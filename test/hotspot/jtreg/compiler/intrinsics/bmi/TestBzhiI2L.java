@@ -65,6 +65,9 @@ public class TestBzhiI2L {
         BMITestRunner.runTests(BzhiICommutativeExpr.class, args,
                                "-XX:+IgnoreUnrecognizedVMOptions",
                                "-XX:+UseBMI2Instructions");
+        BMITestRunner.runTests(BzhiIBoundedExpr.class, args,
+                               "-XX:+IgnoreUnrecognizedVMOptions",
+                               "-XX:+UseBMI2Instructions");
     }
 
     public static class BzhiI2LExpr extends Expr.BMIUnaryIntToLongExpr {
@@ -136,6 +139,25 @@ public class TestBzhiI2L {
 
         public int intExpr(Expr.MemI value, Expr.MemI bits) {
             return ((1 << bits.value) - 1) & value.value;
+        }
+    }
+
+    public static class BzhiIBoundedExpr extends Expr.BMIBinaryIntExpr {
+
+        public int intExpr(int value, int bits) {
+            return value & ((1 << (bits & 31)) - 1);
+        }
+
+        public int intExpr(int value, Expr.MemI bits) {
+            return value & ((1 << (bits.value & 31)) - 1);
+        }
+
+        public int intExpr(Expr.MemI value, int bits) {
+            return value.value & ((1 << (bits & 31)) - 1);
+        }
+
+        public int intExpr(Expr.MemI value, Expr.MemI bits) {
+            return value.value & ((1 << (bits.value & 31)) - 1);
         }
     }
 }

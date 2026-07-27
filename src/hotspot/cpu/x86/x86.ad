@@ -1457,6 +1457,7 @@ source_hpp %{
 #include "peephole_x86_64.hpp"
 
 bool castLL_is_imm32(const Node* n);
+bool is_bzhi_shift_count_bounded(const Node* n);
 
 %}
 
@@ -1466,6 +1467,36 @@ bool castLL_is_imm32(const Node* n) {
   assert(n->is_CastLL(), "must be a CastLL");
   const TypeLong* t = n->bottom_type()->is_long();
   return (t->_lo == min_jlong || Assembler::is_simm32(t->_lo)) && (t->_hi == max_jlong || Assembler::is_simm32(t->_hi));
+}
+
+static const Node* bzhi_shift_count(const Node* n) {
+  if (n == nullptr || n->Opcode() != Op_AndI) {
+    return nullptr;
+  }
+  for (uint i = 1; i < n->req(); i++) {
+    const Node* add = n->in(i);
+    if (add == nullptr || add->Opcode() != Op_AddI) {
+      continue;
+    }
+    for (uint j = 1; j < add->req(); j++) {
+      const Node* shift = add->in(j);
+      if (shift != nullptr && shift->Opcode() == Op_LShiftI &&
+          shift->req() > 2) {
+        return shift->in(2);
+      }
+    }
+  }
+  return nullptr;
+}
+
+bool is_bzhi_shift_count_bounded(const Node* n) {
+  const Node* count = bzhi_shift_count(n);
+  if (count == nullptr) {
+    return false;
+  }
+  const Type* type = (*Compile::current()->types())[count->_idx];
+  const TypeInt* t = type == nullptr ? count->find_int_type() : type->isa_int();
+  return t != nullptr && t->_lo >= 0 && t->_hi < BitsPerInt;
 }
 
 %}
@@ -12692,13 +12723,32 @@ instruct convI2LAndI_reg_immIbitmask(rRegL dst, rRegI src,  immI_Pow2M1 mask, rR
   ins_pipe(ialu_reg_reg);
 %}
 
-// Generate a low-bits mask with BZHI. The shift count must be masked explicitly
-// because Java shift distances wrap modulo 32 while BZHI treats counts >= 32 as
-// selecting the entire source operand.
+// Generate a low-bits mask with BZHI when the shift count is known to be in
+// [0, 31].
+instruct bzhiI_rReg_rReg_bounded(rRegI dst, rRegI src, immI_1 one,
+                                 immI_M1 minus_one, rFlagsReg cr)
+%{
+  predicate(VM_Version::supports_bmi2() &&
+            is_bzhi_shift_count_bounded(n));
+  match(Set dst (AndI src (AddI (LShiftI one dst) minus_one)));
+  effect(KILL cr);
+
+  ins_cost(100);
+  format %{ "bzhil   $dst, $src, $dst\t# low bits mask" %}
+  ins_encode %{
+    __ bzhil($dst$$Register, $src$$Register, $dst$$Register);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+// For unrestricted shift counts, mask the count explicitly because Java shift
+// distances wrap modulo 32 while BZHI treats counts >= 32 as selecting the
+// entire source operand.
 instruct bzhiI_rReg_rReg(rRegI dst, rRegI src, immI_1 one, immI_M1 minus_one,
                          rFlagsReg cr)
 %{
-  predicate(VM_Version::supports_bmi2());
+  predicate(VM_Version::supports_bmi2() &&
+            !is_bzhi_shift_count_bounded(n));
   match(Set dst (AndI src (AddI (LShiftI one dst) minus_one)));
   effect(KILL cr);
 

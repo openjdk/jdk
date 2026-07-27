@@ -138,5 +138,7 @@ public class BzhiTestI2L extends BmiIntrinsicBase.BmiTestCase_x64 {
                 TestBzhiI2L.BzhiIExpr.class.getDeclaredMethod("intExpr", int.class, int.class));
         BmiIntrinsicBase.verifyTestCase(BzhiTestI::new,
                 TestBzhiI2L.BzhiICommutativeExpr.class.getDeclaredMethod("intExpr", int.class, int.class));
+        BmiIntrinsicBase.verifyTestCase(BzhiTestI::new,
+                TestBzhiI2L.BzhiIBoundedExpr.class.getDeclaredMethod("intExpr", int.class, int.class));
     }
 }
