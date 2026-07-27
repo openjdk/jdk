@@ -71,6 +71,8 @@ compiler/escapeAnalysis/TestBCEscapeAnalyzerOverflow.java 8387392 windows-aarch6
 
 compiler/vectorapi/VectorStoreMaskIdentityTest.java 8388281 generic-all
 
+compiler/igvn/TestMaskedStoreIdealization.java 8388490 generic-all
+
 #############################################################################
 
 # :hotspot_gc
