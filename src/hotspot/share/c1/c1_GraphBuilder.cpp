@@ -26,7 +26,9 @@
 #include "c1/c1_CFGPrinter.hpp"
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_GraphBuilder.hpp"
+#include "c1/c1_Instruction.hpp"
 #include "c1/c1_InstructionPrinter.hpp"
+#include "c1/c1_ValueType.hpp"
 #include "ci/ciCallSite.hpp"
 #include "ci/ciField.hpp"
 #include "ci/ciKlass.hpp"
@@ -38,10 +40,13 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerEvent.hpp"
 #include "interpreter/bytecode.hpp"
+#include "interpreter/bytecodes.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/arrayOop.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/checkedCast.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
@@ -4394,7 +4399,6 @@ void GraphBuilder::append_char_access(ciMethod* callee, bool is_store) {
           "sanity: byte[] and char[] scales agree");
 
   ValueStack* state_before = copy_state_indexed_access();
-  compilation()->set_has_access_indexed(true);
   Values* args = state()->pop_arguments(callee->arg_size());
   Value array = args->at(0);
   Value index = args->at(1);
@@ -4403,13 +4407,29 @@ void GraphBuilder::append_char_access(ciMethod* callee, bool is_store) {
     Instruction* store = append(new StoreIndexed(array, index, nullptr, T_CHAR, value, state_before, false, true));
     store->set_flag(Instruction::NeedsRangeCheckFlag, false);
     _memory->store_value(value);
+    compilation()->set_has_access_indexed(true);
   } else {
-    Instruction* load = append(new LoadIndexed(array, index, nullptr, T_CHAR, state_before, true));
-    // We must emit a range check here despite the Java code adding a precondition checkIndex check,
-    // because loop independent code motion can float a LoadIndexed node above its check as we cannot
-    // express control dependencies in C1. The range check stays with the access in case it floats.
-    load->set_flag(Instruction::NeedsRangeCheckFlag, true);
+    // The getChar() method in Java is perceded by a checkIndex() that performs the effective range check.
+    // However, this means that the load must not float over the check. That we cannot guarantee with a LoadIndexed,
+    // in particular LICM will hoist such accesses. For this reason we use an UnsafeGet access to pin the load.
+    // This means we need to emit a null check on the array manually.
+    null_check(array);
+    // Further, we also need to compute the offset into the array from the index. Since we are accessing
+    // a byte[] as char[] we can calculate the offset as
+    //   offset = base(T_BYTE) + 2 * ((long) index) = base(T_BYTE) + ((long) index) << (int)1.
+    Value index_long = append(new Convert(Bytecodes::_i2l, index, as_ValueType(T_LONG)));
+    Value one = append(new Constant(new IntConstant(1)));
+    Value index_scaled = append(new ShiftOp(Bytecodes::_lshl, index_long, one));
+    Value base = append(new Constant(new LongConstant(arrayOopDesc::base_offset_in_bytes(T_BYTE))));
+    Value offset = append(new ArithmeticOp(Bytecodes::_ladd, base, index_scaled, state_before));
+
+#ifndef _LP64
+    offset = appenf(new Convert(Bytecodes::_l2i, offset, as_ValueType(T_INT)));
+#endif // _LP64
+
+    Instruction* load = append(new UnsafeGet(T_CHAR, array, offset, false));
     push(load->type(), load);
+    compilation()->set_has_unsafe_access(true);
   }
 }
 
