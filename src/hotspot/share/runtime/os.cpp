@@ -1994,6 +1994,13 @@ static void shuffle_fisher_yates(T* arr, unsigned num, FastRandom& frand) {
   }
 }
 
+#ifndef S390
+// Default implementation: page table never expands.
+uintptr_t os::vm_page_table_expansion_point() {
+  return align_down(UINTPTR_MAX, os::vm_allocation_granularity());
+}
+#endif
+
 // Helper for os::attempt_reserve_memory_between
 // Given an array of things, do a hemisphere split such that the resulting
 // order is: [first, last, first + 1, last - 1, ...]

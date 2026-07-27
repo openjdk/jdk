@@ -418,15 +418,15 @@ public:
   static OptoReg::Name  inline_cache_reg();
   static int            inline_cache_reg_encode();
 
-  // Register for DIVI projection of divmodI
-  static const RegMask& divI_proj_mask();
-  // Register for MODI projection of divmodI
-  static const RegMask& modI_proj_mask();
+  // Register for the first projection of an int pair
+  static const RegMask& firstI_proj_mask();
+  // Register for the second projection of an int pair
+  static const RegMask& secondI_proj_mask();
 
-  // Register for DIVL projection of divmodL
-  static const RegMask& divL_proj_mask();
-  // Register for MODL projection of divmodL
-  static const RegMask& modL_proj_mask();
+  // Register for the first projection of a long pair
+  static const RegMask& firstL_proj_mask();
+  // Register for the second projection of a long pair
+  static const RegMask& secondL_proj_mask();
 
   // Java-Interpreter calling convention
   // (what you use when calling between compiled-Java and Interpreted-Java

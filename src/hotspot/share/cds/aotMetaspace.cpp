@@ -164,18 +164,16 @@ size_t AOTMetaspace::protection_zone_size() {
   return os::cds_core_region_alignment();
 }
 
-static bool shared_base_valid(char* shared_base) {
-  // We check user input for SharedBaseAddress at dump time.
-
+bool AOTMetaspace::shared_base_valid(char* shared_base) {
   // At CDS runtime, "shared_base" will be the (attempted) mapping start. It will also
   // be the encoding base, since the headers of archived base objects (and with Lilliput,
   // the prototype mark words) carry pre-computed narrow Klass IDs that refer to the mapping
   // start as base.
-  //
-  // On AARCH64, The "shared_base" may not be later usable as encoding base, depending on the
-  // total size of the reserved area and the precomputed_narrow_klass_shift. This is checked
-  // before reserving memory.  Here we weed out values already known to be invalid later.
-  return AARCH64_ONLY(is_aligned(shared_base, 4 * G)) NOT_AARCH64(true);
+  // Note that all narrowKlass inside CDS/AOT archives will be precomputed with the
+  // shift that, at build time, will afford us the maximum encoding range of 4GB. We do this
+  // since we don't know how large the class space at runtime will actually be.
+  return CLASS_SPACE_ONLY(is_aligned(shared_base, Metaspace::reserve_alignment()))
+         NOT_CLASS_SPACE(true);
 }
 
 class DumpClassListCLDClosure : public CLDClosure {
@@ -273,7 +271,7 @@ static char* compute_shared_base(size_t cds_max) {
     err = "too high";
   } else if (shared_base_too_high(specified_base, aligned_base, cds_max)) {
     err = "too high";
-  } else if (!shared_base_valid(aligned_base)) {
+  } else if (!AOTMetaspace::shared_base_valid(aligned_base)) {
     err = "invalid for this platform";
   } else {
     return aligned_base;
@@ -291,7 +289,7 @@ static char* compute_shared_base(size_t cds_max) {
 
   // Make sure the default value of SharedBaseAddress specified in globals.hpp is sane.
   assert(!shared_base_too_high(specified_base, aligned_base, cds_max), "Sanity");
-  assert(shared_base_valid(aligned_base), "Sanity");
+  assert(AOTMetaspace::shared_base_valid(aligned_base), "Sanity");
   return aligned_base;
 }
 
@@ -1971,18 +1969,11 @@ char* AOTMetaspace::reserve_address_space_for_archives(FileMapInfo* static_mapin
   const size_t total_range_size =
       archive_space_size + gap_size + class_space_size;
 
-  // Test that class space base address plus shift can be decoded by aarch64, when restored.
-  const int precomputed_narrow_klass_shift = ArchiveBuilder::precomputed_narrow_klass_shift();
-  if (!CompressedKlassPointers::check_klass_decode_mode(base_address, precomputed_narrow_klass_shift,
-                                                        total_range_size)) {
-    aot_log_info(aot)("CDS initialization: Cannot use SharedBaseAddress " PTR_FORMAT " with precomputed shift %d.",
-                  p2i(base_address), precomputed_narrow_klass_shift);
-    use_archive_base_addr = false;
-  }
-
   assert(total_range_size > ccs_begin_offset, "must be");
   if (use_windows_memory_mapping() && use_archive_base_addr) {
     if (base_address != nullptr) {
+      // Note: We already checked the base address for validity at dump time.
+
       // On Windows, we cannot safely split a reserved memory space into two (see JDK-8255917).
       // Hence, we optimistically reserve archive space and class space side-by-side. We only
       // do this for use_archive_base_addr=true since for use_archive_base_addr=false case

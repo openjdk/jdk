@@ -418,7 +418,8 @@ public record LanguageTag(String language,
         }
 
         // Special handling for no_NO_NY - use nn_NO for language tag
-        if (language.equals("no") && region.equals("NO") && baseVariant.equals("NY")) {
+        if (language.equals("no") && region.equals("NO") && baseVariant.equals("NY")
+                && script.isEmpty() && localeExtensions == null) {
             language = "nn";
             baseVariant = EMPTY_SUBTAG;
         }

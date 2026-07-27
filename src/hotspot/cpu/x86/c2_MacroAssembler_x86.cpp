@@ -294,6 +294,10 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register rax_reg,
     bind(inflated);
 
     const Register monitor = t;
+    // Offsets into the current thread's object monitor cache (omc).
+    const ByteSize thr_omc_offset     = JavaThread::om_cache_offset();
+    const ByteSize omc_monitor_offset = OMCache::monitor_offset();
+    const ByteSize omc_obj_offset     = OMCache::obj_offset();
 
     if (!UseObjectMonitorTable) {
       assert(mark == monitor, "should be the same here");
@@ -301,17 +305,11 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register rax_reg,
       const Register hash = t;
       Label monitor_found;
 
-      // Look for the monitor in the om_cache.
+      // Look for the monitor in the current thread's object monitor cache (omc).
 
-      ByteSize cache_offset   = JavaThread::om_cache_oops_offset();
-      ByteSize monitor_offset = OMCache::oop_to_monitor_difference();
-      const int num_unrolled  = OMCache::CAPACITY;
-      for (int i = 0; i < num_unrolled; i++) {
-        movptr(monitor, Address(thread,  cache_offset + monitor_offset));
-        cmpptr(obj, Address(thread, cache_offset));
-        jccb(Assembler::equal, monitor_found);
-        cache_offset = cache_offset + OMCache::oop_to_oop_difference();
-      }
+      movptr(monitor, Address(thread, thr_omc_offset + omc_monitor_offset));
+      cmpptr(obj, Address(thread, thr_omc_offset + omc_obj_offset));
+      jccb(Assembler::equal, monitor_found);
 
       // Look for the monitor in the table.
 
@@ -339,6 +337,10 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register rax_reg,
       bs_asm->try_peek_weak_handle_in_nmethod(this, rax_reg, rax_reg, slow_path);
       cmpptr(rax_reg, obj);
       jcc(Assembler::notEqual, slow_path);
+
+      // Store the monitor in the current thread's object monitor cache (omc).
+      movptr(Address(thread, thr_omc_offset + omc_monitor_offset), monitor);
+      movptr(Address(thread, thr_omc_offset + omc_obj_offset), obj);
 
       bind(monitor_found);
     }

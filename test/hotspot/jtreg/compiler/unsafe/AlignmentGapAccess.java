@@ -38,17 +38,22 @@ public class AlignmentGapAccess {
 
     static class A           { int  fa; }
     static class B extends A { byte fb; }
+    static class C extends B { int  fc; }
 
     static final long FA_OFFSET = UNSAFE.objectFieldOffset(A.class, "fa");
     static final long FB_OFFSET = UNSAFE.objectFieldOffset(B.class, "fb");
+    static final long FC_OFFSET = UNSAFE.objectFieldOffset(C.class, "fc");
 
     static int test(B obj) {
         return UNSAFE.getInt(obj, FB_OFFSET + 1);
     }
 
     public static void main(String[] args) {
+        System.out.printf("Layout: +%d: fa; +%d: fb; +%d: fc\n",
+                          FA_OFFSET, FB_OFFSET, FC_OFFSET);
+
         for (int i = 0; i < 20_000; i++) {
-            test(new B());
+            test(new C());
         }
         System.out.println("TEST PASSED");
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  * during the lifetime of the application
  *
  * @run main/othervm -Dsun.java2d.font.reftype=weak StrikeDisposalCrashTest
- * @run main/othervm -Dsun.java2d.font.reftype=weak -Dsun.java2d.noddraw=true StrikeDisposalCrashTest
+ * @run main/othervm -Dsun.java2d.font.reftype=weak -Dsun.java2d.d3d=false StrikeDisposalCrashTest
  */
 
 import java.awt.Font;

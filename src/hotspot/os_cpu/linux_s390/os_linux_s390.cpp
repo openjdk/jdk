@@ -477,3 +477,10 @@ int os::extra_bang_size_in_bytes() {
 }
 
 void os::setup_fpu() {}
+
+uintptr_t os::vm_page_table_expansion_point() {
+  // On s390x, page table will dynamically expand based on user demand
+  // (eg mmap probing with high addresses). First expansion happens
+  // at 2^42 (4TB).
+  return nth_bit<uintptr_t>(42);
+}

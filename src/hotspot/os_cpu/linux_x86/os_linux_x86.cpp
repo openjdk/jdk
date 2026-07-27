@@ -381,9 +381,22 @@ size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
 /////////////////////////////////////////////////////////////////////////////
 // helper functions for fatal error handler
 
+// XSAVE Buffer Layout (Intel SDM Vol. 1, Section 13.4.1)
+// Bytes   0-511: Legacy x87/FPU and SSE state (includes XMM0-15)
+// Bytes 512-575: XSAVE Header (64 bytes)
+// Bytes 576-831: YMMH state (upper 128 bits of YMM0-15)
+//                YMMH[i] at: buffer + 576 + (i * 16)
+// Bytes 832+:    Extended state components (e.g., AVX-512, APX, etc.).
+//                Component offsets and sizes are
+//                enumerated by CPUID.(EAX=0xD, ECX=n).
 // XSAVE constants - from Intel SDM Vol. 1, Chapter 13
 #define XSAVE_HDR_OFFSET 512
+#define XSAVE_HDR_SIZE   64
 #define XFEATURE_APX     (1ULL << 19)
+#define XFEATURE_YMM     (1ULL << 2)
+#define XFEATURE_OPMASK  (1ULL << 5)
+#define XFEATURE_ZMM_HI256 (1ULL << 6)
+#define XFEATURE_HI16_ZMM (1ULL << 7)
 
 // XSAVE header structure
 // See: Intel SDM Vol. 1, Section 13.4.2 "XSAVE Header"
@@ -417,6 +430,118 @@ static apx_state* get_apx_state(const ucontext_t* uc) {
     return (apx_state*)(xsave + offset);
 }
 
+static void print_xmm_registers(outputStream* st, const ucontext_t* uc) {
+  for (int i = 0; i < 16; ++i) {
+    const uint64_t* xmm = (const uint64_t*)&uc->uc_mcontext.fpregs->_xmm[i];
+    st->print_cr("XMM[%d]=" INTPTR_FORMAT " " INTPTR_FORMAT, i, xmm[1], xmm[0]);
+  }
+}
+
+static void print_ymm_registers(outputStream* st, const ucontext_t* uc, bool has_ymm_hi128) {
+  const char* xsave = (const char*)uc->uc_mcontext.fpregs;
+  for (int i = 0; i < 16; ++i) {
+    const uint64_t* xmm = (const uint64_t*)&uc->uc_mcontext.fpregs->_xmm[i];
+    uint64_t values[4] = {xmm[0], xmm[1], 0, 0};
+    if (has_ymm_hi128) {
+      const uint64_t* ymmh = (const uint64_t*)(xsave + XSAVE_HDR_OFFSET + XSAVE_HDR_SIZE + (i * 16));
+      values[2] = ymmh[0];
+      values[3] = ymmh[1];
+    }
+    st->print("YMM[%d]=", i);
+    for (int j = 3; j >= 0; --j) {
+      st->print("%s" INTPTR_FORMAT, (j == 3) ? "" : " ", values[j]);
+    }
+    st->cr();
+  }
+}
+
+static void print_zmm_registers(outputStream* st, const ucontext_t* uc, bool has_ymm_hi128,
+                                bool has_zmm_hi256, bool has_hi16_zmm) {
+  const char* xsave = (const char*)uc->uc_mcontext.fpregs;
+
+  for (int i = 0; i < 32; ++i) {
+    uint64_t values[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+
+    if (i < 16) {
+      const uint64_t* xmm = (const uint64_t*)&uc->uc_mcontext.fpregs->_xmm[i];
+      values[0] = xmm[0];
+      values[1] = xmm[1];
+
+      if (has_ymm_hi128) {
+        const uint64_t* ymmh = (const uint64_t*)(xsave + XSAVE_HDR_OFFSET + XSAVE_HDR_SIZE + (i * 16));
+        values[2] = ymmh[0];
+        values[3] = ymmh[1];
+      }
+
+      if (has_zmm_hi256) {
+        const uint32_t zmm_hi256_offset = VM_Version::zmm0to15_hi256_xstate_offset();
+        const uint64_t* zmm_hi256 = (const uint64_t*)(xsave + zmm_hi256_offset + (i * 32));
+        values[4] = zmm_hi256[0];
+        values[5] = zmm_hi256[1];
+        values[6] = zmm_hi256[2];
+        values[7] = zmm_hi256[3];
+      }
+    } else if (has_hi16_zmm) {
+      const uint32_t hi16_zmm_offset = VM_Version::zmm16to31_xstate_offset();
+      const uint64_t* zmm = (const uint64_t*)(xsave + hi16_zmm_offset + ((i - 16) * 64));
+      values[0] = zmm[0];
+      values[1] = zmm[1];
+      values[2] = zmm[2];
+      values[3] = zmm[3];
+      values[4] = zmm[4];
+      values[5] = zmm[5];
+      values[6] = zmm[6];
+      values[7] = zmm[7];
+    }
+
+    st->print("ZMM[%d]=", i);
+    for (int j = 7; j >= 0; --j) {
+      st->print("%s" INTPTR_FORMAT, (j == 7) ? "" : " ", values[j]);
+    }
+    st->cr();
+  }
+}
+
+static void print_kmask_registers(outputStream* st, const ucontext_t* uc, bool has_opmask) {
+  const uint32_t opmask_offset = VM_Version::opmask_xstate_offset();
+  if (!has_opmask || opmask_offset == 0) {
+    return;
+  }
+
+  const char* xsave = (const char*)uc->uc_mcontext.fpregs;
+  const uint64_t* kmask = (const uint64_t*)(xsave + opmask_offset);
+
+  for (int i = 0; i < 8; ++i) {
+    st->print_cr("K[%d]=" INTPTR_FORMAT, i, kmask[i]);
+  }
+  st->cr();
+}
+
+static void print_vector_registers(outputStream* st, const ucontext_t* uc) {
+  if (uc->uc_mcontext.fpregs == nullptr) {
+    return;
+  }
+
+  if (UseAVX < 2) {
+    return print_xmm_registers(st, uc);
+  }
+
+  const char* xsave = (const char*)uc->uc_mcontext.fpregs;
+  const uint64_t* xstate_hdr_ptr = (const uint64_t*)(xsave + XSAVE_HDR_OFFSET);
+  const uint64_t xsave_state_bitmap = xstate_hdr_ptr[0];
+  const bool has_ymm_hi128 = (xsave_state_bitmap & XFEATURE_YMM) != 0;
+  const bool has_opmask = (xsave_state_bitmap & XFEATURE_OPMASK) != 0;
+  const bool has_zmm_hi256 = (xsave_state_bitmap & XFEATURE_ZMM_HI256) != 0;
+  const bool has_hi16_zmm = (xsave_state_bitmap & XFEATURE_HI16_ZMM) != 0;
+  const bool should_print_zmm_registers = (UseAVX > 2) && (has_zmm_hi256 || has_hi16_zmm);
+
+  if (!should_print_zmm_registers) {
+    return print_ymm_registers(st, uc, has_ymm_hi128);
+  }
+
+  print_kmask_registers(st, uc, has_opmask);
+  print_zmm_registers(st, uc, has_ymm_hi128, has_zmm_hi256, has_hi16_zmm);
+}
 
 void os::print_context(outputStream *st, const void *context) {
   if (context == nullptr) return;
@@ -458,7 +583,7 @@ void os::print_context(outputStream *st, const void *context) {
   st->print(", ERR=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_ERR]);
   st->cr();
   st->print("  TRAPNO=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_TRAPNO]);
-  // Add XMM registers + MXCSR. Note that C2 uses XMM to spill GPR values including pointers.
+  // Add vector registers + MXCSR. Note that C2 uses XMM to spill GPR values including pointers.
   st->cr();
   st->cr();
   // Sanity check: fpregs should point into the context.
@@ -467,10 +592,7 @@ void os::print_context(outputStream *st, const void *context) {
     st->print_cr("bad uc->uc_mcontext.fpregs: " INTPTR_FORMAT " (uc: " INTPTR_FORMAT ")",
                  p2i(uc->uc_mcontext.fpregs), p2i(uc));
   } else {
-    for (int i = 0; i < 16; ++i) {
-      const int64_t* xmm_val_addr = (int64_t*)&(uc->uc_mcontext.fpregs->_xmm[i]);
-      st->print_cr("XMM[%d]=" INTPTR_FORMAT " " INTPTR_FORMAT, i, xmm_val_addr[1], xmm_val_addr[0]);
-    }
+    print_vector_registers(st, uc);
     st->print("  MXCSR=" UINT32_FORMAT_X_0, uc->uc_mcontext.fpregs->mxcsr);
   }
   st->cr();

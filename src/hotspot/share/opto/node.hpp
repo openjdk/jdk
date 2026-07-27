@@ -1316,7 +1316,7 @@ public:
 
   // Return a node with opcode "opc" and same inputs as "this" if one can
   // be found; Otherwise return null;
-  Node* find_similar(int opc);
+  Node* find_similar(int opc, bool is_commutative = false);
   bool has_same_inputs_as(const Node* other) const;
 
   // Return the unique control out if only one. Null if none or more than one.

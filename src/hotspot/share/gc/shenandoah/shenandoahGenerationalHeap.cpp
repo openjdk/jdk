@@ -722,10 +722,12 @@ public:
 
   void work(uint worker_id) override {
     if (CONCURRENT) {
+      ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_update_refs, ShenandoahPhaseTimings::Work, worker_id, true);
       ShenandoahConcurrentWorkerSession worker_session(worker_id);
       SuspendibleThreadSetJoiner stsj;
       do_work<ShenandoahConcUpdateRefsClosure>(worker_id);
     } else {
+      ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::degen_gc_update_refs, ShenandoahPhaseTimings::Work, worker_id, true);
       ShenandoahParallelWorkerSession worker_session(worker_id);
       do_work<ShenandoahNonConcUpdateRefsClosure>(worker_id);
     }
