@@ -27,6 +27,7 @@
 
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentCycleTracker.hpp"
+#include "gc/g1/g1EvacuationPrediction.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HeapRegionAttr.hpp"
 #include "gc/g1/g1MMUTracker.hpp"
@@ -36,7 +37,6 @@
 #include "gc/g1/g1YoungGenSizer.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "runtime/atomic.hpp"
-#include "utilities/pair.hpp"
 #include "utilities/ticks.hpp"
 
 // A G1Policy makes policy decisions that determine the
@@ -52,10 +52,52 @@ class G1ConcurrentRefineStats;
 class G1IHOPControl;
 class G1Analytics;
 class G1SurvivorRegions;
+class G1Policy;
 class GCPolicyCounters;
 class STWGCTimer;
 
+// Holds the common inputs used to calculate young-generation sizing.
+class G1YoungGenPredictor {
+  double _base_time_ms;
+  uint _base_free_regions;
+  uint _absolute_min_num_young_regions;
+  uint _absolute_max_num_young_regions;
+  uint _desired_num_eden_regions_by_mmu;
+  uint _num_young_regions;
+  uint _num_survivor_regions;
+  size_t _survivor_bytes_to_copy;
+  size_t _survivor_used_bytes;
+  size_t _old_bytes_to_copy;
+  const G1Policy* const _policy;
+  bool _use_adaptive_sizing;
+
+  uint min_num_eden_regions() const {
+    return _absolute_min_num_young_regions - _num_survivor_regions;
+  }
+
+  uint max_num_eden_regions() const {
+    return _absolute_max_num_young_regions - _num_survivor_regions;
+  }
+
+  bool fits_with_evacuation_reserve(uint num_eden_regions) const;
+  bool will_fit(uint num_eden_regions) const;
+
+  uint desired_num_eden_regions_by_pause() const;
+  uint desired_num_eden_regions_by_evacuation_space() const;
+
+public:
+  G1YoungGenPredictor(const G1Policy* const policy,
+                      const G1EvacuationPrediction& base_prediction,
+                      uint min_num_young_regions_by_sizer,
+                      uint max_num_young_regions_by_sizer);
+
+  uint desired_num_young_regions() const;
+  uint max_num_young_regions_by_evacuation_space() const;
+};
+
 class G1Policy: public CHeapObj<mtGC> {
+  friend class G1YoungGenPredictor;
+
   using Pause = G1CollectorState::Pause;
 
   static G1IHOPControl* create_ihop_control(const G1Predictions* predictor);
@@ -138,15 +180,17 @@ public:
     return _cur_pause_start_sec;
   }
 
-  double predict_base_time_ms(size_t pending_cards, size_t card_rs_length) const;
-
   // Base time contains handling remembered sets and constant other time of the
   // whole young gen, refinement buffers, and copying survivors.
-  // Basically everything but copying eden regions.
-  double predict_base_time_ms(size_t pending_cards, size_t card_rs_length, size_t code_root_length) const;
+  // Basically everything but evacuating eden regions.
+  G1EvacuationPrediction predict_base_evacuation() const;
+  G1EvacuationPrediction predict_base_evacuation(size_t pending_cards,
+                                                 size_t card_rs_length,
+                                                 size_t code_root_length) const;
 
   // Copy time for a region is copying live data.
   double predict_region_copy_time_ms(G1HeapRegion* hr, bool for_young_only_phase) const;
+  double predict_copy_time_ms(size_t bytes_to_copy, bool for_young_only_phase) const;
   // Code root scan time prediction for the given region.
   double predict_region_code_root_scan_time(G1HeapRegion* hr, bool for_young_only_phase) const;
 
@@ -154,9 +198,9 @@ public:
   // Predict other time for count young regions.
   double predict_young_region_other_time_ms(uint count) const;
   double predict_non_young_other_time_ms(uint count) const;
-  // Predict copying live data time for count eden regions. Return the predict bytes if
-  // bytes_to_copy is non-null.
-  double predict_eden_copy_time_ms(uint count, size_t* bytes_to_copy = nullptr) const;
+  // Predict evacuation time, including per-region overhead, and copied bytes
+  // for count eden regions.
+  G1EvacuationPrediction predict_eden_evacuation(uint count) const;
 
   void cset_regions_freed();
 
@@ -198,43 +242,24 @@ private:
   // code root remset length using the prediction model.
   void update_young_regions_bounds();
   void update_young_regions_bounds(size_t pending_cards, size_t card_rs_length, size_t code_root_rs_length);
+  void update_young_regions_bounds(const G1EvacuationPrediction& base_prediction);
 
   // Calculate and return the minimum desired number of eden regions based on the MMU target.
   uint calculate_desired_num_eden_regions_by_mmu() const;
 
-  // Calculate the desired number of eden regions meeting the pause time goal.
-  // min_num_eden_regions and max_num_eden_regions are the bounds
-  // (inclusive) within which eden can grow.
-  uint calculate_desired_num_eden_regions_by_pause(double base_time_ms,
-                                                   uint min_num_eden_regions,
-                                                   uint max_num_eden_regions) const;
-
-  // Calculate the desired number of eden regions that can fit into the pause time
-  // goal before young only gcs.
-  uint calculate_desired_num_eden_regions_before_young_only(double base_time_ms,
-                                                            uint min_num_eden_regions,
-                                                            uint max_num_eden_regions) const;
-
-  // Calculates the desired number of eden regions before mixed gc so that after adding the
-  // minimum amount of old gen regions from the collection set, the eden fits into
-  // the pause time goal.
-  uint calculate_desired_num_eden_regions_before_mixed(double base_time_ms,
-                                                       uint min_num_eden_regions,
-                                                       uint max_num_eden_regions) const;
-
-  // Calculate desired number of young regions based on current situation without taking actually
-  // available free regions into account.
-  uint calculate_desired_num_young_regions(size_t pending_cards,
-                                           size_t card_rs_length,
-                                           size_t code_root_rs_length,
-                                           uint min_num_young_regions_by_sizer,
-                                           uint max_num_young_regions_by_sizer) const;
-  // Limit the given desired number of young regions to available free regions.
+  // Limit the given desired number of young regions to available free regions
+  // and required evacuation space.
   uint calculate_target_num_young_regions(uint desired_num_young_regions,
-                                          uint min_num_young_regions_by_sizer) const;
+                                          uint min_num_young_regions_by_sizer,
+                                          uint max_num_young_regions_by_evacuation_space) const;
 
-  double predict_survivor_regions_evac_time() const;
-  double predict_retained_regions_evac_time() const;
+  G1EvacuationPrediction predict_survivor_regions_evacuation() const;
+  G1EvacuationPrediction predict_retained_regions_evacuation() const;
+
+  // Predict evacuation of the minimum marking candidates that must be included
+  // in the next mixed collection set. Candidate groups are indivisible, so the
+  // prediction may include more regions than the minimum.
+  G1EvacuationPrediction predict_min_marking_candidates_evacuation() const;
 
 public:
   size_t predict_bytes_to_copy(G1HeapRegion* hr) const;
@@ -408,6 +433,12 @@ private:
   size_t desired_survivor_size(uint max_regions) const;
 
 public:
+  // Returns the evacuation-space reserve for young regions. The reserve is limited
+  // by the used bytes in the source young regions because evacuation cannot require
+  // more destination space than can be copied out of those regions, plus waste.
+  static size_t young_evacuation_reserve_bytes(size_t predicted_young_bytes_to_copy,
+                                               size_t max_young_bytes_to_copy);
+
   // Fraction used when predicting how many optional regions to include in
   // the CSet. This fraction of the available time is used for optional regions,
   // the rest is used to add old regions to the normal CSet.

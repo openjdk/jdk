@@ -53,6 +53,15 @@ G1GCPhaseTimes* G1CollectionSet::phase_times() {
   return _policy->phase_times();
 }
 
+static void consume_old_cset_copy_budget(size_t bytes_to_copy, size_t& copy_budget_bytes) {
+  copy_budget_bytes = copy_budget_bytes > bytes_to_copy  ?
+                      copy_budget_bytes - bytes_to_copy : 0;
+}
+
+static double remaining_budget_ms(double budget_ms, double time_ms) {
+  return budget_ms > time_ms ? budget_ms - time_ms : 0.0 ;
+}
+
 G1CollectionSet::G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy) :
   _g1h(g1h),
   _policy(policy),
@@ -317,7 +326,8 @@ void G1CollectionSet::print(outputStream* st) {
 // Always evacuate out pinned regions (apart from object types that can actually be
 // pinned by JNI) to allow faster future evacuation. We already "paid" for this work
 // when sizing the young generation.
-double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1SurvivorRegions* survivors) {
+G1CollectionSet::CSetSelectionBudget
+G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1SurvivorRegions* survivors) {
   assert(_inc_build_state == CSetBuildType::Active, "Precondition");
   assert(SafepointSynchronize::is_at_safepoint(), "should be at a safepoint");
 
@@ -326,11 +336,8 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
   guarantee(target_pause_time_ms > 0.0,
             "target_pause_time_ms = %1.6lf should be positive", target_pause_time_ms);
 
-  bool in_young_only_phase = _policy->collector_state()->is_in_young_only_phase();
-  size_t pending_cards = _policy->analytics()->predict_pending_cards(in_young_only_phase);
-
-  log_trace(gc, ergo, cset)("Start choosing CSet. Pending cards: %zu target pause time: %1.2fms",
-                            pending_cards, target_pause_time_ms);
+  log_trace(gc, ergo, cset)("Start choosing CSet. Target pause time: %1.2fms",
+                            target_pause_time_ms);
 
   // Young region indexes are assigned with eden regions first, followed by
   // survivor regions from the previous pause:
@@ -342,26 +349,176 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
 
   verify_young_cset_indices();
 
-  size_t card_rs_length = _policy->analytics()->predict_card_rs_length(in_young_only_phase);
-  double predicted_base_time_ms = _policy->predict_base_time_ms(pending_cards, card_rs_length);
+  G1EvacuationPrediction base_prediction = _policy->predict_base_evacuation();
+
+  double predicted_base_time_ms = base_prediction._time_ms;
+  size_t predicted_survivor_bytes_to_copy = base_prediction._bytes_to_copy;
+
   // Base time already includes the whole remembered set related time, so do not add that here
   // again.
-  double predicted_eden_time = _policy->predict_young_region_other_time_ms(num_eden_regions) +
-                               _policy->predict_eden_copy_time_ms(num_eden_regions);
-  double remaining_time_ms = MAX2(target_pause_time_ms - (predicted_base_time_ms + predicted_eden_time), 0.0);
+  G1EvacuationPrediction eden_prediction = _policy->predict_eden_evacuation(num_eden_regions);
+
+  size_t predicted_eden_bytes_to_copy = eden_prediction._bytes_to_copy;
+
+  double predicted_eden_time = eden_prediction._time_ms;
+
+  double time_budget_ms = remaining_budget_ms(target_pause_time_ms,
+                                              predicted_base_time_ms + predicted_eden_time);
+
+  size_t predicted_young_bytes_to_copy = predicted_eden_bytes_to_copy + predicted_survivor_bytes_to_copy;
+  size_t young_used = young_used_bytes();
+  size_t copy_budget_bytes = old_cset_copy_budget_bytes(predicted_young_bytes_to_copy, young_used);
 
   log_trace(gc, ergo, cset)("Added young regions to CSet. Eden: %u regions, Survivors: %u regions, "
-                            "predicted eden time: %1.2fms, predicted base time: %1.2fms, target pause time: %1.2fms, remaining time: %1.2fms",
+                            "predicted eden time: %1.2fms, predicted base time: %1.2fms, "
+                            "target pause time: %1.2fms, time budget: %1.2fms "
+                            "eden bytes to copy: %zu survivor bytes to copy: %zu "
+                            "old-region copy budget: %zuB",
                             num_eden_regions, num_survivor_regions,
-                            predicted_eden_time, predicted_base_time_ms, target_pause_time_ms, remaining_time_ms);
+                            predicted_eden_time, predicted_base_time_ms, target_pause_time_ms,
+                            time_budget_ms,
+                            predicted_eden_bytes_to_copy, predicted_survivor_bytes_to_copy,
+                            copy_budget_bytes);
 
   // Set survivor regions as eden and clear survivor tracking for this pause.
   survivors->convert_to_eden();
 
   phase_times()->record_young_cset_choice_time_ms((Ticks::now() - start_time).seconds() * 1000.0);
 
-  return remaining_time_ms;
+  return {time_budget_ms, copy_budget_bytes};
 }
+
+size_t G1CollectionSet::old_cset_copy_budget_bytes(size_t predicted_young_bytes_to_copy,
+                                                   size_t young_used_bytes) const {
+  const size_t free_bytes = (size_t)_g1h->num_free_regions() * G1HeapRegion::GrainBytes;
+  const size_t young_reserve_bytes =
+    G1Policy::young_evacuation_reserve_bytes(predicted_young_bytes_to_copy, young_used_bytes);
+  if (young_reserve_bytes >= free_bytes) {
+    return 0;
+  }
+  const size_t available_bytes = free_bytes - young_reserve_bytes;
+  const size_t scale = 100 + TargetPLABWastePct;
+
+  size_t scaled_bytes = available_bytes * 100;
+  if (scaled_bytes / 100 != available_bytes) {
+    scaled_bytes = SIZE_MAX;
+  }
+
+  return scaled_bytes / scale;
+}
+
+size_t G1CollectionSet::young_used_bytes() const {
+  size_t used_bytes = 0;
+  for (uint i = 0; i < num_young_regions(); i++) {
+    used_bytes += _g1h->region_at(_regions[i])->used();
+  }
+  return used_bytes;
+}
+
+class G1CollectionSet::CandidateSelection {
+  uint _num_initial_regions;
+  uint _num_optional_regions;
+  uint _num_expensive_regions;
+  G1EvacuationPrediction _initial_prediction;
+  G1EvacuationPrediction _optional_prediction;
+
+protected:
+  G1CollectionSet* const _collection_set;
+
+  explicit CandidateSelection(G1CollectionSet* collection_set);
+
+  uint num_initial_regions() const { return _num_initial_regions; }
+  uint num_optional_regions() const { return _num_optional_regions; }
+  uint num_expensive_regions() const { return _num_expensive_regions; }
+
+  const G1EvacuationPrediction& initial_prediction() const {
+    return _initial_prediction;
+  }
+
+  const G1EvacuationPrediction& optional_prediction() const {
+    return _optional_prediction;
+  }
+
+  void add_initial(G1CSetCandidateGroup* group,
+                   const G1EvacuationPrediction& prediction,
+                   CSetSelectionBudget* budget);
+
+  void add_optional(G1CSetCandidateGroup* group,
+                    const G1EvacuationPrediction& prediction);
+
+  // Add a group toward the required minimum even when its prediction exceeds
+  // the available time or old-region copy budget.
+  void add_for_minimum(G1CSetCandidateGroup* group,
+                       const G1EvacuationPrediction& prediction,
+                       CSetSelectionBudget* budget,
+                       double time_budget_ms,
+                       const char* candidate_type);
+};
+
+G1CollectionSet::CandidateSelection::CandidateSelection(G1CollectionSet* collection_set)
+  : _num_initial_regions(0),
+    _num_optional_regions(0),
+    _num_expensive_regions(0),
+    _initial_prediction{0.0, 0},
+    _optional_prediction{0.0, 0},
+    _collection_set(collection_set) {
+}
+
+void G1CollectionSet::CandidateSelection::add_initial(G1CSetCandidateGroup* group,
+                                                      const G1EvacuationPrediction& prediction,
+                                                      CSetSelectionBudget* budget) {
+  precond(budget != nullptr);
+
+  budget->_time_budget_ms = remaining_budget_ms(budget->_time_budget_ms, prediction._time_ms);
+  consume_old_cset_copy_budget(prediction._bytes_to_copy, budget->_copy_budget_bytes);
+
+  _collection_set->add_group_to_collection_set(group);
+  _num_initial_regions += group->length();
+  _initial_prediction._time_ms += prediction._time_ms;
+  _initial_prediction._bytes_to_copy += prediction._bytes_to_copy;
+}
+
+void G1CollectionSet::CandidateSelection::add_optional(G1CSetCandidateGroup* group,
+                                                       const G1EvacuationPrediction& prediction) {
+  _collection_set->add_optional_group(group);
+  _num_optional_regions += group->length();
+  _optional_prediction._time_ms += prediction._time_ms;
+  _optional_prediction._bytes_to_copy += prediction._bytes_to_copy;
+}
+
+void G1CollectionSet::CandidateSelection::add_for_minimum(G1CSetCandidateGroup* group,
+                                                          const G1EvacuationPrediction& prediction,
+                                                          CSetSelectionBudget* budget,
+                                                          double time_budget_ms,
+                                                          const char* candidate_type) {
+  precond(budget != nullptr);
+
+  if (prediction._time_ms > time_budget_ms) {
+    _num_expensive_regions += group->length();
+  }
+
+  if (prediction._bytes_to_copy > budget->_copy_budget_bytes) {
+    log_debug(gc, ergo, cset)("Minimum %s candidate group %u (%u regions) does not fit "
+                              "old-region copy budget: predicted %zuB, budget %zuB. "
+                              "Adding to initial collection set anyway.",
+                              candidate_type, group->group_id(), group->length(),
+                              prediction._bytes_to_copy, budget->_copy_budget_bytes);
+  }
+
+  add_initial(group, prediction, budget);
+}
+
+class G1CollectionSet::RetainedCandidateSelection : public CandidateSelection {
+  uint _num_pinned_regions;
+
+public:
+  explicit RetainedCandidateSelection(G1CollectionSet* collection_set);
+
+  void select_required(CSetSelectionBudget* budget);
+  // Select retained candidates beyond the required minimum using the remaining
+  // pause-time and old-region copy budgets.
+  void select_additional_candidates(const CSetSelectionBudget& budget);
+};
 
 // The current mechanism for evacuating pinned old regions is as below:
 // * pinned regions in the marking collection set candidate list (available during mixed gc) are evacuated like
@@ -373,20 +530,38 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
 //   regions in retained collection set candidates. Retained collection set candidates are aged out, ie.
 //   made to regular old regions without remembered sets after a few attempts to save computation costs
 //   of keeping them candidates for very long living pinned regions.
-void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
+void G1CollectionSet::finalize_old_part(CSetSelectionBudget* budget) {
+  precond(budget != nullptr);
+
   Ticks start_time = Ticks::now();
 
   if (!candidates()->is_empty()) {
     candidates()->verify();
 
+    bool has_retained_candidates = candidates()->retained_groups().num_regions() > 0;
+    RetainedCandidateSelection retained_selection(this);
+
+    // Select old candidates in the following order:
+    // 1. Retained candidates required for progress.
+    // 2. Required marking candidates, followed by any additional marking candidates.
+    // 3. Additional retained candidates.
+    //
+    // Selecting the required retained candidates first charges their cost to
+    // the shared pause-time and evacuation-space budgets. This prevents marking
+    // candidates beyond the required minimum from using the budget needed for
+    // retained-candidate progress.
+    if (has_retained_candidates) {
+      retained_selection.select_required(budget);
+    }
+
     if (collector_state()->is_in_mixed_phase()) {
-      time_remaining_ms = select_candidates_from_marking(time_remaining_ms);
+      select_candidates_from_marking(budget);
     } else {
       log_debug(gc, ergo, cset)("Do not add marking candidates to collection set due to pause type.");
     }
 
-    if (candidates()->retained_groups().num_regions() > 0) {
-      select_candidates_from_retained(time_remaining_ms);
+    if (has_retained_candidates) {
+      retained_selection.select_additional_candidates(*budget);
     }
     candidates()->verify();
   } else {
@@ -401,32 +576,159 @@ static void print_finish_message(const char* reason, bool from_marking) {
                             from_marking ? "marking" : "retained", reason);
 }
 
-void G1CollectionSet::add_optional_group(G1CSetCandidateGroup* group,
-                                         uint& num_optional_regions,
-                                         double& predicted_optional_time_ms,
-                                         double predicted_time_ms) {
+class G1CollectionSet::MarkingCandidateSelection : public CandidateSelection {
+  CSetSelectionBudget* const _budget;
+  G1CSetCandidateGroupList _initial_groups;
+
+  void add_initial(G1CSetCandidateGroup* group,
+                   const G1EvacuationPrediction& prediction);
+
+public:
+  MarkingCandidateSelection(G1CollectionSet* collection_set,
+                            CSetSelectionBudget* budget);
+
+  double time_budget_ms() const {
+    return _budget->_time_budget_ms;
+  }
+
+  size_t copy_budget_bytes() const {
+    return _budget->_copy_budget_bytes;
+  }
+
+  uint num_initial_regions() const {
+    return CandidateSelection::num_initial_regions();
+  }
+
+  uint num_selected_regions() const {
+    return num_initial_regions() + num_optional_regions();
+  }
+
+  // Add a group required to reach the minimum old CSet length. These groups are
+  // selected for initial evacuation even if their prediction exceeds a budget.
+  void add_for_minimum(G1CSetCandidateGroup* group,
+                       const G1EvacuationPrediction& prediction);
+
+  // Add a group directly to optional evacuation for G1ForceOptionalEvacuation,
+  // without consuming the initial selection budgets.
+  void add_forced_optional(G1CSetCandidateGroup* group,
+                           const G1EvacuationPrediction& prediction);
+
+  // Add a group to initial evacuation if above the optional time threshold
+  // and within the copy budget; otherwise make it optional if time remains.
+  // Returns false when the predicted time exhausts the time budget.
+  bool select_within_budget(G1CSetCandidateGroup* group,
+                            const G1EvacuationPrediction& prediction,
+                            double optional_threshold_ms);
+
+  void finalize();
+};
+
+void G1CollectionSet::add_optional_group(G1CSetCandidateGroup* group) {
+  uint optional_region_index = _optional_groups.num_regions();
   _optional_groups.append(group);
-  prepare_optional_group(group, num_optional_regions);
-  num_optional_regions += group->length();
-  predicted_optional_time_ms += predicted_time_ms;
+  prepare_optional_group(group, optional_region_index);
 }
 
-double G1CollectionSet::select_candidates_from_marking(double time_remaining_ms) {
-  uint num_expensive_regions = 0;
-  uint num_inital_regions = 0;
-  uint num_initial_groups = 0;
-  uint num_optional_regions = 0;
+G1CollectionSet::MarkingCandidateSelection::MarkingCandidateSelection(G1CollectionSet* collection_set,
+                                                                      CSetSelectionBudget* budget)
+  : CandidateSelection(collection_set),
+    _budget(budget),
+    _initial_groups() {
+  assert(_budget != nullptr, "must be");
+}
 
+void G1CollectionSet::MarkingCandidateSelection::add_initial(G1CSetCandidateGroup* group,
+                                                             const G1EvacuationPrediction& prediction) {
+  CandidateSelection::add_initial(group, prediction, _budget);
+  _initial_groups.append(group);
+}
+
+void G1CollectionSet::MarkingCandidateSelection::add_for_minimum(G1CSetCandidateGroup* group,
+                                                                 const G1EvacuationPrediction& prediction) {
+  CandidateSelection::add_for_minimum(group, prediction, _budget,
+                                      _budget->_time_budget_ms, "marking");
+  _initial_groups.append(group);
+}
+
+void G1CollectionSet::MarkingCandidateSelection::add_forced_optional(G1CSetCandidateGroup* group,
+                                                                     const G1EvacuationPrediction& prediction) {
+  add_optional(group, prediction);
+}
+
+bool G1CollectionSet::MarkingCandidateSelection::select_within_budget(G1CSetCandidateGroup* group,
+                                                                      const G1EvacuationPrediction& prediction,
+                                                                      double optional_threshold_ms) {
+  double time_budget_after_group_ms =
+    remaining_budget_ms(_budget->_time_budget_ms, prediction._time_ms);
+
+  if (time_budget_after_group_ms > optional_threshold_ms &&
+      prediction._bytes_to_copy <= _budget->_copy_budget_bytes) {
+    add_initial(group, prediction);
+    return true;
+  }
+
+  if (time_budget_after_group_ms > 0.0) {
+    // Initial evacuation must reserve space for evacuating the selected regions.
+    // Once that work is complete, this group may fit the optional evacuation
+    // budget. Add it to the optional set if there is still pause time for it.
+    if (time_budget_after_group_ms > optional_threshold_ms) {
+      log_debug(gc, ergo, cset)("Prediction %zuB for group with %u regions does not fit "
+                                "old regions copy budget: %zuB. Preparing as optional.",
+                                prediction._bytes_to_copy, group->length(),
+                                _budget->_copy_budget_bytes);
+    }
+    _budget->_time_budget_ms = time_budget_after_group_ms;
+    add_optional(group, prediction);
+    return true;
+  }
+
+  print_finish_message("Predicted time too high", true);
+  return false;
+}
+
+void G1CollectionSet::MarkingCandidateSelection::finalize() {
+  G1CSetCandidateGroupList* from_marking_groups = &_collection_set->candidates()->from_marking_groups();
+
+  // Remove selected groups from list of candidate groups.
+  if (_initial_groups.length() > 0) {
+    _collection_set->candidates()->remove(&_initial_groups);
+  }
+
+  if (from_marking_groups->length() == 0) {
+    log_debug(gc, ergo, cset)("Marking candidates exhausted.");
+  }
+
+  if (num_expensive_regions() > 0) {
+    log_debug(gc, ergo, cset)("Added %u marking candidates to collection set although the predicted time was too high.",
+                              num_expensive_regions());
+  }
+
+  log_debug(gc, ergo, cset)("Finish adding marking candidates to collection set. "
+                            "Initial: %u regions (%u groups), optional: %u regions (%u groups), "
+                            "predicted initial time: %1.2fms, predicted optional time: %1.2fms, "
+                            "predicted initial bytes: %zu, predicted optional bytes: %zu, "
+                            "time budget: %1.2fms, old-region copy budget: %zuB",
+                            _initial_groups.num_regions(), _initial_groups.length(),
+                            _collection_set->_optional_groups.num_regions(), _collection_set->_optional_groups.length(),
+                            initial_prediction()._time_ms, optional_prediction()._time_ms,
+                            initial_prediction()._bytes_to_copy, optional_prediction()._bytes_to_copy,
+                            _budget->_time_budget_ms, _budget->_copy_budget_bytes);
+
+  postcond(_collection_set->_optional_groups.num_regions() == num_optional_regions());
+  postcond(_initial_groups.num_regions() == num_initial_regions());
+}
+
+void G1CollectionSet::select_candidates_from_marking(CSetSelectionBudget* budget) {
+  precond(budget != nullptr);
   assert(_optional_groups.num_regions() == 0, "Optional regions should not already be selected");
 
-  double predicted_initial_time_ms = 0.0;
-  double predicted_optional_time_ms = 0.0;
-
-  double optional_threshold_ms = time_remaining_ms * _policy->optional_prediction_fraction();
+  MarkingCandidateSelection selection(this, budget);
+  double optional_threshold_ms = selection.time_budget_ms() *
+                                 _policy->optional_prediction_fraction();
 
   uint min_old_cset_length = _policy->calc_min_old_cset_length(candidates()->last_marking_candidates_length());
   uint max_old_cset_length = MAX2(min_old_cset_length, _policy->calc_max_old_cset_length());
-  bool check_time_remaining = _policy->use_adaptive_num_young_regions();
+  bool enforce_time_budget = _policy->use_adaptive_num_young_regions();
 
   G1CSetCandidateGroupList* from_marking_groups = &candidates()->from_marking_groups();
 
@@ -434,143 +736,121 @@ double G1CollectionSet::select_candidates_from_marking(double time_remaining_ms)
 
   log_debug(gc, ergo, cset)("Start adding marking candidates to collection set. "
                             "Min %u regions, max %u regions, available %u regions (%u groups), "
-                            "time remaining %1.2fms, optional threshold %1.2fms",
+                            "time budget %1.2fms, optional threshold %1.2fms, "
+                            "old-cset copy budget %zuB",
                             min_old_cset_length, max_old_cset_length, from_marking_groups->num_regions(), from_marking_groups->length(),
-                            time_remaining_ms, optional_threshold_ms);
-
-  G1CSetCandidateGroupList selected_groups;
+                            selection.time_budget_ms(), optional_threshold_ms,
+                            selection.copy_budget_bytes());
 
   for (G1CSetCandidateGroup* group : *from_marking_groups) {
-    if (num_inital_regions + num_optional_regions >= max_old_cset_length) {
+    if (selection.num_selected_regions() >= max_old_cset_length) {
       // Added maximum number of old regions to the CSet.
       print_finish_message("Maximum number of regions reached", true);
       break;
     }
 
-    double predicted_time_ms = group->predict_group_total_time_ms();
+    G1EvacuationPrediction prediction = group->predict_group_evacuation();
 
     if (make_first_group_optional) {
-        make_first_group_optional = false;
-        add_optional_group(group,
-                           num_optional_regions,
-                           predicted_optional_time_ms,
-                           predicted_time_ms);
-        continue;
+      make_first_group_optional = false;
+      selection.add_forced_optional(group, prediction);
+      continue;
     }
 
-    time_remaining_ms = MAX2(time_remaining_ms - predicted_time_ms, 0.0);
     // Add regions to old set until we reach the minimum amount
-    if (num_inital_regions < min_old_cset_length) {
-
-      num_initial_groups++;
-
-      add_group_to_collection_set(group);
-      selected_groups.append(group);
-
-      num_inital_regions += group->length();
-
-      predicted_initial_time_ms += predicted_time_ms;
-      // Record the number of regions added with no time remaining
-      if (time_remaining_ms == 0.0) {
-        num_expensive_regions += group->length();
-      }
-    } else if (!check_time_remaining) {
+    if (selection.num_initial_regions() < min_old_cset_length) {
+      selection.add_for_minimum(group, prediction);
+    } else if (!enforce_time_budget) {
       // In the non-auto-tuning case, we'll finish adding regions
       // to the CSet if we reach the minimum.
       print_finish_message("Region amount reached min", true);
       break;
-    } else {
-      // Keep adding regions to old set until we reach the optional threshold
-      if (time_remaining_ms > optional_threshold_ms) {
-        num_initial_groups++;
-
-        add_group_to_collection_set(group);
-        selected_groups.append(group);
-
-        num_inital_regions += group->length();
-
-        predicted_initial_time_ms += predicted_time_ms;
-
-      } else if (time_remaining_ms > 0) {
-        // Keep adding optional regions until time is up.
-        add_optional_group(group,
-                           num_optional_regions,
-                           predicted_optional_time_ms,
-                           predicted_time_ms);
-      } else {
-        print_finish_message("Predicted time too high", true);
-        break;
-      }
+    } else if (!selection.select_within_budget(group,
+                                                prediction,
+                                                optional_threshold_ms)) {
+      break;
     }
   }
 
-  // Remove selected groups from list of candidate groups.
-  if (num_initial_groups > 0) {
-    candidates()->remove(&selected_groups);
-  }
-
-  if (from_marking_groups->length() == 0) {
-    log_debug(gc, ergo, cset)("Marking candidates exhausted.");
-  }
-
-  if (num_expensive_regions > 0) {
-    log_debug(gc, ergo, cset)("Added %u marking candidates to collection set although the predicted time was too high.",
-                              num_expensive_regions);
-  }
-
-  log_debug(gc, ergo, cset)("Finish adding marking candidates to collection set. Initial: %u regions (%u groups), optional: %u regions (%u groups), "
-                            "predicted initial time: %1.2fms, predicted optional time: %1.2fms, time remaining: %1.2fms",
-                            selected_groups.num_regions(), selected_groups.length(), _optional_groups.num_regions(), _optional_groups.length(),
-                            predicted_initial_time_ms, predicted_optional_time_ms, time_remaining_ms);
-
-  assert(selected_groups.num_regions() == num_inital_regions, "must be");
-  assert(_optional_groups.num_regions() == num_optional_regions, "must be");
-  return time_remaining_ms;
+  selection.finalize();
 }
 
-void G1CollectionSet::select_candidates_from_retained(double time_remaining_ms) {
-  uint num_initial_regions = 0;
-  uint prev_num_optional_regions = _optional_groups.num_regions();
-  uint num_optional_regions = prev_num_optional_regions;
-  uint num_expensive_regions = 0;
-  uint num_pinned_regions = 0;
+G1CollectionSet::RetainedCandidateSelection::RetainedCandidateSelection(G1CollectionSet* collection_set)
+  : CandidateSelection(collection_set),
+    _num_pinned_regions(0) {
+}
 
-  double predicted_initial_time_ms = 0.0;
-  double predicted_optional_time_ms = 0.0;
+void G1CollectionSet::RetainedCandidateSelection::select_required(CSetSelectionBudget* budget) {
+  precond(budget != nullptr);
 
-  uint const min_regions = _policy->min_retained_old_cset_length();
-  // We want to make sure that on the one hand we process the retained regions asap,
-  // but on the other hand do not take too many of them as optional regions.
-  // So we split the time budget into budget we will unconditionally take into the
-  // initial old regions, and budget for taking optional regions from the retained
-  // list.
-  double optional_time_remaining_ms = _policy->max_time_for_retaining();
-  time_remaining_ms = MIN2(time_remaining_ms, optional_time_remaining_ms);
+  uint min_regions = _collection_set->_policy->min_retained_old_cset_length();
+  G1CSetCandidateGroupList* retained_groups = &_collection_set->candidates()->retained_groups();
 
-  G1CSetCandidateGroupList* retained_groups = &candidates()->retained_groups();
+  double time_budget_ms = MIN2(budget->_time_budget_ms, _collection_set->_policy->max_time_for_retaining());
 
-  log_debug(gc, ergo, cset)("Start adding retained candidates to collection set. "
+  log_debug(gc, ergo, cset)("Start adding required retained candidates to collection set. "
                             "Min %u regions, available %u regions (%u groups), "
-                            "time remaining %1.2fms, optional remaining %1.2fms",
+                            "time budget %1.2fms, old-region copy budget %zuB",
                             min_regions, retained_groups->num_regions(), retained_groups->length(),
-                            time_remaining_ms, optional_time_remaining_ms);
+                            time_budget_ms, budget->_copy_budget_bytes);
 
-  G1CSetCandidateGroupList remove_from_retained;
+  G1CSetCandidateGroupList selected_groups;
+  for (G1CSetCandidateGroup* group : *retained_groups) {
+    if (num_initial_regions() >= min_regions) {
+      break;
+    }
+
+    assert(group->length() == 1, "Retained groups should have only 1 region");
+
+    G1CollectionSetCandidateInfo* ci = group->at(0);
+    if (ci->_r->has_pinned_objects()) {
+      // The additional-candidate pass updates pinned-region aging exactly once.
+      continue;
+    }
+
+    G1EvacuationPrediction prediction = group->predict_group_evacuation();
+    add_for_minimum(group, prediction, budget, time_budget_ms, "Retained");
+    selected_groups.append(group);
+    time_budget_ms = remaining_budget_ms(time_budget_ms, prediction._time_ms);
+  }
+
+  _collection_set->candidates()->remove(&selected_groups);
+
+  log_debug(gc, ergo, cset)("Finish adding required retained candidates to collection set. "
+                            "Initial: %u, time budget: %1.2fms, old-region copy budget: %zuB",
+                            num_initial_regions(), budget->_time_budget_ms,
+                            budget->_copy_budget_bytes);
+}
+
+void G1CollectionSet::RetainedCandidateSelection::select_additional_candidates(const CSetSelectionBudget& budget) {
+  double optional_time_budget_ms =
+    remaining_budget_ms(_collection_set->_policy->max_time_for_retaining(),
+                        initial_prediction()._time_ms);
+
+  CSetSelectionBudget selection_budget = {MIN2(budget._time_budget_ms, optional_time_budget_ms),
+                                          budget._copy_budget_bytes};
+
+  G1CSetCandidateGroupList* retained_groups = &_collection_set->candidates()->retained_groups();
+
+  log_debug(gc, ergo, cset)("Start adding additional retained candidates to collection set. "
+                            "Available %u regions (%u groups), time budget %1.2fms, "
+                            "optional time budget %1.2fms, old-region copy budget %zuB",
+                            retained_groups->num_regions(), retained_groups->length(),
+                            selection_budget._time_budget_ms, optional_time_budget_ms,
+                            selection_budget._copy_budget_bytes);
+
+  G1CSetCandidateGroupList selected_groups;
   G1CSetCandidateGroupList groups_to_abandon;
 
   for (G1CSetCandidateGroup* group : *retained_groups) {
     assert(group->length() == 1, "Retained groups should have only 1 region");
 
-    double predicted_time_ms = group->predict_group_total_time_ms();
-
-    bool fits_in_remaining_time = predicted_time_ms <= time_remaining_ms;
-
-    G1CollectionSetCandidateInfo* ci = group->at(0); // We only have one region in the group.
+    G1CollectionSetCandidateInfo* ci = group->at(0);
     G1HeapRegion* r = ci->_r;
 
-    // If we can't reclaim that region ignore it for now.
+    // If we cannot reclaim that region, ignore it for now.
     if (r->has_pinned_objects()) {
-      num_pinned_regions++;
+      _num_pinned_regions++;
       if (ci->update_num_unreclaimed()) {
         log_trace(gc, ergo, cset)("Retained candidate %u can not be reclaimed currently. Skipping.", r->hrm_index());
       } else {
@@ -578,80 +858,106 @@ void G1CollectionSet::select_candidates_from_retained(double time_remaining_ms) 
         // Drop pinned retained regions to make progress with retained regions. Regions
         // in that list must have been pinned for at least G1NumCollectionsKeepPinned
         // GCs and hence are considered "long lived".
-        _g1h->clear_region_attr(r);
+        _collection_set->_g1h->clear_region_attr(r);
         groups_to_abandon.append(group);
-        remove_from_retained.append(group);
+        selected_groups.append(group);
       }
       continue;
     }
 
-    if (fits_in_remaining_time || (num_expensive_regions < min_regions)) {
-      predicted_initial_time_ms += predicted_time_ms;
-      if (!fits_in_remaining_time) {
-        num_expensive_regions++;
+    G1EvacuationPrediction prediction = group->predict_group_evacuation();
+    bool fits_time_budget = prediction._time_ms <= selection_budget._time_budget_ms;
+    bool fits_copy_budget = prediction._bytes_to_copy <= selection_budget._copy_budget_bytes;
+
+    if (!fits_copy_budget) {
+      log_debug(gc, ergo, cset)("Retained candidate group %u does not fit "
+                                "old-region copy budget: predicted %zuB, budget %zuB.",
+                                group->group_id(), prediction._bytes_to_copy,
+                                selection_budget._copy_budget_bytes);
+      if (prediction._time_ms <= optional_time_budget_ms) {
+        add_optional(group, prediction);
+        selection_budget._time_budget_ms =
+          remaining_budget_ms(selection_budget._time_budget_ms, prediction._time_ms);
+      } else {
+        print_finish_message("Predicted copy bytes too high", false);
+        break;
       }
-
-      add_group_to_collection_set(group);
-      remove_from_retained.append(group);
-
-      num_initial_regions += group->length();
-    } else if (predicted_time_ms <= optional_time_remaining_ms) {
-      // Prepare optional collection region.
-      add_optional_group(group,
-                         num_optional_regions,
-                         predicted_optional_time_ms,
-                         predicted_time_ms);
+    } else if (fits_time_budget) {
+      add_initial(group, prediction, &selection_budget);
+      selected_groups.append(group);
+    } else if (prediction._time_ms <= optional_time_budget_ms) {
+      add_optional(group, prediction);
+      selection_budget._time_budget_ms =
+        remaining_budget_ms(selection_budget._time_budget_ms, prediction._time_ms);
     } else {
       // Fits neither initial nor optional time limit. Exit.
       break;
     }
-    time_remaining_ms = MAX2(0.0, time_remaining_ms - predicted_time_ms);
-    optional_time_remaining_ms = MAX2(0.0, optional_time_remaining_ms - predicted_time_ms);
+    optional_time_budget_ms = remaining_budget_ms(optional_time_budget_ms, prediction._time_ms);
   }
 
-  if (num_initial_regions == retained_groups->num_regions()) {
+  _collection_set->candidates()->remove(&selected_groups);
+  groups_to_abandon.clear(true /* uninstall_group_cardset */);
+
+  if (retained_groups->length() == 0) {
     log_debug(gc, ergo, cset)("Retained candidates exhausted.");
   }
 
-  if (num_expensive_regions > 0) {
-    log_debug(gc, ergo, cset)("Added %u retained candidates to collection set although the predicted time was too high.",
-                              num_expensive_regions);
+  if (num_expensive_regions() > 0) {
+    log_debug(gc, ergo, cset)("Added %u retained candidates to collection set "
+                              "although the predicted time was too high.",
+                              num_expensive_regions());
   }
 
-  // Remove groups from retained and also do some bookkeeping on CandidateOrigin
-  // for the regions in these groups.
-  candidates()->remove(&remove_from_retained);
-
-  groups_to_abandon.clear(true /* uninstall_group_cardset */);
-
-  assert(num_optional_regions >= prev_num_optional_regions, "Sanity");
-  uint selected_optional_regions = num_optional_regions - prev_num_optional_regions;
-
-  log_debug(gc, ergo, cset)("Finish adding retained candidates to collection set. Initial: %u, optional: %u, pinned: %u, "
+  log_debug(gc, ergo, cset)("Finish adding retained candidates to collection set. "
+                            "Initial: %u, optional: %u, pinned: %u, "
                             "predicted initial time: %1.2fms, predicted optional time: %1.2fms, "
-                            "time remaining: %1.2fms optional time remaining %1.2fms",
-                            num_initial_regions, selected_optional_regions, num_pinned_regions,
-                            predicted_initial_time_ms, predicted_optional_time_ms, time_remaining_ms, optional_time_remaining_ms);
+                            "predicted initial bytes: %zu, predicted optional bytes: %zu, "
+                            "time budget: %1.2fms, optional time budget %1.2fms, "
+                            "old-region copy budget: %zuB",
+                            num_initial_regions(), num_optional_regions(), _num_pinned_regions,
+                            initial_prediction()._time_ms, optional_prediction()._time_ms,
+                            initial_prediction()._bytes_to_copy, optional_prediction()._bytes_to_copy,
+                            selection_budget._time_budget_ms, optional_time_budget_ms,
+                            selection_budget._copy_budget_bytes);
 }
 
-double G1CollectionSet::select_candidates_from_optional_groups(double time_remaining_ms, uint& num_regions_selected) {
-
-  assert(_optional_groups.num_regions() > 0,
+uint G1CollectionSet::select_optional_groups(double time_budget_ms) {
+  uint total_optional_regions = num_optional_regions();
+  assert(total_optional_regions > 0,
          "Should only be called when there are optional regions");
 
+  uint num_regions_selected = 0;
+  // TODO: we do not account for remaining reference processing.
+  // So prematurely consider that previous evacuations are completed.
+  size_t copy_budget_bytes = old_cset_copy_budget_bytes(0, 0);
+
   double total_prediction_ms = 0.0;
+  size_t total_bytes_to_copy = 0;
   G1CSetCandidateGroupList selected;
   for (G1CSetCandidateGroup* group : _optional_groups) {
-    double predicted_time_ms = group->predict_group_total_time_ms();
+    G1EvacuationPrediction prediction = group->predict_group_evacuation();
+    double predicted_time_ms = prediction._time_ms;
+    size_t predicted_bytes_to_copy = prediction._bytes_to_copy;
 
-    if (predicted_time_ms > time_remaining_ms) {
-      log_debug(gc, ergo, cset)("Prediction %.3fms for group with %u regions does not fit remaining time: %.3fms.",
-                                predicted_time_ms, group->length(), time_remaining_ms);
+    if (predicted_time_ms > time_budget_ms) {
+      log_debug(gc, ergo, cset)("Prediction %.3fms for group with %u regions does not fit "
+                                "time budget: %.3fms.",
+                                predicted_time_ms, group->length(), time_budget_ms);
+      break;
+    }
+    if (predicted_bytes_to_copy > copy_budget_bytes) {
+      log_debug(gc, ergo, cset)("Prediction %zuB for group with %u regions does not fit "
+                                "old-region copy budget: %zuB.",
+                                predicted_bytes_to_copy, group->length(), copy_budget_bytes);
       break;
     }
 
     total_prediction_ms += predicted_time_ms;
-    time_remaining_ms -= predicted_time_ms;
+    total_bytes_to_copy += predicted_bytes_to_copy;
+    time_budget_ms -= predicted_time_ms;
+
+    consume_old_cset_copy_budget(predicted_bytes_to_copy, copy_budget_bytes);
 
     num_regions_selected += group->length();
 
@@ -659,27 +965,20 @@ double G1CollectionSet::select_candidates_from_optional_groups(double time_remai
     selected.append(group);
   }
 
-  log_debug(gc, ergo, cset)("Completed with groups, selected %u region in %u groups",
-                            num_regions_selected, selected.length());
+  log_debug(gc, ergo, cset)("Completed with groups, selected %u region in %u groups, "
+                            "predicted copy bytes: %zuB, old-region copy budget: %zuB",
+                            num_regions_selected, selected.length(), total_bytes_to_copy,
+                            copy_budget_bytes);
   // Remove selected groups from candidate list.
   if (selected.length() > 0) {
     _optional_groups.remove(&selected);
     candidates()->remove(&selected);
   }
-  return total_prediction_ms;
-}
 
-uint G1CollectionSet::select_optional_groups(double time_remaining_ms) {
-  uint total_optional_regions = num_optional_regions();
-  assert(total_optional_regions > 0,
-         "Should only be called when there are optional regions");
-
-  uint num_regions_selected = 0;
-
-  double total_prediction_ms = select_candidates_from_optional_groups(time_remaining_ms, num_regions_selected);
-
-  log_debug(gc, ergo, cset)("Prepared %u regions out of %u for optional evacuation. Total predicted time: %.3fms",
-                            num_regions_selected, total_optional_regions, total_prediction_ms);
+  log_debug(gc, ergo, cset)("Prepared %u regions out of %u for optional evacuation. "
+                            "Total predicted time: %.3fms, old-region copy budget: %zuB",
+                            num_regions_selected, total_optional_regions, total_prediction_ms,
+                            copy_budget_bytes);
 
   return num_regions_selected;
 }
@@ -716,16 +1015,16 @@ void G1CollectionSet::finalize_initial_collection_set(double target_pause_time_m
   assert(_regions_inc_part_start == 0, "must be");
   assert(_groups_inc_part_start == 0, "must be");
 
-  double time_remaining_ms = finalize_young_part(target_pause_time_ms, survivor);
-  finalize_old_part(time_remaining_ms);
+  CSetSelectionBudget budget = finalize_young_part(target_pause_time_ms, survivor);
+  finalize_old_part(&budget);
 
   stop_incremental_building();
 }
 
-bool G1CollectionSet::finalize_optional_for_evacuation(double remaining_pause_time) {
+bool G1CollectionSet::finalize_optional_for_evacuation(double time_budget_ms) {
   continue_incremental_building();
 
-  uint num_regions_selected = select_optional_groups(remaining_pause_time);
+  uint num_regions_selected = select_optional_groups(time_budget_ms);
 
   stop_incremental_building();
 
