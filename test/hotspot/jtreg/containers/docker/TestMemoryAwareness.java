@@ -213,7 +213,7 @@ public class TestMemoryAwareness {
         System.out.println("sizeToAllocInMb is:" + sizeToAllocInMb + " sizeToAllocInMb/2 is:" + sizeToAllocInMb/2);
         String javaHeapSize = sizeToAllocInMb/2 + "m";
         opts.addJavaOptsAppended("-Xmx" + javaHeapSize);
-        // reduce the number of CPUs to 2, so that the number of GC threads is not too 
+        // reduce the number of CPUs to 2, so that the number of GC threads is not too
         // high for the small memory limit (each thread reserves 2MB stacksize).
         opts.addJavaOptsAppended("-XX:ActiveProcessorCount=2");
 
