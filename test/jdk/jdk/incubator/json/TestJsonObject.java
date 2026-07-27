@@ -173,13 +173,13 @@ public class TestJsonObject {
                 Arguments.of("{ \"foo\" ", "Expected a colon after the member name. Path: \"{\". Location: line 0, position 8."),
                 Arguments.of("{ \"foo\" : \"bar\" ", "JSON Object is not closed with a brace. Path: \"{\". Location: line 0, position 16."),
                 Arguments.of("{ \"foo\" : \"bar\",  ", "JSON Object is not closed with a brace. Path: \"{\". Location: line 0, position 18."),
-                Arguments.of("{ \"foo\" : 1, \"foo\" : 1  ", "The duplicate member name: \"foo\" was already parsed. Path: \"{\". Location: line 0, position 18."),
+                Arguments.of("{ \"foo\" : 1, \"foo\" : 1  ", "The duplicate member name: \"foo\" was already parsed. Path: \"{\". Location: line 0, position 13."),
                 Arguments.of("{ foo : \"bar\" ", "Expecting a JSON Object member name. Path: \"{\". Location: line 0, position 2."),
                 Arguments.of("{ \"foo : ", "JSON Object member name is not closed with a quotation mark. Path: \"{\". Location: line 0, position 9."),
                 Arguments.of("{ ", "JSON Object is not closed with a brace. Path: \"{\". Location: line 0, position 2."),
 
                 // Escaped names
-                Arguments.of("{ \"foo\" : null, \"\\u0066oo\" : null ", "The duplicate member name: \"foo\" was already parsed. Path: \"{\". Location: line 0, position 26."),
+                Arguments.of("{ \"foo\" : null, \"\\u0066oo\" : null ", "The duplicate member name: \"foo\" was already parsed. Path: \"{\". Location: line 0, position 16."),
                 Arguments.of("{ \"\\u00M\" ", "Invalid Unicode escape sequence. 'M' is not a hex digit. Path: \"{\". Location: line 0, position 7."),
                 Arguments.of("{ \"foo\\a\" ", "Unrecognized escape sequence: \"\\a\". Path: \"{\". Location: line 0, position 7."),
 
@@ -190,14 +190,14 @@ public class TestJsonObject {
                         "a": [
                         ]
                     }
-                    """, "The duplicate member name: \"a\" was already parsed. Path: \"{\". Location: line 2, position 7."),
+                    """, "The duplicate member name: \"a\" was already parsed. Path: \"{\". Location: line 2, position 4."),
                 Arguments.of("""
                     {
                         "a": 0,
                         "a"
                             : 1
                     }
-                    """, "The duplicate member name: \"a\" was already parsed. Path: \"{\". Location: line 2, position 7."),
+                    """, "The duplicate member name: \"a\" was already parsed. Path: \"{\". Location: line 2, position 4."),
 
                 // nested
                 Arguments.of("{ \"l1\": { \"l2\": [ 0, 1, two ] } }",

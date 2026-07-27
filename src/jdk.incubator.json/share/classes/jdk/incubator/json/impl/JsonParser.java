@@ -116,11 +116,11 @@ public final class JsonParser {
             // Why not parse the name as a JsonString and then return its value()?
             // Would require 2 passes; we should build the String as we parse.
             var name = parseName(path);
-            var nameOffset = offset;
+            var nameEnd = offset;
             var nameLine = line;
             var nameLineStart = lineStart;
             var unescaped = escapedMemberName ?
-                new String(doc, nameStart + 1, nameOffset - nameStart - 2) : name;
+                new String(doc, nameStart + 1, nameEnd - nameStart - 2) : name;
 
             // Move from name to ':'
             skipWhitespaces();
@@ -130,7 +130,7 @@ public final class JsonParser {
             }
 
             if (members.putIfAbsent(name, parseValue(path + unescaped)) != null) {
-                throw failure(nameOffset, nameLine, nameLineStart,
+                throw failure(nameStart, nameLine, nameLineStart,
                     "The duplicate member name: \"%s\" was already parsed".formatted(name), path);
             }
 
