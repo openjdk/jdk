@@ -88,6 +88,15 @@ public class TestReplayV4 extends DumpReplayBase {
         reDumpAndCompare();
     }
 
+    private String makeMessageFromList(String header, List<String> lines) {
+        var message = new StringBuilder(header);
+        message.append(":\n");
+        for (String diff : lines) {
+            message.append("  - ").append(diff).append("\n");
+        }
+        return message.toString();
+    }
+
     private void reDumpAndCompare() {
         ReplayFile.ParsedReplayFile firstParsedReplay;
         ReplayFile.ParsedReplayFile secondParsedReplay;
@@ -117,13 +126,12 @@ public class TestReplayV4 extends DumpReplayBase {
             throw new Error("Can't find replay: " + t, t);
         }
 
+        var first_insanities = ReplayFile.ParsedReplayFile.checkSanity(firstParsedReplay);
+        Asserts.assertTrue(first_insanities.isEmpty(), makeMessageFromList("Insane first replay file", first_insanities));
+        var second_insanities = ReplayFile.ParsedReplayFile.checkSanity(secondParsedReplay);
+        Asserts.assertTrue(second_insanities.isEmpty(), makeMessageFromList("Insane second replay file", second_insanities));
         var differences = ReplayFile.ParsedReplayFile.findDifferences(firstParsedReplay, secondParsedReplay);
-        var message = new StringBuilder("Differences:\n");
-        for (String diff : differences) {
-            message.append("  - ").append(diff).append("\n");
-        }
-        Asserts.assertTrue(differences.isEmpty(), message.toString());
-        System.exit(1);
+        Asserts.assertTrue(differences.isEmpty(), makeMessageFromList("Differences", differences));
     }
 
     @Override

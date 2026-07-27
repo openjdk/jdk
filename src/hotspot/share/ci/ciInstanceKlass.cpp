@@ -951,7 +951,7 @@ void ciInstanceKlass::dump_replay_instanceKlass(outputStream* out, InstanceKlass
   if (ik->is_hidden()) {
     const char *name = CURRENT_ENV->dyno_name(ik);
     if (name != nullptr) {
-      out->print_cr("instanceKlass %s # %s", name, ik->name()->as_quoted_ascii());
+      out->print_cr("instanceKlass%s # %s", name, ik->name()->as_quoted_ascii());
     } else {
       out->print_cr("# instanceKlass %s", ik->name()->as_quoted_ascii());
     }

@@ -104,11 +104,11 @@ public class ReplayFile {
         public record InstanceKlassCommandBci(String klass, String name, String signature, int bci, List<String> location) implements InstanceKlassCommand {}
         public record InstanceKlassCommandCpi(String klass, int cpi, List<String> location) implements InstanceKlassCommand {}
         // ciInstanceKlass <name> <is_linked> <is_initialized> <length> tag*
-        public record CiInstanceKlassCommand(String name, boolean is_linked, boolean is_initialized, int length, List<Integer> tag) implements Command {}
+        public record CiInstanceKlassCommand(String name, boolean isLinked, boolean isInitialized, int length, List<Integer> tag) implements Command {}
         // staticfield <klass> <field_name> [IBCSZJFD] <value>
         //                                | "[" [IBCSZJFD] <length>
-        //                                | "[" <klass> <length> "ref" ("nullable" | "null-free") <klass>
-        //                                                      | "flat" ("nullable" | "null-free") ("atomic" | "non-atomic") <klass>
+        //                                | <array-of-klass> <length> "ref" ("nullable" | "null-free") <klass>
+        //                                                          | "flat" ("nullable" | "null-free") ("atomic" | "non-atomic") <klass>
         //                                | "Ljava/lang/String;" <value>
         //                                | <klass> <klass>?
         sealed interface StaticFieldCommand extends Command permits
@@ -119,24 +119,24 @@ public class ReplayFile {
                 StaticFieldCommandNullArray,
                 StaticFieldCommandString,
                 StaticFieldCommandInstance {}
-        public record StaticFieldCommandPrimitive(String klass, String field_name, String signature, String value) implements StaticFieldCommand {}
-        public record StaticFieldCommandPrimitiveArray(String klass, String field_name, String signature, int length) implements StaticFieldCommand {}
-        public record StaticFieldCommandRefArray(String klass, String field_name, String signature, int length, boolean null_free, String actual_klass) implements StaticFieldCommand {}
-        public record StaticFieldCommandFlatArray(String klass, String field_name, String signature, int length, boolean null_free, boolean non_atomic, String actual_klass) implements StaticFieldCommand {}
-        public record StaticFieldCommandNullArray(String klass, String field_name, String signature) implements StaticFieldCommand {}
-        public record StaticFieldCommandString(String klass, String field_name, String value) implements StaticFieldCommand {}
-        public record StaticFieldCommandInstance(String klass, String field_name, String signature, List<String> actual_klass_or_values) implements StaticFieldCommand {}
-        // ciMethodData <klass> <name> <signature> <state> <invocation_counter> orig <length> <byte>* data <length> <ptr>* oops <length> (<offset> <klass> <array properties>?)* methods <length> (<offset> <klass> <name> <signature>)*
+        public record StaticFieldCommandPrimitive(String klass, String fieldName, String signature, String value) implements StaticFieldCommand {}
+        public record StaticFieldCommandPrimitiveArray(String klass, String fieldName, String signature, int length) implements StaticFieldCommand {}
+        public record StaticFieldCommandRefArray(String klass, String fieldName, String signature, int length, boolean nullFree, String actualKlass) implements StaticFieldCommand {}
+        public record StaticFieldCommandFlatArray(String klass, String fieldName, String signature, int length, boolean nullFree, boolean nonAtomic, String actualKlass) implements StaticFieldCommand {}
+        public record StaticFieldCommandNullArray(String klass, String fieldName, String signature) implements StaticFieldCommand {}
+        public record StaticFieldCommandString(String klass, String fieldName, String value) implements StaticFieldCommand {}
+        public record StaticFieldCommandInstance(String klass, String fieldName, String signature, List<String> actualKlassOrValues) implements StaticFieldCommand {}
+        // ciMethodData <klass> <name> <signature> <state> <invocationCounter> orig <length> <byte>* data <length> <ptr>* oops <length> (<offset> <klass> <array properties>?)* methods <length> (<offset> <klass> <name> <signature>)*
         sealed interface CiMethodDataCommandOop permits CiMethodDataCommandOopInstance, CiMethodDataCommandOopArray {}
         public record CiMethodDataCommandOopInstance(int offset, String klass) implements CiMethodDataCommandOop {}
-        public record CiMethodDataCommandOopArray(int offset, String klass, int array_properties) implements CiMethodDataCommandOop {}
+        public record CiMethodDataCommandOopArray(int offset, String klass, int arrayProperties) implements CiMethodDataCommandOop {}
         public record CiMethodDataCommandMethod(int offset, String klass, String name, String signature) {}
-        public record CiMethodDataCommand(String klass, String name, String signature, int state, int invocation_counter, List<Integer> orig, List<String> data, List<CiMethodDataCommandOop> oops, List<CiMethodDataCommandMethod> methods) implements Command {}
+        public record CiMethodDataCommand(String klass, String name, String signature, int state, int invocationCounter, List<Integer> orig, List<String> data, List<CiMethodDataCommandOop> oops, List<CiMethodDataCommandMethod> methods) implements Command {}
         // ciMethod <klass> <name> <signature> <invocation_counter> <backedge_counter> <interpreter_invocation_count> <interpreter_throwout_count> <instructions_size>
-        public record CiMethodCommand(String klass, String name, String signature, int invocation_counter, int backedge_counter, int interpreter_invocation_count, int interpreter_throwout_count, int instructions_size) implements Command {}
+        public record CiMethodCommand(String klass, String name, String signature, int invocationCounter, int backedgeCounter, int interpreterInvocationCount, int interpreterThrowoutCount, int instructionsSize) implements Command {}
         // compile <klass> <name> <signature> <entry_bci> <comp_level> inline <count> (<depth> <bci> <inline_late> <klass> <name> <signature>)*
-        public record CompileCommandInline(int depth, int bci, boolean inline_late, String klass, String name, String signature) {}
-        public record CompileCommand(String klass, String name, String signature, int entry_bci, int comp_level, List<CompileCommandInline> inlines) implements Command {}
+        public record CompileCommandInline(int depth, int bci, boolean inlineLate, String klass, String name, String signature) {}
+        public record CompileCommand(String klass, String name, String signature, int entryBci, int compLevel, List<CompileCommandInline> inlines) implements Command {}
 
         ParsedReplayFile(List<Command> commands) { this.commands = commands; }
         List<Command> commands;
@@ -149,27 +149,27 @@ public class ReplayFile {
         }
         static Command parseLine(String line) {
             List<String> pieces = Arrays.stream(line.split(" ")).filter(piece -> !piece.isEmpty()).toList();
-            int comment_idx = pieces.indexOf("#");
-            if (comment_idx >= 0) {
-                pieces = pieces.subList(0, comment_idx);
+            int commentIdx = pieces.indexOf("#");
+            if (commentIdx >= 0) {
+                pieces = pieces.subList(0, commentIdx);
             }
             if (pieces.isEmpty()) {
                 return null;
             }
             String command = pieces.getFirst();
-            var line_pieces = LinePieces.make(pieces, command);
+            var linePieces = LinePieces.make(pieces, command);
             var cmd = switch (command) {
-                case "version" -> parseVersion(line_pieces);
-                case "JvmtiExport" -> parseJvmtiExport(line_pieces);
-                case "instanceKlass" -> parseInstanceKlass(line_pieces);
-                case "ciInstanceKlass" -> parseCiInstanceKlass(line_pieces);
-                case "staticfield" -> parseStaticField(line_pieces);
-                case "ciMethodData" -> parseCiMethodData(line_pieces);
-                case "ciMethod" -> parseCiMethod(line_pieces);
-                case "compile" -> parseCompile(line_pieces);
+                case "version" -> parseVersion(linePieces);
+                case "JvmtiExport" -> parseJvmtiExport(linePieces);
+                case "instanceKlass" -> parseInstanceKlass(linePieces);
+                case "ciInstanceKlass" -> parseCiInstanceKlass(linePieces);
+                case "staticfield" -> parseStaticField(linePieces);
+                case "ciMethodData" -> parseCiMethodData(linePieces);
+                case "ciMethod" -> parseCiMethod(linePieces);
+                case "compile" -> parseCompile(linePieces);
                 default -> throw new RuntimeException("unknown command: " + command);
             };
-            line_pieces.checkAtEnd();
+            linePieces.checkAtEnd();
             return cmd;
         }
 
@@ -188,9 +188,9 @@ public class ReplayFile {
                 return before + ">>" + after;
             }
 
-            static public LinePieces make(List<String> pieces, String command_name) {
+            static public LinePieces make(List<String> pieces, String commandName) {
                 var line = new LinePieces(pieces);
-                line.getKeywork(command_name);
+                line.getKeywork(commandName);
                 return line;
             }
 
@@ -261,11 +261,11 @@ public class ReplayFile {
                 };
             }
 
-            public boolean getBoolKeyword(String false_kw, String true_kw) {
+            public boolean getBoolKeyword(String falseKw, String trueKw) {
                 String s = getString();
-                if (s.equals(false_kw)) return false;
-                if (s.equals(true_kw)) return true;
-                throw new RuntimeException("unexepcted boolean keyword; got " + s + "; expected " + false_kw + " (for false) or " + true_kw + " (for true)");
+                if (s.equals(falseKw)) return false;
+                if (s.equals(trueKw)) return true;
+                throw new RuntimeException("unexepcted boolean keyword; got " + s + "; expected " + falseKw + " (for false) or " + trueKw + " (for true)");
             }
 
             public boolean atEnd() {
@@ -305,10 +305,10 @@ public class ReplayFile {
             String signature = pieces.getString();
             int bci = pieces.getInt();
             List<String> location = new ArrayList<>();
-            var next_s = pieces.getString();
-            while (!next_s.equals(";")) {
-                location.add(next_s);
-                next_s = pieces.getString();
+            var nextS = pieces.getString();
+            while (!nextS.equals(";")) {
+                location.add(nextS);
+                nextS = pieces.getString();
             }
             return new InstanceKlassCommandBci(klass, name, signature, bci, location);
         }
@@ -322,11 +322,11 @@ public class ReplayFile {
 
         static CiInstanceKlassCommand parseCiInstanceKlass(LinePieces pieces) {
             String name = pieces.getString();
-            boolean is_linked = pieces.getBool();
-            boolean is_initialized = pieces.getBool();
+            boolean isLinked = pieces.getBool();
+            boolean isInitialized = pieces.getBool();
             int length = pieces.getInt();
             List<Integer> tag = pieces.getInts(length - 1);
-            return new CiInstanceKlassCommand(name, is_linked, is_initialized, length, tag);
+            return new CiInstanceKlassCommand(name, isLinked, isInitialized, length, tag);
         }
 
         static boolean isPrimitiveType(char c) {
@@ -335,39 +335,39 @@ public class ReplayFile {
 
         static StaticFieldCommand parseStaticField(LinePieces pieces) {
             String klass = pieces.getString();
-            String field_name = pieces.getString();
+            String fieldName = pieces.getString();
             String signature = pieces.getString();
             if (isPrimitiveType(signature.charAt(0))) {
                 String val = pieces.getString();
-                return new StaticFieldCommandPrimitive(klass, field_name, signature, val);
+                return new StaticFieldCommandPrimitive(klass, fieldName, signature, val);
             }
             if (signature.charAt(0) == '[') {
                 if (isPrimitiveType(signature.charAt(1))) {
                     int length = pieces.getInt();
-                    return new StaticFieldCommandPrimitiveArray(klass, field_name, signature, length);
+                    return new StaticFieldCommandPrimitiveArray(klass, fieldName, signature, length);
                 } else {
                     int length = pieces.getInt();
                     if (length == -1) {
-                        return new StaticFieldCommandNullArray(klass, field_name, signature);
+                        return new StaticFieldCommandNullArray(klass, fieldName, signature);
                     }
-                    boolean is_flat = pieces.getBoolKeyword("ref", "flat");
-                    boolean null_free = pieces.getBoolKeyword("nullable", "null-free");
-                    if (is_flat) {
-                        boolean non_atomic = pieces.getBoolKeyword("atomic", "non-atomic");
-                        String actual_klass = pieces.getString();
-                        return new StaticFieldCommandFlatArray(klass, field_name, signature, length, null_free, non_atomic, actual_klass);
+                    boolean isFlat = pieces.getBoolKeyword("ref", "flat");
+                    boolean nullFree = pieces.getBoolKeyword("nullable", "null-free");
+                    if (isFlat) {
+                        boolean nonAtomic = pieces.getBoolKeyword("atomic", "non-atomic");
+                        String actualKlass = pieces.getString();
+                        return new StaticFieldCommandFlatArray(klass, fieldName, signature, length, nullFree, nonAtomic, actualKlass);
                     } else {
-                        String actual_klass = pieces.getString();
-                        return new StaticFieldCommandRefArray(klass, field_name, signature, length, null_free, actual_klass);
+                        String actualKlass = pieces.getString();
+                        return new StaticFieldCommandRefArray(klass, fieldName, signature, length, nullFree, actualKlass);
                     }
                 }
             }
             if (signature.equals("Ljava/lang/String;")) {
                 String value = pieces.getString();
-                return new StaticFieldCommandString(klass, field_name, value);
+                return new StaticFieldCommandString(klass, fieldName, value);
             }
-            List<String> actual_klass_or_values = pieces.getLeftoverStrings();
-            return new StaticFieldCommandInstance(klass, field_name, signature, actual_klass_or_values);
+            List<String> actualKlassOrValues = pieces.getLeftoverStrings();
+            return new StaticFieldCommandInstance(klass, fieldName, signature, actualKlassOrValues);
         }
 
         // oops <length> (<offset> <klass> <array properties>?)* methods <length> (<offset> <klass> <name> <signature>)*
@@ -376,21 +376,21 @@ public class ReplayFile {
             String name = pieces.getString();
             String signature = pieces.getString();
             int state = pieces.getInt();
-            int invocation_counter = pieces.getInt();
+            int invocationCounter = pieces.getInt();
 
             pieces.getKeywork("orig");
-            int orig_length = pieces.getInt();
-            List<Integer> orig = pieces.getInts(orig_length);
+            int origLength = pieces.getInt();
+            List<Integer> orig = pieces.getInts(origLength);
 
             pieces.getKeywork("data");
-            int data_length = pieces.getInt();
-            List<String> data = pieces.getStrings(data_length);
+            int datalength = pieces.getInt();
+            List<String> data = pieces.getStrings(datalength);
 
             pieces.getKeywork("oops");
-            int oops_length = pieces.getInt();
-            List<CiMethodDataCommandOop> oops = new ArrayList<>(oops_length);
+            int oopsLength = pieces.getInt();
+            List<CiMethodDataCommandOop> oops = new ArrayList<>(oopsLength);
 
-            for (int i = 0; i < oops_length; i++) {
+            for (int i = 0; i < oopsLength; i++) {
                 int offset = pieces.getInt();
                 String klass_ = pieces.getString();
                 Optional<Integer> properties = pieces.getIntIfTwoIntsAvailable();
@@ -402,10 +402,10 @@ public class ReplayFile {
             }
 
             pieces.getKeywork("methods");
-            int methods_length = pieces.getInt();
-            List<CiMethodDataCommandMethod> methods = new ArrayList<>(methods_length);
+            int methodsLength = pieces.getInt();
+            List<CiMethodDataCommandMethod> methods = new ArrayList<>(methodsLength);
 
-            for (int i = 0; i < methods_length; i++) {
+            for (int i = 0; i < methodsLength; i++) {
                 int offset = pieces.getInt();
                 String klass_ = pieces.getString();
                 String name_ = pieces.getString();
@@ -413,27 +413,27 @@ public class ReplayFile {
                 methods.add(new CiMethodDataCommandMethod(offset, klass_, name_, signature_));
             }
 
-            return new CiMethodDataCommand(klass, name, signature, state, invocation_counter, orig, data, oops, methods);
+            return new CiMethodDataCommand(klass, name, signature, state, invocationCounter, orig, data, oops, methods);
         }
 
         static CiMethodCommand parseCiMethod(LinePieces pieces) {
             String klass = pieces.getString();
             String name = pieces.getString();
             String signature = pieces.getString();
-            int invocation_counter = pieces.getInt();
-            int backedge_counter = pieces.getInt();
-            int interpreter_invocation_count = pieces.getInt();
-            int interpreter_throwout_count = pieces.getInt();
-            int instructions_size = pieces.getInt();
-            return new CiMethodCommand(klass, name, signature, invocation_counter, backedge_counter, interpreter_invocation_count, interpreter_throwout_count, instructions_size);
+            int invocationCounter = pieces.getInt();
+            int backedgeCounter = pieces.getInt();
+            int interpreterInvocationCount = pieces.getInt();
+            int interpreterThrowoutCount = pieces.getInt();
+            int instructionsSize = pieces.getInt();
+            return new CiMethodCommand(klass, name, signature, invocationCounter, backedgeCounter, interpreterInvocationCount, interpreterThrowoutCount, instructionsSize);
         }
 
         static CompileCommand parseCompile(LinePieces pieces) {
             String klass = pieces.getString();
             String name = pieces.getString();
             String signature = pieces.getString();
-            int entry_bci = pieces.getInt();
-            int comp_level = pieces.getInt();
+            int entryBci = pieces.getInt();
+            int compLevel = pieces.getInt();
             pieces.getKeywork("inline");
             int count = pieces.getInt();
 
@@ -442,30 +442,88 @@ public class ReplayFile {
             for (int i = 0; i < count; i++) {
                 int depth = pieces.getInt();
                 int bci = pieces.getInt();
-                boolean inline_late = pieces.getBool();
+                boolean inlineLate = pieces.getBool();
                 String klass_ = pieces.getString();
                 String name_ = pieces.getString();
                 String signature_ = pieces.getString();
-                inlines.add(new CompileCommandInline(depth, bci, inline_late, klass_, name_, signature_));
+                inlines.add(new CompileCommandInline(depth, bci, inlineLate, klass_, name_, signature_));
             }
 
-            return new CompileCommand(klass, name, signature, entry_bci, comp_level, inlines);
+            return new CompileCommand(klass, name, signature, entryBci, compLevel, inlines);
         }
 
-        static Optional<Integer> getVersion(String which, ParsedReplayFile parsed, List<String> differences) {
-            List<Integer> parsed_version = parsed.commands.stream().map(cmd -> switch (cmd) { case VersionCommand(int version) -> version; default -> null; }).filter(Objects::nonNull).toList();
-            if (parsed_version.size() != 1) {
-                differences.add("Expected a single version command, but found " + parsed_version.size() + " in " + which);
-                return Optional.empty();
+        static String klassOfStaticField(StaticFieldCommand cmd) {
+            return switch (cmd) {
+                case StaticFieldCommandFlatArray(String klass, String fieldName, String signature, int length, boolean nullFree, boolean nonAtomic, String actualKlass) -> klass;
+                case StaticFieldCommandInstance(String klass, String fieldName, String signature, List<String> actualKlassOrValues) -> klass;
+                case StaticFieldCommandNullArray(String klass, String fieldName, String signature) -> klass;
+                case StaticFieldCommandPrimitive(String klass, String fieldName, String signature, String value) -> klass;
+                case StaticFieldCommandPrimitiveArray(String klass, String fieldName, String signature, int length) -> klass;
+                case StaticFieldCommandRefArray(String klass, String fieldName, String signature, int length,boolean nullFree, String actualKlass) -> klass;
+                case StaticFieldCommandString(String klass, String fieldName, String value) -> klass;
+            };
+        }
+
+        static List<String> checkSanity(ParsedReplayFile parsed) {
+            record Method(String klass, String name, String signature) {}
+            List<String> insanities = new ArrayList<>();
+
+            int seenVersionCommands = 0;
+            Set<Method> seenCiMethod = new HashSet<>();
+            Set<Method> seenCiMethodData = new HashSet<>();
+            Set<Method> seenCompile = new HashSet<>();
+            Set<String> seenKlasses = new HashSet<>();
+            for (Command c : parsed.commands) {
+                switch (c) {
+                    case CiInstanceKlassCommand(String name, boolean isLinked, boolean isInitialized, int length, List<Integer> tag) -> seenKlasses.add(name);
+                    case StaticFieldCommand cmd -> {
+                        if (!seenKlasses.contains(klassOfStaticField(cmd))) {
+                            insanities.add("Static field command " + cmd + " seen before the corresponding ciInstanceKlass command.");
+                        }
+                    }
+                    case CompileCommand(String klass, String name, String signature, int entryBci, int compLevel, List<CompileCommandInline> inlines) -> {
+                        var method = new Method(klass, name, signature);
+                        seenCompile.add(method);
+                        if (!seenCiMethod.contains(method)) {
+                            insanities.add("Found \"compile\" command without a \"ciMethod\" command for the same method.");
+                        }
+                        if (!seenCiMethodData.contains(method)) {
+                            insanities.add("Found \"compile\" command without a \"ciMethodData\" command for the same method.");
+                        }
+                    }
+                    case CiMethodCommand(String klass, String name, String signature, int invocationCounter, int backedgeCounter, int interpreterInvocationCount, int interpreterThrowoutCount, int instructionsSize) ->
+                        seenCiMethod.add(new Method(klass, name, signature));
+                    case CiMethodDataCommand(String klass, String name, String signature, int state, int invocationCounter, List<Integer> orig, List<String> data, List<CiMethodDataCommandOop> oops, List<CiMethodDataCommandMethod> methods) ->
+                        seenCiMethodData.add(new Method(klass, name, signature));
+                    case VersionCommand _ ->
+                        seenVersionCommands++;
+                    case InstanceKlassCommand _,
+                         JvmtiExportCommand _ -> {
+                    }
+                }
             }
-            return Optional.ofNullable(parsed_version.getFirst());
+
+            if (seenCompile.isEmpty()) {
+                insanities.add("No \"compile\" command found.");
+            }
+
+            if (seenVersionCommands == 0) {
+                insanities.add("No \"version\" command found.");
+            } else if (seenVersionCommands > 1) {
+                insanities.add("Found too many \"version\" commands: " + seenVersionCommands);
+            }
+            return insanities;
+        }
+
+        static Optional<Integer> getVersion(ParsedReplayFile parsed) {
+            return parsed.commands.stream().map(cmd -> switch (cmd) { case VersionCommand(int version) -> version; default -> null; }).filter(Objects::nonNull).findAny();
         }
         static void compareVersion(ParsedReplayFile lhs, ParsedReplayFile rhs, List<String> differences) {
-            Optional<Integer> lhs_version = getVersion("lhs", lhs, differences);
-            Optional<Integer> rhs_version = getVersion("rhs", rhs, differences);
+            Optional<Integer> lhsVersion = getVersion(lhs);
+            Optional<Integer> rhsVersion = getVersion(rhs);
 
-            if (lhs_version.isPresent() && rhs_version.isPresent() && !lhs_version.get().equals(rhs_version.get())) {
-                differences.add("Versions mismatch: lhs=" + lhs_version.get() + "; rhs=" + rhs_version.get());
+            if (lhsVersion.isPresent() && rhsVersion.isPresent() && !lhsVersion.get().equals(rhsVersion.get())) {
+                differences.add("Versions mismatch: lhs=" + lhsVersion.get() + "; rhs=" + rhsVersion.get());
             }
         }
 
@@ -497,14 +555,14 @@ public class ReplayFile {
                     HashMap::putAll
             );
         }
-        static <T, U> void diffMaps(String name, HashMap<T, U> lhs, HashMap<T, U> rhs, BiPredicate<U, U> eq_value, List<String> differences) {
-            lhs.forEach((key, l_value) -> {
+        static <T, U> void diffMaps(String name, HashMap<T, U> lhs, HashMap<T, U> rhs, BiPredicate<U, U> eqValue, List<String> differences) {
+            lhs.forEach((key, lValue) -> {
                         if (!rhs.containsKey(key)) {
                             differences.add(name + " mismatch: key=" + key + " exists only in lhs");
                         } else {
-                            U r_value = rhs.get(key);
-                            if (!eq_value.test(l_value, r_value)) {
-                                differences.add(name + " mismatch: for key=" + key + "; value in lhs=" + l_value + "; value in rhs=" + r_value);
+                            U rValue = rhs.get(key);
+                            if (!eqValue.test(lValue, rValue)) {
+                                differences.add(name + " mismatch: for key=" + key + "; value in lhs=" + lValue + "; value in rhs=" + rValue);
                             }
                         }
                     }
@@ -523,9 +581,9 @@ public class ReplayFile {
                     acc.put(field, value);
                 }
             };
-            HashMap<String, Integer> lhs_jvmti = extractMap(lhs, folder);
-            HashMap<String, Integer> rhs_jvmti = extractMap(rhs, folder);
-            diffMaps("JvmtiExport", lhs_jvmti, rhs_jvmti, Integer::equals, differences);
+            HashMap<String, Integer> lhsJvmti = extractMap(lhs, folder);
+            HashMap<String, Integer> rhsJvmti = extractMap(rhs, folder);
+            diffMaps("JvmtiExport", lhsJvmti, rhsJvmti, Integer::equals, differences);
         }
 
         static void compareInstanceKlassNames(ParsedReplayFile lhs, ParsedReplayFile rhs, List<String> differences) {
@@ -534,9 +592,9 @@ public class ReplayFile {
                     acc.add(name);
                 }
             };
-            HashSet<String> lhs_klasses = extractSet(lhs, folder);
-            HashSet<String> rhs_klasses = extractSet(rhs, folder);
-            diffSets("InstanceKlass", lhs_klasses, rhs_klasses, differences);
+            HashSet<String> lhsKlasses = extractSet(lhs, folder);
+            HashSet<String> rhsKlasses = extractSet(rhs, folder);
+            diffSets("InstanceKlass", lhsKlasses, rhsKlasses, differences);
         }
         static void compareInstanceKlassCpi(ParsedReplayFile lhs, ParsedReplayFile rhs, List<String> differences) {
             record Key(String klass, int cpi) {}
@@ -545,9 +603,9 @@ public class ReplayFile {
                     acc.put(new Key(klass, cpi), location);
                 }
             };
-            var lhs_klasses = extractMap(lhs, folder);
-            var rhs_klasses = extractMap(rhs, folder);
-            diffMaps("InstanceKlass", lhs_klasses, rhs_klasses, List::equals, differences);
+            var lhsKlasses = extractMap(lhs, folder);
+            var rhsKlasses = extractMap(rhs, folder);
+            diffMaps("InstanceKlass", lhsKlasses, rhsKlasses, List::equals, differences);
         }
         static void compareInstanceKlassBci(ParsedReplayFile lhs, ParsedReplayFile rhs, List<String> differences) {
             record Key(String klass, String name, String signature, int bci) {}
@@ -556,9 +614,9 @@ public class ReplayFile {
                     acc.put(new Key(klass, name, signature, bci), location);
                 }
             };
-            var lhs_klasses = extractMap(lhs, folder);
-            var rhs_klasses = extractMap(rhs, folder);
-            diffMaps("InstanceKlass", lhs_klasses, rhs_klasses, List::equals, differences);
+            var lhsKlasses = extractMap(lhs, folder);
+            var rhsKlasses = extractMap(rhs, folder);
+            diffMaps("InstanceKlass", lhsKlasses, rhsKlasses, List::equals, differences);
         }
         static void compareInstanceKlasses(ParsedReplayFile lhs, ParsedReplayFile rhs, List<String> differences) {
             compareInstanceKlassNames(lhs, rhs, differences);
@@ -567,95 +625,95 @@ public class ReplayFile {
         }
 
         static void compareCiInstanceKlasses(ParsedReplayFile lhs, ParsedReplayFile rhs, List<String> differences) {
-            record Element(String name, boolean is_linked, boolean is_initialized, int length) {}
+            record Element(String name, boolean isLinked, boolean isInitialized, int length) {}
             BiConsumer<HashSet<Element>, Command> folder = (acc, command) -> {
-                if (command instanceof CiInstanceKlassCommand(String name, boolean is_linked, boolean is_initialized, int length, List<Integer> _)) {
-                    acc.add(new Element(name, is_linked, is_initialized, length));
+                if (command instanceof CiInstanceKlassCommand(String name, boolean isLinked, boolean isInitialized, int length, List<Integer> _)) {
+                    acc.add(new Element(name, isLinked, isInitialized, length));
                 }
             };
-            var lhs_ci_klasses = extractSet(lhs, folder);
-            var rhs_ci_klasses = extractSet(rhs, folder);
-            diffSets("CiInstanceKlass", lhs_ci_klasses, rhs_ci_klasses, differences);
+            var lhsCiLlasses = extractSet(lhs, folder);
+            var rhsCiLlasses = extractSet(rhs, folder);
+            diffSets("CiInstanceKlass", lhsCiLlasses, rhsCiLlasses, differences);
         }
 
         static void compareStaticFieldCommandPrimitive(ParsedReplayFile lhs, ParsedReplayFile rhs, List<String> differences) {
-            record Key(String klass, String field_name, String signature) {}
+            record Key(String klass, String fieldName, String signature) {}
             BiConsumer<HashMap<Key, String>, Command> folder = (acc, command) -> {
-                if (command instanceof StaticFieldCommandPrimitive(String klass, String field_name, String signature, String value)) {
-                    acc.put(new Key(klass, field_name, signature), value);
+                if (command instanceof StaticFieldCommandPrimitive(String klass, String fieldName, String signature, String value)) {
+                    acc.put(new Key(klass, fieldName, signature), value);
                 }
             };
-            var lhs_static_fields = extractMap(lhs, folder);
-            var rhs_static_fields = extractMap(rhs, folder);
-            diffMaps("CiInstanceKlass", lhs_static_fields, rhs_static_fields, String::equals, differences);
+            var lhsStaticFields = extractMap(lhs, folder);
+            var rhsStaticFields = extractMap(rhs, folder);
+            diffMaps("CiInstanceKlass", lhsStaticFields, rhsStaticFields, String::equals, differences);
         }
         static void compareStaticFieldCommandPrimitiveArray(ParsedReplayFile lhs, ParsedReplayFile rhs, List<String> differences) {
-            record Key(String klass, String field_name, String signature) {}
+            record Key(String klass, String fieldName, String signature) {}
             BiConsumer<HashMap<Key, Integer>, Command> folder = (acc, command) -> {
-                if (command instanceof StaticFieldCommandPrimitiveArray(String klass, String field_name, String signature, int length)) {
-                    acc.put(new Key(klass, field_name, signature), length);
+                if (command instanceof StaticFieldCommandPrimitiveArray(String klass, String fieldName, String signature, int length)) {
+                    acc.put(new Key(klass, fieldName, signature), length);
                 }
             };
-            var lhs_static_fields = extractMap(lhs, folder);
-            var rhs_static_fields = extractMap(rhs, folder);
-            diffMaps("CiInstanceKlass", lhs_static_fields, rhs_static_fields, Integer::equals, differences);
+            var lhsStaticFields = extractMap(lhs, folder);
+            var rhsStaticFields = extractMap(rhs, folder);
+            diffMaps("CiInstanceKlass", lhsStaticFields, rhsStaticFields, Integer::equals, differences);
         }
         static void compareStaticFieldCommandRefArray(ParsedReplayFile lhs, ParsedReplayFile rhs, List<String> differences) {
-            record Key(String klass, String field_name, String signature) {}
-            record Value(int length, boolean null_free, String actual_klass) {}
+            record Key(String klass, String fieldName, String signature) {}
+            record Value(int length, boolean nullFree, String actualKlass) {}
             BiConsumer<HashMap<Key, Value>, Command> folder = (acc, command) -> {
-                if (command instanceof StaticFieldCommandRefArray(String klass, String field_name, String signature, int length, boolean null_free, String actual_klass)) {
-                    acc.put(new Key(klass, field_name, signature), new Value(length, null_free, actual_klass));
+                if (command instanceof StaticFieldCommandRefArray(String klass, String fieldName, String signature, int length, boolean nullFree, String actualKlass)) {
+                    acc.put(new Key(klass, fieldName, signature), new Value(length, nullFree, actualKlass));
                 }
             };
-            var lhs_static_fields = extractMap(lhs, folder);
-            var rhs_static_fields = extractMap(rhs, folder);
-            diffMaps("CiInstanceKlass", lhs_static_fields, rhs_static_fields, Value::equals, differences);
+            var lhsStaticFields = extractMap(lhs, folder);
+            var rhsStaticFields = extractMap(rhs, folder);
+            diffMaps("CiInstanceKlass", lhsStaticFields, rhsStaticFields, Value::equals, differences);
         }
         static void compareStaticFieldCommandFlatArray(ParsedReplayFile lhs, ParsedReplayFile rhs, List<String> differences) {
-            record Key(String klass, String field_name, String signature) {}
-            record Value(int length, boolean null_free, boolean non_atomic, String actual_klass) {}
+            record Key(String klass, String fieldName, String signature) {}
+            record Value(int length, boolean nullFree, boolean nonAtomic, String actualKlass) {}
             BiConsumer<HashMap<Key, Value>, Command> folder = (acc, command) -> {
-                if (command instanceof StaticFieldCommandFlatArray(String klass, String field_name, String signature, int length, boolean null_free, boolean non_atomic, String actual_klass)) {
-                    acc.put(new Key(klass, field_name, signature), new Value(length, null_free, non_atomic, actual_klass));
+                if (command instanceof StaticFieldCommandFlatArray(String klass, String fieldName, String signature, int length, boolean nullFree, boolean nonAtomic, String actualKlass)) {
+                    acc.put(new Key(klass, fieldName, signature), new Value(length, nullFree, nonAtomic, actualKlass));
                 }
             };
-            var lhs_static_fields = extractMap(lhs, folder);
-            var rhs_static_fields = extractMap(rhs, folder);
-            diffMaps("CiInstanceKlass", lhs_static_fields, rhs_static_fields, Value::equals, differences);
+            var lhsStaticFields = extractMap(lhs, folder);
+            var rhsStaticFields = extractMap(rhs, folder);
+            diffMaps("CiInstanceKlass", lhsStaticFields, rhsStaticFields, Value::equals, differences);
         }
         static void compareStaticFieldCommandNullArray(ParsedReplayFile lhs, ParsedReplayFile rhs, List<String> differences) {
-            record Element(String klass, String field_name, String signature) {}
+            record Element(String klass, String fieldName, String signature) {}
             BiConsumer<HashSet<Element>, Command> folder = (acc, command) -> {
-                if (command instanceof StaticFieldCommandNullArray(String klass, String field_name, String signature)) {
-                    acc.add(new Element(klass, field_name, signature));
+                if (command instanceof StaticFieldCommandNullArray(String klass, String fieldName, String signature)) {
+                    acc.add(new Element(klass, fieldName, signature));
                 }
             };
-            var lhs_static_fields = extractSet(lhs, folder);
-            var rhs_static_fields = extractSet(rhs, folder);
-            diffSets("CiInstanceKlass", lhs_static_fields, rhs_static_fields, differences);
+            var lhsStaticFields = extractSet(lhs, folder);
+            var rhsStaticFields = extractSet(rhs, folder);
+            diffSets("CiInstanceKlass", lhsStaticFields, rhsStaticFields, differences);
         }
         static void compareStaticFieldCommandString(ParsedReplayFile lhs, ParsedReplayFile rhs, List<String> differences) {
-            record Key(String klass, String field_name) {}
+            record Key(String klass, String fieldName) {}
             BiConsumer<HashMap<Key, String>, Command> folder = (acc, command) -> {
-                if (command instanceof StaticFieldCommandString(String klass, String field_name, String value)) {
-                    acc.put(new Key(klass, field_name), value);
+                if (command instanceof StaticFieldCommandString(String klass, String fieldName, String value)) {
+                    acc.put(new Key(klass, fieldName), value);
                 }
             };
-            var lhs_static_fields = extractMap(lhs, folder);
-            var rhs_static_fields = extractMap(rhs, folder);
-            diffMaps("CiInstanceKlass", lhs_static_fields, rhs_static_fields, String::equals, differences);
+            var lhsStaticFields = extractMap(lhs, folder);
+            var rhsStaticFields = extractMap(rhs, folder);
+            diffMaps("CiInstanceKlass", lhsStaticFields, rhsStaticFields, String::equals, differences);
         }
         static void compareStaticFieldCommandInstance(ParsedReplayFile lhs, ParsedReplayFile rhs, List<String> differences) {
-            record Key(String klass, String field_name, String signature) {}
+            record Key(String klass, String fieldName, String signature) {}
             BiConsumer<HashMap<Key, List<String>>, Command> folder = (acc, command) -> {
-                if (command instanceof StaticFieldCommandInstance(String klass, String field_name, String signature, List<String> actual_klass_or_values)) {
-                    acc.put(new Key(klass, field_name, signature), actual_klass_or_values);
+                if (command instanceof StaticFieldCommandInstance(String klass, String fieldName, String signature, List<String> actualKlassOrValues)) {
+                    acc.put(new Key(klass, fieldName, signature), actualKlassOrValues);
                 }
             };
-            var lhs_static_fields = extractMap(lhs, folder);
-            var rhs_static_fields = extractMap(rhs, folder);
-            diffMaps("CiInstanceKlass", lhs_static_fields, rhs_static_fields, List::equals, differences);
+            var lhsStaticFields = extractMap(lhs, folder);
+            var rhsStaticFields = extractMap(rhs, folder);
+            diffMaps("CiInstanceKlass", lhsStaticFields, rhsStaticFields, List::equals, differences);
         }
         static void compareStaticFieldCommand(ParsedReplayFile lhs, ParsedReplayFile rhs, List<String> differences) {
             compareStaticFieldCommandPrimitive(lhs, rhs, differences);
@@ -669,41 +727,41 @@ public class ReplayFile {
 
         static void compareCiMethodDataCommand(ParsedReplayFile lhs, ParsedReplayFile rhs, List<String> differences) {
             record Key(String klass, String name, String signature) {}
-            record Value(int state, int invocation_counter) {}
+            record Value(int state, int invocationCounter) {}
             BiConsumer<HashMap<Key, Value>, Command> folder = (acc, command) -> {
-                if (command instanceof CiMethodDataCommand(String klass, String name, String signature, int state, int invocation_counter, List<Integer> _, List<String> _, List<CiMethodDataCommandOop> _, List<CiMethodDataCommandMethod> _)) {
-                    acc.put(new Key(klass, name, signature), new Value(state, invocation_counter));
+                if (command instanceof CiMethodDataCommand(String klass, String name, String signature, int state, int invocationCounter, List<Integer> _, List<String> _, List<CiMethodDataCommandOop> _, List<CiMethodDataCommandMethod> _)) {
+                    acc.put(new Key(klass, name, signature), new Value(state, invocationCounter));
                 }
             };
-            var lhs_static_fields = extractMap(lhs, folder);
-            var rhs_static_fields = extractMap(rhs, folder);
-            diffMaps("CiInstanceKlass", lhs_static_fields, rhs_static_fields, Value::equals, differences);
+            var lhsStaticFields = extractMap(lhs, folder);
+            var rhsStaticFields = extractMap(rhs, folder);
+            diffMaps("CiInstanceKlass", lhsStaticFields, rhsStaticFields, Value::equals, differences);
         }
 
         static void compareCiMethodCommand(ParsedReplayFile lhs, ParsedReplayFile rhs, List<String> differences) {
             record Key(String klass, String name, String signature) {}
-            record Value(int invocation_counter, int backedge_counter, int interpreter_invocation_count, int interpreter_throwout_count, int instructions_size) {}
+            record Value(int invocationCounter, int backedgeCounter, int interpreterInvocationCount, int interpreterThrowoutCount, int instructionsSize) {}
             BiConsumer<HashMap<Key, Value>, Command> folder = (acc, command) -> {
-                if (command instanceof CiMethodCommand(String klass, String name, String signature, int invocation_counter, int backedge_counter, int interpreter_invocation_count, int interpreter_throwout_count, int instructions_size)) {
-                    acc.put(new Key(klass, name, signature), new Value(invocation_counter, backedge_counter, interpreter_invocation_count, interpreter_throwout_count, instructions_size));
+                if (command instanceof CiMethodCommand(String klass, String name, String signature, int invocationCounter, int backedgeCounter, int interpreterInvocationCount, int interpreterThrowoutCount, int instructionsSize)) {
+                    acc.put(new Key(klass, name, signature), new Value(invocationCounter, backedgeCounter, interpreterInvocationCount, interpreterThrowoutCount, instructionsSize));
                 }
             };
-            var lhs_static_fields = extractMap(lhs, folder);
-            var rhs_static_fields = extractMap(rhs, folder);
-            diffMaps("CiInstanceKlass", lhs_static_fields, rhs_static_fields, Value::equals, differences);
+            var lhsStaticFields = extractMap(lhs, folder);
+            var rhsStaticFields = extractMap(rhs, folder);
+            diffMaps("CiInstanceKlass", lhsStaticFields, rhsStaticFields, Value::equals, differences);
         }
 
         static void compareCompileCommand(ParsedReplayFile lhs, ParsedReplayFile rhs, List<String> differences) {
             record Key(String klass, String name, String signature) {}
-            record Value(int entry_bci, int comp_level, List<CompileCommandInline> inlines) {}
+            record Value(int entryBci, int compLevel, List<CompileCommandInline> inlines) {}
             BiConsumer<HashMap<Key, Value>, Command> folder = (acc, command) -> {
-                if (command instanceof CompileCommand(String klass, String name, String signature, int entry_bci, int comp_level, List<CompileCommandInline> inlines)) {
-                    acc.put(new Key(klass, name, signature), new Value(entry_bci, comp_level, inlines));
+                if (command instanceof CompileCommand(String klass, String name, String signature, int entryBci, int compLevel, List<CompileCommandInline> inlines)) {
+                    acc.put(new Key(klass, name, signature), new Value(entryBci, compLevel, inlines));
                 }
             };
-            var lhs_static_fields = extractMap(lhs, folder);
-            var rhs_static_fields = extractMap(rhs, folder);
-            diffMaps("CiInstanceKlass", lhs_static_fields, rhs_static_fields, Value::equals, differences);
+            var lhsStaticFields = extractMap(lhs, folder);
+            var rhsStaticFields = extractMap(rhs, folder);
+            diffMaps("CiInstanceKlass", lhsStaticFields, rhsStaticFields, Value::equals, differences);
         }
 
         static List<String> findDifferences(ParsedReplayFile lhs, ParsedReplayFile rhs) {

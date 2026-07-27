@@ -1138,33 +1138,25 @@ class CompileReplay : public StackObj {
             value = oopFactory::new_longArray(length, CHECK_(true));
           } else if (field_signature[0] == JVM_SIGNATURE_ARRAY &&
                      field_signature[1] == JVM_SIGNATURE_CLASS) {
-            if (_version <= 3) {
-              // This handling will change the array property argument passed to the
-              // factory below
+            const char* flatness = parse_string();
+            if (strcmp(flatness, "ref") == 0) {
+              const char* nullability = parse_string();
+              bool null_restricted = (strcmp(nullability, "null-free") == 0);
               Klass* actual_array_klass = parse_klass(CHECK_(true));
               Klass* kelem = ObjArrayKlass::cast(actual_array_klass)->element_klass();
-              value = oopFactory::new_objArray(kelem, length, CHECK_(true));
+              ArrayProperties props = ArrayProperties::Default().with_non_atomic(false).with_null_restricted(null_restricted);
+              value = oopFactory::new_refArray(kelem, length, props, CHECK_(true));
+            } else if (strcmp(flatness, "flat") == 0) {
+              const char* nullability = parse_string();
+              const char* atomicity = parse_string();
+              bool null_restricted = (strcmp(nullability, "null-free") == 0);
+              bool non_atomic = (strcmp(atomicity, "non-atomic") == 0);
+              Klass* actual_array_klass = parse_klass(CHECK_(true));
+              Klass* kelem = ObjArrayKlass::cast(actual_array_klass)->element_klass();
+              ArrayProperties props = ArrayProperties::Default().with_non_atomic(non_atomic).with_null_restricted(null_restricted);
+              value = oopFactory::new_flatArray(InlineKlass::cast(kelem), length, props, CHECK_(true));
             } else {
-              const char* flatness = parse_string();
-              if (strcmp(flatness, "ref") == 0) {
-                const char* nullability = parse_string();
-                bool null_restricted = (strcmp(nullability, "null-free") == 0);
-                Klass* actual_array_klass = parse_klass(CHECK_(true));
-                Klass* kelem = ObjArrayKlass::cast(actual_array_klass)->element_klass();
-                ArrayProperties props = ArrayProperties::Default().with_non_atomic(false).with_null_restricted(null_restricted);
-                value = oopFactory::new_refArray(kelem, length, props, CHECK_(true));
-              } else if (strcmp(flatness, "flat") == 0) {
-                const char* nullability = parse_string();
-                const char* atomicity = parse_string();
-                bool null_restricted = (strcmp(nullability, "null-free") == 0);
-                bool non_atomic = (strcmp(atomicity, "non-atomic") == 0);
-                Klass* actual_array_klass = parse_klass(CHECK_(true));
-                Klass* kelem = ObjArrayKlass::cast(actual_array_klass)->element_klass();
-                ArrayProperties props = ArrayProperties::Default().with_non_atomic(non_atomic).with_null_restricted(null_restricted);
-                value = oopFactory::new_flatArray(InlineKlass::cast(kelem), length, props, CHECK_(true));
-              } else {
-                report_error("unrecognized array kind");
-              }
+              report_error("unrecognized array kind");
             }
           } else {
             report_error("unhandled array staticfield");
@@ -1211,7 +1203,7 @@ class CompileReplay : public StackObj {
     fieldDescriptor fd;
     Symbol* name = SymbolTable::new_symbol(field_name);
     Symbol* sig = SymbolTable::new_symbol(field_signature);
-    if (!k->find_local_field(name, sig, &fd, _version >= 4) ||
+    if (!k->find_local_field(name, sig, &fd, _version >= 3) ||
         !fd.is_static() ||
         fd.has_initial_value()) {
       report_error(field_name);
