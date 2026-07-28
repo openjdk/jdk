@@ -24,36 +24,33 @@
 
 #include "asm/macroAssembler.hpp"
 
-void MacroAssembler::pd_extend_stack_guard_page_for_method_max_stack(Register const_method, Register temp1, Register temp2, Register temp3) {
-  const int page_size = (int)os::vm_page_size();
-  const int page_size_mask = -page_size;
+// __chkstk is an internal CRT function that probes the stack page by page
+// to ensure that the guard page moves to the desired stack location. On
+// entry, r15 contains the number of 16-byte slots to allocate.
+// It clobbers r16 and r17 but does not modify sp or any other registers.
+extern "C" void __chkstk();
 
+void MacroAssembler::pd_extend_stack_guard_page_for_method_max_stack(Register const_method, Register temp1, Register temp2) {
+  assert_different_registers(const_method, temp1, temp2);
+  assert_different_registers(r15, temp1, temp2);
+  assert_different_registers(r16, temp1, temp2);
+  assert_different_registers(r17, temp1, temp2);
+
+  stp(r15, lr, Address(pre(sp, -2 * wordSize)));
   ldrh(temp1, Address(const_method, ConstMethod::max_stack_offset()));
   add(temp1, temp1, MAX2(3, Method::extra_stack_entries()));
 
-  // load the number of 16-byte slots required into temp1
+  // load the number of 16-byte slots required into r15
   add(temp1, temp1, 1);
-  lsr(temp1, temp1, 1);
+  lsr(r15, temp1, 1);
 
-  // compute number of bytes required and load the target SP into temp2
-  subs(temp2, sp, temp1, ext::uxtw, 4);
-  csel(temp2, zr, temp2, Assembler::LO);
+  mov(temp1, r16);
+  mov(temp2, r17);
 
-  // round both down to the nearest page
-  mov(temp3, page_size_mask);
-  mov(temp1, sp);
-  andr(temp1, temp1, temp3);
-  andr(temp2, temp2, temp3);
+  mov(lr, ExternalAddress(CAST_FROM_FN_PTR(address, __chkstk)));
+  blr(lr);
 
-  Label stack_check_done;
-  cmp(temp1, temp2);
-  br(Assembler::EQ, stack_check_done);
-
-  Label stack_check;
-  bind(stack_check);
-  sub(temp1, temp1, page_size);
-  ldr(zr, Address(temp1));
-  cmp(temp1, temp2);
-  br(Assembler::NE, stack_check);
-  bind(stack_check_done);
+  mov(r16, temp1);
+  mov(r17, temp2);
+  ldp(r15, lr, Address(post(sp, 2 * wordSize)));
 }

@@ -24,7 +24,7 @@
 
 #include "asm/macroAssembler.hpp"
 
-void MacroAssembler::pd_extend_stack_guard_page_for_method_max_stack(Register const_method, Register temp1, Register temp2, Register temp3) {
+void MacroAssembler::pd_extend_stack_guard_page_for_method_max_stack(Register const_method, Register temp1, Register temp2) {
     // nothing required here
 }
 
