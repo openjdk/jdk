@@ -592,13 +592,13 @@ final class LazyCollections {
         private volatile AtomicInteger counter;
 
         private Mutexes(int length) {
-            this.mutexes = new Object[length];
-            this.counter = new AtomicInteger(length);
+            this.mutexes = new Object[length];        // Volatile access
+            this.counter = new AtomicInteger(length); // Volatile access
         }
 
         private Object acquireMutex(long offset) {
             // Snapshot
-            var mutexes = this.mutexes;
+            final var mutexes = this.mutexes; // Volatile access
             if (mutexes == null) {
                 // We have already computed all the elements and if we end up here
                 // there was at least one unchecked exception thrown by the
@@ -619,9 +619,10 @@ final class LazyCollections {
         private void releaseMutex(long offset) {
             // Replace the old mutex with a tomb stone since now the old mutex can be collected.
             UNSAFE.putReferenceVolatile(mutexes, offset, TOMB_STONE);
+            // Volatile access on `counter`
             if (counter != null && counter.decrementAndGet() == 0) {
-                mutexes = null;
-                counter = null;
+                mutexes = null; // Volatile access
+                counter = null; // Volatile access
             }
         }
 
