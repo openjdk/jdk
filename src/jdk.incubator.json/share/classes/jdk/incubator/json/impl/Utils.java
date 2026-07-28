@@ -89,7 +89,7 @@ public class Utils {
 
     public static JsonValueException composeError(JsonValue jv, String message) {
         return new JsonValueException(message +
-                (jv instanceof JsonValueImpl jvi && jvi.doc() != null ? JsonPath.getPath(jvi) : ""));
+                (jv instanceof JsonValueImpl jvi && jvi.doc() != null ? JsonPath.getValuePath(jvi) : ""));
     }
 
     // Use to compose an exception when casting to an incorrect type
@@ -105,34 +105,65 @@ public class Utils {
         return composeError(jv, "%s is not a %s.".formatted(actual, expected));
     }
 
-    // This class is responsible for creating the path produced by JsonValueException.
+    static String getParsingPath(int offset, char[] doc, boolean structural) {
+        return JsonPath.getParsingPath(offset, doc, structural);
+    }
+
+    // This class is responsible for creating the path produced by JsonValueException
+    // and JsonParseException. As a result, the appropriate method should be used
+    // as the path semantics differ between the two exception types.
     // Backtracks from the offset of the offending JSON element to the root.
     private static final class JsonPath {
-
         private final int offset;
         private final char[] doc;
         // Tracked and incremented during path creation
         private int line;
         private int pos;
 
-        private JsonPath(JsonValueImpl jvi) {
-            this.offset = jvi.offset();
-            this.doc = jvi.doc();
+        private JsonPath(int offset, char[] doc) {
+            this.offset = offset;
+            this.doc = doc;
         }
 
-        private static String getPath(JsonValueImpl jvi) {
-            return new JsonPath(jvi).parseToRoot();
-        }
-
-        private String parseToRoot() {
+        // JsonParseException path produces a contextual path which may not always lead to a primitive
+        // value, but can occur in the structure itself. The offsets in the exception
+        // message should ultimately be derived from the parser state.
+        private static String getParsingPath(int offset, char[] doc, boolean structural) {
             var sb = new StringBuilder();
+            // If we encounter an error within the structural state, but not within a value itself
+            // we need to manually insert the brace otherwise backtracking skips it
+            if (structural) {
+                // Structural parsing cases
+                if (doc[offset] == '[') {
+                    sb.append( '[');
+                }
+                if (doc[offset] == '{') {
+                    sb.append('{');
+                }
+            }
+            return " Path: \"%s\".".formatted(
+                    new JsonPath(offset, doc).parseToRoot(sb));
+        }
+
+        // JsonValueException path produces a path that always leads to a value, and should provide
+        // the correct line and pos positions derived from the JV itself
+        private static String getValuePath(JsonValueImpl jvi) {
+            var sb = new StringBuilder();
+            var jp = new JsonPath(jvi.offset(), jvi.doc());
+            var path = jp.parseToRoot(sb);
+            // After path is produced, line and pos should be value bearing
+            return " Path: \"%s\". Location: line %d, position %d.".formatted(
+                    path, jp.line, jp.pos);
+        }
+
+        private String parseToRoot(StringBuilder sb) {
             // Updates the sb
             toPath(offset, sb);
             // If no new line encountered, pos is the starting offset value
             if (line == 0) {
                 pos = offset;
             }
-            return " Path: \"%s\". Location: line %d, position %d.".formatted(sb.toString(), line, pos);
+            return sb.toString();
         }
 
         private void addLine(int curr) {
