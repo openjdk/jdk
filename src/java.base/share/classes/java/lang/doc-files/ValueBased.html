@@ -1,6 +1,6 @@
 <!doctype html>
 <!--
- Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,10 @@ A value-based class has the following properties:
 <p>Synchronization on instances of value-based classes is strongly discouraged,
     because the programmer cannot guarantee exclusive ownership of the
     associated monitor.</p>
+
+<p>Use of instances of value-based classes as referents in {@linkplain
+    java.lang.ref.Reference reference objects} is strongly discouraged,
+    because these instances do not have reliable identity.</p>
 
 <p>Identity-related behavior of value-based classes may change in a future release.
     For example, synchronization may fail.</p>
