@@ -2742,9 +2742,8 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
         // Fatal red zone violation.
         overflow_state->disable_stack_red_zone();
         tty->print_raw_cr("An unrecoverable stack overflow has occurred.");
-        report_error(t, exception_code, pc, exception_record,
+        VMError::report_and_die(t, exception_code, pc, exception_record,
                       exceptionInfo->ContextRecord);
-        return EXCEPTION_CONTINUE_SEARCH;
       }
     } else if (exception_code == EXCEPTION_ACCESS_VIOLATION) {
       if (in_java) {
@@ -2781,9 +2780,8 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
           address stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL);
           if (stub != nullptr) return Handle_Exception(exceptionInfo, stub);
         }
-        report_error(t, exception_code, pc, exception_record,
+        VMError::report_and_die(t, exception_code, pc, exception_record,
                       exceptionInfo->ContextRecord);
-        return EXCEPTION_CONTINUE_SEARCH;
       }
 
       // Special care for fast JNI field accessors.
@@ -2795,9 +2793,8 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
       }
 
       // Stack overflow or null pointer exception in native code.
-      report_error(t, exception_code, pc, exception_record,
+      VMError::report_and_error(t, exception_code, pc, exception_record,
                    exceptionInfo->ContextRecord);
-      return EXCEPTION_CONTINUE_SEARCH;
     } // /EXCEPTION_ACCESS_VIOLATION
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -2865,7 +2862,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
 #endif
 
   if (should_report_error) {
-    report_error(t, exception_code, pc, exception_record,
+    VMError::report_and_die(t, exception_code, pc, exception_record,
                  exceptionInfo->ContextRecord);
   }
 
@@ -2886,7 +2883,7 @@ LONG WINAPI topLevelUnhandledExceptionFilter(struct _EXCEPTION_POINTERS* excepti
     Thread* thread = Thread::current_or_null_safe();
 
     if (exceptionCode != EXCEPTION_BREAKPOINT) {
-      report_error(thread, exceptionCode, pc, exceptionInfo->ExceptionRecord,
+      VMError::report_and_die(thread, exceptionCode, pc, exceptionInfo->ExceptionRecord,
                   exceptionInfo->ContextRecord);
     }
   }
