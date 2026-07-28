@@ -49,7 +49,7 @@ public:
 
   void clear() {
     _num_regions = 0;
-    _used_bytes = 0;
+    _used_bytes.store_relaxed(0);
     _regions_on_node.clear();
   }
 

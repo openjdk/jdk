@@ -48,6 +48,6 @@ void G1RegionsOnNodes::clear() {
   ::new (_num_regions_per_node) Atomic<uint>[_numa->num_active_nodes()]{};
 }
 
-uint G1RegionsOnNodes::count(uint node_index) const {
+uint G1RegionsOnNodes::num_regions_per_node(uint node_index) const {
   return _num_regions_per_node[node_index].load_relaxed();
 }
