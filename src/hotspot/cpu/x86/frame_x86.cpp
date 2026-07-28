@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -298,7 +298,7 @@ void frame::patch_pc(Thread* thread, address pc) {
 
 #ifdef ASSERT
   {
-    frame f(this->sp(), this->unextended_sp(), this->fp(), pc);
+    frame f(sp(), unextended_sp(), fp(), pc, cb(), oop_map(), is_heap_frame());
     assert(f.is_deoptimized_frame() == this->is_deoptimized_frame() && f.pc() == this->pc() && f.raw_pc() == this->raw_pc(),
       "must be (f.is_deoptimized_frame(): %d this->is_deoptimized_frame(): %d "
       "f.pc(): " INTPTR_FORMAT " this->pc(): " INTPTR_FORMAT " f.raw_pc(): " INTPTR_FORMAT " this->raw_pc(): " INTPTR_FORMAT ")",
@@ -453,11 +453,11 @@ frame frame::sender_for_interpreter_frame(RegisterMap* map) const {
   intptr_t* unextended_sp = interpreter_frame_sender_sp();
   intptr_t* sender_fp = link();
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   if (map->update_map()) {
     update_map_with_saved_link(map, (intptr_t**) addr_at(link_offset));
   }
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
 
   address sender_pc = this->sender_pc();
 

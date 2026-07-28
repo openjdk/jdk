@@ -808,7 +808,7 @@ void ShenandoahScanRememberedTask::work(uint worker_id) {
 }
 
 void ShenandoahScanRememberedTask::do_work(uint worker_id) {
-  ShenandoahWorkerTimingsTracker x(ShenandoahPhaseTimings::init_scan_rset, ShenandoahPhaseTimings::ScanClusters, worker_id);
+  ShenandoahWorkerTimingsTracker x(ShenandoahPhaseTimings::init_scan_rset, ShenandoahPhaseTimings::Work, worker_id);
 
   ShenandoahObjToScanQueue* q = _queue_set->queue(worker_id);
   ShenandoahObjToScanQueue* old = _old_queue_set == nullptr ? nullptr : _old_queue_set->queue(worker_id);

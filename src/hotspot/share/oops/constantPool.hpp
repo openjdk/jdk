@@ -80,7 +80,6 @@ public:
 
 class ConstantPool : public Metadata {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
   friend class BytecodeInterpreter;  // Directly extracts a klass in the pool for fast instanceof/checkcast
   friend class Universe;             // For null constructor
   friend class AOTConstantPoolResolver;

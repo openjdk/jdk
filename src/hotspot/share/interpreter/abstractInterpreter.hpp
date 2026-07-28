@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -262,8 +262,8 @@ class AbstractInterpreter: AllStatic {
 #endif
 
   // Local values relative to locals[n]
-  static int  local_offset_in_bytes(int n) {
-    return ((frame::interpreter_frame_expression_stack_direction() * n) * stackElementSize);
+  static int local_offset_in_bytes(int n) {
+    return -n * stackElementSize;
   }
 
   // access to stacked values according to type:

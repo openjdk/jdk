@@ -150,11 +150,16 @@ private:
   class ExclusionCheckCandidates;
   static DumpTimeSharedClassTable* _dumptime_table;
 
-  static ArchiveInfo _static_archive;
-  static ArchiveInfo _dynamic_archive;
+  static ArchiveInfo _info_for_static_archive;
+  static ArchiveInfo _info_for_dynamic_archive;
+  static ArchiveInfo _info_for_dumping;
 
-  static ArchiveInfo* get_archive(bool is_static_archive) {
-    return is_static_archive ? &_static_archive : &_dynamic_archive;
+  static ArchiveInfo* get_archive(bool is_static_archive, bool is_dumping) {
+    if (is_dumping) {
+      return &_info_for_dumping;
+    } else {
+      return is_static_archive ? &_info_for_static_archive : &_info_for_dynamic_archive;
+    }
   }
 
   static InstanceKlass* load_shared_class_for_builtin_loader(

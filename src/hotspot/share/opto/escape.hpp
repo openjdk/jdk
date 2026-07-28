@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -556,11 +556,11 @@ private:
   // Helper methods for unique types split.
   bool split_AddP(Node *addp, Node *base);
 
-  PhiNode *create_split_phi(PhiNode *orig_phi, int alias_idx, GrowableArray<PhiNode *>  &orig_phi_worklist, bool &new_created);
-  PhiNode *split_memory_phi(PhiNode *orig_phi, int alias_idx, GrowableArray<PhiNode *>  &orig_phi_worklist, uint rec_depth);
+  PhiNode* create_split_phi(PhiNode* orig_phi, int alias_idx, Unique_Node_List& orig_phi_worklist, bool& new_created);
+  PhiNode* split_memory_phi(PhiNode* orig_phi, int alias_idx, Unique_Node_List& orig_phi_worklist, uint rec_depth);
 
-  void  move_inst_mem(Node* n, GrowableArray<PhiNode *>  &orig_phis);
-  Node* find_inst_mem(Node* mem, int alias_idx,GrowableArray<PhiNode *>  &orig_phi_worklist, uint rec_depth = 0);
+  void  move_inst_mem(Node* n, Unique_Node_List& orig_phis);
+  Node* find_inst_mem(Node* mem, int alias_idx, Unique_Node_List& orig_phi_worklist, uint rec_depth = 0);
   Node* step_through_mergemem(MergeMemNode *mmem, int alias_idx, const TypeOopPtr *toop);
 
   Node_Array _node_map; // used for bookkeeping during type splitting
@@ -609,14 +609,15 @@ private:
   Node* specialize_cmp(Node* base, Node* curr_ctrl);
   Node* specialize_castpp(Node* castpp, Node* base, Node* current_control);
 
-  bool can_reduce_cmp(Node* n, Node* cmp) const;
+  bool can_reduce_cmp(PhiNode* n, Node* cmp) const;
   bool has_been_reduced(PhiNode* n, SafePointNode* sfpt) const;
   bool can_reduce_phi(PhiNode* ophi) const;
   bool can_reduce_check_users(Node* n, uint nesting) const;
   bool can_reduce_phi_check_inputs(PhiNode* ophi) const;
+  bool can_reduce_phi_at_castpp(PhiNode* phi, CastPPNode* castpp) const;
 
   void reduce_phi_on_field_access(Node* previous_addp, GrowableArray<Node *>  &alloc_worklist);
-  void reduce_phi_on_castpp_field_load(Node* castpp, GrowableArray<Node*> &alloc_worklist);
+  void reduce_phi_on_castpp_field_load(CastPPNode* castpp, GrowableArray<Node*> &alloc_worklist);
   void reduce_phi_on_cmp(Node* cmp);
   bool reduce_phi_on_safepoints(PhiNode* ophi);
   bool reduce_phi_on_safepoints_helper(Node* ophi, Node* cast, Node* selector, Unique_Node_List& safepoints);

@@ -342,6 +342,7 @@ public:
     // The type system around pointers is complex, do not rely on operand type then
     assert(res != nullptr, "must be not null");
     assert(is_MachTemp() || res->isa_ptr() == nullptr, "must not be a pointer");
+    assert(is_MachTemp() || res->isa_narrowoop() == nullptr, "must not be a narrow oop");
     return res;
   }
 
@@ -936,7 +937,7 @@ public:
   virtual bool  pinned() const { return false; }
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual const RegMask &in_RegMask(uint) const;
-  virtual int ret_addr_offset() { return 0; }
+  virtual int ret_addr_offset() const { return 0; }
 
   NOT_LP64(bool return_value_is_used() const;)
 
@@ -997,7 +998,7 @@ public:
   // If this is an uncommon trap, return the request code, else zero.
   int uncommon_trap_request() const;
 
-  virtual int ret_addr_offset();
+  virtual int ret_addr_offset() const;
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
   void dump_trap_args(outputStream *st) const;
@@ -1013,7 +1014,7 @@ public:
     init_class_id(Class_MachCallDynamicJava);
     DEBUG_ONLY(_vtable_index = -99);  // throw an assert if uninitialized
   }
-  virtual int ret_addr_offset();
+  virtual int ret_addr_offset() const;
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
 #endif
@@ -1031,7 +1032,7 @@ public:
   MachCallRuntimeNode() : MachCallNode() {
     init_class_id(Class_MachCallRuntime);
   }
-  virtual int ret_addr_offset();
+  virtual int ret_addr_offset() const;
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
 #endif

@@ -46,7 +46,6 @@
 
 class oopDesc {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
  private:
   volatile markWord _mark;
   narrowKlass _compressed_klass;
@@ -330,8 +329,7 @@ class oopDesc {
   static int klass_offset_in_bytes()     {
 #ifdef _LP64
     if (UseCompactObjectHeaders) {
-      // NOTE: The only places where this is used with compact headers are the C2
-      // compiler and JVMCI.
+      // NOTE: The only place where this is used with compact headers is C2.
       return mark_offset_in_bytes() + markWord::klass_offset_in_bytes;
     } else
 #endif

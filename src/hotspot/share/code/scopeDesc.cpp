@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -263,8 +263,8 @@ void ScopeDesc::print_on(outputStream* st, PcDesc* pd) const {
     }
   }
 
-#if COMPILER2_OR_JVMCI
-  if (NOT_JVMCI(DoEscapeAnalysis &&) is_top() && _objects != nullptr) {
+#ifdef COMPILER2
+  if (DoEscapeAnalysis && is_top() && _objects != nullptr) {
     st->print_cr("   Objects");
     for (int i = 0; i < _objects->length(); i++) {
       ObjectValue* sv = (ObjectValue*) _objects->at(i);
@@ -278,7 +278,7 @@ void ScopeDesc::print_on(outputStream* st, PcDesc* pd) const {
       st->cr();
     }
   }
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
 }
 
 #endif

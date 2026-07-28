@@ -2385,7 +2385,8 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       break;
     }
     case Op_VectorBlend:
-    case Op_VectorInsert: {
+    case Op_VectorInsert:
+    case Op_VectorBitwiseBlend: {
       Node* pair = new BinaryNode(n->in(1), n->in(2));
       n->set_req(1, pair);
       n->set_req(2, n->in(3));

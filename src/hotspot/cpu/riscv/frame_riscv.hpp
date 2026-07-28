@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -103,8 +103,6 @@
 
  public:
   enum {
-    pc_return_offset                                 =  0,
-
     // All frames
     link_offset                                      = -2,
     return_addr_offset                               = -1,
@@ -219,8 +217,6 @@
 
   // deoptimization support
   void interpreter_frame_set_last_sp(intptr_t* last_sp);
-
-  static jint interpreter_frame_expression_stack_direction() { return -1; }
 
   // returns the sending frame, without applying any barriers
   inline frame sender_raw(RegisterMap* map) const;

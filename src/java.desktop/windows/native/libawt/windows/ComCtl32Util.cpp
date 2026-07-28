@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,32 +42,18 @@ void ComCtl32Util::InitLibraries() {
 }
 
 WNDPROC ComCtl32Util::SubclassHWND(HWND hwnd, WNDPROC _WindowProc) {
-    if (IS_WINXP) {
-        const SUBCLASSPROC p = SharedWindowProc; // let compiler check type of SharedWindowProc
-        ::SetWindowSubclass(hwnd, p, (UINT_PTR)_WindowProc, NULL); // _WindowProc is used as subclass ID
-        return NULL;
-    } else {
-        return (WNDPROC)::SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR)_WindowProc);
-    }
+    const SUBCLASSPROC p = SharedWindowProc; // let compiler check type of SharedWindowProc
+    ::SetWindowSubclass(hwnd, p, (UINT_PTR)_WindowProc, NULL); // _WindowProc is used as subclass ID
+    return NULL;
 }
 
 void ComCtl32Util::UnsubclassHWND(HWND hwnd, WNDPROC _WindowProc, WNDPROC _DefWindowProc) {
-    if (IS_WINXP) {
-        const SUBCLASSPROC p = SharedWindowProc; // let compiler check type of SharedWindowProc
-        ::RemoveWindowSubclass(hwnd, p, (UINT_PTR)_WindowProc); // _WindowProc is used as subclass ID
-    } else {
-        ::SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR)_DefWindowProc);
-    }
+    const SUBCLASSPROC p = SharedWindowProc; // let compiler check type of SharedWindowProc
+    ::RemoveWindowSubclass(hwnd, p, (UINT_PTR)_WindowProc); // _WindowProc is used as subclass ID
 }
 
 LRESULT ComCtl32Util::DefWindowProc(WNDPROC _DefWindowProc, HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-    if (IS_WINXP) {
-        return ::DefSubclassProc(hwnd, msg, wParam, lParam);
-    } else if (_DefWindowProc != NULL) {
-        return ::CallWindowProc(_DefWindowProc, hwnd, msg, wParam, lParam);
-    } else {
-        return ::DefWindowProc(hwnd, msg, wParam, lParam);
-    }
+    return ::DefSubclassProc(hwnd, msg, wParam, lParam);
 }
 
 LRESULT ComCtl32Util::SharedWindowProc(HWND hwnd, UINT msg,

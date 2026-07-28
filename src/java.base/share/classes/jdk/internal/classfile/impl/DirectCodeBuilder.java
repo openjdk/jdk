@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1859,6 +1859,7 @@ public final class DirectCodeBuilder
 
     @Override
     public CodeBuilder tableswitch(int low, int high, Label defaultTarget, List<SwitchCase> cases) {
+        BytecodeHelpers.validateTableSwitchValues(low, high);
         Objects.requireNonNull(defaultTarget);
         // check cases when we write them
         writeTableSwitch(low, high, defaultTarget, cases);

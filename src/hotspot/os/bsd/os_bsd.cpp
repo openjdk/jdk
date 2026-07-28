@@ -102,6 +102,14 @@
   #include <elf.h>
 #endif
 
+#ifdef __FreeBSD__
+  #include <pthread_np.h>
+#endif
+
+#ifdef __NetBSD__
+#include <lwp.h>
+#endif
+
 #ifdef __APPLE__
   #include <libproc.h>
   #include <mach/task_info.h>
@@ -873,23 +881,20 @@ pid_t os::Bsd::gettid() {
   mach_port_deallocate(mach_task_self(), port);
   return (pid_t)port;
 
+#elif defined(__FreeBSD__)
+  return ::pthread_getthreadid_np();
+#elif defined(__OpenBSD__)
+  retval = getthrid();
+#elif defined(__NetBSD__)
+  retval = (pid_t) _lwp_self();
 #else
-  #ifdef __FreeBSD__
-  retval = syscall(SYS_thr_self);
-  #else
-    #ifdef __OpenBSD__
-  retval = syscall(SYS_getthrid);
-    #else
-      #ifdef __NetBSD__
-  retval = (pid_t) syscall(SYS__lwp_self);
-      #endif
-    #endif
-  #endif
+#error "unsupported OS"
 #endif
 
   if (retval == -1) {
     return getpid();
   }
+  return retval;
 }
 
 // Returns the uid of a process or -1 on error.
@@ -1123,7 +1128,7 @@ bool os::dll_address_to_library_name(address addr, char* buf,
 // in case of error it checks if .dll/.so was built for the
 // same architecture as Hotspot is running on
 
-void *os::Bsd::dlopen_helper(const char *filename, int mode, char *ebuf, int ebuflen) {
+static void *dlopen_helper(const char *filename, char *ebuf, int ebuflen) {
   bool ieee_handling = IEEE_subnormal_handling_OK();
   if (!ieee_handling) {
     Events::log_dll_message(nullptr, "IEEE subnormal handling check failed before loading %s", filename);
@@ -1207,7 +1212,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 
   log_info(os)("attempting shared library load of %s", filename);
 
-  return os::Bsd::dlopen_helper(filename, RTLD_LAZY, ebuf, ebuflen);
+  return dlopen_helper(filename, ebuf, ebuflen);
 }
 #else
 void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
@@ -1218,7 +1223,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   log_info(os)("attempting shared library load of %s", filename);
 
   void* result;
-  result = os::Bsd::dlopen_helper(filename, RTLD_LAZY, ebuf, ebuflen);
+  result = dlopen_helper(filename, ebuf, ebuflen);
   if (result != nullptr) {
     return result;
   }

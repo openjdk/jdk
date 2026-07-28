@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,9 @@
 #ifndef CPU_PPC_C1_LIRASSEMBLER_PPC_HPP
 #define CPU_PPC_C1_LIRASSEMBLER_PPC_HPP
 
+// ArrayCopyStub needs access to bailout
+friend class ArrayCopyStub;
+
  private:
 
   //////////////////////////////////////////////////////////////////////////////
@@ -49,15 +52,12 @@
   // Record the type of the receiver in ReceiverTypeData.
   void type_profile_helper(Register mdo, int mdo_offset_bias,
                            ciMethodData *md, ciProfileData *data,
-                           Register recv, Register tmp1, Label* update_done);
+                           Register recv, Register tmp);
   // Setup pointers to MDO, MDO slot, also compute offset bias to access the slot.
   void setup_md_access(ciMethod* method, int bci,
                        ciMethodData*& md, ciProfileData*& data, int& mdo_offset_bias);
  public:
   static const ConditionRegister BOOL_RESULT;
-
-  // Emit trampoline stub for call. Call bailout() if failed. Return true on success.
-  bool emit_trampoline_stub_for_call(address target, Register Rtoc = noreg);
 
 enum {
   _static_call_stub_size = 4 * BytesPerInstWord + MacroAssembler::b64_patchable_size, // or smaller

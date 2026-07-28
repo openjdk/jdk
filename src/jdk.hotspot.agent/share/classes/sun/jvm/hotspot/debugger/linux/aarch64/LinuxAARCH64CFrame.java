@@ -120,6 +120,13 @@ public final class LinuxAARCH64CFrame extends DwarfCFrame {
      throw new DebuggerException("JavaThread not found");
    }
 
+   // Most of code is copied from AARCH64Frame.java.
+   // CFrame need to consider PAC in native frame even if -XX:UseBranchProtection is disabled.
+   // (_rop_protection in HotSpot)
+   private Address stripPAC(Address addr) {
+      return addr.andWithMask(AARCH64Frame.pacMask());
+   }
+
    @Override
    public CFrame sender(ThreadProxy thread, Address senderSP, Address senderFP, Address senderPC) {
       if (linuxDbg().isSignalTrampoline(pc())) {
@@ -167,6 +174,13 @@ public final class LinuxAARCH64CFrame extends DwarfCFrame {
         return null;
       }
 
+      // Strip PAC
+      if (((MachineDescriptionAArch64)linuxDbg().getMachineDescription()).isPACEnabled() &&
+          ((dwarf() != null && ((AARCH64DwarfParser)dwarf()).isRASigned() /* for native */ ) ||
+           (AARCH64Frame.ropProtection() != 0 /* for Java */ ))) {
+        senderPC = stripPAC(senderPC);
+      }
+
       DwarfParser senderDwarf = null;
       boolean fallback = false;
       try {
@@ -184,9 +198,7 @@ public final class LinuxAARCH64CFrame extends DwarfCFrame {
             return new LinuxAARCH64CFrame(linuxDbg(), senderSP, senderFP, null, senderPC, senderDwarf);
           }
 
-          // DWARF processing should succeed when the frame is native
-          // but it might fail if Common Information Entry (CIE) has language
-          // personality routine and/or Language Specific Data Area (LSDA).
+          // We cannot unwind anymore without appropriate DWARF.
           return null;
         }
       }

@@ -46,7 +46,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
                             Register last_java_sp,
                             address  entry_point,
                             bool allow_relocation,
-                            bool check_exceptions);
+                            bool check_exceptions,
+                            Label *last_java_pc);
 
   // Base routine for all dispatches.
   void dispatch_base(TosState state, address* table, bool generate_poll = false);
@@ -55,8 +56,13 @@ class InterpreterMacroAssembler: public MacroAssembler {
   InterpreterMacroAssembler(CodeBuffer* c)
     : MacroAssembler(c) {}
 
+  void restore_after_resume();
   virtual void check_and_handle_popframe(Register java_thread);
   virtual void check_and_handle_earlyret(Register java_thread);
+
+  // Use for vthread preemption
+  void call_VM_preemptable(Register oop_result, address entry_point, Register arg_1, bool check_exceptions = true);
+  void call_VM_preemptable(Register oop_result, address entry_point, Register arg_1, Register arg_2, bool check_exceptions = true);
 
   void jump_to_entry(address entry, Register Rscratch);
 
@@ -279,12 +285,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void test_mdp_data_at(Register mdp_in, int offset, Register value,
                         Register test_value_out,
                         Label& not_equal_continue);
-
-  void record_klass_in_profile(Register receiver, Register mdp,
-                               Register reg2);
-  void record_klass_in_profile_helper(Register receiver, Register mdp,
-                                      Register reg2, int start_row,
-                                      Label& done);
 
   void update_mdp_by_offset(Register mdp_in, int offset_of_offset);
   void update_mdp_by_offset(Register mdp_in, Register dataidx, int offset_of_disp);

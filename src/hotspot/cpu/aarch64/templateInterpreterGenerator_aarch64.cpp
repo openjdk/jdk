@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -524,30 +524,6 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state,
   // null last_sp until next java call
   __ str(zr, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
 
-#if INCLUDE_JVMCI
-  // Check if we need to take lock at entry of synchronized method.  This can
-  // only occur on method entry so emit it only for vtos with step 0.
-  if (EnableJVMCI && state == vtos && step == 0) {
-    Label L;
-    __ ldrb(rscratch1, Address(rthread, JavaThread::pending_monitorenter_offset()));
-    __ cbz(rscratch1, L);
-    // Clear flag.
-    __ strb(zr, Address(rthread, JavaThread::pending_monitorenter_offset()));
-    // Take lock.
-    lock_method();
-    __ bind(L);
-  } else {
-#ifdef ASSERT
-    if (EnableJVMCI) {
-      Label L;
-      __ ldrb(rscratch1, Address(rthread, JavaThread::pending_monitorenter_offset()));
-      __ cbz(rscratch1, L);
-      __ stop("unexpected pending monitor in deopt entry");
-      __ bind(L);
-    }
-#endif
-  }
-#endif
   // handle exceptions
   {
     Label L;

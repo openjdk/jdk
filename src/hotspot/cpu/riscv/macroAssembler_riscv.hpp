@@ -197,6 +197,7 @@ class MacroAssembler: public Assembler {
                        Register val, Register tmp1, Register tmp2, Register tmp3);
   void load_klass(Register dst, Register src, Register tmp = t0);
   void load_narrow_klass_compact(Register dst, Register src);
+  void load_narrow_klass(Register dst, Register src);
   void store_klass(Register dst, Register src, Register tmp = t0);
   void cmp_klass_beq(Register obj, Register klass,
                      Register tmp1, Register tmp2,
@@ -876,7 +877,7 @@ public:
   void bind(Label& L) {
     Assembler::bind(L);
     // fences across basic blocks should not be merged
-    code()->clear_last_insn();
+    code()->clear_last_merge_candidate();
   }
 
   typedef void (MacroAssembler::* compare_and_branch_insn)(Register Rs1, Register Rs2, const address dest);
@@ -1203,8 +1204,6 @@ public:
 
 #undef INSN_ENTRY_RELOC
 
-  void cmpxchg_obj_header(Register oldv, Register newv, Register obj, Register tmp, Label &succeed, Label *fail);
-  void cmpxchgptr(Register oldv, Register newv, Register addr, Register tmp, Label &succeed, Label *fail);
   void cmpxchg(Register addr, Register expected,
                Register new_val,
                Assembler::operand_size size,

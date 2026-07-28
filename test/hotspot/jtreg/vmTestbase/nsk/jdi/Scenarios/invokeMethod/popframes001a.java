@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import nsk.share.jdi.*;
 import java.io.*;
 
 /**
- *  <code>popframes001a</code> is deugee's part of the popframes001.
+ *  <code>popframes001a</code> is debugee's part of the popframes001.
  */
 
 public class popframes001a {
@@ -38,6 +38,11 @@ public class popframes001a {
     volatile public static boolean finishIt = false;
 
     public static void main(String argv[]) {
+        // The following will cause intialization of a bunch of classes before we
+        // enable MethodEntry/Exit events, which would otherwise result in long test runs.
+        // See JDK-8375076 and JDK-8384569.
+        System.getLogger("java.lang.Runtime");
+
         ArgumentHandler argHandler = new ArgumentHandler(argv);
         Log log = new Log(System.out, argHandler);
 

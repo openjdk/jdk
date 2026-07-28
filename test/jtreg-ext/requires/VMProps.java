@@ -105,8 +105,6 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.flightRecorder", this::vmFlightRecorder);
         map.put("vm.simpleArch", this::vmArch);
         map.put("vm.debug", this::vmDebug);
-        map.put("vm.jvmci", this::vmJvmci);
-        map.put("vm.jvmci.enabled", this::vmJvmciEnabled);
         // vm.hasSA is "true" if the VM contains the serviceability agent
         // and jhsdb.
         map.put("vm.hasSA", this::vmHasSA);
@@ -121,6 +119,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.cds", this::vmCDS);
         map.put("vm.cds.default.archive.available", this::vmCDSDefaultArchiveAvailable);
         map.put("vm.cds.nocoops.archive.available", this::vmCDSNocoopsArchiveAvailable);
+        map.put("vm.cds.nocoh.archive.available", this::vmCDSNocohArchiveAvailable);
         map.put("vm.cds.custom.loaders", this::vmCDSForCustomLoaders);
         map.put("vm.cds.supports.aot.class.linking", this::vmCDSSupportsAOTClassLinking);
         map.put("vm.cds.supports.aot.code.caching", this::vmCDSSupportsAOTCodeCaching);
@@ -128,12 +127,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.cds.write.mapped.java.heap", this::vmCDSCanWriteMappedArchivedJavaHeap);
         map.put("vm.cds.write.streamed.java.heap", this::vmCDSCanWriteStreamedArchivedJavaHeap);
         map.put("vm.continuations", this::vmContinuations);
-        // vm.graal.enabled is true if Graal is used as JIT
-        map.put("vm.graal.enabled", this::isGraalEnabled);
-        // jdk.hasLibgraal is true if the libgraal shared library file is present
-        map.put("jdk.hasLibgraal", this::hasLibgraal);
         map.put("java.enablePreview", this::isPreviewEnabled);
-        map.put("vm.libgraal.jit", this::isLibgraalJIT);
         map.put("vm.compiler1.enabled", this::isCompiler1Enabled);
         map.put("vm.compiler2.enabled", this::isCompiler2Enabled);
         map.put("container.support", this::containerSupport);
@@ -264,41 +258,6 @@ public class VMProps implements Callable<Map<String, String>> {
     }
 
     /**
-     * @return true if VM supports JVMCI and false otherwise
-     */
-    protected String vmJvmci() {
-        // builds with jvmci have this flag
-        if (WB.getBooleanVMFlag("EnableJVMCI") == null) {
-            return "false";
-        }
-
-        // Not all GCs have full JVMCI support
-        if (!WB.isJVMCISupportedByGC()) {
-          return "false";
-        }
-
-        // Interpreted mode cannot enable JVMCI
-        if (vmCompMode().equals("Xint")) {
-          return "false";
-        }
-
-        return "true";
-    }
-
-
-    /**
-     * @return true if JVMCI is enabled
-     */
-    protected String vmJvmciEnabled() {
-        // builds with jvmci have this flag
-        if ("false".equals(vmJvmci())) {
-            return "false";
-        }
-
-        return "" + Compiler.isJVMCIEnabled();
-    }
-
-    /**
      * @return supported CPU features
      */
     protected String cpuFeatures() {
@@ -315,9 +274,7 @@ public class VMProps implements Callable<Map<String, String>> {
      * @param map - property-value pairs
      */
     protected void vmGC(SafeMap map) {
-        var isJVMCIEnabled = Compiler.isJVMCIEnabled();
         Predicate<GC> vmGCProperty = (GC gc) -> (gc.isSupported()
-                                        && (!isJVMCIEnabled || gc.isSupportedByJVMCICompiler())
                                         && (gc.isSelected() || GC.isSelectedErgonomically()));
         for (GC gc: GC.values()) {
             map.put("vm.gc." + gc.name(), () -> "" + vmGCProperty.test(gc));
@@ -370,7 +327,6 @@ public class VMProps implements Callable<Map<String, String>> {
         vmOptFinalFlag(map, "ClassUnloading");
         vmOptFinalFlag(map, "ClassUnloadingWithConcurrentMark");
         vmOptFinalFlag(map, "CriticalJNINatives");
-        vmOptFinalFlag(map, "EnableJVMCI");
         vmOptFinalFlag(map, "EliminateAllocations");
         vmOptFinalFlag(map, "UnlockExperimentalVMOptions");
         vmOptFinalFlag(map, "UseAdaptiveSizePolicy");
@@ -464,6 +420,16 @@ public class VMProps implements Callable<Map<String, String>> {
     }
 
     /**
+     * Check for CDS no compact object headers archive existence.
+     *
+     * @return true if CDS archive classes_nocoh.jsa exists in the JDK to be tested.
+     */
+    protected String vmCDSNocohArchiveAvailable() {
+        Path archive = Paths.get(System.getProperty("java.home"), "lib", "server", "classes_nocoh.jsa");
+        return "" + ("true".equals(vmCDS()) && Files.exists(archive));
+    }
+
+    /**
      * Check for CDS support for custom loaders.
      *
      * @return true if CDS provides support for customer loader in the VM to be tested.
@@ -510,7 +476,6 @@ public class VMProps implements Callable<Map<String, String>> {
     protected String vmCDSSupportsAOTCodeCaching() {
       if ("true".equals(vmCDSSupportsAOTClassLinking()) &&
           !"zero".equals(vmFlavor()) &&
-          "false".equals(vmJvmciEnabled()) &&
           (Platform.isX64() || Platform.isAArch64())) {
         return "true";
       } else {
@@ -534,33 +499,6 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     protected String vmPageSize() {
         return "" + WB.getVMPageSize();
-    }
-
-    /**
-     * Check if Graal is used as JIT compiler.
-     *
-     * @return true if Graal is used as JIT compiler.
-     */
-    protected String isGraalEnabled() {
-        return "" + Compiler.isGraalEnabled();
-    }
-
-    /**
-     * Check if the libgraal shared library file is present.
-     *
-     * @return true if the libgraal shared library file is present.
-     */
-    protected String hasLibgraal() {
-        return "" + WB.hasLibgraal();
-    }
-
-    /**
-     * Check if libgraal is used as JIT compiler.
-     *
-     * @return true if libgraal is used as JIT compiler.
-     */
-    protected String isLibgraalJIT() {
-        return "" + Compiler.isLibgraalJIT();
     }
 
     /**

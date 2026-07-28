@@ -1783,10 +1783,7 @@ public final class Unsafe {
      * <p>The JNI documents specify that, at least for returning
      * values from native methods, a Java boolean value is converted
      * to the value-set 0..1 by first truncating to a byte (0..255 or
-     * maybe -128..127) and then testing against zero. Thus, Java
-     * booleans in non-Java data structures are by convention
-     * represented as 8-bit containers containing either zero (for
-     * false) or any non-zero value (for true).
+     * maybe -128..127) and then testing against zero.
      *
      * <p>Java booleans in the heap are also stored in bytes, but are
      * strongly normalized to the value-set 0..1 (i.e., they are
@@ -1797,17 +1794,17 @@ public final class Unsafe {
      * bit can be usually implemented with fewer (machine)
      * instructions than byte testing against zero.
      *
-     * <p>A number of Unsafe methods load boolean values from the heap
-     * as bytes. Unsafe converts those values according to the JNI
-     * rules (i.e, using the "testing against zero" convention). The
-     * method {@code byte2bool} implements that conversion.
+     * <p>A number of Unsafe methods load boolean values as bytes,
+     * truncate them to the least-significant bit, and then test
+     * against zero. It is uniformly performed for both Java heap
+     * and non-Java heap accesses.
      *
      * @param b the byte to be converted to boolean
      * @return the result of the conversion
      */
     @ForceInline
     private boolean byte2bool(byte b) {
-        return b != 0;
+        return (b & 1) != 0;
     }
 
     /**

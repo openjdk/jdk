@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -96,12 +96,6 @@ ifneq ($(call check-jvm-feature, jvmti), true)
       jvmtiAgentList.cpp jfrJvmtiAgent.cpp
 endif
 
-ifneq ($(call check-jvm-feature, jvmci), true)
-  JVM_CFLAGS_FEATURES += -DINCLUDE_JVMCI=0
-  JVM_EXCLUDES += jvmci
-  JVM_EXCLUDE_FILES += jvmciCodeInstaller_$(HOTSPOT_TARGET_CPU_ARCH).cpp
-endif
-
 ifneq ($(call check-jvm-feature, vm-structs), true)
   JVM_CFLAGS_FEATURES += -DINCLUDE_VM_STRUCTS=0
   JVM_EXCLUDE_FILES += vmStructs.cpp
@@ -178,6 +172,10 @@ ifeq ($(call check-jvm-feature, link-time-opt), true)
   JVM_LTO := true
   ifneq ($(call isCompiler, microsoft), true)
     JVM_LDFLAGS_FEATURES += $(CXX_O_FLAG_HIGHEST_JVM)
+  endif
+  # avoid elimination of Metadata vtable when using LTO (important for serviceability agent)
+  ifeq ($(call isCompiler, gcc), true)
+    JVM_LDFLAGS_FEATURES += -Wl,--undefined=_ZTV8Metadata
   endif
 else
   JVM_LTO := false

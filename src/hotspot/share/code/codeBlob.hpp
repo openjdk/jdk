@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,7 +109,6 @@ class UncommonTrapBlob;
 
 class CodeBlob {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
 
 protected:
   // order fields from large to small to minimize padding between fields
@@ -578,19 +577,13 @@ class SingletonBlob: public RuntimeBlob {
 
 class DeoptimizationBlob: public SingletonBlob {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
+
  private:
   int _unpack_offset;
   int _unpack_with_exception;
   int _unpack_with_reexecution;
 
   int _unpack_with_exception_in_tls;
-
-#if INCLUDE_JVMCI
-  // Offsets when JVMCI calls uncommon_trap.
-  int _uncommon_trap_offset;
-  int _implicit_exception_uncommon_trap_offset;
-#endif
 
   // Creation support
   DeoptimizationBlob(
@@ -604,7 +597,7 @@ class DeoptimizationBlob: public SingletonBlob {
   );
 
  public:
-  static const int ENTRY_COUNT = 4 JVMCI_ONLY(+ 2);
+  static const int ENTRY_COUNT = 4;
   // Creation
   static DeoptimizationBlob* create(
     CodeBuffer* cb,
@@ -629,21 +622,6 @@ class DeoptimizationBlob: public SingletonBlob {
     assert(code_contains(code_begin() + _unpack_with_exception_in_tls), "must be PC inside codeblob");
   }
   address unpack_with_exception_in_tls() const   { return code_begin() + _unpack_with_exception_in_tls; }
-
-#if INCLUDE_JVMCI
-  // Offsets when JVMCI calls uncommon_trap.
-  void set_uncommon_trap_offset(int offset) {
-    _uncommon_trap_offset = offset;
-    assert(contains(code_begin() + _uncommon_trap_offset), "must be PC inside codeblob");
-  }
-  address uncommon_trap() const                  { return (EnableJVMCI ? code_begin() + _uncommon_trap_offset : nullptr); }
-
-  void set_implicit_exception_uncommon_trap_offset(int offset) {
-    _implicit_exception_uncommon_trap_offset = offset;
-    assert(contains(code_begin() + _implicit_exception_uncommon_trap_offset), "must be PC inside codeblob");
-  }
-  address implicit_exception_uncommon_trap() const { return (EnableJVMCI ? code_begin() + _implicit_exception_uncommon_trap_offset : nullptr); }
-#endif // INCLUDE_JVMCI
 
   void post_restore_impl() {
     trace_new_stub(this, "DeoptimizationBlob");

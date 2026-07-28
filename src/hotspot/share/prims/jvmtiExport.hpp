@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -319,6 +319,9 @@ class JvmtiExport : public AllStatic {
   static void at_single_stepping_point(JavaThread *thread, Method* method, address location) NOT_JVMTI_RETURN;
   static void expose_single_stepping(JvmtiThreadState* state) NOT_JVMTI_RETURN;
   static JvmtiThreadState* hide_single_stepping(JavaThread *thread) NOT_JVMTI_RETURN_(nullptr);
+
+  // frame pop management
+  static bool has_frame_pop_for_top_frame(JavaThread *current);
 
   // Methods that notify the debugger that something interesting has happened in the VM.
   static void post_early_vm_start        () NOT_JVMTI_RETURN;

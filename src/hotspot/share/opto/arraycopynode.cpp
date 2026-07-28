@@ -180,6 +180,12 @@ Node* ArrayCopyNode::try_clone_instance(PhaseGVN *phase, bool can_reshape, int c
     return nullptr;
   }
 
+  Node* out_mem = proj_out_or_null(TypeFunc::Memory);
+  if (can_reshape && out_mem == nullptr) { // dead node?
+    return NodeSentinel;
+  }
+
+
   Node* base_src = in(ArrayCopyNode::Src);
   Node* base_dest = in(ArrayCopyNode::Dest);
   Node* ctl = in(TypeFunc::Control);
