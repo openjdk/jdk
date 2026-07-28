@@ -24,27 +24,41 @@
 /*
  * @test
  * @bug 8387032
- * @summary Verifies that Windows/AArch64 code-cache PCs are registered with
- *          the OS runtime function table by os::win32::register_code_area().
- * @requires os.family == "windows" & os.arch == "aarch64"
- * @run main/othervm/native CodeCacheRuntimeFunctionTableTest
+ * @summary Verifies that Windows/AArch64 can dispatch an exception from the
+ *          code cache through the OS runtime function table when HotSpot's
+ *          vectored exception handler declines it.
+ * @requires os.family == "windows" & os.arch == "aarch64" & vm.debug
+ * @library /test/lib
+ * @run driver ${test.main.class}
  */
 
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+
 public class CodeCacheRuntimeFunctionTableTest {
-    static {
-        System.loadLibrary("CodeCacheRuntimeFunctionTableTest");
+    static class Test {
+        static class Box { int value; }
+        static int get(Box box) { return box.value; }
+
+        public static void main(String[] args) {
+            System.out.println(get(null));
+            System.out.println("unreachable");
+        }
     }
 
-    private static native long callerRuntimeFunction();
+    public static void main(String[] args) throws Exception {
+        // Set `InterceptOSException` so that VEH declines handling the
+        // exception, thus diverting the exception to the Windows table-driven
+        // dispatch.
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+                "-XX:+InterceptOSException",
+                "-XX:-CreateCoredumpOnCrash",
+                "-XX:CompileCommand=compileonly,${test.main.class}$Test::get",
+                Test.class.getName());
 
-    public static void main(String[] args) {
-        long runtimeFunction = callerRuntimeFunction();
-
-        if (runtimeFunction == 0) {
-            throw new RuntimeException("code cache is not registered");
-        }
-
-        String hex = Long.toHexString(runtimeFunction);
-        System.out.println("PASSED: code-cache PC has entry (0x" + hex + ")");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldNotHaveExitValue(0);
+        output.shouldMatch("# A fatal error has been detected by the Java Runtime Environment:.*");
+        output.shouldMatch("# +EXCEPTION_ACCESS_VIOLATION.*");
     }
 }
