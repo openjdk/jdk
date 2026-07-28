@@ -79,11 +79,6 @@ JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
     jstring jGetFunctionList)
 {
     HINSTANCE hModule;
-#ifdef DEBUG
-    CK_ULONG ulCount = 0;
-    CK_C_GetInterfaceList C_GetInterfaceList = NULL;
-    CK_INTERFACE_PTR iList = NULL;
-#endif
     CK_C_GetInterface C_GetInterface = NULL;
     CK_INTERFACE_PTR interface = NULL;
     CK_C_GetFunctionList C_GetFunctionList = NULL;
@@ -127,10 +122,12 @@ JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
     }
 
 #ifdef DEBUG
+    CK_ULONG ulCount = 0;
+    CK_INTERFACE_PTR iList = NULL;
     /*
      * Get function pointer to C_GetInterfaceList
      */
-    C_GetInterfaceList = (CK_C_GetInterfaceList) GetProcAddress(hModule,
+    CK_C_GetInterfaceList C_GetInterfaceList = (CK_C_GetInterfaceList) GetProcAddress(hModule,
             "C_GetInterfaceList");
     if (C_GetInterfaceList != NULL) {
         TRACE0("Found C_GetInterfaceList func\n");
