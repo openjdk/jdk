@@ -116,7 +116,6 @@ public class JLinkTest {
              JImageGenerator.getJLinkTask()
                      .output(image)
                      .addMods("jdk.jshell")
-                     .option("--strip-debug")
                      .call().assertSuccess();
              FileUtils.deleteFileTreeWithRetry(image);
         }
@@ -131,7 +130,6 @@ public class JLinkTest {
                      .modulePath("does_not_exist_path")
                      .output(image)
                      .addMods("jdk.jshell")
-                     .option("--strip-debug")
                      .call().assertSuccess();
              FileUtils.deleteFileTreeWithRetry(image);
         }
@@ -152,7 +150,6 @@ public class JLinkTest {
                     .modulePath(helper.defaultModulePath())
                     .output(image1)
                     .addMods("leaf1")
-                    .option("--strip-debug")
                     .call().assertSuccess();
             FileUtils.deleteFileTreeWithRetry(image1);
             JImageGenerator.getJLinkTask()
@@ -171,7 +168,6 @@ public class JLinkTest {
                     .modulePath(helper.defaultModulePath(false))
                     .output(image2)
                     .addMods("leaf1")
-                    .option("--strip-debug")
                     .call().assertSuccess();
             FileUtils.deleteFileTreeWithRetry(image2);
             // no --module-path. default sys mod path is assumed - but that won't contain 'leaf1' module
@@ -189,7 +185,6 @@ public class JLinkTest {
                     .modulePath(helper.defaultModulePath())
                     .output(imageM)
                     .addMods("m")
-                    .option("--strip-debug")
                     .call().assertSuccess();
             FileUtils.deleteFileTreeWithRetry(imageM);
             moduleName = "mod";
@@ -199,7 +194,6 @@ public class JLinkTest {
                     .modulePath(helper.defaultModulePath())
                     .output(imageMod)
                     .addMods("m")
-                    .option("--strip-debug")
                     .call().assertSuccess();
             FileUtils.deleteFileTreeWithRetry(imageMod);
         }
@@ -223,7 +217,6 @@ public class JLinkTest {
                     .output(imageRepeatedPath)
                     .addMods(moduleName)
                     // second --module-path has that module
-                    .option("--strip-debug")
                     .call().assertSuccess();
             FileUtils.deleteFileTreeWithRetry(imageRepeatedPath);
 
@@ -242,7 +235,6 @@ public class JLinkTest {
                     .limitMods("java.base")
                     .repeatedLimitMods(moduleName) // second --limit-modules overrides first
                     .addMods(moduleName)
-                    .option("--strip-debug")
                     .call().assertSuccess();
             FileUtils.deleteFileTreeWithRetry(imageRepeatedLimit);
         }
@@ -465,9 +457,7 @@ public class JLinkTest {
 
     private static void testCompress(Helper helper, String moduleName, String... userOptions) throws IOException {
         helper.generateDefaultJModule(moduleName, "composite2");
-        String[] allOptions = Stream.concat(Stream.of(userOptions), Stream.of("--strip-debug"))
-                .toArray(String[]::new);
-        Path imageDir = helper.generateDefaultImage(allOptions, moduleName).assertSuccess();
+        Path imageDir = helper.generateDefaultImage(userOptions, moduleName).assertSuccess();
         helper.checkImage(imageDir, moduleName, null, null);
         FileUtils.deleteFileTreeWithRetry(imageDir);
     }

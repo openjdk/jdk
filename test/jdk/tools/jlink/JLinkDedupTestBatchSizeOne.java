@@ -97,7 +97,6 @@ public class JLinkDedupTestBatchSizeOne {
                 .addMods("m3")
                 .addMods("m4")
                 .option("--system-modules=batch-size=1")
-                .option("--strip-debug")
                 .call()
                 .assertSuccess();
 

@@ -55,9 +55,7 @@ public class AddOptionsPluginTest {
 
         var module = "addoptions";
         helper.generateDefaultJModule(module);
-        var image = helper.generateDefaultImage(new String[] {
-                "--add-options", OPTS,
-                "--strip-debug" },
+        var image = helper.generateDefaultImage(new String[] { "--add-options", OPTS },
                                                 module)
             .assertSuccess();
         helper.checkImage(image, module, null, null);

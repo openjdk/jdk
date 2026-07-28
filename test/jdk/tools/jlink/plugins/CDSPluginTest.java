@@ -63,9 +63,7 @@ public class CDSPluginTest {
 
         var module = "cds";
         helper.generateDefaultJModule(module);
-        var image = helper.generateDefaultImage(new String[] {
-                "--generate-cds-archive",
-                "--strip-debug" },
+        var image = helper.generateDefaultImage(new String[] { "--generate-cds-archive" },
                                                 module)
             .assertSuccess();
 

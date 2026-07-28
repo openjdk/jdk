@@ -161,7 +161,6 @@ public class BasicTest {
         Collections.addAll(args,
                 "--module-path", modPathArg,
                 "--add-modules", modName,
-                "--strip-debug",
                 "--output", image.toString());
         Collections.addAll(args, options);
 

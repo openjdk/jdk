@@ -76,7 +76,6 @@ public class JLinkPreviewTest {
         if (JLINK_TOOL.run(System.out, System.err,
                 "--add-modules", "java.base",
                 "--add-modules", "jdk.zipfs",
-                "--strip-debug",
                 "--output", jreRoot.toString()) != 0) {
             throw new RuntimeException("failed to create small boot image");
         }
@@ -136,7 +135,6 @@ public class JLinkPreviewTest {
         // The default module path contains the directory we compiled the jars into.
         JImageGenerator.JLinkTask jlink = JImageGenerator.getJLinkTask()
                 .modulePath(helper.defaultModulePath())
-                .option("--strip-debug")
                 .output(outDir);
         jlink.addMods(TEST_MODULE);
         return jlink.call().assertSuccess().resolve("lib", "modules");

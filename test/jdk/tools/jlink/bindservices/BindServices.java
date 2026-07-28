@@ -100,7 +100,6 @@ public class BindServices {
         // no service binding and does not link m2,m3 providers.
         JLink.run("--output", dir.toString(),
                   "--module-path", MODULE_PATH,
-                  "--strip-debug",
                   "--add-modules", "m1").output();
 
         testImage(dir, "m1");
@@ -120,7 +119,6 @@ public class BindServices {
                   "--module-path", MODULE_PATH,
                   "--add-modules", "m1",
                   "--bind-services",
-                  "--strip-debug",
                   "--limit-modules", "m1,m2,m3");
 
         testImage(dir, "m1", "m2", "m3");
@@ -138,7 +136,6 @@ public class BindServices {
                       "--add-modules", "m1",
                       "--bind-services",
                       "--verbose",
-                      "--strip-debug",
                       "--limit-modules", "m1,m2,m3").output();
 
         List<String> expected = List.of(
@@ -168,7 +165,6 @@ public class BindServices {
             JLink.run("--output", dir.toString(),
                       "--module-path", MODULE_PATH,
                       "--verbose",
-                      "--strip-debug",
                       "--add-modules", "m1").output();
 
         assertTrue(output.contains("m1 provides p1.S used by m1"));

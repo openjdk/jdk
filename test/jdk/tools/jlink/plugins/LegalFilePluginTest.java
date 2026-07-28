@@ -264,10 +264,8 @@ public class LegalFilePluginTest {
     private Path createImage(String outputDir, List<String> options) {
         lastImageDir = IMAGES_DIR.resolve(outputDir);
         System.out.println("jlink " + options.stream().collect(Collectors.joining(" ")));
-        List<String> allOptions = new ArrayList<>(options);
-        allOptions.add("--strip-debug");
         int rc = JLINK_TOOL.run(System.out, System.out,
-                                allOptions.toArray(new String[0]));
+                                options.toArray(new String[0]));
         assertTrue(rc == 0);
 
         return lastImageDir;

@@ -107,7 +107,6 @@ public class JLink100Modules {
                 .modulePath(out)
                 .output(src.resolve("out-jlink"))
                 .addMods("bug8240567x")
-                .option("--strip-debug")
                 .call()
                 .assertSuccess();
 

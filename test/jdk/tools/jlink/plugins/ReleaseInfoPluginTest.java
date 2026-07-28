@@ -63,8 +63,7 @@ public class ReleaseInfoPluginTest {
         Files.writeString(utf8File, IMPL + "=\"" + NON_ASCII + "\"", StandardCharsets.UTF_8);
         Path image = helper.generateDefaultImage(
                              new String[] {
-                               "--release-info", utf8File.toString(),
-                               "--strip-debug"
+                               "--release-info", utf8File.toString()
                              }, "java.base").assertSuccess();
 
         // release file produced should have IMPLEMENTOR in
