@@ -53,6 +53,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
+import compiler.ciReplay.ReplayFile.ParsedReplayFile;
+import compiler.ciReplay.ReplayFile.ParsedReplayFile.*;
 
 public class TestReplayV4 extends DumpReplayBase {
     private final String[] defaultReplayRunFlags;
@@ -98,8 +100,8 @@ public class TestReplayV4 extends DumpReplayBase {
     }
 
     private void reDumpAndCompare() {
-        ReplayFile.ParsedReplayFile firstParsedReplay;
-        ReplayFile.ParsedReplayFile secondParsedReplay;
+        ParsedReplayFile firstParsedReplay;
+        ParsedReplayFile secondParsedReplay;
         try {
             String[] reDumpingFlags = Arrays.copyOf(defaultReplayRunFlags, defaultReplayRunFlags.length + 2);
             reDumpingFlags[defaultReplayRunFlags.length] = "-XX:CompileCommand=option," + "*::*" + ",bool,DumpReplay,true";
@@ -118,8 +120,8 @@ public class TestReplayV4 extends DumpReplayBase {
             var secondReplay = secondReplayOpt.get();
             System.out.println("Replay read by the second run: "+firstReplay+"; replay produced: "+secondReplay);
 
-            firstParsedReplay = ReplayFile.ParsedReplayFile.parse(firstReplay);
-            secondParsedReplay = ReplayFile.ParsedReplayFile.parse(secondReplay);
+            firstParsedReplay = ParsedReplayFile.parse(firstReplay);
+            secondParsedReplay = ParsedReplayFile.parse(secondReplay);
         } catch (Throwable t) {
             System.out.println(t);
             System.out.println(t.getMessage());
@@ -127,34 +129,38 @@ public class TestReplayV4 extends DumpReplayBase {
         }
 
         // First, let's make sure replay files are not crazy.
-        var firstInsanities = ReplayFile.ParsedReplayFile.checkSanity(firstParsedReplay);
+        var firstInsanities = firstParsedReplay.checkSanity();
         Asserts.assertTrue(firstInsanities.isEmpty(), makeMessageFromList("Insane first replay file", firstInsanities));
-        var secondInsanities = ReplayFile.ParsedReplayFile.checkSanity(secondParsedReplay);
+        var secondInsanities = secondParsedReplay.checkSanity();
         Asserts.assertTrue(secondInsanities.isEmpty(), makeMessageFromList("Insane second replay file", secondInsanities));
 
+        // For lookup later. This is allowed only after sanity checking.
+        firstParsedReplay.index();
+        secondParsedReplay.index();
+
         // Now, we make sure they have equivalent enough content.
-        var differences = ReplayFile.ParsedReplayFile.findDifferences(firstParsedReplay, secondParsedReplay);
+        var differences = ParsedReplayFile.findDifferences(firstParsedReplay, secondParsedReplay);
         Asserts.assertTrue(differences.isEmpty(), makeMessageFromList("Differences", differences));
 
         // Finally, we check a few facts about the second replay file.
         var oArrNullCmdOpt = secondParsedReplay.findStaticFieldCommand("compiler/ciReplay/TestReplayV4$Test", "oArrNull");
         Asserts.assertTrue(oArrNullCmdOpt.isPresent());
         var oArrNullCmd = oArrNullCmdOpt.get();
-        Asserts.assertTrue(oArrNullCmd instanceof ReplayFile.ParsedReplayFile.StaticFieldCommandNullArray);
+        Asserts.assertTrue(oArrNullCmd instanceof StaticFieldCommandNullArray);
 
         var oArrRefArrayCmdOpt = secondParsedReplay.findStaticFieldCommand("compiler/ciReplay/TestReplayV4$Test", "oArrRefArray");
         Asserts.assertTrue(oArrRefArrayCmdOpt.isPresent());
         var oArrRefArrayCmdUntyped = oArrRefArrayCmdOpt.get();
-        Asserts.assertTrue(oArrRefArrayCmdUntyped instanceof ReplayFile.ParsedReplayFile.StaticFieldCommandRefArray);
-        var oArrRefArrayCmd = (ReplayFile.ParsedReplayFile.StaticFieldCommandRefArray)oArrRefArrayCmdUntyped;
+        Asserts.assertTrue(oArrRefArrayCmdUntyped instanceof StaticFieldCommandRefArray);
+        var oArrRefArrayCmd = (StaticFieldCommandRefArray)oArrRefArrayCmdUntyped;
         Asserts.assertFalse(oArrRefArrayCmd.nullFree());
         Asserts.assertEquals(oArrRefArrayCmd.length(), 2);
 
         var oArrNullableAtomicArrayCmdOpt = secondParsedReplay.findStaticFieldCommand("compiler/ciReplay/TestReplayV4$Test", "oArrNullableAtomicArray");
         Asserts.assertTrue(oArrNullableAtomicArrayCmdOpt.isPresent());
         var oArrNullableAtomicArrayCmdUntyped = oArrNullableAtomicArrayCmdOpt.get();
-        Asserts.assertTrue(oArrNullableAtomicArrayCmdUntyped instanceof ReplayFile.ParsedReplayFile.StaticFieldCommandFlatArray);
-        var oArrNullableAtomicArrayCmd = (ReplayFile.ParsedReplayFile.StaticFieldCommandFlatArray)oArrNullableAtomicArrayCmdUntyped;
+        Asserts.assertTrue(oArrNullableAtomicArrayCmdUntyped instanceof StaticFieldCommandFlatArray);
+        var oArrNullableAtomicArrayCmd = (StaticFieldCommandFlatArray)oArrNullableAtomicArrayCmdUntyped;
         Asserts.assertFalse(oArrNullableAtomicArrayCmd.nullFree());
         Asserts.assertFalse(oArrNullableAtomicArrayCmd.nonAtomic());
         Asserts.assertEquals(oArrNullableAtomicArrayCmd.length(), 2);
@@ -162,8 +168,8 @@ public class TestReplayV4 extends DumpReplayBase {
         var oArrNullRestrictedAtomicArrayCmdOpt = secondParsedReplay.findStaticFieldCommand("compiler/ciReplay/TestReplayV4$Test", "oArrNullRestrictedAtomicArray");
         Asserts.assertTrue(oArrNullRestrictedAtomicArrayCmdOpt.isPresent());
         var oArrNullRestrictedAtomicArrayCmdUntyped = oArrNullRestrictedAtomicArrayCmdOpt.get();
-        Asserts.assertTrue(oArrNullRestrictedAtomicArrayCmdUntyped instanceof ReplayFile.ParsedReplayFile.StaticFieldCommandFlatArray);
-        var oArrNullRestrictedAtomicArrayCmd = (ReplayFile.ParsedReplayFile.StaticFieldCommandFlatArray)oArrNullRestrictedAtomicArrayCmdUntyped;
+        Asserts.assertTrue(oArrNullRestrictedAtomicArrayCmdUntyped instanceof StaticFieldCommandFlatArray);
+        var oArrNullRestrictedAtomicArrayCmd = (StaticFieldCommandFlatArray)oArrNullRestrictedAtomicArrayCmdUntyped;
         Asserts.assertTrue(oArrNullRestrictedAtomicArrayCmd.nullFree());
         Asserts.assertFalse(oArrNullRestrictedAtomicArrayCmd.nonAtomic());
         Asserts.assertEquals(oArrNullRestrictedAtomicArrayCmd.length(), 2);

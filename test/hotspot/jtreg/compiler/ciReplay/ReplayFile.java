@@ -147,6 +147,12 @@ public class ReplayFile {
         ParsedReplayFile(List<Command> commands) { this.commands = commands; }
         List<Command> commands;
 
+        // Set by sanity checking
+        boolean checked = false;
+        // Set by indexing, only after sanity checking
+        public record StaticField(String klass, String name) {}
+        HashMap<StaticField, StaticFieldCommand> staticFieldCommands = null;
+
         static public ParsedReplayFile parse(File file) throws IOException {
             return parse(Files.readAllLines(file.toPath()));
         }
@@ -458,7 +464,7 @@ public class ReplayFile {
             return new CompileCommand(klass, name, signature, entryBci, compLevel, inlines);
         }
 
-        static List<String> checkSanity(ParsedReplayFile parsed) {
+        List<String> checkSanity() {
             record Method(String klass, String name, String signature) {}
             record Field(String klass, String name) {}
             List<String> insanities = new ArrayList<>();
@@ -469,7 +475,7 @@ public class ReplayFile {
             Set<Method> seenCompile = new HashSet<>();
             Set<String> seenKlasses = new HashSet<>();
             Map<Field, String> seenFields = new HashMap<>();
-            for (Command c : parsed.commands) {
+            for (Command c : commands) {
                 switch (c) {
                     case CiInstanceKlassCommand(String name, boolean isLinked, boolean isInitialized, int length, List<Integer> tag) -> seenKlasses.add(name);
                     case StaticFieldCommand cmd -> {
@@ -516,7 +522,32 @@ public class ReplayFile {
             } else if (seenVersionCommands > 1) {
                 insanities.add("Found too many \"version\" commands: " + seenVersionCommands);
             }
+            checked = true;
             return insanities;
+        }
+
+        // Use it only after checkSanity.
+        void index() {
+            Asserts.assertTrue(checked);
+            staticFieldCommands = new HashMap<>();
+
+            for (Command c : commands) {
+                switch (c) {
+                    case StaticFieldCommand cmd -> {
+                        String klass = cmd.klass();
+                        String fieldName = cmd.fieldName();
+                        staticFieldCommands.put(new StaticField(klass, fieldName), cmd);
+                    }
+                    case CiInstanceKlassCommand _,
+                         CiMethodCommand _,
+                         CiMethodDataCommand _,
+                         CompileCommand _,
+                         InstanceKlassCommand _,
+                         JvmtiExportCommand _,
+                         VersionCommand _ -> {}
+                }
+
+            }
         }
 
         static Optional<Integer> getVersion(ParsedReplayFile parsed) {
@@ -784,15 +815,12 @@ public class ReplayFile {
         }
 
         Optional<StaticFieldCommand> findStaticFieldCommand(String klass, String fieldName) {
-            return commands
-                    .stream()
-                    .map(cmd -> switch (cmd) {
-                        case StaticFieldCommand sfc ->
-                                sfc.klass().equals(klass) && sfc.fieldName().equals(fieldName) ? sfc : null;
-                        default -> null;
-                    })
-                    .filter(Objects::nonNull)
-                    .findAny();
+            Asserts.assertNotNull(staticFieldCommands);  // Must be already indexed
+            var f = new StaticField(klass, fieldName);
+            if (!staticFieldCommands.containsKey(f)) {
+                return Optional.empty();
+            }
+            return Optional.ofNullable(staticFieldCommands.get(f));
         }
     }
 }
