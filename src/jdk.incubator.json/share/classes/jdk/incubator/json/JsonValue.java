@@ -66,7 +66,8 @@ import java.util.Optional;
  *
  * <h3>Missing Object Members</h3>
  * A member of a JSON object can be optional. In this scenario, use the access method
- * {@link #tryGet(String)} which returns an Optional of JsonValue. For example:
+ * {@link #tryGet(String)} which returns an {@code Optional} of {@code JsonValue}.
+ * For example:
  * {@snippet lang=java:
  * json.tryGet("foo")
  *     .ifPresent(IO::println)
@@ -76,7 +77,7 @@ import java.util.Optional;
  * <h3>Handling of null</h3>
  * JSON null can be used to signify absence.
  * In this scenario, use the access method {@link #tryValue()} which returns an
- * Optional of JsonValue. For example:
+ * {@code Optional} of {@code JsonValue}. For example:
  * {@snippet lang=java:
  * json.get("baz")
  *     .tryValue()
@@ -89,31 +90,23 @@ import java.util.Optional;
  * Use the conversion methods to produce a Java value from the {@code
  * JsonValue}. Each conversion method corresponds to a JSON type:
  * <ul>
- *     <li>{@code asString()} returns a String that represents the JSON string
- *     with all RFC 8259 JSON escapes converted to their corresponding
- *     characters.</li>
- *     <li>{@code asInt()} returns an int provided the JSON number is a whole
- *     number within range of {@code Integer.MIN_VALUE} and
- *     {@code Integer.MAX_VALUE}.
- *     </li>
- *     <li>{@code asLong()} returns a long provided the JSON number is a whole
- *     number within range of {@code Long.MIN_VALUE} and {@code Long.MAX_VALUE}.
- *     </li>
- *     <li>{@code asDouble()} returns a {@code double} if the string
- *     representation of the JSON number can be converted using
- *     {@link Double#parseDouble(String)} and the resulting value is neither
- *     positive nor negative infinity.
- *     </li>
- *     <li>{@code asBoolean()} returns {@code true} or {@code false} for JSON
- *     boolean literals.</li>
- *     <li>{@code asMap()} returns an unmodifiable map of {@code String} to
- *     {@code JsonValue} for JSON object, guaranteed to contain neither null
- *     keys nor null values. If the JSON object contains no members, an empty
- *     map is returned.
- *     </li>
- *     <li>{@code asList()} returns an unmodifiable list of {@code JsonValue}s
- *     for JSON array, guaranteed to contain non-null values. If the JSON array
- *     contains no values, an empty list is returned.</li>
+ *     <li>{@code asString()} converts a {@code JsonString} instance into a Java
+ *     {@code String} with RFC 8259 JSON escape sequences translated to their
+ *     corresponding characters.</li>
+ *     <li>{@code asInt()} converts a {@code JsonNumber} instance to a Java
+ *     {@code int} if its numeric value can be represented exactly.</li>
+ *     <li>{@code asLong()} converts a {@code JsonNumber} instance to a Java
+ *     {@code long} if its numeric value can be represented exactly.</li>
+ *     <li>{@code asDouble()} converts a {@code JsonNumber} instance to a Java
+ *     {@code double} if its numeric value can be represented accurately.</li>
+ *     <li>{@code asBoolean()} converts a {@code JsonBoolean} instance to a Java
+ *     {@code boolean} value of {@code true} or {@code false}.</li>
+ *     <li>{@code asMap()} converts a {@code JsonObject} instance into an
+ *     unmodifiable Java {@code Map}. If the JSON object contains no members, an
+ *     empty {@code Map} is returned.</li>
+ *     <li>{@code asList()} converts a {@code JsonArray} instance into an
+ *     unmodifiable Java {@code List}. If the JSON array contains no elements,
+ *     an empty {@code List} is returned.</li>
  * </ul>
  * For example,
  * {@snippet lang=java:
@@ -204,7 +197,7 @@ public sealed interface JsonValue permits JsonString, JsonNumber, JsonObject, Js
      * {@return an {@code int} if this {@code JsonValue} is an instance of {@link JsonNumber}
      * and it can be converted from its string representation; otherwise, throws a
      * {@code JsonValueException}} That is, it can be
-     * expressed as a whole number and is within the range of
+     * expressed exactly as a whole number and is within the range of
      * {@link Integer#MIN_VALUE} and {@link Integer#MAX_VALUE}. This occurs,
      * even if the string contains an exponent or a fractional part consisting of
      * only zero digits. For example, both the JSON number "123.0" and "1.23e2"
@@ -227,7 +220,7 @@ public sealed interface JsonValue permits JsonString, JsonNumber, JsonObject, Js
     /**
      * {@return a {@code long} if this {@code JsonValue} is an instance of {@link JsonNumber} and
      * it can be converted from its string representation; otherwise, throws a
-     * {@code JsonValueException}} That is, it can be expressed
+     * {@code JsonValueException}} That is, it can be expressed exactly
      * as a whole number and is within the range of {@link Long#MIN_VALUE} and
      * {@link Long#MAX_VALUE}. This occurs, even if the string contains an
      * exponent or a fractional part consisting of only zero digits. For example,
@@ -249,13 +242,13 @@ public sealed interface JsonValue permits JsonString, JsonNumber, JsonObject, Js
 
     /**
      * {@return a finite {@code double} if this {@code JsonValue} is an instance of
-     * {@link JsonNumber} and it can be converted from its string representation;
-     * otherwise, throws a {@code JsonValueException}}
-     * If the converted {@code double} value is positive or negative infinity,
-     * a {@code JsonValueException} is thrown.
+     * {@link JsonNumber} and it can be converted accurately from its string
+     * representation; otherwise, throws a {@code JsonValueException}}
+     * If the converted {@code double} value is {@link Double#POSITIVE_INFINITY}
+     * or {@link Double#NEGATIVE_INFINITY}, a {@code JsonValueException} is thrown.
      *
      * @apiNote Callers of this method should be aware of the potential loss in
-     * precision when the string representation of the JSON number is converted
+     * precision when the string representation of the {@code JsonNumber} is converted
      * to a {@code double}.
      * @implSpec
      * The default implementation provided by {@code JsonValue} throws {@code
@@ -356,7 +349,7 @@ public sealed interface JsonValue permits JsonString, JsonNumber, JsonObject, Js
      * with the given member name if this {@code JsonValue} is an instance of
      * {@link JsonObject}} Otherwise, throws a {@code JsonValueException}.
      * If there is no association with the given member name, an empty
-     * {@code Optional}} is returned.
+     * {@code Optional} is returned.
      *
      * @implSpec
      * The default implementation obtains an {@code Optional<JsonValue>} by invoking {@link

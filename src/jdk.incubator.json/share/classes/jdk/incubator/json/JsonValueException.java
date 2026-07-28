@@ -35,7 +35,7 @@ import java.io.Serial;
  *     An {@link JsonValue##access access} or a
  *     {@link JsonValue##conversion conversion} method is invoked on a
  *     {@code JsonValue} of an incompatible type. For example, calling
- *     {@code asBoolean()} on a {@code JsonValue} representing a JSON string.
+ *     {@code asBoolean()} on a {@code JsonString}.
  *   </li>
  *   <li>
  *     An access method is invoked for a non-existent value, such as
@@ -59,7 +59,7 @@ public final class JsonValueException extends RuntimeException {
     private static final long serialVersionUID = 2040280066622450939L;
 
     /**
-     * Constructs a JsonValueException with the specified detail message.
+     * Constructs a {@code JsonValueException} with the specified detail message.
      * @param message the detail message
      */
     public JsonValueException(String message) {

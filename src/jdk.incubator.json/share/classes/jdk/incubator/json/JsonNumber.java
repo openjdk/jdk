@@ -33,7 +33,7 @@ import jdk.incubator.json.impl.JsonNumberImpl;
  * <p>
  * A {@code JsonNumber} can be produced by {@link Json#parse(String)}.
  * When a JSON number is parsed, a {@code JsonNumber} object is created
- * as long as the parsed value adheres to the JSON number
+ * as long as the input number text adheres to the JSON number
  * <a href="https://datatracker.ietf.org/doc/html/rfc8259#section-6">
  * syntax</a>.
  * Alternatively, {@link #of(int)}, {@link #of(long)}, {@link #of(double)},
@@ -41,11 +41,11 @@ import jdk.incubator.json.impl.JsonNumberImpl;
  * The value of the {@code JsonNumber} can be retrieved as an {@code int} with
  * {@link #asInt()}, as a {@code long} with {@link #asLong()}, or as a
  * {@code double} with {@link #asDouble()}. {@link #toString()} can be used to
- * return the string representation of the JSON number.
+ * return the string representation of the {@code JsonNumber}.
  *
  * @apiNote
- * To avoid precision loss when converting JSON numbers to Java types, or when
- * converting JSON numbers outside the range of {@code long} or {@code double},
+ * To avoid precision loss when converting {@code JsonNumber}s to Java types, or when
+ * converting {@code JsonNumber}s outside the range of {@code long} or {@code double},
  * use {@link #toString()} to create arbitrary-precision Java objects, for
  * example,
  * {@snippet lang="java" :
@@ -65,7 +65,7 @@ public non-sealed interface JsonNumber extends JsonValue {
     /**
      * {@return an {@code int} value from the string representation}
      * That is, it can be
-     * expressed as a whole number and is within the range of
+     * expressed exactly as a whole number and is within the range of
      * {@link Integer#MIN_VALUE} and {@link Integer#MAX_VALUE}. This occurs,
      * even if the string contains an exponent or a fractional part consisting of
      * only zero digits. For example, both the JSON number "123.0" and "1.23e2"
@@ -81,7 +81,7 @@ public non-sealed interface JsonNumber extends JsonValue {
 
     /**
      * {@return a {@code long} value from the string representation}
-     * That is, it can be expressed
+     * That is, it can be expressed exactly
      * as a whole number and is within the range of {@link Long#MIN_VALUE} and
      * {@link Long#MAX_VALUE}. This occurs, even if the string contains an
      * exponent or a fractional part consisting of only zero digits. For example,
@@ -98,8 +98,8 @@ public non-sealed interface JsonNumber extends JsonValue {
     /**
      * {@return a finite {@code double} value from its string representation}
      * The conversion is performed using {@link Double#parseDouble(String)}.
-     * If the converted {@code double} value is positive or negative infinity,
-     * a {@code JsonValueException} is thrown.
+     * If the converted {@code double} value is {@link Double#POSITIVE_INFINITY}
+     * or {@link Double#NEGATIVE_INFINITY}, a {@code JsonValueException} is thrown.
      *
      * @apiNote {@inheritDoc}
      *
@@ -110,12 +110,12 @@ public non-sealed interface JsonNumber extends JsonValue {
     double asDouble();
 
     /**
-     * Creates a JSON number from the given {@code double} value.
-     * The string representation of the JSON number created is produced by applying
+     * Creates a {@code JsonNumber} from the given {@code double} value.
+     * The string representation of the {@code JsonNumber} created is produced by applying
      * {@link Double#toString(double)} on {@code num}.
      *
      * @param num the given {@code double} value.
-     * @return a JSON number created from the {@code double} value
+     * @return a {@code JsonNumber} created from the {@code double} value
      * @throws IllegalArgumentException if the given {@code double} value
      * is not a finite floating-point value ({@link Double#NaN NaN},
      * {@link Double#POSITIVE_INFINITY positive infinity}, or
@@ -130,12 +130,12 @@ public non-sealed interface JsonNumber extends JsonValue {
     }
 
     /**
-     * Creates a JSON number from the given {@code int} value.
-     * The string representation of the JSON number created is produced by applying
+     * Creates a {@code JsonNumber} from the given {@code int} value.
+     * The string representation of the {@code JsonNumber} created is produced by applying
      * {@link Integer#toString(int)} on {@code num}.
      *
      * @param num the given {@code int} value.
-     * @return a JSON number created from the {@code int} value
+     * @return a {@code JsonNumber} created from the {@code int} value
      */
     static JsonNumber of(int num) {
         var str = Integer.toString(num);
@@ -143,12 +143,12 @@ public non-sealed interface JsonNumber extends JsonValue {
     }
 
     /**
-     * Creates a JSON number from the given {@code long} value.
-     * The string representation of the JSON number created is produced by applying
+     * Creates a {@code JsonNumber} from the given {@code long} value.
+     * The string representation of the {@code JsonNumber} created is produced by applying
      * {@link Long#toString(long)} on {@code num}.
      *
      * @param num the given {@code long} value.
-     * @return a JSON number created from the {@code long} value
+     * @return a {@code JsonNumber} created from the {@code long} value
      */
     static JsonNumber of(long num) {
         var str = Long.toString(num);
@@ -156,8 +156,8 @@ public non-sealed interface JsonNumber extends JsonValue {
     }
 
     /**
-     * Creates a JSON number from the given {@code String} value.
-     * The string representation of the JSON number created is equivalent to
+     * Creates a {@code JsonNumber} from the given {@code String} value.
+     * The string representation of the {@code JsonNumber} created is equivalent to
      * {@code num} with any leading or trailing JSON whitespace removed.
      *
      * @implNote The value returned is equivalent to calling:
@@ -169,9 +169,9 @@ public non-sealed interface JsonNumber extends JsonValue {
      *
      * @param num the given {@code String} value.
      * @throws IllegalArgumentException if {@code num} is not a valid string
-     *      representation of a JSON number.
+     *      representation of a {@code JsonNumber}.
      * @throws NullPointerException if {@code num} is {@code null}
-     * @return a JSON number created from the {@code String} value
+     * @return a {@code JsonNumber} created from the {@code String} value
      */
     static JsonNumber of(String num) {
         try {
