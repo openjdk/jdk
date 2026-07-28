@@ -888,50 +888,135 @@ class StubGenerator: public StubCodeGenerator {
     bool is_backward = step < 0;
     int granularity = g_uabs(step);
 
-    const Register src = x30, dst = x31, vl = x14, cnt = x15, tmp1 = x16, tmp2 = x17;
-    assert_different_registers(s, d, cnt, vl, tmp1, tmp2);
+    const Register src = x30;
+    const Register dst = x31;
+    const Register cnt = x15;
+    const Register saved_vl = x16;
+    const Register bytes_per_iter = x17;
+    const Register tmp0 = x5;
+
+    assert_different_registers(s, d, cnt, saved_vl, bytes_per_iter, tmp0);
     Assembler::SEW sew = Assembler::elembytes_to_sew(granularity);
-    Label loop_forward, loop_backward, done;
+
+    Label forward_main, backward_main, loop_fwd, loop_bwd,
+          tail_fwd, tail_bwd, done;
 
     __ mv(dst, d);
     __ mv(src, s);
     __ mv(cnt, count);
 
-    __ bind(loop_forward);
-    __ vsetvli(vl, cnt, sew, Assembler::m8);
-    if (is_backward) {
-      __ bne(vl, cnt, loop_backward);
+    // For very small forward copies, skip the wide m2 main loop and drain
+    // directly with the m1 tail loop. This avoids the m2 vsetvli setup cost
+    // for short copies (e.g., ≤ 32 bytes). Backward small copies are handled
+    // by the m2 main loop falling through to tail_bwd when cnt < saved_vl.
+    const int max_elems_small = 32 / granularity;
+    if (max_elems_small > 0 && !is_backward) {
+      __ li(tmp0, max_elems_small);
+      __ bleu(cnt, tmp0, tail_fwd);
     }
 
-    __ vlex_v(v0, src, sew);
-    __ sub(cnt, cnt, vl);
-    if (sew != Assembler::e8) {
-      // when sew == e8 (e.g., elem size is 1 byte), slli R, R, 0 is a nop and unnecessary
-      __ slli(vl, vl, sew);
-    }
-    __ add(src, src, vl);
-
-    __ vsex_v(v0, dst, sew);
-    __ add(dst, dst, vl);
-    __ bnez(cnt, loop_forward);
-
     if (is_backward) {
-      __ j(done);
+      __ j(backward_main);
+    }
+    // else: fall through to forward_main
 
-      __ bind(loop_backward);
-      __ sub(t0, cnt, vl);
-      if (sew != Assembler::e8) {
-        // when sew == e8 (e.g., elem size is 1 byte), slli R, R, 0 is a nop and unnecessary
-        __ slli(t0, t0, sew);
+    /* forward main: m2 chunks */
+    __ bind(forward_main);
+    __ vsetvli(saved_vl, cnt, sew, Assembler::m2);
+
+    if (granularity > 1) {
+      __ slli(bytes_per_iter, saved_vl, exact_log2(granularity));
+    } else {
+      __ mv(bytes_per_iter, saved_vl);
+    }
+
+    __ bind(loop_fwd);
+    {
+      __ blt(cnt, saved_vl, tail_fwd);
+      __ vlex_v(v0, src, sew);
+      __ vsex_v(v0, dst, sew);
+      __ add(src, src, bytes_per_iter);
+      __ add(dst, dst, bytes_per_iter);
+      __ sub(cnt, cnt, saved_vl);
+      __ bnez(cnt, loop_fwd);
+    }
+
+    /* forward tail: m1 drain loop. Handles arbitrary leftover cnt
+     * (in [0, vlmax_m2)) with one or more m1 iterations. */
+    __ bind(tail_fwd);
+    {
+      Label loop_tail_fwd;
+      __ beqz(cnt, done);
+      __ bind(loop_tail_fwd);
+      __ vsetvli(tmp0, cnt, sew, Assembler::m1);
+      __ vlex_v(v0, src, sew);
+      __ vsex_v(v0, dst, sew);
+      if (granularity > 1) {
+        __ slli(bytes_per_iter, tmp0, exact_log2(granularity));
+      } else {
+        __ mv(bytes_per_iter, tmp0);
       }
-      __ add(tmp1, s, t0);
-      __ vlex_v(v0, tmp1, sew);
-      __ add(tmp2, d, t0);
-      __ vsex_v(v0, tmp2, sew);
-      __ sub(cnt, cnt, vl);
-      __ bnez(cnt, loop_forward);
-      __ bind(done);
+      __ add(src, src, bytes_per_iter);
+      __ add(dst, dst, bytes_per_iter);
+      __ sub(cnt, cnt, tmp0);
+      __ bnez(cnt, loop_tail_fwd);
+      __ j(done);
     }
+
+    /* backward main: m2 chunks (src/dst point one-past-end) */
+    __ bind(backward_main);
+
+    if (granularity > 1) {
+      __ slli(tmp0, count, exact_log2(granularity));
+    } else {
+      __ mv(tmp0, count);
+    }
+    __ add(src, src, tmp0);
+    __ add(dst, dst, tmp0);
+
+    __ vsetvli(saved_vl, cnt, sew, Assembler::m2);
+
+    if (granularity > 1) {
+      __ slli(bytes_per_iter, saved_vl, exact_log2(granularity));
+    } else {
+      __ mv(bytes_per_iter, saved_vl);
+    }
+
+    __ bind(loop_bwd);
+    {
+      __ blt(cnt, saved_vl, tail_bwd);
+      // src/dst currently point one-past-end. Step back before the first
+      // load/store of each iteration so we copy [end - bytes_per_iter, end).
+      __ sub(src, src, bytes_per_iter);
+      __ sub(dst, dst, bytes_per_iter);
+      __ vlex_v(v0, src, sew);
+      __ vsex_v(v0, dst, sew);
+      __ sub(cnt, cnt, saved_vl);
+      __ bnez(cnt, loop_bwd);
+    }
+
+    /* backward tail: m1 drain loop */
+    __ bind(tail_bwd);
+    {
+      Label loop_tail_bwd;
+      __ beqz(cnt, done);
+      __ bind(loop_tail_bwd);
+      __ vsetvli(tmp0, cnt, sew, Assembler::m1);
+      if (granularity > 1) {
+        __ slli(bytes_per_iter, tmp0, exact_log2(granularity));
+      } else {
+        __ mv(bytes_per_iter, tmp0);
+      }
+      __ sub(src, src, bytes_per_iter);
+      __ sub(dst, dst, bytes_per_iter);
+      __ vlex_v(v0, src, sew);
+      __ vsex_v(v0, dst, sew);
+      __ sub(cnt, cnt, tmp0);
+      __ bnez(cnt, loop_tail_bwd);
+    }
+
+    /* end */
+    __ bind(done);
   }
 
   // All-singing all-dancing memory copy.
