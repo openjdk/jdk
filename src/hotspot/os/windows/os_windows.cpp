@@ -2793,7 +2793,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
       }
 
       // Stack overflow or null pointer exception in native code.
-      VMError::report_and_error(t, exception_code, pc, exception_record,
+      VMError::report_and_die(t, exception_code, pc, exception_record,
                    exceptionInfo->ContextRecord);
     } // /EXCEPTION_ACCESS_VIOLATION
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
