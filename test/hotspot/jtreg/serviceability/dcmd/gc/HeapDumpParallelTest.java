@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023, Alibaba Group Holding Limited. All Rights Reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +56,7 @@ public class HeapDumpParallelTest {
         dcmdOut.shouldHaveExitValue(0);
         dcmdOut.shouldContain("Heap dump file created");
         OutputAnalyzer appOut = new OutputAnalyzer(app.getProcessStdout());
-        appOut.shouldContain("[heapdump]");
+        appOut.shouldMatch("\\[heapdump *\\]");
         String opts = Arrays.asList(Utils.getTestJavaOpts()).toString();
         if (opts.contains("-XX:+UseSerialGC") || opts.contains("-XX:+UseEpsilonGC")) {
             System.out.println("UseSerialGC detected.");

@@ -3767,16 +3767,19 @@ void MacroAssembler::load_narrow_klass_compact(Register dst, Register src) {
   srli(dst, dst, markWord::klass_shift);
 }
 
+void MacroAssembler::load_narrow_klass(Register dst, Register src) {
+  if (UseCompactObjectHeaders) {
+    load_narrow_klass_compact(dst, src);
+  } else {
+    lwu(dst, Address(src, oopDesc::klass_offset_in_bytes()));
+  }
+}
+
 void MacroAssembler::load_klass(Register dst, Register src, Register tmp) {
   assert_different_registers(dst, tmp);
   assert_different_registers(src, tmp);
-  if (UseCompactObjectHeaders) {
-    load_narrow_klass_compact(dst, src);
-    decode_klass_not_null(dst, tmp);
-  } else {
-    lwu(dst, Address(src, oopDesc::klass_offset_in_bytes()));
-    decode_klass_not_null(dst, tmp);
-  }
+  load_narrow_klass(dst, src);
+  decode_klass_not_null(dst, tmp);
 }
 
 void MacroAssembler::store_klass(Register dst, Register src, Register tmp) {

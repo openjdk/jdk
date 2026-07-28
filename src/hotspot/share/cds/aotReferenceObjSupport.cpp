@@ -142,6 +142,16 @@ void AOTReferenceObjSupport::stabilize_cached_reference_objects(TRAPS) {
                            vmSymbols::void_method_signature(),
                            CHECK);
     }
+    {
+      TempNewSymbol method_name = SymbolTable::new_symbol("assemblySetup");
+      JavaValue result(T_VOID);
+      Symbol* baseLocale_name = vmSymbols::sun_util_locale_BaseLocale();
+      Klass* baseLocale_klass = SystemDictionary::resolve_or_fail(baseLocale_name, true, CHECK);
+      JavaCalls::call_static(&result, baseLocale_klass,
+                             method_name,
+                             vmSymbols::void_method_signature(),
+                             CHECK);
+    }
 
     {
       Symbol* cds_name  = vmSymbols::jdk_internal_misc_CDS();

@@ -25,6 +25,7 @@
 
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
+#include "cds/archiveBuilder.hpp"
 #include "ci/ciEnv.hpp"
 #include "code/compiledIC.hpp"
 #include "compiler/compileTask.hpp"
@@ -622,20 +623,18 @@ void MacroAssembler::set_last_Java_frame(Register last_java_sp,
   }
 }
 
-static inline bool target_needs_far_branch(address addr) {
+bool MacroAssembler::target_needs_far_branch(address addr) {
   if (AOTCodeCache::is_on_for_dump()) {
     return true;
   }
-  // codecache size <= 128M
-  if (!MacroAssembler::far_branches()) {
+  if (!far_branches()) {
     return false;
   }
-  // codecache size > 240M
-  if (MacroAssembler::codestub_branch_needs_far_jump()) {
-    return true;
+  if (CodeCache::is_non_nmethod(addr) &&
+      CodeCache::max_distance_to_non_nmethod() <= branch_range) {
+    return false;
   }
-  // codecache size: 128M..240M
-  return !CodeCache::is_non_nmethod(addr);
+  return true;
 }
 
 void MacroAssembler::far_call(Address entry, Register tmp) {
@@ -2231,8 +2230,7 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   // offset is no longer needed after the address is computed.
 
   lea(rscratch2, Address(mdp, offset));
-  cmpxchg(/*addr*/ rscratch2, /*expected*/ zr, /*new*/ recv, Assembler::xword,
-          /*acquire*/ false, /*release*/ false, /*weak*/ true, noreg);
+  cmpxchg_weak(/*addr*/ rscratch2, /*expected*/ zr, /*new*/ recv, Assembler::xword, memory_order_relaxed);
 
   // CAS success means the slot now has the receiver we want. CAS failure means
   // something had claimed the slot concurrently: it can be the same receiver we want,
@@ -3494,9 +3492,33 @@ void MacroAssembler::reinit_heapbase()
 void MacroAssembler::cmpxchg(Register addr, Register expected,
                              Register new_val,
                              enum operand_size size,
-                             bool acquire, bool release,
+                             enum atomic_memory_order order,
                              bool weak,
                              Register result) {
+  bool acquire, release;
+
+  switch (order) {
+    case memory_order_relaxed:
+      acquire = false;
+      release = false;
+      break;
+    case memory_order_acquire:
+      acquire = true;
+      release = false;
+      break;
+    case memory_order_release:
+      acquire = false;
+      release = true;
+      break;
+    case memory_order_acq_rel:
+    case memory_order_seq_cst:
+      acquire = true;
+      release = true;
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+
   if (result == noreg)  result = rscratch1;
   BLOCK_COMMENT("cmpxchg {");
   if (UseLSE) {
@@ -5074,7 +5096,7 @@ void MacroAssembler::load_method_holder(Register holder, Register method) {
   ldr(holder, Address(holder, ConstantPool::pool_holder_offset()));          // InstanceKlass*
 }
 
-// Loads the obj's Klass* into dst.
+// Loads the obj's narrow Klass from a compact object header (+COH) into dst.
 // Preserves all registers (incl src, rscratch1 and rscratch2).
 // Input:
 // src - the oop we want to load the klass from.
@@ -5085,13 +5107,18 @@ void MacroAssembler::load_narrow_klass_compact(Register dst, Register src) {
   lsr(dst, dst, markWord::klass_shift);
 }
 
-void MacroAssembler::load_klass(Register dst, Register src) {
+// Loads the obj's narrow Klass from any header (compact or not) into dst.
+void MacroAssembler::load_narrow_klass(Register dst, Register src) {
   if (UseCompactObjectHeaders) {
     load_narrow_klass_compact(dst, src);
   } else {
     ldrw(dst, Address(src, oopDesc::klass_offset_in_bytes()));
   }
-  decode_klass_not_null(dst);
+}
+
+void MacroAssembler::load_klass(Register dst, Register src, Register tmp) {
+  load_narrow_klass(dst, src);
+  decode_klass_not_null(dst, dst, tmp);
 }
 
 void MacroAssembler::restore_cpu_control_state_after_jni(Register tmp1, Register tmp2) {
@@ -5141,8 +5168,8 @@ void MacroAssembler::load_mirror(Register dst, Register method, Register tmp1, R
   resolve_oop_handle(dst, tmp1, tmp2);
 }
 
-void MacroAssembler::cmp_klass(Register obj, Register klass, Register tmp) {
-  assert_different_registers(obj, klass, tmp);
+void MacroAssembler::cmp_klass(Register obj, Register klass, Register tmp, Register tmp2) {
+  assert_different_registers(obj, klass, tmp, tmp2);
   if (UseCompactObjectHeaders) {
     load_narrow_klass_compact(tmp, obj);
   } else {
@@ -5158,7 +5185,7 @@ void MacroAssembler::cmp_klass(Register obj, Register klass, Register tmp) {
     cmpw(klass, tmp);
     return;
   }
-  decode_klass_not_null(tmp);
+  decode_klass_not_null(tmp, tmp, tmp2);
   cmp(klass, tmp);
 }
 
@@ -5173,11 +5200,11 @@ void MacroAssembler::cmp_klasses_from_objects(Register obj1, Register obj2, Regi
   cmpw(tmp1, tmp2);
 }
 
-void MacroAssembler::store_klass(Register dst, Register src) {
+void MacroAssembler::store_klass(Register dst, Register src, Register tmp) {
   // FIXME: Should this be a store release?  concurrent gcs assumes
   // klass length is valid if klass field is not null.
   assert(!UseCompactObjectHeaders, "not with compact headers");
-  encode_klass_not_null(src);
+  encode_klass_not_null(src, src, tmp);
   strw(src, Address(dst, oopDesc::klass_offset_in_bytes()));
 }
 
@@ -5330,8 +5357,6 @@ MacroAssembler::KlassDecodeMode MacroAssembler::klass_decode_mode() {
 }
 
 MacroAssembler::KlassDecodeMode  MacroAssembler::klass_decode_mode(address base, int shift, const size_t range) {
-  // KlassDecodeMode shouldn't be set already.
-  assert(_klass_decode_mode == KlassDecodeNone, "set once");
 
   if (base == nullptr) {
     return KlassDecodeZero;
@@ -5351,148 +5376,128 @@ MacroAssembler::KlassDecodeMode  MacroAssembler::klass_decode_mode(address base,
     return KlassDecodeMovk;
   }
 
-  // No valid encoding.
-  return KlassDecodeNone;
+  return KlassDecodeFallback;
 }
 
-// Check if one of the above decoding modes will work for given base, shift and range.
-bool MacroAssembler::check_klass_decode_mode(address base, int shift, const size_t range) {
-  return klass_decode_mode(base, shift, range) != KlassDecodeNone;
-}
-
-bool MacroAssembler::set_klass_decode_mode(address base, int shift, const size_t range) {
+void MacroAssembler::initialize_klass_decode_mode(address base, int shift, const size_t range) {
+  // KlassDecodeMode shouldn't be set already.
+  assert(_klass_decode_mode == KlassDecodeNone, "set once");
   _klass_decode_mode = klass_decode_mode(base, shift, range);
-  return _klass_decode_mode != KlassDecodeNone;
+  log_info(metaspace)("Klass Decode Mode: %d", (int)_klass_decode_mode);
 }
 
-static Register pick_different_tmp(Register dst, Register src) {
-  auto tmps = RegSet::of(r0, r1, r2) - RegSet::of(src, dst);
-  return *tmps.begin();
+void MacroAssembler::encode_klass_not_null(Register dst, Register src, Register tmp) {
+  emit_encode_klass_not_null(dst, src, tmp, CompressedKlassPointers::base(),
+                             CompressedKlassPointers::shift(), klass_decode_mode());
 }
 
-void MacroAssembler::encode_klass_not_null_for_aot(Register dst, Register src) {
-  // we have to load the klass base from the AOT constants area but
-  // not the shift because it is not allowed to change
-  int shift = CompressedKlassPointers::shift();
-  assert(shift >= 0 && shift <= CompressedKlassPointers::max_shift(), "unexpected compressed klass shift!");
-  if (dst != src) {
-    // we can load the base into dst, subtract it formthe src and shift down
-    lea(dst, ExternalAddress(CompressedKlassPointers::base_addr()));
-    ldr(dst, dst);
-    sub(dst, src, dst);
-    lsr(dst, dst, shift);
-  } else {
-    // we need an extra register in order to load the coop base
-    Register tmp = pick_different_tmp(dst, src);
-    RegSet regs = RegSet::of(tmp);
-    push(regs, sp);
+void MacroAssembler::emit_encode_klass_not_null(Register dst, Register src, Register tmp,
+                                                address base, int shift, KlassDecodeMode decode_mode) {
+
+  assert_different_registers(tmp, src);
+  assert(tmp != noreg, "valid tmp required");
+
+  if (AOTCodeCache::is_on_for_dump()) {
+    // We are generating code during AOT buildup that will run in *future* processes
+    // with likely different encoding settings. Therefore, we have to load the
+    // encoding base dynamically, we cannot just bake it in as immediate.
+    // Note that we only need to do this for base. The encoding shift would be the
+    // same between build time and runtime: the standard precomputed shift.
+    assert(shift == ArchiveBuilder::precomputed_narrow_klass_shift(), "unexpected compressed klass shift!");
     lea(tmp, ExternalAddress(CompressedKlassPointers::base_addr()));
     ldr(tmp, tmp);
     sub(dst, src, tmp);
     lsr(dst, dst, shift);
-    pop(regs, sp);
-  }
-}
-
-void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
-  if (CompressedKlassPointers::base() != nullptr && AOTCodeCache::is_on_for_dump()) {
-    encode_klass_not_null_for_aot(dst, src);
     return;
   }
 
-  switch (klass_decode_mode()) {
+  switch (decode_mode) {
   case KlassDecodeZero:
-    if (CompressedKlassPointers::shift() != 0) {
-      lsr(dst, src, CompressedKlassPointers::shift());
-    } else {
-      if (dst != src) mov(dst, src);
-    }
+    lsr(dst, src, shift);
     break;
 
   case KlassDecodeXor:
-    if (CompressedKlassPointers::shift() != 0) {
-      eor(dst, src, (uint64_t)CompressedKlassPointers::base());
-      lsr(dst, dst, CompressedKlassPointers::shift());
-    } else {
-      eor(dst, src, (uint64_t)CompressedKlassPointers::base());
-    }
+    eor(dst, src, (uint64_t)base);
+    lsr(dst, dst, shift);
     break;
 
   case KlassDecodeMovk:
-    if (CompressedKlassPointers::shift() != 0) {
-      ubfx(dst, src, CompressedKlassPointers::shift(), 32);
+    if (shift != 0) {
+      ubfx(dst, src, shift, 32);
     } else {
       movw(dst, src);
     }
     break;
 
+  case KlassDecodeFallback: {
+    mov(tmp, base);
+    sub(dst, src, tmp);
+    lsr(dst, dst, shift);
+    break;
+  }
+
   case KlassDecodeNone:
     ShouldNotReachHere();
     break;
   }
+
+#ifdef ASSERT
+  if (tmp != dst) {
+    mov(tmp, 0xdead);
+  }
+#endif // ASSERT
+
 }
 
-void MacroAssembler::encode_klass_not_null(Register r) {
-  encode_klass_not_null(r, r);
+void  MacroAssembler::decode_klass_not_null(Register dst, Register src, Register tmp) {
+  emit_decode_klass_not_null(dst, src, tmp,
+                             CompressedKlassPointers::base(),
+                             CompressedKlassPointers::shift(),
+                             klass_decode_mode());
 }
 
-void MacroAssembler::decode_klass_not_null_for_aot(Register dst, Register src) {
-  // we have to load the klass base from the AOT constants area but
-  // not the shift because it is not allowed to change
-  int shift = CompressedKlassPointers::shift();
-  assert(shift >= 0 && shift <= CompressedKlassPointers::max_shift(), "unexpected compressed klass shift!");
-  if (dst != src) {
-    // we can load the base into dst then add the offset with a suitable shift
-    lea(dst, ExternalAddress(CompressedKlassPointers::base_addr()));
-    ldr(dst, dst);
-    add(dst, dst, src, LSL,  shift);
-  } else {
-    // we need an extra register in order to load the coop base
-    Register tmp = pick_different_tmp(dst, src);
-    RegSet regs = RegSet::of(tmp);
-    push(regs, sp);
+void MacroAssembler::emit_decode_klass_not_null(Register dst, Register src, Register tmp,
+                                                address base, int shift, KlassDecodeMode decode_mode) {
+
+  assert_different_registers(tmp, src);
+  assert(tmp != noreg, "valid tmp required");
+
+  if (AOTCodeCache::is_on_for_dump()) {
+    // We are generating code during AOT buildup that will run in *future* processes
+    // with likely different encoding settings. Therefore, we have to load the
+    // encoding base dynamically, we cannot just bake it in as immediate.
+    // Note that we only need to do this for base. The encoding shift would be the
+    // same between build time and runtime: the standard precomputed shift.
+    assert(shift == ArchiveBuilder::precomputed_narrow_klass_shift(), "unexpected compressed klass shift!");
     lea(tmp, ExternalAddress(CompressedKlassPointers::base_addr()));
     ldr(tmp, tmp);
     add(dst, tmp,  src, LSL,  shift);
-    pop(regs, sp);
-  }
-}
-
-void  MacroAssembler::decode_klass_not_null(Register dst, Register src) {
-  if (AOTCodeCache::is_on_for_dump()) {
-    decode_klass_not_null_for_aot(dst, src);
     return;
   }
 
-  switch (klass_decode_mode()) {
-  case KlassDecodeZero:
-    if (CompressedKlassPointers::shift() != 0) {
-      lsl(dst, src, CompressedKlassPointers::shift());
-    } else {
-      if (dst != src) mov(dst, src);
-    }
+  switch (decode_mode) {
+  case KlassDecodeZero: // 0-1 instructions
+    lsl(dst, src, shift);
     break;
 
-  case KlassDecodeXor:
-    if (CompressedKlassPointers::shift() != 0) {
-      lsl(dst, src, CompressedKlassPointers::shift());
-      eor(dst, dst, (uint64_t)CompressedKlassPointers::base());
-    } else {
-      eor(dst, src, (uint64_t)CompressedKlassPointers::base());
-    }
+  case KlassDecodeXor: // 1-2 instructions
+    lsl(dst, src, shift);
+    eor(dst, dst, (uint64_t)base);
     break;
 
-  case KlassDecodeMovk: {
+  case KlassDecodeMovk: { // 1-3 instructions
     const uint64_t shifted_base =
-      (uint64_t)CompressedKlassPointers::base() >> CompressedKlassPointers::shift();
+      (uint64_t)base >> shift;
 
     if (dst != src) movw(dst, src);
     movk(dst, shifted_base >> 32, 32);
+    lsl(dst, dst, shift);
+    break;
+  }
 
-    if (CompressedKlassPointers::shift() != 0) {
-      lsl(dst, dst, CompressedKlassPointers::shift());
-    }
-
+  case KlassDecodeFallback: { // 3-4 instructions
+    mov(tmp, base);
+    add(dst, tmp, src, LSL, shift);
     break;
   }
 
@@ -5500,10 +5505,14 @@ void  MacroAssembler::decode_klass_not_null(Register dst, Register src) {
     ShouldNotReachHere();
     break;
   }
-}
 
-void  MacroAssembler::decode_klass_not_null(Register r) {
-  decode_klass_not_null(r, r);
+#ifdef ASSERT
+  // Always clobber tmp
+  if (tmp != dst) {
+    mov(tmp, 0xdead);
+  }
+#endif // ASSERT
+
 }
 
 void  MacroAssembler::set_narrow_oop(Register dst, jobject obj) {
@@ -7155,7 +7164,7 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register t1, R
   }
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
-    load_klass(t1, obj);
+    load_klass(t1, obj, rscratch1);
     ldrb(t1, Address(t1, Klass::misc_flags_offset()));
     tst(t1, KlassFlags::_misc_is_value_based_class);
     br(Assembler::NE, slow);
@@ -7180,8 +7189,7 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register t1, R
   assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid lea");
   orr(mark, mark, markWord::unlocked_value);
   eor(t, mark, markWord::unlocked_value);
-  cmpxchg(/*addr*/ obj, /*expected*/ mark, /*new*/ t, Assembler::xword,
-          /*acquire*/ true, /*release*/ false, /*weak*/ false, noreg);
+  cmpxchg(/*addr*/ obj, /*expected*/ mark, /*new*/ t, Assembler::xword, memory_order_acquire);
   br(Assembler::NE, slow);
 
   bind(push);
@@ -7249,8 +7257,7 @@ void MacroAssembler::fast_unlock(Register obj, Register t1, Register t2, Registe
   // Try to unlock. Transition lock bits 0b00 => 0b01
   assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid lea");
   orr(t, mark, markWord::unlocked_value);
-  cmpxchg(obj, mark, t, Assembler::xword,
-          /*acquire*/ false, /*release*/ true, /*weak*/ false, noreg);
+  cmpxchg(obj, mark, t, Assembler::xword, memory_order_release);
   br(Assembler::EQ, unlocked);
 
   bind(push_and_slow);

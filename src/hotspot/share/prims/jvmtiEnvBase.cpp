@@ -35,6 +35,7 @@
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
+#include "prims/downcallLinker.hpp"
 #include "prims/jvmtiEnvBase.hpp"
 #include "prims/jvmtiEventController.inline.hpp"
 #include "prims/jvmtiExtensions.hpp"
@@ -1371,16 +1372,10 @@ JvmtiEnvBase::set_frame_pop(JvmtiThreadState* state, javaVFrame* jvf, jint depth
       return JVMTI_ERROR_OPAQUE_FRAME;
     }
 
-    if (state->is_virtual() && (thread == nullptr || !thread->is_vthread_mounted())) { // unmounted virtual thread
-      assert(fr.is_heap_frame(), "sanity check");
-      fr = jvf->stack_chunk()->derelativize(fr);
-      jvf->stack_chunk()->force_slow_path();
-      fr.deoptimize(nullptr);
-    } else { // platform thread or mounted virtual thread
-      if (fr.is_heap_frame()) {
-        fr = jvf->stack_chunk()->derelativize(fr);
-        jvf->stack_chunk()->force_slow_path();
-      }
+    if (fr.is_heap_frame()) {
+      assert(state->is_virtual(), "invariant");
+      fr.deoptimize(nullptr, jvf->stack_chunk());
+    } else {
       Deoptimization::deoptimize(thread, fr);
     }
   }
@@ -2318,6 +2313,7 @@ SetForceEarlyReturn::doit(Thread *target) {
   // Set pending step flag for this early return.
   // It is cleared when next step event is posted.
   _state->set_pending_step_for_earlyret();
+  _state->invalidate_cur_stack_depth();
 }
 
 void
@@ -2400,6 +2396,101 @@ JvmtiModuleClosure::get_all_modules(JvmtiEnv* env, jint* module_count_ptr, jobje
   *modules_ptr = array;
   *module_count_ptr = len;
   return JVMTI_ERROR_NONE;
+}
+
+
+static bool is_async_unsafe_method(Method* m) {
+  return m != nullptr &&
+         (m->method_holder() == vmClasses::VirtualThread_klass() ||
+         // Checks for VirtualThread$VThreadContinuation$1.run
+         (m->name() == vmSymbols::run_method_name() && m->jvmti_hide_events()));
+}
+
+class StopThreadAsyncClosure : public AsyncExceptionHandshakeClosure {
+ public:
+  StopThreadAsyncClosure(OopHandle& exception)
+    : AsyncExceptionHandshakeClosure(exception, "StopThreadAsyncClosure") {}
+
+  virtual void do_thread(Thread* thread) {
+    JavaThread* java_thread = JavaThread::cast(thread);
+    DEBUG_ONLY(vframeStream vfst(java_thread);)
+    assert(vfst.at_end() || !is_async_unsafe_method(vfst.method()), "missing transition to Java with no async processing");
+    assert(!java_thread->is_in_vthread_transition(), "should not throw inside transition");
+
+    AsyncExceptionHandshakeClosure::do_thread(java_thread);
+  }
+};
+
+StopThreadClosure::StopThreadClosure(JavaThread* current_thread, oop exception)
+  : JvmtiUnitedHandshakeClosure("StopThread"), _exception(current_thread, exception) {}
+
+void
+StopThreadClosure::doit(JavaThread* target) {
+  OopHandle e(Universe::vm_global(), _exception());
+  target->install_async_exception(new StopThreadAsyncClosure(e));
+  _result = JVMTI_ERROR_NONE;
+}
+
+void
+StopThreadClosure::do_thread(Thread* target) {
+  assert(_target_jt == JavaThread::cast(target), "sanity check");
+
+  oop target_oop = _target_jt->threadObj();
+  if (target_oop->is_a(vmClasses::BaseVirtualThread_klass())) {
+    if (!_self && !JvmtiEnvBase::is_vthread_suspended(target_oop, _target_jt)) {
+      _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
+      return;
+    }
+  }
+  doit(_target_jt);
+}
+
+void
+StopThreadClosure::do_vthread(Handle target_h) {
+  if (!_self && !JvmtiVTSuspender::is_vthread_suspended(target_h())) {
+    _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
+    return;
+  }
+
+  if (_target_jt == nullptr) {
+    _result = JVMTI_ERROR_OPAQUE_FRAME;
+    return;
+  }
+
+  if (_target_jt->on_monitor_waited_event()) {
+    // The exception could end up being thrown in the
+    // carrier so skip this case.
+    _result = JVMTI_ERROR_OPAQUE_FRAME;
+    return;
+  }
+
+  vframeStream vfst(_target_jt);
+  Method* m = vfst.method();
+  if (is_async_unsafe_method(m)) {
+    // Throwing from a VirtualThread method might leave the
+    // virtual thread in an inconsistent state. The current
+    // implementation simply checks the top method, which is
+    // enough to fix known issues where transition bits could
+    // be left in an invalid state and trigger assertion failures.
+    // A more thorough approach would be to walk the stack and
+    // check for VirtualThread methods further up (excluding
+    // VirtualThread.run and VirtualThread$VThreadContinuation$1.run
+    // which are always present).
+    _result = JVMTI_ERROR_OPAQUE_FRAME;
+    return;
+  }
+
+  if (_target_jt->at_no_async_entry_count() > 0
+      || _target_jt->is_at_poll_safepoint()
+      || DowncallLinker::is_downcall_stub(_target_jt->last_frame().cb())) {
+    // The target will defer processing of the async exception to
+    // some later safepoint poll. We cannot guarantee where that
+    // will be so we conservatively skip this case.
+    _result = JVMTI_ERROR_OPAQUE_FRAME;
+    return;
+  }
+
+  doit(_target_jt);
 }
 
 void

@@ -135,7 +135,6 @@ class outputStream;
   LOG_TAG(module) \
   LOG_TAG(monitorinflation) \
   LOG_TAG(monitormismatch) \
-  LOG_TAG(monitortable) \
   LOG_TAG(native) \
   LOG_TAG(nestmates) \
   LOG_TAG(nmethod) \
@@ -175,6 +174,7 @@ class outputStream;
   LOG_TAG(refine) \
   LOG_TAG(region) \
   LOG_TAG(reloc) \
+  LOG_TAG(relocator) \
   LOG_TAG(remset) \
   LOG_TAG(resolve) \
   LOG_TAG(safepoint) \

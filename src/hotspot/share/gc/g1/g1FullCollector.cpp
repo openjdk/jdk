@@ -23,6 +23,7 @@
  */
 
 #include "classfile/classLoaderDataGraph.hpp"
+#include "code/codeCache.hpp"
 #include "cppstdlib/new.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1FullCollector.inline.hpp"
@@ -192,7 +193,7 @@ void G1FullCollector::prepare_collection() {
 
   // Verification needs the bitmap, so we should clear the bitmap only later.
   bool in_concurrent_cycle = _heap->abort_concurrent_cycle();
-  _heap->verify_before_full_collection();
+  _heap->verify_before_full_collection(in_concurrent_cycle);
   if (in_concurrent_cycle) {
     GCTraceTime(Debug, gc) debug("Clear Bitmap");
     _heap->concurrent_mark()->clear_bitmap(_heap->workers());
@@ -329,6 +330,8 @@ void G1FullCollector::phase1_mark_live_objects() {
     pt.print_all_references();
     assert(marker(0)->task_queue()->is_empty(), "Should be no oops on the stack");
   }
+
+  CodeCache::on_gc_marking_cycle_finish();
 
   {
     GCTraceTime(Debug, gc, phases) debug("Phase 1: Flush Mark Stats Cache", scope()->timer());

@@ -3560,23 +3560,24 @@ address StubGenerator::generate_generic_copy(address byte_copy_entry, address sh
   __ testl(r11_length, r11_length);
   __ jccb(Assembler::negative, L_failed_0);
 
-  __ load_klass(r10_src_klass, src, rklass_tmp);
+  __ load_narrow_klass(r10_src_klass, src);
 #ifdef ASSERT
   //  assert(src->klass() != nullptr);
   {
     BLOCK_COMMENT("assert klasses not null {");
     Label L1, L2;
-    __ testptr(r10_src_klass, r10_src_klass);
+    __ testl(r10_src_klass, r10_src_klass);
     __ jcc(Assembler::notZero, L2);   // it is broken if klass is null
     __ bind(L1);
     __ stop("broken null klass");
     __ bind(L2);
-    __ load_klass(rax, dst, rklass_tmp);
-    __ cmpq(rax, 0);
+    __ load_narrow_klass(rax, dst);
+    __ testl(rax, rax);
     __ jcc(Assembler::equal, L1);     // this would be broken also
     BLOCK_COMMENT("} assert klasses not null done");
   }
 #endif
+  __ decode_klass_not_null(r10_src_klass, rklass_tmp);
 
   // Load layout helper (32-bits)
   //

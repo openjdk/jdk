@@ -697,7 +697,9 @@ void LIR_Assembler::const2mem(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmi
       }
       break;
 
-    case T_BOOLEAN: // fall through
+    case T_BOOLEAN:
+      __ movb(as_Address(addr), c->as_jint() & 1);
+      break;
     case T_BYTE:
       __ movb(as_Address(addr), c->as_jint() & 0xFF);
       break;

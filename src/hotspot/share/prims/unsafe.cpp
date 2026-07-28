@@ -190,21 +190,12 @@ class MemoryAccess : StackObj {
   }
 
   template <typename U>
-  U normalize_for_write(U x) {
+  U normalize(U x) {
     return x;
   }
 
-  jboolean normalize_for_write(jboolean x) {
-    return x & 1;
-  }
-
-  template <typename U>
-  U normalize_for_read(U x) {
-    return x;
-  }
-
-  jboolean normalize_for_read(jboolean x) {
-    return x != 0;
+  jboolean normalize(jboolean x) {
+    return (x & 1) != 0;
   }
 
 public:
@@ -215,7 +206,7 @@ public:
 
   T get() {
     GuardUnsafeAccess guard(_thread);
-    return normalize_for_read(*addr());
+    return normalize(*addr());
   }
 
   // we use this method at some places for writing to 0 e.g. to cause a crash;
@@ -223,19 +214,19 @@ public:
   ATTRIBUTE_NO_UBSAN
   void put(T x) {
     GuardUnsafeAccess guard(_thread);
-    *addr() = normalize_for_write(x);
+    *addr() = normalize(x);
   }
 
 
   T get_volatile() {
     GuardUnsafeAccess guard(_thread);
     volatile T ret = RawAccess<MO_SEQ_CST>::load(addr());
-    return normalize_for_read(ret);
+    return normalize(ret);
   }
 
   void put_volatile(T x) {
     GuardUnsafeAccess guard(_thread);
-    RawAccess<MO_SEQ_CST>::store(addr(), normalize_for_write(x));
+    RawAccess<MO_SEQ_CST>::store(addr(), normalize(x));
   }
 };
 

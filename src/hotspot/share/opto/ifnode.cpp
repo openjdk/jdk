@@ -669,9 +669,11 @@ const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj
       BoolNode* bol = iff->in(1)->as_Bool();
       if (bol->in(1) && bol->in(1)->is_Cmp()) {
         const CmpNode* cmp  = bol->in(1)->as_Cmp();
-        // Val is always the lhs of the comparision: val <test> cmp2
-        if (cmp->in(1) == val) {
-          assert(cmp->Opcode() == Op_CmpI, "signed comparison required");
+        // Val is always the lhs of the comparision: val CmpI cmp2
+        if (cmp->Opcode() == Op_CmpI && cmp->in(1) == val) {
+          // Only CmpI allowed, assumed by signed logic below.
+          // We could extend to CmpU in the future, and would
+          // have to implement unsigned range logic below.
           const TypeInt* cmp2_t = gvn->type(cmp->in(2))->isa_int();
           if (cmp2_t != nullptr) {
             jint lo = cmp2_t->_lo;

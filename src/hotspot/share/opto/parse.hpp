@@ -480,6 +480,7 @@ class Parse : public GraphKit {
   // Helper: Merge the current mapping into the given basic block
   void merge_common(Block* target, int pnum);
   // Helper functions for merging individual cells.
+  Node* maybe_narrow_phi_input(Node* ctrl, Node* n, const Type* phi_type);
   PhiNode *ensure_phi(       int idx, bool nocreate = false);
   PhiNode *ensure_memory_phi(int idx, bool nocreate = false);
   // Helper to merge the current memory state into the given basic block

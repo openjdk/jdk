@@ -5434,17 +5434,19 @@ void MacroAssembler::load_narrow_klass_compact(Register dst, Register src) {
   shrq(dst, markWord::klass_shift);
 }
 
+void MacroAssembler::load_narrow_klass(Register dst, Register src) {
+  if (UseCompactObjectHeaders) {
+    load_narrow_klass_compact(dst, src);
+  } else {
+    movl(dst, Address(src, oopDesc::klass_offset_in_bytes()));
+  }
+}
+
 void MacroAssembler::load_klass(Register dst, Register src, Register tmp) {
   assert_different_registers(src, tmp);
   assert_different_registers(dst, tmp);
-
-  if (UseCompactObjectHeaders) {
-    load_narrow_klass_compact(dst, src);
-    decode_klass_not_null(dst, tmp);
-  } else {
-    movl(dst, Address(src, oopDesc::klass_offset_in_bytes()));
-    decode_klass_not_null(dst, tmp);
-  }
+  load_narrow_klass(dst, src);
+  decode_klass_not_null(dst, tmp);
 }
 
 void MacroAssembler::store_klass(Register dst, Register src, Register tmp) {
@@ -5872,7 +5874,7 @@ void MacroAssembler::xmm_clear_mem(Register base, Register cnt, Register rtmp, X
   // cnt - number of qwords (8-byte words).
   // base - start address, qword aligned.
   Label L_zero_64_bytes, L_loop, L_sloop, L_tail, L_end;
-  bool use64byteVector = (MaxVectorSize == 64) && (CopyAVX3Threshold == 0);
+  bool use64byteVector = (MaxVectorSize == 64) && (CopyAVX3Threshold == 0) && VM_Version::supports_bmi2();
   if (use64byteVector) {
     vpxor(xtmp, xtmp, xtmp, AVX_512bit);
   } else if (MaxVectorSize >= 32) {
@@ -5919,7 +5921,7 @@ void MacroAssembler::xmm_clear_mem(Register base, Register cnt, Register rtmp, X
   BIND(L_tail);
   addptr(cnt, 4);
   jccb(Assembler::lessEqual, L_end);
-  if (UseAVX > 2 && MaxVectorSize >= 32 && VM_Version::supports_avx512vl()) {
+  if (UseAVX > 2 && MaxVectorSize >= 32 && VM_Version::supports_avx512vl() && VM_Version::supports_bmi2()) {
     fill32_masked(3, base, 0, xtmp, mask, cnt, rtmp);
   } else {
     decrement(cnt);
@@ -6982,7 +6984,7 @@ void MacroAssembler::vectorized_mismatch(Register obja, Register objb, Register 
   xorq(result, result);
 
   if ((AVX3Threshold == 0) && (UseAVX > 2) &&
-      VM_Version::supports_avx512vlbw() && UseCountTrailingZerosInstruction) {
+      VM_Version::supports_avx512vlbw() && UseCountTrailingZerosInstruction && VM_Version::supports_bmi2()) {
     Label VECTOR64_LOOP, VECTOR64_NOT_EQUAL, VECTOR32_TAIL;
 
     cmpq(length, 64);
@@ -10106,10 +10108,6 @@ void MacroAssembler::load_aotrc_address(Register reg, address a) {
 }
 
 void MacroAssembler::setcc(Assembler::Condition comparison, Register dst) {
-  if (VM_Version::supports_apx_f()) {
-    esetzucc(comparison, dst);
-  } else {
-    setb(comparison, dst);
-    movzbl(dst, dst);
-  }
+  setb(comparison, dst);
+  movzbl(dst, dst);
 }

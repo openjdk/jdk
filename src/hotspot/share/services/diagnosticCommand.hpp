@@ -654,17 +654,20 @@ public:
 //   VM.systemdictionary -verbose: for dumping the system dictionary table
 //
 class VM_DumpHashtable : public VM_Operation {
+public:
+  enum DumpKind {
+    DumpSymbols,
+    DumpStrings,
+    DumpSysDict
+  };
+
 private:
   outputStream* _out;
-  int _which;
+  DumpKind _which;
   bool _verbose;
+
 public:
-  enum {
-    DumpSymbols = 1 << 0,
-    DumpStrings = 1 << 1,
-    DumpSysDict = 1 << 2  // not implemented yet
-  };
-  VM_DumpHashtable(outputStream* out, int which, bool verbose) {
+  VM_DumpHashtable(outputStream* out, DumpKind which, bool verbose) {
     _out = out;
     _which = which;
     _verbose = verbose;
