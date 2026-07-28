@@ -104,7 +104,7 @@ public class PolynomialP256Bench {
 
     @Benchmark
     public MutableIntegerModuloP benchAssign() {
-        MutableIntegerModuloP test1;
+        MutableIntegerModuloP test1 = X.mutable();
         MutableIntegerModuloP test2 = one.mutable();
         int[] lScalarBits = scalarBits;
 
