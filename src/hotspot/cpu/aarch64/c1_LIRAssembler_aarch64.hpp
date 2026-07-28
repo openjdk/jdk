@@ -71,9 +71,10 @@ friend class ArrayCopyStub;
   void deoptimize_trap(CodeEmitInfo *info);
 
   enum {
-    // call stub: CompiledDirectCall::to_interp_stub_size() +
-    //            CompiledDirectCall::to_trampoline_stub_size()
-    _call_stub_size = 13 * NativeInstruction::instruction_size,
+    // call stub: CompiledDirectCall::to_interp_stub_size() (16 B +
+    //            4 B alignment allowance = 5 instr) +
+    //            CompiledDirectCall::to_trampoline_stub_size() (5 instr)
+    _call_stub_size = 10 * NativeInstruction::instruction_size,
     _exception_handler_size = DEBUG_ONLY(1*K) NOT_DEBUG(175),
     _deopt_handler_size = 4 * NativeInstruction::instruction_size
   };

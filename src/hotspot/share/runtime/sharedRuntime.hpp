@@ -704,6 +704,10 @@ class AdapterHandlerEntry : public MetaspaceObj {
  private:
   AdapterFingerPrint* _fingerprint;
   AdapterBlob* _adapter_blob;
+#if defined(AARCH64) && !defined(ZERO)
+  address _c2i_entry;   // Cache of _adapter_blob->c2i_entry(), loaded by the
+                        // aarch64 static-call dispatch adapter
+#endif
   uint _id;
   bool _linked;
 
@@ -719,6 +723,9 @@ class AdapterHandlerEntry : public MetaspaceObj {
   AdapterHandlerEntry(int id, AdapterFingerPrint* fingerprint) :
     _fingerprint(fingerprint),
     _adapter_blob(nullptr),
+#if defined(AARCH64) && !defined(ZERO)
+    _c2i_entry(nullptr),
+#endif
     _id(id),
     _linked(false)
 #ifdef ASSERT
@@ -750,6 +757,7 @@ class AdapterHandlerEntry : public MetaspaceObj {
 
   void set_adapter_blob(AdapterBlob* blob) {
     _adapter_blob = blob;
+    cache_c2i_entry();
     _linked = true;
   }
 
@@ -761,6 +769,15 @@ class AdapterHandlerEntry : public MetaspaceObj {
     return nullptr;
 #endif // ZERO
   }
+
+#if defined(AARCH64) && !defined(ZERO)
+  void cache_c2i_entry()         { _c2i_entry = _adapter_blob->c2i_entry(); }
+  void clear_c2i_entry_cache()   { _c2i_entry = nullptr; }
+  static ByteSize c2i_entry_offset() { return byte_offset_of(AdapterHandlerEntry, _c2i_entry); }
+#else
+  void cache_c2i_entry()         {}
+  void clear_c2i_entry_cache()   {}
+#endif
 
   address get_c2i_entry() const {
 #ifndef ZERO

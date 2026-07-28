@@ -27,6 +27,7 @@
 #include "asm/assembler.inline.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "ci/ciEnv.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "compiler/compileTask.hpp"
 #include "compiler/disassembler.hpp"
@@ -55,6 +56,7 @@
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/integerCast.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -921,31 +923,62 @@ int MacroAssembler::max_trampoline_stub_size() {
 }
 
 void MacroAssembler::emit_static_call_stub() {
-  // CompiledDirectCall::set_to_interpreted knows the
-  // exact layout of this stub.
-
-  isb();
-  mov_metadata(rmethod, nullptr);
-
-  // Jump to the entry point of the c2i stub.
-  if (codestub_branch_needs_far_jump()) {
-    movptr(rscratch1, 0);
-    br(rscratch1);
-  } else {
-    b(pc());
-  }
+  address start = pc();
+  address slot = align_up(start + NativeStaticCallStub::body_size, wordSize);
+  int metadata_index = oop_recorder()->allocate_metadata_index(nullptr);
+  relocate(metadata_Relocation::spec(metadata_index));
+  ldr(rmethod, slot);
+  b(static_call_dispatch_adapter());
+  align(wordSize);
+  assert(pc() == slot, "Method* slot must follow the padded body");
+  emit_int64(0);  // Method* slot, filled in by CompiledDirectCall::set_to_interpreted
 }
 
-int MacroAssembler::static_call_stub_size() {
-  // During AOT production run AOT and JIT compiled code
-  // are used at the same time. We need this size
-  // to be the same for both types of code.
-  if (!codestub_branch_needs_far_jump() && !AOTCodeCache::is_on_for_use()) {
-    // isb; movk; movz; movz; b
-    return 5 * NativeInstruction::instruction_size;
+int MacroAssembler::max_static_call_stub_size() {
+  return NativeStaticCallStub::max_instruction_size;
+}
+
+int MacroAssembler::static_call_dispatch_adapter_size() {
+  // ldr rscratch1, [rmethod]
+  // ldr rscratch1, [rscratch1]
+  // br  rscratch1
+  return 3 * NativeInstruction::instruction_size;
+}
+
+// Emit, once per nmethod, the static call dispatch adapter used by static call stubs.
+//
+// dispatch_adapter:
+//   ldr   rscratch1, [rmethod,   #Method::adapter_offset()] ; AdapterHandlerEntry*
+//   ldr   rscratch1, [rscratch1, #AdapterHandlerEntry::c2i_entry_offset()]
+//   br    rscratch1
+bool MacroAssembler::ensure_static_call_dispatch_adapter() {
+  assert(code_section() == code()->insts(),
+         "must be called from the insts section, outside any start_a_stub bracket");
+  if (code()->static_call_dispatch_adapter_offset() != -1) {
+    return true;
   }
-  // isb; movk; movz; movz; movk; movz; movz; br
-  return 8 * NativeInstruction::instruction_size;
+
+  if (start_a_stub(static_call_dispatch_adapter_size()) == nullptr) {
+    return false;  // CodeBuffer::expand failed
+  }
+
+  const int adapter_offset = code()->stubs()->size();
+  ldr(rscratch1, Address(rmethod, Method::adapter_offset()));
+  ldr(rscratch1, Address(rscratch1, AdapterHandlerEntry::c2i_entry_offset()));
+  br(rscratch1);
+
+  assert(code()->stubs()->size() - adapter_offset == static_call_dispatch_adapter_size(),
+         "adapter size mismatch");
+
+  code()->set_static_call_dispatch_adapter_offset(adapter_offset);
+  end_a_stub();
+  return true;
+}
+
+address MacroAssembler::static_call_dispatch_adapter() {
+  const int adapter_offset = code()->static_call_dispatch_adapter_offset();
+  assert(adapter_offset != -1, "dispatch adapter not emitted for this nmethod");
+  return code()->stubs()->start() + adapter_offset;
 }
 
 void MacroAssembler::c2bool(Register x) {

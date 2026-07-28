@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, Red Hat Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,27 +19,22 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+package compiler.calls;
 
-#ifndef CPU_AARCH64_CODEBUFFER_AARCH64_HPP
-#define CPU_AARCH64_CODEBUFFER_AARCH64_HPP
+/*
+ * @test
+ * @library /test/lib
+ * @requires vm.debug == true
+ * @requires vm.compiler1.enabled
+ * @requires vm.flagless
+ * @build compiler.calls.TestStaticCallStubSizingBase
+ * @run driver compiler.calls.TestStaticCallStubSizingC1
+ */
+public class TestStaticCallStubSizingC1 {
 
-private:
-  void pd_initialize() {}
-  bool pd_finalize_stubs();
-
-  // Stubs section relative offset of nmethod's shared static call dispatch
-  // adapter. It is preserved across expand()/take_over_code_from().
-  int _static_call_dispatch_adapter_offset = -1;
-
-public:
-  int  static_call_dispatch_adapter_offset() const    { return _static_call_dispatch_adapter_offset; }
-  void set_static_call_dispatch_adapter_offset(int o) { _static_call_dispatch_adapter_offset = o; }
-
-  void flush_bundle(bool start_new_bundle) {}
-  static constexpr bool supports_shared_stubs() { return true; }
-
-  void share_trampoline_for(address dest, int caller_offset);
-
-#endif // CPU_AARCH64_CODEBUFFER_AARCH64_HPP
+    public static void main(String[] args) throws Exception {
+        TestStaticCallStubSizingBase.runVM("-XX:TieredStopAtLevel=1");
+        System.out.println("TestStaticCallStubSizingC1: OK");
+    }
+}
