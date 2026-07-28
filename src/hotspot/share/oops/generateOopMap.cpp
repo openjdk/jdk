@@ -2242,9 +2242,9 @@ void GenerateOopMap::rewrite_refval_conflicts()
   // Tracing flag
   _did_rewriting = true;
 
-  if (log_is_enabled(Trace, generateoopmap)) {
+  if (log_is_enabled(Debug, generateoopmap)) {
     ResourceMark rm;
-    LogStream st(Log(generateoopmap)::trace());
+    LogStream st(Log(generateoopmap)::debug());
     st.print_cr("ref/value conflict for method %s - bytecodes are getting rewritten", method()->name()->as_C_string());
     method()->print_on(&st);
     method()->print_codes_on(&st);
@@ -2502,32 +2502,9 @@ void GenerateOopMap::update_ret_adr_at_TOS(int bci, int delta) {
 
 // ===================================================================
 
-#ifndef PRODUCT
-int ResolveOopMapConflicts::_nof_invocations  = 0;
-int ResolveOopMapConflicts::_nof_rewrites     = 0;
-int ResolveOopMapConflicts::_nof_relocations  = 0;
-#endif
-
 methodHandle ResolveOopMapConflicts::do_potential_rewrite(TRAPS) {
   if (!compute_map(THREAD)) {
     THROW_HANDLE_(exception(), methodHandle());
   }
-
-#ifndef PRODUCT
-  // Tracking and statistics
-  if (PrintRewrites) {
-    _nof_invocations++;
-    if (did_rewriting()) {
-      _nof_rewrites++;
-      if (did_relocation()) _nof_relocations++;
-      tty->print("Method was rewritten %s: ", (did_relocation()) ? "and relocated" : "");
-      method()->print_value(); tty->cr();
-      tty->print_cr("Cand.: %d rewrts: %d (%d%%) reloc.: %d (%d%%)",
-          _nof_invocations,
-          _nof_rewrites,    (_nof_rewrites    * 100) / _nof_invocations,
-          _nof_relocations, (_nof_relocations * 100) / _nof_invocations);
-    }
-  }
-#endif
   return methodHandle(THREAD, method());
 }

@@ -2636,7 +2636,7 @@ void ThawBase::clear_bitmap_bits(address start, address end) {
 
 intptr_t* ThawBase::handle_preempted_continuation(intptr_t* sp, Continuation::preempt_kind preempt_kind, bool fast_case) {
   frame top(sp);
-  assert(top.pc() == *(address*)(sp - frame::sender_sp_ret_address_offset()), "");
+  assert(top.pc() == ContinuationHelper::return_address_at(sp - frame::sender_sp_ret_address_offset()), "");
   DEBUG_ONLY(verify_frame_kind(top, preempt_kind);)
   NOT_PRODUCT(int64_t tid = _thread->monitor_owner_id();)
 
@@ -3246,8 +3246,6 @@ static void log_frames(JavaThread* thread) {
 
 static void log_frames_after_thaw(JavaThread* thread, ContinuationWrapper& cont, intptr_t* sp) {
   intptr_t* sp0 = sp;
-  address pc0 = *(address*)(sp - frame::sender_sp_ret_address_offset());
-
   bool preempted = false;
   stackChunkOop tail = cont.tail();
   if (tail != nullptr && tail->preempted()) {

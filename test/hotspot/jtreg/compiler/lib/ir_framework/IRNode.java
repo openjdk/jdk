@@ -763,6 +763,26 @@ public class IRNode {
         beforeMatchingNameRegex(DIV_MOD_L, "DivModL");
     }
 
+    public static final String DIV_VB = VECTOR_PREFIX + "DIV_VB" + POSTFIX;
+    static {
+        vectorNode(DIV_VB, "DivVB", TYPE_BYTE);
+    }
+
+    public static final String DIV_VS = VECTOR_PREFIX + "DIV_VS" + POSTFIX;
+    static {
+        vectorNode(DIV_VS, "DivVS", TYPE_SHORT);
+    }
+
+    public static final String DIV_VI = VECTOR_PREFIX + "DIV_VI" + POSTFIX;
+    static {
+        vectorNode(DIV_VI, "DivVI", TYPE_INT);
+    }
+
+    public static final String DIV_VL = VECTOR_PREFIX + "DIV_VL" + POSTFIX;
+    static {
+        vectorNode(DIV_VL, "DivVL", TYPE_LONG);
+    }
+
     public static final String DIV_VHF = VECTOR_PREFIX + "DIV_VHF" + POSTFIX;
     static {
         vectorNode(DIV_VHF, "DivVHF", TYPE_SHORT);
