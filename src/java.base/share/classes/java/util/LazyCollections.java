@@ -593,7 +593,7 @@ final class LazyCollections {
 
         private Mutexes(int length) {
             this.mutexes = new Object[length];
-            this.counter = length;
+            UNSAFE.putIntRelease(this, COUNTER_OFFSET, length);
         }
 
         private Object acquireMutex(long offset) {
@@ -618,10 +618,13 @@ final class LazyCollections {
 
         private void releaseMutex(long offset) {
             // Defensively snapshot and check for null as we are using Unsafe directly.
-            final Object[] mutexes = Objects.requireNonNull(this.mutexes);
+            final Object[] mutexes = Objects.requireNonNull(this.mutexes, "Should not reach here");
             // Replace the old mutex with a tomb stone since now the old mutex can be collected.
             UNSAFE.putReferenceVolatile(mutexes, offset, TOMB_STONE);
+            // This access mode provides both acquire and release ordering which is
+            // needed here.
             if (UNSAFE.getAndAddInt(this, COUNTER_OFFSET, -1) == 1) {
+                // Make the mutexes array eligible for garbage collection.
                 this.mutexes = null;
             }
         }
