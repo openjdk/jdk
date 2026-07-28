@@ -44,5 +44,6 @@ public class Sanity {
         Assert.assertTrue(Object.class.desiredAssertionStatus() == systemDefaultOn);
         Assert.assertTrue(Object[].class.desiredAssertionStatus() == systemDefaultOn);
         Assert.assertTrue(Sanity.class.desiredAssertionStatus() == userDefaultOn);
+        Assert.assertTrue(Sanity[].class.desiredAssertionStatus() == userDefaultOn);
     }
 }
