@@ -126,12 +126,47 @@ public class TestReplayV4 extends DumpReplayBase {
             throw new Error("Can't find replay: " + t, t);
         }
 
-        var first_insanities = ReplayFile.ParsedReplayFile.checkSanity(firstParsedReplay);
-        Asserts.assertTrue(first_insanities.isEmpty(), makeMessageFromList("Insane first replay file", first_insanities));
-        var second_insanities = ReplayFile.ParsedReplayFile.checkSanity(secondParsedReplay);
-        Asserts.assertTrue(second_insanities.isEmpty(), makeMessageFromList("Insane second replay file", second_insanities));
+        // First, let's make sure replay files are not crazy.
+        var firstInsanities = ReplayFile.ParsedReplayFile.checkSanity(firstParsedReplay);
+        Asserts.assertTrue(firstInsanities.isEmpty(), makeMessageFromList("Insane first replay file", firstInsanities));
+        var secondInsanities = ReplayFile.ParsedReplayFile.checkSanity(secondParsedReplay);
+        Asserts.assertTrue(secondInsanities.isEmpty(), makeMessageFromList("Insane second replay file", secondInsanities));
+
+        // Now, we make sure they have equivalent enough content.
         var differences = ReplayFile.ParsedReplayFile.findDifferences(firstParsedReplay, secondParsedReplay);
         Asserts.assertTrue(differences.isEmpty(), makeMessageFromList("Differences", differences));
+
+        // Finally, we check a few facts about the second replay file.
+        var oArrNullCmdOpt = secondParsedReplay.findStaticFieldCommand("compiler/ciReplay/TestReplayV4$Test", "oArrNull");
+        Asserts.assertTrue(oArrNullCmdOpt.isPresent());
+        var oArrNullCmd = oArrNullCmdOpt.get();
+        Asserts.assertTrue(oArrNullCmd instanceof ReplayFile.ParsedReplayFile.StaticFieldCommandNullArray);
+
+        var oArrRefArrayCmdOpt = secondParsedReplay.findStaticFieldCommand("compiler/ciReplay/TestReplayV4$Test", "oArrRefArray");
+        Asserts.assertTrue(oArrRefArrayCmdOpt.isPresent());
+        var oArrRefArrayCmdUntyped = oArrRefArrayCmdOpt.get();
+        Asserts.assertTrue(oArrRefArrayCmdUntyped instanceof ReplayFile.ParsedReplayFile.StaticFieldCommandRefArray);
+        var oArrRefArrayCmd = (ReplayFile.ParsedReplayFile.StaticFieldCommandRefArray)oArrRefArrayCmdUntyped;
+        Asserts.assertFalse(oArrRefArrayCmd.nullFree());
+        Asserts.assertEquals(oArrRefArrayCmd.length(), 2);
+
+        var oArrNullableAtomicArrayCmdOpt = secondParsedReplay.findStaticFieldCommand("compiler/ciReplay/TestReplayV4$Test", "oArrNullableAtomicArray");
+        Asserts.assertTrue(oArrNullableAtomicArrayCmdOpt.isPresent());
+        var oArrNullableAtomicArrayCmdUntyped = oArrNullableAtomicArrayCmdOpt.get();
+        Asserts.assertTrue(oArrNullableAtomicArrayCmdUntyped instanceof ReplayFile.ParsedReplayFile.StaticFieldCommandFlatArray);
+        var oArrNullableAtomicArrayCmd = (ReplayFile.ParsedReplayFile.StaticFieldCommandFlatArray)oArrNullableAtomicArrayCmdUntyped;
+        Asserts.assertFalse(oArrNullableAtomicArrayCmd.nullFree());
+        Asserts.assertFalse(oArrNullableAtomicArrayCmd.nonAtomic());
+        Asserts.assertEquals(oArrNullableAtomicArrayCmd.length(), 2);
+
+        var oArrNullRestrictedAtomicArrayCmdOpt = secondParsedReplay.findStaticFieldCommand("compiler/ciReplay/TestReplayV4$Test", "oArrNullRestrictedAtomicArray");
+        Asserts.assertTrue(oArrNullRestrictedAtomicArrayCmdOpt.isPresent());
+        var oArrNullRestrictedAtomicArrayCmdUntyped = oArrNullRestrictedAtomicArrayCmdOpt.get();
+        Asserts.assertTrue(oArrNullRestrictedAtomicArrayCmdUntyped instanceof ReplayFile.ParsedReplayFile.StaticFieldCommandFlatArray);
+        var oArrNullRestrictedAtomicArrayCmd = (ReplayFile.ParsedReplayFile.StaticFieldCommandFlatArray)oArrNullRestrictedAtomicArrayCmdUntyped;
+        Asserts.assertTrue(oArrNullRestrictedAtomicArrayCmd.nullFree());
+        Asserts.assertFalse(oArrNullRestrictedAtomicArrayCmd.nonAtomic());
+        Asserts.assertEquals(oArrNullRestrictedAtomicArrayCmd.length(), 2);
     }
 
     @Override

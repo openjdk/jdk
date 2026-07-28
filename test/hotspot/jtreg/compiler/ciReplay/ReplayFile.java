@@ -118,13 +118,19 @@ public class ReplayFile {
                 StaticFieldCommandFlatArray,
                 StaticFieldCommandNullArray,
                 StaticFieldCommandString,
-                StaticFieldCommandInstance {}
+                StaticFieldCommandInstance {
+            String klass();
+            String fieldName();
+            String signature();
+        }
         public record StaticFieldCommandPrimitive(String klass, String fieldName, String signature, String value) implements StaticFieldCommand {}
         public record StaticFieldCommandPrimitiveArray(String klass, String fieldName, String signature, int length) implements StaticFieldCommand {}
         public record StaticFieldCommandRefArray(String klass, String fieldName, String signature, int length, boolean nullFree, String actualKlass) implements StaticFieldCommand {}
         public record StaticFieldCommandFlatArray(String klass, String fieldName, String signature, int length, boolean nullFree, boolean nonAtomic, String actualKlass) implements StaticFieldCommand {}
         public record StaticFieldCommandNullArray(String klass, String fieldName, String signature) implements StaticFieldCommand {}
-        public record StaticFieldCommandString(String klass, String fieldName, String value) implements StaticFieldCommand {}
+        public record StaticFieldCommandString(String klass, String fieldName, String value) implements StaticFieldCommand {
+            public String signature() { return "Ljava/lang/String;"; }
+        }
         public record StaticFieldCommandInstance(String klass, String fieldName, String signature, List<String> actualKlassOrValues) implements StaticFieldCommand {}
         // ciMethodData <klass> <name> <signature> <state> <invocationCounter> orig <length> <byte>* data <length> <ptr>* oops <length> (<offset> <klass> <array properties>?)* methods <length> (<offset> <klass> <name> <signature>)*
         sealed interface CiMethodDataCommandOop permits CiMethodDataCommandOopInstance, CiMethodDataCommandOopArray {}
@@ -452,20 +458,9 @@ public class ReplayFile {
             return new CompileCommand(klass, name, signature, entryBci, compLevel, inlines);
         }
 
-        static String klassOfStaticField(StaticFieldCommand cmd) {
-            return switch (cmd) {
-                case StaticFieldCommandFlatArray(String klass, String fieldName, String signature, int length, boolean nullFree, boolean nonAtomic, String actualKlass) -> klass;
-                case StaticFieldCommandInstance(String klass, String fieldName, String signature, List<String> actualKlassOrValues) -> klass;
-                case StaticFieldCommandNullArray(String klass, String fieldName, String signature) -> klass;
-                case StaticFieldCommandPrimitive(String klass, String fieldName, String signature, String value) -> klass;
-                case StaticFieldCommandPrimitiveArray(String klass, String fieldName, String signature, int length) -> klass;
-                case StaticFieldCommandRefArray(String klass, String fieldName, String signature, int length,boolean nullFree, String actualKlass) -> klass;
-                case StaticFieldCommandString(String klass, String fieldName, String value) -> klass;
-            };
-        }
-
         static List<String> checkSanity(ParsedReplayFile parsed) {
             record Method(String klass, String name, String signature) {}
+            record Field(String klass, String name) {}
             List<String> insanities = new ArrayList<>();
 
             int seenVersionCommands = 0;
@@ -473,12 +468,21 @@ public class ReplayFile {
             Set<Method> seenCiMethodData = new HashSet<>();
             Set<Method> seenCompile = new HashSet<>();
             Set<String> seenKlasses = new HashSet<>();
+            Map<Field, String> seenFields = new HashMap<>();
             for (Command c : parsed.commands) {
                 switch (c) {
                     case CiInstanceKlassCommand(String name, boolean isLinked, boolean isInitialized, int length, List<Integer> tag) -> seenKlasses.add(name);
                     case StaticFieldCommand cmd -> {
-                        if (!seenKlasses.contains(klassOfStaticField(cmd))) {
+                        String klass = cmd.klass();
+                        String fieldName = cmd.fieldName();
+                        if (!seenKlasses.contains(klass)) {
                             insanities.add("Static field command " + cmd + " seen before the corresponding ciInstanceKlass command.");
+                        }
+                        var field = new Field(klass, fieldName);
+                        if (seenFields.containsKey(field)) {
+                            insanities.add("Already seen the static field " + klass + "::" + fieldName + " with signature " + seenFields.get(field) + ". This time, it had signature " + cmd.signature() + ".");
+                        } else {
+                            seenFields.put(field, cmd.signature());
                         }
                     }
                     case CompileCommand(String klass, String name, String signature, int entryBci, int compLevel, List<CompileCommandInline> inlines) -> {
@@ -777,6 +781,18 @@ public class ReplayFile {
             compareCompileCommand(lhs, rhs, differences);
 
             return differences;
+        }
+
+        Optional<StaticFieldCommand> findStaticFieldCommand(String klass, String fieldName) {
+            return commands
+                    .stream()
+                    .map(cmd -> switch (cmd) {
+                        case StaticFieldCommand sfc ->
+                                sfc.klass().equals(klass) && sfc.fieldName().equals(fieldName) ? sfc : null;
+                        default -> null;
+                    })
+                    .filter(Objects::nonNull)
+                    .findAny();
         }
     }
 }
