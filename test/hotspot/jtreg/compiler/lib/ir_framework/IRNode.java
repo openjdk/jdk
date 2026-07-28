@@ -2488,6 +2488,11 @@ public class IRNode {
         vectorNode(VECTOR_MASK_CMP_D, "VectorMaskCmp", TYPE_DOUBLE);
     }
 
+    public static final String VECTOR_MASK_CMP_HF = PREFIX + "VECTOR_MASK_CMP_HF" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(VECTOR_MASK_CMP_HF, "VectorMaskCmpHF");
+    }
+
     public static final String VECTOR_MASK_CMP = PREFIX + "VECTOR_MASK_CMP" + POSTFIX;
     static {
         beforeMatchingNameRegex(VECTOR_MASK_CMP, "VectorMaskCmp");

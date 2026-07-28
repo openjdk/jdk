@@ -2409,7 +2409,8 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       n->del_req(MemNode::ValueIn+1);
       break;
     }
-    case Op_VectorMaskCmp: {
+    case Op_VectorMaskCmp:
+    case Op_VectorMaskCmpHF: {
       n->set_req(1, new BinaryNode(n->in(1), n->in(2)));
       n->set_req(2, n->in(3));
       n->del_req(3);

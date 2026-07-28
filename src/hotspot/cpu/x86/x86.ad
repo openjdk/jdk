@@ -3543,6 +3543,14 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
         return false;
       }
       break;
+    case Op_VectorMaskCmpHF:
+      if (!VM_Version::supports_avx512_fp16()) {
+        return false;
+      }
+      if (size_in_bits < 512 && !VM_Version::supports_avx512vl()) {
+        return false;
+      }
+      break;
     case Op_CompressM:
       if (UseAVX < 3 || !VM_Version::supports_bmi2()) {
         return false;
@@ -3725,6 +3733,9 @@ bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType
       if (is_subword_type(bt) && !VM_Version::supports_avx512bw()) {
         return false; // Implementation limitation
       }
+      return true;
+
+    case Op_VectorMaskCmpHF:
       return true;
 
     case Op_VectorRearrange:
@@ -22127,6 +22138,31 @@ instruct evcmp(kReg dst, vec src1, vec src2, immI8 cond) %{
       }
       default: assert(false, "%s", type2name(src1_elem_bt));
     }
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// --------------------------------- VectorMaskCmp (Float16) ----------------------------
+
+instruct evcmpHF(kReg dst, vec src1, vec src2, immI8 cond) %{
+  match(Set dst (VectorMaskCmpHF (Binary src1 src2) cond));
+  format %{ "vector_compare_hf_evex $dst,$src1,$src2,$cond\t!" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this, $src1);
+    Assembler::ComparisonPredicateFP cmp = booltest_pred_to_comparison_pred_fp($cond$$constant);
+    KRegister mask = k0; // The comparison itself is not being masked.
+    __ evcmpph($dst$$KRegister, mask, $src1$$XMMRegister, $src2$$XMMRegister, cmp, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct evcmpHF_masked(kReg dst, vec src1, vec src2, immI8 cond, kReg mask) %{
+  match(Set dst (VectorMaskCmpHF (Binary src1 src2) (Binary cond mask)));
+  format %{ "vector_compare_hf_masked $dst, $src1, $src2, $cond, $mask" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this, $src1);
+    Assembler::ComparisonPredicateFP cmp = booltest_pred_to_comparison_pred_fp($cond$$constant);
+    __ evcmpph($dst$$KRegister, $mask$$KRegister, $src1$$XMMRegister, $src2$$XMMRegister, cmp, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
