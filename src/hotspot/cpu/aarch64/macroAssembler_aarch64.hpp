@@ -1873,6 +1873,10 @@ public:
   SVE_DESTRUCTIVE_TERNARY_UNPRED_INS(sve_eor3);
 
 #undef SVE_DESTRUCTIVE_TERNARY_UNPRED_INS
+
+  // ensure that stack pages are all initially accessed in the order required by the platform
+  // before allocating space on the stack for the largest expression stack used by a method.
+  void pd_extend_stack_guard_page_for_method_max_stack(Register const_method, Register temp1, Register temp2, Register temp3);
 };
 
 #ifdef ASSERT

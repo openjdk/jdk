@@ -888,46 +888,13 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   // leave last_sp as null
   __ stp(zr, r19_sender_sp, Address(sp, 8 * wordSize));
 
-#if defined(_WINDOWS)
   if (!native_call) {
     // Before extending SP, we need to ensure that the stack pages are
-    // all initially accessed in sequential order as required by Windows.
-    const int page_size = (int)os::vm_page_size();
-    const int page_size_mask = -page_size;
-
-    __ ldrh(rscratch1, Address(r5_const_method, ConstMethod::max_stack_offset()));
-    __ add(rscratch1, rscratch1, MAX2(3, Method::extra_stack_entries()));
-
-    // load the number of 16-byte slots required into rscratch1
-    __ add(rscratch1, rscratch1, 1);
-    __ lsr(rscratch1, rscratch1, 1);
-
-    // compute number of bytes required and load the target SP into rscratch2
-    __ subs(rscratch2, sp, rscratch1, ext::uxtw, 4);
-    __ csel(rscratch2, zr, rscratch2, Assembler::LO);
-
-    // round both down to the nearest page
-    __ mov(rscratch1, page_size_mask);
-    __ andr(rscratch2, rscratch1, rscratch2);
-
+    // all initially accessed in the order required by the platform.
     // use r10 as a scratch register before it is loaded with its
-    // final value after this block is done touching the stack pages.
-    __ mov(r10, sp);
-    __ andr(rscratch1, rscratch1, r10);
-
-    Label stack_check_done;
-    __ cmp(rscratch1, rscratch2);
-    __ br(Assembler::EQ, stack_check_done);
-
-    Label stack_check;
-    __ bind(stack_check);
-    __ sub(rscratch1, rscratch1, page_size);
-    __ ldr(zr, Address(rscratch1));
-    __ cmp(rscratch1, rscratch2);
-    __ br(Assembler::NE, stack_check);
-    __ bind(stack_check_done);
+    // final value after this call extends the usable stack.
+    __ pd_extend_stack_guard_page_for_method_max_stack(r5_const_method, rscratch1, rscratch2, r10);
   }
-#endif
 
   // Get mirror. Resolve ConstantPool* -> InstanceKlass* -> Java mirror.
   __ ldr(r10, Address(r11_constants, ConstantPool::pool_holder_offset()));
