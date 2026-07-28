@@ -2217,12 +2217,11 @@ JVM_ENTRY(jboolean, JVM_DesiredAssertionStatus(JNIEnv *env, jclass unused, jclas
   assert(cls != nullptr, "bad class");
 
   oop r = JNIHandles::resolve(cls);
-  assert(! java_lang_Class::is_primitive(r), "primitive classes not allowed");
-  if (java_lang_Class::is_primitive(r)) return false;
+  if (java_lang_Class::is_primitive(r)) {
+    return JavaAssertions::systemClassDefault();
+  }
 
   Klass* k = java_lang_Class::as_Klass(r);
-  assert(k->is_instance_klass(), "must be an instance klass");
-  if (!k->is_instance_klass()) return false;
 
   ResourceMark rm(THREAD);
   const char* name = k->name()->as_C_string();
