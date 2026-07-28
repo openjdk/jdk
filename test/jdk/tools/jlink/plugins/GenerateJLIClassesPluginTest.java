@@ -51,8 +51,7 @@ import tests.Result;
 /*
  * @test
  * @bug 8252919 8327499
- * @library ../../lib
- * @library /test/lib
+ * @library ../../lib /test/lib
  * @summary Test --generate-jli-classes plugin
  * @modules java.base/jdk.internal.jimage
  *          jdk.jlink/jdk.tools.jlink.internal
