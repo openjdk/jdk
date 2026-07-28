@@ -2138,9 +2138,7 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler* masm,
   OptoReg::Name dst_second = ra_->get_reg_second(this);
   OptoReg::Name dst_first = ra_->get_reg_first(this);
 
-  enum RC src_second_rc = rc_class(src_second);
   enum RC src_first_rc = rc_class(src_first);
-  enum RC dst_second_rc = rc_class(dst_second);
   enum RC dst_first_rc = rc_class(dst_first);
 
   assert(OptoReg::is_valid(src_first) && OptoReg::is_valid(dst_first),
