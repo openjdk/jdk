@@ -33,7 +33,6 @@ import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
 import java.lang.reflect.Array;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -583,22 +582,23 @@ final class LazyCollections {
 
     private static final class Mutexes {
 
+        private static final long COUNTER_OFFSET = UNSAFE.objectFieldOffset(Mutexes.class, "counter");
         private static final Object TOMB_STONE = new Object();
 
         // Filled on demand and then discarded once it is not needed anymore.
         // A mutex element can only transition like so: `null` -> `new Object()` -> `TOMB_STONE`
         private volatile Object[] mutexes;
         // Used to detect we have computed all elements and no longer need the `mutexes` array
-        private volatile AtomicInteger counter;
+        private int counter;
 
         private Mutexes(int length) {
             this.mutexes = new Object[length];
-            this.counter = new AtomicInteger(length);
+            this.counter = length;
         }
 
         private Object acquireMutex(long offset) {
             // Snapshot
-            var mutexes = this.mutexes;
+            final var mutexes = this.mutexes;
             if (mutexes == null) {
                 // We have already computed all the elements and if we end up here
                 // there was at least one unchecked exception thrown by the
@@ -617,11 +617,12 @@ final class LazyCollections {
         }
 
         private void releaseMutex(long offset) {
+            // Defensively snapshot and check for null as we are using Unsafe directly.
+            final Object[] mutexes = Objects.requireNonNull(this.mutexes);
             // Replace the old mutex with a tomb stone since now the old mutex can be collected.
             UNSAFE.putReferenceVolatile(mutexes, offset, TOMB_STONE);
-            if (counter != null && counter.decrementAndGet() == 0) {
-                mutexes = null;
-                counter = null;
+            if (UNSAFE.getAndAddInt(this, COUNTER_OFFSET, -1) == 1) {
+                this.mutexes = null;
             }
         }
 
