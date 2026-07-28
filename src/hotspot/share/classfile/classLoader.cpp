@@ -368,18 +368,47 @@ ClassPathZipEntry::~ClassPathZipEntry() {
   FREE_C_HEAP_ARRAY(_zip_name);
 }
 
-bool ClassPathZipEntry::has_entry(JavaThread* current, const char* name) {
-  ThreadToNativeFromVM ttn(current);
+bool ClassPathZipEntry::has_entry(JavaThread* current, const char* name, Handle class_loader, bool is_multi_release_jar) {
   // check whether zip archive contains name
   jint name_len;
   jint filesize;
-  jzentry* entry = ZipLibrary::find_entry(_zip, name, &filesize, &name_len);
-  if (entry == nullptr) {
-    return false;
-  } else {
-     ZipLibrary::free_entry(_zip, entry);
-    return true;
+  jzentry* entry;
+
+  {
+    ThreadToNativeFromVM ttn(current);
+    entry = ZipLibrary::find_entry(_zip, name, &filesize, &name_len);
+    if (entry != nullptr) {
+      ZipLibrary::free_entry(_zip, entry);
+      return true;
+    }
   }
+
+  // Make an upcall to ClassLoader.getResource() if name is in a multi-release JAR
+  if (class_loader != nullptr && is_multi_release_jar) {
+    JavaValue result(T_OBJECT);
+    oop class_name = java_lang_String::create_oop_from_str(name, current);
+    Handle h_class_name = Handle(current, class_name);
+
+    // URL ClassLoader.getResource(String name)
+    JavaCalls::call_virtual(&result,
+                            class_loader,
+                            vmClasses::ClassLoader_klass(),
+                            vmSymbols::getResource_name(),
+                            vmSymbols::toFileURL_signature(),
+                            h_class_name,
+                            current);
+
+    // Not using TRAPS, the thread must be checked manually
+    if (current->has_pending_exception()) {
+      current->clear_pending_exception();
+      return false;
+    }
+
+    assert(result.get_type() == T_OBJECT, "just checking");
+    return result.get_oop() != nullptr;
+  }
+
+  return false;
 }
 
 u1* ClassPathZipEntry::open_entry(JavaThread* current, const char* name, jint* filesize, bool nul_terminate) {

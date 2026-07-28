@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 /*
  * @test MultiReleaseJars
  * @summary Test multi-release jar with AppCDS.
+ * @bug 8380847
  * @requires vm.cds
  * @library /test/lib
  * @run main/othervm/timeout=2400 MultiReleaseJars
@@ -35,6 +36,7 @@ import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.io.IOException;
 import jdk.test.lib.cds.CDSTestUtils;
+import jdk.test.lib.cds.SimpleCDSAppTester;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class MultiReleaseJars {
@@ -61,6 +63,16 @@ public class MultiReleaseJars {
         String[] sts = {
             "package version;",
             "public class Version {",
+            "    public int getVersion(){ return " + version + "; }",
+            "}"
+        };
+        return sts;
+    }
+
+    static String[] getPrivateVersion(int version) {
+        String[] sts = {
+            "package version;",
+            "class Version {",
             "    public int getVersion(){ return " + version + "; }",
             "}"
         };
@@ -96,9 +108,11 @@ public class MultiReleaseJars {
         String tempDir = CDSTestUtils.getOutputDir();
         File baseDir = new File(tempDir + File.separator + "base");
         File vDir    = new File(tempDir + File.separator + MAJOR_VERSION_STRING);
+        File aotBaseDir = new File(tempDir + File.separator + "aot");
 
         baseDir.mkdirs();
         vDir.mkdirs();
+        aotBaseDir.mkdirs();
 
         File fileMain = TestCommon.getOutputSourceFile("Main.java");
         writeFile(fileMain, getMain());
@@ -135,6 +149,16 @@ public class MultiReleaseJars {
         writeFile(metainf, meta2);
         JarBuilder.build("version2", baseDir, metainf.getAbsolutePath(),
             "--release", MAJOR_VERSION_STRING, "-C", vDir.getAbsolutePath(), ".");
+
+        // Use correct manifest
+        File filePrivateVersion = TestCommon.getOutputSourceFile("Version.java");
+        writeFile(filePrivateVersion, getPrivateVersion(BASE_VERSION));
+        writeFile(metainf, meta);
+        JarBuilder.compile(aotBaseDir.getAbsolutePath(), fileMain.getAbsolutePath(),
+            "-cp", baseDir.getAbsolutePath(), "--release", MAJOR_VERSION_STRING);
+        JarBuilder.compile(vDir.getAbsolutePath(), filePrivateVersion.getAbsolutePath(), "--release", MAJOR_VERSION_STRING);
+        JarBuilder.build("version3", aotBaseDir, metainf.getAbsolutePath(),
+            "--release", MAJOR_VERSION_STRING, "-C", vDir.getAbsolutePath(), ".");
     }
 
     static void checkExecOutput(OutputAnalyzer output, String expectedOutput) throws Exception {
@@ -158,6 +182,7 @@ public class MultiReleaseJars {
         String appClasses[]       = {"version/Main", "version/Version"};
         String appJar             = TestCommon.getTestJar("version.jar");
         String appJar2            = TestCommon.getTestJar("version2.jar");
+        String appJar3            = TestCommon.getTestJar("version3.jar");
         String enableMultiRelease = "-Djdk.util.jar.enableMultiRelease=true";
         String jarVersion         = null;
         String expectedOutput     = null;
@@ -235,5 +260,20 @@ public class MultiReleaseJars {
 
         output = TestCommon.exec(appJar2, mainClass);
         checkExecOutput(output, "I am running on version " + MAJOR_VERSION_STRING);
+
+        // 7. AOT Test
+        SimpleCDSAppTester.of("Multi-Release-AOT")
+            .addVmArgs("-Xlog:aot",
+                       enableMultiRelease)
+            .classpath(appJar3)
+            .appCommandLine(mainClass)
+            .setTrainingChecker((OutputAnalyzer out) -> {
+                // We should have only very minimal amount of gaps left unfilled. See JDK-8383503
+                out.shouldNotMatch("class version/Version cannot be archived because it was not defined");
+            })
+            .setProductionChecker((OutputAnalyzer out) -> {
+                out.shouldContain("I am running on version " + BASE_VERSION_STRING);
+            })
+            .runAOTWorkflow();
     }
 }
