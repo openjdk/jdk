@@ -507,7 +507,7 @@ public class setvalues001 {
     }
 
     /**
-     * Check confiramtion from debuggee that values are changed.
+     * Check confirmation from debuggee that values are changed.
      */
     void checkValuesChanged() {
         // send debugee signal RUN
@@ -535,7 +535,7 @@ public class setvalues001 {
     }
 
     /**
-     * Check confiramtion using JDWP ObjectReference.GetValues that the values are changed.
+     * Check confirmation using JDWP ObjectReference.GetValues that the values are changed.
      */
     void checkJDWPValuesChanged(long testedObjectID, long testedFieldIDs[],
                                 JDWP.Value targetValues[]) {

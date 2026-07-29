@@ -176,7 +176,7 @@ public class setvalues001 {
                 log.display("Getting tested final classID by signature:\n"
                             + "  " + TESTED_FINAL_CLASS_SIGNATURE);
                 long testedFinalClassID = debugee.getReferenceTypeID(TESTED_FINAL_CLASS_SIGNATURE);
-                log.display("  got tested final classID: " + testedClassID);
+                log.display("  got tested final classID: " + testedFinalClassID);
 
                 // query debugee for fieldIDs of tested final class static fields
                 log.display("Getting fieldIDs for static fields of the tested final class");
@@ -421,7 +421,7 @@ public class setvalues001 {
     }
 
     /**
-     * Check confiramtion from debuggee that values are changed.
+     * Check confirmation from debuggee that values are changed.
      */
     void checkValuesChanged() {
         // send debugee signal RUN
@@ -449,7 +449,7 @@ public class setvalues001 {
     }
 
     /**
-     * Check confiramtion using JDWP ClassType.GetValues that the values are changed.
+     * Check confirmation using JDWP ClassType.GetValues that the values are changed.
      */
     void checkJDWPValuesChanged(long testedClassID, long testedFieldIDs[],
                                 JDWP.Value targetValues[]) {
