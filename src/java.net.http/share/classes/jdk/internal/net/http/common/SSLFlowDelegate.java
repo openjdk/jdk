@@ -34,9 +34,6 @@ import javax.net.ssl.SSLEngineResult.Status;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
-import java.lang.ref.Reference;
-import java.lang.ref.ReferenceQueue;
-import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -111,9 +108,6 @@ public class SSLFlowDelegate {
     private static final ByteBuffer HS_TRIGGER = ByteBuffer.allocate(0);
     // When handshake is in progress trying to wrap may produce no bytes.
     private static final ByteBuffer NOTHING = ByteBuffer.allocate(0);
-    private static final String monProp = Utils.getProperty("jdk.internal.httpclient.monitorFlowDelegate");
-    private static final boolean isMonitored =
-            monProp != null && (monProp.isEmpty() || monProp.equalsIgnoreCase("true"));
 
     final Executor exec;
     final Reader reader;
@@ -121,7 +115,6 @@ public class SSLFlowDelegate {
     final SSLEngine engine;
     final String tubeName; // hack
     final CompletableFuture<String> alpnCF; // completes on initial handshake
-    final Monitorable monitor = isMonitored ? this::monitor : null; // prevent GC until SSLFD is stopped
     volatile boolean close_notify_received;
     final CompletableFuture<Void> readerCF;
     final CompletableFuture<Void> writerCF;
@@ -173,8 +166,6 @@ public class SSLFlowDelegate {
         // connect the Reader to the downReader and the
         // Writer to the downWriter.
         connect(downReader, downWriter);
-
-        if (isMonitored) Monitor.add(monitor);
     }
 
     /**
@@ -218,26 +209,6 @@ public class SSLFlowDelegate {
         String alpn = engine.getApplicationProtocol();
         if (debug.on()) debug.log("setALPN = %s", alpn);
         alpnCF.complete(alpn);
-    }
-
-    public String monitor() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("SSL: id ").append(id);
-        sb.append(" ").append(dbgString());
-        sb.append(" HS state: " + states(handshakeState));
-        sb.append(" Engine state: " + engine.getHandshakeStatus().toString());
-        if (stateList != null) {
-            sb.append(" LL : ");
-            for (String s : stateList) {
-                sb.append(s).append(" ");
-            }
-        }
-        sb.append("\r\n");
-        sb.append("Reader:: ").append(reader.toString());
-        sb.append("\r\n");
-        sb.append("Writer:: ").append(writer.toString());
-        sb.append("\r\n===================================");
-        return sb.toString();
     }
 
     protected SchedulingAction enterReadScheduling() {
@@ -607,104 +578,6 @@ public class SSLFlowDelegate {
         }
     }
 
-    public interface Monitorable {
-        public String getInfo();
-    }
-
-    public static class Monitor extends Thread {
-        final List<WeakReference<Monitorable>> list;
-        final List<FinalMonitorable> finalList;
-        final ReferenceQueue<Monitorable> queue = new ReferenceQueue<>();
-        static Monitor themon;
-
-        static {
-            themon = new Monitor();
-            themon.start(); // uncomment to enable Monitor
-        }
-
-        // An instance used to temporarily store the
-        // last observable state of a monitorable object.
-        // When Monitor.remove(o) is called, we replace
-        // 'o' with a FinalMonitorable whose reference
-        // will be enqueued after the last observable state
-        // has been printed.
-        final class FinalMonitorable implements Monitorable {
-            final String finalState;
-            FinalMonitorable(Monitorable o) {
-                finalState = o.getInfo();
-                finalList.add(this);
-            }
-            @Override
-            public String getInfo() {
-                finalList.remove(this);
-                return finalState;
-            }
-        }
-
-        Monitor() {
-            super("Monitor");
-            setDaemon(true);
-            list = Collections.synchronizedList(new LinkedList<>());
-            finalList = new ArrayList<>(); // access is synchronized on list above
-        }
-
-        void addTarget(Monitorable o) {
-            list.add(new WeakReference<>(o, queue));
-        }
-        void removeTarget(Monitorable o) {
-            // It can take a long time for GC to clean up references.
-            // Calling Monitor.remove() early helps removing noise from the
-            // logs/
-            synchronized (list) {
-                Iterator<WeakReference<Monitorable>> it = list.iterator();
-                while (it.hasNext()) {
-                    Monitorable m = it.next().get();
-                    if (m == null) it.remove();
-                    if (o == m) {
-                        it.remove();
-                        break;
-                    }
-                }
-                FinalMonitorable m = new FinalMonitorable(o);
-                addTarget(m);
-                Reference.reachabilityFence(m);
-            }
-        }
-
-        public static void add(Monitorable o) {
-            themon.addTarget(o);
-        }
-        public static void remove(Monitorable o) {
-            themon.removeTarget(o);
-        }
-
-        @Override
-        public void run() {
-            System.out.println("Monitor starting");
-            try {
-                while (true) {
-                    Thread.sleep(20 * 1000);
-                    synchronized (list) {
-                        Reference<? extends Monitorable> expired;
-                        while ((expired = queue.poll()) != null) list.remove(expired);
-                        for (WeakReference<Monitorable> ref : list) {
-                            Monitorable o = ref.get();
-                            if (o == null) continue;
-                            if (o instanceof FinalMonitorable) {
-                                ref.enqueue();
-                            }
-                            System.out.println(o.getInfo());
-                            System.out.println("-------------------------");
-                        }
-                    }
-                    System.out.println("--o-o-o-o-o-o-o-o-o-o-o-o-o-o-");
-                }
-            } catch (InterruptedException e) {
-                System.out.println("Monitor exiting with " + e);
-            }
-        }
-    }
-
     /**
      * Processing function for outgoing data. Pass it thru SSLEngine.wrap()
      * Any encrypted buffers generated are passed downstream to be written.
@@ -1007,7 +880,6 @@ public class SSLFlowDelegate {
                     "Connection closed before successful ALPN negotiation");
             alpnCF.completeExceptionally(alpn);
         }
-        if (isMonitored) Monitor.remove(monitor);
     }
 
     private Void stopOnError(Throwable error) {
