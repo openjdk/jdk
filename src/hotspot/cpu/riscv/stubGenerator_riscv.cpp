@@ -895,21 +895,22 @@ class StubGenerator: public StubCodeGenerator {
     const Register bytes_per_iter = x17;
     const Register tmp0 = x5;
 
-    assert_different_registers(s, d, cnt, saved_vl, bytes_per_iter, tmp0);
+    assert_different_registers(s, d, cnt, saved_vl, bytes_per_iter, tmp0, src, dst);
     Assembler::SEW sew = Assembler::elembytes_to_sew(granularity);
 
-    Label forward_main, backward_main, loop_fwd, loop_bwd,
+    Label backward_main, loop_fwd, loop_bwd,
           tail_fwd, tail_bwd, done;
 
     __ mv(dst, d);
     __ mv(src, s);
     __ mv(cnt, count);
 
-    // For very small forward copies, skip the wide m2 main loop and drain
-    // directly with the m1 tail loop. This avoids the m2 vsetvli setup cost
-    // for short copies (e.g., ≤ 32 bytes). Backward small copies are handled
-    // by the m2 main loop falling through to tail_bwd when cnt < saved_vl.
-    const int max_elems_small = 32 / granularity;
+    // For very small forward copies, skip the wide m4 main loop and drain
+    // directly with the m1 tail loop. This avoids the m4 vsetvli setup cost
+    // for short copies (e.g., ≤ MaxVectorSize bytes). Backward small copies
+    // are handled by the m4 main loop falling through to tail_bwd when
+    // cnt < saved_vl.
+    const int max_elems_small = MaxVectorSize / granularity;
     if (max_elems_small > 0 && !is_backward) {
       __ li(tmp0, max_elems_small);
       __ bleu(cnt, tmp0, tail_fwd);
@@ -920,9 +921,8 @@ class StubGenerator: public StubCodeGenerator {
     }
     // else: fall through to forward_main
 
-    /* forward main: m2 chunks */
-    __ bind(forward_main);
-    __ vsetvli(saved_vl, cnt, sew, Assembler::m2);
+    /* forward main: m4 chunks */
+    __ vsetvli(saved_vl, cnt, sew, Assembler::m4);
 
     if (granularity > 1) {
       __ slli(bytes_per_iter, saved_vl, exact_log2(granularity));
@@ -942,7 +942,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     /* forward tail: m1 drain loop. Handles arbitrary leftover cnt
-     * (in [0, vlmax_m2)) with one or more m1 iterations. */
+     * (in [0, vlmax_m4)) with one or more m1 iterations. */
     __ bind(tail_fwd);
     {
       Label loop_tail_fwd;
@@ -963,18 +963,18 @@ class StubGenerator: public StubCodeGenerator {
       __ j(done);
     }
 
-    /* backward main: m2 chunks (src/dst point one-past-end) */
+    /* backward main: m4 chunks (src/dst point one-past-end) */
     __ bind(backward_main);
 
     if (granularity > 1) {
-      __ slli(tmp0, count, exact_log2(granularity));
+      __ slli(tmp0, cnt, exact_log2(granularity));
     } else {
-      __ mv(tmp0, count);
+      __ mv(tmp0, cnt);
     }
     __ add(src, src, tmp0);
     __ add(dst, dst, tmp0);
 
-    __ vsetvli(saved_vl, cnt, sew, Assembler::m2);
+    __ vsetvli(saved_vl, cnt, sew, Assembler::m4);
 
     if (granularity > 1) {
       __ slli(bytes_per_iter, saved_vl, exact_log2(granularity));
