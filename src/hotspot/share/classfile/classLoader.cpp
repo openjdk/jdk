@@ -372,11 +372,10 @@ bool ClassPathZipEntry::has_entry(JavaThread* current, const char* name, Handle 
   // check whether zip archive contains name
   jint name_len;
   jint filesize;
-  jzentry* entry;
 
   {
     ThreadToNativeFromVM ttn(current);
-    entry = ZipLibrary::find_entry(_zip, name, &filesize, &name_len);
+    jzentry* entry = ZipLibrary::find_entry(_zip, name, &filesize, &name_len);
     if (entry != nullptr) {
       ZipLibrary::free_entry(_zip, entry);
       return true;
@@ -405,7 +404,9 @@ bool ClassPathZipEntry::has_entry(JavaThread* current, const char* name, Handle 
     }
 
     assert(result.get_type() == T_OBJECT, "just checking");
-    return result.get_oop() != nullptr;
+    if (result.get_oop() != nullptr) {
+      return true;
+    }
   }
 
   return false;
