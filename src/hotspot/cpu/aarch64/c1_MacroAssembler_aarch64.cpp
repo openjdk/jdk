@@ -117,7 +117,7 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
   if (!UseCompactObjectHeaders) {
     // COH: Markword already contains class pointer. Nothing else to do.
     // Otherwise: Store encoded klass pointer following the markword
-    encode_klass_not_null(t1, klass); // Take care not to kill klass
+    encode_klass_not_null(t1, klass, t1); // Take care not to kill klass
     strw(t1, Address(obj, oopDesc::klass_offset_in_bytes()));
   }
 

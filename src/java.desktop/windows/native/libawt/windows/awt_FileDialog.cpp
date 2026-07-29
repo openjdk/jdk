@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -560,7 +560,7 @@ Java_sun_awt_windows_WFileDialogPeer_setFilterString(JNIEnv *env, jclass cls,
     CATCH_BAD_ALLOC;
 }
 
-JNIEXPORT void JNICALL
+JNIEXPORT jboolean JNICALL
 Java_sun_awt_windows_WFileDialogPeer__1show(JNIEnv *env, jobject peer)
 {
     TRY;
@@ -574,9 +574,12 @@ Java_sun_awt_windows_WFileDialogPeer__1show(JNIEnv *env, jobject peer)
     if (!AwtToolkit::GetInstance().PostMessage(WM_AWT_INVOKE_METHOD,
                              (WPARAM)AwtFileDialog::Show, (LPARAM)peerGlobal)) {
         env->DeleteGlobalRef(peerGlobal);
+        return false;
     }
 
-    CATCH_BAD_ALLOC;
+    return true;
+
+    CATCH_BAD_ALLOC_RET(false);
 }
 
 JNIEXPORT void JNICALL

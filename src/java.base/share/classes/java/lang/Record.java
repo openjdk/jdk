@@ -97,6 +97,7 @@ package java.lang;
  * @jls 8.10 Record Classes
  * @since 16
  */
+// See doc/value-class-preview.md for an overview of value class generation
 public abstract /*value*/ class Record {
     /**
      * Constructor for record classes to call.

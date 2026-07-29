@@ -70,6 +70,7 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  * @since   1.1
  */
 @jdk.internal.ValueBased
+// See doc/value-class-preview.md for an overview of value class generation
 public final /*value*/ class Byte extends Number
         implements Comparable<Byte>, Constable {
 
@@ -115,6 +116,9 @@ public final /*value*/ class Byte extends Number
         return Optional.of(DynamicConstantDesc.ofNamed(BSM_EXPLICIT_CAST, DEFAULT_NAME, CD_byte, intValue()));
     }
 
+    // When preview features are enabled, the cache does not affect object
+    // equality == semantics, but exists for performance.
+    // See doc/value-class-preview.md "Wrapper Class Caches" section.
     @AOTSafeClassInitializer
     private static final class ByteCache {
         private ByteCache() {}

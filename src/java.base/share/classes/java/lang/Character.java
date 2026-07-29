@@ -230,6 +230,7 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  * @since   1.0
  */
 @jdk.internal.ValueBased
+// See doc/value-class-preview.md for an overview of value class generation
 public final /*value*/ class Character
         implements java.io.Serializable, Comparable<Character>, Constable {
     /**
@@ -9428,6 +9429,9 @@ public final /*value*/ class Character
         this.value = value;
     }
 
+    // When preview features are enabled, the cache does not affect object
+    // equality == semantics, but exists for performance.
+    // See doc/value-class-preview.md "Wrapper Class Caches" section.
     @AOTSafeClassInitializer
     private static final class CharacterCache {
         private CharacterCache(){}
