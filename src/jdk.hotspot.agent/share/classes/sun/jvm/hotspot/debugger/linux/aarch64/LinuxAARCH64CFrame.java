@@ -120,6 +120,13 @@ public final class LinuxAARCH64CFrame extends DwarfCFrame {
      throw new DebuggerException("JavaThread not found");
    }
 
+   // Most of code is copied from AARCH64Frame.java.
+   // CFrame need to consider PAC in native frame even if -XX:UseBranchProtection is disabled.
+   // (_rop_protection in HotSpot)
+   private Address stripPAC(Address addr) {
+      return addr.andWithMask(AARCH64Frame.pacMask());
+   }
+
    @Override
    public CFrame sender(ThreadProxy thread, Address senderSP, Address senderFP, Address senderPC) {
       if (linuxDbg().isSignalTrampoline(pc())) {
@@ -165,6 +172,13 @@ public final class LinuxAARCH64CFrame extends DwarfCFrame {
       }
       if (senderSP == null) {
         return null;
+      }
+
+      // Strip PAC
+      if (((MachineDescriptionAArch64)linuxDbg().getMachineDescription()).isPACEnabled() &&
+          ((dwarf() != null && ((AARCH64DwarfParser)dwarf()).isRASigned() /* for native */ ) ||
+           (AARCH64Frame.ropProtection() != 0 /* for Java */ ))) {
+        senderPC = stripPAC(senderPC);
       }
 
       DwarfParser senderDwarf = null;

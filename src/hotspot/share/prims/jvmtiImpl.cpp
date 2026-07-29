@@ -379,7 +379,7 @@ bool VM_BaseGetOrSetLocal::check_slot_type_lvt(javaVFrame* jvf) {
   if (!method->has_localvariable_table()) {
     // Just to check index boundaries.
     jint extra_slot = (_type == T_LONG || _type == T_DOUBLE) ? 1 : 0;
-    if (_index < 0 || _index + extra_slot >= method->max_locals()) {
+    if (_index < 0 || _index >= method->max_locals() - extra_slot) {
       _result = JVMTI_ERROR_INVALID_SLOT;
       return false;
     }
@@ -451,7 +451,7 @@ bool VM_BaseGetOrSetLocal::check_slot_type_no_lvt(javaVFrame* jvf) {
   Method* method = jvf->method();
   jint extra_slot = (_type == T_LONG || _type == T_DOUBLE) ? 1 : 0;
 
-  if (_index < 0 || _index + extra_slot >= method->max_locals()) {
+  if (_index < 0 || _index >= method->max_locals() - extra_slot) {
     _result = JVMTI_ERROR_INVALID_SLOT;
     return false;
   }

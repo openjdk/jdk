@@ -2911,6 +2911,16 @@ bool InstanceKlass::can_be_verified_at_dumptime() const {
     // SystemDictionaryShared::check_verification_constraints() will not work for this class.
     return false;
   }
+
+  if (CDSConfig::is_dumping_final_static_archive() && fail_over_verified()) {
+    // This is a class with version >50 but was verified with the old verifier in the training run,
+    // which had -XX:+AOTClassLinking. However, we are now in the assembly run with -XX:-AOTClassLinking.
+    // As SystemDictionaryShared::check_verification_constraints() does not support this case,
+    // we must exclude this class.
+    assert(!CDSConfig::is_dumping_aot_linked_classes(), "must be");
+    return false;
+  }
+
   if (super() != nullptr && !super()->can_be_verified_at_dumptime()) {
     return false;
   }

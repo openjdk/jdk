@@ -2258,7 +2258,7 @@ class StubGenerator: public StubCodeGenerator {
     // checked.
 
     assert_different_registers(from, to, count, ckoff, ckval, start_to,
-                               copied_oop, r19_klass, count_save);
+                               copied_oop, r19_klass, count_save, rscratch1);
 
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
@@ -2342,7 +2342,7 @@ class StubGenerator: public StubCodeGenerator {
                      gct1);
     __ cbz(copied_oop, L_store_element);
 
-    __ load_klass(r19_klass, copied_oop);// query the object klass
+    __ load_klass(r19_klass, copied_oop, rscratch1);// query the object klass
 
     BLOCK_COMMENT("type_check:");
     generate_type_check(/*sub_klass*/r19_klass,
@@ -2568,7 +2568,7 @@ class StubGenerator: public StubCodeGenerator {
     __ movw(scratch_length, length);        // length (elements count, 32-bits value)
     __ tbnz(scratch_length, 31, L_failed);  // i.e. sign bit set
 
-    __ load_klass(scratch_src_klass, src);
+    __ load_narrow_klass(scratch_src_klass, src);
 #ifdef ASSERT
     //  assert(src->klass() != nullptr);
     {
@@ -2583,6 +2583,7 @@ class StubGenerator: public StubCodeGenerator {
       BLOCK_COMMENT("} assert klasses not null done");
     }
 #endif
+    __ decode_klass_not_null(scratch_src_klass, scratch_src_klass, rscratch1);
 
     // Load layout helper (32-bits)
     //
@@ -2602,7 +2603,7 @@ class StubGenerator: public StubCodeGenerator {
     __ cbzw(rscratch2, L_objArray);
 
     //  if (src->klass() != dst->klass()) return -1;
-    __ load_klass(rscratch2, dst);
+    __ load_klass(rscratch2, dst, rscratch1);
     __ eor(rscratch2, rscratch2, scratch_src_klass);
     __ cbnz(rscratch2, L_failed);
 
@@ -2698,7 +2699,7 @@ class StubGenerator: public StubCodeGenerator {
 
     Label L_plain_copy, L_checkcast_copy;
     //  test array classes for subtyping
-    __ load_klass(r15, dst);
+    __ load_klass(r15, dst, rscratch1);
     __ cmp(scratch_src_klass, r15); // usual case is exact equality
     __ br(Assembler::NE, L_checkcast_copy);
 
@@ -2727,7 +2728,7 @@ class StubGenerator: public StubCodeGenerator {
       arraycopy_range_checks(src, src_pos, dst, dst_pos, scratch_length,
                              r15, L_failed);
 
-      __ load_klass(dst_klass, dst); // reload
+      __ load_klass(dst_klass, dst, rscratch1); // reload
 
       // Marshal the base address arguments now, freeing registers.
       __ lea(from, Address(src, src_pos, Address::lsl(LogBytesPerHeapOop)));

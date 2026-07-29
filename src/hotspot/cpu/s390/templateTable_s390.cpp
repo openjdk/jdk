@@ -1055,7 +1055,7 @@ void TemplateTable::lstore() {
 void TemplateTable::fstore() {
   transition(ftos, vtos);
   locals_index(Z_R1_scratch);
-  __ freg2mem_opt(Z_ftos, faddress(_masm, Z_R1_scratch));
+  __ freg2mem_opt(Z_ftos, faddress(_masm, Z_R1_scratch), false);
 }
 
 void TemplateTable::dstore() {
@@ -2336,7 +2336,9 @@ void TemplateTable::_return(TosState state) {
     __ z_tm(poll_byte_addr, SafepointMechanism::poll_bit());
     __ z_braz(no_safepoint);
     __ push(state);
+    __ push_cont_fastpath();
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint));
+    __ pop_cont_fastpath();
     __ pop(state);
     __ bind(no_safepoint);
   }
@@ -2395,7 +2397,7 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
   // Class initialization barrier slow path lands here as well.
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
   __ load_const_optimized(Z_ARG2, (int)code);
-  __ call_VM(noreg, entry, Z_ARG2);
+  __ call_VM_preemptable(noreg, entry, Z_ARG2);
 
   // Update registers with resolved info.
   __ load_method_entry(Rcache, index);
@@ -2445,7 +2447,7 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
   // Class initialization barrier slow path lands here as well.
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
   __ load_const_optimized(Z_ARG2, (int)code);
-  __ call_VM(noreg, entry, Z_ARG2);
+  __ call_VM_preemptable(noreg, entry, Z_ARG2);
 
   // Update registers with resolved info.
   __ load_field_entry(cache, index);
@@ -3504,7 +3506,7 @@ void TemplateTable::fast_xaccess(TosState state) {
       __ verify_oop(Z_tos);
       break;
     case ftos:
-      __ mem2freg_opt(Z_ftos, field);
+      __ mem2freg_opt(Z_ftos, field, false);
       break;
     default:
       ShouldNotReachHere();
@@ -4022,7 +4024,7 @@ void TemplateTable::_new() {
   __ bind(slow_case);
   __ get_constant_pool(Z_ARG2);
   __ get_2_byte_integer_at_bcp(Z_ARG3/*dest*/, 1, InterpreterMacroAssembler::Unsigned);
-  call_VM(Z_tos, CAST_FROM_FN_PTR(address, InterpreterRuntime::_new), Z_ARG2, Z_ARG3);
+  __ call_VM_preemptable(Z_tos, CAST_FROM_FN_PTR(address, InterpreterRuntime::_new), Z_ARG2, Z_ARG3);
   __ verify_oop(Z_tos);
 
   // continue

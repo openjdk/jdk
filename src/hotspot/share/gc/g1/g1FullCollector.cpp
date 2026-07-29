@@ -23,6 +23,7 @@
  */
 
 #include "classfile/classLoaderDataGraph.hpp"
+#include "code/codeCache.hpp"
 #include "cppstdlib/new.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1FullCollector.inline.hpp"
@@ -329,6 +330,8 @@ void G1FullCollector::phase1_mark_live_objects() {
     pt.print_all_references();
     assert(marker(0)->task_queue()->is_empty(), "Should be no oops on the stack");
   }
+
+  CodeCache::on_gc_marking_cycle_finish();
 
   {
     GCTraceTime(Debug, gc, phases) debug("Phase 1: Flush Mark Stats Cache", scope()->timer());

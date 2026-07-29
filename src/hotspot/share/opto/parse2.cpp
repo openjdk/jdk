@@ -1749,6 +1749,10 @@ static bool match_type_check(PhaseGVN& gvn,
                              Node* con, const Type* tcon,
                              Node* val, const Type* tval,
                              Node** obj, const TypeOopPtr** cast_type) { // out-parameters
+  assert(tcon->singleton(), "not a constant: %s", Type::str(tcon));
+  assert(tcon == gvn.type(con), "mismatch: %s != %s", Type::str(tcon), Type::str(gvn.type(con)));
+  assert(tval == gvn.type(val), "mismatch: %s != %s", Type::str(tval), Type::str(gvn.type(val)));
+
   // Look for opportunities to sharpen the type of a node whose klass is compared with a constant klass.
   // The constant klass being tested against can come from many bytecode instructions (implicitly or explicitly),
   // and also from profile data used by speculative casts.
@@ -1783,14 +1787,14 @@ static bool match_type_check(PhaseGVN& gvn,
   //              Region
   //                 \  ConI ConI
   //                  \  |  /
-  //          val ->    Phi  ConI  <- con
-  //                     \  /
-  //                     CmpI
-  //                      |
-  //                    Bool [btest]
-  //                      |
+  //            val ->  Phi   ConI|CastII <- con
+  //                      \     /
+  //                       CmpI
+  //                        |
+  //                      Bool [btest]
+  //                        |
   //
-  if (tval->isa_int() && val->is_Phi() && val->in(0)->as_Region()->is_diamond()) {
+  if (tcon->isa_int() && val->is_Phi() && val->in(0)->as_Region()->is_diamond()) {
     RegionNode* diamond = val->in(0)->as_Region();
     IfNode* if1 = diamond->in(1)->in(0)->as_If();
     BoolNode* b1 = if1->in(1)->isa_Bool();
@@ -1799,12 +1803,16 @@ static bool match_type_check(PhaseGVN& gvn,
              b1->_test._test == BoolTest::ne, "%d", b1->_test._test);
 
       ProjNode* success_proj = if1->proj_out(b1->_test._test == BoolTest::eq ? 1 : 0);
-      int idx = diamond->find_edge(success_proj);
-      assert(idx == 1 || idx == 2, "");
-      Node* vcon = val->in(idx);
+      int success_idx = diamond->find_edge(success_proj);
+      assert(success_idx == 1 || success_idx == 2, "");
+      assert(val->req() == 3, "not a diamond");
 
-      if ((btest == BoolTest::eq && vcon == con) || (btest == BoolTest::ne && vcon != con)) {
-        assert(val->find_edge(con) > 0, "mismatch");
+      // gen_instanceof() emits 1 on success and 0 on failure.
+      // Check whether current comparison selects the success value.
+      const Type* success_tval = gvn.type(val->in(success_idx));
+      assert(success_tval->isa_int(), "not an int: %s", Type::str(success_tval));
+      if ((btest == BoolTest::eq && tcon == success_tval) ||
+          (btest == BoolTest::ne && tcon->join(success_tval)->empty())) {
         SubTypeCheckNode* sub = b1->in(1)->as_SubTypeCheck();
         Node* obj_or_subklass = sub->in(SubTypeCheckNode::ObjOrSubKlass);
         Node* superklass = sub->in(SubTypeCheckNode::SuperKlass);

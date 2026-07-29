@@ -299,6 +299,9 @@
   void extract_v(Register dst, VectorRegister src,
                  BasicType bt, int idx, VectorRegister vtmp);
 
+  void extract_v(Register dst, VectorRegister src,
+                 BasicType bt, Register idx, VectorRegister vtmp);
+
   void extract_fp_v(FloatRegister dst, VectorRegister src,
                     BasicType bt, int idx, VectorRegister vtmp);
 

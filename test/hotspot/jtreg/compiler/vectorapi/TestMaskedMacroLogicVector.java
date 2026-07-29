@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8273322 8387204
+ * @bug 8273322 8387145 8387204
  * @key randomness
  * @summary Enhance macro logic optimization for masked logic operations.
  * @modules jdk.incubator.vector
@@ -65,6 +65,7 @@ public class TestMaskedMacroLogicVector {
     long [] cl;
 
     boolean [] mask;
+    boolean [] mask2;
 
     static boolean booleanFunc1(boolean a, boolean b) {
         return a & b;
@@ -504,13 +505,154 @@ public class TestMaskedMacroLogicVector {
         }
     }
 
-    static int intFunc9(int a, int b, boolean mask) {
-        int left = mask ? (-1 ^ a) : -1; // masked not-pattern, all-ones passthrough
-        return mask ? (left | b) : left; // masked OR, left passthrough
+    static int intFunc9(int a, int b, int c, boolean mask, boolean mask2) {
+        int left  = mask  ? (b & a) : b;
+        int right = mask2 ? (c & a) : c;
+        return mask ? (left ^ right) : left;
     }
 
     @ForceInline
-    public void testInt9Kernel(VectorSpecies SPECIES, int[] r, int[] a, int[] b, boolean [] mask) {
+    public void testInt9Kernel(VectorSpecies SPECIES, int[] r, int[] a, int[] b, int[] c, boolean [] mask, boolean [] mask2) {
+        for (int i = 0; i < SPECIES.loopBound(r.length); i += SPECIES.length()) {
+            VectorMask<Integer> vmask  = VectorMask.fromArray(SPECIES, mask , i);
+            VectorMask<Integer> vmask2 = VectorMask.fromArray(SPECIES, mask2, i);
+            IntVector va = IntVector.fromArray(SPECIES, a, i);
+            IntVector vb = IntVector.fromArray(SPECIES, b, i);
+            IntVector vc = IntVector.fromArray(SPECIES, c, i);
+            vb.lanewise(VectorOperators.AND, va, vmask)
+            .lanewise(VectorOperators.XOR,
+                      vc.lanewise(VectorOperators.AND, va, vmask2), vmask)
+           .intoArray(r, i);
+        }
+    }
+
+    @Test
+    @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
+    public void testInt9_Int128(int[] r, int[] a, int[] b, int[] c, boolean [] mask, boolean [] mask2) {
+        testInt9Kernel(IntVector.SPECIES_128, r, a, b, c, mask, mask2);
+    }
+    @Test
+    @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
+    public void testInt9_Int256(int[] r, int[] a, int[] b, int[] c, boolean [] mask, boolean [] mask2) {
+        testInt9Kernel(IntVector.SPECIES_256, r, a, b, c, mask, mask2);
+    }
+    @Test
+    @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
+    public void testInt9_Int512(int[] r, int[] a, int[] b, int[] c, boolean [] mask, boolean [] mask2) {
+        testInt9Kernel(IntVector.SPECIES_512, r, a, b, c, mask, mask2);
+    }
+
+    public void verifyInt9(int[] r, int[] a, int[] b, int[] c, boolean [] mask, boolean [] mask2) {
+        for (int i = 0; i < r.length; i++) {
+            int expected = intFunc9(a[i], b[i], c[i], mask[i], mask2[i]);
+            if (r[i] != expected) {
+                throw new AssertionError(String.format("testInt9: at #%d: r=%d, expected = %d = intFunc9(%d,%d,%d,%b,%b)",
+                                                       i, r[i], expected, a[i], b[i], c[i], mask[i], mask2[i]));
+            }
+        }
+    }
+
+    static int intFunc10(int a, int b, int c, boolean mask, boolean mask2) {
+        int left  = mask  ? (a & b) : a;
+        int right = mask2 ? (a | c) : a;
+        return mask ? (left | right) : left;
+    }
+
+    @ForceInline
+    public void testInt10Kernel(VectorSpecies SPECIES, int[] r, int[] a, int[] b, int[] c, boolean [] mask, boolean [] mask2) {
+        for (int i = 0; i < SPECIES.loopBound(r.length); i += SPECIES.length()) {
+            VectorMask<Integer> vmask  = VectorMask.fromArray(SPECIES, mask , i);
+            VectorMask<Integer> vmask2 = VectorMask.fromArray(SPECIES, mask2, i);
+            IntVector va = IntVector.fromArray(SPECIES, a, i);
+            IntVector vb = IntVector.fromArray(SPECIES, b, i);
+            IntVector vc = IntVector.fromArray(SPECIES, c, i);
+            va.lanewise(VectorOperators.AND, vb, vmask)
+            .lanewise(VectorOperators.OR,
+                      va.lanewise(VectorOperators.OR, vc, vmask2), vmask)
+           .intoArray(r, i);
+        }
+    }
+
+    @Test
+    @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
+    public void testInt10_Int128(int[] r, int[] a, int[] b, int[] c, boolean [] mask, boolean [] mask2) {
+        testInt10Kernel(IntVector.SPECIES_128, r, a, b, c, mask, mask2);
+    }
+    @Test
+    @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
+    public void testInt10_Int256(int[] r, int[] a, int[] b, int[] c, boolean [] mask, boolean [] mask2) {
+        testInt10Kernel(IntVector.SPECIES_256, r, a, b, c, mask, mask2);
+    }
+    @Test
+    @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
+    public void testInt10_Int512(int[] r, int[] a, int[] b, int[] c, boolean [] mask, boolean [] mask2) {
+        testInt10Kernel(IntVector.SPECIES_512, r, a, b, c, mask, mask2);
+    }
+
+    public void verifyInt10(int[] r, int[] a, int[] b, int[] c, boolean [] mask, boolean [] mask2) {
+        for (int i = 0; i < r.length; i++) {
+            int expected = intFunc10(a[i], b[i], c[i], mask[i], mask2[i]);
+            if (r[i] != expected) {
+                throw new AssertionError(String.format("testInt10: at #%d: r=%d, expected = %d = intFunc10(%d,%d,%d,%b,%b)",
+                                                       i, r[i], expected, a[i], b[i], c[i], mask[i], mask2[i]));
+            }
+        }
+    }
+
+    static int intFunc11(int a, int b, int c, boolean mask, boolean mask2) {
+        int left  = mask  ? (a ^ b) : a;
+        int right = mask2 ? (a & c) : a;
+        return mask ? (left & right) : left;
+    }
+
+    @ForceInline
+    public void testInt11Kernel(VectorSpecies SPECIES, int[] r, int[] a, int[] b, int[] c, boolean [] mask, boolean [] mask2) {
+        for (int i = 0; i < SPECIES.loopBound(r.length); i += SPECIES.length()) {
+            VectorMask<Integer> vmask  = VectorMask.fromArray(SPECIES, mask , i);
+            VectorMask<Integer> vmask2 = VectorMask.fromArray(SPECIES, mask2, i);
+            IntVector va = IntVector.fromArray(SPECIES, a, i);
+            IntVector vb = IntVector.fromArray(SPECIES, b, i);
+            IntVector vc = IntVector.fromArray(SPECIES, c, i);
+            va.lanewise(VectorOperators.XOR, vb, vmask)
+            .lanewise(VectorOperators.AND,
+                      va.lanewise(VectorOperators.AND, vc, vmask2), vmask)
+           .intoArray(r, i);
+        }
+    }
+
+    @Test
+    @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
+    public void testInt11_Int128(int[] r, int[] a, int[] b, int[] c, boolean [] mask, boolean [] mask2) {
+        testInt11Kernel(IntVector.SPECIES_128, r, a, b, c, mask, mask2);
+    }
+    @Test
+    @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
+    public void testInt11_Int256(int[] r, int[] a, int[] b, int[] c, boolean [] mask, boolean [] mask2) {
+        testInt11Kernel(IntVector.SPECIES_256, r, a, b, c, mask, mask2);
+    }
+    @Test
+    @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
+    public void testInt11_Int512(int[] r, int[] a, int[] b, int[] c, boolean [] mask, boolean [] mask2) {
+        testInt11Kernel(IntVector.SPECIES_512, r, a, b, c, mask, mask2);
+    }
+
+    public void verifyInt11(int[] r, int[] a, int[] b, int[] c, boolean [] mask, boolean [] mask2) {
+        for (int i = 0; i < r.length; i++) {
+            int expected = intFunc11(a[i], b[i], c[i], mask[i], mask2[i]);
+            if (r[i] != expected) {
+                throw new AssertionError(String.format("testInt11: at #%d: r=%d, expected = %d = intFunc11(%d,%d,%d,%b,%b)",
+                                                       i, r[i], expected, a[i], b[i], c[i], mask[i], mask2[i]));
+            }
+        }
+    }
+
+    static int intFunc12(int a, int b, boolean mask) {
+        int left = mask ? (-1 ^ a) : -1;
+        return mask ? (left | b) : left;
+    }
+
+    @ForceInline
+    public void testInt12Kernel(VectorSpecies SPECIES, int[] r, int[] a, int[] b, boolean [] mask) {
         for (int i = 0; i < SPECIES.loopBound(r.length); i += SPECIES.length()) {
             VectorMask<Integer> vmask = VectorMask.fromArray(SPECIES, mask , i);
             IntVector vall = IntVector.broadcast(SPECIES, -1);
@@ -524,37 +666,37 @@ public class TestMaskedMacroLogicVector {
 
     @Test
     @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
-    public void testInt9_Int128(int[] r, int[] a, int[] b, boolean [] mask) {
-        testInt9Kernel(IntVector.SPECIES_128, r, a, b, mask);
+    public void testInt12_Int128(int[] r, int[] a, int[] b, boolean [] mask) {
+        testInt12Kernel(IntVector.SPECIES_128, r, a, b, mask);
     }
     @Test
     @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
-    public void testInt9_Int256(int[] r, int[] a, int[] b, boolean [] mask) {
-        testInt9Kernel(IntVector.SPECIES_256, r, a, b, mask);
+    public void testInt12_Int256(int[] r, int[] a, int[] b, boolean [] mask) {
+        testInt12Kernel(IntVector.SPECIES_256, r, a, b, mask);
     }
     @Test
     @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
-    public void testInt9_Int512(int[] r, int[] a, int[] b, boolean [] mask) {
-        testInt9Kernel(IntVector.SPECIES_512, r, a, b, mask);
+    public void testInt12_Int512(int[] r, int[] a, int[] b, boolean [] mask) {
+        testInt12Kernel(IntVector.SPECIES_512, r, a, b, mask);
     }
 
-    public void verifyInt9(int[] r, int[] a, int[] b, boolean [] mask) {
+    public void verifyInt12(int[] r, int[] a, int[] b, boolean [] mask) {
         for (int i = 0; i < r.length; i++) {
-            int expected = intFunc9(a[i], b[i], mask[i]);
+            int expected = intFunc12(a[i], b[i], mask[i]);
             if (r[i] != expected) {
-                throw new AssertionError(String.format("testInt9: at #%d: r=%d, expected = %d = intFunc9(%d,%d,%b)",
+                throw new AssertionError(String.format("testInt12: at #%d: r=%d, expected = %d = intFunc12(%d,%d,%b)",
                                                        i, r[i], expected, a[i], b[i], mask[i]));
             }
         }
     }
 
-    static int intFunc10(int a, int b, boolean mask) {
+    static int intFunc13(int a, int b, boolean mask) {
         int left = mask ? (-1 ^ a) : -1;
         return mask ? (left & b) : left;
     }
 
     @ForceInline
-    public void testInt10Kernel(VectorSpecies SPECIES, int[] r, int[] a, int[] b, boolean [] mask) {
+    public void testInt13Kernel(VectorSpecies SPECIES, int[] r, int[] a, int[] b, boolean [] mask) {
         for (int i = 0; i < SPECIES.loopBound(r.length); i += SPECIES.length()) {
             VectorMask<Integer> vmask = VectorMask.fromArray(SPECIES, mask , i);
             IntVector vall = IntVector.broadcast(SPECIES, -1);
@@ -568,37 +710,37 @@ public class TestMaskedMacroLogicVector {
 
     @Test
     @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
-    public void testInt10_Int128(int[] r, int[] a, int[] b, boolean [] mask) {
-        testInt10Kernel(IntVector.SPECIES_128, r, a, b, mask);
+    public void testInt13_Int128(int[] r, int[] a, int[] b, boolean [] mask) {
+        testInt13Kernel(IntVector.SPECIES_128, r, a, b, mask);
     }
     @Test
     @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
-    public void testInt10_Int256(int[] r, int[] a, int[] b, boolean [] mask) {
-        testInt10Kernel(IntVector.SPECIES_256, r, a, b, mask);
+    public void testInt13_Int256(int[] r, int[] a, int[] b, boolean [] mask) {
+        testInt13Kernel(IntVector.SPECIES_256, r, a, b, mask);
     }
     @Test
     @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
-    public void testInt10_Int512(int[] r, int[] a, int[] b, boolean [] mask) {
-        testInt10Kernel(IntVector.SPECIES_512, r, a, b, mask);
+    public void testInt13_Int512(int[] r, int[] a, int[] b, boolean [] mask) {
+        testInt13Kernel(IntVector.SPECIES_512, r, a, b, mask);
     }
 
-    public void verifyInt10(int[] r, int[] a, int[] b, boolean [] mask) {
+    public void verifyInt13(int[] r, int[] a, int[] b, boolean [] mask) {
         for (int i = 0; i < r.length; i++) {
-            int expected = intFunc10(a[i], b[i], mask[i]);
+            int expected = intFunc13(a[i], b[i], mask[i]);
             if (r[i] != expected) {
-                throw new AssertionError(String.format("testInt10: at #%d: r=%d, expected = %d = intFunc10(%d,%d,%b)",
+                throw new AssertionError(String.format("testInt13: at #%d: r=%d, expected = %d = intFunc13(%d,%d,%b)",
                                                        i, r[i], expected, a[i], b[i], mask[i]));
             }
         }
     }
 
-    static int intFunc11(int a, int b, boolean mask) {
+    static int intFunc14(int a, int b, boolean mask) {
         int left = mask ? (-1 ^ a) : -1;
         return mask ? (left ^ b) : left;
     }
 
     @ForceInline
-    public void testInt11Kernel(VectorSpecies SPECIES, int[] r, int[] a, int[] b, boolean [] mask) {
+    public void testInt14Kernel(VectorSpecies SPECIES, int[] r, int[] a, int[] b, boolean [] mask) {
         for (int i = 0; i < SPECIES.loopBound(r.length); i += SPECIES.length()) {
             VectorMask<Integer> vmask = VectorMask.fromArray(SPECIES, mask , i);
             IntVector vall = IntVector.broadcast(SPECIES, -1);
@@ -612,30 +754,29 @@ public class TestMaskedMacroLogicVector {
 
     @Test
     @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
-    public void testInt11_Int128(int[] r, int[] a, int[] b, boolean [] mask) {
-        testInt11Kernel(IntVector.SPECIES_128, r, a, b, mask);
+    public void testInt14_Int128(int[] r, int[] a, int[] b, boolean [] mask) {
+        testInt14Kernel(IntVector.SPECIES_128, r, a, b, mask);
     }
     @Test
     @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
-    public void testInt11_Int256(int[] r, int[] a, int[] b, boolean [] mask) {
-        testInt11Kernel(IntVector.SPECIES_256, r, a, b, mask);
+    public void testInt14_Int256(int[] r, int[] a, int[] b, boolean [] mask) {
+        testInt14Kernel(IntVector.SPECIES_256, r, a, b, mask);
     }
     @Test
     @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
-    public void testInt11_Int512(int[] r, int[] a, int[] b, boolean [] mask) {
-        testInt11Kernel(IntVector.SPECIES_512, r, a, b, mask);
+    public void testInt14_Int512(int[] r, int[] a, int[] b, boolean [] mask) {
+        testInt14Kernel(IntVector.SPECIES_512, r, a, b, mask);
     }
 
-    public void verifyInt11(int[] r, int[] a, int[] b, boolean [] mask) {
+    public void verifyInt14(int[] r, int[] a, int[] b, boolean [] mask) {
         for (int i = 0; i < r.length; i++) {
-            int expected = intFunc11(a[i], b[i], mask[i]);
+            int expected = intFunc14(a[i], b[i], mask[i]);
             if (r[i] != expected) {
-                throw new AssertionError(String.format("testInt11: at #%d: r=%d, expected = %d = intFunc11(%d,%d,%b)",
+                throw new AssertionError(String.format("testInt14: at #%d: r=%d, expected = %d = intFunc14(%d,%d,%b)",
                                                        i, r[i], expected, a[i], b[i], mask[i]));
             }
         }
     }
-
 
     // ===================================================== //
 
@@ -933,66 +1074,132 @@ public class TestMaskedMacroLogicVector {
     @Run(test = {"testInt9_Int128"}, mode = RunMode.STANDALONE)
     public void kernel_testInt9_Int128() {
         for (int i = 0; i < 10000; i++) {
-            testInt9_Int128(r, a, b, mask);
-            verifyInt9(r, a, b, mask);
+            testInt9_Int128(r, a, b, c, mask, mask2);
+            verifyInt9(r, a, b, c, mask, mask2);
         }
     }
     @Run(test = {"testInt9_Int256"}, mode = RunMode.STANDALONE)
     public void kernel_testInt9_Int256() {
         for (int i = 0; i < 10000; i++) {
-            testInt9_Int256(r, a, b, mask);
-            verifyInt9(r, a, b, mask);
+            testInt9_Int256(r, a, b, c, mask, mask2);
+            verifyInt9(r, a, b, c, mask, mask2);
         }
     }
     @Run(test = {"testInt9_Int512"}, mode = RunMode.STANDALONE)
     public void kernel_testInt9_Int512() {
         for (int i = 0; i < 10000; i++) {
-            testInt9_Int512(r, a, b, mask);
-            verifyInt9(r, a, b, mask);
+            testInt9_Int512(r, a, b, c, mask, mask2);
+            verifyInt9(r, a, b, c, mask, mask2);
         }
     }
 
     @Run(test = {"testInt10_Int128"}, mode = RunMode.STANDALONE)
     public void kernel_testInt10_Int128() {
         for (int i = 0; i < 10000; i++) {
-            testInt10_Int128(r, a, b, mask);
-            verifyInt10(r, a, b, mask);
+            testInt10_Int128(r, a, b, c, mask, mask2);
+            verifyInt10(r, a, b, c, mask, mask2);
         }
     }
     @Run(test = {"testInt10_Int256"}, mode = RunMode.STANDALONE)
     public void kernel_testInt10_Int256() {
         for (int i = 0; i < 10000; i++) {
-            testInt10_Int256(r, a, b, mask);
-            verifyInt10(r, a, b, mask);
+            testInt10_Int256(r, a, b, c, mask, mask2);
+            verifyInt10(r, a, b, c, mask, mask2);
         }
     }
     @Run(test = {"testInt10_Int512"}, mode = RunMode.STANDALONE)
     public void kernel_testInt10_Int512() {
         for (int i = 0; i < 10000; i++) {
-            testInt10_Int512(r, a, b, mask);
-            verifyInt10(r, a, b, mask);
+            testInt10_Int512(r, a, b, c, mask, mask2);
+            verifyInt10(r, a, b, c, mask, mask2);
         }
     }
 
     @Run(test = {"testInt11_Int128"}, mode = RunMode.STANDALONE)
     public void kernel_testInt11_Int128() {
         for (int i = 0; i < 10000; i++) {
-            testInt11_Int128(r, a, b, mask);
-            verifyInt11(r, a, b, mask);
+            testInt11_Int128(r, a, b, c, mask, mask2);
+            verifyInt11(r, a, b, c, mask, mask2);
         }
     }
     @Run(test = {"testInt11_Int256"}, mode = RunMode.STANDALONE)
     public void kernel_testInt11_Int256() {
         for (int i = 0; i < 10000; i++) {
-            testInt11_Int256(r, a, b, mask);
-            verifyInt11(r, a, b, mask);
+            testInt11_Int256(r, a, b, c, mask, mask2);
+            verifyInt11(r, a, b, c, mask, mask2);
         }
     }
     @Run(test = {"testInt11_Int512"}, mode = RunMode.STANDALONE)
     public void kernel_testInt11_Int512() {
         for (int i = 0; i < 10000; i++) {
-            testInt11_Int512(r, a, b, mask);
-            verifyInt11(r, a, b, mask);
+            testInt11_Int512(r, a, b, c, mask, mask2);
+            verifyInt11(r, a, b, c, mask, mask2);
+        }
+    }
+
+    @Run(test = {"testInt12_Int128"}, mode = RunMode.STANDALONE)
+    public void kernel_testInt12_Int128() {
+        for (int i = 0; i < 10000; i++) {
+            testInt12_Int128(r, a, b, mask);
+            verifyInt12(r, a, b, mask);
+        }
+    }
+    @Run(test = {"testInt12_Int256"}, mode = RunMode.STANDALONE)
+    public void kernel_testInt12_Int256() {
+        for (int i = 0; i < 10000; i++) {
+            testInt12_Int256(r, a, b, mask);
+            verifyInt12(r, a, b, mask);
+        }
+    }
+    @Run(test = {"testInt12_Int512"}, mode = RunMode.STANDALONE)
+    public void kernel_testInt12_Int512() {
+        for (int i = 0; i < 10000; i++) {
+            testInt12_Int512(r, a, b, mask);
+            verifyInt12(r, a, b, mask);
+        }
+    }
+
+    @Run(test = {"testInt13_Int128"}, mode = RunMode.STANDALONE)
+    public void kernel_testInt13_Int128() {
+        for (int i = 0; i < 10000; i++) {
+            testInt13_Int128(r, a, b, mask);
+            verifyInt13(r, a, b, mask);
+        }
+    }
+    @Run(test = {"testInt13_Int256"}, mode = RunMode.STANDALONE)
+    public void kernel_testInt13_Int256() {
+        for (int i = 0; i < 10000; i++) {
+            testInt13_Int256(r, a, b, mask);
+            verifyInt13(r, a, b, mask);
+        }
+    }
+    @Run(test = {"testInt13_Int512"}, mode = RunMode.STANDALONE)
+    public void kernel_testInt13_Int512() {
+        for (int i = 0; i < 10000; i++) {
+            testInt13_Int512(r, a, b, mask);
+            verifyInt13(r, a, b, mask);
+        }
+    }
+
+    @Run(test = {"testInt14_Int128"}, mode = RunMode.STANDALONE)
+    public void kernel_testInt14_Int128() {
+        for (int i = 0; i < 10000; i++) {
+            testInt14_Int128(r, a, b, mask);
+            verifyInt14(r, a, b, mask);
+        }
+    }
+    @Run(test = {"testInt14_Int256"}, mode = RunMode.STANDALONE)
+    public void kernel_testInt14_Int256() {
+        for (int i = 0; i < 10000; i++) {
+            testInt14_Int256(r, a, b, mask);
+            verifyInt14(r, a, b, mask);
+        }
+    }
+    @Run(test = {"testInt14_Int512"}, mode = RunMode.STANDALONE)
+    public void kernel_testInt14_Int512() {
+        for (int i = 0; i < 10000; i++) {
+            testInt14_Int512(r, a, b, mask);
+            verifyInt14(r, a, b, mask);
         }
     }
 
@@ -1034,6 +1241,7 @@ public class TestMaskedMacroLogicVector {
         cl = fillLongRandom(() -> new long[SIZE]);
 
         mask = fillBooleanRandom((()-> new boolean[SIZE]));
+        mask2 = fillBooleanRandom((()-> new boolean[SIZE]));
     }
 
     public static void main(String[] args) {

@@ -763,6 +763,26 @@ public class IRNode {
         beforeMatchingNameRegex(DIV_MOD_L, "DivModL");
     }
 
+    public static final String DIV_VB = VECTOR_PREFIX + "DIV_VB" + POSTFIX;
+    static {
+        vectorNode(DIV_VB, "DivVB", TYPE_BYTE);
+    }
+
+    public static final String DIV_VS = VECTOR_PREFIX + "DIV_VS" + POSTFIX;
+    static {
+        vectorNode(DIV_VS, "DivVS", TYPE_SHORT);
+    }
+
+    public static final String DIV_VI = VECTOR_PREFIX + "DIV_VI" + POSTFIX;
+    static {
+        vectorNode(DIV_VI, "DivVI", TYPE_INT);
+    }
+
+    public static final String DIV_VL = VECTOR_PREFIX + "DIV_VL" + POSTFIX;
+    static {
+        vectorNode(DIV_VL, "DivVL", TYPE_LONG);
+    }
+
     public static final String DIV_VHF = VECTOR_PREFIX + "DIV_VHF" + POSTFIX;
     static {
         vectorNode(DIV_VHF, "DivVHF", TYPE_SHORT);
@@ -2861,6 +2881,26 @@ public class IRNode {
     public static final String X86_VMULDQ_REG = PREFIX + "X86_VMULDQ_REG" + POSTFIX;
     static {
         machOnlyNameRegex(X86_VMULDQ_REG, "vmuldq_reg");
+    }
+
+    public static final String AARCH64_VMULL_UINT_SVE2 = PREFIX + "AARCH64_VMULL_UINT_SVE2" + POSTFIX;
+    static {
+        machOnlyNameRegex(AARCH64_VMULL_UINT_SVE2, "vmulL_uint_sve2");
+    }
+
+    public static final String AARCH64_VMULL_INT_SVE2 = PREFIX + "AARCH64_VMULL_INT_SVE2" + POSTFIX;
+    static {
+        machOnlyNameRegex(AARCH64_VMULL_INT_SVE2, "vmulL_int_sve2");
+    }
+
+    public static final String AARCH64_VMULL_UINT_NEON = PREFIX + "AARCH64_VMULL_UINT_NEON" + POSTFIX;
+    static {
+        machOnlyNameRegex(AARCH64_VMULL_UINT_NEON, "vmulL_uint_neon");
+    }
+
+    public static final String AARCH64_VMULL_INT_NEON = PREFIX + "AARCH64_VMULL_INT_NEON" + POSTFIX;
+    static {
+        machOnlyNameRegex(AARCH64_VMULL_INT_NEON, "vmulL_int_neon");
     }
 
     public static final String X86_SCONV_D2I = PREFIX + "X86_SCONV_D2I" + POSTFIX;
