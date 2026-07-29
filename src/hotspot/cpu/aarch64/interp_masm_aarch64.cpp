@@ -227,7 +227,7 @@ void InterpreterMacroAssembler::write_flat_field(Register entry, Register field_
 
   add(obj, obj, field_offset);
 
-  load_klass(tmp1, r0);
+  load_klass(tmp1, r0, tmp2);
   payload_address(r0, r0, tmp1);
 
   Register layout_info = field_offset;
@@ -714,7 +714,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
     test_oop_is_not_inline_type(r0, rscratch2, skip, /* can_be_null= */ false);
 
     // Load fields from a buffered value with an inline class specific handler
-    load_klass(rscratch1 /*dst*/, r0 /*src*/);
+    load_klass(rscratch1 /*dst*/, r0 /*src*/, rscratch2 /*tmp*/);
     ldr(rscratch1, Address(rscratch1, InlineKlass::adr_members_offset()));
     ldr(rscratch1, Address(rscratch1, InlineKlass::unpack_handler_offset()));
     // Unpack handler can be null if inline type is not scalarizable in returns
@@ -1251,7 +1251,7 @@ void InterpreterMacroAssembler::profile_multiple_element_types(Register mdp, Reg
     b(done);
 
     bind(update);
-    load_klass(tmp, element);
+    load_klass(tmp, element, tmp2);
 
     // Record the object type.
     profile_receiver_type(tmp, mdp, 0);
@@ -1585,7 +1585,7 @@ void InterpreterMacroAssembler::profile_obj_type(Register obj, const Address& md
   b(next);
 
   bind(update);
-  load_klass(obj, obj);
+  load_klass(obj, obj, rscratch1);
 
   ldr(rscratch1, mdo_addr);
   eor(obj, obj, rscratch1);

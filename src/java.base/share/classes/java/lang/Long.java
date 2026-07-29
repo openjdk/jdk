@@ -82,6 +82,7 @@ import static java.lang.String.COMPACT_STRINGS;
  * @since   1.0
  */
 @jdk.internal.ValueBased
+// See doc/value-class-preview.md for an overview of value class generation
 public final /*value*/ class Long extends Number
         implements Comparable<Long>, Constable, ConstantDesc {
     /**
@@ -924,6 +925,9 @@ public final /*value*/ class Long extends Number
         return Long.valueOf(parseLong(s, 10));
     }
 
+    // When preview features are enabled, the cache does not affect object
+    // equality == semantics, but exists for performance.
+    // See doc/value-class-preview.md "Wrapper Class Caches" section.
     @AOTSafeClassInitializer
     private static final class LongCache {
         private LongCache() {}

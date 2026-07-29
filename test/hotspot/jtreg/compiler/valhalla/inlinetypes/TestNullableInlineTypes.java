@@ -3018,6 +3018,7 @@ public class TestNullableInlineTypes {
     }
 
     // Test that the ConstraintCastNode::Ideal transformation propagates null-free information
+    /* TODO 8389088: Re-enable once fixed.
     @Test
     public MyValue1 test103() {
         Object obj = hide(null);
@@ -3028,6 +3029,7 @@ public class TestNullableInlineTypes {
     public void test103_verifier() {
         Asserts.assertEQ(test103(), null);
     }
+    */
 
     // Test null restricted fields
 

@@ -52,7 +52,7 @@ public value class VMObjectAllocValueTest {
         int actual = getNumberOfAllocation();
 
         if (actual != expected) {
-            throw new Exception("Number of allocation: expected: " + expected + ", got: " + actual);
+            throw new Exception("Number of allocations: expected: " + expected + ", got: " + actual);
         }
     }
 }

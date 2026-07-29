@@ -126,7 +126,7 @@ public class AccessZeroNKlassHitsProtectionZone {
 
     private static void run_test(boolean COH, boolean CDS) throws IOException, SkippedException {
         // Notes:
-        // We want to enforce zero-based encoding, to test the protection page in that case. For zero-based encoding,
+        // We want to enforce non-zero-based encoding, to test the protection page in that case. For zero-based encoding,
         // protection page is at address zero, no need to test that.
         // If CDS is on, we never use zero-based, forceBase is ignored.
         // If CDS is off, we use forceBase to (somewhat) reliably force the encoding base to beyond 32G,

@@ -35,7 +35,7 @@ import jdk.internal.access.SharedSecrets;
 
 /**
  * This class implements the {@code Map} interface with a hash table, using
- * {@code == } in place of {@code .equals()} equality when comparing keys (and values).
+ * {@code ==} in place of {@code .equals()} equality when comparing keys (and values).
  * In other words, in an {@code IdentityHashMap}, two keys
  * {@code k1} and {@code k2} are considered equal if and only if
  * {@code (k1==k2)}.  (In normal {@code Map} implementations (like
@@ -46,18 +46,18 @@ import jdk.internal.access.SharedSecrets;
  * implementation!  While this class implements the {@code Map} interface, it
  * intentionally violates {@code Map's} general contract, which mandates the
  * use of the {@code equals} method when comparing objects.  This class is
- * designed for use only in the rare cases wherein {@code == } semantics are required.
+ * designed for use only in the rare cases wherein {@code ==} semantics are required.
  * </b>
  * <div class="preview-block">
  *      <div class="preview-comment">
- *          When preview features are enabled, keys and values may be identity objects,
- *          value objects or null.
- *          For value classes, two value objects are state-wise equivalent if they are instances
+ *          When preview features are enabled, keys and values may be
+ *          {@linkplain java.util.Objects#hasIdentity value objects}.
+ *          Two value object keys are {@code ==} if they are instances
  *          of the same class and the values of their instance fields are the same.
  *      </div>
  * </div>
  *
- * <p>The view collections of this map also have {@code == } equality semantics
+ * <p>The view collections of this map also have {@code ==} equality semantics
  * for their elements. See the {@link #keySet() keySet}, {@link #values() values},
  * and {@link #entrySet() entrySet} methods for further information.
  *

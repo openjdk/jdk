@@ -42,14 +42,14 @@ final class ValueObjectMethods {
     }
 
     /**
-     * Return whether two value objects of the same class are statewise equivalent,
+     * Return whether two value objects of the same class are indistinguishable,
      * as used by {@code ==} operator.
      * The fields to compare are determined by Unsafe.getFieldMap.
      * This method is called by the JVM.
      *
      * @param a a value class instance, non-null
      * @param b a value class instance of the same class as {@code a}, non-null
-     * @return whether these two value objects are statewise equivalent
+     * @return whether these two value objects are indistinguishable
      */
     private static boolean isSubstitutable(Object a, Object b) {
         if (VERBOSE) {
@@ -106,7 +106,7 @@ final class ValueObjectMethods {
 
     /**
      * Return the identity hashCode of a value object.
-     * Two statewise equivalent value objects produce the same hashCode.
+     * Two indistinguishable value objects produce the same hashCode.
      * This method is called by the JVM.
      *
      * The generated identity hash must be invariantly immutable.
