@@ -108,6 +108,76 @@ static bool mach_node_kills_vset(const MachNode* mach) {
   return riscv_vset_from_node(mach, &req);
 }
 
+static RiscVVSetState meet_vset_preds(Compile* C,
+                                      Block* block,
+                                      RiscVVSetState* out_states) {
+  RiscVVSetState result = invalid_vset_state();
+  bool has_state = false;
+  for (uint p = 1; p < block->num_preds(); p++) {
+    Block* pred_block = C->cfg()->get_block_for_node(block->pred(p));
+    if (pred_block == nullptr) {
+      return invalid_vset_state();
+    }
+    const RiscVVSetState& pred_state = out_states[pred_block->_pre_order];
+    if (!pred_state._valid) {
+      return invalid_vset_state();
+    }
+    if (!has_state) {
+      result = pred_state;
+      has_state = true;
+    } else if (!riscv_vset_state_equal_valid(result, pred_state)) {
+      return invalid_vset_state();
+    }
+  }
+  return has_state ? result : invalid_vset_state();
+}
+
+static RiscVVSetState transfer_vset_state(Block* block,
+                                          RiscVVSetState state) {
+  for (uint j = 0; j < block->number_of_nodes(); j++) {
+    Node* n = block->get_node(j);
+    if (!n->is_Mach()) {
+      continue;
+    }
+    MachNode* mach = n->as_Mach();
+    if (mach->is_MachRiscVVSet()) {
+      MachRiscVVSetNode* vset = mach->as_MachRiscVVSet();
+      state = vset->state();
+    } else if (mach_node_kills_vset(mach)) {
+      state = invalid_vset_state();
+    }
+  }
+  return state;
+}
+
+static void compute_vset_states(Compile* C,
+                                RiscVVSetState* in_states,
+                                RiscVVSetState* out_states) {
+  uint nblocks = C->cfg()->number_of_blocks();
+  for (uint i = 0; i < nblocks; i++) {
+    in_states[i] = invalid_vset_state();
+    out_states[i] = invalid_vset_state();
+  }
+
+  bool changed = true;
+  while (changed) {
+    changed = false;
+    for (uint i = 0; i < nblocks; i++) {
+      Block* block = C->cfg()->get_block(i);
+      RiscVVSetState new_in = meet_vset_preds(C, block, out_states);
+      RiscVVSetState new_out = transfer_vset_state(block, new_in);
+      if (!riscv_vset_state_same(in_states[block->_pre_order], new_in)) {
+        in_states[block->_pre_order] = new_in;
+        changed = true;
+      }
+      if (!riscv_vset_state_same(out_states[block->_pre_order], new_out)) {
+        out_states[block->_pre_order] = new_out;
+        changed = true;
+      }
+    }
+  }
+}
+
 static void insert_explicit_vset_nodes(Compile* C) {
   for (uint i = 0; i < C->cfg()->number_of_blocks(); i++) {
     Block* block = C->cfg()->get_block(i);
@@ -133,6 +203,40 @@ static void remove_redundant_vset_nodes_in_blocks(Compile* C) {
   for (uint i = 0; i < C->cfg()->number_of_blocks(); i++) {
     Block* block = C->cfg()->get_block(i);
     RiscVVSetState state = invalid_vset_state();
+    for (uint j = 0; j < block->number_of_nodes(); j++) {
+      Node* n = block->get_node(j);
+      if (!n->is_Mach()) {
+        continue;
+      }
+      MachNode* mach = n->as_Mach();
+      if (mach->is_MachRiscVVSet()) {
+        MachRiscVVSetNode* vset = mach->as_MachRiscVVSet();
+        RiscVVSetState vset_state = vset->state();
+        if (riscv_vset_state_equal_valid(state, vset_state)) {
+          block->remove_node(j);
+          C->cfg()->unmap_node_from_block(vset);
+          j--;
+        } else {
+          state = vset_state;
+        }
+      } else if (mach_node_kills_vset(mach)) {
+        state = invalid_vset_state();
+      }
+    }
+  }
+}
+
+static void remove_redundant_vset_nodes(Compile* C) {
+  uint nblocks = C->cfg()->number_of_blocks();
+  RiscVVSetState* in_states =
+      NEW_RESOURCE_ARRAY(RiscVVSetState, nblocks);
+  RiscVVSetState* out_states =
+      NEW_RESOURCE_ARRAY(RiscVVSetState, nblocks);
+  compute_vset_states(C, in_states, out_states);
+
+  for (uint i = 0; i < nblocks; i++) {
+    Block* block = C->cfg()->get_block(i);
+    RiscVVSetState state = in_states[block->_pre_order];
     for (uint j = 0; j < block->number_of_nodes(); j++) {
       Node* n = block->get_node(j);
       if (!n->is_Mach()) {
@@ -422,6 +526,7 @@ void PhaseOutput::Output() {
 #ifdef RISCV
   insert_explicit_vset_nodes(C);
   remove_redundant_vset_nodes_in_blocks(C);
+  remove_redundant_vset_nodes(C);
   if (C->failing()) {
     return;
   }
