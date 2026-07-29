@@ -119,8 +119,6 @@ public class SSLFlowDelegate {
     final CompletableFuture<Void> writerCF;
     final CompletableFuture<Void> stopCF;
     final Consumer<ByteBuffer> recycler;
-    static AtomicInteger scount = new AtomicInteger(1);
-    final int id;
 
     /**
      * Creates an SSLFlowDelegate fed from two Flow.Subscribers. Each
@@ -146,7 +144,6 @@ public class SSLFlowDelegate {
             Subscriber<? super List<ByteBuffer>> downReader,
             Subscriber<? super List<ByteBuffer>> downWriter)
         {
-        this.id = scount.getAndIncrement();
         this.tubeName = String.valueOf(downWriter);
         this.recycler = recycler;
         this.reader = new Reader();
