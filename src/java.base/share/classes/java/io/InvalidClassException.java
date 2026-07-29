@@ -35,6 +35,7 @@ package java.io;
  * <li>The class does not have an accessible no-arg constructor
  * <li>The ObjectStreamClass of an enum constant does not represent
  *     an enum type
+ * <li>The class declares or inherits any strictly-initialized instance field
  * <li>A {@linkplain Class#isValue value class} cannot be serialized
  * <li> Other conditions given in the <cite>Java Object Serialization
  *      Specification</cite>

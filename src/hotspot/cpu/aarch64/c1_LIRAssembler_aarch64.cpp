@@ -455,16 +455,6 @@ int LIR_Assembler::emit_deopt_handler() {
   return entry_offset;
 }
 
-void LIR_Assembler::add_debug_info_for_branch(address adr, CodeEmitInfo* info) {
-  _masm->code_section()->relocate(adr, relocInfo::poll_type);
-  int pc_offset = code_offset();
-  flush_debug_info(pc_offset);
-  info->record_debug_info(compilation()->debug_info_recorder(), pc_offset);
-  if (info->exception_handlers() != nullptr) {
-    compilation()->add_exception_handlers_for_pco(pc_offset, info->exception_handlers());
-  }
-}
-
 void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
   assert(result->is_illegal() || !result->is_single_cpu() || result->as_register() == r0, "word returns are in r0,");
 
@@ -497,7 +487,7 @@ void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
       __ test_oop_is_not_inline_type(r0, rscratch2, skip, /* can_be_null= */ false);
 
       // Load fields from a buffered value with an inline class specific handler
-      __ load_klass(rscratch1 /*dst*/, r0 /*src*/);
+      __ load_klass(rscratch1 /*dst*/, r0 /*src*/, rscratch2 /*tmp*/);
       __ ldr(rscratch1, Address(rscratch1, InlineKlass::adr_members_offset()));
       __ ldr(rscratch1, Address(rscratch1, InlineKlass::unpack_handler_offset()));
       // Unpack handler can be null if inline type is not scalarizable in returns
@@ -1399,7 +1389,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
       __ bind(not_null);
 
       Register recv = k_RInfo;
-      __ load_klass(recv, obj);
+      __ load_klass(recv, obj, rscratch1);
       type_profile_helper(mdo, md, data, recv);
     } else {
       __ cbz(obj, *obj_is_null);
@@ -1417,15 +1407,15 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     assert(!k->is_loaded() || !k->is_obj_array_klass(), "Use refined array for a direct pointer comparison");
     // get object class
     // not a safepoint as obj null check happens earlier
-    __ load_klass(rscratch1, obj);
-    __ cmp( rscratch1, k_RInfo);
+    __ load_klass(rscratch2, obj, rscratch1);
+    __ cmp( rscratch2, k_RInfo);
 
     __ br(Assembler::NE, *failure_target);
     // successful cast, fall through to profile or jump
   } else {
     // get object class
     // not a safepoint as obj null check happens earlier
-    __ load_klass(klass_RInfo, obj);
+    __ load_klass(klass_RInfo, obj, rscratch1);
     if (k->is_loaded()) {
       // See if we get an immediate positive hit
       __ ldr(rscratch1, Address(klass_RInfo, int64_t(k->super_check_offset())));
@@ -1521,15 +1511,15 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
       __ bind(not_null);
 
       Register recv = k_RInfo;
-      __ load_klass(recv, value);
+      __ load_klass(recv, value, rscratch1);
       type_profile_helper(mdo, md, data, recv);
     } else {
       __ cbz(value, done);
     }
 
     add_debug_info_for_null_check_here(op->info_for_exception());
-    __ load_klass(k_RInfo, array);
-    __ load_klass(klass_RInfo, value);
+    __ load_klass(k_RInfo, array, rscratch1);
+    __ load_klass(klass_RInfo, value, rscratch1);
 
     // get instance klass (it's already uncompressed)
     __ ldr(k_RInfo, Address(k_RInfo, ObjArrayKlass::element_klass_offset()));
@@ -2455,14 +2445,14 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   // an instance type.
   if (flags & LIR_OpArrayCopy::type_check) {
     if (!(flags & LIR_OpArrayCopy::LIR_OpArrayCopy::dst_objarray)) {
-      __ load_klass(tmp, dst);
+      __ load_klass(tmp, dst, rscratch1);
       __ ldrw(rscratch1, Address(tmp, in_bytes(Klass::layout_helper_offset())));
       __ cmpw(rscratch1, Klass::_lh_neutral_value);
       __ br(Assembler::GE, *stub->entry());
     }
 
     if (!(flags & LIR_OpArrayCopy::LIR_OpArrayCopy::src_objarray)) {
-      __ load_klass(tmp, src);
+      __ load_klass(tmp, src, rscratch1);
       __ ldrw(rscratch1, Address(tmp, in_bytes(Klass::layout_helper_offset())));
       __ cmpw(rscratch1, Klass::_lh_neutral_value);
       __ br(Assembler::GE, *stub->entry());
@@ -2516,8 +2506,8 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
 
       __ PUSH(src, dst);
 
-      __ load_klass(src, src);
-      __ load_klass(dst, dst);
+      __ load_klass(src, src, rscratch1);
+      __ load_klass(dst, dst, rscratch1);
 
       __ check_klass_subtype_fast_path(src, dst, tmp, &cont, &slow, nullptr);
 
@@ -2541,9 +2531,9 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
           assert(flags & mask, "one of the two should be known to be an object array");
 
           if (!(flags & LIR_OpArrayCopy::src_objarray)) {
-            __ load_klass(tmp, src);
+            __ load_klass(tmp, src, rscratch1);
           } else if (!(flags & LIR_OpArrayCopy::dst_objarray)) {
-            __ load_klass(tmp, dst);
+            __ load_klass(tmp, dst, rscratch1);
           }
           int lh_offset = in_bytes(Klass::layout_helper_offset());
           Address klass_lh_addr(tmp, lh_offset);
@@ -2569,7 +2559,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
         __ uxtw(c_rarg2, length);
         assert_different_registers(c_rarg2, dst);
 
-        __ load_klass(c_rarg4, dst);
+        __ load_klass(c_rarg4, dst, rscratch1);
         __ ldr(c_rarg4, Address(c_rarg4, ObjArrayKlass::element_klass_offset()));
         __ ldrw(c_rarg3, Address(c_rarg4, Klass::super_check_offset_offset()));
         __ far_call(RuntimeAddress(copyfunc_addr));
@@ -2625,12 +2615,12 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     __ mov_metadata(tmp, default_type->constant_encoding());
 
     if (basic_type != T_OBJECT) {
-      __ cmp_klass(dst, tmp, rscratch1);
+      __ cmp_klass(dst, tmp, rscratch1, rscratch2);
       __ br(Assembler::NE, halt);
-      __ cmp_klass(src, tmp, rscratch1);
+      __ cmp_klass(src, tmp, rscratch1, rscratch2);
       __ br(Assembler::EQ, known_ok);
     } else {
-      __ cmp_klass(dst, tmp, rscratch1);
+      __ cmp_klass(dst, tmp, rscratch1, rscratch2);
       __ br(Assembler::EQ, known_ok);
       __ cmp(src, dst);
       __ br(Assembler::EQ, known_ok);
@@ -2705,7 +2695,7 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
     add_debug_info_for_null_check_here(info);
   }
 
-  __ load_klass(result, obj);
+  __ load_klass(result, obj, rscratch1);
 }
 
 void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
@@ -2747,7 +2737,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
       // Fall back to runtime helper to handle the rest at runtime.
       __ mov_metadata(recv, known_klass->constant_encoding());
     } else {
-      __ load_klass(recv, recv);
+      __ load_klass(recv, recv, rscratch1);
     }
     type_profile_helper(mdo, md, data, recv);
   } else {
@@ -2833,7 +2823,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
 #ifdef ASSERT
     if (exact_klass != nullptr) {
       Label ok;
-      __ load_klass(tmp, tmp);
+      __ load_klass(tmp, tmp, rscratch1);
       __ mov_metadata(rscratch1, exact_klass->constant_encoding());
       __ eor(rscratch1, tmp, rscratch1);
       __ cbz(rscratch1, ok);
@@ -2846,7 +2836,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
         if (exact_klass != nullptr) {
           __ mov_metadata(tmp, exact_klass->constant_encoding());
         } else {
-          __ load_klass(tmp, tmp);
+          __ load_klass(tmp, tmp, rscratch1);
         }
 
         __ ldr(rscratch2, mdo_addr);

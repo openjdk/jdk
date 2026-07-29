@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -530,6 +530,17 @@ public:
     assert(_target_jt->jvmti_vthread() == target_h(), "sanity check");
     doit(_target_jt); // mounted virtual thread
   }
+};
+
+// HandshakeClosure to send an asynchronous exception to target.
+class StopThreadClosure : public JvmtiUnitedHandshakeClosure {
+ private:
+  Handle _exception;
+ public:
+  StopThreadClosure(JavaThread* current_thread, oop exception);
+  void doit(JavaThread* target);
+  void do_thread(Thread* target);
+  void do_vthread(Handle target_h);
 };
 
 // HandshakeClosure to update for pop top frame.

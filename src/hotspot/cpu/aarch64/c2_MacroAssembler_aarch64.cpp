@@ -188,7 +188,7 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register t1,
   }
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
-    load_klass(t1, obj);
+    load_klass(t1, obj, rscratch2);
     ldrb(t1, Address(t1, Klass::misc_flags_offset()));
     tst(t1, KlassFlags::_misc_is_value_based_class);
     br(Assembler::NE, slow_path);
@@ -1827,19 +1827,19 @@ void C2_MacroAssembler::neon_reduce_mul_integral(Register dst, BasicType bt,
         if (isQ) {
           // Multiply the lower half and higher half of vector iteratively.
           // vtmp1 = vsrc[8:15]
-          ins(vtmp1, D, vsrc, 0, 1);
+          ext(vtmp1, T16B, vsrc, vsrc, 8);
           // vtmp1[n] = vsrc[n] * vsrc[n + 8], where n=[0, 7]
           mulv(vtmp1, T8B, vtmp1, vsrc);
           // vtmp2 = vtmp1[4:7]
-          ins(vtmp2, S, vtmp1, 0, 1);
+          ext(vtmp2, T8B, vtmp1, vtmp1, 4);
           // vtmp1[n] = vtmp1[n] * vtmp1[n + 4], where n=[0, 3]
           mulv(vtmp1, T8B, vtmp2, vtmp1);
         } else {
-          ins(vtmp1, S, vsrc, 0, 1);
+          ext(vtmp1, T8B, vsrc, vsrc, 4);
           mulv(vtmp1, T8B, vtmp1, vsrc);
         }
         // vtmp2 = vtmp1[2:3]
-        ins(vtmp2, H, vtmp1, 0, 1);
+        ext(vtmp2, T8B, vtmp1, vtmp1, 2);
         // vtmp2[n] = vtmp1[n] * vtmp1[n + 2], where n=[0, 1]
         mulv(vtmp2, T8B, vtmp2, vtmp1);
         // dst = vtmp2[0] * isrc * vtmp2[1]
@@ -1852,12 +1852,12 @@ void C2_MacroAssembler::neon_reduce_mul_integral(Register dst, BasicType bt,
         break;
       case T_SHORT:
         if (isQ) {
-          ins(vtmp2, D, vsrc, 0, 1);
+          ext(vtmp2, T16B, vsrc, vsrc, 8);
           mulv(vtmp2, T4H, vtmp2, vsrc);
-          ins(vtmp1, S, vtmp2, 0, 1);
+          ext(vtmp1, T8B, vtmp2, vtmp2, 4);
           mulv(vtmp1, T4H, vtmp1, vtmp2);
         } else {
-          ins(vtmp1, S, vsrc, 0, 1);
+          ext(vtmp1, T8B, vsrc, vsrc, 4);
           mulv(vtmp1, T4H, vtmp1, vsrc);
         }
         umov(rscratch1, vtmp1, H, 0);
@@ -1869,7 +1869,7 @@ void C2_MacroAssembler::neon_reduce_mul_integral(Register dst, BasicType bt,
         break;
       case T_INT:
         if (isQ) {
-          ins(vtmp1, D, vsrc, 0, 1);
+          ext(vtmp1, T16B, vsrc, vsrc, 8);
           mulv(vtmp1, T2S, vtmp1, vsrc);
         } else {
           vtmp1 = vsrc;
@@ -1925,19 +1925,19 @@ void C2_MacroAssembler::neon_reduce_mul_fp(FloatRegister dst, BasicType bt,
         break;
       case T_FLOAT:
         fmuls(dst, fsrc, vsrc);
-        ins(vtmp, S, vsrc, 0, 1);
+        ext(vtmp, T8B, vsrc, vsrc, 4);
         fmuls(dst, dst, vtmp);
         if (isQ) {
-          ins(vtmp, S, vsrc, 0, 2);
+          ext(vtmp, T16B, vsrc, vsrc, 8);
           fmuls(dst, dst, vtmp);
-          ins(vtmp, S, vsrc, 0, 3);
+          ext(vtmp, T16B, vsrc, vsrc, 12);
           fmuls(dst, dst, vtmp);
          }
         break;
       case T_DOUBLE:
         assert(isQ, "unsupported");
         fmuld(dst, fsrc, vsrc);
-        ins(vtmp, D, vsrc, 0, 1);
+        ext(vtmp, T16B, vsrc, vsrc, 8);
         fmuld(dst, dst, vtmp);
         break;
       default:
@@ -2749,7 +2749,8 @@ void C2_MacroAssembler::reconstruct_frame_pointer(Register rtmp) {
 void C2_MacroAssembler::select_from_two_vectors_neon(FloatRegister dst, FloatRegister src1,
                                                      FloatRegister src2, FloatRegister index,
                                                      FloatRegister tmp, unsigned vector_length_in_bytes) {
-  assert_different_registers(dst, src1, src2, tmp);
+  assert_different_registers(src2, tmp);
+  assert_different_registers(index, tmp);
   SIMD_Arrangement size = vector_length_in_bytes == 16 ? T16B : T8B;
 
   if (vector_length_in_bytes == 16) {
@@ -2778,7 +2779,8 @@ void C2_MacroAssembler::select_from_two_vectors_sve(FloatRegister dst, FloatRegi
                                                     FloatRegister src2, FloatRegister index,
                                                     FloatRegister tmp, SIMD_RegVariant T,
                                                     unsigned vector_length_in_bytes) {
-  assert_different_registers(dst, src1, src2, index, tmp);
+  assert_different_registers(src2, tmp);
+  assert_different_registers(index, tmp);
 
   if (vector_length_in_bytes == 8) {
     // We need to fit both the source vectors (src1, src2) in a single vector register because the
@@ -2805,7 +2807,8 @@ void C2_MacroAssembler::select_from_two_vectors(FloatRegister dst, FloatRegister
                                                 FloatRegister tmp, BasicType bt,
                                                 unsigned vector_length_in_bytes) {
 
-  assert_different_registers(dst, src1, src2, index, tmp);
+  assert_different_registers(dst, src1, src2, tmp);
+  assert_different_registers(index, tmp);
 
   // The cases that can reach this method are -
   // - UseSVE = 0/1, vector_length_in_bytes = 8 or 16, excluding double and long types
@@ -2987,4 +2990,43 @@ int C2_MacroAssembler::vector_iota_entry_index(BasicType bt) {
   default:
     ShouldNotReachHere();
   }
+}
+
+// Vector integer division for BYTE elements. Each BYTE is widened to SHORT for
+// the low and high halves of the register, divided using the SHORT helper
+// (which widens further to INT), and the two SHORT result halves are narrowed
+// back to BYTE.
+void C2_MacroAssembler::sve_sdiv_byte(FloatRegister dst_src1, FloatRegister src2,
+                                      FloatRegister vtmp1, FloatRegister vtmp2,
+                                      FloatRegister vtmp3, FloatRegister vtmp4) {
+  assert_different_registers(dst_src1, src2, vtmp1, vtmp2, vtmp3, vtmp4);
+  FloatRegister src1 = dst_src1;
+  // Low half of the bytes -> SHORT, then divide (result SHORT in vtmp1).
+  sve_sunpklo(vtmp1, H, src1);
+  sve_sunpklo(vtmp2, H, src2);
+  sve_sdiv_short(vtmp1, vtmp2, vtmp3, vtmp4);
+  // High half of the bytes -> SHORT, then divide (result SHORT in src1).
+  sve_sunpkhi(src1, H, src1);
+  sve_sunpkhi(vtmp2, H, src2);
+  sve_sdiv_short(src1, vtmp2, vtmp3, vtmp4);
+  // Narrow the two SHORT result halves back to BYTE.
+  sve_uzp1(dst_src1, B, vtmp1, src1);
+}
+
+// Vector integer division for SHORT elements, implemented by widening each
+// element to 32 bits, performing SDIV, and narrowing back.
+void C2_MacroAssembler::sve_sdiv_short(FloatRegister dst_src1, FloatRegister src2,
+                                       FloatRegister vtmp1, FloatRegister vtmp2) {
+  assert_different_registers(dst_src1, src2, vtmp1, vtmp2);
+  FloatRegister src1 = dst_src1;
+  // Low half: SHORT -> INT, then divide.
+  sve_sunpklo(vtmp1, S, src1);
+  sve_sunpklo(vtmp2, S, src2);
+  sve_sdiv(vtmp1, S, ptrue, vtmp2);
+  // High half: SHORT -> INT, then divide.
+  sve_sunpkhi(src1, S, src1);
+  sve_sunpkhi(vtmp2, S, src2);
+  sve_sdiv(src1, S, ptrue, vtmp2);
+  // Narrow the two INT result halves back to SHORT.
+  sve_uzp1(dst_src1, H, vtmp1, src1);
 }

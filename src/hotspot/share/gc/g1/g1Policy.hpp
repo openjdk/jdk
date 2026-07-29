@@ -335,9 +335,8 @@ private:
 
 public:
   // This sets the initiate_conc_mark_if_possible() flag to start a
-  // new cycle, as long as we are not already in one. It's best if it
-  // is called during a safepoint when the test whether a cycle is in
-  // progress or not is stable.
+  // new cycle, as long as we are not already in one. It is called
+  // at a safepoint.
   bool force_concurrent_start_if_outside_cycle(GCCause::Cause gc_cause);
 
   // Decide whether this garbage collection pause should be a concurrent start
