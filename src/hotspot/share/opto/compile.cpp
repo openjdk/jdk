@@ -2950,7 +2950,7 @@ bool Compile::compute_logic_cone(Node* n, Unique_Node_List& partition, Unique_No
 
   Node* parent_pred = parent_is_predicated ? n->in(n->req()-1) : nullptr;
   Node* left_child_pred = left_child_predicated ? n->in(1)->in(n->in(1)->req()-1) : nullptr;
-  Node* right_child_pred = right_child_predicated ? n->in(1)->in(n->in(1)->req()-1) : nullptr;
+  Node* right_child_pred = right_child_predicated ? n->in(2)->in(n->in(2)->req()-1) : nullptr;
 
   do {
     if (pack_left_child && left_child_LOP &&
