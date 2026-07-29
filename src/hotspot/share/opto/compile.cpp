@@ -2373,8 +2373,8 @@ void Compile::Optimize() {
 
     if (failing())  return;
 
-    // inline_boxing_calls() may enqueue newly discovered calls matched by a
-    // CompileCommand=delayinline directive into _late_inlines.
+    // inline_boxing_calls() may introduce new late inline candidates
+    // in stress modes or w/ some compile directives.
     inline_incrementally(igvn);
 
     print_method(PHASE_INCREMENTAL_BOXING_INLINE, 2);
