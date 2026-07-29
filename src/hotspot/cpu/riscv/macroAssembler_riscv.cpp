@@ -2144,6 +2144,65 @@ void MacroAssembler::update_word_crc32(Register crc, Register v, Register tmp1, 
   xorr(crc, crc, tmp2);
 }
 
+/**
+ * Emits code to update CRC-32 with a 64-bit value according to tables 0 to 7
+ * (slicing-by-8).
+ */
+void MacroAssembler::update_dword_crc32(Register crc, Register v,
+        Register table0, Register table1, Register table2, Register table3,
+        Register table4, Register table5, Register table6, Register table7) {
+  const Register tmp = t1;
+  assert_different_registers(crc, v, table0, table1, table2, table3, table4, table5, table6, table7, tmp);
+
+  xorr(v, v, crc);
+  mv(crc, zr);
+
+  zext(tmp, v, 8);
+  shadd(tmp, tmp, table7, tmp, 2);
+  lwu(tmp, Address(tmp));
+  xorr(crc, crc, tmp);
+
+  slli(tmp, v, 16);
+  srliw(tmp, tmp, 24);
+  shadd(tmp, tmp, table6, tmp, 2);
+  lwu(tmp, Address(tmp));
+  xorr(crc, crc, tmp);
+
+  slli(tmp, v, 8);
+  srliw(tmp, tmp, 24);
+  shadd(tmp, tmp, table5, tmp, 2);
+  lwu(tmp, Address(tmp));
+  xorr(crc, crc, tmp);
+
+  srliw(tmp, v, 24);
+  shadd(tmp, tmp, table4, tmp, 2);
+  lwu(tmp, Address(tmp));
+  xorr(crc, crc, tmp);
+
+  srli(tmp, v, 32);
+  zext(tmp, tmp, 8);
+  shadd(tmp, tmp, table3, tmp, 2);
+  lwu(tmp, Address(tmp));
+  xorr(crc, crc, tmp);
+
+  srli(tmp, v, 40);
+  zext(tmp, tmp, 8);
+  shadd(tmp, tmp, table2, tmp, 2);
+  lwu(tmp, Address(tmp));
+  xorr(crc, crc, tmp);
+
+  srli(tmp, v, 48);
+  zext(tmp, tmp, 8);
+  shadd(tmp, tmp, table1, tmp, 2);
+  lwu(tmp, Address(tmp));
+  xorr(crc, crc, tmp);
+
+  srli(tmp, v, 56);
+  shadd(tmp, tmp, table0, tmp, 2);
+  lwu(tmp, Address(tmp));
+  xorr(crc, crc, tmp);
+}
+
 
 #ifdef COMPILER2
 // This improvement (vectorization) is based on java.base/share/native/libzip/zlib/zcrc32.c.
@@ -2606,83 +2665,124 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
   assert_different_registers(crc, buf, len, table0, table1, table2, table3, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
   Label L_vector_entry,
         L_unroll_loop,
+        L_by8_loop_entry, L_by8_loop,
         L_by4_loop_entry, L_by4_loop,
-        L_by1_loop, L_exit, L_skip1, L_skip2;
+        L_by1_loop, L_exit, L_skip1, L_skip2, L_skip4;
 
   const int64_t single_table_size = 256;
   const int64_t unroll = 16;
-  const int64_t unroll_words = unroll*wordSize;
+  const int64_t unroll_dwords = unroll * sizeof(julong);
 
-  // tmp5 = 0xffffffff
-  notr(tmp5, zr);
-  srli(tmp5, tmp5, 32);
+  const Register table4 = tmp1;  // input: table4 base (passed from caller)
+  const Register table5 = tmp3;
+  const Register table6 = tmp4;
+  const Register table7 = tmp5;
 
-  andn(crc, tmp5, crc);
+  add(table1, table0, 1 * single_table_size * sizeof(juint), t0);
+  add(table2, table0, 2 * single_table_size * sizeof(juint), t0);
+  add(table3, table0, 3 * single_table_size * sizeof(juint), t0);
+  add(table5, table4, 1 * single_table_size * sizeof(juint), t0);
+  add(table6, table4, 2 * single_table_size * sizeof(juint), t0);
+  add(table7, table4, 3 * single_table_size * sizeof(juint), t0);
 
-  add(table1, table0, 1 * single_table_size * sizeof(juint), tmp1);
-  add(table2, table0, 2 * single_table_size * sizeof(juint), tmp1);
-  add(table3, table2, 1 * single_table_size * sizeof(juint), tmp1);
+  notr(tmp6, zr);
+  srli(tmp6, tmp6, 32);
+  andn(crc, tmp6, crc);
+  // len is a Java int. Canonicalize to signed 32-bit semantics to avoid
+  // bogus loop bounds when callers leave non-canonical high bits.
+  sext(len, len, 32);
 
-  // Ensure basic 4-byte alignment of input byte buffer
-  mv(tmp1, 4);
-  blt(len, tmp1, L_by1_loop);
-  test_bit(tmp1, buf, 0);
-  beqz(tmp1, L_skip1);
+  // Ensure at least 4-byte alignment before any lwu.
+  // Optional 8-byte alignment is only attempted when len >= 8.
+  mv(tmp6, 4);
+  blt(len, tmp6, L_by1_loop);
+  test_bit(tmp6, buf, 0);
+  beqz(tmp6, L_skip1);
     subiw(len, len, 1);
-    lbu(tmp1, Address(buf));
+    lbu(tmp2, Address(buf));
     addi(buf, buf, 1);
-    update_byte_crc32(crc, tmp1, table0);
+    update_byte_crc32(crc, tmp2, table0);
   bind(L_skip1);
-    test_bit(tmp1, buf, 1);
-    beqz(tmp1, L_skip2);
+    test_bit(tmp6, buf, 1);
+    beqz(tmp6, L_skip2);
     subiw(len, len, 2);
-    lhu(tmp1, Address(buf));
+    lhu(tmp2, Address(buf));
     addi(buf, buf, 2);
-    zext(tmp2, tmp1, 8);
-    update_byte_crc32(crc, tmp2, table0);
-    srli(tmp2, tmp1, 8);
-    update_byte_crc32(crc, tmp2, table0);
+    zext(tmp6, tmp2, 8);
+    update_byte_crc32(crc, tmp6, table0);
+    srli(tmp6, tmp2, 8);
+    update_byte_crc32(crc, tmp6, table0);
   bind(L_skip2);
+    // Only spend one 4-byte step to reach 8-byte alignment when we will
+    // actually enter by8 loops.
+    mv(tmp6, 8);
+    blt(len, tmp6, L_skip4);
+    test_bit(tmp6, buf, 2);
+    beqz(tmp6, L_skip4);
+    subiw(len, len, 4);
+    lwu(tmp2, Address(buf));
+    addi(buf, buf, 4);
+    update_word_crc32(crc, tmp2, t0, t1, tmp6, table0, table1, table2, table3, false);
+  bind(L_skip4);
 
 #ifdef COMPILER2
   if (UseRVV) {
     const int64_t tmp_limit =
             UseZvbc ? 128 * 3 // 3 rounds of folding with carry-less multiplication
-                    : MaxVectorSize >= 32 ? unroll_words*3 : unroll_words*5;
-    mv(tmp1, tmp_limit);
-    bge(len, tmp1, L_vector_entry);
+                    : MaxVectorSize >= 32 ? unroll_dwords * 3 : unroll_dwords * 5;
+    mv(tmp6, tmp_limit);
+    bge(len, tmp6, L_vector_entry);
   }
 #endif // COMPILER2
 
-  mv(tmp1, unroll_words);
-  blt(len, tmp1, L_by4_loop_entry);
+  mv(tmp6, unroll_dwords);
+  blt(len, tmp6, L_by8_loop_entry);
 
-  const Register loop_buf_end = tmp3;
+  const Register loop_buf_end = tmp6;
 
   align(CodeEntryAlignment);
   // Entry for L_unroll_loop
     add(loop_buf_end, buf, len); // loop_buf_end will be used as endpoint for loop below
-    andi(len, len, unroll_words - 1); // len = (len % unroll_words)
+    andi(len, len, unroll_dwords - 1); // len = (len % unroll_dwords)
     sub(loop_buf_end, loop_buf_end, len);
   bind(L_unroll_loop);
     for (int i = 0; i < unroll; i++) {
-      ld(tmp1, Address(buf, i*wordSize));
-      update_word_crc32(crc, tmp1, tmp2, tmp4, tmp6, table0, table1, table2, table3, false);
-      update_word_crc32(crc, tmp1, tmp2, tmp4, tmp6, table0, table1, table2, table3, true);
+      ld(tmp2, Address(buf, i * sizeof(julong)));
+      update_dword_crc32(crc, tmp2, table0, table1, table2, table3, table4, table5, table6, table7);
     }
 
-    addi(buf, buf, unroll_words);
+    addi(buf, buf, unroll_dwords);
     blt(buf, loop_buf_end, L_unroll_loop);
 
+  bind(L_by8_loop_entry);
+    mv(tmp6, 8);
+    blt(len, tmp6, L_by4_loop_entry);
+    add(loop_buf_end, buf, len); // loop_buf_end will be used as endpoint for loop below
+    andi(len, len, 7);
+    sub(loop_buf_end, loop_buf_end, len);
+  bind(L_by8_loop);
+    ld(tmp2, Address(buf));
+    update_dword_crc32(crc, tmp2, table0, table1, table2, table3, table4, table5, table6, table7);
+    addi(buf, buf, 8);
+    blt(buf, loop_buf_end, L_by8_loop);
+
   bind(L_by4_loop_entry);
-    mv(tmp1, 4);
-    blt(len, tmp1, L_by1_loop);
+    mv(tmp6, 4);
+    blt(len, tmp6, L_by1_loop);
+    // Safety net: only enter lwu loop when buf is 4-byte aligned.
+    // This prevents accidental unaligned lwu if any control-flow path
+    // reaches here without passing through the front alignment peel.
+    test_bit(tmp6, buf, 0);
+    bnez(tmp6, L_by1_loop);
+    test_bit(tmp6, buf, 1);
+    bnez(tmp6, L_by1_loop);
     add(loop_buf_end, buf, len); // loop_buf_end will be used as endpoint for loop below
     andi(len, len, 3);
     sub(loop_buf_end, loop_buf_end, len);
   bind(L_by4_loop);
-    lwu(tmp1, Address(buf));
-    update_word_crc32(crc, tmp1, tmp2, tmp4, tmp6, table0, table1, table2, table3, false);
+    lwu(tmp2, Address(buf));
+    // Do not use tmp6 here: tmp6 holds loop_buf_end for this loop.
+    update_word_crc32(crc, tmp2, t0, t1, tmp3, table0, table1, table2, table3, false);
     addi(buf, buf, 4);
     blt(buf, loop_buf_end, L_by4_loop);
 
@@ -2690,18 +2790,18 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     beqz(len, L_exit);
 
     subiw(len, len, 1);
-    lbu(tmp1, Address(buf));
-    update_byte_crc32(crc, tmp1, table0);
+    lbu(tmp2, Address(buf));
+    update_byte_crc32(crc, tmp2, table0);
     beqz(len, L_exit);
 
     subiw(len, len, 1);
-    lbu(tmp1, Address(buf, 1));
-    update_byte_crc32(crc, tmp1, table0);
+    lbu(tmp2, Address(buf, 1));
+    update_byte_crc32(crc, tmp2, table0);
     beqz(len, L_exit);
 
     subiw(len, len, 1);
-    lbu(tmp1, Address(buf, 2));
-    update_byte_crc32(crc, tmp1, table0);
+    lbu(tmp2, Address(buf, 2));
+    update_byte_crc32(crc, tmp2, table0);
 
 #ifdef COMPILER2
   // put vector code here, otherwise "offset is too large" error occurs.
@@ -2713,9 +2813,9 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     if (UseZvbc) { // carry-less multiplication
       kernel_crc32_vclmul_fold(crc, buf, len,
                                table0, table1, table2, table3,
-                               tmp1, tmp2, tmp3, tmp4, tmp6);
+                               tmp1, tmp2, tmp3, tmp4, tmp5);
     } else { // plain vector instructions
-      vector_update_crc32(crc, buf, len, tmp1, tmp2, tmp3, tmp4, tmp6, table0, table3);
+      vector_update_crc32(crc, buf, len, tmp1, tmp2, tmp3, tmp4, tmp5, table0, table3);
     }
 
     bgtz(len, L_by4_loop_entry);
@@ -2723,7 +2823,9 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
 #endif // COMPILER2
 
   bind(L_exit);
-    andn(crc, tmp5, crc);
+    notr(tmp6, zr);
+    srli(tmp6, tmp6, 32);
+    andn(crc, tmp6, crc);
 }
 
 #ifdef COMPILER2

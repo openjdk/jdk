@@ -58,6 +58,8 @@ bool StubRoutines::riscv::_completed = false;
 
 // CRC32C table pointer (initialized on first use)
 juint* StubRoutines::riscv::_crc32c_table = nullptr;
+juint* StubRoutines::riscv::_crc32c_table_ext = nullptr;
+ATTRIBUTE_ALIGNED(4096) juint StubRoutines::riscv::_crc_table_ext[4 * 256];
 
 /**
  *  crc_table[] from jdk/src/java.base/share/native/libzip/zlib/crc32.h
@@ -69,6 +71,35 @@ address StubRoutines::crc32c_table_addr() {
     StubRoutines::riscv::generate_CRC32C_table();
   }
   return (address)StubRoutines::riscv::_crc32c_table;
+}
+
+address StubRoutines::riscv::crc_table_ext_addr() {
+  static bool initialized = false;
+  if (!initialized) {
+    generate_CRC32_ext_table();
+    initialized = true;
+  }
+  return (address)_crc_table_ext;
+}
+
+address StubRoutines::riscv::crc32c_table_ext_addr() {
+  if (_crc32c_table_ext == nullptr) {
+    generate_CRC32C_table();
+  }
+  return (address)_crc32c_table_ext;
+}
+
+void StubRoutines::riscv::generate_CRC32_ext_table() {
+  const juint* table0 = _crc_table;
+  for (int index = 0; index < 256; index++) {
+    juint r = table0[index];
+    for (int k = 1; k <= 7; k++) {
+      r = table0[r & 0xFF] ^ (r >> 8);
+      if (k >= 4) {
+        _crc_table_ext[(k - 4) * 256 + index] = r;
+      }
+    }
+  }
 }
 
 /**
@@ -87,6 +118,7 @@ void StubRoutines::riscv::generate_CRC32C_table() {
   constexpr int W = 4;
 
   ATTRIBUTE_ALIGNED(4096) static juint crc32c_table[(scalar_tables + braid_tables) * table_size + 20];
+  ATTRIBUTE_ALIGNED(4096) static juint crc32c_table_ext[4 * table_size];
 
   auto multmodp_crc32c = [](uint32_t a, uint32_t b) -> uint32_t {
     if (a == 0) {
@@ -147,6 +179,18 @@ void StubRoutines::riscv::generate_CRC32C_table() {
     }
   }
 
+  // Scalar slicing-by-8 extension tables (table4..table7), stored separately
+  // from vector braid tables to preserve existing vector table layout.
+  for (int index = 0; index < table_size; index++) {
+    uint32_t r = crc32c_table[index];
+    for (int k = 1; k <= 7; k++) {
+      r = crc32c_table[r & 0xFF] ^ (r >> 8);
+      if (k >= 4) {
+        crc32c_table_ext[(k - 4) * table_size + index] = r;
+      }
+    }
+  }
+
   // Add CRC32C carry-less multiplication constants for Zvbc folding/reduction.
   // Keep this sequence in sync with kernel_crc32_vclmul_fold_* table consumption.
   int vclmul_offset = (scalar_tables + braid_tables) * table_size;
@@ -173,6 +217,7 @@ void StubRoutines::riscv::generate_CRC32C_table() {
   crc32c_table[vclmul_offset++] = 0x00000001UL;
 
   _crc32c_table = crc32c_table;
+  _crc32c_table_ext = crc32c_table_ext;
 }
 
 #undef CRC32C_POLY

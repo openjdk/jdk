@@ -7253,7 +7253,9 @@ static const int64_t right_3_bits = right_n_bits(3);
     __ enter(); // required for proper stackwalking of RuntimeStub frame
 
     const ExternalAddress table_addr = StubRoutines::crc_table_addr();
+    const ExternalAddress table_ext_addr = StubRoutines::riscv::crc_table_ext_addr();
     __ la(c_rarg3, table_addr);
+    __ la(c_rarg7, table_ext_addr);
 
     __ kernel_crc32(crc, buf, len,
                     c_rarg3, c_rarg4, c_rarg5, c_rarg6, // tmp's for tables
@@ -7282,7 +7284,9 @@ static const int64_t right_3_bits = right_n_bits(3);
     __ enter();
 
     const ExternalAddress table_addr = StubRoutines::crc32c_table_addr();
+    const ExternalAddress table_ext_addr = StubRoutines::riscv::crc32c_table_ext_addr();
     __ la(c_rarg3, table_addr);
+    __ la(c_rarg7, table_ext_addr);
 
     // Initial CRC inversion
     __ notr(crc, crc);  // crc = ~crc
