@@ -88,6 +88,26 @@ static bool mach_node_vset_requirement(const MachNode* mach,
   return false;
 }
 
+static bool mach_node_kills_vset(const MachNode* mach) {
+  if (mach->is_MachCall() || mach->is_MachSafePoint()) {
+    return true;
+  }
+  if (mach->is_MachRiscVVSet()) {
+    return false;
+  }
+  if (mach->is_MachSpillCopy()) {
+    const Type* type = mach->bottom_type();
+    if (type != nullptr && (type->isa_vect() != nullptr || type->isa_pvectmask() != nullptr)) {
+      return true;
+    }
+  }
+  RiscVVSetRequirement req = { T_BYTE, 0, Assembler::m1, false };
+  if (mach->has_riscv_vset_requirement()) {
+    return !mach->riscv_vset_requirement(&req);
+  }
+  return riscv_vset_from_node(mach, &req);
+}
+
 static void insert_explicit_vset_nodes(Compile* C) {
   for (uint i = 0; i < C->cfg()->number_of_blocks(); i++) {
     Block* block = C->cfg()->get_block(i);
@@ -105,6 +125,33 @@ static void insert_explicit_vset_nodes(Compile* C) {
       block->insert_node(vset, j);
       C->cfg()->map_node_to_block(vset, block);
       j++;
+    }
+  }
+}
+
+static void remove_redundant_vset_nodes_in_blocks(Compile* C) {
+  for (uint i = 0; i < C->cfg()->number_of_blocks(); i++) {
+    Block* block = C->cfg()->get_block(i);
+    RiscVVSetState state = invalid_vset_state();
+    for (uint j = 0; j < block->number_of_nodes(); j++) {
+      Node* n = block->get_node(j);
+      if (!n->is_Mach()) {
+        continue;
+      }
+      MachNode* mach = n->as_Mach();
+      if (mach->is_MachRiscVVSet()) {
+        MachRiscVVSetNode* vset = mach->as_MachRiscVVSet();
+        RiscVVSetState vset_state = vset->state();
+        if (riscv_vset_state_equal_valid(state, vset_state)) {
+          block->remove_node(j);
+          C->cfg()->unmap_node_from_block(vset);
+          j--;
+        } else {
+          state = vset_state;
+        }
+      } else if (mach_node_kills_vset(mach)) {
+        state = invalid_vset_state();
+      }
     }
   }
 }
@@ -374,6 +421,7 @@ void PhaseOutput::Output() {
 
 #ifdef RISCV
   insert_explicit_vset_nodes(C);
+  remove_redundant_vset_nodes_in_blocks(C);
   if (C->failing()) {
     return;
   }
