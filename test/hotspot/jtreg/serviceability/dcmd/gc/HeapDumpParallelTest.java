@@ -105,7 +105,7 @@ public class HeapDumpParallelTest {
             out.shouldContain("Invalid number of parallel dump threads.");
 
             // Expect error message on value above 32 bit unsigned range
-            out = attachJcmdHeapDump(heapDumpFile, theApp.getPid(), "-parallel=" + 4294967297);
+            out = attachJcmdHeapDump(heapDumpFile, theApp.getPid(), "-parallel=" + 4294967297L);
             out.shouldContain("Invalid number of parallel dump threads.");
 
             // Expect serial dump because 0 implies to disable parallel dump
