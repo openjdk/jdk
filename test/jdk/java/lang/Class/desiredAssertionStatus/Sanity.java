@@ -27,8 +27,8 @@
  * @library /test/lib
  * @run testng/othervm -esa -ea -Dsys.option=on  -Duser.option=on Sanity
  * @run testng/othervm -dsa -ea -Dsys.option=off -Duser.option=on Sanity
- * @run testng/othervm -esa -ea -Dsys.option=on  -Duser.option=on Sanity
  * @run testng/othervm -esa -da -Dsys.option=on  -Duser.option=off Sanity
+ * @run testng/othervm -dsa -da -Dsys.option=off -Duser.option=off Sanity
  */
 
 import org.testng.annotations.Test;
