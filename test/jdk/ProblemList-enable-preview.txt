@@ -33,4 +33,4 @@
 #
 #############################################################################
 
-# Valhalla failures start here:
+# Value Objects failures start here:
