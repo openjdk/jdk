@@ -102,12 +102,12 @@ class H2GoAwayPromptConnectionClose {
     @AfterAll
     static void afterAll() throws Exception {
         System.err.println("stopping server " + server.getServerAddress());
-        closeQuitely(server);
-        closeQuitely(client);
+        closeQuietly(server);
+        closeQuietly(client);
         executor.shutdownNow();
     }
 
-    private static void closeQuitely(final AutoCloseable closeable) {
+    private static void closeQuietly(final AutoCloseable closeable) {
         if (closeable == null) {
             return;
         }
