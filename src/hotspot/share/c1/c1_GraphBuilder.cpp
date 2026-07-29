@@ -4424,7 +4424,7 @@ void GraphBuilder::append_char_access(ciMethod* callee, bool is_store) {
     Value offset = append(new ArithmeticOp(Bytecodes::_ladd, base, index_scaled, state_before));
 
 #ifndef _LP64
-    offset = appenf(new Convert(Bytecodes::_l2i, offset, as_ValueType(T_INT)));
+    offset = append(new Convert(Bytecodes::_l2i, offset, as_ValueType(T_INT)));
 #endif // _LP64
 
     Instruction* load = append(new UnsafeGet(T_CHAR, array, offset, false));
