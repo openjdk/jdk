@@ -414,7 +414,6 @@ public class SSLFlowDelegate {
                 int len;
                 boolean complete = false;
                 while (readBuf.remaining() > (len = minBytesRequired)) {
-                    boolean handshaking = false;
                     try {
                         EngineResult result;
                         readBufferLock.lock();
@@ -479,7 +478,6 @@ public class SSLFlowDelegate {
                             return;
                         }
                         if (result.handshaking()) {
-                            handshaking = true;
                             if (debugr.on()) debugr.log("handshaking");
                             if (doHandshake(result.handshakeStatus(), READER)) continue; // need unwrap
                             else break; // doHandshake will have triggered the write scheduler if necessary
@@ -492,10 +490,6 @@ public class SSLFlowDelegate {
                         Throwable cause = checkForHandshake(ex);
                         errorCommon(cause);
                         handleError(cause);
-                        return;
-                    }
-                    if (handshaking && !complete) {
-                        requestMoreDataIfNeeded();
                         return;
                     }
                 }
@@ -1126,12 +1120,6 @@ public class SSLFlowDelegate {
                    && s != HandshakeStatus.NOT_HANDSHAKING
                    && result.getStatus() != Status.CLOSED;
         }
-
-        boolean needUnwrap() {
-            HandshakeStatus s = result.getHandshakeStatus();
-            return s == HandshakeStatus.NEED_UNWRAP;
-        }
-
 
         int bytesConsumed() {
             return result.bytesConsumed();
