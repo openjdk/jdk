@@ -36,6 +36,9 @@
 
 // define fields for arch-specific entries
 
+// CRC32C polynomial constant (reflected form of Castagnoli polynomial 0x1EDC6F41)
+#define CRC32C_POLY 0x82F63B78
+
 #define DEFINE_ARCH_ENTRY(arch, blob_name, stub_name, field_name, getter_name) \
   address StubRoutines:: arch :: STUB_FIELD_NAME(field_name)  = nullptr;
 
@@ -53,12 +56,126 @@ STUBGEN_ARCH_ENTRIES_DO(DEFINE_ARCH_ENTRY, DEFINE_ARCH_ENTRY_INIT, DEFINE_ARCH_E
 
 bool StubRoutines::riscv::_completed = false;
 
+// CRC32C table pointer (initialized on first use)
+juint* StubRoutines::riscv::_crc32c_table = nullptr;
+
 /**
  *  crc_table[] from jdk/src/java.base/share/native/libzip/zlib/crc32.h
  */
 
 address StubRoutines::crc_table_addr()    { return (address)StubRoutines::riscv::_crc_table; }
-address StubRoutines::crc32c_table_addr() { ShouldNotCallThis(); return nullptr; }
+address StubRoutines::crc32c_table_addr() {
+  if (StubRoutines::riscv::_crc32c_table == nullptr) {
+    StubRoutines::riscv::generate_CRC32C_table();
+  }
+  return (address)StubRoutines::riscv::_crc32c_table;
+}
+
+/**
+ * Generate CRC32C lookup table.
+ *
+ * Layout (same contract as CRC32/vector path):
+ *   - tables 0..3: scalar update tables
+ *   - tables 4..7: braid tables for RVV vector_update_crc32()
+ *   - tail: carry-less multiplication constants
+ */
+void StubRoutines::riscv::generate_CRC32C_table() {
+  constexpr int table_size = 256;
+  constexpr int scalar_tables = 4;
+  constexpr int braid_tables = 4;
+  constexpr int N = 16;
+  constexpr int W = 4;
+
+  ATTRIBUTE_ALIGNED(4096) static juint crc32c_table[(scalar_tables + braid_tables) * table_size + 20];
+
+  auto multmodp_crc32c = [](uint32_t a, uint32_t b) -> uint32_t {
+    if (a == 0) {
+      return 0;
+    }
+
+    uint32_t m = 1u << 31;
+    uint32_t p = 0;
+    while (true) {
+      if ((a & m) != 0) {
+        p ^= b;
+        if ((a & (m - 1)) == 0) {
+          break;
+        }
+      }
+      m >>= 1;
+      b = ((b & 1) != 0) ? ((b >> 1) ^ CRC32C_POLY) : (b >> 1);
+    }
+    return p;
+  };
+
+  auto x2nmodp_direct_crc32c = [](int exponent) -> uint32_t {
+    uint32_t p = 1u << 31;
+    for (int i = 0; i < exponent; i++) {
+      p = ((p & 1) != 0) ? ((p >> 1) ^ CRC32C_POLY) : (p >> 1);
+    }
+    return p;
+  };
+
+  // Table 0: Base CRC32C lookup table.
+  for (int i = 0; i < table_size; i++) {
+    uint32_t crc = static_cast<uint32_t>(i);
+    for (int j = 0; j < 8; j++) {
+      crc = ((crc & 1) != 0) ? ((crc >> 1) ^ CRC32C_POLY) : (crc >> 1);
+    }
+    crc32c_table[i] = crc;
+  }
+
+  // Tables 1..3: scalar extension tables.
+  for (int table_idx = 1; table_idx < scalar_tables; table_idx++) {
+    const int prev_base = (table_idx - 1) * table_size;
+    const int curr_base = table_idx * table_size;
+    for (int i = 0; i < table_size; i++) {
+      uint32_t crc = crc32c_table[prev_base + i];
+      crc32c_table[curr_base + i] = crc32c_table[crc & 0xFF] ^ (crc >> 8);
+    }
+  }
+
+  // Tables 4..7: braid tables for vector_update_crc32() with (N=16, W=4).
+  for (int k = 0; k < braid_tables; k++) {
+    const int exponent = (N * W + 3 - k) << 3;
+    const uint32_t p = x2nmodp_direct_crc32c(exponent);
+    const int base = (scalar_tables + k) * table_size;
+    crc32c_table[base] = 0;
+    for (int i = 1; i < table_size; i++) {
+      crc32c_table[base + i] =
+          multmodp_crc32c(static_cast<uint32_t>(i) << 24, p);
+    }
+  }
+
+  // Add CRC32C carry-less multiplication constants for Zvbc folding/reduction.
+  // Keep this sequence in sync with kernel_crc32_vclmul_fold_* table consumption.
+  int vclmul_offset = (scalar_tables + braid_tables) * table_size;
+
+  crc32c_table[vclmul_offset++] = 0x6992cea2UL;
+  crc32c_table[vclmul_offset++] = 0x00000000UL;
+  crc32c_table[vclmul_offset++] = 0x0d3b6092UL;
+  crc32c_table[vclmul_offset++] = 0x00000000UL;
+  crc32c_table[vclmul_offset++] = 0x740eef02UL;
+  crc32c_table[vclmul_offset++] = 0x00000000UL;
+  crc32c_table[vclmul_offset++] = 0x9e4addf8UL;
+  crc32c_table[vclmul_offset++] = 0x00000000UL;
+  crc32c_table[vclmul_offset++] = 0x1c291d04UL;
+  crc32c_table[vclmul_offset++] = 0x00000000UL;
+  crc32c_table[vclmul_offset++] = 0xd82c63daUL;
+  crc32c_table[vclmul_offset++] = 0x00000001UL;
+  crc32c_table[vclmul_offset++] = 0x384aa63aUL;
+  crc32c_table[vclmul_offset++] = 0x00000001UL;
+  crc32c_table[vclmul_offset++] = 0xba4fc28eUL;
+  crc32c_table[vclmul_offset++] = 0x00000000UL;
+  crc32c_table[vclmul_offset++] = 0xf20c0dfeUL;
+  crc32c_table[vclmul_offset++] = 0x00000000UL;
+  crc32c_table[vclmul_offset++] = 0x4cd00bd6UL;
+  crc32c_table[vclmul_offset++] = 0x00000001UL;
+
+  _crc32c_table = crc32c_table;
+}
+
+#undef CRC32C_POLY
 
 ATTRIBUTE_ALIGNED(4096) juint StubRoutines::riscv::_crc_table[] =
 {

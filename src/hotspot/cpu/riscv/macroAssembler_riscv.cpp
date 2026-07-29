@@ -2574,12 +2574,9 @@ void MacroAssembler::kernel_crc32_vclmul_fold(Register crc, Register buf, Regist
                         Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5) {
   const int64_t single_table_size = 256;
   const int64_t table_num = 8;   // 4 for scalar, 4 for plain vector
-  const ExternalAddress table_addr = StubRoutines::crc_table_addr();
   Register vclmul_table = tmp3;
 
-  la(vclmul_table, table_addr);
-  add(vclmul_table, vclmul_table, table_num * single_table_size * sizeof(juint), tmp1);
-  la(table0, table_addr);
+  add(vclmul_table, table0, table_num * single_table_size * sizeof(juint), tmp1);
 
   if (MaxVectorSize == 16) {
     kernel_crc32_vclmul_fold_vectorsize_16(crc, buf, len, vclmul_table, tmp1, tmp2);
@@ -2622,8 +2619,6 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
 
   andn(crc, tmp5, crc);
 
-  const ExternalAddress table_addr = StubRoutines::crc_table_addr();
-  la(table0, table_addr);
   add(table1, table0, 1 * single_table_size * sizeof(juint), tmp1);
   add(table2, table0, 2 * single_table_size * sizeof(juint), tmp1);
   add(table3, table2, 1 * single_table_size * sizeof(juint), tmp1);
