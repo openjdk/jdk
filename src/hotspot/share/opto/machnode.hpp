@@ -63,20 +63,32 @@ struct RiscVVSetRequirement {
   BasicType _bt;
   uint _vector_length;
   Assembler::LMUL _vlmul;
+  Assembler::VMA _vma;
+  Assembler::VTA _vta;
   bool _valid;
 };
 
 bool riscv_vset_from_vect(const MachNode* node, RiscVVSetRequirement* req,
-                          Assembler::LMUL vlmul = Assembler::m1);
+                          Assembler::LMUL vlmul = Assembler::m1,
+                          Assembler::VMA vma = Assembler::ma,
+                          Assembler::VTA vta = Assembler::ta);
 bool riscv_vset_from_node(BasicType bt, const MachNode* node, RiscVVSetRequirement* req,
-                          Assembler::LMUL vlmul = Assembler::m1);
+                          Assembler::LMUL vlmul = Assembler::m1,
+                          Assembler::VMA vma = Assembler::ma,
+                          Assembler::VTA vta = Assembler::ta);
 bool riscv_vset_from_node(const MachNode* node, RiscVVSetRequirement* req,
-                          Assembler::LMUL vlmul = Assembler::m1);
+                          Assembler::LMUL vlmul = Assembler::m1,
+                          Assembler::VMA vma = Assembler::ma,
+                          Assembler::VTA vta = Assembler::ta);
 bool riscv_vset_from_operand(const MachNode* node, const MachOper* opnd,
                              RiscVVSetRequirement* req,
-                             Assembler::LMUL vlmul = Assembler::m1);
+                             Assembler::LMUL vlmul = Assembler::m1,
+                             Assembler::VMA vma = Assembler::ma,
+                             Assembler::VTA vta = Assembler::ta);
 bool riscv_vset_fixed(BasicType bt, uint vector_length, RiscVVSetRequirement* req,
-                      Assembler::LMUL vlmul = Assembler::m1);
+                      Assembler::LMUL vlmul = Assembler::m1,
+                      Assembler::VMA vma = Assembler::ma,
+                      Assembler::VTA vta = Assembler::ta);
 #endif
 
 //---------------------------MachOper------------------------------------------

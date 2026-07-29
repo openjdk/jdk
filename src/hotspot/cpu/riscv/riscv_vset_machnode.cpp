@@ -32,7 +32,8 @@
 #include "utilities/globalDefinitions.hpp"
 
 static bool set_riscv_vset_requirement(const TypeVect* vt, RiscVVSetRequirement* req,
-                                       Assembler::LMUL vlmul) {
+                                       Assembler::LMUL vlmul,
+                                       Assembler::VMA vma, Assembler::VTA vta) {
   if (vt == nullptr) {
     return false;
   }
@@ -43,18 +44,22 @@ static bool set_riscv_vset_requirement(const TypeVect* vt, RiscVVSetRequirement*
   req->_bt = bt;
   req->_vector_length = vt->length();
   req->_vlmul = vlmul;
+  req->_vma = vma;
+  req->_vta = vta;
   req->_valid = true;
   return true;
 }
 
 bool riscv_vset_from_vect(const MachNode* node, RiscVVSetRequirement* req,
-                          Assembler::LMUL vlmul) {
+                          Assembler::LMUL vlmul,
+                          Assembler::VMA vma, Assembler::VTA vta) {
   const Type* type = node->bottom_type();
-  return type != nullptr && set_riscv_vset_requirement(type->isa_vect(), req, vlmul);
+  return type != nullptr && set_riscv_vset_requirement(type->isa_vect(), req, vlmul, vma, vta);
 }
 
 bool riscv_vset_from_node(BasicType bt, const MachNode* node, RiscVVSetRequirement* req,
-                          Assembler::LMUL vlmul) {
+                          Assembler::LMUL vlmul,
+                          Assembler::VMA vma, Assembler::VTA vta) {
   const Type* type = node->bottom_type();
   const TypeVect* vt = type != nullptr ? type->isa_vect() : nullptr;
   for (uint i = node->oper_input_base(); vt == nullptr && i < node->req(); i++) {
@@ -62,18 +67,19 @@ bool riscv_vset_from_node(BasicType bt, const MachNode* node, RiscVVSetRequireme
     type = input != nullptr ? input->bottom_type() : nullptr;
     vt = type != nullptr ? type->isa_vect() : nullptr;
   }
-  return vt != nullptr && riscv_vset_fixed(bt, vt->length(), req, vlmul);
+  return vt != nullptr && riscv_vset_fixed(bt, vt->length(), req, vlmul, vma, vta);
 }
 
 bool riscv_vset_from_node(const MachNode* node, RiscVVSetRequirement* req,
-                          Assembler::LMUL vlmul) {
-  if (riscv_vset_from_vect(node, req, vlmul)) {
+                          Assembler::LMUL vlmul,
+                          Assembler::VMA vma, Assembler::VTA vta) {
+  if (riscv_vset_from_vect(node, req, vlmul, vma, vta)) {
     return true;
   }
   for (uint i = node->oper_input_base(); i < node->req(); i++) {
     Node* input = node->in(i);
     const Type* type = input != nullptr ? input->bottom_type() : nullptr;
-    if (type != nullptr && set_riscv_vset_requirement(type->isa_vect(), req, vlmul)) {
+    if (type != nullptr && set_riscv_vset_requirement(type->isa_vect(), req, vlmul, vma, vta)) {
       return true;
     }
   }
@@ -81,31 +87,35 @@ bool riscv_vset_from_node(const MachNode* node, RiscVVSetRequirement* req,
 }
 
 bool riscv_vset_from_operand(const MachNode* node, const MachOper* opnd,
-                             RiscVVSetRequirement* req, Assembler::LMUL vlmul) {
+                             RiscVVSetRequirement* req, Assembler::LMUL vlmul,
+                             Assembler::VMA vma, Assembler::VTA vta) {
   int def_idx = node->operand_index(opnd);
   if (def_idx < 0) {
     return false;
   }
   Node* input = node->in(def_idx);
   const Type* type = input != nullptr ? input->bottom_type() : nullptr;
-  return type != nullptr && set_riscv_vset_requirement(type->isa_vect(), req, vlmul);
+  return type != nullptr && set_riscv_vset_requirement(type->isa_vect(), req, vlmul, vma, vta);
 }
 
 bool riscv_vset_fixed(BasicType bt, uint vector_length, RiscVVSetRequirement* req,
-                      Assembler::LMUL vlmul) {
+                      Assembler::LMUL vlmul,
+                      Assembler::VMA vma, Assembler::VTA vta) {
   req->_bt = bt;
   req->_vector_length = vector_length;
   req->_vlmul = vlmul;
+  req->_vma = vma;
+  req->_vta = vta;
   req->_valid = true;
   return true;
 }
 
 RiscVVSetState MachRiscVVSetNode::state() const {
-  return { _bt, Assembler::elemtype_to_sew(_bt), _vector_length, _vlmul, true };
+  return { _bt, Assembler::elemtype_to_sew(_bt), _vector_length, _vlmul, _vma, _vta, true };
 }
 
 void MachRiscVVSetNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc*) const {
-  masm->vsetvli_helper(_bt, _vector_length, _vlmul);
+  masm->vsetvli_helper(_bt, _vector_length, _vlmul, _vma, _vta);
 }
 
 uint MachRiscVVSetNode::size(PhaseRegAlloc*) const {
@@ -118,7 +128,7 @@ uint MachRiscVVSetNode::size(PhaseRegAlloc*) const {
 
 #ifndef PRODUCT
 void MachRiscVVSetNode::format(PhaseRegAlloc*, outputStream* st) const {
-  st->print("vset %s, length=%u, lmul=%d",
-            type2name(_bt), _vector_length, (int)_vlmul);
+  st->print("vset %s, length=%u, lmul=%d, vma=%d, vta=%d",
+            type2name(_bt), _vector_length, (int)_vlmul, (int)_vma, (int)_vta);
 }
 #endif

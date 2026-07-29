@@ -33,6 +33,8 @@ struct RiscVVSetState {
   Assembler::SEW _sew;
   uint _vector_length;
   Assembler::LMUL _vlmul;
+  Assembler::VMA _vma;
+  Assembler::VTA _vta;
   bool _valid;
 };
 
@@ -40,14 +42,19 @@ class MachRiscVVSetNode : public MachIdealNode {
   BasicType _bt;
   uint _vector_length;
   Assembler::LMUL _vlmul;
+  Assembler::VMA _vma;
+  Assembler::VTA _vta;
 
  public:
-  MachRiscVVSetNode(BasicType bt, uint vector_length, Assembler::LMUL vlmul) :
-    _bt(bt), _vector_length(vector_length), _vlmul(vlmul) {}
+  MachRiscVVSetNode(BasicType bt, uint vector_length, Assembler::LMUL vlmul,
+                    Assembler::VMA vma = Assembler::ma, Assembler::VTA vta = Assembler::ta) :
+    _bt(bt), _vector_length(vector_length), _vlmul(vlmul), _vma(vma), _vta(vta) {}
 
   BasicType element_basic_type() const { return _bt; }
   uint vector_length() const { return _vector_length; }
   Assembler::LMUL vlmul() const { return _vlmul; }
+  Assembler::VMA vma() const { return _vma; }
+  Assembler::VTA vta() const { return _vta; }
 
   RiscVVSetState state() const;
 

@@ -63,7 +63,7 @@
 
 #ifdef RISCV
 static RiscVVSetState invalid_vset_state() {
-  return { T_BYTE, Assembler::e8, 0, Assembler::m1, false };
+  return { T_BYTE, Assembler::e8, 0, Assembler::m1, Assembler::ma, Assembler::ta, false };
 }
 
 static bool mach_node_vset_requirement(const MachNode* mach,
@@ -75,12 +75,13 @@ static bool mach_node_vset_requirement(const MachNode* mach,
     return false;
   }
 #ifdef RISCV
-  RiscVVSetRequirement req = { T_BYTE, 0, Assembler::m1, false };
+  RiscVVSetRequirement req = { T_BYTE, 0, Assembler::m1, Assembler::ma, Assembler::ta, false };
   if (mach->has_riscv_vset_requirement()) {
     if (!mach->riscv_vset_requirement(&req)) {
       return false;
     }
-    *state = { req._bt, Assembler::elemtype_to_sew(req._bt), req._vector_length, req._vlmul, true };
+    *state = { req._bt, Assembler::elemtype_to_sew(req._bt), req._vector_length, req._vlmul,
+               req._vma, req._vta, true };
     return true;
   }
 #endif
@@ -99,7 +100,8 @@ static void insert_explicit_vset_nodes(Compile* C) {
       if (!mach_node_vset_requirement(n->as_Mach(), &required)) {
         continue;
       }
-      MachRiscVVSetNode* vset = new MachRiscVVSetNode(required._bt, required._vector_length, required._vlmul);
+      MachRiscVVSetNode* vset = new MachRiscVVSetNode(required._bt, required._vector_length, required._vlmul,
+                                                      required._vma, required._vta);
       block->insert_node(vset, j);
       C->cfg()->map_node_to_block(vset, block);
       j++;
