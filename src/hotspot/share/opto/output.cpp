@@ -62,74 +62,28 @@
 #endif
 
 #ifdef RISCV
-static RiscVVSetState invalid_vset_state() {
-  return { T_BYTE, Assembler::e8, 0, Assembler::m1, Assembler::ma, Assembler::ta, false };
-}
-
-static bool mach_node_vset_requirement(const MachNode* mach,
-                                       RiscVVSetState* state) {
-  if (mach->is_MachCall() || mach->is_MachSafePoint()) {
-    return false;
-  }
-  if (mach->is_MachRiscVVSet()) {
-    return false;
-  }
-#ifdef RISCV
-  RiscVVSetRequirement req = { T_BYTE, 0, Assembler::m1, Assembler::ma, Assembler::ta, false };
-  if (mach->has_riscv_vset_requirement()) {
-    if (!mach->riscv_vset_requirement(&req)) {
-      return false;
-    }
-    *state = { req._bt, Assembler::elemtype_to_sew(req._bt), req._vector_length, req._vlmul,
-               req._vma, req._vta, true };
-    return true;
-  }
-#endif
-  return false;
-}
-
-static bool mach_node_kills_vset(const MachNode* mach) {
-  if (mach->is_MachCall() || mach->is_MachSafePoint()) {
-    return true;
-  }
-  if (mach->is_MachRiscVVSet()) {
-    return false;
-  }
-  if (mach->is_MachSpillCopy()) {
-    const Type* type = mach->bottom_type();
-    if (type != nullptr && (type->isa_vect() != nullptr || type->isa_pvectmask() != nullptr)) {
-      return true;
-    }
-  }
-  RiscVVSetRequirement req = { T_BYTE, 0, Assembler::m1, false };
-  if (mach->has_riscv_vset_requirement()) {
-    return !mach->riscv_vset_requirement(&req);
-  }
-  return riscv_vset_from_node(mach, &req);
-}
-
 static RiscVVSetState meet_vset_preds(Compile* C,
                                       Block* block,
                                       RiscVVSetState* out_states) {
-  RiscVVSetState result = invalid_vset_state();
+  RiscVVSetState result = riscv_vset_invalid_state();
   bool has_state = false;
   for (uint p = 1; p < block->num_preds(); p++) {
     Block* pred_block = C->cfg()->get_block_for_node(block->pred(p));
     if (pred_block == nullptr) {
-      return invalid_vset_state();
+      return riscv_vset_invalid_state();
     }
     const RiscVVSetState& pred_state = out_states[pred_block->_pre_order];
     if (!pred_state._valid) {
-      return invalid_vset_state();
+      return riscv_vset_invalid_state();
     }
     if (!has_state) {
       result = pred_state;
       has_state = true;
     } else if (!riscv_vset_state_equal_valid(result, pred_state)) {
-      return invalid_vset_state();
+      return riscv_vset_invalid_state();
     }
   }
-  return has_state ? result : invalid_vset_state();
+  return has_state ? result : riscv_vset_invalid_state();
 }
 
 static RiscVVSetState transfer_vset_state(Block* block,
@@ -143,8 +97,8 @@ static RiscVVSetState transfer_vset_state(Block* block,
     if (mach->is_MachRiscVVSet()) {
       MachRiscVVSetNode* vset = mach->as_MachRiscVVSet();
       state = vset->state();
-    } else if (mach_node_kills_vset(mach)) {
-      state = invalid_vset_state();
+    } else if (riscv_mach_node_kills_vset(mach)) {
+      state = riscv_vset_invalid_state();
     }
   }
   return state;
@@ -155,8 +109,8 @@ static void compute_vset_states(Compile* C,
                                 RiscVVSetState* out_states) {
   uint nblocks = C->cfg()->number_of_blocks();
   for (uint i = 0; i < nblocks; i++) {
-    in_states[i] = invalid_vset_state();
-    out_states[i] = invalid_vset_state();
+    in_states[i] = riscv_vset_invalid_state();
+    out_states[i] = riscv_vset_invalid_state();
   }
 
   bool changed = true;
@@ -186,8 +140,8 @@ static void insert_explicit_vset_nodes(Compile* C) {
       if (!n->is_Mach()) {
         continue;
       }
-      RiscVVSetState required = invalid_vset_state();
-      if (!mach_node_vset_requirement(n->as_Mach(), &required)) {
+      RiscVVSetState required = riscv_vset_invalid_state();
+      if (!riscv_mach_node_vset_requirement(n->as_Mach(), &required)) {
         continue;
       }
       MachRiscVVSetNode* vset = new MachRiscVVSetNode(required._bt, required._vector_length, required._vlmul,
@@ -202,7 +156,7 @@ static void insert_explicit_vset_nodes(Compile* C) {
 static void remove_redundant_vset_nodes_in_blocks(Compile* C) {
   for (uint i = 0; i < C->cfg()->number_of_blocks(); i++) {
     Block* block = C->cfg()->get_block(i);
-    RiscVVSetState state = invalid_vset_state();
+    RiscVVSetState state = riscv_vset_invalid_state();
     for (uint j = 0; j < block->number_of_nodes(); j++) {
       Node* n = block->get_node(j);
       if (!n->is_Mach()) {
@@ -219,8 +173,8 @@ static void remove_redundant_vset_nodes_in_blocks(Compile* C) {
         } else {
           state = vset_state;
         }
-      } else if (mach_node_kills_vset(mach)) {
-        state = invalid_vset_state();
+      } else if (riscv_mach_node_kills_vset(mach)) {
+        state = riscv_vset_invalid_state();
       }
     }
   }
@@ -253,8 +207,8 @@ static void remove_redundant_vset_nodes(Compile* C) {
         } else {
           state = vset_state;
         }
-      } else if (mach_node_kills_vset(mach)) {
-        state = invalid_vset_state();
+      } else if (riscv_mach_node_kills_vset(mach)) {
+        state = riscv_vset_invalid_state();
       }
     }
   }

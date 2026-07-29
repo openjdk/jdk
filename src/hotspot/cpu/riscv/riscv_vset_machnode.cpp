@@ -110,6 +110,69 @@ bool riscv_vset_fixed(BasicType bt, uint vector_length, RiscVVSetRequirement* re
   return true;
 }
 
+bool riscv_vset_state_same(const RiscVVSetState& a, const RiscVVSetState& b) {
+  return a._valid == b._valid &&
+         (!a._valid ||
+          (a._sew == b._sew &&
+           a._vector_length == b._vector_length &&
+           a._vlmul == b._vlmul &&
+           a._vma == b._vma &&
+           a._vta == b._vta));
+}
+
+bool riscv_vset_state_equal_valid(const RiscVVSetState& a, const RiscVVSetState& b) {
+  return a._valid && b._valid &&
+         a._sew == b._sew &&
+         a._vector_length == b._vector_length &&
+         a._vlmul == b._vlmul &&
+         a._vma == b._vma &&
+         a._vta == b._vta;
+}
+
+RiscVVSetState riscv_vset_invalid_state() {
+  return { T_BYTE, Assembler::e8, 0, Assembler::m1, Assembler::ma, Assembler::ta, false };
+}
+
+bool riscv_mach_node_vset_requirement(const MachNode* mach, RiscVVSetState* state) {
+  if (mach->is_MachCall() || mach->is_MachSafePoint()) {
+    return false;
+  }
+  if (mach->is_MachRiscVVSet()) {
+    return false;
+  }
+
+  RiscVVSetRequirement req = { T_BYTE, 0, Assembler::m1, Assembler::ma, Assembler::ta, false };
+  if (mach->has_riscv_vset_requirement()) {
+    if (!mach->riscv_vset_requirement(&req)) {
+      return false;
+    }
+    *state = { req._bt, Assembler::elemtype_to_sew(req._bt), req._vector_length, req._vlmul,
+               req._vma, req._vta, true };
+    return true;
+  }
+  return false;
+}
+
+bool riscv_mach_node_kills_vset(const MachNode* mach) {
+  if (mach->is_MachCall() || mach->is_MachSafePoint()) {
+    return true;
+  }
+  if (mach->is_MachRiscVVSet()) {
+    return false;
+  }
+  if (mach->is_MachSpillCopy()) {
+    const Type* type = mach->bottom_type();
+    if (type != nullptr && (type->isa_vect() != nullptr || type->isa_pvectmask() != nullptr)) {
+      return true;
+    }
+  }
+  RiscVVSetRequirement req = { T_BYTE, 0, Assembler::m1, Assembler::ma, Assembler::ta, false };
+  if (mach->has_riscv_vset_requirement()) {
+    return !mach->riscv_vset_requirement(&req);
+  }
+  return riscv_vset_from_node(mach, &req);
+}
+
 RiscVVSetState MachRiscVVSetNode::state() const {
   return { _bt, Assembler::elemtype_to_sew(_bt), _vector_length, _vlmul, _vma, _vta, true };
 }

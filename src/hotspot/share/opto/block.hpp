@@ -510,7 +510,7 @@ class PhaseCFG : public Phase {
   bool move_to_next(Block* bx, uint b_index);
   void move_to_end(Block* bx, uint b_index);
 
-  void insert_goto_at(uint block_no, uint succ_no);
+  Block* insert_goto_at(uint block_no, uint succ_no);
 
   // Check for NeverBranch at block end.  This needs to become a GOTO to the
   // true target.  NeverBranch are treated as a conditional branch that always
@@ -638,6 +638,10 @@ class PhaseCFG : public Phase {
 
   // Check all nodes and postalloc_expand them if necessary.
   void postalloc_expand(PhaseRegAlloc* _ra);
+
+#ifdef RISCV
+  void hoist_riscv_vset_before_fixup();
+#endif
 
 #ifndef PRODUCT
   bool trace_opto_pipelining() const { return _trace_opto_pipelining; }

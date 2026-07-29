@@ -38,6 +38,12 @@ struct RiscVVSetState {
   bool _valid;
 };
 
+bool riscv_vset_state_same(const RiscVVSetState& a, const RiscVVSetState& b);
+bool riscv_vset_state_equal_valid(const RiscVVSetState& a, const RiscVVSetState& b);
+RiscVVSetState riscv_vset_invalid_state();
+bool riscv_mach_node_vset_requirement(const MachNode* mach, RiscVVSetState* state);
+bool riscv_mach_node_kills_vset(const MachNode* mach);
+
 class MachRiscVVSetNode : public MachIdealNode {
   BasicType _bt;
   uint _vector_length;
