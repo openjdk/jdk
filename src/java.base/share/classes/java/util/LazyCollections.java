@@ -601,9 +601,7 @@ final class LazyCollections {
             // Snapshot
             final var mutexes = this.mutexes;
             if (mutexes == null) {
-                // We have already computed all the elements and if we end up here
-                // there was at least one unchecked exception thrown by the
-                // computing function.
+                // We have already computed all the elements (successfully or exceptionally).
                 return null;
             }
             // Check if there already is a mutex (Object or TOMB_STONE)
