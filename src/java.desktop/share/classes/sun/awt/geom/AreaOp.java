@@ -259,8 +259,7 @@ public abstract class AreaOp {
                 }
                 y = edgelist[right].getCurve().getYTop();
                 if (y > yrange[0]) {
-                    consumeSubCurves(subcurves, chains, ret);
-                    subcurves.clear();
+                    finalizeSubCurves(subcurves, chains);
                 }
                 yrange[0] = y;
             }

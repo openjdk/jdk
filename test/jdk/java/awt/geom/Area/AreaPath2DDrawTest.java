@@ -24,9 +24,9 @@
 /*
  * @test
  * @bug     8386576
- * @summary Checks that when we calculate Area of a path it results
- *          in proper geometry and no horizontal spurious lines are
- *          drawn.
+ * @summary Checks that when we draw a circle using area of approximated
+ *          straight line segments, no horizontal spurious lines are
+ *          drawn within the circle.
  */
 
 import java.awt.Color;
