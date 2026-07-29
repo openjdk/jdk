@@ -51,11 +51,61 @@
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/xmlstream.hpp"
+#ifdef RISCV
+#include "riscv_vset_machnode.hpp"
+#endif
 
 #ifndef PRODUCT
 #define DEBUG_ARG(x) , x
 #else
 #define DEBUG_ARG(x)
+#endif
+
+#ifdef RISCV
+static RiscVVSetState invalid_vset_state() {
+  return { T_BYTE, Assembler::e8, 0, Assembler::m1, false };
+}
+
+static bool mach_node_vset_requirement(const MachNode* mach,
+                                       RiscVVSetState* state) {
+  if (mach->is_MachCall() || mach->is_MachSafePoint()) {
+    return false;
+  }
+  if (mach->is_MachRiscVVSet()) {
+    return false;
+  }
+#ifdef RISCV
+  RiscVVSetRequirement req = { T_BYTE, 0, Assembler::m1, false };
+  if (mach->has_riscv_vset_requirement()) {
+    if (!mach->riscv_vset_requirement(&req)) {
+      return false;
+    }
+    *state = { req._bt, Assembler::elemtype_to_sew(req._bt), req._vector_length, req._vlmul, true };
+    return true;
+  }
+#endif
+  return false;
+}
+
+static void insert_explicit_vset_nodes(Compile* C) {
+  for (uint i = 0; i < C->cfg()->number_of_blocks(); i++) {
+    Block* block = C->cfg()->get_block(i);
+    for (uint j = 0; j < block->number_of_nodes(); j++) {
+      Node* n = block->get_node(j);
+      if (!n->is_Mach()) {
+        continue;
+      }
+      RiscVVSetState required = invalid_vset_state();
+      if (!mach_node_vset_requirement(n->as_Mach(), &required)) {
+        continue;
+      }
+      MachRiscVVSetNode* vset = new MachRiscVVSetNode(required._bt, required._vector_length, required._vlmul);
+      block->insert_node(vset, j);
+      C->cfg()->map_node_to_block(vset, block);
+      j++;
+    }
+  }
+}
 #endif
 
 //------------------------------Scheduling----------------------------------
@@ -319,6 +369,13 @@ void PhaseOutput::Output() {
   // Initialize code buffer
   estimate_buffer_size(_buf_sizes._const);
   if (C->failing()) return;
+
+#ifdef RISCV
+  insert_explicit_vset_nodes(C);
+  if (C->failing()) {
+    return;
+  }
+#endif
 
   // Pre-compute the length of blocks and replace
   // long branches with short if machine supports it.

@@ -1580,11 +1580,15 @@ void ArchDesc::declareClasses(FILE *fp) {
         fprintf(fp, "  virtual bool           is_TrapBasedCheckNode() const { return %s; }\n", attr->_val);
       } else if (strcmp (attr->_ident, "ins_is_late_expanded_null_check_candidate") == 0) {
         fprintf(fp, "  virtual bool           is_late_expanded_null_check_candidate() const { return %s; }\n", attr->_val);
+      } else if (strcmp (attr->_ident, "ins_riscv_vset") == 0) {
+        fprintf(fp, "  virtual bool           has_riscv_vset_requirement() const { return true; }\n");
+        fprintf(fp, "  virtual bool           riscv_vset_requirement(RiscVVSetRequirement* req) const;\n");
       } else if (strcmp (attr->_ident, "ins_cost") != 0 &&
           strncmp(attr->_ident, "ins_field_", 10) != 0 &&
           // Must match function in node.hpp: return type bool, no prefix "ins_".
           strcmp (attr->_ident, "ins_is_TrapBasedCheckNode") != 0 &&
-          strcmp (attr->_ident, "ins_short_branch") != 0) {
+          strcmp (attr->_ident, "ins_short_branch") != 0 &&
+          strcmp (attr->_ident, "ins_riscv_vset") != 0) {
         fprintf(fp, "  virtual int            %s() const { return %s; }\n", attr->_ident, attr->_val);
       }
       if (strcmp(attr->_ident, "ins_avoid_back_to_back") == 0) {
