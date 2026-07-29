@@ -41,7 +41,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Subscriber;
@@ -943,8 +942,6 @@ public class SSLFlowDelegate {
     }
 
     final AtomicInteger handshakeState;
-    final ConcurrentLinkedQueue<String> stateList =
-            debug.on() ? new ConcurrentLinkedQueue<>() : null;
 
     // Atomically executed to update task bits. Sets either DOING_TASKS or REQUESTING_TASKS
     // depending on previous value
@@ -967,10 +964,6 @@ public class SSLFlowDelegate {
     private boolean doHandshake(HandshakeStatus handshakeStatus, int caller) {
         // unconditionally sets the HANDSHAKING bit, while preserving task bits
         handshakeState.getAndAccumulate(0, (current, unused) -> HANDSHAKING | (current & TASK_BITS));
-        if (stateList != null && debug.on()) {
-            stateList.add(handshakeStatus.toString());
-            stateList.add(Integer.toString(caller));
-        }
         switch (handshakeStatus) {
             case NEED_TASK:
                 int s = handshakeState.accumulateAndGet(0, REQUEST_OR_DO_TASKS);
