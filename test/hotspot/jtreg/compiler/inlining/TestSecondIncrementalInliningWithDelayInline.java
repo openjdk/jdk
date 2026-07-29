@@ -27,7 +27,7 @@
  * @summary Verify that the second incremental inlining pass is performed
  *          when a call discovered during boxing late inlining is delayed
  *          by a delayinline directive.
- * @library  /test/lib /
+ * @library /test/lib /
  * @run driver ${test.main.class}
  */
 
