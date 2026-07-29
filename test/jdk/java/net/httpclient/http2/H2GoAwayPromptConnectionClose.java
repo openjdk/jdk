@@ -212,8 +212,10 @@ class H2GoAwayPromptConnectionClose {
         // number of bytes that are taken by the (common) Length and Type fields of
         // a HTTP/2 frame
         private static final int SIZE_OF_LENGTH_AND_TYPE_FIELDS = 9;
+        // empty SETTINGS frame
         private static final byte[] SERVER_SETTINGS_FRAME = new byte[]{0, 0, 0, 0x04,
                 0, 0, 0, 0, 0};
+        // SETTINGS frame ACKing the receipt of a SETTINGS frame from the client
         private static final byte[] ACK_CLIENT_SETTINGS_FRAME = new byte[]{0, 0, 0, 0x04, 0x01,
                 0, 0, 0, 0};
 
