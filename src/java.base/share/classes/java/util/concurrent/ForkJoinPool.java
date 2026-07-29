@@ -1320,10 +1320,9 @@ public class ForkJoinPool extends AbstractExecutorService
                 if (newArray != null) {               // else throw on next push
                     int mask = cap - 1, newMask = newCap - 1;
                     for (int k = s, j = cap; j > 0; --j, --k) {
-                        ForkJoinTask<?> u;            // poll old, push to new
-                        if ((u = getAndClearSlot(a, k & mask)) == null)
+                        if ((newArray[k & newMask] =  // poll old, push to new
+                             getAndClearSlot(a, k & mask)) == null)
                             break;                    // lost to pollers
-                        newArray[k & newMask] = u;
                     }
                     U.putReferenceRelease(this, ARRAY, newArray);
                 }
@@ -1492,10 +1491,16 @@ public class ForkJoinPool extends AbstractExecutorService
          * @return task status if known to be done
          */
         final int helpComplete(ForkJoinTask<?> task, boolean internal, int limit) {
+            return (internal) ?
+                helpCompleteInternal(task, limit) :
+                helpCompleteExternal(task, limit);
+        }
+
+        private int helpCompleteInternal(ForkJoinTask<?> task, int limit) {
             int status = 0;
             if (task != null) {
-                outer: for (int spins = LOCK_SPINS;;) {
-                    ForkJoinTask<?>[] a; boolean taken; Object o;
+                outer: for (;;) {
+                    ForkJoinTask<?>[] a; ForkJoinTask<?> t;
                     int stat, p, s, cap, j;
                     if ((stat = task.status) < 0) {
                         status = stat;
@@ -1505,33 +1510,59 @@ public class ForkJoinPool extends AbstractExecutorService
                         break;
                     if ((j = (cap - 1) & (s = (p = top) - 1)) < 0 || j >= cap)
                         break;
-                    if (!((o = a[j]) instanceof CountedCompleter))
+                    if ((t = a[j]) == null || !(t instanceof CountedCompleter))
                         break;
-                    CountedCompleter<?> t = (CountedCompleter<?>)o, f = t;
-                    for (int steps = cap;;) {       // bound path
+                    CountedCompleter<?> f = (CountedCompleter<?>)t;
+                    for (int steps = INITIAL_QUEUE_CAPACITY;;) {       // bound path
                         if (f == task)
                             break;
                         if ((f = f.completer) == null || --steps == 0)
                             break outer;
                     }
-                    if (!internal && !tryLockPhase()) {
-                        if (--spins == 0)
-                            break;
-                        Thread.onSpinWait();
+                    if (!casSlotNull(a, j, t))
+                        break;
+                    top = s;
+                    t.doExec();
+                    if (limit != 0 && --limit == 0)
+                        break;
+                }
+            }
+            return status;
+        }
+
+        private int helpCompleteExternal(ForkJoinTask<?> task, int limit) {
+            int status = 0;
+            if (task != null) {
+                outer: for (;;) {
+                    ForkJoinTask<?>[] a; boolean taken; ForkJoinTask<?> t;
+                    int stat, p, s, cap, j;
+                    if ((stat = task.status) < 0) {
+                        status = stat;
+                        break;
                     }
-                    else {
-                        if (taken = (top == p && casSlotNull(a, j, t))) {
-                            top = s;
-                            U.storeFence();
-                        }
-                        if (!internal)
-                            unlockPhase();
-                        if (!taken)
+                    if ((a = array) == null || (cap = a.length) <= 0)
+                        break;
+                    if ((j = (cap - 1) & (s = (p = top) - 1)) < 0 || j >= cap)
+                        break;
+                    if ((t = a[j]) == null || !(t instanceof CountedCompleter))
+                        break;
+                    CountedCompleter<?> f = (CountedCompleter<?>)t;
+                    for (int steps = INITIAL_QUEUE_CAPACITY;;) {       // bound path
+                        if (f == task)
                             break;
-                        t.doExec();
-                        if (limit != 0 && --limit == 0)
-                            break;
+                        if ((f = f.completer) == null || --steps == 0)
+                            break outer;
                     }
+                    if (!tryLockPhase())
+                        break;
+                    if (taken = (top == p && a[j] == t && casSlotNull(a, j, t)))
+                        top = s;
+                    unlockPhase();
+                    if (!taken)
+                        break;
+                    t.doExec();
+                    if (limit != 0 && --limit == 0)
+                        break;
                 }
             }
             return status;
@@ -1562,7 +1593,7 @@ public class ForkJoinPool extends AbstractExecutorService
                         break;
                     else if (blocker.isReleasable())
                         break;
-                    else if (base == b && casSlotNull(a, j, t)) {
+                    else if (base == b && a[j] == t && casSlotNull(a, j, t)) {
                         base = b + 1;
                         U.storeFence();
                         t.doExec();
@@ -1894,13 +1925,13 @@ public class ForkJoinPool extends AbstractExecutorService
             if (sp == 0) {
                 if ((short)(c >>> TC_SHIFT) >= pc)
                     break;
-                nc = ((c + TC_UNIT) & TC_MASK);
+                nc = (((c + TC_UNIT) & TC_MASK)) | ac;
             }
             else if ((v = w) == null)
                 break;
             else
-                nc = (v.stackPred & LMASK) | (c & TC_MASK);
-            if (c == (c = compareAndExchangeCtl(c, nc | ac))) {
+                nc = ((v.stackPred & LMASK) | (c & TC_MASK)) | ac;
+            if (c == (c = compareAndExchangeCtl(c, nc))) {
                 if (v == null)
                     createWorker();
                 else {
@@ -2031,20 +2062,24 @@ public class ForkJoinPool extends AbstractExecutorService
                 if ((q = qs[qid = i & (n - 1)]) != null) {
                     boolean taken = false;
                     for (int b = q.base, pb = b - 1; ; b = q.base) {
-                        ForkJoinTask<?>[] a; int cap, m, nb, bj, nj;
+                        ForkJoinTask<?>[] a; int cap, m, nb, bj, nj, tj;
                         if ((a = q.array) == null || (cap = a.length) <= 0)
                             break;
                         if ((bj = (m = cap - 1) & b) < 0 || bj >= cap ||
-                            (nj =  m & (nb = b + 1)) < 0 || nj >= cap)
+                            (nj =  m & (nb = b + 1)) < 0 || nj >= cap ||
+                            (tj =  m & b + 2)        < 0 || tj >= cap)
                             break;                // never true
                         ForkJoinTask<?> t = getSlotAcquire(a, bj);
-                        ForkJoinTask<?> nt = a[nj];
-                        if (a[bj] != t || q.base != b) { // inconsistent / busy
+                        boolean noNext = (a[nj] == null && a[tj] == null);
+                        ForkJoinTask<?> rt = a[bj];
+                        if (q.array != a)         // resized
+                            ;
+                        else if (q.base != b || rt != t) {   // inconsistent / busy
                             if (src != qid)
                                 break outer;      // reduce interference
                         }
                         else if (t == null) {
-                            if (nt == null) {
+                            if (noNext) {
                                 if (taken)        // end run
                                     break outer;
                                 break;            // probably empty
@@ -2391,7 +2426,8 @@ public class ForkJoinPool extends AbstractExecutorService
                                         }
                                     }
                                 }
-                                else if (q.source == sq && q.base == b) {
+                                else if (q.source == sq && q.base == b &&
+                                         a[bj] == t) {
                                     if (!eligible)
                                         break;
                                     if (casSlotNull(a, bj, t)) {
@@ -2456,9 +2492,9 @@ public class ForkJoinPool extends AbstractExecutorService
                                     (nj = m & (nb = b + 1)) < 0 || nj >= cap)
                                     break;                // never true
                                 ForkJoinTask<?> t = getSlotAcquire(a, bj);
-                                if (t instanceof CountedCompleter) {
+                                if (t != null && t instanceof CountedCompleter) {
                                     CountedCompleter<?> f = (CountedCompleter<?>)t;
-                                    for (int steps = cap;;) {
+                                    for (int steps = INITIAL_QUEUE_CAPACITY;;) {
                                         if (f == task) {
                                             eligible = true;
                                             break;
@@ -2480,7 +2516,7 @@ public class ForkJoinPool extends AbstractExecutorService
                                         }
                                     }
                                 }
-                                else if (q.base == b) {
+                                else if (q.base == b && a[bj] == t) {
                                     if (!eligible)
                                         break;
                                     if (casSlotNull(a, bj, t)) {
