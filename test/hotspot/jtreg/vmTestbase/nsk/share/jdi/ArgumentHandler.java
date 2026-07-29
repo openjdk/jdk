@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -596,6 +596,9 @@ class CheckedFeatures {
 
         {"windows-x64",     "com.sun.jdi.CommandLineLaunch", "dt_socket"},
         {"windows-x64",     "com.sun.jdi.RawCommandLineLaunch", "dt_socket"},
+
+        {"windows-aarch64", "com.sun.jdi.CommandLineLaunch", "dt_socket"},
+        {"windows-aarch64", "com.sun.jdi.RawCommandLineLaunch", "dt_socket"},
 
         {"macosx-amd64",     "com.sun.jdi.CommandLineLaunch", "dt_shmem"},
         {"macosx-amd64",     "com.sun.jdi.RawCommandLineLaunch", "dt_shmem"},

@@ -40,6 +40,7 @@
 #include "opto/multnode.hpp"
 #include "opto/narrowptrnode.hpp"
 #include "opto/node.hpp"
+#include "opto/opaquenode.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/rootnode.hpp"
@@ -1096,6 +1097,11 @@ bool InlineTypeNode::is_allocated(PhaseGVN* phase) const {
 static void replace_proj(Compile* C, CallNode* call, uint& proj_idx, Node* value, BasicType bt) {
   ProjNode* pn = call->proj_out_or_null(proj_idx);
   if (pn != nullptr) {
+    if (pn->outcnt() > 0) {
+      PhaseGVN* gvn = C->initial_gvn();
+      const Type* result_type = gvn->type(pn);
+      value = gvn->transform(new OpaqueParseNode(C, value, result_type));
+    }
     C->gvn_replace_by(pn, value);
     C->initial_gvn()->hash_delete(pn);
     pn->set_req(0, C->top());

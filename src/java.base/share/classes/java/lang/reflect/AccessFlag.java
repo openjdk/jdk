@@ -168,7 +168,13 @@ public enum AccessFlag {
     /**
      * The access flag {@code ACC_IDENTITY} with a mask value of
      * <code>{@value "0x%04x" ClassFile#ACC_IDENTITY}</code>.
+     * <p>
+     * If a class does not use preview features, the {@code ACC_IDENTITY} flag
+     * is considered always set for that class; if an interface or module
+     * descriptor does not use preview features, the {@code ACC_IDENTITY} flag
+     * is considered not set for that interface or module descriptor.
      *
+     * @see Class#isValue()
      * @jvms value-objects-4.1 Class access and property modifiers
      * @since 28
      */
@@ -280,6 +286,10 @@ public enum AccessFlag {
      * The access flag {@code ACC_STRICT_INIT}, with a mask value of
      * <code>{@value "0x%04x" ClassFile#ACC_STRICT_INIT}</code>.
      *
+     * <p>The {@code ACC_STRICT_INIT} flag is considered not set for a field
+     * declared in a class or interface that does not use preview features.
+     *
+     * @see Field#isStrictInit()
      * @jvms strict-fields-4.5 Field access and property flags
      * @since 28
      */
