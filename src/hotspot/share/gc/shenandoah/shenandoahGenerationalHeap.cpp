@@ -990,6 +990,7 @@ public:
 };
 
 void ShenandoahGenerationalHeap::final_update_refs_update_region_states() {
+  flush_region_pin_cache();
   ShenandoahSynchronizePinnedRegionStates pins;
   ShenandoahUpdateRegionAges ages(marking_context());
   auto cl = ShenandoahCompositeRegionClosure::of(pins, ages);

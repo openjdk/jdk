@@ -37,6 +37,7 @@
 #include "gc/shenandoah/shenandoahEvacTracker.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahPLAB.hpp"
+#include "gc/shenandoah/shenandoahRegionPinCache.hpp"
 #include "gc/shenandoah/shenandoahSATBMarkQueueSet.hpp"
 #include "runtime/javaThread.hpp"
 #include "utilities/debug.hpp"
@@ -92,6 +93,11 @@ private:
 
   Atomic<HeapWord*> _invisible_root;
   Atomic<size_t> _invisible_root_word_size;
+
+  // Thread-local pin cache used to increment/decrement the pin count for
+  // a region and flush the accumulated count to the shared pin counter.
+  // This avoids contended atomic updates of the shared pin counter.
+  ShenandoahRegionPinCache _pin_cache;
 
   ShenandoahThreadLocalData();
   ~ShenandoahThreadLocalData();
@@ -241,6 +247,10 @@ public:
 
   static size_t get_invisible_root_word_size(Thread* thread) {
     return data(thread)->_invisible_root_word_size.load_relaxed();
+  }
+
+  static ShenandoahRegionPinCache& pin_count_cache(Thread* thread) {
+    return data(thread)->_pin_cache;
   }
 };
 

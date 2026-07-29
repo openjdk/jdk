@@ -227,6 +227,7 @@ public:
   void record_pin();
   void record_unpin();
   size_t pin_count() const;
+  inline void add_pinned_object_count(size_t value);
 
 private:
   static size_t RegionCount;

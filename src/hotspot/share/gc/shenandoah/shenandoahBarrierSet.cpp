@@ -30,6 +30,7 @@
 #include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahRegionPinCache.inline.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/shenandoahStackWatermark.hpp"
 #ifdef COMPILER1
@@ -176,6 +177,8 @@ void ShenandoahBarrierSet::on_thread_detach(Thread *thread) {
       ShenandoahContextEvacuateUpdateRootsClosure oops;
       StackWatermarkSet::finish_processing(JavaThread::cast(thread), &oops, StackWatermarkKind::gc);
     }
+
+    ShenandoahThreadLocalData::pin_count_cache(thread).flush();
   }
 }
 

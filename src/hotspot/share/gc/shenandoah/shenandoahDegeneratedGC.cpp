@@ -252,6 +252,7 @@ void ShenandoahDegenGC::op_degenerated() {
         // it, we fail degeneration right away and slide into Full GC to recover.
 
         {
+          heap->flush_region_pin_cache();
           heap->sync_pinned_region_status();
           heap->collection_set()->clear_current_index();
           ShenandoahHeapRegion* r;

@@ -71,6 +71,7 @@
 #include "gc/shenandoah/shenandoahPartitionAllocator.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
+#include "gc/shenandoah/shenandoahRegionPinCache.inline.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/shenandoahSTWMark.hpp"
@@ -2435,14 +2436,13 @@ void ShenandoahHeap::unregister_nmethod(nmethod* nm) {
 }
 
 void ShenandoahHeap::pin_object(JavaThread* thr, oop o) {
-  heap_region_containing(o)->record_pin();
+  size_t region_idx = heap_region_index_containing(o);
+  ShenandoahThreadLocalData::pin_count_cache(thr).inc_count(region_idx);
 }
 
 void ShenandoahHeap::unpin_object(JavaThread* thr, oop o) {
-  ShenandoahHeapRegion* r = heap_region_containing(o);
-  assert(r != nullptr, "Sanity");
-  assert(r->pin_count() > 0, "Region %zu should have non-zero pins", r->index());
-  r->record_unpin();
+  size_t region_idx = heap_region_index_containing(o);
+  ShenandoahThreadLocalData::pin_count_cache(thr).dec_count(region_idx);
 }
 
 void ShenandoahHeap::sync_pinned_region_status() {
@@ -2618,6 +2618,7 @@ void ShenandoahHeap::update_heap_region_states(bool concurrent) {
 }
 
 void ShenandoahHeap::final_update_refs_update_region_states() {
+  flush_region_pin_cache();
   ShenandoahSynchronizePinnedRegionStates cl;
   parallel_heap_region_iterate(&cl);
 }
@@ -2972,4 +2973,10 @@ ShenandoahHeapLocker::ShenandoahHeapLocker(ShenandoahHeapLock* lock, bool allow_
   assert(_lock != nullptr, "Must not");
 #endif
   _lock->lock(allow_block_for_safepoint);
+}
+
+void ShenandoahHeap::flush_region_pin_cache() {
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next(); ) {
+    ShenandoahThreadLocalData::pin_count_cache(thread).flush();
+  }
 }
