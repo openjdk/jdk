@@ -244,6 +244,10 @@ public class Http2TestExchangeImpl implements Http2TestExchange {
         return conn.connectionKey();
     }
 
+    public Http2TestServerConnection getConnection() {
+        return this.conn;
+    }
+
     private boolean isHeadRequest() {
         return HEAD.equalsIgnoreCase(getRequestMethod());
     }
