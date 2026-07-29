@@ -517,6 +517,7 @@ DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(ThreadsList * t_list, 
       }
       previousThread = currentThread;
       waitingToLockMonitor = (ObjectMonitor*)currentThread->current_pending_monitor();
+      waitingToLockRawMonitor = currentThread->current_pending_raw_monitor();
       if (concurrent_locks) {
         waitingToLockBlocker = currentThread->current_park_blocker();
       }
@@ -1050,7 +1051,8 @@ void DeadlockCycle::print_on_with(ThreadsList * t_list, outputStream* st) const 
                      waitingToLockMonitor->owner());
         continue;
       }
-    } else {
+      st->print_cr("%s \"%s\"", owner_desc, currentThread->name());
+    } else if (waitingToLockBlocker != nullptr) {
       st->print("  waiting for ownable synchronizer " INTPTR_FORMAT ", (a %s)",
                 p2i(waitingToLockBlocker),
                 waitingToLockBlocker->klass()->external_name());
@@ -1059,8 +1061,10 @@ void DeadlockCycle::print_on_with(ThreadsList * t_list, outputStream* st) const 
       oop ownerObj = java_util_concurrent_locks_AbstractOwnableSynchronizer::get_owner_threadObj(waitingToLockBlocker);
       currentThread = java_lang_Thread::thread(ownerObj);
       assert(currentThread != nullptr, "AbstractOwnableSynchronizer owning thread is unexpectedly null");
+      st->print_cr("%s \"%s\"", owner_desc, currentThread->name());
+    } else {
+      assert(waitingToLockRawMonitor != nullptr, "some deadlock must have been found");
     }
-    st->print_cr("%s \"%s\"", owner_desc, currentThread->name());
   }
 
   st->cr();
