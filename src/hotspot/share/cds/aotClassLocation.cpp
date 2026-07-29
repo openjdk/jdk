@@ -633,7 +633,7 @@ void AOTClassLocationConfig::add_class_location(JavaThread* current, GrowableCla
         // other via cpattr.
         bool found_duplicate = false;
         for (int i = boot_cp_start_index(); i < tmp_array.length(); i++) {
-          if (strcmp(tmp_array.at(i)->path(), libname) == 0) {
+          if (os::same_files(tmp_array.at(i)->path(), libname)) {
             found_duplicate = true;
             break;
           }
