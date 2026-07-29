@@ -76,10 +76,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  *          connection management from closing the HTTP/2 connection
  * @run junit/othervm -Djdk.httpclient.keepalive.timeout.h2=36000 ${test.main.class}
  */
-class H2GoAwayPromptCloseTest {
+class H2GoAwayPromptConnectionClose {
 
     private static final int MAX_HEADER_TABLE_CAPACITY = 4096;
-    private static final String REQUEST_PATH = "/" + H2GoAwayPromptCloseTest.class.getSimpleName();
+    private static final String REQUEST_PATH =
+            "/" + H2GoAwayPromptConnectionClose.class.getSimpleName();
 
     private static final SSLContext sslCtx = SimpleSSLContext.findSSLContext();
     private static final ExecutorService executor = Executors.newCachedThreadPool();
