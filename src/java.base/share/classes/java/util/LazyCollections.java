@@ -588,7 +588,8 @@ final class LazyCollections {
         // Filled on demand and then discarded once it is not needed anymore.
         // A mutex element can only transition like so: `null` -> `new Object()` -> `TOMB_STONE`
         private volatile Object[] mutexes;
-        // Used to detect we have computed all elements and no longer need the `mutexes` array
+        // Used to detect we have computed all elements and no longer need the `mutexes`
+        // array. This field is accessed via Unsafe.
         private int counter;
 
         private Mutexes(int length) {
@@ -617,7 +618,8 @@ final class LazyCollections {
         }
 
         private void releaseMutex(long offset) {
-            // Defensively snapshot and check for null as we are using Unsafe directly.
+            // Defensively snapshot the volatile field and check for null as we are
+            // using Unsafe directly.
             final Object[] mutexes = Objects.requireNonNull(this.mutexes, "Should not reach here");
             // Replace the old mutex with a tomb stone since now the old mutex can be collected.
             UNSAFE.putReferenceVolatile(mutexes, offset, TOMB_STONE);
