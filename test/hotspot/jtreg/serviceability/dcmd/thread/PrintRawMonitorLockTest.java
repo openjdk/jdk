@@ -37,6 +37,7 @@ import java.util.regex.Pattern;
 
 /*
  * @test
+ * @bug 8253442
  * @summary Test of diagnostic command Thread.print with only JVMTI raw monitor.
  * @library /test/lib
  * @modules java.base/jdk.internal.misc

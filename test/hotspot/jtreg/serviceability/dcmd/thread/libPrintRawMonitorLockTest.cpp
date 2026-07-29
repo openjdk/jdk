@@ -59,28 +59,13 @@ Java_PrintRawMonitorLockTest_rawMonitorEnter(JNIEnv *jni, jclass cls, int id) {
   }
 }
 
-/** Agent library initialization. */
-
 JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   LOG("\nAgent_OnLoad started");
-
   // create JVMTI environment
   if (jvm->GetEnv((void **) (&jvmti), JVMTI_VERSION) != JNI_OK) {
     return JNI_ERR;
   }
-
-#if 0
-  // add specific capabilities for suspending thread
-  jvmtiCapabilities suspendCaps;
-  memset(&suspendCaps, 0, sizeof(suspendCaps));
-  suspendCaps.can_suspend = 1;
-
-  jvmtiError err = jvmti->AddCapabilities(&suspendCaps);
-  if (err != JVMTI_ERROR_NONE) {
-    return JNI_ERR;
-  }
-#endif
   LOG("Agent_OnLoad finished\n");
   return JNI_OK;
 }
