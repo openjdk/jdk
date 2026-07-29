@@ -53,9 +53,6 @@ public final class JsonParser {
     // For exception message on failure
     private int line;
     private int lineStart;
-    // For path building on failure
-    private int lastValueStart;
-    private int lastStructureStart;
 
     public JsonParser(char[] doc) {
         this.doc = doc;
@@ -65,7 +62,7 @@ public final class JsonParser {
     public JsonValue parseRoot() {
         JsonValue root = parseValue();
         if (hasInput()) {
-            throw failure("Additional value(s) were found after the JSON Value", 0, false);
+            throw valueFailure(0, "Additional value(s) were found after the JSON Value");
         }
         return root;
     }
@@ -78,10 +75,9 @@ public final class JsonParser {
      */
     private JsonValue parseValue() {
         skipWhitespaces();
-        var savedStart = lastValueStart;
-        lastValueStart = offset;
+        var pathStart = offset;
         if (!hasInput()) {
-            throw valueFailure("Expected a JSON Object, Array, String, Number, Boolean, or Null");
+            throw valueFailure(pathStart, "Expected a JSON Object, Array, String, Number, Boolean, or Null");
         }
         var val = switch (doc[offset]) {
             case '{' -> parseObject();
@@ -94,18 +90,17 @@ public final class JsonParser {
             // we still accept, so that we can provide a better error message
             case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '+', 'e', '.'
                     -> parseNumber();
-            default -> throw valueFailure(UNEXPECTED_VAL);
+            default -> throw valueFailure(pathStart, UNEXPECTED_VAL);
         };
         // Attribute incorrect values appended directly on a valid value as
         // error on the value rather than its enclosing structure.
         if (hasInput()) {
             switch (doc[offset]) {
                 case ']', '}', ',', ' ', '\t','\r', '\n' -> {}
-                default -> throw valueFailure("Unexpected content after JSON value");
+                default -> throw valueFailure(pathStart, "Unexpected content after JSON value");
             }
         }
         skipWhitespaces();
-        lastValueStart = savedStart;
         return val;
     }
 
@@ -115,13 +110,10 @@ public final class JsonParser {
      * See https://datatracker.ietf.org/doc/html/rfc8259#section-4
      */
     private JsonObject parseObject() {
-        int savedStructureStart = lastStructureStart;
-        lastStructureStart = offset;
         var startO = offset++; // Walk past the '{'
         skipWhitespaces();
         // Check for empty case
         if (charEquals('}')) {
-            lastStructureStart = savedStructureStart;
             return new JsonObjectImpl(Map.of(), startO, doc);
         }
         var members = new LinkedHashMap<String, JsonValue>();
@@ -130,24 +122,23 @@ public final class JsonParser {
             // Get the member name, which should be unescaped
             // Why not parse the name as a JsonString and then return its value()?
             // Would require 2 passes; we should build the String as we parse.
-            var name = parseName();
+            var name = parseName(startO);
             var nameLine = line;
             var nameLineStart = lineStart;
 
             // Move from name to ':'
             skipWhitespaces();
             if (!charEquals(':')) {
-                throw structureFailure("Expected a colon after the member name");
+                throw structureFailure(startO, "Expected a colon after the member name");
             }
 
             if (members.putIfAbsent(name, parseValue()) != null) {
                 throw failure(nameStart, nameLine, nameLineStart,
-                    "The duplicate member name: \"%s\" was already parsed".formatted(name), lastStructureStart, true);
+                    "The duplicate member name: \"%s\" was already parsed".formatted(name), startO, true);
             }
 
             // Ensure current char is either ',' or '}'
             if (charEquals('}')) {
-                lastStructureStart = savedStructureStart;
                 return new JsonObjectImpl(members, startO, doc);
             } else if (charEquals(',')) {
                 skipWhitespaces();
@@ -156,7 +147,7 @@ public final class JsonParser {
                 break;
             }
         }
-        throw structureFailure("JSON Object is not closed with a brace");
+        throw structureFailure(startO, "JSON Object is not closed with a brace");
     }
 
     /*
@@ -164,9 +155,9 @@ public final class JsonParser {
      * unescaped value.
      * See https://datatracker.ietf.org/doc/html/rfc8259#section-8.3
      */
-    private String parseName() {
+    private String parseName(int objStart) {
         if (!charEquals('"')) {
-            throw structureFailure("Expecting a JSON Object member name");
+            throw structureFailure(objStart, "Expecting a JSON Object member name");
         }
         var escape = false;
         boolean useBldr = false;
@@ -185,10 +176,10 @@ public final class JsonParser {
                     case 'r' -> c = '\r';
                     case 't' -> c = '\t';
                     case 'u' -> {
-                        c = codeUnit(true);
+                        c = codeUnit(objStart, true);
                         escapeLength = 4;
                     }
-                    default -> throw structureFailure(UNRECOGNIZED_ESCAPE_SEQUENCE.formatted(c));
+                    default -> throw structureFailure(objStart, UNRECOGNIZED_ESCAPE_SEQUENCE.formatted(c));
                 }
                 if (!useBldr) {
                     // Append everything up to the first escape sequence
@@ -209,13 +200,13 @@ public final class JsonParser {
                     return new String(doc, start, offset - start - 1);
                 }
             } else if (c < ' ') {
-                throw structureFailure(UNESCAPED_CONTROL_CODE);
+                throw structureFailure(objStart, UNESCAPED_CONTROL_CODE);
             }
             if (useBldr) {
                 sb.get().append(c);
             }
         }
-        throw structureFailure(UNCLOSED_STRING.formatted("JSON Object member name"));
+        throw structureFailure(objStart, UNCLOSED_STRING.formatted("JSON Object member name"));
     }
 
     /*
@@ -224,13 +215,10 @@ public final class JsonParser {
      * See https://datatracker.ietf.org/doc/html/rfc8259#section-5
      */
     private JsonArray parseArray() {
-        int savedStructureStart = lastStructureStart;
-        lastStructureStart = offset;
         var startO = offset++; // Walk past the '['
         skipWhitespaces();
         // Check for empty case
         if (charEquals(']')) {
-            lastStructureStart = savedStructureStart;
             return new JsonArrayImpl(List.of(), startO, doc);
         }
         var list = new ArrayList<JsonValue>();
@@ -239,13 +227,12 @@ public final class JsonParser {
             list.add(parseValue());
             // Ensure current char is either ']' or ','
             if (charEquals(']')) {
-                lastStructureStart = savedStructureStart;
                 return new JsonArrayImpl(list, startO, doc);
             } else if (!charEquals(',')) {
                 break;
             }
         }
-        throw structureFailure("JSON Array is not closed with a bracket");
+        throw structureFailure(startO, "JSON Array is not closed with a bracket");
     }
 
     /*
@@ -266,8 +253,8 @@ public final class JsonParser {
                 switch (c) {
                     // Allowed JSON escapes
                     case '"', '\\', '/', 'b', 'f', 'n', 'r', 't' -> {}
-                    case 'u' -> codeUnit(false);
-                    default -> throw valueFailure(UNRECOGNIZED_ESCAPE_SEQUENCE.formatted(c));
+                    case 'u' -> codeUnit(start, false);
+                    default -> throw valueFailure(start, UNRECOGNIZED_ESCAPE_SEQUENCE.formatted(c));
                 }
                 escape = false;
             } else if (c == '\\') {
@@ -276,10 +263,10 @@ public final class JsonParser {
             } else if (c == '\"') {
                 return new JsonStringImpl(doc, start, ++offset, hasEscape);
             } else if (c < ' ') {
-                throw valueFailure(UNESCAPED_CONTROL_CODE);
+                throw valueFailure(start, UNESCAPED_CONTROL_CODE);
             }
         }
-        throw valueFailure(UNCLOSED_STRING.formatted("JSON String"));
+        throw valueFailure(start, UNCLOSED_STRING.formatted("JSON String"));
     }
 
     private JsonBooleanImpl parseTrue() {
@@ -287,7 +274,7 @@ public final class JsonParser {
         if (charEquals('r') && charEquals('u') && charEquals('e')) {
             return new JsonBooleanImpl(true, doc, start);
         }
-        throw valueFailure(UNEXPECTED_VAL);
+        throw valueFailure(start, UNEXPECTED_VAL);
     }
 
     private JsonBooleanImpl parseFalse() {
@@ -296,7 +283,7 @@ public final class JsonParser {
                 && charEquals('e')) {
             return new JsonBooleanImpl(false, doc, start);
         }
-        throw valueFailure(UNEXPECTED_VAL);
+        throw valueFailure(start, UNEXPECTED_VAL);
     }
 
     private JsonNullImpl parseNull() {
@@ -304,7 +291,7 @@ public final class JsonParser {
         if (charEquals('u') && charEquals('l') && charEquals('l')) {
             return new JsonNullImpl(doc, start);
         }
-        throw valueFailure(UNEXPECTED_VAL);
+        throw valueFailure(start, UNEXPECTED_VAL);
     }
 
     /*
@@ -327,19 +314,19 @@ public final class JsonParser {
             switch (c) {
                 case '-' -> {
                     if ((offset != start && expOff == -1) || havePart || sawSign) {
-                        throw valueFailure(INVALID_POSITION_IN_NUMBER.formatted(c));
+                        throw valueFailure(start, INVALID_POSITION_IN_NUMBER.formatted(c));
                     }
                     sawSign = true;
                 }
                 case '+' -> {
                     if (expOff == -1 || havePart || sawSign) {
-                        throw valueFailure(INVALID_POSITION_IN_NUMBER.formatted(c));
+                        throw valueFailure(start, INVALID_POSITION_IN_NUMBER.formatted(c));
                     }
                     sawSign = true;
                 }
                 case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' -> {
                     if (decOff == -1 && expOff == -1 && sawZero) {
-                        throw valueFailure(INVALID_POSITION_IN_NUMBER.formatted('0'));
+                        throw valueFailure(start, INVALID_POSITION_IN_NUMBER.formatted('0'));
                     }
                     if (doc[offset] == '0' && !havePart) {
                         sawZero = true;
@@ -348,10 +335,10 @@ public final class JsonParser {
                 }
                 case '.' -> {
                     if (decOff != -1) {
-                        throw valueFailure(INVALID_POSITION_IN_NUMBER.formatted(c));
+                        throw valueFailure(start, INVALID_POSITION_IN_NUMBER.formatted(c));
                     } else {
                         if (!havePart) {
-                            throw valueFailure(INVALID_POSITION_IN_NUMBER.formatted(c));
+                            throw valueFailure(start, INVALID_POSITION_IN_NUMBER.formatted(c));
                         }
                         decOff = offset;
                         havePart = false;
@@ -359,10 +346,10 @@ public final class JsonParser {
                 }
                 case 'e', 'E' -> {
                     if (expOff != -1) {
-                        throw valueFailure(INVALID_POSITION_IN_NUMBER.formatted(c));
+                        throw valueFailure(start, INVALID_POSITION_IN_NUMBER.formatted(c));
                     } else {
                         if (!havePart) {
-                            throw valueFailure(INVALID_POSITION_IN_NUMBER.formatted(c));
+                            throw valueFailure(start, INVALID_POSITION_IN_NUMBER.formatted(c));
                         }
                         expOff = offset;
                         havePart = false;
@@ -376,7 +363,7 @@ public final class JsonParser {
             }
         }
         if (!havePart) {
-            throw valueFailure("Input expected after '[.|e|E]'");
+            throw valueFailure(start, "Input expected after '[.|e|E]'");
         }
         return new JsonNumberImpl(doc, start, offset, decOff, expOff);
     }
@@ -388,12 +375,12 @@ public final class JsonParser {
     }
 
     // Unescapes the Unicode escape sequence and produces a char
-    private char codeUnit(boolean structural) {
+    private char codeUnit(int start, boolean structural) {
         char val = 0;
         int end = offset + 4;
         if (end >= doc.length) {
             throw failure("Invalid Unicode escape sequence. Expected four hex digits",
-                    structural ? lastStructureStart : lastValueStart, structural);
+                    start, structural);
         }
         while (offset < end) {
             char c = doc[++offset];
@@ -405,7 +392,7 @@ public final class JsonParser {
                         case 'A', 'B', 'C', 'D', 'E', 'F' -> c - 'A' + 10;
                         default -> throw failure(
                                 "Invalid Unicode escape sequence. '%c' is not a hex digit".formatted(c),
-                                structural ? lastStructureStart : lastValueStart, structural);
+                                start, structural);
                     });
         }
         return val;
@@ -451,13 +438,13 @@ public final class JsonParser {
     }
 
     // To be thrown when a structure is incorrect, which derives the path from the enclosing structure itself
-    private JsonParseException structureFailure(String message) {
-        return failure(offset, line, lineStart, message, lastStructureStart, true);
+    private JsonParseException structureFailure(int start, String message) {
+        return failure(offset, line, lineStart, message, start, true);
     }
 
     // To be thrown when a "value" is incorrect, which derives the path from the value
-    private JsonParseException valueFailure(String message) {
-        return failure(offset, line, lineStart, message, lastValueStart, false);
+    private JsonParseException valueFailure(int start, String message) {
+        return failure(offset, line, lineStart, message, start, false);
     }
 
     private JsonParseException failure(String message, int recentStart, boolean structural) {
