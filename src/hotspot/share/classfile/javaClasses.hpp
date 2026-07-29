@@ -132,6 +132,7 @@ class java_lang_String : AllStatic {
   static inline bool is_latin1(oop java_string);
   static inline bool deduplication_forbidden(oop java_string);
   static inline bool deduplication_requested(oop java_string);
+  static inline bool deduplication_requested_or_forbidden(oop java_string);
   static inline int length(oop java_string);
   static inline int length(oop java_string, typeArrayOop string_value);
   static size_t utf8_length(oop java_string);
@@ -817,6 +818,10 @@ class java_lang_reflect_Constructor : public java_lang_reflect_AccessibleObject 
   friend class JavaClasses;
 };
 
+#if INCLUDE_JFR
+#define FIELD_INJECTED_FIELDS(macro) \
+  macro(java_lang_reflect_Field, jfr_epoch, int_signature, false)
+#endif // INCLUDE_JFR
 
 // Interface to java.lang.reflect.Field objects
 
@@ -832,6 +837,7 @@ class java_lang_reflect_Field : public java_lang_reflect_AccessibleObject {
   static int _trusted_final_offset;
   static int _signature_offset;
   static int _annotations_offset;
+  JFR_ONLY(static int _jfr_epoch_offset;)
 
   static void compute_offsets();
 
@@ -861,6 +867,9 @@ class java_lang_reflect_Field : public java_lang_reflect_AccessibleObject {
 
   static void set_signature(oop constructor, oop value);
   static void set_annotations(oop constructor, oop value);
+
+  JFR_ONLY(static u2 epoch(oop field);)
+  JFR_ONLY(static int epoch_offset() { CHECK_INIT(_jfr_epoch_offset); })
 
   // Debugging
   friend class JavaClasses;

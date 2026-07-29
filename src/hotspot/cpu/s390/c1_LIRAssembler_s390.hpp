@@ -30,7 +30,7 @@
 
   // Record the type of the receiver in ReceiverTypeData.
   void type_profile_helper(Register mdo, ciMethodData *md, ciProfileData *data,
-                           Register recv, Register tmp1, Label* update_done);
+                           Register recv, Register tmp1);
   // Setup pointers to MDO, MDO slot, also compute offset bias to access the slot.
   void setup_md_access(ciMethod* method, int bci,
                        ciMethodData*& md, ciProfileData*& data, int& mdo_offset_bias);

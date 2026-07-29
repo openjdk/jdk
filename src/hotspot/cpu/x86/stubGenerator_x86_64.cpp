@@ -3069,7 +3069,7 @@ address StubGenerator::generate_base64_decodeBlock() {
 
   // If AVX512 VBMI not supported, just compile non-AVX code
   if(VM_Version::supports_avx512_vbmi() &&
-     VM_Version::supports_avx512bw()) {
+     VM_Version::supports_avx512bw() && VM_Version::supports_bmi2()) {
     __ cmpl(length, 31);     // 32-bytes is break-even for AVX-512
     __ jcc(Assembler::lessEqual, L_lastChunk);
 
@@ -4887,7 +4887,7 @@ void StubGenerator::generate_compiler_stubs() {
   StubRoutines::_data_cache_writeback = generate_data_cache_writeback();
   StubRoutines::_data_cache_writeback_sync = generate_data_cache_writeback_sync();
 
-  if ((UseAVX == 2) && EnableX86ECoreOpts && UseCountTrailingZerosInstruction) {
+  if ((UseAVX == 2) && EnableX86ECoreOpts && UseCountTrailingZerosInstruction && VM_Version::supports_bmi2()) {
     generate_string_indexof(StubRoutines::_string_indexof_array);
   }
 
@@ -4902,6 +4902,11 @@ void StubGenerator::generate_compiler_stubs() {
   if (UseIntPolyIntrinsics) {
     StubRoutines::_intpoly_montgomeryMult_P256 = generate_intpoly_montgomeryMult_P256();
     StubRoutines::_intpoly_assign = generate_intpoly_assign();
+  }
+
+  if (UseIntPoly25519Intrinsics) {
+    StubRoutines::_intpoly_mult_25519 = generate_intpoly_mult_25519();
+    StubRoutines::_intpoly_square_25519 = generate_intpoly_square_25519();
   }
 
   if (UseMD5Intrinsics) {

@@ -119,6 +119,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.cds", this::vmCDS);
         map.put("vm.cds.default.archive.available", this::vmCDSDefaultArchiveAvailable);
         map.put("vm.cds.nocoops.archive.available", this::vmCDSNocoopsArchiveAvailable);
+        map.put("vm.cds.nocoh.archive.available", this::vmCDSNocohArchiveAvailable);
         map.put("vm.cds.custom.loaders", this::vmCDSForCustomLoaders);
         map.put("vm.cds.supports.aot.class.linking", this::vmCDSSupportsAOTClassLinking);
         map.put("vm.cds.supports.aot.code.caching", this::vmCDSSupportsAOTCodeCaching);
@@ -415,6 +416,16 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     protected String vmCDSNocoopsArchiveAvailable() {
         Path archive = Paths.get(System.getProperty("java.home"), "lib", "server", "classes_nocoops.jsa");
+        return "" + ("true".equals(vmCDS()) && Files.exists(archive));
+    }
+
+    /**
+     * Check for CDS no compact object headers archive existence.
+     *
+     * @return true if CDS archive classes_nocoh.jsa exists in the JDK to be tested.
+     */
+    protected String vmCDSNocohArchiveAvailable() {
+        Path archive = Paths.get(System.getProperty("java.home"), "lib", "server", "classes_nocoh.jsa");
         return "" + ("true".equals(vmCDS()) && Files.exists(archive));
     }
 

@@ -853,8 +853,10 @@ public class EventQueue {
             newEventQueue.previousQueue = topQueue;
             topQueue.nextQueue = newEventQueue;
 
-            if (SunToolkit.currentEventQueue == topQueue) {
-                SunToolkit.currentEventQueue = newEventQueue;
+            synchronized (SunToolkit.class) {
+                if (SunToolkit.getSystemEventQueueImplPP() == topQueue) {
+                    SunToolkit.currentEventQueue = newEventQueue;
+                }
             }
 
             pushPopCond.signalAll();
@@ -913,8 +915,10 @@ public class EventQueue {
                 topQueue.dispatchThread.setEventQueue(prevQueue);
             }
 
-            if (SunToolkit.currentEventQueue == this) {
-                SunToolkit.currentEventQueue = prevQueue;
+            synchronized (SunToolkit.class) {
+                if (SunToolkit.getSystemEventQueueImplPP() == this) {
+                    SunToolkit.currentEventQueue = prevQueue;
+                }
             }
 
             // Wake up EDT waiting in getNextEvent(), so it can

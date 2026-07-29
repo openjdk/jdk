@@ -239,36 +239,20 @@ public:
 
 //------------------------------DivModNode---------------------------------------
 // Division with remainder result.
-class DivModNode : public MultiNode {
+class DivModNode : public BinaryMultiNode {
 protected:
-  DivModNode( Node *c, Node *dividend, Node *divisor );
+  DivModNode(Node* ctrl, Node* dividend, Node* divisor) : BinaryMultiNode(ctrl, dividend, divisor) {}
 public:
-  enum {
-    div_proj_num =  0,      // quotient
-    mod_proj_num =  1       // remainder
-  };
   virtual int Opcode() const;
-  virtual Node* Identity(PhaseGVN* phase) { return this; }
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape) { return nullptr; }
-  virtual const Type* Value(PhaseGVN* phase)  const { return bottom_type(); }
-  virtual uint hash() const { return Node::hash(); }
-  virtual bool is_CFG() const  { return false; }
-  virtual uint ideal_reg() const { return NotAMachineReg; }
 
   static DivModNode* make(Node* div_or_mod, BasicType bt, bool is_unsigned);
-
-  ProjNode* div_proj() { return proj_out_or_null(div_proj_num); }
-  ProjNode* mod_proj() { return proj_out_or_null(mod_proj_num); }
-
-private:
-  virtual bool depends_only_on_test() const { return false; }
 };
 
 //------------------------------DivModINode---------------------------------------
 // Integer division with remainder result.
 class DivModINode : public DivModNode {
 public:
-  DivModINode( Node *c, Node *dividend, Node *divisor ) : DivModNode(c, dividend, divisor) {}
+  DivModINode(Node* ctrl, Node* dividend, Node* divisor) : DivModNode(ctrl, dividend, divisor) {}
   virtual int Opcode() const;
   virtual const Type *bottom_type() const { return TypeTuple::INT_PAIR; }
   virtual Node *match( const ProjNode *proj, const Matcher *m );
@@ -281,7 +265,7 @@ public:
 // Long division with remainder result.
 class DivModLNode : public DivModNode {
 public:
-  DivModLNode( Node *c, Node *dividend, Node *divisor ) : DivModNode(c, dividend, divisor) {}
+  DivModLNode(Node* ctrl, Node* dividend, Node* divisor) : DivModNode(ctrl, dividend, divisor) {}
   virtual int Opcode() const;
   virtual const Type *bottom_type() const { return TypeTuple::LONG_PAIR; }
   virtual Node *match( const ProjNode *proj, const Matcher *m );
@@ -295,7 +279,7 @@ public:
 // Unsigend integer division with remainder result.
 class UDivModINode : public DivModNode {
 public:
-  UDivModINode( Node *c, Node *dividend, Node *divisor ) : DivModNode(c, dividend, divisor) {}
+  UDivModINode(Node* ctrl, Node* dividend, Node* divisor) : DivModNode(ctrl, dividend, divisor) {}
   virtual int Opcode() const;
   virtual const Type *bottom_type() const { return TypeTuple::INT_PAIR; }
   virtual Node *match( const ProjNode *proj, const Matcher *m );
@@ -308,7 +292,7 @@ public:
 // Unsigned long division with remainder result.
 class UDivModLNode : public DivModNode {
 public:
-  UDivModLNode( Node *c, Node *dividend, Node *divisor ) : DivModNode(c, dividend, divisor) {}
+  UDivModLNode(Node* ctrl, Node* dividend, Node* divisor) : DivModNode(ctrl, dividend, divisor) {}
   virtual int Opcode() const;
   virtual const Type *bottom_type() const { return TypeTuple::LONG_PAIR; }
   virtual Node *match( const ProjNode *proj, const Matcher *m );

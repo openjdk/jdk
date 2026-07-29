@@ -22,6 +22,7 @@
  *
  */
 
+#include "ci/ciInstanceKlass.hpp"
 #include "ci/ciMethodData.hpp"
 #include "ci/ciTypeFlow.hpp"
 #include "classfile/javaClasses.hpp"
@@ -49,9 +50,6 @@
 #include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/stringUtils.hpp"
-#if INCLUDE_SHENANDOAHGC
-#include "gc/shenandoah/c2/shenandoahBarrierSetC2.hpp"
-#endif // INCLUDE_SHENANDOAHGC
 
 // Portions of code courtesy of Clifford Click
 
@@ -734,10 +732,6 @@ void Type::Initialize_shared(Compile* current) {
   mreg2type[Op_VecX] = TypeVect::VECTX;
   mreg2type[Op_VecY] = TypeVect::VECTY;
   mreg2type[Op_VecZ] = TypeVect::VECTZ;
-
-#if INCLUDE_SHENANDOAHGC
-  ShenandoahBarrierSetC2::init();
-#endif //INCLUDE_SHENANDOAHGC
 
   BarrierSetC2::make_clone_type();
   LockNode::initialize_lock_Type();
@@ -1807,6 +1801,12 @@ const TypeInt* TypeInt::make(jint lo, jint hi, int widen) {
   return make_or_top(TypeIntPrototype<jint, juint>{{lo, hi}, {0, max_juint}, {0, 0}}, widen)->is_int();
 }
 
+const TypeInt* TypeInt::make_unsigned(juint ulo, juint uhi, int widen) {
+  assert(ulo <= uhi, "must be legal bounds");
+  // By creating the TypeInt with the full signed range and the given unsigned range, the signed bounds are inferred from the unsigned bounds.
+  return make_or_top(TypeIntPrototype<jint, juint>{{min_jint, max_jint}, {ulo, uhi}, {0, 0}}, widen)->is_int();
+}
+
 const Type* TypeInt::make_or_top(const TypeIntPrototype<jint, juint>& t, int widen) {
   return make_or_top(t, widen, false);
 }
@@ -1940,6 +1940,12 @@ const TypeLong* TypeLong::make(jlong con) {
 const TypeLong* TypeLong::make(jlong lo, jlong hi, int widen) {
   assert(lo <= hi, "must be legal bounds");
   return make_or_top(TypeIntPrototype<jlong, julong>{{lo, hi}, {0, max_julong}, {0, 0}}, widen)->is_long();
+}
+
+const TypeLong* TypeLong::make_unsigned(julong ulo, julong uhi, int widen) {
+  assert(ulo <= uhi, "must be legal bounds");
+  // By creating the TypeLong with the full signed range and the given unsigned range, the signed bounds are inferred from the unsigned bounds.
+  return make_or_top(TypeIntPrototype<jlong, julong>{{min_jlong, max_jlong}, {ulo, uhi}, {0, 0}}, widen)->is_long();
 }
 
 const Type* TypeLong::make_or_top(const TypeIntPrototype<jlong, julong>& t, int widen) {
@@ -3287,6 +3293,17 @@ bool TypeInterfaces::eq(ciInstanceKlass* k) const {
   return true;
 }
 
+// Check whether an instance of type k will satisfy this
+bool TypeInterfaces::is_subset(ciInstanceKlass* k) const {
+  assert(k->is_loaded(), "should be loaded");
+  GrowableArray<ciInstanceKlass*>* k_interfaces = k->transitive_interfaces();
+  for (int i = 0; i < _interfaces.length(); i++) {
+    if (!k_interfaces->contains(_interfaces.at(i))) {
+      return false;
+    }
+  }
+  return true;
+}
 
 uint TypeInterfaces::hash() const {
   assert(_initialized, "must be");
@@ -5965,20 +5982,16 @@ const TypeKlassPtr* TypeInstKlassPtr::try_improve() const {
   Compile* C = Compile::current();
   Dependencies* deps = C->dependencies();
   assert((deps != nullptr) == (C->method() != nullptr && C->method()->code_size() > 0), "sanity");
-  const TypeInterfaces* interfaces = _interfaces;
   if (k->is_loaded()) {
     ciInstanceKlass* ik = k->as_instance_klass();
     bool klass_is_exact = ik->is_final();
-    if (!klass_is_exact &&
-        deps != nullptr) {
+    if (!klass_is_exact && deps != nullptr) {
       ciInstanceKlass* sub = ik->unique_concrete_subklass();
-      if (sub != nullptr) {
-        if (_interfaces->eq(sub)) {
-          deps->assert_abstract_with_unique_concrete_subtype(ik, sub);
-          k = ik = sub;
-          klass_is_exact = sub->is_final();
-          return TypeKlassPtr::make(klass_is_exact ? Constant : _ptr, k, _offset);
-        }
+      if (sub != nullptr && _interfaces->is_subset(sub)) {
+        deps->assert_abstract_with_unique_concrete_subtype(ik, sub);
+        k = ik = sub;
+        klass_is_exact = sub->is_final();
+        return TypeKlassPtr::make(klass_is_exact ? Constant : _ptr, k, _offset);
       }
     }
   }

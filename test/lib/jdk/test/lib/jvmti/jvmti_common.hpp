@@ -279,6 +279,15 @@ get_frame_count(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread) {
   return frame_count;
 }
 
+static jmethodID
+get_frame_method(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jint depth) {
+  jmethodID method;
+  jlocation loc;
+  jvmtiError err = jvmti->GetFrameLocation(thread, depth, &method, &loc);
+  check_jvmti_status(jni, err, "notifyFramePop: Failed in JVMTI GetFrameLocation");
+  return method;
+}
+
 static jvmtiThreadInfo
 get_thread_info(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread) {
   jvmtiThreadInfo thr_info;

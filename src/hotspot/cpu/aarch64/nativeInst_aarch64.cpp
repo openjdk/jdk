@@ -123,7 +123,7 @@ void NativeCall::insert(address code_pos, address entry) { Unimplemented(); }
 void NativeMovConstReg::verify() {
   if (! (nativeInstruction_at(instruction_address())->is_movz() ||
         is_adrp_at(instruction_address()) ||
-        is_ldr_literal_at(instruction_address())) ) {
+        is_load_literal_at(instruction_address())) ) {
     fatal("should be MOVZ or ADRP or LDR (literal)");
   }
 }
@@ -270,17 +270,17 @@ bool NativeInstruction::is_safepoint_poll() {
   // a safepoint_poll is implemented in two steps as either
   //
   // adrp(reg, polling_page);
-  // ldr(zr, [reg, #offset]);
+  // ldrw(zr, [reg, #offset]);
   //
   // or
   //
   // mov(reg, polling_page);
-  // ldr(zr, [reg, #offset]);
+  // ldrw(zr, [reg, #offset]);
   //
   // or
   //
   // ldr(reg, [rthread, #offset]);
-  // ldr(zr, [reg, #offset]);
+  // ldrw(zr, [reg, #offset]);
   //
   // however, we cannot rely on the polling page address load always
   // directly preceding the read from the page. C1 does that but C2
@@ -301,9 +301,19 @@ bool NativeInstruction::is_adrp_at(address instr) {
   return (Instruction_aarch64::extract(insn, 31, 24) & 0b10011111) == 0b10010000;
 }
 
-bool NativeInstruction::is_ldr_literal_at(address instr) {
+bool NativeInstruction::is_load_literal_at(address instr) {
   unsigned insn = *(unsigned*)instr;
   return (Instruction_aarch64::extract(insn, 29, 24) & 0b011011) == 0b00011000;
+}
+
+bool NativeInstruction::is_ldr_gpr_literal_at(address instr) {
+  unsigned insn = *(unsigned*)instr;
+  return Instruction_aarch64::extract(insn, 31, 24) == 0b01011000;
+}
+
+bool NativeInstruction::is_ldrw_gpr_literal_at(address instr) {
+  unsigned insn = *(unsigned*)instr;
+  return Instruction_aarch64::extract(insn, 31, 24) == 0b00011000;
 }
 
 bool NativeInstruction::is_ldrw_to_zr(address instr) {

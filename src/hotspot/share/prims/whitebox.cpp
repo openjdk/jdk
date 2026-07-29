@@ -747,6 +747,14 @@ WB_ENTRY(void, WB_NMTArenaMalloc(JNIEnv* env, jobject o, jlong arena, jlong size
   a->Amalloc(size_t(size));
 WB_END
 
+WB_ENTRY(jboolean, WB_isC2Included(JNIEnv* env))
+#ifdef COMPILER2
+  return true;
+#else
+  return false;
+#endif
+WB_END
+
 static jmethodID reflected_method_to_jmid(JavaThread* thread, JNIEnv* env, jobject method) {
   assert(method != nullptr, "method should not be null");
   ThreadToNativeFromVM ttn(thread);
@@ -2843,6 +2851,7 @@ static JNINativeMethod methods[] = {
   {CC"NMTNewArena",         CC"(J)J",                 (void*)&WB_NMTNewArena        },
   {CC"NMTFreeArena",        CC"(J)V",                 (void*)&WB_NMTFreeArena       },
   {CC"NMTArenaMalloc",      CC"(JJ)V",                (void*)&WB_NMTArenaMalloc     },
+  {CC"isC2Included",        CC"()Z",                  (void*)&WB_isC2Included       },
   {CC"deoptimizeFrames",   CC"(Z)I",                  (void*)&WB_DeoptimizeFrames  },
   {CC"isFrameDeoptimized", CC"(I)Z",                  (void*)&WB_IsFrameDeoptimized},
   {CC"deoptimizeAll",      CC"()V",                   (void*)&WB_DeoptimizeAll     },

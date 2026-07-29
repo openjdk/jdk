@@ -79,8 +79,9 @@
 #include "utilities/hashTable.hpp"
 #include "utilities/stringUtils.hpp"
 
-SystemDictionaryShared::ArchiveInfo SystemDictionaryShared::_static_archive;
-SystemDictionaryShared::ArchiveInfo SystemDictionaryShared::_dynamic_archive;
+SystemDictionaryShared::ArchiveInfo SystemDictionaryShared::_info_for_static_archive;
+SystemDictionaryShared::ArchiveInfo SystemDictionaryShared::_info_for_dynamic_archive;
+SystemDictionaryShared::ArchiveInfo SystemDictionaryShared::_info_for_dumping;
 
 DumpTimeSharedClassTable* SystemDictionaryShared::_dumptime_table = nullptr;
 
@@ -132,8 +133,8 @@ InstanceKlass* SystemDictionaryShared::lookup_from_stream(Symbol* class_name,
     return nullptr;
   }
 
-  const RunTimeClassInfo* record = find_record(&_static_archive._unregistered_dictionary,
-                                               &_dynamic_archive._unregistered_dictionary,
+  const RunTimeClassInfo* record = find_record(&_info_for_static_archive._unregistered_dictionary,
+                                               &_info_for_dynamic_archive._unregistered_dictionary,
                                                class_name);
   if (record == nullptr) {
     return nullptr;
@@ -701,7 +702,7 @@ void SystemDictionaryShared::copy_unregistered_class_size_and_crc32(InstanceKlas
   precond(klass->in_aot_cache());
 
   // A shared class must have a RunTimeClassInfo record
-  const RunTimeClassInfo* record = find_record(&_static_archive._unregistered_dictionary,
+  const RunTimeClassInfo* record = find_record(&_info_for_static_archive._unregistered_dictionary,
                                                nullptr, klass->name());
   precond(record != nullptr);
   precond(record->klass() == klass);
@@ -1335,7 +1336,7 @@ void SystemDictionaryShared::write_dictionary(RunTimeSharedDictionary* dictionar
 }
 
 void SystemDictionaryShared::write_to_archive(bool is_static_archive) {
-  ArchiveInfo* archive = get_archive(is_static_archive);
+  ArchiveInfo* archive = get_archive(is_static_archive, /*is_dumping=*/true);
 
   write_dictionary(&archive->_builtin_dictionary, true);
   write_dictionary(&archive->_unregistered_dictionary, false);
@@ -1348,7 +1349,7 @@ void SystemDictionaryShared::write_to_archive(bool is_static_archive) {
 
 void SystemDictionaryShared::serialize_dictionary_headers(SerializeClosure* soc,
                                                           bool is_static_archive) {
-  ArchiveInfo* archive = get_archive(is_static_archive);
+  ArchiveInfo* archive = get_archive(is_static_archive, soc->writing());
 
   archive->_builtin_dictionary.serialize_header(soc);
   archive->_unregistered_dictionary.serialize_header(soc);
@@ -1395,8 +1396,8 @@ SystemDictionaryShared::find_record(RunTimeSharedDictionary* static_dict, RunTim
 }
 
 InstanceKlass* SystemDictionaryShared::find_builtin_class(Symbol* name) {
-  const RunTimeClassInfo* record = find_record(&_static_archive._builtin_dictionary,
-                                               &_dynamic_archive._builtin_dictionary,
+  const RunTimeClassInfo* record = find_record(&_info_for_static_archive._builtin_dictionary,
+                                               &_info_for_dynamic_archive._builtin_dictionary,
                                                name);
   if (record != nullptr) {
     assert(!record->klass()->is_hidden(), "hidden class cannot be looked up by name");
@@ -1437,11 +1438,12 @@ const char* SystemDictionaryShared::loader_type_for_shared_class(Klass* k) {
 }
 
 void SystemDictionaryShared::get_all_archived_classes(bool is_static_archive, GrowableArray<Klass*>* classes) {
-  get_archive(is_static_archive)->_builtin_dictionary.iterate_all([&] (const RunTimeClassInfo* record) {
+  ArchiveInfo* archive = get_archive(is_static_archive, /*is_dumping=*/false);
+  archive->_builtin_dictionary.iterate_all([&] (const RunTimeClassInfo* record) {
       classes->append(record->klass());
     });
 
-  get_archive(is_static_archive)->_unregistered_dictionary.iterate_all([&] (const RunTimeClassInfo* record) {
+  archive->_unregistered_dictionary.iterate_all([&] (const RunTimeClassInfo* record) {
       classes->append(record->klass());
     });
 }
@@ -1488,10 +1490,10 @@ void SystemDictionaryShared::ArchiveInfo::print_table_statistics(const char* pre
 void SystemDictionaryShared::print_shared_archive(outputStream* st, bool is_static) {
   if (CDSConfig::is_using_archive()) {
     if (is_static) {
-      _static_archive.print_on("", st, true);
+      _info_for_static_archive.print_on("", st, true);
     } else {
       if (DynamicArchive::is_mapped()) {
-        _dynamic_archive.print_on("Dynamic ", st, false);
+        _info_for_dynamic_archive.print_on("Dynamic ", st, false);
       }
     }
   }
@@ -1504,9 +1506,9 @@ void SystemDictionaryShared::print_on(outputStream* st) {
 
 void SystemDictionaryShared::print_table_statistics(outputStream* st) {
   if (CDSConfig::is_using_archive()) {
-    _static_archive.print_table_statistics("Static ", st, true);
+    _info_for_static_archive.print_table_statistics("Static ", st, true);
     if (DynamicArchive::is_mapped()) {
-      _dynamic_archive.print_table_statistics("Dynamic ", st, false);
+      _info_for_dynamic_archive.print_table_statistics("Dynamic ", st, false);
     }
   }
 }

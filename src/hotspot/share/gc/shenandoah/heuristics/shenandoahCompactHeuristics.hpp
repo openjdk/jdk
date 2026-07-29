@@ -41,13 +41,15 @@ public:
   bool is_diagnostic() override   { return false; }
   bool is_experimental() override { return false; }
 
+  void record_cycle_end() override;
+
 protected:
   void choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
                                              RegionData* data, size_t size,
                                              size_t actual_free) override;
 
 private:
-  size_t estimate_bytes_allocated_since_gc_start() const;
+  size_t _bytes_used_at_end_of_gc;
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHCOMPACTHEURISTICS_HPP
