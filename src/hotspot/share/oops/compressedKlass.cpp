@@ -241,12 +241,9 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
     // a cacheline size.
     _base = addr;
 
+    const int log2_len_to_cover = log2i_ceil(len);
     const int log_cacheline = exact_log2(DEFAULT_CACHE_LINE_SIZE);
-    int s = max_shift();
-    while (s > log_cacheline && ((size_t)nth_bit(narrow_klass_pointer_bits() + s - 1) > len)) {
-      s--;
-    }
-    _shift = s;
+    _shift = MAX2(log_cacheline, log2_len_to_cover - narrow_klass_pointer_bits());
 
   } else {
 
