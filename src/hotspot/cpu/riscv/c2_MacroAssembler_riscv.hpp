@@ -200,13 +200,16 @@
   void float16_to_float(FloatRegister dst, Register src, Register tmp);
   void float_to_float16(Register dst, FloatRegister src, FloatRegister ftmp, Register xtmp);
 
-  void signum_fp_v(VectorRegister dst, VectorRegister one, BasicType bt, int vlen);
+  void signum_fp_v(VectorRegister dst, VectorRegister one, BasicType bt, int vlen,
+                   bool set_vtype = true);
 
 
   // intrinsic methods implemented by rvv instructions
 
-  void java_round_float_v(VectorRegister dst, VectorRegister src, FloatRegister ftmp, BasicType bt, uint vector_length);
-  void java_round_double_v(VectorRegister dst, VectorRegister src, FloatRegister ftmp, BasicType bt, uint vector_length);
+  void java_round_float_v(VectorRegister dst, VectorRegister src, FloatRegister ftmp,
+                          BasicType bt, uint vector_length, bool set_vtype = true);
+  void java_round_double_v(VectorRegister dst, VectorRegister src, FloatRegister ftmp,
+                           BasicType bt, uint vector_length, bool set_vtype = true);
 
   void float16_to_float_v(VectorRegister dst, VectorRegister src, uint vector_length);
   void float_to_float16_v(VectorRegister dst, VectorRegister src, VectorRegister vtmp, Register tmp, uint vector_length);
@@ -247,22 +250,26 @@
 
   void minmax_fp_v(VectorRegister dst,
                   VectorRegister src1, VectorRegister src2,
-                  BasicType bt, bool is_min, uint vector_length);
+                  BasicType bt, bool is_min, uint vector_length,
+                  bool set_vtype = true);
 
   void minmax_fp_masked_v(VectorRegister dst, VectorRegister src1, VectorRegister src2,
                           VectorRegister vmask, VectorRegister tmp1, VectorRegister tmp2,
-                          BasicType bt, bool is_min, uint vector_length);
+                          BasicType bt, bool is_min, uint vector_length,
+                          bool set_vtype = true);
 
   void reduce_minmax_fp_v(FloatRegister dst,
                           FloatRegister src1, VectorRegister src2,
                           VectorRegister tmp1, VectorRegister tmp2,
                           bool is_double, bool is_min, uint vector_length,
-                          VectorMask vm = Assembler::unmasked);
+                          VectorMask vm = Assembler::unmasked,
+                          bool set_vtype = true);
 
   void reduce_integral_v(Register dst, Register src1,
                         VectorRegister src2, VectorRegister tmp,
                         int opc, BasicType bt, uint vector_length,
-                        VectorMask vm = Assembler::unmasked);
+                        VectorMask vm = Assembler::unmasked,
+                        bool set_vtype = true);
 
   void reduce_mul_integral_v(Register dst, Register src1, VectorRegister src2,
                              VectorRegister vtmp1, VectorRegister vtmp2, BasicType bt,
@@ -276,10 +283,12 @@
   }
 
   void compare_integral_v(VectorRegister dst, VectorRegister src1, VectorRegister src2, int cond,
-                          BasicType bt, uint vector_length, VectorMask vm = Assembler::unmasked);
+                          BasicType bt, uint vector_length, VectorMask vm = Assembler::unmasked,
+                          bool set_vtype = true);
 
   void compare_fp_v(VectorRegister dst, VectorRegister src1, VectorRegister src2, int cond,
-                    BasicType bt, uint vector_length, VectorMask vm = Assembler::unmasked);
+                    BasicType bt, uint vector_length, VectorMask vm = Assembler::unmasked,
+                    bool set_vtype = true);
 
   void spill_vmask(VectorRegister v, int offset);
 
@@ -294,7 +303,8 @@
   }
 
   void integer_extend_v(VectorRegister dst, BasicType dst_bt, uint vector_length,
-                        VectorRegister src, BasicType src_bt, bool is_signed);
+                        VectorRegister src, BasicType src_bt, bool is_signed,
+                        bool set_vtype = true);
 
   void integer_narrow_v(VectorRegister dst, BasicType dst_bt, uint vector_length,
                         VectorRegister src, BasicType src_bt);
