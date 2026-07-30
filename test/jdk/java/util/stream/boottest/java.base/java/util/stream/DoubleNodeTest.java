@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,11 @@
  */
 package java.util.stream;
 
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -30,15 +35,13 @@ import java.util.Spliterators;
 import java.util.SpliteratorTestHelper;
 import java.util.function.Function;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@Test
 public class DoubleNodeTest extends OpTestCase {
 
-    @DataProvider(name = "nodes")
-    public Object[][] createSizes() {
-        List<Object[]> params = new ArrayList<>();
+    public static Stream<Arguments> nodes() {
+        List<Arguments> params = new ArrayList<>();
 
         for (int size : Arrays.asList(0, 1, 4, 15, 16, 17, 127, 128, 129, 1000)) {
             double[] array = new double[size];
@@ -55,21 +58,21 @@ public class DoubleNodeTest extends OpTestCase {
             nodes.add(fill(array, Nodes.doubleBuilder()));
 
             for (Node<Double> node : nodes) {
-                params.add(new Object[]{array, node});
+                params.add(Arguments.of(array, node));
             }
 
         }
 
-        return params.toArray(new Object[0][]);
+        return params.stream();
     }
 
-    private static void assertEqualsListDoubleArray(List<Double> list, double[] array) {
-        assertEquals(list.size(), array.length);
-        for (int i = 0; i < array.length; i++)
-            assertEquals(array[i], (double) list.get(i));
+    private static void assertEqualsListDoubleArray(double[] expected, List<Double> actual) {
+        assertEquals(expected.length, actual.size());
+        for (int i = 0; i < expected.length; i++)
+            assertEquals(expected[i], (double) actual.get(i));
     }
 
-    private List<Double> toList(double[] a) {
+    private static List<Double> toList(double[] a) {
         List<Double> l = new ArrayList<>();
         for (double i : a) {
             l.add(i);
@@ -78,7 +81,7 @@ public class DoubleNodeTest extends OpTestCase {
         return l;
     }
 
-    private double[] toDoubleArray(List<Double> l) {
+    private static double[] toDoubleArray(List<Double> l) {
         double[] a = new double[l.size()];
 
         int i = 0;
@@ -88,7 +91,7 @@ public class DoubleNodeTest extends OpTestCase {
         return a;
     }
 
-    private Node.OfDouble fill(double[] array, Node.Builder.OfDouble nb) {
+    private static Node.OfDouble fill(double[] array, Node.Builder.OfDouble nb) {
         nb.begin(array.length);
         for (double i : array)
             nb.accept(i);
@@ -96,7 +99,7 @@ public class DoubleNodeTest extends OpTestCase {
         return nb.build();
     }
 
-    private Node.OfDouble degenerateTree(PrimitiveIterator.OfDouble it) {
+    private static Node.OfDouble degenerateTree(PrimitiveIterator.OfDouble it) {
         if (!it.hasNext()) {
             return Nodes.node(new double[0]);
         }
@@ -110,7 +113,7 @@ public class DoubleNodeTest extends OpTestCase {
         }
     }
 
-    private Node.OfDouble tree(List<Double> l, Function<List<Double>, Node.OfDouble> m) {
+    private static Node.OfDouble tree(List<Double> l, Function<List<Double>, Node.OfDouble> m) {
         if (l.size() < 3) {
             return m.apply(l);
         }
@@ -121,35 +124,41 @@ public class DoubleNodeTest extends OpTestCase {
         }
     }
 
-    @Test(dataProvider = "nodes")
+    @ParameterizedTest
+    @MethodSource("nodes")
     public void testAsArray(double[] array, Node.OfDouble n) {
-        assertEquals(n.asPrimitiveArray(), array);
+        assertArrayEquals(array, n.asPrimitiveArray());
     }
 
-    @Test(dataProvider = "nodes")
+    @ParameterizedTest
+    @MethodSource("nodes")
     public void testFlattenAsArray(double[] array, Node.OfDouble n) {
-        assertEquals(Nodes.flattenDouble(n).asPrimitiveArray(), array);
+        assertArrayEquals(array, Nodes.flattenDouble(n).asPrimitiveArray());
     }
 
-    @Test(dataProvider = "nodes")
+    @ParameterizedTest
+    @MethodSource("nodes")
     public void testCopyTo(double[] array, Node.OfDouble n) {
         double[] copy = new double[(int) n.count()];
         n.copyInto(copy, 0);
 
-        assertEquals(copy, array);
+        assertArrayEquals(array, copy);
     }
 
-    @Test(dataProvider = "nodes", groups = { "serialization-hostile" })
+    @ParameterizedTest
+    @MethodSource("nodes")
+    @Tag("serialization-hostile")
     public void testForEach(double[] array, Node.OfDouble n) {
         List<Double> l = new ArrayList<>((int) n.count());
         n.forEach((double e) -> {
             l.add(e);
         });
 
-        assertEqualsListDoubleArray(l, array);
+        assertEqualsListDoubleArray(array, l);
     }
 
-    @Test(dataProvider = "nodes")
+    @ParameterizedTest
+    @MethodSource("nodes")
     public void testStreams(double[] array, Node.OfDouble n) {
         TestData.OfDouble data = TestData.Factory.ofNode("Node", n);
 
@@ -158,13 +167,16 @@ public class DoubleNodeTest extends OpTestCase {
         exerciseTerminalOps(data, s -> s.toArray());
     }
 
-    @Test(dataProvider = "nodes", groups={ "serialization-hostile" })
+    @ParameterizedTest
+    @MethodSource("nodes")
+    @Tag("serialization-hostile")
     // throws SOE on serialization of DoubleConcNode[size=1000]
     public void testSpliterator(double[] array, Node.OfDouble n) {
         SpliteratorTestHelper.testDoubleSpliterator(n::spliterator);
     }
 
-    @Test(dataProvider = "nodes")
+    @ParameterizedTest
+    @MethodSource("nodes")
     public void testTruncate(double[] array, Node.OfDouble n) {
         int[] nums = new int[] { 0, 1, array.length / 2, array.length - 1, array.length };
         for (int start : nums)

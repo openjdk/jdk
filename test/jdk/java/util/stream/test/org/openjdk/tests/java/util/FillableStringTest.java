@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,16 @@
 package org.openjdk.tests.java.util;
 
 import java.util.Arrays;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@Test(groups = "lib")
+@Tag("lib")
 public class FillableStringTest {
     public Stream<String> generate() {
         return Arrays.asList("one", "two", "three", "four", "five", "six").stream()
@@ -39,18 +41,23 @@ public class FillableStringTest {
                 .map(String::toUpperCase);
     }
 
+    @Test
     public void testStringBuilder() {
-        String s = generate().collect(Collectors.joining());
-        assertEquals(s, "THREEFOURFIVE");
+        StringBuilder sb = generate().collect(
+                Collector.of(StringBuilder::new, StringBuilder::append, StringBuilder::append));
+        assertEquals("THREEFOURFIVE", sb.toString());
     }
 
+    @Test
     public void testStringBuffer() {
-        String s = generate().collect(Collectors.joining());
-        assertEquals(s, "THREEFOURFIVE");
+        StringBuffer sb = generate().collect(
+                Collector.of(StringBuffer::new, StringBuffer::append, StringBuffer::append));
+        assertEquals("THREEFOURFIVE", sb.toString());
     }
 
+    @Test
     public void testStringJoiner() {
         String s = generate().collect(Collectors.joining("-"));
-        assertEquals(s, "THREE-FOUR-FIVE");
+        assertEquals("THREE-FOUR-FIVE", s);
     }
 }

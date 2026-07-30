@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,15 @@
  */
 package org.openjdk.tests.java.util.stream;
 
-import java.util.stream.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-import org.testng.annotations.Test;
+import java.util.stream.*;
 
 public class PrimitiveSumTest extends OpTestCase {
 
-    @Test(dataProvider = "IntStreamTestData", dataProviderClass = IntStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.IntStreamTestDataProvider#intStreamTestData")
     public void testOps(String name, TestData.OfInt data) {
         exerciseTerminalOps(data, s -> s.sum());
 
@@ -38,7 +40,8 @@ public class PrimitiveSumTest extends OpTestCase {
                 exercise();
     }
 
-    @Test(dataProvider = "LongStreamTestData", dataProviderClass = LongStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.LongStreamTestDataProvider#longStreamTestData")
     public void testOps(String name, TestData.OfLong data) {
         exerciseTerminalOps(data, s -> s.sum());
 
@@ -52,7 +55,8 @@ public class PrimitiveSumTest extends OpTestCase {
     //     different results for the sequential and parallel evaluation.results are within
     //     While the following works at the moment, it could change when double data, not cast from long
     //     values is introduced, or if the sum algorithm is modified.
-    @Test(dataProvider = "DoubleStreamTestData", dataProviderClass = DoubleStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.DoubleStreamTestDataProvider#doubleStreamTestData")
     public void testOps(String name, TestData.OfDouble data) {
         exerciseTerminalOps(data, s -> s.sum());
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,20 @@
 
 package org.openjdk.tests.java.util;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.LambdaTestHelpers;
 
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Unit tests for extension methods on Map
@@ -46,8 +47,8 @@ public class MapTest {
 
     private Map<Integer, String> map;
 
-    @BeforeClass
-    public void setUpClass() {
+    @BeforeAll
+    public static void setUpClass() {
         EXPECTED.put(0, "zero");
         EXPECTED.put(1, "one");
         EXPECTED.put(2, "two");
@@ -60,23 +61,24 @@ public class MapTest {
         EXPECTED.put(9, "nine");
     }
 
-    @AfterClass
-    public void tearDownClass() {
+    @AfterAll
+    public static void tearDownClass() {
         EXPECTED.clear();
     }
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         map = new HashMap<>(EXPECTED);
     }
 
-    @AfterMethod
+    @AfterEach
     public void tearDown() {
         map.clear();
         map = null;
     }
 
-    @Test(groups = { "serialization-hostile" })
+    @Test
+    @Tag("serialization-hostile")
     public void testForEach() {
         final Set<String> values = new HashSet<>(EXPECTED.size());
         map.forEach((k, v) -> {values.add(v);});
@@ -87,7 +89,7 @@ public class MapTest {
     public void testReplaceAll() {
         map.replaceAll((k, v) -> {return v.toUpperCase();});
         for (final Map.Entry<Integer, String> entry : map.entrySet()) {
-            assertEquals(entry.getValue(), EXPECTED.get(entry.getKey()).toUpperCase());
+            assertEquals(EXPECTED.get(entry.getKey()).toUpperCase(), entry.getValue());
         }
     }
 }

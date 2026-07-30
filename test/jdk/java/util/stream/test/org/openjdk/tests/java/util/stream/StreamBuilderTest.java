@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,11 @@
  */
 package org.openjdk.tests.java.util.stream;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -38,21 +41,19 @@ import java.util.stream.Stream;
 import java.util.stream.TestData;
 
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.ThrowableHelper.checkISE;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@Test
 public class StreamBuilderTest extends OpTestCase {
 
-    List<Integer> sizes = Arrays.asList(0, 1, 4, 16, 256,
+    static List<Integer> sizes = Arrays.asList(0, 1, 4, 16, 256,
                                         1023, 1024, 1025,
                                         2047, 2048, 2049,
                                         1024 * 32 - 1, 1024 * 32, 1024 * 32 + 1);
 
-    @DataProvider(name = "sizes")
-    public Object[][] createStreamBuilders() {
-        return sizes.stream().map(i -> new Object[] { i }).toArray(Object[][]::new);
+    static Stream<Arguments> sizes() {
+        return sizes.stream().map(Arguments::of);
     }
-
 
     @Test
     public void testOfNullableWithNonNull() {
@@ -92,18 +93,21 @@ public class StreamBuilderTest extends OpTestCase {
                 exercise();
     }
 
-    @Test(dataProvider = "sizes")
+    @ParameterizedTest
+    @MethodSource("sizes")
     public void testAfterBuilding(int size) {
         Stream.Builder<Integer> sb = Stream.builder();
         IntStream.range(0, size).boxed().forEach(sb);
         sb.build();
 
-        checkISE(() -> sb.accept(1));
-        checkISE(() -> sb.add(1));
-        checkISE(() -> sb.build());
+        assertThrows(IllegalStateException.class, () -> sb.accept(1));
+        assertThrows(IllegalStateException.class, () -> sb.add(1));
+        assertThrows(IllegalStateException.class, sb::build);
     }
 
-    @Test(dataProvider = "sizes", groups = { "serialization-hostile" })
+    @ParameterizedTest
+    @MethodSource("sizes")
+    @Tag("serialization-hostile")
     public void testStreamBuilder(int size) {
         testStreamBuilder(size, (s) -> {
             Stream.Builder<Integer> sb = Stream.builder();
@@ -115,7 +119,7 @@ public class StreamBuilderTest extends OpTestCase {
             Stream.Builder<Integer> sb = Stream.builder();
             IntStream.range(0, s).boxed().forEach(i -> {
                 Stream.Builder<Integer> _sb = sb.add(i);
-                assertTrue(sb == _sb);
+                assertSame(sb, _sb);
             });
             return sb.build();
         });
@@ -154,18 +158,21 @@ public class StreamBuilderTest extends OpTestCase {
                 exercise();
     }
 
-    @Test(dataProvider = "sizes")
+    @ParameterizedTest
+    @MethodSource("sizes")
     public void testIntAfterBuilding(int size) {
         IntStream.Builder sb = IntStream.builder();
         IntStream.range(0, size).forEach(sb);
         sb.build();
 
-        checkISE(() -> sb.accept(1));
-        checkISE(() -> sb.add(1));
-        checkISE(() -> sb.build());
+        assertThrows(IllegalStateException.class, () -> sb.accept(1));
+        assertThrows(IllegalStateException.class, () -> sb.add(1));
+        assertThrows(IllegalStateException.class, sb::build);
     }
 
-    @Test(dataProvider = "sizes", groups = { "serialization-hostile" })
+    @ParameterizedTest
+    @MethodSource("sizes")
+    @Tag("serialization-hostile")
     public void testIntStreamBuilder(int size) {
         testIntStreamBuilder(size, (s) -> {
             IntStream.Builder sb = IntStream.builder();
@@ -177,7 +184,7 @@ public class StreamBuilderTest extends OpTestCase {
             IntStream.Builder sb = IntStream.builder();
             IntStream.range(0, s).forEach(i -> {
                 IntStream.Builder _sb = sb.add(i);
-                assertTrue(sb == _sb);
+                assertSame(sb, _sb);
             });
             return sb.build();
         });
@@ -216,18 +223,21 @@ public class StreamBuilderTest extends OpTestCase {
                 exercise();
     }
 
-    @Test(dataProvider = "sizes")
+    @ParameterizedTest
+    @MethodSource("sizes")
     public void testLongAfterBuilding(int size) {
         LongStream.Builder sb = LongStream.builder();
         LongStream.range(0, size).forEach(sb);
         sb.build();
 
-        checkISE(() -> sb.accept(1));
-        checkISE(() -> sb.add(1));
-        checkISE(() -> sb.build());
+        assertThrows(IllegalStateException.class, () -> sb.accept(1));
+        assertThrows(IllegalStateException.class, () -> sb.add(1));
+        assertThrows(IllegalStateException.class, sb::build);
     }
 
-    @Test(dataProvider = "sizes", groups = { "serialization-hostile" })
+    @ParameterizedTest
+    @MethodSource("sizes")
+    @Tag("serialization-hostile")
     public void testLongStreamBuilder(int size) {
         testLongStreamBuilder(size, (s) -> {
             LongStream.Builder sb = LongStream.builder();
@@ -239,7 +249,7 @@ public class StreamBuilderTest extends OpTestCase {
             LongStream.Builder sb = LongStream.builder();
             LongStream.range(0, s).forEach(i -> {
                 LongStream.Builder _sb = sb.add(i);
-                assertTrue(sb == _sb);
+                assertSame(sb, _sb);
             });
             return sb.build();
         });
@@ -277,18 +287,21 @@ public class StreamBuilderTest extends OpTestCase {
                 exercise();
     }
 
-    @Test(dataProvider = "sizes")
+    @ParameterizedTest
+    @MethodSource("sizes")
     public void testDoubleAfterBuilding(int size) {
         DoubleStream.Builder sb = DoubleStream.builder();
         IntStream.range(0, size).asDoubleStream().forEach(sb);
         sb.build();
 
-        checkISE(() -> sb.accept(1));
-        checkISE(() -> sb.add(1));
-        checkISE(() -> sb.build());
+        assertThrows(IllegalStateException.class, () -> sb.accept(1));
+        assertThrows(IllegalStateException.class, () -> sb.add(1));
+        assertThrows(IllegalStateException.class, sb::build);
     }
 
-    @Test(dataProvider = "sizes", groups = { "serialization-hostile" })
+    @ParameterizedTest
+    @MethodSource("sizes")
+    @Tag("serialization-hostile")
     public void testDoubleStreamBuilder(int size) {
         testDoubleStreamBuilder(size, (s) -> {
             DoubleStream.Builder sb = DoubleStream.builder();
@@ -300,7 +313,7 @@ public class StreamBuilderTest extends OpTestCase {
             DoubleStream.Builder sb = DoubleStream.builder();
             IntStream.range(0, s).asDoubleStream().forEach(i -> {
                 DoubleStream.Builder _sb = sb.add(i);
-                assertTrue(sb == _sb);
+                assertSame(sb, _sb);
             });
             return sb.build();
         });

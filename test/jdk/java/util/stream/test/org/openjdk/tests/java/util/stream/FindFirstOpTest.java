@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,34 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8148115
  */
 
 package org.openjdk.tests.java.util.stream;
 
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import java.util.*;
 import java.util.stream.*;
-
-import org.testng.annotations.Test;
 
 import java.util.function.Function;
 
 import static java.util.stream.LambdaTestHelpers.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 /**
  * FindFirstOpTest
  */
-@Test
 public class FindFirstOpTest extends OpTestCase {
 
+    @Test
     public void testFindFirst() {
         assertFalse(Collections.emptySet().stream().findFirst().isPresent(), "no result");
         assertFalse(countTo(10).stream().filter(x -> x > 10).findFirst().isPresent(), "no result");
@@ -56,7 +61,8 @@ public class FindFirstOpTest extends OpTestCase {
         exerciseOps(countTo(1000), s -> Arrays.asList(new Integer[]{s.filter(e -> e == 1499).findFirst().orElse(-1)}).stream(), Arrays.asList(-1));
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testStream(String name, TestData.OfRef<Integer> data) {
         exerciseStream(data, s -> s);
         exerciseStream(data, s -> s.filter(pTrue));
@@ -74,13 +80,14 @@ public class FindFirstOpTest extends OpTestCase {
                               assertContains(act, fs.apply(data.stream()).iterator());
                           }
                           else {
-                              assertEquals(act, exp);
+                              assertEquals(exp, act);
                           }
                       })
                       .exercise();
     }
 
-    @Test(dataProvider = "IntStreamTestData", dataProviderClass = IntStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.IntStreamTestDataProvider#intStreamTestData")
     public void testIntStream(String name, TestData.OfInt data) {
         exerciseIntStream(data, s -> s);
         exerciseIntStream(data, s -> s.filter(ipTrue));
@@ -93,14 +100,15 @@ public class FindFirstOpTest extends OpTestCase {
         if (r.isPresent()) {
             PrimitiveIterator.OfInt i = fs.apply(data.stream()).iterator();
             assertTrue(i.hasNext());
-            assertEquals(i.nextInt(), r.getAsInt());
+            assertEquals(r.getAsInt(), i.nextInt());
         }
         else {
             assertFalse(fs.apply(data.stream()).iterator().hasNext());
         }
     }
 
-    @Test(dataProvider = "LongStreamTestData", dataProviderClass = LongStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.LongStreamTestDataProvider#longStreamTestData")
     public void testLongStream(String name, TestData.OfLong data) {
         exerciseLongStream(data, s -> s);
         exerciseLongStream(data, s -> s.filter(lpTrue));
@@ -113,14 +121,15 @@ public class FindFirstOpTest extends OpTestCase {
         if (r.isPresent()) {
             PrimitiveIterator.OfLong i = fs.apply(data.stream()).iterator();
             assertTrue(i.hasNext());
-            assertEquals(i.nextLong(), r.getAsLong());
+            assertEquals(r.getAsLong(), i.nextLong());
         }
         else {
             assertFalse(fs.apply(data.stream()).iterator().hasNext());
         }
     }
 
-    @Test(dataProvider = "DoubleStreamTestData", dataProviderClass = DoubleStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.DoubleStreamTestDataProvider#doubleStreamTestData")
     public void testDoubleStream(String name, TestData.OfDouble data) {
         exerciseDoubleStream(data, s -> s);
         exerciseDoubleStream(data, s -> s.filter(dpTrue));
@@ -133,7 +142,7 @@ public class FindFirstOpTest extends OpTestCase {
         if (r.isPresent()) {
             PrimitiveIterator.OfDouble i = fs.apply(data.stream()).iterator();
             assertTrue(i.hasNext());
-            assertEquals(i.nextDouble(), r.getAsDouble());
+            assertEquals(r.getAsDouble(), i.nextDouble());
         }
         else {
             assertFalse(fs.apply(data.stream()).iterator().hasNext());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,13 @@
  */
 package java.util.stream;
 
-import org.testng.annotations.DataProvider;
+import org.junit.jupiter.params.provider.Arguments;
 
 import java.util.*;
 import java.util.Spliterators;
 import java.util.function.Supplier;
 
-/** TestNG DataProvider for long-valued streams */
+/** JUnit MethodSource for long-valued streams */
 public class LongStreamTestDataProvider {
     private static final long[] to0 = new long[0];
     private static final long[] to1 = new long[1];
@@ -155,19 +155,16 @@ public class LongStreamTestDataProvider {
     }
 
     // Return an array of ( String name, LongStreamTestData )
-    @DataProvider(name = "LongStreamTestData")
-    public static Object[][] makeLongStreamTestData() {
-        return testData;
+    public static Stream<Arguments> longStreamTestData() {
+        return Arrays.stream(testData).map(Arguments::of);
     }
 
-    @DataProvider(name = "LongStreamTestData.small")
-    public static Object[][] makeSmallLongStreamTestData() {
-        return testSmallData;
+    public static Stream<Arguments> smallLongStreamTestData() {
+        return Arrays.stream(testSmallData).map(Arguments::of);
     }
 
     // returns an array of (String name, Supplier<PrimitiveSpliterator<Long>>)
-    @DataProvider(name = "LongSpliterator")
-    public static Object[][] spliteratorProvider() {
-        return spliteratorTestData;
+    public static Stream<Arguments> spliteratorProvider() {
+        return Arrays.stream(spliteratorTestData).map(Arguments::of);
     }
 }

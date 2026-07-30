@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,9 @@
  */
 package org.openjdk.tests.java.util.stream;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.stream.*;
 
@@ -33,9 +35,9 @@ import static java.util.stream.LambdaTestHelpers.*;
  *
  * @author Brian Goetz
  */
-@Test
 public class MapOpTest extends OpTestCase {
 
+    @Test
     public void testMap() {
         assertCountSum(countTo(0).stream().map(mId), 0, 0);
         assertCountSum(countTo(10).stream().map(mId), 10, 55);
@@ -52,6 +54,7 @@ public class MapOpTest extends OpTestCase {
         exerciseOps(countTo(1000), s -> s.map(e -> (Integer) (1000 + e)), range(1001, 2000));
     }
 
+    @Test
     public void testEveryMapShape() {
         assertCountSum(countTo(1000).stream()
                                .mapToInt(i -> i - 1)
@@ -69,7 +72,8 @@ public class MapOpTest extends OpTestCase {
                        1000, countTo(1000).stream().mapToInt(i -> i).sum());
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testOps(String name, TestData.OfRef<Integer> data) {
         exerciseOpsInt(data, s -> s.map(mId), s -> s.map(e -> e), s -> s.map(e -> e), s -> s.map(e -> e));
         exerciseOpsInt(data, s -> s.map(mZero), s -> s.map(e -> 0), s -> s.map(e -> 0), s -> s.map(e -> 0));
@@ -83,7 +87,8 @@ public class MapOpTest extends OpTestCase {
 
     //
 
-    @Test(dataProvider = "IntStreamTestData", dataProviderClass = IntStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.IntStreamTestDataProvider#intStreamTestData")
     public void testIntOps(String name, TestData.OfInt data) {
         exerciseOps(data, s -> s.mapToObj(i -> i));
         exerciseOps(data, s -> s.map(i -> 0));
@@ -98,7 +103,8 @@ public class MapOpTest extends OpTestCase {
 
     //
 
-    @Test(dataProvider = "LongStreamTestData", dataProviderClass = LongStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.LongStreamTestDataProvider#longStreamTestData")
     public void testLongOps(String name, TestData.OfLong data) {
         exerciseOps(data, s -> s.mapToObj(i -> i));
         exerciseOps(data, s -> s.map(i -> 0L));
@@ -112,7 +118,8 @@ public class MapOpTest extends OpTestCase {
 
     //
 
-    @Test(dataProvider = "DoubleStreamTestData", dataProviderClass = DoubleStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.DoubleStreamTestDataProvider#doubleStreamTestData")
     public void testDoubleOps(String name, TestData.OfDouble data) {
         exerciseOps(data, s -> s.mapToObj(i -> i));
         exerciseOps(data, s -> s.map(i -> 0.0));

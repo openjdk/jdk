@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,34 +22,32 @@
  */
 package java.util.stream;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Spliterator;
 import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.ToDoubleFunction;
-import java.util.function.ToIntFunction;
-import java.util.function.ToLongFunction;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamOpFlag.*;
-import static org.testng.Assert.*;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Test
 public class StreamOpFlagsTest {
 
+    @Test
     public void testNullCombine() {
         int sourceFlags = StreamOpFlag.IS_SIZED;
 
         assertEquals(sourceFlags, toStreamFlags(combineOpFlags(sourceFlags, StreamOpFlag.INITIAL_OPS_VALUE)));
     }
 
+    @Test
     public void testInitialOpFlagsFromSourceFlags() {
         List<StreamOpFlag> flags = new ArrayList<>(StreamOpFlagTestHelper.allStreamFlags());
         for (int i = 0; i < (1 << flags.size()); i++)  {
@@ -61,10 +59,11 @@ public class StreamOpFlagsTest {
             }
 
             int opsFlags = combineOpFlags(sourceFlags, StreamOpFlag.INITIAL_OPS_VALUE);
-            assertEquals(opsFlags, (~(sourceFlags << 1)) & StreamOpFlag.INITIAL_OPS_VALUE);
+            assertEquals((~(sourceFlags << 1)) & StreamOpFlag.INITIAL_OPS_VALUE, opsFlags);
         }
     }
 
+    @Test
     public void testSameCombine() {
         for (StreamOpFlag f : StreamOpFlagTestHelper.allStreamFlags()) {
             int sourceFlags = f.set();
@@ -76,6 +75,7 @@ public class StreamOpFlagsTest {
         }
     }
 
+    @Test
     public void testOpClear() {
         for (StreamOpFlag f : StreamOpFlagTestHelper.allStreamFlags()) {
             // Clear when source not set
@@ -95,6 +95,7 @@ public class StreamOpFlagsTest {
         }
     }
 
+    @Test
     public void testOpInject() {
         for (StreamOpFlag f : StreamOpFlagTestHelper.allStreamFlags()) {
             // Set when source not set
@@ -114,6 +115,7 @@ public class StreamOpFlagsTest {
         }
     }
 
+    @Test
     public void testPairSet() {
         List<Integer> sourceFlagsList
                 = StreamOpFlagTestHelper.allStreamFlags().stream().map(StreamOpFlag::set).collect(toList());
@@ -133,6 +135,7 @@ public class StreamOpFlagsTest {
         }
     }
 
+    @Test
     public void testPairSetAndClear() {
         List<Integer> sourceFlagsList
                 = StreamOpFlagTestHelper.allStreamFlags().stream().map(StreamOpFlag::set).collect(toList());
@@ -155,6 +158,7 @@ public class StreamOpFlagsTest {
         }
     }
 
+    @Test
     public void testShortCircuit() {
         int opsFlags = combineOpFlags(0, StreamOpFlag.INITIAL_OPS_VALUE);
         assertFalse(StreamOpFlag.SHORT_CIRCUIT.isKnown(opsFlags));
@@ -166,6 +170,7 @@ public class StreamOpFlagsTest {
         assertTrue(StreamOpFlag.SHORT_CIRCUIT.isKnown(opsFlags));
     }
 
+    @Test
     public void testApplySourceFlags() {
         int sourceFlags = StreamOpFlag.IS_SIZED | StreamOpFlag.IS_DISTINCT;
 
@@ -195,6 +200,7 @@ public class StreamOpFlagsTest {
         assertTrue(StreamOpFlag.ORDERED.isKnown(streamFlags));
     }
 
+    @Test
     public void testSpliteratorMask() {
         assertSpliteratorMask(StreamOpFlag.DISTINCT.set(), StreamOpFlag.IS_DISTINCT);
         assertSpliteratorMask(StreamOpFlag.DISTINCT.clear(), 0);
@@ -213,9 +219,10 @@ public class StreamOpFlagsTest {
     }
 
     private void assertSpliteratorMask(int actual, int expected) {
-        assertEquals(actual & StreamOpFlag.SPLITERATOR_CHARACTERISTICS_MASK, expected);
+        assertEquals(expected, actual & StreamOpFlag.SPLITERATOR_CHARACTERISTICS_MASK);
     }
 
+    @Test
     public void testStreamMask() {
         assertStreamMask(StreamOpFlag.DISTINCT.set(), StreamOpFlag.IS_DISTINCT);
         assertStreamMask(StreamOpFlag.DISTINCT.clear(), 0);
@@ -234,9 +241,10 @@ public class StreamOpFlagsTest {
     }
 
     private void assertStreamMask(int actual, int expected) {
-        assertEquals(actual & StreamOpFlag.STREAM_MASK, expected);
+        assertEquals(expected, actual & StreamOpFlag.STREAM_MASK);
     }
 
+    @Test
     public void testOpMask() {
         assertOpMask(StreamOpFlag.DISTINCT.set(), StreamOpFlag.IS_DISTINCT);
         assertOpMask(StreamOpFlag.DISTINCT.clear(), StreamOpFlag.NOT_DISTINCT);
@@ -255,9 +263,10 @@ public class StreamOpFlagsTest {
     }
 
     private void assertOpMask(int actual, int expected) {
-        assertEquals(actual & StreamOpFlag.OP_MASK, expected);
+        assertEquals(expected, actual & StreamOpFlag.OP_MASK);
     }
 
+    @Test
     public void testTerminalOpMask() {
         assertTerminalOpMask(StreamOpFlag.DISTINCT.set(), 0);
         assertTerminalOpMask(StreamOpFlag.DISTINCT.clear(), 0);
@@ -276,9 +285,10 @@ public class StreamOpFlagsTest {
     }
 
     private void assertTerminalOpMask(int actual, int expected) {
-        assertEquals(actual & StreamOpFlag.TERMINAL_OP_MASK, expected);
+        assertEquals(expected, actual & StreamOpFlag.TERMINAL_OP_MASK);
     }
 
+    @Test
     public void testUpstreamTerminalOpMask() {
         assertUpstreamTerminalOpMask(StreamOpFlag.DISTINCT.set(), 0);
         assertUpstreamTerminalOpMask(StreamOpFlag.DISTINCT.clear(), 0);
@@ -297,9 +307,10 @@ public class StreamOpFlagsTest {
     }
 
     private void assertUpstreamTerminalOpMask(int actual, int expected) {
-        assertEquals(actual & StreamOpFlag.UPSTREAM_TERMINAL_OP_MASK, expected);
+        assertEquals(expected, actual & StreamOpFlag.UPSTREAM_TERMINAL_OP_MASK);
     }
 
+    @Test
     public void testSpliteratorCharacteristics() {
         assertEquals(Spliterator.DISTINCT, StreamOpFlag.IS_DISTINCT);
         assertEquals(Spliterator.SORTED, StreamOpFlag.IS_SORTED);
@@ -309,10 +320,11 @@ public class StreamOpFlagsTest {
         List<Integer> others = Arrays.asList(Spliterator.NONNULL, Spliterator.IMMUTABLE,
                                              Spliterator.CONCURRENT, Spliterator.SUBSIZED);
         for (int c : others) {
-            assertNotEquals(c, StreamOpFlag.IS_SHORT_CIRCUIT);
+            assertNotEquals(StreamOpFlag.IS_SHORT_CIRCUIT, c);
         }
     }
 
+    @Test
     public void testSpliteratorCharacteristicsMask() {
         assertSpliteratorCharacteristicsMask(StreamOpFlag.DISTINCT.set(), StreamOpFlag.IS_DISTINCT);
         assertSpliteratorCharacteristicsMask(StreamOpFlag.DISTINCT.clear(), 0);
@@ -331,9 +343,10 @@ public class StreamOpFlagsTest {
     }
 
     private void assertSpliteratorCharacteristicsMask(int actual, int expected) {
-        assertEquals(StreamOpFlag.fromCharacteristics(actual), expected);
+        assertEquals(expected, StreamOpFlag.fromCharacteristics(actual));
     }
 
+    @Test
     public void testSpliteratorSorted() {
         class SortedEmptySpliterator<T extends Comparable<? super T>> implements Spliterator<T> {
             final Comparator<T> c;
@@ -370,17 +383,17 @@ public class StreamOpFlagsTest {
 
         {
             int flags = StreamOpFlag.fromCharacteristics(new SortedEmptySpliterator<>(null));
-            assertEquals(flags, StreamOpFlag.IS_SORTED);
+            assertEquals(StreamOpFlag.IS_SORTED, flags);
         }
 
         {
             int flags = StreamOpFlag.fromCharacteristics(new SortedEmptySpliterator<>((a, b) -> 0));
-            assertEquals(flags, 0);
+            assertEquals(0, flags);
         }
 
         {
             int flags = StreamOpFlag.fromCharacteristics(new SortedEmptySpliterator<String>(Comparator.naturalOrder()));
-            assertEquals(flags, StreamOpFlag.IS_SORTED);
+            assertEquals(StreamOpFlag.IS_SORTED, flags);
         }
     }
 }

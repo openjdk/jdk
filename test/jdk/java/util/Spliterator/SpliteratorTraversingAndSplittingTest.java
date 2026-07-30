@@ -27,12 +27,13 @@
  * @library /lib/testlibrary/bootlib
  * @build java.base/java.util.SpliteratorOfIntDataBuilder
  *        java.base/java.util.SpliteratorTestHelper
- * @run testng SpliteratorTraversingAndSplittingTest
+ * @run junit SpliteratorTraversingAndSplittingTest
  * @bug 8020016 8071477 8072784 8169838
  */
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.nio.CharBuffer;
 import java.util.AbstractCollection;
@@ -85,6 +86,7 @@ import java.util.function.IntConsumer;
 import java.util.function.LongConsumer;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
+import java.util.stream.Stream;
 
 public class SpliteratorTraversingAndSplittingTest extends SpliteratorTestHelper {
 
@@ -122,7 +124,7 @@ public class SpliteratorTraversingAndSplittingTest extends SpliteratorTestHelper
     }
 
     private static class SpliteratorDataBuilder<T> {
-        List<Object[]> data;
+        List<Arguments> data;
 
         List<T> exp;
 
@@ -132,7 +134,7 @@ public class SpliteratorTraversingAndSplittingTest extends SpliteratorTestHelper
 
         Map<T, T> mExpRev;
 
-        SpliteratorDataBuilder(List<Object[]> data, List<T> exp) {
+        SpliteratorDataBuilder(List<Arguments> data, List<T> exp) {
             this.data = data;
             this.exp = exp;
             this.expRev = new ArrayList<>(exp);
@@ -151,7 +153,7 @@ public class SpliteratorTraversingAndSplittingTest extends SpliteratorTestHelper
 
         void add(String description, Collection<?> expected, Supplier<Spliterator<?>> s) {
             description = joiner(description).toString();
-            data.add(new Object[]{description, expected, s});
+            data.add(Arguments.of(description, expected, s));
         }
 
         void add(String description, Supplier<Spliterator<?>> s) {
@@ -198,15 +200,14 @@ public class SpliteratorTraversingAndSplittingTest extends SpliteratorTestHelper
         }
     }
 
-    static Object[][] spliteratorDataProvider;
+    static List<Arguments> spliteratorDataProvider;
 
-    @DataProvider(name = "Spliterator<Integer>")
-    public static Object[][] spliteratorDataProvider() {
+    public static Stream<Arguments> spliteratorIntegerDataProvider() {
         if (spliteratorDataProvider != null) {
-            return spliteratorDataProvider;
+            return spliteratorDataProvider.stream();
         }
 
-        List<Object[]> data = new ArrayList<>();
+        List<Arguments> data = new ArrayList<>();
         for (int size : SIZES) {
             List<Integer> exp = listIntRange(size);
             SpliteratorDataBuilder<Integer> db = new SpliteratorDataBuilder<>(data, exp);
@@ -678,7 +679,9 @@ public class SpliteratorTraversingAndSplittingTest extends SpliteratorTestHelper
             }
         }
 
-        return spliteratorDataProvider = data.toArray(new Object[0][]);
+        spliteratorDataProvider = data;
+
+        return data.stream();
     }
 
     private static List<Integer> listIntRange(int upTo) {
@@ -688,55 +691,64 @@ public class SpliteratorTraversingAndSplittingTest extends SpliteratorTestHelper
         return Collections.unmodifiableList(exp);
     }
 
-    @Test(dataProvider = "Spliterator<Integer>")
+    @ParameterizedTest
+    @MethodSource("spliteratorIntegerDataProvider")
     public void testNullPointerException(String description, Collection<Integer> exp, Supplier<Spliterator<Integer>> s) {
         assertThrowsNPE(() -> s.get().forEachRemaining(null));
         assertThrowsNPE(() -> s.get().tryAdvance(null));
     }
 
-    @Test(dataProvider = "Spliterator<Integer>")
+    @ParameterizedTest
+    @MethodSource("spliteratorIntegerDataProvider")
     public void testForEach(String description, Collection<Integer> exp, Supplier<Spliterator<Integer>> s) {
         testForEach(exp, s, UnaryOperator.identity());
     }
 
-    @Test(dataProvider = "Spliterator<Integer>")
+    @ParameterizedTest
+    @MethodSource("spliteratorIntegerDataProvider")
     public void testTryAdvance(String description, Collection<Integer> exp, Supplier<Spliterator<Integer>> s) {
         testTryAdvance(exp, s, UnaryOperator.identity());
     }
 
-    @Test(dataProvider = "Spliterator<Integer>")
+    @ParameterizedTest
+    @MethodSource("spliteratorIntegerDataProvider")
     public void testMixedTryAdvanceForEach(String description, Collection<Integer> exp, Supplier<Spliterator<Integer>> s) {
         testMixedTryAdvanceForEach(exp, s, UnaryOperator.identity());
     }
 
-    @Test(dataProvider = "Spliterator<Integer>")
+    @ParameterizedTest
+    @MethodSource("spliteratorIntegerDataProvider")
     public void testMixedTraverseAndSplit(String description, Collection<Integer> exp, Supplier<Spliterator<Integer>> s) {
         testMixedTraverseAndSplit(exp, s, UnaryOperator.identity());
     }
 
-    @Test(dataProvider = "Spliterator<Integer>")
+    @ParameterizedTest
+    @MethodSource("spliteratorIntegerDataProvider")
     public void testSplitAfterFullTraversal(String description, Collection<Integer> exp, Supplier<Spliterator<Integer>> s) {
         testSplitAfterFullTraversal(s, UnaryOperator.identity());
     }
 
-    @Test(dataProvider = "Spliterator<Integer>")
+    @ParameterizedTest
+    @MethodSource("spliteratorIntegerDataProvider")
     public void testSplitOnce(String description, Collection<Integer> exp, Supplier<Spliterator<Integer>> s) {
         testSplitOnce(exp, s, UnaryOperator.identity());
     }
 
-    @Test(dataProvider = "Spliterator<Integer>")
+    @ParameterizedTest
+    @MethodSource("spliteratorIntegerDataProvider")
     public void testSplitSixDeep(String description, Collection<Integer> exp, Supplier<Spliterator<Integer>> s) {
         testSplitSixDeep(exp, s, UnaryOperator.identity());
     }
 
-    @Test(dataProvider = "Spliterator<Integer>")
+    @ParameterizedTest
+    @MethodSource("spliteratorIntegerDataProvider")
     public void testSplitUntilNull(String description, Collection<Integer> exp, Supplier<Spliterator<Integer>> s) {
         testSplitUntilNull(exp, s, UnaryOperator.identity());
     }
 
     //
     private static class SpliteratorOfIntCharDataBuilder {
-        List<Object[]> data;
+        List<Arguments> data;
 
         String s;
 
@@ -744,7 +756,7 @@ public class SpliteratorTraversingAndSplittingTest extends SpliteratorTestHelper
 
         List<Integer> expCodePoints;
 
-        SpliteratorOfIntCharDataBuilder(List<Object[]> data, String s) {
+        SpliteratorOfIntCharDataBuilder(List<Arguments> data, String s) {
             this.data = data;
             this.s = s;
             this.expChars = transform(s, false);
@@ -780,26 +792,25 @@ public class SpliteratorTraversingAndSplittingTest extends SpliteratorTestHelper
             description = description.replace("%s", s);
             {
                 Supplier<Spliterator.OfInt> supplier = () -> f.apply(s).chars().spliterator();
-                data.add(new Object[]{description + ".chars().spliterator()", expChars, supplier});
+                data.add(Arguments.of(description + ".chars().spliterator()", expChars, supplier));
             }
             {
                 Supplier<Spliterator.OfInt> supplier = () -> f.apply(s).codePoints().spliterator();
-                data.add(new Object[]{description + ".codePoints().spliterator()", expCodePoints, supplier});
+                data.add(Arguments.of(description + ".codePoints().spliterator()", expCodePoints, supplier));
             }
         }
     }
 
-    static Object[][] spliteratorOfIntDataProvider;
+    static List<Arguments> spliteratorOfIntDataProvider;
 
-    @DataProvider(name = "Spliterator.OfInt")
-    public static Object[][] spliteratorOfIntDataProvider() {
+    public static Stream<Arguments> spliteratorOfIntDataProvider() {
         if (spliteratorOfIntDataProvider != null) {
-            return spliteratorOfIntDataProvider;
+            return spliteratorOfIntDataProvider.stream();
         }
 
-        List<Object[]> data = new ArrayList<>();
+        List<Arguments> data = new ArrayList<>();
         for (int size : SIZES) {
-            int exp[] = arrayIntRange(size);
+            int[] exp = arrayIntRange(size);
             SpliteratorOfIntDataBuilder db = new SpliteratorOfIntDataBuilder(data, listIntRange(size));
 
             db.add("Spliterators.spliterator(int[], ...)",
@@ -878,7 +889,9 @@ public class SpliteratorTraversingAndSplittingTest extends SpliteratorTestHelper
             cdb.add("CharBuffer.wrap(\"%s\".toCharArray())", s -> CharBuffer.wrap(s.toCharArray()));
         }
 
-        return spliteratorOfIntDataProvider = data.toArray(new Object[0][]);
+        spliteratorOfIntDataProvider = data;
+
+        return data.stream();
     }
 
     private static int[] arrayIntRange(int upTo) {
@@ -888,48 +901,57 @@ public class SpliteratorTraversingAndSplittingTest extends SpliteratorTestHelper
         return exp;
     }
 
-    @Test(dataProvider = "Spliterator.OfInt")
+    @ParameterizedTest
+    @MethodSource("spliteratorOfIntDataProvider")
     public void testIntNullPointerException(String description, Collection<Integer> exp, Supplier<Spliterator.OfInt> s) {
         assertThrowsNPE(() -> s.get().forEachRemaining((IntConsumer) null));
         assertThrowsNPE(() -> s.get().tryAdvance((IntConsumer) null));
     }
 
-    @Test(dataProvider = "Spliterator.OfInt")
+    @ParameterizedTest
+    @MethodSource("spliteratorOfIntDataProvider")
     public void testIntForEach(String description, Collection<Integer> exp, Supplier<Spliterator.OfInt> s) {
         testForEach(exp, s, intBoxingConsumer());
     }
 
-    @Test(dataProvider = "Spliterator.OfInt")
+    @ParameterizedTest
+    @MethodSource("spliteratorOfIntDataProvider")
     public void testIntTryAdvance(String description, Collection<Integer> exp, Supplier<Spliterator.OfInt> s) {
         testTryAdvance(exp, s, intBoxingConsumer());
     }
 
-    @Test(dataProvider = "Spliterator.OfInt")
+    @ParameterizedTest
+    @MethodSource("spliteratorOfIntDataProvider")
     public void testIntMixedTryAdvanceForEach(String description, Collection<Integer> exp, Supplier<Spliterator.OfInt> s) {
         testMixedTryAdvanceForEach(exp, s, intBoxingConsumer());
     }
 
-    @Test(dataProvider = "Spliterator.OfInt")
+    @ParameterizedTest
+    @MethodSource("spliteratorOfIntDataProvider")
     public void testIntMixedTraverseAndSplit(String description, Collection<Integer> exp, Supplier<Spliterator.OfInt> s) {
         testMixedTraverseAndSplit(exp, s, intBoxingConsumer());
     }
 
-    @Test(dataProvider = "Spliterator.OfInt")
+    @ParameterizedTest
+    @MethodSource("spliteratorOfIntDataProvider")
     public void testIntSplitAfterFullTraversal(String description, Collection<Integer> exp, Supplier<Spliterator.OfInt> s) {
         testSplitAfterFullTraversal(s, intBoxingConsumer());
     }
 
-    @Test(dataProvider = "Spliterator.OfInt")
+    @ParameterizedTest
+    @MethodSource("spliteratorOfIntDataProvider")
     public void testIntSplitOnce(String description, Collection<Integer> exp, Supplier<Spliterator.OfInt> s) {
         testSplitOnce(exp, s, intBoxingConsumer());
     }
 
-    @Test(dataProvider = "Spliterator.OfInt")
+    @ParameterizedTest
+    @MethodSource("spliteratorOfIntDataProvider")
     public void testIntSplitSixDeep(String description, Collection<Integer> exp, Supplier<Spliterator.OfInt> s) {
         testSplitSixDeep(exp, s, intBoxingConsumer());
     }
 
-    @Test(dataProvider = "Spliterator.OfInt")
+    @ParameterizedTest
+    @MethodSource("spliteratorOfIntDataProvider")
     public void testIntSplitUntilNull(String description, Collection<Integer> exp, Supplier<Spliterator.OfInt> s) {
         testSplitUntilNull(exp, s, intBoxingConsumer());
     }
@@ -937,18 +959,18 @@ public class SpliteratorTraversingAndSplittingTest extends SpliteratorTestHelper
     //
 
     private static class SpliteratorOfLongDataBuilder {
-        List<Object[]> data;
+        List<Arguments> data;
 
         List<Long> exp;
 
-        SpliteratorOfLongDataBuilder(List<Object[]> data, List<Long> exp) {
+        SpliteratorOfLongDataBuilder(List<Arguments> data, List<Long> exp) {
             this.data = data;
             this.exp = exp;
         }
 
         void add(String description, List<Long> expected, Supplier<Spliterator.OfLong> s) {
             description = joiner(description).toString();
-            data.add(new Object[]{description, expected, s});
+            data.add(Arguments.of(description, expected, s));
         }
 
         void add(String description, Supplier<Spliterator.OfLong> s) {
@@ -963,17 +985,16 @@ public class SpliteratorTraversingAndSplittingTest extends SpliteratorTestHelper
         }
     }
 
-    static Object[][] spliteratorOfLongDataProvider;
+    static List<Arguments> spliteratorOfLongDataProvider;
 
-    @DataProvider(name = "Spliterator.OfLong")
-    public static Object[][] spliteratorOfLongDataProvider() {
+    public static Stream<Arguments> spliteratorOfLongDataProvider() {
         if (spliteratorOfLongDataProvider != null) {
-            return spliteratorOfLongDataProvider;
+            return spliteratorOfLongDataProvider.stream();
         }
 
-        List<Object[]> data = new ArrayList<>();
+        List<Arguments> data = new ArrayList<>();
         for (int size : SIZES) {
-            long exp[] = arrayLongRange(size);
+            long[] exp = arrayLongRange(size);
             SpliteratorOfLongDataBuilder db = new SpliteratorOfLongDataBuilder(data, listLongRange(size));
 
             db.add("Spliterators.spliterator(long[], ...)",
@@ -1014,7 +1035,9 @@ public class SpliteratorTraversingAndSplittingTest extends SpliteratorTestHelper
                    () -> new LongSpliteratorFromArray(exp));
         }
 
-        return spliteratorOfLongDataProvider = data.toArray(new Object[0][]);
+        spliteratorOfLongDataProvider = data;
+
+        return data.stream();
     }
 
     private static List<Long> listLongRange(int upTo) {
@@ -1031,48 +1054,57 @@ public class SpliteratorTraversingAndSplittingTest extends SpliteratorTestHelper
         return exp;
     }
 
-    @Test(dataProvider = "Spliterator.OfLong")
+    @ParameterizedTest
+    @MethodSource("spliteratorOfLongDataProvider")
     public void testLongNullPointerException(String description, Collection<Long> exp, Supplier<Spliterator.OfLong> s) {
         assertThrowsNPE(() -> s.get().forEachRemaining((LongConsumer) null));
         assertThrowsNPE(() -> s.get().tryAdvance((LongConsumer) null));
     }
 
-    @Test(dataProvider = "Spliterator.OfLong")
+    @ParameterizedTest
+    @MethodSource("spliteratorOfLongDataProvider")
     public void testLongForEach(String description, Collection<Long> exp, Supplier<Spliterator.OfLong> s) {
         testForEach(exp, s, longBoxingConsumer());
     }
 
-    @Test(dataProvider = "Spliterator.OfLong")
+    @ParameterizedTest
+    @MethodSource("spliteratorOfLongDataProvider")
     public void testLongTryAdvance(String description, Collection<Long> exp, Supplier<Spliterator.OfLong> s) {
         testTryAdvance(exp, s, longBoxingConsumer());
     }
 
-    @Test(dataProvider = "Spliterator.OfLong")
+    @ParameterizedTest
+    @MethodSource("spliteratorOfLongDataProvider")
     public void testLongMixedTryAdvanceForEach(String description, Collection<Long> exp, Supplier<Spliterator.OfLong> s) {
         testMixedTryAdvanceForEach(exp, s, longBoxingConsumer());
     }
 
-    @Test(dataProvider = "Spliterator.OfLong")
+    @ParameterizedTest
+    @MethodSource("spliteratorOfLongDataProvider")
     public void testLongMixedTraverseAndSplit(String description, Collection<Long> exp, Supplier<Spliterator.OfLong> s) {
         testMixedTraverseAndSplit(exp, s, longBoxingConsumer());
     }
 
-    @Test(dataProvider = "Spliterator.OfLong")
+    @ParameterizedTest
+    @MethodSource("spliteratorOfLongDataProvider")
     public void testLongSplitAfterFullTraversal(String description, Collection<Long> exp, Supplier<Spliterator.OfLong> s) {
         testSplitAfterFullTraversal(s, longBoxingConsumer());
     }
 
-    @Test(dataProvider = "Spliterator.OfLong")
+    @ParameterizedTest
+    @MethodSource("spliteratorOfLongDataProvider")
     public void testLongSplitOnce(String description, Collection<Long> exp, Supplier<Spliterator.OfLong> s) {
         testSplitOnce(exp, s, longBoxingConsumer());
     }
 
-    @Test(dataProvider = "Spliterator.OfLong")
+    @ParameterizedTest
+    @MethodSource("spliteratorOfLongDataProvider")
     public void testLongSplitSixDeep(String description, Collection<Long> exp, Supplier<Spliterator.OfLong> s) {
         testSplitSixDeep(exp, s, longBoxingConsumer());
     }
 
-    @Test(dataProvider = "Spliterator.OfLong")
+    @ParameterizedTest
+    @MethodSource("spliteratorOfLongDataProvider")
     public void testLongSplitUntilNull(String description, Collection<Long> exp, Supplier<Spliterator.OfLong> s) {
         testSplitUntilNull(exp, s, longBoxingConsumer());
     }
@@ -1080,18 +1112,18 @@ public class SpliteratorTraversingAndSplittingTest extends SpliteratorTestHelper
     //
 
     private static class SpliteratorOfDoubleDataBuilder {
-        List<Object[]> data;
+        List<Arguments> data;
 
         List<Double> exp;
 
-        SpliteratorOfDoubleDataBuilder(List<Object[]> data, List<Double> exp) {
+        SpliteratorOfDoubleDataBuilder(List<Arguments> data, List<Double> exp) {
             this.data = data;
             this.exp = exp;
         }
 
         void add(String description, List<Double> expected, Supplier<Spliterator.OfDouble> s) {
             description = joiner(description).toString();
-            data.add(new Object[]{description, expected, s});
+            data.add(Arguments.of(description, expected, s));
         }
 
         void add(String description, Supplier<Spliterator.OfDouble> s) {
@@ -1106,17 +1138,16 @@ public class SpliteratorTraversingAndSplittingTest extends SpliteratorTestHelper
         }
     }
 
-    static Object[][] spliteratorOfDoubleDataProvider;
+    static List<Arguments> spliteratorOfDoubleDataProvider;
 
-    @DataProvider(name = "Spliterator.OfDouble")
-    public static Object[][] spliteratorOfDoubleDataProvider() {
+    public static Stream<Arguments> spliteratorOfDoubleDataProvider() {
         if (spliteratorOfDoubleDataProvider != null) {
-            return spliteratorOfDoubleDataProvider;
+            return spliteratorOfDoubleDataProvider.stream();
         }
 
-        List<Object[]> data = new ArrayList<>();
+        List<Arguments> data = new ArrayList<>();
         for (int size : SIZES) {
-            double exp[] = arrayDoubleRange(size);
+            double[] exp = arrayDoubleRange(size);
             SpliteratorOfDoubleDataBuilder db = new SpliteratorOfDoubleDataBuilder(data, listDoubleRange(size));
 
             db.add("Spliterators.spliterator(double[], ...)",
@@ -1157,7 +1188,9 @@ public class SpliteratorTraversingAndSplittingTest extends SpliteratorTestHelper
                    () -> new DoubleSpliteratorFromArray(exp));
         }
 
-        return spliteratorOfDoubleDataProvider = data.toArray(new Object[0][]);
+        spliteratorOfDoubleDataProvider = data;
+
+        return data.stream();
     }
 
     private static List<Double> listDoubleRange(int upTo) {
@@ -1174,48 +1207,57 @@ public class SpliteratorTraversingAndSplittingTest extends SpliteratorTestHelper
         return exp;
     }
 
-    @Test(dataProvider = "Spliterator.OfDouble")
+    @ParameterizedTest
+    @MethodSource("spliteratorOfDoubleDataProvider")
     public void testDoubleNullPointerException(String description, Collection<Double> exp, Supplier<Spliterator.OfDouble> s) {
         assertThrowsNPE(() -> s.get().forEachRemaining((DoubleConsumer) null));
         assertThrowsNPE(() -> s.get().tryAdvance((DoubleConsumer) null));
     }
 
-    @Test(dataProvider = "Spliterator.OfDouble")
+    @ParameterizedTest
+    @MethodSource("spliteratorOfDoubleDataProvider")
     public void testDoubleForEach(String description, Collection<Double> exp, Supplier<Spliterator.OfDouble> s) {
         testForEach(exp, s, doubleBoxingConsumer());
     }
 
-    @Test(dataProvider = "Spliterator.OfDouble")
+    @ParameterizedTest
+    @MethodSource("spliteratorOfDoubleDataProvider")
     public void testDoubleTryAdvance(String description, Collection<Double> exp, Supplier<Spliterator.OfDouble> s) {
         testTryAdvance(exp, s, doubleBoxingConsumer());
     }
 
-    @Test(dataProvider = "Spliterator.OfDouble")
+    @ParameterizedTest
+    @MethodSource("spliteratorOfDoubleDataProvider")
     public void testDoubleMixedTryAdvanceForEach(String description, Collection<Double> exp, Supplier<Spliterator.OfDouble> s) {
         testMixedTryAdvanceForEach(exp, s, doubleBoxingConsumer());
     }
 
-    @Test(dataProvider = "Spliterator.OfDouble")
+    @ParameterizedTest
+    @MethodSource("spliteratorOfDoubleDataProvider")
     public void testDoubleMixedTraverseAndSplit(String description, Collection<Double> exp, Supplier<Spliterator.OfDouble> s) {
         testMixedTraverseAndSplit(exp, s, doubleBoxingConsumer());
     }
 
-    @Test(dataProvider = "Spliterator.OfDouble")
+    @ParameterizedTest
+    @MethodSource("spliteratorOfDoubleDataProvider")
     public void testDoubleSplitAfterFullTraversal(String description, Collection<Double> exp, Supplier<Spliterator.OfDouble> s) {
         testSplitAfterFullTraversal(s, doubleBoxingConsumer());
     }
 
-    @Test(dataProvider = "Spliterator.OfDouble")
+    @ParameterizedTest
+    @MethodSource("spliteratorOfDoubleDataProvider")
     public void testDoubleSplitOnce(String description, Collection<Double> exp, Supplier<Spliterator.OfDouble> s) {
         testSplitOnce(exp, s, doubleBoxingConsumer());
     }
 
-    @Test(dataProvider = "Spliterator.OfDouble")
+    @ParameterizedTest
+    @MethodSource("spliteratorOfDoubleDataProvider")
     public void testDoubleSplitSixDeep(String description, Collection<Double> exp, Supplier<Spliterator.OfDouble> s) {
         testSplitSixDeep(exp, s, doubleBoxingConsumer());
     }
 
-    @Test(dataProvider = "Spliterator.OfDouble")
+    @ParameterizedTest
+    @MethodSource("spliteratorOfDoubleDataProvider")
     public void testDoubleSplitUntilNull(String description, Collection<Double> exp, Supplier<Spliterator.OfDouble> s) {
         testSplitUntilNull(exp, s, doubleBoxingConsumer());
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,14 +41,15 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
  * Base class for streams test cases.  Provides 'exercise' methods for taking
  * lambdas that construct and modify streams, and evaluates them in different
  * ways and asserts that they produce equivalent results.
  */
-@Test
+@ExtendWith(LoggingTestCase.Extension.class)
 public abstract class OpTestCase extends LoggingTestCase {
 
     private final Map<StreamShape, Set<? extends BaseStreamTestScenario>> testScenarios;
@@ -122,7 +123,7 @@ public abstract class OpTestCase extends LoggingTestCase {
                 result = withData(data).stream(m).exercise();
             else {
                 Collection<U> r2 = withData(data).stream(m).exercise();
-                assertEquals(result, r2);
+                Assertions.assertEquals(result, r2);
             }
         }
         return result;
@@ -441,7 +442,7 @@ public abstract class OpTestCase extends LoggingTestCase {
                 }
                 sb.append("--");
 
-                fail(String.format("%d failure(s) for test data: %s\n%s", i - 1, data.toString(), sb));
+                Assertions.fail(String.format("%d failure(s) for test data: %s\n%s", i - 1, data, sb));
             }
 
             return refResult;
@@ -538,7 +539,7 @@ public abstract class OpTestCase extends LoggingTestCase {
         }
 
         public ExerciseDataTerminalBuilder<T, U, R, S_IN, S_OUT> equalator(BiConsumer<R, R> equalityAsserter) {
-            resultAsserter = (act, exp, ord, par) -> equalityAsserter.accept(act, exp);
+            resultAsserter = (act, exp, ord, par) -> equalityAsserter.accept(exp, act);
             return this;
         }
 

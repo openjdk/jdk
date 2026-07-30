@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,10 @@
 
 package org.openjdk.tests.java.util.stream;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -42,19 +45,22 @@ import java.util.stream.LongStream;
 import java.util.stream.OpTestCase;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import java.util.stream.StreamTestDataProvider;
 import java.util.stream.TestData;
 
 import static java.util.stream.LambdaTestHelpers.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * SliceOpTest
  *
  * @author Brian Goetz
  */
-@Test
 public class SliceOpTest extends OpTestCase {
 
+    @Test
     public void testSkip() {
         assertCountSum(countTo(0).stream().skip(0), 0, 0);
         assertCountSum(countTo(0).stream().skip(4), 0, 0);
@@ -79,6 +85,7 @@ public class SliceOpTest extends OpTestCase {
         exerciseOps(countTo(100), s -> s.skip(200), Collections.emptyList());
     }
 
+    @Test
     public void testLimit() {
         assertCountSum(countTo(0).stream().limit(4), 0, 0);
         assertCountSum(countTo(2).stream().limit(4), 2, 3);
@@ -102,6 +109,7 @@ public class SliceOpTest extends OpTestCase {
         exerciseOps(countTo(100), s -> s.limit(200), countTo(100));
     }
 
+    @Test
     public void testSkipLimit() {
         exerciseOps(Collections.emptyList(), s -> s.skip(0).limit(0), Collections.emptyList());
         exerciseOps(Collections.emptyList(), s -> s.skip(0).limit(10), Collections.emptyList());
@@ -122,6 +130,7 @@ public class SliceOpTest extends OpTestCase {
         exerciseOps(countTo(100), s -> s.skip(200).limit(0), Collections.emptyList());
     }
 
+    @Test
     public void testSlice() {
         exerciseOps(Collections.emptyList(), s -> s.skip(0).limit(0), Collections.emptyList());
         exerciseOps(Collections.emptyList(), s -> s.skip(0).limit(10), Collections.emptyList());
@@ -153,8 +162,9 @@ public class SliceOpTest extends OpTestCase {
         return Math.max(0, dataSize - skip);
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class,
-          groups = { "serialization-hostile" })
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
+    @Tag("serialization-hostile")
     public void testSkipOps(String name, TestData.OfRef<Integer> data) {
         List<Integer> skips = sizes(data.size());
 
@@ -176,8 +186,9 @@ public class SliceOpTest extends OpTestCase {
         }
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class,
-          groups = { "serialization-hostile" })
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
+    @Tag("serialization-hostile")
     public void testSkipLimitOps(String name, TestData.OfRef<Integer> data) {
         List<Integer> skips = sizes(data.size());
         List<Integer> limits = skips;
@@ -196,7 +207,8 @@ public class SliceOpTest extends OpTestCase {
         }
     }
 
-    @Test(groups = { "serialization-hostile" })
+    @Test
+    @Tag("serialization-hostile")
     public void testSkipLimitOpsWithNonSplittingSpliterator() {
         class NonSplittingNotSubsizedOrderedSpliterator<T> implements Spliterator<T> {
             Spliterator<T> s;
@@ -244,8 +256,9 @@ public class SliceOpTest extends OpTestCase {
         testSkipLimitOps("testSkipLimitOpsWithNonSplittingSpliterator", data);
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class,
-          groups = { "serialization-hostile" })
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
+    @Tag("serialization-hostile")
     public void testLimitOps(String name, TestData.OfRef<Integer> data) {
         List<Integer> limits = sizes(data.size());
 
@@ -280,7 +293,7 @@ public class SliceOpTest extends OpTestCase {
                 List<Integer> actual = new ArrayList<>();
                 act.forEach(actual::add);
 
-                assertEquals(actual.size(), expectedSize);
+                assertEquals(expectedSize, actual.size());
                 assertTrue(expected.containsAll(actual));
             }
             else {
@@ -316,17 +329,19 @@ public class SliceOpTest extends OpTestCase {
                     .stream(m)
                     .resultAsserter(sliceResultAsserter(data, expectedSize))
                     .exercise();
-            assertEquals(sr.size(), expectedSize);
+            assertEquals(expectedSize, sr.size());
         }
     }
 
+    @Test
     public void testLimitSort() {
         List<Integer> l = countTo(100);
         Collections.reverse(l);
         exerciseOps(l, s -> s.limit(10).sorted(Comparator.naturalOrder()));
     }
 
-    @Test(groups = { "serialization-hostile" })
+    @Test
+    @Tag("serialization-hostile")
     public void testLimitShortCircuit() {
         for (int l : Arrays.asList(0, 10)) {
             setContext("l", l);
@@ -335,7 +350,7 @@ public class SliceOpTest extends OpTestCase {
                     .peek(i -> ai.getAndIncrement())
                     .limit(l).toArray();
             // For the case of a zero limit, one element will get pushed through the sink chain
-            assertEquals(ai.get(), l, "tee block was called too many times");
+            assertEquals(l, ai.get(), "tee block was called too many times");
         }
     }
 
@@ -348,34 +363,36 @@ public class SliceOpTest extends OpTestCase {
         }
     }
 
+    @Test
     public void testLimitParallelHugeInput() {
         for (int n : new int[] {10, 100, 1000, 10000}) {
             long[] actual = LongStream.range(0, Long.MAX_VALUE)
                                   .parallel().filter(x -> true) // remove SIZED
                                   .limit(n).toArray();
-            assertEquals(LongStream.range(0, n).toArray(), actual);
+            assertArrayEquals(LongStream.range(0, n).toArray(), actual);
         }
     }
 
+    @Test
     public void testSliceOpsSpliteratorPreservesSized() {
         var parSpliterator = IntStream.range(0, 1000).parallel().skip(50).limit(800).spliterator();
         assertTrue(parSpliterator.hasCharacteristics(Spliterator.SIZED));
         assertTrue(parSpliterator.hasCharacteristics(Spliterator.SUBSIZED));
-        assertEquals(parSpliterator.getExactSizeIfKnown(), 800);
+        assertEquals(800, parSpliterator.getExactSizeIfKnown());
         // Original spliterator is split to [0..499] and [500..999] parts
         // due to skip+limit, we have [50..499] and [500..849]
         var prefix = parSpliterator.trySplit();
         assertNotNull(prefix);
         assertTrue(parSpliterator.hasCharacteristics(Spliterator.SIZED));
         assertTrue(parSpliterator.hasCharacteristics(Spliterator.SUBSIZED));
-        assertEquals(parSpliterator.getExactSizeIfKnown(), 350);
+        assertEquals(350, parSpliterator.getExactSizeIfKnown());
         assertTrue(prefix.hasCharacteristics(Spliterator.SIZED));
         assertTrue(prefix.hasCharacteristics(Spliterator.SUBSIZED));
-        assertEquals(prefix.getExactSizeIfKnown(), 450);
+        assertEquals(450, prefix.getExactSizeIfKnown());
 
         var seqSpliterator = IntStream.range(0, 1000).skip(50).limit(800).spliterator();
         assertTrue(seqSpliterator.hasCharacteristics(Spliterator.SIZED));
         assertTrue(seqSpliterator.hasCharacteristics(Spliterator.SUBSIZED));
-        assertEquals(seqSpliterator.getExactSizeIfKnown(), 800);
+        assertEquals(800, seqSpliterator.getExactSizeIfKnown());
     }
 }

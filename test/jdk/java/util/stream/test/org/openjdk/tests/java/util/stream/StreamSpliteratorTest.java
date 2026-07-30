@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,11 @@
 
 package org.openjdk.tests.java.util.stream;
 
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -40,31 +45,22 @@ import java.util.function.IntConsumer;
 import java.util.function.LongConsumer;
 import java.util.function.UnaryOperator;
 import java.util.stream.DoubleStream;
-import java.util.stream.DoubleStreamTestDataProvider;
 import java.util.stream.IntStream;
-import java.util.stream.IntStreamTestDataProvider;
 import java.util.stream.LambdaTestHelpers;
 import java.util.stream.LongStream;
-import java.util.stream.LongStreamTestDataProvider;
 import java.util.stream.OpTestCase;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import java.util.stream.StreamTestDataProvider;
 import java.util.stream.TestData;
-
-import org.testng.Assert;
-import org.testng.annotations.Test;
 
 import static java.util.stream.LambdaTestHelpers.countTo;
 import static java.util.stream.LambdaTestHelpers.dpEven;
 import static java.util.stream.LambdaTestHelpers.ipEven;
-import static java.util.stream.LambdaTestHelpers.irDoubler;
 import static java.util.stream.LambdaTestHelpers.lpEven;
-import static java.util.stream.LambdaTestHelpers.mDoubler;
 import static java.util.stream.LambdaTestHelpers.pEven;
 import static java.util.stream.LambdaTestHelpers.permuteStreamFunctions;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Test
 public class StreamSpliteratorTest extends OpTestCase {
 
     private static class ProxyNoExactSizeSpliterator<T> implements Spliterator<T> {
@@ -245,6 +241,7 @@ public class StreamSpliteratorTest extends OpTestCase {
         }
     }
 
+    @Test
     public void testSplitting() {
         // Size is assumed to be larger than the target size for no splitting
         // @@@ Need way to obtain the target size
@@ -274,13 +271,13 @@ public class StreamSpliteratorTest extends OpTestCase {
                     ProxyNoExactSizeSpliterator<Integer> psp = new ProxyNoExactSizeSpliterator<>(sp, proxyEstimateSize);
                     Stream<Integer> s = StreamSupport.stream(psp, true);
                     terminalOp.accept(s);
-                    Assert.assertTrue(psp.splits > 0,
+                    assertTrue(psp.splits > 0,
                                       String.format("Number of splits should be greater that zero when proxyEstimateSize is %s",
                                                     proxyEstimateSize));
-                    Assert.assertTrue(psp.prefixSplits > 0,
+                    assertTrue(psp.prefixSplits > 0,
                                       String.format("Number of non-null prefix splits should be greater that zero when proxyEstimateSize is %s",
                                                     proxyEstimateSize));
-                    Assert.assertTrue(psp.sizeOnTraversal < l.size(),
+                    assertTrue(psp.sizeOnTraversal < l.size(),
                                       String.format("Size on traversal of last split should be less than the size of the list, %d, when proxyEstimateSize is %s",
                                                     l.size(), proxyEstimateSize));
                 }
@@ -288,9 +285,9 @@ public class StreamSpliteratorTest extends OpTestCase {
         }
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>.small",
-          dataProviderClass = StreamTestDataProvider.class,
-          groups = { "serialization-hostile" })
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#smallIntegerStreamTestData")
+    @Tag("serialization-hostile")
     public void testStreamSpliterators(String name, TestData.OfRef<Integer> data) {
         for (Function<Stream<Integer>, Stream<Integer>> f : streamFunctions()) {
             withData(data).
@@ -309,14 +306,16 @@ public class StreamSpliteratorTest extends OpTestCase {
         }
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>.small", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#smallIntegerStreamTestData")
     public void testSpliterators(String name, TestData.OfRef<Integer> data) {
         for (Function<Stream<Integer>, Stream<Integer>> f : streamFunctions()) {
             SpliteratorTestHelper.testSpliterator(() -> f.apply(data.stream()).spliterator());
         }
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>.small", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#smallIntegerStreamTestData")
     public void testParSpliterators(String name, TestData.OfRef<Integer> data) {
         for (Function<Stream<Integer>, Stream<Integer>> f : streamFunctions()) {
             SpliteratorTestHelper.testSpliterator(() -> f.apply(data.parallelStream()).spliterator());
@@ -343,6 +342,7 @@ public class StreamSpliteratorTest extends OpTestCase {
 
     //
 
+    @Test
     public void testIntSplitting() {
         List<Consumer<IntStream>> terminalOps = Arrays.asList(
                 s -> s.toArray(),
@@ -370,13 +370,13 @@ public class StreamSpliteratorTest extends OpTestCase {
                     ProxyNoExactSizeSpliterator.OfInt psp = new ProxyNoExactSizeSpliterator.OfInt(sp, proxyEstimateSize);
                     IntStream s = StreamSupport.intStream(psp, true);
                     terminalOp.accept(s);
-                    Assert.assertTrue(psp.splits > 0,
+                    assertTrue(psp.splits > 0,
                                       String.format("Number of splits should be greater that zero when proxyEstimateSize is %s",
                                                     proxyEstimateSize));
-                    Assert.assertTrue(psp.prefixSplits > 0,
+                    assertTrue(psp.prefixSplits > 0,
                                       String.format("Number of non-null prefix splits should be greater that zero when proxyEstimateSize is %s",
                                                     proxyEstimateSize));
-                    Assert.assertTrue(psp.sizeOnTraversal < 1000,
+                    assertTrue(psp.sizeOnTraversal < 1000,
                                       String.format("Size on traversal of last split should be less than the size of the list, %d, when proxyEstimateSize is %s",
                                                     1000, proxyEstimateSize));
                 }
@@ -384,9 +384,9 @@ public class StreamSpliteratorTest extends OpTestCase {
         }
     }
 
-    @Test(dataProvider = "IntStreamTestData.small",
-          dataProviderClass = IntStreamTestDataProvider.class,
-          groups = { "serialization-hostile" })
+    @ParameterizedTest
+    @MethodSource("java.util.stream.IntStreamTestDataProvider#smallIntStreamTestData")
+    @Tag("serialization-hostile")
     public void testIntStreamSpliterators(String name, TestData.OfInt data) {
         for (Function<IntStream, IntStream> f : intStreamFunctions()) {
             withData(data).
@@ -405,14 +405,16 @@ public class StreamSpliteratorTest extends OpTestCase {
         }
     }
 
-    @Test(dataProvider = "IntStreamTestData.small", dataProviderClass = IntStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.IntStreamTestDataProvider#smallIntStreamTestData")
     public void testIntSpliterators(String name, TestData.OfInt data) {
         for (Function<IntStream, IntStream> f : intStreamFunctions()) {
             SpliteratorTestHelper.testIntSpliterator(() -> f.apply(data.stream()).spliterator());
         }
     }
 
-    @Test(dataProvider = "IntStreamTestData.small", dataProviderClass = IntStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.IntStreamTestDataProvider#smallIntStreamTestData")
     public void testIntParSpliterators(String name, TestData.OfInt data) {
         for (Function<IntStream, IntStream> f : intStreamFunctions()) {
             SpliteratorTestHelper.testIntSpliterator(() -> f.apply(data.parallelStream()).spliterator());
@@ -436,6 +438,7 @@ public class StreamSpliteratorTest extends OpTestCase {
 
     //
 
+    @Test
     public void testLongSplitting() {
         List<Consumer<LongStream>> terminalOps = Arrays.asList(
                 s -> s.toArray(),
@@ -463,13 +466,13 @@ public class StreamSpliteratorTest extends OpTestCase {
                     ProxyNoExactSizeSpliterator.OfLong psp = new ProxyNoExactSizeSpliterator.OfLong(sp, proxyEstimateSize);
                     LongStream s = StreamSupport.longStream(psp, true);
                     terminalOp.accept(s);
-                    Assert.assertTrue(psp.splits > 0,
+                    assertTrue(psp.splits > 0,
                                       String.format("Number of splits should be greater that zero when proxyEstimateSize is %s",
                                                     proxyEstimateSize));
-                    Assert.assertTrue(psp.prefixSplits > 0,
+                    assertTrue(psp.prefixSplits > 0,
                                       String.format("Number of non-null prefix splits should be greater that zero when proxyEstimateSize is %s",
                                                     proxyEstimateSize));
-                    Assert.assertTrue(psp.sizeOnTraversal < 1000,
+                    assertTrue(psp.sizeOnTraversal < 1000,
                                       String.format("Size on traversal of last split should be less than the size of the list, %d, when proxyEstimateSize is %s",
                                                     1000, proxyEstimateSize));
                 }
@@ -477,9 +480,9 @@ public class StreamSpliteratorTest extends OpTestCase {
         }
     }
 
-    @Test(dataProvider = "LongStreamTestData.small",
-          dataProviderClass = LongStreamTestDataProvider.class,
-          groups = { "serialization-hostile" })
+    @ParameterizedTest
+    @MethodSource("java.util.stream.LongStreamTestDataProvider#smallLongStreamTestData")
+    @Tag("serialization-hostile")
     public void testLongStreamSpliterators(String name, TestData.OfLong data) {
         for (Function<LongStream, LongStream> f : longStreamFunctions()) {
             withData(data).
@@ -498,14 +501,16 @@ public class StreamSpliteratorTest extends OpTestCase {
         }
     }
 
-    @Test(dataProvider = "LongStreamTestData.small", dataProviderClass = LongStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.LongStreamTestDataProvider#smallLongStreamTestData")
     public void testLongSpliterators(String name, TestData.OfLong data) {
         for (Function<LongStream, LongStream> f : longStreamFunctions()) {
             SpliteratorTestHelper.testLongSpliterator(() -> f.apply(data.stream()).spliterator());
         }
     }
 
-    @Test(dataProvider = "LongStreamTestData.small", dataProviderClass = LongStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.LongStreamTestDataProvider#smallLongStreamTestData")
     public void testLongParSpliterators(String name, TestData.OfLong data) {
         for (Function<LongStream, LongStream> f : longStreamFunctions()) {
             SpliteratorTestHelper.testLongSpliterator(() -> f.apply(data.parallelStream()).spliterator());
@@ -529,6 +534,7 @@ public class StreamSpliteratorTest extends OpTestCase {
 
     //
 
+    @Test
     public void testDoubleSplitting() {
         List<Consumer<DoubleStream>> terminalOps = Arrays.asList(
                 s -> s.toArray(),
@@ -556,13 +562,13 @@ public class StreamSpliteratorTest extends OpTestCase {
                     ProxyNoExactSizeSpliterator.OfDouble psp = new ProxyNoExactSizeSpliterator.OfDouble(sp, proxyEstimateSize);
                     DoubleStream s = StreamSupport.doubleStream(psp, true);
                     terminalOp.accept(s);
-                    Assert.assertTrue(psp.splits > 0,
+                    assertTrue(psp.splits > 0,
                                       String.format("Number of splits should be greater that zero when proxyEstimateSize is %s",
                                                     proxyEstimateSize));
-                    Assert.assertTrue(psp.prefixSplits > 0,
+                    assertTrue(psp.prefixSplits > 0,
                                       String.format("Number of non-null prefix splits should be greater that zero when proxyEstimateSize is %s",
                                                     proxyEstimateSize));
-                    Assert.assertTrue(psp.sizeOnTraversal < 1000,
+                    assertTrue(psp.sizeOnTraversal < 1000,
                                       String.format("Size on traversal of last split should be less than the size of the list, %d, when proxyEstimateSize is %s",
                                                     1000, proxyEstimateSize));
                 }
@@ -570,9 +576,9 @@ public class StreamSpliteratorTest extends OpTestCase {
         }
     }
 
-    @Test(dataProvider = "DoubleStreamTestData.small",
-          dataProviderClass = DoubleStreamTestDataProvider.class,
-          groups = { "serialization-hostile" })
+    @ParameterizedTest
+    @MethodSource("java.util.stream.DoubleStreamTestDataProvider#smallDoubleStreamTestData")
+    @Tag("serialization-hostile")
     public void testDoubleStreamSpliterators(String name, TestData.OfDouble data) {
         for (Function<DoubleStream, DoubleStream> f : doubleStreamFunctions()) {
             withData(data).
@@ -591,14 +597,16 @@ public class StreamSpliteratorTest extends OpTestCase {
         }
     }
 
-    @Test(dataProvider = "DoubleStreamTestData.small", dataProviderClass = DoubleStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.DoubleStreamTestDataProvider#smallDoubleStreamTestData")
     public void testDoubleSpliterators(String name, TestData.OfDouble data) {
         for (Function<DoubleStream, DoubleStream> f : doubleStreamFunctions()) {
             SpliteratorTestHelper.testDoubleSpliterator(() -> f.apply(data.stream()).spliterator());
         }
     }
 
-    @Test(dataProvider = "DoubleStreamTestData.small", dataProviderClass = DoubleStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.DoubleStreamTestDataProvider#smallDoubleStreamTestData")
     public void testDoubleParSpliterators(String name, TestData.OfDouble data) {
         for (Function<DoubleStream, DoubleStream> f : doubleStreamFunctions()) {
             SpliteratorTestHelper.testDoubleSpliterator(() -> f.apply(data.parallelStream()).spliterator());
@@ -623,7 +631,7 @@ public class StreamSpliteratorTest extends OpTestCase {
 
     void assertValidCombinationOfSortedAndOrdered(Spliterator<?> s) {
         if (s.hasCharacteristics(Spliterator.SORTED))
-            Assert.assertTrue(s.hasCharacteristics(Spliterator.ORDERED));
+            assertTrue(s.hasCharacteristics(Spliterator.ORDERED));
     }
 
     private List<Function<DoubleStream, DoubleStream>> doubleStreamFunctions;

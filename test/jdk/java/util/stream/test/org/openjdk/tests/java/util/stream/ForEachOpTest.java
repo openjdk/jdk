@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,10 @@
  */
 package org.openjdk.tests.java.util.stream;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -36,10 +39,10 @@ import static java.util.stream.LambdaTestHelpers.countTo;
 /**
  * ForEachOpTest
  */
-@Test
 public class ForEachOpTest extends OpTestCase {
 
-    @Test(groups = { "serialization-hostile" })
+    @Test
+    @Tag("serialization-hostile")
     public void testForEach() {
         exerciseTerminalOps(countTo(10),
                             s -> {
@@ -69,7 +72,8 @@ public class ForEachOpTest extends OpTestCase {
         };
     }
 
-    @Test(groups = { "serialization-hostile" })
+    @Test
+    @Tag("serialization-hostile")
     public void testForEachOrdered() {
         List<Integer> input = countTo(10000);
         TestData.OfRef<Integer> data = TestData.Factory.ofCollection("[1, 10000]", input);
@@ -93,7 +97,8 @@ public class ForEachOpTest extends OpTestCase {
                 exercise();
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testForEach(String name, TestData.OfRef<Integer> data) {
         Function<Stream<Integer>, List<Integer>> terminalFunc = s -> {
             List<Integer> l = Collections.synchronizedList(new ArrayList<>());
@@ -116,7 +121,8 @@ public class ForEachOpTest extends OpTestCase {
 
     //
 
-    @Test(groups = { "serialization-hostile" })
+    @Test
+    @Tag("serialization-hostile")
     public void testIntForEachOrdered() {
         List<Integer> input = countTo(10000);
         TestData.OfInt data = TestData.Factory.ofIntSupplier("[1, 10000]",
@@ -141,7 +147,8 @@ public class ForEachOpTest extends OpTestCase {
                 exercise();
     }
 
-    @Test(dataProvider = "IntStreamTestData", dataProviderClass = IntStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.IntStreamTestDataProvider#intStreamTestData")
     public void testIntForEach(String name, TestData.OfInt data) {
         Function<IntStream, List<Integer>> terminalFunc = s -> {
             List<Integer> l = Collections.synchronizedList(new ArrayList<Integer>());
@@ -164,7 +171,8 @@ public class ForEachOpTest extends OpTestCase {
 
     //
 
-    @Test(groups = { "serialization-hostile" })
+    @Test
+    @Tag("serialization-hostile")
     public void testLongForEachOrdered() {
         List<Integer> input = countTo(10000);
         TestData.OfLong data = TestData.Factory.ofLongSupplier("[1, 10000]",
@@ -189,7 +197,8 @@ public class ForEachOpTest extends OpTestCase {
                 exercise();
     }
 
-    @Test(dataProvider = "LongStreamTestData", dataProviderClass = LongStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.LongStreamTestDataProvider#longStreamTestData")
     public void testLongOps(String name, TestData.OfLong data) {
         Function<LongStream, List<Long>> terminalFunc = s -> {
             List<Long> l = Collections.synchronizedList(new ArrayList<Long>());
@@ -212,7 +221,8 @@ public class ForEachOpTest extends OpTestCase {
 
     //
 
-    @Test(groups = { "serialization-hostile" })
+    @Test
+    @Tag("serialization-hostile")
     public void testDoubleForEachOrdered() {
         List<Integer> input = countTo(10000);
         TestData.OfDouble data = TestData.Factory.ofDoubleSupplier("[1, 10000]",
@@ -237,7 +247,8 @@ public class ForEachOpTest extends OpTestCase {
                 exercise();
     }
 
-    @Test(dataProvider = "DoubleStreamTestData", dataProviderClass = DoubleStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.DoubleStreamTestDataProvider#doubleStreamTestData")
     public void testDoubleOps(String name, TestData.OfDouble data) {
         Function<DoubleStream, List<Double>> terminalFunc = s -> {
             List<Double> l = Collections.synchronizedList(new ArrayList<Double>());

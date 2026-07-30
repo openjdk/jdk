@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,9 @@
  */
 package java.util.stream;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,12 +34,12 @@ import java.util.Spliterator;
 import java.util.SpliteratorTestHelper;
 
 import static java.util.stream.Collectors.toList;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @bug 8012987
  */
-@Test
 public class SliceSpliteratorTest extends LoggingTestCase {
 
     static class UnorderedContentAsserter<T> implements SpliteratorTestHelper.ContentAsserter<T> {
@@ -51,10 +52,10 @@ public class SliceSpliteratorTest extends LoggingTestCase {
         @Override
         public void assertContents(Collection<T> actual, Collection<T> expected, boolean isOrdered) {
             if (isOrdered) {
-                assertEquals(actual, expected);
+                assertEquals(expected, actual);
             }
             else {
-                assertEquals(actual.size(), expected.size());
+                assertEquals(expected.size(), actual.size());
                 assertTrue(source.containsAll(actual));
             }
         }
@@ -64,9 +65,8 @@ public class SliceSpliteratorTest extends LoggingTestCase {
         void test(int size, int skip, int limit);
     }
 
-    @DataProvider(name = "sliceSpliteratorDataProvider")
-    public static Object[][] sliceSpliteratorDataProvider() {
-        List<Object[]> data = new ArrayList<>();
+    public static Stream<Arguments> sliceSpliteratorDataProvider() {
+        List<Arguments> data = new ArrayList<>();
 
         // SIZED/SUBSIZED slice spliterator
 
@@ -80,7 +80,7 @@ public class SliceSpliteratorTest extends LoggingTestCase {
                     return new StreamSpliterators.SliceSpliterator.OfRef<>(s, skip, limit);
                 });
             };
-            data.add(new Object[]{"StreamSpliterators.SliceSpliterator.OfRef", r});
+            data.add(Arguments.of("StreamSpliterators.SliceSpliterator.OfRef", r));
         }
 
         {
@@ -93,7 +93,7 @@ public class SliceSpliteratorTest extends LoggingTestCase {
                     return new StreamSpliterators.SliceSpliterator.OfInt(s, skip, limit);
                 });
             };
-            data.add(new Object[]{"StreamSpliterators.SliceSpliterator.OfInt", r});
+            data.add(Arguments.of("StreamSpliterators.SliceSpliterator.OfInt", r));
         }
 
         {
@@ -106,7 +106,7 @@ public class SliceSpliteratorTest extends LoggingTestCase {
                     return new StreamSpliterators.SliceSpliterator.OfLong(s, skip, limit);
                 });
             };
-            data.add(new Object[]{"StreamSpliterators.SliceSpliterator.OfLong", r});
+            data.add(Arguments.of("StreamSpliterators.SliceSpliterator.OfLong", r));
         }
 
         {
@@ -119,7 +119,7 @@ public class SliceSpliteratorTest extends LoggingTestCase {
                     return new StreamSpliterators.SliceSpliterator.OfDouble(s, skip, limit);
                 });
             };
-            data.add(new Object[]{"StreamSpliterators.SliceSpliterator.OfLong", r});
+            data.add(Arguments.of("StreamSpliterators.SliceSpliterator.OfLong", r));
         }
 
 
@@ -136,7 +136,7 @@ public class SliceSpliteratorTest extends LoggingTestCase {
                     return new StreamSpliterators.UnorderedSliceSpliterator.OfRef<>(s, skip, limit);
                 }, uca);
             };
-            data.add(new Object[]{"StreamSpliterators.UnorderedSliceSpliterator.OfRef", r});
+            data.add(Arguments.of("StreamSpliterators.UnorderedSliceSpliterator.OfRef", r));
         }
 
         {
@@ -150,7 +150,7 @@ public class SliceSpliteratorTest extends LoggingTestCase {
                     return new StreamSpliterators.UnorderedSliceSpliterator.OfInt(s, skip, limit);
                 }, uca);
             };
-            data.add(new Object[]{"StreamSpliterators.UnorderedSliceSpliterator.OfInt", r});
+            data.add(Arguments.of("StreamSpliterators.UnorderedSliceSpliterator.OfInt", r));
         }
 
         {
@@ -164,7 +164,7 @@ public class SliceSpliteratorTest extends LoggingTestCase {
                     return new StreamSpliterators.UnorderedSliceSpliterator.OfLong(s, skip, limit);
                 }, uca);
             };
-            data.add(new Object[]{"StreamSpliterators.UnorderedSliceSpliterator.OfLong", r});
+            data.add(Arguments.of("StreamSpliterators.UnorderedSliceSpliterator.OfLong", r));
         }
 
         {
@@ -178,17 +178,18 @@ public class SliceSpliteratorTest extends LoggingTestCase {
                     return new StreamSpliterators.UnorderedSliceSpliterator.OfDouble(s, skip, limit);
                 }, uca);
             };
-            data.add(new Object[]{"StreamSpliterators.UnorderedSliceSpliterator.OfLong", r});
+            data.add(Arguments.of("StreamSpliterators.UnorderedSliceSpliterator.OfLong", r));
         }
 
-        return data.toArray(new Object[0][]);
+        return data.stream();
     }
 
     static final int SIZE = 256;
 
     static final int STEP = 32;
 
-    @Test(dataProvider = "sliceSpliteratorDataProvider")
+    @ParameterizedTest
+    @MethodSource("sliceSpliteratorDataProvider")
     public void testSliceSpliterator(String description, SliceTester r) {
         setContext("size", SIZE);
         for (int skip = 0; skip < SIZE; skip += STEP) {

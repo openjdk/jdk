@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,10 +45,12 @@ import java.util.function.ToDoubleFunction;
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertIterableEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * LambdaTestHelpers -- assertion methods and useful objects for lambda test cases
@@ -200,8 +202,8 @@ public class LambdaTestHelpers {
             s += i;
         }
 
-        assertEquals(c, count);
-        assertEquals(s, sum);
+        assertEquals(count, c);
+        assertEquals(sum, s);
     }
 
     public static void assertConcat(Iterator<Character> it, String result) {
@@ -271,57 +273,21 @@ public class LambdaTestHelpers {
         Set<T> uniq = new HashSet<>();
         while(iter.hasNext()) {
             T each = iter.next();
-            assertTrue(!uniq.contains(each), "Not unique");
+            assertFalse(uniq.contains(each), "Not unique");
             uniq.add(each);
         }
     }
 
     public static<T> void assertContents(Iterable<T> actual, Iterable<T> expected) {
         if (actual instanceof Collection && expected instanceof Collection) {
-            assertIterableEquals(actual, expected);
+            assertIterableEquals(expected, actual);
         } else {
             assertContents(actual.iterator(), expected.iterator());
         }
     }
 
     public static<T> void assertContents(Iterator<T> actual, Iterator<T> expected) {
-        assertEquals(toBoxedList(actual), toBoxedList(expected));
-    }
-
-    // Workaround excessive String creation in inner loop in org.testng.Assert.assertEquals(Iterable<?>, Iterable<?>)
-    static public void assertIterableEquals(Iterable<?> actual, Iterable<?> expected) {
-        if(actual == expected) {
-            return;
-        }
-
-        if(actual == null || expected == null) {
-            fail("Iterables not equal: expected: " + expected + " and actual: " + actual);
-        }
-
-        assertIteratorsEquals(actual.iterator(), expected.iterator());
-    }
-
-    // Workaround excessive String creation in inner loop in org.testng.Assert.assertEquals(Iterator<?>, Iterator<?>)
-    static public void assertIteratorsEquals(Iterator<?> actual, Iterator<?> expected) {
-        if (actual == expected) {
-            return;
-        }
-
-        if (actual == null || expected == null) {
-            fail("Iterators not equal: expected: " + expected + " and actual: " + actual);
-        }
-
-        while (actual.hasNext() && expected.hasNext()) {
-            Object e = expected.next();
-            Object a = actual.next();
-            assertEquals(a, e, "Iterator contents differ");
-        }
-
-        if(actual.hasNext()) {
-            fail("Actual iterator returned more elements than the expected iterator.");
-        } else if(expected.hasNext()) {
-            fail("Expected iterator returned more elements than the actual iterator.");
-        }
+        assertEquals(toBoxedList(expected), toBoxedList(actual));
     }
 
     @SafeVarargs
@@ -423,11 +389,19 @@ public class LambdaTestHelpers {
     }
 
     @SuppressWarnings("unchecked")
-    public static void assertContentsEqual(Object a, Object b) {
-        if (a instanceof Iterable && b instanceof Iterable)
-            assertContents((Iterable) a, (Iterable) b);
+    public static void assertContentsEqual(Object actual, Object expected) {
+        if (expected instanceof Iterable && actual instanceof Iterable)
+            assertContents((Iterable) actual, (Iterable) expected);
+        else if (expected instanceof double[] && actual instanceof double[])
+            assertArrayEquals((double[]) expected, (double[]) actual);
+        else if (expected instanceof int[] && actual instanceof int[])
+            assertArrayEquals((int[]) expected, (int[]) actual);
+        else if (expected instanceof long[] && actual instanceof long[])
+            assertArrayEquals((long[]) expected, (long[]) actual);
+        else if (expected instanceof Object[] && actual instanceof Object[])
+            assertArrayEquals((Object[]) expected, (Object[]) actual);
         else
-            assertEquals(a, b);
+            assertEquals(expected, actual);
     }
 
     public static<T> void assertContentsUnordered(Iterable<T> actual, Iterable<T> expected) {
@@ -435,7 +409,7 @@ public class LambdaTestHelpers {
     }
 
     public static<T> void assertContentsUnordered(Iterator<T> actual, Iterator<T> expected) {
-        assertEquals(toBoxedMultiset(actual), toBoxedMultiset(expected));
+        assertEquals(toBoxedMultiset(expected), toBoxedMultiset(actual));
     }
 
     public static<T> void assertContains(Optional<T> actual, Iterator<T> it) {

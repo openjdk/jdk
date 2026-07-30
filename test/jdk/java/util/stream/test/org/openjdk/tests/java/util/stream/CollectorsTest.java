@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  */
 package org.openjdk.tests.java.util.stream;
+
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -51,10 +56,7 @@ import java.util.stream.LambdaTestHelpers;
 import java.util.stream.OpTestCase;
 import java.util.stream.Stream;
 import java.util.stream.StreamOpFlagTestHelper;
-import java.util.stream.StreamTestDataProvider;
 import java.util.stream.TestData;
-
-import org.testng.annotations.Test;
 
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.flatMapping;
@@ -72,6 +74,11 @@ import static java.util.stream.Collectors.toSet;
 import static java.util.stream.LambdaTestHelpers.assertContents;
 import static java.util.stream.LambdaTestHelpers.assertContentsUnordered;
 import static java.util.stream.LambdaTestHelpers.mDoubler;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test
@@ -154,8 +161,7 @@ public class CollectorsTest extends OpTestCase {
         void assertValue(M map,
                          Supplier<Stream<T>> source,
                          boolean ordered) throws ReflectiveOperationException {
-            if (!clazz.isAssignableFrom(map.getClass()))
-                fail(String.format("Class mismatch in GroupingByAssertion: %s, %s", clazz, map.getClass()));
+            assertInstanceOf(clazz, map, String.format("Class mismatch in GroupingByAssertion: %s, %s", clazz, map.getClass()));
             assertContentsUnordered(map.keySet(), source.get().map(classifier).collect(toSet()));
             for (Map.Entry<K, ? extends V> entry : map.entrySet()) {
                 K key = entry.getKey();
@@ -184,8 +190,7 @@ public class CollectorsTest extends OpTestCase {
 
         @Override
         void assertValue(M map, Supplier<Stream<T>> source, boolean ordered) throws ReflectiveOperationException {
-            if (!clazz.isAssignableFrom(map.getClass()))
-                fail(String.format("Class mismatch in ToMapAssertion: %s, %s", clazz, map.getClass()));
+            assertInstanceOf(clazz, map, String.format("Class mismatch in ToMapAssertion: %s, %s", clazz, map.getClass()));
             Set<K> uniqueKeys = source.get().map(keyFn).collect(toSet());
             assertEquals(uniqueKeys, map.keySet());
             source.get().forEach(t -> {
@@ -213,8 +218,7 @@ public class CollectorsTest extends OpTestCase {
         void assertValue(Map<Boolean, D> map,
                          Supplier<Stream<T>> source,
                          boolean ordered) throws ReflectiveOperationException {
-            if (!Map.class.isAssignableFrom(map.getClass()))
-                fail(String.format("Class mismatch in PartitioningByAssertion: %s", map.getClass()));
+            assertInstanceOf(Map.class, map, String.format("Class mismatch in PartitioningByAssertion: %s", map.getClass()));
             assertEquals(2, map.size());
             downstream.assertValue(map.get(true), () -> source.get().filter(predicate), ordered);
             downstream.assertValue(map.get(false), () -> source.get().filter(predicate.negate()), ordered);
@@ -225,8 +229,7 @@ public class CollectorsTest extends OpTestCase {
         @Override
         void assertValue(List<T> value, Supplier<Stream<T>> source, boolean ordered)
                 throws ReflectiveOperationException {
-            if (!List.class.isAssignableFrom(value.getClass()))
-                fail(String.format("Class mismatch in ToListAssertion: %s", value.getClass()));
+            assertInstanceOf(List.class, value, String.format("Class mismatch in ToListAssertion: %s", value.getClass()));
             Stream<T> stream = source.get();
             List<T> result = new ArrayList<>();
             for (Iterator<T> it = stream.iterator(); it.hasNext(); ) // avoid capturing result::add
@@ -250,8 +253,7 @@ public class CollectorsTest extends OpTestCase {
         @Override
         void assertValue(Collection<T> value, Supplier<Stream<T>> source, boolean ordered)
                 throws ReflectiveOperationException {
-            if (!clazz.isAssignableFrom(value.getClass()))
-                fail(String.format("Class mismatch in ToCollectionAssertion: %s, %s", clazz, value.getClass()));
+            assertInstanceOf(clazz, value, String.format("Class mismatch in ToCollectionAssertion: %s, %s", clazz, value.getClass()));
             Stream<T> stream = source.get();
             Collection<T> result = clazz.newInstance();
             for (Iterator<T> it = stream.iterator(); it.hasNext(); ) // avoid capturing result::add
@@ -279,8 +281,8 @@ public class CollectorsTest extends OpTestCase {
                 throws ReflectiveOperationException {
             Optional<U> reduced = source.get().map(mapper).reduce(reducer);
             if (value == null)
-                assertTrue(!reduced.isPresent());
-            else if (!reduced.isPresent()) {
+                assertFalse(reduced.isPresent());
+            else if (reduced.isEmpty()) {
                 assertEquals(value, identity);
             }
             else {
@@ -363,7 +365,8 @@ public class CollectorsTest extends OpTestCase {
         withData(data).terminal(s -> s.collect(collector)).expectedResult(check).exercise();
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testReducing(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
         assertCollect(data, Collectors.reducing(0, Integer::sum),
                       s -> s.reduce(0, Integer::sum));
@@ -412,7 +415,8 @@ public class CollectorsTest extends OpTestCase {
                       s -> s.mapToInt(x -> x * 2).average().orElse(0));
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testJoining(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
         withData(data)
                 .terminal(s -> s.map(Object::toString).collect(Collectors.joining()))
@@ -473,7 +477,8 @@ public class CollectorsTest extends OpTestCase {
         return sb.toString();
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testSimpleToMap(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
         Function<Integer, Integer> keyFn = i -> i * 2;
         Function<Integer, Integer> valueFn = i -> i * 4;
@@ -488,12 +493,10 @@ public class CollectorsTest extends OpTestCase {
             try {
                 exerciseMapCollection(data, toMap(keyFn, valueFn),
                                       new ToMapAssertion<>(keyFn, valueFn, op, HashMap.class));
-                if (dataAsList.size() != dataAsSet.size())
-                    fail("Expected ISE on input with duplicates");
+                assertEquals(dataAsList.size(), dataAsSet.size(), "Expected ISE on input with duplicates");
             }
             catch (IllegalStateException e) {
-                if (dataAsList.size() == dataAsSet.size())
-                    fail("Expected no ISE on input without duplicates");
+                assertNotEquals(dataAsList.size(), dataAsSet.size(), "Expected no ISE on input without duplicates");
             }
 
             exerciseMapCollection(data, toMap(keyFn, valueFn, op),
@@ -507,12 +510,10 @@ public class CollectorsTest extends OpTestCase {
         try {
             exerciseMapCollection(data, toConcurrentMap(keyFn, valueFn),
                                   new ToMapAssertion<>(keyFn, valueFn, sum, ConcurrentHashMap.class));
-            if (dataAsList.size() != dataAsSet.size())
-                fail("Expected ISE on input with duplicates");
+            assertEquals(dataAsList.size(), dataAsSet.size(), "Expected ISE on input with duplicates");
         }
         catch (IllegalStateException e) {
-            if (dataAsList.size() == dataAsSet.size())
-                fail("Expected no ISE on input without duplicates");
+            assertNotEquals(dataAsList.size(), dataAsSet.size(), "Expected no ISE on input without duplicates");
         }
 
         exerciseMapCollection(data, toConcurrentMap(keyFn, valueFn, sum),
@@ -522,7 +523,8 @@ public class CollectorsTest extends OpTestCase {
                               new ToMapAssertion<>(keyFn, valueFn, sum, ConcurrentSkipListMap.class));
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testSimpleGroupingBy(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
         Function<Integer, Integer> classifier = i -> i % 3;
 
@@ -546,7 +548,8 @@ public class CollectorsTest extends OpTestCase {
                                                         new ToCollectionAssertion<Integer>(HashSet.class, false)));
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testGroupingByWithMapping(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
         Function<Integer, Integer> classifier = i -> i % 3;
         Function<Integer, Integer> mapper = i -> i * 2;
@@ -558,7 +561,8 @@ public class CollectorsTest extends OpTestCase {
                                                                                new ToListAssertion<>())));
     }
 
-    @Test(groups = { "serialization-hostile" })
+    @Test
+    @Tag("serialization-hostile")
     public void testFlatMappingClose() {
         Function<Integer, Integer> classifier = i -> i;
         AtomicInteger ai = new AtomicInteger();
@@ -567,7 +571,8 @@ public class CollectorsTest extends OpTestCase {
         assertEquals(m.size(), ai.get());
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testGroupingByWithFlatMapping(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
         Function<Integer, Integer> classifier = i -> i % 3;
         Function<Integer, Stream<Integer>> flatMapperByNull = i -> null;
@@ -591,7 +596,8 @@ public class CollectorsTest extends OpTestCase {
                                                                                    new ToListAssertion<>())));
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testGroupingByWithFiltering(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
         Function<Integer, Integer> classifier = i -> i % 3;
         Predicate<Integer> filteringByMod2 = i -> i % 2 == 0;
@@ -621,7 +627,8 @@ public class CollectorsTest extends OpTestCase {
                                                                                    new ToListAssertion<>())));
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testTwoLevelGroupingBy(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
         Function<Integer, Integer> classifier = i -> i % 6;
         Function<Integer, Integer> classifier2 = i -> i % 23;
@@ -677,8 +684,9 @@ public class CollectorsTest extends OpTestCase {
                                                                                   new ToListAssertion<>())));
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
-    public void testGroupubgByWithReducing(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
+    public void testGroupingByWithReducing(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
         Function<Integer, Integer> classifier = i -> i % 3;
 
         // Single-level simple reduce
@@ -726,7 +734,8 @@ public class CollectorsTest extends OpTestCase {
                                                         new ReducingAssertion<>(0, mDoubler, Integer::sum)));
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testSimplePartitioningBy(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
         Predicate<Integer> classifier = i -> i % 3 == 0;
 
@@ -739,7 +748,8 @@ public class CollectorsTest extends OpTestCase {
                               new PartitioningByAssertion<>(classifier, new ToListAssertion<>()));
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testTwoLevelPartitioningBy(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
         Predicate<Integer> classifier = i -> i % 3 == 0;
         Predicate<Integer> classifier2 = i -> i % 7 == 0;
@@ -757,19 +767,17 @@ public class CollectorsTest extends OpTestCase {
                                                             new ReducingAssertion<>(0, LambdaTestHelpers.identity(), Integer::sum)));
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testComposeFinisher(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
         List<Integer> asList = exerciseTerminalOps(data, s -> s.collect(toList()));
         List<Integer> asImmutableList = exerciseTerminalOps(data, s -> s.collect(collectingAndThen(toList(), Collections::unmodifiableList)));
         assertEquals(asList, asImmutableList);
-        try {
-            asImmutableList.add(0);
-            fail("Expecting immutable result");
-        }
-        catch (UnsupportedOperationException ignored) { }
+        assertThrows(UnsupportedOperationException.class, () -> asImmutableList.add(0), "Expecting immutable result");
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testTeeing(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
         Collector<Integer, ?, Long> summing = Collectors.summingLong(Integer::valueOf);
         Collector<Integer, ?, Long> counting = Collectors.counting();

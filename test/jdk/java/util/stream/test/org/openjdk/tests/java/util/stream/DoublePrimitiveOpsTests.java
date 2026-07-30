@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,7 @@
  */
 package org.openjdk.tests.java.util.stream;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Random;
@@ -31,24 +30,27 @@ import java.util.Spliterator;
 import java.util.stream.DoubleStream;
 import java.util.stream.LongStream;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @test
  * @bug 8153293
  */
-@Test
 public class DoublePrimitiveOpsTests {
 
     // @@@ tests for double are fragile if relying on equality when accumulating and multiplying values
 
+    @Test
     public void testUnBox() {
         double sum = Arrays.asList(1.0, 2.0, 3.0, 4.0, 5.0).stream().mapToDouble(i -> i).reduce(0.0, Double::sum);
-        assertEquals(sum, 1.0 + 2.0 + 3.0 + 4.0 + 5.0);
+        assertEquals(1.0 + 2.0 + 3.0 + 4.0 + 5.0, sum);
     }
 
+
+    @Test
     public void testFlags() {
         assertTrue(LongStream.range(1, 10).asDoubleStream().boxed().spliterator()
                       .hasCharacteristics(Spliterator.SORTED));
@@ -56,18 +58,20 @@ public class DoublePrimitiveOpsTests {
                       .hasCharacteristics(Spliterator.SORTED));
     }
 
+    @Test
     public void testToArray() {
         {
             double[] array =  LongStream.range(1, 10).asDoubleStream().map(i -> i * 2).toArray();
-            assertEquals(array, new double[]{2, 4, 6, 8, 10, 12, 14, 16, 18});
+            assertArrayEquals(new double[]{2, 4, 6, 8, 10, 12, 14, 16, 18}, array);
         }
 
         {
             double[] array =  LongStream.range(1, 10).parallel().asDoubleStream().map(i -> i * 2).toArray();
-            assertEquals(array, new double[]{2, 4, 6, 8, 10, 12, 14, 16, 18});
+            assertArrayEquals(new double[]{2, 4, 6, 8, 10, 12, 14, 16, 18}, array);
         }
     }
 
+    @Test
     public void testSort() {
         Random r = new Random();
 
@@ -77,31 +81,33 @@ public class DoublePrimitiveOpsTests {
 
         {
             double[] array =  Arrays.stream(content).sorted().toArray();
-            assertEquals(array, sortedContent);
+            assertArrayEquals(sortedContent, array);
         }
 
         {
             double[] array =  Arrays.stream(content).parallel().sorted().toArray();
-            assertEquals(array, sortedContent);
+            assertArrayEquals(sortedContent, array);
         }
     }
 
+    @Test
     public void testSortDistinct() {
         {
             double[] range = LongStream.range(0, 10).asDoubleStream().toArray();
 
-            assertEquals(LongStream.range(0, 10).asDoubleStream().sorted().distinct().toArray(), range);
-            assertEquals(LongStream.range(0, 10).asDoubleStream().parallel().sorted().distinct().toArray(), range);
+            assertArrayEquals(range, LongStream.range(0, 10).asDoubleStream().sorted().distinct().toArray());
+            assertArrayEquals(range, LongStream.range(0, 10).asDoubleStream().parallel().sorted().distinct().toArray());
 
             double[] data = {5, 3, 1, 1, 5, Double.NaN, 3, 9, Double.POSITIVE_INFINITY,
                              Double.NEGATIVE_INFINITY, 2, 9, 1, 0, 8, Double.NaN, -0.0};
             double[] expected = {Double.NEGATIVE_INFINITY, -0.0, 0, 1, 2, 3, 5, 8, 9,
                                  Double.POSITIVE_INFINITY, Double.NaN};
-            assertEquals(DoubleStream.of(data).sorted().distinct().toArray(), expected);
-            assertEquals(DoubleStream.of(data).parallel().sorted().distinct().toArray(), expected);
+            assertArrayEquals(expected, DoubleStream.of(data).sorted().distinct().toArray());
+            assertArrayEquals(expected, DoubleStream.of(data).parallel().sorted().distinct().toArray());
         }
     }
 
+    @Test
     public void testSortSort() {
         Random r = new Random();
 
@@ -111,26 +117,27 @@ public class DoublePrimitiveOpsTests {
 
         {
             double[] array =  Arrays.stream(content).sorted().sorted().toArray();
-            assertEquals(array, sortedContent);
+            assertArrayEquals(sortedContent, array);
         }
 
         {
             double[] array =  Arrays.stream(content).parallel().sorted().sorted().toArray();
-            assertEquals(array, sortedContent);
+            assertArrayEquals(sortedContent, array);
         }
     }
 
+    @Test
     public void testLimit() {
         double[] expected = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
         {
             double[] actual = DoubleStream.iterate(1.0, i -> i + 1.0).limit(9).toArray();
-            Assert.assertTrue(Arrays.equals(expected, actual));
+            assertArrayEquals(expected, actual);
         }
 
         {
             double[] actual = LongStream.range(1, 100).parallel().asDoubleStream().limit(9).toArray();
-            Assert.assertTrue(Arrays.equals(expected, actual));
+            assertArrayEquals(expected, actual);
         }
     }
 }

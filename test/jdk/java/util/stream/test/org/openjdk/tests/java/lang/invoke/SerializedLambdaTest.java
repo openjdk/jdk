@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,8 @@
  */
 package org.openjdk.tests.java.lang.invoke;
 
+import org.junit.jupiter.api.Test;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -43,18 +45,16 @@ import java.util.function.LongConsumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * SerializedLambdaTest
  *
  * @author Brian Goetz
  */
-@Test
 public class SerializedLambdaTest {
     public static final int REPS = 50;
 
@@ -70,16 +70,9 @@ public class SerializedLambdaTest {
         }
     }
 
-    private void assertNotSerial(Predicate<String> p, Consumer<Predicate<String>> asserter)
-            throws IOException, ClassNotFoundException {
+    private void assertNotSerial(Predicate<String> p, Consumer<Predicate<String>> asserter) {
         asserter.accept(p);
-        try {
-            byte[] bytes = serialize(p);
-            fail("Expected serialization failure");
-        }
-        catch (NotSerializableException e) {
-            // success
-        }
+        assertThrows(NotSerializableException.class, () -> serialize(p));
     }
 
     private byte[] serialize(Object o) throws IOException {
@@ -97,13 +90,14 @@ public class SerializedLambdaTest {
     }
 
     // Test instantiating against intersection type
+    @Test
     public void testSimpleSerializedInstantiation() throws IOException, ClassNotFoundException {
         @SuppressWarnings("unchecked")
         Predicate<String> pred = (Predicate<String> & Serializable) s -> true;
         assertSerial(pred,
                      p -> {
-                         assertTrue(p instanceof Predicate);
-                         assertTrue(p instanceof Serializable);
+                         assertInstanceOf(Predicate.class, p);
+                         assertInstanceOf(Serializable.class, p);
                          assertTrue(p.test(""));
                      });
     }
@@ -111,30 +105,33 @@ public class SerializedLambdaTest {
     interface SerPredicate<T> extends Predicate<T>, Serializable { }
 
     // Test instantiating against derived type
+    @Test
     public void testSimpleSerializedInstantiation2() throws IOException, ClassNotFoundException {
         SerPredicate<String> serPred = (SerPredicate<String>) s -> true;
         assertSerial(serPred,
                      p -> {
-                         assertTrue(p instanceof Predicate);
-                         assertTrue(p instanceof Serializable);
-                         assertTrue(p instanceof SerPredicate);
+                         assertInstanceOf(Predicate.class, p);
+                         assertInstanceOf(Serializable.class, p);
+                         assertInstanceOf(SerPredicate.class, p);
                          assertTrue(p.test(""));
                      });
     }
 
     // Negative test: non-serializable lambdas are in fact not serializable
+    @Test
     public void testNonserializableInstantiation() throws IOException, ClassNotFoundException {
         @SuppressWarnings("unchecked")
         Predicate<String> pred = (Predicate<String>) s -> true;
         assertNotSerial(pred,
                         p -> {
-                            assertTrue(p instanceof Predicate);
+                            assertInstanceOf(Predicate.class, p);
                             assertFalse(p instanceof Serializable);
                             assertTrue(p.test(""));
                         });
     }
 
     // Test lambda capturing int
+    @Test
     public void testSerializeCapturingInt() throws IOException, ClassNotFoundException {
         class Moo {
             @SuppressWarnings("unchecked")
@@ -150,6 +147,7 @@ public class SerializedLambdaTest {
     }
 
     // Test lambda capturing String
+    @Test
     public void testSerializeCapturingString() throws IOException, ClassNotFoundException {
         class Moo {
             @SuppressWarnings("unchecked")
@@ -165,6 +163,7 @@ public class SerializedLambdaTest {
     }
 
     // Negative test: lambdas that capture a non-serializable var
+    @Test
     public void testSerializeCapturingNonSerializable() throws IOException, ClassNotFoundException {
         class Box {
             String s;
@@ -189,13 +188,14 @@ public class SerializedLambdaTest {
     }
 
     // Test static method ref
+    @Test
     public void testStaticMR() throws IOException, ClassNotFoundException {
         @SuppressWarnings("unchecked")
         Predicate<String> mh1 = (Predicate<String> & Serializable) SerializedLambdaTest::startsWithA;
         @SuppressWarnings("unchecked")
         Predicate<String> mh2 = (SerPredicate<String>) SerializedLambdaTest::startsWithA;
         Consumer<Predicate<String>> b = p -> {
-            assertTrue(p instanceof Serializable);
+            assertInstanceOf(Serializable.class, p);
             assertTrue(p.test("arf"));
             assertFalse(p.test("barf"));
         };
@@ -204,6 +204,7 @@ public class SerializedLambdaTest {
     }
 
     // Test unbound method ref of nonserializable class -- should still succeed
+    @Test
     public void testUnboundMR() throws IOException, ClassNotFoundException {
         class Moo {
             public boolean startsWithB(String s) {
@@ -213,7 +214,7 @@ public class SerializedLambdaTest {
         @SuppressWarnings("unchecked")
         BiPredicate<Moo, String> mh1 = (BiPredicate<Moo, String> & Serializable) Moo::startsWithB;
         Consumer<BiPredicate<Moo, String>> b = p -> {
-            assertTrue(p instanceof Serializable);
+            assertInstanceOf(Serializable.class, p);
             assertTrue(p.test(new Moo(), "barf"));
             assertFalse(p.test(new Moo(), "arf"));
         };
@@ -221,6 +222,7 @@ public class SerializedLambdaTest {
     }
 
     // Negative test: test bound MR of nonserializable class
+    @Test
     public void testBoundMRNotSerReceiver() throws IOException, ClassNotFoundException {
         class Moo {
             public boolean startsWithB(String s) {
@@ -233,7 +235,7 @@ public class SerializedLambdaTest {
         @SuppressWarnings("unchecked")
         Predicate<String> mh2 = (SerPredicate<String>) moo::startsWithB;
         Consumer<Predicate<String>> b = p -> {
-            assertTrue(p instanceof Serializable);
+            assertInstanceOf(Serializable.class, p);
             assertTrue(p.test("barf"));
             assertFalse(p.test("arf"));
         };
@@ -249,6 +251,7 @@ public class SerializedLambdaTest {
         }
     }
 
+    @Test
     public void testBoundMR() throws IOException, ClassNotFoundException {
         ForBoundMRef moo = new ForBoundMRef();
         @SuppressWarnings("unchecked")
@@ -256,7 +259,7 @@ public class SerializedLambdaTest {
         @SuppressWarnings("unchecked")
         Predicate<String> mh2 = (SerPredicate<String>) moo::startsWithB;
         Consumer<Predicate<String>> b = p -> {
-            assertTrue(p instanceof Serializable);
+            assertInstanceOf(Serializable.class, p);
             assertTrue(p.test("barf"));
             assertFalse(p.test("arf"));
         };
@@ -270,11 +273,12 @@ public class SerializedLambdaTest {
         }
     }
     // Test ctor ref of nonserializable class
+    @Test
     public void testCtorRef() throws IOException, ClassNotFoundException {
         @SuppressWarnings("unchecked")
         Supplier<ForCtorRef> ctor = (Supplier<ForCtorRef> & Serializable) ForCtorRef::new;
         Consumer<Supplier<ForCtorRef>> b = s -> {
-            assertTrue(s instanceof Serializable);
+            assertInstanceOf(Serializable.class, s);
             ForCtorRef m = s.get();
             assertTrue(m.startsWithB("barf"));
             assertFalse(m.startsWithB("arf"));
@@ -283,10 +287,11 @@ public class SerializedLambdaTest {
     }
 
     //Test throwing away return type
+    @Test
     public void testDiscardReturnBound() throws IOException, ClassNotFoundException {
         List<String> list = new ArrayList<>();
         Consumer<String> c = (Consumer<String> & Serializable) list::add;
-        assertSerial(c, cc -> { assertTrue(cc instanceof Consumer); });
+        assertSerial(c, cc -> assertInstanceOf(Consumer.class, cc));
 
         AtomicLong a = new AtomicLong();
         LongConsumer lc = (LongConsumer & Serializable) a::addAndGet;
@@ -305,6 +310,7 @@ public class SerializedLambdaTest {
     };
 
     // standard MF: nonserializable supertype
+    @Test
     public void testDirectStdNonser() throws Throwable {
         MethodHandle fooMH = MethodHandles.lookup().findStatic(SerializedLambdaTest.class, "foo", predicateMT);
 
@@ -317,6 +323,7 @@ public class SerializedLambdaTest {
     }
 
     // standard MF: serializable supertype
+    @Test
     public void testDirectStdSer() throws Throwable {
         MethodHandle fooMH = MethodHandles.lookup().findStatic(SerializedLambdaTest.class, "foo", predicateMT);
 
@@ -328,6 +335,7 @@ public class SerializedLambdaTest {
     }
 
     // alt MF: nonserializable supertype
+    @Test
     public void testAltStdNonser() throws Throwable {
         MethodHandle fooMH = MethodHandles.lookup().findStatic(SerializedLambdaTest.class, "foo", predicateMT);
 
@@ -339,6 +347,7 @@ public class SerializedLambdaTest {
     }
 
     // alt MF: serializable supertype
+    @Test
     public void testAltStdSer() throws Throwable {
         MethodHandle fooMH = MethodHandles.lookup().findStatic(SerializedLambdaTest.class, "foo", predicateMT);
 

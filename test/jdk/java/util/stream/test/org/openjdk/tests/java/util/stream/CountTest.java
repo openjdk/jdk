@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @summary Tests counting of streams
  * @bug 8031187 8067969 8075307 8265029
@@ -29,26 +29,27 @@
 
 package org.openjdk.tests.java.util.stream;
 
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
-import java.util.stream.DoubleStreamTestDataProvider;
 import java.util.stream.IntStream;
-import java.util.stream.IntStreamTestDataProvider;
 import java.util.stream.LongStream;
-import java.util.stream.LongStreamTestDataProvider;
 import java.util.stream.OpTestCase;
 import java.util.stream.Stream;
-import java.util.stream.StreamTestDataProvider;
 import java.util.stream.TestData;
 
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class CountTest extends OpTestCase {
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testOps(String name, TestData.OfRef<Integer> data) {
         long expectedCount = data.size();
 
@@ -88,7 +89,8 @@ public class CountTest extends OpTestCase {
                 exercise();
     }
 
-    @Test(dataProvider = "IntStreamTestData", dataProviderClass = IntStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.IntStreamTestDataProvider#intStreamTestData")
     public void testOps(String name, TestData.OfInt data) {
         long expectedCount = data.size();
 
@@ -118,7 +120,8 @@ public class CountTest extends OpTestCase {
                 exercise();
     }
 
-    @Test(dataProvider = "LongStreamTestData", dataProviderClass = LongStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.LongStreamTestDataProvider#longStreamTestData")
     public void testOps(String name, TestData.OfLong data) {
         long expectedCount = data.size();
 
@@ -148,7 +151,8 @@ public class CountTest extends OpTestCase {
                 exercise();
     }
 
-    @Test(dataProvider = "DoubleStreamTestData", dataProviderClass = DoubleStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.DoubleStreamTestDataProvider#doubleStreamTestData")
     public void testOps(String name, TestData.OfDouble data) {
         long expectedCount = data.size();
 
@@ -192,37 +196,37 @@ public class CountTest extends OpTestCase {
 
     private void checkStreamDoesNotConsumeElements(Supplier<Stream<?>> supplier, long expectedCount) {
         AtomicInteger ai = new AtomicInteger();
-        assertEquals(supplier.get().peek(e -> ai.getAndIncrement()).count(), expectedCount);
-        assertEquals(ai.get(), 0);
+        assertEquals(expectedCount, supplier.get().peek(e -> ai.getAndIncrement()).count());
+        assertEquals(0, ai.get());
 
-        assertEquals(supplier.get().peek(e -> ai.getAndIncrement()).parallel().count(), expectedCount);
-        assertEquals(ai.get(), 0);
+        assertEquals(expectedCount, supplier.get().peek(e -> ai.getAndIncrement()).parallel().count());
+        assertEquals(0, ai.get());
     }
 
     private void checkIntStreamDoesNotConsumeElements(Supplier<IntStream> supplier, long expectedCount) {
         AtomicInteger ai = new AtomicInteger();
-        assertEquals(supplier.get().peek(e -> ai.getAndIncrement()).count(), expectedCount);
-        assertEquals(ai.get(), 0);
+        assertEquals(expectedCount, supplier.get().peek(e -> ai.getAndIncrement()).count());
+        assertEquals(0, ai.get());
 
-        assertEquals(supplier.get().peek(e -> ai.getAndIncrement()).parallel().count(), expectedCount);
-        assertEquals(ai.get(), 0);
+        assertEquals(expectedCount, supplier.get().peek(e -> ai.getAndIncrement()).parallel().count());
+        assertEquals(0, ai.get());
     }
 
     private void checkLongStreamDoesNotConsumeElements(Supplier<LongStream> supplier, long expectedCount) {
         AtomicInteger ai = new AtomicInteger();
-        assertEquals(supplier.get().peek(e -> ai.getAndIncrement()).count(), expectedCount);
-        assertEquals(ai.get(), 0);
+        assertEquals(expectedCount, supplier.get().peek(e -> ai.getAndIncrement()).count());
+        assertEquals(0, ai.get());
 
-        assertEquals(supplier.get().peek(e -> ai.getAndIncrement()).parallel().count(), expectedCount);
-        assertEquals(ai.get(), 0);
+        assertEquals(expectedCount, supplier.get().peek(e -> ai.getAndIncrement()).parallel().count());
+        assertEquals(0, ai.get());
     }
 
     private void checkDoubleStreamDoesNotConsumeElements(Supplier<DoubleStream> supplier, long expectedCount) {
         AtomicInteger ai = new AtomicInteger();
-        assertEquals(supplier.get().peek(e -> ai.getAndIncrement()).count(), expectedCount);
-        assertEquals(ai.get(), 0);
+        assertEquals(expectedCount, supplier.get().peek(e -> ai.getAndIncrement()).count());
+        assertEquals(0, ai.get());
 
-        assertEquals(supplier.get().peek(e -> ai.getAndIncrement()).parallel().count(), expectedCount);
-        assertEquals(ai.get(), 0);
+        assertEquals(expectedCount, supplier.get().peek(e -> ai.getAndIncrement()).parallel().count());
+        assertEquals(0, ai.get());
     }
 }

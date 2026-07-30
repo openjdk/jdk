@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,15 @@
  */
 package org.openjdk.tests.java.util.stream;
 
-import java.util.stream.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-import org.testng.annotations.Test;
+import java.util.stream.*;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 
-@Test
 public class StreamLinkTest extends OpTestCase {
 
     private <S> Function<S, S> apply(int n, Function<S, S> f) {
@@ -44,7 +44,8 @@ public class StreamLinkTest extends OpTestCase {
 
     private List<Integer> sizes = Arrays.asList(0, 1, 2, 3, 4, 5, 255, 1000);
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testManyStreams(String name, TestData.OfRef<Integer> data) {
         for (int n : sizes) {
             setContext("n", n);
@@ -57,7 +58,8 @@ public class StreamLinkTest extends OpTestCase {
         }
     }
 
-    @Test(dataProvider = "IntStreamTestData", dataProviderClass = IntStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.IntStreamTestDataProvider#intStreamTestData")
     public void testIntManyStreams(String name, TestData.OfInt data) {
         for (int n : sizes) {
             setContext("n", n);
@@ -70,7 +72,8 @@ public class StreamLinkTest extends OpTestCase {
         }
     }
 
-    @Test(dataProvider = "LongStreamTestData", dataProviderClass = LongStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.LongStreamTestDataProvider#longStreamTestData")
     public void testLongManyStreams(String name, TestData.OfLong data) {
         for (int n : sizes) {
             setContext("n", n);
@@ -83,7 +86,8 @@ public class StreamLinkTest extends OpTestCase {
         }
     }
 
-    @Test(dataProvider = "DoubleStreamTestData", dataProviderClass = DoubleStreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.DoubleStreamTestDataProvider#doubleStreamTestData")
     public void testDoubleManyStreams(String name, TestData.OfDouble data) {
         for (int n : sizes) {
             setContext("n", n);

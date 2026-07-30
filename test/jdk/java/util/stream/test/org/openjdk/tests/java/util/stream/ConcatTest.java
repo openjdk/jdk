@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,12 @@
  */
 package org.openjdk.tests.java.util.stream;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Factory;
-import org.testng.annotations.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -40,13 +39,13 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static java.util.stream.LambdaTestHelpers.*;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Test
 public class ConcatTest {
-    private static Object[][] cases;
 
-    static {
+    private static Stream<Arguments> cases() {
         List<Integer> part1 = Arrays.asList(5, 3, 4, 1, 2, 6, 2, 4);
         List<Integer> part2 = Arrays.asList(8, 8, 6, 6, 9, 7, 10, 9);
         List<Integer> p1p2 = Arrays.asList(5, 3, 4, 1, 2, 6, 2, 4, 8, 8, 6, 6, 9, 7, 10, 9);
@@ -58,46 +57,23 @@ public class ConcatTest {
         TreeSet<Integer> sortedP1 = new TreeSet<>(part1);
         TreeSet<Integer> sortedP2 = new TreeSet<>(part2);
 
-        cases = new Object[][] {
-            { "regular", part1, part2, p1p2 },
-            { "reverse regular", part2, part1, p2p1 },
-            { "front distinct", distinctP1, part2, Arrays.asList(5, 3, 4, 1, 2, 6, 8, 8, 6, 6, 9, 7, 10, 9) },
-            { "back distinct", part1, distinctP2, Arrays.asList(5, 3, 4, 1, 2, 6, 2, 4, 8, 6, 9, 7, 10) },
-            { "both distinct", distinctP1, distinctP2, Arrays.asList(5, 3, 4, 1, 2, 6, 8, 6, 9, 7, 10) },
-            { "front sorted", sortedP1, part2, Arrays.asList(1, 2, 3, 4, 5, 6, 8, 8, 6, 6, 9, 7, 10, 9) },
-            { "back sorted", part1, sortedP2, Arrays.asList(5, 3, 4, 1, 2, 6, 2, 4, 6, 7, 8, 9, 10) },
-            { "both sorted", sortedP1, sortedP2, Arrays.asList(1, 2, 3, 4, 5, 6, 6, 7, 8, 9, 10) },
-            { "reverse both sorted", sortedP2, sortedP1, Arrays.asList(6, 7, 8, 9, 10, 1, 2, 3, 4, 5, 6) },
-            { "empty something", empty, part1, part1 },
-            { "something empty", part1, empty, part1 },
-            { "empty empty", empty, empty, empty }
-        };
+        return Stream.of(
+                Arguments.of("regular", part1, part2, p1p2),
+                Arguments.of("reverse regular", part2, part1, p2p1),
+                Arguments.of("front distinct", distinctP1, part2, Arrays.asList(5, 3, 4, 1, 2, 6, 8, 8, 6, 6, 9, 7, 10, 9)),
+                Arguments.of("back distinct", part1, distinctP2, Arrays.asList(5, 3, 4, 1, 2, 6, 2, 4, 8, 6, 9, 7, 10)),
+                Arguments.of("both distinct", distinctP1, distinctP2, Arrays.asList(5, 3, 4, 1, 2, 6, 8, 6, 9, 7, 10)),
+                Arguments.of("front sorted", sortedP1, part2, Arrays.asList(1, 2, 3, 4, 5, 6, 8, 8, 6, 6, 9, 7, 10, 9)),
+                Arguments.of("back sorted", part1, sortedP2, Arrays.asList(5, 3, 4, 1, 2, 6, 2, 4, 6, 7, 8, 9, 10)),
+                Arguments.of("both sorted", sortedP1, sortedP2, Arrays.asList(1, 2, 3, 4, 5, 6, 6, 7, 8, 9, 10)),
+                Arguments.of("reverse both sorted", sortedP2, sortedP1, Arrays.asList(6, 7, 8, 9, 10, 1, 2, 3, 4, 5, 6)),
+                Arguments.of("empty something", empty, part1, part1),
+                Arguments.of("something empty", part1, empty, part1),
+                Arguments.of("empty empty", empty, empty, empty)
+        );
     }
 
-    @DataProvider(name = "cases")
-    private static Object[][] getCases() {
-        return cases;
-    }
-
-    @Factory(dataProvider = "cases")
-    public static Object[] createTests(String scenario, Collection<Integer> c1, Collection<Integer> c2, Collection<Integer> expected) {
-        return new Object[] {
-            new ConcatTest(scenario, c1, c2, expected)
-        };
-    }
-
-    protected final String scenario;
-    protected final Collection<Integer> c1;
-    protected final Collection<Integer> c2;
-    protected final Collection<Integer> expected;
-
-    public ConcatTest(String scenario, Collection<Integer> c1, Collection<Integer> c2, Collection<Integer> expected) {
-        this.scenario = scenario;
-        this.c1 = c1;
-        this.c2 = c2;
-        this.expected = expected;
-
-        // verify prerequisite
+    private void verifyPrerequisites(Collection<Integer> c1, Collection<Integer> c2) {
         Stream<Integer> s1s = c1.stream();
         Stream<Integer> s2s = c2.stream();
         Stream<Integer> s1p = c1.parallelStream();
@@ -113,117 +89,129 @@ public class ConcatTest {
         assertTrue(s2p.spliterator().hasCharacteristics(Spliterator.ORDERED));
     }
 
-    private <T> void assertConcatContent(Spliterator<T> sp, boolean ordered, Spliterator<T> expected) {
+    private <T> void assertConcatContent(Spliterator<T> sp, boolean ordered, Spliterator<T> expected, String scenario) {
         // concat stream cannot guarantee uniqueness
         assertFalse(sp.hasCharacteristics(Spliterator.DISTINCT), scenario);
         // concat stream cannot guarantee sorted
         assertFalse(sp.hasCharacteristics(Spliterator.SORTED), scenario);
         // concat stream is ordered if both are ordered
-        assertEquals(sp.hasCharacteristics(Spliterator.ORDERED), ordered, scenario);
+        assertEquals(ordered, sp.hasCharacteristics(Spliterator.ORDERED), scenario);
 
         // Verify elements
         if (ordered) {
-            assertEquals(toBoxedList(sp),
-                         toBoxedList(expected),
+            assertEquals(toBoxedList(expected),
+                         toBoxedList(sp),
                          scenario);
         } else {
-            assertEquals(toBoxedMultiset(sp),
-                         toBoxedMultiset(expected),
+            assertEquals(toBoxedMultiset(expected),
+                         toBoxedMultiset(sp),
                          scenario);
         }
     }
 
-    private void assertRefConcat(Stream<Integer> s1, Stream<Integer> s2, boolean parallel, boolean ordered) {
+    private void assertRefConcat(Stream<Integer> s1, Stream<Integer> s2, boolean parallel, boolean ordered, Collection<Integer> expected, String scenario) {
         Stream<Integer> result = Stream.concat(s1, s2);
-        assertEquals(result.isParallel(), parallel);
-        assertConcatContent(result.spliterator(), ordered, expected.spliterator());
+        assertEquals(parallel, result.isParallel());
+        assertConcatContent(result.spliterator(), ordered, expected.spliterator(), scenario);
     }
 
-    private void assertIntConcat(Stream<Integer> s1, Stream<Integer> s2, boolean parallel, boolean ordered) {
+    private void assertIntConcat(Stream<Integer> s1, Stream<Integer> s2, boolean parallel, boolean ordered, Collection<Integer> expected, String scenario) {
         IntStream result = IntStream.concat(s1.mapToInt(Integer::intValue),
                                             s2.mapToInt(Integer::intValue));
-        assertEquals(result.isParallel(), parallel);
+        assertEquals(parallel, result.isParallel());
         assertConcatContent(result.spliterator(), ordered,
-                            expected.stream().mapToInt(Integer::intValue).spliterator());
+                            expected.stream().mapToInt(Integer::intValue).spliterator(), scenario);
     }
 
-    private void assertLongConcat(Stream<Integer> s1, Stream<Integer> s2, boolean parallel, boolean ordered) {
+    private void assertLongConcat(Stream<Integer> s1, Stream<Integer> s2, boolean parallel, boolean ordered, Collection<Integer> expected, String scenario) {
         LongStream result = LongStream.concat(s1.mapToLong(Integer::longValue),
                                               s2.mapToLong(Integer::longValue));
-        assertEquals(result.isParallel(), parallel);
+        assertEquals(parallel, result.isParallel());
         assertConcatContent(result.spliterator(), ordered,
-                            expected.stream().mapToLong(Integer::longValue).spliterator());
+                            expected.stream().mapToLong(Integer::longValue).spliterator(), scenario);
     }
 
-    private void assertDoubleConcat(Stream<Integer> s1, Stream<Integer> s2, boolean parallel, boolean ordered) {
+    private void assertDoubleConcat(Stream<Integer> s1, Stream<Integer> s2, boolean parallel, boolean ordered, Collection<Integer> expected, String scenario) {
         DoubleStream result = DoubleStream.concat(s1.mapToDouble(Integer::doubleValue),
                                                   s2.mapToDouble(Integer::doubleValue));
-        assertEquals(result.isParallel(), parallel);
+        assertEquals(parallel, result.isParallel());
         assertConcatContent(result.spliterator(), ordered,
-                            expected.stream().mapToDouble(Integer::doubleValue).spliterator());
+                            expected.stream().mapToDouble(Integer::doubleValue).spliterator(), scenario);
     }
 
-    public void testRefConcat() {
+    @ParameterizedTest
+    @MethodSource("cases")
+    public void testRefConcat(String scenario, Collection<Integer> c1, Collection<Integer> c2, Collection<Integer> expected) {
+        verifyPrerequisites(c1, c2);
         // sequential + sequential -> sequential
-        assertRefConcat(c1.stream(), c2.stream(), false, true);
+        assertRefConcat(c1.stream(), c2.stream(), false, true, expected, scenario);
         // parallel + parallel -> parallel
-        assertRefConcat(c1.parallelStream(), c2.parallelStream(), true, true);
+        assertRefConcat(c1.parallelStream(), c2.parallelStream(), true, true, expected, scenario);
         // sequential + parallel -> parallel
-        assertRefConcat(c1.stream(), c2.parallelStream(), true, true);
+        assertRefConcat(c1.stream(), c2.parallelStream(), true, true, expected, scenario);
         // parallel + sequential -> parallel
-        assertRefConcat(c1.parallelStream(), c2.stream(), true, true);
+        assertRefConcat(c1.parallelStream(), c2.stream(), true, true, expected, scenario);
 
         // not ordered
-        assertRefConcat(c1.stream().unordered(), c2.stream(), false, false);
-        assertRefConcat(c1.stream(), c2.stream().unordered(), false, false);
-        assertRefConcat(c1.parallelStream().unordered(), c2.stream().unordered(), true, false);
+        assertRefConcat(c1.stream().unordered(), c2.stream(), false, false, expected, scenario);
+        assertRefConcat(c1.stream(), c2.stream().unordered(), false, false, expected, scenario);
+        assertRefConcat(c1.parallelStream().unordered(), c2.stream().unordered(), true, false, expected, scenario);
     }
 
-    public void testIntConcat() {
+    @ParameterizedTest
+    @MethodSource("cases")
+    public void testIntConcat(String scenario, Collection<Integer> c1, Collection<Integer> c2, Collection<Integer> expected) {
+        verifyPrerequisites(c1, c2);
         // sequential + sequential -> sequential
-        assertIntConcat(c1.stream(), c2.stream(), false, true);
+        assertIntConcat(c1.stream(), c2.stream(), false, true, expected, scenario);
         // parallel + parallel -> parallel
-        assertIntConcat(c1.parallelStream(), c2.parallelStream(), true, true);
+        assertIntConcat(c1.parallelStream(), c2.parallelStream(), true, true, expected, scenario);
         // sequential + parallel -> parallel
-        assertIntConcat(c1.stream(), c2.parallelStream(), true, true);
+        assertIntConcat(c1.stream(), c2.parallelStream(), true, true, expected, scenario);
         // parallel + sequential -> parallel
-        assertIntConcat(c1.parallelStream(), c2.stream(), true, true);
+        assertIntConcat(c1.parallelStream(), c2.stream(), true, true, expected, scenario);
 
         // not ordered
-        assertIntConcat(c1.stream().unordered(), c2.stream(), false, false);
-        assertIntConcat(c1.stream(), c2.stream().unordered(), false, false);
-        assertIntConcat(c1.parallelStream().unordered(), c2.stream().unordered(), true, false);
+        assertIntConcat(c1.stream().unordered(), c2.stream(), false, false, expected, scenario);
+        assertIntConcat(c1.stream(), c2.stream().unordered(), false, false, expected, scenario);
+        assertIntConcat(c1.parallelStream().unordered(), c2.stream().unordered(), true, false, expected, scenario);
     }
 
-    public void testLongConcat() {
+    @ParameterizedTest
+    @MethodSource("cases")
+    public void testLongConcat(String scenario, Collection<Integer> c1, Collection<Integer> c2, Collection<Integer> expected) {
+        verifyPrerequisites(c1, c2);
         // sequential + sequential -> sequential
-        assertLongConcat(c1.stream(), c2.stream(), false, true);
+        assertLongConcat(c1.stream(), c2.stream(), false, true, expected, scenario);
         // parallel + parallel -> parallel
-        assertLongConcat(c1.parallelStream(), c2.parallelStream(), true, true);
+        assertLongConcat(c1.parallelStream(), c2.parallelStream(), true, true, expected, scenario);
         // sequential + parallel -> parallel
-        assertLongConcat(c1.stream(), c2.parallelStream(), true, true);
+        assertLongConcat(c1.stream(), c2.parallelStream(), true, true, expected, scenario);
         // parallel + sequential -> parallel
-        assertLongConcat(c1.parallelStream(), c2.stream(), true, true);
+        assertLongConcat(c1.parallelStream(), c2.stream(), true, true, expected, scenario);
 
         // not ordered
-        assertLongConcat(c1.stream().unordered(), c2.stream(), false, false);
-        assertLongConcat(c1.stream(), c2.stream().unordered(), false, false);
-        assertLongConcat(c1.parallelStream().unordered(), c2.stream().unordered(), true, false);
+        assertLongConcat(c1.stream().unordered(), c2.stream(), false, false, expected, scenario);
+        assertLongConcat(c1.stream(), c2.stream().unordered(), false, false, expected, scenario);
+        assertLongConcat(c1.parallelStream().unordered(), c2.stream().unordered(), true, false, expected, scenario);
     }
 
-    public void testDoubleConcat() {
+    @ParameterizedTest
+    @MethodSource("cases")
+    public void testDoubleConcat(String scenario, Collection<Integer> c1, Collection<Integer> c2, Collection<Integer> expected) {
+        verifyPrerequisites(c1, c2);
         // sequential + sequential -> sequential
-        assertDoubleConcat(c1.stream(), c2.stream(), false, true);
+        assertDoubleConcat(c1.stream(), c2.stream(), false, true, expected, scenario);
         // parallel + parallel -> parallel
-        assertDoubleConcat(c1.parallelStream(), c2.parallelStream(), true, true);
+        assertDoubleConcat(c1.parallelStream(), c2.parallelStream(), true, true, expected, scenario);
         // sequential + parallel -> parallel
-        assertDoubleConcat(c1.stream(), c2.parallelStream(), true, true);
+        assertDoubleConcat(c1.stream(), c2.parallelStream(), true, true, expected, scenario);
         // parallel + sequential -> parallel
-        assertDoubleConcat(c1.parallelStream(), c2.stream(), true, true);
+        assertDoubleConcat(c1.parallelStream(), c2.stream(), true, true, expected, scenario);
 
         // not ordered
-        assertDoubleConcat(c1.stream().unordered(), c2.stream(), false, false);
-        assertDoubleConcat(c1.stream(), c2.stream().unordered(), false, false);
-        assertDoubleConcat(c1.parallelStream().unordered(), c2.stream().unordered(), true, false);
+        assertDoubleConcat(c1.stream().unordered(), c2.stream(), false, false, expected, scenario);
+        assertDoubleConcat(c1.stream(), c2.stream().unordered(), false, false, expected, scenario);
+        assertDoubleConcat(c1.parallelStream().unordered(), c2.stream().unordered(), true, false, expected, scenario);
     }
 }

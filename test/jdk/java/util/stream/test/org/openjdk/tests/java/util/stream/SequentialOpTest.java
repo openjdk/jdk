@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,10 @@ package org.openjdk.tests.java.util.stream;
 import java.util.stream.LambdaTestHelpers;
 import java.util.stream.OpTestCase;
 import java.util.stream.StreamTestDataProvider;
-import org.testng.annotations.Test;
+
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.Iterator;
 import java.util.Comparator;
@@ -37,8 +40,8 @@ import java.util.Spliterator;
 import java.util.stream.Stream;
 import java.util.stream.TestData;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * SequentialOpTest
@@ -47,8 +50,9 @@ import static org.testng.Assert.assertTrue;
  */
 public class SequentialOpTest extends OpTestCase {
     @SuppressWarnings({"rawtypes", "unchecked"})
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class,
-          groups = { "serialization-hostile" })
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
+    @Tag("serialization-hostile")
     public void testLazy(String name, TestData.OfRef<Integer> data) {
         Function<Integer, Integer> id = LambdaTestHelpers.identity();
         AtomicInteger counter = new AtomicInteger();
@@ -94,7 +98,8 @@ public class SequentialOpTest extends OpTestCase {
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    @Test(dataProvider = "StreamTestData<Integer>.mini", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#miniIntegerStreamTestData")
     public void testMixedSeqPar(String name, TestData.OfRef<Integer> data) {
         Function<Integer, Integer> id = LambdaTestHelpers.identity();
         UnaryOperator<Stream<Integer>>[] changers

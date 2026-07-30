@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,10 @@
  */
 package org.openjdk.tests.java.util.stream;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -41,18 +44,20 @@ import java.util.stream.LambdaTestHelpers;
 import java.util.stream.LongStream;
 import java.util.stream.OpTestCase;
 import java.util.stream.Stream;
-import java.util.stream.StreamTestDataProvider;
 import java.util.stream.TestData;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
  * @bug 8071597 8193856
  */
-@Test
 public class WhileOpTest extends OpTestCase {
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class,
-          groups = { "serialization-hostile" })
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
+    @Tag("serialization-hostile")
     public void testTakeWhileOps(String name, TestData.OfRef<Integer> data) {
         for (int size : sizes(data.size())) {
             setContext("takeWhile", size);
@@ -74,8 +79,9 @@ public class WhileOpTest extends OpTestCase {
         }
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class,
-          groups = { "serialization-hostile" })
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
+    @Tag("serialization-hostile")
     public void testDropWhileOps(String name, TestData.OfRef<Integer> data) {
         for (int size : sizes(data.size())) {
             setContext("dropWhile", size);
@@ -96,8 +102,9 @@ public class WhileOpTest extends OpTestCase {
         }
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class,
-          groups = { "serialization-hostile" })
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
+    @Tag("serialization-hostile")
     public void testDropTakeWhileOps(String name, TestData.OfRef<Integer> data) {
         for (int size : sizes(data.size())) {
             setContext("dropWhile", size);
@@ -322,7 +329,8 @@ public class WhileOpTest extends OpTestCase {
         }
     }
 
-    @Test(groups = { "serialization-hostile" })
+    @Test
+    @Tag("serialization-hostile")
     public void testRefDefaultClose() {
         AtomicBoolean isClosed = new AtomicBoolean();
         Stream<Integer> s = Stream.of(1, 2, 3).onClose(() -> isClosed.set(true));
@@ -332,7 +340,8 @@ public class WhileOpTest extends OpTestCase {
         assertTrue(isClosed.get());
     }
 
-    @Test(groups = { "serialization-hostile" })
+    @Test
+    @Tag("serialization-hostile")
     public void testIntDefaultClose() {
         AtomicBoolean isClosed = new AtomicBoolean();
         IntStream s = IntStream.of(1, 2, 3).onClose(() -> isClosed.set(true));
@@ -342,7 +351,8 @@ public class WhileOpTest extends OpTestCase {
         assertTrue(isClosed.get());
     }
 
-    @Test(groups = { "serialization-hostile" })
+    @Test
+    @Tag("serialization-hostile")
     public void testLongDefaultClose() {
         AtomicBoolean isClosed = new AtomicBoolean();
         LongStream s = LongStream.of(1, 2, 3).onClose(() -> isClosed.set(true));
@@ -352,7 +362,8 @@ public class WhileOpTest extends OpTestCase {
         assertTrue(isClosed.get());
     }
 
-    @Test(groups = { "serialization-hostile" })
+    @Test
+    @Tag("serialization-hostile")
     public void testDoubleDefaultClose() {
         AtomicBoolean isClosed = new AtomicBoolean();
         DoubleStream s = DoubleStream.of(1, 2, 3).onClose(() -> isClosed.set(true));
@@ -362,7 +373,8 @@ public class WhileOpTest extends OpTestCase {
         assertTrue(isClosed.get());
     }
 
-    @Test(groups = { "serialization-hostile" })
+    @Test
+    @Tag("serialization-hostile")
     public void testFlatMapThenTake() {
         TestData.OfRef<Integer> range = TestData.Factory.ofSupplier(
                 "range", () -> IntStream.range(0, 100).boxed());

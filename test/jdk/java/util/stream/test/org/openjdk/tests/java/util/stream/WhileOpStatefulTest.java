@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,8 @@
  */
 package org.openjdk.tests.java.util.stream;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -41,12 +42,12 @@ import java.util.stream.OpTestCase;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toCollection;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
  * @bug 8071597
  */
-@Test
 public class WhileOpStatefulTest extends OpTestCase {
     static final long COUNT_PERIOD = 100;
 
@@ -87,7 +88,8 @@ public class WhileOpStatefulTest extends OpTestCase {
                 });
     }
 
-    @Test(groups = { "serialization-hostile" })
+    @Test
+    @Tag("serialization-hostile")
     public void testCountTakeWithCount() {
         testTakeWhileMulti(
                 s -> {
@@ -116,7 +118,8 @@ public class WhileOpStatefulTest extends OpTestCase {
                 });
     }
 
-    @Test(groups = { "serialization-hostile" })
+    @Test
+    @Tag("serialization-hostile")
     public void testCountTakeWithToArray() {
         testTakeWhileMulti(
                 s -> {
@@ -146,7 +149,8 @@ public class WhileOpStatefulTest extends OpTestCase {
     }
 
 
-    @Test(groups = { "serialization-hostile" })
+    @Test
+    @Tag("serialization-hostile")
     public void testCountDropWithCount() {
         testDropWhileMulti(
                 s -> {
@@ -179,7 +183,8 @@ public class WhileOpStatefulTest extends OpTestCase {
                 });
     }
 
-    @Test(groups = { "serialization-hostile" })
+    @Test
+    @Tag("serialization-hostile")
     public void testCountDropWithToArray() {
         testDropWhileMulti(
                 s -> {

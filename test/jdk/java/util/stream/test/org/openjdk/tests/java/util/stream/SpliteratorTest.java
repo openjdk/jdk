@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,48 +22,51 @@
  */
 package org.openjdk.tests.java.util.stream;
 
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SequenceLayout;
-import org.testng.annotations.Test;
 
 import java.util.function.Supplier;
 import java.util.Spliterator;
 import java.util.SpliteratorTestHelper;
 import java.util.stream.*;
 
-import static org.testng.Assert.*;
-import static org.testng.Assert.assertEquals;
-
 /**
  * SpliteratorTest
  *
  * @author Brian Goetz
  */
-@Test
 public class SpliteratorTest {
 
-    @Test(dataProvider = "Spliterator<Integer>", dataProviderClass = StreamTestDataProvider.class )
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#spliteratorProvider")
     public void testSpliterator(String name, Supplier<Spliterator<Integer>> supplier) {
         SpliteratorTestHelper.testSpliterator(supplier);
     }
 
-    @Test(dataProvider = "IntSpliterator", dataProviderClass = IntStreamTestDataProvider.class )
+    @ParameterizedTest
+    @MethodSource("java.util.stream.IntStreamTestDataProvider#spliteratorProvider")
     public void testIntSpliterator(String name, Supplier<Spliterator.OfInt> supplier) {
         SpliteratorTestHelper.testIntSpliterator(supplier);
     }
 
-    @Test(dataProvider = "LongSpliterator", dataProviderClass = LongStreamTestDataProvider.class )
+    @ParameterizedTest
+    @MethodSource("java.util.stream.LongStreamTestDataProvider#spliteratorProvider")
     public void testLongSpliterator(String name, Supplier<Spliterator.OfLong> supplier) {
         SpliteratorTestHelper.testLongSpliterator(supplier);
     }
 
-    @Test(dataProvider = "DoubleSpliterator", dataProviderClass = DoubleStreamTestDataProvider.class )
+    @ParameterizedTest
+    @MethodSource("java.util.stream.DoubleStreamTestDataProvider#spliteratorProvider")
     public void testDoubleSpliterator(String name, Supplier<Spliterator.OfDouble> supplier) {
         SpliteratorTestHelper.testDoubleSpliterator(supplier);
     }
 
-    @Test(dataProvider = "SegmentSpliterator", dataProviderClass = SegmentTestDataProvider.class )
+    @ParameterizedTest
+    @MethodSource("org.openjdk.tests.java.util.stream.SegmentTestDataProvider#segmentSpliterator")
     public void testSegmentSpliterator(String name, SequenceLayout layout, SpliteratorTestHelper.ContentAsserter<MemorySegment> contentAsserter) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment segment = arena.allocate(layout);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,24 +22,24 @@
  */
 package org.openjdk.tests.java.lang.invoke;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandleProxies;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * MHProxiesTest -- regression test for MH library bug
  */
-@Test
 public class MHProxiesTest {
     public interface Sam { double m(int arg); }
 
     public static Byte m(int arg) { return (byte) arg; }
 
+    @Test
     public void testProxy() throws NoSuchMethodException, IllegalAccessException {
         MethodHandle m = MethodHandles.lookup().findStatic(MHProxiesTest.class, "m",
                                                            MethodType.methodType(Byte.class, int.class));

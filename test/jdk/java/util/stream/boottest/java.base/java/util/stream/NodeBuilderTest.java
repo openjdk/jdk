@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,11 @@
  */
 package java.util.stream;
 
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -30,23 +35,18 @@ import java.util.function.Function;
 import java.util.function.IntConsumer;
 import java.util.function.LongConsumer;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-
 import static java.util.stream.LambdaTestHelpers.assertContents;
 import static java.util.stream.LambdaTestHelpers.countTo;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@Test
 public class NodeBuilderTest {
 
-    List<Integer> sizes = Arrays.asList(0, 1, 4, 16, 256,
+    static List<Integer> sizes = Arrays.asList(0, 1, 4, 16, 256,
                                         1023, 1024, 1025,
                                         2047, 2048, 2049,
                                         1024 * 32 - 1, 1024 * 32, 1024 * 32 + 1);
 
-    @DataProvider(name = "Node.Builder")
-    public Object[][] createNodeBuilders() {
+    public static Stream<Arguments> createNodeBuilders() {
         List<List<Integer>> ls = new ArrayList<>();
         for (int size : sizes) {
             ls.add(countTo(size));
@@ -57,18 +57,19 @@ public class NodeBuilderTest {
                 s -> Nodes.builder(s, LambdaTestHelpers.integerArrayGenerator)
         );
 
-        Object[][] params = new Object[ls.size() * ms.size()][];
-        int i = 0;
+        List<Arguments> params = new ArrayList<>();
         for (List<Integer> l : ls) {
             for (Function<Integer, Node.Builder<Integer>> m : ms) {
-                params[i++] = new Object[]{l, m};
+                params.add(Arguments.of(l, m));
             }
         }
 
-        return params;
+        return params.stream();
     }
 
-    @Test(dataProvider = "Node.Builder", groups = { "serialization-hostile" })
+    @ParameterizedTest
+    @MethodSource("createNodeBuilders")
+    @Tag("serialization-hostile")
     public void testIteration(List<Integer> l, Function<Integer, Node.Builder<Integer>> m) {
         Node.Builder<Integer> nb = m.apply(l.size());
         nb.begin(l.size());
@@ -78,7 +79,7 @@ public class NodeBuilderTest {
         nb.end();
 
         Node<Integer> n = nb.build();
-        assertEquals(n.count(), l.size());
+        assertEquals(l.size(), n.count());
 
         {
             List<Integer> _l = new ArrayList<>();
@@ -90,8 +91,7 @@ public class NodeBuilderTest {
 
     // Node.Builder.OfInt
 
-    @DataProvider(name = "Node.Builder<Integer>")
-    public Object[][] createIntNodeBuilders() {
+    public static Stream<Arguments> createIntegerNodeBuilders() {
         List<List<Integer>> ls = new ArrayList<>();
         for (int size : sizes) {
             ls.add(countTo(size));
@@ -102,18 +102,20 @@ public class NodeBuilderTest {
                 s -> Nodes.intBuilder(s)
         );
 
-        Object[][] params = new Object[ls.size() * ms.size()][];
+        List<Arguments> params = new ArrayList<>();
         int i = 0;
         for (List<Integer> l : ls) {
             for (Function<Integer, Node.Builder<Integer>> m : ms) {
-                params[i++] = new Object[]{l, m};
+                params.add(Arguments.of(l, m));
             }
         }
 
-        return params;
+        return params.stream();
     }
 
-    @Test(dataProvider = "Node.Builder<Integer>", groups = { "serialization-hostile" })
+    @ParameterizedTest
+    @MethodSource("createIntegerNodeBuilders")
+    @Tag("serialization-hostile")
     public void testIntIteration(List<Integer> l, Function<Integer, Node.Builder.OfInt> m) {
         Node.Builder.OfInt nb = m.apply(l.size());
         nb.begin(l.size());
@@ -123,7 +125,7 @@ public class NodeBuilderTest {
         nb.end();
 
         Node.OfInt n = nb.build();
-        assertEquals(n.count(), l.size());
+        assertEquals(l.size(), n.count());
 
         {
             List<Integer> _l = new ArrayList<>();
@@ -136,8 +138,7 @@ public class NodeBuilderTest {
 
     // Node.Builder.OfLong
 
-    @DataProvider(name = "Node.Builder<Long>")
-    public Object[][] createLongNodeBuilders() {
+    public static Stream<Arguments> createLongNodeBuilders() {
         List<List<Long>> ls = new ArrayList<>();
         for (int size : sizes) {
             List<Long> l = new ArrayList<>();
@@ -152,18 +153,18 @@ public class NodeBuilderTest {
                 s -> Nodes.longBuilder(s)
         );
 
-        Object[][] params = new Object[ls.size() * ms.size()][];
-        int i = 0;
+        List<Arguments> params = new ArrayList<>();
         for (List<Long> l : ls) {
             for (Function<Integer, Node.Builder<Long>> m : ms) {
-                params[i++] = new Object[]{l, m};
+                params.add(Arguments.of(l, m));
             }
         }
 
-        return params;
+        return params.stream();
     }
 
-    @Test(dataProvider = "Node.Builder<Long>")
+    @ParameterizedTest
+    @MethodSource("createLongNodeBuilders")
     public void testLongIteration(List<Long> l, Function<Integer, Node.Builder.OfLong> m) {
         Node.Builder.OfLong nb = m.apply(l.size());
         nb.begin(l.size());
@@ -173,7 +174,7 @@ public class NodeBuilderTest {
         nb.end();
 
         Node.OfLong n = nb.build();
-        assertEquals(n.count(), l.size());
+        assertEquals(l.size(), n.count());
 
         {
             List<Long> _l = new ArrayList<>();
@@ -186,8 +187,7 @@ public class NodeBuilderTest {
 
     // Node.Builder.OfDouble
 
-    @DataProvider(name = "Node.Builder<Double>")
-    public Object[][] createDoubleNodeBuilders() {
+    public static Stream<Arguments> createDoubleNodeBuilders() {
         List<List<Double>> ls = new ArrayList<>();
         for (int size : sizes) {
             List<Double> l = new ArrayList<>();
@@ -202,18 +202,19 @@ public class NodeBuilderTest {
                 s -> Nodes.doubleBuilder(s)
         );
 
-        Object[][] params = new Object[ls.size() * ms.size()][];
+        List<Arguments> params = new ArrayList<>();
         int i = 0;
         for (List<Double> l : ls) {
             for (Function<Integer, Node.Builder<Double>> m : ms) {
-                params[i++] = new Object[]{l, m};
+                params.add(Arguments.of(l, m));
             }
         }
 
-        return params;
+        return params.stream();
     }
 
-    @Test(dataProvider = "Node.Builder<Double>")
+    @ParameterizedTest
+    @MethodSource("createDoubleNodeBuilders")
     public void testDoubleIteration(List<Double> l, Function<Integer, Node.Builder.OfDouble> m) {
         Node.Builder.OfDouble nb = m.apply(l.size());
         nb.begin(l.size());
@@ -223,7 +224,7 @@ public class NodeBuilderTest {
         nb.end();
 
         Node.OfDouble n = nb.build();
-        assertEquals(n.count(), l.size());
+        assertEquals(l.size(), n.count());
 
         {
             List<Double> _l = new ArrayList<>();

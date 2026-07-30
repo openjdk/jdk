@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,10 @@
  */
 package org.openjdk.tests.java.util.stream;
 
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -36,10 +40,7 @@ import java.util.stream.Collectors;
 import java.util.stream.LambdaTestHelpers;
 import java.util.stream.OpTestCase;
 import java.util.stream.Stream;
-import java.util.stream.StreamTestDataProvider;
 import java.util.stream.TestData;
-
-import org.testng.annotations.Test;
 
 import static java.util.stream.LambdaTestHelpers.countTo;
 import static java.util.stream.LambdaTestHelpers.mDoubler;
@@ -49,14 +50,16 @@ import static java.util.stream.LambdaTestHelpers.pEven;
 import static java.util.stream.LambdaTestHelpers.pFalse;
 import static java.util.stream.LambdaTestHelpers.pOdd;
 import static java.util.stream.LambdaTestHelpers.pTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * GroupByOpTest
  *
  */
-@Test
 public class GroupByOpTest extends OpTestCase {
 
+    @Test
     public void testBypassCollect() {
         @SuppressWarnings("unchecked")
         Collector<Integer, Map<Boolean, List<Integer>>, Map<Boolean, List<Integer>>> collector
@@ -80,6 +83,7 @@ public class GroupByOpTest extends OpTestCase {
         }
     }
 
+    @Test
     public void testGroupBy() {
         Map<Boolean,List<Integer>> result = countTo(10).stream().collect(Collectors.groupingBy(LambdaTestHelpers.forPredicate(pEven, true, false)));
 
@@ -123,7 +127,8 @@ public class GroupByOpTest extends OpTestCase {
         );
     }
 
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("java.util.stream.StreamTestDataProvider#integerStreamTestData")
     public void testOps(String name, TestData.OfRef<Integer> data) {
         // @@@ More things to test here:
         //     - Every value in data is present in right bucket
@@ -139,16 +144,12 @@ public class GroupByOpTest extends OpTestCase {
                             GroupByOpTest.assertMultiMapEquals(act, exp);
                         }
                         else {
-                            GroupByOpTest.assertObjectEquals(act, exp);
+                            assertEquals(exp, act);
                         }
                     })
                     .exercise();
-            assertEquals(result.keySet().size(), md.expectedSize);
+            assertEquals(md.expectedSize, result.keySet().size());
         }
-    }
-
-    static void assertObjectEquals(Object a, Object b) {
-        assertTrue(Objects.equals(a, b));
     }
 
     static <K, V> void assertMultiMapEquals(Map<K, ? extends Collection<V>> a, Map<K, ? extends Collection<V>> b) {
