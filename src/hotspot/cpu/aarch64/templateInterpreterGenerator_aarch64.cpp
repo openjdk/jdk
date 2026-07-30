@@ -676,13 +676,13 @@ void TemplateInterpreterGenerator::generate_counter_overflow(Label& do_continue)
   __ b(do_continue);
 }
 
-// See if we've got enough room on the stack for locals plus overhead
-// below JavaThread::stack_overflow_limit(). If not, throw a StackOverflowError
-// without going through the signal handler, i.e., reserved and yellow zones
-// will not be made usable. The shadow zone must suffice to handle the
-// overflow.
-// The expression stack grows down incrementally, so the normal guard
-// page mechanism will work for that.
+// See if we've got enough room on the stack for locals plus overhead plus the
+// expression stack below JavaThread::stack_overflow_limit(). If not, throw a
+// StackOverflowError without going through the signal handler, i.e., reserved
+// and yellow zones will not be made usable. The shadow zone must suffice to
+// handle the overflow.
+// The expression stack size is included because the expression stack does
+// not grow down incrementally. The max required size is reserved upfront.
 //
 // NOTE: Since the additional locals are also always pushed (wasn't
 // obvious in generate_method_entry) so the guard should work for them
@@ -724,7 +724,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
   // compute rsp as if this were going to be the last frame on
   // the stack before the red zone
 
-  // locals + overhead, in bytes
+  // locals + overhead + max_stack, in bytes
   __ mov(r0, overhead_size);
   __ add(r0, r0, r3, Assembler::LSL, Interpreter::logStackElementSize);  // 2 slots per parameter.
 
@@ -1648,19 +1648,26 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   const Address size_of_parameters(r3,
                                    ConstMethod::size_of_parameters_offset());
   const Address size_of_locals(r3, ConstMethod::size_of_locals_offset());
+  const Address max_stack(r3, ConstMethod::max_stack_offset());
 
   // get parameter size (always needed)
   // need to load the const method first
   __ ldr(r3, constMethod);
   __ load_unsigned_short(r2, size_of_parameters);
+  __ load_unsigned_short(rscratch1, max_stack);
 
   // r2: size of parameters
 
   __ load_unsigned_short(r3, size_of_locals); // get size of locals in words
   __ sub(r3, r3, r2); // r3 = no. of additional locals
+  __ stp(r3, rscratch1, Address(__ pre(sp, -2 * wordSize)));
+  __ add(r3, r3, rscratch1);  // r3 = no. of additional locals + max expression stack size
 
   // see if we've got enough room on the stack for locals plus overhead.
   generate_stack_overflow_check();
+
+  // restore r3
+  __ ldp(r3, rscratch1, Address(__ post(sp, 2 * wordSize)));
 
   // compute beginning of parameters (rlocals)
   __ add(rlocals, esp, r2, ext::uxtx, 3);
