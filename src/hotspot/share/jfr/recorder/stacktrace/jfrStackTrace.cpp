@@ -22,6 +22,7 @@
  *
  */
 
+#include "jfr/periodic/sampling/jfrSampleRequest.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
@@ -232,6 +233,25 @@ bool JfrStackTrace::record_inner(JavaThread* jt, const frame& frame, bool in_con
     _count++;
   }
   return _count > 0;
+}
+
+void JfrStackTrace::start_record_frames() {
+  if (_hash == 0) {
+    _hash = 1;
+  }
+}
+
+void JfrStackTrace::end_record_frames(bool truncated) {
+  _reached_root = !truncated;
+}
+
+void JfrStackTrace::record_frame(const Method* method, int bci, int line_no, u1 type) {
+  const traceid mid = JfrTraceId::load(method);
+  _hash = (_hash * 31) + mid;
+  _hash = (_hash * 31) + bci;
+  _hash = (_hash * 31) + type;
+  _frames->append(JfrStackFrame(mid, bci, type, method->method_holder()));
+  _count++;
 }
 
 void JfrStackTrace::resolve_linenos() const {

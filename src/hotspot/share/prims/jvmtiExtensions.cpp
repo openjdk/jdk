@@ -28,8 +28,21 @@
 #include "prims/jvmtiThreadState.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/mountUnmountDisabler.hpp"
+#include "utilities/macros.hpp"
+
+#if INCLUDE_JFR
+#include "jfr/periodic/sampling/jfrStackWalker.hpp"
+#include "jfr/recorder/jfrRecorder.hpp"
+#include "jfr/recorder/service/jfrOptionSet.hpp"
+#include "jfr/recorder/stacktrace/jfrStackTrace.hpp"
+#include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
+#include "jfr/support/jfrThreadLocal.hpp"
+#include "jfr/utilities/jfrTypes.hpp"
+#include "jfrfiles/jfrEventClasses.hpp"
+#endif
 
 // the list of extension functions
 GrowableArray<jvmtiExtensionFunctionInfo*>* JvmtiExtensions::_ext_functions;
@@ -37,6 +50,7 @@ GrowableArray<jvmtiExtensionFunctionInfo*>* JvmtiExtensions::_ext_functions;
 // the list of extension events
 GrowableArray<jvmtiExtensionEventInfo*>* JvmtiExtensions::_ext_events;
 
+volatile bool JvmtiExtensions::_request_stack_trace_requested = false;
 
 //
 // Extension Functions
@@ -167,6 +181,148 @@ static jvmtiError JNICALL GetCarrierThread(const jvmtiEnv* env, ...) {
   return JVMTI_ERROR_NONE;
 }
 
+#if INCLUDE_JFR
+
+class JfrAsyncStackTraceCallback : public JfrStackWalkerCallback {
+  JavaThread* _requested_thread;
+  JfrTicks _sample_ticks;
+  JfrStackTrace* _stack_trace;
+  traceid _tid;
+  jlong _user_data;
+  bool _biased;
+
+  static u1 convert_type(JfrStackWalkerFrameType type) {
+    switch (type) {
+      case JfrStackWalkerFrameType::FRAME_INTERPRETER: return JfrStackFrame::FRAME_INTERPRETER;
+      case JfrStackWalkerFrameType::FRAME_JIT:         return JfrStackFrame::FRAME_JIT;
+      case JfrStackWalkerFrameType::FRAME_INLINE:      return JfrStackFrame::FRAME_INLINE;
+      case JfrStackWalkerFrameType::FRAME_NATIVE:      return JfrStackFrame::FRAME_NATIVE;
+    }
+    ShouldNotReachHere();
+  }
+
+public:
+  JfrAsyncStackTraceCallback(jlong user_data) :
+    _requested_thread(nullptr),
+    _sample_ticks(JfrTicks::now()),
+    _stack_trace(nullptr),
+    _tid(0),
+    _user_data(user_data),
+    _biased(false) {
+  }
+
+  ~JfrAsyncStackTraceCallback() {
+    if (_stack_trace != nullptr) {
+      delete _stack_trace;
+    }
+  }
+
+  void begin_stacktrace(JavaThread* jt, bool continuation, bool biased) final {
+    assert(_stack_trace == nullptr, "invariant");
+    _requested_thread = jt;
+    _stack_trace = new JfrStackTrace;
+    _stack_trace->start_record_frames();
+    _biased = biased;
+    JfrThreadLocal* tl = jt->jfr_thread_local();
+    _tid = continuation ? tl->vthread_id_with_epoch_update(jt) : JfrThreadLocal::jvm_thread_id(jt);
+  }
+
+  void end_stacktrace(bool truncated) final {
+    assert(_stack_trace != nullptr, "invariant");
+    _stack_trace->end_record_frames(truncated);
+    traceid sid = JfrStackTraceRepository::add(*_stack_trace);
+    assert(sid != 0, "invariant");
+
+    EventAsyncStackTrace event(UNTIMED);
+    event.set_starttime(_sample_ticks);
+    event.set_eventThread(_tid);
+    event.set_stackTrace(sid);
+    event.set_userData(_user_data);
+    event.set_failed(false);
+    event.set_biased(_biased);
+    event.commit();
+  }
+
+  void stack_frame(const Method* method, int bci, int line_no, JfrStackWalkerFrameType type) final {
+    assert(_stack_trace != nullptr, "invariant");
+    _stack_trace->record_frame(method, bci, line_no, convert_type(type));
+  }
+
+  void failure() final {
+    EventAsyncStackTrace event(UNTIMED);
+    event.set_starttime(_sample_ticks);
+    event.set_eventThread(_tid);
+    event.set_stackTrace(0);
+    event.set_userData(_user_data);
+    event.set_failed(true);
+    event.set_biased(false);
+    event.commit();
+  }
+};
+
+#endif // INCLUDE_JFR
+
+// Parameters: (const jvmtiEnv* env)
+static jvmtiError JNICALL InitializeRequestStackTrace(const jvmtiEnv* env, ...) {
+  JvmtiExtensions::set_request_stack_trace_requested();
+  return JVMTI_ERROR_NONE;
+}
+
+// Parameters: (const jvmtiEnv* env, jthread thread, void* ucontext, jlong user_data)
+static jvmtiError JNICALL RequestStackTrace(const jvmtiEnv* env, ...) {
+#if !INCLUDE_JFR
+  return JVMTI_ERROR_NOT_AVAILABLE;
+#else
+  jthread thread = nullptr;
+  void* ucontext = nullptr;
+  jlong user_data = 0;
+  va_list ap;
+
+  va_start(ap, env);
+  thread = va_arg(ap, jthread);
+  ucontext = va_arg(ap, void*);
+  user_data = va_arg(ap, jlong);
+  va_end(ap);
+
+  // Only sampling the current thread is supported (thread must be null).
+  if (thread != nullptr) {
+    return JVMTI_ERROR_UNSUPPORTED_OPERATION;
+  }
+
+  // Use current_or_null_safe() because this is called from a signal handler
+  // and the signal may fire on a thread that is detaching from the VM.
+  Thread* current = Thread::current_or_null_safe();
+  if (current == nullptr || !current->is_Java_thread()) {
+    return JVMTI_ERROR_WRONG_PHASE;
+  }
+
+  if (!JfrRecorder::is_created()) {
+    return JVMTI_ERROR_WRONG_PHASE;
+  }
+
+  if (!EventAsyncStackTrace::is_enabled()) {
+    return JVMTI_ERROR_NOT_AVAILABLE;
+  }
+
+  JavaThread* java_thread = JavaThread::cast(current);
+
+  // Filter out threads that are exiting or excluded, matching the JFR CPU
+  // time sampler's get_java_thread_if_valid() checks.
+  if (java_thread->is_exiting() ||
+      java_thread->is_hidden_from_external_view() ||
+      java_thread->jfr_thread_local()->is_excluded()) {
+    return JVMTI_ERROR_WRONG_PHASE;
+  }
+
+  JfrStackWalkRequest request;
+  request.set_max_frames(JfrOptionSet::stackdepth());
+  request.construct_callback<JfrAsyncStackTraceCallback>(user_data);
+  JfrStackWalker::request_stack_trace(request, java_thread, ucontext, true /* thread_is_suspended */);
+
+  return JVMTI_ERROR_NONE;
+#endif // !INCLUDE_JFR
+}
+
 // register extension functions and events. In this implementation we
 // have a single extension function (to prove the API) that tests if class
 // unloading is enabled or disabled. We also have a single extension event
@@ -225,9 +381,43 @@ void JvmtiExtensions::register_extensions() {
     errors
   };
 
+  static jvmtiExtensionFunctionInfo ext_func_init_rst = {
+    (jvmtiExtensionFunction)InitializeRequestStackTrace,
+    (char*)"com.sun.hotspot.functions.InitializeRequestStackTrace",
+    (char*)"Initialize the RequestStackTrace extension (must be called during Agent_OnLoad)",
+    0,
+    nullptr,
+    0,
+    nullptr
+  };
+
+  static jvmtiParamInfo func_params_rst[] = {
+    { (char*)"thread",    JVMTI_KIND_IN, JVMTI_TYPE_JTHREAD, JNI_TRUE },
+    { (char*)"ucontext",  JVMTI_KIND_IN_PTR, JVMTI_TYPE_CVOID, JNI_TRUE },
+    { (char*)"user_data", JVMTI_KIND_IN, JVMTI_TYPE_JLONG, JNI_FALSE }
+  };
+
+  static jvmtiError rst_errors[] = {
+    JVMTI_ERROR_NOT_AVAILABLE,
+    JVMTI_ERROR_UNSUPPORTED_OPERATION,
+    JVMTI_ERROR_WRONG_PHASE
+  };
+
+  static jvmtiExtensionFunctionInfo ext_func_rst = {
+    (jvmtiExtensionFunction)RequestStackTrace,
+    (char*)"com.sun.hotspot.functions.RequestStackTrace",
+    (char*)"Request an async stack trace of the current thread, emitted as a JFR AsyncStackTrace event",
+    sizeof(func_params_rst)/sizeof(func_params_rst[0]),
+    func_params_rst,
+    sizeof(rst_errors)/sizeof(jvmtiError),
+    rst_errors
+  };
+
   _ext_functions->append(&ext_func0);
   _ext_functions->append(&ext_func1);
   _ext_functions->append(&ext_func2);
+  _ext_functions->append(&ext_func_init_rst);
+  _ext_functions->append(&ext_func_rst);
 
   // register our extension event
 
@@ -458,4 +648,12 @@ jvmtiError JvmtiExtensions::set_event_callback(JvmtiEnv* env,
                                                      callback);
 
   return JVMTI_ERROR_NONE;
+}
+
+void JvmtiExtensions::post_initialize() {
+#if INCLUDE_JFR
+  if (_request_stack_trace_requested) {
+    JfrStackWalker::initialize();
+  }
+#endif // INCLUDE_JFR
 }
