@@ -43,7 +43,7 @@ import java.security.Security;
 
 public class TestExtendedMasterSecretHandshake extends PKCS11Test {
 
-    static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws Exception {
         main(new TestExtendedMasterSecretHandshake(), args);
     }
 
