@@ -87,7 +87,9 @@ class ChunkPool {
   // Our four static pools
   static constexpr int _num_pools = 4;
   static ChunkPool _pools[_num_pools];
+#ifdef ASSERT
   static bool _suspend_cleaning;
+#endif
 
   Chunk*       _first;
   const size_t _size;         // (inner payload) size of the chunks this pool serves
@@ -136,7 +138,9 @@ public:
   ChunkPool(size_t size) : _first(nullptr), _size(size) {}
 
   static void clean() {
+#ifdef ASSERT
     if (_suspend_cleaning) return;
+#endif
     NativeHeapTrimmer::SuspendMark sm("chunk pool cleaner");
     for (int i = 0; i < _num_pools; i++) {
       _pools[i].prune();
@@ -146,9 +150,11 @@ public:
   // Returns an initialized and null-terminated Chunk of requested size
   static Chunk* allocate_chunk(Arena* arena, size_t length, AllocFailType alloc_failmode);
   static void deallocate_chunk(Chunk* p);
+#ifdef ASSERT
   static void set_suspend_cleaning(bool suspend) {
     _suspend_cleaning = suspend;
   }
+#endif
 };
 
 static bool on_compiler_thread() {
@@ -235,7 +241,6 @@ void ChunkPool::deallocate_chunk(Chunk* c) {
 }
 
 ChunkPool ChunkPool::_pools[] = { Chunk::size, Chunk::medium_size, Chunk::init_size, Chunk::tiny_size };
-bool ChunkPool::_suspend_cleaning = false;
 
 class ChunkPoolCleaner : public PeriodicTask {
   static const int cleaning_interval = 5000; // cleaning interval in ms
@@ -247,9 +252,13 @@ class ChunkPoolCleaner : public PeriodicTask {
    }
 };
 
+#ifdef ASSERT
+bool ChunkPool::_suspend_cleaning = false;
+
 void Arena::suspend_chunk_pool_cleaning(bool suspend) {
   ChunkPool::set_suspend_cleaning(suspend);
 }
+#endif
 
 void Arena::start_chunk_pool_cleaner_task() {
 #ifdef ASSERT

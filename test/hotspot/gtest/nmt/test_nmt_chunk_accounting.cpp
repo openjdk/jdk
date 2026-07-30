@@ -91,6 +91,7 @@ TEST_VM(NMTChunkAccounting, non_standard_chunks) {
 }
 
 // This test uses standard sized chunks which should exercise the code path using the chunk pool.
+#ifdef ASSERT
 TEST_VM(NMTChunkAccounting, standard_chunks) {
   if (!MemTracker::enabled()) {
     return;
@@ -148,6 +149,7 @@ TEST_VM(NMTChunkAccounting, standard_chunks) {
   EXPECT_EQ(arena.size_in_bytes(), expected_arena_size);
   EXPECT_EQ(after_grow2.mtTest_arena_size, arena.size_in_bytes());
 }
+#endif
 
 // This test verifies malloc header tags, MST markers, and stacks.
 TEST_VM(NMTChunkAccounting, mst) {
