@@ -473,7 +473,8 @@ void PhaseVector::expand_vunbox_node(VectorUnboxNode* vec_unbox) {
                                               adr,
                                               adr_type,
                                               num_elem,
-                                              bt);
+                                              bt,
+                                              LoadNode::UnknownControl);
     vec_val_load = gvn.transform(vec_val_load);
 
     C->set_max_vector_size(MAX2(C->max_vector_size(), vt->length_in_bytes()));

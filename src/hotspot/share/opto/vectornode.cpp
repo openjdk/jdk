@@ -1543,9 +1543,10 @@ PackNode* PackNode::binary_tree_pack(int lo, int hi) {
 LoadVectorNode* LoadVectorNode::make(int opc, Node* ctl, Node* mem,
                                      Node* adr, const TypePtr* atyp,
                                      uint vlen, BasicType bt,
-                                     ControlDependency control_dependency) {
+                                     ControlDependency control_dependency,
+                                     bool rc_constant_folded) {
   const TypeVect* vt = TypeVect::make(bt, vlen);
-  return new LoadVectorNode(ctl, mem, adr, atyp, vt, control_dependency);
+  return new LoadVectorNode(ctl, mem, adr, atyp, vt, control_dependency, rc_constant_folded);
 }
 
 Node* LoadVectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
@@ -1589,7 +1590,7 @@ Node* LoadVectorMaskedNode::Ideal(PhaseGVN* phase, bool can_reshape) {
         Node* ctr = in(MemNode::Control);
         Node* mem = in(MemNode::Memory);
         Node* adr = in(MemNode::Address);
-        return phase->transform(new LoadVectorNode(ctr, mem, adr, adr_type(), vect_type()));
+        return phase->transform(new LoadVectorNode(ctr, mem, adr, adr_type(), vect_type(), _control_dependency, _rc_constant_folded));
       }
     }
   }

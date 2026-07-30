@@ -2998,14 +2998,20 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
       assert(iff->is_If(), "");
       ProjNode* dp = ((IfNode*)iff)->proj_out(1-flip);
       // Find loads off the surviving projection; remove their control edge
-      for (DUIterator_Fast imax, i = dp->fast_outs(imax); i < imax; i++) {
-        Node* cd = dp->fast_out(i); // Control-dependent node
-        if (cd->is_Load() && cd->depends_only_on_test()) {
-          // Allow a load to float around in the loop, or before it but after this loop's Template Assertion Predicates
-          // or when absent after the loop's zero trip guard.
-          _igvn.replace_input_of(cd, 0, ctrl_target_for_data_rewire);
+      for (DUIterator i = dp->outs(); dp->has_out(i); i++) {
+        Node* cd = dp->out(i); // Control-dependent node
+        if (cd->is_Load() && cd->depends_only_on_test()) {   // Loads can now float around in the loop
+          // Allow the load to float around in the loop, or before it
+          // but NOT before the pre-loop.
+          Node* clone = cd->pin_node_under_control();
+          if (clone != nullptr) {
+            clone->set_req(0, ctrl_target_for_data_rewire);
+            register_new_node(clone, get_ctrl(cd));
+            _igvn.replace_node(cd, clone);
+          } else {
+            _igvn.replace_input_of(cd, 0, ctrl_target_for_data_rewire); // ctrl, not null
+          }
           --i;
-          --imax;
         }
       }
     } // End of is IF
