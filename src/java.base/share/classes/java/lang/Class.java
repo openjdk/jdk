@@ -93,6 +93,9 @@ import sun.reflect.generics.repository.ClassRepository;
 import sun.reflect.generics.scope.ClassScope;
 import sun.reflect.annotation.*;
 
+import static java.lang.classfile.ClassFile.ACC_ABSTRACT;
+import static java.lang.classfile.ClassFile.ACC_FINAL;
+
 /**
  * Instances of the class {@code Class} represent classes and
  * interfaces in a running Java application. An enum class and a record
@@ -861,6 +864,24 @@ public final class Class<T> implements java.io.Serializable,
         return primitive;
     }
 
+    private static final int NON_CLASS_FILE_MODIFIER_MASK = ACC_ABSTRACT | ACC_FINAL;
+
+    /**
+     * Determines if this {@code Class} object represents a class or an interface.
+     * Classes and interfaces are derived from {@code class} files and can
+     * declare fields and methods.
+     *
+     * @return {@code true} if and only if this {@code Class} object represents
+     *         a class or an interface
+     * @jls 8 Classes
+     * @jls 9 Interfaces
+     * @jvms 4 The {@code class} File Format
+     * @since 28
+     */
+    public boolean isClassOrInterface() {
+        return (modifiers & NON_CLASS_FILE_MODIFIER_MASK) != NON_CLASS_FILE_MODIFIER_MASK;
+    }
+
     /**
      * Returns true if this {@code Class} object represents an annotation
      * interface.  Note that if this method returns true, {@link #isInterface()}
@@ -1121,7 +1142,7 @@ public final class Class<T> implements java.io.Serializable,
      * @return the package of this class.
      */
     public Package getPackage() {
-        if (isPrimitive() || isArray()) {
+        if (!isClassOrInterface()) {
             return null;
         }
         ClassLoader cl = classLoader;
@@ -1418,7 +1439,7 @@ public final class Class<T> implements java.io.Serializable,
      * Set the signers of this class.
      */
     void setSigners(Object[] signers) {
-        if (!isPrimitive() && !isArray()) {
+        if (isClassOrInterface()) {
             this.signers = signers;
         }
     }
@@ -3723,9 +3744,7 @@ public final class Class<T> implements java.io.Serializable,
     public AnnotatedType getAnnotatedSuperclass() {
         if (this == Object.class ||
                 isInterface() ||
-                isArray() ||
-                isPrimitive() ||
-                this == Void.TYPE) {
+                !isClassOrInterface()) {
             return null;
         }
 
@@ -3797,7 +3816,7 @@ public final class Class<T> implements java.io.Serializable,
      * @jvms 5.4.4 Access Control
      */
     public Class<?> getNestHost() {
-        if (isPrimitive() || isArray()) {
+        if (!isClassOrInterface()) {
             return this;
         }
         return getNestHost0();
@@ -3820,8 +3839,7 @@ public final class Class<T> implements java.io.Serializable,
         if (this == c) {
             return true;
         }
-        if (isPrimitive() || isArray() ||
-            c.isPrimitive() || c.isArray()) {
+        if (!isClassOrInterface() || !c.isClassOrInterface()) {
             return false;
         }
 
@@ -3869,7 +3887,7 @@ public final class Class<T> implements java.io.Serializable,
      * @jvms 4.7.29 The {@code NestMembers} Attribute
      */
     public Class<?>[] getNestMembers() {
-        if (isPrimitive() || isArray()) {
+        if (!isClassOrInterface()) {
             return new Class<?>[] { this };
         }
         Class<?>[] members = getNestMembers0();
@@ -4046,7 +4064,7 @@ public final class Class<T> implements java.io.Serializable,
      */
     public Class<?>[] getPermittedSubclasses() {
         Class<?>[] subClasses;
-        if (isArray() || isPrimitive() || (subClasses = getPermittedSubclasses0()) == null) {
+        if (!isClassOrInterface() || (subClasses = getPermittedSubclasses0()) == null) {
             return null;
         }
         if (subClasses.length > 0) {
@@ -4088,7 +4106,7 @@ public final class Class<T> implements java.io.Serializable,
      * @since 17
      */
     public boolean isSealed() {
-        if (isArray() || isPrimitive()) {
+        if (!isClassOrInterface()) {
             return false;
         }
         return getPermittedSubclasses() != null;
@@ -4112,18 +4130,18 @@ public final class Class<T> implements java.io.Serializable,
 
     private native int getClassFileVersion0();
 
-     /**
-      * Return the access flags as they were in the class's bytecode, including
-      * the original setting of ACC_SUPER.
-      *
-      * If this {@code Class} object represents a primitive type or
-      * void, the flags are {@code PUBLIC}, {@code ABSTRACT}, and
-      * {@code FINAL}.
-      * If this {@code Class} object represents an array type, return 0.
-      */
-     int getClassFileAccessFlags() {
-         return classFileAccessFlags;
-     }
+    /**
+     * Return the access flags as they were in the class's bytecode, including
+     * the original setting of ACC_SUPER.
+     *
+     * If this {@code Class} object represents a primitive type or
+     * void, the flags are {@code PUBLIC}, {@code ABSTRACT}, and
+     * {@code FINAL}.
+     * If this {@code Class} object represents an array type, return 0.
+     */
+    int getClassFileAccessFlags() {
+        return classFileAccessFlags;
+    }
 
     // Validates the length of the class name and throws an exception if it exceeds the maximum allowed length.
     private static void validateClassNameLength(String name) throws ClassNotFoundException {
