@@ -53,6 +53,7 @@ public class HugeArenaTracking {
     NMTTestUtils.runJcmdSummaryReportAndCheckOutput(
             new String[] { "scale=K" },
             new String[] { "Test (reserved=2KB, committed=2KB)",
+                           "(malloc=0KB tag=Test",
                            "(arena=2KB #2) (at peak)" });
 
     Random rand = Utils.getRandomInstance();
@@ -75,6 +76,7 @@ public class HugeArenaTracking {
     NMTTestUtils.runJcmdSummaryReportAndCheckOutput(
             new String[] { "scale=M" },
             new String[] { "Test (reserved=2048MB, committed=2048MB)",
+                           "(malloc=0MB tag=Test",
                            "(arena=2048MB #2) (at peak)" });
 
     wb.NMTFreeArena(arena1);
@@ -90,6 +92,7 @@ public class HugeArenaTracking {
     NMTTestUtils.runJcmdSummaryReportAndCheckOutput(
             new String[] { "scale=M" },
             new String[] { "Test (reserved=0MB, committed=0MB)",
+                           "(malloc=0MB tag=Test",
                            "(arena=0MB #1) (peak=2048MB #2)" });
 
     // At KB level we should see the remaining 1KB. Note that we refrain from testing peak here

@@ -190,12 +190,11 @@ void* MallocTracker::record_malloc(void* malloc_base, size_t size, MemTag mem_ta
 void MallocTracker::chunk_assigned_to_arena(void* memblock, MemTag new_tag) {
   MallocHeader* header = (MallocHeader*)memblock - 1;
 
-  // Only decrement mtChunk, leave the total malloc amounts unchanged.
-  assert(header->mem_tag() == mtChunk, "Should only be operating on heap chunks");
-  MallocMemorySummary::as_snapshot()->by_tag(mtChunk)->record_free(header->size());
+  // Only decrement per-tag counters, leave the total malloc amounts unchanged.
+  MallocMemorySummary::as_snapshot()->by_tag(header->mem_tag())->record_free(header->size());
 
   uint32_t new_mst_marker = 0;
-  if (MemTracker::tracking_level() == NMT_detail) {
+  if (MemTracker::tracking_level() == NMT_detail && header->mem_tag() != new_tag) {
     // retrieve the old stack from MST
     NativeCallStack old_stack;
     if (!MallocSiteTable::access_stack(old_stack, *header)) {
@@ -211,8 +210,10 @@ void MallocTracker::chunk_assigned_to_arena(void* memblock, MemTag new_tag) {
   // Arena only accounts for payload. Account for the header size and count. Attribute it to the arena's tag.
   MallocMemorySummary::as_snapshot()->by_tag(new_tag)->record_malloc(Chunk::aligned_overhead_size());
 
-  header->set_mem_tag(new_tag);
-  header->set_mst_marker(new_mst_marker);
+  if (header->mem_tag() != new_tag) {
+    header->set_mem_tag(new_tag);
+    header->set_mst_marker(new_mst_marker);
+  }
 }
 
 void MallocTracker::add_chunk_to_pool(void* memblock) {

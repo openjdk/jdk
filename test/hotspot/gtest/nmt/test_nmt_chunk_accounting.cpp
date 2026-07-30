@@ -172,4 +172,16 @@ TEST_VM(NMTChunkAccounting, mst) {
   ASSERT_TRUE(MallocSiteTable::access_stack(new_stack, *header));
   EXPECT_TRUE(new_stack.equals(old_stack));
   os::free(allocation);
+
+  // Now test the path where new and old tags are equal.
+  allocation = os::malloc(100, mtTest, CALLER_PC);
+  header = (MallocHeader*)allocation - 1;
+  old_marker = header->mst_marker();
+  ASSERT_TRUE(MallocSiteTable::access_stack(old_stack, *header));
+
+  MemTracker::chunk_assigned_to_arena(allocation, mtTest);
+  EXPECT_TRUE(header->mem_tag() == mtTest);
+  EXPECT_EQ(header->mst_marker(), old_marker);
+  EXPECT_TRUE(MallocSiteTable::access_stack(new_stack, *header));
+  EXPECT_TRUE(new_stack.equals(old_stack));
 }
