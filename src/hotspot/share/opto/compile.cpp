@@ -4512,46 +4512,90 @@ Compile::TracePhase::~TracePhase() {
   }
 }
 
+static ciInstanceKlass* base_element_instance_klass(const TypeKlassPtr* tk) {
+  const Type* elem_t = tk;
+  if (elem_t->isa_aryklassptr()) {
+    int ignored;
+    elem_t = tk->is_aryklassptr()->base_element_type(ignored);
+  }
+
+  if (elem_t->isa_instklassptr()) {
+    return elem_t->is_instklassptr()->instance_klass();
+  }
+
+  return nullptr;
+}
+
+static const TypeKlassPtr* exact_if_leaf(const TypeKlassPtr* tk) {
+  if (tk->klass_is_exact()) {
+    return tk;
+  }
+
+  ciInstanceKlass* ik = base_element_instance_klass(tk);
+  if (ik != nullptr && !ik->has_subklass()) {
+    return tk->cast_to_exactness(true);
+  }
+
+  return tk;
+}
+
+static bool has_no_subklass(const TypeKlassPtr* tk) {
+  ciInstanceKlass* ik = base_element_instance_klass(tk);
+  if (ik == nullptr || ik->has_subklass()) {
+    return false;
+  }
+
+  if (!ik->is_final()) {
+    Compile::current()->dependencies()->assert_leaf_type(ik);
+  }
+
+  return true;
+}
+
 //----------------------------static_subtype_check-----------------------------
-// Shortcut important common cases when superklass is exact:
-// (0) superklass is java.lang.Object (can occur in reflective code)
-// (1) subklass is already limited to a subtype of superklass => always ok
-// (2) subklass does not overlap with superklass => always fail
-// (3) superklass has NO subtypes and we can check with a simple compare.
 Compile::SubTypeCheckResult Compile::static_subtype_check(const TypeKlassPtr* superk, const TypeKlassPtr* subk, bool skip) {
   if (skip) {
     return SSC_full_test;       // Let caller generate the general case.
   }
 
-  if (subk->is_java_subtype_of(superk)) {
-    return SSC_always_true; // (0) and (1)  this test cannot fail
+   if (!superk->is_loaded() || !subk->is_loaded()) {
+    return SSC_full_test;
   }
 
-  if (!subk->maybe_java_subtype_of(superk)) {
-    return SSC_always_false; // (2) true path dead; no dynamic test needed
+  const bool superk_is_exact = superk->klass_is_exact();
+  const bool subk_is_exact = subk->klass_is_exact();
+  const TypeKlassPtr* superk_ne = superk->cast_to_exactness(false);
+
+  const bool subk_higher = subk->higher_equal(superk_ne);
+
+  if (subk_higher &&
+      (superk_is_exact || has_no_subklass(superk))) {
+    return SSC_always_true;
   }
 
-  const Type* superelem = superk;
-  if (superk->isa_aryklassptr()) {
-    int ignored;
-    superelem = superk->is_aryklassptr()->base_element_type(ignored);
+  if (!subk_higher &&
+      (subk_is_exact || has_no_subklass(subk))) {
+    return SSC_always_false;
   }
 
-  if (superelem->isa_instklassptr()) {
-    ciInstanceKlass* ik = superelem->is_instklassptr()->instance_klass();
-    if (!ik->has_subklass()) {
-      if (!ik->is_final()) {
-        // Add a dependency if there is a chance of a later subclass.
-        dependencies()->assert_leaf_type(ik);
-      }
-      if (!superk->maybe_java_subtype_of(subk)) {
-        return SSC_always_false;
-      }
-      return SSC_easy_test;     // (3) caller can do a simple ptr comparison
+  const TypeKlassPtr* superk_e = exact_if_leaf(superk_ne);
+  const TypeKlassPtr* subk_e = exact_if_leaf(subk);
+
+  const Type* ft = subk_e->filter(superk_e);
+  if (ft == Type::TOP &&
+      (superk_e == superk_ne || has_no_subklass(superk)) &&
+      (subk_e == subk || has_no_subklass(subk))) {
+    return SSC_always_false;
+  }
+
+  ciInstanceKlass* ik = base_element_instance_klass(superk);
+  if (ik != nullptr) {
+    if (!ik->is_interface() &&
+        (ik->is_final() || has_no_subklass(superk))) {
+      return SSC_easy_test;
     }
-  } else {
-    // A primitive array type has no subtypes.
-    return SSC_easy_test;       // (3) caller can do a simple ptr comparison
+  } else if (superk->isa_aryklassptr()) {
+    return SSC_easy_test; // primitive array type has no subtypes
   }
 
   return SSC_full_test;
