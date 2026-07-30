@@ -503,7 +503,7 @@ void HeapDumpDCmd::execute(DCmdSource source, TRAPS) {
   if (_parallel.is_set()) {
     parallel = _parallel.value();
 
-    if (parallel < 0) {
+    if (parallel < 0 || parallel > max_juint) {
       output()->print_cr("Invalid number of parallel dump threads.");
       return;
     } else if (parallel == 0) {
