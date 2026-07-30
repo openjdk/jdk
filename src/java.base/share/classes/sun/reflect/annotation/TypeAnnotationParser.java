@@ -196,8 +196,7 @@ public final class TypeAnnotationParser {
             ConstantPool cp,
             Class<?> decl) {
         if (decl == Object.class ||
-                !decl.isClassOrInterface() ||
-                decl == Void.TYPE)
+                !decl.isClassOrInterface())
             return AnnotatedTypeFactory.EMPTY_ANNOTATED_TYPE_ARRAY;
         return buildAnnotatedTypes(rawAnnotations,
                                    cp,
