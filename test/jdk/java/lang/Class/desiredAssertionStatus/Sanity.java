@@ -41,9 +41,10 @@ public class Sanity {
         boolean systemDefaultOn = System.getProperty("sys.option").equals("on");
         boolean userDefaultOn = System.getProperty("user.option").equals("on");
 
+        Assert.assertTrue(int.class.desiredAssertionStatus() == false);
         Assert.assertTrue(Object.class.desiredAssertionStatus() == systemDefaultOn);
-        Assert.assertTrue(Object[].class.desiredAssertionStatus() == systemDefaultOn);
+        Assert.assertTrue(Object[].class.desiredAssertionStatus() == false);
         Assert.assertTrue(Sanity.class.desiredAssertionStatus() == userDefaultOn);
-        Assert.assertTrue(Sanity[].class.desiredAssertionStatus() == userDefaultOn);
+        Assert.assertTrue(Sanity[].class.desiredAssertionStatus() == false);
     }
 }
