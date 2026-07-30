@@ -56,17 +56,6 @@ public class PrintRawMonitorLockTest {
     static native int createRawMonitors();
     static native int rawMonitorEnter(int id);
 
-    static {
-        try {
-            System.loadLibrary(AGENT_LIB);
-            log("Loaded library: " + AGENT_LIB);
-        } catch (UnsatisfiedLinkError ule) {
-            log("Failed to load library: " + AGENT_LIB);
-            log("java.library.path: " + System.getProperty("java.library.path"));
-            throw ule;
-        }
-    }
-
     CyclicBarrier readyBarrier = new CyclicBarrier(3);
 
     private void waitForBarrier(CyclicBarrier b) {

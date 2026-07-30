@@ -1025,10 +1025,10 @@ void DeadlockCycle::print_on_with(ThreadsList * t_list, outputStream* st) const 
           currentThread = JavaThread::cast(owner);
           st->print_cr("%s \"%s\"", owner_desc, currentThread->name());
         } else {
-          st->print_cr(",\n  which has now been released");
+          st->print_cr("%s non-Java thread=" PTR_FORMAT, owner_desc, p2i(owner));
         }
       } else {
-        st->print_cr("%s non-Java thread=" PTR_FORMAT, owner_desc, p2i(owner));
+        st->print_cr(",\n  which has now been released");
       }
     }
 
@@ -1049,9 +1049,9 @@ void DeadlockCycle::print_on_with(ThreadsList * t_list, outputStream* st) const 
         // blocked permanently.
         st->print_cr("%s UNKNOWN_owner_addr=" INT64_FORMAT, owner_desc,
                      waitingToLockMonitor->owner());
-        continue;
+      } else {
+        st->print_cr("%s \"%s\"", owner_desc, currentThread->name());
       }
-      st->print_cr("%s \"%s\"", owner_desc, currentThread->name());
     } else if (waitingToLockBlocker != nullptr) {
       st->print("  waiting for ownable synchronizer " INTPTR_FORMAT ", (a %s)",
                 p2i(waitingToLockBlocker),
