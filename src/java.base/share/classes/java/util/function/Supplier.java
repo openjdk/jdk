@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,12 @@ package java.util.function;
  * <p>There is no requirement that a new or distinct result be returned each
  * time the supplier is invoked.
  *
- * <p>This is a <a href="package-summary.html">functional interface</a>
+ * <p>This is a {@linkplain java.util.function functional interface}
  * whose functional method is {@link #get()}.
+ *
+ * The method conforms to the {@linkplain
+ * java.util.function##functionsAndNull null handling policy} for
+ * interfaces in this package.
  *
  * @param <T> the type of results supplied by this supplier
  *
