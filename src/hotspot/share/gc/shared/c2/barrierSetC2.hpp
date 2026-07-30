@@ -87,23 +87,13 @@ public:
   void set_node(Node* node) { _node = node; }
 };
 
-// This class wraps a node and a pointer type.
-class C2AccessValuePtr: public C2AccessValue {
-
-public:
-  C2AccessValuePtr(Node* node, const TypePtr* type) :
-    C2AccessValue(node, type) {}
-
-  const TypePtr* type() const { return _type->is_ptr(); }
-};
-
 // This class wraps a bunch of context parameters that are passed around in the
 // BarrierSetC2 backend hierarchy, for loads and stores, to reduce boiler plate.
 class C2Access: public StackObj {
 protected:
   DecoratorSet      _decorators;
   Node*             _base;
-  C2AccessValuePtr& _addr;
+  Node*             _addr;
   Node*             _raw_access;
   BasicType         _type;
   uint8_t           _barrier_data;
@@ -112,7 +102,7 @@ protected:
 
 public:
   C2Access(DecoratorSet decorators,
-           BasicType type, Node* base, C2AccessValuePtr& addr) :
+           BasicType type, Node* base, Node* addr) :
     _decorators(decorators),
     _base(base),
     _addr(addr),
@@ -123,7 +113,7 @@ public:
 
   DecoratorSet decorators() const { return _decorators; }
   Node* base() const              { return _base; }
-  C2AccessValuePtr& addr() const  { return _addr; }
+  Node* addr() const              { return _addr; }
   BasicType type() const          { return _type; }
   bool is_oop() const             { return is_reference_type(_type); }
   bool is_raw() const             { return (_decorators & AS_RAW) != 0; }
@@ -152,7 +142,7 @@ protected:
 
 public:
   C2ParseAccess(GraphKit* kit, DecoratorSet decorators,
-                BasicType type, Node* base, C2AccessValuePtr& addr) :
+                BasicType type, Node* base, Node* addr) :
     C2Access(decorators, type, base, addr),
     _kit(kit) {
     fixup_decorators();
@@ -172,7 +162,7 @@ class C2AtomicParseAccess: public C2ParseAccess {
 
 public:
   C2AtomicParseAccess(GraphKit* kit, DecoratorSet decorators, BasicType type,
-                 Node* base, C2AccessValuePtr& addr, uint alias_idx) :
+                 Node* base, Node* addr, uint alias_idx) :
     C2ParseAccess(kit, decorators, type, base, addr),
     _memory(nullptr),
     _alias_idx(alias_idx) {}
@@ -192,7 +182,7 @@ class C2OptAccess: public C2Access {
 
 public:
   C2OptAccess(PhaseGVN& gvn, Node* ctl, MergeMemNode* mem, DecoratorSet decorators,
-              BasicType type, Node* base, C2AccessValuePtr& addr) :
+              BasicType type, Node* base, Node* addr) :
     C2Access(decorators, type, base, addr),
     _gvn(gvn), _mem(mem), _ctl(ctl) {
     fixup_decorators();
