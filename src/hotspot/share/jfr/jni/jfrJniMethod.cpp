@@ -30,6 +30,7 @@
 #include "jfr/jni/jfrJniMethodRegistration.hpp"
 #include "jfr/leakprofiler/leakProfiler.hpp"
 #include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
+#include "jfr/periodic/sampling/jfrStackWalker.hpp"
 #include "jfr/periodic/sampling/jfrThreadSampler.hpp"
 #include "jfr/recorder/checkpoint/jfrMetadataEvent.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
@@ -109,6 +110,18 @@ NO_TRANSITION(void, jfr_set_enabled(JNIEnv* env, jclass jvm, jlong event_type_id
       LeakProfiler::start(JfrOptionSet::old_object_queue_size());
     } else {
       LeakProfiler::stop();
+    }
+  }
+  if (EventStackTraceRequest::eventId == event_type_id) {
+    static bool stack_trace_request_active = false;
+    const bool requested = JNI_TRUE == enabled;
+    if (requested != stack_trace_request_active) {
+      stack_trace_request_active = requested;
+      if (requested) {
+        JfrStackWalker::initialize();
+      } else {
+        JfrStackWalker::teardown();
+      }
     }
   }
 NO_TRANSITION_END

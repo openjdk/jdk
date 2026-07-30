@@ -33,6 +33,7 @@
 #include "runtime/stackWatermarkSet.hpp"
 #if INCLUDE_JFR
 #include "jfr/jfr.inline.hpp"
+#include "jfr/periodic/sampling/jfrStackWalker.hpp"
 #endif
 
 // Caller is responsible for using a memory barrier if needed.
@@ -60,7 +61,9 @@ bool SafepointMechanism::global_poll() {
 }
 
 inline bool SafepointMechanism::has_pending_safepoint(JavaThread* thread) {
-  return global_poll() || thread->handshake_state()->has_operation() JFR_ONLY(|| Jfr::has_sample_request(thread));
+  return global_poll() || thread->handshake_state()->has_operation()
+         JFR_ONLY(|| thread->stackwalker_thread_local().has_requests())
+         JFR_ONLY(|| Jfr::has_sample_request(thread));
 }
 
 bool SafepointMechanism::should_process(JavaThread* thread, bool allow_suspend) {
