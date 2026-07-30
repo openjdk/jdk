@@ -54,10 +54,6 @@ class MallocSite : public AllocationSite {
   const MemoryCounter* counter() const { return &_c; }
 };
 
-inline unsigned int malloc_site_hash(const NativeCallStack& stack, MemTag tag) {
-  return stack.calculate_hash() + NMTUtil::tag_to_index(tag) * 73;
-}
-
 // Malloc site hashtable entry
 class MallocSiteHashtableEntry : public CHeapObj<mtNMT> {
  private:
@@ -68,7 +64,7 @@ class MallocSiteHashtableEntry : public CHeapObj<mtNMT> {
  public:
 
   MallocSiteHashtableEntry(NativeCallStack stack, MemTag mem_tag):
-    _malloc_site(stack, mem_tag), _hash(malloc_site_hash(stack, mem_tag)), _next(nullptr) {
+    _malloc_site(stack, mem_tag), _hash(stack.calculate_hash()), _next(nullptr) {
     assert(mem_tag != mtNone, "Expect a real memory tag");
   }
 
