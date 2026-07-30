@@ -4409,7 +4409,7 @@ void GraphBuilder::append_char_access(ciMethod* callee, bool is_store) {
     _memory->store_value(value);
     compilation()->set_has_access_indexed(true);
   } else {
-    // The getChar() method in Java is perceded by a checkIndex() that performs the effective range check.
+    // The getChar() method in Java is preceded by a checkIndex() that performs the effective range check.
     // However, this means that the load must not float over the check. That we cannot guarantee with a LoadIndexed,
     // in particular LICM will hoist such accesses. For this reason we use an UnsafeGet access to pin the load.
     // This means we need to emit a null check on the array manually.
