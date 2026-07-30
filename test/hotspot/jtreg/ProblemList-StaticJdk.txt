@@ -52,4 +52,4 @@ gtest/NMTGtests.java#nmt-summary                        8356201 generic-all
 
 #############################################################################
 
-# Valhalla failures start here:
+# Value Objects failures start here:
