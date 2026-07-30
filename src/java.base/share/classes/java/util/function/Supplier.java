@@ -31,14 +31,17 @@ package java.util.function;
  * time the supplier is invoked.
  *
  * <p>This is a {@linkplain java.util.function functional interface}
- * whose functional method is {@link #get()}.
+ * whose functional method is {@link #get()}. The result may be null.
  *
- * The method conforms to the {@linkplain
+ * <p>The method conforms to the {@linkplain
  * java.util.function##functionsAndNull null handling policy} for
  * interfaces in this package.
  *
  * @param <T> the type of results supplied by this supplier
  *
+ * @see IntSupplier
+ * @see LongSupplier
+ * @see DoubleSupplier
  * @since 1.8
  */
 @FunctionalInterface
