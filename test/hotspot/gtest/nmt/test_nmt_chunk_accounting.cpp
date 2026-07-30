@@ -30,8 +30,6 @@
 #include "runtime/os.hpp"
 #include "unittest.hpp"
 
-
-
 struct CountersSnapshot {
     size_t mtChunk_malloc_size;
     size_t mtChunk_malloc_count;

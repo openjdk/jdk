@@ -87,7 +87,7 @@ class ChunkPool {
   // Our four static pools
   static constexpr int _num_pools = 4;
   static ChunkPool _pools[_num_pools];
-  volatile static bool _suspend_cleaning;
+  static bool _suspend_cleaning;
 
   Chunk*       _first;
   const size_t _size;         // (inner payload) size of the chunks this pool serves
@@ -235,7 +235,7 @@ void ChunkPool::deallocate_chunk(Chunk* c) {
 }
 
 ChunkPool ChunkPool::_pools[] = { Chunk::size, Chunk::medium_size, Chunk::init_size, Chunk::tiny_size };
-volatile bool ChunkPool::_suspend_cleaning = false;
+bool ChunkPool::_suspend_cleaning = false;
 
 class ChunkPoolCleaner : public PeriodicTask {
   static const int cleaning_interval = 5000; // cleaning interval in ms
