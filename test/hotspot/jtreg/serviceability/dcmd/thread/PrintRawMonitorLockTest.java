@@ -51,7 +51,6 @@ import java.util.regex.Pattern;
 public class PrintRawMonitorLockTest {
 
     private static void log(String s) { System.out.println(s); }
-    private static String AGENT_LIB = "PrintRawMonitorLockTest";;
 
     static native int createRawMonitors();
     static native int rawMonitorEnter(int id);
