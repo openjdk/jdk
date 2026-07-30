@@ -52,6 +52,7 @@
 #include "prims/jvmtiAgentList.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/flags/jvmFlag.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.hpp"
@@ -109,6 +110,7 @@ void DCmd::register_dcmds() {
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<RunFinalizationDCmd>(full_export));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HeapInfoDCmd>(full_export));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<FinalizerInfoDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ShowSettingsDCmd>(full_export));
 #if INCLUDE_SERVICES
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HeapDumpDCmd>(DCmd_Source_Internal | DCmd_Source_AttachAPI));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassHistogramDCmd>(full_export));
@@ -462,6 +464,50 @@ void FinalizerInfoDCmd::execute(DCmdSource source, TRAPS) {
     int count = element_oop->int_field(count_fd.offset());
     output()->print_cr("%10d  %s", count, name);
   }
+}
+
+void ShowSettingsDCmd::execute(DCmdSource source, TRAPS) {
+  ResourceMark rm(THREAD);
+  HandleMark hm(THREAD);
+
+  const char* sec = _section.value();
+  if (sec == nullptr || sec[0] == '\0') {
+    sec = "all";
+  }
+
+  char flag_buf[64];
+  jio_snprintf(flag_buf, sizeof(flag_buf), "-XshowSettings:%s", sec);
+
+  // resolve jdk.internal.util.ShowSettings
+  Symbol* klass_sym = vmSymbols::jdk_internal_util_ShowSettings();
+  Klass* k = SystemDictionary::resolve_or_fail(klass_sym, true, CHECK);
+
+  // call ShowSettings.showSettingsBytes(String, long, long, long)
+  JavaValue result(T_OBJECT);
+  JavaCallArguments args;
+
+  Handle option_str = java_lang_String::create_from_str(flag_buf, CHECK);
+
+  args.push_oop(option_str);
+  args.push_long((jlong)InitialHeapSize);
+  args.push_long((jlong)MaxHeapSize);
+  args.push_long((jlong)ThreadStackSize * K);
+
+  JavaCalls::call_static(&result,
+                         k,
+                         vmSymbols::showSettingsBytes_name(),
+                         vmSymbols::showSettingsBytes_signature(),
+                         &args,
+                         CHECK);
+
+  oop res = result.get_oop();
+  if (res == nullptr) {
+    return;
+  }
+
+  typeArrayOop ba = typeArrayOop(res);
+  jbyte* addr = ba->byte_at_addr(0);
+  output()->print_raw((const char*)addr, ba->length());
 }
 
 #if INCLUDE_SERVICES // Heap dumping/inspection supported

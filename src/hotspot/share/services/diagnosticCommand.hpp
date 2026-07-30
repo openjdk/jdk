@@ -853,6 +853,30 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
+class ShowSettingsDCmd : public DCmdWithParser {
+protected:
+  DCmdArgument<char*> _section;
+public:
+  ShowSettingsDCmd(outputStream* output, bool heap) :
+      DCmdWithParser(output, heap),
+      _section("section",
+               "Optional -XshowSettings section. See 'java -X' for supported "
+               "-XshowSettings sections.",
+               "STRING", false, "all") {
+    _dcmdparser.add_dcmd_argument(&_section);
+  }
+
+  static int num_arguments() { return 1; }
+  static const char* name() { return "VM.show_settings"; }
+  static const char* description() {
+    return "Print information similar to -XshowSettings e.g. 'VM.show_settings all'"
+           "See 'java -X' for supported -XshowSettings sections.";
+  }
+  static const char* impact() { return "Low"; }
+
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
 #if defined(LINUX) || defined(_WIN64) || defined(__APPLE__)
 
 class SystemMapDCmd : public DCmd {
