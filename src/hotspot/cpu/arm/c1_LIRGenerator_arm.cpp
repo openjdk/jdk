@@ -1301,6 +1301,7 @@ void LIRGenerator::trace_block_entry(BlockBegin* block) {
 
 void LIRGenerator::volatile_field_store(LIR_Opr value, LIR_Address* address,
                                         CodeEmitInfo* info) {
+  __ membar_release();
   if (value->is_double_cpu()) {
     assert(address->index()->is_illegal(), "should have a constant displacement");
     LIR_Address* store_addr = nullptr;
@@ -1313,9 +1314,10 @@ void LIRGenerator::volatile_field_store(LIR_Opr value, LIR_Address* address,
       store_addr = address;
     }
     __ volatile_store_mem_reg(value, store_addr, info);
-    return;
+  } else {
+    __ store(value, address, info, lir_patch_none);
   }
-  __ store(value, address, info, lir_patch_none);
+  __ membar();
 }
 
 void LIRGenerator::volatile_field_load(LIR_Address* address, LIR_Opr result,

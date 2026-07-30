@@ -91,7 +91,8 @@ const DecoratorSet INTERNAL_DECORATOR_MASK           = INTERNAL_CONVERT_COMPRESS
 //    - Guarantees from relaxed stores hold.
 //  * MO_SEQ_CST: Sequentially consistent stores.
 //    - The stores are observed in the same order by MO_SEQ_CST loads on other processors
-//    - Preceding loads and stores in program order are not reordered with subsequent loads and stores in program order.
+//    - Preceding MO_SEQ_CST loads and stores in program order are not reordered with
+//      subsequent MO_SEQ_CST loads and stores in program order.
 //    - Guarantees from releasing stores hold.
 // === Loads ===
 //  * MO_UNORDERED (Default): No guarantees

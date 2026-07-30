@@ -137,12 +137,49 @@ public class TestImplicitNullChecks {
         o.f = o1;
     }
 
-    @Run(test = {"testStore"})
+    @Test
+    // G1 and ZGC stores cannot be currently used to implement implicit null
+    // checks, because they expand into multiple memory access instructions that
+    // are not necessarily located at the initial instruction start address.
+    @IR(applyIfOr = {"UseZGC", "true", "UseG1GC", "true"},
+        failOn = IRNode.NULL_CHECK,
+        phase = CompilePhase.FINAL_CODE)
+    static void testStoreVolatile(OuterWithVolatileField o, Object o1) {
+        o.f = o1;
+    }
+
+    @Run(test = {"testStore",
+                 "testStoreVolatile"})
     static void runStoreTests() {
         {
             Outer o = new Outer();
             Object o1 = new Object();
-            testStore(o, o1);
+            // Trigger compilation with implicit null check.
+            for (int i = 0; i < 10_000; i++) {
+                testStore(o, o1);
+            }
+            // Trigger null pointer exception.
+            o = null;
+            boolean nullPointerException = false;
+            try {
+                testStore(o, o1);
+            } catch (NullPointerException e) { nullPointerException = true; }
+            Asserts.assertTrue(nullPointerException);
+        }
+        {
+            OuterWithVolatileField o = new OuterWithVolatileField();
+            Object o1 = new Object();
+            // Trigger compilation with implicit null check.
+            for (int i = 0; i < 10_000; i++) {
+                testStoreVolatile(o, o1);
+            }
+            // Trigger null pointer exception.
+            o = null;
+            boolean nullPointerException = false;
+            try {
+                testStoreVolatile(o, o1);
+            } catch (NullPointerException e) { nullPointerException = true; }
+            Asserts.assertTrue(nullPointerException);
         }
     }
 
