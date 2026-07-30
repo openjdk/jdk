@@ -63,14 +63,8 @@ public class TextComponentDragEnabledTest {
     }
 
     private static void runTest() throws Exception {
-        String originalLaf = UIManager.getLookAndFeel().getClass().getName();
-
-        try {
-            testDefaultsForAllLookAndFeels();
-            testExplicitSettingsForAllLookAndFeels();
-        } finally {
-            UIManager.setLookAndFeel(originalLaf);
-        }
+        testDefaultsForAllLookAndFeels();
+        testExplicitSettingsForAllLookAndFeels();
     }
 
     private static void testDefaultsForAllLookAndFeels()
