@@ -116,7 +116,7 @@ public final class WebSocketImpl implements WebSocket {
     private final AtomicBoolean pendingPingOrPong = new AtomicBoolean();
     private final Transport transport;
     private final SequentialScheduler receiveScheduler
-            = new SequentialScheduler(new ReceiveTask());
+            = SequentialScheduler.lockingScheduler(new ReceiveTask());
     private final Demand demand = new Demand();
     private final Executor clientExecutor;
 
@@ -416,7 +416,7 @@ public final class WebSocketImpl implements WebSocket {
      *     - after the state has been observed as CLOSE/ERROR, the scheduler
      *       is stopped
      */
-    private class ReceiveTask extends SequentialScheduler.CompleteRestartableTask {
+    private class ReceiveTask implements Runnable {
 
         // Transport only asked here and nowhere else because we must make sure
         // onOpen is invoked first and no messages become pending before onOpen

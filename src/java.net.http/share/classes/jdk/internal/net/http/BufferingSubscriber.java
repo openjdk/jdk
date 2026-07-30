@@ -183,7 +183,7 @@ public class BufferingSubscriber<T> implements TrustedSubscriber<T>
         }
 
         private final SequentialScheduler pushDemandedScheduler =
-                new SequentialScheduler(new PushDemandedTask());
+                SequentialScheduler.lockingScheduler(new PushDemandedTask());
 
         void pushDemanded() {
             if (cancelled.get())
@@ -191,7 +191,7 @@ public class BufferingSubscriber<T> implements TrustedSubscriber<T>
             pushDemandedScheduler.runOrSchedule();
         }
 
-        class PushDemandedTask extends SequentialScheduler.CompleteRestartableTask {
+        class PushDemandedTask implements Runnable {
             @Override
             public void run() {
                 try {
