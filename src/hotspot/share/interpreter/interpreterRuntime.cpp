@@ -76,6 +76,7 @@
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
 #include "utilities/exceptions.hpp"
+#include "utilities/preserveException.hpp"
 #if INCLUDE_JFR
 #include "jfr/jfr.inline.hpp"
 #endif

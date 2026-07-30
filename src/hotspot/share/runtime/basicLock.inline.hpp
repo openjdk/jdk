@@ -27,7 +27,7 @@
 
 #include "runtime/basicLock.hpp"
 
-#include "runtime/objectMonitor.inline.hpp"
+//NONEED #include "runtime/objectMonitor.inline.hpp"
 
 inline ObjectMonitor* BasicLock::object_monitor_cache() const {
   assert(UseObjectMonitorTable, "must be");

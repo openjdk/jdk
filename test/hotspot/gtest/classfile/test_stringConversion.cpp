@@ -21,6 +21,7 @@
  * questions.
  */
 
+#include "memory/resourceArea.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "unittest.hpp"
 

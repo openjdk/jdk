@@ -23,6 +23,7 @@
  */
 
 #include "logging/log.hpp"
+#include "memory/resourceArea.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.hpp"

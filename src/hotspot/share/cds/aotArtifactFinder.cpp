@@ -35,6 +35,7 @@
 #include "classfile/vmClasses.hpp"
 #include "logging/log.hpp"
 #include "memory/metaspaceClosure.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/trainingData.hpp"

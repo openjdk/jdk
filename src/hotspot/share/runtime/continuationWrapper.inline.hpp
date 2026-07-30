@@ -27,12 +27,12 @@
 
 // There is no continuationWrapper.hpp file
 
-#include "classfile/javaClasses.inline.hpp"
+//NONEED #include "classfile/javaClasses.inline.hpp"
 #include "memory/allocation.hpp"
-#include "oops/oop.inline.hpp"
+//NONEED #include "oops/oop.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "oops/stackChunkOop.hpp"
-#include "runtime/continuationEntry.inline.hpp"
+//NONEED #include "runtime/continuationEntry.inline.hpp"
 #include "runtime/continuationJavaClasses.inline.hpp"
 #include "runtime/javaThread.hpp"
 

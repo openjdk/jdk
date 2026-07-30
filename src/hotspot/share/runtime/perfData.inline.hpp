@@ -28,8 +28,8 @@
 #include "runtime/perfData.hpp"
 
 #include "utilities/globalCounter.inline.hpp"
-#include "utilities/globalDefinitions.hpp"
-#include "utilities/growableArray.hpp"
+//NONEED #include "utilities/globalDefinitions.hpp"
+//NONEED #include "utilities/growableArray.hpp"
 
 inline int PerfDataList::length() {
   return _set->length();

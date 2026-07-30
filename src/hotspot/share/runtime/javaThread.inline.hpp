@@ -29,7 +29,7 @@
 #include "runtime/javaThread.hpp"
 
 #include "classfile/javaClasses.hpp"
-#include "gc/shared/tlab_globals.hpp"
+//NONEED #include "gc/shared/tlab_globals.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oopHandle.inline.hpp"

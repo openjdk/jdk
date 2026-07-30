@@ -31,6 +31,7 @@
 #include "logging/logTag.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/guardedMemory.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"

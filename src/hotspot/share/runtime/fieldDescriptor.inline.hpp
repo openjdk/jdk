@@ -28,7 +28,7 @@
 #include "runtime/fieldDescriptor.hpp"
 
 #include "oops/fieldInfo.inline.hpp"
-#include "runtime/handles.inline.hpp"
+//NONEED #include "runtime/handles.inline.hpp"
 #include "runtime/signature.hpp"
 
 // All fieldDescriptor inline functions that (directly or indirectly) use "_cp()" or "_cp->"

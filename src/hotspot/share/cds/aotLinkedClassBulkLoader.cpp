@@ -43,6 +43,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/serviceThread.hpp"
+#include "runtime/vmThread.hpp"
 #include "utilities/growableArray.hpp"
 
 void AOTLinkedClassBulkLoader::serialize(SerializeClosure* soc) {

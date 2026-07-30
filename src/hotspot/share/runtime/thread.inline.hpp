@@ -30,7 +30,7 @@
 
 #include "gc/shared/tlab_globals.hpp"
 #include "runtime/atomicAccess.hpp"
-#include "utilities/permitForbiddenFunctions.hpp"
+/*NEED*/ #include "utilities/permitForbiddenFunctions.hpp"
 
 #ifdef MACOS_AARCH64
 #include "runtime/os.hpp"

@@ -50,6 +50,7 @@
 #include "runtime/threads.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/vmOperations.hpp"
+#include "runtime/vmThread.hpp"
 #include "services/threadService.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/ticks.hpp"

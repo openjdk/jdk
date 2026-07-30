@@ -32,6 +32,7 @@
 #include "compiler/disassembler.hpp"
 #include "gc/shared/gcConfig.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
+#include "interpreter/interpreter.hpp"
 #include "jvm.h"
 #include "logging/logConfiguration.hpp"
 #include "memory/allocation.hpp"

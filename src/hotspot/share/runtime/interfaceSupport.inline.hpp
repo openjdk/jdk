@@ -30,18 +30,18 @@
 
 #include "gc/shared/gc_globals.hpp"
 #include "runtime/globals.hpp"
-#include "runtime/handles.inline.hpp"
+//NONEED #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
-#include "runtime/safepointVerifiers.hpp"
-#include "runtime/threadWXSetters.inline.hpp"
-#include "runtime/vmOperations.hpp"
+//NONEED #include "runtime/safepointVerifiers.hpp"
+//NONEED #include "runtime/threadWXSetters.inline.hpp"
+/*NEED*/ #include "runtime/vmOperations.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/preserveException.hpp"
+/*NEED*/ #include "utilities/preserveException.hpp"
 
 // Wrapper for all entry points to the virtual machine.
 

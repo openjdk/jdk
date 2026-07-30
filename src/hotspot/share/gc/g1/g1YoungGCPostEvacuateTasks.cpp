@@ -43,6 +43,7 @@
 #include "gc/g1/g1YoungGCPostEvacuateTasks.hpp"
 #include "gc/shared/bufferNode.hpp"
 #include "gc/shared/partialArrayState.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"

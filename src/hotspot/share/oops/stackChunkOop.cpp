@@ -24,6 +24,7 @@
 
 #include "code/nmethod.hpp"
 #include "code/scopeDesc.hpp"
+#include "compiler/oopMap.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetStackChunk.hpp"
 #include "logging/log.hpp"

@@ -23,6 +23,7 @@
 
 #include "classfile/vmClasses.hpp"
 #include "memory/allocation.hpp"
+#include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/objectMonitor.hpp"
