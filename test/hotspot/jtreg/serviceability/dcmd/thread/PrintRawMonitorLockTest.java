@@ -21,6 +21,19 @@
  * questions.
  */
 
+/*
+ * @test
+ * @bug 8253442
+ * @summary Test of diagnostic command Thread.print prints a deadlock of only JVMTI raw monitors.
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.compiler
+ *          java.management
+ *          jdk.internal.jvmstat/sun.jvmstat.monitor
+ * @requires vm.jvmti
+ * @run testng/othervm/native -agentlib:PrintRawMonitorLockTest PrintRawMonitorLockTest
+ */
+
 import org.testng.SkipException;
 import org.testng.annotations.Test;
 import org.testng.Assert;
@@ -35,25 +48,13 @@ import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
 
-/*
- * @test
- * @bug 8253442
- * @summary Test of diagnostic command Thread.print with only JVMTI raw monitor.
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.compiler
- *          java.management
- *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @requires vm.jvmti
- * @run testng/othervm/native -agentlib:PrintRawMonitorLockTest PrintRawMonitorLockTest
- */
 public class PrintRawMonitorLockTest {
 
-    static private void log(String s) { System.out.println(s); }
-    static private String AGENT_LIB = "PrintRawMonitorLockTest";;
+    private static void log(String s) { System.out.println(s); }
+    private static String AGENT_LIB = "PrintRawMonitorLockTest";;
 
-    native static int createRawMonitors();
-    native static int rawMonitorEnter(int id);
+    static native int createRawMonitors();
+    static native int rawMonitorEnter(int id);
 
     static {
         try {
@@ -92,18 +93,18 @@ public class PrintRawMonitorLockTest {
                 throw new RuntimeException("error in JVMTI RawMonitorEnter: " +
                                            "retCode=" + retCode);
             }
-            log("entered lock1");
+            log("entered my lock");
 
-            /* Hold lock on "lock" to show up in thread dump */
-            /* Signal that we're ready for thread dump */
+            // Signal that we're ready for thread dump.
             waitForBarrier(readyBarrier);
 
+            log("trying to enter the other lock");
             retCode = rawMonitorEnter(otherid);
             if (retCode != 0) {
                 throw new RuntimeException("error in JVMTI RawMonitorEnter: " +
                                            "retCode=" + retCode);
             }
-            log("tried to enter lock2");
+            log("shouldn't get here since the threads are deadlocked");
         }
     }
 
@@ -113,8 +114,7 @@ public class PrintRawMonitorLockTest {
             throw new RuntimeException("error in JVMTI CreateRawMonitor: " +
                                        "retCode=" + retCode);
         }
-        log("created threadLock");
-
+        log("created JVM TI raw monitors");
     }
 
     public void run(CommandExecutor executor) {
@@ -126,15 +126,15 @@ public class PrintRawMonitorLockTest {
         RawMonitorThread bThread = new RawMonitorThread(2, 1);
         bThread.start();
 
-        /* Wait for threads to get ready */
+        // Wait for threads to get ready.
         waitForBarrier(readyBarrier);
 
         OutputAnalyzer output;
 
+        // Execute dcmd in a loop in case the threads haven't deadlocked yet.
         while (true) {
-            /* Execute */
             try {
-                Thread.sleep(200);
+                Thread.sleep(100);
             } catch (InterruptedException ie) {
             }
             output = executor.execute("Thread.print -l=true");
