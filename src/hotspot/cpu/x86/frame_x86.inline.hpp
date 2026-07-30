@@ -390,9 +390,10 @@ inline int frame::sender_sp_ret_address_offset() {
   return frame::sender_sp_offset - frame::return_addr_offset;
 }
 
-//------------------------------------------------------------------------------
-// frame::sender
-
+// This method can be on a hot path. Since Valhalla made it a bit bigger, compilers are
+// not as eager to inline it, but in some cases, it makes a significant difference.
+// Let's encourage the compiler to inline sender all the way to frame::repair_sender_sp.
+// through frame::sender_for_compiled_frame.
 ALWAYSINLINE frame frame::sender(RegisterMap* map) const {
   frame result = sender_raw(map);
 

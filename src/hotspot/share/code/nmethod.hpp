@@ -286,7 +286,7 @@ public:
     // Used by shared scope closure (scopedMemoryAccess.cpp)
     bool has_scoped_access() const { return (_bits & SCOPED_ACCESS) != 0; }
 
-    // Used by shared scope closure (scopedMemoryAccess.cpp)
+    // Stack has been extended and needs reair. See comment in MacroAssembler::remove_frame
     bool needs_stack_repair() const { return (_bits & NEEDS_STACK_REPAIR) != 0; }
   };
 
