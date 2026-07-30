@@ -24,11 +24,11 @@
  */
 
 #include "logging/log.hpp"
-#include "logging/logTag.hpp"
+//NONEED #include "logging/logTag.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/atomicAccess.hpp"
-#include "runtime/handles.inline.hpp"
-#include "runtime/sharedRuntime.hpp"
+//NONEED #include "runtime/handles.inline.hpp"
+//NONEED #include "runtime/sharedRuntime.hpp"
 #include "runtime/threadHeapSampler.hpp"
 #include "utilities/checkedCast.hpp"
 

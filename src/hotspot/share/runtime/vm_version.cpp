@@ -24,8 +24,8 @@
 
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
-#include "memory/resourceArea.hpp"
-#include "runtime/vm_version.hpp"
+#include "runtime/os.hpp"
+//NONEED #include "runtime/vm_version.hpp"
 
 void VM_Version_init() {
   VM_Version::initialize();

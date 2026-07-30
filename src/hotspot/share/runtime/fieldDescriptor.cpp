@@ -22,17 +22,17 @@
  *
  */
 
-#include "classfile/vmSymbols.hpp"
-#include "memory/resourceArea.hpp"
+//NONEED #include "classfile/vmSymbols.hpp"
+//NONEED #include "memory/resourceArea.hpp"
 #include "oops/annotations.hpp"
 #include "oops/constantPool.hpp"
-#include "oops/fieldStreams.inline.hpp"
+//NONEED #include "oops/fieldStreams.inline.hpp"
 #include "oops/instanceKlass.hpp"
-#include "oops/klass.inline.hpp"
+//NONEED #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
-#include "runtime/handles.inline.hpp"
-#include "runtime/signature.hpp"
+//NONEED #include "runtime/handles.inline.hpp"
+//NONEED #include "runtime/signature.hpp"
 
 Symbol* fieldDescriptor::generic_signature() const {
   if (!has_generic_signature()) {

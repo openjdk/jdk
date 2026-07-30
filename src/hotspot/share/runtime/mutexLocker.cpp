@@ -27,10 +27,10 @@
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "runtime/javaThread.hpp"
+//NONEED #include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/vmThread.hpp"
+//NONEED #include "runtime/vmThread.hpp"
 #include "utilities/vmError.hpp"
 
 // Mutexes used in the VM (see comment in mutexLocker.hpp):

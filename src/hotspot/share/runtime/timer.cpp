@@ -22,11 +22,11 @@
  *
  */
 
-#include "logging/log.hpp"
-#include "oops/oop.inline.hpp"
+//NONEED #include "logging/log.hpp"
+//NONEED #include "oops/oop.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/timer.hpp"
-#include "utilities/ostream.hpp"
+//NONEED #include "utilities/ostream.hpp"
 
 double TimeHelper::counter_to_seconds(jlong counter) {
   double freq  = (double) os::elapsed_frequency();

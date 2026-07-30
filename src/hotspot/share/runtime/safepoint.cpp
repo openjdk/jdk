@@ -28,7 +28,7 @@
 #include "code/scopeDesc.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/gcLocker.hpp"
+//#include "gc/shared/gcLocker.hpp"
 #include "gc/shared/oopStorage.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "gc/shared/workerUtils.hpp"

@@ -22,7 +22,7 @@
  *
  */
 
-#include "cppstdlib/limits.hpp"
+//NONEED #include "cppstdlib/limits.hpp"
 #include "jni.h"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/sharedRuntime.hpp"

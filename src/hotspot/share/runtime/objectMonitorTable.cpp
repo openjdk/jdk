@@ -27,10 +27,10 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitorTable.hpp"
-#include "runtime/safepoint.hpp"
+//NONEED #include "runtime/safepoint.hpp"
 #include "runtime/thread.hpp"
-#include "runtime/timerTrace.hpp"
-#include "runtime/trimNativeHeap.hpp"
+//NONEED #include "runtime/timerTrace.hpp"
+//NONEED #include "runtime/trimNativeHeap.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 

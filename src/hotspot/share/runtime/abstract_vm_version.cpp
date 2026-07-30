@@ -23,12 +23,12 @@
  */
 
 #include "cds/cdsConfig.hpp"
-#include "compiler/compilerDefinitions.hpp"
-#include "jvm_io.h"
+//NONEED #include "compiler/compilerDefinitions.hpp"
+//NONEED #include "jvm_io.h"
 #include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
-#include "runtime/vm_version.hpp"
-#include "utilities/globalDefinitions.hpp"
+//NONEED #include "runtime/vm_version.hpp"
+//NONEED #include "utilities/globalDefinitions.hpp"
 
 const char* Abstract_VM_Version::_s_vm_release = Abstract_VM_Version::vm_release();
 const char* Abstract_VM_Version::_s_internal_vm_info_string = Abstract_VM_Version::internal_vm_info_string();

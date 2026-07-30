@@ -26,7 +26,7 @@
 #include "gc/shared/gcId.hpp"
 #include "jvm_io.h"
 #include "runtime/atomicAccess.hpp"
-#include "runtime/javaThread.hpp"
+//NONEED #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/nonJavaThread.hpp"

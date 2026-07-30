@@ -25,6 +25,8 @@
 #ifndef SHARE_RUNTIME_JNIPERIODICCHECKER_HPP
 #define SHARE_RUNTIME_JNIPERIODICCHECKER_HPP
 
+#include "memory/allStatic.hpp"
+
 class JniPeriodicCheckerTask;
 
 /*

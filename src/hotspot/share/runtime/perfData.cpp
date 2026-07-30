@@ -23,20 +23,20 @@
  */
 
 #include "classfile/vmSymbols.hpp"
-#include "jvm.h"
+//NONEED #include "jvm.h"
 #include "logging/log.hpp"
-#include "memory/allocation.inline.hpp"
+//NONEED #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/handles.inline.hpp"
+//NONEED #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
-#include "runtime/mutex.hpp"
+//NONEED #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/perfData.inline.hpp"
 #include "utilities/exceptions.hpp"
-#include "utilities/globalCounter.inline.hpp"
+//NONEED #include "utilities/globalCounter.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 PerfDataList*   PerfDataManager::_all = nullptr;

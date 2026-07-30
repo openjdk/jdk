@@ -22,11 +22,11 @@
  *
  */
 
-#include "classfile/javaClasses.inline.hpp"
-#include "jfr/jfrEvents.hpp"
-#include "jfr/support/jfrThreadId.hpp"
-#include "logging/log.hpp"
-#include "logging/logStream.hpp"
+//NONEED #include "classfile/javaClasses.inline.hpp"
+//NONEED #include "jfr/jfrEvents.hpp"
+//NONEED #include "jfr/support/jfrThreadId.hpp"
+//NONEED #include "logging/log.hpp"
+//NONEED #include "logging/logStream.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "oops/stackChunkOop.inline.hpp"
 #include "runtime/continuation.hpp"

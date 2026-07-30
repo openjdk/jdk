@@ -23,7 +23,7 @@
  */
 
 #include "gc/shared/jvmFlagConstraintsGC.hpp"
-#include "memory/allocation.inline.hpp"
+//NONEED #include "memory/allocation.inline.hpp"
 #include "oops/markWord.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/flags/jvmFlagAccess.hpp"
@@ -31,7 +31,7 @@
 #include "runtime/flags/jvmFlagConstraintsRuntime.hpp"
 #include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/globals_extension.hpp"
-#include "runtime/task.hpp"
+//NONEED #include "runtime/task.hpp"
 #include "utilities/vmError.hpp"
 
 //----------------------------------------------------------------------

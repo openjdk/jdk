@@ -23,7 +23,7 @@
  */
 
 #include "runtime/stackFrameStream.inline.hpp"
-#include "utilities/debug.hpp"
+//NONEED #include "utilities/debug.hpp"
 
 StackFrameStream::StackFrameStream(JavaThread *thread, bool update, bool process_frames, bool allow_missing_reg)
   : _reg_map(thread,

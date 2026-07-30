@@ -22,11 +22,11 @@
  *
  */
 
-#include "memory/allocation.inline.hpp"
+//NONEED #include "memory/allocation.inline.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/method.hpp"
-#include "oops/oop.inline.hpp"
-#include "runtime/handles.inline.hpp"
+//NONEED #include "oops/oop.inline.hpp"
+//NONEED #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.hpp"
 
 #ifdef ASSERT

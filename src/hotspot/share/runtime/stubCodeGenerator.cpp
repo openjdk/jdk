@@ -22,7 +22,7 @@
  *
  */
 
-#include "asm/macroAssembler.inline.hpp"
+//NONEED #include "asm/macroAssembler.inline.hpp"
 #include "code/aotCodeCache.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/disassembler.hpp"

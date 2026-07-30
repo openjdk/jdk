@@ -22,15 +22,15 @@
  *
  */
 
-#include "classfile/javaClasses.hpp"
-#include "classfile/vmClasses.hpp"
-#include "classfile/vmSymbols.hpp"
+//NONEED #include "classfile/javaClasses.hpp"
+//NONEED #include "classfile/vmClasses.hpp"
+//NONEED #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
-#include "memory/universe.hpp"
+//NONEED #include "memory/universe.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
-#include "runtime/javaCalls.hpp"
+//NONEED #include "runtime/javaCalls.hpp"
 #include "runtime/monitorDeflationThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/synchronizer.hpp"

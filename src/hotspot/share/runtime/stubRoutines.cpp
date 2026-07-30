@@ -25,7 +25,7 @@
 #include "asm/codeBuffer.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/access.inline.hpp"
+#include "oops/access.hpp"
 #include "oops/klass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/vectorSupport.hpp"

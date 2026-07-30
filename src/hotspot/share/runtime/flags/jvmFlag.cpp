@@ -22,9 +22,9 @@
  *
  */
 
-#include "jfr/jfrEvents.hpp"
+//NONEED #include "jfr/jfrEvents.hpp"
 #include "jvm_io.h"
-#include "memory/allocation.inline.hpp"
+//NONEED #include "memory/allocation.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/flags/jvmFlagAccess.hpp"

@@ -23,10 +23,10 @@
  */
 
 #include "gc/shared/collectedHeap.hpp"
-#include "memory/universe.hpp"
-#include "runtime/safepoint.hpp"
+//NONEED #include "memory/universe.hpp"
+//NONEED #include "runtime/safepoint.hpp"
 #include "runtime/safepointVerifiers.hpp"
-#include "utilities/debug.hpp"
+//NONEED #include "utilities/debug.hpp"
 
 #ifdef ASSERT
 

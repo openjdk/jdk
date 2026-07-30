@@ -26,7 +26,7 @@
 #include "prims/jvmtiEventController.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.inline.hpp"
-#include "runtime/handles.inline.hpp"
+//NONEED #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/mountUnmountDisabler.hpp"
