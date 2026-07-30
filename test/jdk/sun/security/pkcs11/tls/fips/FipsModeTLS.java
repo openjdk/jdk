@@ -38,6 +38,7 @@
  *   NSS-FIPS does not support ML-KEM, so configures the list of named groups.
  * @run main/othervm/timeout=120
  *      -Djdk.tls.client.protocols=TLSv1.3
+ *      -Djdk.tls.useExtendedMasterSecret=false
  *      -Djdk.tls.namedGroups=x25519,secp256r1,secp384r1,secp521r1,x448,ffdhe2048,ffdhe3072,ffdhe4096,ffdhe6144,ffdhe8192
  *      FipsModeTLS
  */
