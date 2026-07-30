@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -33,6 +33,7 @@ import java.util.Iterator;
 import javax.xml.XMLConstants;
 import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.SecuritySupport;
+import jdk.xml.internal.XMLSecurityManager;
 import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
 
@@ -41,7 +42,7 @@ import org.xml.sax.XMLReader;
  * @author Morten Jorgensen
  * @author Erwin Bolwidt <ejb@klomp.org>
  * @author Gunnlaugur Briem <gthb@dimon.is>
- * @LastModified: May 2021
+ * @LastModified: July 2026
  */
 final class Include extends TopLevelElement {
 
@@ -84,8 +85,9 @@ final class Include extends TopLevelElement {
             if (input == null) {
                 docToLoad = SystemIDResolver.getAbsoluteURI(docToLoad, currLoadedDoc);
                 String accessError = SecuritySupport.checkAccess(docToLoad,
-                        (String)xsltc.getProperty(XMLConstants.ACCESS_EXTERNAL_STYLESHEET),
-                        JdkConstants.ACCESS_EXTERNAL_ALL);
+                    (XMLSecurityManager)xsltc.getProperty(JdkConstants.SECURITY_MANAGER),
+                    XMLConstants.ACCESS_EXTERNAL_STYLESHEET,
+                    (String)xsltc.getProperty(XMLConstants.ACCESS_EXTERNAL_STYLESHEET));
 
                 if (accessError != null) {
                     final ErrorMsg msg = new ErrorMsg(ErrorMsg.ACCESSING_XSLT_TARGET_ERR,

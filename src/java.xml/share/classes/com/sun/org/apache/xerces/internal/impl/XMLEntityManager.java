@@ -1361,20 +1361,15 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
 
         if (external) {
             staxInputSource = resolveEntityAsPerStax(externalEntity.entityLocation);
-            /** xxx:  Waiting from the EG
-             * //simply return if there was entity resolver registered and application
-             * //returns either XMLStreamReader or XMLEventReader.
-             * if(staxInputSource.hasXMLStreamOrXMLEventReader()) return ;
-             */
             xmlInputSource = staxInputSource.getXMLInputSource() ;
             if (!fISCreatedByResolver) {
-                String accessError = SecuritySupport.checkAccess(expandedSystemId,
-                        fAccessExternalDTD, JdkConstants.ACCESS_EXTERNAL_ALL);
+                String accessError = SecuritySupport.checkAccess(expandedSystemId, fSecurityManager,
+                    XMLConstants.ACCESS_EXTERNAL_DTD, fAccessExternalDTD);
                 if (accessError != null) {
-                    fErrorReporter.reportError(this.getEntityScanner(),XMLMessageFormatter.XML_DOMAIN,
-                            "AccessExternalEntity",
-                            new Object[] { SecuritySupport.sanitizePath(expandedSystemId), accessError },
-                            XMLErrorReporter.SEVERITY_FATAL_ERROR);
+                    fErrorReporter.reportError(this.getEntityScanner(), XMLMessageFormatter.XML_DOMAIN,
+                        "AccessExternalEntity",
+                        new Object[]{SecuritySupport.sanitizePath(expandedSystemId), accessError},
+                        XMLErrorReporter.SEVERITY_FATAL_ERROR);
                 }
             }
         }
