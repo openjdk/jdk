@@ -826,6 +826,123 @@ public class TestMaskedMacroLogicVector {
         }
     }
 
+    static long longFunc15(long a, long b, boolean mask) {
+        long left = mask ? (-1L ^ a) : -1L;
+        return mask ? (left | b) : left;
+    }
+
+    @ForceInline
+    public void testLong15Kernel(VectorSpecies SPECIES, long[] r, long[] a, long[] b, boolean [] mask) {
+        for (int i = 0; i < SPECIES.loopBound(r.length); i += SPECIES.length()) {
+            VectorMask<Long> vmask = VectorMask.fromArray(SPECIES, mask , i);
+            LongVector vall = LongVector.broadcast(SPECIES, -1L);
+            LongVector va = LongVector.fromArray(SPECIES, a, i);
+            LongVector vb = LongVector.fromArray(SPECIES, b, i);
+            vall.lanewise(VectorOperators.XOR, va, vmask)
+                .lanewise(VectorOperators.OR, vb, vmask)
+                .intoArray(r, i);
+        }
+    }
+
+    @Test
+    @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
+    public void testLong15_Long256(long[] r, long[] a, long[] b, boolean [] mask) {
+        testLong15Kernel(LongVector.SPECIES_256, r, a, b, mask);
+    }
+    @Test
+    @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
+    public void testLong15_Long512(long[] r, long[] a, long[] b, boolean [] mask) {
+        testLong15Kernel(LongVector.SPECIES_512, r, a, b, mask);
+    }
+
+    public void verifyLong15(long[] r, long[] a, long[] b, boolean [] mask) {
+        for (int i = 0; i < r.length; i++) {
+            long expected = longFunc15(a[i], b[i], mask[i]);
+            if (r[i] != expected) {
+                throw new AssertionError(String.format("testLong15: at #%d: r=%d, expected = %d = longFunc15(%d,%d,%b)",
+                                                       i, r[i], expected, a[i], b[i], mask[i]));
+            }
+        }
+    }
+
+    static long longFunc16(long a, long b, boolean mask) {
+        long left = mask ? (-1L ^ a) : -1L;
+        return mask ? (left & b) : left;
+    }
+
+    @ForceInline
+    public void testLong16Kernel(VectorSpecies SPECIES, long[] r, long[] a, long[] b, boolean [] mask) {
+        for (int i = 0; i < SPECIES.loopBound(r.length); i += SPECIES.length()) {
+            VectorMask<Long> vmask = VectorMask.fromArray(SPECIES, mask , i);
+            LongVector vall = LongVector.broadcast(SPECIES, -1L);
+            LongVector va = LongVector.fromArray(SPECIES, a, i);
+            LongVector vb = LongVector.fromArray(SPECIES, b, i);
+            vall.lanewise(VectorOperators.XOR, va, vmask)
+                .lanewise(VectorOperators.AND, vb, vmask)
+                .intoArray(r, i);
+        }
+    }
+
+    @Test
+    @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
+    public void testLong16_Long256(long[] r, long[] a, long[] b, boolean [] mask) {
+        testLong16Kernel(LongVector.SPECIES_256, r, a, b, mask);
+    }
+    @Test
+    @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
+    public void testLong16_Long512(long[] r, long[] a, long[] b, boolean [] mask) {
+        testLong16Kernel(LongVector.SPECIES_512, r, a, b, mask);
+    }
+
+    public void verifyLong16(long[] r, long[] a, long[] b, boolean [] mask) {
+        for (int i = 0; i < r.length; i++) {
+            long expected = longFunc16(a[i], b[i], mask[i]);
+            if (r[i] != expected) {
+                throw new AssertionError(String.format("testLong16: at #%d: r=%d, expected = %d = longFunc16(%d,%d,%b)",
+                                                       i, r[i], expected, a[i], b[i], mask[i]));
+            }
+        }
+    }
+
+    static long longFunc17(long a, long b, boolean mask) {
+        long left = mask ? (-1L ^ a) : -1L;
+        return mask ? (left ^ b) : left;
+    }
+
+    @ForceInline
+    public void testLong17Kernel(VectorSpecies SPECIES, long[] r, long[] a, long[] b, boolean [] mask) {
+        for (int i = 0; i < SPECIES.loopBound(r.length); i += SPECIES.length()) {
+            VectorMask<Long> vmask = VectorMask.fromArray(SPECIES, mask , i);
+            LongVector vall = LongVector.broadcast(SPECIES, -1L);
+            LongVector va = LongVector.fromArray(SPECIES, a, i);
+            LongVector vb = LongVector.fromArray(SPECIES, b, i);
+            vall.lanewise(VectorOperators.XOR, va, vmask)
+                .lanewise(VectorOperators.XOR, vb, vmask)
+                .intoArray(r, i);
+        }
+    }
+
+    @Test
+    @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
+    public void testLong17_Long256(long[] r, long[] a, long[] b, boolean [] mask) {
+        testLong17Kernel(LongVector.SPECIES_256, r, a, b, mask);
+    }
+    @Test
+    @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
+    public void testLong17_Long512(long[] r, long[] a, long[] b, boolean [] mask) {
+        testLong17Kernel(LongVector.SPECIES_512, r, a, b, mask);
+    }
+
+    public void verifyLong17(long[] r, long[] a, long[] b, boolean [] mask) {
+        for (int i = 0; i < r.length; i++) {
+            long expected = longFunc17(a[i], b[i], mask[i]);
+            if (r[i] != expected) {
+                throw new AssertionError(String.format("testLong17: at #%d: r=%d, expected = %d = longFunc17(%d,%d,%b)",
+                                                       i, r[i], expected, a[i], b[i], mask[i]));
+            }
+        }
+    }
+
     // ===================================================== //
 
     private static final Random R = Utils.getRandomInstance();
@@ -1215,6 +1332,51 @@ public class TestMaskedMacroLogicVector {
         for (int i = 0; i < 10000; i++) {
             testLong_Long512(rl, al, bl, cl);
             verifyLong(rl, al, bl, cl);
+        }
+    }
+
+    @Run(test = {"testLong15_Long256"}, mode = RunMode.STANDALONE)
+    public void kernel_testLong15_Long256() {
+        for (int i = 0; i < 10000; i++) {
+            testLong15_Long256(rl, al, bl, mask);
+            verifyLong15(rl, al, bl, mask);
+        }
+    }
+    @Run(test = {"testLong15_Long512"}, mode = RunMode.STANDALONE)
+    public void kernel_testLong15_Long512() {
+        for (int i = 0; i < 10000; i++) {
+            testLong15_Long512(rl, al, bl, mask);
+            verifyLong15(rl, al, bl, mask);
+        }
+    }
+
+    @Run(test = {"testLong16_Long256"}, mode = RunMode.STANDALONE)
+    public void kernel_testLong16_Long256() {
+        for (int i = 0; i < 10000; i++) {
+            testLong16_Long256(rl, al, bl, mask);
+            verifyLong16(rl, al, bl, mask);
+        }
+    }
+    @Run(test = {"testLong16_Long512"}, mode = RunMode.STANDALONE)
+    public void kernel_testLong16_Long512() {
+        for (int i = 0; i < 10000; i++) {
+            testLong16_Long512(rl, al, bl, mask);
+            verifyLong16(rl, al, bl, mask);
+        }
+    }
+
+    @Run(test = {"testLong17_Long256"}, mode = RunMode.STANDALONE)
+    public void kernel_testLong17_Long256() {
+        for (int i = 0; i < 10000; i++) {
+            testLong17_Long256(rl, al, bl, mask);
+            verifyLong17(rl, al, bl, mask);
+        }
+    }
+    @Run(test = {"testLong17_Long512"}, mode = RunMode.STANDALONE)
+    public void kernel_testLong17_Long512() {
+        for (int i = 0; i < 10000; i++) {
+            testLong17_Long512(rl, al, bl, mask);
+            verifyLong17(rl, al, bl, mask);
         }
     }
 
