@@ -102,6 +102,11 @@ final class LazyInitializingVarHandle extends VarHandle {
         return MethodHandles.collectArguments(mh, 0, ensureInitializedMh()).bindTo(this);
     }
 
+    @Override
+    boolean isReachableFrom(ClassLoader cl) {
+        return target.isReachableFrom(cl);
+    }
+
     @ForceInline
     private void ensureInitialized() {
         if (this.initialized)
