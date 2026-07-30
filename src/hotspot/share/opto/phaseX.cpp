@@ -3384,7 +3384,6 @@ Node *PhaseCCP::transform_once( Node *n ) {
   switch( n->Opcode() ) {
   case Op_CallStaticJava:  // Give post-parse call devirtualization a chance
   case Op_CallDynamicJava:
-  case Op_FastLock:        // Revisit FastLocks for lock coarsening
   case Op_If:
   case Op_CountedLoopEnd:
   case Op_Region:
@@ -3394,6 +3393,8 @@ Node *PhaseCCP::transform_once( Node *n ) {
   case Op_Opaque1:
     _worklist.push(n);
     break;
+  case Op_FastLock:
+    assert(false, "should not be materialized yet");
   default:
     break;
   }

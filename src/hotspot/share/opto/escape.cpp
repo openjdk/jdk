@@ -4740,7 +4740,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
           memnode_worklist.push(use);
         } else if (!(op == Op_CmpP || op == Op_Conv2B ||
               op == Op_CastP2X ||
-              op == Op_FastLock || op == Op_AryEq ||
+              op == Op_AryEq ||
               op == Op_StrComp || op == Op_CountPositives ||
               op == Op_StrCompressedCopy || op == Op_StrInflatedCopy ||
               op == Op_StrEquals || op == Op_VectorizedHashCode ||

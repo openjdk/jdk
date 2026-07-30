@@ -817,14 +817,6 @@ public:
   }
 };
 
-//------------------------------MachFastLockNode-------------------------------------
-// Machine-specific versions of FastLockNodes
-class MachFastLockNode : public MachNode {
-  virtual uint size_of() const { return sizeof(*this); } // Size is bigger
-public:
-  MachFastLockNode() : MachNode() {}
-};
-
 //------------------------------MachReturnNode--------------------------------
 // Machine-specific versions of subroutine returns
 class MachReturnNode : public MachNode {

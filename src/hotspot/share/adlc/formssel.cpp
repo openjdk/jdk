@@ -318,13 +318,6 @@ bool InstructForm::is_ideal_if() const {
   return _matrule->is_ideal_if();
 }
 
-// Return 'true' if this instruction matches an ideal 'FastLock' node
-bool InstructForm::is_ideal_fastlock() const {
-  if( _matrule == nullptr ) return false;
-
-  return _matrule->is_ideal_fastlock();
-}
-
 // Return 'true' if this instruction matches an ideal 'MemBarXXX' node
 bool InstructForm::is_ideal_membar() const {
   if( _matrule == nullptr ) return false;
@@ -1113,9 +1106,6 @@ const char *InstructForm::mach_base_class(FormDict &globals)  const {
   }
   else if (is_ideal_goto()) {
     return "MachGotoNode";
-  }
-  else if (is_ideal_fastlock()) {
-    return "MachFastLockNode";
   }
   else if (is_ideal_nop()) {
     return "MachNopNode";
@@ -4200,13 +4190,6 @@ bool MatchRule::is_ideal_if() const {
   return
     !strcmp(_opType,"If"            ) ||
     !strcmp(_opType,"CountedLoopEnd");
-}
-
-bool MatchRule::is_ideal_fastlock() const {
-  if ( _opType && (strcmp(_opType,"Set") == 0) && _rChild ) {
-    return (strcmp(_rChild->_opType,"FastLock") == 0);
-  }
-  return false;
 }
 
 bool MatchRule::is_ideal_membar() const {

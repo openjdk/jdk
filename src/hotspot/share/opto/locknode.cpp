@@ -157,46 +157,10 @@ bool BoxLockNode::is_simple_lock_region(LockNode** unique_lock, Node* obj, Node*
       }
     }
   }
-#ifdef ASSERT
-  // Verify that FastLock and Safepoint reference only this lock region.
-  for (uint i = 0; i < this->outcnt(); i++) {
-    Node* n = this->raw_out(i);
-    if (n->is_FastLock()) {
-      FastLockNode* flock = n->as_FastLock();
-      assert((flock->box_node() == this) && flock->obj_node()->eqv_uncast(obj),"");
-    }
-    // Don't check monitor info in safepoints since the referenced object could
-    // be different from the locked object. It could be Phi node of different
-    // cast nodes which point to this locked object.
-    // We assume that no other objects could be referenced in monitor info
-    // associated with this BoxLock node because all associated locks and
-    // unlocks are reference only this one object.
-  }
-#endif
   if (unique_lock != nullptr && has_one_lock) {
     *unique_lock = lock;
   }
   return true;
-}
-
-//=============================================================================
-//-----------------------------hash--------------------------------------------
-uint FastLockNode::hash() const { return NO_HASH; }
-
-uint FastLockNode::size_of() const { return sizeof(*this); }
-
-//------------------------------cmp--------------------------------------------
-bool FastLockNode::cmp( const Node &n ) const {
-  return (&n == this);                // Always fail except on self
-}
-
-//=============================================================================
-//-----------------------------hash--------------------------------------------
-uint FastUnlockNode::hash() const { return NO_HASH; }
-
-//------------------------------cmp--------------------------------------------
-bool FastUnlockNode::cmp( const Node &n ) const {
-  return (&n == this);                // Always fail except on self
 }
 
 //=============================================================================
@@ -212,7 +176,7 @@ void Parse::do_monitor_enter() {
   // the monitor object is not part of debug info expression stack
   pop();
 
-  // Insert a FastLockNode which takes as arguments the current thread pointer,
+  // Insert a LockNode which takes as arguments the current thread pointer,
   // the obj pointer & the address of the stack slot pair used for the lock.
   shared_lock(obj);
 }

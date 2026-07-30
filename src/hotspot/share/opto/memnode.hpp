@@ -1180,7 +1180,7 @@ private:
 //------------------------------MemBar-----------------------------------------
 // There are different flavors of Memory Barriers to match the Java Memory
 // Model.  Monitor-enter and volatile-load act as Acquires: no following ref
-// can be moved to before them.  We insert a MemBar-Acquire after a FastLock or
+// can be moved to before them.  We insert a MemBar-Acquire after a lock or
 // volatile-load.  Monitor-exit and volatile-store act as Release: no
 // preceding ref can be moved to after them.  We insert a MemBar-Release
 // before a FastUnlock or volatile-store.  All volatiles need to be
@@ -1292,7 +1292,7 @@ public:
 
 // "Acquire" - no following ref can move before (but earlier refs can
 // follow, like an early Load stalled in cache).  Requires multi-cpu
-// visibility.  Inserted after a FastLock.
+// visibility.  Inserted after a Lock.
 class MemBarAcquireLockNode: public MemBarNode {
 public:
   MemBarAcquireLockNode(Compile* C, int alias_idx, Node* precedent)

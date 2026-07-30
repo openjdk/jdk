@@ -1554,15 +1554,15 @@ void SafePointNode::grow_stack(JVMState* jvms, uint grow_by) {
   jvms->set_endoff(endoff + grow_by);
 }
 
-void SafePointNode::push_monitor(const FastLockNode *lock) {
+void SafePointNode::push_monitor(BoxLockNode* box, Node* obj) {
   // Add a LockNode, which points to both the original BoxLockNode (the
   // stack space for the monitor) and the Object being locked.
   const int MonitorEdges = 2;
   assert(JVMState::logMonitorEdges == exact_log2(MonitorEdges), "correct MonitorEdges");
   assert(req() == jvms()->endoff(), "correct sizing");
   int nextmon = jvms()->scloff();
-  ins_req(nextmon,   lock->box_node());
-  ins_req(nextmon+1, lock->obj_node());
+  ins_req(nextmon, box);
+  ins_req(nextmon+1, obj);
   jvms()->set_scloff(nextmon + MonitorEdges);
   jvms()->set_endoff(req());
 }
@@ -1582,13 +1582,13 @@ void SafePointNode::pop_monitor() {
   assert(jvms()->nof_monitors() == num_before_pop-1, "");
 }
 
-Node *SafePointNode::peek_monitor_box() const {
+BoxLockNode* SafePointNode::peek_monitor_box() const {
   int mon = jvms()->nof_monitors() - 1;
   assert(mon >= 0, "must have a monitor");
   return monitor_box(jvms(), mon);
 }
 
-Node *SafePointNode::peek_monitor_obj() const {
+Node* SafePointNode::peek_monitor_obj() const {
   int mon = jvms()->nof_monitors() - 1;
   assert(mon >= 0, "must have a monitor");
   return monitor_obj(jvms(), mon);
@@ -1935,17 +1935,8 @@ uint LockNode::size_of() const { return sizeof(*this); }
 // Locking and unlocking have a canonical form in ideal that looks
 // roughly like this:
 //
-//              <obj>
-//                | \\------+
-//                |  \       \
-//                | BoxLock   \
-//                |  |   |     \
-//                |  |    \     \
-//                |  |   FastLock
-//                |  |   /
-//                |  |  /
-//                |  |  |
-//
+//             obj  BoxLock
+//               \   /
 //               Lock
 //                |
 //            Proj #0
@@ -2185,8 +2176,7 @@ void AbstractLockNode::dump_compact_spec(outputStream* st) const {
 #endif
 
 //=============================================================================
-Node *LockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-
+Node* LockNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // perform any generic optimizations first (returns 'this' or null)
   Node *result = SafePointNode::Ideal(phase, can_reshape);
   if (result != nullptr)  return result;
@@ -2368,7 +2358,7 @@ bool LockNode::is_nested_lock_region(Compile * c) {
     for (int idx = 0; idx < num_mon; idx++) {
       Node* obj_node = sfn->monitor_obj(jvms, idx);
       obj_node = bs->step_over_gc_barrier(obj_node);
-      BoxLockNode* box_node = sfn->monitor_box(jvms, idx)->as_BoxLock();
+      BoxLockNode* box_node = sfn->monitor_box(jvms, idx);
       if ((box_node->stack_slot() < stk_slot) && obj_node->eqv_uncast(obj)) {
         box->set_nested();
         return true;
