@@ -52,7 +52,6 @@ import jdk.internal.net.http.common.Demand;
 import jdk.internal.net.http.common.FlowTube;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.SequentialScheduler;
-import jdk.internal.net.http.common.SequentialScheduler.DeferredCompleter;
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Utils;
 
@@ -554,7 +553,7 @@ abstract class HttpConnection implements Closeable {
         volatile Flow.Subscriber<? super List<ByteBuffer>> subscriber;
         volatile HttpWriteSubscription subscription;
         final SequentialScheduler writeScheduler =
-                    new SequentialScheduler(this::flushTask);
+                    SequentialScheduler.lockingScheduler(this::flushTask);
         @Override
         public void subscribe(Flow.Subscriber<? super List<ByteBuffer>> subscriber) {
             synchronized (reading) {
@@ -570,13 +569,9 @@ abstract class HttpConnection implements Closeable {
             signal();
         }
 
-        void flushTask(DeferredCompleter completer) {
-            try {
-                HttpWriteSubscription sub = subscription;
-                if (sub != null) sub.flush();
-            } finally {
-                completer.complete();
-            }
+        void flushTask() {
+            HttpWriteSubscription sub = subscription;
+            if (sub != null) sub.flush();
         }
 
         void signal() {
