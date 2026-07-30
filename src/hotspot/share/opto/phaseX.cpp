@@ -675,16 +675,6 @@ ConNode* PhaseValues::zerocon(BasicType bt) {
 }
 
 
-
-//=============================================================================
-Node* PhaseGVN::apply_ideal(Node* k, bool can_reshape) {
-  Node* i = BarrierSet::barrier_set()->barrier_set_c2()->ideal_node(this, k, can_reshape);
-  if (i == nullptr) {
-    i = k->Ideal(this, can_reshape);
-  }
-  return i;
-}
-
 //------------------------------transform--------------------------------------
 // Return a node which computes the same function as this node, but
 // in a faster or cheaper fashion.
@@ -693,7 +683,7 @@ Node* PhaseGVN::transform(Node* n) {
 
   // Apply the Ideal call in a loop until it no longer applies
   Node* k = n;
-  Node* i = apply_ideal(k, /*can_reshape=*/false);
+  Node* i = k->Ideal(this, /*can_reshape=*/false);
   NOT_PRODUCT(uint loop_count = 1;)
   while (i != nullptr) {
     assert(i->_idx >= k->_idx, "Idealize should return new nodes, use Identity to return old nodes" );
@@ -703,7 +693,7 @@ Node* PhaseGVN::transform(Node* n) {
       dump_infinite_loop_info(i, "PhaseGVN::transform");
     }
 #endif
-    i = apply_ideal(k, /*can_reshape=*/false);
+    i = k->Ideal(this, /*can_reshape=*/false);
     NOT_PRODUCT(loop_count++;)
   }
   NOT_PRODUCT(if (loop_count != 0) { set_progress(); })
@@ -2220,7 +2210,7 @@ Node *PhaseIterGVN::transform_old(Node* n) {
 #ifndef PRODUCT
   uint hash_before = is_verify_Ideal_return() ? k->hash() : 0;
 #endif
-  Node* i = apply_ideal(k, /*can_reshape=*/true);
+  Node* i = k->Ideal(this, /*can_reshape=*/true);
   assert(i != k || is_new || i->outcnt() > 0, "don't return dead nodes");
 #ifndef PRODUCT
   if (is_verify_Ideal_return()) {
@@ -2255,7 +2245,7 @@ Node *PhaseIterGVN::transform_old(Node* n) {
 #ifndef PRODUCT
     uint hash_before = is_verify_Ideal_return() ? k->hash() : 0;
 #endif
-    i = apply_ideal(k, /*can_reshape=*/true);
+    i = k->Ideal(this, /*can_reshape=*/true);
     assert(i != k || is_new || (i->outcnt() > 0), "don't return dead nodes");
 #ifndef PRODUCT
     if (is_verify_Ideal_return()) {
@@ -2381,8 +2371,6 @@ void PhaseIterGVN::remove_globally_dead_node(Node* dead, NodeOrigin origin) {
               }
             } else if (dead->is_data_proj_of_pure_function(in)) {
               _worklist.push(in);
-            } else {
-              BarrierSet::barrier_set()->barrier_set_c2()->enqueue_useful_gc_barrier(this, in);
             }
             if (ReduceFieldZeroing && dead->is_Load() && i == MemNode::Memory &&
                 in->is_Proj() && in->in(0) != nullptr && in->in(0)->is_Initialize()) {
@@ -2766,20 +2754,11 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   // Loading the java mirror from a Klass requires two loads and the type
   // of the mirror load depends on the type of 'n'. See LoadNode::Value().
   //   LoadBarrier?(LoadP(LoadP(AddP(foo:Klass, #java_mirror))))
-  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  bool has_load_barrier_nodes = bs->has_load_barrier_nodes();
-
   if (use_op == Op_LoadP && use->bottom_type()->isa_rawptr()) {
     for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
       Node* u = use->fast_out(i2);
       const Type* ut = u->bottom_type();
       if (u->Opcode() == Op_LoadP && ut->isa_instptr()) {
-        if (has_load_barrier_nodes) {
-          // Search for load barriers behind the load
-          add_users_to_worklist_if(worklist, u, [&](Node* b) {
-            return bs->is_gc_barrier_node(b);
-          });
-        }
         worklist.push(u);
       }
     }
@@ -3163,28 +3142,15 @@ void PhaseCCP::push_counted_loop_phi(Unique_Node_List& worklist, Node* parent, c
 // Loading the java mirror from a Klass requires two loads and the type of the mirror load depends on the type of 'n'.
 // See LoadNode::Value().
 void PhaseCCP::push_loadp(Unique_Node_List& worklist, const Node* use) const {
-  BarrierSetC2* barrier_set = BarrierSet::barrier_set()->barrier_set_c2();
-  bool has_load_barrier_nodes = barrier_set->has_load_barrier_nodes();
-
   if (use->Opcode() == Op_LoadP && use->bottom_type()->isa_rawptr()) {
     for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
       Node* loadp = use->fast_out(i);
       const Type* ut = loadp->bottom_type();
       if (loadp->Opcode() == Op_LoadP && ut->isa_instptr() && ut != type(loadp)) {
-        if (has_load_barrier_nodes) {
-          // Search for load barriers behind the load
-          push_load_barrier(worklist, barrier_set, loadp);
-        }
         worklist.push(loadp);
       }
     }
   }
-}
-
-void PhaseCCP::push_load_barrier(Unique_Node_List& worklist, const BarrierSetC2* barrier_set, const Node* use) {
-  add_users_to_worklist_if(worklist, use, [&](Node* u) {
-    return barrier_set->is_gc_barrier_node(u);
-  });
 }
 
 // AndI/L::Value() optimizes patterns similar to (v << 2) & 3, or CON & 3 to zero if they are bitwise disjoint.
@@ -3544,8 +3510,6 @@ void Node::set_req_X( uint i, Node *n, PhaseIterGVN *igvn ) {
     default:
       break;
     }
-
-    BarrierSet::barrier_set()->barrier_set_c2()->enqueue_useful_gc_barrier(igvn, old);
   }
 }
 
