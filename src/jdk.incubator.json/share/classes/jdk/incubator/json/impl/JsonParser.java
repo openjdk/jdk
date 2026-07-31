@@ -334,7 +334,7 @@ public final class JsonParser {
                     havePart = true;
                 }
                 case '.' -> {
-                    if (decOff != -1) {
+                    if (decOff != -1 || expOff != -1) {
                         throw valueFailure(start, INVALID_POSITION_IN_NUMBER.formatted(c));
                     } else {
                         if (!havePart) {

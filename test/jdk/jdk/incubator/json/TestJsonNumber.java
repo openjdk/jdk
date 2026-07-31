@@ -315,7 +315,10 @@ public class TestJsonNumber {
                 Arguments.of("e2", "Invalid position of 'e' within JSON Number. Path: \"\". Location: line 0, position 0."),
                 Arguments.of("e", "Invalid position of 'e' within JSON Number. Path: \"\". Location: line 0, position 0."),
                 Arguments.of("5.", "Input expected after '[.|e|E]'. Path: \"\". Location: line 0, position 2."),
-                Arguments.of("5e", "Input expected after '[.|e|E]'. Path: \"\". Location: line 0, position 2."));
+                Arguments.of("5e", "Input expected after '[.|e|E]'. Path: \"\". Location: line 0, position 2."),
+                Arguments.of("5e5.5", "Invalid position of '.' within JSON Number. Path: \"\". Location: line 0, position 3."),
+                Arguments.of("5.5e5.5", "Invalid position of '.' within JSON Number. Path: \"\". Location: line 0, position 5.")
+        );
 
         @ParameterizedTest
         @FieldSource("INVALID_NUMBER")
