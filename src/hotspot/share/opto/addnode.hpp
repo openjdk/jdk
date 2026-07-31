@@ -206,6 +206,7 @@ class AddHFNode : public AddNode {
 public:
   AddHFNode(Node* in1, Node* in2) : AddNode(in1,in2) {}
   virtual int Opcode() const;
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual const Type* add_of_identity(const Type* t1, const Type* t2) const;
   virtual const Type* add_ring(const Type*, const Type*) const;
   virtual const Type* add_id() const { return TypeH::ZERO; }

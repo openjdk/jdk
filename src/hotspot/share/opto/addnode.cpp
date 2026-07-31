@@ -747,6 +747,12 @@ const Type* AddHFNode::add_ring(const Type* t0, const Type* t1) const {
   return TypeH::make(t0->getf() + t1->getf());
 }
 
+//------------------------------Ideal------------------------------------------
+Node* AddHFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  // Floating point additions are not associative because of boundary conditions (infinity)
+  return commute(phase, this) ? this : nullptr;
+}
+
 //=============================================================================
 //------------------------------add_of_identity--------------------------------
 // Check for addition of the identity
