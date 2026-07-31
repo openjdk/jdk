@@ -981,7 +981,7 @@ bool ciTypeFlow::StateVector::apply_one_bytecode(ciBytecodeStream* str) {
       if (!will_link) {
         trap(str, element_klass, str->get_klass_index());
       } else {
-        push_object(ciObjArrayKlass::make(element_klass));
+        push_object(ciObjArrayKlass::make(element_klass,/* refined_type = */ false));
       }
       break;
     }
