@@ -71,8 +71,9 @@ public class AccessRuleTest {
             Arguments.of("http://[2001:0db8:0000:0000:0000:0000:0000:0001]",
                 "http://[2001:db8::1]/dtds/example.dtd", true),
             Arguments.of("jrt:*; jrt:/java.xml/*", "jrt:/java.xml/jdk/xml/internal/jdkcatalog/JDKCatalog.xml", true),
-            Arguments.of("jar:file:/tmp/foo.jar; jar:file:/tmp/foo.jar!/dtds/*", "jar:file:/tmp/foo.jar!/dtds/example.dtd", true),
-            Arguments.of("jar:*; jar:file:*", "jar:file://all.file.access", true)
+            Arguments.of("file:/tmp/foo.jar",
+                "jar:file:/tmp/foo.jar!/dtds/example.dtd; jar:file:/tmp/foo.jar!/xsds/example.xsd", true),
+            Arguments.of("file:/tmp/foo.jar", "jar:file:/tmp/bar.jar!/dtds/example.dtd", false)
         );
     }
 
@@ -90,9 +91,11 @@ public class AccessRuleTest {
             Arguments.of("http", IllegalArgumentException.class),
             Arguments.of("http:", IllegalArgumentException.class),
             Arguments.of("http://:8080", IllegalArgumentException.class),
+            Arguments.of("http://example.com:", IllegalArgumentException.class),
             Arguments.of("http:///dtds", IllegalArgumentException.class),
             Arguments.of("http://example.com, , file:*", IllegalArgumentException.class),
-            Arguments.of("http://example.com, *, file:*", IllegalArgumentException.class)
+            Arguments.of("http://example.com, *, file:*", IllegalArgumentException.class),
+            Arguments.of("jar:file:/tmp/foo.jar!/dtds/*", IllegalArgumentException.class)
         );
     }
 

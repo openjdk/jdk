@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -93,7 +93,7 @@ import org.xml.sax.InputSource;
  * @author K.Venugopal SUN Microsystems
  * @author Neeraj Bajaj SUN Microsystems
  * @author Sunitha Reddy SUN Microsystems
- * @LastModified: May 2025
+ * @LastModified: July 2026
  */
 public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
 

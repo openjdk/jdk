@@ -44,11 +44,11 @@ import java.util.Locale;
  * Supported rule format:
  * <pre>
  *   [scheme]://host[:port][/path-pattern]
- *   [scheme]:/[path-pattern]     (for local schemes such as file, jar, jrt)
+ *   [scheme]:/[path-pattern]     (for local schemes such as file and jrt)
  * </pre>
  * <ul>
- *   <li><b>scheme</b>: The URI scheme (e.g., http, https, ftp, file, jar, jrt).</li>
- *   <li><b>host</b>: Domain name, IPv4, or IPv6 address. For local schemes ("file", "jar", "jrt"), host is omitted.</li>
+ *   <li><b>scheme</b>: The URI scheme (e.g., http, https, ftp, file, jrt).</li>
+ *   <li><b>host</b>: Domain name, IPv4, or IPv6 address. For local schemes ("file", "jrt"), host is omitted.</li>
  *   <li><b>port</b>: (optional) Port number to match. If omitted, matches the default port for the scheme.</li>
  *   <li><b>path-pattern</b>: (optional) Resource path. Supports wildcards (e.g., {@code /*}, {@code /dtds/*}).</li>
  * </ul>
@@ -129,28 +129,11 @@ public class AccessRule {
         private final HostPattern hostPattern;
         private final Integer port;  // null if not set
         private final PathPattern pathPattern;
-        // for scheme==jar
-        private final URIPatternRule jarBaseRule;
-        private final PathPattern jarEntryPathPattern;
-
-        // Constructor for schemes other than jar
         private URIPatternRule(String scheme, HostPattern hostPattern, Integer port, PathPattern pathPattern) {
             this.scheme = scheme;
             this.hostPattern = hostPattern;
             this.port = port;
             this.pathPattern = pathPattern;
-            this.jarBaseRule = null;
-            this.jarEntryPathPattern = null;
-        }
-
-        // Constructor for jar patterns
-        public URIPatternRule(URIPatternRule jarBaseRule, PathPattern jarEntryPathPattern) {
-            this.scheme = "jar";
-            this.hostPattern = null;
-            this.port = null;
-            this.pathPattern = null;
-            this.jarBaseRule = jarBaseRule;
-            this.jarEntryPathPattern = jarEntryPathPattern;
         }
 
         /**
@@ -169,36 +152,6 @@ public class AccessRule {
             if (!isSupportedScheme(scheme))
                 throw new IllegalArgumentException("Unsupported scheme in resource access pattern: " + pattern);
 
-            if ("jar".equals(scheme)) {
-                int exclIdx = pattern.indexOf('!', scheme.length() + 1);
-                String nestedPart, entryPart;
-                boolean isLocalScheme = false;
-                if (exclIdx < 0) {
-                    nestedPart = pattern.substring(scheme.length() + 1); // after "jar:"
-                    entryPart = null;
-                    isLocalScheme = nestedPart.startsWith("file") || nestedPart.startsWith("jar") || nestedPart.startsWith("jrt");
-                } else {
-                    nestedPart = pattern.substring(scheme.length() + 1, exclIdx);
-                    entryPart = pattern.substring(exclIdx + 1);
-                }
-
-                // Check for illegal forms
-                if (Utils.isEmpty(nestedPart) && Utils.isNotEmpty(entryPart))
-                    throw new IllegalArgumentException("Invalid JAR rule: entry pattern present but missing jar base: " + pattern);
-                if (!isLocalScheme && Utils.isEmpty(entryPart) && Utils.isNotEmptyOrWildcard(nestedPart))
-                    throw new IllegalArgumentException("Invalid JAR rule: entry pattern is empty: " + pattern);
-
-                URIPatternRule jarBaseRule = null;
-                if (Utils.isNotEmptyOrWildcard(nestedPart)) {
-                    jarBaseRule = URIPatternRule.parse(nestedPart);
-                }
-                PathPattern jarEntryPathPattern = (entryPart == null || entryPart.isEmpty() || entryPart.equals("/*") || entryPart.equals("*"))
-                    ? PathPattern.of("*")
-                    : PathPattern.of(entryPart.startsWith("/") ? entryPart : "/" + entryPart);
-
-                return new URIPatternRule(jarBaseRule, jarEntryPathPattern);
-            }
-
             String rest = pattern.substring(schemeSep + 1);
             // Remove up to 3 leading slashes
             String afterSlashes;
@@ -206,8 +159,8 @@ public class AccessRule {
             HostPattern hostPattern = null;
             Integer port = null;
             PathPattern pathPattern = null;
-            // Handle file/jar/jrt schemes as path patterns
-            boolean isLocalScheme = scheme.equals("file") || scheme.equals("jar") || scheme.equals("jrt");
+            // Handle file and jrt schemes as path patterns.
+            boolean isLocalScheme = scheme.equals("file") || scheme.equals("jrt");
             if (isLocalScheme) {
                 // Remove up to 3 leading slashes
                 afterSlashes = rest.replaceFirst("^/{0,3}", "");
@@ -243,6 +196,9 @@ public class AccessRule {
                     throw new IllegalArgumentException("Host must not be blank for scheme: " + scheme);
                 // Port
                 int portSep = hostPart.lastIndexOf(':');
+                if (portSep == hostPart.length() - 1) {
+                    throw new IllegalArgumentException("Empty port: " + pattern);
+                }
                 if (portSep > 0 && portSep < hostPart.length() - 1
                     && isPortNumber(hostPart.substring(portSep + 1))) {
                     hostPattern = HostPattern.of(hostPart.substring(0, portSep));
@@ -272,26 +228,16 @@ public class AccessRule {
         }
 
         public boolean matches(URI uri) {
-            if (uri == null) return false;
+            if (uri != null && "jar".equalsIgnoreCase(uri.getScheme())) {
+                URI jarFile = getJarFileURI(uri);
+                return jarFile != null && matches(jarFile);
+            }
+
+            // Resource access matching applies only to hierarchical URIs. Opaque URIs
+            // have no hierarchical host/port/path components to match.
+            if (uri == null || uri.isOpaque()) return false;
             String testScheme = uri.getScheme();
             if (testScheme == null || !testScheme.equalsIgnoreCase(scheme)) return false;
-
-            if ("jar".equalsIgnoreCase(testScheme)) {
-                String ssp = uri.getSchemeSpecificPart();
-                int exclIdx = ssp.indexOf("!/");
-                String basePart, entryPart;
-                if (exclIdx < 0) {
-                    basePart = ssp;
-                    entryPart = "";
-                } else {
-                    basePart = ssp.substring(0, exclIdx);
-                    entryPart = ssp.substring(exclIdx + 1); // may be empty
-                }
-                URI baseUri = URI.create(basePart);
-                boolean baseMatches = (jarBaseRule == null) || jarBaseRule.matches(baseUri); // wildcard/null means match any
-                boolean entryMatches = jarEntryPathPattern == null || jarEntryPathPattern.matches(entryPart); // always at least "/*"
-                return baseMatches && entryMatches;
-            }
 
             // Local: path-pattern match only
             if (hostPattern == null) {
@@ -312,9 +258,22 @@ public class AccessRule {
             return true;
         }
 
+        private static URI getJarFileURI(URI jarURI) {
+            String schemeSpecificPart = jarURI.getRawSchemeSpecificPart();
+            int separator = schemeSpecificPart.indexOf("!/");
+            if (separator < 0) {
+                return null;
+            }
+            try {
+                return URI.create(schemeSpecificPart.substring(0, separator));
+            } catch (IllegalArgumentException e) {
+                return null;
+            }
+        }
+
         private static boolean isSupportedScheme(String scheme) {
             return switch (scheme) {
-                case "http", "https", "ftp", "file", "jar", "jrt" -> true;
+                case "http", "https", "ftp", "file", "jrt" -> true;
                 default -> false;
             };
         }
