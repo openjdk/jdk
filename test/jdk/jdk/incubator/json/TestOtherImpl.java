@@ -78,17 +78,6 @@ public class TestOtherImpl {
         public String toString() {
             return "\""+theString+"\"";
         }
-
-        @Override
-        public boolean equals(Object o) {
-            return this == o ||
-                    o instanceof JsonString ojs && asString().equals(ojs.asString());
-        }
-
-        @Override
-        public int hashCode() {
-            return asString().hashCode();
-        }
     }
 }
 
