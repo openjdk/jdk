@@ -42,11 +42,11 @@ public class TestSveClone {
 
     static long test(int init) {
         return ByteVector.broadcast(SB, (byte) -8)
-            .lanewise(VectorOperators.XOR,
-                ByteVector.broadcast(SB, (byte) init),
-                ByteVector.fromArray(SB, new byte[8], 0)
-                .compare(VectorOperators.EQ, (byte) init))
-            .reduceLanesToLong(VectorOperators.OR);
+                         .lanewise(VectorOperators.XOR,
+                                   ByteVector.broadcast(SB, (byte) init),
+                                   ByteVector.fromArray(SB, new byte[8], 0)
+                         .compare(VectorOperators.EQ, (byte) init))
+                         .reduceLanesToLong(VectorOperators.OR);
     }
 
     public static void main(String[] args) {
