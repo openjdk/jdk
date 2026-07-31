@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,8 +55,8 @@ import com.sun.tools.javac.file.JRTIndex;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.jvm.ClassReader;
 import com.sun.tools.javac.jvm.Profile;
+import com.sun.tools.javac.main.JavaCompiler;
 import com.sun.tools.javac.main.Option;
-import com.sun.tools.javac.platform.PlatformDescription;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.util.*;
 
@@ -64,8 +64,7 @@ import static javax.tools.StandardLocation.*;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
-import com.sun.tools.javac.code.Symbol;
-import com.sun.tools.javac.code.Symbol.CompletionFailure;
+
 import com.sun.tools.javac.main.DelegatingJavaFileManager;
 
 import com.sun.tools.javac.util.Dependencies.CompletionCause;
@@ -218,7 +217,14 @@ public class ClassFinder {
         } else {
             useCtProps = false;
         }
-        jrtIndex = useCtProps && JRTIndex.isAvailable() ? JRTIndex.getSharedInstance() : null;
+        if (useCtProps && JRTIndex.isAvailable()) {
+            Preview preview = Preview.instance(context);
+            JavaCompiler comp = JavaCompiler.instance(context);
+            jrtIndex = JRTIndex.instance(preview.isEnabled());
+            comp.closeables = comp.closeables.prepend(jrtIndex);
+        } else {
+            jrtIndex = null;
+        }
 
         profile = Profile.instance(context);
         cachedCompletionFailure = new CompletionFailure(null, () -> null, dcfh);
