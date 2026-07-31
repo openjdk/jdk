@@ -114,9 +114,9 @@ class InlineKlass: public InstanceKlass {
     int _fast_acmp_offset;    // if < 0, fast acmp doesn't apply
     int64_t _fast_acmp_mask;  // can be 0 for empty value classes
 
-    // When we can't intrinsify the identityHashCode, we can still aboid the Java call at runtim if the value object is nice
+    // When we can't intrinsify the identityHashCode, we can still avoid the Java call at runtime if the value object is nice
     // enough. This fast path basically implements the method ValueObjectMethods::valueObjectHashCode in a special case. This
-    // special case is when there is at most one no-oop segment in the acmp maps, that this segment (if it exsits) is 1, 2 4
+    // special case is when there is at most one no-oop segment in the acmp maps, that this segment (if it exists) is 1, 2, 4
     // or 8 byte long, and there is no oop in the acmp maps. Basically, valueObjectHashCode makes 0 or 1 iteration of the big
     // outer loop, and one iteration of one of the inner loops. The fast path loads a long at the given offset, isolates the
     // numeric value we are interested in, and does the arithmetic.
@@ -127,11 +127,11 @@ class InlineKlass: public InstanceKlass {
     // 3. the object has one segment: we set _fast_hashcode_offset according to where we should load.
     //
     // Alike for the acmp fast path, we must not load further than the object, and we use the same trick as for acmp, and we
-    // load possibly some part of the header. The cases 2. and 3. cannot collide since loading loading at offset 0 would read
-    // only the header, and no payload.
+    // load possibly some part of the header. The cases 2. and 3. cannot collide since loading at offset 0 would read only the
+    // header, and no payload.
     //
     // But unlike acmp, we need the actual arithmetic value, and resetting irrelevant bits is not correct. To do that, we need
-    // to have a different logic wrt. endianness. Moreover, the fast path needs to handle differently a when the segment is 8-byte
+    // to have a different logic wrt. endianness. Moreover, the fast path needs to handle differently when the segment is 8-byte
     // long, just as valueObjectHashCode does, while the arithmetic for segments of size 1, 2 or 4 is the same. This is also known
     // by a endianness-dependent test.
     int _fast_hashcode_offset;   // if < 0, fast hashcode doesn't apply
@@ -162,7 +162,7 @@ class InlineKlass: public InstanceKlass {
     // This field is storing the mask. Since we keep 1, 2, 4 or 8 bytes, the legal values of _fast_hashcode_mask
     // are 0xff ff ff ff ff ff ff ff, 0x00 00 00 00 ff ff ff ff, 0x00 00 00 00 00 00 ff ff or 0x00 00 00 00 00 00 00 ff
     //
-    // The fast path is aware we are loading a long if the shift is (long)-1.
+    // The fast path is aware we are loading a long if the mask is (long)-1.
     // Value is not specified (and does not matter) if _fast_hashcode_offset <= 0
     int64_t _fast_hashcode_mask;
 #endif
