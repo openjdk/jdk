@@ -212,12 +212,12 @@ public final class AquaProgressBarUI extends ProgressBarUI implements ChangeList
         }
         painter.paint(g2, progressBar, i.left, i.top, width, height);
         g2.setTransform(savedAT);
+        if (progressBar.isStringPainted() && !progressBar.isIndeterminate()) {
+            paintString(g2, i.left, i.top, width, height);
+        }
         if (image != null) {
             g.drawImage(image, 0, 0, width, height, null);
             g2.dispose();
-        }
-        if (progressBar.isStringPainted() && !progressBar.isIndeterminate()) {
-            paintString(g, i.left, i.top, width, height);
         }
     }
 
@@ -228,39 +228,32 @@ public final class AquaProgressBarUI extends ProgressBarUI implements ChangeList
     }
 
     protected void paintString(final Graphics g, final int x, final int y, final int width, final int height) {
+        if (!(g instanceof Graphics2D)) return;
 
+        final Graphics2D g2 = (Graphics2D)g;
         final String progressString = progressBar.getString();
-        g.setFont(progressBar.getFont());
-        final Point renderLocation = getStringPlacement(g, progressString, x, y, width, height);
-        final Rectangle oldClip = g.getClipBounds();
+        g2.setFont(progressBar.getFont());
+        final Point renderLocation = getStringPlacement(g2, progressString, x, y, width, height);
+        final Rectangle oldClip = g2.getClipBounds();
 
         if (isHorizontal()) {
-            g.setColor(selectionForeground);
-            SwingUtilities2.drawString(progressBar, g, progressString, renderLocation.x, renderLocation.y);
+            g2.setColor(selectionForeground);
+            SwingUtilities2.drawString(progressBar, g2, progressString, renderLocation.x, renderLocation.y);
         } else { // VERTICAL
-            Graphics2D g2 = null;
-            AffineTransform savedAT = null;
-            if (g instanceof Graphics2D) {
-                g2 = (Graphics2D)g;
-            }
-            if (g instanceof Graphics2D) {
                 // We rotate it -90 degrees, then translate it down since we are going to be bottom up.
-                savedAT = g2.getTransform();
-                g2.transform(AffineTransform.getRotateInstance(0.0f - (Math.PI / 2.0f), 0, 0));
-                g2.translate(-progressBar.getHeight(), 0);
-                // 0,0 is now the bottom left of the viewable area, so we just draw our image at
-                // the render location since that calculation knows about rotation.
-            }
+            final AffineTransform savedAT = g2.getTransform();
+            g2.transform(AffineTransform.getRotateInstance(0.0f - (Math.PI / 2.0f), 0, 0));
+            g2.translate(-progressBar.getHeight(), 0);
+            // 0,0 is now the bottom left of the viewable area, so we just draw our image at
+            // the render location since that calculation knows about rotation.
 
-            g.setColor(selectionForeground);
-            SwingUtilities2.drawString(progressBar, g, progressString, renderLocation.x, renderLocation.y);
+            g2.setColor(selectionForeground);
+            SwingUtilities2.drawString(progressBar, g2, progressString, renderLocation.x, renderLocation.y);
 
-            if (g instanceof Graphics2D) {
-                g2.setTransform(savedAT);
-            }
+            g2.setTransform(savedAT);
         }
 
-        g.setClip(oldClip);
+        g2.setClip(oldClip);
     }
 
     /**
