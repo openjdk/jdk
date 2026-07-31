@@ -60,7 +60,6 @@ public class Versions {
         try {
             Class.forName(className, false, cl);
         } catch (UnsupportedClassVersionError e) {
-            System.out.println(e);
             supported = false;
         } catch (Throwable t) {
             // We expect an Exception indicating invalid class file
