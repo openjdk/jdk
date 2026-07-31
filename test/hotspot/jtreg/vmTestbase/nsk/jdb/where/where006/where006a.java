@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 package nsk.jdb.where.where006;
 
+import jdk.test.lib.thread.ThreadWrapper;
 import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdb.*;
@@ -52,7 +53,7 @@ public class where006a {
 
         for (int i = 0; i < numThreads ; i++) {
            locks[i] = new Lock();
-           holder[i] = new MyThread(locks[i],"MyThread-" + i);
+           holder[i] = new MyThread(locks[i],"MyThread-" + i).getThread();
         }
 
         // lock monitor to prevent threads from finishing after they started
@@ -104,10 +105,10 @@ class Lock {
    }
 }
 
-class MyThread extends Thread {
+class MyThread extends ThreadWrapper {
    Lock lock;
    String name;
-   MyThread(Lock l, String n) {this.lock = l; name = n;}
+   MyThread(Lock l, String n) {super(n); this.lock = l; name = n;}
 
    public void run() {
       // Concatenate strings in advance to avoid lambda calculations later

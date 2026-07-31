@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
  *      -jdb=${test.jdk}/bin/jdb
+ *      -jdb.option=-trackallthreads
  *      -java.options="${test.vm.opts} ${test.java.opts}"
  *      -workdir=.
  *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
@@ -90,10 +91,11 @@ public class thread002 extends JdbTest {
         jdb.setBreakpointInMethod(LAST_BREAK);
         jdb.receiveReplyFor(JdbCommand.cont);
 
-        String[] threadIds = jdb.getThreadIds(PACKAGE_NAME + "." + THREAD_NAME);
+        String[] threadIds = jdb.getThreadIdsByName(THREAD_NAME);
 
+        String[][] switchReplies = new String[thread002a.numThreads][];
         for (int i = 0; i < thread002a.numThreads; i++) {
-            jdb.receiveReplyFor(JdbCommand.thread + threadIds[i]);
+            switchReplies[i] = jdb.receiveReplyFor(JdbCommand.thread + threadIds[i]);
             jdb.receiveReplyFor(JdbCommand.print + DEBUGGEE_CLASS + ".holder[" + i + "].name");
         }
 
@@ -102,8 +104,8 @@ public class thread002 extends JdbTest {
         reply = jdb.getTotalReply();
         grep = new Paragrep(reply);
         for (int i = 0; i < threadIds.length; i++) {
-            count = grep.find(THREAD_NAME + "#" + i);
-            if (count != 1) {
+            count = new Paragrep(switchReplies[i]).find(THREAD_NAME + "#" + i);
+            if (count == 0) {
                  failure("jdb failed to switch to thread: " + threadIds[i]);
             }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
  *      -jdb=${test.jdk}/bin/jdb
+ *      -jdb.option=-trackallthreads
  *      -java.options="${test.vm.opts} ${test.java.opts}"
  *      -workdir=.
  *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
@@ -84,7 +85,7 @@ public class wherei001 extends JdbTest {
         jdb.setBreakpointInMethod(LAST_BREAK);
         reply = jdb.receiveReplyFor(JdbCommand.cont);
 
-        threads = jdb.getThreadIds(DEBUGGEE_THREAD);
+        threads = jdb.getThreadIdsByName("MyThread");
 
         if (threads.length != 5) {
             log.complain("jdb should report 5 instance of " + DEBUGGEE_THREAD);

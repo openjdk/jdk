@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
  *      -jdb=${test.jdk}/bin/jdb
+ *      -jdb.option=-trackallthreads
  *      -java.options="${test.vm.opts} ${test.java.opts}"
  *      -workdir=.
  *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
@@ -95,7 +96,7 @@ public class where006 extends JdbTest {
         jdb.setBreakpointInMethod(LAST_BREAK);
         jdb.receiveReplyFor(JdbCommand.cont);
 
-        String[] threadIds = jdb.getThreadIds(PACKAGE_NAME + ".MyThread");
+        String[] threadIds = jdb.getThreadIdsByName("MyThread");
         reply = jdb.receiveReplyFor(JdbCommand.where + "all");
         for (int i = 0; i < where006a.numThreads; i++) {
             checkFrames(threadIds[i], reply, 5);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,6 +103,9 @@ public class suspend001a {
     }
 }
 
+// Note: the tested thread classes must extend Thread, not ThreadWrapper.
+// Suspending a single virtual thread and continuing causes jdb to stop
+// responding (no prompt is received). See JDK-8382272.
 class Suspended extends Thread {
     String name;
 

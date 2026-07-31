@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,6 +113,9 @@ public class kill002a {
 }
 
 
+// Note: MyThread must extend Thread, not ThreadWrapper. jdb's kill command
+// (JVMTI StopThread) rejects a virtual thread that is unmounted in Object.wait()
+// with "Operation is not supported on the current frame". See JDK-8382272.
 class MyThread extends Thread {
     Object lock;
     String name;

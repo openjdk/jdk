@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
  *      -jdb=${test.jdk}/bin/jdb
+ *      -jdb.option=-trackallthreads
  *      -java.options="${test.vm.opts} ${test.java.opts}"
  *      -workdir=.
  *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
@@ -97,7 +98,7 @@ public class pop001 extends JdbTest {
         reply = jdb.receiveReplyFor(JdbCommand.cont);
 
         while (true) {
-            String[] threads = jdb.getThreadIds(DEBUGGEE_THREAD);
+            String[] threads = jdb.getThreadIdsByName(MYTHREAD);
             if (threads.length != 1) {
                 log.complain("jdb should report 1 instance of " + DEBUGGEE_THREAD);
                 log.complain("Found: " + threads.length);
