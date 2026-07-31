@@ -2802,7 +2802,7 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step_opr, LIR_Opr dest_opr,
   ProfileStub *counter_stub
     = ProfileCaptureRatio > 1 ? new ProfileStub() : nullptr;
 
-  Register dest = dest_opr->as_register();
+  Register dest = as_reg(dest_opr);
 
   auto lambda = [counter_stub, overflow_stub, freq_opr, ratio_shift, step_opr,
                  md_reg, md_opr, md_offset_opr, dest_opr, dest] (LIR_Assembler* ce, LIR_Op* op) {
