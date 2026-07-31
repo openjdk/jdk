@@ -176,7 +176,7 @@ import static java.lang.classfile.ClassFile.ACC_FINAL;
  * A class or interface created by the invocation of
  * {@link java.lang.invoke.MethodHandles.Lookup#defineHiddenClass(byte[], boolean, MethodHandles.Lookup.ClassOption...)
  * Lookup::defineHiddenClass} is a {@linkplain Class#isHidden() <dfn>hidden</dfn>}
- * class or interface.
+ * {@linkplain #isClassOrInterface() class or interface}.
  * All kinds of class, including enum classes and record classes, may be
  * hidden classes; all kinds of interface, including annotation interfaces,
  * may be hidden interfaces.
@@ -906,7 +906,10 @@ public final class Class<T> implements java.io.Serializable,
     /**
      * Determines if this {@code Class} object represents a class or an interface.
      * Classes and interfaces are derived from {@code class} files and can
-     * declare fields and methods.
+     * declare fields and methods.  Many reflective concepts, such as {@linkplain
+     * #isHidden() hidden classes}, {@linkplain #getEnclosingClass() enclosing
+     * classes}, {@linkplain #getNestMembers() nest members}, only apply to
+     * classes and interfaces.
      *
      * @return {@code true} if and only if this {@code Class} object represents
      *         a class or an interface
@@ -4125,9 +4128,8 @@ public final class Class<T> implements java.io.Serializable,
    }
 
     /**
-     * Returns {@code true} if and only if the underlying class is a hidden class.
-     *
-     * @return {@code true} if and only if this class is a hidden class.
+     * {@return {@code true} if and only if the underlying class is a hidden
+     * {@linkplain #isClassOrInterface() class or interface}}
      *
      * @since 15
      * @see MethodHandles.Lookup#defineHiddenClass
