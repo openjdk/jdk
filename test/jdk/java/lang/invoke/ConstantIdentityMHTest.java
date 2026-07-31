@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /* @test
  * @summary unit tests for java.lang.invoke.MethodHandles
- * @run testng/othervm -ea -esa test.java.lang.invoke.ConstantIdentityMHTest
+ * @run junit/othervm -ea -esa test.java.lang.invoke.ConstantIdentityMHTest
  */
 package test.java.lang.invoke;
 
@@ -31,13 +31,14 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
-import static org.testng.Assert.*;
-import org.testng.annotations.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class ConstantIdentityMHTest {
 
-    @DataProvider(name = "testZeroData")
-    private Object[][] testZeroData() {
+    private static Object[][] testZeroData() {
        return new Object[][] {
            {void.class, "()void"},
            {int.class, "()int"},
@@ -52,26 +53,27 @@ public class ConstantIdentityMHTest {
        };
     }
 
-    @Test(dataProvider = "testZeroData")
+    @ParameterizedTest
+    @MethodSource("testZeroData")
     public void testZero(Class<?> expectedtype, String expected) throws Throwable {
-        assertEquals(MethodHandles.zero(expectedtype).type().toString(), expected);
+        assertEquals(expected, MethodHandles.zero(expectedtype).type().toString());
     }
 
-    @Test(expectedExceptions={ NullPointerException.class })
+    @Test
     public void testZeroNPE() {
-        MethodHandle mh = MethodHandles.zero(null);
+        assertThrows(NullPointerException.class, () -> MethodHandles.zero(null));
     }
 
     @Test
     void testEmpty() throws Throwable {
         MethodHandle cat = lookup().findVirtual(String.class, "concat", methodType(String.class, String.class));
-        assertEquals((String)cat.invoke("x","y"), "xy");
+        assertEquals("xy", (String)cat.invoke("x","y"));
         MethodHandle mhEmpty = MethodHandles.empty(cat.type());
-        assertEquals((String)mhEmpty.invoke("x","y"), null);
+        assertNull((String) mhEmpty.invoke("x", "y"));
     }
 
-    @Test(expectedExceptions = { NullPointerException.class })
+    @Test
     void testEmptyNPE() {
-        MethodHandle lenEmptyMH = MethodHandles.empty(null);
+        assertThrows(NullPointerException.class, () -> MethodHandles.empty(null));
     }
 }

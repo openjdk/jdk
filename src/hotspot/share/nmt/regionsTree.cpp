@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,9 +58,9 @@ void RegionsTree::print_on(outputStream* st) {
 }
 #endif
 
-size_t RegionsTree::committed_size(const ReservedMemoryRegion& rgn) {
+size_t RegionsTree::committed_size(const VirtualMemoryRegion& rgn) {
   size_t result = 0;
-  visit_committed_regions(rgn, [&](CommittedMemoryRegion& crgn) {
+  visit_committed_regions(rgn, [&](VirtualMemoryRegion& crgn) {
     result += crgn.size();
     return true;
   });

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,9 @@
  */
 
 /*
- * @test
+ * @test id=default
  * @bug 8270290
+ * @requires os.family != "windows"
  * @library /test/lib
  * @run main/othervm NTLMHeadTest SERVER
  * @run main/othervm NTLMHeadTest PROXY
@@ -46,6 +47,17 @@
  *      (to not block on socket read) because HEAD is sent to server and
  *      NTLMSSP_CHALLENGE response includes Content-Length, but does not
  *      include the body.
+ */
+
+/*
+ * @test id=windows
+ * @bug 8270290
+ * @comment Only run on specific Windows OS versions because NTLMv1 is no longer supported starting Windows 11 and Windows Server 2025
+ * @requires os.family == "windows" & (os.name == "Windows 10" | os.name == "Windows Server 2016" | os.name == "Windows Server 2019" | os.name == "Windows Server 2022")
+ * @library /test/lib
+ * @run main/othervm NTLMHeadTest SERVER
+ * @run main/othervm NTLMHeadTest PROXY
+ * @run main/othervm NTLMHeadTest TUNNEL
  */
 
 import java.net.*;

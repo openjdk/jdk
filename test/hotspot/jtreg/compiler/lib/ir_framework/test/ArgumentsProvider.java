@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,6 @@
 
 package compiler.lib.ir_framework.test;
 
-import compiler.lib.ir_framework.shared.TestFormat;
-import compiler.lib.ir_framework.shared.TestRunException;
-import compiler.lib.ir_framework.Argument;
-import compiler.lib.ir_framework.Arguments;
-import compiler.lib.ir_framework.SetupInfo;
-
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.HashMap;
-import java.util.Arrays;
-
 /**
  * This interface provides arguments (and can set fields) for a test method. Different implementations are chosen
  * based on the @Arguments annotation for the @Test method.
@@ -51,90 +40,3 @@ interface ArgumentsProvider {
     Object[] getArguments(Object invocationTarget, int invocationCounter);
 
 }
-
-/**
- * For a test method, determine what ArgumentsProvider is to be constructed, given its @Arguments annotation,
- * and the available setup methods.
- */
-class ArgumentsProviderBuilder {
-   public static ArgumentsProvider build(Method method,
-                                         HashMap<String, Method> setupMethodMap) {
-        Arguments argumentsAnnotation = method.getAnnotation(Arguments.class);
-        if (argumentsAnnotation == null) {
-            return new DefaultArgumentsProvider();
-        }
-
-        Argument[] values = argumentsAnnotation.values();
-        String setupMethodName = argumentsAnnotation.setup();
-
-        if (!setupMethodName.isEmpty()) {
-            TestFormat.check(values.length == 0,
-                             "@Arguments: Can only specify \"setup\" or \"values\" but not both in " + method);
-            TestFormat.check(setupMethodMap.containsKey(setupMethodName),
-                             "@Arguments setup: did not find " + setupMethodName +
-                             " for " + method);
-            Method setupMethod = setupMethodMap.get(setupMethodName);
-            return new SetupArgumentsProvider(setupMethod);
-        } else {
-            TestFormat.check(values.length > 0,
-                             "@Arguments: Empty annotation not allowed. Either specify \"values\" or \"setup\" in " + method);
-            ArgumentValue[] argumentValues = ArgumentValue.getArgumentValues(method, values);
-            return new ValueArgumentsProvider(argumentValues);
-        }
-    }
-}
-
-/**
- * Default: when no @Arguments annotation is provided (including for custom run tests).
- */
-final class DefaultArgumentsProvider implements ArgumentsProvider {
-    @Override
-    public Object[] getArguments(Object invocationTarget, int invocationCounter) {
-        return new Object[]{};
-    }
-}
-
-/**
- * Used for @Arguments(values = {...}) to specify individual arguments directly.
- */
-final class ValueArgumentsProvider implements ArgumentsProvider {
-    ArgumentValue[] argumentValues;
-
-    ValueArgumentsProvider(ArgumentValue[] argumentValues) {
-        this.argumentValues = argumentValues;
-    }
-
-    @Override
-    public Object[] getArguments(Object invocationTarget, int invocationCounter) {
-        return Arrays.stream(argumentValues).map(v -> v.getValue()).toArray();
-    }
-}
-
-/**
- * Used for @Arguments(setup = "setupMethodName") to specify a setup method to provide arguments
- * and possibly set fields.
- */
-final class SetupArgumentsProvider implements ArgumentsProvider {
-    Method setupMethod;
-
-    SetupArgumentsProvider(Method setupMethod) {
-        this.setupMethod = setupMethod;
-    }
-
-    @Override
-    public Object[] getArguments(Object invocationTarget, int invocationCounter) {
-        Object target = Modifier.isStatic(setupMethod.getModifiers()) ? null
-                                                                      : invocationTarget;
-        try {
-            if (setupMethod.getParameterCount() == 1) {
-                return (Object[]) setupMethod.invoke(target, new SetupInfo(invocationCounter));
-            } else {
-                return (Object[]) setupMethod.invoke(target);
-            }
-        } catch (Exception e) {
-            throw new TestRunException("There was an error while invoking setup method " +
-                                       setupMethod + " on " + target, e);
-        }
-    }
-}
-

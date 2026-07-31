@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -736,41 +736,56 @@ public class LogManager {
                 logger.setLevel(level);
             }
 
-            // instantiation of the handler is done in the LogManager.addLogger
-            // implementation as a handler class may be only visible to LogManager
-            // subclass for the custom log manager case
-            processParentHandlers(logger, name, VisitedLoggers.NEVER);
+            // We need to make sure that loggers created by processParentHandlers
+            // will not be garbage collected before the child/parent
+            // pointers are updated. We use an ArrayList to temporarily
+            // store these loggers, until the parent/child relationship
+            // have been updated
+            final List<Logger> saved = new ArrayList<>();
+            try {
 
-            // Find the new node and its parent.
-            LogNode node = getNode(name);
-            node.loggerRef = ref;
-            Logger parent = null;
-            LogNode nodep = node.parent;
-            while (nodep != null) {
-                LoggerWeakRef nodeRef = nodep.loggerRef;
-                if (nodeRef != null) {
-                    parent = nodeRef.get();
-                    if (parent != null) {
-                        break;
+                // always return false, to make sure we process all loggers from
+                // root to child.
+                Predicate<Logger> visited = (l) -> saved.add(l) && false;
+
+                // instantiation of the handler is done in the LogManager.addLogger
+                // implementation as a handler class may be only visible to LogManager
+                // subclass for the custom log manager case
+                processParentHandlers(logger, name, visited);
+
+                // Find the new node and its parent.
+                LogNode node = getNode(name);
+                node.loggerRef = ref;
+                Logger parent = null;
+                LogNode nodep = node.parent;
+                while (nodep != null) {
+                    LoggerWeakRef nodeRef = nodep.loggerRef;
+                    if (nodeRef != null) {
+                        parent = nodeRef.get();
+                        if (parent != null) {
+                            break;
+                        }
                     }
+                    nodep = nodep.parent;
                 }
-                nodep = nodep.parent;
-            }
 
-            if (parent != null) {
-               logger.setParent(parent);
-            }
-            // Walk over the children and tell them we are their new parent.
-            node.walkAndSetParent(logger);
-            // new LogNode is ready so tell the LoggerWeakRef about it
-            ref.setNode(node);
+                if (parent != null) {
+                    logger.setParent(parent);
+                }
+                // Walk over the children and tell them we are their new parent.
+                node.walkAndSetParent(logger);
+                // new LogNode is ready so tell the LoggerWeakRef about it
+                ref.setNode(node);
 
-            // Do not publish 'ref' in namedLoggers before the logger tree
-            // is fully updated - because the named logger will be visible as
-            // soon as it is published in namedLoggers (findLogger takes
-            // benefit of the ConcurrentHashMap implementation of namedLoggers
-            // to avoid synchronizing on retrieval when that is possible).
-            namedLoggers.put(name, ref);
+                // Do not publish 'ref' in namedLoggers before the logger tree
+                // is fully updated - because the named logger will be visible as
+                // soon as it is published in namedLoggers (findLogger takes
+                // benefit of the ConcurrentHashMap implementation of namedLoggers
+                // to avoid synchronizing on retrieval when that is possible).
+                namedLoggers.put(name, ref);
+            } finally {
+                saved.clear();
+            }
             return true;
         }
 
@@ -1647,11 +1662,6 @@ public class LogManager {
         public void clear() {
             if (visited != null) visited.clear();
         }
-
-        // An object that considers that no logger has ever been visited.
-        // This is used when processParentHandlers is called from
-        // LoggerContext.addLocalLogger
-        static final VisitedLoggers NEVER = new VisitedLoggers(null);
     }
 
 

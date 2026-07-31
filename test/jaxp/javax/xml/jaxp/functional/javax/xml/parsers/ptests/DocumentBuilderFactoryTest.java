@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,26 +23,16 @@
 
 package javax.xml.parsers.ptests;
 
-import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
-import static javax.xml.parsers.ptests.ParserTestConst.GOLDEN_DIR;
-import static javax.xml.parsers.ptests.ParserTestConst.XML_DIR;
-import static jaxp.library.JAXPTestUtilities.USER_DIR;
-import static jaxp.library.JAXPTestUtilities.compareWithGold;
-import static jaxp.library.JAXPTestUtilities.filenameToURL;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertNull;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.assertSame;
-import static org.testng.Assert.assertNotSame;
-
-import java.io.BufferedReader;
-import java.io.Closeable;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
+import jaxp.library.JAXPDataProvider;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -54,17 +44,28 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXResult;
+import java.io.BufferedReader;
+import java.io.Closeable;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
-import jaxp.library.JAXPDataProvider;
-
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
+import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
+import static javax.xml.parsers.ptests.ParserTestConst.GOLDEN_DIR;
+import static javax.xml.parsers.ptests.ParserTestConst.XML_DIR;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertLinesMatch;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @bug 8080907 8169778
@@ -73,7 +74,8 @@ import org.xml.sax.helpers.DefaultHandler;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm javax.xml.parsers.ptests.DocumentBuilderFactoryTest
+ * @build jaxp.library.JAXPDataProvider
+ * @run junit/othervm javax.xml.parsers.ptests.DocumentBuilderFactoryTest
  */
 public class DocumentBuilderFactoryTest {
 
@@ -93,9 +95,11 @@ public class DocumentBuilderFactoryTest {
      *
      * @return a data provider contains DocumentBuilderFactory instantiation parameters.
      */
-    @DataProvider(name = "parameters")
-    public Object[][] getValidateParameters() {
-        return new Object[][] { { DOCUMENT_BUILDER_FACTORY_CLASSNAME, null }, { DOCUMENT_BUILDER_FACTORY_CLASSNAME, this.getClass().getClassLoader() } };
+    public static Object[][] getValidateParameters() {
+        return new Object[][] {
+                { DOCUMENT_BUILDER_FACTORY_CLASSNAME, null },
+                { DOCUMENT_BUILDER_FACTORY_CLASSNAME, DocumentBuilderFactoryTest.class.getClassLoader() },
+        };
     }
 
     /**
@@ -109,8 +113,8 @@ public class DocumentBuilderFactoryTest {
         DocumentBuilderFactory dbf2 = DocumentBuilderFactory.newInstance();
         assertNotSame(dbf1, dbf2, "same instance returned:");
         assertSame(dbf1.getClass(), dbf2.getClass(),
-                  "unexpected class mismatch for newDefaultInstance():");
-        assertEquals(dbf1.getClass().getName(), DEFAULT_IMPL_CLASS);
+                "unexpected class mismatch for newDefaultInstance():");
+        assertEquals(DEFAULT_IMPL_CLASS, dbf1.getClass().getName());
     }
 
     /**
@@ -119,12 +123,9 @@ public class DocumentBuilderFactoryTest {
      * points to correct implementation of
      * javax.xml.parsers.DocumentBuilderFactory , should return newInstance of
      * DocumentBuilderFactory
-     *
-     * @param factoryClassName
-     * @param classLoader
-     * @throws ParserConfigurationException
      */
-    @Test(dataProvider = "parameters")
+    @ParameterizedTest
+    @MethodSource("getValidateParameters")
     public void testNewInstance(String factoryClassName, ClassLoader classLoader) throws ParserConfigurationException {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance(factoryClassName, classLoader);
         DocumentBuilder builder = dbf.newDocumentBuilder();
@@ -135,13 +136,13 @@ public class DocumentBuilderFactoryTest {
      * test for DocumentBuilderFactory.newInstance(java.lang.String
      * factoryClassName, java.lang.ClassLoader classLoader) factoryClassName is
      * null , should throw FactoryConfigurationError
-     *
-     * @param factoryClassName
-     * @param classLoader
      */
-    @Test(expectedExceptions = FactoryConfigurationError.class, dataProvider = "new-instance-neg", dataProviderClass = JAXPDataProvider.class)
+    @ParameterizedTest
+    @MethodSource("jaxp.library.JAXPDataProvider#newInstanceNeg")
     public void testNewInstanceNeg(String factoryClassName, ClassLoader classLoader) {
-        DocumentBuilderFactory.newInstance(factoryClassName, classLoader);
+        assertThrows(
+                FactoryConfigurationError.class,
+                () -> DocumentBuilderFactory.newInstance(factoryClassName, classLoader));
     }
 
     /**
@@ -162,11 +163,11 @@ public class DocumentBuilderFactoryTest {
         assertFalse(eh.isErrorOccured());
     }
 
-    @DataProvider(name = "schema-source")
-    public Object[][] getSchemaSource() throws FileNotFoundException {
+    public static Object[][] getSchemaSource() throws FileNotFoundException {
         return new Object[][] {
                 { new FileInputStream(new File(XML_DIR, "test.xsd")) },
-                { new InputSource(filenameToURL(XML_DIR + "test.xsd")) } };
+                { new InputSource(Path.of(XML_DIR).resolve("test.xsd").toUri().toASCIIString()) },
+        };
     }
 
     /**
@@ -174,7 +175,8 @@ public class DocumentBuilderFactoryTest {
      * this case the schema source property is set.
      * @throws Exception If any errors occur.
      */
-    @Test(dataProvider = "schema-source")
+    @ParameterizedTest
+    @MethodSource("getSchemaSource")
     public void testCheckSchemaSupport2(Object schemaSource) throws Exception {
         try {
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -201,7 +203,8 @@ public class DocumentBuilderFactoryTest {
      * this case the schema source property is set.
      * @throws Exception If any errors occur.
      */
-    @Test(dataProvider = "schema-source")
+    @ParameterizedTest
+    @MethodSource("getSchemaSource")
     public void testCheckSchemaSupport3(Object schemaSource) throws Exception {
         try {
             SAXParserFactory spf = SAXParserFactory.newInstance();
@@ -236,7 +239,7 @@ public class DocumentBuilderFactoryTest {
         Document doc = docBuilder.parse(new File(XML_DIR, "DocumentBuilderFactory01.xml"));
         Element e = (Element) doc.getElementsByTagName("html").item(0);
         NodeList nl = e.getChildNodes();
-        assertEquals(nl.getLength(), 1);
+        assertEquals(1, nl.getLength());
     }
 
     /**
@@ -312,7 +315,7 @@ public class DocumentBuilderFactoryTest {
             Element e = (Element) doc.getElementsByTagName("title").item(0);
             NodeList nl = e.getChildNodes();
             assertTrue(dbf.isExpandEntityReferences());
-            assertEquals(nl.item(0).getNodeValue().trim().charAt(0), 'W');
+            assertEquals('W', nl.item(0).getNodeValue().trim().charAt(0));
         }
     }
 
@@ -331,7 +334,7 @@ public class DocumentBuilderFactoryTest {
         MyErrorHandler eh = MyErrorHandler.newInstance();
         db.setErrorHandler(eh);
         Document doc = db.parse(new File(XML_DIR, "DocumentBuilderFactory04.xml"));
-        assertTrue(doc instanceof Document);
+        assertInstanceOf(Document.class, doc);
         assertFalse(eh.isErrorOccured());
     }
 
@@ -350,7 +353,7 @@ public class DocumentBuilderFactoryTest {
             Element e = (Element) doc.getElementsByTagName("title").item(0);
             NodeList nl = e.getChildNodes();
             assertTrue(dbf.isExpandEntityReferences());
-            assertEquals(nl.item(0).getNodeValue().trim().charAt(0), 'W');
+            assertEquals('W', nl.item(0).getNodeValue().trim().charAt(0));
         }
     }
 
@@ -458,12 +461,12 @@ public class DocumentBuilderFactoryTest {
      * throw Sax Exception.
      * @throws Exception If any errors occur.
      */
-    @Test(expectedExceptions = SAXException.class)
+    @Test
     public void testCheckDocumentBuilderFactory14() throws Exception {
         // Accesing default working directory.
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder = dbf.newDocumentBuilder();
-        docBuilder.parse("");
+        assertThrows(SAXException.class, () -> docBuilder.parse(""));
     }
 
     /**
@@ -472,12 +475,12 @@ public class DocumentBuilderFactoryTest {
      * @throws Exception If any errors occur.
      *
      */
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testCheckDocumentBuilderFactory15() throws Exception {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder = dbf.newDocumentBuilder();
         String uri = null;
-        docBuilder.parse(uri);
+        assertThrows(IllegalArgumentException.class, () -> docBuilder.parse(uri));
     }
 
     /**
@@ -496,7 +499,7 @@ public class DocumentBuilderFactoryTest {
             Document doc = docBuilder.parse(fis);
             Element e = (Element) doc.getElementsByTagName("body").item(0);
             NodeList nl = e.getChildNodes();
-            assertEquals(nl.getLength(), 0);
+            assertEquals(0, nl.getLength());
         }
     }
 
@@ -531,7 +534,7 @@ public class DocumentBuilderFactoryTest {
     @Test
     public void testCheckElementContentWhitespace() throws Exception {
         String goldFile = GOLDEN_DIR + "dbfactory02GF.out";
-        String outputFile = USER_DIR + "dbfactory02.out";
+        String outputFile = "dbfactory02.out";
         MyErrorHandler eh = MyErrorHandler.newInstance();
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         dbf.setValidating(true);
@@ -549,6 +552,8 @@ public class DocumentBuilderFactoryTest {
             saxResult.setHandler(handler);
             transformer.transform(domSource, saxResult);
         }
-        assertTrue(compareWithGold(goldFile, outputFile));
+        assertLinesMatch(
+                Files.readAllLines(Path.of(goldFile)),
+                Files.readAllLines(Path.of(outputFile)));
     }
 }

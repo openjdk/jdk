@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,10 +194,6 @@ Java_java_awt_Component_initIDs
         (*env)->GetFieldID(env, keyclass, "isProxyActive",
                            "Z");
     CHECK_NULL(componentIDs.isProxyActive);
-
-    componentIDs.appContext =
-        (*env)->GetFieldID(env, cls, "appContext",
-                           "Lsun/awt/AppContext;");
 
     (*env)->DeleteLocalRef(env, keyclass);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,7 @@ public final class MainClassTest {
         }
 
         Script expectedErrorMessage(String key, Object... args) {
-            expectedErrorMessage = JPackageStringBundle.MAIN.cannedFormattedString(key, args);
+            expectedErrorMessage = JPackageCommand.makeError(key, args);
             return this;
         }
 
@@ -222,7 +222,7 @@ public final class MainClassTest {
         if (script.expectedErrorMessage != null) {
             // This is the case when main class is not found nor in jar
             // file nor on command line.
-            cmd.validateOutput(script.expectedErrorMessage).execute(1);
+            cmd.validateErr(script.expectedErrorMessage).execute(1);
             return;
         }
 
@@ -240,8 +240,7 @@ public final class MainClassTest {
             cmd.executeAndAssertHelloAppImageCreated();
         } else {
             cmd.executeAndAssertImageCreated();
-            var appVerifier = HelloApp.assertMainLauncher(cmd);
-            if (appVerifier != null) {
+            HelloApp.assertMainLauncher(cmd).ifPresent(appVerifier -> {
                 List<String> output = appVerifier
                         .saveOutput(true)
                         .expectedExitCode(1)
@@ -249,7 +248,7 @@ public final class MainClassTest {
                 TKit.assertTextStream(String.format(
                         "Error: Could not find or load main class %s",
                         nonExistingMainClass)).apply(output);
-            }
+            });
         }
 
         CfgFile cfg = cmd.readLauncherCfgFile();

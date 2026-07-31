@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *          to its lowest possible value, 1, does not wedge the client
  * @library /test/jdk/java/net/httpclient/lib
  *          /test/lib
- * @run junit/othervm -Djdk.httpclient.bufsize=1 BufferSize1Test
+ * @run junit/othervm -Djdk.httpclient.bufsize=1 ${test.main.class}
  */
 
 class BufferSize1Test implements HttpServerAdapters {
@@ -79,7 +79,7 @@ class BufferSize1Test implements HttpServerAdapters {
     void test(Version version, boolean secure) throws Exception {
 
         // Create the server
-        var sslContext = secure || HTTP_3.equals(version) ? new SimpleSSLContext().get() : null;
+        var sslContext = secure || HTTP_3.equals(version) ? SimpleSSLContext.findSSLContext() : null;
         try (var server = switch (version) {
             case HTTP_1_1, HTTP_2 -> HttpTestServer.create(version, sslContext);
             case HTTP_3 -> HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);

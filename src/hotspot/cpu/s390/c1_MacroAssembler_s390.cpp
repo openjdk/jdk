@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -43,7 +43,10 @@ void C1_MacroAssembler::explicit_null_check(Register base) {
   ShouldNotCallThis(); // unused
 }
 
-void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_bytes) {
+void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_bytes,
+                                    int sp_offset_for_orig_pc,
+                                    bool needs_stack_repair, bool has_scalarized_args,
+                                    Label* verified_inline_entry_label) {
   assert(bang_size_in_bytes >= frame_size_in_bytes, "stack bang size incorrect");
   generate_stack_overflow_check(bang_size_in_bytes);
   save_return_pc();
@@ -107,10 +110,10 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
   }
 
   if (len->is_valid()) {
-    // Length will be in the klass gap, if one exists.
+    // Length will be in the klass gap.
     z_st(len, Address(obj, arrayOopDesc::length_offset_in_bytes()));
-  } else if (UseCompressedClassPointers && !UseCompactObjectHeaders) {
-    store_klass_gap(Rzero, obj);  // Zero klass gap for compressed oops.
+  } else if (!UseCompactObjectHeaders) {
+    store_klass_gap(Rzero, obj);  // Zero klass gap.
   }
 }
 
@@ -248,6 +251,11 @@ void C1_MacroAssembler::allocate_array(
 
   verify_oop(obj, FILE_AND_LINE);
 }
+
+int C1_MacroAssembler::scalarized_entry(const CompiledEntrySignature* ces, int frame_size_in_bytes, int bang_size_in_bytes, int sp_offset_for_orig_pc, Label& verified_inline_entry_label, bool is_inline_ro_entry) {
+  Unimplemented();
+}
+
 
 
 #ifndef PRODUCT

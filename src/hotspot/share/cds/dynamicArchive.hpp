@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,8 @@
 #define SHARE_CDS_DYNAMICARCHIVE_HPP
 
 #include "cds/filemap.hpp"
-#include "classfile/compactHashtable.hpp"
 #include "memory/allStatic.hpp"
-#include "memory/memRegion.hpp"
-#include "oops/array.hpp"
-#include "oops/oop.hpp"
 #include "utilities/exceptions.hpp"
-#include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 
 #if INCLUDE_CDS
@@ -59,22 +54,13 @@ public:
 };
 
 class DynamicArchive : AllStatic {
-private:
-  static GrowableArray<ObjArrayKlass*>* _array_klasses;
-  static Array<ObjArrayKlass*>* _dynamic_archive_array_klasses;
 public:
   static void dump_for_jcmd(const char* archive_name, TRAPS);
   static void dump_at_exit(JavaThread* current);
   static void dump_impl(bool jcmd_request, const char* archive_name, TRAPS);
   static bool is_mapped() { return FileMapInfo::dynamic_info() != nullptr; }
   static bool validate(FileMapInfo* dynamic_info);
-  static void dump_array_klasses();
-  static void setup_array_klasses();
-  static void append_array_klass(ObjArrayKlass* oak);
   static void serialize(SerializeClosure* soc);
-  static void make_array_klasses_shareable();
-  static void post_dump();
-  static int  num_array_klasses();
 };
 #endif // INCLUDE_CDS
 #endif // SHARE_CDS_DYNAMICARCHIVE_HPP

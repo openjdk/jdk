@@ -1,4 +1,4 @@
-#  Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+#  Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
 #  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 #  This code is free software; you can redistribute it and/or modify it
@@ -45,8 +45,16 @@ tier1 = \
 tier1_part1 = \
     :jdk_lang
 
+tier1_part1_no_valhalla = \
+    :tier1_part1 \
+    -:jdk_valhalla
+
 tier1_part2 = \
     :jdk_util
+
+tier1_part2_no_valhalla = \
+    :tier1_part2 \
+    -:jdk_valhalla
 
 tier1_part3 = \
     :jdk_math \
@@ -57,6 +65,14 @@ tier1_part3 = \
     com/sun/crypto/provider/Cipher \
     jdk/classfile \
     sun/nio/cs/ISO8859x.java
+
+tier1_part3_no_valhalla = \
+    :tier1_part3 \
+    -:jdk_valhalla
+
+tier1_no_valhalla = \
+    :tier1 \
+    -:jdk_valhalla
 
 # When adding tests to tier2, make sure they end up in one of the tier2_partX groups
 tier2 = \
@@ -109,8 +125,7 @@ tier4 = \
     / \
    -:tier1 \
    -:tier2 \
-   -:tier3 \
-   :jdk_foreign_stress
+   -:tier3
 
 ###############################################################################
 #
@@ -138,7 +153,16 @@ jdk_lang = \
     jdk/internal/math \
     jdk/internal/vm \
     jdk/modules \
-    jni/nullCaller
+    jni/nullCaller \
+    valhalla
+
+# valhalla lworld tests
+jdk_valhalla = \
+    valhalla \
+    java/lang/instrument/valhalla \
+    com/sun/jdi/valhalla \
+    java/lang/reflect/valhalla
+
 
 # All of the java.util package
 jdk_util = \
@@ -146,6 +170,11 @@ jdk_util = \
     :jdk_collections \
     :jdk_concurrent \
     :jdk_stream
+
+valhalla_adopted = \
+    java/util/Collections/AddAll.java \
+    java/util/Arrays \
+    java/util/Collections
 
 # All util components not part of some other util category
 jdk_util_other = \
@@ -391,11 +420,7 @@ jdk_svc = \
 jdk_foreign = \
     java/foreign \
     jdk/internal/reflect/CallerSensitive/CheckCSMs.java \
-    -java/foreign/TestMatrix.java \
-    -java/foreign/TestUpcallStress.java
-
-jdk_foreign_stress = \
-    java/foreign/TestUpcallStress.java
+    -java/foreign/TestMatrix.java
 
 jdk_vector = \
     jdk/incubator/vector
@@ -558,6 +583,7 @@ jdk_jfr_sanity = \
     jdk/jfr/event/gc/collection/TestGCWithFasttime.java \
     jdk/jfr/event/gc/configuration/TestGCConfigurationEvent.java \
     jdk/jfr/event/metadata/TestDefaultConfigurations.java \
+    jdk/jfr/event/oldobject/TestDFSWithSmallStack.java \
     jdk/jfr/startupargs/TestDumpOnExit.java \
     jdk/jfr/api/consumer/recordingstream/TestBasics.java
 
@@ -664,7 +690,8 @@ jdk_core_manual_interactive = \
 jdk_security_manual_interactive = \
     sun/security/tools/keytool/i18n.java \
     com/sun/security/auth/callback/TextCallbackHandler/Password.java \
-    sun/security/krb5/config/native/TestDynamicStore.java
+    sun/security/krb5/config/native/TestDynamicStore.java \
+    sun/security/tools/keytool/EchoPassword.java
 
 # Test sets for running inside container environment
 jdk_containers_extended = \

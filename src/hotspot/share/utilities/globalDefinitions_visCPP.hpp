@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@
 // Need this on windows to get the math constants (e.g., M_PI).
 #define _USE_MATH_DEFINES
 
+#include "cppstdlib/cstdlib.hpp"
+
 # include <ctype.h>
 # include <fcntl.h>
 # include <float.h> // for _isnan
@@ -45,7 +47,6 @@
 # include <stddef.h>// for offsetof
 # include <stdint.h>
 # include <stdio.h>
-# include <stdlib.h>
 # include <string.h>
 # include <sys/stat.h>
 # include <time.h>
@@ -68,7 +69,9 @@ inline int strncasecmp(const char *s1, const char *s2, size_t n) {
 // *not* the same as the C99 Annex K strtok_s.  VS provides that function
 // under the name strtok_s_l.  Make strtok_r a synonym so we can use that name
 // in shared code.
-const auto strtok_r = strtok_s;
+inline char* strtok_r(char* str, const char* delim, char** saveptr) {
+  return strtok_s(str, delim, saveptr);
+}
 
 // VS doesn't provide POSIX macros S_ISFIFO or S_IFIFO.  It doesn't even
 // provide _S_ISFIFO, per its usual naming convention for POSIX stuff.  But it

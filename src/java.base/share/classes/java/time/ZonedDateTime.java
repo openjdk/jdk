@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,11 +146,18 @@ import jdk.internal.util.DateTimeHelper;
  * represents an instant, especially during a daylight savings overlap.
  * <p>
  * This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; programmers should treat instances that are
- * {@linkplain #equals(Object) equal} as interchangeable and should not
- * use instances for synchronization, or unpredictable behavior may
- * occur. For example, in a future release, synchronization may fail.
- * The {@code equals} method should be used for comparisons.
+ * class; programmers should treat instances that are {@linkplain #equals(Object) equal}
+ * as interchangeable and should not use instances for synchronization or
+ * with {@linkplain java.lang.ref.Reference object references}.
+ *
+ * <div class="preview-block">
+ *      <div class="preview-comment">
+ *          When preview features are enabled, {@code ZonedDateTime} is a {@linkplain Class#isValue value class}.
+ *          Use of value class instances for synchronization or with
+ *          {@linkplain java.lang.ref.Reference object references} result in
+ *          {@link IdentityException}.
+ *      </div>
+ * </div>
  *
  * @implSpec
  * A {@code ZonedDateTime} holds state equivalent to three separate objects,
@@ -164,7 +171,8 @@ import jdk.internal.util.DateTimeHelper;
  * @since 1.8
  */
 @jdk.internal.ValueBased
-public final class ZonedDateTime
+// See doc/value-class-preview.md for an overview of value class generation
+public final /*value*/ class ZonedDateTime
         implements Temporal, ChronoZonedDateTime<LocalDate>, Serializable {
 
     /**
@@ -2207,7 +2215,10 @@ public final class ZonedDateTime
      * Outputs this date-time as a {@code String}, such as
      * {@code 2007-12-03T10:15:30+01:00[Europe/Paris]}.
      * <p>
-     * The format consists of the {@code LocalDateTime} followed by the {@code ZoneOffset}.
+     * The format consists of the output of {@link LocalDateTime#toString()},
+     * followed by the output of {@link ZoneOffset#toString()}.
+     * If the time has zero seconds and/or nanoseconds, they are
+     * omitted to produce the shortest representation.
      * If the {@code ZoneId} is not the same as the offset, then the ID is output.
      * The output is compatible with ISO-8601 if the offset and ID are the same,
      * and the seconds in the offset are zero.
@@ -2258,6 +2269,7 @@ public final class ZonedDateTime
      * @throws InvalidObjectException always
      */
     @java.io.Serial
+    @SuppressWarnings("serial") // this method is not invoked for value classes
     private void readObject(ObjectInputStream s) throws InvalidObjectException {
         throw new InvalidObjectException("Deserialization via serialization delegate");
     }

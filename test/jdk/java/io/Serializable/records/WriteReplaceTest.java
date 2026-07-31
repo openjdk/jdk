@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8246774
  * @summary Basic tests for writeReplace
- * @run testng WriteReplaceTest
+ * @run junit WriteReplaceTest
  */
 
 import java.io.ByteArrayInputStream;
@@ -34,11 +34,15 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 import static java.lang.System.out;
-import static org.testng.Assert.assertEquals;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class WriteReplaceTest {
 
     record R1 () implements Serializable {
@@ -71,7 +75,6 @@ public class WriteReplaceTest {
         }
     }
 
-    @DataProvider(name = "recordObjects")
     public Object[][] recordObjects() {
         return new Object[][] {
             new Object[] { new R1(),                       R1.class             },
@@ -81,7 +84,8 @@ public class WriteReplaceTest {
         };
     }
 
-    @Test(dataProvider = "recordObjects")
+    @ParameterizedTest
+    @MethodSource("recordObjects")
     public void testSerialize(Object objectToSerialize, Class<?> expectedType)
         throws Exception
     {
@@ -90,9 +94,9 @@ public class WriteReplaceTest {
         Object deserializedObj = serializeDeserialize(objectToSerialize);
         out.println("deserialized: " + deserializedObj);
         if (objectToSerialize.getClass().equals(expectedType))
-            assertEquals(deserializedObj, objectToSerialize);
+            assertEquals(objectToSerialize, deserializedObj);
         else
-            assertEquals(deserializedObj.getClass(), expectedType);
+            assertEquals(expectedType, deserializedObj.getClass());
     }
 
     // -- null replacement
@@ -108,7 +112,7 @@ public class WriteReplaceTest {
         out.println("serializing : " + objectToSerialize);
         Object deserializedObj = serializeDeserialize(objectToSerialize);
         out.println("deserialized: " + deserializedObj);
-        assertEquals(deserializedObj, null);
+        assertEquals(null, deserializedObj);
     }
 
     // --- infra

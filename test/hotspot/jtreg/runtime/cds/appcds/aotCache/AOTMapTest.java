@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,21 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar AOTMapTestApp
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar cust.jar Hello
  * @run main/othervm/timeout=240 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. AOTMapTest DYNAMIC
+ */
+
+/**
+ * @test id=valhalla
+ * @bug 8362566
+ * @summary Test the contents of -Xlog:aot+map with AOT workflow and flat arrays
+ * @enablePreview
+ * @requires vm.cds.supports.aot.class.linking & vm.debug & vm.cds.write.archived.java.heap
+ * @library /test/lib /test/hotspot/jtreg/runtime/cds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
+ * @modules java.base/jdk.internal.value java.base/jdk.internal.misc java.base/jdk.internal.vm.annotation
+ * @build Hello
+ * @compile test-classes/AOTMapTestApp.java
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar AOTMapTestApp AOTMapTestApp$Wrapper AOTMapTestApp$WrapperWrapper
+ *                                                                  AOTMapTestApp$ArchivedData Hello
+ * @run main/othervm/timeout=240 AOTMapTest STATIC
  */
 
 import java.io.File;
@@ -112,11 +127,21 @@ public class AOTMapTest {
             vmArgs.add("-Xmx128M");
             vmArgs.add("-Xlog:aot=debug");
 
+            if (isStaticWorkflow()) {
+                vmArgs.add("--enable-preview");
+                vmArgs.add("--add-exports");
+                vmArgs.add("java.base/jdk.internal.value=ALL-UNNAMED");
+                vmArgs.add("--add-exports");
+                vmArgs.add("java.base/jdk.internal.misc=ALL-UNNAMED");
+                vmArgs.add("-Xbootclasspath/a:" + appJar);
+                vmArgs.add("-XX:ArchiveHeapTestClass=AOTMapTestApp");
+            }
+
             // filesize=0 ensures that a large map file not broken up in multiple files.
-            String logMapPrefix = "-Xlog:aot+map=debug,aot+map+oops=trace:file=";
+            String logMapPrefix = "-Xlog:aot+map=trace,aot+map+oops=trace:file=";
             String logSuffix = ":none:filesize=0";
 
-            if (runMode == RunMode.ASSEMBLY || runMode == RunMode.DUMP_DYNAMIC) {
+            if (runMode == RunMode.ASSEMBLY || runMode == RunMode.DUMP_DYNAMIC || runMode == RunMode.DUMP_STATIC) {
                 vmArgs.add(logMapPrefix + dumpMapFile + logSuffix);
             } else if (runMode == RunMode.PRODUCTION) {
                 vmArgs.add(logMapPrefix + runMapFile + logSuffix);
@@ -136,6 +161,7 @@ public class AOTMapTest {
 }
 
 class AOTMapTestApp {
+    static URLClassLoader loader; // keep Hello class alive
     public static void main(String[] args) throws Exception {
         System.out.println("Hello AOTMapTestApp");
         testCustomLoader();
@@ -144,7 +170,7 @@ class AOTMapTestApp {
     static void testCustomLoader() throws Exception {
         File custJar = new File("cust.jar");
         URL[] urls = new URL[] {custJar.toURI().toURL()};
-        URLClassLoader loader = new URLClassLoader(urls, AOTMapTestApp.class.getClassLoader());
+        loader = new URLClassLoader(urls, AOTMapTestApp.class.getClassLoader());
         Class<?> c = loader.loadClass("Hello");
         System.out.println(c);
     }

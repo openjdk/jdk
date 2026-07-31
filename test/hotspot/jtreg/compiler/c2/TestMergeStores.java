@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,28 +34,31 @@ import java.util.Random;
 /*
  * @test
  * @bug 8318446 8331054 8331311 8335392 8347405
+ * @key randomness
  * @summary Test merging of consecutive stores
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run main/timeout=480 compiler.c2.TestMergeStores aligned
+ * @run driver/timeout=480 ${test.main.class} aligned
  */
 
 /*
  * @test
  * @bug 8318446 8331054 8331311 8335392 8347405
+ * @key randomness
  * @summary Test merging of consecutive stores
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run main/timeout=480 compiler.c2.TestMergeStores unaligned
+ * @run driver/timeout=480 ${test.main.class} unaligned
  */
 
 /*
  * @test
  * @bug 8318446 8331054 8331311 8335392 8348959 8351414
+ * @key randomness
  * @summary Test merging of consecutive stores
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run main/timeout=480 compiler.c2.TestMergeStores StressIGVN
+ * @run driver/timeout=480 ${test.main.class} StressIGVN
  */
 
 public class TestMergeStores {

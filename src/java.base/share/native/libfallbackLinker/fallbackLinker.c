@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,14 +87,32 @@ Java_jdk_internal_foreign_abi_fallback_LibFallback_ffi_1get_1struct_1offsets(JNI
   return ffi_get_struct_offsets((ffi_abi) abi, jlong_to_ptr(type), jlong_to_ptr(offsets));
 }
 
-static void do_capture_state(int32_t* value_ptr, int captured_state_mask) {
-    // keep in synch with jdk.internal.foreign.abi.CapturableState
-  enum PreservableValues {
-    NONE = 0,
-    GET_LAST_ERROR = 1,
-    WSA_GET_LAST_ERROR = 1 << 1,
-    ERRNO = 1 << 2
-  };
+// keep in synch with jdk.internal.foreign.abi.CapturableState
+enum PreservableValues {
+  NONE = 0,
+  GET_LAST_ERROR = 1,
+  WSA_GET_LAST_ERROR = 1 << 1,
+  ERRNO = 1 << 2
+};
+
+static void do_capture_state_pre(int32_t* value_ptr, int captured_state_mask) {
+#ifdef _WIN64
+  if (captured_state_mask & GET_LAST_ERROR) {
+    SetLastError(*value_ptr);
+  }
+  value_ptr++;
+  if (captured_state_mask & WSA_GET_LAST_ERROR) {
+    WSASetLastError(*value_ptr);
+    *value_ptr = WSAGetLastError();
+  }
+  value_ptr++;
+#endif
+  if (captured_state_mask & ERRNO) {
+    errno = *value_ptr;
+  }
+}
+
+static void do_capture_state_post(int32_t* value_ptr, int captured_state_mask) {
 #ifdef _WIN64
   if (captured_state_mask & GET_LAST_ERROR) {
     *value_ptr = GetLastError();
@@ -142,10 +160,15 @@ Java_jdk_internal_foreign_abi_fallback_LibFallback_doDowncall(JNIEnv* env, jclas
     }
   }
 
+  if (captured_state_mask != 0) {
+    // Copy the contents of the capture state buffer into thread local
+    do_capture_state_pre(captured_state_addr, captured_state_mask);
+  }
+
   ffi_call(jlong_to_ptr(cif), jlong_to_ptr(fn), jlong_to_ptr(rvalue), jlong_to_ptr(avalues));
 
   if (captured_state_mask != 0) {
-    do_capture_state(captured_state_addr, captured_state_mask);
+    do_capture_state_post(captured_state_addr, captured_state_mask);
   }
 
   if (heapBases != NULL) {

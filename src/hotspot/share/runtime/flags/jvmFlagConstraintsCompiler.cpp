@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,9 +61,21 @@ JVMFlag::Error CICompilerCountConstraintFunc(intx value, bool verbose) {
                         "at least %d \n",
                         value, min_number_of_compiler_threads);
     return JVMFlag::VIOLATES_CONSTRAINT;
-  } else {
-    return JVMFlag::SUCCESS;
   }
+
+  // Limit CICompilerCount to a reasonable value in product builds.
+#ifndef ASSERT
+  int active_processor_count = os::active_processor_count();
+  // On a single-CPU machine we still can run C1 and C2 compiler threads, so allow up to 2x for tiered.
+  int reasonable_threads_num = MAX2(2, CompilerConfig::is_tiered() ? active_processor_count * 2 : active_processor_count);
+  if (value > reasonable_threads_num) {
+    JVMFlag::printError(verbose, "CICompilerCount is too large (%" PRIdPTR ") for current active processor count %d \n",
+                        CICompilerCount, active_processor_count);
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+#endif
+
+  return JVMFlag::SUCCESS;
 }
 
 JVMFlag::Error AllocatePrefetchStepSizeConstraintFunc(int value, bool verbose) {
@@ -163,10 +175,10 @@ JVMFlag::Error CodeCacheSegmentSizeConstraintFunc(size_t value, bool verbose) {
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
 
-  if (CodeCacheSegmentSize < (size_t)CodeEntryAlignment) {
+  if (CodeCacheSegmentSize < CodeEntryAlignment) {
     JVMFlag::printError(verbose,
                         "CodeCacheSegmentSize  (%zu) must be "
-                        "larger than or equal to CodeEntryAlignment (%zd) "
+                        "larger than or equal to CodeEntryAlignment (%u) "
                         "to align entry points\n",
                         CodeCacheSegmentSize, CodeEntryAlignment);
     return JVMFlag::VIOLATES_CONSTRAINT;
@@ -194,25 +206,25 @@ JVMFlag::Error CodeCacheSegmentSizeConstraintFunc(size_t value, bool verbose) {
   return JVMFlag::SUCCESS;
 }
 
-JVMFlag::Error CodeEntryAlignmentConstraintFunc(intx value, bool verbose) {
+JVMFlag::Error CodeEntryAlignmentConstraintFunc(uint value, bool verbose) {
   if (!is_power_of_2(value)) {
     JVMFlag::printError(verbose,
-                        "CodeEntryAlignment (%zd) must be "
+                        "CodeEntryAlignment (%u) must be "
                         "a power of two\n", CodeEntryAlignment);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
 
   if (CodeEntryAlignment < 16) {
       JVMFlag::printError(verbose,
-                          "CodeEntryAlignment (%zd) must be "
+                          "CodeEntryAlignment (%u) must be "
                           "greater than or equal to %d\n",
                           CodeEntryAlignment, 16);
       return JVMFlag::VIOLATES_CONSTRAINT;
   }
 
-  if ((size_t)CodeEntryAlignment > CodeCacheSegmentSize) {
+  if (CodeEntryAlignment > CodeCacheSegmentSize) {
     JVMFlag::printError(verbose,
-                        "CodeEntryAlignment (%zd) must be "
+                        "CodeEntryAlignment (%u) must be "
                         "less than or equal to CodeCacheSegmentSize (%zu) "
                         "to align entry points\n",
                         CodeEntryAlignment, CodeCacheSegmentSize);
@@ -241,10 +253,10 @@ JVMFlag::Error OptoLoopAlignmentConstraintFunc(intx value, bool verbose) {
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
 
-  if (OptoLoopAlignment > CodeEntryAlignment) {
+  if (checked_cast<uintx>(OptoLoopAlignment) > CodeEntryAlignment) {
     JVMFlag::printError(verbose,
                         "OptoLoopAlignment (%zd) must be "
-                        "less or equal to CodeEntryAlignment (%zd)\n",
+                        "less or equal to CodeEntryAlignment (%u)\n",
                         value, CodeEntryAlignment);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
@@ -267,6 +279,17 @@ JVMFlag::Error AVX3ThresholdConstraintFunc(int value, bool verbose) {
   if (value != 0 && !is_power_of_2(value)) {
     JVMFlag::printError(verbose,
                         "AVX3Threshold ( %d ) must be 0 or "
+                        "a power of two value between 0 and MAX_INT\n", value);
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+
+  return JVMFlag::SUCCESS;
+}
+
+JVMFlag::Error CopyAVX3ThresholdConstraintFunc(int value, bool verbose) {
+  if (value != 0 && !is_power_of_2(value)) {
+    JVMFlag::printError(verbose,
+                        "CopyAVX3Threshold ( %d ) must be 0 or "
                         "a power of two value between 0 and MAX_INT\n", value);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
@@ -306,7 +329,7 @@ JVMFlag::Error TypeProfileLevelConstraintFunc(uint value, bool verbose) {
 }
 
 JVMFlag::Error VerifyIterativeGVNConstraintFunc(uint value, bool verbose) {
-  const int max_modes = 4;
+  const int max_modes = 6;
   uint original_value = value;
   for (int i = 0; i < max_modes; i++) {
     if (value % 10 > 1) {
@@ -339,10 +362,10 @@ JVMFlag::Error InitArrayShortSizeConstraintFunc(intx value, bool verbose) {
 
 #ifdef COMPILER2
 JVMFlag::Error InteriorEntryAlignmentConstraintFunc(intx value, bool verbose) {
-  if (InteriorEntryAlignment > CodeEntryAlignment) {
+  if (checked_cast<uintx>(InteriorEntryAlignment) > CodeEntryAlignment) {
     JVMFlag::printError(verbose,
                        "InteriorEntryAlignment (%zd) must be "
-                       "less than or equal to CodeEntryAlignment (%zd)\n",
+                       "less than or equal to CodeEntryAlignment (%u)\n",
                        InteriorEntryAlignment, CodeEntryAlignment);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }

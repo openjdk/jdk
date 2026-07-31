@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -549,6 +549,11 @@ JavaMain(void* _args)
         LEAVE();
     }
 
+    /* Exit normally after showing the settings if no application was specified. */
+    if (showSettings != NULL && what == NULL) {
+        LEAVE();
+    }
+
     FreeKnownVMs(); /* after last possible PrintUsage */
 
     if (JLI_IsTraceLauncher()) {
@@ -1058,7 +1063,7 @@ static void
 SetMainModule(const char *s)
 {
     static const char format[] = "-Djdk.module.main=%s";
-    char* slash = JLI_StrChr(s, '/');
+    const char* slash = JLI_StrChr(s, '/');
     size_t s_len, def_len;
     char *def;
 
@@ -1303,21 +1308,9 @@ ParseArguments(int *pargc, char ***pargv,
             AddOption("-verbose:gc", NULL);
         } else if (JLI_StrCmp(arg, "-debug") == 0) {
             JLI_ReportErrorMessage(ARG_DEPRECATED, "-debug");
-        } else if (JLI_StrCmp(arg, "-noclassgc") == 0) {
-            JLI_ReportErrorMessage(ARG_DEPRECATED, "-noclassgc");
-            AddOption("-Xnoclassgc", NULL);
         } else if (JLI_StrCmp(arg, "-verify") == 0) {
             JLI_ReportErrorMessage(ARG_DEPRECATED, "-verify");
             AddOption("-Xverify:all", NULL);
-        } else if (JLI_StrCmp(arg, "-verifyremote") == 0) {
-            JLI_ReportErrorMessage(ARG_DEPRECATED, "-verifyremote");
-            AddOption("-Xverify:remote", NULL);
-        } else if (JLI_StrCmp(arg, "-noverify") == 0) {
-            /*
-             * Note that no 'deprecated' message is needed here because the VM
-             * issues 'deprecated' messages for -noverify and -Xverify:none.
-             */
-            AddOption("-Xverify:none", NULL);
         } else if (JLI_StrCCmp(arg, "-ss") == 0 ||
                    JLI_StrCCmp(arg, "-ms") == 0 ||
                    JLI_StrCCmp(arg, "-mx") == 0) {
@@ -1363,7 +1356,11 @@ ParseArguments(int *pargc, char ***pargv,
 
     if (*pwhat == NULL) {
         /* LM_UNKNOWN okay for options that exit */
-        if (!listModules && !describeModule && !validateModules && !dumpSharedSpaces) {
+        if (!listModules &&
+            !describeModule &&
+            !validateModules &&
+            !dumpSharedSpaces &&
+            !showSettings) {
             *pret = 1;
             printUsageKind = HELP_CONCISE;
         }
@@ -1505,6 +1502,7 @@ InitializeJVM(JavaVM **pvm, JNIEnv **penv, InvocationFunctions *ifn)
 
     r = ifn->CreateJavaVM(pvm, (void **)penv, &args);
     JLI_MemFree(options);
+    options = NULL;
     return r == JNI_OK;
 }
 
@@ -2203,6 +2201,7 @@ FreeKnownVMs()
         knownVMs[i].name = NULL;
     }
     JLI_MemFree(knownVMs);
+    knownVMs = NULL;
 }
 
 /*
@@ -2276,8 +2275,9 @@ ShowSplashScreen()
     (void)UnsetEnv(SPLASH_JAR_ENV_ENTRY);
 
     JLI_MemFree(splash_jar_entry);
+    splash_jar_entry = NULL;
     JLI_MemFree(splash_file_entry);
-
+    splash_file_entry = NULL;
 }
 
 static const char* GetFullVersion()

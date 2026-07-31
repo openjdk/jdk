@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ import compiler.lib.ir_framework.*;
 /*
  * @test
  * @bug 8343067
- * @requires os.simpleArch == "x64" | os.simpleArch == "aarch64"
+ * @requires os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64"
  * @requires vm.compiler2.enabled
  * @summary Test that chains of AddP nodes with constant offsets are idealized
  *          when their offset input changes.
@@ -43,6 +43,7 @@ public class TestCombineAddPWithConstantOffsets {
     @Test
     @IR(applyIfPlatform = {"x64", "true"}, failOn = {IRNode.ADD_P_OF, ".*"})
     @IR(applyIfPlatform = {"aarch64", "true"}, failOn = {IRNode.ADD_P_OF, "reg_imm"})
+    @IR(applyIfPlatform = {"riscv64", "true"}, failOn = {IRNode.ADD_P_OF, "reg_imm"})
     static void testCombineAddPWithConstantOffsets(int[] arr) {
         for (long i = 6; i < 14; i++) {
             arr[(int)i] = 1;

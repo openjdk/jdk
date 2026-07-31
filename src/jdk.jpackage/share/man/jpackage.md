@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -121,9 +121,76 @@ The `jpackage` tool will take as input a Java application and a Java run-time im
 
 :   Vendor of the application
 
-<a id="option-verbose">`--verbose`</a>
+<a id="option-verbose">`--verbose` &lt;\[-\]key(,\[-\]key)*&gt;</a>
 
-:   Enables verbose output.
+:   Configures verbose output. Enables and/or disables log message categories using zero or more of the keys described below separated by commas.
+    The key `all` enables or disables all categories (respectively); other keys enable the corresponding category, or disable it if preceded by a hyphen (`-`).
+
+    Supported values for *key* are:
+
+    -   `all`: Enables console output and routing of all message categories to the logging framework through the [System.Logger API](../../api/java.base/java/lang/System.Logger.html). Equivalent to `console,log`.
+
+    -   `console`: Enables console output of all message categories. Equivalent to `all,-log`.
+
+    -   `errors`: Enables output of fatal errors.
+        If the key is specified without the `trace` key, error messages will be written to the console without the corresponding exception stacktraces.
+        If the key is specified with the `trace` key, error messages will be written to the console with the corresponding exception stacktraces.
+
+    -   `progress`: Enables output of progress messages.
+
+    -   `resources`: Enables output of messages about the use of the configurable resources.
+
+    -   `summary`: Enables output of the bundle properties and the versions of the tools being used.
+
+    -   `tools`: Enables output of commands being executed.
+        If the key is specified without the `trace` key, the jpackage will print the command lines without the output produced by executing these command lines.
+        Only command lines that are relevant to package customization will be written to the console.
+        If the key is specified with the `trace` key, the jpackage will print all command lines and their output.
+
+    -   `trace`: Enables output of stack traces of suppressed exceptions and details of the jpackage execution.
+        When combined with other keys, it enables additional information in messages from the corresponding message categories, as described above.
+
+    -   `warning`: Enables output of warnings.
+
+    -   `log`: Enables routing of all message categories to the logging framework through the [System.Logger API](../../api/java.base/java/lang/System.Logger.html).
+        The logger name will be "jdk.jpackage".
+
+    If the option is specified without the value, it is equivalent to:
+    ```
+    --verbose console,-trace
+    ```
+
+    If the option is not specified, it is equivalent to:
+    ```
+    --verbose errors,warnings
+    ```
+
+    Sample usage:
+
+    Suppress all console output, enable logging via the [System.Logger API](../../api/java.base/java/lang/System.Logger.html):
+    ```
+    --verbose log
+    ```
+
+    Enable all message categories in the console:
+    ```
+    --verbose console
+    ```
+
+    Enable all message categories, but "trace" and "tools" in the console:
+    ```
+    --verbose console,-trace,-tools
+    ```
+
+    Enable "trace" and "tools" message categories in the console:
+    ```
+    --verbose trace,tools
+    ```
+
+    Enable "trace" and "tools" message categories in the console and enable logging via the [System.Logger API](../../api/java.base/java/lang/System.Logger.html):
+    ```
+    --verbose log,trace,tools
+    ```
 
 <a id="option-version">`--version`</a>
 
@@ -410,7 +477,8 @@ The `jpackage` tool will take as input a Java application and a Java run-time im
 
 <a id="option-win-menu">`--win-menu`</a>
 
-:   Request to add a Start Menu shortcut for this application
+:   Adds a Start menu shortcut for this application, or requests to do so
+    if --win-shortcut-prompt is specified
 
 <a id="option-win-menu-group">`--win-menu-group` *menu-group-name*</a>
 
@@ -418,15 +486,17 @@ The `jpackage` tool will take as input a Java application and a Java run-time im
 
 <a id="option-win-per-user-install">`--win-per-user-install`</a>
 
-:   Request to perform an install on a per-user basis
+:   Installs the application on a per-user basis. Without this option installs per-machine
 
 <a id="option-win-shortcut">`--win-shortcut`</a>
 
-:   Request to create a desktop shortcut for this application
+:   Adds a desktop shortcut for this application, or requests to do so
+    if --win-shortcut-prompt is specified
 
 <a id="option-win-shortcut-prompt">`--win-shortcut-prompt`</a>
 
-:   Adds a dialog to enable the user to choose if shortcuts will be created by installer
+:   Adds a dialog if at least one of --win-menu or --win-shortcut are specified
+    to enable the user to choose if these shortcuts will be created by the installer
 
 <a id="option-win-update-url">`--win-update-url` *url*</a>
 
@@ -435,6 +505,10 @@ The `jpackage` tool will take as input a Java application and a Java run-time im
 <a id="option-win-upgrade-uuid">`--win-upgrade-uuid` *id*</a>
 
 :   UUID associated with upgrades for this package
+
+<a id="option-win-with-ui">`--win-with-ui`</a>
+
+:   Enforces the installer to have UI
 
 #### Linux platform options (available only when running on Linux):
 

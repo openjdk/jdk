@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -249,7 +249,7 @@ public class ECDSAPrimitive {
 
         byte[] u1Bytes = u1.asByteArray(length);
         byte[] u2Bytes = u2.asByteArray(length);
-        AffinePoint publicKeyPoint = ECDSAOperations.toAffinePoint(publicKey,
+        AffinePoint publicKeyPoint = AffinePoint.fromECPoint(publicKey,
                 ecOps.getField());
         MutablePoint R = ecOps.multiply(publicKeyPoint, u2Bytes);
         AffinePoint a1 = ops.basePointMultiply(u1Bytes);

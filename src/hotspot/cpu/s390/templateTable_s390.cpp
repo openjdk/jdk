@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -480,8 +480,9 @@ void TemplateTable::fast_aldc(LdcType type) {
 
   // Convert null sentinel to null.
   __ load_const_optimized(Z_R1_scratch, (intptr_t)Universe::the_null_sentinel_addr());
-  __ resolve_oop_handle(Z_R1_scratch);
-  __ z_cg(Z_tos, Address(Z_R1_scratch));
+  __ z_lg(Z_R1_scratch, Address(Z_R1_scratch));
+  __ resolve_oop_handle(Z_R1_scratch, Z_R0_scratch, Z_R1_scratch);
+  __ z_cgr(Z_tos, Z_R1_scratch);
   __ z_brne(L_resolved);
   __ clear_reg(Z_tos);
   __ z_bru(L_resolved);
@@ -1054,7 +1055,7 @@ void TemplateTable::lstore() {
 void TemplateTable::fstore() {
   transition(ftos, vtos);
   locals_index(Z_R1_scratch);
-  __ freg2mem_opt(Z_ftos, faddress(_masm, Z_R1_scratch));
+  __ freg2mem_opt(Z_ftos, faddress(_masm, Z_R1_scratch), false);
 }
 
 void TemplateTable::dstore() {
@@ -2335,7 +2336,9 @@ void TemplateTable::_return(TosState state) {
     __ z_tm(poll_byte_addr, SafepointMechanism::poll_bit());
     __ z_braz(no_safepoint);
     __ push(state);
+    __ push_cont_fastpath();
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint));
+    __ pop_cont_fastpath();
     __ pop(state);
     __ bind(no_safepoint);
   }
@@ -2377,7 +2380,8 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
   __ z_cli(Address(Rcache, bc_offset), code);
 
   // Class initialization barrier for static methods
-  if (VM_Version::supports_fast_class_init_checks() && bytecode() == Bytecodes::_invokestatic) {
+  if (bytecode() == Bytecodes::_invokestatic) {
+    assert(VM_Version::supports_fast_class_init_checks(), "sanity");
     const Register method = Z_R1_scratch;
     const Register klass  = Z_R1_scratch;
     __ z_brne(L_clinit_barrier_slow);
@@ -2393,7 +2397,7 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
   // Class initialization barrier slow path lands here as well.
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
   __ load_const_optimized(Z_ARG2, (int)code);
-  __ call_VM(noreg, entry, Z_ARG2);
+  __ call_VM_preemptable(noreg, entry, Z_ARG2);
 
   // Update registers with resolved info.
   __ load_method_entry(Rcache, index);
@@ -2427,8 +2431,8 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
   __ z_cli(Address(cache, code_offset), code);
 
   // Class initialization barrier for static fields
-  if (VM_Version::supports_fast_class_init_checks() &&
-      (bytecode() == Bytecodes::_getstatic || bytecode() == Bytecodes::_putstatic)) {
+  if (bytecode() == Bytecodes::_getstatic || bytecode() == Bytecodes::_putstatic) {
+    assert(VM_Version::supports_fast_class_init_checks(), "sanity");
     const Register field_holder = index;
 
     __ z_brne(L_clinit_barrier_slow);
@@ -2443,7 +2447,7 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
   // Class initialization barrier slow path lands here as well.
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
   __ load_const_optimized(Z_ARG2, (int)code);
-  __ call_VM(noreg, entry, Z_ARG2);
+  __ call_VM_preemptable(noreg, entry, Z_ARG2);
 
   // Update registers with resolved info.
   __ load_field_entry(cache, index);
@@ -2477,7 +2481,7 @@ void TemplateTable::load_resolved_field_entry(Register obj,
   if (is_static) {
     __ load_sized_value(obj, Address(cache, ResolvedFieldEntry::field_holder_offset()), sizeof(void*), false);
     __ load_sized_value(obj, Address(obj, in_bytes(Klass::java_mirror_offset())), sizeof(void*), false);
-    __ resolve_oop_handle(obj);
+    __ resolve_oop_handle(obj, Z_R0_scratch, Z_R1_scratch);
   }
 }
 
@@ -3502,7 +3506,7 @@ void TemplateTable::fast_xaccess(TosState state) {
       __ verify_oop(Z_tos);
       break;
     case ftos:
-      __ mem2freg_opt(Z_ftos, field);
+      __ mem2freg_opt(Z_ftos, field, false);
       break;
     default:
       ShouldNotReachHere();
@@ -4020,7 +4024,7 @@ void TemplateTable::_new() {
   __ bind(slow_case);
   __ get_constant_pool(Z_ARG2);
   __ get_2_byte_integer_at_bcp(Z_ARG3/*dest*/, 1, InterpreterMacroAssembler::Unsigned);
-  call_VM(Z_tos, CAST_FROM_FN_PTR(address, InterpreterRuntime::_new), Z_ARG2, Z_ARG3);
+  __ call_VM_preemptable(Z_tos, CAST_FROM_FN_PTR(address, InterpreterRuntime::_new), Z_ARG2, Z_ARG3);
   __ verify_oop(Z_tos);
 
   // continue

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,8 +59,6 @@
  */
 package tck.java.time.serial;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 import tck.java.time.AbstractTCKTest;
 
 import java.io.ByteArrayInputStream;
@@ -72,13 +70,18 @@ import java.time.DateTimeException;
 import java.time.ZoneId;
 import java.time.zone.ZoneRulesException;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
+import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Test serialization of ZoneId.
  */
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TCKZoneIdSerialization extends AbstractTCKTest {
 
     //-----------------------------------------------------------------------
@@ -105,11 +108,11 @@ public class TCKZoneIdSerialization extends AbstractTCKTest {
         String id = "QWERTYUIOPASDFGHJKLZXCVBNM~/._+-";
         ZoneId deser = deserialize(id);
         // getId, equals, hashCode, toString and normalized are OK
-        assertEquals(deser.getId(), id);
-        assertEquals(deser.toString(), id);
+        assertEquals(id, deser.getId());
+        assertEquals(id, deser.toString());
         assertEquals(deser, deser);
         assertEquals(deser.hashCode(), deser.hashCode());
-        assertEquals(deser.normalized(), deser);
+        assertEquals(deser, deser.normalized());
         // getting the rules is not
         try {
             deser.getRules();
@@ -119,39 +122,45 @@ public class TCKZoneIdSerialization extends AbstractTCKTest {
         }
     }
 
-    @Test(expectedExceptions=DateTimeException.class)
+    @Test
     public void test_deserialization_lenient_badCharacters() throws Exception {
-        // an ID can be loaded without validation during deserialization
-        // but there is a check to ensure the ID format is valid
-        deserialize("|!?");
+        Assertions.assertThrows(DateTimeException.class, () -> {
+            // an ID can be loaded without validation during deserialization
+            // but there is a check to ensure the ID format is valid
+            deserialize("|!?");
+        });
     }
 
-    @Test(dataProvider="offsetBasedValid")
+    @ParameterizedTest
+    @MethodSource("data_offsetBasedValid")
     public void test_deserialization_lenient_offsetNotAllowed_noPrefix(String input, String resolvedId) throws Exception {
         ZoneId deserialized = deserialize(input);
-        assertEquals(deserialized, ZoneId.of(input));
-        assertEquals(deserialized, ZoneId.of(resolvedId));
+        assertEquals(ZoneId.of(input), deserialized);
+        assertEquals(ZoneId.of(resolvedId), deserialized);
     }
 
-    @Test(dataProvider="offsetBasedValidPrefix")
+    @ParameterizedTest
+    @MethodSource("data_offsetBasedValidPrefix")
     public void test_deserialization_lenient_offsetNotAllowed_prefixUTC(String input, String resolvedId, String offsetId) throws Exception {
         ZoneId deserialized = deserialize("UTC" + input);
-        assertEquals(deserialized, ZoneId.of("UTC" + input));
-        assertEquals(deserialized, ZoneId.of("UTC" + resolvedId));
+        assertEquals(ZoneId.of("UTC" + input), deserialized);
+        assertEquals(ZoneId.of("UTC" + resolvedId), deserialized);
     }
 
-    @Test(dataProvider="offsetBasedValidPrefix")
+    @ParameterizedTest
+    @MethodSource("data_offsetBasedValidPrefix")
     public void test_deserialization_lenient_offsetNotAllowed_prefixGMT(String input, String resolvedId, String offsetId) throws Exception {
         ZoneId deserialized = deserialize("GMT" + input);
-        assertEquals(deserialized, ZoneId.of("GMT" + input));
-        assertEquals(deserialized, ZoneId.of("GMT" + resolvedId));
+        assertEquals(ZoneId.of("GMT" + input), deserialized);
+        assertEquals(ZoneId.of("GMT" + resolvedId), deserialized);
     }
 
-    @Test(dataProvider="offsetBasedValidPrefix")
+    @ParameterizedTest
+    @MethodSource("data_offsetBasedValidPrefix")
     public void test_deserialization_lenient_offsetNotAllowed_prefixUT(String input, String resolvedId, String offsetId) throws Exception {
         ZoneId deserialized = deserialize("UT" + input);
-        assertEquals(deserialized, ZoneId.of("UT" + input));
-        assertEquals(deserialized, ZoneId.of("UT" + resolvedId));
+        assertEquals(ZoneId.of("UT" + input), deserialized);
+        assertEquals(ZoneId.of("UT" + resolvedId), deserialized);
     }
 
     private ZoneId deserialize(String id) throws Exception {
@@ -186,7 +195,6 @@ public class TCKZoneIdSerialization extends AbstractTCKTest {
     //-----------------------------------------------------------------------
     // regular factory and .normalized()
     //-----------------------------------------------------------------------
-    @DataProvider(name="offsetBasedValid")
     Object[][] data_offsetBasedValid() {
         return new Object[][] {
                 {"Z", "Z"},
@@ -223,7 +231,6 @@ public class TCKZoneIdSerialization extends AbstractTCKTest {
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="offsetBasedValidPrefix")
     Object[][] data_offsetBasedValidPrefix() {
         return new Object[][] {
                 {"", "", "Z"},

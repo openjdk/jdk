@@ -35,6 +35,7 @@ public class JUnitUtilsTest {
         JUnitUtils.assertArrayEquals(new int[] {1, 2, 3}, new int[] {1, 2, 3});
         JUnitUtils.assertArrayEquals(new long[] {1, 2, 3}, new long[] {1, 2, 3});
         JUnitUtils.assertArrayEquals(new boolean[] {true, true}, new boolean[] {true, true});
+        JUnitUtils.assertArrayEquals(null, null);
     }
 
     @Test

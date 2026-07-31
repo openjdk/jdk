@@ -46,7 +46,6 @@ define_pd_global(intx, FreqInlineSize,               325);
 define_pd_global(intx, MinJumpTableSize,             10);
 define_pd_global(intx, LoopPercentProfileLimit,      10);
 define_pd_global(intx,  InteriorEntryAlignment,      16);
-define_pd_global(size_t, NewSizeThreadIncrease,      ScaleForWordSize(4*K));
 define_pd_global(intx,  LoopUnrollLimit,             60);
 // InitialCodeCacheSize derived from specjbb2000 run.
 define_pd_global(size_t, InitialCodeCacheSize,       2496*K); // Integral multiple of CodeCacheExpansionSize
@@ -73,8 +72,5 @@ define_pd_global(size_t, CodeCacheMinBlockLength,    6);
 define_pd_global(size_t, CodeCacheMinimumUseSpace,   400*K);
 
 define_pd_global(bool,  TrapBasedRangeChecks,        false); // Not needed on x86.
-
-// Ergonomics related flags
-define_pd_global(bool, NeverActAsServerClassMachine, false);
 
 #endif // CPU_X86_C2_GLOBALS_X86_HPP

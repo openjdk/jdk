@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,7 +185,7 @@ size_t G1HeapSizingPolicy::young_collection_shrink_amount(double cpu_usage_delta
   // going to use during this mutator phase.
   uint target_regions_to_shrink = _g1h->num_free_regions();
 
-  uint needed_for_allocation = _g1h->eden_target_length();
+  uint needed_for_allocation = _g1h->target_num_eden_regions();
   if (_g1h->is_humongous(allocation_word_size)) {
     needed_for_allocation += (uint) _g1h->humongous_obj_size_in_regions(allocation_word_size);
   }
@@ -366,6 +366,12 @@ static size_t target_heap_capacity(size_t used_bytes, uintx free_ratio) {
 }
 
 size_t G1HeapSizingPolicy::full_collection_resize_amount(bool& expand, size_t allocation_word_size) {
+  // User-requested Full GCs introduce GC load unrelated to heap size; reset CPU
+  // usage tracking so heap resizing heuristics are driven only by GC pressure.
+  if (GCCause::is_user_requested_gc(_g1h->gc_cause())) {
+    reset_cpu_usage_tracking_data();
+  }
+
   const size_t capacity_after_gc = _g1h->capacity();
   // Capacity, free and used after the GC counted as full regions to
   // include the waste in the following calculations.

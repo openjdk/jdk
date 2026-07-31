@@ -26,35 +26,45 @@
 
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcTrace.hpp"
-#include "gc/shared/gcWhen.hpp"
 #include "gc/shared/referenceProcessorStats.hpp"
-#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
-#include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "utilities/debug.hpp"
 
 ShenandoahPhaseTimings::Phase ShenandoahTimingsTracker::_current_phase = ShenandoahPhaseTimings::_invalid_phase;
 
-ShenandoahGCSession::ShenandoahGCSession(GCCause::Cause cause, ShenandoahGeneration* generation) :
+const char* ShenandoahGCSession::cycle_end_message(ShenandoahGenerationType type) {
+  switch (type) {
+    case NON_GEN:
+      return "end of GC cycle";
+    case GLOBAL:
+      return "end of Global GC cycle";
+    case YOUNG:
+      return "end of Young GC cycle";
+    case OLD:
+      return "end of Old GC cycle";
+    default:
+      ShouldNotReachHere();
+      return "end of GC cycle";
+  }
+}
+
+ShenandoahGCSession::ShenandoahGCSession(GCCause::Cause cause, ShenandoahGeneration* generation,
+                                         bool is_degenerated, bool is_out_of_cycle) :
   _heap(ShenandoahHeap::heap()),
   _generation(generation),
   _timer(_heap->gc_timer()),
   _tracer(_heap->tracer()) {
   assert(!ShenandoahGCPhase::is_current_phase_valid(), "No current GC phase");
-
-  _heap->on_cycle_start(cause, _generation);
-
+  _heap->on_cycle_start(cause, _generation, is_degenerated, is_out_of_cycle);
   _timer->register_gc_start();
   _tracer->report_gc_start(cause, _timer->gc_start());
   _heap->trace_heap_before_gc(_tracer);
 
   _trace_cycle.initialize(_heap->cycle_memory_manager(), cause,
-          "end of GC cycle",
+          cycle_end_message(_generation->type()),
           /* allMemoryPoolsAffected */    true,
           /* recordGCBeginTime = */       true,
           /* recordPreGCUsage = */        true,
@@ -133,7 +143,7 @@ bool ShenandoahTimingsTracker::is_current_phase_valid() {
 ShenandoahGCPhase::ShenandoahGCPhase(ShenandoahPhaseTimings::Phase phase) :
   ShenandoahTimingsTracker(phase),
   _timer(ShenandoahHeap::heap()->gc_timer()) {
-  _timer->register_gc_phase_start(ShenandoahPhaseTimings::phase_name(phase), Ticks::now());
+  _timer->register_gc_phase_start(ShenandoahPhaseTimings::phase_desc(phase), Ticks::now());
 }
 
 ShenandoahGCPhase::~ShenandoahGCPhase() {
@@ -154,9 +164,9 @@ ShenandoahWorkerSession::ShenandoahWorkerSession(uint worker_id) {
 }
 
 ShenandoahConcurrentWorkerSession::~ShenandoahConcurrentWorkerSession() {
-  _event.commit(GCId::current(), ShenandoahPhaseTimings::phase_name(ShenandoahGCPhase::current_phase()));
+  _event.commit(GCId::current(), ShenandoahPhaseTimings::phase_desc(ShenandoahGCPhase::current_phase()));
 }
 
 ShenandoahParallelWorkerSession::~ShenandoahParallelWorkerSession() {
-  _event.commit(GCId::current(), WorkerThread::worker_id(), ShenandoahPhaseTimings::phase_name(ShenandoahGCPhase::current_phase()));
+  _event.commit(GCId::current(), WorkerThread::worker_id(), ShenandoahPhaseTimings::phase_desc(ShenandoahGCPhase::current_phase()));
 }

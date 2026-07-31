@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,7 +168,7 @@ public class PackageTestTest extends JUnitAdapter {
         protected final int expectedTicks;
     }
 
-    private static class CountingConsumer extends TickCounter implements ThrowingConsumer<JPackageCommand> {
+    private static class CountingConsumer extends TickCounter implements ThrowingConsumer<JPackageCommand, RuntimeException> {
 
         @Override
         public void accept(JPackageCommand cmd) {
@@ -188,7 +188,7 @@ public class PackageTestTest extends JUnitAdapter {
         private final String label;
     }
 
-    private static class CountingRunnable extends TickCounter implements ThrowingRunnable {
+    private static class CountingRunnable extends TickCounter implements ThrowingRunnable<RuntimeException> {
 
         @Override
         public void run() {
@@ -208,12 +208,12 @@ public class PackageTestTest extends JUnitAdapter {
         private final String label;
     }
 
-    private static class CountingBundleVerifier extends TickCounter implements ThrowingBiConsumer<JPackageCommand, Executor.Result> {
+    private static class CountingBundleVerifier extends TickCounter implements ThrowingBiConsumer<JPackageCommand, Executor.Result, RuntimeException> {
 
         @Override
         public void accept(JPackageCommand cmd, Executor.Result result) {
             tick();
-            jpackageExitCode = result.exitCode();
+            jpackageExitCode = result.getExitCode();
         }
 
         @Override
@@ -371,8 +371,7 @@ public class PackageTestTest extends JUnitAdapter {
                         } catch (IOException ex) {
                             throw new UncheckedIOException(ex);
                         }
-                        return new Executor.Result(actualJPackageExitCode,
-                                this::getPrintableCommandLine).assertExitCodeIs(expectedExitCode);
+                        return new Executor.Result(actualJPackageExitCode).assertExitCodeIs(expectedExitCode);
                     }
                 };
             }).setExpectedExitCode(expectedJPackageExitCode)

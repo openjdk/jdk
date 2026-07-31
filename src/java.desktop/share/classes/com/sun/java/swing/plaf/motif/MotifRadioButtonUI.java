@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,6 @@ import javax.swing.UIManager;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicRadioButtonUI;
 
-import sun.awt.AppContext;
-
 /**
  * RadioButtonUI implementation for MotifRadioButtonUI
  *
@@ -45,7 +43,7 @@ import sun.awt.AppContext;
  */
 public class MotifRadioButtonUI extends BasicRadioButtonUI {
 
-    private static final Object MOTIF_RADIO_BUTTON_UI_KEY = new Object();
+    private static final ComponentUI UI = new MotifRadioButtonUI();
 
     protected Color focusColor;
 
@@ -55,19 +53,13 @@ public class MotifRadioButtonUI extends BasicRadioButtonUI {
     //         Create PLAF
     // ********************************
     public static ComponentUI createUI(JComponent c) {
-        AppContext appContext = AppContext.getAppContext();
-        MotifRadioButtonUI motifRadioButtonUI =
-                (MotifRadioButtonUI) appContext.get(MOTIF_RADIO_BUTTON_UI_KEY);
-        if (motifRadioButtonUI == null) {
-            motifRadioButtonUI = new MotifRadioButtonUI();
-            appContext.put(MOTIF_RADIO_BUTTON_UI_KEY, motifRadioButtonUI);
-        }
-        return motifRadioButtonUI;
+        return UI;
     }
 
     // ********************************
     //          Install Defaults
     // ********************************
+    @Override
     public void installDefaults(AbstractButton b) {
         super.installDefaults(b);
         if(!defaults_initialized) {
@@ -76,6 +68,7 @@ public class MotifRadioButtonUI extends BasicRadioButtonUI {
         }
     }
 
+    @Override
     protected void uninstallDefaults(AbstractButton b) {
         super.uninstallDefaults(b);
         defaults_initialized = false;
@@ -92,6 +85,7 @@ public class MotifRadioButtonUI extends BasicRadioButtonUI {
     // ********************************
     //         Paint Methods
     // ********************************
+    @Override
     protected void paintFocus(Graphics g, Rectangle t, Dimension d){
         g.setColor(getFocusColor());
         g.drawRect(0,0,d.width-1,d.height-1);

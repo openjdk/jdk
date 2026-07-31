@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,12 +32,12 @@
     jobject fCurPainter;
     jobject fCurPeekGraphics;
 
-    jint fFirstPage, fLastPage;
+    jint fTotalPages;
 }
 
 - (id)initWithFrame:(NSRect)aRect withEnv:(JNIEnv*)env withPrinterJob:(jobject)printerJob;
 
-- (void)setFirstPage:(jint)firstPage lastPage:(jint)lastPage;
+- (void)setTotalPages:(jint)totalPages;
 
 - (void)releaseReferences:(JNIEnv*)env;
 

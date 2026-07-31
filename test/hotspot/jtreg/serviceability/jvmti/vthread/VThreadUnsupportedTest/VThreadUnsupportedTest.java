@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @summary Verifies that specific JVMTI functions return UNSUPPORTED_OPERATION
  *          or OPAQUE_FRAME if called with virtual threads.
  * @requires vm.continuations
+ * @requires test.thread.factory == null
  * @compile VThreadUnsupportedTest.java
  * @run main/othervm/native -agentlib:VThreadUnsupportedTest VThreadUnsupportedTest
  */

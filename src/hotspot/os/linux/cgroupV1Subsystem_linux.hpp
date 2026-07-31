@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -214,15 +214,15 @@ class CgroupV1Subsystem: public CgroupSubsystem {
     const char * container_type() override {
       return "cgroupv1";
     }
-    CachingCgroupController<CgroupMemoryController>* memory_controller() override { return _memory; }
-    CachingCgroupController<CgroupCpuController>* cpu_controller() override { return _cpu; }
+    CachingCgroupController<CgroupMemoryController, physical_memory_size_type>* memory_controller() override { return _memory; }
+    CachingCgroupController<CgroupCpuController, double>* cpu_controller() override { return _cpu; }
     CgroupCpuacctController* cpuacct_controller() override { return _cpuacct; }
 
   private:
     /* controllers */
-    CachingCgroupController<CgroupMemoryController>* _memory = nullptr;
+    CachingCgroupController<CgroupMemoryController, physical_memory_size_type>* _memory = nullptr;
     CgroupV1Controller* _cpuset = nullptr;
-    CachingCgroupController<CgroupCpuController>* _cpu = nullptr;
+    CachingCgroupController<CgroupCpuController, double>* _cpu = nullptr;
     CgroupV1CpuacctController* _cpuacct = nullptr;
     CgroupV1Controller* _pids = nullptr;
 

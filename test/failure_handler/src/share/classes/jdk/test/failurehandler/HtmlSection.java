@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,41 +57,15 @@ public class HtmlSection {
         if (rootSection == null) {
             this.rootSection = this;
             this.pw.println("<html>");
-            this.pw.println("<style>\n"
-                    + "div { display:none;}\n"
-                    + "</style>\n"
-                    + "\n"
-                    + "<script>\n"
-                    + "function show(e) {\n"
-                    + "  while (e != null) {\n"
-                    + "    if (e.tagName == 'DIV') {\n"
-                    + "      e.style.display = 'block';\n"
-                    + "    }\n"
-                    + "    e = e.parentNode;\n"
-                    + "  }\n"
-                    + "}\n"
-                    + "\n"
-                    + "function toggle(id) {\n"
-                    + "  e = document.getElementById(id);\n"
-                    + "  d = e.style.display;\n"
-                    + "  if (d == 'block') {\n"
-                    + "    e.style.display = 'none';\n"
-                    + "  } else {\n"
-                    + "    show(e);\n"
-                    + "  }\n"
-                    + "}\n"
-                    + "\n"
-                    + "function main() {\n"
-                    + "  index = location.href.indexOf(\"#\");"
-                    + "  if (index != -1) {\n"
-                    + "    show(document.getElementById(location.href.substring(index + 1)));\n"
-                    + "  }\n"
-                    + "}\n"
-                    + "\n"
-                    + "</script>\n"
-                    + "</head>");
 
-            this.pw.println("<body onload='main()'>");
+            this.pw.println("<head>");
+            this.pw.println(
+                    "<link href=\"" + HtmlPage.STYLE_SHEET_FILENAME + "\" rel=\"stylesheet\" type=\"text/css\" />");
+            this.pw.println(
+                    "<script src=\"" + HtmlPage.SCRIPT_FILENAME + "\" type=\"text/javascript\" ></script>");
+            this.pw.println("</head>");
+
+            this.pw.println("<body>");
         } else {
             this.rootSection = rootSection;
             this.pw.print("<ul>");
@@ -146,7 +120,7 @@ public class HtmlSection {
         } else if (child != null) {
             path = String.format("%s.%s", path, child);
         }
-        pw.printf("<a href=\"#%1$s\" onclick=\"show(document.getElementById('%1$s')); return true;\">%2$s</a>%n",
+        pw.printf("<a href=\"#%1$s\" data-show=\"%1$s\" >%2$s</a>%n",
                 path, name);
     }
 
@@ -188,7 +162,7 @@ public class HtmlSection {
                             : String.format("%s.%s", parent.id, name),
                     name, rootSection);
             this.parent = parent;
-            pw.printf("<li><a name='%1$s'/><a href='#%1$s' onclick=\"toggle('%1$s'); return false;\">%2$s</a><div id='%1$s'><code><pre>",
+            pw.printf("<li><a name='%1$s'/><a href='#%1$s' data-toggle=\"%1$s\" >%2$s</a><div id='%1$s'><code><pre>",
                     id, name);
         }
 

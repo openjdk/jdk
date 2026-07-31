@@ -23,10 +23,14 @@
 
 package test.astro;
 
+import java.nio.file.Path;
+
 import static java.io.File.separator;
-import static jaxp.library.JAXPTestUtilities.getPathByClassName;
 
 public class AstroConstants {
+    private static final Path XML_FILES =
+            Path.of(System.getProperty("test.src")).resolve("xmlfiles").toAbsolutePath();
+
     // Query parameters :
 
     public static final double RA_MIN = 0.0; // hours
@@ -36,7 +40,7 @@ public class AstroConstants {
 
     // Stylesheet source paths:
 
-    public static final String XSLPATH = getPathByClassName(AstroConstants.class, "xmlfiles" + separator + "xsl");
+    public static final String XSLPATH = XML_FILES.resolve("xsl").toString() + separator;
     public static final String RAXSL = XSLPATH + "ra.xsl";
     public static final String DECXSL = XSLPATH + "dec.xsl";
     public static final String RADECXSL = XSLPATH + "radec.xsl";
@@ -51,10 +55,9 @@ public class AstroConstants {
 
     // Catalog references
 
-    public static final String ASTROCAT = getPathByClassName(AstroConstants.class, "xmlfiles") + "catalog.xml";
+    public static final String ASTROCAT = XML_FILES.resolve("catalog.xml").toString();
 
-
-    public static final String GOLDEN_DIR = getPathByClassName(AstroConstants.class, "xmlfiles" + separator + "gold");
+    public static final String GOLDEN_DIR = XML_FILES.resolve("gold").toString() + separator;
     public static final String JAXP_SCHEMA_LANGUAGE = "http://java.sun.com/xml/jaxp/properties/schemaLanguage";
     public static final String JAXP_SCHEMA_SOURCE = "http://java.sun.com/xml/jaxp/properties/schemaSource";
 }

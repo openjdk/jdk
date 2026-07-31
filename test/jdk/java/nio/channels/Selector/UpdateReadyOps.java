@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @run testng UpdateReadyOps
+ * @run junit UpdateReadyOps
  * @summary Test that the ready set from a selection operation is bitwise-disjoined
  *     into a key's ready set when the key is already in the selected-key set
  */
@@ -37,16 +37,19 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
 
-@Test
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 public class UpdateReadyOps {
 
     /**
      * Test that OP_WRITE is preserved when updating the ready set of a key in
      * the selected-key set to add OP_READ.
      */
+    @Test
     public void testOpWritePreserved() throws Exception {
         try (ConnectionPair pair = new ConnectionPair();
              Selector sel = Selector.open()) {
@@ -58,14 +61,14 @@ public class UpdateReadyOps {
             SelectionKey key = sc1.register(sel, SelectionKey.OP_WRITE);
 
             int updated = sel.select();
-            assertTrue(updated == 1);
+            assertEquals(1, updated);
             assertTrue(sel.selectedKeys().contains(key));
             assertFalse(key.isReadable());
             assertTrue(key.isWritable());
 
             // select again, should be no updates
             updated = sel.select();
-            assertTrue(updated == 0);
+            assertEquals(0, updated);
             assertTrue(sel.selectedKeys().contains(key));
             assertFalse(key.isReadable());
             assertTrue(key.isWritable());
@@ -78,16 +81,17 @@ public class UpdateReadyOps {
 
             key.interestOps(SelectionKey.OP_READ);
             updated = sel.select();
-            assertTrue(updated == 1);
-            assertTrue(sel.selectedKeys().size() == 1);
+            assertEquals(1, updated);
+            assertEquals(1, sel.selectedKeys().size());
             assertTrue(key.isReadable());
             assertTrue(key.isWritable());
-            assertTrue(key.readyOps() == (SelectionKey.OP_READ|SelectionKey.OP_WRITE));
+            assertEquals(SelectionKey.OP_READ|SelectionKey.OP_WRITE,
+                         key.readyOps());
 
             // select again, should be no updates
             updated = sel.select();
-            assertTrue(updated == 0);
-            assertTrue(sel.selectedKeys().size() == 1);
+            assertEquals(0, updated);
+            assertEquals(1, sel.selectedKeys().size());
             assertTrue(key.isReadable());
             assertTrue(key.isWritable());
         }
@@ -97,6 +101,7 @@ public class UpdateReadyOps {
      * Test that OP_READ is preserved when updating the ready set of a key in
      * the selected-key set to add OP_WRITE.
      */
+    @Test
     public void testOpReadPreserved() throws Exception {
         try (ConnectionPair pair = new ConnectionPair();
              Selector sel = Selector.open()) {
@@ -111,32 +116,32 @@ public class UpdateReadyOps {
             sc2.write(helloMessage());
 
             int updated = sel.select();
-            assertTrue(updated == 1);
-            assertTrue(sel.selectedKeys().size() == 1);
+            assertEquals(1, updated);
+            assertEquals(1, sel.selectedKeys().size());
             assertTrue(sel.selectedKeys().contains(key));
             assertTrue(key.isReadable());
             assertFalse(key.isWritable());
 
             // select again, should be no updates
             updated = sel.select();
-            assertTrue(updated == 0);
+            assertEquals(0, updated);
             assertTrue(sel.selectedKeys().contains(key));
             assertTrue(key.isReadable());
             assertFalse(key.isWritable());
 
             key.interestOps(SelectionKey.OP_WRITE);
             updated = sel.select();
-            assertTrue(updated == 1);
-            assertTrue(sel.selectedKeys().size() == 1);
+            assertEquals(1, updated);
+            assertEquals(1, sel.selectedKeys().size());
             assertTrue(sel.selectedKeys().contains(key));
             assertTrue(key.isReadable());
             assertTrue(key.isWritable());
-            assertTrue(key.readyOps() == (SelectionKey.OP_READ|SelectionKey.OP_WRITE));
+            assertEquals(SelectionKey.OP_READ|SelectionKey.OP_WRITE, key.readyOps());
 
             // select again, should be no updates
             updated = sel.select();
-            assertTrue(updated == 0);
-            assertTrue(sel.selectedKeys().size() == 1);
+            assertEquals(0, updated);
+            assertEquals(1, sel.selectedKeys().size());
             assertTrue(key.isReadable());
             assertTrue(key.isWritable());
         }

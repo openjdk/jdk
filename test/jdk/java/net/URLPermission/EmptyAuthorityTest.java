@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,19 @@
 * @test
 * @bug 8367049
 * @summary URLPermission must reject empty/missing host authority with IAE (no SIOOBE)
-* @run testng EmptyAuthorityTest
+* @run junit ${test.main.class}
 */
 
 import java.net.URLPermission;
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class EmptyAuthorityTest {
 
-    @DataProvider(name = "badUrls")
-    public Object[][] badUrls() {
+    public static Object[][] badUrls() {
         return new Object[][]{
                 { "http:///path" }, // empty authority
                 { "https:///x" }, // empty authority
@@ -46,8 +47,7 @@ public class EmptyAuthorityTest {
         };
     }
 
-    @DataProvider(name = "goodUrls")
-    public Object[][] goodUrls() {
+    public static Object[][] goodUrls() {
         return new Object[][]{
                 { "http://example.com/x" },
                 { "http://example.com:80/x" },
@@ -56,12 +56,14 @@ public class EmptyAuthorityTest {
         };
     }
 
-    @Test(dataProvider = "badUrls")
+    @ParameterizedTest
+    @MethodSource("badUrls")
     public void rejectsEmptyOrMalformedAuthority(String url) {
-        Assert.expectThrows(IllegalArgumentException.class, () -> new URLPermission(url));
+        assertThrows(IllegalArgumentException.class, () -> new URLPermission(url));
     }
 
-    @Test(dataProvider = "goodUrls")
+    @ParameterizedTest
+    @MethodSource("goodUrls")
     public void acceptsValidAuthorities(String url) {
         new URLPermission(url); // should not throw
     }

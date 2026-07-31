@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
 #include "runtime/mutex.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/integerCast.hpp"
 
 class BytecodeStream;
 
@@ -77,7 +78,6 @@ class ProfileData;
 // Overlay for generic profiling data.
 class DataLayout {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
 
 private:
   // Every data layout begins with a header.  This header
@@ -127,7 +127,10 @@ public:
     call_type_data_tag,
     virtual_call_type_data_tag,
     parameters_type_data_tag,
-    speculative_trap_data_tag
+    speculative_trap_data_tag,
+    array_store_data_tag,
+    array_load_data_tag,
+    acmp_data_tag
   };
 
   enum {
@@ -206,7 +209,7 @@ public:
   }
 
   bool set_flag_at(u1 flag_number) {
-    const u1 bit = 1 << flag_number;
+    const u1 bit = integer_cast<u1>(1 << flag_number);
     u1 compare_value;
     do {
       compare_value = _header._struct._flags;
@@ -219,7 +222,7 @@ public:
   }
 
   bool clear_flag_at(u1 flag_number) {
-    const u1 bit = 1 << flag_number;
+    const u1 bit = integer_cast<u1>(1 << flag_number);
     u1 compare_value;
     u1 exchange_value;
     do {
@@ -287,15 +290,18 @@ class     CounterData;
 class       ReceiverTypeData;
 class         VirtualCallData;
 class           VirtualCallTypeData;
+class         ArrayStoreData;
 class       RetData;
 class       CallTypeData;
 class   JumpData;
 class     BranchData;
+class       ACmpData;
 class   ArrayData;
 class     MultiBranchData;
 class     ArgInfoData;
 class     ParametersTypeData;
 class   SpeculativeTrapData;
+class   ArrayLoadData;
 
 // ProfileData
 //
@@ -303,7 +309,7 @@ class   SpeculativeTrapData;
 // data in a structured way.
 class ProfileData : public ResourceObj {
   friend class TypeEntries;
-  friend class ReturnTypeEntry;
+  friend class SingleTypeEntry;
   friend class TypeStackSlotEntries;
 private:
   enum {
@@ -422,6 +428,9 @@ public:
   virtual bool is_VirtualCallTypeData()const { return false; }
   virtual bool is_ParametersTypeData() const { return false; }
   virtual bool is_SpeculativeTrapData()const { return false; }
+  virtual bool is_ArrayStoreData() const { return false; }
+  virtual bool is_ArrayLoadData() const { return false; }
+  virtual bool is_ACmpData()           const { return false; }
 
 
   BitData* as_BitData() const {
@@ -480,6 +489,18 @@ public:
     assert(is_SpeculativeTrapData(), "wrong type");
     return is_SpeculativeTrapData() ? (SpeculativeTrapData*)this : nullptr;
   }
+  ArrayStoreData* as_ArrayStoreData() const {
+    assert(is_ArrayStoreData(), "wrong type");
+    return is_ArrayStoreData() ? (ArrayStoreData*)this : nullptr;
+  }
+  ArrayLoadData* as_ArrayLoadData() const {
+    assert(is_ArrayLoadData(), "wrong type");
+    return is_ArrayLoadData() ? (ArrayLoadData*)this : nullptr;
+  }
+  ACmpData* as_ACmpData() const {
+    assert(is_ACmpData(), "wrong type");
+    return is_ACmpData() ? (ACmpData*)this : nullptr;
+  }
 
 
   // Subclass specific initialization
@@ -513,7 +534,6 @@ public:
 // A BitData holds a flag or two in its header.
 class BitData : public ProfileData {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
 protected:
   enum : u1 {
     // null_seen:
@@ -521,10 +541,7 @@ protected:
       null_seen_flag                  = DataLayout::first_flag + 0,
       exception_handler_entered_flag  = null_seen_flag + 1,
       deprecated_method_callsite_flag = exception_handler_entered_flag + 1
-#if INCLUDE_JVMCI
-    // bytecode threw any exception
-    , exception_seen_flag             = deprecated_method_callsite_flag + 1
-#endif
+    , last_bit_data_flag
   };
   enum { bit_cell_count = 0 };  // no additional data fields needed.
 public:
@@ -545,17 +562,11 @@ public:
 
   // The null_seen flag bit is specially known to the interpreter.
   // Consulting it allows the compiler to avoid setting up null_check traps.
-  bool null_seen()     { return flag_at(null_seen_flag); }
+  bool null_seen() const  { return flag_at(null_seen_flag); }
   void set_null_seen()    { set_flag_at(null_seen_flag); }
   bool deprecated_method_call_site() const { return flag_at(deprecated_method_callsite_flag); }
   bool set_deprecated_method_call_site() { return data()->set_flag_at(deprecated_method_callsite_flag); }
   bool clear_deprecated_method_call_site() { return data()->clear_flag_at(deprecated_method_callsite_flag); }
-
-#if INCLUDE_JVMCI
-  // true if an exception was thrown at the specific BCI
-  bool exception_seen() { return flag_at(exception_seen_flag); }
-  void set_exception_seen() { set_flag_at(exception_seen_flag); }
-#endif
 
   // true if a ex handler block at this bci was entered
   bool exception_handler_entered() { return flag_at(exception_handler_entered_flag); }
@@ -578,7 +589,6 @@ public:
 // A CounterData corresponds to a simple counter.
 class CounterData : public BitData {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
 protected:
   enum {
     count_off,
@@ -631,7 +641,6 @@ public:
 // the corresponding target bci.
 class JumpData : public ProfileData {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
 protected:
   enum {
     taken_off_set,
@@ -646,7 +655,8 @@ protected:
 public:
   JumpData(DataLayout* layout) : ProfileData(layout) {
     assert(layout->tag() == DataLayout::jump_data_tag ||
-      layout->tag() == DataLayout::branch_data_tag, "wrong type");
+      layout->tag() == DataLayout::branch_data_tag ||
+      layout->tag() == DataLayout::acmp_data_tag, "wrong type");
   }
 
   virtual bool is_JumpData() const { return true; }
@@ -890,7 +900,7 @@ public:
 
 // Type entry used for return from a call. A single cell to record the
 // type.
-class ReturnTypeEntry : public TypeEntries {
+class SingleTypeEntry : public TypeEntries {
 
 private:
   enum {
@@ -898,7 +908,7 @@ private:
   };
 
 public:
-  ReturnTypeEntry(int base_off)
+  SingleTypeEntry(int base_off)
     : TypeEntries(base_off) {}
 
   void post_initialize() {
@@ -939,7 +949,7 @@ public:
 };
 
 // Entries to collect type information at a call: contains arguments
-// (TypeStackSlotEntries), a return type (ReturnTypeEntry) and a
+// (TypeStackSlotEntries), a return type (SingleTypeEntry) and a
 // number of cells. Because the number of cells for the return type is
 // smaller than the number of cells for the type of an arguments, the
 // number of cells is used to tell how many arguments are profiled and
@@ -993,7 +1003,7 @@ public:
   }
 
   static ByteSize return_only_size() {
-    return ReturnTypeEntry::size() + in_ByteSize(header_cell_count() * DataLayout::cell_size);
+    return SingleTypeEntry::size() + in_ByteSize(header_cell_count() * DataLayout::cell_size);
   }
 
 };
@@ -1008,7 +1018,7 @@ private:
   // entries for arguments if any
   TypeStackSlotEntries _args;
   // entry for return type if any
-  ReturnTypeEntry _ret;
+  SingleTypeEntry _ret;
 
   int cell_count_global_offset() const {
     return CounterData::static_cell_count() + TypeEntriesAtCall::cell_count_local_offset();
@@ -1027,7 +1037,7 @@ public:
   CallTypeData(DataLayout* layout) :
     CounterData(layout),
     _args(CounterData::static_cell_count()+TypeEntriesAtCall::header_cell_count(), number_of_arguments()),
-    _ret(cell_count() - ReturnTypeEntry::static_cell_count())
+    _ret(cell_count() - SingleTypeEntry::static_cell_count())
   {
     assert(layout->tag() == DataLayout::call_type_data_tag, "wrong type");
     // Some compilers (VC++) don't want this passed in member initialization list
@@ -1040,7 +1050,7 @@ public:
     return &_args;
   }
 
-  const ReturnTypeEntry* ret() const {
+  const SingleTypeEntry* ret() const {
     assert(has_return(), "no profiling of return value");
     return &_ret;
   }
@@ -1148,9 +1158,10 @@ public:
 // is seen. A per ReceiverTypeData counter is incremented on type
 // overflow (when there's no more room for a not yet profiled Klass*).
 //
+// Updated by platform-specific code, for example MacroAssembler::profile_receiver_type.
+//
 class ReceiverTypeData : public CounterData {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
 protected:
   enum {
     receiver0_offset = counter_cell_count,
@@ -1162,7 +1173,8 @@ public:
   ReceiverTypeData(DataLayout* layout) : CounterData(layout) {
     assert(layout->tag() == DataLayout::receiver_type_data_tag ||
            layout->tag() == DataLayout::virtual_call_data_tag ||
-           layout->tag() == DataLayout::virtual_call_type_data_tag, "wrong type");
+           layout->tag() == DataLayout::virtual_call_type_data_tag ||
+           layout->tag() == DataLayout::array_store_data_tag, "wrong type");
   }
 
   virtual bool is_ReceiverTypeData() const { return true; }
@@ -1281,7 +1293,6 @@ public:
     return cell_offset(static_cell_count());
   }
 
-  void print_method_data_on(outputStream* st) const NOT_JVMCI_RETURN;
   void print_data_on(outputStream* st, const char* extra = nullptr) const;
 };
 
@@ -1295,7 +1306,7 @@ private:
   // entries for arguments if any
   TypeStackSlotEntries _args;
   // entry for return type if any
-  ReturnTypeEntry _ret;
+  SingleTypeEntry _ret;
 
   int cell_count_global_offset() const {
     return VirtualCallData::static_cell_count() + TypeEntriesAtCall::cell_count_local_offset();
@@ -1314,7 +1325,7 @@ public:
   VirtualCallTypeData(DataLayout* layout) :
     VirtualCallData(layout),
     _args(VirtualCallData::static_cell_count()+TypeEntriesAtCall::header_cell_count(), number_of_arguments()),
-    _ret(cell_count() - ReturnTypeEntry::static_cell_count())
+    _ret(cell_count() - SingleTypeEntry::static_cell_count())
   {
     assert(layout->tag() == DataLayout::virtual_call_type_data_tag, "wrong type");
     // Some compilers (VC++) don't want this passed in member initialization list
@@ -1327,7 +1338,7 @@ public:
     return &_args;
   }
 
-  const ReturnTypeEntry* ret() const {
+  const SingleTypeEntry* ret() const {
     assert(has_return(), "no profiling of return value");
     return &_ret;
   }
@@ -1527,7 +1538,6 @@ public:
 // for the taken case.
 class BranchData : public JumpData {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
 protected:
   enum {
     not_taken_off_set = jump_cell_count,
@@ -1540,7 +1550,7 @@ protected:
 
 public:
   BranchData(DataLayout* layout) : JumpData(layout) {
-    assert(layout->tag() == DataLayout::branch_data_tag, "wrong type");
+    assert(layout->tag() == DataLayout::branch_data_tag || layout->tag() == DataLayout::acmp_data_tag, "wrong type");
   }
 
   virtual bool is_BranchData() const { return true; }
@@ -1591,7 +1601,6 @@ public:
 // and an array start.
 class ArrayData : public ProfileData {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
 protected:
   friend class DataLayout;
 
@@ -1652,7 +1661,6 @@ public:
 // case was taken and specify the data displacement for each branch target.
 class MultiBranchData : public ArrayData {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
 protected:
   enum {
     default_count_off_set,
@@ -1749,7 +1757,7 @@ public:
   virtual bool is_ArgInfoData() const { return true; }
 
 
-  int number_of_args() const {
+  int size_of_args() const {
     return array_len();
   }
 
@@ -1901,6 +1909,229 @@ public:
   virtual void print_data_on(outputStream* st, const char* extra = nullptr) const;
 };
 
+class ArrayStoreData : public ReceiverTypeData {
+private:
+  enum {
+    flat_array_flag = BitData::last_bit_data_flag,
+    null_free_array_flag = flat_array_flag + 1,
+  };
+
+  SingleTypeEntry _array;
+
+public:
+  ArrayStoreData(DataLayout* layout) :
+    ReceiverTypeData(layout),
+    _array(ReceiverTypeData::static_cell_count()) {
+    assert(layout->tag() == DataLayout::array_store_data_tag, "wrong type");
+    _array.set_profile_data(this);
+  }
+
+  const SingleTypeEntry* array() const {
+    return &_array;
+  }
+
+  virtual bool is_ArrayStoreData() const { return true; }
+
+  static int static_cell_count() {
+    return ReceiverTypeData::static_cell_count() + SingleTypeEntry::static_cell_count();
+  }
+
+  virtual int cell_count() const {
+    return static_cell_count();
+  }
+
+  void set_flat_array() { set_flag_at(flat_array_flag); }
+  bool flat_array() const { return flag_at(flat_array_flag); }
+
+  void set_null_free_array() { set_flag_at(null_free_array_flag); }
+  bool null_free_array() const { return flag_at(null_free_array_flag); }
+
+  // Code generation support
+  static int flat_array_byte_constant() {
+    return flag_number_to_constant(flat_array_flag);
+  }
+
+  static int null_free_array_byte_constant() {
+    return flag_number_to_constant(null_free_array_flag);
+  }
+
+  static ByteSize array_offset() {
+    return cell_offset(ReceiverTypeData::static_cell_count());
+  }
+
+  virtual void clean_weak_klass_links(bool always_clean) {
+    ReceiverTypeData::clean_weak_klass_links(always_clean);
+    _array.clean_weak_klass_links(always_clean);
+  }
+
+  virtual void metaspace_pointers_do(MetaspaceClosure* it) {
+    ReceiverTypeData::metaspace_pointers_do(it);
+    _array.metaspace_pointers_do(it);
+  }
+
+  static ByteSize array_store_data_size() {
+    return cell_offset(static_cell_count());
+  }
+
+  virtual void print_data_on(outputStream* st, const char* extra = nullptr) const;
+};
+
+class ArrayLoadData : public BitData {
+private:
+  enum {
+    flat_array_flag = BitData::last_bit_data_flag,
+    null_free_array_flag = flat_array_flag + 1,
+  };
+
+  SingleTypeEntry _array;
+  SingleTypeEntry _element;
+
+public:
+  ArrayLoadData(DataLayout* layout) :
+    BitData(layout),
+    _array(0),
+    _element(SingleTypeEntry::static_cell_count()) {
+    assert(layout->tag() == DataLayout::array_load_data_tag, "wrong type");
+    _array.set_profile_data(this);
+    _element.set_profile_data(this);
+  }
+
+  const SingleTypeEntry* array() const {
+    return &_array;
+  }
+
+  const SingleTypeEntry* element() const {
+    return &_element;
+  }
+
+  virtual bool is_ArrayLoadData() const { return true; }
+
+  static int static_cell_count() {
+    return SingleTypeEntry::static_cell_count() * 2;
+  }
+
+  virtual int cell_count() const {
+    return static_cell_count();
+  }
+
+  void set_flat_array() { set_flag_at(flat_array_flag); }
+  bool flat_array() const { return flag_at(flat_array_flag); }
+
+  void set_null_free_array() { set_flag_at(null_free_array_flag); }
+  bool null_free_array() const { return flag_at(null_free_array_flag); }
+
+  // Code generation support
+  static int flat_array_byte_constant() {
+    return flag_number_to_constant(flat_array_flag);
+  }
+
+  static int null_free_array_byte_constant() {
+    return flag_number_to_constant(null_free_array_flag);
+  }
+
+  static ByteSize array_offset() {
+    return cell_offset(0);
+  }
+
+  static ByteSize element_offset() {
+    return cell_offset(SingleTypeEntry::static_cell_count());
+  }
+
+  virtual void clean_weak_klass_links(bool always_clean) {
+    _array.clean_weak_klass_links(always_clean);
+    _element.clean_weak_klass_links(always_clean);
+  }
+
+  virtual void metaspace_pointers_do(MetaspaceClosure* it) {
+    _array.metaspace_pointers_do(it);
+    _element.metaspace_pointers_do(it);
+  }
+
+  static ByteSize array_load_data_size() {
+    return cell_offset(static_cell_count());
+  }
+
+  virtual void print_data_on(outputStream* st, const char* extra = nullptr) const;
+};
+
+class ACmpData : public BranchData {
+private:
+  enum {
+    left_inline_type_flag = DataLayout::first_flag,
+    right_inline_type_flag
+  };
+
+  SingleTypeEntry _left;
+  SingleTypeEntry _right;
+
+public:
+  ACmpData(DataLayout* layout) :
+    BranchData(layout),
+    _left(BranchData::static_cell_count()),
+    _right(BranchData::static_cell_count() + SingleTypeEntry::static_cell_count()) {
+    assert(layout->tag() == DataLayout::acmp_data_tag, "wrong type");
+    _left.set_profile_data(this);
+    _right.set_profile_data(this);
+  }
+
+  const SingleTypeEntry* left() const {
+    return &_left;
+  }
+
+  const SingleTypeEntry* right() const {
+    return &_right;
+  }
+
+  virtual bool is_ACmpData() const { return true; }
+
+  static int static_cell_count() {
+    return BranchData::static_cell_count() + SingleTypeEntry::static_cell_count() * 2;
+  }
+
+  virtual int cell_count() const {
+    return static_cell_count();
+  }
+
+  void set_left_inline_type() { set_flag_at(left_inline_type_flag); }
+  bool left_inline_type() const { return flag_at(left_inline_type_flag); }
+
+  void set_right_inline_type() { set_flag_at(right_inline_type_flag); }
+  bool right_inline_type() const { return flag_at(right_inline_type_flag); }
+
+  // Code generation support
+  static int left_inline_type_byte_constant() {
+    return flag_number_to_constant(left_inline_type_flag);
+  }
+
+  static int right_inline_type_byte_constant() {
+    return flag_number_to_constant(right_inline_type_flag);
+  }
+
+  static ByteSize left_offset() {
+    return cell_offset(BranchData::static_cell_count());
+  }
+
+  static ByteSize right_offset() {
+    return cell_offset(BranchData::static_cell_count() + SingleTypeEntry::static_cell_count());
+  }
+
+  virtual void clean_weak_klass_links(bool always_clean) {
+    _left.clean_weak_klass_links(always_clean);
+    _right.clean_weak_klass_links(always_clean);
+  }
+
+  virtual void metaspace_pointers_do(MetaspaceClosure* it) {
+    _left.metaspace_pointers_do(it);
+    _right.metaspace_pointers_do(it);
+  }
+
+  static ByteSize acmp_data_size() {
+    return cell_offset(static_cell_count());
+  }
+
+  virtual void print_data_on(outputStream* st, const char* extra = nullptr) const;
+};
+
 // MethodData*
 //
 // A MethodData* holds information which has been collected about
@@ -1949,52 +2180,13 @@ public:
   virtual bool is_live(Method* m) = 0;
 };
 
-
-#if INCLUDE_JVMCI
-// Encapsulates an encoded speculation reason. These are linked together in
-// a list that is atomically appended to during deoptimization. Entries are
-// never removed from the list.
-// @see jdk.vm.ci.hotspot.HotSpotSpeculationLog.HotSpotSpeculationEncoding
-class FailedSpeculation: public CHeapObj<mtCompiler> {
- private:
-  // The length of HotSpotSpeculationEncoding.toByteArray(). The data itself
-  // is an array embedded at the end of this object.
-  int   _data_len;
-
-  // Next entry in a linked list.
-  FailedSpeculation* _next;
-
-  FailedSpeculation(address data, int data_len);
-
-  FailedSpeculation** next_adr() { return &_next; }
-
-  // Placement new operator for inlining the speculation data into
-  // the FailedSpeculation object.
-  void* operator new(size_t size, size_t fs_size) throw();
-
- public:
-  char* data()         { return (char*)(((address) this) + sizeof(FailedSpeculation)); }
-  int data_len() const { return _data_len; }
-  FailedSpeculation* next() const { return _next; }
-
-  // Atomically appends a speculation from nm to the list whose head is at (*failed_speculations_address).
-  // Returns false if the FailedSpeculation object could not be allocated.
-  static bool add_failed_speculation(nmethod* nm, FailedSpeculation** failed_speculations_address, address speculation, int speculation_len);
-
-  // Frees all entries in the linked list whose head is at (*failed_speculations_address).
-  static void free_failed_speculations(FailedSpeculation** failed_speculations_address);
-};
-#endif
-
 class ciMethodData;
 
 class MethodData : public Metadata {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
   friend class ProfileData;
   friend class TypeEntriesAtCall;
   friend class ciMethodData;
-  friend class VM_ReinitializeMDO;
 
   // If you add a new field that points to any metaspace object, you
   // must add this field to MethodData::metaspace_pointers_do().
@@ -2011,20 +2203,13 @@ class MethodData : public Metadata {
   Mutex* volatile _extra_data_lock;
 
   MethodData(const methodHandle& method);
-
-  void initialize();
-
 public:
   MethodData();
 
   static MethodData* allocate(ClassLoaderData* loader_data, const methodHandle& method, TRAPS);
 
   virtual bool is_methodData() const { return true; }
-
-  // Safely reinitialize the data in the MDO.  This is intended as a testing facility as the
-  // reinitialization is performed at a safepoint so it's isn't cheap and it doesn't ensure that all
-  // readers will see consistent profile data.
-  void reinitialize();
+  void initialize();
 
   // Whole-method sticky bits and flags
   enum {
@@ -2036,15 +2221,13 @@ public:
   // Compiler-related counters.
   class CompilerCounters {
     friend class VMStructs;
-    friend class JVMCIVMStructs;
 
     uint _nof_decompiles;             // count of all nmethod removals
     uint _nof_overflow_recompiles;    // recompile count, excluding recomp. bits
     uint _nof_overflow_traps;         // trap count, excluding _trap_hist
     union {
       intptr_t _align;
-      // JVMCI separates trap history for OSR compilations from normal compilations
-      u1 _array[JVMCI_ONLY(2 *) MethodData::_trap_hist_limit];
+      u1 _array[MethodData::_trap_hist_limit];
     } _trap_hist;
 
   public:
@@ -2129,12 +2312,6 @@ private:
   // Does this method contain anything worth profiling?
   enum WouldProfile {unknown, no_profile, profile};
   WouldProfile      _would_profile;
-
-#if INCLUDE_JVMCI
-  // Support for HotSpotMethodData.setCompiledIRSize(int)
-  FailedSpeculation* _failed_speculations;
-  int                _jvmci_ir_size;
-#endif
 
   // Size of _data array in bytes.  (Excludes header and extra_data fields.)
   int _data_size;
@@ -2307,12 +2484,6 @@ public:
 
   InvocationCounter* invocation_counter()     { return &_invocation_counter; }
   InvocationCounter* backedge_counter()       { return &_backedge_counter;   }
-
-#if INCLUDE_JVMCI
-  FailedSpeculation** get_failed_speculations_address() {
-    return &_failed_speculations;
-  }
-#endif
 
 #if INCLUDE_CDS
   void remove_unshareable_info();
@@ -2530,7 +2701,7 @@ public:
 
   // Deallocation support
   void deallocate_contents(ClassLoaderData* loader_data);
-  void release_C_heap_structures();
+  void release_C_heap_structures() {}
 
   // GC support
   void set_size(int object_size_in_bytes) { _size = object_size_in_bytes; }

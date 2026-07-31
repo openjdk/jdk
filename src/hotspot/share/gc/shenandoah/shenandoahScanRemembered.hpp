@@ -413,7 +413,7 @@ public:
   }
 
   ~ShenandoahCardCluster() {
-    FREE_C_HEAP_ARRAY(crossing_info, _object_starts);
+    FREE_C_HEAP_ARRAY(_object_starts);
     _object_starts = nullptr;
   }
 
@@ -603,6 +603,9 @@ public:
   // as address.
   void register_object_without_lock(HeapWord* address);
 
+  // Dirty cards and register objects for the given range in memory.
+  void update_card_table(HeapWord* start, HeapWord* end);
+
   // During the reference updates phase of GC, we walk through each old-gen memory region that was
   // not part of the collection set and we invalidate all unmarked objects.  As part of this effort,
   // we coalesce neighboring dead objects in order to make future remembered set scanning more
@@ -748,7 +751,7 @@ public:
       for (uint i = 0; i < ParallelGCThreads; i++) {
         delete _card_stats[i];
       }
-      FREE_C_HEAP_ARRAY(HdrSeq*, _card_stats);
+      FREE_C_HEAP_ARRAY(_card_stats);
       _card_stats = nullptr;
     }
     assert(_card_stats == nullptr, "Error");
@@ -812,6 +815,10 @@ public:
     } else {
       return nullptr;
     }
+  }
+
+  void update_card_table(HeapWord* start, HeapWord* end) const {
+    _scc->update_card_table(start, end);
   }
 
   // Return true iff this object is "properly" registered.
@@ -973,7 +980,7 @@ private:
   const size_t _total_chunks;
 
   shenandoah_padding(0);
-  volatile size_t _index;
+  Atomic<size_t> _index;
   shenandoah_padding(1);
 
   size_t _region_index[_maximum_groups];           // The region index for the first region spanned by this group

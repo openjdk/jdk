@@ -41,6 +41,7 @@ import jtreg.SkippedException;
  * @summary Cgroup v1 subsystem fails to set subsystem path
  * @requires container.support
  * @requires !vm.asan
+ * @requires !vm.ubsan
  * @library /test/lib
  * @modules java.base/jdk.internal.platform
  * @build MetricsMemoryTester
@@ -91,7 +92,8 @@ public class TestDockerMemoryMetricsSubgroup {
             .addDockerOpts("--volume", Utils.TEST_JDK + ":/jdk")
             .addDockerOpts("--privileged")
             .addDockerOpts("--cgroupns=" + (privateNamespace ? "private" : "host"))
-            .addDockerOpts("--memory", outerGroupMemorySize);
+            .addDockerOpts("--memory", outerGroupMemorySize)
+            .addDockerOpts("-e", "LANG=C.UTF-8");
         opts.addClassOptions("mkdir -p /sys/fs/cgroup/memory/test ; " +
             "echo " + innerSize + " > /sys/fs/cgroup/memory/test/memory.limit_in_bytes ; " +
             "echo $$ > /sys/fs/cgroup/memory/test/cgroup.procs ; " +
@@ -112,6 +114,7 @@ public class TestDockerMemoryMetricsSubgroup {
             .addDockerOpts("--volume", Utils.TEST_JDK + ":/jdk")
             .addDockerOpts("--privileged")
             .addDockerOpts("--cgroupns=" + (privateNamespace ? "private" : "host"))
+            .addDockerOpts("-e", "LANG=C.UTF-8")
             .addDockerOpts("--memory", outerGroupMemorySize);
         opts.addClassOptions("mkdir -p /sys/fs/cgroup/memory/test ; " +
             "echo $$ > /sys/fs/cgroup/memory/test/cgroup.procs ; " +

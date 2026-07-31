@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,36 +23,43 @@
 
 /*
  * @test
+ * @key randomness
  * @bug 8278398
  * @summary Tests the jwebserver's maximum request time
  * @modules jdk.httpserver
  * @library /test/lib
- * @run testng/othervm MaxRequestTimeTest
+ * @build jdk.test.lib.RandomFactory
+ * @run junit/othervm MaxRequestTimeTest
  */
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.ByteBuffer;
+import java.nio.channels.SocketChannel;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLException;
+
 import jdk.test.lib.Platform;
-import jdk.test.lib.net.SimpleSSLContext;
+import jdk.test.lib.RandomFactory;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.FileUtils;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
-import static org.testng.Assert.*;
+
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 /**
  * This test confirms that the jwebserver does not wait indefinitely for
@@ -60,16 +67,16 @@ import static org.testng.Assert.*;
  *
  * The jwebserver has a maximum request time of 5 seconds, which is set with the
  * "sun.net.httpserver.maxReqTime" system property. If this threshold is
- * reached, for example in the case of an HTTPS request where the server keeps
- * waiting for a plaintext request, the server closes the connection. Subsequent
+ * reached, the server closes the connection. Subsequent
  * requests are expected to be handled as normal.
  *
  * The test checks in the following order that:
  *    1. an HTTP request is handled successfully,
- *    2. an HTTPS request fails due to the server closing the connection
+ *    2. an incomplete HTTP request fails due to the server closing the connection
  *    3. another HTTP request is handled successfully.
  */
 public class MaxRequestTimeTest {
+    private static final Random RND = RandomFactory.getRandom();
     static final Path JAVA_HOME = Path.of(System.getProperty("java.home"));
     static final String LOCALE_OPT = "-J-Duser.language=en -J-Duser.country=US";
     static final String JWEBSERVER = getJwebserver(JAVA_HOME);
@@ -78,18 +85,12 @@ public class MaxRequestTimeTest {
     static final String LOOPBACK_ADDR = InetAddress.getLoopbackAddress().getHostAddress();
     static final AtomicInteger PORT = new AtomicInteger();
 
-    static SSLContext sslContext;
-
-    @BeforeTest
-    public void setup() throws IOException {
+    @BeforeAll
+    public static void setup() throws IOException {
         if (Files.exists(TEST_DIR)) {
             FileUtils.deleteFileTreeWithRetry(TEST_DIR);
         }
         Files.createDirectories(TEST_DIR);
-
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null)
-            throw new AssertionError("Unexpected null sslContext");
     }
 
     @Test
@@ -97,10 +98,10 @@ public class MaxRequestTimeTest {
         final var sb = new StringBuffer();  // stdout & stderr
         final var p = startProcess("jwebserver", sb);
         try {
-            sendHTTPSRequest();  // server expected to terminate connection
-            sendHTTPRequest();   // server expected to respond successfully
-            sendHTTPSRequest();  // server expected to terminate connection
-            sendHTTPRequest();   // server expected to respond successfully
+            sendIncompleteRequest();  // server expected to terminate connection
+            sendCompleteRequest();   // server expected to respond successfully
+            sendIncompleteRequest();  // server expected to terminate connection
+            sendCompleteRequest();   // server expected to respond successfully
         } finally {
             p.destroy();
             int exitCode = p.waitFor();
@@ -108,6 +109,12 @@ public class MaxRequestTimeTest {
         }
     }
 
+    static String requestText = """
+            GET / HTTP/1.1\r
+            Host: localhost\r
+            \r
+            """;
+    static ByteBuffer requestBuffer =  ByteBuffer.wrap(requestText.getBytes(StandardCharsets.UTF_8));
     static String expectedBody = """
                 <!DOCTYPE html>
                 <html>
@@ -122,33 +129,36 @@ public class MaxRequestTimeTest {
                 </html>
                 """;
 
-    void sendHTTPRequest() throws IOException, InterruptedException {
-        out.println("\n--- sendHTTPRequest");
+    static void sendCompleteRequest() throws IOException, InterruptedException {
+        out.println("\n--- sendCompleteRequest");
         var client = HttpClient.newBuilder()
                 .proxy(NO_PROXY)
                 .build();
         var request = HttpRequest.newBuilder(URI.create("http://localhost:" + PORT.get() + "/")).build();
         var response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        assertEquals(response.body(), expectedBody);
+        assertEquals(expectedBody, response.body());
     }
 
-    void sendHTTPSRequest() throws IOException, InterruptedException {
-        out.println("\n--- sendHTTPSRequest");
-        var client = HttpClient.newBuilder()
-                .sslContext(sslContext)
-                .proxy(NO_PROXY)
-                .build();
-        var request = HttpRequest.newBuilder(URI.create("https://localhost:" + PORT.get() + "/")).build();
-        try {
-            client.send(request, HttpResponse.BodyHandlers.ofString());
-            throw new RuntimeException("Expected SSLException not thrown");
-        } catch (SSLException expected) {  // server closes connection when max request time is reached
-            expected.printStackTrace(System.out);
+    static void sendIncompleteRequest() throws IOException {
+        out.println("\n--- sendIncompleteRequest");
+        try (SocketChannel sc = SocketChannel.open(
+                new InetSocketAddress(LOOPBACK_ADDR, PORT.get()))) {
+            requestBuffer.clear();
+            // only send a part of the HTTP request
+            int numBytes = RND.nextInt(1, requestBuffer.limit());
+            System.out.println("Sending " + numBytes + " bytes");
+            requestBuffer.limit(numBytes);
+            while (requestBuffer.hasRemaining()) {
+                sc.write(requestBuffer);
+            }
+            ByteBuffer responseBuffer = ByteBuffer.allocate(1);
+            int result = sc.read(responseBuffer);
+            assertEquals(-1, result);
         }
     }
 
-    @AfterTest
-    public void teardown() throws IOException {
+    @AfterAll
+    public static void teardown() throws IOException {
         if (Files.exists(TEST_DIR)) {
             FileUtils.deleteFileTreeWithRetry(TEST_DIR);
         }

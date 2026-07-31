@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,7 +123,6 @@ public class VM {
   private int          invocationEntryBCI;
   private ReversePtrs  revPtrs;
   private VMRegImpl    vmregImpl;
-  private int          reserveForAllocationPrefetch;
   private int          labAlignmentReserve;
 
   // System.getProperties from debuggee VM
@@ -145,7 +144,6 @@ public class VM {
   private static CIntegerType boolType;
   private Boolean sharingEnabled;
   private Boolean compressedOopsEnabled;
-  private Boolean compressedKlassPointersEnabled;
   private Boolean compactObjectHeadersEnabled;
 
   // command line flags supplied to VM - see struct JVMFlag in jvmFlag.hpp
@@ -447,8 +445,6 @@ public class VM {
     boolType = (CIntegerType) db.lookupType("bool");
 
     Type threadLocalAllocBuffer = db.lookupType("ThreadLocalAllocBuffer");
-    CIntegerField reserveForAllocationPrefetchField = threadLocalAllocBuffer.getCIntegerField("_reserve_for_allocation_prefetch");
-    reserveForAllocationPrefetch = (int)reserveForAllocationPrefetchField.getCInteger(intType);
 
     Type collectedHeap = db.lookupType("CollectedHeap");
     CIntegerField labAlignmentReserveField = collectedHeap.getCIntegerField("_lab_alignment_reserve");
@@ -518,11 +514,7 @@ public class VM {
       heapOopSize = (int)getOopSize();
     }
 
-    if (isCompressedKlassPointersEnabled()) {
-      klassPtrSize = (int)getIntSize();
-    } else {
-      klassPtrSize = (int)getOopSize(); // same as an oop
-    }
+    klassPtrSize = (int)getIntSize();
   }
 
   /** This could be used by a reflective runtime system */
@@ -915,10 +907,6 @@ public class VM {
     return vmInternalInfo;
   }
 
-  public int getReserveForAllocationPrefetch() {
-    return reserveForAllocationPrefetch;
-  }
-
   public int getLabAlignmentReserve() {
     return labAlignmentReserve;
   }
@@ -943,15 +931,6 @@ public class VM {
              (flag.getBool()? Boolean.TRUE: Boolean.FALSE);
     }
     return compressedOopsEnabled.booleanValue();
-  }
-
-  public boolean isCompressedKlassPointersEnabled() {
-    if (compressedKlassPointersEnabled == null) {
-        Flag flag = getCommandLineFlag("UseCompressedClassPointers");
-        compressedKlassPointersEnabled = (flag == null) ? Boolean.FALSE:
-             (flag.getBool()? Boolean.TRUE: Boolean.FALSE);
-    }
-    return compressedKlassPointersEnabled.booleanValue();
   }
 
   public boolean isCompactObjectHeadersEnabled() {

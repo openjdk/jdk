@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "classfile/classLoaderData.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
+#include "gc/shared/barrierSetRuntime.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "oops/compressedOops.hpp"
 #include "runtime/jniHandles.hpp"
@@ -55,6 +56,7 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
     if (UseCompressedOops && in_heap) {
       Register co = tmp1;
       if (val == noreg) {
+        assert(!not_null, "inconsistent access");
         __ li(co, 0);
       } else {
         co = not_null ? __ encode_heap_oop_not_null(tmp1, val) : __ encode_heap_oop(tmp1, val);
@@ -62,6 +64,7 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
       __ stw(co, ind_or_offs, base, tmp2);
     } else {
       if (val == noreg) {
+        assert(!not_null, "inconsistent access");
         val = tmp1;
         __ li(val, 0);
       }
@@ -110,6 +113,19 @@ void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators,
     break;
   }
   default: Unimplemented();
+  }
+}
+
+void BarrierSetAssembler::flat_field_copy(MacroAssembler* masm, DecoratorSet decorators,
+                                          Register src, Register dst, Register inline_layout_info) {
+  // flat_field_copy implementation is fairly complex, and there are not any
+  // "short-cuts" to be made from asm. What there is, appears to have the same
+  // cost in C++, so just "call_VM_leaf" for now rather than maintain hundreds
+  // of hand-rolled instructions...
+  if (decorators & IS_DEST_UNINITIALIZED) {
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSetRuntime::value_copy_is_dest_uninitialized), src, dst, inline_layout_info);
+  } else {
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSetRuntime::value_copy), src, dst, inline_layout_info);
   }
 }
 
@@ -177,6 +193,12 @@ void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Re
                                                         Register obj, Register tmp, Label& slowpath) {
   __ clrrdi(dst, obj, JNIHandles::tag_size);
   __ ld(dst, 0, dst);         // Resolve (untagged) jobject.
+}
+
+void BarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj,
+                                                          Register tmp, Label& slow_path) {
+  // Load the oop from the weak handle without barriers.
+  __ ld(obj, 0, weak_handle);
 }
 
 void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Register tmp) {
@@ -349,19 +371,9 @@ int SaveLiveRegisters::iterate_over_register_mask(IterationAction action, int of
         Register spill_addr = R0;
         int spill_offset = offset - reg_save_index * BytesPerWord;
         if (action == ACTION_SAVE) {
-          if (PowerArchitecturePPC64 >= 9) {
-            _masm->stxv(vs_reg, spill_offset, R1_SP);
-          } else {
-            _masm->addi(spill_addr, R1_SP, spill_offset);
-            _masm->stxvd2x(vs_reg, spill_addr);
-          }
+          _masm->stxv(vs_reg, spill_offset, R1_SP);
         } else if (action == ACTION_RESTORE) {
-          if (PowerArchitecturePPC64 >= 9) {
-            _masm->lxv(vs_reg, spill_offset, R1_SP);
-          } else {
-            _masm->addi(spill_addr, R1_SP, spill_offset);
-            _masm->lxvd2x(vs_reg, spill_addr);
-          }
+          _masm->lxv(vs_reg, spill_offset, R1_SP);
         } else {
           assert(action == ACTION_COUNT_ONLY, "Sanity");
         }

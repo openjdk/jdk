@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.test.lib.net.SimpleSSLContext
  *        jdk.test.lib.net.URIBuilder
- * @run junit HttpClientSNITest
+ * @run junit ${test.main.class}
  */
 public class HttpClientSNITest {
     private static final String RESP_BODY_TEXT = "hello world";
@@ -95,8 +95,7 @@ public class HttpClientSNITest {
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
     void testRequestToIPLiteralHost(final boolean sniConfiguredOnClient) throws Exception {
-        final SSLContext sslContext = new SimpleSSLContext().get();
-        assertNotNull(sslContext, "could not create a SSLContext");
+        final SSLContext sslContext = SimpleSSLContext.findSSLContext();
         final String expectedSNI = "non-dns-resolvable.foo.bar.localhost";
         final ServerNameMatcher matcher = new ServerNameMatcher(expectedSNI);
         final HttpTestServer server = createServer(matcher, sslContext);
@@ -149,8 +148,7 @@ public class HttpClientSNITest {
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
     void testRequestResolvedHostName(final boolean sniConfiguredOnClient) throws Exception {
-        final SSLContext sslContext = new SimpleSSLContext().get();
-        assertNotNull(sslContext, "could not create a SSLContext");
+        final SSLContext sslContext = SimpleSSLContext.findSSLContext();
         final String resolvedHostName = InetAddress.getLoopbackAddress().getHostName();
         final String expectedSNI = resolvedHostName;
         final ServerNameMatcher matcher = new ServerNameMatcher(expectedSNI);

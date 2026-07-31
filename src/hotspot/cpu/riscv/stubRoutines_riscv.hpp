@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -49,9 +49,6 @@ enum platform_dependent_constants {
 class riscv {
  friend class StubGenerator;
  friend class StubRoutines;
-#if INCLUDE_JVMCI
-  friend class JVMCIVMStructs;
-#endif
 
   // declare fields for arch-specific entries
 
@@ -61,9 +58,13 @@ class riscv {
 #define DECLARE_ARCH_ENTRY_INIT(arch, blob_name, stub_name, field_name, getter_name, init_function) \
   DECLARE_ARCH_ENTRY(arch, blob_name, stub_name, field_name, getter_name)
 
-private:
-  STUBGEN_ARCH_ENTRIES_DO(DECLARE_ARCH_ENTRY, DECLARE_ARCH_ENTRY_INIT)
+#define DECLARE_ARCH_ENTRY_ARRAY(arch, blob_name, stub_name, field_name, getter_name, count) \
+  static address STUB_FIELD_NAME(field_name) [count] ;
 
+private:
+  STUBGEN_ARCH_ENTRIES_DO(DECLARE_ARCH_ENTRY, DECLARE_ARCH_ENTRY_INIT, DECLARE_ARCH_ENTRY_ARRAY)
+
+#undef DECLARE_ARCH_ENTRY_ARRAY
 #undef DECLARE_ARCH_ENTRY_INIT
 #undef DECLARE_ARCH_ENTRY
 
@@ -79,8 +80,12 @@ private:
 #define DEFINE_ARCH_ENTRY_GETTER_INIT(arch, blob_name, stub_name, field_name, getter_name, init_function) \
   DEFINE_ARCH_ENTRY_GETTER(arch, blob_name, stub_name, field_name, getter_name)
 
-  STUBGEN_ARCH_ENTRIES_DO(DEFINE_ARCH_ENTRY_GETTER, DEFINE_ARCH_ENTRY_GETTER_INIT)
+#define DEFINE_ARCH_ENTRY_GETTER_ARRAY(arch, blob_name, stub_name, field_name, getter_name, count) \
+  static address getter_name(int idx) { return STUB_FIELD_NAME(field_name) [idx] ; }
 
+  STUBGEN_ARCH_ENTRIES_DO(DEFINE_ARCH_ENTRY_GETTER, DEFINE_ARCH_ENTRY_GETTER_INIT, DEFINE_ARCH_ENTRY_GETTER_ARRAY)
+
+#undef DEFINE_ARCH_ENTRY_GETTER_ARRAY
 #undef DEFINE_ARCH_ENTRY_GETTER_INIT
 #undef DEFINE_ARCH_ENTRY_GETTER
 

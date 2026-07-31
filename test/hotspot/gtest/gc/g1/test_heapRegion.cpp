@@ -79,7 +79,6 @@ void VM_HeapRegionApplyToMarkedObjectsTest::doit() {
   bitmap->par_mark(region->bottom() + MARK_OFFSET_1);
   bitmap->par_mark(region->bottom() + MARK_OFFSET_2);
   bitmap->par_mark(region->bottom() + MARK_OFFSET_3);
-  bitmap->par_mark(region->end());
 
   VerifyAndCountMarkClosure cl(bitmap);
 

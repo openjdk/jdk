@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,8 +24,9 @@
  */
 
 #include "asm/assembler.inline.hpp"
-#include "compiler/disassembler.hpp"
 #include "code/compiledIC.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
+#include "compiler/disassembler.hpp"
 #include "jvm.h"
 #include "memory/resourceArea.hpp"
 #include "runtime/java.hpp"
@@ -105,7 +106,7 @@ void VM_Version::initialize() {
   int model_ix = get_model_index();
 
   if ( model_ix >= 7 ) {
-    if (FLAG_IS_DEFAULT(SuperwordUseVX)) {
+    if (FLAG_IS_DEFAULT(SuperwordUseVX) && CompilerConfig::is_c2_enabled()) {
       FLAG_SET_ERGO(SuperwordUseVX, true);
     }
     if (model_ix > 7 && FLAG_IS_DEFAULT(UseSFPV) && SuperwordUseVX) {
@@ -287,10 +288,6 @@ void VM_Version::initialize() {
   if (UseSHA3Intrinsics) {
     warning("Intrinsics for SHA3-224, SHA3-256, SHA3-384 and SHA3-512 crypto hash functions not available on this CPU.");
     FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
-  }
-
-  if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics)) {
-    FLAG_SET_DEFAULT(UseSHA, false);
   }
 
   if (UseSecondarySupersTable && VM_Version::get_model_index() < 5 /* z196/z11 */) {

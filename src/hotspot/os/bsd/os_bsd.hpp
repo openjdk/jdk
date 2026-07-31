@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,12 @@ class os::Bsd {
   static pthread_t main_thread(void)                                { return _main_thread; }
 
   static pid_t gettid();
+  static uid_t get_process_uid(pid_t pid);
+  static bool is_process_root(pid_t pid);
+
+#ifdef __APPLE__
+  static int get_user_tmp_dir_macos(const char* user, int vmid, char* output_buffer, int buffer_size);
+#endif
 
   static intptr_t* ucontext_get_sp(const ucontext_t* uc);
   static intptr_t* ucontext_get_fp(const ucontext_t* uc);
@@ -69,8 +75,6 @@ class os::Bsd {
 
   // Real-time clock functions
   static void clock_init(void);
-
-  static void *dlopen_helper(const char *path, int mode, char *ebuf, int ebuflen);
 
   // Stack repair handling
 
@@ -99,6 +103,7 @@ class os::Bsd {
   static void set_numa_tonode_memory(numa_tonode_memory_func_t func) { _numa_tonode_memory = func; }
   static void set_numa_interleave_memory(numa_interleave_memory_func_t func) { _numa_interleave_memory = func; }
   static void set_numa_all_nodes(unsigned long* ptr) { _numa_all_nodes = ptr; }
+
  public:
   static int sched_getcpu()  { return _sched_getcpu != nullptr ? _sched_getcpu() : -1; }
   static int numa_node_to_cpus(int node, unsigned long *buffer, int bufferlen) {
@@ -117,6 +122,8 @@ class os::Bsd {
   static int get_node_by_cpu(int cpu_id);
 
   static void print_uptime_info(outputStream* st);
+  static void print_open_file_descriptors(outputStream* st, char* buf, size_t buflen);
+  static void print_open_file_descriptors(outputStream* st);
 };
 
 #endif // OS_BSD_OS_BSD_HPP

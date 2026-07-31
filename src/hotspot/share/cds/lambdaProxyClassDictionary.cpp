@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "cds/aotClassFilter.hpp"
+#include "cds/aotCompressedPointers.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cdsProtectionDomain.hpp"
@@ -49,11 +50,11 @@ unsigned int LambdaProxyClassKey::hash() const {
 }
 
 unsigned int RunTimeLambdaProxyClassKey::hash() const {
-  return primitive_hash<u4>(_caller_ik) +
-         primitive_hash<u4>(_invoked_name) +
-         primitive_hash<u4>(_invoked_type) +
-         primitive_hash<u4>(_method_type) +
-         primitive_hash<u4>(_instantiated_method_type);
+  return primitive_hash<u4>(cast_to_u4(_caller_ik)) +
+         primitive_hash<u4>(cast_to_u4(_invoked_name)) +
+         primitive_hash<u4>(cast_to_u4(_invoked_type)) +
+         primitive_hash<u4>(cast_to_u4(_method_type)) +
+         primitive_hash<u4>(cast_to_u4(_instantiated_method_type));
 }
 
 #ifndef PRODUCT
@@ -71,12 +72,12 @@ void LambdaProxyClassKey::print_on(outputStream* st) const {
 void RunTimeLambdaProxyClassKey::print_on(outputStream* st) const {
   ResourceMark rm;
   st->print_cr("LambdaProxyClassKey       : " INTPTR_FORMAT " hash: %0x08x", p2i(this), hash());
-  st->print_cr("_caller_ik                : %d", _caller_ik);
-  st->print_cr("_instantiated_method_type : %d", _instantiated_method_type);
-  st->print_cr("_invoked_name             : %d", _invoked_name);
-  st->print_cr("_invoked_type             : %d", _invoked_type);
-  st->print_cr("_member_method            : %d", _member_method);
-  st->print_cr("_method_type              : %d", _method_type);
+  st->print_cr("_caller_ik                : %d", cast_to_u4(_caller_ik));
+  st->print_cr("_instantiated_method_type : %d", cast_to_u4(_instantiated_method_type));
+  st->print_cr("_invoked_name             : %d", cast_to_u4(_invoked_name));
+  st->print_cr("_invoked_type             : %d", cast_to_u4(_invoked_type));
+  st->print_cr("_member_method            : %d", cast_to_u4(_member_method));
+  st->print_cr("_method_type              : %d", cast_to_u4(_method_type));
 }
 
 void RunTimeLambdaProxyClassInfo::print_on(outputStream* st) const {
@@ -91,6 +92,7 @@ void RunTimeLambdaProxyClassInfo::init(LambdaProxyClassKey& key, DumpTimeLambdaP
 }
 
 DumpTimeLambdaProxyClassDictionary* LambdaProxyClassDictionary::_dumptime_table = nullptr;
+LambdaProxyClassDictionary LambdaProxyClassDictionary::_runtime_table_for_dumping;
 LambdaProxyClassDictionary LambdaProxyClassDictionary::_runtime_static_table; // for static CDS archive
 LambdaProxyClassDictionary LambdaProxyClassDictionary::_runtime_dynamic_table; // for dynamic CDS archive
 
@@ -418,14 +420,13 @@ public:
         (RunTimeLambdaProxyClassInfo*)ArchiveBuilder::ro_region_alloc(byte_size);
     runtime_info->init(key, info);
     unsigned int hash = runtime_info->hash();
-    u4 delta = _builder->any_to_offset_u4((void*)runtime_info);
-    _writer->add(hash, delta);
+    _writer->add(hash, AOTCompressedPointers::encode_not_null(runtime_info));
     return true;
   }
 };
 
 void LambdaProxyClassDictionary::write_dictionary(bool is_static_archive) {
-  LambdaProxyClassDictionary* dictionary = is_static_archive ? &_runtime_static_table : &_runtime_dynamic_table;
+  LambdaProxyClassDictionary* dictionary = &_runtime_table_for_dumping;
   CompactHashtableStats stats;
   dictionary->reset();
   CompactHashtableWriter writer(_dumptime_table->_count, &stats);

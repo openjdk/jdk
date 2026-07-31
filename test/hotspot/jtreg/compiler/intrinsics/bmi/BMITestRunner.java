@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,8 +125,7 @@ public class BMITestRunner {
         // Hide timestamps from warnings (e.g. due to potential AOT
         // saved/runtime state mismatch), to avoid false positives when
         // comparing output across runs.
-        vmOpts.add("-Xlog:all=warning:stdout:level,tags");
-        vmOpts.add("-Xlog:aot=off");
+        vmOpts.add("-Xlog:all=warning,aot=off:stdout:level,tags");
 
         //setup mode-specific options
         switch (testVMMode) {

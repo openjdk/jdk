@@ -70,7 +70,7 @@ public:
   }
 
   ~EpsilonSpaceCounters() {
-    FREE_C_HEAP_ARRAY(char, _name_space);
+    FREE_C_HEAP_ARRAY(_name_space);
   }
 
   inline void update_all(size_t capacity, size_t used) {
@@ -99,6 +99,7 @@ EpsilonMonitoringSupport::EpsilonMonitoringSupport(EpsilonHeap* heap) {
 }
 
 void EpsilonMonitoringSupport::update_counters() {
+  assert(is_ready(), "Must be ready");
   MemoryService::track_memory_usage();
 
   if (UsePerfData) {
@@ -109,4 +110,12 @@ void EpsilonMonitoringSupport::update_counters() {
     _space_counters->update_all(capacity, used);
     MetaspaceCounters::update_performance_counters();
   }
+}
+
+bool EpsilonMonitoringSupport::is_ready() {
+  return _ready.load_acquire();
+}
+
+void EpsilonMonitoringSupport::mark_ready() {
+  _ready.release_store(true);
 }

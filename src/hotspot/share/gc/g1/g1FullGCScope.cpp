@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,18 +38,14 @@ G1FullGCJFRTracerMark::~G1FullGCJFRTracerMark() {
 G1FullGCScope::G1FullGCScope(G1MonitoringSupport* monitoring_support,
                              bool clear_soft,
                              bool do_maximal_compaction,
-                             G1FullGCTracer* tracer) :
-    _rm(),
+                             GCTracer* tracer) :
     _should_clear_soft_refs(clear_soft),
     _do_maximal_compaction(do_maximal_compaction),
-    _g1h(G1CollectedHeap::heap()),
-    _svc_marker(SvcGCMarker::FULL),
     _timer(),
     _tracer(tracer),
-    _active(),
     _tracer_mark(&_timer, _tracer),
     _monitoring_scope(monitoring_support),
-    _heap_printer(_g1h),
+    _heap_printer(G1CollectedHeap::heap()),
     _region_compaction_threshold(do_maximal_compaction ?
                                  G1HeapRegion::GrainWords :
                                  (1 - MarkSweepDeadRatio / 100.0) * G1HeapRegion::GrainWords) { }
@@ -58,7 +54,7 @@ STWGCTimer* G1FullGCScope::timer() {
   return &_timer;
 }
 
-G1FullGCTracer* G1FullGCScope::tracer() {
+GCTracer* G1FullGCScope::tracer() {
   return _tracer;
 }
 

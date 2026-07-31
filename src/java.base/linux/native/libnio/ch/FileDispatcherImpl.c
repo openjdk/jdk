@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ Java_sun_nio_ch_FileDispatcherImpl_transferFrom0(JNIEnv *env, jobject this,
     if (n < 0) {
         if (errno == EAGAIN)
             return IOS_UNAVAILABLE;
-        if (errno == ENOSYS)
+        if (errno == ENOSYS || errno == EOPNOTSUPP)
             return IOS_UNSUPPORTED_CASE;
         if ((errno == EBADF || errno == EINVAL || errno == EXDEV) &&
             ((ssize_t)count >= 0))
@@ -103,6 +103,7 @@ Java_sun_nio_ch_FileDispatcherImpl_transferTo0(JNIEnv *env, jobject this,
                 case EINVAL:
                 case ENOSYS:
                 case EXDEV:
+                case EOPNOTSUPP:
                     // ignore and try sendfile()
                     break;
                 default:

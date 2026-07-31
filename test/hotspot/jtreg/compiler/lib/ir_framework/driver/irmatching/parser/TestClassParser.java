@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 package compiler.lib.ir_framework.driver.irmatching.parser;
 
+import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.driver.irmatching.Matchable;
 import compiler.lib.ir_framework.driver.irmatching.NonIRTestClass;
 import compiler.lib.ir_framework.driver.irmatching.TestClass;
@@ -30,6 +31,9 @@ import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchable;
 import compiler.lib.ir_framework.driver.irmatching.parser.hotspot.HotSpotPidFileParser;
 import compiler.lib.ir_framework.driver.irmatching.parser.hotspot.LoggedMethods;
+import compiler.lib.ir_framework.driver.network.TestVMData;
+import compiler.lib.ir_framework.driver.network.testvm.java.ApplicableIRRules;
+import compiler.lib.ir_framework.driver.network.testvm.java.VMInfo;
 import compiler.lib.ir_framework.shared.TestFormat;
 
 import java.util.SortedSet;
@@ -50,23 +54,24 @@ public class TestClassParser {
     }
 
     /**
-     * Parse the IR encoding and hotspot_pid* file to create a collection of {@link IRMethod} objects.
+     * Parse the Applicable IR Rules and hotspot_pid* file to create a collection of {@link IRMethod} objects.
      * Return a default/empty TestClass object if there are no applicable @IR rules in any method of the test class.
      */
-    public Matchable parse(String hotspotPidFileName, String irEncoding) {
-        IREncodingParser irEncodingParser = new IREncodingParser(testClass);
-        TestMethods testMethods = irEncodingParser.parse(irEncoding);
-        VMInfo vmInfo = VMInfoParser.parseVMInfo(irEncoding);
-        if (testMethods.hasTestMethods()) {
-            HotSpotPidFileParser hotSpotPidFileParser = new HotSpotPidFileParser(testClass.getName(), testMethods);
-            LoggedMethods loggedMethods = hotSpotPidFileParser.parse(hotspotPidFileName);
-            return createTestClass(testMethods, loggedMethods, vmInfo);
+    public Matchable parse(TestVMData testVmData) {
+        ApplicableIRRules applicableIrRules = testVmData.applicableIRRules();
+        if (applicableIrRules.hasNoMethods()) {
+            return new NonIRTestClass();
         }
-        return new NonIRTestClass();
+        ApplicableIRRulesParser applicableIRRulesParser = new ApplicableIRRulesParser(testClass);
+        TestMethods testMethods = applicableIRRulesParser.parse(testVmData.applicableIRRules());
+        TestFramework.check(testMethods.hasTestMethods(), "must have at least one");
+        HotSpotPidFileParser hotSpotPidFileParser = new HotSpotPidFileParser(testClass.getName(), testMethods);
+        LoggedMethods loggedMethods = hotSpotPidFileParser.parse(testVmData.hotspotPidFileName());
+        return createTestClass(testMethods, loggedMethods, testVmData.vmInfo());
     }
 
     /**
-     * Create test class with IR methods for all test methods identified by {@link IREncodingParser} by combining them
+     * Create test class with IR methods for all test methods found in {@link ApplicableIRRules} by combining them
      * with the parsed compilation output from {@link HotSpotPidFileParser}.
      */
     private Matchable createTestClass(TestMethods testMethods, LoggedMethods loggedMethods, VMInfo vmInfo) {

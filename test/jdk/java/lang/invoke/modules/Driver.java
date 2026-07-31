@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,9 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @build m1/* m2/* Unnamed
- * @run testng/othervm m1/p1.Main
+ * @run junit/othervm m1/p1.Main
  * @summary Basic test case for module access checks and Lookup.in.
  */

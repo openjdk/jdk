@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ import java.util.*;
  * @test
  * @library /test/lib
  * @requires vm.hasSA
+ * @requires vm.gc != "Z"
  * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @modules java.base/jdk.internal.misc
  *          jdk.hotspot.agent/sun.jvm.hotspot
@@ -67,7 +68,6 @@ public class TestInstanceKlassSize {
                                                 "java.util.ArrayList",
                                                 "java.lang.String",
                                                 "java.lang.Thread",
-                                                "java.lang.Byte"
                                              };
 
     private static void startMeWithArgs() throws Exception {

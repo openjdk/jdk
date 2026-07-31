@@ -23,20 +23,21 @@
 
 package catalog;
 
-import static catalog.CatalogTestUtils.catalogResolver;
-import static catalog.ResolutionChecker.checkNoMatch;
-import static catalog.ResolutionChecker.checkPubIdResolution;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.catalog.CatalogException;
 import javax.xml.catalog.CatalogResolver;
 
-import org.testng.annotations.Test;
+import static catalog.CatalogTestUtils.catalogResolver;
+import static catalog.ResolutionChecker.checkNoMatch;
+import static catalog.ResolutionChecker.checkPubIdResolution;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm catalog.PublicFamilyTest
+ * @run junit/othervm catalog.PublicFamilyTest
  * @summary Get matched URIs from public and delegatePublic entries.
  *          It tests the resolution priorities among the public family entries.
  *          The test rule is based on OASIS Standard V1.1 section 7.1.2.
@@ -58,12 +59,12 @@ public class PublicFamilyTest {
     /*
      * If no match is found, a CatalogException should be thrown.
      */
-    @Test(expectedExceptions = CatalogException.class)
-    public void testNoMatched() {
-        checkNoMatch(createResolver());
+    @Test
+    public void testNoMatch() {
+        assertThrows(CatalogException.class, () -> checkNoMatch(createResolver()));
     }
 
-    private CatalogResolver createResolver() {
+    private static CatalogResolver createResolver() {
         return catalogResolver("publicFamily.xml");
     }
 }

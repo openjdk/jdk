@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -265,7 +265,7 @@ PhaseChaitin::PhaseChaitin(uint unique, PhaseCFG &cfg, Matcher &matcher, bool sc
   assert((&buckets[0][0] + nr_blocks) == offset, "should be");
 
   // Free the now unused memory
-  FREE_RESOURCE_ARRAY(Block*, buckets[1], (NUMBUCKS-1)*nr_blocks);
+  FREE_RESOURCE_ARRAY(buckets[1], (NUMBUCKS-1)*nr_blocks);
   // Finally, point the _blks to our memory
   _blks = buckets[0];
 
@@ -1076,8 +1076,8 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
 
       // Prepare register mask for each input
       for( uint k = input_edge_start; k < cnt; k++ ) {
-        uint vreg = _lrg_map.live_range_id(n->in(k));
-        if (!vreg) {
+        uint vreg_in = _lrg_map.live_range_id(n->in(k));
+        if (!vreg_in) {
           continue;
         }
 
@@ -1099,7 +1099,7 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
           if (k >= cur_node->num_opnds()) continue;
         }
 
-        LRG &lrg = lrgs(vreg);
+        LRG &lrg_in = lrgs(vreg_in);
         // // Testing for floating point code shape
         // Node *test = n->in(k);
         // if( test->is_Mach() ) {
@@ -1114,25 +1114,25 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
         // Do not limit registers from uncommon uses before
         // AggressiveCoalesce.  This effectively pre-virtual-splits
         // around uncommon uses of common defs.
-        const RegMask &rm = n->in_RegMask(k);
+        const RegMask &rm_in = n->in_RegMask(k);
         if (!after_aggressive && _cfg.get_block_for_node(n->in(k))->_freq > 1000 * block->_freq) {
           // Since we are BEFORE aggressive coalesce, leave the register
           // mask untrimmed by the call.  This encourages more coalescing.
           // Later, AFTER aggressive, this live range will have to spill
           // but the spiller handles slow-path calls very nicely.
         } else {
-          lrg.and_with(rm);
+          lrg_in.and_with(rm_in);
         }
 
         // Check for bound register masks
-        const RegMask &lrgmask = lrg.mask();
+        const RegMask &lrgmask_in = lrg_in.mask();
         uint kreg = n->in(k)->ideal_reg();
         bool is_vect = RegMask::is_vector(kreg);
         assert(n->in(k)->bottom_type()->isa_vect() == nullptr || is_vect ||
                kreg == Op_RegD || kreg == Op_RegL || kreg == Op_RegVectMask,
                "vector must be in vector registers");
-        if (lrgmask.is_bound(kreg))
-          lrg._is_bound = 1;
+        if (lrgmask_in.is_bound(kreg))
+          lrg_in._is_bound = 1;
 
         // If this use of a double forces a mis-aligned double,
         // flag as '_fat_proj' - really flag as allowing misalignment
@@ -1141,30 +1141,30 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
         // FOUR registers!
 #ifdef ASSERT
         if (is_vect && !_scheduling_info_generated) {
-          if (lrg.num_regs() != 0) {
-            assert(lrgmask.is_aligned_sets(lrg.num_regs()), "vector should be aligned");
-            assert(!lrg._fat_proj, "sanity");
-            assert(RegMask::num_registers(kreg) == lrg.num_regs(), "sanity");
+          if (lrg_in.num_regs() != 0) {
+            assert(lrgmask_in.is_aligned_sets(lrg_in.num_regs()), "vector should be aligned");
+            assert(!lrg_in._fat_proj, "sanity");
+            assert(RegMask::num_registers(kreg) == lrg_in.num_regs(), "sanity");
           } else {
             assert(n->is_Phi(), "not all inputs processed only if Phi");
           }
         }
 #endif
-        if (!is_vect && lrg.num_regs() == 2 && !lrg._fat_proj && rm.is_misaligned_pair()) {
-          lrg._fat_proj = 1;
-          lrg._is_bound = 1;
+        if (!is_vect && lrg_in.num_regs() == 2 && !lrg_in._fat_proj && rm_in.is_misaligned_pair()) {
+          lrg_in._fat_proj = 1;
+          lrg_in._is_bound = 1;
         }
         // if the LRG is an unaligned pair, we will have to spill
         // so clear the LRG's register mask if it is not already spilled
         if (!is_vect && !n->is_SpillCopy() &&
-            (lrg._def == nullptr || lrg.is_multidef() || !lrg._def->is_SpillCopy()) &&
-            lrgmask.is_misaligned_pair()) {
-          lrg.clear();
+            (lrg_in._def == nullptr || lrg_in.is_multidef() || !lrg_in._def->is_SpillCopy()) &&
+            lrgmask_in.is_misaligned_pair()) {
+          lrg_in.clear();
         }
 
         // Check for maximum frequency value
-        if (lrg._maxfreq < block->_freq) {
-          lrg._maxfreq = block->_freq;
+        if (lrg_in._maxfreq < block->_freq) {
+          lrg_in._maxfreq = block->_freq;
         }
 
       } // End for all allocated inputs
@@ -1941,10 +1941,10 @@ Node* PhaseChaitin::find_base_for_derived(Node** derived_base_map, Node* derived
   // can't happen at run-time but the optimizer cannot deduce it so
   // we have to handle it gracefully.
   assert(!derived->bottom_type()->isa_narrowoop() ||
-          derived->bottom_type()->make_ptr()->is_ptr()->_offset == 0, "sanity");
+         derived->bottom_type()->make_ptr()->is_ptr()->offset() == 0, "sanity");
   const TypePtr *tj = derived->bottom_type()->isa_ptr();
   // If its an OOP with a non-zero offset, then it is derived.
-  if( tj == nullptr || tj->_offset == 0 ) {
+  if (tj == nullptr || tj->offset() == 0) {
     derived_base_map[derived->_idx] = derived;
     return derived;
   }
@@ -2110,9 +2110,9 @@ bool PhaseChaitin::stretch_base_pointer_live_ranges(ResourceArea *a) {
           Node *derived = lrgs(neighbor)._def;
           const TypePtr *tj = derived->bottom_type()->isa_ptr();
           assert(!derived->bottom_type()->isa_narrowoop() ||
-                  derived->bottom_type()->make_ptr()->is_ptr()->_offset == 0, "sanity");
+                 derived->bottom_type()->make_ptr()->is_ptr()->offset() == 0, "sanity");
           // If its an OOP with a non-zero offset, then it is derived.
-          if( tj && tj->_offset != 0 && tj->isa_oop_ptr() ) {
+          if (tj && tj->offset() != 0 && tj->isa_oop_ptr()) {
             Node *base = find_base_for_derived(derived_base_map, derived, maxlrg);
             assert(base->_idx < _lrg_map.size(), "");
             // Add reaching DEFs of derived pointer and base pointer as a
@@ -2402,7 +2402,7 @@ void PhaseChaitin::dump_for_spill_split_recycle() const {
 
 void PhaseChaitin::dump_frame() const {
   const char *fp = OptoReg::regname(OptoReg::c_frame_pointer);
-  const TypeTuple *domain = C->tf()->domain();
+  const TypeTuple *domain = C->tf()->domain_cc();
   const int        argcnt = domain->cnt() - TypeFunc::Parms;
 
   // Incoming arguments in registers dump
@@ -2463,7 +2463,27 @@ void PhaseChaitin::dump_frame() const {
   OptoReg::Name return_addr = _matcher.return_addr();
 
   reg = OptoReg::add(reg, -1);
+
+  // Special fixed slots
+  int current_slot = fixed_slots;
+  int stack_increment_slot = -1;
+  int nm_slot = -1;
+
+  auto next_slot = [&]() {
+    current_slot -= VMRegImpl::slots_per_word;
+    return current_slot;
+  };
+
+  if (C->needs_stack_repair()) {
+    stack_increment_slot = next_slot();
+  }
+  if (C->needs_nm_slot()) {
+    nm_slot = next_slot();
+  }
+  int orig_pc_slot = next_slot();
+
   while (OptoReg::is_stack(reg)) {
+    int stack_slot = (int)OptoReg::reg2stack(reg);
     tty->print("#r%3.3d %s+%2d: ",reg,fp,reg2offset_unchecked(reg));
     if (return_addr == reg) {
       tty->print_cr("return address");
@@ -2476,8 +2496,17 @@ void PhaseChaitin::dump_frame() const {
         tty->print_cr("<Majik cookie>   +VerifyStackAtCalls");
       else
         tty->print_cr("in_preserve");
-    } else if ((int)OptoReg::reg2stack(reg) < fixed_slots) {
-      tty->print_cr("Fixed slot %d", OptoReg::reg2stack(reg));
+    } else if (stack_slot < fixed_slots) {
+      tty->print("Fixed slot %d", OptoReg::reg2stack(reg));
+      if (stack_slot == stack_increment_slot) {
+        tty->print_cr(" (stack increment)");
+      } else if (stack_slot == nm_slot) {
+        tty->print_cr(" (null marker)");
+      } else if (stack_slot == orig_pc_slot) {
+        tty->print_cr(" (original deopt pc)");
+      } else {
+        tty->cr();
+      }
     } else {
       tty->print_cr("pad2, stack alignment");
     }
@@ -2611,11 +2640,11 @@ void PhaseChaitin::verify_base_ptrs(ResourceArea* a) const {
                     worklist.push(check->in(m));
                   }
                 } else if (check->is_Con()) {
-                  if (is_derived && check->bottom_type()->is_ptr()->_offset != 0) {
+                  if (is_derived && check->bottom_type()->is_ptr()->offset() != 0) {
                     // Derived is null+non-zero offset, base must be null.
                     assert(check->bottom_type()->is_ptr()->ptr() == TypePtr::Null, "Bad derived pointer");
                   } else {
-                    assert(check->bottom_type()->is_ptr()->_offset == 0, "Bad base pointer");
+                    assert(check->bottom_type()->is_ptr()->offset() == 0, "Bad base pointer");
                     // Base either ConP(nullptr) or loadConP
                     if (check->is_Mach()) {
                       assert(check->as_Mach()->ideal_Opcode() == Op_ConP, "Bad base pointer");
@@ -2624,7 +2653,7 @@ void PhaseChaitin::verify_base_ptrs(ResourceArea* a) const {
                              check->bottom_type()->is_ptr()->ptr() == TypePtr::Null, "Bad base pointer");
                     }
                   }
-                } else if (check->bottom_type()->is_ptr()->_offset == 0) {
+                } else if (check->bottom_type()->is_ptr()->offset() == 0) {
                   if (check->is_Proj() || (check->is_Mach() &&
                      (check->as_Mach()->ideal_Opcode() == Op_CreateEx ||
                       check->as_Mach()->ideal_Opcode() == Op_ThreadLocal ||
@@ -2633,7 +2662,7 @@ void PhaseChaitin::verify_base_ptrs(ResourceArea* a) const {
 #ifdef _LP64
                       (UseCompressedOops && check->as_Mach()->ideal_Opcode() == Op_CastPP) ||
                       (UseCompressedOops && check->as_Mach()->ideal_Opcode() == Op_DecodeN) ||
-                      (UseCompressedClassPointers && check->as_Mach()->ideal_Opcode() == Op_DecodeNKlass) ||
+                      (check->as_Mach()->ideal_Opcode() == Op_DecodeNKlass) ||
 #endif // _LP64
                       check->as_Mach()->ideal_Opcode() == Op_LoadP ||
                       check->as_Mach()->ideal_Opcode() == Op_LoadKlass))) {

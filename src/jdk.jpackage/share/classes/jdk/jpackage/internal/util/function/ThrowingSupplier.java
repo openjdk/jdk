@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,16 +27,16 @@ package jdk.jpackage.internal.util.function;
 import java.util.function.Supplier;
 
 @FunctionalInterface
-public interface ThrowingSupplier<T> {
+public interface ThrowingSupplier<T, E extends Exception> {
 
-    T get() throws Throwable;
+    T get() throws E;
 
-    public static <T> Supplier<T> toSupplier(ThrowingSupplier<T> v) {
+    public static <T> Supplier<T> toSupplier(ThrowingSupplier<T, ? extends Exception> v) {
         return () -> {
             try {
                 return v.get();
-            } catch (Throwable ex) {
-                throw ExceptionBox.rethrowUnchecked(ex);
+            } catch (Exception ex) {
+                throw ExceptionBox.toUnchecked(ex);
             }
         };
     }

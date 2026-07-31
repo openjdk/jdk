@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 #include "gc/z/zArray.hpp"
 
 #include "gc/z/zLock.inline.hpp"
-#include "runtime/atomicAccess.hpp"
 
 template <typename T>
 ZArraySlice<T>::ZArraySlice(T* data, int len)
@@ -130,7 +129,7 @@ inline bool ZArrayIteratorImpl<T, Parallel>::next_serial(size_t* index) {
 
 template <typename T, bool Parallel>
 inline bool ZArrayIteratorImpl<T, Parallel>::next_parallel(size_t* index) {
-  const size_t claimed_index = AtomicAccess::fetch_then_add(&_next, 1u, memory_order_relaxed);
+  const size_t claimed_index = _next.fetch_then_add(1u, memory_order_relaxed);
 
   if (claimed_index < _end) {
     *index = claimed_index;
@@ -177,7 +176,7 @@ inline bool ZArrayIteratorImpl<T, Parallel>::next_if(T* elem, Function predicate
 
 template <typename T, bool Parallel>
 inline bool ZArrayIteratorImpl<T, Parallel>::next_index(size_t* index) {
-  if (Parallel) {
+  if constexpr (Parallel) {
     return next_parallel(index);
   } else {
     return next_serial(index);

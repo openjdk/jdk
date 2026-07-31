@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+class ValuePayload;
 
 // = GENERAL =
 // Access is an API for performing accesses with declarative semantics. Each access can have a number of "decorators".
@@ -57,6 +58,7 @@
 // * atomic_xchg_at: Atomically swap a new value at an internal pointer address without checking the previous value.
 // * arraycopy: Copy data from one heap array to another heap array. The ArrayAccess class has convenience functions for this.
 // * clone: Clone the contents of an object to a newly allocated object.
+// * value_copy: Copy the contents of a value type from one heap address to another
 //
 // == IMPLEMENTATION ==
 // Each access goes through the following steps in a template pipeline.
@@ -121,6 +123,12 @@ class Access: public AllStatic {
     verify_decorators<expected_mo_decorators | heap_oop_decorators>();
   }
 
+  template <DecoratorSet expected_mo_decorators>
+  static void verify_heap_value_decorators() {
+    const DecoratorSet heap_value_decorators = IN_HEAP | IS_DEST_UNINITIALIZED;
+    verify_decorators<expected_mo_decorators | heap_value_decorators>();
+  }
+
   static const DecoratorSet load_mo_decorators = MO_UNORDERED | MO_RELAXED | MO_ACQUIRE | MO_SEQ_CST;
   static const DecoratorSet store_mo_decorators = MO_UNORDERED | MO_RELAXED | MO_RELEASE | MO_SEQ_CST;
   static const DecoratorSet atomic_xchg_mo_decorators = MO_SEQ_CST;
@@ -128,9 +136,9 @@ class Access: public AllStatic {
 
 protected:
   template <typename T>
-  static inline bool oop_arraycopy(arrayOop src_obj, size_t src_offset_in_bytes, const T* src_raw,
-                                   arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
-                                   size_t length) {
+  static inline OopCopyResult oop_arraycopy(arrayOop src_obj, size_t src_offset_in_bytes, const T* src_raw,
+                                            arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
+                                            size_t length) {
     verify_decorators<ARRAYCOPY_DECORATOR_MASK | IN_HEAP |
                       AS_DECORATOR_MASK | IS_ARRAY | IS_DEST_UNINITIALIZED>();
     return AccessInternal::arraycopy<decorators | INTERNAL_VALUE_IS_OOP>(src_obj, src_offset_in_bytes, src_raw,
@@ -209,6 +217,19 @@ public:
   static inline void clone(oop src, oop dst, size_t size) {
     verify_decorators<IN_HEAP>();
     AccessInternal::clone<decorators>(src, dst, size);
+  }
+
+  // inline type heap access (when flat)...
+
+  // Copy value type data from src to dst
+  static inline void value_copy(const ValuePayload& src, const ValuePayload& dst) {
+    verify_heap_value_decorators<IN_HEAP>();
+    AccessInternal::value_copy<decorators>(src, dst);
+  }
+
+  static inline void value_store_null(const ValuePayload& dst) {
+    verify_heap_value_decorators<IN_HEAP>();
+    AccessInternal::value_store_null<decorators>(dst);
   }
 
   // Primitive accesses
@@ -316,19 +337,25 @@ public:
                        length);
   }
 
-  static inline bool oop_arraycopy(arrayOop src_obj, size_t src_offset_in_bytes,
-                                   arrayOop dst_obj, size_t dst_offset_in_bytes,
-                                   size_t length) {
+  [[nodiscard]] // The caller is responsible to throw an exception on failure
+  static inline OopCopyResult oop_arraycopy(arrayOop src_obj, size_t src_offset_in_bytes,
+                                            arrayOop dst_obj, size_t dst_offset_in_bytes,
+                                            size_t length) {
     return AccessT::oop_arraycopy(src_obj, src_offset_in_bytes, static_cast<const HeapWord*>(nullptr),
                                   dst_obj, dst_offset_in_bytes, static_cast<HeapWord*>(nullptr),
                                   length);
   }
 
   template <typename T>
-  static inline bool oop_arraycopy_raw(T* src, T* dst, size_t length) {
-    return AccessT::oop_arraycopy(nullptr, 0, src,
-                                  nullptr, 0, dst,
-                                  length);
+  static inline void oop_arraycopy_raw(T* src, T* dst, size_t length) {
+    static_assert((decorators & ARRAYCOPY_CHECKCAST) == 0);
+    static_assert((decorators & ARRAYCOPY_NOTNULL) == 0);
+
+    OopCopyResult result = AccessT::oop_arraycopy(nullptr, 0, src,
+                                                  nullptr, 0, dst,
+                                                  length);
+
+    assert(result == OopCopyResult::ok, "Should never fail");
   }
 
 };

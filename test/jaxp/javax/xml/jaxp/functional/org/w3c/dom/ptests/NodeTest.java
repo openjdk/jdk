@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,29 +22,10 @@
  */
 package org.w3c.dom.ptests;
 
-import static jaxp.library.JAXPTestUtilities.USER_DIR;
-import static jaxp.library.JAXPTestUtilities.compareWithGold;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertNotEquals;
-import static org.testng.Assert.assertTrue;
-import static org.w3c.dom.ptests.DOMTestUtil.GOLDEN_DIR;
-import static org.w3c.dom.ptests.DOMTestUtil.createDOM;
-import static org.w3c.dom.ptests.DOMTestUtil.createDOMWithNS;
-import static org.w3c.dom.ptests.DOMTestUtil.createNewDocument;
-
-import java.io.File;
-import java.util.PropertyPermission;
-
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.TransformerFactoryConfigurationError;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
@@ -52,15 +33,35 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.TransformerFactoryConfigurationError;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.w3c.dom.ptests.DOMTestUtil.GOLDEN_DIR;
+import static org.w3c.dom.ptests.DOMTestUtil.createDOM;
+import static org.w3c.dom.ptests.DOMTestUtil.createDOMWithNS;
+import static org.w3c.dom.ptests.DOMTestUtil.createNewDocument;
+
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm org.w3c.dom.ptests.NodeTest
+ * @run junit/othervm org.w3c.dom.ptests.NodeTest
  * @summary Test Node interface
  */
 public class NodeTest {
-    @DataProvider(name = "feature-supported")
-    public Object[][] getFeatureSupportedList() throws Exception {
+    public static Object[][] getFeatureSupportedList() throws Exception {
         Document document = createDOMWithNS("Node01.xml");
         Node node = document.getElementsByTagName("body").item(0);
         return new Object[][] {
@@ -81,9 +82,10 @@ public class NodeTest {
     /*
      * Verify Node for feature supporting.
      */
-    @Test(dataProvider = "feature-supported")
+    @ParameterizedTest
+    @MethodSource("getFeatureSupportedList")
     public void testHasFeature(Node node, String feature, String version, boolean supported) {
-        assertEquals(node.isSupported(feature, version), supported);
+        assertEquals(supported, node.isSupported(feature, version));
     }
 
     /*
@@ -98,7 +100,7 @@ public class NodeTest {
         Node node =  document.getElementsByTagName("title").item(0);
         node.appendChild(document.createTextNode("test"));
         root.normalize();
-        assertEquals(node.getChildNodes().item(0).getNodeValue(), "Typographytest");
+        assertEquals("Typographytest", node.getChildNodes().item(0).getNodeValue());
     }
 
     /*
@@ -154,10 +156,10 @@ public class NodeTest {
         Element element = (Element) document.getElementsByTagName("sender").item(0);
         parentElement.insertBefore(createTestDocumentFragment(document), element);
 
-        String outputfile = USER_DIR + "InsertBefore.out";
+        String outputfile = "InsertBefore.out";
         String goldfile = GOLDEN_DIR + "InsertBeforeGF.out";
         outputXml(document, outputfile);
-        assertTrue(compareWithGold(goldfile, outputfile));
+        assertLinesMatch(goldfile, outputfile);
     }
 
 
@@ -172,10 +174,10 @@ public class NodeTest {
         Element element = (Element) document.getElementsByTagName("sender").item(0);
         parentElement.replaceChild(createTestDocumentFragment(document), element);
 
-        String outputfile = USER_DIR + "ReplaceChild3.out";
+        String outputfile = "ReplaceChild3.out";
         String goldfile = GOLDEN_DIR + "ReplaceChild3GF.out";
         outputXml(document, outputfile);
-        assertTrue(compareWithGold(goldfile, outputfile));
+        assertLinesMatch(goldfile, outputfile);
     }
 
     /*
@@ -183,14 +185,16 @@ public class NodeTest {
      * with a node which was created from a different document than the one
      * which is trying to use this method. It should throw a DOMException.
      */
-    @Test(expectedExceptions = DOMException.class)
+    @Test
     public void testReplaceChildNeg() throws Exception {
         Document document = createDOM("Node04.xml");
         Document doc2 = createNewDocument();
 
         Element parentElement = (Element) document.getElementsByTagName("to").item(0);
         Element element = (Element) document.getElementsByTagName("sender").item(0);
-        parentElement.replaceChild(createTestDocumentFragment(doc2), element);
+        assertThrows(
+                DOMException.class, () ->
+                        parentElement.replaceChild(createTestDocumentFragment(doc2), element));
     }
 
     private DocumentFragment createTestDocumentFragment(Document document) {
@@ -206,5 +210,11 @@ public class NodeTest {
         Transformer transformer = TransformerFactory.newInstance().newTransformer();
         StreamResult streamResult = new StreamResult(new File(outputFileName));
         transformer.transform(domSource, streamResult);
+    }
+
+    private static void assertLinesMatch(String goldenFile, String actual) throws IOException {
+        Assertions.assertLinesMatch(
+                Files.readAllLines(Path.of(goldenFile)),
+                Files.readAllLines(Path.of(actual)));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8246774
  * @summary Basic tests for serializing and deserializing record classes
- * @run testng RecordClassTest
+ * @run junit RecordClassTest
  */
 
 import java.io.ByteArrayInputStream;
@@ -37,12 +37,15 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamClass;
+import java.io.Serial;
 import java.io.Serializable;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 import static java.lang.System.out;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Serializes and deserializes record classes. Ensures that the SUID is 0.
@@ -52,6 +55,7 @@ public class RecordClassTest {
     record Foo () implements Serializable { }
 
     record Bar (int x) implements Serializable {
+        @Serial
         private static final long serialVersionUID = 987654321L;
     }
 
@@ -67,6 +71,7 @@ public class RecordClassTest {
     }
 
     record Wibble () implements ThrowingExternalizable {
+        @Serial
         private static final long serialVersionUID = 12345678L;
     }
 
@@ -74,8 +79,7 @@ public class RecordClassTest {
 
     record Wubble (Wobble wobble, Wibble wibble, String s) implements ThrowingExternalizable { }
 
-    @DataProvider(name = "recordClasses")
-    public Object[][] recordClasses() {
+    public static Object[][] recordClasses() {
         return new Object[][] {
             new Object[] { Foo.class    , 0L         },
             new Object[] { Bar.class    , 987654321L },
@@ -87,7 +91,8 @@ public class RecordClassTest {
     }
 
     /** Tests that the serialized and deserialized instances are equal. */
-    @Test(dataProvider = "recordClasses")
+    @ParameterizedTest
+    @MethodSource("recordClasses")
     public void testClassSerialization(Class<?> recordClass, long unused)
         throws Exception
     {
@@ -95,21 +100,22 @@ public class RecordClassTest {
         out.println("serializing : " + recordClass);
         var deserializedClass = serializeDeserialize(recordClass);
         out.println("deserialized: " + deserializedClass);
-        assertEquals(recordClass, deserializedClass);
         assertEquals(deserializedClass, recordClass);
+        assertEquals(recordClass, deserializedClass);
     }
 
     /** Tests that the SUID is always 0 unless explicitly declared. */
-    @Test(dataProvider = "recordClasses")
+    @ParameterizedTest
+    @MethodSource("recordClasses")
     public void testSerialVersionUID(Class<?> recordClass, long expectedUID) {
         out.println("\n---");
         ObjectStreamClass osc = ObjectStreamClass.lookup(recordClass);
         out.println("ObjectStreamClass::lookup  : " + osc);
-        assertEquals(osc.getSerialVersionUID(), expectedUID);
+        assertEquals(expectedUID, osc.getSerialVersionUID());
 
         osc = ObjectStreamClass.lookupAny(recordClass);
         out.println("ObjectStreamClass::lookupAny: " + osc);
-        assertEquals(osc.getSerialVersionUID(), expectedUID);
+        assertEquals(expectedUID, osc.getSerialVersionUID());
     }
 
     // --- not Serializable
@@ -120,8 +126,7 @@ public class RecordClassTest {
 
     record NotSerializable3<T>(T t) { }
 
-    @DataProvider(name = "notSerRecordClasses")
-    public Object[][] notSerRecordClasses() {
+    public static Object[][] notSerRecordClasses() {
         return new Object[][] {
             new Object[] { NotSerializable1.class },
             new Object[] { NotSerializable2.class },
@@ -130,16 +135,17 @@ public class RecordClassTest {
     }
 
     /** Tests that the generated SUID is always 0 for all non-Serializable record classes. */
-    @Test(dataProvider = "notSerRecordClasses")
+    @ParameterizedTest
+    @MethodSource("notSerRecordClasses")
     public void testSerialVersionUIDNonSer(Class<?> recordClass) {
         out.println("\n---");
         ObjectStreamClass osc = ObjectStreamClass.lookup(recordClass);
         out.println("ObjectStreamClass::lookup  : " + osc);
-        assertEquals(osc, null);
+        assertEquals(null, osc);
 
         osc = ObjectStreamClass.lookupAny(recordClass);
         out.println("ObjectStreamClass::lookupAny: " + osc);
-        assertEquals(osc.getSerialVersionUID(), 0L);
+        assertEquals(0L, osc.getSerialVersionUID());
     }
 
     // --- infra

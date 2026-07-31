@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,7 +248,7 @@ void javaVFrame::print_lock_info_on(outputStream* st, bool is_virtual, int frame
           // The first stage of async deflation does not affect any field
           // used by this comparison so the ObjectMonitor* is usable here.
           if (mark.has_monitor()) {
-            ObjectMonitor* mon = ObjectSynchronizer::read_monitor(current, monitor->owner(), mark);
+            ObjectMonitor* mon = ObjectSynchronizer::read_monitor(monitor->owner(), mark);
             if (// if the monitor is null we must be in the process of locking
                 mon == nullptr ||
                 // we have marked ourself as pending on this monitor
@@ -318,13 +318,9 @@ static StackValue* create_stack_value_from_oop_map(const InterpreterOopMap& oop_
 static bool is_in_expression_stack(const frame& fr, const intptr_t* const addr) {
   assert(addr != nullptr, "invariant");
 
-  // Ensure to be 'inside' the expression stack (i.e., addr >= sp for Intel).
+  // Ensure to be 'inside' the expression stack (i.e., addr >= sp).
   // In case of exceptions, the expression stack is invalid and the sp
   // will be reset to express this condition.
-  if (frame::interpreter_frame_expression_stack_direction() > 0) {
-    return addr <= fr.interpreter_frame_tos_address();
-  }
-
   return addr >= fr.interpreter_frame_tos_address();
 }
 

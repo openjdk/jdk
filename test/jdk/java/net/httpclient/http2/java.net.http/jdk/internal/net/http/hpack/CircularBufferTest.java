@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  */
 package jdk.internal.net.http.hpack;
 
-import org.testng.annotations.Test;
 import jdk.internal.net.http.hpack.SimpleHeaderTable.CircularBuffer;
 
 import java.util.Arrays;
@@ -31,10 +30,11 @@ import java.util.Random;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import static jdk.internal.net.http.common.Utils.pow2Size;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static jdk.internal.net.http.hpack.TestHelper.assertVoidThrows;
 import static jdk.internal.net.http.hpack.TestHelper.newRandom;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 
 public final class CircularBufferTest {
 
@@ -143,7 +143,7 @@ public final class CircularBufferTest {
             for (int i = 0; i < gets; i++) {
                 Integer expected = referenceQueue.poll();
                 Integer actual = buffer.remove();
-                assertEquals(actual, expected);
+                assertEquals(expected, actual);
             }
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,18 +147,25 @@ public:
 class C2ParseAccess: public C2Access {
 protected:
   GraphKit*         _kit;
+  Node* _ctl;
+  const InlineTypeNode* _vt; // For flat, atomic accesses that might require GC barriers on oop fields
 
   void* barrier_set_state() const;
 
 public:
   C2ParseAccess(GraphKit* kit, DecoratorSet decorators,
-                BasicType type, Node* base, C2AccessValuePtr& addr) :
+                BasicType type, Node* base, C2AccessValuePtr& addr,
+                Node* ctl = nullptr, const InlineTypeNode* vt = nullptr) :
     C2Access(decorators, type, base, addr),
-    _kit(kit) {
+    _kit(kit),
+    _ctl(ctl),
+    _vt (vt) {
     fixup_decorators();
   }
 
   GraphKit* kit() const           { return _kit; }
+  Node* control() const;
+  const InlineTypeNode* vt() const { return _vt; }
 
   virtual PhaseGVN& gvn() const;
   virtual bool is_parse_access() const { return true; }
@@ -261,6 +268,8 @@ public:
   void preserve(Register reg);
   // Do not preserve the value in reg across runtime calls in this barrier.
   void dont_preserve(Register reg);
+  // Check if register is in preserved set.
+  bool is_preserved(Register reg) const;
   // Set of registers whose value needs to be preserved across runtime calls in this barrier.
   const RegMask& preserve_set() const;
 };
@@ -270,6 +279,9 @@ public:
 // various GC barrier sets inherit from the BarrierSetC2 class to sprinkle
 // barriers into the accesses.
 class BarrierSetC2: public CHeapObj<mtGC> {
+private:
+  static const TypeFunc* _clone_type_Type;
+
 protected:
   virtual void resolve_address(C2Access& access) const;
   virtual Node* store_at_resolved(C2Access& access, C2AccessValue& val) const;
@@ -297,7 +309,7 @@ public:
   virtual Node* atomic_xchg_at(C2AtomicParseAccess& access, Node* new_val, const Type* value_type) const;
   virtual Node* atomic_add_at(C2AtomicParseAccess& access, Node* new_val, const Type* value_type) const;
 
-  virtual void clone(GraphKit* kit, Node* src, Node* dst, Node* size, bool is_array) const;
+  virtual void clone(GraphKit* kit, Node* src_base, Node* dst_base, Node* size, bool is_array) const;
 
   virtual Node* obj_allocate(PhaseMacroExpand* macro, Node* mem, Node* toobig_false, Node* size_in_bytes,
                              Node*& i_o, Node*& needgc_ctrl,
@@ -325,7 +337,7 @@ public:
   // Support for macro expanded GC barriers
   virtual void register_potential_barrier_node(Node* node) const { }
   virtual void unregister_potential_barrier_node(Node* node) const { }
-  virtual void eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const { }
+  virtual void eliminate_gc_barrier(PhaseIterGVN* igvn, Node* node) const { }
   virtual void eliminate_gc_barrier_data(Node* node) const { }
   virtual void enqueue_useful_gc_barrier(PhaseIterGVN* igvn, Node* node) const {}
   virtual void eliminate_useless_gc_barriers(Unique_Node_List &useful, Compile* C) const {}
@@ -336,6 +348,7 @@ public:
   // If the BarrierSetC2 state has barrier nodes in its compilation
   // unit state to be expanded later, then now is the time to do so.
   virtual bool expand_barriers(Compile* C, PhaseIterGVN& igvn) const { return false; }
+  virtual void final_refinement(Compile* C) const { }
   virtual bool optimize_loops(PhaseIdealLoop* phase, LoopOptsMode mode, VectorSet& visited, Node_Stack& nstack, Node_List& worklist) const { return false; }
   virtual bool strip_mined_loops_expanded(LoopOptsMode mode) const { return false; }
   virtual bool is_gc_specific_loop_opts_pass(LoopOptsMode mode) const { return false; }
@@ -367,7 +380,7 @@ public:
   // Whether the given phi node joins OOPs from fast and slow allocation paths.
   static bool is_allocation(const Node* node);
   // Elide GC barriers from a Mach node according to elide_dominated_barriers().
-  virtual void elide_dominated_barrier(MachNode* mach) const { }
+  virtual void elide_dominated_barrier(MachNode* mach, MachNode* dominator) const { }
   // Elide GC barriers from instructions in 'accesses' if they are dominated by
   // instructions in 'access_dominators' (according to elide_mach_barrier()) and
   // there is no safepoint poll in between.
@@ -378,6 +391,9 @@ public:
   virtual void emit_stubs(CodeBuffer& cb) const { }
 
   static int arraycopy_payload_base_offset(bool is_array);
+
+  static void make_clone_type();
+  static const TypeFunc* clone_type();
 
 #ifndef PRODUCT
   virtual void dump_barrier_data(const MachNode* mach, outputStream* st) const {

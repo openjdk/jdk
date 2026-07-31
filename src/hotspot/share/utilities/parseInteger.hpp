@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,6 +26,7 @@
 #ifndef SHARE_UTILITIES_PARSE_INTEGER_HPP
 #define SHARE_UTILITIES_PARSE_INTEGER_HPP
 
+#include "cppstdlib/cstdlib.hpp"
 #include "cppstdlib/limits.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "utilities/debug.hpp"
@@ -33,7 +34,6 @@
 #include "utilities/macros.hpp"
 
 #include <errno.h>
-#include <stdlib.h>
 
 // *************************************************************************
 // ** Attention compatibility!                                            **
@@ -124,7 +124,7 @@ static bool parse_integer(const char *s, char **endptr, T* result) {
 
   T n = 0;
   bool is_hex = (s[0] == '0' && (s[1] == 'x' || s[1] == 'X')) ||
-                (s[0] == '-' && s[1] == '0' && (s[2] == 'x' || s[3] == 'X'));
+                (s[0] == '-' && s[1] == '0' && (s[2] == 'x' || s[2] == 'X'));
   char* remainder;
 
   if (!parse_integer_impl<T>(s, &remainder, (is_hex ? 16 : 10), &n)) {

@@ -47,6 +47,7 @@ import com.sun.net.httpserver.*;
 import java.io.*;
 import java.math.BigInteger;
 import java.net.InetSocketAddress;
+import java.security.Security;
 import java.security.cert.*;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -69,6 +70,7 @@ public class AIACertTimeout {
     private static X509Certificate  eeCert;
 
     public static void main(String[] args) throws Exception {
+        Security.setProperty("com.sun.security.allowedAIALocations", "any");
         int servTimeoutMsec = (args != null && args.length >= 1) ?
                 Integer.parseInt(args[0]) : -1;
         boolean expectedPass = args != null && args.length >= 2 &&

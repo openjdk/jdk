@@ -44,11 +44,12 @@ using namespace testing;
 class ZForwardingTest : public ZTest {
 public:
   // Setup and tear down
-  ZHeap*            _old_heap;
-  ZGenerationOld*   _old_old;
-  ZGenerationYoung* _old_young;
-  ZAddressReserver  _zaddress_reserver;
-  zoffset           _page_offset;
+  ZHeap*                       _old_heap;
+  ZGenerationOld*              _old_old;
+  ZGenerationYoung*            _old_young;
+  ZAddressReserver             _zaddress_reserver;
+  ZPhysicalMemoryBackingMocker _physical_backing;
+  zoffset                      _page_offset;
 
   virtual void SetUp() {
     _old_heap = ZHeap::_heap;
@@ -73,8 +74,16 @@ public:
       GTEST_SKIP() << "Unable to reserve memory";
     }
 
-    char* const addr = (char*)untype(ZOffset::address_unsafe(_page_offset));
-    os::commit_memory(addr, ZGranuleSize, /* executable */ false);
+    // Setup backing storage
+    _physical_backing.SetUp(ZGranuleSize);
+
+    size_t committed = _physical_backing()->commit(zbacking_offset(0), ZGranuleSize, 0);
+
+    if (committed != ZGranuleSize) {
+      GTEST_SKIP() << "Unable to commit memory";
+    }
+
+    _physical_backing()->map(ZOffset::address_unsafe(_page_offset), ZGranuleSize, zbacking_offset(0));
   }
 
   virtual void TearDown() {
@@ -84,9 +93,11 @@ public:
     ZGeneration::_young = _old_young;
 
     if (_page_offset != zoffset::invalid) {
-      char* const addr = (char*)untype(ZOffset::address_unsafe(_page_offset));
-      os::uncommit_memory(addr, ZGranuleSize, false /* executable */);
+      _physical_backing()->unmap(ZOffset::address_unsafe(_page_offset), ZGranuleSize);
+      _physical_backing()->uncommit(zbacking_offset(0), ZGranuleSize);
     }
+
+    _physical_backing.TearDown();
 
     _zaddress_reserver.TearDown();
   }

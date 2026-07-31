@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomicAccess.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/globals_extension.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -129,10 +129,8 @@ void G1HeapRegion::hr_clear(bool clear_space) {
 
   rem_set()->clear();
 
-  G1CollectedHeap::heap()->concurrent_mark()->reset_top_at_mark_start(this);
-
-  _parsable_bottom = bottom();
-  _garbage_bytes = 0;
+  _parsable_bottom.store_relaxed(bottom());
+  _garbage_bytes.store_relaxed(0);
   _incoming_refs = 0;
 
   if (clear_space) clear(SpaceDecorator::Mangle);
@@ -294,12 +292,12 @@ void G1HeapRegion::report_region_type_change(G1HeapRegionTraceType::Type to) {
   // young gen regions never have their PB set to anything other than bottom.
   assert(parsable_bottom_acquire() == bottom(), "must be");
 
-  _garbage_bytes = 0;
+  _garbage_bytes.store_relaxed(0);
   _incoming_refs = 0;
 }
 
 void G1HeapRegion::note_self_forward_chunk_done(size_t garbage_bytes) {
-  AtomicAccess::add(&_garbage_bytes, garbage_bytes, memory_order_relaxed);
+  _garbage_bytes.add_then_fetch(garbage_bytes, memory_order_relaxed);
 }
 
 // Code roots support
@@ -415,6 +413,8 @@ bool G1HeapRegion::verify_code_roots(VerifyOption vo) const {
     return has_code_roots;
   }
 
+  rem_set()->reset_code_root_table_scanner();
+
   VerifyCodeRootNMethodClosure nm_cl(this);
   code_roots_do(&nm_cl);
 
@@ -439,7 +439,9 @@ void G1HeapRegion::print_on(outputStream* st) const {
   }
   G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
   st->print("|TAMS " PTR_FORMAT "| PB " PTR_FORMAT "| %-9s ",
-            p2i(cm->top_at_mark_start(this)), p2i(parsable_bottom_acquire()), rem_set()->get_state_str());
+            p2i(cm->top_at_mark_start_or_bottom(this)),
+            p2i(parsable_bottom_acquire()),
+            rem_set()->get_state_str());
   if (UseNUMA) {
     G1NUMA* numa = G1NUMA::numa();
     if (node_index() < numa->num_active_nodes()) {
@@ -448,7 +450,7 @@ void G1HeapRegion::print_on(outputStream* st) const {
       st->print("|-");
     }
   }
-  st->print("|%3zu", AtomicAccess::load(&_pinned_object_count));
+  st->print("|%3zu", _pinned_object_count.load_relaxed());
   st->print_cr("");
 }
 

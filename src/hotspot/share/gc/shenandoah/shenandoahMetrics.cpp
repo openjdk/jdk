@@ -30,7 +30,7 @@
 
 ShenandoahMetricsSnapshot::ShenandoahMetricsSnapshot(ShenandoahFreeSet* free_set)
   : _free_set(free_set)
-  , _used_before(free_set->used())
+  , _used_before(free_set->used_not_holding_lock())
   , _if_before(free_set->internal_fragmentation())
   , _ef_before(free_set->external_fragmentation()) {
 }
@@ -38,7 +38,6 @@ ShenandoahMetricsSnapshot::ShenandoahMetricsSnapshot(ShenandoahFreeSet* free_set
 bool ShenandoahMetricsSnapshot::is_good_progress() const {
   // Under the critical threshold?
   const size_t free_actual = _free_set->available();
-  assert(free_actual != ShenandoahFreeSet::FreeSetUnderConstruction, "Avoid this race");
 
   // ShenandoahCriticalFreeThreshold is expressed as a percentage.  We multiply this percentage by 1/100th
   // of the soft max capacity to determine whether the available memory within the mutator partition of the
@@ -52,7 +51,7 @@ bool ShenandoahMetricsSnapshot::is_good_progress() const {
   }
 
   // Freed up enough?
-  const size_t used_after = _free_set->used();
+  const size_t used_after = _free_set->used_not_holding_lock();
   const size_t progress_actual   = (_used_before > used_after) ? _used_before - used_after : 0;
   const size_t progress_expected = ShenandoahHeapRegion::region_size_bytes();
   const bool prog_used = progress_actual >= progress_expected;

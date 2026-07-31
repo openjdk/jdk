@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,6 +77,7 @@ class os::Linux {
   static void print_proc_sys_info(outputStream* st);
   static bool print_ld_preload_file(outputStream* st);
   static void print_uptime_info(outputStream* st);
+  static bool print_numa_info(outputStream* st);
 
  public:
   struct CPUPerfTicks {

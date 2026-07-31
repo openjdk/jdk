@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,16 @@ class InstanceRefKlass: public InstanceKlass {
 
  public:
   InstanceRefKlass();
+
+  static InstanceRefKlass* cast(Klass* k) {
+    return const_cast<InstanceRefKlass*>(cast(const_cast<const Klass*>(k)));
+  }
+
+  static const InstanceRefKlass* cast(const Klass* k) {
+    assert(k != nullptr, "k should not be null");
+    assert(k->is_reference_instance_klass(), "cast to InstanceRefKlass");
+    return static_cast<const InstanceRefKlass*>(k);
+  }
 
   // Oop fields (and metadata) iterators
   //
@@ -126,7 +136,7 @@ class InstanceRefKlass: public InstanceKlass {
 
  public:
   // Verification
-  void oop_verify_on(oop obj, outputStream* st);
+  void oop_verify_on(oop obj, outputStream* st) override;
 };
 
 #endif // SHARE_OOPS_INSTANCEREFKLASS_HPP

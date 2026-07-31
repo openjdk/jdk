@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,6 @@
  * questions.
  */
 
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -33,9 +29,17 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.regex.PatternSyntaxException;
+import java.util.stream.Stream;
 import java.util.zip.ZipException;
 
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * @test
@@ -43,7 +47,7 @@ import static org.testng.Assert.*;
  * @summary ZIP File System tests that leverage DirectoryStream
  * @modules jdk.zipfs
  * @compile DirectoryStreamTests.java
- * @run testng DirectoryStreamTests
+ * @run junit DirectoryStreamTests
  */
 public class DirectoryStreamTests {
 
@@ -65,8 +69,8 @@ public class DirectoryStreamTests {
     /**
      * Create the JAR files used by the tests
      */
-    @BeforeClass
-    public void setUp()  throws Exception {
+    @BeforeAll
+    public static void setUp() throws Exception {
         emptyJarFile = Paths.get("emptyDir.jar");
         try (FileSystem zipfs = ZIPFS_PROVIDER.newFileSystem(emptyJarFile, ZIPFS_MAP)) {
 
@@ -80,8 +84,8 @@ public class DirectoryStreamTests {
     /**
      * Remove JAR files used by test as part of clean-up
      */
-    @AfterClass
-    public void tearDown() throws Exception {
+    @AfterAll
+    public static void tearDown() throws Exception {
             Files.deleteIfExists(jarFile);
             Files.deleteIfExists(emptyJarFile);
     }
@@ -91,7 +95,8 @@ public class DirectoryStreamTests {
      * System and that the returned Iterator correctly indicates whether the
      * filter has been matched
      */
-    @Test(dataProvider = "filterTestValues")
+    @ParameterizedTest
+    @MethodSource("filterValues")
     public void test0000(String glob, boolean expectedResult, String errMsg)
             throws Exception {
 
@@ -106,7 +111,7 @@ public class DirectoryStreamTests {
                          }
              }))
         {
-            assertEquals(ds.iterator().hasNext(), expectedResult, errMsg);
+            assertEquals(expectedResult, ds.iterator().hasNext(), errMsg);
         }
     }
 
@@ -114,7 +119,8 @@ public class DirectoryStreamTests {
      * Validate that you can specify a glob using the ZIP File System and that the
      * returned Iterator correctly indicates whether the glob pattern has been matched
      */
-    @Test(dataProvider = "filterTestValues")
+    @ParameterizedTest
+    @MethodSource("filterValues")
     public void test0001(String glob, boolean expectedResult, String errMsg)
             throws Exception {
 
@@ -122,7 +128,7 @@ public class DirectoryStreamTests {
                 ZIPFS_PROVIDER.newFileSystem(Paths.get("basic.jar"), UNZIPFS_MAP);
              DirectoryStream<Path> ds =
                      Files.newDirectoryStream(zipfs.getPath("/"), glob)) {
-            assertEquals(ds.iterator().hasNext(), expectedResult, errMsg);
+            assertEquals(expectedResult, ds.iterator().hasNext(), errMsg);
         }
     }
 
@@ -144,7 +150,8 @@ public class DirectoryStreamTests {
      * Validate that the correct type of paths are returned when creating a
      * DirectoryStream
      */
-    @Test(dataProvider = "startPaths")
+    @ParameterizedTest
+    @MethodSource("Name")
     public void test0003(String startPath, String expectedPath)
             throws IOException {
         try (FileSystem zipfs =
@@ -153,9 +160,8 @@ public class DirectoryStreamTests {
                      Files.newDirectoryStream(zipfs.getPath(startPath))) {
 
             for (Path entry : stream) {
-                assertTrue(entry.toString().equals(expectedPath),
-                        String.format("Error: Expected path %s not found when"
-                                + " starting at %s%n", expectedPath, entry));
+                assertEquals(entry.toString(), expectedPath, String.format("Error: Expected path %s not found when"
+                        + " starting at %s%n", expectedPath, entry));
             }
         }
     }
@@ -310,35 +316,31 @@ public class DirectoryStreamTests {
     /**
      * Glob values to use to validate filtering
      */
-    @DataProvider(name = "filterTestValues")
-    public static Object[][] filterValues() {
+    public static Stream<Arguments> filterValues() {
 
         String expectedMsg = "Error: Matching entries were expected but not found!!!";
         String notExpectedMsg = "Error: No matching entries expected but were found!!!";
-        return new Object[][]{
-
-                {"M*", true, expectedMsg},
-                {"I*", false, notExpectedMsg}
-        };
+        return Stream.of(
+                Arguments.of("M*", true, expectedMsg),
+                Arguments.of("I*", false, notExpectedMsg)
+        );
     }
 
     /**
      * Starting Path for the DirectoryStream and the expected path to be returned
      * when traversing the stream
      */
-    @DataProvider(name = "startPaths")
-    public static Object[][] Name() {
-        return new Object[][]{
-
-                {"META-INF", "META-INF/services"},
-                {"/META-INF", "/META-INF/services"},
-                {"/META-INF/../META-INF","/META-INF/../META-INF/services" },
-                {"./META-INF", "./META-INF/services"},
-                {"", "META-INF"},
-                {"/", "/META-INF"},
-                {".", "./META-INF"},
-                {"./", "./META-INF"}
-        };
+    public static Stream<Arguments> Name() {
+        return Stream.of(
+                Arguments.of("META-INF", "META-INF/services"),
+                Arguments.of("/META-INF", "/META-INF/services"),
+                Arguments.of("/META-INF/../META-INF", "/META-INF/../META-INF/services" ),
+                Arguments.of("./META-INF", "./META-INF/services"),
+                Arguments.of("", "META-INF"),
+                Arguments.of("/", "/META-INF"),
+                Arguments.of(".", "./META-INF"),
+                Arguments.of("./", "./META-INF")
+        );
     }
 
     /**

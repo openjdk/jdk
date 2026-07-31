@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -180,16 +180,6 @@ void ImageFileReaderTable::remove(ImageFileReader* image) {
     }
 }
 
-// Determine if image entry is in table.
-bool ImageFileReaderTable::contains(ImageFileReader* image) {
-    for (u4 i = 0; i < _count; i++) {
-        if (_table[i] == image) {
-            return true;
-        }
-    }
-    return false;
-}
-
 // Table to manage multiple opens of an image file.
 ImageFileReaderTable ImageFileReader::_reader_table;
 
@@ -259,25 +249,6 @@ void ImageFileReader::close(ImageFileReader *reader) {
         _reader_table.remove(reader);
         delete reader;
     }
-}
-
-// Return an id for the specified ImageFileReader.
-u8 ImageFileReader::reader_to_ID(ImageFileReader *reader) {
-    // ID is just the cloaked reader address.
-    return (u8)reader;
-}
-
-// Validate the image id.
-bool ImageFileReader::id_check(u8 id) {
-    // Make sure the ID is a managed (_reader_table) reader.
-    SimpleCriticalSectionLock cs(&_reader_table_lock);
-    return _reader_table.contains((ImageFileReader*)id);
-}
-
-// Return an id for the specified ImageFileReader.
-ImageFileReader* ImageFileReader::id_to_reader(u8 id) {
-    assert(id_check(id) && "invalid image id");
-    return (ImageFileReader*)id;
 }
 
 // Constructor initializes to a closed state.
@@ -372,23 +343,6 @@ bool ImageFileReader::read_at(u1* data, u8 size, u8 offset) const {
     return (u8)osSupport::read(_fd, (char*)data, size, offset) == size;
 }
 
-// Find the location attributes associated with the path.    Returns true if
-// the location is found, false otherwise.
-bool ImageFileReader::find_location(const char* path, ImageLocation& location) const {
-    // Locate the entry in the index perfect hash table.
-    s4 index = ImageStrings::find(_endian, path, _redirect_table, table_length());
-    // If is found.
-    if (index != ImageStrings::NOT_FOUND) {
-        // Get address of first byte of location attribute stream.
-        u1* data = get_location_data(index);
-        // Expand location attributes.
-        location.set_data(data);
-        // Make sure result is not a false positive.
-        return verify_location(location, path);
-    }
-    return false;
-}
-
 // Find the location index and size associated with the path.
 // Returns the location index and size if the location is found, 0 otherwise.
 u4 ImageFileReader::find_location_index(const char* path, u8 *size) const {
@@ -403,8 +357,8 @@ u4 ImageFileReader::find_location_index(const char* path, u8 *size) const {
         ImageLocation location(data);
         // Make sure result is not a false positive.
         if (verify_location(location, path)) {
-                *size = (jlong)location.get_attribute(ImageLocation::ATTRIBUTE_UNCOMPRESSED);
-                return offset;
+            *size = (jlong)location.get_attribute(ImageLocation::ATTRIBUTE_UNCOMPRESSED);
+            return offset;
         }
     }
     return 0;            // not found
@@ -435,7 +389,7 @@ bool ImageFileReader::verify_location(ImageLocation& location, const char* path)
     }
     // Get base name string.
     const char* base = location.get_attribute(ImageLocation::ATTRIBUTE_BASE, strings);
-    // Compare with basne name.
+    // Compare with base name.
     if (!(next = ImageStrings::starts_with(next, base))) return false;
     // Get extension string.
     const char* extension = location.get_attribute(ImageLocation::ATTRIBUTE_EXTENSION, strings);

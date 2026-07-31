@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,12 @@
  *
  */
 
-#ifndef SHARE_CDS_LAMBDAPROXYCLASSINFO_HPP
-#define SHARE_CDS_LAMBDAPROXYCLASSINFO_HPP
+#ifndef SHARE_CDS_LAMBDAPROXYCLASSDICTIONARY_HPP
+#define SHARE_CDS_LAMBDAPROXYCLASSDICTIONARY_HPP
 
+#include "cds/aotCompressedPointers.hpp"
 #include "cds/aotMetaspace.hpp"
-#include "cds/archiveBuilder.hpp"
+#include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "utilities/growableArray.hpp"
@@ -132,19 +133,20 @@ public:
 };
 
 class RunTimeLambdaProxyClassKey {
-  u4 _caller_ik;
-  u4 _invoked_name;
-  u4 _invoked_type;
-  u4 _method_type;
-  u4 _member_method;
-  u4 _instantiated_method_type;
+  using narrowPtr = AOTCompressedPointers::narrowPtr;
+  narrowPtr _caller_ik;
+  narrowPtr _invoked_name;
+  narrowPtr _invoked_type;
+  narrowPtr _method_type;
+  narrowPtr _member_method;
+  narrowPtr _instantiated_method_type;
 
-  RunTimeLambdaProxyClassKey(u4 caller_ik,
-                             u4 invoked_name,
-                             u4 invoked_type,
-                             u4 method_type,
-                             u4 member_method,
-                             u4 instantiated_method_type) :
+  RunTimeLambdaProxyClassKey(narrowPtr caller_ik,
+                             narrowPtr invoked_name,
+                             narrowPtr invoked_type,
+                             narrowPtr method_type,
+                             narrowPtr member_method,
+                             narrowPtr instantiated_method_type) :
     _caller_ik(caller_ik),
     _invoked_name(invoked_name),
     _invoked_type(invoked_type),
@@ -154,15 +156,12 @@ class RunTimeLambdaProxyClassKey {
 
 public:
   static RunTimeLambdaProxyClassKey init_for_dumptime(LambdaProxyClassKey& key) {
-    assert(ArchiveBuilder::is_active(), "sanity");
-    ArchiveBuilder* b = ArchiveBuilder::current();
-
-    u4 caller_ik                = b->any_to_offset_u4(key.caller_ik());
-    u4 invoked_name             = b->any_to_offset_u4(key.invoked_name());
-    u4 invoked_type             = b->any_to_offset_u4(key.invoked_type());
-    u4 method_type              = b->any_to_offset_u4(key.method_type());
-    u4 member_method            = b->any_or_null_to_offset_u4(key.member_method()); // could be null
-    u4 instantiated_method_type = b->any_to_offset_u4(key.instantiated_method_type());
+    narrowPtr caller_ik                = AOTCompressedPointers::encode_not_null(key.caller_ik());
+    narrowPtr invoked_name             = AOTCompressedPointers::encode_not_null(key.invoked_name());
+    narrowPtr invoked_type             = AOTCompressedPointers::encode_not_null(key.invoked_type());
+    narrowPtr method_type              = AOTCompressedPointers::encode_not_null(key.method_type());
+    narrowPtr member_method            = AOTCompressedPointers::encode(key.member_method()); // could be null
+    narrowPtr instantiated_method_type = AOTCompressedPointers::encode_not_null(key.instantiated_method_type());
 
     return RunTimeLambdaProxyClassKey(caller_ik, invoked_name, invoked_type, method_type,
                                       member_method, instantiated_method_type);
@@ -176,12 +175,12 @@ public:
                                                      Symbol*        instantiated_method_type) {
     // All parameters must be in shared space, or else you'd get an assert in
     // ArchiveUtils::to_offset().
-    return RunTimeLambdaProxyClassKey(ArchiveUtils::archived_address_to_offset(caller_ik),
-                                      ArchiveUtils::archived_address_to_offset(invoked_name),
-                                      ArchiveUtils::archived_address_to_offset(invoked_type),
-                                      ArchiveUtils::archived_address_to_offset(method_type),
-                                      ArchiveUtils::archived_address_or_null_to_offset(member_method), // could be null
-                                      ArchiveUtils::archived_address_to_offset(instantiated_method_type));
+    return RunTimeLambdaProxyClassKey(AOTCompressedPointers::encode_address_in_cache(caller_ik),
+                                      AOTCompressedPointers::encode_address_in_cache(invoked_name),
+                                      AOTCompressedPointers::encode_address_in_cache(invoked_type),
+                                      AOTCompressedPointers::encode_address_in_cache(method_type),
+                                      AOTCompressedPointers::encode_address_in_cache_or_null(member_method), // could be null
+                                      AOTCompressedPointers::encode_address_in_cache(instantiated_method_type));
   }
 
   unsigned int hash() const;
@@ -270,6 +269,7 @@ class LambdaProxyClassDictionary : public OffsetCompactHashtable<
 private:
   class CleanupDumpTimeLambdaProxyClassTable;
   static DumpTimeLambdaProxyClassDictionary* _dumptime_table;
+  static LambdaProxyClassDictionary _runtime_table_for_dumping;
   static LambdaProxyClassDictionary _runtime_static_table; // for static CDS archive
   static LambdaProxyClassDictionary _runtime_dynamic_table; // for dynamic CDS archive
 
@@ -320,7 +320,9 @@ public:
   }
 
   static void serialize(SerializeClosure* soc, bool is_static_archive) {
-    if (is_static_archive) {
+    if (soc->writing()) {
+      _runtime_table_for_dumping.serialize_header(soc);
+    } else if (is_static_archive) {
       _runtime_static_table.serialize_header(soc);
     } else {
       _runtime_dynamic_table.serialize_header(soc);
@@ -332,4 +334,4 @@ public:
   static void print_statistics(outputStream* st,  bool is_static_archive);
 };
 
-#endif // SHARE_CDS_LAMBDAPROXYCLASSINFO_HPP
+#endif // SHARE_CDS_LAMBDAPROXYCLASSDICTIONARY_HPP

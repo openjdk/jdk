@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -158,7 +158,7 @@ static const char* as_internal_package(oop package_string, char* buf, size_t buf
 }
 
 static void define_javabase_module(Handle module_handle, jstring version, jstring location,
-                                   objArrayHandle pkgs, int num_packages, TRAPS) {
+                                   refArrayHandle pkgs, int num_packages, TRAPS) {
   ResourceMark rm(THREAD);
 
   // Obtain java.base's module version
@@ -297,7 +297,7 @@ void Modules::define_module(Handle module, jboolean is_open, jstring version,
   }
 
   // Resolve packages
-  objArrayHandle packages_h(THREAD, objArrayOop(JNIHandles::resolve(packages)));
+  refArrayHandle packages_h(THREAD, refArrayOop(JNIHandles::resolve(packages)));
   int num_packages = (packages_h.is_null() ? 0 : packages_h->length());
 
   // Special handling of java.base definition
@@ -453,7 +453,7 @@ void Modules::define_module(Handle module, jboolean is_open, jstring version,
     ClassLoader::add_to_exploded_build_list(THREAD, module_symbol);
   }
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   // Special handling of jdk.incubator.vector
   if (strcmp(module_name, "jdk.incubator.vector") == 0) {
     if (FLAG_IS_DEFAULT(EnableVectorSupport)) {
@@ -469,7 +469,7 @@ void Modules::define_module(Handle module, jboolean is_open, jstring version,
     log_info(compilation)("EnableVectorReboxing=%s",           (EnableVectorReboxing           ? "true" : "false"));
     log_info(compilation)("EnableVectorAggressiveReboxing=%s", (EnableVectorAggressiveReboxing ? "true" : "false"));
   }
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
 }
 
 #if INCLUDE_CDS_JAVA_HEAP
@@ -505,13 +505,10 @@ void Modules::check_archived_module_oop(oop orig_module_obj) {
     ClassLoaderData* loader_data = orig_module_ent->loader_data();
     assert(loader_data->is_builtin_class_loader_data(), "must be");
 
-    if (orig_module_ent->name() != nullptr) {
-      // For each named module, we archive both the java.lang.Module oop and the ModuleEntry.
-      assert(orig_module_ent->has_been_archived(), "sanity");
-    } else {
+    precond(ArchiveBuilder::current()->has_been_archived(orig_module_ent));
+    if (orig_module_ent->name() == nullptr) {
       // We always archive unnamed module oop for boot, platform, and system loaders.
       precond(orig_module_ent->should_be_archived());
-      precond(orig_module_ent->has_been_archived());
 
       if (loader_data->is_boot_class_loader_data()) {
         assert(!_seen_boot_unnamed_module, "only once");
@@ -527,10 +524,6 @@ void Modules::check_archived_module_oop(oop orig_module_obj) {
       }
     }
   }
-}
-
-void Modules::verify_archived_modules() {
-  ModuleEntry::verify_archived_module_entries();
 }
 
 class Modules::ArchivedProperty {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #define SHARE_OOPS_RESOLVEDFIELDENTRY_HPP
 
 #include "interpreter/bytecodes.hpp"
-#include "oops/instanceKlass.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/sizes.hpp"
@@ -46,7 +45,8 @@
 // The explicit paddings are necessary for generating deterministic CDS archives. They prevent
 // the C++ compiler from potentially inserting random values in unused gaps.
 
-//class InstanceKlass;
+class InstanceKlass;
+
 class ResolvedFieldEntry {
   friend class VMStructs;
 
@@ -55,7 +55,7 @@ class ResolvedFieldEntry {
   u2 _field_index;              // Index into field information in holder InstanceKlass
   u2 _cpool_index;              // Constant pool index
   u1 _tos_state;                // TOS state
-  u1 _flags;                    // Flags: [0000|00|is_final|is_volatile]
+  u1 _flags;                    // Flags: [000|has_null_marker|is_null_free_inline_type|is_flat|is_final|is_volatile]
   u1 _get_code, _put_code;      // Get and Put bytecodes of the field
 #ifdef _LP64
   u4 _padding;
@@ -80,22 +80,28 @@ public:
     ResolvedFieldEntry(0) {}
 
   // Bit shift to get flags
-  // Note: Only two flags exists at the moment but more could be added
   enum {
       is_volatile_shift     = 0,
       is_final_shift        = 1, // unused
+      is_flat_shift         = 2,
+      is_null_free_inline_type_shift = 3,
+      has_null_marker_shift = 4,
+      max_flag_shift = has_null_marker_shift
   };
 
   // Getters
-  InstanceKlass* field_holder() const { return _field_holder; }
-  int field_offset()            const { return _field_offset; }
-  u2 field_index()              const { return _field_index;  }
-  u2 constant_pool_index()      const { return _cpool_index;  }
-  u1 tos_state()                const { return _tos_state;    }
-  u1 get_code()                 const { return AtomicAccess::load_acquire(&_get_code);      }
-  u1 put_code()                 const { return AtomicAccess::load_acquire(&_put_code);      }
-  bool is_final()               const { return (_flags & (1 << is_final_shift))    != 0; }
-  bool is_volatile ()           const { return (_flags & (1 << is_volatile_shift)) != 0; }
+  InstanceKlass* field_holder()   const { return _field_holder; }
+  int field_offset()              const { return _field_offset; }
+  u2 field_index()                const { return _field_index;  }
+  u2 constant_pool_index()        const { return _cpool_index;  }
+  u1 tos_state()                  const { return _tos_state;    }
+  u1 get_code()                   const { return AtomicAccess::load_acquire(&_get_code);   }
+  u1 put_code()                   const { return AtomicAccess::load_acquire(&_put_code);   }
+  bool is_volatile ()             const { return (_flags & (1 << is_volatile_shift)) != 0; }
+  bool is_final()                 const { return (_flags & (1 << is_final_shift))    != 0; }
+  bool is_flat()                  const { return (_flags & (1 << is_flat_shift))     != 0; }
+  bool is_null_free_inline_type() const { return (_flags & (1 << is_null_free_inline_type_shift)) != 0; }
+  bool has_null_marker()          const { return (_flags & (1 << has_null_marker_shift)) != 0; }
   bool is_resolved(Bytecodes::Code code) const {
     switch(code) {
     case Bytecodes::_getstatic:
@@ -113,11 +119,24 @@ public:
   // Printing
   void print_on(outputStream* st) const;
 
-  void set_flags(bool is_final_flag, bool is_volatile_flag) {
-    int new_flags = (is_final_flag << is_final_shift) | static_cast<int>(is_volatile_flag);
+ private:
+  void set_flags(bool is_volatile_flag,
+                 bool is_final_flag,
+                 bool is_flat_flag,
+                 bool is_null_free_inline_type_flag,
+                 bool has_null_marker_flag) {
+    int new_flags =
+        ((is_volatile_flag ? 1 : 0) << is_volatile_shift) |
+        ((is_final_flag ? 1 : 0) << is_final_shift) |
+        ((is_flat_flag ? 1 : 0) << is_flat_shift) |
+        ((is_null_free_inline_type_flag ? 1 : 0) << is_null_free_inline_type_shift) |
+        ((has_null_marker_flag  ? 1 : 0) << has_null_marker_shift);
     _flags = checked_cast<u1>(new_flags);
-    assert(is_final() == is_final_flag, "Must be");
     assert(is_volatile() == is_volatile_flag, "Must be");
+    assert(is_final() == is_final_flag, "Must be");
+    assert(is_flat() == is_flat_flag, "Must be");
+    assert(is_null_free_inline_type() == is_null_free_inline_type_flag, "Must be");
+    assert(has_null_marker() == has_null_marker_flag, "Must be");
   }
 
   inline void set_bytecode(u1* code, u1 new_code) {
@@ -129,17 +148,12 @@ public:
     AtomicAccess::release_store(code, new_code);
   }
 
-  // Populate the strucutre with resolution information
-  void fill_in(InstanceKlass* klass, int offset, u2 index, u1 tos_state, u1 b1, u1 b2) {
-    _field_holder = klass;
-    _field_offset = offset;
-    _field_index = index;
-    _tos_state = tos_state;
+   // Debug help
+  void assert_is_valid() const NOT_DEBUG_RETURN;
 
-    // These must be set after the other fields
-    set_bytecode(&_get_code, b1);
-    set_bytecode(&_put_code, b2);
-  }
+ public:
+  // Populate the strucutre with resolution information
+  void fill_in(const fieldDescriptor& info, u1 tos_state, u1 get_code, u1 put_code);
 
   // CDS
 #if INCLUDE_CDS
@@ -155,7 +169,6 @@ public:
   static ByteSize put_code_offset()     { return byte_offset_of(ResolvedFieldEntry, _put_code);     }
   static ByteSize type_offset()         { return byte_offset_of(ResolvedFieldEntry, _tos_state);    }
   static ByteSize flags_offset()        { return byte_offset_of(ResolvedFieldEntry, _flags);        }
-
 };
 
 #endif //SHARE_OOPS_RESOLVEDFIELDENTRY_HPP

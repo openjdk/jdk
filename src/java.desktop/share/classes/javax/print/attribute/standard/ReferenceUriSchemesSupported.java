@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,6 +154,7 @@ public class ReferenceUriSchemesSupported
     /**
      * Returns the string table for class {@code ReferenceUriSchemesSupported}.
      */
+    @Override
     protected String[] getStringTable() {
         return myStringTable.clone();
     }
@@ -162,6 +163,7 @@ public class ReferenceUriSchemesSupported
      * Returns the enumeration value table for class
      * {@code ReferenceUriSchemesSupported}.
      */
+    @Override
     protected EnumSyntax[] getEnumValueTable() {
         return (EnumSyntax[])myEnumValueTable.clone();
     }
@@ -177,6 +179,7 @@ public class ReferenceUriSchemesSupported
      * @return printing attribute class (category), an instance of class
      *         {@link Class java.lang.Class}
      */
+    @Override
     public final Class<? extends Attribute> getCategory() {
         return ReferenceUriSchemesSupported.class;
     }
@@ -191,6 +194,7 @@ public class ReferenceUriSchemesSupported
      *
      * @return attribute category name
      */
+    @Override
     public final String getName() {
         return "reference-uri-schemes-supported";
     }

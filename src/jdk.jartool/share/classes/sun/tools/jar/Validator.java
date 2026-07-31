@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,8 @@ import java.util.function.Function;
 import java.util.function.IntSupplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.jar.Attributes;
+import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
@@ -100,6 +102,7 @@ final class Validator {
         this.zf = zf;
         this.zis = zis;
         checkModuleDescriptor(MODULE_INFO);
+        checkAutomaticModuleName();
     }
 
     static boolean validate(Main main, File zipFile) throws IOException {
@@ -451,6 +454,36 @@ final class Validator {
 
             return;
         });
+    }
+
+    /**
+     * Checks whether an Automatic-Module-Name entry is valid
+     * and also verifies it to the name given by a compiled
+     * module descriptor.
+     */
+    private void checkAutomaticModuleName() {
+        var entry = zf.getEntry("META-INF/MANIFEST.MF");
+        if (entry == null) {
+            return;
+        }
+        try (InputStream jis = zf.getInputStream(entry)) {
+            Attributes attributes = new Manifest(jis).getMainAttributes();
+            String automaticModuleName = attributes.getValue("Automatic-Module-Name");
+            if (automaticModuleName == null) {
+                return;
+            }
+            try {
+                ModuleDescriptor.newAutomaticModule(automaticModuleName);
+            } catch (IllegalArgumentException e) {
+                errorAndInvalid(formatMsg("error.validator.manifest.invalid.automatic.module.name", automaticModuleName));
+            }
+            if (md == null || automaticModuleName.equals(md.name())) {
+                return;
+            }
+            errorAndInvalid(formatMsg("error.validator.manifest.inconsistent.automatic.module.name", automaticModuleName, md.name()));
+        } catch (IOException e) {
+            errorAndInvalid(e.getMessage());
+        }
     }
 
     /*

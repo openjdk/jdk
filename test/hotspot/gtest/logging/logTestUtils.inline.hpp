@@ -126,7 +126,7 @@ static inline char* read_line(FILE* fp) {
   char* ret = fgets(buf, buflen, fp);
   while (ret != nullptr && buf[strlen(buf) - 1] != '\n' && !feof(fp)) {
     // retry with a larger buffer
-    buf = REALLOC_RESOURCE_ARRAY(char, buf, buflen, buflen * 2);
+    buf = REALLOC_RESOURCE_ARRAY(buf, buflen, buflen * 2);
     buflen *= 2;
     // rewind to beginning of line
     fseek(fp, pos, SEEK_SET);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -185,7 +185,7 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
       __ relocate(barrier_Relocation::spec(), [&] {
         __ li16u(rnew_zpointer, barrier_Relocation::unpatched);
       }, ZBarrierRelocationFormatStoreGoodBits);
-      __ bne(rtmp, rnew_zpointer, medium_path, true /* is_far */);
+      __ bne(rtmp, rnew_zpointer, medium_path, /* is_far */ true);
     } else {
       __ ld(rtmp, ref_addr);
       // Stores on relocatable objects never need to deal with raw null pointers in fields.
@@ -196,7 +196,7 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
         __ li16u(rnew_zpointer, barrier_Relocation::unpatched);
       }, ZBarrierRelocationFormatStoreBadMask);
       __ andr(rtmp, rtmp, rnew_zpointer);
-      __ bnez(rtmp, medium_path, true /* is_far */);
+      __ bnez(rtmp, medium_path, /* is_far */ true);
     }
     __ bind(medium_path_continuation);
     __ relocate(barrier_Relocation::spec(), [&] {
@@ -210,7 +210,7 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
     __ ld(rtmp, rtmp);
     __ ld(rnew_zpointer, Address(xthread, ZThreadLocalData::store_bad_mask_offset()));
     __ andr(rtmp, rtmp, rnew_zpointer);
-    __ bnez(rtmp, medium_path, true /* is_far */);
+    __ bnez(rtmp, medium_path, /* is_far */ true);
     __ bind(medium_path_continuation);
     if (rnew_zaddress == noreg) {
       __ mv(rnew_zpointer, zr);
@@ -602,6 +602,30 @@ void ZBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm,
   BLOCK_COMMENT("} ZBarrierSetAssembler::try_resolve_jobject_in_native");
 }
 
+void ZBarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj,
+                                                           Register tmp, Label& slow_path) {
+  BLOCK_COMMENT("ZBarrierSetAssembler::try_peek_weak_handle_in_nmethod {");
+
+  assert_different_registers(weak_handle, tmp, noreg);
+  assert_different_registers(obj, tmp, noreg);
+
+
+  // Peek weak handle using the standard implementation.
+  BarrierSetAssembler::try_peek_weak_handle_in_nmethod(masm, weak_handle, obj, tmp, slow_path);
+
+  // Check if the oop is bad, in which case we need to take the slow path.
+  __ relocate(barrier_Relocation::spec(), [&] {
+    __ li16u(tmp, barrier_Relocation::unpatched);
+  }, ZBarrierRelocationFormatMarkBadMask);
+  __ andr(tmp, obj, tmp);
+  __ bnez(tmp, slow_path);
+
+  // Oop is okay, so we uncolor it.
+  __ srli(obj, obj, ZPointerLoadShift);
+
+  BLOCK_COMMENT("} ZBarrierSetAssembler::try_peek_weak_handle_in_nmethod");
+}
+
 static uint16_t patch_barrier_relocation_value(int format) {
   switch (format) {
     case ZBarrierRelocationFormatLoadBadMask:
@@ -713,6 +737,7 @@ public:
 #define __ masm->
 
 void ZBarrierSetAssembler::generate_c2_load_barrier_stub(MacroAssembler* masm, ZLoadBarrierStubC2* stub) const {
+  Assembler::InlineSkippedInstructionsCounter skipped_counter(masm);
   BLOCK_COMMENT("ZLoadBarrierStubC2");
 
   // Stub entry
@@ -732,6 +757,7 @@ void ZBarrierSetAssembler::generate_c2_load_barrier_stub(MacroAssembler* masm, Z
 }
 
 void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, ZStoreBarrierStubC2* stub) const {
+  Assembler::InlineSkippedInstructionsCounter skipped_counter(masm);
   BLOCK_COMMENT("ZStoreBarrierStubC2");
 
   // Stub entry
@@ -1013,7 +1039,7 @@ void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Registe
   __ bind(check_oop);
 
   // Make sure klass is 'reasonable', which is not zero
-  __ load_klass(tmp1, obj, tmp2);
+  __ load_narrow_klass(tmp1, obj);
   __ beqz(tmp1, error);
 
   __ bind(check_zaddress);
