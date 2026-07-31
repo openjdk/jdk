@@ -32,6 +32,7 @@
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "runtime/deoptimization.hpp"
+#include "runtime/sharedRuntime.hpp"
 
 class CompilationFailureInfo;
 class CompilationResourceObj;
@@ -251,6 +252,10 @@ class Compilation: public StackObj {
   bool profile_return() {
     return env()->comp_level() == CompLevel_full_profile &&
       C1UpdateMethodData && MethodData::profile_return();
+  }
+  bool profile_array_accesses() {
+    return env()->comp_level() == CompLevel_full_profile &&
+      C1UpdateMethodData;
   }
 
   // will compilation make optimistic assumptions that might lead to

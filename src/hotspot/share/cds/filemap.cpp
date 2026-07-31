@@ -87,6 +87,77 @@
 #define O_BINARY 0     // otherwise do nothing.
 #endif
 
+inline void CDSMustMatchFlags::do_print(outputStream* st, bool v) {
+  st->print("%s", v ? "true" : "false");
+}
+
+#ifdef _LP64
+inline void CDSMustMatchFlags::do_print(outputStream* st, uint v) {
+  st->print("%u", v);
+}
+#endif
+
+inline void CDSMustMatchFlags::do_print(outputStream* st, intx v) {
+  st->print("%zd", v);
+}
+
+inline void CDSMustMatchFlags::do_print(outputStream* st, uintx v) {
+  st->print("%zu", v);
+}
+
+inline void CDSMustMatchFlags::do_print(outputStream* st, double v) {
+  st->print("%f", v);
+}
+
+void CDSMustMatchFlags::init() {
+  assert(CDSConfig::is_dumping_archive(), "sanity");
+  _max_name_width = 0;
+
+#define INIT_CDS_MUST_MATCH_FLAG(n) \
+  _v_##n = n; \
+  _max_name_width = MAX2(_max_name_width,strlen(#n));
+  CDS_MUST_MATCH_FLAGS_DO(INIT_CDS_MUST_MATCH_FLAG);
+#undef INIT_CDS_MUST_MATCH_FLAG
+}
+
+bool CDSMustMatchFlags::runtime_check() const {
+#define CHECK_CDS_MUST_MATCH_FLAG(n) \
+  if (_v_##n != n) { \
+    ResourceMark rm; \
+    stringStream ss; \
+    ss.print("VM option %s is different between dumptime (", #n);  \
+    do_print(&ss, _v_ ## n); \
+    ss.print(") and runtime ("); \
+    do_print(&ss, n); \
+    ss.print(")"); \
+    log_info(cds)("%s", ss.as_string()); \
+    return false; \
+  }
+  CDS_MUST_MATCH_FLAGS_DO(CHECK_CDS_MUST_MATCH_FLAG);
+#undef CHECK_CDS_MUST_MATCH_FLAG
+
+  return true;
+}
+
+void CDSMustMatchFlags::print_info() const {
+  LogTarget(Info, cds) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    ls.print_cr("Recorded VM flags during dumptime:");
+    print(&ls);
+  }
+}
+
+void CDSMustMatchFlags::print(outputStream* st) const {
+#define PRINT_CDS_MUST_MATCH_FLAG(n) \
+  st->print("- %-s ", #n);                   \
+  st->sp(int(_max_name_width - strlen(#n))); \
+  do_print(st, _v_##n);                      \
+  st->cr();
+  CDS_MUST_MATCH_FLAGS_DO(PRINT_CDS_MUST_MATCH_FLAG);
+#undef PRINT_CDS_MUST_MATCH_FLAG
+}
+
 // Fill in the fileMapInfo structure with data about this VM instance.
 
 // This method copies the vm version info into header_version.  If the version is too
@@ -242,6 +313,7 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   _use_optimized_module_handling = CDSConfig::is_using_optimized_module_handling();
   _has_aot_linked_classes = CDSConfig::is_dumping_aot_linked_classes();
   _has_full_module_graph = CDSConfig::is_dumping_full_module_graph();
+  _has_valhalla_patched_classes = Arguments::is_valhalla_enabled();
 
   // The following fields are for sanity checks for whether this archive
   // will function correctly with this JVM and the bootclasspath it's
@@ -255,6 +327,7 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   _has_platform_or_app_classes = AOTClassLocationConfig::dumptime()->has_platform_or_app_classes();
   _requested_base_address = (char*)SharedBaseAddress;
   _mapped_base_address = (char*)SharedBaseAddress;
+  _must_match.init();
 }
 
 void FileMapHeader::copy_base_archive_name(const char* archive) {
@@ -323,6 +396,8 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- _ro_ptrmap_start_pos:                     %zu", _ro_ptrmap_start_pos);
   st->print_cr("- use_optimized_module_handling:            %d", _use_optimized_module_handling);
   st->print_cr("- has_full_module_graph                     %d", _has_full_module_graph);
+  st->print_cr("- has_valhalla_patched_classes              %d", _has_valhalla_patched_classes);
+  _must_match.print(st);
   st->print_cr("- has_aot_linked_classes                    %d", _has_aot_linked_classes);
 }
 
@@ -704,6 +779,10 @@ bool FileMapInfo::init_from_file(int fd) {
       aot_log_warning(aot)("The %s has been truncated.", file_type);
       return false;
     }
+  }
+
+  if (!header()->check_must_match_flags()) {
+    return false;
   }
 
   return true;
@@ -1922,6 +2001,24 @@ bool FileMapHeader::validate() {
                                "different from runtime (%d), CDS will be disabled.", file_type,
                                compressed_oops(), UseCompressedOops);
     return false;
+  }
+
+  if (is_static()) {
+    const char* err = nullptr;
+    if (Arguments::is_valhalla_enabled()) {
+      if (!_has_valhalla_patched_classes) {
+        err = "not created";
+      }
+    } else {
+      if (_has_valhalla_patched_classes) {
+        err = "created";
+      }
+    }
+    if (err != nullptr) {
+      log_warning(cds)("This archive was %s with --enable-preview. It is "
+                         "incompatible with the current JVM setting", err);
+      return false;
+    }
   }
 
   if (compact_headers() != UseCompactObjectHeaders) {
