@@ -45,8 +45,6 @@ import jdk.test.lib.dcmd.JMXExecutor;
 
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.regex.Pattern;
 
 public class PrintRawMonitorLockTest {
 
@@ -117,20 +115,22 @@ public class PrintRawMonitorLockTest {
         // Wait for threads to get ready.
         waitForBarrier(readyBarrier);
 
-        OutputAnalyzer output;
-
-        // Execute dcmd in a loop in case the threads haven't deadlocked yet.
-        while (true) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException ie) {
-            }
-            output = executor.execute("Thread.print -l=true");
-            if (output.getOutput().contains("Found 1 deadlock")) {
-                break;
+        OutputAnalyzer output = executor.execute("Thread.print -l=true");
+        if (!output.getOutput().contains("Found 1 deadlock")) {
+            // Execute dcmd in a loop in case the threads haven't deadlocked yet.
+            // Fail after 100 iterations.  That's all it should take unless something is wrong.
+            for (int i = 0; i < 100; i++) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException ie) {
+                }
+                // try again, otherwise java thinks it's not initialized.
+                output = executor.execute("Thread.print -l=true");
+                if (output.getOutput().contains("Found 1 deadlock")) {
+                    break;
+                }
             }
         }
-
         output.shouldContain("waiting to lock JVM TI raw monitor");
     }
 

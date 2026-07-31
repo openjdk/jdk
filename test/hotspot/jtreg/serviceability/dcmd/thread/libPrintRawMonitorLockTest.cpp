@@ -23,6 +23,7 @@
 
 #include <string.h>
 #include "jvmti.h"
+#include "jvmti_common.hpp"
 
 extern "C" {
 
@@ -32,13 +33,6 @@ static char threadLockName1[] = "threadLock1";
 
 static jrawMonitorID threadLock2 = nullptr;
 static char threadLockName2[] = "threadLock2";
-
-#define LOG(...) \
-  do { \
-    printf(__VA_ARGS__); \
-    printf("\n"); \
-    fflush(stdout); \
-  } while (0)
 
 JNIEXPORT jint JNICALL
 Java_PrintRawMonitorLockTest_createRawMonitors(JNIEnv *jni, jclass cls) {
