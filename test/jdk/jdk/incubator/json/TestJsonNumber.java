@@ -263,14 +263,11 @@ public class TestJsonNumber {
 
         private static Stream<Arguments> testToStringEquality() {
             return Stream.of(
-                    // true
                     Arguments.of("3", "3"),
                     Arguments.of("3", "   3   "),
                     Arguments.of("3.0", "3.0"),
                     Arguments.of("3e0", "3E0"),
                     Arguments.of("3.141592653589793238462643383279", "3.141592653589793238462643383279"),
-
-                    // false
                     Arguments.of("3", "3.0"),
                     Arguments.of("3.0", "3.000"),
                     Arguments.of("3", "3e0"),
