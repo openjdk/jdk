@@ -174,8 +174,12 @@ public class Object {
      * indistinguishable value objects ({@code x == y} has the value
      * {@code true}).
      * <p>
-     * In other words, under the object equality equivalence
-     * relation, each equivalence class only has a single element.
+     * Therefore, under the object equality equivalence relation, each
+     * equivalence class only has a single element for identity
+     * classes. For value classes, there is not necessarily a similar
+     * constraint as multiple indistinguishable value objects could be
+     * constructed, depending on the semantics of the particular value
+     * class.
      *
      * @apiNote
      * It is generally necessary to override the {@link #hashCode() hashCode}
