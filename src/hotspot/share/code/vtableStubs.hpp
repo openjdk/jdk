@@ -69,8 +69,8 @@
 class VtableStub;
 
 // VtableStubs creates the code stubs for compiled calls through vtables and itables. There is one
-// stub per (type, index), and the stubs are never deallocated. They don't need to be GCed because
-// they contain no oops.
+// stub per (type, index, caller type), and the stubs are never deallocated. They don't need to be
+// GCed because they contain no oops.
 class VtableStubs : AllStatic {
  public:                                         // N must be public (some compilers need this for _table)
   enum {
@@ -115,8 +115,9 @@ class VtableStubs : AllStatic {
 };
 
 
-// A VtableStub holds an individual code stub for a particular type (itable or vtable) and index
-// pair.  There's a one-to-one relationship between a VtableStub and such a pair.
+// A VtableStub holds an individual code stub for a particular type (itable or vtable), index, and
+// caller type (C1 or unspecified).  There's a one-to-one relationship between a VtableStub and such
+// a triple.
 class VtableStub {
  private:
   friend class VtableStubs;
