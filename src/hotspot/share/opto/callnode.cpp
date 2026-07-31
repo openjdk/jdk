@@ -1403,7 +1403,7 @@ bool CallStaticJavaNode::remove_unknown_flat_array_load(PhaseIterGVN* igvn, Node
 Node* CallStaticJavaNode::replace_is_substitutable(PhaseIterGVN* igvn) {
   Node* left = in(TypeFunc::Parms);
   Node* right = in(TypeFunc::Parms + 1);
-  if (!InlineTypeNode::can_emit_substitutability_check(left, right)) {
+  if (!InlineTypeNode::can_emit_substitutability_check(igvn, left, right)) {
     return nullptr;
   }
 
