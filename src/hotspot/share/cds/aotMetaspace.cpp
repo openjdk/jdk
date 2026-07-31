@@ -168,22 +168,15 @@ size_t AOTMetaspace::protection_zone_size() {
 }
 
 bool AOTMetaspace::shared_base_valid(char* shared_base) {
-  // We check user input for SharedBaseAddress at dump time.
-
   // At CDS runtime, "shared_base" will be the (attempted) mapping start. It will also
   // be the encoding base, since the headers of archived base objects (and with Lilliput,
   // the prototype mark words) carry pre-computed narrow Klass IDs that refer to the mapping
   // start as base.
-  //
-  // The "shared_base" may not be later usable as encoding base, depending on the
-  // total size of the reserved area and the precomputed_narrow_klass_shift. This is checked
-  // before reserving memory.  Here we weed out values already known to be invalid later.
-  // Since we cannot predict the range, we use the full maximum encoding range
-  // (4G).
-  constexpr size_t range = 4 * G;
-  address addr = (address)shared_base;
-  const int shift = ArchiveBuilder::precomputed_narrow_klass_shift();
-  return CompressedKlassPointers::check_klass_decode_mode(addr, shift, range);
+  // Note that all narrowKlass inside CDS/AOT archives will be precomputed with the
+  // shift that, at build time, will afford us the maximum encoding range of 4GB. We do this
+  // since we don't know how large the class space at runtime will actually be.
+  return CLASS_SPACE_ONLY(is_aligned(shared_base, Metaspace::reserve_alignment()))
+         NOT_CLASS_SPACE(true);
 }
 
 class DumpClassListCLDClosure : public CLDClosure {
@@ -1014,7 +1007,19 @@ void AOTMetaspace::init_heap_settings() {
       // We don't need it -- always disable for better jitted code.
       FLAG_SET_ERGO(AOTCompatibleOopCompression, false);
     } else if (CDSConfig::is_dumping_final_static_archive()) {
-      // Obey the command-line switch. Do not override
+      // Enable by default: use the CompressedOops::HeapBasedNarrowOop mode
+      // so that AOT code can always work regardless of runtime heap range.
+      //
+      // If you are *absolutely sure* that the CompressedOops::mode() will be the same
+      // between training and production runs (e.g., if you specify -Xmx128m for
+      // both training and production runs, and you know the OS will always reserve
+      // the heap under 4GB), you can explicitly disable this with:
+      //     java -XX:+UnlockDiagnosticVMOptions -XX:-AOTCompatibleOopCompression ...
+      // However, this is risky and there's a chance that the startup in production run
+      // will be slower than expected because it is unable to load the AOT code cache
+      // due to a different compressed oops encoding.
+      //
+      FLAG_SET_ERGO_IF_DEFAULT(AOTCompatibleOopCompression, true);
     } else if (CDSConfig::is_using_archive()) {
       FileMapInfo* static_mapinfo = FileMapInfo::current_info();
       // may have been opened by get_aot_code_region_size()
@@ -1026,6 +1031,8 @@ void AOTMetaspace::init_heap_settings() {
         FLAG_SET_ERGO(AOTCompatibleOopCompression, true);
       }
     }
+  } else {
+    FLAG_SET_ERGO(AOTCompatibleOopCompression, false);
   }
 
   if (!CDSConfig::is_dumping_heap() || UseCompressedOops) {
@@ -2007,16 +2014,11 @@ char* AOTMetaspace::reserve_address_space_for_archives(FileMapInfo* static_mapin
   const size_t total_range_size =
       archive_space_size + gap_size + class_space_size;
 
-  // The code for dumping the archive ensures that the base address is valid.
-  // Here we validate that the base address plus shift can be decoded when
-  // restored.
-  assert(shared_base_valid((char*)base_address),
-      "Cannot use SharedBaseAddress " PTR_FORMAT " with precomputed shift %d.",
-      p2i(base_address), ArchiveBuilder::precomputed_narrow_klass_shift());
-
   assert(total_range_size > ccs_begin_offset, "must be");
   if (use_windows_memory_mapping() && use_archive_base_addr) {
     if (base_address != nullptr) {
+      // Note: We already checked the base address for validity at dump time.
+
       // On Windows, we cannot safely split a reserved memory space into two (see JDK-8255917).
       // Hence, we optimistically reserve archive space and class space side-by-side. We only
       // do this for use_archive_base_addr=true since for use_archive_base_addr=false case

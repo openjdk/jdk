@@ -1,5 +1,7 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, IBM Corp. All rights reserved.
+ *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,33 +21,31 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-package compiler.lib.ir_framework.driver.irmatching.visitor;
-
-import compiler.lib.ir_framework.driver.irmatching.MatchResult;
-
-import java.util.Collection;
-import java.util.List;
-import java.util.function.Consumer;
-
-/**
- * This class invokes {@link MatchResult#accept(MatchResultVisitor)} on all failed match results (i.e. children) inside
- * a {@link MatchResult} object to visit them.
+/*
+ * This runs the MacroAssembler gtests related to Klass de- and encoding
+ * (for now, only on aarch64) with and without COH.
  */
-public class AcceptChildren implements Consumer<MatchResultVisitor> {
-    private final Collection<? extends MatchResult> matchResults;
 
-    public AcceptChildren(List<MatchResult> matchResults) {
-        this.matchResults = matchResults;
-    }
+/* @test id=coh
+ * @summary Run Assembler-related gtests
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.xml
+ * @requires vm.flagless
+ * @requires os.arch=="aarch64"
+ * @run main/native GTestWrapper --gtest_filter=AssemblerAArch64::decode_encode_klass* -XX:+UseCompactObjectHeaders
+ */
 
-    @Override
-    public void accept(MatchResultVisitor visitor) {
-        for (MatchResult result : matchResults) {
-            if (result.fail()) {
-                result.accept(visitor);
-            }
-        }
-    }
-}
+/* @test id=noncoh
+ * @summary Run Assembler-related gtests
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.xml
+ * @requires vm.flagless
+ * @requires os.arch=="aarch64"
+ * @run main/native GTestWrapper --gtest_filter=AssemblerAArch64::decode_encode_klass* -XX:-UseCompactObjectHeaders
+ */
+

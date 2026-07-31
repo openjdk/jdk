@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package sun.security.timestamp;
 
 import java.io.IOException;
+
+import sun.security.pkcs.ContentInfo;
 import sun.security.pkcs.PKCS7;
 import sun.security.util.Debug;
 import sun.security.util.DerValue;
@@ -357,6 +359,11 @@ public final class TSResponse {
             DerValue timestampToken = derValue.data.getDerValue();
             encodedTsToken = timestampToken.toByteArray();
             tsToken = new PKCS7(encodedTsToken);
+            // RFC 3161 Section 2.4.2. id-ct-TSTInfo.
+            if (!tsToken.getContentInfo().getContentType()
+                    .equals(ContentInfo.TIMESTAMP_TOKEN_INFO_OID)) {
+                throw new TimestampException("Not using id-ct-TSTInfo");
+            }
             tstInfo = new TimestampToken(tsToken.getContentInfo().getData());
         }
 

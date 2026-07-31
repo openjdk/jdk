@@ -73,6 +73,10 @@ JVM_LEAF(void, DowncallLinker::capture_state_post(int32_t* value_ptr, int captur
   }
 JVM_END
 
+bool DowncallLinker::is_downcall_stub(const CodeBlob* cb) {
+  return cb != nullptr && cb->is_runtime_stub() && (strcmp(cb->name(), "nep_invoker_blob") == 0);
+}
+
 void DowncallLinker::StubGenerator::add_offsets_to_oops(GrowableArray<VMStorage>& java_regs, VMStorage tmp1, VMStorage tmp2) const {
   int reg_idx = 0;
   for (int sig_idx = 0; sig_idx < _num_args; sig_idx++) {

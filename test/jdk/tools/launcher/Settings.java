@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@ import java.io.IOException;
 
 /*
  * @test
- * @bug 6994753 7123582 8305950 8281658 8310201 8311653 8343804 8351354 8366364
+ * @bug 6994753 7123582 8305950 8281658 8310201 8311653 8343804 8351354 8366364 8387750
  * @summary tests -XshowSettings options
  * @modules jdk.compiler
  *          jdk.zipfs
@@ -86,6 +86,7 @@ public class Settings extends TestHelper {
     private static final String ENABLED_GROUPS_SETTINGS = "Enabled Named Groups:";
     private static final String ENABLED_SIG_SCHEMES_SETTINGS =
             "Enabled Signature Schemes:";
+    private static final String USAGE_HEADER = "Usage: java";
 
     /*
      * "all" should print verbose settings
@@ -174,25 +175,32 @@ public class Settings extends TestHelper {
     static void runTestOptionAll() throws IOException {
         init();
         TestResult tr = doExec(javaCmd, "-XshowSettings:all");
+        tr.checkPositive();
         containsAllOptions(tr);
+        checkNotContains(tr, USAGE_HEADER);
     }
 
     static void runTestOptionVM() throws IOException {
         TestResult tr = doExec(javaCmd, "-XshowSettings:vm");
+        tr.checkPositive();
         checkContains(tr, VM_SETTINGS);
         checkNotContains(tr, PROP_SETTINGS);
         checkNotContains(tr, LOCALE_SETTINGS);
+        checkNotContains(tr, USAGE_HEADER);
     }
 
     static void runTestOptionProperty() throws IOException {
         TestResult tr = doExec(javaCmd, "-XshowSettings:properties");
+        tr.checkPositive();
         checkNotContains(tr, VM_SETTINGS);
         checkContains(tr, PROP_SETTINGS);
         checkNotContains(tr, LOCALE_SETTINGS);
+        checkNotContains(tr, USAGE_HEADER);
     }
 
     static void runTestOptionLocale() throws IOException {
         TestResult tr = doExec(javaCmd, "-XshowSettings:locale");
+        tr.checkPositive();
         checkNotContains(tr, VM_SETTINGS);
         checkNotContains(tr, PROP_SETTINGS);
         checkContains(tr, LOCALE_SETTINGS);
@@ -200,28 +208,34 @@ public class Settings extends TestHelper {
         checkNotContains(tr, LOCALE_SUMMARY_SETTINGS);
         checkContains(tr, TIMEZONE_SETTINGS);
         checkContains(tr, TZDATA_SETTINGS);
+        checkNotContains(tr, USAGE_HEADER);
     }
 
     static void runTestOptionSecurity() throws IOException {
         TestResult tr = doExec(javaCmd, "-XshowSettings:security");
+        tr.checkPositive();
         checkNotContains(tr, VM_SETTINGS);
         checkNotContains(tr, PROP_SETTINGS);
         checkContains(tr, SEC_PROPS_SETTINGS);
         checkContains(tr, SEC_PROVIDER_SETTINGS);
         checkContains(tr, SEC_TLS_SETTINGS);
+        checkNotContains(tr, USAGE_HEADER);
     }
 
     static void runTestOptionSecurityProps() throws IOException {
         TestResult tr = doExec(javaCmd, "-XshowSettings:security:properties");
+        tr.checkPositive();
         checkContains(tr, SEC_PROPS_SETTINGS);
         checkNotContains(tr, SEC_PROVIDER_SETTINGS);
         checkNotContains(tr, SEC_TLS_SETTINGS);
         // test a well known property for sanity
         checkContains(tr, "keystore.type=pkcs12");
+        checkNotContains(tr, USAGE_HEADER);
     }
 
     static void runTestOptionSecurityProv() throws IOException {
         TestResult tr = doExec(javaCmd, "-XshowSettings:security:providers");
+        tr.checkPositive();
         checkNotContains(tr, SEC_PROPS_SETTINGS);
         checkContains(tr, SEC_PROVIDER_SETTINGS);
         checkNotContains(tr, SEC_TLS_SETTINGS);
@@ -230,10 +244,12 @@ public class Settings extends TestHelper {
         // test for a well known alias (SunJCE: AlgorithmParameterGenerator.DiffieHellman)
         checkContains(tr, "aliases: [1.2.840.113549.1.3.1, " +
                 "DH, OID.1.2.840.113549.1.3.1]");
+        checkNotContains(tr, USAGE_HEADER);
     }
 
     static void runTestOptionSecurityTLS() throws IOException {
         TestResult tr = doExec(javaCmd, "-XshowSettings:security:tls");
+        tr.checkPositive();
         checkNotContains(tr, SEC_PROPS_SETTINGS);
         checkNotContains(tr, SEC_PROVIDER_SETTINGS);
         checkContains(tr, SEC_TLS_SETTINGS);
@@ -241,6 +257,7 @@ public class Settings extends TestHelper {
         checkContains(tr, "TLSv1.2");
         checkContains(tr, ENABLED_GROUPS_SETTINGS);
         checkContains(tr, ENABLED_SIG_SCHEMES_SETTINGS);
+        checkNotContains(tr, USAGE_HEADER);
     }
 
     // ensure error message is printed when unrecognized option used
@@ -255,6 +272,7 @@ public class Settings extends TestHelper {
     }
     static void runTestOptionSystem() throws IOException {
         TestResult tr = doExec(javaCmd, "-XshowSettings:system");
+        tr.checkPositive();
         if (System.getProperty("os.name").contains("Linux")) {
             checkNotContains(tr, VM_SETTINGS);
             checkNotContains(tr, PROP_SETTINGS);
@@ -266,6 +284,7 @@ public class Settings extends TestHelper {
             checkNotContains(tr, VM_SETTINGS);
             checkContains(tr, METRICS_NOT_AVAILABLE_MSG);
         }
+        checkNotContains(tr, USAGE_HEADER);
     }
 
     static void runTestBadOptions() throws IOException {

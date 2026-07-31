@@ -824,7 +824,7 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
         // load the klass and check the has finalizer flag
         Label register_finalizer;
         Register t = r5;
-        __ load_klass(t, r0);
+        __ load_klass(t, r0, rscratch1);
         __ ldrb(t, Address(t, Klass::misc_flags_offset()));
         __ tbnz(t, exact_log2(KlassFlags::_misc_has_finalizer), register_finalizer);
         __ ret(lr);
@@ -947,7 +947,7 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
         __ br(Assembler::EQ, is_secondary); // Klass is a secondary superclass
 
         // Klass is a concrete class
-        __ load_klass(r5, obj);
+        __ load_klass(r5, obj, rscratch1);
         __ ldr(rscratch1, Address(r5, r3));
         __ cmp(klass, rscratch1);
         __ cset(result, Assembler::EQ);
@@ -955,7 +955,7 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
 
         __ bind(is_secondary);
 
-        __ load_klass(obj, obj);
+        __ load_klass(obj, obj, rscratch1);
 
         // This is necessary because I am never in my own secondary_super list.
         __ cmp(obj, klass);

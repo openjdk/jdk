@@ -108,14 +108,6 @@
 
 nmethod*            SharedRuntime::_cont_doYield_stub;
 
-#if 0
-// TODO tweak global stub name generation to match this
-#define SHARED_STUB_NAME_DECLARE(name, type) "Shared Runtime " # name "_blob",
-const char *SharedRuntime::_stub_names[] = {
-  SHARED_STUBS_DO(SHARED_STUB_NAME_DECLARE)
-};
-#endif
-
 //----------------------------generate_stubs-----------------------------------
 void SharedRuntime::generate_initial_stubs() {
   // Build this early so it's available for the interpreter.
