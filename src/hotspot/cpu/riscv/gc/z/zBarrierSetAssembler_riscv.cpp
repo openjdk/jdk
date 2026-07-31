@@ -185,7 +185,7 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
       __ relocate(barrier_Relocation::spec(), [&] {
         __ li16u(rnew_zpointer, barrier_Relocation::unpatched);
       }, ZBarrierRelocationFormatStoreGoodBits);
-      __ bne(rtmp, rnew_zpointer, medium_path, true /* is_far */);
+      __ bne(rtmp, rnew_zpointer, medium_path, /* is_far */ true);
     } else {
       __ ld(rtmp, ref_addr);
       // Stores on relocatable objects never need to deal with raw null pointers in fields.
@@ -196,7 +196,7 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
         __ li16u(rnew_zpointer, barrier_Relocation::unpatched);
       }, ZBarrierRelocationFormatStoreBadMask);
       __ andr(rtmp, rtmp, rnew_zpointer);
-      __ bnez(rtmp, medium_path, true /* is_far */);
+      __ bnez(rtmp, medium_path, /* is_far */ true);
     }
     __ bind(medium_path_continuation);
     __ relocate(barrier_Relocation::spec(), [&] {
@@ -210,7 +210,7 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
     __ ld(rtmp, rtmp);
     __ ld(rnew_zpointer, Address(xthread, ZThreadLocalData::store_bad_mask_offset()));
     __ andr(rtmp, rtmp, rnew_zpointer);
-    __ bnez(rtmp, medium_path, true /* is_far */);
+    __ bnez(rtmp, medium_path, /* is_far */ true);
     __ bind(medium_path_continuation);
     if (rnew_zaddress == noreg) {
       __ mv(rnew_zpointer, zr);
