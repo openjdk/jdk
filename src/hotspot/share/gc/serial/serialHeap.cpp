@@ -589,7 +589,6 @@ void SerialHeap::do_full_collection(bool clear_all_soft_refs) {
   gc_timer->register_gc_end();
 
   gc_tracer->report_gc_end(gc_timer->gc_end(), gc_timer->time_partitions());
-  CodeCache::on_gc_marking_cycle_finish();
   CodeCache::arm_all_nmethods();
   COMPILER2_PRESENT(DerivedPointerTable::update_pointers());
 
