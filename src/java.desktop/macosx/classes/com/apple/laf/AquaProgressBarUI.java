@@ -240,13 +240,13 @@ public final class AquaProgressBarUI extends ProgressBarUI implements ChangeList
             g2.setColor(selectionForeground);
             SwingUtilities2.drawString(progressBar, g2, progressString, renderLocation.x, renderLocation.y);
         } else { // VERTICAL
-                // We rotate it -90 degrees, then translate it down since we are going to be bottom up.
+            // We rotate it -90 degrees, then translate it down since we are going to be bottom up.
             final AffineTransform savedAT = g2.getTransform();
             g2.transform(AffineTransform.getRotateInstance(0.0f - (Math.PI / 2.0f), 0, 0));
             g2.translate(-progressBar.getHeight(), 0);
+
             // 0,0 is now the bottom left of the viewable area, so we just draw our image at
             // the render location since that calculation knows about rotation.
-
             g2.setColor(selectionForeground);
             SwingUtilities2.drawString(progressBar, g2, progressString, renderLocation.x, renderLocation.y);
 
