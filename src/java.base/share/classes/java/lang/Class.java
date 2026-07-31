@@ -102,10 +102,14 @@ import static java.lang.classfile.ClassFile.ACC_ABSTRACT;
 import static java.lang.classfile.ClassFile.ACC_FINAL;
 
 /**
- * Instances of the class {@code Class} represent classes and
- * interfaces in a running Java application. An enum class and a record
- * class are kinds of class; an annotation interface is a kind of
- * interface. Every array also belongs to a class that is reflected as
+ * Instances of the class {@code Class} represent types in a running
+ * Java application. The two kinds of types are {@linkplain #isPrimitive()
+ * primitive types and void} and reference types. Reference types consist of
+ * {@linkplain #isClassOrInterface() classes and interfaces} and {@linkplain
+ * #isArray() array types}. An {@linkplain #isEnum() enum} class and a
+ * {@linkplain #isRecord() record} class are kinds of class; an {@linkplain
+ * #isAnnotation() annotation} interface is a kind of {@linkplain #isInterface()
+ * interface}. Every array also belongs to an array type that is reflected as
  * a {@code Class} object that is shared by all arrays with the same
  * element type and number of dimensions.  The primitive Java types
  * ({@code boolean}, {@code byte}, {@code char}, {@code short}, {@code
@@ -838,6 +842,10 @@ public final class Class<T> implements java.io.Serializable,
     /**
      * Determines if this {@code Class} object represents an
      * interface type.
+     * <p>
+     * Interfaces are often grouped with classes, called "{@linkplain
+     * #isClassOrInterface() classes and interfaces}", as kinds of {@linkplain
+     * ##referencetype reference types}.
      *
      * @return  {@code true} if this {@code Class} object represents an interface;
      *          {@code false} otherwise.
@@ -848,11 +856,17 @@ public final class Class<T> implements java.io.Serializable,
 
 
     /**
-     * Determines if this {@code Class} object represents an array class.
+     * Determines if this {@code Class} object represents an array type.
+     * <p>
+     * Array types are {@linkplain ##referencetype reference types}. Every array
+     * type has a unique {@linkplain #componentType() component type}, and
+     * {@linkplain #arrayType() vice versa}.
      *
-     * @return  {@code true} if this {@code Class} object represents an array class;
-     *          {@code false} otherwise.
-     * @since   1.1
+     * @return {@code true} if this {@code Class} object represents an array
+     *         type; {@code false} otherwise.
+     * @jls 10 Arrays
+     * @jls 10.8 {@code Class} Objects for Arrays
+     * @since 1.1
      */
     public boolean isArray() {
         return componentType != null;
@@ -870,8 +884,11 @@ public final class Class<T> implements java.io.Serializable,
      * represent, namely {@code boolean}, {@code byte}, {@code char},
      * {@code short}, {@code int}, {@code long}, {@code float}, and
      * {@code double}.
-     *
-     * <p>No other class objects are considered primitive.
+     * <p>
+     * No other class objects are considered primitive; they are
+     * collectively called <dfn>{@index "reference type"}s</dfn>, which are
+     * further classified into {@linkplain #isClassOrInterface() classes and
+     * interfaces} and {@linkplain #isArray() array types}.
      *
      * @apiNote
      * A {@code Class} object represented by a primitive type can be
@@ -904,15 +921,15 @@ public final class Class<T> implements java.io.Serializable,
     private static final int NON_CLASS_FILE_MODIFIER_MASK = ACC_ABSTRACT | ACC_FINAL;
 
     /**
-     * Determines if this {@code Class} object represents a class or an interface.
-     * Classes and interfaces are derived from {@code class} files and can
-     * declare fields and methods.  Many reflective concepts, such as {@linkplain
-     * #isHidden() hidden classes}, {@linkplain #getEnclosingClass() enclosing
-     * classes}, {@linkplain #getNestMembers() nest members}, only apply to
-     * classes and interfaces.
+     * Determines if this {@code Class} object represents a class or {@linkplain
+     * #isInterface() interface}.
+     * <p>
+     * Classes and interfaces are {@linkplain ##referencetype reference types}.
+     * They are derived from {@code class} files and can declare fields and
+     * methods.
      *
      * @return {@code true} if and only if this {@code Class} object represents
-     *         a class or an interface
+     *         a class or interface
      * @jls 8 Classes
      * @jls 9 Interfaces
      * @jvms 4 The {@code class} File Format
