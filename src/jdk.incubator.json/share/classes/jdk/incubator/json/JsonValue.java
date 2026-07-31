@@ -211,7 +211,7 @@ public sealed interface JsonValue permits JsonString, JsonNumber, JsonObject, Js
      * provide an implementation of this method.
      *
      * @throws JsonValueException if this {@code JsonValue} is not an instance
-     *      of {@code JsonNumber} nor can be represented as an {@code int}.
+     *      of {@code JsonNumber} or is not representable as an {@code int}.
      */
     default int asInt() {
         throw Utils.composeTypeError(this, "JsonNumber");
@@ -234,7 +234,7 @@ public sealed interface JsonValue permits JsonString, JsonNumber, JsonObject, Js
      * provide an implementation of this method.
      *
      * @throws JsonValueException if this {@code JsonValue} is not an instance
-     *      of {@code JsonNumber} nor can be represented as a {@code long}.
+     *      of {@code JsonNumber} or is not representable as a {@code long}.
      */
     default long asLong() {
         throw Utils.composeTypeError(this, "JsonNumber");
@@ -256,7 +256,7 @@ public sealed interface JsonValue permits JsonString, JsonNumber, JsonObject, Js
      * provide an implementation of this method.
      *
      * @throws JsonValueException if this {@code JsonValue} is not an instance
-     *      of {@code JsonNumber} nor can be represented as a {@code double}.
+     *      of {@code JsonNumber} or is not representable as a {@code double}.
      */
     default double asDouble() {
         throw Utils.composeTypeError(this, "JsonNumber");
