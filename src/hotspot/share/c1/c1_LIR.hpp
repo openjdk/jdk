@@ -1957,7 +1957,9 @@ class LIR_OpIncrementCounter : public LIR_Op {
     , _md_reg(md_reg)
     , _md_op(md_op)
     , _md_offset_op(md_offset_op)
-    , _overflow_stub(overflow_stub) { }
+    , _overflow_stub(overflow_stub) {
+    assert(type2aelembytes(dest->type()) == wordSize, "must be");
+  }
 
   LIR_Opr   step()          const            { return _step;          }
   LIR_Opr   dest()          const            { return result_opr();   }

@@ -408,6 +408,8 @@ int LIR_Assembler::emit_unwind_handler() {
     __ mov(rbx, rax);  // Preserve the exception (rbx is always callee-saved)
   }
 
+  __ restore_profile_rng();
+
   // Perform needed unlocking
   MonitorExitStub* stub = nullptr;
   if (method()->is_synchronized()) {

@@ -964,7 +964,7 @@ void LIRGenerator::profile_branch(If* if_instr, If::Condition cond) {
              LIR_OprFact::intptrConst(not_taken_count_offset),
              data_offset_reg, as_BasicType(if_instr->x()->type()));
 
-    LIR_Opr tmp = new_register(T_INT);
+    LIR_Opr tmp = new_register(wordSize == 4 ? T_INT : T_LONG);
     LIR_Opr step = LIR_OprFact::intConst(DataLayout::counter_increment);
     __ increment_counter(step, tmp, md_reg, md->constant_encoding(), data_offset_reg);
   }
@@ -2416,7 +2416,7 @@ void LIRGenerator::do_Goto(Goto* x) {
     }
     LIR_Opr md_reg = new_register(T_METADATA);
 #ifdef RANDOMIZED_PROFILE_CAPTURE
-    LIR_Opr tmp = new_register(T_INT);
+    LIR_Opr tmp = new_register(wordSize == 4 ? T_INT : T_LONG);
     LIR_Opr inc = LIR_OprFact::intConst(DataLayout::counter_increment);
     __ increment_counter(inc, tmp, md_reg, md->constant_encoding(), offset);
 #else
@@ -3225,7 +3225,7 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
     ShouldNotReachHere();
   }
 
-  LIR_Opr result = new_register(T_INT);
+  LIR_Opr result = new_register(wordSize == 4 ? T_INT : T_LONG);
   if (notify && (!backedge || UseOnStackReplacement)) {
     int ratio_shift = exact_log2(ProfileCaptureRatio);
     LIR_Opr meth = LIR_OprFact::metadataConst(method->constant_encoding());
