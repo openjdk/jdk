@@ -434,7 +434,6 @@ private:
     RV_ENABLE_EXTENSION(UseRVV)                     \
     RV_ENABLE_EXTENSION(UseZba)                     \
     RV_ENABLE_EXTENSION(UseZbb)                     \
-    RV_ENABLE_EXTENSION(UseZbc)                     \
     RV_ENABLE_EXTENSION(UseZbs)                     \
     RV_ENABLE_EXTENSION(UseZcb)                     \
     RV_ENABLE_EXTENSION(UseZfa)                     \
