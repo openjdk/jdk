@@ -76,6 +76,9 @@ define_pd_global(intx, InitArrayShortSize, BytesPerLong);
 
 define_pd_global(intx, InlineSmallCode,          1000);
 
+define_pd_global(bool, InlineTypePassFieldsAsArgs, false);
+define_pd_global(bool, InlineTypeReturnedAsFields, false);
+
 #define ARCH_FLAGS(develop,                                                      \
                    product,                                                      \
                    range,                                                        \
