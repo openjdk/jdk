@@ -187,9 +187,9 @@ ciEnv::ciEnv(CompileTask* task)
 // {
 //   RecordLocation fp(this, "field1");
 //   // location: "field1"
-//   { RecordLocation fp(this, " field2"); // location: "field1 field2" }
+//   { RecordLocation fp(this, "field2"); // location: "field1 field2" }
 //   // location: "field1"
-//   { RecordLocation fp(this, " field3"); // location: "field1 field3" }
+//   { RecordLocation fp(this, "field3"); // location: "field1 field3" }
 //   // location: "field1"
 // }
 // // location: ""
