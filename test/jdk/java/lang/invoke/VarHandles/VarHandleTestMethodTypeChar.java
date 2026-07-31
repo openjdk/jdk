@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,9 +51,9 @@ public class VarHandleTestMethodTypeChar extends VarHandleBaseTest {
 
     static char static_v = '\u0123';
 
-    final char final_v = '\u0123';
+    final char final_v;
 
-    char v = '\u0123';
+    char v;
 
     VarHandle vhFinalField;
 
@@ -64,6 +64,12 @@ public class VarHandleTestMethodTypeChar extends VarHandleBaseTest {
     VarHandle vhStaticFinalField;
 
     VarHandle vhArray;
+
+    public VarHandleTestMethodTypeChar() {
+        final_v = '\u0123';
+        v = '\u0123';
+        super();
+    }
 
     @BeforeAll
     public void setup() throws Exception {
