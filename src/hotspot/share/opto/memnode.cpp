@@ -954,6 +954,10 @@ bool AccessAnalyzer::store_fully_covers(const StoreNode* other) const {
   assert(_n->is_Store(), "current access must be a store");
 
   int other_size = other->memory_size();
+  // The coverage cases handled below are either based on address range
+  // containment, which requires the current store's memory_size() to be at
+  // least that of 'other', or on matching write patterns, which imply equal
+  // memory sizes.
   if (_memory_size < other_size) {
     return false;
   }
@@ -969,8 +973,9 @@ bool AccessAnalyzer::store_fully_covers(const StoreNode* other) const {
 
   Node* other_adr = other->in(MemNode::Address);
   int other_opcode = other->Opcode();
-  // True if 'other' can be described by a contiguous address range:
-  // [other_adr, other_adr + other_size).
+  // True if all writes performed by 'other' fall within the address range
+  // [other_adr, other_adr + other_size), regardless of whether the writes
+  // are contiguous.
   bool other_writes_within_contiguous_range = !other->is_StoreVector() ||
                                               other_opcode == Op_StoreVector ||
                                               other_opcode == Op_StoreVectorMasked;
@@ -1005,17 +1010,21 @@ bool AccessAnalyzer::store_fully_covers(const StoreNode* other) const {
       case Op_StoreVectorMasked: {
         StoreVectorMaskedNode* n_m = cur->as_StoreVectorMasked();
         StoreVectorMaskedNode* o_m = other->as_StoreVectorMasked();
-        return n_m->mask() == o_m->mask();
+        return n_m->mask() != nullptr &&
+               n_m->mask() == o_m->mask();
       }
       case Op_StoreVectorScatter: {
         StoreVectorScatterNode* n_s = cur->as_StoreVectorScatter();
         StoreVectorScatterNode* o_s = other->as_StoreVectorScatter();
-        return n_s->indices() == o_s->indices();
+        return n_s->indices() != nullptr &&
+               n_s->indices() == o_s->indices();
       }
       case Op_StoreVectorScatterMasked: {
         StoreVectorScatterMaskedNode* n_sm = cur->as_StoreVectorScatterMasked();
         StoreVectorScatterMaskedNode* o_sm = other->as_StoreVectorScatterMasked();
-        return n_sm->indices() == o_sm->indices() &&
+        return n_sm->indices() != nullptr &&
+               n_sm->mask() != nullptr &&
+               n_sm->indices() == o_sm->indices() &&
                n_sm->mask() == o_sm->mask();
       }
       default:
@@ -1023,8 +1032,9 @@ bool AccessAnalyzer::store_fully_covers(const StoreNode* other) const {
     }
   }
 
-  // This is only valid when the current store writes a contiguous range,
-  // the other store has a contiguous address range.
+  // Coverage between stores with different addresses can only be checked when
+  // the current store writes a full contiguous range and all writes of the
+  // other store are confined to a contiguous address range.
   if (!cur_writes_full_contiguous_range ||
       !other_writes_within_contiguous_range) {
     return false;

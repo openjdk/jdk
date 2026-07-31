@@ -34,6 +34,7 @@ import java.util.Random;
 /*
  * @test
  * @bug 8387472
+ * @key randomness
  * @summary Test removal of fully covered stores and same-pattern vector stores.
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
@@ -53,23 +54,31 @@ public class TestRemoveFullyCoveredStores {
     static final VectorSpecies<Long> L256 = LongVector.SPECIES_256;
     // Arrays
     static final int[] intArray256Early = new int[I256.length()];
+    static final int[] intArray256Middle = new int[I256.length()];
     static final int[] intArray256Late = new int[I256.length()];
     static final int[] intArray512 = new int[I512.length()];
     static final long[] longArray256Early = new long[L256.length()];
+    static final long[] longArray256Middle = new long[L256.length()];
     static final long[] longArray256Late = new long[L256.length()];
     // Indices
-    static final int[] longIndices256 = new int[L256.length()];
+    static int[] longIndices256A = new int[L256.length()];
+    static int[] longIndices256B = new int[L256.length()];
     // Masks
-    static final boolean[] intMask256 = new boolean[I256.length()];
-    static final boolean[] longMask256 = new boolean[L256.length()];
-    static final VectorMask<Integer> intVectorMask256;
-    static final VectorMask<Long> longVectorMask256;
+    static VectorMask<Integer> intVectorMask256A;
+    static VectorMask<Integer> intVectorMask256B;
+    static VectorMask<Long> longVectorMask256A;
+    static VectorMask<Long> longVectorMask256B;
+
+    static boolean[] intMask256BitA;
+    static boolean[] intMask256BitB;
+    static boolean[] longMask256BitA;
+    static boolean[] longMask256BitB;
 
     static {
         for (int i = 0; i < I256.length(); i++) {
             intArray256Early[i] = 256 + i;
+            intArray256Middle[i] = 345 + i;
             intArray256Late[i] = 652 + i;
-            intMask256[i] = i % 2 == 0;
         }
 
         for (int i = 0; i < I512.length(); i++) {
@@ -78,13 +87,9 @@ public class TestRemoveFullyCoveredStores {
 
         for (int i = 0; i < L256.length(); i++) {
             longArray256Early[i] = 256L + i;
+            longArray256Middle[i] = 468L + i;
             longArray256Late[i] = 652L + i;
-            longIndices256[i] = (i + L256.length() / 2) % L256.length();
-            longMask256[i] = i % 2 == 0;
         }
-
-        intVectorMask256 = VectorMask.fromArray(I256, intMask256, 0);
-        longVectorMask256 = VectorMask.fromArray(L256, longMask256, 0);
     }
 
     public static void main(String[] args) {
@@ -97,27 +102,48 @@ public class TestRemoveFullyCoveredStores {
      * Contiguous store fully covers contiguous store even though
      * they use different addresses.
      *
-     * StoreI [base + 4, base + 8)
-     * StoreL [base + 0, base + 8)
+     * Before optimization:
+     *
+     * StoreB  byte [base + 1, base + 2)
+     * LOAD_US byte [base + 1, base + 3)
+     * StoreB  byte [base + 1, base + 2)
+     * StoreI  byte [base + 4, base + 8)
+     * StoreL  byte [base + 0, base + 8)
+     *
+     * After optimization:
+     *
+     * StoreB  byte [base + 1, base + 2)
+     * LOAD_US byte [base + 1, base + 3)
+     * StoreL  byte [base + 0, base + 8)
      */
     @Test
-    @IR(counts = {IRNode.STORE_I, "0", IRNode.STORE_L, "1"},
+    @IR(counts = {IRNode.STORE_B, "1",
+                  IRNode.LOAD_US,  "1",
+                  IRNode.STORE_I, "0",
+                  IRNode.STORE_L, "1"},
         phase = CompilePhase.BEFORE_MATCHING)
-    public static void testStoreLongCoversStoreInt() {
+    public static char testStoreLongCoversStoreInt() {
+        UNSAFE.putByte(BYTES, BYTE_BASE + 1, (byte)0x15);
+        char val = UNSAFE.getChar(BYTES, BYTE_BASE + 1);
+        UNSAFE.putByte(BYTES, BYTE_BASE + 1, (byte)0x18);
         UNSAFE.putInt(BYTES, BYTE_BASE + 4, 0x12345678);
         UNSAFE.putLong(BYTES, BYTE_BASE, 0x1122334455667788L);
+        return val;
     }
 
     /*
      * Contiguous store fully covers non-contiguous store
      * even though they use different addresses.
      *
-     * StoreVectorMasked256 res[1..8], mask = intVectorMask256
-     * byte range: [base + 4, base + 36)
+     * Before optimization:
      *
-     * StoreVector512 res[0..15]
-     * byte range: [base + 0, base + 64)
+     * StoreVectorMasked256 int [base + i + 1, base + i + 9) intVectorMask256A
+     * StoreVector256       int [base + i + 4, base + i + 12)
+     * StoreVector512       int [base + i, base + i + 16)
      *
+     * After optimization:
+     *
+     * StoreVector512       int [base + i, base + i + 16)
      */
     @Test
     @IR(counts = {IRNode.STORE_VECTOR_MASKED, "0", IRNode.STORE_VECTOR, "1"},
@@ -128,89 +154,207 @@ public class TestRemoveFullyCoveredStores {
         int[] res = new int[I512.length() + 8];
         int i = index & 7;
 
-        if (intVectorMask256.allTrue()) {
+        if (intVectorMask256A.allTrue()) {
             return res;
         }
 
-        IntVector intVector256 = IntVector.fromArray(I256, intArray256Early, 0);
-        IntVector intVector512 = IntVector.fromArray(I512, intArray512, 0);
-        intVector256.intoArray(res, i + 1, intVectorMask256);
-        intVector512.intoArray(res, i);
+        IntVector earlyVector256 = IntVector.fromArray(I256, intArray256Early, 0);
+        IntVector middleVector256 = IntVector.fromArray(I256, intArray256Middle, 0);
+        IntVector lateVector512 = IntVector.fromArray(I512, intArray512, 0);
+
+        earlyVector256.intoArray(res, i + 1, intVectorMask256A);
+        middleVector256.intoArray(res, i + 4);
+        lateVector512.intoArray(res, i);
         return res;
     }
 
     /*
-     * StoreVectorMasked same pattern.
+     * Combined masked-store patterns
      *
-     * Same address, same vector size, same mask. The later masked store fully
-     * covers the earlier masked store.
+     * Before optimization:
+     *
+     * StoreVectorMasked int [base + i,     base + i + 8) intVectorMask256A
+     * StoreVectorMasked int [base + i,     base + i + 8) intVectorMask256B
+     * StoreVectorMasked int [base + i,     base + i + 8) intVectorMask256B
+     * StoreVectorMasked int [base + i + 1, base + i + 9) intVectorMask256A
+     * StoreVectorMasked int [base + i,     base + i + 8) intVectorMask256A
+     * StoreVectorMasked int [base + i,     base + i + 8) intVectorMask256A
+     *
+     * After optimization:
+     *
+     * StoreVectorMasked int [base + i,     base + i + 8) intVectorMask256B
+     * StoreVectorMasked int [base + i + 1, base + i + 9) intVectorMask256A
+     * StoreVectorMasked int [base + i,     base + i + 8) intVectorMask256A
      */
     @Test
-    @IR(counts = {IRNode.STORE_VECTOR_MASKED, "1"},
+    @IR(counts = {IRNode.STORE_VECTOR_MASKED, "3"},
         phase = CompilePhase.BEFORE_MATCHING,
         applyIf = {"MaxVectorSize", ">= 32"},
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
-    public static int[] testMaskedStoreVectorSameMask() {
-        int[] res = new int[I256.length()];
-        if (intVectorMask256.allTrue()){
+    public static int[] testStoreVectorMasked(int index,
+                                              boolean[] intMask256BitA,
+                                              boolean[] intMask256BitB) {
+        int[] res = new int[I256.length() + 8];
+        int i = index & 7;
+
+        VectorMask<Integer> intVectorMask256A = VectorMask.fromArray(I256, intMask256BitA, 0);
+        VectorMask<Integer> intVectorMask256B = VectorMask.fromArray(I256, intMask256BitB, 0);
+        if (intVectorMask256A.allTrue() ||
+            intVectorMask256B.allTrue()) {
             return res;
         }
-        IntVector intVector256Early = IntVector.fromArray(I256, intArray256Early, 0);
-        IntVector intVector256Late = IntVector.fromArray(I256, intArray256Late, 0);
-        intVector256Early.intoArray(res, 0, intVectorMask256);
-        intVector256Late.intoArray(res, 0, intVectorMask256);
+
+        IntVector earlyVector256 = IntVector.fromArray(I256, intArray256Early, 0);
+        IntVector middleVector256 = IntVector.fromArray(I256, intArray256Middle, 0);
+        IntVector lateVector256 = IntVector.fromArray(I256, intArray256Late, 0);
+        // Different mask, same offset.
+        earlyVector256.intoArray(res, i, intVectorMask256A);
+        middleVector256.intoArray(res, i, intVectorMask256B);
+        lateVector256.intoArray(res, i, intVectorMask256B);
+        // Different offset, same mask.
+        earlyVector256.intoArray(res, i + 1, intVectorMask256A);
+        middleVector256.intoArray(res, i, intVectorMask256A);
+        lateVector256.intoArray(res, i, intVectorMask256A);
         return res;
     }
 
     /*
-     * StoreVectorScatter same pattern.
+     * Combined and chained StoreVectorScatter patterns.
      *
-     * Same address, same vector size, same index map. The later scatter store
-     * fully covers the earlier scatter store.
+     * Before optimization:
+     *
+     * StoreVectorScatter offset i     longIndices256A
+     * StoreVectorScatter offset i     longIndices256B
+     * StoreVectorScatter offset i     longIndices256B
+     * StoreVectorScatter offset i + 1 longIndices256A
+     * StoreVectorScatter offset i     longIndices256A
+     * StoreVectorScatter offset i     longIndices256A
+     *
+     * After optimization:
+     *
+     * StoreVectorScatter offset i     longIndices256A
+     * StoreVectorScatter offset i     longIndices256B
+     * StoreVectorScatter offset i + 1 longIndices256A
+     * StoreVectorScatter offset i     longIndices256A
+     *
+     * A new indice or offset introduces a range check. The preceding store
+     * then has two outputs and is not considered for elimination.
      */
     @Test
-    @IR(counts = {IRNode.STORE_VECTOR_SCATTER, "1"},
+    @IR(counts = {IRNode.STORE_VECTOR_SCATTER, "4"},
         phase = CompilePhase.BEFORE_MATCHING,
         applyIf = {"MaxVectorSize", ">= 32"},
-        applyIfCPUFeatureOr = {"sve", "true"})
-    public static long[] testScatterStoreVectorSameIndices() {
-        long[] res = new long[L256.length()];
+        applyIfCPUFeatureOr = {"sve", "true", "avx512vl", "true", "rvv", "true"})
+    public static long[] testStoreVectorScatter(int index) {
+        long[] res = new long[L256.length() + 8];
+        int i = index & 7;
+
         LongVector longVector256Early = LongVector.fromArray(L256, longArray256Early, 0);
+        LongVector longVector256Middle = LongVector.fromArray(L256, longArray256Middle, 0);
         LongVector longVector256Late = LongVector.fromArray(L256, longArray256Late, 0);
-        longVector256Early.intoArray(res, 0, longIndices256, 0);
-        longVector256Late.intoArray(res, 0, longIndices256, 0);
+        // Different indice, same offset.
+        longVector256Early.intoArray(res, i, longIndices256A, 0);
+        longVector256Middle.intoArray(res, i, longIndices256B, 0);
+        longVector256Late.intoArray(res, i, longIndices256B, 0);
+        // Different offset, same indice.
+        longVector256Early.intoArray(res, i + 1, longIndices256A, 0);
+        longVector256Middle.intoArray(res, i, longIndices256A, 0);
+        longVector256Late.intoArray(res, i, longIndices256A, 0);
         return res;
     }
 
     /*
-     * StoreVectorScatterMasked same pattern.
+     * Combined and chained StoreVectorScatterMasked patterns.
      *
-     * Same address, same vector size, same index map, same mask. The later
-     * scatter-masked store fully covers the earlier scatter-masked store.
+     * Before optimization:
+     *
+     * StoreVectorScatterMasked offset i     longIndices256A longVectorMask256A
+     * StoreVectorScatterMasked offset i     longIndices256B longVectorMask256A
+     * StoreVectorScatterMasked offset i     longIndices256B longVectorMask256A
+     * StoreVectorScatterMasked offset i     longIndices256A longVectorMask256A
+     * StoreVectorScatterMasked offset i     longIndices256A longVectorMask256B
+     * StoreVectorScatterMasked offset i     longIndices256A longVectorMask256B
+     * StoreVectorScatterMasked offset i + 1 longIndices256A longVectorMask256A
+     * StoreVectorScatterMasked offset i     longIndices256B longVectorMask256A
+     * StoreVectorScatterMasked offset i     longIndices256B longVectorMask256A
+     *
+     * After optimization:
+     *
+     * StoreVectorScatterMasked offset i     longIndices256A longVectorMask256A
+     * StoreVectorScatterMasked offset i     longIndices256B longVectorMask256A
+     * StoreVectorScatterMasked offset i     longIndices256A longVectorMask256A
+     * StoreVectorScatterMasked offset i     longIndices256A longVectorMask256B
+     * StoreVectorScatterMasked offset i + 1 longIndices256A longVectorMask256A
+     * StoreVectorScatterMasked offset i     longIndices256A longVectorMask256A
+     *
+     * A new indice or offset introduces a range check. The preceding store
+     * then has two outputs and is not considered for elimination.
      */
     @Test
-    @IR(counts = {IRNode.STORE_VECTOR_SCATTER_MASKED, "1"},
+    @IR(counts = {IRNode.STORE_VECTOR_SCATTER_MASKED, "6"},
         phase = CompilePhase.BEFORE_MATCHING,
         applyIf = {"MaxVectorSize", ">= 32"},
-        applyIfCPUFeatureOr = {"sve", "true"})
-    public static long[] testScatterMaskedStoreVectorSameIndicesAndMask() {
-        long[] res = new long[L256.length()];
+        applyIfCPUFeatureOr = {"sve", "true", "avx512vl", "true", "rvv", "true"})
+    public static long[] testStoreVectorScatterMasked(int index,
+                                                      boolean[] longMask256BitA,
+                                                      boolean[] longMask256BitB) {
+        long[] res = new long[L256.length() + 8];
+        int i = index & 7;
+
+        VectorMask<Long> longVectorMask256A = VectorMask.fromArray(L256, longMask256BitA, 0);
+        VectorMask<Long> longVectorMask256B = VectorMask.fromArray(L256, longMask256BitB, 0);
+
+        if (longVectorMask256A.allTrue() ||
+            longVectorMask256B.allTrue()) {
+            return res;
+        }
+
         LongVector longVector256Early = LongVector.fromArray(L256, longArray256Early, 0);
+        LongVector longVector256Middle = LongVector.fromArray(L256, longArray256Middle, 0);
         LongVector longVector256Late = LongVector.fromArray(L256, longArray256Late, 0);
-        longVector256Early.intoArray(res, 0, longIndices256, 0, longVectorMask256);
-        longVector256Late.intoArray(res, 0, longIndices256, 0, longVectorMask256);
+        // Different indice, same offset and mask.
+        longVector256Early.intoArray(res, i, longIndices256A, 0, longVectorMask256A);
+        longVector256Middle.intoArray(res, i, longIndices256B, 0, longVectorMask256A);
+        longVector256Late.intoArray(res, i, longIndices256B, 0, longVectorMask256A);
+        // Different mask, same offset and indice.
+        longVector256Early.intoArray(res, i, longIndices256A, 0, longVectorMask256A);
+        longVector256Middle.intoArray(res, i, longIndices256A, 0, longVectorMask256B);
+        longVector256Late.intoArray(res, i, longIndices256A, 0, longVectorMask256B);
+        // Different offset, same indice and mask.
+        longVector256Early.intoArray(res, i + 1, longIndices256A, 0, longVectorMask256A);
+        longVector256Middle.intoArray(res, i, longIndices256A, 0, longVectorMask256A);
+        longVector256Late.intoArray(res, i, longIndices256A, 0, longVectorMask256A);
         return res;
     }
 
     @Run(test = {"testStoreLongCoversStoreInt",
                  "testStoreVectorCoversMaskedStoreVector",
-                 "testMaskedStoreVectorSameMask",
-                 "testScatterStoreVectorSameIndices",
-                 "testScatterMaskedStoreVectorSameIndicesAndMask"})
+                 "testStoreVectorMasked",
+                 "testStoreVectorScatter",
+                 "testStoreVectorScatterMasked"})
     public static void runTest() {
         testStoreLongCoversStoreInt();
         Asserts.assertEQ(UNSAFE.getLong(BYTES, BYTE_BASE),
                          0x1122334455667788L);
+
+        intMask256BitA = getRandomMask(I256.length(), true);
+        intMask256BitB = getRandomMask(I256.length(), false);
+        longMask256BitA = getRandomMask(L256.length(), true);
+        longMask256BitB = getRandomMask(L256.length(), false);
+
+        intVectorMask256A = VectorMask.fromArray(I256, intMask256BitA, 0);
+        intVectorMask256B = VectorMask.fromArray(I256, intMask256BitB, 0);
+        longVectorMask256A = VectorMask.fromArray(L256, longMask256BitA, 0);
+        longVectorMask256B = VectorMask.fromArray(L256, longMask256BitB, 0);
+
+        longIndices256A = getRandomIndice(L256.length());
+        longIndices256B = getRandomIndice(L256.length());
+
+        if (Arrays.equals(longIndices256A, longIndices256B)) {
+            int tmp = longIndices256B[0];
+            longIndices256B[0] = longIndices256B[1];
+            longIndices256B[1] = tmp;
+        }
 
         int index = RANDOM.nextInt(8);
         int[] res = testStoreVectorCoversMaskedStoreVector(index);
@@ -218,23 +362,140 @@ public class TestRemoveFullyCoveredStores {
         System.arraycopy(intArray512, 0, expectedArr, index, I512.length());
         Asserts.assertTrue(Arrays.equals(res, expectedArr));
 
-        res = testMaskedStoreVectorSameMask();
-        for (int i = 0; i < I256.length(); i++) {
-            int expected = intVectorMask256.laneIsSet(i) ? intArray256Late[i] : 0;
-            Asserts.assertEQ(res[i], expected);
+        index = RANDOM.nextInt(8);
+        res = testStoreVectorMasked(index, intMask256BitA, intMask256BitB);
+        expectedArr = expectedStoreVectorMasked(index);
+        Asserts.assertTrue(Arrays.equals(res, expectedArr));
+
+        index = RANDOM.nextInt(8);
+        long[] res1 = testStoreVectorScatter(index);
+        long[] expectedLong = expectedStoreVectorScatter(index);
+        Asserts.assertTrue(Arrays.equals(res1, expectedLong));
+
+
+        index = RANDOM.nextInt(8);
+        res1 = testStoreVectorScatterMasked(index, longMask256BitA, longMask256BitB);
+        expectedLong = expectedScatterVectorStoreMasked(index);
+        Asserts.assertTrue(Arrays.equals(res1, expectedLong));
+    }
+
+    @DontInline
+    static boolean[] getRandomMask(int length, boolean first) {
+        boolean[] mask = new boolean[length];
+        for (int i = 0; i < length; i++) {
+            mask[i] = RANDOM.nextBoolean();
+        }
+        // avoid all true.
+        if (length >= 2) {
+            mask[0] = first;
+            mask[1] = !first;
+        }
+        return mask;
+    }
+
+    @DontInline
+    static int[] getRandomIndice(int length) {
+        int[] indice = new int[length];
+        for (int i = 0; i < length; i++) {
+            indice[i] = i;
         }
 
-        long[] res1 = testScatterStoreVectorSameIndices();
-        for (int i = 0; i < L256.length(); i++) {
-            index = longIndices256[i];
-            Asserts.assertEquals(res1[index], longArray256Late[i]);
+        for (int i = length - 1; i > 0; i--) {
+            int j = RANDOM.nextInt(i + 1);
+            int tmp = indice[i];
+            indice[i] = indice[j];
+            indice[j] = tmp;
         }
+        return indice;
+    }
 
-        res1 = testScatterMaskedStoreVectorSameIndicesAndMask();
-        for (int i = 0; i < L256.length(); i++) {
-            index = longIndices256[i];
-            long expected = longVectorMask256.laneIsSet(i) ? longArray256Late[i] : 0L;
-            Asserts.assertEQ(res1[index], expected);
+    @DontInline
+    static int[] expectedStoreVectorMasked(int index) {
+        int[] expected = new int[I256.length() + 8];
+        int offset = index & 7;
+
+        applyMaskedStore(expected, offset,
+                         intArray256Early, intVectorMask256A);
+        applyMaskedStore(expected, offset,
+                         intArray256Middle, intVectorMask256B);
+        applyMaskedStore(expected, offset,
+                         intArray256Late, intVectorMask256B);
+        applyMaskedStore(expected, offset + 1,
+                         intArray256Early, intVectorMask256A);
+        applyMaskedStore(expected, offset,
+                        intArray256Middle, intVectorMask256A);
+        applyMaskedStore(expected, offset,
+                         intArray256Late, intVectorMask256A);
+
+        return expected;
+    }
+
+    @DontInline
+    static void applyMaskedStore(int[] dst, int offset, int[] values,
+                                 VectorMask<Integer> mask) {
+        for (int lane = 0; lane < I256.length(); lane++) {
+            if (mask.laneIsSet(lane)) {
+                dst[offset + lane] = values[lane];
+            }
+        }
+    }
+
+    @DontInline
+    static long[] expectedStoreVectorScatter(int index) {
+        long[] expected = new long[L256.length() + 8];
+        int offset = index & 7;
+
+        applyScatterStore(expected, offset,
+                          longArray256Early, longIndices256A, null);
+        applyScatterStore(expected, offset,
+                          longArray256Middle, longIndices256B, null);
+        applyScatterStore(expected, offset,
+                          longArray256Late, longIndices256B, null);
+        applyScatterStore(expected, offset + 1,
+                          longArray256Early, longIndices256A, null);
+        applyScatterStore(expected, offset,
+                          longArray256Middle, longIndices256A, null);
+        applyScatterStore(expected, offset,
+                          longArray256Late, longIndices256A, null);
+
+        return expected;
+    }
+
+    @DontInline
+    static long[] expectedScatterVectorStoreMasked(int index) {
+        long[] expected = new long[L256.length() + 8];
+        int offset = index & 7;
+
+        applyScatterStore(expected, offset, longArray256Early,
+                          longIndices256A, longVectorMask256A);
+        applyScatterStore(expected, offset, longArray256Middle,
+                          longIndices256B, longVectorMask256A);
+        applyScatterStore(expected, offset, longArray256Late,
+                          longIndices256B, longVectorMask256A);
+        applyScatterStore(expected, offset, longArray256Early,
+                          longIndices256A, longVectorMask256A);
+        applyScatterStore(expected, offset, longArray256Middle,
+                          longIndices256A, longVectorMask256B);
+        applyScatterStore(expected, offset, longArray256Late,
+                          longIndices256A, longVectorMask256B);
+        applyScatterStore(expected, offset + 1, longArray256Early,
+                          longIndices256A, longVectorMask256A);
+        applyScatterStore(expected, offset, longArray256Middle,
+                          longIndices256A, longVectorMask256A);
+        applyScatterStore(expected, offset, longArray256Late,
+                          longIndices256A, longVectorMask256A);
+
+        return expected;
+    }
+
+    @DontInline
+    static void applyScatterStore(long[] dst, int offset,
+                                  long[] values, int[] indices,
+                                  VectorMask<Long> mask) {
+        for (int lane = 0; lane < L256.length(); lane++) {
+            if (mask == null || mask.laneIsSet(lane)) {
+                dst[offset + indices[lane]] = values[lane];
+            }
         }
     }
 }
