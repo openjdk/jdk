@@ -38,6 +38,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayKlass.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
 #include "utilities/macros.hpp"
 
@@ -75,10 +76,14 @@ TypeArrayKlass* TypeArrayKlass::allocate_klass(ClassLoaderData* loader_data, Bas
 }
 
 u2 TypeArrayKlass::compute_modifier_flags() const {
-  return JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC;
+  u2 identity_flag = (Arguments::is_valhalla_enabled()) ? JVM_ACC_IDENTITY : 0;
+
+  return JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC
+                    | identity_flag;
 }
 
-TypeArrayKlass::TypeArrayKlass(BasicType type, Symbol* name) : ArrayKlass(1, name, Kind) {
+TypeArrayKlass::TypeArrayKlass(BasicType type, Symbol* name)
+    : ArrayKlass(1, name, Kind, ArrayProperties::Default()) {
   set_layout_helper(array_layout_helper(type));
   assert(is_array_klass(), "sanity");
   assert(is_typeArray_klass(), "sanity");
@@ -98,7 +103,6 @@ typeArrayOop TypeArrayKlass::allocate_common(int length, bool do_zero, TRAPS) {
 }
 
 oop TypeArrayKlass::multi_allocate(int rank, jint* last_size, TRAPS) {
-  // For typeArrays this is only called for the last dimension
   assert(rank == 1, "just checking");
   int length = *last_size;
   return allocate_instance(length, THREAD);

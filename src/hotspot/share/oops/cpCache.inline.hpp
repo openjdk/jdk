@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "oops/cpCache.hpp"
 
+#include "oops/oopCast.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
@@ -46,10 +47,10 @@ inline ConstantPoolCache::ConstantPoolCache(const intStack& invokedynamic_refere
   CDS_JAVA_HEAP_ONLY(_archived_references_index = -1;)
 }
 
-inline objArrayOop ConstantPoolCache::resolved_references() {
+inline refArrayOop ConstantPoolCache::resolved_references() {
   oop obj = _resolved_references.resolve();
-  assert(obj == nullptr || obj->is_objArray(), "should be objArray");
-  return (objArrayOop)obj;
+  assert(obj == nullptr || obj->is_refArray(), "should be refArray");
+  return obj == nullptr ? nullptr : oop_cast<refArrayOop>(obj);
 }
 
 inline ResolvedFieldEntry* ConstantPoolCache::resolved_field_entry_at(int field_index) const {

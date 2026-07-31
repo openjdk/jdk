@@ -163,7 +163,7 @@ class FrameMap : public CompilationResourceObj {
   CallingConvention* java_calling_convention(const BasicTypeArray* signature, bool outgoing);
 
   // deopt support
-  ByteSize sp_offset_for_orig_pc() { return sp_offset_for_monitor_base(_num_monitors); }
+  ByteSize sp_offset_for_orig_pc() const { return sp_offset_for_monitor_base(_num_monitors); }
 
   static LIR_Opr as_opr(Register r) {
     return LIR_OprFact::single_cpu(cpu_reg2rnr(r));
@@ -181,7 +181,7 @@ class FrameMap : public CompilationResourceObj {
   }
 
   FrameMap(ciMethod* method, int monitors, int reserved_argument_area_size);
-  bool finalize_frame(int nof_slots);
+  bool finalize_frame(int nof_slots, bool needs_stack_repair);
 
   int   reserved_argument_area_size () const     { return _reserved_argument_area_size; }
   int   framesize                   () const     { assert(_framesize != -1, "hasn't been calculated"); return _framesize; }
@@ -206,6 +206,9 @@ class FrameMap : public CompilationResourceObj {
   }
   Address address_for_monitor_object(int monitor_index) const {
     return make_new_address(sp_offset_for_monitor_object(monitor_index));
+  }
+  Address address_for_orig_pc_addr() const {
+    return make_new_address(sp_offset_for_orig_pc());
   }
 
   // Creates Location describing desired slot and returns it via pointer
