@@ -225,10 +225,13 @@ public:
   // append a new component
   ATTRIBUTE_PRINTF(3, 4)
   RecordLocation(ciEnv* ci, const char* fmt, ...) {
-    end = ci->_dyno_name + strlen(ci->_dyno_name);
+    size_t len = strlen(ci->_dyno_name);
+    end = ci->_dyno_name + len;
     va_list args;
     va_start(args, fmt);
-    push(ci, " ");
+    if (len > 0) {
+      push(ci, " ");
+    }
     push_va(ci, fmt, args);
     va_end(args);
   }
