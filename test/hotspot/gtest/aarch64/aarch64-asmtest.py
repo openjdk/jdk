@@ -1121,6 +1121,8 @@ class SVEVectorOp(Instruction):
         self._bitwiseop = False
         if name[0] == 'f':
             self._width = RegVariant(2, 3)
+        elif name in ["sdiv", "udiv"]:
+            self._width = RegVariant(2, 3)
         elif not self._isPredicated and (name in ["and", "bic", "bsl", "eor", "eor3", "orr"]):
             self._width = RegVariant(3, 3)
             self._bitwiseop = True
@@ -2163,6 +2165,10 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         # SVE2 instructions
                         ["histcnt",  "__ sve_histcnt(z16, __ S, p0, z16, z16);",           "histcnt\tz16.s, p0/z, z16.s, z16.s"],
                         ["histcnt",  "__ sve_histcnt(z17, __ D, p0, z17, z17);",           "histcnt\tz17.d, p0/z, z17.d, z17.d"],
+                        ["umullb",   "__ sve_umullb(z16, __ H, z17, z18);",                "umullb\tz16.h, z17.b, z18.b"],
+                        ["umullt",   "__ sve_umullt(z19, __ S, z20, z21);",                "umullt\tz19.s, z20.h, z21.h"],
+                        ["smullb",   "__ sve_smullb(z22, __ D, z23, z24);",                "smullb\tz22.d, z23.s, z24.s"],
+                        ["smullt",   "__ sve_smullt(z25, __ H, z26, z27);",                "smullt\tz25.h, z26.b, z27.b"],
 ])
 
 print "\n// FloatImmediateOp"
@@ -2216,6 +2222,8 @@ generate(SVEVectorOp, [["add", "ZZZ"],
                        ["lsl", "ZPZ", "m", "dn"],
                        ["lsr", "ZPZ", "m", "dn"],
                        ["mul", "ZPZ", "m", "dn"],
+                       ["sdiv", "ZPZ", "m", "dn"],
+                       ["udiv", "ZPZ", "m", "dn"],
                        ["neg", "ZPZ", "m"],
                        ["not", "ZPZ", "m"],
                        ["orr", "ZPZ", "m", "dn"],

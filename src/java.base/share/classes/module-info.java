@@ -154,7 +154,8 @@ module java.base {
     // module declaration be annotated with jdk.internal.javac.ParticipatesInPreview.
     exports jdk.internal.javac to
         java.compiler,
-        jdk.compiler;
+        jdk.compiler,
+        jdk.jdeps; // Uses Valhalla reflective preview APIs
     exports jdk.internal.access to
         java.desktop,
         java.logging,
@@ -237,6 +238,7 @@ module java.base {
         java.sql,
         java.sql.rowset,
         jdk.dynalink,
+        jdk.jdeps,
         jdk.unsupported;
     exports jdk.internal.vm to
         java.management,
@@ -255,6 +257,8 @@ module java.base {
         jdk.jfr;
     exports jdk.internal.util.xml.impl to
         jdk.jfr;
+    exports jdk.internal.value to  // Needed by Unsafe
+        jdk.unsupported;
     exports jdk.internal.util to
         java.desktop,
         java.prefs,

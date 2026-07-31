@@ -87,6 +87,7 @@ class EncodePNode;
 class EncodePKlassNode;
 class FastLockNode;
 class FastUnlockNode;
+class FlatArrayCheckNode;
 class HaltNode;
 class IfNode;
 class IfProjNode;
@@ -119,12 +120,14 @@ class MachJumpNode;
 class MachNode;
 class MachNullCheckNode;
 class MachProjNode;
+class MachPrologNode;
 class MachReturnNode;
 class MachSafePointNode;
 class MachSpillCopyNode;
 class MachTempNode;
 class MachMergeNode;
 class MachMemBarNode;
+class MachVEPNode;
 class Matcher;
 class MemBarNode;
 class MemBarStoreStoreNode;
@@ -185,6 +188,9 @@ class SubTypeCheckNode;
 class Type;
 class TypeNode;
 class UnlockNode;
+class InlineTypeNode;
+class LoadFlatNode;
+class StoreFlatNode;
 class VectorNode;
 class LoadVectorNode;
 class LoadVectorMaskedNode;
@@ -694,6 +700,8 @@ public:
             DEFINE_CLASS_ID(Lock,             AbstractLock, 0)
             DEFINE_CLASS_ID(Unlock,           AbstractLock, 1)
           DEFINE_CLASS_ID(ArrayCopy,        Call, 4)
+        DEFINE_CLASS_ID(LoadFlat,  SafePoint, 1)
+        DEFINE_CLASS_ID(StoreFlat, SafePoint, 2)
       DEFINE_CLASS_ID(MultiBranch, Multi, 1)
         DEFINE_CLASS_ID(PCTable,     MultiBranch, 0)
           DEFINE_CLASS_ID(Catch,       PCTable, 0)
@@ -710,6 +718,7 @@ public:
       DEFINE_CLASS_ID(MemBar,      Multi, 3)
         DEFINE_CLASS_ID(Initialize,       MemBar, 0)
         DEFINE_CLASS_ID(MemBarStoreStore, MemBar, 1)
+      DEFINE_CLASS_ID(Blackhole,   Multi, 4)
 
     DEFINE_CLASS_ID(Mach,  Node, 1)
       DEFINE_CLASS_ID(MachReturn, Mach, 0)
@@ -731,6 +740,8 @@ public:
         DEFINE_CLASS_ID(MachJump,       MachConstant, 0)
       DEFINE_CLASS_ID(MachMerge,        Mach, 6)
       DEFINE_CLASS_ID(MachMemBar,       Mach, 7)
+      DEFINE_CLASS_ID(MachProlog,       Mach, 8)
+      DEFINE_CLASS_ID(MachVEP,          Mach, 9)
 
     DEFINE_CLASS_ID(Type,  Node, 2)
       DEFINE_CLASS_ID(Phi,   Type, 0)
@@ -763,10 +774,11 @@ public:
         DEFINE_CLASS_ID(NegV, Vector, 8)
         DEFINE_CLASS_ID(SaturatingVector, Vector, 9)
         DEFINE_CLASS_ID(MulVL, Vector, 10)
-      DEFINE_CLASS_ID(Con, Type, 8)
+      DEFINE_CLASS_ID(InlineType, Type, 8)
+      DEFINE_CLASS_ID(Con, Type, 9)
           DEFINE_CLASS_ID(ConI, Con, 0)
-      DEFINE_CLASS_ID(SafePointScalarMerge, Type, 9)
-      DEFINE_CLASS_ID(Convert, Type, 10)
+      DEFINE_CLASS_ID(SafePointScalarMerge, Type, 10)
+      DEFINE_CLASS_ID(Convert, Type, 11)
 
 
     DEFINE_CLASS_ID(Proj,  Node, 3)
@@ -805,9 +817,10 @@ public:
 
     DEFINE_CLASS_ID(Sub,   Node, 6)
       DEFINE_CLASS_ID(Cmp,   Sub, 0)
-        DEFINE_CLASS_ID(FastLock,   Cmp, 0)
-        DEFINE_CLASS_ID(FastUnlock, Cmp, 1)
-        DEFINE_CLASS_ID(SubTypeCheck,Cmp, 2)
+        DEFINE_CLASS_ID(FastLock,       Cmp, 0)
+        DEFINE_CLASS_ID(FastUnlock,     Cmp, 1)
+        DEFINE_CLASS_ID(SubTypeCheck,   Cmp, 2)
+        DEFINE_CLASS_ID(FlatArrayCheck, Cmp, 3)
 
     DEFINE_CLASS_ID(MergeMem, Node, 7)
     DEFINE_CLASS_ID(Bool,     Node, 8)
@@ -919,6 +932,7 @@ public:
   DEFINE_CLASS_QUERY(ArrayCopy)
   DEFINE_CLASS_QUERY(BaseCountedLoop)
   DEFINE_CLASS_QUERY(BaseCountedLoopEnd)
+  DEFINE_CLASS_QUERY(Blackhole)
   DEFINE_CLASS_QUERY(Bool)
   DEFINE_CLASS_QUERY(BoxLock)
   DEFINE_CLASS_QUERY(Call)
@@ -952,6 +966,7 @@ public:
   DEFINE_CLASS_QUERY(EncodePKlass)
   DEFINE_CLASS_QUERY(FastLock)
   DEFINE_CLASS_QUERY(FastUnlock)
+  DEFINE_CLASS_QUERY(FlatArrayCheck)
   DEFINE_CLASS_QUERY(Halt)
   DEFINE_CLASS_QUERY(If)
   DEFINE_CLASS_QUERY(RangeCheck)
@@ -984,12 +999,14 @@ public:
   DEFINE_CLASS_QUERY(MachJump)
   DEFINE_CLASS_QUERY(MachNullCheck)
   DEFINE_CLASS_QUERY(MachProj)
+  DEFINE_CLASS_QUERY(MachProlog)
   DEFINE_CLASS_QUERY(MachReturn)
   DEFINE_CLASS_QUERY(MachSafePoint)
   DEFINE_CLASS_QUERY(MachSpillCopy)
   DEFINE_CLASS_QUERY(MachTemp)
   DEFINE_CLASS_QUERY(MachMemBar)
   DEFINE_CLASS_QUERY(MachMerge)
+  DEFINE_CLASS_QUERY(MachVEP)
   DEFINE_CLASS_QUERY(Mem)
   DEFINE_CLASS_QUERY(MemBar)
   DEFINE_CLASS_QUERY(MemBarStoreStore)
@@ -1030,6 +1047,9 @@ public:
   DEFINE_CLASS_QUERY(Sub)
   DEFINE_CLASS_QUERY(SubTypeCheck)
   DEFINE_CLASS_QUERY(Type)
+  DEFINE_CLASS_QUERY(InlineType)
+  DEFINE_CLASS_QUERY(LoadFlat)
+  DEFINE_CLASS_QUERY(StoreFlat)
   DEFINE_CLASS_QUERY(Vector)
   DEFINE_CLASS_QUERY(VectorMaskCmp)
   DEFINE_CLASS_QUERY(VectorUnbox)
@@ -1069,6 +1089,7 @@ public:
   uint is_Copy() const { return (_flags & Flag_is_Copy); }
 
   virtual bool is_CFG() const { return false; }
+  bool is_memory_access_intrinsic() const;
 
   // If this node is control-dependent on a test, can it be rerouted to a dominating equivalent
   // test? This means that the node can be executed safely as long as it happens after the test
@@ -1315,7 +1336,7 @@ public:
 
   // Return a node with opcode "opc" and same inputs as "this" if one can
   // be found; Otherwise return null;
-  Node* find_similar(int opc);
+  Node* find_similar(int opc, bool is_commutative = false);
   bool has_same_inputs_as(const Node* other) const;
 
   // Return the unique control out if only one. Null if none or more than one.
@@ -1329,10 +1350,12 @@ public:
 
   // Visit boundary uses of the node and apply a callback function for each.
   // Recursively traverse uses, stopping and applying the callback when
-  // reaching a boundary node, defined by is_boundary. Note: the function
-  // definition appears after the complete type definition of Node_List.
+  // reaching a boundary node, defined by is_boundary. If callback_on_all is true,
+  // it applies the callback on all the nodes seen, and not only on the boundary
+  // nodes. Note: the function definition appears after the complete type
+  // definition of Node_List.
   template <typename Callback, typename Check>
-  void visit_uses(Callback callback, Check is_boundary) const;
+  void visit_uses(Callback callback, Check is_boundary, bool always_callback = false) const;
 
   //----------------- Code Generation
 
@@ -1849,7 +1872,7 @@ public:
 
 // Definition must appear after complete type definition of Node_List
 template <typename Callback, typename Check>
-void Node::visit_uses(Callback callback, Check is_boundary) const {
+void Node::visit_uses(Callback callback, Check is_boundary, bool always_callback) const {
   ResourceMark rm;
   VectorSet visited;
   Node_List worklist;
@@ -1862,10 +1885,11 @@ void Node::visit_uses(Callback callback, Check is_boundary) const {
 
   while (worklist.size() > 0) {
     Node* use = worklist.pop();
-    // Apply callback on boundary nodes
-    if (is_boundary(use)) {
+    bool boundary = is_boundary(use);
+    if (boundary || always_callback) {
       callback(use);
-    } else {
+    }
+    if (!boundary) {
       // Not a boundary node, continue search
       for (DUIterator_Fast kmax, k = use->fast_outs(kmax); k < kmax; k++) {
         Node* out = use->fast_out(k);

@@ -413,6 +413,8 @@ bool G1HeapRegion::verify_code_roots(VerifyOption vo) const {
     return has_code_roots;
   }
 
+  rem_set()->reset_code_root_table_scanner();
+
   VerifyCodeRootNMethodClosure nm_cl(this);
   code_roots_do(&nm_cl);
 
