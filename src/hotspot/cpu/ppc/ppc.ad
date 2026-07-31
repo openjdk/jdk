@@ -3510,7 +3510,7 @@ frame %{
   // stack slot.
   // Ret Addr is on stack 4 slots (16 bytes) above _old_SP.
   // That's the after-PROLOG location. Actually it is passed in the LR register and
-  // the prolog saves in the caller's abi section.
+  // the prolog saves it in the caller's abi section.
   return_addr(STACK OptoReg::reg2stack(_old_SP) + 4);
 
   // Location of compiled Java return values.  Same as C
