@@ -291,8 +291,10 @@ public:
     return archive_ptr_array(tmp_array);
   }
 
-  // Compute the address at the given offset from requested_base. It's possible for
-  // requested_base to have the numerical value of 0x0.
+  // Compute the address at the given offset from requested_base, which must be the
+  // requested address of the bottom of the static or dynamic archive. In the case of
+  // the static archive, it's possible for requested_base to have the numerical value
+  // of 0x0, so we use integer arithmetic to avoid UB pointer arithmetic.
   template <typename T>
   static address offset_from_requested_base(T requested_base, size_t offset) {
     // As zero is allowed for requested_base, use integer arithmetic to avoid UB pointer arithmetic.
