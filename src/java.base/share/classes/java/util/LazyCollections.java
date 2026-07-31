@@ -621,8 +621,11 @@ final class LazyCollections {
             final Object[] mutexes = Objects.requireNonNull(this.mutexes, "Should not reach here");
             // Replace the old mutex with a tomb stone since now the old mutex can be collected.
             UNSAFE.putReferenceVolatile(mutexes, offset, TOMB_STONE);
-            // This access mode provides both acquire and release ordering which is
-            // needed here.
+            // In order not to rely on incidental volatile operations elsewhere, we elect
+            // to use full volatile semantics here in addition to atomicity. Each
+            // decrement publishes this slot's state and acquires state propagated by
+            // preceding decrements. The thread observing 1 has therefore acquired all
+            // completed-slot state before publishing `mutexes == null`.
             if (UNSAFE.getAndAddInt(this, COUNTER_OFFSET, -1) == 1) {
                 // Make the mutexes array eligible for garbage collection.
                 this.mutexes = null;
