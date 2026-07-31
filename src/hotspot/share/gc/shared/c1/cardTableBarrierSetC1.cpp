@@ -22,6 +22,7 @@
  *
  */
 
+#include "c1/c1_IR.hpp"
 #include "ci/ciInlineKlass.hpp"
 #include "code/aotCodeCache.hpp"
 #include "gc/shared/c1/cardTableBarrierSetC1.hpp"
@@ -49,7 +50,12 @@ void CardTableBarrierSetC1::store_at_resolved(LIRAccess& access, LIR_Opr value) 
       ciField* field = vk->nonstatic_field_at(i);
       if (!field->type()->is_primitive_type()) {
         int off = access.offset().opr().as_jint() + field->offset_in_bytes() - vk->payload_offset();
-        LIRAccess inner_access(access.gen(), decorators, access.base(), LIR_OprFact::intConst(off), field->type()->basic_type(), access.patch_emit_info(), access.access_emit_info());
+        // Each pre-barrier needs its own CodeEmitInfo
+        CodeEmitInfo* info = access.patch_emit_info();
+        if (info != nullptr) {
+          info = new CodeEmitInfo(info);
+        }
+        LIRAccess inner_access(access.gen(), decorators, access.base(), LIR_OprFact::intConst(off), field->type()->basic_type(), info, access.access_emit_info());
         pre_barrier(inner_access, resolve_address(inner_access, false),
                     LIR_OprFact::illegalOpr /* pre_val */, inner_access.patch_emit_info());
       }
