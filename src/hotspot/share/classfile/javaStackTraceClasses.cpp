@@ -818,7 +818,7 @@ void java_lang_Throwable::get_stack_trace_elements(int depth, Handle backtrace,
     THROW(vmSymbols::java_lang_IndexOutOfBoundsException());
   }
 
-  refArrayHandle result(THREAD, backtrace());
+  refArrayHandle result(THREAD, refArrayOop(backtrace()));
   BacktraceIterator iter(result, THREAD);
 
   int index = 0;
