@@ -3087,9 +3087,11 @@ public class TestLWorld {
     @IR(applyIf = {"UseArrayFlattening", "true"},
         failOn = {STORE_UNKNOWN_INLINE, INLINE_ARRAY_NULL_GUARD},
         counts = {COUNTED_LOOP, "= 2", LOAD_UNKNOWN_INLINE, "= 2"},
-         // Match on CCP since we are removing one of the unswitched loop versions later due to being empty
+        // Match on CCP since we are removing one of the unswitched loop versions later due to being empty
         phase = {CompilePhase.CCP1})
     public void test107(Object[] src1, Object[] src2) {
+        // Null check both arrays before the loop to allow both flat array checks to be hoisted.
+        src2 = Objects.requireNonNull(src2);
         for (int i = 0; i < src1.length; i++) {
             oFld1 = src1[i];
             oFld2 = src2[i];
