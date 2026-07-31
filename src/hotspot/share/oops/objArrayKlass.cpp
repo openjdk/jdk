@@ -237,14 +237,18 @@ ObjArrayKlass* ObjArrayKlass::allocate_klass_from_description(ArrayDescription a
 }
 
 objArrayOop ObjArrayKlass::allocate_instance(int length, ArrayProperties props, TRAPS) {
-  check_array_allocation_length(length, arrayOopDesc::max_array_length(T_OBJECT), CHECK_NULL);
   ObjArrayKlass* ak = klass_with_properties(props, CHECK_NULL);
-  switch (ak->kind()) {
+  return ak->allocate_instance(length, CHECK_NULL);
+}
+
+objArrayOop ObjArrayKlass::allocate_instance(int length, TRAPS) {
+  check_array_allocation_length(length, arrayOopDesc::max_array_length(T_OBJECT), CHECK_NULL);
+  switch (kind()) {
     case Klass::RefArrayKlassKind:
-      return RefArrayKlass::cast(ak)->allocate_instance(length, CHECK_NULL);
+      return RefArrayKlass::cast(this)->allocate_instance(length, CHECK_NULL);
 
     case Klass::FlatArrayKlassKind:
-      return FlatArrayKlass::cast(ak)->allocate_instance(length, CHECK_NULL);
+      return FlatArrayKlass::cast(this)->allocate_instance(length, CHECK_NULL);
 
     default:
       ShouldNotReachHere();
