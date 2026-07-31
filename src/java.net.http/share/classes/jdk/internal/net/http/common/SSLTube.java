@@ -49,7 +49,7 @@ import static javax.net.ssl.SSLEngineResult.HandshakeStatus.FINISHED;
  * the SSLTube wraps a SocketTube on the right hand side, and is connected
  * to an HttpConnection on the left hand side.
  *
- * <preformatted>{@code
+ * <pre>{@code
  *                  +----------  SSLTube -------------------------+
  *                  |                                             |
  *                  |                    +---SSLFlowDelegate---+  |
@@ -63,7 +63,7 @@ import static javax.net.ssl.SSLEngineResult.HandshakeStatus.FINISHED;
  *                  |                    +---------------------+  |
  *                  |                                             |
  *                  +---------------------------------------------+
- * }</preformatted>
+ * }</pre>
  */
 public class SSLTube implements FlowTube {
 
