@@ -137,6 +137,9 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index, bool caller_is_c1)
 
   // Must do an explicit check if offset too large or implicit checks are disabled.
   address ame_addr = __ pc();
+  if (UseArrayFlattening) {
+    __ stop("implement function VtableStubs::create_vtable_stub");
+  }
   __ null_check(Z_method, Z_R1_scratch, in_bytes(Method::from_compiled_offset()));
   __ z_lg(Z_R1_scratch, in_bytes(Method::from_compiled_offset()), Z_method);
   __ z_br(Z_R1_scratch);
@@ -216,6 +219,10 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index, bool caller_is_c1)
 #endif
 
   address ame_addr = __ pc();
+  if (UseArrayFlattening) {
+    __ stop("implement function VtableStubs::create_itable_stub");
+  }
+
   // Must do an explicit check if implicit checks are disabled.
   if (!ImplicitNullChecks) {
     __ compare64_and_branch(Z_method, (intptr_t) 0, Assembler::bcondEqual, no_such_interface);

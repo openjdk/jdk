@@ -49,6 +49,7 @@ class SignatureHandlerGenerator: public NativeSignatureIterator {
   void pass_double();
   void pass_float();
   void pass_object();
+  void pass_valuetype();
 
  public:
   // creation

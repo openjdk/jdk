@@ -132,6 +132,9 @@ void InterpreterRuntime::SignatureHandlerGenerator::pass_object() {
   }
 }
 
+void InterpreterRuntime::SignatureHandlerGenerator::pass_valuetype() {
+  pass_object();
+}
 
 void InterpreterRuntime::SignatureHandlerGenerator::generate(uint64_t fingerprint) {
   __ z_lgr(Z_R1, Z_ARG1); // Z_R1 is used in locals_j_arg_at(index) macro.
