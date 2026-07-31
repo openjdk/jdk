@@ -187,7 +187,7 @@ void* MallocTracker::record_malloc(void* malloc_base, size_t size, MemTag mem_ta
   return memblock;
 }
 
-void MallocTracker::chunk_assigned_to_arena(void* memblock, MemTag new_tag) {
+void MallocTracker::chunk_assigned_to_arena(void* memblock, MemTag new_tag, const NativeCallStack& new_stack) {
   MallocHeader* header = (MallocHeader*)memblock - 1;
 
   // Only decrement per-tag counters, leave the total malloc amounts unchanged.
@@ -195,14 +195,8 @@ void MallocTracker::chunk_assigned_to_arena(void* memblock, MemTag new_tag) {
 
   uint32_t new_mst_marker = 0;
   if (MemTracker::tracking_level() == NMT_detail && header->mem_tag() != new_tag) {
-    // retrieve the old stack from MST
-    NativeCallStack old_stack;
-    if (!MallocSiteTable::access_stack(old_stack, *header)) {
-      fatal("NMT is now out of sync.");
-    }
     MallocSiteTable::deallocation_at(header->size(), header->mst_marker());
-    // update MST with new tag
-    if (!MallocSiteTable::allocation_at(old_stack, header->size(), &new_mst_marker, new_tag)) {
+    if (!MallocSiteTable::allocation_at(new_stack, header->size(), &new_mst_marker, new_tag)) {
       fatal("NMT is now out of sync.");
     }
   }
@@ -216,7 +210,7 @@ void MallocTracker::chunk_assigned_to_arena(void* memblock, MemTag new_tag) {
   }
 }
 
-void MallocTracker::add_chunk_to_pool(void* memblock) {
+void MallocTracker::add_chunk_to_pool(void* memblock, const NativeCallStack& new_stack) {
   MallocHeader* header = (MallocHeader*)memblock - 1;
   assert(header->mem_tag() != mtChunk, "Should only be operating on arena chunks");
 
@@ -225,14 +219,8 @@ void MallocTracker::add_chunk_to_pool(void* memblock) {
 
   uint32_t new_mst_marker = 0;
   if (MemTracker::tracking_level() == NMT_detail) {
-    NativeCallStack old_stack;
-    // retrieve the old stack from MST
-    if (!MallocSiteTable::access_stack(old_stack, *header)) {
-      fatal("NMT is now out of sync.");
-    }
     MallocSiteTable::deallocation_at(header->size(), header->mst_marker());
-    // update MST with new tag
-    if (!MallocSiteTable::allocation_at(old_stack, header->size(), &new_mst_marker, mtChunk)) {
+    if (!MallocSiteTable::allocation_at(new_stack, header->size(), &new_mst_marker, mtChunk)) {
       fatal("NMT is now out of sync.");
     }
   }

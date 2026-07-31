@@ -156,34 +156,39 @@ TEST_VM(NMTChunkAccounting, mst) {
   if (!MemTracker::enabled() || MemTracker::tracking_level() != NMT_detail) {
     return;
   }
-  void* allocation = os::malloc(100, mtChunk, CALLER_PC);
+  NativeCallStack stack_a = CALLER_PC;
+  NativeCallStack stack_b = CURRENT_PC;
+  void* allocation = os::malloc(100, mtChunk, stack_a);
   MallocHeader* header = (MallocHeader*)allocation - 1;
   uint32_t old_marker = header->mst_marker();
   NativeCallStack old_stack;
   ASSERT_TRUE(MallocSiteTable::access_stack(old_stack, *header));
+  EXPECT_TRUE(old_stack.equals(stack_a));
 
-  MemTracker::chunk_assigned_to_arena(allocation, mtTest);
+  MemTracker::chunk_assigned_to_arena(allocation, mtTest, stack_b);
   EXPECT_TRUE(header->mem_tag() == mtTest);
   EXPECT_NE(header->mst_marker(), old_marker);
   NativeCallStack new_stack;
   EXPECT_TRUE(MallocSiteTable::access_stack(new_stack, *header));
-  EXPECT_TRUE(new_stack.equals(old_stack));
+  EXPECT_TRUE(new_stack.equals(stack_b));
 
-  MemTracker::add_chunk_to_pool(allocation);
+  MemTracker::add_chunk_to_pool(allocation, stack_a);
   ASSERT_TRUE(header->mem_tag() == mtChunk);
   ASSERT_TRUE(MallocSiteTable::access_stack(new_stack, *header));
-  EXPECT_TRUE(new_stack.equals(old_stack));
+  EXPECT_TRUE(new_stack.equals(stack_a));
   os::free(allocation);
 
   // Now test the path where new and old tags are equal.
-  allocation = os::malloc(100, mtTest, CALLER_PC);
+  // This should only happen when a fresh chunk is created to grow an arena.
+  allocation = os::malloc(100, mtTest, stack_b);
   header = (MallocHeader*)allocation - 1;
   old_marker = header->mst_marker();
   ASSERT_TRUE(MallocSiteTable::access_stack(old_stack, *header));
+  EXPECT_TRUE(old_stack.equals(stack_b));
 
-  MemTracker::chunk_assigned_to_arena(allocation, mtTest);
+  MemTracker::chunk_assigned_to_arena(allocation, mtTest, stack_b);
   EXPECT_TRUE(header->mem_tag() == mtTest);
   EXPECT_EQ(header->mst_marker(), old_marker);
   EXPECT_TRUE(MallocSiteTable::access_stack(new_stack, *header));
-  EXPECT_TRUE(new_stack.equals(old_stack));
+  EXPECT_TRUE(new_stack.equals(stack_b));
 }

@@ -204,7 +204,7 @@ Chunk* ChunkPool::allocate_chunk(Arena* arena, size_t length, AllocFailType allo
     }
     chunk = (Chunk*)p;
   }
-  MemTracker::chunk_assigned_to_arena(chunk, arena->get_mem_tag());
+  MemTracker::chunk_assigned_to_arena(chunk, arena->get_mem_tag(), CALLER_PC);
   ::new(chunk) Chunk(length);
   // We rely on arena alignment <= malloc alignment.
   assert(is_aligned(chunk, ARENA_AMALLOC_ALIGNMENT), "Chunk start address misaligned.");
@@ -229,7 +229,7 @@ void ChunkPool::deallocate_chunk(Chunk* c) {
     c->set_stamp(0);
   }
 
-  MemTracker::add_chunk_to_pool(c);
+  MemTracker::add_chunk_to_pool(c, CALLER_PC);
 
   // If this is a standard-sized chunk, return it to its pool; otherwise free it.
   ChunkPool* pool = ChunkPool::get_pool_for_size(c->length());

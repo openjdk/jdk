@@ -278,8 +278,8 @@ class MallocTracker : AllStatic {
   static void* record_malloc(void* malloc_base, size_t size, MemTag mem_tag,
     const NativeCallStack& stack);
 
-  static void chunk_assigned_to_arena(void* memblock, MemTag new_tag);
-  static void add_chunk_to_pool(void* memblock);
+  static void chunk_assigned_to_arena(void* memblock, MemTag new_tag, const NativeCallStack& new_stack);
+  static void add_chunk_to_pool(void* memblock, const NativeCallStack& new_stack);
 
   // Given a block returned by os::malloc() or os::realloc():
   // deaccount block from NMT, mark its header as dead and return pointer to header.
