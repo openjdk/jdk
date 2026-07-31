@@ -138,7 +138,7 @@ class SerialFullGC : AllStatic {
   // Call backs for marking
   static void mark_object(oop obj);
 
-  static inline void push_objarray(oop obj, size_t index);
+  static inline void push_objarray(objArrayOop obj, size_t index);
 
   static void follow_array(objArrayOop array);
 

@@ -24,6 +24,7 @@
 
 #include "ci/ciConstant.hpp"
 #include "ci/ciField.hpp"
+#include "ci/ciInlineKlass.hpp"
 #include "ci/ciMethod.hpp"
 #include "ci/ciMethodData.hpp"
 #include "ci/ciObjArrayKlass.hpp"
@@ -272,9 +273,21 @@ ciType* ciTypeFlow::StateVector::type_meet_internal(ciType* t1, ciType* t2, ciTy
     return t2;
   } else if (t2->equals(top_type())) {
     return t1;
-  } else if (t1->is_primitive_type() || t2->is_primitive_type()) {
+  }
+  // Unwrap after saving nullness information and handling top meets
+  assert(t1->is_early_larval() == t2->is_early_larval(), "States should be compatible.");
+  bool is_early_larval = t1->is_early_larval();
+  bool null_free1 = t1->is_null_free();
+  bool null_free2 = t2->is_null_free();
+  if (t1->unwrap() == t2->unwrap() && null_free1 == null_free2) {
+    return t1;
+  }
+  t1 = t1->unwrap();
+  t2 = t2->unwrap();
+
+  if (t1->is_primitive_type() || t2->is_primitive_type()) {
     // Special case null_type.  null_type meet any reference type T
-    // is T.  null_type meet null_type is null_type.
+    // is T. null_type meet null_type is null_type.
     if (t1->equals(null_type())) {
       if (!t2->is_primitive_type() || t2->equals(null_type())) {
         return t2;
@@ -288,50 +301,59 @@ ciType* ciTypeFlow::StateVector::type_meet_internal(ciType* t1, ciType* t2, ciTy
     // At least one of the two types is a non-top primitive type.
     // The other type is not equal to it.  Fall to bottom.
     return bottom_type();
-  } else {
-    // Both types are non-top non-primitive types.  That is,
-    // both types are either instanceKlasses or arrayKlasses.
-    ciKlass* object_klass = analyzer->env()->Object_klass();
-    ciKlass* k1 = t1->as_klass();
-    ciKlass* k2 = t2->as_klass();
-    if (k1->equals(object_klass) || k2->equals(object_klass)) {
-      return object_klass;
-    } else if (!k1->is_loaded() || !k2->is_loaded()) {
-      // Unloaded classes fall to java.lang.Object at a merge.
-      return object_klass;
-    } else if (k1->is_interface() != k2->is_interface()) {
-      // When an interface meets a non-interface, we get Object;
-      // This is what the verifier does.
-      return object_klass;
-    } else if (k1->is_array_klass() || k2->is_array_klass()) {
-      // When an array meets a non-array, we get Object.
-      // When objArray meets typeArray, we also get Object.
-      // And when typeArray meets different typeArray, we again get Object.
-      // But when objArray meets objArray, we look carefully at element types.
-      if (k1->is_obj_array_klass() && k2->is_obj_array_klass()) {
-        // Meet the element types, then construct the corresponding array type.
-        ciKlass* elem1 = k1->as_obj_array_klass()->element_klass();
-        ciKlass* elem2 = k2->as_obj_array_klass()->element_klass();
-        ciKlass* elem  = type_meet_internal(elem1, elem2, analyzer)->as_klass();
-        // Do an easy shortcut if one type is a super of the other.
-        if (elem == elem1) {
-          assert(k1 == ciObjArrayKlass::make(elem), "shortcut is OK");
-          return k1;
-        } else if (elem == elem2) {
-          assert(k2 == ciObjArrayKlass::make(elem), "shortcut is OK");
-          return k2;
-        } else {
-          return ciObjArrayKlass::make(elem);
-        }
+  }
+
+  // Both types are non-top non-primitive types.  That is,
+  // both types are either instanceKlasses or arrayKlasses.
+  ciKlass* object_klass = analyzer->env()->Object_klass();
+  ciKlass* k1 = t1->as_klass();
+  ciKlass* k2 = t2->as_klass();
+  if (k1->equals(object_klass) || k2->equals(object_klass)) {
+    return object_klass;
+  } else if (!k1->is_loaded() || !k2->is_loaded()) {
+    // Unloaded classes fall to java.lang.Object at a merge.
+    return object_klass;
+  } else if (k1->is_interface() != k2->is_interface()) {
+    // When an interface meets a non-interface, we get Object;
+    // This is what the verifier does.
+    return object_klass;
+  } else if (k1->is_array_klass() || k2->is_array_klass()) {
+    // When an array meets a non-array, we get Object.
+    // When objArray meets typeArray, we also get Object.
+    // And when typeArray meets different typeArray, we again get Object.
+    // But when objArray meets objArray, we look carefully at element types.
+    if (k1->is_obj_array_klass() && k2->is_obj_array_klass()) {
+      ciType* elem1 = k1->as_array_klass()->element_klass();
+      ciType* elem2 = k2->as_array_klass()->element_klass();
+      ciType* elem = elem1;
+      if (elem1 != elem2) {
+        elem = type_meet_internal(elem1, elem2, analyzer)->as_klass();
+      }
+      // Do an easy shortcut if one type is a super of the other.
+      if (elem == elem1 && !elem->is_inlinetype()) {
+        assert(k1 == ciArrayKlass::make(elem), "shortcut is OK");
+        return k1;
+      } else if (elem == elem2 && !elem->is_inlinetype()) {
+        assert(k2 == ciArrayKlass::make(elem), "shortcut is OK");
+        return k2;
       } else {
-        return object_klass;
+        return ciArrayKlass::make(elem);
       }
     } else {
-      // Must be two plain old instance klasses.
-      assert(k1->is_instance_klass(), "previous cases handle non-instances");
-      assert(k2->is_instance_klass(), "previous cases handle non-instances");
-      return k1->least_common_ancestor(k2);
+      return object_klass;
     }
+  } else {
+    // Must be two plain old instance klasses.
+    assert(k1->is_instance_klass(), "previous cases handle non-instances");
+    assert(k2->is_instance_klass(), "previous cases handle non-instances");
+    ciType* result = k1->least_common_ancestor(k2);
+    if (null_free1 && null_free2 && result->is_inlinetype()) {
+      result = analyzer->mark_as_null_free(result);
+    }
+    if (is_early_larval) {
+      result = analyzer->mark_as_early_larval(result);
+    }
+    return result;
   }
 }
 
@@ -393,7 +415,19 @@ const ciTypeFlow::StateVector* ciTypeFlow::get_start_state() {
   // "Push" the method signature into the first few locals.
   state->set_stack_size(-max_locals());
   if (!method()->is_static()) {
-    state->push(method()->holder());
+    ciType* holder = method()->holder();
+    if (method()->is_object_constructor()) {
+      if (holder->is_inlinetype() || (holder->is_instance_klass() && !holder->as_instance_klass()->flags().is_identity())) {
+        // The receiver is early larval (so also null-free)
+        holder = mark_as_early_larval(holder);
+      }
+    } else {
+      if (holder->is_inlinetype()) {
+        // The receiver is null-free
+        holder = mark_as_null_free(holder);
+      }
+    }
+    state->push(holder);
     assert(state->tos() == state->local(0), "");
   }
   for (ciSignatureStream str(method()->signature());
@@ -543,12 +577,12 @@ void ciTypeFlow::StateVector::push_translate(ciType* type) {
 }
 
 // ------------------------------------------------------------------
-// ciTypeFlow::StateVector::do_aaload
-void ciTypeFlow::StateVector::do_aaload(ciBytecodeStream* str) {
+// ciTypeFlow::StateVector::do_aload
+void ciTypeFlow::StateVector::do_aload(ciBytecodeStream* str) {
   pop_int();
-  ciObjArrayKlass* array_klass = pop_objArray();
+  ciArrayKlass* array_klass = pop_objOrFlatArray();
   if (array_klass == nullptr) {
-    // Did aaload on a null reference; push a null and ignore the exception.
+    // Did aload on a null reference; push a null and ignore the exception.
     // This instruction will never continue normally.  All we have to do
     // is report a value that will meet correctly with any downstream
     // reference types on paths that will truly be executed.  This null type
@@ -566,6 +600,7 @@ void ciTypeFlow::StateVector::do_aaload(ciBytecodeStream* str) {
     return;
   }
   ciKlass* element_klass = array_klass->element_klass();
+  // TODO 8350865 Can we check that array_klass is null_free and use mark_as_null_free on the result here?
   if (!element_klass->is_loaded() && element_klass->is_instance_klass()) {
     Untested("unloaded array element class in ciTypeFlow");
     trap(str, element_klass,
@@ -591,7 +626,13 @@ void ciTypeFlow::StateVector::do_checkcast(ciBytecodeStream* str) {
     pop_object();
     do_null_assert(klass);
   } else {
-    pop_object();
+    ciType* type = pop_value();
+    type = type->unwrap();
+    if (type->is_loaded() && klass->is_loaded() &&
+        type != klass && type->is_subtype_of(klass)) {
+      // Useless cast, propagate more precise type of object
+      klass = type->as_klass();
+    }
     push_object(klass);
   }
 }
@@ -613,7 +654,16 @@ void ciTypeFlow::StateVector::do_getstatic(ciBytecodeStream* str) {
     trap(str, field->holder(), str->get_field_holder_index());
   } else {
     ciType* field_type = field->type();
-    if (!field_type->is_loaded()) {
+    if (field->is_static() && field->is_null_free() &&
+        !field_type->as_instance_klass()->is_initialized()) {
+      // Deoptimize if we load from a static field with an uninitialized inline type
+      // because we need to throw an exception if initialization of the type failed.
+      trap(str, field_type->as_klass(),
+           Deoptimization::make_trap_request
+           (Deoptimization::Reason_unloaded,
+            Deoptimization::Action_reinterpret));
+      return;
+    } else if (!field_type->is_loaded()) {
       // Normally, we need the field's type to be loaded if we are to
       // do anything interesting with its value.
       // We used to do this:  trap(str, str->get_field_signature_index());
@@ -634,6 +684,9 @@ void ciTypeFlow::StateVector::do_getstatic(ciBytecodeStream* str) {
       // (See bug 4379915.)
       do_null_assert(field_type->as_klass());
     } else {
+      if (field->is_null_free()) {
+        field_type = outer()->mark_as_null_free(field_type);
+      }
       push_translate(field_type);
     }
   }
@@ -681,7 +734,17 @@ void ciTypeFlow::StateVector::do_invoke(ciBytecodeStream* str,
       pop();
     }
     if (has_receiver) {
-      // Check this?
+      if (type_at_tos()->is_early_larval()) {
+        // Call with larval receiver accepted by verifier
+        // => this is <init> and the receiver is no longer larval after that.
+        Cell limit = limit_cell();
+        for (Cell c = start_cell(); c < limit; c = next_cell(c)) {
+          if (type_at(c)->ident() == type_at_tos()->ident()) {
+            assert(type_at(c) == type_at_tos(), "Sin! Abomination!");
+            set_type_at(c, type_at_tos()->unwrap());
+          }
+        }
+      }
       pop_object();
     }
     assert(!sigstr.is_done(), "must have return type");
@@ -737,7 +800,11 @@ void ciTypeFlow::StateVector::do_ldc(ciBytecodeStream* str) {
         push_null();
       } else {
         assert(obj->is_instance() || obj->is_array(), "must be java_mirror of klass");
-        push_object(obj->klass());
+        ciType* type = obj->klass();
+        if (type->is_inlinetype()) {
+          type = outer()->mark_as_null_free(type);
+        }
+        push(type);
       }
     } else {
       assert(basic_type == con.basic_type() || con.basic_type() == T_OBJECT,
@@ -775,6 +842,10 @@ void ciTypeFlow::StateVector::do_new(ciBytecodeStream* str) {
   if (!will_link || str->is_unresolved_klass()) {
     trap(str, klass, str->get_klass_index());
   } else {
+    if (klass->is_inlinetype()) {
+      push(outer()->mark_as_early_larval(klass));
+      return;
+    }
     push_object(klass);
   }
 }
@@ -884,13 +955,13 @@ bool ciTypeFlow::StateVector::apply_one_bytecode(ciBytecodeStream* str) {
   }
 
   switch(str->cur_bc()) {
-  case Bytecodes::_aaload: do_aaload(str);                       break;
+  case Bytecodes::_aaload: do_aload(str);                           break;
 
   case Bytecodes::_aastore:
     {
       pop_object();
       pop_int();
-      pop_objArray();
+      pop_objOrFlatArray();
       break;
     }
   case Bytecodes::_aconst_null:
@@ -912,7 +983,7 @@ bool ciTypeFlow::StateVector::apply_one_bytecode(ciBytecodeStream* str) {
       if (!will_link) {
         trap(str, element_klass, str->get_klass_index());
       } else {
-        push_object(ciObjArrayKlass::make(element_klass));
+        push_object(ciArrayKlass::make(element_klass));
       }
       break;
     }
@@ -1471,6 +1542,7 @@ bool ciTypeFlow::StateVector::apply_one_bytecode(ciBytecodeStream* str) {
       push(value2);
       break;
     }
+
   case Bytecodes::_wide:
   default:
     {
@@ -1491,7 +1563,7 @@ bool ciTypeFlow::StateVector::apply_one_bytecode(ciBytecodeStream* str) {
 // ------------------------------------------------------------------
 // ciTypeFlow::StateVector::print_cell_on
 void ciTypeFlow::StateVector::print_cell_on(outputStream* st, Cell c) const {
-  ciType* type = type_at(c);
+  ciType* type = type_at(c)->unwrap();
   if (type == top_type()) {
     st->print("top");
   } else if (type == bottom_type()) {
@@ -1754,9 +1826,12 @@ ciTypeFlow::Block::successors(ciBytecodeStream* str,
         break;
       }
 
-      case Bytecodes::_athrow:     case Bytecodes::_ireturn:
-      case Bytecodes::_lreturn:    case Bytecodes::_freturn:
-      case Bytecodes::_dreturn:    case Bytecodes::_areturn:
+      case Bytecodes::_athrow:
+      case Bytecodes::_ireturn:
+      case Bytecodes::_lreturn:
+      case Bytecodes::_freturn:
+      case Bytecodes::_dreturn:
+      case Bytecodes::_areturn:
       case Bytecodes::_return:
         _successors =
           new (arena) GrowableArray<Block*>(arena, 1, 0, nullptr);
@@ -3147,6 +3222,17 @@ void ciTypeFlow::record_failure(const char* reason) {
     // Record the first failure reason.
     _failure_reason = reason;
   }
+}
+
+ciType* ciTypeFlow::mark_as_early_larval(ciType* type) {
+  // Wrap the type to carry the information that it is null-free
+  return env()->make_early_larval_wrapper(type);
+}
+
+
+ciType* ciTypeFlow::mark_as_null_free(ciType* type) {
+  // Wrap the type to carry the information that it is null-free
+  return env()->make_null_free_wrapper(type);
 }
 
 #ifndef PRODUCT
