@@ -178,7 +178,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * distinguished from each other and every bit pattern encoding a NaN
  * is distinguished from every other bit pattern encoding a NaN.
  * Note this is the notion of equivalence used when {@linkplain
- * Object#equals(Object) comparing value objects for equality}.
+ * Object##equalsIndistinguishable comparing value objects for equality}.
  * </dd>
  *
  * <dt><dfn><a id=repEquivalence></a>{@index "representation equivalence"}</dfn>:</dt>
