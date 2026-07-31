@@ -2689,9 +2689,8 @@ static bool is_vector_unary_bitwise_op(Node* n) {
   // operation keeps its first operand, so both inputs must be preserved (and
   // their order matters, since in(1) becomes the masked MacroLogicV
   // passthrough). Only an unmasked not-pattern is genuinely unary.
-  return n->Opcode() == Op_XorV &&
-         !n->is_predicated_vector() &&
-         VectorNode::is_vector_bitwise_not_pattern(n);
+return VectorNode::is_vector_bitwise_not_pattern(n) &&
+       !n->is_predicated_vector();
 }
 
 static bool is_vector_binary_bitwise_op(Node* n) {
