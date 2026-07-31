@@ -1048,7 +1048,7 @@ class RelocateBufferToRequested : public BitMapClosure {
 
     address bottom = _builder->buffer_bottom();
     address top = _builder->buffer_top();
-    address new_bottom = ArchiveUtils::offset_to_requested_addr(bottom, _buffer_to_requested_delta);
+    address new_bottom = bottom +  _buffer_to_requested_delta;
     address new_top = top + _buffer_to_requested_delta;
     aot_log_debug(aot)("Relocating archive from [" INTPTR_FORMAT " - " INTPTR_FORMAT "] to "
                    "[" INTPTR_FORMAT " - " INTPTR_FORMAT "]",
