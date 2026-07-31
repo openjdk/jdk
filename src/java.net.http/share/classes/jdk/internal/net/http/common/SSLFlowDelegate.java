@@ -244,17 +244,10 @@ public class SSLFlowDelegate {
         final ReentrantLock readBufferLock = new ReentrantLock();
         final Logger debugr = Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
 
-        private final class ReaderDownstreamPusher implements Runnable {
-            @Override
-            public void run() {
-                processData();
-            }
-        }
-
         Reader() {
             super();
             scheduler = SequentialScheduler.lockingScheduler(
-                    new ReaderDownstreamPusher());
+                    this::processData);
             this.readBuf = ByteBuffer.allocate(1024);
             readBuf.limit(0); // keep in read mode
         }
@@ -588,14 +581,10 @@ public class SSLFlowDelegate {
         volatile boolean completing;
         boolean completed; // only accessed in processData
 
-        class WriterDownstreamPusher extends SequentialScheduler.CompleteRestartableTask {
-            @Override public void run() { processData(); }
-        }
-
         Writer() {
             super();
             writeList = Collections.synchronizedList(new LinkedList<>());
-            scheduler = new SequentialScheduler(new WriterDownstreamPusher());
+            scheduler = SequentialScheduler.lockingScheduler(this::processData);
         }
 
         @Override
