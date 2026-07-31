@@ -1074,7 +1074,7 @@ bool PhaseIterGVN::needs_deep_revisit(const Node* n) const {
 
 bool PhaseIterGVN::drain_worklist() {
   uint loop_count = 1;
-  const int max_live_nodes_increase_per_iteration = NodeLimitFudgeFactor * 3;
+  const int max_live_nodes_increase_per_iteration = NodeLimitFudgeFactor * 5;
   while (_worklist.size() != 0) {
     if (C->check_node_count(max_live_nodes_increase_per_iteration, "Out of nodes")) {
       C->print_method(PHASE_AFTER_ITER_GVN, 3);
@@ -1332,7 +1332,7 @@ void PhaseIterGVN::verify_Value_for(const Node* n, bool strict) {
   stringStream ss; // Print as a block without tty lock.
   ss.cr();
   ss.print_cr("Missed Value optimization:");
-  n->dump_bfs(1, nullptr, "", &ss);
+  n->dump_bfs(3, nullptr, "", &ss);
   ss.print_cr("Current type:");
   told->dump_on(&ss);
   ss.cr();
@@ -1963,6 +1963,16 @@ void PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape, bool deep_revisit
       assert(false, "Unexpected hash change from applying Ideal optimization on %s", n->Name());
     }
 
+    // Some nodes try to push itself back to the worklist if can_reshape is
+    // false
+    if (!can_reshape && _worklist.size() > 0 && _worklist.pop() != n) {
+      stringStream ss;
+      ss.cr();
+      ss.print_cr("Previously optimized:");
+      n->dump_bfs(1, nullptr, "", &ss);
+      tty->print_cr("%s", ss.as_string());
+      assert(false, "should only push itself on worklist");
+    }
     verify_empty_worklist(n);
 
     // Everything is good.
@@ -2182,16 +2192,16 @@ Node* PhaseIterGVN::register_new_node_with_optimizer(Node* n, Node* orig) {
 //------------------------------transform--------------------------------------
 // Non-recursive: idealize Node 'n' with respect to its inputs and its value
 Node *PhaseIterGVN::transform( Node *n ) {
-  if (_delay_transform) {
-    // Register the node but don't optimize for now
-    register_new_node_with_optimizer(n);
-    return n;
-  }
-
   // If brand new node, make space in type array, and give it a type.
   ensure_type_or_null(n);
   if (type_or_null(n) == nullptr) {
     set_type_bottom(n);
+  }
+
+  if (_delay_transform) {
+    // Add the node to the worklist but don't optimize for now
+    _worklist.push(n);
+    return n;
   }
 
   return transform_old(n);
@@ -2476,6 +2486,19 @@ void PhaseIterGVN::subsume_node( Node *old, Node *nn ) {
   temp->destruct(this);     // reuse the _idx of this little guy
 }
 
+// Replaces n with m in all uses, including self-loops.
+void PhaseIterGVN::replace_in_uses(Node* n, Node* m) {
+  assert(n != nullptr, "sanity");
+  add_users_to_worklist(n);
+  for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+    Node* u = n->fast_out(i);
+    rehash_node_delayed(u);
+    int nb = u->replace_edge(n, m);
+    --i, imax -= nb;
+  }
+  assert(n->outcnt() == 0, "all uses must be deleted");
+}
+
 //------------------------------add_users_to_worklist--------------------------
 void PhaseIterGVN::add_users_to_worklist0(Node* n, Unique_Node_List& worklist) {
   for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
@@ -2528,6 +2551,16 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     Node* p = use->as_CallDynamicJava()->proj_out_or_null(TypeFunc::Control);
     if (p != nullptr) {
       add_users_to_worklist0(p, worklist);
+    }
+  }
+
+  // AndLNode::Ideal folds GraphKit::mark_word_test patterns. Give it a chance to run.
+  if (n->is_Load() && use->is_Phi()) {
+    for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
+      Node* u = use->fast_out(i);
+      if (u->Opcode() == Op_AndL) {
+        worklist.push(u);
+      }
     }
   }
 
@@ -2628,6 +2661,17 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     }
   }
 
+  // Inline type nodes can have other inline types as users. If an input gets
+  // updated, make sure that inline type users get a chance for optimization.
+  if (use->is_InlineType() || use->is_DecodeN()) {
+    auto push_the_uses_to_worklist = [&](Node* n){
+      if (n->is_InlineType()) {
+        worklist.push(n);
+      }
+    };
+    auto is_boundary = [](Node* n){ return !n->is_InlineType(); };
+    use->visit_uses(push_the_uses_to_worklist, is_boundary, true);
+  }
   // If changed Cast input, notify down for Phi, Sub, and Xor - all do "uncast"
   // Patterns:
   // ConstraintCast+ -> Sub
@@ -2769,6 +2813,24 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   bool has_load_barrier_nodes = bs->has_load_barrier_nodes();
 
+  if (use_op == Op_CastP2X) {
+    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+      Node* u = use->fast_out(i2);
+      // TODO 8350865 Still needed? Yes, I think this is from PhaseMacroExpand::expand_mh_intrinsic_return
+      if (u->Opcode() == Op_AndX) {
+        worklist.push(u);
+      }
+      // Search for CmpL(OrL(CastP2X(..), CastP2X(..)), 0L)
+      if (u->Opcode() == Op_OrL) {
+        for (DUIterator_Fast i3max, i3 = u->fast_outs(i3max); i3 < i3max; i3++) {
+          Node* cmp = u->fast_out(i3);
+          if (cmp->Opcode() == Op_CmpL) {
+            worklist.push(cmp);
+          }
+        }
+      }
+    }
+  }
   if (use_op == Op_LoadP && use->bottom_type()->isa_rawptr()) {
     for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
       Node* u = use->fast_out(i2);
@@ -2782,6 +2844,16 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
         }
         worklist.push(u);
       }
+    }
+  }
+  // Give CallStaticJavaNode::remove_useless_allocation a chance to run
+  if (use->is_Region()) {
+    Node* c = use;
+    do {
+      c = c->unique_ctrl_out_or_null();
+    } while (c != nullptr && c->is_Region());
+    if (c != nullptr && c->is_CallStaticJava() && c->as_CallStaticJava()->uncommon_trap_request() != 0) {
+      worklist.push(c);
     }
   }
   if (use->Opcode() == Op_OpaqueZeroTripGuard) {
@@ -2880,7 +2952,7 @@ PhaseCCP::~PhaseCCP() {
 #ifdef ASSERT
 void PhaseCCP::verify_type(Node* n, const Type* tnew, const Type* told) {
   if (tnew->meet(told) != tnew->remove_speculative()) {
-    n->dump(1);
+    n->dump(3);
     tty->print("told = "); told->dump(); tty->cr();
     tty->print("tnew = "); tnew->dump(); tty->cr();
     fatal("Not monotonic");
@@ -3049,6 +3121,7 @@ void PhaseCCP::push_more_uses(Unique_Node_List& worklist, Node* parent, const No
   push_catch(worklist, use);
   push_cmpu(worklist, use);
   push_counted_loop_phi(worklist, parent, use);
+  push_cast(worklist, use);
   push_loadp(worklist, use);
   push_and(worklist, parent, use);
   push_cast_ii(worklist, parent, use);
@@ -3156,6 +3229,19 @@ void PhaseCCP::push_counted_loop_phi(Unique_Node_List& worklist, Node* parent, c
     PhiNode* phi = countedloop_phi_from_cmp(use->as_Cmp(), parent);
     if (phi != nullptr) {
       worklist.push(phi);
+    }
+  }
+}
+
+// TODO 8350865 Still needed? Yes, I think this is from PhaseMacroExpand::expand_mh_intrinsic_return
+void PhaseCCP::push_cast(Unique_Node_List& worklist, const Node* use) {
+  uint use_op = use->Opcode();
+  if (use_op == Op_CastP2X) {
+    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+      Node* u = use->fast_out(i2);
+      if (u->Opcode() == Op_AndX) {
+        worklist.push(u);
+      }
     }
   }
 }

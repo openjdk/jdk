@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,15 +29,12 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicReference;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import jdk.internal.net.http.common.BufferSupplier;
@@ -46,8 +43,6 @@ import jdk.internal.net.http.common.FlowTube;
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.SequentialScheduler;
-import jdk.internal.net.http.common.SequentialScheduler.DeferredCompleter;
-import jdk.internal.net.http.common.SequentialScheduler.RestartableTask;
 import jdk.internal.net.http.common.Utils;
 
 /**
@@ -158,34 +153,6 @@ final class SocketTube implements FlowTube {
         }
         readPublisher.subscriptionImpl.signalError(
                 new IOException("connection closed locally", cause));
-    }
-
-    /**
-     * A restartable task used to process tasks in sequence.
-     */
-    private static class SocketFlowTask implements RestartableTask {
-        final Runnable task;
-        private final Lock lock = new ReentrantLock();
-        SocketFlowTask(Runnable task) {
-            this.task = task;
-        }
-        @Override
-        public final void run(DeferredCompleter taskCompleter) {
-            try {
-                // The logics of the sequential scheduler should ensure that
-                // the restartable task is running in only one thread at
-                // a given time: there should never be contention.
-                boolean locked = lock.tryLock();
-                assert locked : "contention detected in SequentialScheduler";
-                try {
-                    task.run();
-                } finally {
-                    if (locked) lock.unlock();
-                }
-            } finally {
-                taskCompleter.complete();
-            }
-        }
     }
 
     // This is best effort - there's no guarantee that the printed set of values
@@ -682,7 +649,7 @@ final class SocketTube implements FlowTube {
             private final AsyncEvent subscribeEvent;
 
             InternalReadSubscription() {
-                readScheduler = new SequentialScheduler(new SocketFlowTask(this::read));
+                readScheduler = SequentialScheduler.lockingScheduler(this::read);
                 subscribeEvent = new AsyncTriggerEvent(this::signalError,
                                                        this::handleSubscribeEvent);
                 readEvent = new ReadEvent(channel, this);

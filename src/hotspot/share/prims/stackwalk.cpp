@@ -51,20 +51,20 @@ BaseFrameStream::BaseFrameStream(JavaThread* thread, Handle continuation)
     assert(thread != nullptr, "");
 }
 
-void BaseFrameStream::setup_magic_on_entry(objArrayHandle frames_array) {
+void BaseFrameStream::setup_magic_on_entry(refArrayHandle frames_array) {
   frames_array->obj_at_put(magic_pos, _thread->threadObj());
   _anchor = address_value();
   assert(check_magic(frames_array), "invalid magic");
 }
 
-bool BaseFrameStream::check_magic(objArrayHandle frames_array) {
+bool BaseFrameStream::check_magic(refArrayHandle frames_array) {
   oop   m1 = frames_array->obj_at(magic_pos);
   jlong m2 = _anchor;
   if (m1 == _thread->threadObj() && m2 == address_value())  return true;
   return false;
 }
 
-bool BaseFrameStream::cleanup_magic_on_exit(objArrayHandle frames_array) {
+bool BaseFrameStream::cleanup_magic_on_exit(refArrayHandle frames_array) {
   bool ok = check_magic(frames_array);
   frames_array->obj_at_put(magic_pos, nullptr);
   _anchor = 0L;
@@ -132,7 +132,7 @@ void LiveFrameStream::next() {
 //                 for this BaseFrameStream to use
 //
 BaseFrameStream* BaseFrameStream::from_current(JavaThread* thread, jlong magic,
-                                               objArrayHandle frames_array)
+                                               refArrayHandle frames_array)
 {
   oop m1 = frames_array->obj_at(magic_pos);
   if (m1 != thread->threadObj()) return nullptr;
@@ -163,7 +163,7 @@ BaseFrameStream* BaseFrameStream::from_current(JavaThread* thread, jlong magic,
 //
 int StackWalk::fill_in_frames(jint mode, BaseFrameStream& stream,
                               int buffer_size, int start_index,
-                              objArrayHandle  frames_array,
+                              refArrayHandle frames_array,
                               int& end_index, TRAPS) {
   log_debug(stackwalk)("fill_in_frames limit=%d start=%d frames length=%d",
                        buffer_size, start_index, frames_array->length());
@@ -211,7 +211,7 @@ int StackWalk::fill_in_frames(jint mode, BaseFrameStream& stream,
 }
 
 // Fill in the LiveStackFrameInfo at the given index in frames_array
-void LiveFrameStream::fill_frame(int index, objArrayHandle  frames_array,
+void LiveFrameStream::fill_frame(int index, refArrayHandle frames_array,
                                  const methodHandle& method, TRAPS) {
   HandleMark hm(THREAD);
   Handle stackFrame(THREAD, frames_array->obj_at(index));
@@ -219,7 +219,7 @@ void LiveFrameStream::fill_frame(int index, objArrayHandle  frames_array,
 }
 
 // Fill in the StackFrameInfo at the given index in frames_array
-void JavaFrameStream::fill_frame(int index, objArrayHandle  frames_array,
+void JavaFrameStream::fill_frame(int index, refArrayHandle frames_array,
                                  const methodHandle& method, TRAPS) {
   if (_need_method_info) {
     HandleMark hm(THREAD);
@@ -385,7 +385,7 @@ void LiveFrameStream::fill_live_stackframe(Handle stackFrame,
 // Returns Object returned from AbstractStackWalker::doStackWalk call.
 //
 oop StackWalk::walk(Handle stackStream, jint mode, int skip_frames, Handle cont_scope, Handle cont,
-                    int buffer_size, int start_index, objArrayHandle frames_array,
+                    int buffer_size, int start_index, refArrayHandle frames_array,
                     TRAPS) {
   ResourceMark rm(THREAD);
   HandleMark hm(THREAD); // needed to store a continuation in the RegisterMap
@@ -426,7 +426,7 @@ oop StackWalk::walk(Handle stackStream, jint mode, int skip_frames, Handle cont_
 
 oop StackWalk::fetchFirstBatch(BaseFrameStream& stream, Handle stackStream,
                                jint mode, int skip_frames, int buffer_size,
-                               int start_index, objArrayHandle frames_array, TRAPS) {
+                               int start_index, refArrayHandle frames_array, TRAPS) {
   methodHandle m_doStackWalk(THREAD, Universe::do_stack_walk_method());
 
   {
@@ -506,7 +506,7 @@ oop StackWalk::fetchFirstBatch(BaseFrameStream& stream, Handle stackStream,
 //
 jint StackWalk::fetchNextBatch(Handle stackStream, jint mode, jlong magic,
                                int last_batch_count, int buffer_size, int start_index,
-                               objArrayHandle frames_array,
+                               refArrayHandle frames_array,
                                TRAPS)
 {
   JavaThread* jt = THREAD;
@@ -563,7 +563,7 @@ jint StackWalk::fetchNextBatch(Handle stackStream, jint mode, jlong magic,
   return 0;
 }
 
-void StackWalk::setContinuation(Handle stackStream, jlong magic, objArrayHandle frames_array, Handle cont, TRAPS) {
+void StackWalk::setContinuation(Handle stackStream, jlong magic, refArrayHandle frames_array, Handle cont, TRAPS) {
   JavaThread* jt = JavaThread::cast(THREAD);
 
   if (frames_array.is_null()) {
