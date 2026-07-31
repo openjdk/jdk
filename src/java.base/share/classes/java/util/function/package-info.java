@@ -109,16 +109,16 @@
  *     </li>
  * </ul>
  *
- * <h2><a id=functionsAndNull>Hanndling null</a></h2>
+ * <h2><a id=functionsAndNull>Handling null</a></h2>
  *
  * The interfaces in this package focus on defining the
  * <em>structure</em> of the functional interfaces; the exact
- * semantics of the methods on null arguments and whether or now not a
+ * semantics of the methods on null arguments and whether or not a
  * return value can be null is largely left to particular
  * implementations of the interfaces. Therefore, unless otherwise
  * specified for arguments and return values that have a reference
- * type, arguments to methods may be null and the the return value may
- * be null.
+ * type, arguments to methods may be null and the return value may be
+ * null.
  *
  * @see java.lang.FunctionalInterface
  * @since 1.8
