@@ -46,5 +46,5 @@ vmTestbase/gc/gctests/MemoryEaterMT/MemoryEaterMT.java        8289582   windows-
 
 #############################################################################
 
-# Valhalla failures start here:
+# Value Objects failures start here:
 

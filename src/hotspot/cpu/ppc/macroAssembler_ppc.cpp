@@ -2763,6 +2763,11 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
     const Register monitor    = UseObjectMonitorTable ? tmp1 : noreg;
     const Register owner_addr = tmp2;
     const Register thread_id  = UseObjectMonitorTable ? tmp3 : tmp1;
+    // Offsets into the current thread's object monitor cache (omc).
+    const ByteSize thr_omc_offset     = JavaThread::om_cache_offset();
+    const ByteSize omc_monitor_offset = OMCache::monitor_offset();
+    const ByteSize omc_obj_offset     = OMCache::obj_offset();
+
     Label monitor_locked;
 
     if (!UseObjectMonitorTable) {
@@ -2777,18 +2782,12 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
       // Save the mark, we might need it to extract the hash.
       mr(tmp2_hash, mark);
 
-      // Look for the monitor in the om_cache.
+      // Look for the monitor in the current thread's object monitor cache (omc).
 
-      ByteSize cache_offset   = JavaThread::om_cache_oops_offset();
-      ByteSize monitor_offset = OMCache::oop_to_monitor_difference();
-      const int num_unrolled  = OMCache::CAPACITY;
-      for (int i = 0; i < num_unrolled; i++) {
-        ld(R0, in_bytes(cache_offset), R16_thread);
-        ld(monitor, in_bytes(cache_offset + monitor_offset), R16_thread);
-        cmpd(CR0, R0, obj);
-        beq(CR0, monitor_found);
-        cache_offset = cache_offset + OMCache::oop_to_oop_difference();
-      }
+      ld(R0, in_bytes(thr_omc_offset + omc_obj_offset), R16_thread);
+      ld(monitor, in_bytes(thr_omc_offset + omc_monitor_offset), R16_thread);
+      cmpd(CR0, R0, obj);
+      beq(CR0, monitor_found);
 
       // Look for the monitor in the table.
 
@@ -2816,6 +2815,10 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
       bs_asm->try_peek_weak_handle_in_nmethod(this, tmp3, tmp3, tmp2, slow_path);
       cmpd(CR0, tmp3, obj);
       bne(CR0, slow_path);
+
+      // Store the monitor in the current thread's object monitor cache (omc).
+      std(monitor, in_bytes(thr_omc_offset + omc_monitor_offset), R16_thread);
+      std(obj, in_bytes(thr_omc_offset + omc_obj_offset), R16_thread);
 
       bind(monitor_found);
 
@@ -2854,6 +2857,7 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
 
     bind(monitor_locked);
     if (UseObjectMonitorTable) {
+      // Cache the monitor for unlock.
       std(monitor, BasicLock::object_monitor_cache_offset_in_bytes(), box);
     }
   }
