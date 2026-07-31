@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ public class CondyBadBSMArrayTest {
             throw new RuntimeException("Expected ClassFormatError exception not thrown");
         } catch (java.lang.ClassFormatError e) {
             if (!e.getMessage().contains("Short length on BootstrapMethods in class file")) {
-                throw new RuntimeException("ClassFormatError thrown, incorrect message");
+                throw new RuntimeException("ClassFormatError thrown, incorrect message: " + e.getMessage());
             }
             System.out.println("Test CondyEmptyBSMArray1 passed: " + e.getMessage());
         } catch (Throwable e) {

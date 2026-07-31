@@ -78,6 +78,8 @@
 #include "nmt/memTracker.hpp"
 #include "oops/compressedKlass.hpp"
 #include "oops/constantPool.inline.hpp"
+#include "oops/flatArrayKlass.hpp"
+#include "oops/inlineKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.hpp"
@@ -502,7 +504,7 @@ void AOTMetaspace::serialize(SerializeClosure* soc) {
   soc->do_tag(arrayOopDesc::base_offset_in_bytes(T_BYTE));
   soc->do_tag(sizeof(ConstantPool));
   soc->do_tag(sizeof(ConstantPoolCache));
-  soc->do_tag(objArrayOopDesc::base_offset_in_bytes());
+  soc->do_tag(refArrayOopDesc::base_offset_in_bytes());
   soc->do_tag(typeArrayOopDesc::base_offset_in_bytes(T_BYTE));
   soc->do_tag(sizeof(Symbol));
 
@@ -581,7 +583,14 @@ static void rewrite_bytecodes(const methodHandle& method) {
         case btos:
           // fallthrough
         case ztos: new_code = Bytecodes::_fast_bgetfield; break;
-        case atos: new_code = Bytecodes::_fast_agetfield; break;
+        case atos: {
+          if (rfe->is_flat()) {
+            new_code = Bytecodes::_fast_vgetfield;
+          } else {
+            new_code = Bytecodes::_fast_agetfield;
+          }
+          break;
+        }
         case itos: new_code = Bytecodes::_fast_igetfield; break;
         case ctos: new_code = Bytecodes::_fast_cgetfield; break;
         case stos: new_code = Bytecodes::_fast_sgetfield; break;
@@ -606,7 +615,14 @@ static void rewrite_bytecodes(const methodHandle& method) {
         switch(rfe->tos_state()) {
         case btos: new_code = Bytecodes::_fast_bputfield; break;
         case ztos: new_code = Bytecodes::_fast_zputfield; break;
-        case atos: new_code = Bytecodes::_fast_aputfield; break;
+        case atos: {
+          if (rfe->is_flat() || rfe->is_null_free_inline_type()) {
+            new_code = Bytecodes::_fast_vputfield;
+          } else {
+            new_code = Bytecodes::_fast_aputfield;
+          }
+          break;
+        }
         case itos: new_code = Bytecodes::_fast_iputfield; break;
         case ctos: new_code = Bytecodes::_fast_cputfield; break;
         case stos: new_code = Bytecodes::_fast_sputfield; break;

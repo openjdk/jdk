@@ -236,7 +236,7 @@ void PhaseCFG::schedule_pinned_nodes(VectorSet &visited) {
       }
 
       // process all inputs that are non null
-      for (int i = node->req()-1; i >= 0; --i) {
+      for (int i = node->len()-1; i >= 0; --i) {
         if (node->in(i) != nullptr) {
           spstack.push(node->in(i));
         }
@@ -1596,6 +1596,9 @@ void PhaseCFG::schedule_late(VectorSet &visited, Node_Stack &stack) {
         early->add_inst(self);
         continue;
         break;
+      case Op_CastI2N:
+        early->add_inst(self);
+        continue;
       case Op_CheckCastPP: {
         // Don't move CheckCastPP nodes away from their input, if the input
         // is a rawptr (5071820).

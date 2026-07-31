@@ -72,8 +72,8 @@ class java_lang_Throwable: AllStatic {
 
  public:
   // Backtrace
-  static oop backtrace(oop throwable);
-  static void set_backtrace(oop throwable, oop value);
+  static refArrayOop backtrace(oop throwable);
+  static void set_backtrace(oop throwable, refArrayOop value);
   static int depth(oop throwable);
   static void set_depth(oop throwable, int value);
   // Message
@@ -98,7 +98,7 @@ class java_lang_Throwable: AllStatic {
   static void fill_in_stack_trace(Handle throwable, const methodHandle& method = methodHandle());
 
   // Programmatic access to stack trace
-  static void get_stack_trace_elements(int depth, Handle backtrace, objArrayHandle stack_trace, TRAPS);
+  static void get_stack_trace_elements(int depth, Handle backtrace, refArrayHandle stack_trace, TRAPS);
 
   // For recreating class initialization error exceptions.
   static Handle create_initialization_error(JavaThread* current, Handle throwable);

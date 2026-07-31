@@ -36,7 +36,7 @@
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
-#include "oops/objArrayOop.inline.hpp"
+#include "oops/refArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "oops/typeArrayOop.inline.hpp"
@@ -158,12 +158,11 @@ oop java_lang_Throwable::unassigned_stacktrace() {
   return base->obj_field(_static_unassigned_stacktrace_offset);
 }
 
-oop java_lang_Throwable::backtrace(oop throwable) {
-  return throwable->obj_field_acquire(_backtrace_offset);
+refArrayOop java_lang_Throwable::backtrace(oop throwable) {
+  return (refArrayOop)throwable->obj_field_acquire(_backtrace_offset);
 }
 
-
-void java_lang_Throwable::set_backtrace(oop throwable, oop value) {
+void java_lang_Throwable::set_backtrace(oop throwable, refArrayOop value) {
   throwable->release_obj_field_put(_backtrace_offset, value);
 }
 
@@ -231,11 +230,11 @@ static inline bool version_matches(Method* method, int version) {
 class BacktraceBuilder: public StackObj {
  friend class BacktraceIterator;
  private:
-  Handle          _backtrace;
-  objArrayOop     _head;
+  refArrayHandle  _backtrace;
+  refArrayOop     _head;
   typeArrayOop    _methods;
   typeArrayOop    _bcis;
-  objArrayOop     _mirrors;
+  refArrayOop     _mirrors;
   typeArrayOop    _names; // Needed to insulate method name against redefinition.
   // True if the top frame of the backtrace is omitted because it shall be hidden.
   bool            _has_hidden_top_frame;
@@ -255,27 +254,27 @@ class BacktraceBuilder: public StackObj {
   };
 
   // get info out of chunks
-  static typeArrayOop get_methods(objArrayHandle chunk) {
+  static typeArrayOop get_methods(refArrayHandle chunk) {
     typeArrayOop methods = typeArrayOop(chunk->obj_at(trace_methods_offset));
     assert(methods != nullptr, "method array should be initialized in backtrace");
     return methods;
   }
-  static typeArrayOop get_bcis(objArrayHandle chunk) {
+  static typeArrayOop get_bcis(refArrayHandle chunk) {
     typeArrayOop bcis = typeArrayOop(chunk->obj_at(trace_bcis_offset));
     assert(bcis != nullptr, "bci array should be initialized in backtrace");
     return bcis;
   }
-  static objArrayOop get_mirrors(objArrayHandle chunk) {
-    objArrayOop mirrors = objArrayOop(chunk->obj_at(trace_mirrors_offset));
+  static refArrayOop get_mirrors(refArrayHandle chunk) {
+    refArrayOop mirrors = refArrayOop(chunk->obj_at(trace_mirrors_offset));
     assert(mirrors != nullptr, "mirror array should be initialized in backtrace");
     return mirrors;
   }
-  static typeArrayOop get_names(objArrayHandle chunk) {
+  static typeArrayOop get_names(refArrayHandle chunk) {
     typeArrayOop names = typeArrayOop(chunk->obj_at(trace_names_offset));
     assert(names != nullptr, "names array should be initialized in backtrace");
     return names;
   }
-  static bool has_hidden_top_frame(objArrayHandle chunk) {
+  static bool has_hidden_top_frame(refArrayHandle chunk) {
     oop hidden = chunk->obj_at(trace_hidden_offset);
     return hidden != nullptr;
   }
@@ -285,11 +284,11 @@ class BacktraceBuilder: public StackObj {
   // constructor for new backtrace
   BacktraceBuilder(TRAPS): _head(nullptr), _methods(nullptr), _bcis(nullptr), _mirrors(nullptr), _names(nullptr), _has_hidden_top_frame(false) {
     expand(CHECK);
-    _backtrace = Handle(THREAD, _head);
+    _backtrace = refArrayHandle(THREAD, _head);
     _index = 0;
   }
 
-  BacktraceBuilder(Thread* thread, objArrayHandle backtrace) {
+  BacktraceBuilder(Thread* thread, refArrayHandle backtrace) {
     _methods = get_methods(backtrace);
     _bcis = get_bcis(backtrace);
     _mirrors = get_mirrors(backtrace);
@@ -302,16 +301,16 @@ class BacktraceBuilder: public StackObj {
 
     // head is the preallocated backtrace
     _head = backtrace();
-    _backtrace = Handle(thread, _head);
+    _backtrace = refArrayHandle(thread, _head);
     _index = 0;
   }
 
   void expand(TRAPS) {
-    objArrayHandle old_head(THREAD, _head);
+    refArrayHandle old_head(THREAD, _head);
     PauseNoSafepointVerifier pnsv(&_nsv);
 
-    objArrayOop head = oopFactory::new_objectArray(trace_size, CHECK);
-    objArrayHandle new_head(THREAD, head);
+    refArrayOop head = oopFactory::new_objectArray(trace_size, CHECK);
+    refArrayHandle new_head(THREAD, head);
 
     typeArrayOop methods = oopFactory::new_shortArray(trace_chunk_size, CHECK);
     typeArrayHandle new_methods(THREAD, methods);
@@ -319,8 +318,8 @@ class BacktraceBuilder: public StackObj {
     typeArrayOop bcis = oopFactory::new_intArray(trace_chunk_size, CHECK);
     typeArrayHandle new_bcis(THREAD, bcis);
 
-    objArrayOop mirrors = oopFactory::new_objectArray(trace_chunk_size, CHECK);
-    objArrayHandle new_mirrors(THREAD, mirrors);
+    refArrayOop mirrors = oopFactory::new_objectArray(trace_chunk_size, CHECK);
+    refArrayHandle new_mirrors(THREAD, mirrors);
 
     typeArrayOop names = oopFactory::new_symbolArray(trace_chunk_size, CHECK);
     typeArrayHandle new_names(THREAD, names);
@@ -342,7 +341,7 @@ class BacktraceBuilder: public StackObj {
     _index = 0;
   }
 
-  oop backtrace() {
+  refArrayOop backtrace() {
     return _backtrace();
   }
 
@@ -400,25 +399,25 @@ struct BacktraceElement : public StackObj {
 
 class BacktraceIterator : public StackObj {
   int _index;
-  objArrayHandle  _result;
-  objArrayHandle  _mirrors;
+  refArrayHandle  _result;
+  refArrayHandle  _mirrors;
   typeArrayHandle _methods;
   typeArrayHandle _bcis;
   typeArrayHandle _names;
 
-  void init(objArrayHandle result, Thread* thread) {
+  void init(refArrayHandle result, Thread* thread) {
     // Get method id, bci, version and mirror from chunk
     _result = result;
     if (_result.not_null()) {
       _methods = typeArrayHandle(thread, BacktraceBuilder::get_methods(_result));
       _bcis = typeArrayHandle(thread, BacktraceBuilder::get_bcis(_result));
-      _mirrors = objArrayHandle(thread, BacktraceBuilder::get_mirrors(_result));
+      _mirrors = refArrayHandle(thread, BacktraceBuilder::get_mirrors(_result));
       _names = typeArrayHandle(thread, BacktraceBuilder::get_names(_result));
       _index = 0;
     }
   }
  public:
-  BacktraceIterator(objArrayHandle result, Thread* thread) {
+  BacktraceIterator(refArrayHandle result, Thread* thread) {
     init(result, thread);
     assert(_methods.is_null() || _methods->length() == java_lang_Throwable::trace_chunk_size, "lengths don't match");
   }
@@ -434,7 +433,7 @@ class BacktraceIterator : public StackObj {
     if (_index >= java_lang_Throwable::trace_chunk_size) {
       int next_offset = java_lang_Throwable::trace_next_offset;
       // Get next chunk
-      objArrayHandle result (thread, objArrayOop(_result->obj_at(next_offset)));
+      refArrayHandle result (thread, refArrayOop(_result->obj_at(next_offset)));
       init(result, thread);
     }
     return e;
@@ -525,7 +524,7 @@ void java_lang_Throwable::print_stack_trace(Handle throwable, outputStream* st) 
   // Now print the stack trace.
   JavaThread* THREAD = JavaThread::current(); // For exception macros.
   while (throwable.not_null()) {
-    objArrayHandle result (THREAD, objArrayOop(backtrace(throwable())));
+    refArrayHandle result (THREAD, backtrace(throwable()));
     if (result.is_null()) {
       st->print_raw_cr("\t<<no stack trace available>>");
       return;
@@ -709,7 +708,7 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable, const methodHand
 
       // skip <init> methods of the exception class and superclasses
       // This is similar to classic VM.
-      if (method->name() == vmSymbols::object_initializer_name() &&
+      if (method->is_object_constructor() &&
           throwable->is_a(method->method_holder())) {
         continue;
       } else {
@@ -778,7 +777,7 @@ void java_lang_Throwable::fill_in_stack_trace_of_preallocated_backtrace(Handle t
 
   JavaThread* THREAD = JavaThread::current(); // For exception macros.
 
-  objArrayHandle backtrace (THREAD, (objArrayOop)java_lang_Throwable::backtrace(throwable()));
+  refArrayHandle backtrace(THREAD, java_lang_Throwable::backtrace(throwable()));
   assert(backtrace.not_null(), "backtrace should have been preallocated");
 
   ResourceMark rm(THREAD);
@@ -807,19 +806,19 @@ void java_lang_Throwable::fill_in_stack_trace_of_preallocated_backtrace(Handle t
 }
 
 void java_lang_Throwable::get_stack_trace_elements(int depth, Handle backtrace,
-                                                   objArrayHandle stack_trace_array_h, TRAPS) {
+                                                   refArrayHandle stack_trace_array_h, TRAPS) {
 
   if (backtrace.is_null() || stack_trace_array_h.is_null()) {
     THROW(vmSymbols::java_lang_NullPointerException());
   }
 
-  assert(stack_trace_array_h->is_objArray(), "Stack trace array should be an array of StackTraceElenent");
+  assert(stack_trace_array_h->is_refArray(), "Stack trace array should be an array of StackTraceElement");
 
   if (stack_trace_array_h->length() != depth) {
     THROW(vmSymbols::java_lang_IndexOutOfBoundsException());
   }
 
-  objArrayHandle result(THREAD, objArrayOop(backtrace()));
+  refArrayHandle result(THREAD, backtrace());
   BacktraceIterator iter(result, THREAD);
 
   int index = 0;
@@ -888,7 +887,7 @@ Handle java_lang_Throwable::create_initialization_error(JavaThread* current, Han
                           current);
   if (!current->has_pending_exception()){
     Handle stack_trace(current, result.get_oop());
-    assert(stack_trace->is_objArray(), "Should be an array");
+    assert(stack_trace->is_refArray(), "Should be an array");
     java_lang_Throwable::set_stacktrace(init_error(), stack_trace());
     // Clear backtrace because the stacktrace should be used instead.
     set_backtrace(init_error(), nullptr);
@@ -903,14 +902,14 @@ Handle java_lang_Throwable::create_initialization_error(JavaThread* current, Han
 
 bool java_lang_Throwable::get_top_method_and_bci(oop throwable, Method** method, int* bci) {
   JavaThread* current = JavaThread::current();
-  objArrayHandle result(current, objArrayOop(backtrace(throwable)));
+  refArrayHandle result(current, backtrace(throwable));
   BacktraceIterator iter(result, current);
   // No backtrace available.
   if (!iter.repeat()) return false;
 
   // If the exception happened in a frame that has been hidden, i.e.,
   // omitted from the back trace, we can not compute the message.
-  oop hidden = ((objArrayOop)backtrace(throwable))->obj_at(trace_hidden_offset);
+  oop hidden = backtrace(throwable)->obj_at(trace_hidden_offset);
   if (hidden != nullptr) {
     return false;
   }
@@ -1051,8 +1050,8 @@ void java_lang_ClassFrameInfo::serialize_offsets(SerializeClosure* f) {
 
 static int get_flags(const methodHandle& m) {
   int flags = m->access_flags().as_method_flags();
-  if (m->is_object_initializer()) {
-    flags |= java_lang_invoke_MemberName::MN_IS_CONSTRUCTOR;
+  if (m->is_object_constructor()) {
+    flags |= java_lang_invoke_MemberName::MN_IS_OBJECT_CONSTRUCTOR;
   } else {
     // Note: Static initializers can be here. Record them as plain methods.
     flags |= java_lang_invoke_MemberName::MN_IS_METHOD;

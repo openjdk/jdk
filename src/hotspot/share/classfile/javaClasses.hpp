@@ -320,6 +320,7 @@ class java_lang_Class : AllStatic {
   // compiler support for class operations
   static int klass_offset()                { CHECK_INIT(_klass_offset); }
   static int array_klass_offset()          { CHECK_INIT(_array_klass_offset); }
+
   // Support for classRedefinedCount field
   static int classRedefinedCount(oop the_class_mirror);
   static void set_classRedefinedCount(oop the_class_mirror, int value);
@@ -624,7 +625,6 @@ class java_lang_VirtualThread : AllStatic {
   static ObjectMonitor* current_waiting_monitor(oop vthread);
 };
 
-
 // Interface to java.lang.reflect.AccessibleObject objects
 
 class java_lang_reflect_AccessibleObject: AllStatic {
@@ -757,7 +757,7 @@ class java_lang_reflect_Field : public java_lang_reflect_AccessibleObject {
   static int _type_offset;
   static int _slot_offset;
   static int _modifiers_offset;
-  static int _trusted_final_offset;
+  static int _flags_offset;
   static int _signature_offset;
   static int _annotations_offset;
   JFR_ONLY(static int _jfr_epoch_offset;)
@@ -786,7 +786,7 @@ class java_lang_reflect_Field : public java_lang_reflect_AccessibleObject {
   static int modifiers(oop field);
   static void set_modifiers(oop field, int value);
 
-  static void set_trusted_final(oop field);
+  static void set_flags(oop field, int value);
 
   static void set_signature(oop constructor, oop value);
   static void set_annotations(oop constructor, oop value);
@@ -911,8 +911,7 @@ class reflect_ConstantPool {
 
 class java_lang_boxing_object: AllStatic {
  private:
-  static int _value_offset;
-  static int _long_value_offset;
+  static int* _offsets;
 
   static void compute_offsets();
   static oop initialize_and_allocate(BasicType type, TRAPS);
@@ -929,7 +928,9 @@ class java_lang_boxing_object: AllStatic {
   static void print(BasicType type, jvalue* value, outputStream* st);
 
   static int value_offset(BasicType type) {
-    return is_double_word_type(type) ? _long_value_offset : _value_offset;
+    assert(type >= T_BOOLEAN && type <= T_LONG, "BasicType out of range");
+    assert(_offsets != nullptr, "Uninitialized offsets");
+    return _offsets[type - T_BOOLEAN];
   }
 
   static void serialize_offsets(SerializeClosure* f);
@@ -1129,9 +1130,9 @@ class jdk_internal_foreign_abi_ABIDescriptor: AllStatic {
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
 
   // Accessors
-  static objArrayOop inputStorage(oop entry);
-  static objArrayOop outputStorage(oop entry);
-  static objArrayOop volatileStorage(oop entry);
+  static refArrayOop inputStorage(oop entry);
+  static refArrayOop outputStorage(oop entry);
+  static refArrayOop volatileStorage(oop entry);
   static jint        stackAlignment(oop entry);
   static jint        shadowSpace(oop entry);
   static oop         scratch1(oop entry);
@@ -1179,8 +1180,8 @@ class jdk_internal_foreign_abi_CallConv: AllStatic {
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
 
   // Accessors
-  static objArrayOop argRegs(oop entry);
-  static objArrayOop retRegs(oop entry);
+  static refArrayOop argRegs(oop entry);
+  static refArrayOop retRegs(oop entry);
 
   // Testers
   static bool is_subclass(Klass* klass) {
@@ -1277,14 +1278,17 @@ class java_lang_invoke_MemberName: AllStatic {
   // Relevant integer codes (keep these in synch. with MethodHandleNatives.Constants):
   enum {
     MN_IS_METHOD             = 0x00010000, // method (not constructor)
-    MN_IS_CONSTRUCTOR        = 0x00020000, // constructor
+    MN_IS_OBJECT_CONSTRUCTOR = 0x00020000, // constructor
     MN_IS_FIELD              = 0x00040000, // field
     MN_IS_TYPE               = 0x00080000, // nested type
     MN_CALLER_SENSITIVE      = 0x00100000, // @CallerSensitive annotation detected
     MN_TRUSTED_FINAL         = 0x00200000, // trusted final field
     MN_HIDDEN_MEMBER         = 0x00400000, // @Hidden annotation detected
+    MN_NULL_RESTRICTED_FIELD = 0x00800000, // null-restricted field
     MN_REFERENCE_KIND_SHIFT  = 24, // refKind
-    MN_REFERENCE_KIND_MASK   = 0x0F000000 >> MN_REFERENCE_KIND_SHIFT,
+    MN_REFERENCE_KIND_MASK   = 0x0F000000 >> MN_REFERENCE_KIND_SHIFT, // 4 bits
+    MN_LAYOUT_SHIFT          = 28, // field layout
+    MN_LAYOUT_MASK           = 0x70000000 >> MN_LAYOUT_SHIFT, // 3 bits
     MN_NESTMATE_CLASS        = 0x00000001,
     MN_HIDDEN_CLASS          = 0x00000002,
     MN_STRONG_LOADER_LINK    = 0x00000004,
@@ -1319,7 +1323,7 @@ class java_lang_invoke_MethodType: AllStatic {
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
   // Accessors
   static oop            rtype(oop mt);
-  static objArrayOop    ptypes(oop mt);
+  static refArrayOop    ptypes(oop mt);
 
   static oop            ptype(oop mt, int index);
   static int            ptype_count(oop mt);
@@ -1576,7 +1580,7 @@ class java_lang_Integer_IntegerCache : AllStatic {
  public:
   static Symbol* symbol();
   static void compute_offsets(InstanceKlass* k);
-  static objArrayOop  cache(InstanceKlass *k);
+  static refArrayOop  cache(InstanceKlass *k);
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
 };
 
@@ -1586,7 +1590,7 @@ class java_lang_Long_LongCache : AllStatic {
  public:
   static Symbol* symbol();
   static void compute_offsets(InstanceKlass* k);
-  static objArrayOop  cache(InstanceKlass *k);
+  static refArrayOop  cache(InstanceKlass *k);
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
 };
 
@@ -1596,7 +1600,7 @@ class java_lang_Character_CharacterCache : AllStatic {
  public:
   static Symbol* symbol();
   static void compute_offsets(InstanceKlass* k);
-  static objArrayOop  cache(InstanceKlass *k);
+  static refArrayOop  cache(InstanceKlass *k);
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
 };
 
@@ -1606,7 +1610,7 @@ class java_lang_Short_ShortCache : AllStatic {
  public:
   static Symbol* symbol();
   static void compute_offsets(InstanceKlass* k);
-  static objArrayOop  cache(InstanceKlass *k);
+  static refArrayOop  cache(InstanceKlass *k);
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
 };
 
@@ -1616,10 +1620,9 @@ class java_lang_Byte_ByteCache : AllStatic {
  public:
   static Symbol* symbol();
   static void compute_offsets(InstanceKlass* k);
-  static objArrayOop  cache(InstanceKlass *k);
+  static refArrayOop  cache(InstanceKlass *k);
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
 };
-
 
 // Interface to java.lang.InternalError objects
 
