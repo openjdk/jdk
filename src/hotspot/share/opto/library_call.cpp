@@ -2675,7 +2675,7 @@ bool LibraryCallKit::inline_unsafe_flat_access(bool is_store, AccessKind kind) {
     return false;
   }
   ciType* mirror_type = value_klass_node->const_oop()->as_instance()->java_mirror_type();
-  if (!mirror_type->is_inlinetype()) {
+  if (mirror_type == nullptr || !mirror_type->is_inlinetype()) {
     // Dead code
     return false;
   }
