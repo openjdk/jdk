@@ -156,6 +156,7 @@ module java.base {
     exports jdk.internal.javac to
         java.compiler,
         jdk.compiler,
+        jdk.jdeps, // Uses Valhalla reflective preview APIs
         jdk.incubator.json;
     exports jdk.internal.access to
         java.desktop,
@@ -239,6 +240,7 @@ module java.base {
         java.sql,
         java.sql.rowset,
         jdk.dynalink,
+        jdk.jdeps,
         jdk.unsupported;
     exports jdk.internal.vm to
         java.management,
@@ -257,6 +259,8 @@ module java.base {
         jdk.jfr;
     exports jdk.internal.util.xml.impl to
         jdk.jfr;
+    exports jdk.internal.value to  // Needed by Unsafe
+        jdk.unsupported;
     exports jdk.internal.util to
         java.desktop,
         java.prefs,
