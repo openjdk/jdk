@@ -122,9 +122,9 @@ public:
   uint          field_index(int offset) const;
 
   // Replace InlineTypeNodes in debug info at safepoints with SafePointScalarObjectNodes
-  void make_scalar_in_safepoints(PhaseIterGVN* igvn, bool allow_oop = true);
+  [[nodiscard]] bool make_scalar_in_safepoints(PhaseIterGVN* igvn, bool allow_oop = true);
   // Variant that allows to limit to a single safepoint. If nullptr is given, all safepoint uses will be considered.
-  void make_scalar_in_safepoints(PhaseIterGVN* igvn, bool allow_oop, SafePointNode* safepoint);
+  [[nodiscard]] bool make_scalar_in_safepoints(PhaseIterGVN* igvn, bool allow_oop, SafePointNode* safepoint);
 
   // Store the inline type as a flat (headerless) representation
   void store_flat(GraphKit* kit, Node* base, Node* ptr, bool atomic, bool immutable_memory, bool null_free, DecoratorSet decorators);

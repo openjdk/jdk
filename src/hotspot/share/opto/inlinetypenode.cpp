@@ -324,11 +324,11 @@ void InlineTypeNode::make_scalar_in_safepoint(PhaseIterGVN* igvn, Unique_Node_Li
   }
 }
 
-void InlineTypeNode::make_scalar_in_safepoints(PhaseIterGVN* igvn, bool allow_oop) {
-  make_scalar_in_safepoints(igvn, allow_oop, nullptr);
+bool InlineTypeNode::make_scalar_in_safepoints(PhaseIterGVN* igvn, bool allow_oop) {
+  return make_scalar_in_safepoints(igvn, allow_oop, nullptr);
 }
 
-void InlineTypeNode::make_scalar_in_safepoints(PhaseIterGVN* igvn, bool allow_oop, SafePointNode* safepoint) {
+bool InlineTypeNode::make_scalar_in_safepoints(PhaseIterGVN* igvn, bool allow_oop, SafePointNode* safepoint) {
   // If the inline type has a constant or loaded oop, use the oop instead of scalarization
   // in the safepoint to avoid keeping field loads live just for the debug info.
   Node* oop = get_oop();
@@ -378,8 +378,13 @@ void InlineTypeNode::make_scalar_in_safepoints(PhaseIterGVN* igvn, bool allow_oo
     safepoints.push(safepoint);
   }
 
+  // Scalarize the inline type in all safepoint uses but first check if we
+  // have enough nodes left to create a new SafePointScalarObjectNode per use.
+  Compile* C = igvn->C;
+  if ((C->live_nodes() + safepoints.size() + NodeLimitFudgeFactor) > C->max_node_limit()) {
+    return false;
+  }
   Unique_Node_List vt_worklist;
-  // Process all safepoint uses and scalarize inline type
   while (safepoints.size() > 0) {
     SafePointNode* sfpt = safepoints.pop()->as_SafePoint();
     if (use_oop) {
@@ -397,11 +402,14 @@ void InlineTypeNode::make_scalar_in_safepoints(PhaseIterGVN* igvn, bool allow_oo
   // Now scalarize non-flat fields
   for (uint i = 0; i < vt_worklist.size(); ++i) {
     InlineTypeNode* vt = vt_worklist.at(i)->isa_InlineType();
-    vt->make_scalar_in_safepoints(igvn);
+    if (!vt->make_scalar_in_safepoints(igvn)) {
+      return false;
+    }
   }
   if (outcnt() == 0) {
     igvn->record_for_igvn(this);
   }
+  return true;
 }
 
 void InlineTypeNode::load(GraphKit* kit, Node* base, Node* ptr, bool immutable_memory, bool trust_null_free_oop, DecoratorSet decorators) {

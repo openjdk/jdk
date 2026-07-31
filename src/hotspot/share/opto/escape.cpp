@@ -1374,7 +1374,10 @@ bool ConnectionGraph::reduce_phi_on_safepoints_helper(Node* ophi, Node* cast, No
       const bool allow_oop = !merge_t->is_flat();
       for (uint j = 0; j < value_worklist.size(); ++j) {
         InlineTypeNode* vt = value_worklist.at(j)->as_InlineType();
-        vt->make_scalar_in_safepoints(_igvn, allow_oop);
+        if (!vt->make_scalar_in_safepoints(_igvn, allow_oop)) {
+          sfpt->restore_non_debug_edges(non_debug_edges_worklist);
+          return false;
+        }
       }
     }
 
