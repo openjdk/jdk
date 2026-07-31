@@ -242,8 +242,8 @@ public sealed interface JsonValue permits JsonString, JsonNumber, JsonObject, Js
 
     /**
      * {@return a finite {@code double} if this {@code JsonValue} is an instance of
-     * {@link JsonNumber} and it can be converted accurately from its string
-     * representation; otherwise, throws a {@code JsonValueException}}
+     * {@link JsonNumber} and it can be converted from its string representation using
+     * {@link Double#parseDouble(String)}; otherwise, throws a {@code JsonValueException}}
      * If the converted {@code double} value is {@link Double#POSITIVE_INFINITY}
      * or {@link Double#NEGATIVE_INFINITY}, a {@code JsonValueException} is thrown.
      *
