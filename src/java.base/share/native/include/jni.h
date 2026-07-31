@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -782,6 +782,11 @@ struct JNINativeInterface_ {
 
     jlong (JNICALL *GetStringUTFLengthAsLong)
       (JNIEnv *env, jstring str);
+
+    /* Value classes */
+
+    jboolean (JNICALL *HasIdentity)
+      (JNIEnv* env, jobject obj);
 
 };
 
@@ -1890,6 +1895,12 @@ struct JNIEnv_ {
         return functions->IsVirtualThread(this, obj);
     }
 
+    /* Value classes */
+
+    jboolean HasIdentity(jobject obj) {
+        return functions->HasIdentity(this, obj);
+    }
+
 #endif /* __cplusplus */
 };
 
@@ -2005,6 +2016,7 @@ JNI_OnUnload(JavaVM *vm, void *reserved);
 #define JNI_VERSION_20  0x00140000
 #define JNI_VERSION_21  0x00150000
 #define JNI_VERSION_24  0x00180000
+#define JNI_VERSION_28  0x001C0000
 
 #ifdef __cplusplus
 } /* extern "C" */

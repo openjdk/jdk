@@ -890,6 +890,12 @@
           "profiling data. "                                                \
           "Requires UseLoopPredicate to be turned on (default).")           \
                                                                             \
+  product(bool, UseArrayLoadStoreProfile, true, DIAGNOSTIC,                 \
+          "Take advantage of profiling at array load/store")                \
+                                                                            \
+  product(bool, UseACmpProfile, true, DIAGNOSTIC,                           \
+          "Take advantage of profiling at if_acmp<cond>")                   \
+                                                                            \
   develop(uintx, StressLongCountedLoop, 0,                                  \
           "if > 0, convert int counted loops to long counted loops"         \
           "to stress handling of long counted loops: run inner loop"        \
@@ -922,8 +928,8 @@
           "Use StoreStore barrier instead of Release barrier at the end "   \
           "of constructors")                                                \
                                                                             \
-  develop(bool, KillPathsReachableByDeadDataNode, true,                     \
-          "When a data node becomes top, make paths where the node is "     \
+  develop(bool, KillPathsReachableByDeadTypeNode, true,                     \
+          "When a Type node becomes top, make paths where the node is "     \
           "used dead by replacing them with a Halt node. Turning this off " \
           "could corrupt the graph in rare cases and should be used with "  \
           "care.")                                                          \
