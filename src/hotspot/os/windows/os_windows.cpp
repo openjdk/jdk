@@ -2743,7 +2743,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
         overflow_state->disable_stack_red_zone();
         tty->print_raw_cr("An unrecoverable stack overflow has occurred.");
         VMError::report_and_die(t, exception_code, pc, exception_record,
-                      exceptionInfo->ContextRecord);
+                                exceptionInfo->ContextRecord);
       }
     } else if (exception_code == EXCEPTION_ACCESS_VIOLATION) {
       if (in_java) {
@@ -2781,7 +2781,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
           if (stub != nullptr) return Handle_Exception(exceptionInfo, stub);
         }
         VMError::report_and_die(t, exception_code, pc, exception_record,
-                      exceptionInfo->ContextRecord);
+                                exceptionInfo->ContextRecord);
       }
 
       // Special care for fast JNI field accessors.
@@ -2794,7 +2794,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
 
       // Stack overflow or null pointer exception in native code.
       VMError::report_and_die(t, exception_code, pc, exception_record,
-                   exceptionInfo->ContextRecord);
+                              exceptionInfo->ContextRecord);
     } // /EXCEPTION_ACCESS_VIOLATION
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -2863,7 +2863,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
 
   if (should_report_error) {
     VMError::report_and_die(t, exception_code, pc, exception_record,
-                 exceptionInfo->ContextRecord);
+                            exceptionInfo->ContextRecord);
   }
 
   return EXCEPTION_CONTINUE_SEARCH;
@@ -2884,7 +2884,7 @@ LONG WINAPI topLevelUnhandledExceptionFilter(struct _EXCEPTION_POINTERS* excepti
 
     if (exceptionCode != EXCEPTION_BREAKPOINT) {
       VMError::report_and_die(thread, exceptionCode, pc, exceptionInfo->ExceptionRecord,
-                  exceptionInfo->ContextRecord);
+                              exceptionInfo->ContextRecord);
     }
   }
 
