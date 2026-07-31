@@ -31,10 +31,10 @@
 
 // Holds (caches) the pending pinned object count adjustment for the region
 // _region_idx on a per thread basis.
-// Keeping such a cache avoids the expensive atomic operations when updating the
-// pin count for the very common case that the application pins and unpins the
-// same object without any interleaving by a garbage collection or pinning/unpinning
-// to an object in another region.
+// Keeping such a cache avoids expensive atomic operations when updating the
+// pin count for the very common case that a single thread pins and unpins
+// the same object without any interleaving by garbage collection or by
+// pinning/unpinning of objects in other regions.
 class ShenandoahRegionPinCache : public StackObj {
   size_t _region_idx;
   size_t _count;
