@@ -25,9 +25,9 @@
  * @test
  * @bug 8033148 8141409
  * @summary tests for array equals and compare
+ * @library /test/lib
  * @run junit ArraysEqCmpTest
 */
-
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -43,6 +43,8 @@ import java.util.function.BiFunction;
 import java.util.function.LongFunction;
 import java.util.stream.IntStream;
 
+import jdk.test.lib.valueclass.AsValueClass;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -56,6 +58,24 @@ public class ArraysEqCmpTest {
     static final int MAX_WIDTH = 512;
 
     static final Map<Class, Integer> typeToWidth;
+
+    @AsValueClass
+    record Point(int x, int y) implements Comparable<Point> {
+        @Override
+        public int compareTo(Point o) {
+            int r = Integer.compare(this.x, o.x);
+            return (r != 0) ? r : Integer.compare(this.y, o.y);
+        }
+    }
+
+    @AsValueClass
+    record BoxedPoint(Integer x, Integer y) implements Comparable<BoxedPoint> {
+        @Override
+        public int compareTo(BoxedPoint o) {
+            int r = Integer.compare(this.x, o.x);
+            return (r != 0) ? r : Integer.compare(this.y, o.y);
+        }
+    }
 
     static {
         typeToWidth = new HashMap<>();
@@ -588,6 +608,42 @@ public class ArraysEqCmpTest {
                 ((double[]) a)[i] = pv;
             }
         }
+
+        static class ValuePoints extends ArrayType<Point[]> {
+            public ValuePoints() {
+                super(Point[].class);
+            }
+
+            @Override
+            void set(Object a, int i, Object v) {
+                if (v == null) {
+                    ((Point[]) a)[i] = null;
+                } else if (v instanceof Point) {
+                    ((Point[]) a)[i] = (Point) v;
+                } else if (v instanceof Integer) {
+                    int val = (Integer) v;
+                    ((Point[]) a)[i] = new Point(val, val);
+                } else throw new IllegalStateException();
+            }
+        }
+
+        static class ValueBoxedPoints extends ArrayType<BoxedPoint[]> {
+            public ValueBoxedPoints() {
+                super(BoxedPoint[].class);
+            }
+
+            @Override
+            void set(Object a, int i, Object v) {
+                if (v == null) {
+                    ((BoxedPoint[]) a)[i] = null;
+                } else if (v instanceof BoxedPoint) {
+                    ((BoxedPoint[]) a)[i] = (BoxedPoint) v;
+                } else if (v instanceof Integer) {
+                    int val = (Integer) v;
+                    ((BoxedPoint[]) a)[i] = new BoxedPoint(val, val);
+                } else throw new IllegalStateException();
+            }
+        }
     }
 
     static Object[][] arrayTypes;
@@ -609,6 +665,8 @@ public class ArraysEqCmpTest {
                     new Object[]{new ArrayType.Longs(true)},
                     new Object[]{new ArrayType.Floats()},
                     new Object[]{new ArrayType.Doubles()},
+                    new Object[]{new ArrayType.ValuePoints()},
+                    new Object[]{new ArrayType.ValueBoxedPoints()}
             };
         }
         return arrayTypes;
@@ -639,6 +697,8 @@ public class ArraysEqCmpTest {
             objectArrayTypes = new Object[][]{
                     new Object[]{new ArrayType.BoxedIntegers()},
                     new Object[]{new ArrayType.BoxedIntegersWithReverseComparator()},
+                    new Object[]{new ArrayType.ValuePoints()},
+                    new Object[]{new ArrayType.ValueBoxedPoints()},
             };
         }
         return objectArrayTypes;
@@ -767,37 +827,37 @@ public class ArraysEqCmpTest {
         // One ref
         Integer one = 1;
         testArrayType(arrayType,
-                      (at, s) -> {
-                          Integer[] a = (Integer[]) at.construct(s);
-                          for (int x = 0; x < s; x++) {
-                              a[x] = one;
-                          }
-                          return a;
-                      },
-                      cloner);
+                    (at, s) -> {
+                        Object a = at.construct(s);
+                            for (int x = 0; x < s; x++) {
+                                at.set(a, x, one);
+                            }
+                        return a;
+                    },
+                    cloner);
 
         // All ref
         testArrayType(arrayType,
-                      (at, s) -> {
-                          Integer[] a = (Integer[]) at.construct(s);
-                          for (int x = 0; x < s; x++) {
-                              a[x] = Integer.valueOf(s);
-                          }
-                          return a;
-                      },
-                      cloner);
+                    (at, s) -> {
+                        Object a = at.construct(s);
+                        for (int x = 0; x < s; x++) {
+                            at.set(a, x, s);
+                        }
+                        return a;
+                    },
+                    cloner);
 
         // Some same ref
         testArrayType(arrayType,
-                      (at, s) -> {
-                          Integer[] a = (Integer[]) at.construct(s);
-                          for (int x = 0; x < s; x++) {
-                              int v = x % 8;
-                              a[x] = v == 1 ? one : new Integer(v);
-                          }
-                          return a;
-                      },
-                      cloner);
+                    (at, s) -> {
+                        Object a = at.construct(s);
+                        for (int x = 0; x < s; x++) {
+                            int v = x % 8;
+                            at.set(a, x, v == 1 ? one : v);
+                        }
+                        return a;
+                    },
+                    cloner);
     }
 
     @ParameterizedTest

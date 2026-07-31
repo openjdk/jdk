@@ -208,6 +208,15 @@ void ShenandoahArguments::initialize() {
         ShenandoahAllocRateSampleWindow));
   }
 
+  if (Arguments::is_valhalla_enabled()) {
+    // Flat atomic payloads may contain embedded oops. Current Valhalla code does not handle
+    // it well, missing the GC barriers. As the temporary kludge, disable compressed oops:
+    // this would make flat atomic payloads contain at most one oop, which would be treated
+    // as the single oop field.
+    log_warning(gc)("Shenandoah disables compressed oops to avoid breaking with Valhalla");
+    FLAG_SET_ERGO(UseCompressedOops, false);
+  }
+
   FullGCForwarding::initialize_flags(MaxHeapSize);
 }
 
