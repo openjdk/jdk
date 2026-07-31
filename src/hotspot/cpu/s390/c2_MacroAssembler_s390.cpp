@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -42,10 +42,12 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register box, Register temp1, 
 }
 
 void C2_MacroAssembler::load_narrow_klass_compact_c2(Register dst, Address src) {
+  BLOCK_COMMENT("load_narrow_klass_compact_c2 {");
   // The incoming address is pointing into obj-start + klass_offset_in_bytes. We need to extract
   // obj-start, so that we can load from the object's mark-word instead.
   z_lg(dst, src.plus_disp(-oopDesc::klass_offset_in_bytes()));
-  z_srlg(dst, dst, markWord::klass_shift); // TODO: could be z_sra
+  z_srlg(dst, dst, markWord::klass_shift);
+  BLOCK_COMMENT("} load_narrow_klass_compact_c2");
 }
 
 //------------------------------------------------------

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ public:
     _oops_in_cld(g1h, pss),
     _oops_in_nmethod(g1h, pss),
     _clds(&_oops_in_cld, process_only_dirty),
-    _nmethods(pss->worker_id(), &_oops_in_nmethod, should_mark) {}
+    _nmethods(pss->worker_id(), &_oops_in_nmethod, should_mark, pss) {}
 };
 
 #endif // SHARE_GC_G1_G1SHAREDCLOSURES_HPP
