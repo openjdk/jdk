@@ -27,6 +27,7 @@ package gc;
  * @test id=serial
  * @summary Tests that one full GC unloads a freshly not-entrant nmethod.
  * @requires vm.gc.Serial
+ * @requires vm.flagless
  * @requires vm.compiler1.enabled
  * @requires vm.opt.ClassUnloading != false
  * @requires vm.opt.MethodFlushing != false
@@ -44,6 +45,7 @@ package gc;
  * @test id=parallel
  * @summary Tests that one full GC unloads a freshly not-entrant nmethod.
  * @requires vm.gc.Parallel
+ * @requires vm.flagless
  * @requires vm.compiler1.enabled
  * @requires vm.opt.ClassUnloading != false
  * @requires vm.opt.MethodFlushing != false
@@ -61,6 +63,7 @@ package gc;
  * @test id=g1
  * @summary Tests that one full GC unloads a freshly not-entrant nmethod.
  * @requires vm.gc.G1
+ * @requires vm.flagless
  * @requires vm.compiler1.enabled
  * @requires vm.opt.ClassUnloading != false
  * @requires vm.opt.MethodFlushing != false
@@ -78,6 +81,7 @@ package gc;
  * @test id=shenandoah
  * @summary Tests that one full GC unloads a freshly not-entrant nmethod.
  * @requires vm.gc.Shenandoah
+ * @requires vm.flagless
  * @requires vm.compiler1.enabled
  * @requires vm.opt.ClassUnloading != false
  * @requires vm.opt.MethodFlushing != false
@@ -95,6 +99,7 @@ package gc;
  * @test id=z
  * @summary Tests that one full GC unloads a freshly not-entrant nmethod.
  * @requires vm.gc.Z
+ * @requires vm.flagless
  * @requires vm.compiler1.enabled
  * @requires vm.opt.ClassUnloading != false
  * @requires vm.opt.MethodFlushing != false
@@ -110,9 +115,10 @@ package gc;
 
 import java.lang.reflect.Method;
 
-import jdk.test.lib.dcmd.JMXExecutor;
-import jdk.test.lib.process.OutputAnalyzer;
+import gc.testlibrary.CodeCacheUtils;
 import jdk.test.whitebox.WhiteBox;
+import jdk.test.whitebox.code.NMethod;
+import jdk.test.whitebox.gc.GC;
 
 public class TestCodeCacheUnload {
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
@@ -123,9 +129,7 @@ public class TestCodeCacheUnload {
         }
     }
 
-    private static void compileAndMakeNotEntrant() throws Exception {
-        Method method = Target.class.getDeclaredMethod("test", int.class);
-
+    private static int compileAndMakeNotEntrant(Method method) throws Exception {
         method.invoke(null, 1);
         if (!WB.enqueueMethodForCompilation(method, 1 /* compLevel */)) {
             throw new AssertionError("Failed to enqueue target for compilation");
@@ -133,45 +137,44 @@ public class TestCodeCacheUnload {
         while (WB.isMethodQueuedForCompilation(method)) {
             Thread.sleep(50);
         }
-        if (!WB.isMethodCompiled(method)) {
-            throw new AssertionError("Target is not compiled");
+        NMethod nmethod = NMethod.get(method, false);
+        if (nmethod == null || nmethod.comp_level != 1) {
+            throw new AssertionError("Target is not compiled at level 1");
         }
 
         int deoptimized = WB.deoptimizeMethod(method);
         if (deoptimized == 0) {
             throw new AssertionError("No target nmethod was made not-entrant");
         }
+        return nmethod.compile_id;
     }
 
-    private static int countNotEntrantEntries() {
-        OutputAnalyzer output = new JMXExecutor().execute("Compiler.codelist");
-        String target = "gc.TestCodeCacheUnload$Target.test";
-        int result = 0;
+    private static void runTest() throws Exception {
+        Method method = Target.class.getDeclaredMethod("test", int.class);
+        int compileId = compileAndMakeNotEntrant(method);
+        WB.fullGC();
 
-        for (String line : output.asLines()) {
-            if (!line.contains(target)) {
-                continue;
-            }
-
-            System.out.println("Found codelist entry: " + line);
-            String[] parts = line.trim().split("\\s+");
-            int codeState = Integer.parseInt(parts[2]);
-            if (codeState == 1 /* not_entrant */) {
-                result++;
-            }
+        if (CodeCacheUtils.codelistContains(compileId, method, 1, 1 /* not_entrant */)) {
+            throw new AssertionError("Expected one full GC to unload the not-entrant nmethod");
         }
+    }
 
-        return result;
+    private static void runTestG1() throws Exception {
+        // Prevent a concurrent mark from owning the code-cache cycle in which
+        // the target nmethod is created; the full GC must start a later cycle.
+        WB.concurrentGCAcquireControl();
+        try {
+            runTest();
+        } finally {
+            WB.concurrentGCReleaseControl();
+        }
     }
 
     public static void main(String[] args) throws Exception {
-        compileAndMakeNotEntrant();
-        WB.fullGC();
-
-        int notEntrantEntries = countNotEntrantEntries();
-        System.out.println("Target not-entrant entries after 1 full GC: " + notEntrantEntries);
-        if (notEntrantEntries != 0) {
-            throw new AssertionError("Expected one full GC to unload the not-entrant nmethod");
+        if (GC.G1.isSelected()) {
+            runTestG1();
+        } else {
+            runTest();
         }
     }
 }

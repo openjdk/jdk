@@ -27,11 +27,12 @@ package gc.g1;
  * @test TestCodeCacheUnloadDuringConcurrentMark
  * @summary Tests that G1 concurrent marking unloads a freshly not-entrant nmethod.
  * @requires vm.gc.G1
+ * @requires vm.flagless
  * @requires vm.compiler1.enabled
  * @requires vm.opt.ClassUnloading != false
  * @requires vm.opt.ClassUnloadingWithConcurrentMark != false
  * @requires vm.opt.MethodFlushing != false
- * @library /test/lib
+ * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
@@ -45,8 +46,9 @@ package gc.g1;
 
 import java.lang.reflect.Method;
 
-import jdk.test.lib.dcmd.JMXExecutor;
+import gc.testlibrary.CodeCacheUtils;
 import jdk.test.whitebox.WhiteBox;
+import jdk.test.whitebox.code.NMethod;
 
 public class TestCodeCacheUnloadDuringConcurrentMark {
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
@@ -57,7 +59,7 @@ public class TestCodeCacheUnloadDuringConcurrentMark {
         }
     }
 
-    private static void compileAndMakeNotEntrant(Method method) throws Exception {
+    private static int compileAndMakeNotEntrant(Method method) throws Exception {
         Target.test(1);
         if (!WB.enqueueMethodForCompilation(method, 1 /* compLevel */)) {
             throw new AssertionError("Failed to enqueue target for compilation");
@@ -65,51 +67,41 @@ public class TestCodeCacheUnloadDuringConcurrentMark {
         while (WB.isMethodQueuedForCompilation(method)) {
             Thread.sleep(50);
         }
-        if (!WB.isMethodCompiled(method)) {
-            throw new AssertionError("Target is not compiled");
+        NMethod nmethod = NMethod.get(method, false);
+        if (nmethod == null || nmethod.comp_level != 1) {
+            throw new AssertionError("Target is not compiled at level 1");
         }
 
         int deoptimized = WB.deoptimizeMethod(method);
         if (deoptimized == 0) {
             throw new AssertionError("No target nmethod was made not-entrant");
         }
-    }
-
-    private static int countNotEntrantEntries() {
-        String target = TestCodeCacheUnloadDuringConcurrentMark.class.getName() + "$Target.test";
-        int result = 0;
-
-        for (String line : new JMXExecutor().execute("Compiler.codelist", true).asLines()) {
-            if (!line.contains(target)) {
-                continue;
-            }
-
-            System.out.println("Found codelist entry: " + line);
-            String[] parts = line.trim().split("\\s+");
-            int codeState = Integer.parseInt(parts[2]);
-            if (codeState == 1 /* not_entrant */) {
-                result++;
-            }
-        }
-
-        return result;
+        return nmethod.compile_id;
     }
 
     public static void main(String[] args) throws Exception {
-        compileAndMakeNotEntrant(Target.class.getDeclaredMethod("test", int.class));
+        // Keep an automatic cycle from reclaiming the target before the
+        // test-owned concurrent mark reaches it.
+        WB.concurrentGCAcquireControl();
+        try {
+            Method method = Target.class.getDeclaredMethod("test", int.class);
+            int compileId = compileAndMakeNotEntrant(method);
+            if (!CodeCacheUtils.codelistContains(compileId, method, 1, 1 /* not_entrant */)) {
+                throw new AssertionError("Expected a not-entrant target nmethod before concurrent mark");
+            }
 
-        int notEntrantEntries = countNotEntrantEntries();
-        System.out.println("Target not-entrant entries before concurrent mark: " + notEntrantEntries);
-        if (notEntrantEntries == 0) {
-            throw new AssertionError("Expected a not-entrant target nmethod before concurrent mark");
-        }
+            int completedCycles = WB.g1CompletedConcurrentMarkCycles();
+            WB.concurrentGCRunTo(WB.AFTER_MARKING_STARTED);
+            WB.concurrentGCRunToIdle();
+            if (completedCycles >= WB.g1CompletedConcurrentMarkCycles()) {
+                throw new AssertionError("Concurrent GC aborted");
+            }
 
-        WB.g1RunConcurrentGC();
-
-        notEntrantEntries = countNotEntrantEntries();
-        System.out.println("Target not-entrant entries after concurrent mark: " + notEntrantEntries);
-        if (notEntrantEntries != 0) {
-            throw new AssertionError("Expected concurrent mark to unload the not-entrant target nmethod");
+            if (CodeCacheUtils.codelistContains(compileId, method, 1, 1 /* not_entrant */)) {
+                throw new AssertionError("Expected concurrent mark to unload the not-entrant target nmethod");
+            }
+        } finally {
+            WB.concurrentGCReleaseControl();
         }
     }
 }
