@@ -2174,12 +2174,12 @@ void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register le
     mv(tmp5, 0xff);
 
     if (MaxVectorSize == 16) {
-      vsetivli(zr, N, Assembler::e32, Assembler::m4, Assembler::ma, Assembler::ta);
+      vsetivli(zr, N, Assembler::e32, Assembler::m4, Assembler::mu, Assembler::tu);
     } else if (MaxVectorSize == 32) {
-      vsetivli(zr, N, Assembler::e32, Assembler::m2, Assembler::ma, Assembler::ta);
+      vsetivli(zr, N, Assembler::e32, Assembler::m2, Assembler::mu, Assembler::tu);
     } else {
       assert(MaxVectorSize > 32, "sanity");
-      vsetivli(zr, N, Assembler::e32, Assembler::m1, Assembler::ma, Assembler::ta);
+      vsetivli(zr, N, Assembler::e32, Assembler::m1, Assembler::mu, Assembler::tu);
     }
 
     vmv_v_x(vcrc, zr);
