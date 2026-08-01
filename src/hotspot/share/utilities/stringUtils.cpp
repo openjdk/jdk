@@ -189,7 +189,7 @@ class StringMatcher {
           if (ch == string_match_eos ||
               ch == string_match_comma) {
             // Anchor word is at end of pattern, so treat it as a fixed pattern.
-            size_t remaining_len = string_end - matchp;
+            int remaining_len = (int)(string_end - matchp);
             if (anchor_len > remaining_len) {
               // The anchor word does not fit into the remainder of the string, so we can give up on this list item.
               matchp = nullptr;
