@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,10 @@
 package jdk.internal.net.http;
 
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.net.ProtocolException;
+import java.net.SocketException;
 import java.util.Objects;
 
 import jdk.internal.net.http.common.Utils;
@@ -39,21 +41,18 @@ public abstract sealed class Http2TerminationCause {
     private String logMsg;
     private String peerVisibleReason;
     private final int closeCode;
-    private final Throwable originalCause;
     private final IOException reportedCause;
 
     private Http2TerminationCause(final int closeCode, final Throwable closeCause) {
         this.closeCode = closeCode;
-        this.originalCause = closeCause;
         if (closeCause != null) {
             this.logMsg = closeCause.toString();
         }
-        this.reportedCause = toReportedCause(this.originalCause, this.logMsg);
+        this.reportedCause = toReportedCause(closeCause, this.logMsg);
     }
 
     private Http2TerminationCause(final int closeCode, final String loggedAs) {
         this.closeCode = closeCode;
-        this.originalCause = null;
         this.logMsg = loggedAs;
         this.reportedCause = toReportedCause(null, this.logMsg);
     }
@@ -129,6 +128,37 @@ public abstract sealed class Http2TerminationCause {
     }
 
     /**
+     * Returns a connection termination cause that represents a termination due to
+     * the given {@code errorCode}.
+     * <p>
+     * If the {@code errorCode} is {@link ErrorFrame#NO_ERROR},
+     * then this method returns {@link #noErrorTermination()}. The given {@code loggedAs} message
+     * is ignored for such termination.
+     * <p>
+     * For other error codes, an instance representing an {@linkplain #isAbnormalClose() abnormal}
+     * termination is returned.
+     * <p>
+     * Although this method does no checks for the {@code errorCode}, it is expected to be one
+     * of the error codes specified by the HTTP/2 RFC for the ErrorFrame.
+     *
+     * @param errorCode the error code
+     * @param loggedAs  optional log message to be associated with this termination cause
+     */
+    public static Http2TerminationCause forH2Error(final int errorCode, final String loggedAs) {
+        if (errorCode == ErrorFrame.NO_ERROR) {
+            return noErrorTermination();
+        }
+        if (errorCode == ErrorFrame.PROTOCOL_ERROR) {
+            return new ProtocolError(loggedAs);
+        }
+        if (errorCode == ErrorFrame.FLOW_CONTROL_ERROR) {
+            // we treat flow control error as a protocol error currently
+            return new ProtocolError(loggedAs, true);
+        }
+        return new H2StandardError(errorCode, loggedAs);
+    }
+
+    /**
      * Returns a connection termination cause that represents a
      * {@linkplain #isAbnormalClose() normal} termination.
      */
@@ -146,22 +176,59 @@ public abstract sealed class Http2TerminationCause {
     }
 
     /**
-     * Returns a connection termination cause that represents an
-     * {@linkplain #isAbnormalClose() abnormal} termination due to the given {@code errorCode}.
-     * Although this method does no checks for the {@code errorCode}, it is expected to be one
-     * of the error codes specified by the HTTP/2 RFC for the ErrorFrame.
+     * If the connection is being terminated due to the given {@code original} termination cause,
+     * and if that connection had previously received a GOAWAY frame with the given
+     * {@code errCodeFromGoAway}, then this method decides whether to use the {@code original}
+     * termination cause or a new one inferred from the GOAWAY frame, to terminate the connection.
+     * The returned {@linkplain  Http2TerminationCause termination cause} should be used for
+     * terminating the connection.
+     * <p>
+     * Only certain termination causes are eligible for being replaced with an inferred
+     * termination cause. This method returns the {@code original} termination cause if
+     * {@code original} isn't eligible to be replaced with an inferred one.
+     * <p>
+     * If {@code errCodeFromGoAway} is {@link ErrorFrame#NO_ERROR} then this method returns back
+     * the {@code original} termination cause.
      *
-     * @param errorCode the error code
-     * @param loggedAs  optional log message to be associated with this termination cause
+     * @param original          the termination cause which may be replaced with an inferred one
+     * @param errCodeFromGoAway the error code received in a GOAWAY frame
+     * @return the termination cause that should be used to terminate the connection
      */
-    public static Http2TerminationCause forH2Error(final int errorCode, final String loggedAs) {
-        if (errorCode == ErrorFrame.PROTOCOL_ERROR) {
-            return new ProtocolError(loggedAs);
-        } else if (errorCode == ErrorFrame.FLOW_CONTROL_ERROR) {
-            // we treat flow control error as a protocol error currently
-            return new ProtocolError(loggedAs, true);
+    static Http2TerminationCause inferFromGoAway(final Http2TerminationCause original,
+                                                 final int errCodeFromGoAway) {
+        // we replace the original termination cause with the one from the GOAWAY
+        // frame only if the error code in the GOAWAY frame represents an errorneous
+        // termination
+        if (errCodeFromGoAway == ErrorFrame.NO_ERROR) {
+            return original;
         }
-        return new H2StandardError(errorCode, loggedAs);
+        Throwable eligibleException = null;
+        Throwable t = original.getCloseCause();
+        // if the original termination cause's exception chain doesn't contain an
+        // exception of some specific types, then we don't replace the original termination cause
+        while (t != null) {
+            // for now, we consider just these types as eligible to indiciate a connection
+            // termination that may be attributed to a GOAWAY that was previously received
+            // on the connection
+            if ((t instanceof SocketException) || (t instanceof EOFException)) {
+                eligibleException = t;
+                break;
+            }
+            t = t.getCause();
+        }
+        if (eligibleException == null) {
+            // no eligible exception found in the chain, return the original termination cause
+            return original;
+        }
+        // construct and return a new inferred termination cause using the error code
+        // in the GOAWAY frame
+        final IOException inferred = new IOException("received GOAWAY from peer, error: "
+                + ErrorFrame.stringForCode(errCodeFromGoAway));
+        // add the original as a suppressed exception
+        inferred.addSuppressed(eligibleException);
+        // due to the replacement of the termination cause, we do lose the error code
+        // from the original termination cause, but that's OK
+        return new H2StandardError(errCodeFromGoAway, inferred);
     }
 
     private static IOException toReportedCause(final Throwable original,
