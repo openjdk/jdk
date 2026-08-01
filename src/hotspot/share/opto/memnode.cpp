@@ -3906,7 +3906,7 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* value   = in(MemNode::ValueIn);
   // Remove a previous store when the current store fully covers its writes.
   // This is generally unsafe if there are intervening uses.
-  {
+  if (phase->C->get_adr_type(phase->C->get_alias_index(adr_type())) != TypeAryPtr::INLINES) {
     AccessAnalyzer analyzer(phase, this);
     Node* st = mem;
     // If Store 'st' has more than one use, we cannot fold 'st' away.
