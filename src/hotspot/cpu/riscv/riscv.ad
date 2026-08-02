@@ -7520,7 +7520,7 @@ instruct maxF_reg_reg(fRegF dst, fRegF src1, fRegF src2, rFlagsReg cr) %{
   ins_encode %{
     __ minmax_fp(as_FloatRegister($dst$$reg),
                  as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg),
-                 __ FLOAT_TYPE::single_precision, false /* is_min */);
+                 C2_MacroAssembler::FLOAT_TYPE::single_precision, false /* is_min */);
   %}
 
   ins_pipe(pipe_class_default);
@@ -7551,7 +7551,7 @@ instruct minF_reg_reg(fRegF dst, fRegF src1, fRegF src2, rFlagsReg cr) %{
   ins_encode %{
     __ minmax_fp(as_FloatRegister($dst$$reg),
                  as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg),
-                 __ FLOAT_TYPE::single_precision, true /* is_min */);
+                 C2_MacroAssembler::FLOAT_TYPE::single_precision, true /* is_min */);
   %}
 
   ins_pipe(pipe_class_default);
@@ -7582,7 +7582,7 @@ instruct maxD_reg_reg(fRegD dst, fRegD src1, fRegD src2, rFlagsReg cr) %{
   ins_encode %{
     __ minmax_fp(as_FloatRegister($dst$$reg),
                  as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg),
-                 __ FLOAT_TYPE::double_precision, false /* is_min */);
+                 C2_MacroAssembler::FLOAT_TYPE::double_precision, false /* is_min */);
   %}
 
   ins_pipe(pipe_class_default);
@@ -7613,7 +7613,7 @@ instruct minD_reg_reg(fRegD dst, fRegD src1, fRegD src2, rFlagsReg cr) %{
   ins_encode %{
     __ minmax_fp(as_FloatRegister($dst$$reg),
                  as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg),
-                 __ FLOAT_TYPE::double_precision, true /* is_min */);
+                 C2_MacroAssembler::FLOAT_TYPE::double_precision, true /* is_min */);
   %}
 
   ins_pipe(pipe_class_default);
@@ -8695,7 +8695,7 @@ instruct min_HF_reg(fRegF dst, fRegF src1, fRegF src2, rFlagsReg cr)
 
   ins_encode %{
     __ minmax_fp($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister,
-                 __ FLOAT_TYPE::half_precision, true /* is_min */);
+                 C2_MacroAssembler::FLOAT_TYPE::half_precision, true /* is_min */);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -8725,7 +8725,7 @@ instruct max_HF_reg(fRegF dst, fRegF src1, fRegF src2, rFlagsReg cr)
 
   ins_encode %{
     __ minmax_fp($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister,
-                 __ FLOAT_TYPE::half_precision, false /* is_min */);
+                 C2_MacroAssembler::FLOAT_TYPE::half_precision, false /* is_min */);
   %}
   ins_pipe(pipe_class_default);
 %}
