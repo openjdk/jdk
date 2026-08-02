@@ -43,8 +43,9 @@ public class UnsupportedClassFileVersion implements Opcodes {
         writeClassFile();
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder("-cp", ".",  "ClassFile");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldMatch("ClassFile requires a newer Java runtime. The runtime in use, Java .*, " +
-                           "supports class file versions up to " + System.getProperty("java.class.version") +
+        output.shouldMatch("ClassFile requires a newer Java runtime. The runtime in use, Java " +
+                           Runtime.getRuntime().version().feature() + ", supports class file versions up to " +
+                           System.getProperty("java.class.version") +
                            ", but the class file version of ClassFile is 99.0");
 
         output.shouldHaveExitValue(1);
