@@ -651,8 +651,9 @@ class URICertStore extends CertStoreSpi {
                     // configured maximum length.
                     if (debug != null) {
                         debug.println("Discarding CRL: " + iae.getMessage());
-                        crl = null;
                     }
+                    lastModified = 0;
+                    crl = null;
                 }
             }
             return getMatchingCRLs(crl, selector);
