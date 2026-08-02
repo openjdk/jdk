@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,10 @@
  * @bug 8046321 8153829
  * @summary OCSP Stapling for TLS
  * @library /test/lib
- * @run main/othervm HttpsUrlConnClient RSA SHA256withRSA
- * @run main/othervm HttpsUrlConnClient RSASSA-PSS RSASSA-PSS
+ * @run main/othervm -Dtest.debug=true -Dtest.separateServerThread=true HttpsUrlConnClient RSA SHA256withRSA
+ * @run main/othervm -Dtest.debug=true -Dtest.separateServerThread=true HttpsUrlConnClient RSASSA-PSS RSASSA-PSS
+ * @run main/othervm -Dtest.debug=true -Dtest.separateServerThread=false HttpsUrlConnClient RSA SHA256withRSA
+ * @run main/othervm -Dtest.debug=true -Dtest.separateServerThread=false HttpsUrlConnClient RSASSA-PSS RSASSA-PSS
  */
 
 import java.io.BufferedReader;
@@ -39,26 +41,24 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.math.BigInteger;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.net.Socket;
-import java.net.URL;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
-
-import javax.net.ssl.*;
-
+import java.net.Socket;
+import java.net.URI;
+import java.net.URL;
+import java.security.GeneralSecurityException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.KeyStore;
 import java.security.PublicKey;
 import java.security.Security;
-import java.security.GeneralSecurityException;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertPathValidatorException.BasicReason;
 import java.security.cert.Certificate;
 import java.security.cert.PKIXBuilderParameters;
+import java.security.cert.PKIXRevocationChecker;
 import java.security.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
-import java.security.cert.PKIXRevocationChecker;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -73,8 +73,21 @@ import java.util.TimeZone;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import jdk.test.lib.security.SimpleOCSPServer;
+import javax.net.ssl.CertPathTrustManagerParameters;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.ManagerFactoryParameters;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManagerFactory;
+
 import jdk.test.lib.security.CertificateBuilder;
+import jdk.test.lib.security.SimpleOCSPServer;
+import jdk.test.lib.Utils;
 
 public class HttpsUrlConnClient {
 
@@ -91,14 +104,14 @@ public class HttpsUrlConnClient {
     static String KEYALG;
 
     // Turn on TLS debugging
-    static boolean debug = true;
+    static boolean debug = Boolean.getBoolean("test.debug");
 
     /*
      * Should we run the client or server in a separate thread?
      * Both sides can throw exceptions, but do you have a preference
      * as to which side should be the main thread.
      */
-    static boolean separateServerThread = true;
+    static boolean separateServerThread = Boolean.getBoolean("test.separateServerThread");
     Thread clientThread = null;
     Thread serverThread = null;
 
@@ -332,11 +345,13 @@ public class HttpsUrlConnClient {
 
         HtucSSLSocketFactory sockFac = new HtucSSLSocketFactory(cliParams);
         HttpsURLConnection.setDefaultSSLSocketFactory(sockFac);
-        URL location = new URL("https://localhost:" + serverPort);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        String hostAddr = loopback.getHostAddress();
+        URL location = URI.create("https://" + hostAddr + ":" + serverPort).toURL();
         HttpsURLConnection tlsConn =
                 (HttpsURLConnection)location.openConnection();
-        tlsConn.setConnectTimeout(5000);
-        tlsConn.setReadTimeout(5000);
+        tlsConn.setConnectTimeout((int)Utils.adjustTimeout(5000));
+        tlsConn.setReadTimeout((int)Utils.adjustTimeout(5000));
         tlsConn.setDoInput(true);
 
         try (InputStream in = tlsConn.getInputStream()) {
@@ -431,8 +446,8 @@ public class HttpsUrlConnClient {
         Throwable curExc = e;
         CertPathValidatorException cpve = null;
         while (curExc != null) {
-            if (curExc instanceof CertPathValidatorException) {
-                cpve = (CertPathValidatorException)curExc;
+            if (curExc instanceof CertPathValidatorException certPathValidatorException) {
+                cpve = certPathValidatorException;
             }
             curExc = curExc.getCause();
         }
@@ -567,11 +582,11 @@ public class HttpsUrlConnClient {
         // Now fire up the OCSP responder
         rootOcsp = new SimpleOCSPServer(rootKeystore, passwd, ROOT_ALIAS, null);
         rootOcsp.enableLog(debug);
-        rootOcsp.setNextUpdateInterval(3600);
+        rootOcsp.setNextUpdateInterval((int)Utils.adjustTimeout(3600));
         rootOcsp.start();
 
         // Wait 5 seconds for server ready
-        boolean readyStatus = rootOcsp.awaitServerReady(5, TimeUnit.SECONDS);
+        boolean readyStatus = rootOcsp.awaitServerReady((int)Utils.adjustTimeout(5000), TimeUnit.MILLISECONDS);
         if (!readyStatus) {
             throw new RuntimeException("Server not ready");
         }
@@ -618,11 +633,11 @@ public class HttpsUrlConnClient {
         intOcsp = new SimpleOCSPServer(intKeystore, passwd,
                 INT_ALIAS, null);
         intOcsp.enableLog(debug);
-        intOcsp.setNextUpdateInterval(3600);
+        intOcsp.setNextUpdateInterval((int)Utils.adjustTimeout(3600));
         intOcsp.start();
 
         // Wait 5 seconds for server ready
-        readyStatus = intOcsp.awaitServerReady(5, TimeUnit.SECONDS);
+        readyStatus = intOcsp.awaitServerReady((int)Utils.adjustTimeout(5000), TimeUnit.MILLISECONDS);
         if (!readyStatus) {
             throw new RuntimeException("Server not ready");
         }
@@ -740,7 +755,7 @@ public class HttpsUrlConnClient {
         boolean enabled = true;
         int cacheSize = 256;
         int cacheLifetime = 3600;
-        int respTimeout = 5000;
+        int respTimeout = (int)Utils.adjustTimeout(5000);
         String respUri = "";
         boolean respOverride = false;
         boolean ignoreExts = false;
@@ -849,8 +864,7 @@ public class HttpsUrlConnClient {
         }
 
         private void customizeSocket(Socket sock) {
-            if (sock instanceof SSLSocket) {
-                SSLSocket sslSock = (SSLSocket)sock;
+            if (sock instanceof SSLSocket sslSock) {
                 if (params.protocols != null) {
                     sslSock.setEnabledProtocols(params.protocols);
                 }
