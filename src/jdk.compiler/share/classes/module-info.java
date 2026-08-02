@@ -259,6 +259,7 @@ module jdk.compiler {
     exports com.sun.tools.javac.resources to
         jdk.jshell;
     exports com.sun.tools.javac.code to
+        jdk.jdeps,
         jdk.javadoc,
         jdk.jshell;
     exports com.sun.tools.javac.comp to

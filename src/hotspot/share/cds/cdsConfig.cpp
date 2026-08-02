@@ -41,6 +41,7 @@
 #include "prims/jvmtiAgentList.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/vmThread.hpp"
@@ -170,6 +171,9 @@ const char* CDSConfig::default_archive_path() {
       tmp.print_raw("_nocoh");
     }
 #endif
+    if (Arguments::is_valhalla_enabled()) {
+      tmp.print_raw("_preview");
+    }
     tmp.print_raw(".jsa");
     _default_archive_path = os::strdup(tmp.base());
   }

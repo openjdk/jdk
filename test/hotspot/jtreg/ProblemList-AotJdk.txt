@@ -82,3 +82,4 @@ vmTestbase/vm/mlvm/indy/stress/jdi/breakpointInCompiledCode/Test.java 8383781 ge
 
 #############################################################################
 
+# Value Objects failures start here:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "oops/symbolHandle.hpp"
 #include "oops/trainingData.hpp"
@@ -496,7 +497,7 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
                              require_local);
     if (elem_klass != nullptr && elem_klass->is_loaded()) {
       // Now make an array for it
-      return ciObjArrayKlass::make_impl(elem_klass);
+      return ciArrayKlass::make(elem_klass);
     }
   }
 
@@ -1542,7 +1543,9 @@ void ciEnv::record_lambdaform(Thread* thread, oop form) {
   }
 
   // Check LambdaForm.names array
-  objArrayOop names = (objArrayOop)obj_field(form, "names");
+  // The type of the array is Name[] and Name is an identity class,
+  // so the array is always an array of references
+  refArrayOop names = oop_cast<refArrayOop>(obj_field(form, "names"));
   if (names != nullptr) {
     RecordLocation lp0(this, "names");
     int len = names->length();
@@ -1904,7 +1907,7 @@ InstanceKlass::ClassState ciEnv::compute_init_state_for_aot_compile(InstanceKlas
   }
   if (task()->method()->method_holder() == ik) {
     log_trace(aot, compilation)("%d: method_holder: (%s) %s", task()->compile_id(), InstanceKlass::state2name(ik->init_state()), ik->external_name());
-    if (task()->method()->is_static_initializer()) { // Happens with -Xcomp
+    if (task()->method()->is_class_initializer()) { // Happens with -Xcomp
        return InstanceKlass::ClassState::being_initialized;
     } else {
        return InstanceKlass::ClassState::fully_initialized;

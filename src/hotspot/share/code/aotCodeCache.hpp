@@ -376,6 +376,7 @@ public:
   do_var(bool,  UseSHA512Intrinsics) \
   do_var(bool,  UseIntPolyIntrinsics) \
   do_var(bool,  UseVectorizedMismatchIntrinsic) \
+  do_var(bool,  InlineTypeReturnedAsFields) \
   do_var(bool,  VMContinuations) \
   do_fun(int,   CompressedKlassPointers_shift,          CompressedKlassPointers::shift()) \
   do_fun(bool,  JavaAssertions_systemClassDefault,      JavaAssertions::systemClassDefault()) \
@@ -656,9 +657,6 @@ public:
   bool write_oop_map_set(CodeBlob& cb);
   bool write_nmethod_reloc_immediates(GrowableArray<Handle>& oop_list, GrowableArray<Metadata*>& metadata_list);
 
-  jobject read_oop(JavaThread* thread);
-  Metadata* read_metadata();
-
   bool write_oop(jobject& jo);
   bool write_oop(oop obj);
   bool write_metadata(Metadata* m);
@@ -830,12 +828,11 @@ private:
   bool lookup_failed() const { return _failure != nullptr; }
   const char* lookup_failure() const { return _failure; }
 
-  Klass* read_klass();
+  Klass* read_klass(JavaThread* thread);
   Method* read_method();
 
   oop read_oop(JavaThread* thread);
-  Metadata* read_metadata();
-  bool read_metadata(OopRecorder* oop_recorder);
+  Metadata* read_metadata(JavaThread* thread);
 
   bool read_oop_metadata_list(JavaThread* thread, GrowableArray<Handle> &oop_list, GrowableArray<Metadata*> &metadata_list, OopRecorder* oop_recorder);
 

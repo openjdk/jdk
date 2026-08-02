@@ -306,13 +306,25 @@ void AOTCodeCache::initialize() {
 #else
   assert(!FLAG_IS_DEFAULT(AOTCache), "AOTCache should be specified");
 
+  if (Arguments::is_valhalla_enabled()) {
+    // Disable AOT code caching when Valhalla is enabled.
+    load_info_log().print_cr("AOT Code Caching is not supported with Valhalla");
+    disable_caching();
+    return;
+  }
+
   if (VerifyOops) {
-    // Disable AOT stubs caching when VerifyOops flag is on.
+    // Disable AOT code caching when VerifyOops flag is on.
     // Verify oops code generated a lot of C strings which overflow
     // AOT C string table (which has fixed size).
     // AOT C string table will be reworked later to handle such cases.
     load_info_log().print_cr("AOT Code Caching is not supported with VerifyOops");
     disable_caching();
+    // Keep next code when VerifyOops is supported.
+    if (InlineTypePassFieldsAsArgs) {
+      load_info_log().print_cr("AOT Adapter Caching is not supported with VerifyOops + InlineTypePassFieldsAsArgs.");
+      FLAG_SET_ERGO(AOTAdapterCaching, false);
+    }
     return;
   }
 
@@ -2539,8 +2551,6 @@ bool AOTCodeCache::write_relocations(CodeBlob& code_blob, RelocIterator& iter,
         break;
       case relocInfo::post_call_nop_type:
         break;
-      case relocInfo::entry_guard_type:
-        break;
       default:
         log_debug(aot, codecache, reloc)("relocation %d unimplemented", (int)iter.type());
         return false;
@@ -2696,8 +2706,6 @@ void AOTCodeReader::fix_relocations(CodeBlob *code_blob, RelocIterator& iter,
         break;
       case relocInfo::post_call_nop_type:
         break;
-      case relocInfo::entry_guard_type:
-        break;
       default:
         assert(false,"relocation %d unimplemented", (int)iter.type());
         break;
@@ -2789,7 +2797,7 @@ bool AOTCodeCache::write_metadata(Metadata* m) {
   return true;
 }
 
-Metadata* AOTCodeReader::read_metadata() {
+Metadata* AOTCodeReader::read_metadata(JavaThread* thread) {
   uint code_offset = read_position();
   Metadata* m = nullptr;
   DataKind kind = *(DataKind*)addr(code_offset);
@@ -2800,7 +2808,7 @@ Metadata* AOTCodeReader::read_metadata() {
   } else if (kind == DataKind::No_Data) {
     m = (Metadata*)Universe::non_oop_word();
   } else if (kind == DataKind::Klass) {
-    m = (Metadata*)read_klass();
+    m = (Metadata*)read_klass(thread);
   } else if (kind == DataKind::Method) {
     m = (Metadata*)read_method();
   } else if (kind == DataKind::MethodCnts) {
@@ -2888,12 +2896,17 @@ Method* AOTCodeReader::read_method() {
 
 bool AOTCodeCache::write_klass(Klass* klass) {
   uint array_dim = 0;
+  uint array_flags = ArrayProperties::Invalid().value();
   bool can_write = true;
   if (klass->is_objArray_klass()) {
     // We must check klass and its bottom_klass.
     can_write = AOTCacheAccess::can_generate_aot_code(klass);
     array_dim = ObjArrayKlass::cast(klass)->dimension();
-    klass     = ObjArrayKlass::cast(klass)->bottom_klass(); // overwrites klass
+    if (klass->is_refined_objArray_klass()) {
+      // Preserve property of object array
+      array_flags = ObjArrayKlass::cast(klass)->properties().value();
+    }
+    klass = ObjArrayKlass::cast(klass)->bottom_klass(); // overwrites klass
   }
   uint init_state = 0;
   if (klass->is_instance_klass()) {
@@ -2917,6 +2930,11 @@ bool AOTCodeCache::write_klass(Klass* klass) {
     if (n != sizeof(int)) {
       return false;
     }
+    // Record array's properties
+    n = write_bytes(&array_flags, sizeof(int));
+    if (n != sizeof(int)) {
+      return false;
+    }
     narrowPtr klass_narrow_ptr = AOTCacheAccess::to_narrow_ptr(klass);
     n = write_bytes(&klass_narrow_ptr, sizeof(narrowPtr));
     if (n != sizeof(narrowPtr)) {
@@ -2936,11 +2954,13 @@ bool AOTCodeCache::write_klass(Klass* klass) {
   return false;
 }
 
-Klass* AOTCodeReader::read_klass() {
+Klass* AOTCodeReader::read_klass(JavaThread* thread) {
   uint code_offset = read_position();
   uint state = *(uint*)addr(code_offset);
   uint init_state = (state  & 1);
   uint array_dim  = (state >> 1);
+  code_offset += sizeof(int);
+  uint array_flags = *(uint*)addr(code_offset);
   code_offset += sizeof(int);
   narrowPtr klass_narrow_ptr = *(narrowPtr*)addr(code_offset);
   code_offset += sizeof(uint);
@@ -2971,6 +2991,10 @@ Klass* AOTCodeReader::read_klass() {
   if (array_dim > 0) {
     assert(k->is_instance_klass() || k->is_typeArray_klass(), "sanity check");
     Klass* ak = k->array_klass_or_null(array_dim);
+    ArrayProperties props(array_flags);
+    if (ak != nullptr && props.is_valid()) {
+      ak = ObjArrayKlass::cast(ak)->klass_with_properties(ArrayProperties(array_flags), thread);
+    }
     if (ak == nullptr) {
       set_lookup_failed("Lookup failed for array klass");
       log_debug(aot, codecache, metadata)("%d (A%d): Lookup failed for %d-dimensions array klass %s",
@@ -3110,7 +3134,7 @@ oop AOTCodeReader::read_oop(JavaThread* thread) {
   } else if (kind == DataKind::No_Data) {
     return cast_to_oop(Universe::non_oop_word());
   } else if (kind == DataKind::Klass) {
-    Klass* k = read_klass();
+    Klass* k = read_klass(thread);
     if (k == nullptr) {
       return nullptr;
     }
@@ -3216,7 +3240,7 @@ bool AOTCodeReader::read_oop_metadata_list(JavaThread* current, GrowableArray<Ha
   offset += sizeof(int);
   set_read_position(offset);
   for (int i = 0; i < count; i++) {
-    Metadata* m = read_metadata();
+    Metadata* m = read_metadata(current);
     if (lookup_failed()) {
       return false;
     }
@@ -3470,6 +3494,9 @@ void AOTCodeAddressTable::init_extrs() {
     ADD_EXTERNAL_ADDRESS(SharedRuntime::throw_delayed_StackOverflowError);
     ADD_EXTERNAL_ADDRESS(StubRoutines::crc_table_addr());
     ADD_EXTERNAL_ADDRESS(StubRoutines::verify_oop_count_addr()); // used by generate_verify_oop()
+    if (InlineTypeReturnedAsFields) {
+      ADD_EXTERNAL_ADDRESS(SharedRuntime::store_inline_type_fields_to_buf);
+    }
   }
 
   // Record addresses of VM runtime methods
@@ -3477,6 +3504,7 @@ void AOTCodeAddressTable::init_extrs() {
   ADD_EXTERNAL_ADDRESS(SharedRuntime::handle_wrong_method);
   ADD_EXTERNAL_ADDRESS(SharedRuntime::handle_wrong_method_abstract);
   ADD_EXTERNAL_ADDRESS(SharedRuntime::handle_wrong_method_ic_miss);
+  ADD_EXTERNAL_ADDRESS(SharedRuntime::allocate_inline_types);
 #if defined(AARCH64) && !defined(ZERO)
   ADD_EXTERNAL_ADDRESS(JavaThread::aarch64_get_thread_helper);
   ADD_EXTERNAL_ADDRESS(BarrierSetAssembler::patching_epoch_addr());
@@ -3607,6 +3635,14 @@ void AOTCodeAddressTable::init_extrs() {
     ADD_EXTERNAL_ADDRESS(Runtime1::predicate_failed_trap);
     ADD_EXTERNAL_ADDRESS(Runtime1::unimplemented_entry);
     ADD_EXTERNAL_ADDRESS(Runtime1::trace_block_entry);
+    ADD_EXTERNAL_ADDRESS(Runtime1::new_null_free_array);
+    ADD_EXTERNAL_ADDRESS(Runtime1::load_flat_array);
+    ADD_EXTERNAL_ADDRESS(Runtime1::store_flat_array);
+    ADD_EXTERNAL_ADDRESS(Runtime1::substitutability_check);
+    ADD_EXTERNAL_ADDRESS(Runtime1::buffer_inline_args);
+    ADD_EXTERNAL_ADDRESS(Runtime1::buffer_inline_args_no_receiver);
+    ADD_EXTERNAL_ADDRESS(Runtime1::throw_identity_exception);
+    ADD_EXTERNAL_ADDRESS(Runtime1::throw_illegal_monitor_state_exception);
   }
 #endif // COMPILER1
 
@@ -3630,6 +3666,8 @@ void AOTCodeAddressTable::init_extrs() {
     ADD_EXTERNAL_ADDRESS(OptoRuntime::slow_arraycopy_C);
     ADD_EXTERNAL_ADDRESS(OptoRuntime::register_finalizer_C);
     ADD_EXTERNAL_ADDRESS(OptoRuntime::compile_method_C);
+    ADD_EXTERNAL_ADDRESS(OptoRuntime::load_unknown_inline_C);
+    ADD_EXTERNAL_ADDRESS(OptoRuntime::store_unknown_inline_C);
     ADD_EXTERNAL_ADDRESS(OptoRuntime::vthread_end_first_transition_C);
     ADD_EXTERNAL_ADDRESS(OptoRuntime::vthread_start_final_transition_C);
     ADD_EXTERNAL_ADDRESS(OptoRuntime::vthread_start_transition_C);

@@ -23,6 +23,7 @@
  */
 
 #include "classfile/vmClasses.hpp"
+#include "classfile/vmIntrinsics.hpp"
 #include "code/aotCodeCache.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
@@ -32,6 +33,7 @@
 #include "opto/optoreg.hpp"
 #include "opto/output.hpp"
 #include "opto/runtime.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -676,6 +678,7 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_getLong:
   case vmIntrinsics::_getFloat:
   case vmIntrinsics::_getDouble:
+  case vmIntrinsics::_getFlatValue:
   case vmIntrinsics::_putReference:
   case vmIntrinsics::_putBoolean:
   case vmIntrinsics::_putByte:
@@ -685,6 +688,7 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_putLong:
   case vmIntrinsics::_putFloat:
   case vmIntrinsics::_putDouble:
+  case vmIntrinsics::_putFlatValue:
   case vmIntrinsics::_getReferenceVolatile:
   case vmIntrinsics::_getBooleanVolatile:
   case vmIntrinsics::_getByteVolatile:
@@ -751,6 +755,10 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_storeFence:
   case vmIntrinsics::_storeStoreFence:
   case vmIntrinsics::_fullFence:
+  case vmIntrinsics::_arrayInstanceBaseOffset:
+  case vmIntrinsics::_arrayInstanceIndexScale:
+  case vmIntrinsics::_arrayLayout:
+  case vmIntrinsics::_getFieldMap:
   case vmIntrinsics::_currentCarrierThread:
   case vmIntrinsics::_currentThread:
   case vmIntrinsics::_setCurrentThread:
@@ -769,6 +777,12 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_allocateInstance:
   case vmIntrinsics::_allocateUninitializedArray:
   case vmIntrinsics::_newArray:
+  case vmIntrinsics::_newNullRestrictedNonAtomicArray:
+  case vmIntrinsics::_newNullRestrictedAtomicArray:
+  case vmIntrinsics::_newNullableAtomicArray:
+  case vmIntrinsics::_isFlatArray:
+  case vmIntrinsics::_isNullRestrictedArray:
+  case vmIntrinsics::_isAtomicArray:
   case vmIntrinsics::_getLength:
   case vmIntrinsics::_copyOf:
   case vmIntrinsics::_copyOfRange:
