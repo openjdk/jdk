@@ -5202,7 +5202,8 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
 
     Node* refined_klass_node = load_default_refined_array_klass(klass_node, /* type_array_guard= */ false);
 
-    if (success_proj != nullptr) {
+    const TypeAryKlassPtr* dest_ary_klass_t = dest_klass_t->isa_aryklassptr();
+    if (success_proj != nullptr || dest_ary_klass_t != nullptr) {
       // Improve the klass node's type from the new optimistic assumption:
       ciKlass* ak = ciArrayKlass::make(env()->Object_klass());
       bool not_flat = !UseArrayFlattening;

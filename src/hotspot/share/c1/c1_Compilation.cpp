@@ -425,11 +425,14 @@ void Compilation::install_code(int frame_size) {
     exception_handler_table(),
     implicit_exception_table(),
     compiler(),
+    false, // has_clinit_barriers
+    false, // for_preload
     has_unsafe_access(),
     SharedRuntime::is_wide_vector(max_vector_size()),
     has_monitors(),
     has_scoped_access(),
-    _immediate_oops_patched
+    _immediate_oops_patched,
+    should_install_code()
   );
 }
 
@@ -474,8 +477,7 @@ void Compilation::compile_method() {
   // Note: make sure we mark the method as not compilable!
   CHECK_BAILOUT();
 
-  if (should_install_code()) {
-    // install code
+  { // install code
     PhaseTraceTime timeit(_t_codeinstall);
     install_code(frame_size);
   }

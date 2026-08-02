@@ -329,6 +329,16 @@ public:
     return 2;
   }
   static int immediate(address insn_addr, address &target) {
+    // Metadata pointers are either narrow (32 bits) or wide (48 bits).
+    // We encode narrow ones by setting the upper 16 bits in the first
+    // instruction.
+    if (Instruction_aarch64::extract(insn_at(insn_addr, 0), 31, 21) == 0b11010010101) {
+      assert(nativeInstruction_at(insn_addr+4)->is_movk(), "wrong insns in patch");
+      narrowKlass nk = CompressedKlassPointers::encode((Klass*)target);
+      Instruction_aarch64::patch(insn_addr, 20, 5, nk >> 16);
+      Instruction_aarch64::patch(insn_addr+4, 20, 5, nk & 0xffff);
+      return 2;
+    }
     assert(Instruction_aarch64::extract(insn_at(insn_addr, 0), 31, 21) == 0b11010010100, "must be");
     uint64_t dest = (uint64_t)target;
     // Move wide constant
@@ -456,6 +466,16 @@ public:
   }
   static int immediate(address insn_addr, address &target) {
     uint32_t *insns = (uint32_t *)insn_addr;
+    // Metadata pointers are either narrow (32 bits) or wide (48 bits).
+    // We encode narrow ones by setting the upper 16 bits in the first
+    // instruction.
+    if (Instruction_aarch64::extract(insns[0], 31, 21) == 0b11010010101) {
+      assert(nativeInstruction_at(insn_addr+4)->is_movk(), "wrong insns in patch");
+      narrowKlass nk = (narrowKlass)((uint32_t(Instruction_aarch64::extract(insns[0], 20, 5)) << 16)
+                                   +  uint32_t(Instruction_aarch64::extract(insns[1], 20, 5)));
+      target = (address)CompressedKlassPointers::decode(nk);
+      return 2;
+    }
     assert(Instruction_aarch64::extract(insns[0], 31, 21) == 0b11010010100, "must be");
     // Move wide constant: movz, movk, movk.  See movptr().
     assert(nativeInstruction_at(insns+1)->is_movk(), "wrong insns in patch");
@@ -2447,7 +2467,7 @@ void MacroAssembler::mov(Register r, Address dest) {
 // reach anywhere.
 void MacroAssembler::movptr(Register r, uintptr_t imm64) {
 #ifndef PRODUCT
-  {
+  if (!AOTCodeCache::is_on_for_dump()) {
     char buffer[64];
     os::snprintf_checked(buffer, sizeof(buffer), "0x%" PRIX64, (uint64_t)imm64);
     block_comment(buffer);
@@ -2505,7 +2525,7 @@ void MacroAssembler::mov(FloatRegister Vd, SIMD_Arrangement T, uint64_t imm64) {
 void MacroAssembler::mov_immediate64(Register dst, uint64_t imm64)
 {
 #ifndef PRODUCT
-  {
+  if (!AOTCodeCache::is_on_for_dump()) {
     char buffer[64];
     os::snprintf_checked(buffer, sizeof(buffer), "0x%" PRIX64, imm64);
     block_comment(buffer);
@@ -2618,7 +2638,7 @@ void MacroAssembler::mov_immediate64(Register dst, uint64_t imm64)
 void MacroAssembler::mov_immediate32(Register dst, uint32_t imm32)
 {
 #ifndef PRODUCT
-    {
+    if (!AOTCodeCache::is_on_for_dump()) {
       char buffer[64];
       os::snprintf_checked(buffer, sizeof(buffer), "0x%" PRIX32, imm32);
       block_comment(buffer);

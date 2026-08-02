@@ -85,9 +85,9 @@ public class AOTCodeCPUFeatureIncompatibilityTest {
             public String[] vmArgs(RunMode runMode) {
                 if (runMode == RunMode.ASSEMBLY) {
                     if (mode == IncompatibilityMode.MISSING) {
-                        return new String[] {"-Xlog:aot+codecache*=debug"};
+                        return new String[] {"-Xlog:aot+codecache+exit=debug"};
                     } else {
-                        return new String[] {vmOption, "-Xlog:aot+codecache*=debug"};
+                        return new String[] {vmOption, "-Xlog:aot+codecache+exit=debug"};
                     }
                 } else if (runMode == RunMode.PRODUCTION) {
                     if (mode == IncompatibilityMode.MISSING) {
@@ -95,12 +95,12 @@ public class AOTCodeCPUFeatureIncompatibilityTest {
                                              "-XX:+UnlockDiagnosticVMOptions",
                                              // Prevent exiting VM on failure
                                              "-XX:-AbortVMOnAOTCodeFailure",
-                                             "-Xlog:aot+codecache*=debug"};
+                                             "-Xlog:aot+codecache+init=debug"};
                     } else {
                         return new String[] {"-XX:+UnlockDiagnosticVMOptions",
                                              // Prevent exiting VM on failure
                                              "-XX:-AbortVMOnAOTCodeFailure",
-                                             "-Xlog:aot+codecache*=debug"};
+                                             "-Xlog:aot+codecache+init=debug"};
                     }
                 }
                 return new String[]{};

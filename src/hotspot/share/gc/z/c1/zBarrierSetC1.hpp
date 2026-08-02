@@ -88,6 +88,7 @@ public:
 };
 
 class ZBarrierSetC1 : public BarrierSetC1 {
+  friend class AOTCodeAddressTable;
 private:
   address _load_barrier_on_oop_field_preloaded_runtime_stub;
   address _load_barrier_on_weak_oop_field_preloaded_runtime_stub;

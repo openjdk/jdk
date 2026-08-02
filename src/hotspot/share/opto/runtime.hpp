@@ -149,6 +149,7 @@ class OptoRuntime : public AllStatic {
   static const TypeFunc* _checkcast_arraycopy_Type;
   static const TypeFunc* _generic_arraycopy_Type;
   static const TypeFunc* _slow_arraycopy_Type;
+  static const TypeFunc* _compile_method_Type;
   static const TypeFunc* _unsafe_setmemory_Type;
   static const TypeFunc* _array_fill_Type;
   static const TypeFunc* _array_sort_Type;
@@ -233,6 +234,7 @@ class OptoRuntime : public AllStatic {
                                oopDesc* dest, jint dest_pos,
                                jint length, JavaThread* thread);
   static void complete_monitor_locking_C(oopDesc* obj, BasicLock* lock, JavaThread* current);
+  static void compile_method_C(Method* method, JavaThread* current);
 
 public:
   static void monitor_notify_C(oopDesc* obj, JavaThread* current);
@@ -299,6 +301,7 @@ private:
 
   static address slow_arraycopy_Java()                   { return _slow_arraycopy_Java; }
   static address register_finalizer_Java()               { return _register_finalizer_Java; }
+  static address compile_method_Java()                   { return _compile_method_Java; }
   static address load_unknown_inline_Java()              { return _load_unknown_inline_Java; }
   static address store_unknown_inline_Java()             { return _store_unknown_inline_Java; }
 
@@ -468,6 +471,11 @@ private:
     // There are no intptr_t (int/long) arguments.
     return _slow_arraycopy_Type;
   }   // the full routine
+
+  static inline const TypeFunc* compile_method_Type() {
+    assert(_compile_method_Type != nullptr, "should be initialized");
+    return _compile_method_Type;
+  }
 
   static inline const TypeFunc* unsafe_setmemory_Type() {
     assert(_unsafe_setmemory_Type != nullptr, "should be initialized");

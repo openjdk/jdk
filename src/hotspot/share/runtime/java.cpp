@@ -34,6 +34,7 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compilationPolicy.hpp"
@@ -250,9 +251,13 @@ static void print_bytecode_count() {}
 
 
 // General statistics printing (profiling ...)
-void print_statistics() {
+void print_statistics_before_exit() {
+  LogStreamHandle(Info, aot, codecache, stats) aot_log;
   if (CITime) {
     CompileBroker::print_times();
+    AOTCodeCache::print_timers_on(tty);
+  } else if (aot_log.is_enabled()) {
+    AOTCodeCache::print_timers_on(&aot_log);
   }
 
 #ifdef COMPILER1
@@ -285,6 +290,9 @@ void print_statistics() {
 
   if (PrintNMethodStatistics) {
     nmethod::print_statistics();
+    AOTCodeCache::print_statistics_on(tty);
+  } else if (aot_log.is_enabled()) {
+    AOTCodeCache::print_statistics_on(&aot_log);
   }
   if (CountCompiledCalls) {
     print_method_invocation_histogram();
@@ -499,7 +507,7 @@ void before_exit(JavaThread* thread, bool halt) {
   }
   #endif
 
-  print_statistics();
+  print_statistics_before_exit();
 
   { MutexLocker ml(BeforeExit_lock);
     _before_exit_status = BEFORE_EXIT_DONE;

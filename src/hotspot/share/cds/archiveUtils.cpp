@@ -53,6 +53,7 @@
 CHeapBitMap* ArchivePtrMarker::_ptrmap = nullptr;
 CHeapBitMap* ArchivePtrMarker::_rw_ptrmap = nullptr;
 CHeapBitMap* ArchivePtrMarker::_ro_ptrmap = nullptr;
+CHeapBitMap* ArchivePtrMarker::_ac_ptrmap = nullptr;
 VirtualSpace* ArchivePtrMarker::_vs;
 
 bool ArchivePtrMarker::_compacted;
@@ -61,6 +62,7 @@ void ArchivePtrMarker::initialize(CHeapBitMap* ptrmap, VirtualSpace* vs) {
   assert(_ptrmap == nullptr, "initialize only once");
   assert(_rw_ptrmap == nullptr, "initialize only once");
   assert(_ro_ptrmap == nullptr, "initialize only once");
+  assert(_ac_ptrmap == nullptr, "initialize only once");
   _vs = vs;
   _compacted = false;
   _ptrmap = ptrmap;
@@ -76,29 +78,34 @@ void ArchivePtrMarker::initialize(CHeapBitMap* ptrmap, VirtualSpace* vs) {
   _ptrmap->initialize(estimated_archive_size / sizeof(intptr_t));
 }
 
-void ArchivePtrMarker::initialize_rw_ro_maps(CHeapBitMap* rw_ptrmap, CHeapBitMap* ro_ptrmap) {
+void ArchivePtrMarker::initialize_rw_ro_ac_maps(CHeapBitMap* rw_ptrmap, CHeapBitMap* ro_ptrmap, CHeapBitMap* ac_ptrmap) {
   address* buff_bottom = (address*)ArchiveBuilder::current()->buffer_bottom();
   address* rw_bottom   = (address*)ArchiveBuilder::current()->rw_region()->base();
   address* ro_bottom   = (address*)ArchiveBuilder::current()->ro_region()->base();
+  address* ac_bottom   = (address*)ArchiveBuilder::current()->ac_region()->base();
 
-  // The bit in _ptrmap that cover the very first word in the rw/ro regions.
+  // The bit in _ptrmap that cover the very first word in the rw/ro/ac regions.
   size_t rw_start = rw_bottom - buff_bottom;
   size_t ro_start = ro_bottom - buff_bottom;
+  size_t ac_start = ac_bottom - buff_bottom;
 
   // The number of bits used by the rw/ro ptrmaps. We might have lots of zero
   // bits at the bottom and top of rw/ro ptrmaps, but these zeros will be
   // removed by FileMapInfo::write_bitmap_region().
   size_t rw_size = ArchiveBuilder::current()->rw_region()->used() / sizeof(address);
   size_t ro_size = ArchiveBuilder::current()->ro_region()->used() / sizeof(address);
+  size_t ac_size = ArchiveBuilder::current()->ac_region()->used() / sizeof(address);
 
   // The last (exclusive) bit in _ptrmap that covers the rw/ro regions.
   // Note: _ptrmap is dynamically expanded only when an actual pointer is written, so
   // it may not be as large as we want.
   size_t rw_end = MIN2<size_t>(rw_start + rw_size, _ptrmap->size());
   size_t ro_end = MIN2<size_t>(ro_start + ro_size, _ptrmap->size());
+  size_t ac_end = MIN2<size_t>(ac_start + ac_size, _ptrmap->size());
 
   rw_ptrmap->initialize(rw_size);
   ro_ptrmap->initialize(ro_size);
+  ac_ptrmap->initialize(ac_size);
 
   for (size_t rw_bit = rw_start; rw_bit < rw_end; rw_bit++) {
     rw_ptrmap->at_put(rw_bit - rw_start, _ptrmap->at(rw_bit));
@@ -108,8 +115,13 @@ void ArchivePtrMarker::initialize_rw_ro_maps(CHeapBitMap* rw_ptrmap, CHeapBitMap
     ro_ptrmap->at_put(ro_bit - ro_start, _ptrmap->at(ro_bit));
   }
 
+  for (size_t ac_bit = ac_start; ac_bit < ac_end; ac_bit++) {
+    ac_ptrmap->at_put(ac_bit - ac_start, _ptrmap->at(ac_bit));
+  }
+
   _rw_ptrmap = rw_ptrmap;
   _ro_ptrmap = ro_ptrmap;
+  _ac_ptrmap = ac_ptrmap;
 }
 
 void ArchivePtrMarker::mark_pointer(address* ptr_loc) {
@@ -475,8 +487,6 @@ void DumpRegion::pack(DumpRegion* next) {
     _end = (char*)align_up(_top, AOTMetaspace::core_region_alignment());
     _is_packed = true;
   }
-  _end = (char*)align_up(_top, AOTMetaspace::core_region_alignment());
-  _is_packed = true;
   if (next != nullptr) {
     next->_rs = _rs;
     next->_vs = _vs;

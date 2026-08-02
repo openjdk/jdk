@@ -429,9 +429,15 @@ Symbol* Method::klass_name() const {
 }
 
 void Method::metaspace_pointers_do(MetaspaceClosure* it) {
-  log_trace(aot)("Iter(Method): %p", this);
-
-  if (!method_holder()->is_rewritten() || Arguments::is_valhalla_enabled()) {
+  LogStreamHandle(Trace, aot) lsh;
+  if (lsh.is_enabled()) {
+    lsh.print("Iter(Method): %p ", this);
+    print_external_name(&lsh);
+    lsh.cr();
+  }
+  // holder is null for MH intrinsic methods
+  if ((method_holder() != nullptr && !method_holder()->is_rewritten()) ||
+      Arguments::is_valhalla_enabled()) {
     it->push(&_constMethod, MetaspaceClosure::_writable);
   } else {
     it->push(&_constMethod);
@@ -460,6 +466,12 @@ void Method::remove_unshareable_info() {
     _adapter->remove_unshareable_info();
     _adapter = nullptr;
   }
+  if (method_data() != nullptr) {
+    method_data()->remove_unshareable_info();
+  }
+  if (method_counters() != nullptr) {
+    method_counters()->remove_unshareable_info();
+  }
   JFR_ONLY(REMOVE_METHOD_ID(this);)
 }
 
@@ -476,6 +488,12 @@ void Method::restore_unshareable_info(TRAPS) {
     _from_compiled_entry = _adapter->get_c2i_entry();
     _from_compiled_inline_entry = _adapter->get_c2i_inline_entry();
     _from_compiled_inline_ro_entry = _adapter->get_c2i_inline_ro_entry();
+  }
+  if (method_data() != nullptr) {
+    method_data()->restore_unshareable_info(CHECK);
+  }
+  if (method_counters() != nullptr) {
+    method_counters()->restore_unshareable_info(CHECK);
   }
   assert(!queued_for_compilation(), "method's queued_for_compilation flag should not be set");
 }
