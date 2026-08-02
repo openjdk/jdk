@@ -37,6 +37,7 @@ import jtreg.SkippedException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.lang.foreign.Arena;
 import java.nio.ByteBuffer;
 import java.security.AlgorithmParameters;
 import java.security.NoSuchAlgorithmException;
@@ -123,93 +124,96 @@ public class TestSymmCiphersNoPad extends PKCS11Test {
         int outLen = cipher.getOutputSize(in.length);
         debugBuf.append("Estimated output size = " + outLen + "\n");
 
-        // test data preparation
-        ByteBuffer inBuf = ByteBuffer.allocate(in.length);
-        inBuf.put(in);
-        inBuf.position(0);
-        ByteBuffer inDirectBuf = ByteBuffer.allocateDirect(in.length);
-        inDirectBuf.put(in);
-        inDirectBuf.position(0);
-        ByteBuffer outBuf = ByteBuffer.allocate(outLen);
-        ByteBuffer outDirectBuf = ByteBuffer.allocateDirect(outLen);
+        try (Arena arena = Arena.ofConfined()) {
+            // test data preparation
+            ByteBuffer inBuf = ByteBuffer.allocate(in.length);
+            inBuf.put(in);
+            inBuf.position(0);
+            ByteBuffer inDirectBuf = ByteBuffer.allocateDirect(in.length);
+            inDirectBuf.put(in);
+            inDirectBuf.position(0);
+            ByteBuffer outBuf = ByteBuffer.allocate(outLen);
+            ByteBuffer outDirectBuf = ByteBuffer.allocateDirect(outLen);
+            ByteBuffer inMemBuf = arena.allocate(in.length).asByteBuffer();
+            ByteBuffer outMemBuf = arena.allocate(outLen).asByteBuffer();
 
-        // test#1: byte[] in + byte[] out
-        debugBuf.append("Test#1:\n");
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        byte[] testOut1 = cipher.update(in, 0, 16);
-        if (testOut1 != null) baos.write(testOut1, 0, testOut1.length);
-        testOut1 = cipher.doFinal(in, 16, in.length-16);
-        if (testOut1 != null) baos.write(testOut1, 0, testOut1.length);
-        testOut1 = baos.toByteArray();
-        match(testOut1, answer);
+            // test#1: byte[] in + byte[] out
+            debugBuf.append("Test#1:\n");
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            byte[] testOut1 = cipher.update(in, 0, 16);
+            if (testOut1 != null) baos.write(testOut1, 0, testOut1.length);
+            testOut1 = cipher.doFinal(in, 16, in.length - 16);
+            if (testOut1 != null) baos.write(testOut1, 0, testOut1.length);
+            testOut1 = baos.toByteArray();
+            match(testOut1, answer);
 
-        // test#2: Non-direct Buffer in + non-direct Buffer out
-        debugBuf.append("Test#2:\n");
-        debugBuf.append("inputBuf: " + inBuf + "\n");
-        debugBuf.append("outputBuf: " + outBuf + "\n");
-        cipher.update(inBuf, outBuf);
-        cipher.doFinal(inBuf, outBuf);
-        match(outBuf, answer);
+            // test#2: Non-direct Buffer in + non-direct Buffer out
+            debugBuf.append("Test#2:\n");
+            debugBuf.append("inputBuf: " + inBuf + "\n");
+            debugBuf.append("outputBuf: " + outBuf + "\n");
+            cipher.update(inBuf, outBuf);
+            cipher.doFinal(inBuf, outBuf);
+            match(outBuf, answer);
 
-        // test#3: Direct Buffer in + direc Buffer out
-        debugBuf.append("Test#3:\n");
-        debugBuf.append("(pre) inputBuf: " + inDirectBuf + "\n");
-        debugBuf.append("(pre) outputBuf: " + outDirectBuf + "\n");
-        cipher.update(inDirectBuf, outDirectBuf);
-        cipher.doFinal(inDirectBuf, outDirectBuf);
+            // test#3: Direct Buffer in + direc Buffer out
+            debugBuf.append("Test#3:\n");
+            debugBuf.append("(pre) inputBuf: " + inDirectBuf + "\n");
+            debugBuf.append("(pre) outputBuf: " + outDirectBuf + "\n");
+            cipher.update(inDirectBuf, outDirectBuf);
+            cipher.doFinal(inDirectBuf, outDirectBuf);
 
-        debugBuf.append("(post) inputBuf: " + inDirectBuf + "\n");
-        debugBuf.append("(post) outputBuf: " + outDirectBuf + "\n");
-        match(outDirectBuf, answer);
+            debugBuf.append("(post) inputBuf: " + inDirectBuf + "\n");
+            debugBuf.append("(post) outputBuf: " + outDirectBuf + "\n");
+            match(outDirectBuf, answer);
 
-        // test#4: Direct Buffer in + non-direct Buffer out
-        debugBuf.append("Test#4:\n");
-        inDirectBuf.position(0);
-        outBuf.position(0);
-        debugBuf.append("inputBuf: " + inDirectBuf + "\n");
-        debugBuf.append("outputBuf: " + outBuf + "\n");
-        cipher.update(inDirectBuf, outBuf);
-        cipher.doFinal(inDirectBuf, outBuf);
-        match(outBuf, answer);
+            // test#4: Direct Buffer in + non-direct Buffer out
+            debugBuf.append("Test#4:\n");
+            inDirectBuf.position(0);
+            outBuf.position(0);
+            debugBuf.append("inputBuf: " + inDirectBuf + "\n");
+            debugBuf.append("outputBuf: " + outBuf + "\n");
+            cipher.update(inDirectBuf, outBuf);
+            cipher.doFinal(inDirectBuf, outBuf);
+            match(outBuf, answer);
 
-        // test#5: Non-direct Buffer in + direct Buffer out
-        debugBuf.append("Test#5:\n");
-        inBuf.position(0);
-        outDirectBuf.position(0);
+            // test#5: Non-direct Buffer in + direct Buffer out
+            debugBuf.append("Test#5:\n");
+            inBuf.position(0);
+            outDirectBuf.position(0);
 
-        debugBuf.append("(pre) inputBuf: " + inBuf + "\n");
-        debugBuf.append("(pre) outputBuf: " + outDirectBuf + "\n");
+            debugBuf.append("(pre) inputBuf: " + inBuf + "\n");
+            debugBuf.append("(pre) outputBuf: " + outDirectBuf + "\n");
 
-        cipher.update(inBuf, outDirectBuf);
-        cipher.doFinal(inBuf, outDirectBuf);
+            cipher.update(inBuf, outDirectBuf);
+            cipher.doFinal(inBuf, outDirectBuf);
 
-        debugBuf.append("(post) inputBuf: " + inBuf + "\n");
-        debugBuf.append("(post) outputBuf: " + outDirectBuf + "\n");
-        match(outDirectBuf, answer);
+            debugBuf.append("(post) inputBuf: " + inBuf + "\n");
+            debugBuf.append("(post) outputBuf: " + outDirectBuf + "\n");
+            match(outDirectBuf, answer);
 
-        // test#6: Streams
-        debugBuf.append("Test#6: Streaming\n");
-        outBuf.position(0);
-        InputStream stream =
-            new CipherInputStream(new ByteArrayInputStream(in), cipher);
-        byte[] data = new byte[1024];
-        int bytesRead = 0;
-        try {
-            while (bytesRead >= 0) {
-                bytesRead = stream.read(data);
-                if (bytesRead == -1)
-                    break;
-                debugBuf.append("bytesRead: " + bytesRead);
-                debugBuf.append("\toutBuf.position(): " + outBuf.position() +
-                    "\n");
-                outBuf.put(data, 0 , bytesRead);
+            // test#6: Streams
+            debugBuf.append("Test#6: Streaming\n");
+            outBuf.position(0);
+            InputStream stream =
+                    new CipherInputStream(new ByteArrayInputStream(in), cipher);
+            byte[] data = new byte[1024];
+            int bytesRead = 0;
+            try {
+                while (bytesRead >= 0) {
+                    bytesRead = stream.read(data);
+                    if (bytesRead == -1)
+                        break;
+                    debugBuf.append("bytesRead: " + bytesRead);
+                    debugBuf.append("\toutBuf.position(): " + outBuf.position() +
+                            "\n");
+                    outBuf.put(data, 0, bytesRead);
+                }
+            } catch (Exception ex) {
+                debugBuf.append("Caught Exception during stream reading\n");
+                throw ex;
             }
-        } catch (Exception ex) {
-            debugBuf.append("Caught Exception during stream reading\n");
-            throw ex;
+            match(outBuf, answer);
         }
-        match(outBuf, answer);
-
         debugBuf.setLength(0);
     }
 

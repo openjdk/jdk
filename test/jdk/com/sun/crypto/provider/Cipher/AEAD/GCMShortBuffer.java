@@ -25,6 +25,7 @@ import javax.crypto.Cipher;
 import javax.crypto.ShortBufferException;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.lang.foreign.Arena;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HexFormat;
@@ -117,6 +118,10 @@ public class GCMShortBuffer {
         new GCMShortBuffer(new byte[50]);
         new GCMShortBuffer(ByteBuffer.allocate(13));
         new GCMShortBuffer(ByteBuffer.allocate(50));
+        try(Arena arena = Arena.ofConfined()) {
+            new GCMShortBuffer(arena.allocate(13).asByteBuffer());
+            new GCMShortBuffer(arena.allocate(50).asByteBuffer());
+        }
     }
 
 
