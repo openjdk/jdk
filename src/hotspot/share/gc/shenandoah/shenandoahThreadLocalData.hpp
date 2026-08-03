@@ -97,7 +97,8 @@ private:
   // Thread-local pin cache used to increment/decrement the pin count for
   // a region and flush the accumulated count to the shared pin counter.
   // This avoids contended atomic updates of the shared pin counter.
-  ShenandoahRegionPinCache _pin_cache;
+  size_t _pin_region_idx;
+  size_t _pin_count;
 
   ShenandoahThreadLocalData();
   ~ShenandoahThreadLocalData();
@@ -249,8 +250,20 @@ public:
     return data(thread)->_invisible_root_word_size.load_relaxed();
   }
 
-  static ShenandoahRegionPinCache& pin_count_cache(Thread* thread) {
-    return data(thread)->_pin_cache;
+  static size_t pin_cache_region(Thread* thread) {
+    return data(thread)->_pin_region_idx;
+  }
+
+  static size_t pin_cache_count(Thread* thread) {
+    return data(thread)->_pin_count;
+  }
+
+  static void pin_cache_set_region(Thread* thread, size_t reg_idx_pin) {
+    data(thread)->_pin_region_idx = reg_idx_pin;
+  }
+
+  static void pin_cache_set_count(Thread* thread, size_t new_count) {
+    data(thread)->_pin_count = new_count;
   }
 };
 

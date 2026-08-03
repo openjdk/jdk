@@ -178,7 +178,7 @@ void ShenandoahBarrierSet::on_thread_detach(Thread *thread) {
       StackWatermarkSet::finish_processing(JavaThread::cast(thread), &oops, StackWatermarkKind::gc);
     }
 
-    ShenandoahThreadLocalData::pin_count_cache(thread).flush();
+    _heap->flush_region_pin_cache(JavaThread::cast(thread));
   }
 }
 

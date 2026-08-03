@@ -197,7 +197,7 @@ inline void ShenandoahHeapRegion::restore_top_before_promote() {
   _top_before_promoted = nullptr;
 }
 
-inline void ShenandoahHeapRegion::add_pinned_object_count(size_t value) {
+inline void ShenandoahHeapRegion::inc_pin_count(size_t value) {
   _critical_pins.add_then_fetch(value, memory_order_relaxed);
 }
 

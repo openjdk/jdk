@@ -2436,16 +2436,55 @@ void ShenandoahHeap::unregister_nmethod(nmethod* nm) {
 }
 
 void ShenandoahHeap::pin_object(JavaThread* thr, oop o) {
-  size_t region_idx = heap_region_index_containing(o);
-  ShenandoahThreadLocalData::pin_count_cache(thr).inc_count(region_idx);
+  assert(thr == JavaThread::current(), "Sanity");
+  size_t reg_idx_pin = heap_region_index_containing(o);
+  size_t reg_idx_cached = ShenandoahThreadLocalData::pin_cache_region(thr);
+  size_t count = ShenandoahThreadLocalData::pin_cache_count(thr);
+  if (reg_idx_pin == reg_idx_cached) {
+    ShenandoahThreadLocalData::pin_cache_set_count(thr, count + 1);
+  } else {
+    if (count != 0) {
+      get_region(reg_idx_cached)->inc_pin_count(count);
+    }
+    ShenandoahThreadLocalData::pin_cache_set_region(thr, reg_idx_pin);
+    ShenandoahThreadLocalData::pin_cache_set_count(thr, 1);
+  }
 }
 
 void ShenandoahHeap::unpin_object(JavaThread* thr, oop o) {
-  size_t region_idx = heap_region_index_containing(o);
-  ShenandoahThreadLocalData::pin_count_cache(thr).dec_count(region_idx);
+  assert(thr == JavaThread::current(), "Sanity");
+  size_t reg_idx_pin = heap_region_index_containing(o);
+  size_t reg_idx_cached = ShenandoahThreadLocalData::pin_cache_region(thr);
+  size_t count = ShenandoahThreadLocalData::pin_cache_count(thr);
+  if (reg_idx_pin == reg_idx_cached) {
+    ShenandoahThreadLocalData::pin_cache_set_count(thr, count - 1);
+  } else {
+    if (count != 0) {
+      get_region(reg_idx_cached)->inc_pin_count(count);
+    }
+    ShenandoahThreadLocalData::pin_cache_set_region(thr, reg_idx_pin);
+    ShenandoahThreadLocalData::pin_cache_set_count(thr, ~(size_t)0);
+  }
+}
+
+void ShenandoahHeap::flush_region_pin_cache(JavaThread* thr) {
+  size_t count = ShenandoahThreadLocalData::pin_cache_count(thr);
+  if (count != 0) {
+    get_region(ShenandoahThreadLocalData::pin_cache_region(thr))->inc_pin_count(count);
+  }
+  ShenandoahThreadLocalData::pin_cache_set_region(thr, SIZE_MAX);
+  ShenandoahThreadLocalData::pin_cache_set_count(thr, 0);
+}
+
+void ShenandoahHeap::flush_region_pin_cache() {
+  assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint.");
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next(); ) {
+    flush_region_pin_cache(thread);
+  }
 }
 
 void ShenandoahHeap::sync_pinned_region_status() {
+  flush_region_pin_cache();
   ShenandoahHeapLocker locker(lock());
 
   for (size_t i = 0; i < num_regions(); i++) {
