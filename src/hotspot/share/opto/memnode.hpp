@@ -1251,7 +1251,7 @@ public:
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual uint match_edge(uint idx) const { return 0; }
   virtual const Type *bottom_type() const { return TypeTuple::MEMBAR; }
-  virtual Node *match(const ProjNode *proj, const Matcher *m, const RegMask* mask);
+  virtual Node* match(const ProjNode* proj, const Matcher* m);
   // Factory method.  Builds a wide or narrow membar.
   // Optional 'precedent' becomes an extra edge if not null.
   static MemBarNode* make(Compile* C, int opcode,

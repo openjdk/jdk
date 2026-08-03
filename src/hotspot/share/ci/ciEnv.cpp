@@ -490,7 +490,7 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
                              require_local);
     if (elem_klass != nullptr && elem_klass->is_loaded()) {
       // Now make an array for it
-      return ciArrayKlass::make(elem_klass);
+      return ciObjArrayKlass::make_impl(elem_klass);
     }
   }
 
