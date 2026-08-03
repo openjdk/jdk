@@ -823,6 +823,7 @@ void HeapShared::copy_and_rescan_aot_inited_mirror(InstanceKlass* ik) {
 
   oop orig_mirror;
   if (RegeneratedClasses::is_regenerated_object(ik)) {
+    assert(!ik->is_inline_klass(), "not supported");
     InstanceKlass* orig_ik = RegeneratedClasses::get_original_object(ik);
     precond(orig_ik->is_initialized());
     orig_mirror = orig_ik->java_mirror();
@@ -892,6 +893,16 @@ void HeapShared::copy_and_rescan_aot_inited_mirror(InstanceKlass* ik) {
     assert(success, "sanity");
   }
 
+  if (ik->is_inline_klass()) {
+    InlineKlass* ilk = InlineKlass::cast(ik);
+    if (ilk->supports_nullable_layouts()) {
+      oop null_reset_value = ilk->null_reset_value();
+      m->obj_field_put(ilk->null_reset_value_offset(), null_reset_value);
+      bool success = archive_reachable_objects_from(1, _dump_time_special_subgraph, null_reset_value);
+      assert(success, "sanity");
+    }
+  }
+
   if (log_is_enabled(Debug, aot, init)) {
     ResourceMark rm;
     log_debug(aot, init)("copied %3d field(s) in aot-initialized mirror %s%s%s", nfields, ik->external_name(),
@@ -921,14 +932,6 @@ void HeapShared::copy_java_mirror(oop orig_mirror, oop scratch_m) {
   Klass* k = java_lang_Class::as_Klass(orig_mirror);
   if (k != nullptr && k->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(k);
-
-    if (ik->is_inline_klass() && ik->is_initialized()) {
-      // Only concrete value classes need the null_reset field
-      InlineKlass* ilk = InlineKlass::cast(k);
-      if (ilk->supports_nullable_layouts()) {
-        scratch_m->obj_field_put(ilk->null_reset_value_offset(), ilk->null_reset_value());
-      }
-    }
 
     if (ik->has_acmp_maps_offset()) {
       int maps_offset = ik->acmp_maps_offset();
@@ -1144,8 +1147,10 @@ void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k) {
   } else if (orig_k->is_objArray_klass()) {
     Klass* abk = ObjArrayKlass::cast(orig_k)->bottom_klass();
     if (abk->is_instance_klass()) {
-      assert(InstanceKlass::cast(abk)->defined_by_boot_loader(),
-            "must be boot class");
+      if (!AOTClassInitializer::has_test_class()) {
+        assert(InstanceKlass::cast(abk)->defined_by_boot_loader(),
+               "must be boot class");
+      }
       check_allowed_klass(InstanceKlass::cast(ObjArrayKlass::cast(orig_k)->bottom_klass()));
     }
     if (orig_k == Universe::objectArrayKlass()) {
