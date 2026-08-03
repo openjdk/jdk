@@ -1022,9 +1022,6 @@ Node* InlineTypeNode::emit_identity_hash_code(GraphKit* kit, Node* arg, intptr_t
   }
   PhaseIterGVN& igvn = *kit->gvn().is_IterGVN();
 
-  RegionNode* compute_region = new RegionNode(3);
-  igvn.register_new_node_with_optimizer(compute_region);
-
   const Type* arg_type = igvn.type(arg);
   assert(!arg_type->maybe_null(), "must check null beforehand");
 
@@ -1035,7 +1032,7 @@ Node* InlineTypeNode::emit_identity_hash_code(GraphKit* kit, Node* arg, intptr_t
   auto make_load = [&](int offset, const Type* type, BasicType bt) -> Node* {
     Node* adr = kit->basic_plus_adr(arg, offset);
     ciField* field = vk->get_field_by_offset(offset, false);
-    // If the load is by chance not a mismatch, let mark it so. This way, loading the field can be simplified
+    // If the load is by chance not a mismatch, let's mark it so. This way, loading the field can be simplified
     bool is_mismatch = field == nullptr || field->type()->basic_type() != bt;
     if (bt == T_BYTE && field != nullptr && field->type()->basic_type() == T_BOOLEAN) {
       is_mismatch = false;
@@ -1047,10 +1044,12 @@ Node* InlineTypeNode::emit_identity_hash_code(GraphKit* kit, Node* arg, intptr_t
 
   Node* const thirty_one = kit->intcon(31);
   Node* result = kit->intcon(checked_cast<jint>(klass_hash));
+  tty->print_cr("method=%s; vk=%s; number_of_nonoop_entries=%d", kit->C->method()->name()->as_quoted_ascii(), vk->get_InlineKlass()->name()->as_quoted_ascii(), number_of_nonoop_entries);
   for (int i = 0; i < number_of_nonoop_entries; i++) {
     AcmpMapSegment segment = vk->get_nonoop_segment_of_acmp_map(i);
     int offset = segment._offset;
     int size = segment._size;
+    tty->print_cr("offset=%d; size=%d", offset, size);
     int nlong = size / 8;
     for (int j = 0; j < nlong; j++) {
       Node* la = make_load(offset, TypeLong::LONG, T_LONG);

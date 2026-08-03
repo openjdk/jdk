@@ -1204,8 +1204,7 @@ Node* CallStaticJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       if (res != nullptr) {
         return res;
       }
-    }
-    else if (method()->holder() == phase->C->env()->System_klass() &&
+    } else if (method()->holder() == phase->C->env()->System_klass() &&
         method()->name() == ciSymbols::identityHashCode_name()) {
       Node* res = replace_identity_hash_code(phase->is_IterGVN());
       if (res != nullptr) {

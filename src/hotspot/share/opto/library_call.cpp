@@ -5578,11 +5578,11 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
     return true;
   }
 
-  // We only go to the cache case code if we pass a number of guards.  The
-  // paths which do not pass are accumulated in the compute_region. The compute
-  // region tries to use the fast path for inline types. That also needs a lot
-  // of guards to be met. The paths which do not pass are accumulated in the
-  // slow_region, where we do the runtime call, which is the last resort.
+  // We only go to the cache case code if we pass a number of guards. The paths which do
+  // not pass are accumulated in the inline_fast_path_region. The compute region tries
+  // to use the fast path for inline types. That also needs a lot of guards to be met.
+  // The paths which do not pass are accumulated in the slow_region, where we do the
+  // runtime call, which is the last resort.
   RegionNode* inline_fast_path_region = new RegionNode(1);
   RegionNode* slow_region = new RegionNode(1);
 
@@ -5647,7 +5647,7 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
               // Now that we know fast path applies, there are 3 cases to distinguish here,
               // that unmasked_region/unmasked_result merge:
               // 1. the object has no segment, the hash is simply the hash of the class object
-              // 2. the object has one segment of size smaller that 8 (1, 2, 4)
+              // 2. the object has one segment of size smaller than 8 (1, 2, 4)
               // 3. the object has one segment of size 8 (long-sized)
               // See inlineKlass.hpp on why and how to tell them apart.
               RegionNode* unmasked_region = new RegionNode(4);
@@ -5674,7 +5674,7 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
               Node* mask_addr = off_heap_plus_addr(members, in_bytes(InlineKlass::fast_hashcode_mask_offset()));
               Node* mask = make_load(control(), mask_addr, TypeLong::LONG, T_LONG, MemNode::unordered);
               Node* obj_extracted = AndL(obj_payload, mask);
-              Node* is_long_payload_bol = BoolCmpI(mask, BoolTest::eq, longcon(-1));
+              Node* is_long_payload_bol = BoolCmpL(mask, BoolTest::eq, longcon(-1));
 #endif
               IfNode* iff_is_long_payload = create_and_map_if(control(), is_long_payload_bol, PROB_FAIR, COUNT_UNKNOWN);
 

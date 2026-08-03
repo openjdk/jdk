@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Test acmp fast path with value classes
+ * @summary Test hashcode fast path with value classes
  * @library /test/lib /
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
@@ -34,7 +34,7 @@
 
 /*
  * @test
- * @summary Test acmp fast path with value classes
+ * @summary Test hashcode fast path with value classes
  * @library /test/lib /
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
@@ -45,7 +45,7 @@
 
 /*
  * @test
- * @summary Test acmp fast path with value classes
+ * @summary Test hashcode fast path with value classes
  * @library /test/lib /
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
@@ -56,7 +56,7 @@
 
 /*
  * @test
- * @summary Test acmp fast path with value classes
+ * @summary Test hashcode fast path with value classes
  * @library /test/lib /
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
@@ -67,7 +67,7 @@
 
 /*
  * @test
- * @summary Test acmp fast path with value classes
+ * @summary Test hashcode fast path with value classes
  * @library /test/lib /
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
@@ -78,7 +78,7 @@
 
 /*
  * @test
- * @summary Test acmp fast path with value classes
+ * @summary Test hashcode fast path with value classes
  * @library /test/lib /
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
@@ -89,7 +89,7 @@
 
 /*
  * @test
- * @summary Test acmp fast path with value classes
+ * @summary Test hashcode fast path with value classes
  * @library /test/lib /
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
@@ -100,7 +100,7 @@
 
 /*
  * @test
- * @summary Test acmp fast path with value classes
+ * @summary Test hashcode fast path with value classes
  * @library /test/lib /
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
@@ -111,7 +111,7 @@
 
 /*
  * @test
- * @summary Test acmp fast path with value classes
+ * @summary Test hashcode fast path with value classes
  * @library /test/lib /
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
@@ -122,7 +122,7 @@
 
 /*
  * @test
- * @summary Test acmp fast path with value classes
+ * @summary Test hashcode fast path with value classes
  * @library /test/lib /
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
@@ -133,7 +133,7 @@
 
 /*
  * @test
- * @summary Test acmp fast path with value classes
+ * @summary Test hashcode fast path with value classes
  * @library /test/lib /
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
@@ -144,7 +144,7 @@
 
 /*
  * @test
- * @summary Test acmp fast path with value classes
+ * @summary Test hashcode fast path with value classes
  * @library /test/lib /
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
@@ -155,7 +155,7 @@
 
 /*
  * @test
- * @summary Test acmp fast path with value classes
+ * @summary Test hashcode fast path with value classes
  * @library /test/lib /
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
@@ -166,7 +166,7 @@
 
 /*
  * @test
- * @summary Test acmp fast path with value classes
+ * @summary Test hashcode fast path with value classes
  * @library /test/lib /
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
@@ -465,47 +465,57 @@ public class TestHashcodeFastPath {
             "h_short_with_int_hidden_type2",
             "h_with_oop2",
     })
-    public void run2() {
-        int SIZE = 100;
-        for (int i = 0; i < SIZE; ++i) {
-            Asserts.assertEQ(h_byte(new Byte((byte)i)), h(new Byte((byte)i)));
+    public void run2(RunInfo info) {
+        for (int i = 0; i < 1 << Byte.SIZE; ++i) {
+            Asserts.assertEQ(h_byte(new Byte((byte)i)), h(new Byte((byte)i)), "i = " + i);
+            Asserts.assertEQ(h_byte(new Byte((byte)-i)), h(new Byte((byte)-i)), "i = " + i);
         }
-        for (int i = 256; i < 256 + SIZE; ++i) {
-            Asserts.assertEQ(h_short(new Short((short)i)), h(new Short((short)i)));
-            Asserts.assertEQ(h_int(new Integer(i)), h(new Integer(i)));
-            Asserts.assertEQ(h_long(new Long(i)), h(new Long(i)));
-            Asserts.assertEQ(h_long_long(new LongLong(i, i)), h(new LongLong(i, i)));
-            Asserts.assertEQ(h_long_long(new LongLong((((long)i) << 32L) + i, Long.MAX_VALUE - i)), h(new LongLong((((long)i) << 32L) + i, Long.MAX_VALUE - i)));
-            Asserts.assertEQ(h_short_with_int2(new ShortWithInt(i, i)), h(new ShortWithInt(i, i)));
-            Asserts.assertEQ(h_short_with_int_hidden_type2(new ShortWithInt(i, i)), h(new ShortWithInt(i, i)));
-            String s = String.valueOf(i);
-            Asserts.assertEQ(h_with_oop2(new WithOop(s)), h(new WithOop(s)));
+        int HALF_WIDTH = 256;
+        for (short base : new short[]{0, Short.MIN_VALUE, Short.MAX_VALUE}) {
+            for (short k = 0; k < 2 * HALF_WIDTH + 1; ++k) {
+                short s = (short) (k + base - HALF_WIDTH);
+                Asserts.assertEQ(h_short(new Short(s)), h(new Short(s)), "s = " + s);
+            }
+        }
+        for (int base : new int[]{0, Short.MIN_VALUE, Short.MAX_VALUE, Integer.MIN_VALUE, Integer.MAX_VALUE}) {
+            for (int k = 0; k < 2 * HALF_WIDTH + 1; ++k) {
+                int i = k + base - HALF_WIDTH;
+                Asserts.assertEQ(h_int(new Integer(i)), h(new Integer(i)), "i = " + i);
+                Asserts.assertEQ(h_short_with_int2(new ShortWithInt(i, i)), h(new ShortWithInt(i, i)), "i = " + i);
+                Asserts.assertEQ(h_short_with_int_hidden_type2(new ShortWithInt(i, i)), h(new ShortWithInt(i, i)), "i = " + i);
+            }
+        }
+        for (long base : new long[]{0, Long.MIN_VALUE, Long.MAX_VALUE}) {
+            for (long k = 0; k < 2 * HALF_WIDTH + 1; ++k) {
+                long l = k + base - HALF_WIDTH;
+                Asserts.assertEQ(h_long(new Long(l)), h(new Long(l)), "l = " + l);
+                Asserts.assertEQ(h_long_long(new LongLong(l, l)), h(new LongLong(l, l)), "l = " + l);
+                Asserts.assertEQ(h_long_long(new LongLong((l << 32L) + l, Long.MAX_VALUE - l)), h(new LongLong((l << 32L) + l, Long.MAX_VALUE - l)), "l = " + l);
+                String str = String.valueOf(l);
+                Asserts.assertEQ(h_with_oop2(new WithOop(str)), h(new WithOop(str)), "l = " + l);
 
-            Long l = new Long(i);
-            int expected_hash = h(l);
-            Asserts.assertEQ(h_long(l), expected_hash);
+                Long l_ = new Long(l);
+                int expected_hash = h(l_);
+                Asserts.assertEQ(h_long(l_), expected_hash, "l = " + l);
+            }
         }
 
         short s = G.ints().next().shortValue();
-        Asserts.assertEQ(h_short(new Short(s)), h(new Short(s)));
+        Asserts.assertEQ(h_short(new Short(s)), h(new Short(s)), "s = " + s);
         int i = G.ints().next();
-        Asserts.assertEQ(h_int(new Integer(i)), h(new Integer(i)));
+        Asserts.assertEQ(h_int(new Integer(i)), h(new Integer(i)), "i = " + i);
         long l = G.longs().next();
-        Asserts.assertEQ(h_long(new Long(l)), h(new Long(l)));
-        Asserts.assertEQ(h_long_long(new LongLong(i, i)), h(new LongLong(i, i)));
-        Asserts.assertEQ(h_short_with_int2(new ShortWithInt(i, i)), h(new ShortWithInt(i, i)));
-        Asserts.assertEQ(h_short_with_int_hidden_type2(new ShortWithInt(i, i)), h(new ShortWithInt(i, i)));
+        Asserts.assertEQ(h_long(new Long(l)), h(new Long(l)), "l = " + l);
+        Asserts.assertEQ(h_long_long(new LongLong(i, i)), h(new LongLong(i, i)), "i = " + i);
+        Asserts.assertEQ(h_short_with_int2(new ShortWithInt(i, i)), h(new ShortWithInt(i, i)), "i = " + i);
+        Asserts.assertEQ(h_short_with_int_hidden_type2(new ShortWithInt(i, i)), h(new ShortWithInt(i, i)), "i = " + i);
         String str = String.valueOf(i);
-        Asserts.assertEQ(h_with_oop2(new WithOop(str)), h(new WithOop(str)));
+        Asserts.assertEQ(h_with_oop2(new WithOop(str)), h(new WithOop(str)), "i = " + i);
 
         Long lon = new Long(i);
         int expected_hash = h(lon);
-        Asserts.assertEQ(h_long(lon), expected_hash);
+        Asserts.assertEQ(h_long(lon), expected_hash, "lon = " + lon);
     }
-
-    // TODO: complicated structure, static expansion, random values with/without late removal of fast path
-    // TODO: all the simple structures, fast path taken if enabled
-    // TODO: example with oops, no fast path taken, no expansion
 
     // Statically expanded
     @Test
