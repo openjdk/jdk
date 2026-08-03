@@ -784,20 +784,20 @@ public final class Class<T> implements java.io.Serializable,
      * // @link substring=isAssignableFrom target="#isAssignableFrom(Class)" :
      * obj != null && this.isAssignableFrom(obj.getClass()) // @link substring=getClass target="Object#getClass()"
      * }
+     * <p>
+     * If this method returns true for a specified object, that object can be
+     * passed to {@link #cast(Object) cast} without causing a {@code
+     * ClassCastException}.
      *
      * @apiNote
      * This method is the dynamic equivalent of the type comparison operator of
      * the {@code instanceof} Java keyword (JLS {@jls 15.20.2 The {@code
      * instanceof} Operator}) and the {@code instanceof} instruction (JVMS
      * {@jvms 6.5.instanceof}).
-     * <p>
-     * If a specified instance passes the check of this method, it can be
-     * passed to {@link #cast(Object) cast} without throwing a {@code
-     * ClassCastException}.
      *
      * @param obj the reference to check, an object or {@code null}
-     * @return true the reference type represented by this {@code Class} is
-     *         a supertype of the class of {@code obj}; false otherwise
+     * @return true if and only if this {@code Class} represents a reference
+     *         type that is a supertype of the class of {@code obj}
      * @jls 4.3 Reference Types and Values
      * @see #cast(Object)
      * @see #isAssignableFrom(Class)
@@ -845,7 +845,7 @@ public final class Class<T> implements java.io.Serializable,
      * </ol></li>
      * </ul>
      *
-     * @param subtype the {@code Class} object presumed representing a subtype
+     * @param subtype the {@code Class} object presumably representing a subtype
      * @return true if and only if either {@code subtype} is the same as this
      *         object, or both this object and {@code subtype} represent a
      *         reference type, and that represented by {@code subtype} is a
@@ -3600,6 +3600,10 @@ public final class Class<T> implements java.io.Serializable,
      * If this {@code Class} object represents a primitive type or void, this
      * method completes normally if and only if the specified reference is
      * {@code null}.
+     * <p>
+     * If a non-null object passes the check of this method without causing
+     * a {@code ClassCastException}, {@link #isInstance(Object) isInstance}
+     * will return true for that object.
      *
      * @apiNote
      * This method is the dynamic equivalent of the cast operator with a single
