@@ -30,8 +30,9 @@ import java.io.Serial;
 /**
  * Signals that an error has been detected while parsing the
  * JSON document. This exception is thrown if the value supplied
- * to the {@link Json#parse(String) Json::parse} methods is not valid JSON
- * syntax, or contains a JSON object with duplicate names.
+ * to either {@link Json#parse(String)} or {@link Json#parse(char[])}
+ * is not valid JSON syntax, or contains a JSON object with duplicate
+ * names.
  *
  * @since 99
  */
@@ -56,7 +57,7 @@ public final class JsonParseException extends RuntimeException {
      * Constructs a JsonParseException with the specified detail message.
      * @param message the detail message
      * @param line the zero-based line number of the error, counted by
-     *         {@code LF (\n)} line terminators. Non-negative.
+     *         {@code '\n'} (linefeed, {@code U+000A}) characters. Non-negative.
      * @param pos the zero-based position of the error within the line, counted
      *         in UTF-16 code units. Non-negative.
      * @throws IllegalArgumentException if either {@code line} or {@code pos} are
@@ -74,7 +75,7 @@ public final class JsonParseException extends RuntimeException {
 
     /**
      * {@return the zero-based line number of the error, counted by
-     * {@code LF (\n)} line terminators}
+     * {@code '\n'} (linefeed, {@code U+000A}) characters}
      */
     public int getErrorLine() {
         return line;

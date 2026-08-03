@@ -31,7 +31,7 @@ import jdk.incubator.json.impl.JsonParser;
 import jdk.incubator.json.impl.Utils;
 
 /**
- * This class provides static methods for parsing and generating JSON documents
+ * This class provides static methods for parsing and generating JSON documents.
  *
  * <p>
  * {@link #parse(String)} and {@link #parse(char[])} produce a {@code JsonValue}
