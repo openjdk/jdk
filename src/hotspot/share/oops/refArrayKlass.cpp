@@ -111,12 +111,12 @@ size_t RefArrayKlass::oop_size(oop obj) const {
   return refArrayOop(obj)->object_size();
 }
 
-refArrayOop RefArrayKlass::allocate_instance(int length, TRAPS) {
+objArrayOop RefArrayKlass::allocate_instance(int length, TRAPS) {
   check_array_allocation_length(length, arrayOopDesc::max_array_length(T_OBJECT), CHECK_NULL);
   size_t size = refArrayOopDesc::object_size(length);
   oop array = Universe::heap()->array_allocate(
       this, size, length, /* do_zero */ true, CHECK_NULL);
-  return oop_cast<refArrayOop>(array);
+  return oop_cast<objArrayOop>(array);
 }
 
 static void throw_array_null_pointer_store_exception(arrayOop src, arrayOop dst, TRAPS) {

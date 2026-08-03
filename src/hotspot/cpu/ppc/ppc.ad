@@ -11096,8 +11096,8 @@ instruct inlineCallClearArray(rarg1RegL cnt, rarg2RegP base, immL_0 zero, Univer
 %}
 
 // Clear-array with dynamic array length and non-zero value.
-instruct inlineCallClearArrayWordCopy(rarg1RegL cnt, rarg2RegP base, iRegLdst val, Universe dummy, regCTR ctr) %{
-  predicate(((ClearArrayNode*)n)->word_copy_only());
+instruct inlineCallClearArrayWordFill(rarg1RegL cnt, rarg2RegP base, iRegLdst val, Universe dummy, regCTR ctr) %{
+  predicate(((ClearArrayNode*)n)->requires_word_fill());
   match(Set dummy (ClearArray (Binary cnt base) val));
   effect(USE_KILL base, KILL ctr);
   ins_cost(8 * MEMORY_REF_COST);

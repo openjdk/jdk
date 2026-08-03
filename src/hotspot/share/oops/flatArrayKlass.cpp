@@ -146,12 +146,12 @@ void FlatArrayKlass::metaspace_pointers_do(MetaspaceClosure* it) {
 }
 
 // Oops allocation...
-flatArrayOop FlatArrayKlass::allocate_instance(int length, TRAPS) {
+objArrayOop FlatArrayKlass::allocate_instance(int length, TRAPS) {
   assert(UseArrayFlattening, "Must be enabled");
   check_array_allocation_length(length, max_elements(), CHECK_NULL);
   int size = flatArrayOopDesc::object_size(layout_helper(), length);
   oop array = Universe::heap()->array_allocate(this, size, length, true, CHECK_NULL);
-  return oop_cast<flatArrayOop>(array);
+  return oop_cast<objArrayOop>(array);
 }
 
 oop FlatArrayKlass::multi_allocate(int rank, jint* last_size, TRAPS) {
