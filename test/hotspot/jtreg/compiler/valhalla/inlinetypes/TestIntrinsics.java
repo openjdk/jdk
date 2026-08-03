@@ -1296,7 +1296,8 @@ public class TestIntrinsics {
 
         @ForceInline
         static SmallValue createWithFieldsInline(int x, long y) {
-            return new SmallValue((byte)x, (byte)y);
+            // Make sure it's different from the default value, some tests rely on this
+            return new SmallValue((byte)x, (byte) (y | 1));
         }
     }
 
