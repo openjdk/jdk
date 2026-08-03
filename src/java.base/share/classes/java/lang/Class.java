@@ -791,9 +791,9 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @apiNote
      * This method is the dynamic equivalent of the type comparison operator of
-     * the {@code instanceof} Java keyword (JLS {@jls 15.20.2 The {@code
-     * instanceof} Operator}) and the {@code instanceof} instruction (JVMS
-     * {@jvms 6.5.instanceof}).
+     * the {@code instanceof} Java keyword (JLS {@jls 15.20.2 The
+     * <code>instanceof</code> Operator}) and the {@code instanceof} instruction
+     * (JVMS {@jvms 6.5.instanceof}).
      *
      * @param obj the reference to check, an object or {@code null}
      * @return true if and only if this {@code Class} represents a reference
