@@ -310,15 +310,15 @@ abstract public class CDSAppTester {
 
     private void createAOTCacheFileForRetrainingOneStep(boolean runAppInBaseCache) throws Exception {
         RunMode runMode = RunMode.TRAINING;
-        String[] cmdLine = StringArrayUtils.concat(vmArgs(runMode),
-                                                   "-XX:AOTMode=record",
+        String[] cmdLine = addCommonVMArgs(runMode);
+        cmdLine = StringArrayUtils.concat(cmdLine, vmArgs(runMode));
+        cmdLine = StringArrayUtils.concat(cmdLine, "-XX:AOTMode=record",
                                                    "-XX:AOTCacheOutput=" + aotCacheFileForRetraining,
                                                    logToFile(aotCacheFileForRetrainingLog,
                                                              "class+load=debug",
                                                              "aot=debug",
                                                              "aot+class=debug",
                                                              "cds=debug"));
-        cmdLine = addCommonVMArgs(runMode, cmdLine);
         OutputAnalyzer out;
         if (runAppInBaseCache) {
             cmdLine = StringArrayUtils.concat(cmdLine, appCommandLine(runMode));
@@ -333,15 +333,15 @@ abstract public class CDSAppTester {
     private void createAOTCacheFileForRetrainingTwoStep(boolean runAppInBaseCache) throws Exception {
         // Training step
         RunMode runMode = RunMode.TRAINING;
-        String[] cmdLine = StringArrayUtils.concat(vmArgs(runMode),
-                                                   "-XX:AOTMode=record",
+        String[] cmdLine = addCommonVMArgs(runMode);
+        cmdLine = StringArrayUtils.concat(cmdLine, vmArgs(runMode));
+        cmdLine = StringArrayUtils.concat(cmdLine, "-XX:AOTMode=record",
                                                    "-XX:AOTConfiguration=" + aotConfigurationFileForRetraining,
                                                    logToFile(aotConfigurationFileForRetrainingLog,
                                                              "class+load=debug",
                                                              "aot=debug",
                                                              "cds=debug",
                                                              "aot+class=debug"));
-        cmdLine = addCommonVMArgs(runMode, cmdLine);
         OutputAnalyzer out;
         if (runAppInBaseCache) {
             cmdLine = StringArrayUtils.concat(cmdLine, appCommandLine(runMode));
@@ -353,8 +353,9 @@ abstract public class CDSAppTester {
 
         // Assembly step
         runMode = RunMode.ASSEMBLY;
-        cmdLine = StringArrayUtils.concat(vmArgs(runMode),
-                                                   "-Xlog:aot",
+        cmdLine = addCommonVMArgs(runMode);
+        cmdLine = StringArrayUtils.concat(cmdLine, vmArgs(runMode));
+        cmdLine = StringArrayUtils.concat(cmdLine, "-Xlog:aot",
                                                    "-Xlog:aot+heap=error",
                                                    "-Xlog:cds",
                                                    "-XX:AOTMode=create",
@@ -366,7 +367,6 @@ abstract public class CDSAppTester {
                                                              "aot+class=debug",
                                                              "aot+heap=warning",
                                                              "aot+resolve=debug"));
-        cmdLine = addCommonVMArgs(runMode, cmdLine);
         cmdLine = StringArrayUtils.concat(cmdLine, appCommandLine(runMode));
         executeAndCheck(cmdLine, runMode, aotCacheFileForRetraining, aotCacheFileForRetrainingLog);
     }
