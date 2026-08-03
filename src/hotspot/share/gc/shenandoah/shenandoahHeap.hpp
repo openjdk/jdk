@@ -686,9 +686,11 @@ public:
   void pin_object(JavaThread* thread, oop obj) override;
   void unpin_object(JavaThread* thread, oop obj) override;
 
-  // Updates each region's pin counts from the per-thread caches and resets them.
-  // Must be called before any decision based on pin counts.
+  // Flushes this thread's current pin count to its region's shared counter
+  // and resets the pin cache.
   void flush_region_pin_cache(JavaThread* thread);
+
+  // Flushes all Java threads' pin counts.
   void flush_region_pin_cache();
 
   void sync_pinned_region_status();

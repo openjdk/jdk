@@ -257,8 +257,8 @@ public:
     return data(thread)->_pin_count;
   }
 
-  static void pin_cache_set_region(Thread* thread, size_t reg_idx_pin) {
-    data(thread)->_pin_region_idx = reg_idx_pin;
+  static void pin_cache_set_region(Thread* thread, size_t region_idx) {
+    data(thread)->_pin_region_idx = region_idx;
   }
 
   static void pin_cache_set_count(Thread* thread, size_t new_count) {
