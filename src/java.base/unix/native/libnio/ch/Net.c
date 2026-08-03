@@ -294,10 +294,9 @@ Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
     }
 
 #if defined(__linux__)
-    if (type == SOCK_DGRAM) {
+    if (domain == AF_INET && type == SOCK_DGRAM) {
         int arg = 0;
-        int level = (domain == AF_INET6) ? IPPROTO_IPV6 : IPPROTO_IP;
-        if ((setsockopt(fd, level, IP_MULTICAST_ALL, (char*)&arg, sizeof(arg)) < 0) &&
+        if ((setsockopt(fd, IPPROTO_IP, IP_MULTICAST_ALL, &arg, sizeof(arg)) < 0) &&
             (errno != ENOPROTOOPT)) {
             JNU_ThrowByNameWithLastError(env,
                                          JNU_JAVANETPKG "SocketException",
@@ -321,7 +320,7 @@ Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
 
         /* Disable IPV6_MULTICAST_ALL if option supported */
         arg = 0;
-        if ((setsockopt(fd, IPPROTO_IPV6, IPV6_MULTICAST_ALL, (char*)&arg, sizeof(arg)) < 0) &&
+        if ((setsockopt(fd, IPPROTO_IPV6, IPV6_MULTICAST_ALL, &arg, sizeof(arg)) < 0) &&
             (errno != ENOPROTOOPT)) {
             JNU_ThrowByNameWithLastError(env,
                                      JNU_JAVANETPKG "SocketException",
