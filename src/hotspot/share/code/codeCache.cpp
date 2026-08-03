@@ -286,12 +286,6 @@ void CodeCache::initialize_heaps() {
     set_size_of_unset_code_heap(&non_nmethod, cache_size, profiled.size + non_profiled.size + hot.size, non_nmethod_min_size);
   }
 
-  /*if(!can_align_up(non_nmethod.size, min_size)  ||
-     !can_align_up(profiled.size, min_size)     ||
-     !can_align_up(non_profiled.size, min_size) ||
-     !can_align_up(hot.size, min_size)) {
-    vm_exit_during_initialization("Code cache size exceeds platform limit");
-  }*/
   // Note: if large page support is enabled, min_size is at least the large
   // page size. This ensures that the code cache is covered by large pages.
   non_nmethod.size = align_up(non_nmethod.size, min_size);
@@ -1243,9 +1237,6 @@ void CodeCache::initialize() {
   // This was originally just a check of the alignment, causing failure, instead, round
   // the code cache to the page size.  In particular, Solaris is moving to a larger
   // default page size.
-  /*if(!can_align_up(CodeCacheExpansionSize, os::vm_page_size())) {
-    vm_exit_during_initialization("Code cache size exceeds platform limit");
-  }*/
   CodeCacheExpansionSize = align_up(CodeCacheExpansionSize, os::vm_page_size());
 
   if (SegmentedCodeCache) {
