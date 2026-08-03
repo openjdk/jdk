@@ -38,18 +38,18 @@ void G1YoungRegions::clear_data() {
 
 void G1EdenRegions::add(G1HeapRegion* r) {
   assert(r->is_eden(), "must be");
-  G1YoungRegions::add_to_nodes(r);
+  add_to_nodes(r);
   _length++;
 }
 
 void G1EdenRegions::clear() {
-  G1YoungRegions::clear_data();
+  clear_data();
   _length = 0;
 }
 
 void G1SurvivorRegions::add(G1HeapRegion* r) {
   assert(r->is_survivor(), "should be flagged as survivor region");
-  G1YoungRegions::add_to_nodes(r);
+  add_to_nodes(r);
   _regions.append(r);
 }
 
@@ -61,6 +61,6 @@ void G1SurvivorRegions::convert_to_eden() {
 }
 
 void G1SurvivorRegions::clear() {
-  G1YoungRegions::clear_data();
+  clear_data();
   _regions.clear();
 }
