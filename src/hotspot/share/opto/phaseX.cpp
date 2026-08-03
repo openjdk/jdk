@@ -32,7 +32,6 @@
 #include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/convertnode.hpp"
-#include "opto/divnode.hpp"
 #include "opto/idealGraphPrinter.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/machnode.hpp"
@@ -1087,7 +1086,7 @@ bool PhaseIterGVN::needs_deep_revisit(const Node* n) const {
 
 bool PhaseIterGVN::drain_worklist() {
   uint loop_count = 1;
-  const int max_live_nodes_increase_per_iteration = NodeLimitFudgeFactor * 3;
+  const int max_live_nodes_increase_per_iteration = NodeLimitFudgeFactor * 5;
   while (_worklist.size() != 0) {
     if (C->check_node_count(max_live_nodes_increase_per_iteration, "Out of nodes")) {
       C->print_method(PHASE_AFTER_ITER_GVN, 3);
@@ -1345,7 +1344,7 @@ void PhaseIterGVN::verify_Value_for(const Node* n, bool strict) {
   stringStream ss; // Print as a block without tty lock.
   ss.cr();
   ss.print_cr("Missed Value optimization:");
-  n->dump_bfs(1, nullptr, "", &ss);
+  n->dump_bfs(3, nullptr, "", &ss);
   ss.print_cr("Current type:");
   told->dump_on(&ss);
   ss.cr();
@@ -1754,6 +1753,16 @@ void PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape, bool deep_revisit
       assert(false, "Unexpected hash change from applying Ideal optimization on %s", n->Name());
     }
 
+    // Some nodes try to push itself back to the worklist if can_reshape is
+    // false
+    if (!can_reshape && _worklist.size() > 0 && _worklist.pop() != n) {
+      stringStream ss;
+      ss.cr();
+      ss.print_cr("Previously optimized:");
+      n->dump_bfs(1, nullptr, "", &ss);
+      tty->print_cr("%s", ss.as_string());
+      assert(false, "should only push itself on worklist");
+    }
     verify_empty_worklist(n);
 
     // Everything is good.
@@ -1939,120 +1948,19 @@ Node* PhaseIterGVN::register_new_node_with_optimizer(Node* n, Node* orig) {
 //------------------------------transform--------------------------------------
 // Non-recursive: idealize Node 'n' with respect to its inputs and its value
 Node *PhaseIterGVN::transform( Node *n ) {
-  if (_delay_transform) {
-    // Register the node but don't optimize for now
-    register_new_node_with_optimizer(n);
-    return n;
-  }
-
   // If brand new node, make space in type array, and give it a type.
   ensure_type_or_null(n);
   if (type_or_null(n) == nullptr) {
     set_type_bottom(n);
   }
 
+  if (_delay_transform) {
+    // Add the node to the worklist but don't optimize for now
+    _worklist.push(n);
+    return n;
+  }
+
   return transform_old(n);
-}
-
-DeadPathNode* PhaseIterGVN::dead_path() {
-  DeadPathNode* dead_path_node = C->dead_path();
-  if (!dead_path_node->is_active()) {
-    dead_path_node->activate(this);
-  }
-  assert(C->root()->find_edge(dead_path_node) > 0, "should be reachable from root");
-  return dead_path_node;
-}
-
-
-// If dead_node is a data node, all CFG nodes reachable from dead_node are dead cfg paths. This method follows uses from
-// dead_node until it encounters a cfg node or a phi and eagerly kills these dead cfg paths. This is needed because, in
-// some corner cases, a data node dies but some data paths that use it (and are unreachable at runtime) are not proven
-// dead by igvn, possibly leading to incorrect IR graphs.
-// Also see comment at DeadPathNode declaration.
-void PhaseIterGVN::make_dependent_paths_dead_if_top(Node* dead_node, const Type* t) {
-  if (t != Type::TOP) {
-    return;
-  }
-  if (!KillPathsReachableByDeadDataNode) {
-    return;
-  }
-  // dead_node is going dead, follow uses
-  ResourceMark rm;
-  Unique_Node_List wq;
-  wq.push(dead_node);
-  for (uint i = 0; i < wq.size(); i++) {
-    Node* n = wq.at(i);
-    if (n != dead_node && (n->is_Phi() || n->is_CFG())) {
-      continue;
-    }
-    for (DUIterator_Fast kmax, k = n->fast_outs(kmax); k < kmax; k++) {
-      Node* u = n->fast_out(k);
-      wq.push(u);
-    }
-  }
-  for (uint i = 0; i < wq.size(); i++) {
-    Node* n = wq.at(i);
-    if (n->is_Phi()) {
-      Node* region = n->in(0);
-      // Find out through which of the Phi's input, we reached that Phi and mark the corresponding CFG path dead
-      for (uint j = 1; j < n->req(); j++) {
-        Node* in = n->in(j);
-        // We don't follow uses beyond Phis so if 'in' is a Phi (unless it's dead_node), we couldn't reach this Phi through it
-        if (in == dead_node || (in != nullptr && !in->is_Phi() && wq.member(in))) {
-          if (!region->is_top() && region->in(j) != nullptr && !region->in(j)->is_top()) {
-            // We reached this CFG path through data nodes, record it in dead path to later insert a Halt node, if it
-            // doesn't die in the meantime
-            dead_path()->add_req(region->in(j));
-            _worklist.push(dead_path());
-            replace_input_of(region, j, C->top());
-          }
-          replace_input_of(n, j, C->top());
-          if (in->outcnt() == 0) {
-            remove_dead_node(in, NodeOrigin::Graph);
-          }
-        }
-      }
-      continue;
-    }
-    if (n == dead_node) {
-      continue;
-    }
-    // We don't want to follow CFG nodes but is_CFG() can return false for a cfg projection if its input is top. So
-    // there's no foolproof way of telling if dead_node is a cfg or not and as a consequence we can reach a Region.
-    if (n->is_Region()) {
-      // Find out through which of the Region's input, we reached that Region and mark it dead
-      for (uint j = 1; j < n->req(); j++) {
-        Node* in = n->in(j);
-        // We don't follow uses beyond Regions so if 'in' is a Region, we couldn't reach this Region through it
-        if (in != nullptr && !in->is_Region() && wq.member(in)) {
-          replace_input_of(n, j, C->top());
-          in->remove_dead_region(this, true);
-        }
-      }
-      continue;
-    }
-    // If we reached this CFG node through a data input...
-    if (n->is_CFG()) {
-      Node* control_input = n->in(0);
-      if (control_input != nullptr && !control_input->is_top()) {
-        // record it in dead path to later insert a Halt node, if it doesn't die in the meantime
-        dead_path()->add_req(control_input);
-        _worklist.push(dead_path());
-        replace_input_of(n, 0, C->top());
-      }
-      n->remove_dead_region(this, true);
-      continue;
-    }
-    if (n->outcnt() == 0) {
-      remove_dead_node(n, NodeOrigin::Graph);
-    }
-  }
-#ifdef ASSERT
-  for (uint i = 0; i < wq.size(); i++) {
-    Node* n = wq.at(i);
-    assert(n->is_Region() || n->is_Phi() || n->is_CFG() || n->outcnt() == 0, "node should be dead now");
-  }
-#endif
 }
 
 Node *PhaseIterGVN::transform_old(Node* n) {
@@ -2146,7 +2054,6 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   }
   // If 'k' computes a constant, replace it with a constant
   if (t->singleton() && !k->is_Con()) {
-    make_dependent_paths_dead_if_top(k, t);
     set_progress();
     Node* con = makecon(t);     // Make a constant
     add_users_to_worklist(k);
@@ -2335,6 +2242,19 @@ void PhaseIterGVN::subsume_node( Node *old, Node *nn ) {
   temp->destruct(this);     // reuse the _idx of this little guy
 }
 
+// Replaces n with m in all uses, including self-loops.
+void PhaseIterGVN::replace_in_uses(Node* n, Node* m) {
+  assert(n != nullptr, "sanity");
+  add_users_to_worklist(n);
+  for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+    Node* u = n->fast_out(i);
+    rehash_node_delayed(u);
+    int nb = u->replace_edge(n, m);
+    --i, imax -= nb;
+  }
+  assert(n->outcnt() == 0, "all uses must be deleted");
+}
+
 //------------------------------add_users_to_worklist--------------------------
 void PhaseIterGVN::add_users_to_worklist0(Node* n, Unique_Node_List& worklist) {
   for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
@@ -2390,7 +2310,17 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     }
   }
 
-  int use_op = use->Opcode();
+  // AndLNode::Ideal folds GraphKit::mark_word_test patterns. Give it a chance to run.
+  if (n->is_Load() && use->is_Phi()) {
+    for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
+      Node* u = use->fast_out(i);
+      if (u->Opcode() == Op_AndL) {
+        worklist.push(u);
+      }
+    }
+  }
+
+  uint use_op = use->Opcode();
   if(use->is_Cmp()) {       // Enable CMP/BOOL optimization
     add_users_to_worklist0(use, worklist); // Put Bool on worklist
     if (use->outcnt() > 0) {
@@ -2487,6 +2417,17 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     }
   }
 
+  // Inline type nodes can have other inline types as users. If an input gets
+  // updated, make sure that inline type users get a chance for optimization.
+  if (use->is_InlineType() || use->is_DecodeN()) {
+    auto push_the_uses_to_worklist = [&](Node* n){
+      if (n->is_InlineType()) {
+        worklist.push(n);
+      }
+    };
+    auto is_boundary = [](Node* n){ return !n->is_InlineType(); };
+    use->visit_uses(push_the_uses_to_worklist, is_boundary, true);
+  }
   // If changed Cast input, notify down for Phi, Sub, and Xor - all do "uncast"
   // Patterns:
   // ConstraintCast+ -> Sub
@@ -2664,6 +2605,24 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   bool has_load_barrier_nodes = bs->has_load_barrier_nodes();
 
+  if (use_op == Op_CastP2X) {
+    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+      Node* u = use->fast_out(i2);
+      // TODO 8350865 Still needed? Yes, I think this is from PhaseMacroExpand::expand_mh_intrinsic_return
+      if (u->Opcode() == Op_AndX) {
+        worklist.push(u);
+      }
+      // Search for CmpL(OrL(CastP2X(..), CastP2X(..)), 0L)
+      if (u->Opcode() == Op_OrL) {
+        for (DUIterator_Fast i3max, i3 = u->fast_outs(i3max); i3 < i3max; i3++) {
+          Node* cmp = u->fast_out(i3);
+          if (cmp->Opcode() == Op_CmpL) {
+            worklist.push(cmp);
+          }
+        }
+      }
+    }
+  }
   if (use_op == Op_LoadP && use->bottom_type()->isa_rawptr()) {
     for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
       Node* u = use->fast_out(i2);
@@ -2677,6 +2636,16 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
         }
         worklist.push(u);
       }
+    }
+  }
+  // Give CallStaticJavaNode::remove_useless_allocation a chance to run
+  if (use->is_Region()) {
+    Node* c = use;
+    do {
+      c = c->unique_ctrl_out_or_null();
+    } while (c != nullptr && c->is_Region());
+    if (c != nullptr && c->is_CallStaticJava() && c->as_CallStaticJava()->uncommon_trap_request() != 0) {
+      worklist.push(c);
     }
   }
   if (use->Opcode() == Op_OpaqueZeroTripGuard) {
@@ -2807,7 +2776,7 @@ PhaseCCP::~PhaseCCP() {
 #ifdef ASSERT
 void PhaseCCP::verify_type(Node* n, const Type* tnew, const Type* told) {
   if (tnew->meet(told) != tnew->remove_speculative()) {
-    n->dump(1);
+    n->dump(3);
     tty->print("told = "); told->dump(); tty->cr();
     tty->print("tnew = "); tnew->dump(); tty->cr();
     fatal("Not monotonic");
@@ -2884,14 +2853,10 @@ void PhaseCCP::analyze_step(Unique_Node_List& worklist, Node* n) {
     set_type(n, new_type);
     push_child_nodes_to_worklist(worklist, n);
   }
-  if (KillPathsReachableByDeadDataNode && n->is_Type() && new_type == Type::TOP) {
+  if (KillPathsReachableByDeadTypeNode && n->is_Type() && new_type == Type::TOP) {
     // Keep track of Type nodes to kill CFG paths that use Type
     // nodes that become dead.
-    _maybe_top_type_or_div_mod_nodes.push(n);
-  }
-  if (KillPathsReachableByDeadDataNode && new_type == Type::TOP && n->is_DivModInteger() &&
-      type(n->in(2)) == n->as_DivModInteger()->zero()) {
-    _maybe_top_type_or_div_mod_nodes.push(n);
+    _maybe_top_type_nodes.push(n);
   }
 }
 
@@ -2980,6 +2945,7 @@ void PhaseCCP::push_more_uses(Unique_Node_List& worklist, Node* parent, const No
   push_catch(worklist, use);
   push_cmpu(worklist, use);
   push_counted_loop_phi(worklist, parent, use);
+  push_cast(worklist, use);
   push_loadp(worklist, use);
   push_and(worklist, parent, use);
   push_cast_ii(worklist, parent, use);
@@ -3091,6 +3057,19 @@ void PhaseCCP::push_counted_loop_phi(Unique_Node_List& worklist, Node* parent, c
   }
 }
 
+// TODO 8350865 Still needed? Yes, I think this is from PhaseMacroExpand::expand_mh_intrinsic_return
+void PhaseCCP::push_cast(Unique_Node_List& worklist, const Node* use) {
+  uint use_op = use->Opcode();
+  if (use_op == Op_CastP2X) {
+    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+      Node* u = use->fast_out(i2);
+      if (u->Opcode() == Op_AndX) {
+        worklist.push(u);
+      }
+    }
+  }
+}
+
 // Loading the java mirror from a Klass requires two loads and the type of the mirror load depends on the type of 'n'.
 // See LoadNode::Value().
 void PhaseCCP::push_loadp(Unique_Node_List& worklist, const Node* use) const {
@@ -3187,16 +3166,16 @@ Node *PhaseCCP::transform( Node *n ) {
   // track all visited nodes, so that we can remove the complement
   Unique_Node_List useful;
 
-  if (KillPathsReachableByDeadDataNode) {
-    for (uint i = 0; i < _maybe_top_type_or_div_mod_nodes.size(); ++i) {
-      Node* data_node = _maybe_top_type_or_div_mod_nodes.at(i);
-      if (type(data_node) == Type::TOP) {
+  if (KillPathsReachableByDeadTypeNode) {
+    for (uint i = 0; i < _maybe_top_type_nodes.size(); ++i) {
+      Node* type_node = _maybe_top_type_nodes.at(i);
+      if (type(type_node) == Type::TOP) {
         ResourceMark rm;
-        data_node->make_paths_from_here_dead(this, nullptr, "ccp");
+        type_node->as_Type()->make_paths_from_here_dead(this, nullptr, "ccp");
       }
     }
   } else {
-    assert(_maybe_top_type_or_div_mod_nodes.size() == 0, "we don't need type nodes");
+    assert(_maybe_top_type_nodes.size() == 0, "we don't need type nodes");
   }
 
   // Initialize the traversal.

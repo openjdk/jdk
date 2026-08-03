@@ -866,6 +866,12 @@ const Type *AddPNode::bottom_type() const {
   if (tx->is_con()) {   // Left input is an add of a constant?
     txoffset = tx->get_con();
   }
+  if (tp->isa_aryptr()) {
+    // In the case of a flat inline type array, each field has its
+    // own slice so we need to extract the field being accessed from
+    // the address computation
+    return tp->is_aryptr()->add_field_offset_and_offset(txoffset);
+  }
   return tp->add_offset(txoffset);
 }
 
@@ -885,6 +891,12 @@ const Type* AddPNode::Value(PhaseGVN* phase) const {
   intptr_t p2offset = Type::OffsetBot;
   if (p2->is_con()) {   // Left input is an add of a constant?
     p2offset = p2->get_con();
+  }
+  if (p1->isa_aryptr()) {
+    // In the case of a flat inline type array, each field has its
+    // own slice so we need to extract the field being accessed from
+    // the address computation
+    return p1->is_aryptr()->add_field_offset_and_offset(p2offset);
   }
   return p1->add_offset(p2offset);
 }

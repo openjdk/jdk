@@ -68,7 +68,9 @@ static uintx calc_array_stride(uint array_len, uint num_threads) {
 }
 
 void G1FullGCMarker::start_partial_array_processing(objArrayOop obj) {
+  precond(obj->is_array_with_oops());
   mark_closure()->do_klass(obj->klass());
+
   // Don't push empty arrays to avoid unnecessary work.
   const int array_length = obj->length();
 

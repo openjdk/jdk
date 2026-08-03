@@ -37,9 +37,9 @@ static const jint OverflowSlot = INT_MAX; // 0x7fffffff
 
 static jvmtiEnv *jvmti = nullptr;
 
-// Each access below MUST come back as JVMTI_ERROR_INVALID_SLOT. On an unfixed
-// VM the overflowing bounds check is bypassed and the subsequent
-// locals->at(INT_MAX) access crashes the VM before we ever see a return code.
+// Each access must come back as JVMTI_ERROR_INVALID_SLOT. On an unfixed VM the
+// overflowing bounds check is bypassed and the subsequent locals->at(INT_MAX)
+// access crashes the VM before we ever see a return code.
 static bool expect_invalid_slot(const char* what, jvmtiError err) {
   if (err == JVMTI_ERROR_INVALID_SLOT) {
     LOG(" PASS: %s returned JVMTI_ERROR_INVALID_SLOT (%d) for slot=INT_MAX\n", what, err);
@@ -51,7 +51,7 @@ static bool expect_invalid_slot(const char* what, jvmtiError err) {
 }
 
 JNIEXPORT jboolean JNICALL
-Java_GetSetLocalSlotOverflow_testOverflow(JNIEnv *env, jclass cls, jobject thread) {
+Java_GetSetLocalSlotOverflow_testOverflow(JNIEnv *env, jclass cls, jobject thread, jboolean isVirtual) {
   if (jvmti == nullptr) {
     LOG("JVMTI client was not properly loaded!\n");
     return JNI_FALSE;
@@ -64,8 +64,14 @@ Java_GetSetLocalSlotOverflow_testOverflow(JNIEnv *env, jclass cls, jobject threa
   bool ok = true;
   ok &= expect_invalid_slot("GetLocalLong",   jvmti->GetLocalLong(thread, Depth, OverflowSlot, &lval));
   ok &= expect_invalid_slot("GetLocalDouble", jvmti->GetLocalDouble(thread, Depth, OverflowSlot, &dval));
-  ok &= expect_invalid_slot("SetLocalLong",   jvmti->SetLocalLong(thread, Depth, OverflowSlot, (jlong)0));
-  ok &= expect_invalid_slot("SetLocalDouble", jvmti->SetLocalDouble(thread, Depth, OverflowSlot, (jdouble)0));
+
+  // JVMTI only supports SetLocal on the topmost frame of a virtual thread. The
+  // runner() frame is not topmost, so on a virtual thread SetLocal is rejected
+  // before the slot check runs and cannot exercise the overflow -- skip it there.
+  if (!isVirtual) {
+    ok &= expect_invalid_slot("SetLocalLong",   jvmti->SetLocalLong(thread, Depth, OverflowSlot, (jlong)0));
+    ok &= expect_invalid_slot("SetLocalDouble", jvmti->SetLocalDouble(thread, Depth, OverflowSlot, (jdouble)0));
+  }
   return ok ? JNI_TRUE : JNI_FALSE;
 }
 
