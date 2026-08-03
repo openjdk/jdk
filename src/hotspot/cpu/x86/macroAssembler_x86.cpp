@@ -6506,11 +6506,12 @@ void MacroAssembler::remove_frame(int initial_framesize, bool needs_stack_repair
 
 #ifdef COMPILER2
 
-// clear memory of size 'cnt' qwords, starting at 'base' using XMM/YMM/ZMM registers
-void MacroAssembler::xmm_clear_mem(Register base, Register cnt, Register val, XMMRegister xtmp, KRegister mask) {
+// Fill memory with 'val', for 'cnt' qwords starting at 'base', using XMM/YMM/ZMM registers.
+void MacroAssembler::xmm_fill_mem(Register base, Register cnt, Register val, XMMRegister xtmp, KRegister mask) {
   // cnt - number of qwords (8-byte words).
   // base - start address, qword aligned.
-  Label L_zero_64_bytes, L_loop, L_sloop, L_tail, L_end;
+  // val - qword pattern to fill.
+  Label L_fill_64_bytes, L_loop, L_sloop, L_tail, L_end;
   bool use64byteVector = (MaxVectorSize == 64) && (CopyAVX3Threshold == 0) && VM_Version::supports_bmi2();
   if (use64byteVector) {
     evpbroadcastq(xtmp, val, AVX_512bit);
@@ -6522,7 +6523,7 @@ void MacroAssembler::xmm_clear_mem(Register base, Register cnt, Register val, XM
     movdq(xtmp, val);
     punpcklqdq(xtmp, xtmp);
   }
-  jmp(L_zero_64_bytes);
+  jmp(L_fill_64_bytes);
 
   BIND(L_loop);
   if (MaxVectorSize >= 32) {
@@ -6535,11 +6536,11 @@ void MacroAssembler::xmm_clear_mem(Register base, Register cnt, Register val, XM
   }
   addptr(base, 64);
 
-  BIND(L_zero_64_bytes);
+  BIND(L_fill_64_bytes);
   subptr(cnt, 8);
   jccb(Assembler::greaterEqual, L_loop);
 
-  // Copy trailing 64 bytes
+  // Fill trailing 64 bytes.
   if (use64byteVector) {
     addptr(cnt, 8);
     jccb(Assembler::equal, L_end);
@@ -6665,10 +6666,12 @@ void MacroAssembler::clear_mem(Register base, int cnt, Register rtmp, XMMRegiste
 }
 
 void MacroAssembler::clear_mem(Register base, Register cnt, Register val, XMMRegister xtmp,
-                               bool is_large, bool word_copy_only, KRegister mask) {
+                               bool is_large, bool requires_word_fill, KRegister mask) {
   // cnt      - number of qwords (8-byte words).
   // base     - start address, qword aligned.
   // is_large - if optimizers know cnt is larger than InitArrayShortSize
+  // requires_word_fill - if true, val contains the qword pattern to fill; if
+  //                      false, val is scratch and this method creates zero
   assert(base==rdi, "base register must be edi for rep stos");
   assert(val==rax,   "val register must be eax for rep stos");
   assert(cnt==rcx,   "cnt register must be ecx for rep stos");
@@ -6676,6 +6679,10 @@ void MacroAssembler::clear_mem(Register base, Register cnt, Register val, XMMReg
     "InitArrayShortSize should be the multiple of BytesPerLong");
 
   Label DONE;
+
+  if (!requires_word_fill) {
+    xorptr(val, val);
+  }
 
   if (!is_large) {
     Label LOOP, LONG;
@@ -6695,12 +6702,13 @@ void MacroAssembler::clear_mem(Register base, Register cnt, Register val, XMMReg
     BIND(LONG);
   }
 
-  // Use longer rep-prefixed ops for non-small counts:
-  if (UseFastStosb && !word_copy_only) {
+  // Use longer rep-prefixed ops for non-small counts. rep stosb is valid only
+  // for zeroing; an arbitrary qword pattern must be copied in full.
+  if (UseFastStosb && !requires_word_fill) {
     shlptr(cnt, 3); // convert to number of bytes
     rep_stosb();
   } else if (UseXMMForObjInit) {
-    xmm_clear_mem(base, cnt, val, xtmp, mask);
+    xmm_fill_mem(base, cnt, val, xtmp, mask);
   } else {
     rep_stos();
   }
@@ -10617,8 +10625,10 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register reg_r
   movptr(tmp, reg_rax);
   andptr(tmp, ~(int32_t)markWord::unlocked_value);
   orptr(reg_rax, markWord::unlocked_value);
-  // Mask inline_type bit such that we go to the slow path if object is an inline type
-  andptr(reg_rax, ~((int) markWord::inline_type_bit_in_place));
+  if (Arguments::is_valhalla_enabled()) {
+    // Mask inline_type bit such that we go to the slow path if object is an inline type
+    andptr(reg_rax, ~((int) markWord::inline_type_bit_in_place));
+  }
 
   lock(); cmpxchgptr(tmp, Address(obj, oopDesc::mark_offset_in_bytes()));
   jcc(Assembler::notEqual, slow);

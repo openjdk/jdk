@@ -2623,11 +2623,13 @@ class StubGenerator: public StubCodeGenerator {
     __ eor(rscratch2, rscratch2, scratch_src_klass);
     __ cbnz(rscratch2, L_failed);
 
-    // Check for flat inline type array -> return -1
-    __ test_flat_array_oop(src, rscratch2, L_failed);
+    if (Arguments::is_valhalla_enabled()) {
+      // Check for flat inline type array -> return -1
+      __ test_flat_array_oop(src, rscratch2, L_failed);
 
-    // Check for null-free (non-flat) inline type array -> handle as object array
-    __ test_null_free_array_oop(src, rscratch2, L_objArray);
+      // Check for null-free (non-flat) inline type array -> handle as object array
+      __ test_null_free_array_oop(src, rscratch2, L_objArray);
+    }
 
     //  if (!src->is_Array()) return -1;
     __ tbz(lh, 31, L_failed);  // i.e. (lh >= 0)

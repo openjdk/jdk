@@ -514,15 +514,14 @@ class CompileReplay : public StackObj {
         return k;
       }
       obj = ciReplay::obj_field(obj, field);
-      // TODO 8350865 I think we need to handle null-free/flat arrays here
-      if (obj != nullptr && obj->is_refArray()) {
-        refArrayOop arr = oop_cast<refArrayOop>(obj);
+      if (obj != nullptr && obj->is_objArray()) {
+        objArrayOop arr = oop_cast<objArrayOop>(obj);
         int index = parse_int("index");
         if (index >= arr->length()) {
           report_error("bad array index");
           return nullptr;
         }
-        obj = arr->obj_at(index);
+        obj = arr->obj_at(index, THREAD);
       }
     } while (obj != nullptr);
     if (obj == nullptr) {
@@ -825,7 +824,7 @@ class CompileReplay : public StackObj {
     rec->_instructions_size = parse_int("instructions_size");
   }
 
-  // ciMethodData <klass> <name> <signature> <state> <invocation_counter> orig <length> <byte>* data <length> <ptr>* oops <length> (<offset> <klass>)* methods <length> (<offset> <klass> <name> <signature>)*
+  // ciMethodData <klass> <name> <signature> <state> <invocation_counter> orig <length> <byte>* data <length> <ptr>* oops <length> (<offset> <klass> <array properties>?)* methods <length> (<offset> <klass> <name> <signature>)*
   void process_ciMethodData(TRAPS) {
     Method* method = parse_method(CHECK);
     if (had_error()) return;
@@ -1139,12 +1138,26 @@ class CompileReplay : public StackObj {
             value = oopFactory::new_longArray(length, CHECK_(true));
           } else if (field_signature[0] == JVM_SIGNATURE_ARRAY &&
                      field_signature[1] == JVM_SIGNATURE_CLASS) {
-            Klass* actual_array_klass = parse_klass(CHECK_(true));
-            // TODO 8350865 I think we need to handle null-free/flat arrays here
-            // This handling will change the array property argument passed to the
-            // factory below
-            Klass* kelem = ObjArrayKlass::cast(actual_array_klass)->element_klass();
-            value = oopFactory::new_objArray(kelem, length, CHECK_(true));
+            const char* flatness = parse_string();
+            if (strcmp(flatness, "ref") == 0) {
+              const char* nullability = parse_string();
+              bool null_restricted = (strcmp(nullability, "null-free") == 0);
+              Klass* actual_array_klass = parse_klass(CHECK_(true));
+              Klass* kelem = ObjArrayKlass::cast(actual_array_klass)->element_klass();
+              ArrayProperties props = ArrayProperties::Default().with_non_atomic(false).with_null_restricted(null_restricted);
+              value = oopFactory::new_refArray(kelem, length, props, CHECK_(true));
+            } else if (strcmp(flatness, "flat") == 0) {
+              const char* nullability = parse_string();
+              const char* atomicity = parse_string();
+              bool null_restricted = (strcmp(nullability, "null-free") == 0);
+              bool non_atomic = (strcmp(atomicity, "non-atomic") == 0);
+              Klass* actual_array_klass = parse_klass(CHECK_(true));
+              Klass* kelem = ObjArrayKlass::cast(actual_array_klass)->element_klass();
+              ArrayProperties props = ArrayProperties::Default().with_non_atomic(non_atomic).with_null_restricted(null_restricted);
+              value = oopFactory::new_flatArray(InlineKlass::cast(kelem), length, props, CHECK_(true));
+            } else {
+              report_error("unrecognized array kind");
+            }
           } else {
             report_error("unhandled array staticfield");
           }
@@ -1190,7 +1203,7 @@ class CompileReplay : public StackObj {
     fieldDescriptor fd;
     Symbol* name = SymbolTable::new_symbol(field_name);
     Symbol* sig = SymbolTable::new_symbol(field_signature);
-    if (!k->find_local_field(name, sig, &fd) ||
+    if (!k->find_local_field(name, sig, &fd, _version >= 3) ||
         !fd.is_static() ||
         fd.has_initial_value()) {
       report_error(field_name);
