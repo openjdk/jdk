@@ -110,13 +110,36 @@ JVMFlag::Error ContendedPaddingWidthConstraintFunc(int value, bool verbose) {
 
 JVMFlag::Error VMPageSizeConstraintFunc(size_t value, bool verbose) {
   size_t min = os::vm_page_size();
-  if (value < min) {
+  size_t max = align_down(SIZE_MAX, min);
+  if (value < min || value > max) {
     JVMFlag::printError(verbose,
                         "%s %s=%zu is outside the allowed range [ %zu"
                         " ... %zu ]\n",
                         JVMFlagLimit::last_checked_flag()->type_string(),
                         JVMFlagLimit::last_checked_flag()->name(),
-                        value, min, max_uintx);
+                        value, min, max);
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+
+  return JVMFlag::SUCCESS;
+}
+
+//For code heap size flags where 0 means heap disabled.
+//Non-zero values must be page aligned and must not overflow
+//when rounded up to a page boundary.
+JVMFlag::Error CodeHeapSizeConstraintFunc(size_t value, bool verbose) {
+  if (value == 0) {
+    return JVMFlag::SUCCESS;
+  }
+  size_t min = os::vm_page_size();
+  size_t max = align_down(SIZE_MAX, min);
+  if (value < min || value > max) {
+    JVMFlag::printError(verbose,
+                        "%s %s=%zu is outside the allowed range [ %zu"
+                        " ... %zu ]\n",
+                        JVMFlagLimit::last_checked_flag()->type_string(),
+                        JVMFlagLimit::last_checked_flag()->name(),
+                        value, min, max);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
 

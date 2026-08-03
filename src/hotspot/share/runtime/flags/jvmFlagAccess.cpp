@@ -382,10 +382,10 @@ void JVMFlagAccess::print_range(outputStream* st, const JVMFlag* flag) {
       // Two special cases where the lower limit of the range is defined by an os:: function call
       // and cannot be initialized at compile time with constexpr.
       if (func == (void*)VMPageSizeConstraintFunc) {
-        uintx min = (uintx)os::vm_page_size();
-        uintx max = max_uintx;
+        size_t min = os::vm_page_size();
+        size_t max = align_down(SIZE_MAX, min);
 
-        JVMTypedFlagLimit<uintx> tmp(0, min, max);
+        JVMTypedFlagLimit<size_t> tmp(0, min, max);
         access_impl(flag)->print_range(st, &tmp);
       } else if (func == (void*)NUMAInterleaveGranularityConstraintFunc) {
         size_t min = os::vm_allocation_granularity();
