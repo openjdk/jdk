@@ -209,7 +209,6 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
     rp->abandon_partial_discovery();
 
     // e. Sync pinned region status from the CP marks
-    heap->flush_region_pin_cache();
     heap->sync_pinned_region_status();
 
     if (heap->mode()->is_generational()) {
