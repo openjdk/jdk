@@ -3341,7 +3341,9 @@ void Compile::Optimize() {
   // Process inline type nodes again and remove them. From here
   // on we don't need to keep track of field values anymore.
   process_inline_types(igvn, /* remove= */ true);
-  if (failing()) return;
+  if (failing()) {
+    return;
+  }
 
   {
     TracePhase tp(_t_barrierExpand);
