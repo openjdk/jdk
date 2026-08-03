@@ -3116,7 +3116,9 @@ void Compile::Optimize() {
 
   // Process inline type nodes now that all inlining is over
   process_inline_types(igvn);
-  if (failing()) return;
+  if (failing()) {
+    return;
+  }
 
   adjust_flat_array_access_aliases(igvn);
 
