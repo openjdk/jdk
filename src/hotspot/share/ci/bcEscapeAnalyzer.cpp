@@ -189,14 +189,25 @@ void BCEscapeAnalyzer::set_global_escape(ArgumentMap vars, bool merge) {
 }
 
 void BCEscapeAnalyzer::set_modified(ArgumentMap vars, int offs, int size) {
-
   for (int i = 0; i < _arg_size; i++) {
     if (vars.contains(i)) {
       set_arg_modified(i, offs, size);
     }
   }
-  if (vars.contains_unknown())
+  if (vars.contains_unknown()) {
     _unknown_modified = true;
+  }
+}
+
+void BCEscapeAnalyzer::set_modified_any_offset(ArgumentMap vars) {
+  for (int i = 0; i < _arg_size; i++) {
+    if (vars.contains(i)) {
+      _arg_modified[i] = (uint)-1;
+    }
+  }
+  if (vars.contains_unknown()) {
+    _unknown_modified = true;
+  }
 }
 
 bool BCEscapeAnalyzer::is_recursive_call(ciMethod* callee) {
@@ -227,7 +238,7 @@ bool BCEscapeAnalyzer::is_arg_modified(int arg, int offset, int size_in_bytes) {
 
 void BCEscapeAnalyzer::set_arg_modified(int arg, int offset, int size_in_bytes) {
   if (offset == OFFSET_ANY) {
-    _arg_modified[arg] =  (uint) -1;
+    _arg_modified[arg] = (uint)-1;
     return;
   }
   assert(arg >= 0 && arg < _arg_size, "must be an argument.");
@@ -537,7 +548,7 @@ void BCEscapeAnalyzer::iterate_one_block(ciBlock *blk, StateInfo &state, Growabl
         state.spop();
         ArgumentMap arr = state.apop();
         set_method_escape(arr);
-        set_modified(arr, OFFSET_ANY, type2size[T_INT]*HeapWordSize);
+        set_modified_any_offset(arr);
         break;
       }
       case Bytecodes::_lastore:
@@ -547,7 +558,7 @@ void BCEscapeAnalyzer::iterate_one_block(ciBlock *blk, StateInfo &state, Growabl
         state.spop();
         ArgumentMap arr = state.apop();
         set_method_escape(arr);
-        set_modified(arr, OFFSET_ANY, type2size[T_LONG]*HeapWordSize);
+        set_modified_any_offset(arr);
         break;
       }
       case Bytecodes::_aastore:
@@ -555,7 +566,8 @@ void BCEscapeAnalyzer::iterate_one_block(ciBlock *blk, StateInfo &state, Growabl
         set_global_escape(state.apop());
         state.spop();
         ArgumentMap arr = state.apop();
-        set_modified(arr, OFFSET_ANY, type2size[T_OBJECT]*HeapWordSize);
+        // If the array is a flat array, a larger part of it is modified than the size of a reference.
+        set_modified_any_offset(arr);
         break;
       }
       case Bytecodes::_pop:

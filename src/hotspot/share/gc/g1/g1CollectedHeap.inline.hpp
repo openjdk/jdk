@@ -41,6 +41,7 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/markBitMap.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
+#include "oops/oop.inline.hpp"
 #include "oops/stackChunkOop.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -73,6 +74,10 @@ inline void G1JavaThreadsListClaimer::apply(ThreadClosure* cl) {
       cl->do_thread(list[i]);
     }
   }
+}
+
+bool G1CollectedHeap::can_be_marked_through_immediately(oop obj) const {
+  return obj->is_array() && !obj->is_array_with_oops();
 }
 
 G1GCPhaseTimes* G1CollectedHeap::phase_times() const {
