@@ -7064,8 +7064,11 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register tmp1,
   // Try to lock. Transition lock-bits 0b01 => 0b00
   assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid a la");
   ori(mark, mark, markWord::unlocked_value);
-  // Mask inline_type bit such that we go to the slow path if object is an inline type
-  andi(mark, mark, ~((int) markWord::inline_type_bit_in_place));
+  if (Arguments::is_valhalla_enabled()) {
+    // Mask inline_type bit such that we go to the slow path if object is an inline type
+    andi(mark, mark, ~((int) markWord::inline_type_bit_in_place));
+  }
+
   xori(t, mark, markWord::unlocked_value);
   cmpxchg(/*addr*/ obj, /*expected*/ mark, /*new*/ t, Assembler::int64,
           /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ t);
