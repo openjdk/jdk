@@ -1095,6 +1095,8 @@ static char* mmap_create_shared(size_t size) {
   int vmid = os::current_process_id();
 
   char* user_name = get_user_name(geteuid());
+  assert(user_name != nullptr,
+         "get_user_name() must resolve or synthesize a user name");
   char* dirname = get_user_tmp_dir(user_name, vmid, -1);
   char* filename = get_sharedmem_filename(dirname, vmid, -1);
 
