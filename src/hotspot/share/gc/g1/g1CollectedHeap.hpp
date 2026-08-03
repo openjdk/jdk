@@ -622,6 +622,11 @@ public:
   void gc_prologue(bool full);
   void gc_epilogue(bool full);
 
+  // Can concurrent mark process this object immediately, i.e. mark as live without the need
+  // of pushing it on the mark stack (to process references)?
+  // Used to keep objects that are potentially eagerly reclaimed out of the mark stack.
+  // Its klass may still need to be handled.
+  inline bool can_be_marked_through_immediately(oop obj) const;
   // Does the given region fulfill remembered set based eager reclaim candidate requirements?
   bool is_potential_eager_reclaim_candidate(G1HeapRegion* r) const;
 
@@ -953,7 +958,6 @@ public:
   void fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap) override;
 
   static void start_codecache_marking_cycle_if_inactive(bool concurrent_mark_start);
-  static void finish_codecache_marking_cycle();
 
   // The shared block offset table array.
   G1BlockOffsetTable* bot() const { return _bot; }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ void AwtTextArea::EditSetSel(CHARRANGE &cr) {
     SendMessage(EM_EXSETSEL, 0, reinterpret_cast<LPARAM>(&cr));
     SendMessage(EM_HIDESELECTION, TRUE, TRUE);
     // 6417581: force expected drawing
-    if (IS_WINVISTA && cr.cpMin == cr.cpMax) {
+    if (cr.cpMin == cr.cpMax) {
         ::InvalidateRect(GetHWnd(), NULL, TRUE);
     }
 }

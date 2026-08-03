@@ -27,6 +27,7 @@
 
 #include "code/codeBlob.hpp"
 #include "code/pcDesc.hpp"
+#include "compiler/compilerDefinitions.hpp"
 #include "oops/metadata.hpp"
 #include "oops/method.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -208,6 +209,9 @@ class nmethod : public CodeBlob {
   address  _osr_entry_point;       // entry point for on stack replacement
   uint16_t _entry_offset;          // entry point with class check
   uint16_t _verified_entry_offset; // entry point without class check
+  uint16_t _inline_entry_offset;             // inline type entry point (unpack all inline type args) with class check
+  uint16_t _verified_inline_entry_offset;    // inline type entry point (unpack all inline type args) without class check
+  uint16_t _verified_inline_ro_entry_offset; // inline type entry point (unpack receiver only) without class check
   int      _entry_bci;             // != InvocationEntryBci if this nmethod is an on-stack replacement method
   int      _immutable_data_size;
 
@@ -674,6 +678,9 @@ public:
   // entry points
   address entry_point() const          { return code_begin() + _entry_offset;          } // normal entry point
   address verified_entry_point() const { return code_begin() + _verified_entry_offset; } // if klass is correct
+  address inline_entry_point() const              { return code_begin() + _inline_entry_offset; }             // inline type entry point (unpack all inline type args)
+  address verified_inline_entry_point() const     { return code_begin() + _verified_inline_entry_offset; }    // inline type entry point (unpack all inline type args) without class check
+  address verified_inline_ro_entry_point() const  { return code_begin() + _verified_inline_ro_entry_offset; } // inline type entry point (only unpack receiver) without class check
 
   enum : signed char { not_installed = -1, // in construction, only the owner doing the construction is
                                            // allowed to advance state
@@ -732,6 +739,16 @@ public:
   bool  has_monitors() const                      { return _flags.has_monitors(); }
   bool  has_scoped_access() const                 { return _flags.has_scoped_access(); }
   bool  has_wide_vectors() const                  { return _flags.has_wide_vectors(); }
+
+  bool  needs_stack_repair() const {
+    if (is_compiled_by_c1()) {
+      return method()->c1_needs_stack_repair();
+    } else if (is_compiled_by_c2()) {
+      return method()->c2_needs_stack_repair();
+    } else {
+      return false;
+    }
+  }
 
   bool  has_flushed_dependencies() const          { return _has_flushed_dependencies; }
   void  set_has_flushed_dependencies(bool z)      {
@@ -812,7 +829,7 @@ public:
   const char* state() const;
 
   bool inlinecache_check_contains(address addr) const {
-    return (addr >= code_begin() && addr < verified_entry_point());
+    return (addr >= code_begin() && (addr < verified_entry_point() || addr < verified_inline_entry_point()));
   }
 
   void preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map, OopClosure* f);
@@ -1022,9 +1039,10 @@ public:
   // and the changes have invalidated it
   bool check_dependency_on(DepChange& changes);
 
-  // Fast breakpoint support. Tells if this compiled method is
-  // dependent on the given method. Returns true if this nmethod
-  // corresponds to the given method as well.
+  // Tells if this compiled method is dependent on the given method.
+  // Returns true if this nmethod corresponds to the given method as well.
+  // It is used for fast breakpoint support and updating the calling convention
+  // in case of mismatch.
   bool is_dependent_on_method(Method* dependee);
 
   // JVMTI's GetLocalInstance() support

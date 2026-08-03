@@ -312,6 +312,14 @@ public:
     static void clone_in_heap(oop src, oop dst, size_t size) {
       Raw::clone(src, dst, size);
     }
+
+    static void value_copy_in_heap(const ValuePayload& src, const ValuePayload& dst) {
+      Raw::value_copy(src, dst);
+    }
+
+    static void value_store_null_in_heap(const ValuePayload& dst) {
+      Raw::value_store_null(dst);
+    }
   };
 };
 

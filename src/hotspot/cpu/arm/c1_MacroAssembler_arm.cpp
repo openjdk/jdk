@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,10 @@
 // arm [macro]assembler) and used with care in the other C1 specific
 // files.
 
-void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_bytes) {
+void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_bytes,
+                                    int sp_offset_for_orig_pc,
+                                    bool needs_stack_repair, bool has_scalarized_args,
+                                    Label* verified_inline_entry_label) {
   assert(bang_size_in_bytes >= frame_size_in_bytes, "stack bang size incorrect");
   assert((frame_size_in_bytes % StackAlignmentInBytes) == 0, "frame size should be aligned");
 
@@ -62,9 +65,8 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
 }
 
 void C1_MacroAssembler::remove_frame(int frame_size_in_bytes) {
-  add_slow(SP, SP, frame_size_in_bytes);
-  raw_pop(FP, LR);
   save_profile_rng();
+  MacroAssembler::remove_frame(frame_size_in_bytes);  
 }
 
 void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
@@ -282,6 +284,10 @@ void C1_MacroAssembler::verify_not_null_oop(Register r) {
   bind(not_null);
   if (!VerifyOops) return;
   verify_oop(r);
+}
+
+int C1_MacroAssembler::scalarized_entry(const CompiledEntrySignature* ces, int frame_size_in_bytes, int bang_size_in_bytes, int sp_offset_for_orig_pc, Label& verified_inline_entry_label, bool is_inline_ro_entry) {
+  Unimplemented();
 }
 
 #endif // !PRODUCT
