@@ -49,7 +49,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -76,8 +76,9 @@ public class SocketReadInterruptTest {
             int readTimeout = Integer.parseInt(args[1]);
             Client client = new Client(s1, readTimeout);
             Future<Void> f2 = executor.submit(client);
-            // wait for the client thread to be ready to call the socket input stream's read()
-            client.ready.await();
+            // wait for the client thread to reach a point where it is going to call
+            // the socket input stream's read()
+            client.ready.join();
             // wait just some more for the client thread to block on InputStream.read(), before
             // we send a signal to interrupt that thread
             sleep(200);
@@ -106,7 +107,9 @@ public class SocketReadInterruptTest {
 
     static class Client implements Callable<Void> {
 
-        private final CountDownLatch ready = new CountDownLatch(1);
+        // completes right before the Client is about to initiate
+        // a blocking read() call on the socket's InputStream
+        private final CompletableFuture<Void> ready = new CompletableFuture<>();
         private final Socket socket;
         private final int readTimeout;
         private volatile long nativeThreadId = -1;
@@ -122,6 +125,9 @@ public class SocketReadInterruptTest {
                 doCall();
                 return null;
             } catch (Throwable t) {
+                if (!ready.isDone()) {
+                    ready.completeExceptionally(t);
+                }
                 System.err.println("Exception in client: " + t);
                 t.printStackTrace();
                 throw t;
@@ -138,7 +144,7 @@ public class SocketReadInterruptTest {
                 int n = 0;
                 // let the main thread know that we are about to do a
                 // InputStream.read() on the socket
-                ready.countDown();
+                ready.complete(null);
                 while ((n = in.read(new byte[100])) != -1) {
                     totalRead += n;
                 }
@@ -155,8 +161,12 @@ public class SocketReadInterruptTest {
          * Returns the id of thread which is executing the {@link #call()} method
          */
         long getThreadId() {
-            if (ready.getCount() != 0) {
+            if (!ready.isDone()) {
                 throw new IllegalStateException("Client thread is not yet ready");
+            }
+            if (ready.isCompletedExceptionally()) {
+                throw new IllegalStateException("Client's native thread id unavailable",
+                        ready.exceptionNow());
             }
             return nativeThreadId;
         }
