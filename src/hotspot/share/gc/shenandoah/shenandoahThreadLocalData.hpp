@@ -226,7 +226,7 @@ public:
     return Thread::gc_data_offset() + byte_offset_of(ShenandoahThreadLocalData, _gc_state_fast_array) + in_ByteSize(gc_state_to_fast_array_index(gc_state));
   }
 
-static ByteSize card_table_offset() {
+  static ByteSize card_table_offset() {
     return Thread::gc_data_offset() + byte_offset_of(ShenandoahThreadLocalData, _card_table);
   }
 

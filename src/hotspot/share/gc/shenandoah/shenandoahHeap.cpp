@@ -3012,9 +3012,3 @@ ShenandoahHeapLocker::ShenandoahHeapLocker(ShenandoahHeapLock* lock, bool allow_
 #endif
   _lock->lock(allow_block_for_safepoint);
 }
-
-void ShenandoahHeap::flush_region_pin_cache() {
-  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next(); ) {
-    ShenandoahThreadLocalData::pin_count_cache(thread).flush();
-  }
-}
