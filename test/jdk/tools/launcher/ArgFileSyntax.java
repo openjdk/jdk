@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,9 @@
  * questions.
  */
 
-/**
+/*
  * @test
- * @bug 8027634 8210810 8240629
+ * @bug 8027634 8210810 8240629 8357862
  * @summary Verify syntax of argument file
  * @build TestHelper
  * @run main ArgFileSyntax
@@ -171,6 +171,15 @@ public class ArgFileSyntax extends TestHelper {
               "-Xint",
               "-version",
               "-Dcontinue.with.leadingws=Line1continue with \f<ff> and \t<tab>"
+            }
+        },
+        { // multiple args in one line and comments without preceding whitespace
+            { "-Xmx32m -XshowSettings#COMMENT 1",
+              "-version#COMMENT 2"
+            },
+            { "-Xmx32m",
+              "-XshowSettings",
+              "-version"
             }
         }
     };

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8297977
  * @summary Test that throwing OOM from reflected method gets InvocationTargetException
- * @run main/othervm -Xmx128m ReflectOutOfMemoryError
+ * @run main/othervm/timeout=480 -Xmx128m ReflectOutOfMemoryError
  */
 import java.lang.reflect.*;
 
@@ -38,7 +38,8 @@ public class ReflectOutOfMemoryError {
         try {
             // Repository for objects, which should be allocated:
             int index = 0;
-            for (int size = 1 << 30; size > 0 && pool == null; size >>= 1)
+            // Halving loop starting from max possible size constrained by max heap size
+            for (int size = (int)(Runtime.getRuntime().maxMemory()>>2); size > 0 && pool == null; size >>= 1)
                 try {
                     pool = new Object[size];
                 } catch (OutOfMemoryError oome) {

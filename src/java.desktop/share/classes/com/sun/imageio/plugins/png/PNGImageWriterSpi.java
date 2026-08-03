@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,7 @@ public class PNGImageWriterSpi extends ImageWriterSpi {
                 );
     }
 
+    @Override
     public boolean canEncodeImage(ImageTypeSpecifier type) {
         SampleModel sampleModel = type.getSampleModel();
         ColorModel colorModel = type.getColorModel();
@@ -116,10 +117,12 @@ public class PNGImageWriterSpi extends ImageWriterSpi {
         return true;
     }
 
+    @Override
     public String getDescription(Locale locale) {
         return "Standard PNG image writer";
     }
 
+    @Override
     public ImageWriter createWriterInstance(Object extension) {
         return new PNGImageWriter(this);
     }

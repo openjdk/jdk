@@ -38,16 +38,11 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.nio.charset.Charset;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JComboBox;
@@ -71,16 +66,14 @@ import javax.tools.StandardJavaFileManager;
 
 import com.sun.source.tree.CaseTree.CaseKind;
 import com.sun.source.tree.CompilationUnitTree;
-import com.sun.source.util.JavacTask;
+import com.sun.tools.javac.api.JavacTaskPool;
 import com.sun.tools.javac.api.JavacTool;
 import com.sun.tools.javac.code.Flags;
-import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCAnnotatedType;
 import com.sun.tools.javac.tree.JCTree.JCCase;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
-import com.sun.tools.javac.tree.JCTree.JCImport;
 import com.sun.tools.javac.tree.JCTree.JCImportBase;
 import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
 import com.sun.tools.javac.tree.JCTree.JCNewClass;
@@ -90,7 +83,6 @@ import com.sun.tools.javac.tree.TreeScanner;
 
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import static com.sun.tools.javac.util.Position.NOPOS;
-import java.util.stream.Stream;
 
 /**
  * Utility and test program to check validity of tree positions for tree nodes.
@@ -275,6 +267,7 @@ public class TreePosTest {
     PrintWriter pw = new PrintWriter(sw);
     Reporter r = new Reporter(pw);
     JavacTool tool = JavacTool.create();
+    JavacTaskPool pool = new JavacTaskPool(1);
     StandardJavaFileManager fm = tool.getStandardFileManager(r, null, null);
 
     /**
@@ -285,21 +278,25 @@ public class TreePosTest {
      * @throws TreePosTest.ParseException if any errors occur while parsing the file
      */
     JCCompilationUnit read(File file) throws IOException, ParseException {
-        JavacTool tool = JavacTool.create();
         r.errors = 0;
         Iterable<? extends JavaFileObject> files = fm.getJavaFileObjects(file);
-        JavacTask task = tool.getTask(pw, fm, r, List.of("-proc:none"), null, files);
-        Iterable<? extends CompilationUnitTree> trees = task.parse();
-        pw.flush();
-        if (r.errors > 0)
-            throw new ParseException(sw.toString());
-        Iterator<? extends CompilationUnitTree> iter = trees.iterator();
-        if (!iter.hasNext())
-            throw new Error("no trees found");
-        JCCompilationUnit t = (JCCompilationUnit) iter.next();
-        if (iter.hasNext())
-            throw new Error("too many trees found");
-        return t;
+        return pool.getTask(pw, fm, r, List.of("-proc:none"), null, files, task -> {
+            try {
+                Iterable<? extends CompilationUnitTree> trees = task.parse();
+                pw.flush();
+                if (r.errors > 0)
+                    throw new ParseException(sw.toString());
+                Iterator<? extends CompilationUnitTree> iter = trees.iterator();
+                if (!iter.hasNext())
+                    throw new Error("no trees found");
+                JCCompilationUnit t = (JCCompilationUnit) iter.next();
+                if (iter.hasNext())
+                    throw new Error("too many trees found");
+                return t;
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
+        });
     }
 
     /**
@@ -349,7 +346,6 @@ public class TreePosTest {
         private boolean compactSourceFile;
         void test(JCCompilationUnit tree) {
             sourcefile = tree.sourcefile;
-            endPosTable = tree.endPositions;
             encl = new Info();
             List<JCTree> nonImports = tree.defs
                                           .stream()
@@ -357,7 +353,7 @@ public class TreePosTest {
                                           .toList();
             compactSourceFile = nonImports.size() == 1 &&
                                 nonImports.get(0) instanceof JCClassDecl classDecl &&
-                                tree.endPositions.getEndPos(classDecl) == NOPOS;
+                                classDecl.endpos == NOPOS;
             tree.accept(this);
         }
 
@@ -366,7 +362,7 @@ public class TreePosTest {
             if (tree == null)
                 return;
 
-            Info self = new Info(tree, endPosTable);
+            Info self = new Info(tree);
             if (check(encl, self)) {
                 // Modifiers nodes are present throughout the tree even where
                 // there is no corresponding source text.
@@ -506,7 +502,6 @@ public class TreePosTest {
         }
 
         JavaFileObject sourcefile;
-        EndPosTable endPosTable;
         Info encl;
 
     }
@@ -523,12 +518,12 @@ public class TreePosTest {
             end = Integer.MAX_VALUE;
         }
 
-        Info(JCTree tree, EndPosTable endPosTable) {
+        Info(JCTree tree) {
             this.tree = tree;
             tag = tree.getTag();
             start = TreeInfo.getStartPos(tree);
             pos = tree.pos;
-            end = TreeInfo.getEndPos(tree, endPosTable);
+            end = TreeInfo.getEndPos(tree);
         }
 
         @Override
@@ -546,7 +541,7 @@ public class TreePosTest {
     /**
      * Thrown when errors are found parsing a java file.
      */
-    private static class ParseException extends Exception {
+    private static class ParseException extends RuntimeException {
         ParseException(String msg) {
             super(msg);
         }

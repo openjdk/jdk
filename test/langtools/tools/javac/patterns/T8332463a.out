@@ -1,0 +1,6 @@
+T8332463a.java:35:18: compiler.err.pattern.dominated
+T8332463a.java:43:18: compiler.err.pattern.dominated
+T8332463a.java:51:18: compiler.err.pattern.dominated
+- compiler.note.preview.filename: T8332463a.java, DEFAULT
+- compiler.note.preview.recompile
+3 errors

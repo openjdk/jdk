@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,10 @@ import java.util.List;
 
 /**
  * A mixin interface for an element that has type parameters.
+ *
+ * @jls 4.5 Parameterized Types
+ * @jls 8.4.4 Generic Methods
+ * @jls 8.8.4 Generic Constructors
  *
  * @since 1.7
  */

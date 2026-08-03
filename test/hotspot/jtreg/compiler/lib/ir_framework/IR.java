@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ import java.lang.annotation.RetentionPolicy;
  * For any other flag specified either by user code (e.g. {@link Scenario#Scenario(int, String...)},
  * {@link TestFramework#runWithFlags(String...) etc.} or as part of the JTreg whitelist, IR verification is applied.
  * To restrict the application of IR rules when certain flags are present that could change the IR, each {@code @IR}
- * annotation can specify additional preconditions on the allowed test VM flags that must hold when an IR rule is applied.
+ * annotation can specify additional preconditions on the allowed Test VM flags that must hold when an IR rule is applied.
  * If the specified preconditions fail, then the framework does not apply the IR rule. These preconditions can be
  * set with {@link #applyIf()}, {@link #applyIfNot()}, {@link #applyIfAnd()}, or {@link #applyIfOr()}.
  * <p>

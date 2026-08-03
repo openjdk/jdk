@@ -1,4 +1,4 @@
-## The Unicode Standard, Unicode Character Database, Version 16.0.0
+## The Unicode Standard, Unicode Character Database, Version 17.0.0
 
 ### Unicode Character Database
 ```
@@ -7,7 +7,7 @@ UNICODE LICENSE V3
 
 COPYRIGHT AND PERMISSION NOTICE
 
-Copyright © 1991-2024 Unicode, Inc.
+Copyright © 1991-2025 Unicode, Inc.
 
 NOTICE TO USER: Carefully read the following legal agreement. BY
 DOWNLOADING, INSTALLING, COPYING OR OTHERWISE USING DATA FILES, AND/OR

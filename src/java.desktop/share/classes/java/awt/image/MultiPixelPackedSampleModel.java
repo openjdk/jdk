@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,22 +99,39 @@ public class MultiPixelPackedSampleModel extends SampleModel
      *         either {@code DataBuffer.TYPE_BYTE},
      *         {@code DataBuffer.TYPE_USHORT}, or
      *         {@code DataBuffer.TYPE_INT}
+     * @throws IllegalArgumentException if either {@code w} or {@code h}
+     *         is less than or equal to 0
+     * @throws RasterFormatException if the number of bits per pixel
+     *                  is not a power of 2 or if a power of 2 number of
+     *                  pixels do not fit in one data element.
      */
     public MultiPixelPackedSampleModel(int dataType,
                                        int w,
                                        int h,
                                        int numberOfBits) {
-        this(dataType,w,h,
-             numberOfBits,
-            (w*numberOfBits+DataBuffer.getDataTypeSize(dataType)-1)/
-                DataBuffer.getDataTypeSize(dataType),
-             0);
+        long size = (long)w * h;
+        if (w <= 0 || h <= 0) {
+            throw new IllegalArgumentException("Width ("+w+") and height ("+
+                                               h+") must be > 0");
+        }
+        if (size > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("Dimensions (width="+w+
+                                               " height="+h+") are too large");
+        }
+
         if (dataType != DataBuffer.TYPE_BYTE &&
             dataType != DataBuffer.TYPE_USHORT &&
-            dataType != DataBuffer.TYPE_INT) {
-            throw new IllegalArgumentException("Unsupported data type "+
+            dataType != DataBuffer.TYPE_INT)
+        {
+            throw new IllegalArgumentException("Unsupported dataType: "+
                                                dataType);
         }
+        long sls = ((long)w*numberOfBits+DataBuffer.getDataTypeSize(dataType)-1)/
+                        DataBuffer.getDataTypeSize(dataType);
+        if (sls > Integer.MAX_VALUE) {
+            throw new RasterFormatException("Pixels do not fit");
+        }
+        this(dataType, w, h, numberOfBits, (int)sls, 0);
     }
 
     /**
@@ -130,15 +147,23 @@ public class MultiPixelPackedSampleModel extends SampleModel
      * @param scanlineStride the line stride of the image data
      * @param dataBitOffset the data bit offset for the region of image
      *                  data described
-     * @throws RasterFormatException if the number of bits per pixel
-     *                  is not a power of 2 or if a power of 2 number of
-     *                  pixels do not fit in one data element.
-     * @throws IllegalArgumentException if {@code w} or
-     *         {@code h} is not greater than 0
      * @throws IllegalArgumentException if {@code dataType} is not
      *         either {@code DataBuffer.TYPE_BYTE},
      *         {@code DataBuffer.TYPE_USHORT}, or
      *         {@code DataBuffer.TYPE_INT}
+     * @throws IllegalArgumentException if either {@code w} or {@code h}
+     *         is less than or equal to 0
+     * @throws IllegalArgumentException if {@code scanlineStride}
+     *         is less than or equal to 0
+     * @throws RasterFormatException if
+     *         {@code ((numberOfBits * (long)w) + DataBuffer.getDataTypeSize(dataType) - 1)
+     *         / DataBuffer.getDataTypeSize(dataType)}
+     *         is greater than {@code scanlineStride}
+     * @throws RasterFormatException if the number of bits per pixel
+     *                  is not a power of 2 or if a power of 2 number of
+     *                  pixels do not fit in one data element.
+     * @throws IllegalArgumentException if {@code dataBitOffset} is less than zero,
+     *         or not a multiple of {@code numberOfBits}.
      */
     public MultiPixelPackedSampleModel(int dataType, int w, int h,
                                        int numberOfBits,
@@ -151,11 +176,27 @@ public class MultiPixelPackedSampleModel extends SampleModel
             throw new IllegalArgumentException("Unsupported data type "+
                                                dataType);
         }
+        if ((numberOfBits <= 0) || ((numberOfBits & (numberOfBits - 1)) != 0)) {
+            throw new RasterFormatException("numberOfBits per pixel must be a power of 2");
+        }
+        if (scanlineStride <= 0) {
+            throw new IllegalArgumentException("scanlineStride must be > 0");
+        }
+        int dataTypeSize = DataBuffer.getDataTypeSize(dataType);
+        if ((((numberOfBits * (long)w) + dataTypeSize - 1) / dataTypeSize) > scanlineStride) {
+            throw new RasterFormatException("scanlineStride is too small for width");
+        }
+        if (dataBitOffset < 0) {
+            throw new IllegalArgumentException("dataBitOffset must be >= 0");
+        }
+        if ((dataBitOffset % numberOfBits) != 0) {
+            throw new IllegalArgumentException("dataBitOffset must be a multiple of bits per pixel");
+        }
         this.dataType = dataType;
         this.pixelBitStride = numberOfBits;
         this.scanlineStride = scanlineStride;
         this.dataBitOffset = dataBitOffset;
-        this.dataElementSize = DataBuffer.getDataTypeSize(dataType);
+        this.dataElementSize = dataTypeSize;
         this.pixelsPerDataElement = dataElementSize/numberOfBits;
         if (pixelsPerDataElement*numberOfBits != dataElementSize) {
            throw new RasterFormatException("MultiPixelPackedSampleModel " +
@@ -235,7 +276,11 @@ public class MultiPixelPackedSampleModel extends SampleModel
 
     /**
      * Returns the number of bits per sample for the specified band.
-     * @param band the specified band
+     * <p>
+     * Since {@code MultiPixelPackedSampleModel} has only one band,
+     * this method ignores the {@code band} parameter and returns
+     * the sample size of the single band.
+     * @param band the specified band (ignored)
      * @return the number of bits per sample for the specified band.
      */
     public int getSampleSize(int band) {
@@ -316,22 +361,12 @@ public class MultiPixelPackedSampleModel extends SampleModel
      * subset of the bands of this
      * {@code MultiPixelPackedSampleModel}.  Since a
      * {@code MultiPixelPackedSampleModel} only has one band, the
-     * bands argument must have a length of one and indicate the zeroth
-     * band.
-     * @param bands the specified bands
-     * @return a new {@code SampleModel} with a subset of bands of
+     * bands argument is ignored.
+     * @param bands the specified bands (ignored)
+     * @return a new {@code SampleModel} with the same bands as
      * this {@code MultiPixelPackedSampleModel}.
-     * @throws RasterFormatException if the number of bands requested
-     * is not one.
-     * @throws IllegalArgumentException if {@code w} or
-     *         {@code h} is not greater than 0
      */
     public SampleModel createSubsetSampleModel(int[] bands) {
-        if (bands != null) {
-           if (bands.length != 1)
-            throw new RasterFormatException("MultiPixelPackedSampleModel has "
-                                            + "only one band.");
-        }
         SampleModel sm = createCompatibleSampleModel(width, height);
         return sm;
     }
@@ -343,7 +378,7 @@ public class MultiPixelPackedSampleModel extends SampleModel
      * coordinates are not in bounds.
      * @param x         the X coordinate of the specified pixel
      * @param y         the Y coordinate of the specified pixel
-     * @param b         the band to return, which is assumed to be 0
+     * @param b         the band to return, which must be 0
      * @param data      the {@code DataBuffer} containing the image
      *                  data
      * @return the specified band containing the sample of the specified
@@ -374,7 +409,7 @@ public class MultiPixelPackedSampleModel extends SampleModel
      * coordinates are not in bounds.
      * @param x the X coordinate of the specified pixel
      * @param y the Y coordinate of the specified pixel
-     * @param b the band to return, which is assumed to be 0
+     * @param b the band to set, which must be 0
      * @param s the input sample as an {@code int}
      * @param data the {@code DataBuffer} where image data is stored
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
@@ -448,6 +483,9 @@ public class MultiPixelPackedSampleModel extends SampleModel
      * not in bounds, or if {@code obj} is not {@code null} or
      * not large enough to hold the pixel data
      * @see #setDataElements(int, int, Object, DataBuffer)
+     * @throws NullPointerException if {@code data} is {@code null}.
+     * @throws ArrayIndexOutOfBoundsException if the coordinates are
+     * not in bounds, or if {code obj} is too small to hold the output.
      */
     public Object getDataElements(int x, int y, Object obj, DataBuffer data) {
         if ((x < 0) || (y < 0) || (x >= width) || (y >= height)) {
@@ -527,8 +565,11 @@ public class MultiPixelPackedSampleModel extends SampleModel
      * @param data the {@code DataBuffer} where image data is stored
      * @return an array containing the specified pixel.
      * @throws ArrayIndexOutOfBoundsException if the coordinates
-     *  are not in bounds
+     * are not in bounds, or if {@code iArray} is too small to hold the output.
      * @see #setPixel(int, int, int[], DataBuffer)
+     * @throws NullPointerException if {@code data} is {@code null}.
+     * @throws ArrayIndexOutOfBoundsException if the coordinates are
+     * not in bounds, or if {@code iArray} is too small to hold the output.
      */
     public int[] getPixel(int x, int y, int[] iArray, DataBuffer data) {
         if ((x < 0) || (y < 0) || (x >= width) || (y >= height)) {
@@ -588,6 +629,9 @@ public class MultiPixelPackedSampleModel extends SampleModel
      * @param obj a primitive array containing pixel data
      * @param data the {@code DataBuffer} containing the image data
      * @see #getDataElements(int, int, Object, DataBuffer)
+     * @throws NullPointerException if {@code obj} or {@code data} is {@code null}.
+     * @throws ArrayIndexOutOfBoundsException if the coordinates are
+     * not in bounds, or if {@code obj} is too small to hold the input.
      */
     public void setDataElements(int x, int y, Object obj, DataBuffer data) {
         if ((x < 0) || (y < 0) || (x >= width) || (y >= height)) {
@@ -638,6 +682,9 @@ public class MultiPixelPackedSampleModel extends SampleModel
      * @param iArray the input pixel in an {@code int} array
      * @param data the {@code DataBuffer} containing the image data
      * @see #getPixel(int, int, int[], DataBuffer)
+     * @throws NullPointerException if {@code iArray} or {@code data} is {@code null}.
+     * @throws ArrayIndexOutOfBoundsException if the coordinates are
+     * not in bounds, or if {@code iArray} is too small to hold the input.
      */
     public void setPixel(int x, int y, int[] iArray, DataBuffer data) {
         if ((x < 0) || (y < 0) || (x >= width) || (y >= height)) {

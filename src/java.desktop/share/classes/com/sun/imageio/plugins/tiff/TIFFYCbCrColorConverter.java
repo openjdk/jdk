@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,6 +80,7 @@ public class TIFFYCbCrColorConverter extends TIFFColorConverter {
                 / CodingRange) + ReferenceBlack;
 
      */
+    @Override
     public void fromRGB(float r, float g, float b, float[] result) {
         // Convert RGB to full-range YCbCr.
         float Y = (lumaRed*r + lumaGreen*g + lumaBlue*b);
@@ -95,6 +96,7 @@ public class TIFFYCbCrColorConverter extends TIFFColorConverter {
             referenceBlackCr;
     }
 
+    @Override
     public void toRGB(float x0, float x1, float x2, float[] rgb) {
         // Convert YCbCr code to full-range YCbCr.
         float Y = (x0 - referenceBlackY)*CODING_RANGE_Y/

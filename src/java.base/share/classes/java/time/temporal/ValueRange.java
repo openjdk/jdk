@@ -78,7 +78,7 @@ import java.time.DateTimeException;
  * Only the minimum and maximum values are provided.
  * It is possible for there to be invalid values within the outer range.
  * For example, a weird field may have valid values of 1, 2, 4, 6, 7, thus
- * have a range of '1 - 7', despite that fact that values 3 and 5 are invalid.
+ * have a range of '1 - 7', despite the fact that values 3 and 5 are invalid.
  * <p>
  * Instances of this class are not tied to a specific field.
  *

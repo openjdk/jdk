@@ -22,7 +22,7 @@
  *
  */
 
-#include "gc/g1/g1CollectedHeap.hpp"
+#include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCCompactionPoint.hpp"
@@ -147,6 +147,10 @@ void G1FullGCCompactTask::free_non_overlapping_regions(uint src_start_idx, uint 
 
   for (uint i = non_overlapping_start; i <= src_end_idx; ++i) {
     G1HeapRegion* hr = _g1h->region_at(i);
+    if (VerifyDuringGC) {
+      // Satisfy some asserts in free_..._region
+      hr->clear_both_card_tables();
+    }
     _g1h->free_humongous_region(hr, nullptr);
   }
 }

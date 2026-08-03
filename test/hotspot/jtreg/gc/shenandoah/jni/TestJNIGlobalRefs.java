@@ -27,7 +27,7 @@
  * @summary Test JNI Global Refs with Shenandoah
  * @requires vm.gc.Shenandoah
  *
- * @run main/othervm/native -Xmx1g -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ * @run main/othervm/native/timeout=240 -Xmx1g -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
  *      -XX:+ShenandoahVerify
  *      TestJNIGlobalRefs
@@ -37,7 +37,7 @@
  * @summary Test JNI Global Refs with Shenandoah
  * @requires vm.gc.Shenandoah
  *
- * @run main/othervm/native -Xmx1g -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ * @run main/othervm/native/timeout=240 -Xmx1g -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
  *      TestJNIGlobalRefs
  */
@@ -46,7 +46,7 @@
  * @summary Test JNI Global Refs with Shenandoah
  * @requires vm.gc.Shenandoah
  *
- * @run main/othervm/native -Xmx1g -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ * @run main/othervm/native/timeout=240 -Xmx1g -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
  *      -XX:+ShenandoahVerify
  *      TestJNIGlobalRefs
@@ -56,7 +56,7 @@
  * @summary Test JNI Global Refs with Shenandoah
  * @requires vm.gc.Shenandoah
  *
- * @run main/othervm/native -Xmx1g -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ * @run main/othervm/native/timeout=240 -Xmx1g -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
  *      TestJNIGlobalRefs
  */

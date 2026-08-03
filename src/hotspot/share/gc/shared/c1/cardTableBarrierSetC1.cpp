@@ -22,6 +22,7 @@
  *
  */
 
+#include "code/aotCodeCache.hpp"
 #include "gc/shared/c1/cardTableBarrierSetC1.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
@@ -34,6 +35,68 @@
 #define __ gen->lir()->
 #endif
 
+void CardTableBarrierSetC1::store_at_resolved(LIRAccess& access, LIR_Opr value) {
+  DecoratorSet decorators = access.decorators();
+  bool is_array = (decorators & IS_ARRAY) != 0;
+  bool on_anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
+
+  if (access.is_oop()) {
+    pre_barrier(access, access.resolved_addr(),
+                LIR_OprFact::illegalOpr /* pre_val */, access.patch_emit_info());
+  }
+
+  BarrierSetC1::store_at_resolved(access, value);
+
+  if (access.is_oop()) {
+    bool precise = is_array || on_anonymous;
+    LIR_Opr post_addr = precise ? access.resolved_addr() : access.base().opr();
+    post_barrier(access, post_addr, value);
+  }
+}
+
+LIR_Opr CardTableBarrierSetC1::atomic_cmpxchg_at_resolved(LIRAccess& access, LIRItem& cmp_value, LIRItem& new_value) {
+  if (access.is_oop()) {
+    pre_barrier(access, access.resolved_addr(),
+                LIR_OprFact::illegalOpr /* pre_val */, nullptr);
+  }
+
+  LIR_Opr result = BarrierSetC1::atomic_cmpxchg_at_resolved(access, cmp_value, new_value);
+
+  if (access.is_oop()) {
+    post_barrier(access, access.resolved_addr(), new_value.result());
+  }
+
+  return result;
+}
+
+LIR_Opr CardTableBarrierSetC1::atomic_xchg_at_resolved(LIRAccess& access, LIRItem& value) {
+  if (access.is_oop()) {
+    pre_barrier(access, access.resolved_addr(),
+                LIR_OprFact::illegalOpr /* pre_val */, nullptr);
+  }
+
+  LIR_Opr result = BarrierSetC1::atomic_xchg_at_resolved(access, value);
+
+  if (access.is_oop()) {
+    post_barrier(access, access.resolved_addr(), value.result());
+  }
+
+  return result;
+}
+
+// This overrides the default to resolve the address into a register,
+// assuming it will be used by a write barrier anyway.
+LIR_Opr CardTableBarrierSetC1::resolve_address(LIRAccess& access, bool resolve_in_register) {
+  DecoratorSet decorators = access.decorators();
+  bool needs_patching = (decorators & C1_NEEDS_PATCHING) != 0;
+  bool is_write = (decorators & ACCESS_WRITE) != 0;
+  bool is_array = (decorators & IS_ARRAY) != 0;
+  bool on_anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
+  bool precise = is_array || on_anonymous;
+  resolve_in_register |= !needs_patching && is_write && access.is_oop() && precise;
+  return BarrierSetC1::resolve_address(access, resolve_in_register);
+}
+
 void CardTableBarrierSetC1::post_barrier(LIRAccess& access, LIR_Opr addr, LIR_Opr new_val) {
   DecoratorSet decorators = access.decorators();
   LIRGenerator* gen = access.gen();
@@ -42,11 +105,8 @@ void CardTableBarrierSetC1::post_barrier(LIRAccess& access, LIR_Opr addr, LIR_Op
     return;
   }
 
-  BarrierSet* bs = BarrierSet::barrier_set();
-  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
-  CardTable* ct = ctbs->card_table();
-  LIR_Const* card_table_base = new LIR_Const(ct->byte_map_base());
-  SHENANDOAHGC_ONLY(assert(!UseShenandoahGC, "Shenandoah byte_map_base is not constant.");)
+  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
+  LIR_Const* card_table_base = new LIR_Const(ctbs->card_table_base_const());
 
   if (addr->is_address()) {
     LIR_Address* address = addr->as_address_ptr();
@@ -64,6 +124,7 @@ void CardTableBarrierSetC1::post_barrier(LIRAccess& access, LIR_Opr addr, LIR_Op
   assert(addr->is_register(), "must be a register at this point");
 
 #ifdef CARDTABLEBARRIERSET_POST_BARRIER_HELPER
+  assert(!AOTCodeCache::is_on(), "this path is not implemented");
   gen->CardTableBarrierSet_post_barrier_helper(addr, card_table_base);
 #else
   LIR_Opr tmp = gen->new_pointer_register();
@@ -76,6 +137,17 @@ void CardTableBarrierSetC1::post_barrier(LIRAccess& access, LIR_Opr addr, LIR_Op
   }
 
   LIR_Address* card_addr;
+#if INCLUDE_CDS
+  if (AOTCodeCache::is_on_for_dump()) {
+    // load the card table address from the AOT Runtime Constants area
+    LIR_Opr byte_map_base_adr = LIR_OprFact::intptrConst(AOTRuntimeConstants::card_table_base_address());
+    LIR_Opr byte_map_base_reg = gen->new_pointer_register();
+    __ move(byte_map_base_adr, byte_map_base_reg);
+    LIR_Address* byte_map_base_indirect = new LIR_Address(byte_map_base_reg, 0, T_LONG);
+    __ move(byte_map_base_indirect, byte_map_base_reg);
+    card_addr = new LIR_Address(tmp, byte_map_base_reg, T_BYTE);
+  } else
+#endif
   if (gen->can_inline_as_constant(card_table_base)) {
     card_addr = new LIR_Address(tmp, card_table_base->as_jint(), T_BYTE);
   } else {

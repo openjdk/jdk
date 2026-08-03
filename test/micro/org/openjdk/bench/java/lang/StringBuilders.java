@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +51,7 @@ public class StringBuilders {
     private String[] str16p8p7;
     private String[] str3p9p8;
     private String[] str22p40p31;
+    private char[][] charArray22p40p31;
     private StringBuilder sbLatin1;
     private StringBuilder sbLatin2;
     private StringBuilder sbUtf16;
@@ -63,10 +65,15 @@ public class StringBuilders {
                 "advise", "you", "to", "drive", "at", "top", "speed", "it'll",
                 "be", "a", "god", "damn", "miracle", "if", "we", "can", "get",
                 "there", "before", "you", "turn", "into", "a", "wild", "animal."};
+
         str3p4p2 = new String[]{"123", "1234", "12"};
         str16p8p7 = new String[]{"1234567890123456", "12345678", "1234567"};
         str3p9p8 = new String[]{"123", "123456789", "12345678"};
         str22p40p31 = new String[]{"1234567890123456789012", "1234567890123456789012345678901234567890", "1234567890123456789012345678901"};
+        charArray22p40p31 = new char[str22p40p31.length][];
+        for (int i = 0; i < str22p40p31.length; i++) {
+            charArray22p40p31[i] = str22p40p31[i].toCharArray();
+        }
         sbLatin1 = new StringBuilder("Latin1 string");
         sbLatin2 = new StringBuilder("Latin1 string");
         sbUtf16 = new StringBuilder("UTF-\uFF11\uFF16 string");
@@ -269,6 +276,24 @@ public class StringBuilders {
         buf.setLength(0);
         for (long l : longArray) {
             buf.append(l);
+        }
+        return buf.length();
+    }
+
+    @Benchmark
+    public int appendWithCharArrayLatin1() {
+        StringBuilder buf = new StringBuilder();
+        for (char[] charArray : charArray22p40p31) {
+            buf.append(charArray);
+        }
+        return buf.length();
+    }
+
+    @Benchmark
+    public int appendWithCharArrayUTF16() {
+        StringBuilder buf = new StringBuilder("\uFF11");
+        for (char[] charArray : charArray22p40p31) {
+            buf.append(charArray);
         }
         return buf.length();
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
  * @library /tools/lib
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
  * @build ReplToolTesting TestingInputStream Compiler
- * @run testng CommandCompletionTest
+ * @run junit CommandCompletionTest
  */
 
 import java.io.IOException;
@@ -46,16 +46,16 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.testng.SkipException;
-import org.testng.annotations.Test;
 
 import jdk.internal.jshell.tool.JShellTool;
 import jdk.internal.jshell.tool.JShellToolBuilder;
 import jdk.jshell.SourceCodeAnalysis.Suggestion;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.Test;
 
 public class CommandCompletionTest extends ReplToolTesting {
 
@@ -94,7 +94,7 @@ public class CommandCompletionTest extends ReplToolTesting {
     public void assertCompletion(String code, boolean isSmart, String... expected) {
         List<String> completions = computeCompletions(code, isSmart);
         List<String> expectedL = Arrays.asList(expected);
-        assertEquals(completions, expectedL, "Command: " + code + ", output: " +
+        assertEquals(expectedL, completions, "Command: " + code + ", output: " +
                 completions.toString() + ", expected: " + expectedL.toString());
     }
 
@@ -356,9 +356,7 @@ public class CommandCompletionTest extends ReplToolTesting {
                                   .map(file -> file.getFileName().toString().replace(" ", "\\ "))
                                   .orElse(null);
         }
-        if (selectedFile == null) {
-            throw new SkipException("No suitable file(s) found for this test in " + home);
-        }
+        Assumptions.assumeFalse(selectedFile == null, "No suitable file(s) found for this test in " + home);
         try (Stream<Path> content = Files.list(home)) {
             completions = content.filter(CLASSPATH_FILTER)
                                  .filter(file -> file.getFileName().toString().startsWith(selectedFile.replace("\\ ", " ")))

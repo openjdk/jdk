@@ -19,11 +19,12 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
 #ifndef CPU_AARCH64_SPIN_WAIT_AARCH64_HPP
 #define CPU_AARCH64_SPIN_WAIT_AARCH64_HPP
+
+#include "utilities/debug.hpp"
 
 class SpinWait {
 public:
@@ -31,18 +32,33 @@ public:
     NONE = -1,
     NOP,
     ISB,
-    YIELD
+    YIELD,
+    SB,
+    WFET
   };
 
 private:
   Inst _inst;
   int _count;
+  int _delay;
+
+  Inst from_name(const char *name);
 
 public:
-  SpinWait(Inst inst = NONE, int count = 0) : _inst(inst), _count(count) {}
+  SpinWait(Inst inst = NONE, int count = 0, int delay = -1)
+    : _inst(inst), _count(inst == NONE ? 0 : count), _delay(delay) {}
+  SpinWait(const char *name, int count, int delay)
+    : SpinWait(from_name(name), count, delay) {}
 
   Inst inst() const { return _inst; }
   int inst_count() const { return _count; }
+  int delay() const {
+    assert(_inst == WFET, "Specifying the delay value is only supported for WFET");
+    assert(_delay > 0, "The delay value must be positive");
+    return _delay;
+  }
+
+  static bool supports(const char *name);
 };
 
 #endif // CPU_AARCH64_SPIN_WAIT_AARCH64_HPP

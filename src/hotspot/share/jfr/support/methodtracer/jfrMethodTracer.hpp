@@ -25,10 +25,10 @@
 #ifndef SHARE_JFR_SUPPORT_METHODTRACER_JFRMETHODTRACER_HPP
 #define SHARE_JFR_SUPPORT_METHODTRACER_JFRMETHODTRACER_HPP
 
-#include "jni.h"
 #include "jfr/support/methodtracer/jfrInstrumentedClass.hpp"
 #include "jfr/support/methodtracer/jfrTracedMethod.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
+#include "jni.h"
 #include "memory/allocation.hpp"
 
 class ClassFileParser;

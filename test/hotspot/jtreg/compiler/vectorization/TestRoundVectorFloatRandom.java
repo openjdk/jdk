@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Rivos Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -37,6 +37,7 @@
 package compiler.vectorization;
 
 import java.util.Random;
+import jdk.test.lib.Utils;
 import static compiler.lib.golden.GoldenRound.golden_round;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
@@ -47,7 +48,7 @@ import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.Warmup;
 
 public class TestRoundVectorFloatRandom {
-  private static final Random rand = new Random();
+  private static final Random rand = Utils.getRandomInstance();
 
   private static final int ITERS  = 11000;
   private static final int ARRLEN = rand.nextInt(4096-997) + 997;

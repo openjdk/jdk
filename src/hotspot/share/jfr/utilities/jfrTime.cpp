@@ -34,7 +34,7 @@ bool JfrTime::initialize() {
   static bool initialized = false;
   if (!initialized) {
 #if defined(X86) && !defined(ZERO)
-    _ft_enabled = Rdtsc::initialize();
+    _ft_enabled = Rdtsc::enabled();
 #else
     _ft_enabled = false;
 #endif

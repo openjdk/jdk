@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.locks.*;
 import java.io.FileDescriptor;
 import java.io.IOException;
+import jdk.internal.access.JavaNioAccess;
+import jdk.internal.access.SharedSecrets;
 
 /**
  * Base implementation of AsynchronousFileChannel.
@@ -40,6 +42,8 @@ import java.io.IOException;
 abstract class AsynchronousFileChannelImpl
     extends AsynchronousFileChannel
 {
+    private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
+
     // close support
     protected final ReadWriteLock closeLock = new ReentrantReadWriteLock();
     protected volatile boolean closed;
@@ -215,6 +219,10 @@ abstract class AsynchronousFileChannelImpl
 
     @Override
     public final Future<Integer> read(ByteBuffer dst, long position) {
+        if (dst.isReadOnly())
+            throw new IllegalArgumentException("Read-only buffer");
+        if (NIO_ACCESS.isThreadConfined(dst))
+            throw new IllegalArgumentException("Buffer is thread confined");
         return implRead(dst, position, null, null);
     }
 
@@ -226,6 +234,10 @@ abstract class AsynchronousFileChannelImpl
     {
         if (handler == null)
             throw new NullPointerException("'handler' is null");
+        if (dst.isReadOnly())
+            throw new IllegalArgumentException("Read-only buffer");
+        if (NIO_ACCESS.isThreadConfined(dst))
+            throw new IllegalArgumentException("Buffer is thread confined");
         implRead(dst, position, attachment, handler);
     }
 
@@ -237,6 +249,8 @@ abstract class AsynchronousFileChannelImpl
 
     @Override
     public final Future<Integer> write(ByteBuffer src, long position) {
+        if (NIO_ACCESS.isThreadConfined(src))
+            throw new IllegalArgumentException("Buffer is thread confined");
         return implWrite(src, position, null, null);
     }
 
@@ -248,6 +262,8 @@ abstract class AsynchronousFileChannelImpl
     {
         if (handler == null)
             throw new NullPointerException("'handler' is null");
+        if (NIO_ACCESS.isThreadConfined(src))
+            throw new IllegalArgumentException("Buffer is thread confined");
         implWrite(src, position, attachment, handler);
     }
 }

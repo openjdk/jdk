@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import java.util.Base64;
 import com.sun.net.httpserver.Authenticator;
 import com.sun.net.httpserver.BasicAuthenticator;
 import com.sun.net.httpserver.HttpServer;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
 
 public class BasicAuthToken {
     private static final String CRLF = "\r\n";
@@ -59,11 +60,11 @@ public class BasicAuthToken {
         HttpServer server = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
         server.createContext(someContext, exchange -> {
             if (authenticator.authenticate(exchange) instanceof Authenticator.Failure) {
-                exchange.sendResponseHeaders(401, -1);
+                exchange.sendResponseHeaders(401, RSPBODY_EMPTY);
                 exchange.close();
                 return;
             }
-            exchange.sendResponseHeaders(200, -1);
+            exchange.sendResponseHeaders(200, RSPBODY_EMPTY);
             exchange.close();
         }).setAuthenticator(authenticator);
         server.start();

@@ -26,6 +26,7 @@
 package jdk.internal.net.http.frame;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -70,6 +71,7 @@ public class FramesEncoder {
             case GoAwayFrame.TYPE ->        encodeGoAwayFrame((GoAwayFrame) frame);
             case WindowUpdateFrame.TYPE ->  encodeWindowUpdateFrame((WindowUpdateFrame) frame);
             case ContinuationFrame.TYPE ->  encodeContinuationFrame((ContinuationFrame) frame);
+            case AltSvcFrame.TYPE ->        encodeAltSvcFrame((AltSvcFrame) frame);
 
             default -> throw new UnsupportedOperationException("Not supported frame " + frame.type() + " (" + frame.getClass().getName() + ")");
         };
@@ -225,6 +227,20 @@ public class FramesEncoder {
         putHeader(buf, length, ContinuationFrame.TYPE, frame.getFlags(), frame.streamid());
         buf.flip();
         return join(buf, frame.getHeaderBlock());
+    }
+
+    private List<ByteBuffer> encodeAltSvcFrame(AltSvcFrame frame) {
+       final int length = frame.length();
+       ByteBuffer buf = getBuffer(Http2Frame.FRAME_HEADER_SIZE + length);
+       putHeader(buf, length, AltSvcFrame.TYPE, NO_FLAGS,  frame.streamid);
+       final String origin = frame.getOrigin();
+       assert (origin.length() & 0xffff0000) == 0;
+       buf.putShort((short)origin.length());
+       if (!origin.isEmpty())
+           buf.put(frame.getOrigin().getBytes(StandardCharsets.US_ASCII));
+       buf.put(frame.getAltSvcValue().getBytes(StandardCharsets.US_ASCII));
+       buf.flip();
+       return List.of(buf);
     }
 
     private List<ByteBuffer> joinWithPadding(ByteBuffer buf, List<ByteBuffer> data, int padLength) {

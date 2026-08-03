@@ -29,17 +29,17 @@
 #include "utilities/macros.hpp"
 
 void G1BarrierSetRuntime::write_ref_array_pre_oop_entry(oop* dst, size_t length) {
-  G1BarrierSet *bs = barrier_set_cast<G1BarrierSet>(BarrierSet::barrier_set());
+  G1BarrierSet *bs = G1BarrierSet::g1_barrier_set();
   bs->write_ref_array_pre(dst, length, false);
 }
 
 void G1BarrierSetRuntime::write_ref_array_pre_narrow_oop_entry(narrowOop* dst, size_t length) {
-  G1BarrierSet *bs = barrier_set_cast<G1BarrierSet>(BarrierSet::barrier_set());
+  G1BarrierSet *bs = G1BarrierSet::g1_barrier_set();
   bs->write_ref_array_pre(dst, length, false);
 }
 
 void G1BarrierSetRuntime::write_ref_array_post_entry(HeapWord* dst, size_t length) {
-  G1BarrierSet *bs = barrier_set_cast<G1BarrierSet>(BarrierSet::barrier_set());
+  G1BarrierSet *bs = G1BarrierSet::g1_barrier_set();
   bs->G1BarrierSet::write_ref_array(dst, length);
 }
 
@@ -47,18 +47,10 @@ void G1BarrierSetRuntime::write_ref_array_post_entry(HeapWord* dst, size_t lengt
 JRT_LEAF(void, G1BarrierSetRuntime::write_ref_field_pre_entry(oopDesc* orig, JavaThread* thread))
   assert(thread == JavaThread::current(), "pre-condition");
   assert(orig != nullptr, "should be optimized out");
-  assert(oopDesc::is_oop(orig, true /* ignore mark word */), "Error");
+  assert(oopDesc::is_oop(orig), "Error");
   // store the original value that was in the field reference
   SATBMarkQueue& queue = G1ThreadLocalData::satb_mark_queue(thread);
   G1BarrierSet::satb_mark_queue_set().enqueue_known_active(queue, orig);
-JRT_END
-
-// G1 post write barrier slowpath
-JRT_LEAF(void, G1BarrierSetRuntime::write_ref_field_post_entry(volatile G1CardTable::CardValue* card_addr,
-                                                               JavaThread* thread))
-  assert(thread == JavaThread::current(), "pre-condition");
-  G1DirtyCardQueue& queue = G1ThreadLocalData::dirty_card_queue(thread);
-  G1BarrierSet::dirty_card_queue_set().enqueue(queue, card_addr);
 JRT_END
 
 JRT_LEAF(void, G1BarrierSetRuntime::clone(oopDesc* src, oopDesc* dst, size_t size))

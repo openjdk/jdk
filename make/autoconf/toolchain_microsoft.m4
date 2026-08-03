@@ -25,7 +25,7 @@
 
 ################################################################################
 # The order of these defines the priority by which we try to find them.
-VALID_VS_VERSIONS="2022 2019"
+VALID_VS_VERSIONS="2022 2019 2026"
 
 VS_DESCRIPTION_2019="Microsoft Visual Studio 2019"
 VS_VERSION_INTERNAL_2019=142
@@ -56,6 +56,21 @@ VS_VS_PLATFORM_NAME_2022="v143"
 VS_SDK_PLATFORM_NAME_2022=
 VS_SUPPORTED_2022=true
 VS_TOOLSET_SUPPORTED_2022=true
+
+VS_DESCRIPTION_2026="Microsoft Visual Studio 2026"
+VS_VERSION_INTERNAL_2026=145
+VS_MSVCR_2026=vcruntime140.dll
+VS_VCRUNTIME_1_2026=vcruntime140_1.dll
+VS_MSVCP_2026=msvcp140.dll
+VS_ENVVAR_2026="VS180COMNTOOLS"
+VS_USE_UCRT_2026="true"
+VS_VS_INSTALLDIR_2026="Microsoft Visual Studio/18"
+VS_EDITIONS_2026="BuildTools Community Professional Enterprise"
+VS_SDK_INSTALLDIR_2026=
+VS_VS_PLATFORM_NAME_2026="v145"
+VS_SDK_PLATFORM_NAME_2026=
+VS_SUPPORTED_2026=true
+VS_TOOLSET_SUPPORTED_2026=true
 
 ################################################################################
 
@@ -202,10 +217,12 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO_BAT_FILE],
     TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([$TARGET_CPU], [$VS_VERSION],
         [$PROGRAMFILES_X86/$VS_INSTALL_DIR], [well-known name])
   fi
+  # Derive system drive root from CMD (which is at <drive>/windows/system32/cmd.exe)
+  WINSYSDRIVE_ROOT="$(dirname "$(dirname "$(dirname "$CMD")")")"
   TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([$TARGET_CPU], [$VS_VERSION],
-      [c:/program files/$VS_INSTALL_DIR], [well-known name])
+      [$WINSYSDRIVE_ROOT/program files/$VS_INSTALL_DIR], [well-known name])
   TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([$TARGET_CPU], [$VS_VERSION],
-      [c:/program files (x86)/$VS_INSTALL_DIR], [well-known name])
+      [$WINSYSDRIVE_ROOT/program files (x86)/$VS_INSTALL_DIR], [well-known name])
   if test "x$SDK_INSTALL_DIR" != x; then
     if test "x$ProgramW6432" != x; then
       TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT([$TARGET_CPU], [$VS_VERSION],
@@ -220,9 +237,9 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO_BAT_FILE],
           [$PROGRAMFILES/$SDK_INSTALL_DIR], [well-known name])
     fi
     TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT([$TARGET_CPU], [$VS_VERSION],
-        [c:/program files/$SDK_INSTALL_DIR], [well-known name])
+        [$WINSYSDRIVE_ROOT/program files/$SDK_INSTALL_DIR], [well-known name])
     TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT([$TARGET_CPU], [$VS_VERSION],
-        [c:/program files (x86)/$SDK_INSTALL_DIR], [well-known name])
+        [$WINSYSDRIVE_ROOT/program files (x86)/$SDK_INSTALL_DIR], [well-known name])
   fi
 
   VCVARS_VER=auto
@@ -323,7 +340,7 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_VISUAL_STUDIO_ENV],
   OLDPATH="$PATH"
   # Make sure we only capture additions to PATH needed by VS.
   # Clear out path, but need system dir present for vsvars cmd file to be able to run
-  export PATH=$WINENV_PREFIX/c/windows/system32
+  export PATH="$(dirname "$CMD")"
   # The "| cat" is to stop SetEnv.Cmd to mess with system colors on some systems
   # We can't pass -vcvars_ver=$VCVARS_VER here because cmd.exe eats all '='
   # in bat file arguments. :-(

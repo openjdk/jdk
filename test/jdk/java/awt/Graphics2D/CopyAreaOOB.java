@@ -27,6 +27,8 @@
  * @bug 6430601 8198613
  * @summary Verifies that copyArea() works properly when the
  *          destination parameters are outside the destination bounds.
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
  * @run main/othervm CopyAreaOOB
  */
 
@@ -49,23 +51,29 @@ import java.awt.image.RenderedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-
 import javax.imageio.ImageIO;
+import jdk.test.lib.Platform;
 
 public class CopyAreaOOB extends Canvas {
+    private static final int PRIMARY_TOLERANCE = 2;
+    private static int TOLERANCE = 30;
+    private static final boolean DEBUG = false;
     private static Frame frame;
     private static Robot robot;
     private static BufferedImage captureImg;
 
-    private static StringBuffer errorLog = new StringBuffer();
+    private static final StringBuffer errorLog = new StringBuffer();
 
     private static final Point OFF_FRAME_LOC = new Point(50, 50);
     private static final int SIZE = 400;
 
     public static void main(String[] args) throws Exception {
         try {
-            robot = new Robot();
+            if (!Platform.isOSX()) {
+                TOLERANCE = PRIMARY_TOLERANCE;
+            }
 
+            robot = new Robot();
             // added to move mouse pointer away from test UI
             // so that it is not captured in the screenshot
             robot.mouseMove(OFF_FRAME_LOC.x, OFF_FRAME_LOC.y);
@@ -77,7 +85,7 @@ public class CopyAreaOOB extends Canvas {
 
             if (!errorLog.isEmpty()) {
                 saveImages();
-                throw new RuntimeException("Test failed: \n" + errorLog.toString());
+                throw new RuntimeException("Test failed for the following region(s)" + errorLog);
             }
         } finally {
             if (frame != null) {
@@ -101,13 +109,13 @@ public class CopyAreaOOB extends Canvas {
         int h = getHeight();
 
         Graphics2D g2d = (Graphics2D)g;
-        g2d.setColor(Color.black);
+        g2d.setColor(Color.BLUE);
         g2d.fillRect(0, 0, w, h);
 
-        g2d.setColor(Color.green);
+        g2d.setColor(Color.GREEN);
         g2d.fillRect(0, 0, w, 10);
 
-        g2d.setColor(Color.red);
+        g2d.setColor(Color.RED);
         g2d.fillRect(0, 10, 50, h - 10);
 
         // copy the region such that part of it goes below the bottom of the
@@ -123,12 +131,12 @@ public class CopyAreaOOB extends Canvas {
         captureImg = robot.createScreenCapture(rect);
 
         // Test pixels
-        testRegion("green", 0, 0, 400, 10, 0xff00ff00);
-        testRegion("original-red", 0, 10, 50, 400, 0xffff0000);
-        testRegion("background", 50, 10, 60, 400, 0xff000000);
-        testRegion("in-between", 60, 10, 110, 20, 0xff000000);
-        testRegion("copied-red", 60, 20, 110, 400, 0xffff0000);
-        testRegion("background", 110, 10, 400, 400, 0xff000000);
+        testRegion("green", 0, 0, 400, 10, Color.GREEN);
+        testRegion("original-red", 0, 10, 50, 400, Color.RED);
+        testRegion("background", 50, 10, 60, 400, Color.BLUE);
+        testRegion("in-between", 60, 10, 110, 20, Color.BLUE);
+        testRegion("copied-red", 60, 20, 110, 400, Color.RED);
+        testRegion("background", 110, 10, 400, 400, Color.BLUE);
     }
 
     public Dimension getPreferredSize() {
@@ -137,24 +145,23 @@ public class CopyAreaOOB extends Canvas {
 
     private static void testRegion(String region,
                                    int x1, int y1, int x2, int y2,
-                                   int expected) {
-        System.out.print("Test region: " + region);
+                                   Color expected) {
         for (int y = y1; y < y2; y++) {
             for (int x = x1; x < x2; x++) {
-                int actual = captureImg.getRGB(x, y);
-                if (actual != expected) {
-                    System.out.print(" Status: FAILED\n");
-                    errorLog.append("Test failed for " + region
-                                                + " region at x: " + x + " y: " + y
-                                                + " (expected: "
-                                                + Integer.toHexString(expected)
-                                                + " actual: "
-                                                + Integer.toHexString(actual) + ")\n");
+                Color actual = new Color(captureImg.getRGB(x, y));
+                if (DEBUG) {
+                    System.out.println("Actual color: " + actual);
+                }
+                if (!compareColor(expected, actual)) {
+                    errorLog.append("\nTest region: " + region + " Status: FAILED!!!\n");
+                    errorLog.append("Test failed at x : " + x + " y : " + y + "\n"
+                                    + "Expected Color: " + expected + "\n"
+                                    + "Actual Color: " + actual + "\n");
                     return;
                 }
             }
         }
-        System.out.print(" Status: PASSED\n");
+        System.out.println("Test region: " + region + " Status: PASSED");
     }
 
     private static void saveImages() {
@@ -173,4 +180,14 @@ public class CopyAreaOOB extends Canvas {
             System.err.println("Can't write image " + e);
         }
     }
+
+    private static boolean compareColor(Color expected, Color actual) {
+            return Math.abs(expected.getRed() - actual.getRed())
+                   < (expected.equals(Color.RED) ? PRIMARY_TOLERANCE : TOLERANCE)
+                   && Math.abs(expected.getGreen() - actual.getGreen())
+                      < (expected.equals(Color.GREEN) ? PRIMARY_TOLERANCE : TOLERANCE)
+                   && Math.abs(expected.getBlue() - actual.getBlue())
+                      < (expected.equals(Color.BLUE) ? PRIMARY_TOLERANCE : TOLERANCE);
+    }
 }
+

@@ -29,12 +29,12 @@
 #include "opto/c2compiler.hpp"
 #include "opto/callnode.hpp"
 #include "opto/cfgnode.hpp"
+#include "opto/chaitin.hpp"
 #include "opto/machnode.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
-#include "opto/chaitin.hpp"
 #include "runtime/deoptimization.hpp"
 
 // Portions of code courtesy of Clifford Click
@@ -152,9 +152,12 @@ bool PhaseCFG::is_CFG(Node* n) {
 }
 
 bool PhaseCFG::is_control_proj_or_safepoint(Node* n) const {
-  bool result = (n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_SafePoint) || (n->is_Proj() && n->as_Proj()->bottom_type() == Type::CONTROL);
-  assert(!result || (n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_SafePoint)
-          || (n->is_Proj() && n->as_Proj()->_con == 0), "If control projection, it must be projection 0");
+  bool result = n->is_ReachabilityFence() ||
+                (n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_SafePoint) ||
+                (n->is_Proj() && n->as_Proj()->bottom_type() == Type::CONTROL);
+  assert(!n->is_Proj() ||
+         n->as_Proj()->bottom_type() != Type::CONTROL ||
+         n->as_Proj()->_con == 0, "If control projection, it must be projection 0");
   return result;
 }
 
@@ -592,7 +595,7 @@ private:
   };
 
   GrowableArray<DefUsePair> _queue;
-  GrowableArray<MergeMemNode*> _worklist_visited; // visited mergemem nodes
+  Unique_Node_List _worklist_visited; // visited mergemem nodes
 
   bool already_enqueued(Node* def_mem, PhiNode* use_phi) const {
     // def_mem is one of the inputs of use_phi and at least one input of use_phi is
@@ -632,9 +635,11 @@ public:
   void push(Node* def_mem_state, Node* use_mem_state) {
     if (use_mem_state->is_MergeMem()) {
       // Be sure we don't get into combinatorial problems.
-      if (!_worklist_visited.append_if_missing(use_mem_state->as_MergeMem())) {
-        return; // already on work list; do not repeat
+      if (_worklist_visited.member(use_mem_state)) {
+        // already on work list; do not repeat
+        return;
       }
+      _worklist_visited.push(use_mem_state);
     } else if (use_mem_state->is_Phi()) {
       // A Phi could have the same mem as input multiple times. If that's the case, we don't need to enqueue it
       // more than once. We otherwise allow phis to be repeated; they can merge two relevant states.
@@ -1449,8 +1454,9 @@ Block* PhaseCFG::hoist_to_cheaper_block(Block* LCA, Block* early, Node* self) {
   // single register.  Hoisting stretches the live range of the
   // single register and may force spilling.
   MachNode* mach = self->is_Mach() ? self->as_Mach() : nullptr;
-  if (mach && mach->out_RegMask().is_bound1() && mach->out_RegMask().is_NotEmpty())
+  if (mach != nullptr && mach->out_RegMask().is_bound1() && !mach->out_RegMask().is_empty()) {
     in_latency = true;
+  }
 
 #ifndef PRODUCT
   if (trace_opto_pipelining()) {
@@ -1482,7 +1488,7 @@ Block* PhaseCFG::hoist_to_cheaper_block(Block* LCA, Block* early, Node* self) {
     }
 
     // Don't hoist machine instructions to the root basic block
-    if (mach && LCA == root_block)
+    if (mach != nullptr && LCA == root_block)
       break;
 
     if (self->is_memory_writer() &&
@@ -1739,6 +1745,9 @@ void PhaseCFG::schedule_late(VectorSet &visited, Node_Stack &stack) {
       // are needed make sure that after placement in a block we don't
       // need any new precedence edges.
       verify_anti_dependences(late, self);
+      if (C->failing()) {
+        return;
+      }
     }
 #endif
   } // Loop until all nodes have been visited

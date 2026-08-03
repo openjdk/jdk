@@ -377,11 +377,6 @@ LIR_Opr FrameMap::stack_pointer() {
   return FrameMap::sp_opr;
 }
 
-// JSR 292
-LIR_Opr FrameMap::method_handle_invoke_SP_save_opr() {
-  return LIR_OprFact::illegalOpr;  // Not needed on riscv
-}
-
 bool FrameMap::validate_frame() {
   return true;
 }

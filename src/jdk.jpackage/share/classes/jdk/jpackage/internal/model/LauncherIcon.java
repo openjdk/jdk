@@ -27,5 +27,5 @@ package jdk.jpackage.internal.model;
 /**
  * Application launcher icon.
  */
-public interface LauncherIcon {
+public sealed interface LauncherIcon permits DefaultLauncherIcon, ResourceDirLauncherIcon, CustomLauncherIcon {
 }

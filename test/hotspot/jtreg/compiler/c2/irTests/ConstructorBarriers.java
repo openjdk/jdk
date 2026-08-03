@@ -123,9 +123,12 @@ public class ConstructorBarriers {
     }
 
     long l = 42;
+    volatile Object global;
 
     @DontInline
-    public void consume(Object o) {}
+    public void consume(Object o) {
+        global = o;
+    }
 
     @Test
     @IR(counts = {IRNode.MEMBAR_STORESTORE, "1"})

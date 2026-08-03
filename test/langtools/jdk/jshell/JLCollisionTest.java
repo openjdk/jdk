@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,14 +28,14 @@
  *          the same simple names
  * @modules jdk.jshell/jdk.jshell
  * @build KullaTesting
- * @run testng JLCollisionTest
+ * @run junit JLCollisionTest
  */
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class JLCollisionTest extends KullaTesting {
 
+    @Test
     public void testObject() {
         assertEval("class Object {}");
         assertEval("1");
@@ -43,6 +43,7 @@ public class JLCollisionTest extends KullaTesting {
         assertEval("$2 = \"\"");
     }
 
+    @Test
     public void testThrowable() {
         assertEval("class Throwable {}");
         assertEval("1");
@@ -50,6 +51,7 @@ public class JLCollisionTest extends KullaTesting {
         assertEval("var _ = new Object() {};");
     }
 
+    @Test
     public void testSuppressWarnings() {
         assertEval("class SuppressWarnings {}");
         //var with an "enhanced" (non-denotable) type:

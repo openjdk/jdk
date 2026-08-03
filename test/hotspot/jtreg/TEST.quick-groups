@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -1603,7 +1603,6 @@ vmTestbase_vm_compiler_quick = \
   vmTestbase/jit/misctests/JitBug1/JitBug1.java \
   vmTestbase/jit/misctests/Pi/Pi.java \
   vmTestbase/jit/misctests/clss14702/clss14702.java \
-  vmTestbase/jit/misctests/fpustack/GraphApplet.java \
   vmTestbase/jit/misctests/putfield00802/putfield00802.java \
   vmTestbase/jit/misctests/t5/t5.java \
   vmTestbase/jit/overflow/overflow.java \

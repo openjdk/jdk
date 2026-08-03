@@ -43,7 +43,8 @@
 # which load the "UTC" file to handle seconds properly.
 Zone	Etc/UTC		0	-	UTC
 
-# Functions like gmtime load the "GMT" file to handle leap seconds properly.
+# If leap second support is enabled, functions like gmtime
+# load the "GMT" file to handle leap seconds properly.
 # Vanguard section, which works with most .zi parsers.
 #Zone	GMT		0	-	GMT
 # Rearguard section, for TZUpdater 2.3.2 and earlier.

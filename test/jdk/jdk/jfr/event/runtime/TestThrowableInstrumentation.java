@@ -52,7 +52,7 @@ public class TestThrowableInstrumentation {
     public static void main(String[] args) {
         // Compile Throwable::<clinit> with C1 (if available)
         if (!WHITE_BOX.enqueueInitializerForCompilation(java.lang.Throwable.class, COMP_LEVEL_SIMPLE)) {
-          if (!Platform.isServer() || isTieredCompilationEnabled() || Platform.isEmulatedClient()) {
+          if (!Platform.isServer() || isTieredCompilationEnabled()) {
             throw new RuntimeException("Unable to compile Throwable::<clinit> with C1");
           }
         }

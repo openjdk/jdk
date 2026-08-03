@@ -238,6 +238,7 @@ final class TokenStorage {
     }
 
     private static WatchService watchService;
+    private static volatile boolean isWatcherThreadStarted = false;
 
     private static void setupWatch() {
         try {
@@ -256,10 +257,6 @@ final class TokenStorage {
                 System.err.printf("Token storage: failed to setup " +
                         "file watch %s\n", e);
             }
-        }
-
-        if (watchService != null) {
-            new WatcherThread(watchService).start();
         }
     }
 
@@ -337,7 +334,27 @@ final class TokenStorage {
         return true;
     }
 
+    private static void startWatcherThreadIfNeeded() {
+        if (!isWatcherThreadStarted) {
+            // not sure if the double-checked locking is actually needed here
+            // the getTokens is only called from ScreencastHelper#getRGBPixels
+            // and ScreencastHelper#remoteDesktop* methods (which are synchronized),
+            // but it may change later.
+            synchronized (TokenStorage.class) {
+                if (!isWatcherThreadStarted) {
+                    readTokens(PROPS_PATH);
+                    if (watchService != null) {
+                        new WatcherThread(watchService).start();
+                    }
+                    isWatcherThreadStarted = true;
+                }
+            }
+        }
+    }
+
     static Set<TokenItem> getTokens(List<Rectangle> affectedScreenBounds) {
+        startWatcherThreadIfNeeded();
+
         // We need an ordered set to store tokens
         // with exact matches at the beginning.
         LinkedHashSet<TokenItem> result = new LinkedHashSet<>();

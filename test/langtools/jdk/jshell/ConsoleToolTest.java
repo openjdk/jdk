@@ -28,11 +28,11 @@
  * @modules jdk.internal.le/jdk.internal.org.jline.reader
  *          jdk.jshell/jdk.internal.jshell.tool:+open
  * @build ConsoleToolTest ReplToolTesting
- * @run testng ConsoleToolTest
+ * @run junit ConsoleToolTest
  */
 
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 public class ConsoleToolTest extends ReplToolTesting {
 

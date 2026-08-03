@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,8 +76,22 @@ typedef union {
  */
 void NET_ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
                                                const char* hostname,
-                                               int gai_error);
+                                               int gai_error,
+                                               int sys_errno);
 void NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
                                   const char *defaultDetail);
+
+/**
+ * Invokes CALL in a loop, setting RET to return value.
+ * Invokes PREDICATE for condition to restart CALL (in loop)
+ * Return RET otherwise
+ */
+#define NET_RESTARTABLE(RET,CALL,PREDICATE)     \
+    while (1) {                                 \
+        RET = CALL;                             \
+        if (!(PREDICATE)) {                     \
+            break;                              \
+        }                                       \
+    }
 
 #endif /* NET_UTILS_MD_H */

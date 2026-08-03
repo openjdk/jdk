@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import java.awt.Window;
 import java.util.EventObject;
 
 @SuppressWarnings("serial") // JDK implementation class
-public class FullScreenEvent extends EventObject {
+public final class FullScreenEvent extends EventObject {
 
         final Window window;
 

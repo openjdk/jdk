@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,7 @@ public class TestAsyncSocketChannels extends AbstractChannelsTest {
 
     static final Class<IOException> IOE = IOException.class;
     static final Class<ExecutionException> EE = ExecutionException.class;
+    static final Class<IllegalArgumentException> IAE = IllegalArgumentException.class;
     static final Class<IllegalStateException> ISE = IllegalStateException.class;
 
     /** Tests that confined sessions are not supported. */
@@ -79,8 +80,8 @@ public class TestAsyncSocketChannels extends AbstractChannelsTest {
             var bb = segment.asByteBuffer();
             var bba = new ByteBuffer[] { bb };
             List<ThrowingConsumer<TestHandler,?>> ioOps = List.of(
-                    handler -> handler.propagateHandlerFromFuture(channel.write(bb)),
-                    handler -> handler.propagateHandlerFromFuture(channel.read(bb)),
+                    handler -> channel.write(bb),
+                    handler -> channel.read(bb),
                     handler -> channel.write(bb, null, handler),
                     handler -> channel.read( bb, null, handler),
                     handler -> channel.write(bb , 0L, SECONDS, null, handler),
@@ -91,10 +92,7 @@ public class TestAsyncSocketChannels extends AbstractChannelsTest {
             for (var ioOp : ioOps) {
                 out.println("testAsyncWithConfined - op");
                 var handler = new TestHandler();
-                ioOp.accept(handler);
-                handler.await()
-                        .assertFailedWith(ISE)
-                        .assertExceptionMessage("Confined session not supported");
+                expectThrows(IAE, () -> ioOp.accept(handler));
             }
         }
     }

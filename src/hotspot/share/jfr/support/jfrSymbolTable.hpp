@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,30 +25,56 @@
 #ifndef SHARE_JFR_SUPPORT_JFRSYMBOLTABLE_HPP
 #define SHARE_JFR_SUPPORT_JFRSYMBOLTABLE_HPP
 
-#include "jfr/utilities/jfrHashtable.hpp"
+#include "jfr/utilities/jfrAllocation.hpp"
+#include "jfr/utilities/jfrConcurrentHashtable.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 
 template <typename T, typename IdType>
-class ListEntry : public JfrHashtableEntry<T, IdType> {
+class JfrSymbolTableEntry : public JfrConcurrentHashtableEntry<T, IdType> {
  public:
-  ListEntry(uintptr_t hash, const T& data) : JfrHashtableEntry<T, IdType>(hash, data),
-    _list_next(nullptr), _serialized(false), _unloading(false), _leakp(false) {}
-  const ListEntry<T, IdType>* list_next() const { return _list_next; }
-  void reset() const {
-    _list_next = nullptr; _serialized = false; _unloading = false; _leakp = false;
-  }
-  void set_list_next(const ListEntry<T, IdType>* next) const { _list_next = next; }
+  JfrSymbolTableEntry(unsigned hash, const T& data);
   bool is_serialized() const { return _serialized; }
   void set_serialized() const { _serialized = true; }
   bool is_unloading() const { return _unloading; }
   void set_unloading() const { _unloading = true; }
   bool is_leakp() const { return _leakp; }
   void set_leakp() const { _leakp = true; }
+  void reset() const {
+    _serialized = false;
+    _unloading = false;
+    _leakp = false;
+  }
+
+  bool on_equals(const Symbol* sym) {
+    assert(sym != nullptr, "invariant");
+    return sym == (const Symbol*)this->literal();
+  }
+
+  bool on_equals(const char* str);
+
  private:
-  mutable const ListEntry<T, IdType>* _list_next;
   mutable bool _serialized;
   mutable bool _unloading;
   mutable bool _leakp;
+};
+
+class JfrSymbolCallback : public JfrCHeapObj {
+  friend class JfrSymbolTable;
+ public:
+  typedef JfrConcurrentHashTableHost<const Symbol*, traceid, JfrSymbolTableEntry, JfrSymbolCallback> Symbols;
+  typedef JfrConcurrentHashTableHost<const char*, traceid, JfrSymbolTableEntry, JfrSymbolCallback> Strings;
+
+  void on_link(const Symbols::Entry* entry);
+  void on_unlink(const Symbols::Entry* entry);
+  void on_link(const Strings::Entry* entry);
+  void on_unlink(const Strings::Entry* entry);
+
+ private:
+  traceid _id_counter;
+
+  JfrSymbolCallback();
+  template <typename T>
+  void assign_id(const T* entry);
 };
 
 /*
@@ -58,88 +84,93 @@ class ListEntry : public JfrHashtableEntry<T, IdType> {
  * which is represented in the binary format as a sequence of checkpoint events.
  * The returned id can be used as a foreign key, but please note that the id is
  * epoch-relative, and is therefore only valid in the current epoch / chunk.
- * The table is cleared as part of rotation.
- *
- * Caller must ensure mutual exclusion by means of the ClassLoaderDataGraph_lock or by safepointing.
  */
-class JfrSymbolTable : public JfrCHeapObj {
-  template <typename, typename, template<typename, typename> class, typename, size_t>
-  friend class HashTableHost;
-  typedef HashTableHost<const Symbol*, traceid, ListEntry, JfrSymbolTable> Symbols;
-  typedef HashTableHost<const char*, traceid, ListEntry, JfrSymbolTable> Strings;
+class JfrSymbolTable : public AllStatic {
   friend class JfrArtifactSet;
+  template <typename, typename, template<typename, typename> class, typename, unsigned>
+  friend class JfrConcurrentHashTableHost;
+  friend class JfrRecorder;
+  friend class JfrRecorderService;
+  friend class JfrSymbolCallback;
+
+  typedef JfrConcurrentHashTableHost<const Symbol*, traceid, JfrSymbolTableEntry, JfrSymbolCallback> Symbols;
+  typedef JfrConcurrentHashTableHost<const char*, traceid, JfrSymbolTableEntry, JfrSymbolCallback> Strings;
 
  public:
-  typedef Symbols::HashEntry SymbolEntry;
-  typedef Strings::HashEntry StringEntry;
+  typedef Symbols::Entry SymbolEntry;
+  typedef Strings::Entry StringEntry;
 
   static traceid add(const Symbol* sym);
   static traceid add(const char* str);
 
  private:
-  Symbols* _symbols;
-  Strings* _strings;
-  const SymbolEntry* _symbol_list;
-  const StringEntry* _string_list;
-  const Symbol* _symbol_query;
-  const char* _string_query;
-  traceid _id_counter;
-  bool _class_unload;
+  class Impl : public JfrCHeapObj {
+    friend class JfrSymbolTable;
+   private:
+    Symbols* _symbols;
+    Strings* _strings;
 
-  JfrSymbolTable();
-  ~JfrSymbolTable();
-  static JfrSymbolTable* create();
+    Impl(unsigned symbol_capacity = 0, unsigned string_capacity = 0);
+    ~Impl();
+
+    void clear();
+
+    traceid add(const Symbol* sym);
+    traceid add(const char* str);
+
+    traceid mark(unsigned hash, const Symbol* sym, bool leakp, bool class_unload = false);
+    traceid mark(const Klass* k, bool leakp, bool class_unload = false);
+    traceid mark(const Symbol* sym, bool leakp = false, bool class_unload = false);
+    traceid mark(const char* str, bool leakp = false, bool class_unload = false);
+    traceid mark(unsigned hash, const char* str, bool leakp, bool class_unload = false);
+    traceid mark_hidden_klass_name(const Klass* k, bool leakp, bool class_unload = false);
+
+    bool has_entries() const;
+    bool has_symbol_entries() const;
+    bool has_string_entries() const;
+
+    unsigned symbols_capacity() const;
+    unsigned symbols_size() const;
+    unsigned strings_capacity() const;
+    unsigned strings_size() const;
+
+    template <typename Functor>
+    void iterate_symbols(Functor& functor);
+
+    template <typename Functor>
+    void iterate_strings(Functor& functor);
+  };
+
+  static Impl* _epoch_0;
+  static Impl* _epoch_1;
+  static StringEntry* _bootstrap;
+
+  static bool create();
   static void destroy();
 
-  void clear();
-  void increment_checkpoint_id();
-  void set_class_unload(bool class_unload);
+  static Impl* this_epoch_table();
+  static Impl* previous_epoch_table();
+  static Impl* epoch_table_selector(u1 epoch);
+  static void set_this_epoch(Impl* table);
+  static void set_previous_epoch(Impl* table);
 
-  traceid mark(uintptr_t hash, const Symbol* sym, bool leakp);
-  traceid mark(const Klass* k, bool leakp);
-  traceid mark(const Symbol* sym, bool leakp = false);
-  traceid mark(const char* str, bool leakp = false);
-  traceid mark(uintptr_t hash, const char* str, bool leakp);
-  traceid mark_hidden_klass_name(const Klass* k, bool leakp);
-  traceid bootstrap_name(bool leakp);
+  static void clear_previous_epoch();
+  static void allocate_next_epoch();
 
-  bool has_entries() const { return has_symbol_entries() || has_string_entries(); }
-  bool has_symbol_entries() const { return _symbol_list != nullptr; }
-  bool has_string_entries() const { return _string_list != nullptr; }
+  static bool has_entries(bool previous_epoch = false);
+  static bool has_symbol_entries(bool previous_epoch = false);
+  static bool has_string_entries(bool previous_epoch = false);
 
-  // hashtable(s) callbacks
-  void on_link(const SymbolEntry* entry);
-  bool on_equals(uintptr_t hash, const SymbolEntry* entry);
-  void on_unlink(const SymbolEntry* entry);
-  void on_link(const StringEntry* entry);
-  bool on_equals(uintptr_t hash, const StringEntry* entry);
-  void on_unlink(const StringEntry* entry);
-
-  template <typename T>
-  static traceid add_impl(const T* sym);
-
-  template <typename T>
-  void assign_id(T* entry);
+  static traceid mark(const Klass* k, bool leakp, bool class_unload = false, bool previous_epoch = false);
+  static traceid mark(const Symbol* sym, bool leakp = false, bool class_unload = false, bool previous_epoch = false);
+  static traceid mark(unsigned hash, const char* str, bool leakp, bool class_unload = false, bool previous_epoch = false);
+  static traceid bootstrap_name(bool leakp);
 
   template <typename Functor>
-  void iterate_symbols(Functor& functor) {
-    iterate(functor, _symbol_list);
-  }
+  static void iterate_symbols(Functor& functor, bool previous_epoch = false);
 
   template <typename Functor>
-  void iterate_strings(Functor& functor) {
-    iterate(functor, _string_list);
-  }
-
-  template <typename Functor, typename T>
-  void iterate(Functor& functor, const T* list) {
-    const T* symbol = list;
-    while (symbol != nullptr) {
-      const T* next = symbol->list_next();
-      functor(symbol);
-      symbol = next;
-    }
-  }
+  static void iterate_strings(Functor& functor, bool previous_epoch = false);
 };
 
 #endif // SHARE_JFR_SUPPORT_JFRSYMBOLTABLE_HPP

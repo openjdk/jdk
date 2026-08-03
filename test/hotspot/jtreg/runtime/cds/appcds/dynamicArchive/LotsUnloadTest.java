@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ public class LotsUnloadTest extends DynamicArchiveTestBase {
 
         dump(topArchiveName,
              logging,
-             "-Xmx64m", "-Xms32m",
+             "-Xmx256m", "-Xms32m",
              "-cp", appJar, mainClass)
           .assertNormalExit(output -> {
                 output.shouldHaveExitValue(0);
@@ -73,7 +73,7 @@ public class LotsUnloadTest extends DynamicArchiveTestBase {
 
         run(topArchiveName,
             logging,
-            "-Xmx64m", "-Xms32m",
+            "-Xmx256m", "-Xms32m",
             "-cp", appJar, mainClass)
           .assertNormalExit(output -> {
               output.shouldHaveExitValue(0);

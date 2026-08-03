@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -94,10 +94,6 @@ static inline Address daddress(Register r, Register scratch,
 
 static inline Address aaddress(Register r) {
   return iaddress(r);
-}
-
-static inline Address at_rsp() {
-  return Address(esp, 0);
 }
 
 // At top of Java expression stack which may be different than esp().  It
@@ -1763,7 +1759,7 @@ void TemplateTable::float_cmp(bool is_float, int unordered_result)
 
 void TemplateTable::branch(bool is_jsr, bool is_wide)
 {
-  __ profile_taken_branch(r0, r1);
+  __ profile_taken_branch(r0);
   const ByteSize be_offset = MethodCounters::backedge_counter_offset() +
                              InvocationCounter::counter_offset();
   const ByteSize inv_offset = MethodCounters::invocation_counter_offset() +
@@ -1813,7 +1809,6 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
   if (UseLoopCounter) {
     // increment backedge counter for backward branches
     // r0: MDO
-    // w1: MDO bumped taken-count
     // r2: target offset
     __ cmp(r2, zr);
     __ br(Assembler::GT, dispatch); // count only if backward branch
@@ -1824,12 +1819,10 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
     __ ldr(rscratch1, Address(rmethod, Method::method_counters_offset()));
     __ cbnz(rscratch1, has_counters);
     __ push(r0);
-    __ push(r1);
     __ push(r2);
     __ call_VM(noreg, CAST_FROM_FN_PTR(address,
             InterpreterRuntime::build_method_counters), rmethod);
     __ pop(r2);
-    __ pop(r1);
     __ pop(r0);
     __ ldr(rscratch1, Address(rmethod, Method::method_counters_offset()));
     __ cbz(rscratch1, dispatch); // No MethodCounters allocated, OutOfMemory
@@ -2276,7 +2269,7 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
   assert_different_registers(Rcache, index, temp);
   assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
 
-  Label resolved, clinit_barrier_slow;
+  Label L_clinit_barrier_slow, L_done;
 
   Bytecodes::Code code = bytecode();
   __ load_method_entry(Rcache, index);
@@ -2291,27 +2284,30 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
   // Load-acquire the bytecode to match store-release in InterpreterRuntime
   __ ldarb(temp, temp);
   __ subs(zr, temp, (int) code);  // have we resolved this bytecode?
-  __ br(Assembler::EQ, resolved);
+
+  // Class initialization barrier for static methods
+  if (bytecode() == Bytecodes::_invokestatic) {
+    assert(VM_Version::supports_fast_class_init_checks(), "sanity");
+    __ br(Assembler::NE, L_clinit_barrier_slow);
+    __ ldr(temp, Address(Rcache, in_bytes(ResolvedMethodEntry::method_offset())));
+    __ load_method_holder(temp, temp);
+    __ clinit_barrier(temp, rscratch1, &L_done, /*L_slow_path*/ nullptr);
+    __ bind(L_clinit_barrier_slow);
+  } else {
+    __ br(Assembler::EQ, L_done);
+  }
 
   // resolve first time through
   // Class initialization barrier slow path lands here as well.
-  __ bind(clinit_barrier_slow);
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
   __ mov(temp, (int) code);
-  __ call_VM(noreg, entry, temp);
+  __ call_VM_preemptable(noreg, entry, temp);
 
   // Update registers with resolved info
   __ load_method_entry(Rcache, index);
   // n.b. unlike x86 Rcache is now rcpool plus the indexed offset
   // so all clients ofthis method must be modified accordingly
-  __ bind(resolved);
-
-  // Class initialization barrier for static methods
-  if (VM_Version::supports_fast_class_init_checks() && bytecode() == Bytecodes::_invokestatic) {
-    __ ldr(temp, Address(Rcache, in_bytes(ResolvedMethodEntry::method_offset())));
-    __ load_method_holder(temp, temp);
-    __ clinit_barrier(temp, rscratch1, nullptr, &clinit_barrier_slow);
-  }
+  __ bind(L_done);
 }
 
 void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
@@ -2320,7 +2316,7 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
   const Register temp = r19;
   assert_different_registers(Rcache, index, temp);
 
-  Label resolved;
+  Label L_clinit_barrier_slow, L_done;
 
   Bytecodes::Code code = bytecode();
   switch (code) {
@@ -2339,16 +2335,29 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
   // Load-acquire the bytecode to match store-release in ResolvedFieldEntry::fill_in()
   __ ldarb(temp, temp);
   __ subs(zr, temp, (int) code);  // have we resolved this bytecode?
-  __ br(Assembler::EQ, resolved);
+
+  // Class initialization barrier for static fields
+  if (bytecode() == Bytecodes::_getstatic || bytecode() == Bytecodes::_putstatic) {
+    assert(VM_Version::supports_fast_class_init_checks(), "sanity");
+    const Register field_holder = temp;
+
+    __ br(Assembler::NE, L_clinit_barrier_slow);
+    __ ldr(field_holder, Address(Rcache, in_bytes(ResolvedFieldEntry::field_holder_offset())));
+    __ clinit_barrier(field_holder, rscratch1, &L_done, /*L_slow_path*/ nullptr);
+    __ bind(L_clinit_barrier_slow);
+  } else {
+    __ br(Assembler::EQ, L_done);
+  }
 
   // resolve first time through
+  // Class initialization barrier slow path lands here as well.
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
   __ mov(temp, (int) code);
-  __ call_VM(noreg, entry, temp);
+  __ call_VM_preemptable(noreg, entry, temp);
 
   // Update registers with resolved info
   __ load_field_entry(Rcache, index);
-  __ bind(resolved);
+  __ bind(L_done);
 }
 
 void TemplateTable::load_resolved_field_entry(Register obj,
@@ -2613,7 +2622,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   // membar it's possible for a simple Dekker test to fail if loads
   // use LDR;DMB but stores use STLR.  This can happen if C2 compiles
   // the stores in one method and we interpret the loads in another.
-  if (!CompilerConfig::is_c1_or_interpreter_only_no_jvmci()){
+  if (!CompilerConfig::is_c1_or_interpreter_only()){
     Label notVolatile;
     __ tbz(flags, ResolvedFieldEntry::is_volatile_shift, notVolatile);
     __ membar(MacroAssembler::AnyAny);
@@ -3191,7 +3200,7 @@ void TemplateTable::fast_accessfield(TosState state)
   // membar it's possible for a simple Dekker test to fail if loads
   // use LDR;DMB but stores use STLR.  This can happen if C2 compiles
   // the stores in one method and we interpret the loads in another.
-  if (!CompilerConfig::is_c1_or_interpreter_only_no_jvmci()) {
+  if (!CompilerConfig::is_c1_or_interpreter_only()) {
     Label notVolatile;
     __ tbz(r3, ResolvedFieldEntry::is_volatile_shift, notVolatile);
     __ membar(MacroAssembler::AnyAny);
@@ -3254,7 +3263,7 @@ void TemplateTable::fast_xaccess(TosState state)
   // membar it's possible for a simple Dekker test to fail if loads
   // use LDR;DMB but stores use STLR.  This can happen if C2 compiles
   // the stores in one method and we interpret the loads in another.
-  if (!CompilerConfig::is_c1_or_interpreter_only_no_jvmci()) {
+  if (!CompilerConfig::is_c1_or_interpreter_only()) {
     Label notVolatile;
     __ load_unsigned_byte(r3, Address(r2, in_bytes(ResolvedFieldEntry::flags_offset())));
     __ tbz(r3, ResolvedFieldEntry::is_volatile_shift, notVolatile);
@@ -3357,7 +3366,7 @@ void TemplateTable::invokevirtual_helper(Register index,
   __ load_klass(r0, recv);
 
   // profile this call
-  __ profile_virtual_call(r0, rlocals, r3);
+  __ profile_virtual_call(r0, rlocals);
 
   // get target Method & entry point
   __ lookup_virtual_method(r0, index, method);
@@ -3470,7 +3479,6 @@ void TemplateTable::invokeinterface(int byte_no) {
   __ bind(notVFinal);
 
   // Get receiver klass into r3
-  __ restore_locals();
   __ load_klass(r3, r2);
 
   Label no_such_method;
@@ -3487,7 +3495,7 @@ void TemplateTable::invokeinterface(int byte_no) {
                              /*return_method=*/false);
 
   // profile this call
-  __ profile_virtual_call(r3, r13, r19);
+  __ profile_virtual_call(r3, r13);
 
   // Get declaring interface class from method, and itable index
 
@@ -3688,7 +3696,7 @@ void TemplateTable::_new() {
   __ bind(slow_case);
   __ get_constant_pool(c_rarg1);
   __ get_unsigned_2_byte_index_at_bcp(c_rarg2, 1);
-  call_VM(r0, CAST_FROM_FN_PTR(address, InterpreterRuntime::_new), c_rarg1, c_rarg2);
+  __ call_VM_preemptable(r0, CAST_FROM_FN_PTR(address, InterpreterRuntime::_new), c_rarg1, c_rarg2);
   __ verify_oop(r0);
 
   // continue

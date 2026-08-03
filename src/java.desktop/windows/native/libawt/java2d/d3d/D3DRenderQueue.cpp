@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,8 +67,8 @@ D3DRQ_SwapBuffers(D3DPipelineManager *pMgr, D3DSDOps *d3dsdo,
     RECT srcRect, dstRect, *pSrcRect, *pDstRect;
 
     J2dTraceLn(J2D_TRACE_INFO, "D3DRQ_SwapBuffers");
-    J2dTraceLn4(J2D_TRACE_VERBOSE, "  x1=%d y1=%d x2=%d y2=%d",
-                x1, y1, x2, y2);
+    J2dTraceLn(J2D_TRACE_VERBOSE, "  x1=%d y1=%d x2=%d y2=%d",
+               x1, y1, x2, y2);
 
     RETURN_STATUS_IF_NULL(d3dsdo, E_FAIL);
     RETURN_STATUS_IF_NULL(d3dsdo->pResource, E_FAIL);
@@ -106,10 +106,10 @@ D3DRQ_SwapBuffers(D3DPipelineManager *pMgr, D3DSDOps *d3dsdo,
         int ww = r.right - r.left;
         int wh = r.bottom - r.top;
         if (ww != params.BackBufferWidth || wh != params.BackBufferHeight) {
-            J2dTraceLn4(J2D_TRACE_WARNING,
-                "D3DRQ_SwapBuffers: surface/window dimensions mismatch: "\
-                "win: w=%d h=%d, bb: w=%d h=%d",
-                ww, wh, params.BackBufferWidth, params.BackBufferHeight);
+            J2dTraceLn(J2D_TRACE_WARNING,
+                       "D3DRQ_SwapBuffers: surface/window dimensions mismatch: "\
+                       "win: w=%d h=%d, bb: w=%d h=%d",
+                       ww, wh, params.BackBufferWidth, params.BackBufferHeight);
 
             return S_OK;
         }
@@ -200,7 +200,7 @@ void D3DRQ_FlushBuffer(void *pParam)
 
     b = pFlush->buffer;
     limit = pFlush->limit;
-    J2dTraceLn1(J2D_TRACE_INFO, "D3DRQ_flushBuffer: limit=%d", limit);
+    J2dTraceLn(J2D_TRACE_INFO, "D3DRQ_flushBuffer: limit=%d", limit);
 
     end = b + limit;
 
@@ -219,7 +219,7 @@ void D3DRQ_FlushBuffer(void *pParam)
     while (b < end) {
         jint opcode = NEXT_INT(b);
 
-        J2dTraceLn1(J2D_TRACE_VERBOSE, "D3DRQ_flushBuffer: opcode=%d", opcode);
+        J2dTraceLn(J2D_TRACE_VERBOSE, "D3DRQ_flushBuffer: opcode=%d", opcode);
 
         switch (opcode) {
 
@@ -839,8 +839,8 @@ void D3DRQ_FlushBuffer(void *pParam)
             break;
 
         default:
-            J2dRlsTraceLn1(J2D_TRACE_ERROR,
-                "D3DRQ_flushBuffer: invalid opcode=%d", opcode);
+            J2dRlsTraceLn(J2D_TRACE_ERROR,
+                          "D3DRQ_flushBuffer: invalid opcode=%d", opcode);
             return;
         }
         // we may mark the surface lost repeatedly but that won't do much harm

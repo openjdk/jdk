@@ -153,22 +153,26 @@ public class CertificateBuilder {
      * @throws IOException
      */
     public static SubjectAlternativeNameExtension createDNSSubjectAltNameExt(
-            boolean critical, String dnsName) throws IOException {
+            boolean critical, String... dnsNames) throws IOException {
         GeneralNames gns = new GeneralNames();
-        gns.add(new GeneralName(new DNSName(dnsName)));
+        for (String dnsName : dnsNames) {
+            gns.add(new GeneralName(new DNSName(dnsName)));
+        }
         return new SubjectAlternativeNameExtension(critical, gns);
     }
 
     /**
      * Create a Subject Alternative Name extension for the given IP address
      * @param critical Sets the extension to critical or non-critical
-     * @param ipAddress IP address to use in the extension
+     * @param ipAddresses IP addresses to use in the extension
      * @throws IOException
      */
     public static SubjectAlternativeNameExtension createIPSubjectAltNameExt(
-            boolean critical, String ipAddress) throws IOException {
+            boolean critical, String... ipAddresses) throws IOException {
         GeneralNames gns = new GeneralNames();
-        gns.add(new GeneralName(new IPAddressName(ipAddress)));
+        for (String ip : ipAddresses) {
+            gns.add(new GeneralName(new IPAddressName(ip)));
+        }
         return new SubjectAlternativeNameExtension(critical, gns);
     }
 
@@ -331,6 +335,26 @@ public class CertificateBuilder {
             GeneralNames gNames = new GeneralNames();
             for (String name : dnsNames) {
                 gNames.add(new GeneralName(new DNSName(name)));
+            }
+            addExtension(new SubjectAlternativeNameExtension(false,
+                    gNames));
+        }
+        return this;
+    }
+
+    /**
+     * Helper method to add IPAddress types for the SAN extension
+     *
+     * @param ipAddresses A {@code List} of names to add as IPAddress
+     *         types
+     * @throws IOException if an encoding error occurs.
+     */
+    public CertificateBuilder addSubjectAltNameIPExt(List<String> ipAddresses)
+            throws IOException {
+        if (!ipAddresses.isEmpty()) {
+            GeneralNames gNames = new GeneralNames();
+            for (String name : ipAddresses) {
+                gNames.add(new GeneralName(new IPAddressName(name)));
             }
             addExtension(new SubjectAlternativeNameExtension(false,
                     gNames));

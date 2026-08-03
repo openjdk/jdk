@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,16 +35,18 @@ class G1EvacInfo;
 class G1ParScanThreadStateSet;
 
 // First set of post evacuate collection set tasks containing ("s" means serial):
-// - Merge PSS (s)
+// - Flush PSS (s)
 // - Recalculate Used (s)
 // - Sample Collection Set Candidates (s)
 // - Clear Card Table
 // - Restore evac failure regions (on evacuation failure)
+// - Update code roots (for regions that need code roots to be added)
 class G1PostEvacuateCollectionSetCleanupTask1 : public G1BatchedTask {
-  class MergePssTask;
+  class FlushPssTask;
   class RecalculateUsedTask;
   class SampleCollectionSetCandidatesTask;
   class RestoreEvacFailureRegionsTask;
+  class UpdateCodeRootsTask;
 
 public:
   G1PostEvacuateCollectionSetCleanupTask1(G1ParScanThreadStateSet* per_thread_states,
@@ -54,22 +56,21 @@ public:
 // Second set of post evacuate collection set tasks containing (s means serial):
 // - Eagerly Reclaim Humongous Objects (s)
 // - Update Derived Pointers (s)
+// - Destroy PSS (s) + Reset the reusable PartialArrayStateManager
 // - Clear Retained Region Data (on evacuation failure)
-// - Redirty Logged Cards
 // - Free Collection Set
-// - Resize TLABs
-// - Reset the reusable PartialArrayStateManager.
+// - Resize TLABs and Swap Card Table
 class G1PostEvacuateCollectionSetCleanupTask2 : public G1BatchedTask {
   class EagerlyReclaimHumongousObjectsTask;
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   class UpdateDerivedPointersTask;
-#endif
+#endif // COMPILER2
 
   class ProcessEvacuationFailedRegionsTask;
-  class RedirtyLoggedCardsTask;
   class FreeCollectionSetTask;
-  class ResizeTLABsTask;
-  class ResetPartialArrayStateManagerTask;
+  class ResizeTLABsAndSwapCardTableTask;
+
+  class DestroyPssTask;
 
 public:
   G1PostEvacuateCollectionSetCleanupTask2(G1ParScanThreadStateSet* per_thread_states,

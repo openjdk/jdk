@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ final class JrtFileAttributes  implements BasicFileAttributes {
     //-------- basic attributes --------
     @Override
     public FileTime creationTime() {
-        return node.creationTime();
+        return node.getFileAttributes().creationTime();
     }
 
     @Override
@@ -69,12 +69,12 @@ final class JrtFileAttributes  implements BasicFileAttributes {
 
     @Override
     public FileTime lastAccessTime() {
-        return node.lastAccessTime();
+        return node.getFileAttributes().lastAccessTime();
     }
 
     @Override
     public FileTime lastModifiedTime() {
-        return node.lastModifiedTime();
+        return node.getFileAttributes().lastModifiedTime();
     }
 
     @Override

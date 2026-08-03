@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,10 +91,7 @@ class ResolutionErrorEntry : public CHeapObj<mtClass> {
   ~ResolutionErrorEntry();
 
   // The incoming nest host error message is already in the C-Heap.
-  void set_nest_host_error(const char* message) {
-    _nest_host_error = message;
-  }
-
+  void set_nest_host_error(const char* message);
 
   Symbol*            error() const              { return _error; }
   const char*        message() const            { return _message; }

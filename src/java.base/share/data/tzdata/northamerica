@@ -29,9 +29,9 @@
 # also includes Central America and the Caribbean
 
 # This file is by no means authoritative; if you think you know better,
-# go ahead and edit the file (and please send any changes to
-# tz@iana.org for general use in the future).  For more, please see
-# the file CONTRIBUTING in the tz distribution.
+# go ahead and edit the file, and please send any changes to
+# the public mailing list tz@iana.org for general use in the future.
+# For more, please see the file CONTRIBUTING in the tz distribution.
 
 # From Paul Eggert (1999-03-22):
 # A reliable and entertaining source about time zones is
@@ -1241,6 +1241,16 @@ Zone America/Menominee	-5:50:27 -	LMT	1885 Sep 18 12:00
 # _Los Angeles Times_ (1998-11-10), A1, A10; it cites
 # Jimmy Skaggs, _The Great Guano Rush_ (1994).
 
+# From Rob van Gent (2025-07-23):
+# Another useful source for historical time zone information appears to be
+# a series of circulars with the title "Standard Time Throughout the World"
+# issued between 1925 and 1950 by the U.S. Bureau of Standards.
+# I found the following issues online:
+# https://nvlpubs.nist.gov/nistpubs/Legacy/circ/nbscircular280.pdf (1925)
+# https://nvlpubs.nist.gov/nistpubs/Legacy/circ/nbscircular399.pdf (1932)
+# https://nvlpubs.nist.gov/nistpubs/Legacy/circ/nbscircular406.pdf (1935)
+# https://nvlpubs.nist.gov/nistpubs/Legacy/circ/nbscircular496.pdf (1950)
+
 ################################################################################
 
 
@@ -1970,6 +1980,56 @@ Zone America/Edmonton	-7:33:52 -	LMT	1906 Sep
 # https://searcharchives.vancouver.ca/daylight-saving-1918-starts-again-july-7-1941-start-d-s-sept-27-end-of-d-s-1941
 # We have no further details, so omit them for now.
 
+# From Arthur David Olson (2026-03-02):
+# B. C. Gov News: “Adopting permanent daylight saving time: ‘Spring forward’
+# on March 8 will be the last time change, ending twice-yearly clock changes.”
+# https://news.gov.bc.ca/releases/2026AG0013-000209
+#
+# From Paul Eggert (2026-03-07):
+# The law says that 21 hours after the usual 2026-03-08 02:00 switch from
+# PST to PDT, the next day inaugurates the new standard time Pacific Time,
+# i.e., just one clock change but two name changes separated by 21 hours.
+# PT, the obvious abbreviation for Pacific Time, is one letter too short
+# to conform to TZDB’s (and POSIX’s) [-+[:alnum:]]{3,6} requirements.
+# I asked the BC government for advice, with no response. For now, do this:
+#   1.	As a temporary hack, pretend that the BC law takes effect
+#	not on 2026-03-09 at 00:00, but on 2026-11-01 at 02:00.
+#	This pretense works around a limitation in CLDR v48.2 (2026-03-17),
+#	which would otherwise say the interval uses “Pacific Standard Time”.
+#	(Below, this temporary hack is marked “Temporary hack; see above.”)
+#	Strictly speaking this hack is incorrect since the interval uses
+#	standard time, but it does have the right UT offset and it
+#	works around the CLDR limitation.  We should be able to remove
+#	the temporary hack after CLDR is fixed.
+#   2.	After the BC law takes effect, model the time as MST sans DST.
+#	We can change this later if another conforming non-numeric abbreviation
+#	for Pacific Time becomes more popular.  Possibilities include:
+#   MST - the most compatible with existing software and practice,
+#	and already used in parts of BC and in Yukon
+#   PDT - almost as software-friendly, but confusing because it implies
+#	it is DST and is paired with PST, whereas PT is standard time
+#   PST - straightforward but even more confusing,
+#	and will likely break much software that assumes PST is -08
+#   -07 - accurate and clear in itself, but makes BC look odd vs neighbors
+#   CPT, CPST - for Canadian Pacific (Standard) Time,
+#	by analogy with AEST in Australia
+#   P-T - conforming approximation to “PT”
+#   PT+ - like P-T but suggesting one-hour advance over PST
+
+# From Chris Walton (2026-03-15):
+# The Regional District of East Kootenay is planning to move to year-round
+# Mountain Standard Time (MST) on November 1, 2026....
+# https://www.rdek.bc.ca/news/entry/rdek_board_moves_to_transition_to_year_round_mountain_standard_time
+# (2026-03-17):
+# The final decision East Kootenay made a few days ago may turn out not to
+# be final after all. They are going to reopen the debate next month!
+# https://www.cbc.ca/news/canada/british-columbia/what-time-is-it-in-the-east-kootenay-debate-9.7132624
+# From Paul Eggert (2026-03-17):
+# Mayor Steve Fairbairn of Elkford asked the question be called a second time,
+# saying, “Pardon the pun, but this is not a time-sensitive issue.”
+# For now, merely mention the potential change in these comments.
+# If it happens it would likely affect clocks starting 2027-03-14 at 02:00.
+
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Vanc	1918	only	-	Apr	14	2:00	1:00	D
 Rule	Vanc	1918	only	-	Oct	27	2:00	0	S
@@ -1983,7 +2043,11 @@ Rule	Vanc	1962	2006	-	Oct	lastSun	2:00	0	S
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Vancouver	-8:12:28 -	LMT	1884
 			-8:00	Vanc	P%sT	1987
-			-8:00	Canada	P%sT
+			-8:00	Canada	P%sT	2026 Mar  9
+			# Temporary hack; see above.
+			-8:00	1:00	PDT	2026 Nov  1 02:00
+			# End of temporary hack.
+			-7:00	-	MST
 Zone America/Dawson_Creek -8:00:56 -	LMT	1884
 			-8:00	Canada	P%sT	1947
 			-8:00	Vanc	P%sT	1972 Aug 30  2:00
@@ -2457,11 +2521,34 @@ Zone America/Dawson	-9:17:40 -	LMT	1900 Aug 20
 # on the same dates or with a difference of one day.
 # So it may be easier to implement these changes as DST with rule CA
 # during this whole period.
+
+# From Alois Treindl (2025-07-29):
+# I did a quick newspaper archive research on https://hndm.iib.unam.mx/
+# and found that Periódico Oficial del Estado de Baja California Norte
+# (1973-04-20) states clearly that DST was observed from last Sunday
+# in April to last Sunday in October....  I have a few more data from the
+# official bulletin for DST begin or end in Baja California 1964 1967 1969
+# 1972 1973 (already sent) 1974 1975 1976 I do not know whether it is safe to
+# assume that it also applied in the years where I did not yet find proof.
+# The 1974 end of DST contains a reference to an Acuerdo of 1973-dec-20 which
+# I could not find....  One might assume that Baja California, which followed
+# US-CA in all these other yours, did the same.
 #
-# From Paul Eggert (2024-08-18):
-# For now, maintain the slightly-different history for Baja California,
+# From Paul Eggert (2025-08-04):
+# Assume that Tijuana agreed with San Diego from 1953 through 1996,
+# as this agrees with Alois Treindl's data and with Shanks.
+# For now, keep the slightly-different 1948/1952 history for Baja California,
 # as we have no information on whether 1948/1952 clocks in Tijuana followed
 # the decrees or followed San Diego.
+
+# From Mark Schapiro, writing in The Nation (2002-10-28):
+# https://www.thenation.com/article/archive/sowing-disaster/
+# When Mexican clocks were turned back for daylight saving time in the spring,
+# the Zapotecs refused to make the adjustment, insisting that they live in
+# "God's time," not in what they derisively call "Fox time," referring to
+# President Vicente Fox in far-off Mexico City.
+# From Paul Eggert (2025-08-04):
+# Unfortunately we have no data to track this informal practice.
 
 # From Alan Perry (1996-02-15):
 # A guy from our Mexico subsidiary finally found the Presidential Decree
@@ -2728,7 +2815,7 @@ Zone America/Mexico_City -6:36:36 -	LMT	1922 Jan  1  7:00u
 # Chihuahua (near US border - western side)
 # This includes the municipios of Janos, Ascensión, Juárez, Guadalupe, and
 # Práxedis G Guerrero.
-# http://gaceta.diputados.gob.mx/PDF/65/2a022/nov/20221124-VII.pdf
+# https://gaceta.diputados.gob.mx/PDF/65/2022/nov/20221124-VII.pdf
 Zone America/Ciudad_Juarez -7:05:56 -	LMT	1922 Jan  1  7:00u
 			-7:00	-	MST	1927 Jun 10
 			-6:00	-	CST	1930 Nov 15
@@ -2743,7 +2830,7 @@ Zone America/Ciudad_Juarez -7:05:56 -	LMT	1922 Jan  1  7:00u
 # Chihuahua (near US border - eastern side)
 # This includes the municipios of Coyame del Sotol, Ojinaga, and Manuel
 # Benavides.
-# http://gaceta.diputados.gob.mx/PDF/65/2a022/nov/20221124-VII.pdf
+# https://gaceta.diputados.gob.mx/PDF/65/2022/nov/20221124-VII.pdf
 Zone America/Ojinaga	-6:57:40 -	LMT	1922 Jan  1  7:00u
 			-7:00	-	MST	1927 Jun 10
 			-6:00	-	CST	1930 Nov 15
@@ -2840,9 +2927,7 @@ Zone America/Tijuana	-7:48:04 -	LMT	1922 Jan  1  7:00u
 			-8:00	1:00	PDT	1951 Sep 30  2:00
 			-8:00	-	PST	1952 Apr 27  2:00
 			-8:00	1:00	PDT	1952 Sep 28  2:00
-			-8:00	-	PST	1954
-			-8:00	CA	P%sT	1961
-			-8:00	-	PST	1976
+			-8:00	CA	P%sT	1967
 			-8:00	US	P%sT	1996
 			-8:00	Mexico	P%sT	2001
 			-8:00	US	P%sT	2002 Feb 20

@@ -37,9 +37,6 @@ public interface LinuxPackage extends Package, LinuxPackageMixin {
     LinuxApplication app();
 
     @Override
-    AppImageLayout packageLayout();
-
-    @Override
     default String packageFileName() {
         String packageFileNameTemlate = asStandardPackageType().map(stdType -> {
             switch (stdType) {

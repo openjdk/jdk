@@ -56,6 +56,8 @@ public sealed interface FieldBuilder
      *
      * @param flags the access flags, as a bit mask
      * @return this builder
+     * @throws IllegalArgumentException if {@code flags} is not {@link
+     *         java.lang.classfile##u2 u2}
      * @see AccessFlags
      * @see AccessFlag.Location#FIELD
      * @see ClassBuilder#withField(String, ClassDesc, int)
@@ -69,6 +71,8 @@ public sealed interface FieldBuilder
      *
      * @param flags the access flags, as a bit mask
      * @return this builder
+     * @throws IllegalArgumentException if any flag cannot be applied to the
+     *         {@link AccessFlag.Location#FIELD} location
      * @see AccessFlags
      * @see AccessFlag.Location#FIELD
      * @see ClassBuilder#withField(String, ClassDesc, int)

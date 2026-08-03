@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
  * @requires vm.gc.G1
  * @requires !vm.flightRecorder
  * @requires vm.opt.ExplicitGCInvokesConcurrent != true
- * @requires !vm.graal.enabled
  * @requires vm.compMode != "Xcomp"
  * @requires os.maxMemory > 1G
  * @library /test/lib /
@@ -114,14 +113,13 @@ public class TestIHOPStatic {
     private static void runTest(int ihop, long pctToFill, long heapSize, boolean expectInitiationMessage) throws Throwable {
         System.out.println("");
         System.out.println("IHOP test:");
-        System.out.println("  InitiatingHeapOccupancyPercent : " + ihop);
+        System.out.println("  G1IHOP : " + ihop);
         System.out.println("  Part of heap to fill (percentage) : " + pctToFill);
         System.out.println("  MaxHeapSize : " + heapSize);
         System.out.println("  Expect for concurrent cycle initiation message : " + expectInitiationMessage);
         List<String> options = new ArrayList<>();
-        Collections.addAll(options, Utils.getTestJavaOpts());
         Collections.addAll(options,
-                "-XX:InitiatingHeapOccupancyPercent=" + ihop,
+                "-XX:G1IHOP=" + ihop,
                 "-Dmemory.fill=" + (heapSize * 1024 * 1024 * pctToFill / 100),
                 "-XX:MaxHeapSize=" + heapSize + "M",
                 "-XX:InitialHeapSize=" + heapSize + "M"

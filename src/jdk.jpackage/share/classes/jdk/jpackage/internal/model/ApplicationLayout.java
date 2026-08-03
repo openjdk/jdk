@@ -24,10 +24,11 @@
  */
 package jdk.jpackage.internal.model;
 
-import static jdk.jpackage.internal.util.PathUtils.resolveNullablePath;
+import static jdk.jpackage.internal.util.PathUtils.mapNullablePath;
 
 import java.nio.file.Path;
 import java.util.Objects;
+import java.util.function.UnaryOperator;
 import jdk.jpackage.internal.util.CompositeProxy;
 
 /**
@@ -42,7 +43,26 @@ public interface ApplicationLayout extends AppImageLayout, ApplicationLayoutMixi
 
     @Override
     default ApplicationLayout resolveAt(Path root) {
-        return buildFrom(this).resolveAt(root).create();
+        return (ApplicationLayout)AppImageLayout.super.resolveAt(root);
+    }
+
+    @Override
+    default ApplicationLayout unresolve() {
+        return (ApplicationLayout)AppImageLayout.super.unresolve();
+    }
+
+    @Override
+    default ApplicationLayout resetRootDirectory() {
+        if (isResolved()) {
+            return buildFrom(this).rootDirectory("").create();
+        } else {
+            return this;
+        }
+    }
+
+    @Override
+    default ApplicationLayout map(UnaryOperator<Path> mapper) {
+        return buildFrom(this).mutate(mapper).create();
     }
 
     /**
@@ -113,14 +133,14 @@ public interface ApplicationLayout extends AppImageLayout, ApplicationLayoutMixi
             return this;
         }
 
-        public Builder resolveAt(Path base) {
-            rootDirectory(resolveNullablePath(base, rootDirectory));
-            launchersDirectory(resolveNullablePath(base, launchersDirectory));
-            appDirectory(resolveNullablePath(base, appDirectory));
-            runtimeDirectory(resolveNullablePath(base, runtimeDirectory));
-            appModsDirectory(resolveNullablePath(base, appModsDirectory));
-            desktopIntegrationDirectory(resolveNullablePath(base, desktopIntegrationDirectory));
-            contentDirectory(resolveNullablePath(base, contentDirectory));
+        public Builder mutate(UnaryOperator<Path> mapper) {
+            rootDirectory(mapNullablePath(mapper, rootDirectory));
+            launchersDirectory(mapNullablePath(mapper, launchersDirectory));
+            appDirectory(mapNullablePath(mapper, appDirectory));
+            runtimeDirectory(mapNullablePath(mapper, runtimeDirectory));
+            appModsDirectory(mapNullablePath(mapper, appModsDirectory));
+            desktopIntegrationDirectory(mapNullablePath(mapper, desktopIntegrationDirectory));
+            contentDirectory(mapNullablePath(mapper, contentDirectory));
             return this;
         }
 

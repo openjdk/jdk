@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /* @test
  * @bug 4927640
+ * @requires (os.family == "linux")
  * @library /test/lib
  * @summary Tests the SCTP protocol implementation
  * @author chegar
@@ -190,7 +191,7 @@ public class Accept {
 
                 /* TEST 5: AsynchronousCloseException */
                 debug("TEST 5: AsynchronousCloseException");
-                /* reset thread interrupt status */
+                /* reset thread interrupted status */
                 Thread.currentThread().interrupted();
 
                 ssc = SctpServerChannel.open().bind(null);

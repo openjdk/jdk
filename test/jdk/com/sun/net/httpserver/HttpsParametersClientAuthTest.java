@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ import jdk.test.lib.net.URIBuilder;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -83,6 +84,7 @@ public class HttpsParametersClientAuthTest {
         return t;
     };
 
+    private static final SSLContext serverSSLCtx = SimpleSSLContext.findSSLContext();
     /**
      * verifies default values of {@link HttpsParameters#setNeedClientAuth(boolean)}
      * and {@link HttpsParameters#setWantClientAuth(boolean)} methods
@@ -167,8 +169,6 @@ public class HttpsParametersClientAuthTest {
     public void testServerNeedClientAuth(final boolean presentClientCerts) throws Exception {
         // SSLContext which contains both the key and the trust material and will be used
         // by the server
-        final SSLContext serverSSLCtx = new SimpleSSLContext().get();
-        assertNotNull(serverSSLCtx, "could not create SSLContext");
         final HttpsConfigurator configurator = new HttpsConfigurator(serverSSLCtx) {
             @Override
             public void configure(final HttpsParameters params) {
@@ -275,8 +275,6 @@ public class HttpsParametersClientAuthTest {
     public void testServerWantClientAuth(final boolean presentClientCerts) throws Exception {
         // SSLContext which contains both the key and the trust material and will be used
         // by the server
-        final SSLContext serverSSLCtx = new SimpleSSLContext().get();
-        assertNotNull(serverSSLCtx, "could not create SSLContext");
         final HttpsConfigurator configurator = new HttpsConfigurator(serverSSLCtx) {
             @Override
             public void configure(final HttpsParameters params) {
@@ -392,12 +390,10 @@ public class HttpsParametersClientAuthTest {
     // A HttpHandler which just returns 200 response code
     private static final class AllOKHandler implements HttpHandler {
 
-        private static final int NO_RESPONSE_BODY = -1;
-
         @Override
         public void handle(final HttpExchange exchange) throws IOException {
             System.out.println("responding to request: " + exchange.getRequestURI());
-            exchange.sendResponseHeaders(200, NO_RESPONSE_BODY);
+            exchange.sendResponseHeaders(200, RSPBODY_EMPTY);
         }
     }
 }

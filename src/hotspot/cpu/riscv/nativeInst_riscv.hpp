@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2018, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -37,7 +37,7 @@
 // - NativeInstruction
 // - - NativeCall
 // - - NativeMovConstReg
-// - - NativeMovRegMem
+// - - NativeMovRegMem - Unimplemented
 // - - NativeJump
 // - - NativeGeneralJump
 // - - NativeIllegalInstruction
@@ -74,7 +74,6 @@ class NativeInstruction {
   bool is_nop() const;
   bool is_jump_or_nop();
   bool is_safepoint_poll();
-  bool is_sigill_not_entrant();
   bool is_stop();
 
  protected:
@@ -233,38 +232,18 @@ inline NativeMovConstReg* nativeMovConstReg_before(address addr) {
 // NativeMovRegMem to keep some compilers happy.
 class NativeMovRegMem: public NativeInstruction {
  public:
-  enum RISCV_specific_constants {
-    instruction_size            =    NativeInstruction::instruction_size,
-    instruction_offset          =    0,
-    data_offset                 =    0,
-    next_instruction_offset     =    NativeInstruction::instruction_size
-  };
+  int num_bytes_to_end_of_patch() const { Unimplemented(); return 0; }
 
-  int instruction_start() const { return instruction_offset; }
+  int offset() const { Unimplemented(); return 0; }
 
-  address instruction_address() const { return addr_at(instruction_offset); }
+  void set_offset(int x) { Unimplemented(); }
 
-  int num_bytes_to_end_of_patch() const { return instruction_offset + instruction_size; }
-
-  int offset() const;
-
-  void set_offset(int x);
-
-  void add_offset_in_bytes(int add_offset) {
-    set_offset(offset() + add_offset);
-  }
-
-  void verify();
-  void print();
-
- private:
-  inline friend NativeMovRegMem* nativeMovRegMem_at(address addr);
+  void add_offset_in_bytes(int add_offset) { Unimplemented(); }
 };
 
 inline NativeMovRegMem* nativeMovRegMem_at(address addr) {
-  NativeMovRegMem* test = (NativeMovRegMem*)(addr - NativeMovRegMem::instruction_offset);
-  DEBUG_ONLY(test->verify());
-  return test;
+  Unimplemented();
+  return (NativeMovRegMem*)nullptr;
 }
 
 class NativeJump: public NativeInstruction {
@@ -288,9 +267,6 @@ class NativeJump: public NativeInstruction {
 
   // Insertion of native jump instruction
   static void insert(address code_pos, address entry);
-  // MT-safe insertion of native jump at verified method entry
-  static void check_verified_entry_alignment(address entry, address verified_entry);
-  static void patch_verified_entry(address entry, address verified_entry, address dest);
 };
 
 inline NativeJump* nativeJump_at(address addr) {
@@ -318,12 +294,6 @@ inline NativeGeneralJump* nativeGeneralJump_at(address addr) {
   return jump;
 }
 
-class NativeIllegalInstruction: public NativeInstruction {
- public:
-  // Insert illegal opcode as specific address
-  static void insert(address code_pos);
-};
-
 inline bool NativeInstruction::is_nop() const {
   uint32_t insn = Assembler::ld_instr(addr_at(0));
   return insn == 0x13;
@@ -341,12 +311,19 @@ inline bool NativeInstruction::is_jump_or_nop() {
 // can store an offset from the initial nop to the nmethod.
 class NativePostCallNop: public NativeInstruction {
 public:
+  enum RISCV_specific_constants {
+    // The two parts should be checked separately to prevent out of bounds access in
+    // case the return address points to the deopt handler stub code entry point
+    // which could be at the end of page.
+    first_check_size = instruction_size
+  };
+
   bool check() const {
     // Check for two instructions: nop; lui zr, hi20
     // These instructions only ever appear together in a post-call
     // NOP, so it's unnecessary to check that the third instruction is
     // an addiw as well.
-    return is_nop() && MacroAssembler::is_lui_to_zr_at(addr_at(4));
+    return is_nop() && MacroAssembler::is_lui_to_zr_at(addr_at(first_check_size));
   }
   bool decode(int32_t& oopmap_slot, int32_t& cb_offset) const;
   bool patch(int32_t oopmap_slot, int32_t cb_offset);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
 
 package test.java.time.format;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -47,20 +47,20 @@ import java.time.format.TextStyle;
 import java.util.Locale;
 import java.util.Objects;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Test DateTimeFormatterBuilder.appendOffset().
  */
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestLocalizedOffsetPrinterParser {
 
     private static final LocalDateTime DT_2012_06_30_12_30_40 = LocalDateTime.of(2012, 6, 30, 12, 30, 40);
 
     private static final Locale LOCALE_GA = Locale.of("ga");
 
-    @DataProvider(name="print_localized_custom_locale")
     Object[][] data_print_localized_custom_locale() {
         return new Object[][] {
                 {TextStyle.FULL, DT_2012_06_30_12_30_40, ZoneOffset.UTC, LOCALE_GA, "MAG"},
@@ -69,7 +69,8 @@ public class TestLocalizedOffsetPrinterParser {
         };
     }
 
-    @Test(dataProvider="print_localized_custom_locale")
+    @ParameterizedTest
+    @MethodSource("data_print_localized_custom_locale")
     public void test_print_localized_custom_locale(TextStyle style, LocalDateTime ldt, ZoneOffset offset, Locale locale, String expected) {
 
         Objects.requireNonNull(locale, "Locale must not be null");
@@ -78,27 +79,27 @@ public class TestLocalizedOffsetPrinterParser {
         ZonedDateTime zdt = ldt.atZone(offset);
 
         DateTimeFormatter f = new DateTimeFormatterBuilder().appendLocalizedOffset(style).toFormatter(locale);
-        assertEquals(f.format(odt), expected);
-        assertEquals(f.format(zdt), expected);
-        assertEquals(f.parse(expected, ZoneOffset::from), offset);
+        assertEquals(expected, f.format(odt));
+        assertEquals(expected, f.format(zdt));
+        assertEquals(offset, f.parse(expected, ZoneOffset::from));
 
         if (style == TextStyle.FULL) {
             f = new DateTimeFormatterBuilder().appendPattern("ZZZZ").toFormatter(locale);
-            assertEquals(f.format(odt), expected);
-            assertEquals(f.format(zdt), expected);
-            assertEquals(f.parse(expected, ZoneOffset::from), offset);
+            assertEquals(expected, f.format(odt));
+            assertEquals(expected, f.format(zdt));
+            assertEquals(offset, f.parse(expected, ZoneOffset::from));
 
             f = new DateTimeFormatterBuilder().appendPattern("OOOO").toFormatter(locale);
-            assertEquals(f.format(odt), expected);
-            assertEquals(f.format(zdt), expected);
-            assertEquals(f.parse(expected, ZoneOffset::from), offset);
+            assertEquals(expected, f.format(odt));
+            assertEquals(expected, f.format(zdt));
+            assertEquals(offset, f.parse(expected, ZoneOffset::from));
         }
 
         if (style == TextStyle.SHORT) {
             f = new DateTimeFormatterBuilder().appendPattern("O").toFormatter(locale);
-            assertEquals(f.format(odt), expected);
-            assertEquals(f.format(zdt), expected);
-            assertEquals(f.parse(expected, ZoneOffset::from), offset);
+            assertEquals(expected, f.format(odt));
+            assertEquals(expected, f.format(zdt));
+            assertEquals(offset, f.parse(expected, ZoneOffset::from));
         }
 
     }

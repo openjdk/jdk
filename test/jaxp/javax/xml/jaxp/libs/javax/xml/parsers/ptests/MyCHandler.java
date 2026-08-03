@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,15 @@
  */
 package javax.xml.parsers.ptests;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import static jaxp.library.JAXPTestUtilities.ERROR_MSG_HEADER;
 import org.xml.sax.Attributes;
 import org.xml.sax.Locator;
 import org.xml.sax.helpers.DefaultHandler;
 import org.xml.sax.helpers.LocatorImpl;
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 
 /**
  * Customized DefaultHandler which writes output document when methods are
@@ -38,6 +38,7 @@ import org.xml.sax.helpers.LocatorImpl;
  * file for verification.
  */
 class MyCHandler extends DefaultHandler implements AutoCloseable {
+    private static final String ERROR_MSG_HEADER = "Unexcepted exception thrown:";
 
     private final BufferedWriter bWriter;
     private final Locator locator = new LocatorImpl();

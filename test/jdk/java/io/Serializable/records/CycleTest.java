@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8246774
  * @summary Ensures basic behavior of cycles from record components
- * @run testng CycleTest
+ * @run junit CycleTest
  */
 
 import java.io.ByteArrayInputStream;
@@ -34,10 +34,11 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import org.testng.annotations.Test;
 import static java.lang.System.out;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 
 public class CycleTest {
 
@@ -61,10 +62,10 @@ public class CycleTest {
         out.println("serializing : " + r);
         R deserializedObj = serializeDeserialize(r);
         out.println("deserialized: " + deserializedObj);
-        assertEquals(deserializedObj.x(), 1);           // sanity
-        assertEquals(deserializedObj.y(), 2);           // sanity
+        assertEquals(1, deserializedObj.x());           // sanity
+        assertEquals(2, deserializedObj.y());           // sanity
         assertTrue(deserializedObj.c() instanceof C);   // sanity
-        assertEquals(deserializedObj.c().obj, null);    // cycle, expect null
+        assertEquals(null, deserializedObj.c().obj);    // cycle, expect null
     }
 
     /**
@@ -84,8 +85,8 @@ public class CycleTest {
         out.println("deserialized: " + deserializedObj);
         assertTrue(deserializedObj instanceof C);         // sanity
         assertTrue(deserializedObj.obj != null);          // expect non-null, r
-        assertEquals(((R)deserializedObj.obj).x(), 3);    // sanity
-        assertEquals(((R)deserializedObj.obj).y(), 4);    // sanity
+        assertEquals(3, ((R)deserializedObj.obj).x());    // sanity
+        assertEquals(4, ((R)deserializedObj.obj).y());    // sanity
     }
 
     record R2 (int x, int y, C c1, C c2) implements Serializable { }
@@ -105,8 +106,8 @@ public class CycleTest {
         out.println("serializing : " + r);
         R2 deserializedObj = serializeDeserialize(r);
         out.println("deserialized: " + deserializedObj);
-        assertEquals(deserializedObj.x(), 5);         // sanity
-        assertEquals(deserializedObj.y(), 6);         // sanity
+        assertEquals(5, deserializedObj.x());         // sanity
+        assertEquals(6, deserializedObj.y());         // sanity
 
         c1 = deserializedObj.c1();
         c2 = deserializedObj.c2();
@@ -132,11 +133,11 @@ public class CycleTest {
         R3 deserializedObj = serializeDeserialize(r3);
         out.println("deserialized: " + deserializedObj);
         assertTrue(deserializedObj.r() != null);
-        assertEquals(deserializedObj.l(), 9);              // sanity
-        assertEquals(deserializedObj.r().x(), 7);          // sanity
-        assertEquals(deserializedObj.r().y(), 8);          // sanity
+        assertEquals(9, deserializedObj.l());              // sanity
+        assertEquals(7, deserializedObj.r().x());          // sanity
+        assertEquals(8, deserializedObj.r().y());          // sanity
         assertTrue(deserializedObj.r().c() instanceof C);  // sanity
-        assertEquals(deserializedObj.r().c().obj, null);   // cycle, expect null
+        assertEquals(null, deserializedObj.r().c().obj);   // cycle, expect null
     }
 
     // --- infra

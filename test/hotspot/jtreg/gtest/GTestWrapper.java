@@ -27,7 +27,7 @@
  * @modules java.base/jdk.internal.misc
  *          java.xml
  * @requires vm.flagless
- * @run main/native GTestWrapper
+ * @run main/native/timeout=480 GTestWrapper
  */
 
 import jdk.test.lib.Platform;

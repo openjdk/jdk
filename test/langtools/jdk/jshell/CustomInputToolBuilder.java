@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary Verify JavaShellToolBuilder uses provided inputs
  * @modules jdk.jshell
  * @build KullaTesting TestingInputStream
- * @run testng CustomInputToolBuilder
+ * @run junit CustomInputToolBuilder
  */
 
 import java.io.ByteArrayInputStream;
@@ -38,15 +38,14 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import jdk.jshell.tool.JavaShellToolBuilder;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 
-import static org.testng.Assert.assertTrue;
-
-@Test
 public class CustomInputToolBuilder extends KullaTesting {
 
     private static final String TEST_JDK = "test.jdk";
 
+    @Test
     public void checkCustomInput() throws Exception {
         String testJdk = System.getProperty(TEST_JDK);
         try {
@@ -102,6 +101,7 @@ public class CustomInputToolBuilder extends KullaTesting {
             }
     }
 
+    @Test
     public void checkInteractiveTerminal() throws Exception {
         String testJdk = System.getProperty(TEST_JDK);
         try {

@@ -58,11 +58,11 @@ void C2EntryBarrierStub::emit(C2_MacroAssembler& masm) {
   __ jmp(continuation(), false /* maybe_short */);
 }
 
-int C2FastUnlockLightweightStub::max_size() const {
+int C2FastUnlockStub::max_size() const {
   return 128;
 }
 
-void C2FastUnlockLightweightStub::emit(C2_MacroAssembler& masm) {
+void C2FastUnlockStub::emit(C2_MacroAssembler& masm) {
   assert(_t == rax, "must be");
 
   { // Restore lock-stack and handle the unlock in runtime.

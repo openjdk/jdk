@@ -23,20 +23,51 @@
 
 package jdk.jpackage.internal.model;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Stream;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 
 public class ApplicationLayoutTest {
 
-    public void test(boolean move, Path tempDir) throws IOException {
+    @Test
+    public void testMove(@TempDir Path tempDir) throws IOException {
+        test(true, tempDir);
+    }
+
+    @Test
+    public void testCopy(@TempDir Path tempDir) throws IOException {
+        test(false, tempDir);
+    }
+
+    @Test
+    public void testResolveAt() {
+        AppImageLayoutTest.testResolveAt(createLayout());
+    }
+
+    @Test
+    public void testResolveAtRepeat() {
+        AppImageLayoutTest.testResolveAtRepeat(createLayout());
+    }
+
+    @Test
+    public void testUnresolve() {
+        AppImageLayoutTest.testUnresolve(createLayout());
+    }
+
+    @Test
+    public void testEmptyRootDirectory() {
+        AppImageLayoutTest.testEmptyRootDirectory(createLayout());
+    }
+
+    private static void test(boolean move, Path tempDir) throws IOException {
         final var srcAppImageRoot = tempDir.resolve("src");
         Files.createDirectories(srcAppImageRoot);
 
@@ -55,14 +86,7 @@ public class ApplicationLayoutTest {
             Files.createDirectories(path);
         }
 
-        final var layout = ApplicationLayout.build()
-                .launchersDirectory("bin")
-                .appDirectory("lib/app")
-                .runtimeDirectory("runtime")
-                .appModsDirectory("mods")
-                .contentDirectory("content")
-                .desktopIntegrationDirectory("lib/apps")
-                .create();
+        final var layout = createLayout();
 
         final var dstAppImageRoot = tempDir.resolve("dst");
         Files.createDirectories(dstAppImageRoot);
@@ -100,13 +124,14 @@ public class ApplicationLayoutTest {
         }
     }
 
-    @Test
-    public void testMove(@TempDir Path tempDir) throws IOException {
-        test(true, tempDir);
-    }
-
-    @Test
-    public void testCopy(@TempDir Path tempDir) throws IOException {
-        test(false, tempDir);
+    public static ApplicationLayout createLayout() {
+        return ApplicationLayout.build()
+                .launchersDirectory("bin")
+                .appDirectory("lib/app")
+                .runtimeDirectory("runtime")
+                .appModsDirectory("mods")
+                .contentDirectory("content")
+                .desktopIntegrationDirectory("lib/apps")
+                .create();
     }
 }

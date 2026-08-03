@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary Make sure -Xlog:class+load=info works properly with "modules" jimage,
             --patch-module, and with -Xbootclasspath/a
  * @requires vm.flagless
+ * @requires !jdk.explodedImage
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @compile PatchModuleMain.java

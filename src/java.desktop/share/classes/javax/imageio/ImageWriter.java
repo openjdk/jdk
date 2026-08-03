@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2000,8 +2000,7 @@ public abstract class ImageWriter implements ImageTranscoder {
 
     /**
      * Allows any resources held by this object to be released.  The
-     * result of calling any other method (other than
-     * {@code finalize}) subsequent to a call to this method
+     * result of calling any other method subsequent to a call to this method
      * is undefined.
      *
      * <p>It is important for applications to call this method when they

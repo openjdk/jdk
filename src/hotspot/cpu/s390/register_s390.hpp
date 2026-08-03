@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -414,7 +414,7 @@ constexpr FloatRegister  Z_FARG2   = Z_F2;
 constexpr FloatRegister  Z_FARG3   = Z_F4;
 constexpr FloatRegister  Z_FARG4   = Z_F6;
 
-// Register declarations to be used in frame manager assembly code.
+// Register declarations to be used in template interpreter assembly code.
 // Use only non-volatile registers in order to keep values across C-calls.
 
 // Register to cache the integer value on top of the operand stack.
@@ -439,7 +439,7 @@ constexpr Register      Z_bcp          = Z_R13;
 // Bytecode which is dispatched (short lived!).
 constexpr Register      Z_bytecode     = Z_R14;
 
-// Temporary registers to be used within frame manager. We can use
+// Temporary registers to be used within template interpreter. We can use
 // the nonvolatile ones because the call stub has saved them.
 // Use only non-volatile registers in order to keep values across C-calls.
 constexpr Register Z_tmp_1 =  Z_R10;

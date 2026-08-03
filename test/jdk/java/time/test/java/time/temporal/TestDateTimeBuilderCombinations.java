@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,8 +70,9 @@ import static java.time.temporal.ChronoField.EPOCH_DAY;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static java.time.temporal.ChronoField.PROLEPTIC_MONTH;
 import static java.time.temporal.ChronoField.YEAR;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.time.DateTimeException;
 import java.time.LocalDate;
@@ -80,15 +81,16 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Test.
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestDateTimeBuilderCombinations {
 
-    @DataProvider(name = "combine")
     Object[][] data_combine() {
         return new Object[][] {
             {YEAR, 2012, MONTH_OF_YEAR, 6, DAY_OF_MONTH, 3, null, null, LocalDate.class, LocalDate.of(2012, 6, 3)},
@@ -101,7 +103,8 @@ public class TestDateTimeBuilderCombinations {
         };
     }
 
-    @Test(dataProvider = "combine")
+    @ParameterizedTest
+    @MethodSource("data_combine")
     public void test_derive(final TemporalField field1, final Number value1,
                             final TemporalField field2, final Number value2,
                             final TemporalField field3, final Number value3,
@@ -149,7 +152,7 @@ public class TestDateTimeBuilderCombinations {
         TemporalAccessor parsed = dtfb.toFormatter().parse(str);
         if (query == LocalDate.class) {
             if (expectedVal != null) {
-                assertEquals(parsed.query(LocalDate::from), expectedVal);
+                assertEquals(expectedVal, parsed.query(LocalDate::from));
             } else {
                 try {
                     parsed.query(LocalDate::from);
@@ -164,7 +167,6 @@ public class TestDateTimeBuilderCombinations {
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name = "normalized")
     Object[][] data_normalized() {
         return new Object[][] {
             {YEAR, 2127, YEAR, 2127},
@@ -182,7 +184,8 @@ public class TestDateTimeBuilderCombinations {
         };
     }
 
-    @Test(dataProvider = "normalized")
+    @ParameterizedTest
+    @MethodSource("data_normalized")
     public void test_normalized(final TemporalField field1, final Number value1, TemporalField expectedField, Number expectedVal) {
         // mock for testing that does not fully comply with TemporalAccessor contract
         TemporalAccessor test = new TemporalAccessor() {
@@ -202,9 +205,9 @@ public class TestDateTimeBuilderCombinations {
         String str = value1.toString();
         TemporalAccessor temporal = f.parse(str);
         if (expectedVal != null) {
-            assertEquals(temporal.getLong(expectedField), expectedVal.longValue());
+            assertEquals(expectedVal.longValue(), temporal.getLong(expectedField));
         } else {
-            assertEquals(temporal.isSupported(expectedField), false);
+            assertEquals(false, temporal.isSupported(expectedField));
         }
     }
 

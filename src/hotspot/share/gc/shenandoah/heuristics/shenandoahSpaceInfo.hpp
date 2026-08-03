@@ -27,6 +27,8 @@
 
 #include "utilities/globalDefinitions.hpp"
 
+class ShenandoahHeapRegion;
+
 /*
  * The purpose of this interface is to decouple the heuristics from a
  * direct dependency on the ShenandoahHeap singleton instance. This is
@@ -37,12 +39,13 @@
 class ShenandoahSpaceInfo {
 public:
   virtual const char* name() const = 0;
-  virtual size_t soft_max_capacity() const = 0;
   virtual size_t max_capacity() const = 0;
-  virtual size_t soft_available() const = 0;
+  virtual size_t soft_mutator_available() const = 0;
   virtual size_t available() const = 0;
   virtual size_t used() const = 0;
-  virtual size_t bytes_allocated_since_gc_start() const = 0;
+
+  // Return true if this region belongs to this space.
+  virtual bool contains(ShenandoahHeapRegion* region) const = 0;
 };
 
 #endif //SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHSPACEINFO_HPP

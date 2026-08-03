@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018, 2022 SAP SE. All rights reserved.
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,11 @@ public class ShowRegistersOnAssertTest {
             } else if (Platform.isX86()) {
                 pattern = new Pattern[] { Pattern.compile("Registers:"), Pattern.compile("EAX=.*")};
             } else if (Platform.isAArch64()) {
-                pattern = new Pattern[] { Pattern.compile("Registers:"), Pattern.compile("R0=.*")};
+                if (Platform.isLinux()) {
+                    pattern = new Pattern[] { Pattern.compile("Registers:"), Pattern.compile("R0=.*")};
+                } else if (Platform.isWindows()) {
+                    pattern = new Pattern[] { Pattern.compile("Registers:"), Pattern.compile("X0 =.*")};
+                }
             } else if (Platform.isS390x()) {
                 pattern = new Pattern[] { Pattern.compile("General Purpose Registers:"),
                                           Pattern.compile("^-{26}$"),

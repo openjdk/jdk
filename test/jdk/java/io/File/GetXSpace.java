@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import jdk.test.lib.Platform;
 import jdk.test.lib.Platform;
 
 import static java.lang.System.err;
@@ -103,18 +102,13 @@ public class GetXSpace {
         private final long free;
         private final long available;
 
-        Space(String name) {
+        Space(String name) throws IOException {
             this.name = name;
             long[] sizes = new long[4];
-            if (Platform.isWindows() & isCDDrive(name)) {
-                try {
-                    getCDDriveSpace(name, sizes);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    throw new RuntimeException("can't get CDDrive sizes");
-                }
+            if (Platform.isWindows() && isCDDrive(name)) {
+                getCDDriveSpace(name, sizes);
             } else {
-                if (getSpace0(name, sizes))
+                if (getSpace(name, sizes))
                     System.err.println("WARNING: total space is estimated");
             }
             this.size = sizes[0];
@@ -170,21 +164,21 @@ public class GetXSpace {
         return al;
     }
 
-    private static void compare(Space s) {
+    private static void compare(Space s) throws IOException {
         File f = new File(s.name());
         long ts = f.getTotalSpace();
         long fs = f.getFreeSpace();
         long us = f.getUsableSpace();
 
-        // Verify inequalities us <= fs <= ts (JDK-8349092)
+        // Verify inequalities us <= ts and fs <= ts (JDK-8349092)
         if (fs > ts)
             throw new RuntimeException(f + " free space " + fs + " > total space " + ts);
-        if (us > fs)
-            throw new RuntimeException(f + " usable space " + us + " > free space " + fs);
+        if (us > ts)
+            throw new RuntimeException(f + " usable space " + us + " > total space " + ts);
 
         out.format("%s (%d):%n", s.name(), s.size());
         String fmt = "  %-4s total = %12d free = %12d usable = %12d%n";
-        String method = Platform.isWindows() & isCDDrive(s.name()) ? "getCDDriveSpace" : "getSpace0";
+        String method = Platform.isWindows() && isCDDrive(s.name()) ? "getCDDriveSpace" : "getSpace";
         out.format(fmt, method, s.total(), s.free(), s.available());
         out.format(fmt, "getXSpace", ts, fs, us);
 
@@ -269,15 +263,9 @@ public class GetXSpace {
             pass();
         }
 
-        // usable space <= free space
-        if (us > s.free()) {
-            // free and usable change dynamically
-            System.err.println("Warning: us > s.free()");
-            if (1.0 - Math.abs((double)s.free()/(double)us) > 0.01) {
-                fail(s.name() + " usable vs. free space", us, ">", s.free());
-            } else {
-                pass();
-            }
+        // usable space <= total space
+        if (us > s.total()) {
+            fail(s.name() + " usable vs. total space", us, ">", s.total());
         } else {
             pass();
         }
@@ -324,7 +312,7 @@ public class GetXSpace {
         }
     }
 
-    private static int testFile(Path dir) {
+    private static int testFile(Path dir) throws IOException {
         String dirName = dir.toString();
         out.format("--- Testing %s%n", dirName);
         compare(new Space(dir.getRoot().toString()));
@@ -339,10 +327,11 @@ public class GetXSpace {
         return fail != 0 ? 1 : 0;
     }
 
-    private static int testVolumes() {
+    private static int testVolumes() throws IOException {
         out.println("--- Testing volumes");
         // Find all of the partitions on the machine and verify that the sizes
-        // returned by File::getXSpace are equivalent to those from getSpace0 or getCDDriveSpace
+        // returned by File::getXSpace are equivalent to those from getSpace
+        // or getCDDriveSpace
         ArrayList<String> l;
         try {
             l = paths();
@@ -356,7 +345,18 @@ public class GetXSpace {
             throw new RuntimeException("no partitions?");
 
         for (var p : l) {
-            Space s = new Space(p);
+            Space s;
+            try {
+                s = new Space(p);
+            } catch (IOException x) {
+                // Avoid failing for transient file systems on Windows
+                if (Platform.isWindows()) {
+                    File f = new File(p);
+                    if (!f.exists())
+                        continue;
+                }
+                throw new IOException("Failure for volume " + p, x);
+            }
             compare(s);
             compareZeroNonExist();
             compareZeroExist();
@@ -414,9 +414,22 @@ public class GetXSpace {
     // size[2]  free space:   number of free bytes in the volume
     // size[3]  usable space: number of bytes available to the caller
     //
-    private static native boolean getSpace0(String root, long[] space);
+    private static native boolean getSpace0(String root, long[] space)
+        throws IOException;
 
     private static native boolean isCDDrive(String root);
+
+    private static boolean getSpace(String root, long[] space)
+        throws IOException {
+        try {
+            return getSpace0(root, space);
+        } catch (IOException e) {
+            File f = new File(root);
+            System.err.printf("getSpace0 failed for %s (%s, %s)%n",
+                              root, f.exists(), f.canRead());
+            throw e;
+        }
+    }
 
     private static void getCDDriveSpace(String root, long[] sizes)
         throws IOException {

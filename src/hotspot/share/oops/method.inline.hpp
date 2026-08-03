@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,19 +31,19 @@
 #include "code/nmethod.inline.hpp"
 #include "oops/methodCounters.hpp"
 #include "oops/methodData.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 inline address Method::from_compiled_entry() const {
-  return Atomic::load_acquire(&_from_compiled_entry);
+  return AtomicAccess::load_acquire(&_from_compiled_entry);
 }
 
 inline address Method::from_interpreted_entry() const {
-  return Atomic::load_acquire(&_from_interpreted_entry);
+  return AtomicAccess::load_acquire(&_from_interpreted_entry);
 }
 
 inline nmethod* Method::code() const {
   assert( check_code(), "" );
-  return Atomic::load_acquire(&_code);
+  return AtomicAccess::load_acquire(&_code);
 }
 
 // Write (bci, line number) pair to stream
@@ -136,14 +136,14 @@ inline void Method::clear_number_of_breakpoints() {
 }
 #endif // INCLUDE_JVMTI
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
 inline void Method::interpreter_throwout_increment(Thread* current) {
   MethodCounters* mcs = get_method_counters(current);
   if (mcs != nullptr) {
     mcs->interpreter_throwout_increment();
   }
 }
-#endif
+#endif // COMPILER2
 
 inline int Method::interpreter_throwout_count() const        {
   MethodCounters* mcs = method_counters();

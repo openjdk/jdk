@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_OOPS_INSTANCEKLASSFLAGS_HPP
 #define SHARE_OOPS_INSTANCEKLASSFLAGS_HPP
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 class ClassLoaderData;
 
@@ -37,7 +37,6 @@ class ClassLoaderData;
 
 class InstanceKlassFlags {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
 
 #define IK_FLAGS_DO(flag)  \
     flag(rewritten                          , 1 << 0) /* methods rewritten. */ \
@@ -54,6 +53,7 @@ class InstanceKlassFlags {
     flag(has_localvariable_table            , 1 << 11) /* has localvariable information */ \
     flag(has_miranda_methods                , 1 << 12) /* True if this class has miranda methods in it's vtable */ \
     flag(has_final_method                   , 1 << 13) /* True if klass has final method */ \
+    flag(trust_final_fields                 , 1 << 14) /* All instance final fields in this class should be trusted */ \
     /* end of list */
 
 #define IK_FLAGS_ENUM_NAME(name, value)    _misc_##name = value,
@@ -122,8 +122,8 @@ class InstanceKlassFlags {
   IK_STATUS_DO(IK_STATUS_GET_SET)
 #undef IK_STATUS_GET_SET
 
-  void atomic_set_bits(u1 bits)   { Atomic::fetch_then_or(&_status, bits); }
-  void atomic_clear_bits(u1 bits) { Atomic::fetch_then_and(&_status, (u1)(~bits)); }
+  void atomic_set_bits(u1 bits)   { AtomicAccess::fetch_then_or(&_status, bits); }
+  void atomic_clear_bits(u1 bits) { AtomicAccess::fetch_then_and(&_status, (u1)(~bits)); }
   void print_on(outputStream* st) const;
 };
 

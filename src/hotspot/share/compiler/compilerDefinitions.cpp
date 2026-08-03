@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,7 @@
 const char* compilertype2name_tab[compiler_number_of_types] = {
   "",
   "c1",
-  "c2",
-  "jvmci"
+  "c2"
 };
 
 CompilationModeFlag::Mode CompilationModeFlag::_mode = CompilationModeFlag::Mode::NORMAL;
@@ -63,16 +62,10 @@ bool CompilationModeFlag::initialize() {
         _mode = Mode::QUICK_ONLY;
       }
     } else if (strcmp(CompilationMode, "high-only") == 0) {
-      if (!CompilerConfig::has_c2() && !CompilerConfig::is_jvmci_compiler()) {
-        print_mode_unavailable("high-only", "there is no c2 or jvmci compiler present");
+      if (!CompilerConfig::has_c2()) {
+        print_mode_unavailable("high-only", "there is no c2 compiler present");
       } else {
         _mode = Mode::HIGH_ONLY;
-      }
-    } else if (strcmp(CompilationMode, "high-only-quick-internal") == 0) {
-      if (!CompilerConfig::has_c1() || !CompilerConfig::is_jvmci_compiler()) {
-        print_mode_unavailable("high-only-quick-internal", "there is no c1 and jvmci compiler present");
-      } else {
-        _mode = Mode::HIGH_ONLY_QUICK_INTERNAL;
       }
     } else {
       print_error();
@@ -84,12 +77,8 @@ bool CompilationModeFlag::initialize() {
   if (normal()) {
     if (CompilerConfig::is_c1_simple_only()) {
       _mode = Mode::QUICK_ONLY;
-    } else if (CompilerConfig::is_c2_or_jvmci_compiler_only()) {
+    } else if (CompilerConfig::is_c2_only()) {
       _mode = Mode::HIGH_ONLY;
-    } else if (CompilerConfig::is_jvmci_compiler_enabled() && CompilerConfig::is_c1_enabled() && !TieredCompilation) {
-      warning("Disabling tiered compilation with non-native JVMCI compiler is not recommended, "
-              "disabling intermediate compilation levels instead. ");
-      _mode = Mode::HIGH_ONLY_QUICK_INTERNAL;
     }
   }
   return true;
@@ -102,12 +91,8 @@ void CompilationModeFlag::print_error() {
     jio_fprintf(defaultStream::error_stream(), "%s quick-only", comma ? "," : "");
     comma = true;
   }
-  if (CompilerConfig::has_c2() || CompilerConfig::has_jvmci()) {
+  if (CompilerConfig::has_c2()) {
     jio_fprintf(defaultStream::error_stream(), "%s high-only", comma ? "," : "");
-    comma = true;
-  }
-  if (CompilerConfig::has_c1() && CompilerConfig::has_jvmci()) {
-    jio_fprintf(defaultStream::error_stream(), "%s high-only-quick-internal", comma ? "," : "");
     comma = true;
   }
   jio_fprintf(defaultStream::error_stream(), "\n");
@@ -185,54 +170,6 @@ intx CompilerConfig::scaled_freq_log(intx freq_log, double scale) {
   }
 }
 
-void CompilerConfig::set_client_emulation_mode_flags() {
-  assert(has_c1(), "Must have C1 compiler present");
-  CompilationModeFlag::set_quick_only();
-
-  FLAG_SET_ERGO(ProfileInterpreter, false);
-#if INCLUDE_JVMCI
-  FLAG_SET_ERGO(EnableJVMCI, false);
-  FLAG_SET_ERGO(UseJVMCICompiler, false);
-#endif
-  if (FLAG_IS_DEFAULT(NeverActAsServerClassMachine)) {
-    FLAG_SET_ERGO(NeverActAsServerClassMachine, true);
-  }
-  if (FLAG_IS_DEFAULT(InitialCodeCacheSize)) {
-    FLAG_SET_ERGO(InitialCodeCacheSize, 160*K);
-  }
-  if (FLAG_IS_DEFAULT(ReservedCodeCacheSize)) {
-    FLAG_SET_ERGO(ReservedCodeCacheSize, 32*M);
-  }
-  if (FLAG_IS_DEFAULT(NonProfiledCodeHeapSize)) {
-    FLAG_SET_ERGO(NonProfiledCodeHeapSize, 27*M);
-  }
-  if (FLAG_IS_DEFAULT(ProfiledCodeHeapSize)) {
-    FLAG_SET_ERGO(ProfiledCodeHeapSize, 0);
-  }
-  if (FLAG_IS_DEFAULT(NonNMethodCodeHeapSize)) {
-    FLAG_SET_ERGO(NonNMethodCodeHeapSize, 5*M);
-  }
-  if (FLAG_IS_DEFAULT(CodeCacheExpansionSize)) {
-    FLAG_SET_ERGO(CodeCacheExpansionSize, 32*K);
-  }
-  if (FLAG_IS_DEFAULT(MaxRAM)) {
-    // Do not use FLAG_SET_ERGO to update MaxRAM, as this will impact
-    // heap setting done based on available phys_mem (see Arguments::set_heap_size).
-    FLAG_SET_DEFAULT(MaxRAM, 1ULL*G);
-  }
-  if (FLAG_IS_DEFAULT(CICompilerCount)) {
-    FLAG_SET_ERGO(CICompilerCount, 1);
-  }
-}
-
-bool CompilerConfig::is_compilation_mode_selected() {
-  return !FLAG_IS_DEFAULT(TieredCompilation) ||
-         !FLAG_IS_DEFAULT(TieredStopAtLevel) ||
-         !FLAG_IS_DEFAULT(CompilationMode)
-         JVMCI_ONLY(|| !FLAG_IS_DEFAULT(EnableJVMCI)
-                    || !FLAG_IS_DEFAULT(UseJVMCICompiler));
-}
-
 static bool check_legacy_flags() {
   JVMFlag* compile_threshold_flag = JVMFlag::flag_from_enum(FLAG_MEMBER_ENUM(CompileThreshold));
   if (JVMFlagAccess::check_constraint(compile_threshold_flag, JVMFlagLimit::get_constraint(compile_threshold_flag)->constraint_func(), false) != JVMFlag::SUCCESS) {
@@ -254,7 +191,7 @@ void CompilerConfig::set_legacy_emulation_flags() {
   if (!FLAG_IS_DEFAULT(CompileThreshold)         ||
       !FLAG_IS_DEFAULT(OnStackReplacePercentage) ||
       !FLAG_IS_DEFAULT(InterpreterProfilePercentage)) {
-    if (CompilerConfig::is_c1_only() || CompilerConfig::is_c2_or_jvmci_compiler_only()) {
+    if (CompilerConfig::is_c1_only() || CompilerConfig::is_c2_only()) {
       // This function is called before these flags are validated. In order to not confuse the user with extraneous
       // error messages, we check the validity of these flags here and bail out if any of them are invalid.
       if (!check_legacy_flags()) {
@@ -286,7 +223,7 @@ void CompilerConfig::set_legacy_emulation_flags() {
       FLAG_SET_ERGO(Tier3MinInvocationThreshold, threshold);
       FLAG_SET_ERGO(Tier3CompileThreshold, threshold);
       FLAG_SET_ERGO(Tier3BackEdgeThreshold, osr_threshold);
-      if (CompilerConfig::is_c2_or_jvmci_compiler_only()) {
+      if (CompilerConfig::is_c2_only()) {
         FLAG_SET_ERGO(Tier4InvocationThreshold, threshold);
         FLAG_SET_ERGO(Tier4MinInvocationThreshold, threshold);
         FLAG_SET_ERGO(Tier4CompileThreshold, threshold);
@@ -313,7 +250,7 @@ void CompilerConfig::set_compilation_policy_flags() {
     // Increase the code cache size - tiered compiles a lot more.
     if (FLAG_IS_DEFAULT(ReservedCodeCacheSize)) {
       FLAG_SET_ERGO(ReservedCodeCacheSize,
-                    MIN2(CODE_CACHE_DEFAULT_LIMIT, (size_t)ReservedCodeCacheSize * 5));
+                    MIN2(CODE_CACHE_DEFAULT_LIMIT, ReservedCodeCacheSize * 5));
     }
     // Enable SegmentedCodeCache if tiered compilation is enabled, ReservedCodeCacheSize >= 240M
     // and the code cache contains at least 8 pages (segmentation disables advantage of huge pages).
@@ -334,8 +271,38 @@ void CompilerConfig::set_compilation_policy_flags() {
     }
   }
 
+#ifdef COMPILER2
+  if (HotCodeHeap) {
+    if (FLAG_IS_DEFAULT(SegmentedCodeCache)) {
+      FLAG_SET_ERGO(SegmentedCodeCache, true);
+    } else if (!SegmentedCodeCache) {
+      vm_exit_during_initialization("HotCodeHeap requires SegmentedCodeCache enabled");
+    }
+
+    if (FLAG_IS_DEFAULT(NMethodRelocation)) {
+      FLAG_SET_ERGO(NMethodRelocation, true);
+    } else if (!NMethodRelocation) {
+      vm_exit_during_initialization("HotCodeHeap requires NMethodRelocation enabled");
+    }
+
+    if (!is_c2_enabled()) {
+      vm_exit_during_initialization("HotCodeHeap requires C2 enabled");
+    }
+
+    if (HotCodeMinSamplingMs > HotCodeMaxSamplingMs) {
+      vm_exit_during_initialization("HotCodeMinSamplingMs cannot be larger than HotCodeMaxSamplingMs");
+    }
+  } else if (HotCodeHeapSize > 0) {
+    vm_exit_during_initialization("HotCodeHeapSize requires HotCodeHeap enabled");
+  }
+#else
+  if (HotCodeHeapSize > 0) {
+    vm_exit_during_initialization("HotCodeHeapSize requires C2 present");
+  }
+#endif // COMPILER2
+
   if (CompileThresholdScaling < 0) {
-    vm_exit_during_initialization("Negative value specified for CompileThresholdScaling", nullptr);
+    vm_exit_during_initialization("Negative value specified for CompileThresholdScaling");
   }
 
   if (CompilationModeFlag::disable_intermediate()) {
@@ -409,92 +376,39 @@ void CompilerConfig::set_compilation_policy_flags() {
 #endif
 
   if (CompilerConfig::is_tiered() && CompilerConfig::is_c2_enabled()) {
-#ifdef COMPILER2
-    // Some inlining tuning
-#if defined(X86) || defined(AARCH64) || defined(RISCV64)
+#if defined(COMPILER2) && defined(_LP64)
+    // LP64 specific inlining tuning for C2
     if (FLAG_IS_DEFAULT(InlineSmallCode)) {
       FLAG_SET_DEFAULT(InlineSmallCode, 2500);
     }
 #endif
-#endif // COMPILER2
   }
 
 }
 
-#if INCLUDE_JVMCI
-void CompilerConfig::set_jvmci_specific_flags() {
-  if (UseJVMCICompiler) {
-    if (FLAG_IS_DEFAULT(TypeProfileWidth)) {
-      FLAG_SET_DEFAULT(TypeProfileWidth, 8);
-    }
-    if (FLAG_IS_DEFAULT(TypeProfileLevel)) {
-      FLAG_SET_DEFAULT(TypeProfileLevel, 0);
-    }
-
-    if (UseJVMCINativeLibrary) {
-      // SVM compiled code requires more stack space
-      if (FLAG_IS_DEFAULT(CompilerThreadStackSize)) {
-        // Duplicate logic in the implementations of os::create_thread
-        // so that we can then double the computed stack size. Once
-        // the stack size requirements of SVM are better understood,
-        // this logic can be pushed down into os::create_thread.
-        int stack_size = CompilerThreadStackSize;
-        if (stack_size == 0) {
-          stack_size = VMThreadStackSize;
-        }
-        if (stack_size != 0) {
-          FLAG_SET_DEFAULT(CompilerThreadStackSize, stack_size * 2);
-        }
-      }
-    } else {
-      // JVMCI needs values not less than defaults
-      if (FLAG_IS_DEFAULT(ReservedCodeCacheSize)) {
-        FLAG_SET_DEFAULT(ReservedCodeCacheSize, MAX2(64*M, ReservedCodeCacheSize));
-      }
-      if (FLAG_IS_DEFAULT(InitialCodeCacheSize)) {
-        FLAG_SET_DEFAULT(InitialCodeCacheSize, MAX2(16*M, InitialCodeCacheSize));
-      }
-      if (FLAG_IS_DEFAULT(NewSizeThreadIncrease)) {
-        FLAG_SET_DEFAULT(NewSizeThreadIncrease, MAX2(4*K, NewSizeThreadIncrease));
-      }
-      if (FLAG_IS_DEFAULT(Tier3DelayOn)) {
-        // This effectively prevents the compile broker scheduling tier 2
-        // (i.e., limited C1 profiling) compilations instead of tier 3
-        // (i.e., full C1 profiling) compilations when the tier 4 queue
-        // backs up (which is quite likely when using a non-AOT compiled JVMCI
-        // compiler). The observation based on jargraal is that the downside
-        // of skipping full profiling is much worse for performance than the
-        // queue backing up.
-        FLAG_SET_DEFAULT(Tier3DelayOn, 100000);
-      }
-    } // !UseJVMCINativeLibrary
-  } // UseJVMCICompiler
-}
-#endif // INCLUDE_JVMCI
-
 bool CompilerConfig::check_args_consistency(bool status) {
   // Check lower bounds of the code cache
   // Template Interpreter code is approximately 3X larger in debug builds.
-  uint min_code_cache_size = CodeCacheMinimumUseSpace DEBUG_ONLY(* 3);
+  size_t min_code_cache_size = CodeCacheMinimumUseSpace DEBUG_ONLY(* 3);
   if (ReservedCodeCacheSize < InitialCodeCacheSize) {
     jio_fprintf(defaultStream::error_stream(),
-                "Invalid ReservedCodeCacheSize: %dK. Must be at least InitialCodeCacheSize=%dK.\n",
+                "Invalid ReservedCodeCacheSize: %zuK. Must be at least InitialCodeCacheSize=%zuK.\n",
                 ReservedCodeCacheSize/K, InitialCodeCacheSize/K);
     status = false;
   } else if (ReservedCodeCacheSize < min_code_cache_size) {
     jio_fprintf(defaultStream::error_stream(),
-                "Invalid ReservedCodeCacheSize=%dK. Must be at least %uK.\n", ReservedCodeCacheSize/K,
+                "Invalid ReservedCodeCacheSize=%zuK. Must be at least %zuK.\n", ReservedCodeCacheSize/K,
                 min_code_cache_size/K);
     status = false;
   } else if (ReservedCodeCacheSize > CODE_CACHE_SIZE_LIMIT) {
     // Code cache size larger than CODE_CACHE_SIZE_LIMIT is not supported.
     jio_fprintf(defaultStream::error_stream(),
-                "Invalid ReservedCodeCacheSize=%dM. Must be at most %uM.\n", ReservedCodeCacheSize/M,
+                "Invalid ReservedCodeCacheSize=%zuM. Must be at most %zuM.\n", ReservedCodeCacheSize/M,
                 CODE_CACHE_SIZE_LIMIT/M);
     status = false;
   } else if (NonNMethodCodeHeapSize < min_code_cache_size) {
     jio_fprintf(defaultStream::error_stream(),
-                "Invalid NonNMethodCodeHeapSize=%dK. Must be at least %uK.\n", NonNMethodCodeHeapSize/K,
+                "Invalid NonNMethodCodeHeapSize=%zuK. Must be at least %zuK.\n", NonNMethodCodeHeapSize/K,
                 min_code_cache_size/K);
     status = false;
   }
@@ -535,19 +449,6 @@ bool CompilerConfig::check_args_consistency(bool status) {
       warning("SegmentedCodeCache has no meaningful effect with -Xint");
       FLAG_SET_DEFAULT(SegmentedCodeCache, false);
     }
-#if INCLUDE_JVMCI
-    if (EnableJVMCI || UseJVMCICompiler) {
-      if (!FLAG_IS_DEFAULT(EnableJVMCI) || !FLAG_IS_DEFAULT(UseJVMCICompiler)) {
-        warning("JVMCI Compiler disabled due to -Xint.");
-      }
-      FLAG_SET_CMDLINE(EnableJVMCI, false);
-      FLAG_SET_CMDLINE(UseJVMCICompiler, false);
-    }
-#endif
-  } else {
-#if INCLUDE_JVMCI
-    status = status && JVMCIGlobals::check_jvmci_flags_are_consistent();
-#endif
   }
 
   return status;
@@ -558,27 +459,8 @@ void CompilerConfig::ergo_initialize() {
   return;
 #endif
 
-  if (has_c1()) {
-    if (!is_compilation_mode_selected()) {
-      if (NeverActAsServerClassMachine) {
-        set_client_emulation_mode_flags();
-      }
-    } else if (!has_c2() && !is_jvmci_compiler()) {
-      set_client_emulation_mode_flags();
-    }
-  }
-
   set_legacy_emulation_flags();
   set_compilation_policy_flags();
-
-#if INCLUDE_JVMCI
-  // Check that JVMCI supports selected GC.
-  // Should be done after GCConfig::initialize() was called.
-  JVMCIGlobals::check_jvmci_supported_gc();
-
-  // Do JVMCI specific settings
-  set_jvmci_specific_flags();
-#endif
 
   if (UseOnStackReplacement && !UseLoopCounter) {
     warning("On-stack-replacement requires loop counters; enabling loop counters");
@@ -586,9 +468,6 @@ void CompilerConfig::ergo_initialize() {
   }
 
   if (ProfileInterpreter && CompilerConfig::is_c1_simple_only()) {
-    if (!FLAG_IS_DEFAULT(ProfileInterpreter)) {
-        warning("ProfileInterpreter disabled due to client emulation mode");
-    }
     FLAG_SET_CMDLINE(ProfileInterpreter, false);
   }
 
@@ -620,6 +499,11 @@ void CompilerConfig::ergo_initialize() {
   if (FLAG_IS_DEFAULT(LoopStripMiningIterShortLoop)) {
     // blind guess
     LoopStripMiningIterShortLoop = LoopStripMiningIter / 10;
+  }
+  if (UseAutoVectorizationSpeculativeAliasingChecks && !LoopMultiversioning && !UseAutoVectorizationPredicate) {
+    warning("Disabling UseAutoVectorizationSpeculativeAliasingChecks, because neither of the following is enabled:"
+            "  LoopMultiversioning UseAutoVectorizationPredicate");
+    UseAutoVectorizationSpeculativeAliasingChecks = false;
   }
 #endif // COMPILER2
 }

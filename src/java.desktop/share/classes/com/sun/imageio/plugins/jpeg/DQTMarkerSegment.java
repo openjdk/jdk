@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,6 +83,7 @@ class DQTMarkerSegment extends MarkerSegment {
         }
     }
 
+    @Override
     protected Object clone() {
         DQTMarkerSegment newGuy = (DQTMarkerSegment) super.clone();
         newGuy.tables = new ArrayList<>(tables.size());
@@ -92,6 +93,7 @@ class DQTMarkerSegment extends MarkerSegment {
         return newGuy;
     }
 
+    @Override
     IIOMetadataNode getNativeNode() {
         IIOMetadataNode node = new IIOMetadataNode("dqt");
         for (int i= 0; i<tables.size(); i++) {
@@ -105,10 +107,12 @@ class DQTMarkerSegment extends MarkerSegment {
      * Writes the data for this segment to the stream in
      * valid JPEG format.
      */
+    @Override
     void write(ImageOutputStream ios) throws IOException {
         // We don't write DQT segments; the IJG library does.
     }
 
+    @Override
     void print() {
         printTag("DQT");
         System.out.println("Num tables: " + tables.size());
@@ -264,6 +268,7 @@ class DQTMarkerSegment extends MarkerSegment {
             }
         }
 
+        @Override
         protected Object clone() {
             Qtable newGuy = null;
             try {

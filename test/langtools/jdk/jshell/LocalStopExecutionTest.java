@@ -27,7 +27,7 @@
  * @summary Verify local execution can stop execution when there are no backward branches
  * @modules jdk.jshell/jdk.internal.jshell.tool
  * @build KullaTesting TestingInputStream
- * @run testng LocalStopExecutionTest
+ * @run junit LocalStopExecutionTest
  */
 
 import java.io.IOException;
@@ -40,15 +40,13 @@ import jdk.internal.jshell.tool.StopDetectingInputStream;
 import jdk.internal.jshell.tool.StopDetectingInputStream.State;
 import jdk.jshell.JShell;
 
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.testng.Assert.assertEquals;
-
-@Test
 public class LocalStopExecutionTest extends AbstractStopExecutionTest {
 
-    @BeforeMethod
+    @BeforeEach
     @Override
     public void setUp() {
         setUp(b -> b.executionEngine("local"));

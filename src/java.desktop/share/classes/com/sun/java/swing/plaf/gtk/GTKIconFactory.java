@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,6 +163,7 @@ class GTKIconFactory {
             this.method = methodName;
         }
 
+        @Override
         public void paintIcon(SynthContext context, Graphics g,
                               int x, int y, int w, int h) {
             if (context != null) {
@@ -171,10 +172,12 @@ class GTKIconFactory {
             }
         }
 
+        @Override
         public int getIconWidth(SynthContext context) {
             return getIconDimension(context);
         }
 
+        @Override
         public int getIconHeight(SynthContext context) {
             return getIconDimension(context);
         }
@@ -248,6 +251,7 @@ class GTKIconFactory {
             super(method);
         }
 
+        @Override
         public void paintIcon(SynthContext context, Graphics g, int x, int y,
                               int w, int h) {
             if (context != null) {
@@ -256,6 +260,7 @@ class GTKIconFactory {
             }
         }
 
+        @Override
         int getIconDimension(SynthContext context) {
             updateSizeIfNecessary(context);
             return (iconDimension == -1) ? DEFAULT_ICON_SIZE :
@@ -285,10 +290,12 @@ class GTKIconFactory {
             super(TOOL_BAR_HANDLE_ICON);
         }
 
+        @Override
         protected Class<?>[] getMethodParamTypes() {
             return PARAM_TYPES;
         }
 
+        @Override
         public void paintIcon(SynthContext context, Graphics g, int x, int y,
                               int w, int h) {
             if (context != null) {
@@ -309,6 +316,7 @@ class GTKIconFactory {
             }
         }
 
+        @Override
         public int getIconWidth(SynthContext context) {
             if (context == null) {
                 return 10;
@@ -321,6 +329,7 @@ class GTKIconFactory {
             }
         }
 
+        @Override
         public int getIconHeight(SynthContext context) {
             if (context == null) {
                 return 10;
@@ -344,10 +353,12 @@ class GTKIconFactory {
             super(MENU_ARROW_ICON);
         }
 
+        @Override
         protected Class<?>[] getMethodParamTypes() {
             return PARAM_TYPES;
         }
 
+        @Override
         public void paintIcon(SynthContext context, Graphics g, int x, int y,
                               int w, int h) {
             if (context != null) {

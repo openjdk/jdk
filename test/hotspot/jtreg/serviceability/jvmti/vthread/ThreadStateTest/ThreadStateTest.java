@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,21 +27,24 @@
  * @summary Exercise JvmtiThreadState creation concurrently with terminating vthreads
  * @requires vm.continuations
  * @modules java.base/java.lang:+open
+ * @library /test/lib
  * @run main/othervm/native -agentlib:ThreadStateTest ThreadStateTest
  */
 
-import java.util.concurrent.*;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadFactory;
+import jdk.test.lib.thread.VThreadScheduler;
 
 public class ThreadStateTest {
     static final int VTHREAD_COUNT = 64;
 
     private static native void setSingleSteppingMode(boolean enable);
     private static native void setMonitorContendedMode(boolean enable);
+    private static native void setFramePopEvent(Thread thread);
     private static native void testGetThreadState(Thread thread);
     private static native void testGetThreadListStackTraces(Thread thread);
 
@@ -49,6 +52,10 @@ public class ThreadStateTest {
         testGetThreadState(Thread.currentThread());
         testGetThreadListStackTraces(Thread.currentThread());
         Thread.yield();
+        for (int i = 0; i < 10; i++) {
+            testGetThreadListStackTraces(Thread.currentThread());
+            Thread.yield();
+        }
     };
 
     private void runTest() throws Exception {
@@ -59,7 +66,7 @@ public class ThreadStateTest {
 
         while (tryCount-- > 0) {
             ExecutorService scheduler = Executors.newFixedThreadPool(8);
-            ThreadFactory factory = virtualThreadBuilder(scheduler).factory();
+            ThreadFactory factory = VThreadScheduler.virtualThreadBuilder(scheduler).factory();
 
             List<Thread> virtualThreads = new ArrayList<>();
             for (int i = 0; i < VTHREAD_COUNT; i++) {
@@ -73,7 +80,13 @@ public class ThreadStateTest {
             }
 
             // Give some time for vthreads to finish.
-            Thread.sleep(10);
+            Thread.sleep(50);
+
+            for (Thread t : virtualThreads) {
+                if (tryCount % 4 == 0) {
+                    setFramePopEvent(t);
+                }
+            }
 
             // Trigger race of JvmtiThreadState creation with terminating vthreads.
             setMonitorContendedMode(false);
@@ -97,23 +110,5 @@ public class ThreadStateTest {
     public static void main(String[] args) throws Exception {
         ThreadStateTest obj = new ThreadStateTest();
         obj.runTest();
-    }
-
-    private static Thread.Builder.OfVirtual virtualThreadBuilder(Executor scheduler) {
-        Thread.Builder.OfVirtual builder = Thread.ofVirtual();
-        try {
-            Class<?> clazz = Class.forName("java.lang.ThreadBuilders$VirtualThreadBuilder");
-            Constructor<?> ctor = clazz.getDeclaredConstructor(Executor.class);
-            ctor.setAccessible(true);
-            return (Thread.Builder.OfVirtual) ctor.newInstance(scheduler);
-        } catch (InvocationTargetException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof RuntimeException re) {
-                throw re;
-            }
-            throw new RuntimeException(e);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 }

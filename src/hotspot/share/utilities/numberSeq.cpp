@@ -22,7 +22,6 @@
  *
  */
 
-#include "memory/allocation.inline.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/numberSeq.hpp"
@@ -145,7 +144,7 @@ TruncatedSeq::TruncatedSeq(int length, double alpha):
 }
 
 TruncatedSeq::~TruncatedSeq() {
-  FREE_C_HEAP_ARRAY(double, _sequence);
+  FREE_C_HEAP_ARRAY(_sequence);
 }
 
 void TruncatedSeq::add(double val) {

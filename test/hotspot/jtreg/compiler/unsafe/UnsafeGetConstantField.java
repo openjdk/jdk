@@ -27,7 +27,7 @@
  * @library /test/lib
  * @library /testlibrary/asm
  *
- * @requires vm.flavor == "server" & !vm.emulatedClient
+ * @requires vm.flavor == "server"
  *
  * @modules java.base/jdk.internal.vm.annotation
  *          java.base/jdk.internal.misc
@@ -97,8 +97,8 @@ public class UnsafeGetConstantField {
     static final Unsafe U = Unsafe.getUnsafe();
 
     public static void main(String[] args) {
-        if (!Platform.isServer() || Platform.isEmulatedClient()) {
-            throw new Error("TESTBUG: Not server mode");
+        if (!Platform.isServer()) {
+            throw new Error("TESTBUG: Not server VM");
         }
         testUnsafeGetAddress();
         testUnsafeGetField();

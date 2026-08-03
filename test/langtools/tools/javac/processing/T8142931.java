@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,9 @@ public class T8142931 extends AbstractProcessor {
                 "-processorpath", testClasses);
             StringWriter out = new StringWriter();
             JavacTask task = (JavacTask)tool.getTask(out, fm, dl, opts, null, files);
-            task.call();
+            if (!task.call()) {
+                throw new AssertionError("test failed due to a compilation error");
+            }
             String s = out.toString();
             System.err.print(s);
             System.err.println(dl.count + " diagnostics; " + s.length() + " characters");

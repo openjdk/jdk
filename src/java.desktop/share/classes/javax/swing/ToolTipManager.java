@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,6 @@ public final class ToolTipManager extends MouseAdapter implements MouseMotionLis
     JComponent insideComponent;
     MouseEvent mouseEvent;
     boolean showImmediately;
-    private static final Object TOOL_TIP_MANAGER_KEY = new Object();
     transient Popup tipWindow;
     /** The Window tip is being displayed in. This will be non-null if
      * the Window tip is in differs from that of insideComponent's Window.
@@ -394,19 +393,19 @@ public final class ToolTipManager extends MouseAdapter implements MouseMotionLis
         }
     }
 
+    private static ToolTipManager manager;
     /**
      * Returns a shared <code>ToolTipManager</code> instance.
      *
      * @return a shared <code>ToolTipManager</code> object
      */
     public static ToolTipManager sharedInstance() {
-        Object value = SwingUtilities.appContextGet(TOOL_TIP_MANAGER_KEY);
-        if (value instanceof ToolTipManager) {
-            return (ToolTipManager) value;
+        synchronized(ToolTipManager.class) {
+            if (manager == null) {
+                manager = new ToolTipManager();
+            }
+            return manager;
         }
-        ToolTipManager manager = new ToolTipManager();
-        SwingUtilities.appContextPut(TOOL_TIP_MANAGER_KEY, manager);
-        return manager;
     }
 
     // add keylistener here to trigger tip for access
@@ -794,7 +793,6 @@ public final class ToolTipManager extends MouseAdapter implements MouseMotionLis
   // Returns: 0 no adjust
   //         -1 can't fit
   //         >0 adjust value by amount returned
- @SuppressWarnings("removal")
   private int getPopupFitWidth(Rectangle popupRectInScreen, Component invoker){
     if (invoker != null){
       Container parent;
@@ -803,7 +801,7 @@ public final class ToolTipManager extends MouseAdapter implements MouseMotionLis
         if(parent instanceof JFrame || parent instanceof JDialog ||
            parent instanceof JWindow) { // no check for awt.Frame since we use Heavy tips
           return getWidthAdjust(parent.getBounds(),popupRectInScreen);
-        } else if (parent instanceof JApplet || parent instanceof JInternalFrame) {
+        } else if (parent instanceof JInternalFrame) {
           if (popupFrameRect == null){
             popupFrameRect = new Rectangle();
           }
@@ -820,7 +818,6 @@ public final class ToolTipManager extends MouseAdapter implements MouseMotionLis
 
   // Returns:  0 no adjust
   //          >0 adjust by value return
-  @SuppressWarnings("removal")
   private int getPopupFitHeight(Rectangle popupRectInScreen, Component invoker){
     if (invoker != null){
       Container parent;
@@ -828,7 +825,7 @@ public final class ToolTipManager extends MouseAdapter implements MouseMotionLis
         if(parent instanceof JFrame || parent instanceof JDialog ||
            parent instanceof JWindow) {
           return getHeightAdjust(parent.getBounds(),popupRectInScreen);
-        } else if (parent instanceof JApplet || parent instanceof JInternalFrame) {
+        } else if (parent instanceof JInternalFrame) {
           if (popupFrameRect == null){
             popupFrameRect = new Rectangle();
           }

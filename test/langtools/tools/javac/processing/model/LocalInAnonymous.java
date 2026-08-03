@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,9 @@ public class LocalInAnonymous {
         List<String> options = Arrays.asList("-d", classes.toString());
         StringWriter out = new StringWriter();
         JavacTask task = (JavacTask) compiler.getTask(out, null, noErrors, options, null, files);
-        task.call();
+        if (!task.call()) {
+            throw new AssertionError("test failed due to a compilation error");
+        }
         if (!out.toString().isEmpty()) {
             throw new AssertionError("Unexpected output: " + out);
         }
@@ -103,7 +105,9 @@ public class LocalInAnonymous {
                 }
             }
         });
-        task2.call();
+        if (!task2.call()) {
+            throw new AssertionError("test failed due to a compilation error");
+        }
         if (!out.toString().isEmpty()) {
             throw new AssertionError("Unexpected output: " + out);
         }
@@ -112,7 +116,9 @@ public class LocalInAnonymous {
                                 "-processorpath", System.getProperty("test.classes"),
                                 "-processor", Processor.class.getName());
         JavacTask task3 = (JavacTask) compiler.getTask(out, null, noErrors, options, null, files);
-        task3.call();
+        if (!task3.call()) {
+            throw new AssertionError("test failed due to a compilation error");
+        }
         if (!out.toString().isEmpty()) {
             throw new AssertionError("Unexpected output: " + out);
         }

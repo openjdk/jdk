@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -371,7 +371,8 @@
             const int newCellHeight = cellY1 <= _poolCellHeight ? _poolCellHeight : cellY1;
             const int newCellsCount = newCellWidth*newCellHeight;
 #ifdef DEBUG
-            J2dTraceLn2(J2D_TRACE_VERBOSE, "MTLTexturePool: resize: %d -> %d", _poolCellWidth * _poolCellHeight, newCellsCount);
+            J2dTraceLn(J2D_TRACE_VERBOSE, "MTLTexturePool: resize: %d -> %d",
+                       _poolCellWidth * _poolCellHeight, newCellsCount);
 #endif
             void ** newcells = malloc(newCellsCount*sizeof(void*));
             const int strideBytes = _poolCellWidth * sizeof(void*);
@@ -425,7 +426,9 @@
             }
             minDeltaTpi = [cell createItem:device width:width height:height format:format isMultiSample:isMultiSample];
             _memoryTotalAllocated += requestedBytes;
-            J2dTraceLn5(J2D_TRACE_VERBOSE, "MTLTexturePool: created pool item: tex=%p, w=%d h=%d, pf=%d | total memory = %d Kb", minDeltaTpi.texture, width, height, format, _memoryTotalAllocated/1024);
+            J2dTraceLn(J2D_TRACE_VERBOSE, "MTLTexturePool: created pool item: "\
+                       "tex=%p, w=%d h=%d, pf=%d | total memory = %d Kb",
+                       minDeltaTpi.texture, width, height, format, _memoryTotalAllocated/1024);
         }
 
         minDeltaTpi.isBusy = YES;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,13 +34,13 @@ import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.Error;
 import com.sun.tools.javac.util.JCDiagnostic.LintWarning;
 import com.sun.tools.javac.util.JCDiagnostic.SimpleDiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.Warning;
 import com.sun.tools.javac.util.Log;
-import com.sun.tools.javac.util.MandatoryWarningHandler;
 import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Options;
 
@@ -67,12 +67,6 @@ public class Preview {
 
     /** flag: are preview features enabled */
     private final boolean enabled;
-
-    /** flag: is the "preview" lint category enabled? */
-    private final boolean verbose;
-
-    /** the diag handler to manage preview feature usage diagnostics */
-    private final MandatoryWarningHandler previewHandler;
 
     /** test flag: should all features be considered as preview features? */
     private final boolean forcePreview;
@@ -104,8 +98,6 @@ public class Preview {
         enabled = options.isSet(PREVIEW);
         log = Log.instance(context);
         source = Source.instance(context);
-        verbose = Lint.instance(context).isEnabled(LintCategory.PREVIEW);
-        previewHandler = new MandatoryWarningHandler(log, source, verbose, true, LintCategory.PREVIEW);
         forcePreview = options.isSet("forcePreview");
         majorVersionToSource = initMajorVersionToSourceMap();
     }
@@ -159,24 +151,27 @@ public class Preview {
     /**
      * Report usage of a preview feature. Usages reported through this method will affect the
      * set of sourcefiles with dependencies on preview features.
+     * @param flag a flag to set on the diagnostic
      * @param pos the position at which the preview feature was used.
      * @param feature the preview feature used.
      */
-    public void warnPreview(int pos, Feature feature) {
-        warnPreview(new SimpleDiagnosticPosition(pos), feature);
+    public void warnPreview(DiagnosticFlag flag, int pos, Feature feature) {
+        warnPreview(flag, new SimpleDiagnosticPosition(pos), feature);
     }
 
     /**
      * Report usage of a preview feature. Usages reported through this method will affect the
      * set of sourcefiles with dependencies on preview features.
+     * @param flag a flag to set on the diagnostic
      * @param pos the position at which the preview feature was used.
      * @param feature the preview feature used.
      */
-    public void warnPreview(DiagnosticPosition pos, Feature feature) {
+    public void warnPreview(DiagnosticFlag flag, DiagnosticPosition pos, Feature feature) {
         Assert.check(isEnabled());
         Assert.check(isPreview(feature));
         markUsesPreview(pos);
-        previewHandler.report(pos, feature.isPlural() ?
+        log.warning(flag, pos,
+            feature.isPlural() ?
                 LintWarnings.PreviewFeatureUsePlural(feature.nameFragment()) :
                 LintWarnings.PreviewFeatureUse(feature.nameFragment()));
     }
@@ -188,10 +183,7 @@ public class Preview {
      */
     public void warnPreview(JavaFileObject classfile, int majorVersion) {
         Assert.check(isEnabled());
-        if (verbose) {
-            log.mandatoryWarning(null,
-                    LintWarnings.PreviewFeatureUseClassfile(classfile, majorVersionToSource.get(majorVersion).name));
-        }
+        log.warning(LintWarnings.PreviewFeatureUseClassfile(classfile, majorVersionToSource.get(majorVersion).name));
     }
 
     /**
@@ -201,10 +193,6 @@ public class Preview {
      */
     public void markUsesPreview(DiagnosticPosition pos) {
         sourcesWithPreviewFeatures.add(log.currentSourceFile());
-    }
-
-    public void reportPreviewWarning(DiagnosticPosition pos, LintWarning warnKey) {
-        previewHandler.report(pos, warnKey);
     }
 
     public boolean usesPreview(JavaFileObject file) {
@@ -269,28 +257,16 @@ public class Preview {
         return false;
     }
 
-    /**
-     * Report any deferred diagnostics.
-     */
-    public void reportDeferredDiagnostics() {
-        previewHandler.reportDeferredDiagnostic();
-    }
-
-    public void clear() {
-        previewHandler.clear();
-    }
-
     public void checkSourceLevel(DiagnosticPosition pos, Feature feature) {
         if (isPreview(feature) && !isEnabled()) {
             //preview feature without --preview flag, error
-            log.error(JCDiagnostic.DiagnosticFlag.SOURCE_LEVEL, pos, disabledError(feature));
+            log.error(pos, disabledError(feature));
         } else {
             if (!feature.allowedInSource(source)) {
-                log.error(JCDiagnostic.DiagnosticFlag.SOURCE_LEVEL, pos,
-                          feature.error(source.name));
+                log.error(pos, feature.error(source.name));
             }
             if (isEnabled() && isPreview(feature)) {
-                warnPreview(pos, feature);
+                warnPreview(null, pos, feature);
             }
         }
     }

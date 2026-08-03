@@ -73,10 +73,48 @@ public class DefaultStripDebugPluginTest {
         }
     }
 
+    // Disable embedded strip Java plugin, with native plugin present.
+    public void testOnlyNativePlugin() {
+        MockStripPlugin javaPlugin = new MockStripPlugin(false);
+        MockStripPlugin nativePlugin = new MockStripPlugin(true);
+        TestNativeStripPluginFactory nativeFactory =
+                                 new TestNativeStripPluginFactory(nativePlugin);
+        DefaultStripDebugPlugin plugin = new DefaultStripDebugPlugin(javaPlugin,
+                                                                     nativeFactory);
+        plugin.enableJavaStripPlugin(false);
+
+        ResourcePoolManager inManager = new ResourcePoolManager();
+        ResourcePool pool = plugin.transform(inManager.resourcePool(),
+                                             inManager.resourcePoolBuilder());
+        if (pool.findEntry(MockStripPlugin.JAVA_PATH).isPresent() ||
+            !pool.findEntry(MockStripPlugin.NATIVE_PATH).isPresent()) {
+            throw new AssertionError("Expected only native to get called");
+        }
+    }
+
+    // Disable embedded strip Java plugin, and without native plugin present.
+    public void testNoOperation() {
+        MockStripPlugin javaPlugin = new MockStripPlugin(false);
+        TestNativeStripPluginFactory nativeFactory =
+                                         new TestNativeStripPluginFactory(null);
+        DefaultStripDebugPlugin plugin = new DefaultStripDebugPlugin(javaPlugin,
+                                                                     nativeFactory);
+        plugin.enableJavaStripPlugin(false);
+        ResourcePoolManager inManager = new ResourcePoolManager();
+        ResourcePool pool = plugin.transform(inManager.resourcePool(),
+                                             inManager.resourcePoolBuilder());
+        if (pool.findEntry(MockStripPlugin.JAVA_PATH).isPresent() ||
+            pool.findEntry(MockStripPlugin.NATIVE_PATH).isPresent()) {
+            throw new AssertionError("Expected both native and java not called");
+        }
+    }
+
     public static void main(String[] args) {
         DefaultStripDebugPluginTest test = new DefaultStripDebugPluginTest();
         test.testNoNativeStripPluginPresent();
         test.testWithNativeStripPresent();
+        test.testOnlyNativePlugin();
+        test.testNoOperation();
     }
 
     public static class MockStripPlugin implements Plugin {

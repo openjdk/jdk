@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,7 @@ class SOFMarkerSegment extends MarkerSegment {
         updateFromNativeNode(node, true);
     }
 
+    @Override
     protected Object clone() {
         SOFMarkerSegment newGuy = (SOFMarkerSegment) super.clone();
         if (componentSpecs != null) {
@@ -107,6 +108,7 @@ class SOFMarkerSegment extends MarkerSegment {
         return newGuy;
     }
 
+    @Override
     IIOMetadataNode getNativeNode() {
         IIOMetadataNode node = new IIOMetadataNode("sof");
         node.setAttribute("process", Integer.toString(tag-JPEG.SOF0));
@@ -154,10 +156,12 @@ class SOFMarkerSegment extends MarkerSegment {
      * Writes the data for this segment to the stream in
      * valid JPEG format.
      */
+    @Override
     void write(ImageOutputStream ios) throws IOException {
         // We don't write SOF segments; the IJG library does.
     }
 
+    @Override
     void print () {
         printTag("SOF");
         System.out.print("Sample precision: ");
@@ -231,6 +235,7 @@ class SOFMarkerSegment extends MarkerSegment {
                                                0, 3, true);
         }
 
+        @Override
         protected Object clone() {
             try {
                 return super.clone();

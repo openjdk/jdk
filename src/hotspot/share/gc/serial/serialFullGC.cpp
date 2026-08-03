@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,12 +48,11 @@
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
-#include "gc/shared/modRefBarrierSet.hpp"
+#include "gc/shared/oopStorageSet.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
 #include "gc/shared/space.hpp"
-#include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/weakProcessor.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/universe.hpp"
@@ -66,13 +65,11 @@
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
+#include "runtime/threads.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
 #include "utilities/stack.inline.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci.hpp"
-#endif
 
 Stack<oop, mtGC>              SerialFullGC::_marking_stack;
 Stack<ObjArrayTask, mtGC>     SerialFullGC::_objarray_stack;
@@ -412,7 +409,7 @@ void SerialFullGC::follow_array_chunk(objArrayOop array, int index) {
   const int stride = MIN2(len - beg_index, (int) ObjArrayMarkingStride);
   const int end_index = beg_index + stride;
 
-  array->oop_iterate_range(&mark_and_push_closure, beg_index, end_index);
+  array->oop_iterate_elements_range(&mark_and_push_closure, beg_index, end_index);
 
   if (end_index < len) {
     SerialFullGC::push_objarray(array, end_index); // Push the continuation.
@@ -481,15 +478,25 @@ void SerialFullGC::phase1_mark(bool clear_all_softrefs) {
   ref_processor()->start_discovery(clear_all_softrefs);
 
   {
-    StrongRootsScope srs(0);
+    GCTraceTime(Debug, gc, phases) tm_m("Marking From Roots", gc_timer());
 
-    CLDClosure* weak_cld_closure = ClassUnloading ? nullptr : &follow_cld_closure;
-    MarkingNMethodClosure mark_code_closure(&follow_root_closure, !NMethodToOopClosure::FixRelocations, true);
-    gch->process_roots(SerialHeap::SO_None,
-                       &follow_root_closure,
-                       &follow_cld_closure,
-                       weak_cld_closure,
-                       &mark_code_closure);
+    // Start tracing from roots, there are 3 kinds of roots in full-gc.
+    //
+    // 1. CLD. This method internally takes care of whether class loading is
+    // enabled or not, applying the closure to both strong and weak or only
+    // strong CLDs.
+    ClassLoaderDataGraph::always_strong_cld_do(&follow_cld_closure);
+
+    {
+      // 2. Threads stack frames and active nmethods in them.
+      NMethodMarkingScope nmethod_marking_scope;
+      MarkingNMethodClosure mark_code_closure(&follow_root_closure);
+
+      Threads::oops_do(&follow_root_closure, &mark_code_closure);
+    }
+
+    // 3. VM internal roots.
+    OopStorageSet::strong_oops_do(&follow_root_closure);
   }
 
   // Process reference objects found during marking
@@ -498,7 +505,7 @@ void SerialFullGC::phase1_mark(bool clear_all_softrefs) {
 
     ReferenceProcessorPhaseTimes pt(_gc_timer, ref_processor()->max_num_queues());
     SerialGCRefProcProxyTask task(is_alive, keep_alive, follow_stack_closure);
-    const ReferenceProcessorStats& stats = ref_processor()->process_discovered_references(task, pt);
+    const ReferenceProcessorStats& stats = ref_processor()->process_discovered_references(task, nullptr, pt);
     pt.print_all_references();
     gc_tracer()->report_gc_reference_stats(stats);
   }
@@ -543,9 +550,6 @@ void SerialFullGC::phase1_mark(bool clear_all_softrefs) {
 
     // Prune dead klasses from subklass/sibling/implementor lists.
     Klass::clean_weak_klass_links(unloading_occurred);
-
-    // Clean JVMCI metadata handles.
-    JVMCI_ONLY(JVMCI::do_unloading(unloading_occurred));
   }
 
   {
@@ -694,6 +698,16 @@ void SerialFullGC::invoke_at_safepoint(bool clear_all_softrefs) {
 
   allocate_stacks();
 
+  // Usually, all class unloading work occurs at the end of phase 1, but Serial
+  // full-gc accesses dead-objs' klass to find out the start of next live-obj
+  // during phase 2. This requires klasses of dead-objs to be kept loaded.
+  // Therefore, we declare ClassUnloadingContext at the same level as
+  // full-gc phases, and purge dead classes (invoking
+  // ClassLoaderDataGraph::purge) after all phases of full-gc.
+  ClassUnloadingContext ctx(1 /* num_nmethod_unlink_workers */,
+                            false /* unregister_nmethods_during_purge */,
+                            false /* lock_nmethod_free_separately */);
+
   phase1_mark(clear_all_softrefs);
 
   Compacter compacter{gch};
@@ -706,10 +720,10 @@ void SerialFullGC::invoke_at_safepoint(bool clear_all_softrefs) {
   }
 
   // Don't add any more derived pointers during phase3
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   assert(DerivedPointerTable::is_active(), "Sanity");
   DerivedPointerTable::set_active(false);
-#endif
+#endif // COMPILER2
 
   {
     // Adjust the pointers to reflect the new locations
@@ -717,13 +731,20 @@ void SerialFullGC::invoke_at_safepoint(bool clear_all_softrefs) {
 
     ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_adjust);
 
-    NMethodToOopClosure code_closure(&adjust_pointer_closure, NMethodToOopClosure::FixRelocations);
-    gch->process_roots(SerialHeap::SO_AllCodeCache,
-                       &adjust_pointer_closure,
-                       &adjust_cld_closure,
-                       &adjust_cld_closure,
-                       &code_closure);
+    // Remap strong and weak roots in adjust phase.
+    // 1. All (strong and weak) CLDs.
+    ClassLoaderDataGraph::cld_do(&adjust_cld_closure);
 
+    // 2. Threads stack frames. No need to visit on-stack nmethods, because all
+    // nmethods are visited in one go via CodeCache::nmethods_do.
+    Threads::oops_do(&adjust_pointer_closure, nullptr);
+    NMethodToOopClosure nmethod_cl(&adjust_pointer_closure, NMethodToOopClosure::FixRelocations);
+    CodeCache::nmethods_do(&nmethod_cl);
+
+    // 3. VM internal roots
+    OopStorageSet::strong_oops_do(&adjust_pointer_closure);
+
+    // 4. VM internal weak roots
     WeakProcessor::oops_do(&adjust_pointer_closure);
 
     adjust_marks();
@@ -736,6 +757,13 @@ void SerialFullGC::invoke_at_safepoint(bool clear_all_softrefs) {
 
     compacter.phase4_compact();
   }
+
+  // Delete metaspaces for unloaded class loaders and clean up CLDG.
+  ClassLoaderDataGraph::purge(true /* at_safepoint */);
+  DEBUG_ONLY(MetaspaceUtils::verify();)
+
+  // Need to clear claim bits for the next full-gc (specifically phase 1 and 3).
+  ClassLoaderDataGraph::clear_claimed_marks();
 
   restore_marks();
 

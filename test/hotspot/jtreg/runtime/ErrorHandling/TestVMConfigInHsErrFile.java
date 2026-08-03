@@ -23,14 +23,26 @@
 
 
 /*
- * @test
+ * @test id=coh-off
  * @summary Test that we see VM configs reported correctly in hs_err file
  * @library /test/lib
  * @requires vm.flagless
  * @requires vm.debug
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run driver TestVMConfigInHsErrFile
+ * @run driver TestVMConfigInHsErrFile coh-off
+ */
+
+/*
+ * @test id=coh-on
+ * @summary Test that we see VM configs reported correctly in hs_err file
+ * @library /test/lib
+ * @requires vm.bits == "64"
+ * @requires vm.flagless
+ * @requires vm.debug
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @run driver TestVMConfigInHsErrFile coh-on
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
@@ -42,8 +54,10 @@ import java.util.regex.Pattern;
 public class TestVMConfigInHsErrFile {
 
   public static void main(String[] args) throws Exception {
-    testCompactObjectHeaders();
-    testCompressedClassPointers();
+    switch (args[0]) {
+      case "coh-on" -> testCompactObjectHeaders();
+      case "coh-off" -> testNotCompactObjectHeaders();
+    }
   }
 
   private static void testCompactObjectHeaders() throws Exception {
@@ -65,20 +79,16 @@ public class TestVMConfigInHsErrFile {
     Pattern[] expectedPatterns = new Pattern[] {
       Pattern.compile("# Java VM: .*compact obj headers.*")
     };
-    Pattern[] notExpectedPatterns = new Pattern[] {
-      Pattern.compile("# Java VM: .*compressed class ptrs.*")
-    };
 
-    HsErrFileUtils.checkHsErrFileContent(f, expectedPatterns, notExpectedPatterns, true, true);
+    HsErrFileUtils.checkHsErrFileContent(f, expectedPatterns, null, true, true);
 
   }
 
-  private static void testCompressedClassPointers() throws Exception {
+  private static void testNotCompactObjectHeaders() throws Exception {
     ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
         "-XX:+UnlockDiagnosticVMOptions",
         "-XX:+UnlockExperimentalVMOptions",
         "-XX:-UseCompactObjectHeaders",
-        "-XX:+UseCompressedClassPointers",
         "-Xmx100M",
         "-XX:-CreateCoredumpOnCrash",
         "-XX:ErrorHandlerTest=14",
@@ -90,14 +100,11 @@ public class TestVMConfigInHsErrFile {
     // extract hs-err file
     File f = HsErrFileUtils.openHsErrFileFromOutput(output);
 
-    Pattern[] expectedPatterns = new Pattern[] {
-      Pattern.compile("# Java VM: .*compressed class ptrs.*")
-    };
     Pattern[] notExpectedPatterns = new Pattern[] {
       Pattern.compile("# Java VM: .*compact obj headers.*")
     };
 
-    HsErrFileUtils.checkHsErrFileContent(f, expectedPatterns, notExpectedPatterns, true, true);
+    HsErrFileUtils.checkHsErrFileContent(f, null, notExpectedPatterns, true, true);
 
   }
 }

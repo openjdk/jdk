@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,8 @@ import sun.jvm.hotspot.utilities.Observable;
 import sun.jvm.hotspot.utilities.Observer;
 
 public class MetaspaceObj {
-  private static Address sharedMetaspaceBaseAddr;
-  private static Address sharedMetaspaceTopAddr;
+  private static Address aotMetaspaceBaseAddr;
+  private static Address aotMetaspaceTopAddr;
 
   static {
     VM.registerVMInitializedObserver(new Observer() {
@@ -45,13 +45,13 @@ public class MetaspaceObj {
 
   private static synchronized void initialize(TypeDataBase db) {
     Type type = db.lookupType("MetaspaceObj");
-    sharedMetaspaceBaseAddr = type.getAddressField("_shared_metaspace_base").getStaticFieldAddress();
-    sharedMetaspaceTopAddr  = type.getAddressField("_shared_metaspace_top").getStaticFieldAddress();
+    aotMetaspaceBaseAddr = type.getAddressField("_aot_metaspace_base").getStaticFieldAddress();
+    aotMetaspaceTopAddr  = type.getAddressField("_aot_metaspace_top").getStaticFieldAddress();
   }
 
   public static boolean isShared(Address addr) {
-    Address base = sharedMetaspaceBaseAddr.getAddressAt(0);
-    Address top  = sharedMetaspaceTopAddr. getAddressAt(0);
+    Address base = aotMetaspaceBaseAddr.getAddressAt(0);
+    Address top  = aotMetaspaceTopAddr. getAddressAt(0);
 
     return base.lessThanOrEqual(addr) && addr.lessThan(top);
   }

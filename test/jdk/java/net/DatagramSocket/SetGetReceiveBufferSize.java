@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,9 @@
  * @test
  * @bug 4173717 8243488
  * @summary Check that setReceiveBufferSize and getReceiveBufferSize work as expected
- * @run testng SetGetReceiveBufferSize
- * @run testng/othervm -Djava.net.preferIPv4Stack=true SetGetReceiveBufferSize
+ * @run junit ${test.main.class}
+ * @run junit/othervm -Djava.net.preferIPv4Stack=true ${test.main.class}
  */
-
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
@@ -38,8 +35,10 @@ import java.net.MulticastSocket;
 import java.net.SocketException;
 import java.nio.channels.DatagramChannel;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.expectThrows;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class SetGetReceiveBufferSize {
     static final Class<SocketException> SE = SocketException.class;
@@ -51,8 +50,7 @@ public class SetGetReceiveBufferSize {
     }
     static DatagramSocketSupplier supplier(DatagramSocketSupplier supplier) { return supplier; }
 
-    @DataProvider
-    public Object[][] invariants() {
+    public static Object[][] suppliers() {
         return new Object[][]{
                 {"DatagramSocket", supplier(() -> new DatagramSocket())},
                 {"MulticastSocket", supplier(() -> new MulticastSocket())},
@@ -60,39 +58,42 @@ public class SetGetReceiveBufferSize {
         };
     }
 
-    @Test(dataProvider = "invariants")
+    @ParameterizedTest
+    @MethodSource("suppliers")
     public void testSetInvalidBufferSize(String name, DatagramSocketSupplier supplier) throws IOException {
         var invalidArgs = new int[]{ -1, 0 };
 
         try (var socket = supplier.open()) {
             for (int i : invalidArgs) {
-                Exception ex = expectThrows(IAE, () -> socket.setReceiveBufferSize(i));
+                Exception ex = assertThrows(IAE, () -> socket.setReceiveBufferSize(i));
                 System.out.println(name + " got expected exception: " + ex);
             }
         }
     }
 
-    @Test(dataProvider = "invariants")
+    @ParameterizedTest
+    @MethodSource("suppliers")
     public void testSetAndGetBufferSize(String name, DatagramSocketSupplier supplier) throws IOException {
         var validArgs = new int[]{ 1234, 2345, 3456 };
 
         try (var socket = supplier.open()) {
             for (int i : validArgs) {
                 socket.setReceiveBufferSize(i);
-                assertEquals(socket.getReceiveBufferSize(), i, name);
+                assertEquals(i, socket.getReceiveBufferSize(), name);
             }
         }
     }
 
-    @Test(dataProvider = "invariants")
+    @ParameterizedTest
+    @MethodSource("suppliers")
     public void testSetGetAfterClose(String name, DatagramSocketSupplier supplier) throws IOException {
         var socket = supplier.open();
         socket.close();
 
-        Exception setException = expectThrows(SE, () -> socket.setReceiveBufferSize(2345));
+        Exception setException = assertThrows(SE, () -> socket.setReceiveBufferSize(2345));
         System.out.println(name + " got expected exception: " + setException);
 
-        Exception getException = expectThrows(SE, () -> socket.getReceiveBufferSize());
+        Exception getException = assertThrows(SE, () -> socket.getReceiveBufferSize());
         System.out.println(name + " got expected exception: " + getException);
     }
 }

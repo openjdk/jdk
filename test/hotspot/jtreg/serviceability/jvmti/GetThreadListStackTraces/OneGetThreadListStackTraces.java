@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, NTT DATA.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,6 +27,7 @@
  * @bug 8242428
  * @summary Verifies JVMTI GetThreadListStackTraces API with thread_count = 1
  * @requires vm.jvmti
+ * @requires test.thread.factory == null
  * @library /test/lib
  * @run main/othervm/native -agentlib:OneGetThreadListStackTraces OneGetThreadListStackTraces
  *

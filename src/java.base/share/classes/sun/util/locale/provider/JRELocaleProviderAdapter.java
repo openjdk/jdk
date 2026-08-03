@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.text.spi.DateFormatProvider;
 import java.text.spi.DateFormatSymbolsProvider;
 import java.text.spi.DecimalFormatSymbolsProvider;
 import java.text.spi.NumberFormatProvider;
+import java.time.format.DateTimeFormatterPatternProvider;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -46,7 +47,6 @@ import java.util.spi.CurrencyNameProvider;
 import java.util.spi.LocaleNameProvider;
 import java.util.spi.LocaleServiceProvider;
 import java.util.spi.TimeZoneNameProvider;
-import sun.text.spi.JavaTimeDateTimePatternProvider;
 import sun.util.resources.LocaleData;
 import sun.util.spi.CalendarProvider;
 
@@ -79,37 +79,35 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
      * Getter method for Locale Service Providers
      */
     @Override
-    @SuppressWarnings("unchecked")
     public <P extends LocaleServiceProvider> P getLocaleServiceProvider(Class<P> c) {
-        switch (c.getSimpleName()) {
-        case "BreakIteratorProvider":
-            return (P) getBreakIteratorProvider();
-        case "CollatorProvider":
-            return (P) getCollatorProvider();
-        case "DateFormatProvider":
-            return (P) getDateFormatProvider();
-        case "DateFormatSymbolsProvider":
-            return (P) getDateFormatSymbolsProvider();
-        case "DecimalFormatSymbolsProvider":
-            return (P) getDecimalFormatSymbolsProvider();
-        case "NumberFormatProvider":
-            return (P) getNumberFormatProvider();
-        case "CurrencyNameProvider":
-            return (P) getCurrencyNameProvider();
-        case "LocaleNameProvider":
-            return (P) getLocaleNameProvider();
-        case "TimeZoneNameProvider":
-            return (P) getTimeZoneNameProvider();
-        case "CalendarDataProvider":
-            return (P) getCalendarDataProvider();
-        case "CalendarNameProvider":
-            return (P) getCalendarNameProvider();
-        case "CalendarProvider":
-            return (P) getCalendarProvider();
-        case "JavaTimeDateTimePatternProvider":
-            return (P) getJavaTimeDateTimePatternProvider();
-        default:
-            throw new InternalError("should not come down here");
+        if (c == BreakIteratorProvider.class) {
+            return c.cast(getBreakIteratorProvider());
+        } else if (c == CollatorProvider.class) {
+            return c.cast(getCollatorProvider());
+        } else if (c == DateFormatProvider.class) {
+            return c.cast(getDateFormatProvider());
+        } else if (c == DateFormatSymbolsProvider.class) {
+            return c.cast(getDateFormatSymbolsProvider());
+        } else if (c == DecimalFormatSymbolsProvider.class) {
+            return c.cast(getDecimalFormatSymbolsProvider());
+        } else if (c == NumberFormatProvider.class) {
+            return c.cast(getNumberFormatProvider());
+        } else if (c == CurrencyNameProvider.class) {
+            return c.cast(getCurrencyNameProvider());
+        } else if (c == LocaleNameProvider.class) {
+            return c.cast(getLocaleNameProvider());
+        } else if (c == TimeZoneNameProvider.class) {
+            return c.cast(getTimeZoneNameProvider());
+        } else if (c == CalendarDataProvider.class) {
+            return c.cast(getCalendarDataProvider());
+        } else if (c == CalendarNameProvider.class) {
+            return c.cast(getCalendarNameProvider());
+        } else if (c == CalendarProvider.class) {
+            return c.cast(getCalendarProvider());
+        } else if (c == DateTimeFormatterPatternProvider.class) {
+            return c.cast(getDateTimeFormatterPatternProvider());
+        } else {
+            throw new InternalError("Unknown LocaleServiceProvider class");
         }
     }
 
@@ -127,7 +125,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
     protected volatile CalendarNameProvider calendarNameProvider;
 
     private volatile CalendarProvider calendarProvider;
-    private volatile JavaTimeDateTimePatternProvider javaTimeDateTimePatternProvider;
+    private volatile DateTimeFormatterPatternProvider dateTimeFormatterPatternProvider;
 
     /*
      * Getter methods for java.text.spi.* providers
@@ -331,22 +329,22 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
     }
 
     /**
-     * Getter methods for sun.text.spi.JavaTimeDateTimePatternProvider provider
+     * Getter methods for java.time.format.DateTimeFormatterPatternProvider provider
      */
     @Override
-    public JavaTimeDateTimePatternProvider getJavaTimeDateTimePatternProvider() {
-        if (javaTimeDateTimePatternProvider == null) {
-            JavaTimeDateTimePatternProvider provider = new JavaTimeDateTimePatternImpl(
+    public DateTimeFormatterPatternProvider getDateTimeFormatterPatternProvider() {
+        if (dateTimeFormatterPatternProvider == null) {
+            DateTimeFormatterPatternProvider provider = new DateTimeFormatterPatternProviderImpl(
                             getAdapterType(),
                             getLanguageTagSet("FormatData"));
 
             synchronized (this) {
-                if (javaTimeDateTimePatternProvider == null) {
-                    javaTimeDateTimePatternProvider = provider;
+                if (dateTimeFormatterPatternProvider == null) {
+                    dateTimeFormatterPatternProvider = provider;
                 }
             }
         }
-        return javaTimeDateTimePatternProvider;
+        return dateTimeFormatterPatternProvider;
     }
 
     @Override

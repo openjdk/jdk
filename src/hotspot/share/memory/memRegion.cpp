@@ -22,7 +22,6 @@
  *
  */
 
-#include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/memRegion.hpp"
 #include "runtime/globals.hpp"
@@ -116,5 +115,5 @@ void MemRegion::destroy_array(MemRegion* array, size_t length) {
   for (size_t i = 0; i < length; i++) {
     array[i].~MemRegion();
   }
-  FREE_C_HEAP_ARRAY(MemRegion, array);
+  FREE_C_HEAP_ARRAY(array);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package sun.java2d.loops;
 
 import java.awt.Font;
+import java.util.Arrays;
 
 import sun.font.Font2D;
 import sun.font.FontStrike;
@@ -41,7 +42,7 @@ import sun.font.FontStrike;
  * time. I am reluctant to add the overhead of that machinery here without
  * a proven benefit.
  */
-public class FontInfo implements Cloneable {
+public final class FontInfo implements Cloneable {
     public Font font;
     public Font2D font2D;
     public FontStrike fontStrike;
@@ -56,15 +57,7 @@ public class FontInfo implements Cloneable {
     /* lcdSubPixPos is used if FM is ON for HRGB/HBGR LCD text mode */
     public boolean lcdSubPixPos;
 
-    public String mtx(double[] matrix) {
-        return ("["+
-                matrix[0]+", "+
-                matrix[1]+", "+
-                matrix[2]+", "+
-                matrix[3]+
-                "]");
-    }
-
+    @Override
     public Object clone() {
         try {
             return super.clone();
@@ -73,15 +66,16 @@ public class FontInfo implements Cloneable {
         }
     }
 
+    @Override
     public String toString() {
         return ("FontInfo["+
                 "font="+font+", "+
-                "devTx="+mtx(devTx)+", "+
-                "glyphTx="+mtx(glyphTx)+", "+
+                "devTx="+Arrays.toString(devTx)+", "+
+                "glyphTx="+Arrays.toString(glyphTx)+", "+
                 "pixelHeight="+pixelHeight+", "+
                 "origin=("+originX+","+originY+"), "+
                 "aaHint="+aaHint+", "+
-                "lcdRGBOrder="+(lcdRGBOrder ? "RGB" : "BGR")+
+                "lcdRGBOrder="+(lcdRGBOrder ? "RGB" : "BGR")+", "+
                 "lcdSubPixPos="+lcdSubPixPos+
                 "]");
     }

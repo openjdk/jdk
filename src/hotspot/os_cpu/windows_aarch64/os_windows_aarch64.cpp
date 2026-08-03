@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020, Microsoft Corporation. All rights reserved.
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "code/codeCache.hpp"
 #include "code/vtableStubs.hpp"
 #include "code/nativeInst.hpp"
+#include "cppstdlib/cstdlib.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
 #include "memory/allocation.inline.hpp"
@@ -54,7 +55,6 @@
 # include <sys/types.h>
 # include <signal.h>
 # include <errno.h>
-# include <stdlib.h>
 # include <stdio.h>
 # include <intrin.h>
 
@@ -113,6 +113,10 @@ intptr_t* os::fetch_bcp_from_context(const void* ucVoid) {
   CONTEXT* uc = (CONTEXT*)ucVoid;
   assert(is_interpreter(uc), "invariant");
   return reinterpret_cast<intptr_t*>(uc->REG_BCP);
+}
+
+void os::win32::context_set_pc(CONTEXT* uc, address pc) {
+  uc->Pc = (intptr_t)pc;
 }
 
 bool os::win32::get_frame_at_stack_banging_point(JavaThread* thread,

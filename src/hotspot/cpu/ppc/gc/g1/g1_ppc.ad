@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2025 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -64,13 +64,13 @@ static void post_write_barrier(MacroAssembler* masm,
                                Register tmp1,
                                Register tmp2,
                                bool decode_new_val = false) {
-  if (!G1PostBarrierStubC2::needs_barrier(node)) {
+  if (!G1BarrierStubC2::needs_post_barrier(node)) {
     return;
   }
   Assembler::InlineSkippedInstructionsCounter skip_counter(masm);
   G1BarrierSetAssembler* g1_asm = static_cast<G1BarrierSetAssembler*>(BarrierSet::barrier_set()->barrier_set_assembler());
-  G1PostBarrierStubC2* const stub = G1PostBarrierStubC2::create(node);
-  g1_asm->g1_write_barrier_post_c2(masm, store_addr, new_val, tmp1, tmp2, stub, decode_new_val);
+  bool new_val_may_be_null = G1BarrierStubC2::post_new_val_may_be_null(node);
+  g1_asm->g1_write_barrier_post_c2(masm, store_addr, new_val, tmp1, tmp2, new_val_may_be_null, decode_new_val);
 }
 
 %}

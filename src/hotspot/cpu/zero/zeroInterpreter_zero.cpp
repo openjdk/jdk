@@ -331,26 +331,9 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
   monitor = nullptr;
   if (method->is_synchronized()) {
     monitor = (BasicObjectLock*) istate->stack_base();
-    oop lockee = monitor->obj();
-    bool success = false;
-    if (LockingMode == LM_LEGACY) {
-      markWord disp = lockee->mark().set_unlocked();
-      monitor->lock()->set_displaced_header(disp);
-      success = true;
-      if (lockee->cas_set_mark(markWord::from_pointer(monitor), disp) != disp) {
-        // Is it simple recursive case?
-        if (thread->is_lock_owned((address) disp.clear_lock_bits().to_pointer())) {
-          monitor->lock()->set_displaced_header(markWord::from_pointer(nullptr));
-        } else {
-          success = false;
-        }
-      }
-    }
-    if (!success) {
-      CALL_VM_NOCHECK(InterpreterRuntime::monitorenter(thread, monitor));
-          if (HAS_PENDING_EXCEPTION)
-            goto unwind_and_return;
-    }
+    CALL_VM_NOCHECK(InterpreterRuntime::monitorenter(thread, monitor));
+    if (HAS_PENDING_EXCEPTION)
+      goto unwind_and_return;
   }
 
   // Get the signature handler
@@ -385,12 +368,15 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
     goto unlock_unwind_and_return;
 
   void **arguments;
-  void *mirror; {
+  // These locals must remain on stack until call completes
+  void *mirror;
+  void *env;
+  {
     arguments =
       (void **) stack->alloc(handler->argument_count() * sizeof(void **));
     void **dst = arguments;
 
-    void *env = thread->jni_environment();
+    env = thread->jni_environment();
     *(dst++) = &env;
 
     if (method->is_static()) {
@@ -481,24 +467,7 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
 
   // Unlock if necessary
   if (monitor) {
-    bool success = false;
-    if (LockingMode == LM_LEGACY) {
-      BasicLock* lock = monitor->lock();
-      oop rcvr = monitor->obj();
-      monitor->set_obj(nullptr);
-      success = true;
-      markWord header = lock->displaced_header();
-      if (header.to_pointer() != nullptr) { // Check for recursive lock
-        markWord old_header = markWord::encode(lock);
-        if (rcvr->cas_set_mark(header, old_header) != old_header) {
-          monitor->set_obj(rcvr);
-          success = false;
-        }
-      }
-    }
-    if (!success) {
-      InterpreterRuntime::monitorexit(monitor);
-    }
+    InterpreterRuntime::monitorexit(monitor);
   }
 
   unwind_and_return:

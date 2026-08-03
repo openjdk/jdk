@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_OPTO_ESCAPE_HPP
 
 #include "opto/addnode.hpp"
+#include "opto/idealGraphPrinter.hpp"
 #include "opto/node.hpp"
 #include "utilities/growableArray.hpp"
 
@@ -235,6 +236,7 @@ public:
   NodeType node_type() const { return (NodeType)_type;}
   void dump(bool print_state=true, outputStream* out=tty, bool newline=true) const;
   void dump_header(bool print_state=true, outputStream* out=tty) const;
+  const char* esc_name() const;
 #endif
 
 };
@@ -321,6 +323,7 @@ public:
 class ConnectionGraph: public ArenaObj {
   friend class PointsToNode; // to access _compile
   friend class FieldNode;
+  friend class IdealGraphPrinter;
 private:
   GrowableArray<PointsToNode*>  _nodes; // Map from ideal nodes to
                                         // ConnectionGraph nodes.
@@ -467,7 +470,8 @@ private:
   // Propagate GlobalEscape and ArgEscape escape states to all nodes
   // and check that we still have non-escaping java objects.
   bool find_non_escaped_objects(GrowableArray<PointsToNode*>& ptnodes_worklist,
-                                GrowableArray<JavaObjectNode*>& non_escaped_worklist);
+                                GrowableArray<JavaObjectNode*>& non_escaped_worklist,
+                                bool print_method = true);
 
   // Adjust scalar_replaceable state after Connection Graph is built.
   void adjust_scalar_replaceable_state(JavaObjectNode* jobj, Unique_Node_List &reducible_merges);
@@ -535,7 +539,8 @@ private:
   }
 
   // Helper functions
-  bool   is_oop_field(Node* n, int offset, bool* unsafe);
+  bool is_oop_field(Node* n, int offset, bool* unsafe);
+  bool has_oop_node_outs(Node* n);
   static Node* find_second_addp(Node* addp, Node* n);
   // offset of a field reference
   int address_offset(Node* adr, PhaseValues* phase);
@@ -551,11 +556,11 @@ private:
   // Helper methods for unique types split.
   bool split_AddP(Node *addp, Node *base);
 
-  PhiNode *create_split_phi(PhiNode *orig_phi, int alias_idx, GrowableArray<PhiNode *>  &orig_phi_worklist, bool &new_created);
-  PhiNode *split_memory_phi(PhiNode *orig_phi, int alias_idx, GrowableArray<PhiNode *>  &orig_phi_worklist, uint rec_depth);
+  PhiNode* create_split_phi(PhiNode* orig_phi, int alias_idx, Unique_Node_List& orig_phi_worklist, bool& new_created);
+  PhiNode* split_memory_phi(PhiNode* orig_phi, int alias_idx, Unique_Node_List& orig_phi_worklist, uint rec_depth);
 
-  void  move_inst_mem(Node* n, GrowableArray<PhiNode *>  &orig_phis);
-  Node* find_inst_mem(Node* mem, int alias_idx,GrowableArray<PhiNode *>  &orig_phi_worklist, uint rec_depth = 0);
+  void  move_inst_mem(Node* n, Unique_Node_List& orig_phis);
+  Node* find_inst_mem(Node* mem, int alias_idx, Unique_Node_List& orig_phi_worklist, uint rec_depth = 0);
   Node* step_through_mergemem(MergeMemNode *mmem, int alias_idx, const TypeOopPtr *toop);
 
   Node_Array _node_map; // used for bookkeeping during type splitting
@@ -563,8 +568,10 @@ private:
                         // Memory Phi    - most recent unique Phi split out
                         //                 from this Phi
                         // MemNode       - new memory input for this node
-                        // ChecCastPP    - allocation that this is a cast of
+                        // CheckCastPP   - allocation that this is a cast of
                         // allocation    - CheckCastPP of the allocation
+                        // NarrowMem     - newly created projection (type includes instance_id) from projection created
+                        //                 before EA
 
   // manage entries in _node_map
 
@@ -602,18 +609,19 @@ private:
   Node* specialize_cmp(Node* base, Node* curr_ctrl);
   Node* specialize_castpp(Node* castpp, Node* base, Node* current_control);
 
-  bool can_reduce_cmp(Node* n, Node* cmp) const;
+  bool can_reduce_cmp(PhiNode* n, Node* cmp) const;
   bool has_been_reduced(PhiNode* n, SafePointNode* sfpt) const;
   bool can_reduce_phi(PhiNode* ophi) const;
   bool can_reduce_check_users(Node* n, uint nesting) const;
   bool can_reduce_phi_check_inputs(PhiNode* ophi) const;
+  bool can_reduce_phi_at_castpp(PhiNode* phi, CastPPNode* castpp) const;
 
   void reduce_phi_on_field_access(Node* previous_addp, GrowableArray<Node *>  &alloc_worklist);
-  void reduce_phi_on_castpp_field_load(Node* castpp, GrowableArray<Node *>  &alloc_worklist, GrowableArray<Node *>  &memnode_worklist);
+  void reduce_phi_on_castpp_field_load(CastPPNode* castpp, GrowableArray<Node*> &alloc_worklist);
   void reduce_phi_on_cmp(Node* cmp);
   bool reduce_phi_on_safepoints(PhiNode* ophi);
   bool reduce_phi_on_safepoints_helper(Node* ophi, Node* cast, Node* selector, Unique_Node_List& safepoints);
-  void reduce_phi(PhiNode* ophi, GrowableArray<Node *>  &alloc_worklist, GrowableArray<Node *>  &memnode_worklist);
+  void reduce_phi(PhiNode* ophi, GrowableArray<Node*> &alloc_worklist);
 
   void set_not_scalar_replaceable(PointsToNode* ptn NOT_PRODUCT(COMMA const char* reason)) const {
 #ifndef PRODUCT

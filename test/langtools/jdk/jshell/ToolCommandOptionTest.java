@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,16 +30,16 @@
  *          jdk.compiler/com.sun.tools.javac.main
  * @library /tools/lib
  * @build ToolCommandOptionTest ReplToolTesting
- * @run testng ToolCommandOptionTest
+ * @run junit ToolCommandOptionTest
  */
 import java.nio.file.Path;
-import org.testng.annotations.Test;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class ToolCommandOptionTest extends ReplToolTesting {
 
+    @Test
     public void listTest() {
         test(
                 (a) -> assertCommand(a, "int x;",
@@ -67,6 +67,7 @@ public class ToolCommandOptionTest extends ReplToolTesting {
         );
     }
 
+    @Test
     public void typesTest() {
         test(
                 (a) -> assertCommand(a, "int x",
@@ -92,6 +93,7 @@ public class ToolCommandOptionTest extends ReplToolTesting {
         );
     }
 
+    @Test
     public void dropTest() {
         test(false, new String[]{"--no-startup"},
                 (a) -> assertCommand(a, "int x = 5;",
@@ -120,6 +122,7 @@ public class ToolCommandOptionTest extends ReplToolTesting {
         );
     }
 
+    @Test
     public void setEditorTest() {
         test(
                 (a) -> assertCommand(a, "/set editor -furball",
@@ -157,6 +160,7 @@ public class ToolCommandOptionTest extends ReplToolTesting {
         );
     }
 
+    @Test
     public void retainEditorTest() {
         test(
                 (a) -> assertCommand(a, "/set editor -retain -furball",
@@ -211,6 +215,7 @@ public class ToolCommandOptionTest extends ReplToolTesting {
         );
     }
 
+    @Test
     public void setEditorEnvTest() {
         setEnvVar("EDITOR", "best one");
         setEditorEnvSubtest();
@@ -244,6 +249,7 @@ public class ToolCommandOptionTest extends ReplToolTesting {
         );
     }
 
+    @Test
     public void setStartTest() {
         Compiler compiler = new Compiler();
         Path startup = compiler.getPath("StartTest/startup.txt");
@@ -288,6 +294,7 @@ public class ToolCommandOptionTest extends ReplToolTesting {
         );
     }
 
+    @Test
     public void retainStartTest() {
         Compiler compiler = new Compiler();
         Path startup = compiler.getPath("StartTest/startup.txt");
@@ -337,6 +344,7 @@ public class ToolCommandOptionTest extends ReplToolTesting {
         );
     }
 
+    @Test
     public void setModeTest() {
         test(
                 (a) -> assertCommandOutputContains(a, "/set mode",
@@ -399,6 +407,7 @@ public class ToolCommandOptionTest extends ReplToolTesting {
         );
     }
 
+    @Test
     public void setModeSmashTest() {
         test(
                 (a) -> assertCommand(a, "/set mode mymode -command",
@@ -428,6 +437,7 @@ public class ToolCommandOptionTest extends ReplToolTesting {
         );
     }
 
+    @Test
     public void retainModeTest() {
         test(
                 (a) -> assertCommandOutputStartsWith(a, "/set mode -retain",
@@ -531,6 +541,7 @@ public class ToolCommandOptionTest extends ReplToolTesting {
         );
     }
 
+    @Test
     public void retainModeDeleteLocalTest() {
         test(
                 (a) -> assertCommand(a, "/set mode rmdlt normal -command",

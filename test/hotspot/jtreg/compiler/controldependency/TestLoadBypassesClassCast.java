@@ -26,7 +26,7 @@
  * @summary C2: Load can bypass subtype check that enforces it's from the right object type
  * @requires vm.gc.Parallel
  * @requires vm.compiler2.enabled
- * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:CompileOnly=TestLoadBypassesClassCast::test
+ * @run main/othervm/timeout=480 -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:CompileOnly=TestLoadBypassesClassCast::test
  *                   -XX:CompileThreshold=20000 -XX:LoopMaxUnroll=1 -XX:-LoopUnswitching -XX:+UseParallelGC TestLoadBypassesClassCast
  *
  */

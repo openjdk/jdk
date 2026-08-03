@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,12 @@ package java.lang;
 
 /**
  * An instance of {@code ThreadDeath} was originally specified to be thrown
- * by a victim thread when "stopped" with {@link Thread#stop()}.
+ * by a victim thread when "stopped" with the {@link Thread} API.
  *
- * @deprecated {@link Thread#stop()} was originally specified to "stop" a victim
- *      thread by causing the victim thread to throw a {@code ThreadDeath}. It
- *      was inherently unsafe and deprecated in an early JDK release. The ability
- *      to "stop" a thread with {@code Thread.stop} has been removed and the
- *      {@code Thread.stop} method changed to throw an exception. Consequently,
- *      {@code ThreadDeath} is also deprecated, for removal.
+ * @deprecated {@code Thread} originally specified a "{@code stop}" method to stop a
+ *      victim thread by causing the victim thread to throw a {@code ThreadDeath}. It
+ *      was inherently unsafe and deprecated in an early JDK release. The {@code stop}
+ *      method has since been removed and {@code ThreadDeath} is deprecated, for removal.
  *
  * @since   1.0
  */

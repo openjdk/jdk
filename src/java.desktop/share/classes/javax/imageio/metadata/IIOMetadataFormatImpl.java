@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -952,7 +952,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
          * are intended to be delivered by the subclasser - ie supplier of the
          * metadataformat. For the standard format and all standard plugins that
          * is the JDK. For 3rd party plugins that they will supply their own.
-         * This includes plugins bundled with applets/applications.
+         * This includes plugins bundled with applications.
          * In all cases this means it is sufficient to search for those resource
          * in the module that is providing the MetadataFormatImpl subclass.
          */

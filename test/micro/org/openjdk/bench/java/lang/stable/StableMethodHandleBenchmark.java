@@ -35,22 +35,18 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 
-import java.lang.classfile.CodeBuilder;
-import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static java.lang.constant.ConstantDescs.*;
+import java.lang.LazyConstant;
 
 /**
- * Benchmark measuring StableValue performance
+ * Benchmark measuring lazy value performance
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -64,17 +60,15 @@ import static java.lang.constant.ConstantDescs.*;
 public class StableMethodHandleBenchmark {
 
     private static final MethodHandle FINAL_MH = identityHandle();
-    private static final StableValue<MethodHandle> STABLE_MH;
+    private static final LazyConstant<MethodHandle> STABLE_MH = LazyConstant.of(StableMethodHandleBenchmark::identityHandle);
 
     private static /* intentionally not final */ MethodHandle mh = identityHandle();
     private static final Dcl<MethodHandle> DCL = new Dcl<>(StableMethodHandleBenchmark::identityHandle);
     private static final AtomicReference<MethodHandle> ATOMIC_REFERENCE = new AtomicReference<>(identityHandle());
     private static final Map<String, MethodHandle> MAP = new ConcurrentHashMap<>();
-    private static final Map<String, MethodHandle> STABLE_MAP = StableValue.map(Set.of("identityHandle"), _ -> identityHandle());
+    private static final Map<String, MethodHandle> STABLE_MAP = Map.ofLazy(Set.of("identityHandle"), _ -> identityHandle());
 
     static {
-        STABLE_MH = StableValue.of();
-        STABLE_MH.setOrThrow(identityHandle());
         MAP.put("identityHandle", identityHandle());
     }
 
@@ -110,7 +104,7 @@ public class StableMethodHandleBenchmark {
 
     @Benchmark
     public int stableMh() throws Throwable {
-        return (int) STABLE_MH.orElseThrow().invokeExact(1);
+        return (int) STABLE_MH.get().invokeExact(1);
     }
 
     static MethodHandle identityHandle() {

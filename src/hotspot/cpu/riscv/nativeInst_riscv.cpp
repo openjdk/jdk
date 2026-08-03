@@ -28,6 +28,7 @@
 #include "code/compiledIC.hpp"
 #include "nativeInst_riscv.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/safepoint.hpp"
@@ -99,10 +100,10 @@ void NativeCall::optimize_call(address dest, bool mt_safe) {
   if (Assembler::reachable_from_branch_at(jmp_ins_pc, dest)) {
     int64_t distance = dest - jmp_ins_pc;
     uint32_t new_jal = Assembler::encode_jal(ra, distance);
-    Atomic::store((uint32_t *)jmp_ins_pc, new_jal);
+    AtomicAccess::store((uint32_t *)jmp_ins_pc, new_jal);
   } else if (!MacroAssembler::is_jalr_at(jmp_ins_pc)) { // The jalr is always identical: jalr ra, 0(t1)
     uint32_t new_jalr = Assembler::encode_jalr(ra, t1, 0);
-    Atomic::store((uint32_t *)jmp_ins_pc, new_jalr);
+    AtomicAccess::store((uint32_t *)jmp_ins_pc, new_jalr);
   } else {
     // No change to instruction stream
     return;
@@ -274,34 +275,9 @@ void NativeMovConstReg::print() {
                 p2i(instruction_address()), data());
 }
 
-//-------------------------------------------------------------------
-
-int NativeMovRegMem::offset() const  {
-  Unimplemented();
-  return 0;
-}
-
-void NativeMovRegMem::set_offset(int x) { Unimplemented(); }
-
-void NativeMovRegMem::verify() {
-  Unimplemented();
-}
-
 //--------------------------------------------------------------------------------
 
 void NativeJump::verify() { }
-
-
-void NativeJump::check_verified_entry_alignment(address entry, address verified_entry) {
-  // Patching to not_entrant can happen while activations of the method are
-  // in use. The patching in that instance must happen only when certain
-  // alignment restrictions are true. These guarantees check those
-  // conditions.
-
-  // Must be 4 bytes aligned
-  MacroAssembler::assert_alignment(verified_entry);
-}
-
 
 address NativeJump::jump_destination() const {
   address dest = MacroAssembler::target_addr_for_insn(instruction_address());
@@ -355,60 +331,10 @@ bool NativeInstruction::is_safepoint_poll() {
   return MacroAssembler::is_lwu_to_zr(address(this));
 }
 
-// A 16-bit instruction with all bits ones is permanently reserved as an illegal instruction.
-bool NativeInstruction::is_sigill_not_entrant() {
-  // jvmci
-  return uint_at(0) == 0xffffffff;
-}
-
-void NativeIllegalInstruction::insert(address code_pos) {
-  assert_cond(code_pos != nullptr);
-  Assembler::sd_instr(code_pos, 0xffffffff);   // all bits ones is permanently reserved as an illegal instruction
-}
-
 bool NativeInstruction::is_stop() {
   // an illegal instruction, 'csrrw x0, time, x0'
   uint32_t encoded = Assembler::encode_csrrw(x0, Assembler::time, x0);
   return uint_at(0) == encoded;
-}
-
-//-------------------------------------------------------------------
-
-// MT-safe inserting of a jump over a jump or a nop (used by
-// nmethod::make_not_entrant)
-
-void NativeJump::patch_verified_entry(address entry, address verified_entry, address dest) {
-
-  assert(dest == SharedRuntime::get_handle_wrong_method_stub(), "expected fixed destination of patch");
-
-  assert(nativeInstruction_at(verified_entry)->is_jump_or_nop() ||
-         nativeInstruction_at(verified_entry)->is_sigill_not_entrant(),
-         "riscv cannot replace non-jump with jump");
-
-  check_verified_entry_alignment(entry, verified_entry);
-
-  // Patch this nmethod atomically.
-  if (Assembler::reachable_from_branch_at(verified_entry, dest)) {
-    ptrdiff_t offset = dest - verified_entry;
-    guarantee(Assembler::is_simm21(offset) && ((offset % 2) == 0),
-              "offset is too large to be patched in one jal instruction."); // 1M
-
-    uint32_t insn = 0;
-    address pInsn = (address)&insn;
-    Assembler::patch(pInsn, 31, 31, (offset >> 20) & 0x1);
-    Assembler::patch(pInsn, 30, 21, (offset >> 1) & 0x3ff);
-    Assembler::patch(pInsn, 20, 20, (offset >> 11) & 0x1);
-    Assembler::patch(pInsn, 19, 12, (offset >> 12) & 0xff);
-    Assembler::patch(pInsn, 11, 7, 0); // zero, no link jump
-    Assembler::patch(pInsn, 6, 0, 0b1101111); // j, (jal x0 offset)
-    Assembler::sd_instr(verified_entry, insn);
-  } else {
-    // We use an illegal instruction for marking a method as
-    // not_entrant.
-    NativeIllegalInstruction::insert(verified_entry);
-  }
-
-  ICache::invalidate_range(verified_entry, instruction_size);
 }
 
 //-------------------------------------------------------------------

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,11 +41,12 @@ public class T6423003 extends ToolTester {
     void test(String... args) {
         task = tool.getTask(null, fm, null, Arrays.asList("-Xlint:all"), null, null);
         try {
+            // no need to check the result of JavacTask::call, reevaluate if the test is modified
             task.call();
+            throw new AssertionError("Expected IllegalStateException not thrown");
         } catch (IllegalStateException ex) {
             return;
         }
-        throw new AssertionError("Expected IllegalStateException not thrown");
     }
     public static void main(String... args) throws IOException {
         try (T6423003 t = new T6423003()) {

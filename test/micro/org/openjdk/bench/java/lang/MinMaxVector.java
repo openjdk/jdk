@@ -1,3 +1,26 @@
+/*
+ * Copyright (c) 2025, Red Hat, Inc. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
 package org.openjdk.bench.java.lang;
 
 import org.openjdk.jmh.annotations.Benchmark;
@@ -33,11 +56,11 @@ public class MinMaxVector
         int size;
 
         /**
-         * Probability of one of the min/max branches being taken.
+         * Probability of going down one of the min/max branch sides.
          * For max, this value represents the percentage of branches in which
-         * the value will be bigger or equal than the current max.
+         * the value will be bigger than the current max.
          * For min, this value represents the percentage of branches in which
-         * the value will be smaller or equal than the current min.
+         * the value will be smaller than the current min.
          */
         @Param({"50", "80", "100"})
         int probability;
@@ -90,21 +113,22 @@ public class MinMaxVector
             // such that when the values in the same index are compared for min/max,
             // the probability that a new min/max value is found has the probability P.
             do {
-                long max = ThreadLocalRandom.current().nextLong(10);
+                long max = ThreadLocalRandom.current().nextLong(1, 10);
                 result = new long[2][size];
                 result[0][0] = max;
                 result[1][0] = max - 1;
 
-                aboveCount = 0;
+                // Assume that the first value is above the initial value
+                aboveCount = 1;
                 for (int i = 1; i < result[0].length; i++) {
                     long value;
                     if (ThreadLocalRandom.current().nextLong(101) <= probability) {
-                        long increment = ThreadLocalRandom.current().nextLong(10);
+                        long increment = ThreadLocalRandom.current().nextLong(1, 10);
                         value = max + increment;
                         aboveCount++;
                     } else {
                         // Decrement by at least 1
-                        long diffToMax = ThreadLocalRandom.current().nextLong(10) + 1;
+                        long diffToMax = ThreadLocalRandom.current().nextLong(1, 10);
                         value = max - diffToMax;
                     }
                     result[0][i] = value;
@@ -112,7 +136,7 @@ public class MinMaxVector
                     max = Math.max(max, value);
                 }
 
-                abovePercent = ((aboveCount + 1) * 100) / size;
+                abovePercent = (aboveCount * 100) / size;
             } while (abovePercent != probability);
 
             return result;
@@ -199,7 +223,7 @@ public class MinMaxVector
         int result = 0;
         for (int i = 0; i < state.size; i++) {
             final int v = 11 * state.minIntA[i];
-            result = Math.min(result, v);
+            result = Math.min(v, result);
         }
         return result;
     }
@@ -209,7 +233,7 @@ public class MinMaxVector
         int result = 0;
         for (int i = 0; i < state.size; i++) {
             final int v = state.minIntA[i];
-            result = Math.min(result, v);
+            result = Math.min(v, result);
         }
         return result;
     }
@@ -219,7 +243,7 @@ public class MinMaxVector
         int result = 0;
         for (int i = 0; i < state.size; i++) {
             final int v = 11 * state.maxIntA[i];
-            result = Math.max(result, v);
+            result = Math.max(v, result);
         }
         return result;
     }
@@ -229,7 +253,7 @@ public class MinMaxVector
         int result = 0;
         for (int i = 0; i < state.size; i++) {
             final int v = state.maxIntA[i];
-            result = Math.max(result, v);
+            result = Math.max(v, result);
         }
         return result;
     }
@@ -263,7 +287,7 @@ public class MinMaxVector
         long result = 0;
         for (int i = 0; i < state.size; i++) {
             final long v = 11 * state.minLongA[i];
-            result = Math.min(result, v);
+            result = Math.min(v, result);
         }
         return result;
     }
@@ -273,7 +297,7 @@ public class MinMaxVector
         long result = 0;
         for (int i = 0; i < state.size; i++) {
             final long v = state.minLongA[i];
-            result = Math.min(result, v);
+            result = Math.min(v, result);
         }
         return result;
     }
@@ -283,7 +307,7 @@ public class MinMaxVector
         long result = 0;
         for (int i = 0; i < state.size; i++) {
             final long v = 11 * state.maxLongA[i];
-            result = Math.max(result, v);
+            result = Math.max(v, result);
         }
         return result;
     }
@@ -293,7 +317,7 @@ public class MinMaxVector
         long result = 0;
         for (int i = 0; i < state.size; i++) {
             final long v = state.maxLongA[i];
-            result = Math.max(result, v);
+            result = Math.max(v, result);
         }
         return result;
     }

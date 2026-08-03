@@ -470,6 +470,14 @@ class PhaseCFG : public Phase {
   Node* catch_cleanup_find_cloned_def(Block* use_blk, Node* def, Block* def_blk, int n_clone_idx);
   void  catch_cleanup_inter_block(Node *use, Block *use_blk, Node *def, Block *def_blk, int n_clone_idx);
 
+  // Ensure that n happens at b or above, i.e. at a block that dominates b.
+  // We expect n to be an orphan node without further inputs.
+  void ensure_node_is_at_block_or_above(Node* n, Block* b);
+
+  // Move node n from its current placement into the end of block b.
+  // Move also outgoing Mach projections.
+  void move_node_and_its_projections_to_block(Node* n, Block* b);
+
   // Detect implicit-null-check opportunities.  Basically, find null checks
   // with suitable memory ops nearby.  Use the memory op to do the null check.
   // I can generate a memory op if there is not one nearby.
@@ -768,8 +776,8 @@ class CFGEdge : public ResourceObj {
   // Private accessors
   int  from_pct() const { return _from_pct; }
   int  to_pct()   const { return _to_pct;   }
-  int  from_infrequent() const { return from_pct() < BlockLayoutMinDiamondPercentage; }
-  int  to_infrequent()   const { return to_pct()   < BlockLayoutMinDiamondPercentage; }
+  bool from_infrequent() const { return from_pct() < BlockLayoutMinDiamondPercentage; }
+  bool to_infrequent()   const { return to_pct()   < BlockLayoutMinDiamondPercentage; }
 
  public:
   enum {
@@ -787,7 +795,7 @@ class CFGEdge : public ResourceObj {
   double  freq() const { return _freq; }
   Block* from() const { return _from; }
   Block* to  () const { return _to;   }
-  int  infrequent() const { return _infrequent; }
+  bool   infrequent() const { return _infrequent; }
   int state() const { return _state; }
 
   void set_state(int state) { _state = state; }

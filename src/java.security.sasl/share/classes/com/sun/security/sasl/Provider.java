@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 package com.sun.security.sasl;
 
+import java.io.Serial;
 import java.security.NoSuchAlgorithmException;
 import java.security.InvalidParameterException;
 import java.security.ProviderException;
@@ -45,6 +46,7 @@ import static sun.security.util.SecurityConstants.PROVIDER_VER;
 
 public final class Provider extends java.security.Provider {
 
+    @Serial
     private static final long serialVersionUID = 8622598936488630849L;
 
     private static final String info = "Sun SASL provider" +

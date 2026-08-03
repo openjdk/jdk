@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,9 +36,6 @@
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmciRuntime.hpp"
-#endif
 
 static int slow_path_size(nmethod* nm) {
   // The slow path code is out of line with C2
@@ -58,8 +55,6 @@ static int entry_barrier_offset(nmethod* nm) {
     return -4 * (4 + slow_path_size(nm));
   case NMethodPatchingType::conc_instruction_and_data_patch:
     return -4 * (10 + slow_path_size(nm));
-  case NMethodPatchingType::conc_data_patch:
-    return -4 * (5 + slow_path_size(nm));
   }
   ShouldNotReachHere();
   return 0;
@@ -83,42 +78,43 @@ class NativeNMethodBarrier {
 
 public:
   NativeNMethodBarrier(nmethod* nm): _nm(nm) {
-#if INCLUDE_JVMCI
-    if (nm->is_compiled_by_jvmci()) {
-      address pc = nm->code_begin() + nm->jvmci_nmethod_data()->nmethod_entry_patch_offset();
-      RelocIterator iter(nm, pc, pc + 4);
-      guarantee(iter.next(), "missing relocs");
-      guarantee(iter.type() == relocInfo::section_word_type, "unexpected reloc");
-
-      _guard_addr = (int*) iter.section_word_reloc()->target();
-      _instruction_address = pc;
-    } else
-#endif
-      {
-        _instruction_address = nm->code_begin() + nm->frame_complete_offset() + entry_barrier_offset(nm);
-        if (nm->is_compiled_by_c2()) {
-          // With c2 compiled code, the guard is out-of-line in a stub
-          // We find it using the RelocIterator.
-          RelocIterator iter(nm);
-          while (iter.next()) {
-            if (iter.type() == relocInfo::entry_guard_type) {
-              entry_guard_Relocation* const reloc = iter.entry_guard_reloc();
-              _guard_addr = reinterpret_cast<int*>(reloc->addr());
-              return;
-            }
+      _instruction_address = nm->code_begin() + nm->frame_complete_offset() + entry_barrier_offset(nm);
+      if (nm->is_compiled_by_c2()) {
+        // With c2 compiled code, the guard is out-of-line in a stub
+        // We find it using the RelocIterator.
+        RelocIterator iter(nm);
+        while (iter.next()) {
+          if (iter.type() == relocInfo::entry_guard_type) {
+            entry_guard_Relocation* const reloc = iter.entry_guard_reloc();
+            _guard_addr = reinterpret_cast<int*>(reloc->addr());
+            return;
           }
-          ShouldNotReachHere();
         }
-        _guard_addr =  reinterpret_cast<int*>(instruction_address() + local_guard_offset(nm));
+        ShouldNotReachHere();
       }
+      _guard_addr =  reinterpret_cast<int*>(instruction_address() + local_guard_offset(nm));
   }
 
   int get_value() {
-    return Atomic::load_acquire(guard_addr());
+    return AtomicAccess::load_acquire(guard_addr());
   }
 
-  void set_value(int value) {
-    Atomic::release_store(guard_addr(), value);
+  void set_value(int value, int bit_mask) {
+    if (bit_mask == ~0) {
+      AtomicAccess::release_store(guard_addr(), value);
+      return;
+    }
+    assert((value & ~bit_mask) == 0, "trying to set bits outside the mask");
+    value &= bit_mask;
+    int old_value = AtomicAccess::load(guard_addr());
+    while (true) {
+      // Only bits in the mask are changed
+      int new_value = value | (old_value & ~bit_mask);
+      if (new_value == old_value) break;
+      int v = AtomicAccess::cmpxchg(guard_addr(), old_value, new_value, memory_order_release);
+      if (v == old_value) break;
+      old_value = v;
+    }
   }
 
   bool check_barrier(err_msg& msg) const;
@@ -181,7 +177,7 @@ void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
   new_frame->pc = SharedRuntime::get_handle_wrong_method_stub();
 }
 
-void BarrierSetNMethod::set_guard_value(nmethod* nm, int value) {
+void BarrierSetNMethod::set_guard_value(nmethod* nm, int value, int bit_mask) {
   if (!supports_entry_barrier(nm)) {
     return;
   }
@@ -197,8 +193,12 @@ void BarrierSetNMethod::set_guard_value(nmethod* nm, int value) {
     bs_asm->increment_patching_epoch();
   }
 
+  // Enable WXWrite: the function is called directly from nmethod_entry_barrier
+  // stub.
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current()));
+
   NativeNMethodBarrier barrier(nm);
-  barrier.set_value(value);
+  barrier.set_value(value, bit_mask);
 }
 
 int BarrierSetNMethod::guard_value(nmethod* nm) {
@@ -209,10 +209,3 @@ int BarrierSetNMethod::guard_value(nmethod* nm) {
   NativeNMethodBarrier barrier(nm);
   return barrier.get_value();
 }
-
-#if INCLUDE_JVMCI
-bool BarrierSetNMethod::verify_barrier(nmethod* nm, err_msg& msg) {
-  NativeNMethodBarrier barrier(nm);
-  return barrier.check_barrier(msg);
-}
-#endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,8 @@ public class DiagSpans extends TestRunner {
                         }
                         """,
                         '/',
-                        '^');
+                        '^',
+                        false);
     }
 
     @Test
@@ -87,7 +88,8 @@ public class DiagSpans extends TestRunner {
                         }
                         """,
                         '/',
-                        '^');
+                        '^',
+                        false);
     }
 
     @Test
@@ -102,7 +104,8 @@ public class DiagSpans extends TestRunner {
                         }
                         """,
                         '/',
-                        '^');
+                        '^',
+                        false);
     }
 
     @Test
@@ -118,7 +121,8 @@ public class DiagSpans extends TestRunner {
                         }
                         """,
                         '/',
-                        '^');
+                        '^',
+                        false);
     }
 
     @Test
@@ -134,7 +138,8 @@ public class DiagSpans extends TestRunner {
                         }
                         """,
                         '/',
-                        '^');
+                        '^',
+                        false);
     }
 
     @Test
@@ -158,7 +163,8 @@ public class DiagSpans extends TestRunner {
                         class Sub2 extends Base2 {}
                         """,
                         '/',
-                        '^');
+                        '^',
+                        true);
     }
 
     @Test
@@ -175,7 +181,8 @@ public class DiagSpans extends TestRunner {
                         class Sub1 extends Base1 {}
                         """,
                         '/',
-                        '^');
+                        '^',
+                        false);
     }
 
     @Test
@@ -192,10 +199,11 @@ public class DiagSpans extends TestRunner {
                         class Sub1 extends Base1 {}
                         """,
                         '/',
-                        '^');
+                        '^',
+                        false);
     }
 
-    private void runDiagSpanTest(String code, char spanMarker, char prefMarker) throws Exception {
+    private void runDiagSpanTest(String code, char spanMarker, char prefMarker, boolean succCompilationExpected) throws Exception {
         var realCode = new StringBuilder();
         var expectedError = new ArrayList<String>();
         int startPos = -1;
@@ -238,7 +246,9 @@ public class DiagSpans extends TestRunner {
         };
         var sourceFiles = List.of(new JFOImpl(realCode.toString()));
         var task = compiler.getTask(null, null, dl, null, null, sourceFiles);
-        task.call();
+        if (task.call() != succCompilationExpected) {
+            throw new AssertionError("unexpected compilation result");
+        }
         if (!Objects.equals(expectedError, actualErrors)) {
             throw new AssertionError("Expected error spans not found, expected: " +
                                      expectedError + ", actual: " + actualErrors);

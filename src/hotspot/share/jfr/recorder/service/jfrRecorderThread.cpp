@@ -33,8 +33,8 @@
 #include "memory/universe.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.hpp"
-#include "utilities/preserveException.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/preserveException.hpp"
 
 static Thread* start_thread(instanceHandle thread_oop, ThreadFunction proc, TRAPS) {
   assert(thread_oop.not_null(), "invariant");

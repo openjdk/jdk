@@ -28,7 +28,7 @@
 #include "logging/logFileStreamOutput.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 class AsyncLogWriter::Locker : public StackObj {
   Thread*& _holder;
@@ -324,7 +324,7 @@ void AsyncLogWriter::initialize() {
     for (LogTagSet* ts = LogTagSet::first(); ts != nullptr; ts = ts->next()) {
       ts->wait_until_no_readers();
     }
-    Atomic::release_store_fence(&AsyncLogWriter::_instance, self);
+    AtomicAccess::release_store_fence(&AsyncLogWriter::_instance, self);
     os::start_thread(self);
     log_debug(logging, thread)("Async logging thread started.");
   } else {

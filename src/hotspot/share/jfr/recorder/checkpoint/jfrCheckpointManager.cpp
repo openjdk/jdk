@@ -51,7 +51,7 @@
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/mutex.hpp"
@@ -176,6 +176,7 @@ static inline bool is_global(ConstBufferPtr buffer) {
   return buffer->context() == JFR_GLOBAL;
 }
 
+#ifdef ASSERT
 static inline bool is_thread_local(ConstBufferPtr buffer) {
   assert(buffer != nullptr, "invariant");
   return buffer->context() == JFR_THREADLOCAL;
@@ -185,6 +186,7 @@ static inline bool is_virtual_thread_local(ConstBufferPtr buffer) {
   assert(buffer != nullptr, "invariant");
   return buffer->context() == JFR_VIRTUAL_THREADLOCAL;
 }
+#endif // ASSERT
 
 BufferPtr JfrCheckpointManager::lease_global(Thread* thread, bool previous_epoch /* false */, size_t size /* 0 */) {
   JfrCheckpointMspace* const mspace = instance()._global_mspace;
@@ -676,18 +678,36 @@ void JfrCheckpointManager::write_simplified_vthread_checkpoint(traceid vtid) {
   JfrTypeManager::write_simplified_vthread_checkpoint(vtid);
 }
 
-class JfrNotifyClosure : public ThreadClosure {
+// Reset thread local state used for object allocation sampling.
+static void clear_last_allocated_bytes(JavaThread* jt) {
+  assert(jt != nullptr, "invariant");
+  assert(!JfrRecorder::is_recording(), "invariant");
+  JfrThreadLocal* const tl = jt->jfr_thread_local();
+  assert(tl != nullptr, "invariant");
+  if (tl->last_allocated_bytes() != 0) {
+    tl->clear_last_allocated_bytes();
+  }
+  assert(tl->last_allocated_bytes() == 0, "invariant");
+}
+
+class JfrNotifyClosure : public StackObj {
+ private:
+  bool _clear;
  public:
-  void do_thread(Thread* thread) {
-    assert(thread != nullptr, "invariant");
+  JfrNotifyClosure(bool clear) : _clear(clear) {}
+  void do_thread(JavaThread* jt) {
+    assert(jt != nullptr, "invariant");
     assert_locked_or_safepoint(Threads_lock);
-    JfrJavaEventWriter::notify(JavaThread::cast(thread));
+    JfrJavaEventWriter::notify(jt);
+    if (_clear) {
+      clear_last_allocated_bytes(jt);
+    }
   }
 };
 
-void JfrCheckpointManager::notify_threads() {
+void JfrCheckpointManager::notify_threads(bool clear /* false */) {
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
-  JfrNotifyClosure tc;
+  JfrNotifyClosure tc(clear);
   JfrJavaThreadIterator iter;
   while (iter.has_next()) {
     tc.do_thread(iter.next());

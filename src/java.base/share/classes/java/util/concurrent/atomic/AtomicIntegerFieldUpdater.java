@@ -42,14 +42,17 @@ import java.util.function.IntUnaryOperator;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
+import jdk.internal.vm.annotation.TrustFinalFields;
+
 import java.lang.invoke.VarHandle;
 
 /**
  * A reflection-based utility that enables atomic updates to
- * designated {@code volatile int} fields of designated classes.
- * This class is designed for use in atomic data structures in which
- * several fields of the same node are independently subject to atomic
- * updates.
+ * designated non-static {@code volatile int} fields of designated
+ * classes, providing a subset of the functionality of class {@link
+ * VarHandle} that should be used instead.  This class is designed for
+ * use in atomic data structures in which several fields of the same
+ * node are independently subject to atomic updates.
  *
  * <p>Note that the guarantees of the {@code compareAndSet}
  * method in this class are weaker than in other atomic classes.
@@ -370,6 +373,7 @@ public abstract class AtomicIntegerFieldUpdater<T> {
     /**
      * Standard hotspot implementation using intrinsics.
      */
+    @TrustFinalFields
     private static final class AtomicIntegerFieldUpdaterImpl<T>
         extends AtomicIntegerFieldUpdater<T> {
         private static final Unsafe U = Unsafe.getUnsafe();
@@ -401,6 +405,9 @@ public abstract class AtomicIntegerFieldUpdater<T> {
 
             if (!Modifier.isVolatile(modifiers))
                 throw new IllegalArgumentException("Must be volatile type");
+
+            if (Modifier.isStatic(modifiers))
+                throw new IllegalArgumentException("Must not be a static field");
 
             // Access to protected field members is restricted to receivers only
             // of the accessing class, or one of its subclasses, and the

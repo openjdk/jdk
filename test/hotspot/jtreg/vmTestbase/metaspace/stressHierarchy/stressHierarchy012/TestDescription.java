@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @comment generate and compile metaspace.stressHierarchy.common.HumongousClass
  * @run driver metaspace.stressHierarchy.common.GenClassesBuilder
- * @run main/othervm
+ * @run main/othervm/timeout=480
  *      -XX:MaxMetaspaceSize=250m
  *      -Xss10m
  *      -Xbootclasspath/a:.

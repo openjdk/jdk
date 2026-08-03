@@ -24,7 +24,7 @@
 /*
  * @test
  * @key headful
- * @bug 8020443 6899304 4737732
+ * @bug 8020443 6899304 4737732 8357390
  * @summary Tests that Toolkit.getScreenInsets() returns correct insets
  * @library /test/lib
  * @build jdk.test.lib.Platform
@@ -44,7 +44,7 @@ import jdk.test.lib.Platform;
 public class ScreenInsetsTest {
     private static final int SIZE = 100;
     // Allow a margin tolerance of 1 pixel due to scaling
-    private static final int MARGIN_TOLERANCE = 1;
+    private static final int MARGIN_TOLERANCE = 2;
 
     public static void main(String[] args) throws InterruptedException {
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ public class ClearLwQueueBreakTest {
     JTextField tf1 = new JTextField("     ");
     JTextField tf2 = new JTextField("     ");
     JTextField tf3 = new JTextField("     ");
-    AtomicBoolean typed = new AtomicBoolean(false);
+    final AtomicBoolean typed = new AtomicBoolean(false);
     FocusListener listener1;
     FocusListener listener2;
 
@@ -114,6 +114,7 @@ public class ClearLwQueueBreakTest {
         f1.setLocationRelativeTo(null);
         f1.setVisible(true);
         Util.waitForIdle(robot);
+        robot.delay(1000);
 
         /*
          * Break the sequence of LW requests in the middle.

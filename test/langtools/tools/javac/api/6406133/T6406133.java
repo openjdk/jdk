@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,9 @@ public class T6406133 extends ToolTester {
         task = tool.getTask(pw, fm, listener, null, null, compilationUnits);
         task.setProcessors(Arrays.asList(processor));
         task.setLocale(locale); //6443132
-        task.call();
+        if (task.call()) {
+            throw new AssertionError("test compilation was expected to fail");
+        }
         if (!processor.locale.equals(locale))
             throw new AssertionError("Error in diagnostic localization during annotation processing");
         String res = useListener ? listener.result : pw.toString();

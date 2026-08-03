@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+#include "gc/z/zAddress.inline.hpp"
+#include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zBarrierSet.hpp"
 #include "gc/z/zBarrierSetAssembler.hpp"
 #include "gc/z/zBarrierSetNMethod.hpp"
@@ -30,11 +32,14 @@
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zStackWatermark.hpp"
 #include "gc/z/zThreadLocalData.hpp"
+#include "gc/z/zUtils.inline.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/registerMap.hpp"
 #include "runtime/stackWatermarkSet.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #ifdef COMPILER1
 #include "gc/z/c1/zBarrierSetC1.hpp"
@@ -45,6 +50,168 @@
 
 class ZBarrierSetC1;
 class ZBarrierSetC2;
+
+class ZColorStoreGoodOopClosure : public BasicOopIterateClosure {
+public:
+  virtual void do_oop(oop* p_) {
+    volatile zpointer* const p = (volatile zpointer*)p_;
+    const zpointer ptr = ZBarrier::load_atomic(p);
+    const zaddress addr = ZPointer::uncolor(ptr);
+    AtomicAccess::store(p, ZAddress::store_good(addr));
+  }
+
+  virtual void do_oop(narrowOop* p) {
+    ShouldNotReachHere();
+  }
+};
+
+class ZLoadBarrierOopClosure : public BasicOopIterateClosure {
+public:
+  virtual void do_oop(oop* p) {
+    ZBarrier::load_barrier_on_oop_field((zpointer*)p);
+  }
+
+  virtual void do_oop(narrowOop* p) {
+    ShouldNotReachHere();
+  }
+};
+
+void ZBarrierSet::load_barrier_all(oop src, size_t size) {
+  check_is_valid_zaddress(src);
+
+  ZLoadBarrierOopClosure cl;
+  ZIterator::oop_iterate(src, &cl);
+}
+
+void ZBarrierSet::color_store_good_all(oop dst, size_t size) {
+  check_is_valid_zaddress(dst);
+  assert(dst->is_typeArray() || ZHeap::heap()->is_young(to_zaddress(dst)), "ZColorStoreGoodOopClosure is only valid for young objects");
+
+  ZColorStoreGoodOopClosure cl_sg;
+  ZIterator::oop_iterate(dst, &cl_sg);
+}
+
+zaddress ZBarrierSet::load_barrier_on_oop_field_preloaded(volatile zpointer* p, zpointer o) {
+  return ZBarrier::load_barrier_on_oop_field_preloaded(p, o);
+}
+
+zaddress ZBarrierSet::no_keep_alive_load_barrier_on_weak_oop_field_preloaded(volatile zpointer* p, zpointer o) {
+  return ZBarrier::no_keep_alive_load_barrier_on_weak_oop_field_preloaded(p, o);
+}
+
+zaddress ZBarrierSet::no_keep_alive_load_barrier_on_phantom_oop_field_preloaded(volatile zpointer* p, zpointer o) {
+  return ZBarrier::no_keep_alive_load_barrier_on_phantom_oop_field_preloaded(p, o);
+}
+
+zaddress ZBarrierSet::load_barrier_on_weak_oop_field_preloaded(volatile zpointer* p, zpointer o) {
+  return ZBarrier::load_barrier_on_weak_oop_field_preloaded(p, o);
+}
+
+zaddress ZBarrierSet::load_barrier_on_phantom_oop_field_preloaded(volatile zpointer* p, zpointer o) {
+  return ZBarrier::load_barrier_on_phantom_oop_field_preloaded(p, o);
+}
+
+void ZBarrierSet::store_barrier_on_heap_oop_field(volatile zpointer* p, bool heal) {
+  ZBarrier::store_barrier_on_heap_oop_field(p, heal);
+}
+
+void ZBarrierSet::no_keep_alive_store_barrier_on_heap_oop_field(volatile zpointer* p) {
+  ZBarrier::no_keep_alive_store_barrier_on_heap_oop_field(p);
+}
+
+void ZBarrierSet::store_barrier_on_native_oop_field(volatile zpointer* p, bool heal) {
+  ZBarrier::store_barrier_on_native_oop_field(p, heal);
+}
+
+zaddress ZBarrierSet::load_barrier_on_oop_field(volatile zpointer* p) {
+  return ZBarrier::load_barrier_on_oop_field(p);
+}
+
+class ZBarrierSet::ZClonerOopClosure : public BasicOopIterateClosure {
+  const zaddress _src;
+  const zaddress _dst;
+  const size_t   _size;
+  const bool     _is_dst_old;
+
+  size_t _copied_bytes;
+
+  void copy_to(size_t byte_offset) {
+    assert(byte_offset != 0 && _copied_bytes <= byte_offset,
+           "Unexpected size and oop iteration order: %zu <= %zu",
+           _copied_bytes, byte_offset);
+
+    if (_copied_bytes == byte_offset) {
+      // Already copied
+      return;
+    }
+
+    // Copy up to byte_offset
+    const size_t copy_size = byte_offset - _copied_bytes;
+    ZUtils::object_copy_disjoint_atomic(_src, _dst, _copied_bytes, copy_size);
+
+    // Account copied bytes
+    _copied_bytes = byte_offset;
+  }
+
+public:
+  ZClonerOopClosure(zaddress src, zaddress dst, size_t size)
+    : _src(src),
+      _dst(dst),
+      _size(size),
+      _is_dst_old(ZHeap::heap()->page(dst)->is_old()),
+      _copied_bytes(0) {}
+
+  ~ZClonerOopClosure() {
+    precond(!to_oop(_src)->is_typeArray() || _copied_bytes == 0);
+
+    // Copy any potential tail
+    copy_to(_size);
+
+    // Copy will have copied the header, clear it.
+    to_oop(_dst)->init_mark();
+
+    postcond(_copied_bytes == _size);
+  }
+
+  virtual void do_oop(oop* p) {
+    volatile zpointer* const src_p = (volatile zpointer*)p;
+    const size_t offset = (uintptr_t)src_p - untype(_src);
+    volatile zpointer* const dst_p = (volatile zpointer*)(untype(_dst) + offset);
+
+    // Copy payload up to element or field
+    copy_to(offset);
+
+    // Load source object
+    const zaddress obj = ZBarrier::load_barrier_on_oop_field(src_p);
+
+    // Store barrier
+
+    // Store barrier over null (or uninitialized) requires only remembered-set handling
+    if (_is_dst_old) {
+      // "page is old" may be racy w.r.t. flip aging, but relocation handles
+      // missing remembered-set entries via ZRelocateAddRemsetForFlipPromoted.
+      ZGeneration::young()->remember(dst_p);
+    }
+
+    // No concurrent writes are allowed to the dst object, except potential
+    // GC barrier healing.
+    AtomicAccess::store(dst_p, ZAddress::store_good(obj));
+
+    _copied_bytes += oopSize;
+
+    postcond(_copied_bytes == offset + oopSize);
+  }
+
+  virtual void do_oop(narrowOop* p) {
+    ShouldNotReachHere();
+  }
+};
+
+void ZBarrierSet::clone_obj(zaddress src, zaddress dst, size_t size) {
+  // Clone the object
+  ZClonerOopClosure cl(src, dst, size);
+  ZIterator::oop_iterate(to_oop(src), &cl);
+}
 
 ZBarrierSet::ZBarrierSet()
   : BarrierSet(make_barrier_set_assembler<ZBarrierSetAssembler>(),
@@ -115,55 +282,20 @@ static void deoptimize_allocation(JavaThread* thread) {
   assert(caller_frame.is_compiled_frame(), "must be compiled");
 
   const nmethod* const nm = caller_frame.cb()->as_nmethod();
-  if ((nm->is_compiled_by_c2() || nm->is_compiled_by_jvmci()) && !caller_frame.is_deoptimized_frame()) {
+  if (nm->is_compiled_by_c2() && !caller_frame.is_deoptimized_frame()) {
     // The JIT might have elided barriers on this object so deoptimize the frame and let the
-    // intepreter deal with it.
+    // interpreter deal with it.
     Deoptimization::deoptimize_frame(thread, caller_frame.id());
   }
 }
 
 void ZBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop new_obj) {
   const ZPage* const page = ZHeap::heap()->page(to_zaddress(new_obj));
-  const ZPageAge age = page->age();
-  if (age == ZPageAge::old) {
+  if (!page->allows_raw_null()) {
     // We promised C2 that its allocations would end up in young gen. This object
-    // breaks that promise. Take a few steps in the interpreter instead, which has
-    // no such assumptions about where an object resides.
+    // is too old to guarantee that. Take a few steps in the interpreter instead,
+    // which does not elide barriers based on the age of an object.
     deoptimize_allocation(thread);
-    return;
-  }
-
-  if (!ZGeneration::young()->is_phase_mark_complete()) {
-    return;
-  }
-
-  if (!page->is_relocatable()) {
-    return;
-  }
-
-  if (ZRelocate::compute_to_age(age) != ZPageAge::old) {
-    return;
-  }
-
-  // If the object is young, we have to still be careful that it isn't racingly
-  // about to get promoted to the old generation. That causes issues when null
-  // pointers are supposed to be coloured, but the JIT is a bit sloppy and
-  // reinitializes memory with raw nulls. We detect this situation and detune
-  // rather than relying on the JIT to never be sloppy with redundant initialization.
-  deoptimize_allocation(thread);
-}
-
-void ZBarrierSet::clone_obj_array(objArrayOop src_obj, objArrayOop dst_obj) {
-  volatile zpointer* src = (volatile zpointer*)src_obj->base();
-  volatile zpointer* dst = (volatile zpointer*)dst_obj->base();
-  const int length = src_obj->length();
-
-  for (const volatile zpointer* const end = src + length; src < end; src++, dst++) {
-    zaddress elem = ZBarrier::load_barrier_on_oop_field(src);
-    // We avoid healing here because the store below colors the pointer store good,
-    // hence avoiding the cost of a CAS.
-    ZBarrier::store_barrier_on_heap_oop_field(dst, false /* heal */);
-    Atomic::store(dst, ZAddress::store_good(elem));
   }
 }
 

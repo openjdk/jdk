@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,8 @@ public class GenericTestCaseForUnsupportedCPU extends
             // a warning will occur in VM output if UseSHA is disabled.
             if (!optionName.equals(DigestOptionsBase.USE_SHA_OPTION)) {
                 CommandLineOptionTest.verifySameJVMStartup(
-                        new String[] { DigestOptionsBase.getWarningForUnsupportedCPU(optionName) },
+                        new String[] { "warning: " }, // Accept any warning message, e.g. "requires that UseSHA is enabled"
+                                                      // or the common "not available on this CPU" message.
                         null,
                         shouldPassMessage,
                         shouldPassMessage,

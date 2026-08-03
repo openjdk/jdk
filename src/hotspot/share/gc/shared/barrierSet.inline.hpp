@@ -34,15 +34,16 @@
 
 template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
-inline bool BarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_arraycopy_in_heap(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
-                                                                                      arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
-                                                                                      size_t length) {
+inline OopCopyResult BarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_arraycopy_in_heap(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
+                                                                                               arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
+                                                                                               size_t length) {
   T* src = arrayOopDesc::obj_offset_to_raw(src_obj, src_offset_in_bytes, src_raw);
   T* dst = arrayOopDesc::obj_offset_to_raw(dst_obj, dst_offset_in_bytes, dst_raw);
 
   if (!HasDecorator<decorators, ARRAYCOPY_CHECKCAST>::value) {
     // Covariant, copy without checks
-    return Raw::oop_arraycopy(nullptr, 0, src, nullptr, 0, dst, length);
+    Raw::oop_arraycopy(nullptr, 0, src, nullptr, 0, dst, length);
+    return OopCopyResult::ok;
   }
 
   // Copy each element with checking casts
@@ -50,12 +51,12 @@ inline bool BarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_arraycopy_in
   for (const T* const end = src + length; src < end; src++, dst++) {
     const T elem = *src;
     if (!oopDesc::is_instanceof_or_null(CompressedOops::decode(elem), dst_klass)) {
-      return false;
+      return OopCopyResult::failed_check_class_cast;
     }
     *dst = elem;
   }
 
-  return true;
+  return OopCopyResult::ok;
 }
 
 #endif // SHARE_GC_SHARED_BARRIERSET_INLINE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6270015
  * @library /test/lib
@@ -40,6 +40,7 @@ import javax.net.ssl.*;
 import jdk.test.lib.net.SimpleSSLContext;
 
 import jdk.test.lib.net.URIBuilder;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
 
 /**
  * Test https POST large file via chunked encoding (unusually small chunks)
@@ -54,7 +55,7 @@ public class Test6a extends Test {
         HttpsServer server = HttpsServer.create (addr, 0);
         HttpContext ctx = server.createContext ("/test", handler);
         ExecutorService executor = Executors.newCachedThreadPool();
-        SSLContext ssl = new SimpleSSLContext().get();
+        SSLContext ssl = SimpleSSLContext.findSSLContext();
         server.setExecutor (executor);
         server.setHttpsConfigurator(new HttpsConfigurator (ssl));
         server.start ();
@@ -115,7 +116,7 @@ public class Test6a extends Test {
                 error = true;
             }
             is.close();
-            t.sendResponseHeaders (200, -1);
+            t.sendResponseHeaders (200, RSPBODY_EMPTY);
             t.close();
         }
     }

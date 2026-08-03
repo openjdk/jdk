@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -157,6 +157,35 @@ void test_merge_dmb() {
   BufferBlob::free(b);
 }
 
+void test_merge_dmb_does_not_cross_section_start() {
+  unsigned int insns[12] = {};
+
+  // Add a StoreStore membar just before the start of the CodeBuffer's
+  // instruction section to see that it doesn't affect any merging decisions
+  // inside the code buffer.
+  insns[0] = test_encode_dmb_st;
+
+  unsigned int* insns_actual = (insns + 1);
+
+  CodeBuffer code((address)insns_actual, sizeof(insns) - sizeof(insns[0]));
+  MacroAssembler _masm(&code);
+  {
+    __ membar(Assembler::Membar_mask_bits::LoadStore);
+    __ membar(Assembler::Membar_mask_bits::StoreStore);
+  }
+
+  asm_dump(code.insts()->start(), code.insts()->end());
+
+  // The last StoreStore in the CodeBuffer should not have been removed.
+  static const unsigned int insns_expected[] = {
+    test_encode_dmb_ld,
+    test_encode_dmb_st,
+  };
+
+  EXPECT_EQ(code.insts()->size(), (CodeSection::csize_t)(sizeof(insns_expected)));
+  asm_check((const unsigned int *)code.insts()->start(), insns_expected, sizeof(insns_expected) / sizeof(insns_expected[0]));
+}
+
 TEST_VM(AssemblerAArch64, merge_dmb_1) {
   FlagSetting fs(AlwaysMergeDMB, true);
   test_merge_dmb();
@@ -165,6 +194,11 @@ TEST_VM(AssemblerAArch64, merge_dmb_1) {
 TEST_VM(AssemblerAArch64, merge_dmb_2) {
   FlagSetting fs(AlwaysMergeDMB, false);
   test_merge_dmb();
+}
+
+TEST_VM(AssemblerAArch64, merge_dmb_does_not_cross_section_start) {
+  FlagSetting fs(AlwaysMergeDMB, false);
+  test_merge_dmb_does_not_cross_section_start();
 }
 
 TEST_VM(AssemblerAArch64, merge_dmb_block_by_label) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,19 @@
 
 package com.sun.tools.javac.file;
 
-import java.io.IOError;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
@@ -163,4 +163,30 @@ public class FSInfo {
         return null;
     }
 
+    // Must match the keys/values expected by ZipFileSystem.java.
+    private static final Map<String, String> READ_ONLY_JARFS_ENV = Map.of(
+            // Jar files opened by Javac should always be read-only.
+            "accessMode", "readOnly",
+            // ignores timestamps not stored in ZIP central directory, reducing I/O.
+            "zipinfo-time", "false");
+
+    /**
+     * Returns a {@link java.nio.file.FileSystem FileSystem} environment map
+     * suitable for creating read-only JAR file-systems with default timestamp
+     * information via {@link FileSystemProvider#newFileSystem(Path, Map)}
+     * or {@link java.nio.file.FileSystems#newFileSystem(Path, Map)}.
+     *
+     * @param releaseVersion the release version to use when creating a
+     *                       file-system from a multi-release JAR (or
+     *                       {@code null} to ignore release versioning).
+     */
+    public Map<String, ?> readOnlyJarFSEnv(String releaseVersion) {
+        if (releaseVersion == null) {
+            return READ_ONLY_JARFS_ENV;
+        }
+        // Multi-release JARs need an additional attribute.
+        Map<String, String> env = new HashMap<>(READ_ONLY_JARFS_ENV);
+        env.put("releaseVersion", releaseVersion);
+        return Collections.unmodifiableMap(env);
+    }
 }

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8349583
+ * @bug 8349583 8365820
  * @summary Add mechanism to disable signature schemes based on their TLS scope.
  *          This test only covers TLS 1.3.
  * @library /javax/net/ssl/templates
@@ -40,15 +40,6 @@ import java.util.List;
 
 public class DisableSignatureSchemePerScopeTLS13
         extends DisableSignatureSchemePerScopeTLS12 {
-
-    // Signature schemes not supported in TLSv1.3 only for the handshake.
-    // This is regardless of jdk.tls.disabledAlgorithms configuration.
-    List<String> NOT_SUPPORTED_FOR_HANDSHAKE = List.of(
-            "rsa_pkcs1_sha1",
-            "rsa_pkcs1_sha256",
-            "rsa_pkcs1_sha384",
-            "rsa_pkcs1_sha512"
-    );
 
     protected DisableSignatureSchemePerScopeTLS13() throws Exception {
         super();
@@ -74,23 +65,24 @@ public class DisableSignatureSchemePerScopeTLS13
                 extractHandshakeMsg(cTOs, TLS_HS_CLI_HELLO),
                 SIG_ALGS_EXT);
 
-        // Should not be present in signature_algorithms extension.
-        NOT_SUPPORTED_FOR_HANDSHAKE.forEach(ss ->
-                assertFalse(sigAlgsSS.contains(ss),
-                        "Signature Scheme " + ss
-                        + " present in ClientHello's signature_algorithms extension"));
+        // These signature schemes MOST NOT be present in signature_algorithms
+        // extension.
+        TLS13_CERT_ONLY.forEach(ss ->
+                assertFalse(sigAlgsSS.contains(ss), "Signature Scheme " + ss
+                        + " present in ClientHello's"
+                        + " signature_algorithms extension"));
 
         // Get signature_algorithms_cert extension signature schemes.
         List<String> sigAlgsCertSS = getSigSchemesCliHello(
                 extractHandshakeMsg(cTOs, TLS_HS_CLI_HELLO),
                 SIG_ALGS_CERT_EXT);
 
-        // Should be present in signature_algorithms_cert extension.
-        NOT_SUPPORTED_FOR_HANDSHAKE.forEach(ss ->
-                assertTrue(sigAlgsCertSS.contains(ss),
-                        "Signature Scheme " + ss
+        // These signature schemes MUST be present in
+        // signature_algorithms_cert extension.
+        TLS13_CERT_ONLY.forEach(ss ->
+                assertTrue(sigAlgsCertSS.contains(ss), "Signature Scheme " + ss
                         + " isn't present in ClientHello's"
-                        + " signature_algorithms extension"));
+                        + " signature_algorithms_cert extension"));
     }
 
     // TLSv1.3 sends CertificateRequest signature schemes in

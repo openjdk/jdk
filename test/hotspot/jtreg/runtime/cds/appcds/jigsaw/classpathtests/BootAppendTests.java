@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 /**
  * @test
  * @summary AppCDS tests for testing -Xbootclasspath/a
- * @requires vm.cds & !vm.graal.enabled
+ * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @compile src/jdk/test/Main.java
  * @compile src/com/sun/tools/javac/MyMain.jasm

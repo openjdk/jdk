@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,9 @@ public class TwrSimpleClose {
              JFMImpl fm = new JFMImpl(sfm)) {
             Iterable<ToolBox.JavaSource> files = Arrays.asList(new ToolBox.JavaSource(code));
             JavacTask task = (JavacTask) compiler.getTask(null, fm, null, null, null, files);
-            task.call();
+            if (!task.call()) {
+                throw new AssertionError("test failed due to a compilation error");
+            }
 
             if (fm.classBytes.size() != 1) {
                 throw new AssertionError();

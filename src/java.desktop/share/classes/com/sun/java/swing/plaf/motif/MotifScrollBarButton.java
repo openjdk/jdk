@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,7 @@ public class MotifScrollBarButton extends BasicArrowButton
     }
 
 
+    @Override
     public Dimension getPreferredSize() {
         switch (direction) {
         case NORTH:
@@ -76,18 +77,22 @@ public class MotifScrollBarButton extends BasicArrowButton
         }
     }
 
+    @Override
     public Dimension getMinimumSize() {
         return getPreferredSize();
     }
 
+    @Override
     public Dimension getMaximumSize() {
         return getPreferredSize();
     }
 
+    @Override
     public boolean isFocusTraversable() {
         return false;
     }
 
+    @Override
     public void paint(Graphics g)
     {
         int w = getWidth();

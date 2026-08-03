@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,18 @@ import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import static org.testng.Assert.*;
-import org.testng.SkipException;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+
+import org.junit.jupiter.api.Assumptions;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
  * @bug 8032220 8293792 8307976
  * @summary Test java.nio.file.Files.createDirectories method
  * @library ..
- * @run testng CreateDirectories
+ * @run junit CreateDirectories
  */
 public class CreateDirectories {
 
@@ -46,12 +48,10 @@ public class CreateDirectories {
     public void testSymlinkDir() throws Exception {
         // create a temp dir as the "root" in which we will run our tests.
         final Path top = TestUtil.createTemporaryDirectory();
-        if (!TestUtil.supportsSymbolicLinks(top)) {
-            System.out.println("Skipping tests since symbolic links isn't " +
-                    "supported under directory "+ top);
-            throw new SkipException("Symbolic links not supported");
-        }
-        System.out.println("Running tests under directory " + top.toAbsolutePath());
+        Assumptions.assumeTrue(TestUtil.supportsSymbolicLinks(top),
+            "Skipping as symbolic links are not supported under in " + top);
+        System.err.println("Running tests under directory " +
+                           top.toAbsolutePath());
         final Path fooDir = Files.createDirectory(top.resolve("foo"));
         assertTrue(Files.isDirectory(fooDir),
                 fooDir + " was expected to be a directory but wasn't");

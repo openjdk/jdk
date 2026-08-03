@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,15 +39,15 @@ import com.sun.net.httpserver.spi.*;
 class FixedLengthInputStream extends LeftOverInputStream {
     private long remaining;
 
-    FixedLengthInputStream (ExchangeImpl t, InputStream src, long len) {
-        super (t, src);
+    FixedLengthInputStream(ExchangeImpl t, InputStream src, long len) {
+        super(t, src);
         if (len < 0) {
             throw new IllegalArgumentException("Content-Length: " + len);
         }
         this.remaining = len;
     }
 
-    protected int readImpl (byte[]b, int off, int len) throws IOException {
+    protected int readImpl(byte[] b, int off, int len) throws IOException {
 
         eof = (remaining == 0L);
         if (eof) {
@@ -60,7 +60,7 @@ class FixedLengthInputStream extends LeftOverInputStream {
         if (n > -1) {
             remaining -= n;
             if (remaining == 0) {
-                t.getServerImpl().requestCompleted (t.getConnection());
+                t.getServerImpl().requestCompleted(t.getConnection());
             }
         }
         if (n < 0 && !eof)
@@ -68,7 +68,7 @@ class FixedLengthInputStream extends LeftOverInputStream {
         return n;
     }
 
-    public int available () throws IOException {
+    public int available() throws IOException {
         if (eof) {
             return 0;
         }
@@ -76,12 +76,12 @@ class FixedLengthInputStream extends LeftOverInputStream {
         return n < remaining? n: (int)remaining;
     }
 
-    public boolean markSupported () {return false;}
+    public boolean markSupported() {return false;}
 
-    public void mark (int l) {
+    public void mark(int l) {
     }
 
-    public void reset () throws IOException {
-        throw new IOException ("mark/reset not supported");
+    public void reset() throws IOException {
+        throw new IOException("mark/reset not supported");
     }
 }

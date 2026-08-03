@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@
  * @library /test/lib /
  * @requires vm.debug & vm.compiler2.enabled
  * @compile -XDstringConcat=inline TestScalarReplacementMaxLiveNodes.java
- * @run main/othervm compiler.c2.TestScalarReplacementMaxLiveNodes
- * @run main/othervm -Xbatch -XX:-OptimizeStringConcat -XX:-TieredCompilation
+ * @run main/othervm/timeout=480 compiler.c2.TestScalarReplacementMaxLiveNodes
+ * @run main/othervm/timeout=480 -Xbatch -XX:-OptimizeStringConcat -XX:-TieredCompilation
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+ReduceAllocationMerges
  *                   -XX:CompileCommand=dontinline,compiler.c2.TestScalarReplacementMaxLiveNodes::test
  *                   -XX:CompileCommand=compileonly,*TestScalarReplacementMaxLiveNodes*::*test*
@@ -38,6 +38,7 @@
  *                   -XX:CompileCommand=dontinline,*String*::substring
  *                   -XX:NodeCountInliningCutoff=220000
  *                   -XX:DesiredMethodLimit=100000
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:CompileTaskTimeout=0
  *                   compiler.c2.TestScalarReplacementMaxLiveNodes
  */
 package compiler.c2;

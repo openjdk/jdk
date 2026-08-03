@@ -24,7 +24,6 @@
  */
 package jdk.jfr.internal.management;
 
-import java.nio.file.Paths;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,13 +61,19 @@ package java.sql;
  * If the connection's type map or a type map supplied to a method has no entry
  * for the base type, the elements are mapped according to the standard mapping.
  * <p>
+ * To release resources used by the {@code Array} object, applications must call
+ * either the {@link #free()} or the {@link #close()} method.  Any attempt to
+ * invoke a method other than {@link #free()} or {@link #close()} after the
+ * {@code Array} object has been closed, will result in a {@link SQLException}
+ * being thrown.
+ * <P>
  * All methods on the {@code Array} interface must be fully implemented if the
  * JDBC driver supports the data type.
  *
  * @since 1.2
  */
 
-public interface Array {
+public interface Array extends AutoCloseable {
 
   /**
    * Retrieves the SQL type name of the elements in
@@ -345,21 +351,35 @@ public interface Array {
                           java.util.Map<String,Class<?>> map)
     throws SQLException;
     /**
-     * This method frees the {@code Array} object and releases the resources that
-     * it holds. The object is invalid once the {@code free}
-     * method is called.
+     * Closes and releases the resources held by this {@code Array} object.
      * <p>
-     * After {@code free} has been called, any attempt to invoke a
-     * method other than {@code free} will result in a {@code SQLException}
-     * being thrown.  If {@code free} is called multiple times, the subsequent
-     * calls to {@code free} are treated as a no-op.
+     * If the {@code Array} object is already closed, then invoking this method
+     * has no effect.
      *
      * @throws SQLException if an error occurs releasing
      * the Array's resources
      * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.6
+     * @see #close()
      */
     void free() throws SQLException;
 
+    /**
+     * Closes and releases the resources held by this {@code Array} object.
+     * <p>
+     * If the {@code Array} object is already closed, then invoking this method
+     * has no effect.
+     *
+     * @throws SQLException                    if an error occurs releasing
+     *                                         the Array's resources
+     * @throws SQLFeatureNotSupportedException if the JDBC driver
+     *                                         does not support this method
+     * @implSpec The default implementation calls the {@link #free()} method.
+     * @see #free()
+     * @since 26
+     */
+    default void close() throws SQLException {
+      free();
+    };
 }

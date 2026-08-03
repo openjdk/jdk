@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,9 @@ public class TwrAvoidNullCheck {
         DumpLower.preRegister(ctx);
         Iterable<ToolBox.JavaSource> files = Arrays.asList(new ToolBox.JavaSource(code));
         JavacTask task = JavacTool.create().getTask(null, null, null, null, null, files, ctx);
-        task.call();
+        if (!task.call()) {
+            throw new AssertionError("test failed due to a compilation error");
+        }
 
         boolean hasNullCheck = ((DumpLower) DumpLower.instance(ctx)).hasNullCheck;
 

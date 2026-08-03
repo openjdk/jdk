@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2019, Red Hat Inc.
  * Copyright (c) 2021, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -101,30 +101,11 @@ public class RISCV64Frame extends Frame {
   private RISCV64Frame() {
   }
 
-  private void adjustForDeopt() {
-    if ( pc != null) {
-      // Look for a deopt pc and if it is deopted convert to original pc
-      CodeBlob cb = VM.getVM().getCodeCache().findBlob(pc);
-      if (cb != null && cb.isJavaMethod()) {
-        NMethod nm = (NMethod) cb;
-        if (pc.equals(nm.deoptHandlerBegin())) {
-          if (Assert.ASSERTS_ENABLED) {
-            Assert.that(this.getUnextendedSP() != null, "null SP in Java frame");
-          }
-          // adjust pc if frame is deoptimized.
-          pc = this.getUnextendedSP().getAddressAt(nm.origPCOffset());
-          deoptimized = true;
-        }
-      }
-    }
-  }
-
   public RISCV64Frame(Address raw_sp, Address raw_fp, Address pc) {
     this.raw_sp = raw_sp;
     this.raw_unextendedSP = raw_sp;
     this.raw_fp = raw_fp;
     this.pc = pc;
-    adjustUnextendedSP();
 
     // Frame must be fully constructed before this call
     adjustForDeopt();
@@ -148,8 +129,6 @@ public class RISCV64Frame extends Frame {
       this.pc = savedPC;
     }
 
-    adjustUnextendedSP();
-
     // Frame must be fully constructed before this call
     adjustForDeopt();
 
@@ -164,7 +143,6 @@ public class RISCV64Frame extends Frame {
     this.raw_unextendedSP = raw_unextendedSp;
     this.raw_fp = raw_fp;
     this.pc = pc;
-    adjustUnextendedSP();
 
     // Frame must be fully constructed before this call
     adjustForDeopt();
@@ -222,6 +200,11 @@ public class RISCV64Frame extends Frame {
   public Address getFP() { return raw_fp; }
   public Address getSP() { return raw_sp; }
   public Address getID() { return raw_sp; }
+
+  @Override
+  public void setSP(Address newSP) {
+    raw_sp = newSP;
+  }
 
   // FIXME: not implemented yet
   public boolean isSignalHandlerFrameDbg() { return false; }
@@ -284,7 +267,11 @@ public class RISCV64Frame extends Frame {
     }
 
     if (cb != null) {
-      return cb.isUpcallStub() ? senderForUpcallStub(map, (UpcallStub)cb) : senderForCompiledFrame(map, cb);
+      if (cb.isUpcallStub()) {
+        return senderForUpcallStub(map, (UpcallStub)cb);
+      } else if (cb.getFrameSize() > 0) {
+        return senderForCompiledFrame(map, cb);
+      }
     }
 
     // Must be native-compiled frame, i.e. the marshaling code for native
@@ -345,24 +332,6 @@ public class RISCV64Frame extends Frame {
       Assert.that(map.getIncludeArgumentOops(), "should be set by clear");
     }
     return fr;
-  }
-
-  //------------------------------------------------------------------------------
-  // frame::adjust_unextended_sp
-  private void adjustUnextendedSP() {
-    // Sites calling method handle intrinsics and lambda forms are
-    // treated as any other call site. Therefore, no special action is
-    // needed when we are returning to any of these call sites.
-
-    CodeBlob cb = cb();
-    NMethod senderNm = (cb == null) ? null : cb.asNMethodOrNull();
-    if (senderNm != null) {
-      // If the sender PC is a deoptimization point, get the original PC.
-      if (senderNm.isDeoptEntry(getPC()) ||
-          senderNm.isDeoptMhEntry(getPC())) {
-        // DEBUG_ONLY(verifyDeoptriginalPc(senderNm, raw_unextendedSp));
-      }
-    }
   }
 
   private Frame senderForInterpreterFrame(RISCV64RegisterMap map) {
@@ -428,6 +397,22 @@ public class RISCV64Frame extends Frame {
       // for it so we must fill in its location as if there was an oopmap entry
       // since if our caller was compiled code there could be live jvm state in it.
       updateMapWithSavedLink(map, savedFPAddr);
+    }
+
+    if (Continuation.isReturnBarrierEntry(senderPC)) {
+      // We assume WalkContinuation is "WalkContinuation::skip".
+      // It is same with c'tor arguments of RegisterMap in frame::next_frame().
+      //
+      // HotSpot code in cpu/riscv/frame_riscv.inline.hpp:
+      //
+      //   if (Continuation::is_return_barrier_entry(sender_pc)) {
+      //     if (map->walk_cont()) { // about to walk into an h-stack
+      //       return Continuation::top_frame(*this, map);
+      //     } else {
+      //       return Continuation::continuation_bottom_sender(map->thread(), *this, l_sender_sp);
+      //     }
+      //   }
+      return Continuation.continuationBottomSender(map.getThread(), this, senderSP);
     }
 
     return new RISCV64Frame(senderSP, savedFPAddr.getAddressAt(0), senderPC);

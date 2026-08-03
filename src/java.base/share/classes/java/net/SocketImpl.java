@@ -357,7 +357,11 @@ public abstract class SocketImpl implements SocketOptions {
      *         bandwidth
      *
      * @since 1.5
+     *
+     * @deprecated This method was intended to allow for protocols that are now
+     *             obsolete.
      */
+    @Deprecated(since = "26", forRemoval = true)
     protected void setPerformancePreferences(int connectionTime,
                                           int latency,
                                           int bandwidth)

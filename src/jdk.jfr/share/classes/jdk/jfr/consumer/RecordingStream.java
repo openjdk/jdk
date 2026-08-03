@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import jdk.jfr.EventSettings;
 import jdk.jfr.EventType;
 import jdk.jfr.Recording;
 import jdk.jfr.RecordingState;
+import jdk.jfr.internal.PlatformRecorder;
 import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.util.Utils;
@@ -97,9 +98,9 @@ public final class RecordingStream implements AutoCloseable, EventStream {
     private RecordingStream(Map<String, String> settings) {
         this.recording = new Recording();
         this.creationTime = Instant.now();
-        this.recording.setName("Recording Stream: " + creationTime);
         try {
             PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
+            pr.setName("Recording Stream: " + creationTime, false);
             this.directoryStream = new EventDirectoryStream(
                 null,
                 pr,
@@ -112,6 +113,12 @@ public final class RecordingStream implements AutoCloseable, EventStream {
         }
         if (!settings.isEmpty()) {
             recording.setSettings(settings);
+        }
+        PlatformRecorder recorder = PrivateAccess.getInstance().getPlatformRecorder();
+        synchronized (recorder) {
+            if (recorder.isDestroyed()) {
+                close();
+            }
         }
     }
 
@@ -232,8 +239,8 @@ public final class RecordingStream implements AutoCloseable, EventStream {
      * that is older than the specified length of time is removed by the Java
      * Virtual Machine (JVM).
      * <p>
-     * If neither maximum limit or the maximum age is set, the size of the
-     * recording may grow indefinitely if events are on
+     * If neither the maximum limit nor the maximum age is set, the size of the
+     * recording may grow indefinitely if events are not consumed.
      *
      * @param maxAge the length of time that data is kept, or {@code null} if
      *        infinite

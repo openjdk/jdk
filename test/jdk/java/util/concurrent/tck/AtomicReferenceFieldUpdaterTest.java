@@ -45,6 +45,7 @@ public class AtomicReferenceFieldUpdaterTest extends JSR166TestCase {
     Object z;
     Item w;
     volatile int i;
+    static volatile Item q;
 
     public static void main(String[] args) {
         main(suite(), args);
@@ -99,6 +100,17 @@ public class AtomicReferenceFieldUpdaterTest extends JSR166TestCase {
             shouldThrow();
         } catch (ClassCastException success) {}
     }
+
+    /**
+     * construction with static field throws IllegalArgumentException
+     */
+    public void testConstructor5() {
+        try {
+            updaterFor("q");
+            shouldThrow();
+        } catch (IllegalArgumentException success) {}
+    }
+
 
     /**
      * construction using private field from subclass throws RuntimeException

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,10 +184,9 @@ public enum ChronoUnit implements TemporalUnit {
      * Artificial unit that represents the concept of forever.
      * This is primarily used with {@link TemporalField} to represent unbounded fields
      * such as the year or era.
-     * The estimated duration of this unit is artificially defined as the largest duration
-     * supported by {@link Duration}.
+     * The estimated duration of this unit is artificially defined as {@link Duration#MAX}.
      */
-    FOREVER("Forever", Duration.ofSeconds(Long.MAX_VALUE, 999_999_999));
+    FOREVER("Forever", Duration.MAX);
 
     private final String name;
     private final Duration duration;

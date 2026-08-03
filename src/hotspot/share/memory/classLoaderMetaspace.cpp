@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +26,6 @@
 #include "logging/log.hpp"
 #include "memory/classLoaderMetaspace.hpp"
 #include "memory/metaspace.hpp"
-#include "memory/metaspaceUtils.hpp"
 #include "memory/metaspace/chunkManager.hpp"
 #include "memory/metaspace/internalStats.hpp"
 #include "memory/metaspace/metablock.hpp"
@@ -38,6 +37,7 @@
 #include "memory/metaspace/metaspaceStatistics.hpp"
 #include "memory/metaspace/runningCounters.hpp"
 #include "memory/metaspaceTracer.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "oops/klass.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/debug.hpp"
@@ -162,10 +162,12 @@ void ClassLoaderMetaspace::deallocate(MetaWord* ptr, size_t word_size) {
   MetaBlock bl(ptr, word_size);
   // Add to class arena only if block is usable for encodable Klass storage.
   MetaspaceArena* receiving_arena = non_class_space_arena();
-  if (Metaspace::using_class_space() && Metaspace::is_in_class_space(ptr) &&
+#if INCLUDE_CLASS_SPACE
+  if (Metaspace::is_in_class_space(ptr) &&
       is_aligned(ptr, class_space_arena()->allocation_alignment_bytes())) {
     receiving_arena = class_space_arena();
   }
+#endif
   receiving_arena->deallocate(bl);
   DEBUG_ONLY(InternalStats::inc_num_deallocs();)
 }

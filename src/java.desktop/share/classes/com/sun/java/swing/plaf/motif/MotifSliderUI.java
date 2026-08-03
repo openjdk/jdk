@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,22 +64,27 @@ public class MotifSliderUI extends BasicSliderUI {
         return new MotifSliderUI((JSlider)b);
     }
 
+    @Override
     public Dimension getPreferredHorizontalSize() {
         return PREFERRED_HORIZONTAL_SIZE;
     }
 
+    @Override
     public Dimension getPreferredVerticalSize() {
         return PREFERRED_VERTICAL_SIZE;
     }
 
+    @Override
     public Dimension getMinimumHorizontalSize() {
         return MINIMUM_HORIZONTAL_SIZE;
     }
 
+    @Override
     public Dimension getMinimumVerticalSize() {
         return MINIMUM_VERTICAL_SIZE;
     }
 
+    @Override
     protected Dimension getThumbSize() {
         if ( slider.getOrientation() == JSlider.HORIZONTAL ) {
             return new Dimension( 30, 15 );
@@ -89,12 +94,15 @@ public class MotifSliderUI extends BasicSliderUI {
         }
     }
 
+    @Override
     public void paintFocus(Graphics g)  {
     }
 
+    @Override
     public void paintTrack(Graphics g)  {
     }
 
+    @Override
     public void paintThumb(Graphics g)  {
         Rectangle knobBounds = thumbRect;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package java.lang;
 
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
@@ -35,6 +36,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * @see     java.lang.Class
  * @since   1.0
  */
+@AOTSafeClassInitializer // for hierarchy checks
 public class Object {
 
     /**
@@ -381,7 +383,7 @@ public class Object {
             try {
                 wait0(timeoutMillis);
             } catch (InterruptedException e) {
-                // virtual thread's interrupt status needs to be cleared
+                // virtual thread's interrupted status needs to be cleared
                 vthread.getAndClearInterrupt();
                 throw e;
             }

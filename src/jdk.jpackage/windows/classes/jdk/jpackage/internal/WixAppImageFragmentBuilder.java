@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,12 @@
 
 package jdk.jpackage.internal;
 
-import jdk.jpackage.internal.model.WinLauncher;
-import jdk.jpackage.internal.model.WinMsiPackage;
-import jdk.jpackage.internal.model.Launcher;
-import jdk.jpackage.internal.model.DottedVersion;
-import jdk.jpackage.internal.model.ApplicationLayout;
-import jdk.jpackage.internal.util.PathGroup;
+import static java.util.stream.Collectors.toMap;
+import static jdk.jpackage.internal.util.CollectionUtils.toCollection;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -50,7 +46,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import static java.util.stream.Collectors.toMap;
 import java.util.stream.Stream;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
@@ -60,15 +55,19 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-import static jdk.jpackage.internal.util.CollectionUtils.toCollection;
-import jdk.jpackage.internal.model.WinLauncherMixin.WinShortcut;
 import jdk.jpackage.internal.WixToolset.WixToolsetType;
 import jdk.jpackage.internal.model.AppImageLayout;
+import jdk.jpackage.internal.model.ApplicationLayout;
+import jdk.jpackage.internal.model.DottedVersion;
 import jdk.jpackage.internal.model.FileAssociation;
+import jdk.jpackage.internal.model.Launcher;
+import jdk.jpackage.internal.model.LauncherShortcut;
+import jdk.jpackage.internal.model.WinLauncher;
+import jdk.jpackage.internal.model.WinMsiPackage;
+import jdk.jpackage.internal.util.PathGroup;
 import jdk.jpackage.internal.util.PathUtils;
-import jdk.jpackage.internal.util.XmlUtils;
 import jdk.jpackage.internal.util.XmlConsumer;
-import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
+import jdk.jpackage.internal.util.XmlUtils;
 import org.w3c.dom.NodeList;
 
 /**
@@ -140,16 +139,6 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
             packageFile.save(ApplicationLayout.build().setAll(getConfigRoot()).create());
         }
         super.addFilesToConfigRoot();
-    }
-
-    @Override
-    List<String> getLoggableWixFeatures() {
-        if (isWithWix36Features()) {
-            return List.of(MessageFormat.format(I18N.getString("message.use-wix36-features"),
-                    getWixVersion()));
-        } else {
-            return List.of();
-        }
     }
 
     @Override
@@ -248,7 +237,7 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
         String of(Path path) {
             if (this == Folder && KNOWN_DIRS.contains(path)) {
-                return IOUtils.getFileName(path).toString();
+                return path.getFileName().toString();
             }
 
             String result = of(path, prefix, name());
@@ -352,7 +341,7 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
         private final Config cfg;
         private final Id id;
-    };
+    }
 
     private static void addComponentGroup(XMLStreamWriter xml, String id,
             List<String> componentIds) throws XMLStreamException, IOException {
@@ -469,7 +458,21 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
                         launcher.executableNameWithSuffix());
 
                 if (folder.isRequestedFor(launcher)) {
-                    String componentId = addShortcutComponent(xml, launcherPath, folder);
+                    var workDirectory = folder.shortcut(launcher).startupDirectory().map(v -> {
+                        switch (v) {
+                            case DEFAULT -> {
+                                return INSTALLDIR;
+                            }
+                            case APP_DIR -> {
+                                return installedAppImage.appDirectory();
+                            }
+                            default -> {
+                                throw new AssertionError();
+                            }
+                        }
+                    }).orElseThrow();
+
+                    String componentId = addShortcutComponent(xml, launcherPath, folder, workDirectory);
 
                     if (componentId != null) {
                         Path folderPath = folder.getPath(this);
@@ -499,23 +502,26 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
     }
 
     private String addShortcutComponent(XMLStreamWriter xml, Path launcherPath,
-            ShortcutsFolder folder) throws XMLStreamException, IOException {
+            ShortcutsFolder folder, Path shortcutWorkDir) throws XMLStreamException, IOException {
         Objects.requireNonNull(folder);
 
         if (!INSTALLDIR.equals(launcherPath.getName(0))) {
             throw throwInvalidPathException(launcherPath);
         }
 
+        if (!INSTALLDIR.equals(shortcutWorkDir.getName(0))) {
+            throw throwInvalidPathException(shortcutWorkDir);
+        }
+
         String launcherBasename = PathUtils.replaceSuffix(
-                IOUtils.getFileName(launcherPath), "").toString();
+                launcherPath.getFileName(), "").toString();
 
         Path shortcutPath = folder.getPath(this).resolve(launcherBasename);
         return addComponent(xml, shortcutPath, Component.Shortcut, unused -> {
             xml.writeAttribute("Name", launcherBasename);
-            xml.writeAttribute("WorkingDirectory", INSTALLDIR.toString());
+            xml.writeAttribute("WorkingDirectory", Id.Folder.of(shortcutWorkDir));
             xml.writeAttribute("Advertise", "no");
-            xml.writeAttribute("Target", String.format("[#%s]",
-                    Component.File.idOf(launcherPath)));
+            xml.writeAttribute("Target", String.format("[#%s]", Id.File.of(launcherPath)));
         });
     }
 
@@ -695,7 +701,7 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
             xml.writeAttribute("Id", Id.Folder.of(dir.getParent()));
             xml.writeStartElement("Directory");
             xml.writeAttribute("Id", Id.Folder.of(dir));
-            xml.writeAttribute("Name", IOUtils.getFileName(dir).toString());
+            xml.writeAttribute("Name", dir.getFileName().toString());
             xml.writeEndElement();
             xml.writeEndElement();
         }
@@ -801,7 +807,7 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         appImagePathGroup.transform(installedAppImagePathGroup, new PathGroup.TransformHandler() {
             @Override
             public void copyFile(Path src, Path dst) throws IOException {
-                if (IOUtils.getFileName(src).toString().endsWith(".ico")) {
+                if (src.getFileName().toString().endsWith(".ico")) {
                     icoFiles.add(Map.entry(src, dst));
                 }
             }
@@ -906,15 +912,15 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
     }
 
     enum ShortcutsFolder {
-        ProgramMenu(PROGRAM_MENU_PATH, WinShortcut.WIN_SHORTCUT_START_MENU,
+        ProgramMenu(PROGRAM_MENU_PATH, WinLauncher::startMenuShortcut,
                 "JP_INSTALL_STARTMENU_SHORTCUT", "JpStartMenuShortcutPrompt"),
-        Desktop(DESKTOP_PATH, WinShortcut.WIN_SHORTCUT_DESKTOP,
+        Desktop(DESKTOP_PATH, WinLauncher::desktopShortcut,
                 "JP_INSTALL_DESKTOP_SHORTCUT", "JpDesktopShortcutPrompt");
 
-        private ShortcutsFolder(Path root, WinShortcut shortcutId,
+        private ShortcutsFolder(Path root, Function<WinLauncher, Optional<LauncherShortcut>> shortcut,
                 String property, String wixVariableName) {
             this.root = root;
-            this.shortcutId = shortcutId;
+            this.shortcut = shortcut;
             this.wixVariableName = wixVariableName;
             this.property = property;
         }
@@ -927,7 +933,11 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         }
 
         boolean isRequestedFor(WinLauncher launcher) {
-            return launcher.shortcuts().contains(shortcutId);
+            return LauncherShortcut.toRequest(shortcut.apply(launcher)).orElse(false);
+        }
+
+        LauncherShortcut shortcut(WinLauncher launcher) {
+            return shortcut.apply(launcher).orElseThrow();
         }
 
         String getWixVariableName() {
@@ -947,7 +957,7 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         private final Path root;
         private final String property;
         private final String wixVariableName;
-        private final WinShortcut shortcutId;
+        private final Function<WinLauncher, Optional<LauncherShortcut>> shortcut;
     }
 
     private boolean systemWide;

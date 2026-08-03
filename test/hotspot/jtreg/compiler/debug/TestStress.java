@@ -30,11 +30,11 @@ import jdk.test.lib.Asserts;
 /*
  * @test
  * @key stress randomness
- * @bug 8252219 8256535 8317349
+ * @bug 8252219 8256535 8317349 8325478
  * @requires vm.debug == true & vm.compiler2.enabled
  * @requires vm.flagless
  * @summary Tests that stress compilations with the same seed yield the same
- *          IGVN, CCP, and macro expansion traces.
+ *          IGVN, CCP, macro elimination, and macro expansion traces.
  * @library /test/lib /
  * @run driver compiler.debug.TestStress
  */
@@ -69,9 +69,25 @@ public class TestStress {
                           stressSeed);
     }
 
+    static String macroEliminationTrace(int stressSeed) throws Exception {
+        return phaseTrace("StressMacroElimination",
+                          "CompileCommand=PrintIdealPhase,*::*,AFTER_MACRO_ELIMINATION_STEP",
+                          stressSeed);
+    }
+
     static void sum(int n) {
         int acc = 0;
-        for (int i = 0; i < n; i++) acc += i;
+        int[] arr1 = new int[n];
+        int[] arr2 = new int[n];
+        int[] arr3 = new int[n];
+        int[] arr4 = new int[n];
+        for (int i = 0; i < n; i++) {
+            acc += i;
+            arr1[i] = i;
+            arr2[i] = acc;
+            arr3[i] = i * n;
+            arr4[i] = acc * n;
+        }
         System.out.println(acc);
     }
 
@@ -84,6 +100,8 @@ public class TestStress {
                     "got different CCP traces for the same seed");
                 Asserts.assertEQ(macroExpansionTrace(s), macroExpansionTrace(s),
                     "got different macro expansion traces for the same seed");
+                Asserts.assertEQ(macroEliminationTrace(s), macroEliminationTrace(s),
+                    "got different macro elimination traces for the same seed");
             }
         } else if (args.length > 0) {
             sum(Integer.parseInt(args[0]));

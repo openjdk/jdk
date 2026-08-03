@@ -81,7 +81,7 @@ public final class DirectClassBuilder
 
     @Override
     public ClassBuilder withFlags(int flags) {
-        setFlags(flags);
+        setFlags(Util.checkFlags(flags));
         return this;
     }
 
@@ -167,7 +167,6 @@ public final class DirectClassBuilder
     public void setSizeHint(int sizeHint) {
         this.sizeHint = sizeHint;
     }
-
 
     public byte[] build() {
 

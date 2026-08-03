@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
-#include "classfile/stackMapTable.hpp"
 #include "classfile/stackMapFrame.hpp"
+#include "classfile/stackMapTable.hpp"
 #include "classfile/stackMapTableFormat.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -140,7 +140,7 @@ static bool is_eligible_for_verification(InstanceKlass* klass, bool should_verif
     // Shared classes shouldn't have stackmaps either.
     // However, bytecodes for shared old classes can be verified because
     // they have not been rewritten.
-    !(klass->is_shared() && klass->is_rewritten()));
+    !(klass->in_aot_cache() && klass->is_rewritten()));
 }
 
 void Verifier::trace_class_resolution(Klass* resolve_class, InstanceKlass* verify_class) {
@@ -190,9 +190,8 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
   // effect (sic!) for external_name(), but instead of doing that, we opt to
   // explicitly push the hashcode in here. This is signify the following block
   // is IMPORTANT:
-  if (klass->java_mirror() != nullptr) {
-    klass->java_mirror()->identity_hash();
-  }
+  assert(klass->java_mirror() != nullptr, "must be");
+  klass->java_mirror()->identity_hash();
 
   if (!is_eligible_for_verification(klass, should_verify_class)) {
     return true;
@@ -237,7 +236,7 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
       // Exclude any classes that are verified with the old verifier, as the old verifier
       // doesn't call SystemDictionaryShared::add_verification_constraint()
       if (CDSConfig::is_dumping_archive()) {
-        SystemDictionaryShared::warn_excluded(klass, "Verified with old verifier");
+        SystemDictionaryShared::log_exclusion(klass, "Verified with old verifier");
         SystemDictionaryShared::set_excluded(klass);
       }
 #endif
@@ -620,9 +619,6 @@ TypeOrigin ClassVerifier::ref_ctx(const char* sig) {
 
 void ClassVerifier::verify_class(TRAPS) {
   log_info(verification)("Verifying class %s with new format", _klass->external_name());
-
-  // Either verifying both local and remote classes or just remote classes.
-  assert(BytecodeVerificationRemote, "Should not be here");
 
   Array<Method*>* methods = _klass->methods();
   int num_methods = methods->length();
@@ -1611,12 +1607,12 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
         case Bytecodes::_if_acmpeq :
         case Bytecodes::_if_acmpne :
           current_frame.pop_stack(
-            VerificationType::reference_check(), CHECK_VERIFY(this));
+            object_type(), CHECK_VERIFY(this));
           // fall through
         case Bytecodes::_ifnull :
         case Bytecodes::_ifnonnull :
           current_frame.pop_stack(
-            VerificationType::reference_check(), CHECK_VERIFY(this));
+            object_type(), CHECK_VERIFY(this));
           stackmap_table.check_jump_target
             (&current_frame, bcs.bci(), bcs.get_offset_s2(), CHECK_VERIFY(this));
           no_control_flow = false; break;

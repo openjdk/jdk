@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
 class VMRegImpl;
 typedef VMRegImpl* VMReg;
 
-// The implementation of integer registers for the x86/x64 architectures.
+// The implementation of integer registers for the x64 architectures.
 class Register {
 private:
   int _encoding;
@@ -44,11 +44,9 @@ private:
 public:
   inline friend constexpr Register as_Register(int encoding);
 
-  enum {
-    number_of_registers      = LP64_ONLY( 32 ) NOT_LP64( 8 ),
-    number_of_byte_registers = LP64_ONLY( 32 ) NOT_LP64( 4 ),
-    max_slots_per_register   = LP64_ONLY(  2 ) NOT_LP64( 1 )
-  };
+  static const int number_of_registers      = 32;
+  static const int number_of_byte_registers = 32;
+  static const int max_slots_per_register   =  2;
 
   class RegisterImpl: public AbstractRegisterImpl {
     friend class Register;
@@ -79,11 +77,9 @@ public:
 
   // Actually available GP registers for use, depending on actual CPU capabilities and flags.
   static int available_gp_registers() {
-#ifdef _LP64
     if (!UseAPX) {
       return number_of_registers / 2;
     }
-#endif // _LP64
     return number_of_registers;
   }
 };
@@ -116,9 +112,8 @@ constexpr Register rsp = as_Register(4);
 constexpr Register rbp = as_Register(5);
 constexpr Register rsi = as_Register(6);
 constexpr Register rdi = as_Register(7);
-#ifdef _LP64
-constexpr Register r8  = as_Register( 8);
-constexpr Register r9  = as_Register( 9);
+constexpr Register r8  = as_Register(8);
+constexpr Register r9  = as_Register(9);
 constexpr Register r10 = as_Register(10);
 constexpr Register r11 = as_Register(11);
 constexpr Register r12 = as_Register(12);
@@ -141,7 +136,6 @@ constexpr Register r28 = as_Register(28);
 constexpr Register r29 = as_Register(29);
 constexpr Register r30 = as_Register(30);
 constexpr Register r31 = as_Register(31);
-#endif // _LP64
 
 
 // The implementation of x87 floating point registers for the ia32 architecture.
@@ -154,10 +148,8 @@ private:
 public:
   inline friend constexpr FloatRegister as_FloatRegister(int encoding);
 
-  enum {
-    number_of_registers    = 8,
-    max_slots_per_register = 2
-  };
+  static const int number_of_registers    = 8;
+  static const int max_slots_per_register = 2;
 
   class FloatRegisterImpl: public AbstractRegisterImpl {
     friend class FloatRegister;
@@ -217,10 +209,8 @@ private:
 public:
   inline friend constexpr XMMRegister as_XMMRegister(int encoding);
 
-  enum {
-    number_of_registers    = LP64_ONLY( 32 ) NOT_LP64(  8 ),
-    max_slots_per_register = LP64_ONLY( 16 ) NOT_LP64( 16 )   // 512-bit
-  };
+  static const int number_of_registers    =  32;
+  static const int max_slots_per_register =  16; // 512-bit
 
   class XMMRegisterImpl: public AbstractRegisterImpl {
     friend class XMMRegister;
@@ -250,11 +240,9 @@ public:
 
   // Actually available XMM registers for use, depending on actual CPU capabilities and flags.
   static int available_xmm_registers() {
-#ifdef _LP64
     if (UseAVX < 3) {
       return number_of_registers / 2;
     }
-#endif // _LP64
     return number_of_registers;
   }
 };
@@ -287,7 +275,6 @@ constexpr XMMRegister xmm4  = as_XMMRegister( 4);
 constexpr XMMRegister xmm5  = as_XMMRegister( 5);
 constexpr XMMRegister xmm6  = as_XMMRegister( 6);
 constexpr XMMRegister xmm7  = as_XMMRegister( 7);
-#ifdef _LP64
 constexpr XMMRegister xmm8  = as_XMMRegister( 8);
 constexpr XMMRegister xmm9  = as_XMMRegister( 9);
 constexpr XMMRegister xmm10 = as_XMMRegister(10);
@@ -312,7 +299,6 @@ constexpr XMMRegister xmm28 = as_XMMRegister(28);
 constexpr XMMRegister xmm29 = as_XMMRegister(29);
 constexpr XMMRegister xmm30 = as_XMMRegister(30);
 constexpr XMMRegister xmm31 = as_XMMRegister(31);
-#endif // _LP64
 
 
 // The implementation of AVX-512 opmask registers.
@@ -394,25 +380,17 @@ constexpr KRegister k7 = as_KRegister(7);
 // Define a class that exports it.
 class ConcreteRegisterImpl : public AbstractRegisterImpl {
  public:
-  enum {
-    max_gpr = Register::number_of_registers * Register::max_slots_per_register,
-    max_fpr = max_gpr + FloatRegister::number_of_registers * FloatRegister::max_slots_per_register,
-    max_xmm = max_fpr + XMMRegister::number_of_registers * XMMRegister::max_slots_per_register,
-    max_kpr = max_xmm + KRegister::number_of_registers * KRegister::max_slots_per_register,
+    static const int max_gpr = Register::number_of_registers * Register::max_slots_per_register;
+    static const int max_fpr = max_gpr + FloatRegister::number_of_registers * FloatRegister::max_slots_per_register;
+    static const int max_xmm = max_fpr + XMMRegister::number_of_registers * XMMRegister::max_slots_per_register;
+    static const int max_kpr = max_xmm + KRegister::number_of_registers * KRegister::max_slots_per_register;
 
     // A big enough number for C2: all the registers plus flags
     // This number must be large enough to cover REG_COUNT (defined by c2) registers.
     // There is no requirement that any ordering here matches any ordering c2 gives
     // it's optoregs.
-
-    // x86_32.ad defines additional dummy FILL0-FILL7 registers, in order to tally
-    // REG_COUNT (computed by ADLC based on the number of reg_defs seen in .ad files)
-    // with ConcreteRegisterImpl::number_of_registers additional count of 8 is being
-    // added for 32 bit jvm.
-    number_of_registers = max_kpr +       // gpr/fpr/xmm/kpr
-                          NOT_LP64( 8 + ) // FILL0-FILL7 in x86_32.ad
-                          1               // eflags
-  };
+    static const int number_of_registers = max_kpr + // gpr/fpr/xmm/kpr
+                                           1;        // eflags
 };
 
 template <>

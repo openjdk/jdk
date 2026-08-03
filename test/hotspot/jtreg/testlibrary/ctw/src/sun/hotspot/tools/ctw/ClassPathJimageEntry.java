@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,19 @@
 
 package sun.hotspot.tools.ctw;
 
-import jdk.internal.jimage.ImageLocation;
-import jdk.internal.jimage.ImageReader;
-
 import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.FileSystem;
+import java.nio.file.FileVisitResult;
+import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.spi.FileSystemProvider;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 /**
@@ -39,17 +45,21 @@ public class ClassPathJimageEntry extends PathHandler.PathEntry {
 
     @Override
     protected Stream<String> classes() {
-        return Arrays.stream(reader.getEntryNames())
-                     .filter(name -> name.endsWith(".class"))
-                     .filter(name -> !name.endsWith("module-info.class"))
-                     .map(ClassPathJimageEntry::toFileName)
-                     .map(Utils::fileNameToClassName);
-    }
-
-    private static String toFileName(String name) {
-        final char nameSeparator = '/';
-        assert name.charAt(0) == nameSeparator : name;
-        return name.substring(name.indexOf(nameSeparator, 1) + 1);
+        Path modulesRoot = jrtFileSystem.getPath("/modules");
+        List<String> classNames = new ArrayList<>();
+        FileVisitor<Path> collectClassNames = new SimpleFileVisitor<>() {
+            @Override
+            public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) {
+                classNames.add(Utils.fileNameToClassName(modulesRoot.relativize(path).toString()));
+                return FileVisitResult.CONTINUE;
+            }
+        };
+        try {
+            Files.walkFileTree(modulesRoot, collectClassNames);
+        } catch (IOException e) {
+            throw new Error(e);
+        }
+        return classNames.stream();
     }
 
     @Override
@@ -60,7 +70,7 @@ public class ClassPathJimageEntry extends PathHandler.PathEntry {
     @Override
     public void close() {
         try {
-            reader.close();
+            jrtFileSystem.close();
         } catch (IOException e) {
             throw new Error("error on closing reader for " + root + " : "
                     + e.getMessage(), e);
@@ -69,7 +79,7 @@ public class ClassPathJimageEntry extends PathHandler.PathEntry {
         }
     }
 
-    private final ImageReader reader;
+    private final FileSystem jrtFileSystem;
 
     public ClassPathJimageEntry(Path root) {
         super(root);
@@ -77,7 +87,11 @@ public class ClassPathJimageEntry extends PathHandler.PathEntry {
             throw new Error(root + " image file not found");
         }
         try {
-            reader = ImageReader.open(root);
+            jrtFileSystem = FileSystemProvider.installedProviders().stream()
+                    .filter(p -> "jrt".equals(p.getScheme()))
+                    .findFirst()
+                    .orElseThrow(() -> new Error("cannot find JRT filesystem for " + root))
+                    .newFileSystem(root, Map.of());
         } catch (IOException e) {
             throw new Error("can not open " + root + " : " + e.getMessage(), e);
         }
@@ -85,14 +99,19 @@ public class ClassPathJimageEntry extends PathHandler.PathEntry {
 
     @Override
     protected byte[] findByteCode(String name) {
-        String resource = Utils.classNameToFileName(name);
-        for (String m : reader.getModuleNames()) {
-            ImageLocation location = reader.findLocation(m, resource);
-            if (location != null) {
-                return reader.getResource(location);
+        // Relative path to search for inside each /modules/<module> directory.
+        Path resourcePath = jrtFileSystem.getPath(Utils.classNameToFileName(name));
+        Path modulesRoot = jrtFileSystem.getPath("/modules");
+        try (DirectoryStream<Path> modules = Files.newDirectoryStream(modulesRoot)) {
+            for (Path module : modules) {
+                Path p = module.resolve(resourcePath);
+                if (Files.isRegularFile(p)) {
+                    return Files.readAllBytes(p);
+                }
             }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
         return null;
     }
-
 }

@@ -321,6 +321,7 @@ class VectorRegister {
 
   // accessors
   constexpr int encoding() const { assert(is_valid(), "invalid register"); return _encoding; }
+  inline VMReg as_VMReg() const;
 
   // testers
   constexpr bool is_valid() const { return (0 <= _encoding && _encoding < number_of_registers); }
@@ -392,7 +393,6 @@ class VectorSRegister {
 
   // accessors
   constexpr int encoding() const { assert(is_valid(), "invalid register"); return _encoding; }
-  inline VMReg as_VMReg() const;
   VectorSRegister successor() const { return VectorSRegister(encoding() + 1); }
 
   // testers
@@ -484,8 +484,8 @@ class ConcreteRegisterImpl : public AbstractRegisterImpl {
   enum {
     max_gpr = Register::number_of_registers * 2,
     max_fpr = max_gpr + FloatRegister::number_of_registers * 2,
-    max_vsr = max_fpr + VectorSRegister::number_of_registers * 4,
-    max_cnd = max_vsr + ConditionRegister::number_of_registers,
+    max_vr  = max_fpr + VectorRegister::number_of_registers * 4,
+    max_cnd = max_vr  + ConditionRegister::number_of_registers,
     max_spr = max_cnd + SpecialRegister::number_of_registers,
     // This number must be large enough to cover REG_COUNT (defined by c2) registers.
     // There is no requirement that any ordering here matches any ordering c2 gives

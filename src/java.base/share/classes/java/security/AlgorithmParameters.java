@@ -55,10 +55,11 @@ import java.util.Objects;
  * <ul>
  * <li>{@code AES}</li>
  * <li>{@code ChaCha20-Poly1305}</li>
- * <li>{@code DESede}</li>
  * <li>{@code DiffieHellman}</li>
  * <li>{@code DSA}</li>
  * <li>{@code EC} (secp256r1, secp384r1)</li>
+ * <li>{@code PBEWithHmacSHA256AndAES_128}</li>
+ * <li>{@code PBEWithHmacSHA256AndAES_256}</li>
  * <li>{@code RSASSA-PSS} (MGF1 mask generation function and SHA-256 or SHA-384
  *     hash algorithms)</li>
  * </ul>

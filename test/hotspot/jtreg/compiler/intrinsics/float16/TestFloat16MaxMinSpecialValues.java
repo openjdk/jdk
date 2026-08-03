@@ -30,6 +30,7 @@ import jdk.test.lib.*;
 /**
  * @test
  * @bug 8352585
+ * @key randomness
  * @library /test/lib /
  * @summary Add special case handling for Float16.max/min x86 backend
  * @modules jdk.incubator.vector

@@ -26,8 +26,9 @@
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 #include "waitBarrier_linux.hpp"
-#include <sys/syscall.h>
+
 #include <linux/futex.h>
+#include <sys/syscall.h>
 
 // 32-bit RISC-V has no SYS_futex syscall.
 #ifdef RISCV32

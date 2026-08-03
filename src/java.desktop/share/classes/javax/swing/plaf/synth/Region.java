@@ -24,8 +24,6 @@
  */
 package javax.swing.plaf.synth;
 
-import sun.awt.AppContext;
-
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -72,8 +70,6 @@ import javax.swing.UIDefaults;
  * @author Scott Violet
  */
 public class Region {
-    private static final Object UI_TO_REGION_MAP_KEY = new Object();
-    private static final Object LOWER_CASE_NAME_MAP_KEY = new Object();
 
     /**
      * ArrowButton's are special types of buttons that also render a
@@ -425,10 +421,10 @@ public class Region {
      */
     public static final Region VIEWPORT = new Region("Viewport", false);
 
-    private static Map<String, Region> getUItoRegionMap() {
-        AppContext context = AppContext.getAppContext();
-        @SuppressWarnings("unchecked")
-        Map<String, Region> map = (Map<String, Region>) context.get(UI_TO_REGION_MAP_KEY);
+    private static Map<String, Region> regionMap;
+
+    private static synchronized Map<String, Region> getUItoRegionMap() {
+        Map<String, Region> map = regionMap;
         if (map == null) {
             map = new HashMap<String, Region>();
             map.put("ArrowButtonUI", ARROW_BUTTON);
@@ -476,18 +472,18 @@ public class Region {
             map.put("ToolBarSeparatorUI", TOOL_BAR_SEPARATOR);
             map.put("TreeUI", TREE);
             map.put("ViewportUI", VIEWPORT);
-            context.put(UI_TO_REGION_MAP_KEY, map);
+            regionMap = map;
         }
         return map;
     }
 
-    private static Map<Region, String> getLowerCaseNameMap() {
-        AppContext context = AppContext.getAppContext();
-        @SuppressWarnings("unchecked")
-        Map<Region, String> map = (Map<Region, String>) context.get(LOWER_CASE_NAME_MAP_KEY);
+    private static Map<Region, String> lcRegionMap;
+
+    private static synchronized Map<Region, String> getLowerCaseNameMap() {
+        Map<Region, String> map = lcRegionMap;
         if (map == null) {
             map = new HashMap<Region, String>();
-            context.put(LOWER_CASE_NAME_MAP_KEY, map);
+            lcRegionMap = map;
         }
         return map;
     }

@@ -27,7 +27,7 @@
  * @library /test/lib
  * @build jdk.test.lib.net.IPSupport
  * @modules jdk.httpserver
- * @run testng/othervm CommandLinePositiveTest
+ * @run junit/othervm CommandLinePositiveTest
  */
 
 import java.io.IOException;
@@ -41,11 +41,12 @@ import jdk.test.lib.net.IPSupport;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.FileUtils;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 import static java.lang.System.out;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class CommandLinePositiveTest {
 
@@ -84,8 +85,8 @@ public class CommandLinePositiveTest {
 
     static final String LOOPBACK_ADDR = InetAddress.getLoopbackAddress().getHostAddress();
 
-    @BeforeTest
-    public void setup() throws IOException {
+    @BeforeAll
+    public static void setup() throws IOException {
         if (Files.exists(ROOT_DIR)) {
             FileUtils.deleteFileTreeWithRetry(ROOT_DIR);
         }
@@ -105,16 +106,17 @@ public class CommandLinePositiveTest {
         }
     }
 
-    @DataProvider
-    public Object[][] directoryOptions() { return new Object[][] {{"-d"}, {"--directory"}}; }
+    public static Object[][] directoryOptions() { return new Object[][] {{"-d"}, {"--directory"}}; }
 
-    @Test(dataProvider = "directoryOptions")
+    @ParameterizedTest
+    @MethodSource("directoryOptions")
     public void testAbsDirectory(String opt) throws Throwable {
         out.printf("\n--- testAbsDirectory, opt=\"%s\"%n", opt);
         testDirectory(opt, ROOT_DIR_STR);
     }
 
-    @Test(dataProvider = "directoryOptions")
+    @ParameterizedTest
+    @MethodSource("directoryOptions")
     public void testRelDirectory(String opt) throws Throwable {
         out.printf("\n--- testRelDirectory, opt=\"%s\"%n", opt);
         Path rootRelDir = CWD.relativize(ROOT_DIR);
@@ -129,10 +131,10 @@ public class CommandLinePositiveTest {
                 .shouldContain("URL http://" + LOOPBACK_ADDR);
     }
 
-    @DataProvider
-    public Object[][] portOptions() { return new Object[][] {{"-p"}, {"--port"}}; }
+    public static Object[][] portOptions() { return new Object[][] {{"-p"}, {"--port"}}; }
 
-    @Test(dataProvider = "portOptions")
+    @ParameterizedTest
+    @MethodSource("portOptions")
     public void testPort(String opt) throws Throwable {
         out.println("\n--- testPort, opt=\"%s\" ".formatted(opt));
         simpleserver(JAVA, LOCALE_OPT, "-m", "jdk.httpserver", opt, "0")
@@ -142,8 +144,7 @@ public class CommandLinePositiveTest {
                 .shouldContain("URL http://" + LOOPBACK_ADDR);
     }
 
-    @DataProvider
-    public Object[][] helpOptions() { return new Object[][] {{"-h"}, {"-?"}, {"--help"}}; }
+    public static Object[][] helpOptions() { return new Object[][] {{"-h"}, {"-?"}, {"--help"}}; }
 
     static final String USAGE_TEXT = """
             Usage: java -m jdk.httpserver [-b bind address] [-p port] [-d directory]
@@ -161,7 +162,8 @@ public class CommandLinePositiveTest {
             -version, --version   - Prints version information and exits.
             To stop the server, press Ctrl + C.""".formatted(LOOPBACK_ADDR);
 
-    @Test(dataProvider = "helpOptions")
+    @ParameterizedTest
+    @MethodSource("helpOptions")
     public void testHelp(String opt) throws Throwable {
         out.println("\n--- testHelp, opt=\"%s\" ".formatted(opt));
         simpleserver(WaitForLine.HELP_STARTUP_LINE,
@@ -172,10 +174,10 @@ public class CommandLinePositiveTest {
                 .shouldContain(OPTIONS_TEXT);
     }
 
-    @DataProvider
-    public Object[][] versionOptions() { return new Object[][] {{"-version"}, {"--version"}}; }
+    public static Object[][] versionOptions() { return new Object[][] {{"-version"}, {"--version"}}; }
 
-    @Test(dataProvider = "versionOptions")
+    @ParameterizedTest
+    @MethodSource("versionOptions")
     public void testVersion(String opt) throws Throwable {
         out.println("\n--- testVersion, opt=\"%s\" ".formatted(opt));
         simpleserver(WaitForLine.VERSION_STARTUP_LINE,
@@ -184,10 +186,10 @@ public class CommandLinePositiveTest {
                 .shouldHaveExitValue(0);
     }
 
-    @DataProvider
-    public Object[][] bindOptions() { return new Object[][] {{"-b"}, {"--bind-address"}}; }
+    public static Object[][] bindOptions() { return new Object[][] {{"-b"}, {"--bind-address"}}; }
 
-    @Test(dataProvider = "bindOptions")
+    @ParameterizedTest
+    @MethodSource("bindOptions")
     public void testBindAllInterfaces(String opt) throws Throwable {
         out.println("\n--- testBindAllInterfaces, opt=\"%s\" ".formatted(opt));
         simpleserver(JAVA, LOCALE_OPT, "-m", "jdk.httpserver", "-p", "0", opt, "0.0.0.0")
@@ -202,7 +204,8 @@ public class CommandLinePositiveTest {
         }
     }
 
-    @Test(dataProvider = "bindOptions")
+    @ParameterizedTest
+    @MethodSource("bindOptions")
     public void testLastOneWinsBindAddress(String opt) throws Throwable {
         out.println("\n--- testLastOneWinsBindAddress, opt=\"%s\" ".formatted(opt));
         simpleserver(JAVA, LOCALE_OPT, "-m", "jdk.httpserver", "-p", "0", opt, "123.4.5.6", opt, LOOPBACK_ADDR)
@@ -212,7 +215,8 @@ public class CommandLinePositiveTest {
 
     }
 
-    @Test(dataProvider = "directoryOptions")
+    @ParameterizedTest
+    @MethodSource("directoryOptions")
     public void testLastOneWinsDirectory(String opt) throws Throwable {
         out.println("\n--- testLastOneWinsDirectory, opt=\"%s\" ".formatted(opt));
         simpleserver(JAVA, LOCALE_OPT, "-m", "jdk.httpserver", "-p", "0", opt, ROOT_DIR_STR, opt, ROOT_DIR_STR)
@@ -222,10 +226,10 @@ public class CommandLinePositiveTest {
                 .shouldContain("URL http://" + LOOPBACK_ADDR);
     }
 
-    @DataProvider
-    public Object[][] outputOptions() { return new Object[][] {{"-o"}, {"--output"}}; }
+    public static Object[][] outputOptions() { return new Object[][] {{"-o"}, {"--output"}}; }
 
-    @Test(dataProvider = "outputOptions")
+    @ParameterizedTest
+    @MethodSource("outputOptions")
     public void testLastOneWinsOutput(String opt) throws Throwable {
         out.println("\n--- testLastOneWinsOutput, opt=\"%s\" ".formatted(opt));
         simpleserver(JAVA, LOCALE_OPT, "-m", "jdk.httpserver", "-p", "0", opt, "none", opt, "verbose")
@@ -235,7 +239,8 @@ public class CommandLinePositiveTest {
                 .shouldContain("URL http://" + LOOPBACK_ADDR);
     }
 
-    @Test(dataProvider = "portOptions")
+    @ParameterizedTest
+    @MethodSource("portOptions")
     public void testLastOneWinsPort(String opt) throws Throwable {
         out.println("\n--- testLastOneWinsPort, opt=\"%s\" ".formatted(opt));
         simpleserver(JAVA, LOCALE_OPT, "-m", "jdk.httpserver", opt, "-999", opt, "0")
@@ -245,8 +250,8 @@ public class CommandLinePositiveTest {
                 .shouldContain("URL http://" + LOOPBACK_ADDR);
     }
 
-    @AfterTest
-    public void teardown() throws IOException {
+    @AfterAll
+    public static void teardown() throws IOException {
         if (Files.exists(ROOT_DIR)) {
             FileUtils.deleteFileTreeWithRetry(ROOT_DIR);
         }

@@ -111,6 +111,7 @@ class ConstantPoolCache: public MetaspaceObj {
 
   oop  archived_references() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
   void clear_archived_references() NOT_CDS_JAVA_HEAP_RETURN;
+  CDS_JAVA_HEAP_ONLY(int archived_references_index() { return _archived_references_index; })
 
   inline objArrayOop resolved_references();
   void set_resolved_references(OopHandle s) { _resolved_references = s; }
@@ -195,7 +196,7 @@ class ConstantPoolCache: public MetaspaceObj {
 #endif
 
  public:
-  static int size() { return align_metadata_size(sizeof(ConstantPoolCache) / wordSize); }
+  static int size() { return align_metadata_size(sizeof_auto(ConstantPoolCache) / wordSize); }
 
  private:
   // Helpers
@@ -225,7 +226,7 @@ class ConstantPoolCache: public MetaspaceObj {
   void remove_resolved_field_entries_if_non_deterministic();
   void remove_resolved_indy_entries_if_non_deterministic();
   void remove_resolved_method_entries_if_non_deterministic();
-  bool can_archive_resolved_method(ConstantPool* src_cp, ResolvedMethodEntry* method_entry);
+  bool can_archive_resolved_method(ConstantPool* src_cp, ResolvedMethodEntry* method_entry, const char*& rejection_reason);
 #endif
 
   // RedefineClasses support

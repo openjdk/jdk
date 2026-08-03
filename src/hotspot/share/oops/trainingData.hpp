@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,18 +26,18 @@
 #define SHARE_OOPS_TRAININGDATA_HPP
 
 #include "cds/cdsConfig.hpp"
-#include "classfile/classLoaderData.hpp"
 #include "classfile/compactHashtable.hpp"
-#include "compiler/compilerDefinitions.hpp"
 #include "compiler/compiler_globals.hpp"
+#include "compiler/compilerDefinitions.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metaspaceClosure.hpp"
+#include "oops/array.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/method.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "utilities/resizeableResourceHash.hpp"
+#include "utilities/resizableHashTable.hpp"
 
 class ciEnv;
 class ciBaseObject;
@@ -180,7 +180,7 @@ public:
   // A set of TD objects that we collect during the training run.
   class TrainingDataSet {
     friend TrainingData;
-    ResizeableResourceHashtable<const Key*, TrainingData*,
+    ResizeableHashTable<const Key*, TrainingData*,
                                 AnyObj::C_HEAP, MemTag::mtCompiler,
                                 &TrainingData::Key::hash,
                                 &TrainingData::Key::equals>
@@ -218,11 +218,7 @@ public:
       return *prior;
     }
     template<typename Function>
-    void iterate(const Function& fn) const { // lambda enabled API
-      iterate(const_cast<Function&>(fn));
-    }
-    template<typename Function>
-    void iterate(Function& fn) const { // lambda enabled API
+    void iterate(Function fn) const { // lambda enabled API
       return _table.iterate_all([&](const TrainingData::Key* k, TrainingData* td) { fn(td); });
     }
     int size() const { return _table.number_of_entries(); }
@@ -236,7 +232,7 @@ public:
   // A widget to ensure that we visit TD object only once (TD objects can have pointer to
   // other TD object that are sometimes circular).
   class Visitor {
-    ResizeableResourceHashtable<TrainingData*, bool> _visited;
+    ResizeableHashTable<TrainingData*, bool> _visited;
   public:
     Visitor(unsigned size) : _visited(size, 0x3fffffff) { }
     bool is_visited(TrainingData* td) {
@@ -305,13 +301,10 @@ private:
   }
 
   template<typename Function>
-  static void iterate(const Function& fn) { iterate(const_cast<Function&>(fn)); }
-
-  template<typename Function>
-  static void iterate(Function& fn) { // lambda enabled API
+  static void iterate(Function fn) { // lambda enabled API
     TrainingDataLocker l;
     if (have_data()) {
-      archived_training_data_dictionary()->iterate(fn);
+      archived_training_data_dictionary()->iterate_all(fn);
     }
     if (need_data()) {
       training_data_set()->iterate(fn);
@@ -406,7 +399,7 @@ private:
       _deps_dyn = nullptr;
     }
 #endif
-    void prepare(ClassLoaderData* loader_data);
+    void prepare();
     void metaspace_pointers_do(MetaspaceClosure *iter);
   };
 
@@ -432,6 +425,8 @@ private:
     }
     return nullptr;
   }
+
+  static void cleanup_after_redefinition();
 };
 
 // Training data that is associated with an InstanceKlass
@@ -446,7 +441,6 @@ class KlassTrainingData : public TrainingData {
 
   // cross-link to live klass, or null if not loaded or encountered yet
   InstanceKlass* _holder;
-  jobject _holder_mirror;   // extra link to prevent unloading by GC
 
   DepList<CompileTrainingData*> _comp_deps; // compiles that depend on me
 
@@ -469,7 +463,6 @@ class KlassTrainingData : public TrainingData {
     TrainingDataLocker::assert_locked();
      _comp_deps.remove_if_existing(ctd);
   }
-
  public:
   Symbol* name() const {
     precond(has_holder());
@@ -485,10 +478,6 @@ class KlassTrainingData : public TrainingData {
   }
   virtual KlassTrainingData* as_KlassTrainingData() const { return const_cast<KlassTrainingData*>(this); };
 
-  ClassLoaderData* class_loader_data() {
-    assert(has_holder(), "");
-    return holder()->class_loader_data();
-  }
   void notice_fully_initialized() NOT_CDS_RETURN;
 
   void print_on(outputStream* st, bool name_only) const;
@@ -626,8 +615,8 @@ public:
 #if INCLUDE_CDS
       void remove_unshareable_info() { _data.remove_unshareable_info(); }
 #endif
-      void prepare(ClassLoaderData* loader_data) {
-        _data.prepare(loader_data);
+      void prepare() {
+        _data.prepare();
       }
       void metaspace_pointers_do(MetaspaceClosure *iter) {
         _data.metaspace_pointers_do(iter);
@@ -645,8 +634,8 @@ public:
       ciMethod__inline_instructions_size.remove_unshareable_info();
     }
 #endif
-    void prepare(ClassLoaderData* loader_data) {
-      ciMethod__inline_instructions_size.prepare(loader_data);
+    void prepare() {
+      ciMethod__inline_instructions_size.prepare();
     }
     void metaspace_pointers_do(MetaspaceClosure *iter) {
       ciMethod__inline_instructions_size.metaspace_pointers_do(iter);
@@ -694,9 +683,9 @@ public:
     }
     _init_deps.clear();
   }
-  void dec_init_deps_left(KlassTrainingData* ktd);
-  int init_deps_left() const {
-    return Atomic::load(&_init_deps_left);
+  void dec_init_deps_left_release(KlassTrainingData* ktd);
+  int init_deps_left_acquire() const {
+    return AtomicAccess::load_acquire(&_init_deps_left);
   }
   uint compute_init_deps_left(bool count_initialized = false);
 
@@ -728,7 +717,7 @@ public:
     return (int)align_metadata_size(align_up(sizeof(CompileTrainingData), BytesPerWord)/BytesPerWord);
   }
 
-  void verify();
+  void verify(bool verify_dep_counter);
 
   static CompileTrainingData* allocate(MethodTrainingData* mtd, int level, int compile_id) {
     return TrainingData::allocate<CompileTrainingData>(mtd, level, compile_id);
@@ -755,6 +744,9 @@ class MethodTrainingData : public TrainingData {
   MethodCounters* _final_counters;
   MethodData*     _final_profile;
 
+  int _invocation_count;
+  int _backedge_count;
+
   MethodTrainingData();
   MethodTrainingData(Method* method, KlassTrainingData* ktd) : TrainingData(method) {
     _klass = ktd;
@@ -765,6 +757,8 @@ class MethodTrainingData : public TrainingData {
     _highest_top_level = CompLevel_none;
     _level_mask = 0;
     _was_toplevel = false;
+    _invocation_count = 0;
+    _backedge_count = 0;
   }
 
   static int level_mask(int level) {
@@ -779,6 +773,8 @@ class MethodTrainingData : public TrainingData {
   bool saw_level(CompLevel l) const { return (_level_mask & level_mask(l)) != 0; }
   int highest_top_level()     const { return _highest_top_level; }
   MethodData* final_profile() const { return _final_profile; }
+  int invocation_count() const { return _invocation_count; }
+  int backedge_count() const { return _backedge_count; }
 
   Symbol* name() const {
     precond(has_holder());
@@ -849,7 +845,7 @@ class MethodTrainingData : public TrainingData {
     return "{ method training data }";
   };
 
-  void verify();
+  void verify(bool verify_dep_counter);
 
   static MethodTrainingData* allocate(Method* m, KlassTrainingData* ktd) {
     return TrainingData::allocate<MethodTrainingData>(m, ktd);

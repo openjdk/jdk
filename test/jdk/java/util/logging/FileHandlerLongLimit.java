@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import java.util.logging.LogRecord;
  * @bug 8059767
  * @summary tests that FileHandler can accept a long limit.
  * @modules java.logging/java.util.logging:open
- * @run main/othervm FileHandlerLongLimit
+ * @run main/othervm --enable-final-field-mutation=ALL-UNNAMED FileHandlerLongLimit
  * @author danielfuchs
  * @key randomness
  */

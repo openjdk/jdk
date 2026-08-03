@@ -237,7 +237,7 @@ ClassFileStream* JfrUpcalls::on_method_trace(InstanceKlass* ik, const ClassFileS
   ModuleEntry* module_entry = ik->module();
   oop module = nullptr;
   if (module_entry != nullptr) {
-    module = module_entry->module();
+    module = module_entry->module_oop();
   }
   instanceHandle module_handle(THREAD, (instanceOop)module);
 

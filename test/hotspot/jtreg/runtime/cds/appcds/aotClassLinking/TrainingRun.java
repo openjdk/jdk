@@ -27,8 +27,6 @@
  * @summary -XX:AOTMode=record should not interfere with app execution: (1) thread creation; (2) exit code
  * @bug 8351327
  * @requires vm.cds.supports.aot.class.linking
- * @comment work around JDK-8345635
- * @requires !vm.jvmci.enabled
  * @library /test/jdk/lib/testlibrary /test/lib
  * @build TrainingRun
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar MyTestApp

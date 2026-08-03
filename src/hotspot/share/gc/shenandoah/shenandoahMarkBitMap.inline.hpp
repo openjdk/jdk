@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,7 +28,8 @@
 
 #include "gc/shenandoah/shenandoahMarkBitMap.hpp"
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
+#include "utilities/count_leading_zeros.hpp"
 #include "utilities/count_trailing_zeros.hpp"
 
 inline size_t ShenandoahMarkBitMap::address_to_index(const HeapWord* addr) const {
@@ -47,7 +48,7 @@ inline bool ShenandoahMarkBitMap::mark_strong(HeapWord* heap_addr, bool& was_upg
   volatile bm_word_t* const addr = word_addr(bit);
   const bm_word_t mask = bit_mask(bit);
   const bm_word_t mask_weak = (bm_word_t)1 << (bit_in_word(bit) + 1);
-  bm_word_t old_val = Atomic::load(addr);
+  bm_word_t old_val = AtomicAccess::load(addr);
 
   do {
     const bm_word_t new_val = old_val | mask;
@@ -55,7 +56,7 @@ inline bool ShenandoahMarkBitMap::mark_strong(HeapWord* heap_addr, bool& was_upg
       assert(!was_upgraded, "Should be false already");
       return false;     // Someone else beat us to it.
     }
-    const bm_word_t cur_val = Atomic::cmpxchg(addr, old_val, new_val, memory_order_relaxed);
+    const bm_word_t cur_val = AtomicAccess::cmpxchg(addr, old_val, new_val, memory_order_relaxed);
     if (cur_val == old_val) {
       was_upgraded = (cur_val & mask_weak) != 0;
       return true;      // Success.
@@ -72,7 +73,7 @@ inline bool ShenandoahMarkBitMap::mark_weak(HeapWord* heap_addr) {
   volatile bm_word_t* const addr = word_addr(bit);
   const bm_word_t mask_weak = (bm_word_t)1 << (bit_in_word(bit) + 1);
   const bm_word_t mask_strong = (bm_word_t)1 << bit_in_word(bit);
-  bm_word_t old_val = Atomic::load(addr);
+  bm_word_t old_val = AtomicAccess::load(addr);
 
   do {
     if ((old_val & mask_strong) != 0) {
@@ -82,7 +83,7 @@ inline bool ShenandoahMarkBitMap::mark_weak(HeapWord* heap_addr) {
     if (new_val == old_val) {
       return false;     // Someone else beat us to it.
     }
-    const bm_word_t cur_val = Atomic::cmpxchg(addr, old_val, new_val, memory_order_relaxed);
+    const bm_word_t cur_val = AtomicAccess::cmpxchg(addr, old_val, new_val, memory_order_relaxed);
     if (cur_val == old_val) {
       return true;      // Success.
     }
@@ -135,14 +136,12 @@ inline ShenandoahMarkBitMap::idx_t ShenandoahMarkBitMap::get_next_bit_impl(idx_t
     // Get the word containing l_index, and shift out low bits.
     idx_t index = to_words_align_down(l_index);
     bm_word_t cword = (map(index) ^ flip) >> bit_in_word(l_index);
-    if ((cword & 1) != 0) {
-      // The first bit is similarly often interesting. When it matters
-      // (density or features of the calling algorithm make it likely
-      // the first bit is set), going straight to the next clause compares
-      // poorly with doing this check first; count_trailing_zeros can be
-      // relatively expensive, plus there is the additional range check.
-      // But when the first bit isn't set, the cost of having tested for
-      // it is relatively small compared to the rest of the search.
+    if ((cword & 0x03) != 0) {
+      // The first bits (representing weak mark or strong mark) are similarly often interesting. When it matters
+      // (density or features of the calling algorithm make it likely the first bits are set), going straight to
+      // the next clause compares poorly with doing this check first; count_trailing_zeros can be relatively expensive,
+      // plus there is the additional range check.  But when the first bits are not set, the cost of having tested for
+      // them is relatively small compared to the rest of the search.
       return l_index;
     } else if (cword != 0) {
       // Flipped and shifted first word is non-zero.
@@ -171,8 +170,97 @@ inline ShenandoahMarkBitMap::idx_t ShenandoahMarkBitMap::get_next_bit_impl(idx_t
   return r_index;
 }
 
+template<ShenandoahMarkBitMap::bm_word_t flip, bool aligned_left>
+inline ShenandoahMarkBitMap::idx_t ShenandoahMarkBitMap::get_prev_bit_impl(idx_t l_index, idx_t r_index) const {
+  STATIC_ASSERT(flip == find_ones_flip || flip == find_zeros_flip);
+  verify_range(l_index, r_index);
+  assert(!aligned_left || is_aligned(l_index, BitsPerWord), "l_index not aligned");
+
+  // The first word often contains an interesting bit, either due to
+  // density or because of features of the calling algorithm.  So it's
+  // important to examine that first word with a minimum of fuss,
+  // minimizing setup time for later words that will be wasted if the
+  // first word is indeed interesting.
+
+  // The benefit from aligned_left being true is relatively small.
+  // It saves an operation in the setup for the word search loop.
+  // It also eliminates the range check on the final result.
+  // However, callers often have a comparison with l_index, and
+  // inlining often allows the two comparisons to be combined; it is
+  // important when !aligned_left that return paths either return
+  // l_index or a value dominating a comparison with l_index.
+  // aligned_left is still helpful when the caller doesn't have a
+  // range check because features of the calling algorithm guarantee
+  // an interesting bit will be present.
+
+  if (l_index < r_index) {
+    // Get the word containing r_index, and shift out the high-order bits (representing objects that come after r_index)
+    idx_t index = to_words_align_down(r_index);
+    assert(BitsPerWord - 2 >= bit_in_word(r_index), "sanity");
+    size_t shift = BitsPerWord - 2 - bit_in_word(r_index);
+    bm_word_t cword = (map(index) ^ flip) << shift;
+    // After this shift, the highest order bits correspond to r_index.
+
+    // We give special handling if either of the two most significant bits (Weak or Strong) is set.  With 64-bit
+    // words, the mask of interest is 0xc000_0000_0000_0000.  Symbolically, this constant is represented by:
+    const bm_word_t first_object_mask = ((bm_word_t) 0x3) << (BitsPerWord - 2);
+    if ((cword & first_object_mask) != 0) {
+      // The first object is similarly often interesting. When it matters
+      // (density or features of the calling algorithm make it likely
+      // the first bit is set), going straight to the next clause compares
+      // poorly with doing this check first; count_leading_zeros can be
+      // relatively expensive, plus there is the additional range check.
+      // But when the first bit isn't set, the cost of having tested for
+      // it is relatively small compared to the rest of the search.
+      return r_index;
+    } else if (cword != 0) {
+      // Note that there are 2 bits corresponding to every index value (Weak and Strong), and every odd index value
+      //  corresponds to the same object as index-1
+      // Flipped and shifted first word is non-zero.  If leading_zeros is 0 or 1, we return r_index (above).
+      // if leading zeros is 2 or 3, we return (r_index - 1) or (r_index - 2), and so forth
+      idx_t result = r_index + 1 - count_leading_zeros(cword);
+      if (aligned_left || (result >= l_index)) return result;
+      else {
+        // Sentinel value means no object found within specified range.
+        return r_index + 2;
+      }
+    } else {
+      // Flipped and shifted first word is zero.  Word search through
+      // aligned up r_index for a non-zero flipped word.
+      idx_t limit = aligned_left
+                    ? to_words_align_down(l_index) // Minuscule savings when aligned.
+                    : to_words_align_up(l_index);
+      // Unsigned index is always >= unsigned limit if limit equals zero, so test for strictly greater than before decrement.
+      while (index-- > limit) {
+        cword = map(index) ^ flip;
+        if (cword != 0) {
+          // cword hods bits:
+          //    0x03 for the object corresponding to index (and index+1)       (count_leading_zeros is 62 or 63)
+          //    0x0c for the object corresponding to index + 2 (and index+3)   (count_leading_zeros is 60 or 61)
+          //    and so on.
+          idx_t result = bit_index(index + 1) - (count_leading_zeros(cword) + 1);
+          if (aligned_left || (result >= l_index)) return result;
+          else {
+            // Sentinel value means no object found within specified range.
+            return r_index + 2;
+          }
+        }
+      }
+      // No bits in range; return r_index+2.
+      return r_index + 2;
+    }
+  }
+  else {
+    return r_index + 2;
+  }
+}
+
 inline ShenandoahMarkBitMap::idx_t ShenandoahMarkBitMap::get_next_one_offset(idx_t l_offset, idx_t r_offset) const {
   return get_next_bit_impl<find_ones_flip, false>(l_offset, r_offset);
+}
+
+inline ShenandoahMarkBitMap::idx_t ShenandoahMarkBitMap::get_prev_one_offset(idx_t l_offset, idx_t r_offset) const {
+  return get_prev_bit_impl<find_ones_flip, false>(l_offset, r_offset);
 }
 
 // Returns a bit mask for a range of bits [beg, end) within a single word.  Each

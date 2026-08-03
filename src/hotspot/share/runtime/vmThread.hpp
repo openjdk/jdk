@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@
 #ifndef SHARE_RUNTIME_VMTHREAD_HPP
 #define SHARE_RUNTIME_VMTHREAD_HPP
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
-#include "runtime/perfDataTypes.hpp"
 #include "runtime/nonJavaThread.hpp"
+#include "runtime/perfDataTypes.hpp"
 #include "runtime/task.hpp"
 #include "runtime/vmOperation.hpp"
 
@@ -88,7 +88,7 @@ class VMThread: public NamedThread {
   void loop();
 
  public:
-  bool is_running() const { return Atomic::load(&_is_running); }
+  bool is_running() const { return AtomicAccess::load(&_is_running); }
 
   // Tester
   bool is_VM_thread() const                      { return true; }

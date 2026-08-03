@@ -29,11 +29,17 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import jdk.jfr.AnnotationElement;
 import jdk.jfr.Enabled;
 import jdk.jfr.Event;
+import jdk.jfr.EventFactory;
+import jdk.jfr.Name;
 import jdk.jfr.Recording;
 import jdk.jfr.SettingControl;
 import jdk.jfr.SettingDefinition;
@@ -132,6 +138,7 @@ public class TestThrottle {
         testThrottleThresholded();
         testThrottleNormalRate();
         testThrottleUserdefined();
+        testThrottleDynamic();
     }
 
     private static void testUnthrottled() throws Exception {
@@ -232,6 +239,40 @@ public class TestThrottle {
         }
     }
 
+    private static void testThrottleDynamic() throws Exception {
+        List<AnnotationElement> offAnnotations = new ArrayList<>();
+        offAnnotations.add(new AnnotationElement(Name.class, "DynamicZero"));
+        offAnnotations.add(new AnnotationElement(Throttle.class, "0/s"));
+        EventFactory offFactory = EventFactory.create(offAnnotations, List.of());
+
+        List<AnnotationElement> highRateAnnotations = new ArrayList<>();
+        highRateAnnotations.add(new AnnotationElement(Name.class, "DynamicHighRate"));
+        highRateAnnotations.add(new AnnotationElement(Throttle.class, "1000/s"));
+        EventFactory highRateFactory = EventFactory.create(highRateAnnotations, List.of());
+
+        List<RecordedEvent> events = new CopyOnWriteArrayList<>();
+        try (RecordingStream r = new RecordingStream()) {
+            r.enable("DynamicZero");
+            r.enable("DynamicHighRate");
+            r.onEvent(events::add);
+            r.startAsync();
+            Event offEvent = offFactory.newEvent();
+            offEvent.commit();
+            Event highRateEvent = highRateFactory.newEvent();
+            highRateEvent.begin();
+            highRateEvent.commit();
+            r.stop();
+            if (events.size() != 1) {
+                System.out.println(events);
+                throw new Exception("Expected one dynamic event");
+            }
+            if (!events.get(0).getEventType().getName().equals("DynamicHighRate")) {
+                System.out.println(events);
+                throw new Exception("Expected DynamicHighRate");
+            }
+        }
+    }
+
     @SuppressWarnings("unchecked")
     private static void testEvent(Class<? extends Event> eventClass, boolean shouldCommit) throws Exception {
         try (Recording r = new Recording()) {
@@ -272,6 +313,8 @@ public class TestThrottle {
             }
             if (shouldCommit) {
                 assertEvents(r, eventClass.getName(), 17 + 50 + 11);
+            } else {
+                assertEvents(r, eventClass.getName(), 0);
             }
         }
     }

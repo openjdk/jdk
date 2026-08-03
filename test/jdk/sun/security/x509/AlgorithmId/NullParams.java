@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,13 @@ public class NullParams {
         test("SHA3-256withRSA", true);
         test("SHA3-384withRSA", true);
         test("SHA3-512withRSA", true);
+        test("HmacSHA1", true);
+        test("HmacSHA224", true);
+        test("HmacSHA256", true);
+        test("HmacSHA384", true);
+        test("HmacSHA512", true);
+        test("HmacSHA512/224", true);
+        test("HmacSHA512/256", true);
 
         // Full old list: must be absent
         test("SHA1withECDSA", false);
@@ -83,7 +90,6 @@ public class NullParams {
         // Others
         test("DSA", false);
         test("SHA1withDSA", false);
-        test("HmacSHA1", false);
 
         if (failed) {
             throw new RuntimeException("At least one failed");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,7 +207,7 @@ class CloseTest {
     }
 
     /**
-     * Test invoking close with interrupt status set.
+     * Test invoking close with interrupted status set.
      */
     @ParameterizedTest
     @MethodSource("executors")
@@ -225,7 +225,7 @@ class CloseTest {
             executor.close();
             assertTrue(Thread.currentThread().isInterrupted());
         } finally {
-            Thread.interrupted();  // clear interrupt status
+            Thread.interrupted();  // clear interrupted status
         }
         assertTrue(executor.isShutdown());
         assertTrue(executor.isTerminated());
@@ -259,7 +259,7 @@ class CloseTest {
             executor.close();
             assertTrue(Thread.currentThread().isInterrupted());
         } finally {
-            Thread.interrupted();  // clear interrupt status
+            Thread.interrupted();  // clear interrupted status
         }
         assertTrue(executor.isShutdown());
         assertTrue(executor.isTerminated());

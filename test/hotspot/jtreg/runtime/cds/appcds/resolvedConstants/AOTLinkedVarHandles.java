@@ -28,8 +28,6 @@
  * @bug 8343245
  * @requires vm.cds
  * @requires vm.cds.supports.aot.class.linking
- * @comment work around JDK-8345635
- * @requires !vm.jvmci.enabled
  * @library /test/lib
  * @build AOTLinkedVarHandles
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
@@ -66,6 +64,7 @@ public class AOTLinkedVarHandles {
         OutputAnalyzer dumpOut = CDSTestUtils.createArchiveAndCheck(opts);
         dumpOut.shouldMatch(s + "java/lang/invoke/VarHandle.compareAndExchangeAcquire:\\(\\[DIDI\\)D =>");
         dumpOut.shouldMatch(s + "java/lang/invoke/VarHandle.get:\\(\\[DI\\)D => ");
+        dumpOut.shouldNotContain("rejected .* CP entry.*");
 
         CDSOptions runOpts = (new CDSOptions())
             .setUseVersion(false)

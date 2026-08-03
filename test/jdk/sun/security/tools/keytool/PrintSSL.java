@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,12 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class PrintSSL {
 
     public static void main(String[] args) throws Throwable {
+        // Disable KeyManager's algorithm constraints checking,
+        // so we can make keytool print certificate with weak
+        // MD5withRSA signature algorithm.
+        System.setProperty(
+                "jdk.tls.SunX509KeyManager.certChecking", "false");
+
         Files.deleteIfExists(Paths.get("keystore"));
 
         // make sure that "-printcert" works with weak algorithms

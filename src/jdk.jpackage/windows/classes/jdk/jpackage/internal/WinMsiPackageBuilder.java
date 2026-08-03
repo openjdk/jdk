@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,7 @@ import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-
 import jdk.jpackage.internal.model.Application;
-import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.MsiVersion;
 import jdk.jpackage.internal.model.WinMsiPackage;
 import jdk.jpackage.internal.model.WinMsiPackageMixin;
@@ -45,7 +43,7 @@ final class WinMsiPackageBuilder {
         this.pkgBuilder = Objects.requireNonNull(pkgBuilder);
     }
 
-    WinMsiPackage create() throws ConfigException {
+    WinMsiPackage create() {
         var pkg = pkgBuilder.create();
 
         try {
@@ -67,6 +65,7 @@ final class WinMsiPackageBuilder {
                 MsiVersion.of(pkg.version()),
                 withInstallDirChooser,
                 withShortcutPrompt,
+                withUi,
                 Optional.ofNullable(helpURL),
                 Optional.ofNullable(updateURL),
                 Optional.ofNullable(startMenuGroupName).orElseGet(DEFAULTS::startMenuGroupName),
@@ -91,6 +90,11 @@ final class WinMsiPackageBuilder {
 
     WinMsiPackageBuilder withShortcutPrompt(boolean v) {
         withShortcutPrompt = v;
+        return this;
+    }
+
+    WinMsiPackageBuilder withUi(boolean v) {
+        withUi = v;
         return this;
     }
 
@@ -133,6 +137,7 @@ final class WinMsiPackageBuilder {
 
     private boolean withInstallDirChooser;
     private boolean withShortcutPrompt;
+    private boolean withUi;
     private String helpURL;
     private String updateURL;
     private String startMenuGroupName;

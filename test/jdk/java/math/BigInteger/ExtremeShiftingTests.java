@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
  * @summary Tests of shiftLeft and shiftRight on Integer.MIN_VALUE
  * @requires os.maxMemory >= 1g
  * @run main/othervm -Xmx512m ExtremeShiftingTests
- * @author Joseph D. Darcy
  */
 import java.math.BigInteger;
 import static java.math.BigInteger.*;

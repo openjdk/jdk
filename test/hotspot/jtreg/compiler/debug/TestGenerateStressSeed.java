@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,9 @@ import jdk.test.lib.process.ProcessTools;
 /*
  * @test
  * @key stress randomness
- * @bug 8252219 8256535
+ * @bug 8252219 8256535 8325478
  * @requires vm.compiler2.enabled
+ * @requires vm.flagless
  * @summary Tests that using a stress option without -XX:StressSeed=N generates
  *          and logs a random seed.
  * @library /test/lib /
@@ -40,6 +41,7 @@ import jdk.test.lib.process.ProcessTools;
  * @run driver compiler.debug.TestGenerateStressSeed StressIGVN
  * @run driver compiler.debug.TestGenerateStressSeed StressCCP
  * @run driver compiler.debug.TestGenerateStressSeed StressMacroExpansion
+ * @run driver compiler.debug.TestGenerateStressSeed StressMacroElimination
  */
 
 public class TestGenerateStressSeed {

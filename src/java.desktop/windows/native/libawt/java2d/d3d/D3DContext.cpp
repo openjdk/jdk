@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -213,7 +213,7 @@ D3DContext::CreateInstance(IDirect3D9 *pd3d9, UINT adapter, D3DContext **ppCtx)
 D3DContext::D3DContext(IDirect3D9 *pd3d, UINT adapter)
 {
     J2dTraceLn(J2D_TRACE_INFO, "D3DContext::D3DContext");
-    J2dTraceLn1(J2D_TRACE_VERBOSE, "  pd3d=0x%x", pd3d);
+    J2dTraceLn(J2D_TRACE_VERBOSE, "  pd3d=0x%x", pd3d);
     pd3dObject = pd3d;
     pd3dDevice = NULL;
     adapterOrdinal = adapter;
@@ -283,9 +283,9 @@ void D3DContext::ReleaseDefPoolResources()
 
 void D3DContext::ReleaseContextResources()
 {
-    J2dTraceLn1(J2D_TRACE_INFO,
-                "D3DContext::ReleaseContextResources: pd3dDevice = 0x%x",
-                pd3dDevice);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "D3DContext::ReleaseContextResources: pd3dDevice = 0x%x",
+               pd3dDevice);
 
     ReleaseDefPoolResources();
 
@@ -309,9 +309,9 @@ void D3DContext::ReleaseContextResources()
 }
 
 D3DContext::~D3DContext() {
-    J2dTraceLn2(J2D_TRACE_INFO,
-                "~D3DContext: pd3dDevice=0x%x, pd3dObject =0x%x",
-                pd3dDevice, pd3dObject);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "~D3DContext: pd3dDevice=0x%x, pd3dObject =0x%x",
+               pd3dDevice, pd3dObject);
     ReleaseContextResources();
     SAFE_RELEASE(pd3dDevice);
 }
@@ -323,8 +323,8 @@ D3DContext::InitDevice(IDirect3DDevice9 *pd3dDevice)
 
     pd3dDevice->GetDeviceCaps(&devCaps);
 
-    J2dRlsTraceLn1(J2D_TRACE_INFO,
-                   "D3DContext::InitDevice: device %d", adapterOrdinal);
+    J2dRlsTraceLn(J2D_TRACE_INFO,
+                  "D3DContext::InitDevice: device %d", adapterOrdinal);
 
     // disable some of the unneeded and costly d3d functionality
     pd3dDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
@@ -423,9 +423,9 @@ D3DContext::InitDevice(IDirect3DDevice9 *pd3dDevice)
 
     bBeginScenePending = FALSE;
 
-    J2dRlsTraceLn1(J2D_TRACE_INFO,
-                   "D3DContext::InitDefice: successfully initialized device %d",
-                   adapterOrdinal);
+    J2dRlsTraceLn(J2D_TRACE_INFO,
+                  "D3DContext::InitDefice: successfully initialized device %d",
+                  adapterOrdinal);
 
     return res;
 }
@@ -440,13 +440,13 @@ D3DContext::CheckAndResetDevice()
     if (pd3dDevice != NULL) {
         if (FAILED(res = pd3dDevice->TestCooperativeLevel())) {
             if (res == D3DERR_DEVICELOST) {
-                J2dTraceLn1(J2D_TRACE_VERBOSE, "  device %d is still lost",
-                            adapterOrdinal);
+                J2dTraceLn(J2D_TRACE_VERBOSE, "  device %d is still lost",
+                           adapterOrdinal);
                 // nothing to be done here, wait for D3DERR_DEVICENOTRESET
                 return res;
             } else if (res == D3DERR_DEVICENOTRESET) {
-                J2dTraceLn1(J2D_TRACE_VERBOSE, "  device %d needs to be reset",
-                            adapterOrdinal);
+                J2dTraceLn(J2D_TRACE_VERBOSE, "  device %d needs to be reset",
+                           adapterOrdinal);
                 res = ResetContext();
             } else {
                 // some unexpected error
@@ -454,8 +454,8 @@ D3DContext::CheckAndResetDevice()
                                    "unknown error %x from TestCooperativeLevel");
             }
         } else {
-            J2dTraceLn1(J2D_TRACE_VERBOSE, "  device %d is not lost",
-                        adapterOrdinal);
+            J2dTraceLn(J2D_TRACE_VERBOSE, "  device %d is not lost",
+                       adapterOrdinal);
         }
     } else {
         J2dTraceLn(J2D_TRACE_VERBOSE, "  null device");
@@ -491,8 +491,8 @@ D3DContext::ResetContext()
 HRESULT
 D3DContext::ConfigureContext(D3DPRESENT_PARAMETERS *pNewParams)
 {
-    J2dRlsTraceLn1(J2D_TRACE_INFO, "D3DContext::ConfigureContext device %d",
-                   adapterOrdinal);
+    J2dRlsTraceLn(J2D_TRACE_INFO, "D3DContext::ConfigureContext device %d",
+                  adapterOrdinal);
     HRESULT res = S_OK;
     D3DFORMAT stencilFormat;
     HWND focusHWND = D3DPipelineManager::GetInstance()->GetCurrentFocusWindow();
@@ -516,7 +516,7 @@ D3DContext::ConfigureContext(D3DPRESENT_PARAMETERS *pNewParams)
     // do not set device window in the windowed mode, we use additional
     // swap chains for rendering, the default chain is not used. otherwise
     // our scratch focus window will be made visible
-    J2dTraceLn1(J2D_TRACE_VERBOSE, "  windowed=%d",pNewParams->Windowed);
+    J2dTraceLn(J2D_TRACE_VERBOSE, "  windowed=%d",pNewParams->Windowed);
     if (pNewParams->Windowed) {
         pNewParams->hDeviceWindow = (HWND)0;
     }
@@ -571,9 +571,8 @@ D3DContext::ConfigureContext(D3DPRESENT_PARAMETERS *pNewParams)
                 "D3DContext::ConfigureContext: could not reset the device");
             return res;
         }
-        J2dRlsTraceLn1(J2D_TRACE_INFO,
-            "D3DContext::ConfigureContext: successfully reset device: %d",
-            adapterOrdinal);
+        J2dRlsTraceLn(J2D_TRACE_INFO, "D3DContext::ConfigureContext: " \
+                      "successfully reset device: %d", adapterOrdinal);
     } else {
         D3DCAPS9 d3dCaps;
         DWORD dwBehaviorFlags;
@@ -622,9 +621,8 @@ D3DContext::ConfigureContext(D3DPRESENT_PARAMETERS *pNewParams)
                 "D3DContext::ConfigureContext: error creating d3d device");
             return res;
         }
-        J2dRlsTraceLn1(J2D_TRACE_INFO,
-            "D3DContext::ConfigureContext: successfully created device: %d",
-            adapterOrdinal);
+        J2dRlsTraceLn(J2D_TRACE_INFO, "D3DContext::ConfigureContext: " \
+                      "successfully created device: %d", adapterOrdinal);
         bIsHWRasterizer = (devType == D3DDEVTYPE_HAL);
     }
 
@@ -646,8 +644,8 @@ D3DContext::ConfigureContext(D3DPRESENT_PARAMETERS *pNewParams)
 HRESULT
 D3DContext::InitContext()
 {
-    J2dRlsTraceLn1(J2D_TRACE_INFO, "D3DContext::InitContext device %d",
-                   adapterOrdinal);
+    J2dRlsTraceLn(J2D_TRACE_INFO, "D3DContext::InitContext device %d",
+                  adapterOrdinal);
 
     D3DPRESENT_PARAMETERS params;
     ZeroMemory(&params, sizeof(D3DPRESENT_PARAMETERS));
@@ -791,9 +789,9 @@ D3DContext::SetRenderTarget(IDirect3DSurface9 *pSurface)
     D3DSURFACE_DESC descNew;
     IDirect3DSurface9 *pCurrentTarget;
 
-    J2dTraceLn1(J2D_TRACE_INFO,
-                "D3DContext::SetRenderTarget: pSurface=0x%x",
-                pSurface);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "D3DContext::SetRenderTarget: pSurface=0x%x",
+               pSurface);
 
     RETURN_STATUS_IF_NULL(pd3dDevice, E_FAIL);
     RETURN_STATUS_IF_NULL(pSurface, E_FAIL);
@@ -829,7 +827,7 @@ D3DContext::SetRenderTarget(IDirect3DSurface9 *pSurface)
                        (float)descNew.Height);
     pd3dDevice->SetTransform(D3DTS_PROJECTION, &tx);
 
-    J2dTraceLn1(J2D_TRACE_VERBOSE, "  current render target=0x%x", pSurface);
+    J2dTraceLn(J2D_TRACE_VERBOSE, "  current render target=0x%x", pSurface);
     return res;
 }
 
@@ -900,14 +898,14 @@ D3DContext::SetTransform(jdouble m00, jdouble m10,
     tx._42 = -0.5f;
     D3DUtils_2DConcatenateM(&tx, &tx1);
 
-    J2dTraceLn4(J2D_TRACE_VERBOSE,
-                "  %5f %5f %5f %5f", tx._11, tx._12, tx._13, tx._14);
-    J2dTraceLn4(J2D_TRACE_VERBOSE,
-                "  %5f %5f %5f %5f", tx._21, tx._22, tx._23, tx._24);
-    J2dTraceLn4(J2D_TRACE_VERBOSE,
-                "  %5f %5f %5f %5f", tx._31, tx._32, tx._33, tx._34);
-    J2dTraceLn4(J2D_TRACE_VERBOSE,
-                "  %5f %5f %5f %5f", tx._41, tx._42, tx._43, tx._44);
+    J2dTraceLn(J2D_TRACE_VERBOSE,
+               "  %5f %5f %5f %5f", tx._11, tx._12, tx._13, tx._14);
+    J2dTraceLn(J2D_TRACE_VERBOSE,
+               "  %5f %5f %5f %5f", tx._21, tx._22, tx._23, tx._24);
+    J2dTraceLn(J2D_TRACE_VERBOSE,
+               "  %5f %5f %5f %5f", tx._31, tx._32, tx._33, tx._34);
+    J2dTraceLn(J2D_TRACE_VERBOSE,
+               "  %5f %5f %5f %5f", tx._41, tx._42, tx._43, tx._44);
     if (FAILED(res = pd3dDevice->SetTransform(D3DTS_WORLD, &tx))) {
         DebugPrintD3DError(res, "D3DContext::SetTransform failed");
     }
@@ -924,9 +922,9 @@ D3DContext::SetRectClip(int x1, int y1, int x2, int y2)
     IDirect3DSurface9 *pCurrentTarget;
 
     J2dTraceLn(J2D_TRACE_INFO, "D3DContext::SetRectClip");
-    J2dTraceLn4(J2D_TRACE_VERBOSE,
-                "  x1=%-4d y1=%-4d x2=%-4d y2=%-4d",
-                x1, y1, x2, y2);
+    J2dTraceLn(J2D_TRACE_VERBOSE,
+               "  x1=%-4d y1=%-4d x2=%-4d y2=%-4d",
+               x1, y1, x2, y2);
 
     RETURN_STATUS_IF_NULL(pd3dDevice, E_FAIL);
 
@@ -962,9 +960,9 @@ D3DContext::SetRectClip(int x1, int y1, int x2, int y2)
         res = pd3dDevice->SetRenderState(D3DRS_SCISSORTESTENABLE, TRUE);
     } else {
         DebugPrintD3DError(res, "Error setting scissor rect");
-        J2dRlsTraceLn4(J2D_TRACE_ERROR,
-                       "  x1=%-4d y1=%-4d x2=%-4d y2=%-4d",
-                       x1, y1, x2, y2);
+        J2dRlsTraceLn(J2D_TRACE_ERROR,
+                      "  x1=%-4d y1=%-4d x2=%-4d y2=%-4d",
+                      x1, y1, x2, y2);
     }
 
     return res;
@@ -1108,9 +1106,9 @@ D3DContext::UploadTileToTexture(D3DResource *pTextureRes, void *pixels,
     jint pixelsTouchedL = 0, pixelsTouchedR = 0;
 
     J2dTraceLn(J2D_TRACE_INFO, "D3DContext::UploadTileToTexture");
-    J2dTraceLn4(J2D_TRACE_VERBOSE,
-        " rect={%-4d, %-4d, %-4d, %-4d}",
-        r.left, r.top, r.right, r.bottom);
+    J2dTraceLn(J2D_TRACE_VERBOSE,
+               " rect={%-4d, %-4d, %-4d, %-4d}",
+               r.left, r.top, r.right, r.bottom);
 
     if (pDesc->Usage == D3DUSAGE_DYNAMIC) {
         // it is safe to lock with discard because we don't care about the
@@ -1300,9 +1298,9 @@ HRESULT
 D3DContext::SetAlphaComposite(jint rule, jfloat ea, jint flags)
 {
     HRESULT res;
-    J2dTraceLn3(J2D_TRACE_INFO,
-                "D3DContext::SetAlphaComposite: rule=%-1d ea=%f flags=%d",
-                rule, ea, flags);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "D3DContext::SetAlphaComposite: rule=%-1d ea=%f flags=%d",
+               rule, ea, flags);
 
     RETURN_STATUS_IF_NULL(pd3dDevice, E_FAIL);
 
@@ -1316,12 +1314,12 @@ D3DContext::SetAlphaComposite(jint rule, jfloat ea, jint flags)
         (ea == 1.0f) &&
         (flags & D3DC_SRC_IS_OPAQUE))
     {
-        J2dTraceLn1(J2D_TRACE_VERBOSE,
-                    "  disabling alpha comp rule=%-1d ea=1.0 src=opq)", rule);
+        J2dTraceLn(J2D_TRACE_VERBOSE,
+                   "  disabling alpha comp rule=%-1d ea=1.0 src=opq)", rule);
         pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
     } else {
-        J2dTraceLn2(J2D_TRACE_VERBOSE,
-                    "  enabling alpha comp (rule=%-1d ea=%f)", rule, ea);
+        J2dTraceLn(J2D_TRACE_VERBOSE,
+                   "  enabling alpha comp (rule=%-1d ea=%f)", rule, ea);
         pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
 
         pd3dDevice->SetRenderState(D3DRS_SRCBLEND,
@@ -1362,7 +1360,7 @@ D3DContext::UpdateTextureTransforms(DWORD dwSamplerToUpdate)
         // update only given sampler, dwMaxSampler will be set to it as well
         dwSampler = dwSamplerToUpdate;
         dwMaxSampler = dwSamplerToUpdate;
-        J2dTraceLn1(J2D_TRACE_INFO, "D3DContext::UpdateTextureTransforms: "\
+        J2dTraceLn(J2D_TRACE_INFO, "D3DContext::UpdateTextureTransforms: "\
                                     "updating sampler %d", dwSampler);
     }
 
@@ -1376,14 +1374,14 @@ D3DContext::UpdateTextureTransforms(DWORD dwSamplerToUpdate)
             D3DSURFACE_DESC texDesc;
 
             pd3dDevice->GetTransform(D3DTS_WORLD, &tx);
-            J2dTraceLn4(10,
-                        "  %5f %5f %5f %5f", tx._11, tx._12, tx._13, tx._14);
-            J2dTraceLn4(10,
-                        "  %5f %5f %5f %5f", tx._21, tx._22, tx._23, tx._24);
-            J2dTraceLn4(10,
-                        "  %5f %5f %5f %5f", tx._31, tx._32, tx._33, tx._34);
-            J2dTraceLn4(10,
-                        "  %5f %5f %5f %5f", tx._41, tx._42, tx._43, tx._44);
+            J2dTraceLn(J2D_TRACE_VERBOSE2,
+                       "  %5f %5f %5f %5f", tx._11, tx._12, tx._13, tx._14);
+            J2dTraceLn(J2D_TRACE_VERBOSE2,
+                       "  %5f %5f %5f %5f", tx._21, tx._22, tx._23, tx._24);
+            J2dTraceLn(J2D_TRACE_VERBOSE2,
+                       "  %5f %5f %5f %5f", tx._31, tx._32, tx._33, tx._34);
+            J2dTraceLn(J2D_TRACE_VERBOSE2,
+                       "  %5f %5f %5f %5f", tx._41, tx._42, tx._43, tx._44);
 
             // this formula works for scales and flips
             if (tx._11 == 0.0f) {
@@ -1403,8 +1401,8 @@ D3DContext::UpdateTextureTransforms(DWORD dwSamplerToUpdate)
             // transform.
             mt._31 = (1.0f / (2.0f * texDesc.Width  * tx._11));
             mt._32 = (1.0f / (2.0f * texDesc.Height * tx._22));
-            J2dTraceLn2(J2D_TRACE_VERBOSE, "  offsets: tx=%f ty=%f",
-                        mt._31, mt._32);
+            J2dTraceLn(J2D_TRACE_VERBOSE, "  offsets: tx=%f ty=%f",
+                       mt._31, mt._32);
 
             pd3dDevice->SetTextureStageState(dwSampler,
                                              D3DTSS_TEXTURETRANSFORMFLAGS,
@@ -1436,16 +1434,16 @@ D3DContext::SetTexture(IDirect3DTexture9 *pTexture, DWORD dwSampler)
     J2dTraceLn(J2D_TRACE_INFO, "D3DContext::SetTexture");
 
     if (dwSampler < 0 || dwSampler > MAX_USED_TEXTURE_SAMPLER) {
-        J2dTraceLn1(J2D_TRACE_ERROR,
-                    "D3DContext::SetTexture: incorrect sampler: %d", dwSampler);
+        J2dTraceLn(J2D_TRACE_ERROR,
+                   "D3DContext::SetTexture: incorrect sampler: %d", dwSampler);
         return E_FAIL;
     }
     if (lastTexture[dwSampler] != pTexture) {
         if (FAILED(res = FlushVertexQueue())) {
             return res;
         }
-        J2dTraceLn2(J2D_TRACE_VERBOSE,
-                    "  new texture=0x%x on sampler %d", pTexture, dwSampler);
+        J2dTraceLn(J2D_TRACE_VERBOSE,
+                   "  new texture=0x%x on sampler %d", pTexture, dwSampler);
         res = pd3dDevice->SetTexture(dwSampler, pTexture);
         if (SUCCEEDED(res)) {
             lastTexture[dwSampler] = pTexture;
@@ -1589,9 +1587,9 @@ IDirect3DPixelShader9 *D3DContext::CreateFragmentProgram(DWORD **shaders,
     DWORD *sourceCode;
     IDirect3DPixelShader9 *pProgram;
 
-    J2dTraceLn1(J2D_TRACE_INFO,
-                "D3DContext::CreateFragmentProgram: flags=%d",
-                flags);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "D3DContext::CreateFragmentProgram: flags=%d",
+               flags);
 
     sourceCode = shaders[flags];
     if (FAILED(pd3dDevice->CreatePixelShader(sourceCode, &pProgram))) {
@@ -1782,7 +1780,7 @@ BOOL D3DContext::IsOpaqueRTTSupported()
 
 HRESULT D3DContext::InitContextCaps() {
     J2dTraceLn(J2D_TRACE_INFO, "D3DContext::InitContextCaps");
-    J2dTraceLn1(J2D_TRACE_VERBOSE, "  caps for adapter %d :", adapterOrdinal);
+    J2dTraceLn(J2D_TRACE_VERBOSE, "  caps for adapter %d :", adapterOrdinal);
 
     if (pd3dDevice == NULL || pd3dObject == NULL) {
         contextCaps = CAPS_EMPTY;

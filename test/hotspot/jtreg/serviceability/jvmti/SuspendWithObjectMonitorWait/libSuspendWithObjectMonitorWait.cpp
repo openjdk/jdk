@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ static jvmtiEnv* jvmti = nullptr;
   } while (0)
 
 JNIEXPORT int JNICALL
-Java_SuspendWithObjectMonitorWait_suspendThread(JNIEnv *jni, jclass cls, jthread thr) {
+Java_SuspendWithObjectMonitorWaitBase_suspendThread(JNIEnv *jni, jclass cls, jthread thr) {
   return jvmti->SuspendThread(thr);
 }
 
@@ -46,7 +46,7 @@ Java_SuspendWithObjectMonitorWaitWorker_resumeThread(JNIEnv *jni, jclass cls, jt
 }
 
 JNIEXPORT jint JNICALL
-Java_SuspendWithObjectMonitorWait_wait4ContendedEnter(JNIEnv *jni, jclass cls, jthread thr) {
+Java_SuspendWithObjectMonitorWaitBase_wait4ContendedEnter(JNIEnv *jni, jclass cls, jthread thr) {
   jvmtiError err;
   jint thread_state;
   do {

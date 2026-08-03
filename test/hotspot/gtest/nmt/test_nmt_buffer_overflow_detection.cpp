@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022 SAP SE. All rights reserved.
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "memory/allocation.hpp"
+#include "memory/arena.hpp"
 #include "nmt/memTracker.hpp"
 #include "runtime/os.hpp"
 #include "sanitizers/address.hpp"
@@ -30,8 +31,6 @@
 #include "utilities/ostream.hpp"
 #include "unittest.hpp"
 #include "testutils.hpp"
-
-#if !INCLUDE_ASAN
 
 // This prefix shows up on any c heap corruption NMT detects. If unsure which assert will
 // come, just use this one.
@@ -48,8 +47,9 @@
                 "fake message ignore this - " expected_assertion_message);                \
     }                                                                                     \
   }
-
 ///////
+
+#if !INCLUDE_ASAN
 
 static void test_overwrite_front() {
   address p = (address) os::malloc(1, mtTest);
@@ -85,31 +85,6 @@ DEFINE_TEST(test_overwrite_back_long_unaligned_distance, "footer canary broken")
 
 ///////
 
-static void test_double_free() {
-  address p = (address) os::malloc(1, mtTest);
-  os::free(p);
-  // Now a double free. Note that this is susceptible to concurrency issues should
-  // a concurrent thread have done a malloc and gotten the same address after the
-  // first free. To decrease chance of this happening, we repeat the double free
-  // several times.
-  for (int i = 0; i < 100; i ++) {
-    os::free(p);
-  }
-}
-
-// What assertion message we will see depends on whether the VM wipes the memory-to-be-freed
-// on the first free(), and whether the libc uses the freed memory to store bookkeeping information.
-// If the death marker in the header is still intact after the first free, we will recognize this as
-// double free; if it got wiped, we should at least see a broken header canary.
-// The message would be either
-// - "header canary broken" or
-// - "header canary dead (double free?)".
-// However, since gtest regex expressions do not support unions (a|b), I search for a reasonable
-// subset here.
-DEFINE_TEST(test_double_free, "header canary")
-
-///////
-
 static void test_invalid_block_address() {
   // very low, like the result of an overflow or of accessing a null this pointer
   os::free((void*)0x100);
@@ -142,6 +117,21 @@ DEFINE_TEST(test_corruption_on_realloc_growing, COMMON_NMT_HEAP_CORRUPTION_MESSA
 static void test_corruption_on_realloc_shrinking()  { test_corruption_on_realloc(0x11, 0x10); }
 DEFINE_TEST(test_corruption_on_realloc_shrinking, COMMON_NMT_HEAP_CORRUPTION_MESSAGE_PREFIX);
 
+static void test_chunkpool_lock() {
+  if (!MemTracker::enabled()) {
+    tty->print_cr("Skipped");
+    return;
+  }
+  PrintNMTStatistics = true;
+  {
+    ChunkPoolLocker cpl;
+    char* mem = (char*)os::malloc(100, mtTest);
+    memset(mem - 16, 0, 100 + 16 + 2);
+    os::free(mem);
+  }
+}
+DEFINE_TEST(test_chunkpool_lock, COMMON_NMT_HEAP_CORRUPTION_MESSAGE_PREFIX);
+
 ///////
 
 // realloc is the trickiest of the bunch. Test that realloc works and correctly takes over
@@ -163,5 +153,89 @@ TEST_VM(NMT, test_realloc) {
     }
   }
 }
+
+TEST_VM_FATAL_ERROR_MSG(NMT, memory_corruption_call_stack, ".*header canary.*") {
+  if (MemTracker::tracking_level() != NMT_detail) {
+    guarantee(false, "fake message ignore this - header canary");
+  }
+  const size_t SIZE = 1024;
+  char* p = (char*)os::malloc(SIZE, mtTest);
+  *(p - 1) = 0;
+  os::free(p);
+}
+
+#else // ASAN is enabled
+
+#define DEFINE_ASAN_TEST(test_function)  \
+  DEFINE_TEST(test_function, ".*AddressSanitizer.*")
+
+static void test_write_header() {
+  const size_t SIZE = 10;
+  char* p = (char*)os::malloc(SIZE, mtTest);
+  // sizeof(MallocHeader) == 16, pick anywheree in [p - 16, p)
+  *(uint16_t*)((char*)p - 5) = 1;
+}
+
+static void test_read_header() {
+  const size_t SIZE = 10;
+  char* p = (char*)os::malloc(SIZE, mtTest);
+  // sizeof(MallocHeader) == 16, pick anywheree in [p - 16, p)
+  uint16_t read_canary = *(uint16_t*)((char*)p - 5);
+}
+
+static void test_write_footer() {
+  const size_t SIZE = 10;
+  char* p = (char*)os::malloc(SIZE, mtTest);
+  uint16_t* footer_ptr = (uint16_t*)(p + SIZE);
+  *footer_ptr = 1;
+}
+
+static void test_read_footer() {
+  const size_t SIZE = 10;
+  char* p = (char*)os::malloc(SIZE, mtTest);
+  uint16_t* footer_ptr = (uint16_t*)(p + SIZE);
+  uint16_t read_footer = *footer_ptr;
+}
+
+static void test_write_header_after_realloc() {
+  const size_t SIZE = 10;
+  char* p = (char*)os::malloc(SIZE, mtTest);
+  p = (char*)os::realloc(p, 2 * SIZE, mtTest);
+  // sizeof(MallocHeader) == 16, pick anywheree in [p - 16, p)
+  *(uint16_t*)((char*)p - 5) = 1;
+}
+
+static void test_read_header_after_realloc() {
+  const size_t SIZE = 10;
+  char* p = (char*)os::malloc(SIZE, mtTest);
+  p = (char*)os::realloc(p, 2 * SIZE, mtTest);
+  // sizeof(MallocHeader) == 16, pick anywheree in [p - 16, p)
+  uint16_t read_canary = *(uint16_t*)((char*)p - 5);
+}
+
+static void test_write_footer_after_realloc() {
+  const size_t SIZE = 10;
+  char* p = (char*)os::malloc(SIZE, mtTest);
+  p = (char*)os::realloc(p, 2 * SIZE, mtTest);
+  uint16_t* footer_ptr = (uint16_t*)(p + 2 * SIZE);
+  *footer_ptr = 1;
+}
+
+static void test_read_footer_after_realloc() {
+  const size_t SIZE = 10;
+  char* p = (char*)os::malloc(SIZE, mtTest);
+  p = (char*)os::realloc(p, 2 * SIZE, mtTest);
+  uint16_t* footer_ptr = (uint16_t*)(p + 2 * SIZE);
+  uint16_t read_footer = *footer_ptr;
+}
+
+DEFINE_ASAN_TEST(test_write_header);
+DEFINE_ASAN_TEST(test_read_header);
+DEFINE_ASAN_TEST(test_write_footer);
+DEFINE_ASAN_TEST(test_read_footer);
+DEFINE_ASAN_TEST(test_write_header_after_realloc);
+DEFINE_ASAN_TEST(test_read_header_after_realloc);
+DEFINE_ASAN_TEST(test_write_footer_after_realloc);
+DEFINE_ASAN_TEST(test_read_footer_after_realloc);
 
 #endif // !INCLUDE_ASAN

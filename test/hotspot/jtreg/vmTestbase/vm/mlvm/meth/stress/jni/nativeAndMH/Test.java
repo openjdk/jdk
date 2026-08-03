@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
  *     another method handle and so on.
  *     The test verifies that arguments are correctly passed between native methods and MHs.
  *
+ * @requires vm.compMode != "Xcomp"
  * @library /vmTestbase
  *          /test/lib
  *
@@ -62,15 +63,25 @@ public class Test extends MultiThreadedTest {
 
     private static final String RETURN_VALUE = "test";
 
-    static {
-        System.loadLibrary("nativeAndMH");
-    }
-
-    private static native Object native01(Object a1, String a2, Object a3, Object a4, Object a5, Object a6, MethodHandle mh);
-
     private static final MethodType MT_calledFromNative = MethodType.methodType(
             Object.class,
             Object.class, Object.class, int.class, long.class, double.class, float.class);
+
+    private static MethodHandle mh;
+
+    static {
+        System.loadLibrary("nativeAndMH");
+        try {
+            mh = MethodHandles.lookup().findStatic(
+                Test.class,
+                "calledFromNative",
+                MT_calledFromNative);
+        } catch (Exception ex) {
+            throw new RuntimeException("TEST FAILED - Unable to lookup \"calledFromNative\"");
+        }
+    }
+
+    private static native Object native01(Object a1, String a2, Object a3, Object a4, Object a5, Object a6, MethodHandle mh);
 
     private static Object calledFromNative(Object s1, Object s2, int i, long l, double d, float f) {
         return RETURN_VALUE;
@@ -78,10 +89,6 @@ public class Test extends MultiThreadedTest {
 
     @Override
     protected boolean runThread(int threadNum) throws Throwable {
-        MethodHandle mh = MethodHandles.lookup().findStatic(
-                Test.class,
-                "calledFromNative",
-                MT_calledFromNative);
 
         Stresser stresser = createStresser();
         stresser.start(1);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,29 @@
  *                   compiler.codecache.stress.RandomAllocationTest
  */
 
+/*
+ * @test RandomAllocationTest
+ * @key stress randomness
+ * @requires vm.compiler2.enabled
+ * @summary stressing code cache by allocating randomly sized "dummy" code blobs
+ * @library /test/lib /
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ *
+ * @build jdk.test.whitebox.WhiteBox compiler.codecache.stress.Helper compiler.codecache.stress.TestCaseImpl
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI
+ *                   -XX:CompileCommand=dontinline,compiler.codecache.stress.Helper$TestCase::method
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+HotCodeHeap -XX:HotCodeHeapSize=8M -XX:+TieredCompilation -XX:TieredStopAtLevel=4
+ *                   compiler.codecache.stress.RandomAllocationTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI
+ *                   -XX:CompileCommand=dontinline,compiler.codecache.stress.Helper$TestCase::method
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+HotCodeHeap -XX:HotCodeHeapSize=8M -XX:-TieredCompilation -XX:TieredStopAtLevel=4
+ *                   compiler.codecache.stress.RandomAllocationTest
+ */
+
 package compiler.codecache.stress;
 
 import jdk.test.whitebox.code.BlobType;
@@ -53,7 +76,7 @@ import jdk.test.lib.Utils;
 
 public class RandomAllocationTest implements Runnable {
     private static final long CODE_CACHE_SIZE
-            = Helper.WHITE_BOX.getUintxVMFlag("ReservedCodeCacheSize");
+            = Helper.WHITE_BOX.getSizeTVMFlag("ReservedCodeCacheSize");
     private static final int MAX_BLOB_SIZE = (int) (CODE_CACHE_SIZE >> 7);
     private static final BlobType[] BLOB_TYPES
             = BlobType.getAvailable().toArray(new BlobType[0]);

@@ -65,4 +65,4 @@ to be updated for a particular release.
 * `test/langtools/tools/javac/lib/JavacTestingAbstractProcessor.java`
    update annotation processor extended by `javac` tests to cover the new source version
 * `test/langtools/tools/javac/preview/classReaderTest/Client.nopreview.out` and `test/langtools/tools/javac/preview/classReaderTest/Client.preview.out`: update expected messages for preview errors and warnings
-
+* `test/langtools/tools/javac/versions/Versions.java`: add new source version to the set of valid sources and add new enum constant for the new class file version.

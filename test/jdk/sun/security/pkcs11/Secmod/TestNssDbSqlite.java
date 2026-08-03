@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Red Hat, Inc. and/or its affiliates.
+ * Copyright (c) 2017, 2025, Red Hat, Inc. and/or its affiliates.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -46,6 +46,7 @@ import java.security.KeyStore;
 import java.security.Provider;
 import java.security.Signature;
 
+import jtreg.SkippedException;
 import sun.security.rsa.SunRsaSign;
 import sun.security.jca.ProviderList;
 import sun.security.jca.Providers;
@@ -66,9 +67,7 @@ public final class TestNssDbSqlite extends SecmodTest {
 
     public static void main(String[] args) throws Exception {
 
-        if (!initialize()) {
-            return;
-        }
+        initializeProvider();
 
         if (enableDebug) {
             System.out.println("SunPKCS11 provider: " +
@@ -110,16 +109,9 @@ public final class TestNssDbSqlite extends SecmodTest {
         }
     }
 
-    private static boolean initialize() throws Exception {
-        return initializeProvider();
-    }
-
-    private static boolean initializeProvider() throws Exception {
+    private static void initializeProvider() throws Exception {
         useSqlite(true);
-        if (!initSecmod()) {
-            System.out.println("Cannot init security module database, skipping");
-            return false;
-        }
+        initSecmod();
 
         sunPKCS11NSSProvider = getSunPKCS11(BASE + SEP + "nss-sqlite.cfg");
         sunJCEProvider = new com.sun.crypto.provider.SunJCE();
@@ -135,7 +127,5 @@ public final class TestNssDbSqlite extends SecmodTest {
         gen.generate(2048);
         privateKey = gen.getPrivateKey();
         certificate = gen.getSelfCertificate(new X500Name("CN=Me"), 365);
-
-        return true;
     }
 }

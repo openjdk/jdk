@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
  * Copyright (c) 2020, 2021, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -36,53 +37,38 @@ class ShenandoahPreBarrierStub;
 class ShenandoahLoadReferenceBarrierStub;
 class StubAssembler;
 #endif
+#ifdef COMPILER2
+class MachNode;
+#endif // COMPILER2
 class StubCodeGenerator;
 
 class ShenandoahBarrierSetAssembler: public BarrierSetAssembler {
 private:
 
-  void satb_write_barrier_pre(MacroAssembler* masm,
-                              Register obj,
-                              Register pre_val,
-                              Register thread,
-                              Register tmp1,
-                              Register tmp2,
-                              bool tosca_live,
-                              bool expand_call);
-  void shenandoah_write_barrier_pre(MacroAssembler* masm,
-                                    Register obj,
-                                    Register pre_val,
-                                    Register thread,
-                                    Register tmp,
-                                    bool tosca_live,
-                                    bool expand_call);
+  void satb_barrier(MacroAssembler* masm,
+                    Register obj,
+                    Register pre_val,
+                    Register thread,
+                    Register tmp1,
+                    Register tmp2);
 
-  void store_check(MacroAssembler* masm, Register obj);
+  void card_barrier(MacroAssembler* masm, Register obj);
 
-  void resolve_forward_pointer(MacroAssembler* masm, Register dst, Register tmp = noreg);
-  void resolve_forward_pointer_not_null(MacroAssembler* masm, Register dst, Register tmp = noreg);
   void load_reference_barrier(MacroAssembler* masm, Register dst, Address load_addr, DecoratorSet decorators);
 
   void gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                         Register start, Register count,
-                                        Register tmp, RegSet saved_regs);
+                                        Register tmp);
 
 public:
 
-  virtual NMethodPatchingType nmethod_patching_type() { return NMethodPatchingType::conc_data_patch; }
-
-#ifdef COMPILER1
-  void gen_pre_barrier_stub(LIR_Assembler* ce, ShenandoahPreBarrierStub* stub);
-  void gen_load_reference_barrier_stub(LIR_Assembler* ce, ShenandoahLoadReferenceBarrierStub* stub);
-  void generate_c1_pre_barrier_runtime_stub(StubAssembler* sasm);
-  void generate_c1_load_reference_barrier_runtime_stub(StubAssembler* sasm, DecoratorSet decorators);
-#endif
+  virtual NMethodPatchingType nmethod_patching_type() { return NMethodPatchingType::conc_instruction_and_data_patch; }
 
   virtual void arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
                                   Register src, Register dst, Register count, RegSet saved_regs);
 
   virtual void arraycopy_epilogue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
-                                  Register start, Register count, Register tmp, RegSet saved_regs);
+                                  Register start, Register count, Register tmp);
 
   virtual void load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                        Register dst, Address src, Register tmp1, Register tmp2);
@@ -91,9 +77,26 @@ public:
 
   virtual void try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
                                              Register obj, Register tmp, Label& slowpath);
+  virtual void try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj,
+                                               Register tmp, Label& slow_path);
 
-  void cmpxchg_oop(MacroAssembler* masm, Register addr, Register expected, Register new_val,
-                   Assembler::Aqrl acquire, Assembler::Aqrl release, bool is_cae, Register result);
+#ifdef COMPILER1
+  void gen_pre_barrier_stub(LIR_Assembler* ce, ShenandoahPreBarrierStub* stub);
+  void gen_load_reference_barrier_stub(LIR_Assembler* ce, ShenandoahLoadReferenceBarrierStub* stub);
+  void generate_c1_pre_barrier_runtime_stub(StubAssembler* sasm);
+  void generate_c1_load_reference_barrier_runtime_stub(StubAssembler* sasm, DecoratorSet decorators);
+#endif
+
+#ifdef COMPILER2
+  // Entry points from Matcher
+  void load_c2(const MachNode* node, MacroAssembler* masm, Register dst, Address addr, Register tmp1, Register tmp2, bool is_narrow);
+  void store_c2(const MachNode* node, MacroAssembler* masm, Address dst, bool dst_narrow, Register src,
+      bool src_narrow, Register tmp1, Register tmp2, Register tmp3);
+  void compare_and_set_c2(const MachNode* node, MacroAssembler* masm, Register res, Register addr, Register oldval,
+      Register newval, Register tmp1, Register tmp2, Register tmp3, bool exchange, bool narrow, bool is_acquire);
+  void get_and_set_c2(const MachNode* node, MacroAssembler* masm, Register preval, Register newval,
+      Register addr, Register tmp1, Register tmp2, Register tmp3, bool is_acquire);
+#endif
 };
 
 #endif // CPU_RISCV_GC_SHENANDOAH_SHENANDOAHBARRIERSETASSEMBLER_RISCV_HPP

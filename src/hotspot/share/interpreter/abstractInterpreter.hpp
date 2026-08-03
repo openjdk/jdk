@@ -72,6 +72,7 @@ class AbstractInterpreter: AllStatic {
     java_lang_math_sin,                                         // implementation of java.lang.Math.sin   (x)
     java_lang_math_cos,                                         // implementation of java.lang.Math.cos   (x)
     java_lang_math_tan,                                         // implementation of java.lang.Math.tan   (x)
+    java_lang_math_sinh,                                        // implementation of java.lang.Math.sinh  (x)
     java_lang_math_tanh,                                        // implementation of java.lang.Math.tanh  (x)
     java_lang_math_cbrt,                                        // implementation of java.lang.Math.cbrt  (x)
     java_lang_math_abs,                                         // implementation of java.lang.Math.abs   (x)
@@ -83,7 +84,7 @@ class AbstractInterpreter: AllStatic {
     java_lang_math_exp,                                         // implementation of java.lang.Math.exp   (x)
     java_lang_math_fmaF,                                        // implementation of java.lang.Math.fma   (x, y, z)
     java_lang_math_fmaD,                                        // implementation of java.lang.Math.fma   (x, y, z)
-    java_lang_ref_reference_get,                                // implementation of java.lang.ref.Reference.get()
+    java_lang_ref_reference_get0,                               // implementation of java.lang.ref.Reference.get()
     java_util_zip_CRC32_update,                                 // implementation of java.util.zip.CRC32.update()
     java_util_zip_CRC32_updateBytes,                            // implementation of java.util.zip.CRC32.updateBytes()
     java_util_zip_CRC32_updateByteBuffer,                       // implementation of java.util.zip.CRC32.updateByteBuffer()
@@ -152,6 +153,7 @@ class AbstractInterpreter: AllStatic {
       case vmIntrinsics::_dsin  : // fall thru
       case vmIntrinsics::_dcos  : // fall thru
       case vmIntrinsics::_dtan  : // fall thru
+      case vmIntrinsics::_dsinh : // fall thru
       case vmIntrinsics::_dtanh : // fall thru
       case vmIntrinsics::_dcbrt : // fall thru
       case vmIntrinsics::_dabs  : // fall thru
@@ -253,7 +255,7 @@ class AbstractInterpreter: AllStatic {
     return stackElementWords * i;
   }
 
-#if !defined(ZERO) && (defined(IA32) || defined(AMD64))
+#if !defined(ZERO) && defined(AMD64)
   static Address::ScaleFactor stackElementScale() {
     return NOT_LP64(Address::times_4) LP64_ONLY(Address::times_8);
   }

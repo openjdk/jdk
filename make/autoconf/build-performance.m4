@@ -162,12 +162,7 @@ AC_DEFUN([BPERF_SETUP_CCACHE],
   # Check if ccache is available
   CCACHE_AVAILABLE=true
 
-  OLD_PATH="$PATH"
-  if test "x$TOOLCHAIN_PATH" != x; then
-    PATH=$TOOLCHAIN_PATH:$PATH
-  fi
-  UTIL_LOOKUP_PROGS(CCACHE, ccache)
-  PATH="$OLD_PATH"
+  UTIL_LOOKUP_TOOLCHAIN_PROGS(CCACHE, ccache)
 
   AC_MSG_CHECKING([if ccache is available])
   if test "x$TOOLCHAIN_TYPE" != "xgcc" && test "x$TOOLCHAIN_TYPE" != "xclang"; then

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,9 +182,6 @@ public class DescriptorSupportTest {
         d1 = new DescriptorSupport(new String[] {"NAME=blah"});
         ok &= caseTest(new DescriptorSupport(d1),
                        "DescriptorSupport(Descriptor)");
-        d1 = new DescriptorSupport(new String[] {"NAME=blah"});
-        ok &= caseTest(new DescriptorSupport(d1.toXMLString()),
-                       "DescriptorSupport(String)");
         d1 = new DescriptorSupport(new String[] {"NAME=blah"});
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(bos);

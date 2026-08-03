@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
  * @test
  * @bug  6911256 6964740 6967842 6961571 7025809
  * @summary Test that the resource variable kind is appropriately set
- * @author  Joseph D. Darcy
  * @library /tools/javac/lib
  * @modules jdk.compiler
  * @build   JavacTestingAbstractProcessor TestResourceVariable

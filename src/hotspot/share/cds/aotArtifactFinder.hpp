@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ class TypeArrayKlass;
 // It also decides what Klasses must be cached in aot-initialized state.
 //
 // ArchiveBuilder uses [1] as roots to scan for all MetaspaceObjs that need to be cached.
-// ArchiveHeapWriter uses [2] to create an image of the archived heap.
+// HeapShared uses [2] to create an image of the archived heap.
 //
 // [1] is stored in _all_cached_classes in aotArtifactFinder.cpp.
 // [2] is stored in HeapShared::archived_object_cache().
@@ -63,6 +63,7 @@ class TypeArrayKlass;
 //      be AOT-initialized:
 //       - If we discover at least one instance of class X, then class X is AOT-initialized (** Note1).
 //       - If AOTClassInitializer::can_archive_initialized_mirror(X) is true, then X is AOT-initialized.
+//         This function checks for the @jdk.internal.vm.annotation.AOTSafeClassInitializer annotation.
 //    - For each AOT-initialized class, we scan all the static fields in its java mirror. This will in
 //      turn discover more Klasses and java heap objects.
 //    - The scanning continues until we reach a steady state.
@@ -80,12 +81,14 @@ class AOTArtifactFinder : AllStatic {
   static void add_cached_type_array_class(TypeArrayKlass* tak);
   static void add_cached_instance_class(InstanceKlass* ik);
   static void append_to_all_cached_classes(Klass* k);
+  static void check_critical_class(InstanceKlass* ik);
 public:
   static void initialize();
   static void find_artifacts();
   static void add_cached_class(Klass* k);
   static void add_aot_inited_class(InstanceKlass* ik);
   static void all_cached_classes_do(MetaspaceClosure* it);
+  static void check_critical_classes();
   static void dispose();
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,9 @@
 
 #include "ci/bcEscapeAnalyzer.hpp"
 #include "ci/ciCallSite.hpp"
-#include "ci/ciObjArray.hpp"
 #include "ci/ciMemberName.hpp"
 #include "ci/ciMethodHandle.hpp"
+#include "ci/ciObjArray.hpp"
 #include "classfile/javaClasses.hpp"
 #include "compiler/compileLog.hpp"
 #include "opto/addnode.hpp"
@@ -78,7 +78,7 @@ public:
 
   virtual bool      is_parse() const           { return true; }
   virtual JVMState* generate(JVMState* jvms);
-  int is_osr() { return _is_osr; }
+  bool              is_osr() const             { return _is_osr; }
 
 };
 
@@ -169,10 +169,6 @@ JVMState* DirectCallGenerator::generate(JVMState* jvms) {
     }
     // Mark the call node as virtual, sort of:
     call->set_optimized_virtual(true);
-    if (method()->is_method_handle_intrinsic() ||
-        method()->is_compiled_lambda_form()) {
-      call->set_method_handle_invoke(true);
-    }
   }
   kit.set_arguments_for_java_call(call);
   kit.set_edges_for_java_call(call, false, _separate_io_proj);
@@ -422,9 +418,9 @@ bool LateInlineMHCallGenerator::do_late_inline_check(Compile* C, JVMState* jvms)
       C->inline_printer()->record(cg->method(), call_node()->jvms(), InliningResult::FAILURE,
                                   "late method handle call resolution");
     }
-    assert(!cg->is_late_inline() || cg->is_mh_late_inline() || AlwaysIncrementalInline || StressIncrementalInlining, "we're doing late inlining");
+    assert(!cg->is_late_inline() || cg->is_mh_late_inline() || cg->is_virtual_late_inline() ||
+           AlwaysIncrementalInline || StressIncrementalInlining, "we're doing late inlining");
     _inline_cg = cg;
-    C->dec_number_of_mh_late_inlines();
     return true;
   } else {
     // Method handle call which has a constant appendix argument should be either inlined or replaced with a direct call
@@ -436,7 +432,7 @@ bool LateInlineMHCallGenerator::do_late_inline_check(Compile* C, JVMState* jvms)
 
 CallGenerator* CallGenerator::for_mh_late_inline(ciMethod* caller, ciMethod* callee, bool input_not_const) {
   assert(IncrementalInlineMH, "required");
-  Compile::current()->inc_number_of_mh_late_inlines();
+  Compile::current()->mark_has_mh_late_inlines();
   CallGenerator* cg = new LateInlineMHCallGenerator(caller, callee, input_not_const);
   return cg;
 }
@@ -468,6 +464,10 @@ class LateInlineVirtualCallGenerator : public VirtualCallGenerator {
 
   // Convert the CallDynamicJava into an inline
   virtual void do_late_inline();
+
+  virtual ciMethod* callee_method() {
+    return _callee;
+  }
 
   virtual void set_callee_method(ciMethod* m) {
     assert(_callee == nullptr || _callee == m, "repeated inline attempt with different callee");
@@ -611,6 +611,20 @@ void CallGenerator::do_late_inline_helper() {
   }
 
   Compile* C = Compile::current();
+
+  uint endoff = call->jvms()->endoff();
+  if (C->inlining_incrementally()) {
+    // No reachability edges should be present when incremental inlining takes place.
+    // Inlining logic doesn't expect any extra edges past debug info and fails with
+    // an assert in SafePointNode::grow_stack.
+    assert(endoff == call->req(), "reachability edges not supported");
+  } else {
+    if (call->req() > endoff) { // reachability edges present
+      assert(OptimizeReachabilityFences, "required");
+      return; // keep the original call node as the holder of reachability info
+    }
+  }
+
   // Remove inlined methods from Compiler's lists.
   if (call->is_macro()) {
     C->remove_macro_node(call);
@@ -632,6 +646,12 @@ void CallGenerator::do_late_inline_helper() {
     for (uint i1 = 0; i1 < size; i1++) {
       map->init_req(i1, call->in(i1));
     }
+    // Call node has in(ReturnAdr) set to top() node.
+    // We have to set map->in(ReturnAdr) to correct value
+    // because it is used by uncommon traps.
+    Node* ret_adr = C->start()->proj_out_or_null(TypeFunc::ReturnAdr);
+    precond(ret_adr != nullptr);
+    map->set_req(TypeFunc::ReturnAdr, ret_adr);
 
     // Make sure the state is a MergeMem for parsing.
     if (!map->in(TypeFunc::Memory)->is_MergeMem()) {
@@ -647,6 +667,7 @@ void CallGenerator::do_late_inline_helper() {
       map->set_req(TypeFunc::Parms + i1, top);
     }
     jvms->set_map(map);
+    precond(ret_adr == jvms->map()->returnadr());
 
     // Make enough space in the expression stack to transfer
     // the incoming arguments and return value.

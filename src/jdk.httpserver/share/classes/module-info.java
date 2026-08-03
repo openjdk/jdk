@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+import com.sun.net.httpserver.*;
 
 /**
  * Defines the JDK-specific HTTP server API, and provides the jwebserver tool
@@ -99,7 +101,35 @@
  * <li><p><b>{@systemProperty sun.net.httpserver.nodelay}</b> (default: false)<br>
  * Boolean value, which if true, sets the {@link java.net.StandardSocketOptions#TCP_NODELAY TCP_NODELAY}
  * socket option on all incoming connections.
- * </li></ul>
+ * </li>
+ * <li>
+ * <p><b>{@systemProperty sun.net.httpserver.pathMatcher}</b> (default:
+ * {@code pathPrefix})<br/>
+ *
+ * The path matching scheme used to route requests to context handlers.
+ * The property can be configured with one of the following values:</p>
+ *
+ * <blockquote>
+ * <dl>
+ * <dt>{@code pathPrefix} (default)</dt>
+ * <dd>The request path must begin with the context path and all matching path
+ * segments must be identical. For instance, the context path {@code /foo}
+ * would match request paths {@code /foo}, {@code /foo/}, and {@code /foo/bar},
+ * but not {@code /foobar}.</dd>
+ * <dt>{@code stringPrefix}</dt>
+ * <dd>The request path string must begin with the context path string. For
+ * instance, the context path {@code /foo} would match request paths
+ * {@code /foo}, {@code /foo/}, {@code /foo/bar}, and {@code /foobar}.
+ * </dd>
+ * </dl>
+ * </blockquote>
+ *
+ * <p>In case of a blank or invalid value, the default will be used.</p>
+ *
+ * <p>This property and the ability to restore the string prefix matching
+ * behavior may be removed in a future release.</p>
+ * </li>
+ * </ul>
  *
  * @apiNote The API and SPI in this module are designed and implemented to support a minimal
  * HTTP server and simple HTTP semantics primarily.
@@ -109,6 +139,14 @@
  * and implementation of the server does not intend to be a full-featured, high performance
  * HTTP server.
  *
+ * @implNote
+ * Prior to JDK 26, in the JDK default implementation, the {@link HttpExchange} attribute map was
+ * shared with the enclosing {@link HttpContext}.
+ * Since JDK 26, by default, exchange attributes are per-exchange and the context attributes must
+ * be accessed by calling {@link HttpExchange#getHttpContext() getHttpContext()}{@link
+ * HttpContext#getAttributes() .getAttributes()}. <br>
+ * A new system property, <b>{@systemProperty jdk.httpserver.attributes}</b> (default value: {@code ""})
+ * allows to revert this new behavior. Set this property to "context" to restore the pre JDK 26 behavior.
  * @toolGuide jwebserver
  *
  * @uses com.sun.net.httpserver.spi.HttpServerProvider

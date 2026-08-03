@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8132125 8202537
+ * @bug 8132125 8202537 8354548
  * @summary Checks Swiss' number elements
  * @modules jdk.localedata
  * @run junit Bug8132125
@@ -44,8 +44,8 @@ public class Bug8132125 {
         Locale deCH = Locale.of("de", "CH");
         NumberFormat nf = NumberFormat.getInstance(deCH);
 
-        // "\u002E" as decimal separator, "\u2019" as grouping separator
-        String expected = "54\u2019839\u2019483.142";
+        // "\u002E" as decimal separator, "\u0027" as grouping separator
+        String expected = "54'839'483.142";
         String actual = nf.format(54839483.1415);
         assertEquals(expected, actual, "incorrect number elements for de_CH");
     }

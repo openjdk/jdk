@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import javax.sound.sampled.LineUnavailableException;
 /**
  * @test
  * @bug 8156169
+ * @key sound
  * @run main/othervm/timeout=300 IsRunningHang
  */
 public final class IsRunningHang {

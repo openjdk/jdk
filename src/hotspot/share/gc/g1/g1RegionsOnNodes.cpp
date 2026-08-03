@@ -32,19 +32,16 @@ G1RegionsOnNodes::G1RegionsOnNodes() : _count_per_node(nullptr), _numa(G1NUMA::n
 }
 
 G1RegionsOnNodes::~G1RegionsOnNodes() {
-  FREE_C_HEAP_ARRAY(uint, _count_per_node);
+  FREE_C_HEAP_ARRAY(_count_per_node);
 }
 
-uint G1RegionsOnNodes::add(G1HeapRegion* hr) {
+void G1RegionsOnNodes::add(G1HeapRegion* hr) {
   uint node_index = hr->node_index();
 
   // Update only if the node index is valid.
   if (node_index < _numa->num_active_nodes()) {
     *(_count_per_node + node_index) += 1;
-    return node_index;
   }
-
-  return G1NUMA::UnknownNodeIndex;
 }
 
 void G1RegionsOnNodes::clear() {

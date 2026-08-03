@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,6 @@ private:
   uintptr_t              _mark_bad_mask;
   uintptr_t              _store_good_mask;
   uintptr_t              _store_bad_mask;
-  uintptr_t              _uncolor_mask;
   uintptr_t              _nmethod_disarmed;
   ZStoreBarrierBuffer*   _store_barrier_buffer;
   ZMarkThreadLocalStacks _mark_stacks[2];
@@ -51,7 +50,6 @@ private:
       _mark_bad_mask(0),
       _store_good_mask(0),
       _store_bad_mask(0),
-      _uncolor_mask(0),
       _nmethod_disarmed(0),
       _store_barrier_buffer(new ZStoreBarrierBuffer()),
       _mark_stacks(),

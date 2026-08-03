@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,18 +33,18 @@ class CompiledICProtectionBehaviour {
   static CompiledICProtectionBehaviour* _current;
 
 public:
-  virtual bool lock(nmethod* method) = 0;
-  virtual void unlock(nmethod* method) = 0;
-  virtual bool is_safe(nmethod* method) = 0;
+  virtual bool lock(nmethod* nm) = 0;
+  virtual void unlock(nmethod* nm) = 0;
+  virtual bool is_safe(nmethod* nm) = 0;
 
   static CompiledICProtectionBehaviour* current() { return _current; }
   static void set_current(CompiledICProtectionBehaviour* current) { _current = current; }
 };
 
 class DefaultICProtectionBehaviour: public CompiledICProtectionBehaviour, public CHeapObj<mtInternal> {
-  virtual bool lock(nmethod* method);
-  virtual void unlock(nmethod* method);
-  virtual bool is_safe(nmethod* method);
+  virtual bool lock(nmethod* nm);
+  virtual void unlock(nmethod* nm);
+  virtual bool is_safe(nmethod* nm);
 };
 
 #endif // SHARE_CODE_CODEBEHAVIOURS_HPP

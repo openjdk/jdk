@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,26 +59,26 @@
  */
 package tck.java.time.format;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.WeekFields;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import test.java.time.format.AbstractTestPrinterParser;
 
 /**
  * Test LocalizedFieldPrinterParser.
  */
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TCKLocalizedFieldPrinter extends AbstractTestPrinterParser {
 
         //-----------------------------------------------------------------------
-    @DataProvider(name="Patterns")
     Object[][] provider_pad() {
         return new Object[][] {
             {"e",  "6"},
@@ -92,18 +92,18 @@ public class TCKLocalizedFieldPrinter extends AbstractTestPrinterParser {
     }
 
     //-----------------------------------------------------------------------
-    @Test(dataProvider="Patterns")
+    @ParameterizedTest
+    @MethodSource("provider_pad")
     public void test_localizedDayOfWeek(String pattern, String expected) {
         DateTimeFormatterBuilder b
                 = new DateTimeFormatterBuilder().appendPattern(pattern);
         LocalDate date = LocalDate.of(2012, 7, 20);
 
         String result = b.toFormatter(locale).format(date);
-        assertEquals(result, expected, "Wrong output for pattern '" + pattern + "'.");
+        assertEquals(expected, result, "Wrong output for pattern '" + pattern + "'.");
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="LocalWeekBasedYearPatterns")
     Object[][] provider_patternLocalWeekBasedYearDate() {
         return new Object[][] {
             {"e w Y",  "6 29 2012", LocalDate.of(2012, 7, 20)},
@@ -119,11 +119,12 @@ public class TCKLocalizedFieldPrinter extends AbstractTestPrinterParser {
        };
     }
 
-    @Test(dataProvider = "LocalWeekBasedYearPatterns")
+    @ParameterizedTest
+    @MethodSource("provider_patternLocalWeekBasedYearDate")
     public void test_print_WeekBasedYear(String pattern, String expectedText, LocalDate date) {
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern(pattern, locale);
         String result = dtf.format(date);
         WeekFields weekDef = WeekFields.of(locale);
-        assertEquals(result, expectedText, "Incorrect formatting for " + pattern + ", weekDef: " + weekDef);
+        assertEquals(expectedText, result, "Incorrect formatting for " + pattern + ", weekDef: " + weekDef);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.plaf.basic.BasicHTML;
 import javax.swing.text.View;
 
+import com.sun.java.swing.SwingUtilities3;
 import sun.swing.MenuItemLayoutHelper;
 import sun.swing.SwingUtilities2;
 
@@ -552,15 +553,6 @@ public class SynthGraphicsUtils {
          return result;
      }
 
-    static void applyInsets(Rectangle rect, Insets insets, boolean leftToRight) {
-        if (insets != null) {
-            rect.x += (leftToRight ? insets.left : insets.right);
-            rect.y += insets.top;
-            rect.width -= (leftToRight ? insets.right : insets.left) + rect.x;
-            rect.height -= (insets.bottom + rect.y);
-        }
-    }
-
     static void paint(SynthContext context, SynthContext accContext, Graphics g,
                Icon checkIcon, Icon arrowIcon, String acceleratorDelimiter,
                int defaultTextIconGap, String propertyPrefix) {
@@ -570,7 +562,7 @@ public class SynthGraphicsUtils {
 
         Rectangle viewRect = new Rectangle(0, 0, mi.getWidth(), mi.getHeight());
         boolean leftToRight = SynthLookAndFeel.isLeftToRight(mi);
-        applyInsets(viewRect, mi.getInsets(), leftToRight);
+        SwingUtilities3.applyInsets(viewRect, mi.getInsets(), leftToRight);
 
         SynthMenuItemLayoutHelper lh = new SynthMenuItemLayoutHelper(
                 context, accContext, mi, checkIcon, arrowIcon, viewRect,

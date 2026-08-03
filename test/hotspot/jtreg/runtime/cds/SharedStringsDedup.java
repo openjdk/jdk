@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /**
  * @test SharedStringsDedup
  * @summary Test -Xshare:auto with shared strings and -XX:+UseStringDeduplication
- * @requires vm.cds.write.archived.java.heap
+ * @requires vm.cds.write.mapped.java.heap
  * @library /test/lib
  * @run driver SharedStringsDedup
  */

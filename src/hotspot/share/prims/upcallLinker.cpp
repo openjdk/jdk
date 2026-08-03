@@ -130,7 +130,7 @@ void UpcallLinker::on_exit(UpcallStub::FrameData* context) {
   JNIHandleBlock::release_block(context->new_handles, thread);
 }
 
-void UpcallLinker::handle_uncaught_exception(oop exception) {
+void UpcallLinker::handle_uncaught_exception(oopDesc* exception) {
   tty->print_cr("Uncaught exception:");
   Handle exception_h(Thread::current(), exception);
   java_lang_Throwable::print_stack_trace(exception_h, tty);

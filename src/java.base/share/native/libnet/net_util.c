@@ -74,18 +74,17 @@ DEF_JNI_OnLoad(JavaVM *vm, void *reserved)
     s = (*env)->NewStringUTF(env, "java.net.preferIPv4Stack");
     CHECK_NULL_RETURN(s, JNI_VERSION_1_2);
     preferIPv4Stack = (*env)->CallStaticBooleanMethod(env, iCls, mid, s);
-
+    JNU_CHECK_EXCEPTION_RETURN(env, JNI_VERSION_1_2);
     /*
      * Since we have initialized and loaded the socket library we will
      * check now whether we have IPv6 on this platform and if the
      * supporting socket APIs are available
      */
     IPv4_available = IPv4_supported();
-    IPv6_available = IPv6_supported() & (!preferIPv4Stack);
+    IPv6_available = IPv6_supported() && !preferIPv4Stack;
 
     /* check if SO_REUSEPORT is supported on this platform */
     REUSEPORT_available = reuseport_supported(IPv6_available);
-
 
     return JNI_VERSION_1_2;
 }

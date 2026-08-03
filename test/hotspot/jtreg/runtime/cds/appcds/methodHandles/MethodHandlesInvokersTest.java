@@ -28,8 +28,6 @@
  * @summary Run the MethodHandlesInvokersTest.java test in CDSAppTester::AOT workflow.
  * @requires vm.cds & vm.compMode != "Xcomp"
  * @requires vm.cds.supports.aot.class.linking
- * @comment work around JDK-8345635
- * @requires !vm.jvmci.enabled
  * @comment Some of the tests run excessively slowly with -Xcomp. The original
  *          tests aren't executed with -Xcomp in the CI pipeline, so let's exclude
  *          the generated tests from -Xcomp execution as well.

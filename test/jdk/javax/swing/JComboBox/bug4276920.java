@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ public class bug4276920 {
             SwingUtilities.invokeAndWait(combo::hidePopup);
             int after = combo.getRepaintCount();
             if (after > before) {
-                throw new Error("Failed 4276920: BasicComboPopup.hide() caused unnecessary repaint()");
+                throw new RuntimeException("Failed 4276920: BasicComboPopup.hide() caused unnecessary repaint()");
             }
          } finally {
             if (frame != null) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ public class StackValueCollection {
   public StackValue get(int i)    { return list.get(i); }
 
   // Get typed locals/expressions
-  // FIXME: must figure out whether word swapping is necessary on x86
+  // FIXME: must figure out whether word swapping is necessary on amd64
   public boolean   booleanAt(int slot)   { return (int)get(slot).getInteger() != 0; }
   public byte      byteAt(int slot)      { return (byte) get(slot).getInteger(); }
   public char      charAt(int slot)      { return (char) get(slot).getInteger(); }

@@ -58,6 +58,7 @@ import sun.security.jca.GetInstance.Instance;
  * <ul>
  * <li>{@code HmacSHA1}</li>
  * <li>{@code HmacSHA256}</li>
+ * <li>{@code PBEWithHmacSHA256}</li>
  * </ul>
  * These algorithms are described in the
  * <a href="{@docRoot}/../specs/security/standard-names.html#mac-algorithms">
@@ -626,6 +627,7 @@ public class Mac implements Cloneable {
         }
         byte[] mac = doFinal();
         System.arraycopy(mac, 0, output, outOffset, macLen);
+        Arrays.fill(mac, (byte)0);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import java.io.IOException;
 public class DisposeTest {
     private static Frame backgroundFrame;
     private static Frame testedFrame;
+    private static final int PIXEL_OFFSET = 4;
 
     private static final Rectangle backgroundFrameBounds =
             new Rectangle(100, 100, 200, 200);
@@ -74,8 +75,8 @@ public class DisposeTest {
         BufferedImage bi = robot.createScreenCapture(backgroundFrameBounds);
         int redPix = Color.RED.getRGB();
 
-        for (int x = 0; x < bi.getWidth(); x++) {
-            for (int y = 0; y < bi.getHeight(); y++) {
+        for (int x = PIXEL_OFFSET; x < bi.getWidth() - PIXEL_OFFSET; x++) {
+            for (int y = PIXEL_OFFSET; y < bi.getHeight() - PIXEL_OFFSET; y++) {
                 if (bi.getRGB(x, y) != redPix) {
                     try {
                         ImageIO.write(bi, "png",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -369,17 +369,32 @@ public final class ConstantBootstraps {
      * <p>
      * Otherwise one of the following conversions is applied to {@code value}:
      * <ol>
-     * <li>If {@code dstType} is a reference type, a reference cast
-     *     is applied to {@code value} as if by calling {@code dstType.cast(value)}.
-     * <li>If {@code dstType} is a primitive type, then, if the runtime type
-     *     of {@code value} is a primitive wrapper type (such as {@link Integer}),
-     *     a Java unboxing conversion is applied {@jls 5.1.8} followed by a
-     *     Java casting conversion {@jls 5.5} converting either directly to
-     *     {@code dstType}, or, if {@code dstType} is {@code boolean},
-     *     to {@code int}, which is then converted to either {@code true}
-     *     or {@code false} depending on whether the least-significant-bit
-     *     is 1 or 0 respectively. If the runtime type of {@code value} is
-     *     not a primitive wrapper type a {@link ClassCastException} is thrown.
+     * <li>If {@code dstType} is a reference type, a reference cast is applied
+     *     to {@code value} as if by calling {@link Class#cast(Object)
+     *     dstType.cast(value)}.
+     * <li>Otherwise, {@code dstType} is a primitive type:
+     *     <ol>
+     *     <li>If {@code value} is null, the default value (JVMS {@jvms 2.3})
+     *         of {@code dstType} is returned.
+     *     <li>If the runtime type of {@code value} is a primitive wrapper type
+     *         (such as {@link Integer}), a Java unboxing conversion is applied
+     *         (JLS {@jls 5.1.8}).
+     *         <ul>
+     *         <li>If the runtime type is {@link Boolean}, the unboxing result
+     *             is then converted to {@code int}, where {@code true} becomes
+     *             {@code 1} and {@code false} becomes {@code 0}.
+     *         </ul>
+     *         Followed by a Java casting conversion (JLS {@jls 5.5}):
+     *         <ul>
+     *         <li>If {@code dstType} is not {@code boolean}, the cast converts
+     *             directly to {@code dstType}.
+     *         <li>If {@code dstType} is {@code boolean}, the cast converts to
+     *             {@code int}, and the resulting {@code boolean} is produced
+     *             by testing whether the least significant bit of the cast
+     *             {@code int} is 1.
+     *         </ul>
+     *     <li>Otherwise, a {@link ClassCastException} is thrown.
+     *     </ol>
      * </ol>
      * <p>
      * The result is the same as when using the following code:
@@ -393,13 +408,12 @@ public final class ConstantBootstraps {
      * @param lookup unused
      * @param name unused
      * @param dstType the destination type of the conversion
-     * @param value the value to be converted
+     * @param value the value to be converted, may be null
      * @return the converted value
-     * @throws ClassCastException when {@code dstType} is {@code void},
-     *         when a cast per (1) fails, or when {@code dstType} is a primitive type
-     *         and the runtime type of {@code value} is not a primitive wrapper type
-     *         (such as {@link Integer})
-     *
+     * @throws ClassCastException when {@code dstType} is {@code void}; when
+     *         {@code dstType} is a reference type, and the reference cast fails; or
+     *         when {@code dstType} is primitive, and {@code value} is an
+     *         instance of a reference type that is not a wrapper class
      * @since 15
      */
     public static Object explicitCast(MethodHandles.Lookup lookup, String name, Class<?> dstType, Object value)

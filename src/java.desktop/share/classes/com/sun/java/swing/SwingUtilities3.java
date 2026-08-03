@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package com.sun.java.swing;
 
-import java.applet.Applet;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
@@ -46,7 +45,6 @@ import javax.swing.JComponent;
 import javax.swing.JMenu;
 import javax.swing.RepaintManager;
 
-import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 import sun.swing.MenuItemLayoutHelper;
 import sun.swing.SwingUtilities2;
@@ -61,9 +59,7 @@ import static sun.java2d.pipe.Region.clipRound;
  * releases and even patch releases. You should not rely on this class even
  * existing.
  *
- * This is a second part of sun.swing.SwingUtilities2. It is required
- * to provide services for JavaFX applets.
- *
+ * This is a second part of sun.swing.SwingUtilities2.
  */
 public class SwingUtilities3 {
     /**
@@ -72,16 +68,17 @@ public class SwingUtilities3 {
     private static final Object DELEGATE_REPAINT_MANAGER_KEY =
         new StringBuilder("DelegateRepaintManagerKey");
 
+    private static volatile boolean repaintDelegateSet;
+
     /**
       * Registers delegate RepaintManager for {@code JComponent}.
       */
     public static void setDelegateRepaintManager(JComponent component,
                                                 RepaintManager repaintManager) {
-        /* setting up flag in AppContext to speed up lookups in case
+        /* setting up flag to speed up lookups in case
          * there are no delegate RepaintManagers used.
          */
-        AppContext.getAppContext().put(DELEGATE_REPAINT_MANAGER_KEY,
-                                       Boolean.TRUE);
+        repaintDelegateSet = true;
 
         component.putClientProperty(DELEGATE_REPAINT_MANAGER_KEY,
                                     repaintManager);
@@ -99,14 +96,12 @@ public class SwingUtilities3 {
      * depends on current RepaintManager's RepaintManager.PaintManager
      * and on the capabilities of the graphics hardware/software and what not.
      *
-     * @param rootContainer topmost container. Should be either {@code Window}
-     *  or {@code Applet}
+     * @param rootContainer topmost container. Should be {@code Window}
      * @param isRequested the value to set vsyncRequested state to
      */
-    @SuppressWarnings("removal")
     public static void setVsyncRequested(Container rootContainer,
                                          boolean isRequested) {
-        assert (rootContainer instanceof Applet) || (rootContainer instanceof Window);
+        assert (rootContainer instanceof Window);
         if (isRequested) {
             vsyncedMap.put(rootContainer, Boolean.TRUE);
         } else {
@@ -117,12 +112,11 @@ public class SwingUtilities3 {
     /**
      * Checks if vsync painting is requested for {@code rootContainer}
      *
-     * @param rootContainer topmost container. Should be either Window or Applet
+     * @param rootContainer topmost container. Should be Window
      * @return {@code true} if vsync painting is requested for {@code rootContainer}
      */
-    @SuppressWarnings("removal")
     public static boolean isVsyncRequested(Container rootContainer) {
-        assert (rootContainer instanceof Applet) || (rootContainer instanceof Window);
+        assert (rootContainer instanceof Window);
         return Boolean.TRUE == vsyncedMap.get(rootContainer);
     }
 
@@ -132,8 +126,7 @@ public class SwingUtilities3 {
     public static RepaintManager getDelegateRepaintManager(Component
                                                             component) {
         RepaintManager delegate = null;
-        if (Boolean.TRUE == SunToolkit.targetToAppContext(component)
-                                      .get(DELEGATE_REPAINT_MANAGER_KEY)) {
+        if (repaintDelegateSet) {
             while (delegate == null && component != null) {
                 while (component != null
                          && ! (component instanceof JComponent)) {
@@ -152,11 +145,15 @@ public class SwingUtilities3 {
     }
 
     public static void applyInsets(Rectangle rect, Insets insets) {
+        applyInsets(rect, insets, true);
+    }
+
+    public static void applyInsets(Rectangle rect, Insets insets, boolean leftToRight) {
         if (insets != null) {
-            rect.x += insets.left;
+            rect.x += leftToRight ? insets.left : insets.right;
             rect.y += insets.top;
-            rect.width -= (insets.right + rect.x);
-            rect.height -= (insets.bottom + rect.y);
+            rect.width -= (insets.left + insets.right);
+            rect.height -= (insets.top + insets.bottom);
         }
     }
 

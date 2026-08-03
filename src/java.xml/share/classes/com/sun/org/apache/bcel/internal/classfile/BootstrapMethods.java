@@ -58,11 +58,11 @@ public class BootstrapMethods extends Attribute implements Iterable<BootstrapMet
      */
     public BootstrapMethods(final int nameIndex, final int length, final BootstrapMethod[] bootstrapMethods, final ConstantPool constantPool) {
         super(Const.ATTR_BOOTSTRAP_METHODS, nameIndex, length, constantPool);
-        this.bootstrapMethods = bootstrapMethods;
+        setBootstrapMethods(bootstrapMethods);
     }
 
     /**
-     * Construct object from Input stream.
+     * Constructs object from Input stream.
      *
      * @param nameIndex Index in constant pool to CONSTANT_Utf8
      * @param length Content length in bytes
@@ -135,7 +135,7 @@ public class BootstrapMethods extends Attribute implements Iterable<BootstrapMet
      * @param bootstrapMethods the array of bootstrap methods
      */
     public final void setBootstrapMethods(final BootstrapMethod[] bootstrapMethods) {
-        this.bootstrapMethods = bootstrapMethods;
+        this.bootstrapMethods = bootstrapMethods != null ? bootstrapMethods : BootstrapMethod.EMPTY_ARRAY;
     }
 
     /**

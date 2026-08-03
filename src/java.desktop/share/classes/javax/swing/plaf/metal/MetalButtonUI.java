@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package javax.swing.plaf.metal;
 
 import sun.swing.SwingUtilities2;
-import sun.awt.AppContext;
 
 import javax.swing.*;
 import javax.swing.border.*;
@@ -69,7 +68,7 @@ public class MetalButtonUI extends BasicButtonUI {
      */
     protected Color disabledTextColor;
 
-    private static final Object METAL_BUTTON_UI_KEY = new Object();
+    private static final ComponentUI UI = new MetalButtonUI();
 
     // ********************************
     //          Create PLAF
@@ -87,14 +86,7 @@ public class MetalButtonUI extends BasicButtonUI {
      * @return an instance of {@code MetalButtonUI}
      */
     public static ComponentUI createUI(JComponent c) {
-        AppContext appContext = AppContext.getAppContext();
-        MetalButtonUI metalButtonUI =
-                (MetalButtonUI) appContext.get(METAL_BUTTON_UI_KEY);
-        if (metalButtonUI == null) {
-            metalButtonUI = new MetalButtonUI();
-            appContext.put(METAL_BUTTON_UI_KEY, metalButtonUI);
-        }
-        return metalButtonUI;
+        return UI;
     }
 
     // ********************************
@@ -217,6 +209,13 @@ public class MetalButtonUI extends BasicButtonUI {
         // If there is an icon and no text
         else if ( isIcon ) {
             focusRect.setBounds( iconRect );
+        } else {
+            Rectangle emptyRect = new Rectangle();
+            emptyRect.x = 5;
+            emptyRect.y = 5;
+            emptyRect.width = b.getWidth() - emptyRect.x * 2;
+            emptyRect.height = b.getHeight() - emptyRect.y * 2;
+            focusRect.setBounds(emptyRect);
         }
 
         g.setColor(getFocusColor());

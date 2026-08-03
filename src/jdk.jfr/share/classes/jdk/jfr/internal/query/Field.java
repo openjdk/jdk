@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.internal.query.Configuration.Truncate;
 import jdk.jfr.internal.query.Query.Grouper;
 import jdk.jfr.internal.query.Query.OrderElement;
+import jdk.jfr.internal.query.Function.FunctionFactory;
 
 /**
  * Field is the core class of the package.
@@ -117,6 +118,9 @@ final class Field {
     // An integral type (byte, short, int, long)
     boolean integralType;
 
+    // An integral type that should be treated like a symbol, e.g. PID.
+    boolean identifier;
+
     // A java.time.Duration
     boolean timespan;
 
@@ -136,6 +140,8 @@ final class Field {
     public String missingText = "N/A";
 
     public int precision = -1;
+
+    public FunctionFactory functionFactory;
 
     public Field(FilteredType type, String name) {
         this.type = type;

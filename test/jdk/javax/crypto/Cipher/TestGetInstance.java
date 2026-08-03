@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,10 @@
 
 /*
  * @test
- * @bug 4898428
+ * @bug 4898428 8368984
  * @summary test that the new getInstance() implementation works correctly
  * @author Andreas Sterbenz
+ * @library /test/lib
  * @run main TestGetInstance DES PBEWithMD5AndTripleDES
  * @run main TestGetInstance AES PBEWithHmacSHA1AndAES_128
  */
@@ -35,6 +36,7 @@ import java.security.spec.*;
 import java.util.Locale;
 
 import javax.crypto.*;
+import jdk.test.lib.Utils;
 
 public class TestGetInstance {
 
@@ -48,8 +50,8 @@ public class TestGetInstance {
         String algo = args[0];
         String algoLC = algo.toLowerCase(Locale.ROOT);
         String pbeAlgo = args[1];
-        Provider p = Security.getProvider(
-                System.getProperty("test.provider.name", "SunJCE"));
+        String pName = System.getProperty("test.provider.name", "SunJCE");
+        Provider p = Security.getProvider(pName);
 
         Cipher c;
 
@@ -68,86 +70,54 @@ public class TestGetInstance {
         c = Cipher.getInstance(algoLC + "/cbc/pkcs5padding", p);
         same(p, c.getProvider());
 
-        try {
-            c = Cipher.getInstance(algo + "/XYZ/PKCS5Padding");
-            throw new AssertionError();
-        } catch (NoSuchAlgorithmException e) {
-            System.out.println(e);
-        }
-        try {
-            c = Cipher.getInstance(algo + "/XYZ/PKCS5Padding",
-                    System.getProperty("test.provider.name", "SunJCE"));
-            throw new AssertionError();
-        } catch (NoSuchAlgorithmException e) {
-            System.out.println(e);
-        }
-        try {
-            c = Cipher.getInstance(algo + "/XYZ/PKCS5Padding", p);
-            throw new AssertionError();
-        } catch (NoSuchAlgorithmException e) {
-            System.out.println(e);
+        // invalid transformations or transformations containing unsupported
+        // modes which should lead to NSAE
+        String[] nsaeTransformations = {
+            (algo + "/XYZ/PKCS5Padding"),
+            (algo + "/CBC/XYZWithSHA512/224Padding/"),
+            (algo + "/CBC/XYZWithSHA512/256Padding/"),
+            (pbeAlgo + "/CBC/XYZWithSHA512/224Padding/"),
+            (pbeAlgo + "/CBC/XYZWithSHA512/256Padding/"),
+            "foo",
+        };
+
+        for (String t : nsaeTransformations) {
+            System.out.println("Testing NSAE on " + t);
+            Utils.runAndCheckException(() -> Cipher.getInstance(t),
+                    NoSuchAlgorithmException.class);
+            Utils.runAndCheckException(() -> Cipher.getInstance(t, pName),
+                    NoSuchAlgorithmException.class);
+            Utils.runAndCheckException(() -> Cipher.getInstance(t, p),
+                    NoSuchAlgorithmException.class);
         }
 
-        try {
-            c = Cipher.getInstance(algo + "/CBC/XYZPadding");
-            throw new AssertionError();
-        } catch (NoSuchAlgorithmException e) {
-            System.out.println(e);
-        }
-        try {
-            c = Cipher.getInstance(algo + "/CBC/XYZPadding",
-                    System.getProperty("test.provider.name", "SunJCE"));
-            throw new AssertionError();
-        } catch (NoSuchPaddingException e) {
-            System.out.println(e);
-        }
-        try {
-            c = Cipher.getInstance(algo + "/CBC/XYZPadding", p);
-            throw new AssertionError();
-        } catch (NoSuchPaddingException e) {
-            System.out.println(e);
+        // transformations containing unsupported paddings for SunJCE provider
+        // which should lead to NSPE
+        String[] nspeTransformations = {
+            (algo + "/CBC/XYZPadding"),
+            (algo + "/CBC/XYZWithSHA512/224Padding"),
+            (algo + "/CBC/XYZWithSHA512/256Padding"),
+            (pbeAlgo + "/CBC/XYZWithSHA512/224Padding"),
+            (pbeAlgo + "/CBC/XYZWithSHA512/256Padding"),
+        };
+
+        for (String t : nspeTransformations) {
+            System.out.println("Testing NSPE on " + t);
+            Utils.runAndCheckException(() -> Cipher.getInstance(t, pName),
+                    NoSuchPaddingException.class);
+            Utils.runAndCheckException(() -> Cipher.getInstance(t, p),
+                    NoSuchPaddingException.class);
         }
 
-        try {
-            c = Cipher.getInstance("foo");
-            throw new AssertionError();
-        } catch (NoSuchAlgorithmException e) {
-            System.out.println(e);
-        }
-        try {
-            c = Cipher.getInstance("foo",
-                    System.getProperty("test.provider.name", "SunJCE"));
-            throw new AssertionError();
-        } catch (NoSuchAlgorithmException e) {
-            System.out.println(e);
-        }
-        try {
-            c = Cipher.getInstance("foo", p);
-            throw new AssertionError();
-        } catch (NoSuchAlgorithmException e) {
-            System.out.println(e);
-        }
-
-        try {
-            c = Cipher.getInstance("foo",
-                    System.getProperty("test.provider.name", "SUN"));
-            throw new AssertionError();
-        } catch (NoSuchAlgorithmException e) {
-            System.out.println(e);
-        }
-        try {
-            c = Cipher.getInstance("foo", Security.getProvider(
-                    System.getProperty("test.provider.name", "SUN")));
-            throw new AssertionError();
-        } catch (NoSuchAlgorithmException e) {
-            System.out.println(e);
-        }
-        try {
-            c = Cipher.getInstance("foo", "bar");
-            throw new AssertionError();
-        } catch (NoSuchProviderException e) {
-            System.out.println(e);
-        }
+        // additional misc tests
+        Utils.runAndCheckException(() -> Cipher.getInstance("foo",
+                System.getProperty("test.provider.name", "SUN")),
+                NoSuchAlgorithmException.class);
+        Utils.runAndCheckException(() -> Cipher.getInstance("foo",
+                Security.getProvider(System.getProperty("test.provider.name",
+                "SUN"))), NoSuchAlgorithmException.class);
+        Utils.runAndCheckException(() -> Cipher.getInstance("foo", "bar"),
+                NoSuchProviderException.class);
 
         System.out.println("All Tests ok");
     }

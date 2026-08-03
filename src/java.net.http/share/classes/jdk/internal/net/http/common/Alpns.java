@@ -34,4 +34,9 @@ public final class Alpns {
     public static final String HTTP_1_1 = "http/1.1";
     public static final String H2 = "h2";
     public static final String H2C = "h2c";
+    public static final String H3 = "h3";
+
+    public static boolean isSecureALPNName(final String alpnName) {
+        return H3.equals(alpnName) || H2.equals(alpnName);
+    }
 }

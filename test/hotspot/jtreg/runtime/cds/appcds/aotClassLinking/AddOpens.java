@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
  * @test
  * @requires vm.cds
  * @requires vm.cds.supports.aot.class.linking
- * @comment work around JDK-8345635
- * @requires !vm.jvmci.enabled
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @run driver AddOpens
  * @summary sanity test the --add-opens option
@@ -159,7 +157,7 @@ public class AddOpens {
                 out.shouldContain(expectedOutput[0]);
                 out.shouldContain(expectedOutput[1]);
             } else if (runMode == RunMode.ASSEMBLY) {
-                out.shouldContain("full module graph: enabled");
+                out.shouldMatch("(full module graph: enabled)|(Full module graph = enabled)");
             }
         }
     }
@@ -202,7 +200,7 @@ public class AddOpens {
                 out.shouldContain(expectedOutput[0]);
                 out.shouldContain(expectedOutput[1]);
             } else if (runMode == RunMode.ASSEMBLY) {
-                out.shouldContain("full module graph: enabled");
+                out.shouldMatch("(full module graph: enabled)|(Full module graph = enabled)");
             }
         }
     }

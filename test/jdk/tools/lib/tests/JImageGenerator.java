@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -423,7 +423,7 @@ public class JImageGenerator {
             // This is expect FIRST jmods THEN jars, if you change this, some tests could fail
             String jmods = toPath(this.jmods);
             String jars = toPath(this.jars);
-            return linkableRuntime ? jars : jmods + File.pathSeparator + jars;
+            return (linkableRuntime || jmods.isEmpty()) ? jars : jmods + File.pathSeparator + jars;
         }
 
         private String toPath(List<Path> paths) {
@@ -654,7 +654,7 @@ public class JImageGenerator {
             // This is expect FIRST jmods THEN jars, if you change this, some tests could fail
             String jmods = toPath(this.jmods);
             String jars = toPath(this.jars);
-            return jmods + File.pathSeparator + jars;
+            return jmods.isEmpty() ? jars : jmods + File.pathSeparator + jars;
         }
 
         private String toPath(List<Path> paths) {

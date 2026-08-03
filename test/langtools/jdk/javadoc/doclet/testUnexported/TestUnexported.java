@@ -258,13 +258,13 @@ public class TestUnexported extends JavadocTester {
                     <h3 id="methods-inherited-from-class-pa.internal.InternalClass">Methods inherit\
                     ed from class&nbsp;<a href="internal/InternalClass.html#method-summary" title="\
                     class in pa.internal">InternalClass</a></h3>
-                    <code><a href="internal/InternalClass.html#p()" title="p()">p</a></code></div>
+                    <code><a href="internal/InternalClass.html#p()" title="p()">p</a></code>
                     """,
                 """
                     <h3 id="methods-inherited-from-class-pa.internal.InternalInterface">Methods inh\
                     erited from interface&nbsp;<a href="internal/InternalInterface.html#method-summ\
                     ary" title="interface in pa.internal">InternalInterface</a></h3>
-                    <code><a href="internal/InternalInterface.html#m()" title="m()">m</a></code></div>
+                    <code><a href="internal/InternalInterface.html#m()" title="m()">m</a></code>
                     """);
 
         checkOrder("mb/pb/B.html",
@@ -286,13 +286,13 @@ public class TestUnexported extends JavadocTester {
                     <h3 id="methods-inherited-from-class-pa.internal.InternalClass">Methods inherit\
                     ed from class&nbsp;<a href="../../ma/pa/internal/InternalClass.html#method-summ\
                     ary" title="class in pa.internal">InternalClass</a></h3>
-                    <code><a href="../../ma/pa/internal/InternalClass.html#p()" title="p()">p</a></code></div>
+                    <code><a href="../../ma/pa/internal/InternalClass.html#p()" title="p()">p</a></code>
                     """,
                 """
                     <h3 id="methods-inherited-from-class-pa.internal.InternalInterface">Methods inh\
                     erited from interface&nbsp;<a href="../../ma/pa/internal/InternalInterface.html\
                     #method-summary" title="interface in pa.internal">InternalInterface</a></h3>
-                    <code><a href="../../ma/pa/internal/InternalInterface.html#m()" title="m()">m</a></code></div>
+                    <code><a href="../../ma/pa/internal/InternalInterface.html#m()" title="m()">m</a></code>
                     """);
 
     }

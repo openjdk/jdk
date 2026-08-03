@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, 2024, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,6 +25,7 @@
 
 #if defined(__APPLE__)
 
+#include "cppstdlib/cstdlib.hpp"
 #include "nmt/memMapPrinter.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
@@ -34,7 +35,6 @@
 
 #include <limits.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <libproc.h>
 #include <unistd.h>
 
@@ -132,7 +132,7 @@ public:
   static const char* tagToStr(uint32_t user_tag) {
     switch (user_tag) {
       case 0:
-        return 0;
+        return nullptr;
       X1(MALLOC, malloc);
       X1(MALLOC_SMALL, malloc_small);
       X1(MALLOC_LARGE, malloc_large);
@@ -177,7 +177,7 @@ public:
       X1(GENEALOGY, genealogy);
       default:
         static char buffer[30];
-        snprintf(buffer, sizeof(buffer), "user_tag=0x%x(%d)", user_tag, user_tag);
+        os::snprintf_checked(buffer, sizeof(buffer), "user_tag=0x%x(%d)", user_tag, user_tag);
         return buffer;
     }
   }
@@ -233,10 +233,10 @@ public:
     mach_msg_type_number_t num_out = TASK_VM_INFO_COUNT;
     kern_return_t err = task_info(mach_task_self(), TASK_VM_INFO, (task_info_t)(&vm_info), &num_out);
     if (err == KERN_SUCCESS) {
-      st->print_cr("             vsize: %llu (%llu%s)", vm_info.virtual_size, PROPERFMTARGS(vm_info.virtual_size));
-      st->print_cr("               rss: %llu (%llu%s)", vm_info.resident_size, PROPERFMTARGS(vm_info.resident_size));
-      st->print_cr("          peak rss: %llu (%llu%s)", vm_info.resident_size_peak, PROPERFMTARGS(vm_info.resident_size_peak));
-      st->print_cr("         page size: %d (%ld%s)", vm_info.page_size, PROPERFMTARGS((size_t)vm_info.page_size));
+      st->print_cr("             vsize: %llu (" PROPERFMT ")", vm_info.virtual_size, PROPERFMTARGS((size_t)vm_info.virtual_size));
+      st->print_cr("               rss: %llu (" PROPERFMT ")", vm_info.resident_size, PROPERFMTARGS((size_t)vm_info.resident_size));
+      st->print_cr("          peak rss: %llu (" PROPERFMT ")", vm_info.resident_size_peak, PROPERFMTARGS((size_t)vm_info.resident_size_peak));
+      st->print_cr("         page size: %d (" PROPERFMT ")", vm_info.page_size, PROPERFMTARGS((size_t)vm_info.page_size));
     } else {
       st->print_cr("error getting vm_info %d", err);
     }

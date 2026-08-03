@@ -36,7 +36,6 @@ import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.jvm.PoolConstant.LoadableConstant;
 import com.sun.tools.javac.main.Option.PkgInfo;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
-import com.sun.tools.javac.resources.CompilerProperties.Notes;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
@@ -49,7 +48,6 @@ import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.code.Type.*;
 
 import com.sun.tools.javac.jvm.Target;
-import com.sun.tools.javac.tree.EndPosTable;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Flags.BLOCK;
@@ -156,10 +154,6 @@ public class Lower extends TreeTranslator {
     /** Environment for symbol lookup, set by translateTopLevelClass.
      */
     Env<AttrContext> attrEnv;
-
-    /** A hash table mapping syntax trees to their ending source positions.
-     */
-    EndPosTable endPosTable;
 
 /* ************************************************************************
  * Global mappings
@@ -2060,8 +2054,8 @@ public class Lower extends TreeTranslator {
         } else {
             make_at(tree.pos());
             T result = super.translate(tree);
-            if (endPosTable != null && result != tree) {
-                endPosTable.replaceTree(tree, result);
+            if (result != null && result != tree) {
+                result.endpos = tree.endpos;
             }
             return result;
         }
@@ -2831,47 +2825,55 @@ public class Lower extends TreeTranslator {
      */
     public void visitTypeTest(JCInstanceOf tree) {
         if (tree.expr.type.isPrimitive() || tree.pattern.type.isPrimitive()) {
-            JCExpression exactnessCheck = null;
+            JCStatement prefixStatement;
+            JCExpression exactnessCheck;
             JCExpression instanceOfExpr = translate(tree.expr);
 
-            // preserving the side effects of the value
-            VarSymbol dollar_s = new VarSymbol(FINAL | SYNTHETIC,
-                    names.fromString("tmp" + variableIndex++ + this.target.syntheticNameChar()),
-                    types.erasure(tree.expr.type),
-                    currentMethodSym);
-            JCStatement var = make.at(tree.pos())
-                    .VarDef(dollar_s, instanceOfExpr);
-
-            if (types.isUnconditionallyExact(tree.expr.type, tree.pattern.type)) {
+            if (types.isUnconditionallyExactTypeBased(tree.expr.type, tree.pattern.type)) {
+                // instanceOfExpr; true
+                prefixStatement = make.Exec(instanceOfExpr);
                 exactnessCheck = make.Literal(BOOLEAN, 1).setType(syms.booleanType.constType(1));
-            }
-            else if (tree.expr.type.isReference()) {
-                JCExpression nullCheck =
-                        makeBinary(NE,
-                            make.Ident(dollar_s),
-                            makeNull());
-
-                if (types.isUnconditionallyExact(types.unboxedType(tree.expr.type), tree.pattern.type)) {
-                    exactnessCheck = nullCheck;
-                } else if (types.unboxedType(tree.expr.type).isPrimitive()) {
-                    exactnessCheck =
-                        makeBinary(AND,
-                            nullCheck,
-                            getExactnessCheck(tree, boxIfNeeded(make.Ident(dollar_s), types.unboxedType(tree.expr.type))));
+            } else if (tree.expr.type.isPrimitive()) {
+                // ExactConversionSupport.isXxxExact(instanceOfExpr)
+                prefixStatement = null;
+                exactnessCheck = getExactnessCheck(tree, instanceOfExpr);
+            } else if (tree.expr.type.isReference()) {
+                if (types.isUnconditionallyExactTypeBased(types.unboxedType(tree.expr.type), tree.pattern.type)) {
+                    // instanceOfExpr != null
+                    prefixStatement = null;
+                    exactnessCheck = makeBinary(NE, instanceOfExpr, makeNull());
                 } else {
-                    exactnessCheck =
-                        makeBinary(AND,
-                            nullCheck,
-                            make.at(tree.pos())
-                                .TypeTest(make.Ident(dollar_s), make.Type(types.boxedClass(tree.pattern.type).type))
-                                .setType(syms.booleanType));
-                }
-            }
-            else if (tree.expr.type.isPrimitive()) {
-                exactnessCheck = getExactnessCheck(tree, make.Ident(dollar_s));
-            }
+                    // We read the result of instanceOfExpr, so create variable
+                    VarSymbol dollar_s = new VarSymbol(FINAL | SYNTHETIC,
+                            names.fromString("tmp" + variableIndex++ + this.target.syntheticNameChar()),
+                            types.erasure(tree.expr.type),
+                            currentMethodSym);
+                    prefixStatement = make.at(tree.pos())
+                            .VarDef(dollar_s, instanceOfExpr);
 
-            result = make.LetExpr(List.of(var), exactnessCheck)
+                    JCExpression nullCheck =
+                            makeBinary(NE,
+                                    make.Ident(dollar_s),
+                                    makeNull());
+
+                    if (types.unboxedType(tree.expr.type).isPrimitive()) {
+                        exactnessCheck =
+                            makeBinary(AND,
+                                nullCheck,
+                                getExactnessCheck(tree, boxIfNeeded(make.Ident(dollar_s), types.unboxedType(tree.expr.type))));
+                    } else {
+                        exactnessCheck =
+                            makeBinary(AND,
+                                nullCheck,
+                                make.at(tree.pos())
+                                    .TypeTest(make.Ident(dollar_s), make.Type(types.boxedClass(tree.pattern.type).type))
+                                    .setType(syms.booleanType));
+                    }
+                }
+            } else {
+                throw Assert.error("Non primitive or reference type: " + tree.expr.type);
+            }
+            result = (prefixStatement == null ? exactnessCheck : make.LetExpr(List.of(prefixStatement), exactnessCheck))
                     .setType(syms.booleanType);
         } else {
             tree.expr = translate(tree.expr);
@@ -3566,7 +3568,7 @@ public class Lower extends TreeTranslator {
          *             int #len = array.length;
          *             int #i = 0; };
          *           #i < #len; i$++ ) {
-         *         T v = arr$[#i];
+         *         T v = (T) arr$[#i];
          *         stmt;
          *     }
          * }</pre>
@@ -3602,6 +3604,7 @@ public class Lower extends TreeTranslator {
             Type elemtype = types.elemtype(tree.expr.type);
             JCExpression loopvarinit = make.Indexed(make.Ident(arraycache),
                                                     make.Ident(index)).setType(elemtype);
+            loopvarinit = transTypes.coerce(attrEnv, loopvarinit, tree.var.type);
             JCVariableDecl loopvardef = (JCVariableDecl)make.VarDef(tree.var.mods,
                                                   tree.var.name,
                                                   tree.var.vartype,
@@ -3690,14 +3693,15 @@ public class Lower extends TreeTranslator {
             if (tree.var.type.isPrimitive())
                 vardefinit = make.TypeCast(types.cvarUpperBound(iteratorTarget), vardefinit);
             else
-                vardefinit = make.TypeCast(tree.var.type, vardefinit);
+                vardefinit = transTypes.coerce(attrEnv, vardefinit, tree.var.type);
             JCVariableDecl indexDef = (JCVariableDecl)make.VarDef(tree.var.mods,
                                                   tree.var.name,
                                                   tree.var.vartype,
-                                                  vardefinit).setType(tree.var.type);
+                                                  vardefinit,
+                                                  tree.var.declKind).setType(tree.var.type);
             indexDef.sym = tree.var.sym;
             JCBlock body = make.Block(0, List.of(indexDef, tree.body));
-            body.endpos = TreeInfo.endPos(tree.body);
+            body.bracePos = TreeInfo.endPos(tree.body);
             result = translate(make.
                 ForLoop(List.of(init),
                         cond,
@@ -4158,7 +4162,7 @@ public class Lower extends TreeTranslator {
                 stmtList.append(switch2);
 
                 JCBlock res = make.Block(0L, stmtList.toList());
-                res.endpos = TreeInfo.endPos(tree);
+                res.bracePos = TreeInfo.endPos(tree);
                 return res;
             } else {
                 JCSwitchExpression switch2 = make.SwitchExpression(make.Ident(dollar_tmp), lb.toList());
@@ -4345,7 +4349,6 @@ public class Lower extends TreeTranslator {
         try {
             attrEnv = env;
             this.make = make;
-            endPosTable = env.toplevel.endPositions;
             currentClass = null;
             currentRestype = null;
             currentMethodDef = null;
@@ -4375,7 +4378,6 @@ public class Lower extends TreeTranslator {
             // note that recursive invocations of this method fail hard
             attrEnv = null;
             this.make = null;
-            endPosTable = null;
             currentClass = null;
             currentRestype = null;
             currentMethodDef = null;

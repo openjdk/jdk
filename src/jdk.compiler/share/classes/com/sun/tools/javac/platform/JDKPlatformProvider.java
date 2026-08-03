@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,10 +51,8 @@ import java.util.TreeSet;
 import javax.annotation.processing.Processor;
 import javax.tools.ForwardingJavaFileObject;
 import javax.tools.JavaFileManager;
-import javax.tools.JavaFileManager.Location;
 import javax.tools.JavaFileObject;
 import javax.tools.JavaFileObject.Kind;
-import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 
 import com.sun.source.util.Plugin;
@@ -64,6 +62,7 @@ import com.sun.tools.javac.file.CacheFSInfo;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.main.Option;
+import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.StringUtils;
@@ -96,6 +95,14 @@ public class JDKPlatformProvider implements PlatformProvider {
 
     private static final String[] symbolFileLocation = { "lib", "ct.sym" };
 
+    // These must match attributes defined in ZipFileSystem.java.
+    private static final Map<String, ?> CT_SYM_ZIP_ENV = Map.of(
+            // Symbol file should always be opened read-only.
+            "accessMode", "readOnly",
+            // Uses less accurate, but faster, timestamp information
+            // (nobody should care about timestamps in the CT symbol file).
+            "zipinfo-time", "false");
+
     private static final Set<String> SUPPORTED_JAVA_PLATFORM_VERSIONS;
     public static final Comparator<String> NUMERICAL_COMPARATOR = (s1, s2) -> {
         int i1;
@@ -117,7 +124,7 @@ public class JDKPlatformProvider implements PlatformProvider {
         SUPPORTED_JAVA_PLATFORM_VERSIONS = new TreeSet<>(NUMERICAL_COMPARATOR);
         Path ctSymFile = findCtSym();
         if (Files.exists(ctSymFile)) {
-            try (FileSystem fs = FileSystems.newFileSystem(ctSymFile, (ClassLoader)null);
+            try (FileSystem fs = FileSystems.newFileSystem(ctSymFile, CT_SYM_ZIP_ENV);
                  DirectoryStream<Path> dir =
                          Files.newDirectoryStream(fs.getRootDirectories().iterator().next())) {
                 for (Path section : dir) {
@@ -249,7 +256,12 @@ public class JDKPlatformProvider implements PlatformProvider {
                 try {
                     FileSystem fs = ctSym2FileSystem.get(file);
                     if (fs == null) {
-                        ctSym2FileSystem.put(file, fs = FileSystems.newFileSystem(file, (ClassLoader)null));
+                        fs = FileSystems.newFileSystem(file, CT_SYM_ZIP_ENV);
+                        // If for any reason this was not opened from a ZIP file,
+                        // then the resulting file system would not be read-only.
+                        // NOTE: This check is disabled until JDK 25 bootstrap!
+                        // Assert.check(fs.isReadOnly());
+                        ctSym2FileSystem.put(file, fs);
                     }
 
                     Path root = fs.getRootDirectories().iterator().next();

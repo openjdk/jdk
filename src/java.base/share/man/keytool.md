@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -211,7 +211,7 @@ perform.
 
 ## Commands for Creating or Adding Data to the Keystore
 
-`-gencert`
+[`-gencert`]{#command-gencert}
 :   The following are the available options for the `-gencert` command:
 
     -   {`-rfc`}: Output in RFC (Request For Comment) style
@@ -328,7 +328,7 @@ perform.
 
     >   `keytool -alias e1 -certreq | keytool -alias ca2 -gencert > e1.cert`
 
-`-genkeypair`
+[`-genkeypair`]{#option-genkeypair}
 :   The following are the available options for the `-genkeypair` command:
 
     -   {`-alias` *alias*}: Alias name of the entry to process
@@ -478,7 +478,7 @@ perform.
     specified by `-startdate`, or the current date when `-startdate` isn't
     specified) for which the certificate should be considered valid.
 
-`-genseckey`
+[`-genseckey`]{#command-genseckey}
 :   The following are the available options for the `-genseckey` command:
 
     -   {`-alias` *alias*}: Alias name of the entry to process
@@ -521,7 +521,7 @@ perform.
     the same password that is used for the `-keystore`. The `-keypass` value
     must contain at least six characters.
 
-`-importcert`
+[`-importcert`]{#command-importcert}
 :   The following are the available options for the `-importcert` command:
 
     -   {`-noprompt`}: Do not prompt
@@ -586,7 +586,7 @@ perform.
     entry, then the `keytool` command assumes that you're importing a
     certificate reply.
 
-`-importpass`
+[`-importpass`]{#command-importpass}
 :   The following are the available options for the `-importpass` command:
 
     -   {`-alias` *alias*}: Alias name of the entry to process
@@ -629,7 +629,7 @@ perform.
 
 ## Commands for Importing Contents from Another Keystore
 
-`-importkeystore`
+[`-importkeystore`]{#command-importkeystore}
 :   The following are the available options for the `-importkeystore` command:
 
     -   `-srckeystore` *keystore*: Source keystore name
@@ -724,7 +724,7 @@ perform.
 
 ## Commands for Generating a Certificate Request
 
-`-certreq`
+[`-certreq`]{#command-certreq}
 :   The following are the available options for the `-certreq` command:
 
     -   {`-alias` *alias*}: Alias name of the entry to process
@@ -786,7 +786,7 @@ perform.
 
 ## Commands for Exporting Data
 
-`-exportcert`
+[`-exportcert`]{#command-exportcert}
 :   The following are the available options for the `-exportcert` command:
 
     -   {`-rfc`}: Output in RFC style
@@ -834,7 +834,7 @@ perform.
 
 ## Commands for Displaying Data
 
-`-list`
+[`-list`]{#command-list}
 :   The following are the available options for the `-list` command:
 
     -   {`-rfc`}: Output in RFC style
@@ -881,7 +881,7 @@ perform.
     You can't specify both `-v` and `-rfc` in the same command. Otherwise, an
     error is reported.
 
-`-printcert`
+[`-printcert`]{#command-printcert}
 :   The following are the available options for the `-printcert` command:
 
     -   {`-rfc`}: Output in RFC style
@@ -946,7 +946,7 @@ perform.
     trusted certificate in the user keystore (specified by `-keystore`) or in
     the `cacerts` keystore (if `-trustcacerts` is specified).
 
-`-printcertreq`
+[`-printcertreq`]{#command-printcertreq}
 :   The following are the available options for the `-printcertreq` command:
 
     -   {`-file` *file*}: Input file name
@@ -958,7 +958,7 @@ perform.
     command. The command reads the request from file. If there is no file, then
     the request is read from the standard input.
 
-`-printcrl`
+[`-printcrl`]{#command-printcrl}
 :   The following are the available options for the `-printcrl` command:
 
     -   {`-file crl`}: Input file name
@@ -999,7 +999,7 @@ perform.
 
 ## Commands for Managing the Keystore
 
-`-storepasswd`
+[`-storepasswd`]{#command-storepasswd}
 :   The following are the available options for the `-storepasswd` command:
 
     -   \[`-new` *arg*\]: New password
@@ -1029,7 +1029,7 @@ perform.
     integrity of the keystore contents. The new password is set by `-new` *arg*
     and must contain at least six characters.
 
-`-keypasswd`
+[`-keypasswd`]{#command-keypasswd}
 :   The following are the available options for the `-keypasswd` command:
 
     -   {`-alias` *alias*}: Alias name of the entry to process
@@ -1069,7 +1069,7 @@ perform.
     If the `-new` option isn't provided at the command line, then the user is
     prompted for it.
 
-`-delete`
+[`-delete`]{#command-delete}
 :   The following are the available options for the `-delete` command:
 
     -   \[`-alias` *alias*\]: Alias name of the entry to process
@@ -1101,7 +1101,7 @@ perform.
     keystore. When not provided at the command line, the user is prompted for
     the `alias`.
 
-`-changealias`
+[`-changealias`]{#command-changealias}
 :   The following are the available options for the `-changealias` command:
 
     -   {`-alias` *alias*}: Alias name of the entry to process
@@ -1143,7 +1143,7 @@ perform.
 
 ## Commands for Displaying Security-related Information
 
-`-showinfo`
+[`-showinfo`]{#command-showinfo}
 :   The following are the available options for the `-showinfo` command:
 
     -   {`-tls`}: Displays TLS configuration information
@@ -1185,10 +1185,10 @@ environment or memory usage. For a list of possible interpreter options, enter
 
 These options can appear for all commands operating on a keystore:
 
-`-storetype` *storetype*
+[`-storetype`]{#option-storetype} *storetype*
 :   This qualifier specifies the type of keystore to be instantiated.
 
-`-keystore` *keystore*
+[`-keystore`]{#option-keystore} *keystore*
 :   The keystore location.
 
     If the JKS `storetype` is used and a keystore file doesn't yet exist, then
@@ -1206,13 +1206,13 @@ These options can appear for all commands operating on a keystore:
     if the keystore isn't file-based. For example, when the keystore resides on
     a hardware token device.
 
-`-cacerts` *cacerts*
+[`-cacerts`]{#option-cacerts} *cacerts*
 :   Operates on the *cacerts* keystore . This option is equivalent to
     `-keystore` *path\_to\_cacerts* `-storetype` *type\_of\_cacerts*. An error
     is reported if the `-keystore` or `-storetype` option is used with the
     `-cacerts` option.
 
-`-storepass` \[`:env` \| `:file` \] *argument*
+[`-storepass`]{#option-storepass} \[`:env` \| `:file` \] *argument*
 :   The password that is used to protect the integrity of the keystore.
 
     If the modifier `env` or `file` isn't specified, then the password has the
@@ -1237,22 +1237,22 @@ These options can appear for all commands operating on a keystore:
     a password is not specified, then the integrity of the retrieved
     information can't be verified and a warning is displayed.
 
-`-providername` *name*
+[`-providername`]{#option-providername} *name*
 :   Used to identify a cryptographic service provider's name when listed in the
     security properties file.
 
-`-addprovider` *name*
+[`-addprovider`]{#option-addprovider} *name*
 :   Used to add a security provider by name (such as SunPKCS11) .
 
-`-providerclass` *class*
+[`-providerclass`]{#option-providerclass} *class*
 :   Used to specify the name of a cryptographic service provider's master class
     file when the service provider isn't listed in the security properties
     file.
 
-`-providerpath` *list*
+[`-providerpath`]{#option-providerpath} *list*
 :   Used to specify the provider classpath.
 
-`-providerarg` *arg*
+[`-providerarg`]{#option-providerarg} *arg*
 :   Used with the `-addprovider` or `-providerclass` option to represent an
     optional string input argument for the constructor of *class* name.
 
@@ -1263,7 +1263,7 @@ These options can appear for all commands operating on a keystore:
     following two options, `-srcprotected` and `-destprotected`, are provided
     for the source keystore and the destination keystore respectively.
 
-`-ext` {*name*{`:critical`} {`=`*value*}}
+[`-ext`]{#option-ext} {*name*{`:critical`} {`=`*value*}}
 :   Denotes an X.509 certificate extension. The option can be used in
     `-genkeypair` and `-gencert` to embed extensions into the generated
     certificate, or in `-certreq` to show what extensions are requested in the
@@ -1276,7 +1276,7 @@ These options can appear for all commands operating on a keystore:
     `isCritical` attribute is `true`; otherwise, it is `false`. You can use
     `:c` in place of `:critical`.
 
-`-conf` *file*
+[`-conf`]{#option-conf} *file*
 :   Specifies a pre-configured options file.
 
 ## Pre-configured options file

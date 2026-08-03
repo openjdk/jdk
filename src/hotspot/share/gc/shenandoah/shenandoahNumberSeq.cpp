@@ -26,7 +26,7 @@
 
 
 #include "gc/shenandoah/shenandoahNumberSeq.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 HdrSeq::HdrSeq() {
   _hdr = NEW_C_HEAP_ARRAY(int*, MagBuckets, mtInternal);
@@ -39,10 +39,10 @@ HdrSeq::~HdrSeq() {
   for (int c = 0; c < MagBuckets; c++) {
     int* sub = _hdr[c];
     if (sub != nullptr) {
-      FREE_C_HEAP_ARRAY(int, sub);
+      FREE_C_HEAP_ARRAY(sub);
     }
   }
-  FREE_C_HEAP_ARRAY(int*, _hdr);
+  FREE_C_HEAP_ARRAY(_hdr);
 }
 
 void HdrSeq::add(double val) {
@@ -191,18 +191,18 @@ BinaryMagnitudeSeq::BinaryMagnitudeSeq() {
 }
 
 BinaryMagnitudeSeq::~BinaryMagnitudeSeq() {
-  FREE_C_HEAP_ARRAY(size_t, _mags);
+  FREE_C_HEAP_ARRAY(_mags);
 }
 
 void BinaryMagnitudeSeq::clear() {
   for (int c = 0; c < BitsPerSize_t; c++) {
     _mags[c] = 0;
   }
-  _sum = 0;
+  _sum.store_relaxed(0);
 }
 
 void BinaryMagnitudeSeq::add(size_t val) {
-  Atomic::add(&_sum, val);
+  _sum.add_then_fetch(val);
 
   int mag = log2i_graceful(val) + 1;
 
@@ -217,7 +217,7 @@ void BinaryMagnitudeSeq::add(size_t val) {
     mag = BitsPerSize_t - 1;
   }
 
-  Atomic::add(&_mags[mag], (size_t)1);
+  AtomicAccess::add(&_mags[mag], (size_t)1);
 }
 
 size_t BinaryMagnitudeSeq::level(int level) const {
@@ -237,7 +237,7 @@ size_t BinaryMagnitudeSeq::num() const {
 }
 
 size_t BinaryMagnitudeSeq::sum() const {
-  return _sum;
+  return _sum.load_relaxed();
 }
 
 int BinaryMagnitudeSeq::min_level() const {

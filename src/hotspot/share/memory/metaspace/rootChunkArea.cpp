@@ -473,7 +473,7 @@ RootChunkAreaLUT::~RootChunkAreaLUT() {
   for (int i = 0; i < _num; i++) {
     _arr[i].~RootChunkArea();
   }
-  FREE_C_HEAP_ARRAY(RootChunkArea, _arr);
+  FREE_C_HEAP_ARRAY(_arr);
 }
 
 #ifdef ASSERT

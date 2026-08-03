@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@ public class TIFFNullDecompressor extends TIFFDecompressor {
     // change beginDecoding() and decode() to use the active region values
     // when random access is easy and the entire region values otherwise.
     //
+    @Override
     public void beginDecoding() {
         // Determine number of bits per pixel.
         int bitsPerPixel = 0;
@@ -89,6 +90,7 @@ public class TIFFNullDecompressor extends TIFFDecompressor {
         super.beginDecoding();
     }
 
+    @Override
     public void decode() throws IOException {
         super.decode();
 
@@ -105,6 +107,7 @@ public class TIFFNullDecompressor extends TIFFDecompressor {
         }
     }
 
+    @Override
     public void decodeRaw(byte[] b,
                           int dstOffset,
                           int bitsPerPixel,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,8 @@
  * @summary Test DWARF parser with various crashes if debug symbols are available. If the libjvm debug symbols are not
  *          in the same directory as the libjvm.so file, in a subdirectory called .debug, or in the path specified
  *          by the environment variable _JVM_DWARF_PATH, then no verification of the hs_err_file is done for libjvm.so.
- * @requires vm.debug == true & vm.flagless & vm.compMode != "Xint" & os.family == "linux" & !vm.graal.enabled & vm.gc.G1
+ * @requires vm.debug == true & vm.flagless & vm.compMode != "Xint" & os.family == "linux" & vm.gc.G1
+ * @requires !vm.ubsan
  * @modules java.base/jdk.internal.misc
  * @run main/native/othervm -Xbootclasspath/a:. -XX:-CreateCoredumpOnCrash TestDwarf
  */
@@ -108,13 +109,19 @@ public class TestDwarf {
         if (Platform.isX64() || Platform.isX86()) {
             // Not all platforms raise SIGFPE but x86_32 and x86_64 do.
             runAndCheck(new Flags(TestDwarf.class.getCanonicalName(), "nativeDivByZero"),
-                        new DwarfConstraint(0, "Java_TestDwarf_crashNativeDivByZero", "libTestDwarf.c", 59));
+                        new DwarfConstraint(0, "Java_TestDwarf_crashNativeDivByZero", "libTestDwarf.c", 62));
             runAndCheck(new Flags(TestDwarf.class.getCanonicalName(), "nativeMultipleMethods"),
-                        new DwarfConstraint(0, "foo", "libTestDwarf.c", 42),
-                        new DwarfConstraint(1, "Java_TestDwarf_crashNativeMultipleMethods", "libTestDwarf.c", 70));
+                        new DwarfConstraint(0, "foo", "libTestDwarf.c", 45),
+                        new DwarfConstraint(1, "Java_TestDwarf_crashNativeMultipleMethods", "libTestDwarf.c", 73));
         }
-        runAndCheck(new Flags(TestDwarf.class.getCanonicalName(), "nativeDereferenceNull"),
-                    new DwarfConstraint(0, "dereference_null", "libTestDwarfHelper.h", 46));
+        // Null pointer dereferences exhibit different behaviour depending on if GCC or Clang is used.
+        // When using GCC, the VM will crash gracefully and generate a hs_err which can be parsed.
+        // On the contrary, with Clang the process exits immediately without hs_err.
+        // Since runAndCheck needs an hs_err file, we have to skip this subtest.
+        if (!isUsingClang()) {
+            runAndCheck(new Flags(TestDwarf.class.getCanonicalName(), "nativeDereferenceNull"),
+                        new DwarfConstraint(0, "dereference_null", "libTestDwarfHelper.h", 49));
+        }
     }
 
     // A full pattern could check for lines like:
@@ -240,6 +247,7 @@ public class TestDwarf {
     private static native void crashNativeDivByZero();
     private static native void crashNativeDereferenceNull();
     private static native void crashNativeMultipleMethods(int x);
+    private static native boolean isUsingClang();
 }
 
 class UnsupportedDwarfVersionException extends RuntimeException { }

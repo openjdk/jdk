@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8284161 8287008 8309406 8356870
+ * @bug 8284161 8287008 8309406 8356870 8365057
  * @summary Basic test for com.sun.management.HotSpotDiagnosticMXBean.dumpThreads
  * @requires vm.continuations
  * @modules java.base/jdk.internal.vm jdk.management
@@ -49,6 +49,7 @@ import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Path;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -238,6 +239,7 @@ class DumpThreads {
 
     void testBlockedThread(ThreadFactory factory, boolean pinned) throws Exception {
         var lock = new Object();
+        String lockAsString = Objects.toIdentityString(lock);
         var started = new CountDownLatch(1);
 
         Thread thread = factory.newThread(() -> {
@@ -258,9 +260,7 @@ class DumpThreads {
                 thread.start();
                 started.await();
                 await(thread, Thread.State.BLOCKED);
-
                 long tid = thread.threadId();
-                String lockAsString = Objects.toIdentityString(lock);
 
                 // thread dump in plain text should include thread
                 List<String> lines = dumpThreadsToPlainText();
@@ -308,6 +308,7 @@ class DumpThreads {
 
     void testWaitingThread(ThreadFactory factory, boolean pinned) throws Exception {
         var lock = new Object();
+        String lockAsString = Objects.toIdentityString(lock);
         var started = new CountDownLatch(1);
 
         Thread thread = factory.newThread(() -> {
@@ -331,9 +332,7 @@ class DumpThreads {
             thread.start();
             started.await();
             await(thread, Thread.State.WAITING);
-
             long tid = thread.threadId();
-            String lockAsString = Objects.toIdentityString(lock);
 
             // thread dump in plain text should include thread
             List<String> lines = dumpThreadsToPlainText();
@@ -417,7 +416,6 @@ class DumpThreads {
             thread.start();
             started.await();
             await(thread, Thread.State.WAITING);
-
             long tid = thread.threadId();
 
             // thread dump in plain text should include thread
@@ -425,7 +423,9 @@ class DumpThreads {
             ThreadFields fields = findThread(tid, lines);
             assertNotNull(fields, "thread not found");
             assertEquals("WAITING", fields.state());
-            assertTrue(contains(lines, "- parking to wait for <java.util.concurrent.locks.ReentrantLock"));
+            String line = find(lines, "- parking to wait for <java.util.concurrent.locks.ReentrantLock");
+            assertNotNull(line, "parking to wait line not found");
+            assertTrue(line.endsWith(" owner #" + Thread.currentThread().threadId()));
 
             // thread dump in JSON format should include thread in root container
             ThreadDump threadDump = dumpThreadsToJson();
@@ -440,6 +440,12 @@ class DumpThreads {
             String parkBlocker = ti.parkBlocker();
             assertNotNull(parkBlocker);
             assertTrue(parkBlocker.contains("java.util.concurrent.locks.ReentrantLock"));
+
+            // the owner of the parkBlocker should be the current thread
+            long ownerTid = ti.parkBlockerOwner().orElse(-1L);
+            assertNotEquals(-1L, ownerTid, "parkBlockerOwner not found");
+            assertEquals(Thread.currentThread().threadId(), ownerTid);
+
             if (pinned) {
                 long carrierTid = ti.carrier().orElse(-1L);
                 assertNotEquals(-1L, carrierTid, "carrier not found");
@@ -452,7 +458,7 @@ class DumpThreads {
     }
 
     /**
-     * Test thread dump with a thread owning a monitor.
+     * Test thread dump with a thread owning monitors.
      */
     @ParameterizedTest
     @MethodSource("threadFactories")
@@ -467,19 +473,26 @@ class DumpThreads {
     }
 
     void testThreadOwnsMonitor(ThreadFactory factory, boolean pinned) throws Exception {
-        var lock = new Object();
-        var started = new CountDownLatch(1);
+        var lock1 = new Object();
+        var lock2 = new Object();
+        var lock3 = new Object();
+        String lock1AsString = Objects.toIdentityString(lock1);
+        String lock2AsString = Objects.toIdentityString(lock2);
+        String lock3AsString = Objects.toIdentityString(lock3);
 
+        var started = new CountDownLatch(1);
         Thread thread = factory.newThread(() -> {
-            synchronized (lock) {
-                if (pinned) {
-                    VThreadPinner.runPinned(() -> {
+            synchronized (lock1) {
+                synchronized (lock2) {
+                    if (pinned) {
+                        VThreadPinner.runPinned(() -> {
+                            started.countDown();
+                            lockAndRun(lock3, LockSupport::park);
+                        });
+                    } else {
                         started.countDown();
-                        LockSupport.park();
-                    });
-                } else {
-                    started.countDown();
-                    LockSupport.park();
+                        lockAndRun(lock3, LockSupport::park);
+                    }
                 }
             }
         });
@@ -489,16 +502,16 @@ class DumpThreads {
             thread.start();
             started.await();
             await(thread, Thread.State.WAITING);
-
             long tid = thread.threadId();
-            String lockAsString = Objects.toIdentityString(lock);
 
             // thread dump in plain text should include thread
             List<String> lines = dumpThreadsToPlainText();
             ThreadFields fields = findThread(tid, lines);
             assertNotNull(fields, "thread not found");
             assertEquals("WAITING", fields.state());
-            assertTrue(contains(lines, "- locked <" + lockAsString));
+            assertTrue(contains(lines, "- locked <" + lock1AsString));
+            assertTrue(contains(lines, "- locked <" + lock2AsString));
+            assertTrue(contains(lines, "- locked <" + lock3AsString));
 
             // thread dump in JSON format should include thread in root container
             ThreadDump threadDump = dumpThreadsToJson();
@@ -508,15 +521,44 @@ class DumpThreads {
             assertNotNull(ti, "thread not found");
             assertEquals(ti.isVirtual(), thread.isVirtual());
 
-            // the lock should be in the ownedMonitors array
-            Set<String> ownedMonitors = ti.ownedMonitors().values()
+            // depth -> list of locks
+            Map<Integer, List<String>> ownedMonitors = ti.ownedMonitors();
+
+            // lock -> list of depths
+            Map<String, List<Integer>> monitorDepths = ownedMonitors.entrySet()
                     .stream()
-                    .flatMap(List::stream)
-                    .collect(Collectors.toSet());
-            assertTrue(ownedMonitors.contains(lockAsString), lockAsString + " not found");
+                    .flatMap(e -> e.getValue()
+                            .stream()
+                            .map(monitor -> Map.entry(monitor, e.getKey())))
+                    .collect(Collectors.groupingBy(
+                            Map.Entry::getKey,
+                            Collectors.mapping(Map.Entry::getValue, Collectors.toList())
+                    ));
+
+            // each lock should be owned
+            List<Integer> lock1Depths = monitorDepths.getOrDefault(lock1AsString, List.of());
+            List<Integer> lock2Depths = monitorDepths.getOrDefault(lock2AsString, List.of());
+            List<Integer> lock3Depths = monitorDepths.getOrDefault(lock3AsString, List.of());
+            assertEquals(1, lock1Depths.size());
+            assertEquals(1, lock2Depths.size());
+            assertEquals(1, lock3Depths.size());
+
+            // lock1 and lock2 owned at the same depth, lock3 is the innermost
+            int depth1 = lock1Depths.get(0);
+            int depth2 = lock2Depths.get(0);
+            int depth3 = lock3Depths.get(0);
+            assertEquals(depth1, depth2);
+            assertTrue(depth3 < depth1);
+
         } finally {
             LockSupport.unpark(thread);
             thread.join();
+        }
+    }
+
+    private void lockAndRun(Object lock, Runnable action) {
+        synchronized (lock) {
+            action.run();
         }
     }
 
@@ -682,6 +724,16 @@ class DumpThreads {
     private boolean contains(List<String> lines, String text) {
         return lines.stream().map(String::trim)
                 .anyMatch(l -> l.contains(text));
+    }
+
+    /**
+     * Finds the line of a plain text thread dump containing the given text.
+     */
+    private String find(List<String> lines, String text) {
+        return lines.stream().map(String::trim)
+                .filter(l -> l.contains(text))
+                .findAny()
+                .orElse(null);
     }
 
     /**

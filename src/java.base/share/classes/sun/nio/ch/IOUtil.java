@@ -479,7 +479,7 @@ public final class IOUtil {
 
     static void acquireScope(ByteBuffer bb, boolean async) {
         if (async && NIO_ACCESS.isThreadConfined(bb)) {
-            throw new IllegalStateException("Confined session not supported");
+            throw new IllegalArgumentException("Buffer is thread confined");
         }
         NIO_ACCESS.acquireSession(bb);
     }
@@ -587,9 +587,11 @@ public final class IOUtil {
      */
     static native int drain1(int fd) throws IOException;
 
-    public static native void configureBlocking(FileDescriptor fd,
-                                                boolean blocking)
-        throws IOException;
+    static native void configureBlocking(int fd, boolean blocking) throws IOException;
+
+    public static void configureBlocking(FileDescriptor fd, boolean blocking) throws IOException {
+        configureBlocking(fdVal(fd), blocking);
+    }
 
     public static native int fdVal(FileDescriptor fd);
 

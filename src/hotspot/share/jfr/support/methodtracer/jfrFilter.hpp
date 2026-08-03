@@ -25,8 +25,8 @@
 #ifndef SHARE_JFR_SUPPORT_METHODTRACER_JFRFILTER_HPP
 #define SHARE_JFR_SUPPORT_METHODTRACER_JFRFILTER_HPP
 
-#include "jni.h"
 #include "jfr/utilities/jfrAllocation.hpp"
+#include "jni.h"
 #include "oops/annotations.hpp"
 
 class InstanceKlass;

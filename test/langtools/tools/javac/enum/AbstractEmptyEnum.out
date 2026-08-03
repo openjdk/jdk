@@ -1,2 +1,2 @@
-AbstractEmptyEnum.java:10:8: compiler.err.does.not.override.abstract: AbstractEmptyEnum, m(), AbstractEmptyEnum
+AbstractEmptyEnum.java:9:8: compiler.err.does.not.override.abstract: AbstractEmptyEnum, m(), AbstractEmptyEnum
 1 error

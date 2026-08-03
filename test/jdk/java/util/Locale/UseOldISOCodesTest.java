@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8295232 8353118
+ * @bug 8295232 8353118 8355522
  * @summary Tests for the "java.locale.useOldISOCodes" system property
  * @library /test/lib
  * @run junit UseOldISOCodesTest
@@ -34,7 +34,7 @@ import jdk.test.lib.process.ProcessTools;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 public class UseOldISOCodesTest {
 
@@ -44,7 +44,7 @@ public class UseOldISOCodesTest {
                 .outputTo(System.out)
                 .errorTo(System.err);
         oa.shouldHaveExitValue(0);
-        oa.stderrShouldMatch("WARNING: The use of the system property \"java.locale.useOldISOCodes\" is deprecated. It will be removed in a future release of the JDK.");
+        oa.stderrShouldMatch("WARNING: The system property \"java.locale.useOldISOCodes\" is no longer supported. Any specified value will be ignored.");
     }
 
     static class Runner {
@@ -52,12 +52,9 @@ public class UseOldISOCodesTest {
         private static final String newCode = "he";
 
         public static void main(String[] args) {
-            // Ensure java.locale.useOldISOCodes is only interpreted at runtime startup
-            // Should have no effect
-            System.setProperty("java.locale.useOldISOCodes", "false");
-            Locale locale = Locale.of(newCode);
-            assertEquals(obsoleteCode, locale.getLanguage(),
-                    "newCode 'he' was not mapped to 'iw' with useOldISOCodes=true");
+            // Ensure java.locale.useOldISOCodes should have no effect
+            assertNotEquals(obsoleteCode, Locale.of(newCode).getLanguage(),
+                    "newCode 'he' was mapped to 'iw' with useOldISOCodes=true");
         }
     }
 }

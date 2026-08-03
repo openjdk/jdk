@@ -102,7 +102,7 @@ abstract class GaloisCounterMode extends CipherSpi {
     /**
      *
      * @param keySize length of key.
-     * @param embeddedCipher Cipher object, such as AESCrypt.
+     * @param embeddedCipher Cipher object, such as AES_Crypt.
      */
     GaloisCounterMode(int keySize, SymmetricCipher embeddedCipher) {
         blockCipher = embeddedCipher;
@@ -198,7 +198,7 @@ abstract class GaloisCounterMode extends CipherSpi {
     protected int engineGetKeySize(Key key) throws InvalidKeyException {
         byte[] encoded = key.getEncoded();
         Arrays.fill(encoded, (byte)0);
-        if (!AESCrypt.isKeySizeValid(encoded.length)) {
+        if (!AES_Crypt.isKeySizeValid(encoded.length)) {
             throw new InvalidKeyException("Invalid key length: " +
                                           encoded.length + " bytes");
         }
@@ -1693,25 +1693,25 @@ abstract class GaloisCounterMode extends CipherSpi {
 
     public static final class AESGCM extends GaloisCounterMode {
         public AESGCM() {
-            super(-1, new AESCrypt());
+            super(-1, new AES_Crypt());
         }
     }
 
     public static final class AES128 extends GaloisCounterMode {
         public AES128() {
-            super(16, new AESCrypt());
+            super(16, new AES_Crypt());
         }
     }
 
     public static final class AES192 extends GaloisCounterMode {
         public AES192() {
-            super(24, new AESCrypt());
+            super(24, new AES_Crypt());
         }
     }
 
     public static final class AES256 extends GaloisCounterMode {
         public AES256() {
-            super(32, new AESCrypt());
+            super(32, new AES_Crypt());
         }
     }
 

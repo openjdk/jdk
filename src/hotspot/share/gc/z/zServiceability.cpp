@@ -50,31 +50,11 @@ static ZMemoryUsageInfo compute_memory_usage_info() {
   return info;
 }
 
-class ZGenerationCounters : public GenerationCounters {
-public:
-  ZGenerationCounters(const char* name,
-                      int ordinal,
-                      int spaces,
-                      size_t min_capacity,
-                      size_t max_capacity,
-                      size_t curr_capacity)
-    : GenerationCounters(name,
-                         ordinal,
-                         spaces,
-                         min_capacity,
-                         max_capacity,
-                         curr_capacity) {}
-
-  void update_capacity(size_t capacity) {
-    update_all(capacity);
-  }
-};
-
 // Class to expose perf counters used by jstat.
 class ZServiceabilityCounters : public CHeapObj<mtGC> {
 private:
-  ZGenerationCounters _generation_young_counters;
-  ZGenerationCounters _generation_old_counters;
+  GenerationCounters  _generation_young_counters;
+  GenerationCounters  _generation_old_counters;
   HSpaceCounters      _space_young_counters;
   HSpaceCounters      _space_old_counters;
   CollectorCounters   _minor_collection_counters;

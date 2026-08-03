@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,8 @@
 #include "compiler/compilerDefinitions.hpp"
 #include "oops/annotations.hpp"
 #include "oops/constantPool.hpp"
-#include "oops/methodFlags.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/methodFlags.hpp"
 #include "oops/oop.hpp"
 #include "utilities/accessFlags.hpp"
 #include "utilities/align.hpp"
@@ -67,7 +67,6 @@ class InterpreterOopMap;
 
 class Method : public Metadata {
  friend class VMStructs;
- friend class JVMCIVMStructs;
  friend class MethodTest;
  private:
   // If you add a new field that points to any metaspace object, you
@@ -171,11 +170,11 @@ class Method : public Metadata {
   // C string, for the purpose of providing more useful
   // fatal error handling. The string is allocated in resource
   // area if a buffer is not provided by the caller.
-  char* name_and_sig_as_C_string() const;
+  char* name_and_sig_as_C_string(bool use_double_colon = false) const;
   char* name_and_sig_as_C_string(char* buf, int size) const;
 
   // Static routine in the situations we don't have a Method*
-  static char* name_and_sig_as_C_string(Klass* klass, Symbol* method_name, Symbol* signature);
+  static char* name_and_sig_as_C_string(Klass* klass, Symbol* method_name, Symbol* signature, bool use_double_colon = false);
   static char* name_and_sig_as_C_string(Klass* klass, Symbol* method_name, Symbol* signature, char* buf, int size);
 
   // Get return type + klass name + "." + method name + ( parameters types )
@@ -261,10 +260,10 @@ class Method : public Metadata {
   int highest_osr_comp_level() const;
   void set_highest_osr_comp_level(int level);
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   // Count of times method was exited via exception while interpreting
   inline void interpreter_throwout_increment(Thread* current);
-#endif
+#endif // COMPILER2
 
   inline int interpreter_throwout_count() const;
 
@@ -465,9 +464,9 @@ public:
   bool    contains(address bcp) const { return constMethod()->contains(bcp); }
 
   // prints byte codes
-  void print_codes(int flags = 0) const { print_codes_on(tty, flags); }
-  void print_codes_on(outputStream* st, int flags = 0) const;
-  void print_codes_on(int from, int to, outputStream* st, int flags = 0) const;
+  void print_codes(int flags = 0, bool buffered = true) const { print_codes_on(tty, flags, buffered); }
+  void print_codes_on(outputStream* st, int flags = 0, bool buffered = true) const;
+  void print_codes_on(int from, int to, outputStream* st, int flags = 0, bool buffered = true) const;
 
   // method parameters
   bool has_method_parameters() const
@@ -704,18 +703,10 @@ public:
   // refers to null (as is the case for any weak reference).
   static jmethodID make_jmethod_id(ClassLoaderData* cld, Method* mh);
 
-  // Ensure there is enough capacity in the internal tracking data
-  // structures to hold the number of jmethodIDs you plan to generate.
-  // This saves substantial time doing allocations.
-  static void ensure_jmethod_ids(ClassLoaderData* cld, int capacity);
-
   // Use resolve_jmethod_id() in situations where the caller is expected
   // to provide a valid jmethodID; the only sanity checks are in asserts;
   // result guaranteed not to be null.
-  inline static Method* resolve_jmethod_id(jmethodID mid) {
-    assert(mid != nullptr, "JNI method id should not be null");
-    return *((Method**)mid);
-  }
+  static Method* resolve_jmethod_id(jmethodID mid);
 
   // Use checked_resolve_jmethod_id() in situations where the caller
   // should provide a valid jmethodID, but might not. Null is returned
@@ -723,10 +714,9 @@ public:
   static Method* checked_resolve_jmethod_id(jmethodID mid);
 
   static void change_method_associated_with_jmethod_id(jmethodID old_jmid_ptr, Method* new_method);
-  static bool is_method_id(jmethodID mid);
+  static bool validate_jmethod_id(jmethodID mid);
 
-  // Clear methods
-  static void clear_jmethod_ids(ClassLoaderData* loader_data);
+  // Clear jmethodID
   void clear_jmethod_id();
   static void print_jmethod_ids_count(const ClassLoaderData* loader_data, outputStream* out) PRODUCT_RETURN;
 
@@ -868,7 +858,8 @@ public:
   void print_on(outputStream* st) const;
 #endif
   void print_value_on(outputStream* st) const;
-  void print_linkage_flags(outputStream* st) PRODUCT_RETURN;
+  void print_access_flags(outputStream* st) const;
+  void print_linkage_flags(outputStream* st) const PRODUCT_RETURN;
 
   const char* internal_name() const { return "{method}"; }
 

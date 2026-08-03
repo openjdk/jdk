@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  */
 package jdk.internal.net.http.hpack;
 
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -33,10 +32,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import static jdk.internal.net.http.hpack.BuffersTestingKit.*;
 import static jdk.internal.net.http.hpack.TestHelper.newRandom;
+import org.junit.jupiter.api.Test;
 
 //
 // Some of the tests below overlap in what they test. This allows to diagnose
@@ -96,7 +96,7 @@ public final class BinaryPrimitivesTest {
                 totalCases++;
                 maxFilling = Math.max(maxFilling, buf.remaining());
                 r.reset().configure(N).read(buf);
-                assertEquals(r.get(), expected);
+                assertEquals(expected, r.get());
                 buf.clear();
             }
         }
@@ -127,7 +127,7 @@ public final class BinaryPrimitivesTest {
                                 throw new UncheckedIOException(e);
                             }
                         }
-                        assertEquals(r.get(), expected);
+                        assertEquals(expected, r.get());
                         r.reset();
                     });
             bb.clear();
@@ -167,7 +167,7 @@ public final class BinaryPrimitivesTest {
                             throw new UncheckedIOException(e);
                         }
                         // TODO: check payload here
-                        assertEquals(r.get(), expected);
+                        assertEquals(expected, r.get());
                         w.reset();
                         r.reset();
                         bb.clear();
@@ -209,7 +209,7 @@ public final class BinaryPrimitivesTest {
                 bytes.flip();
                 reader.read(bytes, chars);
                 chars.flip();
-                assertEquals(chars.toString(), expected);
+                assertEquals(expected, chars.toString());
                 reader.reset();
                 writer.reset();
             }
@@ -257,7 +257,7 @@ public final class BinaryPrimitivesTest {
                     throw new UncheckedIOException(e);
                 }
                 chars.flip();
-                assertEquals(chars.toString(), expected);
+                assertEquals(expected, chars.toString());
                 reader.reset();
                 writer.reset();
                 chars.clear();
@@ -301,7 +301,7 @@ public final class BinaryPrimitivesTest {
                     buf.position(p0);
                 }
                 chars.flip();
-                assertEquals(chars.toString(), expected);
+                assertEquals(expected, chars.toString());
                 reader.reset();
                 chars.clear();
             });
@@ -356,7 +356,7 @@ public final class BinaryPrimitivesTest {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        assertEquals(reader.get(), expected);
+        assertEquals(expected, reader.get());
     }
 
     private void verifyWrite(byte[] expected, int data, int N) {
@@ -364,6 +364,6 @@ public final class BinaryPrimitivesTest {
         ByteBuffer buf = ByteBuffer.allocate(2 * expected.length);
         w.configure(data, N, 1).write(buf);
         buf.flip();
-        assertEquals(buf, ByteBuffer.wrap(expected));
+        assertEquals(ByteBuffer.wrap(expected), buf);
     }
 }

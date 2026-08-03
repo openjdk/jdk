@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,9 +33,6 @@
 #ifdef COMPILER2
 #include "opto/c2_globals.hpp"
 #endif // COMPILER2
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci_globals.hpp"
-#endif
 
 // TODO -- currently, even if all JIT compilers are disabled, the following flags
 // are still available in HotSpot. This should eventually be fixed ...
@@ -234,12 +231,14 @@
                                                                             \
   product(intx, Tier3LoadFeedback, 5,                                       \
           "Tier 3 thresholds will increase twofold when C1 queue size "     \
-          "reaches this amount per compiler thread")                        \
+          "reaches this amount per compiler thread"                         \
+          "Passing 0 disables the threshold scaling")                       \
           range(0, max_jint)                                                \
                                                                             \
   product(intx, Tier4LoadFeedback, 3,                                       \
           "Tier 4 thresholds will increase twofold when C2 queue size "     \
-          "reaches this amount per compiler thread")                        \
+          "reaches this amount per compiler thread"                         \
+          "Passing 0 disables the threshold scaling")                       \
           range(0, max_jint)                                                \
                                                                             \
   product(intx, TieredCompileTaskTimeout, 50,                               \
@@ -263,18 +262,11 @@
                                                                             \
   product(intx, TieredRateUpdateMinTime, 1,                                 \
           "Minimum rate sampling interval (in milliseconds)")               \
-          range(0, max_intx)                                                \
+          range(1, max_intx)                                                \
                                                                             \
   product(intx, TieredRateUpdateMaxTime, 25,                                \
           "Maximum rate sampling interval (in milliseconds)")               \
-          range(0, max_intx)                                                \
-                                                                            \
-  product(double, Tier0ProfileDelayFactor, 100.0, DIAGNOSTIC,               \
-          "Delay profiling/compiling of methods that were "                 \
-          "observed to be lukewarm")                                        \
-                                                                            \
-  product(double, Tier2ProfileDelayFactor, 250.0, DIAGNOSTIC,               \
-          "Delay profiling of methods that were observed to be lukewarm")   \
+          range(1, max_intx)                                                \
                                                                             \
   product(bool, SkipTier2IfPossible, false, DIAGNOSTIC,                     \
           "Compile at tier 4 instead of tier 2 in training replay "         \
@@ -284,9 +276,7 @@
           "Compilation modes: "                                             \
           "default: normal tiered compilation; "                            \
           "quick-only: C1-only mode; "                                      \
-          "high-only: C2/JVMCI-only mode; "                                 \
-          "high-only-quick-internal: C2/JVMCI-only mode, "                  \
-          "with JVMCI compiler compiled with C1.")                          \
+          "high-only: C2-only mode.")                                       \
                                                                             \
   product(bool, PrintTieredEvents, false,                                   \
           "Print tiered events notifications")                              \

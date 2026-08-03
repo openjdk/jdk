@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,9 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
-import sun.security.util.RawKeySpec;
 
 import java.security.KeyFactory;
+import java.security.PublicKey;
 import java.security.Security;
 import java.security.Signature;
 import java.util.HexFormat;
@@ -64,7 +64,23 @@ public class HSSBench {
 
     public static Signature getVerifier(byte[] pk) throws Exception {
         var kf = KeyFactory.getInstance("HSS/LMS", Security.getProvider("SUN"));
-        var pk1 = kf.generatePublic(new RawKeySpec(pk));
+        var pk1 = (PublicKey) kf.translateKey(new PublicKey() {
+
+            @Override
+            public String getAlgorithm() {
+                return "HSS/LMS";
+            }
+
+            @Override
+            public String getFormat() {
+                return "RAW";
+            }
+
+            @Override
+            public byte[] getEncoded() {
+                return pk.clone();
+            }
+        });
 
         var vv = Signature.getInstance("HSS/LMS");
         vv.initVerify(pk1);

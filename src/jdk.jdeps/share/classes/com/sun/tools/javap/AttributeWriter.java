@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -221,7 +221,7 @@ public class AttributeWriter extends BasicWriter {
                         for (var flag : maskToAccessFlagsReportUnknown(access_flags, AccessFlag.Location.INNER_CLASS, cffv)) {
                             if (flag.sourceModifier() && (flag != AccessFlag.ABSTRACT
                                     || !info.has(AccessFlag.INTERFACE))) {
-                                print(Modifier.toString(flag.mask()) + " ");
+                                print(flag.name().toLowerCase(Locale.ROOT) + " ");
                             }
                         }
                         if (info.innerName().isPresent()) {

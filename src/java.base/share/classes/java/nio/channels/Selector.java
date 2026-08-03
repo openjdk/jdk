@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -236,7 +236,7 @@ import java.util.function.Consumer;
  *
  *   <li><p> By invoking the blocked thread's {@link
  *   java.lang.Thread#interrupt() interrupt} method, in which case its
- *   interrupt status will be set and the selector's {@link #wakeup wakeup}
+ *   interrupted status will be set and the selector's {@link #wakeup wakeup}
  *   method will be invoked. </p></li>
  *
  * </ul>

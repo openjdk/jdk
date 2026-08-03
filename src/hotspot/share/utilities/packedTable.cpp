@@ -21,11 +21,11 @@
  * questions.
  *
  */
-#include <cstring>
-
 #include "utilities/align.hpp"
 #include "utilities/count_leading_zeros.hpp"
 #include "utilities/packedTable.hpp"
+
+#include <cstring>
 
 // The thresholds are inclusive, and in practice the limits are rounded
 // to the nearest power-of-two - 1.

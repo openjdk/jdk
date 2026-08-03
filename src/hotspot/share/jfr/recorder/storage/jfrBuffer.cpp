@@ -59,7 +59,7 @@ void JfrBuffer::reinitialize() {
 }
 
 const u1* JfrBuffer::top() const {
-  return Atomic::load_acquire(&_top);
+  return AtomicAccess::load_acquire(&_top);
 }
 
 const u1* JfrBuffer::stable_top() const {
@@ -73,14 +73,14 @@ const u1* JfrBuffer::stable_top() const {
 void JfrBuffer::set_top(const u1* new_top) {
   assert(new_top <= end(), "invariant");
   assert(new_top >= start(), "invariant");
-  Atomic::release_store(&_top, new_top);
+  AtomicAccess::release_store(&_top, new_top);
 }
 
 const u1* JfrBuffer::acquire_critical_section_top() const {
   do {
     const u1* current_top = stable_top();
     assert(current_top != TOP_CRITICAL_SECTION, "invariant");
-    if (Atomic::cmpxchg(&_top, current_top, TOP_CRITICAL_SECTION) == current_top) {
+    if (AtomicAccess::cmpxchg(&_top, current_top, TOP_CRITICAL_SECTION) == current_top) {
       return current_top;
     }
   } while (true);
@@ -105,13 +105,13 @@ void JfrBuffer::acquire(const void* id) {
   const void* current_id;
   do {
     current_id = identity();
-  } while (current_id != nullptr || Atomic::cmpxchg(&_identity, current_id, id) != current_id);
+  } while (current_id != nullptr || AtomicAccess::cmpxchg(&_identity, current_id, id) != current_id);
 }
 
 bool JfrBuffer::try_acquire(const void* id) {
   assert(id != nullptr, "invariant");
   const void* const current_id = identity();
-  return current_id == nullptr && Atomic::cmpxchg(&_identity, current_id, id) == current_id;
+  return current_id == nullptr && AtomicAccess::cmpxchg(&_identity, current_id, id) == current_id;
 }
 
 void JfrBuffer::set_identity(const void* id) {
@@ -123,7 +123,7 @@ void JfrBuffer::set_identity(const void* id) {
 
 void JfrBuffer::release() {
   assert(identity() != nullptr, "invariant");
-  Atomic::release_store(&_identity, (const void*)nullptr);
+  AtomicAccess::release_store(&_identity, (const void*)nullptr);
 }
 
 #ifdef ASSERT
@@ -178,7 +178,7 @@ enum FLAG {
 
 inline u1 load(const volatile u1* dest) {
   assert(dest != nullptr, "invariant");
-  return Atomic::load_acquire(dest);
+  return AtomicAccess::load_acquire(dest);
 }
 
 inline void set(u1* dest, u1 data) {

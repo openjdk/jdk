@@ -194,6 +194,11 @@ define SetupCompilerFlags
     $1_EXTRA_CXXFLAGS += $(CFLAGS_WARNINGS_ARE_ERRORS)
   endif
 
+  ifeq (true, $$($1_LINK_TIME_OPTIMIZATION))
+    $1_EXTRA_CFLAGS += $(C_O_FLAG_LTO)
+    $1_EXTRA_CXXFLAGS += $(CXX_O_FLAG_LTO)
+  endif
+
   ifeq (NONE, $$($1_OPTIMIZATION))
     $1_OPT_CFLAGS := $(C_O_FLAG_NONE)
     $1_OPT_CXXFLAGS := $(CXX_O_FLAG_NONE)
@@ -222,6 +227,18 @@ define SetupLinkerFlags
   # Pickup extra OPENJDK_TARGET_OS_TYPE, OPENJDK_TARGET_OS and TOOLCHAIN_TYPE
   # dependent variables for LDFLAGS and LIBS, and additionally the pair dependent
   # TOOLCHAIN_TYPE plus OPENJDK_TARGET_OS
+  ifeq ($$($1_LINK_TIME_OPTIMIZATION), true)
+    $1_EXTRA_LDFLAGS += $(LDFLAGS_LTO)
+    # Instruct the ld64 linker not to delete the temporary object file
+    # generated during Link Time Optimization
+    ifeq ($(call isTargetOs, macosx), true)
+      $1_EXTRA_LDFLAGS += -Wl,-object_path_lto,$$($1_OBJECT_DIR)/$$($1_NAME)_lto_helper.o
+    endif
+    ifeq ($(TOOLCHAIN_TYPE), microsoft)
+      $1_EXTRA_LDFLAGS += -LTCGOUT:$$($1_OBJECT_DIR)/$$($1_NAME).iobj
+    endif
+  endif
+
   $1_EXTRA_LDFLAGS += $$($1_LDFLAGS_$(OPENJDK_TARGET_OS_TYPE)) $$($1_LDFLAGS_$(OPENJDK_TARGET_OS)) \
       $$($1_LDFLAGS_$(TOOLCHAIN_TYPE)) $$($1_LDFLAGS_$(TOOLCHAIN_TYPE)_$(OPENJDK_TARGET_OS))
   $1_EXTRA_LIBS += $$($1_LIBS_$(OPENJDK_TARGET_OS_TYPE)) $$($1_LIBS_$(OPENJDK_TARGET_OS)) \

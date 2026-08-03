@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.debugger.amd64.*;
 import sun.jvm.hotspot.debugger.windows.amd64.*;
+import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.utilities.AddressOps;
 
 class WindbgCDebugger implements CDebugger {
@@ -66,14 +67,35 @@ class WindbgCDebugger implements CDebugger {
     return null;
   }
 
+  private JavaThread mapThreadProxyToJavaThread(ThreadProxy thread) {
+    var threads = VM.getVM().getThreads();
+    for (int i = 0; i < threads.getNumberOfThreads(); i++) {
+      var jt = threads.getJavaThreadAt(i);
+      if (thread.equals(jt.getThreadProxy())) {
+        return jt;
+      }
+    }
+
+    // not found
+    return null;
+  }
+
   public CFrame topFrameForThread(ThreadProxy thread) throws DebuggerException {
     if (dbg.getCPU().equals("amd64")) {
       AMD64ThreadContext context = (AMD64ThreadContext) thread.getContext();
+
+      // rbp is not needed null check because it could be used as GPR by compiler (cl.exe) option.
       Address rbp = context.getRegisterAsAddress(AMD64ThreadContext.RBP);
-      if (rbp == null) return null;
+
+      Address rsp = context.getRegisterAsAddress(AMD64ThreadContext.RSP);
+      if (rsp == null) return null;
       Address pc  = context.getRegisterAsAddress(AMD64ThreadContext.RIP);
       if (pc == null) return null;
-      return new WindowsAMD64CFrame(dbg, rbp, pc);
+
+      // get JavaThread as the owner from ThreadProxy
+      JavaThread ownerThread = mapThreadProxyToJavaThread(thread);
+
+      return new WindowsAMD64CFrame(dbg, ownerThread, rsp, rbp, pc);
     } else {
       // unsupported CPU!
       return null;

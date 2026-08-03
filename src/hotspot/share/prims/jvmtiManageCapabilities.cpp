@@ -24,9 +24,9 @@
 
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
-#include "runtime/mutexLocker.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiManageCapabilities.hpp"
+#include "runtime/mutexLocker.hpp"
 
 static const jint CAPA_SIZE = (JVMTI_INTERNAL_CAPABILITY_COUNT + 7) / 8;
 
@@ -327,7 +327,6 @@ void JvmtiManageCapabilities::update() {
     avail.can_generate_field_access_events ||
     avail.can_generate_field_modification_events ||
     avail.can_generate_single_step_events ||
-    avail.can_generate_frame_pop_events ||
     avail.can_generate_method_entry_events ||
     avail.can_generate_method_exit_events;
 #ifdef ZERO

@@ -27,15 +27,13 @@ package jdk.jpackage.internal;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-
-import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.FileAssociation;
 import jdk.jpackage.internal.model.MacFileAssociation;
 import jdk.jpackage.internal.model.MacFileAssociationMixin;
 
 final class MacFileAssociationBuilder {
 
-    MacFileAssociation create(FileAssociation fa) throws ConfigException {
+    MacFileAssociation create(FileAssociation fa) {
         Objects.requireNonNull(fa);
 
         final var mixin = new MacFileAssociationMixin.Stub(

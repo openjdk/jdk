@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,17 +149,20 @@ public class AbstractDebuggeeTest {
         }
     }
 
-    public static final int MAX_UNLOAD_ATTEMPS = 5;
-
     public void unloadTestClass(String className, boolean expectedUnloadingResult) {
         ClassUnloader classUnloader = loadedClasses.get(className);
 
-        int unloadAttemps = 0;
-
         if (classUnloader != null) {
-            boolean wasUnloaded = false;
-
-            while (!wasUnloaded && (unloadAttemps++ < MAX_UNLOAD_ATTEMPS)) {
+            boolean wasUnloaded;
+            if (expectedUnloadingResult) {
+                // We expect unloading to succeed. Retry multiple times because
+                // the debug agent creates global references (NewGlobalRef)
+                // when handling ClassPrepare events. These global references
+                // are released only by the agent thread, whose scheduling can
+                // be delayed, causing class unloading to occur later than
+                // expected.
+                wasUnloaded = classUnloader.unloadClassAndWait(10_000);
+            } else {
                 wasUnloaded = classUnloader.unloadClass();
             }
 
@@ -180,13 +183,6 @@ public class AbstractDebuggeeTest {
         } else {
             log.complain("Invalid command 'unloadClass' is requested: class " + className + " was not loaded via ClassUnloader");
             throw new TestBug("Invalid command 'unloadClass' is requested: class " + className + " was not loaded via ClassUnloader");
-        }
-    }
-
-    static public void sleep1sec() {
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
         }
     }
 
@@ -360,9 +356,6 @@ public class AbstractDebuggeeTest {
 
     public void forceGC() {
         eatMemory();
-    }
-
-    public void voidValueMethod() {
     }
 
     public void unexpectedException(Throwable t) {

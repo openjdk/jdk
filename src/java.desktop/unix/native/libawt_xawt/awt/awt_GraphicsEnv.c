@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -900,18 +900,18 @@ void TryInitMITShm(JNIEnv *env, jint *shmExt, jint *shmPixmaps) {
                                IPC_CREAT|mitShmPermissionMask);
         if (shminfo.shmid < 0) {
             AWT_UNLOCK();
-            J2dRlsTraceLn1(J2D_TRACE_ERROR,
-                           "TryInitMITShm: shmget has failed: %s",
-                           strerror(errno));
+            J2dRlsTraceLn(J2D_TRACE_ERROR,
+                          "TryInitMITShm: shmget has failed: %s",
+                          strerror(errno));
             return;
         }
         shminfo.shmaddr = (char *) shmat(shminfo.shmid, 0, 0);
         if (shminfo.shmaddr == ((char *) -1)) {
             shmctl(shminfo.shmid, IPC_RMID, 0);
             AWT_UNLOCK();
-            J2dRlsTraceLn1(J2D_TRACE_ERROR,
-                           "TryInitMITShm: shmat has failed: %s",
-                           strerror(errno));
+            J2dRlsTraceLn(J2D_TRACE_ERROR,
+                          "TryInitMITShm: shmat has failed: %s",
+                          strerror(errno));
             return;
         }
         shminfo.readOnly = True;
@@ -1268,11 +1268,15 @@ Java_sun_awt_X11GraphicsDevice_pGetBounds(JNIEnv *env, jobject this, jint screen
                                                xinInfo[screen].width,
                                                xinInfo[screen].height);
                     XFree(xinInfo);
+                    if (!bounds) {
+                        return NULL;
+                    }
                 }
             } else {
                 jclass exceptionClass = (*env)->FindClass(env, "java/lang/IllegalArgumentException");
                 if (exceptionClass != NULL) {
                     (*env)->ThrowNew(env, exceptionClass, "Illegal screen index");
+                    return NULL;
                 }
             }
         }
@@ -1544,8 +1548,8 @@ static XRRSetCrtcConfigType              awt_XRRSetCrtcConfig;
     do { \
         awt_##f = (f##Type)dlsym(pLibRandR, #f); \
         if (awt_##f == NULL) { \
-            J2dRlsTraceLn1(J2D_TRACE_ERROR, \
-                           "X11GD_InitXrandrFuncs: Could not load %s", #f); \
+            J2dRlsTraceLn(J2D_TRACE_ERROR, \
+                          "X11GD_InitXrandrFuncs: Could not load %s", #f); \
             dlclose(pLibRandR); \
             return JNI_FALSE; \
         } \
@@ -1583,9 +1587,9 @@ X11GD_InitXrandrFuncs(JNIEnv *env)
          * a fake one provided by RANDR itself. See Java bug 6636469 for info.
          */
         if (!(rr_maj_ver > 1 || (rr_maj_ver == 1 && rr_min_ver >= 2))) {
-            J2dRlsTraceLn2(J2D_TRACE_INFO, "X11GD_InitXrandrFuncs: Can't use Xrandr. "
-                           "Xinerama is active and Xrandr version is %d.%d",
-                           rr_maj_ver, rr_min_ver);
+            J2dRlsTraceLn(J2D_TRACE_INFO, "X11GD_InitXrandrFuncs: Can't use Xrandr. "
+                          "Xinerama is active and Xrandr version is %d.%d",
+                          rr_maj_ver, rr_min_ver);
             dlclose(pLibRandR);
             return JNI_FALSE;
         }

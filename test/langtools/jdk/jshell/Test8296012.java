@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,21 +26,22 @@
  * @bug 8296012
  * @summary jshell crashes on mismatched record pattern
  * @build KullaTesting TestingInputStream
- * @run testng Test8296012
+ * @run junit Test8296012
  */
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class Test8296012 extends KullaTesting {
 
+    @Test
     public void test() {
         assertEval("record Foo(int x, int y) {}");
         assertEvalFail("switch (new Foo(1, 2)) { case Foo(int z) -> z; }");
     }
 
-    @org.testng.annotations.BeforeMethod
+    @BeforeEach
     public void setUp() {
         super.setUp(bc -> bc.compilerOptions("--source", System.getProperty("java.specification.version"), "--enable-preview").remoteVMOptions("--enable-preview"));
     }

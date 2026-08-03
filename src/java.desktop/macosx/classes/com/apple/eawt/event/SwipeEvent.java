@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ package com.apple.eawt.event;
  *
  * @since Java for Mac OS X 10.5 Update 7, Java for Mac OS X 10.6 Update 2
  */
-public class SwipeEvent extends GestureEvent {
+public final class SwipeEvent extends GestureEvent {
     SwipeEvent() {
         // package private
     }

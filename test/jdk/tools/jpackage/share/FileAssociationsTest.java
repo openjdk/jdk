@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,18 @@
  * questions.
  */
 
-import static jdk.jpackage.test.JPackageStringBundle.MAIN;
+import static java.util.Map.entry;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Map;
-import jdk.jpackage.test.AdditionalLauncher;
+import java.util.List;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.FileAssociations;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
-import jdk.jpackage.test.RunnablePackageTest;
 import jdk.jpackage.test.TKit;
 
 /**
@@ -66,7 +66,7 @@ import jdk.jpackage.test.TKit;
  * @requires jpackage.test.SQETest == null
  * @build jdk.jpackage.test.*
  * @compile -Xlint:all -Werror FileAssociationsTest.java
- * @run main/othervm/timeout=1080 -Xmx512m jdk.jpackage.test.Main
+ * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=FileAssociationsTest
  */
 
@@ -86,8 +86,8 @@ public class FileAssociationsTest {
     @Test
     @Parameter("true")
     @Parameter("false")
-    public static void test(boolean includeDescription) {
-        PackageTest packageTest = new PackageTest().configureHelloApp();
+    public static void test(boolean includeDescription) throws IOException {
+        PackageTest packageTest = new PackageTest();
 
         // Not supported
         packageTest.excludeTypes(PackageType.MAC_DMG);
@@ -98,10 +98,8 @@ public class FileAssociationsTest {
         }
         fa.applyTo(packageTest);
 
-        Path icon = TKit.TEST_SRC_ROOT.resolve(Path.of("resources", "icon"
-                + TKit.ICON_SUFFIX));
-
-        icon = TKit.createRelativePathCopy(icon);
+        var icon = TKit.createTempDirectory("icon-dir").resolve(ICON.getFileName());
+        Files.copy(ICON, icon);
 
         new FileAssociations("jptest2")
                 .setFilename("fa2")
@@ -116,15 +114,15 @@ public class FileAssociationsTest {
         final Path propFile = TKit.workDir().resolve("fa.properties");
 
         initPackageTest().addRunOnceInitializer(() -> {
-            TKit.createPropertiesFile(propFile, Map.of(
-                "extension", "foo",
-                "description", "bar"
+            TKit.createPropertiesFile(propFile, List.of(
+                    entry("extension", "foo"),
+                    entry("description", "bar")
             ));
         }).addInitializer(cmd -> {
             cmd.addArguments("--file-associations", propFile);
-            cmd.validateOutput(
-                    MAIN.cannedFormattedString("error.no-content-types-for-file-association", 1),
-                    MAIN.cannedFormattedString("error.no-content-types-for-file-association.advice", 1));
+            cmd.validateErr(
+                    JPackageCommand.makeError("error.no-content-types-for-file-association", 1),
+                    JPackageCommand.makeAdvice("error.no-content-types-for-file-association.advice", 1));
         }).run();
     }
 
@@ -133,45 +131,17 @@ public class FileAssociationsTest {
         final Path propFile = TKit.workDir().resolve("fa.properties");
 
         initPackageTest().addRunOnceInitializer(() -> {
-            TKit.createPropertiesFile(propFile, Map.of(
-                "mime-type", "application/x-jpackage-foo, application/x-jpackage-bar",
-                "extension", "foo",
-                "description", "bar"
+            TKit.createPropertiesFile(propFile, List.of(
+                    entry("mime-type", "application/x-jpackage-foo, application/x-jpackage-bar"),
+                    entry("extension", "foo"),
+                    entry("description", "bar")
             ));
         }).addInitializer(cmd -> {
             cmd.addArguments("--file-associations", propFile);
-            cmd.validateOutput(
-                    MAIN.cannedFormattedString("error.too-many-content-types-for-file-association", 1),
-                    MAIN.cannedFormattedString("error.too-many-content-types-for-file-association.advice", 1));
+            cmd.validateErr(
+                    JPackageCommand.makeError("error.too-many-content-types-for-file-association", 1),
+                    JPackageCommand.makeAdvice("error.too-many-content-types-for-file-association.advice", 1));
         }).run();
-    }
-
-    @Test
-    @Parameter("true")
-    @Parameter("false")
-    public static void testFromAppImage(boolean withAdditionalLauncher) {
-
-        var appImageCmd = JPackageCommand.helloAppImage();
-
-        if (RunnablePackageTest.hasAction(RunnablePackageTest.Action.INSTALL)) {
-            // Ensure launchers are executable.
-            appImageCmd.ignoreFakeRuntime();
-        }
-
-        if (withAdditionalLauncher) {
-            new AdditionalLauncher("foo").applyTo(appImageCmd);
-        }
-
-        var test = new PackageTest().excludeTypes(PackageType.MAC_DMG)
-        .addRunOnceInitializer(appImageCmd::execute)
-        .addInitializer(cmd -> {
-            cmd.removeArgumentWithValue("--input");
-            cmd.setArgumentValue("--app-image", appImageCmd.outputBundle());
-        });
-
-        new FileAssociations("jptest3").applyTo(test);
-
-        test.run();
     }
 
     private static PackageTest initPackageTest() {
@@ -181,4 +151,6 @@ public class FileAssociationsTest {
                 .addInitializer(JPackageCommand::setFakeRuntime)
                 .setExpectedExitCode(1);
     }
+
+    private static final Path ICON = TKit.TEST_SRC_ROOT.resolve(Path.of("resources", "icon" + TKit.ICON_SUFFIX));
 }

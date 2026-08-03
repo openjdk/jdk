@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8319311
  * @summary Tests JdiStarter
  * @modules jdk.jshell/jdk.jshell jdk.jshell/jdk.jshell.spi jdk.jshell/jdk.jshell.execution
- * @run testng JdiStarterTest
+ * @run junit JdiStarterTest
  */
 
 import java.util.Collections;
@@ -34,26 +34,26 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.testng.annotations.Test;
 import jdk.jshell.JShell;
 import jdk.jshell.SnippetEvent;
 import jdk.jshell.execution.JdiDefaultExecutionControl.JdiStarter;
 import jdk.jshell.execution.JdiDefaultExecutionControl.JdiStarter.TargetDescription;
 import jdk.jshell.execution.JdiExecutionControlProvider;
 import jdk.jshell.execution.JdiInitiator;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class JdiStarterTest {
 
+    @Test
     public void jdiStarter() {
         // turn on logging of launch failures
         Logger.getLogger("jdk.jshell.execution").setLevel(Level.ALL);
         JdiStarter starter = (env, parameters, port) -> {
-            assertEquals(parameters.get(JdiExecutionControlProvider.PARAM_HOST_NAME), "");
-            assertEquals(parameters.get(JdiExecutionControlProvider.PARAM_LAUNCH), "false");
-            assertEquals(parameters.get(JdiExecutionControlProvider.PARAM_REMOTE_AGENT), "jdk.jshell.execution.RemoteExecutionControl");
-            assertEquals(parameters.get(JdiExecutionControlProvider.PARAM_TIMEOUT), "5000");
+            assertEquals("", parameters.get(JdiExecutionControlProvider.PARAM_HOST_NAME));
+            assertEquals("false", parameters.get(JdiExecutionControlProvider.PARAM_LAUNCH));
+            assertEquals("jdk.jshell.execution.RemoteExecutionControl", parameters.get(JdiExecutionControlProvider.PARAM_REMOTE_AGENT));
+            assertEquals("5000", parameters.get(JdiExecutionControlProvider.PARAM_TIMEOUT));
             JdiInitiator jdii =
                     new JdiInitiator(port,
                                      env.extraRemoteVMOptions(),

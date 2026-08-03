@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -258,6 +258,7 @@ public final class Generators {
      * An overload for restrictable generators exists.
      */
     @SafeVarargs
+    @SuppressWarnings("varargs")
     public final <T> Generator<T> mixed(List<Integer> weights, Generator<T>... generators) {
         return new MixedGenerator<>(this, Arrays.asList(generators), weights);
     }
@@ -279,6 +280,7 @@ public final class Generators {
      * generator.
      */
     @SafeVarargs
+    @SuppressWarnings("varargs")
     public final <T extends Comparable<T>> RestrictableGenerator<T> mixed(List<Integer> weights, RestrictableGenerator<T>... generators) {
         return new RestrictableMixedGenerator<>(this, Arrays.asList(generators), weights);
     }
@@ -604,6 +606,29 @@ public final class Generators {
     public void fill(Generator<Float> generator, float[] a) {
         fillFloat(generator, MemorySegment.ofArray(a));
     }
+
+    /**
+     * Fills the memory segments with shorts obtained by calling next on the generator.
+     *
+     * @param generator The generator from which to source the values.
+     * @param ms Memory segment to be filled with random values.
+     */
+    public void fillShort(Generator<Short> generator, MemorySegment ms) {
+        var layout = ValueLayout.JAVA_SHORT_UNALIGNED;
+        for (long i = 0; i < ms.byteSize() / layout.byteSize(); i++) {
+            ms.setAtIndex(layout, i, generator.next());
+        }
+    }
+
+    /**
+     * Fill the array with shorts using the distribution of the generator.
+     *
+     * @param a Array to be filled with random values.
+     */
+    public void fill(Generator<Short> generator, short[] a) {
+        fillShort(generator, MemorySegment.ofArray(a));
+    }
+
 
     /**
      * Fills the memory segments with ints obtained by calling next on the generator.

@@ -26,7 +26,6 @@ package jdk.jpackage.internal;
 
 import java.util.Objects;
 import java.util.Optional;
-import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.LinuxRpmPackage;
 import jdk.jpackage.internal.model.LinuxRpmPackageMixin;
 
@@ -36,7 +35,7 @@ final class LinuxRpmPackageBuilder {
         this.pkgBuilder = Objects.requireNonNull(pkgBuilder);
     }
 
-    LinuxRpmPackage create() throws ConfigException {
+    LinuxRpmPackage create() {
         if (pkgBuilder.release().isEmpty()) {
             pkgBuilder.release("1");
         }

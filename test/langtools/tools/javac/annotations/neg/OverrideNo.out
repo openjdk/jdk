@@ -1,2 +1,2 @@
-OverrideNo.java:16:5: compiler.err.method.does.not.override.superclass
+OverrideNo.java:16:5: compiler.err.method.does.not.override.superclass: f(), overrideNo.B
 1 error

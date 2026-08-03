@@ -45,13 +45,13 @@ import java.util.List;
  *
  * @run main/othervm -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                   -Xmx128m -Xms128m
- *                   -XX:G1HeapRegionSize=1M -XX:InitiatingHeapOccupancyPercent=100 -XX:-G1UseAdaptiveIHOP
+ *                   -XX:G1HeapRegionSize=1M -XX:G1IHOP=100 -XX:-G1UseAdaptiveIHOP
  *                   -Xlog:gc -Xlog:gc:file=TestHeapCountersRuntime.gc.log
  *                    gc.g1.humongousObjects.TestHeapCounters RUNTIME_COUNTER
  *
  * @run main/othervm -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                   -Xmx128m -Xms128m
- *                   -XX:G1HeapRegionSize=1M -XX:InitiatingHeapOccupancyPercent=100 -XX:-G1UseAdaptiveIHOP
+ *                   -XX:G1HeapRegionSize=1M -XX:G1IHOP=100 -XX:-G1UseAdaptiveIHOP
  *                   -Xlog:gc -Xlog:gc:file=TestHeapCountersMXBean.gc.log
  *                    gc.g1.humongousObjects.TestHeapCounters MX_BEAN_COUNTER
  */

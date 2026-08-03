@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,16 +43,15 @@
 #include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
-#include "runtime/objectMonitor.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/synchronizer.inline.hpp"
+#include "runtime/synchronizer.hpp"
 #include "runtime/vframe.inline.hpp"
-#include "runtime/vframeArray.hpp"
 #include "runtime/vframe_hp.hpp"
+#include "runtime/vframeArray.hpp"
 
 vframe::vframe(const frame* fr, const RegisterMap* reg_map, JavaThread* thread)
 : _reg_map(reg_map), _thread(thread),
@@ -249,7 +248,7 @@ void javaVFrame::print_lock_info_on(outputStream* st, bool is_virtual, int frame
           // The first stage of async deflation does not affect any field
           // used by this comparison so the ObjectMonitor* is usable here.
           if (mark.has_monitor()) {
-            ObjectMonitor* mon = ObjectSynchronizer::read_monitor(current, monitor->owner(), mark);
+            ObjectMonitor* mon = ObjectSynchronizer::read_monitor(monitor->owner(), mark);
             if (// if the monitor is null we must be in the process of locking
                 mon == nullptr ||
                 // we have marked ourself as pending on this monitor

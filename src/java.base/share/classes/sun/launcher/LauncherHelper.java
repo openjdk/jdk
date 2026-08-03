@@ -98,11 +98,14 @@ public final class LauncherHelper {
             "javafx.application.Application";
     private static final String JAVAFX_FXHELPER_CLASS_NAME_SUFFIX =
             "sun.launcher.LauncherHelper$FXHelper";
+    private static final String JAVAFX_GRAPHICS_MODULE_NAME =
+            "javafx.graphics";
     private static final String LAUNCHER_AGENT_CLASS = "Launcher-Agent-Class";
     private static final String MAIN_CLASS = "Main-Class";
     private static final String ADD_EXPORTS = "Add-Exports";
     private static final String ADD_OPENS = "Add-Opens";
     private static final String ENABLE_NATIVE_ACCESS = "Enable-Native-Access";
+    private static final String ENABLE_FINAL_FIELD_MUTATION = "Enable-Final-Field-Mutation";
 
     private static StringBuilder outBuf = new StringBuilder();
 
@@ -647,12 +650,24 @@ public final class LauncherHelper {
         if (opens != null) {
             addExportsOrOpens(opens, true);
         }
+
+        // Enable-Native-Access
         String enableNativeAccess = mainAttrs.getValue(ENABLE_NATIVE_ACCESS);
         if (enableNativeAccess != null) {
             if (!enableNativeAccess.equals("ALL-UNNAMED")) {
                 abort(null, "java.launcher.jar.error.illegal.ena.value", enableNativeAccess);
             }
             Modules.addEnableNativeAccessToAllUnnamed();
+        }
+
+        // Enable-Final-Field-Mutation
+        String enableFinalFieldMutation = mainAttrs.getValue(ENABLE_FINAL_FIELD_MUTATION);
+        if (enableFinalFieldMutation != null) {
+            if (!enableFinalFieldMutation.equals("ALL-UNNAMED")) {
+                abort(null, "java.launcher.jar.error.illegal.effm.value",
+                        enableFinalFieldMutation);
+            }
+            Modules.addEnableFinalMutationToAllUnnamed();
         }
 
         /*
@@ -755,8 +770,9 @@ public final class LauncherHelper {
          * the main class may or may not have a main method, so do this before
          * validating the main class.
          */
-        if (JAVAFX_FXHELPER_CLASS_NAME_SUFFIX.equals(mainClass.getName()) ||
-            doesExtendFXApplication(mainClass)) {
+        if ((JAVAFX_FXHELPER_CLASS_NAME_SUFFIX.equals(mainClass.getName()) ||
+                doesExtendFXApplication(mainClass)) &&
+                ModuleLayer.boot().findModule(JAVAFX_GRAPHICS_MODULE_NAME).isPresent()) {
             // Will abort() if there are problems with FX runtime
             FXHelper.setFXLaunchParameters(what, mode);
             mainClass = FXHelper.class;
@@ -1068,9 +1084,6 @@ public final class LauncherHelper {
     }
 
     static final class FXHelper {
-
-        private static final String JAVAFX_GRAPHICS_MODULE_NAME =
-                "javafx.graphics";
 
         private static final String JAVAFX_LAUNCHER_CLASS_NAME =
                 "com.sun.javafx.application.LauncherImpl";

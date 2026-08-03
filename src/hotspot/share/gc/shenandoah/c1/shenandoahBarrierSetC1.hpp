@@ -127,66 +127,12 @@ public:
     visitor->do_input(_addr);
     visitor->do_temp(_addr);
     visitor->do_temp(_result);
+    visitor->do_output(_result);
     visitor->do_temp(_tmp1);
     visitor->do_temp(_tmp2);
   }
 #ifndef PRODUCT
   virtual void print_name(outputStream* out) const { out->print("ShenandoahLoadReferenceBarrierStub"); }
-#endif // PRODUCT
-};
-
-class LIR_OpShenandoahCompareAndSwap : public LIR_Op {
- friend class LIR_OpVisitState;
-
-private:
-  LIR_Opr _addr;
-  LIR_Opr _cmp_value;
-  LIR_Opr _new_value;
-  LIR_Opr _tmp1;
-  LIR_Opr _tmp2;
-
-public:
-  LIR_OpShenandoahCompareAndSwap(LIR_Opr addr, LIR_Opr cmp_value, LIR_Opr new_value,
-                                 LIR_Opr t1, LIR_Opr t2, LIR_Opr result)
-    : LIR_Op(lir_none, result, nullptr)  // no info
-    , _addr(addr)
-    , _cmp_value(cmp_value)
-    , _new_value(new_value)
-    , _tmp1(t1)
-    , _tmp2(t2)                                  { }
-
-  LIR_Opr addr()        const                    { return _addr;  }
-  LIR_Opr cmp_value()   const                    { return _cmp_value; }
-  LIR_Opr new_value()   const                    { return _new_value; }
-  LIR_Opr tmp1()        const                    { return _tmp1;      }
-  LIR_Opr tmp2()        const                    { return _tmp2;      }
-
-  virtual void visit(LIR_OpVisitState* state) {
-    if (_info)                              state->do_info(_info);
-    assert(_addr->is_valid(), "used");      state->do_input(_addr);
-                                            state->do_temp(_addr);
-    assert(_cmp_value->is_valid(), "used"); state->do_input(_cmp_value);
-                                            state->do_temp(_cmp_value);
-    assert(_new_value->is_valid(), "used"); state->do_input(_new_value);
-                                            state->do_temp(_new_value);
-    if (_tmp1->is_valid())                  state->do_temp(_tmp1);
-    if (_tmp2->is_valid())                  state->do_temp(_tmp2);
-    if (_result->is_valid())                state->do_output(_result);
-  }
-
-  virtual void emit_code(LIR_Assembler* masm);
-
-  virtual void print_instr(outputStream* out) const {
-    addr()->print(out);      out->print(" ");
-    cmp_value()->print(out); out->print(" ");
-    new_value()->print(out); out->print(" ");
-    tmp1()->print(out);      out->print(" ");
-    tmp2()->print(out);      out->print(" ");
-  }
-#ifndef PRODUCT
-  virtual const char* name() const {
-    return "shenandoah_cas_obj";
-  }
 #endif // PRODUCT
 };
 
@@ -244,7 +190,7 @@ protected:
 
   virtual LIR_Opr atomic_xchg_at_resolved(LIRAccess& access, LIRItem& value);
 
-  void post_barrier(LIRAccess& access, LIR_Opr addr, LIR_Opr new_val);
+  void post_barrier(LIRAccess& access, LIR_Opr addr);
 
 public:
 

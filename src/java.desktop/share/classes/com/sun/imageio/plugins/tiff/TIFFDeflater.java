@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ public class TIFFDeflater extends TIFFCompressor {
         this.deflater = new Deflater(deflateLevel);
     }
 
+    @Override
     public int encode(byte[] b, int off,
                       int width, int height,
                       int[] bitsPerSample,

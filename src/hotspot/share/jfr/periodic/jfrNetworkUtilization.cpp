@@ -22,13 +22,13 @@
  *
  */
 
-#include "logging/log.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/metadata/jfrSerializer.hpp"
 #include "jfr/periodic/jfrNetworkUtilization.hpp"
 #include "jfr/periodic/jfrOSInterface.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
+#include "logging/log.hpp"
 #include "runtime/os_perf.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
@@ -46,7 +46,7 @@ static GrowableArray<InterfaceEntry>* _interfaces = nullptr;
 void JfrNetworkUtilization::destroy() {
   if (_interfaces != nullptr) {
     for (int i = 0; i < _interfaces->length(); ++i) {
-      FREE_C_HEAP_ARRAY(char, _interfaces->at(i).name);
+      FREE_C_HEAP_ARRAY(_interfaces->at(i).name);
     }
     delete _interfaces;
     _interfaces = nullptr;

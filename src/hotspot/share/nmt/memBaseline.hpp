@@ -35,7 +35,6 @@
 
 typedef LinkedListIterator<MallocSite>                   MallocSiteIterator;
 typedef LinkedListIterator<VirtualMemoryAllocationSite>  VirtualMemorySiteIterator;
-typedef LinkedListIterator<ReservedMemoryRegion>         VirtualMemoryAllocationIterator;
 
 /*
  * Baseline a memory snapshot
@@ -71,7 +70,7 @@ class MemBaseline {
   LinkedListImpl<MallocSite>                  _malloc_sites;
 
   // All virtual memory allocations
-  LinkedListImpl<ReservedMemoryRegion>        _virtual_memory_allocations;
+  RegionsTree* _vma_allocations;
 
   // Virtual memory allocations by allocation sites, always in by_address
   // order
@@ -86,7 +85,12 @@ class MemBaseline {
   // create a memory baseline
   MemBaseline():
     _instance_class_count(0), _array_class_count(0), _thread_count(0),
+    _vma_allocations(nullptr),
     _baseline_type(Not_baselined) {
+  }
+
+  ~MemBaseline() {
+    delete _vma_allocations;
   }
 
   void baseline(bool summaryOnly = true);
@@ -110,9 +114,9 @@ class MemBaseline {
 
   // Virtual memory allocation iterator always returns in virtual memory
   // base address order.
-  VirtualMemoryAllocationIterator virtual_memory_allocations() {
-    assert(!_virtual_memory_allocations.is_empty(), "Not detail baseline");
-    return VirtualMemoryAllocationIterator(_virtual_memory_allocations.head());
+  RegionsTree* virtual_memory_allocations() {
+    assert(_vma_allocations != nullptr, "Not detail baseline");
+    return _vma_allocations;
   }
 
   // Total reserved memory = total malloc'd memory + total reserved virtual
@@ -185,7 +189,8 @@ class MemBaseline {
 
     _malloc_sites.clear();
     _virtual_memory_sites.clear();
-    _virtual_memory_allocations.clear();
+    delete _vma_allocations;
+    _vma_allocations = nullptr;
   }
 
  private:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,10 @@
  * questions.
  */
 
-import java.awt.AWTException;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Point;
@@ -42,18 +42,18 @@ import java.awt.image.VolatileImage;
  * make sure the pixels on the screen are red.
  *
  * Note that we force the use of shared memory pixmaps in the shell script.
- *
- * @author Dmitri.Trembovetski
  */
 
 public class SharedMemoryPixmapsTest {
-    static final int IMAGE_SIZE = 100;
-    static boolean show = false;
-    final Frame testFrame;
-    /** Creates a new instance of SharedMemoryPixmapsTest */
-    public SharedMemoryPixmapsTest() {
+    static final int IMAGE_SIZE = 200;
+    static volatile boolean show = false;
+    static volatile Frame testFrame;
+    static volatile TestComponent testComponent;
+
+    static void createUI() {
         testFrame = new Frame("SharedMemoryPixmapsTest");
-        testFrame.add(new TestComponent());
+        testComponent = new TestComponent();
+        testFrame.add(testComponent);
         testFrame.setUndecorated(true);
         testFrame.setResizable(false);
         testFrame.pack();
@@ -62,7 +62,7 @@ public class SharedMemoryPixmapsTest {
         testFrame.toFront();
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         for (String s : args) {
             if ("-show".equals(s)) {
                 show = true;
@@ -70,12 +70,43 @@ public class SharedMemoryPixmapsTest {
                 System.err.println("Usage: SharedMemoryPixmapsTest [-show]");
             }
         }
-        new SharedMemoryPixmapsTest();
+        EventQueue.invokeAndWait(SharedMemoryPixmapsTest::createUI);
+        if (testRendering()) {
+            System.err.println("Test Passed");
+        } else {
+            System.err.println("Test Failed");
+        }
+        if (!show && testFrame != null) {
+            EventQueue.invokeAndWait(testFrame::dispose);
+        }
     }
 
-    private class TestComponent extends Component {
+    static boolean testRendering() throws Exception {
+        Robot r = new Robot();
+        r.waitForIdle();
+        r.delay(2000);
+        Point p = testComponent.getLocationOnScreen();
+        BufferedImage b =
+            r.createScreenCapture(new Rectangle(p, testComponent.getPreferredSize()));
+        for (int y = 20; y < b.getHeight() - 40; y++) {
+            for (int x = 20; x < b.getWidth() - 40; x++) {
+                if (b.getRGB(x, y) != Color.red.getRGB()) {
+                    System.err.println("Incorrect pixel at "
+                        + x + "x" + y + " : " +
+                        Integer.toHexString(b.getRGB(x, y)));
+                    if (show) {
+                        return false;
+                    }
+                    System.err.println("Test Failed");
+                    System.exit(1);
+                }
+            }
+        }
+        return true;
+    }
+
+    static class TestComponent extends Component {
         VolatileImage vi = null;
-        boolean tested = false;
 
         void initVI() {
             int res;
@@ -104,54 +135,10 @@ public class SharedMemoryPixmapsTest {
                 g.setColor(Color.green);
                 g.fillRect(0, 0, getWidth(), getHeight());
 
+                vi = null;
                 initVI();
                 g.drawImage(vi, 0, 0, null);
             } while (vi.contentsLost());
-
-            Toolkit.getDefaultToolkit().sync();
-            if (!tested) {
-                if (testRendering()) {
-                    System.err.println("Test Passed");
-                } else {
-                    System.err.println("Test Failed");
-                }
-                tested = true;
-            }
-            if (!show) {
-                testFrame.setVisible(false);
-                testFrame.dispose();
-            }
-        }
-
-        private boolean testRendering() throws RuntimeException {
-            try {
-                Thread.sleep(2000);
-            } catch (InterruptedException ex) {}
-            Robot r = null;
-            try {
-                r = new Robot();
-            } catch (AWTException ex) {
-                ex.printStackTrace();
-                throw new RuntimeException("Can't create Robot");
-            }
-            Point p = getLocationOnScreen();
-            BufferedImage b =
-                r.createScreenCapture(new Rectangle(p, getPreferredSize()));
-            for (int y = 0; y < b.getHeight(); y++) {
-                for (int x = 0; x < b.getWidth(); x++) {
-                    if (b.getRGB(x, y) != Color.red.getRGB()) {
-                        System.err.println("Incorrect pixel" + " at "
-                            + x + "x" + y + " : " +
-                            Integer.toHexString(b.getRGB(x, y)));
-                        if (show) {
-                            return false;
-                        }
-                        System.err.println("Test Failed");
-                        System.exit(1);
-                    }
-                }
-            }
-            return true;
         }
 
         @Override
@@ -159,5 +146,4 @@ public class SharedMemoryPixmapsTest {
             return new Dimension(IMAGE_SIZE, IMAGE_SIZE);
         }
     }
-
 }

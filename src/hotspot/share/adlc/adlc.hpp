@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,14 +29,13 @@
 // Standard include file for ADLC parser
 //
 
+#include <ctype.h>
 // standard library constants
 #include <iostream>
-
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
-#include <stdarg.h>
 #include <sys/types.h>
 
 /* Make sure that we have the intptr_t and uintptr_t definitions */
@@ -86,14 +85,8 @@ typedef unsigned __int64 uintptr_t;
 
 // ADLC components
 #include "adlArena.hpp"
-#include "opto/adlcVMDeps.hpp"
-#include "filebuff.hpp"
-#include "dict2.hpp"
-#include "forms.hpp"
-#include "formsopt.hpp"
-#include "formssel.hpp"
-#include "archDesc.hpp"
 #include "adlparse.hpp"
+#include "archDesc.hpp"
 
 // globally define ArchDesc for convenience.  Alternatively every form
 // could have a backpointer to the AD but it's too complicated to pass
