@@ -116,7 +116,7 @@ void BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value, 
   __ z_bre(done);          // Use null result as-is.
 
   __ z_tmll(value, JNIHandles::tag_mask);
-  __ z_btrue(tagged); // not zero
+  __ branch_optimized(Assembler::bcondNotAllZero, tagged); // not zero
 
   // Resolve Local handle
   __ access_load_at(T_OBJECT, IN_NATIVE | AS_RAW, Address(value, 0), value, tmp1, tmp2);
@@ -124,7 +124,7 @@ void BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value, 
 
   __ bind(tagged);
   __ testbit(value, exact_log2(JNIHandles::TypeTag::weak_global)); // test for weak tag
-  __ z_btrue(weak_tag);
+  __ branch_optimized(Assembler::bcondNotAllZero, weak_tag);
 
   // resolve global handle
   __ access_load_at(T_OBJECT, IN_NATIVE, Address(value, -JNIHandles::TypeTag::global), value, tmp1, tmp2);
@@ -169,9 +169,10 @@ void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Re
   __ z_lg(obj, 0, obj); // Resolve (untagged) jobject.
 }
 
-void BarrierSetAssembler::try_resolve_weak_handle(MacroAssembler* masm, Register obj, Register tmp, Label& slow_path) {
-  // Load the oop from the weak handle.
-  __ z_lg(obj, Address(obj));
+void BarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj,
+                                                          Register tmp, Label& slow_path) {
+  // Load the oop from the weak handle without barriers.
+  __ z_lg(obj, Address(weak_handle));
 }
 
 void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
@@ -194,6 +195,10 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
 
     // Fall through to method body.
   __ block_comment("} nmethod_entry_barrier (nmethod_entry_barrier)");
+}
+
+void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register oop, const char* msg) {
+  __ verify_oop(oop, msg);
 }
 
 #ifdef COMPILER2

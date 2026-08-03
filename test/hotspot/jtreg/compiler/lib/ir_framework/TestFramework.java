@@ -364,6 +364,7 @@ public class TestFramework {
      * @return the same framework instance.
      */
     @SafeVarargs
+    @SuppressWarnings("varargs")
     final public TestFramework addCrossProductScenarios(Set<String>... flagSets) {
         TestFormat.checkAndReport(flagSets != null &&
                                   Arrays.stream(flagSets).noneMatch(Objects::isNull) &&
@@ -652,6 +653,18 @@ public class TestFramework {
      */
     public static void assertDeoptimizedByC2(Method m) {
         TestVM.assertDeoptimizedByC2(m);
+    }
+
+    /**
+     * Checks if deopt of {@code m} is stable at the specified {@code compLevel}.
+     *
+     * @param m the method to be checked.
+     * @param compLevel the compilation level.
+     * @return {@code true} if deopt of {@code m} is stable at {@code compLevel};
+     *         {@code false} otherwise.
+     */
+    public static boolean isStableDeopt(Method m, CompLevel compLevel) {
+        return TestVM.isStableDeopt(m, compLevel);
     }
 
     /**

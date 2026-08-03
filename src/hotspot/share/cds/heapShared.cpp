@@ -63,6 +63,7 @@
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -452,8 +453,25 @@ void HeapShared::make_archived_object_cache_gc_safe() {
 
   // Copy all CachedOopInfo into a new table using a different hashing algorithm
   archived_object_cache()->iterate_all([&] (OopHandle oh, CachedOopInfo info) {
-      new_cache->put_when_absent(oh, info);
-    });
+      if (Arguments::is_valhalla_enabled() && oh.resolve()->klass()->is_inline_klass()) {
+        // After make_archived_object_cache_gc_safe() returns,
+        // _archived_object_cache->get() is called only from the (future) AOT code
+        // compiler to access heap oops referenced by AOT-compiled method.
+        //
+        // As planned in JDK 27 (JDK-8335368), AOT-compiled methods will only reference
+        // oops that are Strings, mirrors, or exceptions, all of which are not value
+        // objects.
+        //
+        // We exclude value objects from new_cache, as we don't know how to track them
+        // after the GC moves them. This should be fixed when AOT-compiled methods
+        // need to reference value objects.
+        //
+        // Also TODO: the AOT heap should de-duplicate value objects with identical
+        // values. See JDK-8383381
+      } else {
+        new_cache->put_when_absent(oh, info);
+      }
+  });
 
   destroy_archived_object_cache();
   _archived_object_cache = new_cache;
@@ -630,9 +648,7 @@ bool HeapShared::archive_object(oop obj, oop referrer, KlassSubGraphInfo* subgra
     } else if (java_lang_invoke_ResolvedMethodName::is_instance(obj)) {
       Method* m = java_lang_invoke_ResolvedMethodName::vmtarget(obj);
       if (m != nullptr) {
-        if (RegeneratedClasses::has_been_regenerated(m)) {
-          m = RegeneratedClasses::get_regenerated_object(m);
-        }
+        m = RegeneratedClasses::maybe_get_regenerated_object(m);
         InstanceKlass* method_holder = m->method_holder();
         AOTArtifactFinder::add_cached_class(method_holder);
       }
@@ -694,8 +710,9 @@ void HeapShared::add_scratch_resolved_references(ConstantPool* src, objArrayOop 
   }
 }
 
-objArrayOop HeapShared::scratch_resolved_references(ConstantPool* src) {
-  return (objArrayOop)_scratch_objects_table->get_oop(src);
+refArrayOop HeapShared::scratch_resolved_references(ConstantPool* src) {
+  oop rr = _scratch_objects_table->get_oop(src);
+  return rr == nullptr ? nullptr : oop_cast<refArrayOop>(rr);
 }
 
 void HeapShared::remove_scratch_resolved_references(ConstantPool* src) {
@@ -892,12 +909,32 @@ void HeapShared::copy_java_mirror(oop orig_mirror, oop scratch_m) {
       narrowKlass nk = CompressedKlassPointers::encode(orig_mirror->klass());
       scratch_m->set_mark(markWord::prototype().set_narrow_klass(nk).copy_set_hash(src_hash));
     } else {
+      // For valhalla, the prototype header is the same as markWord::prototype();
       scratch_m->set_mark(markWord::prototype().copy_set_hash(src_hash));
     }
     assert(scratch_m->mark().is_unlocked(), "sanity");
 
     DEBUG_ONLY(intptr_t archived_hash = scratch_m->identity_hash());
     assert(src_hash == archived_hash, "Different hash codes: original " INTPTR_FORMAT ", archived " INTPTR_FORMAT, src_hash, archived_hash);
+  }
+
+  Klass* k = java_lang_Class::as_Klass(orig_mirror);
+  if (k != nullptr && k->is_instance_klass()) {
+    InstanceKlass* ik = InstanceKlass::cast(k);
+
+    if (ik->is_inline_klass() && ik->is_initialized()) {
+      // Only concrete value classes need the null_reset field
+      InlineKlass* ilk = InlineKlass::cast(k);
+      if (ilk->supports_nullable_layouts()) {
+        scratch_m->obj_field_put(ilk->null_reset_value_offset(), ilk->null_reset_value());
+      }
+    }
+
+    if (ik->has_acmp_maps_offset()) {
+      int maps_offset = ik->acmp_maps_offset();
+      oop maps = orig_mirror->obj_field(maps_offset);
+      scratch_m->obj_field_put(maps_offset, maps);
+    }
   }
 
   if (CDSConfig::is_dumping_aot_linked_classes()) {
@@ -1115,6 +1152,9 @@ void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k) {
       // Initialized early during Universe::genesis. No need to be added
       // to the list.
       return;
+    }
+    if (orig_k->is_flatArray_klass()) {
+      _subgraph_object_klasses->append_if_missing(FlatArrayKlass::cast(orig_k)->element_klass());
     }
   } else {
     assert(orig_k->is_typeArray_klass(), "must be");
@@ -1491,11 +1531,24 @@ HeapShared::resolve_or_init_classes_for_subgraph_of(Klass* k, bool do_init, TRAP
       log_info(aot, heap)("%s subgraph %s ", do_init ? "init" : "resolve", k->external_name());
     }
 
+    Array<Klass*>* klasses = record->subgraph_object_klasses();
+
+    if (do_init && klasses != nullptr) {
+      // All the classes of the oops in this subgraph are in the klasses array.
+      // Link them first in case any of the oops are used in the <clinit> methods
+      // invoked in the rest of this function.
+      for (int i = 0; i < klasses->length(); i++) {
+        Klass* klass = klasses->at(i);
+        if (klass->in_aot_cache() && klass->is_instance_klass()) {
+          InstanceKlass::cast(klass)->link_class(CHECK_NULL);
+        }
+      }
+    }
+
     resolve_or_init(k, do_init, CHECK_NULL);
 
     // Load/link/initialize the klasses of the objects in the subgraph.
     // nullptr class loader is used.
-    Array<Klass*>* klasses = record->subgraph_object_klasses();
     if (klasses != nullptr) {
       for (int i = 0; i < klasses->length(); i++) {
         Klass* klass = klasses->at(i);
@@ -1527,7 +1580,11 @@ void HeapShared::resolve_or_init(Klass* k, bool do_init, TRAPS) {
   if (!do_init) {
     if (k->class_loader_data() == nullptr) {
       Klass* resolved_k = SystemDictionary::resolve_or_null(k->name(), CHECK);
-      assert(resolved_k == k, "classes used by archived heap must not be replaced by JVMTI ClassFileLoadHook");
+      if (resolved_k->is_array_klass()) {
+        assert(resolved_k == k || resolved_k == k->super(), "classes used by archived heap must not be replaced by JVMTI ClassFileLoadHook");
+      } else {
+        assert(resolved_k == k, "classes used by archived heap must not be replaced by JVMTI ClassFileLoadHook");
+      }
     }
   } else {
     assert(k->class_loader_data() != nullptr, "must have been resolved by HeapShared::resolve_classes");
@@ -1753,10 +1810,7 @@ bool HeapShared::walk_one_object(PendingOopStack* stack, int level, KlassSubGrap
   }
 
   if (java_lang_Class::is_instance(orig_obj)) {
-    Klass* k = java_lang_Class::as_Klass(orig_obj);
-    if (RegeneratedClasses::has_been_regenerated(k)) {
-      orig_obj = RegeneratedClasses::get_regenerated_object(k)->java_mirror();
-    }
+    orig_obj = RegeneratedClasses::maybe_get_regenerated_mirror(orig_obj);
   }
 
   if (CDSConfig::is_dumping_aot_linked_classes()) {
@@ -1961,11 +2015,7 @@ void HeapShared::verify_subgraph_from(oop orig_obj) {
 void HeapShared::verify_reachable_objects_from(oop obj) {
   _num_total_verifications ++;
   if (java_lang_Class::is_instance(obj)) {
-    Klass* k = java_lang_Class::as_Klass(obj);
-    if (RegeneratedClasses::has_been_regenerated(k)) {
-      k = RegeneratedClasses::get_regenerated_object(k);
-      obj = k->java_mirror();
-    }
+    obj = RegeneratedClasses::maybe_get_regenerated_mirror(obj);
     obj = scratch_java_mirror(obj);
     assert(obj != nullptr, "must be");
   }
@@ -1994,7 +2044,8 @@ void HeapShared::check_special_subgraph_classes() {
     for (int i = 0; i < num; i++) {
       Klass* subgraph_k = klasses->at(i);
       Symbol* name = subgraph_k->name();
-      if (subgraph_k->is_instance_klass() &&
+
+      if (subgraph_k->is_identity_class() &&
           name != vmSymbols::java_lang_Class() &&
           name != vmSymbols::java_lang_String() &&
           name != vmSymbols::java_lang_ArithmeticException() &&
@@ -2460,9 +2511,7 @@ void HeapShared::remap_dumped_metadata(oop src_obj, address archived_object) {
       return;
     }
 
-    if (RegeneratedClasses::has_been_regenerated(native_ptr)) {
-      native_ptr = RegeneratedClasses::get_regenerated_object(native_ptr);
-    }
+    native_ptr = RegeneratedClasses::maybe_get_regenerated_object(native_ptr);
 
     address buffered_native_ptr = ArchiveBuilder::current()->get_buffered_addr((address)native_ptr);
     address requested_native_ptr = ArchiveBuilder::current()->to_requested(buffered_native_ptr);

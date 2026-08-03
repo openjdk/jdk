@@ -156,7 +156,7 @@ InterpreterOopMap::InterpreterOopMap() {
 InterpreterOopMap::~InterpreterOopMap() {
   if (has_valid_mask() && mask_size() > small_mask_limit) {
     assert(_bit_mask[0] != 0, "should have pointer to C heap");
-    FREE_C_HEAP_ARRAY(uintptr_t, _bit_mask[0]);
+    FREE_C_HEAP_ARRAY((uintptr_t*)_bit_mask[0]);
   }
 }
 
@@ -288,7 +288,7 @@ void OopMapCacheEntry::deallocate_bit_mask() {
   if (mask_size() > small_mask_limit && _bit_mask[0] != 0) {
     assert(!Thread::current()->resource_area()->contains((void*)_bit_mask[0]),
       "This bit mask should not be in the resource area");
-    FREE_C_HEAP_ARRAY(uintptr_t, _bit_mask[0]);
+    FREE_C_HEAP_ARRAY((uintptr_t*)_bit_mask[0]);
     DEBUG_ONLY(_bit_mask[0] = 0;)
   }
 }

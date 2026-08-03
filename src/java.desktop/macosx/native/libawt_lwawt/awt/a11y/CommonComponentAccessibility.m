@@ -619,6 +619,13 @@ static jobject sAccessibilityClass = NULL;
                 if (nsActionName != nil) {
                     [fActions setObject:action forKey:nsActionName];
                     [fActionSelectors addObject:[sActionSelectors objectForKey:nsActionName]];
+                } else if (count == 1) {
+                    // If no mapping exists and it's the sole action, default
+                    // to "press" (click). In JButtons where the language is
+                    // not English the accessible action description we receive
+                    // is localized, so we can't assume it's "click"
+                    [fActions setObject:action forKey:NSAccessibilityPressAction];
+                    [fActionSelectors addObject:[sActionSelectors objectForKey:NSAccessibilityPressAction]];
                 }
             }
             [action release];
@@ -1190,13 +1197,24 @@ static jobject sAccessibilityClass = NULL;
     JNIEnv* env = [ThreadUtilities getJNIEnv];
 
     GET_CACCESSIBILITY_CLASS_RETURN(FALSE);
-    DECLARE_STATIC_METHOD_RETURN(jm_doAccessibleAction, sjc_CAccessibility, "doAccessibleAction",
-                                 "(Ljavax/accessibility/AccessibleAction;ILjava/awt/Component;)V", FALSE);
-    (*env)->CallStaticVoidMethod(env, sjc_CAccessibility, jm_doAccessibleAction,
-                                 [self axContextWithEnv:(env)], index, fComponent);
+    DECLARE_STATIC_METHOD_RETURN(jm_getAccessibleAction, sjc_CAccessibility, "getAccessibleAction",
+                           "(Ljavax/accessibility/Accessible;Ljava/awt/Component;)Ljavax/accessibility/AccessibleAction;", FALSE);
+
+    jobject axAction = (*env)->CallStaticObjectMethod(env, sjc_CAccessibility, jm_getAccessibleAction, fAccessible, fComponent);
     CHECK_EXCEPTION();
 
-    return TRUE;
+    if (axAction != NULL) {
+        DECLARE_STATIC_METHOD_RETURN(jm_doAccessibleAction, sjc_CAccessibility, "doAccessibleAction",
+                                     "(Ljavax/accessibility/AccessibleAction;ILjava/awt/Component;)V", FALSE);
+        (*env)->CallStaticVoidMethod(env, sjc_CAccessibility, jm_doAccessibleAction,
+                                     axAction, index, fComponent);
+        CHECK_EXCEPTION();
+
+        (*env)->DeleteLocalRef(env, axAction);
+        return TRUE;
+    } else {
+        return FALSE;
+    }
 }
 
 // NSAccessibilityActions methods

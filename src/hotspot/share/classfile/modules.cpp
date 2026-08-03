@@ -158,7 +158,7 @@ static const char* as_internal_package(oop package_string, char* buf, size_t buf
 }
 
 static void define_javabase_module(Handle module_handle, jstring version, jstring location,
-                                   objArrayHandle pkgs, int num_packages, TRAPS) {
+                                   refArrayHandle pkgs, int num_packages, TRAPS) {
   ResourceMark rm(THREAD);
 
   // Obtain java.base's module version
@@ -297,7 +297,7 @@ void Modules::define_module(Handle module, jboolean is_open, jstring version,
   }
 
   // Resolve packages
-  objArrayHandle packages_h(THREAD, objArrayOop(JNIHandles::resolve(packages)));
+  refArrayHandle packages_h(THREAD, refArrayOop(JNIHandles::resolve(packages)));
   int num_packages = (packages_h.is_null() ? 0 : packages_h->length());
 
   // Special handling of java.base definition
@@ -453,7 +453,7 @@ void Modules::define_module(Handle module, jboolean is_open, jstring version,
     ClassLoader::add_to_exploded_build_list(THREAD, module_symbol);
   }
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   // Special handling of jdk.incubator.vector
   if (strcmp(module_name, "jdk.incubator.vector") == 0) {
     if (FLAG_IS_DEFAULT(EnableVectorSupport)) {
@@ -469,7 +469,7 @@ void Modules::define_module(Handle module, jboolean is_open, jstring version,
     log_info(compilation)("EnableVectorReboxing=%s",           (EnableVectorReboxing           ? "true" : "false"));
     log_info(compilation)("EnableVectorAggressiveReboxing=%s", (EnableVectorAggressiveReboxing ? "true" : "false"));
   }
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
 }
 
 #if INCLUDE_CDS_JAVA_HEAP

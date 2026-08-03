@@ -851,6 +851,46 @@ public:
     tree.verify_self();
   }
 
+  void test_update_key() {
+    RBTreeInt tree;
+
+    tree.upsert(10, 10);
+    tree.upsert(20, 20);
+    tree.upsert(30, 30);
+
+    RBTreeIntNode* node = tree.find_node(20);
+    EXPECT_NOT_NULL(node);
+
+    tree.update_key(node, 25);
+
+    EXPECT_NULL(tree.find_node(20));
+
+    RBTreeIntNode* updated_node = tree.find_node(25);
+    EXPECT_NOT_NULL(updated_node);
+    EXPECT_EQ(updated_node, node);
+
+    EXPECT_EQ(25, updated_node->key());
+    EXPECT_EQ(20, updated_node->val());
+
+    RBTreeInt::Cursor cursor = tree.cursor(10);
+    EXPECT_TRUE(cursor.found());
+
+    tree.update_key(cursor, 20);
+
+    EXPECT_FALSE(tree.cursor(10).found());
+
+    RBTreeInt::Cursor updated_cursor = tree.cursor(20);
+    EXPECT_TRUE(updated_cursor.found());
+
+    RBTreeIntNode* updated_cursor_node = updated_cursor.node();
+    EXPECT_EQ(updated_cursor_node, cursor.node());
+
+    EXPECT_EQ(20, updated_cursor_node->key());
+    EXPECT_EQ(10, updated_cursor_node->val());
+
+    tree.verify_self();
+  }
+
   void test_intrusive() {
     IntrusiveTreeInt intrusive_tree;
     int num_iterations = 100;
@@ -1167,9 +1207,28 @@ TEST_VM_F(RBTreeTest, CursorReplace) {
   this->test_cursor_replace();
 }
 
+TEST_VM_F(RBTreeTest, UpdateKey) {
+  this->test_update_key();
+}
+
 #ifdef ASSERT
 TEST_VM_F(RBTreeTest, NodesVisitedOnce) {
   this->test_nodes_visited_once();
+}
+
+TEST_VM_ASSERT_MSG(RBTreeTestNonFixture, UpdateKeyAssert,
+                   ".*updated key not LT next node's key.*") {
+  typedef RBTreeCHeap<int, int, IntCmp, mtTest> TreeType;
+
+  TreeType tree;
+  tree.upsert(10, 10);
+  tree.upsert(20, 20);
+  tree.upsert(30, 30);
+
+  RBNode<int, int>* node = tree.find_node(20);
+  ASSERT_NOT_NULL(node);
+
+  tree.update_key(node, 35);
 }
 
 TEST_VM_ASSERT_MSG(RBTreeTestNonFixture, CustomVerifyAssert, ".*failed on key = 7") {

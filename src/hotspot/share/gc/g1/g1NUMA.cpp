@@ -123,8 +123,8 @@ void G1NUMA::initialize(bool use_numa) {
 
 G1NUMA::~G1NUMA() {
   delete _stats;
-  FREE_C_HEAP_ARRAY(uint, _node_id_to_index_map);
-  FREE_C_HEAP_ARRAY(uint, _node_ids);
+  FREE_C_HEAP_ARRAY(_node_id_to_index_map);
+  FREE_C_HEAP_ARRAY(_node_ids);
 }
 
 void G1NUMA::set_region_info(size_t region_size, size_t page_size) {
@@ -280,9 +280,9 @@ G1NodeIndexCheckClosure::~G1NodeIndexCheckClosure() {
     _ls->print("%u: %u/%u/%u ", numa_ids[i], _matched[i], _mismatched[i], _total[i]);
   }
 
-  FREE_C_HEAP_ARRAY(uint, _matched);
-  FREE_C_HEAP_ARRAY(uint, _mismatched);
-  FREE_C_HEAP_ARRAY(uint, _total);
+  FREE_C_HEAP_ARRAY(_matched);
+  FREE_C_HEAP_ARRAY(_mismatched);
+  FREE_C_HEAP_ARRAY(_total);
 }
 
 bool G1NodeIndexCheckClosure::do_heap_region(G1HeapRegion* hr) {

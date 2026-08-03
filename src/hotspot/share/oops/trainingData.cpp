@@ -727,7 +727,7 @@ void TrainingData::metaspace_pointers_do(MetaspaceClosure* iter) {
 }
 
 bool TrainingData::Key::can_compute_cds_hash(const Key* const& k) {
-  return k->meta() == nullptr || MetaspaceObj::in_aot_cache(k->meta());
+  return k->meta() == nullptr || k->meta()->in_aot_cache();
 }
 
 uint TrainingData::Key::cds_hash(const Key* const& k) {

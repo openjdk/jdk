@@ -487,7 +487,7 @@ public:
 
   void clean_details() {
     if (_detail_stats != nullptr) {
-      FREE_C_HEAP_ARRAY(Details, _detail_stats);
+      FREE_C_HEAP_ARRAY(_detail_stats);
       _detail_stats = nullptr;
     }
   }

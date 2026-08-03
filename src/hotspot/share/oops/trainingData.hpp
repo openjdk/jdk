@@ -31,6 +31,7 @@
 #include "compiler/compilerDefinitions.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metaspaceClosure.hpp"
+#include "oops/array.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/method.hpp"
 #include "oops/objArrayKlass.hpp"

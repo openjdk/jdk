@@ -25,7 +25,12 @@
 
 package sun.lwawt.macosx;
 
+import java.awt.AWTEvent;
 import java.awt.Component;
+import java.awt.Container;
+import java.awt.Toolkit;
+import java.awt.event.AWTEventListener;
+import java.awt.event.ContainerEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.Objects;
@@ -52,6 +57,16 @@ import sun.awt.AWTAccessor;
 final class CAccessible extends CFRetainedResource implements Accessible {
 
     public static CAccessible getCAccessible(final Accessible a) {
+        return getCAccessible(a, true);
+    }
+
+    /**
+     * @param createIfUndefined if there is not yet a cached CAccessible for
+     *                          the given Accessible, then this boolean
+     *                          controls whether this method creates a new
+     *                          CAccessible or returns null.
+     */
+    private static CAccessible getCAccessible(final Accessible a, final boolean createIfUndefined) {
         if (a == null) return null;
         AccessibleContext context = a.getAccessibleContext();
         AWTAccessor.AccessibleContextAccessor accessor
@@ -60,9 +75,40 @@ final class CAccessible extends CFRetainedResource implements Accessible {
         if (cachedCAX != null) {
             return cachedCAX;
         }
-        final CAccessible newCAX = new CAccessible(a);
-        accessor.setNativeAXResource(context, newCAX);
-        return newCAX;
+        if (createIfUndefined) {
+            final CAccessible newCAX = new CAccessible(a);
+            accessor.setNativeAXResource(context, newCAX);
+            return newCAX;
+        }
+        return null;
+    }
+
+    static {
+        // Call CAccessible.dispose() as objects are removed from the AWT hierarchy.
+        AWTEventListener componentRemovedListener = new AWTEventListener() {
+            @Override
+            public void eventDispatched(AWTEvent event) {
+                if (event.getID() == ContainerEvent.COMPONENT_REMOVED) {
+                    ContainerEvent containerEvent = (ContainerEvent) event;
+                    disposeRecursively(containerEvent.getChild());
+                }
+            }
+
+            private void disposeRecursively(Component c) {
+                if (c instanceof Container container) {
+                    for (Component child : container.getComponents()) {
+                        disposeRecursively(child);
+                    }
+                }
+                if (c instanceof Accessible ax) {
+                    CAccessible ca = getCAccessible(ax, false);
+                    if (ca != null) {
+                        ca.dispose();
+                    }
+                }
+            }
+        };
+        Toolkit.getDefaultToolkit().addAWTEventListener(componentRemovedListener, ContainerEvent.CONTAINER_EVENT_MASK);
     }
 
     private static native void unregisterFromCocoaAXSystem(long ptr);

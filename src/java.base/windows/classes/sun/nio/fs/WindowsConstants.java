@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,6 +114,12 @@ class WindowsConstants {
     public static final int ERROR_CANT_RESOLVE_FILENAME = 1921;
     public static final int ERROR_NOT_A_REPARSE_POINT   = 4390;
     public static final int ERROR_INVALID_REPARSE_DATA  = 4392;
+
+    // FILE_INFO_BY_NAME_CLASS enum values for GetFileInformationByName()
+    public static final int FileStatByNameInfo          = 0;
+    public static final int FileStatLxByNameInfo        = 1;
+    public static final int FileCaseSensitiveByNameInfo = 2;
+    public static final int FileStatBasicByNameInfo     = 3;
 
     // notify filters
     public static final int FILE_NOTIFY_CHANGE_FILE_NAME   = 0x00000001;

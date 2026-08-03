@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,6 @@ class Symbol : public MetaspaceObj {
   friend class VMStructs;
   friend class SymbolTable;
   friend class vmSymbols;
-  friend class JVMCIVMStructs;
 
  private:
 
@@ -238,6 +237,12 @@ class Symbol : public MetaspaceObj {
     if (position < 0)  return false;  // can happen with ends_with
     if (position >= utf8_length()) return false;
     return code_byte == char_at(position);
+  }
+
+  // True if this is a descriptor for a method with void return.
+  // (Assumes it is a valid descriptor.)
+  bool is_void_method_signature() const {
+    return starts_with('(') && ends_with('V');
   }
 
   // Test if the symbol has the give substring at or after the i-th char.

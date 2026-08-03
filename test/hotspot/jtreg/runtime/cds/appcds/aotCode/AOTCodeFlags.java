@@ -217,10 +217,7 @@ public class AOTCodeFlags {
                         // AOTStubCaching is on, non-zero stubs should be stored
                         out.shouldMatch("Shared Blobs:\\s+total=[1-9][0-9]+");
                         out.shouldMatch("C1 Blobs:\\s+total=[1-9][0-9]+");
-                        // we do not currently load or store C2 stubs
-                        // because we are seeing weird memory errors
-                        // when loading them -- see JDK-8357593
-                        out.shouldMatch("C2 Blobs:\\s+total=0");
+                        out.shouldMatch("C2 Blobs:\\s+total=[1-9][0-9]+");
                     } else {
                         // AOTStubCaching is off, no stubs should be stored
                         out.shouldMatch("Shared Blobs:\\s+total=0");

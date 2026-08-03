@@ -34,7 +34,7 @@ import javax.imageio.ImageIO;
 
 /**
  * @test
- * @bug 8378201
+ * @bug 8378201 8378506
  * @key headful
  * @summary Verifies that window content survives a GL context switch to another
  *          window and back

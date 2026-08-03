@@ -22,10 +22,12 @@
  *
  */
 
+#include "asm/macroAssembler.inline.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
+#include "gc/shared/barrierSetRuntime.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "memory/universe.hpp"
@@ -158,6 +160,19 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
     __ movptr(dst, val);
     break;
   default: Unimplemented();
+  }
+}
+
+void BarrierSetAssembler::flat_field_copy(MacroAssembler* masm, DecoratorSet decorators,
+                                          Register src, Register dst, Register inline_layout_info) {
+  // flat_field_copy implementation is fairly complex, and there are not any
+  // "short-cuts" to be made from asm. What there is, appears to have the same
+  // cost in C++, so just "call_VM_leaf" for now rather than maintain hundreds
+  // of hand-rolled instructions...
+  if (decorators & IS_DEST_UNINITIALIZED) {
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSetRuntime::value_copy_is_dest_uninitialized), src, dst, inline_layout_info);
+  } else {
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSetRuntime::value_copy), src, dst, inline_layout_info);
   }
 }
 
@@ -357,9 +372,14 @@ void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register
   __ jcc(Assembler::notZero, error);
 
   // make sure klass is 'reasonable', which is not zero.
-  __ load_klass(obj, obj, tmp1);  // get klass
-  __ testptr(obj, obj);
+  __ load_narrow_klass(tmp1, obj); // get narrow Klass
+  __ testl(tmp1, tmp1);
   __ jcc(Assembler::zero, error); // if klass is null it is broken
+}
+
+void BarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj, Label& slowpath) {
+  // Load the oop from the weak handle without barriers.
+  __ movptr(obj, Address(weak_handle));
 }
 
 #ifdef COMPILER2
@@ -394,11 +414,6 @@ OptoReg::Name BarrierSetAssembler::refine_register(const Node* node, OptoReg::Na
 // We use the vec_spill_helper from the x86.ad file to avoid reinventing this wheel
 extern void vec_spill_helper(C2_MacroAssembler *masm, bool is_load,
                             int stack_offset, int reg, uint ireg, outputStream* st);
-
-void BarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler* masm, Register obj, Label& slowpath) {
-  // Load the oop from the weak handle.
-  __ movptr(obj, Address(obj));
-}
 
 #undef __
 #define __ _masm->

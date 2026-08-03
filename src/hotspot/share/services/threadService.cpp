@@ -1179,13 +1179,14 @@ public:
   OopHandle _carrier_thread;
   GrowableArray<OwnedLock>* _locks;
   Blocker _blocker;
+  bool _processed;
 
   GetThreadSnapshotHandshakeClosure(Handle thread_h):
     HandshakeClosure("GetThreadSnapshotHandshakeClosure"),
     _thread_h(thread_h), _java_thread(nullptr),
     _frame_count(0), _methods(nullptr), _bcis(nullptr),
-    _thread_status(), _thread_name(nullptr),
-    _locks(nullptr), _blocker() {
+    _thread_status(JavaThreadStatus::NEW), _thread_name(nullptr),
+    _locks(nullptr), _blocker(), _processed(false) {
   }
   virtual ~GetThreadSnapshotHandshakeClosure() {
     delete _methods;
@@ -1274,6 +1275,7 @@ public:
   void do_thread(Thread* th) override {
     Thread* current = Thread::current();
     _java_thread = th != nullptr ? JavaThread::cast(th) : nullptr;
+    _processed = true;
 
     bool is_virtual = java_lang_VirtualThread::is_instance(_thread_h());
     if (_java_thread != nullptr) {
@@ -1473,16 +1475,17 @@ oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, TRAPS) {
     Handshake::execute(&cl, &tlh, java_thread);
   }
 
-  assert(cl._thread_status != JavaThreadStatus::NEW, "unstarted Thread");
-  if (is_virtual && (cl._thread_status == JavaThreadStatus::TERMINATED)) {
-    return nullptr; // virtual thread terminated
+  assert(cl._processed || (!is_virtual && java_thread->is_terminated()), "should have executed handshake closure");
+  if (!cl._processed || cl._thread_status == JavaThreadStatus::TERMINATED) {
+    return nullptr; // thread terminated
   }
+  assert(cl._thread_status != JavaThreadStatus::NEW, "unstarted Thread");
 
   // StackTrace
   InstanceKlass* ste_klass = vmClasses::StackTraceElement_klass();
   assert(ste_klass != nullptr, "must be loaded");
 
-  objArrayHandle trace = oopFactory::new_objArray_handle(ste_klass, cl._frame_count, CHECK_NULL);
+  refArrayHandle trace = oopFactory::new_refArray_handle(ste_klass, cl._frame_count, CHECK_NULL);
 
   for (int i = 0; i < cl._frame_count; i++) {
     methodHandle method(THREAD, cl._methods->at(i));
@@ -1495,9 +1498,9 @@ oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, TRAPS) {
   Klass* lock_k = SystemDictionary::resolve_or_fail(lock_sym, true, CHECK_NULL);
   InstanceKlass* lock_klass = InstanceKlass::cast(lock_k);
 
-  objArrayHandle locks;
+  refArrayHandle locks;
   if (cl._locks != nullptr && cl._locks->length() > 0) {
-    locks = oopFactory::new_objArray_handle(lock_klass, cl._locks->length(), CHECK_NULL);
+    locks = oopFactory::new_refArray_handle(lock_klass, cl._locks->length(), CHECK_NULL);
     for (int n = 0; n < cl._locks->length(); n++) {
       GetThreadSnapshotHandshakeClosure::OwnedLock* lock_info = cl._locks->adr_at(n);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,10 +33,12 @@
 package verify.tests;
 
 import java.lang.foreign.*;
+import java.util.Arrays;
 import java.util.Random;
 import jdk.test.lib.Utils;
 
 import jdk.incubator.vector.Float16;
+import jdk.incubator.vector.Float16Vector;
 
 import compiler.lib.verify.*;
 
@@ -47,6 +49,8 @@ public class TestVerifyFloat16 {
         testArrayFloat16();
         testRawFloat16();
         testFloat16Random();
+        testFloat16VectorCarrier();
+        testFloat16VectorCarrierRandom();
     }
 
     public static void testArrayFloat16() {
@@ -109,6 +113,84 @@ public class TestVerifyFloat16 {
                 Verify.checkEQ(a, b);
             } else {
                 checkNE(a, b);
+            }
+        }
+    }
+
+    /**
+     * Exercises the {@code Float16Vector} short[]-carrier path in Verify
+     * (checkEQForFloat16Carrier). The short carrier bits encode Float16 values, so the
+     * non-raw mode must canonicalize NaN (distinct NaN encodings are equal) while the raw
+     * mode must compare the carrier bits directly (distinct NaN encodings are not equal).
+     */
+    public static void testFloat16VectorCarrier() {
+        var species = Float16Vector.SPECIES_128;
+        int len = species.length();
+
+        // Two different NaN encodings of Float16.
+        short nan1 = (short)0xFFFF;
+        short nan2 = (short)0x7FFF;
+
+        short[] aBits = new short[len];
+        short[] bBits = new short[len];
+        Arrays.fill(aBits, nan1);
+        Arrays.fill(bBits, nan2);
+        Float16Vector va = Float16Vector.fromArray(species, aBits, 0);
+        Float16Vector vb = Float16Vector.fromArray(species, bBits, 0);
+
+        // Same vector: equal in both modes.
+        Verify.checkEQ(va, va);
+        Verify.checkEQWithRawBits(va, va);
+
+        // Distinct NaN encodings: equal in non-raw mode (canonicalized) ...
+        Verify.checkEQ(va, vb);
+        // ... but not equal in raw mode.
+        checkNEWithRawBits(va, vb);
+
+        // A real value mismatch must fail in both modes.
+        short[] oneBits = new short[len];
+        short[] twoBits = new short[len];
+        Arrays.fill(oneBits, Float16.float16ToShortBits(Float16.valueOf(1f)));
+        Arrays.fill(twoBits, Float16.float16ToShortBits(Float16.valueOf(2f)));
+        Float16Vector vOne = Float16Vector.fromArray(species, oneBits, 0);
+        Float16Vector vTwo = Float16Vector.fromArray(species, twoBits, 0);
+        Verify.checkEQ(vOne, vOne);
+        Verify.checkEQWithRawBits(vOne, vOne);
+        checkNE(vOne, vTwo);
+        checkNEWithRawBits(vOne, vTwo);
+
+        // NaN vs a real number: not equal in either mode.
+        checkNE(va, vOne);
+        checkNEWithRawBits(va, vOne);
+    }
+
+    public static void testFloat16VectorCarrierRandom() {
+        var species = Float16Vector.SPECIES_128;
+        int len = species.length();
+        // Testing all 2^16 * 2^16 = 2^32 would take a bit long, so we randomly sample instead.
+        for (int i = 0; i < 10_000; i++) {
+            short bitsA = (short)RANDOM.nextInt();
+            short bitsB = (short)RANDOM.nextInt();
+            short[] aBits = new short[len];
+            short[] bBits = new short[len];
+            Arrays.fill(aBits, bitsA);
+            Arrays.fill(bBits, bitsB);
+            Float16Vector va = Float16Vector.fromArray(species, aBits, 0);
+            Float16Vector vb = Float16Vector.fromArray(species, bBits, 0);
+
+            // Raw mode: equal iff identical carrier bits.
+            if (bitsA == bitsB) {
+                Verify.checkEQWithRawBits(va, vb);
+            } else {
+                checkNEWithRawBits(va, vb);
+            }
+
+            // Non-raw mode: equal iff the canonicalized Float16 values match.
+            if (Float.floatToIntBits(Float.float16ToFloat(bitsA)) ==
+                Float.floatToIntBits(Float.float16ToFloat(bitsB))) {
+                Verify.checkEQ(va, vb);
+            } else {
+                checkNE(va, vb);
             }
         }
     }

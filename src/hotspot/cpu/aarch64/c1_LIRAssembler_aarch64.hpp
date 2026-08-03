@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -52,10 +52,15 @@ friend class ArrayCopyStub;
   // Record the type of the receiver in ReceiverTypeData
   void type_profile_helper(Register mdo, ciMethodData *md,
                            ciProfileData *data, Register recv);
-  void add_debug_info_for_branch(address adr, CodeEmitInfo* info);
 
   void casw(Register addr, Register newval, Register cmpval);
   void casl(Register addr, Register newval, Register cmpval);
+
+  void mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type,
+               LIR_PatchCode patch_code,
+               CodeEmitInfo* info, bool wide, bool is_volatile);
+  void load_unordered(LIR_Address *from_addr, LIR_Opr dest, BasicType type, bool wide, CodeEmitInfo* info);
+  void load_volatile(LIR_Address *from_addr, LIR_Opr dest, BasicType type, CodeEmitInfo* info);
 
   static const int max_tableswitches = 20;
   struct tableswitch switches[max_tableswitches];
@@ -72,6 +77,9 @@ friend class ArrayCopyStub;
     _exception_handler_size = DEBUG_ONLY(1*K) NOT_DEBUG(175),
     _deopt_handler_size = 4 * NativeInstruction::instruction_size
   };
+
+  void arraycopy_inlinetype_check(Register obj, Register tmp, CodeStub* slow_path, bool is_dest, bool null_check);
+  void move(LIR_Opr src, LIR_Opr dst);
 
 public:
 
