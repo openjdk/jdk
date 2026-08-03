@@ -79,7 +79,8 @@ typeArrayOop oopFactory::new_longArray(int length, TRAPS) {
 
 // create java.lang.Object[]
 refArrayOop oopFactory::new_objectArray(int length, TRAPS)  {
-  return Universe::objectArrayKlass()->allocate_instance(length, THREAD);
+  objArrayOop array = Universe::objectArrayKlass()->allocate_instance(length, CHECK_NULL);
+  return oop_cast<refArrayOop>(array);
 }
 
 typeArrayOop oopFactory::new_charArray(const char* utf8_str, TRAPS) {
@@ -126,7 +127,8 @@ refArrayOop oopFactory::new_refArray(Klass* klass, int length, ArrayProperties p
   ObjArrayKlass* oak = ObjArrayKlass::cast(ak)->klass_from_description(ad, CHECK_NULL);
   // Cast below must pass because the array description required a RefArrayKlass
   RefArrayKlass* rak = RefArrayKlass::cast(oak);
-  return rak->allocate_instance(length, CHECK_NULL);
+  objArrayOop array = rak->allocate_instance(length, CHECK_NULL);
+  return oop_cast<refArrayOop>(array);
 }
 
 refArrayOop oopFactory::new_refArray(Klass* klass, int length, TRAPS) {
@@ -138,7 +140,8 @@ flatArrayOop oopFactory::new_flatArray(InlineKlass* ik, int length, ArrayPropert
   ObjArrayKlass* oak = ObjArrayKlass::cast(ak)->klass_with_properties(props, CHECK_NULL);
   FlatArrayKlass* fak = FlatArrayKlass::cast(oak);
 
-  return fak->allocate_instance(length, THREAD);
+  objArrayOop array = fak->allocate_instance(length, CHECK_NULL);
+  return oop_cast<flatArrayOop>(array);
 }
 
 refArrayHandle oopFactory::new_refArray_handle(Klass* klass, int length, TRAPS) {
