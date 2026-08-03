@@ -451,6 +451,9 @@ public:
   // Helper to call Node::Ideal() and BarrierSetC2::ideal_node().
   Node* apply_ideal(Node* i, bool can_reshape);
 
+  // Helper to call Node::Identity() and verify that it returns an existing node.
+  Node* apply_identity(Node* n);
+
 #ifdef ASSERT
   void dump_infinite_loop_info(Node* n, const char* where);
   // Check for a simple dead loop when a data node references itself.
