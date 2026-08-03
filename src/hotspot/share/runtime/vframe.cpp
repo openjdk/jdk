@@ -318,13 +318,9 @@ static StackValue* create_stack_value_from_oop_map(const InterpreterOopMap& oop_
 static bool is_in_expression_stack(const frame& fr, const intptr_t* const addr) {
   assert(addr != nullptr, "invariant");
 
-  // Ensure to be 'inside' the expression stack (i.e., addr >= sp for Intel).
+  // Ensure to be 'inside' the expression stack (i.e., addr >= sp).
   // In case of exceptions, the expression stack is invalid and the sp
   // will be reset to express this condition.
-  if (frame::interpreter_frame_expression_stack_direction() > 0) {
-    return addr <= fr.interpreter_frame_tos_address();
-  }
-
   return addr >= fr.interpreter_frame_tos_address();
 }
 

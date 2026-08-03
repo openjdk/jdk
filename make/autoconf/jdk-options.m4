@@ -95,6 +95,13 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_OPEN_OR_CUSTOM],
 
 AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
 [
+  # Should we build a JDK with/without sound ?
+  UTIL_ARG_ENABLE(NAME: jsound, DEFAULT: true,
+      RESULT: ENABLE_JSOUND,
+      DESC: [build with sound support],
+      CHECKING_MSG: [if we should build with sound support])
+  AC_SUBST(ENABLE_JSOUND)
+
   # Should we build a JDK without a graphical UI?
   UTIL_ARG_ENABLE(NAME: headless-only, DEFAULT: false,
       RESULT: ENABLE_HEADLESS_ONLY,

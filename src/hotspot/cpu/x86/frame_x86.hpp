@@ -137,6 +137,17 @@
   }
 
  public:
+  // Support for scalarized inline type calling convention
+  intptr_t* repair_sender_sp(intptr_t* sender_sp, intptr_t** saved_fp_addr) const;
+  struct CompiledFramePointers {
+    intptr_t* sender_sp;       // The top of the stack of the sender
+    intptr_t** saved_fp_addr;  // Where RBP is saved on the stack
+    address* sender_pc_addr;   // Where return address (copy #1 in remove_frame's comment) is saved on the stack
+  };
+  CompiledFramePointers compiled_frame_details() const;
+  static intptr_t* repair_sender_sp(nmethod* nm, intptr_t* sp, intptr_t** saved_fp_addr);
+  bool was_augmented_on_entry(int& real_size) const;
+
   // Constructors
 
   frame(intptr_t* sp, intptr_t* fp, address pc);
@@ -169,8 +180,6 @@
 
   // deoptimization support
   void interpreter_frame_set_last_sp(intptr_t* sp);
-
-  static jint interpreter_frame_expression_stack_direction() { return -1; }
 
   // returns the sending frame, without applying any barriers
   inline frame sender_raw(RegisterMap* map) const;
