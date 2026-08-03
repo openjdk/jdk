@@ -2374,7 +2374,7 @@ void LIRGenerator::do_LoadIndexed(LoadIndexed* x) {
   }
 
   ciFlatArrayKlass* flat_array_klass = x->array()->is_loaded_flat_array() ?
-                                      x->array()->declared_type()->as_flat_array_klass() : nullptr;
+                                       x->array()->declared_type()->as_flat_array_klass() : nullptr;
   bool assert_null = flat_array_klass != nullptr && !flat_array_klass->is_elem_null_free() &&
                      !flat_array_klass->element_klass()->as_inline_klass()->is_initialized();
   if (assert_null) {
