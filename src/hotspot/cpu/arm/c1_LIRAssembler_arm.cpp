@@ -2878,7 +2878,10 @@ void LIR_Assembler::emit_opFlattenedArrayCheck(LIR_OpFlattenedArrayCheck* op) {
 }
 
 void LIR_Assembler::emit_opNullFreeArrayCheck(LIR_OpNullFreeArrayCheck* op) {
-  Unimplemented();
+  // There is no way to check this on 32-bit, no bits in mark word.
+  // Just say the check always fails, which will assume arrays are not null-free.
+  Register tmp = op->tmp()->as_register();
+  __ cmp(tmp, tmp);
 }
 
 void LIR_Assembler::emit_opSubstitutabilityCheck(LIR_OpSubstitutabilityCheck* op) {

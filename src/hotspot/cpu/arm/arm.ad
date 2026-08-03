@@ -9007,8 +9007,8 @@ instruct cmpFastUnlock(flagsRegP pcc, iRegP object, iRegP box, iRegP scratch2, i
 
 // Count and Base registers are fixed because the allocator cannot
 // kill unknown registers.  The encodings are generic.
-instruct clear_array(iRegX cnt, iRegP base, iRegI temp, iRegX zero, Universe dummy, flagsReg cpsr) %{
-  match(Set dummy (ClearArray cnt base));
+instruct clear_array(iRegX cnt, iRegP base, iRegI temp, iRegX zero, immI0 val, Universe dummy, flagsReg cpsr) %{
+  match(Set dummy (ClearArray (Binary cnt base) val));
   effect(TEMP temp, TEMP zero, KILL cpsr);
   ins_cost(300);
   format %{ "MOV    $zero,0\n"
