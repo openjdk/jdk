@@ -1149,7 +1149,7 @@ static bool hasPredicateSubset( const InstructForm *target_instr, const Instruct
   }
 
   #ifdef AMD64
-  // A replacement_instr with no predicate handles a superset of the cases that target_instr handles. 
+  // A replacement_instr with no predicate handles a superset of the cases that target_instr handles.
   // *Except* when target_instr has "predicate(false)", which shouldn't match anything.
   // This is safe for x86 which only uses such predicates for instructions that should only be expanded
   // as part of peephole optimizations. It's unclear if this is safe for s390 due to more complex predicates
