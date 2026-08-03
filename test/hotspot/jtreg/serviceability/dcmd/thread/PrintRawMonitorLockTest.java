@@ -117,14 +117,13 @@ public class PrintRawMonitorLockTest {
 
         OutputAnalyzer output = executor.execute("Thread.print -l=true");
         if (!output.getOutput().contains("Found 1 deadlock")) {
-            // Execute dcmd in a loop in case the threads haven't deadlocked yet.
-            // Fail after 100 iterations.  That's all it should take unless something is wrong.
-            for (int i = 0; i < 100; i++) {
+            // Execute dcmd in a timed loop in case the threads haven't deadlocked yet.
+            while (true) {
                 try {
                     Thread.sleep(100);
                 } catch (InterruptedException ie) {
                 }
-                // try again, otherwise java thinks it's not initialized.
+                // try again, otherwise java thinks output is not initialized.
                 output = executor.execute("Thread.print -l=true");
                 if (output.getOutput().contains("Found 1 deadlock")) {
                     break;
