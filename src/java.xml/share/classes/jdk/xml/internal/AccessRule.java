@@ -382,19 +382,42 @@ public class AccessRule {
                 return new PathPattern(pattern, true, false);
             }
             if (pattern.endsWith("/*")) {
-                return new PathPattern(pattern.substring(0, pattern.length() - 2), false, true);
+                return new PathPattern(normalizePath(pattern.substring(0, pattern.length() - 2)), false, true);
             }
-            return new PathPattern(pattern, false, false);
+            return new PathPattern(normalizePath(pattern), false, false);
         }
 
         public boolean matches(String testPath) {
             if (isAny) return true;
             if (testPath == null) return false;
+            testPath = normalizePath(testPath);
             if (isDirectory) {
                 // Path starts with this directory
                 return testPath.startsWith(pattern + "/") || testPath.equals(pattern);
             }
             return testPath.equals(pattern);
+        }
+
+        // Normalizes URI path for rule matching, consistent with URI.normalize().
+        private static String normalizePath(String path) {
+            boolean absolute = path.startsWith("/");
+            List<String> segments = new ArrayList<>();
+            for (String segment : path.split("/")) {
+                if (segment.isEmpty() || segment.equals(".")) {
+                    continue;
+                }
+                if (segment.equals("..")) {
+                    if (!segments.isEmpty()) {
+                        segments.remove(segments.size() - 1);
+                    } else if (!absolute) {
+                        segments.add(segment);
+                    }
+                } else {
+                    segments.add(segment);
+                }
+            }
+            String normalizedPath = String.join("/", segments);
+            return absolute ? "/" + normalizedPath : normalizedPath;
         }
     }
 }
