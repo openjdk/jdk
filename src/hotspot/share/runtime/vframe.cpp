@@ -575,8 +575,11 @@ void vframeStreamCommon::skip_prefixed_method_and_wrappers() {
     }
     const char* name = method()->name()->as_C_string();
     size_t name_len = strlen(name);
+    if (name_len >= prefixed_name_len) {
+      break; // the name can't be the unprefixed version of prefixed_name
+    }
     size_t prefix_len = prefixed_name_len - name_len;
-    if (prefix_len <= 0 || strcmp(name, prefixed_name + prefix_len) != 0) {
+    if (strcmp(name, prefixed_name + prefix_len) != 0) {
       break; // prefixed name isn't prefixed version of method name, can't be a wrapper
     }
     for (; prefix_index >= 0; --prefix_index) {
