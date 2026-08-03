@@ -149,6 +149,7 @@ public class TestIntrinsics {
 
     public TestIntrinsics() {
         test24_vt = MyValue1.createWithFieldsInline(rI, rL);
+        test31_vt = MyValue1.createDefaultInline();
         super();
     }
 
@@ -658,6 +659,7 @@ public class TestIntrinsics {
         Asserts.assertEQ(v.v1, res);
     }
 
+    @NullRestricted
     MyValue1 test31_vt;
     private static final long TEST31_VT_OFFSET;
     private static final boolean TEST31_VT_FLATTENED;
@@ -835,6 +837,54 @@ public class TestIntrinsics {
         test31_vt = MyValue1.createDefaultInline();
         test38(vt);
         Asserts.assertEQ(vt, test31_vt);
+    }
+
+    // Test put intrinsic with null
+    @Test
+    @IR(failOn = {CALL_UNSAFE})
+    public void test39(MyValue1 val) {
+        if (TEST31_VT_FLATTENED) {
+            U.putFlatValue(this, TEST31_VT_OFFSET, TEST31_VT_LAYOUT, MyValue1.class, val);
+        } else {
+            U.putReference(this, TEST31_VT_OFFSET, null);
+        }
+    }
+
+    @Run(test = "test39")
+    public void test39_verifier() {
+        test31_vt = MyValue1.createDefaultInline();
+        try {
+            test39(null);
+            if (TEST31_VT_FLATTENED) {
+                throw new RuntimeException("No NullPointerException thrown");
+            }
+        } catch (NullPointerException npe) {
+            // Expected
+        }
+    }
+
+    // Same as test39 but with a constant null
+    @Test
+    @IR(failOn = {CALL_UNSAFE})
+    public void test39Constant() {
+        if (TEST31_VT_FLATTENED) {
+            U.putFlatValue(this, TEST31_VT_OFFSET, TEST31_VT_LAYOUT, MyValue1.class, null);
+        } else {
+            U.putReference(this, TEST31_VT_OFFSET, null);
+        }
+    }
+
+    @Run(test = "test39Constant")
+    public void test39Constant_verifier() {
+        test31_vt = MyValue1.createDefaultInline();
+        try {
+            test39Constant();
+            if (TEST31_VT_FLATTENED) {
+                throw new RuntimeException("No NullPointerException thrown");
+            }
+        } catch (NullPointerException npe) {
+            // Expected
+        }
     }
 
     // Test value class array creation via reflection
@@ -1246,7 +1296,8 @@ public class TestIntrinsics {
 
         @ForceInline
         static SmallValue createWithFieldsInline(int x, long y) {
-            return new SmallValue((byte)x, (byte)y);
+            // Make sure it's different from the default value, some tests rely on this
+            return new SmallValue((byte)x, (byte) (y | 1));
         }
     }
 
