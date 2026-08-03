@@ -3305,7 +3305,9 @@ void Compile::Optimize() {
   // Process inline types before macro expansion. Otherwise, we will not be able to
   // remove unused allocations because it cannot match the expanded allocation.
   process_inline_types(igvn);
-  if (failing()) return;
+  if (failing()) {
+    return;
+  }
 
   {
     TracePhase tp(_t_macroExpand);
