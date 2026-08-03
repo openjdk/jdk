@@ -27,6 +27,7 @@
 #include "ci/ciMemberName.hpp"
 #include "ci/ciMethodHandle.hpp"
 #include "ci/ciObjArray.hpp"
+#include "ci/ciStreams.hpp"
 #include "classfile/javaClasses.hpp"
 #include "compiler/compileLog.hpp"
 #include "oops/accessDecorators.hpp"
@@ -772,13 +773,19 @@ void CallGenerator::do_late_inline_helper() {
     Node* buffer_oop = nullptr;
     ciMethod* inline_method = inline_cg()->method();
     ciType* return_type = inline_method->return_type();
-    if (!call->tf()->returns_inline_type_as_fields() &&
-        return_type->is_inlinetype() && return_type->as_inline_klass()->can_be_returned_as_fields()) {
-      assert(is_mh_late_inline(), "Unexpected return type");
+    // Allocate a buffer for the inline type returned as fields because the caller expects an oop return.
+    // Moving this after the call would require distinct JVM states: a next-BCI state with the result for
+    // deoptimization at an allocation safepoint and an invoke-BCI state for exceptions like OOME. The
+    // pre-call state can safely execute the call if allocation deoptimizes.
+    bool needs_return_buffer = !call->tf()->returns_inline_type_as_fields() &&
+                               return_type->is_inlinetype() &&
+                               return_type->as_inline_klass()->can_be_returned_as_fields();
+    // A non-null scalarized return would require a buffer. Since allocating that buffer could
+    // initialize the value class, speculate that the result is null and deoptimize otherwise.
+    bool assert_null_return = needs_return_buffer && !return_type->as_inline_klass()->is_initialized();
+    assert(!needs_return_buffer || is_mh_late_inline(), "Unexpected return type");
 
-      // Allocate a buffer for the inline type returned as fields because the caller expects an oop return.
-      // Do this before the method handle call in case the buffer allocation triggers deoptimization and
-      // we need to "re-execute" the call in the interpreter (to make sure the call is only executed once).
+    if (needs_return_buffer && !assert_null_return) {
       GraphKit arg_kit(jvms, &gvn);
       {
         PreserveReexecuteState preexecs(&arg_kit);
@@ -840,6 +847,20 @@ void CallGenerator::do_late_inline_helper() {
         if (vt != nullptr) {
           if (call->tf()->returns_inline_type_as_fields()) {
             vt->replace_call_results(&kit, call, C);
+          } else if (assert_null_return && !vt->is_allocated(&kit.gvn())) {
+            // Deoptimize if the result is non-null.
+            // Put the trap at the next bytecode to avoid re-executing the method handle call.
+            ciBytecodeStream iter(kit.method());
+            iter.force_bci(kit.bci());
+            assert(Bytecodes::is_invoke(iter.cur_bc()), "unexpected bytecode: %s", Bytecodes::name(iter.cur_bc()));
+            int bci = kit.bci();
+            kit.push(vt);
+            kit.set_bci(iter.next_bci());
+            result = kit.null_assert(vt);
+            kit.set_bci(bci);
+            if (!kit.stopped()) {
+              result = kit.pop();
+            }
           } else {
             // Result might still be allocated (for example, if it has been stored to a non-flat field)
             if (!vt->is_allocated(&kit.gvn())) {
@@ -899,6 +920,7 @@ void CallGenerator::do_late_inline_helper() {
       }
     }
 
+    C->set_do_cleanup(kit.stopped()); // path is dead; needs cleanup
     kit.replace_call(call, result, true, do_asserts);
   }
 }
