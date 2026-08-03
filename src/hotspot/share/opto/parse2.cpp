@@ -204,7 +204,7 @@ void Parse::array_store(BasicType bt) {
 
   Node* stored_value_casted = nullptr;
   if (bt == T_OBJECT) {
-    stored_value_casted = array_store_check(adr, elemtype);
+    stored_value_casted = array_store_check(elemtype);
     if (stopped()) {
       return;
     }
