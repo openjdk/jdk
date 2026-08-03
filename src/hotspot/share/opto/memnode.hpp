@@ -1151,13 +1151,16 @@ public:
 //------------------------------ClearArray-------------------------------------
 class ClearArrayNode: public Node {
 private:
+  // True if cnt is larger than InitArrayShortSize
   bool _is_large;
-  bool _word_copy_only;
+  // True if the fill value is a non-constant or non-zero 64-bit value. Such a
+  // value must be copied as a complete word and cannot use byte-wise zeroing.
+  bool _requires_word_fill;
   static Node* make_address(Node* dest, Node* offset, bool raw_base, PhaseGVN* phase);
 public:
   ClearArrayNode( Node *ctrl, Node *arymem, Node *word_cnt, Node *base, Node* val, bool is_large)
     : Node(ctrl, arymem, word_cnt, base, val), _is_large(is_large),
-      _word_copy_only(val->bottom_type()->isa_long() && (!val->bottom_type()->is_long()->is_con() || val->bottom_type()->is_long()->get_con() != 0)) {
+      _requires_word_fill(val->bottom_type()->isa_long() && (!val->bottom_type()->is_long()->is_con() || val->bottom_type()->is_long()->get_con() != 0)) {
     init_class_id(Class_ClearArray);
   }
   virtual int         Opcode() const;
@@ -1169,7 +1172,8 @@ public:
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual uint match_edge(uint idx) const;
   bool is_large() const { return _is_large; }
-  bool word_copy_only() const { return _word_copy_only; }
+  bool is_zero_fill() const { return !_requires_word_fill; }
+  bool requires_word_fill() const { return _requires_word_fill; }
   virtual uint size_of() const { return sizeof(ClearArrayNode); }
   virtual uint hash() const { return Node::hash() + _is_large; }
   virtual bool cmp(const Node& n) const {
