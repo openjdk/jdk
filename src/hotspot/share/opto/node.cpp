@@ -1241,7 +1241,7 @@ bool Node::has_special_unique_user() const {
     // Condition for MoveX2Y (LoadX mem) => LoadY mem
     return true;
   } else if ((op == Op_LoadB || op == Op_LoadS) && n->Opcode() == Op_AndI) {
-    // AndINode::Ideal turns AndI(LoadB) into AndI(LoadUB), if the LoadB
+    // AndINode::Ideal turns AndI(LoadB/S) into AndI(LoadUB/US), if the LoadB
     // only has a single use.
     return true;
   } else if (op == Op_AddL) {

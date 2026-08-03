@@ -458,8 +458,8 @@ PhaseRenumberLive::PhaseRenumberLive(PhaseGVN* gvn,
   for (uint current_idx = 0; current_idx < _useful.size(); current_idx++) {
     Node* n = _useful.at(current_idx);
 
-    int old_idx = n->_idx;
-    int new_idx = _old2new_map.at(old_idx);
+    uint old_idx = n->_idx;
+    uint new_idx = _old2new_map.at(old_idx);
     assert(new_idx >= 0, "every useful node must have new idx");
 
     const Type* type = gvn->type_or_null(n);
