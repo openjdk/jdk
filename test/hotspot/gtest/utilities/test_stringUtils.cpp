@@ -76,7 +76,7 @@ TEST(StringUtils, ClassListMatch) {
   // Wild card matching doesn't look backwards
   const char* str = "xabc";
   const char* pat = "*abc";
-  bool match = StringUtils::class_list_match(pat, str);
+  bool match =  StringUtils::class_list_match(pat, &str[3]);
   EXPECT_FALSE(match);
 
   // Package name supports both / and .

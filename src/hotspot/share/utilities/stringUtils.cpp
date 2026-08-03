@@ -33,6 +33,8 @@
 #include <string.h>
 
 int StringUtils::replace_no_expand(char* string, const char* from, const char* to) {
+  assert(strcmp(from, "") != 0, "mustn't be empty");
+
   int replace_count = 0;
   size_t from_len = strlen(from);
   size_t to_len = strlen(to);
@@ -109,6 +111,11 @@ class StringMatcher {
     // note that begp is now advanced over ch1
     assert(ch1 > 0, "regular char only");
     const char* matchp = match;
+    int remaining_len = (int)(match_end - matchp);
+    if (anchor_length > remaining_len) {
+      return nullptr;
+    }
+
     const char* limitp = match_end - anchor_length;
     while (matchp <= limitp) {
       int mch = _string_getc(matchp, match_end);
