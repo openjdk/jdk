@@ -2548,18 +2548,17 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
                                           CodeStub* overflow_stub) {
 #ifndef PRODUCT
   if (CommentedAssembly) {
-    __ block_comment("increment_event_counter {");
+    __ block_comment("increment_profile_ctr" " {");
   }
 #endif
 
-  int profile_capture_ratio = ProfileCaptureRatio;
-  int ratio_shift = exact_log2(profile_capture_ratio);
+  int ratio_shift = exact_log2(ProfileCaptureRatio);
   uint64_t threshold = (UCONST64(1) << 32) >> ratio_shift;
 
   assert(threshold > 0, "must be");
 
   ProfileStub *counter_stub
-    = profile_capture_ratio > 1 ? new ProfileStub() : nullptr;
+    = ProfileCaptureRatio > 1 ? new ProfileStub() : nullptr;
 
   Register dest = as_reg(dest_opr);
 
@@ -2589,7 +2588,6 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
       if (ProfileCaptureRatio > 1) {
         __ lsl(inc, inc, ratio_shift);
       }
-
       __ ldrw(dest, counter_address);
       __ addw(dest, dest, inc);
       __ strw(dest, counter_address);
@@ -2597,13 +2595,8 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
         __ lsr(inc, inc, ratio_shift);
       }
     } else {
-      jint inc = step->as_constant_ptr()->as_jint_bits();
-      inc *= ProfileCaptureRatio;
+      jint inc = step->as_constant_ptr()->as_jint_bits() * ProfileCaptureRatio;
       switch (dest_opr->type()) {
-        case T_INT: {
-          __ incrementw(counter_address, inc, dest);
-          break;
-        }
         case T_LONG: {
           __ increment(counter_address, inc, dest);
           break;
@@ -2668,7 +2661,7 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
     __ step_random(r_profile_rng, rscratch2);
 
     counter_stub->set_action(lambda, nullptr);
-    counter_stub->set_name("IncrementEventCounter");
+    counter_stub->set_name("IncrementProfileCtr");
     append_code_stub(counter_stub);
   } else {
     lambda(this, nullptr);
@@ -2676,7 +2669,7 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
 
 #ifndef PRODUCT
   if (CommentedAssembly) {
-    __ block_comment("} increment_event_counter");
+    __ block_comment("} increment_profile_ctr");
   }
 #endif
 }

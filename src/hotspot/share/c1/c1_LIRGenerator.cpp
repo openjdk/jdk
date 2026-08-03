@@ -964,7 +964,7 @@ void LIRGenerator::profile_branch(If* if_instr, If::Condition cond) {
              LIR_OprFact::intptrConst(not_taken_count_offset),
              data_offset_reg, as_BasicType(if_instr->x()->type()));
 
-    LIR_Opr tmp = new_register(wordSize == 4 ? T_INT : T_LONG);
+    LIR_Opr tmp = new_pointer_register();  // really an intptr_t counter
     LIR_Opr step = LIR_OprFact::intConst(DataLayout::counter_increment);
     __ increment_counter(step, tmp, md_reg, md->constant_encoding(), data_offset_reg);
   }

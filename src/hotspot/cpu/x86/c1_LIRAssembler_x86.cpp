@@ -2807,25 +2807,24 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step_opr, LIR_Opr dest_opr,
   auto lambda = [counter_stub, overflow_stub, freq_opr, ratio_shift, step_opr,
                  md_reg, md_opr, md_offset_opr, dest_opr, dest] (LIR_Assembler* ce, LIR_Op* op) {
 
-    auto masm = [=]() { return ce->masm(); };
-    Address counter_address;
+    auto masm = [ce]() { return ce->masm(); };
 
     if (counter_stub != nullptr)  __ bind(*counter_stub->entry());
 
-    if (md_opr->is_valid()) {
-      if (md_opr->type() == T_METADATA) {
-        __ mov_metadata(md_reg->as_register(),
-                        md_opr->as_constant_ptr()->as_metadata());
-      } else {
-        __ lea(md_reg->as_pointer_register(),
-               ExternalAddress(md_opr->as_constant_ptr()->as_pointer()));
-      }
-      RegisterOrConstant offset =
-        md_offset_opr->is_constant()
+    assert(md_opr->is_valid(), "must be");
+
+    if (md_opr->type() == T_METADATA) {
+      __ mov_metadata(md_reg->as_register(),
+                      md_opr->as_constant_ptr()->as_metadata());
+    } else {
+      __ lea(md_reg->as_pointer_register(),
+             ExternalAddress(md_opr->as_constant_ptr()->as_pointer()));
+    }
+    RegisterOrConstant offset =
+      md_offset_opr->is_constant()
         ? RegisterOrConstant(md_offset_opr->as_constant_ptr()->as_jint())
         : as_reg(md_offset_opr);
-      counter_address = Address(md_reg->as_pointer_register(), offset);
-    }
+    counter_address = Address(md_reg->as_pointer_register(), offset);
 
     if (step_opr->is_register()) {
       Register inc = step_opr->as_register();
@@ -2841,13 +2840,6 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step_opr, LIR_Opr dest_opr,
     } else {
       jint inc = step_opr->as_constant_ptr()->as_jint_bits() * ProfileCaptureRatio;
       switch (dest_opr->type()) {
-        case T_INT: {
-          __ movl(dest, counter_address);
-          // Use lea instead of add to avoid destroying condition codes on x86
-          __ lea(dest, Address(dest, inc, Address::times_1));
-          __ movl(counter_address, dest);
-          break;
-        }
         case T_LONG: {
           __ movq(dest, counter_address);
           // Use lea instead of add to avoid destroying condition codes on x86
@@ -2907,7 +2899,7 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step_opr, LIR_Opr dest_opr,
   };
 
   if (counter_stub != nullptr) {
-    __ cmpl(r_profile_rng, threshold);
+    __ cmpl(r_profile_rng, checked_cast<uint32_t>(threshold));
     __ jcc(Assembler::below, *counter_stub->entry());
     __ bind(*counter_stub->continuation());
     __ step_random(r_profile_rng, dest);
