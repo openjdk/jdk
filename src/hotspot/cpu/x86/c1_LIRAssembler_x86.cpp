@@ -2806,7 +2806,6 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step_opr, LIR_Opr dest_opr,
 
   auto lambda = [counter_stub, overflow_stub, freq_opr, ratio_shift, step_opr,
                  md_reg, md_opr, md_offset_opr, dest_opr, dest] (LIR_Assembler* ce, LIR_Op* op) {
-
     auto masm = [ce]() { return ce->masm(); };
 
     if (counter_stub != nullptr)  __ bind(*counter_stub->entry());
@@ -2824,7 +2823,7 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step_opr, LIR_Opr dest_opr,
       md_offset_opr->is_constant()
         ? RegisterOrConstant(md_offset_opr->as_constant_ptr()->as_jint())
         : as_reg(md_offset_opr);
-    counter_address = Address(md_reg->as_pointer_register(), offset);
+    auto counter_address = Address(md_reg->as_pointer_register(), offset);
 
     if (step_opr->is_register()) {
       Register inc = step_opr->as_register();
