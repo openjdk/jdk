@@ -820,6 +820,24 @@ AC_DEFUN([JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE_NOCOH],
   AC_SUBST(BUILD_CDS_ARCHIVE_NOCOH)
 ])
 
+AC_DEFUN([JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE_PREVIEW],
+[
+  UTIL_ARG_ENABLE(NAME: cds-archive-preview, DEFAULT: true, RESULT: BUILD_CDS_ARCHIVE_PREVIEW,
+      DESC: [enable generation of preview CDS archives (requires --enable-cds-archive)],
+      DEFAULT_DESC: [enable generation of preview CDS archives],
+      CHECKING_MSG: [if default CDS archives for preview should be generated])
+  AC_SUBST(BUILD_CDS_ARCHIVE_PREVIEW)
+])
+
+AC_DEFUN([JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE_NOCOOPS],
+[
+  UTIL_ARG_ENABLE(NAME: cds-archive-nocoops, DEFAULT: true, RESULT: BUILD_CDS_ARCHIVE_NOCOOPS,
+      DESC: [enable generation of no compressed oops CDS archives (requires --enable-cds-archive)],
+      DEFAULT_DESC: [enable generation of no compressed oops CDS archives],
+      CHECKING_MSG: [if default CDS archives for no compressed oops should be generated])
+  AC_SUBST(BUILD_CDS_ARCHIVE_NOCOOPS)
+])
+
 ################################################################################
 #
 # Enable the alternative CDS core region alignment
