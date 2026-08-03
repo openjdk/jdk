@@ -37,7 +37,6 @@
 #include "gc/shenandoah/shenandoahEvacTracker.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahPLAB.hpp"
-#include "gc/shenandoah/shenandoahRegionPinCache.hpp"
 #include "gc/shenandoah/shenandoahSATBMarkQueueSet.hpp"
 #include "runtime/javaThread.hpp"
 #include "utilities/debug.hpp"
@@ -227,7 +226,7 @@ public:
     return Thread::gc_data_offset() + byte_offset_of(ShenandoahThreadLocalData, _gc_state_fast_array) + in_ByteSize(gc_state_to_fast_array_index(gc_state));
   }
 
-  static ByteSize card_table_offset() {
+static ByteSize card_table_offset() {
     return Thread::gc_data_offset() + byte_offset_of(ShenandoahThreadLocalData, _card_table);
   }
 
