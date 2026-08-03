@@ -5575,7 +5575,10 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
   // Java spec says that HashCode is an int so there's no point in capturing
   // an 'X'-sized hashcode (32 in 32-bit build or 64 in 64-bit build).
   hshifted_header      = ConvX2I(hshifted_header);
-  Node *hash_val       = _gvn.transform(new AndINode(hshifted_header, hash_mask));
+  // On LP64 without compact headers, bits [42:63] of the mark word are zero,
+  // so bit 31 of the shifted result is already clear — the mask is redundant.
+  Node *hash_val = LP64_ONLY(!UseCompactObjectHeaders ? hshifted_header :)
+                   _gvn.transform(new AndINode(hshifted_header, hash_mask));
 
   Node *no_hash_val    = _gvn.intcon(markWord::no_hash);
   Node *chk_assigned   = _gvn.transform(new CmpINode( hash_val, no_hash_val));
