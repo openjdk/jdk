@@ -2287,10 +2287,12 @@ const Type* LoadFlatNode::Value(PhaseGVN* phase) const {
 }
 
 const Type* StoreFlatNode::Value(PhaseGVN* phase) const {
+  Node* val = in(TypeFunc::Parms + 2);
   if (phase->type(in(TypeFunc::Control)) == Type::TOP || phase->type(in(TypeFunc::Memory)) == Type::TOP ||
-      phase->type(base()) == Type::TOP || phase->type(ptr()) == Type::TOP || phase->type(value()) == Type::TOP) {
+      phase->type(base()) == Type::TOP || phase->type(ptr()) == Type::TOP || phase->type(val) == Type::TOP) {
     return Type::TOP;
   }
+  assert(val->is_InlineType(), "must be InlineTypeNode: %s", val->Name());
   return bottom_type();
 }
 
