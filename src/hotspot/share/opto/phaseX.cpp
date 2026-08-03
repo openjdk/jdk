@@ -2321,7 +2321,7 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   }
 
   uint use_op = use->Opcode();
-  if(use->is_Cmp()) {       // Enable CMP/BOOL optimization
+  if (use->is_Cmp()) {       // Enable CMP/BOOL optimization
     add_users_to_worklist0(use, worklist); // Put Bool on worklist
     if (use->outcnt() > 0) {
       Node* bol = use->raw_out(0);
