@@ -598,14 +598,32 @@ static bool check_cycle(ciInlineKlass* vk) {
   return false;
 }
 
+// Check if 'lhs' and 'rhs' are the same oop, possibly wrapped in an InlineTypeNode.
+static bool same_oop(PhaseGVN* phase, Node* lhs, Node* rhs) {
+  InlineTypeNode* lhs_inline = lhs->isa_InlineType();
+  if (lhs_inline != nullptr && lhs_inline->is_allocated(phase)) {
+    lhs = lhs_inline->get_oop();
+  }
+  InlineTypeNode* rhs_inline = rhs->isa_InlineType();
+  if (rhs_inline != nullptr && rhs_inline->is_allocated(phase)) {
+    rhs = rhs_inline->get_oop();
+  }
+  return lhs->eqv_uncast(rhs);
+}
+
 // Check if a substitutability check between 'lhs' and 'rhs' can be implemented in IR
-bool InlineTypeNode::can_emit_substitutability_check(Node* lhs, Node* rhs) {
+bool InlineTypeNode::can_emit_substitutability_check(PhaseGVN* phase, Node* lhs, Node* rhs) {
+  // We can't create new InlineTypeNodes after macro expansion
+  if (!phase->C->allow_macro_nodes()) {
+    return false;
+  }
+
   if (!lhs->bottom_type()->isa_ptr() ||
       (rhs != nullptr && !rhs->bottom_type()->isa_ptr())) {
     return false;
   }
 
-  if (rhs != nullptr && lhs->eqv_uncast(rhs)) {
+  if (rhs != nullptr && same_oop(phase, lhs, rhs)) {
     return true;
   }
 
@@ -641,7 +659,7 @@ bool InlineTypeNode::can_emit_substitutability_check(Node* lhs, Node* rhs) {
 
     Node* lhs_fv = lhs_inline->field_value(i);
     Node* rhs_fv = rhs_inline != nullptr ? rhs_inline->field_value(i) : nullptr;
-    if (!can_emit_substitutability_check(lhs_fv, rhs_fv)) {
+    if (!can_emit_substitutability_check(phase, lhs_fv, rhs_fv)) {
       return false;
     }
   }
@@ -696,7 +714,7 @@ static Node* emit_substitutability_check_pointer(GraphKit* kit, PhiNode* result,
   }
 
   Node* cmp = nullptr;
-  if (lhs->eqv_uncast(rhs)) {
+  if (same_oop(&gvn, lhs, rhs)) {
     cmp = kit->intcon(0);
   } else if (!lhs_type->is_ptr()->can_be_inline_type() || !rhs_type->is_ptr()->can_be_inline_type()) {
     // If one of the sides is not a value object, can only be substitutable if they are the same
@@ -2287,10 +2305,12 @@ const Type* LoadFlatNode::Value(PhaseGVN* phase) const {
 }
 
 const Type* StoreFlatNode::Value(PhaseGVN* phase) const {
+  Node* val = in(TypeFunc::Parms + 2);
   if (phase->type(in(TypeFunc::Control)) == Type::TOP || phase->type(in(TypeFunc::Memory)) == Type::TOP ||
-      phase->type(base()) == Type::TOP || phase->type(ptr()) == Type::TOP || phase->type(value()) == Type::TOP) {
+      phase->type(base()) == Type::TOP || phase->type(ptr()) == Type::TOP || phase->type(val) == Type::TOP) {
     return Type::TOP;
   }
+  assert(val->is_InlineType(), "must be InlineTypeNode: %s", val->Name());
   return bottom_type();
 }
 

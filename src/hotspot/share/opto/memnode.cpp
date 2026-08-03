@@ -4815,7 +4815,7 @@ const Type* MemBarNode::Value(PhaseGVN* phase) const {
 
 //------------------------------match------------------------------------------
 // Construct projections for memory.
-Node *MemBarNode::match(const ProjNode *proj, const Matcher *m, const RegMask* mask) {
+Node* MemBarNode::match(const ProjNode* proj, const Matcher* m) {
   switch (proj->_con) {
   case TypeFunc::Control:
   case TypeFunc::Memory:

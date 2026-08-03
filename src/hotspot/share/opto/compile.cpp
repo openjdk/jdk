@@ -4926,6 +4926,7 @@ bool Compile::final_graph_reshaping() {
 bool Compile::too_many_traps(ciMethod* method,
                              int bci,
                              Deoptimization::DeoptReason reason) {
+  assert(reason > Deoptimization::Reason_none && reason <= Deoptimization::Reason_LIMIT, "invalid reason");
   ciMethodData* md = method->method_data();
   if (md->is_empty()) {
     // Assume the trap has not occurred, or that it occurred only
@@ -4951,6 +4952,7 @@ bool Compile::too_many_traps(ciMethod* method,
 // Less-accurate variant which does not require a method and bci.
 bool Compile::too_many_traps(Deoptimization::DeoptReason reason,
                              ciMethodData* logmd) {
+  assert(reason > Deoptimization::Reason_none && reason <= Deoptimization::Reason_LIMIT, "invalid reason");
   if (trap_count(reason) >= Deoptimization::per_method_trap_limit(reason)) {
     // Too many traps globally.
     // Note that we use cumulative trap_count, not just md->trap_count.
@@ -4975,6 +4977,7 @@ bool Compile::too_many_traps(Deoptimization::DeoptReason reason,
 bool Compile::too_many_recompiles(ciMethod* method,
                                   int bci,
                                   Deoptimization::DeoptReason reason) {
+  assert(reason > Deoptimization::Reason_none && reason <= Deoptimization::Reason_LIMIT, "invalid reason");
   ciMethodData* md = method->method_data();
   if (md->is_empty()) {
     // Assume the trap has not occurred, or that it occurred only

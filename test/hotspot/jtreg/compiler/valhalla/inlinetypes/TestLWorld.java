@@ -5511,4 +5511,16 @@ public class TestLWorld {
     public void runTestAcmp() {
         Asserts.assertFalse(testAcmp());
     }
+
+    @Test
+    @Arguments(values = Argument.BOOLEAN_TOGGLE_FIRST_FALSE)
+    static Object[] testRefinedArrayTypeFlow(boolean flag) {
+        Object[] oArr;
+        if (flag) {
+            oArr = new Object[1];
+        } else {
+            oArr = new String[1];
+        }
+        return oArr;
+    }
 }

@@ -1092,12 +1092,15 @@ void GraphBuilder::load_indexed(BasicType type) {
       bool is_null_free = array_klass->is_elem_null_free();
       bool will_link;
       ciField* next_field = s.get_field(will_link);
-      bool next_needs_patching = !next_field->holder()->is_initialized() ||
+      ciInstanceKlass* next_holder = next_field->holder();
+      bool next_needs_patching = !next_holder->is_initialized() ||
                                  !next_field->will_link(method(), Bytecodes::_getfield) ||
                                  PatchALot;
       bool needs_atomic_access = array_klass->is_elem_atomic();
+      // Offset adjustment for delayed reads requires a concrete inline holder
+      bool next_holder_is_inlinetype = next_holder->is_inlinetype();
       can_delay_access = is_null_free && C1UseDelayedFlattenedFieldReads &&
-                         !next_needs_patching && !needs_atomic_access;
+                         !next_needs_patching && !needs_atomic_access && next_holder_is_inlinetype;
     }
     if (can_delay_access) {
       // potentially optimizable array access, storing information for delayed decision
@@ -1998,12 +2001,16 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
               s.next();
               if (s.cur_bc() == Bytecodes::_getfield && !needs_patching) {
                 ciField* next_field = s.get_field(will_link);
-                bool next_needs_patching = !next_field->holder()->is_loaded() ||
+                ciInstanceKlass* next_holder = next_field->holder();
+                bool next_needs_patching = !next_holder->is_loaded() ||
                                           !next_field->will_link(method(), Bytecodes::_getfield) ||
                                           PatchALot;
                 // We can't update the offset for atomic accesses
                 bool next_needs_atomic_access = next_field->is_flat() && next_field->is_atomic();
-                can_delay_access = C1UseDelayedFlattenedFieldReads && !next_needs_patching && !next_needs_atomic_access && next_field->is_null_free();
+                // Offset adjustment for delayed reads requires a concrete inline holder
+                bool next_holder_is_inlinetype = next_holder->is_inlinetype();
+                can_delay_access = C1UseDelayedFlattenedFieldReads && !next_needs_patching && !next_needs_atomic_access &&
+                                   next_field->is_null_free() && next_holder_is_inlinetype;
               }
             }
 

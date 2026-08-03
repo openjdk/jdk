@@ -85,7 +85,7 @@ const RegMask &StartNode::in_RegMask(uint) const {
 
 //------------------------------match------------------------------------------
 // Construct projections for incoming parameters, and their RegMask info
-Node *StartNode::match(const ProjNode *proj, const Matcher *match, const RegMask* mask) {
+Node* StartNode::match(const ProjNode* proj, const Matcher* match) {
   switch (proj->_con) {
   case TypeFunc::Control:
   case TypeFunc::I_O:
@@ -782,15 +782,16 @@ void CallNode::calling_convention(BasicType* sig_bt, VMRegPair *parm_regs, uint 
 //------------------------------match------------------------------------------
 // Construct projections for control, I/O, memory-fields, ..., and
 // return result(s) along with their RegMask info
-Node *CallNode::match(const ProjNode *proj, const Matcher *match, const RegMask* mask) {
+Node* CallNode::match(const ProjNode* proj, const Matcher* match) {
   uint con = proj->_con;
-  const TypeTuple* range_cc = tf()->range_cc();
+  const TypeTuple* range_cc = _tf->range_cc();
   if (con >= TypeFunc::Parms) {
-    if (tf()->returns_inline_type_as_fields()) {
+    if (_tf->returns_inline_type_as_fields()) {
       // The call returns multiple values (inline type fields): we
       // create one projection per returned value.
       assert(con <= TypeFunc::Parms+1 || InlineTypeReturnedAsFields, "only for multi value return");
       uint ideal_reg = range_cc->field_at(con)->ideal_reg();
+      const RegMask* mask = match->return_values_mask(_tf);
       return new MachProjNode(this, con, mask[con-TypeFunc::Parms], ideal_reg);
     } else {
       if (con == TypeFunc::Parms) {
@@ -1403,7 +1404,7 @@ bool CallStaticJavaNode::remove_unknown_flat_array_load(PhaseIterGVN* igvn, Node
 Node* CallStaticJavaNode::replace_is_substitutable(PhaseIterGVN* igvn) {
   Node* left = in(TypeFunc::Parms);
   Node* right = in(TypeFunc::Parms + 1);
-  if (!InlineTypeNode::can_emit_substitutability_check(left, right)) {
+  if (!InlineTypeNode::can_emit_substitutability_check(igvn, left, right)) {
     return nullptr;
   }
 
@@ -2052,8 +2053,7 @@ AllocateNode::AllocateNode(Compile* C, const TypeFunc *atype,
 
 void AllocateNode::compute_MemBar_redundancy(ciMethod* initializer)
 {
-  assert(initializer != nullptr &&
-         (initializer->is_object_constructor() || initializer->is_class_initializer()),
+  assert(initializer != nullptr && initializer->is_object_constructor(),
          "unexpected initializer method");
   BCEscapeAnalyzer* analyzer = initializer->get_bcea();
   if (analyzer == nullptr) {
