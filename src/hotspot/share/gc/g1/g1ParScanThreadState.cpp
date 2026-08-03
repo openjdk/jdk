@@ -683,17 +683,17 @@ void G1ParScanThreadStateSet::par_iterate_nmethod_regions_to_add(G1HeapRegionClo
 }
 
 void G1ParScanThreadStateSet::record_unused_optional_region(G1HeapRegion* hr) {
-  for (uint worker_index = 0; worker_index < _num_workers; ++worker_index) {
-    G1ParScanThreadState* pss = _states[worker_index];
+  for (uint worker_id = 0; worker_id < _num_workers; ++worker_id) {
+    G1ParScanThreadState* pss = _states[worker_id];
     assert(pss != nullptr, "must be initialized");
 
     size_t used_memory = pss->oops_into_optional_region(hr)->used_memory();
-    _g1h->phase_times()->record_or_add_thread_work_item(G1GCPhaseTimes::OptScanHR, worker_index, used_memory, G1GCPhaseTimes::ScanHRUsedMemory);
+    _g1h->phase_times()->record_or_add_thread_work_item(G1GCPhaseTimes::OptScanHR, worker_id, used_memory, G1GCPhaseTimes::ScanHRUsedMemory);
   }
 }
 
-void G1ParScanThreadState::record_evacuation_failed_region(G1HeapRegion* r, uint worker_id, bool cause_pinned) {
-  if (_evac_failure_regions->record(worker_id, r->hrm_index(), cause_pinned)) {
+void G1ParScanThreadState::record_evacuation_failed_region(G1HeapRegion* r, bool cause_pinned) {
+  if (_evac_failure_regions->record(worker_id(), r->hrm_index(), cause_pinned)) {
     G1HeapRegionPrinter::evac_failure(r);
   }
 }
@@ -707,7 +707,7 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, Kla
     // Forward-to-self succeeded. We are the "owner" of the object.
     G1HeapRegion* r = _g1h->heap_region_containing(old);
 
-    record_evacuation_failed_region(r, _worker_id, cause_pinned);
+    record_evacuation_failed_region(r, cause_pinned);
 
     // Mark the failing object in the marking bitmap and later use the bitmap to handle
     // evacuation failure recovery.
