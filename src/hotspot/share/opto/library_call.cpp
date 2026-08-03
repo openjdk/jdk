@@ -2782,13 +2782,17 @@ bool LibraryCallKit::inline_unsafe_flat_access(bool is_store, AccessKind kind) {
       value = new_value;
     }
 
-    assert(value_type->inline_klass() == value_klass, "value is of type %s while valueType is %s", value_type->inline_klass()->name()->as_utf8(), value_klass->name()->as_utf8());
+    assert(value_type == TypePtr::NULL_PTR || value_type->inline_klass() == value_klass,
+           "value is of type %s while value klass is %s", value_type->inline_klass()->name()->as_utf8(), value_klass->name()->as_utf8());
     if (layout == LayoutKind::REFERENCE) {
       const TypePtr* ptr_type = (decorators & C2_MISMATCHED) != 0 ? TypeRawPtr::BOTTOM : _gvn.type(ptr)->is_ptr();
       access_store_at(base, ptr, ptr_type, value, value_type, T_OBJECT, decorators);
     } else {
       bool atomic = LayoutKindHelper::is_atomic_flat(layout);
       bool null_free = !LayoutKindHelper::is_nullable_flat(layout);
+      if (null_free) {
+        null_check(value);
+      }
       value->as_InlineType()->store_flat(this, base, ptr, atomic, immutable_memory, null_free, decorators);
     }
 
