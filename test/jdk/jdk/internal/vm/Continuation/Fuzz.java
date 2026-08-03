@@ -30,6 +30,7 @@
  * @requires vm.opt.TieredCompilation == null | vm.opt.TieredCompilation == true
  * @modules java.base java.base/jdk.internal.vm.annotation java.base/jdk.internal.vm
  * @library /test/lib
+ * @enablePreview
  * @build java.base/java.lang.StackWalkerHelper
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -47,6 +48,7 @@
  * @requires vm.opt.TieredCompilation == null | vm.opt.TieredCompilation == true
  * @modules java.base java.base/jdk.internal.vm.annotation java.base/jdk.internal.vm
  * @library /test/lib
+ * @enablePreview
  * @build java.base/java.lang.StackWalkerHelper
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -83,6 +85,7 @@ public class Fuzz implements Runnable {
     static final boolean FILE    = true;
     static final boolean RANDOM  = true;
     static final boolean VERBOSE = false;
+    static final Random RAND = Utils.getRandomInstance();
 
     static int COMPILATION_TIMEOUT = (int)(5_000 * Utils.TIMEOUT_FACTOR); // ms
 
@@ -112,14 +115,14 @@ public class Fuzz implements Runnable {
 
     static void runTests() {
         if (FILE)   testFile("fuzz.dat");
-        if (RANDOM) testRandom(System.currentTimeMillis(), 50);
+        if (RANDOM) testRandom(RAND.nextLong(), 50);
     }
 
     ////////////////
 
     enum Op {
-        CALL_I_INT, CALL_I_DBL, CALL_I_MANY,
-        CALL_C_INT, CALL_C_DBL, CALL_C_MANY,
+        CALL_I_INT, CALL_I_DBL, CALL_I_MANY, CALL_I_VAL,
+        CALL_C_INT, CALL_C_DBL, CALL_C_MANY, CALL_C_VAL,
         CALL_I_CTCH, CALL_C_CTCH,
         CALL_I_PIN, CALL_C_PIN,
         MH_I_INT, MH_C_INT, MH_I_MANY, MH_C_MANY,
@@ -282,7 +285,7 @@ public class Fuzz implements Runnable {
     private static int COMPILE_LEVEL;
 
     static final int  WARMUP_ITERS = 15_000;
-    static final Op[] WARMUP_TRACE = {Op.MH_C_INT, Op.MH_C_MANY, Op.REF_C_INT, Op.REF_C_MANY, Op.CALL_C_INT};
+    static final Op[] WARMUP_TRACE = {Op.MH_C_INT, Op.MH_C_MANY, Op.REF_C_INT, Op.REF_C_MANY, Op.CALL_C_INT, Op.CALL_C_VAL};
 
     static void warmup() {
         final long start = time();
@@ -602,6 +605,118 @@ public class Fuzz implements Runnable {
         return f instanceof StackFrame ? StackWalkerHelper.frameToString((StackFrame)f) : Objects.toString(f);
     }
 
+    //// Value Classes
+
+    static abstract value class BaseValue {
+        public abstract int res();
+    };
+
+    static value class SmallValue extends BaseValue {
+        int x1;
+        int x2;
+
+        public SmallValue(int i) {
+            x1 = i;
+            x2 = i;
+        }
+
+        public int res() {
+            return x1 + x2;
+        }
+    };
+
+    static value class LargeValue extends BaseValue {
+        int x1;
+        int x2;
+        int x3;
+        int x4;
+        int x5;
+        int x6;
+        int x7;
+
+        public LargeValue(int i) {
+            x1 = i;
+            x2 = i;
+            x3 = i;
+            x4 = i;
+            x5 = i;
+            x6 = i;
+            x7 = i;
+        }
+
+        public int res() {
+            return x1 + x2 + x3 + x4 + x5 + x6 + x7;
+        }
+    };
+
+    static value class OopsValue extends BaseValue {
+        Object x1;
+        Object x2;
+        Object x3;
+        Object x4;
+        Object x5;
+        int x6;
+
+        public OopsValue(int i) {
+            x1 = new Object();
+            x2 = new Object();
+            x3 = new Object();
+            x4 = new Object();
+            x5 = new Object();
+            x6 = i;
+        }
+
+        public int res() {
+            return x6;
+        }
+    };
+
+    public static value class DoubleValue extends BaseValue {
+        double d1;
+        double d2;
+        double d3;
+        double d4;
+        double d5;
+        double d6;
+        double d7;
+
+        public DoubleValue(double d) {
+            d1 = d;
+            d2 = d + 1;
+            d3 = d + 2;
+            d4 = d + 3;
+            d5 = d + 4;
+            d6 = d + 4;
+            d7 = d + 4;
+        }
+
+        public int res() {
+            return (int)(d1 + d2 + d3 + d4 + d5 + d6 + d7);
+        }
+    };
+
+    static value class MixedValue extends BaseValue {
+        byte x1;
+        short x2;
+        int x3;
+        long x4;
+        double x5;
+        boolean x6;
+
+        public MixedValue(int i) {
+            x1 = (byte)i;
+            x2 = (short)i;
+            x3 = i;
+            x4 = i;
+            x5 = i;
+            x6 = (i % 2) == 0;
+        }
+
+        public int res() {
+            return (int)x1 + (int)x2 + (int)x3 + (int)x4 + (int)x5 + (x6 ? 1 : 0);
+        }
+    };
+
     //// Static Helpers
 
     static void rethrow(Throwable t) {
@@ -637,6 +752,8 @@ public class Fuzz implements Runnable {
     static final Class<?>[] run_sig = new Class<?>[]{};
     static final Class<?>[] int_sig = new Class<?>[]{int.class, int.class};
     static final Class<?>[] dbl_sig = new Class<?>[]{int.class, double.class};
+    static final Class<?>[] val_sig = new Class<?>[]{int.class, SmallValue.class,
+        LargeValue.class, OopsValue.class, DoubleValue.class, MixedValue.class};
     static final Class<?>[] mny_sig = new Class<?>[]{int.class,
         int.class, double.class, long.class, float.class, Object.class,
         int.class, double.class, long.class, float.class, Object.class,
@@ -662,6 +779,8 @@ public class Fuzz implements Runnable {
             method.put(Op.CALL_C_INT,  Fuzz.class.getDeclaredMethod("com_int", int_sig));
             method.put(Op.CALL_I_DBL,  Fuzz.class.getDeclaredMethod("int_dbl", dbl_sig));
             method.put(Op.CALL_C_DBL,  Fuzz.class.getDeclaredMethod("com_dbl", dbl_sig));
+            method.put(Op.CALL_I_VAL,  Fuzz.class.getDeclaredMethod("int_val", val_sig));
+            method.put(Op.CALL_C_VAL,  Fuzz.class.getDeclaredMethod("com_val", val_sig));
             method.put(Op.CALL_I_MANY, Fuzz.class.getDeclaredMethod("int_mny", mny_sig));
             method.put(Op.CALL_C_MANY, Fuzz.class.getDeclaredMethod("com_mny", mny_sig));
             method.put(Op.CALL_I_PIN,  Fuzz.class.getDeclaredMethod("int_pin", int_sig));
@@ -706,6 +825,11 @@ public class Fuzz implements Runnable {
         long l1 = (long)res, l2 = (long)res, l3 = (long)res, l4 = (long)res;
         float f1 = (float)res, f2 = (float)res, f3 = (float)res, f4 = (float)res;
         Object o1 = res, o2 = res, o3 = res, o4 = res;
+        SmallValue sv = new SmallValue(res);
+        LargeValue lv = new LargeValue(res);
+        OopsValue ov = new OopsValue(res);
+        DoubleValue dv = new DoubleValue((double)res);
+        MixedValue mv = new MixedValue(res);
 
         for (int c = 1, index0 = index; c > 0; c--, maybeResetIndex(index0)) { // index0 is the index to which we return when we loop
             switch (next(c)) {
@@ -717,6 +841,8 @@ public class Fuzz implements Runnable {
             case CALL_C_INT  -> res += com_int(depth+1, (int)res);
             case CALL_I_DBL  -> res += (int)int_dbl(depth+1, res);
             case CALL_C_DBL  -> res += (int)com_dbl(depth+1, res);
+            case CALL_I_VAL  -> res += int_val(depth+1, sv, lv, ov, dv, mv).res();
+            case CALL_C_VAL  -> res += com_val(depth+1, sv, lv, ov, dv, mv).res();
             case CALL_I_PIN  -> res += int_pin(depth+1, (int)res);
             case CALL_C_PIN  -> res += com_pin(depth+1, (int)res);
             case CALL_I_MANY -> res += int_mny(depth+1, x1, d1, l1, f1, o1, x2, d2, l2, f2, o2, x3, d3, l3, f3, o3, x4, d4, l4, f4, o4);
@@ -743,6 +869,11 @@ public class Fuzz implements Runnable {
         long l1 = (long)res, l2 = (long)res, l3 = (long)res, l4 = (long)res;
         float f1 = (float)res, f2 = (float)res, f3 = (float)res, f4 = (float)res;
         Object o1 = res, o2 = res, o3 = res, o4 = res;
+        SmallValue sv = new SmallValue(x);
+        LargeValue lv = new LargeValue(x);
+        OopsValue ov = new OopsValue(x);
+        DoubleValue dv = new DoubleValue((double)x);
+        MixedValue mv = new MixedValue(x);
 
         for (int c = 1, index0 = index; c > 0; c--, maybeResetIndex(index0)) { // index0 is the index to which we return when we loop
             switch (next(c)) {
@@ -754,6 +885,8 @@ public class Fuzz implements Runnable {
             case CALL_C_INT  -> res += com_int(depth+1, (int)res);
             case CALL_I_DBL  -> res += (int)int_dbl(depth+1, res);
             case CALL_C_DBL  -> res += (int)com_dbl(depth+1, res);
+            case CALL_I_VAL  -> res += int_val(depth+1, sv, lv, ov, dv, mv).res();
+            case CALL_C_VAL  -> res += com_val(depth+1, sv, lv, ov, dv, mv).res();
             case CALL_I_PIN  -> res += int_pin(depth+1, (int)res);
             case CALL_C_PIN  -> res += com_pin(depth+1, (int)res);
             case CALL_I_MANY -> res += int_mny(depth+1, x1, d1, l1, f1, o1, x2, d2, l2, f2, o2, x3, d3, l3, f3, o3, x4, d4, l4, f4, o4);
@@ -780,6 +913,11 @@ public class Fuzz implements Runnable {
         long l1 = (long)res, l2 = (long)res, l3 = (long)res, l4 = (long)res;
         float f1 = (float)res, f2 = (float)res, f3 = (float)res, f4 = (float)res;
         Object o1 = res, o2 = res, o3 = res, o4 = res;
+        SmallValue sv = new SmallValue(x);
+        LargeValue lv = new LargeValue(x);
+        OopsValue ov = new OopsValue(x);
+        DoubleValue dv = new DoubleValue((double)x);
+        MixedValue mv = new MixedValue(x);
 
         for (int c = 1, index0 = index; c > 0; c--, maybeResetIndex(index0)) { // index0 is the index to which we return when we loop
             switch (next(c)) {
@@ -791,6 +929,8 @@ public class Fuzz implements Runnable {
             case CALL_C_INT  -> res += com_int(depth+1, (int)res);
             case CALL_I_DBL  -> res += (int)int_dbl(depth+1, res);
             case CALL_C_DBL  -> res += (int)com_dbl(depth+1, res);
+            case CALL_I_VAL  -> res += int_val(depth+1, sv, lv, ov, dv, mv).res();
+            case CALL_C_VAL  -> res += com_val(depth+1, sv, lv, ov, dv, mv).res();
             case CALL_I_PIN  -> res += int_pin(depth+1, (int)res);
             case CALL_C_PIN  -> res += com_pin(depth+1, (int)res);
             case CALL_I_MANY -> res += int_mny(depth+1, x1, d1, l1, f1, o1, x2, d2, l2, f2, o2, x3, d3, l3, f3, o3, x4, d4, l4, f4, o4);
@@ -817,6 +957,11 @@ public class Fuzz implements Runnable {
         long l1 = (long)res, l2 = (long)res, l3 = (long)res, l4 = (long)res;
         float f1 = (float)res, f2 = (float)res, f3 = (float)res, f4 = (float)res;
         Object o1 = res, o2 = res, o3 = res, o4 = res;
+        SmallValue sv = new SmallValue(x1);
+        LargeValue lv = new LargeValue(x1);
+        OopsValue ov = new OopsValue(x1);
+        DoubleValue dv = new DoubleValue((double)x1);
+        MixedValue mv = new MixedValue(x1);
 
         for (int c = 1, index0 = index; c > 0; c--, maybeResetIndex(index0)) { // index0 is the index to which we return when we loop
             switch (next(c)) {
@@ -828,6 +973,8 @@ public class Fuzz implements Runnable {
             case CALL_C_INT  -> res += com_int(depth+1, (int)res);
             case CALL_I_DBL  -> res += (int)int_dbl(depth+1, res);
             case CALL_C_DBL  -> res += (int)com_dbl(depth+1, res);
+            case CALL_I_VAL  -> res += int_val(depth+1, sv, lv, ov, dv, mv).res();
+            case CALL_C_VAL  -> res += com_val(depth+1, sv, lv, ov, dv, mv).res();
             case CALL_I_PIN  -> res += int_pin(depth+1, (int)res);
             case CALL_C_PIN  -> res += com_pin(depth+1, (int)res);
             case CALL_I_MANY -> res += int_mny(depth+1, x1, d1, l1, f1, o1, x2, d2, l2, f2, o2, x3, d3, l3, f3, o3, x4, d4, l4, f4, o4);
@@ -854,6 +1001,11 @@ public class Fuzz implements Runnable {
         long l1 = (long)res, l2 = (long)res, l3 = (long)res, l4 = (long)res;
         float f1 = (float)res, f2 = (float)res, f3 = (float)res, f4 = (float)res;
         Object o1 = res, o2 = res, o3 = res, o4 = res;
+        SmallValue sv = new SmallValue(x1);
+        LargeValue lv = new LargeValue(x1);
+        OopsValue ov = new OopsValue(x1);
+        DoubleValue dv = new DoubleValue((double)x1);
+        MixedValue mv = new MixedValue(x1);
 
         for (int c = 1, index0 = index; c > 0; c--, maybeResetIndex(index0)) { // index0 is the index to which we return when we loop
             switch (next(c)) {
@@ -865,6 +1017,8 @@ public class Fuzz implements Runnable {
             case CALL_C_INT  -> res += com_int(depth+1, (int)res);
             case CALL_I_DBL  -> res += (int)int_dbl(depth+1, res);
             case CALL_C_DBL  -> res += (int)com_dbl(depth+1, res);
+            case CALL_I_VAL  -> res += int_val(depth+1, sv, lv, ov, dv, mv).res();
+            case CALL_C_VAL  -> res += com_val(depth+1, sv, lv, ov, dv, mv).res();
             case CALL_I_PIN  -> res += int_pin(depth+1, (int)res);
             case CALL_C_PIN  -> res += com_pin(depth+1, (int)res);
             case CALL_I_MANY -> res += int_mny(depth+1, x1, d1, l1, f1, o1, x2, d2, l2, f2, o2, x3, d3, l3, f3, o3, x4, d4, l4, f4, o4);
@@ -883,6 +1037,110 @@ public class Fuzz implements Runnable {
     }
 
     @DontInline
+    BaseValue int_val(final int depth, SmallValue x1, LargeValue x2, OopsValue x3, DoubleValue x4, MixedValue x5) {
+        int res = x1.res();
+
+        int x11 = (int)res, x12 = (int)res, x13 = (int)res, x14 = (int)res;
+        double d1 = (double)res, d2 = (double)res, d3 = (double)res, d4 = (double)res;
+        long l1 = (long)res, l2 = (long)res, l3 = (long)res, l4 = (long)res;
+        float f1 = (float)res, f2 = (float)res, f3 = (float)res, f4 = (float)res;
+        Object o1 = res, o2 = res, o3 = res, o4 = res;
+        SmallValue sv = new SmallValue(res);
+        LargeValue lv = new LargeValue(res);
+        OopsValue ov = new OopsValue(res);
+        DoubleValue dv = new DoubleValue((double)res);
+        MixedValue mv = new MixedValue(res);
+
+        for (int c = 1, index0 = index; c > 0; c--, maybeResetIndex(index0)) { // index0 is the index to which we return when we loop
+            switch (next(c)) {
+            case THROW -> throwException();
+            case LOOP  -> { c += 2; index0 = index; }
+            case YIELD -> { preYield(); boolean y = Continuation.yield(SCOPE); postYield(y); c++; }
+            case DONE  -> { break; }
+            case CALL_I_INT  -> res += int_int(depth+1, (int)res);
+            case CALL_C_INT  -> res += com_int(depth+1, (int)res);
+            case CALL_I_DBL  -> res += (int)int_dbl(depth+1, res);
+            case CALL_C_DBL  -> res += (int)com_dbl(depth+1, res);
+            case CALL_I_VAL  -> res += int_val(depth+1, sv, lv, ov, dv, mv).res();
+            case CALL_C_VAL  -> res += com_val(depth+1, sv, lv, ov, dv, mv).res();
+            case CALL_I_PIN  -> res += int_pin(depth+1, (int)res);
+            case CALL_C_PIN  -> res += com_pin(depth+1, (int)res);
+            case CALL_I_MANY -> res += int_mny(depth+1, x11, d1, l1, f1, o1, x12, d2, l2, f2, o2, x13, d3, l3, f3, o3, x14, d4, l4, f4, o4);
+            case CALL_C_MANY -> res += com_mny(depth+1, x11, d1, l1, f1, o1, x12, d2, l2, f2, o2, x13, d3, l3, f3, o3, x14, d4, l4, f4, o4);
+            case CALL_I_CTCH -> {try { res += int_int(depth+1, (int)res); } catch (FuzzException e) {}}
+            case CALL_C_CTCH -> {try { res += com_int(depth+1, (int)res); } catch (FuzzException e) {}}
+            case MH_I_INT, MH_C_INT     -> {try { res += (int)handle(current()).invokeExact(this, depth+1, (int)res);  } catch (Throwable e) { rethrow(e); }}
+            case MH_I_MANY, MH_C_MANY   -> {try { res += (int)handle(current()).invokeExact(this, depth+1, x11, d1, l1, f1, o1, x12, d2, l2, f2, o2, x13, d3, l3, f3, o3, x14, d4, l4, f4, o4); } catch (Throwable e) { rethrow(e); }}
+            case REF_I_INT,  REF_C_INT  -> {try { res += (int)method(current()).invoke(this, depth+1, (int)res); } catch (InvocationTargetException e) { rethrow(e.getCause()); } catch (IllegalAccessException e) { assert false; }}
+            case REF_I_MANY, REF_C_MANY -> {try { res += (int)method(current()).invoke(this, depth+1, x11, d1, l1, f1, o1, x12, d2, l2, f2, o2, x13, d3, l3, f3, o3, x14, d4, l4, f4, o4); } catch (InvocationTargetException e) { rethrow(e.getCause()); } catch (IllegalAccessException e) { assert false; }}
+            default -> throw new AssertionError("Unknown op: " + current());
+            }
+        }
+
+        int positiveRes = (res == Integer.MIN_VALUE) ? Integer.MAX_VALUE : Math.abs(res);
+        switch (positiveRes % 5) {
+            case 0 -> { return log(new SmallValue(res)); }
+            case 1 -> { return log(new LargeValue(res)); }
+            case 2 -> { return log(new OopsValue(res)); }
+            case 3 -> { return log(new DoubleValue((double)res)); }
+            case 4 -> { return log(new MixedValue(res)); }
+            default -> throw new AssertionError("Invalid case");
+        }
+    }
+
+    @DontInline
+    BaseValue com_val(final int depth, SmallValue x1, LargeValue x2, OopsValue x3, DoubleValue x4, MixedValue x5) {
+        int res = x1.res();
+
+        int x11 = (int)res, x12 = (int)res, x13 = (int)res, x14 = (int)res;
+        double d1 = (double)res, d2 = (double)res, d3 = (double)res, d4 = (double)res;
+        long l1 = (long)res, l2 = (long)res, l3 = (long)res, l4 = (long)res;
+        float f1 = (float)res, f2 = (float)res, f3 = (float)res, f4 = (float)res;
+        Object o1 = res, o2 = res, o3 = res, o4 = res;
+        SmallValue sv = new SmallValue(res);
+        LargeValue lv = new LargeValue(res);
+        OopsValue ov = new OopsValue(res);
+        DoubleValue dv = new DoubleValue((double)res);
+        MixedValue mv = new MixedValue(res);
+
+        for (int c = 1, index0 = index; c > 0; c--, maybeResetIndex(index0)) { // index0 is the index to which we return when we loop
+            switch (next(c)) {
+            case THROW -> throwException();
+            case LOOP  -> { c += 2; index0 = index; }
+            case YIELD -> { preYield(); boolean y = Continuation.yield(SCOPE); postYield(y); c++; }
+            case DONE  -> { break; }
+            case CALL_I_INT  -> res += int_int(depth+1, (int)res);
+            case CALL_C_INT  -> res += com_int(depth+1, (int)res);
+            case CALL_I_DBL  -> res += (int)int_dbl(depth+1, res);
+            case CALL_C_DBL  -> res += (int)com_dbl(depth+1, res);
+            case CALL_I_VAL  -> res += int_val(depth+1, sv, lv, ov, dv, mv).res();
+            case CALL_C_VAL  -> res += com_val(depth+1, sv, lv, ov, dv, mv).res();
+            case CALL_I_PIN  -> res += int_pin(depth+1, (int)res);
+            case CALL_C_PIN  -> res += com_pin(depth+1, (int)res);
+            case CALL_I_MANY -> res += int_mny(depth+1, x11, d1, l1, f1, o1, x12, d2, l2, f2, o2, x13, d3, l3, f3, o3, x14, d4, l4, f4, o4);
+            case CALL_C_MANY -> res += com_mny(depth+1, x11, d1, l1, f1, o1, x12, d2, l2, f2, o2, x13, d3, l3, f3, o3, x14, d4, l4, f4, o4);
+            case CALL_I_CTCH -> {try { res += int_int(depth+1, (int)res); } catch (FuzzException e) {}}
+            case CALL_C_CTCH -> {try { res += com_int(depth+1, (int)res); } catch (FuzzException e) {}}
+            case MH_I_INT, MH_C_INT     -> {try { res += (int)handle(current()).invokeExact(this, depth+1, (int)res);  } catch (Throwable e) { rethrow(e); }}
+            case MH_I_MANY, MH_C_MANY   -> {try { res += (int)handle(current()).invokeExact(this, depth+1, x11, d1, l1, f1, o1, x12, d2, l2, f2, o2, x13, d3, l3, f3, o3, x14, d4, l4, f4, o4); } catch (Throwable e) { rethrow(e); }}
+            case REF_I_INT,  REF_C_INT  -> {try { res += (int)method(current()).invoke(this, depth+1, (int)res); } catch (InvocationTargetException e) { rethrow(e.getCause()); } catch (IllegalAccessException e) { assert false; }}
+            case REF_I_MANY, REF_C_MANY -> {try { res += (int)method(current()).invoke(this, depth+1, x11, d1, l1, f1, o1, x12, d2, l2, f2, o2, x13, d3, l3, f3, o3, x14, d4, l4, f4, o4); } catch (InvocationTargetException e) { rethrow(e.getCause()); } catch (IllegalAccessException e) { assert false; }}
+            default -> throw new AssertionError("Unknown op: " + current());
+            }
+        }
+
+        int positiveRes = (res == Integer.MIN_VALUE) ? Integer.MAX_VALUE : Math.abs(res);
+        switch (positiveRes % 5) {
+            case 0 -> { return log(new SmallValue(res)); }
+            case 1 -> { return log(new LargeValue(res)); }
+            case 2 -> { return log(new OopsValue(res)); }
+            case 3 -> { return log(new DoubleValue((double)res)); }
+            case 4 -> { return log(new MixedValue(res)); }
+            default -> throw new AssertionError("Invalid case");
+        }
+    }
+
+    @DontInline
     int int_pin(final int depth, int x) {
         int res = x;
 
@@ -891,6 +1149,11 @@ public class Fuzz implements Runnable {
         long l1 = (long)res, l2 = (long)res, l3 = (long)res, l4 = (long)res;
         float f1 = (float)res, f2 = (float)res, f3 = (float)res, f4 = (float)res;
         Object o1 = res, o2 = res, o3 = res, o4 = res;
+        SmallValue sv = new SmallValue(x);
+        LargeValue lv = new LargeValue(x);
+        OopsValue ov = new OopsValue(x);
+        DoubleValue dv = new DoubleValue((double)x);
+        MixedValue mv = new MixedValue(x);
 
         synchronized (this) {
 
@@ -904,6 +1167,8 @@ public class Fuzz implements Runnable {
             case CALL_C_INT  -> res += com_int(depth+1, (int)res);
             case CALL_I_DBL  -> res += (int)int_dbl(depth+1, res);
             case CALL_C_DBL  -> res += (int)com_dbl(depth+1, res);
+            case CALL_I_VAL  -> res += int_val(depth+1, sv, lv, ov, dv, mv).res();
+            case CALL_C_VAL  -> res += com_val(depth+1, sv, lv, ov, dv, mv).res();
             case CALL_I_PIN  -> res += int_pin(depth+1, (int)res);
             case CALL_C_PIN  -> res += com_pin(depth+1, (int)res);
             case CALL_I_MANY -> res += int_mny(depth+1, x1, d1, l1, f1, o1, x2, d2, l2, f2, o2, x3, d3, l3, f3, o3, x4, d4, l4, f4, o4);
@@ -932,6 +1197,11 @@ public class Fuzz implements Runnable {
         long l1 = (long)res, l2 = (long)res, l3 = (long)res, l4 = (long)res;
         float f1 = (float)res, f2 = (float)res, f3 = (float)res, f4 = (float)res;
         Object o1 = res, o2 = res, o3 = res, o4 = res;
+        SmallValue sv = new SmallValue(x);
+        LargeValue lv = new LargeValue(x);
+        OopsValue ov = new OopsValue(x);
+        DoubleValue dv = new DoubleValue((double)x);
+        MixedValue mv = new MixedValue(x);
 
         synchronized (this) {
 
@@ -945,6 +1215,8 @@ public class Fuzz implements Runnable {
             case CALL_C_INT  -> res += com_int(depth+1, (int)res);
             case CALL_I_DBL  -> res += (int)int_dbl(depth+1, res);
             case CALL_C_DBL  -> res += (int)com_dbl(depth+1, res);
+            case CALL_I_VAL  -> res += int_val(depth+1, sv, lv, ov, dv, mv).res();
+            case CALL_C_VAL  -> res += com_val(depth+1, sv, lv, ov, dv, mv).res();
             case CALL_I_PIN  -> res += int_pin(depth+1, (int)res);
             case CALL_C_PIN  -> res += com_pin(depth+1, (int)res);
             case CALL_I_MANY -> res += int_mny(depth+1, x1, d1, l1, f1, o1, x2, d2, l2, f2, o2, x3, d3, l3, f3, o3, x4, d4, l4, f4, o4);
@@ -972,6 +1244,11 @@ public class Fuzz implements Runnable {
         int x4, double d4, long l4, float f4, Object o4) {
 
         double res = x1 + d2 + f3 + l4 + (double)(o4 instanceof Double ? (Double)o4 : (Integer)o4);
+        SmallValue sv = new SmallValue(x1);
+        LargeValue lv = new LargeValue(x1);
+        OopsValue ov = new OopsValue(x1);
+        DoubleValue dv = new DoubleValue((double)x1);
+        MixedValue mv = new MixedValue(x1);
 
         for (int c = 1, index0 = index; c > 0; c--, maybeResetIndex(index0)) { // index0 is the index to which we return when we loop
             switch (next(c)) {
@@ -983,6 +1260,8 @@ public class Fuzz implements Runnable {
             case CALL_C_INT  -> res += com_int(depth+1, (int)res);
             case CALL_I_DBL  -> res += (int)int_dbl(depth+1, res);
             case CALL_C_DBL  -> res += (int)com_dbl(depth+1, res);
+            case CALL_I_VAL  -> res += int_val(depth+1, sv, lv, ov, dv, mv).res();
+            case CALL_C_VAL  -> res += com_val(depth+1, sv, lv, ov, dv, mv).res();
             case CALL_I_PIN  -> res += int_pin(depth+1, (int)res);
             case CALL_C_PIN  -> res += com_pin(depth+1, (int)res);
             case CALL_I_MANY -> res += int_mny(depth+1, x1, d1, l1, f1, o1, x2, d2, l2, f2, o2, x3, d3, l3, f3, o3, x4, d4, l4, f4, o4);
@@ -1008,6 +1287,11 @@ public class Fuzz implements Runnable {
         int x4, double d4, long l4, float f4, Object o4) {
 
         double res = x1 + d2 + f3 + l4 + (double)(o4 instanceof Double ? (Double)o4 : (Integer)o4);
+        SmallValue sv = new SmallValue(x1);
+        LargeValue lv = new LargeValue(x1);
+        OopsValue ov = new OopsValue(x1);
+        DoubleValue dv = new DoubleValue((double)x1);
+        MixedValue mv = new MixedValue(x1);
 
         for (int c = 1, index0 = index; c > 0; c--, maybeResetIndex(index0)) { // index0 is the index to which we return when we loop
             switch (next(c)) {
@@ -1019,6 +1303,8 @@ public class Fuzz implements Runnable {
             case CALL_C_INT  -> res += com_int(depth+1, (int)res);
             case CALL_I_DBL  -> res += (int)int_dbl(depth+1, res);
             case CALL_C_DBL  -> res += (int)com_dbl(depth+1, res);
+            case CALL_I_VAL  -> res += int_val(depth+1, sv, lv, ov, dv, mv).res();
+            case CALL_C_VAL  -> res += com_val(depth+1, sv, lv, ov, dv, mv).res();
             case CALL_I_PIN  -> res += int_pin(depth+1, (int)res);
             case CALL_C_PIN  -> res += com_pin(depth+1, (int)res);
             case CALL_I_MANY -> res += int_mny(depth+1, x1, d1, l1, f1, o1, x2, d2, l2, f2, o2, x3, d3, l3, f3, o3, x4, d4, l4, f4, o4);

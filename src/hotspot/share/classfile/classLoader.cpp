@@ -698,6 +698,16 @@ static const char* get_exploded_module_path(const char* module_name, bool c_heap
   return path;
 }
 
+// Gets a preview path for a given class path as a resource.
+static const char* get_preview_path(const char* path) {
+  const char file_sep = os::file_separator()[0];
+  // 18 represents the length of "META-INF" (8) + "preview" (7) + 2 file separators + \0
+  size_t len = strlen(path) + 18;
+  char* preview_path = NEW_RESOURCE_ARRAY(char, len);
+  jio_snprintf(preview_path, len, "%s%cMETA-INF%cpreview", path, file_sep, file_sep);
+  return preview_path;
+}
+
 // During an exploded modules build, each module defined to the boot loader
 // will be added to the ClassLoader::_exploded_entries array.
 void ClassLoader::add_to_exploded_build_list(JavaThread* current, Symbol* module_sym) {
@@ -713,19 +723,32 @@ void ClassLoader::add_to_exploded_build_list(JavaThread* current, Symbol* module
   if (os::stat(path, &st) == 0) {
     // Directory found
     ClassPathEntry* new_entry = create_class_path_entry(current, path, &st);
-
     // If the path specification is valid, enter it into this module's list.
     // There is no need to check for duplicate modules in the exploded entry list,
     // since no two modules with the same name can be defined to the boot loader.
     // This is checked at module definition time in Modules::define_module.
     if (new_entry != nullptr) {
       ModuleClassPathList* module_cpl = new ModuleClassPathList(module_sym);
+      log_info(class, load)("path: %s", path);
+
+      // If we are in preview mode, attempt to add a preview entry *before* the
+      // new class path entry if a preview path exists.
+      if (is_preview_enabled()) {
+        const char* preview_path = get_preview_path(path);
+        if (os::stat(preview_path, &st) == 0) {
+          ClassPathEntry* preview_entry = create_class_path_entry(current, preview_path, &st);
+          if (preview_entry != nullptr) {
+            module_cpl->add_to_list(preview_entry);
+            log_info(class, load)("preview path: %s", preview_path);
+          }
+        }
+      }
+
       module_cpl->add_to_list(new_entry);
       {
         MutexLocker ml(current, Module_lock);
         _exploded_entries->push(module_cpl);
       }
-      log_info(class, load)("path: %s", path);
     }
   }
 }
@@ -964,7 +987,7 @@ oop ClassLoader::get_system_package(const char* name, TRAPS) {
   return nullptr;
 }
 
-objArrayOop ClassLoader::get_system_packages(TRAPS) {
+refArrayOop ClassLoader::get_system_packages(TRAPS) {
   ResourceMark rm(THREAD);
   // List of pointers to PackageEntrys that have loaded classes.
   PackageEntryTable* pe_table =
@@ -972,9 +995,10 @@ objArrayOop ClassLoader::get_system_packages(TRAPS) {
   GrowableArray<PackageEntry*>* loaded_class_pkgs = pe_table->get_system_packages();
 
   // Allocate objArray and fill with java.lang.String
-  objArrayOop r = oopFactory::new_objArray(vmClasses::String_klass(),
-                                           loaded_class_pkgs->length(), CHECK_NULL);
-  objArrayHandle result(THREAD, r);
+  refArrayOop r = oopFactory::new_refArray(vmClasses::String_klass(),
+                                           loaded_class_pkgs->length(),
+                                           CHECK_NULL);
+  refArrayHandle result(THREAD, r);
   for (int x = 0; x < loaded_class_pkgs->length(); x++) {
     PackageEntry* package_entry = loaded_class_pkgs->at(x);
     Handle str = java_lang_String::create_from_symbol(package_entry->name(), CHECK_NULL);
@@ -1091,6 +1115,7 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, PackageEntry* pkg_entry, bo
   ClassFileStream* stream = nullptr;
   s2 classpath_index = 0;
   ClassPathEntry* e = nullptr;
+  bool is_patched = false;
 
   // If search_append_only is true, boot loader visibility boundaries are
   // set to be _first_append_entry to the end. This includes:
@@ -1110,8 +1135,22 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, PackageEntry* pkg_entry, bo
   // Note: The --patch-module entries are never searched if the boot loader's
   //       visibility boundary is limited to only searching the append entries.
   if (_patch_mod_entries != nullptr && !search_append_only) {
-    assert(!CDSConfig::is_dumping_archive(), "CDS doesn't support --patch-module during dumping");
-    stream = search_module_entries(THREAD, _patch_mod_entries, pkg_entry, file_name);
+    // At CDS dump time, the --patch-module entries are ignored. That means a
+    // class is still loaded from the runtime image even if it might
+    // appear in the _patch_mod_entries. The runtime shared class visibility
+    // check will determine if a shared class is visible based on the runtime
+    // environment, including the runtime --patch-module setting.
+    if (!Arguments::is_valhalla_enabled()) {
+      // Dynamic dumping requires UseSharedSpaces to be enabled. Since --patch-module
+      // is not supported with UseSharedSpaces, we can never come here during dynamic dumping.
+      assert(!CDSConfig::is_dumping_archive(), "CDS doesn't support --patch-module during dumping");
+    }
+    if (Arguments::is_valhalla_enabled() || !CDSConfig::is_dumping_static_archive()) {
+      stream = search_module_entries(THREAD, _patch_mod_entries, pkg_entry, file_name);
+      if (stream != nullptr) {
+        is_patched = true;
+      }
+    }
   }
 
   // Load Attempt #2: [jimage | exploded build]
@@ -1160,6 +1199,9 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, PackageEntry* pkg_entry, bo
                                                            cl_info,
                                                            CHECK_NULL);
   result->set_classpath_index(classpath_index);
+  if (is_patched) {
+    result->set_shared_classpath_index(0);
+  }
   return result;
 }
 
@@ -1233,6 +1275,10 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
 
   if (ik->is_hidden()) {
     record_hidden_class(ik);
+    return;
+  }
+
+  if (ik->shared_classpath_index() == 0 && ik->defined_by_boot_loader()) {
     return;
   }
 
