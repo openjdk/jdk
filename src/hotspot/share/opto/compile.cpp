@@ -2130,7 +2130,10 @@ void Compile::process_inline_types(PhaseIterGVN &igvn, bool remove) {
   set_scalarize_in_safepoints(true);
   for (int i = _inline_type_nodes.length()-1; i >= 0; i--) {
     InlineTypeNode* vt = _inline_type_nodes.at(i)->as_InlineType();
-    vt->make_scalar_in_safepoints(&igvn);
+    if (!vt->make_scalar_in_safepoints(&igvn)) {
+      record_failure("out of nodes during scalarization");
+      return;
+    }
     igvn.record_for_igvn(vt);
   }
   if (remove) {
@@ -3113,6 +3116,9 @@ void Compile::Optimize() {
 
   // Process inline type nodes now that all inlining is over
   process_inline_types(igvn);
+  if (failing()) {
+    return;
+  }
 
   adjust_flat_array_access_aliases(igvn);
 
@@ -3299,6 +3305,9 @@ void Compile::Optimize() {
   // Process inline types before macro expansion. Otherwise, we will not be able to
   // remove unused allocations because it cannot match the expanded allocation.
   process_inline_types(igvn);
+  if (failing()) {
+    return;
+  }
 
   {
     TracePhase tp(_t_macroExpand);
@@ -3332,6 +3341,9 @@ void Compile::Optimize() {
   // Process inline type nodes again and remove them. From here
   // on we don't need to keep track of field values anymore.
   process_inline_types(igvn, /* remove= */ true);
+  if (failing()) {
+    return;
+  }
 
   {
     TracePhase tp(_t_barrierExpand);
