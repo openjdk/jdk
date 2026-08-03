@@ -132,7 +132,7 @@ public:
   void store_flat_array(GraphKit* kit, Node* base, Node* idx);
 
   // Implementation of the substitutability check for acmp
-  static bool can_emit_substitutability_check(Node* lhs, Node* rhs);
+  static bool can_emit_substitutability_check(PhaseGVN* phase, Node* lhs, Node* rhs);
   static Node* emit_substitutability_check(GraphKit* kit, Node* lhs, Node* rhs);
 
   // Allocates the inline type (if not yet allocated)
