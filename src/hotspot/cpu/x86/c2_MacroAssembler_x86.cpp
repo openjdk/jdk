@@ -51,7 +51,30 @@
 #endif
 
 // C2 compiled method's prolog code.
-void C2_MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool fp_mode_24b, bool is_stub) {
+// Beware! This sp_inc is NOT the same as the one mentioned in MacroAssembler::remove_frame but only the size
+// of the extension space + the additional copy of the return address. That means, it doesn't contain the
+// frame size (where the local and sp_inc are) and the saved RBP.
+void C2_MacroAssembler::verified_entry(Compile* C, int sp_inc) {
+  if (C->clinit_barrier_on_entry()) {
+    assert(VM_Version::supports_fast_class_init_checks(), "sanity");
+    assert(!C->method()->holder()->is_not_initialized(), "initialization should have been started");
+
+    Label L_skip_barrier;
+    Register klass = rscratch1;
+
+    mov_metadata(klass, C->method()->holder()->constant_encoding());
+    clinit_barrier(klass, &L_skip_barrier /*L_fast_path*/);
+
+    jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub())); // slow path
+
+    bind(L_skip_barrier);
+  }
+
+  int framesize = C->output()->frame_size_in_bytes();
+  int bangsize = C->output()->bang_size_in_bytes();
+  bool fp_mode_24b = false;
+  int stack_bang_size = C->output()->need_stack_bang(bangsize) ? bangsize : 0;
+
   assert(stack_bang_size >= framesize || stack_bang_size <= 0, "stack bang size incorrect");
 
   assert((framesize & (StackAlignmentInBytes-1)) == 0, "frame size not aligned");
@@ -70,6 +93,12 @@ void C2_MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool 
     // We always push rbp, so that on return to interpreter rbp, will be
     // restored correctly and we can correct the stack.
     push(rbp);
+#ifdef ASSERT
+    if (sp_inc > 0) {
+      movl(Address(rsp, 0), badRegWordVal);
+      movl(Address(rsp, VMRegImpl::stack_slot_size), badRegWordVal);
+    }
+#endif
     // Save caller's stack pointer into RBP if the frame pointer is preserved.
     if (PreserveFramePointer) {
       mov(rbp, rsp);
@@ -87,6 +116,12 @@ void C2_MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool 
     // Save RBP register now.
     framesize -= wordSize;
     movptr(Address(rsp, framesize), rbp);
+#ifdef ASSERT
+    if (sp_inc > 0) {
+      movl(Address(rsp, framesize), badRegWordVal);
+      movl(Address(rsp, framesize + VMRegImpl::stack_slot_size), badRegWordVal);
+    }
+#endif
     // Save caller's stack pointer into RBP if the frame pointer is preserved.
     if (PreserveFramePointer) {
       movptr(rbp, rsp);
@@ -94,6 +129,12 @@ void C2_MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool 
         addptr(rbp, framesize);
       }
     }
+  }
+
+  if (C->needs_stack_repair()) {
+    // Save stack increment just below the saved rbp (also account for fixed framesize and rbp)
+    assert((sp_inc & (StackAlignmentInBytes-1)) == 0, "stack increment not aligned");
+    movptr(Address(rsp, framesize - wordSize), sp_inc + framesize);
   }
 
   if (VerifyStackAtCalls) { // Majik cookie to verify stack depth
@@ -114,23 +155,23 @@ void C2_MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool 
     bind(L);
   }
 #endif
+}
 
-  if (!is_stub) {
-    BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-    // We put the non-hot code of the nmethod entry barrier out-of-line in a stub.
-    Label dummy_slow_path;
-    Label dummy_continuation;
-    Label* slow_path = &dummy_slow_path;
-    Label* continuation = &dummy_continuation;
-    if (!Compile::current()->output()->in_scratch_emit_size()) {
-      // Use real labels from actual stub when not emitting code for the purpose of measuring its size
-      C2EntryBarrierStub* stub = new (Compile::current()->comp_arena()) C2EntryBarrierStub();
-      Compile::current()->output()->add_stub(stub);
-      slow_path = &stub->entry();
-      continuation = &stub->continuation();
-    }
-    bs->nmethod_entry_barrier(this, slow_path, continuation);
+void C2_MacroAssembler::entry_barrier() {
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  // We put the non-hot code of the nmethod entry barrier out-of-line in a stub.
+  Label dummy_slow_path;
+  Label dummy_continuation;
+  Label* slow_path = &dummy_slow_path;
+  Label* continuation = &dummy_continuation;
+  if (!Compile::current()->output()->in_scratch_emit_size()) {
+    // Use real labels from actual stub when not emitting code for the purpose of measuring its size
+    C2EntryBarrierStub* stub = new (Compile::current()->comp_arena()) C2EntryBarrierStub();
+    Compile::current()->output()->add_stub(stub);
+    slow_path = &stub->entry();
+    continuation = &stub->continuation();
   }
+  bs->nmethod_entry_barrier(this, slow_path, continuation);
 }
 
 inline Assembler::AvxVectorLen C2_MacroAssembler::vector_length_encoding(int vlen_in_bytes) {
@@ -294,6 +335,10 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register rax_reg,
     bind(inflated);
 
     const Register monitor = t;
+    // Offsets into the current thread's object monitor cache (omc).
+    const ByteSize thr_omc_offset     = JavaThread::om_cache_offset();
+    const ByteSize omc_monitor_offset = OMCache::monitor_offset();
+    const ByteSize omc_obj_offset     = OMCache::obj_offset();
 
     if (!UseObjectMonitorTable) {
       assert(mark == monitor, "should be the same here");
@@ -301,17 +346,11 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register rax_reg,
       const Register hash = t;
       Label monitor_found;
 
-      // Look for the monitor in the om_cache.
+      // Look for the monitor in the current thread's object monitor cache (omc).
 
-      ByteSize cache_offset   = JavaThread::om_cache_oops_offset();
-      ByteSize monitor_offset = OMCache::oop_to_monitor_difference();
-      const int num_unrolled  = OMCache::CAPACITY;
-      for (int i = 0; i < num_unrolled; i++) {
-        movptr(monitor, Address(thread,  cache_offset + monitor_offset));
-        cmpptr(obj, Address(thread, cache_offset));
-        jccb(Assembler::equal, monitor_found);
-        cache_offset = cache_offset + OMCache::oop_to_oop_difference();
-      }
+      movptr(monitor, Address(thread, thr_omc_offset + omc_monitor_offset));
+      cmpptr(obj, Address(thread, thr_omc_offset + omc_obj_offset));
+      jccb(Assembler::equal, monitor_found);
 
       // Look for the monitor in the table.
 
@@ -339,6 +378,10 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register rax_reg,
       bs_asm->try_peek_weak_handle_in_nmethod(this, rax_reg, rax_reg, slow_path);
       cmpptr(rax_reg, obj);
       jcc(Assembler::notEqual, slow_path);
+
+      // Store the monitor in the current thread's object monitor cache (omc).
+      movptr(Address(thread, thr_omc_offset + omc_monitor_offset), monitor);
+      movptr(Address(thread, thr_omc_offset + omc_obj_offset), obj);
 
       bind(monitor_found);
     }
