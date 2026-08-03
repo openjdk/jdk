@@ -8515,14 +8515,6 @@ void Assembler::vsqrtsh(XMMRegister dst, XMMRegister src) {
   emit_int16(0x51, (0xC0 | encode));
 }
 
-void Assembler::vfmadd132sh(XMMRegister dst, XMMRegister src1, XMMRegister src2) {
-  assert(VM_Version::supports_avx512_fp16(), "");
-  InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-  attributes.set_is_evex_instruction();
-  int encode = vex_prefix_and_encode(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_66, VEX_OPCODE_MAP6, &attributes);
-  emit_int16((unsigned char)0x99, (0xC0 | encode));
-}
-
 void Assembler::vfmadd231sh(XMMRegister dst, XMMRegister src1, XMMRegister src2) {
   assert(VM_Version::supports_avx512_fp16(), "");
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
@@ -17030,27 +17022,6 @@ void Assembler::evsqrtph(XMMRegister dst, Address src, int vector_len) {
   attributes.set_address_attributes(/* tuple_type */ EVEX_FV, /* input_size_in_bits */ EVEX_NObit);
   vex_prefix(src, 0, dst->encoding(), VEX_SIMD_NONE, VEX_OPCODE_MAP5, &attributes);
   emit_int8(0x51);
-  emit_operand(dst, src, 0);
-}
-
-void Assembler::evfmadd132ph(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
-  assert(VM_Version::supports_avx512_fp16(), "");
-  assert(vector_len == Assembler::AVX_512bit || VM_Version::supports_avx512vl(), "");
-  InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
-  attributes.set_is_evex_instruction();
-  int encode = vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_MAP6, &attributes);
-  emit_int16(0x98, (0xC0 | encode));
-}
-
-void Assembler::evfmadd132ph(XMMRegister dst, XMMRegister nds, Address src, int vector_len) {
-  assert(VM_Version::supports_avx512_fp16(), "");
-  assert(vector_len == Assembler::AVX_512bit || VM_Version::supports_avx512vl(), "");
-  InstructionMark im(this);
-  InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
-  attributes.set_is_evex_instruction();
-  attributes.set_address_attributes(/* tuple_type */ EVEX_FV, /* input_size_in_bits */ EVEX_NObit);
-  vex_prefix(src, nds->encoding(), dst->encoding(), VEX_SIMD_66, VEX_OPCODE_MAP6, &attributes);
-  emit_int8(0x98);
   emit_operand(dst, src, 0);
 }
 
