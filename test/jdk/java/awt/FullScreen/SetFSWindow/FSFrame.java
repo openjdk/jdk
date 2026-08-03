@@ -119,7 +119,7 @@ public class FSFrame extends Frame {
                 System.out.println("Dumped screen shot to " + name);
             } catch (IOException ignored) {}
 
-            throw new Error("Some pixel colors not correct; FS window may not" +
+            throw new RuntimeException("Some pixel colors not correct; FS window may not" +
                             " have been displayed correctly");
         }
     }
