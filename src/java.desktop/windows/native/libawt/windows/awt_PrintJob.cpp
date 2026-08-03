@@ -4266,6 +4266,12 @@ static BOOL SetPrinterDevice(LPTSTR pszDeviceName, HGLOBAL* p_hDevMode,
   }
 
   DEVNAMES* pDevNames = (DEVNAMES*)::GlobalLock(hDevNames);
+  if (pDevNames == NULL) {
+    ::GlobalFree(hDevNames);
+    ::GlobalFree(hDevMode);
+    ::GlobalFree(p2);
+    return FALSE;
+  }
 
   // Copy the DEVNAMES information from PRINTER_INFO_2 structure.
   pDevNames->wDriverOffset = sizeof(DEVNAMES)/sizeof(TCHAR);
