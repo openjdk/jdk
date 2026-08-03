@@ -64,6 +64,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/unsafe.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/mountUnmountDisabler.hpp"
@@ -5231,11 +5232,13 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
     // should be thrown
     generate_negative_guard(length, bailout, &length);
 
-    // Handle inline type arrays
-    // TODO 8251971 This is too strong
-    generate_fair_guard(flat_array_test(load_object_klass(original)), bailout);
-    generate_fair_guard(flat_array_test(refined_klass_node), bailout);
-    generate_fair_guard(null_free_array_test(original), bailout);
+    if (Arguments::is_valhalla_enabled()) {
+      // Handle inline type arrays
+      // TODO 8251971 This is too strong
+      generate_fair_guard(flat_array_test(load_object_klass(original)), bailout);
+      generate_fair_guard(flat_array_test(refined_klass_node), bailout);
+      generate_fair_guard(null_free_array_test(original), bailout);
+    }
 
     // Bail out if start is larger than the original length
     Node* orig_tail = _gvn.transform(new SubINode(orig_length, start));
@@ -6848,32 +6851,34 @@ bool LibraryCallKit::inline_arraycopy() {
       slow_region->add_req(not_subtype_ctrl);
     }
 
-    // TODO 8251971 Improve this. What about atomicity? Make sure this is always folded for type arrays.
-    // If destination is null-restricted, source must be null-restricted as well: src_null_restricted || !dst_null_restricted
-    Node* src_klass = load_object_klass(src);
-    Node* adr_prop_src = basic_plus_adr(top(), src_klass, in_bytes(ArrayKlass::properties_offset()));
-    Node* prop_src = _gvn.transform(LoadNode::make(_gvn, control(), immutable_memory(), adr_prop_src,
-                                                   _gvn.type(adr_prop_src)->is_ptr(), TypeInt::INT, T_INT,
-                                                   MemNode::unordered));
-    Node* adr_prop_dest = basic_plus_adr(top(), refined_dest_klass, in_bytes(ArrayKlass::properties_offset()));
-    Node* prop_dest = _gvn.transform(LoadNode::make(_gvn, control(), immutable_memory(), adr_prop_dest,
-                                                    _gvn.type(adr_prop_dest)->is_ptr(), TypeInt::INT, T_INT,
-                                                    MemNode::unordered));
+    if (Arguments::is_valhalla_enabled()) {
+      // TODO 8251971 Improve this. What about atomicity? Make sure this is always folded for type arrays.
+      // If destination is null-restricted, source must be null-restricted as well: src_null_restricted || !dst_null_restricted
+      Node* src_klass = load_object_klass(src);
+      Node* adr_prop_src = basic_plus_adr(top(), src_klass, in_bytes(ArrayKlass::properties_offset()));
+      Node* prop_src = _gvn.transform(LoadNode::make(_gvn, control(), immutable_memory(), adr_prop_src,
+                                                     _gvn.type(adr_prop_src)->is_ptr(), TypeInt::INT, T_INT,
+                                                     MemNode::unordered));
+      Node* adr_prop_dest = basic_plus_adr(top(), refined_dest_klass, in_bytes(ArrayKlass::properties_offset()));
+      Node* prop_dest = _gvn.transform(LoadNode::make(_gvn, control(), immutable_memory(), adr_prop_dest,
+                                                      _gvn.type(adr_prop_dest)->is_ptr(), TypeInt::INT, T_INT,
+                                                      MemNode::unordered));
 
-    const ArrayProperties props_null_restricted = ArrayProperties::Default().with_null_restricted();
-    jint props_value = (jint)props_null_restricted.value();
+      const ArrayProperties props_null_restricted = ArrayProperties::Default().with_null_restricted();
+      jint props_value = (jint)props_null_restricted.value();
 
-    prop_dest = _gvn.transform(new XorINode(prop_dest, intcon(props_value)));
-    prop_src = _gvn.transform(new OrINode(prop_dest, prop_src));
-    prop_src = _gvn.transform(new AndINode(prop_src, intcon(props_value)));
+      prop_dest = _gvn.transform(new XorINode(prop_dest, intcon(props_value)));
+      prop_src = _gvn.transform(new OrINode(prop_dest, prop_src));
+      prop_src = _gvn.transform(new AndINode(prop_src, intcon(props_value)));
 
-    Node* chk = _gvn.transform(new CmpINode(prop_src, intcon(props_value)));
-    Node* tst = _gvn.transform(new BoolNode(chk, BoolTest::ne));
-    generate_fair_guard(tst, slow_region);
+      Node* chk = _gvn.transform(new CmpINode(prop_src, intcon(props_value)));
+      Node* tst = _gvn.transform(new BoolNode(chk, BoolTest::ne));
+      generate_fair_guard(tst, slow_region);
 
-    // TODO 8251971 This is too strong
-    generate_fair_guard(flat_array_test(src), slow_region);
-    generate_fair_guard(flat_array_test(dest), slow_region);
+      // TODO 8251971 This is too strong
+      generate_fair_guard(flat_array_test(src), slow_region);
+      generate_fair_guard(flat_array_test(dest), slow_region);
+    }
 
     {
       PreserveJVMState pjvms(this);
