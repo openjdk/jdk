@@ -1424,9 +1424,9 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
       Register recv = k_RInfo;
       __ load_klass(recv, obj, tmp_load_klass);
       type_profile_helper(mdo, md, data, recv, Rtmp1);
+    } else {
+      __ jcc(Assembler::equal, *obj_is_null);
     }
-  } else {
-    __ jcc(Assembler::equal, *obj_is_null);
   }
 
   if (!k->is_loaded()) {

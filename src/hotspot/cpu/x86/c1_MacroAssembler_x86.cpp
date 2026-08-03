@@ -277,11 +277,11 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
   bs->nmethod_entry_barrier(this, nullptr /* slow_path */, nullptr /* continuation */);
 }
 
-void C1_MacroAssembler::remove_frame(int frame_size_in_bytes) {
+void C1_MacroAssembler::remove_frame(int frame_size_in_bytes, bool needs_stack_repair) {
   save_profile_rng();
-  MacroAssembler::remove_frame(int frame_size_in_bytes);
+  MacroAssembler::remove_frame(frame_size_in_bytes, needs_stack_repair);
 }
-xs-
+
 void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
   if (breakAtEntry) int3();
   // build frame
