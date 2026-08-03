@@ -3115,6 +3115,7 @@ private:
     _clones.map(phi->_idx, vt);
     Node_List casts;
     for (uint i = 1; i < phi->req(); ++i) {
+      assert(casts.size() == 0, "must be cleared");
       Node* n = phi->in(i);
       if (n == nullptr) {
         continue;
@@ -3142,6 +3143,10 @@ private:
         n->as_InlineType()->set_oop(*_phase, _phase->transform(cast));
         n = _phase->transform(n);
         if (n->is_top()) {
+          if (casts.size() > 0) {
+            // We could be skipping some unprocessed casts that are also dead. Clear the list for the next phi input.
+            casts.clear();
+          }
           break;
         }
       }
