@@ -2149,20 +2149,27 @@ AllocateNode* LoadNode::is_new_object_mark_load() const {
   return nullptr;
 }
 
-
-//------------------------------Ideal------------------------------------------
 // If the load is from Field memory and the pointer is non-null, it might be possible to
 // zero out the control input.
 // If the offset is constant and the base is an object allocation,
 // try to hook me up to the exact initializing store.
-Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  if (has_pinned_control_dependency()) {
-    return nullptr;
-  }
-  Node* p = MemNode::Ideal_common(phase, can_reshape);
-  if (p)  return (p == NodeSentinel) ? nullptr : p;
+Node* LoadNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (has_pinned_control_dependency()) { return nullptr; }
+  Node* p = Ideal_load_common(phase, can_reshape);
+  if (p == NodeSentinel) { return nullptr; }
 
-  Node* ctrl    = in(MemNode::Control);
+  if (p == nullptr && !can_reshape) {
+    phase->record_for_igvn(this);
+  }
+
+  return p;
+}
+
+Node* LoadNode::Ideal_load_common(PhaseGVN* phase, bool can_reshape) {
+  Node* p = MemNode::Ideal_common(phase, can_reshape);
+  if (p != nullptr) { return p; }
+
+  Node* ctrl = in(MemNode::Control);
   Node* address = in(MemNode::Address);
 
   bool addr_mark = ((phase->type(address)->isa_oopptr() || phase->type(address)->isa_narrowoop()) &&
@@ -2180,9 +2187,9 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   intptr_t ignore = 0;
-  Node*    base   = AddPNode::Ideal_base_and_offset(address, phase, ignore);
-  if (base != nullptr
-      && phase->C->get_alias_index(phase->type(address)->is_ptr()) != Compile::AliasIdxRaw) {
+  Node* base = AddPNode::Ideal_base_and_offset(address, phase, ignore);
+  if (base != nullptr &&
+      phase->C->get_alias_index(phase->type(address)->is_ptr()) != Compile::AliasIdxRaw) {
     // Check for useless control edge in some common special cases
     if (in(MemNode::Control) != nullptr
         // TODO 8350865 Can we re-enable this?
@@ -2197,26 +2204,26 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   Node* mem = in(MemNode::Memory);
-  const TypePtr *addr_t = phase->type(address)->isa_ptr();
+  const TypePtr* addr_t = phase->type(address)->isa_ptr();
 
   if (can_reshape && (addr_t != nullptr)) {
     // try to optimize our memory input
     Node* opt_mem = MemNode::optimize_memory_chain(mem, addr_t, this, phase);
     if (opt_mem != mem) {
       set_req_X(MemNode::Memory, opt_mem, phase);
-      if (phase->type( opt_mem ) == Type::TOP) return nullptr;
+      if (phase->type(opt_mem) == Type::TOP) { return NodeSentinel; }
       return this;
     }
-    const TypeOopPtr *t_oop = addr_t->isa_oopptr();
+    const TypeOopPtr* t_oop = addr_t->isa_oopptr();
     if ((t_oop != nullptr) &&
         (t_oop->is_known_instance_field() ||
          t_oop->is_ptr_to_boxed_value())) {
-      PhaseIterGVN *igvn = phase->is_IterGVN();
+      PhaseIterGVN* igvn = phase->is_IterGVN();
       assert(igvn != nullptr, "must be PhaseIterGVN when can_reshape is true");
       if (igvn->_worklist.member(opt_mem)) {
         // Delay this transformation until memory Phi is processed.
         igvn->_worklist.push(this);
-        return nullptr;
+        return NodeSentinel;
       }
       // Split instance field load through Phi.
       Node* result = split_through_phi(phase);
@@ -2234,7 +2241,7 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // barriers etc.) alone
   if (in(0) != nullptr && !adr_type()->isa_rawptr() && can_reshape) {
     for (DUIterator_Fast imax, i = mem->fast_outs(imax); i < imax; i++) {
-      Node *use = mem->fast_out(i);
+      Node* use = mem->fast_out(i);
       if (use != this &&
           use->Opcode() == Opcode() &&
           use->in(0) != nullptr &&
@@ -2285,10 +2292,6 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       set_req_X(MemNode::Memory, prev_mem, phase);
       return this;
     }
-  }
-
-  if (!can_reshape) {
-    phase->record_for_igvn(this);
   }
 
   return nullptr;
@@ -2909,16 +2912,23 @@ Node* LoadKlassNode::Identity(PhaseGVN* phase) {
 
 Node* LoadNode::klass_identity_common(PhaseGVN* phase) {
   Node* x = LoadNode::Identity(phase);
-  if (x != this)  return x;
+  if (x != this) { return x; }
 
+  Node* k = find_known_klass(phase);
+  return k == nullptr ? this : k;
+}
+
+// Find an existing Klass node from a recognized allocation or
+// class-mirror pattern.
+Node* LoadNode::find_known_klass(PhaseGVN* phase) const {
   // Take apart the address into an oop and offset.
-  // Return 'this' if we cannot.
-  Node*    adr    = in(MemNode::Address);
+  // Return 'nullptr' if we cannot.
+  Node* adr = in(MemNode::Address);
   intptr_t offset = 0;
-  Node*    base   = AddPNode::Ideal_base_and_offset(adr, phase, offset);
-  if (base == nullptr)     return this;
+  Node* base = AddPNode::Ideal_base_and_offset(adr, phase, offset);
+  if (base == nullptr) { return nullptr; }
   const TypeOopPtr* toop = phase->type(adr)->isa_oopptr();
-  if (toop == nullptr)     return this;
+  if (toop == nullptr) { return nullptr; }
 
   // Step over potential GC barrier for OopHandle resolve
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
@@ -2973,7 +2983,7 @@ Node* LoadNode::klass_identity_common(PhaseGVN* phase) {
     }
   }
 
-  return this;
+  return nullptr;
 }
 
 LoadNode* LoadNode::clone_pinned() const {
@@ -2998,7 +3008,32 @@ LoadNode* LoadNode::pin_node_under_control_impl() const {
   return nullptr;
 }
 
-//------------------------------Value------------------------------------------
+Node* LoadNKlassNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  bool pinned = has_pinned_control_dependency();
+  if (!pinned) {
+    Node* p = Ideal_load_common(phase, can_reshape);
+    if (p == NodeSentinel) { return nullptr; }
+    if (p != nullptr) { return p; }
+  }
+
+  // To clean up reflective code, simplify k.java_mirror.as_klass to narrow k.
+  // Also feed through the klass in Allocate(...klass...)._klass.
+  Node* k = find_known_klass(phase);
+  if (k != nullptr) {
+    const Type* t = phase->type(k);
+    if (t != Type::TOP) {
+      assert(t->isa_klassptr(), "must be a klass pointer");
+      return new EncodePKlassNode(k, t->make_narrowklass());
+    }
+  }
+
+  if (!pinned && !can_reshape) {
+    phase->record_for_igvn(this);
+  }
+
+  return nullptr;
+}
+
 const Type* LoadNKlassNode::Value(PhaseGVN* phase) const {
   const Type *t = klass_value_common(phase);
   if (t == Type::TOP)
@@ -3007,18 +3042,11 @@ const Type* LoadNKlassNode::Value(PhaseGVN* phase) const {
   return t->make_narrowklass();
 }
 
-//------------------------------Identity---------------------------------------
-// To clean up reflective code, simplify k.java_mirror.as_klass to narrow k.
-// Also feed through the klass in Allocate(...klass...)._klass.
 Node* LoadNKlassNode::Identity(PhaseGVN* phase) {
-  Node *x = klass_identity_common(phase);
-
-  const Type *t = phase->type( x );
-  if( t == Type::TOP ) return x;
-  if( t->isa_narrowklass()) return x;
-  assert (!t->isa_narrowoop(), "no narrow oop here");
-
-  return phase->transform(new EncodePKlassNode(x, t->make_narrowklass()));
+  Node* x = klass_identity_common(phase);
+  const Type* t = phase->type(x);
+  if (t == Type::TOP || t->isa_narrowklass()) { return x; }
+  return this;
 }
 
 //------------------------------Value-----------------------------------------
