@@ -25,7 +25,6 @@
  * @test
  * @bug 8388441
  * @summary Test acmp optimization when operands become known after macro expansion
- * @requires vm.compiler2.enabled
  * @library /test/lib
  * @enablePreview
  * @run main/othervm -XX:-TieredCompilation -Xbatch ${test.main.class}
