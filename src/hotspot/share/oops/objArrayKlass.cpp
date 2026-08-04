@@ -225,11 +225,11 @@ ObjArrayKlass* ObjArrayKlass::allocate_klass_from_description(ArrayDescription a
 
   switch (ad._kind) {
     case Klass::RefArrayKlassKind:
-      return RefArrayKlass::allocate_refArray_klass(class_loader_data(), dimension(), element_klass(), ad._properties, CHECK_NULL);
+      return RefArrayKlass::allocate_refArray_klass(class_loader_data(), dimension(), element_klass(), ad._properties, THREAD);
 
     case Klass::FlatArrayKlassKind:
       assert(dimension() == 1, "Flat arrays can only be dimension 1 arrays");
-      return FlatArrayKlass::allocate_klass(element_klass(), ad._properties, ad._layout_kind, CHECK_NULL);
+      return FlatArrayKlass::allocate_klass(element_klass(), ad._properties, ad._layout_kind, THREAD);
 
     default:
       ShouldNotReachHere();
@@ -238,7 +238,7 @@ ObjArrayKlass* ObjArrayKlass::allocate_klass_from_description(ArrayDescription a
 
 objArrayOop ObjArrayKlass::allocate_instance(int length, ArrayProperties props, TRAPS) {
   ObjArrayKlass* ak = klass_with_properties(props, CHECK_NULL);
-  return ak->allocate_instance(length, CHECK_NULL);
+  return ak->allocate_instance(length, THREAD);
 }
 
 objArrayOop ObjArrayKlass::allocate_instance(int length, TRAPS) {

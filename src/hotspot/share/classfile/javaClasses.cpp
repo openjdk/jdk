@@ -2713,8 +2713,8 @@ int java_lang_Module::_module_entry_offset;
 Handle java_lang_Module::create(Handle loader, Handle module_name, TRAPS) {
   assert(Universe::is_fully_initialized(), "Need to find another solution to the reflection problem");
   return JavaCalls::construct_new_instance(vmClasses::Module_klass(),
-                          vmSymbols::java_lang_module_init_signature(),
-                          loader, module_name, CHECK_NH);
+                                           vmSymbols::java_lang_module_init_signature(),
+                                           loader, module_name, THREAD);
 }
 
 #define MODULE_FIELDS_DO(macro) \
