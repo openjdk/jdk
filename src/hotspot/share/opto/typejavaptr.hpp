@@ -77,14 +77,15 @@ private:
     }
   }
 
-  template <class IOT, class PT>
-  static const IOT* instptr_type_xmeet(const IOT* t1, const IOT* t2, Type::Offset offset, std::invoke_result_t<decltype(&IOT::interfaces), IOT> interfaces,
+  template <class IOT, class PT, class InterfacesType>
+  static const IOT* instptr_type_xmeet(const IOT* t1, const IOT* t2, Type::Offset offset, InterfacesType interfaces,
                                        TypePtr::FlatInArray flat_in_array, int instance_id, const PT* speculative, int inline_depth) {
+    using ConstOopType = std::invoke_result_t<decltype(&IOT::const_oop), IOT>;
+
     auto k1 = t1->instance_klass();
     auto k2 = t2->instance_klass();
-
     TypePtr::PTR ptr;
-    std::invoke_result_t<decltype(&IOT::const_oop), IOT> const_oop = nullptr;
+    ConstOopType const_oop = nullptr;
     meet_ptr_and_const_oop(ptr, const_oop, t1, t2);
     bool xk = t1->klass_is_exact() && t2->klass_is_exact() && k1 == k2;
 
@@ -104,13 +105,16 @@ private:
   template <class AOT, class PT>
   static const AOT* aryptr_type_xmeet(const AOT* t1, const AOT* t2, Type::Offset offset, int instance_id, const PT* speculative, int inline_depth) {
     using PointeeType = std::remove_pointer_t<std::invoke_result_t<decltype(&AOT::ary), AOT>>;
+    using ConstOopType = std::invoke_result_t<decltype(&AOT::const_oop), AOT>;
+    using ElemType = std::invoke_result_t<decltype(&AOT::elem), AOT>;
+    using KlassType = std::invoke_result_t<decltype(&AOT::klass), AOT>;
 
     TypePtr::PTR ptr;
-    std::invoke_result_t<decltype(&AOT::const_oop), AOT> const_oop = nullptr;
+    ConstOopType const_oop = nullptr;
     meet_ptr_and_const_oop(ptr, const_oop, t1, t2);
 
-    std::invoke_result_t<decltype(&AOT::elem), AOT> elem;
-    std::invoke_result_t<decltype(&AOT::klass), AOT> klass = nullptr;
+    ElemType elem;
+    KlassType klass = nullptr;
     meet_ary_elem(elem, klass, t1, t2);
 
     auto size = t1->size()->meet(t2->size())->is_int();
@@ -149,8 +153,8 @@ private:
     }
   }
 
-  template <class IKT>
-  static const IKT* instklassptr_type_xmeet(const IKT* t1, const IKT* t2, Type::Offset offset, std::invoke_result_t<decltype(&IKT::interfaces), IKT> interfaces,
+  template <class IKT, class InterfacesType>
+  static const IKT* instklassptr_type_xmeet(const IKT* t1, const IKT* t2, Type::Offset offset, InterfacesType interfaces,
                                             TypePtr::FlatInArray flat_in_array) {
     TypePtr::PTR ptr = meet_inst_klass_ptr(t1, t2);
     auto klass = t1->instance_klass()->least_common_ancestor(t2->instance_klass())->as_instance_klass();
@@ -159,9 +163,12 @@ private:
 
   template <class AKT>
   static const AKT* aryklassptr_type_xmeet(const AKT* t1, const AKT* t2, Type::Offset offset) {
+    using ElemType = std::invoke_result_t<decltype(&AKT::elem), AKT>;
+    using KlassType = std::invoke_result_t<decltype(&AKT::klass), AKT>;
+
     TypePtr::PTR ptr = meet_ary_klass_ptr(t1, t2);
-    std::invoke_result_t<decltype(&AKT::elem), AKT> elem;
-    std::invoke_result_t<decltype(&AKT::klass), AKT> klass = nullptr;
+    ElemType elem;
+    KlassType klass = nullptr;
     meet_ary_elem(elem, klass, t1, t2);
     bool not_flat = t1->is_not_flat() && t2->is_not_flat();
     bool not_null_free = t1->is_not_null_free() && t2->is_not_null_free();
@@ -177,8 +184,8 @@ private:
     return Type::Offset(t1->offset()).meet(Type::Offset(t2->offset()));
   }
 
-  template <class PT>
-  static std::invoke_result_t<decltype(&PT::interfaces), PT> meet_interfaces(const PT* t1, const PT* t2) {
+  template <class PT, class InterfacesType = std::invoke_result_t<decltype(&PT::interfaces), PT>>
+  static InterfacesType meet_interfaces(const PT* t1, const PT* t2) {
     return t1->interfaces()->intersection_with(t2->interfaces());
   }
 
@@ -436,8 +443,8 @@ private:
     }
   }
 
-  template <class IOT, class PT>
-  static const typename IOT::PtrType* instptr_type_xjoin(const IOT* t1, const IOT* t2, Type::Offset offset, std::invoke_result_t<decltype(&IOT::interfaces), IOT> interfaces,
+  template <class IOT, class PT, class InterfacesType>
+  static const typename IOT::PtrType* instptr_type_xjoin(const IOT* t1, const IOT* t2, Type::Offset offset, InterfacesType interfaces,
                                                          TypePtr::FlatInArray flat_in_array, int instance_id, const PT* speculative, int inline_depth) {
     // Join 2 constants
     if (t1->const_oop() != nullptr && t2->const_oop() != nullptr) {
@@ -509,6 +516,9 @@ private:
   template <class AOT, class PT>
   static const typename AOT::PtrType* aryptr_type_xjoin(const AOT* t1, const AOT* t2, Type::Offset offset, int instance_id, const PT* speculative, int inline_depth) {
     using PointeeType = std::remove_pointer_t<std::invoke_result_t<decltype(&AOT::ary), AOT>>;
+    using ElemType = std::invoke_result_t<decltype(&AOT::elem), AOT>;
+    using KlassType = std::invoke_result_t<decltype(&AOT::klass), AOT>;
+
     auto field_offset = t1->field_offset().join(t2->field_offset());
 
     // Join of 2 constants
@@ -522,8 +532,8 @@ private:
 
     // From here, at least one of the operand is not constant
     TypePtr::PTR ptr = join_ptr(t1, t2);
-    std::invoke_result_t<decltype(&AOT::elem), AOT> elem;
-    std::invoke_result_t<decltype(&AOT::klass), AOT> klass = nullptr;
+    ElemType elem;
+    KlassType klass = nullptr;
     join_ary_elem(elem, klass, t1, t2);
     if (elem->empty() || field_offset == Type::Offset::top) {
       return AOT::PtrType::make(Type::AnyPtr, ptr == TypePtr::BotPTR ? TypePtr::Null : TypePtr::TopPTR, offset, speculative, inline_depth);
@@ -599,8 +609,8 @@ private:
     }
   }
 
-  template <class IKT>
-  static const typename IKT::PtrType* instklassptr_type_xjoin(const IKT* t1, const IKT* t2, Type::Offset offset, std::invoke_result_t<decltype(&IKT::interfaces), IKT> interfaces,
+  template <class IKT, class InterfacesType>
+  static const typename IKT::PtrType* instklassptr_type_xjoin(const IKT* t1, const IKT* t2, Type::Offset offset, InterfacesType interfaces,
                                                               TypePtr::FlatInArray flat_in_array) {
     auto klass1 = t1->instance_klass();
     auto klass2 = t2->instance_klass();
@@ -640,9 +650,12 @@ private:
 
   template <class AKT>
   static const typename AKT::PtrType* aryklassptr_type_xjoin(const AKT* t1, const AKT* t2, Type::Offset offset) {
+    using ElemType = std::invoke_result_t<decltype(&AKT::elem), AKT>;
+    using KlassType = std::invoke_result_t<decltype(&AKT::klass), AKT>;
+
     TypePtr::PTR ptr = join_ptr(t1, t2);
-    std::invoke_result_t<decltype(&AKT::elem), AKT> elem;
-    std::invoke_result_t<decltype(&AKT::klass), AKT> klass = nullptr;
+    ElemType elem;
+    KlassType klass = nullptr;
     join_ary_elem(elem, klass, t1, t2);
     bool not_flat = t1->is_not_flat() || t2->is_not_flat();
     bool not_null_free = t1->is_not_null_free() || t2->is_not_null_free();
@@ -684,8 +697,8 @@ private:
     return Type::Offset(t1->offset()).join(Type::Offset(t2->offset()));
   }
 
-  template <class PT>
-  static std::invoke_result_t<decltype(&PT::interfaces), PT> join_interfaces(const PT* t1, const PT* t2) {
+  template <class PT, class InterfacesType = std::invoke_result_t<decltype(&PT::interfaces), PT>>
+  static InterfacesType join_interfaces(const PT* t1, const PT* t2) {
     return t1->interfaces()->union_with(t2->interfaces());
   }
 
