@@ -43,10 +43,9 @@ Java_PrefixedNativeStackWalk_go(JNIEnv* jni, jclass cls) {
     LOG("FindClass(java/lang/String) failed\n");
     return JNI_FALSE;
   }
-  JNINativeMethod methods[1];
-  memset(methods, 0, sizeof(methods));
-
-  jint res = jni->RegisterNatives(boot_cls, methods, 0);
+  // No methods to register: the walk happens before the (empty) method list is
+  // looked at, so the list itself is never read.
+  jint res = jni->RegisterNatives(boot_cls, nullptr, 0);
   if (res != 0) {
     LOG("RegisterNatives returned %d, expected 0\n", (int)res);
     return JNI_FALSE;

@@ -35,9 +35,9 @@
  * vframeStreamCommon::skip_prefixed_method_and_wrappers() (vframe.cpp).
  *
  * The agent registers "wrapped_" as a native method prefix, so resolving the
- * native wrapped_walk() strips the prefix, finds the non-native walk() and
- * binds wrapped_walk() to walk()'s native entry point. That marks wrapped_walk()
- * as a prefixed native method, which is what makes a security stack walk enter
+ * native wrapped_go() strips the prefix, finds the non-native go() and binds
+ * wrapped_go() to go()'s native entry point. That marks wrapped_go() as a
+ * prefixed native method, which is what makes a security stack walk enter
  * skip_prefixed_method_and_wrappers().
  *
  * While the native method runs, the stack is
