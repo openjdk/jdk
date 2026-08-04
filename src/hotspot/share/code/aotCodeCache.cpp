@@ -83,11 +83,12 @@ const char* aot_code_entry_kind_name[] = {
 // Print to error channel when -XX:AOTMode is set to "on"
 static LogStream& load_failure_log() {
   static LogStream err_stream(LogLevel::Error, LogTagSetMapping<LOG_TAGS(aot, codecache, init)>::tagset());
-  static LogStream dbg_stream(LogLevel::Debug, LogTagSetMapping<LOG_TAGS(aot, codecache, init)>::tagset());
+  static LogStream inf_stream(LogLevel::Info, LogTagSetMapping<LOG_TAGS(aot, codecache, init)>::tagset());
   if (RequireSharedSpaces || AbortVMOnAOTCodeFailure) {
     return err_stream;
   } else {
-    return dbg_stream;
+    static LogStream aot_stream(LogLevel::Info, LogTagSetMapping<LOG_TAGS(aot)>::tagset());
+    return inf_stream.is_enabled() ? inf_stream : aot_stream;
   }
 }
 
@@ -215,14 +216,16 @@ void AOTCodeCache::initialize() {
   }
 
   if (VerifyOops) {
-    // Disable AOT stubs caching when VerifyOops flag is on.
+    // Disable AOT stub caching when VerifyOops flag is on.
     // Verify oops code generated a lot of C strings which overflow
     // AOT C string table (which has fixed size).
     // AOT C string table will be reworked later to handle such cases.
-    //
-    // Note: AOT adapters are not affected - they don't have oop operations.
-    log_info(aot, codecache, init)("AOT Stubs Caching is not supported with VerifyOops.");
+    log_info(aot, codecache, init)("AOT Stub Caching is not supported with VerifyOops.");
     FLAG_SET_ERGO(AOTStubCaching, false);
+    if (InlineTypePassFieldsAsArgs) {
+      log_info(aot, codecache, init)("AOT Adapter Caching is not supported with VerifyOops + InlineTypePassFieldsAsArgs.");
+      FLAG_SET_ERGO(AOTAdapterCaching, false);
+    }
   }
 
   bool is_dumping = false;
@@ -288,6 +291,20 @@ void AOTCodeCache::init2() {
     return;
   }
 
+  // Report contents of AOT code cache after verification passed
+  Header* header = opened_cache->_load_header;
+  if (header != nullptr) { // Loading AOT code
+    log_info (aot, codecache, init)("Loaded %u AOT code entries from AOT Code Cache", header->entries_count());
+    log_debug(aot, codecache, init)("  Adapters:  total=%u", header->adapters_count());
+    log_debug(aot, codecache, init)("  Shared Blobs: total=%u", header->shared_blobs_count());
+    log_debug(aot, codecache, init)("  StubGen Blobs:  total=%d", header->stubgen_blobs_count());
+    log_debug(aot, codecache, init)("  C1 Blobs: total=%u", header->C1_blobs_count());
+    log_debug(aot, codecache, init)("  C2 Blobs: total=%u", header->C2_blobs_count());
+    log_debug(aot, codecache, init)("  AOT code cache size: %u bytes", header->cache_size());
+
+    // Read strings
+    opened_cache->load_strings();
+  }
   // initialize aot runtime constants as appropriate to this runtime
   AOTRuntimeConstants::initialize_from_runtime();
 
@@ -379,16 +396,6 @@ AOTCodeCache::AOTCodeCache(bool is_dumping, bool is_using) :
       set_failed();
       return;
     }
-    log_info (aot, codecache, init)("Loaded %u AOT code entries from AOT Code Cache", _load_header->entries_count());
-    log_debug(aot, codecache, init)("  Adapters:  total=%u", _load_header->adapters_count());
-    log_debug(aot, codecache, init)("  Shared Blobs: total=%u", _load_header->shared_blobs_count());
-    log_debug(aot, codecache, init)("  StubGen Blobs:  total=%d", _load_header->stubgen_blobs_count());
-    log_debug(aot, codecache, init)("  C1 Blobs: total=%u", _load_header->C1_blobs_count());
-    log_debug(aot, codecache, init)("  C2 Blobs: total=%u", _load_header->C2_blobs_count());
-    log_debug(aot, codecache, init)("  AOT code cache size: %u bytes", _load_header->cache_size());
-
-    // Read strings
-    load_strings();
   }
   if (_for_dump) {
     _C_store_buffer = NEW_C_HEAP_ARRAY(char, max_aot_code_size() + DATA_ALIGNMENT, mtCode);
@@ -1868,7 +1875,7 @@ void AOTCodeReader::read_dbg_strings(DbgStrings& dbg_strings) {
 // [_stubs_base, _stubs_base + _stubs_max -1], [_c_str_base,
 // _c_str_base + _c_str_max -1],
 
-#define _extrs_max 380
+#define _extrs_max 500
 #define _stubs_max static_cast<int>(EntryId::NUM_ENTRYIDS)
 
 #define _extrs_base 0
@@ -1926,6 +1933,9 @@ void AOTCodeAddressTable::init_extrs() {
     ADD_EXTERNAL_ADDRESS(Thread::current); // used by call_stub
     ADD_EXTERNAL_ADDRESS(SharedRuntime::throw_StackOverflowError);
     ADD_EXTERNAL_ADDRESS(SharedRuntime::throw_delayed_StackOverflowError);
+    if (InlineTypeReturnedAsFields) {
+      ADD_EXTERNAL_ADDRESS(SharedRuntime::store_inline_type_fields_to_buf);
+    }
   }
 
   // Record addresses of VM runtime methods
@@ -1933,6 +1943,7 @@ void AOTCodeAddressTable::init_extrs() {
   ADD_EXTERNAL_ADDRESS(SharedRuntime::handle_wrong_method);
   ADD_EXTERNAL_ADDRESS(SharedRuntime::handle_wrong_method_abstract);
   ADD_EXTERNAL_ADDRESS(SharedRuntime::handle_wrong_method_ic_miss);
+  ADD_EXTERNAL_ADDRESS(SharedRuntime::allocate_inline_types);
 #if defined(AARCH64) && !defined(ZERO)
   ADD_EXTERNAL_ADDRESS(JavaThread::aarch64_get_thread_helper);
   ADD_EXTERNAL_ADDRESS(BarrierSetAssembler::patching_epoch_addr());
@@ -2051,6 +2062,14 @@ void AOTCodeAddressTable::init_extrs() {
     ADD_EXTERNAL_ADDRESS(Runtime1::move_appendix_patching);
     ADD_EXTERNAL_ADDRESS(Runtime1::predicate_failed_trap);
     ADD_EXTERNAL_ADDRESS(Runtime1::unimplemented_entry);
+    ADD_EXTERNAL_ADDRESS(Runtime1::new_null_free_array);
+    ADD_EXTERNAL_ADDRESS(Runtime1::load_flat_array);
+    ADD_EXTERNAL_ADDRESS(Runtime1::store_flat_array);
+    ADD_EXTERNAL_ADDRESS(Runtime1::substitutability_check);
+    ADD_EXTERNAL_ADDRESS(Runtime1::buffer_inline_args);
+    ADD_EXTERNAL_ADDRESS(Runtime1::buffer_inline_args_no_receiver);
+    ADD_EXTERNAL_ADDRESS(Runtime1::throw_identity_exception);
+    ADD_EXTERNAL_ADDRESS(Runtime1::throw_illegal_monitor_state_exception);
     // already added
     // ADD_EXTERNAL_ADDRESS(Thread::current);
     ADD_EXTERNAL_ADDRESS(CompressedKlassPointers::base_addr());
@@ -2076,6 +2095,8 @@ void AOTCodeAddressTable::init_extrs() {
     ADD_EXTERNAL_ADDRESS(OptoRuntime::rethrow_C);
     ADD_EXTERNAL_ADDRESS(OptoRuntime::slow_arraycopy_C);
     ADD_EXTERNAL_ADDRESS(OptoRuntime::register_finalizer_C);
+    ADD_EXTERNAL_ADDRESS(OptoRuntime::load_unknown_inline_C);
+    ADD_EXTERNAL_ADDRESS(OptoRuntime::store_unknown_inline_C);
     ADD_EXTERNAL_ADDRESS(OptoRuntime::vthread_end_first_transition_C);
     ADD_EXTERNAL_ADDRESS(OptoRuntime::vthread_start_final_transition_C);
     ADD_EXTERNAL_ADDRESS(OptoRuntime::vthread_start_transition_C);
@@ -2419,9 +2440,6 @@ int AOTCodeAddressTable::id_for_address(address addr, RelocIterator reloc, CodeB
     id = search_address(addr, _stubs_addr, _stubs_max);
     if (id == BAD_ADDRESS_ID) {
       StubCodeDesc* desc = StubCodeDesc::desc_for(addr);
-      if (desc == nullptr) {
-        desc = StubCodeDesc::desc_for(addr + frame::pc_return_offset);
-      }
       const char* sub_name = (desc != nullptr) ? desc->name() : "<unknown>";
       assert(false, "Address " INTPTR_FORMAT " for Stub:%s is missing in AOT Code Cache addresses table", p2i(addr), sub_name);
     } else {

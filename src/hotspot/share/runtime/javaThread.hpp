@@ -230,16 +230,16 @@ class JavaThread: public Thread {
 
   // Asynchronous exception support
  private:
-  friend class InstallAsyncExceptionHandshakeClosure;
   friend class AsyncExceptionHandshakeClosure;
   friend class HandshakeState;
 
+  int _at_no_async_entry_count;  // Tracks JRT_xxx_NO_ASYNC entry points
+
   void handle_async_exception(oop java_throwable);
  public:
-  void install_async_exception(AsyncExceptionHandshakeClosure* aec = nullptr);
+  void install_async_exception(AsyncExceptionHandshakeClosure* aec);
   bool has_async_exception_condition();
   inline void set_pending_unsafe_access_error();
-  static void send_async_exception(JavaThread* jt, oop java_throwable);
 
   class NoAsyncExceptionDeliveryMark : public StackObj {
     friend JavaThread;
@@ -247,6 +247,20 @@ class JavaThread: public Thread {
     inline NoAsyncExceptionDeliveryMark(JavaThread *t);
     inline ~NoAsyncExceptionDeliveryMark();
   };
+
+  int at_no_async_entry_count() const {
+    assert(is_handshake_safe_for(Thread::current()), "Should only be invoked from within a handshake!");
+    assert(_at_no_async_entry_count >= 0, "");
+    return _at_no_async_entry_count;
+  }
+  void inc_at_no_async_entry_count() {
+    assert(_at_no_async_entry_count >= 0, "");
+    _at_no_async_entry_count++;
+  }
+  void dec_at_no_async_entry_count() {
+    _at_no_async_entry_count--;
+    assert(_at_no_async_entry_count >= 0, "");
+  }
 
   // Safepoint support
  public:                                                        // Expose _thread_state for SafeFetchInt()
@@ -873,7 +887,7 @@ public:
   // Atomic version; invoked by a thread other than the owning thread.
   bool in_critical_atomic() { return AtomicAccess::load(&_jni_active_critical) > 0; }
 
-  bool jni_deferred_suspension() { return AtomicAccess::load(&_jni_deferred_suspension_count); }
+  bool jni_deferred_suspension() const { return AtomicAccess::load(&_jni_deferred_suspension_count); }
   inline void enter_jni_deferred_suspension();
   void exit_jni_deferred_suspension() {
     precond(Thread::current() == this);
@@ -1224,7 +1238,6 @@ public:
   static ByteSize lock_stack_base_offset() { return lock_stack_offset() + LockStack::base_offset(); }
 
   static ByteSize om_cache_offset()        { return byte_offset_of(JavaThread, _om_cache); }
-  static ByteSize om_cache_oops_offset()   { return om_cache_offset() + OMCache::entries_offset(); }
 
   void om_set_monitor_cache(ObjectMonitor* monitor);
   void om_clear_monitor_cache();
@@ -1335,6 +1348,27 @@ public:
   }
   ~ThrowingUnsafeAccessError() {
     _thread->set_throwing_unsafe_access_error(_prev);
+  }
+};
+
+// Tracks Java->VM entry points that defer async exception
+// processing on the transition back to Java (except the
+// safepoint poll from compiled code which is already
+// tracked by JavaThread::is_at_poll_safepoint()).
+class AtNoAsyncEntryMark : public StackObj {
+  JavaThread* _target;
+  bool _do_count;
+ public:
+  AtNoAsyncEntryMark(JavaThread* jt, bool do_count)
+    : _target(jt), _do_count(do_count) {
+    if (_do_count) {
+      _target->inc_at_no_async_entry_count();
+    }
+  }
+  ~AtNoAsyncEntryMark() {
+    if (_do_count) {
+      _target->dec_at_no_async_entry_count();
+    }
   }
 };
 

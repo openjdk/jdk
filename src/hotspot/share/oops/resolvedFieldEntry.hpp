@@ -55,7 +55,7 @@ class ResolvedFieldEntry {
   u2 _field_index;              // Index into field information in holder InstanceKlass
   u2 _cpool_index;              // Constant pool index
   u1 _tos_state;                // TOS state
-  u1 _flags;                    // Flags: [0000|00|is_final|is_volatile]
+  u1 _flags;                    // Flags: [000|has_null_marker|is_null_free_inline_type|is_flat|is_final|is_volatile]
   u1 _get_code, _put_code;      // Get and Put bytecodes of the field
 #ifdef _LP64
   u4 _padding;
@@ -80,23 +80,28 @@ public:
     ResolvedFieldEntry(0) {}
 
   // Bit shift to get flags
-  // Note: Only two flags exists at the moment but more could be added
   enum {
       is_volatile_shift     = 0,
       is_final_shift        = 1, // unused
-      max_flag_shift        = is_final_shift
+      is_flat_shift         = 2,
+      is_null_free_inline_type_shift = 3,
+      has_null_marker_shift = 4,
+      max_flag_shift = has_null_marker_shift
   };
 
   // Getters
-  InstanceKlass* field_holder() const { return _field_holder; }
-  int field_offset()            const { return _field_offset; }
-  u2 field_index()              const { return _field_index;  }
-  u2 constant_pool_index()      const { return _cpool_index;  }
-  u1 tos_state()                const { return _tos_state;    }
-  u1 get_code()                 const { return AtomicAccess::load_acquire(&_get_code);      }
-  u1 put_code()                 const { return AtomicAccess::load_acquire(&_put_code);      }
-  bool is_final()               const { return (_flags & (1 << is_final_shift))    != 0; }
-  bool is_volatile ()           const { return (_flags & (1 << is_volatile_shift)) != 0; }
+  InstanceKlass* field_holder()   const { return _field_holder; }
+  int field_offset()              const { return _field_offset; }
+  u2 field_index()                const { return _field_index;  }
+  u2 constant_pool_index()        const { return _cpool_index;  }
+  u1 tos_state()                  const { return _tos_state;    }
+  u1 get_code()                   const { return AtomicAccess::load_acquire(&_get_code);   }
+  u1 put_code()                   const { return AtomicAccess::load_acquire(&_put_code);   }
+  bool is_volatile ()             const { return (_flags & (1 << is_volatile_shift)) != 0; }
+  bool is_final()                 const { return (_flags & (1 << is_final_shift))    != 0; }
+  bool is_flat()                  const { return (_flags & (1 << is_flat_shift))     != 0; }
+  bool is_null_free_inline_type() const { return (_flags & (1 << is_null_free_inline_type_shift)) != 0; }
+  bool has_null_marker()          const { return (_flags & (1 << has_null_marker_shift)) != 0; }
   bool is_resolved(Bytecodes::Code code) const {
     switch(code) {
     case Bytecodes::_getstatic:
@@ -115,11 +120,23 @@ public:
   void print_on(outputStream* st) const;
 
  private:
-  void set_flags(bool is_final_flag, bool is_volatile_flag) {
-    int new_flags = (is_final_flag << is_final_shift) | static_cast<int>(is_volatile_flag);
+  void set_flags(bool is_volatile_flag,
+                 bool is_final_flag,
+                 bool is_flat_flag,
+                 bool is_null_free_inline_type_flag,
+                 bool has_null_marker_flag) {
+    int new_flags =
+        ((is_volatile_flag ? 1 : 0) << is_volatile_shift) |
+        ((is_final_flag ? 1 : 0) << is_final_shift) |
+        ((is_flat_flag ? 1 : 0) << is_flat_shift) |
+        ((is_null_free_inline_type_flag ? 1 : 0) << is_null_free_inline_type_shift) |
+        ((has_null_marker_flag  ? 1 : 0) << has_null_marker_shift);
     _flags = checked_cast<u1>(new_flags);
-    assert(is_final() == is_final_flag, "Must be");
     assert(is_volatile() == is_volatile_flag, "Must be");
+    assert(is_final() == is_final_flag, "Must be");
+    assert(is_flat() == is_flat_flag, "Must be");
+    assert(is_null_free_inline_type() == is_null_free_inline_type_flag, "Must be");
+    assert(has_null_marker() == has_null_marker_flag, "Must be");
   }
 
   inline void set_bytecode(u1* code, u1 new_code) {

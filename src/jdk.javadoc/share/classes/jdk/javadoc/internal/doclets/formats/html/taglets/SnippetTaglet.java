@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ import com.sun.source.util.DocTreePath;
 
 import jdk.javadoc.doclet.Taglet;
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
+import jdk.javadoc.internal.doclets.formats.html.HtmlDocletWriter;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.formats.html.taglets.snippet.Action;
 import jdk.javadoc.internal.doclets.formats.html.taglets.snippet.ParseException;
@@ -124,7 +125,8 @@ public class SnippetTaglet extends BaseTaglet {
         if (id != null && !id.isBlank()) {
             pre.put(HtmlAttr.ID, id);
         } else {
-            pre.put(HtmlAttr.ID, config.htmlIds.forSnippet(element, ids).name());
+            var set = ids.computeIfAbsent(tagletWriter.htmlWriter, _ -> new HashSet<>());
+            pre.put(HtmlAttr.ID, config.htmlIds.forSnippet(element, set).name());
         }
         var code = HtmlTree.CODE()
                 .addUnchecked(Text.EMPTY); // Make sure the element is always rendered
@@ -207,7 +209,7 @@ public class SnippetTaglet extends BaseTaglet {
         return snippetContainer.add(pre.add(code));
     }
 
-    private final Set<String> ids = new HashSet<>();
+    private final HashMap<HtmlDocletWriter, Set<String>> ids = new HashMap<>();
 
     private static final class BadSnippetException extends Exception {
 

@@ -77,6 +77,8 @@
 #include "nmt/memTracker.hpp"
 #include "oops/compressedKlass.hpp"
 #include "oops/constantPool.inline.hpp"
+#include "oops/flatArrayKlass.hpp"
+#include "oops/inlineKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.hpp"
@@ -164,18 +166,16 @@ size_t AOTMetaspace::protection_zone_size() {
   return os::cds_core_region_alignment();
 }
 
-static bool shared_base_valid(char* shared_base) {
-  // We check user input for SharedBaseAddress at dump time.
-
+bool AOTMetaspace::shared_base_valid(char* shared_base) {
   // At CDS runtime, "shared_base" will be the (attempted) mapping start. It will also
   // be the encoding base, since the headers of archived base objects (and with Lilliput,
   // the prototype mark words) carry pre-computed narrow Klass IDs that refer to the mapping
   // start as base.
-  //
-  // On AARCH64, The "shared_base" may not be later usable as encoding base, depending on the
-  // total size of the reserved area and the precomputed_narrow_klass_shift. This is checked
-  // before reserving memory.  Here we weed out values already known to be invalid later.
-  return AARCH64_ONLY(is_aligned(shared_base, 4 * G)) NOT_AARCH64(true);
+  // Note that all narrowKlass inside CDS/AOT archives will be precomputed with the
+  // shift that, at build time, will afford us the maximum encoding range of 4GB. We do this
+  // since we don't know how large the class space at runtime will actually be.
+  return CLASS_SPACE_ONLY(is_aligned(shared_base, Metaspace::reserve_alignment()))
+         NOT_CLASS_SPACE(true);
 }
 
 class DumpClassListCLDClosure : public CLDClosure {
@@ -273,7 +273,7 @@ static char* compute_shared_base(size_t cds_max) {
     err = "too high";
   } else if (shared_base_too_high(specified_base, aligned_base, cds_max)) {
     err = "too high";
-  } else if (!shared_base_valid(aligned_base)) {
+  } else if (!AOTMetaspace::shared_base_valid(aligned_base)) {
     err = "invalid for this platform";
   } else {
     return aligned_base;
@@ -291,7 +291,7 @@ static char* compute_shared_base(size_t cds_max) {
 
   // Make sure the default value of SharedBaseAddress specified in globals.hpp is sane.
   assert(!shared_base_too_high(specified_base, aligned_base, cds_max), "Sanity");
-  assert(shared_base_valid(aligned_base), "Sanity");
+  assert(AOTMetaspace::shared_base_valid(aligned_base), "Sanity");
   return aligned_base;
 }
 
@@ -503,7 +503,7 @@ void AOTMetaspace::serialize(SerializeClosure* soc) {
   soc->do_tag(arrayOopDesc::base_offset_in_bytes(T_BYTE));
   soc->do_tag(sizeof(ConstantPool));
   soc->do_tag(sizeof(ConstantPoolCache));
-  soc->do_tag(objArrayOopDesc::base_offset_in_bytes());
+  soc->do_tag(refArrayOopDesc::base_offset_in_bytes());
   soc->do_tag(typeArrayOopDesc::base_offset_in_bytes(T_BYTE));
   soc->do_tag(sizeof(Symbol));
 
@@ -582,7 +582,14 @@ static void rewrite_bytecodes(const methodHandle& method) {
         case btos:
           // fallthrough
         case ztos: new_code = Bytecodes::_fast_bgetfield; break;
-        case atos: new_code = Bytecodes::_fast_agetfield; break;
+        case atos: {
+          if (rfe->is_flat()) {
+            new_code = Bytecodes::_fast_vgetfield;
+          } else {
+            new_code = Bytecodes::_fast_agetfield;
+          }
+          break;
+        }
         case itos: new_code = Bytecodes::_fast_igetfield; break;
         case ctos: new_code = Bytecodes::_fast_cgetfield; break;
         case stos: new_code = Bytecodes::_fast_sgetfield; break;
@@ -607,7 +614,14 @@ static void rewrite_bytecodes(const methodHandle& method) {
         switch(rfe->tos_state()) {
         case btos: new_code = Bytecodes::_fast_bputfield; break;
         case ztos: new_code = Bytecodes::_fast_zputfield; break;
-        case atos: new_code = Bytecodes::_fast_aputfield; break;
+        case atos: {
+          if (rfe->is_flat() || rfe->is_null_free_inline_type()) {
+            new_code = Bytecodes::_fast_vputfield;
+          } else {
+            new_code = Bytecodes::_fast_aputfield;
+          }
+          break;
+        }
         case itos: new_code = Bytecodes::_fast_iputfield; break;
         case ctos: new_code = Bytecodes::_fast_cputfield; break;
         case stos: new_code = Bytecodes::_fast_sputfield; break;
@@ -1176,20 +1190,6 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
 
     AOTReferenceObjSupport::initialize(CHECK);
     AOTReferenceObjSupport::stabilize_cached_reference_objects(CHECK);
-
-    if (CDSConfig::is_dumping_aot_linked_classes()) {
-      // java.lang.Class::reflectionFactory cannot be archived yet. We set this field
-      // to null, and it will be initialized again at runtime.
-      log_debug(aot)("Resetting Class::reflectionFactory");
-      TempNewSymbol method_name = SymbolTable::new_symbol("resetArchivedStates");
-      Symbol* method_sig = vmSymbols::void_method_signature();
-      JavaValue result(T_VOID);
-      JavaCalls::call_static(&result, vmClasses::Class_klass(),
-                             method_name, method_sig, CHECK);
-
-      // Perhaps there is a way to avoid hard-coding these names here.
-      // See discussion in JDK-8342481.
-    }
   } else {
     log_info(aot)("Not dumping heap, reset CDSConfig::_is_using_optimized_module_handling");
     CDSConfig::stop_using_optimized_module_handling();
@@ -1221,8 +1221,8 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
   assert(!_output_mapinfo->is_open(), "Must be closed already");
   _output_mapinfo = nullptr;
   if (status && CDSConfig::is_dumping_preimage_static_archive()) {
-    tty->print_cr("%s AOTConfiguration recorded: %s",
-                  CDSConfig::has_temp_aot_config_file() ? "Temporary" : "", AOTConfiguration);
+    tty->print_cr("%sAOTConfiguration recorded: %s",
+                  CDSConfig::has_temp_aot_config_file() ? "Temporary " : "", AOTConfiguration);
     if (CDSConfig::is_single_command_training()) {
       fork_and_dump_final_static_archive(CHECK);
     }
@@ -1359,8 +1359,19 @@ void AOTMetaspace::fork_and_dump_final_static_archive(TRAPS) {
   tty->print_cr("Launching child process %s to assemble AOT cache %s using configuration %s", cmd, AOTCacheOutput, AOTConfiguration);
   int status = exec_jvm_with_java_tool_options(cmd, CHECK);
   if (status != 0) {
+    // We do this in all cases when the child process is launched because:
+    // - the AOT training process is about to exit; or
+    // - jcmd or AOTCacheMXBean is used to end AOT training.
+    //
+    // The child process is just a convenient way to get a fresh JVM state to
+    // assemble the AOT cache. Logically, we consider the AOT assembly to be
+    // executed as part of the current JVM. If the child process has failed,
+    // we should exit the current JVM as well.
+    //
+    // To help debugging, if we have created a temporary AOT config file, do not
+    // delete it.
     log_error(aot)("Child process failed; status = %d", status);
-    // We leave the temp config file for debugging
+    vm_exit(status);
   } else if (CDSConfig::has_temp_aot_config_file()) {
     const char* tmp_config = AOTConfiguration;
     // On Windows, need WRITE permission to remove the file.
@@ -1985,18 +1996,11 @@ char* AOTMetaspace::reserve_address_space_for_archives(FileMapInfo* static_mapin
   const size_t total_range_size =
       archive_space_size + gap_size + class_space_size;
 
-  // Test that class space base address plus shift can be decoded by aarch64, when restored.
-  const int precomputed_narrow_klass_shift = ArchiveBuilder::precomputed_narrow_klass_shift();
-  if (!CompressedKlassPointers::check_klass_decode_mode(base_address, precomputed_narrow_klass_shift,
-                                                        total_range_size)) {
-    aot_log_info(aot)("CDS initialization: Cannot use SharedBaseAddress " PTR_FORMAT " with precomputed shift %d.",
-                  p2i(base_address), precomputed_narrow_klass_shift);
-    use_archive_base_addr = false;
-  }
-
   assert(total_range_size > ccs_begin_offset, "must be");
   if (use_windows_memory_mapping() && use_archive_base_addr) {
     if (base_address != nullptr) {
+      // Note: We already checked the base address for validity at dump time.
+
       // On Windows, we cannot safely split a reserved memory space into two (see JDK-8255917).
       // Hence, we optimistically reserve archive space and class space side-by-side. We only
       // do this for use_archive_base_addr=true since for use_archive_base_addr=false case

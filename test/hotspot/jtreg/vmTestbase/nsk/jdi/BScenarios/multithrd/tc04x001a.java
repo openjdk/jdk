@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,14 +29,14 @@ import nsk.share.jdi.*;
 //    THIS TEST IS LINE NUMBER SENSITIVE
 
 /**
- *  <code>tc04x001a</code> is deugee's part of the tc04x001.
+ *  <code>tc04x001a</code> is debugee's part of the tc04x001.
  */
 public class tc04x001a {
 
     public final static int threadCount = 3;
     static Log log;
 
-    public final static int checkMethodBrkpLine = 73;
+    public final static int checkMethodBrkpLine = 74;
     Thread[] thrds = new Thread[threadCount];
 
     public static void main (String argv[]) {
@@ -58,6 +58,7 @@ public class tc04x001a {
                 System.exit(Consts.TEST_FAILED + Consts.JCK_STATUS_BASE);
             }
         }
+        done(); // Signal the disabling of MethodEntryRequest
         log.display("completed succesfully.");
         System.exit(Consts.TEST_PASSED + Consts.JCK_STATUS_BASE);
     }
@@ -75,6 +76,10 @@ public class tc04x001a {
 
     public static void bar(String caller) {
         log.display(caller + "::bar is called");
+    }
+
+    public static void done() {
+        log.display("done is called");
     }
 
     static class Thready extends NamedTask {

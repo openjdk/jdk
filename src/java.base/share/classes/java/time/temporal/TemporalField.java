@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,10 +186,10 @@ public interface TemporalField {
      * The second is to use {@link TemporalAccessor#isSupported(TemporalField)}:
      * <pre>
      *   // these two lines are equivalent, but the second approach is recommended
-     *   temporal = thisField.isSupportedBy(temporal);
-     *   temporal = temporal.isSupported(thisField);
+     *   supported = thisField.isSupportedBy(temporal);
+     *   supported = temporal.isSupported(thisField);
      * </pre>
-     * It is recommended to use the second approach, {@code isSupported(TemporalField)},
+     * It is recommended to use the second approach, {@code isSupported(thisField)},
      * as it is a lot clearer to read in code.
      * <p>
      * Implementations should determine whether they are supported using the fields
@@ -216,10 +216,10 @@ public interface TemporalField {
      * The second is to use {@link TemporalAccessor#range(TemporalField)}:
      * <pre>
      *   // these two lines are equivalent, but the second approach is recommended
-     *   temporal = thisField.rangeRefinedBy(temporal);
-     *   temporal = temporal.range(thisField);
+     *   range = thisField.rangeRefinedBy(temporal);
+     *   range = temporal.range(thisField);
      * </pre>
-     * It is recommended to use the second approach, {@code range(TemporalField)},
+     * It is recommended to use the second approach, {@code range(thisField)},
      * as it is a lot clearer to read in code.
      * <p>
      * Implementations should perform any queries or calculations using the fields
@@ -244,10 +244,10 @@ public interface TemporalField {
      * (or {@link TemporalAccessor#get(TemporalField)}):
      * <pre>
      *   // these two lines are equivalent, but the second approach is recommended
-     *   temporal = thisField.getFrom(temporal);
-     *   temporal = temporal.getLong(thisField);
+     *   value = thisField.getFrom(temporal);
+     *   value = temporal.getLong(thisField);
      * </pre>
-     * It is recommended to use the second approach, {@code getLong(TemporalField)},
+     * It is recommended to use the second approach, {@code getLong(thisField)},
      * as it is a lot clearer to read in code.
      * <p>
      * Implementations should perform any queries or calculations using the fields
@@ -281,10 +281,10 @@ public interface TemporalField {
      * The second is to use {@link Temporal#with(TemporalField, long)}:
      * <pre>
      *   // these two lines are equivalent, but the second approach is recommended
-     *   temporal = thisField.adjustInto(temporal);
-     *   temporal = temporal.with(thisField);
+     *   temporal = thisField.adjustInto(temporal, newValue);
+     *   temporal = temporal.with(thisField, newValue);
      * </pre>
-     * It is recommended to use the second approach, {@code with(TemporalField)},
+     * It is recommended to use the second approach, {@code with(thisField, newValue)},
      * as it is a lot clearer to read in code.
      * <p>
      * Implementations should perform any queries or calculations using the fields
