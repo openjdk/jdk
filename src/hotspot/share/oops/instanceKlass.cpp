@@ -1583,7 +1583,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
       call_class_initializer(THREAD);
     }
 
-    if (has_strict_static_fields() && !HAS_PENDING_EXCEPTION) {
+    if (has_strict_static_fields() && !HAS_PENDING_EXCEPTION && !ReplayCompiles) {
       // Step 9 also verifies that strict static fields have been initialized.
       // Status bits were set in ClassFileParser::post_process_parsed_stream.
       // After <clinit>, bits must all be clear, or else we must throw an error.
@@ -2134,12 +2134,25 @@ bool InstanceKlass::find_local_field(Symbol* name, Symbol* sig, fieldDescriptor*
   if (fs.lookup(name, sig)) {
     assert(fs.name() == name, "name must match");
     assert(fs.signature() == sig, "signature must match");
-    fd->reinitialize(const_cast<InstanceKlass*>(this), fs.to_FieldInfo());
+    fd->reinitialize(this, fs.to_FieldInfo());
     return true;
   }
   return false;
 }
 
+bool InstanceKlass::find_local_field(Symbol* name, Symbol* sig, fieldDescriptor* fd, bool also_internal) const {
+  if (!also_internal) {
+    return find_local_field( name, sig, fd);
+  }
+
+  for (AllFieldStream fs(this); !fs.done(); fs.next()) {
+    if (fs.name() == name && fs.signature() == sig) {
+      fd->reinitialize(this, fs.to_FieldInfo());
+      return true;
+    }
+  }
+  return false;
+}
 
 Klass* InstanceKlass::find_interface_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const {
   const int n = local_interfaces()->length();

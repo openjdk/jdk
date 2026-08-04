@@ -204,7 +204,7 @@ void Parse::array_store(BasicType bt) {
 
   Node* stored_value_casted = nullptr;
   if (bt == T_OBJECT) {
-    stored_value_casted = array_store_check(adr, elemtype);
+    stored_value_casted = array_store_check(elemtype);
     if (stopped()) {
       return;
     }
@@ -581,7 +581,7 @@ Node* Parse::speculate_non_flat_array(Node* const array, const TypeAryPtr* const
       !too_many_traps_or_recompiles(Deoptimization::Reason_speculate_class_check)) {
     flat_array = false;
     reason = Deoptimization::Reason_speculate_class_check;
-  } else if (UseArrayLoadStoreProfile && !too_many_traps_or_recompiles(reason)) {
+  } else if (UseArrayLoadStoreProfile && !too_many_traps_or_recompiles(Deoptimization::Reason_class_check)) {
     ciKlass* profiled_array_type = nullptr;
     ciKlass* profiled_element_type = nullptr;
     ProfilePtrKind element_ptr = ProfileMaybeNull;

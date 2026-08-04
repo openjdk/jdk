@@ -1221,8 +1221,8 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
   assert(!_output_mapinfo->is_open(), "Must be closed already");
   _output_mapinfo = nullptr;
   if (status && CDSConfig::is_dumping_preimage_static_archive()) {
-    tty->print_cr("%s AOTConfiguration recorded: %s",
-                  CDSConfig::has_temp_aot_config_file() ? "Temporary" : "", AOTConfiguration);
+    tty->print_cr("%sAOTConfiguration recorded: %s",
+                  CDSConfig::has_temp_aot_config_file() ? "Temporary " : "", AOTConfiguration);
     if (CDSConfig::is_single_command_training()) {
       fork_and_dump_final_static_archive(CHECK);
     }
@@ -1359,8 +1359,19 @@ void AOTMetaspace::fork_and_dump_final_static_archive(TRAPS) {
   tty->print_cr("Launching child process %s to assemble AOT cache %s using configuration %s", cmd, AOTCacheOutput, AOTConfiguration);
   int status = exec_jvm_with_java_tool_options(cmd, CHECK);
   if (status != 0) {
+    // We do this in all cases when the child process is launched because:
+    // - the AOT training process is about to exit; or
+    // - jcmd or AOTCacheMXBean is used to end AOT training.
+    //
+    // The child process is just a convenient way to get a fresh JVM state to
+    // assemble the AOT cache. Logically, we consider the AOT assembly to be
+    // executed as part of the current JVM. If the child process has failed,
+    // we should exit the current JVM as well.
+    //
+    // To help debugging, if we have created a temporary AOT config file, do not
+    // delete it.
     log_error(aot)("Child process failed; status = %d", status);
-    // We leave the temp config file for debugging
+    vm_exit(status);
   } else if (CDSConfig::has_temp_aot_config_file()) {
     const char* tmp_config = AOTConfiguration;
     // On Windows, need WRITE permission to remove the file.
