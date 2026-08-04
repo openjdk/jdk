@@ -547,7 +547,18 @@ void C2_MacroAssembler::string_indexof_char(Register str1, Register cnt1,
 
   bind(DO_LONG);
   mv(orig_cnt, cnt1);
-  if (AvoidUnalignedAccesses) {
+  // Align str1 down to an 8-byte boundary before entering CH1_LOOP,
+  // unconditionally (i.e. regardless of AvoidUnalignedAccesses).
+  //
+  // CH1_LOOP below deliberately over-reads up to 7 bytes past the end of the
+  // string using an 8-byte 'ld' (the trailing garbage is masked out by the
+  // HIT bounds check). Aligning str1 to 8 bytes here guarantees every 8-byte
+  // load stays within a single page, so the over-read can never step into an
+  // adjacent unmapped page. Without this alignment (which used to be skipped
+  // when AvoidUnalignedAccesses was false) the last load could straddle a page
+  // boundary and crash with SIGSEGV when the string's trailing bytes happened
+  // to sit right before an unmapped page.
+  {
     Label ALIGNED;
     andi(unaligned_elems, str1, 0x7);
     beqz(unaligned_elems, ALIGNED);
