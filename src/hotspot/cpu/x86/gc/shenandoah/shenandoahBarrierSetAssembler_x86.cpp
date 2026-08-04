@@ -832,6 +832,18 @@ void ShenandoahBarrierStubC2::patchable_jump(MacroAssembler& masm, const char gc
 void ShenandoahBarrierStubC2::enter_if_gc_state(MacroAssembler& masm, const char test_state) {
   Assembler::InlineSkippedInstructionsCounter skip_counter(&masm);
   patchable_jump_if_gc_state(masm, test_state, entry());
+
+#ifdef ASSERT
+  // Cross-check against the actual GC state. If real GC state has any required bits set,
+  // patchable jump should have jumped and returned to continuation below. If this did not
+  // happen, it means something went wrong with hotpatching. Crash hard in that case.
+  // All interesting transitions happen at safepoints, so we should not have false crashes here.
+  Address gc_state_addr(r15_thread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
+  __ testb(gc_state_addr, test_state);
+  __ jccb(Assembler::zero, *continuation());
+  __ hlt();
+#endif
+
   __ bind(*continuation());
 }
 
