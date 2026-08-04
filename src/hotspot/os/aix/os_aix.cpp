@@ -1996,8 +1996,8 @@ uintptr_t os::vm_min_address() {
   // done at actual reservation time, where we honor a "no-mmap" area following
   // the break. See MaxExpectedDataSegmentSize. So we can return a very low
   // address here.
-  assert(is_aligned(os::vm_min_address_default, os::vm_allocation_granularity()), "Sanity");
-  return os::vm_min_address_default;
+  assert(is_aligned(_vm_min_address_default, os::vm_allocation_granularity()), "Sanity");
+  return _vm_min_address_default;
 }
 
 uintptr_t os::vm_max_address() {
