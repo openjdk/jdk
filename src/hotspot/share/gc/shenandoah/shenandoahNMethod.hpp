@@ -39,7 +39,7 @@ class BarrierSetNMethod;
 typedef ShenandoahReentrantLock<ShenandoahSimpleLock> ShenandoahNMethodLock;
 typedef ShenandoahLocker<ShenandoahNMethodLock>       ShenandoahNMethodLocker;
 
-struct ShenandoahNMethodBarrier {
+struct ShenandoahPatchableJump {
   int32_t _rel_pc;
   int32_t _rel_target_pc;
   char _gc_state;
@@ -55,8 +55,8 @@ private:
   nmethod* const          _nm;
   oop**                   _oops;
   int                     _oops_count;
-  ShenandoahNMethodBarrier* _barriers;
-  int                     _barriers_count;
+  ShenandoahPatchableJump* _patchable_jumps;
+  int                     _patchable_jumps_count;
   bool                    _has_non_immed_oops;
   bool                    _unregistered;
   ShenandoahNMethodLock   _lock;
@@ -95,7 +95,7 @@ public:
   static inline ShenandoahNMethodLock* ic_lock_for_nmethod(nmethod* nm);
 
   static bool handle_oops(nmethod* nm);
-  static bool handle_barriers(nmethod* nm);
+  static bool handle_jumps(nmethod* nm);
   static inline void heal_nmethod_metadata(ShenandoahNMethod* nmethod_data);
   static inline void disarm_nmethod(nmethod* nm);
 
@@ -105,14 +105,14 @@ public:
   void assert_correct() NOT_DEBUG_RETURN;
   void assert_same_oops() NOT_DEBUG_RETURN;
 
-  bool has_barriers() {
-    return _barriers_count > 0;
+  bool has_patchable_jumps() {
+    return _patchable_jumps_count > 0;
   }
 
 private:
   void init_from(nmethod* nm);
-  static void parse(nmethod* nm, GrowableArray<oop*>& oops, bool& _has_non_immed_oops, GrowableArray<ShenandoahNMethodBarrier>& barriers);
-  static bool patch_barrier(address pc, address target_pc, bool should_jump);
+  static void parse(nmethod* nm, GrowableArray<oop*>& oops, bool& _has_non_immed_oops, GrowableArray<ShenandoahPatchableJump>& jumps);
+  static bool patch_jump(address pc, address target_pc, bool should_jump);
 };
 
 class ShenandoahNMethodTable;

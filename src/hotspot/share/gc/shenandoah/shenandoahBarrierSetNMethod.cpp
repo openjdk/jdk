@@ -69,9 +69,9 @@ bool ShenandoahBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
 
   bool changed = false;
 
-  // Handle oops and barriers.
+  // Handle oops and jumps.
   changed |= ShenandoahNMethod::handle_oops(nm);
-  changed |= ShenandoahNMethod::handle_barriers(nm);
+  changed |= ShenandoahNMethod::handle_jumps(nm);
 
   // If any code changed, bulk invalidate the entire nmethod.
   if (changed) {

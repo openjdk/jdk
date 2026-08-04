@@ -33,7 +33,7 @@
 #include "runtime/safepointVerifiers.hpp"
 
 ShenandoahNMethod::ShenandoahNMethod(nmethod* nm) :
-  _nm(nm), _oops(nullptr), _oops_count(0), _barriers(nullptr), _barriers_count(0), _unregistered(false), _lock(), _ic_lock() {
+  _nm(nm), _oops(nullptr), _oops_count(0), _patchable_jumps(nullptr), _patchable_jumps_count(0), _unregistered(false), _lock(), _ic_lock() {
   init_from(nm);
 }
 
@@ -41,8 +41,8 @@ ShenandoahNMethod::~ShenandoahNMethod() {
   if (_oops != nullptr) {
     FREE_C_HEAP_ARRAY(_oops);
   }
-  if (_barriers != nullptr) {
-    FREE_C_HEAP_ARRAY(_barriers);
+  if (_patchable_jumps != nullptr) {
+    FREE_C_HEAP_ARRAY(_patchable_jumps);
   }
 }
 
@@ -54,9 +54,9 @@ void ShenandoahNMethod::init_from(nmethod* nm) {
   ResourceMark rm;
   bool non_immediate_oops = false;
   GrowableArray<oop*> oops;
-  GrowableArray<ShenandoahNMethodBarrier> barriers;
+  GrowableArray<ShenandoahPatchableJump> jumps;
 
-  parse(nm, oops, non_immediate_oops, barriers);
+  parse(nm, oops, non_immediate_oops, jumps);
 
   int new_oops_count = oops.length();
   if (_oops_count != new_oops_count) {
@@ -74,25 +74,25 @@ void ShenandoahNMethod::init_from(nmethod* nm) {
   }
   assert_same_oops();
 
-  int new_barriers_count = barriers.length();
-  if (_barriers_count != new_barriers_count) {
-    if (_barriers != nullptr) {
-      FREE_C_HEAP_ARRAY(_barriers);
-      _barriers = nullptr;
+  int new_jumps_count = jumps.length();
+  if (_patchable_jumps_count != new_jumps_count) {
+    if (_patchable_jumps != nullptr) {
+      FREE_C_HEAP_ARRAY(_patchable_jumps);
+      _patchable_jumps = nullptr;
     }
-    if (new_barriers_count > 0) {
-      _barriers = NEW_C_HEAP_ARRAY(ShenandoahNMethodBarrier, new_barriers_count, mtGC);
+    if (new_jumps_count > 0) {
+      _patchable_jumps = NEW_C_HEAP_ARRAY(ShenandoahPatchableJump, new_jumps_count, mtGC);
     }
   }
-  _barriers_count = new_barriers_count;
-  for (int c = 0; c < _barriers_count; c++) {
-    _barriers[c] = barriers.at(c);
+  _patchable_jumps_count = new_jumps_count;
+  for (int c = 0; c < _patchable_jumps_count; c++) {
+    _patchable_jumps[c] = jumps.at(c);
   }
 
   _has_non_immed_oops = non_immediate_oops;
 }
 
-void ShenandoahNMethod::parse(nmethod* nm, GrowableArray<oop*>& oops, bool& has_non_immed_oops, GrowableArray<ShenandoahNMethodBarrier>& barriers) {
+void ShenandoahNMethod::parse(nmethod* nm, GrowableArray<oop*>& oops, bool& has_non_immed_oops, GrowableArray<ShenandoahPatchableJump>& jumps) {
   has_non_immed_oops = false;
   address code_begin = nm->code_begin();
   RelocIterator iter(nm);
@@ -122,12 +122,12 @@ void ShenandoahNMethod::parse(nmethod* nm, GrowableArray<oop*>& oops, bool& has_
       case relocInfo::patchable_barrier_type: {
         patchable_barrier_Relocation* r = iter.patchable_barrier_reloc();
 
-        ShenandoahNMethodBarrier b;
+        ShenandoahPatchableJump b;
         b._rel_pc = checked_cast<int32_t>(pointer_delta(r->addr(), code_begin, 1));
         b._rel_target_pc = r->target_offset();
         b._gc_state = decode_reloc_gc_state(r->metadata());
         b._jump_when_state = decode_reloc_jump_when_state(r->metadata());
-        barriers.push(b);
+        jumps.push(b);
         break;
       }
       default:
@@ -165,7 +165,7 @@ bool ShenandoahNMethod::handle_oops(nmethod* nm) {
   return false;
 }
 
-bool ShenandoahNMethod::handle_barriers(nmethod* nm) {
+bool ShenandoahNMethod::handle_jumps(nmethod* nm) {
   ShenandoahNMethod* data = gc_data(nm);
   assert(data != nullptr, "Sanity");
   assert(data->lock()->owned_by_self(), "Must hold the lock");
@@ -174,11 +174,11 @@ bool ShenandoahNMethod::handle_barriers(nmethod* nm) {
   address code_begin = nm->code_begin();
 
   bool changed = false;
-  for (int c = 0; c < data->_barriers_count; c++) {
-    ShenandoahNMethodBarrier& b = data->_barriers[c];
-    changed |= patch_barrier(code_begin + b._rel_pc,
-                             code_begin + b._rel_target_pc,
-                             ((gc_state & b._gc_state) != 0) == b._jump_when_state);
+  for (int c = 0; c < data->_patchable_jumps_count; c++) {
+    ShenandoahPatchableJump& b = data->_patchable_jumps[c];
+    changed |= patch_jump(code_begin + b._rel_pc,
+                          code_begin + b._rel_target_pc,
+                          ((gc_state & b._gc_state) != 0) == b._jump_when_state);
   }
   return changed;
 }
@@ -196,7 +196,7 @@ bool ShenandoahNMethod::handle_barriers(nmethod* nm) {
 //
 // The icache flushing is also handled on both paths.
 //
-bool ShenandoahNMethod::patch_barrier(address pc, address target_pc, bool should_jump) {
+bool ShenandoahNMethod::patch_jump(address pc, address target_pc, bool should_jump) {
   bool patched = true;
   if (should_jump && ShenandoahBarrierSetAssembler::is_patchable_nop(pc)) {
     ShenandoahBarrierSetAssembler::insert_patchable_jump(pc, target_pc);
@@ -206,7 +206,7 @@ bool ShenandoahNMethod::patch_barrier(address pc, address target_pc, bool should
     patched = false;
   }
 
-  // Failing to change the barrier is catastrophic for correctness,
+  // Failing to change the jump is catastrophic for correctness,
   // so prefer to crash hard even in product.
   if (should_jump) {
     guarantee(ShenandoahBarrierSetAssembler::is_patchable_jump(pc, target_pc),
@@ -288,9 +288,9 @@ void ShenandoahNMethod::assert_same_oops() {
       debug_stream.print_cr("-> " PTR_FORMAT, p2i(_oops[i]));
     }
     GrowableArray<oop*> check;
-    GrowableArray<ShenandoahNMethodBarrier> barriers;
+    GrowableArray<ShenandoahPatchableJump> jumps;
     bool non_immed;
-    parse(nm(), check, non_immed, barriers);
+    parse(nm(), check, non_immed, jumps);
     debug_stream.print_cr("check oops: %d", check.length());
     for (int i = 0; i < check.length(); i++) {
       debug_stream.print_cr("-> " PTR_FORMAT, p2i(check.at(i)));
@@ -322,18 +322,18 @@ void ShenandoahNMethodTable::register_nmethod(nmethod* nm) {
 
   if (data != nullptr) {
     // Re-registering the existing nmethod. This is the C1 oop patching path.
-    // We expect no barriers here, as only oops can change in C1 case.
+    // We expect no patchable jumps here, as only oops can change in C1 case.
     assert(contain(nm), "Must have been registered");
     assert(nm == data->nm(), "Must be same nmethod");
     assert(nm->is_compiled_by_c1(), "Must be compiled by C1");
-    assert(!data->has_barriers(), "Must not have barriers");
+    assert(!data->has_patchable_jumps(), "Must not have patchable jumps");
     // Prevent updating a nmethod while concurrent iteration is in progress.
     wait_until_concurrent_iteration_done();
     ShenandoahNMethodLocker data_locker(data->lock());
     data->update();
   } else {
     // New nmethod, not yet executing. We can safely append it to the list,
-    // because concurrent iteration will not touch it. Ditto we do barrier
+    // because concurrent iteration will not touch it. Ditto we do jump
     // fixups right here, without relying on nmethod entry barrier to be armed
     // for new nmethods.
     data = ShenandoahNMethod::for_nmethod(nm);
@@ -343,14 +343,14 @@ void ShenandoahNMethodTable::register_nmethod(nmethod* nm) {
     log_register_nmethod(nm);
     append(data);
     ShenandoahNMethodLocker data_locker(data->lock());
-    if (ShenandoahNMethod::handle_barriers(nm)) {
+    if (ShenandoahNMethod::handle_jumps(nm)) {
       ICache::invalidate_range(nm->code_begin(), nm->code_size());
     }
     ShenandoahNMethod::disarm_nmethod(nm);
   }
 
-  assert(!data->has_barriers() || _bs_nm->supports_entry_barrier(nm),
-         "NMethods with hotpatchable GC barriers require entry barrier support");
+  assert(!data->has_patchable_jumps() || _bs_nm->supports_entry_barrier(nm),
+         "NMethods with patchable jumps require entry barrier support");
 }
 
 void ShenandoahNMethodTable::unregister_nmethod(nmethod* nm) {
