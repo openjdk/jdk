@@ -206,7 +206,7 @@ class BacktraceBuilder: public StackObj {
     assert(mirrors != nullptr, "mirror array should be initialized in backtrace");
     return mirrors;
   }
-  static bool has_hidden_top_frame(objArrayHandle chunk) {
+  static bool has_hidden_top_frame(refArrayHandle chunk) {
     oop hidden = chunk->obj_at(trace_hidden_offset);
     return hidden != nullptr;
   }
@@ -226,7 +226,7 @@ class BacktraceBuilder: public StackObj {
   // constructor for new backtrace
   BacktraceBuilder(TRAPS): _head(nullptr), _methods_and_bcis(nullptr), _mirrors(nullptr), _has_hidden_top_frame(false) {
     expand(CHECK);
-    _backtrace = Handle(THREAD, _head);
+    _backtrace = refArrayHandle(THREAD, _head);
     _index = 0;
   }
 
@@ -243,6 +243,8 @@ class BacktraceBuilder: public StackObj {
     _index = 0;
   }
 
+ private:
+  // Move this up.
   void expand(TRAPS) {
     refArrayHandle old_head(THREAD, _head);
     PauseNoSafepointVerifier pnsv(&_nsv);
@@ -269,6 +271,7 @@ class BacktraceBuilder: public StackObj {
     _index = 0;
   }
 
+ public:
   refArrayOop backtrace() {
     return _backtrace();
   }
@@ -336,7 +339,7 @@ class BacktraceIterator : public StackObj {
     }
   }
  public:
-  BacktraceIterator(objArrayHandle result, Thread* thread) {
+  BacktraceIterator(refArrayHandle result, Thread* thread) {
     init(result, thread);
     assert(_methods.is_null() || _methods->length() == BacktraceBuilder::trace_chunk_size, "lengths don't match");
   }
@@ -841,7 +844,7 @@ bool java_lang_Throwable::get_top_method_and_bci(oop throwable, Method** method,
 
   // If the exception happened in a frame that has been hidden, i.e.,
   // omitted from the back trace, we can not compute the message.
-  oop hidden = backtrace(throwable)->obj_at(trace_hidden_offset);
+  oop hidden = backtrace(throwable)->obj_at(BacktraceBuilder::trace_hidden_offset);
   if (hidden != nullptr) {
     return false;
   }
