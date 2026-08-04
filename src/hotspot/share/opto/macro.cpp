@@ -38,11 +38,8 @@
 #include "opto/compile.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/graphKit.hpp"
-<<<<<<< HEAD
-#include "opto/int128tnode.hpp"
-=======
 #include "opto/inlinetypenode.hpp"
->>>>>>> master
+#include "opto/int128tnode.hpp"
 #include "opto/intrinsicnode.hpp"
 #include "opto/locknode.hpp"
 #include "opto/loopnode.hpp"
@@ -3210,11 +3207,11 @@ void PhaseMacroExpand::expand_add_sub_i128_node(Int128TBinaryNode* addsub) {
     new_lo = _igvn.transform(new SubLNode(addsub->lo1(), addsub->lo2()));
   }
 
-  if (addsub->result_lo_or_null() != nullptr) {
-    _igvn.replace_node(addsub->result_lo_or_null(), new_lo);
+  if (Node* lo = addsub->result_lo_or_null(); lo != nullptr) {
+    _igvn.replace_node(lo, new_lo);
   }
 
-  if (addsub->result_hi_or_null() != nullptr) {
+  if (Node* hi = addsub->result_hi_or_null(); hi != nullptr) {
     Node* overflow_cmp = _igvn.transform(new CmpULNode(is_add ? new_lo : addsub->lo1(), addsub->lo2()));
     Node* overflow_bol = _igvn.transform(new BoolNode(overflow_cmp, BoolTest::lt));
     Node* overflow_int = _igvn.transform(new CMoveLNode(overflow_bol, _igvn.longcon(0), _igvn.longcon(1), TypeLong::LONG));
@@ -3225,7 +3222,7 @@ void PhaseMacroExpand::expand_add_sub_i128_node(Int128TBinaryNode* addsub) {
     } else {
       new_hi = _igvn.transform(new SubLNode(addsub->hi1(), hi2));
     }
-    _igvn.replace_node(addsub->result_hi_or_null(), new_hi);
+    _igvn.replace_node(hi, new_hi);
   }
 
   _igvn.remove_dead_node(addsub, PhaseIterGVN::NodeOrigin::Graph);
