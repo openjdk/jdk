@@ -25,6 +25,7 @@
 #include "cds/aotClassLocation.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
+#include "cds/cdsProtectionDomain.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/classFileStream.hpp"
@@ -385,17 +386,20 @@ bool ClassPathZipEntry::has_entry(JavaThread* current, const char* name, Handle 
   // Make an upcall to ClassLoader.getResource() if name is in a multi-release JAR
   if (class_loader != nullptr && is_multi_release_jar) {
     JavaValue result(T_OBJECT);
-    oop class_name = java_lang_String::create_oop_from_str(name, current);
-    Handle h_class_name = Handle(current, class_name);
+    oop class_name_oop = java_lang_String::create_oop_from_str(name, current);
+    oop zip_name_oop = CDSProtectionDomain::to_file_URL(_zip_name, Handle(), current);
+    Handle h_class_name = Handle(current, class_name_oop);
+    Handle h_zip_name = Handle(current, zip_name_oop);
 
     // URL ClassLoader.getResource(String name)
-    JavaCalls::call_virtual(&result,
-                            class_loader,
-                            vmClasses::ClassLoader_klass(),
-                            vmSymbols::getResource_name(),
-                            vmSymbols::toFileURL_signature(),
-                            h_class_name,
-                            current);
+    JavaCalls::call_static(&result,
+                           vmClasses::CDS_klass(),
+                           vmSymbols::getResource_name(),
+                           vmSymbols::getResource_cds_signature(),
+                           class_loader,
+                           h_zip_name,
+                           h_class_name,
+                           current);
 
     // Not using TRAPS, the thread must be checked manually
     if (current->has_pending_exception()) {
