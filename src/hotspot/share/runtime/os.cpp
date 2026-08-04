@@ -1999,6 +1999,13 @@ static void shuffle_fisher_yates(T* arr, unsigned num, FastRandom& frand) {
 uintptr_t os::vm_page_table_expansion_point() {
   return align_down(UINTPTR_MAX, os::vm_allocation_granularity());
 }
+#else
+uintptr_t os::vm_page_table_expansion_point() {
+  // On s390x, page table will dynamically expand based on user demand
+  // (eg mmap probing with high addresses). First expansion happens
+  // at 2^42 (4TB).
+  return nth_bit<uintptr_t>(42);
+}
 #endif
 
 // Helper for os::attempt_reserve_memory_between
