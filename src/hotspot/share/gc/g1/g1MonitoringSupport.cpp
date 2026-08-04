@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,7 +201,7 @@ void G1MonitoringSupport::initialize_serviceability() {
   _full_gc_memory_manager.add_pool(_survivor_space_pool);
   _full_gc_memory_manager.add_pool(_old_gen_pool);
 
-  _conc_gc_memory_manager.add_pool(_old_gen_pool);
+  _conc_gc_memory_manager.add_pool(_old_gen_pool, false /* always_affected_by_gc */);
 
   _young_gc_memory_manager.add_pool(_eden_space_pool);
   _young_gc_memory_manager.add_pool(_survivor_space_pool);
@@ -245,14 +245,14 @@ void G1MonitoringSupport::recalculate_sizes() {
   // use smaller value to subtract.
   _old_gen_used = _overall_used - MIN2(_overall_used, _eden_space_used + _survivor_space_used);
 
-  uint survivor_list_length = _g1h->survivor_regions_count();
+  uint num_survivor_regions = _g1h->survivor_regions_count();
 
-  uint young_list_target_length = _g1h->policy()->young_list_target_length();
-  assert(young_list_target_length >= survivor_list_length, "invariant");
-  uint eden_list_max_length = young_list_target_length - survivor_list_length;
+  uint target_num_young_regions = _g1h->policy()->target_num_young_regions();
+  assert(target_num_young_regions >= num_survivor_regions, "invariant");
+  uint max_num_eden_regions = target_num_young_regions - num_survivor_regions;
 
   // First calculate the committed sizes that can be calculated independently.
-  _survivor_space_committed = survivor_list_length * G1HeapRegion::GrainBytes;
+  _survivor_space_committed = num_survivor_regions * G1HeapRegion::GrainBytes;
   _old_gen_committed = G1HeapRegion::align_up_to_region_byte_size(_old_gen_used);
 
   // Next, start with the overall committed size.
@@ -265,7 +265,7 @@ void G1MonitoringSupport::recalculate_sizes() {
   committed -= _survivor_space_committed + _old_gen_committed;
 
   // Next, calculate and remove the committed size for the eden.
-  _eden_space_committed = (size_t) eden_list_max_length * G1HeapRegion::GrainBytes;
+  _eden_space_committed = (size_t) max_num_eden_regions * G1HeapRegion::GrainBytes;
   // Somewhat defensive: be robust in case there are inaccuracies in
   // the calculations
   _eden_space_committed = MIN2(_eden_space_committed, committed);
@@ -383,9 +383,10 @@ G1FullGCMonitoringScope::G1FullGCMonitoringScope(G1MonitoringSupport* monitoring
                     "end of major GC") {
 }
 
-G1ConcGCMonitoringScope::G1ConcGCMonitoringScope(G1MonitoringSupport* monitoring_support) :
+G1ConcGCMonitoringScope::G1ConcGCMonitoringScope(G1MonitoringSupport* monitoring_support, bool affects_memory_pools) :
   G1MonitoringScope(monitoring_support,
                     monitoring_support->_conc_collection_counters,
                     &monitoring_support->_conc_gc_memory_manager,
-                    "end of concurrent GC pause") {
+                    "end of concurrent GC pause",
+                    affects_memory_pools) {
 }

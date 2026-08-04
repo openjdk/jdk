@@ -25,8 +25,11 @@ import static jdk.jpackage.test.WindowsHelper.getWixTypeFromVerboseJPackageOutpu
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -55,64 +58,103 @@ import jdk.jpackage.test.WindowsHelper.WixType;
  *  --jpt-run=WinL10nTest
  */
 
-public class WinL10nTest {
+public record WinL10nTest(
+        Collection<WixFileInitializer> wxlFileInitializers,
+        Collection<String> expectedCultures,
+        Optional<Locale> locale,
+        boolean enableWixUIExtension) {
 
-    public WinL10nTest(WixFileInitializer wxlFileInitializers[],
-            String[] expectedCultures, String expectedErrorMessage,
-            String userLanguage, String userCountry,
-            boolean enableWixUIExtension) {
-        this.wxlFileInitializers = wxlFileInitializers;
-        this.expectedCultures = expectedCultures;
-        this.expectedErrorMessage = expectedErrorMessage;
-        this.userLanguage = userLanguage;
-        this.userCountry = userCountry;
-        this.enableWixUIExtension = enableWixUIExtension;
+    public WinL10nTest {
+        Objects.requireNonNull(wxlFileInitializers);
+        Objects.requireNonNull(expectedCultures);
+        Objects.requireNonNull(locale);
+    }
+
+    public WinL10nTest(Collection<String> expectedCultures, Locale locale, boolean enableWixUIExtension) {
+        this(List.of(), expectedCultures, Optional.of(locale), enableWixUIExtension);
+    }
+
+    public WinL10nTest(Collection<WixFileInitializer> wxlFileInitializers, Collection<String> expectedCultures) {
+        this(wxlFileInitializers, expectedCultures, Optional.empty(), false);
+    }
+
+    public WinL10nTest(WinL10nTest other) {
+        this(other.wxlFileInitializers, other.expectedCultures, other.locale, other.enableWixUIExtension);
+    }
+
+    @Override
+    public String toString() {
+        var tokens = new ArrayList<String>();
+        if (!wxlFileInitializers.isEmpty()) {
+            tokens.add(String.format("wxlFileInitializers=%s", wxlFileInitializers));
+        }
+        if (!expectedCultures.isEmpty()) {
+            tokens.add(String.format("expectedCultures=%s", expectedCultures));
+        }
+        locale.ifPresent(l -> {
+            tokens.add(String.format("locale=%s", l));
+        });
+        if (enableWixUIExtension) {
+            tokens.add("enableWixUIExtension=true");
+        }
+        return String.join(", ", tokens);
     }
 
     @Parameters
     public static List<Object[]> data() {
-        return List.of(new Object[][]{
-            {null, new String[] {"en-us"}, null, null, null, false},
-            {null, new String[] {"en-us"}, null, "en", "US", false},
-            {null, new String[] {"en-us"}, null, "en", "US", true},
-            {null, new String[] {"de-de"}, null, "de", "DE", false},
-            {null, new String[] {"de-de"}, null, "de", "DE", true},
-            {null, new String[] {"ja-jp"}, null, "ja", "JP", false},
-            {null, new String[] {"ja-jp"}, null, "ja", "JP", true},
-            {null, new String[] {"zh-cn"}, null, "zh", "CN", false},
-            {null, new String[] {"zh-cn"}, null, "zh", "CN", true},
-            {new WixFileInitializer[] {
+
+        List<WinL10nTest> testCases = new ArrayList<>();
+
+        testCases.add(new WinL10nTest(List.of(), List.of("en-us"), Optional.empty(), false));
+        for (var enableWixUIExtension : List.of(true, false)) {
+            testCases.add(new WinL10nTest(List.of("en-us"), Locale.of("en", "US"), enableWixUIExtension));
+            testCases.add(new WinL10nTest(List.of("de-de"), Locale.of("de", "DE"), enableWixUIExtension));
+            testCases.add(new WinL10nTest(List.of("ja-jp"), Locale.of("ja", "JP"), enableWixUIExtension));
+            testCases.add(new WinL10nTest(List.of("zh-cn"), Locale.of("zh", "CN"), enableWixUIExtension));
+        }
+
+        testCases.add(new WinL10nTest(List.of(
                 WixFileInitializer.create("a.wxl", "en-us")
-            }, new String[] {"en-us"}, null, null, null, false},
-            {new WixFileInitializer[] {
+        ), List.of("en-us")));
+
+        testCases.add(new WinL10nTest(List.of(
                 WixFileInitializer.create("a.wxl", "fr")
-            }, new String[] {"fr", "en-us"}, null, null, null, false},
-            {new WixFileInitializer[] {
+        ), List.of("fr", "en-us")));
+
+        testCases.add(new WinL10nTest(List.of(
                 WixFileInitializer.create("a.wxl", "fr"),
                 WixFileInitializer.create("b.wxl", "fr")
-            }, new String[] {"fr", "en-us"}, null, null, null, false},
-            {new WixFileInitializer[] {
+        ), List.of("fr", "en-us")));
+
+        testCases.add(new WinL10nTest(List.of(
                 WixFileInitializer.create("a.wxl", "it"),
                 WixFileInitializer.create("b.wxl", "fr")
-            }, new String[] {"it", "fr", "en-us"}, null, null, null, false},
-            {new WixFileInitializer[] {
+        ), List.of("it", "fr", "en-us")));
+
+        testCases.add(new WinL10nTest(List.of(
                 WixFileInitializer.create("c.wxl", "it"),
                 WixFileInitializer.create("b.wxl", "fr")
-            }, new String[] {"fr", "it", "en-us"}, null, null, null, false},
-            {new WixFileInitializer[] {
+        ), List.of("fr", "it", "en-us")));
+
+        testCases.add(new WinL10nTest(List.of(
                 WixFileInitializer.create("a.wxl", "fr"),
                 WixFileInitializer.create("b.wxl", "it"),
                 WixFileInitializer.create("c.wxl", "fr"),
                 WixFileInitializer.create("d.wxl", "it")
-            }, new String[] {"fr", "it", "en-us"}, null, null, null, false},
-            {new WixFileInitializer[] {
+        ), List.of("fr", "it", "en-us")));
+
+        testCases.add(new WinL10nTest(List.of(
                 WixFileInitializer.create("c.wxl", "it"),
                 WixFileInitializer.createMalformed("b.wxl")
-            }, null, null, null, null, false},
-            {new WixFileInitializer[] {
+        ), List.of()));
+
+        testCases.add(new WinL10nTest(List.of(
                 WixFileInitializer.create("MsiInstallerStrings_de.wxl", "de")
-            }, new String[] {"en-us"}, null, null, null, false}
-        });
+        ), List.of("en-us")));
+
+        return testCases.stream().map(testCase -> {
+            return new Object[] { testCase };
+        }).toList();
     }
 
     private record OutputAnalizer(Executor.Result result, WixType wixType, Optional<String> wixBuildCommandLine) {
@@ -123,8 +165,8 @@ public class WinL10nTest {
             Objects.requireNonNull(wixBuildCommandLine);
         }
 
-        OutputAnalizer(Executor.Result result) {
-            this(result, getWixTypeFromVerboseJPackageOutput(result));
+        OutputAnalizer(Locale locale, Executor.Result result) {
+            this(result, getWixTypeFromVerboseJPackageOutput(locale, result));
         }
 
         OutputAnalizer(Executor.Result result, WixType wixType) {
@@ -196,13 +238,7 @@ public class WinL10nTest {
     public void test() throws IOException {
         final Path tempRoot = TKit.createTempDirectory("tmp");
 
-        final boolean allWxlFilesValid;
-        if (wxlFileInitializers != null) {
-            allWxlFilesValid = Stream.of(wxlFileInitializers).allMatch(
-                    WixFileInitializer::isValid);
-        } else {
-            allWxlFilesValid = true;
-        }
+        final boolean allWxlFilesValid = wxlFileInitializers.stream().allMatch(WixFileInitializer::isValid);
 
         PackageTest test = new PackageTest()
         .forTypes(PackageType.WINDOWS)
@@ -225,19 +261,18 @@ public class WinL10nTest {
             boolean withJavaOptions = false;
 
             // Set JVM default locale that is used to select primary l10n file.
-            if (userLanguage != null) {
-                withJavaOptions = true;
-                cmd.addArguments("-J-Duser.language=" + userLanguage);
-            }
-            if (userCountry != null) {
-                withJavaOptions = true;
-                cmd.addArguments("-J-Duser.country=" + userCountry);
-            }
-
-            if (withJavaOptions) {
+            locale.ifPresent(l -> {
+                cmd.addArguments("-J-Duser.language=" + l.getLanguage());
+                cmd.addArguments("-J-Duser.country=" + l.getCountry());
+                // Force UTF8 encoding of the output of jpackage command.
+                // This is the default encoding of the output for the command executor.
+                // This is needed to properly handle JP and CN l10n-s.
+                cmd.addArguments("-J-Dstdout.encoding=UTF-8");
+                cmd.addArguments("-J-Dstderr.encoding=UTF-8");
+                cmd.addArguments("-J-Dfile.encoding=UTF-8");
                 // Use jpackage as a command to allow "-J" options come through
                 cmd.useToolProvider(false);
-            }
+            });
 
             // Cultures handling is affected by the WiX extensions used.
             // By default only WixUtilExtension is used, this flag
@@ -252,14 +287,10 @@ public class WinL10nTest {
         })
         .addBundleVerifier((cmd, result) -> {
 
-            var outputAnalizer = new OutputAnalizer(result);
+            var outputAnalizer = new OutputAnalizer(locale.orElseGet(Locale::getDefault), result);
 
-            if (expectedCultures != null) {
-                outputAnalizer.verifyCulturesInCmdline(expectedCultures);
-            }
-
-            if (expectedErrorMessage != null) {
-                TKit.assertTextStream(expectedErrorMessage).apply(result.stderr());
+            if (!expectedCultures.isEmpty()) {
+                outputAnalizer.verifyCulturesInCmdline(expectedCultures.toArray(String[]::new));
             }
 
             if (wxlFileInitializers != null) {
@@ -277,7 +308,7 @@ public class WinL10nTest {
                         v.apply(List.of(outputAnalizer.getWixBuildCommandLine()));
                     }
                 } else {
-                    Stream.of(wxlFileInitializers)
+                    wxlFileInitializers.stream()
                             .filter(Predicate.not(WixFileInitializer::isValid))
                             .forEach(v -> v.createCmdOutputVerifier(
                                     wixSrcDir).apply(result.getOutput()));
@@ -287,9 +318,9 @@ public class WinL10nTest {
             }
         });
 
-        if (wxlFileInitializers != null) {
+        if (!wxlFileInitializers.isEmpty()) {
             test.addInitializer(cmd -> {
-                resourceDir = TKit.createTempDirectory("resources");
+                var resourceDir = TKit.createTempDirectory("resources");
 
                 cmd.addArguments("--resource-dir", resourceDir);
 
@@ -299,20 +330,12 @@ public class WinL10nTest {
             });
         }
 
-        if (expectedErrorMessage != null || !allWxlFilesValid) {
+        if (!allWxlFilesValid) {
             test.setExpectedExitCode(1);
         }
 
         test.run();
     }
-
-    private final WixFileInitializer[] wxlFileInitializers;
-    private final String[] expectedCultures;
-    private final String expectedErrorMessage;
-    private final String userLanguage;
-    private final String userCountry;
-    private final boolean enableWixUIExtension;
-    private Path resourceDir;
 
     private static class WixFileInitializer {
         static WixFileInitializer create(String name, String culture) {

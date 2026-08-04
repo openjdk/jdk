@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 /*
  * @test
+ * @bug 8365575
  * @summary Sanity test for AOTCache
  * @requires vm.cds.supports.aot.class.linking
  * @library /test/lib
@@ -33,24 +34,72 @@
  * @run driver VerifierFailOver
  */
 
+import jdk.test.lib.cds.CDSAppTester;
 import jdk.test.lib.cds.SimpleCDSAppTester;
+import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class VerifierFailOver {
+
+    static final String mainClass = VerifierFailOverApp.class.getName();
+    static final String appJar = ClassFileInstaller.getJarPath("app.jar");
+
     public static void main(String... args) throws Exception {
         SimpleCDSAppTester.of("VerifierFailOver")
             .addVmArgs("-Xlog:aot,aot+class=debug")
             .classpath("app.jar")
             .appCommandLine("VerifierFailOverApp")
             .setTrainingChecker((OutputAnalyzer out) -> {
-                    out.shouldContain("Skipping VerifierFailOver_Helper: Verified with old verifier");
+                    out.shouldMatch("class.* klasses.* VerifierFailOver_Helper");
                 })
             .setAssemblyChecker((OutputAnalyzer out) -> {
-                    // classes verified with fail-over mode should not be cached.
-                    out.shouldMatch("class.* klasses.* VerifierFailOverApp");
-                    out.shouldNotMatch("class.* klasses.* VerifierFailOver_Helper");
+                    // Classes verified with fail-over can be cached if AOTClassLinking is on
+                    out.shouldMatch("class.* klasses.* VerifierFailOverApp aot-linked");
+                    out.shouldMatch("class.* klasses.* VerifierFailOver_Helper aot-linked");
                 })
             .runAOTWorkflow();
+
+
+        // When running an assembly run without AOTClassLinking, any classes verified with
+        // fail-over need to be excluded.
+        Tester t = new Tester();
+        t.runAOTWorkflow();
+    }
+
+    static class Tester extends CDSAppTester {
+        public Tester() {
+            super(mainClass);
+        }
+
+        @Override
+        public String classpath(RunMode runMode) {
+            return appJar;
+        }
+
+        @Override
+        public String[] vmArgs(RunMode runMode) {
+            if (runMode == RunMode.ASSEMBLY) {
+                return new String[] {"-XX:-AOTClassLinking", "-Xlog:aot,aot+class=debug"};
+            } else {
+                return new String[] { "-Xlog:aot,aot+class=debug" };
+            }
+        }
+
+        @Override
+        public String[] appCommandLine(RunMode runMode) {
+            return new String[] { mainClass };
+        }
+
+        @Override
+        public void checkExecution(OutputAnalyzer out, RunMode runMode)  throws Exception {
+            if (runMode == RunMode.TRAINING) {
+                out.shouldMatch("class.* klasses.* VerifierFailOver_Helper");
+            } else if (runMode == RunMode.ASSEMBLY) {
+                out.shouldContain("Skipping VerifierFailOver_Helper: Old class has been linked");
+                out.shouldMatch("class.* klasses.* VerifierFailOverApp");
+                out.shouldNotMatch("class.* klasses.* VerifierFailOver_Helper");
+            }
+        }
     }
 }
 

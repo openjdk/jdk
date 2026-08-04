@@ -151,7 +151,7 @@ instruct g1CompareAndExchangeP$1(iRegPNoSp res, indirect mem, iRegP oldval, iReg
                       RegSet::of($mem$$Register, $oldval$$Register, $newval$$Register) /* preserve */,
                       RegSet::of($res$$Register) /* no_preserve */);
     __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::xword,
-               $3 /* acquire */, true /* release */, false /* weak */, $res$$Register);
+               ifelse($1,Acq,memory_order_seq_cst,memory_order_release), $res$$Register);
     write_barrier_post(masm, this,
                        $mem$$Register /* store_addr */,
                        $newval$$Register /* new_val */,
@@ -160,8 +160,8 @@ instruct g1CompareAndExchangeP$1(iRegPNoSp res, indirect mem, iRegP oldval, iReg
   %}
   ins_pipe(pipe_slow);
 %}')dnl
-CAEP_INSN(,,false)
-CAEP_INSN(Acq,_acq,true)
+CAEP_INSN(,)
+CAEP_INSN(Acq,_acq)
 dnl
 define(`CAEN_INSN',
 `
@@ -185,7 +185,7 @@ instruct g1CompareAndExchangeN$1(iRegNNoSp res, indirect mem, iRegN oldval, iReg
                       RegSet::of($mem$$Register, $oldval$$Register, $newval$$Register) /* preserve */,
                       RegSet::of($res$$Register) /* no_preserve */);
     __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::word,
-               $3 /* acquire */, true /* release */, false /* weak */, $res$$Register);
+               ifelse($1,Acq,memory_order_seq_cst,memory_order_release), $res$$Register);
     __ decode_heap_oop($tmp1$$Register, $newval$$Register);
     write_barrier_post(masm, this,
                        $mem$$Register /* store_addr */,
@@ -195,8 +195,8 @@ instruct g1CompareAndExchangeN$1(iRegNNoSp res, indirect mem, iRegN oldval, iReg
   %}
   ins_pipe(pipe_slow);
 %}')dnl
-CAEN_INSN(,,false)
-CAEN_INSN(Acq,_acq,true)
+CAEN_INSN(,)
+CAEN_INSN(Acq,_acq)
 dnl
 define(`CASP_INSN',
 `
@@ -221,8 +221,7 @@ instruct g1CompareAndSwapP$1(iRegINoSp res, indirect mem, iRegP newval, iRegPNoS
                       $tmp2$$Register /* tmp2 */,
                       RegSet::of($mem$$Register, $oldval$$Register, $newval$$Register) /* preserve */,
                       RegSet::of($res$$Register) /* no_preserve */);
-    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::xword,
-               $3 /* acquire */, true /* release */, false /* weak */, noreg);
+    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::xword, ifelse($1,Acq,memory_order_seq_cst,memory_order_release));
     __ cset($res$$Register, Assembler::EQ);
     write_barrier_post(masm, this,
                        $mem$$Register /* store_addr */,
@@ -232,8 +231,8 @@ instruct g1CompareAndSwapP$1(iRegINoSp res, indirect mem, iRegP newval, iRegPNoS
   %}
   ins_pipe(pipe_slow);
 %}')dnl
-CASP_INSN(,,false)
-CASP_INSN(Acq,_acq,true)
+CASP_INSN(,)
+CASP_INSN(Acq,_acq)
 dnl
 define(`CASN_INSN',
 `
@@ -258,8 +257,7 @@ instruct g1CompareAndSwapN$1(iRegINoSp res, indirect mem, iRegN newval, iRegPNoS
                       $tmp3$$Register /* tmp2 */,
                       RegSet::of($mem$$Register, $oldval$$Register, $newval$$Register) /* preserve */,
                       RegSet::of($res$$Register) /* no_preserve */);
-    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::word,
-               $3 /* acquire */, true /* release */, false /* weak */, noreg);
+    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::word, ifelse($1,Acq,memory_order_seq_cst,memory_order_release));
     __ cset($res$$Register, Assembler::EQ);
     __ decode_heap_oop($tmp1$$Register, $newval$$Register);
     write_barrier_post(masm, this,
@@ -270,8 +268,8 @@ instruct g1CompareAndSwapN$1(iRegINoSp res, indirect mem, iRegN newval, iRegPNoS
   %}
   ins_pipe(pipe_slow);
 %}')dnl
-CASN_INSN(,,false)
-CASN_INSN(Acq,_acq,true)
+CASN_INSN(,)
+CASN_INSN(Acq,_acq)
 dnl
 define(`XCHGP_INSN',
 `

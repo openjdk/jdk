@@ -67,7 +67,7 @@ public class AddOpens {
         {{"-Xlog:cds", "-Xlog:cds"},
          {"--add-opens", addOpensArg}};
     private static String expectedOutput[] =
-        { "[class,load] com.simple.Main source: shared objects file",
+        { "\\[class,load *\\] com\\.simple\\.Main source: shared objects file",
           "method.setAccessible succeeded!"};
 
     public static void buildTestModule() throws Exception {
@@ -103,7 +103,7 @@ public class AddOpens {
                     out.shouldContain("Full module graph = enabled");
                     })
             .setProductionChecker((OutputAnalyzer out) -> {
-                    out.shouldContain(expectedOutput[0]);
+                    out.shouldMatch(expectedOutput[0]);
                     out.shouldContain(expectedOutput[1]);
                     })
             .runStaticWorkflow()
@@ -154,7 +154,7 @@ public class AddOpens {
         @Override
         public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception {
             if (runMode == RunMode.PRODUCTION) {
-                out.shouldContain(expectedOutput[0]);
+                out.shouldMatch(expectedOutput[0]);
                 out.shouldContain(expectedOutput[1]);
             } else if (runMode == RunMode.ASSEMBLY) {
                 out.shouldMatch("(full module graph: enabled)|(Full module graph = enabled)");
@@ -197,7 +197,7 @@ public class AddOpens {
         @Override
         public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception {
             if (runMode == RunMode.PRODUCTION) {
-                out.shouldContain(expectedOutput[0]);
+                out.shouldMatch(expectedOutput[0]);
                 out.shouldContain(expectedOutput[1]);
             } else if (runMode == RunMode.ASSEMBLY) {
                 out.shouldMatch("(full module graph: enabled)|(Full module graph = enabled)");

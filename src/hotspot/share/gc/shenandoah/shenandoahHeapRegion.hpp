@@ -280,6 +280,7 @@ private:
   // clears the self_fwd bits. Safety-net reset on region recycle.
   ShenandoahSharedFlag _has_self_forwards;
 
+  // This is only read/written by a gc worker to avoid unnecessary bitmap resets
   bool _needs_bitmap_reset;
 
 public:
@@ -386,12 +387,6 @@ public:
   HeapWord* get_top_at_evac_start() const { return _top_at_evac_start; }
   void record_top_at_evac_start()         { _top_at_evac_start = _top; }
 
-  // If next available memory is not aligned on address that is multiple of alignment, fill the empty space
-  // so that returned object is aligned on an address that is a multiple of alignment_in_bytes.  Requested
-  // size is in words.  It is assumed that this->is_old().  A pad object is allocated, filled, and registered
-  // if necessary to assure the new allocation is properly aligned.  Return nullptr if memory is not available.
-  inline HeapWord* allocate_aligned(size_t word_size, ShenandoahAllocRequest &req, size_t alignment_in_bytes);
-
   // Allocation (return nullptr if full)
   inline HeapWord* allocate(size_t word_size, const ShenandoahAllocRequest& req);
 
@@ -453,7 +448,7 @@ public:
   // This is used by old-gen GC following concurrent marking to make old-gen HeapRegions parsable. Old regions must be
   // parsable because the mark bitmap is not reliable during the concurrent old mark.
   // Return true iff region is completely coalesced and filled.  Returns false if cancelled before task is complete.
-  bool oop_coalesce_and_fill(bool cancellable);
+  bool oop_coalesce_and_fill(bool cancellable, bool do_card_table_updates = true);
 
   // Invoke closure on every reference contained within the humongous object that spans this humongous
   // region if the reference is contained within a DIRTY card and the reference is no more than words following

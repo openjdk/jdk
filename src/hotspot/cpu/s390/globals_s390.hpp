@@ -64,7 +64,7 @@ define_pd_global(intx,  StackRedPages,               DEFAULT_STACK_RED_PAGES);
 define_pd_global(intx,  StackShadowPages,            DEFAULT_STACK_SHADOW_PAGES);
 define_pd_global(intx,  StackReservedPages,          DEFAULT_STACK_RESERVED_PAGES);
 
-define_pd_global(bool,  VMContinuations, false);
+define_pd_global(bool,  VMContinuations, true);
 
 define_pd_global(bool, RewriteBytecodes,     true);
 define_pd_global(bool, RewriteFrequentPairs, true);
@@ -77,6 +77,9 @@ define_pd_global(bool, CompactStrings, true);
 
 // 8146801 (Short Array Allocation): No performance work done here yet.
 define_pd_global(intx, InitArrayShortSize, 1*BytesPerLong);
+
+define_pd_global(bool, InlineTypePassFieldsAsArgs, false);
+define_pd_global(bool, InlineTypeReturnedAsFields, false);
 
 #define ARCH_FLAGS(develop,                                                   \
                    product,                                                   \

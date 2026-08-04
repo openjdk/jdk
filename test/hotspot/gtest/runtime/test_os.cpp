@@ -1062,17 +1062,26 @@ TEST_VM(os, is_first_C_frame) {
 TEST_VM(os, trim_native_heap) {
   EXPECT_TRUE(os::can_trim_native_heap());
   os::size_change_t sc;
-  sc.before = sc.after = (size_t)-1;
-  EXPECT_TRUE(os::trim_native_heap(&sc));
-  tty->print_cr("%zu->%zu", sc.before, sc.after);
-  // Regardless of whether we freed memory, both before and after
-  // should be somewhat believable numbers (RSS).
-  const size_t min = 5 * M;
-  const size_t max = LP64_ONLY(20 * G) NOT_LP64(3 * G);
-  ASSERT_LE(min, sc.before);
-  ASSERT_GT(max, sc.before);
-  ASSERT_LE(min, sc.after);
-  ASSERT_GT(max, sc.after);
+  os::Linux::accurate_meminfo_t info1;
+  os::Linux::accurate_meminfo_t info2;
+  bool have_info1 = os::Linux::query_accurate_process_memory_info(&info1);
+  EXPECT_TRUE(os::trim_native_heap(nullptr));
+  bool have_info2 = os::Linux::query_accurate_process_memory_info(&info2);
+
+  if (have_info1 && have_info2) {
+    sc.before = (info1.rss + info1.swap) * K;
+    sc.after = (info2.rss + info2.swap) * K;
+    tty->print_cr("%zu->%zu", sc.before, sc.after);
+
+    // Regardless of whether we freed memory, both before and after
+    // should be somewhat believable numbers (RSS).
+    const size_t min = 5 * M;
+    const size_t max = LP64_ONLY(20 * G) NOT_LP64(3 * G);
+    ASSERT_LE(min, sc.before);
+    ASSERT_GT(max, sc.before);
+    ASSERT_LE(min, sc.after);
+    ASSERT_GT(max, sc.after);
+  }
   // Should also work
   EXPECT_TRUE(os::trim_native_heap());
 }
@@ -1105,7 +1114,7 @@ TEST_VM(os, reserve_at_wish_address_shall_not_replace_mappings_largepages) {
     const size_t lpsz = os::large_page_size();
     char* p1 = os::reserve_memory_aligned(lpsz, lpsz, mtTest);
     ASSERT_NE(p1, nullptr);
-    char* p2 = os::reserve_memory_special(lpsz, lpsz, lpsz, p1, false);
+    char* p2 = os::reserve_memory_special(lpsz, lpsz, lpsz, p1, mtTest, false);
     ASSERT_EQ(p2, nullptr); // should have failed
     os::release_memory(p1, M);
   } else {
@@ -1200,16 +1209,22 @@ TEST_VM(os, map_unmap_memory) {
 
 TEST_VM(os, map_memory_to_file_aligned) {
   const char* letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  const size_t size = strlen(letters) + 1;
+  const size_t content_size = strlen(letters) + 1;
+  const size_t granularity = os::vm_allocation_granularity();
+  const size_t alignments[] = { granularity, 2 * granularity, 4 * granularity, 16 * granularity, 1 * M };
 
   int fd = os::open("map_memory_to_file.txt", O_RDWR | O_CREAT, 0666);
   EXPECT_TRUE(fd > 0);
-  EXPECT_TRUE(os::write(fd, letters, size));
+  ASSERT_TRUE(os::write(fd, letters, content_size));
 
-  char* result = os::map_memory_to_file_aligned(os::vm_allocation_granularity(), os::vm_allocation_granularity(), fd, mtTest);
-  ASSERT_NOT_NULL(result);
-  EXPECT_EQ(strcmp(letters, result), 0);
-  os::unmap_memory(result, os::vm_allocation_granularity());
+  const size_t size = granularity;
+  for (size_t alignment : alignments) {
+    char* result = os::map_memory_to_file_aligned(size, alignment, fd, mtTest);
+    ASSERT_NOT_NULL(result) << "Mapping failed for alignment=" << alignment;
+    EXPECT_TRUE(is_aligned(result, alignment)) << "Failed to aligned to " << alignment;
+    EXPECT_EQ(strcmp(letters, result), 0) << "Text mismatch at alignment=" << alignment;
+    os::unmap_memory(result, size);
+  }
   ::close(fd);
 }
 
@@ -1219,4 +1234,37 @@ TEST_VM(os, dll_load_null_error_buf) {
   // This should not crash.
   void* lib = os::dll_load("NoSuchLib", nullptr, 0);
   ASSERT_NULL(lib);
+}
+
+TEST_VM(os, reserve_memory_aligned_basic) {
+  const size_t granularity = os::vm_allocation_granularity();
+  const size_t alignments[] = { granularity, 2 * granularity, 4 * granularity, 16 * granularity };
+
+  for (size_t alignment : alignments) {
+    const size_t size = alignment;
+    char* result = os::reserve_memory_aligned(size, alignment, mtTest);
+    ASSERT_NE(result, (char*)nullptr) << "reserve_memory_aligned failed for alignment=" << alignment;
+    EXPECT_TRUE(is_aligned(result, alignment)) << "Result " << result << " not aligned to " << alignment;
+
+    ASSERT_TRUE(os::commit_memory(result, size, false));
+    memset(result, 0xCD, size);
+    EXPECT_EQ((unsigned char)result[0], 0xCD);
+
+    os::release_memory(result, size);
+  }
+}
+
+TEST_VM(os, reserve_memory_aligned_large) {
+  const size_t alignment = 1 * M;
+  const size_t size = alignment;
+
+  char* result = os::reserve_memory_aligned(size, alignment, mtTest);
+  ASSERT_NE(result, (char*)nullptr);
+  EXPECT_TRUE(is_aligned(result, alignment));
+
+  ASSERT_TRUE(os::commit_memory(result, size, false));
+  memset(result, 0xEF, size);
+  EXPECT_EQ((unsigned char)result[size - 1], 0xEF);
+
+  os::release_memory(result, size);
 }
