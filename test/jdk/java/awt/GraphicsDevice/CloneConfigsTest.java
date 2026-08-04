@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
  *
  * @run     main CloneConfigsTest
  * @run     main/othervm -Dsun.java2d.d3d=true CloneConfigsTest
- * @run     main/othervm -Dsun.java2d.noddraw=true CloneConfigsTest
+ * @run     main/othervm -Dsun.java2d.d3d=false CloneConfigsTest
  */
 
 import java.awt.GraphicsConfiguration;

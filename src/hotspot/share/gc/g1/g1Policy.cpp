@@ -913,7 +913,7 @@ G1CollectorState G1Policy::record_young_collection_end(bool concurrent_operation
     }
 
     // Update prediction for copy cost per byte
-    size_t copied_bytes = p->sum_thread_work_items(G1GCPhaseTimes::MergePSS, G1GCPhaseTimes::MergePSSCopiedBytes);
+    size_t copied_bytes = p->sum_thread_work_items(G1GCPhaseTimes::FlushPSS, G1GCPhaseTimes::FlushPSSCopiedBytes);
 
     if (copied_bytes > 0) {
       double avg_copy_time = average_time_ms(G1GCPhaseTimes::ObjCopy) + average_time_ms(G1GCPhaseTimes::OptObjCopy);
@@ -950,8 +950,8 @@ G1CollectorState G1Policy::record_young_collection_end(bool concurrent_operation
                           mutator_end_time,
                           pending_cards_from_refinement_table,
                           yield_duration_ms,
-                          phase_times()->sum_thread_work_items(G1GCPhaseTimes::MergePSS, G1GCPhaseTimes::MergePSSPendingCards),
-                          phase_times()->sum_thread_work_items(G1GCPhaseTimes::MergePSS, G1GCPhaseTimes::MergePSSToYoungGenCards));
+                          phase_times()->sum_thread_work_items(G1GCPhaseTimes::FlushPSS, G1GCPhaseTimes::FlushPSSPendingCards),
+                          phase_times()->sum_thread_work_items(G1GCPhaseTimes::FlushPSS, G1GCPhaseTimes::FlushPSSToYoungGenCards));
   }
 
   if (collector_state()->is_in_prepare_mixed_gc()) {
@@ -1253,6 +1253,7 @@ void G1Policy::update_survivors_policy() {
 }
 
 bool G1Policy::force_concurrent_start_if_outside_cycle(GCCause::Cause gc_cause) {
+  assert_at_safepoint_on_vm_thread();
   // Check whether a concurrent cycle is active, do not include the
   // reclamation/mixed phase. This means that we can schedule a concurrent cycle
   // even while in the mixed phase.

@@ -220,7 +220,6 @@ template<typename ConfigT, bool preempt> static inline freeze_result freeze_inte
 static inline int prepare_thaw_internal(JavaThread* thread, bool return_barrier);
 template<typename ConfigT> static inline intptr_t* thaw_internal(JavaThread* thread, const Continuation::thaw_kind kind);
 
-
 // Entry point to freeze. Transitions are handled manually
 // Called from gen_continuation_yield() in sharedRuntime_<cpu>.cpp through Continuation::freeze_entry();
 template<typename ConfigT>
@@ -468,9 +467,9 @@ private:
   static frame sender(const frame& f) { return f.is_interpreted_frame() ? sender<ContinuationHelper::InterpretedFrame>(f)
                                                                         : sender<ContinuationHelper::NonInterpretedUnknownFrame>(f); }
   template<typename FKind> static inline frame sender(const frame& f);
-  template<typename FKind> frame new_heap_frame(frame& f, frame& caller);
+  template<typename FKind> frame new_heap_frame(frame& f, frame& caller, int size_adjust = 0);
   inline void set_top_frame_metadata_pd(const frame& hf);
-  inline void patch_pd(frame& callee, const frame& caller);
+  inline void patch_pd(frame& callee, const frame& caller, bool is_bottom_frame);
   inline void patch_pd_unused(intptr_t* sp);
   void adjust_interpreted_frame_unextended_sp(frame& f);
   inline void prepare_freeze_interpreted_top_frame(frame& f);
@@ -507,13 +506,7 @@ FreezeBase::FreezeBase(JavaThread* thread, ContinuationWrapper& cont, intptr_t* 
 
   assert(!Interpreter::contains(_cont.entryPC()), "");
 
-  _bottom_address = _cont.entrySP() - _cont.entry_frame_extension();
-#ifdef _LP64
-  if (((intptr_t)_bottom_address & 0xf) != 0) {
-    _bottom_address--;
-  }
-  assert(is_aligned(_bottom_address, frame::frame_alignment), "");
-#endif
+  _bottom_address = align_down(_cont.entrySP() - _cont.entry_frame_extension(), frame::frame_alignment);
 
   log_develop_trace(continuations)("bottom_address: " INTPTR_FORMAT " entrySP: " INTPTR_FORMAT " argsize: " PTR_FORMAT,
                 p2i(_bottom_address), p2i(_cont.entrySP()), (_cont.entrySP() - _bottom_address) << LogBytesPerWord);
@@ -523,13 +516,17 @@ FreezeBase::FreezeBase(JavaThread* thread, ContinuationWrapper& cont, intptr_t* 
 
   assert(_cont.chunk_invariant(), "");
   assert(!Interpreter::contains(_cont.entryPC()), "");
-#if !defined(PPC64) || defined(ZERO)
-  static const int doYield_stub_frame_size = frame::metadata_words;
-#else
+#if defined(PPC64) && !defined(ZERO)
   static const int doYield_stub_frame_size = frame::native_abi_reg_args_size >> LogBytesPerWord;
+#elif defined(S390) && !defined(ZERO)
+  static const int doYield_stub_frame_size = frame::z_abi_160_base_size >> LogBytesPerWord;
+#else
+  static const int doYield_stub_frame_size = frame::metadata_words;
 #endif
   // With preemption doYield() might not have been resolved yet
-  assert(_preempt || SharedRuntime::cont_doYield_stub()->frame_size() == doYield_stub_frame_size, "");
+  assert(_preempt || SharedRuntime::cont_doYield_stub()->frame_size() == doYield_stub_frame_size,
+      "_preempt = %d, cont_doYield_stub()->frame_size() = %d, doYield_stub_frame_size = %d",
+      (_preempt ? 1 : 0), SharedRuntime::cont_doYield_stub()->frame_size(), doYield_stub_frame_size);
 
   if (preempt) {
     _last_frame = _thread->last_frame();
@@ -1180,7 +1177,7 @@ void FreezeBase::patch(const frame& f, frame& hf, const frame& caller, bool is_b
     assert(!caller.is_empty(), "");
   }
 
-  patch_pd(hf, caller);
+  patch_pd(hf, caller, is_bottom_frame);
 
   if (f.is_interpreted_frame()) {
     assert(hf.is_heap_frame(), "should be");
@@ -1277,13 +1274,35 @@ freeze_result FreezeBase::recurse_freeze_compiled_frame(frame& f, frame& caller,
   intptr_t* const stack_frame_top = ContinuationHelper::CompiledFrame::frame_top(f, callee_argsize, callee_interpreted);
   intptr_t* const stack_frame_bottom = ContinuationHelper::CompiledFrame::frame_bottom(f);
   // including metadata between f and its stackargs
-  const int argsize = ContinuationHelper::CompiledFrame::stack_argsize(f) + frame::metadata_words_at_top;
-  const int fsize = pointer_delta_as_int(stack_frame_bottom + argsize, stack_frame_top);
+  int argsize = ContinuationHelper::CompiledFrame::stack_argsize(f) + frame::metadata_words_at_top;
+  int fsize = pointer_delta_as_int(stack_frame_bottom + argsize, stack_frame_top);
 
-  log_develop_trace(continuations)("recurse_freeze_compiled_frame %s _size: %d fsize: %d argsize: %d",
+  int real_frame_size = 0;
+  bool augmented = f.was_augmented_on_entry(real_frame_size);
+  if (augmented) {
+    // The args reside inside the frame so clear argsize. If the caller is compiled,
+    // this will cause the stack arguments passed by the caller to be freezed when
+    // freezing the caller frame itself. If the caller is interpreted this will have
+    // the effect of discarding the arg area created in the i2c stub.
+    argsize = 0;
+    fsize = real_frame_size - (callee_interpreted ? 0 : callee_argsize);
+#ifdef ASSERT
+    nmethod* nm = f.cb()->as_nmethod();
+    Method* method = nm->method();
+    address return_pc = ContinuationHelper::CompiledFrame::return_pc(f);
+    CodeBlob* caller_cb = CodeCache::find_blob_fast(return_pc);
+    assert(nm->is_compiled_by_c2() || (caller_cb->is_nmethod() && caller_cb->as_nmethod()->is_compiled_by_c2()), "caller or callee should be c2 compiled");
+    assert((!caller_cb->is_nmethod() && nm->is_compiled_by_c2()) ||
+           (nm->compiler_type() != caller_cb->as_nmethod()->compiler_type()) ||
+           (nm->is_compiled_by_c2() && !method->is_static() && method->method_holder()->is_inline_klass()),
+           "frame should not be extended");
+#endif
+  }
+
+  log_develop_trace(continuations)("recurse_freeze_compiled_frame %s _size: %d fsize: %d argsize: %d augmented: %d",
                              ContinuationHelper::Frame::frame_method(f) != nullptr ?
                              ContinuationHelper::Frame::frame_method(f)->name_and_sig_as_C_string() : "",
-                             _freeze_size, fsize, argsize);
+                             _freeze_size, fsize, argsize, augmented);
   // we'd rather not yield inside methods annotated with @JvmtiMountTransition
   assert(!ContinuationHelper::Frame::frame_method(f)->jvmti_mount_transition(), "");
 
@@ -1294,10 +1313,11 @@ freeze_result FreezeBase::recurse_freeze_compiled_frame(frame& f, frame& caller,
 
   bool is_bottom_frame = result == freeze_ok_bottom;
   assert(!caller.is_empty() || is_bottom_frame, "");
+  assert(!is_bottom_frame || !augmented, "thaw extended frame without caller?");
 
   DEBUG_ONLY(before_freeze_java_frame(f, caller, fsize, argsize, is_bottom_frame);)
 
-  frame hf = new_heap_frame<ContinuationHelper::CompiledFrame>(f, caller);
+  frame hf = new_heap_frame<ContinuationHelper::CompiledFrame>(f, caller, augmented ? real_frame_size - f.cb()->as_nmethod()->frame_size() : 0);
 
   intptr_t* heap_frame_top = ContinuationHelper::CompiledFrame::frame_top(hf, callee_argsize, callee_interpreted);
 
@@ -2079,6 +2099,7 @@ protected:
   void clear_chunk(stackChunkOop chunk);
   template<bool check_stub>
   int remove_top_compiled_frame_from_chunk(stackChunkOop chunk, int &argsize);
+  int remove_scalarized_frames(StackChunkFrameStream<ChunkFrames::CompiledOnly>& scfs, int &argsize);
   void copy_from_chunk(intptr_t* from, intptr_t* to, int size);
 
   void thaw_lockstack(stackChunkOop chunk);
@@ -2114,7 +2135,7 @@ private:
 
   void push_return_frame(const frame& f);
   inline frame new_entry_frame();
-  template<typename FKind> frame new_stack_frame(const frame& hf, frame& caller, bool bottom);
+  template<typename FKind> frame new_stack_frame(const frame& hf, frame& caller, bool bottom, int size_adjust = 0);
   inline void patch_pd(frame& f, const frame& sender);
   inline void patch_pd(frame& f, intptr_t* caller_sp);
   inline intptr_t* align(const frame& hf, intptr_t* frame_sp, frame& caller, bool bottom);
@@ -2191,6 +2212,20 @@ inline void ThawBase::clear_chunk(stackChunkOop chunk) {
   chunk->set_max_thawing_size(0);
 }
 
+int ThawBase::remove_scalarized_frames(StackChunkFrameStream<ChunkFrames::CompiledOnly>& f, int &argsize) {
+  intptr_t* top = f.sp();
+
+  while (f.cb()->as_nmethod()->needs_stack_repair()) {
+    f.next(SmallRegisterMap::instance_no_args(), false /* stop */);
+  }
+  assert(!f.is_done(), "");
+  assert(f.is_compiled(), "");
+
+  intptr_t* bottom = f.sp() + f.cb()->frame_size();
+  argsize = f.stack_argsize();
+  return bottom - top;
+}
+
 template<bool check_stub>
 int ThawBase::remove_top_compiled_frame_from_chunk(stackChunkOop chunk, int &argsize) {
   bool empty = false;
@@ -2212,8 +2247,6 @@ int ThawBase::remove_top_compiled_frame_from_chunk(stackChunkOop chunk, int &arg
 
     f.get_cb();
     assert(f.is_compiled(), "");
-    frame_size += f.cb()->frame_size();
-    argsize = f.stack_argsize();
 
     if (f.cb()->as_nmethod()->is_marked_for_deoptimization()) {
       // The caller of the runtime stub when the continuation is preempted is not at a
@@ -2221,6 +2254,15 @@ int ThawBase::remove_top_compiled_frame_from_chunk(stackChunkOop chunk, int &arg
       log_develop_trace(continuations)("Deoptimizing runtime stub caller");
       f.to_frame().deoptimize(nullptr); // the null thread simply avoids the assertion in deoptimize which we're not set up for
     }
+
+    if (f.cb()->as_nmethod()->needs_stack_repair()) {
+      frame_size += remove_scalarized_frames(f, argsize);
+    } else {
+      frame_size += f.cb()->frame_size();
+      argsize = f.stack_argsize();
+    }
+  } else if (f.cb()->as_nmethod()->needs_stack_repair()) {
+    frame_size = remove_scalarized_frames(f, argsize);
   }
 
   f.next(SmallRegisterMap::instance_no_args(), true /* stop */);
@@ -2521,13 +2563,19 @@ bool ThawBase::recurse_thaw_java_frame(frame& caller, int num_frames) {
   DEBUG_ONLY(_frames++;)
 
   int argsize = _stream.stack_argsize();
+  CodeBlob* cb = _stream.cb();
 
   _stream.next(SmallRegisterMap::instance_no_args());
   assert(_stream.to_frame().is_empty() == _stream.is_done(), "");
 
-  // we never leave a compiled caller of an interpreted frame as the top frame in the chunk
-  // as it makes detecting that situation and adjusting unextended_sp tricky
-  if (num_frames == 1 && !_stream.is_done() && FKind::interpreted && _stream.is_compiled()) {
+  // We never leave a compiled caller of an interpreted frame as the top frame in the chunk
+  // as it makes detecting that situation and adjusting unextended_sp tricky. We also always
+  // thaw the caller of a frame that needs_stack_repair, as it would otherwise complicate things:
+  // - Regardless of whether the frame was extended or not, we would need to copy the right arg
+  //   size if its greater than the one given by the normal method signature (non-scalarized).
+  // - If the frame was indeed extended, leaving its caller as the top frame would complicate walking
+  //   the chunk (we need unextended_sp, but we only have sp).
+  if (num_frames == 1 && !_stream.is_done() && ((FKind::interpreted && _stream.is_compiled()) || (FKind::compiled && cb->as_nmethod_or_null()->needs_stack_repair()))) {
     log_develop_trace(continuations)("thawing extra compiled frame to not leave a compiled interpreted-caller at top");
     num_frames++;
   }
@@ -2594,10 +2642,16 @@ inline void ThawBase::patch(frame& f, const frame& caller, bool bottom) {
   if (bottom) {
     ContinuationHelper::Frame::patch_pc(caller, _cont.is_empty() ? caller.pc()
                                                                  : StubRoutines::cont_returnBarrier());
-  } else if (_should_patch_caller_pc) {
+  } else if (_should_patch_caller_pc || caller.is_compiled_frame()) {
     // Caller was deoptimized during thaw but we've overwritten the return address when copying f from the heap.
     // Also, on some platforms, if the caller is interpreted but the callee not we also need to patch.
-    assert(caller.is_deoptimized_frame() PPC64_ONLY(|| caller.is_interpreted_frame()), "");
+
+#if defined(PPC64) || defined(S390)
+    assert(!_should_patch_caller_pc || caller.is_deoptimized_frame() || caller.is_interpreted_frame(), "");
+#else
+    assert(!_should_patch_caller_pc || caller.is_deoptimized_frame(), "");
+#endif
+
     ContinuationHelper::Frame::patch_pc(caller, caller.raw_pc());
     _should_patch_caller_pc = false;
   }
@@ -2633,7 +2687,7 @@ void ThawBase::clear_bitmap_bits(address start, address end) {
 
 intptr_t* ThawBase::handle_preempted_continuation(intptr_t* sp, Continuation::preempt_kind preempt_kind, bool fast_case) {
   frame top(sp);
-  assert(top.pc() == *(address*)(sp - frame::sender_sp_ret_address_offset()), "");
+  assert(top.pc() == ContinuationHelper::return_address_at(sp - frame::sender_sp_ret_address_offset()), "");
   DEBUG_ONLY(verify_frame_kind(top, preempt_kind);)
   NOT_PRODUCT(int64_t tid = _thread->monitor_owner_id();)
 
@@ -2837,17 +2891,23 @@ void ThawBase::recurse_thaw_compiled_frame(const frame& hf, frame& caller, int n
     _align_size += frame::align_wiggle; // we add one whether or not we've aligned because we add it in recurse_freeze_compiled_frame
   }
 
+  int fsize = 0;
+  int added_argsize = 0;
+  bool augmented = hf.was_augmented_on_entry(fsize);
+  if (!augmented) {
+    added_argsize = (is_bottom_frame || caller.is_interpreted_frame()) ? hf.compiled_frame_stack_argsize() : 0;
+    fsize += added_argsize;
+  }
+  assert(!is_bottom_frame || !augmented, "");
+
   // new_stack_frame must construct the resulting frame using hf.pc() rather than hf.raw_pc() because the frame is not
   // yet laid out in the stack, and so the original_pc is not stored in it.
   // As a result, f.is_deoptimized_frame() is always false and we must test hf to know if the frame is deoptimized.
-  frame f = new_stack_frame<ContinuationHelper::CompiledFrame>(hf, caller, is_bottom_frame);
+  frame f = new_stack_frame<ContinuationHelper::CompiledFrame>(hf, caller, is_bottom_frame, augmented ? fsize - hf.cb()->frame_size() : 0);
+  assert((int)(caller.sp() - f.sp()) == (augmented ? fsize : f.cb()->frame_size()), "");
+
   intptr_t* const stack_frame_top = f.sp();
   intptr_t* const heap_frame_top = hf.unextended_sp();
-
-  const int added_argsize = (is_bottom_frame || caller.is_interpreted_frame()) ? hf.compiled_frame_stack_argsize() : 0;
-  int fsize = ContinuationHelper::CompiledFrame::size(hf) + added_argsize;
-  assert(fsize <= (int)(caller.unextended_sp() - f.unextended_sp()), "");
-
   intptr_t* from = heap_frame_top - frame::metadata_words_at_bottom;
   intptr_t* to   = stack_frame_top - frame::metadata_words_at_bottom;
   // copy metadata, except the metadata at the top of the (unextended) entry frame
@@ -3243,8 +3303,6 @@ static void log_frames(JavaThread* thread) {
 
 static void log_frames_after_thaw(JavaThread* thread, ContinuationWrapper& cont, intptr_t* sp) {
   intptr_t* sp0 = sp;
-  address pc0 = *(address*)(sp - frame::sender_sp_ret_address_offset());
-
   bool preempted = false;
   stackChunkOop tail = cont.tail();
   if (tail != nullptr && tail->preempted()) {

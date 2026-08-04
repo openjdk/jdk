@@ -107,17 +107,18 @@ public class T8068517 {
     void runTest(String aJava, String bJava) throws Exception {
         try (JavaFileManager fm = ToolProvider.getSystemJavaCompiler().getStandardFileManager(null, null, null)) {
             ToolBox tb = new ToolBox();
-            ToolBox.MemoryFileManager memoryFM1 = new ToolBox.MemoryFileManager(fm);
-            new JavacTask(tb).fileManager(memoryFM1)
-                              .sources(aJava, bJava)
-                              .run();
-            ToolBox.MemoryFileManager memoryFM2 = new ToolBox.MemoryFileManager(fm);
-            new JavacTask(tb).fileManager(memoryFM2)
-                              .sources(bJava, aJava)
-                              .run();
+            try (var memoryFM1 = new ToolBox.MemoryFileManager(fm, false);
+                 var memoryFM2 = new ToolBox.MemoryFileManager(fm, false)) {
+                new JavacTask(tb).fileManager(memoryFM1)
+                        .sources(aJava, bJava)
+                        .run();
+                new JavacTask(tb).fileManager(memoryFM2)
+                        .sources(bJava, aJava)
+                        .run();
 
-            Assert.check(Arrays.equals(memoryFM1.getFileBytes(StandardLocation.CLASS_OUTPUT, "B"),
-                                       memoryFM2.getFileBytes(StandardLocation.CLASS_OUTPUT, "B")));
+                Assert.check(Arrays.equals(memoryFM1.getFileBytes(StandardLocation.CLASS_OUTPUT, "B"),
+                        memoryFM2.getFileBytes(StandardLocation.CLASS_OUTPUT, "B")));
+            }
         }
     }
 }

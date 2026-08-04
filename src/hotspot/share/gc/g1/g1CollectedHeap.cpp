@@ -868,7 +868,7 @@ void G1CollectedHeap::prepare_for_mutator_after_full_collection(size_t allocatio
 
   // Rebuild the code root lists for each region
   rebuild_code_roots();
-  finish_codecache_marking_cycle();
+  CodeCache::arm_all_nmethods();
 
   start_new_collection_set();
   _allocator->init_mutator_alloc_regions();
@@ -1761,12 +1761,11 @@ size_t G1CollectedHeap::unused_committed_regions_in_bytes() const {
 
 // Computes the sum of the storage used by the various regions.
 size_t G1CollectedHeap::used() const {
-  size_t result = _summary_bytes_used + _allocator->used_in_alloc_regions();
-  return result;
+  return used_unlocked() + _allocator->used_in_alloc_regions();
 }
 
 size_t G1CollectedHeap::used_unlocked() const {
-  return _summary_bytes_used;
+  return _summary_bytes_used.load_relaxed();
 }
 
 class SumUsedClosure: public G1HeapRegionClosure {
@@ -3034,18 +3033,18 @@ void G1CollectedHeap::prepare_region_for_full_compaction(G1HeapRegion* hr) {
 }
 
 void G1CollectedHeap::increase_used(size_t bytes) {
-  _summary_bytes_used += bytes;
+  _summary_bytes_used.add_then_fetch(bytes, memory_order_relaxed);
 }
 
 void G1CollectedHeap::decrease_used(size_t bytes) {
-  assert(_summary_bytes_used >= bytes,
+  assert(used_unlocked() >= bytes,
          "invariant: _summary_bytes_used: %zu should be >= bytes: %zu",
-         _summary_bytes_used, bytes);
-  _summary_bytes_used -= bytes;
+         used_unlocked(), bytes);
+  _summary_bytes_used.sub_then_fetch(bytes, memory_order_relaxed);
 }
 
 void G1CollectedHeap::set_used(size_t bytes) {
-  _summary_bytes_used = bytes;
+  _summary_bytes_used.store_relaxed(bytes);
 }
 
 class RebuildRegionSetsClosure : public G1HeapRegionClosure {
@@ -3342,9 +3341,4 @@ void G1CollectedHeap::start_codecache_marking_cycle_if_inactive(bool concurrent_
   if (concurrent_mark_start) {
     CodeCache::arm_all_nmethods();
   }
-}
-
-void G1CollectedHeap::finish_codecache_marking_cycle() {
-  CodeCache::on_gc_marking_cycle_finish();
-  CodeCache::arm_all_nmethods();
 }

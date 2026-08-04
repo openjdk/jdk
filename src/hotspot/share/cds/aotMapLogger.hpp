@@ -74,7 +74,8 @@ public:
   // FakeOop and subtypes
   class FakeOop;
   class   FakeMirror;
-  class   FakeObjArray;
+  class   FakeRefArray;
+  class   FakeFlatArray;
   class   FakeString;
   class   FakeTypeArray;
 

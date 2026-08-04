@@ -23,8 +23,10 @@
  *
  */
 
+#include "asm/macroAssembler.hpp"
 #include "code/codeCache.hpp"
 #include "code/nativeInst.hpp"
+#include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "logging/log.hpp"
@@ -53,69 +55,131 @@ static int entry_barrier_offset(nmethod* nm) {
   return 0;
 }
 
+static int* decode_guard_from_instruction(nmethod* nm, address& instruction) {
+  int* result = reinterpret_cast<int*>(MacroAssembler::target_addr_for_insn(instruction));
+  assert(nm->insts_contains(reinterpret_cast<address>(result)) ||
+         nm->stub_contains(reinterpret_cast<address>(result)),
+         "guard must be in nmethod code");
+  return result;
+}
+
+// The NativeNMethodBarrier class encapsulates up to three entrypoints and handles their
+// arming/verification.
+// An entrypoint is defined as a tuple of <instr. address, guard address>:
+// * The instr. address corresponds to the ldr of the guard value of that entrypoint.
+// * The guard address is the address where the guard value of that entrypoint resides.
+//
+// Each nmethod has at least one entrypoint. The default must always be well-defined
+// (neither instruction nor guard are nullptr).
+//
+// When using the scalarized calling convention, up to two additional (verified) entrypoints,
+// alt1 and alt2 can be present. The meaning of these depends on who compiled the nmethod.
+//
+// The mapping of C1-compiled methods (scalarization used) looks as follows:
+// * alt1: verified entry point
+// * alt2 (optional): verified inline ro entry point
+//
+// The mapping of C2-compiled methods (scalarization used) looks as follows:
+// * alt1: verified inline entry point
+// * alt2 (optional): verified inline ro entry point
+//
+// In other scenarios, neither alt1 nor alt2 are defined.
 class NativeNMethodBarrier {
-  address  _instruction_address;
-  int*     _guard_addr;
-  nmethod* _nm;
+ private:
+  // The addresses of the instructions that act as the guards.
+  address _default_entry_instruction;
+  address _verified_alt1_instruction;
+  address _verified_alt2_instruction;
+  // Pointers representing the actual guard values themselves.
+  int* _default_entry_guard;
+  int* _verified_alt1_guard;
+  int* _verified_alt2_guard;
 
-  address instruction_address() const { return _instruction_address; }
+ public:
+  NativeNMethodBarrier(nmethod* nm) :
+    _default_entry_instruction(nullptr),
+    _verified_alt1_instruction(nullptr),
+    _verified_alt2_instruction(nullptr),
+    _default_entry_guard(nullptr),
+    _verified_alt1_guard(nullptr),
+    _verified_alt2_guard(nullptr)
+  {
+    // The default entry point has a known address. The guard address can be
+    // decoded from the literal in the instruction. Verification will confirm
+    // that this instruction corresponds to a load.
+    _default_entry_instruction = nm->code_begin() + nm->frame_complete_offset() + entry_barrier_offset(nm);
 
-  int *guard_addr() {
-    return _guard_addr;
-  }
+    _default_entry_guard = decode_guard_from_instruction(nm, _default_entry_instruction);
 
-  int local_guard_offset(nmethod* nm) {
-    // It's the last instruction
-    return (-entry_barrier_offset(nm)) - 4;
-  }
-
-public:
-  NativeNMethodBarrier(nmethod* nm): _nm(nm) {
-    _instruction_address = nm->code_begin() + nm->frame_complete_offset() + entry_barrier_offset(nm);
-    if (nm->is_compiled_by_c2()) {
-      // With c2 compiled code, the guard is out-of-line in a stub
-      // We find it using the RelocIterator.
-      RelocIterator iter(nm);
-      while (iter.next()) {
-        if (iter.type() == relocInfo::entry_guard_type) {
-          entry_guard_Relocation* const reloc = iter.entry_guard_reloc();
-          _guard_addr = reinterpret_cast<int*>(reloc->addr());
-          return;
-        }
-      }
-
-      ShouldNotReachHere();
-    }
-    _guard_addr = reinterpret_cast<int*>(instruction_address() + local_guard_offset(nm));
+    // If the nmethod has scalarized arguments, then there are more entry
+    // points, each with their own nmethod entry barrier.
+    assert(nm->is_osr_method() || !nm->method()->has_scalarized_args(), "unimplemented");
 
     // Perform the checking as verification.
     err_msg msg("%s", "");
-    assert(check_barrier(msg), "%s", msg.buffer());
+    assert(check_barriers(msg), "%s", msg.buffer());
   }
 
-  int get_value() {
-    return AtomicAccess::load_acquire(guard_addr());
+  // Gets the value of the default entry guard.
+  // This does not consider the alternative entrypoints, as these should
+  // all be consistent. It is up to the caller to enforce this.
+  int get_default_guard_value() {
+    return AtomicAccess::load_acquire(_default_entry_guard);
   }
 
-  void set_value(int value, int bit_mask) {
+  // Sets the value for all barriers.
+  void set_values(int value, int bit_mask) {
+    set_value_impl(_default_entry_guard, value, bit_mask);
+    if (_verified_alt1_guard != nullptr) {
+      set_value_impl(_verified_alt1_guard, value, bit_mask);
+    }
+    if (_verified_alt2_guard != nullptr) {
+      set_value_impl(_verified_alt2_guard, value, bit_mask);
+    }
+  }
+
+  // Verifies that all potential barriers are correct.
+  bool check_barriers(err_msg& msg) {
+    // The default entry barrier should always be checked.
+    if (!check_barrier_impl(_default_entry_instruction, msg)) {
+      return false;
+    }
+    // Check the alternative entry barriers only if they are specified.
+    // Note that the guard values are already validated at construction time,
+    // if they fall out of the nmethod range, this will be caught earlier.
+    if (_verified_alt1_instruction != nullptr &&
+        !check_barrier_impl(_verified_alt1_instruction, msg)) {
+      return false;
+    }
+    if (_verified_alt2_instruction != nullptr &&
+        !check_barrier_impl(_verified_alt2_instruction, msg)) {
+      return false;
+    }
+    return true;
+  }
+
+private:
+  // Sets the value for a single barrier.
+  void set_value_impl(int* guard, int value, int bit_mask) {
     if (bit_mask == ~0) {
-      AtomicAccess::release_store(guard_addr(), value);
+      AtomicAccess::release_store(guard, value);
       return;
     }
     assert((value & ~bit_mask) == 0, "trying to set bits outside the mask");
     value &= bit_mask;
-    int old_value = AtomicAccess::load(guard_addr());
+    int old_value = AtomicAccess::load(guard);
     while (true) {
       // Only bits in the mask are changed
       int new_value = value | (old_value & ~bit_mask);
       if (new_value == old_value) break;
-      int v = AtomicAccess::cmpxchg(guard_addr(), old_value, new_value, memory_order_release);
+      int v = AtomicAccess::cmpxchg(guard, old_value, new_value, memory_order_release);
       if (v == old_value) break;
       old_value = v;
     }
   }
 
-  bool check_barrier(err_msg& msg) const;
+  // Checks the validity of a single barrier.
+  bool check_barrier_impl(address& instruction, err_msg& msg) const;
 };
 
 // Store the instruction bitmask, bits and name for checking the barrier.
@@ -137,8 +201,8 @@ static const struct CheckInsn barrierInsn[] = {
 // The encodings must match the instructions emitted by
 // BarrierSetAssembler::nmethod_entry_barrier. The matching ignores the specific
 // register numbers and immediate values in the encoding.
-bool NativeNMethodBarrier::check_barrier(err_msg& msg) const {
-  address addr = instruction_address();
+bool NativeNMethodBarrier::check_barrier_impl(address& instruction, err_msg& msg) const {
+  address addr = instruction;
   for (unsigned int i = 0; i < sizeof(barrierInsn) / sizeof(struct CheckInsn); i++) {
     uint32_t inst = Assembler::ld_instr(addr);
     if ((inst & barrierInsn[i].mask) != barrierInsn[i].bits) {
@@ -208,7 +272,7 @@ void BarrierSetNMethod::set_guard_value(nmethod* nm, int value, int bit_mask) {
   }
 
   NativeNMethodBarrier barrier(nm);
-  barrier.set_value(value, bit_mask);
+  barrier.set_values(value, bit_mask);
 }
 
 int BarrierSetNMethod::guard_value(nmethod* nm) {
@@ -217,5 +281,5 @@ int BarrierSetNMethod::guard_value(nmethod* nm) {
   }
 
   NativeNMethodBarrier barrier(nm);
-  return barrier.get_value();
+  return barrier.get_default_guard_value();
 }
