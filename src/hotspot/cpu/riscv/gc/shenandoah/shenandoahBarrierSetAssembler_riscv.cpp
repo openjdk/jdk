@@ -513,6 +513,7 @@ static uint32_t encode_patchable_jump(address pc, address target_pc) {
 
 void ShenandoahBarrierSetAssembler::insert_patchable_nop(address pc) {
   *((uint32_t*)pc) = encode_patchable_nop();
+  assert(nativeInstruction_at(pc)->is_nop(), "Sanity");
 }
 
 void ShenandoahBarrierSetAssembler::insert_patchable_jump(address pc, address target_pc) {
