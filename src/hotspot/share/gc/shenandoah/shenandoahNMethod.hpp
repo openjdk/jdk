@@ -33,6 +33,8 @@
 #include "runtime/atomic.hpp"
 #include "utilities/growableArray.hpp"
 
+class BarrierSetNMethod;
+
 // Use ShenandoahReentrantLock as ShenandoahNMethodLock
 typedef ShenandoahReentrantLock<ShenandoahSimpleLock> ShenandoahNMethodLock;
 typedef ShenandoahLocker<ShenandoahNMethodLock>       ShenandoahNMethodLocker;
