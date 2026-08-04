@@ -58,6 +58,25 @@
  *                                Fuzz
  */
 
+/*
+ * @test id=verify-cont
+ * @key randomness
+ * @summary Fuzz tests for jdk.internal.vm.Continuation
+ * @requires vm.debug == true & vm.continuations
+ * @requires vm.flavor == "server" & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
+ * @requires vm.opt.TieredCompilation == null | vm.opt.TieredCompilation == true
+ * @modules java.base java.base/jdk.internal.vm.annotation java.base/jdk.internal.vm
+ * @library /test/lib
+ * @enablePreview
+ * @build java.base/java.lang.StackWalkerHelper
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ *
+ * @run main/othervm/timeout=1200 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ *                                -XX:+VerifyContinuations
+ *                                Fuzz
+ */
+
 import jdk.internal.vm.Continuation;
 import jdk.internal.vm.ContinuationScope;
 
