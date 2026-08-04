@@ -100,6 +100,7 @@ class ObjArrayKlass : public ArrayKlass {
                                                 int n, Klass* element_klass, TRAPS);
 
   oop multi_allocate(int rank, jint* sizes, TRAPS) override;
+  virtual objArrayOop allocate_instance(int length, TRAPS);
 
   // Copying
   void copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos, int length, TRAPS) override;

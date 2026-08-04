@@ -838,8 +838,8 @@ public:
     StaticFieldPrinter(out), _obj(obj) {
   }
   void do_field(fieldDescriptor* fd) {
-    do_field_helper(fd, _obj, true);
     _out->print(" ");
+    do_field_helper(fd, _obj, true);
   }
 };
 
@@ -865,27 +865,48 @@ void StaticFieldPrinter::do_field_helper(fieldDescriptor* fd, oop mirror, bool i
     case T_ARRAY:  // fall-through
     case T_OBJECT:
       if (!fd->is_null_free_inline_type()) {
-        _out->print("%s ", fd->signature()->as_quoted_ascii());
+        _out->print("%s", fd->signature()->as_quoted_ascii());
         oop value =  mirror->obj_field_acquire(fd->offset());
         if (value == nullptr) {
           if (field_type == T_ARRAY) {
-            _out->print("%d", -1);
+            _out->print(" %d", -1);
           }
-          _out->cr();
         } else if (value->is_instance()) {
           assert(field_type == T_OBJECT, "");
           if (value->is_a(vmClasses::String_klass())) {
             const char* ascii_value = java_lang_String::as_quoted_ascii(value);
-            _out->print("\"%s\"", (ascii_value != nullptr) ? ascii_value : "");
+            _out->print(" \"%s\"", (ascii_value != nullptr) ? ascii_value : "");
           } else {
             const char* klass_name  = value->klass()->name()->as_quoted_ascii();
-            _out->print("%s", klass_name);
+            _out->print(" %s", klass_name);
           }
         } else if (value->is_array()) {
           arrayOop a = (arrayOop)value;
-          _out->print("%d", a->length());
+          _out->print(" %d", a->length());
           if (value->is_objArray()) {
             objArrayOop oa = (objArrayOop)value;
+            if (value->is_flatArray()) {
+              FlatArrayKlass* klass = ((flatArrayOop)oa)->klass();
+              LayoutKind lk = klass->layout_kind();
+              _out->print(" flat");
+              if (LayoutKindHelper::is_nullable_flat(lk)) {
+                _out->print(" nullable");
+              } else {
+                _out->print(" null-free");
+              }
+              if (LayoutKindHelper::is_atomic_flat(lk)) {
+                _out->print(" atomic");
+              } else {
+                _out->print(" non-atomic");
+              }
+            } else {
+              _out->print(" ref");
+              if (oa->klass()->is_null_free_array_klass()) {
+                _out->print(" null-free");
+              } else {
+                _out->print(" nullable");
+              }
+            }
             const char* klass_name  = value->klass()->name()->as_quoted_ascii();
             _out->print(" %s", klass_name);
           }
@@ -895,6 +916,7 @@ void StaticFieldPrinter::do_field_helper(fieldDescriptor* fd, oop mirror, bool i
         break;
       } else {
         // handling of null free inline type
+        _out->print("%s", fd->signature()->as_quoted_ascii());
         ResetNoHandleMark rnhm;
         Thread* THREAD = Thread::current();
         SignatureStream ss(fd->signature(), false);

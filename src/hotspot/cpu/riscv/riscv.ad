@@ -11376,7 +11376,7 @@ instruct clearArray_reg_reg(iRegL_R29 cnt, iRegP_R28 base, iRegL val,
                             Universe dummy)
 %{
   // temp registers must match the one used in StubGenerator::generate_zero_blocks()
-  predicate(((ClearArrayNode*)n)->word_copy_only());
+  predicate(((ClearArrayNode*)n)->requires_word_fill());
   match(Set dummy (ClearArray (Binary cnt base) val));
   effect(USE_KILL cnt, USE_KILL base, TEMP tmp1, TEMP tmp2, KILL cr);
 
@@ -11395,7 +11395,7 @@ instruct clearArray_imm_reg(immL cnt, iRegP_R28 base, immL0 zero, Universe dummy
   predicate(!UseRVV
             && (uint64_t)n->in(2)->in(1)->get_long()
                < (uint64_t)(BlockZeroingLowLimit >> LogBytesPerWord)
-            && !((ClearArrayNode*)n)->word_copy_only());
+            && !((ClearArrayNode*)n)->requires_word_fill());
   match(Set dummy (ClearArray (Binary cnt base) zero));
   effect(USE_KILL base, KILL cr);
 

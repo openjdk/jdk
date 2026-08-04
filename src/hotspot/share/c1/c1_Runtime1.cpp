@@ -383,10 +383,10 @@ const char* Runtime1::name_for_address(address entry) {
   return pd_name_for_address(entry);
 }
 
-static void allocate_instance(JavaThread* current, Klass* klass, TRAPS) {
+JRT_ENTRY(void, Runtime1::new_instance(JavaThread* current, Klass* klass))
 #ifndef PRODUCT
   if (PrintC1Statistics) {
-    Runtime1::_new_instance_slowcase_cnt++;
+    _new_instance_slowcase_cnt++;
   }
 #endif
   assert(klass->is_klass(), "not a class");
@@ -398,10 +398,6 @@ static void allocate_instance(JavaThread* current, Klass* klass, TRAPS) {
   // allocate instance and return via TLS
   oop obj = h->allocate_instance(CHECK);
   current->set_vm_result_oop(obj);
-JRT_END
-
-JRT_ENTRY(void, Runtime1::new_instance(JavaThread* current, Klass* klass))
-  allocate_instance(current, klass, CHECK);
 JRT_END
 
 JRT_ENTRY(void, Runtime1::new_type_array(JavaThread* current, Klass* klass, jint length))
@@ -1188,7 +1184,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, StubId stub_id ))
         { Bytecode_anewarray anew(caller_method(), caller_method->bcp_from(bci));
           Klass* ek = caller_method->constants()->klass_at(anew.index(), CHECK);
           k = ek->array_klass(CHECK);
-          if (!k->is_typeArray_klass() && !k->is_refArray_klass() && !k->is_flatArray_klass()) {
+          if (k->is_unrefined_objArray_klass()) {
             k = ObjArrayKlass::cast(k)->klass_with_properties(ArrayProperties::Default(), THREAD);
           }
           if (k->is_flatArray_klass()) {
