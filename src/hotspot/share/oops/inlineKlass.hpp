@@ -135,37 +135,38 @@ class InlineKlass: public InstanceKlass {
     // long, just as valueObjectHashCode does, while the arithmetic for segments of size 1, 2 or 4 is the same. This is also known
     // by a endianness-dependent test.
     int _fast_hashcode_offset;   // if < 0, fast hashcode doesn't apply
-#ifdef VM_LITTLE_ENDIAN
+
+    // It turns out we need the same helping data for little and big endian at the moment. Yet, the logic is not quite the same.
+    //
+    // === LITTLE ENDIAN ===
     // In little endian, the memory layout, with a 4-byte segment whose value (as returned by getInt) would be 0x01 02 03 04. The
     // memory layout of the object would be something like:
     //                v- start of payload
     // ....header.... | 04 03 02 01
     //    \___________|___________/
     // Not to load too far, we load at offset "start of payload" - 4, so, we get some header bytes, and we get the long value
-    // 0x01 02 03 04 HH HH HH HH, where HH are header bytes. To get the integer value, we can simply do a unsigned shift right,
-    // by 4 bytes (32 bits) in this case.
-    // This field is saying by how much we need to shift. Since we keep 1, 2, 4 or 8 bytes, the legal values of _fast_hashcode_shift
-    // are 8 * (8 - (1, 2, 4, 8)) = 8 * (7, 6, 4, 0) = 56, 48, 32, 0.
+    // 0x01 02 03 04 HH HH HH HH, where HH are header bytes. To get the integer value, we can simply do an arithmetic right shift,
+    // by 4 bytes (32 bits) in this case. By doing an arithmetic right shift, we conserve the mathematical value, even if we cut
+    // higher bits (as long as we leave at least as much as the block we load).
     //
-    // The fast path is aware we are loading a long if the shift is 0.
-    // Value is not specified (and does not matter) if _fast_hashcode_offset <= 0
-    int _fast_hashcode_shift;
-#else
+    // === BIG ENDIAN ===
     // In big endian, the memory layout, with a 4-byte segment whose value (as returned by getInt) would be 0x01 02 03 04. The
     // memory layout of the object would be something like:
     //                v- start of payload
     // ....header.... | 01 02 03 04
     //    \___________|___________/
     // Not to load too far, we load at offset "start of payload" - 4, so, we get some header bytes, and we get the long value
-    // 0xHH HH HH HH 01 02 03 04, where HH are header bytes. To get the integer value, we can simply filter out the upper bits, with
-    // the mask 0x00 00 00 00 ff ff ff ff in this case.
-    // This field is storing the mask. Since we keep 1, 2, 4 or 8 bytes, the legal values of _fast_hashcode_mask
-    // are 0xff ff ff ff ff ff ff ff, 0x00 00 00 00 ff ff ff ff, 0x00 00 00 00 00 00 ff ff or 0x00 00 00 00 00 00 00 ff
+    // 0xHH HH HH HH 01 02 03 04, where HH are header bytes. To get the integer value, we can simply so a left shift, which
+    // fills the lower bits with 0, followed by a arithmetic right shift, to preserve the mathematical value. The shift magnitude
+    // is equal to the number of bits we need to discard. In this example, that is 32.
     //
-    // The fast path is aware we are loading a long if the mask is (long)-1.
+    // === COMMON ===
+    // This field is saying by how much we need to shift. Since we keep 1, 2, 4 or 8 bytes, the legal values of _fast_hashcode_shift
+    // are 8 * (8 - (1, 2, 4, 8)) = 8 * (7, 6, 4, 0) = 56, 48, 32, 0.
+    //
+    // The fast path is aware we are loading a long if the shift is 0.
     // Value is not specified (and does not matter) if _fast_hashcode_offset <= 0
-    int64_t _fast_hashcode_mask;
-#endif
+    int _fast_hashcode_shift;
 
     Members();
 
@@ -268,13 +269,8 @@ class InlineKlass: public InstanceKlass {
   int fast_hashcode_offset() const                            { return members()._fast_hashcode_offset; }
   void set_fast_hashcode_offset(int offset)                   { members()._fast_hashcode_offset = offset; }
 
-#ifdef VM_LITTLE_ENDIAN
   int fast_hashcode_shift() const                             { return members()._fast_hashcode_shift; }
   void set_fast_hashcode_shift(int shift)                     { members()._fast_hashcode_shift = shift; }
-#else
-  int64_t fast_hashcode_mask() const                          { return members()._fast_hashcode_mask; }
-  void set_fast_hashcode_mask(int64_t mask)                   { members()._fast_hashcode_mask = mask; }
-#endif
 
   bool supports_nullable_layouts() const {
     return has_nullable_non_atomic_layout() || has_nullable_atomic_layout();
@@ -401,15 +397,10 @@ class InlineKlass: public InstanceKlass {
   static ByteSize fast_hashcode_offset_offset() {
     return byte_offset_of(Members, _fast_hashcode_offset);
   }
-#ifdef VM_LITTLE_ENDIAN
+
   static ByteSize fast_hashcode_shift_offset() {
     return byte_offset_of(Members, _fast_hashcode_shift);
   }
-#else
-  static ByteSize fast_hashcode_mask_offset() {
-    return byte_offset_of(Members, _fast_hashcode_mask);
-  }
-#endif
 
   oop null_reset_value() const;
   void set_null_reset_value(oop val);

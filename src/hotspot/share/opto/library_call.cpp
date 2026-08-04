@@ -5663,19 +5663,18 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
 
               Node* obj_payload_addr = basic_plus_adr(obj, ConvI2L(offset));
               Node* obj_payload = make_load(control(), obj_payload_addr, TypeLong::LONG, T_LONG, MemNode::unordered, LoadNNode::DependsOnlyOnTest, false, true, true, true);
-#ifdef VM_LITTLE_ENDIAN
-              // *(obj + offset) >>> shift
+
               Node* shift_addr = off_heap_plus_addr(members, in_bytes(InlineKlass::fast_hashcode_shift_offset()));
               Node* shift = make_load(control(), shift_addr, TypeInt::INT, T_INT, MemNode::unordered);
-              Node* obj_extracted = URShiftL(obj_payload, shift);
-              Node* is_long_payload_bol = BoolCmpI(shift, BoolTest::eq, intcon(0));
+#ifdef VM_LITTLE_ENDIAN
+              // *(obj + offset) >> shift
+              Node* obj_extracted = RShiftL(obj_payload, shift);
 #else
-              // *(obj + offset) & mask
-              Node* mask_addr = off_heap_plus_addr(members, in_bytes(InlineKlass::fast_hashcode_mask_offset()));
-              Node* mask = make_load(control(), mask_addr, TypeLong::LONG, T_LONG, MemNode::unordered);
-              Node* obj_extracted = AndL(obj_payload, mask);
-              Node* is_long_payload_bol = BoolCmpL(mask, BoolTest::eq, longcon(-1));
+              // (*(obj + offset) << shift) >> shift
+              Node* obj_payload_left_shifted = LShiftL(obj_payload, shift);
+              Node* obj_extracted = RShiftL(obj_payload_left_shifted, shift);
 #endif
+              Node* is_long_payload_bol = BoolCmpI(shift, BoolTest::eq, intcon(0));
               IfNode* iff_is_long_payload = create_and_map_if(control(), is_long_payload_bol, PROB_FAIR, COUNT_UNKNOWN);
 
               // Case 2. one segment, less than 8-byte long

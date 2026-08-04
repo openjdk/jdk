@@ -353,7 +353,9 @@ class GraphKit : public Phase {
   Node* MinI(Node* l, Node* r)                { return _gvn.transform(new MinINode(l, r));       }
 
   Node* LShiftI(Node* l, Node* r)             { return _gvn.transform(new LShiftINode(l, r));    }
+  Node* LShiftL(Node* l, Node* r)             { return _gvn.transform(new LShiftLNode(l, r));    }
   Node* RShiftI(Node* l, Node* r)             { return _gvn.transform(new RShiftINode(l, r));    }
+  Node* RShiftL(Node* l, Node* r)             { return _gvn.transform(new RShiftLNode(l, r));    }
   Node* URShiftI(Node* l, Node* r)            { return _gvn.transform(new URShiftINode(l, r));   }
   Node* URShiftL(Node* l, Node* r)            { return _gvn.transform(new URShiftLNode(l, r));   }
   Node* URShiftX(Node* l, Node* r)            { return _gvn.transform(new URShiftXNode(l, r));   }

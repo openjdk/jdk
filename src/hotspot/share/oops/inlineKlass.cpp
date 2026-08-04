@@ -76,11 +76,7 @@ InlineKlass::Members::Members()
     _fast_acmp_offset(-1),
     _fast_acmp_mask(0),
     _fast_hashcode_offset(-1),
-#ifdef VM_LITTLE_ENDIAN
     _fast_hashcode_shift(0)
-#else
-    _fast_hashcode_mask(0)
-#endif
 {}
 
 InlineKlass::InlineKlass() {
@@ -583,11 +579,7 @@ void InlineKlass::Members::print_on(outputStream* st) const {
   st->print_cr(BULLET"fast acmp offset:                  %d", _fast_acmp_offset);
   st->print_cr(BULLET"fast acmp mask:                    " INT64_FORMAT_X_0, _fast_acmp_mask);
   st->print_cr(BULLET"fast hashcode offset:              %d", _fast_hashcode_offset);
-#ifdef VM_LITTLE_ENDIAN
   st->print_cr(BULLET"fast hashcode shift:               %d", _fast_hashcode_shift);
-#else
-  st->print_cr(BULLET"fast hashcode mask:                " INT64_FORMAT_X_0, _fast_hashcode_mask);
-#endif
 }
 
 #undef BULLET

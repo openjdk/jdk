@@ -5437,7 +5437,7 @@ void ClassFileParser::set_fast_acmp_members(InlineKlass* vk) const {
 #endif // VM_LITTLE_ENDIAN
 }
 
-// See the declarations of _fast_hashcode_offset, _fast_hashcode_shift and _fast_hashcode_mask in InlineKlass::Members
+// See the declarations of _fast_hashcode_offset and _fast_hashcode_shift in InlineKlass::Members
 // for details about the fast path logic, and the meaning of these values.
 void ClassFileParser::set_fast_hashcode_members(InlineKlass* vk) const {
   if (_layout_info->_oop_acmp_map->length() > 0) {  // Oops are not allowed in the fast path
@@ -5449,11 +5449,7 @@ void ClassFileParser::set_fast_hashcode_members(InlineKlass* vk) const {
 
   if (_layout_info->_nonoop_acmp_map->length() == 0) {
     vk->set_fast_hashcode_offset(0);
-#ifdef VM_LITTLE_ENDIAN
     vk->set_fast_hashcode_shift(0);
-#else
-    vk->set_fast_hashcode_mask(0);
-#endif // VM_LITTLE_ENDIAN
     return;
   }
 
@@ -5466,11 +5462,7 @@ void ClassFileParser::set_fast_hashcode_members(InlineKlass* vk) const {
 
   int piece_start = _layout_info->_nonoop_acmp_map->at(0)._offset;
   vk->set_fast_hashcode_offset(piece_start - (BytesPerLong - piece_size));
-#ifdef VM_LITTLE_ENDIAN
   vk->set_fast_hashcode_shift(BitsPerByte * (BytesPerLong - piece_size));
-#else
-  vk->set_fast_hashcode_mask(right_n_bits<int64_t>(piece_size * BitsPerByte));
-#endif // VM_LITTLE_ENDIAN
 }
 
 void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
