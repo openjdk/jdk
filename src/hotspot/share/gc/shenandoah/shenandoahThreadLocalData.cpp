@@ -40,7 +40,7 @@ ShenandoahThreadLocalData::ShenandoahThreadLocalData() :
   _evacuation_stats(new ShenandoahEvacuationStats()),
   _invisible_root(nullptr),
   _invisible_root_word_size(0),
-  _pin_region_idx(SIZE_MAX),
+  _pin_region_idx(0),
   _pin_count(0) {
 }
 

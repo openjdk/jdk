@@ -2467,13 +2467,13 @@ void ShenandoahHeap::unpin_object(JavaThread* thr, oop o) {
 }
 
 void ShenandoahHeap::flush_region_pin_cache(JavaThread* thr) {
-  size_t reg_idx_cached = ShenandoahThreadLocalData::pin_cache_region(thr);
   size_t count = ShenandoahThreadLocalData::pin_cache_count(thr);
   if (count != 0) {
+    size_t reg_idx_cached = ShenandoahThreadLocalData::pin_cache_region(thr);
     get_region(reg_idx_cached)->inc_pin_count(count);
+    ShenandoahThreadLocalData::pin_cache_set_count(thr, 0);
   }
-  ShenandoahThreadLocalData::pin_cache_set_region(thr, SIZE_MAX);
-  ShenandoahThreadLocalData::pin_cache_set_count(thr, 0);
+  ShenandoahThreadLocalData::pin_cache_set_region(thr, 0);
 }
 
 void ShenandoahHeap::flush_region_pin_cache() {
