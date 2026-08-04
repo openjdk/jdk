@@ -303,6 +303,7 @@ void ShenandoahNMethod::assert_same_oops() {
 
 ShenandoahNMethodTable::ShenandoahNMethodTable() :
   _heap(ShenandoahHeap::heap()),
+  _bs_nm(BarrierSet::barrier_set()->barrier_set_nmethod()),
   _index(0),
   _itr_cnt(0) {
   _list = new ShenandoahNMethodList(minSize);
@@ -347,6 +348,9 @@ void ShenandoahNMethodTable::register_nmethod(nmethod* nm) {
     }
     ShenandoahNMethod::disarm_nmethod(nm);
   }
+
+  assert(!data->has_barriers() || _bs_nm->supports_entry_barrier(nm),
+         "NMethods with hotpatchable GC barriers require entry barrier support");
 }
 
 void ShenandoahNMethodTable::unregister_nmethod(nmethod* nm) {

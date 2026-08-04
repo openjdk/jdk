@@ -170,6 +170,8 @@ private:
   };
 
   ShenandoahHeap* const  _heap;
+  BarrierSetNMethod* const _bs_nm;
+
   ShenandoahNMethodList* _list;
 
   int                    _index;
