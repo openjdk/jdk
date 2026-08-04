@@ -126,6 +126,10 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
+    if (InlineTypeReturnedAsFields) {
+      __ stop("fix T_OBJECT");
+    }
+
     Register r_arg_call_wrapper_addr   = Z_ARG1;
     Register r_arg_result_addr         = Z_ARG2;
     Register r_arg_result_type         = Z_ARG3;
@@ -434,9 +438,6 @@ class StubGenerator: public StubCodeGenerator {
         __ align(handlerLen);
       // T_OBJECT:
         guarantee(T_OBJECT == T_LONG+1, "check BasicType definition in globalDefinitions.hpp");
-        if (InlineTypeReturnedAsFields) {
-          __ stop("implement function StubGenerator::generate_call_stub #1");
-        }
         __ z_stg(Z_RET, 0, r_arg_result_addr);
         __ z_br(Z_R14); // Return to caller.
         __ align(handlerLen);
@@ -449,6 +450,16 @@ class StubGenerator: public StubCodeGenerator {
         guarantee(T_VOID == T_ARRAY+1, "check BasicType definition in globalDefinitions.hpp");
         __ z_stg(Z_RET, 0, r_arg_result_addr);
         __ z_br(Z_R14); // Return to caller.
+        __ align(handlerLen);
+      // T_FLAT_ELEMENT:
+        guarantee(T_FLAT_ELEMENT == T_VOID + 1, "check BasicType definition in globalDefinitions.hpp");
+        // never reachable, see SignatureIterator::fp_is_valid_type in signature.cpp, it only accepts
+        // is_java_primitive || is_reference_type || T_VOID.
+        // T_FLAT_ELEMENT fails all three, so no method's stored result type can ever be T_FLAT_ELEMENT.
+        __ z_illtrap(0xde);  // pattern: 0x00de00ad
+        __ z_illtrap(0xad);
+        __ z_illtrap(0xbe);
+        __ z_illtrap(0xef);
         __ align(handlerLen);
       // T_ADDRESS:
         guarantee(T_ADDRESS == T_FLAT_ELEMENT+1, "check BasicType definition in globalDefinitions.hpp");

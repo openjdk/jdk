@@ -840,16 +840,16 @@ class MacroAssembler: public Assembler {
   // range (0 <= offset <= page_size).
   //
   // %%%%%% Currently not done for z/Architecture
-void null_check(Register reg, Register tmp = Z_R0, int64_t offset = -1);
-static bool needs_explicit_null_check(intptr_t offset);  // Implemented in shared file ?!
-static bool uses_implicit_null_check(void* address);
 
-// markWord tests, kills markWord reg
-void test_markword_is_inline_type(Register markword, Label& is_inline_type);
+  void null_check(Register reg, Register tmp = Z_R0, int64_t offset = -1);
+  static bool needs_explicit_null_check(intptr_t offset);  // Implemented in shared file ?!
+  static bool uses_implicit_null_check(void* address);
 
-// inlineKlass queries, kills temp_reg
-void test_oop_is_not_inline_type(Register object, Register tmp, Label& not_inline_type, bool can_be_null = true);
+  // markWord tests, kills markWord reg
+  void test_markword_is_inline_type(Register markword, Label& is_inline_type);
 
+  // inlineKlass queries, kills temp_reg
+  void test_oop_is_not_inline_type(Register object, Register tmp, Label& not_inline_type, bool can_be_null = true);
 
   // Valhalla support for inline types
   void test_field_is_null_free_inline_type(Register flags, Label& is_null_free);

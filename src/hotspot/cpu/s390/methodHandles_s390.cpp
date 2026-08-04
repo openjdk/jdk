@@ -167,10 +167,6 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
   __ z_ltgr(temp, method);
   __ z_bre(L_no_such_method);
 
-  if (for_compiler_entry && UseArrayFlattening) {
-    __ stop("implement function MethodHandles::jump_from_method_handle");
-  }
-
   ByteSize offset = for_compiler_entry ?
                        Method::from_compiled_inline_offset() : Method::from_interpreted_offset();
   Address method_from(method, offset);

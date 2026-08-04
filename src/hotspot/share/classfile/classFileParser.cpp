@@ -5378,7 +5378,7 @@ void ClassFileParser::set_fast_acmp_members(InlineKlass* vk) const {
   // make_mask_piece(0, 1) = 0xff00 0000 0000 0000 => [ff]| 00 | 00 | 00 | 00 | 00 | 00 | 00
   // make_mask_piece(0, 2) = 0xffff 0000 0000 0000 => [ff | ff]| 00 | 00 | 00 | 00 | 00 | 00
   // make_mask_piece(1, 1) = 0x00ff 0000 0000 0000 => 00 |[ff]| 00 | 00 | 00 | 00 | 00 | 00
-  // make_mask_piece(1, 3) = 0x00ff ff00 0000 0000 => 00 |[ff | ff | ff]| 00 | 00 | 00 | 00
+  // make_mask_piece(1, 3) = 0x00ff ffff 0000 0000 => 00 |[ff | ff | ff]| 00 | 00 | 00 | 00
   auto make_mask_piece = [](int start, int size) -> int64_t {
     return right_n_bits<int64_t>(size * BitsPerByte) << ((BytesPerLong - start - size) * BitsPerByte);
   };

@@ -27,8 +27,6 @@
 #define CPU_S390_CONTINUATIONENTRY_S390_INLINE_HPP
 
 #include "oops/method.inline.hpp"
-#include "code/codeCache.hpp"
-
 #include "runtime/frame.inline.hpp"
 #include "runtime/registerMap.hpp"
 #include "utilities/macros.hpp"

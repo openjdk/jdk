@@ -4377,7 +4377,6 @@ int SharedRuntime::java_return_convention(const BasicType *sig_bt, VMRegPair *re
 
 BufferedInlineTypeBlob* SharedRuntime::generate_buffered_inline_type_adapter(const InlineKlass* vk) {
   Unimplemented();
-  ShouldNotReachHere();
   return nullptr;
 }
 

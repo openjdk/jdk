@@ -406,7 +406,7 @@ inline frame frame::sender_for_compiled_frame(RegisterMap *map) const {
 
   nmethod* nm = _cb->as_nmethod_or_null();
   if (nm != nullptr && nm->method()->has_scalarized_args()) {
-    fatal("implement function frame::sender_for_compiled_frame");
+    Unimplemented();
   }
 
   intptr_t* sender_sp = this->sender_sp();
