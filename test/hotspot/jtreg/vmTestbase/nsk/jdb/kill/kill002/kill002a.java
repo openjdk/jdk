@@ -113,9 +113,8 @@ public class kill002a {
 }
 
 
-// Note: MyThread must extend Thread, not ThreadWrapper. jdb's kill command
-// (JVMTI StopThread) rejects a virtual thread that is unmounted in Object.wait()
-// with "Operation is not supported on the current frame". See JDK-8382272.
+// This test uses a platform thread because jdb's kill command cannot stop an
+// unmounted virtual thread waiting in Object.wait().
 class MyThread extends Thread {
     Object lock;
     String name;

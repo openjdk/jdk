@@ -110,6 +110,8 @@ class Lock {
     }
 }
 
+// This test uses a platform thread because it verifies explicit ThreadGroup
+// placement, and virtual-thread builders cannot specify a ThreadGroup.
 class MyThread extends Thread {
 
     Lock lock;

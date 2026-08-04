@@ -103,9 +103,8 @@ public class suspend001a {
     }
 }
 
-// Note: the tested thread classes must extend Thread, not ThreadWrapper.
-// Suspending a single virtual thread and continuing causes jdb to stop
-// responding (no prompt is received). See JDK-8382272.
+// This test uses a platform thread because suspending the tested virtual thread
+// and continuing causes jdb to stop responding.
 class Suspended extends Thread {
     String name;
 
