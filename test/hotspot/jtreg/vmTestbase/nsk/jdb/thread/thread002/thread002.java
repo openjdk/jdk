@@ -21,7 +21,6 @@
  * questions.
  */
 
-
 /*
  * @test
  *
@@ -82,32 +81,29 @@ public class thread002 extends JdbTest {
     static final String THREAD_NAME      = "MyThread";
 
     protected void runCases() {
-        String[] reply;
-        Paragrep grep;
-        int count;
-        Vector v;
-        String found;
 
         jdb.setBreakpointInMethod(LAST_BREAK);
         jdb.receiveReplyFor(JdbCommand.cont);
 
-        String[] threadIds = jdb.getThreadIdsByName(THREAD_NAME);
-
-        String[][] switchReplies = new String[thread002a.numThreads][];
+        // Resolve each tested thread id by its exact name instead of assuming that
+        // getThreadIdsByName(THREAD_NAME) returns the ids in creation order.
         for (int i = 0; i < thread002a.numThreads; i++) {
-            switchReplies[i] = jdb.receiveReplyFor(JdbCommand.thread + threadIds[i]);
+            String threadName = THREAD_NAME + "#" + i;
+            String[] ids = jdb.getThreadIdsByName(threadName);
+            if (ids.length != 1) {
+                failure("Expected exactly one thread named " + threadName
+                        + ", found: " + ids.length);
+                continue;
+            }
+            String[] switchReply = jdb.receiveReplyFor(JdbCommand.thread + ids[0]);
+            if (new Paragrep(switchReply).find(threadName) == 0) {
+                failure("jdb failed to switch to thread: " + threadName
+                        + " (id: " + ids[0] + ")");
+            }
             jdb.receiveReplyFor(JdbCommand.print + DEBUGGEE_CLASS + ".holder[" + i + "].name");
         }
 
         jdb.contToExit(1);
 
-        reply = jdb.getTotalReply();
-        grep = new Paragrep(reply);
-        for (int i = 0; i < threadIds.length; i++) {
-            count = new Paragrep(switchReplies[i]).find(THREAD_NAME + "#" + i);
-            if (count == 0) {
-                 failure("jdb failed to switch to thread: " + threadIds[i]);
-            }
-        }
     }
 }
