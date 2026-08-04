@@ -74,7 +74,7 @@ void ShenandoahSTWMark::mark() {
 
   // Arm all nmethods. Even though this is STW mark, some marking code
   // piggybacks on nmethod barriers for special instances.
-  ShenandoahCodeRoots::arm_nmethods();
+  CodeCache::arm_all_nmethods();
 
   // Weak reference processing
   ShenandoahReferenceProcessor* rp = _generation->ref_processor();

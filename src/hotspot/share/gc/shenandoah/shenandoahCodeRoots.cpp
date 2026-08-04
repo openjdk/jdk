@@ -54,14 +54,6 @@ void ShenandoahCodeRoots::unregister_nmethod(nmethod* nm) {
   _nmethod_table->unregister_nmethod(nm);
 }
 
-void ShenandoahCodeRoots::arm_nmethods() {
-  BarrierSet::barrier_set()->barrier_set_nmethod()->arm_all_nmethods();
-
-  // Arming should also activate stack watermark machinery.
-  // See ShenandoahNMethod::patch_barrier.
-  ShenandoahStackWatermark::change_epoch_id();
-}
-
 class ShenandoahNMethodUnlinkClosure : public NMethodClosure {
 private:
   bool                      _unloading_occurred;

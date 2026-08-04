@@ -315,7 +315,7 @@ void ShenandoahDegenGC::op_degenerated() {
   DEBUG_ONLY(heap->assert_no_self_forwards());
 
   // Leaving degenerated GC, we need to flip barriers back to idle.
-  ShenandoahCodeRoots::arm_nmethods();
+  CodeCache::arm_all_nmethods();
 
   if (ShenandoahVerify) {
     heap->verifier()->verify_after_degenerated(_generation);

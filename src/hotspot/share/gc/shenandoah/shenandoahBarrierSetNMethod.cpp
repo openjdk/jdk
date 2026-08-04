@@ -30,6 +30,7 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
+#include "gc/shenandoah/shenandoahStackWatermark.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
@@ -100,4 +101,12 @@ void ShenandoahBarrierSetNMethod::finalize_relocations(nmethod* nm) {
       }
     }
   }
+}
+
+void ShenandoahBarrierSetNMethod::arm_all_nmethods() {
+  BarrierSetNMethod::arm_all_nmethods();
+
+  // Arming should also activate stack watermark machinery.
+  // See ShenandoahNMethod::patch_barrier.
+  ShenandoahStackWatermark::change_epoch_id();
 }
