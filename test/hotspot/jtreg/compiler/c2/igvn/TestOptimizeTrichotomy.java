@@ -29,15 +29,15 @@
  *          are expected to optimize, and others that should not, because
  *          it would lead to wrong results.
  * @library /test/lib /
- * @run driver ${test.main.class} vanilla
+ * @run driver ${test.main.class}
  */
 
 /*
- * @test id=noWarmup
+ * @test id=Xcomp
  * @bug 8385157
  * @key randomness
  * @library /test/lib /
- * @run driver ${test.main.class} noWarmup
+ * @run driver ${test.main.class} -Xcomp -XX:-TieredCompilation -XX:CompileCommand=compileonly,${test.main.class}::test*
  */
 
 package compiler.c2.igvn;
@@ -59,17 +59,7 @@ public class TestOptimizeTrichotomy {
     private static final Random RANDOM = Utils.getRandomInstance();
 
     public static void main(String[] args) {
-        switch(args[0]) {
-            case "vanilla" -> {
-                TestFramework.run();
-            }
-            case "noWarmup" -> {
-                TestFramework f = new TestFramework();
-                f.setDefaultWarmup(0);
-                f.addFlags("-XX:-TieredCompilation", "-XX:CompileCommand=compileonly,${test.main.class}::test*");
-                f.start();
-            }
-        }
+        TestFramework.runWithFlags(args);
     }
 
     private record IntPair(int x, int y) {
