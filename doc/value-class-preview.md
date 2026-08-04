@@ -12,7 +12,8 @@ which overrides the regular files of the same name. For example,
 
 The JDK generates preview-specific source files (they may use preview language
 features), compiles class files from them, and distributes these class files in
-`META-INF/preview`.
+`META-INF/preview`. These preview-specific class files can be inspected by javap
+with the `--preview-mode=true` flag.
 
 ## The Build Process
 
