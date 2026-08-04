@@ -177,8 +177,8 @@ public class TestOptimizeTrichotomy {
     // ------------------- IR tests to check that optimization was performed ------------------------
 
     @Test
-    @IR(counts = {IRNode.CMP_I, "= 1", IRNode.CMP_U, "= 0", IRNode.CMOVE_I, "= 0"}, phase = CompilePhase.AFTER_PARSING)
-    @IR(counts = {IRNode.CMP_I, "= 1", IRNode.CMP_U, "= 0", IRNode.CMOVE_I, "= 1"})
+    @IR(counts = {IRNode.CMP_I, "= 1", IRNode.CMP_U, "= 0", IRNode.CMOVE_I, "= 0", IRNode.IF, "= 2"}, phase = CompilePhase.AFTER_PARSING)
+    @IR(counts = {IRNode.CMP_I, "= 1", IRNode.CMP_U, "= 0", IRNode.CMOVE_I, "= 1", IRNode.IF, "= 0"})
     // Should be able to optimize to "a <= b", already during parsing.
     static boolean testIR0(int a, int b) {
         if (a < b || a == b) {
@@ -206,8 +206,8 @@ public class TestOptimizeTrichotomy {
     }
 
     @Test
-    @IR(counts = {IRNode.CMP_I, "= 1", IRNode.CMP_U, "= 0", IRNode.CMOVE_I, "= 0"}, phase = CompilePhase.AFTER_PARSING)
-    @IR(counts = {IRNode.CMP_I, "= 1", IRNode.CMP_U, "= 0", IRNode.CMOVE_I, "= 1"})
+    @IR(counts = {IRNode.CMP_I, "= 1", IRNode.CMP_U, "= 0", IRNode.CMOVE_I, "= 0", IRNode.IF, "= 2"}, phase = CompilePhase.AFTER_PARSING)
+    @IR(counts = {IRNode.CMP_I, "= 1", IRNode.CMP_U, "= 0", IRNode.CMOVE_I, "= 1", IRNode.IF, "= 0"})
     // Should be able to optimize to "a >= b", already during parsing.
     static boolean testIR1(int a, int b) {
         if (a > b || a == b) {
@@ -235,8 +235,8 @@ public class TestOptimizeTrichotomy {
     }
 
     @Test
-    @IR(counts = {IRNode.CMP_I, "= 0", IRNode.CMP_U, "= 1", IRNode.CMOVE_I, "= 0"}, phase = CompilePhase.AFTER_PARSING)
-    @IR(counts = {IRNode.CMP_I, "= 0", IRNode.CMP_U, "= 1", IRNode.CMOVE_I, "= 1"})
+    @IR(counts = {IRNode.CMP_I, "= 0", IRNode.CMP_U, "= 1", IRNode.CMOVE_I, "= 0", IRNode.IF, "= 2"}, phase = CompilePhase.AFTER_PARSING)
+    @IR(counts = {IRNode.CMP_I, "= 0", IRNode.CMP_U, "= 1", IRNode.CMOVE_I, "= 1", IRNode.IF, "= 0"})
     // Should be able to optimize to "a <=u b", already during parsing.
     static boolean testIR2(int a, int b) {
         if ((Integer.compareUnsigned(a, b) < 0) || (Integer.compareUnsigned(a, b) == 0)) {
@@ -264,8 +264,8 @@ public class TestOptimizeTrichotomy {
     }
 
     @Test
-    @IR(counts = {IRNode.CMP_I, "= 0", IRNode.CMP_U, "= 1", IRNode.CMOVE_I, "= 0"}, phase = CompilePhase.AFTER_PARSING)
-    @IR(counts = {IRNode.CMP_I, "= 0", IRNode.CMP_U, "= 1", IRNode.CMOVE_I, "= 1"})
+    @IR(counts = {IRNode.CMP_I, "= 0", IRNode.CMP_U, "= 1", IRNode.CMOVE_I, "= 0", IRNode.IF, "= 2"}, phase = CompilePhase.AFTER_PARSING)
+    @IR(counts = {IRNode.CMP_I, "= 0", IRNode.CMP_U, "= 1", IRNode.CMOVE_I, "= 1", IRNode.IF, "= 0"})
     // Should be able to optimize to "a >=u b", already during parsing.
     static boolean testIR3(int a, int b) {
         if ((Integer.compareUnsigned(a, b) > 0) || (Integer.compareUnsigned(a, b) == 0)) {
@@ -293,8 +293,8 @@ public class TestOptimizeTrichotomy {
     }
 
     @Test
-    @IR(counts = {IRNode.CMP_L, "= 1", IRNode.CMP_UL, "= 0", IRNode.CMOVE_I, "= 0"}, phase = CompilePhase.AFTER_PARSING)
-    @IR(counts = {IRNode.CMP_L, "= 1", IRNode.CMP_UL, "= 0", IRNode.CMOVE_I, "= 1"})
+    @IR(counts = {IRNode.CMP_L, "= 1", IRNode.CMP_UL, "= 0", IRNode.CMOVE_I, "= 0", IRNode.IF, "= 2"}, phase = CompilePhase.AFTER_PARSING)
+    @IR(counts = {IRNode.CMP_L, "= 1", IRNode.CMP_UL, "= 0", IRNode.CMOVE_I, "= 1", IRNode.IF, "= 0"})
     // Should be able to optimize to "a <= b", already during parsing.
     static boolean testIR4(long a, long b) {
         if (a < b || a == b) {
@@ -322,8 +322,8 @@ public class TestOptimizeTrichotomy {
     }
 
     @Test
-    @IR(counts = {IRNode.CMP_L, "= 1", IRNode.CMP_UL, "= 0", IRNode.CMOVE_I, "= 0"}, phase = CompilePhase.AFTER_PARSING)
-    @IR(counts = {IRNode.CMP_L, "= 1", IRNode.CMP_UL, "= 0", IRNode.CMOVE_I, "= 1"})
+    @IR(counts = {IRNode.CMP_L, "= 1", IRNode.CMP_UL, "= 0", IRNode.CMOVE_I, "= 0", IRNode.IF, "= 2"}, phase = CompilePhase.AFTER_PARSING)
+    @IR(counts = {IRNode.CMP_L, "= 1", IRNode.CMP_UL, "= 0", IRNode.CMOVE_I, "= 1", IRNode.IF, "= 0"})
     // Should be able to optimize to "a >= b", already during parsing.
     static boolean testIR5(long a, long b) {
         if (a > b || a == b) {
@@ -351,8 +351,8 @@ public class TestOptimizeTrichotomy {
     }
 
     @Test
-    @IR(counts = {IRNode.CMP_L, "= 0", IRNode.CMP_UL, "= 1", IRNode.CMOVE_I, "= 0"}, phase = CompilePhase.AFTER_PARSING)
-    @IR(counts = {IRNode.CMP_L, "= 0", IRNode.CMP_UL, "= 1", IRNode.CMOVE_I, "= 1"})
+    @IR(counts = {IRNode.CMP_L, "= 0", IRNode.CMP_UL, "= 1", IRNode.CMOVE_I, "= 0", IRNode.IF, "= 2"}, phase = CompilePhase.AFTER_PARSING)
+    @IR(counts = {IRNode.CMP_L, "= 0", IRNode.CMP_UL, "= 1", IRNode.CMOVE_I, "= 1", IRNode.IF, "= 0"})
     // Should be able to optimize to "a <=u b", already during parsing.
     static boolean testIR6(long a, long b) {
         if ((Long.compareUnsigned(a, b) < 0) || (Long.compareUnsigned(a, b) == 0)) {
@@ -380,8 +380,8 @@ public class TestOptimizeTrichotomy {
     }
 
     @Test
-    @IR(counts = {IRNode.CMP_L, "= 0", IRNode.CMP_UL, "= 1", IRNode.CMOVE_I, "= 0"}, phase = CompilePhase.AFTER_PARSING)
-    @IR(counts = {IRNode.CMP_L, "= 0", IRNode.CMP_UL, "= 1", IRNode.CMOVE_I, "= 1"})
+    @IR(counts = {IRNode.CMP_L, "= 0", IRNode.CMP_UL, "= 1", IRNode.CMOVE_I, "= 0", IRNode.IF, "= 2"}, phase = CompilePhase.AFTER_PARSING)
+    @IR(counts = {IRNode.CMP_L, "= 0", IRNode.CMP_UL, "= 1", IRNode.CMOVE_I, "= 1", IRNode.IF, "= 0"})
     // Should be able to optimize to "a >=u b", already during parsing.
     static boolean testIR7(long a, long b) {
         if ((Long.compareUnsigned(a, b) > 0) || (Long.compareUnsigned(a, b) == 0)) {
