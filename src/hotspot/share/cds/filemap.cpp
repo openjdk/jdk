@@ -195,23 +195,18 @@ template <int N> static void get_header_version(char (&header_version) [N]) {
 
 FileMapInfo::FileMapInfo(const char* full_path, bool is_static) :
   _is_static(is_static), _file_open(false), _is_mapped(false), _fd(-1), _file_offset(0),
-  _full_path(full_path), _base_archive_name(nullptr), _header(nullptr) {
-  if (_is_static) {
-    assert(_current_info == nullptr, "must be singleton"); // not thread safe
-    _current_info = this;
-  } else {
-    assert(_dynamic_archive_info == nullptr, "must be singleton"); // not thread safe
-    _dynamic_archive_info = this;
-  }
-}
+  _full_path(full_path), _base_archive_name(nullptr), _header(nullptr) {}
+
 
 FileMapInfo::~FileMapInfo() {
-  if (_is_static) {
-    assert(_current_info == this, "must be singleton"); // not thread safe
-    _current_info = nullptr;
+  if (_output_archive == this) {
+    _output_archive = nullptr;
+  } else if (_is_static) {
+    assert(_static_input_archive == this, "must be singleton"); // not thread safe
+    _static_input_archive = nullptr;
   } else {
-    assert(_dynamic_archive_info == this, "must be singleton"); // not thread safe
-    _dynamic_archive_info = nullptr;
+    assert(_dynamic_input_archive == this, "must be singleton"); // not thread safe
+    _dynamic_input_archive = nullptr;
   }
 
   if (_header != nullptr) {
@@ -223,11 +218,22 @@ FileMapInfo::~FileMapInfo() {
   }
 }
 
-void FileMapInfo::free_current_info() {
-  assert(CDSConfig::is_dumping_final_static_archive(), "only supported in this mode");
-  assert(_current_info != nullptr, "sanity");
-  delete _current_info;
-  assert(_current_info == nullptr, "sanity"); // Side effect expected from the above "delete" operator.
+FileMapInfo* FileMapInfo::allocate_static_input_archive(const char* filename) {
+  precond(_static_input_archive == nullptr);
+  _static_input_archive = new FileMapInfo(filename, /*is_static=*/true);
+  return _static_input_archive;
+}
+
+FileMapInfo* FileMapInfo::allocate_dynamic_input_archive(const char* filename) {
+  precond(_dynamic_input_archive == nullptr);
+  _dynamic_input_archive = new FileMapInfo(filename, /*is_dynamic=*/false);
+  return _dynamic_input_archive;
+}
+
+FileMapInfo* FileMapInfo::allocate_output_archive(const char* filename, bool is_static) {
+  precond(_output_archive == nullptr);
+  _output_archive = new FileMapInfo(filename, is_static);
+  return _output_archive;
 }
 
 void FileMapInfo::populate_header(size_t core_region_alignment) {
@@ -312,6 +318,7 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   _spec_trap_limit_extra_entries = SpecTrapLimitExtraEntries;
   _max_heap_size = MaxHeapSize;
   _use_optimized_module_handling = CDSConfig::is_using_optimized_module_handling();
+  _aot_class_linking_value = AOTClassLinking;
   _has_aot_linked_classes = CDSConfig::is_dumping_aot_linked_classes();
   _has_full_module_graph = CDSConfig::is_dumping_full_module_graph();
   _has_valhalla_patched_classes = Arguments::is_valhalla_enabled();
@@ -931,7 +938,7 @@ static const char* region_name(int region_index) {
 
 BitMapView FileMapInfo::bitmap_view(int region_index, bool is_oopmap) {
   FileMapRegion* r = region_at(region_index);
-  char* bitmap_base = is_static() ? FileMapInfo::current_info()->map_bitmap_region() : FileMapInfo::dynamic_info()->map_bitmap_region();
+  char* bitmap_base = is_static() ? FileMapInfo::static_input_archive()->map_bitmap_region() : FileMapInfo::dynamic_input_archive()->map_bitmap_region();
   bitmap_base += is_oopmap ? r->oopmap_offset() : r->ptrmap_offset();
   size_t size_in_bits = is_oopmap ? r->oopmap_size_in_bits() : r->ptrmap_size_in_bits();
 
@@ -1558,12 +1565,12 @@ size_t FileMapInfo::read_bytes(void* buffer, size_t count) {
 // Get the total size in bytes of all mapped read only region
 size_t FileMapInfo::readonly_total() {
   size_t total = 0;
-  if (current_info() != nullptr && current_info()->is_mapped()) {
-    FileMapRegion* r = FileMapInfo::current_info()->region_at(AOTMetaspace::ro);
+  if (static_input_archive() != nullptr && static_input_archive()->is_mapped()) {
+    FileMapRegion* r = static_input_archive()->region_at(AOTMetaspace::ro);
     if (r->read_only()) total += r->used();
   }
-  if (dynamic_info() != nullptr && current_info()->is_mapped()) {
-    FileMapRegion* r = FileMapInfo::dynamic_info()->region_at(AOTMetaspace::ro);
+  if (dynamic_input_archive() != nullptr && dynamic_input_archive()->is_mapped()) {
+    FileMapRegion* r = dynamic_input_archive()->region_at(AOTMetaspace::ro);
     if (r->read_only()) total += r->used();
   }
   return total;
@@ -1775,8 +1782,9 @@ void FileMapInfo::assert_mark(bool check) {
   }
 }
 
-FileMapInfo* FileMapInfo::_current_info = nullptr;
-FileMapInfo* FileMapInfo::_dynamic_archive_info = nullptr;
+FileMapInfo* FileMapInfo::_static_input_archive = nullptr;
+FileMapInfo* FileMapInfo::_dynamic_input_archive = nullptr;
+FileMapInfo* FileMapInfo::_output_archive = nullptr;
 bool FileMapInfo::_memory_mapping_failed = false;
 
 // Open the shared archive file, read and validate the header
@@ -1803,7 +1811,11 @@ bool FileMapInfo::open_as_input() {
 
   if (!open_for_read() || !init_from_file(_fd) || !validate_header()) {
     if (_is_static) {
-      AOTMetaspace::report_loading_error("Loading static archive failed.");
+      if (CDSConfig::new_aot_flags_used()) {
+        AOTMetaspace::report_loading_error("Loading %s failed.", CDSConfig::type_of_archive_being_loaded());
+      } else {
+        AOTMetaspace::report_loading_error("Loading static archive failed.");
+      }
       return false;
     } else {
       AOTMetaspace::report_loading_error("Loading dynamic archive failed.");
@@ -2047,6 +2059,22 @@ bool FileMapHeader::validate() {
     // Only the static archive can contain the full module graph.
     if (!_has_full_module_graph) {
       CDSConfig::stop_using_full_module_graph("archive was created without full module graph");
+    }
+  }
+
+  if (CDSConfig::is_redumping_aot_configuration() || CDSConfig::is_dumping_aot_cache()) {
+    if (_aot_class_linking_value && !AOTClassLinking) {
+      AOTMetaspace::report_loading_error("%s was created with AOTClassLinking enabled. It cannot be used when "
+                                            "AOTClassLinking is disabled.",
+                                            CDSConfig::type_of_archive_being_loaded());
+      return false;
+    }
+
+    if (!_aot_class_linking_value && AOTClassLinking) {
+      AOTMetaspace::report_loading_error("%s was created with AOTClassLinking disabled. It cannot be used when "
+                                            "AOTClassLinking is enabled.",
+                                            CDSConfig::type_of_archive_being_loaded());
+      return false;
     }
   }
 

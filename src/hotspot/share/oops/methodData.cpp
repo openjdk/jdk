@@ -1930,7 +1930,9 @@ void MethodData::check_extra_data_locked() const {
     // Usually we only want non-const accesses on the lock,
     // so this here is an exception.
     MethodData* self = (MethodData*)this;
-    assert(self->extra_data_lock()->owned_by_self() || CDSConfig::is_dumping_archive(), "must have lock");
+    assert(self->extra_data_lock()->owned_by_self()
+           || CDSConfig::is_dumping_archive()
+           || AOTMapLogger::is_logging_at_bootstrap(), "must have lock");
     assert(!Thread::current()->is_Java_thread() ||
            JavaThread::current()->is_in_no_safepoint_scope(),
            "JavaThread must have NoSafepointVerifier inside lock scope");

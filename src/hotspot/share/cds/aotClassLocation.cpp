@@ -413,9 +413,9 @@ bool AOTClassLocation::check(const char* runtime_path, bool has_aot_linked_class
       } else {
         aot_log_warning(aot)("Archived non-system classes are disabled because the "
                          "file %s exists", runtime_path);
-        FileMapInfo::current_info()->set_has_platform_or_app_classes(false);
+        FileMapInfo::static_input_archive()->set_has_platform_or_app_classes(false);
         if (DynamicArchive::is_mapped()) {
-          FileMapInfo::dynamic_info()->set_has_platform_or_app_classes(false);
+          FileMapInfo::dynamic_input_archive()->set_has_platform_or_app_classes(false);
         }
       }
     }

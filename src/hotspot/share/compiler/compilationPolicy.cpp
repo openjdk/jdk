@@ -146,15 +146,20 @@ void CompilationPolicy::replay_training_at_init_impl(InstanceKlass* klass, JavaT
       ktd->notice_fully_initialized(); // sets klass->has_init_deps_processed bit
       assert(klass->has_init_deps_processed(), "");
       if (AOTCompileEagerly) {
+        GrowableArray<MethodTrainingData*> mtds;
         ktd->iterate_comp_deps([&](CompileTrainingData* ctd) {
           if (ctd->init_deps_left_acquire() == 0) {
             MethodTrainingData* mtd = ctd->method();
             if (mtd->has_holder()) {
-              const methodHandle mh(current, const_cast<Method*>(mtd->holder()));
-              CompilationPolicy::maybe_compile_early(mh, current);
+              mtds.push(mtd);
             }
           }
         });
+       for (int i = 0; i < mtds.length(); i++) {
+          MethodTrainingData* mtd = mtds.at(i);
+          const methodHandle mh(current, const_cast<Method*>(mtd->holder()));
+          CompilationPolicy::maybe_compile_early(mh, current);
+        }
       }
     }
   }

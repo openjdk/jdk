@@ -142,6 +142,13 @@ public:
   static bool is_dumping_preimage_static_archive()           NOT_CDS_RETURN_(false);
   static bool is_dumping_final_static_archive()              NOT_CDS_RETURN_(false);
 
+  // New names:
+  static bool is_dumping_aot_configuration() { return is_dumping_preimage_static_archive(); }
+  static bool is_dumping_aot_cache()         { return is_dumping_final_static_archive(); }
+
+  // Iterative training
+  static bool is_redumping_aot_configuration() { return is_dumping_aot_configuration() && is_using_archive(); }
+
   // dynamic_archive
   static bool is_dumping_dynamic_archive()                   { return CDS_ONLY(_is_dumping_dynamic_archive) NOT_CDS(false); }
   static void enable_dumping_dynamic_archive(const char* output_path) NOT_CDS_RETURN;
@@ -183,6 +190,7 @@ public:
 
   static bool are_vm_options_incompatible_with_dumping_heap() NOT_CDS_JAVA_HEAP_RETURN_(true);
   static void log_reasons_for_not_dumping_heap();
+  static bool can_allocate_scratch_oops()                     NOT_CDS_JAVA_HEAP_RETURN_(false);
 
   static void disable_heap_dumping()                         { CDS_ONLY(_disable_heap_dumping = true); }
   static bool is_dumping_heap()                              NOT_CDS_JAVA_HEAP_RETURN_(false);

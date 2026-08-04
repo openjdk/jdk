@@ -1266,7 +1266,9 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
         "Restored %s archived mirror " PTR_FORMAT, k->external_name(), p2i(mirror()));
   }
 
-  if (CDSConfig::is_dumping_heap() && (!k->is_refined_objArray_klass())) {
+  if (CDSConfig::is_dumping_heap() && (!k->is_refined_objArray_klass()) && CDSConfig::can_allocate_scratch_oops()) {
+    // TODO: comment -- we can create scratch mirrors after GC is ready, or
+    // else it will be created in AOTLinkedClassBulkLoader::link_classes_impl
     create_scratch_mirror(k, CHECK_(false));
   }
 

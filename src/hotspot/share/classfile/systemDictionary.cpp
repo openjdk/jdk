@@ -891,7 +891,7 @@ InstanceKlass* SystemDictionary::resolve_class_from_stream(
  InstanceKlass* k = nullptr;
 
 #if INCLUDE_CDS
-  if (!CDSConfig::is_dumping_static_archive()) {
+  if (!CDSConfig::is_dumping_static_archive() || CDSConfig::is_redumping_aot_configuration()) {
     k = SystemDictionaryShared::lookup_from_stream(class_name,
                                                    class_loader,
                                                    cl_info.protection_domain(),
@@ -1284,7 +1284,7 @@ void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData
   // notify a class loaded from shared object
   ClassLoadingService::notify_class_loaded(ik, true /* shared class */);
 
-  if (CDSConfig::is_dumping_final_static_archive()) {
+  if (CDSConfig::is_dumping_final_static_archive() || CDSConfig::is_redumping_aot_configuration()) {
     SystemDictionaryShared::init_dumptime_info_from_preimage(ik);
   }
 }

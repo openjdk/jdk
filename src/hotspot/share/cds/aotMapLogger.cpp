@@ -44,6 +44,7 @@
 #include "oops/trainingData.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/globals_extension.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "utilities/growableArray.hpp"
 
 bool AOTMapLogger::_is_logging_at_bootstrap;
@@ -77,7 +78,7 @@ public:
 }; // AOTMapLogger::RequestedMetadataAddr
 
 void AOTMapLogger::ergo_initialize() {
-  if (!CDSConfig::is_dumping_archive() && CDSConfig::is_using_archive() && log_is_enabled(Info, aot, map)) {
+  if (CDSConfig::is_using_archive() && log_is_enabled(Info, aot, map)) {
     _is_logging_at_bootstrap = true;
     if (FLAG_IS_DEFAULT(ArchiveRelocationMode)) {
       FLAG_SET_ERGO(ArchiveRelocationMode, 0);
@@ -146,6 +147,7 @@ public:
 }; // AOTMapLogger::RuntimeGatherArchivedMetaspaceObjs
 
 void AOTMapLogger::runtime_log(FileMapInfo* static_mapinfo, FileMapInfo* dynamic_mapinfo) {
+  NoSafepointVerifier nsv;
   _is_runtime_logging = true;
   _requested_to_mapped_metadata_delta = static_mapinfo->relocation_delta();
 
@@ -168,6 +170,9 @@ void AOTMapLogger::runtime_log(FileMapInfo* static_mapinfo, FileMapInfo* dynamic
     for (int i = 0; i < klasses.length(); i++) {
       gatherer.push(klasses.adr_at(i));
     }
+
+    TrainingData::runtime_iterate_roots(&gatherer);
+
     gatherer.finish();
   }
 
@@ -175,6 +180,9 @@ void AOTMapLogger::runtime_log(FileMapInfo* static_mapinfo, FileMapInfo* dynamic
   if (dynamic_mapinfo != nullptr) {
     runtime_log(dynamic_mapinfo, gatherer.objs());
   }
+
+  _is_runtime_logging = false;
+  _is_logging_at_bootstrap = false;
 }
 
 void AOTMapLogger::runtime_log(FileMapInfo* mapinfo, GrowableArrayCHeap<ArchivedObjInfo, mtClass>* objs) {
@@ -412,6 +420,15 @@ void AOTMapLogger::log_metaspace_objects_impl(address region_base, address regio
   }
 }
 
+template <typename FUNC> void AOTMapLogger::log_metaspace_obj_details(FUNC func) {
+  if (_is_runtime_logging) {
+    LogStreamHandle(Trace, aot, map) trace_st;
+    if (trace_st.is_enabled()) {
+      func(&trace_st);
+    }
+  }
+}
+
 void AOTMapLogger::log_constant_pool(ConstantPool* cp, address requested_addr,
                                      const char* type_name, int bytes, Thread* current) {
   ResourceMark rm(current);
@@ -493,6 +510,10 @@ void AOTMapLogger::log_klass_training_data(KlassTrainingData* ktd, address reque
   } else {
     log_debug(aot, map)(_LOG_PREFIX, p2i(requested_addr), type_name, bytes);
   }
+
+  log_metaspace_obj_details([&] (outputStream* st) {
+    ktd->print_on(st);
+  });
 }
 
 void AOTMapLogger::log_method_training_data(MethodTrainingData* mtd, address requested_addr, const char* type_name,
@@ -504,6 +525,10 @@ void AOTMapLogger::log_method_training_data(MethodTrainingData* mtd, address req
   } else {
     log_debug(aot, map)(_LOG_PREFIX, p2i(requested_addr), type_name, bytes);
   }
+
+  log_metaspace_obj_details([&] (outputStream* st) {
+    mtd->print_on(st);
+  });
 }
 
 void AOTMapLogger::log_compile_training_data(CompileTrainingData* ctd, address requested_addr, const char* type_name,
@@ -515,6 +540,10 @@ void AOTMapLogger::log_compile_training_data(CompileTrainingData* ctd, address r
   } else {
     log_debug(aot, map)(_LOG_PREFIX, p2i(requested_addr), type_name, bytes);
   }
+
+  log_metaspace_obj_details([&] (outputStream* st) {
+    ctd->print_on(st);
+  });
 }
 #undef _LOG_PREFIX
 
