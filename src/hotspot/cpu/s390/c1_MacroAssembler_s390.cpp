@@ -87,7 +87,6 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
                                     bool needs_stack_repair, bool has_scalarized_args,
                                     Label* verified_inline_entry_label) {
   assert(bang_size_in_bytes >= frame_size_in_bytes, "stack bang size incorrect");
-
   generate_stack_overflow_check(bang_size_in_bytes);
 
   build_frame_helper(frame_size_in_bytes, sp_offset_for_orig_pc, 0, has_scalarized_args, needs_stack_repair);

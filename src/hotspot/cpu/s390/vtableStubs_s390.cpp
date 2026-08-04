@@ -216,7 +216,6 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index, bool caller_is_c1)
 #endif
 
   address ame_addr = __ pc();
-
   // Must do an explicit check if implicit checks are disabled.
   if (!ImplicitNullChecks) {
     __ compare64_and_branch(Z_method, (intptr_t) 0, Assembler::bcondEqual, no_such_interface);

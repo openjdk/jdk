@@ -439,7 +439,6 @@ void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet deco
   bool is_array = (decorators & IS_ARRAY) != 0;
   bool on_anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
   bool precise = is_array || on_anonymous;
-
   // Load and record the previous value.
   if (needs_pre_barrier) {
     g1_write_barrier_pre(masm, decorators, &dst, tmp3, val, tmp1, tmp2, false);

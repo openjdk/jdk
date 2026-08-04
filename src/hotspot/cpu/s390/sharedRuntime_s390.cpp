@@ -3167,7 +3167,7 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler* masm,
   entry_address[AdapterBlob::C2I_Unverified] = __ pc();
   entry_address[AdapterBlob::C2I_Unverified_Inline] = __ pc();
 
-  Label skip_fixup; // TODO: can be NearLabel ?
+  Label skip_fixup;
 
   gen_inline_cache_check(masm, skip_fixup);
 

@@ -6388,18 +6388,19 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register temp1
   z_cg(obj, Address(Z_thread, top));
   z_bre(push);
 
-  // Check for monitor (0b10) to avoid a doomed CAS; a locked (0b00) object
-  // will also fail the CAS below and correctly fall to slow.
+  // Check for monitor (0b10).
   z_tmll(mark, markWord::monitor_value);
   branch_optimized(bcondNotAllZero, slow);
 
   { // Try to lock. Transition lock bits 0b01 => 0b00
-    static_assert((uint32_t)markWord::inline_type_bit_in_place <= 0x7FFFFFFF,
-                  "inline_type_bit_in_place must fit in low 32 bits for z_nilf");
     const Register locked_obj = top;
     z_oill(mark, markWord::unlocked_value);
-    // Mask inline_type bit so CAS fails (-> slow) if object is an inline type.
-    z_nilf(mark, ~((uint32_t)markWord::inline_type_bit_in_place));
+    if (Arguments::is_valhalla_enabled()) {
+      static_assert((uint32_t)markWord::inline_type_bit_in_place <= 0x7FFFFFFF,
+                     "inline_type_bit_in_place must fit in low 32 bits for z_nilf");
+      // Mask inline_type bit so CAS fails (-> slow) if object is an inline type.
+      z_nilf(mark, ~((uint32_t)markWord::inline_type_bit_in_place));
+    }
     z_lgr(locked_obj, mark);
     // Clear lock-bits from locked_obj (locked state)
     z_xilf(locked_obj, markWord::unlocked_value);
@@ -6555,12 +6556,14 @@ void MacroAssembler::compiler_fast_lock_object(Register obj, Register box, Regis
 
     { // Try to lock. Transition lock bits 0b01 => 0b00
       assert(mark_offset == 0, "required to avoid a lea");
-      static_assert((uint32_t)markWord::inline_type_bit_in_place <= 0x7FFFFFFF,
-                    "inline_type_bit_in_place must fit in low 32 bits for z_nilf");
       const Register locked_obj = top;
       z_oill(mark, markWord::unlocked_value);
-      // Mask inline_type bit so CAS fails (-> slow) if object is an inline type.
-      z_nilf(mark, ~((uint32_t)markWord::inline_type_bit_in_place));
+      if (Arguments::is_valhalla_enabled()) {
+        static_assert((uint32_t)markWord::inline_type_bit_in_place <= 0x7FFFFFFF,
+                      "inline_type_bit_in_place must fit in low 32 bits for z_nilf");
+        // Mask inline_type bit so CAS fails (-> slow) if object is an inline type.
+        z_nilf(mark, ~((uint32_t)markWord::inline_type_bit_in_place));
+      }
       z_lgr(locked_obj, mark);
       // Clear lock-bits from locked_obj (locked state)
       z_xilf(locked_obj, markWord::unlocked_value);
@@ -6640,21 +6643,22 @@ void MacroAssembler::compiler_fast_lock_object(Register obj, Register box, Regis
     NearLabel monitor_locked;
     // lock the monitor
 
-    const Register expected       = tmp2; // holds 0 (expected owner) before CAS; filled with actual owner on CAS failure
+    const Register zero           = tmp2;
 
     const ByteSize monitor_tag = in_ByteSize(UseObjectMonitorTable ? 0 : checked_cast<int>(markWord::monitor_value));
     const Address owner_address(tmp1_monitor, ObjectMonitor::owner_offset() - monitor_tag);
     const Address recursions_address(tmp1_monitor, ObjectMonitor::recursions_offset() - monitor_tag);
 
     // Try to CAS owner (no owner => current thread's _monitor_owner_id).
-    // On failure, z_csg loads the actual owner into expected.
-    z_lghi(expected, 0);
+    // If csg succeeds then CR=EQ, otherwise, register zero is filled
+    // with the current owner.
+    z_lghi(zero, 0);
     z_lg(Z_R0_scratch, Address(Z_thread, JavaThread::monitor_owner_id_offset()));
-    z_csg(expected, Z_R0_scratch, owner_address);
+    z_csg(zero, Z_R0_scratch, owner_address);
     z_bre(monitor_locked);
 
-    // Check if recursive: expected now holds the actual owner after failed CAS.
-    z_cgr(Z_R0_scratch, expected);
+    // Check if recursive.
+    z_cgr(Z_R0_scratch, zero); // zero contains the owner from z_csg instruction
     z_brne(slow_path);
 
     // Recursive
@@ -6665,7 +6669,7 @@ void MacroAssembler::compiler_fast_lock_object(Register obj, Register box, Regis
       // Cache the monitor for unlock.
       z_stg(tmp1_monitor, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
     }
-    // z_agsi/z_csg above clobber CC; restore to EQ for the locked label contract.
+    // set the CC now
     z_cgr(obj, obj);
   }
   BLOCK_COMMENT("} handle_inflated_monitor_locking");
