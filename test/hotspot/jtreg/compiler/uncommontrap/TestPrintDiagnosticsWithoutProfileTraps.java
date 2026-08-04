@@ -28,7 +28,7 @@
  *          -XX:-TieredCompilation -Xcomp crash
  * @modules java.base/jdk.internal.misc
  * @requires vm.debug
- * @run main/othervm -XX:+TraceDeoptimization -XX:-ProfileTraps
+ * @run main/othervm -XX:-DisplayVMOutput -XX:+TraceDeoptimization -XX:-ProfileTraps
  *                   -XX:-TieredCompilation -Xcomp -Xbatch
  *                   -XX:CompileCommand=compileonly,compiler.uncommontrap.TestPrintDiagnosticsWithoutProfileTraps::test
  *                   compiler.uncommontrap.TestPrintDiagnosticsWithoutProfileTraps

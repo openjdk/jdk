@@ -32,11 +32,18 @@
 #include "metaprogramming/enableIf.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/compressedKlass.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "runtime/signature.hpp"
+
+
+class ciInlineKlass;
 
 class OopMap;
+struct GtestFriendToMacroAssembler;
 
 // MacroAssembler extends Assembler by frequently used macros.
 //
@@ -45,6 +52,7 @@ class OopMap;
 
 class MacroAssembler: public Assembler {
   friend class LIR_Assembler;
+  friend struct GtestFriendToMacroAssembler;
 
  public:
   using Assembler::mov;
@@ -90,28 +98,31 @@ class MacroAssembler: public Assembler {
 
   void call_VM_helper(Register oop_result, address entry_point, int number_of_arguments, bool check_exceptions = true);
 
+ private:
+
   enum KlassDecodeMode {
     KlassDecodeNone,
     KlassDecodeZero,
     KlassDecodeXor,
-    KlassDecodeMovk
+    KlassDecodeMovk,
+    KlassDecodeFallback
   };
 
-  // Calculate decoding mode based on given parameters, used for checking then ultimately setting.
-  static KlassDecodeMode klass_decode_mode(address base, int shift, const size_t range);
-
- private:
   static KlassDecodeMode _klass_decode_mode;
 
   // Returns above setting with asserts
   static KlassDecodeMode klass_decode_mode();
 
- public:
-  // Checks the decode mode and returns false if not compatible with preferred decoding mode.
-  static bool check_klass_decode_mode(address base, int shift, const size_t range);
+  // Calculate decoding mode based on given parameters, used for checking then ultimately setting.
+  static KlassDecodeMode klass_decode_mode(address base, int shift, const size_t range);
 
-  // Sets the decode mode and returns false if cannot be set.
-  static bool set_klass_decode_mode(address base, int shift, const size_t range);
+  void emit_encode_klass_not_null(Register dst, Register src, Register tmp,
+                                  address base, int shift, KlassDecodeMode decode_mode);
+  void emit_decode_klass_not_null(Register dst, Register src, Register tmp,
+                                  address base, int shift, KlassDecodeMode decode_mode);
+ public:
+  // Determines the decode mode best suited for the given encoding parameters.
+  static void initialize_klass_decode_mode(address base, int shift, const size_t range);
 
  public:
   MacroAssembler(CodeBuffer* code) : Assembler(code) {}
@@ -185,7 +196,8 @@ class MacroAssembler: public Assembler {
   void strw(Register Rx, const Address &adr);
 
   // Frame creation and destruction shared between JITs.
-  void build_frame(int framesize);
+  DEBUG_ONLY(void build_frame(int framesize);)
+  void build_frame(int framesize DEBUG_ONLY(COMMA bool zap_rfp_lr_spills));
   void remove_frame(int framesize);
 
   virtual void _call_Unimplemented(address call_site) {
@@ -307,19 +319,27 @@ class MacroAssembler: public Assembler {
   }
 
   inline void lslw(Register Rd, Register Rn, unsigned imm) {
-    ubfmw(Rd, Rn, ((32 - imm) & 31), (31 - imm));
+    if (imm > 0 || Rd != Rn) {
+      ubfmw(Rd, Rn, ((32 - imm) & 31), (31 - imm));
+    }
   }
 
   inline void lsl(Register Rd, Register Rn, unsigned imm) {
-    ubfm(Rd, Rn, ((64 - imm) & 63), (63 - imm));
+    if (imm > 0 || Rd != Rn) {
+      ubfm(Rd, Rn, ((64 - imm) & 63), (63 - imm));
+    }
   }
 
   inline void lsrw(Register Rd, Register Rn, unsigned imm) {
-    ubfmw(Rd, Rn, imm, 31);
+    if (imm > 0 || Rd != Rn) {
+      ubfmw(Rd, Rn, imm, 31);
+    }
   }
 
   inline void lsr(Register Rd, Register Rn, unsigned imm) {
-    ubfm(Rd, Rn, imm, 63);
+    if (imm > 0 || Rd != Rn) {
+      ubfm(Rd, Rn, imm, 63);
+    }
   }
 
   inline void rorw(Register Rd, Register Rn, unsigned imm) {
@@ -696,6 +716,26 @@ public:
   static bool needs_explicit_null_check(intptr_t offset);
   static bool uses_implicit_null_check(void* address);
 
+  // markWord tests, kills markWord reg
+  void test_markword_is_inline_type(Register markword, Label& is_inline_type);
+
+  // inlineKlass queries, kills temp_reg
+  void test_oop_is_not_inline_type(Register object, Register tmp, Label& not_inline_type, bool can_be_null = true);
+
+  void test_field_is_null_free_inline_type(Register flags, Register temp_reg, Label& is_null_free);
+  void test_field_is_not_null_free_inline_type(Register flags, Register temp_reg, Label& not_null_free);
+  void test_field_is_flat(Register flags, Register temp_reg, Label& is_flat);
+
+  // Check oops for special arrays, i.e. flat arrays and/or null-free arrays
+  void test_oop_prototype_bit(Register oop, Register temp_reg, int32_t test_bit, bool jmp_set, Label& jmp_label);
+  void test_flat_array_oop(Register klass, Register temp_reg, Label& is_flat_array);
+  void test_non_flat_array_oop(Register oop, Register temp_reg, Label&is_non_flat_array);
+  void test_null_free_array_oop(Register oop, Register temp_reg, Label& is_null_free_array);
+  void test_non_null_free_array_oop(Register oop, Register temp_reg, Label&is_non_null_free_array);
+
+  // Check array klass layout helper for flat or null-free arrays...
+  void test_flat_array_layout(Register lh, Label& is_flat_array);
+
   static address target_addr_for_insn(address insn_addr);
 
   // Required platform-specific helpers for Label::patch_instructions.
@@ -922,10 +962,13 @@ public:
   void load_method_holder(Register holder, Register method);
 
   // oop manipulations
+  void load_metadata(Register dst, Register src);
+
   void load_narrow_klass_compact(Register dst, Register src);
-  void load_klass(Register dst, Register src);
-  void store_klass(Register dst, Register src);
-  void cmp_klass(Register obj, Register klass, Register tmp);
+  void load_narrow_klass(Register dst, Register src);
+  void load_klass(Register dst, Register src, Register tmp);
+  void store_klass(Register dst, Register src, Register tmp);
+  void cmp_klass(Register obj, Register klass, Register tmp, Register tmp2);
   void cmp_klasses_from_objects(Register obj1, Register obj2, Register tmp1, Register tmp2);
 
   void resolve_weak_handle(Register result, Register tmp1, Register tmp2);
@@ -937,6 +980,12 @@ public:
 
   void access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register val,
                        Register tmp1, Register tmp2, Register tmp3);
+
+  void flat_field_copy(DecoratorSet decorators, Register src, Register dst, Register inline_layout_info);
+
+  // inline type data payload offsets...
+  void payload_offset(Register inline_klass, Register offset);
+  void payload_address(Register oop, Register data, Register inline_klass);
 
   void load_heap_oop(Register dst, Address src, Register tmp1,
                      Register tmp2, DecoratorSet decorators = 0);
@@ -950,6 +999,8 @@ public:
   // Used for storing null. All other oop constants should be
   // stored using routines that take a jobject.
   void store_heap_oop_null(Address dst);
+
+  void load_prototype_header(Register dst, Register src);
 
   void store_klass_gap(Register dst, Register src);
 
@@ -970,12 +1021,8 @@ public:
 
   void set_narrow_oop(Register dst, jobject obj);
 
-  void decode_klass_not_null_for_aot(Register dst, Register src);
-  void encode_klass_not_null_for_aot(Register dst, Register src);
-  void encode_klass_not_null(Register r);
-  void decode_klass_not_null(Register r);
-  void encode_klass_not_null(Register dst, Register src);
-  void decode_klass_not_null(Register dst, Register src);
+  void encode_klass_not_null(Register dst, Register src, Register tmp);
+  void decode_klass_not_null(Register dst, Register src, Register tmp);
 
   void set_narrow_klass(Register dst, Klass* k);
 
@@ -1000,6 +1047,7 @@ public:
   void java_round_float(Register dst, FloatRegister src, FloatRegister ftmp);
 
   // allocation
+
   void tlab_allocate(
     Register obj,                      // result: pointer to object after successful allocation
     Register var_size_in_bytes,        // object size in bytes if unknown at compile time; invalid otherwise
@@ -1009,6 +1057,8 @@ public:
     Label&   slow_case                 // continuation point if fast allocation fails
   );
   void verify_tlab();
+
+  void inline_layout_info(Register holder_klass, Register index, Register layout_info);
 
   // interface method calling
   void lookup_interface_method(Register recv_klass,
@@ -1239,12 +1289,25 @@ public:
     str(rscratch1, adr);
   }
 
+private:
   // A generic CAS; success or failure is in the EQ flag.
   // Clobbers rscratch1
   void cmpxchg(Register addr, Register expected, Register new_val,
-               enum operand_size size,
-               bool acquire, bool release, bool weak,
-               Register result);
+               enum operand_size size, enum atomic_memory_order order,
+               bool weak, Register result);
+
+public:
+  void cmpxchg(Register addr, Register expected, Register new_val,
+               enum operand_size size, enum atomic_memory_order order,
+               Register result = noreg) {
+    cmpxchg(addr, expected, new_val, size, order, /* weak */ false, result);
+  }
+
+  void cmpxchg_weak(Register addr, Register expected, Register new_val,
+                    enum operand_size size, enum atomic_memory_order order,
+                    Register result = noreg) {
+    cmpxchg(addr, expected, new_val, size, order, /* weak */ true, result);
+  }
 
 #ifdef ASSERT
   // Template short-hand support to clean-up after a failed call to trampoline
@@ -1339,15 +1402,16 @@ public:
   static bool far_branches() {
     return ReservedCodeCacheSize > branch_range;
   }
-
-  // Check if branches to the non nmethod section require a far jump
+  // Check if the static call stub branch needs a far jump.
   static bool codestub_branch_needs_far_jump() {
     if (AOTCodeCache::is_on_for_dump()) {
-      // To calculate far_codestub_branch_size correctly.
+      // To calculate static_call_stub_size correctly.
       return true;
     }
-    return CodeCache::max_distance_to_non_nmethod() > branch_range;
+    return far_branches();
   }
+  // Check if a branch to the given address needs a far jump.
+  static bool target_needs_far_branch(address addr);
 
   // Emit a direct call/jump if the entry address will always be in range,
   // otherwise a far call/jump.
@@ -1359,17 +1423,9 @@ public:
   // In the case of a far call/jump, the entry address is put in the tmp register.
   // The tmp register is invalidated.
   //
-  // Far_jump returns the amount of the emitted code.
   void far_call(Address entry, Register tmp = rscratch1);
+  // Far_jump returns the amount of the emitted code.
   int far_jump(Address entry, Register tmp = rscratch1);
-
-  static int far_codestub_branch_size() {
-    if (codestub_branch_needs_far_jump()) {
-      return 3 * 4;  // adrp, add, br
-    } else {
-      return 4;
-    }
-  }
 
   // Emit the CompiledIC call idiom
   address ic_call(address entry, jint method_index = 0);
@@ -1467,6 +1523,13 @@ public:
 
   void adrp(Register reg1, const Address &dest, uint64_t &byte_offset);
 
+  void verified_entry(Compile* C, int sp_inc);
+
+  // Inline type specific methods
+  #include "asm/macroAssembler_common.hpp"
+
+  void save_stack_increment(int sp_inc, int frame_size);
+
   void tableswitch(Register index, jint lowbound, jint highbound,
                    Label &jumptable, Label &jumptable_end, int stride = 1) {
     adr(rscratch1, jumptable);
@@ -1541,6 +1604,8 @@ public:
   void string_equals(Register a1, Register a2, Register result, Register cnt1);
 
   void fill_words(Register base, Register cnt, Register value);
+  void fill_words(Register base, uint64_t cnt, Register value);
+
   address zero_words(Register base, uint64_t cnt);
   address zero_words(Register ptr, Register cnt);
   void zero_dcache_blocks(Register base, Register cnt);
@@ -1790,6 +1855,8 @@ public:
   SVE_DESTRUCTIVE_BINARY_5(sve_fmul, sve_fsub,  sve_lsl,   sve_lsr,   sve_mul)
   SVE_DESTRUCTIVE_BINARY_5(sve_orr,  sve_smax,  sve_smin,  sve_sqadd, sve_sqsub)
   SVE_DESTRUCTIVE_BINARY_5(sve_sub,  sve_uqadd, sve_uqsub, sve_umax,  sve_umin)
+  SVE_DESTRUCTIVE_BINARY_INS(sve_sdiv);
+  SVE_DESTRUCTIVE_BINARY_INS(sve_udiv);
 
 #undef SVE_DESTRUCTIVE_BINARY_INS
 #undef SVE_DESTRUCTIVE_BINARY_5
