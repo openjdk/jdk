@@ -36,7 +36,7 @@ void MacroAssembler::pd_extend_stack(Register const_method, Register temp1, Regi
   assert_different_registers(r16, temp1, temp2);
   assert_different_registers(r17, temp1, temp2);
 
-  stp(r15, lr, Address(pre(sp, -2 * wordSize)));
+  push(RegSet::of(r15, lr), sp);
   ldrh(temp1, Address(const_method, ConstMethod::max_stack_offset()));
   add(temp1, temp1, MAX2(3, Method::extra_stack_entries()));
 
@@ -52,5 +52,5 @@ void MacroAssembler::pd_extend_stack(Register const_method, Register temp1, Regi
 
   mov(r16, temp1);
   mov(r17, temp2);
-  ldp(r15, lr, Address(post(sp, 2 * wordSize)));
+  pop(RegSet::of(r15, lr), sp);
 }
