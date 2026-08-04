@@ -124,7 +124,6 @@ public class Http2TestServerConnection {
     // the stream id that was sent in a GOAWAY frame. -1 implies no GOAWAY frame was sent.
     private final AtomicInteger goAwayRequestStreamId = new AtomicInteger(-1);
     private volatile Thread writeLoopThread;
-    private volatile Thread readLoopThread;
 
     final static ByteBuffer EMPTY_BUFFER = ByteBuffer.allocate(0);
     final Random random;
@@ -507,11 +506,14 @@ public class Http2TestServerConnection {
             nextstream = 3;
         }
 
-        this.readLoopThread = new Thread(this::readLoop, "readLoop");
-        this.readLoopThread.start();
+        final Thread readLoopThread = new Thread(this::readLoop, "readLoop");
+        readLoopThread.setDaemon(true);
+        readLoopThread.start();
 
-        this.writeLoopThread = new Thread(this::writeLoop, "writeLoop");
-        this.writeLoopThread.start();
+        final Thread writeLoopThread = new Thread(this::writeLoop, "writeLoop");
+        writeLoopThread.setDaemon(true);
+        writeLoopThread.start();
+        this.writeLoopThread = writeLoopThread;
     }
 
     private void writeFrame(Http2Frame frame) throws IOException {
