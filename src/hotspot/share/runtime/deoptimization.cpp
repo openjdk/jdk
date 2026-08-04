@@ -351,16 +351,15 @@ static void log_objects(JavaThread* current, JavaThread* deoptee_thread, frame* 
   }
 }
 
-static bool rematerialize_objects(JavaThread* thread, int exec_mode, nmethod* compiled_method,
+static bool rematerialize_objects(JavaThread* current, int exec_mode, nmethod* compiled_method,
                                   frame& deoptee, RegisterMap& map, GrowableArray<compiledVFrame*>* chunk,
                                   bool& deoptimized_objects) {
   bool realloc_failures = false;
   assert (chunk->at(0)->scope() != nullptr,"expect only compiled java frames");
-  assert(thread == JavaThread::current(), "should be current");
-  JavaThread* current = thread;
+  assert(current == JavaThread::current(), "should be current");
 
   JavaThread* deoptee_thread = chunk->at(0)->thread();
-  assert(exec_mode == Deoptimization::Unpack_none || (deoptee_thread == thread),
+  assert(exec_mode == Deoptimization::Unpack_none || (deoptee_thread == current),
          "a frame can only be deoptimized by the owner thread");
 
   GrowableArray<ScopeValue*>* objects = chunk->at(0)->scope()->objects_to_rematerialize(deoptee, map);
@@ -375,7 +374,7 @@ static bool rematerialize_objects(JavaThread* thread, int exec_mode, nmethod* co
   // If the previous frame was popped or if we are dispatching an exception,
   // we don't have an oop result.
   ScopeDesc* scope = chunk->at(0)->scope();
-  bool save_oop_result = scope->return_oop() && !thread->popframe_forcing_deopt_reexecution() && (exec_mode == Deoptimization::Unpack_deopt);
+  bool save_oop_result = scope->return_oop() && !current->popframe_forcing_deopt_reexecution() && (exec_mode == Deoptimization::Unpack_deopt);
   // In case of the return of multiple values, we must take care
   // of all oop return values.
   GrowableArray<Handle> return_oops;
@@ -392,20 +391,20 @@ static bool rematerialize_objects(JavaThread* thread, int exec_mode, nmethod* co
     // call which returns oop we need to save it since it is not in oopmap.
     oop result = deoptee.saved_oop_result(&map);
     assert(oopDesc::is_oop_or_null(result), "must be oop");
-    return_oops.push(Handle(thread, result));
+    return_oops.push(Handle(current, result));
     assert(Universe::heap()->is_in_or_null(result), "must be heap pointer");
-    log_debug(deoptimization)("SAVED OOP RESULT " INTPTR_FORMAT " in thread " INTPTR_FORMAT, p2i(result), p2i(thread));
+    log_debug(deoptimization)("SAVED OOP RESULT " INTPTR_FORMAT " in thread " INTPTR_FORMAT, p2i(result), p2i(current));
   }
   if (objects != nullptr || vk != nullptr) {
     if (exec_mode == Deoptimization::Unpack_none) {
-      assert(thread->thread_state() == _thread_in_vm, "assumption");
-      JavaThread* THREAD = thread; // For exception macros.
+      assert(current->thread_state() == _thread_in_vm, "assumption");
+      JavaThread* THREAD = current; // For exception macros.
       // Clear pending OOM if reallocation fails and return true indicating allocation failure
       if (vk != nullptr) {
         realloc_failures = Deoptimization::realloc_inline_type_result(vk, map, return_oops, CHECK_AND_CLEAR_(true));
       }
       if (objects != nullptr) {
-        realloc_failures = realloc_failures || Deoptimization::realloc_objects(thread, &deoptee, &map, objects, CHECK_AND_CLEAR_(true));
+        realloc_failures = realloc_failures || Deoptimization::realloc_objects(current, &deoptee, &map, objects, CHECK_AND_CLEAR_(true));
         guarantee(compiled_method != nullptr, "deopt must be associated with an nmethod");
         Deoptimization::reassign_fields(&deoptee, &map, objects, realloc_failures, CHECK_AND_CLEAR_(true));
       }
@@ -416,7 +415,7 @@ static bool rematerialize_objects(JavaThread* thread, int exec_mode, nmethod* co
         realloc_failures = Deoptimization::realloc_inline_type_result(vk, map, return_oops, THREAD);
       }
       if (objects != nullptr) {
-        realloc_failures = realloc_failures || Deoptimization::realloc_objects(thread, &deoptee, &map, objects, THREAD);
+        realloc_failures = realloc_failures || Deoptimization::realloc_objects(current, &deoptee, &map, objects, THREAD);
         guarantee(compiled_method != nullptr, "deopt must be associated with an nmethod");
         Deoptimization::reassign_fields(&deoptee, &map, objects, realloc_failures, THREAD);
       }
@@ -434,7 +433,7 @@ static bool rematerialize_objects(JavaThread* thread, int exec_mode, nmethod* co
   return realloc_failures;
 }
 
-static void log_eliminated_monitors(JavaThread* thread, JavaThread* deoptee_thread,
+static void log_eliminated_monitors(JavaThread* current, JavaThread* deoptee_thread,
                                     GrowableArray<MonitorInfo*>* monitors,
                                     int exec_mode,
                                     bool& first) {
@@ -442,14 +441,14 @@ static void log_eliminated_monitors(JavaThread* thread, JavaThread* deoptee_thre
   LogMessage(deoptimization) msg;
   NonInterleavingLogStream ls(LogLevel::Debug, msg);
   if (ls.is_enabled()) {
-    ResourceMark rm(thread);
+    ResourceMark rm(current);
 
     for (int j = 0; j < monitors->length(); j++) {
       MonitorInfo* mi = monitors->at(j);
       if (mi->eliminated()) {
         if (first) {
           first = false;
-          ls.print_cr("RELOCK OBJECTS in thread " INTPTR_FORMAT, p2i(thread));
+          ls.print_cr("RELOCK OBJECTS in thread " INTPTR_FORMAT, p2i(current));
         }
         if (exec_mode == Deoptimization::Unpack_none) {
           ObjectMonitor* monitor = deoptee_thread->current_waiting_monitor();
