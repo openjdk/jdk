@@ -142,5 +142,6 @@ class UtilTest {
     void testRawBytecodeHelperCodeRangeCheck() {
         assertThrows(IndexOutOfBoundsException.class, () -> RawBytecodeHelper.of(new byte[0], 1));
         assertThrows(IndexOutOfBoundsException.class, () -> RawBytecodeHelper.of(new byte[1], Integer.MAX_VALUE));
+        assertThrows(IndexOutOfBoundsException.class, () -> RawBytecodeHelper.of(new byte[16], -42));
     }
 }
