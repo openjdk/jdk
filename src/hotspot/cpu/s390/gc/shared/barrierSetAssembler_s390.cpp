@@ -197,6 +197,10 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
   __ block_comment("} nmethod_entry_barrier (nmethod_entry_barrier)");
 }
 
+void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register oop, const char* msg) {
+  __ verify_oop(oop, msg);
+}
+
 #ifdef COMPILER2
 
 OptoReg::Name BarrierSetAssembler::refine_register(const Node* node, OptoReg::Name opto_reg) const {

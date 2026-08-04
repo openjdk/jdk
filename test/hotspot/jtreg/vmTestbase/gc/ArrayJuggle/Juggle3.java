@@ -24,6 +24,10 @@
 /*
  * VM Testbase keywords: [gc, stress, stressopt, nonconcurrent]
  */
+/* @test id=BooleanObjArr_medium   @key stress randomness @library /vmTestbase /test/lib @run main/othervm -XX:+HeapDumpOnOutOfMemoryError -Xlog:gc=debug:gc.log gc.ArrayJuggle.Juggle3 -gp BooleanObjArr        -ms medium */
+/* @test id=ByteObjArr_high        @key stress randomness @library /vmTestbase /test/lib @run main/othervm -XX:+HeapDumpOnOutOfMemoryError -Xlog:gc=debug:gc.log gc.ArrayJuggle.Juggle3 -gp ByteObjArr           -ms high */
+/* @test id=IntegerObjArr_low      @key stress randomness @library /vmTestbase /test/lib @run main/othervm -XX:+HeapDumpOnOutOfMemoryError -Xlog:gc=debug:gc.log gc.ArrayJuggle.Juggle3 -gp IntegerObjArr        -ms low */
+/* @test id=h_IntegerObjArr_low    @key stress randomness @library /vmTestbase /test/lib @run main/othervm -XX:+HeapDumpOnOutOfMemoryError -Xlog:gc=debug:gc.log gc.ArrayJuggle.Juggle3 -gp  hashed(IntegerObjArr) -ms low */
 
 /* @test id=booleanArr_medium  @key stress randomness @library /vmTestbase /test/lib @run main/othervm -XX:+HeapDumpOnOutOfMemoryError -Xlog:gc=debug:gc.log gc.ArrayJuggle.Juggle3 -gp booleanArr        -ms medium */
 /* @test id=floatArr_high      @key stress randomness @library /vmTestbase /test/lib @run main/othervm -XX:+HeapDumpOnOutOfMemoryError -Xlog:gc=debug:gc.log gc.ArrayJuggle.Juggle3 -gp floatArr          -ms high */
