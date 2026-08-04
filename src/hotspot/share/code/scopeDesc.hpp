@@ -110,7 +110,8 @@ class ScopeDesc : public ResourceObj {
   bool          _has_ea_local_in_scope;       // One or more NoEscape or ArgEscape objects exist in
                                               // any of the scopes at compiled pc.
   bool          _arg_escape;                  // Compiled Java call in youngest scope passes ArgEscape
-  // Decoding offsets
+
+ // Decoding offsets
   int _decode_offset;
   int _sender_decode_offset;
   int _locals_decode_offset;

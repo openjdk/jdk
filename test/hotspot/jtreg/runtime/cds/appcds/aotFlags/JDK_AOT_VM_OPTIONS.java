@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ public class JDK_AOT_VM_OPTIONS {
         // The "-Xshare:off" below should be treated as part of a property value and not
         // a VM option by itself
         pb.environment().put("JDK_AOT_VM_OPTIONS", "-Dsome.option='foo -Xshare:off ' -Xmx512m -XX:-AOTClassLinking");
-        out = CDSTestUtils.executeAndLog(pb, "ontstep-train");
+        out = CDSTestUtils.executeAndLog(pb, "onestep-train");
         out.shouldContain("Hello World");
         out.shouldContain("AOTCache creation is complete: hello.aot");
         out.shouldContain("Picked up JDK_AOT_VM_OPTIONS: -Dsome.option='foo -Xshare:off '");

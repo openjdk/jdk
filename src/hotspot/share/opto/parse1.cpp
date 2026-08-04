@@ -1105,7 +1105,7 @@ void Parse::do_exits() {
   // such unusual early publications.  But no barrier is needed on
   // exceptional returns, since they cannot publish normally.
   //
-  if ((method()->is_object_constructor() || method()->is_class_initializer()) &&
+  if (method()->is_object_constructor() &&
        (wrote_non_strict_final() || wrote_stable() ||
          (AlwaysSafeConstructors && wrote_fields()) ||
          (support_IRIW_for_not_multiple_copy_atomic_cpu && wrote_volatile()))) {
