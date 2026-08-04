@@ -663,7 +663,7 @@ public interface List<E> extends SequencedCollection<E> {
      *         is not supported by this list
      * @throws IndexOutOfBoundsException if the index is out of range
      *         ({@code index < 0 || index >= size()})
-     * @since 27
+     * @since 28
      */
     default E removeAt(int index) {
         return remove(index);
