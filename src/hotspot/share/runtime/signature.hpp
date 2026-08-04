@@ -28,7 +28,10 @@
 
 #include "classfile/symbolTable.hpp"
 #include "memory/allocation.hpp"
+#include "memory/metaspaceClosureType.hpp"
 #include "oops/method.hpp"
+
+class MetaspaceClosure;
 
 // Static routines and parsing loops for processing field and method
 // descriptors.  In the HotSpot sources we call them "signatures".
@@ -594,6 +597,11 @@ class SigEntry {
   static bool skip_value_delimiters(const GrowableArray<SigEntry>* sig, int i);
   static int fill_sig_bt(const GrowableArray<SigEntry>* sig, BasicType* sig_bt);
   static TempNewSymbol create_symbol(const GrowableArray<SigEntry>* sig);
+
+  void metaspace_pointers_do(MetaspaceClosure* it);
+  int size_in_heapwords() const { return (int)heap_word_size(sizeof(SigEntry)); }
+  MetaspaceClosureType type() const { return MetaspaceClosureType::SigEntryType; }
+  static bool is_read_only_by_default() { return true; }
 
   void print_on(outputStream* st) const;
 };
