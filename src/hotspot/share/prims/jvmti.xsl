@@ -73,6 +73,15 @@
             padding: 3px;
             text-align: left;
           }
+          /* Same as sup.preview-mark in the Javadoc stylesheet. */
+          sup.preview-mark {
+            font-family: 'DejaVu Sans Mono', monospace;
+            font-weight: normal;
+            font-size: 8px;
+            background-color: #f7f7f7;
+            padding: 1px;
+            border-radius: 2px;
+          }
           .toc { }
           span.bold { font-weight: bold; }
           div.divTable { display: table; }
@@ -1003,7 +1012,7 @@ typedef struct {
     <xsl:attribute name="href">
       <xsl:value-of select="@id"/>
     </xsl:attribute>
-    <xsl:value-of select="."/>
+    <xsl:apply-templates/>
   </a>
 </xsl:template>
 
@@ -2011,6 +2020,13 @@ typedef struct {
 
 <xsl:template match="space">
   <xsl:text>&#032;</xsl:text>
+</xsl:template>
+
+<xsl:template match="sup">
+  <sup>
+    <xsl:copy-of select="@*"/>
+    <xsl:apply-templates/>
+  </sup>
 </xsl:template>
 
 <xsl:template match="jvmti">
