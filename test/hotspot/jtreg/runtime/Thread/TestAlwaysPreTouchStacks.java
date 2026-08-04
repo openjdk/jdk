@@ -86,10 +86,8 @@ public class TestAlwaysPreTouchStacks {
               "-XX:+UnlockDiagnosticVMOptions",
               "-Xmx100M",
               "-XX:NativeMemoryTracking=summary", "-XX:+PrintNMTStatistics");
-      // Set the tested flag explicitly for both children. External VM options are
-      // prepended by createTestJavaProcessBuilder, so an externally supplied
-      // -XX:+AlwaysPreTouchStacks would otherwise also apply to the control run and
-      // both runs would commit the same amount of stack (JDK-8346476).
+      // Set the tested flag explicitly for both children, so it can't be affected
+      // by externally supplied VM options.
       vmArgs.add(preTouch ? "-XX:+AlwaysPreTouchStacks" : "-XX:-AlwaysPreTouchStacks");
       if (System.getProperty("os.name").contains("Linux")) {
           vmArgs.add("-XX:-UseMadvPopulateWrite");
