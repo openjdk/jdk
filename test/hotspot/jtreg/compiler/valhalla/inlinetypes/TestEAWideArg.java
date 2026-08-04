@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @bug 8388848
  * @summary Test EA with wide arguments and mixed scalarized calling convention.
  * @enablePreview
  * @library /test/lib /
