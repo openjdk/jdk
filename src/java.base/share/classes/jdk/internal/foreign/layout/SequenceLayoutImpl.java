@@ -30,6 +30,7 @@ import jdk.internal.foreign.Utils;
 
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.SequenceLayout;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -130,7 +131,11 @@ public final class SequenceLayoutImpl extends AbstractLayout<SequenceLayoutImpl>
             } else if (elementCounts[i] <= 0) {
                 throw new IllegalArgumentException("Invalid element count: " + elementCounts[i]);
             } else {
-                actualCount = elementCounts[i] * actualCount;
+                try {
+                    actualCount = Math.multiplyExact(elementCounts[i], actualCount);
+                } catch (ArithmeticException e) {
+                    throw new IllegalArgumentException("Counts overflow: " + Arrays.toString(elementCounts));
+                }
             }
         }
 

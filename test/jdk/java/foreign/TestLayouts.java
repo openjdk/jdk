@@ -215,6 +215,14 @@ public class TestLayouts {
                 () -> MemoryLayout.sequenceLayout(Long.MAX_VALUE/3, JAVA_LONG));
         assertThrows(IllegalArgumentException.class, // flip back to positive
                 () -> MemoryLayout.sequenceLayout(0, JAVA_LONG).withElementCount(Long.MAX_VALUE));
+        assertThrows(IllegalArgumentException.class, () -> {
+            SequenceLayout oneByte = MemoryLayout.sequenceLayout(1, ValueLayout.JAVA_BYTE);
+            // 2^32
+            long n = 1L << 32;
+            // n * n -> overflow -> zero
+            oneByte.reshape(-1, n, n);
+        });
+
     }
 
     @Test
