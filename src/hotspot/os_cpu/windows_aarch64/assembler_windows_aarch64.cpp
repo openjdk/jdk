@@ -30,7 +30,7 @@
 // It clobbers r16 and r17 but does not modify sp or any other registers.
 extern "C" void __chkstk();
 
-void MacroAssembler::pd_extend_stack_guard_page_for_method_max_stack(Register const_method, Register temp1, Register temp2) {
+void MacroAssembler::pd_extend_stack(Register const_method, Register temp1, Register temp2) {
   assert_different_registers(const_method, temp1, temp2);
   assert_different_registers(r15, temp1, temp2);
   assert_different_registers(r16, temp1, temp2);
