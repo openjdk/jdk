@@ -30,6 +30,10 @@
 #include "asm/assembler.hpp"
 #include "oops/accessDecorators.hpp"
 
+class ciInlineKlass;
+class SigEntry;
+class VMRegPair;
+
 #define MODERN_IFUN(name)  ((void (MacroAssembler::*)(Register, int64_t, Register, Register))&MacroAssembler::name)
 #define CLASSIC_IFUN(name) ((void (MacroAssembler::*)(Register, int64_t, Register, Register))&MacroAssembler::name)
 #define MODERN_FFUN(name)  ((void (MacroAssembler::*)(FloatRegister, int64_t, Register, Register))&MacroAssembler::name)
@@ -1123,6 +1127,9 @@ class MacroAssembler: public Assembler {
   void load_on_condition_imm_64(Register dst, int64_t i2, branch_condition cc);
 
   void profile_receiver_type(Register recv, Register mdp, int mdp_offset, Register tmp1);
+
+  // Inline type specific methods
+  #include "asm/macroAssembler_common.hpp"
 };
 
 #ifdef ASSERT

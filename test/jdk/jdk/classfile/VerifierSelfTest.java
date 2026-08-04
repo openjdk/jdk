@@ -26,6 +26,7 @@
  * @summary Testing ClassFile Verifier.
  * @bug 8333812 8361526
  * @run junit VerifierSelfTest
+ * @run junit/othervm --enable-preview VerifierSelfTest
  */
 import java.io.IOException;
 import java.lang.classfile.constantpool.PoolEntry;
@@ -216,7 +217,6 @@ class VerifierSelfTest {
                                 cob.iconst_0()
                                    .ifThen(CodeBuilder::nop)
                                    .return_()
-                                   .with(new CloneAttribute(StackMapTableAttribute.of(List.of())))
                                    .with(new CloneAttribute(CharacterRangeTableAttribute.of(List.of())))
                                    .with(new CloneAttribute(LineNumberTableAttribute.of(List.of())))
                                    .with(new CloneAttribute(LocalVariableTableAttribute.of(List.of())))
@@ -336,12 +336,10 @@ class VerifierSelfTest {
                 Wrong Signature attribute length in method ParserVerificationTestClass::m()
                 Wrong Synthetic attribute length in method ParserVerificationTestClass::m()
                 Code attribute in native or abstract method ParserVerificationTestClass::m()
-                Wrong StackMapTable attribute length in Code attribute for method ParserVerificationTestClass::m()
                 Wrong CharacterRangeTable attribute length in Code attribute for method ParserVerificationTestClass::m()
                 Wrong LineNumberTable attribute length in Code attribute for method ParserVerificationTestClass::m()
                 Wrong LocalVariableTable attribute length in Code attribute for method ParserVerificationTestClass::m()
                 Wrong LocalVariableTypeTable attribute length in Code attribute for method ParserVerificationTestClass::m()
-                Multiple StackMapTable attributes in Code attribute for method ParserVerificationTestClass::m()
                 Multiple Signature attributes in Record component c of class ParserVerificationTestClass
                 Wrong Signature attribute length in Record component c of class ParserVerificationTestClass
                 Multiple RuntimeVisibleAnnotations attributes in Record component c of class ParserVerificationTestClass

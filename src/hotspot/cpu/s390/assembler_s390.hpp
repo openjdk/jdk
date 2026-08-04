@@ -3280,7 +3280,7 @@ class Assembler : public AbstractAssembler {
     return is_z_nop(* (short *) x);
   }
   static bool is_z_illtrap(address x) {
-    return *(uint16_t*)x == 0u;
+    return *(uint8_t*)x == 0u;
   }
   static bool is_z_br(long x) {
     return is_z_bcr(x) && ((x & 0x00f0) == 0x00f0);

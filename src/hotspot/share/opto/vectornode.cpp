@@ -96,6 +96,15 @@ int VectorNode::opcode(int sopc, BasicType bt) {
     return (bt == T_DOUBLE ? Op_VectorBlend : 0);
   case Op_Bool:
     return Op_VectorMaskCmp;
+  case Op_DivI:
+    switch (bt) {
+    case T_BYTE:  return Op_DivVB;
+    case T_SHORT: return Op_DivVS;
+    case T_INT:   return Op_DivVI;
+    default:      return 0;
+    }
+  case Op_DivL:
+    return (bt == T_LONG ? Op_DivVL : 0);
   case Op_DivHF:
     return (bt == T_SHORT ? Op_DivVHF : 0);
   case Op_DivF:
@@ -333,6 +342,12 @@ int VectorNode::scalar_opcode(int vopc, BasicType bt) {
     case Op_MulVD:
       return Op_MulD;
 
+    case Op_DivVB:
+    case Op_DivVS:
+    case Op_DivVI:
+      return Op_DivI;
+    case Op_DivVL:
+      return Op_DivL;
     case Op_DivVF:
       return Op_DivF;
     case Op_DivVD:
@@ -680,7 +695,7 @@ void VectorNode::vector_operands(Node* n, uint* start, uint* end) {
   case Op_AddI: case Op_AddL: case Op_AddHF: case Op_AddF: case Op_AddD:
   case Op_SubI: case Op_SubL: case Op_SubHF: case Op_SubF: case Op_SubD:
   case Op_MulI: case Op_MulL: case Op_MulHF: case Op_MulF: case Op_MulD:
-  case Op_DivHF: case Op_DivF: case Op_DivD:
+  case Op_DivI: case Op_DivL: case Op_DivHF: case Op_DivF: case Op_DivD:
   case Op_AndI: case Op_AndL:
   case Op_OrI:  case Op_OrL:
   case Op_XorI: case Op_XorL:
@@ -759,6 +774,10 @@ VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, const TypeVect* vt, b
   case Op_MulVF:  return new MulVFNode(n1, n2, vt);
   case Op_MulVD:  return new MulVDNode(n1, n2, vt);
 
+  case Op_DivVB:  return new DivVBNode(n1, n2, vt);
+  case Op_DivVS:  return new DivVSNode(n1, n2, vt);
+  case Op_DivVI:  return new DivVINode(n1, n2, vt);
+  case Op_DivVL:  return new DivVLNode(n1, n2, vt);
   case Op_DivVHF: return new DivVHFNode(n1, n2, vt);
   case Op_DivVF:  return new DivVFNode(n1, n2, vt);
   case Op_DivVD:  return new DivVDNode(n1, n2, vt);
