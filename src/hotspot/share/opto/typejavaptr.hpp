@@ -519,23 +519,16 @@ private:
     using ElemType = std::invoke_result_t<decltype(&AOT::elem), AOT>;
     using KlassType = std::invoke_result_t<decltype(&AOT::klass), AOT>;
 
-    auto field_offset = t1->field_offset().join(t2->field_offset());
-
-    // Join of 2 constants
-    if (t1->const_oop() != nullptr && t2->const_oop() != nullptr) {
-      if (t1->const_oop() == t2->const_oop() && field_offset != Type::Offset::top) {
-        return AOT::make(TypePtr::Constant, t1->const_oop(), t1->ary(), t1->klass(), true, offset, field_offset, instance_id, speculative, inline_depth, t1->is_autobox_cache());
-      } else {
-        return AOT::PtrType::make(Type::AnyPtr, TypePtr::TopPTR, offset, speculative, inline_depth);
-      }
+    // Join of 2 different constants
+    if (t1->const_oop() != nullptr && t2->const_oop() != nullptr && t1->const_oop() != t2->const_oop()) {
+      return AOT::PtrType::make(Type::AnyPtr, TypePtr::TopPTR, offset, speculative, inline_depth);
     }
 
-    // From here, at least one of the operand is not constant
     TypePtr::PTR ptr = join_ptr(t1, t2);
     ElemType elem;
     KlassType klass = nullptr;
     join_ary_elem(elem, klass, t1, t2);
-    if (elem->empty() || field_offset == Type::Offset::top) {
+    if (elem->empty()) {
       return AOT::PtrType::make(Type::AnyPtr, ptr == TypePtr::BotPTR ? TypePtr::Null : TypePtr::TopPTR, offset, speculative, inline_depth);
     }
 
@@ -555,7 +548,8 @@ private:
     bool null_free = t1->is_null_free() || t2->is_null_free();
     bool not_null_free = t1->is_not_null_free() || t2->is_not_null_free();
     bool atomic = t1->is_atomic() || t2->is_atomic();
-    if ((flat && not_flat) || (null_free && not_null_free)) {
+    auto field_offset = t1->field_offset().join(t2->field_offset());
+    if ((flat && not_flat) || (null_free && not_null_free) || field_offset == Type::Offset::top) {
       return AOT::PtrType::make(Type::AnyPtr, ptr == TypePtr::BotPTR ? TypePtr::Null : TypePtr::TopPTR, offset, speculative, inline_depth);
     }
 

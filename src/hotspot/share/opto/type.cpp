@@ -27,6 +27,7 @@
 #include "ci/ciFlatArrayKlass.hpp"
 #include "ci/ciInlineKlass.hpp"
 #include "ci/ciInstanceKlass.hpp"
+#include "ci/ciMetadata.hpp"
 #include "ci/ciMethodData.hpp"
 #include "ci/ciObjArrayKlass.hpp"
 #include "ci/ciObject.hpp"
@@ -2521,7 +2522,7 @@ bool TypeAry::empty(void) const {
   // intersection of a flat and a non-flat array, we could change the element type to an
   // empty type to reduce the abstract value. And we must be careful not to do that in
   // the dual world.
-  return _elem->empty() || (_flat && _not_flat);
+  return _elem->empty() || (_flat && _not_flat) || (_null_free && _not_null_free);
 }
 
 //--------------------------ary_must_be_exact----------------------------------
@@ -2793,9 +2794,11 @@ const Type* TypePtr::xjoin_helper(const Type* t) const {
   switch (t->base()) {
     case AnyPtr: {
       const TypePtr* tp = t->is_ptr();
+      Offset offset = join_offset(tp->offset());
+      PTR ptr = offset == Offset::top ? TopPTR : join_ptr(tp->ptr());
       const TypePtr* speculative = xjoin_speculative(tp);
       int depth = join_inline_depth(tp->inline_depth());
-      return make(AnyPtr, join_ptr(tp->ptr()), join_offset(tp->offset()), speculative, depth);
+      return make(AnyPtr, ptr, offset, speculative, depth);
     }
     case RawPtr:
     case OopPtr:
@@ -3863,10 +3866,12 @@ const Type* TypeOopPtr::xjoin_helper(const Type* t) const {
     case AnyPtr: {
       const TypePtr* tp = t->is_ptr();
       Offset offset = join_offset(tp->offset());
-      PTR ptr = join_ptr(tp->ptr());
+      PTR other_ptr = offset == Offset::top ? TopPTR : tp->ptr();
+      PTR ptr = join_ptr(other_ptr);
       const TypePtr* speculative = xjoin_speculative(tp);
       int depth = join_inline_depth(tp->inline_depth());
-      switch (tp->ptr()) {
+
+      switch (other_ptr) {
         case Null:
         case TopPTR:
           return TypePtr::make(AnyPtr, ptr, offset, speculative, depth);
@@ -4440,11 +4445,13 @@ const Type* TypeInstPtr::xjoin_helper(const Type* t) const {
     case AnyPtr:
     case OopPtr: {
       const TypePtr* tp = t->is_ptr();
-      PTR ptr = join_ptr(tp->ptr());
       Offset offset = join_offset(tp->offset());
+      PTR other_ptr = offset == Offset::top ? TopPTR : tp->ptr();
+      PTR ptr = join_ptr(other_ptr);
       const TypePtr* speculative = xjoin_speculative(tp);
       int depth = join_inline_depth(tp->inline_depth());
-      switch (tp->ptr()) {
+
+      switch (other_ptr) {
         case TopPTR:
         case Null:
           return TypePtr::make(AnyPtr, ptr, offset, speculative, depth);
@@ -4980,11 +4987,13 @@ const Type* TypeAryPtr::xjoin_helper(const Type* t) const {
     case AnyPtr:
     case OopPtr: {
       const TypePtr* tp = t->is_ptr();
-      PTR ptr = join_ptr(tp->ptr());
       Offset offset = join_offset(tp->offset());
+      PTR other_ptr = offset == Offset::top ? TopPTR : tp->ptr();
+      PTR ptr = join_ptr(other_ptr);
       const TypePtr* speculative = xjoin_speculative(tp);
       int depth = join_inline_depth(tp->inline_depth());
-      switch (tp->ptr()) {
+
+      switch (other_ptr) {
         case TopPTR:
         case Null:
           return TypePtr::make(AnyPtr, ptr, offset, speculative, depth);
@@ -5458,12 +5467,16 @@ const Type* TypeMetadataPtr::xjoin(const Type* t) const {
       const TypeMetadataPtr* tp = t->is_metadataptr();
       PTR ptr = join_ptr(tp->ptr());
       Offset offset = join_offset(tp->offset());
+      if (offset == Offset::top) {
+        return TypePtr::make(AnyPtr, TopPTR, offset);
+      }
+
       ciMetadata* metadata = this->metadata();
-      if (tp->metadata() != nullptr) {
+      if (ciMetadata* meta2 = tp->metadata(); meta2 != nullptr) {
         if (metadata == nullptr) {
-          metadata = tp->metadata();
-        } else {
-          return TypePtr::make(AnyPtr, TopPTR, offset);
+          metadata = meta2;
+        } else if (!metadata->equals(meta2)) {
+          return TypePtr::make(AnyPtr, ptr == TypePtr::BotPTR ? Null : TopPTR, offset);
         }
       }
 

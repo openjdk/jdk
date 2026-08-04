@@ -1911,7 +1911,7 @@ static void test_meet_join() {
     static_assert(samples_size == 471);
   }
 
-  // Running all instances takes hundreds of seconds, so we only run a fraction of them regularly
+  // Running all instances takes a lot of time, so we only run a fraction of them regularly
   auto sample_hit = []() {
     constexpr double sampling_prob = 0.02;
     return uint(os::random()) < max_juint * sampling_prob;
