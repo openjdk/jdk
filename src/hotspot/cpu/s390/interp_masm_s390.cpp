@@ -2206,6 +2206,8 @@ void InterpreterMacroAssembler::pop_interpreter_frame(Register return_pc, Regist
 //-------------------------------------
 
 void InterpreterMacroAssembler::read_flat_field(Register entry, Register obj) {
+  assert_different_registers(entry, obj);
+  assert_different_registers(entry, Z_ARG2);
   call_VM(obj, CAST_FROM_FN_PTR(address, InterpreterRuntime::read_flat_field), obj, entry);
 }
 
