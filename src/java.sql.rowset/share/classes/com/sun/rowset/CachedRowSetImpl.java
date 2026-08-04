@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -321,6 +321,9 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
 
     private boolean updateOnInsert;
 
+    private static final String MAX_ROW_WARNING =
+            "Populating rows setting has exceeded max row setting";
+
 
 
     /**
@@ -382,11 +385,6 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
         // insert row setup
         onInsertRow = false;
         insertRow = null;
-
-        // set the warnings
-        sqlwarn = new SQLWarning();
-        rowsetWarning = new RowSetWarning();
-
     }
 
     /**
@@ -648,14 +646,15 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
         mRows = this.getMaxRows();
         rowsFetched = 0;
         currentRow = null;
+        boolean exceededMax = false;
 
         while ( data.next()) {
 
             currentRow = new Row(numCols);
 
-            if ( rowsFetched > mRows && mRows > 0) {
-                rowsetWarning.setNextWarning(new RowSetWarning("Populating rows "
-                + "setting has exceeded max row setting"));
+            if (rowsFetched > mRows && mRows > 0 && !exceededMax) {
+                exceededMax = true;
+                addRowSetWarning(MAX_ROW_WARNING);
             }
             for ( i = 1; i <= numCols; i++) {
                 /*
@@ -6809,6 +6808,18 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
         return rowsetWarning;
     }
 
+    /**
+     * Adds a RowSetWarning with the specified reason.
+     * If there is no root warning yet, one is created, otherwise the warning
+     * is chained to an existing warning chain.
+     */
+    private void addRowSetWarning(String reason) {
+        if (rowsetWarning == null) {
+            rowsetWarning = new RowSetWarning(reason);
+        } else {
+            rowsetWarning.setNextWarning(new RowSetWarning(reason));
+        }
+    }
 
     /**
      * The function tries to isolate the tablename when only setCommand
@@ -7322,16 +7333,14 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
 
             currentRow = new Row(numCols);
           if(pageSize == 0){
-            if ( rowsFetched >= mRows && mRows > 0) {
-                rowsetWarning.setNextException(new SQLException("Populating rows "
-                + "setting has exceeded max row setting"));
+            if (rowsFetched >= mRows && mRows > 0) {
+                addRowSetWarning(MAX_ROW_WARNING);
                 break;
             }
           }
           else {
-              if ( (rowsFetched >= pageSize) ||( maxRowsreached >= mRows && mRows > 0)) {
-                rowsetWarning.setNextException(new SQLException("Populating rows "
-                + "setting has exceeded max row setting"));
+              if ((rowsFetched >= pageSize) || ( maxRowsreached >= mRows && mRows > 0)) {
+                addRowSetWarning(MAX_ROW_WARNING);
                 break;
             }
           }

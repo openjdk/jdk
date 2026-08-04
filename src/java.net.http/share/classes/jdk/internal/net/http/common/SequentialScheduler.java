@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,7 +111,7 @@ public final class SequentialScheduler {
      * later time, and maybe in different thread. This type exists for
      * readability purposes at use-sites only.
      */
-    public abstract static class DeferredCompleter {
+    private abstract static class DeferredCompleter {
 
         /** Extensible from this (outer) class ONLY. */
         private DeferredCompleter() { }
@@ -124,7 +124,7 @@ public final class SequentialScheduler {
      * A restartable task.
      */
     @FunctionalInterface
-    public interface RestartableTask {
+    private interface RestartableTask {
 
         /**
          * The body of the task.
@@ -140,7 +140,7 @@ public final class SequentialScheduler {
      * A simple and self-contained task that completes once its {@code run}
      * method returns.
      */
-    public abstract static class CompleteRestartableTask
+    private abstract static class CompleteRestartableTask
         implements RestartableTask
     {
         @Override
@@ -161,7 +161,7 @@ public final class SequentialScheduler {
      * memory visibility between runs. Since the main loop can't run concurrently,
      * the lock shouldn't be contended and no deadlock should ever be possible.
      */
-    public static final class LockingRestartableTask
+    private static final class LockingRestartableTask
             extends CompleteRestartableTask {
 
         private final Runnable mainLoop;
@@ -208,7 +208,7 @@ public final class SequentialScheduler {
         }
     }
 
-    public SequentialScheduler(RestartableTask restartableTask) {
+    private SequentialScheduler(RestartableTask restartableTask) {
         this.restartableTask = requireNonNull(restartableTask);
         this.completer = new TryEndDeferredCompleter();
         this.schedulableTask = new SchedulableTask();

@@ -440,22 +440,20 @@ bool PhaseIdealLoop::expand_reachability_fences() {
 // Find a point in CFG right after safepoint node to insert reachability fence.
 static Node* sfpt_ctrl_out(SafePointNode* sfpt) {
   if (sfpt->is_Call()) {
-    CallProjections callprojs;
-    sfpt->as_Call()->extract_projections(&callprojs,
-                                         false /*separate_io_proj*/,
-                                         false /*do_asserts*/,
-                                         true /*allow_handlers*/);
+    CallProjections* callprojs = sfpt->as_Call()->extract_projections(false /*separate_io_proj*/,
+                                                                      false /*do_asserts*/,
+                                                                      true /*allow_handlers*/);
     // Calls can have multiple control projections. However, reachability edge expansion
     // happens during final graph reshaping which is performed very late in compilation pipeline.
     // The assumption here is that the control path chosen for insertion can't go away.
     // So, materializing a reachability fence on a single control path produced by a call
     // is enough to keep the referent oop alive across the call.
-    if (callprojs.fallthrough_catchproj != nullptr) {
-      return callprojs.fallthrough_catchproj;
-    } else if (callprojs.catchall_catchproj != nullptr) {
-      return callprojs.catchall_catchproj; // rethrow stub
-    } else if (callprojs.fallthrough_proj != nullptr) {
-      return callprojs.fallthrough_proj; // no exceptions thrown
+    if (callprojs->fallthrough_catchproj != nullptr) {
+      return callprojs->fallthrough_catchproj;
+    } else if (callprojs->catchall_catchproj != nullptr) {
+      return callprojs->catchall_catchproj; // rethrow stub
+    } else if (callprojs->fallthrough_proj != nullptr) {
+      return callprojs->fallthrough_proj; // no exceptions thrown
     } else {
       ShouldNotReachHere();
     }
