@@ -53,7 +53,8 @@ ShenandoahGenerationalControlThread::ShenandoahGenerationalControlThread() :
   _requested_generation(nullptr),
   _gc_mode(none),
   _degen_point(ShenandoahGC::_degenerated_unset),
-  _heap(ShenandoahGenerationalHeap::heap()) {
+  _heap(ShenandoahGenerationalHeap::heap()),
+  _do_old_gc_bootstrap(false) {
   shenandoah_assert_generational();
   set_name("ShenControl");
   create_and_start();
@@ -529,12 +530,14 @@ void ShenandoahGenerationalControlThread::service_concurrent_cycle(ShenandoahGen
 
   assert(!generation->is_old(), "Old GC takes a different control path");
 
+  _do_old_gc_bootstrap = do_old_gc_bootstrap;
   ShenandoahConcurrentGC gc(generation, do_old_gc_bootstrap);
   _heap->increment_total_collections(false);
   if (gc.collect(cause)) {
     // Cycle is complete
     _heap->notify_gc_progress();
     generation->record_success_concurrent(gc.abbreviated());
+    _do_old_gc_bootstrap = false;
   } else {
     assert(_heap->cancelled_gc(), "Must have been cancelled");
     check_cancellation_or_degen(gc.degen_point());
@@ -573,30 +576,31 @@ void ShenandoahGenerationalControlThread::service_concurrent_cycle(ShenandoahGen
 }
 
 bool ShenandoahGenerationalControlThread::check_cancellation_or_degen(ShenandoahGC::ShenandoahDegenPoint point) {
-  if (!_heap->cancelled_gc()) {
+  // Only read the cancellation cause once. Other threads may change it.
+  const GCCause::Cause cancelled_cause = _heap->cancelled_cause();
+  if (cancelled_cause == GCCause::_no_gc) {
     return false;
   }
 
-  if (_heap->cancelled_cause() == GCCause::_shenandoah_stop_vm
-    || _heap->cancelled_cause() == GCCause::_shenandoah_concurrent_gc) {
-    log_debug(gc, thread)("Cancellation detected, reason: %s", GCCause::to_string(_heap->cancelled_cause()));
+  if (cancelled_cause == GCCause::_shenandoah_stop_vm
+      || cancelled_cause == GCCause::_shenandoah_concurrent_gc) {
+    log_debug(gc, thread)("Cancellation detected, reason: %s", GCCause::to_string(cancelled_cause));
     return true;
   }
 
-  if (ShenandoahCollectorPolicy::is_allocation_failure(_heap->cancelled_cause())) {
+  if (ShenandoahCollectorPolicy::is_allocation_failure(cancelled_cause)) {
     assert(_degen_point == ShenandoahGC::_degenerated_unset,
            "Should not be set yet: %s", ShenandoahGC::degen_point_to_string(_degen_point));
     MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
-    _requested_gc_cause = _heap->cancelled_cause();
+    _requested_gc_cause = cancelled_cause;
     _degen_point = point;
     log_debug(gc, thread)("Cancellation detected:, reason: %s, degen point: %s",
-                          GCCause::to_string(_heap->cancelled_cause()),
+                          GCCause::to_string(cancelled_cause),
                           ShenandoahGC::degen_point_to_string(_degen_point));
     return true;
   }
 
   fatal("Cancel GC either for alloc failure GC, or gracefully exiting, or to pause old generation marking");
-  return false;
 }
 
 void ShenandoahGenerationalControlThread::service_stw_full_cycle(GCCause::Cause cause) {
@@ -605,6 +609,7 @@ void ShenandoahGenerationalControlThread::service_stw_full_cycle(GCCause::Cause 
   ShenandoahFullGC gc;
   gc.collect(cause);
   _degen_point = ShenandoahGC::_degenerated_unset;
+  _do_old_gc_bootstrap = false;
 }
 
 void ShenandoahGenerationalControlThread::service_stw_degenerated_cycle(const ShenandoahGCRequest& request) {
@@ -613,9 +618,10 @@ void ShenandoahGenerationalControlThread::service_stw_degenerated_cycle(const Sh
 
   ShenandoahGCSession session(request.cause, request.generation, true,
                               _degen_point == ShenandoahGC::ShenandoahDegenPoint::_degenerated_outside_cycle);
-  ShenandoahDegenGC gc(_degen_point, request.generation);
+  ShenandoahDegenGC gc(_degen_point, request.generation, _do_old_gc_bootstrap);
   gc.collect(request.cause);
   _degen_point = ShenandoahGC::_degenerated_unset;
+  _do_old_gc_bootstrap = false;
 
   assert(_heap->young_generation()->task_queues()->is_empty(), "Unexpected young generation marking tasks");
   if (request.generation->is_global()) {

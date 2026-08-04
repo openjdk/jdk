@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,11 @@
 /*
  * @test
  * @bug 8024500 8166446
+ * @library /test/lib
  * @run testng SingletonIterator
  */
 
+import jdk.test.lib.valueclass.VClass;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -62,6 +64,18 @@ public class SingletonIterator {
     }
 
     static class SingletonException extends RuntimeException { }
+
+    @Test
+    public void testValueSingletonIterator() {
+        Iterator<VClass> it = Collections.singleton(new VClass(42, new int[] { 42 })).iterator();
+        AtomicInteger cnt = new AtomicInteger(0);
+        it.forEachRemaining(v -> {
+            if (!v.equals(new VClass(42, new int[] { 42 }))) throw new RuntimeException("wrong value");
+            cnt.incrementAndGet();
+        });
+        assertEquals(cnt.get(), 1);
+        assertIteratorExhausted(it);
+    }
 
     public void testThrowFromForEachRemaining() {
         Iterator<String> it = Collections.singleton("TheOne").iterator();

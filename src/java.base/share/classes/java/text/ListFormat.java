@@ -498,15 +498,18 @@ public final class ListFormat extends Format {
                         midIndex += mbLength;
                     }
                 }
-                parsed = new MessageFormat(createMessageFormatString(count), locale).parseObject(source, parsePos);
+                parsed = new MessageFormat(listToMessageFormatPattern(createMessageFormatString(count)),
+                        locale).parseObject(source, parsePos);
             }
         }
 
         if (parsed == null) {
             // now try exact number patterns
-            parsed = new MessageFormat(patterns[TWO], locale).parseObject(source, parsePos);
+            parsed = new MessageFormat(listToMessageFormatPattern(patterns[TWO]),
+                    locale).parseObject(source, parsePos);
             if (parsed == null) {
-                parsed = new MessageFormat(patterns[THREE], locale).parseObject(source, parsePos);
+                parsed = new MessageFormat(listToMessageFormatPattern(patterns[THREE]),
+                        locale).parseObject(source, parsePos);
             }
         }
 
@@ -584,9 +587,9 @@ public final class ListFormat extends Format {
         var len = input.length;
         return switch (len) {
             case 0 -> throw new IllegalArgumentException("There should at least be one input string");
-            case 1 -> new MessageFormat("{0}", locale);
-            case 2, 3 -> new MessageFormat(patterns[len + 1], locale);
-            default -> new MessageFormat(createMessageFormatString(len), locale);
+            case 1 -> new MessageFormat(listToMessageFormatPattern("{0}"), locale);
+            case 2, 3 -> new MessageFormat(listToMessageFormatPattern(patterns[len + 1]), locale);
+            default -> new MessageFormat(listToMessageFormatPattern(createMessageFormatString(len)), locale);
         };
     }
 
@@ -741,5 +744,19 @@ public final class ListFormat extends Format {
 
         return prefixPos < suffixPos ?
             new int[] {prefixPos, suffixPos + suffix.length()} : null;
+    }
+
+    /**
+     * {@return the MessageFormat pattern corresponding to the passed ListFormat pattern}
+     *
+     * Single quotes must be escaped so they are interpreted as literal text
+     * as opposed to escaping delimiters when passed to MessageFormat. Everything
+     * else remains the same; ListFormat already handles other validation on its own.
+     *
+     * @param pattern list pattern to use
+     */
+    private static String listToMessageFormatPattern(String pattern) {
+        return pattern.indexOf('\'') < 0 ? pattern :
+                pattern.replace("'", "''");
     }
 }

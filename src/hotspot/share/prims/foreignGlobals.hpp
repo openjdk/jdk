@@ -68,7 +68,7 @@ struct CallRegs {
 class ForeignGlobals {
 private:
   template<typename T>
-  static void parse_register_array(objArrayOop jarray, StorageType type_index, GrowableArray<T>& array, T (*converter)(int));
+  static void parse_register_array(refArrayOop jarray, StorageType type_index, GrowableArray<T>& array, T (*converter)(int));
 
 public:
   static bool is_foreign_linker_supported();
