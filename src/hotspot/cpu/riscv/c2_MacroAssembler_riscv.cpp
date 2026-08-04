@@ -2617,7 +2617,7 @@ void C2_MacroAssembler::java_round_float_v(VectorRegister dst, VectorRegister sr
   // replacing vfclass with feq as performance optimization
   vmfeq_vv(v0, src, src);
   // set dst = 0 in cases of NaN
-  vmv_v_x(dst, zr);
+  vmv_v_i(dst, 0);
 
   // dst = (src + 0.5) rounded down towards negative infinity
   vfadd_vf(dst, src, ftmp, Assembler::v0_t);
@@ -2641,7 +2641,7 @@ void C2_MacroAssembler::java_round_double_v(VectorRegister dst, VectorRegister s
   // replacing vfclass with feq as performance optimization
   vmfeq_vv(v0, src, src);
   // set dst = 0 in cases of NaN
-  vmv_v_x(dst, zr);
+  vmv_v_i(dst, 0);
 
   // dst = (src + 0.5) rounded down towards negative infinity
   vfadd_vf(dst, src, ftmp, Assembler::v0_t);
@@ -2699,7 +2699,7 @@ void C2_MacroAssembler::clear_array_v(Register base, Register cnt) {
 
   // making zero words
   vsetvli(t0, cnt, Assembler::e64, Assembler::m4);
-  vxor_vv(v4, v4, v4);
+  vmv_v_i(v4, 0);
 
   bind(loop);
   vsetvli(t0, cnt, Assembler::e64, Assembler::m4);
@@ -3296,7 +3296,7 @@ void C2_MacroAssembler::integer_narrow_v(VectorRegister dst, BasicType dst_bt, u
 #define VFCVT_SAFE(VFLOATCVT)                                                      \
 void C2_MacroAssembler::VFLOATCVT##_safe(VectorRegister dst, VectorRegister src) { \
   assert_different_registers(dst, src);                                            \
-  vxor_vv(dst, dst, dst);                                                          \
+  vmv_v_i(dst, 0);                                                                 \
   vmfeq_vv(v0, src, src);                                                          \
   VFLOATCVT(dst, src, Assembler::v0_t);                                            \
 }
