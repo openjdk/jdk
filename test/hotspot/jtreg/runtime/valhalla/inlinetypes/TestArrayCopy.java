@@ -23,6 +23,7 @@
 
 /**
  * @test TestArrayCopy
+ * @bug 8388480
  * @library /test/lib
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
