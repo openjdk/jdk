@@ -215,17 +215,9 @@ void AOTCodeCache::initialize() {
     return; // AOTCache must be specified to dump and use AOT code
   }
 
-  if (VerifyOops) {
-    // Disable AOT stub caching when VerifyOops flag is on.
-    // Verify oops code generated a lot of C strings which overflow
-    // AOT C string table (which has fixed size).
-    // AOT C string table will be reworked later to handle such cases.
-    log_info(aot, codecache, init)("AOT Stub Caching is not supported with VerifyOops.");
-    FLAG_SET_ERGO(AOTStubCaching, false);
-    if (InlineTypePassFieldsAsArgs) {
-      log_info(aot, codecache, init)("AOT Adapter Caching is not supported with VerifyOops + InlineTypePassFieldsAsArgs.");
-      FLAG_SET_ERGO(AOTAdapterCaching, false);
-    }
+  if (VerifyOops && InlineTypePassFieldsAsArgs) {
+    log_info(aot, codecache, init)("AOT Adapter Caching is not supported with VerifyOops + InlineTypePassFieldsAsArgs.");
+    FLAG_SET_ERGO(AOTAdapterCaching, false);
   }
 
   bool is_dumping = false;
@@ -1933,6 +1925,8 @@ void AOTCodeAddressTable::init_extrs() {
     ADD_EXTERNAL_ADDRESS(Thread::current); // used by call_stub
     ADD_EXTERNAL_ADDRESS(SharedRuntime::throw_StackOverflowError);
     ADD_EXTERNAL_ADDRESS(SharedRuntime::throw_delayed_StackOverflowError);
+    ADD_EXTERNAL_ADDRESS(StubRoutines::verify_oop_count_addr()); // used by generate_verify_oop()
+    ADD_EXTERNAL_ADDRESS(StubRoutines::verify_oop_subroutine_entry_address());
     if (InlineTypeReturnedAsFields) {
       ADD_EXTERNAL_ADDRESS(SharedRuntime::store_inline_type_fields_to_buf);
     }
@@ -2150,9 +2144,10 @@ void AOTCodeAddressTable::init_extrs() {
   ADD_EXTERNAL_ADDRESS(ZPointerVectorStoreGoodMask);
 #if defined(AMD64)
   ADD_EXTERNAL_ADDRESS(&ZPointerLoadShift);
-  ADD_EXTERNAL_ADDRESS(&ZPointerLoadShiftTable);
+  extern address ZPointerLoadShiftTableAddr;
+  ADD_EXTERNAL_ADDRESS(&ZPointerLoadShiftTableAddr);
 #endif
-#endif
+#endif // INCLUDE_ZGC
 #ifndef ZERO
 #if defined(AMD64) || defined(AARCH64) || defined(RISCV64)
   ADD_EXTERNAL_ADDRESS(MacroAssembler::debug64);
@@ -2315,36 +2310,33 @@ const char* AOTCodeCache::add_C_string(const char* str) {
   if (is_on_for_dump() && str != nullptr) {
     MutexLocker ml(AOTCodeCStrings_lock, Mutex::_no_safepoint_check_flag);
     AOTCodeAddressTable* table = addr_table();
-    if (table != nullptr) {
-      return table->add_C_string(str);
-    }
+    assert(table != nullptr, "should be initialized already");
+    return table->add_C_string(str);
   }
   return str;
 }
 
 const char* AOTCodeAddressTable::add_C_string(const char* str) {
-  if (_extrs_complete || initializing_extrs) {
-    // Check previous strings address
-    for (int i = 0; i < _C_strings_count; i++) {
-      if (_C_strings_in[i] == str) {
-        return _C_strings[i]; // Found previous one - return our duplicate
-      } else if (strcmp(_C_strings[i], str) == 0) {
-        return _C_strings[i];
-      }
+  // Check previous strings address
+  for (int i = 0; i < _C_strings_count; i++) {
+    if (_C_strings_in[i] == str) {
+      return _C_strings[i]; // Found previous one - return our duplicate
+    } else if (strcmp(_C_strings[i], str) == 0) {
+      return _C_strings[i];
     }
-    // Add new one
-    if (_C_strings_count < MAX_STR_COUNT) {
-      // Passed in string can be freed and used space become inaccessible.
-      // Keep original address but duplicate string for future compare.
-      _C_strings_id[_C_strings_count] = -1; // Init
-      _C_strings_in[_C_strings_count] = str;
-      const char* dup = os::strdup(str);
-      _C_strings[_C_strings_count++] = dup;
-      log_trace(aot, codecache, stringtable)("add_C_string: [%d] " INTPTR_FORMAT " '%s'", _C_strings_count, p2i(dup), dup);
-      return dup;
-    } else {
-      assert(false, "Number of C strings >= MAX_STR_COUNT");
-    }
+  }
+  // Add new one
+  if (_C_strings_count < MAX_STR_COUNT) {
+    // Passed in string can be freed and used space become inaccessible.
+    // Keep original address but duplicate string for future compare.
+    _C_strings_id[_C_strings_count] = -1; // Init
+    _C_strings_in[_C_strings_count] = str;
+    const char* dup = os::strdup(str);
+    _C_strings[_C_strings_count++] = dup;
+    log_trace(aot, codecache, stringtable)("add_C_string: [%d] " INTPTR_FORMAT " '%s'", _C_strings_count, p2i(dup), dup);
+    return dup;
+  } else {
+    assert(false, "Number of C strings >= MAX_STR_COUNT");
   }
   return str;
 }
@@ -2512,12 +2504,16 @@ void AOTRuntimeConstants::initialize_from_runtime() {
   _aot_runtime_constants._card_table_base = card_table_base;
   _aot_runtime_constants._grain_shift = grain_shift;
   _aot_runtime_constants._cset_base = cset_base;
+  _aot_runtime_constants._verify_oop_mask = Universe::verify_oop_mask();
+  _aot_runtime_constants._verify_oop_bits = Universe::verify_oop_bits();
 }
 
 address AOTRuntimeConstants::_field_addresses_list[] = {
   ((address)&_aot_runtime_constants._card_table_base),
   ((address)&_aot_runtime_constants._grain_shift),
   ((address)&_aot_runtime_constants._cset_base),
+  ((address)&_aot_runtime_constants._verify_oop_mask),
+  ((address)&_aot_runtime_constants._verify_oop_bits),
   nullptr
 };
 

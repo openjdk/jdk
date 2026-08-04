@@ -304,6 +304,7 @@ public:
   do_var(bool,  UseVectorizedMismatchIntrinsic) \
   do_var(bool,  InlineTypeReturnedAsFields) \
   do_var(bool,  VMContinuations) \
+  do_var(bool,  VerifyOops) \
   do_fun(int,   CompressedKlassPointers_shift,          CompressedKlassPointers::shift()) \
   do_fun(bool,  JavaAssertions_systemClassDefault,      JavaAssertions::systemClassDefault()) \
   do_fun(bool,  JavaAssertions_userClassDefault,        JavaAssertions::userClassDefault()) \
@@ -683,6 +684,9 @@ class AOTRuntimeConstants {
   address _card_table_base;
   uint    _grain_shift;
   address _cset_base;
+  uintptr_t _verify_oop_mask;
+  uintptr_t _verify_oop_bits;
+
   static address _field_addresses_list[];
   static AOTRuntimeConstants _aot_runtime_constants;
   // private constructor for unique singleton
@@ -699,6 +703,8 @@ class AOTRuntimeConstants {
   static address card_table_base_address();
   static address grain_shift_address() { return (address)&_aot_runtime_constants._grain_shift; }
   static address cset_base_address() { return (address)&_aot_runtime_constants._cset_base; }
+  static address verify_oop_mask_address() { return (address)&_aot_runtime_constants._verify_oop_mask; }
+  static address verify_oop_bits_address() { return (address)&_aot_runtime_constants._verify_oop_bits; }
   static address* field_addresses_list() {
     return _field_addresses_list;
   }
@@ -707,6 +713,8 @@ class AOTRuntimeConstants {
   static address card_table_base_address() { return nullptr; }
   static address grain_shift_address()     { return nullptr; }
   static address cset_base_address()       { return nullptr; }
+  static address verify_oop_mask_address() { return nullptr; }
+  static address verify_oop_bits_address() { return nullptr; }
   static address* field_addresses_list()   { return nullptr; }
 #endif
 };
