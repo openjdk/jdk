@@ -412,7 +412,6 @@ public class CDS {
                     return null;
                 }
             } else {
-                System.exit(1);
                 return null;
             }
         }
