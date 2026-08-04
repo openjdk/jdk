@@ -297,7 +297,6 @@ public:
   // of 0x0, so we use integer arithmetic to avoid UB pointer arithmetic.
   template <typename T>
   static address offset_from_requested_base(T requested_base, size_t offset) {
-    // As zero is allowed for requested_base, use integer arithmetic to avoid UB pointer arithmetic.
     return (address)((uintptr_t)requested_base + offset);
   }
 };
