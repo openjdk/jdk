@@ -407,4 +407,34 @@ public class TestOptimizeTrichotomy {
             throw new RuntimeException("wrong value: " + v0 + " vs " + v1);
         }
     }
+
+    // ------------------- And for fun, an IR test where we don't optimize ------------------------
+
+    @Test
+    @IR(counts = {IRNode.CMP_I, "= 1", IRNode.CMP_U, "= 1", IRNode.CMOVE_I, "= 0", IRNode.IF, "= 2"}, phase = CompilePhase.AFTER_PARSING)
+    @IR(counts = {IRNode.CMP_I, "= 1", IRNode.CMP_U, "= 1", IRNode.CMOVE_I, "= 0", IRNode.IF, "= 2"})
+    static boolean testIR8(int a, int b) {
+        if (a == b || (Integer.compareUnsigned(a, b) > 0)) {
+            return true;
+        }
+        return false;
+    }
+
+    @DontCompile
+    static boolean referenceIR8(int a, int b) {
+        if (a == b || (Integer.compareUnsigned(a, b) > 0)) {
+            return true;
+        }
+        return false;
+    }
+
+    @Run(test = {"testIR8"})
+    static void runTestIR8() {
+        var p = IntPair.balancedTrichotomy();
+        boolean v0 = testIR8(p.x, p.y);
+        boolean v1 = referenceIR8(p.x, p.y);
+        if (v0 != v1) {
+            throw new RuntimeException("wrong value: " + v0 + " vs " + v1);
+        }
+    }
 }
