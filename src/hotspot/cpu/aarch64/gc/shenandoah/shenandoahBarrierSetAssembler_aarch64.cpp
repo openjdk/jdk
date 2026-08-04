@@ -494,7 +494,7 @@ static uint32_t encode_patchable_nop() {
 static uint32_t encode_patchable_jump(address pc, address target_pc) {
   int32_t disp = checked_cast<int32_t>((intptr_t)target_pc - (intptr_t)pc);
   int64_t imm26 = disp >> 2;
-  assert(Assembler::is_simm(imm26, 26), "maximum offset is 128MiB");
+  guarantee(Assembler::is_simm(imm26, 26), "maximum offset is 128MiB");
   return 0x14000000 | (imm26 & 0x03FFFFFF);
 }
 
