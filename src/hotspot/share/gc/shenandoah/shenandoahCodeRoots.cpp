@@ -57,9 +57,8 @@ void ShenandoahCodeRoots::unregister_nmethod(nmethod* nm) {
 void ShenandoahCodeRoots::arm_nmethods() {
   BarrierSet::barrier_set()->barrier_set_nmethod()->arm_all_nmethods();
 
-  // nmethod entry barriers are used to update nmethods. In order to guarantee
-  // that nmethod execution is not interleaved with nmethod entry barrier fixups,
-  // we need to also activate stack watermark machinery.
+  // Arming should also activate stack watermark machinery.
+  // See ShenandoahNMethod::patch_barrier.
   ShenandoahStackWatermark::change_epoch_id();
 }
 
