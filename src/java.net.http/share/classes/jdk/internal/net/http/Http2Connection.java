@@ -645,7 +645,7 @@ class Http2Connection implements Closeable {
         }
     }
 
-    /*
+    /**
      * return true if the connection is marked as "final stream" and there
      * are no active streams on that connection and the connection isn't
      * reserved for a new stream.
@@ -1399,6 +1399,14 @@ class Http2Connection implements Closeable {
             prevLastProcessed = lastProcessedStreamInGoAway.get();
         }
         handlePeerUnprocessedStreams(lastProcessedStreamInGoAway.get());
+        // if there are no more active streams on the connection, then go ahead and close the
+        // connection
+        if (shouldClose()) {
+            final Http2TerminationCause tc = Http2TerminationCause.forH2Error(
+                    frame.getErrorCode(),
+                    "GOAWAY received from server");
+            close(tc);
+        }
     }
 
     private void handlePeerUnprocessedStreams(final long lastProcessedStream) {

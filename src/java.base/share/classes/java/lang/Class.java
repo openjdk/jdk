@@ -52,6 +52,7 @@ import java.lang.reflect.RecordComponent;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.constant.Constable;
+import java.lang.classfile.ClassFile;
 import java.net.URL;
 import java.security.AllPermission;
 import java.security.Permissions;
@@ -70,13 +71,17 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import jdk.internal.constant.ConstantUtils;
+import jdk.internal.javac.PreviewFeature;
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.BuiltinClassLoader;
+import jdk.internal.misc.PreviewFeatures;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.module.Resources;
+import jdk.internal.reflect.AccessFlagSet;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.CallerSensitiveAdapter;
 import jdk.internal.reflect.ConstantPool;
+import jdk.internal.reflect.PreviewAccessFlags;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.reflect.ReflectionFactory;
 import jdk.internal.util.ModifiedUtf;
@@ -224,9 +229,6 @@ public final class Class<T> implements java.io.Serializable,
                               AnnotatedElement,
                               TypeDescriptor.OfField<Class<?>>,
                               Constable {
-    private static final int ANNOTATION = 0x00002000;
-    private static final int ENUM       = 0x00004000;
-    private static final int SYNTHETIC  = 0x00001000;
 
     private static native void registerNatives();
     static {
@@ -343,10 +345,16 @@ public final class Class<T> implements java.io.Serializable,
                 } else {
                     if (isEnum())
                         sb.append("enum");
-                    else if (isRecord())
-                        sb.append("record");
-                    else
-                        sb.append("class");
+                    else {
+                        if (isValue()) {
+                            sb.append("value ");
+                        }
+                        if (isRecord()) {
+                            sb.append("record");
+                        } else {
+                            sb.append("class");
+                        }
+                    }
                 }
                 sb.append(' ');
                 sb.append(getName());
@@ -616,6 +624,35 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     /**
+     * {@return {@code true} if this {@code Class} object represents a value class,
+     * otherwise {@code false}}
+     *
+     * <p>A value class is declared with the {@code value} modifier. If this
+     * {@code Class} object represents an interface, array type, primitive type,
+     * or {@code void}, the result is {@code false}.
+     *
+     * <p>This method returns {@code true} if and only if this {@code Class}
+     * object represents a class that uses preview features, and the class does
+     * not have the {@link AccessFlag#IDENTITY ACC_IDENTITY} flag set.
+     * The {@code ACC_IDENTITY} flag is considered always set for a class that
+     * does not use preview features; consequently, this method always returns
+     * {@code false} when preview features are disabled.
+     *
+     * @jls value-objects-8.1.1.5 {@code value} Classes
+     * @see AccessFlag#IDENTITY
+     * @since 28
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.VALUE_OBJECTS, reflective=true)
+    public boolean isValue() {
+        if (!PreviewFeatures.isEnabled()) {
+            return false;
+        } else {
+            int mask = ClassFile.ACC_IDENTITY | ClassFile.ACC_INTERFACE;
+            return !primitive && (getModifiers() & mask) == 0;
+        }
+    }
+
+    /**
      * {@return the {@code Class} object associated with the
      * {@linkplain #isPrimitive() primitive type} of the given name}
      * If the argument is not the name of a primitive type, {@code
@@ -871,7 +908,7 @@ public final class Class<T> implements java.io.Serializable,
      * @since 1.5
      */
     public boolean isAnnotation() {
-        return (getModifiers() & ANNOTATION) != 0;
+        return (getModifiers() & ClassFile.ACC_ANNOTATION) != 0;
     }
 
     /**
@@ -886,7 +923,7 @@ public final class Class<T> implements java.io.Serializable,
      * @since 1.5
      */
     public boolean isSynthetic() {
-        return (getModifiers() & SYNTHETIC) != 0;
+        return (getModifiers() & ClassFile.ACC_SYNTHETIC) != 0;
     }
 
     /**
@@ -1019,7 +1056,7 @@ public final class Class<T> implements java.io.Serializable,
     private transient Object[] signers; // Read by VM, mutable
     private final transient char modifiers;  // Set by the VM
     private final transient char classFileAccessFlags;  // Set by the VM
-    private final transient boolean primitive;  // Set by the VM if the Class is a primitive type.
+    private final transient boolean primitive;  // Set by the VM if the Class is a primitive type
 
     // package-private
     Object getClassData() {
@@ -1339,6 +1376,8 @@ public final class Class<T> implements java.io.Serializable,
      *      {@code true}
      * <li> its interface modifier is always {@code false}, even when
      *      the component type is an interface
+     * <li> when preview features are enabled, its {@link
+     *      AccessFlag#IDENTITY identity} modifier is always true
      * </ul>
      * If this {@code Class} object represents a primitive type or
      * void, its {@code public}, {@code abstract}, and {@code final}
@@ -1347,8 +1386,38 @@ public final class Class<T> implements java.io.Serializable,
      * arrays, the values of other modifiers are {@code false} other
      * than as specified above.
      *
+     * <div class="preview-block">
+     *      <div class="preview-comment">
+     *          When preview features are enabled and this {@code Class} object
+     *          either represents a class whose {@code class} file does not
+     *          depend on preview features or represents an array type, its
+     *          {@code identity} modifier is always true.
+     *          <p>
+     *          When preview features are disabled, the {@code Class} object
+     *          does not have its {@code identity} modifier set.
+     *      </div>
+     * </div>
+     *
      * <p> The modifier encodings are defined in section {@jvms 4.1}
      * of <cite>The Java Virtual Machine Specification</cite>.
+     *
+     * @apiNote
+     * <div class="preview-block">
+     *      <div class="preview-comment">
+     *          Developers should be aware that the presence of the {@code
+     *          identity} modifier is dependent on whether preview features are
+     *          enabled.  Use the {@link #isValue() Class.isValue()} method to
+     *          test if a class is an identity class or a value class.
+     *          <p>
+     *          This snippet below checks whether a given {@code Class<?> clazz}
+     *          would have its {@code identity} modifier set when preview
+     *          features are enabled, yet behaves consistently regardless of
+     *          whether preview features are enabled.
+     *          {@snippet lang=java :
+     *          !clazz.isPrimitive() && !clazz.isValue() && !clazz.isInterface()
+     *          }
+     *      </div>
+     * </div>
      *
      * @return the {@code int} representing the modifiers for this class
      * @see     java.lang.reflect.Modifier
@@ -1374,6 +1443,8 @@ public final class Class<T> implements java.io.Serializable,
      * <li> its {@code ABSTRACT} and {@code FINAL} flags are present
      * <li> its {@code INTERFACE} flag is absent, even when the
      *      component type is an interface
+     * <li> when preview features are enabled, its {@code IDENTITY} flag
+    *       is present
      * </ul>
      * If this {@code Class} object represents a primitive type or
      * void, the flags are {@code PUBLIC}, {@code ABSTRACT}, and
@@ -1381,24 +1452,56 @@ public final class Class<T> implements java.io.Serializable,
      * For {@code Class} objects representing void, primitive types, and
      * arrays, access flags are absent other than as specified above.
      *
+     * <div class="preview-block">
+     *      <div class="preview-comment">
+     *          When preview features are enabled and this {@code Class} object
+     *          either represents a class whose {@code class} file does not
+     *          depend on preview features or represents an array type, its
+     *          flags always include {@code IDENTITY}.
+     *          <p>
+     *          When preview features are disabled, the {@code Class} object
+     *          does not have the {@code IDENTITY} flag set.
+     *      </div>
+     * </div>
+     *
+     * @apiNote
+     * <div class="preview-block">
+     *      <div class="preview-comment">
+     *          Developers should be aware that the presence of the {@code
+     *          identity} modifier is dependent on whether preview features are
+     *          enabled.  Use the {@link #isValue() Class.isValue()} method to
+     *          test if a class is an identity class or a value class.
+     *          <p>
+     *          This snippet below checks whether a given {@code Class<?> clazz}
+     *          would have its {@code IDENTITY} modifier set when preview
+     *          features are enabled, yet behaves consistently regardless of
+     *          whether preview features are enabled.
+     *          {@snippet lang=java :
+     *          !clazz.isPrimitive() && !clazz.isValue() && !clazz.isInterface()
+     *          }
+     *      </div>
+     * </div>
+     *
      * @see #getModifiers()
      * @jvms 4.1 The ClassFile Structure
      * @jvms 4.7.6 The InnerClasses Attribute
      * @since 20
      */
     public Set<AccessFlag> accessFlags() {
-        // Location.CLASS allows SUPER and AccessFlag.MODULE which
-        // INNER_CLASS forbids. INNER_CLASS allows PRIVATE, PROTECTED,
-        // and STATIC, which are not allowed on Location.CLASS.
-        // Use getClassFileAccessFlags to expose SUPER status.
-        // Arrays need to use PRIVATE/PROTECTED from its component modifiers.
-        var location = (isMemberClass() || isLocalClass() ||
-                        isAnonymousClass() || isArray()) ?
-            AccessFlag.Location.INNER_CLASS :
-            AccessFlag.Location.CLASS;
-        return ReflectionFactory.getReflectionFactory().parseAccessFlags(
-            (location == AccessFlag.Location.CLASS) ? getClassFileAccessFlags() : getModifiers(),
-            location, this);
+        if (!PreviewFeatures.isEnabled()) {
+            // INNER_CLASS_FLAGS exclusively defines PRIVATE, PROTECTED, and STATIC.
+            // CLASS_FLAGS exclusively defines SUPER and MODULE.
+            // Nested classes and interfaces need to report PRIVATE/PROTECTED/STATIC.
+            // Arrays need to report PRIVATE/PROTECTED.
+            // Top-level classes need to report SUPER, using getClassFileAccessFlags.
+            // Module descriptors do not have Class objects so nothing reports MODULE.
+            return (isArray() || getEnclosingClass() != null)
+                    ? AccessFlagSet.ofValidated(AccessFlagSet.INNER_CLASS_FLAGS, getModifiers())
+                    : AccessFlagSet.ofValidated(AccessFlagSet.CLASS_FLAGS, getClassFileAccessFlags());
+        }
+        // CLASS_FLAGS exclusively defines MODULE, but module descriptors are
+        // never represented with Class objects, so INNER_CLASS_FLAGS works
+        return AccessFlagSet.ofValidated(PreviewAccessFlags.INNER_CLASS_PREVIEW_FLAGS, getModifiers());
     }
 
     /**
@@ -3324,6 +3427,8 @@ public final class Class<T> implements java.io.Serializable,
      * @since  1.4
      */
     public boolean desiredAssertionStatus() {
+        if (isPrimitive() || isArray()) return false;
+
         ClassLoader loader = classLoader;
         // If the loader is null this is a system class, so ask the VM
         if (loader == null)
@@ -3364,7 +3469,7 @@ public final class Class<T> implements java.io.Serializable,
         // An enum must both directly extend java.lang.Enum and have
         // the ENUM bit set; classes for specialized enum constants
         // don't do the former.
-        return (this.getModifiers() & ENUM) != 0 &&
+        return (this.getModifiers() & ClassFile.ACC_ENUM) != 0 &&
         this.getSuperclass() == java.lang.Enum.class;
     }
 

@@ -33,6 +33,7 @@
 class ShenandoahHeap;
 class ShenandoahBarrierSetAssembler;
 class ShenandoahCardTable;
+class ShenandoahMarkingContext;
 
 class ShenandoahBarrierSet: public BarrierSet {
 private:
@@ -82,7 +83,7 @@ public:
   void print_on(outputStream* st) const override;
 
   template <class T>
-  inline void arraycopy_barrier(T* src, T* dst, size_t count);
+  inline void arraycopy_barrier(T* src, T* dst, size_t count, bool dest_uninit);
 
   // Support for optimizing compilers to call the barrier set on slow path allocations
   // that did not enter a TLAB. Used for e.g. ReduceInitialCardMarks to take any
@@ -126,6 +127,10 @@ public:
 private:
   template <bool IS_GENERATIONAL, class T>
   void arraycopy_marking(T* dst, size_t count);
+
+  template <bool IS_GENERATIONAL, class T>
+  bool is_above_tams(const ShenandoahMarkingContext* ctx, T* dst) const;
+
   template <class T>
   inline void arraycopy_evacuation(T* src, size_t count);
   template <class T>
@@ -134,10 +139,7 @@ private:
   template <bool EVAC>
   inline void clone_work(oop src);
 
-  template <class T, bool HAS_FWD, bool EVAC, bool ENQUEUE>
-  inline void arraycopy_work(T* src, size_t count);
-
-  inline bool need_bulk_update(HeapWord* dst);
+  inline bool need_bulk_update(HeapWord* dst) const;
 public:
   // Callbacks for runtime accesses.
   template <DecoratorSet decorators, typename BarrierSetT = ShenandoahBarrierSet>
@@ -175,6 +177,10 @@ public:
 
     // Clone barrier support
     static void clone_in_heap(oop src, oop dst, size_t size);
+
+    // Valhalla support
+    static void value_copy_in_heap(const ValuePayload& src, const ValuePayload& dst);
+    static void value_store_null_in_heap(const ValuePayload& dst);
 
     // Support for concurrent roots evacuation, updating and weak roots clearing
     template <typename T>

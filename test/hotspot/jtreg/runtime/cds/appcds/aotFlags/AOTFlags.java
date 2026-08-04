@@ -72,6 +72,8 @@ public class AOTFlags {
             "-XX:AOTConfiguration=" + aotConfigFile,
             "-XX:AOTCache=" + aotCacheFile,
             "-Xlog:aot",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+AOTCompatibleOopCompression", // avoid production run failure due to incompatible CompressedOops::base
             "-cp", appJar);
         out = CDSTestUtils.executeAndLog(pb, "asm");
         out.shouldContain("AOTCache creation is complete");
@@ -142,6 +144,8 @@ public class AOTFlags {
             "-XX:AOTConfiguration=" + aotConfigFile,
             "-XX:AOTCache=" + aotCacheFile,
             "-Xlog:aot",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+AOTCompatibleOopCompression", // avoid production run failure due to incompatible CompressedOops::base
             "-cp", appJar);
         out = CDSTestUtils.executeAndLog(pb, "asm");
         out.shouldContain("AOTCache creation is complete");
@@ -195,7 +199,7 @@ public class AOTFlags {
             "-XX:AOTConfiguration=" + aotConfigFile,
             "-Xlog:aot=debug",
             "-cp", appJar, helloClass);
-        out = CDSTestUtils.executeAndLog(pb, "ontstep-train");
+        out = CDSTestUtils.executeAndLog(pb, "onestep-train");
         out.shouldContain("Hello World");
         out.shouldContain("AOTConfiguration recorded: " + aotConfigFile);
         out.shouldContain("AOTCache creation is complete: hello.aot");
@@ -207,7 +211,7 @@ public class AOTFlags {
             "-XX:AOTConfiguration=" + aotConfigFile,
             "-Xlog:aot=debug",
             "-cp", appJar, helloClass);
-        out = CDSTestUtils.executeAndLog(pb, "ontstep-train");
+        out = CDSTestUtils.executeAndLog(pb, "onestep-train");
         out.shouldContain("Hello World");
         out.shouldContain("AOTConfiguration recorded: " + aotConfigFile);
         out.shouldContain("AOTCache creation is complete: hello.aot");
@@ -220,7 +224,7 @@ public class AOTFlags {
             "-XX:AOTConfiguration=" + aotConfigFile,
             "-Xlog:aot=debug",
             "-cp", appJar, helloClass);
-        out = CDSTestUtils.executeAndLog(pb, "ontstep-train");
+        out = CDSTestUtils.executeAndLog(pb, "onestep-train");
         out.shouldContain("Hello World");
         out.shouldContain("AOTConfiguration recorded: " + aotConfigFile);
         out.shouldContain("AOTCache creation is complete: hello.aot");
@@ -231,7 +235,7 @@ public class AOTFlags {
             "-XX:AOTCacheOutput=" + aotCacheFile,
             "-Xlog:aot=debug",
             "-cp", appJar, helloClass);
-        out = CDSTestUtils.executeAndLog(pb, "ontstep-train");
+        out = CDSTestUtils.executeAndLog(pb, "onestep-train");
         out.shouldContain("Hello World");
         out.shouldContain("Temporary AOTConfiguration recorded: " + aotCacheFile + ".config");
         out.shouldContain("AOTCache creation is complete: hello.aot");
@@ -243,7 +247,7 @@ public class AOTFlags {
             "-XX:AOTCacheOutput=" + aotCacheFile,
             "-Xlog:aot=debug",
             "-cp", appJar, helloClass);
-        out = CDSTestUtils.executeAndLog(pb, "ontstep-train");
+        out = CDSTestUtils.executeAndLog(pb, "onestep-train");
         out.shouldContain("Hello World");
         out.shouldContain("Temporary AOTConfiguration recorded: " + aotCacheFile + ".config");
         out.shouldContain("AOTCache creation is complete: hello.aot");
@@ -255,7 +259,7 @@ public class AOTFlags {
             "-Dmy.prop=My string -Xshare:off here", // -Xshare:off should not be treated as a single VM opt for the child JVM
             "-Xlog:aot=debug",
             "-cp", appJar, helloClass);
-        out = CDSTestUtils.executeAndLog(pb, "ontstep-train");
+        out = CDSTestUtils.executeAndLog(pb, "onestep-train");
         out.shouldContain("Hello World");
         out.shouldContain("AOTCache creation is complete: hello.aot");
         out.shouldMatch("Picked up JAVA_TOOL_OPTIONS:.* -Dmy.prop=My' 'string' '-Xshare:off' 'here");

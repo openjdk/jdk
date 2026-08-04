@@ -41,6 +41,7 @@
 #include "memory/iterator.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "sanitizers/ub.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/copy.hpp"
@@ -360,14 +361,14 @@ bool AOTMappedHeapLoader::load_heap_region(FileMapInfo* mapinfo) {
   return true;
 }
 
-objArrayOop AOTMappedHeapLoader::root_segment(int segment_idx) {
+refArrayOop AOTMappedHeapLoader::root_segment(int segment_idx) {
   if (!CDSConfig::is_using_archive()) {
     assert(CDSConfig::is_dumping_heap() && Thread::current() == (Thread*)VMThread::vm_thread(), "sanity");
   }
 
-  objArrayOop segment = (objArrayOop)_root_segments->at(segment_idx).resolve();
+  oop segment = _root_segments->at(segment_idx).resolve();
   assert(segment != nullptr, "should have been initialized");
-  return segment;
+  return oop_cast<refArrayOop>(segment);
 }
 
 void AOTMappedHeapLoader::get_segment_indexes(int idx, int& seg_idx, int& int_idx) {
@@ -386,7 +387,7 @@ void AOTMappedHeapLoader::get_segment_indexes(int idx, int& seg_idx, int& int_id
          "sanity: %d index maps to %d segment and %d internal", idx, seg_idx, int_idx);
 }
 
-void AOTMappedHeapLoader::add_root_segment(objArrayOop segment_oop) {
+void AOTMappedHeapLoader::add_root_segment(refArrayOop segment_oop) {
   assert(segment_oop != nullptr, "must be");
   assert(is_in_use(), "must be");
   if (_root_segments == nullptr) {
@@ -403,7 +404,7 @@ oop AOTMappedHeapLoader::get_root(int index) {
   assert(!_root_segments->is_empty(), "must have loaded shared heap");
   int seg_idx, int_idx;
   get_segment_indexes(index, seg_idx, int_idx);
-  objArrayOop result = objArrayOop(root_segment(seg_idx));
+  refArrayOop result = root_segment(seg_idx);
   return result->obj_at(int_idx);
 }
 
@@ -461,8 +462,7 @@ void AOTMappedHeapLoader::finish_initialization(FileMapInfo* info) {
     intptr_t first_segment_addr = bottom + segments.base_offset();
     for (size_t c = 0; c < segments.count(); c++) {
       oop segment_oop = cast_to_oop(first_segment_addr + (c * segments.max_size_in_bytes()));
-      assert(segment_oop->is_objArray(), "Must be");
-      add_root_segment((objArrayOop)segment_oop);
+      add_root_segment(oop_cast<refArrayOop>(segment_oop));
     }
 
     if (CDSConfig::is_dumping_final_static_archive()) {

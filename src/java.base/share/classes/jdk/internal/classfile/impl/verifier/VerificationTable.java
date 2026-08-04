@@ -24,8 +24,11 @@
  */
 package jdk.internal.classfile.impl.verifier;
 
+import java.lang.classfile.constantpool.NameAndTypeEntry;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static jdk.internal.classfile.impl.StackMapGenerator.*;
 
@@ -127,6 +130,7 @@ class VerificationTable {
             frame.set_stack_size(ssize);
             frame.copy_stack(stackmap_frame);
             frame.set_flags(stackmap_frame.flags());
+            frame.set_assert_unset_fields(stackmap_frame.assert_unset_fields());
         }
         return result;
     }
@@ -148,6 +152,8 @@ class VerificationTable {
         private int _parsed_frame_count;
         private VerificationFrame _prev_frame;
         char _max_locals, _max_stack;
+        final Set<NameAndTypeEntry> strictFields;
+        Set<NameAndTypeEntry> _assert_unset_fields_buffer;
         boolean _first;
 
         void check_verification_type_array_size(int size, int max_size) {
@@ -197,6 +203,7 @@ class VerificationTable {
 
         public StackMapReader(byte[] stackmapData, byte[] code_data, int code_len,
                               VerificationFrame init_frame, char max_locals, char max_stack,
+                              Set<NameAndTypeEntry> initial_strict_fields,
                               VerificationWrapper.ConstantPoolWrapper cp, VerifierImpl context) {
             this._verifier = context;
             _stream = new StackMapStream(stackmapData, _verifier);
@@ -206,6 +213,8 @@ class VerificationTable {
             _prev_frame = init_frame;
             _max_locals = max_locals;
             _max_stack = max_stack;
+            strictFields = Set.copyOf(initial_strict_fields);
+            _assert_unset_fields_buffer = initial_strict_fields;
             _first = true;
             if (stackmapData != null) {
                 _cp = cp;
@@ -278,6 +287,41 @@ class VerificationTable {
             int offset;
             VerificationType[] locals = null;
             int frame_type = _stream.get_u1();
+            if (frame_type == EARLY_LARVAL) {
+                int num_unset_fields = _stream.get_u2();
+                Set<NameAndTypeEntry> new_fields = new HashSet<>();
+                for (int i = 0; i < num_unset_fields; i++) {
+                    int index = _stream.get_u2();
+                    if (!_cp.is_within_bounds(index) || _cp.tagAt(index) != VerifierImpl.JVM_CONSTANT_NameAndType) {
+                        _prev_frame.verifier().verifyError("Invalid use of strict instance fields %d %s %s".formatted(_prev_frame.offset(), _prev_frame,
+                                "Invalid constant pool index in early larval frame: %d".formatted(index)));
+                    }
+                    var tmp = _cp.cp.entryByIndex(index, NameAndTypeEntry.class);
+                    if (!strictFields.contains(tmp)) {
+                        _prev_frame.verifier().verifyError("Invalid use of strict instance fields %d %s %s".formatted(_prev_frame.offset(), _prev_frame,
+                                "Strict fields not a subset of initial strict instance fields: %s".formatted(tmp)));
+                    } else {
+                        new_fields.add(tmp);
+                    }
+                }
+                // Only modify strict instance fields the frame has uninitialized this
+                if (_prev_frame.flag_this_uninit()) {
+                    _assert_unset_fields_buffer = _prev_frame.merge_unset_fields(new_fields);
+                } else if (!new_fields.isEmpty()) {
+                    _prev_frame.verifier().verifyError("Invalid use of strict instance fields %d %s %s".formatted(_prev_frame.offset(), _prev_frame,
+                            "Cannot have uninitialized strict fields after class initialization"));
+                }
+                // Continue reading frame data
+                if (at_end()) {
+                    _prev_frame.verifier().verifyError("Invalid use of strict instance fields %d %s %s".formatted(_prev_frame.offset(), _prev_frame,
+                            "Early larval frame must be followed by a base frame"));
+                }
+                frame_type = _stream.get_u1();
+                if (frame_type == EARLY_LARVAL) {
+                    _prev_frame.verifier().verifyError("Invalid use of strict instance fields %d %s %s".formatted(_prev_frame.offset(), _prev_frame,
+                            "Early larval frame must be followed by a base frame"));
+                }
+            }
             if (frame_type <= SAME_FRAME_END) {
                 if (_first) {
                     offset = frame_type;
@@ -288,7 +332,7 @@ class VerificationTable {
                     offset = _prev_frame.offset() + frame_type + 1;
                     locals = _prev_frame.locals();
                 }
-                frame = new VerificationFrame(offset, _prev_frame.flags(), _prev_frame.locals_size(), 0, _max_locals, _max_stack, locals, null, _verifier);
+                frame = new VerificationFrame(offset, _prev_frame.flags(), _prev_frame.locals_size(), 0, _max_locals, _max_stack, locals, null, _assert_unset_fields_buffer, _verifier);
                 if (_first && locals != null) {
                     frame.copy_locals(_prev_frame);
                 }
@@ -313,7 +357,7 @@ class VerificationTable {
                     stack_size = 2;
                 }
                 check_verification_type_array_size(stack_size, _max_stack);
-                frame = new VerificationFrame(offset, _prev_frame.flags(), _prev_frame.locals_size(), stack_size, _max_locals, _max_stack, locals, stack, _verifier);
+                frame = new VerificationFrame(offset, _prev_frame.flags(), _prev_frame.locals_size(), stack_size, _max_locals, _max_stack, locals, stack, _assert_unset_fields_buffer, _verifier);
                 if (_first && locals != null) {
                     frame.copy_locals(_prev_frame);
                 }
@@ -342,7 +386,7 @@ class VerificationTable {
                     stack_size = 2;
                 }
                 check_verification_type_array_size(stack_size, _max_stack);
-                frame = new VerificationFrame(offset, _prev_frame.flags(), _prev_frame.locals_size(), stack_size, _max_locals, _max_stack, locals, stack, _verifier);
+                frame = new VerificationFrame(offset, _prev_frame.flags(), _prev_frame.locals_size(), stack_size, _max_locals, _max_stack, locals, stack, _assert_unset_fields_buffer, _verifier);
                 if (_first && locals != null) {
                     frame.copy_locals(_prev_frame);
                 }
@@ -376,7 +420,7 @@ class VerificationTable {
                 } else {
                     offset = _prev_frame.offset() + offset_delta + 1;
                 }
-                frame = new VerificationFrame(offset, flags, new_length, 0, _max_locals, _max_stack, locals, null, _verifier);
+                frame = new VerificationFrame(offset, flags, new_length, 0, _max_locals, _max_stack, locals, null, _assert_unset_fields_buffer, _verifier);
                 if (_first && locals != null) {
                     frame.copy_locals(_prev_frame);
                 }
@@ -407,7 +451,7 @@ class VerificationTable {
                 } else {
                     offset = _prev_frame.offset() + offset_delta + 1;
                 }
-                frame = new VerificationFrame(offset, flags[0], real_length, 0, _max_locals, _max_stack, locals, null, _verifier);
+                frame = new VerificationFrame(offset, flags[0], real_length, 0, _max_locals, _max_stack, locals, null, _assert_unset_fields_buffer, _verifier);
                 _first = false;
                 return frame;
             }
@@ -449,7 +493,7 @@ class VerificationTable {
                 } else {
                     offset = _prev_frame.offset() + offset_delta + 1;
                 }
-                frame = new VerificationFrame(offset, flags[0], real_locals_size, real_stack_size, _max_locals, _max_stack, locals, stack, _verifier);
+                frame = new VerificationFrame(offset, flags[0], real_locals_size, real_stack_size, _max_locals, _max_stack, locals, stack, _assert_unset_fields_buffer, _verifier);
                 _first = false;
                 return frame;
             }
