@@ -27,7 +27,7 @@
 
 extern "C" {
 
-static const char* const NativeMethodPrefix = "wrapped_";
+static const char* const NATIVE_METHOD_PREFIX = "wrapped_";
 
 // Implements PrefixedNativeStackWalk.wrapped_go(): the "wrapped_" prefix is
 // stripped when the VM resolves wrapped_go(), so the entry point it looks for
@@ -73,9 +73,9 @@ Agent_OnLoad(JavaVM* jvm, char* options, void* reserved) {
     return JNI_ERR;
   }
 
-  err = jvmti->SetNativeMethodPrefix(NativeMethodPrefix);
+  err = jvmti->SetNativeMethodPrefix(NATIVE_METHOD_PREFIX);
   if (err != JVMTI_ERROR_NONE) {
-    LOG("SetNativeMethodPrefix(\"%s\") failed with %d\n", NativeMethodPrefix, err);
+    LOG("SetNativeMethodPrefix(\"%s\") failed with %d\n", NATIVE_METHOD_PREFIX, err);
     return JNI_ERR;
   }
   return JNI_OK;
