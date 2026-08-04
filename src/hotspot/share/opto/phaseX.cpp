@@ -2734,6 +2734,14 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       return u->is_Add();
     });
   }
+
+  // AndLNode::Ideal optimizes GraphKit::mark_word_test patterns
+  // Pattern: AndL(LoadL(x=mark word), y)
+  if (use->is_Load()) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->Opcode() == Op_AndL;
+    });
+  }
 }
 
 /**
