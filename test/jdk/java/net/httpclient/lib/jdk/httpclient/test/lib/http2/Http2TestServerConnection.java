@@ -25,6 +25,8 @@ package jdk.httpclient.test.lib.http2;
 
 import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.internal.net.http.common.Log;
+import jdk.internal.net.http.common.Logger;
+import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.frame.ContinuationFrame;
 import jdk.internal.net.http.frame.DataFrame;
 import jdk.internal.net.http.frame.ErrorFrame;
@@ -98,6 +100,9 @@ import static jdk.internal.net.http.frame.SettingsFrame.HEADER_TABLE_SIZE;
  * or HTTPS opened using "h2" ALPN.
  */
 public class Http2TestServerConnection {
+
+    private final Logger debugLogger;
+
     final Http2TestServer server;
     final Map<Integer, Queue<?>> streams; // input q per stream
     final Map<Integer, BodyOutputStream> outStreams; // output q per stream
@@ -172,7 +177,8 @@ public class Http2TestServerConnection {
         throws IOException
     {
         this.server = Objects.requireNonNull(server, "server");
-        log("New connection from " + socket);
+        this.debugLogger = Utils.getDebugLogger(() -> this.server.name);
+        this.debugLogger.log("New connection from " + socket);
 
         if (socket instanceof SSLSocket) {
             SSLSocket sslSocket = (SSLSocket)socket;
@@ -218,9 +224,9 @@ public class Http2TestServerConnection {
             String prop = properties.getProperty(propPrefix + key);
             if (prop != null) {
                 try {
-                    log("setting " + key + " property to: " + prop);
+                    this.debugLogger.log("setting " + key + " property to: " + prop);
                     int num = Integer.parseInt(numS);
-                    log("num = " + num);
+                    this.debugLogger.log("num = " + num);
                     s.setParameter(num, Integer.parseInt(prop));
                 } catch (NumberFormatException e) {/* ignore errors */}
             }
@@ -268,7 +274,7 @@ public class Http2TestServerConnection {
         }
         final GoAwayFrame frame = new GoAwayFrame(maxProcessedStreamId, error);
         outputQ.put(frame);
-        log("Sending GOAWAY frame " + frame + " from server connection " + this);
+        this.debugLogger.log("Sending GOAWAY frame " + frame + " from server connection " + this);
     }
 
     /**
@@ -284,7 +290,7 @@ public class Http2TestServerConnection {
      */
     void handlePing(PingFrame ping) throws IOException {
         if (ping.streamid() != 0) {
-            log("Invalid ping received");
+            this.debugLogger.log("Invalid ping received");
             close(ErrorFrame.PROTOCOL_ERROR);
             return;
         }
@@ -292,7 +298,7 @@ public class Http2TestServerConnection {
             // did we send a Ping?
             PingRequest request = getNextRequest();
             if (request == null) {
-                log("Invalid ping ACK received");
+                this.debugLogger.log("Invalid ping ACK received");
                 close(ErrorFrame.PROTOCOL_ERROR);
                 return;
             } else if (!Arrays.equals(request.pingData, ping.getData())) {
@@ -343,7 +349,7 @@ public class Http2TestServerConnection {
             return; // already closing/closed
         }
         try {
-            log("Server connection to " + socket.getRemoteSocketAddress()
+            this.debugLogger.log("Server connection to " + socket.getRemoteSocketAddress()
                     + " stopping " + (error == NO_ERROR ? "no error" : ("error=" + error))
                     + ". " + streams.size());
             // place a close sentinel in the input queues of each stream of this connection
@@ -360,13 +366,13 @@ public class Http2TestServerConnection {
             // frames are written out before the socket is closed
             this.writeLoopThread.join();
         } catch (Exception e) {
-            log("ignoring failure during Http2TestServerConnection.close() - " + e);
+            this.debugLogger.log("ignoring failure during Http2TestServerConnection.close() - " + e);
         } finally {
-            log("closing socket " + socket);
+            this.debugLogger.log("closing socket " + socket);
             try {
                 socket.close();
             } catch (IOException e) {
-                log("ignoring Socket.close() exception: " + e);
+                this.debugLogger.log("ignoring Socket.close() exception: " + e);
             }
         }
     }
@@ -374,12 +380,12 @@ public class Http2TestServerConnection {
     private void readPreface() throws IOException {
         int len = clientPreface.length;
         byte[] bytes = new byte[len];
-        log("reading preface");
+        this.debugLogger.log("reading preface");
         int n = is.readNBytes(bytes, 0, len);
         if (n >= 0) {
             if (Arrays.compare(clientPreface, bytes) != 0) {
                 String msg = String.format("Invalid preface: read %s/%s bytes", n, len);
-                log(msg);
+                this.debugLogger.log(msg);
                 throw new IOException(msg +": \"" +
                         new String(bytes, 0, n, ISO_8859_1)
                                 .replace("\r", "\\r")
@@ -394,7 +400,7 @@ public class Http2TestServerConnection {
     Http1InitialRequest doUpgrade(Http1InitialRequest upgrade) throws IOException {
         String h2c = getHeader(upgrade.headers, "Upgrade");
         if (h2c == null || !h2c.equals("h2c")) {
-            log("HEADERS: " + upgrade);
+            this.debugLogger.log("HEADERS: " + upgrade);
             throw new IOException("Bad upgrade 1 " + h2c);
         }
 
@@ -466,7 +472,7 @@ public class Http2TestServerConnection {
                     socket.close();
                     return;
                 } else {
-                    log("HEADERS: " + upgrade);
+                    this.debugLogger.log("HEADERS: " + upgrade);
                     throw new IOException("Bad upgrade 1 " + h2c);
                 }
             }
@@ -541,10 +547,10 @@ public class Http2TestServerConnection {
             return;
         } else if (f instanceof GoAwayFrame) {
             if (closeConnOnIncomingGoAway) {
-                log("Closing connection: " + f);
+                this.debugLogger.log("Closing connection: " + f);
                 close(ErrorFrame.NO_ERROR);
             } else {
-                log("Will not close connection for incoming GOAWAY: " + f);
+                this.debugLogger.log("Will not close connection for incoming GOAWAY: " + f);
             }
         } else if (f instanceof PingFrame) {
             handlePing((PingFrame)f);
@@ -637,7 +643,7 @@ public class Http2TestServerConnection {
         // skip processing the request if configured to do so
         final String connKey = connectionKey();
         if (!shouldProcessNewHTTPRequest(connKey)) {
-            log("Rejecting primordial stream 1 and sending GOAWAY" +
+            this.debugLogger.log("Rejecting primordial stream 1 and sending GOAWAY" +
                     " on server connection " + connKey + ", for request: " + path);
             sendGoAway(ErrorFrame.NO_ERROR);
             return;
@@ -714,7 +720,7 @@ public class Http2TestServerConnection {
         final String connKey = connectionKey();
         final String path = headers.firstValue(":path").orElse("");
         if (!shouldProcessNewHTTPRequest(connKey)) {
-            log("Rejecting stream " + streamid
+            this.debugLogger.log("Rejecting stream " + streamid
                     + " and sending GOAWAY on server connection "
                     + connKey + ", for request: " + path);
             sendGoAway(ErrorFrame.NO_ERROR);
@@ -760,15 +766,15 @@ public class Http2TestServerConnection {
         String path = headers.firstValue(":path").orElse("");
         String scheme = headers.firstValue(":scheme").orElse("");
         String authority = headers.firstValue(":authority").orElse("");
-        log(method + " " + path);
+        this.debugLogger.log(method + " " + path);
         int winsize = clientSettings.getParameter(
                 SettingsFrame.INITIAL_WINDOW_SIZE);
         final InputStream bis;
         if (endStreamReceived && queue.size() == 0) {
-            log("got END_STREAM for stream " + streamid);
+            this.debugLogger.log("got END_STREAM for stream " + streamid);
             bis = NullInputStream.INSTANCE;
         } else {
-            log("creating input stream for stream " + streamid);
+            this.debugLogger.log("creating input stream for stream " + streamid);
             bis = new BodyInputStream(queue, streamid, this);
         }
         try (bis;
@@ -811,7 +817,7 @@ public class Http2TestServerConnection {
             // everything happens in the exchange from here. Hopefully will
             // return though.
         } catch (Throwable e) {
-            log("handleRequest exception: " + e);
+            this.debugLogger.log("handleRequest exception: " + e);
             e.printStackTrace();
             close(ErrorFrame.INTERNAL_ERROR);
         }
@@ -854,7 +860,7 @@ public class Http2TestServerConnection {
             while (!closed.get()) {
                 Http2Frame frame = readFrameImpl();
                 if (frame == null) {
-                    log("EOF reached on connection " + connectionKey()
+                    this.debugLogger.log("EOF reached on connection " + connectionKey()
                             + ", will no longer accept incoming frames");
                     close(NO_ERROR, true);
                     return;
@@ -874,7 +880,7 @@ public class Http2TestServerConnection {
                     Queue q = streams.get(stream);
                     if (frame.type() == HeadersFrame.TYPE) {
                         if (q != null) {
-                            log("HEADERS frame for existing stream! Error.");
+                            this.debugLogger.log("HEADERS frame for existing stream! Error.");
                             // TODO: close connection
                             continue;
                         } else {
@@ -883,7 +889,7 @@ public class Http2TestServerConnection {
                             // if we already sent a goaway, then don't create new streams with
                             // higher stream ids.
                             if (finalProcessedStreamId != -1 && streamId > finalProcessedStreamId) {
-                                log(connectionKey() + " resetting stream " + streamId
+                                this.debugLogger.log(connectionKey() + " resetting stream " + streamId
                                         + " as REFUSED_STREAM");
                                 final ResetFrame rst = new ResetFrame(streamId, REFUSED_STREAM);
                                 outputQ.put(rst);
@@ -895,9 +901,9 @@ public class Http2TestServerConnection {
                         }
                     } else {
                         if (q == null && !pushStreams.contains(stream)) {
-                            log("Non Headers frame received with non existing stream ("
+                            this.debugLogger.log("Non Headers frame received with non existing stream ("
                                     + frame.streamid() + ")");
-                            log(frame.toString());
+                            this.debugLogger.log(frame.toString());
                             continue;
                         }
                         if (frame.type() == WindowUpdateFrame.TYPE) {
@@ -928,21 +934,21 @@ public class Http2TestServerConnection {
                             } else if (isClientStreamId(stream) && stream < next) {
                                 // We may receive a reset on a client stream that has already
                                 // been closed. Just ignore it.
-                                log("received ResetFrame on closed stream: " + stream);
-                                log(frame.toString());
+                                this.debugLogger.log("received ResetFrame on closed stream: " + stream);
+                                this.debugLogger.log(frame.toString());
                             } else if (isServerStreamId(stream) && stream < nextPush) {
                                 // We may receive a reset on a push stream that has already
                                 // been closed. Just ignore it.
-                                log("received ResetFrame on closed push stream: " + stream);
-                                log(frame.toString());
+                                this.debugLogger.log("received ResetFrame on closed push stream: " + stream);
+                                this.debugLogger.log(frame.toString());
                             } else {
-                                log("Unexpected frame on: " + stream);
-                                log(frame.toString());
+                                this.debugLogger.log("Unexpected frame on: " + stream);
+                                this.debugLogger.log(frame.toString());
                                 throw new IOException("Unexpected frame");
                             }
                         } else {
                             if (!q.putIfOpen(frame)) {
-                                log("Stream " + stream + " is closed: dropping " + frame);
+                                this.debugLogger.log("Stream " + stream + " is closed: dropping " + frame);
                             }
                         }
                     }
@@ -950,7 +956,7 @@ public class Http2TestServerConnection {
             }
         } catch (Throwable e) {
             if (!closed.get()) {
-                log("Exception in readLoop: " + e);
+                this.debugLogger.log("Exception in readLoop: " + e);
                 e.printStackTrace();
             }
             close(ErrorFrame.PROTOCOL_ERROR);
@@ -959,7 +965,7 @@ public class Http2TestServerConnection {
 
     boolean sendAltSvc(final String originHost, final Http2TestServer.AltSvcAddr altSvcAddr) {
         Objects.requireNonNull(originHost);
-        log("AltSvcFrame for: " + originHost);
+        this.debugLogger.log("AltSvcFrame for: " + originHost);
         try {
             URI url = new URI("https://" + originHost);
             String origin = url.toASCIIString();
@@ -969,11 +975,11 @@ public class Http2TestServerConnection {
             svc = svc + ", h3-34=\"" + altSvcAddr.host() + ":" + altSvcAddr.port()
                     +"\"; ma=2592000; persist=1";
             AltSvcFrame frame = new AltSvcFrame(0, 0, Optional.of(origin), svc);
-            log("Sending AltSvcFrame for: " + origin + "[" + svc + "]");
+            this.debugLogger.log("Sending AltSvcFrame for: " + origin + "[" + svc + "]");
             outputQ.put(frame);
             return true;
         } catch (IOException | URISyntaxException ex) {
-            log("Failed to send AltSvcFrame: " + ex);
+            this.debugLogger.log("Failed to send AltSvcFrame: " + ex);
             ex.printStackTrace();
         }
         return false;
@@ -1121,7 +1127,7 @@ public class Http2TestServerConnection {
                                 : new ContinuationFrame(rh.streamid(), flags, list);
                         if (Log.headers()) {
                             // avoid too much chatter: log only if Log.headers() is enabled
-                            log("writing " + hf);
+                            this.debugLogger.log("writing " + hf);
                         }
                         writeFrame(hf);
                         cont++;
@@ -1131,7 +1137,7 @@ public class Http2TestServerConnection {
                 } else
                     writeFrame(frame);
             }
-            log("Connection writer stopping " + connectionKey());
+            this.debugLogger.log("Connection writer stopping " + connectionKey());
         } catch (Throwable e) {
             e.printStackTrace();
         }
@@ -1178,7 +1184,7 @@ public class Http2TestServerConnection {
 
                 ii.transferTo(oo);
             } catch (Throwable ex) {
-                log("pushing response error: " + ex);
+                this.debugLogger.log("pushing response error: " + ex);
             } finally {
                 closeIgnore(ii);
                 closeIgnore(oo);
@@ -1339,7 +1345,7 @@ public class Http2TestServerConnection {
             }
             return new Http1InitialRequest(headers, buf);
         } catch (IOException e) {
-            log("headers read: [ " + headers + " ]");
+            this.debugLogger.log("headers read: [ " + headers + " ]");
             throw e;
         }
     }
@@ -1413,14 +1419,10 @@ public class Http2TestServerConnection {
     }
 
     public void updateConnectionWindow(int amount) {
-        log("sendWindow (available:" + sendWindow.availablePermits()
+        this.debugLogger.log("sendWindow (available:" + sendWindow.availablePermits()
                 + ", released amount=" + amount + ") is now: "
                 + (sendWindow.availablePermits() + amount));
         sendWindow.release(amount);
-    }
-
-    private void log(final String msg) {
-       System.err.println(this.server.name + ": " + msg);
     }
 
     // simplified output headers class. really just a type safe container
