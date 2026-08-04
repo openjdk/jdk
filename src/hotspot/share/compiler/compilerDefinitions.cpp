@@ -272,17 +272,27 @@ void CompilerConfig::set_compilation_policy_flags() {
   }
 
 #ifdef COMPILER2
-  if (HotCodeHeap && !is_c2_enabled()) {
-    warning("HotCodeHeap disabled because C2 is disabled.");
-    FLAG_SET_ERGO(HotCodeHeap, false);
-    FLAG_SET_ERGO(HotCodeHeapSize, 0);
-  } else if (HotCodeHeap) {
-    if (FLAG_IS_DEFAULT(SegmentedCodeCache)) {
-      FLAG_SET_ERGO(SegmentedCodeCache, true);
+  // HotCodeHeap ergonomic checks
+  // Disable HotCodeHeap if it is enabled with an unsupported configuration
+  if (HotCodeHeap) {
+    if (!is_c2_enabled()) {
+      warning("HotCodeHeap disabled and HotCodeHeapSize zeroed because C2 is disabled.");
+      FLAG_SET_ERGO(HotCodeHeap, false);
+      FLAG_SET_ERGO(HotCodeHeapSize, 0);
     } else if (!SegmentedCodeCache) {
-      vm_exit_during_initialization("HotCodeHeap requires SegmentedCodeCache enabled");
+      if (FLAG_IS_DEFAULT(SegmentedCodeCache)) {
+        FLAG_SET_ERGO(SegmentedCodeCache, true);
+      } else {
+        warning("HotCodeHeap disabled and HotCodeHeapSize zeroed because SegmentedCodeCache is disabled.");
+        FLAG_SET_ERGO(HotCodeHeap, false);
+        FLAG_SET_ERGO(HotCodeHeapSize, 0);
+      }
     }
+  }
 
+  // HotCodeHeap validation checks
+  // Throw an error and exit if HotCodeHeap is enabled with an invalid configuration
+  if (HotCodeHeap) {
     if (FLAG_IS_DEFAULT(NMethodRelocation)) {
       FLAG_SET_ERGO(NMethodRelocation, true);
     } else if (!NMethodRelocation) {
