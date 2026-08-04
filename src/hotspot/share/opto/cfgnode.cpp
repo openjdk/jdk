@@ -990,7 +990,8 @@ bool RegionNode::optimize_trichotomy(PhaseIterGVN* igvn) {
              cmp1->Opcode() == Op_CmpN ||
       // SubTypeCheck is not commutative.
              cmp1->is_SubTypeCheck() ||
-      // TODO: description
+      // FlatArrayCheck does not represent an ordering relation
+      // and therefore does not obey trichotomy.
              cmp1->is_FlatArrayCheck() ||
       // OverflowNode only use Bool[of], that should be rejected
       // by mask merge anyway.
