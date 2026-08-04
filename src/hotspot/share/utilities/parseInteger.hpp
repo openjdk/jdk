@@ -124,7 +124,7 @@ static bool parse_integer(const char *s, char **endptr, T* result) {
 
   T n = 0;
   bool is_hex = (s[0] == '0' && (s[1] == 'x' || s[1] == 'X')) ||
-                (s[0] == '-' && s[1] == '0' && (s[2] == 'x' || s[3] == 'X'));
+                (s[0] == '-' && s[1] == '0' && (s[2] == 'x' || s[2] == 'X'));
   char* remainder;
 
   if (!parse_integer_impl<T>(s, &remainder, (is_hex ? 16 : 10), &n)) {

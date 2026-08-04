@@ -45,6 +45,29 @@
 
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 
+void C2_MacroAssembler::entry_barrier() {
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  // Dummy labels for just measuring the code size
+  Label dummy_slow_path;
+  Label dummy_continuation;
+  Label dummy_guard;
+  Label* slow_path = &dummy_slow_path;
+  Label* continuation = &dummy_continuation;
+  Label* guard = &dummy_guard;
+
+  if (!Compile::current()->output()->in_scratch_emit_size()) {
+    // Use real labels from actual stub when not emitting code for the purpose of measuring its size
+    C2EntryBarrierStub* stub = new (Compile::current()->comp_arena()) C2EntryBarrierStub();
+    Compile::current()->output()->add_stub(stub);
+    slow_path = &stub->entry();
+    continuation = &stub->continuation();
+    guard = &stub->guard();
+  }
+
+  // In the C2 code, we move the non-hot part of nmethod entry barriers out-of-line to a stub.
+  bs->nmethod_entry_barrier(this, slow_path, continuation, guard);
+}
+
 void C2_MacroAssembler::fast_lock(Register obj, Register box,
                                   Register tmp1, Register tmp2, Register tmp3, Register tmp4) {
   // Flag register, zero for success; non-zero for failure.
@@ -121,6 +144,10 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
     bind(inflated);
 
     const Register tmp1_monitor = tmp1;
+    // Offsets into the current thread's object monitor cache (omc).
+    const ByteSize thr_omc_offset     = JavaThread::om_cache_offset();
+    const ByteSize omc_monitor_offset = OMCache::monitor_offset();
+    const ByteSize omc_obj_offset     = OMCache::obj_offset();
 
     if (!UseObjectMonitorTable) {
       assert(tmp1_monitor == tmp1_mark, "should be the same here");
@@ -132,17 +159,11 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
       // Save the mark, we might need it to extract the hash.
       mv(tmp2_hash, tmp1_mark);
 
-      // Look for the monitor in the om_cache.
+      // Look for the monitor in the current thread's object monitor cache (omc).
 
-      ByteSize cache_offset   = JavaThread::om_cache_oops_offset();
-      ByteSize monitor_offset = OMCache::oop_to_monitor_difference();
-      const int num_unrolled  = OMCache::CAPACITY;
-      for (int i = 0; i < num_unrolled; i++) {
-        ld(tmp1_monitor, Address(xthread, cache_offset + monitor_offset));
-        ld(tmp4, Address(xthread, cache_offset));
-        beq(obj, tmp4, monitor_found);
-        cache_offset = cache_offset + OMCache::oop_to_oop_difference();
-      }
+      ld(tmp1_monitor, Address(xthread, thr_omc_offset + omc_monitor_offset));
+      ld(tmp4, Address(xthread, thr_omc_offset + omc_obj_offset));
+      beq(obj, tmp4, monitor_found);
 
       // Look for the monitor in the table.
 
@@ -169,6 +190,10 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
       BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
       bs_asm->try_peek_weak_handle_in_nmethod(this, tmp3, tmp3, tmp2, slow_path);
       bne(tmp3, obj, slow_path);
+
+      // Store the monitor in the current thread's object monitor cache (omc).
+      sd(tmp1_monitor, Address(xthread, thr_omc_offset + omc_monitor_offset));
+      sd(obj, Address(xthread, thr_omc_offset + omc_obj_offset));
 
       bind(monitor_found);
     }
@@ -200,6 +225,7 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
 
     bind(monitor_locked);
     if (UseObjectMonitorTable) {
+      // Cache the monitor for unlock.
       sd(tmp1_monitor, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
     }
   }
@@ -2352,7 +2378,7 @@ void C2_MacroAssembler::float16_to_float(FloatRegister dst, Register src, Regist
   mv(t0, 0x7c00);
   andr(tmp, src, t0);
   // jump to stub processing NaN and Inf cases.
-  beq(t0, tmp, stub->entry(), true);
+  beq(t0, tmp, stub->entry(), /* is_far */ true);
 
   // non-NaN or non-Inf cases, just use built-in instructions.
   fmv_h_x(dst, src);
@@ -2384,7 +2410,7 @@ void C2_MacroAssembler::float_to_float16(Register dst, FloatRegister src, FloatR
   // replace fclass with feq as performance optimization.
   feq_s(t0, src, src);
   // jump to stub processing NaN cases.
-  beqz(t0, stub->entry(), true);
+  beqz(t0, stub->entry(), /* is_far */ true);
 
   // non-NaN cases, just use built-in instructions.
   fcvt_h_s(ftmp, src);
@@ -2445,7 +2471,7 @@ void C2_MacroAssembler::float16_to_float_v(VectorRegister dst, VectorRegister sr
   vfwcvt_f_f_v(dst, src);
 
   // jump to stub processing NaN and Inf cases if there is any of them in the vector-wide.
-  bnez(t0, stub->entry(), true);
+  bnez(t0, stub->entry(), /* is_far */ true);
 
   bind(stub->continuation());
 }
@@ -2538,7 +2564,7 @@ void C2_MacroAssembler::float_to_float16_v(VectorRegister dst, VectorRegister sr
   vfncvt_f_f_w(dst, src);
 
   // jump to stub processing NaN cases.
-  bnez(t0, stub->entry(), true);
+  bnez(t0, stub->entry(), /* is_far */ true);
 
   bind(stub->continuation());
 }
@@ -3293,6 +3319,17 @@ void C2_MacroAssembler::extract_v(Register dst, VectorRegister src,
     slidedown_v(vtmp, src, idx);
     vmv_x_s(dst, vtmp);
   }
+}
+
+// Extract a scalar element from a vector at position 'idx'.
+// The input elements in src are expected to be of integral type.
+void C2_MacroAssembler::extract_v(Register dst, VectorRegister src,
+                                  BasicType bt, Register idx, VectorRegister vtmp) {
+  assert(is_integral_type(bt), "unsupported element type");
+  // Only need the first element after vector slidedown
+  vsetvli_helper(bt, 1);
+  vslidedown_vx(vtmp, src, idx);
+  vmv_x_s(dst, vtmp);
 }
 
 // Extract a scalar element from an vector at position 'idx'.

@@ -1,6 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,7 +144,7 @@ void ShenandoahGenerationalFullGC::account_for_region(ShenandoahHeapRegion* r, s
 void ShenandoahGenerationalFullGC::maybe_coalesce_and_fill_region(ShenandoahHeapRegion* r) {
   if (r->is_pinned() && r->is_old() && r->is_active() && !r->is_humongous()) {
     r->begin_preemptible_coalesce_and_fill();
-    r->oop_coalesce_and_fill(false);
+    r->oop_coalesce_and_fill(/* cancellable = */ false, /* do_card_table_updates = */ false);
   }
 }
 
@@ -157,7 +157,9 @@ void ShenandoahGenerationalFullGC::compute_balances() {
   // Invoke this in case we are able to transfer memory from OLD to YOUNG
   size_t allocation_runway =
     heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(0L);
-  heap->compute_old_generation_balance(allocation_runway, 0, 0);
+  size_t max_transfer = MIN2(allocation_runway,
+                             heap->young_generation()->free_unaffiliated_regions() * ShenandoahHeapRegion::region_size_bytes());
+  heap->compute_old_generation_balance(max_transfer, 0, 0);
 }
 
 ShenandoahPrepareForGenerationalCompactionObjectClosure::ShenandoahPrepareForGenerationalCompactionObjectClosure(PreservedMarks* preserved_marks,
@@ -312,11 +314,7 @@ void ShenandoahPrepareForGenerationalCompactionObjectClosure::do_object(oop p) {
 
     // After full gc compaction, all regions have age 0.  Embed the region's age into the object's age in order to preserve
     // tenuring progress.
-    if (_heap->is_aging_cycle()) {
-      ShenandoahHeap::increase_object_age(p, from_region_age + 1);
-    } else {
-      ShenandoahHeap::increase_object_age(p, from_region_age);
-    }
+    ShenandoahHeap::increase_object_age(p, from_region_age + 1);
 
     if (_young_compact_point + obj_size > _young_to_region->end()) {
       ShenandoahHeapRegion* new_to_region;

@@ -31,7 +31,7 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.math
  * @requires os.arch == "riscv64" & vm.cpu.features ~= ".*rvv.*"
- * @run main compiler.vectorization.TestRoundVectorDoubleRandom
+ * @run driver ${test.main.class}
  */
 
 package compiler.vectorization;

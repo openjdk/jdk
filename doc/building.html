@@ -394,11 +394,11 @@ to date at the time of writing.</p>
 <tbody>
 <tr class="odd">
 <td>Linux/x64</td>
-<td>Oracle Enterprise Linux 6.4 / 8.x</td>
+<td>Oracle Linux 6.4 / 8.x</td>
 </tr>
 <tr class="even">
 <td>Linux/aarch64</td>
-<td>Oracle Enterprise Linux 7.6 / 8.x</td>
+<td>Oracle Linux 7.6 / 8.x</td>
 </tr>
 <tr class="odd">
 <td>macOS</td>
@@ -1495,26 +1495,24 @@ following targets are known to work:</p>
 </tr>
 </tbody>
 </table>
-<p><code>BASE_OS</code> must be one of <code>OL</code> for Oracle
-Enterprise Linux or <code>Fedora</code>. If the base OS is
-<code>Fedora</code> the corresponding Fedora release can be specified
-with the help of the <code>BASE_OS_VERSION</code> option. If the build
-is successful, the new devkits can be found in the
+<p><code>BASE_OS</code> must be one of <code>OL</code> for Oracle Linux
+or <code>Fedora</code>. The release/version of the base OS can be
+specified using the <code>BASE_OS_VERSION</code> option. If the build is
+successful, the new devkits can be found in the
 <code>build/devkit/result</code> subdirectory:</p>
 <pre><code>cd make/devkit
-make TARGETS=&quot;ppc64le-linux-gnu aarch64-linux-gnu&quot; BASE_OS=Fedora BASE_OS_VERSION=21
+make TARGETS=&quot;ppc64le-linux-gnu aarch64-linux-gnu&quot; BASE_OS=Fedora
 ls -1 ../../build/devkit/result/
 x86_64-linux-gnu-to-aarch64-linux-gnu
 x86_64-linux-gnu-to-ppc64le-linux-gnu</code></pre>
 <p>Notice that devkits are not only useful for targeting different build
 platforms. Because they contain the full build dependencies for a system
-(i.e. compiler and root file system), they can easily be used to build
-well-known, reliable and reproducible build environments. You can for
-example create and use a devkit with GCC 7.3 and a Fedora 12 sysroot
-environment (with glibc 2.11) on Ubuntu 14.04 (which doesn't have GCC
-7.3 by default) to produce JDK binaries which will run on all Linux
-systems with runtime libraries newer than the ones from Fedora 12 (e.g.
-Ubuntu 16.04, SLES 11 or RHEL 6).</p>
+(i.e., compiler and root file system/sysroot), they can easily be used
+to build well-known, reliable, and reproducible build environments. You
+can, for example, create and use a devkit with a version of the GCC
+compiler not provided by the host OS, using a sysroot from an older
+Linux distribution to produce JDK binaries which will run on all Linux
+systems with newer runtime libraries.</p>
 <h4 id="using-debian-debootstrap">Using Debian debootstrap</h4>
 <p>On Debian (or a derivative like Ubuntu), you can create sysroots for
 foreign architectures with tools provided by the OS. You can use

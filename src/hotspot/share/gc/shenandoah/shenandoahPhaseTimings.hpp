@@ -70,6 +70,7 @@ class outputStream;
   SHENANDOAH_SIMPLE_PHASE_DEF(f, final_mark_gross,                                "Pause Final Mark (G)")            \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, final_mark,                                      "Pause Final Mark (N)")            \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, final_mark_verify,                               "  Verify")                        \
+  SHENANDOAH_SIMPLE_PHASE_DEF(f, final_mark_flush_satb_roots,                     "  Flush SATB and Roots")          \
   SHENANDOAH_WORKER_PHASE_DEF(f, finish_mark,                                     "  Finish Mark",                   \
                                                                                   "    FM: ")                        \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, final_mark_propagate_gc_state,                   "  Propagate GC State")            \
@@ -105,8 +106,10 @@ class outputStream;
                                                                                   "  CE: ")                          \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, conc_update_card_table,                          "Concurrent Update Cards")         \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, conc_final_roots,                                "Concurrent Final Roots")          \
-  SHENANDOAH_WORKER_PHASE_DEF(f, promote_in_place,                                "  Promote Regions",               \
+  SHENANDOAH_SIMPLE_PHASE_DEF(f, complete_abbreviated,                            "Complete Abbreviated Cycle")      \
+  SHENANDOAH_WORKER_PHASE_DEF(f, complete_abbreviated_promote_in_place,           "  Promote Regions",               \
                                                                                   "    PIP: ")                       \
+  SHENANDOAH_SIMPLE_PHASE_DEF(f, complete_abbreviated_update_region_ages,         "  Update Region Ages")            \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, final_verify_gross,                              "Pause Final Verify (G)")          \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, final_verify,                                    "Pause Final Verify (N)")          \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, init_update_refs_gross,                          "Pause Init Update Refs (G)")      \
