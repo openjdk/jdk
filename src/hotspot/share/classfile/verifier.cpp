@@ -750,7 +750,7 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
 
   // The stackmap table will receive a read-only deep copy of the initial strict fields since
   // the "current frame" will modify this table when a putfield is encountered during verification.
-  // What parsing the StackMapTable attribute, the reader will allocate new tables for frames if
+  // When parsing the StackMapTable attribute, the reader will allocate new tables for frames if
   // they are EARLY_LARVAL, otherwise this read-only initial set will be shared.
   StackMapFrame::AssertUnsetFieldTable* read_only_strict_fields = StackMapFrame::copy_unset_fields(strict_fields);
 
