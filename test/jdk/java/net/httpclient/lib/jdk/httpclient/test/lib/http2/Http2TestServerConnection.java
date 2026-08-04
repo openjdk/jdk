@@ -48,8 +48,7 @@ import javax.net.ssl.SNIMatcher;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -76,6 +75,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiPredicate;
@@ -115,7 +115,7 @@ public class Http2TestServerConnection {
     final ExecutorService exec;
     final boolean secure;
     final Properties properties;
-    volatile boolean stopping;
+    private final AtomicBoolean closed = new AtomicBoolean();
     volatile int nextPushStreamId = 2;
     public volatile boolean closeConnOnIncomingGoAway = true;
     ConcurrentLinkedQueue<PingRequest> pings = new ConcurrentLinkedQueue<>();
@@ -339,10 +339,9 @@ public class Http2TestServerConnection {
     }
 
     private void close(final int error, final boolean peerClosedConnection) {
-        if (stopping) {
-            return;
+        if (!closed.compareAndSet(false, true)) {
+            return; // already closing/closed
         }
-        stopping = true;
         try {
             log("Server connection to " + socket.getRemoteSocketAddress()
                     + " stopping " + (error == NO_ERROR ? "no error" : ("error=" + error))
@@ -852,7 +851,7 @@ public class Http2TestServerConnection {
     void readLoop() {
         try {
             boolean altSvcSent = false;
-            while (!stopping) {
+            while (!closed.get()) {
                 Http2Frame frame = readFrameImpl();
                 if (frame == null) {
                     log("EOF reached on connection " + connectionKey()
@@ -950,8 +949,8 @@ public class Http2TestServerConnection {
                 }
             }
         } catch (Throwable e) {
-            if (!stopping) {
-                log("Http server reader thread shutdown");
+            if (!closed.get()) {
+                log("Exception in readLoop: " + e);
                 e.printStackTrace();
             }
             close(ErrorFrame.PROTOCOL_ERROR);
@@ -1077,7 +1076,7 @@ public class Http2TestServerConnection {
                         break;
                     }
                 } catch(IOException x) {
-                    if (stopping && x.getCause() instanceof InterruptedException) {
+                    if (closed.get() && x.getCause() instanceof InterruptedException) {
                         break;
                     } else throw x;
                 }
@@ -1244,7 +1243,7 @@ public class Http2TestServerConnection {
 
             return frames.get(0);
         } catch (IOException ee) {
-            if (stopping)
+            if (closed.get())
                 return null;
             throw ee;
         }
