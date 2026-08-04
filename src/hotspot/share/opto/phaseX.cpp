@@ -686,9 +686,12 @@ Node* PhaseGVN::apply_ideal(Node* k, bool can_reshape) {
 }
 
 Node* PhaseGVN::apply_identity(Node* n) {
-  DEBUG_ONLY(uint old_unique = C->unique();)
+#ifdef ASSERT
+  bool verify_identity = is_verify_Identity();
+  uint old_unique = verify_identity ? C->unique() : 0;
+#endif
   Node* const i = n->Identity(this);
-  assert(i->_idx < old_unique,
+  assert(!verify_identity || i->_idx < old_unique,
          "Identity() must return an existing node");
   return i;
 }
