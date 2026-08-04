@@ -2742,6 +2742,14 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       return u->Opcode() == Op_AndL;
     });
   }
+
+  // PhiNode::Ideal can optimize:
+  // Pattern: Phi(condition, x + y, x) -> x + Phi(condition, y, 0)
+  if (use_op == Op_AddI) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->is_Phi();
+    });
+  }
 }
 
 /**
