@@ -26,7 +26,7 @@
  * @summary Test EA with wide arguments and mixed scalarized calling convention.
  * @enablePreview
  * @library /test/lib /
- * @run main/othervm TestEAWideArg
+ * @run main ${test.main.class}
  * @run main/othervm -Xbatch -XX:-TieredCompilation
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-PreloadClasses
  *                   -XX:CompileCommand=compileonly,${test.main.class}::test*
