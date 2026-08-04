@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -380,27 +380,31 @@ public final class InternalLocaleBuilder {
         String variant = base.getVariant();
 
         // Special backward compatibility support
-
-        // Exception 1 - ja_JP_JP
-        if (language.equals("ja") && region.equals("JP") && variant.equals("JP")) {
-            // When locale ja_JP_JP is created, ca-japanese is always there.
-            // The builder ignores the variant "JP"
-            assert("japanese".equals(localeExtensions.getUnicodeLocaleType("ca")));
-            variant = "";
-        }
-        // Exception 2 - th_TH_TH
-        else if (language.equals("th") && region.equals("TH") && variant.equals("TH")) {
-            // When locale th_TH_TH is created, nu-thai is always there.
-            // The builder ignores the variant "TH"
-            assert("thai".equals(localeExtensions.getUnicodeLocaleType("nu")));
-            variant = "";
-        }
-        // Exception 3 - no_NO_NY
-        else if (language.equals("no") && region.equals("NO") && variant.equals("NY")) {
-            // no_NO_NY is a valid locale and used by Java 6 or older versions.
-            // The build ignores the variant "NY" and change the language to "nn".
-            language = "nn";
-            variant = "";
+        if (script.isEmpty()) {
+            // Exception 1 - ja_JP_JP
+            if (language.equals("ja") && region.equals("JP") && variant.equals("JP")
+                    && LocaleExtensions.CALENDAR_JAPANESE.equals(localeExtensions)) {
+                // When locale ja_JP_JP is created, ca-japanese is always added.
+                // If the extension exists, the builder ignores the variant "JP"
+                // otherwise "JP" is merely an ill-formed variant
+                variant = "";
+            }
+            // Exception 2 - th_TH_TH
+            else if (language.equals("th") && region.equals("TH") && variant.equals("TH")
+                    && LocaleExtensions.NUMBER_THAI.equals(localeExtensions)){
+                // When locale th_TH_TH is created, nu-thai is always added.
+                // If the extension exists, the builder ignores the variant "TH"
+                // otherwise "TH" is merely an ill-formed variant
+                variant = "";
+            }
+            // Exception 3 - no_NO_NY
+            else if (language.equals("no") && region.equals("NO") && variant.equals("NY")
+                    && localeExtensions == null) {
+                // no_NO_NY is a valid locale and used by Java 6 or older versions.
+                // The builder ignores the variant "NY" and changes the language to "nn".
+                language = "nn";
+                variant = "";
+            }
         }
 
         // Validate base locale fields before updating internal state.

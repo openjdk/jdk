@@ -307,9 +307,13 @@ public class SinglePixelPackedSampleModel extends SampleModel
      * SinglePixelPackedSampleModel/DataBuffer combination will represent
      * an image with a subset of the bands of the original
      * SinglePixelPackedSampleModel/DataBuffer combination.
+     *
+     * @throws NullPointerException if {@code bands} is {@code null}
+     * @throws IllegalArgumentException if the number of bands is not greater than 0
      * @throws RasterFormatException if the length of the bands argument is
      *                                  greater than the number of bands in
      *                                  the sample model.
+     * @throws ArrayIndexOutOfBoundsException if any of the bank indices is out of bounds
      */
     public SampleModel createSubsetSampleModel(int[] bands) {
         if (bands.length > numBands)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "oops/symbolHandle.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -186,9 +187,9 @@ ciEnv::ciEnv(CompileTask* task)
 // {
 //   RecordLocation fp(this, "field1");
 //   // location: "field1"
-//   { RecordLocation fp(this, " field2"); // location: "field1 field2" }
+//   { RecordLocation fp(this, "field2"); // location: "field1 field2" }
 //   // location: "field1"
-//   { RecordLocation fp(this, " field3"); // location: "field1 field3" }
+//   { RecordLocation fp(this, "field3"); // location: "field1 field3" }
 //   // location: "field1"
 // }
 // // location: ""
@@ -224,10 +225,13 @@ public:
   // append a new component
   ATTRIBUTE_PRINTF(3, 4)
   RecordLocation(ciEnv* ci, const char* fmt, ...) {
-    end = ci->_dyno_name + strlen(ci->_dyno_name);
+    size_t len = strlen(ci->_dyno_name);
+    end = ci->_dyno_name + len;
     va_list args;
     va_start(args, fmt);
-    push(ci, " ");
+    if (len > 0) {
+      push(ci, " ");
+    }
     push_va(ci, fmt, args);
     va_end(args);
   }
@@ -1355,7 +1359,9 @@ void ciEnv::record_lambdaform(Thread* thread, oop form) {
   }
 
   // Check LambdaForm.names array
-  objArrayOop names = (objArrayOop)obj_field(form, "names");
+  // The type of the array is Name[] and Name is an identity class,
+  // so the array is always an array of references
+  refArrayOop names = oop_cast<refArrayOop>(obj_field(form, "names"));
   if (names != nullptr) {
     RecordLocation lp0(this, "names");
     int len = names->length();

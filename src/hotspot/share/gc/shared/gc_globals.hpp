@@ -199,10 +199,9 @@
           range(1, (INT_MAX - 1))                                           \
                                                                             \
   product(size_t, ReferencesPerThread, 1000, EXPERIMENTAL,                  \
-               "Ergonomically start one thread for this amount of "         \
-               "references for reference processing if "                    \
-               "ParallelRefProcEnabled is true. Specify 0 to disable and "  \
-               "use all threads.")                                          \
+          "Ergonomically start one thread for this amount of references "   \
+          "for reference processing for parallel stop-the-world garbage "   \
+          "collectors. Specify 0 to force use of all available threads.")   \
                                                                             \
   product(uint, InitiatingHeapOccupancyPercent, 45,                         \
           "The percent occupancy (IHOP) of the current old generation "     \
