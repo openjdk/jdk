@@ -1110,16 +1110,20 @@ void GraphBuilder::load_indexed(BasicType type) {
       set_pending_load_indexed(dli);
       return; // Nothing else to do for now
     } else {
-      NewInstance* buffer = new NewInstance(elem_klass, state_before, false, true);
-      buffer->set_null_free(true);
-      _memory->new_instance(buffer);
-      result = append_split(buffer);
       load_indexed = new LoadIndexed(array, index, length, type, state_before);
-      load_indexed->set_buffer(buffer);
-      // The LoadIndexed node will initialize this instance by copying from
-      // the flat field.  Ensure these stores are visible before any
-      // subsequent store that publishes this reference.
-      need_membar = true;
+      // Deoptimize on non-null because buffering requires the value class to be initialized
+      bool assert_null = !array_klass->is_elem_null_free() && !elem_klass->is_initialized();
+      if (!assert_null) {
+        NewInstance* buffer = new NewInstance(elem_klass, state_before, false, true);
+        buffer->set_null_free(true);
+        _memory->new_instance(buffer);
+        result = append_split(buffer);
+        load_indexed->set_buffer(buffer);
+        // The LoadIndexed node will initialize this instance by copying from
+        // the flat field. Ensure these stores are visible before any
+        // subsequent store that publishes this reference.
+        need_membar = true;
+      }
     }
   } else {
     load_indexed = new LoadIndexed(array, index, length, type, state_before);
