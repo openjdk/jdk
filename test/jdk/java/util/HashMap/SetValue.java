@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,10 @@
  * @bug 4627516
  * @summary HashMap.Entry.setValue() returns new value (as opposed to old)
  * @author jbloch
+ * @library /test/lib
  */
 
+import jdk.test.lib.valueclass.VClass;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,9 +39,25 @@ public class SetValue {
     static final String newValue = "new";
 
     public static void main(String[] args) throws Exception {
+        testStringValue();
+        testVClass();
+    }
+
+    private static void testStringValue() {
         Map m = new HashMap();
         m.put(key, oldValue);
         Map.Entry e = (Map.Entry) m.entrySet().iterator().next();
+        Object returnVal = e.setValue(newValue);
+        if (!returnVal.equals(oldValue))
+            throw new RuntimeException("Return value: " + returnVal);
+    }
+
+    private static void testVClass() {
+        Map<String, VClass> m = new HashMap<>();
+        VClass oldValue = new VClass(1, new int[] { 1 });
+        VClass newValue = new VClass(2, new int[] { 2 });
+        m.put(key, oldValue);
+        Map.Entry<String, VClass> e = m.entrySet().iterator().next();
         Object returnVal = e.setValue(newValue);
         if (!returnVal.equals(oldValue))
             throw new RuntimeException("Return value: " + returnVal);

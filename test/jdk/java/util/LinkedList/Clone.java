@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,10 @@
  * @summary Cloning a subclass of LinkedList results in an object that isn't
  *          an instance of the subclass.  The same applies to TreeSet and
  *          TreeMap.
+ * @library /test/lib
  */
+
+import jdk.test.lib.valueclass.VClass;
 
 import java.util.LinkedList;
 import java.util.TreeMap;
@@ -35,45 +38,73 @@ import java.util.TreeSet;
 
 public class Clone {
     public static void main(String[] args) {
+        testStrings();
+        testVClass();
+    }
+
+    private static void testStrings() {
         LinkedList2 l = new LinkedList2();
-        LinkedList2 lClone = (LinkedList2) l.clone();
-        if (!(l.equals(lClone) && lClone.equals(l)))
-            throw new RuntimeException("LinkedList.clone() is broken 1.");
+        checkLinkedListClone(l, "LinkedList.clone() is broken 1.");
         l.add("a");
-        lClone = (LinkedList2) l.clone();
-        if (!(l.equals(lClone) && lClone.equals(l)))
-            throw new RuntimeException("LinkedList.clone() is broken 2.");
+        checkLinkedListClone(l, "LinkedList.clone() is broken 2.");
         l.add("b");
-        lClone = (LinkedList2) l.clone();
-        if (!(l.equals(lClone) && lClone.equals(l)))
-            throw new RuntimeException("LinkedList.clone() is broken 2.");
+        checkLinkedListClone(l, "LinkedList.clone() is broken 3.");
 
 
         TreeSet2 s = new TreeSet2();
-        TreeSet2 sClone = (TreeSet2) s.clone();
-        if (!(s.equals(sClone) && sClone.equals(s)))
-            throw new RuntimeException("TreeSet.clone() is broken.");
+        checkTreeSetClone(s, "TreeSet.clone() is broken.");
         s.add("a");
-        sClone = (TreeSet2) s.clone();
-        if (!(s.equals(sClone) && sClone.equals(s)))
-            throw new RuntimeException("TreeSet.clone() is broken.");
+        checkTreeSetClone(s, "TreeSet.clone() is broken.");
         s.add("b");
-        sClone = (TreeSet2) s.clone();
-        if (!(s.equals(sClone) && sClone.equals(s)))
-            throw new RuntimeException("TreeSet.clone() is broken.");
+        checkTreeSetClone(s, "TreeSet.clone() is broken.");
 
         TreeMap2 m = new TreeMap2();
+        checkTreeMapClone(m, "TreeMap.clone() is broken.");
+        m.put("a", "b");
+        checkTreeMapClone(m, "TreeMap.clone() is broken.");
+        m.put("c", "d");
+        checkTreeMapClone(m, "TreeMap.clone() is broken.");
+    }
+
+    private static void testVClass() {
+        LinkedList2 l = new LinkedList2();
+        checkLinkedListClone(l, "LinkedList.clone() is broken for VClass 1.");
+        l.add(new VClass(1, new int[] { 0 }));
+        checkLinkedListClone(l, "LinkedList.clone() is broken for VClass 2.");
+        l.add(new VClass(2, new int[] { 0 }));
+        checkLinkedListClone(l, "LinkedList.clone() is broken for VClass 3.");
+
+        TreeSet2 s = new TreeSet2();
+        checkTreeSetClone(s, "TreeSet.clone() is broken for VClass 1.");
+        s.add(new VClass(1, new int[] { 0 }));
+        checkTreeSetClone(s, "TreeSet.clone() is broken for VClass 2.");
+        s.add(new VClass(2, new int[] { 0 }));
+        checkTreeSetClone(s, "TreeSet.clone() is broken for VClass 3.");
+
+        TreeMap2 m = new TreeMap2();
+        checkTreeMapClone(m, "TreeMap.clone() is broken for VClass 1.");
+        m.put(new VClass(1, new int[] { 0 }), new VClass(1, new int[] { 1 }));
+        checkTreeMapClone(m, "TreeMap.clone() is broken for VClass 2.");
+        m.put(new VClass(2, new int[] { 0 }), new VClass(2, new int[] { 1 }));
+        checkTreeMapClone(m, "TreeMap.clone() is broken for VClass 3.");
+    }
+
+    private static void checkLinkedListClone(LinkedList2 l, String message) {
+        LinkedList2 lClone = (LinkedList2) l.clone();
+        if (!(l.equals(lClone) && lClone.equals(l)))
+            throw new RuntimeException(message);
+    }
+
+    private static void checkTreeSetClone(TreeSet2 s, String message) {
+        TreeSet2 sClone = (TreeSet2) s.clone();
+        if (!(s.equals(sClone) && sClone.equals(s)))
+            throw new RuntimeException(message);
+    }
+
+    private static void checkTreeMapClone(TreeMap2 m, String message) {
         TreeMap2 mClone = (TreeMap2) m.clone();
         if (!(m.equals(mClone) && mClone.equals(m)))
-            throw new RuntimeException("TreeMap.clone() is broken.");
-        m.put("a", "b");
-        mClone = (TreeMap2) m.clone();
-        if (!(m.equals(mClone) && mClone.equals(m)))
-            throw new RuntimeException("TreeMap.clone() is broken.");
-        m.put("c", "d");
-        mClone = (TreeMap2) m.clone();
-        if (!(m.equals(mClone) && mClone.equals(m)))
-            throw new RuntimeException("TreeMap.clone() is broken.");
+            throw new RuntimeException(message);
     }
 
     private static class LinkedList2 extends LinkedList {}
