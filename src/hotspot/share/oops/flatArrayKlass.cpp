@@ -227,15 +227,8 @@ void FlatArrayKlass::copy_array(arrayOop s, int src_pos,
     THROW(vmSymbols::java_lang_ArrayStoreException());
   }
 
-  // Check if all offsets and lengths are non negative
-  if (src_pos < 0 || dst_pos < 0 || length < 0) {
-    THROW(vmSymbols::java_lang_ArrayIndexOutOfBoundsException());
-  }
-  // Check if the ranges are valid
-  if  ( (((unsigned int) length + (unsigned int) src_pos) > (unsigned int) s->length())
-      || (((unsigned int) length + (unsigned int) dst_pos) > (unsigned int) d->length()) ) {
-    THROW(vmSymbols::java_lang_ArrayIndexOutOfBoundsException());
-  }
+  array_copy_offsets_and_range_check(s, src_pos, d, dst_pos, length, CHECK);
+
   // Check zero copy
   if (length == 0)
     return;
@@ -248,11 +241,12 @@ void FlatArrayKlass::copy_array(arrayOop s, int src_pos,
   if (sk->is_flatArray_klass()) {
     assert(sk == this, "Unexpected call to copy_array");
     FlatArrayKlass* fsk = FlatArrayKlass::cast(sk);
-    flatArrayOop sa = flatArrayOop(s);
+    flatArrayOop sa = oop_cast<flatArrayOop>(s);
 
     // flatArray-to-flatArray
     if (dk->is_flatArray_klass()) {
-      flatArrayOop da = flatArrayOop(d);
+      flatArrayOop da = oop_cast<flatArrayOop>(d);
+
       if (d_elem_klass == this->element_klass()) {
         FlatArrayKlass* fdk = FlatArrayKlass::cast(dk);
 
@@ -347,8 +341,8 @@ void FlatArrayKlass::copy_array(arrayOop s, int src_pos,
     // refArray-to-flatArray
     assert(s->is_refArray(), "Expected refArray");
     assert(d->is_flatArray(), "Expected flatArray");
-    refArrayOop sa = refArrayOop(s);
-    flatArrayOop da = flatArrayOop(d);
+    refArrayOop sa = oop_cast<refArrayOop>(s);
+    flatArrayOop da = oop_cast<flatArrayOop>(d);
 
     for (int i = 0; i < length; i++) {
       da->obj_at_put( dst_pos + i, sa->obj_at(src_pos + i), CHECK);
