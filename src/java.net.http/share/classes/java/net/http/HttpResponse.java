@@ -162,6 +162,12 @@ public interface HttpResponse<T> {
      * <p> If this {@code HttpResponse} was returned from an invocation of
      * {@link #previousResponse()} then this method returns {@code null}
      *
+     * @apiNote
+     *
+     * Exactly when {@code null} can be returned is implementation dependent. It
+     * is therefore recommended that the caller always check for {@code null}
+     * while dereferencing the result.
+     *
      * @return the body
      */
     public T body();
