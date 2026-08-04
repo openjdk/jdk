@@ -1337,25 +1337,6 @@ static bool find_vma(address addr, address* vma_low, address* vma_high) {
   return false;
 }
 
-bool os::Linux::find_vma_by_name(const char* name, address* vma_low, address* vma_high) {
-  FILE *fp = os::fopen("/proc/self/maps", "r");
-  if (fp != nullptr) {
-    address low, high;
-    char line[128];
-    while (fgets(line, sizeof(line), fp)) {
-      if (sscanf(line, "%p-%p", &low, &high) == 2) {
-        if (strstr(line, name) != nullptr) {
-          if (vma_low)  *vma_low  = low;
-          if (vma_high) *vma_high = high;
-          return true;
-        }
-      }
-    }
-    fclose(fp);
-  }
-  return false;
-}
-
 // Locate primordial thread stack. This special handling of primordial thread stack
 // is needed because pthread_getattr_np() on most (all?) Linux distros returns
 // bogus value for the primordial process thread. While the launcher has created
@@ -1562,75 +1543,6 @@ void os::Linux::capture_initial_stack(size_t max_size) {
                          stack_top, intptr_t(_initial_thread_stack_bottom));
   }
 }
-
-void os::Linux::capture_vm_min_address() {
-  // Determined by sysctl vm.mmap_min_addr. It exists as an adjustable safety zone to prevent
-  // null pointer dereferences.
-  // Most distros set this value to 64 KB. It *can* be zero, but rarely is. Here,
-  // we impose a minimum value if vm.mmap_min_addr is too low, for increased protection.
-  uintptr_t value = 0;
-  FILE* f = os::fopen("/proc/sys/vm/mmap_min_addr", "r");
-  if (f != nullptr) {
-    if (fscanf(f, "%zu", &value) != 1) {
-      value = 0;
-    }
-    fclose(f);
-  }
-
-  _vm_min_address = MAX2(os::vm_min_address_default, value);
-}
-
-#if !defined(S390) && !defined(ARM)
-// Default implementation for standard Linux variants
-void os::Linux::capture_vm_max_address() {
-  // On Linux, the kernel places the primordial stack very close to the end of the
-  // User address space. This happens even with ASLR - it will never "jitter" enough
-  // to be in the lower half of the address space. Since address spaces, on all of
-  // our 64-bit platforms, end at clean power-of-two-boundaries, it is sufficient to
-  // examine the primordial stack location to figure out the address space size.
-
-  // We already captured the primordial stack. If it looks atypical, we will search
-  // for it in /proc/self/maps. Atypical configurations are possible with self-compiled
-  // kernels, but rare - since _initial_thread_stack_bottom may have reported an NPTL
-  // stack as primordial, we re-check here.
-
-  unsigned address_bits = 0;
-
-  if (_initial_thread_stack_bottom != nullptr) {
-    address_bits = BitsPerSize_t - count_leading_zeros(p2u(_initial_thread_stack_bottom));
-  }
-
-  switch(address_bits) {
-#if defined(AARCH64)
-  case 39: // small SBCs, e.g. Raspian OS
-  case 48: // standard
-  case 52: // Distros that enable LVA in their kernels
-    break;
-#elif defined(PPC64)
-  case 47:
-  case 51:
-    break;
-#elif defined(RISCV64)
-  case 38:
-  case 47:
-    break;
-#elif defined(AMD64)
-  case 47: // 4-level paging
-  case 57: // 5-level paging
-    break;
-#endif
-  default: { // fallback
-      address hi;
-      if (find_vma_by_name("[stack]", nullptr, &hi)) {
-        address_bits = BitsPerSize_t - count_leading_zeros(p2u(hi));
-      }
-    }
-  }
-
-  assert(address_bits > 0, "Sanity");
-  _vm_max_address = right_n_bits<uintptr_t>(address_bits);
-}
-#endif
 
 // thread_id is kernel thread id (similar to Solaris LWP id)
 intx os::current_thread_id() { return os::Linux::gettid(); }
@@ -2889,8 +2801,8 @@ void os::print_memory_info(outputStream* st) {
   _page_sizes.print_on(st);
   st->cr();
   st->print_cr("User Address Space: [" PTR_FORMAT "-" PTR_FORMAT "] (%u bits)",
-               Linux::vm_min_address(), Linux::vm_max_address(),
-               log2i_ceil(Linux::vm_max_address()));
+               os::vm_min_address(), os::vm_max_address(),
+               log2i_ceil(os::vm_max_address()));
 }
 
 // Print the first "model name" line and the first "flags" line
@@ -4509,11 +4421,120 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
 }
 
 uintptr_t os::vm_min_address() {
-  return os::Linux::vm_min_address();
+  // Determined by sysctl vm.mmap_min_addr. It exists as a safety zone to prevent
+  // null pointer dereferences.
+  // Most distros set this value to 64 KB. It *can* be zero, but rarely is. Here,
+  // we impose a minimum value if vm.mmap_min_addr is too low, for increased protection.
+  static size_t value = 0;
+  if (value == 0) {
+    assert(is_aligned(_vm_min_address_default, os::vm_allocation_granularity()), "Sanity");
+    FILE* f = os::fopen("/proc/sys/vm/mmap_min_addr", "r");
+    if (f != nullptr) {
+      if (fscanf(f, "%zu", &value) != 1) {
+        value = _vm_min_address_default;
+      }
+      fclose(f);
+    }
+    value = MAX2(_vm_min_address_default, value);
+  }
+  return value;
+}
+
+// Helper for os::vm_max_address
+static address find_primordial_stack_top() {
+  FILE *fp = os::fopen("/proc/self/maps", "r");
+  if (fp != nullptr) {
+    address low, high;
+    char line[128];
+    while (fgets(line, sizeof(line), fp)) {
+      if (sscanf(line, "%p-%p", &low, &high) == 2) {
+        if (strstr(line, "[stack]") != nullptr) {
+          return high;
+        }
+      }
+    }
+    fclose(fp);
+  }
+  return false;
+}
+
+// Helper for os::vm_max_address:
+// Given a number of bits, use mmap probing to determine if the region between
+// [size/2, size) is user-addressable
+static bool mmap_probe_at(size_t size) {
+  const uintptr_t f = size;
+  const uintptr_t h = size / 2;
+  const uintptr_t q = size / 4;
+  const uintptr_t e = size / 8;
+
+  const uintptr_t hints[] = {
+      f - 1,     // end of range
+      h,         // start of range
+      h + q,     // midpoint
+      h + q + e, // 3/4
+      h + q - e  // 1/4
+  };
+
+  constexpr int numhints = sizeof(hints) / sizeof(hints[0]);
+
+  void* result = MAP_FAILED;
+  for (int n = 0; n < numhints; n++) {
+    void* const hint = (void*) (align_down(hints[n], os::vm_allocation_granularity()));
+    result = ::mmap(hint, os::vm_page_size(), PROT_NONE, MAP_ANONYMOUS | MAP_NORESERVE, -1, 0);
+    if (result != MAP_FAILED) {
+      ::munmap(result, os::vm_page_size());
+      if ((uintptr_t)result >= h && (uintptr_t)result < f) {
+        // Success
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 uintptr_t os::vm_max_address() {
-  return os::Linux::vm_max_address();
+
+  static uintptr_t value = 0;
+
+#ifndef _LP64
+  return 2 * G;
+#endif
+
+#ifdef S390
+  // Full 64-bit user space address is user-addressable on s390;
+  // However, see comment above os::vm_page_table_expansion_point().
+  return align_down((uintptr_t)-1, os::vm_allocation_granularity());
+#endif
+
+  if (value != 0) {
+    return value;
+  }
+
+  constexpr size_t address_space_sizes[] = {
+#if defined(AARCH64)
+      256 * G, 2 * T, 128 * T, 4 * P,
+#elif defined(PPC64)
+      128 * T, 512 * T,
+#elif defined(RISCV)
+      256 * G, 2 * T, 64 * P,
+#elif defined(AMD64)
+      128 * T, 64 * P,
+#endif
+      0
+      };
+
+  int hit = -1, i = 0;
+  while(address_space_sizes[i] > 0) {
+    if (!mmap_probe_at(address_space_sizes[i])) {
+      break;
+    }
+    hit = i;
+  }
+
+  if (hit == -1) {
+    // address space may be extremely populated. Fall back to the lowest size
+
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////

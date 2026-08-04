@@ -3700,11 +3700,12 @@ char* os::pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool exec) {
 }
 
 uintptr_t os::vm_min_address() {
-  return os::win32::vm_min_address();
+  assert(is_aligned(_vm_min_address_default, os::vm_allocation_granularity()), "Sanity");
+  return _vm_min_address_default;
 }
 
 uintptr_t os::vm_max_address() {
-  return os::win32::vm_max_address();
+  return g_vm_max_address;
 }
 
 char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, int file_desc) {
@@ -4272,11 +4273,11 @@ int                       os::win32::_minor_version             = 0;
 int                       os::win32::_build_number              = 0;
 int                       os::win32::_build_minor               = 0;
 
-uintptr_t                 os::win32::_vm_min_address            = 0;
-uintptr_t                 os::win32::_vm_max_address            = 0;
-
 bool                      os::win32::_processor_group_warning_displayed = false;
 bool                      os::win32::_job_object_processor_group_warning_displayed = false;
+
+static uintptr_t          g_vm_max_address                      = 0;
+
 
 void getWindowsInstallationType(char* buffer, int bufferSize) {
   HKEY hKey;
@@ -4472,11 +4473,7 @@ void os::win32::initialize_system_info() {
   _processor_type  = si.dwProcessorType;
   _processor_level = si.wProcessorLevel;
 
-  _vm_min_address = MAX2(os::vm_min_address_default, p2u(si.lpMinimumApplicationAddress));
-  assert(is_aligned(_vm_min_address, si.dwAllocationGranularity), "strange alignment?");
-  assert(_vm_min_address <= (G * 4), "weirdly high?");
-
-  _vm_max_address = p2u(si.lpMaximumApplicationAddress); // usually 128TB - 1
+  g_vm_max_address = p2u(si.lpMaximumApplicationAddress); // usually 128TB - 1
   assert(is_aligned(_vm_max_address + 1, si.dwAllocationGranularity), "strange alignment?");
   assert(_vm_max_address > (G * 4), "weirdly low?");
 

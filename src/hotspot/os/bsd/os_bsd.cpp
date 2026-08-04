@@ -1956,7 +1956,8 @@ uintptr_t os::vm_min_address() {
   // -pagezero_size linker option).
   return 4 * G;
 #else
-  return os::vm_min_address_default;
+  assert(is_aligned(_vm_min_address_default, os::vm_allocation_granularity()), "Sanity");
+  return _vm_min_address_default;
 #endif
 }
 
