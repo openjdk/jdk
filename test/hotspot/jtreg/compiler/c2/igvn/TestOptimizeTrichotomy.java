@@ -63,12 +63,10 @@ public class TestOptimizeTrichotomy {
             case "vanilla" -> {
                 TestFramework.run();
             }
-            // We could have used -Xcomp, but then gold values would not
-            // be comuted in interpreter mode.
             case "noWarmup" -> {
                 TestFramework f = new TestFramework();
                 f.setDefaultWarmup(0);
-                f.addFlags("-XX:CompileCommand=compileonly,compiler.c2.igvn.TestOptimizeTrichotomy::test*");
+                f.addFlags("-XX:-TieredCompilation", "-XX:CompileCommand=compileonly,${test.main.class}::test*");
                 f.start();
             }
         }
