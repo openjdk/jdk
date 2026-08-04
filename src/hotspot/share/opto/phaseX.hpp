@@ -501,10 +501,6 @@ protected:
   // Usually returns new_type.  Returns old_type if new_type is only a slight
   // improvement, such that it would take many (>>10) steps to reach 2**32.
 
-  DeadPathNode* dead_path();
-
-  void make_dependent_paths_dead_if_top(Node* dead_node, const Type* t);
-
 public:
 
   PhaseIterGVN(PhaseIterGVN* igvn); // Used by CCP constructor
@@ -528,7 +524,7 @@ public:
 
   // Idealize new Node 'n' with respect to its inputs and its value
   virtual Node *transform( Node *a_node );
-  virtual void record_for_igvn(Node *n) { }
+  virtual void record_for_igvn(Node *n) { _worklist.push(n); }
 
   // Iterative worklist. Reference to "C->igvn_worklist()".
   Unique_Node_List &_worklist;
@@ -615,6 +611,8 @@ public:
     subsume_node(old, nn);
   }
 
+  void replace_in_uses(Node* n, Node* m);
+
   // Delayed node rehash: remove a node from the hash table and rehash it during
   // next optimizing pass
   void rehash_node_delayed(Node* n) {
@@ -699,7 +697,7 @@ protected:
 // Should be replaced with combined CCP & GVN someday.
 class PhaseCCP : public PhaseIterGVN {
   Unique_Node_List _root_and_safepoints;
-  Unique_Node_List _maybe_top_type_or_div_mod_nodes;
+  Unique_Node_List _maybe_top_type_nodes;
   // Non-recursive.  Use analysis to transform single Node.
   virtual Node* transform_once(Node* n);
 
@@ -714,6 +712,7 @@ class PhaseCCP : public PhaseIterGVN {
   static void push_catch(Unique_Node_List& worklist, const Node* use);
   void push_cmpu(Unique_Node_List& worklist, const Node* use) const;
   static void push_counted_loop_phi(Unique_Node_List& worklist, Node* parent, const Node* use);
+  static void push_cast(Unique_Node_List& worklist, const Node* use);
   void push_loadp(Unique_Node_List& worklist, const Node* use) const;
   static void push_load_barrier(Unique_Node_List& worklist, const BarrierSetC2* barrier_set, const Node* use);
   void push_and(Unique_Node_List& worklist, const Node* parent, const Node* use) const;

@@ -103,7 +103,7 @@ int IntelJccErratum::compute_padding(uintptr_t current_offset, const MachNode* m
   }
   if (jcc_size > largest_jcc_size()) {
     // Let's not try fixing this for nodes that seem unreasonably large
-    return false;
+    return 0;
   }
   if (is_crossing_or_ending_at_32_byte_boundary(current_offset, current_offset + jcc_size)) {
     return int(align_up(current_offset, 32) - current_offset);
