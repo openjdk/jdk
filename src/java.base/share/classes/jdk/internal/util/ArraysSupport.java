@@ -31,6 +31,7 @@ import java.util.Objects;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
@@ -110,11 +111,9 @@ public class ArraysSupport {
      * corresponds to the size, in bytes, of an array element.
      * @return if a mismatch is found a relative index, between 0 (inclusive)
      * and {@code length} (exclusive), of the first mismatching pair of elements
-     * in the two arrays.  Otherwise, if a mismatch is not found the bitwise
-     * compliment of the number of remaining pairs of elements to be checked in
-     * the tail of the two arrays.
+     * in the two arrays.  Otherwise, if a mismatch is not found, return -1
      */
-    @IntrinsicCandidate
+    @ForceInline
     public static int vectorizedMismatch(Object a, long aOffset,
                                          Object b, long bOffset,
                                          int length,
@@ -125,10 +124,67 @@ public class ArraysSupport {
         // assert 0 <= length <= sizeOf(b)
         // assert 0 <= log2ArrayIndexScale <= 3
 
+        int result = vectorizedMismatchInternal(a, aOffset, b, bOffset, length, log2ArrayIndexScale);
+        if (result >= -1) {
+            return result;
+        }
+
+        // check remaining bytes
+        long i = ((long)(length - ~result)) << log2ArrayIndexScale;
+        long totalBytes = ((long)length) << log2ArrayIndexScale;
+        for (; i < totalBytes; i++) {
+            byte av = U.getByte(a, aOffset + i);
+            byte bv = U.getByte(b, bOffset + i);
+            if (av != bv) {
+                return (int)(i >> log2ArrayIndexScale);
+            }
+        }
+        return -1;
+    }
+
+
+    /**
+     * The internal implementation of {@link #vectorizedMismatch}, serving as the
+     * platform dependent intrinsic candidate.
+     *
+     * <p>Depending on the platform, an implementation may scan all the elements,
+     * or only a part of them, leaving a tail of elements unchecked.  The caller
+     * {@link #vectorizedMismatch} is responsible for checking those remaining
+     * elements.
+     *
+     * <p>This method does not perform type checks or bounds checks.  It is the
+     * responsibility of the caller to perform such checks before calling this
+     * method.
+     *
+     * @param a the first array to be tested for mismatch, or {@code null} for
+     * direct memory access
+     * @param aOffset the relative offset, in bytes, from the base address of
+     * the first array to test from, otherwise if the first array is
+     * {@code null}, an absolute address pointing to the first element to test.
+     * @param b the second array to be tested for mismatch, or {@code null} for
+     * direct memory access
+     * @param bOffset the relative offset, in bytes, from the base address of
+     * the second array to test from, otherwise if the second array is
+     * {@code null}, an absolute address pointing to the first element to test.
+     * @param length the number of array elements to test
+     * @param log2ArrayIndexScale log<sub>2</sub> of the array index scale, that
+     * corresponds to the size, in bytes, of an array element.
+     * @return if a mismatch is found a relative index, between 0 (inclusive)
+     * and {@code length} (exclusive), of the first mismatching pair of elements
+     * in the two arrays.  Otherwise, if a mismatch is not found the bitwise
+     * compliment of the number of remaining pairs of elements to be checked in
+     * the tail of the two arrays.
+     */
+    @IntrinsicCandidate
+    private static int vectorizedMismatchInternal(Object a, long aOffset,
+                                                  Object b, long bOffset,
+                                                  int length,
+                                                  int log2ArrayIndexScale) {
+
         int log2ValuesPerWidth = LOG2_ARRAY_LONG_INDEX_SCALE - log2ArrayIndexScale;
         int wi = 0;
-        long bi = 0L;
-        for (; wi < length >> log2ValuesPerWidth; wi++, bi += Long.BYTES) {
+        for (; wi < length >> log2ValuesPerWidth; wi++) {
+            long bi = ((long) wi) << LOG2_ARRAY_LONG_INDEX_SCALE;
             long av = U.getLongUnaligned(a, aOffset + bi);
             long bv = U.getLongUnaligned(b, bOffset + bi);
             if (av != bv) {
@@ -141,35 +197,29 @@ public class ArraysSupport {
         }
 
         // Calculate the tail of remaining elements to check
-        int checked = wi << log2ValuesPerWidth;
-        int tailBytes = (length - checked) << log2ArrayIndexScale;
-        if (tailBytes == 0) {
-            return -1;
-        }
+        int tail = length - (wi << log2ValuesPerWidth);
 
-        // check remaining bytes
-        if (tailBytes >= Integer.BYTES) {
-            int av = U.getIntUnaligned(a, aOffset + bi);
-            int bv = U.getIntUnaligned(b, bOffset + bi);
-            if (av != bv) {
-                int x = av ^ bv;
-                int o = BIG_ENDIAN
-                        ? Integer.numberOfLeadingZeros(x) >> (LOG2_BYTE_BIT_SIZE + log2ArrayIndexScale)
-                        : Integer.numberOfTrailingZeros(x) >> (LOG2_BYTE_BIT_SIZE + log2ArrayIndexScale);
-                return checked + o;
+        if (log2ArrayIndexScale < LOG2_ARRAY_INT_INDEX_SCALE) {
+            int wordTail = 1 << (LOG2_ARRAY_INT_INDEX_SCALE - log2ArrayIndexScale);
+            // Handle 4 bytes or 2 chars in the tail using int width
+            if (tail >= wordTail) {
+                long bi = ((long) wi) << LOG2_ARRAY_LONG_INDEX_SCALE;
+                int av = U.getIntUnaligned(a, aOffset + bi);
+                int bv = U.getIntUnaligned(b, bOffset + bi);
+                if (av != bv) {
+                    int x = av ^ bv;
+                    int o = BIG_ENDIAN
+                            ? Integer.numberOfLeadingZeros(x) >> (LOG2_BYTE_BIT_SIZE + log2ArrayIndexScale)
+                            : Integer.numberOfTrailingZeros(x) >> (LOG2_BYTE_BIT_SIZE + log2ArrayIndexScale);
+                    return (wi << log2ValuesPerWidth) + o;
+                }
+                tail -= wordTail;
             }
-            tailBytes -= Integer.BYTES;
-            bi += Integer.BYTES;
+            return ~tail;
         }
-
-        for (int i = 0; i < tailBytes; i++, bi++) {
-            byte av = U.getByte(a, aOffset + bi);
-            byte bv = U.getByte(b, bOffset + bi);
-            if (av != bv) {
-                return (int)(bi >> log2ArrayIndexScale);
-            }
+        else {
+            return ~tail;
         }
-        return -1;
     }
 
     /**
