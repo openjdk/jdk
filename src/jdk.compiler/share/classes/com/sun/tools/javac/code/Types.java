@@ -3923,8 +3923,13 @@ public class Types {
             }
         };
 
-        Set<TypePair> mergeCache = new HashSet<>();
+        Set<TypePair> mergeInProgress = new HashSet<>();
+        Map<TypePair, Type> mergeCache = new HashMap<>();
         private Type merge(Type c1, Type c2) {
+            TypePair pair = new TypePair(c1, c2);
+            Type cached = mergeCache.get(pair);
+            if (cached != null) return cached;
+
             ClassType class1 = (ClassType) c1;
             List<Type> act1 = class1.getTypeArguments();
             ClassType class2 = (ClassType) c2;
@@ -3938,14 +3943,13 @@ public class Types {
                 } else if (containsType(act2.head, act1.head)) {
                     merged.append(act2.head);
                 } else {
-                    TypePair pair = new TypePair(c1, c2);
                     Type m;
-                    if (mergeCache.add(pair)) {
+                    if (mergeInProgress.add(pair)) {
                         m = new WildcardType(lub(wildUpperBound(act1.head),
                                                  wildUpperBound(act2.head)),
                                              BoundKind.EXTENDS,
                                              syms.boundClass);
-                        mergeCache.remove(pair);
+                        mergeInProgress.remove(pair);
                     } else {
                         m = new WildcardType(syms.objectType,
                                              BoundKind.UNBOUND,
@@ -3960,8 +3964,10 @@ public class Types {
             Assert.check(act1.isEmpty() && act2.isEmpty() && typarams.isEmpty());
             // There is no spec detailing how type annotations are to
             // be inherited.  So set it to noAnnotations for now
-            return new ClassType(class1.getEnclosingType(), merged.toList(),
-                                 class1.tsym);
+            Type result = new ClassType(class1.getEnclosingType(), merged.toList(),
+                                        class1.tsym);
+            mergeCache.put(pair, result);
+            return result;
         }
 
     /**
@@ -5462,5 +5468,6 @@ public class Types {
         implCache._map.clear();
         membersCache._map.clear();
         closureCache.clear();
+        mergeCache.clear();
     }
 }
