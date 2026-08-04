@@ -815,35 +815,53 @@ void ShenandoahBarrierStubC2::cardtable(MacroAssembler& masm, Address addr, Regi
 }
 
 void ShenandoahBarrierStubC2::patchable_jump(MacroAssembler& masm, const char gc_state, bool jump_when_state, Label* L_target) {
-  PhaseOutput* const output = Compile::current()->output();
-  if (output->in_scratch_emit_size()) {
-    // Avoid binding L_target in scratch emits.
-    // We know the patchable check is exactly 5 bytes long.
-    __ nop(5);
-    return;
-  }
+  Label L_fake_entry, L_real_entry, L_skip;
+  Address gc_state_addr(r15_thread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
 
   // Emit the unconditional branch in the first version of the method.
   // Let the rest of runtime figure out how to manage it.
-  __ relocate(patchable_barrier_Relocation::spec(ShenandoahNMethod::encode_to_reloc(gc_state, jump_when_state)));
-  __ jmp(*L_target, /* maybe_short = */ false);
+
+  PhaseOutput* const output = Compile::current()->output();
+  if (!output->in_scratch_emit_size()) {
+    __ relocate(patchable_barrier_Relocation::spec(ShenandoahNMethod::encode_to_reloc(gc_state, jump_when_state)));
+  }
+
+#ifdef ASSERT
+  // Emit the secondary jump and use it to cross-check against the actual GC state.
+  // This also checks that all interesting GC state transitions are done non-racily
+  // from the perspective of the thread executing the nmethod.
+  __ jmp(L_fake_entry, /* maybe_short = */ false);
+
+  // Currently hot-patched to NOP.
+  __ testb(gc_state_addr, gc_state);
+  __ jcc(jump_when_state ? Assembler::zero : Assembler::notZero, L_skip);
+  __ hlt();
+
+  // Currently hot-patched to JUMP.
+  __ bind(L_fake_entry);
+  __ testb(gc_state_addr, gc_state);
+  __ jcc(jump_when_state ? Assembler::notZero : Assembler::zero, L_real_entry);
+  __ hlt();
+
+  __ bind(L_real_entry);
+#endif
+
+  if (!output->in_scratch_emit_size()) {
+    __ jmp(*L_target, /* maybe_short = */ false);
+  } else {
+    // Avoid binding L_target in scratch emits.
+    // We know the patchable check is exactly 5 bytes long.
+    __ nop(5);
+  }
+
+#ifdef ASSERT
+  __ bind(L_skip);
+#endif
 }
 
 void ShenandoahBarrierStubC2::enter_if_gc_state(MacroAssembler& masm, const char test_state) {
   Assembler::InlineSkippedInstructionsCounter skip_counter(&masm);
   patchable_jump_if_gc_state(masm, test_state, entry());
-
-#ifdef ASSERT
-  // Cross-check against the actual GC state. If real GC state has any required bits set,
-  // patchable jump should have jumped and returned to continuation below. If this did not
-  // happen, it means something went wrong with hotpatching. Crash hard in that case.
-  // All interesting transitions happen at safepoints, so we should not have false crashes here.
-  Address gc_state_addr(r15_thread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
-  __ testb(gc_state_addr, test_state);
-  __ jccb(Assembler::zero, *continuation());
-  __ hlt();
-#endif
-
   __ bind(*continuation());
 }
 

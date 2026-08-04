@@ -1292,7 +1292,9 @@ void ShenandoahHeap::op_final_roots() {
   set_gc_state_at_safepoint(WEAK_ROOTS, false);
 
   // Arm the nmethods to change the barriers.
-  CodeCache::arm_all_nmethods();
+  if (!UseNewCode) {
+    CodeCache::arm_all_nmethods();
+  }
 
   {
     ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::final_roots_propagate_gc_state);

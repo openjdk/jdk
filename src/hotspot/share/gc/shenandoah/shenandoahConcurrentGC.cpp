@@ -1249,7 +1249,9 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
   _generation->heuristics()->start_idle_span();
 
   // Final pause: update GC barriers to idle state.
-  CodeCache::arm_all_nmethods();
+  if (!UseNewCode) {
+    CodeCache::arm_all_nmethods();
+  }
 
   {
     ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::final_update_refs_propagate_gc_state);
