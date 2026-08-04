@@ -5,7 +5,7 @@ jobs:
       name: Release Build
       runs-on:
         spec: m1.2xlarge
-      image: hub.byted.org/compile/olinux7.compile.byteopenjdk25:4f6bc99f73bf78d260aabf244f93cbbb
+      image: hub.byted.org/x86_64/compile/olinux7.compile.byteopenjdk25:f9c1187308efb43e9b86e11f3d18c963
       timeout: 300
       steps:
         - name: get jtreg
