@@ -3923,8 +3923,13 @@ public class Types {
             }
         };
 
-        Set<TypePair> mergeCache = new HashSet<>();
+        Set<TypePair> mergeInProgress = new HashSet<>();
+        Map<TypePair, Type> mergeCache = new HashMap<>();
         private Type merge(Type c1, Type c2) {
+            TypePair pair = new TypePair(c1, c2);
+            Type cached = mergeCache.get(pair);
+            if (cached != null) return cached;
+
             ClassType class1 = (ClassType) c1;
             List<Type> act1 = class1.getTypeArguments();
             ClassType class2 = (ClassType) c2;
@@ -3938,14 +3943,13 @@ public class Types {
                 } else if (containsType(act2.head, act1.head)) {
                     merged.append(act2.head);
                 } else {
-                    TypePair pair = new TypePair(c1, c2);
                     Type m;
-                    if (mergeCache.add(pair)) {
-                        m = new WildcardType(lub(wildUpperBound(act1.head),
-                                                 wildUpperBound(act2.head)),
+                    if (mergeInProgress.add(pair)) {
+                        m = new WildcardType(lubHelper(wildUpperBound(act1.head),
+                                                       wildUpperBound(act2.head)),
                                              BoundKind.EXTENDS,
                                              syms.boundClass);
-                        mergeCache.remove(pair);
+                        mergeInProgress.remove(pair);
                     } else {
                         m = new WildcardType(syms.objectType,
                                              BoundKind.UNBOUND,
@@ -3960,8 +3964,10 @@ public class Types {
             Assert.check(act1.isEmpty() && act2.isEmpty() && typarams.isEmpty());
             // There is no spec detailing how type annotations are to
             // be inherited.  So set it to noAnnotations for now
-            return new ClassType(class1.getEnclosingType(), merged.toList(),
-                                 class1.tsym);
+            Type result = new ClassType(class1.getEnclosingType(), merged.toList(),
+                                        class1.tsym);
+            mergeCache.put(pair, result);
+            return result;
         }
 
     /**
@@ -4020,7 +4026,11 @@ public class Types {
      * not exist return null.
      */
     public Type lub(List<Type> ts) {
-        return lub(ts.toArray(new Type[ts.length()]));
+        try {
+            return lubHelper(ts.toArray(new Type[ts.length()]));
+        } finally {
+            mergeCache.clear();
+        }
     }
 
     /**
@@ -4028,6 +4038,18 @@ public class Types {
      * does not exist return the type of null (bottom).
      */
     public Type lub(Type... ts) {
+        try {
+            return lubHelper(ts);
+        } finally {
+            mergeCache.clear();
+        }
+    }
+
+    private Type lubHelper(List<Type> ts) {
+        return lubHelper(ts.toArray(new Type[ts.length()]));
+    }
+
+    private Type lubHelper(Type... ts) {
         final int UNKNOWN_BOUND = 0;
         final int ARRAY_BOUND = 1;
         final int CLASS_BOUND = 2;
@@ -4086,7 +4108,7 @@ public class Types {
                 }
             }
             // lub(A[], B[]) is lub(A, B)[]
-            return new ArrayType(lub(elements), syms.arrayClass);
+            return new ArrayType(lubHelper(elements), syms.arrayClass);
 
         case CLASS_BOUND:
             // calculate lub(A, B)
@@ -4131,7 +4153,7 @@ public class Types {
                     classes = classes.prepend(ts[i]);
             }
             // lub(A, B[]) is lub(A, arraySuperType)
-            return lub(classes);
+            return lubHelper(classes);
         }
     }
 
