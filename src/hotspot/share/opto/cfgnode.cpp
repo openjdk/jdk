@@ -901,6 +901,8 @@ void RegionNode::remove_unreachable_subgraph(PhaseIterGVN* igvn) {
 //         Region                Region                    Region
 //
 // The method returns true if 'this' is modified and false otherwise.
+// TODO: the bug seems to be here.
+// Investigate if CmpU should be allowed at all.
 bool RegionNode::optimize_trichotomy(PhaseIterGVN* igvn) {
   int idx1 = 1, idx2 = 2;
   Node* region = nullptr;
@@ -1000,6 +1002,11 @@ bool RegionNode::optimize_trichotomy(PhaseIterGVN* igvn) {
   if (res == BoolTest::illegal) {
     return false; // Unable to merge tests
   }
+
+  tty->print_cr("about to fold:");
+  cmp1->dump_bfs(1,nullptr,"-+");
+  cmp2->dump_bfs(1,nullptr,"-+");
+
   // Adjust iff1 to always pass (only iff2 will remain)
   igvn->replace_input_of(iff1, 1, igvn->intcon(proj1->_con));
   if (res == BoolTest::never) {
