@@ -41,11 +41,9 @@ public final class AquaEditorPaneUI extends BasicEditorPaneUI {
     @Override
     protected void installDefaults(){
         super.installDefaults();
-    }
-
-    @Override
-    protected void uninstallDefaults(){
-        super.uninstallDefaults();
+        if (!GraphicsEnvironment.isHeadless()) {
+            LookAndFeel.installProperty(getComponent(), "dragEnabled", true);
+        }
     }
 
     FocusListener focusListener;

@@ -70,11 +70,9 @@ public final class AquaTextAreaUI extends BasicTextAreaUI {
     @Override
     protected void installDefaults() {
         super.installDefaults();
-    }
-
-    @Override
-    protected void uninstallDefaults() {
-        super.uninstallDefaults();
+        if (!GraphicsEnvironment.isHeadless()) {
+            LookAndFeel.installProperty(getComponent(), "dragEnabled", true);
+        }
     }
 
     // Install a default keypress action which handles Cmd and Option keys

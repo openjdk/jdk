@@ -37,6 +37,7 @@ import sun.awt.SunToolkit;
 import javax.swing.text.*;
 import javax.swing.border.*;
 import javax.swing.plaf.*;
+import sun.swing.SwingAccessor;
 
 import java.net.URL;
 import sun.swing.SwingUtilities2;
@@ -274,10 +275,17 @@ public abstract class LookAndFeel
      */
     public static void installProperty(JComponent c,
                                        String propertyName, Object propertyValue) {
-        // this is a special case because the JPasswordField's ancestor hierarchy
-        // includes a class outside of javax.swing, thus we cannot call setUIProperty
-        // directly.
-        if (SunToolkit.isInstanceOf(c, "javax.swing.JPasswordField")) {
+        if ("dragEnabled".equals(propertyName)
+            && c instanceof JTextComponent textComponent) {
+            var accessor = SwingAccessor.getJTextComponentAccessor();
+            if (!accessor.isDragEnabledSet(textComponent)) {
+                accessor.setDragEnabledUIResource(textComponent,
+                                                   (Boolean) propertyValue);
+            }
+        } else if (SunToolkit.isInstanceOf(c, "javax.swing.JPasswordField")) {
+            // this is a special case because the JPasswordField's ancestor hierarchy
+            // includes a class outside of javax.swing, thus we cannot call setUIProperty
+            // directly.
             if (!((JPasswordField)c).customSetUIProperty(propertyName, propertyValue)) {
                 c.setUIProperty(propertyName, propertyValue);
             }

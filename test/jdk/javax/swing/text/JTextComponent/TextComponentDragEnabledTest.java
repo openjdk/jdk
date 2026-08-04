@@ -45,6 +45,8 @@ import javax.swing.text.JTextComponent;
 
 public class TextComponentDragEnabledTest {
 
+    private static final String AQUA_LAF = "com.apple.laf.AquaLookAndFeel";
+
     private static final List<Supplier<JTextComponent>> TEXT_COMPONENTS = List.of(
             JTextField::new,
             JTextArea::new,
@@ -76,8 +78,9 @@ public class TextComponentDragEnabledTest {
 
             for (Supplier<JTextComponent> supplier : TEXT_COMPONENTS) {
                 JTextComponent component = supplier.get();
-                checkDragEnabled(component, false,
-                    "new component under " + laf.getClassName());
+                boolean expected = AQUA_LAF.equals(laf.getClassName());
+                checkDragEnabled(component, expected,
+                        "new component under " + laf.getClassName());
             }
         }
     }
