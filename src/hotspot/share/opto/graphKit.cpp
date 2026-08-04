@@ -4258,7 +4258,7 @@ Node* GraphKit::get_layout_helper(Node* klass_node, jint& constant_value) {
     }
 
     const TypeAryKlassPtr* aryklass_t = klass_t->isa_aryklassptr();
-    if (aryklass_t != nullptr && aryklass_t->is_not_flat()) {
+    if (aryklass_t != nullptr && aryklass_t->elem()->isa_klassptr() != nullptr && aryklass_t->is_not_flat()) {
       // If we know that the array cannot be flat, then the layout_helper value is known
       constant_value = Klass::array_layout_helper(T_OBJECT);
       return nullptr;
