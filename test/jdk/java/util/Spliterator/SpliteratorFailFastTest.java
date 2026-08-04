@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ import static org.testng.Assert.assertThrows;
 
 /**
  * @test
- * @bug 8148748
+ * @bug 8148748 8336672
  * @summary Spliterator fail-fast tests
  * @run testng SpliteratorFailFastTest
  */
@@ -64,8 +64,8 @@ public class SpliteratorFailFastTest extends SpliteratorLateBindingFailFastHelpe
         }
 
         List<Object[]> data = new ArrayList<>();
-        SpliteratorDataBuilder<Integer> db =
-                new SpliteratorDataBuilder<>(data, 5, Arrays.asList(1, 2, 3, 4));
+        SpliteratorDataBuilder<String> db =
+                new SpliteratorDataBuilder<>(data, "Z", Arrays.asList("A", "B", "C", "D"));
 
         // Collections
 
@@ -84,7 +84,7 @@ public class SpliteratorFailFastTest extends SpliteratorLateBindingFailFastHelpe
         db.addCollection(TreeSet::new);
 
         db.addCollection(c -> {
-            Stack<Integer> s = new Stack<>();
+            Stack<String> s = new Stack<>();
             s.addAll(c);
             return s;
         });
@@ -106,7 +106,7 @@ public class SpliteratorFailFastTest extends SpliteratorLateBindingFailFastHelpe
         // This fails when run through jtreg but passes when run through
         // ant
 //        db.addMap(IdentityHashMap::new);
-
+        // BUG: Assumes identity
         db.addMap(WeakHashMap::new);
 
         // @@@  Descending maps etc
