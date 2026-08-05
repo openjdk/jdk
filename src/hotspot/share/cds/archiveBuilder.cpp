@@ -806,14 +806,20 @@ void ArchiveBuilder::make_klasses_shareable() {
       address narrow_klass_base = _requested_static_archive_bottom; // runtime encoding base == runtime mapping start
       const int narrow_klass_shift = precomputed_narrow_klass_shift();
       narrowKlass nk = CompressedKlassPointers::encode_not_null_without_asserts(requested_k, narrow_klass_base, narrow_klass_shift);
-      k->set_prototype_header(markWord::prototype().set_narrow_klass(nk));
+      k->set_prototype_header_klass(nk);
     }
 #endif //_LP64
-    if (k->is_objArray_klass()) {
+    if (k->is_flatArray_klass()) {
+      num_obj_array_klasses ++;
+      type = "flat array";
+    } else if (k->is_refArray_klass()) {
+        num_obj_array_klasses ++;
+        type = "ref array";
+    } else if (k->is_objArray_klass()) {
       // InstanceKlass and TypeArrayKlass will in turn call remove_unshareable_info
       // on their array classes.
       num_obj_array_klasses ++;
-      type = "array";
+      type = "obj array";
     } else if (k->is_typeArray_klass()) {
       num_type_array_klasses ++;
       type = "array";

@@ -37,9 +37,7 @@
 #include "gc/shared/taskqueue.hpp"
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
-#include "runtime/atomic.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/resizableHashTable.hpp"
 #include "utilities/ticks.hpp"
 
 class G1CardTable;
@@ -52,11 +50,13 @@ class G1PLABAllocator;
 class G1HeapRegion;
 class outputStream;
 
-typedef GrowableArrayCHeap<nmethod*, mtGC> G1NmethodSet;
-typedef ResizeableHashTable<uint, G1NmethodSet*, AnyObj::C_HEAP, mtGC> G1NmethodsToAdd;
+// A code root pair gathered during code root scanning.
+struct G1CodeRootPair {
+  uint _region_idx;
+  nmethod* _nmethod;
+};
 class G1ParScanThreadState : public CHeapObj<mtGC> {
   G1CollectedHeap* _g1h;
-  G1ParScanThreadStateSet* _per_thread_states;
   G1ScannerTasksQueue* _task_queue;
   G1CardTable* _ct;
   G1EvacuationRootClosures* _closures;
@@ -103,8 +103,8 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   // transferred when flushed.
   size_t* _obj_alloc_stat;
 
-  // The nmethods that were found during code root scan that need to be redistributed.
-  G1NmethodsToAdd _nmethods_to_add;
+  // Code root pairs to add after evacuation.
+  GrowableArrayCHeap<G1CodeRootPair, mtGC> _code_root_pairs;
 
   // Per-thread evacuation failure data structures.
   ALLOCATION_FAILURE_INJECTOR_ONLY(size_t _allocation_failure_inject_counter;)
@@ -124,7 +124,6 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
 
 public:
   G1ParScanThreadState(G1CollectedHeap* g1h,
-                       G1ParScanThreadStateSet* per_thread_states,
                        uint worker_id,
                        uint num_workers,
                        G1CollectionSet* collection_set,
@@ -185,6 +184,7 @@ public:
 private:
   void do_partial_array(PartialArrayState* state, bool stolen);
   void start_partial_objarray(oop from, oop to);
+  void process_array_chunk(objArrayOop obj, size_t start, size_t end);
 
   HeapWord* allocate_copy_slow(G1HeapRegionAttr* dest_attr,
                                Klass* klass,
@@ -250,19 +250,13 @@ public:
   Tickspan trim_ticks() const;
   void reset_trim_ticks();
 
-  void record_evacuation_failed_region(G1HeapRegion* r, uint worker_id, bool cause_pinned);
+  void record_evacuation_failed_region(G1HeapRegion* r, bool cause_pinned);
   // An attempt to evacuate "obj" has failed; take necessary steps.
   oop handle_evacuation_failure_par(oop obj, markWord m, Klass* klass, G1HeapRegionAttr attr, size_t word_sz, bool cause_pinned);
 
   inline void remember_nmethod_into_region(G1HeapRegion* r, nmethod* nm);
-  // Updates the global set of regions that need updates to the code root set
-  // later with the ones gathered so far.
-  void update_nmethod_regions_to_add();
 
-  inline size_t num_nmethods(uint index) const;
-  // Iterate nmethods stored for the given region index.
-  template <typename Function>
-  inline void iterate_nmethods(uint index, Function fn);
+  const GrowableArrayCHeap<G1CodeRootPair, mtGC>& code_root_pairs() const { return _code_root_pairs; }
 
   template <typename T>
   inline void remember_root_into_optional_region(T* p);
@@ -281,10 +275,6 @@ class G1ParScanThreadStateSet : public StackObj {
   bool _flushed;
   G1EvacFailureRegions* _evac_failure_regions;
 
-  CHeapBitMap _has_nmethods_to_add;
-  Atomic<uint> _num_nmethod_regions_to_add;
-  uint* _nmethod_regions_to_add;
-
  public:
   G1ParScanThreadStateSet(G1CollectedHeap* g1h,
                           uint num_workers,
@@ -294,13 +284,6 @@ class G1ParScanThreadStateSet : public StackObj {
 
   void flush_stats();
   void destroy_worker_states();
-
-  // Updates the region set that has code root updates with the regions in the given set.
-  void update_nmethod_regions_to_add(G1NmethodsToAdd* nmethods);
-  void par_iterate_nmethod_regions_to_add(G1HeapRegionClosure* cl,
-                                          G1HeapRegionClaimer* claimer,
-                                          uint worker_id);
-  uint num_nmethod_regions_to_add() const { return _num_nmethod_regions_to_add.load_relaxed(); }
 
   void record_unused_optional_region(G1HeapRegion* hr);
 #if TASKQUEUE_STATS

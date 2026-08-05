@@ -390,16 +390,22 @@ class WindowsFileAttributes
         if (supportsGetFileInformationByName()) {
             try (NativeBuffer buffer = NativeBuffers.getNativeBuffer(SIZEOF_STAT_BASIC_INFO)) {
                 long addr = buffer.address();
-                GetFileInformationByName(path.getPathForWin32Calls(),
-                                            FileStatBasicByNameInfo, addr,
-                                            SIZEOF_STAT_BASIC_INFO);
+                try {
+                    GetFileInformationByName(path.getPathForWin32Calls(),
+                                                FileStatBasicByNameInfo, addr,
+                                                SIZEOF_STAT_BASIC_INFO);
 
-                // GetFileInformationByName() doesn't follow reparse points so if
-                // we discover that this is a reparse point and if we're being asked
-                // to follow links, then drop to the slow path.
-                int fileAttrs = unsafe.getInt(addr + OFFSETOF_STAT_BASIC_INFO_ATTRIBUTES);
-                if (!isReparsePoint(fileAttrs) || !followLinks) {
-                    return fromStatBasicInfo(addr);
+                    // GetFileInformationByName() doesn't follow reparse points so if
+                    // we discover that this is a reparse point and if we're being asked
+                    // to follow links, then drop to the slow path.
+                    int fileAttrs = unsafe.getInt(addr + OFFSETOF_STAT_BASIC_INFO_ATTRIBUTES);
+                    if (!isReparsePoint(fileAttrs) || !followLinks) {
+                        return fromStatBasicInfo(addr);
+                    }
+                } catch (WindowsException exc) {
+                    if (exc.lastError() != ERROR_NOT_SUPPORTED) {
+                        throw exc;
+                    }
                 }
             }
         }

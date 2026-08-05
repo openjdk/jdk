@@ -466,6 +466,9 @@ public class ApplicableIRRulesPrinter {
         if (actualFlagValue != null) {
             return value.equals(actualFlagValue);
         }
+        if (flag.equals("enable-valhalla")) {
+            return checkBooleanFlag(flag, value, Integer.class.isValue());
+        }
 
         // This could be improved if the Whitebox offers a "isVMFlag" function. For now, just check if we can actually set
         // a value for a string flag. If we find this value, it's a string flag. If null is returned, the flag is unknown.
