@@ -1325,7 +1325,9 @@ private:
   void evcvttsd2sisq(Register dst, XMMRegister src);
   void evcvttsd2sisq(Register dst, Address src);
 
+  // Convert with Truncation Scalar Half-Precision Floating-Point Value to Doubleword Integer
   void evcvttsh2sil(Register dst, XMMRegister src);
+  // Convert with Truncation Scalar Half-Precision Floating-Point Value to Quadword Integer
   void evcvttsh2siq(Register dst, XMMRegister src);
 
   // Convert with Truncation Scalar Single-Precision Floating-Point Value to Doubleword Integer
