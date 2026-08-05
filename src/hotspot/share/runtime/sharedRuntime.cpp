@@ -2755,7 +2755,7 @@ CompiledEntrySignature::CompiledEntrySignature(Method* method) :
   _method(method), _num_inline_args(0), _has_inline_recv(false),
   _regs(nullptr), _regs_cc(nullptr), _regs_cc_ro(nullptr),
   _args_on_stack(0), _args_on_stack_cc(0), _args_on_stack_cc_ro(0),
-  _c1_needs_stack_repair(false), _c2_needs_stack_repair(false), _supers(nullptr) {
+  _c2_needs_stack_repair(false), _supers(nullptr) {
   _sig = new GrowableArray<SigEntry>((method != nullptr) ? method->size_of_parameters() : 1);
   _sig_cc = new GrowableArray<SigEntry>((method != nullptr) ? method->size_of_parameters() : 1);
   _sig_cc_ro = new GrowableArray<SigEntry>((method != nullptr) ? method->size_of_parameters() : 1);
@@ -2970,7 +2970,6 @@ void CompiledEntrySignature::compute_calling_conventions(bool link_time) {
     _regs_cc_ro = NEW_RESOURCE_ARRAY(VMRegPair, _sig_cc_ro->length());
     _args_on_stack_cc_ro = SharedRuntime::java_calling_convention(_sig_cc_ro, _regs_cc_ro);
 
-    _c1_needs_stack_repair = (_args_on_stack_cc < _args_on_stack) || (_args_on_stack_cc_ro < _args_on_stack);
     _c2_needs_stack_repair = (_args_on_stack_cc > _args_on_stack) || (_args_on_stack_cc > _args_on_stack_cc_ro);
 
     // Upper bound on stack arguments to avoid hitting the argument limit and
@@ -3123,7 +3122,6 @@ void CompiledEntrySignature::initialize_from_fingerprint(AdapterFingerPrint* fin
     _regs_cc_ro = NEW_RESOURCE_ARRAY(VMRegPair, _sig_cc_ro->length());
     _args_on_stack_cc_ro = SharedRuntime::java_calling_convention(_sig_cc_ro, _regs_cc_ro);
 
-    _c1_needs_stack_repair = (_args_on_stack_cc < _args_on_stack) || (_args_on_stack_cc_ro < _args_on_stack);
     _c2_needs_stack_repair = (_args_on_stack_cc > _args_on_stack) || (_args_on_stack_cc > _args_on_stack_cc_ro);
   } else {
     // No scalarized args
@@ -3183,9 +3181,6 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& meth
   if (ces.has_scalarized_args()) {
     if (!method->has_scalarized_args()) {
       method->set_has_scalarized_args();
-    }
-    if (ces.c1_needs_stack_repair()) {
-      method->set_c1_needs_stack_repair();
     }
     if (ces.c2_needs_stack_repair() && !method->c2_needs_stack_repair()) {
       method->set_c2_needs_stack_repair();

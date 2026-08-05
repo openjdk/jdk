@@ -970,7 +970,6 @@ private:
   int _args_on_stack_cc;
   int _args_on_stack_cc_ro;
 
-  bool _c1_needs_stack_repair;
   bool _c2_needs_stack_repair;
 
   GrowableArray<Method*>* _supers;
@@ -1001,7 +1000,6 @@ public:
   bool has_inline_recv()               const { return _has_inline_recv; }
 
   bool has_scalarized_args()           const { return _sig != _sig_cc; }
-  bool c1_needs_stack_repair()         const { return _c1_needs_stack_repair; }
   bool c2_needs_stack_repair()         const { return _c2_needs_stack_repair; }
   CodeOffsets::Entries c1_inline_ro_entry_type() const;
 

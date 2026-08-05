@@ -44,7 +44,7 @@
 
 void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_bytes,
                                     int sp_offset_for_orig_pc,
-                                    bool needs_stack_repair, bool has_scalarized_args,
+                                    bool has_scalarized_args,
                                     Label* verified_inline_entry_label) {
   assert(bang_size_in_bytes >= frame_size_in_bytes, "stack bang size incorrect");
   assert((frame_size_in_bytes % StackAlignmentInBytes) == 0, "frame size should be aligned");

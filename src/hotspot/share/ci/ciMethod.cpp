@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1622,10 +1622,6 @@ const GrowableArray<SigEntry>* ciMethod::get_sig_cc() const {
 bool ciMethod::mismatch() const {
   VM_ENTRY_MARK;
   return get_Method()->mismatch();
-}
-
-bool ciMethod::c1_needs_stack_repair() const {
-  GUARDED_VM_ENTRY(return get_Method()->c1_needs_stack_repair();)
 }
 
 bool ciMethod::c2_needs_stack_repair() const {
