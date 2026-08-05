@@ -193,6 +193,7 @@ private:
   intx    _type_profile_width;
   intx    _bci_profile_width;
   bool    _profile_traps;
+  bool    _profile_exception_handlers;
   bool    _type_profile_casts;
   int     _spec_trap_limit_extra_entries;
 
