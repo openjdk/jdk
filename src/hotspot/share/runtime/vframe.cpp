@@ -649,7 +649,7 @@ void entryVFrame::print(outputStream* output) {
 static void print_stack_values(outputStream* output, const char* title, StackValueCollection* values) {
   if (values->is_empty()) return;
   output->print_cr("\t%s:", title);
-  values->print();
+  values->print_on(output);
 }
 
 
@@ -659,8 +659,8 @@ void javaVFrame::print(outputStream* output) {
   HandleMark hm(current_thread);
 
   vframe::print(output);
-  output->print("\t");
-  method()->print_value();
+  output->print_raw("\t");
+  method()->print_value_on(output);
   output->cr();
   output->print_cr("\tbci:    %d", bci());
 
@@ -672,25 +672,25 @@ void javaVFrame::print(outputStream* output) {
   output->print_cr("\tmonitor list:");
   for (int index = (list->length()-1); index >= 0; index--) {
     MonitorInfo* monitor = list->at(index);
-    output->print("\t  obj\t");
+    output->print("\t  obj ");
     if (monitor->owner_is_scalar_replaced()) {
       Klass* k = java_lang_Class::as_Klass(monitor->owner_klass());
-      output->print("( is scalar replaced %s)", k->external_name());
+      output->print("(is scalar replaced %s)", k->external_name());
     } else if (monitor->owner() == nullptr) {
-      output->print("( null )");
+      output->print("(null)");
     } else {
-      monitor->owner()->print_value();
+      monitor->owner()->print_value_on(output);
       output->print("(owner=" INTPTR_FORMAT ")", p2i(monitor->owner()));
     }
     if (monitor->eliminated()) {
       if(is_compiled_frame()) {
-        output->print(" ( lock is eliminated in compiled frame )");
+        output->print(" (lock is eliminated in compiled frame)");
       } else {
-        output->print(" ( lock is eliminated, frame not compiled )");
+        output->print(" (lock is eliminated, frame not compiled)");
       }
     }
     output->cr();
-    output->print("\t  ");
+    output->print_raw("\t");
     monitor->lock()->print_on(output, monitor->owner());
     output->cr();
   }
@@ -725,14 +725,14 @@ void javaVFrame::print_value(outputStream* output) const {
   }
 }
 
-void javaVFrame::print_activation(int index, outputStream* output) const {
+void javaVFrame::print_activation(outputStream* output, int index) const {
   // frame number and method
   output->print("%2d - ", index);
-  ((vframe*)this)->print_value();
+  ((vframe*)this)->print_value(output);
   output->cr();
 
   if (WizardMode) {
-    ((vframe*)this)->print();
+    ((vframe*)this)->print(output);
     output->cr();
   }
 }
