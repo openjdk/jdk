@@ -2443,7 +2443,7 @@ void ShenandoahHeap::pin_object(JavaThread* thr, oop o) {
     ShenandoahThreadLocalData::pin_cache_set_count(thr, count + 1);
   } else {
     if (count != 0) {
-      get_region(reg_idx_cached)->inc_pin_count(count);
+      get_region(reg_idx_cached)->record_pin(count);
     }
     ShenandoahThreadLocalData::pin_cache_set_region(thr, reg_idx_pin);
     ShenandoahThreadLocalData::pin_cache_set_count(thr, 1);
@@ -2454,15 +2454,11 @@ void ShenandoahHeap::unpin_object(JavaThread* thr, oop o) {
   assert(thr == JavaThread::current(), "Sanity");
   size_t reg_idx_pin = heap_region_index_containing(o);
   size_t reg_idx_cached = ShenandoahThreadLocalData::pin_cache_region(thr);
-  size_t count = ShenandoahThreadLocalData::pin_cache_count(thr);
   if (reg_idx_pin == reg_idx_cached) {
+    size_t count = ShenandoahThreadLocalData::pin_cache_count(thr);
     ShenandoahThreadLocalData::pin_cache_set_count(thr, count - 1);
   } else {
-    if (count != 0) {
-      get_region(reg_idx_cached)->inc_pin_count(count);
-    }
-    ShenandoahThreadLocalData::pin_cache_set_region(thr, reg_idx_pin);
-    ShenandoahThreadLocalData::pin_cache_set_count(thr, ~(size_t)0);
+    get_region(reg_idx_pin)->record_unpin();
   }
 }
 
@@ -2470,10 +2466,9 @@ void ShenandoahHeap::flush_region_pin_cache(JavaThread* thr) {
   size_t count = ShenandoahThreadLocalData::pin_cache_count(thr);
   if (count != 0) {
     size_t reg_idx_cached = ShenandoahThreadLocalData::pin_cache_region(thr);
-    get_region(reg_idx_cached)->inc_pin_count(count);
+    get_region(reg_idx_cached)->record_pin(count);
     ShenandoahThreadLocalData::pin_cache_set_count(thr, 0);
   }
-  ShenandoahThreadLocalData::pin_cache_set_region(thr, 0);
 }
 
 void ShenandoahHeap::flush_region_pin_cache() {

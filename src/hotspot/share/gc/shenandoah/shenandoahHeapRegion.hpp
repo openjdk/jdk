@@ -224,10 +224,9 @@ public:
   RegionState state()              const { return _state.load_acquire(); }
   int  state_ordinal()             const { return region_state_to_ordinal(state()); }
 
-  void record_pin();
-  void record_unpin();
+  inline void record_pin(size_t value = 1);
+  inline void record_unpin(size_t value = 1);
   size_t pin_count() const;
-  inline void inc_pin_count(size_t value);
 
 private:
   static size_t RegionCount;
