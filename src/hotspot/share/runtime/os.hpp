@@ -576,7 +576,7 @@ class os: AllStatic {
   static char* replace_existing_mapping_with_file_mapping(char* base, size_t size, int fd);
 
   static char*  map_memory(int fd, const char* file_name, size_t file_offset,
-                           char *addr, size_t bytes, MemTag mem_tag, bool read_only, bool allow_exec);
+                           char *addr, size_t bytes, bool read_only, MemTag mem_tag, bool allow_exec);
   static void   unmap_memory(char *addr, size_t bytes);
   static void   disclaim_memory(char *addr, size_t bytes);
   static void   realign_memory(char *addr, size_t bytes, size_t alignment_hint);
