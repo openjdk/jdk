@@ -1646,13 +1646,12 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   const Address size_of_parameters(r3,
                                    ConstMethod::size_of_parameters_offset());
   const Address size_of_locals(r3, ConstMethod::size_of_locals_offset());
-  const Address max_stack(r3, ConstMethod::max_stack_offset());
 
   // get parameter size (always needed)
   // need to load the const method first
   __ ldr(r3, constMethod);
   __ load_unsigned_short(r2, size_of_parameters);
-  __ load_unsigned_short(rscratch1, max_stack);
+  __ load_unsigned_short(rscratch1, Address(r3, ConstMethod::max_stack_offset()));
 
   // r2: size of parameters
 
