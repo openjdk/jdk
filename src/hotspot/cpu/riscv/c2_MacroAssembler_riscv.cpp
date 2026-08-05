@@ -1852,7 +1852,7 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
 
   vsetvli(consumed, cnt, Assembler::e32, Assembler::m2);
   vle32_v(v_coeffs, t1); // 31^^(stride - 1) ... 31^^0
-  vmv_v_x(v_sum, x0);
+  vmv_v_i(v_sum, 0);
 
   bind(VEC_LOOP);
   arrays_hashcode_elload_v(v_src, v_tmp, ary, eltype);
