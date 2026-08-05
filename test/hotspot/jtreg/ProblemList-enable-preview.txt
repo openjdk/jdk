@@ -41,3 +41,7 @@
 runtime/cds/appcds/aotCode/AOTCodeFlags.java#default_gc 8382398 generic-all
 runtime/cds/appcds/aotCode/AOTCodeFlags.java#parallel   8382398 generic-all
 runtime/cds/appcds/aotCode/AOTCodeFlags.java#Z          8382398 generic-all
+
+# Serviceability:
+serviceability/sa/TestInstanceKlassSize.java             8389759 generic-all
+serviceability/sa/TestInstanceKlassSizeForInterface.java 8389759 generic-all
