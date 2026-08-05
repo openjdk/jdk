@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -126,9 +126,11 @@ class ThreadStateTransition : public StackObj {
 };
 
 class ThreadInVMfromJava : public ThreadStateTransition {
+  AtNoAsyncEntryMark anaem;
   bool _check_asyncs;
  public:
-  ThreadInVMfromJava(JavaThread* thread, bool check_asyncs = true) : ThreadStateTransition(thread), _check_asyncs(check_asyncs) {
+  ThreadInVMfromJava(JavaThread* thread, bool check_asyncs = true)
+    : ThreadStateTransition(thread), anaem(thread, !check_asyncs), _check_asyncs(check_asyncs) {
     transition_from_java(thread, _thread_in_vm);
   }
   ~ThreadInVMfromJava()  {

@@ -28,11 +28,16 @@ import compiler.lib.ir_framework.driver.FlagVMProcess;
 import compiler.lib.ir_framework.driver.TestVMProcess;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.Matchable;
+import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irmethod.NotCompilableIRMethodMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irmethod.NotCompiledIRMethodMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAttributeType;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CountsConstraintFailure;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOnConstraintFailure;
+import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRuleMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseNoCompilationIRRuleMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.parser.TestClassParser;
-import compiler.lib.ir_framework.driver.irmatching.visitor.AcceptChildren;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 import jdk.test.lib.Asserts;
 
@@ -406,59 +411,46 @@ class FailureBuilder implements MatchResultVisitor {
     }
 
     @Override
-    public void visitTestClass(AcceptChildren acceptChildren) {
-        acceptChildren.accept(this);
+    public void enter(IRMethodMatchResult result) {
+        methodName = result.method().getName();
     }
 
     @Override
-    public void visitIRMethod(AcceptChildren acceptChildren, Method method, int failedIRRules) {
-        methodName = method.getName();
-        acceptChildren.accept(this);
-    }
-
-    @Override
-    public void visitMethodNotCompiled(Method method, int failedIRRules) {
-        methodName = method.getName();
+    public void visitLeaf(NotCompiledIRMethodMatchResult result) {
+        methodName = result.method().getName();
         failures.add(new Failure(methodName, -1, CompilePhase.DEFAULT, CheckAttributeType.FAIL_ON, -1));
     }
 
     @Override
-    public void visitMethodNotCompilable(Method method, int failedIRRules) {
+    public void visitLeaf(NotCompilableIRMethodMatchResult result) {
         throw new RuntimeException("No test should bailout from compilation");
     }
 
     @Override
-    public void visitIRRule(AcceptChildren acceptChildren, int irRuleId, IR irAnno) {
-        ruleId = irRuleId;
-        acceptChildren.accept(this);
+    public void enter(IRRuleMatchResult result) {
+        ruleId = result.irRuleId();
     }
 
     @Override
-    public void visitCompilePhaseIRRule(AcceptChildren acceptChildren, CompilePhase compilePhase, String compilationOutput) {
-        this.compilePhase = compilePhase;
-        acceptChildren.accept(this);
+    public void enter(CompilePhaseIRRuleMatchResult result) {
+        this.compilePhase = result.compilePhase();
     }
 
     @Override
-    public void visitNoCompilePhaseCompilation(CompilePhase compilePhase) {
-        failures.add(new Failure(methodName, ruleId, compilePhase, CheckAttributeType.FAIL_ON, -1));
+    public void visitLeaf(CompilePhaseNoCompilationIRRuleMatchResult result) {
+        failures.add(new Failure(methodName, ruleId, result.compilePhase(), CheckAttributeType.FAIL_ON, -1));
     }
 
     @Override
-    public void visitCheckAttribute(AcceptChildren acceptChildren, CheckAttributeType checkAttributeType) {
-        acceptChildren.accept(this);
-    }
-
-    @Override
-    public void visitFailOnConstraint(FailOnConstraintFailure matchResult) {
+    public void visitLeaf(FailOnConstraintFailure result) {
         failures.add(new Failure(methodName, ruleId, compilePhase, CheckAttributeType.FAIL_ON,
-                                 matchResult.constraintId()));
+                                 result.constraintId()));
     }
 
     @Override
-    public void visitCountsConstraint(CountsConstraintFailure matchResult) {
+    public void visitLeaf(CountsConstraintFailure result) {
         failures.add(new Failure(methodName, ruleId, compilePhase, CheckAttributeType.COUNTS,
-                                 matchResult.constraintId()));
+                                 result.constraintId()));
     }
 }
 
