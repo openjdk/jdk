@@ -143,7 +143,7 @@ public final class SequenceLayoutImpl extends AbstractLayout<SequenceLayoutImpl>
         if (inferPosition != -1) {
             long inferredCount = expectedCount / actualCount;
             elementCounts[inferPosition] = inferredCount;
-            actualCount = actualCount * inferredCount;
+            actualCount = Math.multiplyExact(actualCount, inferredCount);
         }
 
         if (actualCount != expectedCount) {
