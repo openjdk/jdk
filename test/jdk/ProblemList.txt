@@ -398,6 +398,14 @@ java/beans/XMLEncoder/Test6570354.java 8015593 macosx-all
 
 ############################################################################
 
+# jdk_foreign
+
+# ByteOpenJDK CI: timing-sensitive mapped-segment handshake test times out
+# (awaitTermination false) under the build container's slow storage / load.
+java/foreign/TestMappedHandshake.java 0000000 linux-all
+
+############################################################################
+
 # jdk_lang
 
 java/lang/invoke/LFCaching/LFMultiThreadCachingTest.java        8151492 generic-all

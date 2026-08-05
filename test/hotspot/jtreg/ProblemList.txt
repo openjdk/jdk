@@ -62,6 +62,10 @@ compiler/vectorization/TestVectorAlgorithms.java#noSuperWord 8376803 aix-ppc64,l
 compiler/vectorization/TestVectorAlgorithms.java#vanilla 8376803 aix-ppc64,linux-s390x
 compiler/vectorization/TestVectorAlgorithms.java#noOptimizeFill 8376803 aix-ppc64,linux-s390x
 
+# ByteOpenJDK CI: the IR-framework Test VM fails to connect/start in the build
+# container, surfacing as an NPE (javaFuture == null) in TestFrameworkSocket.
+compiler/vectorization/TestReverseBytes.java 0000000 linux-all
+
 compiler/floatingpoint/TestSubnormalFloat.java 8317810 generic-i586
 compiler/floatingpoint/TestSubnormalDouble.java 8317810 generic-i586
 
@@ -132,6 +136,10 @@ serviceability/sa/ClhsdbPmap.java#core            8318754 macosx-aarch64,linux-a
 serviceability/sa/ClhsdbPstack.java#core          8318754 macosx-aarch64,linux-all
 serviceability/sa/TestJmapCore.java               8318754 macosx-aarch64
 serviceability/sa/TestJmapCoreMetaspace.java      8318754 macosx-aarch64
+
+# ByteOpenJDK CI: core file is not produced inside the build container, so the
+# SA test fails in CoreUtils.getCoreFileLocation() instead of skipping.
+serviceability/sa/TestJhsdbJstackMixedCore.java   0000000 linux-all
 
 serviceability/sa/ClhsdbThreadContext.java        8356704 windows-x64
 
