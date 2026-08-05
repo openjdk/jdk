@@ -2960,7 +2960,7 @@ public class Check {
 
     private void checkAccessFromSerializableElementInner(final JCTree tree, boolean isLambda) {
         Symbol sym = TreeInfo.symbol(tree);
-        if (!sym.kind.matches(KindSelector.VAL_MTH)) {
+        if (!sym.kind.matches(KindSelector.VAL_MTH) || sym.kind == ERR) {
             return;
         }
 
