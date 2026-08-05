@@ -786,8 +786,8 @@ public final class Class<T> implements java.io.Serializable,
      * }
      * <p>
      * If this method returns true for a specified object, that object can be
-     * passed to {@link #cast(Object) cast} without causing a {@code
-     * ClassCastException}.
+     * passed to the {@link #cast(Object) cast} method of this {@code Class}
+     * object without causing a {@code ClassCastException}.
      *
      * @apiNote
      * This method is the dynamic equivalent of the type comparison operator of
@@ -808,7 +808,7 @@ public final class Class<T> implements java.io.Serializable,
 
     /**
      * Determines if this object is the same as {@code subtype}, or if both
-     * {@code Class} objects represent a reference type, and that represented by
+     * {@code Class} objects represent a reference type and that represented by
      * this object is a supertype of that represented by {@code subtype}.
      * <p>
      * Let T be the type represented by this object, and P be the type
@@ -3601,9 +3601,10 @@ public final class Class<T> implements java.io.Serializable,
      * method completes normally if and only if the specified reference is
      * {@code null}.
      * <p>
-     * If a non-null object passes the check of this method without causing
-     * a {@code ClassCastException}, {@link #isInstance(Object) isInstance}
-     * will return true for that object.
+     * If an object is non-null and passes the check of this method without
+     * causing a {@code ClassCastException}, the {@link #isInstance(Object)
+     * isInstance} method of this {@code Class} object will return true for
+     * that object.
      *
      * @apiNote
      * This method is the dynamic equivalent of the cast operator with a single
