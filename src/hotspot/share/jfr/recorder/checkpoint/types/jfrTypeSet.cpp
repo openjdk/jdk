@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/thread.inline.hpp"
 #include "utilities/accessFlags.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/stack.inline.hpp"
@@ -87,7 +88,8 @@ static inline bool previous_epoch() {
 template <typename T>
 static inline bool used(const T* ptr) {
   assert(ptr != nullptr, "invariant");
-  return current_epoch() ? USED_THIS_EPOCH(ptr) : USED_PREVIOUS_EPOCH(ptr);
+  return flushpoint() ? USED_THIS_EPOCH(ptr) :
+    unloading() ? USED_THIS_EPOCH(ptr) || USED_PREVIOUS_EPOCH(ptr) : USED_PREVIOUS_EPOCH(ptr);
 }
 
 template <typename T>
@@ -257,7 +259,7 @@ class ModuleFieldSelector {
     if (pkg == nullptr) {
       return nullptr;
     }
-    assert(current_epoch() ? IS_SERIALIZED(pkg) : true, "invariant");
+    assert(IS_SERIALIZED(pkg), "invariant");
     return pkg->module();
   }
 };
@@ -280,7 +282,7 @@ class ModuleCldFieldSelector {
     if (mod == nullptr) {
       return nullptr;
     }
-    assert(current_epoch() ? IS_SERIALIZED(mod) : true, "invariant");
+    assert(IS_SERIALIZED(mod), "invariant");
     return mod->loader_data();
   }
 };
@@ -307,6 +309,16 @@ public:
   }
 };
 
+#ifdef ASSERT
+template <typename T>
+static bool test_is_previous_epoch_cleared_bit_set(const T* ptr) {
+  assert(ptr != nullptr, "invariant");
+  const Thread* const current = Thread::current();
+  assert(current != nullptr, "invariant");
+  return !current->is_JfrRecorder_thread() || IS_PREVIOUS_EPOCH_CLEARED_BIT_SET(ptr);
+}
+#endif
+
 template <typename T>
 static void set_serialized(const T* ptr) {
   assert(ptr != nullptr, "invariant");
@@ -314,7 +326,7 @@ static void set_serialized(const T* ptr) {
     CLEAR_THIS_EPOCH_CLEARED_BIT(ptr);
     assert(!IS_THIS_EPOCH_CLEARED_BIT_SET(ptr), "invariant");
   }
-  assert(IS_PREVIOUS_EPOCH_CLEARED_BIT_SET(ptr), "invariant");
+  assert(test_is_previous_epoch_cleared_bit_set(ptr), "invariant");
   SET_SERIALIZED(ptr);
   assert(IS_SERIALIZED(ptr), "invariant");
 }
@@ -359,12 +371,12 @@ static void do_write_klass(JfrCheckpointWriter* writer, CldPtr cld, KlassPtr kla
     return;
   }
   assert(used(klass), "invariant");
-  assert(unloading() ? true : IS_NOT_SERIALIZED(klass), "invariant");
+  assert(unloading() || IS_NOT_SERIALIZED(klass), "invariant");
   set_serialized(klass);
 }
 
 static inline bool should_write_cld_klass(KlassPtr klass, bool leakp) {
-  return klass != nullptr && (leakp ? IS_LEAKP(klass) : unloading() ? true : IS_NOT_SERIALIZED(klass));
+  return klass != nullptr && (leakp ? IS_LEAKP(klass) : unloading() || IS_NOT_SERIALIZED(klass));
 }
 
 static void write_klass(JfrCheckpointWriter* writer, KlassPtr klass, bool leakp, int& elements) {
@@ -539,6 +551,7 @@ static void do_unloading_klass(Klass* klass) {
     assert(used(klass), "invariant");
   }
   if (JfrKlassUnloading::on_unload(klass)) {
+    assert(used(klass), "invariant");
     if (JfrTraceId::has_sticky_bit(klass)) {
       JfrMethodTracer::add_to_unloaded_set(klass);
     }
@@ -996,6 +1009,15 @@ static void write_clds_on_clear() {
 
 /***** Methods *****/
 
+#ifdef ASSERT
+static bool test_is_previous_epoch_method_cleared_bit_set(MethodPtr method) {
+  assert(method != nullptr, "invariant");
+  const Thread* const current = Thread::current();
+  assert(current != nullptr, "invariant");
+  return !current->is_JfrRecorder_thread() || IS_PREVIOUS_EPOCH_METHOD_CLEARED_BIT_SET(method);
+}
+#endif
+
 template <>
 void set_serialized<Method>(MethodPtr method) {
   assert(method != nullptr, "invariant");
@@ -1003,9 +1025,9 @@ void set_serialized<Method>(MethodPtr method) {
     CLEAR_THIS_EPOCH_METHOD_CLEARED_BIT(method);
     assert(!IS_THIS_EPOCH_METHOD_CLEARED_BIT_SET(method), "invariant");
   }
-  assert(unloading() ? true : METHOD_IS_NOT_SERIALIZED(method), "invariant");
+  assert(test_is_previous_epoch_method_cleared_bit_set(method), "invariant");
+  assert(unloading() || METHOD_IS_NOT_SERIALIZED(method), "invariant");
   SET_METHOD_SERIALIZED(method);
-  assert(IS_PREVIOUS_EPOCH_METHOD_CLEARED_BIT_SET(method), "invariant");
   assert(METHOD_IS_SERIALIZED(method), "invariant");
 }
 
@@ -1054,7 +1076,7 @@ class MethodIteratorHost {
   MethodIteratorHost(JfrCheckpointWriter* writer) :
     _method_cb(writer, unloading(), false),
     _klass_cb(writer, unloading(), false),
-    _method_flag_predicate(current_epoch()) {}
+    _method_flag_predicate(previous_epoch(), unloading()) {}
 
   bool operator()(KlassPtr klass) {
     if (klass->is_instance_klass()) {
