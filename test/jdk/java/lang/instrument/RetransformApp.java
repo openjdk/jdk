@@ -36,6 +36,7 @@ import jdk.test.lib.helpers.ClassFileInstaller;
  *
  * @modules java.instrument
  * @library /test/lib
+ * @build jdk.test.lib.process.ProcessTools
  * @build RetransformAgent asmlib.Instrumentor
  * @run driver/timeout=240 RetransformApp roleDriver
  * @comment The test uses a higher timeout to prevent test timeouts noted in JDK-6528548

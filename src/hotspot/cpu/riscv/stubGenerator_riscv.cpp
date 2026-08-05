@@ -1925,9 +1925,16 @@ class StubGenerator: public StubCodeGenerator {
     __ load_klass(t1, dst);
     __ bne(t1, scratch_src_klass, L_failed);
 
-    // if src->is_Array() isn't null then return -1
-    // i.e. (lh >= 0)
-    __ bgez(lh, L_failed);
+    if (Arguments::is_valhalla_enabled()) {
+      // Check for flat inline type array -> return -1
+      __ test_flat_array_oop(src, t1, L_failed);
+
+      // Check for null-free (non-flat) inline type array -> handle as object array
+      __ test_null_free_array_oop(src, t1, L_objArray);
+    }
+
+    // if (!src->is_Array()) return -1;
+    __ bgez(lh, L_failed);  // i.e. (lh >= 0)
 
     // At this point, it is known to be a typeArray (array_tag 0x3).
 #ifdef ASSERT
@@ -6125,7 +6132,7 @@ class StubGenerator: public StubCodeGenerator {
       int64_t block_bytes = 16 * 4;
       __ addi(buf, buf, block_bytes);
 
-      __ bge(limit, buf, L_sha1_loop, true);
+      __ bge(limit, buf, L_sha1_loop, /* is_far */ true);
     }
 
     // store back the state.
