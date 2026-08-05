@@ -1099,8 +1099,9 @@ HRESULT AwtDragSource::GetCanonicalFormatEtc(FORMATETC __RPC_FAR *pFormatEtcIn, 
 HRESULT AwtDragSource::SetData(FORMATETC __RPC_FAR *pFormatEtc, STGMEDIUM __RPC_FAR *pmedium, BOOL fRelease) {
     AwtToolkit::GetInstance().eventNumber++;
     if (pFormatEtc->cfFormat == CF_PERFORMEDDROPEFFECT && pmedium->tymed == TYMED_HGLOBAL) {
-        m_dwPerformedDropEffect = *(DWORD*)::GlobalLock(pmedium->hGlobal);
-        if (m_dwPerformedDropEffect != NULL) {
+        DWORD *dptr = (DWORD*)::GlobalLock(pmedium->hGlobal);
+        if (dptr != NULL) {
+            m_dwPerformedDropEffect = *dptr;
             ::GlobalUnlock(pmedium->hGlobal);
         }
         if (fRelease) {
