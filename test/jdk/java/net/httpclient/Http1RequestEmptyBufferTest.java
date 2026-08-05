@@ -41,19 +41,19 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 /**
  * @test
- * @bug 8308183
+ * @bug 8308024
  * @summary Verify that the server observes the terminal chunk exactly once
  * when the HTTP/1.1 client request body publisher supplies an empty buffer.
  * @library /test/lib
- * @run main/othervm ${test.main.class}
+ * @run junit/othervm ${test.main.class}
  */
 public class Http1RequestEmptyBufferTest {
-
-    public static void main(String[] args) throws Exception {
-        test();
-    }
 
     static final byte[] HEADER_END = new byte[] {'\r', '\n', '\r', '\n'};
 
@@ -99,7 +99,8 @@ public class Http1RequestEmptyBufferTest {
     static final String RESPONSE_HEADERS = "HTTP/1.1 200 OK\r\n" +
             "Content-Length: 0\r\n\r\n";
 
-    private static void test() throws Exception {
+    @Test
+    void test() throws Exception {
         try (ServerSocket server = new ServerSocket()) {
             server.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
             String path = "/testChunkEmptyBuffer/";
@@ -125,23 +126,20 @@ public class Http1RequestEmptyBufferTest {
                 byte[] headerBytes = readRequestHeaders(input);
                 String headerText = new String(headerBytes, StandardCharsets.US_ASCII)
                         .toLowerCase(Locale.ROOT);
-                if (!headerText.contains("transfer-encoding: chunked")) {
-                    throw new AssertionError("Expected Transfer-Encoding: chunked header, got: "
-                            + headerText);
-                }
+                assertTrue(headerText.contains("transfer-encoding: chunked"),
+                        "Expected Transfer-Encoding: chunked header, got: "
+                        + headerText);
                 int terminalChunkCount = countTerminalChunks(input);
-                if (terminalChunkCount != 1) {
-                    throw new AssertionError("Expected exactly one terminal chunk, got: "
-                            + terminalChunkCount);
-                }
+                assertEquals(1, terminalChunkCount,
+                        "Expected exactly one terminal chunk, got: "
+                        + terminalChunkCount);
                 OutputStream os = connection.getOutputStream();
                 os.write(RESPONSE_HEADERS.getBytes(StandardCharsets.US_ASCII));
                 os.flush();
                 HttpResponse<Void> response = responseFuture.join();
-                if (response.statusCode() != 200) {
-                    throw new AssertionError("Expected response status 200, got: "
-                            + response.statusCode());
-                }
+                assertEquals(200, response.statusCode(),
+                        "Expected response status 200, got: "
+                        + response.statusCode());
             }
         }
     }
