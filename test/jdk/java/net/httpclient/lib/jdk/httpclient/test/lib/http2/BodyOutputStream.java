@@ -177,4 +177,13 @@ public class BodyOutputStream extends OutputStream {
         ResetFrame rf = new ResetFrame(streamid, resetErrorCode);
         outputQ.put(rf);
     }
+
+    public void reset(int resetErrorCode) throws IOException {
+        if (closed) return;
+        synchronized (this) {
+            if (closed) return;
+            this.closed = true;
+        }
+        sendReset(resetErrorCode);
+    }
 }
