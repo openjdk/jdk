@@ -128,7 +128,8 @@ public class Http2TestServerConnection {
     private final AtomicInteger maxProcessedRequestStreamId = new AtomicInteger(-1);
     // the stream id that was sent in a GOAWAY frame. -1 implies no GOAWAY frame was sent.
     private final AtomicInteger goAwayRequestStreamId = new AtomicInteger(-1);
-    private volatile Thread writeLoopThread;
+    private final Thread writeLoopThread;
+    private final Thread readLoopThread;
 
     final static ByteBuffer EMPTY_BUFFER = ByteBuffer.allocate(0);
     final Random random;
@@ -199,6 +200,16 @@ public class Http2TestServerConnection {
         this.exec = server.exec;
         this.secure = server.secure;
         this.pushStreams = new HashSet<>();
+        final Thread writeLoopThread = new Thread(this::writeLoop, "writeLoop");
+        writeLoopThread.setDaemon(true);
+        // the Thread be started in run() method of this connection
+        this.writeLoopThread = writeLoopThread;
+
+        final Thread readLoopThread = new Thread(this::readLoop, "readLoop");
+        readLoopThread.setDaemon(true);
+        // the Thread be started in run() method of this connection
+        this.readLoopThread = readLoopThread;
+
         is = socket.getInputStream();
         os = socket.getOutputStream();
     }
@@ -461,7 +472,7 @@ public class Http2TestServerConnection {
                           "X-Received-Body", new String(request.body, UTF_8));
     }
 
-    void run() throws Exception {
+    final void run() throws Exception {
         Http1InitialRequest upgrade = null;
         if (!secure) {
             Http1InitialRequest request = readHttp1Request();
@@ -499,10 +510,6 @@ public class Http2TestServerConnection {
             }
         }
 
-        // Uncomment if needed, but very noisy
-        //System.out.println("ServerSettings: " + serverSettings);
-        //System.out.println("ClientSettings: " + clientSettings);
-
         hpackOut = new HpackTestEncoder(serverSettings.getParameter(HEADER_TABLE_SIZE));
         hpackIn = new Decoder(clientSettings.getParameter(HEADER_TABLE_SIZE));
 
@@ -510,15 +517,9 @@ public class Http2TestServerConnection {
             createPrimordialStream(upgrade);
             nextstream = 3;
         }
-
-        final Thread readLoopThread = new Thread(this::readLoop, "readLoop");
-        readLoopThread.setDaemon(true);
-        readLoopThread.start();
-
-        final Thread writeLoopThread = new Thread(this::writeLoop, "writeLoop");
-        writeLoopThread.setDaemon(true);
-        writeLoopThread.start();
-        this.writeLoopThread = writeLoopThread;
+        // start the read and write threads
+        this.readLoopThread.start();
+        this.writeLoopThread.start();
     }
 
     private void writeFrame(Http2Frame frame) throws IOException {
