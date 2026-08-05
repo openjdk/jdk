@@ -457,6 +457,9 @@ Java_sun_awt_windows_WClipboard_getClipboardData
             if (data != NULL) {
                 env->SetByteArrayRegion(bytes, 0, size, (jbyte *)data);
                 ::GlobalUnlock(handle);
+            } else {
+                JNU_ThrowIOException(env, "GlobalLock failed");
+                return NULL;
             }
         }
         break;
