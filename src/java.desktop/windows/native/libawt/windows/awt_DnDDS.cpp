@@ -844,6 +844,11 @@ HRESULT AwtDragSource::GetData(FORMATETC __RPC_FAR *pFormatEtc,
         }
 
         char *dataout = (char *)::GlobalLock(copy);
+        if (dataout == NULL) {
+            env->PopLocalFrame(NULL);
+            ::GlobalFree(copy);
+            throw std::bad_alloc();
+        }
 
         if (matchedFormatEtc.cfFormat == CF_HDROP) {
             DROPFILES *dropfiles = (DROPFILES *)dataout;
@@ -914,6 +919,14 @@ HRESULT AwtDragSource::GetData(FORMATETC __RPC_FAR *pFormatEtc,
         }
 
         LPMETAFILEPICT lpMfp = (LPMETAFILEPICT)::GlobalLock(hmfp);
+        if (lpMfp == NULL) {
+            VERIFY(::DeleteMetaFile(hmf));
+            env->ReleasePrimitiveArrayCritical(bytes, (LPVOID)lpbMfpBuffer, JNI_ABORT);
+            env->PopLocalFrame(NULL);
+            ::GlobalFree(hmfp);
+            throw std::bad_alloc();
+        }
+
         lpMfp->mm = lpMfpOld->mm;
         lpMfp->xExt = lpMfpOld->xExt;
         lpMfp->yExt = lpMfpOld->yExt;
@@ -1016,6 +1029,10 @@ HRESULT AwtDragSource::GetDataHere(FORMATETC __RPC_FAR *pFormatEtc,
         }
 
         char *dataout = (char *)::GlobalLock(pmedium->hGlobal);
+        if (dataout == NULL) {
+            env->PopLocalFrame(NULL);
+            return E_UNEXPECTED;
+        }
 
         if (matchedFormatEtc.cfFormat == CF_HDROP) {
             DROPFILES *dropfiles = (DROPFILES *)dataout;
@@ -1083,7 +1100,9 @@ HRESULT AwtDragSource::SetData(FORMATETC __RPC_FAR *pFormatEtc, STGMEDIUM __RPC_
     AwtToolkit::GetInstance().eventNumber++;
     if (pFormatEtc->cfFormat == CF_PERFORMEDDROPEFFECT && pmedium->tymed == TYMED_HGLOBAL) {
         m_dwPerformedDropEffect = *(DWORD*)::GlobalLock(pmedium->hGlobal);
-        ::GlobalUnlock(pmedium->hGlobal);
+        if (m_dwPerformedDropEffect != NULL) {
+            ::GlobalUnlock(pmedium->hGlobal);
+        }
         if (fRelease) {
             ::ReleaseStgMedium(pmedium);
         }
@@ -1163,6 +1182,10 @@ HRESULT AwtDragSource::GetProcessId(FORMATETC __RPC_FAR *pFormatEtc, STGMEDIUM _
     }
 
     char *dataout = (char *)::GlobalLock(copy);
+    if (dataout == NULL) {
+        ::GlobalFree(copy);
+        throw std::bad_alloc();
+    }
 
     memcpy(dataout, &id, sizeof(id));
     ::GlobalUnlock(copy);
