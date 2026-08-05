@@ -772,7 +772,7 @@ class GraphKit : public Phase {
   }
 
   bool too_many_traps_or_recompiles(Deoptimization::DeoptReason reason) {
-      return C->too_many_traps_or_recompiles(method(), bci(), reason);
+    return C->too_many_traps_or_recompiles(method(), bci(), reason);
   }
 
   // Returns the object (if any) which was created the moment before.

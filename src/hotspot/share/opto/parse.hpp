@@ -490,7 +490,7 @@ class Parse : public GraphKit {
   void do_one_bytecode();
 
   // helper function to generate array store check
-  Node* array_store_check(Node*& adr, const Type*& elemtype);
+  Node* array_store_check(const Type*& elemtype);
   // Helper function to generate array load
   void array_load(BasicType etype);
   Node* load_from_unknown_flat_array(Node* array, Node* array_index, const TypeOopPtr* element_ptr);
