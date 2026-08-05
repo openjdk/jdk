@@ -34,7 +34,6 @@ class G1HeapRegion;
 
 // Common base class for tracking information about Eden and Survivor region sets.
 class G1YoungRegions {
-  // Sum of used bytes in all retired regions.
   Atomic<size_t> _used_bytes;
   G1RegionsOnNodes _regions_on_node;
 
