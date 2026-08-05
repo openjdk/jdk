@@ -944,19 +944,25 @@ int MacroAssembler::max_static_call_stub_size() {
   return NativeStaticCallStub::max_instruction_size;
 }
 
-int MacroAssembler::static_call_dispatch_adapter_size() {
+int MacroAssembler::max_static_call_dispatch_adapter_size() {
+  // cbz  rmethod, L_wrong_method
   // ldr rscratch1, [rmethod]
   // ldr rscratch1, [rscratch1]
   // br  rscratch1
-  return 3 * NativeInstruction::instruction_size;
+  // L_wrong_method:
+  // far_jump(handle_wrong_method_stub) - 4 instruction max
+  return 8 * NativeInstruction::instruction_size;
 }
 
 // Emit, once per nmethod, the static call dispatch adapter used by static call stubs.
 //
 // dispatch_adapter:
+//   cbz  rmethod, L_wrong_method
 //   ldr   rscratch1, [rmethod,   #Method::adapter_offset()] ; AdapterHandlerEntry*
 //   ldr   rscratch1, [rscratch1, #AdapterHandlerEntry::c2i_entry_offset()]
 //   br    rscratch1
+//  L_wrong_method:
+//   far_jump(handle_wrong_method_stub)
 bool MacroAssembler::ensure_static_call_dispatch_adapter() {
   assert(code_section() == code()->insts(),
          "must be called from the insts section, outside any start_a_stub bracket");
@@ -964,16 +970,21 @@ bool MacroAssembler::ensure_static_call_dispatch_adapter() {
     return true;
   }
 
-  if (start_a_stub(static_call_dispatch_adapter_size()) == nullptr) {
+  if (start_a_stub(max_static_call_dispatch_adapter_size()) == nullptr) {
     return false;  // CodeBuffer::expand failed
   }
 
+  Label wrong_method;
+
   const int adapter_offset = code()->stubs()->size();
+  cbz(rmethod, wrong_method);
   ldr(rscratch1, Address(rmethod, Method::adapter_offset()));
   ldr(rscratch1, Address(rscratch1, AdapterHandlerEntry::c2i_entry_offset()));
   br(rscratch1);
+  bind(wrong_method);
+  far_jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
 
-  assert(code()->stubs()->size() - adapter_offset == static_call_dispatch_adapter_size(),
+  assert(code()->stubs()->size() - adapter_offset <= max_static_call_dispatch_adapter_size(),
          "adapter size mismatch");
 
   code()->set_static_call_dispatch_adapter_offset(adapter_offset);

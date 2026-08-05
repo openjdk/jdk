@@ -155,12 +155,12 @@ TEST_VM(StaticCallStub, relocs) {
 
   EXPECT_EQ(code.stubs()->start(), stubs_before);
 
-  // As the adapter is 12 bytes, the first stub needs padding. Its size will
+  // As the adapter is up to 28 bytes, the first stub might need padding. Its size might
   // be 20 bytes. Later stubs need no padding. Their size will be 16 bytes.
   int expected_size = NativeStaticCallStub::body_size * N + wordSize * N +
-                      MacroAssembler::static_call_dispatch_adapter_size() +
+                      MacroAssembler::max_static_call_dispatch_adapter_size() +
                       NativeInstruction::instruction_size;
-  EXPECT_EQ((int)code.stubs()->size(), expected_size);
+  EXPECT_LE((int)code.stubs()->size(), expected_size);
 
   count_and_check_metadata_relocs(code, stub_offsets, N);
 }

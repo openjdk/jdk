@@ -328,7 +328,7 @@ bool Compilation::setup_code_buffer(CodeBuffer* code, int call_stub_estimate) {
                    LIR_Assembler::exception_handler_size() +
                    (2 * LIR_Assembler::deopt_handler_size());
   AARCH64_ONLY(if (call_stub_estimate > 0) {
-    stub_size += MacroAssembler::static_call_dispatch_adapter_size();
+    stub_size += MacroAssembler::max_static_call_dispatch_adapter_size();
   })
   if (stub_size >= code->insts_capacity()) return false;
   code->initialize_stubs_size(stub_size);

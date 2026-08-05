@@ -762,7 +762,7 @@ public:
   static int max_static_call_stub_size();
 
   bool ensure_static_call_dispatch_adapter();
-  static int static_call_dispatch_adapter_size();
+  static int max_static_call_dispatch_adapter_size();
   address static_call_dispatch_adapter();
 
   // The following 4 methods return the offset of the appropriate move instruction

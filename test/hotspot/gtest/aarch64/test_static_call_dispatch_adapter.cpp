@@ -34,19 +34,27 @@
 
 #define __ _masm.
 
+static void init_stubs_section(CodeBuffer* code) {
+  code->initialize_stubs_size(64);
+  code->stubs()->initialize_shared_locs(NEW_RESOURCE_ARRAY(relocInfo, 4), 4);
+}
+
 // Unit tests for MacroAssembler::ensure_static_call_dispatch_adapter().
 //
 // The adapter is emitted once per nmethod into the stubs section:
-//
-//   ldr   rscratch1, [rmethod,   #Method::adapter_offset()]
+//   cbz  rmethod, L_wrong_method
+//   ldr   rscratch1, [rmethod,   #Method::adapter_offset()] ; AdapterHandlerEntry*
 //   ldr   rscratch1, [rscratch1, #AdapterHandlerEntry::c2i_entry_offset()]
 //   br    rscratch1
+//  L_wrong_method:
+//   far_jump(handle_wrong_method_stub)
 
 // The first call of instance() must happen inside a TEST_VM body, so the VM and
 // CodeCache are initialized.
 class StaticCallDispatchAdapter {
  private:
-  uint32_t _code[3];
+  uint32_t _code[8];
+  int _code_size;
 
   StaticCallDispatchAdapter() {
     BufferBlob* b = BufferBlob::create("adapterExpected", 64);
@@ -54,12 +62,17 @@ class StaticCallDispatchAdapter {
     CodeBuffer code(b);
     code.set_blob(b); // the buffer owns (and will free) its blob
     MacroAssembler _masm(&code);
+    Label wrong_method;
+    __ cbz(rmethod, wrong_method);
     __ ldr(rscratch1, Address(rmethod, Method::adapter_offset()));
     __ ldr(rscratch1, Address(rscratch1, AdapterHandlerEntry::c2i_entry_offset()));
     __ br(rscratch1);
-    guarantee(code.insts()->size() == (CodeBuffer::csize_t)sizeof(_code),
-              "expected adapter is not %d bytes", (int)sizeof(_code));
-    memcpy(_code, code.insts()->start(), sizeof(_code));
+    __ bind(wrong_method);
+    __ far_jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
+    guarantee(code.insts()->size() <= (CodeBuffer::csize_t)sizeof(_code),
+              "expected adapter is greater than %d bytes", (int)sizeof(_code));
+    memcpy(_code, code.insts()->start(), code.insts()->size());
+    _code_size = code.insts()->size();
   }
 
  public:
@@ -68,22 +81,30 @@ class StaticCallDispatchAdapter {
     return adapter;
   }
 
-  static constexpr int code_size() {
-    return sizeof(_code);
+  static int code_size() {
+    return instance()._code_size;
   }
 
-  static constexpr int num_instructions() {
-    return sizeof(_code) / sizeof(_code[0]);
+  static int num_instructions() {
+    return instance()._code_size / sizeof(_code[0]);
   }
 
   const uint32_t* code() const { return _code; }
 };
 
-static void check_code(const uint32_t* code, const char* when) {
+static void check_code(address adapter, const char* when) {
+  const uint32_t* code = (const uint32_t*)adapter;
   const uint32_t* expected = StaticCallDispatchAdapter::instance().code();
-  for (int i = 0; i < StaticCallDispatchAdapter::num_instructions(); i++) {
+  // Words 0..3 (cbz / ldr / ldr / br) are position-independent.
+  for (int i = 0; i < 4; i++) {
     EXPECT_EQ(code[i], expected[i]) << when << ": adapter word " << i << " mismatch";
   }
+  address wrong_method = adapter + 4 * NativeInstruction::instruction_size;
+  EXPECT_EQ(MacroAssembler::target_addr_for_insn(adapter), wrong_method)
+      << when << ": cbz does not target L_wrong_method";
+  EXPECT_EQ(MacroAssembler::target_addr_for_insn(wrong_method),
+            SharedRuntime::get_handle_wrong_method_stub())
+      << when << ": far_jump does not target handle_wrong_method";
 }
 
 TEST_VM(StaticCallDispatchAdapter, emit_adapter) {
@@ -92,7 +113,7 @@ TEST_VM(StaticCallDispatchAdapter, emit_adapter) {
   ASSERT_TRUE(b != nullptr);
   CodeBuffer code(b);
   code.set_blob(b); // the buffer owns (and will free) its blob
-  code.initialize_stubs_size(64);
+  init_stubs_section(&code);
   MacroAssembler _masm(&code);
 
   // Nothing emitted yet.
@@ -108,7 +129,7 @@ TEST_VM(StaticCallDispatchAdapter, emit_adapter) {
   EXPECT_EQ(size_after_first, (CodeBuffer::csize_t)StaticCallDispatchAdapter::code_size());
   EXPECT_EQ(off_after_first, 0);
   EXPECT_EQ(adapter, code.stubs()->start());
-  check_code((const uint32_t*)adapter, "emit_adapter");
+  check_code(adapter, "emit_adapter");
 
   // A second call must be a no-op.
   ASSERT_TRUE(__ ensure_static_call_dispatch_adapter());
@@ -123,12 +144,12 @@ TEST_VM(StaticCallDispatchAdapter, adapter_offset_after_expansion) {
   ASSERT_TRUE(b != nullptr);
   CodeBuffer code(b);
   code.set_blob(b); // the buffer owns (and will free) its blob
-  code.initialize_stubs_size(64);
+  init_stubs_section(&code);
   MacroAssembler _masm(&code);
 
   ASSERT_TRUE(__ ensure_static_call_dispatch_adapter());
   EXPECT_EQ(code.static_call_dispatch_adapter_offset(), 0);
-  check_code((const uint32_t*)code.stubs()->start(), "pre-expansion");
+  check_code(code.stubs()->start(), "pre-expansion");
 
   address stubs_start_before = code.stubs()->start();
   code.insts()->maybe_expand_to_ensure_remaining(512);
@@ -136,7 +157,7 @@ TEST_VM(StaticCallDispatchAdapter, adapter_offset_after_expansion) {
   ASSERT_NE(stubs_start_after, stubs_start_before) << "buffer was not expanded";
   EXPECT_EQ(code.static_call_dispatch_adapter_offset(), 0);
   EXPECT_EQ(__ static_call_dispatch_adapter(), code.stubs()->start());
-  check_code((const uint32_t*)code.stubs()->start(), "post-expansion");
+  check_code(code.stubs()->start(), "post-expansion");
 
   // A second call must be a no-op.
   ASSERT_TRUE(__ ensure_static_call_dispatch_adapter());
