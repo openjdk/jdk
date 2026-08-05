@@ -4014,8 +4014,9 @@ static void matchPaperSize(HDC printDC, HGLOBAL hDevMode, HGLOBAL hDevNames,
                 }
                 ::GlobalUnlock(hDevMode);
             }
-            return;
         }
+        return;
+      }
     }
 
     /* begin trying to match papers */
