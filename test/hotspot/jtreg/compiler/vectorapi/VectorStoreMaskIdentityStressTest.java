@@ -98,7 +98,7 @@ public class VectorStoreMaskIdentityStressTest {
 
     @Check(test = "testVectorMaskStoreIdentity1")
     public static void checkVectorMaskStoreIdentity1() {
-        verifyResult(I128.length());
+        verifyResult(S128.length());
     }
 
     @Test
