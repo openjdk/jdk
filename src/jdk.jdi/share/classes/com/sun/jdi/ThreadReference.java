@@ -457,10 +457,10 @@ public interface ThreadReference extends ObjectReference {
      * The called method must not be:
      * <ul>
      * <li> A native method. </li>
-     * <li> The class initializer of a class with {@linkplain
-     * java.lang.reflect.Field#isStrictInit() strictly-initialized} static fields. </li>
-     * <li> A constructor of a class with strictly-initialized instance fields declared
-     * in the class or any of its superclasses. </li>
+     * <li> A constructor of a class with {@linkplain
+     * java.lang.reflect.Field#isStrictInit() strictly-initialized} instance fields
+     * declared in the class or any of its superclasses. </li>
+     * <li> The class initializer of a class with strictly-initialized static fields. </li>
      * </ul>
      * <p>
      * Forcing early return on a thread with only one frame on the stack causes the

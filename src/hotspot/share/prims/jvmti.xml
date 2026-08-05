@@ -3404,11 +3404,17 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
         <code>void</code>.
         <p/>
         When preview features are enabled, this function can not be used to force
-        a return when the current frame is the class initializer of a class with
+        a return when the current frame is a constructor of a class with
         <externallink id="../api/java.base/java/lang/reflect/Field.html#isStrictInit()">
-        strictly-initialized<sup class="preview-mark">PREVIEW</sup></externallink>
-        static fields, or a constructor of a class with strictly-initialized instance
-        fields declared in the class or any of its superclasses.
+        strictly-initialized<sup>PREVIEW</sup></externallink> instance fields in the
+        class or any of its superclasses, or the current frame is the class initializer
+        of a class with strictly-initialized static fields.
+        <p/>
+        <b>API Note:</b>
+        <externallink id="../api/java.base/java/lang/Class.html#isValue()">
+        Value classes<sup>PREVIEW</sup></externallink> rely upon strict field
+        initialization. This function can not be used to return from a constructor
+        of a value class.
       </description>
       <origin>new</origin>
       <capabilities>
@@ -3426,9 +3432,9 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           The implementation is unable to force the current frame to return
           (e.g. the current frame is executing a native method or, if preview features
-          are enabled, the current frame is the class initializer of a class with
-          strictly-initialized static fields or a constructor of a class with
-          strictly-initialized instance fields in its class hierarchy.)
+          are enabled, the current frame is a constructor of a class with
+          strictly-initialized instance fields in its class hierarchy or the class
+          initializer of a class with strictly-initialized static fields.)
         </error>
         <error id="JVMTI_ERROR_TYPE_MISMATCH">
           The called method has a result type.

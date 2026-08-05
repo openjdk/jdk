@@ -73,15 +73,6 @@
             padding: 3px;
             text-align: left;
           }
-          /* Same as sup.preview-mark in the Javadoc stylesheet. */
-          sup.preview-mark {
-            font-family: 'DejaVu Sans Mono', monospace;
-            font-weight: normal;
-            font-size: 8px;
-            background-color: #f7f7f7;
-            padding: 1px;
-            border-radius: 2px;
-          }
           .toc { }
           span.bold { font-weight: bold; }
           div.divTable { display: table; }
