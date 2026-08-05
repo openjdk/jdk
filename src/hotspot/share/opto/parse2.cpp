@@ -253,14 +253,13 @@ void Parse::array_store(BasicType bt) {
       // Array might be a flat array, emit runtime checks (for null, a simple inline_array_null_guard is sufficient).
       assert(UseArrayFlattening && !not_flat && elemtype->is_oopptr()->can_be_inline_type() &&
              (!array_type->klass_is_exact() || array_type->is_flat()), "array can't be a flat array");
-      // If by chance (or rather heavy flag usage), only the nullable version is flattenable
-      // we could save this test in the else branch thereunder (the "Flat array" block) and do it
+      // If by chance (or using layout disabling flags), only the nullable version is flattenable
+      // we could avoid this test in the else branch thereunder (the "Flat array" block) and do it
       // only in the "Non-flat array" block.
       // But it would be useful only if 1. the array is maybe-flat, 2. there is a nullable
-      // flat layout, 3. there is no null-free flat layout. Without flags, if a nullable array
+      // flat layout, 3. there is no null-free flat layout. Without flags, if a nullable
       // array is flattenable, so would be the null-free version. So, this optimization would
-      // only apply with extra (experimental) flags.
-      // Moving this guard down (so we could maybe save it) was decided not to be worth the complexity.
+      // only apply with extra (experimental) flags which makes the optimization not worth.
       array = inline_array_null_guard(array, stored_value_casted, 3);
       // Reload array type which could have been updated by inline_array_null_guard().
       array_type = _gvn.type(array)->is_aryptr();
