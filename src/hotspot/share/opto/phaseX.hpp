@@ -463,7 +463,7 @@ public:
 #ifndef PRODUCT
   static bool is_verify_Identity_return() {
     // '-XX:VerifyIterativeGVN=1000000'
-    return ((VerifyIterativeGVN % 10000000) / 1000000) == 1;
+    return ((VerifyIterativeGVN % 10'000'000) / 1'000'000) == 1;
   }
 #endif
 };
