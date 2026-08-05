@@ -139,7 +139,14 @@ class MyThread extends ThreadWrapper {
         name = n;
     }
 
+    // Each tested thread calls this once at startup. The debugger sets a
+    // breakpoint here: receiving the event is what makes a virtual thread
+    // visible to jdb with the default debug agent behavior, so the test
+    // does not need the -trackallthreads option.
+    static void threadStarted() {}
+
     public void run() {
+        threadStarted();
         // Concatenate strings in advance to avoid lambda calculations later
         final String ThreadFinished = "Thread finished: " + this.name;
         final String ThreadInterrupted = "Thread was interrupted: " + this.name;

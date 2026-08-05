@@ -66,7 +66,6 @@
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
  *      -jdb=${test.jdk}/bin/jdb
- *      -jdb.option=-trackallthreads
  *      -java.options="${test.vm.opts} ${test.java.opts}"
  *      -workdir=.
  *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"

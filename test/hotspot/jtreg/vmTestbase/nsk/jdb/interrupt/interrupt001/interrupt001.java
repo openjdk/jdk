@@ -54,7 +54,6 @@
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
  *      -jdb=${test.jdk}/bin/jdb
- *      -jdb.option=-trackallthreads
  *      -java.options="${test.vm.opts} ${test.java.opts}"
  *      -workdir=.
  *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
@@ -84,6 +83,7 @@ public class interrupt001 extends JdbTest {
     static final String DEBUGGEE_CLASS  = TEST_CLASS + "a";
     static final String FIRST_BREAK     = DEBUGGEE_CLASS + ".main";
     static final String LAST_BREAK      = DEBUGGEE_CLASS + ".breakHere";
+    static final String THREAD_STARTED_BREAK = PACKAGE_NAME + ".interrupt001a$MyThread.threadStarted";
     static final String MYTHREAD        = "MyThread";
     static final String DEBUGGEE_THREAD = DEBUGGEE_CLASS + "$" + MYTHREAD;
     static final String DEBUGGEE_RESULT = DEBUGGEE_CLASS + ".notInterrupted";
@@ -106,7 +106,39 @@ public class interrupt001 extends JdbTest {
         String[] threads;
 
         jdb.setBreakpointInMethod(LAST_BREAK);
-        reply = jdb.receiveReplyFor(JdbCommand.cont);
+        jdb.setBreakpointInMethod(THREAD_STARTED_BREAK);
+
+        // Continue until the debuggee reaches the LAST_BREAK breakpoint. Each
+        // tested thread first hits threadStarted(); receiving that event is
+        // what makes a virtual thread visible to jdb with the default debug
+        // agent behavior, so count the hits to be sure every tested thread
+        // became visible before the lookup below.
+        int started = 0;
+        while (true) {
+            String[] contReply = jdb.receiveReplyFor(JdbCommand.cont);
+            // Match the fully qualified method of the stop location as a single
+            // token: debuggee output can interleave with jdb's own output and
+            // split the "Breakpoint hit:" prefix away from the location, so do
+            // not require both in the same paragraph. The "(" suffix avoids
+            // matching jdb's "Set deferred breakpoint" messages.
+            Paragrep contGrep = new Paragrep(contReply);
+            if (contGrep.find(LAST_BREAK + "(") > 0) {
+                break;
+            }
+            if (contGrep.find(THREAD_STARTED_BREAK + "(") > 0) {
+                started++;
+                continue;
+            }
+            failure("Stopped at unexpected location, expected " + LAST_BREAK
+                    + " or " + THREAD_STARTED_BREAK);
+            for (String line : contReply) {
+                log.complain("reply: " + line);
+            }
+            break;
+        }
+        if (started != numThreads) {
+            failure("Expected " + numThreads + " threadStarted() hits, got: " + started);
+        }
 
         threads = jdb.getThreadIdsByName(MYTHREAD);
 
