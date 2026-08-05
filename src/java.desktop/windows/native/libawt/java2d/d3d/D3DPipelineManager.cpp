@@ -389,19 +389,31 @@ BOOL D3DPPLM_OsVersionMatches(USHORT osInfo) {
 
         J2dRlsTrace(J2D_TRACE_INFO, "[I] OS Version = ");
         if (bVersOk) {
-            if (osvi.dwMajorVersion == 6 && osvi.dwMinorVersion >= 1) {
+            if (osvi.dwMajorVersion == 10 && osvi.dwMinorVersion == 0) {
                 if (osvi.wProductType == VER_NT_WORKSTATION) {
-                    J2dRlsTrace(J2D_TRACE_INFO, "OS_WINDOWS7 or newer\n");
-                    currentOS = OS_WINDOWS7;
+                    J2dRlsTrace(J2D_TRACE_INFO, "OS_WINDOWS10_11 or newer\n");
+                    currentOS = OS_WINDOWS10_11;
                 } else {
-                    J2dRlsTrace(J2D_TRACE_INFO, "OS_WINSERV_2008R2 or newer\n");
-                    currentOS = OS_WINSERV_2008R2;
+                    J2dRlsTrace(J2D_TRACE_INFO, "OS_WINSERV_2016 or newer\n");
+                    currentOS = OS_WINSERV_2016_PLUS;
                 }
             } else {
-                J2dRlsTrace(J2D_TRACE_INFO,
-                            "OS_UNKNOWN: dwMajorVersion=%d dwMinorVersion=%d\n",
-                            osvi.dwMajorVersion, osvi.dwMinorVersion);
-                currentOS = OS_UNKNOWN;
+                if (osvi.dwMajorVersion == 6 && osvi.dwMinorVersion >= 1) {
+                    if (osvi.wProductType == VER_NT_WORKSTATION) {
+                        J2dRlsTrace(J2D_TRACE_INFO, "OS_WINDOWS7 or newer\n");
+                        // this detects also Win8
+                        currentOS = OS_WINDOWS7;
+                    } else {
+                        J2dRlsTrace(J2D_TRACE_INFO, "OS_WINSERV_2008R2 or newer\n");
+                        // this detects also 2012 (R2)
+                        currentOS = OS_WINSERV_2008R2;
+                    }
+                } else {
+                    J2dRlsTrace(J2D_TRACE_INFO,
+                                "OS_UNKNOWN: dwMajorVersion=%d dwMinorVersion=%d\n",
+                                osvi.dwMajorVersion, osvi.dwMinorVersion);
+                    currentOS = OS_UNKNOWN;
+                }
             }
         } else {
             J2dRlsTrace(J2D_TRACE_INFO,"OS_UNKNOWN: GetVersionEx failed\n");

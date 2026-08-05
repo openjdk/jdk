@@ -133,9 +133,14 @@ private:
 };
 
 #define OS_UNDEFINED    (0 << 0)
-#define OS_WINDOWS7     (1 << 5)
-#define OS_WINSERV_2008R2 (1 << 6)
-#define OS_ALL (OS_WINDOWS7|OS_WINSERV_2008R2)
+#define OS_WINDOWS7     (1 << 0)
+#define OS_WINSERV_2008R2 (1 << 1)
+// Windows 10 and 11
+#define OS_WINDOWS10_11 (1 << 2)
+// Windows server 2016 or higher
+#define OS_WINSERV_2016_PLUS (1 << 3)
+
+#define OS_ALL (OS_WINDOWS7|OS_WINSERV_2008R2|OS_WINDOWS10_11|OS_WINSERV_2016_PLUS)
 #define OS_UNKNOWN      (~OS_ALL)
 BOOL D3DPPLM_OsVersionMatches(USHORT osInfo);
 
