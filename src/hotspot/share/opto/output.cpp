@@ -1735,11 +1735,11 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
         }
       }
 
-      // Verify that there is sufficient space remaining. MachVEPNodes can be
-      // much larger because they unpack all scalarized arguments.
+      // Verify that there is sufficient space remaining
       uint required_size = MAX_inst_size;
       if (n->is_MachVEP()) {
-        required_size = MAX2(required_size, n->as_Mach()->size(C->regalloc()));
+        // MachVEPNodes can be much larger because they unpack all scalarized arguments.
+        required_size += n->as_Mach()->size(C->regalloc());
       }
       masm->code()->insts()->maybe_expand_to_ensure_remaining(required_size);
       if ((masm->code()->blob() == nullptr) || (!CompileBroker::should_compile_new_jobs())) {
@@ -3195,9 +3195,8 @@ void PhaseOutput::init_scratch_buffer_blob(int const_size) {
       if (UseShenandoahGC) {
         barrier_size += 700;
       } else if (UseZGC) {
-        // Covers the worst-case x64 APX save/restore of all extended general
-        // purpose registers, including the Windows calling sequence and the
-        // slow-path jump triggered by ForceUnreachable.
+        // Covers the worst-case x64 APX save/restore of all extended general purpose
+        // registers, including the slow-path jump triggered by ForceUnreachable.
         barrier_size += 400;
       }
       ciMethod* method = C->method();
