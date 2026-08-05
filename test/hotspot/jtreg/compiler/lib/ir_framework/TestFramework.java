@@ -157,8 +157,8 @@ public class TestFramework {
 
     public static final boolean VERBOSE = Boolean.getBoolean("Verbose");
     public static final boolean PRINT_RULE_MATCHING_TIME = Boolean.getBoolean("PrintRuleMatchingTime");
-    public static final boolean TESTLIST = !System.getProperty("Test", "").isEmpty();
-    public static final boolean EXCLUDELIST = !System.getProperty("Exclude", "").isEmpty();
+    private static final boolean TEST_LIST_IS_EMPTY = SystemProperty.getTestList().isEmpty();
+    private static final boolean EXCLUDE_LIST_IS_EMPTY = SystemProperty.getExcludeList().isEmpty();;
     private static final boolean REPORT_STDOUT = Boolean.getBoolean("ReportStdout");
     // Only used for internal testing and should not be used for normal user testing.
 
@@ -791,7 +791,7 @@ public class TestFramework {
             builder.append(System.lineSeparator());
         }
         System.err.println(builder);
-        if (!VERBOSE && !REPORT_STDOUT && !TESTLIST && !EXCLUDELIST) {
+        if (!VERBOSE && !REPORT_STDOUT && TEST_LIST_IS_EMPTY && EXCLUDE_LIST_IS_EMPTY) {
             // Provide a hint to the user how to get additional output/debugging information.
             System.err.println(RERUN_HINT);
         }

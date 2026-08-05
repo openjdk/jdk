@@ -159,6 +159,8 @@
 
 #define JAVA_28_VERSION                   72
 
+#define JDK_VERSION                       (7 + (JVM_CLASSFILE_MAJOR_VERSION - JAVA_7_VERSION))
+
 void ClassFileParser::set_class_bad_constant_seen(short bad_constant) {
   assert((bad_constant == JVM_CONSTANT_Module ||
           bad_constant == JVM_CONSTANT_Package) && _major_version >= JAVA_9_VERSION,
@@ -4576,9 +4578,10 @@ void ClassFileParser::verify_class_version(u2 major, u2 minor, Symbol* class_nam
     Exceptions::fthrow(
       THREAD_AND_LOCATION,
       vmSymbols::java_lang_UnsupportedClassVersionError(),
-      "%s has been compiled by a more recent version of the Java Runtime (class file version %u.%u), "
-      "this version of the Java Runtime only recognizes class file versions up to %u.0",
-      class_name->as_C_string(), major, minor, JVM_CLASSFILE_MAJOR_VERSION);
+      "%s requires a newer Java runtime. The runtime in use, Java %u, supports class file versions up "
+      "to %u.0, but the class file version of %s is %u.%u.",
+      class_name->as_C_string(), JDK_VERSION, JVM_CLASSFILE_MAJOR_VERSION,
+      class_name->as_C_string(), major, minor);
     return;
   }
 

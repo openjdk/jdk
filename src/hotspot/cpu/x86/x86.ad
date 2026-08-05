@@ -14774,16 +14774,18 @@ instruct MoveL2D_reg_reg(regD dst, rRegL src) %{
 %}
 
 
-// Fast clearing of an array
-// Small non-constant lenght ClearArray for non-AVX512 targets.
-instruct rep_stos(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegL val,
+// Small zero fill for non-AVX512 targets.
+instruct rep_stos(rcx_RegL cnt, rdi_RegP base, regD tmp, immL0 zero, rax_RegL val,
                   Universe dummy, rFlagsReg cr)
 %{
-  predicate(!((ClearArrayNode*)n)->is_large() && !((ClearArrayNode*)n)->word_copy_only() && (UseAVX <= 2));
-  match(Set dummy (ClearArray (Binary cnt base) val));
-  effect(USE_KILL cnt, USE_KILL base, TEMP tmp, USE_KILL val, KILL cr);
+  predicate((UseAVX <= 2) &&
+            !((ClearArrayNode*)n)->is_large() &&
+            ((ClearArrayNode*)n)->is_zero_fill());
+  match(Set dummy (ClearArray (Binary cnt base) zero));
+  effect(USE_KILL cnt, USE_KILL base, TEMP tmp, KILL val, KILL cr);
 
   format %{ $$template
+    $$emit$$"xorq    rax, rax\t# ClearArray:\n\t"
     $$emit$$"cmp     InitArrayShortSize,rcx\n\t"
     $$emit$$"jg      LARGE\n\t"
     $$emit$$"dec     rcx\n\t"
@@ -14802,24 +14804,24 @@ instruct rep_stos(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegL val,
        $$emit$$"vinserti128_high $tmp, $tmp\n\t"
        $$emit$$"jmpq    L_zero_64_bytes\n\t"
        $$emit$$"# L_loop:\t# 64-byte LOOP\n\t"
-       $$emit$$"vmovdqu $tmp,(rax)\n\t"
-       $$emit$$"vmovdqu $tmp,0x20(rax)\n\t"
-       $$emit$$"add     0x40,rax\n\t"
+       $$emit$$"vmovdqu $tmp,($base)\n\t"
+       $$emit$$"vmovdqu $tmp,0x20($base)\n\t"
+       $$emit$$"add     0x40,$base\n\t"
        $$emit$$"# L_zero_64_bytes:\n\t"
        $$emit$$"sub     0x8,rcx\n\t"
        $$emit$$"jge     L_loop\n\t"
        $$emit$$"add     0x4,rcx\n\t"
        $$emit$$"jl      L_tail\n\t"
-       $$emit$$"vmovdqu $tmp,(rax)\n\t"
-       $$emit$$"add     0x20,rax\n\t"
+       $$emit$$"vmovdqu $tmp,($base)\n\t"
+       $$emit$$"add     0x20,$base\n\t"
        $$emit$$"sub     0x4,rcx\n\t"
        $$emit$$"# L_tail:\t# Clearing tail bytes\n\t"
        $$emit$$"add     0x4,rcx\n\t"
        $$emit$$"jle     L_end\n\t"
        $$emit$$"dec     rcx\n\t"
        $$emit$$"# L_sloop:\t# 8-byte short loop\n\t"
-       $$emit$$"vmovq   xmm0,(rax)\n\t"
-       $$emit$$"add     0x8,rax\n\t"
+       $$emit$$"vmovq   $tmp,($base)\n\t"
+       $$emit$$"add     0x8,$base\n\t"
        $$emit$$"dec     rcx\n\t"
        $$emit$$"jge     L_sloop\n\t"
        $$emit$$"# L_end:\n\t"
@@ -14835,10 +14837,13 @@ instruct rep_stos(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegL val,
   ins_pipe(pipe_slow);
 %}
 
-instruct rep_stos_word_copy(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegL val,
+// Small word fill for non-AVX512 targets.
+instruct rep_stos_word_fill(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegL val,
                             Universe dummy, rFlagsReg cr)
 %{
-  predicate(!((ClearArrayNode*)n)->is_large() && ((ClearArrayNode*)n)->word_copy_only() && (UseAVX <= 2));
+  predicate((UseAVX <= 2) &&
+            !((ClearArrayNode*)n)->is_large() &&
+            ((ClearArrayNode*)n)->requires_word_fill());
   match(Set dummy (ClearArray (Binary cnt base) val));
   effect(USE_KILL cnt, USE_KILL base, TEMP tmp, USE_KILL val, KILL cr);
 
@@ -14856,26 +14861,26 @@ instruct rep_stos_word_copy(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegL val,
        $$emit$$"movdq   $tmp, $val\n\t"
        $$emit$$"punpcklqdq $tmp, $tmp\n\t"
        $$emit$$"vinserti128_high $tmp, $tmp\n\t"
-       $$emit$$"jmpq    L_zero_64_bytes\n\t"
+       $$emit$$"jmpq    L_fill_64_bytes\n\t"
        $$emit$$"# L_loop:\t# 64-byte LOOP\n\t"
-       $$emit$$"vmovdqu $tmp,(rax)\n\t"
-       $$emit$$"vmovdqu $tmp,0x20(rax)\n\t"
-       $$emit$$"add     0x40,rax\n\t"
-       $$emit$$"# L_zero_64_bytes:\n\t"
+       $$emit$$"vmovdqu $tmp,($base)\n\t"
+       $$emit$$"vmovdqu $tmp,0x20($base)\n\t"
+       $$emit$$"add     0x40,$base\n\t"
+       $$emit$$"# L_fill_64_bytes:\n\t"
        $$emit$$"sub     0x8,rcx\n\t"
        $$emit$$"jge     L_loop\n\t"
        $$emit$$"add     0x4,rcx\n\t"
        $$emit$$"jl      L_tail\n\t"
-       $$emit$$"vmovdqu $tmp,(rax)\n\t"
-       $$emit$$"add     0x20,rax\n\t"
+       $$emit$$"vmovdqu $tmp,($base)\n\t"
+       $$emit$$"add     0x20,$base\n\t"
        $$emit$$"sub     0x4,rcx\n\t"
-       $$emit$$"# L_tail:\t# Clearing tail bytes\n\t"
+       $$emit$$"# L_tail:\t# Filling tail bytes\n\t"
        $$emit$$"add     0x4,rcx\n\t"
        $$emit$$"jle     L_end\n\t"
        $$emit$$"dec     rcx\n\t"
        $$emit$$"# L_sloop:\t# 8-byte short loop\n\t"
-       $$emit$$"vmovq   xmm0,(rax)\n\t"
-       $$emit$$"add     0x8,rax\n\t"
+       $$emit$$"vmovq   $tmp,($base)\n\t"
+       $$emit$$"add     0x8,$base\n\t"
        $$emit$$"dec     rcx\n\t"
        $$emit$$"jge     L_sloop\n\t"
        $$emit$$"# L_end:\n\t"
@@ -14891,14 +14896,16 @@ instruct rep_stos_word_copy(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegL val,
   ins_pipe(pipe_slow);
 %}
 
-// Small non-constant length ClearArray for AVX512 targets.
-instruct rep_stos_evex(rcx_RegL cnt, rdi_RegP base, legRegD tmp, kReg ktmp, rax_RegL val,
+// Small zero fill for AVX512 targets.
+instruct rep_stos_evex(rcx_RegL cnt, rdi_RegP base, legRegD tmp, kReg ktmp, immL0 zero, rax_RegL val,
                        Universe dummy, rFlagsReg cr)
 %{
-  predicate(!((ClearArrayNode*)n)->is_large() && !((ClearArrayNode*)n)->word_copy_only() && (UseAVX > 2));
-  match(Set dummy (ClearArray (Binary cnt base) val));
+  predicate((UseAVX > 2) &&
+            !((ClearArrayNode*)n)->is_large() &&
+            ((ClearArrayNode*)n)->is_zero_fill());
+  match(Set dummy (ClearArray (Binary cnt base) zero));
   ins_cost(125);
-  effect(USE_KILL cnt, USE_KILL base, TEMP tmp, TEMP ktmp, USE_KILL val, KILL cr);
+  effect(USE_KILL cnt, USE_KILL base, TEMP tmp, TEMP ktmp, KILL val, KILL cr);
 
   format %{ $$template
     $$emit$$"xorq    rax, rax\t# ClearArray:\n\t"
@@ -14915,28 +14922,29 @@ instruct rep_stos_evex(rcx_RegL cnt, rdi_RegP base, legRegD tmp, kReg ktmp, rax_
        $$emit$$"shlq    rcx,3\t# Convert doublewords to bytes\n\t"
        $$emit$$"rep     stosb\t# Store rax to *rdi++ while rcx--\n\t"
     } else if (UseXMMForObjInit) {
-       $$emit$$"mov     rdi,rax\n\t"
-       $$emit$$"vpxor   ymm0,ymm0,ymm0\n\t"
+       $$emit$$"movdq   $tmp, $val\n\t"
+       $$emit$$"punpcklqdq $tmp, $tmp\n\t"
+       $$emit$$"vinserti128_high $tmp, $tmp\n\t"
        $$emit$$"jmpq    L_zero_64_bytes\n\t"
        $$emit$$"# L_loop:\t# 64-byte LOOP\n\t"
-       $$emit$$"vmovdqu ymm0,(rax)\n\t"
-       $$emit$$"vmovdqu ymm0,0x20(rax)\n\t"
-       $$emit$$"add     0x40,rax\n\t"
+       $$emit$$"vmovdqu $tmp,($base)\n\t"
+       $$emit$$"vmovdqu $tmp,0x20($base)\n\t"
+       $$emit$$"add     0x40,$base\n\t"
        $$emit$$"# L_zero_64_bytes:\n\t"
        $$emit$$"sub     0x8,rcx\n\t"
        $$emit$$"jge     L_loop\n\t"
        $$emit$$"add     0x4,rcx\n\t"
        $$emit$$"jl      L_tail\n\t"
-       $$emit$$"vmovdqu ymm0,(rax)\n\t"
-       $$emit$$"add     0x20,rax\n\t"
+       $$emit$$"vmovdqu $tmp,($base)\n\t"
+       $$emit$$"add     0x20,$base\n\t"
        $$emit$$"sub     0x4,rcx\n\t"
        $$emit$$"# L_tail:\t# Clearing tail bytes\n\t"
        $$emit$$"add     0x4,rcx\n\t"
        $$emit$$"jle     L_end\n\t"
        $$emit$$"dec     rcx\n\t"
        $$emit$$"# L_sloop:\t# 8-byte short loop\n\t"
-       $$emit$$"vmovq   xmm0,(rax)\n\t"
-       $$emit$$"add     0x8,rax\n\t"
+       $$emit$$"vmovq   $tmp,($base)\n\t"
+       $$emit$$"add     0x8,$base\n\t"
        $$emit$$"dec     rcx\n\t"
        $$emit$$"jge     L_sloop\n\t"
        $$emit$$"# L_end:\n\t"
@@ -14952,16 +14960,18 @@ instruct rep_stos_evex(rcx_RegL cnt, rdi_RegP base, legRegD tmp, kReg ktmp, rax_
   ins_pipe(pipe_slow);
 %}
 
-instruct rep_stos_evex_word_copy(rcx_RegL cnt, rdi_RegP base, legRegD tmp, kReg ktmp, rax_RegL val,
+// Small word fill for AVX512 targets.
+instruct rep_stos_evex_word_fill(rcx_RegL cnt, rdi_RegP base, legRegD tmp, kReg ktmp, rax_RegL val,
                                  Universe dummy, rFlagsReg cr)
 %{
-  predicate(!((ClearArrayNode*)n)->is_large() && ((ClearArrayNode*)n)->word_copy_only() && (UseAVX > 2));
+  predicate((UseAVX > 2) &&
+            !((ClearArrayNode*)n)->is_large() &&
+            ((ClearArrayNode*)n)->requires_word_fill());
   match(Set dummy (ClearArray (Binary cnt base) val));
   ins_cost(125);
   effect(USE_KILL cnt, USE_KILL base, TEMP tmp, TEMP ktmp, USE_KILL val, KILL cr);
 
   format %{ $$template
-    $$emit$$"xorq    rax, rax\t# ClearArray:\n\t"
     $$emit$$"cmp     InitArrayShortSize,rcx\n\t"
     $$emit$$"jg      LARGE\n\t"
     $$emit$$"dec     rcx\n\t"
@@ -14971,32 +14981,30 @@ instruct rep_stos_evex_word_copy(rcx_RegL cnt, rdi_RegP base, legRegD tmp, kReg 
     $$emit$$"jge     LOOP\n\t"
     $$emit$$"jmp     DONE\n\t"
     $$emit$$"# LARGE:\n\t"
-    if (UseFastStosb) {
-       $$emit$$"shlq    rcx,3\t# Convert doublewords to bytes\n\t"
-       $$emit$$"rep     stosb\t# Store rax to *rdi++ while rcx--\n\t"
-    } else if (UseXMMForObjInit) {
-       $$emit$$"mov     rdi,rax\n\t"
-       $$emit$$"vpxor   ymm0,ymm0,ymm0\n\t"
-       $$emit$$"jmpq    L_zero_64_bytes\n\t"
+    if (UseXMMForObjInit) {
+       $$emit$$"movdq   $tmp, $val\n\t"
+       $$emit$$"punpcklqdq $tmp, $tmp\n\t"
+       $$emit$$"vinserti128_high $tmp, $tmp\n\t"
+       $$emit$$"jmpq    L_fill_64_bytes\n\t"
        $$emit$$"# L_loop:\t# 64-byte LOOP\n\t"
-       $$emit$$"vmovdqu ymm0,(rax)\n\t"
-       $$emit$$"vmovdqu ymm0,0x20(rax)\n\t"
-       $$emit$$"add     0x40,rax\n\t"
-       $$emit$$"# L_zero_64_bytes:\n\t"
+       $$emit$$"vmovdqu $tmp,($base)\n\t"
+       $$emit$$"vmovdqu $tmp,0x20($base)\n\t"
+       $$emit$$"add     0x40,$base\n\t"
+       $$emit$$"# L_fill_64_bytes:\n\t"
        $$emit$$"sub     0x8,rcx\n\t"
        $$emit$$"jge     L_loop\n\t"
        $$emit$$"add     0x4,rcx\n\t"
        $$emit$$"jl      L_tail\n\t"
-       $$emit$$"vmovdqu ymm0,(rax)\n\t"
-       $$emit$$"add     0x20,rax\n\t"
+       $$emit$$"vmovdqu $tmp,($base)\n\t"
+       $$emit$$"add     0x20,$base\n\t"
        $$emit$$"sub     0x4,rcx\n\t"
-       $$emit$$"# L_tail:\t# Clearing tail bytes\n\t"
+       $$emit$$"# L_tail:\t# Filling tail bytes\n\t"
        $$emit$$"add     0x4,rcx\n\t"
        $$emit$$"jle     L_end\n\t"
        $$emit$$"dec     rcx\n\t"
        $$emit$$"# L_sloop:\t# 8-byte short loop\n\t"
-       $$emit$$"vmovq   xmm0,(rax)\n\t"
-       $$emit$$"add     0x8,rax\n\t"
+       $$emit$$"vmovq   $tmp,($base)\n\t"
+       $$emit$$"add     0x8,$base\n\t"
        $$emit$$"dec     rcx\n\t"
        $$emit$$"jge     L_sloop\n\t"
        $$emit$$"# L_end:\n\t"
@@ -15012,15 +15020,18 @@ instruct rep_stos_evex_word_copy(rcx_RegL cnt, rdi_RegP base, legRegD tmp, kReg 
   ins_pipe(pipe_slow);
 %}
 
-// Large non-constant length ClearArray for non-AVX512 targets.
-instruct rep_stos_large(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegL val,
+// Large zero fill for non-AVX512 targets.
+instruct rep_stos_large(rcx_RegL cnt, rdi_RegP base, regD tmp, immL0 zero, rax_RegL val,
                         Universe dummy, rFlagsReg cr)
 %{
-  predicate(((ClearArrayNode*)n)->is_large() && !((ClearArrayNode*)n)->word_copy_only() && (UseAVX <= 2));
-  match(Set dummy (ClearArray (Binary cnt base) val));
-  effect(USE_KILL cnt, USE_KILL base, TEMP tmp, USE_KILL val, KILL cr);
+  predicate((UseAVX <= 2) &&
+            ((ClearArrayNode*)n)->is_large() &&
+            ((ClearArrayNode*)n)->is_zero_fill());
+  match(Set dummy (ClearArray (Binary cnt base) zero));
+  effect(USE_KILL cnt, USE_KILL base, TEMP tmp, KILL val, KILL cr);
 
   format %{ $$template
+    $$emit$$"xorq    rax, rax\t# ClearArray:\n\t"
     if (UseFastStosb) {
        $$emit$$"shlq    rcx,3\t# Convert doublewords to bytes\n\t"
        $$emit$$"rep     stosb\t# Store rax to *rdi++ while rcx--"
@@ -15030,24 +15041,24 @@ instruct rep_stos_large(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegL val,
        $$emit$$"vinserti128_high $tmp, $tmp\n\t"
        $$emit$$"jmpq    L_zero_64_bytes\n\t"
        $$emit$$"# L_loop:\t# 64-byte LOOP\n\t"
-       $$emit$$"vmovdqu $tmp,(rax)\n\t"
-       $$emit$$"vmovdqu $tmp,0x20(rax)\n\t"
-       $$emit$$"add     0x40,rax\n\t"
+       $$emit$$"vmovdqu $tmp,($base)\n\t"
+       $$emit$$"vmovdqu $tmp,0x20($base)\n\t"
+       $$emit$$"add     0x40,$base\n\t"
        $$emit$$"# L_zero_64_bytes:\n\t"
        $$emit$$"sub     0x8,rcx\n\t"
        $$emit$$"jge     L_loop\n\t"
        $$emit$$"add     0x4,rcx\n\t"
        $$emit$$"jl      L_tail\n\t"
-       $$emit$$"vmovdqu $tmp,(rax)\n\t"
-       $$emit$$"add     0x20,rax\n\t"
+       $$emit$$"vmovdqu $tmp,($base)\n\t"
+       $$emit$$"add     0x20,$base\n\t"
        $$emit$$"sub     0x4,rcx\n\t"
        $$emit$$"# L_tail:\t# Clearing tail bytes\n\t"
        $$emit$$"add     0x4,rcx\n\t"
        $$emit$$"jle     L_end\n\t"
        $$emit$$"dec     rcx\n\t"
        $$emit$$"# L_sloop:\t# 8-byte short loop\n\t"
-       $$emit$$"vmovq   xmm0,(rax)\n\t"
-       $$emit$$"add     0x8,rax\n\t"
+       $$emit$$"vmovq   $tmp,($base)\n\t"
+       $$emit$$"add     0x8,$base\n\t"
        $$emit$$"dec     rcx\n\t"
        $$emit$$"jge     L_sloop\n\t"
        $$emit$$"# L_end:\n\t"
@@ -15062,10 +15073,13 @@ instruct rep_stos_large(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegL val,
   ins_pipe(pipe_slow);
 %}
 
-instruct rep_stos_large_word_copy(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegL val,
+// Large word fill for non-AVX512 targets.
+instruct rep_stos_large_word_fill(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegL val,
                                   Universe dummy, rFlagsReg cr)
 %{
-  predicate(((ClearArrayNode*)n)->is_large() && ((ClearArrayNode*)n)->word_copy_only() && (UseAVX <= 2));
+  predicate((UseAVX <= 2) &&
+            ((ClearArrayNode*)n)->is_large() &&
+            ((ClearArrayNode*)n)->requires_word_fill());
   match(Set dummy (ClearArray (Binary cnt base) val));
   effect(USE_KILL cnt, USE_KILL base, TEMP tmp, USE_KILL val, KILL cr);
 
@@ -15074,26 +15088,26 @@ instruct rep_stos_large_word_copy(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_Reg
        $$emit$$"movdq   $tmp, $val\n\t"
        $$emit$$"punpcklqdq $tmp, $tmp\n\t"
        $$emit$$"vinserti128_high $tmp, $tmp\n\t"
-       $$emit$$"jmpq    L_zero_64_bytes\n\t"
+       $$emit$$"jmpq    L_fill_64_bytes\n\t"
        $$emit$$"# L_loop:\t# 64-byte LOOP\n\t"
-       $$emit$$"vmovdqu $tmp,(rax)\n\t"
-       $$emit$$"vmovdqu $tmp,0x20(rax)\n\t"
-       $$emit$$"add     0x40,rax\n\t"
-       $$emit$$"# L_zero_64_bytes:\n\t"
+       $$emit$$"vmovdqu $tmp,($base)\n\t"
+       $$emit$$"vmovdqu $tmp,0x20($base)\n\t"
+       $$emit$$"add     0x40,$base\n\t"
+       $$emit$$"# L_fill_64_bytes:\n\t"
        $$emit$$"sub     0x8,rcx\n\t"
        $$emit$$"jge     L_loop\n\t"
        $$emit$$"add     0x4,rcx\n\t"
        $$emit$$"jl      L_tail\n\t"
-       $$emit$$"vmovdqu $tmp,(rax)\n\t"
-       $$emit$$"add     0x20,rax\n\t"
+       $$emit$$"vmovdqu $tmp,($base)\n\t"
+       $$emit$$"add     0x20,$base\n\t"
        $$emit$$"sub     0x4,rcx\n\t"
-       $$emit$$"# L_tail:\t# Clearing tail bytes\n\t"
+       $$emit$$"# L_tail:\t# Filling tail bytes\n\t"
        $$emit$$"add     0x4,rcx\n\t"
        $$emit$$"jle     L_end\n\t"
        $$emit$$"dec     rcx\n\t"
        $$emit$$"# L_sloop:\t# 8-byte short loop\n\t"
-       $$emit$$"vmovq   xmm0,(rax)\n\t"
-       $$emit$$"add     0x8,rax\n\t"
+       $$emit$$"vmovq   $tmp,($base)\n\t"
+       $$emit$$"add     0x8,$base\n\t"
        $$emit$$"dec     rcx\n\t"
        $$emit$$"jge     L_sloop\n\t"
        $$emit$$"# L_end:\n\t"
@@ -15108,47 +15122,49 @@ instruct rep_stos_large_word_copy(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_Reg
   ins_pipe(pipe_slow);
 %}
 
-// Large non-constant length ClearArray for AVX512 targets.
-instruct rep_stos_large_evex(rcx_RegL cnt, rdi_RegP base, legRegD tmp, kReg ktmp, rax_RegL val,
+// Large zero fill for AVX512 targets.
+instruct rep_stos_large_evex(rcx_RegL cnt, rdi_RegP base, legRegD tmp, kReg ktmp, immL0 zero, rax_RegL val,
                              Universe dummy, rFlagsReg cr)
 %{
-  predicate(((ClearArrayNode*)n)->is_large() && !((ClearArrayNode*)n)->word_copy_only() && (UseAVX > 2));
-  match(Set dummy (ClearArray (Binary cnt base) val));
-  effect(USE_KILL cnt, USE_KILL base, TEMP tmp, TEMP ktmp, USE_KILL val, KILL cr);
+  predicate((UseAVX > 2) &&
+            ((ClearArrayNode*)n)->is_large() &&
+            ((ClearArrayNode*)n)->is_zero_fill());
+  match(Set dummy (ClearArray (Binary cnt base) zero));
+  effect(USE_KILL cnt, USE_KILL base, TEMP tmp, TEMP ktmp, KILL val, KILL cr);
 
   format %{ $$template
+    $$emit$$"xorq    $val, $val\t# ClearArray:\n\t"
     if (UseFastStosb) {
-       $$emit$$"xorq    rax, rax\t# ClearArray:\n\t"
        $$emit$$"shlq    rcx,3\t# Convert doublewords to bytes\n\t"
        $$emit$$"rep     stosb\t# Store rax to *rdi++ while rcx--"
     } else if (UseXMMForObjInit) {
-       $$emit$$"mov     rdi,rax\t# ClearArray:\n\t"
-       $$emit$$"vpxor   ymm0,ymm0,ymm0\n\t"
+       $$emit$$"movdq   $tmp, $val\n\t"
+       $$emit$$"punpcklqdq $tmp, $tmp\n\t"
+       $$emit$$"vinserti128_high $tmp, $tmp\n\t"
        $$emit$$"jmpq    L_zero_64_bytes\n\t"
        $$emit$$"# L_loop:\t# 64-byte LOOP\n\t"
-       $$emit$$"vmovdqu ymm0,(rax)\n\t"
-       $$emit$$"vmovdqu ymm0,0x20(rax)\n\t"
-       $$emit$$"add     0x40,rax\n\t"
+       $$emit$$"vmovdqu $tmp,($base)\n\t"
+       $$emit$$"vmovdqu $tmp,0x20($base)\n\t"
+       $$emit$$"add     0x40,$base\n\t"
        $$emit$$"# L_zero_64_bytes:\n\t"
        $$emit$$"sub     0x8,rcx\n\t"
        $$emit$$"jge     L_loop\n\t"
        $$emit$$"add     0x4,rcx\n\t"
        $$emit$$"jl      L_tail\n\t"
-       $$emit$$"vmovdqu ymm0,(rax)\n\t"
-       $$emit$$"add     0x20,rax\n\t"
+       $$emit$$"vmovdqu $tmp,($base)\n\t"
+       $$emit$$"add     0x20,$base\n\t"
        $$emit$$"sub     0x4,rcx\n\t"
        $$emit$$"# L_tail:\t# Clearing tail bytes\n\t"
        $$emit$$"add     0x4,rcx\n\t"
        $$emit$$"jle     L_end\n\t"
        $$emit$$"dec     rcx\n\t"
        $$emit$$"# L_sloop:\t# 8-byte short loop\n\t"
-       $$emit$$"vmovq   xmm0,(rax)\n\t"
-       $$emit$$"add     0x8,rax\n\t"
+       $$emit$$"vmovq   $tmp,($base)\n\t"
+       $$emit$$"add     0x8,$base\n\t"
        $$emit$$"dec     rcx\n\t"
        $$emit$$"jge     L_sloop\n\t"
        $$emit$$"# L_end:\n\t"
     } else {
-       $$emit$$"xorq    rax, rax\t# ClearArray:\n\t"
        $$emit$$"rep     stosq\t# Store rax to *rdi++ while rcx--"
     }
   %}
@@ -15159,46 +15175,45 @@ instruct rep_stos_large_evex(rcx_RegL cnt, rdi_RegP base, legRegD tmp, kReg ktmp
   ins_pipe(pipe_slow);
 %}
 
-instruct rep_stos_large_evex_word_copy(rcx_RegL cnt, rdi_RegP base, legRegD tmp, kReg ktmp, rax_RegL val,
+// Large word fill for AVX512 targets.
+instruct rep_stos_large_evex_word_fill(rcx_RegL cnt, rdi_RegP base, legRegD tmp, kReg ktmp, rax_RegL val,
                                        Universe dummy, rFlagsReg cr)
 %{
-  predicate(((ClearArrayNode*)n)->is_large() && ((ClearArrayNode*)n)->word_copy_only() && (UseAVX > 2));
+  predicate((UseAVX > 2) &&
+            ((ClearArrayNode*)n)->is_large() &&
+            ((ClearArrayNode*)n)->requires_word_fill());
   match(Set dummy (ClearArray (Binary cnt base) val));
   effect(USE_KILL cnt, USE_KILL base, TEMP tmp, TEMP ktmp, USE_KILL val, KILL cr);
 
   format %{ $$template
-    if (UseFastStosb) {
-       $$emit$$"xorq    rax, rax\t# ClearArray:\n\t"
-       $$emit$$"shlq    rcx,3\t# Convert doublewords to bytes\n\t"
-       $$emit$$"rep     stosb\t# Store rax to *rdi++ while rcx--"
-    } else if (UseXMMForObjInit) {
-       $$emit$$"mov     rdi,rax\t# ClearArray:\n\t"
-       $$emit$$"vpxor   ymm0,ymm0,ymm0\n\t"
-       $$emit$$"jmpq    L_zero_64_bytes\n\t"
+    if (UseXMMForObjInit) {
+       $$emit$$"movdq   $tmp, $val\t# ClearArray:\n\t"
+       $$emit$$"punpcklqdq $tmp, $tmp\n\t"
+       $$emit$$"vinserti128_high $tmp, $tmp\n\t"
+       $$emit$$"jmpq    L_fill_64_bytes\n\t"
        $$emit$$"# L_loop:\t# 64-byte LOOP\n\t"
-       $$emit$$"vmovdqu ymm0,(rax)\n\t"
-       $$emit$$"vmovdqu ymm0,0x20(rax)\n\t"
-       $$emit$$"add     0x40,rax\n\t"
-       $$emit$$"# L_zero_64_bytes:\n\t"
+       $$emit$$"vmovdqu $tmp,($base)\n\t"
+       $$emit$$"vmovdqu $tmp,0x20($base)\n\t"
+       $$emit$$"add     0x40,$base\n\t"
+       $$emit$$"# L_fill_64_bytes:\n\t"
        $$emit$$"sub     0x8,rcx\n\t"
        $$emit$$"jge     L_loop\n\t"
        $$emit$$"add     0x4,rcx\n\t"
        $$emit$$"jl      L_tail\n\t"
-       $$emit$$"vmovdqu ymm0,(rax)\n\t"
-       $$emit$$"add     0x20,rax\n\t"
+       $$emit$$"vmovdqu $tmp,($base)\n\t"
+       $$emit$$"add     0x20,$base\n\t"
        $$emit$$"sub     0x4,rcx\n\t"
-       $$emit$$"# L_tail:\t# Clearing tail bytes\n\t"
+       $$emit$$"# L_tail:\t# Filling tail bytes\n\t"
        $$emit$$"add     0x4,rcx\n\t"
        $$emit$$"jle     L_end\n\t"
        $$emit$$"dec     rcx\n\t"
        $$emit$$"# L_sloop:\t# 8-byte short loop\n\t"
-       $$emit$$"vmovq   xmm0,(rax)\n\t"
-       $$emit$$"add     0x8,rax\n\t"
+       $$emit$$"vmovq   $tmp,($base)\n\t"
+       $$emit$$"add     0x8,$base\n\t"
        $$emit$$"dec     rcx\n\t"
        $$emit$$"jge     L_sloop\n\t"
        $$emit$$"# L_end:\n\t"
     } else {
-       $$emit$$"xorq    rax, rax\t# ClearArray:\n\t"
        $$emit$$"rep     stosq\t# Store rax to *rdi++ while rcx--"
     }
   %}
@@ -15209,14 +15224,16 @@ instruct rep_stos_large_evex_word_copy(rcx_RegL cnt, rdi_RegP base, legRegD tmp,
   ins_pipe(pipe_slow);
 %}
 
-// Small constant length ClearArray for AVX512 targets.
-instruct rep_stos_im(immL cnt, rRegP base, regD tmp, rax_RegL val, kReg ktmp, Universe dummy, rFlagsReg cr)
+// Small constant-count zero fill for AVX512 targets.
+instruct rep_stos_im(immL cnt, rRegP base, regD tmp, immL0 zero, rRegI val, kReg ktmp, Universe dummy, rFlagsReg cr)
 %{
-  predicate(!((ClearArrayNode*)n)->is_large() && !((ClearArrayNode*)n)->word_copy_only() &&
-            ((MaxVectorSize >= 32) && VM_Version::supports_avx512vl()));
-  match(Set dummy (ClearArray (Binary cnt base) val));
+  predicate((MaxVectorSize >= 32) &&
+            VM_Version::supports_avx512vl() &&
+            !((ClearArrayNode*)n)->is_large() &&
+            ((ClearArrayNode*)n)->is_zero_fill());
+  match(Set dummy (ClearArray (Binary cnt base) zero));
   ins_cost(100);
-  effect(TEMP tmp, USE_KILL val, TEMP ktmp, KILL cr);
+  effect(TEMP tmp, TEMP val, TEMP ktmp, KILL cr);
   format %{ "clear_mem_imm $base , $cnt  \n\t" %}
   ins_encode %{
     __ clear_mem($base$$Register, $cnt$$constant, $val$$Register, $tmp$$XMMRegister, $ktmp$$KRegister);

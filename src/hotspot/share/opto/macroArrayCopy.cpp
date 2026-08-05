@@ -33,6 +33,7 @@
 #include "opto/macro.hpp"
 #include "opto/runtime.hpp"
 #include "opto/vectornode.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/align.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -1604,7 +1605,7 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
     // TODO 8251971 This is too strong
     // We need to be careful here because 'adjust_for_flat_array' will adjust offsets/length etc. which then does not work anymore for the slow call to SharedRuntime::slow_arraycopy_C.
     assert(top_src->is_flat() == top_dest->is_flat(), "must have bailed out before");
-    if (!flat_and_same_nullness) {
+    if (Arguments::is_valhalla_enabled() && !flat_and_same_nullness) {
       generate_flat_array_guard(&ctrl, src, merge_mem, slow_region);
       generate_flat_array_guard(&ctrl, dest, merge_mem, slow_region);
       generate_null_free_array_guard(&ctrl, dest, merge_mem, slow_region);
