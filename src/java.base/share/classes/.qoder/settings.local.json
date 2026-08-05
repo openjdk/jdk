@@ -1,7 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(cd /mnt/data/kuaiwei.kw_home_ext/repo/openjdk && git --no-pager diff HEAD)"
-    ]
-  }
-}
