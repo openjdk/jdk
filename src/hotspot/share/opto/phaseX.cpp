@@ -2816,6 +2816,7 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   if (use_op == Op_CastP2X) {
     for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
       Node* u = use->fast_out(i2);
+      // Needed because of PhaseMacroExpand::expand_mh_intrinsic_return
       if (u->Opcode() == Op_AndX) {
         worklist.push(u);
       }
@@ -3232,6 +3233,7 @@ void PhaseCCP::push_counted_loop_phi(Unique_Node_List& worklist, Node* parent, c
   }
 }
 
+// Needed because of PhaseMacroExpand::expand_mh_intrinsic_return
 void PhaseCCP::push_cast(Unique_Node_List& worklist, const Node* use) {
   uint use_op = use->Opcode();
   if (use_op == Op_CastP2X) {

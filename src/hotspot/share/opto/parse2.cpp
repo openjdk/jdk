@@ -253,7 +253,6 @@ void Parse::array_store(BasicType bt) {
       // Array might be a flat array, emit runtime checks (for null, a simple inline_array_null_guard is sufficient).
       assert(UseArrayFlattening && !not_flat && elemtype->is_oopptr()->can_be_inline_type() &&
              (!array_type->klass_is_exact() || array_type->is_flat()), "array can't be a flat array");
-      // TODO 8350865 Depending on the available layouts, we can avoid this check in below flat/not-flat branches. Also the safe_for_replace arg is now always true.
       array = inline_array_null_guard(array, stored_value_casted, 3);
       // Reload array type which could have been updated by inline_array_null_guard().
       array_type = _gvn.type(array)->is_aryptr();

@@ -4879,7 +4879,7 @@ public class TestLWorld {
             oArr = VALUE_CLASS_WITH_FLOAT_ARRAY_NULLABLE_ATOMIC; // VALUE_CLASS_WITH_FLOAT_ARRAY_NULLABLE_ATOMIC is statically known to be flat.
         }
         // The type of 'oArr' is inexact here because we merge two arrays. Since both arrays are flat, 'oArr' is also flat:
-        //     Type: flat:narrowoop: java/lang/Object:NotNull * (flat in array)[int:2]
+        //     Type: flat:narrowoop: java/lang/Object * (flat in array)[int:2]
         // Since the type is inexact, we do not know the exact flat array layout statically and thus need to fall back
         // to call "store_unknown_inline_Type()" at runtime where we know the flat array layout
         oArr[0] = o;
@@ -4894,7 +4894,7 @@ public class TestLWorld {
             oArr = VALUE_CLASS_WITH_FLOAT_ARRAY_NULLABLE_ATOMIC; // VALUE_CLASS_WITH_FLOAT_ARRAY_NULLABLE_ATOMIC is statically known to be flat.
         }
         // The type of 'oArr' is inexact here because we merge two arrays. Since both arrays are flat, 'oArr' is also flat:
-        //     Type: flat:narrowoop: java/lang/Object:NotNull * (flat in array)[int:2]
+        //     Type: flat:narrowoop: java/lang/Object * (flat in array)[int:2]
         // Since the type is inexact, we do not know the exact flat array layout statically and thus need to fall back
         // to call "load_unknown_inline_Type()" at runtime where we know the flat array layout
         return oArr[0];
@@ -4909,7 +4909,7 @@ public class TestLWorld {
             avArr = SUB_VALUE_CLASS_WITH_FLOAT_ARRAY_NULLABLE_ATOMIC;
         }
         // Same as testFlatArrayInexactObjectStore_Nullable_Atomic() but the inexact type is with an abstract value class:
-        //    flat:narrowoop: compiler/valhalla/inlinetypes/TestLWorld$AbstractValueClassWithByte:NotNull * (flat in array)[int:2]
+        //    flat:narrowoop: compiler/valhalla/inlinetypes/TestLWorld$AbstractValueClassWithByte * (flat in array)[int:2]
         avArr[0] = abstractValueClassWithByte;
     }
 
@@ -4922,7 +4922,7 @@ public class TestLWorld {
             avArr = SUB_VALUE_CLASS_WITH_FLOAT_ARRAY_NULLABLE_ATOMIC;
         }
         // Same as testFlatArrayInexactObjectLoad_Nullable_Atomic() but the inexact type is with an abstract value class:
-        //    flat:narrowoop: compiler/valhalla/inlinetypes/TestLWorld$AbstractValueClassWithByte:NotNull * (flat in array)[int:2]
+        //    flat:narrowoop: compiler/valhalla/inlinetypes/TestLWorld$AbstractValueClassWithByte * (flat in array)[int:2]
         return avArr[0];
     }
 
@@ -4967,10 +4967,8 @@ public class TestLWorld {
         } else {
             oArr = VALUE_CLASS_WITH_FLOAT_ARRAY_REF; // VALUE_CLASS_WITH_FLOAT_ARRAY_REF is statically known not to be flat.
         }
-        // The type of 'oArr' is inexact here because we merge two arrays. Since both arrays are flat, 'oArr' is also flat:
-        //     Type: flat:narrowoop: java/lang/Object:NotNull * (flat in array)[int:2]
-        // Since the type is inexact, we do not know the exact flat array layout statically and thus need to fall back
-        // to call "store_unknown_inline_Type()" at runtime where we know the flat array layout
+        // In the similar cases above, the layout is unknown despite the array being known to be flat.
+        // Here, we have a reference array, so it is not a concern, but let's do it anyway, to cover all cases.
         oArr[0] = o;
     }
 
@@ -4982,10 +4980,8 @@ public class TestLWorld {
         } else {
             oArr = VALUE_CLASS_WITH_FLOAT_ARRAY_REF; // VALUE_CLASS_WITH_FLOAT_ARRAY_REF is statically known not to be flat.
         }
-        // The type of 'oArr' is inexact here because we merge two arrays. Since both arrays are flat, 'oArr' is also flat:
-        //     Type: flat:narrowoop: java/lang/Object:NotNull * (flat in array)[int:2]
-        // Since the type is inexact, we do not know the exact flat array layout statically and thus need to fall back
-        // to call "load_unknown_inline_Type()" at runtime where we know the flat array layout
+        // In the similar cases above, the layout is unknown despite the array being known to be flat.
+        // Here, we have a reference array, so it is not a concern, but let's do it anyway, to cover all cases.
         return oArr[0];
     }
 
@@ -4998,7 +4994,7 @@ public class TestLWorld {
             avArr = SUB_VALUE_CLASS_WITH_FLOAT_ARRAY_REF;
         }
         // Same as testFlatArrayInexactObjectStore_Ref() but the inexact type is with an abstract value class:
-        //    flat:narrowoop: compiler/valhalla/inlinetypes/TestLWorld$AbstractValueClassWithByte:NotNull * (flat in array)[int:2]
+        //    narrowoop: compiler/valhalla/inlinetypes/TestLWorld$AbstractValueClassWithByte * [int:2]
         avArr[0] = abstractValueClassWithByte;
     }
 
@@ -5011,7 +5007,7 @@ public class TestLWorld {
             avArr = SUB_VALUE_CLASS_WITH_FLOAT_ARRAY_REF;
         }
         // Same as testFlatArrayInexactObjectLoad_Ref() but the inexact type is with an abstract value class:
-        //    flat:narrowoop: compiler/valhalla/inlinetypes/TestLWorld$AbstractValueClassWithByte:NotNull * (flat in array)[int:2]
+        //    narrowoop: compiler/valhalla/inlinetypes/TestLWorld$AbstractValueClassWithByte * [int:2]
         return avArr[0];
     }
 

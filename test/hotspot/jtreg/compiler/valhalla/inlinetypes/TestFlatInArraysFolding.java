@@ -78,8 +78,8 @@ public class TestFlatInArraysFolding {
     static int iFld;
 
     public static void main(String[] args) {
-        Scenario flatArrayElementMaxSize1Scenario = new Scenario(1, "-XX:FlatArrayElementMaxOops=0");
-        Scenario flatArrayElementMaxSize4Scenario = new Scenario(2, "-XX:FlatArrayElementMaxOops=4");
+        Scenario flatArrayElementMaxOops0Scenario = new Scenario(1, "-XX:FlatArrayElementMaxOops=0");
+        Scenario flatArrayElementMaxOops4Scenario = new Scenario(2, "-XX:FlatArrayElementMaxOops=4");
         Scenario noFlagsScenario = new Scenario(3);
         TestFramework testFramework = new TestFramework();
         testFramework.setDefaultWarmup(0)
@@ -87,8 +87,8 @@ public class TestFlatInArraysFolding {
                           "--add-exports", "java.base/jdk.internal.value=ALL-UNNAMED",
                           "--add-exports", "java.base/jdk.internal.vm.annotation=ALL-UNNAMED",
                           "-XX:+UnlockDiagnosticVMOptions")
-                .addScenarios(flatArrayElementMaxSize1Scenario,
-                              flatArrayElementMaxSize4Scenario, noFlagsScenario);
+                .addScenarios(flatArrayElementMaxOops0Scenario,
+                              flatArrayElementMaxOops4Scenario, noFlagsScenario);
 
         if (args.length > 0) {
             // Disable Loop Unrolling for IR matching in testCmpP().
