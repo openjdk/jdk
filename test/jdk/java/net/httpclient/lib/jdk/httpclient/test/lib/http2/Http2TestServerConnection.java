@@ -374,8 +374,12 @@ public class Http2TestServerConnection {
             // place a close sentinel in the output queue of the connection
             outputQ.orderlyClose();
             // await termination of the writeLoop to make sure any accumulated
-            // frames are written out before the socket is closed
-            this.writeLoopThread.join();
+            // frames are written out before the socket is closed. This close() method is allowed
+            // to be called from the writeLoopThread itself, and we don't want to deadlock in such
+            // cases, so we skip this wait if called from that thread.
+            if (Thread.currentThread() != writeLoopThread) {
+                this.writeLoopThread.join();
+            }
         } catch (Exception e) {
             this.debugLogger.log("ignoring failure during Http2TestServerConnection.close() - " + e);
         } finally {
