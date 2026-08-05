@@ -307,6 +307,7 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   _type_profile_width = TypeProfileWidth;
   _bci_profile_width = BciProfileWidth;
   _profile_traps = ProfileTraps;
+  _profile_exception_handlers = ProfileExceptionHandlers;
   _type_profile_casts = TypeProfileCasts;
   _spec_trap_limit_extra_entries = SpecTrapLimitExtraEntries;
   _max_heap_size = MaxHeapSize;
@@ -1944,6 +1945,14 @@ bool FileMapHeader::validate() {
                                             " does not equal the current ProfileTraps setting (%s).", file_type,
                                             _profile_traps ? "enabled" : "disabled",
                                             ProfileTraps   ? "enabled" : "disabled");
+
+      return false;
+    }
+    if (_profile_exception_handlers != ProfileExceptionHandlers) {
+      AOTMetaspace::report_loading_error("The %s's ProfileExceptionHandlers setting (%s)"
+                                            " does not equal the current ProfileExceptionHandlers setting (%s).", file_type,
+                                            _profile_exception_handlers ? "enabled" : "disabled",
+                                            ProfileExceptionHandlers   ? "enabled" : "disabled");
 
       return false;
     }

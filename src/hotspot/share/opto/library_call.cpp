@@ -2676,8 +2676,9 @@ bool LibraryCallKit::inline_unsafe_flat_access(bool is_store, AccessKind kind) {
     return false;
   }
   ciType* mirror_type = value_klass_node->const_oop()->as_instance()->java_mirror_type();
-  if (!mirror_type->is_inlinetype()) {
-    // Dead code
+  if (mirror_type == nullptr || !mirror_type->is_inlinetype()) {
+    // While mirror_type should not be null, there is no simple argument of that, so let's be safe, and bailout if it happens.
+    // Otherwise, if mirror_type is not null, but not an inline type, that is dead code. Bailout as well.
     return false;
   }
   ciInlineKlass* value_klass = mirror_type->as_inline_klass();
