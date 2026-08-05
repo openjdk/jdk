@@ -99,7 +99,11 @@ Node *PhaseIdealLoop::get_early_ctrl( Node *n ) {
   assert( !n->is_Phi() && !n->is_CFG(), "this code only handles data nodes" );
   uint i;
   Node *early;
-  if (n->in(0) && !n->is_expensive()) {
+  // The control input of an expensive node is only a starting point:
+  // get_early_ctrl_for_expensive() below moves it up the dominator tree.
+  // That modifies the graph, so it is skipped when verifying:
+  // honor the control input here instead.
+  if (n->in(0) && (!n->is_expensive() || _verify_me || _verify_only)) {
     early = n->in(0);
     if (!early->is_CFG()) // Might be a non-CFG multi-def
       early = get_ctrl(early);        // So treat input as a straight data input
