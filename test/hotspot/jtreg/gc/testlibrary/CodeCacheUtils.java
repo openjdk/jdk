@@ -28,9 +28,38 @@ import java.lang.reflect.Method;
 
 import jdk.test.lib.dcmd.JMXExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.whitebox.WhiteBox;
+import jdk.test.whitebox.code.NMethod;
 
 public final class CodeCacheUtils {
     private CodeCacheUtils() {}
+
+    /**
+     * Compiles the given static no-argument method at level 1 and makes it
+     * not-entrant. The method is invoked once to initialize its declaring class.
+     *
+     * @return the compile id of the not-entrant nmethod
+     */
+    public static int compileAndMakeNotEntrant(Method method) throws Exception {
+        WhiteBox WB = WhiteBox.getWhiteBox();
+        method.invoke(null);
+        if (!WB.enqueueMethodForCompilation(method, 1 /* compLevel */)) {
+            throw new AssertionError("Failed to enqueue target for compilation");
+        }
+        while (WB.isMethodQueuedForCompilation(method)) {
+            Thread.sleep(50);
+        }
+        NMethod nmethod = NMethod.get(method, false);
+        if (nmethod == null || nmethod.comp_level != 1) {
+            throw new AssertionError("Target is not compiled at level 1");
+        }
+
+        int deoptimized = WB.deoptimizeMethod(method);
+        if (deoptimized == 0) {
+            throw new AssertionError("No target nmethod was made not-entrant");
+        }
+        return nmethod.compile_id;
+    }
 
     /**
      * Checks whether Compiler.codelist contains the requested nmethod.

@@ -48,35 +48,14 @@ import java.lang.reflect.Method;
 
 import gc.testlibrary.CodeCacheUtils;
 import jdk.test.whitebox.WhiteBox;
-import jdk.test.whitebox.code.NMethod;
 
 public class TestCodeCacheUnloadDuringConcurrentMark {
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
 
-    static class Target {
-        public static int test(int value) {
-            return value + 1;
+    public static class Target {
+        public static int test() {
+            return 1;
         }
-    }
-
-    private static int compileAndMakeNotEntrant(Method method) throws Exception {
-        Target.test(1);
-        if (!WB.enqueueMethodForCompilation(method, 1 /* compLevel */)) {
-            throw new AssertionError("Failed to enqueue target for compilation");
-        }
-        while (WB.isMethodQueuedForCompilation(method)) {
-            Thread.sleep(50);
-        }
-        NMethod nmethod = NMethod.get(method, false);
-        if (nmethod == null || nmethod.comp_level != 1) {
-            throw new AssertionError("Target is not compiled at level 1");
-        }
-
-        int deoptimized = WB.deoptimizeMethod(method);
-        if (deoptimized == 0) {
-            throw new AssertionError("No target nmethod was made not-entrant");
-        }
-        return nmethod.compile_id;
     }
 
     public static void main(String[] args) throws Exception {
@@ -84,8 +63,8 @@ public class TestCodeCacheUnloadDuringConcurrentMark {
         // test-owned concurrent mark reaches it.
         WB.concurrentGCAcquireControl();
         try {
-            Method method = Target.class.getDeclaredMethod("test", int.class);
-            int compileId = compileAndMakeNotEntrant(method);
+            Method method = Target.class.getDeclaredMethod("test");
+            int compileId = CodeCacheUtils.compileAndMakeNotEntrant(method);
             if (!CodeCacheUtils.codelistContains(compileId, method, 1, 1 /* not_entrant */)) {
                 throw new AssertionError("Expected a not-entrant target nmethod before concurrent mark");
             }
