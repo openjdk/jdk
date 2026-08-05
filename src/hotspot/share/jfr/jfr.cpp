@@ -175,12 +175,17 @@ void Jfr::on_report_java_out_of_memory() {
   }
 }
 
+void Jfr::emit_define_class_event(const Klass* k, const Symbol* source) {
+  assert(k != nullptr, "invariant");
+  JfrClassDefineEvent::send_event(k, source);
+}
+
 #if INCLUDE_CDS
-void Jfr::on_restoration(const Klass* k, JavaThread* jt) {
+void Jfr::on_restoration(const Klass* k, const ClassFileStream* cfs, JavaThread* jt) {
   assert(k != nullptr, "invariant");
   JfrTraceId::restore(k);
   if (k->is_instance_klass()) {
-    JfrClassDefineEvent::on_restoration(InstanceKlass::cast(k), jt);
+    JfrClassDefineEvent::on_restoration(InstanceKlass::cast(k), cfs, jt);
   }
 }
 #endif
