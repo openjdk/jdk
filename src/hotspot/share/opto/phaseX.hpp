@@ -461,9 +461,9 @@ public:
 #endif
 
 #ifndef PRODUCT
-  static bool is_verify_Identity() {
-    // '-XX:VerifyIterativeGVN=1000'
-    return ((VerifyIterativeGVN % 10000) / 1000) == 1;
+  static bool is_verify_Identity_return() {
+    // '-XX:VerifyIterativeGVN=1000000'
+    return ((VerifyIterativeGVN % 10000000) / 1000000) == 1;
   }
 #endif
 };
@@ -679,6 +679,10 @@ public:
   static bool is_verify_Ideal() {
     // '-XX:VerifyIterativeGVN=100'
     return ((VerifyIterativeGVN % 1000) / 100) == 1;
+  }
+  static bool is_verify_Identity() {
+    // '-XX:VerifyIterativeGVN=1000'
+    return ((VerifyIterativeGVN % 10000) / 1000) == 1;
   }
   static bool is_verify_invariants() {
     // '-XX:VerifyIterativeGVN=10000'
