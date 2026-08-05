@@ -363,8 +363,8 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_C(Klass* array_type, int len, oopDe
     result = oopFactory::new_typeArray(elem_type, len, THREAD);
   } else {
     Handle holder(current, array_type->klass_holder()); // keep the array klass alive
-    ObjArrayKlass* oak = ObjArrayKlass::cast(array_type);
-    result = oopFactory::new_objArray(oak->element_klass(), len, oak->properties(), THREAD);
+    result = ObjArrayKlass::cast(array_type)->allocate_instance(len, THREAD);
+    assert(HAS_PENDING_EXCEPTION || result->klass() == array_type, "array klass must be preserved");
     if (!HAS_PENDING_EXCEPTION && array_type->is_null_free_array_klass() && !h_init_val.is_null()) {
       // Null-free arrays need to be initialized
 #ifdef ASSERT

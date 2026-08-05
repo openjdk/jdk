@@ -2676,8 +2676,9 @@ bool LibraryCallKit::inline_unsafe_flat_access(bool is_store, AccessKind kind) {
     return false;
   }
   ciType* mirror_type = value_klass_node->const_oop()->as_instance()->java_mirror_type();
-  if (!mirror_type->is_inlinetype()) {
-    // Dead code
+  if (mirror_type == nullptr || !mirror_type->is_inlinetype()) {
+    // While mirror_type should not be null, there is no simple argument of that, so let's be safe, and bailout if it happens.
+    // Otherwise, if mirror_type is not null, but not an inline type, that is dead code. Bailout as well.
     return false;
   }
   ciInlineKlass* value_klass = mirror_type->as_inline_klass();
@@ -4691,6 +4692,7 @@ bool LibraryCallKit::inline_native_subtype_check() {
                                 // {P,P} & superc!=subc => false
     _prim_same_path,            // {P,P} & superc==subc => true
     _prim_1_path,               // {N,P} => false
+    _ref_same_path,             // {N,N} & superk==subk => true
     _ref_subtype_path,          // {N,N} & subtype check wins => true
     _both_ref_path,             // {N,N} & subtype check loses => false
     PATH_LIMIT
@@ -4738,6 +4740,16 @@ bool LibraryCallKit::inline_native_subtype_check() {
     // now we have two reference types, in klasses[0..1]
     Node* subk   = klasses[1];  // the argument to isAssignableFrom
     Node* superk = klasses[0];  // the receiver
+
+    // gen_subtype_check() refines exact array superklasses for comparison with
+    // (refined) klasses loaded from the header. Since both operands here are unrefined
+    // klasses, handle equality first. Unequal types then use the regular hierarchy check.
+    Node* cmp = _gvn.transform(new CmpPNode(subk, superk));
+    Node* bol = _gvn.transform(new BoolNode(cmp, BoolTest::eq));
+    IfNode* iff = create_and_xform_if(control(), bol, PROB_STATIC_FREQUENT, COUNT_UNKNOWN);
+    region->set_req(_ref_same_path, _gvn.transform(new IfTrueNode(iff)));
+    set_control(_gvn.transform(new IfFalseNode(iff)));
+
     region->set_req(_both_ref_path, gen_subtype_check(subk, superk));
     region->set_req(_ref_subtype_path, control());
   }
@@ -4762,6 +4774,7 @@ bool LibraryCallKit::inline_native_subtype_check() {
 
   // these are the only paths that produce 'true':
   phi->set_req(_prim_same_path,   intcon(1));
+  phi->set_req(_ref_same_path,    intcon(1));
   phi->set_req(_ref_subtype_path, intcon(1));
 
   // pull together the cases:

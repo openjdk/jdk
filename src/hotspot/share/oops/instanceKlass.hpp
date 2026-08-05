@@ -669,6 +669,8 @@ public:
 
   // find local field, returns true if found
   bool find_local_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const;
+  // find local field, returns true if found
+  bool find_local_field(Symbol* name, Symbol* sig, fieldDescriptor* fd, bool also_internal) const;
   // find field in direct superinterfaces, returns the interface in which the field is defined
   Klass* find_interface_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const;
   // find field according to JVM spec 5.4.3.2, returns the klass in which the field is defined
