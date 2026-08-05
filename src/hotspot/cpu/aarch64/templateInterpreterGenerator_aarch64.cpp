@@ -893,8 +893,6 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ ldr(r10, Address(r10, in_bytes(Klass::java_mirror_offset())));
   __ resolve_oop_handle(r10, rscratch1, rscratch2);
   if (! native_call) {
-    // Before extending SP, we need to ensure that the stack pages are
-    // all initially accessed in the order required by the platform.
     __ pd_extend_stack(r5_const_method, rscratch1, rscratch2);
     __ ldrh(rscratch1, Address(r5_const_method, ConstMethod::max_stack_offset()));
     __ add(rscratch1, rscratch1, MAX2(3, Method::extra_stack_entries()));
