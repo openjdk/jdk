@@ -227,15 +227,8 @@ void FlatArrayKlass::copy_array(arrayOop s, int src_pos,
     THROW(vmSymbols::java_lang_ArrayStoreException());
   }
 
-  // Check if all offsets and lengths are non negative
-  if (src_pos < 0 || dst_pos < 0 || length < 0) {
-    THROW(vmSymbols::java_lang_ArrayIndexOutOfBoundsException());
-  }
-  // Check if the ranges are valid
-  if  ( (((unsigned int) length + (unsigned int) src_pos) > (unsigned int) s->length())
-      || (((unsigned int) length + (unsigned int) dst_pos) > (unsigned int) d->length()) ) {
-    THROW(vmSymbols::java_lang_ArrayIndexOutOfBoundsException());
-  }
+  array_copy_offsets_and_range_check(s, src_pos, d, dst_pos, length, CHECK);
+
   // Check zero copy
   if (length == 0)
     return;
@@ -244,85 +237,92 @@ void FlatArrayKlass::copy_array(arrayOop s, int src_pos,
   ObjArrayKlass* dk = ObjArrayKlass::cast(d->klass());
   Klass* d_elem_klass = dk->element_klass();
   Klass* s_elem_klass = sk->element_klass();
-  /**** CMH: compare and contrast impl, re-factor once we find edge cases... ****/
 
   if (sk->is_flatArray_klass()) {
     assert(sk == this, "Unexpected call to copy_array");
     FlatArrayKlass* fsk = FlatArrayKlass::cast(sk);
-    // Check subtype, all src homogeneous, so just once
-    if (!s_elem_klass->is_subtype_of(d_elem_klass)) {
-      THROW(vmSymbols::java_lang_ArrayStoreException());
-    }
-
-    flatArrayOop sa = flatArrayOop(s);
+    flatArrayOop sa = oop_cast<flatArrayOop>(s);
 
     // flatArray-to-flatArray
     if (dk->is_flatArray_klass()) {
-      // element types MUST be exact, subtype check would be dangerous
-      if (d_elem_klass != this->element_klass()) {
-        THROW(vmSymbols::java_lang_ArrayStoreException());
-      }
+      flatArrayOop da = oop_cast<flatArrayOop>(d);
 
-      FlatArrayKlass* fdk = FlatArrayKlass::cast(dk);
-      InlineKlass* vk = InlineKlass::cast(s_elem_klass);
-      flatArrayOop da = flatArrayOop(d);
+      if (d_elem_klass == this->element_klass()) {
+        FlatArrayKlass* fdk = FlatArrayKlass::cast(dk);
 
-      // We have already checked that src_pos and dst_pos are valid indices.
-      FlatArrayPayload src_payload(sa, src_pos, fsk);
-      FlatArrayPayload dst_payload(da, dst_pos, fdk);
+        // We have already checked that src_pos and dst_pos are valid indices.
+        FlatArrayPayload src_payload(sa, src_pos, fsk);
+        FlatArrayPayload dst_payload(da, dst_pos, fdk);
 
-      if (fsk->layout_kind() == fdk->layout_kind()) {
-        // Because source and destination have the same layout, we do not have
-        // to worry about null checks and atomicity problems and can call the
-        // Access API directly.
-        int index_delta;
-        if (needs_backwards_copy(sa, src_pos, da, dst_pos, length)) {
-          index_delta = -1;
-          src_payload.advance_index(length - 1);
-          dst_payload.advance_index(length - 1);
-        } else {
-          index_delta = 1;
-        }
-
-        for (int i = 0; i < length; i++) {
-          HeapAccess<>::value_copy(src_payload, dst_payload);
-          src_payload.advance_index(index_delta);
-          dst_payload.advance_index(index_delta);
-        }
-      } else {
-        // We need to allocate a buffer object to facilitate the copy between
-        // the different layouts. Keep the payload in a handle so we can reload
-        // the oops.
-        FlatArrayPayload::Handle src_payload_handle = src_payload.make_handle(THREAD);
-        FlatArrayPayload::Handle dst_payload_handle = dst_payload.make_handle(THREAD);
-
-        inlineOop buffer = vk->allocate_instance(CHECK);
-        BufferedValuePayload buf_payload(buffer);
-
-        // Reload the oops from the payload handles.
-        src_payload = src_payload_handle();
-        dst_payload = dst_payload_handle();
-
-        const bool dst_is_null_restricted = !LayoutKindHelper::is_nullable_flat(dst_payload.layout_kind());
-
-        // fsk->layout_kind() != fdk->layout_kind() implies that s != d, which
-        // means that the copy is disjoint and we do not need to worry about
-        // needs_backwards_copy.
-        for (int i = 0; i < length; i++) {
-          // Copy via buffer
-          if (src_payload.is_payload_null() || !src_payload.copy_to(buf_payload)) {
-            // The source payload is null. Nothing to copy.
-            if (dst_is_null_restricted) {
-              // The destination does not support null.
-              THROW(vmSymbols::java_lang_NullPointerException());
-            }
+        if (fsk->layout_kind() == fdk->layout_kind()) {
+          // Because source and destination have the same layout, we do not have
+          // to worry about null checks and atomicity problems and can call the
+          // Access API directly.
+          int index_delta;
+          if (needs_backwards_copy(sa, src_pos, da, dst_pos, length)) {
+            index_delta = -1;
+            src_payload.advance_index(length - 1);
+            dst_payload.advance_index(length - 1);
           } else {
-            dst_payload.copy_from(buf_payload);
+            index_delta = 1;
           }
 
-          // Advance to next element
-          src_payload.next_element();
-          dst_payload.next_element();
+          for (int i = 0; i < length; i++) {
+            HeapAccess<>::value_copy(src_payload, dst_payload);
+            src_payload.advance_index(index_delta);
+            dst_payload.advance_index(index_delta);
+          }
+        } else {
+          // We need to allocate a buffer object to facilitate the copy between
+          // the different layouts. Keep the payload in a handle so we can reload
+          // the oops.
+          FlatArrayPayload::Handle src_payload_handle = src_payload.make_handle(THREAD);
+          FlatArrayPayload::Handle dst_payload_handle = dst_payload.make_handle(THREAD);
+
+          InlineKlass* vk = InlineKlass::cast(s_elem_klass);
+          inlineOop buffer = vk->allocate_instance(CHECK);
+          BufferedValuePayload buf_payload(buffer);
+
+          // Reload the oops from the payload handles.
+          src_payload = src_payload_handle();
+          dst_payload = dst_payload_handle();
+
+          const bool dst_is_null_restricted = !LayoutKindHelper::is_nullable_flat(dst_payload.layout_kind());
+
+          // fsk->layout_kind() != fdk->layout_kind() implies that s != d, which
+          // means that the copy is disjoint and we do not need to worry about
+          // needs_backwards_copy.
+          for (int i = 0; i < length; i++) {
+            // Copy via buffer
+            if (src_payload.is_payload_null() || !src_payload.copy_to(buf_payload)) {
+              // The source payload is null. Nothing to copy.
+              if (dst_is_null_restricted) {
+                // The destination does not support null.
+                THROW(vmSymbols::java_lang_NullPointerException());
+              }
+            } else {
+              dst_payload.copy_from(buf_payload);
+            }
+
+            // Advance to next element
+            src_payload.next_element();
+            dst_payload.next_element();
+          }
+        }
+      } else {
+        // flat arrays with different element types, can only copy nulls (if destination array accepts them)
+        flatArrayHandle sh(THREAD, sa);
+        flatArrayHandle dh(THREAD, da);
+        bool dst_null_free = da->is_null_free_array();
+        for (int i = 0; i < length; i++) {
+          if (sh->obj_at_is_null(src_pos + i)) {
+            if (dst_null_free) {
+              THROW(vmSymbols::java_lang_NullPointerException());
+            }
+            dh->obj_at_put(dst_pos + i, nullptr);
+          } else {
+            THROW(vmSymbols::java_lang_ArrayStoreException());
+          }
         }
       }
     } else {
@@ -341,8 +341,8 @@ void FlatArrayKlass::copy_array(arrayOop s, int src_pos,
     // refArray-to-flatArray
     assert(s->is_refArray(), "Expected refArray");
     assert(d->is_flatArray(), "Expected flatArray");
-    refArrayOop sa = refArrayOop(s);
-    flatArrayOop da = flatArrayOop(d);
+    refArrayOop sa = oop_cast<refArrayOop>(s);
+    flatArrayOop da = oop_cast<flatArrayOop>(d);
 
     for (int i = 0; i < length; i++) {
       da->obj_at_put( dst_pos + i, sa->obj_at(src_pos + i), CHECK);
