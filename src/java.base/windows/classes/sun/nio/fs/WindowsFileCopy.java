@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,11 +170,15 @@ class WindowsFileCopy {
             }
         }
 
+        if (!followLinks && sourceAttrs.isSymbolicLink()) {
+            copySymbolicLink(source, sourceAttrs, target, copyAttributes);
+            return;
+        }
+
         // Use CopyFileEx if the file is not a directory or junction
         if (!sourceAttrs.isDirectory() && !sourceAttrs.isDirectoryLink()) {
             boolean isBuffering = sourceAttrs.size() <= UNBUFFERED_IO_THRESHOLD;
-            final int flags = (followLinks ? 0 : COPY_FILE_COPY_SYMLINK) |
-                              (isBuffering ? 0 : COPY_FILE_NO_BUFFERING);
+            final int flags = isBuffering ? 0 : COPY_FILE_NO_BUFFERING;
 
             if (interruptible) {
                 // interruptible copy
@@ -235,23 +239,34 @@ class WindowsFileCopy {
             x.rethrowAsIOException(target);
         }
         if (copyAttributes) {
-            // copy DOS/timestamps attributes
-            WindowsFileAttributeViews.Dos view =
-                WindowsFileAttributeViews.createDosView(target, false);
-            try {
-                view.setAttributes(sourceAttrs);
-            } catch (IOException x) {
-                if (sourceAttrs.isDirectory()) {
-                    try {
-                        RemoveDirectory(targetPath);
-                    } catch (WindowsException ignore) { }
-                }
-            }
-
-            // copy security attributes. If this fail it doesn't cause the move
-            // to fail.
+            copyDosAttributes(target, targetPath, sourceAttrs);
             try {
                 copySecurityAttributes(source, target, followLinks);
+            } catch (IOException ignore) { }
+        }
+    }
+
+    private static void copySymbolicLink(WindowsPath source,
+                                         WindowsFileAttributes sourceAttrs,
+                                         WindowsPath target,
+                                         boolean copyAttributes)
+        throws IOException
+    {
+        String targetPath = asWin32Path(target);
+        try {
+            String linkTarget = WindowsLinkSupport.readLink(source);
+            int flags = sourceAttrs.isDirectoryLink() ? SYMBOLIC_LINK_FLAG_DIRECTORY : 0;
+            WindowsLinkSupport.createSymbolicLink(targetPath,
+                                                  WindowsPath.addPrefixIfNeeded(linkTarget),
+                                                  flags);
+        } catch (WindowsException x) {
+            x.rethrowAsIOException(target);
+        }
+
+        if (copyAttributes) {
+            copyDosAttributes(target, targetPath, sourceAttrs);
+            try {
+                copySecurityAttributes(source, target, false);
             } catch (IOException ignore) { }
         }
     }
@@ -435,18 +450,7 @@ class WindowsFileCopy {
             x.rethrowAsIOException(target);
         }
 
-        // copy timestamps/DOS attributes
-        WindowsFileAttributeViews.Dos view =
-                WindowsFileAttributeViews.createDosView(target, false);
-        try {
-            view.setAttributes(sourceAttrs);
-        } catch (IOException x) {
-            // rollback
-            try {
-                RemoveDirectory(targetPath);
-            } catch (WindowsException ignore) { }
-            throw x;
-        }
+        copyDosAttributes(target, targetPath, sourceAttrs);
 
         // copy security attributes. If this fails it doesn't cause the move
         // to fail.
@@ -481,6 +485,26 @@ class WindowsFileCopy {
         } catch (WindowsException x) {
             x.rethrowAsIOException(path);
             return null;
+        }
+    }
+
+    private static void copyDosAttributes(WindowsPath target, String targetPath,
+                                          WindowsFileAttributes attrs)
+        throws IOException
+    {
+        WindowsFileAttributeViews.Dos view =
+            WindowsFileAttributeViews.createDosView(target, false);
+        try {
+            view.setAttributes(attrs);
+        } catch (IOException x) {
+            try {
+                if (attrs.isDirectoryLink()) {
+                    RemoveDirectory(targetPath);
+                } else {
+                    DeleteFile(targetPath);
+                }
+            } catch (WindowsException ignore) { }
+            throw x;
         }
     }
 
