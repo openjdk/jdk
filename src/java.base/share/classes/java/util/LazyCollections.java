@@ -604,7 +604,7 @@ final class LazyCollections {
                 // We have already computed all the elements (successfully or exceptionally).
                 return null;
             }
-            // Check if there already is a mutex (Object or TOMB_STONE)
+            // Check if a mutex alredy exists
             final Object mutex = UNSAFE.getReferenceVolatile(mutexes, offset);
             if (mutex != null) {
                 return mutex;
