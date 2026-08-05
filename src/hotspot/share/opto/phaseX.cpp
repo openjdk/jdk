@@ -2320,7 +2320,7 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     }
   }
 
-  uint use_op = use->Opcode();
+  const int use_op = use->Opcode();
   if (use->is_Cmp()) {       // Enable CMP/BOOL optimization
     add_users_to_worklist0(use, worklist); // Put Bool on worklist
     if (use->outcnt() > 0) {
@@ -2748,6 +2748,15 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   if (use_op == Op_AddI) {
     add_users_to_worklist_if(worklist, use, [](Node* u) {
       return u->is_Phi();
+    });
+  }
+
+  // AndVNode::Ideal and OrVNode::Ideal have 2-hop operations for
+  // repeated and/or with the same value:
+  // Pattern: AndV(AndV(a, b), a) -> AndV(a, b)
+  if (use_op == Op_AndV || use_op == Op_OrV) {
+    add_users_to_worklist_if(worklist, use, [&](Node* u) {
+      return u->Opcode() == use_op;
     });
   }
 }
