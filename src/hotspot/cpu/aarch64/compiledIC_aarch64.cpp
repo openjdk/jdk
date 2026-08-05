@@ -31,6 +31,7 @@
 #include "oops/metadata.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "utilities/debug.hpp"
 
 // ----------------------------------------------------------------------------
