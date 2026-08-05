@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "jfr/jfr.hpp"
 
 #include "jfr/periodic/sampling/jfrThreadSampling.hpp"
+#include "oops/symbol.hpp"
 #include "runtime/javaThread.hpp"
 
 inline bool Jfr::has_sample_request(JavaThread* jt) {
@@ -39,6 +40,30 @@ inline bool Jfr::has_sample_request(JavaThread* jt) {
 inline void Jfr::check_and_process_sample_request(JavaThread* jt) {
   if (has_sample_request(jt)) {
     JfrThreadSampling::process_sample_request(jt);
+  }
+}
+
+inline JfrDefineClassEvent::JfrDefineClassEvent(const Klass* k, const JavaThread* jt, bool commit /* false */) :
+  _k(k), _source(jt->jfr_thread_local()->pop_symbol()), _commit(commit) {
+  assert(k != nullptr, "invariant");
+  assert(jt != nullptr, "invariant");
+}
+
+inline JfrDefineClassEvent::~JfrDefineClassEvent() {
+  if (p2u(_source) != max_julong) {
+    if (_commit) {
+      Jfr::emit_define_class_event(_k, _source);
+    }
+    if (_source != nullptr) {
+      _source->decrement_refcount();
+    }
+  }
+}
+
+inline void JfrDefineClassEvent::commit() {
+  assert(!_commit, "invariant");
+  if (p2u(_source) != max_julong) {
+    _commit = true;
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
 #include "runtime/threadIdentifier.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/sizes.hpp"
 #include "utilities/spinYield.hpp"
 
@@ -61,6 +62,7 @@ JfrThreadLocal::JfrThreadLocal() :
   _checkpoint_buffer_epoch_1(nullptr),
   _sample_state(0),
   _dcmd_arena(nullptr),
+  _symbol_stack(nullptr),
   _thread(),
   _vthread_id(0),
   _jvm_thread_id(0),
@@ -216,6 +218,11 @@ void JfrThreadLocal::release(Thread* t) {
   if (_dcmd_arena != nullptr) {
     delete _dcmd_arena;
     _dcmd_arena = nullptr;
+  }
+  if (_symbol_stack != nullptr) {
+    assert(_symbol_stack->is_empty(), "invariant");
+    delete _symbol_stack;
+    _symbol_stack = nullptr;
   }
 }
 
@@ -582,6 +589,19 @@ Arena* JfrThreadLocal::dcmd_arena(JavaThread* jt) {
   return arena;
 }
 
+void JfrThreadLocal::push_symbol(Symbol* symbol) {
+  if (_symbol_stack == nullptr) {
+    _symbol_stack = new JfrSymbolStack(8);
+  }
+  _symbol_stack->push(symbol);
+}
+
+Symbol* JfrThreadLocal::pop_symbol() {
+  if (_symbol_stack != nullptr && _symbol_stack->is_nonempty()) {
+    return _symbol_stack->pop();
+  }
+  return reinterpret_cast<Symbol*>(max_julong);
+}
 
 #ifdef LINUX
 

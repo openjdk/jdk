@@ -89,7 +89,7 @@
 #include "classfile/systemDictionaryShared.hpp"
 #endif
 #if INCLUDE_JFR
-#include "jfr/jfr.hpp"
+#include "jfr/jfr.inline.hpp"
 #endif
 
 class InvokeMethodKey : public StackObj {
@@ -808,6 +808,27 @@ Klass* SystemDictionary::find_instance_or_array_klass(Thread* current,
   return k;
 }
 
+#if INCLUDE_JFR
+void SystemDictionary::post_class_load_event(EventClassLoad* event, const InstanceKlass* k, const ClassLoaderData* init_cld) {
+  assert(event != nullptr, "invariant");
+  assert(k != nullptr, "invariant");
+  event->set_loadedClass(k);
+  event->set_definingClassLoader(k->class_loader_data());
+  event->set_initiatingClassLoader(init_cld);
+  event->commit();
+}
+
+static void post_events(EventClassLoad* event, const InstanceKlass* k, const ClassLoaderData* init_cld, const JavaThread* jt) {
+  {
+    // A class must be defined before it is loaded.
+    JfrDefineClassEvent event(k, jt, true);
+  }
+  if (event->should_commit()) {
+    SystemDictionary::post_class_load_event(event, k, init_cld);
+  }
+}
+#endif // INCLUDE_JFR
+
 // Note: this method is much like resolve_class_from_stream, but
 // does not publish the classes in the SystemDictionary.
 // Handles Lookup.defineClass hidden.
@@ -837,22 +858,31 @@ InstanceKlass* SystemDictionary::resolve_hidden_class_from_stream(
                                                       cl_info,
                                                       CHECK_NULL);
   assert(k != nullptr, "no klass created");
+  assert(k->class_loader_data() == loader_data, "invariant");
 
-  // Hidden classes that are not strong must update ClassLoaderData holder
-  // so that they can be unloaded when the mirror is no longer referenced.
-  if (!cl_info.is_strong_hidden()) {
-    k->class_loader_data()->initialize_holder(Handle(THREAD, k->java_mirror()));
+  {
+    // This construct is a scoped helper class, placed here
+    // to capture early returns caused by CHECK macros.
+    JFR_ONLY(JfrDefineClassEvent class_define_event(k, THREAD);)
+
+    // Hidden classes that are not strong must update ClassLoaderData holder
+    // so that they can be unloaded when the mirror is no longer referenced.
+    if (!cl_info.is_strong_hidden()) {
+      k->class_loader_data()->initialize_holder(Handle(THREAD, k->java_mirror()));
+    }
+
+    // Add to class hierarchy, and do possible deoptimizations.
+    k->add_to_hierarchy(THREAD);
+    // But, do not add to dictionary.
+
+    k->link_class(CHECK_NULL);
+
+    JFR_ONLY(class_define_event.commit();)
   }
-
-  // Add to class hierarchy, and do possible deoptimizations.
-  k->add_to_hierarchy(THREAD);
-  // But, do not add to dictionary.
 
   if (class_load_event.should_commit()) {
     JFR_ONLY(post_class_load_event(&class_load_event, k, loader_data);)
   }
-
-  k->link_class(CHECK_NULL);
 
   // notify jvmti
   if (JvmtiExport::should_post_class_load()) {
@@ -915,6 +945,9 @@ InstanceKlass* SystemDictionary::resolve_class_from_stream(
   if (is_parallelCapable(class_loader)) {
     k = find_or_define_instance_class(h_name, class_loader, k, CHECK_NULL);
   } else {
+    // This construct is a scoped helper class,
+    // placed here to capture early returns.
+    JFR_ONLY(JfrDefineClassEvent class_define_event(k, THREAD);)
     define_instance_class(k, class_loader, THREAD);
 
     // If defining the class throws an exception register 'k' for cleanup.
@@ -923,6 +956,7 @@ InstanceKlass* SystemDictionary::resolve_class_from_stream(
       loader_data->add_to_deallocate_list(k);
       return nullptr;
     }
+    JFR_ONLY(class_define_event.commit();)
   }
 
   // Make sure we have an entry in the SystemDictionary on success
@@ -1267,11 +1301,11 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
     ik->restore_unshareable_info(loader_data, protection_domain, pkg_entry, CHECK_NULL);
   }
 
-  load_shared_class_misc(ik, loader_data);
+  load_shared_class_misc(ik, loader_data, cfs);
   return ik;
 }
 
-void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData* loader_data) {
+void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData* loader_data, const ClassFileStream* cfs /* nullptr */) {
   ik->print_class_load_logging(loader_data, nullptr, nullptr);
 
   // For boot loader, ensure that GetSystemPackage knows that a class in this
@@ -1287,6 +1321,8 @@ void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData
   if (CDSConfig::is_dumping_final_static_archive()) {
     SystemDictionaryShared::init_dumptime_info_from_preimage(ik);
   }
+
+  JFR_ONLY(Jfr::on_restoration(ik, ik->defined_by_other_loaders() ? cfs : nullptr, JavaThread::current());)
 }
 
 // This is much more lightweight than SystemDictionary::resolve_or_null
@@ -1340,25 +1376,12 @@ void SystemDictionary::preload_class(Handle class_loader, InstanceKlass* ik, TRA
     update_dictionary(THREAD, ik, loader_data);
   }
 
-  if (class_load_event.should_commit()) {
-    JFR_ONLY(post_class_load_event(&class_load_event, ik, loader_data);)
-  }
+  JFR_ONLY(post_events(&class_load_event, ik, loader_data, THREAD);)
 
   assert(ik->is_loaded(), "Must be in at least loaded state");
 }
 
 #endif // INCLUDE_CDS
-
-#if INCLUDE_JFR
-void SystemDictionary::post_class_load_event(EventClassLoad* event, const InstanceKlass* k, const ClassLoaderData* init_cld) {
-  assert(event != nullptr, "invariant");
-  assert(k != nullptr, "invariant");
-  event->set_loadedClass(k);
-  event->set_definingClassLoader(k->class_loader_data());
-  event->set_initiatingClassLoader(init_cld);
-  event->commit();
-}
-#endif // INCLUDE_JFR
 
 InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Handle class_loader, TRAPS) {
 
@@ -1612,6 +1635,10 @@ InstanceKlass* SystemDictionary::find_or_define_helper(Symbol* class_name, Handl
   ClassLoaderData* loader_data = class_loader_data(class_loader);
   Dictionary* dictionary = loader_data->dictionary();
 
+  // This construct is a scoped helper class,
+  // placed here to capture early returns.
+  JFR_ONLY(JfrDefineClassEvent class_define_event(k, THREAD);)
+
   // Hold SD lock around find_class and placeholder creation for DEFINE_CLASS
   {
     MutexLocker mu(THREAD, SystemDictionary_lock);
@@ -1666,7 +1693,13 @@ InstanceKlass* SystemDictionary::find_or_define_helper(Symbol* class_name, Handl
     SystemDictionary_lock->notify_all();
   }
 
-  return HAS_PENDING_EXCEPTION ? nullptr : k;
+  if (HAS_PENDING_EXCEPTION) {
+    return nullptr;
+  }
+
+  JFR_ONLY(class_define_event.commit();)
+
+  return k;
 }
 
 // If a class loader supports parallel classloading handle parallel define requests.

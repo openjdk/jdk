@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,22 @@
 #ifndef SHARE_JFR_SUPPORT_JFRCLASSDEFINEEVENT_HPP
 #define SHARE_JFR_SUPPORT_JFRCLASSDEFINEEVENT_HPP
 
+#include "jfr/utilities/jfrTypes.hpp"
 #include "memory/allStatic.hpp"
 #include "utilities/macros.hpp"
 
 class ClassFileParser;
+class ClassFileStream;
 class InstanceKlass;
 class JavaThread;
+class Klass;
+class Symbol;
 
 class JfrClassDefineEvent : AllStatic {
  public:
   static void on_creation(const InstanceKlass* ik, const ClassFileParser& parser, JavaThread* jt);
-  CDS_ONLY(static void on_restoration(const InstanceKlass* ik, JavaThread* jt);)
+  static void send_event(const Klass* k, const Symbol* source);
+  CDS_ONLY(static void on_restoration(const InstanceKlass* ik, const ClassFileStream* cfs, JavaThread* jt);)
 };
 
 #endif // SHARE_JFR_SUPPORT_JFRCLASSDEFINEEVENT_HPP

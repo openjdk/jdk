@@ -859,7 +859,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   // (same order as class file parsing)
   loader_data->add_class(this);
 
-  JFR_ONLY(Jfr::on_restoration(this, THREAD);)
+  JFR_ONLY(if (!is_instance_klass()) Jfr::on_restoration(this, nullptr, THREAD);)
 
   Handle loader(THREAD, loader_data->class_loader());
   ModuleEntry* module_entry = nullptr;
