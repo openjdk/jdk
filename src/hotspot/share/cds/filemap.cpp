@@ -1131,7 +1131,7 @@ char* FileMapInfo::map_heap_region(FileMapRegion* r, char* addr, size_t bytes) {
                     bytes,
                     r->read_only(),
                     mtJavaHeap,
- 		    r->allow_exec());
+ 		                r->allow_exec());
 }
 
 // JVM/TI RedefineClasses() support:
