@@ -1,0 +1,489 @@
+/*
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+import java.lang.reflect.Field;
+
+import jdk.internal.misc.Unsafe;
+import jdk.internal.vm.annotation.NullRestricted;
+
+import jdk.test.lib.Asserts;
+
+public class <class_name> {
+
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+
+    public <value_class_name> v;
+    @NullRestricted
+    public <value_class_name> nrv;
+    public volatile <value_class_name> vv;
+    @NullRestricted
+    public volatile <value_class_name> nrvv;
+    public final <value_class_name> fv = <value_class_name>.getPredefinedValue(1);
+    @NullRestricted
+    public final <value_class_name>  nrfv;
+
+    public static <value_class_name> sv;
+    @NullRestricted
+    public static <value_class_name> nrsv = <value_class_name>.getPredefinedValue(1);
+    public static volatile <value_class_name> vsv;
+    @NullRestricted
+    public static volatile <value_class_name> nrvsv = <value_class_name>.getPredefinedValue(1);
+    public static final <value_class_name> fsv = <value_class_name>.getPredefinedValue(1);
+    @NullRestricted
+    public static final <value_class_name> nrfsv = <value_class_name>.getPredefinedValue(1);
+
+    public <class_name>() {
+        nrv = <value_class_name>.getPredefinedValue(1);
+        nrvv = <value_class_name>.getPredefinedValue(1);
+        nrfv =  <value_class_name>.getPredefinedValue(1);
+        super();
+    }
+
+    static public void runFieldsTests() throws Exception {
+        var c = new <class_name>();
+        c.testFields();
+
+        // Resetting fields for reflection tests
+        c = new <class_name>(); // simplest way to "reset" instance fields
+        sv = null;
+        nrsv = <value_class_name>.getPredefinedValue(1);
+        vsv = null;
+        nrvsv = <value_class_name>.getPredefinedValue(1);
+
+        c.testFieldsViaReflection();
+    }
+
+    void testFields() {
+        NullPointerException npe = null;
+
+        // Testing field v
+        Asserts.assertNull(v);
+        v = <value_class_name>.getPredefinedValue(2);
+        Asserts.assertEquals(v, <value_class_name>.getPredefinedValue(2));
+        try {
+            v = null;
+            Asserts.assertEquals(v, null);
+        } catch(NullPointerException n) {
+            npe = n;
+        }
+        Asserts.assertNull(npe);
+        v = <value_class_name>.getPredefinedValue(3);
+        Asserts.assertEquals(v, <value_class_name>.getPredefinedValue(3));
+
+        // Testing field nrv
+        npe = null;
+        Asserts.assertNotNull(nrv);
+        try {
+            nrv = <value_class_name>.getPredefinedValue(2);
+            Asserts.assertEquals(nrv, <value_class_name>.getPredefinedValue(2));
+        } catch(NullPointerException n) {
+            npe = n;
+        }
+        Asserts.assertNull(npe);
+        try {
+            nrv = null;
+            Asserts.assertFalse(true, "Should not reach here");
+        } catch(NullPointerException n) {
+            npe = n;
+        }
+        Asserts.assertNotNull(npe);
+
+        // Testing field vv
+        npe = null;
+        Asserts.assertNull(vv);
+        try {
+            vv = <value_class_name>.getPredefinedValue(2);
+            Asserts.assertEquals(vv, <value_class_name>.getPredefinedValue(2));
+        } catch(NullPointerException n) {
+            npe = n;
+        }
+        Asserts.assertNull(npe);
+        try {
+            vv = null;
+            Asserts.assertEquals(vv, null);
+        } catch(NullPointerException n) {
+            npe = n;
+        }
+        Asserts.assertNull(npe);
+        vv = <value_class_name>.getPredefinedValue(3);
+        Asserts.assertEquals(vv, <value_class_name>.getPredefinedValue(3));
+
+        // Testing field nrvv
+        npe = null;
+        Asserts.assertNotNull(nrvv);
+        try {
+            nrvv = <value_class_name>.getPredefinedValue(2);
+            Asserts.assertEquals(nrvv, <value_class_name>.getPredefinedValue(2));
+        } catch(NullPointerException n) {
+            npe = n;
+        }
+        Asserts.assertNull(npe);
+        try {
+            nrvv = null;
+            Asserts.assertFalse(true, "Should not reach here");
+        } catch(NullPointerException n) {
+            npe = n;
+        }
+        Asserts.assertNotNull(npe);
+
+        // Testing field fv
+        Asserts.assertEquals(fv,  <value_class_name>.getPredefinedValue(1));
+
+        // Testing field nrfv
+        Asserts.assertEquals(nrfv,  <value_class_name>.getPredefinedValue(1));
+
+        // Testing field sv
+        npe = null;
+        Asserts.assertNull(<class_name>.sv);
+        <class_name>.sv = <value_class_name>.getPredefinedValue(2);
+        Asserts.assertEquals(sv, <value_class_name>.getPredefinedValue(2));
+        try {
+            <class_name>.sv = null;
+            Asserts.assertEquals(<class_name>.sv, null);
+        } catch(NullPointerException n) {
+            npe = n;
+        }
+        Asserts.assertNull(npe);
+        <class_name>.sv = <value_class_name>.getPredefinedValue(3);
+        Asserts.assertEquals(sv, <value_class_name>.getPredefinedValue(3));
+
+        // Testing field nrsv
+        npe = null;
+        Asserts.assertNotNull(<class_name>.nrsv);
+        try {
+            <class_name>.nrsv = <value_class_name>.getPredefinedValue(2);
+            Asserts.assertEquals(<class_name>.nrsv, <value_class_name>.getPredefinedValue(2));
+        } catch(NullPointerException n) {
+            npe = n;
+        }
+        Asserts.assertNull(npe);
+        try {
+            <class_name>.nrsv = null;
+            Asserts.assertFalse(true, "Should not reach here");
+        } catch(NullPointerException n) {
+            npe = n;
+        }
+        Asserts.assertNotNull(npe);
+
+        // Testing field vsv
+        npe = null;
+        Asserts.assertNull(<class_name>.vsv);
+        try {
+            <class_name>.vsv = <value_class_name>.getPredefinedValue(2);
+            Asserts.assertEquals(<class_name>.vsv, <value_class_name>.getPredefinedValue(2));
+        } catch(NullPointerException n) {
+            npe = n;
+        }
+        Asserts.assertNull(npe);
+        try {
+            <class_name>.vsv = null;
+            Asserts.assertEquals(<class_name>.vsv, null);
+        } catch(NullPointerException n) {
+            npe = n;
+        }
+        Asserts.assertNull(npe);
+        <class_name>.vsv = <value_class_name>.getPredefinedValue(3);
+        Asserts.assertEquals(<class_name>.vsv, <value_class_name>.getPredefinedValue(3));
+
+        // Testing field nrvsv
+        npe = null;
+        Asserts.assertNotNull(<class_name>.nrvsv);
+        try {
+            <class_name>.nrvsv = <value_class_name>.getPredefinedValue(2);
+            Asserts.assertEquals(<class_name>.nrvsv, <value_class_name>.getPredefinedValue(2));
+        } catch(NullPointerException n) {
+            npe = n;
+        }
+        Asserts.assertNull(npe);
+        try {
+            <class_name>.nrvsv = null;
+            Asserts.assertFalse(true, "Should not reach here");
+        } catch(NullPointerException n) {
+            npe = n;
+        }
+        Asserts.assertNotNull(npe);
+
+        // Testing fsv
+        Asserts.assertEquals(<class_name>.fsv, <value_class_name>.getPredefinedValue(1));
+
+        // Testing nrfsv
+        Asserts.assertEquals(<class_name>.nrfsv, <value_class_name>.getPredefinedValue(1));
+    }
+
+    void testFieldsViaReflection() throws Exception {
+        Class<?> c = getClass();
+        NullPointerException npe = null;
+        Field field;
+        Object o;
+
+        // Testing field v
+        field = c.getDeclaredField("v");
+        o = field.get(this);
+        Asserts.assertNull(o);
+        field.set(this, <value_class_name>.getPredefinedValue(2));
+        o = field.get(this);
+        Asserts.assertEquals(o, <value_class_name>.getPredefinedValue(2));
+        try {
+            field.set(this, null);
+            o = field.get(this);
+            Asserts.assertEquals(o, null);
+        } catch(NullPointerException n) {
+            npe = n;
+        }
+        Asserts.assertNull(npe);
+        field.set(this, <value_class_name>.getPredefinedValue(3));
+        o = field.get(this);
+        Asserts.assertEquals(o, <value_class_name>.getPredefinedValue(3));
+
+        // Testing field nrv
+        npe = null;
+        field = c.getDeclaredField("nrv");
+        o = field.get(this);
+        Asserts.assertNotNull(o);
+        try {
+            field.set(this, <value_class_name>.getPredefinedValue(2));
+            o = field.get(this);
+            Asserts.assertEquals(o, <value_class_name>.getPredefinedValue(2));
+        } catch(NullPointerException n) {
+            npe = n;
+        }
+        Asserts.assertNull(npe);
+        try {
+            field.set(this, null);
+            Asserts.assertFalse(true, "Should not reach here");
+        } catch(NullPointerException n) {
+            npe = n;
+        }
+        Asserts.assertNotNull(npe);
+
+        // Testing field vv
+        npe = null;
+        field = c.getDeclaredField("vv");
+        Asserts.assertFalse(UNSAFE.isFlatField(field));
+        o = field.get(this);
+        Asserts.assertNull(o);
+        try {
+            field.set(this, <value_class_name>.getPredefinedValue(2));
+            o = field.get(this);
+            Asserts.assertEquals(o, <value_class_name>.getPredefinedValue(2));
+        } catch(NullPointerException n) {
+            npe = n;
+        }
+        Asserts.assertNull(npe);
+        try {
+            field.set(this, null);
+            o = field.get(this);
+            Asserts.assertEquals(o, null);
+        } catch(NullPointerException n) {
+            npe = n;
+        }
+        Asserts.assertNull(npe);
+        field.set(this, <value_class_name>.getPredefinedValue(3));
+        o = field.get(this);
+        Asserts.assertEquals(o, <value_class_name>.getPredefinedValue(3));
+
+        // Testing field nrvv
+        field = c.getDeclaredField("nrvv");
+        Asserts.assertFalse(UNSAFE.isFlatField(field));
+        npe = null;
+        o = field.get(this);
+        Asserts.assertNotNull(o);
+        try {
+            field.set(this, <value_class_name>.getPredefinedValue(2));
+            o = field.get(this);
+            Asserts.assertEquals(o, <value_class_name>.getPredefinedValue(2));
+        } catch(NullPointerException n) {
+            npe = n;
+        }
+        Asserts.assertNull(npe);
+        try {
+            field.set(this, null);
+            Asserts.assertFalse(true, "Should not reach here");
+        } catch(NullPointerException n) {
+            npe = n;
+        }
+        Asserts.assertNotNull(npe);
+
+        // Testing field fv
+        IllegalAccessException iae = null;
+        field = c.getDeclaredField("fv");
+        o = field.get(this);
+        Asserts.assertEquals(o, <value_class_name>.getPredefinedValue(1));
+        try {
+            field.set(this, <value_class_name>.getPredefinedValue(2));
+            Asserts.assertFalse(true, "Should not reach here");
+        } catch(IllegalAccessException e) {
+            iae = e;
+        }
+        Asserts.assertNotNull(iae);
+        iae = null;
+        try {
+            field.set(this, null);
+            Asserts.assertFalse(true, "Should not reach here");
+        } catch(IllegalAccessException e) {
+            iae = e;
+        }
+        Asserts.assertNotNull(iae);
+
+        // Testing field nrfv
+        iae = null;
+        field = c.getDeclaredField("nrfv");
+        o = field.get(this);
+        Asserts.assertEquals(o, <value_class_name>.getPredefinedValue(1));
+        try {
+            field.set(this, <value_class_name>.getPredefinedValue(2));
+            Asserts.assertFalse(true, "Should not reach here");
+        } catch(IllegalAccessException e) {
+            iae = e;
+        }
+        Asserts.assertNotNull(iae);
+        iae = null;
+        // Test below assumes IAE would be thrown in preference to NPE
+        try {
+            field.set(this, null);
+            Asserts.assertFalse(true, "Should not reach here");
+        } catch(IllegalAccessException e) {
+            iae = e;
+        }
+        Asserts.assertNotNull(iae);
+
+        // Testing field sv
+        field = c.getDeclaredField("sv");
+        Asserts.assertFalse(UNSAFE.isFlatField(field));
+        npe = null;
+        o = field.get(null);
+        Asserts.assertNull(o);
+        field.set(null, <value_class_name>.getPredefinedValue(2));
+        o = field.get(null);
+        Asserts.assertEquals(o, <value_class_name>.getPredefinedValue(2));
+        try {
+            field.set(null, null);
+            o = field.get(null);
+            Asserts.assertEquals(o, null);
+        } catch(NullPointerException n) {
+            npe = n;
+        }
+        Asserts.assertNull(npe);
+        field.set(null, <value_class_name>.getPredefinedValue(3));
+        o = field.get(null);
+        Asserts.assertEquals(o, <value_class_name>.getPredefinedValue(3));
+
+        // Testing field nrsv
+        field = c.getDeclaredField("nrsv");
+        Asserts.assertFalse(UNSAFE.isFlatField(field));
+        npe = null;
+        o = field.get(null);
+        Asserts.assertNotNull(o);
+        try {
+          field.set(null, <value_class_name>.getPredefinedValue(2));
+          o = field.get(null);
+            Asserts.assertEquals(o, <value_class_name>.getPredefinedValue(2));
+        } catch(NullPointerException n) {
+            npe = n;
+        }
+        Asserts.assertNull(npe);
+        try {
+            field.set(null, null);
+            Asserts.assertFalse(true, "Should not reach here");
+        } catch(NullPointerException n) {
+            npe = n;
+        }
+        Asserts.assertNotNull(npe);
+
+        // Testing field vsv
+        field = c.getDeclaredField("vsv");
+        Asserts.assertFalse(UNSAFE.isFlatField(field));
+        npe = null;
+        o = field.get(null);
+        Asserts.assertNull(o);
+        try {
+            field.set(null, <value_class_name>.getPredefinedValue(2));
+            o = field.get(null);
+            Asserts.assertEquals(o, <value_class_name>.getPredefinedValue(2));
+        } catch(NullPointerException n) {
+            npe = n;
+        }
+        Asserts.assertNull(npe);
+        try {
+            field.set(null, null);
+            o = field.get(null);
+            Asserts.assertEquals(o, null);
+        } catch(NullPointerException n) {
+            npe = n;
+        }
+        Asserts.assertNull(npe);
+        field.set(null, <value_class_name>.getPredefinedValue(3));
+        o = field.get(null);
+        Asserts.assertEquals(o, <value_class_name>.getPredefinedValue(3));
+
+        // Testing field nrvsv
+        field = c.getDeclaredField("nrvsv");
+        Asserts.assertFalse(UNSAFE.isFlatField(field));
+        npe = null;
+        o = field.get(null);
+        Asserts.assertNotNull(o);
+        try {
+            field.set(null, <value_class_name>.getPredefinedValue(2));
+            o = field.get(null);
+            Asserts.assertEquals(o, <value_class_name>.getPredefinedValue(2));
+        } catch(NullPointerException n) {
+            npe = n;
+        }
+        Asserts.assertNull(npe);
+        try {
+            field.set(null, null);
+            Asserts.assertFalse(true, "Should not reach here");
+        } catch(NullPointerException n) {
+            npe = n;
+        }
+        Asserts.assertNotNull(npe);
+
+        // Testing fsv
+        field = c.getDeclaredField("fsv");
+        Asserts.assertFalse(UNSAFE.isFlatField(field));
+        o = field.get(null);
+        Asserts.assertEquals(o, <value_class_name>.getPredefinedValue(1));
+        iae = null;
+        try {
+            field.set(this, <value_class_name>.getPredefinedValue(2));
+            Asserts.assertFalse(true, "Should not reach here");
+        } catch(IllegalAccessException e) {
+            iae = e;
+        }
+        Asserts.assertNotNull(iae);
+
+        // Testing nrfsv
+        field = c.getDeclaredField("nrfsv");
+        Asserts.assertFalse(UNSAFE.isFlatField(field));
+        o = field.get(null);
+        Asserts.assertEquals(o, <value_class_name>.getPredefinedValue(1));
+        iae = null;
+        try {
+            field.set(this, <value_class_name>.getPredefinedValue(2));
+            Asserts.assertFalse(true, "Should not reach here");
+        } catch(IllegalAccessException e) {
+            iae = e;
+        }
+        Asserts.assertNotNull(iae);
+    }
+}

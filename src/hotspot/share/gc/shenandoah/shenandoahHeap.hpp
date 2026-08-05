@@ -493,8 +493,8 @@ private:
   // Retires LABs used for evacuation
   void concurrent_prepare_for_update_refs();
 
-  // Turn off weak roots flag, purge old satb buffers in generational mode
-  void concurrent_final_roots(HandshakeClosure* handshake_closure = nullptr);
+  // Turn off weak roots flag
+  void concurrent_final_roots();
 
   virtual void update_heap_references(ShenandoahGeneration* generation, bool concurrent);
   // Final update region states
@@ -868,6 +868,19 @@ private:
 
   void try_inject_alloc_failure();
   bool should_inject_alloc_failure();
+
+  // Randomly pin a region when ShenandoahPinRegionRate > 0. Pin injection is only called after
+  // the cycle has populated _live_data and runs concurrently on the control thread. Releasing
+  // injected pins is done at the start of every cycle preventing stale pinned region states.
+  void try_inject_pin();
+  void release_injected_pins();
+
+  // Maximum number of regions that can be injected with pins.
+  static const uint MAX_INJECTED_PINS = 32;
+
+  // Tracker for injected pins added by try_inject_pin().
+  size_t _injected_pin_indices[MAX_INJECTED_PINS];
+  uint   _injected_pin_count;
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHHEAP_HPP

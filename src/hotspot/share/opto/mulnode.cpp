@@ -26,6 +26,8 @@
 #include "opto/addnode.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
+#include "opto/machnode.hpp"
+#include "opto/matcher.hpp"
 #include "opto/memnode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/phaseX.hpp"
@@ -606,6 +608,36 @@ const Type* UMulHiLNode::Value(PhaseGVN* phase) const {
   return MulHiValue(t1, t2, bot);
 }
 
+MulHiLoLNode* MulHiLoLNode::make(Node* mul_hi) {
+  assert(mul_hi->Opcode() == Op_MulHiL, "expected MulHiL");
+
+  MulHiLoLNode* mul_hi_lo = new MulHiLoLNode(mul_hi->in(0), mul_hi->in(1), mul_hi->in(2));
+  [[maybe_unused]] Node* lo_proj = new ProjNode(mul_hi_lo, MulHiLoLNode::first_proj_num);
+  [[maybe_unused]] Node* hi_proj = new ProjNode(mul_hi_lo, MulHiLoLNode::second_proj_num);
+  return mul_hi_lo;
+}
+
+UMulHiLoLNode* UMulHiLoLNode::make(Node* umul_hi) {
+  assert(umul_hi->Opcode() == Op_UMulHiL, "expected UMulHiL");
+
+  UMulHiLoLNode* umul_hi_lo = new UMulHiLoLNode(umul_hi->in(0), umul_hi->in(1), umul_hi->in(2));
+  [[maybe_unused]] Node* lo_proj = new ProjNode(umul_hi_lo, MulHiLoLNode::first_proj_num);
+  [[maybe_unused]] Node* hi_proj = new ProjNode(umul_hi_lo, MulHiLoLNode::second_proj_num);
+  return umul_hi_lo;
+}
+
+Node* MulHiLoLNode::match(const ProjNode* proj, const Matcher* match) {
+  uint ideal_reg = proj->ideal_reg();
+  RegMask rm;
+  if (proj->_con == first_proj_num) {
+    rm.assignFrom(match->firstL_proj_mask());
+  } else {
+    assert(proj->_con == second_proj_num, "must be lo or hi projection");
+    rm.assignFrom(match->secondL_proj_mask());
+  }
+  return new MachProjNode(this, proj->_con, rm, ideal_reg);
+}
+
 // A common routine used by UMulHiLNode and MulHiLNode
 const Type* MulHiValue(const Type *t1, const Type *t2, const Type *bot) {
   // Either input is TOP ==> the result is TOP
@@ -831,6 +863,47 @@ Node *AndLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           // Use zero-fill shift instead
           Node *zshift = phase->transform(new URShiftLNode(in1->in(1), in1->in(2)));
           return new AndLNode(zshift, in(2));
+        }
+      }
+    }
+  }
+
+  // Search for GraphKit::mark_word_test patterns and fold the test if the result is statically known
+  Node* load1 = in(1);
+  Node* load2 = nullptr;
+  if (load1->is_Phi() && phase->type(load1)->isa_long()) {
+    load1 = in(1)->in(1);
+    load2 = in(1)->in(2);
+  }
+  if (load1 != nullptr && load1->is_Load() && phase->type(load1)->isa_long() &&
+      (load2 == nullptr || (load2->is_Load() && phase->type(load2)->isa_long()))) {
+    const TypePtr* adr_t1 = phase->type(load1->in(MemNode::Address))->isa_ptr();
+    const TypePtr* adr_t2 = (load2 != nullptr) ? phase->type(load2->in(MemNode::Address))->isa_ptr() : nullptr;
+    if (adr_t1 != nullptr && adr_t1->offset() == oopDesc::mark_offset_in_bytes() &&
+        (load2 == nullptr || (adr_t2 != nullptr && adr_t2->offset() == in_bytes(Klass::prototype_header_offset())))) {
+      if (mask == markWord::inline_type_pattern) {
+        if (adr_t1->is_inlinetypeptr()) {
+          set_req_X(1, in(2), phase);
+          return this;
+        } else if (!adr_t1->can_be_inline_type()) {
+          set_req_X(1, phase->longcon(0), phase);
+          return this;
+        }
+      } else if (mask == markWord::null_free_array_bit_in_place) {
+        if (adr_t1->is_null_free()) {
+          set_req_X(1, in(2), phase);
+          return this;
+        } else if (adr_t1->is_not_null_free()) {
+          set_req_X(1, phase->longcon(0), phase);
+          return this;
+        }
+      } else if (mask == markWord::flat_array_bit_in_place) {
+        if (adr_t1->is_flat()) {
+          set_req_X(1, in(2), phase);
+          return this;
+        } else if (adr_t1->is_not_flat()) {
+          set_req_X(1, phase->longcon(0), phase);
+          return this;
         }
       }
     }

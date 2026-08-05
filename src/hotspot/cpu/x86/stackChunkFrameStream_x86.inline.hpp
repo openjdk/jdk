@@ -34,8 +34,30 @@ template <ChunkFrames frame_kind>
 inline bool StackChunkFrameStream<frame_kind>::is_in_frame(void* p0) const {
   assert(!is_done(), "");
   intptr_t* p = (intptr_t*)p0;
-  int argsize = is_compiled() ? (_cb->as_nmethod()->num_stack_arg_slots() * VMRegImpl::stack_slot_size) >> LogBytesPerWord : 0;
-  int frame_size = _cb->frame_size() + argsize;
+  int frame_size = _cb->frame_size();
+  if (is_compiled()) {
+    nmethod* nm = _cb->as_nmethod_or_null();
+    if (nm->needs_stack_repair() && nm->is_compiled_by_c2()) {
+      frame f = to_frame();
+      bool augmented = f.was_augmented_on_entry(frame_size);
+      if (!augmented) {
+        // Fix: C2 caller, so frame was not extended and thus the
+        // size read from the frame does not include the arguments.
+        // Ideally we have to count the arg size for the scalarized
+        // convention. For now we include the size of the caller frame
+        // which would at least be equal to that.
+        RegisterMap map(nullptr,
+                        RegisterMap::UpdateMap::skip,
+                        RegisterMap::ProcessFrames::skip,
+                        RegisterMap::WalkContinuation::skip);
+        frame caller = to_frame().sender(&map);
+        assert(caller.is_compiled_frame() && caller.cb()->as_nmethod()->is_compiled_by_c2(), "needs stack repair but was not extended with c1/interpreter caller");
+        frame_size += (caller.real_fp() - caller.sp());
+      }
+    } else {
+      frame_size += _cb->as_nmethod()->num_stack_arg_slots() * VMRegImpl::stack_slot_size >> LogBytesPerWord;
+    }
+  }
   return p == sp() - frame::sender_sp_offset || ((p - unextended_sp()) >= 0 && (p - unextended_sp()) < frame_size);
 }
 #endif
