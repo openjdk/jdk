@@ -2108,13 +2108,13 @@ void Parse::do_acmp(BoolTest::mask btest, Node* left, Node* right) {
   // Leverage profiling at acmp
   if (UseACmpProfile) {
     method()->acmp_profiled_type(bci(), left_type, right_type, left_ptr, right_ptr, left_inline_type, right_inline_type);
-    if (too_many_traps_or_recompiles(Deoptimization::Reason_class_check)) {
+    if (too_many_traps_or_recompiles(Deoptimization::Reason_class_check) || too_many_traps_or_recompiles(Deoptimization::Reason_speculate_class_check)) {
       left_type = nullptr;
       right_type = nullptr;
       left_inline_type = true;
       right_inline_type = true;
     }
-    if (too_many_traps_or_recompiles(Deoptimization::Reason_null_check)) {
+    if (too_many_traps_or_recompiles(Deoptimization::Reason_null_check) || too_many_traps_or_recompiles(Deoptimization::Reason_null_assert)) {
       left_ptr = ProfileUnknownNull;
       right_ptr = ProfileUnknownNull;
     }
