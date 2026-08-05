@@ -1316,7 +1316,10 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode* alloc, Unique_Node_List&
   bool allow_oop = (res_type != nullptr) && !res_type->is_flat();
   for (uint i = 0; i < value_worklist.size(); ++i) {
     InlineTypeNode* vt = value_worklist.at(i)->as_InlineType();
-    vt->make_scalar_in_safepoints(&_igvn, allow_oop);
+    if (!vt->make_scalar_in_safepoints(&_igvn, allow_oop)) {
+      C->record_failure("out of nodes during scalarization");
+      return false;
+    }
   }
   return true;
 }
@@ -3293,6 +3296,9 @@ void PhaseMacroExpand::eliminate_macro_nodes(bool eliminate_locks) {
                n->Opcode() == Op_MinL      ||
                BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier_node(n),
                "unknown node type in macro list");
+      }
+      if (C->failing()) {
+        return;
       }
       assert(success == (C->macro_count() < old_macro_count), "elimination reduces macro count");
       progress = progress || success;

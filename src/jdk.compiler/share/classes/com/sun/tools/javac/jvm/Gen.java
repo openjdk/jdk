@@ -493,7 +493,6 @@ public class Gen extends JCTree.Visitor {
         for (JCTree t : methodDefs) {
             normalizeMethod((JCMethodDecl)t, initCode.toList(), initBlocks.toList(), initTAlist);
         }
-        localProxyVarsGen.allFieldNormalized(classDecl.sym);
         // If there are class initializers, create a <clinit> method
         // that contains them as its body.
         if (clinitCode.length() != 0) {
@@ -569,8 +568,6 @@ public class Gen extends JCTree.Visitor {
                 }
                 md.sym.appendUniqueTypeAttributes(initTAs);
             }
-
-            localProxyVarsGen.patchConstructor(md, make);
 
             if (md.body.bracePos == Position.NOPOS)
                 md.body.bracePos = TreeInfo.endPos(md.body.stats.last());
@@ -981,6 +978,7 @@ public class Gen extends JCTree.Visitor {
             int extras = 0;
             // Count up extra parameters
             if (meth.isConstructor()) {
+                localProxyVarsGen.patchConstructor(tree, make);
                 extras++;
                 if (meth.enclClass().isInner() &&
                     !meth.enclClass().isStatic()) {
@@ -1051,6 +1049,9 @@ public class Gen extends JCTree.Visitor {
 
                 // Fill in type annotation positions for exception parameters
                 code.fillExceptionParameterPositions();
+            }
+            if (meth.isConstructor()) {
+                localProxyVarsGen.unpatchConstructor(tree, make);
             }
         }
 
@@ -2567,6 +2568,7 @@ public class Gen extends JCTree.Visitor {
                 }
             }
             cdef.defs = List.nil(); // discard trees
+            localProxyVarsGen.classGenerated(c);
             return nerrs == 0;
         } finally {
             // note: this method does NOT support recursion.

@@ -26,18 +26,17 @@
 package com.sun.tools.javac.comp;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
 import com.sun.tools.javac.code.Symbol;
+import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Types;
-import com.sun.tools.javac.tree.JCTree.JCAssign;
 import com.sun.tools.javac.tree.JCTree.JCExpression;
 import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
@@ -91,6 +90,7 @@ public class LocalProxyVarsGen {
     private final Target target;
     private TreeMaker make;
     private final Map<Symbol, Set<Symbol>> fieldsReadInPrologue = new HashMap<>();
+    private final Map<JCMethodDecl, Map<JCTree, JCTree>> rollback = new HashMap<>();
 
     private final boolean noLocalProxyVars;
 
@@ -136,7 +136,7 @@ public class LocalProxyVarsGen {
         }
     }
 
-    public void allFieldNormalized(Symbol.ClassSymbol csym) {
+    public void classGenerated(ClassSymbol csym) {
         fieldsReadInPrologue.remove(csym);
     }
 
@@ -164,6 +164,7 @@ public class LocalProxyVarsGen {
         for (JCStatement st : constructor.body.stats) {
             newBody = newBody.append(fieldRewriter.translate(st));
         }
+        rollback.put(constructor, fieldRewriter.rollback);
         localDeclarations.addAll(newBody);
         ListBuffer<JCStatement> assigmentsBeforeSuper = new ListBuffer<>();
         for (Symbol vsym : fieldToLocalMap.keySet()) {
@@ -207,7 +208,27 @@ public class LocalProxyVarsGen {
         return names.fromString("local" + target.syntheticNameChar() + name);
     }
 
+    public void unpatchConstructor(JCMethodDecl tree, TreeMaker make) {
+        Map<JCTree, JCTree> thisMethodRollback = rollback.remove(tree);
+
+        if (thisMethodRollback == null) {
+            return ;
+        }
+
+        new TreeTranslator() {
+            @Override
+            @SuppressWarnings("unchecked")
+            public <T extends JCTree> T translate(T tree) {
+                if (tree != null && thisMethodRollback.containsKey(tree)) {
+                    return (T) thisMethodRollback.get(tree);
+                }
+                return super.translate(tree);
+            }
+        }.translate(tree.body);
+    }
+
     class FieldRewriter extends TreeTranslator {
+        Map<JCTree, JCTree> rollback = new HashMap<>();
         JCMethodDecl md;
         Map<Symbol, Symbol> fieldToLocalMap;
         boolean ctorPrologue = true;
@@ -221,6 +242,7 @@ public class LocalProxyVarsGen {
         public void visitIdent(JCTree.JCIdent tree) {
             if (ctorPrologue && fieldToLocalMap.get(tree.sym) != null) {
                 result = make.at(md).Ident(fieldToLocalMap.get(tree.sym));
+                rollback.put(result, tree);
             } else {
                 result = tree;
             }
@@ -231,6 +253,7 @@ public class LocalProxyVarsGen {
             super.visitSelect(tree);
             if (ctorPrologue && fieldToLocalMap.get(tree.sym) != null) {
                 result = make.at(md).Ident(fieldToLocalMap.get(tree.sym));
+                rollback.put(result, tree);
             } else {
                 result = tree;
             }
