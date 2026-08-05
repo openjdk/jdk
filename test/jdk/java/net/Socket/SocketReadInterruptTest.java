@@ -158,9 +158,10 @@ public class SocketReadInterruptTest {
         }
 
         /**
-         * Returns the id of thread which is executing the {@link #call()} method
+         * Returns the id of thread which is executing the {@link #call()} method.
+         * Must only be called after {@link #ready} has completed normally.
          */
-        long getThreadId() {
+        private long getThreadId() {
             if (!ready.isDone()) {
                 throw new IllegalStateException("Client thread is not yet ready");
             }
