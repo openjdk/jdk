@@ -32,7 +32,6 @@
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
-#include "gc/g1/g1EdenRegions.hpp"
 #include "gc/g1/g1EvacStats.hpp"
 #include "gc/g1/g1HeapRegionAttr.hpp"
 #include "gc/g1/g1HeapRegionManager.hpp"
@@ -43,8 +42,8 @@
 #include "gc/g1/g1MonotonicArenaFreeMemoryTask.hpp"
 #include "gc/g1/g1MonotonicArenaFreePool.hpp"
 #include "gc/g1/g1NUMA.hpp"
-#include "gc/g1/g1SurvivorRegions.hpp"
 #include "gc/g1/g1YoungGCAllocationFailureInjector.hpp"
+#include "gc/g1/g1YoungRegions.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
@@ -622,6 +621,11 @@ public:
   void gc_prologue(bool full);
   void gc_epilogue(bool full);
 
+  // Can concurrent mark process this object immediately, i.e. mark as live without the need
+  // of pushing it on the mark stack (to process references)?
+  // Used to keep objects that are potentially eagerly reclaimed out of the mark stack.
+  // Its klass may still need to be handled.
+  inline bool can_be_marked_through_immediately(oop obj) const;
   // Does the given region fulfill remembered set based eager reclaim candidate requirements?
   bool is_potential_eager_reclaim_candidate(G1HeapRegion* r) const;
 

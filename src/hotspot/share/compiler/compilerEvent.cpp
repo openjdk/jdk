@@ -56,26 +56,26 @@ class PhaseTypeGuard : public StackObj {
 Semaphore PhaseTypeGuard::_mutex_semaphore(1);
 
 // Table for mapping compiler phases names to int identifiers.
-static GrowableArray<const char*>* phase_names = nullptr;
+static GrowableArray<const char*>* _phase_names = nullptr;
 
 class CompilerPhaseTypeConstant : public JfrSerializer {
  public:
   void serialize(JfrCheckpointWriter& writer) {
     PhaseTypeGuard guard;
-    assert(phase_names != nullptr, "invariant");
-    assert(phase_names->is_nonempty(), "invariant");
-    const u4 nof_entries = phase_names->length();
+    assert(_phase_names != nullptr, "invariant");
+    assert(_phase_names->is_nonempty(), "invariant");
+    const u4 nof_entries = _phase_names->length();
     writer.write_count(nof_entries);
     for (u4 i = 0; i < nof_entries; i++) {
       writer.write_key(i);
-      writer.write(phase_names->at(i));
+      writer.write(_phase_names->at(i));
     }
   }
 };
 
 static int lookup_phase(const char* phase_name) {
-  for (int i = 0; i < phase_names->length(); i++) {
-    const char* name = phase_names->at(i);
+  for (int i = 0; i < _phase_names->length(); i++) {
+    const char* name = _phase_names->at(i);
     if (strcmp(name, phase_name) == 0) {
       return i;
     }
@@ -88,8 +88,8 @@ int CompilerEvent::PhaseEvent::get_phase_id(const char* phase_name, bool may_exi
   bool register_jfr_serializer = false;
   {
     PhaseTypeGuard guard(sync);
-    if (phase_names == nullptr) {
-      phase_names = new (mtInternal) GrowableArray<const char*>(100, mtCompiler);
+    if (_phase_names == nullptr) {
+      _phase_names = new (mtInternal) GrowableArray<const char*>(100, mtCompiler);
       register_jfr_serializer = true;
     } else if (may_exist) {
       index = lookup_phase(phase_name);
@@ -100,8 +100,8 @@ int CompilerEvent::PhaseEvent::get_phase_id(const char* phase_name, bool may_exi
       assert((index = lookup_phase(phase_name)) == -1, "phase name \"%s\" already registered: %d", phase_name, index);
     }
 
-    index = phase_names->length();
-    phase_names->append(use_strdup ? os::strdup(phase_name) : phase_name);
+    index = _phase_names->length();
+    _phase_names->append(use_strdup ? os::strdup(phase_name) : phase_name);
   }
   if (register_jfr_serializer) {
     JfrSerializer::register_serializer(TYPE_COMPILERPHASETYPE, false, new CompilerPhaseTypeConstant());
