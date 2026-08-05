@@ -607,13 +607,24 @@ void RegisterSaver::restore_result_registers(MacroAssembler* masm, bool save_vec
   }
   assert(offset == live_reg_frame_size(all_registers, save_vectors) - (save_vectors ? vreg_save_size : 0) , "consistency check");
 }
-// Push a new frame and save argument registers.
-void RegisterSaver::push_frame_and_save_argument_registers(MacroAssembler* masm, Register r_temp,
-                                                           int frame_size, int total_args, const VMRegPair *regs,
-                                                           const VMRegPair *regs2) {
-  __ save_return_pc();
-  __ push_frame(frame_size, r_temp);
-  int st_off = frame_size - wordSize;
+
+static void flush_gpr_run(MacroAssembler* masm, bool save,
+                          Register first, Register last, int low_off) {
+  assert(first != noreg && last != noreg, "must have a run");
+  if (first == last) {
+    save ? __ z_stg(first, low_off, Z_SP)
+         : __ z_lg( first, low_off, Z_SP);
+  } else {
+    save ? __ z_stmg(first, last, low_off, Z_SP)
+         : __ z_lmg( first, last, low_off, Z_SP);
+  }
+}
+
+static void save_or_restore_arg_regs(MacroAssembler* masm, bool save,
+                                     int total_args, const VMRegPair* regs,
+                                     int st_off) {
+  Register first = noreg, last = noreg;
+
   for (int i = 0; i < total_args; i++) {
     VMReg r_1 = regs[i].first();
     VMReg r_2 = regs[i].second();
@@ -623,72 +634,59 @@ void RegisterSaver::push_frame_and_save_argument_registers(MacroAssembler* masm,
     }
     if (r_1->is_Register()) {
       Register r = r_1->as_Register();
-      __ z_stg(r, st_off, Z_SP);
+      // Extend the run while r is the immediate successor of last.
+      // Check from the incoming side to avoid the modular wrap-around
+      // of successor() at R15->R0 (matching save_live_registers).
+      if (last == noreg || last != r->predecessor()) {
+        // Flush the previous run and start a new one.
+        // st_off was decremented past the last register of the previous run,
+        // so its lowest slot is at st_off + wordSize.
+        if (first != noreg) {
+          flush_gpr_run(masm, save, first, last, st_off + wordSize);
+        }
+        first = r;
+      }
+      last    = r;
       st_off -= wordSize;
     } else if (r_1->is_FloatRegister()) {
+      // A float register breaks the current GPR run.
+      if (first != noreg) {
+        flush_gpr_run(masm, save, first, last, st_off + wordSize);
+        first = noreg;
+        last  = noreg;
+      }
       FloatRegister f = r_1->as_FloatRegister();
-      __ z_std(f, st_off, Z_SP);
+      save ? __ z_std(f, st_off, Z_SP)
+           : __ z_ld( f, st_off, Z_SP);
       st_off -= wordSize;
     }
   }
-  if (regs2 != nullptr) {
-    for (int i = 0; i < total_args; i++) {
-      VMReg r_1 = regs2[i].first();
-      VMReg r_2 = regs2[i].second();
-      if (!r_1->is_valid()) {
-        assert(!r_2->is_valid(), "");
-        continue;
-      }
-      if (r_1->is_Register()) {
-        Register r = r_1->as_Register();
-        __ z_stg(r, st_off, Z_SP);
-        st_off -= wordSize;
-      } else if (r_1->is_FloatRegister()) {
-        FloatRegister f = r_1->as_FloatRegister();
-        __ z_std(f, st_off, Z_SP);
-        st_off -= wordSize;
-      }
-    }
+
+  // Flush any trailing GPR run.
+  if (first != noreg) {
+    flush_gpr_run(masm, save, first, last, st_off + wordSize);
   }
+}
+
+// Push a new frame and save argument registers.
+void RegisterSaver::push_frame_and_save_argument_registers(MacroAssembler* masm, Register r_temp,
+                                                           int frame_size, int total_args,
+                                                           const VMRegPair* regs) {
+  __ save_return_pc();
+  __ push_frame(frame_size, r_temp);
+  int st_off = frame_size - wordSize;
+  save_or_restore_arg_regs(masm, true, total_args, regs, st_off);
 }
 
 // Restore argument registers and pop frame.
 void RegisterSaver::restore_argument_registers_and_pop_frame(MacroAssembler* masm, int frame_size,
-                                                             int total_args, const VMRegPair *regs,
-                                                             const VMRegPair *regs2) {
+                                                             int total_args,
+                                                             const VMRegPair* regs) {
   int st_off = frame_size - wordSize;
-  for (int i = 0; i < total_args; i++) {
-    VMReg r_1 = regs[i].first();
-    VMReg r_2 = regs[i].second();
-    if (r_1->is_Register()) {
-      Register r = r_1->as_Register();
-      __ z_lg(r, st_off, Z_SP);
-      st_off -= wordSize;
-    } else if (r_1->is_FloatRegister()) {
-      FloatRegister f = r_1->as_FloatRegister();
-      __ z_ld(f, st_off, Z_SP);
-      st_off -= wordSize;
-    }
-  }
-  if (regs2 != nullptr) {
-    for (int i = 0; i < total_args; i++) {
-      VMReg r_1 = regs2[i].first();
-      VMReg r_2 = regs2[i].second();
-      if (r_1->is_Register()) {
-        Register r = r_1->as_Register();
-        __ z_lg(r, st_off, Z_SP);
-        st_off -= wordSize;
-      } else if (r_1->is_FloatRegister()) {
-        FloatRegister f = r_1->as_FloatRegister();
-        __ z_ld(f, st_off, Z_SP);
-        st_off -= wordSize;
-      }
-    }
-  }
+  save_or_restore_arg_regs(masm, false, total_args, regs, st_off);
   __ pop_frame();
   __ restore_return_pc();
 }
-
 
 // ---------------------------------------------------------------------------
 void SharedRuntime::save_native_result(MacroAssembler * masm,
@@ -996,23 +994,19 @@ int SharedRuntime::vector_calling_convention(VMRegPair *regs,
 // Patch the callers callsite with entry to compiled code if it exists.
 static void patch_callers_callsite(MacroAssembler *masm, int adapter_size, int total_args_passed, const VMRegPair *regs) {
   Label L;
-  __ z_ltg(Z_R0_scratch, Address(Z_method, Method::code_offset()));
+  const Register tmp = Z_R0_scratch;
+
+  __ z_ltg(tmp, Address(Z_method, Method::code_offset()));
   __ z_bre(L);
 
   // Patch caller's callsite, method_(code) was not null which means that
   // compiled code exists.
-  const Register return_pc = Z_R1_scratch;
-  const Register tmp       = Z_R0_scratch;
 
-  __ z_lgr(return_pc, Z_R14);
-  __ z_stg(return_pc, _z_abi(return_pc), Z_SP);
   RegisterSaver::push_frame_and_save_argument_registers(masm, tmp, adapter_size, total_args_passed, regs);
 
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::fixup_callers_callsite), Z_method, return_pc);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::fixup_callers_callsite), Z_method, Z_R14);
 
   RegisterSaver::restore_argument_registers_and_pop_frame(masm, adapter_size, total_args_passed, regs);
-  __ z_lg(return_pc, _z_abi(return_pc), Z_SP);
-  __ z_lgr(Z_R14, return_pc);
 
   __ bind(L);
 }
