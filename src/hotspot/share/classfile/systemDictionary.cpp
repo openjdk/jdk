@@ -820,7 +820,7 @@ void SystemDictionary::post_class_load_event(EventClassLoad* event, const Instan
 
 static void post_events(EventClassLoad* event, const InstanceKlass* k, const ClassLoaderData* init_cld, const JavaThread* jt) {
   {
-    // A class must be defined before it is loaded.
+    // The class is defined before loading is complete.
     JfrDefineClassEvent event(k, jt, true);
   }
   if (event->should_commit()) {
