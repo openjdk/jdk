@@ -467,19 +467,20 @@ public class TestHashcodeFastPath {
             "h_short_with_int_hidden_type2",
             "h_with_oop2",
     })
-    public void run2(RunInfo info) {
-        for (int i = 0; i < 1 << Byte.SIZE; ++i) {
+    public void run2() {
+        for (int i = Byte.MIN_VALUE; i<= Byte.MAX_VALUE; ++i) {
             Asserts.assertEQ(h_byte(new Byte((byte)i)), h(new Byte((byte)i)), "i = " + i);
-            Asserts.assertEQ(h_byte(new Byte((byte)-i)), h(new Byte((byte)-i)), "i = " + i);
         }
+        // -1000 and 1000 are here to have a "normal" range, but outside what Short,
+        // Integer or Long will cache, that is without cached hash in the header.
         int HALF_WIDTH = 256;
-        for (short base : new short[]{0, Short.MIN_VALUE, Short.MAX_VALUE}) {
+        for (short base : new short[]{0, -1000, 1000, Short.MIN_VALUE, Short.MAX_VALUE}) {
             for (short k = 0; k < 2 * HALF_WIDTH + 1; ++k) {
                 short s = (short) (k + base - HALF_WIDTH);
                 Asserts.assertEQ(h_short(new Short(s)), h(new Short(s)), "s = " + s);
             }
         }
-        for (int base : new int[]{0, Short.MIN_VALUE, Short.MAX_VALUE, Integer.MIN_VALUE, Integer.MAX_VALUE}) {
+        for (int base : new int[]{0, -1000, 1000, Short.MIN_VALUE, Short.MAX_VALUE, Integer.MIN_VALUE, Integer.MAX_VALUE}) {
             for (int k = 0; k < 2 * HALF_WIDTH + 1; ++k) {
                 int i = k + base - HALF_WIDTH;
                 Asserts.assertEQ(h_int(new Integer(i)), h(new Integer(i)), "i = " + i);
@@ -487,7 +488,7 @@ public class TestHashcodeFastPath {
                 Asserts.assertEQ(h_short_with_int_hidden_type2(new ShortWithInt(i, i)), h(new ShortWithInt(i, i)), "i = " + i);
             }
         }
-        for (long base : new long[]{0, Long.MIN_VALUE, Long.MAX_VALUE}) {
+        for (long base : new long[]{0, -1000, 1000, Long.MIN_VALUE, Long.MAX_VALUE}) {
             for (long k = 0; k < 2 * HALF_WIDTH + 1; ++k) {
                 long l = k + base - HALF_WIDTH;
                 Asserts.assertEQ(h_long(new Long(l)), h(new Long(l)), "l = " + l);
