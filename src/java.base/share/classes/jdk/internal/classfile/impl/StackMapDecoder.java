@@ -299,7 +299,10 @@ public class StackMapDecoder {
                     stack = List.of(newStack);
                 }
             }
-            if (actualFrameType != EARLY_LARVAL && !unsetFields.isEmpty() && !locals.contains(SimpleVerificationTypeInfo.UNINITIALIZED_THIS)) {
+            if (actualFrameType != EARLY_LARVAL &&
+                !unsetFields.isEmpty() &&
+                !locals.contains(SimpleVerificationTypeInfo.UNINITIALIZED_THIS) &&
+                !stack.contains(SimpleVerificationTypeInfo.UNINITIALIZED_THIS)) {
                 // clear unsets post larval
                 unsetFields = List.of();
             }
@@ -396,7 +399,12 @@ public class StackMapDecoder {
                         break uninitializedThisCheck;
                     }
                 }
-                throw new IllegalArgumentException("unset fields requires uninitializedThis in locals");
+                for (var stackEntry : stack) {
+                    if (stackEntry == SimpleVerificationTypeInfo.UNINITIALIZED_THIS) {
+                        break uninitializedThisCheck;
+                    }
+                }
+                throw new IllegalArgumentException("unset fields requires uninitializedThis in locals or stack");
             }
         }
 

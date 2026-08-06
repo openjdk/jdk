@@ -394,7 +394,8 @@ StackMapFrame* StackMapReader::next_helper(TRAPS) {
     VerificationType* stack = NEW_RESOURCE_ARRAY_IN_THREAD(
       THREAD, VerificationType, 2);
     u2 stack_size = 1;
-    stack[0] = parse_verification_type(nullptr, CHECK_VERIFY_(_verifier, nullptr));
+    u1 flags = _prev_frame->flags();
+    stack[0] = parse_verification_type(&flags, CHECK_VERIFY_(_verifier, nullptr));
     if (stack[0].is_category2()) {
       stack[1] = stack[0].to_category2_2nd();
       stack_size = 2;
@@ -516,7 +517,7 @@ StackMapFrame* StackMapReader::next_helper(TRAPS) {
         THREAD, VerificationType, stack_size*2);
     }
     for (int i = 0; i < stack_size; i++) {
-      stack[real_stack_size] = parse_verification_type(nullptr, CHECK_NULL);
+      stack[real_stack_size] = parse_verification_type(&flags, CHECK_NULL);
       if (stack[real_stack_size].is_category2()) {
         stack[real_stack_size + 1] = stack[real_stack_size].to_category2_2nd();
         ++real_stack_size;
