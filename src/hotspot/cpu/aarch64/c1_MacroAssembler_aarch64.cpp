@@ -330,20 +330,16 @@ int C1_MacroAssembler::scalarized_entry(const CompiledEntrySignature* ces, int f
   // Remove the temp frame
   MacroAssembler::remove_frame(frame_size_in_bytes);
 
-  // Check if we need to extend the stack for packing
-  int sp_inc = 0;
-  if (args_on_stack > args_on_stack_cc) {
-    sp_inc = extend_stack_for_inline_args(args_on_stack);
-  }
+  assert(args_on_stack <= args_on_stack_cc, "Sanity check");
 
   shuffle_inline_args(true, is_inline_ro_entry, sig_cc,
                       args_passed_cc, args_on_stack_cc, regs_cc, // from
                       args_passed, args_on_stack, regs,          // to
-                      sp_inc, val_array);
+                      0, val_array);
 
   // Create the real frame. Below jump will then skip over the stack banging and frame
   // setup code in the verified_inline_entry (which has a different real_frame_size).
-  build_frame_helper(frame_size_in_bytes, sp_offset_for_orig_pc, sp_inc, false);
+  build_frame_helper(frame_size_in_bytes, sp_offset_for_orig_pc, 0, false);
 
   b(verified_inline_entry_label);
   return rt_call_offset;
