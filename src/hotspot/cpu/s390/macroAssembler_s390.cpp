@@ -5028,7 +5028,7 @@ unsigned int MacroAssembler::Clear_Array_Const_Big(long cnt, Register base_point
 // Fill words with a non-zero value.
 void MacroAssembler::fill_words(Register base, Register cnt, Register value, Register tmp) {
   assert_different_registers(base, cnt, value, tmp);
-  Label loop, loop_end, done;
+  NearLabel loop, loop_end;
 
   BLOCK_COMMENT("fill_words {");
 
@@ -5036,20 +5036,17 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value, Reg
   z_srag(tmp, cnt, 1);    // tmp = cnt / 2, sets CC
   z_bre(loop_end);         // skip pair loop if cnt < 2
 
-  // Loop for pairs of words
   bind(loop);
   z_stg(value, 0, base);
   z_stg(value, 8, base);
-  z_aghi(base, 16);
+  z_la(base, 16, base);
   z_brctg(tmp, loop);      // 64-bit decrement-and-branch
 
   bind(loop_end);
-  // Handle remaining single word if cnt is odd
-  z_tmll(cnt, 1);
-  z_bre(done);
-  z_stg(value, 0, base);
 
-  bind(done);
+  z_tmll(cnt, 1);
+  z_stocg(value, 0, base, bcondNotAllZero);
+
   BLOCK_COMMENT("} fill_words");
 }
 
