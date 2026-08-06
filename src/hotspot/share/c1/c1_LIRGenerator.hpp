@@ -150,6 +150,74 @@ class PhiResolver: public CompilationResourceObj {
 };
 
 
+// The LateControlFlowDiamond and associated (Not)TakenBlock classes are RAII-style helpers
+// to add control flow that is visible to the register allocator durin LIR generation.
+// Adding a conditional branch somewhere in a block, named origin, requires splitting origin
+// into two and moving the part after the split into a new block, called continuation.
+//     origin
+//     /    \
+// taken    not_taken
+//     \    /
+//  continuation
+// With our classes this becomes:
+// {
+//    LateControlFlowDiamond lcfd(<args>, // partially apply arguments to function that emits branch
+//        [&](BlockBegin* taken, BlockBegin* not_taken) -> {branching_condition(<args>, taken, not_taken);});
+//    {
+//      LateControlFlowDiamond::NotTakenBlock not_taken(lcfd);
+//      conditional_work();
+//    } {
+//      LateControlFlowDiamond::TakenBlock taken(lcfd);
+//      other_conditional_work();
+//    }
+// }
+//
+// The classes take care of creating new blocks, adding them into the control flow graph,
+// switching the LIRGeneration context to different blocks, and emitting jumps to the
+// next block.
+//
+class LateControlFlowDiamond: public StackObj {
+ private:
+  LIRGenerator* _gen;
+  Instruction*  _instr;
+  int           _bci;
+  ValueStack*   _state_before;
+  CodeEmitInfo* _info;
+  BlockBegin*   _origin;
+  BlockBegin*   _not_taken;
+  BlockBegin*   _taken;
+  BlockBegin*   _continuation;
+
+ public:
+  BlockBegin* origin()       const { return _origin; }
+  BlockBegin* not_taken()    const { return _not_taken; }
+  BlockBegin* taken()        const { return _taken; }
+  BlockBegin* continuation() const { return _continuation; }
+  ValueStack* state_before() const { return _state_before; }
+  CodeEmitInfo* info()       const { return _info; }
+
+  template <typename EmitBranch>
+  explicit LateControlFlowDiamond(LIRGenerator* _lir_gen, Instruction* instr, int bci, ValueStack* state_before, EmitBranch&& branching_condition);
+  ~LateControlFlowDiamond();
+
+  class NotTakenBlock : StackObj {
+   private:
+    LateControlFlowDiamond& _lcfd;
+   public:
+    explicit NotTakenBlock(LateControlFlowDiamond& lcfd);
+    ~NotTakenBlock();
+  };
+
+  class TakenBlock : StackObj {
+   private:
+    LateControlFlowDiamond& _lcfd;
+   public:
+    explicit TakenBlock(LateControlFlowDiamond& lcfd);
+    ~TakenBlock();
+  };
+};
+
+
 // only the classes below belong in the same file
 class LIRGenerator: public InstructionVisitor, public BlockClosure {
  // LIRGenerator should never get instatiated on the heap.
@@ -586,6 +654,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   virtual void do_MonitorExit    (MonitorExit*     x);
   virtual void do_Intrinsic      (Intrinsic*       x);
   virtual void do_BlockBegin     (BlockBegin*      x);
+  virtual void do_LateBlockEnd   (LateBlockEnd*    x) { assert(false, "must not visit late block end"); }
   virtual void do_Goto           (Goto*            x);
   virtual void do_If             (If*              x);
   virtual void do_TableSwitch    (TableSwitch*     x);

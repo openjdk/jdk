@@ -84,6 +84,7 @@ class       MonitorExit;
 class     Intrinsic;
 class     BlockBegin;
 class     BlockEnd;
+class       LateBlockEnd;
 class       Goto;
 class       If;
 class       Switch;
@@ -179,6 +180,7 @@ class InstructionVisitor: public StackObj {
   virtual void do_MonitorExit    (MonitorExit*     x) = 0;
   virtual void do_Intrinsic      (Intrinsic*       x) = 0;
   virtual void do_BlockBegin     (BlockBegin*      x) = 0;
+  virtual void do_LateBlockEnd   (LateBlockEnd*    x) { assert(false, "must not visit LateBlockEnd"); }
   virtual void do_Goto           (Goto*            x) = 0;
   virtual void do_If             (If*              x) = 0;
   virtual void do_TableSwitch    (TableSwitch*     x) = 0;
@@ -575,6 +577,7 @@ class Instruction: public CompilationResourceObj {
   virtual Intrinsic*        as_Intrinsic()       { return nullptr; }
   virtual BlockBegin*       as_BlockBegin()      { return nullptr; }
   virtual BlockEnd*         as_BlockEnd()        { return nullptr; }
+  virtual LateBlockEnd*     as_LateBlockEnd()    { return nullptr; }
   virtual Goto*             as_Goto()            { return nullptr; }
   virtual If*               as_If()              { return nullptr; }
   virtual TableSwitch*      as_TableSwitch()     { return nullptr; }
@@ -1827,6 +1830,7 @@ LEAF(BlockBegin, StateSplit)
 
   // exception handlers potentially invoked by this block
   void add_exception_handler(BlockBegin* b);
+  void clear_exception_handlers()                { _exception_handlers.clear(); }
   bool is_exception_handler(BlockBegin* b) const { return _exception_handlers.contains(b); }
   int  number_of_exception_handlers() const      { return _exception_handlers.length(); }
   BlockBegin* exception_handler_at(int i) const  { return _exception_handlers.at(i); }
@@ -1850,7 +1854,8 @@ LEAF(BlockBegin, StateSplit)
     critical_edge_split_flag      = 1 << 8, // set for all blocks that are introduced when critical edges are split
     linear_scan_loop_header_flag  = 1 << 9, // set during loop-detection for LinearScan
     linear_scan_loop_end_flag     = 1 << 10, // set during loop-detection for LinearScan
-    donot_eliminate_range_checks  = 1 << 11  // Should be try to eliminate range checks in this block
+    donot_eliminate_range_checks  = 1 << 11, // Should be try to eliminate range checks in this block
+    late_block_flag               = 1 << 12  // This block was added or modified during LIR-generation
   };
 
   void set(Flag f)                               { _flags |= f; }
@@ -1926,6 +1931,35 @@ BASE(BlockEnd, StateSplit)
   void substitute_sux(BlockBegin* old_sux, BlockBegin* new_sux);
 };
 
+LEAF(LateBlockEnd, BlockEnd)
+ // Late blocks must only be created by the late control flow machinery.
+ friend class LateControlFlowDiamond;
+ private:
+  BlockBegin* _continuation;
+
+  LateBlockEnd(ValueStack* state_before, BlockBegin* sux, BlockBegin* continuation)
+  : BlockEnd(illegalType, state_before, false)
+  , _continuation(continuation) {
+    BlockList* s = new BlockList(1);
+    s->append(sux);
+    set_sux(s);
+    set_state(state_before);
+  }
+
+  LateBlockEnd(ValueStack* state_before, BlockBegin* fallthrough_sux, BlockBegin* taken_sux, BlockBegin* continuation)
+  : BlockEnd(illegalType, state_before, false)
+  , _continuation(continuation) {
+    BlockList* s = new BlockList(2);
+    s->append(fallthrough_sux);
+    s->append(taken_sux);
+    set_sux(s);
+    set_state(state_before);
+  }
+
+ public:
+  // Reference to the continuation block where the next HIR instruction is found.
+  BlockBegin* continuation() { return _continuation; }
+};
 
 LEAF(Goto, BlockEnd)
  public:

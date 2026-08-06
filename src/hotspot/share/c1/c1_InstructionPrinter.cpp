@@ -23,6 +23,7 @@
  */
 
 #include "c1/c1_InstructionPrinter.hpp"
+#include "c1/c1_Instruction.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "ci/ciArray.hpp"
 #include "ci/ciInstance.hpp"
@@ -589,7 +590,13 @@ void InstructionPrinter::do_BlockBegin(BlockBegin* x) {
     if (!printed_flag) output()->print("(");
     output()->print("V"); printed_flag = true;
   }
-  if (printed_flag) output()->print(") ");
+  if (x->is_set(BlockBegin::late_block_flag)) {
+    if (!printed_flag) output()->print("(");
+    output()->print("l"); printed_flag = true;
+  }
+  if (printed_flag) {
+    output()->print(") ");
+  }
 
   // print block bci range
   output()->print("[%d, %d]", x->bci(), (end == nullptr ? -1 : end->printable_bci()));
@@ -702,6 +709,22 @@ void InstructionPrinter::do_InstanceOf(InstanceOf* x) {
   print_value(x->obj());
   output()->print(") ");
   print_klass(x->klass());
+}
+
+
+void InstructionPrinter::do_LateBlockEnd(LateBlockEnd* x) {
+  output()->print("late block end: ");
+  switch (x->number_of_sux()) {
+    case 1:
+      output()->print("B%d", x->default_sux()->block_id());
+      break;
+    case 2:
+      output()->print("fallthrough B%d, taken B%d", x->sux_at(0)->block_id(), x->sux_at(1)->block_id());
+      break;
+    default:
+      assert(false, "late blocks have at most two sux");
+  }
+  output()->print(", continuation B%d", x->continuation()->block_id());
 }
 
 

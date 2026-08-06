@@ -25,6 +25,7 @@
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_FrameMap.hpp"
 #include "c1/c1_GraphBuilder.hpp"
+#include "c1/c1_Instruction.hpp"
 #include "c1/c1_InstructionPrinter.hpp"
 #include "c1/c1_IR.hpp"
 #include "c1/c1_Optimizer.hpp"
@@ -1186,6 +1187,21 @@ void ComputeLinearScanOrder::verify() {
 }
 #endif // ASSERT
 
+class CodeReset : public BlockClosure {
+ public:
+  virtual void block_do(BlockBegin* block) {
+    // Reset values calculated by ComputeLinearScanOrder to their defaults at construction.
+    block->set_dominator(nullptr);
+    block->set_dominator_depth(-1);
+    block->dominates()->clear();
+    block->set_loop_depth(0);
+    block->set_loop_index(-1);
+    block->set_linear_scan_number(-1);
+    block->clear(BlockBegin::backward_branch_target_flag);
+    block->clear(BlockBegin::linear_scan_loop_header_flag);
+    block->clear(BlockBegin::linear_scan_loop_end_flag);
+  }
+};
 
 void IR::compute_code() {
   assert(is_valid(), "IR must be valid");
@@ -1193,6 +1209,16 @@ void IR::compute_code() {
   ComputeLinearScanOrder compute_order(compilation(), start());
   _num_loops = compute_order.num_loops();
   _code = compute_order.linear_scan_order();
+}
+
+
+void IR::recompute_code() {
+  assert(compilation()->has_late_control_flow(), "must only recompute with late contol flow");
+
+  CodeReset reset;
+  iterate_postorder(&reset);
+
+  compute_code();
 }
 
 
@@ -1266,10 +1292,18 @@ void IR::print(bool cfg_only, bool live_only) {
 #endif // PRODUCT
 
 #ifdef ASSERT
-class EndNotNullValidator : public BlockClosure {
+class BlockEndValidator : public BlockClosure {
  public:
   virtual void block_do(BlockBegin* block) {
     assert(block->end() != nullptr, "Expect block end to exist.");
+    assert(block->end()->next() == nullptr, "Block end must not have next instruction");
+  }
+};
+
+class NoLateBlocksValidator : public BlockClosure {
+ public:
+  virtual void block_do(BlockBegin* block) {
+    assert(!block->is_set(BlockBegin::late_block_flag), "no late blocks expected at this time");
   }
 };
 
@@ -1423,7 +1457,7 @@ void IR::expand_with_neighborhood(BlockList& blocks) {
 }
 
 void IR::verify_local(BlockList& blocks) {
-  EndNotNullValidator ennv;
+  BlockEndValidator ennv;
   blocks.iterate_forward(&ennv);
 
   ValidateEdgeMutuality vem;
@@ -1439,7 +1473,26 @@ void IR::verify() {
 
   PredecessorAndCodeValidator pv(this);
 
-  EndNotNullValidator ennv;
+  BlockEndValidator ennv;
+  iterate_postorder(&ennv);
+
+  ValidateEdgeMutuality vem;
+  iterate_postorder(&vem);
+
+  VerifyBlockBeginField verifier;
+  iterate_postorder(&verifier);
+
+  if (!compilation()->has_late_control_flow()) {
+    NoLateBlocksValidator nlbv;
+    iterate_postorder(&nlbv);
+  }
+}
+
+void IR::verify_late_controlflow() {
+  XentryFlagValidator xe;
+  iterate_postorder(&xe);
+
+  BlockEndValidator ennv;
   iterate_postorder(&ennv);
 
   ValidateEdgeMutuality vem;
