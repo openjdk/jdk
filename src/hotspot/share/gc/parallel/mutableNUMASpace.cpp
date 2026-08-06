@@ -40,6 +40,7 @@
 #include "utilities/globalDefinitions.hpp"
 
 MutableNUMASpace::MutableNUMASpace(size_t page_size) : MutableSpace(page_size) {
+  _all_lgrp_spaces = new (mtGC) GrowableArray<LGRPSpace*>(0, mtGC);
   _lgrp_spaces = new (mtGC) GrowableArray<LGRPSpace*>(0, mtGC);
   _adaptation_cycles = 0;
   _samples_count = 0;
@@ -49,20 +50,43 @@ MutableNUMASpace::MutableNUMASpace(size_t page_size) : MutableSpace(page_size) {
   size_t lgrp_num = os::numa_get_leaf_groups(lgrp_ids, lgrp_limit);
   assert(lgrp_num > 0, "There should be at least one locality group");
 
+  all_lgrp_spaces()->reserve(checked_cast<int>(lgrp_num));
   lgrp_spaces()->reserve(checked_cast<int>(lgrp_num));
-  // Add new spaces for the new nodes
   for (size_t i = 0; i < lgrp_num; i++) {
-    lgrp_spaces()->append(new LGRPSpace(lgrp_ids[i], page_size));
+    LGRPSpace* lgrp_space = new LGRPSpace(lgrp_ids[i], page_size);
+    all_lgrp_spaces()->append(lgrp_space);
   }
+  update_active_lgrp_spaces(all_lgrp_spaces(), lgrp_spaces(),
+                            lgrp_num * page_size, page_size);
 
   FREE_C_HEAP_ARRAY(lgrp_ids);
 }
 
 MutableNUMASpace::~MutableNUMASpace() {
-  for (int i = 0; i < lgrp_spaces()->length(); i++) {
-    delete lgrp_spaces()->at(i);
+  for (LGRPSpace* lgrp_space : *all_lgrp_spaces()) {
+    delete lgrp_space;
   }
+  delete all_lgrp_spaces();
   delete lgrp_spaces();
+}
+
+int MutableNUMASpace::update_active_lgrp_spaces(GrowableArray<LGRPSpace*>* all_lgrp_spaces,
+                                                GrowableArray<LGRPSpace*>* active_lgrp_spaces,
+                                                size_t region_size,
+                                                size_t page_size) {
+  assert(all_lgrp_spaces->length() > 0, "precondition");
+  const size_t num_pages = region_size / page_size;
+  const int num_active_lgrps = checked_cast<int>(region_size == 0
+                                                  ? 1
+                                                  : MIN2(num_pages, (size_t)all_lgrp_spaces->length()));
+
+  if (active_lgrp_spaces->length() != num_active_lgrps) {
+    active_lgrp_spaces->clear();
+    for (int i = 0; i < num_active_lgrps; i++) {
+      active_lgrp_spaces->append(all_lgrp_spaces->at(i));
+    }
+  }
+  return num_active_lgrps;
 }
 
 #ifndef PRODUCT
@@ -296,19 +320,26 @@ void MutableNUMASpace::initialize(MemRegion mr,
   // Must always clear the space
   clear(SpaceDecorator::DontMangle);
 
-  if (!mr.is_empty()) {
-    size_t num_pages = mr.byte_size() / page_size();
-    assert(num_pages >= 1, "inv");
-    if (num_pages < (size_t)lgrp_spaces()->length()) {
+  const size_t num_pages = mr.byte_size() / page_size();
+  const int previous_num_active_lgrps = lgrp_spaces()->length();
+  const int num_active_lgrps = update_active_lgrp_spaces(all_lgrp_spaces(), lgrp_spaces(),
+                                                         mr.byte_size(), page_size());
+  if (previous_num_active_lgrps != num_active_lgrps) {
+    if (!mr.is_empty() && num_pages < (size_t)all_lgrp_spaces()->length()) {
       log_warning(gc)("Degraded NUMA config: #os-pages (%zu) < #CPU (%d); space-size: %zu, page-size: %zu",
-        num_pages, lgrp_spaces()->length(), mr.byte_size(), page_size());
-
-      // Keep only the first few CPUs.
-      lgrp_spaces()->trunc_to((int)num_pages);
+                      num_pages, all_lgrp_spaces()->length(), mr.byte_size(), page_size());
     }
-  } else {
-    // Keep at least one space.
-    lgrp_spaces()->trunc_to(1);
+
+    // Inactive spaces must not retain regions that may temporarily belong to old gen.
+    const MemRegion empty_region(mr.start(), mr.start());
+    for (int i = num_active_lgrps; i < all_lgrp_spaces()->length(); i++) {
+      all_lgrp_spaces()->at(i)->space()->initialize(empty_region,
+                                                     SpaceDecorator::Clear,
+                                                     SpaceDecorator::DontMangle,
+                                                     MutableSpace::DontSetupPages);
+    }
+    log_debug(gc, heap)("NUMA eden locality groups: %d -> %d",
+                        previous_num_active_lgrps, num_active_lgrps);
   }
 
   // Handle space resize
@@ -327,8 +358,9 @@ void MutableNUMASpace::initialize(MemRegion mr,
   // Check if the space layout has changed significantly?
   // This happens when the space has been resized so that either head or tail
   // chunk became less than a page.
-  bool layout_valid = UseAdaptiveNUMAChunkSizing          &&
-                      current_chunk_size(0) > page_size() &&
+  bool layout_valid = UseAdaptiveNUMAChunkSizing                         &&
+                      previous_num_active_lgrps == num_active_lgrps      &&
+                      current_chunk_size(0) > page_size()                &&
                       current_chunk_size(lgrp_spaces()->length() - 1) > page_size();
 
 

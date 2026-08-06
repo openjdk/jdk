@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,9 @@ PSOldGen::PSOldGen(PSHeapVirtualSpace* vs,
 }
 
 size_t PSOldGen::min_gen_size() const {
+  // The old generation may borrow from or lend to young gen. MinOldSize is
+  // derived for the startup split; the dynamic floor is structural while
+  // ParallelScavengeHeap enforces MinHeapSize for total committed capacity.
   return SpaceAlignment;
 }
 
@@ -226,6 +229,8 @@ bool PSOldGen::expand(size_t bytes) {
   size_t aligned_bytes = align_up(bytes, _heap_vs->alignment());
   aligned_bytes = MIN2(aligned_bytes, remaining_bytes);
 
+  // The request is already clamped to the remaining reservation. A failure
+  // below is therefore an OS commit failure, not a size-selection failure.
   expand_by(aligned_bytes);
 
   return true;

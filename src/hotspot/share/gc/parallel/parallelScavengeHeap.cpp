@@ -65,6 +65,8 @@ GCPolicyCounters* ParallelScavengeHeap::_gc_policy_counters = nullptr;
 size_t ParallelScavengeHeap::_desired_page_size = 0;
 
 size_t ParallelScavengeHeap::young_gen_size_lower_bound() {
+  // This is the structural minimum for a dynamic non-empty young generation,
+  // not MinNewSize, which is derived for the startup generation split.
   return num_young_spaces() * SpaceAlignment;
 }
 
@@ -175,22 +177,24 @@ void ParallelScavengeHeap::post_initialize() {
 void ParallelScavengeHeap::gc_epilogue(bool full) {
   size_t capacity_bytes = max_capacity();
   size_t free_bytes = capacity_bytes - used();
+  double free_percent = percent_of(free_bytes, capacity_bytes);
 
   if (_is_heap_almost_full) {
-    // Reset emergency state
-    if (_young_gen->reserved_size() > 0 && free_bytes > capacity_bytes * 0.10) {
+    // Reset emergency state once young gen and sufficient allocation headroom return.
+    if (_young_gen->reserved_size() > 0 && free_percent > HeapAlmostFullThresholdPercent) {
       log_debug(gc)("Leaving memory constrained state; back to normal");
       _is_heap_almost_full = false;
     }
   } else {
     if (full) {
       if (_young_gen->reserved_size() == 0) {
-        log_debug(gc)("After full-gc, young-gen has become zero-sized, old-gen %zu / %zu (K); entering memory constrained state",
-          free_bytes/K, capacity_bytes/K);
+        log_debug(gc)("After full-gc, young-gen has become zero-sized, free space: %zu / %zu (K); entering memory constrained state",
+                      free_bytes / K, capacity_bytes / K);
         _is_heap_almost_full = true;
-      } else if (free_bytes < capacity_bytes * 0.10) {
+      } else if (free_percent < HeapAlmostFullThresholdPercent) {
+        // Skip a likely futile normal collection on the next allocation failure.
         log_debug(gc)("After full-gc, limited (<10%%) free space: %zu / %zu (K); entering memory constrained state",
-          free_bytes/K, capacity_bytes/K);
+                      free_bytes / K, capacity_bytes / K);
         _is_heap_almost_full = true;
       }
     }
@@ -993,14 +997,14 @@ void ParallelScavengeHeap::resize_young_gen_after_young_gc(bool is_survivor_over
     assert(align_down(_old_gen->uncommitted_size() + _old_gen->free_in_bytes(), SpaceAlignment) >= delta_bytes,
        "enough space for left-shift");
 
-    const bool is_old_gen_conmitted_mr_changed = delta_bytes > _old_gen->uncommitted_size();
+    const bool is_old_gen_committed_mr_changed = delta_bytes > _old_gen->uncommitted_size();
 
     // left-shift by delta
     char* desired_gen_boundary = _heap_vs->gen_boundary() - delta_bytes;
     _heap_vs->left_shift_gen_boundary(desired_gen_boundary);
     assert(_heap_vs->gen_boundary() == desired_gen_boundary, "postcondition");
 
-    if (is_old_gen_conmitted_mr_changed) {
+    if (is_old_gen_committed_mr_changed) {
       _old_gen->reinit_after_committed_mr_change();
     }
   }
@@ -1045,12 +1049,12 @@ bool ParallelScavengeHeap::adjust_gen_boundary_after_full_gc(size_t live_bytes,
                                                              PSPendingAllocation pending_allocation) {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
 
-  const bool has_pending_non_tlab_allocation = pending_allocation.is_present() && !pending_allocation.is_tlab;
+  const bool has_pending_non_tlab_allocation = pending_allocation.is_present() && !pending_allocation._is_tlab;
   size_t required_old_free_bytes = _size_policy->padded_average_promoted_in_bytes();
   if (has_pending_non_tlab_allocation) {
     // TLAB failures retry outside TLAB. Only non-TLAB requests need old-gen room here.
     required_old_free_bytes = MAX2(required_old_free_bytes,
-                                   pending_allocation.word_size * HeapWordSize);
+                                   pending_allocation._word_size * HeapWordSize);
   }
 
   size_t requested_old_capacity = align_up(live_bytes + required_old_free_bytes,
@@ -1094,6 +1098,10 @@ bool ParallelScavengeHeap::adjust_gen_boundary_after_full_gc(size_t live_bytes,
   assert(desired_gen_boundary < current_gen_boundary, "inv");
 
   // Left-shift
+  // Full GC only moves the boundary left to recover from old-gen-only mode.
+  // With a non-empty young reservation, adaptive young-GC sizing owns normal
+  // rebalancing; without adaptive sizing, retaining the borrowed split avoids
+  // making explicit full GCs resize an otherwise fixed-policy heap.
   if (_young_gen->reserved_size() > 0) {
     return false;
   }

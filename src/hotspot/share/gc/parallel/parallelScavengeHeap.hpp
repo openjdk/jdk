@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,15 +48,15 @@ class PSHeapVirtualSpace;
 class ReservedSpace;
 
 struct PSPendingAllocation {
-  size_t word_size;
-  bool is_tlab;
+  size_t _word_size;
+  bool _is_tlab;
 
   static PSPendingAllocation none() {
     return {0, false};
   }
 
   bool is_present() const {
-    return word_size != 0;
+    return _word_size != 0;
   }
 };
 
@@ -111,6 +111,10 @@ class ParallelScavengeHeap : public CollectedHeap {
   uintx _gc_overhead_counter;
 
   bool _is_heap_almost_full;
+
+  // A full GC with less headroom than this is unlikely to make another
+  // normal allocation/collection attempt useful.
+  static constexpr double HeapAlmostFullThresholdPercent = 10.0;
 
   void initialize_serviceability() override;
 

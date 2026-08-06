@@ -490,7 +490,7 @@ void PSParallelCompact::post_compact(PSPendingAllocation pending_allocation) {
       _space_info[to_space_id].space()->clear(SpaceDecorator::Mangle);
     }
     {
-      // Unconditionaly for old-gen (old-space)
+      // Unconditionally for old-gen (old-space).
       MutableSpace* space = heap->old_gen()->object_space();
       HeapWord* top = space->top();
 
