@@ -186,14 +186,15 @@ FrameMap::FrameMap(ciMethod* method, int monitors, int reserved_argument_area_si
 }
 
 
-bool FrameMap::finalize_frame(int nof_slots) {
+bool FrameMap::finalize_frame(int nof_slots, bool needs_stack_repair) {
   assert(nof_slots >= 0, "must be positive");
   assert(_num_spills == -1, "can only be set once");
   _num_spills = nof_slots;
   assert(_framesize == -1, "should only be calculated once");
   _framesize =  align_up(in_bytes(sp_offset_for_monitor_base(0)) +
                          _num_monitors * (int)sizeof(BasicObjectLock) +
-                         (int)sizeof(intptr_t) +                        // offset of deopt orig pc
+                         (int)sizeof(intptr_t) +                             // offset of deopt orig pc
+                         (needs_stack_repair ? (int)sizeof(intptr_t) : 0) +  // stack increment value
                          frame_pad_in_bytes,
                          StackAlignmentInBytes) / 4;
   int java_index = 0;
