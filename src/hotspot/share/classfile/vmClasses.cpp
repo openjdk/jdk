@@ -241,7 +241,7 @@ void vmClasses::resolve_all(TRAPS) {
 static void post_events(EventClassLoad* class_load_event, InstanceKlass* klass, ClassLoaderData* loader_data, JavaThread* jt) {
   {
     // The class is defined before loading is complete.
-    JfrDefineClassEvent event(klass, jt, true);
+    JfrDefineClassEvent class_define_event(klass, jt, true);
   }
   if (class_load_event->should_commit()) {
     SystemDictionary::post_class_load_event(class_load_event, klass, loader_data);
