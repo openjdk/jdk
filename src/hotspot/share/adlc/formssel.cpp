@@ -1139,31 +1139,17 @@ const char *InstructForm::mach_base_class(FormDict &globals)  const {
   return nullptr;
 }
 
-// Do the instruction predicates allow target_instr to be replaced by replacement_instr for cisc-spill optimzation.
-static bool hasPredicateSubset( const InstructForm *target_instr, const InstructForm *replacement_instr ) {
-  const Predicate *target_p  = target_instr->_predicate;
-  const Predicate *replacement_p  = replacement_instr->_predicate;
-  if( target_p == nullptr && replacement_p == nullptr ) {
+// Compare the instruction predicates for textual equality
+bool equivalent_predicates( const InstructForm *instr1, const InstructForm *instr2 ) {
+  const Predicate *pred1  = instr1->_predicate;
+  const Predicate *pred2  = instr2->_predicate;
+  if( pred1 == nullptr && pred2 == nullptr ) {
     // no predicates means they are identical
     return true;
   }
-
-  #ifdef AMD64
-  // A replacement_instr with no predicate handles a superset of the cases that target_instr handles.
-  // *Except* when target_instr has "predicate(false)", which shouldn't match anything.
-  // This is safe for x86 which only uses such predicates for instructions that should only be expanded
-  // as part of peephole optimizations. It's unclear if this is safe for s390 due to more complex predicates
-  // like "predicate(false && <more expressions>)". For now only enable for x86 (AMD64)
-  #define PREDICATE_FALSE_EXPR "#line 9\nfalse\n#line 9\n"
-
-  if( replacement_p == nullptr && !ADLParser::equivalent_expressions(target_p->_pred, PREDICATE_FALSE_EXPR) ) {
-    return true;
-  }
-  #endif /* AMD64 */
-
-  if( target_p != nullptr && replacement_p != nullptr ) {
+  if( pred1 != nullptr && pred2 != nullptr ) {
     // compare the predicates
-    if (ADLParser::equivalent_expressions(target_p->_pred, replacement_p->_pred)) {
+    if (ADLParser::equivalent_expressions(pred1->_pred, pred2->_pred)) {
       return true;
     }
   }
@@ -1184,7 +1170,7 @@ bool InstructForm::cisc_spills_to(ArchDesc &AD, InstructForm *instr) {
   const char *reg_type           = nullptr;
   FormDict   &globals            = AD.globalNames();
   cisc_spill_operand = _matrule->matchrule_cisc_spill_match(globals, AD.get_registers(), instr->_matrule, op_name, reg_type);
-  if( (cisc_spill_operand != Not_cisc_spillable) && (op_name != nullptr) && hasPredicateSubset(this, instr) ) {
+  if( (cisc_spill_operand != Not_cisc_spillable) && (op_name != nullptr) && equivalent_predicates(this, instr) ) {
     cisc_spill_operand = operand_position(op_name, Component::USE);
     int def_oper  = operand_position(op_name, Component::DEF);
     if( def_oper == NameList::Not_in_list && instr->num_opnds() == num_opnds()) {
