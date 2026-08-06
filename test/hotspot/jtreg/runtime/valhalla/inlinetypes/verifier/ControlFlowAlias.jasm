@@ -21,21 +21,37 @@
  * questions.
  */
 
- /**
- * @test
- * @bug 8374862
- * @summary Regression test for -XX:+Verbose -XX:+WizardMode -Xlog:deoptimization=debug crash
- * @requires vm.debug
- * @run main/othervm -XX:-DisplayVMOutput
- *                   -XX:+Verbose -XX:+WizardMode -Xlog:deoptimization=debug
- *                   compiler.uncommontrap.TestDeoptDetailsLockRank
- */
+/*
+class ControlFlowAlias extends Parent {
+    @Strict int x;
 
-package compiler.uncommontrap;
-
-public class TestDeoptDetailsLockRank {
-
-    public static void main(String[] args) {
-        System.out.println("passed");
+    ControlFlowAlias(boolean a) {
+        if (a) {
+            x = 0;
+        }
+        super(); // FAIL: Strict field x never set on this path AND stackmap is wrong
     }
 }
+*/
+
+identity class ControlFlowAlias extends Parent version 72:65535
+{
+  strict Field x:I;
+
+  Method       "<init>":"(Z)V"
+    stack 2 locals 2
+  {
+         iload_1;
+         ifeq              L12;
+         aload_0;
+         iconst_1;
+         putfield          Field x:"I";
+         goto              L15;
+  L12:   stack_frame_type  same;
+         goto              L15;
+  L15:   stack_frame_type  same;
+         aload_0;
+         invokespecial     Method Parent."<init>":"()V";
+         return;
+  }
+} // End of ControlFlowAlias
