@@ -229,14 +229,9 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, 
   verify_oop(obj);
 }
 
-void C1_MacroAssembler::build_frame_helper(int frame_size_in_bytes, int sp_offset_for_orig_pc, int sp_inc, bool reset_orig_pc) {
+void C1_MacroAssembler::build_frame_helper(int frame_size_in_bytes, int sp_offset_for_orig_pc, bool reset_orig_pc) {
   push(rbp);
-#ifdef ASSERT
-  if (sp_inc > 0) {
-    movl(Address(rsp, 0), badRegWordVal);
-    movl(Address(rsp, VMRegImpl::stack_slot_size), badRegWordVal);
-  }
-#endif
+
   if (PreserveFramePointer) {
     mov(rbp, rsp);
   }
@@ -260,7 +255,7 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
   assert(bang_size_in_bytes >= frame_size_in_bytes, "stack bang size incorrect");
   generate_stack_overflow_check(bang_size_in_bytes);
 
-  build_frame_helper(frame_size_in_bytes, sp_offset_for_orig_pc, 0, has_scalarized_args);
+  build_frame_helper(frame_size_in_bytes, sp_offset_for_orig_pc, has_scalarized_args);
 
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   // C1 code is not hot enough to micro optimize the nmethod entry barrier with an out-of-line stub
@@ -297,7 +292,7 @@ int C1_MacroAssembler::scalarized_entry(const CompiledEntrySignature* ces, int f
   int args_passed_cc = SigEntry::fill_sig_bt(sig_cc, sig_bt);
 
   // Create a temp frame so we can call into the runtime. It must be properly set up to accommodate GC.
-  build_frame_helper(frame_size_in_bytes, sp_offset_for_orig_pc, 0, true);
+  build_frame_helper(frame_size_in_bytes, sp_offset_for_orig_pc, true);
 
   // The runtime call might safepoint, make sure nmethod entry barrier is executed
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
@@ -325,7 +320,7 @@ int C1_MacroAssembler::scalarized_entry(const CompiledEntrySignature* ces, int f
 
   // Create the real frame. Below jump will then skip over the stack banging and frame
   // setup code in the verified_inline_entry (which has a different real_frame_size).
-  build_frame_helper(frame_size_in_bytes, sp_offset_for_orig_pc, 0, false);
+  build_frame_helper(frame_size_in_bytes, sp_offset_for_orig_pc, false);
 
   jmp(verified_inline_entry_label);
   return rt_call_offset;
