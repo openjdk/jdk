@@ -46,7 +46,7 @@ public class TestZAllocationSpikeTolerance {
     private static void testInvalidValue() throws Exception {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:+UseZGC",
-            "-XX:ZAllocationSpikeTolerance=-1", // invalid range 
+            "-XX:ZAllocationSpikeTolerance=-1", // invalid range
             "-version"
         );
 
@@ -67,7 +67,7 @@ public class TestZAllocationSpikeTolerance {
     private static void testValidValue() throws Exception {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:+UseZGC",
-            "-XX:ZAllocationSpikeTolerance=1", // valid range 
+            "-XX:ZAllocationSpikeTolerance=1", // valid range
             "-version"
         );
 
