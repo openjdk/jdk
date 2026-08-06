@@ -41,7 +41,10 @@ public class TestAutoResizeLastColumn {
         JTable table = new JTable(3, 3);
         table.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
 
-        table.getTableHeader().setResizingColumn(null);
+        if (table.getTableHeader().getResizingColumn() != null) {
+            throw new RuntimeException(
+                    "AUTO_RESIZE_LAST_COLUMN must not set resizingColumn");
+        }
 
         TableColumnModel cm = table.getColumnModel();
         for (int i = 0; i < cm.getColumnCount(); i++) {
