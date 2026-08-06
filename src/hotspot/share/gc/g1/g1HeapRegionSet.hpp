@@ -30,13 +30,13 @@
 
 #define assert_heap_region_set(p, message)  \
   do {                                      \
-    assert((p), "[%s] %s ln: %u",           \
+    assert((p), "[%s] %s num regions: %u",  \
            name(), message, num_regions()); \
   } while (0)
 
 #define guarantee_heap_region_set(p, message)  \
   do {                                         \
-    guarantee((p), "[%s] %s ln: %u",           \
+    guarantee((p), "[%s] %s num regions: %u",  \
               name(), message, num_regions()); \
   } while (0)
 
@@ -59,9 +59,9 @@ public:
   virtual const char* get_description() = 0;
 };
 
-// Base class for all the classes that represent heap region sets. It
-// contains the basic attributes that each set needs to maintain
-// (e.g., number of regions) plus any shared functionality (e.g., verification).
+// Base class for all the classes that represent heap region sets. It contains the
+// basic attributes that each set needs to maintain (e.g., number of regions) plus
+// any shared functionality (e.g., verification).
 
 class G1HeapRegionSetBase {
   friend class VMStructs;
