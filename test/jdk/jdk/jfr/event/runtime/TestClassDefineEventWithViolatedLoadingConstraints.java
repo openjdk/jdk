@@ -49,7 +49,6 @@ public class TestClassDefineEventWithViolatedLoadingConstraints {
     private final static String CLASS_NAME = TestClassDefineEventWithViolatedLoadingConstraints.class.getName();
     private final static String DEFINED_CLASS_NAME = CLASS_NAME + "$DuplicateDefinition";
 
-
     static class DuplicateDefinition { }
 
     static class DuplicateDefinitionClassLoader extends ClassLoader {
