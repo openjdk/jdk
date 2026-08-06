@@ -52,6 +52,9 @@ public abstract class AARCH64ThreadContext implements ThreadContext {
     //          __u8 __reserved[4096] __attribute__((__aligned__(16)));
     //  };
 
+    // These constants are referenced by "DWARF_REG" macro in DwarfParser.cpp
+    // to map DWARF register numbers to the corresponding indices.
+    //
     // NOTE: the indices for the various registers must be maintained as
     // listed across various operating systems. However, only a small
     // subset of the registers' values are guaranteed to be present (and
