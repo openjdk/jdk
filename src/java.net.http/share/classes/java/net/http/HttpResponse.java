@@ -164,9 +164,11 @@ public interface HttpResponse<T> {
      *
      * @apiNote
      *
-     * Exactly when {@code null} can be returned is implementation dependent. It
-     * is therefore recommended that the caller always check for {@code null}
-     * while dereferencing the result.
+     * Depending on the response's {@linkplain #statusCode() status code} a body
+     * may not always be available, and an implementation may return {@code
+     * null} in such cases. Exactly when {@code null} can be returned is
+     * implementation dependent. It is therefore recommended that the caller
+     * always check for {@code null} while dereferencing the result.
      *
      * @return the body
      */
