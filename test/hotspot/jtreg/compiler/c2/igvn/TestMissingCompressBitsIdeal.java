@@ -30,6 +30,7 @@ import jdk.test.lib.Utils;
 /*
  * @test
  * @bug 8389579
+ * @key randomness
  * @summary Test missing Ideal optimization opportunity for CompressBits.
  * @library /test/lib /
  * @run main/othervm -Xcomp -XX:-TieredCompilation
@@ -37,6 +38,7 @@ import jdk.test.lib.Utils;
  *      -XX:VerifyIterativeGVN=100
  *      -XX:CompileCommand=compileonly,${test.main.class}::test*
  *      ${test.main.class}
+ * @run main ${test.main.class}
  */
 
 public class TestMissingCompressBitsIdeal {
@@ -50,6 +52,9 @@ public class TestMissingCompressBitsIdeal {
                              (intValue >>> intShift) & 1);
             Asserts.assertEQ(testIntCompressWithMinusOneLeftShift(intValue, intShift),
                              intValue >>> intShift);
+            int intMask = R.nextInt();
+            Asserts.assertEQ(testIntCompressExpandWithSameMask(intValue, intMask),
+                             intValue & Integer.compress(intMask, intMask));
 
             long longValue = R.nextLong();
             int longShift = R.nextInt(Long.SIZE);
@@ -57,6 +62,10 @@ public class TestMissingCompressBitsIdeal {
                              (longValue >>> longShift) & 1L);
             Asserts.assertEQ(testLongCompressWithMinusOneLeftShift(longValue, longShift),
                              longValue >>> longShift);
+            long longMask = R.nextLong();
+            Asserts.assertEQ(testLongCompressExpandWithSameMask(longValue, longMask),
+                             longValue & Long.compress(longMask, longMask));
+
         }
     }
 
@@ -90,5 +99,21 @@ public class TestMissingCompressBitsIdeal {
         for (i = -10; i < -1; i++) { }
         long mask = i << Lshift;
         return Long.compress(val, mask);
+    }
+
+    // compress(expand(x, m), m) == x & compress(m, m)
+    public static int testIntCompressExpandWithSameMask(int val, int mask) {
+        int i;
+        for (i = -10; i < -1; i++) { }
+        int expandMask = i & mask;
+        return Integer.compress(Integer.expand(val, expandMask), mask);
+    }
+
+    // compress(expand(x, m), m) == x & compress(m, m)
+    public static long testLongCompressExpandWithSameMask(long val, long mask) {
+        long i;
+        for (i = -10; i < -1; i++) { }
+        long expandMask = i & mask;
+        return Long.compress(Long.expand(val, expandMask), mask);
     }
 }
