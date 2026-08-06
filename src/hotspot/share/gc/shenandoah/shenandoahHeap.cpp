@@ -2652,7 +2652,6 @@ void ShenandoahHeap::update_heap_region_states(bool concurrent) {
 }
 
 void ShenandoahHeap::final_update_refs_update_region_states() {
-  flush_region_pin_cache();
   ShenandoahSynchronizePinnedRegionStates cl;
   parallel_heap_region_iterate(&cl);
 }
