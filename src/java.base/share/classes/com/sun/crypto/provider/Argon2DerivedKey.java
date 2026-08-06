@@ -40,8 +40,6 @@ import javax.crypto.spec.Argon2ParameterSpec;
 
 import jdk.internal.ref.CleanerFactory;
 
-import sun.security.util.Argon2Util;
-
 /**
  * This class represents a secret key derived using Argon2 whose toString()
  * method outputs Argon2 encoded hash.

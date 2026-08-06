@@ -24,15 +24,14 @@
  */
 package com.sun.crypto.provider;
 
-import java.security.*;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.NoSuchAlgorithmException;
 import java.security.spec.AlgorithmParameterSpec;
 import javax.crypto.spec.Argon2ParameterSpec;
 import static javax.crypto.spec.Argon2ParameterSpec.Version;
 import javax.crypto.KDFParameters;
 import javax.crypto.KDFSpi;
 import javax.crypto.SecretKey;
-
-import static sun.security.provider.ByteArrayAccess.*;
 
 /**
  * This class implements the Password Hashing Algorithm Argon2ID as specified
