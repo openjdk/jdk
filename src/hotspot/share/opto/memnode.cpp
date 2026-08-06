@@ -6208,7 +6208,7 @@ Node* MergeMemNode::Identity(PhaseGVN* phase) {
 //------------------------------Ideal------------------------------------------
 // This method is invoked recursively on chains of MergeMem nodes
 Node *MergeMemNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  if (Identity(phase) != this) {
+  if (phase->apply_identity(this) != this) {
     // Let Identity handle this case
     return nullptr;
   }
