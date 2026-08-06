@@ -22,44 +22,63 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1SURVIVORREGIONS_HPP
-#define SHARE_GC_G1_G1SURVIVORREGIONS_HPP
+#ifndef SHARE_GC_G1_G1YOUNGREGIONS_HPP
+#define SHARE_GC_G1_G1YOUNGREGIONS_HPP
 
 #include "gc/g1/g1RegionsOnNodes.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/growableArray.hpp"
 
-template <typename T>
-class GrowableArray;
 class G1HeapRegion;
 
-// Set of current survivor regions.
-class G1SurvivorRegions {
-  GrowableArray<G1HeapRegion*> _regions;
+// Common base class for tracking information about Eden and Survivor region sets.
+class G1YoungRegions {
   Atomic<size_t> _used_bytes;
   G1RegionsOnNodes _regions_on_node;
 
-public:
-  G1SurvivorRegions();
+protected:
+  void add_to_nodes(G1HeapRegion* r);
+  void clear_data();
 
-  void add(G1HeapRegion* hr);
+  G1YoungRegions() : _used_bytes(0), _regions_on_node() { }
+  ~G1YoungRegions() = default;
+  NONCOPYABLE(G1YoungRegions);
+
+public:
+  uint regions_on_node(uint node_index) const { return _regions_on_node.count(node_index); }
+
+  void add_used_bytes(size_t used_bytes) { _used_bytes.add_then_fetch(used_bytes, memory_order_relaxed); }
+  size_t used_bytes() const { return _used_bytes.load_relaxed(); }
+};
+
+class G1EdenRegions : public G1YoungRegions {
+  uint _length;
+
+public:
+  G1EdenRegions() : G1YoungRegions(), _length(0) { }
+
+  void add(G1HeapRegion* r);
+  void clear();
+
+  uint length() const { return _length; }
+};
+
+// Set of current survivor regions.
+class G1SurvivorRegions : public G1YoungRegions {
+  GrowableArray<G1HeapRegion*> _regions;
+
+public:
+  G1SurvivorRegions() : G1YoungRegions(), _regions(8, mtGC) { }
+
+  void add(G1HeapRegion* r);
+  void clear();
+
+  uint length() const { return (uint)_regions.length(); }
 
   void convert_to_eden();
 
-  void clear();
-
-  uint num_regions() const;
-  uint regions_on_node(uint node_index) const;
-
-  const GrowableArray<G1HeapRegion*>& regions() const {
-    return _regions;
-  }
-
-  // Used bytes of all survivor regions.
-  size_t used_bytes() const { return _used_bytes.load_relaxed(); }
-
-  void add_used_bytes(size_t used_bytes);
+  const GrowableArray<G1HeapRegion*>& regions() const { return _regions; }
 };
 
-#endif // SHARE_GC_G1_G1SURVIVORREGIONS_HPP
+#endif // SHARE_GC_G1_G1YOUNGREGIONS_HPP

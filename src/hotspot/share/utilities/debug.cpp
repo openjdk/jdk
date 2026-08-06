@@ -459,7 +459,7 @@ extern "C" NOINLINE void ps() { // print stack
     // can call the standard stack_trace function.
     p->print_stack();
 #ifndef PRODUCT
-    if (Verbose) p->trace_stack();
+    if (Verbose) p->trace_stack_on(tty);
   } else {
     frame f = os::current_frame();
     RegisterMap reg_map(p,
@@ -468,7 +468,7 @@ extern "C" NOINLINE void ps() { // print stack
                         RegisterMap::WalkContinuation::skip);
     f = f.sender(&reg_map);
     tty->print("(guessing starting frame id=" PTR_FORMAT " based on current fp)\n", p2i(f.id()));
-    p->trace_stack_from(vframe::new_vframe(&f, &reg_map, p));
+    p->trace_stack_from(tty, vframe::new_vframe(&f, &reg_map, p));
 #endif
   }
 }
@@ -502,7 +502,7 @@ extern "C" NOINLINE void psf() { // print stack frames
   p->print();
   tty->cr();
   if (p->has_last_Java_frame()) {
-    p->trace_frames();
+    p->trace_frames_on(tty);
   }
 }
 

@@ -23,27 +23,34 @@
  */
 
 #include "gc/g1/g1HeapRegion.hpp"
-#include "gc/g1/g1SurvivorRegions.hpp"
+#include "gc/g1/g1YoungRegions.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
 
-G1SurvivorRegions::G1SurvivorRegions() :
-  _regions(8, mtGC),
-  _used_bytes(0),
-  _regions_on_node() {}
-
-void G1SurvivorRegions::add(G1HeapRegion* hr) {
-  assert(hr->is_survivor(), "should be flagged as survivor region");
-  _regions.append(hr);
-  _regions_on_node.add(hr);
+void G1YoungRegions::add_to_nodes(G1HeapRegion* r) {
+  _regions_on_node.add(r);
 }
 
-uint G1SurvivorRegions::num_regions() const {
-  return (uint)_regions.length();
+void G1YoungRegions::clear_data() {
+  _used_bytes.store_relaxed(0);
+  _regions_on_node.clear();
 }
 
-uint G1SurvivorRegions::regions_on_node(uint node_index) const {
-  return _regions_on_node.num_regions_per_node(node_index);
+void G1EdenRegions::add(G1HeapRegion* r) {
+  assert(r->is_eden(), "must be");
+  add_to_nodes(r);
+  _length++;
+}
+
+void G1EdenRegions::clear() {
+  clear_data();
+  _length = 0;
+}
+
+void G1SurvivorRegions::add(G1HeapRegion* r) {
+  assert(r->is_survivor(), "should be flagged as survivor region");
+  add_to_nodes(r);
+  _regions.append(r);
 }
 
 void G1SurvivorRegions::convert_to_eden() {
@@ -54,11 +61,6 @@ void G1SurvivorRegions::convert_to_eden() {
 }
 
 void G1SurvivorRegions::clear() {
+  clear_data();
   _regions.clear();
-  _used_bytes.store_relaxed(0);
-  _regions_on_node.clear();
-}
-
-void G1SurvivorRegions::add_used_bytes(size_t used_bytes) {
-  _used_bytes.add_then_fetch(used_bytes, memory_order_relaxed);
 }
