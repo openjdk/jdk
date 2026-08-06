@@ -374,18 +374,18 @@ InstanceKlass* LambdaProxyClassDictionary::load_and_init_lambda_proxy_class(Inst
     lambda_ik->add_to_hierarchy(THREAD);
     // But, do not add to dictionary.
 
-    lambda_ik->link_class(CHECK_NULL);
-
     JFR_ONLY(class_define_event.commit());
   }
 
-  if (class_load_event.should_commit()) {
-    JFR_ONLY(SystemDictionary::post_class_load_event(&class_load_event, lambda_ik, ClassLoaderData::class_loader_data(class_loader()));)
-  }
+  lambda_ik->link_class(CHECK_NULL);
 
   // notify jvmti
   if (JvmtiExport::should_post_class_load()) {
     JvmtiExport::post_class_load(THREAD, lambda_ik);
+  }
+
+  if (class_load_event.should_commit()) {
+    JFR_ONLY(SystemDictionary::post_class_load_event(&class_load_event, lambda_ik, ClassLoaderData::class_loader_data(class_loader()));)
   }
 
   lambda_ik->initialize(CHECK_NULL);

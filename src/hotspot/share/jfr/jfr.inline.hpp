@@ -43,7 +43,7 @@ inline void Jfr::check_and_process_sample_request(JavaThread* jt) {
   }
 }
 
-inline JfrDefineClassEvent::JfrDefineClassEvent(const Klass* k, const JavaThread* jt, bool commit /* false */) :
+inline JfrDefineClassEvent::JfrDefineClassEvent(const Klass* k, const JavaThread* jt, bool commit) :
   _k(k), _source(jt->jfr_thread_local()->pop_symbol()), _commit(commit) {
   assert(k != nullptr, "invariant");
   assert(jt != nullptr, "invariant");

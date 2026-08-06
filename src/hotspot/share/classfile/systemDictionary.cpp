@@ -821,7 +821,7 @@ void SystemDictionary::post_class_load_event(EventClassLoad* event, const Instan
 static void post_events(EventClassLoad* event, const InstanceKlass* k, const ClassLoaderData* init_cld, const JavaThread* jt) {
   {
     // The class is defined before loading is complete.
-    JfrDefineClassEvent event(k, jt, true);
+    JfrDefineClassEvent class_define_event(k, jt, true);
   }
   if (event->should_commit()) {
     SystemDictionary::post_class_load_event(event, k, init_cld);
@@ -875,14 +875,14 @@ InstanceKlass* SystemDictionary::resolve_hidden_class_from_stream(
     k->add_to_hierarchy(THREAD);
     // But, do not add to dictionary.
 
-    k->link_class(CHECK_NULL);
-
     JFR_ONLY(class_define_event.commit();)
   }
 
   if (class_load_event.should_commit()) {
     JFR_ONLY(post_class_load_event(&class_load_event, k, loader_data);)
   }
+
+  k->link_class(CHECK_NULL);
 
   // notify jvmti
   if (JvmtiExport::should_post_class_load()) {
@@ -1305,7 +1305,7 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
   return ik;
 }
 
-void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData* loader_data, const ClassFileStream* cfs /* nullptr */) {
+void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData* loader_data, const ClassFileStream* cfs) {
   ik->print_class_load_logging(loader_data, nullptr, nullptr);
 
   // For boot loader, ensure that GetSystemPackage knows that a class in this
