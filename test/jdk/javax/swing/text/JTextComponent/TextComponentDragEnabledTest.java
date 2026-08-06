@@ -51,7 +51,8 @@ public class TextComponentDragEnabledTest {
             JTextField::new,
             JTextArea::new,
             JTextPane::new,
-            JEditorPane::new
+            JEditorPane::new,
+            JPasswordField::new
     );
 
     public static void main(String[] args) throws Exception {
