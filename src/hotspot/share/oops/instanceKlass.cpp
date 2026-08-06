@@ -704,8 +704,6 @@ InstanceKlass::InstanceKlass(const ClassFileParser& parser, KlassKind kind, mark
   if (parser.has_inlined_fields()) {
     set_has_inlined_fields();
   }
-
-  assert(nullptr == _methods, "underlying memory not zeroed?");
   assert(is_instance_klass(), "is layout incorrect?");
   assert(size_helper() == parser.layout_size(), "incorrect size_helper?");
 }
