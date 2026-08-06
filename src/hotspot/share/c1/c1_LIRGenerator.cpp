@@ -26,6 +26,8 @@
 #include "c1/c1_Defs.hpp"
 #include "c1/c1_FrameMap.hpp"
 #include "c1/c1_Instruction.hpp"
+#include "c1/c1_IR.hpp"
+#include "c1/c1_LIR.hpp"
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_LIRGenerator.hpp"
 #include "c1/c1_ValueStack.hpp"
@@ -42,7 +44,9 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c1/barrierSetC1.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/markWord.hpp"
 #include "oops/methodCounters.hpp"
+#include "oops/oop.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -327,6 +331,219 @@ void LIRGenerator::deoptimize_vmalloc_for_jvmti(bool is_allocated_by_vm, CodeEmi
 
 //--------------------------------------------------------------
 
+// Create a control flow diamond during LIR generation. This RAII object takes
+// care of adding new basic blocks and inserting them into the control flow graph.
+// Use the (Not)TakenBlock RAII objects to enter the LIR generation context of the
+// respective branches.
+// The last argument, branching_condition, is a lambda that gets called after all
+// blocks are set up to emit the LIR instruction that branches. The lambda must
+// take two BlockBegin* arguments to the taken and not_taken branches that serve
+// as destinations for the branches, e.g.
+//   [&](BlockBegin* taken, BlockBegin* not_taken) {
+//     condition(cond);
+//     __ branch(cond, taken); // Only use "proper" LIR_Op branches.
+//     __ jump(not_taken); // We must explicitly jump to the not taken block.
+//   }
+template <typename EmitBranch>
+LateControlFlowDiamond::LateControlFlowDiamond(LIRGenerator* lir_gen, Instruction* instr, EmitBranch&& branching_condition)
+: _gen(lir_gen)
+, _instr(instr)
+, _bci(instr->state_before()->bci())
+, _info(nullptr)
+, _origin(lir_gen->block())
+, _not_taken(make_late_block())
+, _taken(make_late_block())
+, _continuation(make_late_block())
+, _outer_continuation(_continuation) {
+  assert(!_gen->compilation()->bailed_out(), "must check for bailiout before LateControlFlowDiamond");
+  assert(_instr->is_pinned(), "LateControlFlowDiamond can only insert blocks for pinned instructions");
+  assert(!_origin->is_set(BlockBegin::late_block_flag) || _origin->end()->as_LateBlockEnd() == nullptr,
+         "use the nested ctor for nesting late control flow");
+
+  _gen->compilation()->set_has_late_control_flow(true);
+
+  // Compute the state for the instruction. This has the important side effect
+  // that values and register definitions are computed before we split the
+  // control flow.
+  _info = lir_gen->state_for(instr, instr->state_before());
+
+  // Move the remaining instructions in origin to continuation.
+  // Instruction::set_next also sets the block of this for the argument.
+  _continuation->set_next(_instr->next());
+  for (Instruction* i = _instr->next(); i->next() != nullptr; i = i->next()) {
+    i->set_next(i->next());
+  }
+  _continuation->set_end(_origin->end());
+
+  // Mark the instruction we are splitting.
+  instr->set_flag(Instruction::HasLateControlFlow, true);
+
+  // Because we moved some instructions from origin to continuation some
+  // exceptional edges may not belong to origin anymore. Leaving them will
+  // lead to unexpected live vregs during register allocation. To fix this
+  // we remove all exceptional edges from origin and add them back by scanning
+  // all emitted HIR and LIR instructions for the needed exception handlers and
+  // add those back in block_do_epilog() as for all late blocks.
+  _origin->set(BlockBegin::late_block_flag);
+  if (_gen->compilation()->has_exception_handlers()) {
+    for (int i = 0; i < _origin->number_of_exception_handlers(); i++) {
+      if (BlockBegin* handler = _origin->exception_handler_at(i); handler != nullptr) {
+        handler->remove_predecessor(_origin);
+      }
+    }
+    _origin->clear_exception_handlers();
+  }
+
+  // Connect all successor edges in the out direction only. Predecessor edges,
+  // i.e. the other direction, is set up by Block ctor later to make nested
+  // diamonds easier.
+  setup_out_edges();
+  _instr->set_next(_origin->end(), _bci);
+
+  // LIR generation is still in origin. Before switching we need to emit the branching condition.
+  branching_condition(_taken, _not_taken);
+
+  // Now, we conclude LIR generation for the origin block.
+  _gen->set_block(nullptr);
+  _gen->block_do_epilog(_origin);
+}
+
+// Ctor for nested late control flow
+template <typename EmitBranch>
+LateControlFlowDiamond::LateControlFlowDiamond(LateControlFlowDiamond::Block& parent, EmitBranch&& branching_condition)
+  : _gen(parent._lcfd._gen)
+  , _instr(parent._lcfd._instr)
+  , _bci(parent._lcfd._bci)
+  , _info(parent._lcfd._info)
+  , _origin(parent.block())
+  , _not_taken(make_late_block())
+  , _taken(make_late_block())
+  , _continuation(make_late_block())
+  , _outer_continuation(parent._lcfd._outer_continuation) {
+  assert(_origin->is_set(BlockBegin::late_block_flag), "only use this ctor for nested late control flow");
+  assert(_gen->compilation()->has_late_control_flow(), "must be since this is nested");
+
+  // Since we are nesting late control flow, the origin for this diamond is a late block. This makes splitting the
+  // block really quite simple because there is only one HIR instruction to move: origin's block end. But we must also
+  // remove origin from the predecessors of the parent's continuation.
+  BlockEnd* _continuation_end = _origin->end();
+  setup_out_edges();
+  _origin->set_next(_origin->end(), _bci);
+  _continuation->set_end(_continuation_end);
+  _continuation->set_next(_continuation->end());
+  assert(parent._lcfd._continuation->number_of_preds() == 2, "sanity");
+  // Part of this splitting operation is replacing the block that `parent` operates on with the continuation block.
+  // This is where LIR generation will resume for the parent diamond.
+  parent.set_block(_continuation);
+
+
+  // LIR generation is still in origin. Before switching we need to emit the branching condition.
+  branching_condition(_taken, _not_taken);
+
+  // Now, we conclude LIR generation for the origin block.
+  _gen->set_block(nullptr);
+  _gen->block_do_epilog(_origin);
+}
+
+BlockBegin* LateControlFlowDiamond::make_late_block() {
+  BlockBegin* block = new BlockBegin(_bci);
+  block->set_state_before(_instr->state_before());
+  block->set(BlockBegin::late_block_flag);
+  return block;
+}
+
+void LateControlFlowDiamond::setup_out_edges() {
+  BlockList* origin_sux = new BlockList(2);
+  origin_sux->append(_not_taken);
+  origin_sux->append(_taken);
+  _origin->set_end(new LateBlockEnd(_instr->state_before(), origin_sux, _outer_continuation));
+  // The predecessor instruction for _origin->end() must be set outside of this as it differs between nested and normal
+  // control flow diamonds.
+  _not_taken->set_end(new LateBlockEnd(_instr->state_before(), new BlockList(1, _continuation), _outer_continuation));
+  _not_taken->set_next(_not_taken->end(), _bci);
+  _taken->set_end(new LateBlockEnd(_instr->state_before(), new BlockList(1, _continuation), _outer_continuation));
+  _taken->set_next(_taken->end(), _bci);
+}
+
+LateControlFlowDiamond::Block::Block(LateControlFlowDiamond& lcfd, BlockBegin* block)
+  : _lcfd(lcfd)
+  , _block(block) {
+  assert(_lcfd._gen->block() == nullptr, "expected LIR generation to be ready for next block");
+  assert(_block->number_of_preds() == 1 && _block->pred_at(0) == lcfd._origin, "sanity");
+
+  // Start LIR generation in this block.
+  _lcfd._gen->block_do_prolog(block);
+  _lcfd._gen->set_block(block);
+}
+
+LateControlFlowDiamond::Block::~Block() {
+  assert(_lcfd._gen->block() == _block, "expected LIR generation to still be in this block");
+
+  // If this block does not contain an LIR instruction besides the label it is empty. The purpose of empty blocks in
+  // late control flow diamonds is to split critical, so we mark them as such.
+  if (_lcfd._gen->lir()->length() == 1) {
+    _block->set(BlockBegin::critical_edge_split_flag);
+  }
+
+  // Add the jump to the continuation as the last LIR instruction in the block.
+  _lcfd._gen->lir()->jump(_lcfd.continuation());
+
+  // Wrap up LIR generation for this block.
+  _lcfd._gen->set_block(nullptr);
+  _lcfd._gen->block_do_epilog(_block);
+}
+
+LateControlFlowDiamond::~LateControlFlowDiamond() {
+  assert(_gen->block() == nullptr, "expected LIR generation to be ready for next block");
+
+  // For brevity, we emit empty blocks here. However, we only tolerate one empty block.
+  if (_taken->lir() == nullptr && _not_taken->lir() != nullptr) {
+    LateControlFlowDiamond::TakenBlock empty(*this);
+  } else if (_not_taken->lir() == nullptr && _taken->lir() != nullptr) {
+    LateControlFlowDiamond::NotTakenBlock empty(*this);
+  } else {
+    assert(_taken->lir() != nullptr && _not_taken->lir() != nullptr, "must not emit two empty late blocks");
+  }
+
+  _gen->block_do_prolog(_continuation);
+  _gen->set_block(_continuation);
+}
+
+static void add_handler_edges(BlockBegin* block, const XHandlers* handlers) {
+  precond(handlers != nullptr);
+
+  for (int k = 0; k < handlers->length(); k++) {
+    BlockBegin* handler = handlers->handler_at(k)->entry_block();
+    block->add_exception_handler(handler);
+    if (!handler->is_predecessor(block)) {
+      handler->add_predecessor(block);
+    }
+  }
+}
+
+// Visit all HIR and LIR operations in a block and add all exception handler edges for that block.
+static void add_exceptional_edges_from_insns(BlockBegin* block) {
+  precond(block != nullptr);
+  // Add the exceptional edges from HIR instructions, except for the instruction we split, i.e. an
+  // instruction that has late control flow. Such an instruction is only followed by a LateBlockEnd
+  // that also gets skipped, which is okay since it does not have handlers.
+  for (Instruction* insn = block->next(); insn != nullptr && !insn->check_flag(Instruction::HasLateControlFlow); insn = insn->next()) {
+    if (XHandlers* handlers = insn->exception_handlers(); handlers != nullptr) {
+      add_handler_edges(block, handlers);
+    }
+  }
+
+  LIR_OpVisitState visitor;
+  LIR_OpList* lir_ops = block->lir()->instructions_list();
+  for (int i = 0; i < lir_ops->length(); i++) {
+    visitor.visit(lir_ops->at(i));
+    for (int j = 0; j < visitor.info_count(); j++) {
+      if (XHandlers* handlers = visitor.info_at(j)->exception_handlers(); handlers != nullptr) {
+        add_handler_edges(block, handlers);
+      }
+    }
+  }
+}
 
 void LIRGenerator::block_do_prolog(BlockBegin* block) {
 #ifndef PRODUCT
@@ -358,6 +575,11 @@ void LIRGenerator::block_do_epilog(BlockBegin* block) {
   }
 #endif
 
+  // Late blocks need their exceptional edges added.
+  if (compilation()->has_exception_handlers() && block->is_set(BlockBegin::late_block_flag)) {
+    add_exceptional_edges_from_insns(block);
+  }
+
   // LIR_Opr for unpinned constants shouldn't be referenced by other
   // blocks so clear them out after processing the block.
   for (int i = 0; i < _unpinned_constants.length(); i++) {
@@ -374,11 +596,27 @@ void LIRGenerator::block_do_epilog(BlockBegin* block) {
 void LIRGenerator::block_do(BlockBegin* block) {
   CHECK_BAILOUT();
 
+  assert(!block->is_set(BlockBegin::late_block_flag), "must not visit late blocks");
+
   block_do_prolog(block);
   set_block(block);
 
   for (Instruction* instr = block; instr != nullptr; instr = instr->next()) {
-    if (instr->is_pinned()) do_root(instr);
+    if (instr->is_pinned()) {
+      do_root(instr);
+      if (compilation()->has_late_control_flow() && instr->next() != nullptr) {
+        // When we have late control flow, we need to check that we do not continue at a LateBlockEnd.
+        if (LateBlockEnd* pot_next = instr->next()->as_LateBlockEnd(); pot_next != nullptr) {
+          // We are looking at a late block end so we set instr to the block begin for
+          // then continuation. Then instr->next() is the expected instruction.
+          // This skips all inserted late blocks.
+          instr = pot_next->continuation();
+          assert(instr->as_BlockBegin() != nullptr && instr->as_BlockBegin()->is_set(BlockBegin::late_block_flag),
+                 "must be late block");
+          block = instr->as_BlockBegin();
+        }
+      }
+    }
   }
 
   set_block(nullptr);

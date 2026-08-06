@@ -111,6 +111,7 @@ class InstructionPrinter: public InstructionVisitor {
   virtual void do_MonitorExit    (MonitorExit*     x);
   virtual void do_Intrinsic      (Intrinsic*       x);
   virtual void do_BlockBegin     (BlockBegin*      x);
+  virtual void do_LateBlockEnd   (LateBlockEnd*    x);
   virtual void do_Goto           (Goto*            x);
   virtual void do_If             (If*              x);
   virtual void do_TableSwitch    (TableSwitch*     x);
