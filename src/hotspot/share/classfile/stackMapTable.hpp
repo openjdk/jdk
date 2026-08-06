@@ -134,11 +134,16 @@ class StackMapReader : StackObj {
   // Check if reading first entry
   bool _first;
 
+  // An uninitializedThis in the locals array can be inherited by
+  // subsequent frames while uninitializedThis in the stack will be
+  // discarded as the stack is cleared between frames.
+  bool _uninit_in_locals;
+
   StackMapFrame* next_helper(TRAPS);
   void check_offset(StackMapFrame* frame);
   void check_size(TRAPS);
   int32_t chop(VerificationType* locals, int32_t length, int32_t chops);
-  VerificationType parse_verification_type(u1* flags, TRAPS);
+  VerificationType parse_verification_type(u1* flags, bool local, TRAPS);
   void check_verification_type_array_size(
       int32_t size, int32_t max_size, TRAPS) {
     if (size < 0 || size > max_size) {
