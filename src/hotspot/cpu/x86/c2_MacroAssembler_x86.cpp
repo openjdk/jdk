@@ -276,10 +276,8 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register rax_reg,
   // Finish fast lock unsuccessfully. MUST jump with ZF == 0
   Label slow_path;
 
-  if (UseObjectMonitorTable) {
-    // Clear cache in case fast locking succeeds or we need to take the slow-path.
-    movptr(Address(box, BasicLock::object_monitor_cache_offset_in_bytes()), 0);
-  }
+  // Clear cache in case fast locking succeeds or we need to take the slow-path.
+  movptr(Address(box, BasicLock::object_monitor_cache_offset_in_bytes()), 0);
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(rax_reg, obj, t);
@@ -293,7 +291,7 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register rax_reg,
 
     Label push;
 
-    const Register top = UseObjectMonitorTable ? rax_reg : box;
+    const Register top = rax_reg;
 
     // Load the mark.
     movptr(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
@@ -320,10 +318,9 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register rax_reg,
     lock(); cmpxchgptr(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
     jcc(Assembler::notEqual, slow_path);
 
-    if (UseObjectMonitorTable) {
-      // Need to reload top, clobbered by CAS.
-      movl(top, Address(thread, JavaThread::lock_stack_top_offset()));
-    }
+    // Need to reload top, clobbered by CAS.
+    movl(top, Address(thread, JavaThread::lock_stack_top_offset()));
+
     bind(push);
     // After successful lock, push object on lock-stack.
     movptr(Address(thread, top), obj);
@@ -340,63 +337,57 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register rax_reg,
     const ByteSize omc_monitor_offset = OMCache::monitor_offset();
     const ByteSize omc_obj_offset     = OMCache::obj_offset();
 
-    if (!UseObjectMonitorTable) {
-      assert(mark == monitor, "should be the same here");
-    } else {
-      const Register hash = t;
-      Label monitor_found;
+    const Register hash = t;
+    Label monitor_found;
 
-      // Look for the monitor in the current thread's object monitor cache (omc).
+    // Look for the monitor in the current thread's object monitor cache (omc).
 
-      movptr(monitor, Address(thread, thr_omc_offset + omc_monitor_offset));
-      cmpptr(obj, Address(thread, thr_omc_offset + omc_obj_offset));
-      jccb(Assembler::equal, monitor_found);
+    movptr(monitor, Address(thread, thr_omc_offset + omc_monitor_offset));
+    cmpptr(obj, Address(thread, thr_omc_offset + omc_obj_offset));
+    jccb(Assembler::equal, monitor_found);
 
-      // Look for the monitor in the table.
+    // Look for the monitor in the table.
 
-      // Get the hash code.
-      movptr(hash, Address(obj, oopDesc::mark_offset_in_bytes()));
-      shrq(hash, markWord::hash_shift);
-      andq(hash, markWord::hash_mask);
+    // Get the hash code.
+    movptr(hash, Address(obj, oopDesc::mark_offset_in_bytes()));
+    shrq(hash, markWord::hash_shift);
+    andq(hash, markWord::hash_mask);
 
-      // Get the table and calculate the bucket's address.
-      lea(rax_reg, ExternalAddress(ObjectMonitorTable::current_table_address()));
-      movptr(rax_reg, Address(rax_reg));
-      andq(hash, Address(rax_reg, ObjectMonitorTable::table_capacity_mask_offset()));
-      movptr(rax_reg, Address(rax_reg, ObjectMonitorTable::table_buckets_offset()));
+    // Get the table and calculate the bucket's address.
+    lea(rax_reg, ExternalAddress(ObjectMonitorTable::current_table_address()));
+    movptr(rax_reg, Address(rax_reg));
+    andq(hash, Address(rax_reg, ObjectMonitorTable::table_capacity_mask_offset()));
+    movptr(rax_reg, Address(rax_reg, ObjectMonitorTable::table_buckets_offset()));
 
-      // Read the monitor from the bucket.
-      movptr(monitor, Address(rax_reg, hash, Address::times_ptr));
+    // Read the monitor from the bucket.
+    movptr(monitor, Address(rax_reg, hash, Address::times_ptr));
 
-      // Check if the monitor in the bucket is special (empty, tombstone or removed)
-      cmpptr(monitor, ObjectMonitorTable::SpecialPointerValues::below_is_special);
-      jcc(Assembler::below, slow_path);
+    // Check if the monitor in the bucket is special (empty, tombstone or removed)
+    cmpptr(monitor, ObjectMonitorTable::SpecialPointerValues::below_is_special);
+    jcc(Assembler::below, slow_path);
 
-      // Check if object matches.
-      movptr(rax_reg, Address(monitor, ObjectMonitor::object_offset()));
-      BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
-      bs_asm->try_peek_weak_handle_in_nmethod(this, rax_reg, rax_reg, slow_path);
-      cmpptr(rax_reg, obj);
-      jcc(Assembler::notEqual, slow_path);
+    // Check if object matches.
+    movptr(rax_reg, Address(monitor, ObjectMonitor::object_offset()));
+    BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+    bs_asm->try_peek_weak_handle_in_nmethod(this, rax_reg, rax_reg, slow_path);
+    cmpptr(rax_reg, obj);
+    jcc(Assembler::notEqual, slow_path);
 
-      // Store the monitor in the current thread's object monitor cache (omc).
-      movptr(Address(thread, thr_omc_offset + omc_monitor_offset), monitor);
-      movptr(Address(thread, thr_omc_offset + omc_obj_offset), obj);
+    // Store the monitor in the current thread's object monitor cache (omc).
+    movptr(Address(thread, thr_omc_offset + omc_monitor_offset), monitor);
+    movptr(Address(thread, thr_omc_offset + omc_obj_offset), obj);
 
-      bind(monitor_found);
-    }
-    const ByteSize monitor_tag = in_ByteSize(UseObjectMonitorTable ? 0 : checked_cast<int>(markWord::monitor_value));
-    const Address recursions_address(monitor, ObjectMonitor::recursions_offset() - monitor_tag);
-    const Address owner_address(monitor, ObjectMonitor::owner_offset() - monitor_tag);
+    bind(monitor_found);
+
+    const Address recursions_address(monitor, ObjectMonitor::recursions_offset());
+    const Address owner_address(monitor, ObjectMonitor::owner_offset());
 
     Label monitor_locked;
     // Lock the monitor.
 
-    if (UseObjectMonitorTable) {
-      // Cache the monitor for unlock before trashing box. On failure to acquire
-      // the lock, the slow path will reset the entry accordingly (see CacheSetter).
-      movptr(Address(box, BasicLock::object_monitor_cache_offset_in_bytes()), monitor);
-    }
+    // Cache the monitor for unlock before trashing box. On failure to acquire
+    // the lock, the slow path will reset the entry accordingly (see CacheSetter).
+    movptr(Address(box, BasicLock::object_monitor_cache_offset_in_bytes()), monitor);
 
     // Try to CAS owner (no owner => current thread's _monitor_owner_id).
     xorptr(rax_reg, rax_reg);
@@ -481,7 +472,7 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register reg_rax, Register t, 
 
   const Register mark = t;
   const Register monitor = t;
-  const Register top = UseObjectMonitorTable ? t : reg_rax;
+  const Register top = t;
   const Register box = reg_rax;
 
   Label dummy;
@@ -499,11 +490,6 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register reg_rax, Register t, 
     // Load top.
     movl(top, Address(thread, JavaThread::lock_stack_top_offset()));
 
-    if (!UseObjectMonitorTable) {
-      // Prefetch mark.
-      movptr(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
-    }
-
     // Check if obj is top of lock-stack.
     cmpptr(obj, Address(thread, top, Address::times_1, -oopSize));
     // Top of lock stack was not obj. Must be monitor.
@@ -519,10 +505,8 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register reg_rax, Register t, 
 
     // We elide the monitor check, let the CAS fail instead.
 
-    if (UseObjectMonitorTable) {
-      // Load mark.
-      movptr(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
-    }
+    // Load mark.
+    movptr(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
 
     // Try to unlock. Transition lock bits 0b00 => 0b01
     movptr(reg_rax, mark);
@@ -545,9 +529,7 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register reg_rax, Register t, 
     jcc(Assembler::notEqual, inflated_check_lock_stack);
     stop("Fast Unlock lock on stack");
     bind(check_done);
-    if (UseObjectMonitorTable) {
-      movptr(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
-    }
+    movptr(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
     testptr(mark, markWord::monitor_value);
     jcc(Assembler::notZero, inflated);
     stop("Fast Unlock not monitor");
@@ -555,20 +537,16 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register reg_rax, Register t, 
 
     bind(inflated);
 
-    if (!UseObjectMonitorTable) {
-      assert(mark == monitor, "should be the same here");
-    } else {
-      // Uses ObjectMonitorTable.  Look for the monitor in our BasicLock on the stack.
-      movptr(monitor, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
-      // null check with ZF == 0, no valid pointer below alignof(ObjectMonitor*)
-      cmpptr(monitor, alignof(ObjectMonitor*));
-      jcc(Assembler::below, slow_path);
-    }
-    const ByteSize monitor_tag = in_ByteSize(UseObjectMonitorTable ? 0 : checked_cast<int>(markWord::monitor_value));
-    const Address recursions_address{monitor, ObjectMonitor::recursions_offset() - monitor_tag};
-    const Address succ_address{monitor, ObjectMonitor::succ_offset() - monitor_tag};
-    const Address entry_list_address{monitor, ObjectMonitor::entry_list_offset() - monitor_tag};
-    const Address owner_address{monitor, ObjectMonitor::owner_offset() - monitor_tag};
+    // Uses ObjectMonitorTable.  Look for the monitor in our BasicLock on the stack.
+    movptr(monitor, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
+    // null check with ZF == 0, no valid pointer below alignof(ObjectMonitor*)
+    cmpptr(monitor, alignof(ObjectMonitor*));
+    jcc(Assembler::below, slow_path);
+
+    const Address recursions_address{monitor, ObjectMonitor::recursions_offset()};
+    const Address succ_address{monitor, ObjectMonitor::succ_offset()};
+    const Address entry_list_address{monitor, ObjectMonitor::entry_list_offset()};
+    const Address owner_address{monitor, ObjectMonitor::owner_offset()};
 
     Label recursive;
 
@@ -593,9 +571,6 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register reg_rax, Register t, 
 
     // Save the monitor pointer in the current thread, so we can try to
     // reacquire the lock in SharedRuntime::monitor_exit_helper().
-    if (!UseObjectMonitorTable) {
-      andptr(monitor, ~(int32_t)markWord::monitor_value);
-    }
     movptr(Address(thread, JavaThread::unlocked_inflated_monitor_offset()), monitor);
 
     orl(t, 1); // Fast Unlock ZF = 0

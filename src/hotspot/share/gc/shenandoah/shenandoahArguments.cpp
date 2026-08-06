@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018, 2022, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,14 +45,7 @@ void ShenandoahArguments::initialize() {
 #endif
 
   // Shenandoah relies on the object header bits (including the self-forwarded bit
-  // at markWord::self_fwd_mask_in_place) being preserved across monitor inflation,
-  // which only holds with UseObjectMonitorTable.
-  if (!UseObjectMonitorTable) {
-    if (FLAG_IS_CMDLINE(UseObjectMonitorTable)) {
-      vm_exit_during_initialization("Shenandoah requires UseObjectMonitorTable");
-    }
-    FLAG_SET_DEFAULT(UseObjectMonitorTable, true);
-  }
+  // at markWord::self_fwd_mask_in_place) being preserved across monitor inflation.
 
 #if 0 // leave this block as stepping stone for future platforms
   log_warning(gc)("Shenandoah GC is not fully supported on this platform:");
