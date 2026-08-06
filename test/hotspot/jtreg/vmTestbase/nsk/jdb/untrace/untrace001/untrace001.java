@@ -103,39 +103,7 @@ public class untrace001 extends JdbTest {
         String[] threads;
 
         jdb.setBreakpointInMethod(LAST_BREAK);
-        jdb.setBreakpointInMethod(THREAD_STARTED_BREAK);
-
-        // Continue until the debuggee reaches the LAST_BREAK breakpoint. Each
-        // tested thread first hits threadStarted(); receiving that event is
-        // what makes a virtual thread visible to jdb with the default debug
-        // agent behavior, so count the hits to be sure every tested thread
-        // became visible before the lookup below.
-        int started = 0;
-        while (true) {
-            String[] contReply = jdb.receiveReplyFor(JdbCommand.cont);
-            // Match the fully qualified method of the stop location as a single
-            // token: debuggee output can interleave with jdb's own output and
-            // split the "Breakpoint hit:" prefix away from the location, so do
-            // not require both in the same paragraph. The "(" suffix avoids
-            // matching jdb's "Set deferred breakpoint" messages.
-            Paragrep contGrep = new Paragrep(contReply);
-            if (contGrep.find(LAST_BREAK + "(") > 0) {
-                break;
-            }
-            if (contGrep.find(THREAD_STARTED_BREAK + "(") > 0) {
-                started++;
-                continue;
-            }
-            failure("Stopped at unexpected location, expected " + LAST_BREAK
-                    + " or " + THREAD_STARTED_BREAK);
-            for (String line : contReply) {
-                log.complain("reply: " + line);
-            }
-            break;
-        }
-        if (started != untrace001a.numThreads) {
-            failure("Expected " + untrace001a.numThreads + " threadStarted() hits, got: " + started);
-        }
+        waitForTestedThreadStarts(THREAD_STARTED_BREAK, untrace001a.numThreads);
 
         threads = jdb.getThreadIdsByName(MYTHREAD);
 
