@@ -357,7 +357,7 @@ arrayOop Reflection::reflect_new_array(oop element_mirror, jint length, TRAPS) {
     if (type == T_VOID) {
       THROW_NULL(vmSymbols::java_lang_IllegalArgumentException());
     }
-    return oopFactory::new_typeArray(type, length, CHECK_NULL);
+    return oopFactory::new_typeArray(type, length, THREAD);
   } else {
     Klass* k = java_lang_Class::as_Klass(element_mirror);
     if (k->is_array_klass() && ArrayKlass::cast(k)->dimension() >= MAX_DIM) {

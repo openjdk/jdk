@@ -487,39 +487,57 @@ class WindowsFileAttributes
     }
 
     boolean isDirectoryLink() {
-        return isSymbolicLink() && ((fileAttrs & FILE_ATTRIBUTE_DIRECTORY) != 0);
+        return ((fileAttrs & FILE_ATTRIBUTE_DIRECTORY) != 0)
+                && isReparsePoint()
+                && (reparseTag == IO_REPARSE_TAG_SYMLINK);
     }
 
     boolean isDirectoryJunction() {
-        return reparseTag == IO_REPARSE_TAG_MOUNT_POINT;
+        return ((fileAttrs & FILE_ATTRIBUTE_DIRECTORY) != 0)
+                && isReparsePoint()
+                && (reparseTag == IO_REPARSE_TAG_MOUNT_POINT);
+    }
+
+    boolean isUnixDomainSocket() {
+        return isReparsePoint() && (reparseTag == IO_REPARSE_TAG_AF_UNIX);
     }
 
     @Override
     public boolean isSymbolicLink() {
-        return reparseTag == IO_REPARSE_TAG_SYMLINK;
-    }
-
-    boolean isUnixDomainSocket() {
-        return reparseTag == IO_REPARSE_TAG_AF_UNIX;
+        return isReparsePoint() && (reparseTag == IO_REPARSE_TAG_SYMLINK);
     }
 
     @Override
     public boolean isDirectory() {
-        return ((fileAttrs & FILE_ATTRIBUTE_DIRECTORY) != 0 &&
-                (fileAttrs & FILE_ATTRIBUTE_REPARSE_POINT) == 0);
-    }
-
-    @Override
-    public boolean isOther() {
-        if (isSymbolicLink())
-            return false;
-        // return true if device or reparse point
-        return ((fileAttrs & (FILE_ATTRIBUTE_DEVICE | FILE_ATTRIBUTE_REPARSE_POINT)) != 0);
+        return ((fileAttrs & FILE_ATTRIBUTE_DIRECTORY) != 0)
+                && !isSymbolicLink()
+                && !isDirectoryJunction();
     }
 
     @Override
     public boolean isRegularFile() {
-        return !isSymbolicLink() && !isDirectory() && !isOther();
+        if ((fileAttrs & FILE_ATTRIBUTE_DIRECTORY) != 0)
+            return false;
+        if ((fileAttrs & FILE_ATTRIBUTE_DEVICE) != 0)
+            return false;
+        if (!isReparsePoint())
+            return true;
+
+        // deduplicated file
+        if (reparseTag == IO_REPARSE_TAG_DEDUP)
+            return true;
+
+        // file in cloud storage (Microsoft defines a range of tags for this)
+        if ((reparseTag & ~IO_REPARSE_TAG_CLOUD_MASK) == IO_REPARSE_TAG_CLOUD)
+            return true;
+
+        // socket file or other non-directory reparse point
+        return false;
+    }
+
+    @Override
+    public boolean isOther() {
+        return !isRegularFile() && !isDirectory() && !isSymbolicLink();
     }
 
     @Override
