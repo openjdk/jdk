@@ -957,7 +957,7 @@ jobject AwtDropTarget::ConvertMemoryMappedData(JNIEnv* env, jlong fmt, STGMEDIUM
                 OLE_HRT(E_INVALIDARG);
             }
             env->SetByteArrayRegion(bytes, 0, st.cbSize.LowPart, pFileListWithDoubleZeroTerminator);
-            ::GlobalUnlock(pFileListWithDoubleZeroTerminator);
+            ::GlobalUnlock(glob);
             retObj = bytes;
         }
         //std::bad_alloc could happen in JStringBuffer
