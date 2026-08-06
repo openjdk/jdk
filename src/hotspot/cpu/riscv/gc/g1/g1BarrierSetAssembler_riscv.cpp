@@ -115,16 +115,24 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
   __ add(start, start, tmp);                              // start := first card address
   __ add(count, count, tmp);                              // count := last card address
 
-  static_assert((uint)G1CardTable::clean_card_val() == 0xff, "must be");
-  static_assert((uint)G1CardTable::dirty_card_val() == 0, "must be to use zr");
   // Iterate from start card to end card (inclusive).
   __ bind(loop);
   if (UseCondCardMark) {
+    // All non-clean cards (dirty, to-cset, from-remset) have bit0 == 0.
+    static_assert((G1CardTable::g1_dirty_card & 1U) == 0
+               && (G1CardTable::g1_to_cset_card & 1U) == 0
+               && (G1CardTable::g1_from_remset_card & 1U) == 0,
+               "cards needing scan must have bit0 == 0");
+    // Clean card has bit0 == 1.
+    static_assert(((uint)G1CardTable::clean_card_val() & 1U) == 1,
+                  "clean card must have bit0 == 1");
     __ lbu(tmp, Address(start, 0));
-    __ test_bit(tmp, tmp, 0);                         // test bit0: clean (0xff) has bit0=1, dirty (0) has bit0=0
-    __ beqz(tmp, next);                               // skip store if not clean
+    __ test_bit(tmp, tmp, 0);                         // test bit0: clean has bit0 == 1, non-clean has bit0 == 0
+    __ beqz(tmp, next);                               // skip store if already non-clean
   }
 
+  // `sb zr` writes 0, which must be the dirty value.
+  static_assert(G1CardTable::dirty_card_val() == 0, "must be to use zr");
   __ sb(zr, Address(start, 0));
 
   __ bind(next);
@@ -264,13 +272,22 @@ static void generate_post_barrier(MacroAssembler* masm,
   __ ld(tmp2, card_table_address);                       // tmp2 := card table base address
   __ add(tmp1, tmp1, tmp2);                              // tmp1 := card address
 
-  static_assert((uint)G1CardTable::clean_card_val() == 0xff, "must be");
-  static_assert((uint)G1CardTable::dirty_card_val() == 0, "must be to use zr");
   if (UseCondCardMark) {
+    // All non-clean cards (dirty, to-cset, from-remset) have bit0 == 0.
+    static_assert((G1CardTable::g1_dirty_card & 1U) == 0
+               && (G1CardTable::g1_to_cset_card & 1U) == 0
+               && (G1CardTable::g1_from_remset_card & 1U) == 0,
+               "cards needing scan must have bit0 == 0");
+    // Clean card has bit0 == 1.
+    static_assert(((uint)G1CardTable::clean_card_val() & 1U) == 1,
+                  "clean card must have bit0 == 1");
     __ lbu(tmp2, Address(tmp1, 0));                      // tmp2 := card
-    __ test_bit(tmp2, tmp2, 0);                          // test bit0: dirty cards have bit0=0
-    __ beqz(tmp2, done);                                 // skip if already dirty (bit0=0)
+    __ test_bit(tmp2, tmp2, 0);                          // test bit0: clean has bit0 == 1, non-clean has bit0 == 0
+    __ beqz(tmp2, done);                                 // skip store if already non-clean
   }
+
+  // `sb zr` writes 0, which must be the dirty value.
+  static_assert(G1CardTable::dirty_card_val() == 0, "must be to use zr");
   __ sb(zr, Address(tmp1, 0));
 }
 
