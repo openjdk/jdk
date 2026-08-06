@@ -28,10 +28,16 @@
 #include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/g1/g1NMethodClosure.hpp"
+#include "gc/g1/g1ParScanThreadState.inline.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
+
+G1NMethodClosure::G1NMethodClosure(OopClosure* oc, bool strong, G1ParScanThreadState* par_scan_state) :
+  _oc(oc, par_scan_state),
+  _marking_oc(par_scan_state->worker_id()),
+  _strong(strong) { }
 
 template <typename T>
 void G1NMethodClosure::HeapRegionGatheringOopClosure::do_oop_work(T* p) {
@@ -65,17 +71,17 @@ void G1NMethodClosure::HeapRegionGatheringOopClosure::do_oop_work(T* p) {
   }
 }
 
-G1NMethodClosure::HeapRegionGatheringOopClosure::HeapRegionGatheringOopClosure(OopClosure* oc, G1ParScanThreadState* pss) :
+G1NMethodClosure::HeapRegionGatheringOopClosure::HeapRegionGatheringOopClosure(OopClosure* oc, G1ParScanThreadState* par_scan_state) :
   _g1h(G1CollectedHeap::heap()),
   _work(oc),
-  _pss(pss),
+  _par_scan_state(par_scan_state),
   _nm(nullptr),
   _affected_regions(5) {
 }
 
 void G1NMethodClosure::HeapRegionGatheringOopClosure::add_to_remsets() {
   while (!_affected_regions.is_empty()) {
-    _pss->remember_nmethod_into_region(_affected_regions.pop(), _nm);
+    _par_scan_state->remember_nmethod_into_region(_affected_regions.pop(), _nm);
   }
 }
 

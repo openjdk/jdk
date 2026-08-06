@@ -1794,7 +1794,12 @@ void VM_Version::get_processor_features() {
     }
 #ifdef COMPILER2
     if (FLAG_IS_DEFAULT(UseFPUForSpilling) && supports_sse4_2()) {
-      FLAG_SET_DEFAULT(UseFPUForSpilling, true);
+      // Spilling to FPU registers not beneficial on Haswell and beyond
+      if (UseAVX > 1) {
+        FLAG_SET_DEFAULT(UseFPUForSpilling, false);
+      } else {
+        FLAG_SET_DEFAULT(UseFPUForSpilling, true);
+      }
     }
 #endif
   }
