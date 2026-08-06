@@ -3924,7 +3924,9 @@ public class Types {
         };
 
         Set<TypePair> mergeCache = new HashSet<>();
-        // this cache could be used by several merge operations
+        /* this cache could be used by several merge operations that can happen inside
+         * an invocation to one of the public lub methods.
+         */
         Map<TypePair, Type> mergeOuterCache = new HashMap<>();
         private Type merge(Type c1, Type c2) {
             TypePair pair = new TypePair(c1, c2);
@@ -3967,6 +3969,10 @@ public class Types {
             // be inherited.  So set it to noAnnotations for now
             Type result = new ClassType(class1.getEnclosingType(), merged.toList(),
                                         class1.tsym);
+            /* We need to store this result, to potentially avoid OOM errors that can be produced when many types
+             * that are equal but with different identity are created while determining the lub, in particular
+             * when F-bounded generic classes are present
+             */
             mergeOuterCache.put(pair, result);
             return result;
         }
