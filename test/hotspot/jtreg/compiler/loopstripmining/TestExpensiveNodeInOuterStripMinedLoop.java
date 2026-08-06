@@ -29,8 +29,9 @@
  *          outer strip mined loop.
  *
  * @run main/othervm -Xbatch -XX:-TieredCompilation
- *                   -XX:CompileCommand=compileonly,TestExpensiveNodeInOuterStripMinedLoop::test
- *                   TestExpensiveNodeInOuterStripMinedLoop
+ *                   -XX:CompileCommand=compileonly,${test.main.class}::test
+ *                   ${test.main.class}
+ * @run main ${test.main.class}
  */
 
 /*
@@ -46,6 +47,8 @@
  * Only a debug VM verifies loop optimizations, so this test can only fail there.
  * The reduced shape comes from a JavaFuzzer test and needs OSR to trigger.
  */
+
+package compiler.loopstripmining;
 
 public class TestExpensiveNodeInOuterStripMinedLoop {
 
