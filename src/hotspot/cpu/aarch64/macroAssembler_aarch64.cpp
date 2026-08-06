@@ -6002,8 +6002,6 @@ void MacroAssembler::remove_frame(int framesize) {
 }
 
 void MacroAssembler::remove_frame(int initial_framesize, bool needs_stack_repair) {
-  save_profile_rng();
-
   if (needs_stack_repair) {
     // The method has a scalarized entry point (where fields of value object arguments
     // are passed through registers and stack), and a non-scalarized entry point (where
