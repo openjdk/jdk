@@ -523,11 +523,15 @@ class WindowsFileAttributes
         if (!isReparsePoint())
             return true;
 
-        // reparse point
+        // deduplicated file
         if (reparseTag == IO_REPARSE_TAG_DEDUP)
             return true;
+
+        // file in cloud storage (Microsoft defines a range of tags for this)
         if ((reparseTag & ~IO_REPARSE_TAG_CLOUD_MASK) == IO_REPARSE_TAG_CLOUD)
             return true;
+
+        // socket file or other non-directory reparse point
         return false;
     }
 
