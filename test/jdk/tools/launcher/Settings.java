@@ -335,8 +335,8 @@ public class Settings extends TestHelper {
         containsDefaultOptions(tr);
     }
 
-    private static TestResult doExecWithUSLocale(
-            String command, String... args) {
+    private static TestResult doExecWithUSLocale(String command,
+                                                 String... args) {
         String[] commandLine = new String[args.length + 3];
         commandLine[0] = command;
         commandLine[1] = "-Duser.language=en";
