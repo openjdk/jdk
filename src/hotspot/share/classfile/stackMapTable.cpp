@@ -352,7 +352,8 @@ StackMapFrame* StackMapReader::next_helper(TRAPS) {
     VerificationType* stack = NEW_RESOURCE_ARRAY_IN_THREAD(
       THREAD, VerificationType, 2);
     u2 stack_size = 1;
-    stack[0] = parse_verification_type(nullptr, CHECK_VERIFY_(_verifier, nullptr));
+    u1 flags = _prev_frame->flags();
+    stack[0] = parse_verification_type(&flags, CHECK_VERIFY_(_verifier, nullptr));
     if (stack[0].is_category2()) {
       stack[1] = stack[0].to_category2_2nd();
       stack_size = 2;
@@ -360,7 +361,7 @@ StackMapFrame* StackMapReader::next_helper(TRAPS) {
     check_verification_type_array_size(
       stack_size, _max_stack, CHECK_VERIFY_(_verifier, nullptr));
     frame = new StackMapFrame(
-      offset, _prev_frame->flags(), _prev_frame->locals_size(), stack_size,
+      offset, flags, _prev_frame->locals_size(), stack_size,
       _max_locals, _max_stack, locals, stack,
       _assert_unset_fields_buffer, _verifier);
     if (_first && locals != nullptr) {
@@ -403,7 +404,7 @@ StackMapFrame* StackMapReader::next_helper(TRAPS) {
     check_verification_type_array_size(
       stack_size, _max_stack, CHECK_VERIFY_(_verifier, nullptr));
     frame = new StackMapFrame(
-      offset, _prev_frame->flags(), _prev_frame->locals_size(), stack_size,
+      offset, flags, _prev_frame->locals_size(), stack_size,
       _max_locals, _max_stack, locals, stack,
       _assert_unset_fields_buffer, _verifier);
     if (_first && locals != nullptr) {
