@@ -52,7 +52,7 @@ public class TestSveClone {
     public static void main(String[] args) {
         for (int i = 0; i < 100; i++) {
             test(0);    // exercise is_valid_sve_arith_imm_pattern()
-            test(1);    // exercise is_vector_bitwise_not_pattern()
+            test(-1);   // exercise is_vector_bitwise_not_pattern()
         }
         IO.println("done");
     }
