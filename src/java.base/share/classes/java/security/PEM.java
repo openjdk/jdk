@@ -32,6 +32,7 @@ import sun.security.util.KeyUtil;
 import sun.security.util.Pem;
 
 import java.io.InputStream;
+import java.lang.ref.Reference;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Objects;
@@ -201,7 +202,11 @@ public final class PEM implements BinaryEncodable {
      * @since 27
      */
     public byte[] content() {
-        return content.clone();
+        try {
+            return content.clone();
+        } finally {
+            Reference.reachabilityFence(this);
+        }
     }
 
     /**
@@ -212,7 +217,11 @@ public final class PEM implements BinaryEncodable {
      * @throws IllegalArgumentException if decoding fails
      */
     public byte[] decode() {
-        return Base64.getMimeDecoder().decode(content);
+        try {
+            return Base64.getMimeDecoder().decode(content);
+        } finally {
+            Reference.reachabilityFence(this);
+        }
     }
 
     /**
@@ -223,15 +232,23 @@ public final class PEM implements BinaryEncodable {
      */
     @Override
     public String toString() {
-        return new String(Pem.pemEncoded(type, content),
-            StandardCharsets.ISO_8859_1);
+        try {
+            return new String(Pem.pemEncoded(type, content),
+                StandardCharsets.ISO_8859_1);
+        } finally {
+            Reference.reachabilityFence(this);
+        }
     }
 
     /*
      * Returns the PEM string representation as a byte array.
      */
     byte[] toTextualByteArray() {
-        return Pem.pemEncoded(type, content);
+        try {
+            return Pem.pemEncoded(type, content);
+        } finally {
+            Reference.reachabilityFence(this);
+        }
     }
 
     // Clear internal content
