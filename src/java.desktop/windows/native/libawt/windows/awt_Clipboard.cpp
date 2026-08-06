@@ -260,8 +260,6 @@ Java_sun_awt_windows_WClipboard_publishClipboardData(JNIEnv *env,
 
         env->ReleasePrimitiveArrayCritical(bytes, (LPVOID)lpbMfpBuffer, JNI_ABORT);
 
-        // where is hmfp freed (in 'normal' and error case) ?
-        // verify is only doing something in the debug case and not freeing anything
         VERIFY(::SetClipboardData((UINT)format, hmfp));
 
         return;
@@ -291,8 +289,6 @@ Java_sun_awt_windows_WClipboard_publishClipboardData(JNIEnv *env,
     env->GetByteArrayRegion(bytes, 0, nBytes, (jbyte *)dataout);
     ::GlobalUnlock(hglobal);
 
-    // where is hglobal freed (in 'normal' and error case) ?
-    // verify is only doing something in the debug case and not freeing anything
     VERIFY(::SetClipboardData((UINT)format, hglobal));
 
     CATCH_BAD_ALLOC;
