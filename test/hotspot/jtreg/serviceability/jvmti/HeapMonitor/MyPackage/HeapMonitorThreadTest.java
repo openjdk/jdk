@@ -26,11 +26,12 @@ package MyPackage;
 
 /**
  * @test
+ * @bug 8323421
  * @build Frame HeapMonitor ThreadInformation
  * @summary Verifies the JVMTI Heap Monitor Thread information sanity.
  * @requires vm.jvmti
  * @compile HeapMonitorThreadTest.java
- * @run main/othervm/native/timeout=480 -Xmx512m -agentlib:HeapMonitorTest MyPackage.HeapMonitorThreadTest
+ * @run main/othervm/native/timeout=480 -Xmx1g -agentlib:HeapMonitorTest MyPackage.HeapMonitorThreadTest
  */
 
 import java.util.List;
