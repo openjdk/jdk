@@ -351,6 +351,80 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
   return slot;
 }
 
+// InlineTypeReturnedAsFields is disabled, so we need to only care about the single return value
+// in this calling convention.
+const uint SharedRuntime::java_return_convention_max_int = 1;
+const uint SharedRuntime::java_return_convention_max_float = 1;
+
+int SharedRuntime::java_return_convention(const BasicType *sig_bt, VMRegPair *regs, int total_args_passed) {
+  uint int_args = 0;
+#ifdef __ABI_HARD__
+  uint fp_args = 0;
+#endif // __ABI_HARD__
+  for (int i = 0; i < total_args_passed; i++) {
+    switch (sig_bt[i]) {
+      case T_BOOLEAN:
+      case T_CHAR:
+      case T_BYTE:
+      case T_SHORT:
+      case T_INT:
+      case T_OBJECT:
+      case T_ARRAY:
+      case T_ADDRESS:
+      case T_METADATA:
+#ifndef __ABI_HARD__
+      case T_FLOAT:
+#endif // !__ABI_HARD__
+        if (int_args < java_return_convention_max_int) {
+          regs[i].set1(R0->as_VMReg());
+          int_args++;
+        } else {
+          return -1;
+        }
+        break;
+      case T_LONG:
+#ifndef __ABI_HARD__
+      case T_DOUBLE:
+#endif // !__ABI_HARD__
+        assert((i + 1) < total_args_passed && sig_bt[i + 1] == T_VOID, "expecting half");
+        if (int_args < java_return_convention_max_int) {
+          regs[i].set_pair(R1->as_VMReg(), R0->as_VMReg());
+          int_args++;
+        } else {
+          return -1;
+        }
+        break;
+#ifdef __ABI_HARD__
+      case T_FLOAT:
+        if (fp_args < java_return_convention_max_float) {
+          regs[i].set1(S0->as_VMReg());
+          fp_args++;
+        } else {
+          return -1;
+        }
+        break;
+      case T_DOUBLE:
+        assert((i + 1) < total_args_passed && sig_bt[i + 1] == T_VOID, "expecting half");
+        if (fp_args < java_return_convention_max_float) {
+          regs[i].set_pair(S1_reg->as_VMReg(), S0->as_VMReg());
+          fp_args++;
+        } else {
+          return -1;
+        }
+        break;
+#endif // !__ABI_HARD__
+      case T_VOID:
+        regs[i].set_bad();
+        break;
+      default:
+        ShouldNotReachHere();
+        break;
+    }
+  }
+
+  return int_args + fp_args;
+}
+
 int SharedRuntime::vector_calling_convention(VMRegPair *regs,
                                              uint num_bits,
                                              uint total_args_passed) {
@@ -1867,71 +1941,6 @@ RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
 }
 
 #endif // INCLUDE_JFR
-
-// InlineTypeReturnedAsFields is disabled, so we need to only care about the single return value
-// in this calling convention.
-const uint SharedRuntime::java_return_convention_max_int = 1;
-const uint SharedRuntime::java_return_convention_max_float = 1;
-
-int SharedRuntime::java_return_convention(const BasicType *sig_bt, VMRegPair *regs, int total_args_passed) {
-  uint int_args = 0;
-  uint fp_args = 0;
-
-  for (int i = 0; i < total_args_passed; i++) {
-    switch (sig_bt[i]) {
-      case T_BOOLEAN:
-      case T_CHAR:
-      case T_BYTE:
-      case T_SHORT:
-      case T_INT:
-      case T_OBJECT:
-      case T_ARRAY:
-      case T_ADDRESS:
-      case T_METADATA:
-        if (int_args < java_return_convention_max_int) {
-          regs[i].set1(R0->as_VMReg());
-          int_args++;
-        } else {
-          return -1;
-        }
-        break;
-      case T_LONG:
-        assert((i + 1) < total_args_passed && sig_bt[i + 1] == T_VOID, "expecting half");
-        if (int_args < java_return_convention_max_int) {
-          regs[i].set_pair(R1->as_VMReg(), R0->as_VMReg());
-          int_args++;
-        } else {
-          return -1;
-        }
-        break;
-      case T_FLOAT:
-        if (fp_args < java_return_convention_max_float) {
-          regs[i].set1(S0->as_VMReg());
-          fp_args++;
-        } else {
-          return -1;
-        }
-        break;
-      case T_DOUBLE:
-        assert((i + 1) < total_args_passed && sig_bt[i + 1] == T_VOID, "expecting half");
-        if (fp_args < java_return_convention_max_float) {
-          regs[i].set_pair(S1_reg->as_VMReg(), S0->as_VMReg());
-          fp_args++;
-        } else {
-          return -1;
-        }
-        break;
-      case T_VOID:
-        regs[i].set_bad();
-        break;
-      default:
-        ShouldNotReachHere();
-        break;
-    }
-  }
-
-  return int_args + fp_args;
-}
 
 BufferedInlineTypeBlob* SharedRuntime::generate_buffered_inline_type_adapter(const InlineKlass* vk) {
   Unimplemented();
