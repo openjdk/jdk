@@ -685,16 +685,16 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
     UTIL_LOOKUP_TOOLCHAIN_PROGS(METAL, metal)
     if test "x$METAL" = x; then
       AC_MSG_CHECKING([if metal can be run using xcrun])
-      METAL="xcrun -sdk macosx metal"
+      METAL="xcrun metal"
       test_metal=`$METAL --version 2>&1`
       if test $? -ne 0; then
         AC_MSG_RESULT([no])
-        AC_MSG_NOTICE([A full XCode is required to build the JDK (not only command line tools)])
-        AC_MSG_NOTICE([If you have XCode installed, you might need to reset the Xcode active developer directory])
+        AC_MSG_NOTICE([A full Xcode is required to build the JDK (not only command line tools)])
+        AC_MSG_NOTICE([If you have Xcode installed, you might need to reset the Xcode active developer directory])
         AC_MSG_NOTICE([using 'sudo xcode-select -r'])
         AC_MSG_NOTICE([Starting with Xcode 26, the Metal toolchain is no longer bundled with Xcode.])
         AC_MSG_NOTICE([Try installing it with 'xcodebuild -downloadComponent MetalToolchain'])
-        AC_MSG_ERROR([XCode tool 'metal' neither found in path nor with xcrun])
+        AC_MSG_ERROR([Xcode tool 'metal' neither found in path nor with xcrun])
       else
         AC_MSG_RESULT([yes, will be using '$METAL'])
       fi
@@ -703,11 +703,11 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
     UTIL_LOOKUP_TOOLCHAIN_PROGS(METALLIB, metallib)
     if test "x$METALLIB" = x; then
       AC_MSG_CHECKING([if metallib can be run using xcrun])
-      METALLIB="xcrun -sdk macosx metallib"
+      METALLIB="xcrun metallib"
       test_metallib=`$METALLIB --version 2>&1`
       if test $? -ne 0; then
         AC_MSG_RESULT([no])
-        AC_MSG_ERROR([XCode tool 'metallib' neither found in path nor with xcrun])
+        AC_MSG_ERROR([Xcode tool 'metallib' neither found in path nor with xcrun])
       else
         AC_MSG_RESULT([yes, will be using '$METALLIB'])
       fi
