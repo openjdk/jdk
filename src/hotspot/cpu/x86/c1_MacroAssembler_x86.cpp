@@ -275,6 +275,11 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   // C1 code is not hot enough to micro optimize the nmethod entry barrier with an out-of-line stub
   bs->nmethod_entry_barrier(this, nullptr /* slow_path */, nullptr /* continuation */);
+
+  if (verified_inline_entry_label != nullptr) {
+    // Jump here from the scalarized entry points that already created the frame.
+    bind(*verified_inline_entry_label);
+  }
 }
 
 void C1_MacroAssembler::remove_frame(int frame_size_in_bytes, bool needs_stack_repair) {
