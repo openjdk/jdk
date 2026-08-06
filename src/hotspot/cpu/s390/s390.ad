@@ -5356,7 +5356,7 @@ instruct castN2X(iRegL dst, iRegN src) %{
   match(Set dst (CastP2X src));
   size(4); // LLGFR is 4 bytes
   format %{ "LLGFR  $dst,$src\t # CastN2X" %}
-  ins_encode %{ __ z_llgfr($dst$$Register, $src$$Register); %}
+  ins_encode %{ __ llgfr_if_needed($dst$$Register, $src$$Register); %}
   ins_pipe(pipe_class_dummy);
 %}
 
@@ -10288,11 +10288,11 @@ instruct inlineCallClearArray(iRegL cnt, iRegP_N2P base, immL_0 zero, Universe d
 %}
 
 // Clear-array with dynamic array length and non-zero value.
-instruct inlineCallClearArrayWordFill(iRegL cnt, iRegP_N2P base, iRegL val, Universe dummy, allRoddRegL tmpL, flagsReg cr) %{
+instruct inlineCallClearArrayWordFill(iRegL cnt, iRegP_N2P base, iRegL val, Universe dummy, iRegL tmpL, flagsReg cr) %{
   predicate(((ClearArrayNode*)n)->requires_word_fill());
   match(Set dummy (ClearArray (Binary cnt base) val));
   effect(TEMP tmpL, KILL cr);
-  ins_cost(BRANCH_COST); // dynamic-length store loop, same as inlineCallClearArray
+  ins_cost(BRANCH_COST); // dynamic-length store loop
   format %{ "ClearArrayWordCopy $cnt,$base,$val" %}
   ins_encode %{ __ fill_words($base$$Register, $cnt$$Register, $val$$Register, $tmpL$$Register); %}
   ins_pipe(pipe_class_dummy);

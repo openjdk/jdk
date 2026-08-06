@@ -218,7 +218,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
 void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler *masm, Register tmp1, Register tmp2, Register tmp3) {
   assert_different_registers(tmp1, tmp2, tmp3);
 
-  __ block_comment("c2i_entry_barrier (c2i_entry_barrier) {");
+  __ block_comment("c2i_entry_barrier {");
 
   Register tmp1_class_loader_data = tmp1;
 
@@ -249,7 +249,7 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler *masm, Register tmp1,
 
   __ bind(skip_barrier);
 
-  __ block_comment("} c2i_entry_barrier (c2i_entry_barrier)");
+  __ block_comment("} c2i_entry_barrier");
 }
 
 void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register oop, const char* msg) {

@@ -1329,7 +1329,6 @@ void InterpreterMacroAssembler::profile_taken_branch(Register mdp, Register bump
   }
 }
 
-// Kills Z_R1_scratch.
 void InterpreterMacroAssembler::profile_not_taken_branch(Register mdp, bool acmp) {
   if (ProfileInterpreter) {
     Label profile_continue;
@@ -1356,22 +1355,20 @@ void InterpreterMacroAssembler::profile_acmp(Register mdp,
                                              Register right,
                                              Register tmp) {
   if (ProfileInterpreter) {
-    assert_different_registers(mdp, left, right, tmp, Z_ARG4);
+    assert_different_registers(mdp, left, right, tmp);
     Label profile_continue;
 
     // If no method data exists, go to profile_continue.
     test_method_data_pointer(mdp, profile_continue);
 
-    z_lgr(tmp, left);
-    profile_obj_type(tmp, Address(mdp, in_bytes(ACmpData::left_offset())), Z_ARG4);
+    profile_obj_type(left, Address(mdp, in_bytes(ACmpData::left_offset())), tmp);
 
     Label left_not_inline_type;
     test_oop_is_not_inline_type(left, tmp, left_not_inline_type);
     set_mdp_flag_at(mdp, ACmpData::left_inline_type_byte_constant());
     bind(left_not_inline_type);
 
-    z_lgr(tmp, right);
-    profile_obj_type(tmp, Address(mdp, in_bytes(ACmpData::right_offset())), Z_ARG4);
+    profile_obj_type(right, Address(mdp, in_bytes(ACmpData::right_offset())), tmp);
 
     Label right_not_inline_type;
     test_oop_is_not_inline_type(right, tmp, right_not_inline_type);

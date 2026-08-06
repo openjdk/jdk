@@ -3928,20 +3928,18 @@ void MacroAssembler::test_markword_is_inline_type(Register markword, Label& is_i
   static_assert(markWord::inline_type_pattern <= 0x7FFF, "must fit in simm16 for z_chi");
   z_nilf(markword, markWord::inline_type_pattern_mask);
   z_chi(markword, markWord::inline_type_pattern);
-  z_bre(is_inline_type);
+  branch_optimized(bcondEqual, is_inline_type);
 }
 
 void MacroAssembler::test_oop_is_not_inline_type(Register object, Register tmp, Label& not_inline_type, bool can_be_null) {
-  assert_different_registers(Z_R0, tmp);
-  assert_different_registers(Z_R0, object);
   if (can_be_null) {
     z_ltgr(object, object);
-    z_bre(not_inline_type);
+    branch_optimized(bcondEqual, not_inline_type);
   }
-  z_lg(Z_R0, oopDesc::mark_offset_in_bytes(), object);
-  z_nilf(Z_R0, markWord::inline_type_pattern_mask);
-  z_chi(Z_R0, markWord::inline_type_pattern);
-  z_brne(not_inline_type);
+  z_lg(tmp, oopDesc::mark_offset_in_bytes(), object);
+  z_nilf(tmp, markWord::inline_type_pattern_mask);
+  z_chi(tmp, markWord::inline_type_pattern);
+  branch_optimized(bcondNotEqual, not_inline_type);
 }
 
 void MacroAssembler::test_field_is_null_free_inline_type(Register flags, Label& is_null_free) {
@@ -4273,8 +4271,7 @@ void MacroAssembler::test_oop_prototype_bit(Register oop, Register temp_reg, int
     z_tmll(temp_reg, markWord::unlocked_value);
     z_brnaz(test_mark_word);
     // Slow path: use klass prototype
-    load_klass(temp_reg, oop);
-    z_lg(temp_reg, Address(temp_reg, in_bytes(Klass::prototype_header_offset())));
+    load_prototype_header(temp_reg, oop);
     bind(test_mark_word);
   }
   z_tmll(temp_reg, test_bit);
@@ -6388,7 +6385,7 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register temp1
   z_cg(obj, Address(Z_thread, top));
   z_bre(push);
 
-  // Check for monitor (0b10).
+  // Check header for monitor (0b10).
   z_tmll(mark, markWord::monitor_value);
   branch_optimized(bcondNotAllZero, slow);
 
@@ -7194,7 +7191,6 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
 // Unimplemented methods for inline types.
 int MacroAssembler::store_inline_type_fields_to_buf(ciInlineKlass* vk, bool from_interpreter) {
    Unimplemented();
-   stop("implement function MacroAssembler::store_inline_type_fields_to_buf");
    return 0;
 }
 

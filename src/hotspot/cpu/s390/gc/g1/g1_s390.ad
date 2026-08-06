@@ -123,7 +123,7 @@ instruct g1StoreLSpecialOneOopOff4(indirect mem, iRegL src, immI_4 off, iRegL tm
                       $tmp1$$Register /* obj     */,
                       $tmp2$$Register /* pre_val */,
                       $tmp3$$Register /* tmp1    */,
-                      RegSet::of($tmp1$$Register, $src$$Register) /* preserve */);
+                      RegSet::of($mem$$Register, $tmp1$$Register, $src$$Register) /* preserve */);
 
     __ z_stg($src$$Register, Address($mem$$Register, 0));
 

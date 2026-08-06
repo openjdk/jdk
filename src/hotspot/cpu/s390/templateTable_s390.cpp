@@ -3322,22 +3322,19 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
       __ pop(atos);
       if (is_static) {
         Label is_nullable;
-        __ z_lgr(Z_R0, flags);
-        __ z_nill(Z_R0, 1 << ResolvedFieldEntry::is_null_free_inline_type_shift);
-        __ branch_optimized(Assembler::bcondZero, is_nullable);
+        __ z_tmll(flags, 1 << ResolvedFieldEntry::is_null_free_inline_type_shift);
+        __ branch_optimized(Assembler::bcondAllZero, is_nullable);
         __ null_check(Z_tos);  // FIXME JDK-8341120
         __ bind(is_nullable);
         // Note: fieldAddr already contains the complete address (obj + offset), look at the start of method
         do_oop_store(_masm, field, Z_tos,
                      oopStore_tmp1, oopStore_tmp2, oopStore_tmp3, IN_HEAP);
       } else {
-        __ z_lgr(Z_R0, flags);
         Label null_free_reference, is_flat, rewrite_inline, done_valhalla;
-        __ z_nill(Z_R0, 1 << ResolvedFieldEntry::is_flat_shift);
-        __ branch_optimized(Assembler::bcondNotZero, is_flat);
-        __ z_lgr(Z_R0, flags);
-        __ z_nill(Z_R0, 1 << ResolvedFieldEntry::is_null_free_inline_type_shift);
-        __ branch_optimized(Assembler::bcondNotZero, null_free_reference);
+        __ z_tmll(flags, 1 << ResolvedFieldEntry::is_flat_shift);
+        __ branch_optimized(Assembler::bcondAllOne, is_flat);
+        __ z_tmll(flags, 1 << ResolvedFieldEntry::is_null_free_inline_type_shift);
+        __ branch_optimized(Assembler::bcondAllOne, null_free_reference);
         pop_and_check_object(obj);
         __ z_agr(fieldAddr, obj);
         // Store into the field

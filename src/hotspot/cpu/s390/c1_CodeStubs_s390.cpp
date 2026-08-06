@@ -297,7 +297,7 @@ void MonitorEnterStub::emit_code(LIR_Assembler* ce) {
     // When we come here, _obj_reg has already been checked to be non-null.
     Register scratch = _scratch_reg->as_register();
     __ z_lg(scratch, oopDesc::mark_offset_in_bytes(), _obj_reg->as_register());
-    __ z_nilf(scratch, markWord::inline_type_pattern);
+    __ z_nilf(scratch, markWord::inline_type_pattern_mask);
     __ z_chi(scratch, markWord::inline_type_pattern);
     __ branch_optimized(Assembler::bcondEqual, *_throw_ie_stub->entry());
   }
