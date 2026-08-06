@@ -231,8 +231,8 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler *masm, Register tmp1,
   __ load_method_holder_cld(tmp1_class_loader_data, Z_method);
 
   // Fast path: If class loader is strong, the holder cannot be unloaded.
-  __ z_llgf(tmp2, Address(tmp1_class_loader_data, ClassLoaderData::keep_alive_ref_count_offset()));
-  __ compareU64_and_branch(tmp2, (intptr_t)0, Assembler::bcondNotEqual, skip_barrier);
+  __ load_and_test_int2long(tmp2, Address(tmp1_class_loader_data, ClassLoaderData::keep_alive_ref_count_offset()));
+  __ branch_optimized(Assembler::bcondNotZero, skip_barrier);
 
   // Class loader is weak. Determine whether the holder is still alive.
   // On s390 neither ZGC nor Shenandoah are supported, so resolve_oop_handle
