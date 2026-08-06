@@ -56,9 +56,6 @@ import java.util.stream.Collectors;
  */
 public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
 
-    // Flag to re-enable pre-note tag output for block tags.
-    private static final boolean OLD_SCHOOL_BLOCK_TAGS = false;
-
     private final String defaultHeader;
     private final String defaultKind;
     private final boolean isBlockTag;
@@ -107,7 +104,7 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
     @Override
     public Content getAllBlockTagOutput(Element holder, TagletWriter tagletWriter) {
         // Useful when comparing API docs with older releases.
-        if (OLD_SCHOOL_BLOCK_TAGS) {
+        if (config.getOptions().legacyNoteTags()) {
             return super.getAllBlockTagOutput(holder, tagletWriter);
         }
         this.tagletWriter = tagletWriter;
