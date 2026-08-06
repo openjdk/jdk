@@ -653,7 +653,6 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * drag handling, this property should be set to {@code true}, and the
      * component's {@code TransferHandler} needs to be {@code non-null}.
      * The default value of the {@code dragEnabled} property is {@code false}.
-     * but look and feel can override the default to match the native text component drag property.
      * <p>
      * The job of honoring this property, and recognizing a user drag gesture,
      * lies with the look and feel implementation, and in particular, the component's
