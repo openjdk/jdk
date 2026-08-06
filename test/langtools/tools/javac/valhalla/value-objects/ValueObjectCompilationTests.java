@@ -1130,6 +1130,25 @@ class ValueObjectCompilationTests extends CompilationTestCase {
           }
           """);
         invokeMain("Test", dir);
+
+        dir = assertOK(true, """
+          class Test {
+              public static void main(String[] args) {
+                  int captured = 42;
+
+                  value class V1 {
+                      int x = captured;
+                      V1() { }
+                      V1(long padding) {}
+                  }
+
+                  if (new V1().x != captured || new V1(1L).x != captured) {
+                      throw new AssertionError();
+                  }
+              }
+          }
+          """);
+        invokeMain("Test", dir);
     }
 
     void invokeMain(String className, File dir) throws Exception {
