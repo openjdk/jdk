@@ -156,7 +156,7 @@ public class Settings extends TestHelper {
             stackSize = 448;
         }
         TestResult tr;
-        tr = doExecWithEnglishLocale(javaCmd, "-Xms64m", "-Xmx512m",
+        tr = doExecWithUSLocale(javaCmd, "-Xms64m", "-Xmx512m",
                 "-Xss" + stackSize + "k", "-XshowSettings", "-jar", testJar.getAbsolutePath());
         // Check the stack size logs printed by -XshowSettings to verify -Xss meaningfully.
         checkContains(tr, STACKSIZE_SETTINGS);
@@ -165,7 +165,7 @@ public class Settings extends TestHelper {
             System.out.println(tr);
             throw new RuntimeException("test fails");
         }
-        tr = doExecWithEnglishLocale(javaCmd, "-Xms65536k", "-Xmx712m",
+        tr = doExecWithUSLocale(javaCmd, "-Xms65536k", "-Xmx712m",
                 "-Xss" + (stackSize * 1024), "-XshowSettings", "-jar", testJar.getAbsolutePath());
         checkContains(tr, STACKSIZE_SETTINGS);
         containsDefaultOptions(tr);
@@ -177,14 +177,14 @@ public class Settings extends TestHelper {
 
     static void runTestOptionAll() throws IOException {
         init();
-        TestResult tr = doExecWithEnglishLocale(javaCmd, "-XshowSettings:all");
+        TestResult tr = doExecWithUSLocale(javaCmd, "-XshowSettings:all");
         tr.checkPositive();
         containsAllOptions(tr);
         checkNotContains(tr, USAGE_HEADER);
     }
 
     static void runTestOptionVM() throws IOException {
-        TestResult tr = doExecWithEnglishLocale(javaCmd, "-XshowSettings:vm");
+        TestResult tr = doExecWithUSLocale(javaCmd, "-XshowSettings:vm");
         tr.checkPositive();
         checkContains(tr, VM_SETTINGS);
         checkNotContains(tr, PROP_SETTINGS);
@@ -193,7 +193,7 @@ public class Settings extends TestHelper {
     }
 
     static void runTestOptionProperty() throws IOException {
-        TestResult tr = doExecWithEnglishLocale(javaCmd, "-XshowSettings:properties");
+        TestResult tr = doExecWithUSLocale(javaCmd, "-XshowSettings:properties");
         tr.checkPositive();
         checkNotContains(tr, VM_SETTINGS);
         checkContains(tr, PROP_SETTINGS);
@@ -202,7 +202,7 @@ public class Settings extends TestHelper {
     }
 
     static void runTestOptionLocale() throws IOException {
-        TestResult tr = doExecWithEnglishLocale(javaCmd, "-XshowSettings:locale");
+        TestResult tr = doExecWithUSLocale(javaCmd, "-XshowSettings:locale");
         tr.checkPositive();
         checkNotContains(tr, VM_SETTINGS);
         checkNotContains(tr, PROP_SETTINGS);
@@ -215,7 +215,7 @@ public class Settings extends TestHelper {
     }
 
     static void runTestOptionSecurity() throws IOException {
-        TestResult tr = doExecWithEnglishLocale(javaCmd, "-XshowSettings:security");
+        TestResult tr = doExecWithUSLocale(javaCmd, "-XshowSettings:security");
         tr.checkPositive();
         checkNotContains(tr, VM_SETTINGS);
         checkNotContains(tr, PROP_SETTINGS);
@@ -226,7 +226,7 @@ public class Settings extends TestHelper {
     }
 
     static void runTestOptionSecurityProps() throws IOException {
-        TestResult tr = doExecWithEnglishLocale(javaCmd, "-XshowSettings:security:properties");
+        TestResult tr = doExecWithUSLocale(javaCmd, "-XshowSettings:security:properties");
         tr.checkPositive();
         checkContains(tr, SEC_PROPS_SETTINGS);
         checkNotContains(tr, SEC_PROVIDER_SETTINGS);
@@ -237,7 +237,7 @@ public class Settings extends TestHelper {
     }
 
     static void runTestOptionSecurityProv() throws IOException {
-        TestResult tr = doExecWithEnglishLocale(javaCmd, "-XshowSettings:security:providers");
+        TestResult tr = doExecWithUSLocale(javaCmd, "-XshowSettings:security:providers");
         tr.checkPositive();
         checkNotContains(tr, SEC_PROPS_SETTINGS);
         checkContains(tr, SEC_PROVIDER_SETTINGS);
@@ -251,7 +251,7 @@ public class Settings extends TestHelper {
     }
 
     static void runTestOptionSecurityTLS() throws IOException {
-        TestResult tr = doExecWithEnglishLocale(javaCmd, "-XshowSettings:security:tls");
+        TestResult tr = doExecWithUSLocale(javaCmd, "-XshowSettings:security:tls");
         tr.checkPositive();
         checkNotContains(tr, SEC_PROPS_SETTINGS);
         checkNotContains(tr, SEC_PROVIDER_SETTINGS);
@@ -265,7 +265,7 @@ public class Settings extends TestHelper {
 
     // ensure error message is printed when unrecognized option used
     static void runTestOptionBadSecurityOption() throws IOException {
-        TestResult tr = doExecWithEnglishLocale(javaCmd, "-XshowSettings:security:bad");
+        TestResult tr = doExecWithUSLocale(javaCmd, "-XshowSettings:security:bad");
         tr.checkNegative();
         checkContains(tr, BAD_SEC_OPTION_MSG);
         // we print all security settings in such scenario
@@ -274,7 +274,7 @@ public class Settings extends TestHelper {
         checkNotContains(tr, SEC_TLS_SETTINGS);
     }
     static void runTestOptionSystem() throws IOException {
-        TestResult tr = doExecWithEnglishLocale(javaCmd, "-XshowSettings:system");
+        TestResult tr = doExecWithUSLocale(javaCmd, "-XshowSettings:system");
         tr.checkPositive();
         if (System.getProperty("os.name").contains("Linux")) {
             checkNotContains(tr, VM_SETTINGS);
@@ -291,7 +291,7 @@ public class Settings extends TestHelper {
     }
 
     static void runTestBadOptions() throws IOException {
-        TestResult tr = doExecWithEnglishLocale(javaCmd, "-XshowSettingsBadOption");
+        TestResult tr = doExecWithUSLocale(javaCmd, "-XshowSettingsBadOption");
         tr.checkNegative();
         checkNotContains(tr, VM_SETTINGS);
         checkNotContains(tr, PROP_SETTINGS);
@@ -299,7 +299,7 @@ public class Settings extends TestHelper {
         checkContains(tr, "Unrecognized option: -XshowSettingsBadOption");
 
         // no such component option
-        tr = doExecWithEnglishLocale(javaCmd, "-XshowSettings:BadOption");
+        tr = doExecWithUSLocale(javaCmd, "-XshowSettings:BadOption");
         tr.checkNegative();
         checkNotContains(tr, VM_SETTINGS);
         checkNotContains(tr, PROP_SETTINGS);
@@ -307,22 +307,22 @@ public class Settings extends TestHelper {
         checkContains(tr, ERR_MSG);
 
         // don't allow invalid sub options
-        tr = doExecWithEnglishLocale(javaCmd, "-XshowSettings:locale:bad");
+        tr = doExecWithUSLocale(javaCmd, "-XshowSettings:locale:bad");
         tr.checkNegative();
         checkContains(tr, ERR_MSG);
 
         // don't allow ":" as an option
-        tr = doExecWithEnglishLocale(javaCmd, "-XshowSettings:");
+        tr = doExecWithUSLocale(javaCmd, "-XshowSettings:");
         tr.checkNegative();
         checkContains(tr, ERR_MSG);
 
         // case-sensitive test
-        tr = doExecWithEnglishLocale(javaCmd, "-XshowSettings:VM");
+        tr = doExecWithUSLocale(javaCmd, "-XshowSettings:VM");
         tr.checkNegative();
         checkContains(tr, ERR_MSG);
 
         // exclude this enum value
-        tr = doExecWithEnglishLocale(javaCmd, "-XshowSettings:empty");
+        tr = doExecWithUSLocale(javaCmd, "-XshowSettings:empty");
         tr.checkNegative();
         checkContains(tr, ERR_MSG);
 
@@ -330,7 +330,7 @@ public class Settings extends TestHelper {
     }
 
     static void runTest7123582() throws IOException {
-        TestResult tr = doExecWithEnglishLocale(javaCmd, "-XshowSettings", "-version");
+        TestResult tr = doExecWithUSLocale(javaCmd, "-XshowSettings", "-version");
         if (!tr.isOK()) {
             System.out.println(tr);
             throw new RuntimeException("test fails");
@@ -338,15 +338,14 @@ public class Settings extends TestHelper {
         containsDefaultOptions(tr);
     }
 
-    private static TestResult doExecWithEnglishLocale(
-        String command, String... args) {
-        List<String> cmd = new ArrayList<>();
-        cmd.add(command);
-        cmd.add("-Duser.language=en");
-        cmd.add("-Duser.country=US");
-        cmd.addAll(Arrays.asList(args));
-
-        return doExec(cmd.toArray(new String[cmd.size()]));
+    private static TestResult doExecWithUSLocale(
+            String command, String... args) {
+        String[] commandLine = new String[args.length + 3];
+        commandLine[0] = command;
+        commandLine[1] = "-Duser.language=en";
+        commandLine[2] = "-Duser.country=US";
+        System.arraycopy(args, 0, commandLine, 3, args.length);
+        return doExec(commandLine);
     }
 
     public static void main(String... args) throws IOException {
