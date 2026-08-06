@@ -51,6 +51,8 @@ import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -210,8 +212,8 @@ public class Http2TestServerConnection {
         // the Thread be started in run() method of this connection
         this.readLoopThread = readLoopThread;
 
-        is = socket.getInputStream();
-        os = socket.getOutputStream();
+        is = new BufferedInputStream(socket.getInputStream());
+        os = new BufferedOutputStream(socket.getOutputStream());
     }
 
     static final String propPrefix = "http2server.settings.";
