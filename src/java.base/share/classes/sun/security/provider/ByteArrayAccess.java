@@ -37,8 +37,7 @@ import java.nio.ByteOrder;
  * failed.
  *
  * This class may also be helpful in improving the performance of the
- * crypto code in the SunJCE provider. However, for now it is only accessible by
- * the message digest implementation in the SUN provider.
+ * crypto code in the SunJCE provider.
  *
  * @since   1.6
  * @author  Andreas Sterbenz
@@ -205,13 +204,6 @@ public final class ByteArrayAccess {
             outOfs += 8;
         }
     }
-
-    //
-    // special optimized byte[] to long conversion, little endian byte order
-    //
-    //static long b2lLittle8(byte[] in, int inOfs) {
-    //    return (long) LE.LONG_ARRAY.get(in, inOfs);
-    //}
 
     /**
      * special optimized long to byte[] conversion, little endian byte order

@@ -36,7 +36,7 @@ import static sun.security.provider.ByteArrayAccess.*;
  *
  * <p>It is an internal implementation of Blake2b for supporting Argon2.
  *
- * @since 27
+ * @since 28
  */
 public final class Blake2b {
 

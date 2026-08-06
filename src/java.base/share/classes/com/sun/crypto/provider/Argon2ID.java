@@ -38,7 +38,7 @@ import static sun.security.provider.ByteArrayAccess.*;
  * This class implements the Password Hashing Algorithm Argon2ID as specified
  * in <a href="https://datatracker.ietf.org/doc/html/rfc9106">RFC 9106</a>.
  *
- * @since 27
+ * @since 28
  */
 public final class Argon2ID extends KDFSpi {
 

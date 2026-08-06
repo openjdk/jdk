@@ -27,15 +27,18 @@ package com.sun.crypto.provider;
 
 import java.io.IOException;
 import java.io.InvalidObjectException;
+import java.io.NotSerializableException;
+import java.io.ObjectOutputStream;
+import java.io.ObjectStreamException;
+import java.lang.ref.Cleaner;
 import java.lang.ref.Reference;
 import java.security.MessageDigest;
-import java.security.KeyRep;
-import java.security.InvalidKeyException;
 import java.util.Arrays;
 import java.util.Locale;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.Argon2ParameterSpec;
-import javax.security.auth.Destroyable;
+
+import jdk.internal.ref.CleanerFactory;
 
 import sun.security.util.Argon2Util;
 
@@ -43,9 +46,9 @@ import sun.security.util.Argon2Util;
  * This class represents a secret key derived using Argon2 whose toString()
  * method outputs Argon2 encoded hash.
  *
- * @since 27
+ * @since 28
  */
-public final class Argon2DerivedKey implements SecretKey, Destroyable {
+public final class Argon2DerivedKey implements SecretKey {
 
     @java.io.Serial
     private static final long serialVersionUID = 724953279128L;
@@ -56,40 +59,51 @@ public final class Argon2DerivedKey implements SecretKey, Destroyable {
 
     // for including Argon2 parameters in toString() method
     private final transient String info;
+    private transient Cleaner.Cleanable cleaner;
 
     /**
-     * Create a Argon2 derived secret key using the supplied arguments.
+     * Create an Argon2 derived secret key using the supplied arguments.
      *
-     * @param type the Argon2 variant.
-     * @param spec the Argon2 parameters used.
-     * @param key the derived key bytes.
-     * @param algo the algorithm for the derived key.
-     *
-     * @exception InvalidKeyException if less than 8 bytes are available for
-     * the key.
+     * @param type the Argon2 variant
+     * @param spec the Argon2 parameters used
+     * @param key the derived key bytes
+     * @param algo the algorithm for the derived key
      */
-    public Argon2DerivedKey(String type, Argon2ParameterSpec spec,
+    Argon2DerivedKey(String type, Argon2ParameterSpec spec,
             byte[] key, String algo) {
         this.key = key; // internally derived, no need to clone
         this.algo = algo;
 
         this.info = String.format("%s key derived using %s with params = %s",
                 algo, type, spec.toString());
+        final byte[] k = key;
+        cleaner = CleanerFactory.cleaner().register(this,
+                () -> {
+                   Arrays.fill(k, (byte) 0x00);
+                });
     }
 
+    @Override
     public byte[] getEncoded() {
         if (isDestroyed()) {
             throw new IllegalStateException("key destroyed");
         }
-        // Return a copy of the key, rather than a reference,
-        // so that the key data cannot be modified from outside
-        return key.clone();
+        try {
+            // Return a copy of the key, rather than a reference,
+            // so that the key data cannot be modified from outside
+            return key.clone();
+        } finally {
+            // prevent this from being cleaned for the above block
+            Reference.reachabilityFence(this);
+        }
     }
 
+    @Override
     public String getAlgorithm() {
         return algo;
     }
 
+    @Override
     public String getFormat() {
         return "RAW";
     }
@@ -100,8 +114,16 @@ public final class Argon2DerivedKey implements SecretKey, Destroyable {
      */
     @Override
     public int hashCode() {
-        return Arrays.hashCode(key) ^
-                algo.toLowerCase(Locale.ENGLISH).hashCode();
+        if (isDestroyed()) {
+            throw new IllegalStateException("key destroyed");
+        }
+        try {
+            return Arrays.hashCode(key) ^
+                    algo.toLowerCase(Locale.ENGLISH).hashCode();
+        } finally {
+            // prevent this from being cleaned for the above block
+            Reference.reachabilityFence(this);
+        }
     }
 
     @Override
@@ -130,7 +152,11 @@ public final class Argon2DerivedKey implements SecretKey, Destroyable {
         } catch (RuntimeException re) {
             // if cannot compare for any reason
             return false;
+        } finally {
+            // prevent this from being cleaned for the above block
+            Reference.reachabilityFence(this);
         }
+
     }
 
     @Override
@@ -140,44 +166,50 @@ public final class Argon2DerivedKey implements SecretKey, Destroyable {
 
     @Override
     public void destroy() {
-        if (key != null) {
-            Arrays.fill(key, (byte)0);
-            key = null;
+        if (cleaner != null) {
+            cleaner.clean();
+            cleaner = null;
         }
     }
 
     @Override
     public boolean isDestroyed() {
-        return (key == null);
+        return (cleaner == null);
     }
 
     /**
-     * Restores the state of this object from the stream.
+     * Rejects deserialization of this type, including input from
+     * externally supplied or manually constructed serialization streams.
      *
-     * @param  s the {@code ObjectInputStream} from which data is read
-     * @throws IOException if an I/O error occurs
-     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     * @param s the deserialization stream
+     * @throws java.io.InvalidObjectException always
      */
     @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)
             throws IOException, ClassNotFoundException {
-        // not directly serialized
-        throw new InvalidObjectException("Invalid object");
+        throw new InvalidObjectException(getClass().getName() +
+                " cannot be deserialized");
     }
 
     /**
-     * Replace this key object to a KeyRep object for serialization
+     * Rejects deserialization when no class data is available for this type.
      *
-     * @return the standard KeyRep object to be serialized
-     *
-     * @throws java.io.ObjectStreamException if a new object representing
-     * this DES key could not be created
+     * @throws java.io.InvalidObjectException always
      */
     @java.io.Serial
-    private Object writeReplace() throws java.io.ObjectStreamException {
-        return new KeyRep(KeyRep.Type.SECRET,
-                    getAlgorithm(),
-                    getFormat(),
-                    key);
+    private void readObjectNoData() throws ObjectStreamException {
+        throw new InvalidObjectException(getClass().getName() +
+                " cannot be deserialized");
+    }
+
+    /**
+     * Rejects serialization of this type.
+     *
+     * @param out the serialization stream
+     * @throws java.io.NotSerializableException always
+     */
+    @java.io.Serial
+    private void writeObject(ObjectOutputStream out) throws IOException {
+        throw new NotSerializableException(getClass().getName());
     }
 }

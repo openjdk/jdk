@@ -41,7 +41,7 @@ import sun.security.util.KeyUtil;
  * This class implements the Password Hashing Algorithm Argon2 as specified
  * in <a href="https://datatracker.ietf.org/doc/html/rfc9106">RFC 9106</a>.
  *
- * @since 27
+ * @since 28
  */
 public final class Argon2Impl {
 

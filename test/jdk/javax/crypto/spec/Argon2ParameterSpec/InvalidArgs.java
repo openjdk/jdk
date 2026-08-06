@@ -25,7 +25,7 @@
  * @test
  * @library /test/lib
  * @bug 8253914
- * @summary Ensure that Argon2ParameterSpec builder constructor throw the
+ * @summary Ensure that Argon2ParameterSpec builder methods throw the
  *     expected exception for invalid arguments.
  */
 import jdk.test.lib.Utils;
