@@ -219,8 +219,6 @@ void LIRItem::set_result(LIR_Opr opr) {
 }
 
 void LIRItem::load_item() {
-  assert(!_gen->in_conditional_code(), "LIRItem cannot be loaded in conditional code");
-
   if (result()->is_illegal()) {
     // update the items result
     _result = value()->operand();
@@ -1489,19 +1487,6 @@ LIR_Opr LIRGenerator::load_constant(Constant* x) {
 
 LIR_Opr LIRGenerator::load_constant(LIR_Const* c) {
   BasicType t = c->type();
-  if (in_conditional_code()) {
-    // TODO 8353851: Control flow introduced by check_flat_array() is currently opaque to the register allocator.
-    // Do not use or update the constant -> register cache in such conditional code because the register allocator could
-    // spill a constant and only rematerialize it into a register in one branch of check_flat_array() but not the other.
-    // Since the control flow is opaque to the register allocator, it assumes the rematerialized constant in the register
-    // dominates all subsequent uses in the block and does not insert another rematerialization. When taking the
-    // non-rematerialized branch of check_flat_array() at runtime, the register contains garbage potentially causing
-    // a crash.
-    LIR_Opr result = new_register(t);
-    __ move(c, result);
-    return result;
-  }
-
   for (int i = 0; i < _constants.length(); i++) {
     LIR_Const* other = _constants.at(i);
     if (t == other->type()) {
@@ -1530,11 +1515,6 @@ LIR_Opr LIRGenerator::load_constant(LIR_Const* c) {
   _constants.append(c);
   _reg_for_constants.append(result);
   return result;
-}
-
-void LIRGenerator::set_in_conditional_code(bool v) {
-  assert(v != _in_conditional_code, "must change state");
-  _in_conditional_code = v;
 }
 
 
@@ -2014,7 +1994,6 @@ void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
       index.load_item();
       slow_path = new StoreFlattenedArrayStub(array.result(), index.result(), value.result(), state_for(x, x->state_before()));
       check_flat_array(array.result(), slow_path);
-      set_in_conditional_code(true);
     }
 
     if (needs_null_free_array_store_check(x)) {
@@ -2030,7 +2009,6 @@ void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
     access_store_at(decorators, x->elt_type(), array, index.result(), value.result(), nullptr, null_check_info);
     if (slow_path != nullptr) {
       __ branch_destination(slow_path->continuation());
-      set_in_conditional_code(false);
     }
   }
 }
@@ -2451,7 +2429,6 @@ void LIRGenerator::do_LoadIndexed(LoadIndexed* x) {
       // if we are loading from a flat array, load it using a runtime call
       slow_path = new LoadFlattenedArrayStub(array.result(), index.result(), result, state_for(x, x->state_before()));
       check_flat_array(array.result(), slow_path);
-      set_in_conditional_code(true);
     }
 
     DecoratorSet decorators = IN_HEAP | IS_ARRAY;
@@ -2461,7 +2438,6 @@ void LIRGenerator::do_LoadIndexed(LoadIndexed* x) {
 
     if (slow_path != nullptr) {
       __ branch_destination(slow_path->continuation());
-      set_in_conditional_code(false);
     }
 
     element = x;

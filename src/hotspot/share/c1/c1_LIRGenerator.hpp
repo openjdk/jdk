@@ -169,7 +169,6 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
 #endif
   BitMap2D      _vreg_flags; // flags which can be set on a per-vreg basis
   LIR_List*     _lir;
-  bool          _in_conditional_code;
 
   LIRGenerator* gen() {
     return this;
@@ -196,7 +195,6 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
 
   friend class PhiResolver;
 
-  void set_in_conditional_code(bool v);
  public:
   // unified bailout support
   void bailout(const char* msg) const            { compilation()->bailout(msg); }
@@ -215,7 +213,6 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   LIR_Opr load_constant(Constant* x);
   LIR_Opr load_constant(LIR_Const* constant);
 
-  bool in_conditional_code() const { return _in_conditional_code; }
   // Given an immediate value, return an operand usable in logical ops.
   LIR_Opr load_immediate(jlong x, BasicType type);
 
@@ -523,7 +520,6 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
     , _method(method)
     , _virtual_register_number(LIR_Opr::vreg_base)
     , _vreg_flags(num_vreg_flags)
-    , _in_conditional_code(false)
     , _barrier_set(BarrierSet::barrier_set()->barrier_set_c1()) {
   }
 
