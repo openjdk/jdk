@@ -274,10 +274,10 @@ public abstract class LookAndFeel
      */
     public static void installProperty(JComponent c,
                                        String propertyName, Object propertyValue) {
+        // this is a special case because the JPasswordField's ancestor hierarchy
+        // includes a class outside of javax.swing, thus we cannot call setUIProperty
+        // directly.
         if (SunToolkit.isInstanceOf(c, "javax.swing.JPasswordField")) {
-            // this is a special case because the JPasswordField's ancestor hierarchy
-            // includes a class outside of javax.swing, thus we cannot call setUIProperty
-            // directly.
             if (!((JPasswordField)c).customSetUIProperty(propertyName, propertyValue)) {
                 c.setUIProperty(propertyName, propertyValue);
             }
