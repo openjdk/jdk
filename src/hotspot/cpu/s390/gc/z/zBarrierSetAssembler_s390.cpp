@@ -630,6 +630,27 @@ void ZBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm,
   BLOCK_COMMENT("} ZBarrierSetAssembler::try_resolve_jobject_in_native");
 }
 
+void ZBarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembler* masm,
+                                                           Register weak_handle,
+                                                           Register obj,
+                                                           Register temp,
+                                                           Label& slow_path) {
+  assert_different_registers(weak_handle, temp, noreg);
+  assert_different_registers(obj, temp, noreg);
+
+  // Peek weak handle using the standard implementation.
+  BarrierSetAssembler::try_peek_weak_handle_in_nmethod(masm, weak_handle, obj, temp, slow_path);
+
+  // Check if the oop is bad, in which case we need to take the slow path.
+  __ z_lgr(temp, obj);
+  __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatMarkBadBeforeTest);
+  __ z_nill(temp, barrier_Relocation::unpatched);
+  __ branch_optimized(Assembler::bcondNotEqual, slow_path);
+
+  // Oop is okay, so we uncolor it.
+  __ z_srlg(obj, obj, ZPointerLoadShift);
+}
+
 #undef __
 
 #ifdef COMPILER1

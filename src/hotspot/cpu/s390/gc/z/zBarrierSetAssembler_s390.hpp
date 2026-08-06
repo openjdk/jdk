@@ -143,6 +143,12 @@ public:
                                              Register temp,
                                              Label& slowpath);
 
+  virtual void try_peek_weak_handle_in_nmethod(MacroAssembler* masm,
+                                               Register weak_handle,
+                                               Register obj,
+                                               Register temp,
+                                               Label& slow_path);
+
 #ifdef COMPILER1
 
   void generate_c1_color(LIR_Assembler* ce, LIR_Opr ref) const;
