@@ -4684,10 +4684,10 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * Application code will not use these methods explicitly, they
      * are used internally by JTable.
      *
-        columnWidthsInitialized = false;
      * @see TableColumnModelListener
      */
     public void columnRemoved(TableColumnModelEvent e) {
+        columnWidthsInitialized = false;
         // If I'm currently editing, then I should stop editing
         if (isEditing()) {
             removeEditor();
