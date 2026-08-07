@@ -75,7 +75,7 @@ void ShenandoahAdaptiveHeuristics::post_initialize() {
 }
 
 void ShenandoahAdaptiveHeuristics::compute_headroom_adjustment() {
-  // The trigger threshold represents mutator available - "head room".
+  // The trigger threshold represents mutator available - "headroom".
   // We plan for GC to finish before the amount of allocated memory exceeds trigger threshold.  This is the same  as saying we
   // intend to finish GC before the amount of available memory is less than the allocation headroom.  Headroom is the planned
   // safety buffer to allow a small amount of additional allocation to take place in case we were overly optimistic in delaying
@@ -150,15 +150,8 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
   }
 }
 
-void ShenandoahAdaptiveHeuristics::add_degenerated_gc_time(double time_at_start, double gc_time) {
-  // Conservatively add sample into linear model, if this time is above the predicted concurrent gc time
-  if (_cycles.predict_duration(time_at_start, _margin_of_error_sd) < gc_time) {
-    _cycles.record_duration(time_at_start, gc_time);
-  }
-}
-
-void ShenandoahAdaptiveHeuristics::record_success_concurrent() {
-  ShenandoahHeuristics::record_success_concurrent();
+void ShenandoahAdaptiveHeuristics::record_concurrent_completion() {
+  ShenandoahHeuristics::record_concurrent_completion();
 
   // We add this time even if it is a shortened cycle. There is a risk that this pulls
   // the gc time trend down, but it is still a more accurate view than excluding times
@@ -211,13 +204,6 @@ void ShenandoahAdaptiveHeuristics::record_success_concurrent() {
   }
 }
 
-void ShenandoahAdaptiveHeuristics::record_degenerated(bool is_generational_global) {
-  ShenandoahHeuristics::record_degenerated(is_generational_global);
-  if (!is_generational_global) {
-    add_degenerated_gc_time(_precursor_cycle_start, elapsed_degenerated_cycle_time());
-  }
-}
-
 bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   const size_t capacity = ShenandoahHeap::heap()->soft_max_capacity();
   const size_t available = _space_info->soft_mutator_available();
@@ -225,7 +211,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   log_debug(gc, ergo)("should_start_gc calculation: available: " PROPERFMT ", soft_max_capacity: "  PROPERFMT,
                       PROPERFMTARGS(available), PROPERFMTARGS(capacity));
 
-  if (_start_gc_is_pending) {
+  if (_start_gc_is_pending.load_relaxed()) {
     log_trigger("GC start is already pending");
     return true;
   }

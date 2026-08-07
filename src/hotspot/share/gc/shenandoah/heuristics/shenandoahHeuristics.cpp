@@ -54,12 +54,10 @@ ShenandoahHeuristics::ShenandoahHeuristics(ShenandoahSpaceInfo* space_info) :
   _most_recent_planned_sleep_interval(0.0),
   _start_gc_is_pending(false),
   _declined_trigger_count(0),
-  _most_recent_declined_trigger_count(0),
   _space_info(space_info),
   _region_data(nullptr),
   _guaranteed_gc_interval(0),
-  _precursor_cycle_start(os::elapsedTime()),
-  _cycle_start(_precursor_cycle_start),
+  _cycle_start(os::elapsedTime()),
   _last_cycle_end(0),
   _gc_times_learned(0),
   _gc_time_penalties(0),
@@ -170,17 +168,10 @@ void ShenandoahHeuristics::adjust_reserves_for_abbreviated(ShenandoahHeap* heap)
   heap->old_generation()->set_promoted_reserve(0UL);
 }
 
-void ShenandoahHeuristics::record_degenerated_cycle_start(bool out_of_cycle) {
-  if (out_of_cycle) {
-    _precursor_cycle_start = _cycle_start = os::elapsedTime();
-  } else {
-    _precursor_cycle_start = _cycle_start;
-    _cycle_start = os::elapsedTime();
-  }
-}
-
 void ShenandoahHeuristics::record_cycle_start() {
   _cycle_start = os::elapsedTime();
+  cancel_trigger_request();
+  log_debug(gc, ergo)("Declined trigger count at start: %zu", _declined_trigger_count.load_relaxed());
 }
 
 void ShenandoahHeuristics::record_cycle_end() {
@@ -194,7 +185,7 @@ void ShenandoahHeuristics::record_cycle_end() {
 }
 
 bool ShenandoahHeuristics::should_start_gc() {
-  if (_start_gc_is_pending) {
+  if (_start_gc_is_pending.load_relaxed()) {
     log_trigger("GC start is already pending");
     return true;
   }
@@ -219,33 +210,12 @@ bool ShenandoahHeuristics::should_start_gc() {
   return false;
 }
 
-bool ShenandoahHeuristics::should_degenerate_cycle() {
-  return ShenandoahHeap::heap()->shenandoah_policy()->consecutive_degenerated_gc_count() <= ShenandoahFullGCThreshold;
-}
-
 void ShenandoahHeuristics::adjust_penalty(intx step) {
-  assert(0 <= _gc_time_penalties && _gc_time_penalties <= 100,
-         "In range before adjustment: %zd", _gc_time_penalties);
-  if ((_most_recent_declined_trigger_count <= Penalty_Free_Declinations) && (step > 0)) {
-    // Don't penalize if heuristics are not responsible for a negative outcome.  Allow Penalty_Free_Declinations following
-    // previous GC for self calibration without penalty.
-    step = 0;
-  }
-
-  intx new_val = _gc_time_penalties + step;
-  if (new_val < 0) {
-    new_val = 0;
-  }
-  if (new_val > 100) {
-    new_val = 100;
-  }
-  _gc_time_penalties = new_val;
-
-  assert(0 <= _gc_time_penalties && _gc_time_penalties <= 100,
-         "In range after adjustment: %zd", _gc_time_penalties);
+  _gc_time_penalties = clamp(_gc_time_penalties + step, Min_Penalty, Max_Penalty);
+  log_info(gc, ergo)("Adjusted heuristic penalty: %zd", _gc_time_penalties);
 }
 
-void ShenandoahHeuristics::log_trigger(const char* fmt, ...) {
+void ShenandoahHeuristics::log_trigger(const char* fmt, ...) const {
   LogTarget(Info, gc) lt;
   if (lt.is_enabled()) {
     ResourceMark rm;
@@ -263,30 +233,29 @@ void ShenandoahHeuristics::log_trigger(const char* fmt, ...) {
   }
 }
 
-void ShenandoahHeuristics::record_success_concurrent() {
+void ShenandoahHeuristics::record_concurrent_completion() {
   _gc_times_learned++;
-
-  adjust_penalty(Concurrent_Adjust);
-}
-
-void ShenandoahHeuristics::record_degenerated(bool is_generational_global) {
-
-  if (!is_generational_global) {
-    // We don't penalize generational GC heuristics for global GC because heuristics predict based on assumption of young GC.
-    _most_recent_declined_trigger_count = _declined_trigger_count;
-    _declined_trigger_count = 0;
-  } else {
-    _most_recent_declined_trigger_count = _declined_trigger_count = 0;
+  const bool stalls = _allocation_stalls.exchange(false, memory_order_relaxed);
+  if (!stalls) {
+    adjust_penalty(Concurrent_Adjust);
+  } else if (_declined_trigger_count.load_relaxed() > Penalty_Free_Declinations) {
+    // There were stalls _and_ the trigger was lazy, penalize it. Else, there were
+    // stalls, but the trigger was not lazy. Make no adjustments in this case.
+    adjust_penalty(Stall_Penalty);
   }
-  adjust_penalty(Degenerated_Penalty);
+
+  log_debug(gc, ergo)("Declined trigger count at end: %zu", _declined_trigger_count.load_relaxed());
+  _declined_trigger_count.store_relaxed(0);
 }
 
-void ShenandoahHeuristics::record_success_full() {
-  adjust_penalty(Full_Penalty);
+void ShenandoahHeuristics::record_allocation_stall() {
+  _allocation_stalls.store_relaxed(true);
 }
 
-void ShenandoahHeuristics::record_allocation_failure_gc() {
-  // Do nothing.
+void ShenandoahHeuristics::record_full_gc(GCCause::Cause cause) {
+  if (cause == GCCause::_shenandoah_upgrade_to_full_gc) {
+    adjust_penalty(Full_Penalty);
+  }
 }
 
 void ShenandoahHeuristics::record_requested_gc() {
@@ -313,13 +282,6 @@ void ShenandoahHeuristics::post_initialize() {
 
 double ShenandoahHeuristics::elapsed_cycle_time() const {
   return os::elapsedTime() - _cycle_start;
-}
-
-
-// Includes the time spent in abandoned concurrent GC cycle that may have triggered this degenerated cycle.
-double ShenandoahHeuristics::elapsed_degenerated_cycle_time() const {
-  double now = os::elapsedTime();
-  return now - _precursor_cycle_start;
 }
 
 #ifdef ASSERT

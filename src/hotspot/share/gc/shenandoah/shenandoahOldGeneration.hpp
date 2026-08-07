@@ -51,7 +51,7 @@ private:
   ssize_t _region_balance;
 
   // Set when evacuation in the old generation fails. When this is set, the control thread will initiate a
-  // full GC instead of a futile degenerated cycle.
+  // full GC instead of a futile concurrent cycle.
   ShenandoahSharedFlag _failed_evacuation;
 
   // Bytes reserved within old-gen to hold the results of promotion. This is separate from
@@ -185,6 +185,11 @@ public:
     return _failed_evacuation.try_unset();
   }
 
+  // Test if the cycle recorded evacuation failures in old
+  bool has_failed_evacuations() const {
+    return _failed_evacuation.is_set();
+  }
+
   // Transition to the next state after mixed evacuations have completed
   void complete_mixed_evacuations();
 
@@ -254,8 +259,7 @@ public:
   void transition_old_generation_after_global_gc();
 
   void prepare_gc() override;
-  void prepare_regions_and_collection_set(bool concurrent) override;
-  void record_success_concurrent(bool abbreviated) override;
+  void prepare_regions_and_collection_set() override;
   void cancel_marking() override;
 
   // Cancels old gc and transitions to the idle state
@@ -304,7 +308,6 @@ public:
   // Abandon any regions waiting for mixed collections
   void abandon_collection_candidates();
 
-public:
   enum State {
     FILLING, IDLE, MARKING, EVACUATING, EVACUATING_AFTER_GLOBAL
   };
@@ -352,7 +355,7 @@ public:
 
   size_t usage_trigger_threshold() const;
 
-  bool can_start_gc() {
+  bool can_start_gc() const {
     return _state == IDLE;
   }
 

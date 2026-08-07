@@ -24,6 +24,7 @@
  */
 
 #include "gc/shenandoah/shenandoahAsserts.hpp"
+#include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalEvacuationTask.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
@@ -49,28 +50,22 @@ public:
 ShenandoahGenerationalEvacuationTask::ShenandoahGenerationalEvacuationTask(ShenandoahGenerationalHeap* heap,
                                                                            ShenandoahGeneration* generation,
                                                                            ShenandoahRegionIterator* iterator,
-                                                                           bool concurrent, bool only_promote_regions) :
+                                                                           bool only_promote_regions) :
   WorkerTask("Shenandoah Evacuation"),
   _heap(heap),
   _generation(generation),
   _regions(iterator),
-  _concurrent(concurrent),
+  _collection_set(_heap->collection_set()),
   _only_promote_regions(only_promote_regions)
 {
   shenandoah_assert_generational();
 }
 
 void ShenandoahGenerationalEvacuationTask::work(uint worker_id) {
-  if (_concurrent) {
-    ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_evac, ShenandoahPhaseTimings::Work, worker_id, true);
-    ShenandoahConcurrentWorkerSession worker_session(worker_id);
-    SuspendibleThreadSetJoiner stsj;
-    do_work();
-  } else {
-    ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::degen_gc_evac, ShenandoahPhaseTimings::Work, worker_id, true);
-    ShenandoahParallelWorkerSession worker_session(worker_id);
-    do_work();
-  }
+  ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_evac, ShenandoahPhaseTimings::Work, worker_id, true);
+  ShenandoahConcurrentWorkerSession worker_session(worker_id);
+  SuspendibleThreadSetJoiner stsj;
+  do_work();
 }
 
 void ShenandoahGenerationalEvacuationTask::do_work() {
@@ -92,45 +87,49 @@ void log_region(const ShenandoahHeapRegion* r, LogStream* ls) {
 }
 
 void ShenandoahGenerationalEvacuationTask::promote_regions() {
-  LogTarget(Debug, gc) lt;
+
   ShenandoahInPlacePromoter promoter(_heap);
   ShenandoahHeapRegion* r;
   while ((r = _regions->next()) != nullptr) {
-    if (lt.is_enabled()) {
+    if (LogTarget(Debug, gc) lt; lt.is_enabled()) {
       LogStream ls(lt);
       log_region(r, &ls);
     }
 
     promoter.maybe_promote_region(r);
 
-    if (_heap->check_cancelled_gc_and_yield(_concurrent)) {
+    if (_heap->check_cancelled_gc_and_yield()) {
       break;
     }
   }
 }
 
 void ShenandoahGenerationalEvacuationTask::evacuate_and_promote_regions() {
-  LogTarget(Debug, gc) lt;
   ShenandoahConcurrentEvacuator cl(_heap);
-  ShenandoahInPlacePromoter promoter(_heap);
   ShenandoahHeapRegion* r;
 
-  while ((r = _regions->next()) != nullptr) {
-    if (lt.is_enabled()) {
+  while ((r = _collection_set->claim_next()) != nullptr) {
+    if (LogTarget(Debug, gc) lt; lt.is_enabled()) {
       LogStream ls(lt);
       log_region(r, &ls);
     }
 
-    if (r->is_cset()) {
-      assert(r->has_live(), "Region %zu should have been reclaimed early", r->index());
-      _heap->marked_object_iterate(r, &cl);
-    } else {
-      promoter.maybe_promote_region(r);
-    }
+    assert(r->has_live(), "Region %zu should have been reclaimed early", r->index());
+    _heap->marked_object_iterate(r, &cl);
 
-    if (_heap->check_cancelled_gc_and_yield(_concurrent)) {
+    if (ShenandoahCollectorPolicy::should_abandon_evacuations(r)) {
+      // No more evacuations for this thread, but it may yet complete in-place promotions
       break;
     }
+
+    if (_heap->check_cancelled_gc_and_yield()) {
+      // GC is cancelled (vm is stopping), no further work
+      assert(_heap->cancelled_cause() == GCCause::_shenandoah_stop_vm,
+        "Evacuation should not be cancelled for: %s", GCCause::to_string(_heap->cancelled_cause()));
+      return;
+    }
   }
+
+  promote_regions();
 }
 

@@ -53,12 +53,10 @@
 
 class PreservedMarksSet;
 class VM_ShenandoahFullGC;
-class ShenandoahDegenGC;
 
 class ShenandoahFullGC : public ShenandoahGC {
   friend class ShenandoahPrepareForCompactionObjectClosure;
   friend class VM_ShenandoahFullGC;
-  friend class ShenandoahDegenGC;
 
 private:
   GCTimer* _gc_timer;
@@ -76,7 +74,7 @@ private:
   void entry_full(GCCause::Cause cause);
   void op_full(GCCause::Cause cause);
 
-  void do_it(GCCause::Cause gc_cause);
+  void do_it();
 
   void phase1_mark_heap();
   void phase2_calculate_target_addresses(ShenandoahHeapRegionSet** worker_slices);

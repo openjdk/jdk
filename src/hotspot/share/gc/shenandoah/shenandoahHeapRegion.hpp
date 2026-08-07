@@ -176,6 +176,7 @@ public:
 
   // Allowed transitions from the outside code:
   void make_regular_allocation(ShenandoahAffiliation affiliation);
+  void make_regular_for_partial_recycling();
   void make_affiliated_maybe();
   void make_regular_bypass();
   void make_humongous_start();
@@ -519,6 +520,8 @@ public:
   }
 
   CENSUS_NOISE(void clear_youth() { _youth = 0; })
+
+  void partially_recycle();
 
   inline bool need_bitmap_reset() const {
     return _needs_bitmap_reset;

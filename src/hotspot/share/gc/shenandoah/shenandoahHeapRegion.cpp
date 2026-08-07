@@ -77,8 +77,7 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
 #ifdef SHENANDOAH_CENSUS_NOISE
   _youth(0),
 #endif // SHENANDOAH_CENSUS_NOISE
-  _needs_bitmap_reset(false)
-  {
+  _needs_bitmap_reset(false) {
 
   assert(Universe::on_page_boundary(_bottom) && Universe::on_page_boundary(_end),
          "invalid space boundaries");
@@ -113,6 +112,21 @@ void ShenandoahHeapRegion::make_regular_allocation(ShenandoahAffiliation affilia
   }
 }
 
+void ShenandoahHeapRegion::make_regular_for_partial_recycling() {
+  shenandoah_assert_heaplocked();
+  assert(has_self_forwards(), "Only for regions holding self forwarded objects");
+  switch (state()) {
+    case _cset:
+      set_state(_regular);
+      return;
+    case _pinned_cset:
+      set_state(_pinned);
+      return;
+    default:
+      report_illegal_transition("partially recycled");
+  }
+}
+
 // Change affiliation to YOUNG_GENERATION if _state is not _pinned_cset, _regular, or _pinned.  This implements
 // behavior previously performed as a side effect of make_regular_bypass().  This is used by Full GC in non-generational
 // modes to transition regions from FREE. Note that all non-free regions in single-generational modes are young.
@@ -140,8 +154,7 @@ void ShenandoahHeapRegion::make_affiliated_maybe() {
 
 void ShenandoahHeapRegion::make_regular_bypass() {
   shenandoah_assert_heaplocked();
-  assert (ShenandoahHeap::heap()->is_full_gc_in_progress() ||
-          ShenandoahHeap::heap()->is_degenerated_gc_in_progress(),
+  assert (ShenandoahHeap::heap()->is_full_gc_in_progress(),
           "Only for STW GC");
   reset_age();
   switch (state()) {
@@ -288,6 +301,7 @@ void ShenandoahHeapRegion::make_cset() {
 
 void ShenandoahHeapRegion::make_trash() {
   shenandoah_assert_heaplocked();
+  assert(!has_self_forwards(), "Should not have evacuation failures");
   reset_age();
   switch (state()) {
     case _humongous_start:
@@ -442,6 +456,10 @@ void ShenandoahHeapRegion::print_on(outputStream* st) const {
   st->print("|S %5zu%1s", byte_size_in_proper_unit(get_shared_allocs()),   proper_unit_for_byte_size(get_shared_allocs()));
   st->print("|L %5zu%1s", byte_size_in_proper_unit(get_live_data_bytes()), proper_unit_for_byte_size(get_live_data_bytes()));
   st->print("|CP %3zu", pin_count());
+
+  if (has_self_forwards()) {
+    st->print("|EF");
+  }
   st->cr();
 
 #undef SHR_PTR_FORMAT
@@ -869,6 +887,91 @@ void ShenandoahHeapRegion::set_affiliation(ShenandoahAffiliation new_affiliation
       return;
   }
   heap->set_affiliation(this, new_affiliation);
+}
+
+// We would like to reclaim what we can from a partially evacuated region. We may have a mixture of objects that were
+// self-forwarded and objects that were successfully evacuated to another region. The simplest thing we can do is slide
+// top to the end of the last self forwarded object. This requires no changes on the allocation path.
+//
+// We must also leave old regions in a walkable state because they could be visited by a remembered set scan.
+class ShenandoahReclaimSelfForwarded : ObjectClosure {
+
+  // This is a nullptr for young regions. For old regions, we use it to patch up the card table.
+  ShenandoahScanRemembered* _cards;
+
+  // This is the _end_ of the last self-forwarded object the closure encountered. We use this
+  // to know where to start the filler object and where to set top when the iteration is complete.
+  HeapWord* _previous;
+
+public:
+  explicit ShenandoahReclaimSelfForwarded(ShenandoahScanRemembered* cards, ShenandoahHeapRegion* region)
+    : _cards(cards), _previous(region->bottom()) {
+    assert(!region->is_old() || cards != nullptr, "Must have card table reference for old region: %zu", region->index());
+  }
+
+  void do_object(oop obj) override {
+    assert(obj->is_forwarded(), "Marked object " PTR_FORMAT " in cset region should be forwarded", p2i(obj));
+
+    if (obj->is_self_forwarded()) {
+      HeapWord* current = cast_from_oop<HeapWord*>(obj);
+      const size_t object_size = ShenandoahForwarding::size(obj);
+
+      // Clear the self forwarded bit, this is just a regular object in a regular region now.
+      obj->unset_self_forwarded();
+
+      if (_cards != nullptr) {
+        // We will have reset registrations and cards before iterating here, so we need to (conservatively)
+        // update the card table and object registrations. We don't need a lock because each region will only
+        // be visited by one thread.
+        _cards->register_object_without_lock(current);
+        _cards->mark_range_as_dirty(current, object_size);
+
+        if (_previous != current) {
+          // We create a filler object to keep the old region parsable. We know there are no pointers in
+          // these filler objects, so we don't need to dirty cards, but we still need to register the object.
+          CollectedHeap::fill_with_object(_previous, pointer_delta(current, _previous));
+          _cards->register_object_without_lock(_previous);
+        }
+      }
+      _previous = current + object_size;
+    }
+  }
+
+  HeapWord* last_self_forwarded_object() const {
+    return _previous;
+  }
+};
+
+void ShenandoahHeapRegion::partially_recycle() {
+  assert(has_self_forwards(), "Region %zu must have self forwarded objects", index());
+
+  // This is only allowed for partially evacuated cset regions
+  make_regular_for_partial_recycling();
+
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  ShenandoahScanRemembered* cards = is_old() ? heap->old_generation()->card_scan() : nullptr;
+  if (cards) {
+    // Some of the objects here may be dead or forwarded, we don't want any stale object registrations or dirty cards.
+    // We will rebuild the registrations and dirty cards for self-forwarded objects that stay in this region.
+    cards->mark_range_as_empty(this->bottom(), region_size_words());
+  }
+
+  // Clear self-forwarded objects and fill in the gaps between them
+  ShenandoahReclaimSelfForwarded reclaimer(cards, this);
+  heap->marked_object_iterate(this, &reclaimer);
+
+  // Reset some of the region states that would be cleared if this region was completely recycled
+  const HeapWord* old_top = top();
+  clear_live_data();
+  reset_alloc_metadata();
+  heap->marking_context()->reset_top_at_mark_start(this);
+  clear_has_self_forwards();
+
+  // Adjust top to the end of our last encountered self-forwarded object. Everything above this is reusable memory.
+  set_top(reclaimer.last_self_forwarded_object());
+  const size_t reclaimed_bytes = pointer_delta(old_top, top()) * HeapWordSize;
+
+  log_debug(gc)("Reclaimed " PROPERFMT " from partially evacuated region (%zu)", PROPERFMTARGS(reclaimed_bytes), index());
 }
 
 void ShenandoahHeapRegion::decrement_humongous_waste() {

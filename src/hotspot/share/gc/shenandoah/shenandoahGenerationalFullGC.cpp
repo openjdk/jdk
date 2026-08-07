@@ -52,7 +52,7 @@ void assert_usage_not_more_than_regions_used(ShenandoahGeneration* generation) {
 
 void ShenandoahGenerationalFullGC::prepare() {
   auto heap = ShenandoahGenerationalHeap::heap();
-  // Since we may arrive here from degenerated GC failure of either young or old, establish generation as GLOBAL.
+  // Full GC always operates on the GLOBAL generation.
   heap->set_active_generation(heap->global_generation());
 
   // Full GC supersedes any marking or coalescing in old generation.
@@ -66,6 +66,7 @@ void ShenandoahGenerationalFullGC::handle_completion(ShenandoahHeap* heap) {
   ShenandoahOldGeneration* old = gen_heap->old_generation();
   young->heuristics()->record_cycle_end();
   old->heuristics()->record_cycle_end();
+  old->clear_failed_evacuation();
 
   gen_heap->mmu_tracker()->record_full(GCId::current());
   gen_heap->log_heap_status("At end of Full GC");

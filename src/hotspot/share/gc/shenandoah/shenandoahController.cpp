@@ -25,53 +25,83 @@
 
 #include "gc/shared/allocTracer.hpp"
 #include "gc/shared/gc_globals.hpp"
-#include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahController.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 
+ShenandoahController::ShenandoahController():
+  _gc_id(0),
+  _phase(UNSET),
+  _gc_waiters_lock(WAITERS_LOCK_RANK, "ShenandoahGCWaiters_lock", true),
+  _alloc_stall_count(0),
+  _concurrent_worker_count(ConcGCThreads) { }
+
 void ShenandoahController::update_gc_id() {
-  _gc_id.add_then_fetch((size_t)1);
+  _gc_id.add_then_fetch(1UL);
 }
 
-size_t ShenandoahController::get_gc_id() {
+size_t ShenandoahController::get_gc_id() const {
   return _gc_id.load_relaxed();
 }
 
-void ShenandoahController::handle_alloc_failure(const ShenandoahAllocRequest& req, bool block) {
+void ShenandoahController::handle_alloc_failure(const ShenandoahAllocRequest &req) {
   assert(current()->is_Java_thread(), "expect Java thread here");
 
   const bool is_humongous = ShenandoahHeapRegion::requires_humongous(req.size());
   const GCCause::Cause cause = is_humongous ? GCCause::_shenandoah_humongous_allocation_failure : GCCause::_allocation_failure;
 
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  size_t req_byte = req.size() * HeapWordSize;
-  if (heap->cancel_gc(cause)) {
-    log_info(gc)("Failed to allocate %s, " PROPERFMT, req.type_string(), PROPERFMTARGS(req_byte));
-    request_gc(cause);
-  }
+  const size_t req_byte = req.size() * HeapWordSize;
+  log_debug(gc)("Failed to allocate %s, " PROPERFMT, req.type_string(), PROPERFMTARGS(req_byte));
   AllocTracer::send_allocation_requiring_gc_event(req_byte, checked_cast<uint>(get_gc_id()));
 
-  if (block) {
-    MonitorLocker ml(&_alloc_failure_waiters_lock);
-    while (!should_terminate() && ShenandoahCollectorPolicy::is_allocation_failure(heap->cancelled_cause())) {
-      ml.wait();
+  request_gc(cause);
+}
+
+void ShenandoahController::increase_concurrent_worker_count() {
+  while (true) {
+    const size_t workers = _concurrent_worker_count.load_relaxed();
+    if (workers == ParallelGCThreads) {
+      break;
+    }
+
+    const size_t new_value = MIN2(workers + 1, checked_cast<size_t>(ParallelGCThreads));
+    if (_concurrent_worker_count.compare_set(workers, new_value, memory_order_relaxed)) {
+      break;
     }
   }
 }
 
-void ShenandoahController::handle_alloc_failure_evac(size_t words) {
+void ShenandoahController::decrease_concurrent_worker_count() {
+  if (_alloc_stall_count.exchange(0) == 0) {
+    // There were no stalls during this cycle, try to reduce the concurrent gc workers
+    while (true) {
+      const size_t workers = _concurrent_worker_count.load_relaxed();
+      if (workers == ConcGCThreads) {
+        break;
+      }
 
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  const bool is_humongous = ShenandoahHeapRegion::requires_humongous(words);
-  const GCCause::Cause cause = is_humongous ? GCCause::_shenandoah_humongous_allocation_failure : GCCause::_shenandoah_allocation_failure_evac;
-
-  if (heap->cancel_gc(cause)) {
-    log_info(gc)("Failed to allocate " PROPERFMT " for evacuation", PROPERFMTARGS(words * HeapWordSize));
+      const size_t new_value = MAX2(workers - 1, checked_cast<size_t>(ConcGCThreads));
+      if (_concurrent_worker_count.compare_set(workers, new_value, memory_order_relaxed)) {
+        break;
+      }
+    }
   }
 }
 
-void ShenandoahController::notify_alloc_failure_waiters() {
-  MonitorLocker ml(&_alloc_failure_waiters_lock);
+void ShenandoahController::notify_gc_waiters() {
+  MonitorLocker ml(&_gc_waiters_lock);
   ml.notify_all();
+}
+
+const char* ShenandoahController::collector_phase_to_string(ShenandoahCollectorPhase phase) {
+  switch(phase) {
+    case UNSET:        return "Outside of Cycle";
+    case INITIALIZING: return "Initializing";
+    case ROOTS:        return "Roots";
+    case MARK:         return "Mark";
+    case EVAC:         return "Evacuation";
+    case UPDATE_REFS:  return "Update References";
+    default:
+      ShouldNotReachHere();
+  }
 }

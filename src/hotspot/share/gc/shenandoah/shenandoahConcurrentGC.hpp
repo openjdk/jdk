@@ -32,6 +32,7 @@
 #include "gc/shenandoah/shenandoahHeap.hpp"
 
 class ShenandoahGeneration;
+class ShenandoahController;
 
 class VM_ShenandoahInitMark;
 class VM_ShenandoahFinalMarkStartEvac;
@@ -49,15 +50,15 @@ protected:
   ShenandoahConcurrentMark    _mark;
 
 private:
-  ShenandoahDegenPoint        _degen_point;
-  bool                        _abbreviated;
-  const bool                  _do_old_gc_bootstrap;
+  ShenandoahController* _controller;
+  bool                  _abbreviated;
+  const bool            _do_old_gc_bootstrap;
 
 public:
-  ShenandoahConcurrentGC(ShenandoahGeneration* generation, bool do_old_gc_bootstrap);
+  ShenandoahConcurrentGC(ShenandoahController* controller, ShenandoahGeneration* generation, bool do_old_gc_bootstrap);
+  ~ShenandoahConcurrentGC();
 
   bool collect(GCCause::Cause cause) override;
-  ShenandoahDegenPoint degen_point() const;
 
   // Return true if this cycle found enough immediate garbage to skip evacuation
   bool abbreviated() const { return _abbreviated; }
@@ -123,7 +124,7 @@ protected:
   void op_reset_after_collect();
 
   // Check GC cancellation and abort concurrent GC
-  bool check_cancellation_and_abort(ShenandoahDegenPoint point);
+  bool check_cancellation_and_abort();
 
   // Called when concurrent GC succeeds.
   void entry_reset_after_collect();

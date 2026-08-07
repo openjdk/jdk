@@ -503,7 +503,7 @@ void ShenandoahReferenceProcessor::process_references(ShenandoahRefProcThreadLoc
   // set_oop_field maintains the card mark barrier as this list is constructed.
   if (!CompressedOops::is_null(*list)) {
     oop head = lrb(CompressedOops::decode_not_null(*list));
-    shenandoah_assert_not_in_cset_except(&head, head, ShenandoahHeap::heap()->cancelled_gc() || !ShenandoahLoadRefBarrier);
+    shenandoah_assert_not_in_cset_except(&head, head, ShenandoahHeap::heap()->has_self_forwarded_objects() || ShenandoahHeap::heap()->cancelled_gc() || !ShenandoahLoadRefBarrier);
     oop prev = _pending_list.exchange(head);
     set_oop_field(p, prev);
     if (prev == nullptr) {
@@ -576,7 +576,7 @@ void ShenandoahReferenceProcessor::process_references(ShenandoahPhaseTimings::Ph
 
 void ShenandoahReferenceProcessor::enqueue_references_locked() {
   // Prepend internal pending list to external pending list
-  shenandoah_assert_not_in_cset_except(&_pending_list, _pending_list.load_relaxed(), ShenandoahHeap::heap()->cancelled_gc() || !ShenandoahLoadRefBarrier);
+  shenandoah_assert_not_in_cset_except(&_pending_list, _pending_list.load_relaxed(), ShenandoahHeap::heap()->has_self_forwarded_objects() || ShenandoahHeap::heap()->cancelled_gc() || !ShenandoahLoadRefBarrier);
 
   // During reference processing, we maintain a local list of references that are identified by
   //   _pending_list and _pending_list_tail.  _pending_list_tail points to the next field of the last Reference object on

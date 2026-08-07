@@ -25,28 +25,27 @@
  */
 
 
+#include "gc/shared/gc_globals.hpp"
+#include "gc/shared/plab.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
-#include "gc/shenandoah/shenandoahGC.hpp"
-#include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "runtime/os.hpp"
+#include "gc/shenandoah/shenandoahController.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.hpp"
+#include "gc/shenandoah/shenandoahThreadLocalData.hpp"
+#include "logging/log.hpp"
+#include "utilities/copy.hpp"
+#include "utilities/ostream.hpp"
 
 ShenandoahCollectorPolicy::ShenandoahCollectorPolicy() :
   _success_concurrent_gcs(0),
   _abbreviated_concurrent_gcs(0),
-  _success_degenerated_gcs(0),
-  _abbreviated_degenerated_gcs(0),
   _success_full_gcs(0),
-  _consecutive_degenerated_gcs(0),
-  _consecutive_degenerated_gcs_without_progress(0),
   _consecutive_young_gcs(0),
   _mixed_gcs(0),
   _success_old_gcs(0),
   _interrupted_old_gcs(0),
-  _alloc_failure_degenerated(0),
-  _alloc_failure_degenerated_upgrade_to_full(0),
   _alloc_failure_full(0) {
 
-  Copy::zero_to_bytes(_degen_point_counts, sizeof(size_t) * ShenandoahGC::_DEGENERATED_LIMIT);
+  Copy::zero_to_bytes(_stall_counts, sizeof(size_t) * ShenandoahController::PHASE_LIMIT);
   Copy::zero_to_bytes(_collection_cause_counts, sizeof(size_t) * GCCause::_last_gc_cause);
 
   _tracer = new ShenandoahTracer();
@@ -61,21 +60,15 @@ void ShenandoahCollectorPolicy::record_alloc_failure_to_full() {
   _alloc_failure_full++;
 }
 
-void ShenandoahCollectorPolicy::record_alloc_failure_to_degenerated(ShenandoahGC::ShenandoahDegenPoint point) {
-  assert(point < ShenandoahGC::_DEGENERATED_LIMIT, "sanity");
-  _alloc_failure_degenerated++;
-  _degen_point_counts[point]++;
-}
-
-void ShenandoahCollectorPolicy::record_degenerated_upgrade_to_full() {
-  reset_consecutive_degenerated_gcs();
-  _alloc_failure_degenerated_upgrade_to_full++;
+void ShenandoahCollectorPolicy::record_allocation_stall(ShenandoahController::ShenandoahCollectorPhase phase) {
+  assert(phase < ShenandoahController::PHASE_LIMIT, "Invalid phase: %d", phase);
+  assert(ShenandoahController::UNSET <= phase, "Invalid phase: %d", phase);
+  _stall_counts[phase].add_then_fetch(1UL);
 }
 
 void ShenandoahCollectorPolicy::record_success_concurrent(bool is_young, bool is_abbreviated) {
   update_young(is_young);
 
-  reset_consecutive_degenerated_gcs();
   _success_concurrent_gcs++;
   if (is_abbreviated) {
     _abbreviated_concurrent_gcs++;
@@ -96,23 +89,6 @@ void ShenandoahCollectorPolicy::record_interrupted_old() {
   _interrupted_old_gcs++;
 }
 
-void ShenandoahCollectorPolicy::record_degenerated(bool is_young, bool is_abbreviated, bool progress) {
-  update_young(is_young);
-
-  _success_degenerated_gcs++;
-  _consecutive_degenerated_gcs++;
-
-  if (progress) {
-    _consecutive_degenerated_gcs_without_progress = 0;
-  } else {
-    _consecutive_degenerated_gcs_without_progress++;
-  }
-
-  if (is_abbreviated) {
-    _abbreviated_degenerated_gcs++;
-  }
-}
-
 void ShenandoahCollectorPolicy::update_young(bool is_young) {
   if (is_young) {
     _consecutive_young_gcs++;
@@ -122,7 +98,6 @@ void ShenandoahCollectorPolicy::update_young(bool is_young) {
 }
 
 void ShenandoahCollectorPolicy::record_success_full() {
-  reset_consecutive_degenerated_gcs();
   _consecutive_young_gcs = 0;
   _success_full_gcs++;
 }
@@ -185,6 +160,9 @@ bool ShenandoahCollectorPolicy::is_requested_gc(GCCause::Cause cause) {
 }
 
 bool ShenandoahCollectorPolicy::should_run_full_gc(GCCause::Cause cause) {
+  if (cause == GCCause::_shenandoah_upgrade_to_full_gc || cause == GCCause::_shenandoah_humongous_allocation_failure) {
+    return true;
+  }
   return is_explicit_gc(cause) ? !ExplicitGCInvokesConcurrent : !ShenandoahImplicitGCInvokesConcurrent;
 }
 
@@ -195,6 +173,53 @@ bool ShenandoahCollectorPolicy::should_handle_requested_gc(GCCause::Cause cause)
     return !is_explicit_gc(cause);
   }
   return true;
+}
+
+bool ShenandoahCollectorPolicy::should_abandon_evacuations(ShenandoahHeapRegion* region) {
+  if (region->has_self_forwards()) {
+    PLAB* gclab = ShenandoahThreadLocalData::gclab(Thread::current());
+    if (gclab->words_remaining() < PLAB::min_size() / HeapWordSize) {
+      // This region and this thread are lost. This thread has evacuated all it can. If
+      // we let it continue on to other regions, it will only fail those as well. We want
+      // to let other threads try the regions that this thread could not.
+      log_debug(gc, thread)("Region (%zu) has self-forwards and labs are exhausted (remaining words: %zu)",
+                            region->index(), gclab->words_remaining());
+      return true;
+    }
+  }
+  return false;
+}
+
+// Some causes should not be allowed to preempt others. We must make sure that
+// regulator requests and allocation failures do not preempt a shutdown request.
+int ShenandoahCollectorPolicy::cause_priority(GCCause::Cause cause) {
+  if (is_explicit_gc(cause)) {
+    return 5;
+  }
+
+  switch (cause) {
+    case GCCause::_shenandoah_stop_vm: return 7;
+    case GCCause::_shenandoah_upgrade_to_full_gc: return 6;
+    // case is_explicit_gc(cause): return 5;
+    case GCCause::_shenandoah_humongous_allocation_failure: return 4;
+    case GCCause::_shenandoah_allocation_failure_evac: return 3;
+    case GCCause::_allocation_failure: return 2;
+    case GCCause::_shenandoah_concurrent_gc: return 1;
+    case GCCause::_no_gc: return 0;
+    default:
+      // Unanticipated gc causes are treated as an allocation failure and cannot be
+      // preempted by regulator requests
+      return 2;
+  }
+}
+
+template<typename T>
+size_t shenandoah_sum_array(T* a, size_t length) {
+  size_t sum = 0;
+  for (size_t i = 0; i < length; i++) {
+    sum += a[i].load_relaxed();
+  }
+  return sum;
 }
 
 void ShenandoahCollectorPolicy::print_gc_stats(outputStream* out) const {
@@ -210,8 +235,7 @@ void ShenandoahCollectorPolicy::print_gc_stats(outputStream* out) const {
     gc_attempts += _collection_cause_counts[c];
   }
 
-  size_t completed_gcs = _success_full_gcs + _success_degenerated_gcs + _success_concurrent_gcs + _success_old_gcs;
-  size_t cancelled_gcs = gc_attempts - completed_gcs;
+  size_t completed_gcs = _success_full_gcs + _success_concurrent_gcs + _success_old_gcs;
   out->print_cr("%5zu GC attempts. %zu Completed GCs (%.2f%%).",
     gc_attempts, completed_gcs, percent_of(completed_gcs, gc_attempts));
 
@@ -242,22 +266,21 @@ void ShenandoahCollectorPolicy::print_gc_stats(outputStream* out) const {
   out->print_cr("  %5zu abbreviated (%.2f%%)",  _abbreviated_concurrent_gcs, percent_of(_abbreviated_concurrent_gcs, _success_concurrent_gcs));
   out->cr();
 
-  if (ShenandoahHeap::heap()->mode()->is_generational()) {
+  if (_success_old_gcs > 0) {
     out->print_cr("%5zu Completed Old GCs (%.2f%%)",        _success_old_gcs, percent_of(_success_old_gcs, completed_gcs));
     out->print_cr("  %5zu mixed",                        _mixed_gcs);
     out->print_cr("  %5zu interruptions",                _interrupted_old_gcs);
     out->cr();
   }
 
-  size_t degenerated_gcs = _alloc_failure_degenerated_upgrade_to_full + _success_degenerated_gcs;
-  out->print_cr("%5zu Degenerated GCs (%.2f%%)", degenerated_gcs, percent_of(degenerated_gcs, completed_gcs));
-  out->print_cr("  %5zu upgraded to Full GC (%.2f%%)",          _alloc_failure_degenerated_upgrade_to_full, percent_of(_alloc_failure_degenerated_upgrade_to_full, degenerated_gcs));
-  out->print_cr("  %5zu caused by allocation failure (%.2f%%)", _alloc_failure_degenerated, percent_of(_alloc_failure_degenerated, degenerated_gcs));
-  out->print_cr("  %5zu abbreviated (%.2f%%)",                  _abbreviated_degenerated_gcs, percent_of(_abbreviated_degenerated_gcs, degenerated_gcs));
-  for (int c = 0; c < ShenandoahGC::_DEGENERATED_LIMIT; c++) {
-    if (_degen_point_counts[c] > 0) {
-      const char* desc = ShenandoahGC::degen_point_to_string((ShenandoahGC::ShenandoahDegenPoint)c);
-      out->print_cr("    %5zu happened at %s", _degen_point_counts[c], desc);
+  const size_t total_stalls = shenandoah_sum_array(_stall_counts, ShenandoahController::PHASE_LIMIT);
+  out->print_cr("%5zu Stalls", total_stalls);
+  for (int c = 0; c < ShenandoahController::PHASE_LIMIT; c++) {
+    const size_t stall_count = _stall_counts[c].load_relaxed();
+    if (stall_count > 0) {
+      const auto phase = static_cast<ShenandoahController::ShenandoahCollectorPhase>(c);
+      const char* desc = ShenandoahController::collector_phase_to_string(phase);
+      out->print_cr("    %5zu happened at %s", stall_count, desc);
     }
   }
   out->cr();
@@ -270,5 +293,4 @@ void ShenandoahCollectorPolicy::print_gc_stats(outputStream* out) const {
     out->print_cr("  %5zu invoked implicitly (%.2f%%)", implicit_requests, percent_of(implicit_requests, _success_full_gcs));
   }
   out->print_cr("  %5zu caused by allocation failure (%.2f%%)", _alloc_failure_full, percent_of(_alloc_failure_full, _success_full_gcs));
-  out->print_cr("  %5zu upgraded from Degenerated GC (%.2f%%)", _alloc_failure_degenerated_upgrade_to_full, percent_of(_alloc_failure_degenerated_upgrade_to_full, _success_full_gcs));
 }

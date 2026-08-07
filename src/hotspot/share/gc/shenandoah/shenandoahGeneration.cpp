@@ -248,16 +248,15 @@ void ShenandoahGeneration::parallel_heap_region_iterate_free(ShenandoahHeapRegio
   ShenandoahHeap::heap()->parallel_heap_region_iterate(cl);
 }
 
-void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
+void ShenandoahGeneration::prepare_regions_and_collection_set() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   ShenandoahCollectionSet* collection_set = heap->collection_set();
   bool is_generational = heap->mode()->is_generational();
 
-  assert(!heap->is_full_gc_in_progress(), "Only for concurrent and degenerated GC");
+  assert(!heap->is_full_gc_in_progress(), "Only for concurrent GC");
   assert(!is_old(), "Only YOUNG and GLOBAL GC perform evacuations");
   {
-    ShenandoahGCPhase phase(concurrent ? ShenandoahPhaseTimings::final_update_region_states :
-                            ShenandoahPhaseTimings::degen_gc_final_update_region_states);
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_update_region_states);
     ShenandoahFinalMarkUpdateRegionStateClosure cl(complete_marking_context());
     parallel_heap_region_iterate(&cl);
 
@@ -287,8 +286,7 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
   }
 
   {
-    ShenandoahGCPhase phase(concurrent ? ShenandoahPhaseTimings::choose_cset :
-                            ShenandoahPhaseTimings::degen_gc_choose_cset);
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::choose_cset);
 
     collection_set->clear();
     ShenandoahHeapLocker locker(heap->lock());
@@ -310,10 +308,9 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
   }
 
   {
-    ShenandoahGCPhase phase(concurrent ? ShenandoahPhaseTimings::final_rebuild_freeset :
-                            ShenandoahPhaseTimings::degen_gc_final_rebuild_freeset);
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_rebuild_freeset);
     ShenandoahHeapLocker locker(heap->lock());
-    // At start of evacation, we do NOT compute_old_generation_balance()
+    // At start of evacuation, we do NOT compute_old_generation_balance()
     size_t young_trashed_regions, old_trashed_regions, first_old, last_old, num_old;
     _free_set->prepare_to_rebuild(young_trashed_regions, old_trashed_regions, first_old, last_old, num_old);
     _free_set->finish_rebuild(young_trashed_regions, old_trashed_regions, num_old);
@@ -429,9 +426,4 @@ size_t ShenandoahGeneration::available(size_t capacity) const {
   size_t in_use = used();
   size_t result = in_use > capacity ? 0 : capacity - in_use;
   return result;
-}
-
-void ShenandoahGeneration::record_success_concurrent(bool abbreviated) {
-  heuristics()->record_success_concurrent();
-  ShenandoahHeap::heap()->shenandoah_policy()->record_success_concurrent(is_young(), abbreviated);
 }

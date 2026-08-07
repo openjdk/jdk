@@ -191,9 +191,10 @@ jlong ShenandoahHeapRegionCounters::encode_heap_status(ShenandoahHeap* heap) {
                           generation->name(), phase, BOOL_TO_STR(heap->is_concurrent_old_mark_in_progress()), status);
   }
 
-  if (heap->is_degenerated_gc_in_progress()) {
+  if (heap->has_self_forwarded_objects()) {
     status |= (1 << 6);
   }
+
   if (heap->is_full_gc_in_progress()) {
     status |= (1 << 7);
   }

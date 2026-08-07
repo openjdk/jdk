@@ -30,22 +30,11 @@
  *
  * @run main/othervm -Xmx64m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+ClassUnloadingWithConcurrentMark
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
- *      -XX:+ShenandoahDegeneratedGC -XX:+ShenandoahVerify
+ *      -XX:+ShenandoahVerify
  *      TestStringInternCleanup
  *
  * @run main/othervm -Xmx64m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+ClassUnloadingWithConcurrentMark
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
- *      -XX:-ShenandoahDegeneratedGC -XX:+ShenandoahVerify
- *      TestStringInternCleanup
- *
- * @run main/othervm -Xmx64m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+ClassUnloadingWithConcurrentMark
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
- *      -XX:+ShenandoahDegeneratedGC
- *      TestStringInternCleanup
- *
- * @run main/othervm -Xmx64m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+ClassUnloadingWithConcurrentMark
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
- *      -XX:-ShenandoahDegeneratedGC
  *      TestStringInternCleanup
  */
 
