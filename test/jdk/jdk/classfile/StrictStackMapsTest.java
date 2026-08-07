@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8388319
  * @enablePreview
  * @library /test/lib
  * @build jdk.test.lib.ByteCodeLoader
@@ -37,9 +38,11 @@ import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassFileVersion;
 import java.lang.classfile.ClassTransform;
 import java.lang.classfile.FieldModel;
+import java.lang.classfile.Label;
 import java.lang.classfile.attribute.StackMapFrameInfo;
 import java.lang.classfile.attribute.StackMapTableAttribute;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.constantpool.NameAndTypeEntry;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandles;
@@ -57,6 +60,29 @@ import static java.lang.constant.ConstantDescs.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class StrictStackMapsTest {
+    private static Label dummyLabel() {
+        Label[] capture = new Label[1];
+        ClassFile.of().build(CD_Object, clb -> clb.withMethodBody("test", MTD_void, 0, cob -> {
+            capture[0] = cob.startLabel();
+            cob.return_();
+        }));
+        return capture[0];
+    }
+
+    @Test
+    void stackMapFrameInfoFactoryValidationTest() {
+        Label label = dummyLabel();
+        NameAndTypeEntry nat = ConstantPoolBuilder.of().nameAndTypeEntry("f", CD_int);
+        assertDoesNotThrow(() -> StackMapFrameInfo.of(label,
+                List.of(), List.of(), List.of()));
+        assertThrows(IllegalArgumentException.class, () -> StackMapFrameInfo.of(label,
+                List.of(), List.of(), List.of(nat)));
+        assertDoesNotThrow(() -> StackMapFrameInfo.of(label,
+                List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.UNINITIALIZED_THIS), List.of(), List.of(nat)));
+        assertDoesNotThrow(() -> StackMapFrameInfo.of(label,
+                List.of(), List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.UNINITIALIZED_THIS), List.of(nat)));
+    }
+
     @Test
     void basicBranchTest() throws Throwable {
         var className = "Test";
@@ -482,5 +508,51 @@ class StrictStackMapsTest {
         assertEquals(List.of(ConstantPoolBuilder.of().nameAndTypeEntry("f", CD_int)), frame.unsetFields());
 
         runtimeVerify(testName, bytes);
+    }
+
+    @Test
+    void uninitThisOnStackTest() {
+        var testName = "Test";
+        var testDesc = ClassDesc.of(testName);
+        var bytes = ClassFile.of().build(testDesc, clb -> clb
+                .withVersion(latestMajorVersion(), PREVIEW_MINOR_VERSION)
+                .withFlags(ACC_PUBLIC | ACC_IDENTITY)
+                .withField("f", CD_int, ACC_STRICT_INIT)
+                .withMethodBody(INIT_NAME, MTD_void, 0, cob -> {
+                    cob.aload(0) // stack for invokespecial
+                       .dup() // stack for putfield
+                       .iconst_4()
+                       .iconst_m1() // stack for astore
+                       .istore(0) // nuke uninitializedThis from locals
+                       .iconst_3(); // stack for branch
+                    var elseLabel = cob.newLabel();
+                    var endIfLabel = cob.newLabel();
+                    cob.ifeq(elseLabel)
+                       .putfield(testDesc, "f", CD_int)
+                       .goto_(endIfLabel)
+                       .labelBinding(elseLabel)
+                       .putfield(testDesc, "f", CD_int)
+                       .labelBinding(endIfLabel)
+                       .invokespecial(CD_Object, INIT_NAME, MTD_void)
+                       .return_();
+                }));
+        var parsed = ClassFile.of().parse(bytes);
+        var frames = parsed.methods().getFirst().code().orElseThrow()
+                .findAttribute(Attributes.stackMapTable()).orElseThrow().entries();
+        assertEquals(2, frames.size());
+        var elseFrame = frames.getFirst();
+        assertEquals(List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.INTEGER), elseFrame.locals());
+        assertEquals(List.of(
+                StackMapFrameInfo.SimpleVerificationTypeInfo.UNINITIALIZED_THIS,
+                StackMapFrameInfo.SimpleVerificationTypeInfo.UNINITIALIZED_THIS,
+                StackMapFrameInfo.SimpleVerificationTypeInfo.INTEGER), elseFrame.stack());
+        assertEquals(List.of(ConstantPoolBuilder.of().nameAndTypeEntry("f", CD_int)), elseFrame.unsetFields());
+        var endIfFrame = frames.getLast();
+        assertEquals(List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.INTEGER), endIfFrame.locals());
+        assertEquals(List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.UNINITIALIZED_THIS), endIfFrame.stack());
+        assertEquals(List.of(), endIfFrame.unsetFields());
+
+        // TODO 8389843: verifier is not setting flagThisUninit for stack-only uninitializedThis presence
+        //runtimeVerify(testName, bytes);
     }
 }
