@@ -1133,7 +1133,7 @@ void PhaseIdealLoop::move_flat_array_check_out_of_loop(Node* n) {
     return;
   }
   Node* mem = n->in(FlatArrayCheckNode::Memory);
-  Node* array = n->in(FlatArrayCheckNode::ArrayOrKlass)->uncast();
+  Node* array = n->in(FlatArrayCheckNode::ArrayOrKlass);
   IdealLoopTree* check_loop = get_loop(get_ctrl(n));
   IdealLoopTree* ary_loop = get_loop(get_ctrl(array));
 
