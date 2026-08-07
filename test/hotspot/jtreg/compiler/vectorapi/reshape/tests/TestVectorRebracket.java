@@ -67,12 +67,12 @@ public class TestVectorRebracket {
 
     @Test
     // Currently this test never runs because vectors of length 1 are not implemented.
-    // This classes uses custom filtering which doesn't make it clear
+    // This test uses custom filtering which doesn't make it clear
     // which tests are supposed to run in which environment.
     // So to make it clear that this test never runs with the current implementation,
     // we set the failOn condition to always fail because `*.` matches any IR node.
     // JDK-8387061 plans to refactor tests like this so that filtering is based on `applyIf` rules.
-    // If vectors of lenght 1 are ever supposed,  this test will fail and the
+    // If vectors of length 1 are ever supported, this test will fail and the
     // correct IR expectations will have to be defined and validated.
     @IR(failOn = "*.")
     public static void testB64toL64(byte[] input, long[] output) {
@@ -98,12 +98,12 @@ public class TestVectorRebracket {
 
     @Test
     // Currently this test never runs because vectors of length 1 are not implemented.
-    // This classes uses custom filtering which doesn't make it clear
+    // This test uses custom filtering which doesn't make it clear
     // which tests are supposed to run in which environment.
     // So to make it clear that this test never runs with the current implementation,
     // we set the failOn condition to always fail because `*.` matches any IR node.
     // JDK-8387061 plans to refactor tests like this so that filtering is based on `applyIf` rules.
-    // If vectors of lenght 1 are ever supposed,  this test will fail and the
+    // If vectors of length 1 are ever supported, this test will fail and the
     // correct IR expectations will have to be defined and validated.
     @IR(failOn = "*.")
     public static void testB64toD64(byte[] input, double[] output) {
@@ -141,12 +141,12 @@ public class TestVectorRebracket {
 
     @Test
     // Currently this test never runs because vectors of length 1 are not implemented.
-    // This classes uses custom filtering which doesn't make it clear
+    // This test uses custom filtering which doesn't make it clear
     // which tests are supposed to run in which environment.
     // So to make it clear that this test never runs with the current implementation,
     // we set the failOn condition to always fail because `*.` matches any IR node.
     // JDK-8387061 plans to refactor tests like this so that filtering is based on `applyIf` rules.
-    // If vectors of lenght 1 are ever supposed,  this test will fail and the
+    // If vectors of length 1 are ever supported, this test will fail and the
     // correct IR expectations will have to be defined and validated.
     @IR(failOn = "*.")
     public static void testS64toL64(short[] input, long[] output) {
@@ -172,12 +172,12 @@ public class TestVectorRebracket {
 
     @Test
     // Currently this test never runs because vectors of length 1 are not implemented.
-    // This classes uses custom filtering which doesn't make it clear
+    // This test uses custom filtering which doesn't make it clear
     // which tests are supposed to run in which environment.
     // So to make it clear that this test never runs with the current implementation,
     // we set the failOn condition to always fail because `*.` matches any IR node.
     // JDK-8387061 plans to refactor tests like this so that filtering is based on `applyIf` rules.
-    // If vectors of lenght 1 are ever supposed,  this test will fail and the
+    // If vectors of length 1 are ever supported, this test will fail and the
     // correct IR expectations will have to be defined and validated.
     @IR(failOn = "*.")
     public static void testS64toD64(short[] input, double[] output) {
@@ -215,12 +215,12 @@ public class TestVectorRebracket {
 
     @Test
     // Currently this test never runs because vectors of length 1 are not implemented.
-    // This classes uses custom filtering which doesn't make it clear
+    // This test uses custom filtering which doesn't make it clear
     // which tests are supposed to run in which environment.
     // So to make it clear that this test never runs with the current implementation,
     // we set the failOn condition to always fail because `*.` matches any IR node.
     // JDK-8387061 plans to refactor tests like this so that filtering is based on `applyIf` rules.
-    // If vectors of lenght 1 are ever supposed,  this test will fail and the
+    // If vectors of length 1 are ever supported, this test will fail and the
     // correct IR expectations will have to be defined and validated.
     @IR(failOn = "*.")
     public static void testI64toL64(int[] input, long[] output) {
@@ -246,12 +246,12 @@ public class TestVectorRebracket {
 
     @Test
     // Currently this test never runs because vectors of length 1 are not implemented.
-    // This classes uses custom filtering which doesn't make it clear
+    // This test uses custom filtering which doesn't make it clear
     // which tests are supposed to run in which environment.
     // So to make it clear that this test never runs with the current implementation,
     // we set the failOn condition to always fail because `*.` matches any IR node.
     // JDK-8387061 plans to refactor tests like this so that filtering is based on `applyIf` rules.
-    // If vectors of lenght 1 are ever supposed,  this test will fail and the
+    // If vectors of length 1 are ever supported, this test will fail and the
     // correct IR expectations will have to be defined and validated.
     @IR(failOn = "*.")
     public static void testI64toD64(int[] input, double[] output) {
@@ -265,12 +265,12 @@ public class TestVectorRebracket {
 
     @Test
     // Currently this test never runs because vectors of length 1 are not implemented.
-    // This classes uses custom filtering which doesn't make it clear
+    // This test uses custom filtering which doesn't make it clear
     // which tests are supposed to run in which environment.
     // So to make it clear that this test never runs with the current implementation,
     // we set the failOn condition to always fail because `*.` matches any IR node.
     // JDK-8387061 plans to refactor tests like this so that filtering is based on `applyIf` rules.
-    // If vectors of lenght 1 are ever supposed,  this test will fail and the
+    // If vectors of length 1 are ever supported, this test will fail and the
     // correct IR expectations will have to be defined and validated.
     @IR(failOn = "*.")
     public static void testL64toB64(long[] input, byte[] output) {
@@ -284,12 +284,12 @@ public class TestVectorRebracket {
 
     @Test
     // Currently this test never runs because vectors of length 1 are not implemented.
-    // This classes uses custom filtering which doesn't make it clear
+    // This test uses custom filtering which doesn't make it clear
     // which tests are supposed to run in which environment.
     // So to make it clear that this test never runs with the current implementation,
     // we set the failOn condition to always fail because `*.` matches any IR node.
     // JDK-8387061 plans to refactor tests like this so that filtering is based on `applyIf` rules.
-    // If vectors of lenght 1 are ever supposed,  this test will fail and the
+    // If vectors of length 1 are ever supported, this test will fail and the
     // correct IR expectations will have to be defined and validated.
     @IR(failOn = "*.")
     public static void testL64toS64(long[] input, short[] output) {
@@ -303,12 +303,12 @@ public class TestVectorRebracket {
 
     @Test
     // Currently this test never runs because vectors of length 1 are not implemented.
-    // This classes uses custom filtering which doesn't make it clear
+    // This test uses custom filtering which doesn't make it clear
     // which tests are supposed to run in which environment.
     // So to make it clear that this test never runs with the current implementation,
     // we set the failOn condition to always fail because `*.` matches any IR node.
     // JDK-8387061 plans to refactor tests like this so that filtering is based on `applyIf` rules.
-    // If vectors of lenght 1 are ever supposed,  this test will fail and the
+    // If vectors of length 1 are ever supported, this test will fail and the
     // correct IR expectations will have to be defined and validated.
     @IR(failOn = "*.")
     public static void testL64toI64(long[] input, int[] output) {
@@ -322,12 +322,12 @@ public class TestVectorRebracket {
 
     @Test
     // Currently this test never runs because vectors of length 1 are not implemented.
-    // This classes uses custom filtering which doesn't make it clear
+    // This test uses custom filtering which doesn't make it clear
     // which tests are supposed to run in which environment.
     // So to make it clear that this test never runs with the current implementation,
     // we set the failOn condition to always fail because `*.` matches any IR node.
     // JDK-8387061 plans to refactor tests like this so that filtering is based on `applyIf` rules.
-    // If vectors of lenght 1 are ever supposed,  this test will fail and the
+    // If vectors of length 1 are ever supported, this test will fail and the
     // correct IR expectations will have to be defined and validated.
     @IR(failOn = "*.")
     public static void testL64toF64(long[] input, float[] output) {
@@ -341,12 +341,12 @@ public class TestVectorRebracket {
 
     @Test
     // Currently this test never runs because vectors of length 1 are not implemented.
-    // This classes uses custom filtering which doesn't make it clear
+    // This test uses custom filtering which doesn't make it clear
     // which tests are supposed to run in which environment.
     // So to make it clear that this test never runs with the current implementation,
     // we set the failOn condition to always fail because `*.` matches any IR node.
     // JDK-8387061 plans to refactor tests like this so that filtering is based on `applyIf` rules.
-    // If vectors of lenght 1 are ever supposed,  this test will fail and the
+    // If vectors of length 1 are ever supported, this test will fail and the
     // correct IR expectations will have to be defined and validated.
     @IR(failOn = "*.")
     public static void testL64toD64(long[] input, double[] output) {
@@ -396,12 +396,12 @@ public class TestVectorRebracket {
 
     @Test
     // Currently this test never runs because vectors of length 1 are not implemented.
-    // This classes uses custom filtering which doesn't make it clear
+    // This test uses custom filtering which doesn't make it clear
     // which tests are supposed to run in which environment.
     // So to make it clear that this test never runs with the current implementation,
     // we set the failOn condition to always fail because `*.` matches any IR node.
     // JDK-8387061 plans to refactor tests like this so that filtering is based on `applyIf` rules.
-    // If vectors of lenght 1 are ever supposed,  this test will fail and the
+    // If vectors of length 1 are ever supported, this test will fail and the
     // correct IR expectations will have to be defined and validated.
     @IR(failOn = "*.")
     public static void testF64toL64(float[] input, long[] output) {
@@ -415,12 +415,12 @@ public class TestVectorRebracket {
 
     @Test
     // Currently this test never runs because vectors of length 1 are not implemented.
-    // This classes uses custom filtering which doesn't make it clear
+    // This test uses custom filtering which doesn't make it clear
     // which tests are supposed to run in which environment.
     // So to make it clear that this test never runs with the current implementation,
     // we set the failOn condition to always fail because `*.` matches any IR node.
     // JDK-8387061 plans to refactor tests like this so that filtering is based on `applyIf` rules.
-    // If vectors of lenght 1 are ever supposed,  this test will fail and the
+    // If vectors of length 1 are ever supported, this test will fail and the
     // correct IR expectations will have to be defined and validated.
     @IR(failOn = "*.")
     public static void testF64toD64(float[] input, double[] output) {
@@ -434,12 +434,12 @@ public class TestVectorRebracket {
 
     @Test
     // Currently this test never runs because vectors of length 1 are not implemented.
-    // This classes uses custom filtering which doesn't make it clear
+    // This test uses custom filtering which doesn't make it clear
     // which tests are supposed to run in which environment.
     // So to make it clear that this test never runs with the current implementation,
     // we set the failOn condition to always fail because `*.` matches any IR node.
     // JDK-8387061 plans to refactor tests like this so that filtering is based on `applyIf` rules.
-    // If vectors of lenght 1 are ever supposed,  this test will fail and the
+    // If vectors of length 1 are ever supported, this test will fail and the
     // correct IR expectations will have to be defined and validated.
     @IR(failOn = "*.")
     public static void testD64toB64(double[] input, byte[] output) {
@@ -453,12 +453,12 @@ public class TestVectorRebracket {
 
     @Test
     // Currently this test never runs because vectors of length 1 are not implemented.
-    // This classes uses custom filtering which doesn't make it clear
+    // This test uses custom filtering which doesn't make it clear
     // which tests are supposed to run in which environment.
     // So to make it clear that this test never runs with the current implementation,
     // we set the failOn condition to always fail because `*.` matches any IR node.
     // JDK-8387061 plans to refactor tests like this so that filtering is based on `applyIf` rules.
-    // If vectors of lenght 1 are ever supposed,  this test will fail and the
+    // If vectors of length 1 are ever supported, this test will fail and the
     // correct IR expectations will have to be defined and validated.
     @IR(failOn = "*.")
     public static void testD64toS64(double[] input, short[] output) {
@@ -472,12 +472,12 @@ public class TestVectorRebracket {
 
     @Test
     // Currently this test never runs because vectors of length 1 are not implemented.
-    // This classes uses custom filtering which doesn't make it clear
+    // This test uses custom filtering which doesn't make it clear
     // which tests are supposed to run in which environment.
     // So to make it clear that this test never runs with the current implementation,
     // we set the failOn condition to always fail because `*.` matches any IR node.
     // JDK-8387061 plans to refactor tests like this so that filtering is based on `applyIf` rules.
-    // If vectors of lenght 1 are ever supposed,  this test will fail and the
+    // If vectors of length 1 are ever supported, this test will fail and the
     // correct IR expectations will have to be defined and validated.
     @IR(failOn = "*.")
     public static void testD64toI64(double[] input, int[] output) {
@@ -491,12 +491,12 @@ public class TestVectorRebracket {
 
     @Test
     // Currently this test never runs because vectors of length 1 are not implemented.
-    // This classes uses custom filtering which doesn't make it clear
+    // This test uses custom filtering which doesn't make it clear
     // which tests are supposed to run in which environment.
     // So to make it clear that this test never runs with the current implementation,
     // we set the failOn condition to always fail because `*.` matches any IR node.
     // JDK-8387061 plans to refactor tests like this so that filtering is based on `applyIf` rules.
-    // If vectors of lenght 1 are ever supposed,  this test will fail and the
+    // If vectors of length 1 are ever supported, this test will fail and the
     // correct IR expectations will have to be defined and validated.
     @IR(failOn = "*.")
     public static void testD64toL64(double[] input, long[] output) {
@@ -510,12 +510,12 @@ public class TestVectorRebracket {
 
     @Test
     // Currently this test never runs because vectors of length 1 are not implemented.
-    // This classes uses custom filtering which doesn't make it clear
+    // This test uses custom filtering which doesn't make it clear
     // which tests are supposed to run in which environment.
     // So to make it clear that this test never runs with the current implementation,
     // we set the failOn condition to always fail because `*.` matches any IR node.
     // JDK-8387061 plans to refactor tests like this so that filtering is based on `applyIf` rules.
-    // If vectors of lenght 1 are ever supposed,  this test will fail and the
+    // If vectors of length 1 are ever supported, this test will fail and the
     // correct IR expectations will have to be defined and validated.
     @IR(failOn = "*.")
     public static void testD64toF64(double[] input, float[] output) {
