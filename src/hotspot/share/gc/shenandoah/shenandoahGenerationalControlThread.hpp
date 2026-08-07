@@ -81,9 +81,10 @@ private:
 public:
   ShenandoahGenerationalControlThread();
 
-  void run_service() override;
-  void stop_service() override;
+  // Cancels gc if old mark is in progress
+  void maybe_cancel_old_cycle(GCCause::Cause cause);
 
+  // Handles explict requests. Overridden to deal with cancelling old if necessary.
   void request_gc(GCCause::Cause cause) override;
 
   // Return true if the request to start a concurrent GC for the given generation succeeded.
@@ -93,6 +94,14 @@ public:
   GCMode gc_mode() const {
     return _gc_mode;
   }
+
+protected:
+  void run_service() override;
+  void stop_service() override;
+
+  void notify_alloc_stall(GCCause::Cause cause) override;
+  void notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation) override;
+
 private:
 
   // Executes one GC cycle
@@ -106,12 +115,6 @@ private:
   void service_stw_full_cycle(GCCause::Cause cause);
   void service_concurrent_normal_cycle(const ShenandoahGCRequest& request);
   void service_concurrent_old_cycle(const ShenandoahGCRequest& request);
-
-  // Blocks until at least one cycle is complete. WARNING: it doesn't know what kind of cycle will be run.
-  void handle_requested_gc(GCCause::Cause cause, ShenandoahGeneration* generation);
-
-  // Blocks until at least one full GC cycle is comp
-  void handle_alloc_failure_full();
 
   // Returns true if the old generation marking was interrupted to allow a young cycle.
   bool preempt_old_marking(ShenandoahGeneration* generation);
@@ -128,7 +131,6 @@ private:
   // Updating the requested generation is not necessary for allocation failures nor when stopping the thread.
   void notify_control_thread(GCCause::Cause cause);
   void notify_control_thread(MonitorLocker& ml, GCCause::Cause cause);
-  void notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation);
   void notify_control_thread(MonitorLocker& ml, GCCause::Cause cause, ShenandoahGeneration* generation);
 
   // Take the _control_lock and check for a request to run a gc cycle. If a request is found,
@@ -141,6 +143,8 @@ private:
 
   // Print table for young region ages if log is enabled
   void maybe_print_young_region_ages() const;
+
+  void clear_allocation_failure_and_notify_waiters();
 
   // Returns true if we should run a full gc
   bool should_run_full_gc(GCCause::Cause cause) const;
