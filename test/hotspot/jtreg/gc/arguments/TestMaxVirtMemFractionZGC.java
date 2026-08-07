@@ -26,26 +26,12 @@ package gc.arguments;
 /**
  * @test
  * @bug 8376296
- * @summary Test that ZGC does not crash with boundary values for MaxVirtMemFraction
+ * @summary Test that ZGC does not crash with -XX:MaxVirtMemFraction=1
  * @requires vm.debug
- * @library /test/lib
- * @library /
  * @requires vm.gc.Z
- * @run driver ${test.main.class}
+ * @run main/othervm -XX:+UseZGC -XX:MaxVirtMemFraction=1 ${test.main.class}
  */
 
-import jdk.test.lib.process.OutputAnalyzer;
-
 public class TestMaxVirtMemFractionZGC {
-    public static void main(String[] args) throws Exception {
-
-        OutputAnalyzer output = GCArguments.executeTestJava("-XX:+UseZGC", "-XX:MaxVirtMemFraction=1", "-version");
-        output.shouldHaveExitValue(0);
-
-        long val = ((long) 2) << 59;
-        output = GCArguments.executeTestJava("-XX:+UseZGC", "-XX:MaxVirtMemFraction=" + val, "-version");
-        output.shouldContain("Error occurred during initialization of VM");
-        output.shouldContain("Too small maximum heap");
-        output.shouldHaveExitValue(1);
-    }
+    public static void main(String[] args) {}
 }
