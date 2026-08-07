@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -256,7 +256,7 @@ void LinearScan::assign_spill_slot(Interval* it) {
 }
 
 void LinearScan::propagate_spill_slots() {
-  if (!frame_map()->finalize_frame(max_spills(), compilation()->method()->c1_needs_stack_repair())) {
+  if (!frame_map()->finalize_frame(max_spills())) {
     bailout("frame too large");
   }
 }

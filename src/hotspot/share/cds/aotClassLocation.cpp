@@ -32,7 +32,7 @@
 #include "cds/serializeClosure.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
-#include "classfile/javaClasses.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/metadataFactory.hpp"

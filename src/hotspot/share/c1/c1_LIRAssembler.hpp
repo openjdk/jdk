@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,10 +92,6 @@ class LIR_Assembler: public CompilationResourceObj {
   void klass2reg_with_patching(Register reg, CodeEmitInfo* info);
 
   void emit_stubs(CodeStubList* stub_list);
-
-  bool needs_stack_repair() const {
-    return method()->c1_needs_stack_repair();
-  }
 
  public:
   // addresses
