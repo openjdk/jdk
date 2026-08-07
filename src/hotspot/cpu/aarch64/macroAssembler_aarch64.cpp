@@ -6136,7 +6136,7 @@ void MacroAssembler::string_equals(Register a1, Register a2,
                                    Register result, Register cnt1,
                                    Register a1_hi, Register a2_hi)
 {
-  Label MAINLOOP, TAIL15, SMALL, END, DONE, SMALL2;
+  Label MAINLOOP, TAIL15, SMALL, END, SMALL2;
   Register a1_low = rscratch1;
   Register a2_low = rscratch2;
 
@@ -6217,7 +6217,6 @@ void MacroAssembler::string_equals(Register a1, Register a2,
   bind(END);
     cset(result, Assembler::EQ);
 
-  bind(DONE);
   BLOCK_COMMENT("} string_equals");
 }
 
