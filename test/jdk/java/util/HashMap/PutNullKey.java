@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,10 @@
  * @bug 8046085
  * @summary Ensure that when trees are being used for collisions that null key
  * insertion still works.
+ * @library /test/lib
  */
 
+import jdk.test.lib.valueclass.AsValueClass;
 import java.util.*;
 import java.util.stream.IntStream;
 
@@ -78,10 +80,59 @@ public class PutNullKey {
         }
     }
 
+    @AsValueClass
+    public static class CollidingHashValue implements Comparable<CollidingHashValue> {
+
+        private final int value;
+
+        public CollidingHashValue(int value) {
+            this.value = value;
+        }
+
+        @Override
+        public int hashCode() {
+            // intentionally bad hashcode. Force into first bin.
+            return 0;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (null == o) {
+                return false;
+            }
+
+            if (o.getClass() != CollidingHashValue.class) {
+                return false;
+            }
+
+            return value == ((CollidingHashValue) o).value;
+        }
+
+        @Override
+        public int compareTo(CollidingHashValue o) {
+            return value - o.value;
+        }
+    }
+
     public static void main(String[] args) throws Exception {
+        testCollidingHash();
+        testCollidingHashValue();
+    }
+
+    private static void testCollidingHash() {
         Map<Object,Object> m = new HashMap<>(INITIAL_CAPACITY, LOAD_FACTOR);
         IntStream.range(0, SIZE)
                 .mapToObj(CollidingHash::new)
+                .forEach(e -> { m.put(e, e); });
+
+        // kaboom?
+        m.put(null, null);
+    }
+
+    private static void testCollidingHashValue() {
+        Map<Object,Object> m = new HashMap<>(INITIAL_CAPACITY, LOAD_FACTOR);
+        IntStream.range(0, SIZE)
+                .mapToObj(CollidingHashValue::new)
                 .forEach(e -> { m.put(e, e); });
 
         // kaboom?

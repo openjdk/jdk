@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,13 +30,29 @@
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 public class EmptyMapIterator {
     public static void main(String[] args) throws Exception {
+        testStringKeys();
+        testIntegerKeys();
+    }
+
+    private static void testStringKeys() throws Exception {
         HashMap map = new HashMap();
         Iterator iter = map.entrySet().iterator();
         map.put("key", "value");
+        expectConcurrentModification(iter);
+    }
 
+    private static void testIntegerKeys() throws Exception {
+        HashMap<Integer,Integer> map = new HashMap<>();
+        Iterator<Map.Entry<Integer,Integer>> iter = map.entrySet().iterator();
+        map.put(Integer.valueOf(1), Integer.valueOf(2));
+        expectConcurrentModification(iter);
+    }
+
+    private static void expectConcurrentModification(Iterator<?> iter) throws Exception {
         try {
             iter.next();
             throw new Exception("No exception thrown");

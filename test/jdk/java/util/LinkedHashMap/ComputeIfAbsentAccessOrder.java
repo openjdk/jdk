@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,11 @@ import java.util.*;
 
 public class ComputeIfAbsentAccessOrder {
     public static void main(String args[]) throws Throwable {
+        testStringKeys();
+        testIntegerKeys();
+    }
+
+    private static void testStringKeys() {
         LinkedHashMap<String,Object> map = new LinkedHashMap<>(2, 0.75f, true);
         map.put("first", null);
         map.put("second", null);
@@ -42,6 +47,23 @@ public class ComputeIfAbsentAccessOrder {
                 .orElseThrow(() -> new RuntimeException("no value"));
         if(!"first".equals(key)) {
             throw new RuntimeException("not expected value " + "first" + "!=" + key);
+        }
+    }
+
+    private static void testIntegerKeys() {
+        LinkedHashMap<Integer,Object> map = new LinkedHashMap<>(2, 0.75f, true);
+        Integer first = Integer.valueOf(1996);
+        Integer second = Integer.valueOf(2026);
+        map.put(first, null);
+        map.put(second, null);
+
+        map.computeIfAbsent(first, l -> null); // should do nothing
+
+        Integer key = map.keySet().stream()
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("no value"));
+        if (!first.equals(key)) {
+            throw new RuntimeException("not expected value " + first + "!=" + key);
         }
     }
 }

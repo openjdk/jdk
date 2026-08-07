@@ -172,9 +172,14 @@ jdk_util = \
     :jdk_stream
 
 valhalla_adopted = \
-    java/util/Collections/AddAll.java \
     java/util/Arrays \
-    java/util/Collections
+    java/util/Collections \
+    java/util/HashMap \
+    java/util/HashSet \
+    java/util/Hashtable \
+    java/util/LinkedHashMap \
+    java/util/LinkedHashSet \
+    java/util/LinkedList
 
 # All util components not part of some other util category
 jdk_util_other = \
