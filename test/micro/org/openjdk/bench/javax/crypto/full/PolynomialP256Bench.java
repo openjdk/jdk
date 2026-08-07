@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,9 +56,21 @@ public class PolynomialP256Bench {
     final ImmutableIntegerModuloP x = residueField.getElement(refx);
     final ImmutableIntegerModuloP X = montField.getElement(refx);
     final ImmutableIntegerModuloP one = montField.get1();
+    final int ITERATIONS = 10_000;
+    final int[] scalarBits = new int[ITERATIONS];
 
     @Param({"true", "false"})
     private boolean isMontBench;
+
+    // Here we assign conditional set bits as non-constants in order to
+    // prevent constant folding.  Previously, C2 would perform constant
+    // propagation and remove the subsequent dead-code where 0 was input.
+    @Setup
+    public void setup() {
+        for (int i = 0; i < ITERATIONS; i++) {
+            scalarBits[i] = i & 1;
+        }
+    }
 
     @Benchmark
     public MutableIntegerModuloP benchMultiply() {
@@ -69,7 +81,7 @@ public class PolynomialP256Bench {
             test = x.mutable();
         }
 
-        for (int i = 0; i< 10000; i++) {
+        for (int i = 0; i < ITERATIONS; i++) {
             test = test.setProduct(test);
         }
         return test;
@@ -84,7 +96,7 @@ public class PolynomialP256Bench {
             test = x.mutable();
         }
 
-        for (int i = 0; i< 10000; i++) {
+        for (int i = 0; i < ITERATIONS; i++) {
             test = test.setSquare();
         }
         return test;
@@ -94,11 +106,16 @@ public class PolynomialP256Bench {
     public MutableIntegerModuloP benchAssign() {
         MutableIntegerModuloP test1 = X.mutable();
         MutableIntegerModuloP test2 = one.mutable();
-        for (int i = 0; i< 10000; i++) {
-            test1.conditionalSet(test2, 0);
-            test1.conditionalSet(test2, 1);
-            test2.conditionalSet(test1, 0);
-            test2.conditionalSet(test1, 1);
+        int[] lScalarBits = scalarBits;
+
+        for (int i = 0; i < ITERATIONS; i++) {
+            int bit = lScalarBits[i];
+            int bitCom = bit ^ 1;
+
+            test1.conditionalSet(test2, bit);
+            test1.conditionalSet(test2, bitCom);
+            test2.conditionalSet(test1, bit);
+            test2.conditionalSet(test1, bitCom);
         }
         return test2;
     }
