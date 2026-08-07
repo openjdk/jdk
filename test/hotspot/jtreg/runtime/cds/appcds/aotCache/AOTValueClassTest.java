@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @summary Test archived flat arrays
+ * @summary Test archived value classes
  * @bug 8389233
  * @requires vm.cds.write.archived.java.heap
  * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds
@@ -44,7 +44,7 @@ public class AOTValueClassTest {
         final String appJar = ClassFileInstaller.getJarPath("archived_value_class.jar");
 
         SimpleCDSAppTester.of("AOTValueClassTest")
-            .addVmArgs("-Xlog:cds,aot", "--enable-preview")
+            .addVmArgs("-Xlog:cds,aot", "--enable-preview", "-XX:AOTInitTestClass=" + mainClass)
             .appCommandLine(mainClass)
             .classpath(appJar)
             .runAOTWorkflow();
