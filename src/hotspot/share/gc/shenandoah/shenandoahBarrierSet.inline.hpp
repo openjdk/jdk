@@ -187,7 +187,7 @@ inline void ShenandoahBarrierSet::satb_barrier(T *field) {
   if (ShenandoahSATBBarrier && _heap->is_concurrent_mark_in_progress()) {
     T heap_oop = RawAccess<>::oop_load(field);
     if (!CompressedOops::is_null(heap_oop)) {
-      enqueue(CompressedOops::decode(heap_oop));
+      enqueue(CompressedOops::decode_not_null(heap_oop));
     }
   }
 }
