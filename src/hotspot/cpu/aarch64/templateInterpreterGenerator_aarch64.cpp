@@ -1641,30 +1641,24 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   // rscratch1: sender sp
   address entry_point = __ pc();
 
-  const Address constMethod(rmethod, Method::const_offset());
   const Address access_flags(rmethod, Method::access_flags_offset());
-  const Address size_of_parameters(r3,
-                                   ConstMethod::size_of_parameters_offset());
-  const Address size_of_locals(r3, ConstMethod::size_of_locals_offset());
 
   // get parameter size (always needed)
   // need to load the const method first
-  __ ldr(r3, constMethod);
-  __ load_unsigned_short(r2, size_of_parameters);
-  __ load_unsigned_short(rscratch1, Address(r3, ConstMethod::max_stack_offset()));
+  __ ldr(r5, Address(rmethod, Method::const_offset()));
 
   // r2: size of parameters
+  __ load_unsigned_short(r2, Address(r5, ConstMethod::size_of_parameters_offset()));
+  __ load_unsigned_short(r3, Address(r5, ConstMethod::size_of_locals_offset())); // get size of locals in words
+  __ load_unsigned_short(rscratch1, Address(r5, ConstMethod::max_stack_offset()));
+  __ sub(r5, r3, r2); // r5 = no. of additional locals
 
-  __ load_unsigned_short(r3, size_of_locals); // get size of locals in words
-  __ sub(r3, r3, r2); // r3 = no. of additional locals
-  __ stp(r3, rscratch1, Address(__ pre(sp, -2 * wordSize)));
-  __ add(r3, r3, rscratch1);  // r3 = no. of additional locals + max expression stack size
+  __ add(r3, r5, rscratch1);  // r3 = no. of additional locals + max expression stack size
 
   // see if we've got enough room on the stack for locals plus overhead.
   generate_stack_overflow_check();
 
-  // restore r3
-  __ ldp(r3, rscratch1, Address(__ post(sp, 2 * wordSize)));
+  __ mov(r3, r5); // r3 = no. of additional locals
 
   // compute beginning of parameters (rlocals)
   __ add(rlocals, esp, r2, ext::uxtx, 3);
