@@ -107,7 +107,7 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
     }
 
     if (region->is_pinned() && !region->has_live()) {
-      fatal("Pinned region %zu should have live (pinned) objects", region->index());
+      fatal("Pinned region %zu should have live (pinned) objects.", region->index());
     }
 
     size_t garbage = region->garbage();

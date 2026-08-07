@@ -564,7 +564,7 @@ public:
 
   void heap_region_do(ShenandoahHeapRegion* r) override {
     if (r->is_pinned() && !r->has_live()) {
-      fatal("Pinned region %zu should have live (pinned) objects", r->index());
+      fatal("Pinned region %zu should have live (pinned) objects.", r->index());
     }
 
     if (r->is_humongous_start()) {
