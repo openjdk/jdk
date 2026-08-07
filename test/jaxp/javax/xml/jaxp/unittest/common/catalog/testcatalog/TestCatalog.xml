@@ -18,6 +18,9 @@
         <!-- file:/path/val_test.xsd -->
         <systemSuffix systemIdSuffix="val_test.xsd" uri="val_test.xsd"/>
     </group>
+    <group id="xsls" prefer = "system" xml:base = "../../xmlfiles/">
+        <uri name="XSLPI_target.xsl" uri="XSLPI_target.xsl"/>
+    </group>
 
     <group id="xi" prefer = "system" xml:base = "xinclude/">
 
@@ -26,7 +29,7 @@
         <system systemId="XI_test2.xml" uri="XI_test2.xml"/>
         <system systemId="XI_utf8.xml" uri="XI_utf8.xml"/>
     </group>
-    <!-- additional catalogs can be added a NextCatalog besides registering
+    <!-- additional catalogs can be added in a NextCatalog besides registering
          through the Feature.FILES (javax.xml.catalog.files) property -->
     <!-- nextCatalog catalog="pathto/AnotherCatalog.xml"/-->
 </catalog>
