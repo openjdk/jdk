@@ -2182,7 +2182,7 @@ void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register le
       vsetivli(zr, N, Assembler::e32, Assembler::m1, Assembler::mu, Assembler::tu);
     }
 
-    vmv_v_x(vcrc, zr);
+    vmv_v_i(vcrc, 0);
     vmv_s_x(vcrc, crc);
 
     // multiple of 64
@@ -2327,7 +2327,7 @@ void MacroAssembler::kernel_crc32_vclmul_fold_vectorsize_16(Register crc, Regist
   vle64_v(v6, buf); addi(buf, buf, STEP);
   vle64_v(v7, buf); addi(buf, buf, STEP);
 
-  vmv_v_x(v31, zr);
+  vmv_v_i(v31, 0);
   vsetivli(zr, 1, Assembler::e32, Assembler::m1, Assembler::mu, Assembler::tu);
   vmv_s_x(v31, crc);
   vsetivli(zr, N, Assembler::e64, Assembler::m1, Assembler::mu, Assembler::tu);
@@ -2450,7 +2450,7 @@ void MacroAssembler::kernel_crc32_vclmul_fold_vectorsize_32(Register crc, Regist
   //    now, v1 should contains: 010101...
 
   // initial crc
-  vmv_v_x(v24, zr);
+  vmv_v_i(v24, 0);
   vsetivli(zr, 1, Assembler::e32, Assembler::m4, Assembler::mu, Assembler::tu);
   vmv_s_x(v24, crc);
   vsetivli(zr, N, Assembler::e64, Assembler::m4, Assembler::mu, Assembler::tu);
