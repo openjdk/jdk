@@ -474,14 +474,14 @@ void TemplateTable::fast_aldc(LdcType type) {
   // We are resolved if the resolved reference cache entry contains a
   // non-null object (CallSite, etc.).
   __ get_cache_index_at_bcp(index, 1, index_size);  // Load index.
-  __ load_resolved_reference_at_index(Z_tos, index);
+  __ load_resolved_reference_at_index(Z_tos, index, Z_R1_scratch);
   __ z_ltgr(Z_tos, Z_tos);
   __ z_bre(L_do_resolve);
 
   // Convert null sentinel to null.
   __ load_const_optimized(Z_R1_scratch, (intptr_t)Universe::the_null_sentinel_addr());
   __ z_lg(Z_R1_scratch, Address(Z_R1_scratch));
-  __ resolve_oop_handle(Z_R1_scratch, Z_R0_scratch, Z_R1_scratch);
+  __ resolve_oop_handle(Z_R1_scratch, Z_tmp_2, Z_R0_scratch);
   __ z_cgr(Z_tos, Z_R1_scratch);
   __ z_brne(L_resolved);
   __ clear_reg(Z_tos);
@@ -2481,7 +2481,7 @@ void TemplateTable::load_resolved_field_entry(Register obj,
   if (is_static) {
     __ load_sized_value(obj, Address(cache, ResolvedFieldEntry::field_holder_offset()), sizeof(void*), false);
     __ load_sized_value(obj, Address(obj, in_bytes(Klass::java_mirror_offset())), sizeof(void*), false);
-    __ resolve_oop_handle(obj, Z_R0_scratch, Z_R1_scratch);
+    __ resolve_oop_handle(obj, Z_R1_scratch, Z_R0_scratch);
   }
 }
 
@@ -2520,7 +2520,7 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   // Push the appendix as a trailing parameter.
   // This must be done before we get the receiver,
   // since the parameter_size includes it.
-  __ load_resolved_reference_at_index(appendix, index);
+  __ load_resolved_reference_at_index(appendix, index, Z_ARG2);
   __ verify_oop(appendix);
   __ push_ptr(appendix);  // Push appendix (MethodType, CallSite, etc.).
   __ bind(L_no_push);
@@ -2557,7 +2557,7 @@ void TemplateTable::load_resolved_method_entry_handle(Register cache,
   // This must be done before we get the receiver,
   // since the parameter_size includes it.
   Register appendix = method;
-  __ load_resolved_reference_at_index(appendix, ref_index);
+  __ load_resolved_reference_at_index(appendix, ref_index, flags);
   __ verify_oop(appendix);
   __ push_ptr(appendix);  // Push appendix (MethodType, CallSite, etc.).
   __ bind(L_no_push);
