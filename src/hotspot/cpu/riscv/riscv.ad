@@ -7520,7 +7520,7 @@ instruct maxF_reg_reg(fRegF dst, fRegF src1, fRegF src2, rFlagsReg cr) %{
   ins_encode %{
     __ minmax_fp(as_FloatRegister($dst$$reg),
                  as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg),
-                 __ FLOAT_TYPE::single_precision, false /* is_min */);
+                 C2_MacroAssembler::FLOAT_TYPE::single_precision, false /* is_min */);
   %}
 
   ins_pipe(pipe_class_default);
@@ -7551,7 +7551,7 @@ instruct minF_reg_reg(fRegF dst, fRegF src1, fRegF src2, rFlagsReg cr) %{
   ins_encode %{
     __ minmax_fp(as_FloatRegister($dst$$reg),
                  as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg),
-                 __ FLOAT_TYPE::single_precision, true /* is_min */);
+                 C2_MacroAssembler::FLOAT_TYPE::single_precision, true /* is_min */);
   %}
 
   ins_pipe(pipe_class_default);
@@ -7582,7 +7582,7 @@ instruct maxD_reg_reg(fRegD dst, fRegD src1, fRegD src2, rFlagsReg cr) %{
   ins_encode %{
     __ minmax_fp(as_FloatRegister($dst$$reg),
                  as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg),
-                 __ FLOAT_TYPE::double_precision, false /* is_min */);
+                 C2_MacroAssembler::FLOAT_TYPE::double_precision, false /* is_min */);
   %}
 
   ins_pipe(pipe_class_default);
@@ -7613,7 +7613,7 @@ instruct minD_reg_reg(fRegD dst, fRegD src1, fRegD src2, rFlagsReg cr) %{
   ins_encode %{
     __ minmax_fp(as_FloatRegister($dst$$reg),
                  as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg),
-                 __ FLOAT_TYPE::double_precision, true /* is_min */);
+                 C2_MacroAssembler::FLOAT_TYPE::double_precision, true /* is_min */);
   %}
 
   ins_pipe(pipe_class_default);
@@ -8695,7 +8695,7 @@ instruct min_HF_reg(fRegF dst, fRegF src1, fRegF src2, rFlagsReg cr)
 
   ins_encode %{
     __ minmax_fp($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister,
-                 __ FLOAT_TYPE::half_precision, true /* is_min */);
+                 C2_MacroAssembler::FLOAT_TYPE::half_precision, true /* is_min */);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -8725,7 +8725,7 @@ instruct max_HF_reg(fRegF dst, fRegF src1, fRegF src2, rFlagsReg cr)
 
   ins_encode %{
     __ minmax_fp($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister,
-                 __ FLOAT_TYPE::half_precision, false /* is_min */);
+                 C2_MacroAssembler::FLOAT_TYPE::half_precision, false /* is_min */);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -11376,7 +11376,7 @@ instruct clearArray_reg_reg(iRegL_R29 cnt, iRegP_R28 base, iRegL val,
                             Universe dummy)
 %{
   // temp registers must match the one used in StubGenerator::generate_zero_blocks()
-  predicate(((ClearArrayNode*)n)->word_copy_only());
+  predicate(((ClearArrayNode*)n)->requires_word_fill());
   match(Set dummy (ClearArray (Binary cnt base) val));
   effect(USE_KILL cnt, USE_KILL base, TEMP tmp1, TEMP tmp2, KILL cr);
 
@@ -11395,7 +11395,7 @@ instruct clearArray_imm_reg(immL cnt, iRegP_R28 base, immL0 zero, Universe dummy
   predicate(!UseRVV
             && (uint64_t)n->in(2)->in(1)->get_long()
                < (uint64_t)(BlockZeroingLowLimit >> LogBytesPerWord)
-            && !((ClearArrayNode*)n)->word_copy_only());
+            && !((ClearArrayNode*)n)->requires_word_fill());
   match(Set dummy (ClearArray (Binary cnt base) zero));
   effect(USE_KILL base, KILL cr);
 

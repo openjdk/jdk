@@ -27,6 +27,7 @@
 #include "cds/aotMappedHeapWriter.hpp"
 #include "cds/aotStreamedHeapLoader.hpp"
 #include "cds/aotStreamedHeapWriter.hpp"
+#include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/filemap.hpp"
 #include "classfile/moduleEntry.hpp"
@@ -967,7 +968,7 @@ void AOTMapLogger::runtime_log_heap_region(FileMapInfo* mapinfo) {
     }
 
     address requested_base = UseCompressedOops ? (address)mapinfo->narrow_oop_base() : AOTMappedHeapLoader::heap_region_requested_address(mapinfo);
-    address requested_start = requested_base + r->mapping_offset();
+    address requested_start = ArchiveUtils::offset_from_requested_base(requested_base, r->mapping_offset());
     log_region_range("heap", buffer_start, buffer_end, requested_start);
     log_archived_objects(AOTMappedHeapLoader::oop_iterator(mapinfo, buffer_start, buffer_end));
   }

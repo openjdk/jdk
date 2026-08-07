@@ -32,7 +32,6 @@
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
-#include "gc/g1/g1EdenRegions.hpp"
 #include "gc/g1/g1EvacStats.hpp"
 #include "gc/g1/g1HeapRegionAttr.hpp"
 #include "gc/g1/g1HeapRegionManager.hpp"
@@ -43,8 +42,8 @@
 #include "gc/g1/g1MonotonicArenaFreeMemoryTask.hpp"
 #include "gc/g1/g1MonotonicArenaFreePool.hpp"
 #include "gc/g1/g1NUMA.hpp"
-#include "gc/g1/g1SurvivorRegions.hpp"
 #include "gc/g1/g1YoungGCAllocationFailureInjector.hpp"
+#include "gc/g1/g1YoungRegions.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
@@ -1241,15 +1240,15 @@ public:
   G1SurvivorRegions* survivor() { return &_survivor; }
 
   inline uint target_num_eden_regions() const;
-  uint eden_regions_count() const { return _eden.length(); }
-  uint eden_regions_count(uint node_index) const { return _eden.regions_on_node(node_index); }
-  uint survivor_regions_count() const { return _survivor.length(); }
-  uint survivor_regions_count(uint node_index) const { return _survivor.regions_on_node(node_index); }
+  uint num_eden_regions() const { return _eden.num_regions(); }
+  uint num_eden_regions(uint node_index) const { return _eden.regions_on_node(node_index); }
+  uint num_survivor_regions() const { return _survivor.num_regions(); }
+  uint num_survivor_regions(uint node_index) const { return _survivor.regions_on_node(node_index); }
   size_t eden_regions_used_bytes() const { return _eden.used_bytes(); }
   size_t survivor_regions_used_bytes() const { return _survivor.used_bytes(); }
-  uint young_regions_count() const { return _eden.length() + _survivor.length(); }
-  uint old_regions_count() const { return _old_set.length(); }
-  uint humongous_regions_count() const { return _humongous_set.length(); }
+  uint num_young_regions() const { return _eden.num_regions() + _survivor.num_regions(); }
+  uint num_old_regions() const { return _old_set.num_regions(); }
+  uint num_humongous_regions() const { return _humongous_set.num_regions(); }
 
 #ifdef ASSERT
   bool check_no_young_regions();

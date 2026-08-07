@@ -48,16 +48,12 @@ void C1_MacroAssembler::explicit_null_check(Register base) {
 }
 
 
-void C1_MacroAssembler::build_frame_helper(int frame_size_in_bytes, int sp_offset_for_orig_pc, int sp_inc, bool reset_orig_pc, bool needs_stack_repair) {
+void C1_MacroAssembler::build_frame_helper(int frame_size_in_bytes, int sp_offset_for_orig_pc, bool reset_orig_pc) {
   const Register return_pc = R20;
   mflr(return_pc);
   std(return_pc, _abi0(lr), R1_SP);    // SP->lr = return_pc
   push_frame(frame_size_in_bytes, R0); // SP -= frame_size_in_bytes
 
-  if (needs_stack_repair) {
-    // Save stack increment (also account for fixed framesize and rbp)
-    Unimplemented();
-  }
   if (reset_orig_pc) {
     // Zero orig_pc to detect deoptimization during buffering in the entry points
     li(R0, 0);
@@ -69,13 +65,13 @@ void C1_MacroAssembler::build_frame_helper(int frame_size_in_bytes, int sp_offse
 
 void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_bytes,
                                     int sp_offset_for_orig_pc,
-                                    bool needs_stack_repair, bool has_scalarized_args,
+                                    bool has_scalarized_args,
                                     Label* verified_inline_entry_label) {
   // Make sure there is enough stack space for this method's activation.
   assert(bang_size_in_bytes >= frame_size_in_bytes, "stack bang size incorrect");
   generate_stack_overflow_check(bang_size_in_bytes);
 
-  build_frame_helper(frame_size_in_bytes, sp_offset_for_orig_pc, 0, has_scalarized_args, needs_stack_repair);
+  build_frame_helper(frame_size_in_bytes, sp_offset_for_orig_pc, has_scalarized_args);
 
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->nmethod_entry_barrier(this, R20);
@@ -370,4 +366,3 @@ void C1_MacroAssembler::null_check(Register r, Label* Lnull) {
 int C1_MacroAssembler::scalarized_entry(const CompiledEntrySignature* ces, int frame_size_in_bytes, int bang_size_in_bytes, int sp_offset_for_orig_pc, Label& verified_inline_entry_label, bool is_inline_ro_entry) {
   Unimplemented();
 }
-
