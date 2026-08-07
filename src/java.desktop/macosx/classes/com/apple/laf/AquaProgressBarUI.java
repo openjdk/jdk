@@ -26,6 +26,7 @@
 package com.apple.laf;
 
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.awt.event.*;
 import java.awt.geom.AffineTransform;
 import java.beans.*;
@@ -187,12 +188,21 @@ public final class AquaProgressBarUI extends ProgressBarUI implements ChangeList
     }
 
     protected void paint(final Graphics g) {
-        // this is questionable. We may want the insets to mean something different.
         final Insets i = progressBar.getInsets();
         final int width = progressBar.getWidth() - (i.right + i.left);
         final int height = progressBar.getHeight() - (i.bottom + i.top);
 
-        Graphics2D g2 = (Graphics2D) g;
+        Graphics2D g2;
+        BufferedImage image = null;
+        if (g instanceof Graphics2D) {
+            g2 = (Graphics2D)g;
+        } else {
+            image = new BufferedImage(width, height,
+                                                    BufferedImage.TYPE_INT_RGB);
+            g2 = image.createGraphics();
+            g2.setColor(progressBar.getBackground());
+            g2.fillRect(0, 0, width, height);
+        }
         final AffineTransform savedAT = g2.getTransform();
         if (!progressBar.getComponentOrientation().isLeftToRight()) {
             //Scale operation: Flips component about pivot
@@ -200,11 +210,14 @@ public final class AquaProgressBarUI extends ProgressBarUI implements ChangeList
             g2.scale(-1, 1);
             g2.translate(-progressBar.getWidth(), 0);
         }
-        painter.paint(g, progressBar, i.left, i.top, width, height);
-
+        painter.paint(g2, progressBar, i.left, i.top, width, height);
         g2.setTransform(savedAT);
         if (progressBar.isStringPainted() && !progressBar.isIndeterminate()) {
-                paintString(g, i.left, i.top, width, height);
+            paintString(g2, i.left, i.top, width, height);
+        }
+        if (image != null) {
+            g.drawImage(image, 0, 0, width, height, null);
+            g2.dispose();
         }
     }
 

@@ -188,10 +188,10 @@ public class WindowsProgressBarUI extends BasicProgressBarUI
                                     2 + barRectWidth - (amountFull - 2),
                                     barRectHeight / 2 + 1);
                         } else {
-                            g.drawRect(2 + barRectWidth, barRectHeight + 1,
+                            g.drawRect(0, 0, barRectWidth, barRectHeight);,
                                        barRectWidth, barRectHeight + 1);
-                            g.fillRect(2 + barRectWidth, barRectHeight + 1,
-                                        amountFull, barRectHeight + 1);
+                            g.fillRect(barRectWidth - amountFill, 0,
+                                        amountFull, barRectHeight);
                         }
                     }
                     paintString(g, 0, 0, (int)(barRectWidth / scaleX),
