@@ -2338,11 +2338,10 @@ void Parse::do_acmp(BoolTest::mask btest, Node* left, Node* right) {
     Node* offset_addr = off_heap_plus_addr(members, in_bytes(InlineKlass::fast_acmp_offset_offset()));
     Node* offset = make_load(control(), offset_addr, TypeInt::INT, T_INT, MemNode::unordered);
 
-    Node* offset_cmp = CmpI(offset, zerocon(T_INT));
-    Node* offset_bol = _gvn.transform(new BoolNode(offset_cmp, BoolTest::lt));
+    Node* offset_bol = BoolCmpI(offset, BoolTest::lt, zerocon(T_INT));
     mask_iff = create_and_map_if(control(), offset_bol, PROB_FAIR, COUNT_UNKNOWN);
-    Node* slow_path_ctl = _gvn.transform(new IfTrueNode(mask_iff));
-    Node* fast_path_ctl = _gvn.transform(new IfFalseNode(mask_iff));
+    Node* slow_path_ctl = IfTrue(mask_iff);
+    Node* fast_path_ctl = IfFalse(mask_iff);
     set_control(slow_path_ctl);
 
     {
@@ -2356,11 +2355,11 @@ void Parse::do_acmp(BoolTest::mask btest, Node* left, Node* right) {
       // *(left + offset) & mask == *(right + offset) & mask
       Node* left_payload_addr = basic_plus_adr(not_null_left, offset_l);
       Node* left_payload = make_load(control(), left_payload_addr, TypeLong::LONG, T_LONG, MemNode::unordered, LoadNNode::DependsOnlyOnTest, false, true, true, true);
-      Node* left_masked = _gvn.transform(new AndLNode(left_payload, fast_acmp_mask));
+      Node* left_masked = AndL(left_payload, fast_acmp_mask);
 
       Node* right_payload_addr = basic_plus_adr(not_null_right, offset_l);
       Node* right_payload = make_load(control(), right_payload_addr, TypeLong::LONG, T_LONG, MemNode::unordered, LoadNNode::DependsOnlyOnTest, false, true, true, true);
-      Node* right_masked = _gvn.transform(new AndLNode(right_payload, fast_acmp_mask));
+      Node* right_masked = AndL(right_payload, fast_acmp_mask);
 
       Node* masked_cmp = CmpL(left_masked, right_masked);
 
