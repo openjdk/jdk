@@ -1414,6 +1414,15 @@ void PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape, bool deep_revisit
     case Op_AddHF:
       return;
 
+    // In XorI/LNode::Ideal, we optimize Xor(x, -1), but
+    // only if is_used_in_only_arithmetic: so we would
+    // need notification if the Xor only has arithmetic
+    // nodes. I think this also calls for a generalization
+    // of Node::has_special_unique_user.
+    case Op_XorI:
+    case Op_XorL:
+      return;
+
     // RegionNode::Ideal does "Skip around the useless IF diamond".
     //   245  IfTrue  === 244
     //   258  If  === 245 257
@@ -2514,10 +2523,12 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     }
   }
   // If changed AndI/AndL inputs, check RShift/URShift users for "(x & mask) >> shift" optimization opportunity
+  // LShiftNode::IdealIL optimizes patterns like: LShift(And(RShift(x, c), Y), c)
   if (use_op == Op_AndI || use_op == Op_AndL) {
     add_users_to_worklist_if(worklist, use, [](Node* u) {
       return u->Opcode() == Op_RShiftI || u->Opcode() == Op_RShiftL ||
-             u->Opcode() == Op_URShiftI || u->Opcode() == Op_URShiftL;
+             u->Opcode() == Op_URShiftI || u->Opcode() == Op_URShiftL ||
+             u->Opcode() == Op_LShiftI || u->Opcode() == Op_LShiftL;
     });
   }
   // MulNode::AndIL_sum_and_mask can optimize:
