@@ -256,11 +256,18 @@ private:
   HeapWord* _coalesce_and_fill_boundary; // for old regions not selected as collection set candidates.
 
   // Frequently updated fields
-  HeapWord* _top;
+  HeapWord* volatile _top;
+  shenandoah_padding(0);
+  Atomic<HeapWord*> _atomic_top; // non-null only while region is an active CAS alloc region.
+  shenandoah_padding(1);
 
   size_t _tlab_allocs;
   size_t _gclab_allocs;
   size_t _plab_allocs;
+
+  // Atomic counter (words) of shared CAS allocations during this activation.
+  // At retirement, growth minus this is attributed to LAB allocs by role.
+  Atomic<size_t> _shared_atomic_allocs;
 
   Atomic<size_t> _live_data;
   Atomic<size_t> _critical_pins;
@@ -269,9 +276,10 @@ private:
 
   Atomic<HeapWord*> _update_watermark;
 
-  uint _age;
+  Atomic<uint> _age;
   bool _promoted_in_place;
-  CENSUS_NOISE(uint _youth;)   // tracks epochs of retrograde ageing (rejuvenation)
+  // Atomic like _age: updated on the lock-free retire path while read by marking workers.
+  CENSUS_NOISE(Atomic<uint> _youth;)
 
   ShenandoahSharedFlag _recycling; // Used to indicate that the region is being recycled; see try_recycle*().
 
@@ -282,6 +290,9 @@ private:
 
   // This is only read/written by a gc worker to avoid unnecessary bitmap resets
   bool _needs_bitmap_reset;
+
+  // True while region is a collector CAS alloc region; read on the barrier fast path.
+  Atomic<bool> _gc_alloc_region;
 
 public:
   ShenandoahHeapRegion(HeapWord* start, size_t index, bool committed);
@@ -385,13 +396,22 @@ public:
   inline size_t garbage_before_padded_for_promote() const;
 
   HeapWord* get_top_at_evac_start() const { return _top_at_evac_start; }
-  void record_top_at_evac_start()         { _top_at_evac_start = _top; }
+  void record_top_at_evac_start()         { _top_at_evac_start = top(); }
 
   // Allocation (return nullptr if full)
   inline HeapWord* allocate(size_t word_size, const ShenandoahAllocRequest& req);
 
   // Allocate fill after top
   inline HeapWord* allocate_fill(size_t word_size);
+
+  // Allocate object with CAS, return nullptr if full or not enough space for the req
+  inline HeapWord* allocate_atomic(const ShenandoahAllocRequest &req);
+
+  // Allocate lab with CAS, return nullptr if full or not enough space for the req
+  inline HeapWord* allocate_lab_atomic(const ShenandoahAllocRequest &req, size_t &actual_size);
+
+  // CAS-allocate the object; prior_atomic_top always receives the prior value of _atomic_top.
+  inline bool try_allocate(HeapWord* const obj, size_t const size, HeapWord* &prior_atomic_top);
 
   inline void clear_live_data();
   void set_live_data(size_t s);
@@ -466,11 +486,49 @@ public:
   // Find humongous start region that this region belongs to
   ShenandoahHeapRegion* humongous_start_region() const;
 
-  HeapWord* top() const         { return _top;     }
-  void set_top(HeapWord* v)     { _top = v;        }
+  HeapWord* atomic_top() const {
+    return _atomic_top.load_acquire();
+  }
 
-  HeapWord* new_top() const     { return _new_top; }
-  void set_new_top(HeapWord* v) { _new_top = v;    }
+  // Relaxed read: only used as the CAS expected operand; the CAS itself validates correctness.
+  HeapWord* atomic_top_relaxed() const {
+    return _atomic_top.load_relaxed();
+  }
+
+  // Returns _atomic_top if active (may advance concurrently), else stable _top.
+  // Only _atomic_top needs the acquire: null implies the preceding _top store is visible.
+  HeapWord* top() const {
+    HeapWord* at = atomic_top();
+    return at == nullptr ? AtomicAccess::load(&_top) : at;
+  }
+
+  // Relaxed top() for best-effort arithmetic readers (never dereference the result).
+  HeapWord* top_relaxed() const {
+    HeapWord* at = atomic_top_relaxed();
+    return at == nullptr ? AtomicAccess::load(&_top) : at;
+  }
+
+  // Plain read of _top; asserts the region is not active for CAS allocation.
+  HeapWord* plain_top() const {
+    assert(!is_atomic_alloc_region(),
+           "Region is active for CAS alloc; use top() for a concurrent snapshot");
+    return AtomicAccess::load(&_top);
+  }
+
+  void set_top(HeapWord* v) {
+    assert(!is_atomic_alloc_region(), "Must not be an atomic alloc region");
+    _top = v;
+  }
+
+  HeapWord* new_top() const {
+    assert(atomic_top() == nullptr, "Must be");
+    return _new_top;
+  }
+
+  void set_new_top(HeapWord* v) {
+    assert(atomic_top() == nullptr, "Must be");
+    _new_top = v;
+  }
 
   HeapWord* bottom() const      { return _bottom;  }
   HeapWord* end() const         { return _end;     }
@@ -479,6 +537,8 @@ public:
   size_t used() const           { return byte_size(bottom(), top()); }
   size_t used_before_promote() const { return byte_size(bottom(), get_top_before_promote()); }
   size_t free() const           { return byte_size(top(),    end()); }
+  size_t free_words() const     { return pointer_delta(end(), top()); }
+  size_t free_relaxed() const   { return byte_size(top_relaxed(), end()); }
 
   // Does this region contain this address?
   bool contains(HeapWord* p) const {
@@ -486,6 +546,7 @@ public:
   }
 
   inline void adjust_alloc_metadata(const ShenandoahAllocRequest &req, size_t);
+  inline void adjust_alloc_metadata_atomic(const ShenandoahAllocRequest &req, size_t);
   void reset_alloc_metadata();
   size_t get_shared_allocs() const;
   size_t get_tlab_allocs() const;
@@ -502,23 +563,24 @@ public:
   void set_affiliation(ShenandoahAffiliation new_affiliation);
 
   // Region ageing and rejuvenation
-  uint age() const { return _age; }
-  CENSUS_NOISE(uint youth() const { return _youth; })
+  uint age() const { return _age.load_relaxed(); }
+  CENSUS_NOISE(uint youth() const { return _youth.load_relaxed(); })
 
   void increment_age() {
-    const uint max_age = markWord::max_age;
-    assert(_age <= max_age, "Error");
-    if (_age++ >= max_age) {
-      _age = max_age;   // clamp
+    const uint current_age = age();
+    assert(current_age <= markWord::max_age, "Error");
+    if (current_age < markWord::max_age) {
+      const uint old = _age.compare_exchange(current_age, current_age + 1, memory_order_relaxed);
+      assert(old == current_age || old == 0u, "Only fail when any mutator reset the age.");
     }
   }
 
   void reset_age() {
-    CENSUS_NOISE(_youth += _age;)
-    _age = 0;
+    CENSUS_NOISE(_youth.add_then_fetch(age(), memory_order_relaxed);)
+    _age.store_relaxed(0);
   }
 
-  CENSUS_NOISE(void clear_youth() { _youth = 0; })
+  CENSUS_NOISE(void clear_youth() { _youth.store_relaxed(0u); })
 
   inline bool need_bitmap_reset() const {
     return _needs_bitmap_reset;
@@ -530,6 +592,27 @@ public:
 
   inline void unset_needs_bitmap_reset() {
     _needs_bitmap_reset = false;
+  }
+
+  inline void set_active_alloc_region() {
+    shenandoah_assert_heaplocked();
+    assert(atomic_top() == nullptr, "Must be");
+    _atomic_top.release_store(plain_top());
+  }
+
+  // Defined in shenandoahHeapRegion.inline.hpp (depends on ShenandoahHeap via is_young()).
+  inline bool unset_active_alloc_region();
+
+  bool is_atomic_alloc_region() const {
+    return atomic_top() != nullptr;
+  }
+
+  void set_gc_alloc_region(const bool is_gc_alloc_region) {
+    _gc_alloc_region.release_store(is_gc_alloc_region);
+  }
+
+  bool is_gc_alloc_region() const {
+    return _gc_alloc_region.load_acquire();
   }
 
   // Self-forward accounting: set by an evacuating thread after it successfully

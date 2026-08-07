@@ -25,6 +25,7 @@
 
 
 #include "gc/shared/collectorCounters.hpp"
+#include "gc/shenandoah/shenandoahAllocator.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentMark.hpp"
 #include "gc/shenandoah/shenandoahDegeneratedGC.hpp"
@@ -229,10 +230,13 @@ void ShenandoahDegenGC::op_degenerated() {
             heap->labs_make_parsable();
           }
 
+          // Must use top(), not plain_top(): degeneration at _degenerated_evac
+          // skips op_prepare_evacuation(), so CAS alloc regions are still active.
           for (size_t i = 0; i < heap->num_regions(); i++) {
             ShenandoahHeapRegion* r = heap->get_region(i);
-            if (r->is_active() && r->top() > r->get_update_watermark()) {
-              r->set_update_watermark_at_safepoint(r->top());
+            HeapWord* region_top = r->top();
+            if (r->is_active() && region_top > r->get_update_watermark()) {
+              r->set_update_watermark_at_safepoint(region_top);
             }
           }
         }
@@ -367,6 +371,9 @@ void ShenandoahDegenGC::op_prepare_evacuation() {
   // STW cleanup weak roots and unload classes
   heap->parallel_cleaning(_generation, false /*full gc*/);
 
+  // Release CAS alloc regions before choosing the collection set.
+  heap->allocator()->release_mutator_alloc_regions_under_lock();
+
   // Prepare regions and collection set
   _generation->prepare_regions_and_collection_set(false /*concurrent*/);
 
@@ -387,6 +394,7 @@ void ShenandoahDegenGC::op_prepare_evacuation() {
 
     heap->set_evacuation_in_progress(true);
     heap->set_has_forwarded_objects(true);
+    heap->allocator()->reserve_collector_alloc_regions_under_lock();
   } else {
     if (ShenandoahVerify) {
       if (has_in_place_promotions(heap)) {
@@ -412,7 +420,9 @@ void ShenandoahDegenGC::op_cleanup_early() {
 
 void ShenandoahDegenGC::op_evacuate() {
   ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_evac);
-  ShenandoahHeap::heap()->evacuate_collection_set(_generation, false /* concurrent*/);
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  heap->evacuate_collection_set(_generation, false /* concurrent*/);
+  heap->allocator()->release_collector_alloc_regions_under_lock();
 }
 
 void ShenandoahDegenGC::op_init_update_refs() {

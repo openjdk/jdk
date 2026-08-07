@@ -28,6 +28,7 @@
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
+#include "gc/shenandoah/shenandoahAllocator.hpp"
 #include "gc/shenandoah/shenandoahBreakpoint.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
@@ -112,6 +113,8 @@ void ShenandoahConcurrentGC::entry_concurrent_update_refs_prepare(ShenandoahHeap
   heap->try_inject_pin();
   // Evacuation is complete, retire gc labs and change gc state
   heap->concurrent_prepare_for_update_refs();
+  // GC state has changed, safe to release collector alloc regions
+  heap->allocator()->release_collector_alloc_regions_under_lock();
 }
 
 void ShenandoahConcurrentGC::entry_update_card_table() {
@@ -691,11 +694,11 @@ public:
       // Check if region needs updating its TAMS. We have updated it already during concurrent
       // reset, so it is very likely we don't need to do another write here.  Since most regions
       // are not "active", this path is relatively rare.
-      if (_ctx->top_at_mark_start(r) != r->top()) {
+      if (_ctx->top_at_mark_start(r) != r->top_relaxed()) {
         _ctx->capture_top_at_mark_start(r);
       }
     } else {
-      assert(_ctx->top_at_mark_start(r) == r->top(),
+      assert(_ctx->top_at_mark_start(r) == r->top_relaxed(),
              "Region %zu should already have correct TAMS", r->index());
     }
   }
@@ -799,6 +802,9 @@ void ShenandoahConcurrentGC::op_final_mark() {
     // Notify JVMTI that the tagmap table will need cleaning.
     JvmtiTagMap::set_needs_cleaning();
 
+    // Release CAS alloc regions before choosing the collection set.
+    heap->allocator()->release_mutator_alloc_regions_under_lock();
+
     // The collection set is chosen by prepare_regions_and_collection_set(). Additionally, certain parameters have been
     // established to govern the evacuation efforts that are about to begin.  Refer to comments on reserve members in
     // ShenandoahGeneration and ShenandoahOldGeneration for more detail.
@@ -837,6 +843,9 @@ void ShenandoahConcurrentGC::op_final_mark() {
           heap->verifier()->verify_after_concmark(_generation);
         }
       }
+    }
+    if (!heap->collection_set()->is_empty()) {
+      heap->allocator()->reserve_collector_alloc_regions_under_lock();
     }
   }
 

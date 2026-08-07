@@ -316,7 +316,7 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
   assert(!region->is_humongous(), "Use region->humongous_start_region() instead");
 #endif
 
-  HeapWord* right = MIN2(region->top(), end_range_of_interest);
+  HeapWord* right = MIN2(region->top_relaxed(), end_range_of_interest);
   HeapWord* end_of_search_next = MIN2(right, tams);
   // Since end_range_of_interest may not align on a card boundary, last_relevant_card_index is conservative.  Not all of the
   // memory within the last relevant card's span is < right.
@@ -544,7 +544,7 @@ bool ShenandoahScanRemembered::verify_registration(HeapWord* address, Shenandoah
   // during mixed evacuations.
 
   ShenandoahHeapRegion* r = heap->heap_region_containing(base_addr + offset);
-  size_t max_offset = r->top() - base_addr;
+  size_t max_offset = r->top_relaxed() - base_addr;
   if (max_offset > CardTable::card_size_in_words()) {
     max_offset = CardTable::card_size_in_words();
   }
@@ -643,7 +643,7 @@ void ShenandoahScanRemembered::roots_do(OopIterateClosure* cl) {
     ShenandoahHeapRegion* region = heap->get_region(i);
     if (region->is_old() && region->is_active() && !region->is_cset()) {
       HeapWord* start_of_range = region->bottom();
-      HeapWord* end_of_range = region->top();
+      HeapWord* end_of_range = region->top_relaxed();
       size_t start_cluster_no = cluster_for_addr(start_of_range);
       size_t num_heapwords = end_of_range - start_of_range;
       unsigned int cluster_size = CardTable::card_size_in_words() * ShenandoahCardCluster::CardsPerCluster;
@@ -832,8 +832,10 @@ void ShenandoahScanRememberedTask::do_work(uint worker_id) {
       HeapWord* end_of_range = region->bottom() + assignment._chunk_offset + assignment._chunk_size;
 
       // During concurrent mark, region->top() equals TAMS with respect to the current young-gen pass.
-      if (end_of_range > region->top()) {
-        end_of_range = region->top();
+      // Load top once to avoid TOCTOU with concurrent allocation.
+      HeapWord* const region_top = region->top_relaxed();
+      if (end_of_range > region_top) {
+        end_of_range = region_top;
       }
       scanner->process_region_slice(region, assignment._chunk_offset, clusters, end_of_range, &cl, false, worker_id);
     }
@@ -1102,7 +1104,7 @@ void ShenandoahReconstructRememberedSetTask::work(uint worker_id) {
           scanner->reset_object_range(r->bottom(), r->end());
 
           // Then iterate over all objects, registering object and DIRTYing relevant remembered set cards
-          HeapWord* t = r->top();
+          HeapWord* t = r->plain_top();
           while (obj_addr < t) {
             oop obj = cast_to_oop(obj_addr);
             scanner->register_object_without_lock(obj_addr);

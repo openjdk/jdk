@@ -308,6 +308,8 @@ size_t ShenandoahGenerationalHeuristics::select_aged_regions(ShenandoahInPlacePr
       continue;
     }
 
+    assert(!r->is_atomic_alloc_region(), "Must not");
+
     if (!r->is_regular()) {
       if (r->is_humongous_start() && heap->is_tenurable(r)) {
         in_place_promotions.prepare(r);

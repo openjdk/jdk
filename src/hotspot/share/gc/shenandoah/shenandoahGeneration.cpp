@@ -117,7 +117,7 @@ public:
     if (_ctx != nullptr && r->is_active()) {
       assert(r->is_young(), "Young regions only");
       HeapWord* tams = _ctx->top_at_mark_start(r);
-      HeapWord* top  = r->top();
+      HeapWord* top  = r->plain_top();
       if (top > tams) {
         _age0_pop += pointer_delta(top, tams);
       }
