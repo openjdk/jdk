@@ -91,7 +91,8 @@ public class TestZoneRules {
             {WINDHOEK, LocalDate.of(1994, 3, 23), OFF_1, OFF_1, false},
             {WINDHOEK, LocalDate.of(2016, 9, 23), OFF_2, OFF_1, true},
 
-            // Africa/Casablanca for the Rule "Morocco"
+            // Africa/Casablanca for the Rule "Morocco" defines negative DST until early 2026,
+            // then returns to standard UTC permanently later that year, starting with 2026c.
             {CASABLANCA, LocalDate.of(1939, 9, 13), OFF_1, OFF_0, true},
             {CASABLANCA, LocalDate.of(1939, 11, 20), OFF_0, OFF_0, false},
             {CASABLANCA, LocalDate.of(2018, 6, 18), OFF_1, OFF_0, true},
@@ -100,6 +101,7 @@ public class TestZoneRules {
             {CASABLANCA, LocalDate.of(2026, 2, 16), OFF_0, OFF_0, false},
             {CASABLANCA, LocalDate.of(2026, 3, 23), OFF_1, OFF_0, true},
             {CASABLANCA, LocalDate.of(2026, 9, 21), OFF_0, OFF_0, false},
+            {CASABLANCA, LocalDate.of(2038, 11, 8), OFF_0, OFF_0, false},
         };
     }
 

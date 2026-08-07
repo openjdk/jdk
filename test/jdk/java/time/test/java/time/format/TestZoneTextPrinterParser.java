@@ -66,7 +66,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
 
-    private static final Map<String, ZoneOffset> EXPLICIT_CLDR_DST_OFFSETS = Map.of(
+    // Explicit dstOffset attributes from CLDR v48.2 metazone data.
+    private static final Map<String, ZoneOffset> CLDR_EXPLICIT_DST_OFFSETS = Map.of(
             "Africa/Windhoek", ZoneOffset.of("+02:00"),
             "America/Vancouver", ZoneOffset.of("-07:00"),
             "Canada/Pacific", ZoneOffset.of("-07:00"),
@@ -105,7 +106,7 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
                 boolean isDST = tz.inDaylightTime(new Date(epochMilli));
                 // Some zones now use an explicit daylight offset in CLDR without java.util.TimeZone
                 // reporting DST for the instant.
-                ZoneOffset explicitDstOffset = EXPLICIT_CLDR_DST_OFFSETS.get(zid);
+                ZoneOffset explicitDstOffset = CLDR_EXPLICIT_DST_OFFSETS.get(zid);
                 boolean useDaylightName = explicitDstOffset != null
                         ? zdt.getOffset().equals(explicitDstOffset)
                         : isDST;

@@ -42,6 +42,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 public class Bug6329116 {
 
+    // As of CLDR v48.2, CLDR provides these short names for zones with explicit DST offsets.
     private static final Map<String, String> CLDR_SHORT_NAMES = Map.of(
             "America/Edmonton", "MST",
             "Canada/Mountain", "MST",
@@ -259,7 +260,7 @@ public class Bug6329116 {
         }
 
         // Some zones use CLDR short names even when the tzdata FORMAT changed.
-        if (locale.equals(Locale.US) && !inDST) {
+        if (!inDST) {
             return CLDR_SHORT_NAMES.getOrDefault(tz.getID(), "").equals(got);
         }
 
