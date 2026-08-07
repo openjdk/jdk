@@ -42,16 +42,18 @@ JNI_COCOA_ENTER(env);
 
     NSURL *urlToOpen = [NSURL URLWithString:JavaStringToNSString(env, uri)];
     NSURL *appURI = nil;
+    NSWorkspace *workspace = [NSWorkspace sharedWorkspace];
 
-    if (action == sun_lwawt_macosx_CDesktopPeer_BROWSE) {
+    if (action == sun_lwawt_macosx_CDesktopPeer_OPEN) {
+        // Open with the app associated with the URI scheme
+        appURI = [workspace URLForApplicationToOpenURL:urlToOpen];
+    } else if (action == sun_lwawt_macosx_CDesktopPeer_BROWSE) {
         // To get the defaultBrowser
         NSURL *httpsURL = [NSURL URLWithString:@"https://"];
-        NSWorkspace *workspace = [NSWorkspace sharedWorkspace];
         appURI = [workspace URLForApplicationToOpenURL:httpsURL];
     } else if (action == sun_lwawt_macosx_CDesktopPeer_MAIL) {
         // To get the default mailer
         NSURL *mailtoURL = [NSURL URLWithString:@"mailto://"];
-        NSWorkspace *workspace = [NSWorkspace sharedWorkspace];
         appURI = [workspace URLForApplicationToOpenURL:mailtoURL];
     }
 
