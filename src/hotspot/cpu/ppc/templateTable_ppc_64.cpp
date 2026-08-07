@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2013, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 2013, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,6 +102,7 @@ void TemplateTable::patch_bytecode(Bytecodes::Code new_bc, Register Rnew_bc, Reg
   Label L_patch_done;
 
   switch (new_bc) {
+    case Bytecodes::_fast_vputfield:
     case Bytecodes::_fast_aputfield:
     case Bytecodes::_fast_bputfield:
     case Bytecodes::_fast_zputfield:
@@ -684,9 +685,26 @@ void TemplateTable::aaload() {
                  Rtemp      = R5_ARG3,
                  Rtemp2     = R31;
   __ index_check(Rarray, R17_tos /* index */, UseCompressedOops ? 2 : LogBytesPerWord, Rtemp, Rload_addr);
-  do_oop_load(_masm, Rload_addr, arrayOopDesc::base_offset_in_bytes(T_OBJECT), R17_tos, Rtemp, Rtemp2,
-              IS_ARRAY);
-  __ verify_oop(R17_tos);
+  __ profile_array_type<ArrayLoadData>(Rarray, R11_scratch1, R12_scratch2);
+  if (UseArrayFlattening) {
+    Label is_flat_array, cont;
+
+    __ test_flat_array_oop(Rarray, Rtemp, is_flat_array);
+    do_oop_load(_masm, Rload_addr, arrayOopDesc::base_offset_in_bytes(T_OBJECT), R17_tos, Rtemp, Rtemp2,
+                IS_ARRAY);
+    __ verify_oop(R17_tos);
+    __ b(cont);
+
+    __ bind(is_flat_array);
+    __ call_VM(R17_tos, CAST_FROM_FN_PTR(address, InterpreterRuntime::flat_array_load), Rarray, R17_tos);
+    __ bind(cont);
+  } else {
+    do_oop_load(_masm, Rload_addr, arrayOopDesc::base_offset_in_bytes(T_OBJECT), R17_tos, Rtemp, Rtemp2,
+                IS_ARRAY);
+    __ verify_oop(R17_tos);
+  }
+  __ profile_element_type(R17_tos, Rtemp, Rtemp2);
+
   //__ dcbt(R17_tos); // prefetch
 }
 
@@ -973,14 +991,14 @@ void TemplateTable::dastore() {
 void TemplateTable::aastore() {
   transition(vtos, vtos);
 
-  Label Lstore_ok, Lis_null, Ldone;
-  const Register Rindex    = R3_ARG1,
-                 Rarray    = R4_ARG2,
+  Label Lstore_ok, Lis_null, Lis_flat_array, Lwrite_null_to_null_free_array, Ldone;
+  const Register Rindex    = R6_ARG4,
+                 Rarray    = R5_ARG3,
                  Rscratch  = R11_scratch1,
                  Rscratch2 = R12_scratch2,
-                 Rarray_klass = R5_ARG3,
+                 Rarray_klass = R4_ARG2,
                  Rarray_element_klass = Rarray_klass,
-                 Rvalue_klass = R6_ARG4,
+                 Rvalue_klass = R3_ARG1,
                  Rstore_addr = R31;    // Use register which survives VM call.
 
   __ ld(R17_tos, Interpreter::expr_offset_in_bytes(0), R15_esp); // Get value to store.
@@ -989,34 +1007,64 @@ void TemplateTable::aastore() {
 
   __ verify_oop(R17_tos);
   __ index_check_without_pop(Rarray, Rindex, UseCompressedOops ? 2 : LogBytesPerWord, Rscratch, Rstore_addr);
-  // Rindex is dead!
-  Register Rscratch3 = Rindex;
+
+  __ profile_array_type<ArrayStoreData>(Rarray, Rscratch, Rscratch2);
+  __ profile_multiple_element_types(R17_tos, Rscratch, Rscratch2, /* temp */ Rarray_klass);
+
+  if (UseArrayFlattening) {
+    __ load_klass(Rarray_klass, Rarray);
+    __ lwz(Rscratch, in_bytes(Klass::layout_helper_offset()), Rarray_klass);
+    __ test_flat_array_layout(Rscratch, Lis_flat_array);
+  }
 
   // Do array store check - check for null value first.
   __ cmpdi(CR0, R17_tos, 0);
   __ beq(CR0, Lis_null);
 
-  __ load_klass(Rarray_klass, Rarray);
+  // Rindex is dead!
+  Register Rscratch3 = Rindex;
+
+  if (!UseArrayFlattening) {
+    __ load_klass(Rarray_klass, Rarray); // haven't done this above
+  }
   __ load_klass(Rvalue_klass, R17_tos);
 
   // Do fast instanceof cache test.
   __ ld(Rarray_element_klass, in_bytes(ObjArrayKlass::element_klass_offset()), Rarray_klass);
 
   // Generate a fast subtype check. Branch to store_ok if no failure. Throw if failure.
-  __ gen_subtype_check(Rvalue_klass /*subklass*/, Rarray_element_klass /*superklass*/, Rscratch, Rscratch2, Rscratch3, Lstore_ok);
+  __ gen_subtype_check(Rvalue_klass /*subklass*/, Rarray_element_klass /*superklass*/,
+                       Rscratch, Rscratch2, Rscratch3, Lstore_ok, false);
 
   // Fell through: subtype check failed => throw an exception.
   __ load_dispatch_table(R11_scratch1, (address*)Interpreter::_throw_ArrayStoreException_entry);
   __ mtctr(R11_scratch1);
   __ bctr();
 
+  if (UseArrayFlattening) {
+    __ bind(Lis_flat_array); // Store non-null value to flat
+    __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::flat_array_store), R17_tos, Rarray, Rindex);
+    __ b(Ldone);
+  }
+
   __ bind(Lis_null);
+  if (Arguments::is_valhalla_enabled()) {
+    // No way to store null in null-free array
+    __ test_null_free_array_oop(Rarray, Rscratch, Lwrite_null_to_null_free_array);
+  }
   do_oop_store(_masm, Rstore_addr, arrayOopDesc::base_offset_in_bytes(T_OBJECT), noreg /* 0 */,
                Rscratch, Rscratch2, Rscratch3, IS_ARRAY);
-  __ profile_null_seen(Rscratch, Rscratch2);
   __ b(Ldone);
 
+  if (Arguments::is_valhalla_enabled()) {
+    __ bind(Lwrite_null_to_null_free_array);
+    __ load_dispatch_table(Rscratch, (address*)Interpreter::_throw_NullPointerException_entry);
+    __ mtctr(Rscratch);
+    __ bctr();
+  }
+
   // Store is OK.
+  __ align(32, 12);
   __ bind(Lstore_ok);
   do_oop_store(_masm, Rstore_addr, arrayOopDesc::base_offset_in_bytes(T_OBJECT), R17_tos /* value */,
                Rscratch, Rscratch2, Rscratch3, IS_ARRAY | IS_NOT_NULL);
@@ -1753,19 +1801,19 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
 
 // Helper function for if_cmp* methods below.
 // Factored out common compare and branch code.
-void TemplateTable::if_cmp_common(Register Rfirst, Register Rsecond, Register Rscratch1, Register Rscratch2, Condition cc, bool is_jint, bool cmp0) {
+void TemplateTable::if_cmp_common(Register Rfirst, Register Rsecond, Register Rscratch1, Register Rscratch2, Condition cc, bool is_jint, bool is_acmp) {
   Label Lnot_taken;
   // Note: The condition code we get is the condition under which we
   // *fall through*! So we have to inverse the CC here.
 
   if (is_jint) {
-    if (cmp0) {
+    if (Rsecond == noreg) {
       __ cmpwi(CR0, Rfirst, 0);
     } else {
       __ cmpw(CR0, Rfirst, Rsecond);
     }
   } else {
-    if (cmp0) {
+    if (Rsecond == noreg) {
       __ cmpdi(CR0, Rfirst, 0);
     } else {
       __ cmpd(CR0, Rfirst, Rsecond);
@@ -1779,14 +1827,14 @@ void TemplateTable::if_cmp_common(Register Rfirst, Register Rsecond, Register Rs
   // Condition is not true => Continue.
   __ align(32, 12);
   __ bind(Lnot_taken);
-  __ profile_not_taken_branch(Rscratch1, Rscratch2);
+  __ profile_not_taken_branch(Rscratch1, Rscratch2, is_acmp);
 }
 
 // Compare integer values with zero and fall through if CC holds, branch away otherwise.
 void TemplateTable::if_0cmp(Condition cc) {
   transition(itos, vtos);
 
-  if_cmp_common(R17_tos, noreg, R11_scratch1, R12_scratch2, cc, true, true);
+  if_cmp_common(R17_tos, noreg, R11_scratch1, R12_scratch2, cc, true);
 }
 
 // Compare integer values and fall through if CC holds, branch away otherwise.
@@ -1801,23 +1849,79 @@ void TemplateTable::if_icmp(Condition cc) {
                  Rsecond = R17_tos;
 
   __ pop_i(Rfirst);
-  if_cmp_common(Rfirst, Rsecond, R11_scratch1, R12_scratch2, cc, true, false);
+  if_cmp_common(Rfirst, Rsecond, R11_scratch1, R12_scratch2, cc, true);
 }
 
 void TemplateTable::if_nullcmp(Condition cc) {
   transition(atos, vtos);
 
-  if_cmp_common(R17_tos, noreg, R11_scratch1, R12_scratch2, cc, false, true);
+  if_cmp_common(R17_tos, noreg, R11_scratch1, R12_scratch2, cc, false);
 }
 
 void TemplateTable::if_acmp(Condition cc) {
   transition(atos, vtos);
 
-  const Register Rfirst  = R0,
+  const Register Rfirst  = R31,
                  Rsecond = R17_tos;
 
   __ pop_ptr(Rfirst);
-  if_cmp_common(Rfirst, Rsecond, R11_scratch1, R12_scratch2, cc, false, false);
+
+  __ profile_acmp(Rsecond, Rfirst, R11_scratch1, R12_scratch2);
+
+  const int is_inline_type_mask = markWord::inline_type_pattern;
+  if (Arguments::is_valhalla_enabled()) {
+    Label taken, not_taken;
+    __ cmpd(CR0, Rfirst, Rsecond);
+    __ beq(CR0, (cc == equal) ? taken : not_taken);
+
+    // test if any input is null
+    __ cmpdi(CR0, Rfirst, 0);
+    __ cmpdi(CR1, Rsecond, 0);
+    __ cror(CR0, Assembler::equal, CR1, Assembler::equal);
+    __ beq(CR0, (cc == equal) ? not_taken : taken);
+
+    // and both are values ?
+    __ ld(R11_scratch1, oopDesc::mark_offset_in_bytes(), Rfirst);
+    __ ld(R12_scratch2, oopDesc::mark_offset_in_bytes(), Rsecond);
+    __ andr(R11_scratch1, R11_scratch1, R12_scratch2);
+    __ andi(R11_scratch1, R11_scratch1, is_inline_type_mask);
+    __ cmpdi(CR0, R11_scratch1, is_inline_type_mask);
+    __ bne(CR0, (cc == equal) ? not_taken : taken);
+
+    // same value klass ?
+    __ load_metadata(R11_scratch1, Rfirst);
+    __ load_metadata(R12_scratch2, Rsecond);
+    __ cmpd(CR0, R11_scratch1, R12_scratch2);
+    __ bne(CR0, (cc == equal) ? not_taken : taken);
+
+    // Know both are the same type, let's test for substitutability...
+    if (cc == equal) {
+      invoke_is_substitutable(Rfirst, Rsecond, taken, not_taken);
+    } else {
+      invoke_is_substitutable(Rfirst, Rsecond, not_taken, taken);
+    }
+    DEBUG_ONLY( __ stop("Not reachable"); )
+
+    // Conition is false => Jump!
+    __ align(32, 12);
+    __ bind(taken);
+    branch(false, false);
+
+    // Condition is not true => Continue.
+    __ align(32, 12);
+    __ bind(not_taken);
+    __ profile_not_taken_branch(R11_scratch1, R12_scratch2, true);
+
+  } else {
+    if_cmp_common(Rfirst, Rsecond, R11_scratch1, R12_scratch2, cc, false, true);
+  }
+}
+
+void TemplateTable::invoke_is_substitutable(Register aobj, Register bobj, Label& is_subst, Label& not_subst) {
+  __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::is_substitutable), aobj, bobj);
+  __ cmpwi(CR0, R3_RET, 0);
+  __ beq(CR0, not_subst);
+  __ b(is_subst);
 }
 
 void TemplateTable::ret() {
@@ -2737,12 +2841,41 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ fence(); // Volatile entry point (one instruction before non-volatile_entry point).
   assert(branch_table[atos] == nullptr, "can't compute twice");
   branch_table[atos] = __ pc(); // non-volatile_entry point
-  do_oop_load(_masm, Rclass_or_obj, Roffset, R17_tos, Rscratch, /* nv temp */ Rflags, IN_HEAP);
-  __ verify_oop(R17_tos);
-  __ push(atos);
-  //__ dcbt(R17_tos); // prefetch
-  if (!is_static && rc == may_rewrite) {
-    patch_bytecode(Bytecodes::_fast_agetfield, Rbc, Rscratch);
+  if (!Arguments::is_valhalla_enabled()) {
+    do_oop_load(_masm, Rclass_or_obj, Roffset, R17_tos, Rscratch, /* nv temp */ Rflags, IN_HEAP);
+    __ verify_oop(R17_tos);
+    __ push(atos);
+    //__ dcbt(R17_tos); // prefetch
+    if (!is_static && rc == may_rewrite) {
+      patch_bytecode(Bytecodes::_fast_agetfield, Rbc, Rscratch);
+    }
+  } else { // Valhalla
+    if (is_static) {
+      do_oop_load(_masm, Rclass_or_obj, Roffset, R17_tos, Rscratch, /* nv temp */ Rflags, IN_HEAP);
+      __ verify_oop(R17_tos);
+      __ push(atos);
+    } else {
+      Label is_flat;
+      __ test_field_is_flat(Rflags, is_flat);
+      do_oop_load(_masm, Rclass_or_obj, Roffset, R17_tos, Rscratch, /* nv temp */ Rflags, IN_HEAP);
+      __ verify_oop(R17_tos);
+      __ push(atos);
+      if (rc == may_rewrite) {
+        patch_bytecode(Bytecodes::_fast_agetfield, Rbc, Rscratch);
+      }
+      __ beq(CR2, Lacquire); // Volatile?
+      __ dispatch_epilog(vtos, Bytecodes::length_for(bytecode()));
+
+      __ bind(is_flat);
+      // field is flat (null-free or nullable with a null-marker)
+      __ mr(R17_tos, Rclass_or_obj);
+      __ read_flat_field(Rcache, R17_tos);
+      __ verify_oop(R17_tos);
+      __ push(atos);
+      if (rc == may_rewrite) {
+        patch_bytecode(Bytecodes::_fast_vgetfield, Rbc, Rscratch);
+      }
+    }
   }
   __ beq(CR2, Lacquire); // Volatile?
   __ dispatch_epilog(vtos, Bytecodes::length_for(bytecode()));
@@ -2778,7 +2911,7 @@ void TemplateTable::getstatic(int byte_no) {
 // The function may destroy various registers, just not the cache and index registers.
 void TemplateTable::jvmti_post_field_mod(Register Rcache, Register Rscratch, bool is_static) {
 
-  assert_different_registers(Rcache, Rscratch, R6_ARG4);
+  assert_different_registers(Rcache, Rscratch);
 
   if (JvmtiExport::can_post_field_modification()) {
     Label Lno_field_mod_post;
@@ -2801,6 +2934,7 @@ void TemplateTable::jvmti_post_field_mod(Register Rcache, Register Rscratch, boo
       int offs = Interpreter::expr_offset_in_bytes(0);
       Register base = R15_esp;
       switch(bytecode()) {
+        case Bytecodes::_fast_vputfield: // fall through
         case Bytecodes::_fast_aputfield: __ push_ptr(); offs+= Interpreter::stackElementSize; break;
         case Bytecodes::_fast_iputfield: // Fall through
         case Bytecodes::_fast_bputfield: // Fall through
@@ -2835,12 +2969,17 @@ void TemplateTable::jvmti_post_field_mod(Register Rcache, Register Rscratch, boo
       __ verify_oop(Robj);
     }
 
-    __ addi(R6_ARG4, R15_esp, Interpreter::expr_offset_in_bytes(0));
-    __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::post_field_modification), Robj, Rcache, R6_ARG4);
+    // Pass arguments without register clashes (R16_thread passed by call_VM)
+    __ mr_if_needed(R4_ARG2, Robj);
+    assert(Rcache != R4_ARG2, "smashed argument");
+    __ mr_if_needed(R5_ARG3, Rcache);
+    __ addi(R6_ARG4, R15_esp, Interpreter::expr_offset_in_bytes(0)); // set R6_ARG4 last (may use same reg as other args)
+    __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::post_field_modification));
     __ load_field_entry(Rcache, Rscratch);
 
     // In case of the fast versions, value lives in registers => put it back on tos.
     switch(bytecode()) {
+      case Bytecodes::_fast_vputfield: // fall through
       case Bytecodes::_fast_aputfield: __ pop_ptr(); break;
       case Bytecodes::_fast_iputfield: // Fall through
       case Bytecodes::_fast_bputfield: // Fall through
@@ -2862,7 +3001,7 @@ void TemplateTable::jvmti_post_field_mod(Register Rcache, Register Rscratch, boo
 void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteControl rc) {
   Label Lvolatile;
 
-  const Register Rcache        = R5_ARG3,  // Do not use ARG1/2 (causes trouble in jvmti_post_field_mod).
+  const Register Rcache        = R6_ARG4,  // Do not use ARG1-3 (causes trouble in jvmti_post_field_mod or write_flat_field).
                  Rclass_or_obj = R31,      // Needs to survive C call.
                  Roffset       = R22_tmp2, // Needs to survive C call.
                  Rtos_state    = R23_tmp3, // Needs to survive C call.
@@ -2870,7 +3009,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
                  Rbtable       = R4_ARG2,
                  Rscratch      = R11_scratch1, // used by load_field_cp_cache_entry
                  Rscratch2     = R12_scratch2, // used by load_field_cp_cache_entry
-                 Rscratch3     = R6_ARG4,
+                 Rscratch3     = R10_ARG8,
                  Rbc           = Rscratch3;
   const ConditionRegister CR_is_vol = CR2; // Non-volatile condition register (survives runtime call in do_oop_store).
 
@@ -3064,11 +3203,52 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   assert(branch_table[atos] == nullptr, "can't compute twice");
   branch_table[atos] = __ pc(); // non-volatile_entry point
   __ pop(atos);
-  if (!is_static) { pop_and_check_object(Rclass_or_obj); } // kills R11_scratch1
-  do_oop_store(_masm, Rclass_or_obj, Roffset, R17_tos, Rscratch, Rscratch2, Rscratch3, IN_HEAP);
-  if (!is_static && rc == may_rewrite) {
-    patch_bytecode(Bytecodes::_fast_aputfield, Rbc, Rscratch, true, byte_no);
-  }
+  if (!Arguments::is_valhalla_enabled()) {
+    if (!is_static) { pop_and_check_object(Rclass_or_obj); } // kills R11_scratch1
+    do_oop_store(_masm, Rclass_or_obj, Roffset, R17_tos, Rscratch, Rscratch2, Rscratch3, IN_HEAP);
+    if (!is_static && rc == may_rewrite) {
+      patch_bytecode(Bytecodes::_fast_aputfield, Rbc, Rscratch, true, byte_no);
+    }
+  } else { // Valhalla
+    if (is_static) {
+      Label is_nullable;
+      __ test_field_is_not_null_free_inline_type(Rflags, is_nullable);
+      __ null_check_throw(R17_tos, -1, Rscratch);
+      __ align(32, 12);
+      __ bind(is_nullable);
+      do_oop_store(_masm, Rclass_or_obj, Roffset, R17_tos, Rscratch, Rscratch2, Rscratch3, IN_HEAP);
+    } else {
+      Label null_free_reference, is_flat, rewrite_inline;
+      __ test_field_is_flat(Rflags, is_flat);
+      __ test_field_is_null_free_inline_type(Rflags, null_free_reference);
+      pop_and_check_object(Rclass_or_obj);
+      // Store into the field
+      do_oop_store(_masm, Rclass_or_obj, Roffset, R17_tos, Rscratch, Rscratch2, Rscratch3, IN_HEAP);
+      if (rc == may_rewrite) {
+        patch_bytecode(Bytecodes::_fast_aputfield, Rbc, Rscratch, true, byte_no);
+      }
+      if (!support_IRIW_for_not_multiple_copy_atomic_cpu) {
+        __ beq(CR_is_vol, Lvolatile); // Volatile?
+      }
+      __ dispatch_epilog(vtos, Bytecodes::length_for(bytecode()));
+
+      // Implementation of the inline type semantic
+      __ bind(null_free_reference);
+      __ null_check_throw(R17_tos, -1, Rscratch);
+      pop_and_check_object(Rclass_or_obj);
+      // Store into the field
+      do_oop_store(_masm, Rclass_or_obj, Roffset, R17_tos, Rscratch, Rscratch2, Rscratch3, IN_HEAP);
+      __ b(rewrite_inline);
+
+      __ bind(is_flat);
+      pop_and_check_object(Rclass_or_obj);
+      __ write_flat_field(Rcache, Rscratch, Rscratch2, Rclass_or_obj, Roffset, R17_tos);
+      __ bind(rewrite_inline);
+      if (rc == may_rewrite) {
+        patch_bytecode(Bytecodes::_fast_vputfield, Rbc, Rscratch, true, byte_no);
+      }
+    }
+  } // Valhalla
   if (!support_IRIW_for_not_multiple_copy_atomic_cpu) {
     __ beq(CR_is_vol, Lvolatile); // Volatile?
     __ dispatch_epilog(vtos, Bytecodes::length_for(bytecode()));
@@ -3108,7 +3288,7 @@ void TemplateTable::jvmti_post_fast_field_mod() {
 void TemplateTable::fast_storefield(TosState state) {
   transition(state, vtos);
 
-  const Register Rcache        = R5_ARG3,  // Do not use ARG1/2 (causes trouble in jvmti_post_field_mod).
+  const Register Rcache        = R6_ARG4,  // Do not use ARG1-3 (causes trouble in jvmti_post_field_mod or write_flat_field).
                  Rclass_or_obj = R31,      // Needs to survive C call.
                  Roffset       = R22_tmp2, // Needs to survive C call.
                  Rflags        = R3_ARG1,
@@ -3138,6 +3318,19 @@ void TemplateTable::fast_storefield(TosState state) {
 
   // Do the store and fencing.
   switch(bytecode()) {
+    case Bytecodes::_fast_vputfield:
+    {
+      Label is_flat, done;
+      __ test_field_is_flat(Rflags, is_flat);
+      __ null_check_throw(Rclass_or_obj, -1, Rscratch);
+      do_oop_store(_masm, Rclass_or_obj, Roffset, R17_tos, Rscratch, Rscratch2, Rscratch3, IN_HEAP);
+      __ b(done);
+      __ bind(is_flat);
+      __ write_flat_field(Rcache, Rscratch, Rscratch2, Rclass_or_obj, Roffset, R17_tos);
+      __ bind(done);
+      break;
+    }
+
     case Bytecodes::_fast_aputfield:
       // Store into the field.
       do_oop_store(_masm, Rclass_or_obj, Roffset, R17_tos, Rscratch, Rscratch2, Rscratch3, IN_HEAP);
@@ -3213,6 +3406,21 @@ void TemplateTable::fast_accessfield(TosState state) {
   __ bne(CR0, LisVolatile);
 
   switch(bytecode()) {
+    case Bytecodes::_fast_vgetfield:
+    {
+      // field is flat
+      __ read_flat_field(Rcache, R17_tos);
+      __ verify_oop(R17_tos);
+      __ dispatch_epilog(state, Bytecodes::length_for(bytecode()));
+
+      __ bind(LisVolatile);
+      if (support_IRIW_for_not_multiple_copy_atomic_cpu) { __ fence(); }
+      __ read_flat_field(Rcache, R17_tos);
+      __ verify_oop(R17_tos);
+      __ twi_0(R17_tos);
+      __ isync();
+      break;
+    }
     case Bytecodes::_fast_agetfield:
     {
       do_oop_load(_masm, Rclass_or_obj, Roffset, R17_tos, Rscratch, /* nv temp */ Rflags, IN_HEAP);
@@ -3842,12 +4050,14 @@ void TemplateTable::_new() {
     // --------------------------------------------------------------------------
     // Init2: Initialize the header: mark, klass
     // Init mark.
-    if (UseCompactObjectHeaders) {
+    if (UseCompactObjectHeaders || Arguments::is_valhalla_enabled()) {
       __ ld(Rscratch, in_bytes(Klass::prototype_header_offset()), RinstanceKlass);
-      __ std(Rscratch, oopDesc::mark_offset_in_bytes(), RallocatedObject);
     } else {
       __ load_const_optimized(Rscratch, markWord::prototype().value(), R0);
-      __ std(Rscratch, oopDesc::mark_offset_in_bytes(), RallocatedObject);
+    }
+    __ std(Rscratch, oopDesc::mark_offset_in_bytes(), RallocatedObject);
+
+    if (!UseCompactObjectHeaders) {
       __ store_klass_gap(RallocatedObject);
       __ store_klass(RallocatedObject, RinstanceKlass, Rscratch);
     }
@@ -4110,6 +4320,10 @@ void TemplateTable::monitorenter() {
   // Null pointer exception.
   __ null_check_throw(Robj_to_lock, -1, Rscratch1);
 
+  Label is_inline_type;
+  __ ld(Rscratch1, oopDesc::mark_offset_in_bytes(), Robj_to_lock);
+  __ test_markword_is_inline_type(Rscratch1, is_inline_type);
+
   // Check if any slot is present => short cut to allocation if not.
   __ cmpld(CR0, Rcurrent_monitor, Rbot);
   __ beq(CR0, Lallocate_new);
@@ -4166,6 +4380,11 @@ void TemplateTable::monitorenter() {
 
   // The bcp has already been incremented. Just need to dispatch to next instruction.
   __ dispatch_next(vtos);
+
+  __ bind(is_inline_type);
+  __ call_VM(noreg, CAST_FROM_FN_PTR(address,
+                    InterpreterRuntime::throw_identity_exception), Robj_to_lock);
+  __ should_not_reach_here();
 }
 
 void TemplateTable::monitorexit() {
@@ -4188,6 +4407,12 @@ void TemplateTable::monitorexit() {
 
   // Null pointer check.
   __ null_check_throw(Robj_to_lock, -1, Rscratch);
+
+  const int is_inline_type_mask = markWord::inline_type_pattern;
+  __ ld(Rscratch, oopDesc::mark_offset_in_bytes(), Robj_to_lock);
+  __ andi(Rscratch, Rscratch, is_inline_type_mask);
+  __ cmpwi(CR0, Rscratch, is_inline_type_mask);
+  __ beq(CR0, Lillegal_monitor_state);
 
   // Check corner case: unbalanced monitorEnter / Exit.
   __ cmpld(CR0, Rcurrent_monitor, Rbot);

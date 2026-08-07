@@ -34,7 +34,7 @@
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
  *      -XX:+ShenandoahVerify
  *      TestAllocIntArrays
-
+ *
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx1g -Xms1g
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
  *      TestAllocIntArrays

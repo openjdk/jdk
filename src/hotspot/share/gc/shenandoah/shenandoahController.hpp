@@ -62,43 +62,45 @@ protected:
 
   Monitor _gc_waiters_lock;
 
-  // The number of threads blocked in allocation, incremented by mutators.
+  // The number of stalls experienced during the cycle. Incremented by mutators, reset by control thread.
   shenandoah_padding(2);
-  Atomic<size_t> _alloc_waiters_count;
+  Atomic<size_t> _alloc_stall_count;
   shenandoah_padding(3);
 
-  // Only read/written by control thread, clamped between ConcGCThreads and ParallelGCThreads.
-  size_t _concurrent_worker_count;
+  // Written by control thread and mutators, clamped between ConcGCThreads and ParallelGCThreads.
+  Atomic<size_t> _concurrent_worker_count;
 
   // Increments the internal GC count.
   void update_gc_id();
 
-  // Notify threads that a cycle has completed
-  void notify_gc_waiters();
+  // Increase worker count when a stall is reported. Called from mutator thread.
+  void increase_concurrent_worker_count();
 
-  // Rapidly increase worker count if stalls were detected during the cycle.
-  // Slowly decrease worker count if no stalls were detected.
-  void adjust_concurrent_worker_count();
+  // Decrease worker count if no stalls were detected in a cycle. Called from control thread.
+  void decrease_concurrent_worker_count();
+
+  // Returns the total number of allocation stalls during a cycle
+  size_t alloc_stall_count() const {
+    return _alloc_stall_count.load_relaxed();
+  }
+
 public:
-
   ShenandoahController();
 
   // Request a collection cycle. This handles "explicit" gc requests
   // like System.gc and "implicit" gc requests, like metaspace oom.
   virtual void request_gc(GCCause::Cause cause) = 0;
 
+  // Notify threads that the gc has reclaimed memory (or that it completed a cycle, or it's exiting).
+  void notify_gc_waiters();
+
   // This cancels the collection cycle and has an option to block
   // until another cycle completes successfully.
   void handle_alloc_failure(const ShenandoahAllocRequest &req);
 
-  // Return number of threads blocked on allocation
-  size_t alloc_waiters_count() const {
-    return _alloc_waiters_count.load_relaxed();
-  }
-
   // Return suggested number of concurrent worker threads
   size_t concurrent_worker_count() const {
-    return _concurrent_worker_count;
+    return _concurrent_worker_count.load_relaxed();
   }
 
   // Return the value of a monotonic increasing GC count, maintained by the control thread.

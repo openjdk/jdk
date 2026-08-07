@@ -448,7 +448,9 @@ jint ShenandoahHeap::initialize() {
       //  gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_cset_regions)
       // until after the heap is fully initialized.  So we make up a safe value here.
       size_t allocation_runway = InitialHeapSize / 2;
-      gen_heap->compute_old_generation_balance(allocation_runway, old_trashed_regions, young_trashed_regions);
+      // We're initializing the heap.  All regions within young are initially empty.
+      size_t max_transfer = allocation_runway;
+      gen_heap->compute_old_generation_balance(max_transfer, old_trashed_regions, young_trashed_regions);
     }
     _free_set->finish_rebuild(young_trashed_regions, old_trashed_regions, num_old);
   }
@@ -954,7 +956,8 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
     // is testing that the GC overhead limit has not been exceeded.
     // This will notify the collector to start a cycle, but will raise
     // an OOME to the mutator if the last Full GCs have not made progress.
-    // gc_no_progress_count is incremented following each degen or full GC that fails to achieve is_good_progress().
+    // gc_no_progress_count is incremented following each full GC that
+    // fails to achieve is_good_progress().
     if (result == nullptr && !req.is_lab_alloc() && get_gc_no_progress_count() > ShenandoahNoProgressThreshold) {
       control_thread()->handle_alloc_failure(req);
       req.set_actual_size(0);
@@ -1144,10 +1147,7 @@ private:
       assert(r->has_live(), "Region %zu should have been reclaimed early", r->index());
       _sh->marked_object_iterate(r, &cl);
 
-      if (r->has_self_forwards()) {
-        // This region and this thread are lost. This thread has evacuated all it can. If
-        // we let it continue on to other regions, it will only fail those as well. We want
-        // to let other threads try the regions that this thread could not.
+      if (ShenandoahCollectorPolicy::should_abandon_evacuations(r)) {
         break;
       }
 
@@ -1248,13 +1248,17 @@ ShenandoahSelfForwardTask::ShenandoahSelfForwardTask(ShenandoahHeap* heap, Shena
 }
 
 void ShenandoahSelfForwardTask::work(uint worker_id) {
-  ShenandoahParallelWorkerSession worker_session(worker_id);
+  ShenandoahConcurrentWorkerSession worker_session(worker_id);
   ShenandoahHeapRegion* r;
   while ((r = _cs->claim_next()) != nullptr) {
     ShenandoahSelfForwardClosure cl;
     _heap->marked_object_iterate(r, &cl);
     if (cl.self_forwarded_objects()) {
       r->set_has_self_forwards();
+    }
+
+    if (_heap->check_cancelled_gc_and_yield()) {
+      break;
     }
   }
 }
@@ -1444,57 +1448,6 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
     shenandoah_assert_correct(nullptr, result);
     return result;
   }
-}
-
-// Clear the self_fwd bit on a live cset object, if set. Runs at a safepoint,
-// so a plain store is sufficient — no concurrent writers to the mark word.
-class ShenandoahUnSelfForwardObjectClosure : public ObjectClosure {
-public:
-  void do_object(oop obj) override {
-    markWord m = obj->mark();
-    if (m.is_self_forwarded()) {
-      obj->set_mark(m.unset_self_forwarded());
-    }
-  }
-};
-
-// Parallel task over flagged cset regions. Iterates the live objects via the
-// mark bitmap (skipping evacuated and never-marked memory), clears self_fwd
-// bits, and resets the region flag once done.
-class ShenandoahUnSelfForwardTask : public WorkerTask {
-private:
-  ShenandoahHeap*          const _heap;
-  ShenandoahCollectionSet* const _cs;
-
-public:
-  ShenandoahUnSelfForwardTask(ShenandoahHeap* heap, ShenandoahCollectionSet* cs) :
-    WorkerTask("Shenandoah Un-Self-Forward"),
-    _heap(heap),
-    _cs(cs) {}
-
-  void work(uint worker_id) override {
-    ShenandoahParallelWorkerSession worker_session(worker_id);
-    ShenandoahUnSelfForwardObjectClosure cl;
-    ShenandoahHeapRegion* r;
-    while ((r = _cs->claim_next()) != nullptr) {
-      if (r->has_self_forwards()) {
-        _heap->marked_object_iterate(r, &cl);
-        r->clear_has_self_forwards();
-      }
-    }
-  }
-};
-
-void ShenandoahHeap::un_self_forward_cset_regions() {
-  assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "must be at safepoint");
-  ShenandoahCollectionSet* cs = collection_set();
-  if (cs == nullptr || cs->is_empty()) {
-    return;
-  }
-  cs->clear_current_index();
-  ShenandoahUnSelfForwardTask task(this, cs);
-  workers()->run_task(&task);
-  DEBUG_ONLY(assert_no_self_forwards());
 }
 
 #ifdef ASSERT
@@ -2293,8 +2246,21 @@ size_t ShenandoahHeap::tlab_used() const {
 }
 
 bool ShenandoahHeap::try_cancel_gc(GCCause::Cause cause) {
-  const GCCause::Cause prev = _cancelled_gc.xchg(cause);
-  return prev == GCCause::_no_gc || prev == GCCause::_shenandoah_concurrent_gc;
+  while (true) {
+    const GCCause::Cause prev = _cancelled_gc.get();
+    if (prev == cause) {
+      return false;
+    }
+
+    if (ShenandoahCollectorPolicy::is_higher_priority(prev, cause)) {
+      // The gc has already been cancelled for a higher priority reason, don't let the cancellation cause be replaced.
+      return false;
+    }
+
+    if (_cancelled_gc.cmpxchg(cause, prev) == prev) {
+      return true;
+    }
+  }
 }
 
 void ShenandoahHeap::cancel_concurrent_mark() {
@@ -2582,7 +2548,10 @@ void ShenandoahHeap::rebuild_free_set_within_phase() {
     ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
     size_t allocation_runway =
       gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_trashed_regions);
-    gen_heap->compute_old_generation_balance(allocation_runway, old_trashed_regions, young_trashed_regions);
+    size_t max_transfer = MIN2(allocation_runway,
+                               (gen_heap->young_generation()->free_unaffiliated_regions() + young_trashed_regions) *
+                               ShenandoahHeapRegion::region_size_bytes());
+    gen_heap->compute_old_generation_balance(max_transfer, old_trashed_regions, young_trashed_regions);
   }
   // Rebuild free set based on adjusted generation sizes.
   _free_set->finish_rebuild(young_trashed_regions, old_trashed_regions, old_region_count);

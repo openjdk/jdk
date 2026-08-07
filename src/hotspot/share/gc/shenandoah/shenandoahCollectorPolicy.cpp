@@ -26,8 +26,12 @@
 
 
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/plab.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahController.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.hpp"
+#include "gc/shenandoah/shenandoahThreadLocalData.hpp"
+#include "logging/log.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/ostream.hpp"
 
@@ -169,6 +173,44 @@ bool ShenandoahCollectorPolicy::should_handle_requested_gc(GCCause::Cause cause)
     return !is_explicit_gc(cause);
   }
   return true;
+}
+
+bool ShenandoahCollectorPolicy::should_abandon_evacuations(ShenandoahHeapRegion* region) {
+  if (region->has_self_forwards()) {
+    PLAB* gclab = ShenandoahThreadLocalData::gclab(Thread::current());
+    if (gclab->words_remaining() < PLAB::min_size() / HeapWordSize) {
+      // This region and this thread are lost. This thread has evacuated all it can. If
+      // we let it continue on to other regions, it will only fail those as well. We want
+      // to let other threads try the regions that this thread could not.
+      log_debug(gc, thread)("Region (%zu) has self-forwards and labs are exhausted (remaining words: %zu)",
+                            region->index(), gclab->words_remaining());
+      return true;
+    }
+  }
+  return false;
+}
+
+// Some causes should not be allowed to preempt others. We must make sure that
+// regulator requests and allocation failures do not preempt a shutdown request.
+int ShenandoahCollectorPolicy::cause_priority(GCCause::Cause cause) {
+  if (is_explicit_gc(cause)) {
+    return 5;
+  }
+
+  switch (cause) {
+    case GCCause::_shenandoah_stop_vm: return 7;
+    case GCCause::_shenandoah_upgrade_to_full_gc: return 6;
+    // case is_explicit_gc(cause): return 5;
+    case GCCause::_shenandoah_humongous_allocation_failure: return 4;
+    case GCCause::_shenandoah_allocation_failure_evac: return 3;
+    case GCCause::_allocation_failure: return 2;
+    case GCCause::_shenandoah_concurrent_gc: return 1;
+    case GCCause::_no_gc: return 0;
+    default:
+      // Unanticipated gc causes are treated as an allocation failure and cannot be
+      // preempted by regulator requests
+      return 2;
+  }
 }
 
 template<typename T>

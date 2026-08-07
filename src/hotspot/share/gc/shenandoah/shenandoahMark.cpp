@@ -72,7 +72,11 @@ void ShenandoahMark::mark_loop_prework(uint w, TaskTerminator *t, StringDedup::R
   // play nice with specialized_oop_iterators.
   using Closure = ShenandoahMarkRefsClosure<GENERATION>;
   Closure cl(q, rp, old_q);
-  mark_loop_work<Closure, GENERATION, CANCELLABLE, STRING_DEDUP>(&cl, ld, w, t, req);
+  if (UseCompressedOops) {
+    mark_loop_work<Closure, narrowOop, GENERATION, CANCELLABLE, STRING_DEDUP>(&cl, ld, w, t, req);
+  } else {
+    mark_loop_work<Closure, oop, GENERATION, CANCELLABLE, STRING_DEDUP>(&cl, ld, w, t, req);
+  }
 
   heap->flush_liveness_cache(w);
 }
@@ -145,7 +149,7 @@ void ShenandoahMark::mark_drain_extra_queues(ShenandoahObjToScanQueueSet* queues
   }
 }
 
-template <class T, ShenandoahGenerationType GENERATION, bool CANCELLABLE, bool STRING_DEDUP>
+template <class T, class OT, ShenandoahGenerationType GENERATION, bool CANCELLABLE, bool STRING_DEDUP>
 void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint worker_id, TaskTerminator *terminator, StringDedup::Requests* const req) {
   uintx stride = ShenandoahMarkLoopStride;
 
@@ -173,7 +177,7 @@ void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint w
     for (uint i = 0; i < stride; i++) {
       if (q->pop(t) ||
           queues->steal(worker_id, t)) {
-        do_task<T, GENERATION, STRING_DEDUP>(q, cl, live_data, req, &t, worker_id);
+        do_task<T, OT, GENERATION, STRING_DEDUP>(q, cl, live_data, req, &t, worker_id);
         work++;
       } else {
         break;

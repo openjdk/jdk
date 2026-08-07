@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 package jdk.test.lib.jittester.visitors;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -66,6 +67,7 @@ import jdk.test.lib.jittester.classes.ClassDefinitionBlock;
 import jdk.test.lib.jittester.classes.Interface;
 import jdk.test.lib.jittester.classes.Klass;
 import jdk.test.lib.jittester.classes.MainKlass;
+import jdk.test.lib.jittester.classes.ValueKlass;
 import jdk.test.lib.jittester.functions.ArgumentDeclaration;
 import jdk.test.lib.jittester.functions.ConstructorDefinition;
 import jdk.test.lib.jittester.functions.ConstructorDefinitionBlock;
@@ -629,6 +631,37 @@ public class JavaCodeVisitor implements Visitor<String> {
                 + (thisKlass.isFinal() ? "final " : "")
                 + (thisKlass.isAbstract() ? "abstract " : "")
                 + "class " + node.getName()
+                + (node.getParentKlass() != null && !node.getParentKlass().equals(TypeList.OBJECT)
+                ? " extends " + node.getParentKlass().getName() : "");
+        List<TypeKlass> interfaces = node.getInterfaces();
+        r += interfaces.stream()
+                .map(Type::getName)
+                .collect(Collectors.joining(", ", (interfaces.isEmpty() ? "" : " implements "), ""));
+        IRNode dataMembers = node.getChild(Klass.KlassPart.DATA_MEMBERS.ordinal());
+        IRNode constructors = node.getChild(Klass.KlassPart.CONSTRUCTORS.ordinal());
+        IRNode redefinedFunctions = node.getChild(Klass.KlassPart.REDEFINED_FUNCTIONS.ordinal());
+        IRNode overridenFunctions = node.getChild(Klass.KlassPart.OVERRIDEN_FUNCTIONS.ordinal());
+        IRNode memberFunctions = node.getChild(Klass.KlassPart.MEMBER_FUNCTIONS.ordinal());
+        IRNode memberFunctionDecls = node.getChild(Klass.KlassPart.MEMBER_FUNCTIONS_DECLARATIONS.ordinal());
+        IRNode printVariables = node.getChild(Klass.KlassPart.PRINT_VARIABLES.ordinal());
+        r += " {\n"
+             + (dataMembers != null ? (dataMembers.accept(this)+ "\n") : "")
+             + (constructors != null ? (constructors.accept(this)+ "\n") : "")
+             + (redefinedFunctions != null ? (redefinedFunctions.accept(this)+ "\n") : "")
+             + (overridenFunctions != null ? (overridenFunctions.accept(this)+ "\n") : "")
+             + (memberFunctionDecls != null ? (memberFunctionDecls.accept(this)+ "\n") : "")
+             + (memberFunctions != null ? (memberFunctions.accept(this)+ "\n") : "")
+             + printVariables.accept(this)
+             + "}\n";
+        return r;
+    }
+
+    @Override
+    public String visit(ValueKlass node) {
+        TypeKlass thisKlass = node.getThisKlass();
+        String r = (ProductionParams.enableStrictFP.value() ? "strictfp " : "")
+                + (thisKlass.isAbstract() ? "abstract " : "")
+                + "value class " + node.getName()
                 + (node.getParentKlass() != null && !node.getParentKlass().equals(TypeList.OBJECT)
                 ? " extends " + node.getParentKlass().getName() : "");
         List<TypeKlass> interfaces = node.getInterfaces();

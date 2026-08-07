@@ -24,6 +24,7 @@
  */
 
 #include "gc/shenandoah/shenandoahAsserts.hpp"
+#include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalEvacuationTask.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
@@ -86,11 +87,11 @@ void log_region(const ShenandoahHeapRegion* r, LogStream* ls) {
 }
 
 void ShenandoahGenerationalEvacuationTask::promote_regions() {
-  LogTarget(Debug, gc) lt;
+
   ShenandoahInPlacePromoter promoter(_heap);
   ShenandoahHeapRegion* r;
   while ((r = _regions->next()) != nullptr) {
-    if (lt.is_enabled()) {
+    if (LogTarget(Debug, gc) lt; lt.is_enabled()) {
       LogStream ls(lt);
       log_region(r, &ls);
     }
@@ -104,19 +105,20 @@ void ShenandoahGenerationalEvacuationTask::promote_regions() {
 }
 
 void ShenandoahGenerationalEvacuationTask::evacuate_and_promote_regions() {
-  LogTarget(Debug, gc) lt;
   ShenandoahConcurrentEvacuator cl(_heap);
   ShenandoahHeapRegion* r;
 
   while ((r = _collection_set->claim_next()) != nullptr) {
-    if (lt.is_enabled()) {
+    if (LogTarget(Debug, gc) lt; lt.is_enabled()) {
       LogStream ls(lt);
       log_region(r, &ls);
     }
+
     assert(r->has_live(), "Region %zu should have been reclaimed early", r->index());
     _heap->marked_object_iterate(r, &cl);
-    if (r->has_self_forwards()) {
-      // This thread can no longer evacuate, but it may still move on to promote regions in place
+
+    if (ShenandoahCollectorPolicy::should_abandon_evacuations(r)) {
+      // No more evacuations for this thread, but it may yet complete in-place promotions
       break;
     }
 

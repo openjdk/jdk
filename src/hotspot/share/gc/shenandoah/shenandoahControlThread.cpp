@@ -137,6 +137,9 @@ void ShenandoahControlThread::run_service() {
       }
       heap->print_after_gc();
 
+      // Try to reduce concurrent worker count
+      decrease_concurrent_worker_count();
+
       // Notify waiters that a cycle is completed. They'll decide for themselves to continue waiting or not.
       notify_gc_waiters();
 
@@ -219,10 +222,9 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   // any of the concurrent phases, the allocating thread will block until the concurrent
   // cycle completes.
   //
-  // There are also a shortcut through the normal cycle: immediate garbage shortcut, when
-  // heuristics says there are no regions to compact, and all the collection comes from immediately
-  // reclaimable regions.
-
+  // There is also a shortcut through the normal cycle: immediate garbage shortcut. When
+  // heuristics say there are no regions to compact, and all the collection comes from immediately
+  // reclaimable regions, Shenandoah can skip the evacuation phase.
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (check_cancellation()) {
     log_info(gc)("Cancelled");
@@ -249,14 +251,16 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
 
 bool ShenandoahControlThread::check_cancellation() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  if (heap->cancelled_gc()) {
-    if (heap->cancelled_cause() == GCCause::_shenandoah_stop_vm) {
-      return true;
-    }
-
-    fatal("Unexpected reason for cancellation: %s", GCCause::to_string(heap->cancelled_cause()));
+  const GCCause::Cause cancelled_cause = heap->cancelled_cause();
+  if (cancelled_cause == GCCause::_no_gc) {
+    return false;
   }
-  return false;
+
+  if (cancelled_cause == GCCause::_shenandoah_stop_vm) {
+    return true;
+  }
+
+  fatal("Unexpected reason for cancellation: %s", GCCause::to_string(cancelled_cause));
 }
 
 void ShenandoahControlThread::stop_service() {
@@ -289,9 +293,14 @@ void ShenandoahControlThread::request_gc(GCCause::Cause cause) {
 void ShenandoahControlThread::notify_control_thread(GCCause::Cause cause) {
   // Although setting gc request is under _controller_lock, the read side (run_service())
   // does not take the lock. We need to enforce following order, so that read side sees
-  // latest requested gc cause when the flag is set.
+  // latest requested gc cause when the flag is set. Do not let a lower priority cause
+  // overwrite a higher priority cause.
   MonitorLocker controller(&_control_lock, Mutex::_no_safepoint_check_flag);
-  _requested_gc_cause = cause;
+  if (ShenandoahCollectorPolicy::is_higher_priority(_requested_gc_cause, cause)) {
+    log_debug(gc, thread)("Not overwriting gc cause %s with %s", GCCause::to_string(_requested_gc_cause), GCCause::to_string(cause));
+  } else {
+    _requested_gc_cause = cause;
+  }
   _gc_requested.set();
   controller.notify();
 }
@@ -325,14 +334,14 @@ void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
   size_t required_gc_id = current_gc_id + 1;
   while (current_gc_id < required_gc_id && !should_terminate()) {
     if (ShenandoahCollectorPolicy::is_allocation_failure(cause)) {
-      _alloc_waiters_count.add_then_fetch(1UL);
+      _alloc_stall_count.add_then_fetch(1UL);
+      increase_concurrent_worker_count();
     }
 
     notify_control_thread(cause);
     ml.wait();
     current_gc_id = get_gc_id();
     if (ShenandoahCollectorPolicy::is_allocation_failure(cause)) {
-      _alloc_waiters_count.sub_then_fetch(1UL);
       break;
     }
   }

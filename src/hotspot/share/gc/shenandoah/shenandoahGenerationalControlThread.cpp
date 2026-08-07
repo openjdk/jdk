@@ -271,7 +271,10 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
     }
   }
 
-  // If this cycle completed successfully, notify threads waiting for gc
+  // Try to reduce concurrent workers
+  decrease_concurrent_worker_count();
+
+  // Notify threads waiting for GC
   notify_gc_waiters();
 
   _heap->free_set()->log_status_under_lock();
@@ -435,14 +438,10 @@ void ShenandoahGenerationalControlThread::resume_concurrent_old_cycle(Shenandoah
   }
 }
 
-// Normal cycle goes via all concurrent phases. If allocation failure (af) happens during
-// any of the concurrent phases, it first degrades to Degenerated GC and completes GC there.
-// If second allocation failure happens during Degenerated GC cycle (for example, when GC
-// tries to evac something and no memory is available), cycle degrades to Full GC.
-//
-// There are also a shortcut through the normal cycle: immediate garbage shortcut, when
-// heuristics says there are no regions to compact, and all the collection comes from immediately
-// reclaimable regions.
+// Normal cycle goes via all concurrent phases.
+// There is also a shortcut through the normal cycle: immediate garbage shortcut. When
+// heuristics say there are no regions to compact, and all the collection comes from immediately
+// reclaimable regions, Shenandoah can skip the evacuation phase.
 //
 // ................................................................................................
 //
@@ -453,22 +452,6 @@ void ShenandoahGenerationalControlThread::resume_concurrent_old_cycle(Shenandoah
 //                             |                                           |
 //                             |                                           v
 // [START] ----> Conc Mark ----o----> Conc Evac --o--> Conc Update-Refs ---o----> [END]
-//                   |                    |                 |              ^
-//                   | (af)               | (af)            | (af)         |
-// ..................|....................|.................|..............|.......................
-//                   |                    |                 |              |
-//                   |                    |                 |              |      Degenerated GC
-//                   v                    v                 v              |
-//               STW Mark ----------> STW Evac ----> STW Update-Refs ----->o
-//                   |                    |                 |              ^
-//                   | (af)               | (af)            | (af)         |
-// ..................|....................|.................|..............|.......................
-//                   |                    |                 |              |
-//                   |                    v                 |              |      Full GC
-//                   \------------------->o<----------------/              |
-//                                        |                                |
-//                                        v                                |
-//                                      Full GC  --------------------------/
 //
 void ShenandoahGenerationalControlThread::service_concurrent_cycle(ShenandoahGeneration* generation,
                                                                    GCCause::Cause cause,
@@ -595,21 +578,6 @@ bool ShenandoahGenerationalControlThread::request_concurrent_gc(ShenandoahGenera
   return false;
 }
 
-// Some causes should not be allowed to preempt others. We must make sure that
-// regulator requests and allocation failures do not preempt a shutdown request.
-static int cause_priority(GCCause::Cause cause) {
-  if (cause == GCCause::_shenandoah_stop_vm)                   return 5;
-  if (cause == GCCause::_shenandoah_upgrade_to_full_gc)        return 4;
-  // Explicit gc will escalate an allocation failure from a young to global cycle
-  if (ShenandoahCollectorPolicy::is_explicit_gc(cause))        return 3;
-  if (ShenandoahCollectorPolicy::is_allocation_failure(cause)) return 2;
-  if (cause == GCCause::_shenandoah_concurrent_gc)             return 1;
-  if (cause == GCCause::_no_gc)                                return 0;
-  // Unanticipated gc causes are treated as an allocation failure and cannot be
-  // preempted by regulator requests
-  return 2;
-}
-
 void ShenandoahGenerationalControlThread::notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation) {
   MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
   notify_control_thread(ml, cause, generation);
@@ -617,7 +585,7 @@ void ShenandoahGenerationalControlThread::notify_control_thread(GCCause::Cause c
 
 void ShenandoahGenerationalControlThread::notify_control_thread(MonitorLocker& ml, GCCause::Cause cause, ShenandoahGeneration* generation) {
   assert(_control_lock.is_locked(), "Request lock must be held here");
-  if (cause_priority(_requested_gc_cause) > cause_priority(cause)) {
+  if (ShenandoahCollectorPolicy::is_higher_priority(_requested_gc_cause, cause)) {
     log_debug(gc, thread)("Not overwriting gc cause %s with %s", GCCause::to_string(_requested_gc_cause), GCCause::to_string(cause));
   } else {
     log_debug(gc, thread)("Notify control (%s): %s, %s", gc_mode_name(gc_mode()), GCCause::to_string(cause), generation->name());
@@ -634,7 +602,7 @@ void ShenandoahGenerationalControlThread::notify_control_thread(GCCause::Cause c
 
 void ShenandoahGenerationalControlThread::notify_control_thread(MonitorLocker& ml, GCCause::Cause cause) {
   assert(_control_lock.is_locked(), "Request lock must be held here");
-  if (cause_priority(_requested_gc_cause) > cause_priority(cause)) {
+  if (ShenandoahCollectorPolicy::is_higher_priority(_requested_gc_cause, cause)) {
     log_debug(gc, thread)("Not overwriting gc cause %s with %s", GCCause::to_string(_requested_gc_cause), GCCause::to_string(cause));
   } else {
     log_debug(gc, thread)("Notify control (%s): %s", gc_mode_name(gc_mode()), GCCause::to_string(cause));
@@ -683,8 +651,9 @@ void ShenandoahGenerationalControlThread::handle_requested_gc(GCCause::Cause cau
   const size_t required_gc_id = current_gc_id + 1;
   while (current_gc_id < required_gc_id && !should_terminate()) {
     if (ShenandoahCollectorPolicy::is_allocation_failure(cause)) {
-      _alloc_waiters_count.add_then_fetch(1UL);
-      log_debug(gc, thread)("Alloc waiters count now: %zu", alloc_waiters_count());
+      _alloc_stall_count.add_then_fetch(1UL);
+      increase_concurrent_worker_count();
+      log_debug(gc, thread)("Alloc stall count now: %zu", alloc_stall_count());
     }
 
     // Make requests to run a cycle until at least one is completed
@@ -692,9 +661,6 @@ void ShenandoahGenerationalControlThread::handle_requested_gc(GCCause::Cause cau
     ml.wait();
     current_gc_id = get_gc_id();
     if (ShenandoahCollectorPolicy::is_allocation_failure(cause)) {
-      // exit early to retry the allocation
-      _alloc_waiters_count.sub_then_fetch(1UL);
-      log_debug(gc, thread)("Woke up: alloc waiters count now: %zu", alloc_waiters_count());
       break;
     }
   }
