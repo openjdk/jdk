@@ -27,7 +27,7 @@
  * @bug 8389652
  * @summary Checks VM options related to the hot code heap
  * @library /test/lib
- * @requires vm.compiler2.enabled & vm.flagless
+ * @requires vm.compiler1.enabled & vm.compiler2.enabled & vm.flagless
  *
  * @run driver compiler.hotcode.TestHotCodeHeapOptions
  */
