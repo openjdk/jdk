@@ -439,12 +439,14 @@ Node* Parse::expand_multianewarray(ciArrayKlass* array_klass, Node* *lengths, in
 Node* Parse::multianewarray2(ciArrayKlass* array_klass, Node* length1, Node* length2) {
 
   assert(length1 != nullptr && length2 != nullptr, "");
-  Node* multi_array = new_array(makecon(TypeKlassPtr::make(array_klass, Type::trust_interfaces)), length1, false);
+  const TypeAryKlassPtr* multi_array_klass = TypeAryKlassPtr::make(array_klass, Type::trust_interfaces)->cast_to_refined_array_klass_ptr();
+  Node* multi_array = new_array(makecon(multi_array_klass), length1, false);
 
   C->set_has_loops(true);
 
   ciArrayKlass* array_element_klass = array_klass->as_obj_array_klass()->element_klass()->as_array_klass();
-  Node* klass_node = makecon(TypeKlassPtr::make(array_element_klass, Type::trust_interfaces));
+  const TypeAryKlassPtr* elem_klass = TypeAryKlassPtr::make(array_element_klass, Type::trust_interfaces)->cast_to_refined_array_klass_ptr();
+  Node* klass_node = makecon(elem_klass);
 
   // The actual loop structure:
   //
