@@ -453,6 +453,14 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * needed.
      */
     private boolean columnSelectionAdjusting;
+
+    /*
+     * True after column widths have been initialized/synchronized by layout.
+     * Used to distinguish the first preferred-width layout from later normal
+     * AUTO_RESIZE_LAST_COLUMN layouts.
+     */
+    private boolean columnWidthsInitialized;
+
     /**
      * The last value of getValueIsAdjusting from the row selection models
      * valueChanged notification. Used to test if a repaint is needed.
@@ -3187,7 +3195,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      */
 
     public void doLayout() {
-        boolean prefWidthSet = false;
         TableColumn resizingColumn = getResizingColumn();
         if (resizingColumn == null) {
             setWidthsFromPreferredWidths(false);
@@ -3304,27 +3311,22 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
             return;
         }
 
-        int totalWidth = getWidth();
-        int total = 0;
-
         for (int i = 0; i < columnCount - 1; i++) {
             TableColumn column = columnModel.getColumn(i);
-            int width = column.getPreferredWidth();
-            column.setWidth(width);
-            total += width;
+            column.setWidth(column.getPreferredWidth());
         }
 
-        TableColumn lastColumn = columnModel.getColumn(columnCount - 1);
-        lastColumn.setWidth(totalWidth - total);
+        accommodateLastColumnOnly();
     }
 
     private void setWidthsFromPreferredWidths(final boolean inverse) {
         if (!inverse && autoResizeMode == AUTO_RESIZE_LAST_COLUMN) {
-            if (isInitialPreferredWidthLayout()) {
+            if (!columnWidthsInitialized) {
                 setWidthsFromPreferredWidthsLastColumnOnly();
             } else {
                 accommodateLastColumnOnly();
             }
+            columnWidthsInitialized = true;
             return;
         }
         int totalWidth     = getWidth();
@@ -3355,6 +3357,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         };
 
         adjustSizes(target, r, inverse);
+        columnWidthsInitialized = true;
     }
 
 
@@ -3853,6 +3856,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         if (columnModel == null) {
             throw new IllegalArgumentException("Cannot set a null ColumnModel");
         }
+        columnWidthsInitialized = false;
         TableColumnModel old = this.columnModel;
         if (columnModel != old) {
             if (old != null) {
@@ -4666,6 +4670,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @see TableColumnModelListener
      */
     public void columnAdded(TableColumnModelEvent e) {
+        columnWidthsInitialized = false;
         // If I'm currently editing, then I should stop editing
         if (isEditing()) {
             removeEditor();
@@ -4679,6 +4684,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * Application code will not use these methods explicitly, they
      * are used internally by JTable.
      *
+        columnWidthsInitialized = false;
      * @see TableColumnModelListener
      */
     public void columnRemoved(TableColumnModelEvent e) {
