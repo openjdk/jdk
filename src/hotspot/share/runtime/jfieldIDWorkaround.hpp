@@ -48,11 +48,15 @@ class jfieldIDWorkaround: AllStatic {
   // not checked, then the checked bit is zero and the rest of
   // the word (30 bits) contains only the offset.
   //
+
+  friend class JNI_FastGetField;
+
  private:
   enum {
     checked_bits           = 1,
     instance_bits          = 1,
-    address_bits           = BitsPerWord - checked_bits - instance_bits,
+    flat_bits              = 1,
+    address_bits           = BitsPerWord - checked_bits - instance_bits - flat_bits,
 
     large_offset_bits      = address_bits,  // unioned with address
     small_offset_bits      = 7,
@@ -60,13 +64,15 @@ class jfieldIDWorkaround: AllStatic {
 
     checked_shift          = 0,
     instance_shift         = checked_shift  + checked_bits,
-    address_shift          = instance_shift + instance_bits,
+    flat_shift             = instance_shift + instance_bits,
+    address_shift          = flat_shift + flat_bits,
 
     offset_shift           = address_shift,  // unioned with address
     klass_shift            = offset_shift + small_offset_bits,
 
     checked_mask_in_place  = right_n_bits(checked_bits)  << checked_shift,
     instance_mask_in_place = right_n_bits(instance_bits) << instance_shift,
+    flat_mask_in_place     = right_n_bits(flat_bits) << flat_shift,
 #ifndef _WIN64
     large_offset_mask      = right_n_bits(large_offset_bits),
     small_offset_mask      = right_n_bits(small_offset_bits),
@@ -111,8 +117,17 @@ class jfieldIDWorkaround: AllStatic {
     return ((as_uint & instance_mask_in_place) == 0);
   }
 
-  static jfieldID to_instance_jfieldID(Klass* k, int offset) {
-    intptr_t as_uint = ((offset & large_offset_mask) << offset_shift) | instance_mask_in_place;
+  static bool is_flat_jfieldID(jfieldID id) {
+    uintptr_t as_uint = (uintptr_t) id;
+    return ((as_uint & flat_mask_in_place) != 0);
+  }
+
+  static jfieldID to_instance_jfieldID(Klass* k, int offset, bool is_flat) {
+    intptr_t as_uint = ((offset & large_offset_mask) << offset_shift) |
+                        instance_mask_in_place;
+    if (is_flat) {
+      as_uint |= flat_mask_in_place;
+    }
     if (VerifyJNIFields) {
       as_uint |= encode_klass_hash(k, offset);
     }
@@ -154,13 +169,13 @@ class jfieldIDWorkaround: AllStatic {
     return result;
   }
 
-  static jfieldID to_jfieldID(InstanceKlass* k, int offset, bool is_static) {
+  static jfieldID to_jfieldID(InstanceKlass* k, int offset, bool is_static, bool is_flat) {
     if (is_static) {
       JNIid *id = k->jni_id_for(offset);
       DEBUG_ONLY(id->set_is_static_field_id());
       return jfieldIDWorkaround::to_static_jfieldID(id);
     } else {
-      return jfieldIDWorkaround::to_instance_jfieldID(k, offset);
+      return jfieldIDWorkaround::to_instance_jfieldID(k, offset, is_flat);
     }
   }
 };

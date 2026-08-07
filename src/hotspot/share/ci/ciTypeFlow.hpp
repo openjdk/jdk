@@ -335,12 +335,13 @@ public:
       pop();
     }
     // pop_objArray and pop_typeArray narrow the tos to ciObjArrayKlass
-    // or ciTypeArrayKlass (resp.).  In the rare case that an explicit
-    // null is popped from the stack, we return null.  Caller beware.
+    // or ciTypeArrayKlass (resp.). In the rare case that an explicit
+    // null is popped from the stack, we return null. Caller beware.
     ciObjArrayKlass* pop_objArray() {
       ciType* array = pop_value();
-      if (array == null_type())  return nullptr;
-      assert(array->is_obj_array_klass(), "must be object array type");
+      if (array == null_type()) {
+        return nullptr;
+      }
       return array->as_obj_array_klass();
     }
     ciTypeArrayKlass* pop_typeArray() {
@@ -851,6 +852,9 @@ public:
   Block* rpo_at(int rpo) const      { assert(0 <= rpo && rpo < block_count(), "out of bounds");
                                       return _block_map[rpo]; }
   int inc_next_pre_order()          { return _next_pre_order++; }
+
+  ciType* mark_as_early_larval(ciType* type);
+  ciType* mark_as_null_free(ciType* type);
 
 private:
   // A work list used during flow analysis.
