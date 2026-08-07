@@ -58,7 +58,7 @@ import java.util.spi.LocaleNameProvider;
 import sun.util.spi.CalendarProvider;
 
 /**
- * LocaleProviderdapter implementation for the Windows locale data.
+ * LocaleProviderAdapter implementation for the Windows locale data.
  *
  * @author Naoto Sato
  */
@@ -179,13 +179,13 @@ public class HostLocaleProviderAdapterImpl {
                 if (ref == null || (patterns = ref.get()) == null) {
                     String langtag = removeExtensions(locale).toLanguageTag();
                     patterns = new AtomicReferenceArray<>(4);
-                    patterns.compareAndSet(0, null, convertDateTimePattern(
+                    patterns.set(0, convertDateTimePattern(
                         getDateTimePattern(DateFormat.LONG, -1, langtag)));
-                    patterns.compareAndSet(1, null, convertDateTimePattern(
+                    patterns.set(1, convertDateTimePattern(
                         getDateTimePattern(DateFormat.SHORT, -1, langtag)));
-                    patterns.compareAndSet(2, null, convertDateTimePattern(
+                    patterns.set(2, convertDateTimePattern(
                         getDateTimePattern(-1, DateFormat.LONG, langtag)));
-                    patterns.compareAndSet(3, null, convertDateTimePattern(
+                    patterns.set(3, convertDateTimePattern(
                         getDateTimePattern(-1, DateFormat.SHORT, langtag)));
                     ref = new SoftReference<>(patterns);
                     dateFormatCache.put(locale, ref);
@@ -581,13 +581,13 @@ public class HostLocaleProviderAdapterImpl {
                 if (ref == null || (patterns = ref.get()) == null) {
                     String langtag = removeExtensions(locale).toLanguageTag();
                     patterns = new AtomicReferenceArray<>(4);
-                    patterns.compareAndSet(0, null, convertDateTimePattern(
+                    patterns.set(0, convertDateTimePattern(
                             getDateTimePattern(DateFormat.LONG, -1, langtag)));
-                    patterns.compareAndSet(1, null, convertDateTimePattern(
+                    patterns.set(1, convertDateTimePattern(
                             getDateTimePattern(DateFormat.SHORT, -1, langtag)));
-                    patterns.compareAndSet(2, null, convertDateTimePattern(
+                    patterns.set(2, convertDateTimePattern(
                             getDateTimePattern(-1, DateFormat.LONG, langtag)));
-                    patterns.compareAndSet(3, null, convertDateTimePattern(
+                    patterns.set(3, convertDateTimePattern(
                             getDateTimePattern(-1, DateFormat.SHORT, langtag)));
                     ref = new SoftReference<>(patterns);
                     dateFormatCache.put(locale, ref);
