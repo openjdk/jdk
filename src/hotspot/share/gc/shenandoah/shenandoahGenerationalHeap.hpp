@@ -44,6 +44,8 @@ public:
   void initialize_heuristics() override;
   void post_initialize_heuristics() override;
 
+  void wait_for_old_collection();
+
   static ShenandoahGenerationalHeap* heap() {
     assert(ShenandoahCardBarrier, "Should have card barrier to use generational heap");
     CollectedHeap* heap = Universe::heap();

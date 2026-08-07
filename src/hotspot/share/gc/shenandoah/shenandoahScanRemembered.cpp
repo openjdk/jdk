@@ -26,7 +26,7 @@
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
-#include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
+#include "gc/shenandoah/shenandoahReferenceProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "logging/log.hpp"
 #include "runtime/threads.hpp"
@@ -787,10 +787,18 @@ void ShenandoahDirectCardMarkRememberedSet::swap_card_tables() {
 ShenandoahScanRememberedTask::ShenandoahScanRememberedTask(ShenandoahObjToScanQueueSet* queue_set,
                                                            ShenandoahObjToScanQueueSet* old_queue_set,
                                                            ShenandoahReferenceProcessor* rp,
-                                                           ShenandoahRegionChunkIterator* work_list, bool is_concurrent) :
-  WorkerTask("Scan Remembered Set"),
-  _queue_set(queue_set), _old_queue_set(old_queue_set), _rp(rp), _work_list(work_list), _is_concurrent(is_concurrent) {
-  bool old_bitmap_stable = ShenandoahHeap::heap()->old_generation()->is_mark_complete();
+                                                           ShenandoahRegionChunkIterator* work_list,
+                                                           ShenandoahRefProcIterator* old_discovered_lists,
+                                                           bool is_concurrent) :
+    WorkerTask("Scan Remembered Set"),
+    _queue_set(queue_set),
+    _old_queue_set(old_queue_set),
+    _old_discovered_lists(old_discovered_lists),
+    _rp(rp),
+    _work_list(work_list),
+    _is_concurrent(is_concurrent)
+{
+  const bool old_bitmap_stable = ShenandoahHeap::heap()->old_generation()->is_mark_complete();
   log_debug(gc, remset)("Scan remembered set using bitmap: %s", BOOL_TO_STR(old_bitmap_stable));
 }
 
@@ -818,7 +826,18 @@ void ShenandoahScanRememberedTask::do_work(uint worker_id) {
 
   // set up thread local closure for shen ref processor
   _rp->set_mark_closure(worker_id, &cl);
-  struct ShenandoahRegionChunk assignment;
+
+  if (old != nullptr) {
+    assert(ShenandoahHeap::heap()->is_concurrent_old_mark_in_progress(), "Must be marking old");
+    assert(_old_discovered_lists != nullptr, "Need to mark young references on old discovered lists");
+    ShenandoahRefProcThreadLocal* discovered = _old_discovered_lists->next();
+    while (discovered != nullptr) {
+      discovered->mark_discovered_list(&cl);
+      discovered = _old_discovered_lists->next();
+    }
+  }
+
+  ShenandoahRegionChunk assignment;
   while (_work_list->next(&assignment)) {
     ShenandoahHeapRegion* region = assignment._r;
     log_debug(gc, remset)("ShenandoahScanRememberedTask::do_work(%u), processing slice of region "
