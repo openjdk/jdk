@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,8 +146,6 @@ public abstract class AreaOp {
     public static final int RSTAG_INSIDE = 1;
     public static final int RSTAG_OUTSIDE = -1;
 
-    public static final int MAX_LINK_COUNT = 1024;
-
     public abstract void newRow();
 
     public abstract int classify(Edge e);
@@ -240,7 +238,6 @@ public abstract class AreaOp {
         Vector<ChainEnd> chains = new Vector<>();
         Vector<CurveLink> links = new Vector<>();
         Vector<Curve> ret = new Vector<>();
-        int linkCount = 0;
         // Active edges are between left (inclusive) and right (exclusive)
         while (left < numedges) {
             double y = yrange[0];
@@ -413,15 +410,6 @@ public abstract class AreaOp {
                     System.out.println("  "+link.getSubCurve());
                 }
             }
-            // If we have complex area calculation, we should consume the
-            // intermediate subcurves to optimize memory footprint
-            if (linkCount >= MAX_LINK_COUNT) {
-                consumeSubCurves(subcurves, chains, ret);
-                linkCount = 0;
-                chains.clear();
-                subcurves.clear();
-            }
-            linkCount += links.size();
             resolveLinks(subcurves, chains, links);
             links.clear();
             // Finally capture the bottom of the valid Y range as the top
