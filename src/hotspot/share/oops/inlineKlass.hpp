@@ -91,7 +91,7 @@ class InlineKlass: public InstanceKlass {
     int _payload_offset;           // offset of the beginning of the payload in a heap buffered instance
     int _payload_alignment;        // alignment required for payload
     int _null_free_non_atomic_alignment;     // alignment requirement for null-free non-atomic layout
-    // size of each LayoutKind. For null-free atomic, nullable atomic and nullable non-atomic, the size also acts as alignment.
+    // size of each LayoutKind. For atomic layouts, the size also acts as alignment.
     int _layout_sizes[static_cast<size_t>(LayoutKind::COUNT) - 1]; // REFERENCE has no size, accounting for -1
     int _null_marker_offset;       // expressed as an offset from the beginning of the object for a heap buffered value
                                    // payload_offset must be subtracted to get the offset from the beginning of the payload

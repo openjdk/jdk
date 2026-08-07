@@ -66,6 +66,7 @@ InlineKlass::Members::Members()
     _null_reset_value_offset(0),
     _payload_offset(-1),
     _payload_alignment(-1),
+    _null_free_non_atomic_alignment(-1),
     _layout_sizes(),
     _null_marker_offset(-1),
     _fast_acmp_offset(-1),

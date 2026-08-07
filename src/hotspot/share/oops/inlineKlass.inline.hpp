@@ -50,7 +50,8 @@ inline int InlineKlass::layout_alignment(LayoutKind lk) const {
   assert(has_layout(lk), "Layout not available");
   if (lk == LayoutKind::BUFFERED) {
     return payload_alignment();
-  } else if (lk == LayoutKind::NULL_FREE_NON_ATOMIC_FLAT) {
+  } else if (lk == LayoutKind::NULL_FREE_NON_ATOMIC_FLAT ||
+             lk == LayoutKind::NULLABLE_NON_ATOMIC_FLAT) {
     return null_free_non_atomic_alignment();
   } else {
     return members().layout_size_in_bytes(lk);
