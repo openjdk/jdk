@@ -27,6 +27,8 @@
  * @summary Test archived value classes
  * @bug 8389233
  * @requires vm.cds.write.archived.java.heap
+ * @requires vm.cds.supports.aot.class.linking
+ * @requires vm.debug
  * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @enablePreview
  * @modules java.base/jdk.internal.value
