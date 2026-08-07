@@ -239,7 +239,21 @@ class WindowsFileCopy {
             x.rethrowAsIOException(target);
         }
         if (copyAttributes) {
-            copyDosAttributes(target, targetPath, sourceAttrs);
+            // copy DOS/timestamps attributes
+            WindowsFileAttributeViews.Dos view =
+                WindowsFileAttributeViews.createDosView(target, false);
+            try {
+                view.setAttributes(sourceAttrs);
+            } catch (IOException x) {
+                if (sourceAttrs.isDirectory()) {
+                    try {
+                        RemoveDirectory(targetPath);
+                    } catch (WindowsException ignore) { }
+                }
+            }
+
+            // copy security attributes. If this fail it doesn't cause the move
+            // to fail.
             try {
                 copySecurityAttributes(source, target, followLinks);
             } catch (IOException ignore) { }
@@ -264,7 +278,10 @@ class WindowsFileCopy {
         }
 
         if (copyAttributes) {
-            copyDosAttributes(target, targetPath, sourceAttrs);
+            WindowsFileAttributeViews.Dos view =
+                WindowsFileAttributeViews.createDosView(target, false);
+            view.setAttributes(sourceAttrs);
+
             try {
                 copySecurityAttributes(source, target, false);
             } catch (IOException ignore) { }
@@ -450,7 +467,18 @@ class WindowsFileCopy {
             x.rethrowAsIOException(target);
         }
 
-        copyDosAttributes(target, targetPath, sourceAttrs);
+        // copy timestamps/DOS attributes
+        WindowsFileAttributeViews.Dos view =
+                WindowsFileAttributeViews.createDosView(target, false);
+        try {
+            view.setAttributes(sourceAttrs);
+        } catch (IOException x) {
+            // rollback
+            try {
+                RemoveDirectory(targetPath);
+            } catch (WindowsException ignore) { }
+            throw x;
+        }
 
         // copy security attributes. If this fails it doesn't cause the move
         // to fail.
@@ -485,26 +513,6 @@ class WindowsFileCopy {
         } catch (WindowsException x) {
             x.rethrowAsIOException(path);
             return null;
-        }
-    }
-
-    private static void copyDosAttributes(WindowsPath target, String targetPath,
-                                          WindowsFileAttributes attrs)
-        throws IOException
-    {
-        WindowsFileAttributeViews.Dos view =
-            WindowsFileAttributeViews.createDosView(target, false);
-        try {
-            view.setAttributes(attrs);
-        } catch (IOException x) {
-            try {
-                if (attrs.isDirectoryLink()) {
-                    RemoveDirectory(targetPath);
-                } else {
-                    DeleteFile(targetPath);
-                }
-            } catch (WindowsException ignore) { }
-            throw x;
         }
     }
 
