@@ -890,6 +890,12 @@
           "profiling data. "                                                \
           "Requires UseLoopPredicate to be turned on (default).")           \
                                                                             \
+  product(bool, UseArrayLoadStoreProfile, true, DIAGNOSTIC,                 \
+          "Take advantage of profiling at array load/store")                \
+                                                                            \
+  product(bool, UseACmpProfile, true, DIAGNOSTIC,                           \
+          "Take advantage of profiling at if_acmp<cond>")                   \
+                                                                            \
   develop(uintx, StressLongCountedLoop, 0,                                  \
           "if > 0, convert int counted loops to long counted loops"         \
           "to stress handling of long counted loops: run inner loop"        \

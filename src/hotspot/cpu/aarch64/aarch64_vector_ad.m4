@@ -314,6 +314,17 @@ source %{
           return false;
         }
         break;
+      case Op_DivVB:
+      case Op_DivVS:
+      case Op_DivVI:
+      case Op_DivVL:
+        // Integer vector divide is only available on SVE (SDIV for 32-bit and
+        // 64-bit elements). NEON has no integer vector divide instruction.
+        // BYTE/SHORT are widened to 32-bit, divided, and narrowed back.
+        if (UseSVE == 0) {
+          return false;
+        }
+        break;
       default:
         break;
     }
@@ -338,6 +349,11 @@ source %{
       case Op_CompressBitsV:
       case Op_ExpandBitsV:
       case Op_VectorBitwiseBlend:
+      // There is no native SVE divide for BYTE/SHORT elements (these are
+      // emulated by widening to 32-bit), so the masked variants are handled
+      // by an unpredicated divide combined with a VectorBlend.
+      case Op_DivVB:
+      case Op_DivVS:
         return false;
       case Op_SaturatingAddV:
       case Op_SaturatingSubV:
@@ -842,6 +858,61 @@ BINARY_OP_NEON_SVE_PAIRWISE(vdivD,  DivVD,  fdiv, sve_fdiv, D)
 // vector float div - predicated
 BINARY_OP_PREDICATE(vdivF, DivVF, sve_fdiv, S)
 BINARY_OP_PREDICATE(vdivD, DivVD, sve_fdiv, D)
+
+dnl
+dnl BINARY_OP_SVE_ONLY($1,        $2,      $3,   $4  )
+dnl BINARY_OP_SVE_ONLY(rule_name, op_name, insn, size)
+define(`BINARY_OP_SVE_ONLY', `
+instruct $1_sve(vReg dst_src1, vReg src2) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src1 ($2 dst_src1 src2));
+  format %{ "$1_sve $dst_src1, $dst_src1, $src2" %}
+  ins_encode %{
+    __ $3($dst_src1$$FloatRegister, __ $4, ptrue, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl
+// ------------------------------ Vector integer div ---------------------------
+
+// BYTE and SHORT have no native integer divide on SVE (SDIV only supports 32-bit
+// and 64-bit elements), so they are emulated by widening each element to 32-bit,
+// performing SDIV, and narrowing the result back.
+
+instruct vdivB_sve(vReg dst_src1, vReg src2, vReg vtmp1, vReg vtmp2, vReg vtmp3, vReg vtmp4) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src1 (DivVB dst_src1 src2));
+  effect(TEMP_DEF dst_src1, TEMP vtmp1, TEMP vtmp2, TEMP vtmp3, TEMP vtmp4);
+  format %{ "vdivB_sve $dst_src1, $dst_src1, $src2" %}
+  ins_encode %{
+    __ sve_sdiv_byte($dst_src1$$FloatRegister, $src2$$FloatRegister,
+                     $vtmp1$$FloatRegister, $vtmp2$$FloatRegister,
+                     $vtmp3$$FloatRegister, $vtmp4$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vdivS_sve(vReg dst_src1, vReg src2, vReg vtmp1, vReg vtmp2) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src1 (DivVS dst_src1 src2));
+  effect(TEMP_DEF dst_src1, TEMP vtmp1, TEMP vtmp2);
+  format %{ "vdivS_sve $dst_src1, $dst_src1, $src2" %}
+  ins_encode %{
+    __ sve_sdiv_short($dst_src1$$FloatRegister, $src2$$FloatRegister,
+                      $vtmp1$$FloatRegister, $vtmp2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+BINARY_OP_SVE_ONLY(vdivI, DivVI, sve_sdiv, S)
+BINARY_OP_SVE_ONLY(vdivL, DivVL, sve_sdiv, D)
+
+// Vector integer div - predicated
+//
+// There is no native SVE divide for BYTE/SHORT elements (these are emulated by
+// widening to 32-bit), so the masked variants are handled by an unpredicated
+// divide combined with a VectorBlend.
+BINARY_OP_PREDICATE(vdivI, DivVI, sve_sdiv, S)
+BINARY_OP_PREDICATE(vdivL, DivVL, sve_sdiv, D)
 dnl
 dnl BITWISE_OP_IMM($1,        $2,   $3,      $4,   $5,   $6        )
 dnl BITWISE_OP_IMM(rule_name, type, op_name, insn, size, basic_type)

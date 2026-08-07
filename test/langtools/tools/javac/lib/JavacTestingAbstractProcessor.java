@@ -98,10 +98,11 @@ public abstract class JavacTestingAbstractProcessor extends AbstractProcessor {
         for (String packageName : packageNames) {
             try {
                 ModuleLayer layer = ModuleLayer.boot();
-                Optional<Module> m = layer.findModule(moduleName);
-                if (!m.isPresent())
+                // removing dependency on java.util.Optional, valhalla only, to avoid VM warnings
+                Module m = layer.findModule(moduleName).get();
+                if (m == null)
                     throw new Error("module not found: " + moduleName);
-                m.get().addExports(packageName, getClass().getModule());
+                m.addExports(packageName, getClass().getModule());
             } catch (Exception e) {
                 throw new Error("failed to add exports for " + moduleName + "/" + packageName);
             }

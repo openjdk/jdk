@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  *
  */
 
+#include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
@@ -30,7 +31,9 @@
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -281,6 +284,39 @@ bool JNIHandles::current_thread_in_native() {
   return (thread->is_Java_thread() &&
           JavaThread::cast(thread)->thread_state() == _thread_in_native);
 }
+
+bool JNIHandles::is_same_object(jobject handle1, jobject handle2) {
+  oop obj1 = resolve_no_keepalive(handle1);
+  oop obj2 = resolve_no_keepalive(handle2);
+
+  bool ret = obj1 == obj2;
+
+  if (!ret && Arguments::is_valhalla_enabled()) {
+    if (obj1 != nullptr && obj2 != nullptr &&
+        obj1->klass() == obj2->klass() && obj1->klass()->is_inline_klass()) {
+      // The two references are different, they are not null and they are both inline types,
+      // a full substitutability test is required, calling ValueObjectMethods.isSubstitutable()
+      // (similarly to InterpreterRuntime::is_substitutable).
+      // The jobjects must be re-resolved as the no-keepalive variants are not safe to use
+      // with the Java upcall.
+      JavaThread* THREAD = JavaThread::current();
+      Handle ha(THREAD, resolve_non_null(handle1));
+      Handle hb(THREAD, resolve_non_null(handle2));
+      JavaValue result(T_BOOLEAN);
+      JavaCallArguments args;
+      args.push_oop(ha);
+      args.push_oop(hb);
+      methodHandle method(THREAD, Universe::is_substitutable_method());
+      JavaCalls::call(&result, method, &args, THREAD);
+      Exceptions::wrap_exception_in_internal_error("Internal error in substitutability test", CHECK_false);
+
+      ret = result.get_jboolean();
+    }
+  }
+
+  return ret;
+}
+
 
 int JNIHandleBlock::_blocks_allocated = 0;
 
