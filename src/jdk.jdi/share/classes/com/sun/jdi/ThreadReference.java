@@ -454,10 +454,17 @@ public interface ThreadReference extends ObjectReference {
      * Events, such as MethodExit, are generated as they would be in
      * a normal return.
      * <p>
-     * The called method must not be a native method or the constructor of
-     * a {@linkplain Class#isValue() value class}. Forcing early return
-     * on a thread with only one frame on the stack causes the thread to
-     * exit when resumed.
+     * The called method must not be:
+     * <ul>
+     * <li> A native method. </li>
+     * <li> A constructor of a class with {@linkplain
+     * java.lang.reflect.Field#isStrictInit() strictly-initialized} instance fields
+     * declared in the class or any of its superclasses. </li>
+     * <li> The class initializer of a class with strictly-initialized static fields. </li>
+     * </ul>
+     * <p>
+     * Forcing early return on a thread with only one frame on the stack causes the
+     * thread to exit when resumed.
      * <p>
      * The <code>value</code> argument is the value that the
      * method is to return.

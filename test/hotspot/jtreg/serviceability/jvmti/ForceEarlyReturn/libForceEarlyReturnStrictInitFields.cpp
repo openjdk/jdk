@@ -49,15 +49,15 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   return JNI_OK;
 }
 
-JNIEXPORT jint Java_ForceEarlyReturnValueClass_suspendThread(JNIEnv *env, jclass ignore, jthread target) {
+JNIEXPORT jint Java_ForceEarlyReturnStrictInitFields_suspendThread(JNIEnv *env, jclass ignore, jthread target) {
   return (jint) jvmti->SuspendThread(target);
 }
 
-JNIEXPORT jint Java_ForceEarlyReturnValueClass_resumeThread(JNIEnv *env, jclass ignore, jthread target) {
+JNIEXPORT jint Java_ForceEarlyReturnStrictInitFields_resumeThread(JNIEnv *env, jclass ignore, jthread target) {
   return (jint) jvmti->ResumeThread(target);
 }
 
-JNIEXPORT jint Java_ForceEarlyReturnValueClass_forceEarlyReturnVoid(JNIEnv *env, jclass ignore, jthread target) {
+JNIEXPORT jint Java_ForceEarlyReturnStrictInitFields_forceEarlyReturnVoid(JNIEnv *env, jclass ignore, jthread target) {
   return (jint) jvmti->ForceEarlyReturnVoid(target);
 }
 
