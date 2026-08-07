@@ -3952,7 +3952,7 @@ public class Types {
                                                        wildUpperBound(act2.head)),
                                              BoundKind.EXTENDS,
                                              syms.boundClass);
-                        mergeOuterCache.remove(pair);
+                        mergeOuterCache.remove(pair, noType);
                     } else {
                         m = new WildcardType(syms.objectType,
                                              BoundKind.UNBOUND,
