@@ -1000,6 +1000,9 @@ Node* InlineTypeNode::emit_substitutability_check(GraphKit* kit, Node* lhs, Node
 // and we want emit_identity_hash_code not to fail on that.
 bool InlineTypeNode::can_emit_identity_hash_code(const PhaseIterGVN& igvn, Node* arg, intptr_t& klass_hash) {
   const Type* arg_type = igvn.type(arg);
+  if (arg_type == TypePtr::NULL_PTR) {
+    return true;
+  }
   if (!arg_type->is_inlinetypeptr()) {
     return false;
   }
@@ -1022,9 +1025,25 @@ Node* InlineTypeNode::emit_identity_hash_code(GraphKit* kit, Node* arg, intptr_t
   }
   PhaseIterGVN& igvn = *kit->gvn().is_IterGVN();
 
-  const Type* arg_type = igvn.type(arg);
-  assert(!arg_type->maybe_null(), "must check null beforehand");
+  RegionNode* region = new RegionNode(1);
+  PhiNode* phi_result = new PhiNode(region, TypeInt::INT);
+  igvn.register_new_node_with_optimizer(region);
+  igvn.register_new_node_with_optimizer(phi_result);
 
+  Node* null_ctl = kit->top();
+  arg = kit->null_check_oop(arg, &null_ctl, false, false, false);
+  if (!null_ctl->is_top()) {
+    region->add_req(null_ctl);
+    phi_result->add_req(kit->intcon(0));
+  }
+  const Type* arg_type = igvn.type(arg);
+  if (arg_type->empty()) {
+    kit->set_control(region);
+    return phi_result;
+  }
+
+  assert(arg_type->is_inlinetypeptr(), "should be a value object at this point");
+  assert(!arg_type->maybe_null(), "must check null beforehand");
   ciInlineKlass* vk = arg_type->inline_klass();
   int number_of_nonoop_entries = vk->number_of_nonoop_entries_in_acmp_map();
   assert(vk->number_of_oop_entries_in_acmp_map() == 0, "cannot have oops here");
@@ -1078,7 +1097,11 @@ Node* InlineTypeNode::emit_identity_hash_code(GraphKit* kit, Node* arg, intptr_t
   }
   result = kit->AndI(result, kit->intcon(markWord::hash_mask));
 
-  return result;
+  region->add_req(kit->control());
+  phi_result->add_req(result);
+
+  kit->set_control(region);
+  return phi_result;
 }
 
 InlineTypeNode* InlineTypeNode::buffer(GraphKit* kit, bool safe_for_replace) {

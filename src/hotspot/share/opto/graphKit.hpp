@@ -366,6 +366,7 @@ class GraphKit : public Phase {
   Node* Bool(Node* cmp, BoolTest::mask relop) { return _gvn.transform(new BoolNode(cmp, relop)); }
   Node* BoolCmpI(Node* l, BoolTest::mask relop, Node* r)       { return Bool(CmpI(l, r), relop); }
   Node* BoolCmpL(Node* l, BoolTest::mask relop, Node* r)       { return Bool(CmpL(l, r), relop); }
+  Node* BoolCmpP(Node* l, BoolTest::mask relop, Node* r)       { return Bool(CmpP(l, r), relop); }
 
   Node* AddP(Node* b, Node* a, Node* o)       { return _gvn.transform(AddPNode::make_with_base(b, a, o)); }
 

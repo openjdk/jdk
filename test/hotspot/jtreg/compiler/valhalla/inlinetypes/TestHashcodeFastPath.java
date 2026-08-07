@@ -22,157 +22,201 @@
  */
 
 /*
- * @test
+ * @test id=0-fast
  * @summary Test hashcode fast path with value classes
  * @library /test/lib /
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main ${test.main.class} 0
+ * @run main ${test.main.class} 0:fast
  */
 
 /*
- * @test
+ * @test id=1-fast
  * @summary Test hashcode fast path with value classes
  * @library /test/lib /
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main ${test.main.class} 1
+ * @run main ${test.main.class} 1:fast
  */
 
 /*
- * @test
+ * @test id=2-fast
  * @summary Test hashcode fast path with value classes
  * @library /test/lib /
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main ${test.main.class} 2
+ * @run main ${test.main.class} 2:fast
  */
 
 /*
- * @test
+ * @test id=3-fast
  * @summary Test hashcode fast path with value classes
  * @library /test/lib /
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main ${test.main.class} 3
+ * @run main ${test.main.class} 3:fast
  */
 
 /*
- * @test
+ * @test id=4-fast
  * @summary Test hashcode fast path with value classes
  * @library /test/lib /
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main ${test.main.class} 4
+ * @run main ${test.main.class} 4:fast
  */
 
 /*
- * @test
+ * @test id=5-fast
  * @summary Test hashcode fast path with value classes
  * @library /test/lib /
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main ${test.main.class} 5
+ * @run main ${test.main.class} 5:fast
  */
 
 /*
- * @test
+ * @test id=6-fast
  * @summary Test hashcode fast path with value classes
  * @library /test/lib /
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main ${test.main.class} 6
+ * @run main ${test.main.class} 6:fast
  */
 
 /*
- * @test
+ * @test id=0-nofast
  * @summary Test hashcode fast path with value classes
  * @library /test/lib /
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main ${test.main.class} 7
+ * @run main ${test.main.class} 0:nofast
  */
 
 /*
- * @test
+ * @test id=1-nofast
  * @summary Test hashcode fast path with value classes
  * @library /test/lib /
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main ${test.main.class} 8
+ * @run main ${test.main.class} 1:nofast
  */
 
 /*
- * @test
+ * @test id=2-nofast
  * @summary Test hashcode fast path with value classes
  * @library /test/lib /
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main ${test.main.class} 9
+ * @run main ${test.main.class} 2:nofast
  */
 
 /*
- * @test
+ * @test id=3-nofast
  * @summary Test hashcode fast path with value classes
  * @library /test/lib /
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main ${test.main.class} 10
+ * @run main ${test.main.class} 3:nofast
  */
 
 /*
- * @test
+ * @test id=4-nofast
  * @summary Test hashcode fast path with value classes
  * @library /test/lib /
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main ${test.main.class} 11
+ * @run main ${test.main.class} 4:nofast
  */
 
 /*
- * @test
+ * @test id=5-nofast
  * @summary Test hashcode fast path with value classes
  * @library /test/lib /
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main ${test.main.class} 12
+ * @run main ${test.main.class} 5:nofast
  */
 
 /*
- * @test
+ * @test id=6-nofast
  * @summary Test hashcode fast path with value classes
  * @library /test/lib /
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main ${test.main.class} 13
+ * @run main ${test.main.class} 6:nofast
+ */
+
+/*
+ * @test id=0-fast-nointrinsics
+ * @summary Test hashcode fast path with value classes
+ * @library /test/lib /
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
+ * @enablePreview
+ * @modules java.base/jdk.internal.value
+ *          java.base/jdk.internal.vm.annotation
+ * @run main ${test.main.class} 0:fast:nointrinsics
+ */
+
+/*
+ * @test id=0-nofast-nointrinsics
+ * @summary Test hashcode fast path with value classes
+ * @library /test/lib /
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
+ * @enablePreview
+ * @modules java.base/jdk.internal.value
+ *          java.base/jdk.internal.vm.annotation
+ * @run main ${test.main.class} 0:nofast:nointrinsics
+ */
+
+/*
+ * @test id=1-fast-nointrinsics
+ * @summary Test hashcode fast path with value classes
+ * @library /test/lib /
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
+ * @enablePreview
+ * @modules java.base/jdk.internal.value
+ *          java.base/jdk.internal.vm.annotation
+ * @run main ${test.main.class} 1:fast:nointrinsics
+ */
+
+/*
+ * @test id=1-nofast-nointrinsics
+ * @summary Test hashcode fast path with value classes
+ * @library /test/lib /
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
+ * @enablePreview
+ * @modules java.base/jdk.internal.value
+ *          java.base/jdk.internal.vm.annotation
+ * @run main ${test.main.class} 1:nofast:nointrinsics
  */
 
 package compiler.valhalla.inlinetypes;
@@ -184,12 +228,43 @@ import jdk.test.lib.Asserts;
 import static compiler.lib.ir_framework.IRNode.*;
 
 public class TestHashcodeFastPath {
+    record RunSettings(int scenario, boolean useHashCodeFastPath, boolean disableIntrinsics) {}
+
+    static boolean parseBooleanSetting(String[] pieces, int idx, String false_str, String true_str, boolean def) {
+        if (pieces.length > idx) {
+            String piece = pieces[idx];
+            if(piece.equals(false_str)) {
+                return false;
+            } else if(piece.equals(true_str)) {
+                return true;
+            } else {
+                throw new RuntimeException("Unknown setting: " + piece);
+            }
+        } else {
+            return def;
+        }
+    }
+
+    static RunSettings parseSetting(String arg) {
+        String[] pieces = arg.split(":");
+
+        int scenario = Integer.parseInt(pieces[0]);
+
+        boolean useHashCodeFastPath = parseBooleanSetting(pieces, 1, "nofast", "fast", true);
+        boolean disableIntrinsics = parseBooleanSetting(pieces, 2, "intrinsics", "nointrinsics", false);
+
+        return new RunSettings(scenario, useHashCodeFastPath, disableIntrinsics);
+    }
+
     public static void main(String[] args) {
         Scenario[] scenarios = InlineTypes.DEFAULT_SCENARIOS;
-        int idx = Integer.parseInt(args[0]);
-        Scenario scenario = scenarios[idx % 7];
-        if (idx / 7 == 1) {
+        RunSettings settings = parseSetting(args[0]);
+        Scenario scenario = scenarios[settings.scenario];
+        if (!settings.useHashCodeFastPath) {
             scenario.addFlags("-XX:-UseHashcodeFastPath");
+        }
+        if (settings.disableIntrinsics) {
+            scenario.addFlags("-XX:DisableIntrinsic=_identityHashCode");
         }
         scenario.addFlags("-XX:CompileCommand=exclude,*::h");
         InlineTypes.getFramework()
@@ -343,44 +418,58 @@ public class TestHashcodeFastPath {
 
     // Get hashcode fast path
     @Test
-    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIf = {"UseHashcodeFastPath", "false"})
-    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIf = {"UseHashcodeFastPath", "false"})
-    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_AND_FAST_PATH_U, RSHIFT_L, FAST_PATH_S, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIf = {"UseHashcodeFastPath", "true"})
-    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_AND_FAST_PATH_U, RSHIFT_L, FAST_PATH_S, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIf = {"UseHashcodeFastPath", "true"})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIfAnd = {"UseHashcodeFastPath", "false", "DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIfAnd = {"UseHashcodeFastPath", "false", "DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_AND_FAST_PATH_U, RSHIFT_L, FAST_PATH_S, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIfAnd = {"UseHashcodeFastPath", "true", "DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_AND_FAST_PATH_U, RSHIFT_L, FAST_PATH_S, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIfAnd = {"UseHashcodeFastPath", "true", "DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L}, applyIfAnd = {"UseHashcodeFastPath", "false", "DisableIntrinsic", "_identityHashCode"})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L}, applyIfAnd = {"UseHashcodeFastPath", "false", "DisableIntrinsic", "_identityHashCode"})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L, RSHIFT_L}, applyIfAnd = {"UseHashcodeFastPath", "true", "DisableIntrinsic", "_identityHashCode"})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L, RSHIFT_L}, applyIfAnd = {"UseHashcodeFastPath", "true", "DisableIntrinsic", "_identityHashCode"})
     int h_object(Object a) {
         return System.identityHashCode(a);
     }
 
     // No hashcode fast path: the type is precise, and the call will be intrinsified
     @Test
-    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"})
-    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_PATH_U}, failOn = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIf = {"DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_PATH_U}, failOn = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE}, applyIf = {"DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L}, applyIf = {"DisableIntrinsic", "_identityHashCode"})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, failOn = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, URSHIFT_L}, applyIf = {"DisableIntrinsic", "_identityHashCode"})
     int h_unique_derived(UniqueDerived a) {
         return System.identityHashCode(a);
     }
 
     // No hashcode fast path: single concrete derived, and the call will be intrinsified
     @Test
-    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"})
-    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_PATH_U}, failOn = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIf = {"DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_PATH_U}, failOn = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE}, applyIf = {"DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L}, applyIf = {"DisableIntrinsic", "_identityHashCode"})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, failOn = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, URSHIFT_L}, applyIf = {"DisableIntrinsic", "_identityHashCode"})
     int h_uniquely_derived_base(UniquelyDerivedBase a) {
         return System.identityHashCode(a);
     }
 
     // No hashcode fast path: the type is precise, and the call will be intrinsified
     @Test
-    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"})
-    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_PATH_U}, failOn = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIf = {"DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_PATH_U}, failOn = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE}, applyIf = {"DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L}, applyIf = {"DisableIntrinsic", "_identityHashCode"})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, failOn = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, URSHIFT_L}, applyIf = {"DisableIntrinsic", "_identityHashCode"})
     int h_derived(Derived a) {
         return System.identityHashCode(a);
     }
 
     // Hashcode fast path is generated, the type is not precise enough for intrinsifying
     @Test
-    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIf = {"UseHashcodeFastPath", "false"})
-    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIf = {"UseHashcodeFastPath", "false"})
-    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_AND_FAST_PATH_U, RSHIFT_L, FAST_PATH_S, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIf = {"UseHashcodeFastPath", "true"})
-    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_AND_FAST_PATH_U, RSHIFT_L, FAST_PATH_S, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIf = {"UseHashcodeFastPath", "true"})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIfAnd = {"UseHashcodeFastPath", "false", "DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIfAnd = {"UseHashcodeFastPath", "false", "DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_AND_FAST_PATH_U, RSHIFT_L, FAST_PATH_S, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIfAnd = {"UseHashcodeFastPath", "true", "DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_AND_FAST_PATH_U, RSHIFT_L, FAST_PATH_S, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIfAnd = {"UseHashcodeFastPath", "true", "DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L}, applyIfAnd = {"UseHashcodeFastPath", "false", "DisableIntrinsic", "_identityHashCode"})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L}, applyIfAnd = {"UseHashcodeFastPath", "false", "DisableIntrinsic", "_identityHashCode"})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L, RSHIFT_L}, applyIfAnd = {"UseHashcodeFastPath", "true", "DisableIntrinsic", "_identityHashCode"})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L, RSHIFT_L}, applyIfAnd = {"UseHashcodeFastPath", "true", "DisableIntrinsic", "_identityHashCode"})
     int h_base(MultiplyDerivedBase a) {
         return System.identityHashCode(a);
     }
@@ -394,18 +483,24 @@ public class TestHashcodeFastPath {
     // With late inlining, type is hidden at first, and a fast path is generated.
     // Later, type becomes precise, call is intrinsified and fast path is removed.
     @Test
-    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIf = {"AlwaysIncrementalInline", "false"})
-    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_AND_FAST_PATH_U, RSHIFT_L, FAST_PATH_S, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIfAnd = {"AlwaysIncrementalInline", "true", "UseHashcodeFastPath", "true"})
-    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIfAnd = {"AlwaysIncrementalInline", "true", "UseHashcodeFastPath", "false"})
-    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_PATH_U}, failOn = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIfAnd = {"AlwaysIncrementalInline", "false", "DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_AND_FAST_PATH_U, RSHIFT_L, FAST_PATH_S, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIfAnd = {"AlwaysIncrementalInline", "true", "UseHashcodeFastPath", "true", "DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIfAnd = {"AlwaysIncrementalInline", "true", "UseHashcodeFastPath", "false", "DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_PATH_U}, failOn = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE}, applyIf = {"DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L}, applyIfAnd = {"AlwaysIncrementalInline", "false", "DisableIntrinsic", "_identityHashCode"})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L, RSHIFT_L}, applyIfAnd = {"AlwaysIncrementalInline", "true", "UseHashcodeFastPath", "true", "DisableIntrinsic", "_identityHashCode"})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L}, applyIfAnd = {"AlwaysIncrementalInline", "true", "UseHashcodeFastPath", "false", "DisableIntrinsic", "_identityHashCode"})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, failOn = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, URSHIFT_L}, applyIf = {"DisableIntrinsic", "_identityHashCode"})
     int h_derived_hidden_type(Derived a) {
         return System.identityHashCode(getter(a));
     }
 
     // No hashcode fast path: the type is precise, and the call will be intrinsified. Fast path wouldn't work anyway because it has a weird size.
     @Test
-    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"})
-    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_PATH_U}, failOn = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIf = {"DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_PATH_U}, failOn = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE}, applyIf = {"DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L}, applyIf = {"DisableIntrinsic", "_identityHashCode"})
+    @IR(phase = {CompilePhase.PRINT_IDEAL},failOn = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, URSHIFT_L}, applyIf = {"DisableIntrinsic", "_identityHashCode"})
     int h_short_with_int(ShortWithInt a) {
         return System.identityHashCode(a);
     }
@@ -413,18 +508,24 @@ public class TestHashcodeFastPath {
     // With late inlining, type is hidden at first, and a fast path is generated.
     // Later, type becomes precise, call is intrinsified and fast path is removed.
     @Test
-    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIf = {"AlwaysIncrementalInline", "false"})
-    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_AND_FAST_PATH_U, RSHIFT_L, FAST_PATH_S, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIfAnd = {"AlwaysIncrementalInline", "true", "UseHashcodeFastPath", "true"})
-    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIfAnd = {"AlwaysIncrementalInline", "true", "UseHashcodeFastPath", "false"})
-    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_PATH_U}, failOn = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIfAnd = {"AlwaysIncrementalInline", "false", "DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_AND_FAST_PATH_U, RSHIFT_L, FAST_PATH_S, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIfAnd = {"AlwaysIncrementalInline", "true", "UseHashcodeFastPath", "true", "DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIfAnd = {"AlwaysIncrementalInline", "true", "UseHashcodeFastPath", "false", "DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_PATH_U}, failOn = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE}, applyIf = {"DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L}, applyIfAnd = {"AlwaysIncrementalInline", "false", "DisableIntrinsic", "_identityHashCode"})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L, RSHIFT_L}, applyIfAnd = {"AlwaysIncrementalInline", "true", "UseHashcodeFastPath", "true", "DisableIntrinsic", "_identityHashCode"})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L}, applyIfAnd = {"AlwaysIncrementalInline", "true", "UseHashcodeFastPath", "false", "DisableIntrinsic", "_identityHashCode"})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, failOn = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, URSHIFT_L}, applyIf = {"DisableIntrinsic", "_identityHashCode"})
     int h_short_with_int_hidden_type(ShortWithInt a) {
         return System.identityHashCode(getter(a));
     }
 
     // No hashcode fast path: the type is precise, and the call will be intrinsified if possible. Fast path wouldn't work anyway because of the oop.
     @Test
-    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"})
-    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIf = {"DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIf = {"DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L}, applyIf = {"DisableIntrinsic", "_identityHashCode"})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L}, applyIf = {"DisableIntrinsic", "_identityHashCode"})
     int h_with_oop(WithOop a) {
         return System.identityHashCode(a);
     }
@@ -432,27 +533,38 @@ public class TestHashcodeFastPath {
     // With late inlining, type is hidden at first, and a fast path is generated.
     // Later, type becomes precise, call would be intrinsified if possible. But it's not. Yet, we can also find out the fast path won't work, and it is removed.
     @Test
-    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIf = {"AlwaysIncrementalInline", "false"})
-    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_AND_FAST_PATH_U, RSHIFT_L, FAST_PATH_S, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIfAnd = {"AlwaysIncrementalInline", "true", "UseHashcodeFastPath", "true"})
-    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIfAnd = {"AlwaysIncrementalInline", "true", "UseHashcodeFastPath", "false"})
-    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIfAnd = {"AlwaysIncrementalInline", "false", "DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_AND_FAST_PATH_U, RSHIFT_L, FAST_PATH_S, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIfAnd = {"AlwaysIncrementalInline", "true", "UseHashcodeFastPath", "true", "DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIfAnd = {"AlwaysIncrementalInline", "true", "UseHashcodeFastPath", "false", "DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIf = {"DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L}, applyIfAnd = {"AlwaysIncrementalInline", "false", "DisableIntrinsic", "_identityHashCode"})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L, RSHIFT_L}, applyIfAnd = {"AlwaysIncrementalInline", "true", "UseHashcodeFastPath", "true", "DisableIntrinsic", "_identityHashCode"})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L}, applyIfAnd = {"AlwaysIncrementalInline", "true", "UseHashcodeFastPath", "false", "DisableIntrinsic", "_identityHashCode"})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L}, applyIf = {"DisableIntrinsic", "_identityHashCode"})
     int h_with_oop_hidden_type(WithOop a) {
         return System.identityHashCode(getter(a));
     }
 
     // Only null path should exist
     @Test
-    @IR(phase = {CompilePhase.AFTER_PARSING}, failOn = {URSHIFT_L, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, failOn = {URSHIFT_L, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE}, applyIf = {"DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, failOn = {URSHIFT_L, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE}, applyIf = {"DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L}, applyIf = {"DisableIntrinsic", "_identityHashCode"})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, failOn = {URSHIFT_L, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE}, applyIf = {"DisableIntrinsic", "_identityHashCode"})
     int h_null() {
         return System.identityHashCode(null);
     }
 
     // Only null path should survive
     @Test
-    @IR(phase = {CompilePhase.AFTER_PARSING}, failOn = {URSHIFT_L, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE}, applyIf = {"AlwaysIncrementalInline", "false"})
-    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_AND_FAST_PATH_U, RSHIFT_L, FAST_PATH_S, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIfAnd = {"AlwaysIncrementalInline", "true", "UseHashcodeFastPath", "true"})
-    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIfAnd = {"AlwaysIncrementalInline", "true", "UseHashcodeFastPath", "false"})
-    @IR(phase = {CompilePhase.PRINT_IDEAL}, failOn = {URSHIFT_L, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, failOn = {URSHIFT_L, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE}, applyIfAnd = {"AlwaysIncrementalInline", "false", "DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_AND_FAST_PATH_U, RSHIFT_L, FAST_PATH_S, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIfAnd = {"AlwaysIncrementalInline", "true", "UseHashcodeFastPath", "true", "DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIfAnd = {"AlwaysIncrementalInline", "true", "UseHashcodeFastPath", "false", "DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, failOn = {URSHIFT_L, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE}, applyIf = {"DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L}, applyIfAnd = {"AlwaysIncrementalInline", "false", "DisableIntrinsic", "_identityHashCode"})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L, RSHIFT_L}, applyIfAnd = {"AlwaysIncrementalInline", "true", "UseHashcodeFastPath", "true", "DisableIntrinsic", "_identityHashCode"})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L}, applyIfAnd = {"AlwaysIncrementalInline", "true", "UseHashcodeFastPath", "false", "DisableIntrinsic", "_identityHashCode"})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, failOn = {URSHIFT_L, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE}, applyIf = {"DisableIntrinsic", "_identityHashCode"})
     int h_null_hidden_type() {
         return System.identityHashCode(getter(null));
     }
@@ -522,46 +634,60 @@ public class TestHashcodeFastPath {
 
     // Statically expanded
     @Test
-    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"})
-    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_PATH_U}, failOn = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIf = {"DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_PATH_U}, failOn = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE}, applyIf = {"DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L}, applyIf = {"DisableIntrinsic", "_identityHashCode"})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, failOn = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, URSHIFT_L}, applyIf = {"DisableIntrinsic", "_identityHashCode"})
     int h_byte(Byte a) {
         return System.identityHashCode(a);
     }
     // Statically expanded
     @Test
-    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"})
-    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_PATH_U}, failOn = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIf = {"DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_PATH_U}, failOn = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE}, applyIf = {"DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L}, applyIf = {"DisableIntrinsic", "_identityHashCode"})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, failOn = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, URSHIFT_L}, applyIf = {"DisableIntrinsic", "_identityHashCode"})
     int h_short(Short a) {
         return System.identityHashCode(a);
     }
     // Statically expanded
     @Test
-    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"})
-    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_PATH_U}, failOn = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIf = {"DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_PATH_U}, failOn = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE}, applyIf = {"DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L}, applyIf = {"DisableIntrinsic", "_identityHashCode"})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, failOn = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, URSHIFT_L}, applyIf = {"DisableIntrinsic", "_identityHashCode"})
     int h_int(Integer a) {
         return System.identityHashCode(a);
     }
     // Statically expanded
+    public static final String ONE_LONG_IN_INTRINSIC = "" + 1;
     public static final String CACHE_PATH_AND_ONE_LONG_IN_INTRINSIC = "" + (URSHIFT_L_COUNT_FOR_CACHE_PATH + 1);
     @Test
-    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"})
-    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_PATH_AND_ONE_LONG_IN_INTRINSIC}, failOn = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIf = {"DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_PATH_AND_ONE_LONG_IN_INTRINSIC}, failOn = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE}, applyIf = {"DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L}, applyIf = {"DisableIntrinsic", "_identityHashCode"})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, ONE_LONG_IN_INTRINSIC}, failOn = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE}, applyIf = {"DisableIntrinsic", "_identityHashCode"})
     int h_long(Long a) {
         return System.identityHashCode(a);
     }
     // Statically expanded
+    public static final String TWO_LONG_IN_INTRINSIC = "" + 2;
     public static final String CACHE_PATH_AND_TWO_LONG_IN_INTRINSIC = "" + (URSHIFT_L_COUNT_FOR_CACHE_PATH + 2);
     @Test
-    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"})
-    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_PATH_AND_TWO_LONG_IN_INTRINSIC}, failOn = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIf = {"DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_PATH_AND_TWO_LONG_IN_INTRINSIC}, failOn = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE}, applyIf = {"DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L}, applyIf = {"DisableIntrinsic", "_identityHashCode"})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, TWO_LONG_IN_INTRINSIC}, failOn = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE}, applyIf = {"DisableIntrinsic", "_identityHashCode"})
     int h_long_long(LongLong a) {
         return System.identityHashCode(a);
     }
 
     // No hashcode fast path: the type is precise, and the call will be intrinsified. Fast path wouldn't work anyway because it has a weird size.
     @Test
-    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"})
-    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_PATH_U}, failOn = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIf = {"DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_PATH_U}, failOn = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE}, applyIf = {"DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L}, applyIf = {"DisableIntrinsic", "_identityHashCode"})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, failOn = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, URSHIFT_L}, applyIf = {"DisableIntrinsic", "_identityHashCode"})
     int h_short_with_int2(ShortWithInt a) {
         return System.identityHashCode(a);
     }
@@ -569,18 +695,24 @@ public class TestHashcodeFastPath {
     // With late inlining, type is hidden at first, and a fast path is generated.
     // Later, type becomes precise, call is intrinsified and fast path is removed.
     @Test
-    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIf = {"AlwaysIncrementalInline", "false"})
-    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_AND_FAST_PATH_U, RSHIFT_L, FAST_PATH_S, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIfAnd = {"AlwaysIncrementalInline", "true", "UseHashcodeFastPath", "true"})
-    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIfAnd = {"AlwaysIncrementalInline", "true", "UseHashcodeFastPath", "false"})
-    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_PATH_U}, failOn = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIfAnd = {"AlwaysIncrementalInline", "false", "DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_AND_FAST_PATH_U, RSHIFT_L, FAST_PATH_S, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIfAnd = {"AlwaysIncrementalInline", "true", "UseHashcodeFastPath", "true", "DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIfAnd = {"AlwaysIncrementalInline", "true", "UseHashcodeFastPath", "false", "DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_PATH_U}, failOn = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE}, applyIf = {"DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L}, applyIfAnd = {"AlwaysIncrementalInline", "false", "DisableIntrinsic", "_identityHashCode"})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L, RSHIFT_L}, applyIfAnd = {"AlwaysIncrementalInline", "true", "UseHashcodeFastPath", "true", "DisableIntrinsic", "_identityHashCode"})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L}, applyIfAnd = {"AlwaysIncrementalInline", "true", "UseHashcodeFastPath", "false", "DisableIntrinsic", "_identityHashCode"})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, failOn = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, URSHIFT_L}, applyIf = {"DisableIntrinsic", "_identityHashCode"})
     int h_short_with_int_hidden_type2(ShortWithInt a) {
         return System.identityHashCode(getter(a));
     }
 
     // No hashcode fast path: the type is precise, and the call will be intrinsified if possible. Fast path wouldn't work anyway because of the oop.
     @Test
-    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"})
-    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIf = {"DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIf = {"DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L}, applyIf = {"DisableIntrinsic", "_identityHashCode"})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L}, applyIf = {"DisableIntrinsic", "_identityHashCode"})
     int h_with_oop2(WithOop a) {
         return System.identityHashCode(a);
     }
