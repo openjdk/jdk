@@ -28,8 +28,6 @@ import jdk.test.lib.jfr.GCHelper;
  * @test
  * @requires vm.flagless
  * @requires vm.hasJFR
- * @requires (vm.gc == "G1" | vm.gc == null)
- *           & vm.opt.ExplicitGCInvokesConcurrent != false
  * @library /test/lib /test/jdk
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseG1GC -XX:+ExplicitGCInvokesConcurrent -XX:MarkSweepDeadRatio=0 -XX:-UseCompressedOops -XX:+IgnoreUnrecognizedVMOptions jdk.jfr.event.gc.objectcount.TestObjectCountAfterGCEventWithG1ConcurrentMark
  */
