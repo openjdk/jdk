@@ -2991,8 +2991,7 @@ void CompiledEntrySignature::compute_calling_conventions(bool link_time) {
       assert(_args_on_stack_cc == _args_on_stack_cc_ro, "calling conventions must match");
       _has_inline_recv = false;
       _num_inline_args--;
-      _c1_needs_stack_repair = _args_on_stack_cc < _args_on_stack;
-      _c2_needs_stack_repair = _args_on_stack_cc > _args_on_stack;
+      _needs_stack_repair = _args_on_stack_cc > _args_on_stack;
       return; // Success
     }
 
