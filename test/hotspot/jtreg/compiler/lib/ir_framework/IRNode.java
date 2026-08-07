@@ -2459,11 +2459,6 @@ public class IRNode {
         machOnlyNameRegex(VAND_NOT_L, "vand_notL");
     }
 
-    public static final String AARCH64_VNOT_AND = PREFIX + "AARCH64_VNOT_AND" + POSTFIX;
-    static {
-        machOnlyNameRegex(AARCH64_VNOT_AND, "vnot_and");
-    }
-
     public static final String VAND_NOT_I_MASKED = PREFIX + "VAND_NOT_I_MASKED" + POSTFIX;
     static {
         machOnlyNameRegex(VAND_NOT_I_MASKED, "vand_notI_masked");
@@ -2818,11 +2813,6 @@ public class IRNode {
     public static final String VMASK_AND_NOT_L = PREFIX + "VMASK_AND_NOT_L" + POSTFIX;
     static {
         machOnlyNameRegex(VMASK_AND_NOT_L, "vmask_and_notL");
-    }
-
-    public static final String AARCH64_VMASK_NOT_AND = PREFIX + "AARCH64_VMASK_NOT_AND" + POSTFIX;
-    static {
-        machOnlyNameRegex(AARCH64_VMASK_NOT_AND, "vmask_not_and");
     }
 
     public static final String VMLA = PREFIX + "VMLA" + POSTFIX;

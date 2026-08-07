@@ -26,7 +26,7 @@
  * @bug 8388918
  * @key randomness
  * @library /test/lib /
- * @summary AArch64: test the vector ((A & B) ^ B == ~A & B) => BIC optimization
+ * @summary Test vector ((A & B) ^ B) canonicalization to (~A & B)
  * @modules jdk.incubator.vector
  *
  * @run driver ${test.main.class}
@@ -109,11 +109,11 @@ public class VectorLogicTest {
         }
     }
 
-    // not_and: (A & B) ^ B == ~A & B. Folds to a single BIC (NEON/SVE) on
-    // AArch64 regardless of the element type.
+    // not_and: (A & B) ^ B is canonicalized to ~A & B and then matched by the
+    // existing AArch64 and_not rules.
 
     @Test
-    @IR(counts = { IRNode.AARCH64_VNOT_AND, ">= 1" },
+    @IR(counts = { IRNode.VAND_NOT_I, ">= 1" },
         applyIfCPUFeature = { "asimd", "true" })
     public static void testNotAndByte() {
         ByteVector va = ByteVector.fromArray(B_SPECIES, ba, 0);
@@ -123,7 +123,7 @@ public class VectorLogicTest {
     }
 
     @Test
-    @IR(counts = { IRNode.AARCH64_VNOT_AND, ">= 1" },
+    @IR(counts = { IRNode.VAND_NOT_I, ">= 1" },
         applyIfCPUFeature = { "asimd", "true" })
     public static void testNotAndShort() {
         ShortVector va = ShortVector.fromArray(S_SPECIES, sa, 0);
@@ -133,7 +133,7 @@ public class VectorLogicTest {
     }
 
     @Test
-    @IR(counts = { IRNode.AARCH64_VNOT_AND, ">= 1" },
+    @IR(counts = { IRNode.VAND_NOT_I, ">= 1" },
         applyIfCPUFeature = { "asimd", "true" })
     public static void testNotAndInt() {
         IntVector va = IntVector.fromArray(I_SPECIES, ia, 0);
@@ -143,7 +143,7 @@ public class VectorLogicTest {
     }
 
     @Test
-    @IR(counts = { IRNode.AARCH64_VNOT_AND, ">= 1" },
+    @IR(counts = { IRNode.VAND_NOT_L, ">= 1" },
         applyIfCPUFeature = { "asimd", "true" })
     public static void testNotAndLong() {
         LongVector va = LongVector.fromArray(L_SPECIES, la, 0);
@@ -152,11 +152,11 @@ public class VectorLogicTest {
         verifyLong();
     }
 
-    // The inner AndV is commutative; exercise the second match rule where the
-    // shared operand is the first AndV input: XorV(AndV(b, a), b).
+    // Exercise canonicalization when the shared operand is the first input of
+    // the inner AndV: XorV(AndV(b, a), b).
 
     @Test
-    @IR(counts = { IRNode.AARCH64_VNOT_AND, ">= 1" },
+    @IR(counts = { IRNode.VAND_NOT_I, ">= 1" },
         applyIfCPUFeature = { "asimd", "true" })
     public static void testNotAndCommutativeByte() {
         ByteVector va = ByteVector.fromArray(B_SPECIES, ba, 0);
@@ -166,7 +166,7 @@ public class VectorLogicTest {
     }
 
     @Test
-    @IR(counts = { IRNode.AARCH64_VNOT_AND, ">= 1" },
+    @IR(counts = { IRNode.VAND_NOT_I, ">= 1" },
         applyIfCPUFeature = { "asimd", "true" })
     public static void testNotAndCommutativeShort() {
         ShortVector va = ShortVector.fromArray(S_SPECIES, sa, 0);
@@ -176,7 +176,7 @@ public class VectorLogicTest {
     }
 
     @Test
-    @IR(counts = { IRNode.AARCH64_VNOT_AND, ">= 1" },
+    @IR(counts = { IRNode.VAND_NOT_I, ">= 1" },
         applyIfCPUFeature = { "asimd", "true" })
     public static void testNotAndCommutativeInt() {
         IntVector va = IntVector.fromArray(I_SPECIES, ia, 0);
@@ -186,7 +186,7 @@ public class VectorLogicTest {
     }
 
     @Test
-    @IR(counts = { IRNode.AARCH64_VNOT_AND, ">= 1" },
+    @IR(counts = { IRNode.VAND_NOT_L, ">= 1" },
         applyIfCPUFeature = { "asimd", "true" })
     public static void testNotAndCommutativeLong() {
         LongVector va = LongVector.fromArray(L_SPECIES, la, 0);

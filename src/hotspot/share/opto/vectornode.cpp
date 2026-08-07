@@ -2873,6 +2873,55 @@ Node* XorVNode::Ideal_XorV_to_VectorBitwiseBlend(PhaseGVN* phase, bool can_resha
   return new VectorBlendNode(a, blend, in(3));
 }
 
+// Canonicalize "(A & B) ^ B" to "~A & B" so backends that already match
+// "~A & B" (e.g. AArch64 BIC) can reuse that pattern.
+//
+// (XorV     (AndV     A B) B) => (AndV     B (XorV     A (Replicate -1)))
+// (XorVMask (AndVMask A B) B) => (AndVMask B (XorVMask A (MaskAll   -1)))
+Node* XorVNode::Ideal_XorV_And_to_AndNot(PhaseGVN* phase, bool can_reshape) {
+  // Predicated vectors are not supported: masked Vector API ops must keep
+  // the unmasked lanes from the first operand.
+  if (is_predicated_vector()) {
+    return nullptr;
+  }
+
+  const bool is_mask = Opcode() == Op_XorVMask;
+  const int and_opcode = is_mask ? Op_AndVMask : Op_AndV;
+
+  Node* and_node = in(1);
+  Node* shared = in(2);
+  if (and_node->Opcode() != and_opcode) {
+    and_node = in(2);
+    shared = in(1);
+  }
+  // Required conditions:
+  //   1. And should only have a single use, otherwise the optimization may be
+  //      unprofitable.
+  //   2. And must be unpredicated and share one operand with the Xor.
+  if (and_node->Opcode() != and_opcode ||
+      and_node->is_predicated_vector() ||
+      and_node->outcnt() != 1 ||
+      (shared != and_node->in(1) && shared != and_node->in(2))) {
+    return nullptr;
+  }
+
+  Node* other = and_node->in(1) == shared ? and_node->in(2) : and_node->in(1);
+  // Neither "shared" nor "other" should be the Top node
+  if (shared->is_top() || other->is_top()) {
+    return nullptr;
+  }
+
+  BasicType bt = vect_type()->element_basic_type();
+  Node* minus_one = (type2aelembytes(bt) == 8)
+                      ? (Node*)phase->longcon(-1L)
+                      : (Node*)phase->intcon(-1);
+  Node* all_ones = phase->transform(
+    VectorNode::scalar2vector(minus_one, length(), bt, is_mask));
+  Node* not_other = phase->transform(
+    VectorNode::make(Op_XorV, other, all_ones, vect_type(), is_mask));
+  return VectorNode::make(Op_AndV, shared, not_other, vect_type(), is_mask);
+}
+
 Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // (XorV src src)      => (Replicate zero)
   // (XorVMask src src)  => (MaskAll zero)
@@ -2896,6 +2945,12 @@ Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (res != nullptr) {
     return res;
   }
+
+  res = Ideal_XorV_And_to_AndNot(phase, can_reshape);
+  if (res != nullptr) {
+    return res;
+  }
+
   return VectorNode::Ideal(phase, can_reshape);
 }
 

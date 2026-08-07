@@ -1061,19 +1061,6 @@ VECTOR_NOT_PREDICATE(L)
 dnl
 // ------------------------------ Vector and_not -------------------------------
 dnl
-dnl VECTOR_BIC($1,    $2   )
-dnl VECTOR_BIC(src_a, src_b)
-dnl Emit an ins_encode body computing "dst = src_a & ~src_b", using the NEON BIC
-dnl for vectors that fit in a SIMD register, otherwise the SVE BIC.
-define(`VECTOR_BIC', `uint length_in_bytes = Matcher::vector_length_in_bytes(this);
-    if (VM_Version::use_neon_for_vector(length_in_bytes)) {
-      __ bic($dst$$FloatRegister, length_in_bytes == 16 ? __ T16B : __ T8B,
-             $$1$$FloatRegister, $$2$$FloatRegister);
-    } else {
-      assert(UseSVE > 0, "must be sve");
-      __ sve_bic($dst$$FloatRegister, $$1$$FloatRegister, $$2$$FloatRegister);
-    }')dnl
-dnl
 dnl VECTOR_AND_NOT($1  )
 dnl VECTOR_AND_NOT(type)
 define(`VECTOR_AND_NOT', `
@@ -1081,7 +1068,14 @@ instruct vand_not$1`'(vReg dst, vReg src1, vReg src2, imm$1_M1 m1) %{
   match(Set dst (AndV src1 (XorV src2 (Replicate m1))));
   format %{ "vand_not$1 $dst, $src1, $src2" %}
   ins_encode %{
-    VECTOR_BIC(src1, src2)
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    if (VM_Version::use_neon_for_vector(length_in_bytes)) {
+      __ bic($dst$$FloatRegister, length_in_bytes == 16 ? __ T16B : __ T8B,
+             $src1$$FloatRegister, $src2$$FloatRegister);
+    } else {
+      assert(UseSVE > 0, "must be sve");
+      __ sve_bic($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister);
+    }
   %}
   ins_pipe(pipe_slow);
 %}')dnl
@@ -1109,20 +1103,6 @@ dnl
 // vector and_not - predicated
 VECTOR_AND_NOT_PREDICATE(I)
 VECTOR_AND_NOT_PREDICATE(L)
-
-// ------------------------------ Vector not_and -------------------------------
-// The expression (A & B) ^ B is equivalent to ~A & B, which maps to the AArch64
-// BIC instruction. The match rule does not depend on the element type, so a
-// single type-agnostic instruct covers all integral vector types.
-instruct vnot_and(vReg dst, vReg src1, vReg src2) %{
-  match(Set dst (XorV (AndV src1 src2) src2));
-  match(Set dst (XorV (AndV src2 src1) src2));
-  format %{ "vnot_and $dst, $src1, $src2" %}
-  ins_encode %{
-    VECTOR_BIC(src2, src1)
-  %}
-  ins_pipe(pipe_slow);
-%}
 
 dnl
 dnl VECTOR_SATURATING_OP($1,     $2, $3     )
@@ -4186,30 +4166,12 @@ instruct vmask_and_not$1(pReg pd, pReg pn, pReg pm, imm$1_M1 m1) %{
   ins_pipe(pipe_slow);
 %}')dnl
 dnl
-dnl VMASK_NOT_AND()
-dnl The expression (A & B) ^ B is equivalent to ~A & B, which maps to the SVE
-dnl BIC instruction. Mask logical ops are always fully active (governed by
-dnl ptrue), so no inactive-lane handling is required. The node is type-agnostic,
-dnl so a single instruct covers all element types.
-define(`VMASK_NOT_AND', `
-instruct vmask_not_and(pReg pd, pReg pn, pReg pm) %{
-  predicate(UseSVE > 0);
-  match(Set pd (XorVMask (AndVMask pn pm) pm));
-  match(Set pd (XorVMask (AndVMask pm pn) pm));
-  format %{ "vmask_not_and $pd, $pn, $pm" %}
-  ins_encode %{
-    __ sve_bic($pd$$PRegister, ptrue, $pm$$PRegister, $pn$$PRegister);
-  %}
-  ins_pipe(pipe_slow);
-%}')dnl
-dnl
-// vector mask logical ops: and/or/xor/and_not/not_and
+// vector mask logical ops: and/or/xor/and_not
 VMASK_BITWISE_OP(and, AndVMask, sve_and)
 VMASK_BITWISE_OP(or,  OrVMask,  sve_orr)
 VMASK_BITWISE_OP(xor, XorVMask, sve_eor)
 VMASK_AND_NOT(I)
 VMASK_AND_NOT(L)
-VMASK_NOT_AND()
 
 // vector mask compare
 

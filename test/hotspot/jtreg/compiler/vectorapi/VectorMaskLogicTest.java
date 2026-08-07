@@ -26,7 +26,7 @@
  * @bug 8388918
  * @key randomness
  * @library /test/lib /
- * @summary AArch64: test the vector mask ((A & B) ^ B == ~A & B) => BIC optimization
+ * @summary Test vector mask ((A & B) ^ B) canonicalization to (~A & B)
  * @modules jdk.incubator.vector
  *
  * @run driver ${test.main.class}
@@ -67,14 +67,13 @@ public class VectorMaskLogicTest {
         }
     }
 
-    // mask not_and: (A & B) ^ B == ~A & B. On SVE the mask logic lives in
-    // predicate registers and folds to a predicate BIC (VMASK_NOT_AND); on NEON
-    // masks are held in vector registers, so it folds to the vector VNOT_AND.
+    // mask not_and: (A & B) ^ B is canonicalized to ~A & B. On SVE it is
+    // matched by VMASK_AND_NOT; on NEON masks use the vector VAND_NOT rule.
 
     @Test
-    @IR(counts = { IRNode.AARCH64_VNOT_AND, ">= 1" },
+    @IR(counts = { IRNode.VAND_NOT_I, ">= 1" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
-    @IR(counts = { IRNode.AARCH64_VMASK_NOT_AND, ">= 1" },
+    @IR(counts = { IRNode.VMASK_AND_NOT_I, ">= 1" },
         applyIfCPUFeature = { "sve", "true" })
     public static void testMaskNotAndByte() {
         VectorMask<Byte> avm = VectorMask.fromArray(B_SPECIES, ma, 0);
@@ -84,9 +83,9 @@ public class VectorMaskLogicTest {
     }
 
     @Test
-    @IR(counts = { IRNode.AARCH64_VNOT_AND, ">= 1" },
+    @IR(counts = { IRNode.VAND_NOT_I, ">= 1" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
-    @IR(counts = { IRNode.AARCH64_VMASK_NOT_AND, ">= 1" },
+    @IR(counts = { IRNode.VMASK_AND_NOT_I, ">= 1" },
         applyIfCPUFeature = { "sve", "true" })
     public static void testMaskNotAndShort() {
         VectorMask<Short> avm = VectorMask.fromArray(S_SPECIES, ma, 0);
@@ -96,9 +95,9 @@ public class VectorMaskLogicTest {
     }
 
     @Test
-    @IR(counts = { IRNode.AARCH64_VNOT_AND, ">= 1" },
+    @IR(counts = { IRNode.VAND_NOT_I, ">= 1" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
-    @IR(counts = { IRNode.AARCH64_VMASK_NOT_AND, ">= 1" },
+    @IR(counts = { IRNode.VMASK_AND_NOT_I, ">= 1" },
         applyIfCPUFeature = { "sve", "true" })
     public static void testMaskNotAndInt() {
         VectorMask<Integer> avm = VectorMask.fromArray(I_SPECIES, ma, 0);
@@ -108,9 +107,9 @@ public class VectorMaskLogicTest {
     }
 
     @Test
-    @IR(counts = { IRNode.AARCH64_VNOT_AND, ">= 1" },
+    @IR(counts = { IRNode.VAND_NOT_L, ">= 1" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
-    @IR(counts = { IRNode.AARCH64_VMASK_NOT_AND, ">= 1" },
+    @IR(counts = { IRNode.VMASK_AND_NOT_L, ">= 1" },
         applyIfCPUFeature = { "sve", "true" })
     public static void testMaskNotAndLong() {
         VectorMask<Long> avm = VectorMask.fromArray(L_SPECIES, ma, 0);
@@ -119,13 +118,13 @@ public class VectorMaskLogicTest {
         verifyMask(L_SPECIES.length());
     }
 
-    // The inner AndVMask is commutative; exercise the second match rule where the
-    // shared operand is the first AndVMask input: XorVMask(AndVMask(b, a), b).
+    // Exercise canonicalization when the shared operand is the first input of
+    // the inner AndVMask: XorVMask(AndVMask(b, a), b).
 
     @Test
-    @IR(counts = { IRNode.AARCH64_VNOT_AND, ">= 1" },
+    @IR(counts = { IRNode.VAND_NOT_I, ">= 1" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
-    @IR(counts = { IRNode.AARCH64_VMASK_NOT_AND, ">= 1" },
+    @IR(counts = { IRNode.VMASK_AND_NOT_I, ">= 1" },
         applyIfCPUFeature = { "sve", "true" })
     public static void testMaskNotAndCommutativeByte() {
         VectorMask<Byte> avm = VectorMask.fromArray(B_SPECIES, ma, 0);
@@ -135,9 +134,9 @@ public class VectorMaskLogicTest {
     }
 
     @Test
-    @IR(counts = { IRNode.AARCH64_VNOT_AND, ">= 1" },
+    @IR(counts = { IRNode.VAND_NOT_I, ">= 1" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
-    @IR(counts = { IRNode.AARCH64_VMASK_NOT_AND, ">= 1" },
+    @IR(counts = { IRNode.VMASK_AND_NOT_I, ">= 1" },
         applyIfCPUFeature = { "sve", "true" })
     public static void testMaskNotAndCommutativeShort() {
         VectorMask<Short> avm = VectorMask.fromArray(S_SPECIES, ma, 0);
@@ -147,9 +146,9 @@ public class VectorMaskLogicTest {
     }
 
     @Test
-    @IR(counts = { IRNode.AARCH64_VNOT_AND, ">= 1" },
+    @IR(counts = { IRNode.VAND_NOT_I, ">= 1" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
-    @IR(counts = { IRNode.AARCH64_VMASK_NOT_AND, ">= 1" },
+    @IR(counts = { IRNode.VMASK_AND_NOT_I, ">= 1" },
         applyIfCPUFeature = { "sve", "true" })
     public static void testMaskNotAndCommutativeInt() {
         VectorMask<Integer> avm = VectorMask.fromArray(I_SPECIES, ma, 0);
@@ -159,9 +158,9 @@ public class VectorMaskLogicTest {
     }
 
     @Test
-    @IR(counts = { IRNode.AARCH64_VNOT_AND, ">= 1" },
+    @IR(counts = { IRNode.VAND_NOT_L, ">= 1" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" })
-    @IR(counts = { IRNode.AARCH64_VMASK_NOT_AND, ">= 1" },
+    @IR(counts = { IRNode.VMASK_AND_NOT_L, ">= 1" },
         applyIfCPUFeature = { "sve", "true" })
     public static void testMaskNotAndCommutativeLong() {
         VectorMask<Long> avm = VectorMask.fromArray(L_SPECIES, ma, 0);

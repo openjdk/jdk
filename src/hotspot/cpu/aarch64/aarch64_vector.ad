@@ -1960,27 +1960,6 @@ instruct vand_notL_masked(vReg dst_src1, vReg src2, immL_M1 m1, pRegGov pg) %{
   ins_pipe(pipe_slow);
 %}
 
-// ------------------------------ Vector not_and -------------------------------
-// The expression (A & B) ^ B is equivalent to ~A & B, which maps to the AArch64
-// BIC instruction. The match rule does not depend on the element type, so a
-// single type-agnostic instruct covers all integral vector types.
-instruct vnot_and(vReg dst, vReg src1, vReg src2) %{
-  match(Set dst (XorV (AndV src1 src2) src2));
-  match(Set dst (XorV (AndV src2 src1) src2));
-  format %{ "vnot_and $dst, $src1, $src2" %}
-  ins_encode %{
-    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
-    if (VM_Version::use_neon_for_vector(length_in_bytes)) {
-      __ bic($dst$$FloatRegister, length_in_bytes == 16 ? __ T16B : __ T8B,
-             $src2$$FloatRegister, $src1$$FloatRegister);
-    } else {
-      assert(UseSVE > 0, "must be sve");
-      __ sve_bic($dst$$FloatRegister, $src2$$FloatRegister, $src1$$FloatRegister);
-    }
-  %}
-  ins_pipe(pipe_slow);
-%}
-
 // ------------------------- Vector saturating add -----------------------------
 
 // Signed saturating add
@@ -6368,7 +6347,7 @@ instruct storeVMasked_vstoremask_masked(vmemA mem, pReg src, pRegGov pg, immI_gt
 
 // ------------------------------ Vector mask basic OPs ------------------------
 
-// vector mask logical ops: and/or/xor/and_not/not_and
+// vector mask logical ops: and/or/xor/and_not
 
 instruct vmask_and(pReg pd, pReg pn, pReg pm) %{
   predicate(UseSVE > 0);
@@ -6416,17 +6395,6 @@ instruct vmask_and_notL(pReg pd, pReg pn, pReg pm, immL_M1 m1) %{
   format %{ "vmask_and_notL $pd, $pn, $pm" %}
   ins_encode %{
     __ sve_bic($pd$$PRegister, ptrue, $pn$$PRegister, $pm$$PRegister);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct vmask_not_and(pReg pd, pReg pn, pReg pm) %{
-  predicate(UseSVE > 0);
-  match(Set pd (XorVMask (AndVMask pn pm) pm));
-  match(Set pd (XorVMask (AndVMask pm pn) pm));
-  format %{ "vmask_not_and $pd, $pn, $pm" %}
-  ins_encode %{
-    __ sve_bic($pd$$PRegister, ptrue, $pm$$PRegister, $pn$$PRegister);
   %}
   ins_pipe(pipe_slow);
 %}
