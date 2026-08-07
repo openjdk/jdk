@@ -1627,10 +1627,10 @@ public class ML_DSA {
     // canonical representative. The product is bounded by ML_DSA_Q squared.
     private static int barrettReduce(long value) {
         long quotient = Math.multiplyHigh(value, BARRETT_MULTIPLIER) << 1;
-        long reduced = value - quotient * ML_DSA_Q;
-        reduced -= ML_DSA_Q & ~((reduced - ML_DSA_Q) >> 63);
-        reduced += (reduced >> 63) & ML_DSA_Q;
-        return (int) reduced;
+        long r = value - quotient * ML_DSA_Q;
+        r -= ML_DSA_Q & ~((r - ML_DSA_Q) >> 63);
+        r += (r >> 63) & ML_DSA_Q;
+        return (int) r;
     }
 
     // For multidimensional array initialization, manually allocating each entry is
