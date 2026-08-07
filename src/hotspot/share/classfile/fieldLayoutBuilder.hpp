@@ -286,16 +286,8 @@ class FieldLayoutBuilder : public ResourceObj {
   FieldLayout* _static_layout;
   GrowableArray<AcmpMapSegment>* _nonoop_acmp_map;
   GrowableArray<int>* _oop_acmp_map;
+  AvailableLayouts _available_layouts;
   int _nonstatic_oopmap_count;
-  int _payload_alignment;
-  int _payload_offset;
-  int _null_marker_offset; // if any, -1 means no internal null marker
-  int _payload_size_in_bytes;
-  int _null_free_non_atomic_layout_size_in_bytes;
-  int _null_free_non_atomic_layout_alignment;
-  int _null_free_atomic_layout_size_in_bytes;
-  int _nullable_atomic_layout_size_in_bytes;
-  int _nullable_non_atomic_layout_size_in_bytes;
   int _fields_size_sum;
   int _declared_nonstatic_fields_count;
   int _flattening_budget;
@@ -313,24 +305,16 @@ class FieldLayoutBuilder : public ResourceObj {
 
   FieldGroup* get_or_create_contended_group(int g);
 
+  int& payload_offset()     { return _available_layouts.payload_offset(); }
+  int& null_marker_offset() { return _available_layouts.null_marker_offset(); }
+
  public:
   FieldLayoutBuilder(const Symbol* classname, ClassLoaderData* loader_data, const InstanceKlass* super_klass, ConstantPool* constant_pool,
                      GrowableArray<FieldInfo>* field_info, bool is_contended, bool is_inline_type, bool is_abstract_value,
                      bool must_be_atomic, FieldLayoutInfo* info, Array<InlineLayoutInfo>* inline_layout_info_array);
 
-  int  payload_offset() const                  { assert(_payload_offset != -1, "Uninitialized"); return _payload_offset; }
-  int  payload_layout_size_in_bytes() const    { return _payload_size_in_bytes; }
-  int  payload_layout_alignment() const        { assert(_payload_alignment != -1, "Uninitialized"); return _payload_alignment; }
-  bool has_null_free_non_atomic_flat_layout() const      { return _null_free_non_atomic_layout_size_in_bytes != -1; }
-  int  null_free_non_atomic_layout_size_in_bytes() const { return _null_free_non_atomic_layout_size_in_bytes; }
-  int  null_free_non_atomic_layout_alignment() const     { return _null_free_non_atomic_layout_alignment; }
-  bool has_null_free_atomic_layout() const               { return _null_free_atomic_layout_size_in_bytes != -1; }
-  int  null_free_atomic_layout_size_in_bytes() const     { return _null_free_atomic_layout_size_in_bytes; }
-  bool has_nullable_atomic_layout() const      { return _nullable_atomic_layout_size_in_bytes != -1; }
-  int  nullable_atomic_layout_size_in_bytes() const { return _nullable_atomic_layout_size_in_bytes; }
-  bool has_nullable_non_atomic_layout() const  { return _nullable_non_atomic_layout_size_in_bytes != -1; }
-  int  nullable_non_atomic_layout_size_in_bytes() const { return _nullable_non_atomic_layout_size_in_bytes; }
-  int  null_marker_offset() const              { return _null_marker_offset; }
+  int  payload_offset() const                  { assert(_available_layouts.payload_offset() != -1, "Uninitialized"); return _available_layouts.payload_offset(); }
+  int  null_marker_offset() const              { return _available_layouts.null_marker_offset(); }
   bool is_empty_inline_class() const           { return _is_empty_inline_class; }
 
   void build_layout();

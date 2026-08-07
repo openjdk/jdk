@@ -48,7 +48,7 @@ class ObjArrayKlass : public ArrayKlass {
   Klass* _bottom_klass;             // The one-dimensional type (InstanceKlass or TypeArrayKlass)
   ObjArrayKlass* _next_refined_array_klass;
 
-  static ArrayDescription array_layout_selection(Klass* element, ArrayProperties properties);
+  static ArrayDescription array_layout_selection(const Klass* element, ArrayProperties properties);
   ObjArrayKlass* allocate_klass_from_description(ArrayDescription ad, TRAPS);
   ObjArrayKlass* klass_from_description(ArrayDescription adesc, TRAPS);
 

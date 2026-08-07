@@ -86,13 +86,14 @@
 // of the java.lang.invoke.MemberName class relies on this property.
 
 enum class LayoutKind : uint32_t {
-  REFERENCE                 = 0,    // indirection to a heap allocated instance
-  BUFFERED                  = 1,    // layout used in heap allocated standalone instances
-  NULL_FREE_NON_ATOMIC_FLAT = 2,    // flat, null-free (no null marker), no guarantee of atomic updates
-  NULL_FREE_ATOMIC_FLAT     = 3,    // flat, null-free, size compatible with atomic updates, alignment requirement is equal to the size
-  NULLABLE_ATOMIC_FLAT      = 4,    // flat, include a null marker, plus same size/alignment properties as ATOMIC layout
-  NULLABLE_NON_ATOMIC_FLAT  = 5,    // flat, include a null marker, non-atomic, only used for strict final non-static fields
-  UNKNOWN                   = 6     // used for uninitialized fields of type LayoutKind
+  REFERENCE                 = 0,      // indirection to a heap allocated instance
+  BUFFERED                  = 1,      // layout used in heap allocated standalone instances
+  NULL_FREE_NON_ATOMIC_FLAT = 2,      // flat, null-free (no null marker), no guarantee of atomic updates
+  NULL_FREE_ATOMIC_FLAT     = 3,      // flat, null-free, size compatible with atomic updates, alignment requirement is equal to the size
+  NULLABLE_ATOMIC_FLAT      = 4,      // flat, include a null marker, plus same size/alignment properties as ATOMIC layout
+  NULLABLE_NON_ATOMIC_FLAT  = 5,      // flat, include a null marker, non-atomic, only used for strict final non-static fields
+  UNKNOWN                   = 6,      // used for uninitialized fields of type LayoutKind
+  COUNT                     = UNKNOWN
 };
 
 class outputStream;
@@ -128,6 +129,105 @@ class LayoutKindHelper : AllStatic {
   static const char* layout_kind_as_string(LayoutKind lk);
 
   static void print_on(LayoutKind lk, outputStream* st) NOT_DEBUG_RETURN;
+};
+
+// The different layouts available for a particular Klass
+struct AvailableLayouts {
+  constexpr static int MissingValue = -1; // Missing layouts are assigned this value
+  int _payload_alignment; // Alignment required for payload
+  int _non_atomic_alignment; // Alignment requirement for the non-atomic layouts
+  int _payload_offset;
+  int _null_marker_offset;
+  // Size of each LayoutKind. For atomic layouts, the size also acts as alignment.
+  int _sizes[static_cast<size_t>(LayoutKind::COUNT) - 1]; // REFERENCE has no size, so we remove 1
+  AvailableLayouts()
+  : _payload_alignment(MissingValue),
+    _non_atomic_alignment(MissingValue),
+    _payload_offset(MissingValue),
+    _null_marker_offset(MissingValue),
+    _sizes() {
+    size_in_bytes_of(LayoutKind::BUFFERED) = MissingValue;
+    size_in_bytes_of(LayoutKind::NULL_FREE_NON_ATOMIC_FLAT) = MissingValue;
+    size_in_bytes_of(LayoutKind::NULL_FREE_ATOMIC_FLAT) = MissingValue;
+    size_in_bytes_of(LayoutKind::NULLABLE_ATOMIC_FLAT) = MissingValue;
+    size_in_bytes_of(LayoutKind::NULLABLE_NON_ATOMIC_FLAT) = MissingValue;
+  }
+
+  int& size_in_bytes_of(LayoutKind lk) {
+    assert(lk != LayoutKind::REFERENCE, "must be");
+    // - 1 to ignore REFERENCE
+    return _sizes[static_cast<size_t>(lk) - 1];
+  }
+  const int& size_in_bytes_of(LayoutKind lk) const {
+    assert(lk != LayoutKind::REFERENCE, "must be");
+    // - 1 to ignore REFERENCE
+    return _sizes[static_cast<size_t>(lk) - 1];
+  }
+
+  int alignment_of(LayoutKind lk) const {
+    assert(has_a(lk), "Layout not available");
+    if (lk == LayoutKind::BUFFERED) {
+      return _payload_alignment;
+    } else if (lk == LayoutKind::NULL_FREE_NON_ATOMIC_FLAT ||
+               lk == LayoutKind::NULLABLE_NON_ATOMIC_FLAT) {
+      return _non_atomic_alignment;
+    } else {
+      return size_in_bytes_of(lk);
+    }
+  }
+
+  int payload_offset() const { return _payload_offset; }
+  int& payload_offset() { return _payload_offset; }
+
+  int null_marker_offset() const { return _null_marker_offset; }
+  int& null_marker_offset() { return _null_marker_offset; }
+  int null_marker_offset_in_payload() const { return null_marker_offset() - payload_offset(); }
+
+  int  payload_size_in_bytes() const { return size_in_bytes_of(LayoutKind::BUFFERED); }
+  int&  payload_size_in_bytes()   { return size_in_bytes_of(LayoutKind::BUFFERED); }
+
+  int   null_free_non_atomic_size_in_bytes() const { return size_in_bytes_of(LayoutKind::NULL_FREE_NON_ATOMIC_FLAT); }
+  int&  null_free_non_atomic_size_in_bytes()       { return size_in_bytes_of(LayoutKind::NULL_FREE_NON_ATOMIC_FLAT); }
+
+  int   null_free_atomic_size_in_bytes() const { return size_in_bytes_of(LayoutKind::NULL_FREE_ATOMIC_FLAT); }
+  int&  null_free_atomic_size_in_bytes()       { return size_in_bytes_of(LayoutKind::NULL_FREE_ATOMIC_FLAT); }
+
+  int  nullable_atomic_size_in_bytes() const { return size_in_bytes_of(LayoutKind::NULLABLE_ATOMIC_FLAT); }
+  int&  nullable_atomic_size_in_bytes() { return size_in_bytes_of(LayoutKind::NULLABLE_ATOMIC_FLAT); }
+
+  int  nullable_non_atomic_size_in_bytes() const { return size_in_bytes_of(LayoutKind::NULLABLE_NON_ATOMIC_FLAT); }
+  int& nullable_non_atomic_size_in_bytes() { return size_in_bytes_of(LayoutKind::NULLABLE_NON_ATOMIC_FLAT); }
+
+  int  payload_alignment() const {
+    assert(_payload_alignment != AvailableLayouts::MissingValue, "Uninitialized");
+    return _payload_alignment;
+  }
+  int& payload_alignment()                    { return _payload_alignment; }
+  int  non_atomic_alignment() const { return _non_atomic_alignment; }
+  int& non_atomic_alignment()                  { return _non_atomic_alignment; }
+
+
+  bool has_a(LayoutKind lk) const {
+    return size_in_bytes_of(lk) != MissingValue;
+  }
+  bool has_null_free_non_atomic_layout() const { return has_a(LayoutKind::NULL_FREE_NON_ATOMIC_FLAT); }
+  bool has_null_free_atomic_layout()     const { return has_a(LayoutKind::NULL_FREE_ATOMIC_FLAT); }
+  bool has_nullable_non_atomic_layout() const  { return has_a(LayoutKind::NULLABLE_NON_ATOMIC_FLAT); }
+  bool has_nullable_atomic_layout() const      { return has_a(LayoutKind::NULLABLE_ATOMIC_FLAT); }
+
+  void print_on(outputStream& st) const {
+    for (int i = (int)LayoutKind::BUFFERED; i < (int)LayoutKind::COUNT; i++) {
+      LayoutKind lk = (LayoutKind)i;
+      if (has_a(lk)) {
+        st.print_cr("%s layout: %d/%d",
+                    LayoutKindHelper::layout_kind_as_string(lk),
+                    size_in_bytes_of(lk), alignment_of(lk));
+      } else {
+        st.print_cr("%s layout: -/-",
+                    LayoutKindHelper::layout_kind_as_string(lk));
+      }
+    }
+  }
 };
 
 #endif // SHARE_OOPS_LAYOUTKIND_HPP
