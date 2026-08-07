@@ -367,7 +367,7 @@ public class TestCompatibleUseDefTypeSize {
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_F, IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
                   IRNode.STORE_VECTOR, "> 0",
-                  IRNode.VECTOR_REINTERPRET, "> 0"},
+                  IRNode.VECTOR_REINTERPRET_I, IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static Object[] test6(int[] a, float[] b) {
@@ -380,7 +380,7 @@ public class TestCompatibleUseDefTypeSize {
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
                   IRNode.STORE_VECTOR, "> 0",
-                  IRNode.VECTOR_REINTERPRET, "> 0"},
+                  IRNode.VECTOR_REINTERPRET_F, "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static Object[] test7(int[] a, float[] b) {
@@ -405,7 +405,7 @@ public class TestCompatibleUseDefTypeSize {
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_D, IRNode.VECTOR_SIZE + "min(max_long, max_double)", "> 0",
                   IRNode.STORE_VECTOR, "> 0",
-                  IRNode.VECTOR_REINTERPRET, "> 0"},
+                  IRNode.VECTOR_REINTERPRET_L, IRNode.VECTOR_SIZE + "min(max_long, max_double)", "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static Object[] test9(long[] a, double[] b) {
@@ -418,7 +418,7 @@ public class TestCompatibleUseDefTypeSize {
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0",
                   IRNode.STORE_VECTOR, "> 0",
-                  IRNode.VECTOR_REINTERPRET, "> 0"},
+                  IRNode.VECTOR_REINTERPRET_D, "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static Object[] test10(long[] a, double[] b) {
@@ -639,7 +639,7 @@ public class TestCompatibleUseDefTypeSize {
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_F, IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
                   IRNode.STORE_VECTOR, "> 0",
-                  IRNode.VECTOR_REINTERPRET, "> 0"},
+                  IRNode.VECTOR_REINTERPRET_I, IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0"},
         applyIf = {"AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
@@ -654,7 +654,7 @@ public class TestCompatibleUseDefTypeSize {
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_D, IRNode.VECTOR_SIZE + "min(max_long, max_double)", "> 0",
                   IRNode.STORE_VECTOR, "> 0",
-                  IRNode.VECTOR_REINTERPRET, "> 0"},
+                  IRNode.VECTOR_REINTERPRET_L, IRNode.VECTOR_SIZE + "min(max_long, max_double)", "> 0"},
         applyIf = {"AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
@@ -669,7 +669,7 @@ public class TestCompatibleUseDefTypeSize {
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
                   IRNode.STORE_VECTOR, "> 0",
-                  IRNode.VECTOR_REINTERPRET, "> 0"},
+                  IRNode.VECTOR_REINTERPRET_F, "> 0"},
         applyIf = {"AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
@@ -684,7 +684,7 @@ public class TestCompatibleUseDefTypeSize {
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0",
                   IRNode.STORE_VECTOR, "> 0",
-                  IRNode.VECTOR_REINTERPRET, "> 0"},
+                  IRNode.VECTOR_REINTERPRET_D, "> 0"},
         applyIf = {"AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
