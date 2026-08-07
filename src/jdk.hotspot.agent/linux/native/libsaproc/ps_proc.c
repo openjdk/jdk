@@ -408,11 +408,6 @@ static bool read_lib_info(struct ps_prochandle* ph) {
 #endif
        if ((lib = add_lib_info(ph, word[5], (uintptr_t)base)) == NULL)
           continue; // ignore, add_lib_info prints error
-
-       // we don't need to keep the library open, symtab is already
-       // built. Only for core dump we need to keep the fd open.
-       close(lib->fd);
-       lib->fd = -1;
     }
   }
   fclose(fp);

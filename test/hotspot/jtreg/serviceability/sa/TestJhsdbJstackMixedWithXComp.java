@@ -27,13 +27,10 @@ import java.util.Arrays;
 import java.util.List;
 
 import jdk.test.lib.JDKToolLauncher;
-import jdk.test.lib.Platform;
 import jdk.test.lib.SA.SATestUtils;
 import jdk.test.lib.Utils;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.process.OutputAnalyzer;
-
-import jtreg.SkippedException;
 
 /**
  * @test id=xcomp
@@ -114,10 +111,6 @@ public class TestJhsdbJstackMixedWithXComp {
     }
 
     public static void main(String... args) throws Exception {
-        if (Platform.isMusl()) {
-            throw new SkippedException("This test does not work on musl libc.");
-        }
-
         SATestUtils.skipIfCannotAttach(); // throws SkippedException if attach not expected to work.
         LingeredApp app = null;
 
