@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,24 +23,31 @@
 
 /*
  * @test
- * @bug 8357105
- * @summary Test stacked string concatenations where the toString result
+ * @bug 8357105 8362117
+ * @summary (f) Test string concatenations where the toString result
  *          of the first StringBuilder chain is wired into an uncommon trap
  *          located in the second one.
- * @run main/othervm compiler.stringopts.TestStackedConcatsAppendUncommonTrap
+ *
+ *          (g) Also test an uncommon trap data dependency on an append call from an unresolved StringBuilder.
+ *
+ * @run main/othervm compiler.stringopts.TestStringConcatAppendUncommonTrap
  * @run main/othervm -XX:-TieredCompilation -Xbatch
- *                   -XX:CompileOnly=compiler.stringopts.TestStackedConcatsAppendUncommonTrap::*
- *                   compiler.stringopts.TestStackedConcatsAppendUncommonTrap
+ *                   -XX:CompileOnly=compiler.stringopts.TestStringConcatAppendUncommonTrap::*
+ *                   compiler.stringopts.TestStringConcatAppendUncommonTrap
  */
 
 package compiler.stringopts;
 
-public class TestStackedConcatsAppendUncommonTrap {
+public class TestStringConcatAppendUncommonTrap {
 
     public static void main (String... args) {
         for (int i = 0; i < 10000; i++) {
             String s = f(" ");
             if (!s.equals("    ")) {
+                throw new RuntimeException("wrong result.");
+            }
+            String z = g(new StringBuilder(" "));
+            if (!z.equals("    ")) {
                 throw new RuntimeException("wrong result.");
             }
         }
@@ -51,5 +58,11 @@ public class TestStackedConcatsAppendUncommonTrap {
         s = new StringBuilder().append(s).append(s).toString();
         s = new StringBuilder().append(s).append(s == c ? s : "  ").toString();
         return s;
+    }
+
+    static String g(StringBuilder c) {
+        StringBuilder s = new StringBuilder().append(" ");
+        String ret = s.append(s == c ? "abc" : "   ").toString();
+        return ret;
     }
 }
