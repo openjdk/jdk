@@ -89,13 +89,10 @@ class InlineKlass: public InstanceKlass {
 
     int _null_reset_value_offset;
     int _payload_offset;           // offset of the beginning of the payload in a heap buffered instance
-    int _payload_size_in_bytes;    // size of payload layout
     int _payload_alignment;        // alignment required for payload
-    int _null_free_non_atomic_size_in_bytes; // size of null-free non-atomic flat layout
     int _null_free_non_atomic_alignment;     // alignment requirement for null-free non-atomic layout
-    int _null_free_atomic_size_in_bytes;     // size and alignment requirement for a null-free atomic layout, -1 if no atomic flat layout is possible
-    int _nullable_atomic_size_in_bytes;      // size and alignment requirement for a nullable layout (always atomic), -1 if no nullable flat layout is possible
-    int _nullable_non_atomic_size_in_bytes;  // size and alignment requirement for a nullable non-atomic layout, -1 if not available
+    // size of each LayoutKind. For null-free atomic, nullable atomic and nullable non-atomic, the size also acts as alignment.
+    int _layout_sizes[static_cast<size_t>(LayoutKind::COUNT) - 1]; // REFERENCE has no size, accounting for -1
     int _null_marker_offset;       // expressed as an offset from the beginning of the object for a heap buffered value
                                    // payload_offset must be subtracted to get the offset from the beginning of the payload
 
@@ -117,6 +114,13 @@ class InlineKlass: public InstanceKlass {
     Members();
 
     void print_on(outputStream* st) const;
+
+    int& layout_size_in_bytes(LayoutKind lk) {
+      return _layout_sizes[static_cast<size_t>(lk)];
+    }
+    const int& layout_size_in_bytes(LayoutKind lk) const {
+      return _layout_sizes[static_cast<size_t>(lk)];
+    }
   };
 
   InlineKlass();
@@ -170,6 +174,10 @@ class InlineKlass: public InstanceKlass {
   }
   void set_null_reset_value_offset(int offset)                { members()._null_reset_value_offset = offset; }
 
+  bool has_layout(LayoutKind lk) const {
+    return members().layout_size_in_bytes(lk) != -1;
+  }
+
   int payload_offset() const {
     int offset = members()._payload_offset;
     assert(offset != 0, "Must be initialized before use");
@@ -177,29 +185,29 @@ class InlineKlass: public InstanceKlass {
   }
   void set_payload_offset(int offset)                         { members()._payload_offset = offset; }
 
-  int payload_size_in_bytes() const                           { return members()._payload_size_in_bytes; }
-  void set_payload_size_in_bytes(int payload_size)            { members()._payload_size_in_bytes = payload_size; }
+  int payload_size_in_bytes() const                           { return members().layout_size_in_bytes(LayoutKind::BUFFERED); }
+  void set_payload_size_in_bytes(int payload_size)            { members().layout_size_in_bytes(LayoutKind::BUFFERED) = payload_size; }
 
   int payload_alignment() const                               { return members()._payload_alignment; }
   void set_payload_alignment(int alignment)                   { members()._payload_alignment = alignment; }
 
-  int null_free_non_atomic_size_in_bytes() const              { return members()._null_free_non_atomic_size_in_bytes; }
-  void set_null_free_non_atomic_size_in_bytes(int size)       { members()._null_free_non_atomic_size_in_bytes = size; }
+  int null_free_non_atomic_size_in_bytes() const              { return members().layout_size_in_bytes(LayoutKind::NULL_FREE_NON_ATOMIC_FLAT); }
+  void set_null_free_non_atomic_size_in_bytes(int size)       { members().layout_size_in_bytes(LayoutKind::NULL_FREE_NON_ATOMIC_FLAT) = size; }
   bool has_null_free_non_atomic_layout() const                { return null_free_non_atomic_size_in_bytes() != -1; }
 
   int null_free_non_atomic_alignment() const                  { return members()._null_free_non_atomic_alignment; }
   void set_null_free_non_atomic_alignment(int alignment)      { members()._null_free_non_atomic_alignment = alignment; }
 
-  int null_free_atomic_size_in_bytes() const                  { return members()._null_free_atomic_size_in_bytes; }
-  void set_null_free_atomic_size_in_bytes(int size)           { members()._null_free_atomic_size_in_bytes = size; }
+  int null_free_atomic_size_in_bytes() const                  { return members().layout_size_in_bytes(LayoutKind::NULL_FREE_ATOMIC_FLAT); }
+  void set_null_free_atomic_size_in_bytes(int size)           { members().layout_size_in_bytes(LayoutKind::NULL_FREE_ATOMIC_FLAT) = size; }
   bool has_null_free_atomic_layout() const                    { return null_free_atomic_size_in_bytes() != -1; }
 
-  int nullable_atomic_size_in_bytes() const                   { return members()._nullable_atomic_size_in_bytes; }
-  void set_nullable_atomic_size_in_bytes(int size)            { members()._nullable_atomic_size_in_bytes = size; }
+  int nullable_atomic_size_in_bytes() const                   { return members().layout_size_in_bytes(LayoutKind::NULLABLE_ATOMIC_FLAT); }
+  void set_nullable_atomic_size_in_bytes(int size)            { members().layout_size_in_bytes(LayoutKind::NULLABLE_ATOMIC_FLAT) = size; }
   bool has_nullable_atomic_layout() const                     { return nullable_atomic_size_in_bytes() != -1; }
 
-  int nullable_non_atomic_size_in_bytes() const               { return members()._nullable_non_atomic_size_in_bytes; }
-  void set_nullable_non_atomic_size_in_bytes(int size)        { members()._nullable_non_atomic_size_in_bytes = size; }
+  int nullable_non_atomic_size_in_bytes() const               { return members().layout_size_in_bytes(LayoutKind::NULLABLE_NON_ATOMIC_FLAT); }
+  void set_nullable_non_atomic_size_in_bytes(int size)        { members().layout_size_in_bytes(LayoutKind::NULLABLE_NON_ATOMIC_FLAT) = size; }
   bool has_nullable_non_atomic_layout() const                 { return nullable_non_atomic_size_in_bytes() != -1; }
 
   int null_marker_offset() const                              { return members()._null_marker_offset; }

@@ -65,16 +65,16 @@ InlineKlass::Members::Members()
     _unpack_handler(nullptr),
     _null_reset_value_offset(0),
     _payload_offset(-1),
-    _payload_size_in_bytes(-1),
     _payload_alignment(-1),
-    _null_free_non_atomic_size_in_bytes(-1),
-    _null_free_non_atomic_alignment(-1),
-    _null_free_atomic_size_in_bytes(-1),
-    _nullable_atomic_size_in_bytes(-1),
-    _nullable_non_atomic_size_in_bytes(-1),
+    _layout_sizes(),
     _null_marker_offset(-1),
     _fast_acmp_offset(-1),
     _fast_acmp_mask(0) {
+  layout_size_in_bytes(LayoutKind::BUFFERED) = -1;
+  layout_size_in_bytes(LayoutKind::NULL_FREE_NON_ATOMIC_FLAT) = -1;
+  layout_size_in_bytes(LayoutKind::NULL_FREE_ATOMIC_FLAT) = -1;
+  layout_size_in_bytes(LayoutKind::NULLABLE_ATOMIC_FLAT) = -1;
+  layout_size_in_bytes(LayoutKind::NULLABLE_NON_ATOMIC_FLAT) = -1;
 }
 
 InlineKlass::InlineKlass() {
