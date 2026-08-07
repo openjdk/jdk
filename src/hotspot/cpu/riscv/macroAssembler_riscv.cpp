@@ -1252,12 +1252,30 @@ void MacroAssembler::wrap_label(Register r1, Register r2, Label &L,
 #undef INSN
 
 // cmov
+void MacroAssembler::cmov_zicond_eqz(Register dst, Register src, Register cond) {
+  assert(UseZicond, "UseZicond must be enabled");
+  assert(cond == t0, "expect t0 as condition register");
+  czero_eqz(dst, dst, cond);
+  if (src != zr) {
+    czero_nez(cond, src, cond);
+    add(dst, dst, cond);
+  }
+}
+
+void MacroAssembler::cmov_zicond_nez(Register dst, Register src, Register cond) {
+  assert(UseZicond, "UseZicond must be enabled");
+  assert(cond == t0, "expect t0 as condition register");
+  czero_nez(dst, dst, cond);
+  if (src != zr) {
+    czero_eqz(cond, src, cond);
+    add(dst, dst, cond);
+  }
+}
+
 void MacroAssembler::cmov_eq(Register cmp1, Register cmp2, Register dst, Register src) {
   if (UseZicond) {
     xorr(t0, cmp1, cmp2);
-    czero_eqz(dst, dst, t0);
-    czero_nez(t0 , src, t0);
-    orr(dst, dst, t0);
+    cmov_zicond_eqz(dst, src, t0);
     return;
   }
   Label no_set;
@@ -1269,9 +1287,7 @@ void MacroAssembler::cmov_eq(Register cmp1, Register cmp2, Register dst, Registe
 void MacroAssembler::cmov_ne(Register cmp1, Register cmp2, Register dst, Register src) {
   if (UseZicond) {
     xorr(t0, cmp1, cmp2);
-    czero_nez(dst, dst, t0);
-    czero_eqz(t0 , src, t0);
-    orr(dst, dst, t0);
+    cmov_zicond_nez(dst, src, t0);
     return;
   }
   Label no_set;
@@ -1283,9 +1299,7 @@ void MacroAssembler::cmov_ne(Register cmp1, Register cmp2, Register dst, Registe
 void MacroAssembler::cmov_le(Register cmp1, Register cmp2, Register dst, Register src) {
   if (UseZicond) {
     slt(t0, cmp2, cmp1);
-    czero_eqz(dst, dst, t0);
-    czero_nez(t0,  src, t0);
-    orr(dst, dst, t0);
+    cmov_zicond_eqz(dst, src, t0);
     return;
   }
   Label no_set;
@@ -1297,9 +1311,7 @@ void MacroAssembler::cmov_le(Register cmp1, Register cmp2, Register dst, Registe
 void MacroAssembler::cmov_leu(Register cmp1, Register cmp2, Register dst, Register src) {
   if (UseZicond) {
     sltu(t0, cmp2, cmp1);
-    czero_eqz(dst, dst, t0);
-    czero_nez(t0,  src, t0);
-    orr(dst, dst, t0);
+    cmov_zicond_eqz(dst, src, t0);
     return;
   }
   Label no_set;
@@ -1311,9 +1323,7 @@ void MacroAssembler::cmov_leu(Register cmp1, Register cmp2, Register dst, Regist
 void MacroAssembler::cmov_ge(Register cmp1, Register cmp2, Register dst, Register src) {
   if (UseZicond) {
     slt(t0, cmp1, cmp2);
-    czero_eqz(dst, dst, t0);
-    czero_nez(t0,  src, t0);
-    orr(dst, dst, t0);
+    cmov_zicond_eqz(dst, src, t0);
     return;
   }
   Label no_set;
@@ -1325,9 +1335,7 @@ void MacroAssembler::cmov_ge(Register cmp1, Register cmp2, Register dst, Registe
 void MacroAssembler::cmov_geu(Register cmp1, Register cmp2, Register dst, Register src) {
   if (UseZicond) {
     sltu(t0, cmp1, cmp2);
-    czero_eqz(dst, dst, t0);
-    czero_nez(t0,  src, t0);
-    orr(dst, dst, t0);
+    cmov_zicond_eqz(dst, src, t0);
     return;
   }
   Label no_set;
@@ -1339,9 +1347,7 @@ void MacroAssembler::cmov_geu(Register cmp1, Register cmp2, Register dst, Regist
 void MacroAssembler::cmov_lt(Register cmp1, Register cmp2, Register dst, Register src) {
   if (UseZicond) {
     slt(t0, cmp1, cmp2);
-    czero_nez(dst, dst, t0);
-    czero_eqz(t0,  src, t0);
-    orr(dst, dst, t0);
+    cmov_zicond_nez(dst, src, t0);
     return;
   }
   Label no_set;
@@ -1353,9 +1359,7 @@ void MacroAssembler::cmov_lt(Register cmp1, Register cmp2, Register dst, Registe
 void MacroAssembler::cmov_ltu(Register cmp1, Register cmp2, Register dst, Register src) {
   if (UseZicond) {
     sltu(t0, cmp1, cmp2);
-    czero_nez(dst, dst, t0);
-    czero_eqz(t0,  src, t0);
-    orr(dst, dst, t0);
+    cmov_zicond_nez(dst, src, t0);
     return;
   }
   Label no_set;
@@ -1367,9 +1371,7 @@ void MacroAssembler::cmov_ltu(Register cmp1, Register cmp2, Register dst, Regist
 void MacroAssembler::cmov_gt(Register cmp1, Register cmp2, Register dst, Register src) {
   if (UseZicond) {
     slt(t0, cmp2, cmp1);
-    czero_nez(dst, dst, t0);
-    czero_eqz(t0,  src, t0);
-    orr(dst, dst, t0);
+    cmov_zicond_nez(dst, src, t0);
     return;
   }
   Label no_set;
@@ -1381,9 +1383,7 @@ void MacroAssembler::cmov_gt(Register cmp1, Register cmp2, Register dst, Registe
 void MacroAssembler::cmov_gtu(Register cmp1, Register cmp2, Register dst, Register src) {
   if (UseZicond) {
     sltu(t0, cmp2, cmp1);
-    czero_nez(dst, dst, t0);
-    czero_eqz(t0,  src, t0);
-    orr(dst, dst, t0);
+    cmov_zicond_nez(dst, src, t0);
     return;
   }
   Label no_set;
