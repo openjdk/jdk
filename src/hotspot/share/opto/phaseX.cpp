@@ -2737,10 +2737,20 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
 
   // AndLNode::Ideal optimizes GraphKit::mark_word_test patterns
   // Pattern: AndL(LoadL(x=mark word), y)
+  // Pattern: AndL(Phi(LoadL(x=mark word), z), y)
   if (use->is_Load()) {
-    add_users_to_worklist_if(worklist, use, [](Node* u) {
-      return u->Opcode() == Op_AndL;
-    });
+    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+      Node* u = use->fast_out(i2);
+      if (u->Opcode() == Op_AndL) {
+        // n -> Load -> AndL
+        worklist.push(u);
+      } else if (u->is_Phi()) {
+        // n -> Load -> Phi -> AndL
+        add_users_to_worklist_if(worklist, u, [](Node* u2) {
+          return u2->Opcode() == Op_AndL;
+        });
+      }
+    }
   }
 
   // PhiNode::Ideal can optimize:
