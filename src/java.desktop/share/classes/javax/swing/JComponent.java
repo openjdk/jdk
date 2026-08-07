@@ -90,6 +90,7 @@ import javax.swing.event.AncestorEvent;
 import javax.swing.event.AncestorListener;
 import javax.swing.event.EventListenerList;
 import javax.swing.plaf.ComponentUI;
+import javax.swing.text.JTextComponent;
 
 import sun.awt.AWTAccessor;
 import sun.awt.SunToolkit;
@@ -4191,6 +4192,13 @@ public abstract class JComponent extends Container implements Serializable,
                 super.setFocusTraversalKeys(KeyboardFocusManager.
                                             BACKWARD_TRAVERSAL_KEYS,
                                             strokeSet);
+            }
+        } else if ("dragEnabled".equals(propertyName)
+                && this instanceof JTextComponent textComponent) {
+            var accessor = SwingAccessor.getJTextComponentAccessor();
+            if (!accessor.isDragEnabledSet(textComponent)) {
+                accessor.setDragEnabledUIResource(textComponent,
+                                                  (Boolean) value);
             }
         } else {
             throw new IllegalArgumentException("property \""+
