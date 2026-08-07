@@ -293,6 +293,11 @@ class StackMapFrame : public ResourceObj {
           "Operand stack overflow");
       return;
     }
+
+    if (type.is_uninitialized_this()) {
+      _flags |= FLAG_THIS_UNINIT;
+    }
+
     _stack[_stack_size++] = type;
   }
 
