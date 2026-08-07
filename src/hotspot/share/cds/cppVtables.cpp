@@ -66,9 +66,11 @@
 // the virtual printing functions in AnyObj).
 
 using GrowableArray_ModuleEntry_ptr = GrowableArray<ModuleEntry*>;
+using GrowableArray_SigEntry = GrowableArray<SigEntry>;
 
 #define DEBUG_CPP_VTABLE_TYPES_DO(f) \
   f(GrowableArray_ModuleEntry_ptr) \
+  f(GrowableArray_SigEntry) \
 
 #endif
 
