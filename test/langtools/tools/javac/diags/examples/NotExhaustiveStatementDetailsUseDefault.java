@@ -21,17 +21,14 @@
  * questions.
  */
 
-// key: compiler.err.not.exhaustive.details
+// key: compiler.err.not.exhaustive.statement.details.use.default
 // key: compiler.misc.binding.pattern
 // key: compiler.misc.missing.cases
 
-class BindingPattern {
-    int t(I i) {
-        return switch (i) {
-            case R1 _ -> 0;
+class NotExhaustiveStatementDetailsUseDefault {
+    void t(Object o) {
+        switch (o) {
+            case String s -> System.err.println("String of length: " + s.length());
         };
     }
-    sealed interface I {}
-    record R1() implements I {}
-    record R2() implements I {}
 }

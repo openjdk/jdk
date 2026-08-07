@@ -39,10 +39,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import javax.tools.Diagnostic;
 
 import toolbox.JavacTask;
 import toolbox.Task;
@@ -530,6 +530,444 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                "Test.Pair(Test.Pair(Test.Pair _,Test.Base _),Test.Pair(Test.Pair(Test.Pair _,Test.Base _),Test.Base _))");
     }
 
+    @Test
+    public void testInaccessiblePermittedType1(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               class Lib {
+                   sealed interface Base {}
+                   record NoOp() implements Base {}
+                   private record Inaccessible() implements Base {}
+               }
+               public class Test {
+                   int t(Lib.Base b) {
+                       return switch (b) {
+                           case Lib.NoOp _ -> 0;
+                           //Inaccessible missing, but cannot be used here.
+                       };
+                   }
+               }
+               """,
+               "Lib.Base _",
+               "or.use.default");
+    }
+
+    @Test
+    public void testInaccessiblePermittedType2(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               class Lib {
+                   sealed interface Base {}
+                   record NoOp() implements Base {}
+                   private sealed interface Intermediate1 extends Base {}
+                   private sealed interface Intermediate2 extends Intermediate1 {}
+                   record Rec() implements Intermediate2 {}
+               }
+               public class Test {
+                   int t(Lib.Base b) {
+                       return switch (b) {
+                           case Lib.NoOp _ -> 0;
+//                           case Lib.Inaccessible _ -> 0;
+                       };
+                   }
+               }
+               """,
+               "Lib.Rec _");
+    }
+
+    @Test
+    public void testInaccessiblePermittedType3(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               class Lib {
+                   sealed interface Base {}
+                   record NoOp() implements Base {}
+                   private record Inaccessible() implements Base {}
+               }
+               public class Test {
+                   int t(Box b) {
+                       return switch (b) {
+                           case Box(Lib.NoOp _) -> 0;
+                           //Box(Inaccessible) missing, but cannot be used here.
+                       };
+                   }
+                   record Box(Lib.Base base) {}
+               }
+               """,
+               "Test.Box(Lib.Base _)");
+    }
+
+    @Test
+    public void testInaccessiblePermittedType4(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               class Lib {
+                   sealed interface Base {}
+                   record NoOp() implements Base {}
+                   private sealed interface Intermediate1 extends Base {}
+                   private sealed interface Intermediate2 extends Intermediate1 {}
+                   record Rec() implements Intermediate2 {}
+               }
+               public class Test {
+                   int t(Box b) {
+                       return switch (b) {
+                           case Box(Lib.NoOp _) -> 0;
+//                           case Box(Lib.Rec _) -> 0;
+                       };
+                   }
+                   record Box(Lib.Base base) {}
+               }
+               """,
+               "Test.Box(Lib.Rec _)");
+    }
+
+    @Test
+    public void testInaccessiblePermittedType5(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               class Lib {
+                   sealed interface Base {}
+                   record NoOp() implements Base {}
+                   private sealed interface Intermediate1 extends Base {}
+                   private sealed interface Intermediate2 extends Intermediate1 {}
+                   sealed interface Intermediate3 extends Intermediate2 {}
+                   private record Inaccessible() implements Intermediate3 {}
+               }
+               public class Test {
+                   int t(Box b) {
+                       return switch (b) {
+                           case Box(Lib.NoOp _) -> 0;
+//                           case Box(Lib.Intermediate3 _) -> 0;
+                       };
+                   }
+                   record Box(Lib.Base base) {}
+               }
+               """,
+               "Test.Box(Lib.Base _)");
+    }
+
+    @Test
+    public void testInaccessiblePermittedType6(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               class Lib {
+                   sealed interface Base {}
+                   record NoOp() implements Base {}
+                   sealed interface Intermediate extends Base {}
+                   private record Leaf1() implements Intermediate {}
+                   record Leaf2() implements Intermediate {}
+               }
+               public class Test {
+                   int t(Lib.Base b) {
+                       return switch (b) {
+                           case Lib.NoOp _ -> 0;
+//                           case Lib.Intermediate _ -> 0;
+                       };
+                   }
+               }
+               """,
+               "Lib.Intermediate _");
+    }
+
+    @Test
+    public void testInaccessiblePermittedType7(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               class Lib {
+                   sealed interface Base {}
+                   record NoOp() implements Base {}
+                   sealed interface Intermediate extends Base {}
+                   private record Leaf1() implements Intermediate {}
+                   record Leaf2() implements Intermediate {}
+               }
+               public class Test {
+                   int t(Lib.Base b) {
+                       return switch (b) {
+                           case Lib.NoOp _ -> 0;
+                           case Lib.Leaf2 _ -> 0;
+//                           cannot refer to Lib.Leaf1, must use Intermediate
+                       };
+                   }
+               }
+               """,
+               "Lib.Intermediate _");
+    }
+
+    @Test
+    public void testInaccessiblePermittedType8(Path base) throws Exception {
+        //recursive
+        doTest(base,
+               new String[0],
+               """
+               class Lib {
+                   sealed interface Base {}
+                   record NoOp() implements Base {}
+                   private static class Wrapper {
+                       public record Inaccessible() implements Base {}
+                   }
+               }
+               public class Test {
+                   int t(Lib.Base b) {
+                       return switch (b) {
+                           case Lib.NoOp _ -> 0;
+                           //Inaccessible missing, but cannot be used here.
+                       };
+                   }
+               }
+               """,
+               "Lib.Base _",
+               "or.use.default");
+    }
+
+    @Test
+    public void testInaccessiblePermittedType9(Path base) throws Exception {
+        //recursive
+        doTest(base,
+               new String[0],
+               """
+               class Lib {
+                   sealed interface Base {}
+                   record NoOp() implements Base {}
+                   private static class Wrapper {
+                       public record Inaccessible() implements Base {}
+                   }
+                   record Box(Base base) {}
+               }
+               public class Test {
+                   int t(Lib.Box b) {
+                       return switch (b) {
+                           case Lib.Box(Lib.NoOp _) -> 0;
+                           //Box(Inaccessible) missing, but cannot be used here.
+                       };
+                   }
+               }
+               """,
+               "Lib.Box(Lib.Base _)");
+    }
+
+    @Test
+    public void testInaccessiblePermittedType10(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               class Lib {
+                   sealed interface Base {}
+                   record NoOp() implements Base {}
+                   private static class Wrapper {
+                       public sealed interface Intermediate1 extends Base {}
+                       public sealed interface Intermediate2 extends Intermediate1 {}
+                   }
+                   record Rec() implements Wrapper.Intermediate2 {}
+               }
+               public class Test {
+                   int t(Box b) {
+                       return switch (b) {
+                           case Box(Lib.NoOp _) -> 0;
+//                           case Box(Lib.Rec _) -> 0;
+                       };
+                   }
+                   record Box(Lib.Base base) {}
+               }
+               """,
+               "Test.Box(Lib.Rec _)");
+    }
+
+    @Test
+    public void testInaccessiblePermittedType11(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               class Lib {
+                   sealed interface I permits A, B, X { }
+                   public static final class A implements I { }
+                   public static final class B implements I { }
+                   private static final class X implements I { }
+               }
+               public class Test {
+                   sealed interface Op permits NoOp, IOp {}
+                   record NoOp() implements Op {}
+                   record IOp(Lib.I i) implements Op {}
+
+                   private void t(Op op) {
+                       switch (op) {
+                           case NoOp() -> {}
+                           case IOp(Lib.A a) -> {}
+                           case IOp(Lib.B b) -> {}
+//                         //IOp(X) missing, but cannot be used here
+                       }
+                   }
+                              }
+               """,
+               "Test.IOp(Lib.I _)");
+    }
+
+    @Test
+    public void testInaccessiblePermittedType12(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               class Lib {
+                   sealed interface Base {}
+                   record NoOp() implements Base {}
+                   private sealed interface Intermediate1 extends Base {}
+                   private sealed interface Intermediate2 extends Intermediate1 {}
+                   record Rec1() implements Intermediate2 {}
+                   record Rec2() implements Intermediate2 {}
+               }
+               public class Test {
+                   int t(Lib.Base b) {
+                       return switch (b) {
+                           case Lib.NoOp _ -> 0;
+//                           case Lib.Rec1 _ -> 0;
+//                           case Lib.Rec2 _ -> 0;
+                       };
+                   }
+               }
+               """,
+               "Lib.Rec1 _", "Lib.Rec2 _");
+    }
+
+    @Test
+    public void testNonAbstract(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               public class Test {
+                   sealed class Sealed {}
+                   final class Impl extends Sealed {}
+                   record Rec(Sealed s) {}
+
+                   int t(Rec r) {
+                       return switch (r) {
+                           case Rec(Impl _) -> 0;
+                       };
+                   }
+               }
+               """,
+               "Test.Rec(Test.Sealed _)");
+    }
+
+    @Test
+    public void testInaccessiblePermittedTypeCrossPackage(Path base) throws Exception {
+        doTest(base,
+               new String[] {
+                   """
+                   package lib;
+                   public class Lib {
+                       public sealed interface Base {}
+                       public record NoOp() implements Base {}
+                       record Inaccessible() implements Base {}
+                   }
+                   """
+               },
+               """
+               package test;
+               import lib.Lib;
+               public class Test {
+                   int t(Lib.Base b) {
+                       return switch (b) {
+                           case Lib.NoOp _ -> 0;
+                           //Inaccessible missing, but cannot be used here.
+                       };
+                   }
+               }
+               """,
+               "lib.Lib.Base _",
+               "or.use.default");
+    }
+
+    @Test
+    public void testInaccessiblePermittedTypeReducedByDominance(Path base) throws Exception {
+        doTest(base,
+               new String[] {
+                   """
+                   package lib;
+                   public class Lib {
+                       public sealed interface Base {}
+                       public record NoOp() implements Base {}
+                       record Inaccessible() implements Base {}
+                       public record Accessible() implements Base {}
+                   }
+                   """
+               },
+               """
+               package test;
+               import lib.Lib;
+               public class Test {
+                   int t(Lib.Base b) {
+                       return switch (b) {
+                           case Lib.NoOp _ -> 0;
+                           //Inaccessible and Accessible missing, but cannot be used here.
+                       };
+                   }
+               }
+               """,
+               "lib.Lib.Base _",
+               "or.use.default");
+    }
+
+    @Test
+    public void testMissingFromMultipleHierarchiesAtTopLevel(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               public class Test {
+                   sealed interface Sealed {}
+                   sealed interface A extends Sealed {}
+                   sealed interface B extends Sealed {}
+                   sealed interface C extends Sealed {}
+                   record A1() implements A {}
+                   record A2() implements A {}
+                   record B1() implements B {}
+                   record B2() implements B {}
+                   record C1() implements C {}
+                   record C2() implements C {}
+
+                   int t(Sealed s) {
+                       return switch (s) {
+                           case A1 _ -> 0;
+                           case B1 _ -> 0;
+                           case C1 _ -> 0;
+                           //all of A2, B2 and C2 as missing
+                       };
+                   }
+               }
+               """,
+               "Test.B2 _", "Test.C2 _", "Test.A2 _");
+        doTest(base,
+               new String[0],
+               """
+               public class Test {
+                   sealed interface Sealed {}
+                   sealed interface A extends Sealed {}
+                   sealed interface B extends Sealed {}
+                   sealed interface C extends Sealed {}
+                   record A1() implements A {}
+                   record A2() implements A {}
+                   record B1() implements B {}
+                   record B2() implements B {}
+                   record C1() implements C {}
+                   record C2() implements C {}
+
+                   int t(Sealed s) {
+                       return switch (s) {
+                           case A1 _ -> 0;
+                           case B1 _ -> 0;
+                           //all of A2, B2, C1 and C2 as missing
+                       };
+                   }
+               }
+               """,
+               "Test.B2 _", "Test.C _", "Test.A2 _");
+    }
+
     private void doTest(Path base, String[] libraryCode, String testCode, String... expectedMissingPatterns) throws IOException {
         Path current = base.resolve(".");
         Path libClasses = current.resolve("libClasses");
@@ -565,17 +1003,26 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                      "-XDexhaustivityMaxBaseChecks=" + Long.MAX_VALUE) //never give up
             .outdir(classes)
             .files(tb.findJavaFiles(src))
-            .diagnosticListener(d -> {
+            .diagnosticListener((Diagnostic<?> d) -> {
                 if ("compiler.err.not.exhaustive.details".equals(d.getCode()) ||
-                    "compiler.err.not.exhaustive.statement.details".equals(d.getCode())) {
+                    "compiler.err.not.exhaustive.statement.details".equals(d.getCode()) ||
+                    "compiler.err.not.exhaustive.details.use.default".equals(d.getCode()) ||
+                    "compiler.err.not.exhaustive.statement.details.use.default".equals(d.getCode())) {
+                    boolean useDefault = d.getCode().endsWith(".use.default");
                     if (d instanceof DiagnosticSourceUnwrapper uw) {
                         d = uw.d;
+                    }
+                    if (d instanceof JCDiagnostic diag) {
+                        d = (Diagnostic<?>) diag.getArgs()[0];
                     }
                     if (d instanceof JCDiagnostic.MultilineDiagnostic diag) {
                         diag.getSubdiagnostics()
                                 .stream()
                                 .map(fragment -> fragment.toString())
                                 .forEach(missingPatterns::add);
+                    }
+                    if (useDefault) {
+                        missingPatterns.add("or.use.default");
                     }
                 }
             })
