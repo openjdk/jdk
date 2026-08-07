@@ -3923,7 +3923,6 @@ public class Types {
             }
         };
 
-        Set<TypePair> mergeCache = new HashSet<>();
         /* this cache could be used by several merge operations that can happen inside
          * an invocation to one of the public lub methods.
          */
@@ -3931,7 +3930,7 @@ public class Types {
         private Type merge(Type c1, Type c2) {
             TypePair pair = new TypePair(c1, c2);
             Type cached = mergeOuterCache.get(pair);
-            if (cached != null) return cached;
+            if (cached != null && cached != noType) return cached;
 
             ClassType class1 = (ClassType) c1;
             List<Type> act1 = class1.getTypeArguments();
@@ -3947,12 +3946,13 @@ public class Types {
                     merged.append(act2.head);
                 } else {
                     Type m;
-                    if (mergeCache.add(pair)) {
+                    if (mergeOuterCache.get(pair) == null) {
+                        mergeOuterCache.put(pair, noType);
                         m = new WildcardType(lubHelper(wildUpperBound(act1.head),
                                                        wildUpperBound(act2.head)),
                                              BoundKind.EXTENDS,
                                              syms.boundClass);
-                        mergeCache.remove(pair);
+                        mergeOuterCache.remove(pair);
                     } else {
                         m = new WildcardType(syms.objectType,
                                              BoundKind.UNBOUND,
