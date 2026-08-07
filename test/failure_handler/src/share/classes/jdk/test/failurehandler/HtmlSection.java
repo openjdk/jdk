@@ -72,7 +72,7 @@ public class HtmlSection {
             this.pw.println("<body>");
         } else {
             this.rootSection = rootSection;
-            this.sectionIds = null;
+            this.sectionIds = new HashSet<>();
             this.pw.print("<ul>");
         }
     }
@@ -161,7 +161,7 @@ public class HtmlSection {
      * {@code base} with the first free numeric suffix ("-2", "-3", ...), and
      * records the returned id as used. Keeps every section id unique so that
      * anchors, {@code data-toggle} and {@code data-show} references resolve to
-     * the right occurrence when a command name is repeated (JDK-8337680).
+     * the right occurrence when a command name is repeated.
      */
     private static String uniqueId(HtmlSection root, String base) {
         String id = base;
