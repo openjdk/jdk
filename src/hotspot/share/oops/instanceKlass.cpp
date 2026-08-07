@@ -35,6 +35,7 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
@@ -1935,7 +1936,7 @@ instanceOop InstanceKlass::register_finalizer(instanceOop i, TRAPS) {
 instanceOop InstanceKlass::allocate_instance(TRAPS) {
   assert(!is_abstract() && !is_interface(), "Should not create this object");
   size_t size = size_helper();  // Query before forming handle.
-  return (instanceOop)Universe::heap()->obj_allocate(this, size, CHECK_NULL);
+  return (instanceOop)Universe::heap()->obj_allocate(this, size, THREAD);
 }
 
 instanceOop InstanceKlass::allocate_instance(oop java_class, TRAPS) {

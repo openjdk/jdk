@@ -2155,19 +2155,28 @@ bool ConnectionGraph::add_final_edges_unsafe_access(Node* n, uint opcode) {
 // }
 // void m(Object o, MyValue v, int i)
 // produces the pairs:
-// (Object, Object), (Myvalue, int), (MyValue, float), (int, int)
+// (Object, Object), (MyValue, int), (MyValue, float), (int, int)
 class DomainIterator : public StackObj {
 private:
-  const TypeTuple* _domain;
-  const TypeTuple* _domain_cc;
-  const GrowableArray<SigEntry>* _sig_cc;
+  const TypeTuple* _domain;               // Domain of the JVM signature
+  const TypeTuple* _domain_cc;            // Domain of the scalarized calling convention
+  const GrowableArray<SigEntry>* _sig_cc; // Entries of the scalarized calling convention
 
-  uint _i_domain;
-  uint _i_domain_cc;
-  int _i_sig_cc;
-  uint _depth;
-  uint _first_field_pos;
-  const bool _is_static;
+  uint _i_domain;        // JVM signature domain index (long/double take two slots)
+  uint _i_domain_cc;     // Scalarized calling convention domain index
+  int _i_arg;            // JVM signature argument index (long/double take one argument)
+  int _i_sig_cc;         // Scalarized calling convention SigEntry index
+  uint _depth;           // Scalarized value nesting depth
+  uint _first_field_pos; // Scalarized calling convention domain index of the first non-hidden value field
+  const bool _is_static; // Whether the target method is static
+
+  void advance_domain() {
+    const BasicType bt = _domain->field_at(_i_domain)->basic_type();
+    _i_domain++;
+    if (bt != T_LONG && bt != T_DOUBLE) {
+      _i_arg++;
+    }
+  }
 
   void next_helper() {
     if (_sig_cc == nullptr) {
@@ -2186,7 +2195,7 @@ private:
       } else if (bt == T_VOID && (prev_bt != T_LONG && prev_bt != T_DOUBLE)) {
         _depth--;
         if (_depth == 0) {
-          _i_domain++;
+          advance_domain();
         }
       } else if (bt == T_OBJECT && prev_bt == T_METADATA && (_is_static || _i_domain > 0) && _sig_cc->at(_i_sig_cc)._offset == 0) {
         assert(_sig_cc->at(_i_sig_cc)._vt_oop, "buffer expected right after T_METADATA");
@@ -2215,6 +2224,7 @@ public:
     _sig_cc(call->method()->get_sig_cc()),
     _i_domain(TypeFunc::Parms),
     _i_domain_cc(TypeFunc::Parms),
+    _i_arg(0),
     _i_sig_cc(0),
     _depth(0),
     _first_field_pos(0),
@@ -2232,7 +2242,7 @@ public:
     assert(_depth != 0 || _domain->field_at(_i_domain) == _domain_cc->field_at(_i_domain_cc), "should produce same non scalarized elements");
     _i_sig_cc++;
     if (_depth == 0) {
-      _i_domain++;
+      advance_domain();
     }
     _i_domain_cc++;
     next_helper();
@@ -2244,6 +2254,10 @@ public:
 
   uint i_domain_cc() const {
     return _i_domain_cc;
+  }
+
+  int i_arg() const {
+    return _i_arg;
   }
 
   const Type* current_domain() const {
@@ -2270,18 +2284,25 @@ bool ConnectionGraph::returns_an_argument(CallNode* call) {
 
   const TypeTuple* d = call->tf()->domain_sig();
   bool ret_arg = false;
+  int arg_num = 0;
   for (uint i = TypeFunc::Parms; i < d->cnt(); i++) {
-    if (d->field_at(i)->isa_ptr() != nullptr &&
+    const Type* t = d->field_at(i);
+    if (t->isa_ptr() != nullptr &&
         call_analyzer->is_arg_returned(i - TypeFunc::Parms)) {
-      if (meth->is_scalarized_arg(i - TypeFunc::Parms) && !compatible_return(call->as_CallJava(), i)) {
+      const bool scalarized_arg = meth->is_scalarized_arg(arg_num);
+      if (scalarized_arg && !compatible_return(call->as_CallJava(), i)) {
         return false;
       }
-      if (call->tf()->returns_inline_type_as_fields() != meth->is_scalarized_arg(i - TypeFunc::Parms)) {
+      if (call->tf()->returns_inline_type_as_fields() != scalarized_arg) {
         return false;
       }
       ret_arg = true;
     }
+    if (t != Type::HALF) {
+      arg_num++;
+    }
   }
+  assert(arg_num == meth->signature()->count() + (meth->is_static() ? 0 : 1), "inconsistent argument count");
   return ret_arg;
 }
 
@@ -2614,18 +2635,19 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
         PointsToNode* call_ptn = ptnode_adr(call->_idx);
         bool ret_arg = returns_an_argument(call);
         for (DomainIterator di(call->as_CallJava()); di.has_next(); di.next()) {
-          int k = di.i_domain() - TypeFunc::Parms;
+          const int jvms_slot = di.i_domain() - TypeFunc::Parms;
+          const bool scalarized_arg = meth->is_scalarized_arg(di.i_arg());
           const Type* at = di.current_domain_cc();
           Node* arg = call->in(di.i_domain_cc());
           PointsToNode* arg_ptn = ptnode_adr(arg->_idx);
-          assert(!call_analyzer->is_arg_returned(k) || !meth->is_scalarized_arg(k) ||
+          assert(!call_analyzer->is_arg_returned(jvms_slot) || !scalarized_arg ||
                  !compatible_return(call->as_CallJava(), di.i_domain()) ||
                  call->proj_out_or_null(di.i_domain_cc() - di.first_field_pos() + TypeFunc::Parms + 1) == nullptr ||
                  _igvn->type(call->proj_out_or_null(di.i_domain_cc() - di.first_field_pos() + TypeFunc::Parms + 1)) == at,
                  "scalarized return and scalarized argument should match");
-          if (at->isa_ptr() != nullptr && call_analyzer->is_arg_returned(k) && ret_arg) {
+          if (at->isa_ptr() != nullptr && call_analyzer->is_arg_returned(jvms_slot) && ret_arg) {
             // The call returns arguments.
-            if (meth->is_scalarized_arg(k)) {
+            if (scalarized_arg) {
               ProjNode* res_proj = call->proj_out_or_null(di.i_domain_cc() - di.first_field_pos() + TypeFunc::Parms + 1);
               if (res_proj != nullptr) {
                 assert(_igvn->type(res_proj)->isa_ptr(), "scalarized return and scalarized argument should match");
@@ -2646,12 +2668,12 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
           }
           if (at->isa_oopptr() != nullptr &&
               arg_ptn->escape_state() < PointsToNode::GlobalEscape) {
-            if (!call_analyzer->is_arg_stack(k)) {
+            if (!call_analyzer->is_arg_stack(jvms_slot)) {
               // The argument global escapes
               set_escape_state(arg_ptn, PointsToNode::GlobalEscape NOT_PRODUCT(COMMA trace_arg_escape_message(call)));
             } else {
               set_escape_state(arg_ptn, PointsToNode::ArgEscape NOT_PRODUCT(COMMA trace_arg_escape_message(call)));
-              if (!call_analyzer->is_arg_local(k)) {
+              if (!call_analyzer->is_arg_local(jvms_slot)) {
                 // The argument itself doesn't escape, but any fields might
                 set_fields_escape_state(arg_ptn, PointsToNode::GlobalEscape NOT_PRODUCT(COMMA trace_arg_escape_message(call)));
               }
