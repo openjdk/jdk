@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,12 +158,10 @@ public class BacktraceFieldTest extends TestScaffold {
                     println("BT: backTraceVal = " + backTraceVal);
 
                     printval(backTraceVal, 0);
-                    printval(backTraceVal, 1);
-                    printval(backTraceVal, 2);
-                    printval(backTraceVal, 3);  // backtrace has 4 elements
+                    printval(backTraceVal, 1);  // backtrace has 2 elements
 
                     try {
-                        printval(backTraceVal, 4);
+                        printval(backTraceVal, 2);
                     } catch (Exception e) {
                         println("Exception " + e);
                     }

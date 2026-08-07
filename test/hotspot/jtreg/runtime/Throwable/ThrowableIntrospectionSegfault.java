@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ public class ThrowableIntrospectionSegfault {
         try {
 
             // Retrieve the class of throwable.backtrace[0][0].
-            Class class2 = ((Object[]) ((Object[]) backtrace)[2])[0].getClass();
+            Class class2 = ((Object[]) ((Object[]) backtrace)[1])[0].getClass();
 
             // Segfault occurs while executing this line, to retrieve the name of
             // this class.
