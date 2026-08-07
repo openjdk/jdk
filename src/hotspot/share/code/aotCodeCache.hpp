@@ -465,7 +465,6 @@ private:
   AOTCodeEntry* _load_entries;   // Used when reading cache
   uint*         _search_entries; // sorted by ID table [id, index]
   AOTCodeEntry* _store_entries;  // Used when writing cache
-  const char*   _C_strings_buf;  // Loaded buffer for _C_strings[] table
   uint          _store_entries_cnt;
 
   static AOTCodeCache* open_for_use();
@@ -499,6 +498,7 @@ public:
   uint load_size() const { return _load_size; }
   uint write_position() const { return _write_position; }
 
+  static void init_C_strings_caching();
   void load_strings();
   int store_strings();
 
