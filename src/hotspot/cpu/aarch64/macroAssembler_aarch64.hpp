@@ -1601,7 +1601,7 @@ public:
            vpowm  == v13, "registers must match aarch64.ad"); \
   } while (0)
 
-  void string_equals(Register a1, Register a2, Register result, Register cnt1);
+  void string_equals(Register a1, Register a2, Register result, Register cnt1, Register a1_hi, Register a2_hi);
 
   void fill_words(Register base, Register cnt, Register value);
   void fill_words(Register base, uint64_t cnt, Register value);
