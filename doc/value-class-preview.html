@@ -63,6 +63,11 @@ the same name. For example,
 <p>The JDK generates preview-specific source files (they may use preview
 language features), compiles class files from them, and distributes
 these class files in <code>META-INF/preview</code>.</p>
+<p>These preview-specific class files can be inspected by javap with the
+<code>--preview-mode true</code> flag, for example:</p>
+<pre><code>javap --preview-mode true java.util.Optional</code></pre>
+<p>Prints the value class declaration:</p>
+<pre><code>public final value class java.util.Optional&lt;T&gt; {</code></pre>
 <h2 id="the-build-process">The Build Process</h2>
 <h3 id="the-custom-handling-for-the-value-objects-jep">The Custom
 Handling for the Value Objects JEP</h3>
