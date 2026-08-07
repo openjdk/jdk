@@ -63,7 +63,6 @@ public final class AquaTextPaneUI extends BasicTextPaneUI {
         super.uninstallListeners();
     }
 
-    boolean oldDragState = false;
     @Override
     protected void installDefaults() {
         super.installDefaults();

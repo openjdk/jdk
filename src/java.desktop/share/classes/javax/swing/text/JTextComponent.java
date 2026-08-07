@@ -3815,6 +3815,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
         boolean newDragEnabled = f.get("dragEnabled", false);
         checkDragEnabled(newDragEnabled);
         dragEnabled = newDragEnabled;
+        dragEnabledSet = f.get("dragEnabledSet", false);
         DropMode newDropMode = (DropMode) f.get("dropMode",
                 DropMode.USE_SELECTION);
         checkDropMode(newDropMode);
