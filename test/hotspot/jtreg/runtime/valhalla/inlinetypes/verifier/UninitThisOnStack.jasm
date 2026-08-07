@@ -63,6 +63,15 @@ identity class UninitThisOnStack version 72:65535
       frame_type stack1;
         stack_map this;
     invokespecial Method java/lang/Object."<init>":"()V";
+    iconst_1;
+    ifeq ELSE2;
+    nop;
+    goto ENDIF2;
+  ELSE2: stack_frame_type full;
+      locals_map int;
+      stack_map;
+    nop;
+  ENDIF2: stack_frame_type same;
     return;
   }
 }

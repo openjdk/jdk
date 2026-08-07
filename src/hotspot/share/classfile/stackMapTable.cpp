@@ -209,7 +209,7 @@ int32_t StackMapReader::chop(
 
 #define CHECK_NT CHECK_(VerificationType::bogus_type())
 
-VerificationType StackMapReader::parse_verification_type(u1* flags, bool local, TRAPS) {
+VerificationType StackMapReader::parse_verification_type(u1* flags, bool in_locals, TRAPS) {
   u1 tag = _stream->get_u1(CHECK_NT);
   if (tag < (u1)ITEM_UninitializedThis) {
     return VerificationType::from_tag(tag);
@@ -232,7 +232,7 @@ VerificationType StackMapReader::parse_verification_type(u1* flags, bool local, 
 
       // An uninitializedThis in the locals array can be preserved between
       // frames while uninitializedThis in the stack cannot as the stack is cleared.
-      if (local) {
+      if (in_locals) {
         _uninit_in_locals = true;
       }
     }
@@ -371,7 +371,7 @@ StackMapFrame* StackMapReader::next_helper(TRAPS) {
       THREAD, VerificationType, 2);
     u2 stack_size = 1;
     u1 flags = _uninit_in_locals;
-    stack[0] = parse_verification_type(&flags, false /*local*/, CHECK_VERIFY_(_verifier, nullptr));
+    stack[0] = parse_verification_type(&flags, false /*in_locals*/, CHECK_VERIFY_(_verifier, nullptr));
     if (stack[0].is_category2()) {
       stack[1] = stack[0].to_category2_2nd();
       stack_size = 2;
@@ -414,7 +414,7 @@ StackMapFrame* StackMapReader::next_helper(TRAPS) {
       THREAD, VerificationType, 2);
     u2 stack_size = 1;
     u1 flags = _uninit_in_locals;
-    stack[0] = parse_verification_type(&flags, false /*local*/, CHECK_VERIFY_(_verifier, nullptr));
+    stack[0] = parse_verification_type(&flags, false /*in_locals*/, CHECK_VERIFY_(_verifier, nullptr));
     if (stack[0].is_category2()) {
       stack[1] = stack[0].to_category2_2nd();
       stack_size = 2;
@@ -489,7 +489,7 @@ StackMapFrame* StackMapReader::next_helper(TRAPS) {
     }
     u1 flags = (u1)_uninit_in_locals;
     for (int i = 0; i < appends; i++) {
-      locals[real_length] = parse_verification_type(&flags, true /*local*/, CHECK_NULL);
+      locals[real_length] = parse_verification_type(&flags, true /*in_locals*/, CHECK_NULL);
       if (locals[real_length].is_category2()) {
         locals[real_length + 1] = locals[real_length].to_category2_2nd();
         ++real_length;
@@ -521,7 +521,7 @@ StackMapFrame* StackMapReader::next_helper(TRAPS) {
         THREAD, VerificationType, locals_size*2);
     }
     for (int i = 0; i < locals_size; i++) {
-      locals[real_locals_size] = parse_verification_type(&flags, true /*local*/, CHECK_NULL);
+      locals[real_locals_size] = parse_verification_type(&flags, true /*in_locals*/, CHECK_NULL);
       if (locals[real_locals_size].is_category2()) {
         locals[real_locals_size + 1] =
           locals[real_locals_size].to_category2_2nd();
@@ -539,7 +539,7 @@ StackMapFrame* StackMapReader::next_helper(TRAPS) {
         THREAD, VerificationType, stack_size*2);
     }
     for (int i = 0; i < stack_size; i++) {
-      stack[real_stack_size] = parse_verification_type(&flags, false /*local*/, CHECK_NULL);
+      stack[real_stack_size] = parse_verification_type(&flags, false /*in_locals*/, CHECK_NULL);
       if (stack[real_stack_size].is_category2()) {
         stack[real_stack_size + 1] = stack[real_stack_size].to_category2_2nd();
         ++real_stack_size;
