@@ -49,27 +49,10 @@ void C1_MacroAssembler::explicit_null_check(Register base) {
 // nmethod entry barrier.  Called from both build_frame() and scalarized_entry()
 // so that scalarized_entry can re-use the same sequence without duplicating
 // the overflow check / barrier.
-//
-// NOTE: this is a *poisoned* stub — the needs_stack_repair and reset_orig_pc
-// paths call ShouldNotCallThis() so that the first time we actually reach them
-// (once s390x enables InlineTypePassFieldsAsArgs) we stop hard and can be
-// debugged before the logic is validated.
 void C1_MacroAssembler::build_frame_helper(int frame_size_in_bytes, int sp_offset_for_orig_pc,
-                                           int sp_inc, bool reset_orig_pc, bool needs_stack_repair) {
+                                           bool reset_orig_pc) {
   save_return_pc();
   push_frame(frame_size_in_bytes);
-  if (needs_stack_repair) {
-    // Save real frame size (frame + sp extension) so the callee can repair
-    // the sender SP on return.  Slot is at frame_size - wordSize relative to
-    // the new SP.
-    //
-    // TODO (s390x): validate slot offset against frame layout once
-    // InlineTypePassFieldsAsArgs is enabled on s390x.
-    ShouldNotCallThis(); // poison: remove once validated on s390x
-    assert((sp_inc & (StackAlignmentInBytes-1)) == 0, "stack increment not aligned");
-    int real_frame_size = sp_inc + frame_size_in_bytes;
-    z_mvghi(frame_size_in_bytes - wordSize, Z_SP, real_frame_size);
-  }
 
   if (reset_orig_pc) {
     // Zero orig_pc slot so that deoptimisation during arg buffering is
@@ -89,7 +72,7 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
   assert(bang_size_in_bytes >= frame_size_in_bytes, "stack bang size incorrect");
   generate_stack_overflow_check(bang_size_in_bytes);
 
-  build_frame_helper(frame_size_in_bytes, sp_offset_for_orig_pc, 0, has_scalarized_args, needs_stack_repair);
+  build_frame_helper(frame_size_in_bytes, sp_offset_for_orig_pc, has_scalarized_args);
 
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->nmethod_entry_barrier(this);
@@ -133,7 +116,7 @@ int C1_MacroAssembler::scalarized_entry(const CompiledEntrySignature* ces, int f
 
   // Build a temp frame so we can call into the runtime.  Must be properly set
   // up to accommodate GC (nmethod entry barrier runs inside).
-  build_frame_helper(frame_size_in_bytes, sp_offset_for_orig_pc, 0, true, ces->c1_needs_stack_repair());
+  build_frame_helper(frame_size_in_bytes, sp_offset_for_orig_pc, true);
 
   // The runtime call might safepoint; make sure the nmethod entry barrier fires.
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
@@ -155,11 +138,7 @@ int C1_MacroAssembler::scalarized_entry(const CompiledEntrySignature* ces, int f
   pop_frame();
   restore_return_pc();
 
-  // Check if the stack needs extending to pack the inline args.
-  int sp_inc = 0;
-  if (args_on_stack > args_on_stack_cc) {
-    sp_inc = extend_stack_for_inline_args(args_on_stack);
-  }
+  assert(args_on_stack <= args_on_stack_cc, "Sanity check");
 
   // Z_R14 (the buffered value array) is the val_array argument to
   // shuffle_inline_args.  On aarch64 a dedicated callee-saved register is
@@ -169,11 +148,11 @@ int C1_MacroAssembler::scalarized_entry(const CompiledEntrySignature* ces, int f
   shuffle_inline_args(true, is_inline_ro_entry, sig_cc,
                       args_passed_cc, args_on_stack_cc, regs_cc, // from
                       args_passed,    args_on_stack,    regs,    // to
-                      sp_inc, Z_R14);
+                      0, Z_R14);
 
   // Build the real frame.  The jump below skips the stack-bang and frame-setup
   // in verified_inline_entry (which uses a different real_frame_size).
-  build_frame_helper(frame_size_in_bytes, sp_offset_for_orig_pc, sp_inc, false, ces->c1_needs_stack_repair());
+  build_frame_helper(frame_size_in_bytes, sp_offset_for_orig_pc, false);
 
   z_brul(verified_inline_entry_label);
   return rt_call_offset;
