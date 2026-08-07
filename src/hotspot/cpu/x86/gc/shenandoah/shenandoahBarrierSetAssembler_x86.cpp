@@ -407,19 +407,15 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet d
   }
 }
 
-void ShenandoahBarrierSetAssembler::card_barrier(MacroAssembler* masm, Register obj) {
+void ShenandoahBarrierSetAssembler::card_barrier(MacroAssembler* masm, Register obj, Register tmp) {
   assert(ShenandoahCardBarrier, "Should have been checked by caller");
+  assert_different_registers(obj, tmp);
 
   // Does a store check for the oop in register obj. The content of
   // register obj is destroyed afterwards.
   __ shrptr(obj, CardTable::card_shift());
 
-  // We'll use this register as the TLS base address and also later on
-  // to hold the byte_map_base.
-  Register thread = r15_thread;
-  Register tmp = rscratch1;
-
-  Address curr_ct_holder_addr(thread, in_bytes(ShenandoahThreadLocalData::card_table_offset()));
+  Address curr_ct_holder_addr(r15_thread, in_bytes(ShenandoahThreadLocalData::card_table_offset()));
   __ movptr(tmp, curr_ct_holder_addr);
   Address card_addr(tmp, obj, Address::times_1);
 
@@ -468,7 +464,7 @@ void ShenandoahBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet 
   // 3: post-barrier: card barrier needs store address
   bool storing_non_null = (val != noreg);
   if (ShenandoahBarrierSet::need_card_barrier(decorators, type) && storing_non_null) {
-    card_barrier(masm, tmp1);
+    card_barrier(masm, tmp1, tmp2);
   }
 }
 
