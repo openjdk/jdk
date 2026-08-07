@@ -27,14 +27,18 @@
  * @summary Test jvmti class file loader hook interaction with AppCDS
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @requires vm.cds
+ * @requires vm.cds.supports.aot.class.linking
  * @requires vm.jvmti
  * @build ClassFileLoadHook
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/native ClassFileLoadHookTest
  */
 
 
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
+import jdk.test.lib.cds.CDSAppTester;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.helpers.ClassFileInstaller;
 
@@ -46,12 +50,15 @@ public class ClassFileLoadHookTest {
         "java/sql/SQLException"
     };
 
+    static final String mainClass = "ClassFileLoadHook";
+    static String wbJar;
+    static String appJar;
+    static String useWb;
+
     public static void main(String[] args) throws Exception {
-        String wbJar =
-            ClassFileInstaller.writeJar("WhiteBox.jar", "jdk.test.whitebox.WhiteBox");
-        String appJar =
-            ClassFileInstaller.writeJar("ClassFileLoadHook.jar", sharedClasses);
-        String useWb = "-Xbootclasspath/a:" + wbJar;
+        wbJar = ClassFileInstaller.writeJar("WhiteBox.jar", "jdk.test.whitebox.WhiteBox");
+        appJar = ClassFileInstaller.writeJar("ClassFileLoadHook.jar", sharedClasses);
+        useWb = "-Xbootclasspath/a:" + wbJar;
 
         // First, run the test class directly, w/o sharing, as a baseline reference
         CDSOptions opts = (new CDSOptions())
@@ -61,7 +68,7 @@ public class ClassFileLoadHookTest {
                        "-XX:+WhiteBoxAPI",
                        useWb,
                        "-agentlib:SimpleClassFileLoadHook=LoadMe,beforeHook,after_Hook",
-                       "ClassFileLoadHook",
+                       mainClass,
                        "" + ClassFileLoadHook.TestCaseId.SHARING_OFF_CFLH_ON);
         CDSTestUtils.run(opts)
                     .assertNormalExit();
@@ -71,7 +78,7 @@ public class ClassFileLoadHookTest {
         OutputAnalyzer out = TestCommon.exec(appJar,
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+WhiteBoxAPI", useWb,
-                "ClassFileLoadHook",
+                mainClass,
                 "" + ClassFileLoadHook.TestCaseId.SHARING_ON_CFLH_OFF);
 
         TestCommon.checkExec(out);
@@ -82,7 +89,7 @@ public class ClassFileLoadHookTest {
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+WhiteBoxAPI", useWb,
                 "-agentlib:SimpleClassFileLoadHook=LoadMe,beforeHook,after_Hook",
-                "ClassFileLoadHook",
+                mainClass,
                 "" + ClassFileLoadHook.TestCaseId.SHARING_AUTO_CFLH_ON);
 
         opts = (new CDSOptions()).setXShareMode("auto");
@@ -93,27 +100,69 @@ public class ClassFileLoadHookTest {
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+WhiteBoxAPI", useWb,
                 "-agentlib:SimpleClassFileLoadHook=LoadMe,beforeHook,after_Hook",
-                "ClassFileLoadHook",
+                mainClass,
                 "" + ClassFileLoadHook.TestCaseId.SHARING_ON_CFLH_ON);
         TestCommon.checkExec(out);
 
         // JEP 483: if dumped with -XX:+AOTClassLinking, cannot use archive when CFLH is enabled
-        TestCommon.testDump(appJar, sharedClasses, useWb, "-XX:+AOTClassLinking");
-        out = TestCommon.exec(appJar,
-                "-XX:+UnlockDiagnosticVMOptions",
-                "-XX:+WhiteBoxAPI", useWb,
-                "-agentlib:SimpleClassFileLoadHook=LoadMe,beforeHook,after_Hook",
-                "-Xlog:aot",
-                "-Xlog:cds",
-                "ClassFileLoadHook",
-                "" + ClassFileLoadHook.TestCaseId.SHARING_ON_CFLH_ON);
-        if (out.contains("Using AOT-linked classes: false (static archive: no aot-linked classes")) {
-            // JTREG is executed with VM options that do not support -XX:+AOTClassLinking, so
-            // the static archive was not created with aot-linked classes.
-            out.shouldHaveExitValue(0);
-        } else {
-            out.shouldContain("shared archive file has aot-linked classes. It cannot be used when JVMTI ClassFileLoadHook is in use.");
-            out.shouldNotHaveExitValue(0);
+        Tester t = new Tester();
+        t.setCheckExitValue(false);
+        t.runAOTWorkflow();
+    }
+
+    static class Tester extends CDSAppTester {
+        public Tester() {
+            super(mainClass);
+        }
+
+        @Override
+        public String classpath(RunMode runMode) {
+            return appJar;
+        }
+
+        @Override
+        public String[] vmArgs(RunMode runMode) {
+            if (runMode == RunMode.TRAINING) {
+                return new String[] {
+                    "-XX:+UnlockDiagnosticVMOptions",
+                    "-XX:+WhiteBoxAPI", useWb,
+                    "-XX:+AOTClassLinking",
+                    "-agentlib:SimpleClassFileLoadHook=LoadMe,beforeHook,after_Hook",
+                    "-Xlog:aot,cds"
+                };
+            } else if (runMode == RunMode.ASSEMBLY) {
+                return new String[] {
+                    "-XX:+UnlockDiagnosticVMOptions",
+                    "-XX:+WhiteBoxAPI", useWb,
+                    "-XX:+AOTClassLinking",
+                    "-agentlib:SimpleClassFileLoadHook=LoadMe,beforeHook,after_Hook",
+                    "-Xlog:aot,cds"
+                };
+            } else {
+                return new String[] {
+                    "-XX:+UnlockDiagnosticVMOptions",
+                    "-XX:+WhiteBoxAPI", useWb,
+                    "-agentlib:SimpleClassFileLoadHook=LoadMe,beforeHook,after_Hook",
+                    "-Xlog:aot,cds"
+                };
+            }
+        }
+
+        @Override
+        public String[] appCommandLine(RunMode runMode) {
+            if (runMode == RunMode.TRAINING) {
+                return new String[] { mainClass, "" + ClassFileLoadHook.TestCaseId.SHARING_OFF_CFLH_ON };
+            } else {
+                return new String[] { mainClass, "" + ClassFileLoadHook.TestCaseId.SHARING_ON_CFLH_ON };
+            }
+        }
+
+        @Override
+        public void checkExecution(OutputAnalyzer out, RunMode runMode) {
+            if (runMode == RunMode.PRODUCTION) {
+                out.shouldContain("AOT cache has aot-linked classes. It cannot be used when JVMTI ClassFileLoadHook is in use.");
+                out.shouldNotHaveExitValue(0);
+            }
         }
     }
 }
