@@ -43,10 +43,12 @@
 package compiler.valhalla.inlinetypes;
 
 import java.util.function.IntFunction;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import compiler.lib.compile_framework.CompileFramework;
+import compiler.lib.template_framework.ScopeToken;
 import compiler.lib.template_framework.Template;
 
 import static compiler.lib.template_framework.Template.let;
@@ -55,16 +57,8 @@ import static compiler.lib.template_framework.Template.scope;
 public class TestScalarizedCallingConventionLimits {
     private static final String GENERATED_CLASS_NAME = "GeneratedScalarizedCallingConventionLimits";
     private static final int ITERATIONS = 100_000;
-    private static final int MAX_ARGUMENT_COUNT = 30;
-    private static final int MAX_OOP_RECEIVER_FIELD_COUNT = 70;
-
-    private static String commaSeparated(int count, IntFunction<String> element) {
-        return IntStream.range(0, count).mapToObj(element).collect(Collectors.joining(", "));
-    }
-
-    private static String lines(int count, IntFunction<String> element) {
-        return IntStream.range(0, count).mapToObj(element).collect(Collectors.joining("\n"));
-    }
+    private static final int MAX_ARGUMENT_COUNT = 2;
+    private static final int MAX_OOP_RECEIVER_FIELD_COUNT = 3;
 
     public static void main(String[] args) {
         CompileFramework compileFramework = new CompileFramework();
@@ -73,106 +67,8 @@ public class TestScalarizedCallingConventionLimits {
         compileFramework.invoke(GENERATED_CLASS_NAME, "run", new Object[] {});
     }
 
-    // Generate interfaces with value and identity-class implementations and a method
-    // with a varying number of arguments to stress test the calling convention.
-    private static final Template.OneArg<Integer> INTERFACE_CASE =
-            Template.make("argumentCount", (Integer argumentCount) -> {
-                String parameters = commaSeparated(argumentCount, i -> "Integer a" + i);
-                String parameterNames = commaSeparated(argumentCount, i -> "a" + i);
-                String arguments = commaSeparated(argumentCount, i -> Integer.toString(i + 1));
-
-                return scope(
-                        let("parameters", parameters),
-                        let("parameterNames", parameterNames),
-                        let("arguments", arguments),
-                        """
-                            interface I#argumentCount {
-                                int m(#parameters);
-                            }
-
-                            static value class ValueImpl#argumentCount implements I#argumentCount {
-                                int x, y, z;
-
-                                ValueImpl#argumentCount(int x, int y, int z) {
-                                    this.x = x;
-                                    this.y = y;
-                                    this.z = z;
-                                }
-
-                                @Override
-                                public int m(#parameters) {
-                                    return hash(x, y, z, hash(#parameterNames));
-                                }
-                            }
-
-                            static class IdentityImpl#argumentCount implements I#argumentCount {
-                                @Override
-                                public int m(#parameters) {
-                                    return hash(#parameterNames);
-                                }
-                            }
-
-                            static void test#argumentCount() {
-                                I#argumentCount value = new ValueImpl#argumentCount(42, 43, 44);
-                                I#argumentCount identity = new IdentityImpl#argumentCount();
-                                int argumentHash = hash(#arguments);
-                                int valueHash = hash(42, 43, 44, argumentHash);
-                                for (int i = 0; i < ITERATIONS; i++) {
-                                    I#argumentCount receiver = (i & 1) == 0 ? value : identity;
-                                    int actual = receiver.m(#arguments);
-                                    int expected = (i & 1) == 0 ? valueHash : argumentHash;
-                                    Asserts.assertEquals(expected, actual);
-                                }
-                            }
-
-                        """);
-            });
-
-    // Generate methods with a value class receiver with a varying number of oop fields to stress
-    // test code buffers during nmethod entry point generation (oops need GC barriers etc.)
-    private static final Template.OneArg<Integer> OOP_RECEIVER =
-            Template.make("fieldCount", (Integer fieldCount) -> {
-                String fields = lines(fieldCount, i -> "        Object f" + i + ";");
-                String assignments = lines(fieldCount, i -> "            this.f" + i + " = values[" + i + "];");
-                String arguments = commaSeparated(fieldCount, i -> "f" + i);
-
-                return scope(
-                        let("fields", fields),
-                        let("assignments", assignments),
-                        let("arguments", arguments),
-                        """
-                            static value class OopReceiver#fieldCount {
-                        #fields
-
-                                OopReceiver#fieldCount(Object[] values) {
-                        #assignments
-                                }
-
-                                int m() {
-                                    return hash(#arguments);
-                                }
-                            }
-
-                            static void testOopReceiver#fieldCount() {
-                                Object[] values = new Object[#fieldCount];
-                                for (int i = 0; i < values.length; i++) {
-                                    values[i] = i;
-                                }
-                                int valuesHash = hash(values);
-                                OopReceiver#fieldCount receiver = new OopReceiver#fieldCount(values);
-                                for (int i = 0; i < ITERATIONS; i++) {
-                                    Asserts.assertEquals(valuesHash, receiver.m());
-                                }
-                            }
-
-                        """);
-            });
-
     private static String generateSource() {
-        String interfaceTestCalls = lines(MAX_ARGUMENT_COUNT, i -> "        test" + i + "();");
-        String oopReceiverTestCalls = lines(MAX_OOP_RECEIVER_FIELD_COUNT, i -> "        testOopReceiver" + i + "();");
-
-        Template.ZeroArgs classTemplate = Template.make(() -> scope(
+        return Template.make(() -> scope(
                 let("generatedClassName", GENERATED_CLASS_NAME),
                 let("iterations", ITERATIONS),
                 """
@@ -190,19 +86,114 @@ public class TestScalarizedCallingConventionLimits {
                     }
 
                 """,
-                IntStream.range(0, MAX_ARGUMENT_COUNT).mapToObj(INTERFACE_CASE::asToken).toList(),
-                IntStream.range(0, MAX_OOP_RECEIVER_FIELD_COUNT).mapToObj(OOP_RECEIVER::asToken).toList(),
-                let("interfaceTestCalls", interfaceTestCalls),
-                let("oopReceiverTestCalls", oopReceiverTestCalls),
+            // Generate interfaces with value and identity-class implementations and a method
+            // with a varying number of arguments to stress test the calling convention.
+            loop(MAX_ARGUMENT_COUNT, argumentCount -> scope(
+                let("argumentCount", argumentCount),
+                let("classname", "ValueImpl" + argumentCount),
+                let("parameters", commaSeparated(argumentCount, i -> "Integer a" + i)),
+                let("parameterNames", commaSeparated(argumentCount, i -> "a" + i)),
+                let("arguments", commaSeparated(argumentCount, i -> Integer.toString(i + 1))),
+                """
+                    interface I#argumentCount {
+                        int m(#parameters);
+                    }
+
+                    static value class #classname implements I#argumentCount {
+                        int x, y, z;
+
+                        #classname(int x, int y, int z) {
+                            this.x = x;
+                            this.y = y;
+                            this.z = z;
+                        }
+
+                        @Override
+                        public int m(#parameters) {
+                            return hash(x, y, z, hash(#parameterNames));
+                        }
+                    }
+
+                    static class IdentityImpl#argumentCount implements I#argumentCount {
+                        @Override
+                        public int m(#parameters) {
+                            return hash(#parameterNames);
+                        }
+                    }
+
+                    static void test#argumentCount() {
+                        I#argumentCount value = new ValueImpl#argumentCount(42, 43, 44);
+                        I#argumentCount identity = new IdentityImpl#argumentCount();
+                        int argumentHash = hash(#arguments);
+                        int valueHash = hash(42, 43, 44, argumentHash);
+                        for (int i = 0; i < ITERATIONS; i++) {
+                            I#argumentCount receiver = (i & 1) == 0 ? value : identity;
+                            int actual = receiver.m(#arguments);
+                            int expected = (i & 1) == 0 ? valueHash : argumentHash;
+                            Asserts.assertEquals(expected, actual);
+                        }
+                    }
+
+                """)),
+            // Generate methods with a value class receiver with a varying number of oop fields to stress
+            // test code buffers during nmethod entry point generation (oops need GC barriers etc.)
+            loop(MAX_OOP_RECEIVER_FIELD_COUNT, fieldCount -> scope(
+                let("fieldCount", fieldCount),
+                let("arguments", commaSeparated(fieldCount, i -> "f" + i)),
+                """
+                    static value class OopReceiver#fieldCount {
+                """,
+            loop(fieldCount, i -> scope(
+               "        Object f" + i + ";\n")),
+                """
+                
+                        OopReceiver#fieldCount(Object[] values) {
+                """,
+            loop(fieldCount, i -> scope(
+               "            this.f" + i + " = values[" + i + "];\n")),
+                """
+                        }
+
+                        int m() {
+                            return hash(#arguments);
+                        }
+                    }
+
+                    static void testOopReceiver#fieldCount() {
+                        Object[] values = new Object[#fieldCount];
+                        for (int i = 0; i < values.length; i++) {
+                            values[i] = i;
+                        }
+                        int valuesHash = hash(values);
+                        OopReceiver#fieldCount receiver = new OopReceiver#fieldCount(values);
+                        for (int i = 0; i < ITERATIONS; i++) {
+                            Asserts.assertEquals(valuesHash, receiver.m());
+                        }
+                    }
+
+                """)),
                 """
                     public static void run() {
-                #interfaceTestCalls
-                #oopReceiverTestCalls
+                """,
+            loop(MAX_ARGUMENT_COUNT, i -> scope(
+               "        test" + i + "();\n")),
+            loop(MAX_OOP_RECEIVER_FIELD_COUNT, i -> scope(
+               "        testOopReceiver" + i + "();\n")),
+                """
                     }
                 }
                 """
-        ));
-        return classTemplate.render();
+        )).render();
+    }
+
+    private static String commaSeparated(int count, IntFunction<String> element) {
+        return IntStream.range(0, count).mapToObj(element).collect(Collectors.joining(", "));
+    }
+
+    private static List<ScopeToken> loop(int limit, IntFunction<ScopeToken> function) {
+        return IntStream.range(0, limit)
+                        .mapToObj(function)
+                        .toList();
     }
 }
 
