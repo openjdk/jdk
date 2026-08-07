@@ -1000,9 +1000,15 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
 
 void LIR_Assembler::emit_alloc_obj(LIR_OpAllocObj* op) {
   if (op->init_check()) {
-    __ lbu(t0, Address(op->klass()->as_register(),
-                       InstanceKlass::init_state_offset()));
-    __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
+    if (UseZalasr) {
+      __ lb_aq(t0, Address(op->klass()->as_register(),
+                           InstanceKlass::init_state_offset()));
+      __ zext(t0, t0, 8);
+    } else {
+      __ lbu(t0, Address(op->klass()->as_register(),
+                         InstanceKlass::init_state_offset()));
+      __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
+    }
     __ mv(t1, (u1)InstanceKlass::fully_initialized);
     add_debug_info_for_null_check_here(op->stub()->info());
     __ bne(t0, t1, *op->stub()->entry(), /* is_far */ true);

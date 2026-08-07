@@ -1189,6 +1189,55 @@ public:
 
 #undef INSN
 
+#define INSN(NAME)                                                          \
+  void NAME(Register Rd, const Address& adr, Register temp = t0) {           \
+    assert(adr.getMode() == Address::base_plus_offset, "unsupported");       \
+    Register base = adr.base();                                              \
+    intptr_t disp = adr.offset();                                            \
+    Register addr = base;                                                    \
+    if (disp != 0) {                                                         \
+      la(temp, Address(base, disp));                                      \
+      addr = temp;                                                          \
+    }                                                                        \
+    Assembler::NAME(Rd, addr);                                               \
+  }
+
+INSN(lb_aq);
+INSN(lb_aqrl);
+INSN(lh_aq);
+INSN(lh_aqrl);
+INSN(lw_aq);
+INSN(lw_aqrl);
+INSN(ld_aq);
+INSN(ld_aqrl);
+
+#undef INSN
+
+#define INSN(NAME)                                                          \
+  void NAME(Register Rs2, const Address& adr, Register temp = t0) {          \
+    assert(adr.getMode() == Address::base_plus_offset, "unsupported");       \
+    Register base = adr.base();                                              \
+    intptr_t disp = adr.offset();                                            \
+    Register addr = base;                                                    \
+    if (disp != 0) {                                                         \
+      assert_different_registers(Rs2, temp);                                 \
+      la(temp, Address(base, disp));                                         \
+      addr = temp;                                                           \
+    }                                                                        \
+    Assembler::NAME(Rs2, addr);                                              \
+  }
+
+INSN(sb_rl);
+INSN(sb_aqrl);
+INSN(sh_rl);
+INSN(sh_aqrl);
+INSN(sw_rl);
+INSN(sw_aqrl);
+INSN(sd_rl);
+INSN(sd_aqrl);
+
+#undef INSN
+
 #define INSN(NAME)                                                                                 \
   void NAME(FloatRegister Rs, address dest, Register temp = t0) {                                  \
     assert_cond(dest != nullptr);                                                                  \

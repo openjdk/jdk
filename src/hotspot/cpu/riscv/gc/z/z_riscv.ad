@@ -116,7 +116,7 @@ instruct zLoadP(iRegPNoSp dst, memory mem, iRegPNoSp tmp, rFlagsReg cr)
 // Store Pointer
 instruct zStoreP(memory mem, iRegP src, iRegPNoSp tmp1, iRegPNoSp tmp2, rFlagsReg cr)
 %{
-  predicate(UseZGC && n->as_Store()->barrier_data() != 0);
+  predicate(UseZGC && !needs_releasing_store(n) && n->as_Store()->barrier_data() != 0);
   match(Set mem (StoreP mem src));
   effect(TEMP tmp1, TEMP tmp2, KILL cr);
 
@@ -126,6 +126,22 @@ instruct zStoreP(memory mem, iRegP src, iRegPNoSp tmp1, iRegPNoSp tmp2, rFlagsRe
     const Address ref_addr(as_Register($mem$$base), $mem$$disp);
     z_store_barrier(masm, this, ref_addr, $src$$Register, $tmp1$$Register, $tmp2$$Register, false /* is_atomic */);
     __ sd($tmp1$$Register, ref_addr);
+  %}
+  ins_pipe(pipe_serial);
+%}
+
+instruct zStorePVolatile(indirect mem, iRegP src, iRegPNoSp tmp1, iRegPNoSp tmp2, rFlagsReg cr)
+%{
+  predicate(UseZGC && needs_releasing_store(n) && n->as_Store()->barrier_data() != 0);
+  match(Set mem (StoreP mem src));
+  effect(TEMP tmp1, TEMP tmp2, KILL cr);
+
+  ins_cost(VOLATILE_REF_COST);
+  format %{ "sd.rl  $mem, $src\t# ptr, @zStorePVolatile" %}
+  ins_encode %{
+    guarantee($mem$$disp == 0, "impossible encoding");
+    z_store_barrier(masm, this, Address($mem$$Register), $src$$Register, $tmp1$$Register, $tmp2$$Register, false /* is_atomic */);
+    __ sd_rl($tmp1$$Register, Address($mem$$Register));
   %}
   ins_pipe(pipe_serial);
 %}

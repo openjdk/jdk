@@ -75,6 +75,7 @@
 #define   RISCV_HWPROBE_EXT_ZFHMIN              (1 << 28)
 #define   RISCV_HWPROBE_EXT_ZIHINTNTL           (1 << 29)
 #define   RISCV_HWPROBE_EXT_ZVFH                (1 << 30)
+#define   RISCV_HWPROBE_EXT_ZALASR              (1ULL << 59)
 #define   RISCV_HWPROBE_EXT_ZVFHMIN             (1ULL << 31)
 #define   RISCV_HWPROBE_EXT_ZFA                 (1ULL << 32)
 #define   RISCV_HWPROBE_EXT_ZTSO                (1ULL << 33)
@@ -200,6 +201,11 @@ void RiscvHwprobe::add_features_from_query_result() {
 #ifndef PRODUCT
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZACAS)) {
     VM_Version::ext_Zacas.enable_feature();
+  }
+#endif
+#ifndef PRODUCT
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZALASR)) {
+    VM_Version::ext_Zalasr.enable_feature();
   }
 #endif
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZBA)) {
