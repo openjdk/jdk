@@ -732,7 +732,9 @@ instruct g1GetAndSetNAcq(indirect mem, iRegN newval, iRegPNoSp tmp1, iRegPNoSp t
 
 instruct g1LoadP(iRegPNoSp dst, indirect mem, iRegPNoSp tmp1, iRegPNoSp tmp2, rFlagsReg cr)
 %{
-  predicate(UseG1GC && n->as_Load()->barrier_data() != 0);
+  // This instruction is only used for reference loading (Reference::get())
+  // and does not need an acquiring counterpart. The same holds for g1LoadN.
+  predicate(UseG1GC && !needs_acquiring_load(n) && n->as_Load()->barrier_data() != 0);
   match(Set dst (LoadP mem));
   effect(TEMP dst, TEMP tmp1, TEMP tmp2, KILL cr);
   ins_cost(LOAD_COST + BRANCH_COST);
@@ -751,7 +753,7 @@ instruct g1LoadP(iRegPNoSp dst, indirect mem, iRegPNoSp tmp1, iRegPNoSp tmp2, rF
 
 instruct g1LoadN(iRegNNoSp dst, indirect mem, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, rFlagsReg cr)
 %{
-  predicate(UseG1GC && n->as_Load()->barrier_data() != 0);
+  predicate(UseG1GC && !needs_acquiring_load(n) && n->as_Load()->barrier_data() != 0);
   match(Set dst (LoadN mem));
   effect(TEMP dst, TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
   ins_cost(LOAD_COST + BRANCH_COST);
