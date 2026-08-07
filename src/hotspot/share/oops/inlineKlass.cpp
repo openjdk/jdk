@@ -566,13 +566,13 @@ void InlineKlass::Members::print_on(outputStream* st) const {
   st->print_cr(BULLET"unpack handler:                    " PTR_FORMAT, p2i(_unpack_handler));
   st->print_cr(BULLET"null reset offset:                 %d", _null_reset_value_offset);
   st->print_cr(BULLET"payload offset:                    %d", _payload_offset);
-  st->print_cr(BULLET"payload size (bytes):              %d", _payload_size_in_bytes);
+  st->print_cr(BULLET"payload size (bytes):              %d", layout_size_in_bytes(LayoutKind::BUFFERED));
   st->print_cr(BULLET"payload alignment:                 %d", _payload_alignment);
-  st->print_cr(BULLET"null-free non-atomic size (bytes): %d", _null_free_non_atomic_size_in_bytes);
+  st->print_cr(BULLET"null-free non-atomic size (bytes): %d", layout_size_in_bytes(LayoutKind::NULL_FREE_NON_ATOMIC_FLAT));
   st->print_cr(BULLET"null-free non-atomic alignment:    %d", _null_free_non_atomic_alignment);
-  st->print_cr(BULLET"null-free atomic size (bytes):     %d", _null_free_atomic_size_in_bytes);
-  st->print_cr(BULLET"nullable atomic size (bytes):      %d", _nullable_atomic_size_in_bytes);
-  st->print_cr(BULLET"nullable non-atomic size (bytes):  %d", _nullable_non_atomic_size_in_bytes);
+  st->print_cr(BULLET"null-free atomic size (bytes):     %d", layout_size_in_bytes(LayoutKind::NULL_FREE_ATOMIC_FLAT));
+  st->print_cr(BULLET"nullable atomic size (bytes):      %d", layout_size_in_bytes(LayoutKind::NULLABLE_ATOMIC_FLAT));
+  st->print_cr(BULLET"nullable non-atomic size (bytes):  %d", layout_size_in_bytes(LayoutKind::NULLABLE_NON_ATOMIC_FLAT));
   st->print_cr(BULLET"null marker offset:                %d", _null_marker_offset);
   st->print_cr(BULLET"fast acmp offset:                  %d", _fast_acmp_offset);
   st->print_cr(BULLET"fast acmp mask:                    " INT64_FORMAT_X_0, _fast_acmp_mask);

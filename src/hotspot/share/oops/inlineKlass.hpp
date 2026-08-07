@@ -116,10 +116,12 @@ class InlineKlass: public InstanceKlass {
     void print_on(outputStream* st) const;
 
     int& layout_size_in_bytes(LayoutKind lk) {
-      return _layout_sizes[static_cast<size_t>(lk)];
+      // - 1 to ignore REFERENCE
+      return _layout_sizes[static_cast<size_t>(lk) - 1];
     }
     const int& layout_size_in_bytes(LayoutKind lk) const {
-      return _layout_sizes[static_cast<size_t>(lk)];
+      // - 1 to ignore REFERENCE
+      return _layout_sizes[static_cast<size_t>(lk) - 1];
     }
   };
 
