@@ -1329,9 +1329,8 @@ void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
 }
 
 static void increment_mdo(MacroAssembler *C1_masm, Address dst, int32_t src) {
-  auto masm = [C1_masm]() { return (C1_MacroAssembler*)C1_masm; };
-  assert(masm()->is_C1_MacroAssembler(), "must be");
-
+  auto as_C1_masm = C1_masm->as_C1_MacroAssembler();
+  auto masm = [=]() { return as_C1_masm; };
   Label nope;
   int ratio_shift = exact_log2(ProfileCaptureRatio);
   if (ProfileCaptureRatio > 1) {
