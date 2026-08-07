@@ -57,8 +57,9 @@ import static compiler.lib.template_framework.Template.scope;
 public class TestScalarizedCallingConventionLimits {
     private static final String GENERATED_CLASS_NAME = "GeneratedScalarizedCallingConventionLimits";
     private static final int ITERATIONS = 100_000;
-    private static final int MAX_ARGUMENT_COUNT = 2;
-    private static final int MAX_OOP_RECEIVER_FIELD_COUNT = 3;
+    private static final int MAX_ARGUMENT_COUNT = 30;
+    private static final int MAX_OOP_RECEIVER_FIELD_COUNT = 70;
+
 
     public static void main(String[] args) {
         CompileFramework compileFramework = new CompileFramework();
