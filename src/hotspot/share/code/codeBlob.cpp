@@ -129,7 +129,7 @@ unsigned int CodeBlob::allocation_size(CodeBuffer* cb, int header_size) {
 }
 
 CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size, uint16_t header_size,
-                   int16_t frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments,
+                   int frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments,
                    int mutable_data_size) :
   _oop_maps(nullptr), // will be set by set_oop_maps() call
   _name(name),
@@ -141,9 +141,9 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size
   _data_offset(_content_offset + align_up(cb->total_content_size(), oopSize)),
   _frame_size(frame_size),
   _mutable_data_size(mutable_data_size),
+  _frame_complete_offset(frame_complete_offset),
   S390_ONLY(_ctable_offset(0) COMMA)
   _header_size(header_size),
-  _frame_complete_offset(frame_complete_offset),
   _kind(kind),
   _caller_must_gc_arguments(caller_must_gc_arguments)
 {
@@ -183,9 +183,9 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, int size, uint16_t heade
   _data_offset(size),
   _frame_size(0),
   _mutable_data_size(0),
+  _frame_complete_offset(CodeOffsets::frame_never_safe),
   S390_ONLY(_ctable_offset(0) COMMA)
   _header_size(header_size),
-  _frame_complete_offset(CodeOffsets::frame_never_safe),
   _kind(kind),
   _caller_must_gc_arguments(false)
 {
@@ -321,7 +321,7 @@ RuntimeBlob::RuntimeBlob(
   CodeBuffer* cb,
   int         size,
   uint16_t    header_size,
-  int16_t     frame_complete,
+  int         frame_complete,
   int         frame_size,
   OopMapSet*  oop_maps,
   bool        caller_must_gc_arguments)
@@ -603,7 +603,7 @@ RuntimeStub::RuntimeStub(
   const char* name,
   CodeBuffer* cb,
   int         size,
-  int16_t     frame_complete,
+  int         frame_complete,
   int         frame_size,
   OopMapSet*  oop_maps,
   bool        caller_must_gc_arguments
@@ -615,7 +615,7 @@ RuntimeStub::RuntimeStub(
 
 RuntimeStub* RuntimeStub::new_runtime_stub(const char* stub_name,
                                            CodeBuffer* cb,
-                                           int16_t frame_complete,
+                                           int frame_complete,
                                            int frame_size,
                                            OopMapSet* oop_maps,
                                            bool caller_must_gc_arguments,
