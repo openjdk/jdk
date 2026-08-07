@@ -40,6 +40,7 @@
 class MacroAssembler;
 class AbstractAssembler;
 class Label;
+class C1_MacroAssembler;
 
 /**
  * Labels represent destinations for control transfer instructions.  Such
@@ -218,9 +219,7 @@ class AbstractAssembler : public ResourceObj  {
   // Code emission & accessing
   address addr_at(int pos) const { return code_section()->start() + pos; }
 
-#ifdef ASSERT
-  virtual bool is_C1_MacroAssembler() { return false; }
-#endif
+  virtual C1_MacroAssembler* as_C1_MacroAssembler() { ShouldNotReachHere(); return nullptr; }
 
  protected:
   // This routine is called with a label is used for an address.
