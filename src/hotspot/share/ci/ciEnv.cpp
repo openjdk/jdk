@@ -1075,17 +1075,6 @@ void ciEnv::register_method(ciMethod* target,
                                handler_table, inc_table,
                                compiler, CompLevel(task()->comp_level()),
                                nmethod::Flags(has_unsafe_access, has_wide_vectors, has_monitors, has_scoped_access));
-    {
-      NoSafepointVerifier nsv;
-      if (nm != nullptr) {
-        // Compilation succeeded, post what we know about it
-        nm->post_compiled_method(task());
-        task()->set_num_inlined_bytecodes(num_inlined_bytecodes());
-      } else {
-        // The CodeCache is full.
-        record_failure("code cache is full");
-      }
-    }
 
     // Free codeBlobs
     code_buffer->free_blob();
@@ -1133,6 +1122,16 @@ void ciEnv::register_method(ciMethod* target,
         }
       }
     }
+  }
+
+  NoSafepointVerifier nsv;
+  if (nm != nullptr) {
+    // Compilation succeeded, post what we know about it
+    nm->post_compiled_method(task());
+    task()->set_num_inlined_bytecodes(num_inlined_bytecodes());
+  } else {
+    // The CodeCache is full.
+    record_failure("code cache is full");
   }
 
   // safepoints are allowed again
