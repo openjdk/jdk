@@ -2520,6 +2520,14 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
              u->Opcode() == Op_URShiftI || u->Opcode() == Op_URShiftL;
     });
   }
+  // MulNode::AndIL_sum_and_mask can optimize:
+  // AndX(AddX(x, y), mask) -> AndX(x, mask)
+  if (use_op == Op_AddI || use_op == Op_AddL) {
+    const int and_op = (use_op == Op_AddI) ? Op_AndI : Op_AndL;
+    add_users_to_worklist_if(worklist, use, [&](Node* u) {
+      return u->Opcode() == and_op;
+    });
+  }
   // Check for redundant conversion patterns:
   // ConvD2L->ConvL2D->ConvD2L
   // ConvF2I->ConvI2F->ConvF2I
