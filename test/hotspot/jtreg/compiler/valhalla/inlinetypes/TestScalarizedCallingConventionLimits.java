@@ -147,7 +147,7 @@ public class TestScalarizedCallingConventionLimits {
             loop(fieldCount, i -> scope(
                "        Object f" + i + ";\n")),
                 """
-                
+
                         OopReceiver#fieldCount(Object[] values) {
                 """,
             loop(fieldCount, i -> scope(
