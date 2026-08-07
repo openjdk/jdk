@@ -1337,7 +1337,7 @@ static int exec_jvm_with_java_tool_options(const char* java_launcher_path, TRAPS
   //
   // Note: the env variables are set only for the child process. They are not changed
   // for the current process. See java.lang.ProcessBuilder::environment().
-  JavaValue result(T_OBJECT);
+  JavaValue result(T_INT);
   JavaCallArguments javacall_args(2);
   javacall_args.push_oop(launcher);
   javacall_args.push_oop(launcher_args);
