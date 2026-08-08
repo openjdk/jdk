@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Microsoft Corporation. All rights reserved.
+ * Copyright (c) 2020, 2026, Microsoft Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,7 @@
 #include "os_windows.hpp"
 
 inline bool os::register_code_area(char *low, char *high) {
-  // Using Vectored Exception Handling
-  return true;
+  return os::win32::register_code_area(low, high);
 }
 
 #define HAVE_PLATFORM_PRINT_NATIVE_STACK 1

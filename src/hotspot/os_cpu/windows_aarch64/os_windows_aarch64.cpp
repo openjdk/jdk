@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Microsoft Corporation. All rights reserved.
+ * Copyright (c) 2020, 2026, Microsoft Corporation. All rights reserved.
  * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -32,6 +32,7 @@
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
 #include "memory/allocation.inline.hpp"
+#include "memory/resourceArea.hpp"
 #include "os_windows.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
@@ -59,6 +60,121 @@
 # include <intrin.h>
 
 #define REG_BCP X22
+
+// Language-specific exception handler installed for the whole code cache.
+LONG HandleException(IN PEXCEPTION_RECORD ExceptionRecord,
+    IN ULONG64 EstablisherFrame, IN OUT PCONTEXT ContextRecord,
+    IN OUT PDISPATCHER_CONTEXT DispatcherContext) {
+  // Vectored exception handling resolves recoverable exceptions at code cache
+  // addresses, so if anything reaches here, it is a genuine crash.
+  Thread* thread = Thread::current_or_null_safe();
+  VMError::report_and_die(thread, ExceptionRecord->ExceptionCode,
+                          (address)ContextRecord->Pc, ExceptionRecord, ContextRecord);
+  return ExceptionContinueSearch; // only reached under UseOSErrorReporting
+}
+
+typedef struct {
+  unsigned char ExceptionHandlerInstr[32];
+  UNWIND_INFO_EH_ONLY unw;
+  UNWIND_INFO_EH_ONLY unw_tail;
+} DynamicCodeData, *pDynamicCodeData;
+
+// The .xdata (UNWIND_INFO) record on AArch64 can contain information of a
+// function that is just under 1MB in size, since the function length, which
+// tracks the size of the function in multiples of 4 bytes, is limited to 18
+// bits.  More precisely, the limit is (2^18 - 1) * 4 bytes.
+static const uint32_t kMaxFragmentSize = ((1u << 18) - 1) * 4;
+
+static void initialize_unwind_info(PUNWIND_INFO_EH_ONLY unwind_info,
+                                   size_t fragment_size,
+                                   DWORD handler_rva) {
+  guarantee(fragment_size <= kMaxFragmentSize, "invalid code cache fragment size");
+  guarantee((fragment_size % 4) == 0, "code cache fragment size must be 4-byte aligned");
+  unwind_info->FunctionLength = fragment_size / 4;
+  unwind_info->Version        = 0;
+  unwind_info->X              = 1;    // exception handler present
+  unwind_info->E              = 1;    // single (empty) epilog described inline
+  unwind_info->EpilogCount    = 0;
+  unwind_info->CodeWords      = 1;
+  unwind_info->UnwindCode0    = 0xE4; // "end"
+  unwind_info->UnwindCode1    = 0;
+  unwind_info->UnwindCode2    = 0;
+  unwind_info->UnwindCode3    = 0;
+  unwind_info->ExceptionHandler = handler_rva;
+}
+
+//
+// Register our CodeCache area with the OS so it will dispatch exceptions that
+// unwind into our dynamically generated code to HandleException.
+//
+// Arguments:  low and high are the addresses of the full reserved
+// codeCache area.
+//
+bool os::win32::register_code_area(char *low, char *high) {
+  ResourceMark rm;
+  const size_t code_size = high - low;
+  guarantee((code_size % 4) == 0, "CodeCache size must be 4-byte aligned");
+
+  // Depending on the size of the code cache area, we need a variable number of
+  // .pdata records. Instead of allocating and managing a separate area of
+  // memory for the .pdata records, we simply allocate space for it after the
+  // unwind record, take care that the addresses associated with the .pdata
+  // records are 4-byte aligned.
+  const uint32_t num_entries = (uint32_t) ((code_size + kMaxFragmentSize - 1) / kMaxFragmentSize);
+  const size_t blob_size = align_up(sizeof(DynamicCodeData), sizeof(DWORD)) +
+                           num_entries * sizeof(RUNTIME_FUNCTION);
+  BufferBlob* blob = BufferBlob::create("CodeCache Exception Handler",
+      (uint)blob_size);
+  CodeBuffer cb(blob);
+  MacroAssembler* masm = new MacroAssembler(&cb);
+  pDynamicCodeData pDCD = (pDynamicCodeData) masm->pc();
+
+  // The `HandleException()` function coukd be more than 4GB (32 bits) away from
+  // `low`, so we cannot store the relative address of that function in the
+  // `ExceptionHandler` field.  As a workaround, we emit a (local) trampoline
+  // that tail-calls the `HandleException()` function, while using the relative
+  // address of the trampoline to set the `ExceptionHandler` field.  We use
+  // `rscratch1` so as to not perturb the callee's arguments in x0 through x3.
+  masm->mov(rscratch1, (address)&HandleException);
+  masm->br(rscratch1);
+  masm->flush();
+
+  // Generally, each .pdata record has an accompanying .xdata record, but if the
+  // contents of the .xdata records are the same, then a single .xdata record
+  // can be shared by multiple .pdata records.  Since the size of the code cache
+  // area might not be a perfect multiple of 1MB and because the function size
+  // is stored inside the .xdata record, just two .xdata records suffice: one
+  // for the first N-1 records where the function size is 1MB and one for the
+  // last record whose size is less than or equal to 1MB.
+  PUNWIND_INFO_EH_ONLY full_info = &pDCD->unw;
+  PUNWIND_INFO_EH_ONLY tail_info = &pDCD->unw_tail;
+  const size_t tail_size = code_size - ((size_t)num_entries - 1) * kMaxFragmentSize;
+  const DWORD handler_rva = (char*)&pDCD->ExceptionHandlerInstr[0] - low;
+  initialize_unwind_info(full_info, kMaxFragmentSize, handler_rva);
+  initialize_unwind_info(tail_info, tail_size, handler_rva);
+
+  // We need one .pdata record for every fragment of the code cache, where each
+  // fragment has the size (2^18 - 1) * 4 bytes, except for the final fragment
+  // which can be shorter. The table is kept in the BufferBlob so it remains
+  // live for the lifetime of the code cache registration.
+  PRUNTIME_FUNCTION prt = (PRUNTIME_FUNCTION)align_up((char*)pDCD +
+      sizeof(DynamicCodeData), sizeof(DWORD));
+
+  for (uint32_t i = 0; i < num_entries; i++) {
+    const bool last = (i == num_entries - 1) && (tail_size != kMaxFragmentSize);
+    PUNWIND_INFO_EH_ONLY unwind_info =  last ? tail_info : full_info;
+    DWORD unwind_rva = (DWORD)((char*)unwind_info - low);
+    guarantee((unwind_rva & 0x3) == 0, ".xdata RVA must be 4-byte aligned");
+
+    prt[i].BeginAddress = i * kMaxFragmentSize;
+    prt[i].UnwindData = unwind_rva;
+  }
+
+  guarantee(RtlAddFunctionTable(prt, num_entries, (DWORD64)low),
+            "Failed to register Dynamic Code Exception Handler with RtlAddFunctionTable");
+
+  return true;
+}
 
 void os::os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandle& method, JavaCallArguments* args, JavaThread* thread) {
   f(value, method, args, thread);
