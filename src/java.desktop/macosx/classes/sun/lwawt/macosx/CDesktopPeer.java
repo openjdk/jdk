@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import java.lang.annotation.Native;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
-
+import java.util.Arrays;
 
 /**
  * Concrete implementation of the interface {@code DesktopPeer} for MacOS X
@@ -80,7 +80,19 @@ public final class CDesktopPeer implements DesktopPeer {
 
     @Override
     public void browse(URI uri) throws IOException {
-        this.lsOpen(uri, BROWSE);
+         this.lsOpen(uri, isBrowseInsecureAllowed(uri) ? OPEN : BROWSE);
+    }
+
+    private static boolean isBrowseInsecureAllowed(URI uri) {
+        String allowList = System.getProperty("awt.desktop.browse_insecure");
+        String scheme = uri.getScheme();
+
+        return scheme != null
+               && allowList != null
+               && (allowList.equals("*")
+                   || Arrays.stream(allowList.split(","))
+                            .map(String::trim)
+                            .anyMatch(allowed -> allowed.equalsIgnoreCase(scheme)));
     }
 
     @Override

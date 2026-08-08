@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,22 @@ final class WDesktopPeer implements DesktopPeer {
 
     @Override
     public void browse(URI uri) throws IOException {
-        this.launchUriInBrowser(uri);
+        String allowList = System.getProperty("awt.desktop.browse_insecure");
+        String scheme = uri.getScheme();
+
+        // For http,https scheme URL should always open in browser
+        // For other schemes, it will depend on whether scheme is in allowList
+        if (scheme != null && !(scheme.equals("http") || scheme.equals("https"))
+            && allowList != null
+            && (allowList.equals("*")
+                || Arrays.stream(allowList.split(","))
+                         .map(String::trim)
+                         .anyMatch(allowed -> allowed.equalsIgnoreCase(scheme)))) {
+            this.ShellExecute(uri, ACTION_OPEN_VERB);
+        } else {
+            // Fall back to opening the URI in browser
+            this.launchUriInBrowser(uri);
+        }
     }
 
     private void ShellExecute(File file, String verb) throws IOException {
