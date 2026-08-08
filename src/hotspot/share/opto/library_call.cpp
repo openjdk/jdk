@@ -5211,16 +5211,30 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
     const TypeAryPtr* src_t = _gvn.type(original)->is_aryptr();
     const TypeKlassPtr* dest_klass_t = _gvn.type(klass_node)->is_klassptr()->is_klassptr();
 
-    Node* success_proj;
+    Node* bailout_ctrl;
     if (should_bail_out_on_non_ref_arrays(src_t, dest_klass_t)) {
-      success_proj = generate_non_refArray_guard(klass_node, bailout);
+      bailout_ctrl = generate_non_refArray_guard(klass_node, bailout);
     } else {
-      success_proj = generate_typeArray_guard(klass_node, bailout);
+      bailout_ctrl = generate_typeArray_guard(klass_node, bailout);
     }
 
     Node* refined_klass_node = load_default_refined_array_klass(klass_node, /* type_array_guard= */ false);
 
-    if (success_proj != nullptr) {
+    // The refined klass has type TypeInstKlassPtr::OBJECT_OR_NULL by default
+    // and is usually constant-folded to TypeArrayKlassPtr.
+    // But it might not be narrowed to an array klass during AOT code compilation
+    // because the load from _next_refined_array_klass field may not be constant
+    // folded (load node is kept).
+    // In such case we need to cast it to TypeAryKlassPtr manually when
+    // the destination is an array klass so that the following code works correctly.
+    // But the cast could be skipped if only bailout_ctrl is checked because
+    // bailout_ctrl could be null when the layout helper is constant and the queried
+    // guard is known to never branch.
+    const TypeAryKlassPtr* dest_ary_klass_t = dest_klass_t->isa_aryklassptr();
+
+    // The current path is dead if the default refined array klass is not initialized,
+    // yet, or the guard is always taken (i.e. bailout).
+    if (!stopped() && (bailout_ctrl != nullptr || dest_ary_klass_t != nullptr)) {
       // Improve the klass node's type from the new optimistic assumption:
       ciKlass* ak = ciArrayKlass::make(env()->Object_klass());
       bool not_flat = !UseArrayFlattening;
