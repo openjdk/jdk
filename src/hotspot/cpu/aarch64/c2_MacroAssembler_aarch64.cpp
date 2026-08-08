@@ -1583,13 +1583,18 @@ void C2_MacroAssembler::sve_compare(PRegister pd, BasicType bt, PRegister pg,
 }
 
 // Get index of the last mask lane that is set
-void C2_MacroAssembler::sve_vmask_lasttrue(Register dst, BasicType bt, PRegister src, PRegister ptmp) {
+// Clobbers: rflags
+void C2_MacroAssembler::sve_vmask_lasttrue(Register dst, BasicType bt,
+                                           PRegister src, FloatRegister vtmp) {
   SIMD_RegVariant size = elemType_to_regVariant(bt);
-  sve_rev(ptmp, size, src);
-  sve_brkb(ptmp, ptrue, ptmp, false);
-  sve_cntp(dst, size, ptrue, ptmp);
-  movw(rscratch1, MaxVectorSize / type2aelembytes(bt) - 1);
-  subw(dst, rscratch1, dst);
+  // vtmp = 0, 1, 2, ...
+  sve_index(vtmp, size, 0, 1);
+  // dst = last true or the highest-numbered element if src is all false
+  sve_lastb(dst, size, src, vtmp);
+  // Zero flag = 1 iff no active lane
+  sve_ptest(ptrue, src);
+  // active: keep; else -1
+  csinvw(dst, dst, zr, Assembler::NE);
 }
 
 // Extend integer vector src to dst with the same lane count
