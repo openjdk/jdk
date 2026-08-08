@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Base64;
+import java.util.HexFormat;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -66,7 +68,7 @@ class ASN1FormatterTest {
             assertEquals(24, result.lines().filter(s -> s.contains("SEQUENCE")).count(),"Sequences");
             assertEquals(17, result.lines().filter(s -> s.contains("OBJECT ID")).count(), "ObjectIDs");
             assertEquals(2, result.lines().filter(s -> s.contains("UTCTIME")).count(), "UTCTIME");
-            assertEquals(3, result.lines().filter(s -> s.contains("BIT STRING")).count(), "BitStrings");
+            assertEquals(2, result.lines().filter(s -> s.contains("BIT STRING")).count(), "BitStrings");
         } catch (EOFException eof) {
             // done
         }
@@ -94,7 +96,7 @@ class ASN1FormatterTest {
             assertEquals(24, result.lines().filter(s -> s.contains("SEQUENCE")).count(), "Sequences");
             assertEquals(17, result.lines().filter(s -> s.contains("OBJECT ID")).count(), "ObjectIDs");
             assertEquals(2, result.lines().filter(s -> s.contains("UTCTIME")).count(), "UTCTIME");
-            assertEquals(3, result.lines().filter(s -> s.contains("BIT STRING")).count(), "BitStrings");
+            assertEquals(2, result.lines().filter(s -> s.contains("BIT STRING")).count(), "BitStrings");
         } catch (EOFException eof) {
             // done
         }
@@ -110,10 +112,42 @@ class ASN1FormatterTest {
 
         assertEquals(1, result.lines().filter(s -> s.contains("OCTET STRING [INDEFINITE]")).count(),
                 "Indefinite length");
-        assertEquals(2, result.lines().filter(s -> s.contains(";   OCTET STRING [2]")).count(),
+        assertEquals(2, result.lines().filter(s -> s.contains("OCTET STRING [2]")).count(),
                 "Octet Sequences");
-        assertEquals(1, result.lines().filter(s -> s.contains(";   END-OF-CONTENT")).count(),
+        assertEquals(1, result.lines().filter(s -> s.contains("END-OF-CONTENT")).count(),
                 "end of content");
+    }
+
+    @Test
+    void testPositions() {
+        byte[] bytes = HexFormat.of().parseHex("3009040730050201050500");
+        HexPrinter p = HexPrinter.simple()
+                .formatter(ASN1Formatter.formatter(), "; ", 100);
+        String result = p.toString(bytes);
+        System.out.println(result);
+
+        assertTrue(result.contains("[0]: OCTET STRING [7] (try --drill=0)"));
+
+        p = HexPrinter.simple()
+                .formatter(ASN1Formatter.formatter(Set.of("0")), "; ", 100);
+        result = p.toString(bytes);
+        System.out.println(result);
+
+        assertFalse(result.contains("try --drill"));
+        assertTrue(result.contains("[0]: OCTET STRING [7]"));
+        assertTrue(result.contains("[0c0]: BYTE 5"));
+    }
+
+    @Test
+    void testManyChildren() {
+        HexPrinter p = HexPrinter.simple()
+                .formatter(ASN1Formatter.formatter(), "; ", 100);
+        // 10 child NULLs
+        byte[] c10 = HexFormat.of().parseHex("30140500050005000500050005000500050005000500");
+        p.toString(c10);
+        // 11 child NULLs. Not supported now.
+        byte[] c11 = HexFormat.of().parseHex("301605000500050005000500050005000500050005000500");
+        assertThrows(UnsupportedOperationException.class, () -> p.toString(c11));
     }
 
     @Test
@@ -124,5 +158,4 @@ class ASN1FormatterTest {
         System.out.println("path: " + path);
         ASN1Formatter.main(args);
     }
-
 }
