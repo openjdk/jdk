@@ -82,6 +82,11 @@ final class ConfinedSession extends MemorySessionImpl {
         }
     }
 
+    @Override
+    public ArenaImpl asArena() {
+        return new ArenaImpl.OfConfined(this);
+    }
+
     /**
      * A confined resource list; no races are possible here.
      */

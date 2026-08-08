@@ -39,6 +39,7 @@ import java.util.concurrent.TimeUnit;
 import jdk.internal.event.VirtualThreadEndEvent;
 import jdk.internal.event.VirtualThreadStartEvent;
 import jdk.internal.event.VirtualThreadSubmitFailedEvent;
+import jdk.internal.foreign.ConfinedSegmentPool;
 import jdk.internal.misc.CarrierThread;
 import jdk.internal.misc.InnocuousThread;
 import jdk.internal.misc.Unsafe;
@@ -687,6 +688,7 @@ final class VirtualThread extends BaseVirtualThread {
             threadContainer().remove(this);
         }
 
+        ConfinedSegmentPool.releaseOnThreadExit(this);
         // clear references to thread locals
         clearReferences();
     }

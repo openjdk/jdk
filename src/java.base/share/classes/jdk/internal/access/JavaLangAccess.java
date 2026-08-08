@@ -653,4 +653,16 @@ public interface JavaLangAccess {
      * Finish initialization of the StackTraceElement objects in a stack trace.
      */
     void finishInit(StackTraceElement[] stackTrace);
+
+    /**
+     * Returns the raw confined native-memory pool states for the given platform
+     * thread, or null if no pools have been created.
+     */
+    long[] getConfinedMemoryPools(Thread thread);
+
+    /**
+     * Returns the raw confined native-memory pool states for the given platform
+     * thread, creating them if needed.
+     */
+    long[] getOrCreateConfinedMemoryPools(Thread thread);
 }
