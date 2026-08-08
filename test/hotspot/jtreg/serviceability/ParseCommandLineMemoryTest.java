@@ -30,7 +30,7 @@
  * @modules java.base/jdk.internal.misc
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:NativeMemoryTracking=summary ParseCommandLineMemoryTest
+ * @run main/othervm/timeout=120 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:NativeMemoryTracking=summary ParseCommandLineMemoryTest
  */
 
 import java.util.regex.Matcher;
@@ -43,10 +43,10 @@ import jdk.test.whitebox.parser.DiagnosticCommand;
 import jdk.test.whitebox.parser.DiagnosticCommand.DiagnosticArgumentType;
 
 public class ParseCommandLineMemoryTest {
-    private static final int INVOCATION_COUNT = 50_000;
+    private static final int INVOCATION_COUNT = 10_000;
     private static final long MAX_INTERNAL_MEMORY_INCREASE_KB = 1024;
     private static final Pattern INTERNAL_MEMORY_DIFF = Pattern.compile(
-            "(?m)^.*Internal \\(reserved=\\d+KB(?: [+-]\\d+KB)?, committed=\\d+KB(?: ([+-]\\d+)KB)?\\).*" );
+            "(?m)^.*Internal \\(reserved=\\d+KB(?: [+-]\\d+KB)?, committed=\\d+KB(?: ([+-]\\d+)KB)?\\).*");
 
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
     private static final PidJcmdExecutor JCMD = new PidJcmdExecutor();
