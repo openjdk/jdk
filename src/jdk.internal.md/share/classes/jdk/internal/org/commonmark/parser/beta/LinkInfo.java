@@ -30,42 +30,72 @@
  * should not be removed.
  */
 
-package jdk.internal.org.commonmark.renderer;
+package jdk.internal.org.commonmark.parser.beta;
 
-import jdk.internal.org.commonmark.node.Node;
-
-import java.util.Set;
+import jdk.internal.org.commonmark.node.Text;
 
 /**
- * A renderer for a set of node types.
+ * A parsed link/image. There are different types of links.
+ * <p>
+ * Inline links:
+ * <pre>
+ * [text](destination)
+ * [text](destination "title")
+ * </pre>
+ * <p>
+ * Reference links, which have different subtypes. Full::
+ * <pre>
+ * [text][label]
+ * </pre>
+ * Collapsed (label is ""):
+ * <pre>
+ * [text][]
+ * </pre>
+ * Shortcut (label is null):
+ * <pre>
+ * [text]
+ * </pre>
+ * Images use the same syntax as links but with a {@code !} {@link #marker()} front, e.g. {@code ![text](destination)}.
  */
-public interface NodeRenderer {
+public interface LinkInfo {
 
     /**
-     * @return the types of nodes that this renderer handles
+     * The marker if present, or null. A marker is e.g. {@code !} for an image, or a custom marker as specified in
+     * {@link org.commonmark.parser.Parser.Builder#linkMarker}.
      */
-    Set<Class<? extends Node>> getNodeTypes();
+    Text marker();
 
     /**
-     * Render the specified node.
-     *
-     * @param node the node to render, will be an instance of one of {@link #getNodeTypes()}
+     * The text node of the opening bracket {@code [}.
      */
-    void render(Node node);
+    Text openingBracket();
 
     /**
-     * Called before the root node is rendered, to do any initial processing at the start.
-     *
-     * @param rootNode the root (top-level) node
+     * The text between the first brackets, e.g. `foo` in `[foo][bar]`.
      */
-    default void beforeRoot(Node rootNode) {
-    }
+    String text();
 
     /**
-     * Called after the root node is rendered, to do any final processing at the end.
-     *
-     * @param rootNode the root (top-level) node
+     * The label, or null for inline links or for shortcut links (in which case {@link #text()} should be used as the label).
      */
-    default void afterRoot(Node rootNode) {
-    }
+    String label();
+
+    /**
+     * The destination if available, e.g. in `[foo](destination)`, or null
+     */
+    String destination();
+
+    /**
+     * The title if available, e.g. in `[foo](destination "title")`, or null
+     */
+    String title();
+
+    /**
+     * The position after the closing text bracket, e.g.:
+     * <pre>
+     * [foo][bar]
+     *      ^
+     * </pre>
+     */
+    Position afterTextBracket();
 }

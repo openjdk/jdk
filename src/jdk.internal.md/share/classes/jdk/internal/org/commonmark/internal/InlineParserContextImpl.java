@@ -34,20 +34,36 @@ package jdk.internal.org.commonmark.internal;
 
 import jdk.internal.org.commonmark.node.LinkReferenceDefinition;
 import jdk.internal.org.commonmark.parser.InlineParserContext;
+import jdk.internal.org.commonmark.parser.beta.LinkProcessor;
+import jdk.internal.org.commonmark.parser.beta.InlineContentParserFactory;
 import jdk.internal.org.commonmark.parser.delimiter.DelimiterProcessor;
 
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 public class InlineParserContextImpl implements InlineParserContext {
 
+    private final List<InlineContentParserFactory> inlineContentParserFactories;
     private final List<DelimiterProcessor> delimiterProcessors;
-    private final LinkReferenceDefinitions linkReferenceDefinitions;
+    private final List<LinkProcessor> linkProcessors;
+    private final Set<Character> linkMarkers;
+    private final Definitions definitions;
 
-    public InlineParserContextImpl(List<DelimiterProcessor> delimiterProcessors,
-                                   LinkReferenceDefinitions linkReferenceDefinitions) {
+    public InlineParserContextImpl(List<InlineContentParserFactory> inlineContentParserFactories,
+                                   List<DelimiterProcessor> delimiterProcessors,
+                                   List<LinkProcessor> linkProcessors,
+                                   Set<Character> linkMarkers,
+                                   Definitions definitions) {
+        this.inlineContentParserFactories = inlineContentParserFactories;
         this.delimiterProcessors = delimiterProcessors;
-        this.linkReferenceDefinitions = linkReferenceDefinitions;
+        this.linkProcessors = linkProcessors;
+        this.linkMarkers = linkMarkers;
+        this.definitions = definitions;
+    }
+
+    @Override
+    public List<InlineContentParserFactory> getCustomInlineContentParserFactories() {
+        return inlineContentParserFactories;
     }
 
     @Override
@@ -56,7 +72,23 @@ public class InlineParserContextImpl implements InlineParserContext {
     }
 
     @Override
+    public List<LinkProcessor> getCustomLinkProcessors() {
+        return linkProcessors;
+    }
+
+    @Override
+    public Set<Character> getCustomLinkMarkers() {
+        return linkMarkers;
+    }
+
+    @Override
+    @Deprecated
     public LinkReferenceDefinition getLinkReferenceDefinition(String label) {
-        return linkReferenceDefinitions.get(label);
+        return definitions.getDefinition(LinkReferenceDefinition.class, label);
+    }
+
+    @Override
+    public <D> D getDefinition(Class<D> type, String label) {
+        return definitions.getDefinition(type, label);
     }
 }
