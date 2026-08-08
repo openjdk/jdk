@@ -4367,7 +4367,7 @@ public class Types {
             isSameType(t, s) ||
             !t.isPrimitive() &&
             !s.isPrimitive() &&
-            isAssignable(t, s, warner);
+            isSubtypeUnchecked(t, s, warner);
     }
     // </editor-fold>
 
