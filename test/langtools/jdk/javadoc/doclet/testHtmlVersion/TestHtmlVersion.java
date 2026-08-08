@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <nav role="navigation">
                     <!-- ========= START OF TOP NAVBAR ======= -->""",
                 """
-                    <main role="main">
+                    <main role="main" id="skip-navbar-top">
                     <div class="header">""",
                 """
                     <section class="package-description" id="package-description">
@@ -135,7 +135,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <nav role="navigation">
                     <!-- ========= START OF TOP NAVBAR ======= -->""",
                 """
-                    <main role="main">
+                    <main role="main" id="skip-navbar-top">
                     <div class="header">""",
                 """
                     <section class="hierarchy">
@@ -168,7 +168,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <nav role="navigation">
                     <!-- ========= START OF TOP NAVBAR ======= -->""",
                 """
-                    <main role="main">
+                    <main role="main" id="skip-navbar-top">
                     <div class="header">""",
                 """
                     <footer>""",
@@ -192,7 +192,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <nav role="navigation" class="toc" aria-label="Table of contents">
                     <div class="toc-header">Contents&nbsp;""",
                 """
-                    <main role="main">
+                    <main role="main" id="skip-navbar-top">
                     <div class="header">""",
                 """
                     <section class="constants-summary" id="pkg">
@@ -217,7 +217,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <nav role="navigation">
                     <!-- ========= START OF TOP NAVBAR ======= -->""",
                 """
-                    <main role="main">
+                    <main role="main" id="skip-navbar-top">
                     <div class="header">""",
                 """
                     <footer>""",
@@ -236,7 +236,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <nav role="navigation">
                     <!-- ========= START OF TOP NAVBAR ======= -->""",
                 """
-                    <main role="main">
+                    <main role="main" id="skip-navbar-top">
                     <div class="header">""",
                 """
                     <section class="serialized-package-container">
@@ -260,7 +260,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <nav role="navigation">
                     <!-- ========= START OF TOP NAVBAR ======= -->""",
                 """
-                    <main role="main">
+                    <main role="main" id="skip-navbar-top">
                     <div class="header">""",
                 """
                     <section class="hierarchy">
@@ -297,7 +297,7 @@ public class TestHtmlVersion extends JavadocTester {
                 """
                     </header>
                     <div class="main-grid">
-                    <main role="main">""",
+                    <main role="main" id="skip-navbar-top">""",
                 """
                     <footer>""",
                 """
@@ -322,7 +322,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <nav role="navigation">
                     <!-- ========= START OF TOP NAVBAR ======= -->""",
                 """
-                    <main role="main">
+                    <main role="main" id="skip-navbar-top">
                     <h1 class="title">JavaDoc Help</h1>""",
                 """
                     <section class="help-section" id="overview">
@@ -353,7 +353,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <nav role="navigation">
                     <!-- ========= START OF TOP NAVBAR ======= -->""",
                 """
-                    <main role="main">
+                    <main role="main" id="skip-navbar-top">
                     <!-- ======== START OF CLASS DATA ======== -->
                     <div class="header">""",
                 """
@@ -403,7 +403,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <nav role="navigation">
                     <!-- ========= START OF TOP NAVBAR ======= -->""",
                 """
-                    <main role="main">
+                    <main role="main" id="skip-navbar-top">
                     <!-- ======== START OF CLASS DATA ======== -->
                     <div class="header">""",
                 """
@@ -444,7 +444,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <nav role="navigation">
                     <!-- ========= START OF TOP NAVBAR ======= -->""",
                 """
-                    <main role="main">
+                    <main role="main" id="skip-navbar-top">
                     <!-- ======== START OF CLASS DATA ======== -->
                     <div class="header">""",
                 """
@@ -476,7 +476,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <nav role="navigation">
                     <!-- ========= START OF TOP NAVBAR ======= -->""",
                 """
-                    <main role="main">
+                    <main role="main" id="skip-navbar-top">
                     <!-- ======== START OF CLASS DATA ======== -->
                     <div class="header">""",
                 """
@@ -503,7 +503,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <nav role="navigation">
                     <!-- ========= START OF TOP NAVBAR ======= -->""",
                 """
-                    <main role="main">
+                    <main role="main" id="skip-navbar-top">
                     <!-- ======== START OF CLASS DATA ======== -->
                     <div class="header">""",
                 """
@@ -530,7 +530,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <nav role="navigation">
                     <!-- ========= START OF TOP NAVBAR ======= -->""",
                 """
-                    <main role="main">
+                    <main role="main" id="skip-navbar-top">
                     <!-- ======== START OF CLASS DATA ======== -->
                     <div class="header">""",
                 """
@@ -568,7 +568,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <nav role="navigation">
                     <!-- ========= START OF TOP NAVBAR ======= -->""",
                 """
-                    <main role="main">
+                    <main role="main" id="skip-navbar-top">
                     <div class="header">""",
                 """
                     <div class="summary-table two-column-summary">""",
