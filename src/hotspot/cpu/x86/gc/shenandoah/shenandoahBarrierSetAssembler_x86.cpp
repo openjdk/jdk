@@ -30,9 +30,11 @@
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
+#include "gc/shenandoah/shenandoahNMethod.inline.hpp"
 #include "gc/shenandoah/shenandoahRuntime.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "interpreter/interpreter.hpp"
+#include "nativeInst_x86.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/macros.hpp"
@@ -43,6 +45,7 @@
 #endif
 #ifdef COMPILER2
 #include "gc/shenandoah/c2/shenandoahBarrierSetC2.hpp"
+#include "opto/output.hpp"
 #endif
 
 #define __ masm->
@@ -574,6 +577,51 @@ void ShenandoahBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssemb
 
 #undef __
 
+address ShenandoahBarrierSetAssembler::parse_jump_address(address pc) {
+  NativeInstruction* ni = nativeInstruction_at(pc);
+  assert(ni->is_jump(), "Must be a jump");
+  NativeJump* jmp = nativeJump_at(pc);
+  return jmp->jump_destination();
+}
+
+void ShenandoahBarrierSetAssembler::insert_patchable_nop(address pc) {
+  *(pc + 0) = 0x0F;
+  *(pc + 1) = 0x1F;
+  *(pc + 2) = 0x44;
+  *(pc + 3) = 0x00;
+  *(pc + 4) = 0x00;
+}
+
+bool ShenandoahBarrierSetAssembler::is_patchable_nop(address pc) {
+  if (*(pc + 0) != 0x0F) return false;
+  if (*(pc + 1) != 0x1F) return false;
+  if (*(pc + 2) != 0x44) return false;
+  if (*(pc + 3) != 0x00) return false;
+  if (*(pc + 4) != 0x00) return false;
+  return true;
+}
+
+void ShenandoahBarrierSetAssembler::insert_patchable_jump(address pc, address target_pc) {
+  int32_t disp = checked_cast<int32_t>((intptr_t)target_pc - ((intptr_t)pc + 5));
+
+  *(pc + 0) = 0xE9;
+  *(pc + 1) = (disp >>  0) & 0xFF;
+  *(pc + 2) = (disp >>  8) & 0xFF;
+  *(pc + 3) = (disp >> 16) & 0xFF;
+  *(pc + 4) = (disp >> 24) & 0xFF;
+}
+
+bool ShenandoahBarrierSetAssembler::is_patchable_jump(address pc, address target_pc) {
+  int32_t disp = checked_cast<int32_t>((intptr_t)target_pc - ((intptr_t)pc + 5));
+
+  if (*(pc + 0) != 0xE9) return false;
+  if (*(pc + 1) != ((disp >>  0) & 0xFF)) return false;
+  if (*(pc + 2) != ((disp >>  8) & 0xFF)) return false;
+  if (*(pc + 3) != ((disp >> 16) & 0xFF)) return false;
+  if (*(pc + 4) != ((disp >> 24) & 0xFF)) return false;
+  return true;
+}
+
 #ifdef COMPILER1
 
 #define __ ce->masm()->
@@ -762,14 +810,57 @@ void ShenandoahBarrierStubC2::cardtable(MacroAssembler& masm, Address addr, Regi
   __ bind(L_done);
 }
 
-void ShenandoahBarrierStubC2::enter_if_gc_state(MacroAssembler& masm, const char test_state, Register tmp) {
-  Assembler::InlineSkippedInstructionsCounter skip_counter(&masm);
+void ShenandoahBarrierStubC2::patchable_jump(MacroAssembler& masm, const char gc_state, bool jump_when_state, Label* L_target) {
+  Label L_fake_entry, L_real_entry, L_skip;
+  Address gc_state_addr(r15_thread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
 
-  Address gc_state_fast(r15_thread, in_bytes(ShenandoahThreadLocalData::gc_state_fast_array_offset(test_state)));
-  __ cmpb(gc_state_fast, 0);
-  __ jcc(Assembler::notEqual, *entry());
+  // Emit the unconditional branch in the first version of the method.
+  // Let the rest of runtime figure out how to manage it.
+
+  PhaseOutput* const output = Compile::current()->output();
+  if (!output->in_scratch_emit_size()) {
+    __ relocate(patchable_barrier_Relocation::spec(ShenandoahNMethod::encode_to_reloc(gc_state, jump_when_state)));
+  }
+
+#ifdef ASSERT
+  // Emit the secondary jump and use it to cross-check against the actual GC state.
+  // This also checks that all interesting GC state transitions are done non-racily
+  // from the perspective of the thread executing the nmethod.
+  __ jmp(L_fake_entry, /* maybe_short = */ false);
+
+  // Currently hot-patched to NOP.
+  __ testb(gc_state_addr, gc_state);
+  __ jcc(jump_when_state ? Assembler::zero : Assembler::notZero, L_skip);
+  __ hlt();
+
+  // Currently hot-patched to JUMP.
+  __ bind(L_fake_entry);
+  __ testb(gc_state_addr, gc_state);
+  __ jcc(jump_when_state ? Assembler::notZero : Assembler::zero, L_real_entry);
+  __ hlt();
+
+  __ bind(L_real_entry);
+#endif
+
+  if (!output->in_scratch_emit_size()) {
+    __ jmp(*L_target, /* maybe_short = */ false);
+  } else {
+    // Avoid binding L_target in scratch emits.
+    // We know the patchable check is exactly 5 bytes long.
+    __ nop(5);
+  }
+
+#ifdef ASSERT
+  __ bind(L_skip);
+#endif
+}
+
+void ShenandoahBarrierStubC2::enter_if_gc_state(MacroAssembler& masm, const char test_state) {
+  Assembler::InlineSkippedInstructionsCounter skip_counter(&masm);
+  patchable_jump_if_gc_state(masm, test_state, entry());
   __ bind(*continuation());
 }
+
 
 void ShenandoahBarrierStubC2::emit_code(MacroAssembler& masm) {
   Assembler::InlineSkippedInstructionsCounter skip_counter(&masm);
@@ -815,17 +906,16 @@ void ShenandoahBarrierStubC2::emit_code(MacroAssembler& masm) {
 }
 
 void ShenandoahBarrierStubC2::keepalive(MacroAssembler& masm, Label* L_done) {
-  Address gc_state_fast(r15_thread, in_bytes(ShenandoahThreadLocalData::gc_state_fast_array_offset(ShenandoahHeap::MARKING)));
   Address index(r15_thread, in_bytes(ShenandoahThreadLocalData::satb_mark_queue_index_offset()));
   Address buffer(r15_thread, in_bytes(ShenandoahThreadLocalData::satb_mark_queue_buffer_offset()));
 
   Label L_through, L_pop_and_slow;
 
-  // If another barrier is enabled as well, do a runtime check for a specific barrier.
+  // If another barrier is enabled as well, do a check for a specific barrier.
   if (_needs_load_ref_barrier) {
-    assert(L_done == nullptr, "L_done is always null when _needs_load_ref_barrier is true");
-    __ cmpb(gc_state_fast, 0);
-    __ jcc(Assembler::equal, L_through);
+    assert(L_done == nullptr, "Should be");
+    char state_to_check = ShenandoahHeap::MARKING;
+    patchable_jump_if_not_gc_state(masm, state_to_check, &L_through);
   }
 
   // Need temp to work, allocate one now.
@@ -894,20 +984,17 @@ void ShenandoahBarrierStubC2::keepalive(MacroAssembler& masm, Label* L_done) {
 void ShenandoahBarrierStubC2::lrb(MacroAssembler& masm) {
   Label L_pop_and_slow, L_slow;
 
-  // If another barrier is enabled as well, do a runtime check for a specific barrier.
+  // If another barrier is enabled as well, do a check for a specific barrier.
   if (_needs_keep_alive_barrier) {
     char state_to_check = ShenandoahHeap::HAS_FORWARDED | (_needs_load_ref_weak_barrier ? ShenandoahHeap::WEAK_ROOTS : 0);
-    Address gc_state_fast(r15_thread, in_bytes(ShenandoahThreadLocalData::gc_state_fast_array_offset(state_to_check)));
-    __ cmpb(gc_state_fast, 0);
-    __ jcc(Assembler::equal, *continuation());
+    patchable_jump_if_not_gc_state(masm, state_to_check, continuation());
   }
 
   // If weak references are being processed, weak/phantom loads need to go slow,
   // regardless of their cset status.
   if (_needs_load_ref_weak_barrier) {
-    Address gc_state_fast(r15_thread, in_bytes(ShenandoahThreadLocalData::gc_state_fast_array_offset(ShenandoahHeap::WEAK_ROOTS)));
-    __ cmpb(gc_state_fast, 0);
-    __ jccb(Assembler::notEqual, L_slow);
+    char state_to_check = ShenandoahHeap::WEAK_ROOTS;
+    patchable_jump_if_gc_state(masm, state_to_check, &L_slow);
   }
 
   bool is_aot = AOTCodeCache::is_on_for_dump();

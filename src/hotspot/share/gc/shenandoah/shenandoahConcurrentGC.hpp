@@ -41,6 +41,7 @@ class VM_ShenandoahFinalUpdateRefs;
 class ShenandoahConcurrentGC : public ShenandoahGC {
   friend class VM_ShenandoahInitMark;
   friend class VM_ShenandoahFinalMarkStartEvac;
+  friend class VM_ShenandoahFinalRoots;
   friend class VM_ShenandoahInitUpdateRefs;
   friend class VM_ShenandoahFinalUpdateRefs;
   friend class VM_ShenandoahFinalVerify;
@@ -69,12 +70,14 @@ protected:
   void vmop_entry_final_mark();
   void vmop_entry_init_update_refs();
   void vmop_entry_final_update_refs();
+  void vmop_entry_final_roots();
   void vmop_entry_final_verify();
 
   // Entry methods to normally STW GC operations. These set up logging, monitoring
   // and workers for next VM operation
   void entry_init_mark();
   void entry_final_mark();
+  void entry_final_roots();
   void entry_init_update_refs();
   void entry_final_update_refs();
   void entry_final_verify();
@@ -92,7 +95,6 @@ protected:
   void entry_strong_roots();
   void entry_cleanup_early();
   void entry_complete_abbreviated_cycle();
-  void entry_final_roots();
   void entry_evacuate();
   void entry_update_thread_roots();
   void entry_update_card_table();
@@ -138,7 +140,7 @@ private:
   const char* init_mark_event_message() const;
   const char* final_mark_event_message() const;
   const char* verify_final_event_message() const;
-  const char* conc_final_roots_event_message() const;
+  const char* final_roots_event_message() const;
   const char* conc_mark_event_message() const;
   const char* conc_reset_event_message() const;
   const char* conc_reset_after_collect_event_message() const;

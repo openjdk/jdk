@@ -172,7 +172,16 @@ class ShenandoahBarrierStubC2 : public BarrierStubC2 {
 
   void maybe_far_jump_if_zero(MacroAssembler& masm, Register reg);
 
-  void enter_if_gc_state(MacroAssembler& masm, const char test_state, Register tmp);
+  void patchable_jump(MacroAssembler& masm, const char gc_state, bool jump_when_state, Label* L_target);
+
+  void patchable_jump_if_gc_state(MacroAssembler& masm, const char gc_state, Label* L_target) {
+    patchable_jump(masm, gc_state, true, L_target);
+  }
+  void patchable_jump_if_not_gc_state(MacroAssembler& masm, const char gc_state, Label* L_target) {
+    patchable_jump(masm, gc_state, false, L_target);
+  }
+
+  void enter_if_gc_state(MacroAssembler& masm, const char test_state);
 
   void keepalive(MacroAssembler& masm, Label* L_done);
   void lrb(MacroAssembler& masm);

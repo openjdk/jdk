@@ -214,7 +214,7 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   }
 
   // Roots processing is complete, put the weak roots flag down.
-  entry_final_roots();
+  vmop_entry_final_roots();
 
   // Continue the cycle with evacuation and optional update-refs.
   // This may be skipped if there is nothing to evacuate.
@@ -360,6 +360,17 @@ void ShenandoahConcurrentGC::vmop_entry_final_update_refs() {
   heap->try_inject_alloc_failure();
   heap->try_inject_pin();
   VM_ShenandoahFinalUpdateRefs op(this);
+  VMThread::execute(&op);
+}
+
+void ShenandoahConcurrentGC::vmop_entry_final_roots() {
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  TraceCollectorStats tcs(heap->monitoring_support()->stw_collection_counters());
+  ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::final_roots_gross);
+
+  // This phase does not use workers, no need for setup
+  heap->try_inject_alloc_failure();
+  VM_ShenandoahFinalRoots op(this);
   VMThread::execute(&op);
 }
 
@@ -766,8 +777,7 @@ void ShenandoahConcurrentGC::op_init_mark() {
   OrderAccess::fence();
 
   // Arm nmethods/stack for concurrent processing
-  ShenandoahCodeRoots::arm_nmethods();
-  ShenandoahStackWatermark::change_epoch_id();
+  CodeCache::arm_all_nmethods();
 
   {
     ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::init_propagate_gc_state);
@@ -823,11 +833,6 @@ void ShenandoahConcurrentGC::op_final_mark() {
       heap->set_evacuation_in_progress(true);
       // From here on, we need to update references.
       heap->set_has_forwarded_objects(true);
-
-      // Arm nmethods/stack for concurrent processing
-      ShenandoahCodeRoots::arm_nmethods();
-      ShenandoahStackWatermark::change_epoch_id();
-
     } else {
       if (ShenandoahVerify) {
         ShenandoahTimingsTracker v(ShenandoahPhaseTimings::final_mark_verify);
@@ -839,6 +844,9 @@ void ShenandoahConcurrentGC::op_final_mark() {
       }
     }
   }
+
+  // Arm nmethods/stack for concurrent processing
+  CodeCache::arm_all_nmethods();
 
   {
     ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::final_mark_propagate_gc_state);
@@ -1060,7 +1068,6 @@ public:
     ShenandoahNMethod* data = ShenandoahNMethod::gc_data(n);
     ShenandoahNMethodLocker locker(data->lock());
     data->oops_do(&_cl, /* fix_relocations = */ true);
-    ShenandoahNMethod::disarm_nmethod(n);
   }
 };
 
@@ -1241,6 +1248,9 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
   heap->rebuild_free_set(true /*concurrent*/);
   _generation->heuristics()->start_idle_span();
 
+  // Final pause: update GC barriers to idle state.
+  CodeCache::arm_all_nmethods();
+
   {
     ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::final_update_refs_propagate_gc_state);
     heap->propagate_gc_state_to_all_threads();
@@ -1248,13 +1258,11 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
 }
 
 void ShenandoahConcurrentGC::entry_final_roots() {
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-  const char* msg = conc_final_roots_event_message();
-  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_final_roots);
+  const char* msg = final_roots_event_message();
+  ShenandoahPausePhase gc_phase(msg, ShenandoahPhaseTimings::final_roots);
   EventMark em("%s", msg);
 
-  heap->concurrent_final_roots();
+  ShenandoahHeap::heap()->op_final_roots();
 }
 
 void ShenandoahConcurrentGC::op_verify_final() {
@@ -1353,11 +1361,11 @@ const char* ShenandoahConcurrentGC::verify_final_event_message() const {
   }
 }
 
-const char* ShenandoahConcurrentGC::conc_final_roots_event_message() const {
+const char* ShenandoahConcurrentGC::final_roots_event_message() const {
   if (ShenandoahHeap::heap()->unload_classes()) {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent Final Roots", " (unload classes)");
+    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Pause Final Roots", " (unload classes)");
   } else {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent Final Roots", "");
+    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Pause Final Roots", "");
   }
 }
 

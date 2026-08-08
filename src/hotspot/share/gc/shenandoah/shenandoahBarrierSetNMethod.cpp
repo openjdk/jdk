@@ -23,12 +23,14 @@
  */
 
 
+#include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetNMethod.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCodeRoots.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
+#include "gc/shenandoah/shenandoahStackWatermark.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
@@ -65,8 +67,16 @@ bool ShenandoahBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
     return false;
   }
 
-  // Heal oops
-  ShenandoahNMethod::heal_nmethod(nm);
+  bool changed = false;
+
+  // Handle oops and jumps.
+  changed |= ShenandoahNMethod::handle_oops(nm);
+  changed |= ShenandoahNMethod::handle_jumps(nm);
+
+  // If any code changed, bulk invalidate the entire nmethod.
+  if (changed) {
+    ICache::invalidate_range(nm->code_begin(), nm->code_size());
+  }
 
   // CodeCache unloading support
   nm->mark_as_maybe_on_stack();
@@ -74,4 +84,29 @@ bool ShenandoahBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
   // Disarm
   ShenandoahNMethod::disarm_nmethod(nm);
   return true;
+}
+
+void ShenandoahBarrierSetNMethod::finalize_relocations(nmethod* nm) {
+  RelocIterator iter(nm);
+  while (iter.next()) {
+    if (iter.type() == relocInfo::patchable_barrier_type) {
+      patchable_barrier_Relocation* r = iter.patchable_barrier_reloc();
+      if (!r->is_target_offset_resolved()) {
+        address pc = r->addr();
+        address target = ShenandoahBarrierSetAssembler::parse_jump_address(pc);
+        r->set_target_offset(target - nm->code_begin());
+      } else {
+        // Already set. This is likely nmethod relocation, so just trust
+        // the existing relocation data.
+      }
+    }
+  }
+}
+
+void ShenandoahBarrierSetNMethod::arm_all_nmethods() {
+  BarrierSetNMethod::arm_all_nmethods();
+
+  // Arming should also activate stack watermark machinery.
+  // See ShenandoahNMethod::patch_barrier.
+  ShenandoahStackWatermark::change_epoch_id();
 }

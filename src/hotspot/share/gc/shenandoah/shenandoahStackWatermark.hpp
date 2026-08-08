@@ -60,6 +60,7 @@ private:
   ThreadLocalAllocStats                _stats;
 
   // Closures
+  ShenandoahNoOpClosure                _no_op_cl;
   ShenandoahKeepAliveClosure           _keep_alive_cl;
   ShenandoahEvacuateUpdateRootsClosure _evac_update_oop_cl;
   ShenandoahOnStackNMethodClosure      _nm_cl;

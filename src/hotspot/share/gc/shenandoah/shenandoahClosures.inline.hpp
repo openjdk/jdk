@@ -199,17 +199,6 @@ void ShenandoahCleanUpdateWeakOopsClosure<CONCURRENT, IsAlive, KeepAlive>::do_oo
   ShouldNotReachHere();
 }
 
-ShenandoahNMethodAndDisarmClosure::ShenandoahNMethodAndDisarmClosure(OopClosure* cl) :
-  NMethodToOopClosure(cl, true /* fix_relocations */) {}
-
-void ShenandoahNMethodAndDisarmClosure::do_nmethod(nmethod* nm) {
-  assert(nm != nullptr, "Sanity");
-  assert(!ShenandoahNMethod::gc_data(nm)->is_unregistered(), "Should not be here");
-  NMethodToOopClosure::do_nmethod(nm);
-  ShenandoahNMethod::disarm_nmethod(nm);
-}
-
-
 //
 // ========= Update References
 //
