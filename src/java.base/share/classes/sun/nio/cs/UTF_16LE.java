@@ -32,6 +32,8 @@ import java.nio.charset.CharsetEncoder;
 public class UTF_16LE extends Unicode
 {
 
+    public static final UTF_16LE INSTANCE = new UTF_16LE();
+
     public UTF_16LE() {
         super("UTF-16LE", StandardCharsets.aliases_UTF_16LE());
     }

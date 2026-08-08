@@ -34,6 +34,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.constant.Constable;
 import java.lang.constant.ConstantDesc;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.CharBuffer;
 import java.nio.charset.*;
 import java.util.ArrayList;
@@ -63,6 +64,9 @@ import sun.nio.cs.ArrayEncoder;
 
 import sun.nio.cs.ISO_8859_1;
 import sun.nio.cs.US_ASCII;
+import sun.nio.cs.UTF_16;
+import sun.nio.cs.UTF_16LE;
+import sun.nio.cs.UTF_16BE;
 import sun.nio.cs.UTF_8;
 
 /**
@@ -1634,6 +1638,41 @@ public final class String
     }
 
     /**
+     * {@return true if the substring contains any unpaired surrogates}
+     */
+    private static boolean hasUnpairedSurrogates(byte[] val, int off, int len) {
+        Preconditions.checkFromIndexSize(off, len, val.length >> 1, Preconditions.AIOOBE_FORMATTER);
+
+        int sp = off;
+        int sl = off + len;
+
+        while (sp < sl) {
+            char c = StringUTF16.getChar(val, sp);
+            if (c >= Character.MIN_HIGH_SURROGATE) {
+                break;
+            }
+            sp++;
+        }
+        while (sp < sl) {
+            char c = StringUTF16.getChar(val, sp++);
+            if (Character.isSurrogate(c)) {
+                int uc = -1;
+                char c2;
+                if (Character.isHighSurrogate(c) && sp < sl &&
+                        Character.isLowSurrogate(c2 = StringUTF16.getChar(val, sp))) {
+                    uc = Character.toCodePoint(c, c2);
+                }
+                if (uc < 0) {
+                    return true;
+                } else {
+                    sp++;  // 2 chars
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
      * Constructs a new {@code String} by decoding the specified array of bytes
      * using the specified {@linkplain java.nio.charset.Charset charset}.  The
      * length of the new {@code String} is a function of the charset, and hence
@@ -2114,6 +2153,10 @@ public final class String
             return encodedLengthUTF8(coder, value);
         } else if (cs == ISO_8859_1.INSTANCE || cs == US_ASCII.INSTANCE) {
             return encodedLengthASCIIor8859_1(coder, value);
+        } else if (cs == UTF_16LE.INSTANCE || cs == UTF_16BE.INSTANCE) {
+            return length() << 1;
+        } else if (cs == UTF_16.INSTANCE) {
+            return (length() << 1) + 2; // BOM
         }
         return getBytes(cs).length;
     }
@@ -2125,19 +2168,20 @@ public final class String
             } else if (charset == UTF_8.INSTANCE || charset == US_ASCII.INSTANCE) {
                 return !StringCoding.hasNegatives(value, srcIndex, numChars); // ok, if ASCII-compatible
             }
+        } else {
+            // UTF-16, where the platform and charset endianness match, and the string contains no unpaired surrogates
+            Charset nativeUtf16 = ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN ? UTF_16LE.INSTANCE : UTF_16BE.INSTANCE;
+            return charset == nativeUtf16 && !hasUnpairedSurrogates(value, srcIndex, numChars);
         }
         return false;
     }
 
-    void copyToSegmentRaw(MemorySegment segment, long offset, int srcIndex, int srcLength) {
-        if (!isLatin1()) {
-            // This method is intended to be used together with bytesCompatible, which currently only supports
-            // latin1 strings. In the future, bytesCompatible could be updated to handle more cases, like
-            // UTF-16 strings (when the platform and charset endianness match, and the String doesn’t contain
-            // unpaired surrogates). If that happens, copyToSegmentRaw should also be updated.
-            throw new IllegalStateException("This string does not support copyToSegmentRaw");
-        }
-        MemorySegment.copy(value, srcIndex, segment, ValueLayout.JAVA_BYTE, offset, srcLength);
+    // This method is intended to be used together with bytesCompatible.
+    int copyToSegmentRaw(MemorySegment segment, long offset, int srcIndex, int srcLength) {
+        int byteOffset = srcIndex << coder;
+        int byteLength = srcLength << coder;
+        MemorySegment.copy(value, byteOffset, segment, ValueLayout.JAVA_BYTE, offset, byteLength);
+        return byteLength;
     }
 
     /**

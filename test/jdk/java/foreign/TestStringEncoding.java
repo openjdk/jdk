@@ -31,6 +31,7 @@ import java.lang.foreign.SegmentAllocator;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Field;
+import java.nio.ByteOrder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -239,14 +240,14 @@ public class TestStringEncoding {
 
     @Test(dataProvider = "strings")
     public void testStringsHeap(String testString) {
-        for (Charset charset : singleByteCharsets()) {
+        for (Charset charset : standardCharsets()) {
             for (var arena : arenas()) {
                 try (arena) {
                     MemorySegment text = arena.allocateFrom(testString, charset);
                     text = toHeapSegment(text);
 
-                    int expectedByteLength =
-                            testString.getBytes(charset).length + 1;
+                    int codeUnitSize = StringSupport.CharsetKind.of(charset).codeUnitSize();
+                    int expectedByteLength = testString.getBytes(charset).length + codeUnitSize;
 
                     assertEquals(text.byteSize(), expectedByteLength);
 
@@ -358,19 +359,26 @@ public class TestStringEncoding {
 
     @Test(dataProvider = "strings")
     public void testSubstringGetString(String testString) {
-        if (testString.length() < 3 || !containsOnlyRegularCharacters(testString)) {
-            return;
-        }
-        for (var charset : singleByteCharsets()) {
+        for (var charset : standardCharsets()) {
+            if (charset == StandardCharsets.UTF_16) {
+                continue; // BOM prevents byte slicing
+            }
             for (var arena: arenas()) {
                 try (arena) {
                     MemorySegment text = arena.allocateFrom(testString, charset, 0, testString.length());
                     for (int srcIndex = 0; srcIndex <= testString.length(); srcIndex++) {
+                        String prefix = testString.substring(0, srcIndex);
+                        if (!charset.newEncoder().canEncode(prefix)) {
+                            continue;
+                        }
                         for (int numChars = 0; numChars <= testString.length() - srcIndex; numChars++) {
-                            // this test assumes single-byte charsets
-                            String roundTrip = text.getString(srcIndex, charset, numChars);
                             String substring = testString.substring(srcIndex, srcIndex + numChars);
-                            assertEquals(roundTrip, substring);
+                            int byteOffset = prefix.encodedLength(charset);
+                            int byteLength = substring.encodedLength(charset);
+                            String roundTrip = text.getString(byteOffset, charset, byteLength);
+                            if (charset.newEncoder().canEncode(substring)) {
+                                assertEquals(roundTrip, substring);
+                            }
                         }
                     }
                 }
@@ -380,10 +388,7 @@ public class TestStringEncoding {
 
     @Test(dataProvider = "strings")
     public void testSubstringAllocate(String testString) {
-        if (testString.length() < 3 || !containsOnlyRegularCharacters(testString)) {
-            return;
-        }
-        for (var charset : singleByteCharsets()) {
+        for (var charset : standardCharsets()) {
             for (var arena: arenas()) {
                 try (arena) {
                     for (int srcIndex = 0; srcIndex <= testString.length(); srcIndex++) {
@@ -392,7 +397,9 @@ public class TestStringEncoding {
                             String substring = testString.substring(srcIndex, srcIndex + numChars);
                             assertEquals(text.byteSize(), substring.getBytes(charset).length);
                             String roundTrip = text.getString(0, charset, text.byteSize());
-                            assertEquals(roundTrip, substring);
+                            if (charset.newEncoder().canEncode(substring)) {
+                                assertEquals(roundTrip, substring);
+                            }
                         }
                     }
                 }
@@ -402,10 +409,7 @@ public class TestStringEncoding {
 
     @Test(dataProvider = "strings")
     public void testSubstringCopy(String testString) {
-        if (testString.length() < 3 || !containsOnlyRegularCharacters(testString)) {
-            return;
-        }
-        for (var charset : singleByteCharsets()) {
+        for (var charset : standardCharsets()) {
             for (var arena: arenas()) {
                 try (arena) {
                     for (int srcIndex = 0; srcIndex <= testString.length(); srcIndex++) {
@@ -415,8 +419,10 @@ public class TestStringEncoding {
                             MemorySegment text = arena.allocate(JAVA_BYTE, length);
                             long copied = MemorySegment.copy(testString, charset, srcIndex, text, 0, numChars);
                             String roundTrip = text.getString(0, charset, length);
-                            assertEquals(roundTrip, substring);
-                            assertEquals(copied, length);
+                            if (charset.newEncoder().canEncode(substring)) {
+                                assertEquals(roundTrip, substring);
+                                assertEquals(copied, length);
+                            }
                         }
                     }
                 }
@@ -598,6 +604,35 @@ public class TestStringEncoding {
         }
     }
 
+    @Test(dataProvider = "stringsAndCompatibleCharsets")
+    public void testBytesCompatible(List<String> strings, Set<Charset> compatibleCharsets) {
+        for (String string : strings) {
+            for (Charset charset : standardCharsets()) {
+                boolean expected = compatibleCharsets.contains(charset);
+                boolean actual = StringSupport.bytesCompatible(string, charset, 0, string.length());
+                assertEquals(actual, expected);
+            }
+        }
+    }
+
+    @Test(dataProvider = "strings")
+    public void testCopyToSegmentRaw(String string) {
+        for (Charset charset : standardCharsets()) {
+            for (int srcIndex = 0; srcIndex <= string.length(); srcIndex++) {
+                for (int numChars = 0; numChars <= string.length() - srcIndex; numChars++) {
+                    try (var arena = Arena.ofConfined()) {
+                        if (StringSupport.bytesCompatible(string, charset, srcIndex, numChars)) {
+                            String substring = string.substring(srcIndex, srcIndex + numChars);
+                            var segment = arena.allocate(substring.encodedLength(charset));
+                            StringSupport.copyToSegmentRaw(string, segment, 0, srcIndex, numChars);
+                            assertEquals(segment.toArray(JAVA_BYTE), substring.getBytes(charset));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     @DataProvider
     public static Object[][] strings() {
         return new Object[][]{
@@ -742,5 +777,37 @@ public class TestStringEncoding {
             }
         }
         return values.toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    public static Object[][] stringsAndCompatibleCharsets() {
+        Charset nativeUtf16 =
+                ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN
+                        ? StandardCharsets.UTF_16LE
+                        : StandardCharsets.UTF_16BE;
+        return new Object[][] {
+            {
+                List.of("", "hello world", "123"),
+                Set.of(
+                        StandardCharsets.US_ASCII,
+                        StandardCharsets.ISO_8859_1,
+                        StandardCharsets.UTF_8),
+            },
+            {
+                List.of("section \u00A7", "\u00E9"), Set.of(StandardCharsets.ISO_8859_1),
+            },
+            {
+                List.of(
+                        "cartwheel \uD83E\uDD38",
+                        "snowman \u26C4",
+                        "cjk \u4E00\u4E8C",
+                        "rainbow \uD83C\uDF08",
+                        "\uD83D\uDE00"),
+                Set.of(nativeUtf16),
+            },
+            {
+                List.of("unpaired surrogate \uD83C", "\uD83D", "\uDC00", "\uDC00\uD83C"), Set.of(),
+            },
+        };
     }
 }
