@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpPrincipal;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.SimpleFileServer;
+import sun.net.httpserver.simpleserver.FileServerHandler;
 
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
@@ -82,6 +83,106 @@ public class FileServerHandlerTest {
         var exchange = new MethodHttpExchange(requestMethod);
         handler.handle(exchange);
         assertEquals(501, exchange.rCode);
+    }
+
+    public static Object[][] singleRangeHeaders() {
+        return new Object[][]{
+                // start-end
+                {1000L, "bytes=0-499", new FileServerHandler.RangeEntry(0, 499)},
+                {1000L, "bytes=500-999", new FileServerHandler.RangeEntry(500, 999)},
+                {500L,  "bytes=100-199", new FileServerHandler.RangeEntry(100, 199)},
+
+                // start-
+                {1000L, "bytes=0-", new FileServerHandler.RangeEntry(0, 999)},
+                {1000L, "bytes=500-", new FileServerHandler.RangeEntry(500, 999)},
+                {500L,  "bytes=250-", new FileServerHandler.RangeEntry(250, 499)},
+
+                // -length
+                {1000L, "bytes=-500", new FileServerHandler.RangeEntry(500, 999)},
+                {1000L, "bytes=-1", new FileServerHandler.RangeEntry(999, 999)},
+                {500L,  "bytes=-50", new FileServerHandler.RangeEntry(450, 499)},
+
+                // single byte ranges
+                {1000L, "bytes=0-0", new FileServerHandler.RangeEntry(0, 0)},
+                {1000L, "bytes=999-999", new FileServerHandler.RangeEntry(999, 999)},
+                {500L,  "bytes=499-499", new FileServerHandler.RangeEntry(499, 499)},
+
+                // merging overlapping or contiguous ranges
+                {1000L, "bytes=0-499,400-599,600-999", new FileServerHandler.RangeEntry(0, 999)},
+                {1000L, "bytes=0-499,500-699,550-999", new FileServerHandler.RangeEntry(0, 999)},
+                {1000L, "bytes=0-499,500-999", new FileServerHandler.RangeEntry(0, 999)},
+                {1000L, "bytes=100-199,50-149", new FileServerHandler.RangeEntry(50, 199)},
+                {1000L, "bytes=100-199,300-399,150-350", new FileServerHandler.RangeEntry(100, 399)},
+        };
+    }
+
+    public static Object[][] multiRangeHeaders() {
+        return new Object[][]{
+                {1000L, "bytes=0-400,500-999", new FileServerHandler.RangeEntry[]{
+                        new FileServerHandler.RangeEntry(0, 400),
+                        new FileServerHandler.RangeEntry(500, 999)
+                }},
+                {1000L, "bytes=0-99,-200", new FileServerHandler.RangeEntry[]{
+                        new FileServerHandler.RangeEntry(0, 99),
+                        new FileServerHandler.RangeEntry(800, 999)
+                }},
+                {500L, "bytes=0-99,200-", new FileServerHandler.RangeEntry[]{
+                        new FileServerHandler.RangeEntry(0, 99),
+                        new FileServerHandler.RangeEntry(200, 499)
+                }},
+                {1000L, "bytes=0-99,200-399,0-99,400-499,200-499", new FileServerHandler.RangeEntry[]{
+                        new FileServerHandler.RangeEntry(0, 99),
+                        new FileServerHandler.RangeEntry(200, 499)
+                }}
+        };
+    }
+
+    @ParameterizedTest
+    @MethodSource("singleRangeHeaders")
+    public void testSingleRangeParse(long fileLength, String rangeHeader, FileServerHandler.RangeEntry entry) {
+        var ranges = FileServerHandler.parseRangeHeader(rangeHeader, fileLength);
+        assertNotNull(ranges);
+        assertEquals(1, ranges.size());
+        assertEquals(ranges.getFirst().start(), entry.start());
+        assertEquals(ranges.getFirst().end(), entry.end());
+    }
+
+    @ParameterizedTest
+    @MethodSource("multiRangeHeaders")
+    public void testMultiRangeParse(long fileLength, String rangeHeader, FileServerHandler.RangeEntry[] entries) {
+        var ranges = FileServerHandler.parseRangeHeader(rangeHeader, fileLength);
+        assertNotNull(ranges);
+        assertEquals(ranges.size(), entries.length);
+        for (int i = 0; i < entries.length; i++) {
+            assertEquals(ranges.get(i).start(), entries[i].start());
+            assertEquals(ranges.get(i).end(), entries[i].end());
+        }
+    }
+
+    public static Object[][] invalidRangeHeaders() {
+        return new Object[][]{
+                // invalid ranges: start > end, end beyond file, start beyond file
+                {"bytes=500-400"}, {"bytes=1000-1001"}, {"bytes=1000-"},
+
+                // malformed numbers or format
+                {"bytes=-0"}, {"bytes=meow"}, {"bytes=--500"}, {"bytes=500"}, {"bytes=-"}, {"bytes=+500-600"},
+                {"bytes=400--500"}, {"bytes=500-+600"}, {"bytes=+500-600"}, {"bytes=500+-600"}, {"bytes=500-600+"},
+                {"bytes=--"}, {"bytes=-+1"}, {"bytes=+1-"}, {"bytes=-+500"}, {"bytes=+"}, {"bytes=,-"}, {"bytes=+"},
+                {"bytes=,+500"}, {"bytes=-,"},
+
+                // multiple ranges with one invalid
+                {"bytes=500-600,700-600"},
+
+                // empty or extra commas/spaces
+                {"bytes="}, {"bytes=400-500,"}, {"bytes=,400-500"}, {"bytes= ,400-500"}, {"bytes=400-500, "}
+        };
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidRangeHeaders")
+    public void testInvalidRangeParse(String rangeHeader) {
+        var ranges = FileServerHandler.parseRangeHeader(rangeHeader, 1000L);
+        assertNull(ranges);
     }
 
     // 301 and 404 response codes tested in SimpleFileServerTest
