@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -359,6 +359,17 @@ public final class KEM {
          * <p>
          * An implementation may choose to not support arbitrary combinations
          * of {@code from}, {@code to}, and {@code algorithm}.
+         *
+         * <p>Implementation note:
+         * This method delegates validation of the input parameters and
+         * the cryptographic decapsulation operation to the underlying
+         * provider implementation.
+         *
+         * A {@code DecapsulateException} should only be thrown when the
+         * encapsulation message is malformed or invalid, as specified in
+         * this method’s {@code @throws} clause. Implementations of the
+         * ML-KEM algorithm should not reveal a decapsulation operation
+         * failure and instead return a pseudorandom secret key.
          *
          * @param encapsulation the key encapsulation message from the sender.
          *          The size must be equal to the value returned by
