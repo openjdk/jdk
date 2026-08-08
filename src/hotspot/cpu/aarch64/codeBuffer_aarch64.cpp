@@ -79,6 +79,13 @@ static bool emit_shared_trampolines(CodeBuffer* cb, CodeBuffer::SharedTrampoline
 #undef __
 
 bool CodeBuffer::pd_finalize_stubs() {
+  if (_shared_stub_to_interp_requests != nullptr) {
+    MacroAssembler masm(this);
+    if (!masm.ensure_static_call_dispatch_adapter()) {
+      return false;
+    }
+  }
+
   return emit_shared_stubs_to_interp<MacroAssembler>(this, _shared_stub_to_interp_requests)
       && emit_shared_trampolines(this, _shared_trampoline_requests);
 }

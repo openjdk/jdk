@@ -2170,6 +2170,11 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
 }
 
 void LIR_Assembler::emit_static_call_stub() {
+  if (!__ ensure_static_call_dispatch_adapter()) {
+    bailout("static call dispatch adapter overflow");
+    return;
+  }
+
   address call_pc = __ pc();
   address stub = __ start_a_stub(call_stub_size());
   if (stub == nullptr) {

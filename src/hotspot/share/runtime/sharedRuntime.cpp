@@ -3403,6 +3403,7 @@ void AdapterHandlerEntry::remove_unshareable_info() {
    _saved_code_length = 0;
 #endif // ASSERT
    _adapter_blob = nullptr;
+   clear_c2i_entry_cache();
    _linked = false;
    _sig_cc = nullptr;
    _sig_cc_ro = nullptr;

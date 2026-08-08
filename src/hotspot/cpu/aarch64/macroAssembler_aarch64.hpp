@@ -27,7 +27,6 @@
 #define CPU_AARCH64_MACROASSEMBLER_AARCH64_HPP
 
 #include "asm/assembler.inline.hpp"
-#include "code/aotCodeCache.hpp"
 #include "code/vmreg.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "oops/compressedOops.hpp"
@@ -760,7 +759,11 @@ public:
   address emit_trampoline_stub(int insts_call_instruction_offset, address target);
   static int max_trampoline_stub_size();
   void emit_static_call_stub();
-  static int static_call_stub_size();
+  static int max_static_call_stub_size();
+
+  bool ensure_static_call_dispatch_adapter();
+  static int max_static_call_dispatch_adapter_size();
+  address static_call_dispatch_adapter();
 
   // The following 4 methods return the offset of the appropriate move instruction
 
@@ -1401,14 +1404,6 @@ public:
 
   static bool far_branches() {
     return ReservedCodeCacheSize > branch_range;
-  }
-  // Check if the static call stub branch needs a far jump.
-  static bool codestub_branch_needs_far_jump() {
-    if (AOTCodeCache::is_on_for_dump()) {
-      // To calculate static_call_stub_size correctly.
-      return true;
-    }
-    return far_branches();
   }
   // Check if a branch to the given address needs a far jump.
   static bool target_needs_far_branch(address addr);
