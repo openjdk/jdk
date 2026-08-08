@@ -486,6 +486,24 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
     }
   }
 
+  // Canonicalize Float16 vector operations to the same IR shape produced by
+  // auto-vectorization.
+  bool bridge_float16_with_reinterpret =
+      vltype == VectorSupport::LaneType::LT_FLOAT16 && !is_vector_mask(vbox_klass) &&
+      arch_supports_vector(Op_VectorReinterpret, num_elem, elem_bt, VecMaskNotUsed);
+  if (bridge_float16_with_reinterpret) {
+    const TypeVect* hf_vect_type = TypeVect::make(elem_bt, num_elem);
+    if (opd1 != nullptr) {
+      opd1 = gvn().transform(new VectorReinterpretNode(opd1, opd1->bottom_type()->is_vect(), hf_vect_type));
+    }
+    if (opd2 != nullptr) {
+      opd2 = gvn().transform(new VectorReinterpretNode(opd2, opd2->bottom_type()->is_vect(), hf_vect_type));
+    }
+    if (opd3 != nullptr) {
+      opd3 = gvn().transform(new VectorReinterpretNode(opd3, opd3->bottom_type()->is_vect(), hf_vect_type));
+    }
+  }
+
   Node* operation = nullptr;
   const TypeVect* vt = TypeVect::make(elem_bt, num_elem, is_vector_mask(vbox_klass));
   switch (n) {
@@ -512,6 +530,11 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
     }
   }
   operation = gvn().transform(operation);
+
+  if (bridge_float16_with_reinterpret) {
+    const TypeVect* hf_vect_type = TypeVect::make(elem_bt, num_elem);
+    operation = gvn().transform(new VectorReinterpretNode(operation, operation->bottom_type()->is_vect(), hf_vect_type));
+  }
 
   // Wrap it up in VectorBox to keep object type information.
   Node* vbox = box_vector(operation, vbox_type, elem_bt, num_elem);
