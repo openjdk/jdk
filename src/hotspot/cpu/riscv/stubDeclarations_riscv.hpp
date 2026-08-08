@@ -39,7 +39,7 @@
                                       do_arch_entry,                    \
                                       do_arch_entry_init,               \
                                       do_arch_entry_array)              \
-  do_arch_blob(initial, 10000)                                          \
+  do_arch_blob(initial, 12000)                                          \
 
 
 #define STUBGEN_CONTINUATION_BLOBS_ARCH_DO(do_stub,                     \

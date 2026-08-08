@@ -1394,6 +1394,9 @@ public:
   void kernel_crc32(Register crc, Register buf, Register len,
         Register table0, Register table1, Register table2, Register table3,
         Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5, Register tmp6);
+  void update_dword_crc32(Register crc, Register v,
+        Register table0, Register table1, Register table2, Register table3,
+        Register table4, Register table5, Register table6, Register table7);
   void update_word_crc32(Register crc, Register v, Register tmp1, Register tmp2, Register tmp3,
         Register table0, Register table1, Register table2, Register table3,
         bool upper);
