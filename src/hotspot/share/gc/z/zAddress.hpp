@@ -188,20 +188,6 @@ constexpr int     ZPointerLoadShiftTable[] = {
   ZPointerRemappedShift + 4                      // [8] Remapped11
 };
 
-// This static duplicate is used in assembler for patching
-// which needs global address.
-static int        ZPointerLoadShiftTableGlobal[] = {
-  ZPointerRemappedShift + ZPointerRemappedShift, // [0] Null
-  ZPointerRemappedShift + 1,                     // [1] Remapped00
-  ZPointerRemappedShift + 2,                     // [2] Remapped01
-  0,
-  ZPointerRemappedShift + 3,                     // [4] Remapped10
-  0,
-  0,
-  0,
-  ZPointerRemappedShift + 4                      // [8] Remapped11
-};
-
 // Barrier metadata masks
 const uintptr_t   ZPointerLoadMetadataMask  = ZPointerRemappedMask;
 const uintptr_t   ZPointerMarkMetadataMask  = ZPointerLoadMetadataMask | ZPointerMarkedMask;
