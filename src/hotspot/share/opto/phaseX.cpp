@@ -443,22 +443,34 @@ PhaseRenumberLive::PhaseRenumberLive(PhaseGVN* gvn,
 
   assert(worklist.is_subset_of(_useful), "only useful nodes should still be in the worklist");
 
+  // While we don't need to rehash, some optimizations are sensitive to the
+  // relative ordering of node IDs, for example AddNode::commute wants to keep
+  // in1 < in2. Therefore, we keep the relative ordering stable.
+  uint next_idx = 0;
+  for (int old_idx = 0; old_idx <  _old2new_map.length(); old_idx++) {
+    if (_useful.member_set().test(old_idx)) {
+      _old2new_map.at_put(old_idx, next_idx++);
+    }
+  }
+  assert(next_idx == _useful.size(), "must map all useful nodes");
+
   // Iterate over the set of live nodes.
   for (uint current_idx = 0; current_idx < _useful.size(); current_idx++) {
     Node* n = _useful.at(current_idx);
 
-    const Type* type = gvn->type_or_null(n);
-    _new_type_array.map(current_idx, type);
+    uint old_idx = n->_idx;
+    int new_idx = _old2new_map.at(old_idx);
+    assert(new_idx >= 0, "every useful node must have new idx");
 
-    assert(_old2new_map.at(n->_idx) == -1, "already seen");
-    _old2new_map.at_put(n->_idx, current_idx);
+    const Type* type = gvn->type_or_null(n);
+    _new_type_array.map(new_idx, type);
 
     if (old_node_note_array != nullptr) {
-      Node_Notes* nn = C->locate_node_notes(old_node_note_array, n->_idx);
-      C->set_node_notes_at(current_idx, nn);
+      Node_Notes* nn = C->locate_node_notes(old_node_note_array, old_idx);
+      C->set_node_notes_at(new_idx, nn);
     }
 
-    n->set_idx(current_idx); // Update node ID.
+    n->set_idx(new_idx); // Update node ID.
 
     if (update_embedded_ids(n) < 0) {
       _delayed.push(n); // has embedded IDs; handle later
@@ -1366,6 +1378,51 @@ void PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape, bool deep_revisit
   // because there are known cases where Ideal can optimize after IGVN.
   // Some may be expected and cannot be fixed, and others should be fixed.
   switch (n->Opcode()) {
+    // BoolNode::Ideal canonicalizes integer comparisons, but only if "!is_counted_loop_exit_test".
+    // We only optimize if:
+    //   Cmp -> Bool -> If
+    // And not if:
+    //   Cmp -> Bool -> CountedLoopEnd
+    // In loop unswitching, we turn a CountedLoopEnd into an If.
+    // We would now have to notify the input of the modified node,
+    // which we don't do so far.
+    // One simple hack would be to just push the Bool node on
+    // the worklist in that optimization, in an ad-hoc fashon.
+    // But more principled would probably be to do this as part
+    // of replace_input_of, which calls set_req_X, which already
+    // has some notification logic, for example using
+    // Node::has_special_unique_user. There are also other places
+    // the graph could be updated and lose the CountedLoopEnd node,
+    // and in those places we also use Node::has_special_unique_user,
+    // and other related code.
+    // I would suggest we refactor and extend that notification
+    // code in a future RFE.
+    //
+    // Found with:
+    //   -XX:VerifyIterativeGVN=1110
+    //   compiler/loopopts/TestBaseCountedEndLoopUnswitchCandidate.java
+    case Op_Bool:
+      return;
+
+    // I have encountered some issues with AddHF.
+    // It could be due to issues arising from JDK-8388873, we should
+    // check again after that is fixed.
+    //
+    // Found on aarch64 with:
+    //   -XX:-TieredCompilation -XX:VerifyIterativeGVN=1110
+    //   compiler/c2/irTests/TestFloat16ScalarOperations.java
+    case Op_AddHF:
+      return;
+
+    // In XorI/LNode::Ideal, we optimize Xor(x, -1), but
+    // only if is_used_in_only_arithmetic: so we would
+    // need notification if the Xor only has arithmetic
+    // nodes. I think this also calls for a generalization
+    // of Node::has_special_unique_user.
+    case Op_XorI:
+    case Op_XorL:
+      return;
+
     // RegionNode::Ideal does "Skip around the useless IF diamond".
     //   245  IfTrue  === 244
     //   258  If  === 245 257
@@ -1383,182 +1440,6 @@ void PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape, bool deep_revisit
     // Found with:
     //   java -XX:VerifyIterativeGVN=0100 -Xcomp --version
     case Op_Region:
-      return;
-
-    // In AddNode::Ideal, we call "commute", which swaps the inputs so
-    // that smaller idx are first. Tracking it back, it led me to
-    // PhaseIdealLoop::remix_address_expressions which swapped the edges.
-    //
-    // Example:
-    //   Before PhaseIdealLoop::remix_address_expressions
-    //     154  AddI  === _ 12 144
-    //   After PhaseIdealLoop::remix_address_expressions
-    //     154  AddI  === _ 144 12
-    //   After AddNode::Ideal
-    //     154  AddI  === _ 12 144
-    //
-    // I suspect that the node should be added to the IGVN worklist after
-    // PhaseIdealLoop::remix_address_expressions
-    //
-    // This is the only case I looked at, there may be others. Found like this:
-    //   java -XX:VerifyIterativeGVN=0100 -Xbatch --version
-    //
-    // The following hit the same logic in PhaseIdealLoop::remix_address_expressions.
-    //
-    // Note: currently all of these fail also for other reasons, for example
-    // because of "commute" doing the reordering with the phi below. Once
-    // that is resolved, we can come back to this issue here.
-    //
-    // case Op_AddD:
-    // case Op_AddI:
-    // case Op_AddL:
-    // case Op_AddF:
-    // case Op_MulI:
-    // case Op_MulL:
-    // case Op_MulF:
-    // case Op_MulD:
-    //   if (n->in(1)->_idx > n->in(2)->_idx) {
-    //     // Expect "commute" to revert this case.
-    //     return false;
-    //   }
-    //   break; // keep verifying
-
-    // AddFNode::Ideal calls "commute", which can reorder the inputs for this:
-    //   Check for tight loop increments: Loop-phi of Add of loop-phi
-    // It wants to take the phi into in(1):
-    //    471  Phi  === 435 38 390
-    //    390  AddF  === _ 471 391
-    //
-    // Other Associative operators are also affected equally.
-    //
-    // Investigate why this does not happen earlier during IGVN.
-    //
-    // Found with:
-    //   test/hotspot/jtreg/compiler/loopopts/superword/ReductionPerf.java
-    //   -XX:VerifyIterativeGVN=1110
-    case Op_AddD:
-    //case Op_AddI: // Also affected for other reasons, see case further down.
-    //case Op_AddL: // Also affected for other reasons, see case further down.
-    case Op_AddF:
-    case Op_MulI:
-    case Op_MulL:
-    case Op_MulF:
-    case Op_MulD:
-    case Op_MinF:
-    case Op_MinD:
-    case Op_MaxF:
-    case Op_MaxD:
-    // XorINode::Ideal
-    // Found with:
-    //   compiler/intrinsics/chacha/TestChaCha20.java
-    //   -XX:VerifyIterativeGVN=1110
-    case Op_XorI:
-    case Op_XorL:
-    // It seems we may have similar issues with the HF cases.
-    // Found with aarch64:
-    //   compiler/vectorization/TestFloat16VectorOperations.java
-    //   -XX:VerifyIterativeGVN=1110
-    case Op_AddHF:
-    case Op_MulHF:
-    case Op_MaxHF:
-    case Op_MinHF:
-      return;
-
-    // In MulNode::Ideal the edges can be swapped to help value numbering:
-    //
-    //    // We are OK if right is a constant, or right is a load and
-    //    // left is a non-constant.
-    //    if( !(t2->singleton() ||
-    //          (in(2)->is_Load() && !(t1->singleton() || in(1)->is_Load())) ) ) {
-    //      if( t1->singleton() ||       // Left input is a constant?
-    //          // Otherwise, sort inputs (commutativity) to help value numbering.
-    //          (in(1)->_idx > in(2)->_idx) ) {
-    //        swap_edges(1, 2);
-    //
-    // Why was this not done earlier during IGVN?
-    //
-    // Found with:
-    //    test/hotspot/jtreg/gc/stress/gcbasher/TestGCBasherWithG1.java
-    //    -XX:VerifyIterativeGVN=1110
-    case Op_AndI:
-    // Same for AndL.
-    // Found with:
-    //   compiler/intrinsics/bigInteger/MontgomeryMultiplyTest.java
-    //    -XX:VerifyIterativeGVN=1110
-    case Op_AndL:
-      return;
-
-    // SubLNode::Ideal does transform like:
-    //   Convert "c1 - (y+c0)" into "(c1-c0) - y"
-    //
-    // In IGVN before verification:
-    //   8423  ConvI2L  === _ 3519  [[ 8424 ]]  #long:-2
-    //   8422  ConvI2L  === _ 8399  [[ 8424 ]]  #long:3..256:www
-    //   8424  AddL  === _ 8422 8423  [[ 8383 ]]  !orig=[8382]
-    //   8016  ConL  === 0  [[ 8383 ]]  #long:0
-    //   8383  SubL  === _ 8016 8424  [[ 8156 ]]  !orig=[8154]
-    //
-    // And then in verification:
-    //   8338  ConL  === 0  [[ 8339 8424 ]]  #long:-2     <----- Was constant folded.
-    //   8422  ConvI2L  === _ 8399  [[ 8424 ]]  #long:3..256:www
-    //   8424  AddL  === _ 8422 8338  [[ 8383 ]]  !orig=[8382]
-    //   8016  ConL  === 0  [[ 8383 ]]  #long:0
-    //   8383  SubL  === _ 8016 8424  [[ 8156 ]]  !orig=[8154]
-    //
-    // So the form changed from:
-    //   c1 - (y + [8423  ConvI2L])
-    // to
-    //   c1 - (y + -2)
-    // but the SubL was not added to the IGVN worklist. Investigate why.
-    // There could be other issues too.
-    //
-    // There seems to be a related AddL IGVN optimization that triggers
-    // the same SubL optimization, so investigate that too.
-    //
-    // Found with:
-    //   java -XX:VerifyIterativeGVN=0100 -Xcomp --version
-    case Op_SubL:
-      return;
-
-    // SubINode::Ideal does
-    // Convert "x - (y+c0)" into "(x-y) - c0" AND
-    // Convert "c1 - (y+c0)" into "(c1-c0) - y"
-    //
-    // Investigate why this does not yet happen during IGVN.
-    //
-    // Found with:
-    //   test/hotspot/jtreg/compiler/c2/IVTest.java
-    //   -XX:VerifyIterativeGVN=1110
-    case Op_SubI:
-      return;
-
-    // AddNode::IdealIL does transform like:
-    //   Convert x + (con - y) into "(x - y) + con"
-    //
-    // In IGVN before verification:
-    //   8382  ConvI2L
-    //   8381  ConvI2L  === _ 791  [[ 8383 ]]  #long:0
-    //   8383  SubL  === _ 8381 8382
-    //   8168  ConvI2L
-    //   8156  AddL  === _ 8168 8383  [[ 8158 ]]
-    //
-    // And then in verification:
-    //   8424  AddL
-    //   8016  ConL  === 0  [[ 8383 ]]  #long:0  <--- Was constant folded.
-    //   8383  SubL  === _ 8016 8424
-    //   8168  ConvI2L
-    //   8156  AddL  === _ 8168 8383  [[ 8158 ]]
-    //
-    // So the form changed from:
-    //   x + (ConvI2L(0) - [8382  ConvI2L])
-    // to
-    //   x + (0 - [8424  AddL])
-    // but the AddL was not added to the IGVN worklist. Investigate why.
-    // There could be other issues, too. For example with "commute", see above.
-    //
-    // Found with:
-    //   java -XX:VerifyIterativeGVN=0100 -Xcomp --version
-    case Op_AddL:
       return;
 
     // SubTypeCheckNode::Ideal calls SubTypeCheckNode::verify_helper, which does
@@ -1658,20 +1539,6 @@ void PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape, bool deep_revisit
     case Op_ConvI2L:
       return;
 
-    // AddNode::IdealIL can do this transform (and similar other ones):
-    //   Convert "a*b+a*c into a*(b+c)
-    // The example had AddI(MulI(a, b), MulI(a, c)). Why did this not happen
-    // during IGVN? There was a mutation for one of the MulI, and only
-    // after that the pattern was as needed for the optimization. The MulI
-    // was added to the IGVN worklist, but not the AddI. This probably
-    // can be fixed by adding the correct pattern in add_users_of_use_to_worklist.
-    //
-    // Found with:
-    //   test/hotspot/jtreg/compiler/loopopts/superword/ReductionPerf.java
-    //   -XX:VerifyIterativeGVN=1110
-    case Op_AddI:
-      return;
-
     // ArrayCopyNode::Ideal
     //    calls ArrayCopyNode::prepare_array_copy
     //    calls Compile::conv_I2X_index        -> is called with sizetype = intcon(0), I think that
@@ -1716,67 +1583,6 @@ void PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape, bool deep_revisit
     //   compiler/c2/TestScalarReplacementMaxLiveNodes.java
     //   -XX:VerifyIterativeGVN=1110
     case Op_CastII:
-      return;
-
-    // MaxLNode::Ideal
-    //   calls AddNode::Ideal
-    //   calls commute -> decides to swap edges
-    //
-    // Another notification issue, because we check inputs of inputs?
-    // MaxL -> Phi -> Loop
-    // MaxL -> Phi -> MaxL
-    //
-    // Found with:
-    //   compiler/c2/irTests/TestIfMinMax.java
-    //   -XX:VerifyIterativeGVN=1110
-    case Op_MaxL:
-    case Op_MinL:
-      return;
-
-    // OrINode::Ideal
-    //   calls AddNode::Ideal
-    //   calls commute -> left is Load, right not -> commute.
-    //
-    // Not sure why notification does not work here, seems like
-    // the depth is only 1, so it should work. Needs investigation.
-    //
-    // Found with:
-    //   compiler/codegen/TestCharVect2.java#id0
-    //   -XX:VerifyIterativeGVN=1110
-    case Op_OrI:
-    case Op_OrL:
-      return;
-
-    // Bool -> constant folded to 1.
-    // Issue with notification?
-    //
-    // Found with:
-    //   compiler/c2/irTests/TestVectorizationMismatchedAccess.java
-    //   -XX:VerifyIterativeGVN=1110
-    case Op_Bool:
-      return;
-
-    // LShiftLNode::Ideal
-    // Looks at pattern: "(x + x) << c0", converts it to "x << (c0 + 1)"
-    // Probably a notification issue.
-    //
-    // Found with:
-    //   compiler/conversions/TestMoveConvI2LOrCastIIThruAddIs.java
-    //   -ea -esa -XX:CompileThreshold=100 -XX:+UnlockExperimentalVMOptions -server -XX:-TieredCompilation -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
-    case Op_LShiftL:
-      return;
-
-    // LShiftINode::Ideal
-    // pattern: ((x + con1) << con2) -> x << con2 + con1 << con2
-    // Could be issue with notification of inputs of inputs
-    //
-    // Side-note: should cases like these not be shared between
-    //            LShiftI and LShiftL?
-    //
-    // Found with:
-    //   compiler/escapeAnalysis/Test6689060.java
-    //   -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110 -ea -esa -XX:CompileThreshold=100 -XX:+UnlockExperimentalVMOptions -server -XX:-TieredCompilation -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
-    case Op_LShiftI:
       return;
 
     // AddPNode::Ideal seems to do set_req without removing lock first.
@@ -1827,13 +1633,6 @@ void PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape, bool deep_revisit
     // Found with:
     //   java -XX:VerifyIterativeGVN=1110 -Xcomp --version
     case Op_CmpP:
-      return;
-
-    // MinINode::Ideal
-    // Did not investigate, but there are some patterns that might
-    // need more notification.
-    case Op_MinI:
-    case Op_MaxI: // preemptively removed it as well.
       return;
   }
 
@@ -2057,24 +1856,6 @@ void PhaseIterGVN::verify_Identity_for(Node* n) {
     case Op_CheckCastPP:
       return;
 
-    // In SubNode::Identity, we do:
-    //   Convert "(X+Y) - Y" into X and "(X+Y) - X" into Y
-    // In the example, the AddI had an input replaced, the AddI is
-    // added to the IGVN worklist, but the SubI is one link further
-    // down and is not added. I checked add_users_of_use_to_worklist
-    // where I would expect the SubI would be added, and I cannot
-    // find the pattern, only this one:
-    //   If changed AddI/SubI inputs, check CmpU for range check optimization.
-    //
-    // Fix this "notification" issue and check if there are any other
-    // issues.
-    //
-    // Found with:
-    //   java -XX:VerifyIterativeGVN=1000 -Xcomp --version
-    case Op_SubI:
-    case Op_SubL:
-      return;
-
     // PhiNode::Identity checks for patterns like:
     //   r = (x != con) ? x : con;
     // that can be constant folded to "x".
@@ -2087,22 +1868,6 @@ void PhaseIterGVN::verify_Identity_for(Node* n) {
     //   test/hotspot/jtreg/gc/stress/gcbasher/TestGCBasherWithG1.java
     //   -XX:VerifyIterativeGVN=1110
     case Op_Phi:
-      return;
-
-    // ConvI2LNode::Identity does
-    // convert I2L(L2I(x)) => x
-    //
-    // Investigate why this did not already happen during IGVN.
-    //
-    // Found with:
-    //   compiler/loopopts/superword/TestDependencyOffsets.java#vanilla-A
-    //   -XX:VerifyIterativeGVN=1110
-    case Op_ConvI2L:
-      return;
-
-    // AbsINode::Identity
-    // Not investigated yet.
-    case Op_AbsI:
       return;
   }
 
@@ -2564,8 +2329,8 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     }
   }
 
-  uint use_op = use->Opcode();
-  if(use->is_Cmp()) {       // Enable CMP/BOOL optimization
+  const int use_op = use->Opcode();
+  if (use->is_Cmp()) {       // Enable CMP/BOOL optimization
     add_users_to_worklist0(use, worklist); // Put Bool on worklist
     if (use->outcnt() > 0) {
       Node* bol = use->raw_out(0);
@@ -2700,10 +2465,41 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       return u->Opcode() == Op_AndI || u->Opcode() == Op_AndL;
     });
   }
+  // OrI/LNode::Ideal converts shift/or patterns into rotates, which
+  // needs to trigger when x and y common.
+  // e.g. (x << 14) | (y >>> 18)
+  if (use_op == Op_LShiftI || use_op == Op_URShiftI) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->Opcode() == Op_OrI;
+    });
+  } else if (use_op == Op_LShiftL || use_op == Op_URShiftL) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->Opcode() == Op_OrL;
+    });
+  }
   // If changed AddI/SubI inputs, check CmpU for range check optimization.
   if (use_op == Op_AddI || use_op == Op_SubI) {
     add_users_to_worklist_if(worklist, use, [](Node* u) {
       return u->Opcode() == Op_CmpU;
+    });
+  }
+  // LShiftNode::IdealIL:
+  // (x + c1) << c2  ->  (x << c2) + c3
+  if (use_op == Op_AddI || use_op == Op_AddL) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->Opcode() == Op_LShiftI || u->Opcode() == Op_LShiftL;
+    });
+  }
+  // If changed AddI/AddL inputs, check for add users:
+  // e.g. x + (y + n)      ->  x + (y + C)     ->  (x + y) +   C
+  // e.g. x - (y + n)      ->  x - (y + C)     ->  (x - y) + (-C)
+  //      before mutation      after mutation      optimized by
+  //                                               AddNode::Ideal
+  if (use_op == Op_AddI || use_op == Op_AddL) {
+    int add_op = use_op;
+    int sub_op = (use_op == Op_AddI) ? Op_SubI : Op_SubL;
+    add_users_to_worklist_if(worklist, use, [&](Node* u) {
+      return u->Opcode() == add_op || u->Opcode() == sub_op;
     });
   }
   // If changed AddI/AddL inputs, check URShift users for
@@ -2727,10 +2523,20 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     }
   }
   // If changed AndI/AndL inputs, check RShift/URShift users for "(x & mask) >> shift" optimization opportunity
+  // LShiftNode::IdealIL optimizes patterns like: LShift(And(RShift(x, c), Y), c)
   if (use_op == Op_AndI || use_op == Op_AndL) {
     add_users_to_worklist_if(worklist, use, [](Node* u) {
       return u->Opcode() == Op_RShiftI || u->Opcode() == Op_RShiftL ||
-             u->Opcode() == Op_URShiftI || u->Opcode() == Op_URShiftL;
+             u->Opcode() == Op_URShiftI || u->Opcode() == Op_URShiftL ||
+             u->Opcode() == Op_LShiftI || u->Opcode() == Op_LShiftL;
+    });
+  }
+  // MulNode::AndIL_sum_and_mask can optimize:
+  // AndX(AddX(x, y), mask) -> AndX(x, mask)
+  if (use_op == Op_AddI || use_op == Op_AddL) {
+    const int and_op = (use_op == Op_AddI) ? Op_AndI : Op_AndL;
+    add_users_to_worklist_if(worklist, use, [&](Node* u) {
+      return u->Opcode() == and_op;
     });
   }
   // Check for redundant conversion patterns:
@@ -2740,15 +2546,20 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   // ConvI2F->ConvF2I->ConvI2F
   // Note: there may be other 3-nodes conversion chains that would require to be added here, but these
   // are the only ones that are known to trigger missed optimizations otherwise
+  //
+  // ConvI2LNode::Identity optimizes the following 2-hop optimization, once x is proven to be in int range:
+  //   ConvI2L(ConvL2I(x)) -> x
   if (use_op == Op_ConvL2D ||
       use_op == Op_ConvI2F ||
       use_op == Op_ConvL2F ||
-      use_op == Op_ConvF2I) {
+      use_op == Op_ConvF2I ||
+      use_op == Op_ConvL2I) {
     add_users_to_worklist_if(worklist, use, [=](Node* u) {
       return (use_op == Op_ConvL2D && u->Opcode() == Op_ConvD2L) ||
              (use_op == Op_ConvI2F && u->Opcode() == Op_ConvF2I) ||
              (use_op == Op_ConvL2F && u->Opcode() == Op_ConvF2L) ||
-             (use_op == Op_ConvF2I && u->Opcode() == Op_ConvI2F);
+             (use_op == Op_ConvF2I && u->Opcode() == Op_ConvI2F) ||
+             (use_op == Op_ConvL2I && u->Opcode() == Op_ConvI2L);
     });
   }
   // ConvD2F::Ideal matches ConvD2F(SqrtD(ConvF2D(x))) => SqrtF(x).
@@ -2909,6 +2720,73 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   if (use_op == Op_SubI || use_op == Op_SubL) {
     const int add_op = (use_op == Op_SubI) ? Op_AddI : Op_AddL;
     add_users_to_worklist_if(worklist, use, [=](Node* u) { return u->Opcode() == add_op; });
+  }
+
+  // If changed Mul inputs, check Add for common-factor reassociation.
+  // e.g., (a * b) + (a * c) -> a * (b + c).
+  if (use_op == Op_MulI || use_op == Op_MulL) {
+    const int add_op = (use_op == Op_MulI) ? Op_AddI : Op_AddL;
+    add_users_to_worklist_if(worklist, use, [=](Node* u) { return u->Opcode() == add_op; });
+  }
+
+  // We may have a loop-phi that is about to close the AddI recurrence,
+  // and we would have to ensure AddNode::commute is called for the AddI.
+  // e.g. use = Phi(x, n)      ->  use = Phi(x, u)     ->  use = Phi(x, u)
+  //      u   = AddI(y, use)       u   = AddI(y, use)  ->  u   = AddI(use, y)
+  //      current state,           After mutation,         After commute,
+  //      before mutation          before commute          canonical loop incr
+  //
+  // Alternatively, we may have a region-phi, that is about to turn
+  // into a loop-phi, and where the AddI recurrence is already closed,
+  // and the AddI has its inputs sorted by idx. In this case, we also
+  // need AddNode::commute to canonicalize the AddI, so that the phi
+  // input is on the left now.
+  // e.g. use = Phi(region, u) ->  use = Phi(loop, u)  ->  use = Phi(loop, u)
+  //      u   = AddI(y, use)       u   = AddI(y, use)  ->  u   = AddI(use, y)
+  //      current state,           loop-phi,               After commute,
+  //      region-phi               before commute          canonical loop incr
+  if (use->is_Phi() &&
+      use->req() == 3 &&
+      (n == use->in(0) ||                          // possibly: region-phi -> loop-phi
+       n == use->in(LoopNode::LoopBackControl))) { // possibly: closing AddI recurrence
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->is_Add();
+    });
+  }
+
+  // AndLNode::Ideal optimizes GraphKit::mark_word_test patterns
+  // Pattern: AndL(LoadL(x=mark word), y)
+  // Pattern: AndL(Phi(LoadL(x=mark word), z), y)
+  if (use->is_Load()) {
+    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+      Node* u = use->fast_out(i2);
+      if (u->Opcode() == Op_AndL) {
+        // n -> Load -> AndL
+        worklist.push(u);
+      } else if (u->is_Phi()) {
+        // n -> Load -> Phi -> AndL
+        add_users_to_worklist_if(worklist, u, [](Node* u2) {
+          return u2->Opcode() == Op_AndL;
+        });
+      }
+    }
+  }
+
+  // PhiNode::Ideal can optimize:
+  // Pattern: Phi(condition, x + y, x) -> x + Phi(condition, y, 0)
+  if (use_op == Op_AddI) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->is_Phi();
+    });
+  }
+
+  // AndVNode::Ideal and OrVNode::Ideal have 2-hop operations for
+  // repeated and/or with the same value:
+  // Pattern: AndV(AndV(a, b), a) -> AndV(a, b)
+  if (use_op == Op_AndV || use_op == Op_OrV) {
+    add_users_to_worklist_if(worklist, use, [&](Node* u) {
+      return u->Opcode() == use_op;
+    });
   }
 }
 
