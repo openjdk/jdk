@@ -765,7 +765,8 @@ bool PSParallelCompact::invoke(bool clear_all_soft_refs, bool should_do_max_comp
 
 bool PSParallelCompact::invoke(bool clear_all_soft_refs,
                                bool should_do_max_compaction,
-                               PSPendingAllocation pending_allocation) {
+                               PSPendingAllocation pending_allocation,
+                               size_t promoted_before_full_gc) {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
   assert(Thread::current() == (Thread*)VMThread::vm_thread(),
          "should be in vm thread");
@@ -847,6 +848,13 @@ bool PSParallelCompact::invoke(bool clear_all_soft_refs,
     ParCompactionManager::_preserved_marks_set->restore(&ParallelScavengeHeap::heap()->workers());
 
     ParCompactionManager::verify_all_region_stack_empty();
+
+    // Update promotion stats.
+    size_t promoted_bytes = promoted_before_full_gc;
+    for (uint id = first_young_gen_space_id; id < last_space_id; ++id) {
+      promoted_bytes += _space_info[id].live_words() * HeapWordSize;
+    }
+    size_policy->sample_promoted_bytes_permit_zero(promoted_bytes);
 
     // Reset the mark bitmap, summary data, and do other bookkeeping.  Must be
     // done before resizing.

@@ -90,7 +90,7 @@ class PSCardTable: public CardTable {
   void verify_clean_cards(MemRegion mr) const NOT_DEBUG_RETURN;
 
   void right_shift_gen_boundary(MemRegion new_region0, MemRegion new_region1);
-  void adjust_after_young_gen_expansion(MemRegion new_region0, MemRegion new_region1);
+  void left_shift_gen_boundary(MemRegion new_region0, MemRegion new_region1);
 
   // Card marking
   void inline_write_ref_field_gc(void* field) {

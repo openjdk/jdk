@@ -60,7 +60,7 @@ void PSHeapVirtualSpace::right_shift_gen_boundary(char* new_boundary) {
   if (_old_gen_committed_high_addr < original_gen_boundary) {
     size_t diff = pointer_delta(original_gen_boundary, _old_gen_committed_high_addr, sizeof(char));
     if (!expand_old_gen(diff)) {
-      vm_exit_out_of_memory(diff, OOM_MMAP_ERROR, "right_shift_gen_boundary");
+      vm_exit_out_of_memory(diff, OOM_MMAP_ERROR, "right_shift_gen_boundary: fully commit old-gen");
     }
   }
   assert(_old_gen_committed_high_addr == original_gen_boundary, "inv");
@@ -71,7 +71,7 @@ void PSHeapVirtualSpace::right_shift_gen_boundary(char* new_boundary) {
     _old_gen_committed_high_addr = original_young_gen_committed_high_addr;
     size_t diff = pointer_delta(new_boundary, original_young_gen_committed_high_addr, sizeof(char));
     if (!expand_old_gen(diff)) {
-      vm_exit_out_of_memory(diff, OOM_MMAP_ERROR, "right_shift_gen_boundary");
+      vm_exit_out_of_memory(diff, OOM_MMAP_ERROR, "right_shift_gen_boundary: expand_old_gen");
     }
     _young_gen_committed_high_addr = new_boundary;
   } else {
@@ -88,7 +88,7 @@ void PSHeapVirtualSpace::right_shift_gen_boundary(char* new_boundary) {
       size_t diff = original_young_gen_committed_size - current_committed;
       diff = MIN2(diff, young_gen_remaining_size);
       if (!expand_young_gen(diff)) {
-        vm_exit_out_of_memory(diff, OOM_MMAP_ERROR, "right_shift_gen_boundary");
+        vm_exit_out_of_memory(diff, OOM_MMAP_ERROR, "right_shift_gen_boundary: expand_young_gen");
       }
     }
   }

@@ -546,15 +546,15 @@ void PSCardTable::right_shift_gen_boundary(MemRegion new_region0,
   }
 }
 
-void PSCardTable::adjust_after_young_gen_expansion(MemRegion new_region0,
-                                                   MemRegion new_region1) {
+void PSCardTable::left_shift_gen_boundary(MemRegion new_region0,
+                                          MemRegion new_region1) {
   // Preconditions – the whole heap must contain both regions and region0 always starts at heap base.
   assert(_whole_heap.contains(new_region0), "precondition");
   assert(_whole_heap.contains(new_region1), "precondition");
   assert(new_region0.start() == _whole_heap.start(), "region0 must start at heap start");
   assert(new_region0.end() <= _covered[0].end(), "region0 committed mem must never grow");
   assert(new_region1.start() < _covered[1].start(), "region1 start must left-shift");
-  assert(new_region1.end() == _whole_heap.end(), "region1 must be at heap-end");
+  assert(new_region1.start() < new_region1.end(), "region1 must be non-empty");
   assert(new_region1.end() >= _covered[1].end(), "region1 must never shrink");
 
   // Heap:

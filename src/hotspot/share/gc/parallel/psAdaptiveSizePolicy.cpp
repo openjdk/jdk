@@ -293,9 +293,18 @@ void PSAdaptiveSizePolicy::update_averages(bool is_survivor_overflow,
     _survived_bytes.add(survived + promoted);
   }
 
-  avg_promoted()->sample(promoted);
+  sample_promoted_bytes(promoted);
   _promoted_bytes.add(promoted);
 
   double promotion_rate = promoted / (_gc_distance_seconds_seq.last() + _trimmed_minor_gc_time_seconds.last());
   _promotion_rate_bytes_per_sec.add(promotion_rate);
+}
+
+void PSAdaptiveSizePolicy::sample_promoted_bytes(size_t promoted) {
+  avg_promoted()->sample(promoted);
+}
+
+void PSAdaptiveSizePolicy::sample_promoted_bytes_permit_zero(size_t promoted) {
+  // avg_promoted() is AdaptivePaddedNoZeroDevAverage*
+  avg_promoted()->AdaptivePaddedAverage::sample(promoted);
 }

@@ -577,19 +577,24 @@ void ParallelScavengeHeap::collect_at_safepoint(bool is_full,
                                                 PSPendingAllocation pending_allocation) {
   assert(!GCLocker::is_active(), "precondition");
   bool clear_soft_refs = GCCause::should_clear_all_soft_refs(_gc_cause);
+  size_t promoted_before_full_gc = 0;
 
   if (!is_full && should_attempt_young_gc()) {
+    const size_t old_used_before = old_gen()->used_in_bytes();
     bool young_gc_success = PSScavenge::invoke(clear_soft_refs);
     if (young_gc_success) {
       return;
     }
+    assert(old_gen()->used_in_bytes() >= old_used_before, "inv");
+    promoted_before_full_gc = old_gen()->used_in_bytes() - old_used_before;
     log_debug(gc, heap)("Upgrade to Full-GC since Young-gc failed.");
   }
 
   const bool should_do_max_compaction = false;
   PSParallelCompact::invoke(clear_soft_refs,
                             should_do_max_compaction,
-                            pending_allocation);
+                            pending_allocation,
+                            promoted_before_full_gc);
 }
 
 void ParallelScavengeHeap::object_iterate(ObjectClosure* cl) {
@@ -856,7 +861,8 @@ size_t ParallelScavengeHeap::calculate_desired_old_gen_capacity(size_t old_gen_l
   // Using recorded data to calculate the new capacity of old-gen to avoid
   // excessive expansion but also keep footprint low
 
-  size_t promoted_estimate = _size_policy->padded_average_promoted_in_bytes();
+  size_t promoted_estimate = MIN2(_size_policy->padded_average_promoted_in_bytes(),
+                                  _young_gen->reserved_size());
   // Should have at least this free room for the next young-gc promotion.
   size_t free_size = promoted_estimate;
 
@@ -967,7 +973,8 @@ void ParallelScavengeHeap::resize_young_gen_after_young_gc(bool is_survivor_over
     old_gen_lendable_size = _old_gen->uncommitted_size() + _old_gen->free_in_bytes();
 
     // Reserve headroom for expected promotion into old gen.
-    size_t avg_promoted = size_policy()->padded_average_promoted_in_bytes();
+    size_t avg_promoted = MIN2(size_policy()->padded_average_promoted_in_bytes(),
+                               MaxNewSize);
     old_gen_lendable_size = (old_gen_lendable_size > avg_promoted)
                             ? old_gen_lendable_size - avg_promoted
                             : 0;
@@ -988,14 +995,18 @@ void ParallelScavengeHeap::resize_young_gen_after_young_gc(bool is_survivor_over
   // The current gen-boundary can't satisfy requested eden/survivor sizes.
   // Expand young-gen on both left and right edges.
 
+  // From-space might contain live objs, so it needs to stay in-place.
+  // Additionally, the two survivor spaces must have the same capacity,
+  // so the left-edge moves by to-capacity.
+
   // 1. Left-edge expansion
   // before:  |old-gen      | from  to  eden  |
   // after:   |old-gen | to   from  eden      |
-  //                       ^ previous gen-boundary
+  //                        ^ previous gen-boundary
   {
     const size_t delta_bytes = survivor_size;
     assert(align_down(_old_gen->uncommitted_size() + _old_gen->free_in_bytes(), SpaceAlignment) >= delta_bytes,
-       "enough space for left-shift");
+           "enough space for left-shift");
 
     const bool is_old_gen_committed_mr_changed = delta_bytes > _old_gen->uncommitted_size();
 
@@ -1022,8 +1033,8 @@ void ParallelScavengeHeap::resize_young_gen_after_young_gc(bool is_survivor_over
 
   PSScavenge::reset_young_gen_reserved(_young_gen->reserved());
 
-  card_table()->adjust_after_young_gen_expansion(_old_gen->committed(),
-                                               _young_gen->committed());
+  card_table()->left_shift_gen_boundary(_old_gen->committed(),
+                                        _young_gen->committed());
 
   _young_gen->reinit_to_from_layout(eden_size, survivor_size);
 }
@@ -1050,7 +1061,11 @@ bool ParallelScavengeHeap::adjust_gen_boundary_after_full_gc(size_t live_bytes,
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
 
   const bool has_pending_non_tlab_allocation = pending_allocation.is_present() && !pending_allocation._is_tlab;
-  size_t required_old_free_bytes = _size_policy->padded_average_promoted_in_bytes();
+  // Adaptive sizing does not grow a non-empty young reservation here, while
+  // fixed sizing may restore it up to MaxNewSize during this full GC.
+  const size_t max_promotion = UseAdaptiveSizePolicy ? _young_gen->reserved_size() : MaxNewSize;
+  size_t required_old_free_bytes = MIN2(_size_policy->padded_average_promoted_in_bytes(),
+                                        max_promotion);
   if (has_pending_non_tlab_allocation) {
     // TLAB failures retry outside TLAB. Only non-TLAB requests need old-gen room here.
     required_old_free_bytes = MAX2(required_old_free_bytes,
@@ -1097,41 +1112,46 @@ bool ParallelScavengeHeap::adjust_gen_boundary_after_full_gc(size_t live_bytes,
 
   assert(desired_gen_boundary < current_gen_boundary, "inv");
 
-  // Left-shift
-  // Full GC only moves the boundary left to recover from old-gen-only mode.
-  // With a non-empty young reservation, adaptive young-GC sizing owns normal
-  // rebalancing; without adaptive sizing, retaining the borrowed split avoids
-  // making explicit full GCs resize an otherwise fixed-policy heap.
-  if (_young_gen->reserved_size() > 0) {
-    return false;
-  }
-
+  // Left-shift. Adaptive sizing recovers from old-gen-only mode gradually;
+  // fixed sizing returns borrowed reservation up to the startup MaxNewSize.
+  const size_t young_reserved_before = _young_gen->reserved_size();
   size_t free_bytes_in_old_gen = _old_gen->reserved_size() - desired_old_capacity;
   assert(is_aligned(free_bytes_in_old_gen, SpaceAlignment), "inv");
-  // Smooth shrinking old-gen
-  size_t desired_shrink_bytes = align_down(free_bytes_in_old_gen / 8, SpaceAlignment);
-  if (desired_shrink_bytes < young_gen_size_lower_bound()) {
+
+  size_t desired_shrink_bytes;
+  if (UseAdaptiveSizePolicy) {
+    // With a non-empty young reservation, adaptive young-GC sizing owns rebalancing.
+    if (young_reserved_before > 0) {
+      return false;
+    }
+    // Recover one eighth at a time to retain promotion headroom. If the result is
+    // smaller than the minimum young size, stay in old-only mode until enough
+    // free space accumulates.
+    desired_shrink_bytes = align_down(free_bytes_in_old_gen / 8, SpaceAlignment);
+  } else {
+    // Recover the startup reservation without allowing young gen to exceed MaxNewSize.
+    desired_shrink_bytes = free_bytes_in_old_gen;
+  }
+
+  desired_shrink_bytes = MIN2(desired_shrink_bytes, MaxNewSize - young_reserved_before);
+  if (young_reserved_before + desired_shrink_bytes < young_gen_size_lower_bound()) {
     return false;
   }
 
-  // Respect MaxNewSize
-  desired_shrink_bytes = MIN2(desired_shrink_bytes, MaxNewSize);
-  desired_old_capacity = pointer_delta(current_gen_boundary - desired_shrink_bytes,
-                                       heap_low,
-                                       sizeof(char));
-  desired_gen_boundary = heap_low + desired_old_capacity;
+  desired_gen_boundary = current_gen_boundary - desired_shrink_bytes;
 
   size_t young_reserved_bytes = pointer_delta(heap_high, desired_gen_boundary, sizeof(char));
-  if (young_reserved_bytes < young_gen_size_lower_bound()) {
-    // A small left shift out of old-gen-only mode must create an initial young-gen large enough to initialize.
-    return false;
-  }
+  assert(young_reserved_bytes >= young_gen_size_lower_bound(), "postcondition");
 
   _heap_vs->left_shift_gen_boundary(desired_gen_boundary);
+
   _old_gen->reinit_after_committed_mr_change();
   _young_gen->reinit_after_gen_boundary_change();
-  card_table()->adjust_after_young_gen_expansion(_old_gen->committed(),
-                                               _young_gen->committed());
+  card_table()->left_shift_gen_boundary(_old_gen->committed(),
+                                        _young_gen->committed());
+
+  log_debug(gc, heap)("Young generation reservation after full GC: %zuK -> %zuK",
+                      young_reserved_before / K, young_reserved_bytes / K);
 
   return true;
 }

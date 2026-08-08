@@ -653,7 +653,8 @@ public:
   static bool invoke(bool clear_all_soft_refs, bool should_do_max_compaction);
   static bool invoke(bool clear_all_soft_refs,
                      bool should_do_max_compaction,
-                     PSPendingAllocation pending_allocation);
+                     PSPendingAllocation pending_allocation,
+                     size_t promoted_before_full_gc = 0);
 
   static void adjust_in_space_helper(SpaceId id, Atomic<uint>* claim_counter);
 
