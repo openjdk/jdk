@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,87 +56,6 @@ static const ADAPTER_INFO badHardware[] = {
 
     // Microsoft Basic Render Driver (as maybe used in VMs such as VirtualBox)
     { 0x1414, 0x008c, NO_VERSION, OS_ALL },
-
-    // ATI Mobility Radeon X1600, X1400, X1450, X1300, X1350
-    // Reason: workaround for 6613066, 6687166
-    // X1300 (four sub ids)
-    { 0x1002, 0x714A, D_VERSION(6,14,10,6706), OS_WINXP },
-    { 0x1002, 0x714A, D_VERSION(7,14,10,0567), OS_VISTA },
-    { 0x1002, 0x7149, D_VERSION(6,14,10,6706), OS_WINXP },
-    { 0x1002, 0x7149, D_VERSION(7,14,10,0567), OS_VISTA },
-    { 0x1002, 0x714B, D_VERSION(6,14,10,6706), OS_WINXP },
-    { 0x1002, 0x714B, D_VERSION(7,14,10,0567), OS_VISTA },
-    { 0x1002, 0x714C, D_VERSION(6,14,10,6706), OS_WINXP },
-    { 0x1002, 0x714C, D_VERSION(7,14,10,0567), OS_VISTA },
-    // X1350 (three sub ids)
-    { 0x1002, 0x718B, D_VERSION(6,14,10,6706), OS_WINXP },
-    { 0x1002, 0x718B, D_VERSION(7,14,10,0567), OS_VISTA },
-    { 0x1002, 0x718C, D_VERSION(6,14,10,6706), OS_WINXP },
-    { 0x1002, 0x718C, D_VERSION(7,14,10,0567), OS_VISTA },
-    { 0x1002, 0x7196, D_VERSION(6,14,10,6706), OS_WINXP },
-    { 0x1002, 0x7196, D_VERSION(7,14,10,0567), OS_VISTA },
-    // X1400
-    { 0x1002, 0x7145, D_VERSION(6,14,10,6706), OS_WINXP },
-    { 0x1002, 0x7145, D_VERSION(7,14,10,0567), OS_VISTA },
-    // X1450 (two sub ids)
-    { 0x1002, 0x7186, D_VERSION(6,14,10,6706), OS_WINXP },
-    { 0x1002, 0x7186, D_VERSION(7,14,10,0567), OS_VISTA },
-    { 0x1002, 0x718D, D_VERSION(6,14,10,6706), OS_WINXP },
-    { 0x1002, 0x718D, D_VERSION(7,14,10,0567), OS_VISTA },
-    // X1600
-    { 0x1002, 0x71C5, D_VERSION(6,14,10,6706), OS_WINXP },
-    { 0x1002, 0x71C5, D_VERSION(7,14,10,0567), OS_VISTA },
-
-    // ATI Mobility Radeon 9700
-    // Reason: workaround for 6773336
-    { 0x1002, 0x4E50, D_VERSION(6,14,10,6561), OS_WINXP },
-
-    // Nvidia FX 5200
-    // Reason: workaround for 6717988
-    { 0x10DE, 0x0322, D_VERSION(6,14,11,6921), OS_WINXP },
-
-    // Nvidia FX Go5600, Go5700
-    // Reason: workaround for 6714579
-    { 0x10DE, 0x031A, D_VERSION(6,14,11,6921), OS_WINXP },
-    { 0x10DE, 0x0347, D_VERSION(6,14,11,6921), OS_WINXP },
-
-    // Nvidia Quadro NVS 110M
-    // Reason: workaround for 6629891
-    { 0x10DE, 0x01D7, D_VERSION(6,14,11,5665), OS_WINXP },
-
-    // Nvidia Quadro PCI-E series
-    // Reason: workaround for 6653860
-    { 0x10DE, 0x00FD, D_VERSION(6,14,10,6573), OS_WINXP },
-
-    // Nvidia Quadro FX family
-    // Reason: workaround for 6772137
-    { 0x10DE, 0x00F8, D_VERSION(6,14,10,9381), OS_WINXP },
-    { 0x10DE, 0x009D, D_VERSION(6,14,10,9381), OS_WINXP },
-    { 0x10DE, 0x029C, D_VERSION(6,14,10,9381), OS_WINXP },
-    { 0x10DE, 0x029D, D_VERSION(6,14,10,9381), OS_WINXP },
-    { 0x10DE, 0x029E, D_VERSION(6,14,10,9381), OS_WINXP },
-    { 0x10DE, 0x029F, D_VERSION(6,14,10,9381), OS_WINXP },
-    { 0x10DE, 0x01DE, D_VERSION(6,14,10,9381), OS_WINXP },
-    { 0x10DE, 0x039E, D_VERSION(6,14,10,9381), OS_WINXP },
-    { 0x10DE, 0x019D, D_VERSION(6,14,10,9381), OS_WINXP },
-    { 0x10DE, 0x019E, D_VERSION(6,14,10,9381), OS_WINXP },
-    { 0x10DE, 0x040A, D_VERSION(6,14,10,9381), OS_WINXP },
-    { 0x10DE, 0x040E, D_VERSION(6,14,10,9381), OS_WINXP },
-    { 0x10DE, 0x040F, D_VERSION(6,14,10,9381), OS_WINXP },
-    { 0x10DE, 0x061A, D_VERSION(6,14,10,9381), OS_WINXP },
-    { 0x10DE, 0x06F9, D_VERSION(6,14,10,9381), OS_WINXP },
-    { 0x10DE, 0x05FD, D_VERSION(6,14,10,9381), OS_WINXP },
-    { 0x10DE, 0x05FE, D_VERSION(6,14,10,9381), OS_WINXP },
-    { 0x10DE, 0x004E, D_VERSION(6,14,10,9381), OS_WINXP },
-    { 0x10DE, 0x00CD, D_VERSION(6,14,10,9381), OS_WINXP },
-    { 0x10DE, 0x00CE, D_VERSION(6,14,10,9381), OS_WINXP },
-    { 0x10DE, 0x014C, D_VERSION(6,14,10,9381), OS_WINXP },
-    { 0x10DE, 0x014D, D_VERSION(6,14,10,9381), OS_WINXP },
-    { 0x10DE, 0x014E, D_VERSION(6,14,10,9381), OS_WINXP },
-
-    // Nvidia GeForce 6200 TurboCache(TM)
-    // Reason: workaround for 6588384
-    { 0x10DE, 0x0161, NO_VERSION, OS_VISTA },
 
     // any Matrox board
     // Reason: there are no known Matrox boards with proper Direct3D support
