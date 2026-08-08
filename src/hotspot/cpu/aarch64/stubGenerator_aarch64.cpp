@@ -504,20 +504,25 @@ class StubGenerator: public StubCodeGenerator {
     // T_OBJECT, T_LONG, T_FLOAT or T_DOUBLE is treated as T_INT)
     // n.b. this assumes Java returns an integral result in r0
     // and a floating result in j_farg0
-    __ ldr(j_rarg2, result);
-    Label is_long, is_float, is_double, exit;
-    __ ldr(j_rarg1, result_type);
-    __ cmp(j_rarg1, (u1)T_OBJECT);
+    // All of j_rargN may be used to return inline type fields so be careful
+    // not to clobber those.
+    // SharedRuntime::generate_buffered_inline_type_adapter() knows the register
+    // assignment of Rresult below.
+    Register Rresult = r14, Rresult_type = r15;
+    __ ldr(Rresult, result);
+    Label is_long, is_float, is_double, check_prim, exit;
+    __ ldr(Rresult_type, result_type);
+    __ cmp(Rresult_type, (u1)T_OBJECT);
+    __ br(Assembler::EQ, check_prim);
+    __ cmp(Rresult_type, (u1)T_LONG);
     __ br(Assembler::EQ, is_long);
-    __ cmp(j_rarg1, (u1)T_LONG);
-    __ br(Assembler::EQ, is_long);
-    __ cmp(j_rarg1, (u1)T_FLOAT);
+    __ cmp(Rresult_type, (u1)T_FLOAT);
     __ br(Assembler::EQ, is_float);
-    __ cmp(j_rarg1, (u1)T_DOUBLE);
+    __ cmp(Rresult_type, (u1)T_DOUBLE);
     __ br(Assembler::EQ, is_double);
 
     // handle T_INT case
-    __ strw(r0, Address(j_rarg2));
+    __ strw(r0, Address(Rresult));
 
     __ BIND(exit);
 
@@ -569,17 +574,28 @@ class StubGenerator: public StubCodeGenerator {
     __ ret(lr);
 
     // handle return types different from T_INT
+    __ BIND(check_prim);
+    if (InlineTypeReturnedAsFields) {
+      // Check for scalarized return value
+      __ tbz(r0, 0, is_long);
+      // Load pack handler address
+      __ andr(rscratch1, r0, -2);
+      __ ldr(rscratch1, Address(rscratch1, InlineKlass::adr_members_offset()));
+      __ ldr(rscratch1, Address(rscratch1, InlineKlass::pack_handler_jobject_offset()));
+      __ blr(rscratch1);
+      __ b(exit);
+    }
 
     __ BIND(is_long);
-    __ str(r0, Address(j_rarg2, 0));
+    __ str(r0, Address(Rresult, 0));
     __ br(Assembler::AL, exit);
 
     __ BIND(is_float);
-    __ strs(j_farg0, Address(j_rarg2, 0));
+    __ strs(j_farg0, Address(Rresult, 0));
     __ br(Assembler::AL, exit);
 
     __ BIND(is_double);
-    __ strd(j_farg0, Address(j_rarg2, 0));
+    __ strd(j_farg0, Address(Rresult, 0));
     __ br(Assembler::AL, exit);
 
     // record the stub entry and end plus the auxiliary entry
@@ -713,9 +729,6 @@ class StubGenerator: public StubCodeGenerator {
     __ call_VM_leaf(CAST_FROM_FN_PTR(address,
                          SharedRuntime::exception_handler_for_return_address),
                     rthread, c_rarg1);
-    // Reinitialize the ptrue predicate register, in case the external runtime
-    // call clobbers ptrue reg, as we may return to SVE compiled code.
-    __ reinitialize_ptrue();
 
     // we should not really care that lr is no longer the callee
     // address. we saved the value the handler needs in r19 so we can
@@ -2606,6 +2619,14 @@ class StubGenerator: public StubCodeGenerator {
     __ load_klass(rscratch2, dst, rscratch1);
     __ eor(rscratch2, rscratch2, scratch_src_klass);
     __ cbnz(rscratch2, L_failed);
+
+    if (Arguments::is_valhalla_enabled()) {
+      // Check for flat inline type array -> return -1
+      __ test_flat_array_oop(src, rscratch2, L_failed);
+
+      // Check for null-free (non-flat) inline type array -> handle as object array
+      __ test_null_free_array_oop(src, rscratch2, L_objArray);
+    }
 
     //  if (!src->is_Array()) return -1;
     __ tbz(lh, 31, L_failed);  // i.e. (lh >= 0)
@@ -12398,6 +12419,30 @@ class StubGenerator: public StubCodeGenerator {
   }
 #endif // LINUX
 
+  static void save_return_registers(MacroAssembler* masm) {
+    if (InlineTypeReturnedAsFields) {
+      masm->push(RegSet::range(r0, r7), sp);
+      masm->sub(sp, sp, 4 * wordSize);
+      masm->st1(v0, v1, v2, v3, masm->T1D, Address(sp));
+      masm->sub(sp, sp, 4 * wordSize);
+      masm->st1(v4, v5, v6, v7, masm->T1D, Address(sp));
+    } else {
+      masm->fmovd(rscratch1, v0);
+      masm->stp(rscratch1, r0, Address(masm->pre(sp, -2 * wordSize)));
+    }
+  }
+
+  static void restore_return_registers(MacroAssembler* masm) {
+    if (InlineTypeReturnedAsFields) {
+      masm->ld1(v4, v5, v6, v7, masm->T1D, Address(masm->post(sp, 4 * wordSize)));
+      masm->ld1(v0, v1, v2, v3, masm->T1D, Address(masm->post(sp, 4 * wordSize)));
+      masm->pop(RegSet::range(r0, r7), sp);
+    } else {
+      masm->ldp(rscratch1, r0, Address(masm->post(sp, 2 * wordSize)));
+      masm->fmovd(v0, rscratch1);
+    }
+  }
+
   address generate_cont_thaw(Continuation::thaw_kind kind) {
     bool return_barrier = Continuation::is_thaw_return_barrier(kind);
     bool return_barrier_exception = Continuation::is_thaw_return_barrier_exception(kind);
@@ -12412,8 +12457,7 @@ class StubGenerator: public StubCodeGenerator {
 
     if (return_barrier) {
       // preserve possible return value from a method returning to the return barrier
-      __ fmovd(rscratch1, v0);
-      __ stp(rscratch1, r0, Address(__ pre(sp, -2 * wordSize)));
+      save_return_registers(_masm);
     }
 
     __ movw(c_rarg1, (return_barrier ? 1 : 0));
@@ -12422,8 +12466,7 @@ class StubGenerator: public StubCodeGenerator {
 
     if (return_barrier) {
       // restore return value (no safepoint in the call to thaw, so even an oop return value should be OK)
-      __ ldp(rscratch1, r0, Address(__ post(sp, 2 * wordSize)));
-      __ fmovd(v0, rscratch1);
+      restore_return_registers(_masm);
     }
     assert_asm(_masm, (__ ldr(rscratch1, Address(rthread, JavaThread::cont_entry_offset())), __ cmp(sp, rscratch1)), Assembler::EQ, "incorrect sp");
 
@@ -12442,8 +12485,7 @@ class StubGenerator: public StubCodeGenerator {
 
     if (return_barrier) {
       // save original return value -- again
-      __ fmovd(rscratch1, v0);
-      __ stp(rscratch1, r0, Address(__ pre(sp, -2 * wordSize)));
+      save_return_registers(_masm);
     }
 
     // If we want, we can templatize thaw by kind, and have three different entries
@@ -12454,8 +12496,7 @@ class StubGenerator: public StubCodeGenerator {
 
     if (return_barrier) {
       // restore return value (no safepoint in the call to thaw, so even an oop return value should be OK)
-      __ ldp(rscratch1, r0, Address(__ post(sp, 2 * wordSize)));
-      __ fmovd(v0, rscratch1);
+      restore_return_registers(_masm);
     } else {
       __ mov(r0, zr); // return 0 (success) from doYield
     }
@@ -12472,9 +12513,6 @@ class StubGenerator: public StubCodeGenerator {
       __ mov(r19, r0);
 
       __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), rthread, c_rarg1);
-
-      // Reinitialize the ptrue predicate register, in case the external runtime call clobbers ptrue reg, as we may return to SVE compiled code.
-      // __ reinitialize_ptrue();
 
       // see OptoRuntime::generate_exception_blob: r0 -- exception oop, r3 -- exception pc
 
