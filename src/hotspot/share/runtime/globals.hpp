@@ -1539,11 +1539,11 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product_pd(size_t, NonProfiledCodeHeapSize,                               \
           "Size of code heap with non-profiled methods (in bytes)")         \
-          range(0, SIZE_MAX)                                                \
+          constraint(CodeHeapSizeConstraintFunc, AtParse)                   \
                                                                             \
   product_pd(size_t, ProfiledCodeHeapSize,                                  \
           "Size of code heap with profiled methods (in bytes)")             \
-          range(0, SIZE_MAX)                                                \
+          constraint(CodeHeapSizeConstraintFunc, AtParse)                   \
                                                                             \
   product_pd(size_t, NonNMethodCodeHeapSize,                                \
           "Size of code heap with non-nmethods (in bytes)")                 \
@@ -1556,6 +1556,7 @@ const int ObjectAlignmentInBytes = 8;
   product_pd(size_t, CodeCacheExpansionSize,                                \
           "Code cache expansion size (in bytes)")                           \
           range(32*K, SIZE_MAX)                                             \
+          constraint(VMPageSizeConstraintFunc, AtParse)                     \
                                                                             \
   product_pd(size_t, CodeCacheMinBlockLength, DIAGNOSTIC,                   \
           "Minimum number of segments in a code cache block")               \
