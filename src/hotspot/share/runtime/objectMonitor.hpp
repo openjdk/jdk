@@ -155,11 +155,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   static ParkEvent* _vthread_unparker_ParkEvent;
 
   // Because of frequent access, the metadata field is at offset zero (0).
-  // Enforced by the assert() in metadata_addr().
-  // * Locking with UseObjectMonitorTable:
-  //   Contains the _object's hashCode.
-  // * Locking without UseObjectMonitorTable:
-  //   Contains the displaced object header word - mark
+  // Enforced by the assert() in metadata_addr() contains the _object's hashCode.
   volatile uintptr_t _metadata;     // metadata
   WeakHandle _object;               // backward object pointer
   // Separate _metadata and _owner on different cache lines since both can
@@ -415,7 +411,6 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
  public:
   // Deflation support
   bool      deflate_monitor(Thread* current);
-  void      install_displaced_markword_in_object(const oop obj);
 
   // JFR support
   static bool is_jfr_excluded(const Klass* monitor_klass);

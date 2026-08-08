@@ -3443,14 +3443,6 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
 }
 
 void Arguments::set_compact_headers_flags() {
-#ifdef _LP64
-  if (UseCompactObjectHeaders && !UseObjectMonitorTable) {
-    if (FLAG_IS_CMDLINE(UseObjectMonitorTable)) {
-      warning("-UseObjectMonitorTable is incompatible with +UseCompactObjectHeaders; ignoring -UseObjectMonitorTable");
-    }
-    FLAG_SET_DEFAULT(UseObjectMonitorTable, true);
-  }
-#endif
 }
 
 jint Arguments::apply_ergo() {

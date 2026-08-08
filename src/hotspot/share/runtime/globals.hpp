@@ -121,7 +121,7 @@ const size_t minimumSymbolTableSize = 1024;
                            constraint)                                      \
                                                                             \
   product(bool, UseCompressedOops, false,                                   \
-          "Use 32-bit object references in 64-bit VM. "                     \
+          "Use 32-bit objec treferences in 64-bit VM. "                     \
           "lp64_product means flag is always constant in 32 bit VM")        \
                                                                             \
   product(bool, AOTCompatibleOopCompression, false, DIAGNOSTIC,             \
@@ -1984,10 +1984,6 @@ const int ObjectAlignmentInBytes = 8;
           false AARCH64_ONLY(DEBUG_ONLY(||true)),                           \
              "Mark all threads after a safepoint, and clear on a modify "   \
              "fence. Add cleanliness checks.")                              \
-                                                                            \
-  product(bool, UseObjectMonitorTable, true, DIAGNOSTIC,                    \
-          "Use a table to record inflated monitors rather than the first "  \
-          "word of the object.")                                            \
                                                                             \
   product(int, FastLockingSpins, 8, DIAGNOSTIC,                             \
           "Specifies the number of times fast locking will attempt to "     \
