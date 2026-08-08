@@ -7443,19 +7443,30 @@ instruct minmaxF_reduction_reg_avx10_2(regF dst, regF a, regF b, rRegI rtmp, rFl
 %}
 
 // min = java.lang.Math.min(float a, float b)
+instruct minF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp1, legRegF tmp2)
+%{
+  predicate(!VM_Version::supports_avx10_2() && UseAVX > 0 && !VLoopReductions::is_reduction(n));
+  match(Set dst (MinF a b));
+  effect(USE a, USE b, TEMP tmp1, TEMP tmp2);
+
+  format %{ "minF $dst, $a, $b \t! using $tmp1 and $tmp2 as TEMP" %}
+  ins_encode %{
+    __ smin_fp(T_FLOAT, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister,
+               $tmp1$$XMMRegister, $tmp2$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 // max = java.lang.Math.max(float a, float b)
-instruct minmaxF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, legRegF btmp)
+instruct maxF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, legRegF btmp)
 %{
   predicate(!VM_Version::supports_avx10_2() && UseAVX > 0 && !VLoopReductions::is_reduction(n));
   match(Set dst (MaxF a b));
-  match(Set dst (MinF a b));
   effect(USE a, USE b, TEMP tmp, TEMP atmp, TEMP btmp);
 
-  format %{ "minmaxF $dst, $a, $b \t! using $tmp, $atmp and $btmp as TEMP" %}
+  format %{ "maxF $dst, $a, $b \t! using $tmp, $atmp and $btmp as TEMP" %}
   ins_encode %{
-    int opcode = this->ideal_Opcode();
-    int param_opcode = (opcode == Op_MinF) ? Op_MinV : Op_MaxV;
-    __ vminmax_fp(param_opcode, T_FLOAT, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $tmp$$XMMRegister,
+    __ vminmax_fp(Op_MaxV, T_FLOAT, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $tmp$$XMMRegister,
                   $atmp$$XMMRegister, $btmp$$XMMRegister, Assembler::AVX_128bit);
   %}
   ins_pipe( pipe_slow );
@@ -7512,19 +7523,30 @@ instruct minmaxD_reduction_reg_avx10_2(regD dst, regD a, regD b, rRegI rtmp, rFl
 %}
 
 // min = java.lang.Math.min(double a, double b)
+instruct minD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp1, legRegD tmp2)
+%{
+  predicate(!VM_Version::supports_avx10_2() && UseAVX > 0 && !VLoopReductions::is_reduction(n));
+  match(Set dst (MinD a b));
+  effect(USE a, USE b, TEMP tmp1, TEMP tmp2);
+
+  format %{ "minD $dst, $a, $b \t! using $tmp1 and $tmp2 as TEMP" %}
+  ins_encode %{
+    __ smin_fp(T_DOUBLE, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister,
+               $tmp1$$XMMRegister, $tmp2$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 // max = java.lang.Math.max(double a, double b)
-instruct minmaxD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, legRegD btmp)
+instruct maxD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, legRegD btmp)
 %{
   predicate(!VM_Version::supports_avx10_2() && UseAVX > 0 && !VLoopReductions::is_reduction(n));
   match(Set dst (MaxD a b));
-  match(Set dst (MinD a b));
   effect(USE a, USE b, TEMP atmp, TEMP btmp, TEMP tmp);
 
-  format %{ "minmaxD $dst, $a, $b \t! using $tmp, $atmp and $btmp as TEMP" %}
+  format %{ "maxD $dst, $a, $b \t! using $tmp, $atmp and $btmp as TEMP" %}
   ins_encode %{
-    int opcode = this->ideal_Opcode();
-    int param_opcode = (opcode == Op_MinD) ? Op_MinV : Op_MaxV;
-    __ vminmax_fp(param_opcode, T_DOUBLE, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $tmp$$XMMRegister,
+    __ vminmax_fp(Op_MaxV, T_DOUBLE, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $tmp$$XMMRegister,
                   $atmp$$XMMRegister, $btmp$$XMMRegister, Assembler::AVX_128bit);
   %}
   ins_pipe( pipe_slow );
