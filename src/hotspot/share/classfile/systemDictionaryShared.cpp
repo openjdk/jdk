@@ -134,6 +134,11 @@ InstanceKlass* SystemDictionaryShared::lookup_from_stream(Symbol* class_name,
     return nullptr;
   }
 
+  JFR_ONLY(if (EventClassDefine::is_enabled() && cfs->source() == nullptr) {
+    // required by JfrClassDefineEvent::on_restoration()
+    return nullptr;
+  });
+
   const RunTimeClassInfo* record = find_record(&_info_for_static_archive._unregistered_dictionary,
                                                &_info_for_dynamic_archive._unregistered_dictionary,
                                                class_name);
