@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -758,7 +758,7 @@ class InvokerBytecodeGenerator {
             assert(isStaticallyInvocableType(member.getMethodOrFieldType()));
             return true;
         }
-        if (cls.isArray() || cls.isPrimitive())
+        if (!cls.isClassOrInterface())
             return false;  // FIXME
         if (cls.isAnonymousClass() || cls.isLocalClass())
             return false;  // inner class of some sort
