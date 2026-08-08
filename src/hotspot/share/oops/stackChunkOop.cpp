@@ -534,6 +534,15 @@ public:
     assert(num_oops >= 0, "");
 
     _argsize   = f.stack_argsize() + frame::metadata_words_at_top;
+    if (f.is_compiled()) {
+      int real_frame_size = 0;
+      frame fr = f.to_frame();
+      if (fr.was_augmented_on_entry(real_frame_size)) {
+        // Extended frames exclude stack arguments passed by caller as they are
+        // never accessed. For interpreted callers they are discarded when freezing.
+        _argsize = 0;
+      }
+    }
     _size     += fsize;
     _num_oops += num_oops;
     if (f.is_interpreted()) {
