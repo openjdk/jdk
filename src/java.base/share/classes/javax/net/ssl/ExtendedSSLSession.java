@@ -273,4 +273,28 @@ public abstract class ExtendedSSLSession implements SSLSession {
         throw new UnsupportedOperationException(
                 "Underlying provider does not implement the method");
     }
+
+    /**
+     * Returns the Client Finished verify_data for this session.
+     *
+     * @implSpec The default implementation returns null.
+     *
+     * @return Client Finished verify_data bytes, or null if unavailable
+     * @since 27
+     */
+    public byte[] getTlsUniqueClientFirstFinishedVerifyData() {
+        return null;
+    }
+
+    /**
+     * Returns the first Finished verify_data sent for this session.
+     *
+     * @implSpec The default implementation returns null.
+     *
+     * @return first Finished verify_data bytes, or null if unavailable
+     * @since 27
+     */
+    public byte[] getTlsUniqueFirstFinishedVerifyData() {
+        return null;
+    }
 }
