@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026, Microsoft Corporation. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,33 +24,7 @@
 
 #include "asm/macroAssembler.hpp"
 
-// __chkstk is an internal CRT function that probes the stack page by page
-// to ensure that the guard page moves to the desired stack location. On
-// entry, r15 contains the number of 16-byte slots to allocate.
-// It clobbers r16 and r17 but does not modify sp or any other registers.
-extern "C" void __chkstk();
-
 void MacroAssembler::pd_extend_stack(Register const_method, Register temp1, Register temp2) {
-  assert_different_registers(const_method, temp1, temp2);
-  assert_different_registers(r15, temp1, temp2);
-  assert_different_registers(r16, temp1, temp2);
-  assert_different_registers(r17, temp1, temp2);
-
-  push(RegSet::of(r15, lr), sp);
-  ldrh(temp1, Address(const_method, ConstMethod::max_stack_offset()));
-  add(temp1, temp1, MAX2(3, Method::extra_stack_entries()));
-
-  // load the number of 16-byte slots required into r15
-  add(temp1, temp1, 1);
-  lsr(r15, temp1, 1);
-
-  mov(temp1, r16);
-  mov(temp2, r17);
-
-  mov(lr, ExternalAddress(CAST_FROM_FN_PTR(address, __chkstk)));
-  blr(lr);
-
-  mov(r16, temp1);
-  mov(r17, temp2);
-  pop(RegSet::of(r15, lr), sp);
+    // nothing required here
 }
+
