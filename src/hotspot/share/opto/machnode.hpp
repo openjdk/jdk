@@ -44,11 +44,13 @@ class MachCallRuntimeNode;
 class MachCallStaticJavaNode;
 class MachEpilogNode;
 class MachIfNode;
+class MachNode;
 class MachNullCheckNode;
 class MachOper;
 class MachProjNode;
 class MachPrologNode;
 class MachReturnNode;
+class MachRiscVVSetNode;
 class MachSafePointNode;
 class MachSpillCopyNode;
 class MachVEPNode;
@@ -56,6 +58,39 @@ class Matcher;
 class PhaseRegAlloc;
 class RegMask;
 class State;
+
+#ifdef RISCV
+struct RiscVVSetRequirement {
+  BasicType _bt;
+  uint _vector_length;
+  Assembler::LMUL _vlmul;
+  Assembler::VMA _vma;
+  Assembler::VTA _vta;
+  bool _valid;
+};
+
+bool riscv_vset_from_vect(const MachNode* node, RiscVVSetRequirement* req,
+                          Assembler::LMUL vlmul = Assembler::m1,
+                          Assembler::VMA vma = Assembler::ma,
+                          Assembler::VTA vta = Assembler::ta);
+bool riscv_vset_from_node(BasicType bt, const MachNode* node, RiscVVSetRequirement* req,
+                          Assembler::LMUL vlmul = Assembler::m1,
+                          Assembler::VMA vma = Assembler::ma,
+                          Assembler::VTA vta = Assembler::ta);
+bool riscv_vset_from_node(const MachNode* node, RiscVVSetRequirement* req,
+                          Assembler::LMUL vlmul = Assembler::m1,
+                          Assembler::VMA vma = Assembler::ma,
+                          Assembler::VTA vta = Assembler::ta);
+bool riscv_vset_from_operand(const MachNode* node, const MachOper* opnd,
+                             RiscVVSetRequirement* req,
+                             Assembler::LMUL vlmul = Assembler::m1,
+                             Assembler::VMA vma = Assembler::ma,
+                             Assembler::VTA vta = Assembler::ta);
+bool riscv_vset_fixed(BasicType bt, uint vector_length, RiscVVSetRequirement* req,
+                      Assembler::LMUL vlmul = Assembler::m1,
+                      Assembler::VMA vma = Assembler::ma,
+                      Assembler::VTA vta = Assembler::ta);
+#endif
 
 //---------------------------MachOper------------------------------------------
 class MachOper : public ResourceObj {
@@ -249,6 +284,13 @@ public:
 
   // Support for short branches
   bool may_be_short_branch() const { return (flags() & Flag_may_be_short_branch) != 0; }
+
+  virtual bool is_MachRiscVVSet() const { return false; }
+  virtual MachRiscVVSetNode* as_MachRiscVVSet() { return nullptr; }
+#ifdef RISCV
+  virtual bool has_riscv_vset_requirement() const { return false; }
+  virtual bool riscv_vset_requirement(RiscVVSetRequirement* req) const { return false; }
+#endif
 
   // Avoid back to back some instructions on some CPUs.
   enum AvoidBackToBackFlag { AVOID_NONE = 0,

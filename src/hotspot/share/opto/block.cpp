@@ -36,6 +36,9 @@
 #include "opto/rootnode.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/powerOfTwo.hpp"
+#ifdef RISCV
+#include "riscv_vset_machnode.hpp"
+#endif
 
 void Block_Array::grow(uint i) {
   assert(i >= Max(), "Should have been checked before, use maybe_grow?");
@@ -510,24 +513,48 @@ uint PhaseCFG::build_cfg() {
 
 // Inserts a goto & corresponding basic block between
 // block[block_no] and its succ_no'th successor block
-void PhaseCFG::insert_goto_at(uint block_no, uint succ_no) {
+Block* PhaseCFG::insert_goto_at(uint block_no, uint succ_no) {
   // get block with block_no
   assert(block_no < number_of_blocks(), "illegal block number");
   Block* in  = get_block(block_no);
   // get successor block succ_no
   assert(succ_no < in->_num_succs, "illegal successor number");
   Block* out = in->_succs[succ_no];
+  // Get the control corresponding to the succ_no'th successor of the in block.
+  // Most successor slots are projections, but a fall-through edge can be
+  // represented directly by the block-ending branch node before fixup_flow().
+  Node* slot_ctrl = in->get_node(in->number_of_nodes() - in->_num_succs + succ_no);
+  Node* edge_ctrl = slot_ctrl;
+  assert(edge_ctrl->is_Proj() || edge_ctrl == in->end(),
+         "successor control must be a projection or the block end");
+  bool found_edge_ctrl = false;
+  for (uint i = 1; i < out->num_preds(); i++) {
+    if (out->pred(i) == edge_ctrl) {
+      found_edge_ctrl = true;
+      break;
+    }
+  }
+  if (!found_edge_ctrl) {
+    for (uint i = 1; i < out->num_preds(); i++) {
+      Node* pred = out->pred(i);
+      if (get_block_for_node(pred) == in) {
+        edge_ctrl = pred;
+        found_edge_ctrl = true;
+        break;
+      }
+    }
+  }
+  assert(found_edge_ctrl, "successor predecessor must match the split edge");
   // Compute frequency of the new block. Do this before inserting
   // new block in case succ_prob() needs to infer the probability from
   // surrounding blocks.
-  float freq = in->_freq * in->succ_prob(succ_no);
-  // get ProjNode corresponding to the succ_no'th successor of the in block
-  ProjNode* proj = in->get_node(in->number_of_nodes() - in->_num_succs + succ_no)->as_Proj();
+  float freq = slot_ctrl->is_Proj() ? in->_freq * in->succ_prob(succ_no) : in->_freq;
   // create region for basic block
   RegionNode* region = new RegionNode(2);
-  region->init_req(1, proj);
+  region->init_req(1, edge_ctrl);
   // setup corresponding basic block
   Block* block = new (_block_arena) Block(_block_arena, region);
+  block->_loop = in->_loop;
   map_node_to_block(region, block);
   C->regalloc()->set_bad(region->_idx);
   // add a goto node
@@ -540,9 +567,14 @@ void PhaseCFG::insert_goto_at(uint block_no, uint succ_no) {
   // hook up successor block
   block->_succs.map(block->_num_succs++, out);
   // remap successor's predecessors if necessary
+  DEBUG_ONLY(bool remapped = false;)
   for (uint i = 1; i < out->num_preds(); i++) {
-    if (out->pred(i) == proj) out->head()->set_req(i, gto);
+    if (out->pred(i) == edge_ctrl) {
+      out->head()->set_req(i, gto);
+      DEBUG_ONLY(remapped = true;)
+    }
   }
+  assert(remapped, "successor predecessor must match the split edge");
   // remap predecessor's successor to new block
   in->_succs.map(succ_no, block);
   // Set the frequency of the new block
@@ -555,7 +587,7 @@ void PhaseCFG::insert_goto_at(uint block_no, uint succ_no) {
   if (out->_idom != in) {
     // The successor block was not immediately dominated by the predecessor
     // block, so there is no dominator subtree to update.
-    return;
+    return block;
   }
   // Update immediate dominator of the successor block.
   out->_idom = block;
@@ -591,7 +623,168 @@ void PhaseCFG::insert_goto_at(uint block_no, uint succ_no) {
       }
     }
   }
+  return block;
 }
+
+#ifdef RISCV
+static bool riscv_block_is_in_loop_nest(CFGLoop* loop, Block* block) {
+  return loop != nullptr && block != nullptr && block->_loop != nullptr && loop->in_loop_nest(block);
+}
+
+static bool riscv_is_loop_header(Block* block) {
+  return block != nullptr && block->head()->is_Loop() &&
+         block->_loop != nullptr && block->_loop->head() == block;
+}
+
+static bool riscv_analyze_loop_vset_requirements(PhaseCFG* cfg, CFGLoop* loop, RiscVVSetState* state) {
+  bool found = false;
+  RiscVVSetState only = riscv_vset_invalid_state();
+
+  for (uint i = 0; i < cfg->number_of_blocks(); i++) {
+    Block* block = cfg->get_block(i);
+    if (!riscv_block_is_in_loop_nest(loop, block)) {
+      continue;
+    }
+    // Keep the first version conservative: do not hoist across nested loops.
+    if (block->_loop != loop) {
+      return false;
+    }
+    for (uint j = 0; j < block->number_of_nodes(); j++) {
+      Node* n = block->get_node(j);
+      if (!n->is_Mach()) {
+        continue;
+      }
+      MachNode* mach = n->as_Mach();
+      RiscVVSetState required = riscv_vset_invalid_state();
+      if (riscv_mach_node_vset_requirement(mach, &required)) {
+        if (!found) {
+          only = required;
+          found = true;
+        } else if (!riscv_vset_state_equal_valid(only, required)) {
+          return false;
+        }
+      } else if (riscv_mach_node_kills_vset(mach)) {
+        return false;
+      }
+    }
+  }
+
+  if (!found) {
+    return false;
+  }
+  *state = only;
+  return true;
+}
+
+static bool riscv_find_block_no(PhaseCFG* cfg, Block* block, uint* block_no) {
+  for (uint i = 0; i < cfg->number_of_blocks(); i++) {
+    if (cfg->get_block(i) == block) {
+      *block_no = i;
+      return true;
+    }
+  }
+  return false;
+}
+
+static bool riscv_find_loop_entry_edges(PhaseCFG* cfg, CFGLoop* loop,
+                                        GrowableArray<Block*>* entries,
+                                        GrowableArray<uint>* succs) {
+  Block* head = loop->head();
+  uint entry_count = 0;
+  uint backedge_count = 0;
+
+  for (uint p = 1; p < head->num_preds(); p++) {
+    Block* pred_block = cfg->get_block_for_node(head->pred(p));
+    if (pred_block == nullptr) {
+      return false;
+    }
+    if (riscv_block_is_in_loop_nest(loop, pred_block)) {
+      backedge_count++;
+    } else {
+      uint succ_no = 0;
+      bool found_succ = false;
+      for (uint s = 0; s < pred_block->_num_succs; s++) {
+        if (pred_block->_succs[s] == head) {
+          succ_no = s;
+          found_succ = true;
+          break;
+        }
+      }
+      if (!found_succ) {
+        return false;
+      }
+
+      Node* entry_ctrl = head->pred(p);
+      if (!pred_block->contains(entry_ctrl)) {
+        return false;
+      }
+      Node* entry_succ = pred_block->get_node(pred_block->number_of_nodes() -
+                                              pred_block->_num_succs + succ_no);
+      if (!entry_succ->is_Proj() && entry_succ != pred_block->end() &&
+          !entry_ctrl->is_Proj() && entry_ctrl != pred_block->end()) {
+        return false;
+      }
+
+      entries->append(pred_block);
+      succs->append(succ_no);
+      entry_count++;
+    }
+  }
+
+  return entry_count != 0 && backedge_count != 0;
+}
+
+static MachRiscVVSetNode* riscv_insert_vset_in_edge_block(PhaseCFG* cfg, Block* block, const RiscVVSetState& state) {
+  MachRiscVVSetNode* vset = new MachRiscVVSetNode(state._bt, state._vector_length, state._vlmul,
+                                                  state._vma, state._vta);
+  uint insert_pos = block->number_of_nodes() - block->_num_succs;
+  assert(insert_pos > 0, "must insert after block head");
+  block->insert_node(vset, insert_pos);
+  cfg->map_node_to_block(vset, block);
+  Compile::current()->regalloc()->set_bad(vset->_idx);
+  return vset;
+}
+
+void PhaseCFG::hoist_riscv_vset_before_fixup() {
+  if (!UseRiscVVSetLICM) {
+    return;
+  }
+
+  for (uint i = 0; i < number_of_blocks(); i++) {
+    Block* head = get_block(i);
+    if (!riscv_is_loop_header(head)) {
+      continue;
+    }
+
+    RiscVVSetState state = riscv_vset_invalid_state();
+    if (!riscv_analyze_loop_vset_requirements(this, head->_loop, &state)) {
+      continue;
+    }
+
+    GrowableArray<Block*> entries;
+    GrowableArray<uint> succs;
+    if (!riscv_find_loop_entry_edges(this, head->_loop, &entries, &succs)) {
+      continue;
+    }
+
+    for (int e = 0; e < entries.length(); e++) {
+      Block* entry = entries.at(e);
+      uint succ_no = succs.at(e);
+      uint pred_block_no = 0;
+      if (!riscv_find_block_no(this, entry, &pred_block_no)) {
+        continue;
+      }
+      Block* edge_block = insert_goto_at(pred_block_no, succ_no);
+      riscv_insert_vset_in_edge_block(this, edge_block, state);
+
+      // Skip the newly inserted block in this scan.
+      if (pred_block_no <= i) {
+        i++;
+      }
+    }
+  }
+}
+#endif
 
 // Does this block end in a multiway branch that cannot have the default case
 // flipped for another case?

@@ -2717,6 +2717,27 @@ void ArchDesc::defineEmit(FILE* fp, InstructForm& inst) {
   fprintf(fp, "}\n\n");
 }
 
+static const char* ins_riscv_vset_attr(InstructForm& inst) {
+  Attribute* attr = inst._attribs;
+  while (attr != nullptr) {
+    if (strcmp(attr->_ident, "ins_riscv_vset") == 0) {
+      return attr->_val;
+    }
+    attr = (Attribute*)attr->_next;
+  }
+  return nullptr;
+}
+
+static void define_riscv_vset_requirement(FILE* fp, InstructForm& inst) {
+  const char* attr = ins_riscv_vset_attr(inst);
+  if (attr == nullptr) {
+    return;
+  }
+  fprintf(fp, "bool %sNode::riscv_vset_requirement(RiscVVSetRequirement* req) const {\n", inst._ident);
+  fprintf(fp, "  return %s;\n", attr);
+  fprintf(fp, "}\n\n");
+}
+
 // defineEvalConstant ---------------------------------------------------------
 void ArchDesc::defineEvalConstant(FILE* fp, InstructForm& inst) {
   InsEncode* encode = inst._constant;
@@ -3205,6 +3226,12 @@ void ArchDesc::defineClasses(FILE *fp) {
       fprintf(fp,"  *block_num = oper->_block_num;\n");
       fprintf(fp,"}\n");
     }
+  }
+
+  _instructions.reset();
+  while ((instr = (InstructForm*)_instructions.iter()) != nullptr) {
+    if (instr->ideal_only()) continue;
+    define_riscv_vset_requirement(fp, *instr);
   }
 
   // Output the definitions for methods

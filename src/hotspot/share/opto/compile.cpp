@@ -3884,6 +3884,9 @@ void Compile::Code_Gen() {
     } else {
       cfg.set_loop_alignment();
     }
+#ifdef RISCV
+    cfg.hoist_riscv_vset_before_fixup();
+#endif
     cfg.fixup_flow();
     cfg.remove_unreachable_blocks();
     cfg.verify_dominator_tree();
