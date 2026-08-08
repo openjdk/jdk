@@ -150,22 +150,56 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
   }
 }
 
-void ShenandoahAdaptiveHeuristics::add_degenerated_gc_time(double time_at_start, double gc_time) {
-  // Conservatively add sample into linear model, if this time is above the predicted concurrent gc time
-  if (_cycles.predict_duration(time_at_start, _margin_of_error_sd) < gc_time) {
+void ShenandoahAdaptiveHeuristics::add_degenerated_gc_time(double time_at_start, double gc_time, bool abbreviated) {
+  // Conservatively add sample into linear model if this time is above the predicted concurrent gc time.  Additionally,
+  // add an adjusted sample time to the model if this cycle is abbreviated and we are learning.
+  bool add_sample = false;
+  if (abbreviated) {
+    const size_t max_learn = ShenandoahLearningSteps;
+    if (_gc_times_learned <= max_learn) {
+      // Assume a regular cycle takes twice as long as mark-only cycle (only for purposes of finishing learn cycles).
+      // All the memory marked must be either evacuated or updated.  Evacuation and updating normally require less
+      // synchronization than marking, so we expect this approximation is conservative.
+      gc_time += gc_time;
+      add_sample = true;
+    }
+  } else if (_cycles.predict_duration(time_at_start, _margin_of_error_sd) < gc_time) {
+    add_sample = true;
+  }
+
+  if (add_sample) {
     _cycles.record_duration(time_at_start, gc_time);
   }
 }
 
-void ShenandoahAdaptiveHeuristics::record_success_concurrent() {
-  ShenandoahHeuristics::record_success_concurrent();
+void ShenandoahAdaptiveHeuristics::record_success_concurrent(bool abbreviated) {
+  ShenandoahHeuristics::record_success_concurrent(abbreviated);
 
-  // We add this time even if it is a shortened cycle. There is a risk that this pulls
-  // the gc time trend down, but it is still a more accurate view than excluding times
-  // from shortened cycles. Suppose we did excluded shortened times, the risk would then
-  // be running the collector more often than necessary because it continues to believe
-  // the average cycle time is much higher than it otherwise would be.
-  _cycles.record_duration(_cycle_start, elapsed_cycle_time());
+  double gc_time = elapsed_cycle_time();
+  bool add_sample = false;
+  if (abbreviated) {
+    // We add adjusted gc time for abbreviated cycles only if we are still learning.
+    const size_t max_learn = ShenandoahLearningSteps;
+    // Assume a regular cycle takes twice as long as mark-only cycle. All the memory marked must be either evacuated or
+    // updated.  Evacuation and updating normally require less synchronization than marking, so we expect this approximation
+    // is conservative.
+    gc_time += gc_time;
+
+    // Only add adjusted abbreviated cycle times if we are still learning or if the new adjusted measurements is below the
+    // most current prediction. Workloads that have a large number of abbreviated cycles are vulnerable to overly conservative
+    // linear prediction of execution time based on learning cycles alone. This happens because any small error in the
+    // linear prediction model is amplified as the time between learning cycles and current prediction event increases.
+    if ((_gc_times_learned <= max_learn) || (gc_time < _cycles.predict_duration(_cycle_start, _margin_of_error_sd))) {
+      add_sample = true;
+    }
+  } else {
+    // Always add non-abbreviated GC cycles times into linear prediction history.
+    add_sample = true;
+  }
+
+  if (add_sample) {
+    _cycles.record_duration(_cycle_start, elapsed_cycle_time());
+  }
 
   double z_score = 0.0;
   const double available = static_cast<double>(_space_info->available());
@@ -211,10 +245,10 @@ void ShenandoahAdaptiveHeuristics::record_success_concurrent() {
   }
 }
 
-void ShenandoahAdaptiveHeuristics::record_degenerated(bool is_generational_global) {
-  ShenandoahHeuristics::record_degenerated(is_generational_global);
+void ShenandoahAdaptiveHeuristics::record_degenerated(bool abbreviated, bool is_generational_global) {
+  ShenandoahHeuristics::record_degenerated(abbreviated, is_generational_global);
   if (!is_generational_global) {
-    add_degenerated_gc_time(_precursor_cycle_start, elapsed_degenerated_cycle_time());
+    add_degenerated_gc_time(_precursor_cycle_start, elapsed_degenerated_cycle_time(), abbreviated);
   }
 }
 
