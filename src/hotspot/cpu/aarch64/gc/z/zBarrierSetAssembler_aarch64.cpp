@@ -22,6 +22,7 @@
  */
 
 #include "asm/macroAssembler.inline.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/codeBlob.hpp"
 #include "code/vmreg.inline.hpp"
 #include "gc/z/zAddress.hpp"
@@ -1390,9 +1391,21 @@ void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Registe
 
   __ bind(check_zaddress);
   // Check if the oop is in the right area of memory
-  __ mov(tmp1, (intptr_t) Universe::verify_oop_mask());
-  __ andr(tmp1, tmp1, obj);
-  __ mov(obj, (intptr_t) Universe::verify_oop_bits());
+#if INCLUDE_CDS
+  if (AOTCodeCache::is_on_for_dump()) {
+    assert_different_registers(tmp1, tmp2, obj);
+    __ lea(tmp1, ExternalAddress(AOTRuntimeConstants::verify_oop_mask_address()));
+    __ ldr(tmp1, Address(tmp1));
+    __ andr(tmp1, tmp1, obj);
+    __ lea(obj, ExternalAddress(AOTRuntimeConstants::verify_oop_bits_address()));
+    __ ldr(obj, Address(obj));
+  } else
+#endif
+  {
+    __ mov(tmp1, (intptr_t) Universe::verify_oop_mask());
+    __ andr(tmp1, tmp1, obj);
+    __ mov(obj, (intptr_t) Universe::verify_oop_bits());
+  }
   __ cmp(tmp1, obj);
   __ br(Assembler::NE, error);
 
