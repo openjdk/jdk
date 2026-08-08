@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,13 +64,12 @@ public class RehandshakeWithDataExTest extends SSLEngineTestCase {
                 HandshakeMode.REHANDSHAKE_BEGIN_CLIENT);
         sendApplicationData(clientEngine, serverEngine);
         r = sendApplicationData(serverEngine, clientEngine);
-        AssertionError epochError = new AssertionError("Epoch number"
-                + " did not grow after re-handshake! "
-                + " Was " + initialEpoch + ", now " + secondEpoch + ".");
         if (TESTED_SECURITY_PROTOCOL.contains("DTLS")) {
             secondEpoch = r.sequenceNumber() >> 48;
             if (Long.compareUnsigned(secondEpoch, initialEpoch) <= 0) {
-                throw epochError;
+                throw new AssertionError("Epoch number"
+                        + " did not grow after re-handshake! "
+                        + " Was " + initialEpoch + ", now " + secondEpoch + ".");
             }
         }
         doHandshake(clientEngine, serverEngine, maxPacketSize,
@@ -78,9 +77,11 @@ public class RehandshakeWithDataExTest extends SSLEngineTestCase {
         sendApplicationData(clientEngine, serverEngine);
         r = sendApplicationData(serverEngine, clientEngine);
         if (TESTED_SECURITY_PROTOCOL.contains("DTLS")) {
-        thirdEpoch = r.sequenceNumber() >> 48;
+            thirdEpoch = r.sequenceNumber() >> 48;
             if (Long.compareUnsigned(thirdEpoch, secondEpoch) <= 0) {
-                throw epochError;
+                throw new AssertionError("Epoch number"
+                        + " did not grow after re-handshake! "
+                        + " Was " + secondEpoch + ", now " + thirdEpoch + ".");
             }
         }
         closeEngines(clientEngine, serverEngine);

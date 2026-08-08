@@ -73,11 +73,10 @@ public class RehandshakeWithCipherChangeTest extends SSLEngineTestCase {
         r = sendApplicationData(serverEngine, clientEngine);
         if (TESTED_SECURITY_PROTOCOL.contains("DTLS")) {
             secondEpoch = r.sequenceNumber() >> 48;
-            AssertionError epochError = new AssertionError("Epoch number"
-                    + " did not grow after re-handshake! "
-                    + " Was " + initialEpoch + ", now " + secondEpoch + ".");
             if (Long.compareUnsigned(secondEpoch, initialEpoch) <= 0) {
-                throw epochError;
+                throw new AssertionError("Epoch number"
+                        + " did not grow after re-handshake! "
+                        + " Was " + initialEpoch + ", now " + secondEpoch + ".");
             }
         }
         closeEngines(clientEngine, serverEngine);
