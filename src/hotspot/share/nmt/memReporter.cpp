@@ -323,14 +323,15 @@ void MemDetailReporter::report_detail() {
 }
 
 int MemDetailReporter::report_malloc_sites() {
-  MallocSiteIterator         malloc_itr = _baseline.malloc_sites(MemBaseline::by_size);
-  if (malloc_itr.is_empty()) return 0;
+  _baseline.sort_malloc_sites(MemBaseline::by_size);
 
   outputStream* out = output();
 
-  const MallocSite* malloc_site;
+  out->print_cr("NUM MALLOC: %d", _baseline.malloc_sites_length());
+  const MallocSite* malloc_site = nullptr;
   int num_omitted = 0;
-  while ((malloc_site = malloc_itr.next()) != nullptr) {
+  for (int i = 0; i < _baseline.malloc_sites_length(); i++) {
+    malloc_site = &_baseline.malloc_sites()[i];
     // Omit printing if the current value and the historic peak value both fall below the reporting scale threshold
     if (amount_in_current_scale(MAX2(malloc_site->size(), malloc_site->peak_size())) == 0) {
       num_omitted ++;
@@ -340,11 +341,11 @@ int MemDetailReporter::report_malloc_sites() {
     _stackprinter.print_stack(stack);
     MemTag mem_tag = malloc_site->mem_tag();
     assert(NMTUtil::tag_is_valid(mem_tag) && mem_tag != mtNone,
-      "Must have a valid memory tag");
+           "Must have a valid memory tag");
     INDENT_BY(29,
-      out->print("(");
-      print_malloc(malloc_site->counter(), mem_tag);
-      out->print_cr(")");
+              out->print("(");
+    print_malloc(malloc_site->counter(), mem_tag);
+    out->print_cr(")");
     )
     out->cr();
   }
@@ -352,16 +353,14 @@ int MemDetailReporter::report_malloc_sites() {
 }
 
 int MemDetailReporter::report_virtual_memory_allocation_sites()  {
-  VirtualMemorySiteIterator  virtual_memory_itr =
-    _baseline.virtual_memory_sites(MemBaseline::by_size);
-
-  if (virtual_memory_itr.is_empty()) return 0;
+  _baseline.sort_virtual_memory_sites(MemBaseline::by_size);
 
   outputStream* out = output();
-
-  const VirtualMemoryAllocationSite*  virtual_memory_site;
+  out->print_cr("NUM MMAP: %d", _baseline.virtual_memory_sites_length());
+  const VirtualMemoryAllocationSite*  virtual_memory_site = nullptr;
   int num_omitted = 0;
-  while ((virtual_memory_site = virtual_memory_itr.next()) != nullptr) {
+  for (int i = 0; i < _baseline.virtual_memory_sites_length(); i++) {
+    virtual_memory_site = &_baseline.virtual_memory_sites()[i];
     // Don't report free sites; does not count toward omitted count.
     if (virtual_memory_site->reserved() == 0) {
       continue;
@@ -804,69 +803,113 @@ void MemDetailDiffReporter::report_diff() {
 }
 
 void MemDetailDiffReporter::diff_malloc_sites() const {
-  MallocSiteIterator early_itr = _early_baseline.malloc_sites(MemBaseline::by_site_and_tag);
-  MallocSiteIterator current_itr = _current_baseline.malloc_sites(MemBaseline::by_site_and_tag);
+  _early_baseline.sort_malloc_sites(MemBaseline::by_site_and_tag);
+  _current_baseline.sort_malloc_sites(MemBaseline::by_site_and_tag);
 
-  const MallocSite* early_site   = early_itr.next();
-  const MallocSite* current_site = current_itr.next();
+  const MallocSite* early_site = nullptr;
+  const MallocSite* current_site = nullptr;
+  int early_i = 0;
+  int current_i = 0;
+  auto early_next = [&]() -> const MallocSite* {
+    if (early_i < _early_baseline.malloc_sites_length()) {
+      const MallocSite* e = &_early_baseline.malloc_sites()[early_i];
+      early_i++;
+      return e;
+    } else {
+      return nullptr;
+    }
+  };
+  auto current_next = [&]() -> const MallocSite* {
+    if (current_i < _current_baseline.malloc_sites_length()) {
+      const MallocSite* e = &_current_baseline.malloc_sites()[current_i];
+      current_i++;
+      return e;
+    } else {
+      return nullptr;
+    }
+  };
+
+
+  early_site   = early_next();
+  current_site = current_next();
 
   while (early_site != nullptr || current_site != nullptr) {
     if (early_site == nullptr) {
       new_malloc_site(current_site);
-      current_site = current_itr.next();
+      current_site = current_next();
     } else if (current_site == nullptr) {
       old_malloc_site(early_site);
-      early_site = early_itr.next();
+      early_site = early_next();
     } else {
       int compVal = current_site->call_stack()->compare(*early_site->call_stack());
       if (compVal < 0) {
         new_malloc_site(current_site);
-        current_site = current_itr.next();
+        current_site = current_next();
       } else if (compVal > 0) {
         old_malloc_site(early_site);
-        early_site = early_itr.next();
+        early_site = early_next();
       } else {
         diff_malloc_site(early_site, current_site);
-        early_site   = early_itr.next();
-        current_site = current_itr.next();
+        early_site   = early_next();
+        current_site = current_next();
       }
     }
   }
 }
 
 void MemDetailDiffReporter::diff_virtual_memory_sites() const {
-  VirtualMemorySiteIterator early_itr = _early_baseline.virtual_memory_sites(MemBaseline::by_site);
-  VirtualMemorySiteIterator current_itr = _current_baseline.virtual_memory_sites(MemBaseline::by_site);
+  _early_baseline.sort_virtual_memory_sites(MemBaseline::by_site);
+  _current_baseline.sort_virtual_memory_sites(MemBaseline::by_site);
 
-  const VirtualMemoryAllocationSite* early_site   = early_itr.next();
-  const VirtualMemoryAllocationSite* current_site = current_itr.next();
+  const VirtualMemoryAllocationSite* early_site = nullptr;
+  const VirtualMemoryAllocationSite* current_site = nullptr;
+  int early_i = 0;
+  int current_i = 0;
+  auto early_next = [&]() -> const VirtualMemoryAllocationSite* {
+    if (early_i < _early_baseline.virtual_memory_sites_length()) {
+      const VirtualMemoryAllocationSite* e = &_early_baseline.virtual_memory_sites()[early_i];
+      early_i++;
+      return e;
+    } else {
+      return nullptr;
+    }
+  };
+  auto current_next = [&]() -> const VirtualMemoryAllocationSite* {
+    if (current_i < _current_baseline.virtual_memory_sites_length()) {
+      const VirtualMemoryAllocationSite* e = &_current_baseline.virtual_memory_sites()[current_i];
+      current_i++;
+      return e;
+    } else {
+      return nullptr;
+    }
+  };
 
   while (early_site != nullptr || current_site != nullptr) {
     if (early_site == nullptr) {
       new_virtual_memory_site(current_site);
-      current_site = current_itr.next();
+      current_site = current_next();
     } else if (current_site == nullptr) {
       old_virtual_memory_site(early_site);
-      early_site = early_itr.next();
+      early_site = early_next();
     } else {
       int compVal = current_site->call_stack()->compare(*early_site->call_stack());
       if (compVal < 0) {
         new_virtual_memory_site(current_site);
-        current_site = current_itr.next();
+        current_site = current_next();
       } else if (compVal > 0) {
         old_virtual_memory_site(early_site);
-        early_site = early_itr.next();
+        early_site = early_next();
       } else if (early_site->mem_tag() != current_site->mem_tag()) {
         // This site was originally allocated with one memory tag, then released,
         // then re-allocated at the same site (as far as we can tell) with a different memory tag.
         old_virtual_memory_site(early_site);
-        early_site = early_itr.next();
+        early_site = early_next();
         new_virtual_memory_site(current_site);
-        current_site = current_itr.next();
+        current_site = current_next();
       } else {
         diff_virtual_memory_site(early_site, current_site);
-        early_site   = early_itr.next();
-        current_site = current_itr.next();
+        early_site   = early_next();
+        current_site = current_next();
       }
     }
   }
