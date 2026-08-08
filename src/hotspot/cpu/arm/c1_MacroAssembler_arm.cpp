@@ -57,6 +57,8 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
   raw_push(FP, LR);
   sub_slow(SP, SP, frame_size_in_bytes);
 
+  restore_profile_rng();
+
   // Insert nmethod entry barrier into frame.
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->nmethod_entry_barrier(this);
@@ -220,9 +222,48 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register basic
   // Success: fall through
 }
 
-int C1_MacroAssembler::scalarized_entry(const CompiledEntrySignature* ces, int frame_size_in_bytes, int bang_size_in_bytes, int sp_offset_for_orig_pc, Label& verified_inline_entry_label, bool is_inline_ro_entry) {
-  Unimplemented();
+// Increments mdp data. Sets bumped_count register to adjusted counter.
+void C1_MacroAssembler::increment_mdp_data_at(Address data,
+                                              Register bumped_count,
+                                              RegisterOrConstant increment) {
+  assert_different_registers(data.base(), Rtemp);
+  assert(data.mode() == basic_offset, "must be");
+
+  if (increment.is_constant()) {
+    auto incr = increment.as_constant();
+    ldr(bumped_count, data);
+    add_slow(bumped_count, bumped_count, incr);
+    str(bumped_count, data);
+  } else {
+    auto incr = increment.as_register();
+    ldr(bumped_count, data);
+    add(bumped_count, bumped_count, incr);
+    str(bumped_count, data);
+  }
 }
+
+// Randomized profile capture.
+
+void C1_MacroAssembler::step_random(Register state, Register temp, Register data) {
+  /* LCG by Marsaglia. From Karl Entacher,
+     https://www.researchgate.net/publication/2683298_A_Collection_of_Selected_Pseudorandom_Number_Generators_With_Linear_Structures */
+  mov_slow(temp, 69069);
+  mul(state, state, temp);
+  add(state, state, 1);
+}
+
+void C1_MacroAssembler::save_profile_rng() {
+  if (ProfileCaptureRatio > 1) {
+    str(r_profile_rng, Address(Rthread, JavaThread::profile_rng_offset()));
+  }
+}
+
+void C1_MacroAssembler::restore_profile_rng() {
+  if (ProfileCaptureRatio > 1) {
+    ldr(r_profile_rng, Address(Rthread, JavaThread::profile_rng_offset()));
+  }
+}
+
 
 #ifndef PRODUCT
 

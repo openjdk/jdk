@@ -2122,7 +2122,8 @@ Address MacroAssembler::argument_address(RegisterOrConstant arg_slot,
 // avoids grossly misrepresenting the profiles under concurrent updates. For speed,
 // counter updates are not atomic.
 //
-void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_offset) {
+void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_offset,
+                                           increment_mdo_insn_t inc) {
   assert_different_registers(recv, mdp, rscratch1, rscratch2);
 
   int base_receiver_offset   = in_bytes(ReceiverTypeData::receiver_offset(0));
@@ -2135,6 +2136,8 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   base_receiver_offset += mdp_offset;
   end_receiver_offset  += mdp_offset;
   poly_count_offset    += mdp_offset;
+
+  block_comment("profile_receiver_type {");
 
 #ifdef ASSERT
   // We are about to walk the MDO slots without asking for offsets.
@@ -2153,7 +2156,8 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
 
   // Corner case: no profile table. Increment poly counter and exit.
   if (ReceiverTypeData::row_limit() == 0) {
-    increment(Address(mdp, poly_count_offset), DataLayout::counter_increment);
+    inc(this, Address(mdp, poly_count_offset), DataLayout::counter_increment);
+    block_comment("} profile_receiver_type");
     return;
   }
 
@@ -2258,7 +2262,9 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
 
   // Finally, update the counter
   bind(L_count_update);
-  increment(Address(mdp, offset), DataLayout::counter_increment);
+  inc(this, Address(mdp, offset), DataLayout::counter_increment);
+
+  block_comment("} profile_receiver_type");
 }
 
 

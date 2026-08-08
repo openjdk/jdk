@@ -5703,7 +5703,7 @@ void LinearScanWalker::init_vars_for_alloc(Interval* cur) {
     // the appropriate register range was selected.
   } else if (type == T_FLOAT || type == T_DOUBLE) {
     _first_reg = pd_first_fpu_reg;
-    _last_reg = pd_last_fpu_reg;
+    _last_reg = FrameMap::last_fpu_reg();
   } else {
     _first_reg = pd_first_cpu_reg;
     _last_reg = FrameMap::last_cpu_reg();

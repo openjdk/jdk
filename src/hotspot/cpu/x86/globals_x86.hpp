@@ -200,7 +200,7 @@ define_pd_global(bool, InlineTypeReturnedAsFields, true);
              "Explicitly selected mechanism will fail at startup if "       \
              "hardware does not support it.")                               \
              range(-1, 5)                                                   \
-                                                                            \
+
 // end of ARCH_FLAGS
 
 #endif // CPU_X86_GLOBALS_X86_HPP

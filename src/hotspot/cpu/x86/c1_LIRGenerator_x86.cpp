@@ -85,6 +85,7 @@ LIR_Opr LIRGenerator::shiftCountOpr()   { return FrameMap::rcx_opr; }
 LIR_Opr LIRGenerator::syncLockOpr()     { return new_register(T_INT); }
 LIR_Opr LIRGenerator::syncTempOpr()     { return FrameMap::rax_opr; }
 LIR_Opr LIRGenerator::getThreadTemp()   { return LIR_OprFact::illegalOpr; }
+LIR_Opr LIRGenerator::profile_rng_opr() { return FrameMap::profile_rng_opr; }
 
 
 LIR_Opr LIRGenerator::result_register_for(ValueType* type, bool callee) {
@@ -1389,6 +1390,10 @@ void LIRGenerator::do_If(If* x) {
   }
   // Generate branch profiling. Profiling code doesn't kill flags.
   profile_branch(x, cond);
+  // If we're subsampling counter updates, then profiling code kills flags
+  if (ProfileCaptureRatio > 1) {
+    __ cmp(lir_cond(cond), left, right);
+  }
   move_to_phi(x->state());
   if (x->x()->type()->is_float_kind()) {
     __ branch(lir_cond(cond), x->tsux(), x->usux());
