@@ -125,14 +125,14 @@ protected:
   int      _data_offset;           // offset to where data region begins
   int      _frame_size;            // size of stack frame in words (NOT slots. On x64 these are 64bit words)
   int      _mutable_data_size;
+  int      _frame_complete_offset; // instruction offsets in [0.._frame_complete_offset) have
+                                   // not finished setting up their frame. Beware of pc's in
+                                   // that range. There is a similar range(s) on returns
+                                   // which we don't detect.
 
   S390_ONLY(int _ctable_offset;)
 
   uint16_t _header_size;           // size of header (depends on subclass)
-  int16_t  _frame_complete_offset; // instruction offsets in [0.._frame_complete_offset) have
-                                   // not finished setting up their frame. Beware of pc's in
-                                   // that range. There is a similar range(s) on returns
-                                   // which we don't detect.
 
   CodeBlobKind _kind;              // Kind of this code blob
 
@@ -162,7 +162,7 @@ protected:
   const Vptr* vptr() const;
 
   CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size, uint16_t header_size,
-           int16_t frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments,
+           int frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments,
            int mutable_data_size);
 
   // Simple CodeBlob used for simple BufferBlob.
@@ -367,7 +367,7 @@ class RuntimeBlob : public CodeBlob {
     CodeBuffer* cb,
     int         size,
     uint16_t    header_size,
-    int16_t     frame_complete,
+    int         frame_complete,
     int         frame_size,
     OopMapSet*  oop_maps,
     bool        caller_must_gc_arguments = false
@@ -526,7 +526,7 @@ class RuntimeStub: public RuntimeBlob {
     const char* name,
     CodeBuffer* cb,
     int         size,
-    int16_t     frame_complete,
+    int         frame_complete,
     int         frame_size,
     OopMapSet*  oop_maps,
     bool        caller_must_gc_arguments
@@ -540,7 +540,7 @@ class RuntimeStub: public RuntimeBlob {
   static RuntimeStub* new_runtime_stub(
     const char* stub_name,
     CodeBuffer* cb,
-    int16_t     frame_complete,
+    int         frame_complete,
     int         frame_size,
     OopMapSet*  oop_maps,
     bool        caller_must_gc_arguments,

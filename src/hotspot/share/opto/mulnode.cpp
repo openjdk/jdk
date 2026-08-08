@@ -626,7 +626,7 @@ UMulHiLoLNode* UMulHiLoLNode::make(Node* umul_hi) {
   return umul_hi_lo;
 }
 
-Node* MulHiLoLNode::match(const ProjNode* proj, const Matcher* match, const RegMask*) {
+Node* MulHiLoLNode::match(const ProjNode* proj, const Matcher* match) {
   uint ideal_reg = proj->ideal_reg();
   RegMask rm;
   if (proj->_con == first_proj_num) {

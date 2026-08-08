@@ -4112,7 +4112,8 @@ public class Types {
             //step 3 - for each element G in MEC, compute lci(Inv(G))
             List<Type> candidates = List.nil();
             for (Type erasedSupertype : mec) {
-                List<Type> lci = List.of(asSuper(ts[startIdx], erasedSupertype.tsym));
+                Type firstSuperType = asSuper(ts[startIdx], erasedSupertype.tsym);
+                List<Type> lci = firstSuperType != null ? List.of(firstSuperType) : List.nil();
                 for (int i = startIdx + 1 ; i < ts.length ; i++) {
                     Type superType = asSuper(ts[i], erasedSupertype.tsym);
                     lci = intersect(lci, superType != null ? List.of(superType) : List.nil());

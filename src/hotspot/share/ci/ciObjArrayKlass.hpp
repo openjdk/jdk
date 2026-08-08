@@ -70,7 +70,7 @@ public:
   bool is_obj_array_klass() const { return true; }
 
   static ciObjArrayKlass* make(ciKlass* element_klass, bool refined_type = true, bool null_free = false, bool atomic = true);
-  static ciArrayKlass* make(ciKlass* element_klass, int dims);
+  static ciObjArrayKlass* make(ciKlass* element_klass, int dims);
 
   virtual ciKlass* exact_klass();
 
