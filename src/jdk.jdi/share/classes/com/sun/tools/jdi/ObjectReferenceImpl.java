@@ -436,11 +436,27 @@ public class ObjectReferenceImpl extends ValueImpl
             vm.notifySuspend();
         }
 
+        if ((options & INVOKE_DISABLE_COLLECTION) != 0) {
+            // Account for implicit disableCollection() done by JDWP.
+            if (ret.exception != null) {
+                ret.exception.incrementGcDisableCount();
+            } else {
+                if (ret.returnValue instanceof ObjectReferenceImpl obj) {
+                    obj.incrementGcDisableCount();
+                }
+            }
+        }
+
         if (ret.exception != null) {
             throw new InvocationException(ret.exception);
         } else {
             return ret.returnValue;
         }
+    }
+
+    /* leave synchronized to keep count accurate */
+    synchronized void incrementGcDisableCount() {
+        gcDisableCount++;
     }
 
     /* leave synchronized to keep count accurate */
