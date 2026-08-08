@@ -49,7 +49,7 @@ public class StreamDecoder extends Reader {
     private static final int MIN_BYTE_BUFFER_SIZE = 32;
     private static final int DEFAULT_BYTE_BUFFER_SIZE = 8192;
 
-    private volatile boolean havePulledFromInputStream;
+    private volatile boolean decoderContainsBytes;
     private volatile boolean closed;
 
     private void ensureOpen() throws IOException {
@@ -207,10 +207,15 @@ public class StreamDecoder extends Reader {
 
             byte[] remaining = in.readAllBytes();
 
-            if (!havePulledFromInputStream)
+            if (!decoderContainsBytes
+                    && decoder.malformedInputAction() == CodingErrorAction.REPLACE
+                    && decoder.unmappableCharacterAction() == CodingErrorAction.REPLACE
+                    && decoder.getClass() == cs.newDecoder().getClass())
                 return new String(remaining, cs);
 
-            int estimateSize = (haveLeftoverChar ? 1 : 0) + (int) Math.ceil((bb.remaining() + remaining.length) * decoder.maxCharsPerByte());
+            int estimateSize = (haveLeftoverChar ? 1 : 0)
+                    + (int) Math.ceil((bb.remaining() + remaining.length)
+                    * decoder.maxCharsPerByte());
             int initialSize = Math.max(estimateSize, DEFAULT_BYTE_BUFFER_SIZE);
             CharBuffer cb = CharBuffer.allocate(initialSize);
 
@@ -219,21 +224,41 @@ public class StreamDecoder extends Reader {
                 haveLeftoverChar = false;
             }
 
-            while (bb.hasRemaining()) {
-                CoderResult cr = decoder.decode(bb, cb, false);
-                if (cr.isError())
-                    cr.throwException();
-                if (cr.isOverflow())
-                    cb = ensureFree(cb, bb.remaining());
-            }
+            if (bb.hasRemaining() || remaining.length > 0) {
+                while (bb.hasRemaining()) {
+                    CoderResult cr = decoder.decode(bb, cb, remaining.length == 0);
+                    if (cr.isError())
+                        cr.throwException();
+                    if (cr.isOverflow())
+                        cb = ensureFree(cb, bb.remaining());
+                    if (cr.isUnderflow())
+                        break;
+                }
 
-            ByteBuffer bbuf = ByteBuffer.wrap(remaining);
-            while (bbuf.hasRemaining()) {
-                CoderResult cr = decoder.decode(bbuf, cb, false);
+                ByteBuffer bbuf = !bb.hasRemaining()
+                        ? ByteBuffer.wrap(remaining)
+                        : bb.capacity() - bb.remaining() >= remaining.length
+                        ? bb.compact().put(remaining).flip()
+                        : ByteBuffer.allocate(bb.remaining() + remaining.length)
+                                .put(bb).put(remaining).flip();
+
+                while (bbuf.hasRemaining()) {
+                    CoderResult cr = decoder.decode(bbuf, cb, true);
+                    if (cr.isError())
+                        cr.throwException();
+                    if (cr.isOverflow())
+                        cb = ensureFree(cb, bbuf.remaining());
+                    if (cr.isUnderflow())
+                        break;
+                }
+
+                CoderResult cr = decoder.flush(cb);
+                while (cr.isOverflow()) {
+                    cb = ensureFree(cb, 1);
+                    cr = decoder.flush(cb);
+                }
                 if (cr.isError())
                     cr.throwException();
-                if (cr.isOverflow())
-                    cb = ensureFree(cb, bbuf.remaining());
             }
 
             return cb.flip().toString();
@@ -331,7 +356,7 @@ public class StreamDecoder extends Reader {
                     throw new IOException("Underlying input stream returned zero bytes");
                 assert (n <= rem) : "n = " + n + ", rem = " + rem;
                 bb.position(pos + n);
-                havePulledFromInputStream = true;
+                decoderContainsBytes = true;
             }
         } finally {
             // Flip even when an IOException is thrown,
