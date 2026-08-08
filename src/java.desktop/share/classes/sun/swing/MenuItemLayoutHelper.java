@@ -457,6 +457,13 @@ public class MenuItemLayoutHelper {
         calcMaxValue(SwingUtilities2.BASICMENUITEMUI_MAX_TEXT_OFFSET, offset);
     }
 
+    public boolean allocateIconTextGap;
+    public int iconTextGap;
+    public void allocateIconTextGap(int iconTextGap) {
+        allocateIconTextGap = true;
+        this.iconTextGap = iconTextGap;
+    }
+
     /**
      * Layout icon, text, check icon, accelerator text and arrow icon
      * in the viewRect and return their positions.
@@ -577,6 +584,9 @@ public class MenuItemLayoutHelper {
         if (lr.checkRect.width > 0) { // there is the afterCheckIconGap
             lr.iconRect.x += afterCheckIconGap - gap;
             lr.textRect.x += afterCheckIconGap - gap;
+            if (allocateIconTextGap) {
+                lr.textRect.x += iconTextGap - gap;
+            }
         }
 
         calcXPositionsRTL(viewRect.x + viewRect.width, leadingGap, gap,
@@ -641,6 +651,9 @@ public class MenuItemLayoutHelper {
         // Tune the gap after check icon
         if (lr.checkRect.width > 0) { // there is the gap after check icon
             lr.iconRect.x -= afterCheckIconGap - gap;
+            if (allocateIconTextGap) {
+                lr.textRect.x -= iconTextGap;
+            }
             lr.textRect.x -= afterCheckIconGap - gap;
         }
 
