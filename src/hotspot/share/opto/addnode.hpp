@@ -130,6 +130,9 @@ class AddNode : public Node {
 
   // Utility function to make a NOT operation, i.e., returning n ^ (-1).
   static AddNode* make_not(PhaseGVN* phase, Node* n, BasicType bt);
+
+  // Utility function to make a logical OR operation.
+  static AddNode* make_or(Node* in1, Node* in2, BasicType bt);
 };
 
 //------------------------------AddINode---------------------------------------
