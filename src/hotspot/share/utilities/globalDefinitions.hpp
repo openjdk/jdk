@@ -738,7 +738,7 @@ inline bool is_java_type(BasicType t) {
   return T_BOOLEAN <= t && t <= T_VOID;
 }
 
-inline bool is_java_primitive(BasicType t) {
+constexpr inline bool is_java_primitive(BasicType t) {
   return T_BOOLEAN <= t && t <= T_LONG;
 }
 

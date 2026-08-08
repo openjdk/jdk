@@ -4240,7 +4240,7 @@ bool LibraryCallKit::inline_native_setCurrentThread() {
 const Type* LibraryCallKit::scopedValueCache_type() {
   ciKlass* objects_klass = ciObjArrayKlass::make(env()->Object_klass());
   const TypeOopPtr* etype = TypeOopPtr::make_from_klass(env()->Object_klass());
-  const TypeAry* arr0 = TypeAry::make(etype, TypeInt::POS, /* stable= */ false, /* flat= */ false, /* not_flat= */ true, /* not_null_free= */ true, true);
+  const TypeAry* arr0 = TypeAry::make(etype, TypeInt::POS, /* stable= */ false, /* flat= */ false, /* not_flat= */ true, /*null_free=*/ false, /* not_null_free= */ true, true);
 
   // Because we create the scopedValue cache lazily we have to make the
   // type of the result BotPTR.
