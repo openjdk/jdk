@@ -916,14 +916,18 @@ uint8_t MemNode::barrier_data(const Node* n) {
   return 0;
 }
 
-AccessAnalyzer::AccessAnalyzer(PhaseGVN* phase, MemNode* n)
-  : _phase(phase), _n(n), _memory_size(n->memory_size()), _alias_idx(-1) {
-  Node* adr  = _n->in(MemNode::Address);
+AccessAnalyzer::AccessAnalyzer(PhaseGVN* phase, MemNode* n) :
+  _phase(phase),
+  _n(n),
+  _memory_size(n->memory_size()),
+  _alias_idx(-1),
+  _adr(n->in(MemNode::Address)) {
+
   _offset    = 0;
-  _base      = AddPNode::Ideal_base_and_offset(adr, _phase, _offset);
-  _maybe_raw = MemNode::check_if_adr_maybe_raw(adr);
+  _base      = AddPNode::Ideal_base_and_offset(_adr, _phase, _offset);
+  _maybe_raw = MemNode::check_if_adr_maybe_raw(_adr);
   _alloc     = AllocateNode::Ideal_allocation(_base);
-  _adr_type = _n->adr_type();
+  _adr_type  = _n->adr_type();
 
   if (_adr_type != nullptr && _adr_type->base() != TypePtr::AnyPtr) {
     // Avoid the cases that will upset Compile::get_alias_index
@@ -1082,6 +1086,107 @@ AccessAnalyzer::AccessIndependence AccessAnalyzer::detect_access_independence(No
   }
 
   return {false, nullptr};
+}
+
+// Return true if the current store fully covers all bytes written by 'other'.
+bool AccessAnalyzer::store_fully_covers(const StoreNode* other) const {
+  assert(_n->is_Store(), "current access must be a store");
+
+  int other_size = other->memory_size();
+  // The coverage cases handled below are either based on address range
+  // containment, which requires the current store's memory_size() to be at
+  // least that of 'other', or on matching write patterns, which imply equal
+  // memory sizes.
+  if (_memory_size < other_size) {
+    return false;
+  }
+
+  StoreNode* cur = _n->as_Store();
+  int cur_opcode = cur->Opcode();
+  bool cur_writes_full_contiguous_range = !cur->is_StoreVector() ||
+                                          (!cur->is_predicated_vector() &&
+                                           (cur_opcode == Op_StoreVector ||
+                                            (cur_opcode == Op_StoreVectorMasked &&
+                                             VectorNode::is_all_ones_vector(cur->as_StoreVectorMasked()->mask()))));
+
+
+  Node* other_adr = other->in(MemNode::Address);
+  int other_opcode = other->Opcode();
+  // True if all writes performed by 'other' fall within the address range
+  // [other_adr, other_adr + other_size), regardless of whether the writes
+  // are contiguous.
+  bool other_writes_within_contiguous_range = !other->is_StoreVector() ||
+                                              other_opcode == Op_StoreVector ||
+                                              other_opcode == Op_StoreVectorMasked;
+
+  // For same address.
+  if (other_adr->eqv_uncast(_adr)) {
+    // A full contiguous store can cover other store with a contiguous address range.
+    if (cur_writes_full_contiguous_range &&
+        other_writes_within_contiguous_range) {
+      return true;
+    }
+
+    // Check whether both stores are non-predicated masked/scatter vector stores.
+    if (cur_opcode != other_opcode ||
+        !cur->is_StoreVector() ||
+        cur->is_predicated_vector() ||
+        other->is_predicated_vector()) {
+      return false;
+    }
+
+    StoreVectorNode* n = cur->as_StoreVector();
+    StoreVectorNode* o = other->as_StoreVector();
+
+    // Same write pattern.
+    if (_memory_size != other_size ||
+        n->element_size() != o->element_size() ||
+        n->length() != o->length()) {
+      return false;
+    }
+
+    switch (cur_opcode) {
+      case Op_StoreVectorMasked: {
+        StoreVectorMaskedNode* n_m = cur->as_StoreVectorMasked();
+        StoreVectorMaskedNode* o_m = other->as_StoreVectorMasked();
+        return n_m->mask() != nullptr &&
+               n_m->mask() == o_m->mask();
+      }
+      case Op_StoreVectorScatter: {
+        StoreVectorScatterNode* n_s = cur->as_StoreVectorScatter();
+        StoreVectorScatterNode* o_s = other->as_StoreVectorScatter();
+        return n_s->indices() != nullptr &&
+               n_s->indices() == o_s->indices();
+      }
+      case Op_StoreVectorScatterMasked: {
+        StoreVectorScatterMaskedNode* n_sm = cur->as_StoreVectorScatterMasked();
+        StoreVectorScatterMaskedNode* o_sm = other->as_StoreVectorScatterMasked();
+        return n_sm->indices() != nullptr &&
+               n_sm->mask() != nullptr &&
+               n_sm->indices() == o_sm->indices() &&
+               n_sm->mask() == o_sm->mask();
+      }
+      default:
+        return false;
+    }
+  }
+
+  // Coverage between stores with different addresses can only be checked when
+  // the current store writes a full contiguous range and all writes of the
+  // other store are confined to a contiguous address range.
+  if (!cur_writes_full_contiguous_range ||
+      !other_writes_within_contiguous_range) {
+    return false;
+  }
+
+#ifndef PRODUCT
+  const TraceMemPointer trace(false, false, false, false);
+#endif
+
+  const MemPointer cur_pointer(_n NOT_PRODUCT(COMMA trace));
+  const MemPointer other_pointer(other NOT_PRODUCT(COMMA trace));
+
+  return cur_pointer.always_contains(other_pointer);
 }
 
 //=============================================================================
@@ -3826,12 +3931,11 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (p)  return (p == NodeSentinel) ? nullptr : p;
 
   Node* mem     = in(MemNode::Memory);
-  Node* address = in(MemNode::Address);
   Node* value   = in(MemNode::ValueIn);
-  // Back-to-back stores to same address?  Fold em up.  Generally
-  // unsafe if I have intervening uses...
-  if ((!this->is_StoreVector() || this->Opcode() == Op_StoreVector) &&
-      phase->C->get_adr_type(phase->C->get_alias_index(adr_type())) != TypeAryPtr::INLINES) {
+  // Remove a previous store when the current store fully covers its writes.
+  // This is generally unsafe if there are intervening uses.
+  if (phase->C->get_adr_type(phase->C->get_alias_index(adr_type())) != TypeAryPtr::INLINES) {
+    AccessAnalyzer analyzer(phase, this);
     Node* st = mem;
     // If Store 'st' has more than one use, we cannot fold 'st' away.
     // For example, 'st' might be the final state at a conditional
@@ -3839,14 +3943,15 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // the same time 'st' is live, which might be unschedulable.  So,
     // require exactly ONE user until such time as we clone 'mem' for
     // each of 'mem's uses (thus making the exactly-1-user-rule hold
-    // true). Further, 'st' must be a contiguous store, otherwise
-    // memory_size does not make sense for measuring overlap.
-    while (st->is_Store() && st->outcnt() == 1 && (!st->is_StoreVector() || st->Opcode() == Op_StoreVector)) {
+    // true).
+    while (st->is_Store() && st->outcnt() == 1) {
       // Looking at a dead closed cycle of memory?
       assert(st != st->in(MemNode::Memory), "dead loop in StoreNode::Ideal");
       assert(Opcode() == st->Opcode() ||
              st->Opcode() == Op_StoreVector ||
              Opcode() == Op_StoreVector ||
+             st->Opcode() == Op_StoreVectorScatter ||
+             Opcode() == Op_StoreVectorScatter ||
              phase->C->get_alias_index(adr_type()) == Compile::AliasIdxRaw ||
              (Opcode() == Op_StoreL && st->Opcode() == Op_StoreI) || // expanded ClearArrayNode
              (Opcode() == Op_StoreI && st->Opcode() == Op_StoreL) || // initialization by arraycopy
@@ -3854,13 +3959,7 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
              (is_mismatched_access() || st->as_Store()->is_mismatched_access()),
              "no mismatched stores, except on raw memory: %s %s", NodeClassNames[Opcode()], NodeClassNames[st->Opcode()]);
 
-      if (st->in(MemNode::Address)->eqv_uncast(address) &&
-          st->as_Store()->memory_size() <= this->memory_size()) {
-        assert(!is_predicated_vector() && !is_StoreVectorMasked() &&
-               !is_StoreVectorScatter() && !is_StoreVectorScatterMasked() &&
-               !st->is_predicated_vector() && !st->is_StoreVectorMasked() &&
-               !st->is_StoreVectorScatter() && !st->is_StoreVectorScatterMasked(),
-               "optimization only correct for full-width stores without holes");
+      if (analyzer.store_fully_covers(st->as_Store())) {
         Node* use = st->raw_out(0);
         if (phase->is_IterGVN()) {
           phase->is_IterGVN()->rehash_node_delayed(use);
