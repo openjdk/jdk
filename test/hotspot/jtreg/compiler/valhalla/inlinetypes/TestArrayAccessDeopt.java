@@ -98,7 +98,7 @@ public class TestArrayAccessDeopt {
             // Run test in new VM instance
             String[] arg = {"--enable-preview", "--add-exports", "java.base/jdk.internal.vm.annotation=ALL-UNNAMED", "--add-exports", "java.base/jdk.internal.value=ALL-UNNAMED",
                             "-XX:+UnlockDiagnosticVMOptions", "-XX:CompileCommand=quiet", "-XX:CompileCommand=compileonly,compiler.valhalla.inlinetypes.TestArrayAccessDeopt::test*", "-XX:-UseArrayLoadStoreProfile",
-                            "-XX:+TraceDeoptimization", "-Xbatch", "-XX:-MonomorphicArrayCheck", "-Xmixed", "-XX:+ProfileInterpreter", "compiler.valhalla.inlinetypes.TestArrayAccessDeopt", "run"};
+                            "-Xlog:deoptimization=debug", "-Xbatch", "-XX:-MonomorphicArrayCheck", "-Xmixed", "-XX:+ProfileInterpreter", "compiler.valhalla.inlinetypes.TestArrayAccessDeopt", "run"};
             OutputAnalyzer oa = ProcessTools.executeTestJava(arg);
             oa.shouldHaveExitValue(0);
             String output = oa.getOutput();

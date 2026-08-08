@@ -78,9 +78,8 @@ public class TestFlatInArraysFolding {
     static int iFld;
 
     public static void main(String[] args) {
-        // TODO 8350865 Scenarios are equivalent, FlatArrayElementMaxSize does not exist anymore
-        Scenario flatArrayElementMaxSize1Scenario = new Scenario(1, "-XX:-UseArrayFlattening");
-        Scenario flatArrayElementMaxSize4Scenario = new Scenario(2, "-XX:-UseArrayFlattening");
+        Scenario flatArrayElementMaxOops0Scenario = new Scenario(1, "-XX:FlatArrayElementMaxOops=0");
+        Scenario flatArrayElementMaxOops4Scenario = new Scenario(2, "-XX:FlatArrayElementMaxOops=4");
         Scenario noFlagsScenario = new Scenario(3);
         TestFramework testFramework = new TestFramework();
         testFramework.setDefaultWarmup(0)
@@ -88,8 +87,8 @@ public class TestFlatInArraysFolding {
                           "--add-exports", "java.base/jdk.internal.value=ALL-UNNAMED",
                           "--add-exports", "java.base/jdk.internal.vm.annotation=ALL-UNNAMED",
                           "-XX:+UnlockDiagnosticVMOptions")
-                .addScenarios(flatArrayElementMaxSize1Scenario,
-                              flatArrayElementMaxSize4Scenario, noFlagsScenario);
+                .addScenarios(flatArrayElementMaxOops0Scenario,
+                              flatArrayElementMaxOops4Scenario, noFlagsScenario);
 
         if (args.length > 0) {
             // Disable Loop Unrolling for IR matching in testCmpP().
@@ -165,8 +164,7 @@ public class TestFlatInArraysFolding {
         }
     }
 
-    // TODO 8350865 FlatArrayElementMaxSize does not exist anymore
-    // PUnique is the unique concrete sub class of AUnique and is not flat in array (with FlatArrayElementMaxSize=4).
+    // PUnique is the unique concrete sub class of AUnique and is not flat in array (with FlatArrayElementMaxOops=0).
     // The CheckCastPP output of the sub type check uses PUnique while the sub type check itself uses AUnique. This leads
     // to a bad graph because the type system determines that the flat in array super klass cannot be met with the
     // not flat in array sub klass. But the sub type check does not fold away because AUnique *could* be flat in array.
@@ -253,10 +251,10 @@ public class TestFlatInArraysFolding {
     @LooselyConsistentValue
     static value class PUnique extends AUnique {
         int x;
-        int y;
+        String y;
         PUnique(int x) {
             this.x = x;
-            this.y = 34;
+            this.y = "abc";
         }
 
         public void foo() {}
@@ -282,14 +280,15 @@ public class TestFlatInArraysFolding {
         public void bar() {}
     }
 
-    // TODO 8350865 FlatArrayElementMaxSize does not exist anymore
-    // Not flat in array with -XX:FlatArrayElementMaxSize=4
+    // Not flat in array with -XX:FlatArrayElementMaxOops=0
     static value class NotFlatInArray extends A implements I {
         int x;
         int y;
+        String z;
         NotFlatInArray(int x) {
             this.x = x;
             this.y = 34;
+            this.z = "abc";
         }
 
         public void foo() {}
