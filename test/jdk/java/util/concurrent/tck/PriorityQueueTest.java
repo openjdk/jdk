@@ -79,6 +79,24 @@ public class PriorityQueueTest extends JSR166TestCase {
         }
     }
 
+    static class CountedComparator implements Comparator<Item> {
+        int comparisons;
+
+        public int compare(Item x, Item y) {
+            comparisons++;
+            return x.compareTo(y);
+        }
+    }
+
+    static class CountedAddPriorityQueue<E> extends PriorityQueue<E> {
+        int adds;
+
+        public boolean add(E e) {
+            adds++;
+            return super.add(e);
+        }
+    }
+
     /**
      * Returns a new queue of given size containing consecutive
      * Items 0 ... n - 1.
@@ -399,6 +417,40 @@ public class PriorityQueueTest extends JSR166TestCase {
         assertTrue(q.addAll(Arrays.asList(items)));
         for (int i = 0; i < SIZE; ++i)
             mustEqual(i, q.poll());
+    }
+
+    /**
+     * addAll into an empty queue heapifies the added elements
+     */
+    public void testAddAllEmptyQueueHeapifies() {
+        final int size = 10_000;
+        Item[] items = new Item[size];
+        for (int i = 0; i < size; ++i)
+            items[i] = itemFor(size - 1 - i);
+
+        CountedComparator cmp = new CountedComparator();
+        PriorityQueue<Item> q = new PriorityQueue<>(cmp);
+        assertTrue(q.addAll(Arrays.asList(items)));
+        assertEquals(size, q.size());
+        assertTrue(cmp.comparisons < size * 4);
+        for (int i = 0; i < size; ++i)
+            mustEqual(i, q.poll());
+    }
+
+    /**
+     * addAll into a subclass adds elements one at a time
+     */
+    public void testAddAllSubclassAddsEachElement() {
+        CountedAddPriorityQueue<Item> q = new CountedAddPriorityQueue<>();
+        assertTrue(q.addAll(Arrays.asList(three, two, one)));
+        assertEquals(3, q.adds);
+        assertEquals(3, q.size());
+
+        q = new CountedAddPriorityQueue<>();
+        mustAdd(q, zero);
+        assertTrue(q.addAll(Arrays.asList(three, two, one)));
+        assertEquals(4, q.adds);
+        assertEquals(4, q.size());
     }
 
     /**

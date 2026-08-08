@@ -338,6 +338,65 @@ public class PriorityQueue<E> extends AbstractQueue<E>
     }
 
     /**
+     * Adds all of the elements in the specified collection to this
+     * priority queue.
+     *
+     * @param c collection containing elements to be added to this queue
+     * @return {@code true} if this queue changed as a result of the call
+     * @throws ClassCastException if elements of the specified collection
+     *         cannot be compared with elements currently in this queue
+     *         according to the priority queue's ordering
+     * @throws NullPointerException if the specified collection contains a
+     *         null element, or if the specified collection is null
+     * @throws IllegalArgumentException if the specified collection is this
+     *         queue
+     */
+    @Override
+    public boolean addAll(Collection<? extends E> c) {
+        if (size == 0 && getClass() == PriorityQueue.class) {
+            if (c == null)
+                throw new NullPointerException();
+            if (c == this)
+                throw new IllegalArgumentException();
+
+            Object[] es;
+            int len;
+
+            Class<?> cClass = c.getClass();
+            if (cClass == PriorityQueue.class) {
+                PriorityQueue<?> pq = (PriorityQueue<?>) c;
+                if ((len = pq.size) == 0)
+                    return false;
+                es = Arrays.copyOf(pq.queue, len);
+                if (pq.comparator != comparator)
+                    heapify(es, len, comparator);
+            } else {
+                es = c.toArray();
+                if ((len = es.length) == 0)
+                    return false;
+                if (cClass != ArrayList.class)
+                    es = Arrays.copyOf(es, len, Object[].class);
+                // A single element is not examined by heapify(), and a comparator
+                // may permit nulls, so explicitly reject null before committing the
+                // new array.
+                if (len == 1 || comparator != null)
+                    for (Object e : es)
+                        if (e == null)
+                            throw new NullPointerException();
+                heapify(es, len, comparator);
+            }
+
+            modCount++;
+            queue = es;
+            size = len;
+
+            return true;
+        }
+
+        return super.addAll(c);
+    }
+
+    /**
      * Inserts the specified element into this priority queue.
      *
      * @return {@code true} (as specified by {@link Queue#offer})
@@ -749,15 +808,17 @@ public class PriorityQueue<E> extends AbstractQueue<E>
      * This classic algorithm due to Floyd (1964) is known to be O(size).
      */
     private void heapify() {
-        final Object[] es = queue;
-        int n = size, i = (n >>> 1) - 1;
-        final Comparator<? super E> cmp;
-        if ((cmp = comparator) == null)
+        heapify(queue, size, comparator);
+    }
+
+    private static <T> void heapify(Object[] es, int n, Comparator<? super T> cmp) {
+        int i = (n >>> 1) - 1;
+        if (cmp == null)
             for (; i >= 0; i--)
-                siftDownComparable(i, (E) es[i], es, n);
+                siftDownComparable(i, (T) es[i], es, n);
         else
             for (; i >= 0; i--)
-                siftDownUsingComparator(i, (E) es[i], es, n, cmp);
+                siftDownUsingComparator(i, (T) es[i], es, n, cmp);
     }
 
     /**
