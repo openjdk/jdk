@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -846,7 +846,8 @@ public class CopyAndMove {
             createFile(target);
             try {
                 Files.copy(source, target, REPLACE_EXISTING);
-                throw new RuntimeException("AccessDeniedException not thrown");
+                if (!Platform.isRoot())
+                    throw new RuntimeException("AccessDeniedException not thrown");
             } catch (AccessDeniedException expected) {
             }
             if (!Files.exists(target))
