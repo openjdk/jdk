@@ -137,6 +137,17 @@ static void fill_in_parser(DCmdParser* parser, oop argument)
    }
 }
 
+class DCmdParserMark : public StackObj {
+  DCmdParser* const _parser;
+
+public:
+  explicit DCmdParserMark(DCmdParser* parser) : _parser(parser) {}
+
+  ~DCmdParserMark() {
+    _parser->cleanup();
+  }
+};
+
 /*
  * Will Fill in a java object array with alternating names of parsed command line options and
  * the value that has been parsed for it:
@@ -146,6 +157,7 @@ static void fill_in_parser(DCmdParser* parser, oop argument)
 WB_ENTRY(jobjectArray, WB_ParseCommandLine(JNIEnv* env, jobject o, jstring j_cmdline, jchar j_delim, jobjectArray arguments))
   ResourceMark rm;
   DCmdParser parser;
+  DCmdParserMark parser_mark(&parser);
 
   const char* c_cmdline = java_lang_String::as_utf8_string(JNIHandles::resolve(j_cmdline));
   const char c_delim = (char)(j_delim & 0xff);
