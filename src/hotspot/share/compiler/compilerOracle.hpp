@@ -38,6 +38,8 @@ class methodHandle;
 
 //       OPTION_TYPES: type, name
 #define OPTION_TYPES(type) \
+  type(Int, "int") \
+  type(Uint, "uint") \
   type(Intx, "intx") \
   type(Uintx, "uintx") \
   type(Bool, "bool") \
@@ -50,18 +52,18 @@ class methodHandle;
   option(Help,  "help",  Unknown) \
   option(Quiet, "quiet", Unknown) \
   option(Log, "log", Bool) \
-  option(Print, "print", Intx) \
+  option(Print, "print", Uint) \
   option(Inline,  "inline", Bool) \
   option(DelayInline,  "delayinline", Bool) \
   option(DontInline,  "dontinline", Bool) \
   option(Blackhole,  "blackhole", Bool) \
-  option(CompileOnly, "compileonly", Intx) \
-  option(Exclude, "exclude", Intx) \
-  option(Break, "break", Intx) \
+  option(CompileOnly, "compileonly", Uint) \
+  option(Exclude, "exclude", Uint) \
+  option(Break, "break", Uint) \
   option(BreakAtExecute, "BreakAtExecute", Bool) \
   option(BreakAtCompile, "BreakAtCompile", Bool) \
   option(MemLimit, "MemLimit", Intx) \
-  option(MemStat, "MemStat", Uintx) \
+  option(MemStat, "MemStat", Uint) \
   option(PrintAssembly, "PrintAssembly", Bool) \
   option(PrintCompilation, "PrintCompilation", Bool) \
   option(PrintCompilation2, "PrintCompilation2", Bool) \
@@ -95,8 +97,10 @@ NOT_PRODUCT(option(TraceMergeStores, "TraceMergeStores", Ccstrlist)) \
   option(CloneMapDebug, "CloneMapDebug", Bool) \
   option(IncrementalInlineForceCleanup, "IncrementalInlineForceCleanup", Bool) \
   option(MaxNodeLimit, "MaxNodeLimit", Intx)  \
-NOT_PRODUCT(option(TestOptionInt,    "TestOptionInt",    Intx)) \
-NOT_PRODUCT(option(TestOptionUint,   "TestOptionUint",   Uintx)) \
+NOT_PRODUCT(option(TestOptionInt,    "TestOptionInt",    Int)) \
+NOT_PRODUCT(option(TestOptionUint,   "TestOptionUint",   Uint)) \
+NOT_PRODUCT(option(TestOptionIntx,   "TestOptionIntx",   Intx)) \
+NOT_PRODUCT(option(TestOptionUintx,  "TestOptionUintx",  Uintx)) \
 NOT_PRODUCT(option(TestOptionBool,   "TestOptionBool",   Bool)) \
 NOT_PRODUCT(option(TestOptionBool2,  "TestOptionBool2",  Bool)) \
 NOT_PRODUCT(option(TestOptionStr,    "TestOptionStr",    Ccstr)) \
@@ -147,7 +151,7 @@ class CompilerOracle : AllStatic {
   static bool parse_from_file();
 
   // Tells whether we to exclude compilation of method
-  static bool should_exclude(const methodHandle & method, CompLevel level);
+  static bool should_exclude(const methodHandle& method, CompLevel level);
 
   static bool be_quiet() { return _quiet; }
 
