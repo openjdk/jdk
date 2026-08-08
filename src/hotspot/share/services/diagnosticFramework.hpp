@@ -193,6 +193,7 @@ private:
 public:
   DCmdParser()
     : _options(nullptr), _arguments_list(nullptr) {}
+  ~DCmdParser();
   void add_dcmd_option(GenDCmdArgument* arg);
   void add_dcmd_argument(GenDCmdArgument* arg);
   GenDCmdArgument* lookup_dcmd_option(const char* name, size_t len);
