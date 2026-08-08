@@ -95,6 +95,7 @@ public class SuperInitFails extends AtomicReference<Object> implements Iterable<
 
     public SuperInitFails(short[] x) {
         this.x++;                       // this should FAIL
+        SuperInitFails.this.x++;        // this should FAIL
         super();
     }
 
