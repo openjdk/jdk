@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public:
   ZHeap*                       _old_heap;
   ZGenerationOld*              _old_old;
   ZGenerationYoung*            _old_young;
-  ZAddressReserver             _zaddress_reserver;
+  ZTestAddressReserver         _zaddress_reserver;
   ZPhysicalMemoryBackingMocker _physical_backing;
   zoffset                      _page_offset;
 
@@ -117,6 +117,11 @@ public:
     }
   };
 
+  static zoffset to_offset(uintptr_t from_index) {
+    // ZForwardingEntry expects the lower three alignment bits to be 0.
+    return to_zoffset(from_index << 3);
+  }
+
   // Test functions
 
   static void setup(ZForwarding* forwarding) {
@@ -148,7 +153,7 @@ public:
       ZForwardingEntry entry = forwarding->find(from_index, &cursor);
       ASSERT_FALSE(entry.populated()) << CAPTURE2(from_index, size);
 
-      forwarding->insert(from_index, zoffset(from_index), &cursor);
+      forwarding->insert(from_index, to_offset(from_index), &cursor);
     }
 
     // Verify
@@ -160,7 +165,7 @@ public:
       ASSERT_TRUE(entry.populated()) << CAPTURE2(from_index, size);
 
       ASSERT_EQ(entry.from_index(), from_index) << CAPTURE(size);
-      ASSERT_EQ(entry.to_offset(), from_index) << CAPTURE(size);
+      ASSERT_EQ(entry.to_offset(), untype(to_offset(from_index))) << CAPTURE(size);
     }
   }
 
@@ -176,7 +181,7 @@ public:
       ZForwardingEntry entry = forwarding->find(from_index, &cursor);
       ASSERT_FALSE(entry.populated()) << CAPTURE2(from_index, size);
 
-      forwarding->insert(from_index, zoffset(from_index), &cursor);
+      forwarding->insert(from_index, to_offset(from_index), &cursor);
     }
 
     // Verify populated even indices
@@ -188,7 +193,7 @@ public:
       ASSERT_TRUE(entry.populated()) << CAPTURE2(from_index, size);
 
       ASSERT_EQ(entry.from_index(), from_index) << CAPTURE(size);
-      ASSERT_EQ(entry.to_offset(), from_index) << CAPTURE(size);
+      ASSERT_EQ(entry.to_offset(), untype(to_offset(from_index))) << CAPTURE(size);
     }
 
     // Verify empty odd indices

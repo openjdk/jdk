@@ -348,8 +348,8 @@ ZRemembered::FoundOld::FoundOld()
     // Array initialization requires copy constructors, which CHeapBitMap
     // doesn't provide. Instantiate two instances, and populate an array
     // with pointers to the two instances.
-  : _allocated_bitmap_0{ZAddressOffsetMax >> ZGranuleSizeShift, mtGC, true /* clear */},
-    _allocated_bitmap_1{ZAddressOffsetMax >> ZGranuleSizeShift, mtGC, true /* clear */},
+  : _allocated_bitmap_0{ZAddressOffsetUpperLimit >> ZGranuleSizeShift, mtGC, true /* clear */},
+    _allocated_bitmap_1{ZAddressOffsetUpperLimit >> ZGranuleSizeShift, mtGC, true /* clear */},
     _bitmaps{&_allocated_bitmap_0, &_allocated_bitmap_1},
     _current{0} {}
 

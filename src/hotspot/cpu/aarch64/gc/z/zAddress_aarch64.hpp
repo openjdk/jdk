@@ -28,7 +28,4 @@
 
 const size_t ZPointerLoadShift = 16;
 
-size_t ZPlatformAddressOffsetBits();
-size_t ZPlatformAddressHeapBaseShift();
-
 #endif // CPU_AARCH64_GC_Z_ZADDRESS_AARCH64_HPP

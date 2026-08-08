@@ -38,8 +38,8 @@ private:
 public:
   static void initialize();
 
-  static void reserve(zaddress_unsafe start, size_t size);
-  static void unreserve(zaddress_unsafe start, size_t size);
+  static void reserve(uintptr_t addr, size_t size);
+  static void unreserve(uintptr_t addr, size_t size);
 
   static void commit(zbacking_offset offset, size_t size);
   static void uncommit(zbacking_offset offset, size_t size);

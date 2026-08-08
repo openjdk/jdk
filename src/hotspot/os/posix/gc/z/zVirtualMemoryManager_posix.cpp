@@ -30,20 +30,20 @@
 
 #include <sys/mman.h>
 
-void ZVirtualMemoryReserver::pd_register_callbacks(ZVirtualMemoryRegistry* registry) {
+void ZVirtualMemoryReservation::pd_register_callbacks(ZVirtualMemoryRegistry* registry) {
   // Does nothing
 }
 
-bool ZVirtualMemoryReserver::pd_reserve(zaddress_unsafe addr, size_t size) {
+bool ZVirtualMemoryReserver::pd_reserve(uintptr_t addr, size_t size) {
   const int flags = MAP_ANONYMOUS|MAP_PRIVATE|MAP_NORESERVE LINUX_ONLY(|MAP_FIXED_NOREPLACE);
 
-  void* const res = mmap((void*)untype(addr), size, PROT_NONE, flags, -1, 0);
+  void* const res = mmap((void*)addr, size, PROT_NONE, flags, -1, 0);
   if (res == MAP_FAILED) {
     // Failed to reserve memory
     return false;
   }
 
-  if (res != (void*)untype(addr)) {
+  if (res != (void*)addr) {
     // Failed to reserve memory at the requested address
     munmap(res, size);
     return false;
@@ -53,7 +53,11 @@ bool ZVirtualMemoryReserver::pd_reserve(zaddress_unsafe addr, size_t size) {
   return true;
 }
 
-void ZVirtualMemoryReserver::pd_unreserve(zaddress_unsafe addr, size_t size) {
-  const int res = munmap((void*)untype(addr), size);
+void ZVirtualMemoryReserver::pd_split_reserved(uintptr_t addr, size_t split_size, size_t size) {
+  // Does nothing
+}
+
+void ZVirtualMemoryReserver::pd_unreserve(uintptr_t addr, size_t size) {
+  const int res = munmap((void*)addr, size);
   assert(res == 0, "Failed to unmap memory");
 }

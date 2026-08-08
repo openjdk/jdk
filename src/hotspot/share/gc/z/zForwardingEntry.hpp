@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ class ZForwardingEntry {
 
 private:
   typedef ZBitField<uint64_t, bool,   0,   1> field_populated;
-  typedef ZBitField<uint64_t, size_t, 1,  45> field_to_offset;
+  typedef ZBitField<uint64_t, size_t, 1,  45, 3> field_to_offset;
   typedef ZBitField<uint64_t, size_t, 46, 18> field_from_index;
 
   uint64_t _entry;
