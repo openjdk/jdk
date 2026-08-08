@@ -131,19 +131,16 @@ void Relocation::pd_set_call_destination(address x) {
           assert(false, "pc-relative call w/o ShortenBranches?");
         }
 #endif
-        nativeFarCall_at(inst_addr)->set_destination(x, 0);
+        nativeFarCall_at(inst_addr)->set_destination(x);
         return;
       }
       assert(x == (address)-1, "consistency check");
       return;
     }
-    int toc_offset = -1;
+    // The TOC slot address is self-described by the LGRL instruction; we no
+    // longer need the per-relocation toc_offset to find it.
     if (type() == relocInfo::runtime_call_w_cp_type) {
-      toc_offset = ((runtime_call_w_cp_Relocation *)this)->get_constant_pool_offset();
-    }
-    if (toc_offset>=0) {
-      NativeFarCall* call = nativeFarCall_at(inst_addr);
-      call->set_destination(x, toc_offset);
+      nativeFarCall_at(inst_addr)->set_destination(x);
       return;
     }
   }
