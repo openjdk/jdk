@@ -150,12 +150,8 @@ public final class URLEncoder {
      * as the encoding scheme to obtain the bytes for unsafe characters.
      *
      * @param   s   {@code String} to be translated.
-     * @deprecated The resulting string may vary depending on the
-     *             default charset. Instead, use the encode(String,String)
-     *             method to specify the encoding.
      * @return  the translated {@code String}.
      */
-    @Deprecated
     public static String encode(String s) {
         return encode(s, Charset.defaultCharset());
     }
