@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8304031 8338406 8338546 8361909 8388374
+ * @bug 8304031 8338406 8338546 8361909 8388362 8388374
  * @summary Testing handling of various constant descriptors in ClassFile API.
  * @modules java.base/jdk.internal.constant
  *          java.base/jdk.internal.classfile.impl
@@ -32,6 +32,7 @@
 
 import java.lang.classfile.constantpool.*;
 import java.lang.constant.*;
+import java.lang.invoke.MethodHandleInfo;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.nio.charset.StandardCharsets;
@@ -130,6 +131,13 @@ final class ConstantDescSymbolsTest {
         assertSame(a, cb.lookup.lookupClass());
         assertEquals(DEFAULT_NAME, cb.name);
         assertEquals(CondyBoot.class, cb.type);
+    }
+
+    @Test
+    void testMethodHandleSymbolConstructorValidation() {
+        var cp = ConstantPoolBuilder.of();
+        var entry = cp.methodHandleEntry(MethodHandleInfo.REF_newInvokeSpecial, cp.methodRefEntry(CD_Object, "wait", MTD_void));
+        assertThrows(IllegalArgumentException.class, entry::asSymbol);
     }
 
     static Stream<ClassDesc> classOrInterfaceEntries() {
