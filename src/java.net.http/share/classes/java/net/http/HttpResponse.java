@@ -159,10 +159,16 @@ public interface HttpResponse<T> {
      * {@code String}, or {@code Path}) or it may represent an object with
      * which the body is read, such as an {@link java.io.InputStream}.
      *
-     * <p> If this {@code HttpResponse} was returned from an invocation of
-     * {@link #previousResponse()} then this method returns {@code null}
+     * <p> Depending on the response's {@linkplain #statusCode() status code} a
+     * body may not always be available, and an implementation may return {@code
+     * null} in such cases. Exactly when {@code null} can be returned is
+     * implementation dependent. It is therefore recommended that the caller
+     * always check for {@code null} while dereferencing the result.
      *
-     * @return the body
+     * <p> If this {@code HttpResponse} was returned from an invocation of
+     * {@link #previousResponse()} then this method always returns {@code null}
+     *
+     * @return the body, or {@code null} if the body is not available
      */
     public T body();
 
