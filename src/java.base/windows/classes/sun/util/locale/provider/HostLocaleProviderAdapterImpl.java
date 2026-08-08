@@ -58,7 +58,7 @@ import java.util.spi.LocaleNameProvider;
 import sun.util.spi.CalendarProvider;
 
 /**
- * LocaleProviderdapter implementation for the Windows locale data.
+ * LocaleProviderAdapter implementation for the Windows locale data.
  *
  * @author Naoto Sato
  */
@@ -714,10 +714,10 @@ public class HostLocaleProviderAdapterImpl {
     }
 
     private static String convertDateTimePattern(String winPattern) {
-        String ret = winPattern.replaceAll("dddd", "EEEE");
-        ret = ret.replaceAll("ddd", "EEE");
-        ret = ret.replaceAll("tt", "a");
-        ret = ret.replaceAll("g", "GG");
+        String ret = winPattern.replace("dddd", "EEEE");
+        ret = ret.replace("ddd", "EEE");
+        ret = ret.replace("tt", "a");
+        ret = ret.replace("g", "GG");
         return ret;
     }
 
