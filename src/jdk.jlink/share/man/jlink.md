@@ -235,6 +235,24 @@ Options
 Description
 :   Generate CDS archive if the runtime image supports the CDS feature.
 
+### Plugin `security-properties`
+
+Options
+:   `--security-properties=`*filename*`
+
+Description
+:   Override the security properties in the `conf/security/java.security`
+    configuration file with the properties in the specified *filename*.
+    Security properties with the same name are overridden and security
+    properties not present are added to the end of the
+    `conf/security/java.security` configuration file. Comments in the
+    properties file are ignored and not copied. If the properties file
+    contains an include statement, it is always added as the last line of the
+    `conf/security/java.security` configuration file, after any new security
+    properties that may have been added. The include filename does not need to
+    exist at jlink time. If the properties file contains more than one property
+    with the same name, the value of the last property is used.
+
 ### Plugin `cacerts`
 
 Options
