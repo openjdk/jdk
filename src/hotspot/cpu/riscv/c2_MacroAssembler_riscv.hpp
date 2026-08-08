@@ -197,6 +197,8 @@
   void round_double_mode(FloatRegister dst, FloatRegister src, int round_mode,
                          Register tmp1, Register tmp2, Register tmp3);
 
+  void round_double_mode_zfa(FloatRegister dst, FloatRegister src, int round_mode);
+
   void signum_fp(FloatRegister dst, FloatRegister one, bool is_double);
 
   void float16_to_float(FloatRegister dst, Register src, Register tmp);
