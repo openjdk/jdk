@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ public class StreamDecoder extends Reader {
     private static final int MIN_BYTE_BUFFER_SIZE = 32;
     private static final int DEFAULT_BYTE_BUFFER_SIZE = 8192;
 
+    private volatile boolean havePulledFromInputStream;
     private volatile boolean closed;
 
     private void ensureOpen() throws IOException {
@@ -192,6 +193,53 @@ public class StreamDecoder extends Reader {
         }
     }
 
+    private static CharBuffer ensureFree(CharBuffer cb, int minFree) {
+        return cb.remaining() < minFree ? CharBuffer.allocate(cb.position() + minFree).put(cb.flip()) : cb;
+    }
+
+    @Override
+    public String readAllAsString() throws IOException {
+        synchronized (lock) {
+            ensureOpen();
+
+            if (in == null)
+                return super.readAllAsString();
+
+            byte[] remaining = in.readAllBytes();
+
+            if (!havePulledFromInputStream)
+                return new String(remaining, cs);
+
+            int estimateSize = (haveLeftoverChar ? 1 : 0) + (int) Math.ceil((bb.remaining() + remaining.length) * decoder.maxCharsPerByte());
+            int initialSize = Math.max(estimateSize, DEFAULT_BYTE_BUFFER_SIZE);
+            CharBuffer cb = CharBuffer.allocate(initialSize);
+
+            if (haveLeftoverChar) {
+                cb.put(leftoverChar);
+                haveLeftoverChar = false;
+            }
+
+            while (bb.hasRemaining()) {
+                CoderResult cr = decoder.decode(bb, cb, false);
+                if (cr.isError())
+                    cr.throwException();
+                if (cr.isOverflow())
+                    cb = ensureFree(cb, bb.remaining());
+            }
+
+            ByteBuffer bbuf = ByteBuffer.wrap(remaining);
+            while (bbuf.hasRemaining()) {
+                CoderResult cr = decoder.decode(bbuf, cb, false);
+                if (cr.isError())
+                    cr.throwException();
+                if (cr.isOverflow())
+                    cb = ensureFree(cb, bbuf.remaining());
+            }
+
+            return cb.flip().toString();
+        }
+    }
+
     public boolean ready() throws IOException {
         synchronized (lock) {
             ensureOpen();
@@ -283,6 +331,7 @@ public class StreamDecoder extends Reader {
                     throw new IOException("Underlying input stream returned zero bytes");
                 assert (n <= rem) : "n = " + n + ", rem = " + rem;
                 bb.position(pos + n);
+                havePulledFromInputStream = true;
             }
         } finally {
             // Flip even when an IOException is thrown,
