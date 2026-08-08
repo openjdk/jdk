@@ -48,12 +48,15 @@ class MountUnmountDisabler : public AnyObj {
   bool _is_virtual;      // target thread is virtual
   bool _is_self;         // MountUnmountDisabler is a no-op for current platform, carrier or virtual thread
   Handle _vthread;       // virtual thread to disable transitions for, no-op if it is a platform thread
+  bool _did_reenable;    // indicates we've already reenabled all threads before running a destructor - see
+                         // reenable_all_except(oop target) for description
 
   //DEBUG_ONLY(static void print_info();)
   void disable_transition_for_one();
   void disable_transition_for_all();
   void enable_transition_for_one();
   void enable_transition_for_all();
+  void do_reenable();
 
  public:
   MountUnmountDisabler(bool exlusive = false);
@@ -61,6 +64,7 @@ class MountUnmountDisabler : public AnyObj {
   MountUnmountDisabler(jthread thread);
   ~MountUnmountDisabler();
 
+  void reenable_all_except(JavaThread* current, oop target);
   static int global_vthread_transition_disable_count();
   static void inc_global_vthread_transition_disable_count();
   static void dec_global_vthread_transition_disable_count();
