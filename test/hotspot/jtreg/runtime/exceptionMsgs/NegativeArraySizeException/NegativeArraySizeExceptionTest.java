@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -33,8 +33,30 @@
 import java.lang.reflect.Array;
 
 import jdk.test.lib.Asserts;
+import jdk.test.lib.valueclass.AsValueClass;
 
 public class NegativeArraySizeExceptionTest {
+
+    @AsValueClass
+    static class VClass {
+        Integer x;
+        Integer y;
+        VClass(Integer x, Integer y) { this.x = x; this.y = y; }
+    }
+
+    @FunctionalInterface
+    interface AllocAction {
+        void run() throws Exception;
+    }
+
+    private static void assertNASE(int size, AllocAction action) throws Exception {
+        try {
+            action.run();
+            throw new RuntimeException("Array allocation with negative size expected to fail!");
+        } catch (NegativeArraySizeException e) {
+            Asserts.assertEQ(Integer.toString(size), e.getMessage());
+        }
+    }
 
     private static void fail () throws Exception {
         throw new RuntimeException("Array allocation with negative size expected to fail!");
@@ -299,6 +321,19 @@ public class NegativeArraySizeExceptionTest {
             fail();
         } catch (NegativeArraySizeException e) {
             Asserts.assertEQ("-2147483648", e.getMessage());
+        }
+
+
+        // Tests for value class arrays (migrated Integer and custom VClass).
+        int[] negativeSizes = { minusOne, Integer.MIN_VALUE };
+        Class<?>[] valueTypes = { Integer.class, VClass.class };
+        for (int size : negativeSizes) {
+            for (Class<?> type : valueTypes) {
+                assertNASE(size, () -> Array.newInstance(type, size));
+                assertNASE(size, () -> Array.newInstance(type, new int[] {3, size}));
+                assertNASE(size, () -> Array.newInstance(type, new int[] {size, 3}));
+                assertNASE(size, () -> Array.newInstance(type, new int[] {0, size}));
+            }
         }
 
         Asserts.assertEQ(r, null, "Expected all tries to allocate negative array to fail.");
