@@ -35,6 +35,7 @@ import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.annotations.Benchmark;
 import java.math.BigInteger;
 import java.util.concurrent.TimeUnit;
+import java.util.Random;
 import sun.security.util.math.intpoly.MontgomeryIntegerPolynomialP256;
 import sun.security.util.math.intpoly.IntegerPolynomialP256;
 import sun.security.util.math.MutableIntegerModuloP;
@@ -55,26 +56,36 @@ public class PolynomialP256Bench {
         new BigInteger("6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296", 16);
     final ImmutableIntegerModuloP x = residueField.getElement(refx);
     final ImmutableIntegerModuloP X = montField.getElement(refx);
-    final ImmutableIntegerModuloP one = montField.get1();
     final int ITERATIONS = 10_000;
-    final int[] scalarBits = new int[ITERATIONS];
+    final int SET = 16;
+    final ImmutableIntegerModuloP[] xArray = new ImmutableIntegerModuloP[SET];
+    final ImmutableIntegerModuloP[] XArray = new ImmutableIntegerModuloP[SET];
+    private MutableIntegerModuloP xM;
+    private MutableIntegerModuloP XM;
+    private int index = 0;
 
     @Param({"true", "false"})
     private boolean isMontBench;
 
-    // Here we assign conditional set bits as non-constants in order to
-    // prevent constant folding.  Previously, C2 would perform constant
-    // propagation and remove the subsequent dead-code where 0 was input.
     @Setup
     public void setup() {
-        for (int i = 0; i < ITERATIONS; i++) {
-            scalarBits[i] = i & 1;
+        Random rand = new Random(1234567890L);
+
+        // Only one coordinate constructed here instead of three for simplicity.
+        for (int i = 0; i < SET; i++) {
+            BigInteger coor = new BigInteger(256, rand);
+
+            xArray[i] = residueField.getElement(coor);
+            XArray[i] = montField.getElement(coor);
         }
+        xM = x.mutable();
+        XM = X.mutable();
     }
 
     @Benchmark
     public MutableIntegerModuloP benchMultiply() {
         MutableIntegerModuloP test;
+
         if (isMontBench) {
             test = X.mutable();
         } else {
@@ -90,6 +101,7 @@ public class PolynomialP256Bench {
     @Benchmark
     public MutableIntegerModuloP benchSquare() {
         MutableIntegerModuloP test;
+
         if (isMontBench) {
             test = X.mutable();
         } else {
@@ -102,21 +114,42 @@ public class PolynomialP256Bench {
         return test;
     }
 
+    // Duplicate lookup logic to provide production equivalent conditional
+    // set.  This emulates Montgomery P256 with secp256r1 coordinates.
+    // The non-Montgomery flag is used to emulate the generic lookup for
+    // ten-limb P256.  In production the flags are created dynamically, we do
+    // this here to better emulate production lookups despite the consistent
+    // overhead.
     @Benchmark
     public MutableIntegerModuloP benchAssign() {
-        MutableIntegerModuloP test1 = X.mutable();
-        MutableIntegerModuloP test2 = one.mutable();
-        int[] lScalarBits = scalarBits;
+        ImmutableIntegerModuloP[] testA;
+        MutableIntegerModuloP test;
 
-        for (int i = 0; i < ITERATIONS; i++) {
-            int bit = lScalarBits[i];
-            int bitCom = bit ^ 1;
-
-            test1.conditionalSet(test2, bit);
-            test1.conditionalSet(test2, bitCom);
-            test2.conditionalSet(test1, bit);
-            test2.conditionalSet(test1, bitCom);
+        if (isMontBench) {
+            test = XM;
+            testA = XArray;
+        } else {
+            test = xM;
+            testA = xArray;
         }
-        return test2;
+
+        // Here we assign conditional set bits as non-constants in order to
+        // prevent constant folding.  Previously, C2 would perform constant
+        // propagation and remove the subsequent dead-code where 0 was input.
+        for (int j = 0; j < SET; j++) {
+            int xor = index ^ j;
+            int bit3 = (xor & 0x8) >>> 3;
+            int bit2 = (xor & 0x4) >>> 2;
+            int bit1 = (xor & 0x2) >>> 1;
+            int bit0 = (xor & 0x1);
+            int inverse = bit0 | bit1 | bit2 | bit3;
+
+            test.conditionalSet(testA[j], 1 - inverse);
+        }
+        index++;
+        if (index == SET) {
+            index = 0;
+        }
+        return test;
     }
 }
