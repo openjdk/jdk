@@ -139,6 +139,19 @@ public class SegmentFactories {
                 MemorySessionImpl.createHeap(arr));
     }
 
+    public static MemorySegment ofString(byte[] value, byte coder, int srcIndex, int numChars) {
+        ensureInitialized();
+        long byteOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET + ((long) srcIndex << coder);
+        long byteLength = (long) numChars << coder;
+        return new OfByte(byteOffset, value, byteLength, true, MemorySessionImpl.GLOBAL_SESSION);
+    }
+
+    public static MemorySegment ofString(byte[] value) {
+        ensureInitialized();
+        return new OfByte(Unsafe.ARRAY_BYTE_BASE_OFFSET, value, value.length, true,
+                MemorySessionImpl.GLOBAL_SESSION);
+    }
+
     // Buffer conversion factories
 
     public static OfByte arrayOfByteSegment(Object base, long offset, long length,

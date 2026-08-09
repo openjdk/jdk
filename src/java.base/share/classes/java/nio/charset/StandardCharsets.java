@@ -62,18 +62,18 @@ public final class StandardCharsets {
     /**
      * Sixteen-bit UCS Transformation Format, big-endian byte order.
      */
-    public static final Charset UTF_16BE = new sun.nio.cs.UTF_16BE();
+    public static final Charset UTF_16BE = sun.nio.cs.UTF_16BE.INSTANCE;
 
     /**
      * Sixteen-bit UCS Transformation Format, little-endian byte order.
      */
-    public static final Charset UTF_16LE = new sun.nio.cs.UTF_16LE();
+    public static final Charset UTF_16LE = sun.nio.cs.UTF_16LE.INSTANCE;
 
     /**
      * Sixteen-bit UCS Transformation Format, byte order identified by an
      * optional byte-order mark.
      */
-    public static final Charset UTF_16 = new sun.nio.cs.UTF_16();
+    public static final Charset UTF_16 = sun.nio.cs.UTF_16.INSTANCE;
 
     /**
      * Thirty-two-bit UCS Transformation Format, big-endian byte order.
