@@ -681,7 +681,7 @@ public:
 
   // Support for scalarized inline type calling convention
   bool              has_scalarized_args() const  { return _method != nullptr && _method->has_scalarized_args(); }
-  bool              needs_stack_repair()  const  { return _method != nullptr && _method->c2_needs_stack_repair(); }
+  bool              needs_stack_repair()  const  { return _method != nullptr && _method->needs_stack_repair(); }
   bool              needs_nm_slot()       const  { return _needs_nm_slot; }
   void          set_needs_nm_slot(bool v)        { _needs_nm_slot = v; }
 
