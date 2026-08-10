@@ -1870,6 +1870,13 @@ bool FileMapInfo::validate_aot_class_linking() {
 #endif
   }
 
+  if (CDSConfig::is_dumping_final_static_archive() && header()->aot_class_linking_value() && !CDSConfig::is_dumping_aot_linked_classes()) {
+    ResourceMark rm;
+    const char* msg = err_msg("AOT class linking was enabled in training run but has been disabled%s",
+                              (CDSConfig::is_dumping_full_module_graph() ? "" : " due to incompatible module options"));
+    AOTMetaspace::unrecoverable_writing_error(msg);
+  }
+
   return true;
 }
 

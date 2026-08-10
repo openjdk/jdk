@@ -1519,7 +1519,7 @@ void AOTMetaspace::unrecoverable_writing_error(const char* message) {
 // This function is called when the JVM is unable to write the specified CDS archive due to a
 // an error. The error will be propagated
 void AOTMetaspace::writing_error(const char* message) {
-  aot_log_error(aot)("An error has occurred while writing the shared archive file.");
+  aot_log_error(aot)("An error has occurred while writing the %s.", CDSConfig::type_of_archive_being_written());
   if (message != nullptr) {
     aot_log_error(aot)("%s", message);
   }

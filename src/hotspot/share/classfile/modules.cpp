@@ -587,29 +587,58 @@ Modules::ArchivedProperty& Modules::archived_prop(size_t i) {
 
 void Modules::ArchivedProperty::runtime_check() const {
   ResourceMark rm;
-  const char* runtime_value = get_flattened_value();
+  const char* current_value = get_flattened_value();
   aot_log_info(aot)("archived module property %s: %s", _prop,
                 _archived_value != nullptr ? _archived_value : "(null)");
 
-  bool disable = false;
-  if (runtime_value == nullptr) {
+  bool mismatch = false;
+  const char* previous;
+  const char* now;
+  const char* previous0;
+  const char* now0;
+
+  if (CDSConfig::is_dumping_final_static_archive()) {
+    previous = "in AOTConfiguration";
+    now = "for current JVM";
+    previous0 = "AOTConfiguration";
+    now0 = "current";
+  } else if (CDSConfig::new_aot_flags_used()) {
+    previous = "in AOTCache";
+    now = "for current JVM";
+    previous0 = "AOTCache";
+    now0 = "current";
+  } else {
+    previous = "during dump time";
+    now = "during runtime";
+    previous0 = "dump time";
+    now0 = "runtime";
+  }
+
+  if (current_value == nullptr) {
     if (_archived_value != nullptr) {
-      AOTMetaspace::report_loading_error("Mismatched values for property %s: %s specified during dump time but not during runtime", _prop, _archived_value);
-      disable = true;
+      AOTMetaspace::report_loading_error("Mismatched values for property %s: %s specified %s but not %s", 
+                                         _prop, _archived_value, previous, now);
+      mismatch = true;
     }
   } else {
     if (_archived_value == nullptr) {
-      AOTMetaspace::report_loading_error("Mismatched values for property %s: %s specified during runtime but not during dump time", _prop, runtime_value);
-      disable = true;
-    } else if (strcmp(runtime_value, _archived_value) != 0) {
-      AOTMetaspace::report_loading_error("Mismatched values for property %s: runtime %s dump time %s", _prop, runtime_value, _archived_value);
-      disable = true;
+      AOTMetaspace::report_loading_error("Mismatched values for property %s: %s specified %s but not %s",
+                                         _prop, current_value, now, previous);
+      mismatch = true;
+    } else if (strcmp(current_value, _archived_value) != 0) {
+      AOTMetaspace::report_loading_error("Mismatched values for property %s: %s = %s, %s = %s",
+                                         _prop, previous0, _archived_value, now0, current_value);
+      mismatch = true;
     }
   }
 
-  if (disable) {
+  if (mismatch) {
     AOTMetaspace::report_loading_error("Disabling full module graph");
     CDSConfig::disable_full_module_graph();
+
+    if (CDSConfig::is_dumping_final_static_archive()) {
+      AOTMetaspace::unrecoverable_writing_error("mismatched module options");
+    }
   }
 }
 
