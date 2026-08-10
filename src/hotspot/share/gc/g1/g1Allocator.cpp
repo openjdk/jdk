@@ -92,12 +92,7 @@ bool G1Allocator::is_retained_old_region(G1HeapRegion* hr) {
   return _retained_old_gc_alloc_region == hr;
 }
 
-void G1Allocator::reuse_retained_old_region(G1EvacInfo* evacuation_info,
-                                            OldGCAllocRegion* old,
-                                            G1HeapRegion** retained_old) {
-  G1HeapRegion* retained_region = *retained_old;
-  *retained_old = nullptr;
-
+bool G1Allocator::can_reuse_retained_old_region(const G1HeapRegion* region) {
   // We will discard the current GC alloc region if:
   // a) it's in the collection set (it can happen!),
   // b) it's already full (no point in using it),
@@ -107,28 +102,38 @@ void G1Allocator::reuse_retained_old_region(G1EvacInfo* evacuation_info,
   // during a cleanup and was added to the free list, but
   // has been subsequently used to allocate a humongous
   // object that may be less than the region size).
-  if (retained_region != nullptr &&
-      !retained_region->in_collection_set() &&
-      !(retained_region->top() == retained_region->end()) &&
-      !retained_region->is_empty() &&
-      !retained_region->is_humongous()) {
-    // The retained region was added to the old region set when it was
-    // retired. We have to remove it now, since we don't allow regions
-    // we allocate to in the region sets. We'll re-add it later, when
-    // it's retired again.
-    _g1h->old_set_remove(retained_region);
-    old->reuse(retained_region);
-    G1HeapRegionPrinter::reuse(retained_region);
-    evacuation_info->set_alloc_regions_used_before(retained_region->used());
-  }
+  return region != nullptr &&
+         region->is_old() &&
+         !region->in_collection_set() &&
+         region->top() != region->end() &&
+         !region->is_empty() &&
+         !region->is_humongous();
 }
 
-size_t G1Allocator::free_bytes_in_retained_old_region() const {
-  if (_retained_old_gc_alloc_region == nullptr) {
-    return 0;
-  } else {
-    return _retained_old_gc_alloc_region->free();
+void G1Allocator::reuse_retained_old_region(G1EvacInfo* evacuation_info,
+                                            OldGCAllocRegion* old,
+                                            G1HeapRegion** retained_old) {
+  G1HeapRegion* retained_region = *retained_old;
+  *retained_old = nullptr;
+
+  if (!can_reuse_retained_old_region(retained_region)) {
+    return;
   }
+
+  // The retained region was added to the old region set when it was
+  // retired. We have to remove it now, since we don't allow regions
+  // we allocate to in the region sets. We'll re-add it later, when
+  // it's retired again.
+  _g1h->old_set_remove(retained_region);
+  old->reuse(retained_region);
+  G1HeapRegionPrinter::reuse(retained_region);
+  evacuation_info->set_alloc_regions_used_before(retained_region->used());
+}
+
+// Return the free bytes in the retained old region if it can be reused.
+size_t G1Allocator::free_bytes_in_retained_old_region() const {
+  G1HeapRegion* region = _retained_old_gc_alloc_region;
+  return can_reuse_retained_old_region(region) ? region->free() : 0;
 }
 
 void G1Allocator::init_gc_alloc_regions(G1EvacInfo* evacuation_info) {

@@ -49,23 +49,19 @@
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
 
-static size_t evacuation_reserve_bytes(size_t bytes_to_copy) {
+static size_t evacuation_reserve_bytes(double bytes_to_copy) {
   // Consider the natural expected waste.
   // (100 + TargetPLABWastePct) represents the increase in expected bytes during
   // copying due to anticipated waste in the PLABs.
-  const size_t scale = 100 + TargetPLABWastePct;
-  const size_t scaled_bytes = bytes_to_copy * scale;
+  double reserve_regions =
+    ceil(bytes_to_copy / G1HeapRegion::GrainBytes *
+         (1.0 + TargetPLABWastePct / 100.0));
 
-  // If scaling overflows or the addition used for ceiling division would overflow,
-  // just use max value.
-  if (scaled_bytes / scale != bytes_to_copy ||
-      scaled_bytes > SIZE_MAX - 99) {
+  if (reserve_regions > SIZE_MAX / G1HeapRegion::GrainBytes) {
     return SIZE_MAX;
   }
 
-  const size_t reserve_bytes = (scaled_bytes + 99) / 100;
-
-  return align_up(reserve_bytes, G1HeapRegion::GrainBytes);
+  return (size_t)reserve_regions * G1HeapRegion::GrainBytes;
 }
 
 size_t G1Policy::young_evacuation_reserve_bytes(size_t predicted_young_bytes_to_copy,
@@ -74,17 +70,11 @@ size_t G1Policy::young_evacuation_reserve_bytes(size_t predicted_young_bytes_to_
   // Add some safety margin to factor in the confidence of our prediction.
   // (100.0 / G1ConfidencePercent) is a scale factor that expresses the uncertainty
   // of the calculation: the lower the confidence, the more headroom.
-  const size_t confidence = G1ConfidencePercent;
-  const size_t scaled_bytes = predicted_young_bytes_to_copy * 100;
+  const double confidence_adjusted_bytes =
+    predicted_young_bytes_to_copy * (100.0 / G1ConfidencePercent);
 
-  if (scaled_bytes / 100 != predicted_young_bytes_to_copy ||
-      scaled_bytes > SIZE_MAX - (confidence - 1)) {
-    return evacuation_reserve_bytes(max_young_bytes_to_copy);
-  }
-
-  const size_t confidence_adjusted_bytes = (scaled_bytes + confidence - 1) / confidence;
-
-  const size_t bytes_to_copy = MIN2(confidence_adjusted_bytes, max_young_bytes_to_copy);
+  const double bytes_to_copy = MIN2(confidence_adjusted_bytes,
+                                    (double)max_young_bytes_to_copy);
 
   return evacuation_reserve_bytes(bytes_to_copy);
 }

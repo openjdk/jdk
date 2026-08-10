@@ -367,7 +367,9 @@ G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1SurvivorRegi
 
   size_t predicted_young_bytes_to_copy = predicted_eden_bytes_to_copy + predicted_survivor_bytes_to_copy;
   size_t young_used = young_used_bytes();
-  size_t copy_budget_bytes = old_cset_copy_budget_bytes(predicted_young_bytes_to_copy, young_used);
+
+  size_t copy_budget_bytes = old_cset_copy_budget_bytes(predicted_young_bytes_to_copy,
+                                                        young_used);
 
   log_trace(gc, ergo, cset)("Added young regions to CSet. Eden: %u regions, Survivors: %u regions, "
                             "predicted eden time: %1.2fms, predicted base time: %1.2fms, "
@@ -388,23 +390,25 @@ G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1SurvivorRegi
   return {time_budget_ms, copy_budget_bytes};
 }
 
-size_t G1CollectionSet::old_cset_copy_budget_bytes(size_t predicted_young_bytes_to_copy,
-                                                   size_t young_used_bytes) const {
-  const size_t free_bytes = (size_t)_g1h->num_free_regions() * G1HeapRegion::GrainBytes;
-  const size_t young_reserve_bytes =
-    G1Policy::young_evacuation_reserve_bytes(predicted_young_bytes_to_copy, young_used_bytes);
-  if (young_reserve_bytes >= free_bytes) {
-    return 0;
-  }
-  const size_t available_bytes = free_bytes - young_reserve_bytes;
+static size_t max_evacuation_copy_bytes(size_t available_destination_bytes) {
   const size_t scale = 100 + TargetPLABWastePct;
 
-  size_t scaled_bytes = available_bytes * 100;
-  if (scaled_bytes / 100 != available_bytes) {
-    scaled_bytes = SIZE_MAX;
-  }
+  // floor(available_destination_bytes * 100 / scale)
+  return (available_destination_bytes / scale) * 100 +
+         ((available_destination_bytes % scale) * 100) / scale;
+}
 
-  return scaled_bytes / scale;
+size_t G1CollectionSet::old_cset_copy_budget_bytes(size_t predicted_young_bytes_to_copy,
+                                                   size_t young_used_bytes) const {
+  const size_t free_regions_bytes = (size_t)_g1h->num_free_regions() * G1HeapRegion::GrainBytes;
+  const size_t young_reserve_bytes = G1Policy::young_evacuation_reserve_bytes(predicted_young_bytes_to_copy,
+                                                                              young_used_bytes);
+  if (young_reserve_bytes > free_regions_bytes) {
+    return 0;
+  }
+  const size_t available_old_destination_bytes = free_regions_bytes - young_reserve_bytes;
+
+  return max_evacuation_copy_bytes(available_old_destination_bytes);
 }
 
 size_t G1CollectionSet::young_used_bytes() const {
