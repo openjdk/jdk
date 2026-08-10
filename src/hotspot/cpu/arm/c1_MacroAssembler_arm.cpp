@@ -64,6 +64,11 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
   bs->nmethod_entry_barrier(this);
 }
 
+void C1_MacroAssembler::remove_frame(int frame_size_in_bytes) {
+  save_profile_rng();
+  MacroAssembler::remove_frame(frame_size_in_bytes);
+}
+
 void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
   if (breakAtEntry) {
     breakpoint();
@@ -220,6 +225,10 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register basic
 
   fast_unlock(obj, t1, t2, t3, 1 /* savemask - save t1 */, slow_case);
   // Success: fall through
+}
+
+int C1_MacroAssembler::scalarized_entry(const CompiledEntrySignature* ces, int frame_size_in_bytes, int bang_size_in_bytes, int sp_offset_for_orig_pc, Label& verified_inline_entry_label, bool is_inline_ro_entry) {
+  Unimplemented();
 }
 
 // Increments mdp data. Sets bumped_count register to adjusted counter.
