@@ -167,7 +167,7 @@ public class IrreducibleLoopFuzzer {
             );
         }
 
-        public String genRnd() { return "0"; } // TODO: actually random
+        public String genRnd() { return "RANDOM.nextInt()"; }
     }
 
     static class LongType implements JasmType {
@@ -188,7 +188,7 @@ public class IrreducibleLoopFuzzer {
             );
         }
 
-        public String genRnd() { return "0"; } // TODO: actually random
+        public String genRnd() { return "RANDOM.nextLong()"; }
     }
 
     static final JasmType INTS = new IntType();
@@ -506,12 +506,15 @@ public class IrreducibleLoopFuzzer {
 
     public static String generateRunner(List<Method> methods) {
         var template = Template.make(() -> scope(
+            let("seed", RANDOM.nextInt()),
             """
             package compiler.loopopts.templated;
 
-            import java.lang.reflect.InvocationTargetException;
+            import java.util.Random;
 
             public class Runner {
+                static final Random RANDOM = new Random(#seed);
+
                 public static void main(String[] args) throws Throwable {
                     if (args.length != 1) {
                         throw new IllegalArgumentException("expected generated method name");
