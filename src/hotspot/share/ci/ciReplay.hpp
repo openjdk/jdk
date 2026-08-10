@@ -134,7 +134,7 @@ class ciReplay {
 // 1: first instanceKlass sets protection domain (8275868)
 //    replace current_mileage with invocation_count (8276095)
 // 2: incremental inlining support (8254108)
-// 3: value class array support (8375548)
+// 3: value class array support (8375548 & 8388709)
 #define REPLAY_VERSION 3 // current version, bump up for incompatible changes
 
 #endif // SHARE_CI_CIREPLAY_HPP

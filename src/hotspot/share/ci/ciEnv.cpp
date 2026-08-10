@@ -193,9 +193,9 @@ ciEnv::ciEnv(CompileTask* task)
 // {
 //   RecordLocation fp(this, "field1");
 //   // location: "field1"
-//   { RecordLocation fp(this, " field2"); // location: "field1 field2" }
+//   { RecordLocation fp(this, "field2"); // location: "field1 field2" }
 //   // location: "field1"
-//   { RecordLocation fp(this, " field3"); // location: "field1 field3" }
+//   { RecordLocation fp(this, "field3"); // location: "field1 field3" }
 //   // location: "field1"
 // }
 // // location: ""
@@ -231,10 +231,13 @@ public:
   // append a new component
   ATTRIBUTE_PRINTF(3, 4)
   RecordLocation(ciEnv* ci, const char* fmt, ...) {
-    end = ci->_dyno_name + strlen(ci->_dyno_name);
+    size_t len = strlen(ci->_dyno_name);
+    end = ci->_dyno_name + len;
     va_list args;
     va_start(args, fmt);
-    push(ci, " ");
+    if (len > 0) {
+      push(ci, " ");
+    }
     push_va(ci, fmt, args);
     va_end(args);
   }
@@ -497,7 +500,7 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
                              require_local);
     if (elem_klass != nullptr && elem_klass->is_loaded()) {
       // Now make an array for it
-      return ciArrayKlass::make(elem_klass);
+      return ciObjArrayKlass::make_impl(elem_klass);
     }
   }
 
@@ -1233,6 +1236,7 @@ void ciEnv::register_method(ciMethod* target,
            offsets->value(CodeOffsets::Exceptions) != -1, "must have exception entry");
 
     if (install_code) {
+      bool needs_stack_repair = (compiler->is_c2() && method()->needs_stack_repair());
       nm =  nmethod::new_nmethod(method,
                                  compile_id(),
                                  entry_bci,
@@ -1246,6 +1250,7 @@ void ciEnv::register_method(ciMethod* target,
                                                 has_wide_vectors,
                                                 has_monitors,
                                                 has_scoped_access,
+                                                needs_stack_repair,
                                                 has_clinit_barriers));
     }
     // Free codeBlobs

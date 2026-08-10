@@ -2147,7 +2147,10 @@ void Compile::process_inline_types(PhaseIterGVN &igvn, bool remove) {
   set_scalarize_in_safepoints(true);
   for (int i = _inline_type_nodes.length()-1; i >= 0; i--) {
     InlineTypeNode* vt = _inline_type_nodes.at(i)->as_InlineType();
-    vt->make_scalar_in_safepoints(&igvn);
+    if (!vt->make_scalar_in_safepoints(&igvn)) {
+      record_failure("out of nodes during scalarization");
+      return;
+    }
     igvn.record_for_igvn(vt);
   }
   if (remove) {
@@ -3079,9 +3082,9 @@ void Compile::Optimize() {
 
     if (failing())  return;
 
-    if (AlwaysIncrementalInline || StressIncrementalInlining) {
-      inline_incrementally(igvn);
-    }
+    // inline_boxing_calls() may introduce new late inline candidates
+    // in stress modes or w/ some compile directives.
+    inline_incrementally(igvn);
 
     print_method(PHASE_INCREMENTAL_BOXING_INLINE, 2);
 
@@ -3130,6 +3133,9 @@ void Compile::Optimize() {
 
   // Process inline type nodes now that all inlining is over
   process_inline_types(igvn);
+  if (failing()) {
+    return;
+  }
 
   adjust_flat_array_access_aliases(igvn);
 
@@ -3316,6 +3322,9 @@ void Compile::Optimize() {
   // Process inline types before macro expansion. Otherwise, we will not be able to
   // remove unused allocations because it cannot match the expanded allocation.
   process_inline_types(igvn);
+  if (failing()) {
+    return;
+  }
 
   {
     TracePhase tp(_t_macroExpand);
@@ -3349,6 +3358,9 @@ void Compile::Optimize() {
   // Process inline type nodes again and remove them. From here
   // on we don't need to keep track of field values anymore.
   process_inline_types(igvn, /* remove= */ true);
+  if (failing()) {
+    return;
+  }
 
   {
     TracePhase tp(_t_barrierExpand);
@@ -4947,6 +4959,7 @@ bool Compile::too_many_traps(ciMethod* method,
     // Preload code should not have traps, if possible.
     return true;
   }
+  assert(reason > Deoptimization::Reason_none && reason <= Deoptimization::Reason_LIMIT, "invalid reason");
   ciMethodData* md = method->method_data();
   if (md->is_empty()) {
     // Assume the trap has not occurred, or that it occurred only
@@ -4976,6 +4989,7 @@ bool Compile::too_many_traps(Deoptimization::DeoptReason reason,
     // Preload code should not have traps, if possible.
     return true;
   }
+  assert(reason > Deoptimization::Reason_none && reason <= Deoptimization::Reason_LIMIT, "invalid reason");
   if (trap_count(reason) >= Deoptimization::per_method_trap_limit(reason)) {
     // Too many traps globally.
     // Note that we use cumulative trap_count, not just md->trap_count.
@@ -5000,6 +5014,7 @@ bool Compile::too_many_traps(Deoptimization::DeoptReason reason,
 bool Compile::too_many_recompiles(ciMethod* method,
                                   int bci,
                                   Deoptimization::DeoptReason reason) {
+  assert(reason > Deoptimization::Reason_none && reason <= Deoptimization::Reason_LIMIT, "invalid reason");
   ciMethodData* md = method->method_data();
   if (md->is_empty()) {
     // Assume the trap has not occurred, or that it occurred only

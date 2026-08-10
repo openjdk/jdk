@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1048,10 +1048,7 @@ bool ciMethod::is_compiled_lambda_form() const {
 // ciMethod::is_object_constructor
 //
 bool ciMethod::is_object_constructor() const {
-  return (name() == ciSymbols::object_initializer_name()
-          && signature()->return_type()->is_void());
-  // Note:  We can't test is_static, because that would
-  // require the method to be loaded.  Sometimes it isn't.
+  return name() == ciSymbols::object_initializer_name();
 }
 
 // ------------------------------------------------------------------
@@ -1679,12 +1676,8 @@ bool ciMethod::mismatch() const {
   return get_Method()->mismatch();
 }
 
-bool ciMethod::c1_needs_stack_repair() const {
-  GUARDED_VM_ENTRY(return get_Method()->c1_needs_stack_repair();)
-}
-
-bool ciMethod::c2_needs_stack_repair() const {
-  GUARDED_VM_ENTRY(return get_Method()->c2_needs_stack_repair();)
+bool ciMethod::needs_stack_repair() const {
+  GUARDED_VM_ENTRY(return get_Method()->needs_stack_repair();)
 }
 
 // ciMethod::is_old

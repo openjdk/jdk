@@ -168,7 +168,7 @@ void Matcher::verify_new_nodes_only(Node* xroot) {
 
 // Array of RegMask, one per returned values (inline type instances can
 // be returned as multiple return values, one per field)
-RegMask* Matcher::return_values_mask(const TypeFunc* tf) {
+RegMask* Matcher::return_values_mask(const TypeFunc* tf) const {
   const TypeTuple* range = tf->range_cc();
   uint cnt = range->cnt() - TypeFunc::Parms;
   if (cnt == 0) {
@@ -1089,11 +1089,7 @@ Node *Matcher::xform( Node *n, int max_stack ) {
               }
               if (m == nullptr) {
                 // Convert to machine-dependent projection
-                RegMask* mask = nullptr;
-                if (n->in(0)->is_Call() && n->in(0)->as_Call()->tf()->returns_inline_type_as_fields()) {
-                  mask = return_values_mask(n->in(0)->as_Call()->tf());
-                }
-                m = n->in(0)->as_Multi()->match(n->as_Proj(), this, mask);
+                m = n->in(0)->as_Multi()->match(n->as_Proj(), this);
                 NOT_PRODUCT(record_new2old(m, n);)
               }
               if (m->in(0) != nullptr) // m might be top

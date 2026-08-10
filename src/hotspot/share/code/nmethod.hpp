@@ -266,7 +266,8 @@ public:
       WIDE_VECTORS  = 1 << 1,
       MONITORS      = 1 << 2,
       SCOPED_ACCESS = 1 << 3,
-      CLINIT_BARRIERS = 1 << 4
+      NEEDS_STACK_REPAIR = 1 << 4,
+      CLINIT_BARRIERS = 1 << 5
     };
 
     Flags() : _bits(0) {}
@@ -274,11 +275,13 @@ public:
           bool has_wide_vectors,
           bool has_monitors,
           bool has_scoped_access,
+          bool needs_stack_repair,
           bool has_clinit_barriers) :
-      _bits((has_unsafe_access ? UNSAFE_ACCESS : 0) |
-            (has_wide_vectors  ? WIDE_VECTORS  : 0) |
-            (has_monitors      ? MONITORS      : 0) |
-            (has_scoped_access ? SCOPED_ACCESS : 0) |
+      _bits((has_unsafe_access   ? UNSAFE_ACCESS : 0) |
+            (has_wide_vectors    ? WIDE_VECTORS  : 0) |
+            (has_monitors        ? MONITORS      : 0) |
+            (has_scoped_access   ? SCOPED_ACCESS : 0) |
+            (needs_stack_repair  ? NEEDS_STACK_REPAIR : 0) |
             (has_clinit_barriers ? CLINIT_BARRIERS : 0))
     {}
 
@@ -293,6 +296,9 @@ public:
 
     // Used by shared scope closure (scopedMemoryAccess.cpp)
     bool has_scoped_access() const { return (_bits & SCOPED_ACCESS) != 0; }
+
+    // Stack has been extended and needs repair. See comment in MacroAssembler::remove_frame
+    bool needs_stack_repair() const { return (_bits & NEEDS_STACK_REPAIR) != 0; }
 
     // AOT preload code has clinit barriers
     bool has_clinit_barriers() const {  return (_bits & CLINIT_BARRIERS) != 0; }
@@ -777,20 +783,11 @@ public:
   bool  has_monitors() const                      { return _flags.has_monitors(); }
   bool  has_scoped_access() const                 { return _flags.has_scoped_access(); }
   bool  has_wide_vectors() const                  { return _flags.has_wide_vectors(); }
+  bool  needs_stack_repair() const                { return _flags.needs_stack_repair(); }
   bool  has_clinit_barriers() const               { return _flags.has_clinit_barriers(); }
 
   bool  preloaded() const                         { return _preloaded; }
   void  set_preloaded(bool z)                     { _preloaded = z; }
-
-  bool  needs_stack_repair() const {
-    if (is_compiled_by_c1()) {
-      return method()->c1_needs_stack_repair();
-    } else if (is_compiled_by_c2()) {
-      return method()->c2_needs_stack_repair();
-    } else {
-      return false;
-    }
-  }
 
   bool  has_flushed_dependencies() const          { return _has_flushed_dependencies; }
   void  set_has_flushed_dependencies(bool z)      {
