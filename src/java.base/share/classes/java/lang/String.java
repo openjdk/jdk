@@ -1157,6 +1157,22 @@ public final class String
         return dp;
     }
 
+    private static int encodedLengthUTF16LEorUTF16BE(byte coder, byte[] value) {
+        long length = ((long) value.length >> coder) << 1;
+        if (length > (long) Integer.MAX_VALUE) {
+            throw new OutOfMemoryError("Required length exceeds implementation limit");
+        }
+        return (int) length;
+    }
+
+    private static int encodedLengthUTF16(byte coder, byte[] value) {
+        long length = (((long) value.length >> coder) << 1) + 2; // BOM
+        if (length > (long) Integer.MAX_VALUE) {
+            throw new OutOfMemoryError("Required length exceeds implementation limit");
+        }
+        return (int) length;
+    }
+
     //------------------------------ utf8 ------------------------------------
 
     /**
@@ -2154,9 +2170,9 @@ public final class String
         } else if (cs == ISO_8859_1.INSTANCE || cs == US_ASCII.INSTANCE) {
             return encodedLengthASCIIor8859_1(coder, value);
         } else if (cs == UTF_16LE.INSTANCE || cs == UTF_16BE.INSTANCE) {
-            return length() << 1;
+            return encodedLengthUTF16LEorUTF16BE(coder, value);
         } else if (cs == UTF_16.INSTANCE) {
-            return (length() << 1) + 2; // BOM
+            return encodedLengthUTF16(coder, value);
         }
         return getBytes(cs).length;
     }
