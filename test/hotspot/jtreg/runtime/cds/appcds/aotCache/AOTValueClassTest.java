@@ -32,23 +32,46 @@
  * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @enablePreview
  * @modules java.base/jdk.internal.value
- * @compile AOTValueClassApp.java
+ * @build AOTValueClassTest
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar archived_value_class.jar AOTValueClassApp
- * @run main/othervm AOTValueClassTest
+ * @run driver AOTValueClassTest
+ * @run driver AOTValueClassTest INIT_TEST_CLASS
  */
 
 import jdk.test.lib.cds.SimpleCDSAppTester;
 import jdk.test.lib.helpers.ClassFileInstaller;
+import jdk.test.lib.process.OutputAnalyzer;
 
 public class AOTValueClassTest {
     public static void main(String[] args) throws Exception {
         final String mainClass = "AOTValueClassApp";
         final String appJar = ClassFileInstaller.getJarPath("archived_value_class.jar");
+        boolean initTestClass = false;
 
-        SimpleCDSAppTester.of("AOTValueClassTest")
-            .addVmArgs("-Xlog:cds,aot", "--enable-preview", "-XX:AOTInitTestClass=" + mainClass)
-            .appCommandLine(mainClass)
-            .classpath(appJar)
-            .runAOTWorkflow();
+        if (args.length > 0) {
+            if (args[0].equals("INIT_TEST_CLASS")) {
+                initTestClass = true;
+            } else {
+                throw new RuntimeException("Unexpected argument");
+            }
+        }
+
+        SimpleCDSAppTester tester = SimpleCDSAppTester.of("AOTValueClassTest");
+        if (initTestClass) {
+            tester.addVmArgs("-XX:AOTInitTestClass=" + mainClass);
+        }
+        tester.addVmArgs("-Xlog:cds,aot,aot+class=debug", "--enable-preview")
+              .appCommandLine(mainClass)
+              .classpath(appJar)
+              .setAssemblyChecker((OutputAnalyzer out) -> {
+                  out.shouldContain("AOTValueClassApp aot-linked");
+              });
+        tester.runAOTWorkflow();
+    }
+}
+
+value class AOTValueClassApp {
+    public static void main(String[] args) {
+        System.out.println("Hello value class");
     }
 }

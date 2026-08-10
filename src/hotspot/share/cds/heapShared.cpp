@@ -1148,6 +1148,9 @@ void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k) {
     Klass* abk = ObjArrayKlass::cast(orig_k)->bottom_klass();
     if (abk->is_instance_klass()) {
       if (!AOTClassInitializer::has_test_class()) {
+        // Without `-XX:AOTInitTestClass`, no Java code outside of the boot loader will
+        // be executed in the AOT assembly phase, so we can't have an initialized class
+        // outside of the boot loader.
         assert(InstanceKlass::cast(abk)->defined_by_boot_loader(),
                "must be boot class");
       }
