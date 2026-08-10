@@ -1913,9 +1913,6 @@ JvmtiEnv::FollowReferences(jint heap_filter, jclass klass, jobject initial_objec
       return JVMTI_ERROR_NONE;
     }
     k = java_lang_Class::as_Klass(k_mirror);
-    if (k == nullptr) {
-      return JVMTI_ERROR_INVALID_CLASS;
-    }
   }
 
   if (initial_object != nullptr) {
