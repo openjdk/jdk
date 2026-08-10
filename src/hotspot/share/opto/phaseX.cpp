@@ -870,7 +870,7 @@ PhaseIterGVN::PhaseIterGVN() : _delay_transform(false),
 void PhaseIterGVN::shuffle_worklist() {
   if (_worklist.size() < 2) return;
   for (uint i = _worklist.size() - 1; i >= 1; i--) {
-    uint j = C->random() % (i + 1);
+    uint j = C->stress().random() % (i + 1);
     swap(_worklist.adr()[i], _worklist.adr()[j]);
   }
 }
@@ -3075,7 +3075,7 @@ void PhaseCCP::verify_analyze(Unique_Node_List& worklist_verify) {
 // Fetch next node from worklist to be examined in this iteration.
 Node* PhaseCCP::fetch_next_node(Unique_Node_List& worklist) {
   if (StressCCP) {
-    return worklist.remove(C->random() % worklist.size());
+    return worklist.remove(C->stress().random() % worklist.size());
   } else {
     return worklist.pop();
   }
