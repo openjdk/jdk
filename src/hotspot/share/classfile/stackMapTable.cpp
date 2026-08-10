@@ -210,6 +210,7 @@ int32_t StackMapReader::chop(
 #define CHECK_NT CHECK_(VerificationType::bogus_type())
 
 VerificationType StackMapReader::parse_verification_type(u1* flags, bool parsing_locals, TRAPS) {
+  assert(flags != nullptr, "must be initialized");
   u1 tag = _stream->get_u1(CHECK_NT);
   if (tag < (u1)ITEM_UninitializedThis) {
     return VerificationType::from_tag(tag);
@@ -227,15 +228,12 @@ VerificationType StackMapReader::parse_verification_type(u1* flags, bool parsing
     return VerificationType::reference_type(klass_name);
   }
   if (tag == ITEM_UninitializedThis) {
-    if (flags != nullptr) {
-      *flags |= FLAG_THIS_UNINIT;
-
-      // An uninitializedThis in the locals array can sometimes be preserved
-      // between frames while uninitializedThis in the stack cannot as the stack
-      // is cleared. Chop and Full frames need special handling.
-      if (parsing_locals) {
-        _uninit_in_prev_frame_locals = true;
-      }
+    *flags |= FLAG_THIS_UNINIT;
+    // An uninitializedThis in the locals array can sometimes be preserved
+    // between frames while uninitializedThis in the stack cannot as the stack
+    // is cleared. Chop and Full frames need special handling.
+    if (parsing_locals) {
+      _uninit_in_prev_frame_locals = true;
     }
     return VerificationType::uninitialized_this_type();
   }
