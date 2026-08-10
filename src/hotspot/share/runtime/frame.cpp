@@ -75,7 +75,7 @@ RegisterMap::RegisterMap(JavaThread *thread, UpdateMap update_map, ProcessFrames
   NOT_PRODUCT(_async = false;)
 
   if (walk_cont == WalkContinuation::include && thread != nullptr && thread->last_continuation() != nullptr) {
-    _chunk = stackChunkHandle(Thread::current()->handle_area()->allocate_null_handle(), true /* dummy */);
+    _chunk = stackChunkHandle::make_handle(Thread::current()->handle_area()->allocate_null_handle());
   }
   _chunk_index = -1;
 
@@ -94,7 +94,7 @@ RegisterMap::RegisterMap(oop continuation, UpdateMap update_map) {
   NOT_PRODUCT(_skip_missing = false;)
   NOT_PRODUCT(_async = false;)
 
-  _chunk = stackChunkHandle(Thread::current()->handle_area()->allocate_null_handle(), true /* dummy */);
+  _chunk = stackChunkHandle::make_handle(Thread::current()->handle_area()->allocate_null_handle());
   _chunk_index = -1;
 
 #ifndef PRODUCT
