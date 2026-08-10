@@ -25,12 +25,15 @@
 #include "compiler/compileLog.hpp"
 #include "compiler/compilerDefinitions.hpp"
 #include "compiler/compilerDirectives.hpp"
-#include "compiler_globals.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "compiler/stress.hpp"
-#include "opto/c2_globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/os.hpp"
 #include "utilities/ticks.hpp"
+
+#ifdef COMPILER2
+#include "opto/c2_globals.hpp"
+#endif // COMPILER
 
 static bool should_initialize_stress_seed(CompilerType comp) {
   switch (comp) {
