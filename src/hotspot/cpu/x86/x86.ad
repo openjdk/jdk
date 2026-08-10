@@ -23262,6 +23262,7 @@ instruct vstoreMask_evex(vec dst, kReg mask, immI size) %{
 %}
 
 instruct vmaskcast_evex(kReg dst) %{
+  predicate(Matcher::vector_length_in_bytes(n->in(1)) >= 16);
   match(Set dst (VectorMaskCast dst));
   ins_cost(0);
   format %{ "vector_mask_cast $dst" %}
@@ -23269,6 +23270,16 @@ instruct vmaskcast_evex(kReg dst) %{
     // empty
   %}
   ins_pipe(empty);
+%}
+
+instruct vmaskcast_evex_partial(kReg dst) %{
+  predicate(Matcher::vector_length_in_bytes(n->in(1)) < 16);
+  match(Set dst (VectorMaskCast dst));
+  format %{ "vector_mask_cast $dst\t! clip spurious lanes of partial source" %}
+  ins_encode %{
+    __ clip_partial_mask($dst$$KRegister, Matcher::vector_length(this));
+  %}
+  ins_pipe(pipe_slow);
 %}
 
 instruct vmaskcast(vec dst) %{

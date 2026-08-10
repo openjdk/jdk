@@ -1585,6 +1585,7 @@ private:
 
   void kxnorbl(KRegister dst, KRegister src1, KRegister src2);
   void kshiftlbl(KRegister dst, KRegister src, int imm8);
+  void kshiftlwl(KRegister dst, KRegister src, int imm8);
   void kshiftlql(KRegister dst, KRegister src, int imm8);
   void kshiftrbl(KRegister dst, KRegister src, int imm8);
   void kshiftrwl(KRegister dst, KRegister src, int imm8);
