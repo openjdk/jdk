@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -183,6 +183,9 @@ class VerificationFrame {
         if (type.is_check()) _verifier.verifyError("Must be a real type");
         if (_stack_size >= _max_stack) {
             _verifier.verifyError("Operand stack overflow");
+        }
+        if (type.is_uninitialized_this(_verifier)) {
+            _flags |= FLAG_THIS_UNINIT;
         }
         _stack[_stack_size++] = type;
     }
