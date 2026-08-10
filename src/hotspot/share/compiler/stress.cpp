@@ -23,9 +23,9 @@
  */
 
 #include "compiler/compileLog.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "compiler/compilerDefinitions.hpp"
 #include "compiler/compilerDirectives.hpp"
-#include "compiler/compiler_globals.hpp"
 #include "compiler/stress.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/os.hpp"
