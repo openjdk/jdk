@@ -218,11 +218,16 @@ void ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t cou
           // for the next iteration of a dirty card loop.
           upper_bound = p;   // remember upper bound for next chunk
           if (p < start_addr) {
-            // if object starts in a previous slice, it'll be handled
-            // in its entirety by the thread processing that slice; we can
-            // skip over it and avoid an unnecessary extra scan.
             assert(obj == cast_to_oop(p), "Inconsistency detected");
-            p += obj->size();
+            if (use_write_table) {
+              // The head card may have become dirty after the worker
+              // responsible for the preceding slice passed it.
+              p += obj->oop_iterate_size(cl);
+            } else {
+              // The stable read table guarantees that the worker processing
+              // the preceding slice scanned this object in its entirety.
+              p += obj->size();
+            }
           } else {
             // the object starts in our slice, we scan it in its entirety
             assert(obj == cast_to_oop(p), "Inconsistency detected");
