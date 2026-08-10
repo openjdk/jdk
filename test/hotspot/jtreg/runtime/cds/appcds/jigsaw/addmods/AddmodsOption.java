@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8319343
+ * @bug 8319343 8381976
  * @summary Test handling of the --add-modules option.
  * @requires vm.cds.write.archived.java.heap
  * @requires vm.flagless
@@ -111,7 +111,7 @@ public class AddmodsOption {
           // version of the jdk.httpserver module, e.g. java 22-ea
           .shouldMatch(versionPattern);
 
-        // dump an archive with an incubator module,
+        // dump an archive with incubator modules,
         // --add-modules jdk.incubator.vector,jdk.incubator.json
         archiveName = TestCommon.getNewArchiveName("incubator-module");
         TestCommon.setCurrentArchiveName(archiveName);
@@ -125,14 +125,14 @@ public class AddmodsOption {
           // module graph won't be archived with an incubator module
           .shouldContain("archivedBootLayer not available, disabling full module graph");
 
-        // run with the same incubator module
+        // run with the same incubator modules
         oa = TestCommon.execCommon(
             loggingOption,
             "--add-modules", incubatorModules,
             "-m", moduleOption,
             "-version");
         oa.shouldContain("full module graph: disabled")
-          // module is not restored from archive
+          // modules are not restored from archive
           .shouldContain("define_module(): creation of module: jdk.incubator.vector")
           .shouldContain("define_module(): creation of module: jdk.incubator.json")
           .shouldMatch(warningIncubatorPattern)

@@ -25,6 +25,8 @@
 
 /*
  * @test
+ * @bug 8381976
+ * @summary Unit tests for JsonObject
  * @modules jdk.incubator.json
  * @run junit TestJsonObject
  */

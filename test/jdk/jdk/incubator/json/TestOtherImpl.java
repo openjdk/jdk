@@ -25,6 +25,8 @@
 
 /*
  * @test
+ * @bug 8381976
+ * @summary Tests for other implementations that extend JsonValue sub-interfaces
  * @modules jdk.incubator.json
  * @run junit TestOtherImpl
  */
