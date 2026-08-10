@@ -26,6 +26,7 @@
 /*
  * @test
  * @bug 8381976
+ * @summary Unit tests for JsonArray
  * @modules jdk.incubator.json
  * @run junit TestJsonArray
  */
