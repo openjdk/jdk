@@ -2717,9 +2717,13 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
 
   // If changed Sub inputs, check Add for identity.
   // e.g., (x - y) + y -> x; x + (y - x) -> y.
+  // SubI/LNode::Ideal also optimize this:
+  // (x - y) - x -> -y
   if (use_op == Op_SubI || use_op == Op_SubL) {
     const int add_op = (use_op == Op_SubI) ? Op_AddI : Op_AddL;
-    add_users_to_worklist_if(worklist, use, [=](Node* u) { return u->Opcode() == add_op; });
+    add_users_to_worklist_if(worklist, use, [=](Node* u) {
+      return u->Opcode() == add_op || u->Opcode() == use_op;
+    });
   }
 
   // If changed Mul inputs, check Add for common-factor reassociation.
