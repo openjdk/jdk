@@ -50,6 +50,7 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderDataShared.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/loaderConstraints.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/placeholders.hpp"
@@ -77,6 +78,8 @@
 #include "nmt/memTracker.hpp"
 #include "oops/compressedKlass.hpp"
 #include "oops/constantPool.inline.hpp"
+#include "oops/flatArrayKlass.hpp"
+#include "oops/inlineKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.hpp"
@@ -501,7 +504,7 @@ void AOTMetaspace::serialize(SerializeClosure* soc) {
   soc->do_tag(arrayOopDesc::base_offset_in_bytes(T_BYTE));
   soc->do_tag(sizeof(ConstantPool));
   soc->do_tag(sizeof(ConstantPoolCache));
-  soc->do_tag(objArrayOopDesc::base_offset_in_bytes());
+  soc->do_tag(refArrayOopDesc::base_offset_in_bytes());
   soc->do_tag(typeArrayOopDesc::base_offset_in_bytes(T_BYTE));
   soc->do_tag(sizeof(Symbol));
 
@@ -580,7 +583,14 @@ static void rewrite_bytecodes(const methodHandle& method) {
         case btos:
           // fallthrough
         case ztos: new_code = Bytecodes::_fast_bgetfield; break;
-        case atos: new_code = Bytecodes::_fast_agetfield; break;
+        case atos: {
+          if (rfe->is_flat()) {
+            new_code = Bytecodes::_fast_vgetfield;
+          } else {
+            new_code = Bytecodes::_fast_agetfield;
+          }
+          break;
+        }
         case itos: new_code = Bytecodes::_fast_igetfield; break;
         case ctos: new_code = Bytecodes::_fast_cgetfield; break;
         case stos: new_code = Bytecodes::_fast_sgetfield; break;
@@ -605,7 +615,14 @@ static void rewrite_bytecodes(const methodHandle& method) {
         switch(rfe->tos_state()) {
         case btos: new_code = Bytecodes::_fast_bputfield; break;
         case ztos: new_code = Bytecodes::_fast_zputfield; break;
-        case atos: new_code = Bytecodes::_fast_aputfield; break;
+        case atos: {
+          if (rfe->is_flat() || rfe->is_null_free_inline_type()) {
+            new_code = Bytecodes::_fast_vputfield;
+          } else {
+            new_code = Bytecodes::_fast_aputfield;
+          }
+          break;
+        }
         case itos: new_code = Bytecodes::_fast_iputfield; break;
         case ctos: new_code = Bytecodes::_fast_cputfield; break;
         case stos: new_code = Bytecodes::_fast_sputfield; break;
@@ -1205,8 +1222,8 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
   assert(!_output_mapinfo->is_open(), "Must be closed already");
   _output_mapinfo = nullptr;
   if (status && CDSConfig::is_dumping_preimage_static_archive()) {
-    tty->print_cr("%s AOTConfiguration recorded: %s",
-                  CDSConfig::has_temp_aot_config_file() ? "Temporary" : "", AOTConfiguration);
+    tty->print_cr("%sAOTConfiguration recorded: %s",
+                  CDSConfig::has_temp_aot_config_file() ? "Temporary " : "", AOTConfiguration);
     if (CDSConfig::is_single_command_training()) {
       fork_and_dump_final_static_archive(CHECK);
     }
@@ -1320,7 +1337,7 @@ static int exec_jvm_with_java_tool_options(const char* java_launcher_path, TRAPS
   //
   // Note: the env variables are set only for the child process. They are not changed
   // for the current process. See java.lang.ProcessBuilder::environment().
-  JavaValue result(T_OBJECT);
+  JavaValue result(T_INT);
   JavaCallArguments javacall_args(2);
   javacall_args.push_oop(launcher);
   javacall_args.push_oop(launcher_args);
@@ -1343,8 +1360,19 @@ void AOTMetaspace::fork_and_dump_final_static_archive(TRAPS) {
   tty->print_cr("Launching child process %s to assemble AOT cache %s using configuration %s", cmd, AOTCacheOutput, AOTConfiguration);
   int status = exec_jvm_with_java_tool_options(cmd, CHECK);
   if (status != 0) {
+    // We do this in all cases when the child process is launched because:
+    // - the AOT training process is about to exit; or
+    // - jcmd or AOTCacheMXBean is used to end AOT training.
+    //
+    // The child process is just a convenient way to get a fresh JVM state to
+    // assemble the AOT cache. Logically, we consider the AOT assembly to be
+    // executed as part of the current JVM. If the child process has failed,
+    // we should exit the current JVM as well.
+    //
+    // To help debugging, if we have created a temporary AOT config file, do not
+    // delete it.
     log_error(aot)("Child process failed; status = %d", status);
-    // We leave the temp config file for debugging
+    vm_exit(status);
   } else if (CDSConfig::has_temp_aot_config_file()) {
     const char* tmp_config = AOTConfiguration;
     // On Windows, need WRITE permission to remove the file.

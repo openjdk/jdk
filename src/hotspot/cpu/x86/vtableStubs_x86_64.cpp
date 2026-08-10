@@ -44,11 +44,11 @@
 extern "C" void bad_compiled_vtable_index(JavaThread* thread, oop receiver, int index);
 #endif
 
-VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
+VtableStub* VtableStubs::create_vtable_stub(int vtable_index, bool caller_is_c1) {
   // Read "A word on VtableStub sizing" in share/code/vtableStubs.hpp for details on stub sizing.
   const int stub_code_length = code_size_limit(true);
-  VtableStub* s = new(stub_code_length) VtableStub(true, vtable_index);
-  // Can be null if there is no free space in the code cache.
+  VtableStub* s = new(stub_code_length) VtableStub(true, vtable_index, caller_is_c1);
+  // Can be nullptr if there is no free space in the code cache.
   if (s == nullptr) {
     return nullptr;
   }
@@ -61,6 +61,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   int       slop_delta = 0;
   // No variance was detected in vtable stub sizes. Setting index_dependent_slop == 0 will unveil any deviation from this observation.
   const int index_dependent_slop     = 0;
+  ByteSize  entry_offset = caller_is_c1 ? Method::from_compiled_inline_offset() :  Method::from_compiled_inline_ro_offset();
 
   ResourceMark    rm;
   CodeBuffer      cb(s->entry_point(), stub_code_length);
@@ -117,7 +118,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
     Label L;
     __ cmpptr(method, NULL_WORD);
     __ jcc(Assembler::equal, L);
-    __ cmpptr(Address(method, Method::from_compiled_offset()), NULL_WORD);
+    __ cmpptr(Address(method, entry_offset), NULL_WORD);
     __ jcc(Assembler::notZero, L);
     __ stop("Vtable entry is null");
     __ bind(L);
@@ -128,7 +129,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   // method (rbx): Method*
   // rcx: receiver
   address ame_addr = __ pc();
-  __ jmp( Address(rbx, Method::from_compiled_offset()));
+  __ jmp( Address(rbx, entry_offset));
 
   masm->flush();
   slop_bytes += index_dependent_slop; // add'l slop for size variance due to large itable offsets
@@ -138,11 +139,12 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
 }
 
 
-VtableStub* VtableStubs::create_itable_stub(int itable_index) {
+VtableStub* VtableStubs::create_itable_stub(int itable_index, bool caller_is_c1) {
   // Read "A word on VtableStub sizing" in share/code/vtableStubs.hpp for details on stub sizing.
   const int stub_code_length = code_size_limit(false);
-  VtableStub* s = new(stub_code_length) VtableStub(false, itable_index);
-  // Can be null if there is no free space in the code cache.
+  ByteSize  entry_offset = caller_is_c1 ? Method::from_compiled_inline_offset() :  Method::from_compiled_inline_ro_offset();
+  VtableStub* s = new(stub_code_length) VtableStub(false, itable_index, caller_is_c1);
+  // Can be nullptr if there is no free space in the code cache.
   if (s == nullptr) {
     return nullptr;
   }
@@ -209,7 +211,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   // We expect we need index_dependent_slop extra bytes. Reason:
   // The emitted code in lookup_interface_method changes when itable_index exceeds 15.
   // For linux, a very narrow estimate would be 112, but Solaris requires some more space (130).
-  const ptrdiff_t estimate = 136;
+  const ptrdiff_t estimate = 144;
   const ptrdiff_t codesize = lookupSize + index_dependent_slop;
   slop_delta  = (int)(estimate - codesize);
   slop_bytes += slop_delta;
@@ -228,7 +230,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
     Label L2;
     __ cmpptr(method, NULL_WORD);
     __ jcc(Assembler::equal, L2);
-    __ cmpptr(Address(method, Method::from_compiled_offset()), NULL_WORD);
+    __ cmpptr(Address(method, entry_offset), NULL_WORD);
     __ jcc(Assembler::notZero, L2);
     __ stop("compiler entrypoint is null");
     __ bind(L2);
@@ -236,7 +238,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
 #endif // ASSERT
 
   address ame_addr = __ pc();
-  __ jmp(Address(method, Method::from_compiled_offset()));
+  __ jmp(Address(method, entry_offset));
 
   __ bind(L_no_such_interface);
   // Handle IncompatibleClassChangeError in itable stubs.

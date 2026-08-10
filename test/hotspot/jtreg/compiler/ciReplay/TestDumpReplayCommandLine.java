@@ -32,7 +32,7 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+TieredCompilation
- *      compiler.ciReplay.TestDumpReplayCommandLine
+ *      ${test.main.class}
  */
 
 package compiler.ciReplay;
@@ -40,15 +40,7 @@ package compiler.ciReplay;
 import jdk.test.lib.Asserts;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.StringTokenizer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class TestDumpReplayCommandLine extends DumpReplayBase {
 

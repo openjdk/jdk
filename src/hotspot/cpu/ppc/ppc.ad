@@ -1171,16 +1171,16 @@ bool followed_by_acquire(const Node *load) {
 
 // PPC port: Removed use of lazy constant construct.
 
-int MachCallStaticJavaNode::ret_addr_offset() {
+int MachCallStaticJavaNode::ret_addr_offset() const {
   // It's only a single branch-and-link instruction.
   return 4;
 }
 
-int MachCallDynamicJavaNode::ret_addr_offset() {
+int MachCallDynamicJavaNode::ret_addr_offset() const {
   return 12;
 }
 
-int MachCallRuntimeNode::ret_addr_offset() {
+int MachCallRuntimeNode::ret_addr_offset() const {
   if (rule() == CallRuntimeDirect_rule) {
     // CallRuntimeDirectNode uses call_c.
 #if defined(ABI_ELFv2)
@@ -1542,11 +1542,6 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   C->output()->set_frame_complete(__ offset());
 }
 
-uint MachPrologNode::size(PhaseRegAlloc *ra_) const {
-  // Variable size. determine dynamically.
-  return MachNode::size(ra_);
-}
-
 int MachPrologNode::reloc() const {
   // Return number of relocatable values contained in this instruction.
   return 1; // 1 reloc entry for load_const(toc).
@@ -1603,11 +1598,6 @@ void MachEpilogNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
     }
     __ safepoint_poll(*code_stub, temp, true /* at_return */, true /* in_nmethod */);
   }
-}
-
-uint MachEpilogNode::size(PhaseRegAlloc *ra_) const {
-  // Variable size. Determine dynamically.
-  return MachNode::size(ra_);
 }
 
 int MachEpilogNode::reloc() const {
@@ -1960,6 +1950,18 @@ uint BoxLockNode::size(PhaseRegAlloc *ra_) const {
 }
 
 #ifndef PRODUCT
+void MachVEPNode::format(PhaseRegAlloc* ra_, outputStream* st) const
+{
+  Unimplemented();
+}
+#endif
+
+void MachVEPNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc* ra_) const
+{
+  Unimplemented();
+}
+
+#ifndef PRODUCT
 void MachUEPNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   st->print_cr("---- MachUEPNode ----");
   st->print_cr("...");
@@ -1970,11 +1972,6 @@ void MachUEPNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   // This is the unverified entry point.
   __ ic_check(CodeEntryAlignment);
   // Argument is valid and klass is as expected, continue.
-}
-
-uint MachUEPNode::size(PhaseRegAlloc *ra_) const {
-  // Variable size. Determine dynamically.
-  return MachNode::size(ra_);
 }
 
 //=============================================================================
@@ -9533,6 +9530,17 @@ instruct castP2X(iRegLdst dst, iRegP_N2P src) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct castN2X(iRegLdst dst, iRegNsrc src) %{
+  match(Set dst (CastP2X src));
+
+  format %{ "MR      $dst, $src \t// Ptr->Long" %}
+  // variable size, 0 or 4.
+  ins_encode %{
+    __ mr_if_needed($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct castPP(iRegPdst dst) %{
   match(Set dst (CastPP dst));
   format %{ " -- \t// castPP of $dst" %}
@@ -11049,8 +11057,8 @@ instruct array_size(iRegLdst dst, iRegPsrc end, iRegPsrc start) %{
 %}
 
 // Clear-array with constant short array length. The versions below can use dcbz with cnt > 30.
-instruct inlineCallClearArrayShort(immLmax30 cnt, rarg2RegP base, Universe dummy, regCTR ctr) %{
-  match(Set dummy (ClearArray cnt base));
+instruct inlineCallClearArrayShort(immLmax30 cnt, rarg2RegP base, immL_0 zero, Universe dummy, regCTR ctr) %{
+  match(Set dummy (ClearArray (Binary cnt base) zero));
   effect(USE_KILL base, KILL ctr);
   ins_cost(2 * MEMORY_REF_COST);
 
@@ -11062,8 +11070,8 @@ instruct inlineCallClearArrayShort(immLmax30 cnt, rarg2RegP base, Universe dummy
 %}
 
 // Clear-array with constant large array length.
-instruct inlineCallClearArrayLarge(immL cnt, rarg2RegP base, Universe dummy, iRegLdst tmp, regCTR ctr) %{
-  match(Set dummy (ClearArray cnt base));
+instruct inlineCallClearArrayLarge(immL cnt, rarg2RegP base, immL_0 zero, Universe dummy, iRegLdst tmp, regCTR ctr) %{
+  match(Set dummy (ClearArray (Binary cnt base) zero));
   effect(USE_KILL base, TEMP tmp, KILL ctr);
   ins_cost(3 * MEMORY_REF_COST);
 
@@ -11075,14 +11083,28 @@ instruct inlineCallClearArrayLarge(immL cnt, rarg2RegP base, Universe dummy, iRe
 %}
 
 // Clear-array with dynamic array length.
-instruct inlineCallClearArray(rarg1RegL cnt, rarg2RegP base, Universe dummy, regCTR ctr) %{
-  match(Set dummy (ClearArray cnt base));
+instruct inlineCallClearArray(rarg1RegL cnt, rarg2RegP base, immL_0 zero, Universe dummy, regCTR ctr) %{
+  match(Set dummy (ClearArray (Binary cnt base) zero));
   effect(USE_KILL cnt, USE_KILL base, KILL ctr);
   ins_cost(4 * MEMORY_REF_COST);
 
   format %{ "ClearArray $cnt, $base" %}
   ins_encode %{
     __ clear_memory_doubleword($base$$Register, $cnt$$Register, R0); // kills cnt, base, R0
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// Clear-array with dynamic array length and non-zero value.
+instruct inlineCallClearArrayWordFill(rarg1RegL cnt, rarg2RegP base, iRegLdst val, Universe dummy, regCTR ctr) %{
+  predicate(((ClearArrayNode*)n)->requires_word_fill());
+  match(Set dummy (ClearArray (Binary cnt base) val));
+  effect(USE_KILL base, KILL ctr);
+  ins_cost(8 * MEMORY_REF_COST);
+
+  format %{ "ClearArray $cnt, $base, $val" %}
+  ins_encode %{
+    __ fill_words($base$$Register, $cnt$$Register, $val$$Register);
   %}
   ins_pipe(pipe_class_default);
 %}
