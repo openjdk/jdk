@@ -783,11 +783,8 @@ public:
   bool is_scalarized_arg(int idx) const;
   bool is_scalarized_buffer_arg(int idx) const;
 
-  bool c1_needs_stack_repair() const { return constMethod()->c1_needs_stack_repair(); }
-  void set_c1_needs_stack_repair() { constMethod()->set_c1_needs_stack_repair(); }
-
-  bool c2_needs_stack_repair() const { return constMethod()->c2_needs_stack_repair(); }
-  void set_c2_needs_stack_repair() { constMethod()->set_c2_needs_stack_repair(); }
+  bool needs_stack_repair() const { return constMethod()->needs_stack_repair(); }
+  void set_needs_stack_repair() { constMethod()->set_needs_stack_repair(); }
 
   bool mismatch() const { return constMethod()->mismatch(); }
   void set_mismatch() { constMethod()->set_mismatch(); }
