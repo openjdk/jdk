@@ -103,7 +103,7 @@ public class TestStringView {
     }
 
     @Test(dataProvider = "strings")
-    public void testStringViewRoundtrip(String string) {
+    public void testStringViewSubstringRoundtrip(String string) {
         for (int srcIndex = 0; srcIndex <= string.length(); srcIndex++) {
             for (int numChars = 0; numChars <= string.length() - srcIndex; numChars++) {
                 MemorySegment.StringView view = MemorySegment.ofString(string, srcIndex, numChars);
