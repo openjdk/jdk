@@ -129,7 +129,7 @@ class WEPollSelectorImpl extends SelectorImpl {
      * thread. The Blocker mechanism is used to arrange for a spare carrier thread to
      * be activated if necessary while the blocking operation is in progress.
      * The maximum underlying poll is 10s to ensure that the Blocker mechanism keeps
-     * a spare thread available for the entire duration of the poll. This avoid
+     * a spare thread available for the entire duration of the poll. This avoids
      * cases where the keep alive timeout kicks in and the spare terminates while
      * the poll is in progress.
      * @param pollTimeout the poll time or -1 to block indefinitely
@@ -154,7 +154,7 @@ class WEPollSelectorImpl extends SelectorImpl {
                 if (rem <= 0) {
                     return 0;
                 }
-                numEntries = poll(Math.clamp(rem, 0, 10_000));  // max 10s
+                numEntries = poll(Math.clamp(rem, 1, 10_000));  // max 10s
                 if (numEntries > 0) {
                     return numEntries;
                 }
