@@ -192,17 +192,22 @@ tier1_compiler_2 = \
   compiler/inlining/ \
   compiler/integerArithmetic/ \
   compiler/interpreter/ \
-  -compiler/classUnloading/methodUnloading/TestOverloadCompileQueues.java \
-  -compiler/codecache/stress \
-  -compiler/codegen/aes \
-  -compiler/gcbarriers/PreserveFPRegistersTest.java \
-  -compiler/igvn/TestMaskedStoreIdealization.java
-
-tier1_compiler_3 = \
   compiler/intrinsics/ \
   compiler/jsr292/ \
   compiler/locks/ \
   compiler/loopopts/ \
+  -compiler/classUnloading/methodUnloading/TestOverloadCompileQueues.java \
+  -compiler/codecache/stress \
+  -compiler/codegen/aes \
+  -compiler/gcbarriers/PreserveFPRegistersTest.java \
+  -compiler/igvn/TestMaskedStoreIdealization.java \
+  -compiler/intrinsics/bmi \
+  -compiler/intrinsics/mathexact \
+  -compiler/intrinsics/sha \
+  -compiler/intrinsics/bigInteger/TestMultiplyToLen.java \
+  -compiler/intrinsics/zip/TestAdler32.java
+
+tier1_compiler_3 = \
   compiler/macronodes/ \
   compiler/memoryinitialization/ \
   compiler/osr/ \
@@ -218,11 +223,6 @@ tier1_compiler_3 = \
   compiler/unsafe/ \
   compiler/valhalla/ \
   compiler/vectorization/ \
-  -compiler/intrinsics/bmi \
-  -compiler/intrinsics/mathexact \
-  -compiler/intrinsics/sha \
-  -compiler/intrinsics/bigInteger/TestMultiplyToLen.java \
-  -compiler/intrinsics/zip/TestAdler32.java \
   -compiler/loopopts/Test7052494.java \
   -compiler/memoryinitialization/ZeroTLABTest.java \
   -compiler/runtime/Test6826736.java \
