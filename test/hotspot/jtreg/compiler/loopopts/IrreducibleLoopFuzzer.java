@@ -217,9 +217,13 @@ public class IrreducibleLoopFuzzer {
         new Operation(List.of(INTS, INTS), List.of(INTS), "iadd"),
         new Operation(List.of(INTS, INTS), List.of(INTS), "imul"),
         new Operation(List.of(INTS, INTS), List.of(INTS), "iand"),
+        new Operation(List.of(INTS, INTS), List.of(INTS), "ior"),
+        new Operation(List.of(INTS, INTS), List.of(INTS), "ixor"),
         new Operation(List.of(LONGS, LONGS), List.of(LONGS), "ladd"),
         new Operation(List.of(LONGS, LONGS), List.of(LONGS), "lmul"),
         new Operation(List.of(LONGS, LONGS), List.of(LONGS), "land"),
+        new Operation(List.of(LONGS, LONGS), List.of(LONGS), "lor"),
+        new Operation(List.of(LONGS, LONGS), List.of(LONGS), "lxor"),
         new Operation(List.of(INTS), List.of(LONGS), "i2l"),
         new Operation(List.of(LONGS), List.of(INTS), "l2i")
     );
