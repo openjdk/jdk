@@ -54,12 +54,12 @@ G1GCPhaseTimes* G1CollectionSet::phase_times() {
 }
 
 static void consume_old_cset_copy_budget(size_t bytes_to_copy, size_t& copy_budget_bytes) {
-  copy_budget_bytes = copy_budget_bytes > bytes_to_copy  ?
+  copy_budget_bytes = copy_budget_bytes > bytes_to_copy ?
                       copy_budget_bytes - bytes_to_copy : 0;
 }
 
 static double remaining_budget_ms(double budget_ms, double time_ms) {
-  return budget_ms > time_ms ? budget_ms - time_ms : 0.0 ;
+  return budget_ms > time_ms ? budget_ms - time_ms : 0.0;
 }
 
 G1CollectionSet::G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy) :

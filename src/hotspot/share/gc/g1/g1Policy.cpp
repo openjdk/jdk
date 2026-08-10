@@ -54,8 +54,8 @@ static size_t evacuation_reserve_bytes(double bytes_to_copy) {
   // (100 + TargetPLABWastePct) represents the increase in expected bytes during
   // copying due to anticipated waste in the PLABs.
   double reserve_regions =
-    ceil(bytes_to_copy / G1HeapRegion::GrainBytes *
-         (1.0 + TargetPLABWastePct / 100.0));
+    ceil(bytes_to_copy * (100.0 + TargetPLABWastePct) /
+         (100.0 * G1HeapRegion::GrainBytes));
 
   if (reserve_regions > SIZE_MAX / G1HeapRegion::GrainBytes) {
     return SIZE_MAX;
