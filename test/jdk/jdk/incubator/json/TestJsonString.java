@@ -25,6 +25,8 @@
 
 /*
  * @test
+ * @bug 8381976
+ * @summary Unit tests for JsonString
  * @modules jdk.incubator.json
  * @run junit TestJsonString
  */

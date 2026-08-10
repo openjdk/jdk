@@ -25,7 +25,8 @@
 
 /*
  * @test
- * @summary JsonBoolean and JsonNull
+ * @bug 8381976
+ * @summary Unit tests for JsonBoolean and JsonNull
  * @modules jdk.incubator.json
  * @run junit TestJsonLiteral
  */

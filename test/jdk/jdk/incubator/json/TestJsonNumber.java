@@ -25,6 +25,8 @@
 
 /*
  * @test
+ * @bug 8381976
+ * @summary Unit tests for JsonNumber
  * @modules jdk.incubator.json
  * @enablePreview
  * @run junit TestJsonNumber

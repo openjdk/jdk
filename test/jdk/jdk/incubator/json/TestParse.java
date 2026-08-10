@@ -25,8 +25,9 @@
 
 /*
  * @test
- * @modules jdk.incubator.json
+ * @bug 8381976
  * @summary Checks non JSON subtype specific parse behavior
+ * @modules jdk.incubator.json
  * @run junit TestParse
  */
 

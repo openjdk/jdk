@@ -25,6 +25,7 @@
 
 /*
  * @test
+ * @bug 8381976
  * @summary Tests methods that generate JSON documents
  * @modules jdk.incubator.json
  * @run junit TestGenerate
