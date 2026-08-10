@@ -75,10 +75,22 @@ public class NPEInPreviewTest {
     static MyValue nullStaticVal;
 
     static void testNullRestrictedFieldError() {
-        String expectedMessage = "Cannot assign field \"val\" because \"val\" is a null restricted field and there's an attempt to store null in it";
+        String expectedMessage = "Cannot assign field \"val\" because \"test\" is null or \"val\" is a null restricted field and there's an attempt to store null in it";
         try {
             var test = new NPEInPreviewTest();
             test.val = null;
+        } catch (NullPointerException npe) {
+            String message = npe.getMessage();
+            System.out.println("*** " + message);
+            Asserts.assertEquals(expectedMessage, message);
+        }
+    }
+
+    static void testNullRestrictedFieldStoredInNullError() {
+        String expectedMessage = "Cannot assign field \"val\" because \"test\" is null or \"val\" is a null restricted field and there's an attempt to store null in it";
+        try {
+            NPEInPreviewTest test = null;
+            test.val = new MyValue();
         } catch (NullPointerException npe) {
             String message = npe.getMessage();
             System.out.println("*** " + message);
@@ -165,6 +177,7 @@ public class NPEInPreviewTest {
     public static void main(String[] args) {
         c1Mode = args[0].equals("c1");
         testNullRestrictedFieldError();
+        testNullRestrictedFieldStoredInNullError();
         testActualNullFieldError();
         testNullRestrictedStaticFieldError();
         testNullRestrictedStaticFieldError2();

@@ -1202,17 +1202,13 @@ bool ExceptionMessageBuilder::print_NPE_cause(outputStream* os, int bci, int slo
   address code_base = _method->constMethod()->code_base();
   Bytecodes::Code code = Bytecodes::java_code_at(_method, code_base + bci);
 
-  // Print null assignment to a null restricted type first, without finding the reference.
-  if (code == Bytecodes::_putfield && is_null_restricted_field(_method, code_base, bci)) {
-    int cp_index = Bytes::get_native_u2(code_base + bci + 1);
-    os->print(" because \"%s\" is a null restricted field and there's an attempt to store null in it",
-              get_field_name(_method, cp_index, code));
-    return true;
-  }
-
   if (print_NPE_cause0(os, bci, slot, _max_cause_detail, false, " because \"")) {
     if (code == Bytecodes::_aastore) {
       os->print("\" is null or is a null-free array and there's an attempt to store null in it");
+    } else if (code == Bytecodes::_putfield && is_null_restricted_field(_method, code_base, bci)) {
+      int cp_index = Bytes::get_native_u2(code_base + bci + 1);
+      os->print("\" is null or \"%s\" is a null restricted field and there's an attempt to store null in it",
+                get_field_name(_method, cp_index, code));
     } else if (code == Bytecodes::_putstatic) {
       os->print("\" cannot be stored into a null restricted field");
     } else {
