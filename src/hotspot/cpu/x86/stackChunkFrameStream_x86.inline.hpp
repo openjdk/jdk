@@ -37,7 +37,7 @@ inline bool StackChunkFrameStream<frame_kind>::is_in_frame(void* p0) const {
   int frame_size = _cb->frame_size();
   if (is_compiled()) {
     nmethod* nm = _cb->as_nmethod_or_null();
-    if (nm->needs_stack_repair() && nm->is_compiled_by_c2()) {
+    if (nm->needs_stack_repair()) {
       frame f = to_frame();
       bool augmented = f.was_augmented_on_entry(frame_size);
       if (!augmented) {

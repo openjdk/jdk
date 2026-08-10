@@ -573,12 +573,11 @@ static MyValue1 tmp = null;
     // correctly allocated.
     @Test
     @IR(applyIf = {"InlineTypePassFieldsAsArgs", "true"},
-        counts = {ALLOC_OF_MYVALUE_KLASS, "<= 1"}, // 1 MyValue2 allocation (if not the all-zero value)
+        counts = {ALLOC_OF_MYVALUE_KLASS, "<= 1"}, // 1 MyValue2 allocation (if not the all-zero value): MyValue1.createWithFieldsInline -> setV4
         failOn = {LOAD_OF_ANY_KLASS})
-    // TODO 8350865
-    //@IR(applyIf = {"InlineTypePassFieldsAsArgs", "false"},
-    //    counts = {ALLOC_OF_MYVALUE_KLASS, "<= 2"}, // 1 MyValue1 and 1 MyValue2 allocation (if not the all-zero value)
-    //    failOn = LOAD_OF_ANY_KLASS)
+    @IR(applyIf = {"InlineTypePassFieldsAsArgs", "false"},
+        counts = {ALLOC_OF_MYVALUE_KLASS, "<= 3"}, // 1 MyValue1 and 2 MyValue2 allocation (if not the all-zero value): same as above + the local v (MyValue1) + MyValue2.DEFAULT for the calls to MyValue2.hashInterpreted()
+        failOn = LOAD_OF_ANY_KLASS)
     public long test20(boolean deopt, Method m) {
         MyValue1 v = MyValue1.createWithFieldsInline(rI, rL);
         MyValue2[] va = (MyValue2[])ValueClass.newNullRestrictedNonAtomicArray(MyValue2.class, 3, MyValue2.DEFAULT);
