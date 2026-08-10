@@ -2178,6 +2178,13 @@ public final class String
     }
 
     boolean bytesCompatible(Charset charset, int srcIndex, int numChars) {
+        if (numChars == 0) {
+            return charset == ISO_8859_1.INSTANCE
+                    || charset == UTF_8.INSTANCE
+                    || charset == US_ASCII.INSTANCE
+                    || charset == UTF_16LE.INSTANCE
+                    || charset == UTF_16BE.INSTANCE;
+        }
         if (isLatin1()) {
             if (charset == ISO_8859_1.INSTANCE) {
                 return true; // ok, same encoding

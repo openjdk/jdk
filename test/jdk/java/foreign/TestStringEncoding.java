@@ -610,7 +610,7 @@ public class TestStringEncoding {
             for (Charset charset : standardCharsets()) {
                 boolean expected = compatibleCharsets.contains(charset);
                 boolean actual = StringSupport.bytesCompatible(string, charset, 0, string.length());
-                assertEquals(actual, expected);
+                assertEquals(actual, expected, String.format("charset: %s, string: '%s'", charset, string));
             }
         }
     }
@@ -787,7 +787,16 @@ public class TestStringEncoding {
                         : StandardCharsets.UTF_16BE;
         return new Object[][] {
             {
-                List.of("", "hello world", "123"),
+                List.of(""),
+                Set.of(
+                        StandardCharsets.US_ASCII,
+                        StandardCharsets.ISO_8859_1,
+                        StandardCharsets.UTF_8,
+                        StandardCharsets.UTF_16LE,
+                        StandardCharsets.UTF_16BE),
+            },
+            {
+                List.of("hello world", "123"),
                 Set.of(
                         StandardCharsets.US_ASCII,
                         StandardCharsets.ISO_8859_1,
@@ -802,11 +811,20 @@ public class TestStringEncoding {
                         "snowman \u26C4",
                         "cjk \u4E00\u4E8C",
                         "rainbow \uD83C\uDF08",
-                        "\uD83D\uDE00"),
+                        "\uD83D\uDE00",
+                        "\uFEFF"),
                 Set.of(nativeUtf16),
             },
             {
-                List.of("unpaired surrogate \uD83C", "\uD83D", "\uDC00", "\uDC00\uD83C"), Set.of(),
+                List.of(
+                        "unpaired high surrogate: \uD83C",
+                        "unpaired low surrogate: \uDC00",
+                        "low surrogate followed by high surrogate: \uDC00\uD83C",
+                        "high surrogate followed by high surrogate: \uDC00\uD83C",
+                        "high surrogate followed by a non-low surrogate: \uD83C\uE000",
+                        "valid pair followed by an unpaired low surrogate: \uD83D\uDE00\uDC00",
+                        "unpaired low surrogate followed by valid pair: \uDC00\uD83D\uDE00"),
+                Set.of(),
             },
         };
     }
