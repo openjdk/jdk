@@ -145,6 +145,142 @@ public class InitAssignOp {
         }
     }
 
+    @Test
+    void testInitAssignOpErrors() throws Exception {
+        record TestCase(String source, List<String> expectedCompilationOutput) {}
+        TestCase[] tests = new TestCase[] {
+            new TestCase("""
+                         public class Test {
+                             public Test() {
+                                 ++0;
+                                 super();
+                             }
+                         }
+                         """,
+                         List.of(
+                             "Test.java:3:11: compiler.err.unexpected.type: kindname.variable, kindname.value",
+                             "1 error"
+                         )),
+            new TestCase("""
+                         public class Test {
+                             public Test() {
+                                 ++test();
+                                 super();
+                             }
+                             private static int test() { return 1; }
+                         }
+                         """,
+                         List.of(
+                             "Test.java:3:15: compiler.err.unexpected.type: kindname.variable, kindname.value",
+                             "1 error"
+                         )),
+            new TestCase("""
+                         public class Test {
+                             public Test(int i) {
+                                 ++(i + 1);
+                                 super();
+                             }
+                         }
+                         """,
+                         List.of(
+                             "Test.java:3:14: compiler.err.unexpected.type: kindname.variable, kindname.value",
+                             "1 error"
+                         )),
+
+            new TestCase("""
+                         public class Test {
+                             public Test() {
+                                 0++;
+                                 super();
+                             }
+                         }
+                         """,
+                         List.of(
+                             "Test.java:3:9: compiler.err.unexpected.type: kindname.variable, kindname.value",
+                             "1 error"
+                         )),
+            new TestCase("""
+                         public class Test {
+                             public Test() {
+                                 test()++;
+                                 super();
+                             }
+                             private static int test() { return 1; }
+                         }
+                         """,
+                         List.of(
+                             "Test.java:3:13: compiler.err.unexpected.type: kindname.variable, kindname.value",
+                             "1 error"
+                         )),
+            new TestCase("""
+                         public class Test {
+                             public Test(int i) {
+                                 (i + 1)++;
+                                 super();
+                             }
+                         }
+                         """,
+                         List.of(
+                             "Test.java:3:12: compiler.err.unexpected.type: kindname.variable, kindname.value",
+                             "1 error"
+                         )),
+
+            new TestCase("""
+                         public class Test {
+                             public Test() {
+                                 0 += 1;
+                                 super();
+                             }
+                         }
+                         """,
+                         List.of(
+                             "Test.java:3:9: compiler.err.unexpected.type: kindname.variable, kindname.value",
+                             "1 error"
+                         )),
+            new TestCase("""
+                         public class Test {
+                             public Test() {
+                                 test() += 1;
+                                 super();
+                             }
+                             private static int test() { return 1; }
+                         }
+                         """,
+                         List.of(
+                             "Test.java:3:13: compiler.err.unexpected.type: kindname.variable, kindname.value",
+                             "1 error"
+                         )),
+            new TestCase("""
+                         public class Test {
+                             public Test(int i) {
+                                 (i + 1) += 1;
+                                 super();
+                             }
+                         }
+                         """,
+                         List.of(
+                             "Test.java:3:12: compiler.err.unexpected.type: kindname.variable, kindname.value",
+                             "1 error"
+                         )),
+        };
+        for (TestCase test : tests) {
+            Path classes = base.resolve("classes");
+            Files.createDirectories(classes);
+            List<String> out;
+
+            out =
+                new JavacTask(tb)
+                        .options("-XDrawDiagnostics",
+                                 "--enable-preview", "--release", System.getProperty("java.specification.version"))
+                        .outdir(classes)
+                        .sources(test.source())
+                        .run(Task.Expect.FAIL)
+                        .writeAll()
+                        .getOutputLines(Task.OutputKind.DIRECT);
+            Assertions.assertEquals(test.expectedCompilationOutput(), out);
+        }
+    }
+
     @BeforeEach
     public void setUp(TestInfo info) {
         base = Paths.get(".")
