@@ -154,9 +154,9 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   // ParkEvent of unblocker thread.
   static ParkEvent* _vthread_unparker_ParkEvent;
 
-  // Because of frequent access, the metadata field is at offset zero (0).
-  // Enforced by the assert() in metadata_addr() contains the _object's hashCode.
-  volatile uintptr_t _metadata;     // metadata
+  // Because of frequent access, the _metadata field is at offset zero (0),
+  // which is enforced by a STATIC_ASSERT() in metadata_addr().
+  volatile uintptr_t _metadata;     // contains the _object's hashCode
   WeakHandle _object;               // backward object pointer
   // Separate _metadata and _owner on different cache lines since both can
   // have busy multi-threaded access. _metadata and _object are set at initial

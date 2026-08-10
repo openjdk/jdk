@@ -3442,9 +3442,6 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   return JNI_OK;
 }
 
-void Arguments::set_compact_headers_flags() {
-}
-
 jint Arguments::apply_ergo() {
   // Set flags based on ergonomics.
   jint result = set_ergonomics_flags();
@@ -3454,8 +3451,6 @@ jint Arguments::apply_ergo() {
   GCConfig::arguments()->set_heap_size();
 
   GCConfig::arguments()->initialize();
-
-  set_compact_headers_flags();
 
   CompressedKlassPointers::pre_initialize();
 

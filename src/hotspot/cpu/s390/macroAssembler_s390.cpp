@@ -4265,15 +4265,6 @@ void MacroAssembler::test_oop_prototype_bit(Register oop, Register temp_reg, int
   assert(test_bit <= 0xFFFF, "must fit in low 16 bits for z_tmll");
   // Load mark word
   z_lg(temp_reg, oopDesc::mark_offset_in_bytes(), oop);
-  if (!UseObjectMonitorTable) {
-    Label test_mark_word;
-    // If unlocked bit is set we can directly use the mark word
-    z_tmll(temp_reg, markWord::unlocked_value);
-    z_brnaz(test_mark_word);
-    // Slow path: use klass prototype
-    load_prototype_header(temp_reg, oop);
-    bind(test_mark_word);
-  }
   z_tmll(temp_reg, test_bit);
   // Use branch_optimized to handle both near and far branches automatically
   branch_optimized(jmp_set ? Assembler::bcondNotAllZero : Assembler::bcondAllZero, jmp_label);

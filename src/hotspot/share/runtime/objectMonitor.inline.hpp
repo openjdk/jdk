@@ -75,12 +75,14 @@ inline volatile uintptr_t* ObjectMonitor::metadata_addr() {
 }
 
 inline markWord ObjectMonitor::header() const {
-  guarantee(false, "Locking with OM table does not use header");
+  // Locking with OM table does not use header.
+  ShouldNotCallThis();
   return markWord(metadata());
 }
 
 inline void ObjectMonitor::set_header(markWord hdr) {
-  guarantee(false, "Locking with OM table does not use header");
+  // Locking with OM table does not use header.
+  ShouldNotCallThis();
   set_metadata(hdr.value());
 }
 

@@ -683,8 +683,7 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
     markWord temp, test;
     intptr_t hash;
     markWord mark = obj->mark_acquire();
-    // The hash can simply be installed in the object header when
-    // using the Object Monitor Table.
+    // The hash is located in the object header.
     hash = mark.hash();
     if (hash != 0) {                     // if it has a hash, just return it
       return hash;

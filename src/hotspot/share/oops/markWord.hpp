@@ -254,12 +254,14 @@ class markWord {
     return markWord((value() & ~lock_mask_in_place) | monitor_value);
   }
   ObjectMonitor* monitor() const {
-    guarantee(false, "Locking with OM table does not use markWord for monitors");
+    // Locking with OM table does not use markWord for monitors.
+    ShouldNotCallThis();
     return (ObjectMonitor*) nullptr;
   }
 
   static markWord encode(ObjectMonitor* monitor) {
-    guarantee(false, "Locking with OM table does not use markWord for monitors");
+    // Locking with OM table does not use markWord for monitors.
+    ShouldNotCallThis();
     return markWord(0);
   }
 
