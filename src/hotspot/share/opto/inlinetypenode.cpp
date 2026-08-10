@@ -2093,10 +2093,6 @@ Node* LoadFlatNode::get_payload_value(PhaseIterGVN& igvn, Node* ctrl, BasicType 
   assert((offset + type2aelembytes(value_bt)) <= type2aelembytes(payload_bt), "Value does not fit into payload");
   Node* value = nullptr;
   // Shift the field to the low-order bits of the payload.
-  // On little-endian, a field at byte offset N occupies bits [N*8 + fieldBits-1 : N*8],
-  // so we shift right by N*8.
-  // On big-endian, a field at byte offset N occupies bits [(payloadBytes-N-fieldBytes)*8 + fieldBits-1 :
-  // (payloadBytes-N-fieldBytes)*8], so we shift right by (payloadBytes-N-fieldBytes)*8.
 #ifdef VM_LITTLE_ENDIAN
   int shift = offset << LogBitsPerByte;
 #else
@@ -2298,7 +2294,12 @@ Node* StoreFlatNode::set_payload_value(PhaseIterGVN& igvn, BasicType payload_bt,
     assert(val_bt == T_INT, "Unsupported type: %s", type2name(val_bt));
   }
 
-  Node* shift_val = igvn.intcon(offset << LogBitsPerByte);
+#ifdef VM_LITTLE_ENDIAN
+  int shift = offset << LogBitsPerByte;
+#else
+  int shift = (type2aelembytes(payload_bt) - type2aelembytes(val_bt) - offset) << LogBitsPerByte;
+#endif
+  Node* shift_val = igvn.intcon(shift);
   if (payload_bt == T_LONG) {
     // Convert to long and remove the sign bit (the backend will fold this and emit a zero extend i2l)
     value = igvn.transform(new ConvI2LNode(value));
