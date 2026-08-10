@@ -5007,9 +5007,11 @@ bool LibraryCallKit::inline_getArrayProperties(ArrayPropertiesCheck check) {
 Node* LibraryCallKit::load_default_refined_array_klass(Node* klass_node, bool type_array_guard) {
   RegionNode* region = new RegionNode(2);
   const TypeAryKlassPtr* load_type = TypeAryKlassPtr::OBJECT_ARRAY_OR_NULL;
-  const TypeKlassPtr* phi_type = load_type;
+  const TypeKlassPtr* phi_type;
   if (type_array_guard) {
     phi_type = TypeInstKlassPtr::OBJECT_OR_NULL; // Use very general type for Phi
+  } else {
+    phi_type = load_type;
   }
   Node* phi = new PhiNode(region, phi_type);
 
