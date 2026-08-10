@@ -2092,8 +2092,17 @@ void LoadFlatNode::expand_projs_atomic(PhaseIterGVN& igvn, Node* ctrl, Node* pay
 Node* LoadFlatNode::get_payload_value(PhaseIterGVN& igvn, Node* ctrl, BasicType payload_bt, Node* payload, const Type* value_type, BasicType value_bt, int offset) {
   assert((offset + type2aelembytes(value_bt)) <= type2aelembytes(payload_bt), "Value does not fit into payload");
   Node* value = nullptr;
-  // Shift to the right position in the long value
-  Node* shift_val = igvn.intcon(offset << LogBitsPerByte);
+  // Shift the field to the low-order bits of the payload.
+  // On little-endian, a field at byte offset N occupies bits [N*8 + fieldBits-1 : N*8],
+  // so we shift right by N*8.
+  // On big-endian, a field at byte offset N occupies bits [(payloadBytes-N-fieldBytes)*8 + fieldBits-1 :
+  // (payloadBytes-N-fieldBytes)*8], so we shift right by (payloadBytes-N-fieldBytes)*8.
+#ifdef VM_LITTLE_ENDIAN
+  int shift = offset << LogBitsPerByte;
+#else
+  int shift = (type2aelembytes(payload_bt) - type2aelembytes(value_bt) - offset) << LogBitsPerByte;
+#endif
+  Node* shift_val = igvn.intcon(shift);
   if (payload_bt == T_LONG) {
     value = igvn.transform(new URShiftLNode(payload, shift_val));
     value = igvn.transform(new ConvL2INode(value));
