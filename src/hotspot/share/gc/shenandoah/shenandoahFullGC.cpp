@@ -563,9 +563,7 @@ public:
     _ctx(ShenandoahHeap::heap()->global_generation()->complete_marking_context()) {}
 
   void heap_region_do(ShenandoahHeapRegion* r) override {
-    if (r->is_pinned() && !r->has_live()) {
-      fatal("Pinned region %zu should have live (pinned) objects.", r->index());
-    }
+    r->assert_pinned_has_live();
 
     if (r->is_humongous_start()) {
       oop humongous_obj = cast_to_oop(r->bottom());

@@ -830,6 +830,12 @@ size_t ShenandoahHeapRegion::pin_count() const {
   return _critical_pins.load_relaxed();
 }
 
+#ifdef ASSERT
+void ShenandoahHeapRegion::assert_pinned_has_live() const {
+  assert(!is_pinned() || has_live(), "Pinned region %zu should have live (pinned) objects.", index());
+}
+#endif
+
 void ShenandoahHeapRegion::set_affiliation(ShenandoahAffiliation new_affiliation) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 

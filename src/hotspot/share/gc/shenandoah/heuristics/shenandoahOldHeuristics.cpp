@@ -418,9 +418,7 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
       continue;
     }
 
-    if (region->is_pinned() && !region->has_live()) {
-      fatal("Pinned region %zu should have live (pinned) objects.", region->index());
-    }
+    region->assert_pinned_has_live();
 
     size_t garbage = region->garbage();
     size_t live_bytes = region->get_live_data_bytes();

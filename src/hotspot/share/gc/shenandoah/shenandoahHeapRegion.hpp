@@ -227,6 +227,7 @@ public:
   void record_pin();
   void record_unpin();
   size_t pin_count() const;
+  void assert_pinned_has_live() const NOT_DEBUG_RETURN;
 
 private:
   static size_t RegionCount;
