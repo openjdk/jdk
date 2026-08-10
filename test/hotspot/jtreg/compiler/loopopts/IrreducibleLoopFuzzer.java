@@ -332,6 +332,7 @@ public class IrreducibleLoopFuzzer {
         }
 
         public void mutate() {
+            // TODO: sample weights upfront in a config.
             Block b = blocks.get(RANDOM.nextInt(blocks.size()));
             int r = RANDOM.nextInt(100);
             if (r < 20) {
