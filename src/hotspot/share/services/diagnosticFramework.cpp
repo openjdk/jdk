@@ -147,10 +147,6 @@ bool DCmdInfo::name_equals(const char* name) const {
   return strcmp(name, this->name()) == 0;
 }
 
-DCmdParser::~DCmdParser() {
-  cleanup();
-}
-
 void DCmdParser::add_dcmd_option(GenDCmdArgument* arg) {
   assert(arg != nullptr, "Sanity");
   if (_options == nullptr) {
