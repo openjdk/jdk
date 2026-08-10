@@ -53,7 +53,7 @@ $(eval $(call SetupJavaCompilation, BUILD_COMPILER_TESTLIBRARY, \
 
 TARGETS += $(BUILD_COMPILER_TESTLIBRARY)
 
-build-compiler-testlibrary: $(TARGETS)
+build-hotspot-compiler-testlibrary: $(TARGETS)
 
 ################################################################################
 # Targets for building test-image.
@@ -67,9 +67,9 @@ $(eval $(call SetupCopyFiles, COPY_COMPILER_TESTLIBRARY, \
 
 IMAGE_TARGETS += $(COPY_COMPILER_TESTLIBRARY)
 
-test-image-compiler-testlibrary: $(IMAGE_TARGETS)
+test-image-hotspot-compiler-testlibrary: $(IMAGE_TARGETS)
 
-.PHONY: build-compiler-testlibrary test-image-compiler-testlibrary
+.PHONY: build-hotspot-compiler-testlibrary test-image-hotspot-compiler-testlibrary
 
 ################################################################################
 
