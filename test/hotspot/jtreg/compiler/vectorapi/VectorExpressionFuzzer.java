@@ -22,26 +22,17 @@
  */
 
 /*
- * @test id=AVX2
- * @bug 8369699
+ * @test
+ * @bug 8369699 8381618
  * @key randomness
  * @summary Test the Template Library's expression generation for the Vector API.
- * @requires os.family == "linux" & os.simpleArch == "x64"
  * @modules jdk.incubator.vector
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @compile ../../compiler/lib/verify/Verify.java
- * @run driver ${test.main.class} -XX:UseAVX=2
+ * @run driver ${test.main.class}
  */
 
-// TODO: remove the x64 and linux restriction above. I added that for now so we are not flooded
-//       with failures in the CI. We should remove these restriction once more bugs are fixed.
-//       x64 linux is the easiest to debug on for me, that's why I picked it.
-//       In addition, I put a UseAVX=2 restriction below, to avoid AVX512 bugs for now.
-//
-//       A trick to extend this to other platforms: create a new run block, so you have full
-//       freedom to restrict it as necessary for platform and vector features.
-//
 // TODO: Some compilation bailouts are to be expected, for example, we've encountered this before:
 //         COMPILE SKIPPED: out of virtual registers in LIR generator (retry at different tier)
 //       Which manifested in:
@@ -75,6 +66,8 @@ import compiler.lib.template_framework.library.Expression.Nesting;
 import compiler.lib.template_framework.library.Operations;
 import compiler.lib.template_framework.library.TestFrameworkClass;
 import compiler.lib.template_framework.library.PrimitiveType;
+import compiler.lib.template_framework.library.ShortCarriesFloat16Type;
+import compiler.lib.template_framework.library.VectorElementType;
 import compiler.lib.template_framework.library.VectorType;
 
 /**
@@ -171,23 +164,39 @@ public class VectorExpressionFuzzer {
         // - We check correctness with a reference method that does the same but runs in the interpreter.
         // - Input values are delivered via fields or array loads.
         // - The final vector is written into an array, and that array is returned.
-        var template2Body = Template.make("expression", "arguments", (Expression expression, List<Object> arguments) -> scope(
-            let("elementType", ((VectorType.Vector)expression.returnType).elementType),
-            """
-            try {
-            #elementType[] out = new #elementType[1000];
-            """,
-            expression.asToken(arguments), ".intoArray(out, 0);\n",
-            "return out;\n",
-            expression.info.exceptions.stream().map(exception ->
-                "} catch (" + exception + " e) { return e;\n"
-            ).toList(),
-            """
-            } finally {
-                // Just javac is happy if there are no exceptions to catch.
-            }
-            """
-        ));
+        //
+        // NaN canonicalization (Float16Vector only): the {@code short} carrier of Float16Vector lanes
+        // distinguishes multiple NaN bit patterns, so a structural comparison between two distinct NaN
+        // bit patterns would spuriously fail. We widen the {@code short[]} carrier to {@code float[]}
+        // via {@link Float#float16ToFloat}, which returns a canonical NaN for any NaN input.
+        var template2Body = Template.make("expression", "arguments", (Expression expression, List<Object> arguments) -> {
+            VectorType.Vector retType = (VectorType.Vector) expression.returnType;
+            boolean float16Result = retType.elementType instanceof ShortCarriesFloat16Type;
+            return scope(
+                let("carrierType", retType.elementType.carrierTypeName()),
+                """
+                try {
+                #carrierType[] out = new #carrierType[1000];
+                """,
+                expression.asToken(arguments), ".intoArray(out, 0);\n",
+                float16Result
+                    ? """
+                      // Float16Vector NaN canonicalization: widen short carrier to float for compare.
+                      float[] outF = new float[out.length];
+                      for (int i = 0; i < out.length; i++) { outF[i] = Float.float16ToFloat(out[i]); }
+                      return outF;
+                      """
+                    : "return out;\n",
+                expression.info.exceptions.stream().map(exception ->
+                    "} catch (" + exception + " e) { return e;\n"
+                ).toList(),
+                """
+                } finally {
+                    // Just javac is happy if there are no exceptions to catch.
+                }
+                """
+            );
+        });
 
         var template2 = Template.make("type", (VectorType.Vector type) -> {
             // The depth determines roughly how many operations are going to be used in the expression.
@@ -219,24 +228,25 @@ public class VectorExpressionFuzzer {
                         ));
                     }
                     default -> {
-                        if (argumentType instanceof PrimitiveType t) {
+                        if (argumentType instanceof VectorElementType vet) {
                             // We can use the LibraryRGN to create a new value for the primitive in each
                             // invocation. We have to make sure to call the LibraryRNG in the "defineAndFill",
                             // so we get the same value for both test and reference. If we called LibraryRNG
                             // for "use", we would get separate values, which is not helpful.
                             arguments.add(new TestArgument(
-                                List.of(t.name(), " ", name, " = ", t.callLibraryRNG(), ";\n"),
+                                List.of(vet.carrierTypeName(), " ", name, " = ", vet.callLibraryRNG(), ";\n"),
                                 name,
-                                List.of(t.name(), " ", name),
+                                List.of(vet.carrierTypeName(), " ", name),
                                 name
                             ));
                         } else if (argumentType instanceof VectorType.Vector t) {
-                            PrimitiveType et = t.elementType;
+                            VectorElementType et = t.elementType;
+                            String fillMethod = (et instanceof ShortCarriesFloat16Type) ? "fill_float16" : "fill";
                             arguments.add(new TestArgument(
-                                List.of(et.name(), "[] ", name, " = new ", et.name(), "[1000];\n",
-                                        "LibraryRNG.fill(", name,");\n"),
+                                List.of(et.carrierTypeName(), "[] ", name, " = new ", et.carrierTypeName(), "[1000];\n",
+                                        "LibraryRNG.", fillMethod, "(", name,");\n"),
                                 name,
-                                List.of(et.name(), "[] ", name),
+                                List.of(et.carrierTypeName(), "[] ", name),
                                 List.of(t.name(), ".fromArray(", t.speciesName, ", ", name, ", 0)")
                             ));
                         } else if (argumentType instanceof VectorType.Mask t) {

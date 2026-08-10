@@ -388,7 +388,7 @@ public:
      _used(0), _committed(0), _garbage(0), _regions(0), _humongous_waste(0), _trashed_regions(0), _trashed_used(0)
   {
     _region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
-    // Retired regions are not necessarily filled, thouugh their remnant memory is considered used.
+    // Retired regions are not necessarily filled, though their remnant memory is considered used.
     _min_free_size = PLAB::min_size() * HeapWordSize;
   };
 

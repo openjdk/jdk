@@ -1,0 +1,107 @@
+#
+# Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+ARCH := $(word 1,$(subst -, ,$(TARGET)))
+
+ifeq ($(TARGET), arm-linux-gnueabihf)
+  ARCH=armhfp
+endif
+
+$(info ARCH=$(ARCH))
+
+ifeq ($(PREFIX),)
+  $(error PREFIX not set)
+endif
+
+BUILDDIR := $(OUTPUT_ROOT)/$(HOST)/$(TARGET)
+TARGETDIR := $(PREFIX)/$(TARGET)
+SYSROOT := $(TARGETDIR)/sysroot
+
+# Base OS information and repositories
+#
+# BASE_OS_REPOS is a space-separated set of repositories. Each entry
+# is of the format <repo_name>,<url> where <repo_name> is a unique
+# identifier across the set of repositories.
+
+ifeq ($(BASE_OS), OL)
+  ifeq ($(filter aarch64 x86_64, $(ARCH)), )
+    $(error Only "aarch64 x86_64" architectures are supported for OL, but "$(ARCH)" was requested)
+  endif
+  BASE_OS_VERSION ?= 7
+  ifeq ($(BASE_OS_VERSION), 6)
+    ifeq ($(filter x86_64, $(ARCH)), )
+      $(error Only "x86_64" architectures are supported for OL6, but "$(ARCH)" was requested)
+    endif
+    BASE_OS_DESCRIPTION_VERSION := 6.4
+    REPO_BASE_URL := https://yum.oracle.com/repo/OracleLinux/OL6/4
+    BASE_OS_REPOS := base,$(REPO_BASE_URL)/base/$(ARCH)
+  else ifeq ($(BASE_OS_VERSION), 7)
+    BASE_OS_DESCRIPTION_VERSION := 7.6
+    REPO_BASE_URL := https://yum.oracle.com/repo/OracleLinux/OL7/6
+    BASE_OS_REPOS := base,$(REPO_BASE_URL)/base/$(ARCH)
+  else
+    REPO_BASE_URL := https://yum.oracle.com/repo/OracleLinux/OL$(BASE_OS_VERSION)
+    BASE_OS_REPOS := baseos,$(REPO_BASE_URL)/baseos/latest/$(ARCH) appstream,$(REPO_BASE_URL)/appstream/$(ARCH)
+    BASE_OS_DESCRIPTION_VERSION := $(BASE_OS_VERSION)
+  endif
+  BASE_OS_DESCRIPTION := OL$(BASE_OS_DESCRIPTION_VERSION)
+else ifeq ($(BASE_OS), Fedora)
+  ifeq ($(filter aarch64 armhfp ppc64le riscv64 s390x x86_64, $(ARCH)), )
+    $(error Only "aarch64 armhfp ppc64le riscv64 s390x x86_64" architectures are supported for Fedora, but "$(ARCH)" was requested)
+  endif
+  ifeq ($(ARCH), riscv64)
+    BASE_OS_VERSION ?= 43
+    BASE_OS_BUILD := 6640
+    REPO_BASE_URL := https://riscv-koji.fedoraproject.org/repos-dist/f$(BASE_OS_VERSION)/$(BASE_OS_BUILD)/riscv64
+    BASE_OS_REPOS := riscv64,$(REPO_BASE_URL)
+  else
+    ifeq ($(ARCH), armhfp)
+      BASE_OS_VERSION ?= 36
+    else
+      BASE_OS_VERSION ?= 41
+    endif
+    ifeq ($(ARCH), armhfp)
+      ifneq ($(BASE_OS_VERSION), 36)
+        $(error Fedora 36 is the last release supporting "armhfp", but $(BASE_OS_VERSION) was requested)
+      endif
+    endif
+    LATEST_ARCHIVED_OS_VERSION := 41
+    ifeq ($(filter aarch64 x86_64 armhfp, $(ARCH)), )
+      FEDORA_TYPE := fedora-secondary
+    else
+      FEDORA_TYPE := fedora/linux
+    endif
+    NOT_ARCHIVED := $(shell [ $(BASE_OS_VERSION) -gt $(LATEST_ARCHIVED_OS_VERSION) ] && echo true)
+    ifeq ($(NOT_ARCHIVED),true)
+      RPM_REPO_URL := https://dl.fedoraproject.org/pub/$(FEDORA_TYPE)/releases/$(BASE_OS_VERSION)/Everything/$(ARCH)/os
+    else
+      RPM_REPO_URL := https://archives.fedoraproject.org/pub/archive/$(FEDORA_TYPE)/releases/$(BASE_OS_VERSION)/Everything/$(ARCH)/os
+    endif
+    BASE_OS_REPOS := os,$(RPM_REPO_URL)
+  endif
+  BASE_OS_DESCRIPTION := Fedora_$(BASE_OS_VERSION)
+else
+  $(error Unknown base OS $(BASE_OS))
+endif

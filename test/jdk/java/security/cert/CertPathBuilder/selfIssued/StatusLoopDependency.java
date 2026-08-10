@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@
  * @run main/othervm StatusLoopDependency alice
  */
 
-import java.security.DEREncodable;
+import java.security.BinaryEncodable;
 import java.security.PEMDecoder;
 import java.security.Security;
 import java.security.cert.CertPathBuilder;
@@ -210,9 +210,9 @@ public final class StatusLoopDependency {
 
     private static CertStore generateCertificateStore() throws Exception {
 
-        Collection<DEREncodable> entries = new HashSet<>();
+        Collection<BinaryEncodable> entries = new HashSet<>();
 
-        DEREncodable cert = pemDecoder.decode(targetCertStr, X509Certificate.class);
+        BinaryEncodable cert = pemDecoder.decode(targetCertStr, X509Certificate.class);
         entries.add(cert);
 
         cert = pemDecoder.decode(subCaCertStr, X509Certificate.class);
@@ -228,7 +228,7 @@ public final class StatusLoopDependency {
         entries.add(cert);
 
         // generate CRL from CRL string
-        DEREncodable mixes = pemDecoder.decode(topCrlStr, X509CRL.class);
+        BinaryEncodable mixes = pemDecoder.decode(topCrlStr, X509CRL.class);
         entries.add(mixes);
 
         mixes = pemDecoder.decode(subCrlStr, X509CRL.class);

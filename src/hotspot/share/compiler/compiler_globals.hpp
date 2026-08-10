@@ -273,7 +273,7 @@
           "mode if posssible")                                              \
                                                                             \
   product(ccstr, CompilationMode, "default",                                \
-          "Compilation modes: "                                             \
+          "(Deprecated) Compilation modes: "                                \
           "default: normal tiered compilation; "                            \
           "quick-only: C1-only mode; "                                      \
           "high-only: C2-only mode.")                                       \
