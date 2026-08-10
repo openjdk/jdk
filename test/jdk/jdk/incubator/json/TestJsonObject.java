@@ -259,7 +259,7 @@ public class TestJsonObject {
               "c": 2,
               "b": 3
             }""";
-            assertEquals(json, Json.toDisplayString(Json.parse(json), 2));
+            assertEquals(json, Json.toDisplayString(Json.parse(json), "  "));
         }
 
         // Ensure decoded escape sequences are translated to valid JSON

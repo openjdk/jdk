@@ -56,12 +56,12 @@
  * <h2><a>Generating JSON documents</a></h2>
  *
  * Generating JSON text is performed with either {@link
- * JsonValue#toString()} or {@link Json#toDisplayString(JsonValue, int)}.
+ * JsonValue#toString()} or {@link Json#toDisplayString(JsonValue, String)}.
  * These methods produce String representations of a {@code JsonValue}.
  * The returned text adheres to the JSON grammar defined in RFC 8259.
  * {@code JsonValue.toString()} produces the most compact representation which does not
  * include extra whitespaces or line-breaks, preferable for network transaction
- * or storage. {@code Json.toDisplayString(JsonValue, int)} produces a text which
+ * or storage. {@code Json.toDisplayString(JsonValue, String)} produces a text which
  * is human friendly, preferable for debugging or logging.
  *
  * @spec https://datatracker.ietf.org/doc/html/rfc8259 RFC 8259: The JavaScript

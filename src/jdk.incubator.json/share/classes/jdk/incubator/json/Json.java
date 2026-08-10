@@ -43,7 +43,7 @@ import jdk.incubator.json.impl.Utils;
  * parsing throws a {@link JsonParseException}. Note that duplicate names in
  * a {@code JsonObject} also result in this exception.
  * <p>
- * {@link #toDisplayString(JsonValue, int)} produces a
+ * {@link #toDisplayString(JsonValue, String)} produces a
  * JSON text representation of the given {@code JsonValue} suitable for display.
  *
  * @spec https://datatracker.ietf.org/doc/html/rfc8259 RFC 8259: The JavaScript
@@ -108,32 +108,34 @@ public final class Json {
      * suited for display.
      *
      * @param value the {@code JsonValue} to create the display string from. Non-null.
-     * @param indent the number of spaces used for the indentation. Zero or positive.
-     * @throws NullPointerException if {@code value} is {@code null}
-     * @throws IllegalArgumentException if {@code indent} is a negative number
+     * @param indent the {@code String} for the indentation. Non-null.
+     * @throws IllegalArgumentException if {@code indent} contains non-JSON whitespace.
+     * @throws NullPointerException if {@code value} or {@code indent} is {@code null}
      * @see JsonValue#toString()
      */
-    public static String toDisplayString(JsonValue value, int indent) {
+    public static String toDisplayString(JsonValue value, String indent) {
         Objects.requireNonNull(value);
-        if (indent < 0) {
-            throw new IllegalArgumentException("indent is negative");
+        Objects.requireNonNull(indent);
+        if (!indent.chars().allMatch(c ->
+            c == ' ' || c == '\t' || c == '\n' || c == '\r')) {
+            throw new IllegalArgumentException("indent contains non-JSON whitespace: " + indent);
         }
         var s = new StringBuilder();
         toDisplayString(value, s, 0, indent, false);
         return s.toString();
     }
 
-    private static void toDisplayString(JsonValue jv, StringBuilder s, int col, int indent, boolean isField) {
+    private static void toDisplayString(JsonValue jv, StringBuilder s, int depth, String indent, boolean isField) {
         switch (jv) {
-            case JsonObject jo -> toDisplayString(jo, s, col, indent, isField);
-            case JsonArray ja -> toDisplayString(ja, s, col, indent, isField);
-            default -> s.append(" ".repeat(isField ? 1 : col)).append(jv);
+            case JsonObject jo -> toDisplayString(jo, s, depth, indent, isField);
+            case JsonArray ja -> toDisplayString(ja, s, depth, indent, isField);
+            default -> s.append(isField ? " " : indent.repeat(depth)).append(jv);
         }
     }
 
     private static void toDisplayString(JsonObject jo, StringBuilder s,
-                                          int col, int indent, boolean isField) {
-        var prefix = " ".repeat(col);
+                                          int depth, String indent, boolean isField) {
+        var prefix = indent.repeat(depth);
         if (isField) {
             s.append(" ");
         } else {
@@ -145,12 +147,11 @@ public final class Json {
         } else {
             s.append("{\n");
             map.forEach((name, val) -> {
-                s.append(prefix)
-                        .append(" ".repeat(indent))
-                        .append("\"")
-                        .append(Utils.escape(name))
-                        .append("\":");
-                Json.toDisplayString(val, s, col + indent, indent, true);
+                s.append(indent.repeat(depth + 1))
+                    .append("\"")
+                    .append(Utils.escape(name))
+                    .append("\":");
+                Json.toDisplayString(val, s, depth + 1, indent, true);
                 s.append(",\n");
             });
             s.setLength(s.length() - 2); // trim final comma
@@ -159,8 +160,8 @@ public final class Json {
     }
 
     private static void toDisplayString(JsonArray ja, StringBuilder s,
-                                          int col, int indent, boolean isField) {
-        var prefix = " ".repeat(col);
+                                          int depth, String indent, boolean isField) {
+        var prefix = indent.repeat(depth);
         if (isField) {
             s.append(" ");
         } else {
@@ -172,7 +173,7 @@ public final class Json {
         } else {
             s.append("[\n");
             for (JsonValue v : list) {
-                Json.toDisplayString(v, s, col + indent, indent, false);
+                Json.toDisplayString(v, s, depth + 1, indent, false);
                 s.append(",\n");
             }
             s.setLength(s.length() - 2); // trim final comma/newline

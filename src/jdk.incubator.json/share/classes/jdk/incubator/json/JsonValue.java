@@ -149,7 +149,7 @@ import java.util.Optional;
  * {@code JsonValue} overrides {@link Object#toString()} to generate RFC 8259 compliant
  * JSON text in a compact representation with white spaces eliminated.
  * For generating JSON documents suitable for display, use
- * the generation method {@link Json#toDisplayString(JsonValue, int)} instead.
+ * the generation method {@link Json#toDisplayString(JsonValue, String)} instead.
  * <p>
  * Instances of {@code JsonValue} are immutable and thread safe.
  *
@@ -168,9 +168,9 @@ public sealed interface JsonValue permits JsonString, JsonNumber, JsonObject, Js
      * specify stronger preservation behavior for their corresponding JSON type.
      * <p>
      * For a String representation suitable for display, use
-     * {@link Json#toDisplayString(JsonValue, int)}.
+     * {@link Json#toDisplayString(JsonValue, String)}.
      *
-     * @see Json#toDisplayString(JsonValue, int)
+     * @see Json#toDisplayString(JsonValue, String)
      */
     String toString();
 
