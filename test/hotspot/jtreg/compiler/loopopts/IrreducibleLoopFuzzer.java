@@ -144,7 +144,7 @@ public class IrreducibleLoopFuzzer {
         String prefix();
         String descriptor();
         int slots();
-        Object pushCon();
+        String pushCon();
         List<Operation> ifGotoOperations(String label);
         String genRnd();
     }
@@ -154,7 +154,7 @@ public class IrreducibleLoopFuzzer {
         public String prefix() { return "i"; }
         public String descriptor() { return "I"; }
         public int slots() { return 1; }
-        public Object pushCon() { return "ldc_w " + RANDOM.nextInt() + ";\n"; }
+        public String pushCon() { return "ldc_w " + RANDOM.nextInt() + ";\n"; }
 
         public List<Operation> ifGotoOperations(String label) {
             return List.of(
@@ -175,7 +175,7 @@ public class IrreducibleLoopFuzzer {
         public String prefix() { return "l"; }
         public String descriptor() { return "J"; }
         public int slots() { return 2; }
-        public Object pushCon() { return "ldc2_w " + RANDOM.nextLong() + "L;\n"; }
+        public String pushCon() { return "ldc2_w " + RANDOM.nextLong() + "L;\n"; }
 
         public List<Operation> ifGotoOperations(String label) {
             return List.of(
@@ -204,6 +204,21 @@ public class IrreducibleLoopFuzzer {
     }
 
     static record Local(int index, JasmType type) {}
+
+    static record BinaryOp(JasmType type, String op) {}
+
+    static final List<BinaryOp> BINARY_OPERATIONS = List.of(
+        new BinaryOp(INTS, "iadd"),
+        new BinaryOp(INTS, "imul"),
+        new BinaryOp(INTS, "iand"),
+        new BinaryOp(INTS, "ior"),
+        new BinaryOp(INTS, "ixor"),
+        new BinaryOp(LONGS, "ladd"),
+        new BinaryOp(LONGS, "lmul"),
+        new BinaryOp(LONGS, "land"),
+        new BinaryOp(LONGS, "lor"),
+        new BinaryOp(LONGS, "lxor")
+    );
 
     static record Operation(List<JasmType> in, List<JasmType> out, String op) {}
 
@@ -432,14 +447,50 @@ public class IrreducibleLoopFuzzer {
         }
 
         public Object ballancedOp() {
-            Operation op = OPERATIONS.get(RANDOM.nextInt(OPERATIONS.size()));
-            var template = Template.make(() -> scope(
-                """
-                // ballanced op:
-                """,
-                randomOp(OPERATIONS)
-            ));
-            return template.asToken();
+            if (RANDOM.nextInt(3) == 0) {
+                Operation op = OPERATIONS.get(RANDOM.nextInt(OPERATIONS.size()));
+                var template = Template.make(() -> scope(
+                    """
+                    // ballanced op:
+                    """,
+                    randomOp(OPERATIONS)
+                ));
+                return template.asToken();
+            } else {
+                // Binary op that is self-mutating: load and store to same local
+                // so that self-loops are more likely.
+                BinaryOp op = BINARY_OPERATIONS.get(RANDOM.nextInt(BINARY_OPERATIONS.size()));
+
+                List<Local> localIndices = locals.stream()
+                    .filter(l -> l.type == op.type)
+                    .toList();
+
+                String load;
+                String store;
+                if (localIndices.size() > 0) {
+                    var l = localIndices.get(RANDOM.nextInt(localIndices.size()));
+                    load  = l.type.prefix() + "load " + l.index + ";";
+                    store = l.type.prefix() + "store " + l.index + ";";
+                } else {
+                    load = op.type.pushCon();
+                    store = op.type.slots() == 1 ? "pop;" : "pop2;";
+                }
+
+                var template = Template.make(() -> scope(
+                    let("op", op.op),
+                    let("load", load),
+                    let("pushCon", op.type.pushCon()),
+                    let("store", store),
+                    """
+                    // binary operation:
+                    #load
+                    #pushCon
+                    #op;
+                    #store
+                    """
+                ));
+                return template.asToken();
+            }
         }
 
         public Object randomOp(List<Operation> ops) {
