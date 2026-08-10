@@ -278,6 +278,8 @@ public class IrreducibleLoopFuzzer {
         private final List<Local> locals = new ArrayList<Local>();
         private final int localsSize;
 
+        public final List<Local> uninitializedLocals = new ArrayList<Local>();
+
         public Method(String methodName, int mutations) {
             this.methodName = methodName;
             this.entry = new Block();
@@ -294,8 +296,13 @@ public class IrreducibleLoopFuzzer {
             int n = a + 1 + RANDOM.nextInt(6);
             int j = 0;
             for (int i = 0; i < n; i++) {
-                JasmType t = (i < a) ? argumentTypes.get(i) : randomType();
-                locals.add(new Local(j, t));
+                boolean isArgument = i < a;
+                JasmType t = isArgument ? argumentTypes.get(i) : randomType();
+                Local l = new Local(j, t);
+                locals.add(l);
+                if (!isArgument) {
+                    uninitializedLocals.add(l);
+                }
                 j += t.slots();
             }
             this.localsSize = j;
@@ -465,8 +472,7 @@ public class IrreducibleLoopFuzzer {
                 {
                 // Init locals:
                 """,
-                // TODO: avoid killing inputs
-                locals.stream().map(l -> scope(
+                uninitializedLocals.stream().map(l -> scope(
                     l.type.pushCon(),
                     l.type.prefix() + "store " + l.index + ";\n"
                 )).toList(),
