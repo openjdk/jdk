@@ -2069,15 +2069,16 @@ class Http2Connection implements Closeable {
             // allow to be terminated only once
             stateLock.lock();
             try {
+                final IncomingGoAway rcvdGoAway = this.incomingGoAway;
                 // if the connection has previously received a GOAWAY then use the error
                 // code from that frame to determine whether the current termination
                 // cause can be attribtued to the error reported by the GOAWAY frame.
                 // if it can be, then use that inferred termination cause as the effective one
                 // to terminate the connection.
-                final Http2TerminationCause effectiveTC = incomingGoAway == null
+                final Http2TerminationCause effectiveTC = rcvdGoAway == null
                         ? terminationCause
                         : Http2TerminationCause.inferFromGoAway(terminationCause,
-                        incomingGoAway.errorCode);
+                        rcvdGoAway.errorCode);
                 final boolean success = this.terminationCause.compareAndSet(null, effectiveTC);
                 if (!success) {
                     // already terminated or is being terminated by some other thread
