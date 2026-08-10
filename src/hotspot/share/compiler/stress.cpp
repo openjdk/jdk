@@ -37,14 +37,18 @@
 
 static bool should_initialize_stress_seed(CompilerType comp) {
   switch (comp) {
+#ifdef COMPILER1
     case compiler_c1:
       return false;
+#endif // COMPILER1
+#ifdef COMPILER2
     case compiler_c2:
       return StressLCM || StressGCM || StressIGVN || StressCCP ||
         StressIncrementalInlining || StressMacroExpansion ||
         StressMacroElimination || StressUnstableIfTraps ||
         StressBailout || StressLoopPeeling || StressCountedLoop ||
         StressEliminateAllocations;
+#endif // COMPILER2
     default:
       assert(comp != compiler_none && comp != compiler_number_of_types, "expected valid compiler");
       return false;
