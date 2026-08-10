@@ -146,7 +146,6 @@ class ObjectWaiter : public CHeapObj<mtThread> {
 
 class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   friend class VMStructs;
-  JVMCI_ONLY(friend class JVMCIVMStructs;)
 
   static OopStorage* _oop_storage;
 

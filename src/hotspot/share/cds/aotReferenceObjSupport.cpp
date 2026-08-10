@@ -32,6 +32,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -142,6 +143,16 @@ void AOTReferenceObjSupport::stabilize_cached_reference_objects(TRAPS) {
                            vmSymbols::void_method_signature(),
                            CHECK);
     }
+    {
+      TempNewSymbol method_name = SymbolTable::new_symbol("assemblySetup");
+      JavaValue result(T_VOID);
+      Symbol* baseLocale_name = vmSymbols::sun_util_locale_BaseLocale();
+      Klass* baseLocale_klass = SystemDictionary::resolve_or_fail(baseLocale_name, true, CHECK);
+      JavaCalls::call_static(&result, baseLocale_klass,
+                             method_name,
+                             vmSymbols::void_method_signature(),
+                             CHECK);
+    }
 
     {
       Symbol* cds_name  = vmSymbols::jdk_internal_misc_CDS();
@@ -163,9 +174,9 @@ void AOTReferenceObjSupport::init_keep_alive_objs_table() {
   assert_at_safepoint(); // _keep_alive_objs_table uses raw oops
   oop a = _keep_alive_objs_array.resolve();
   if (a != nullptr) {
-    precond(a->is_objArray());
+    precond(a->is_refArray());
     precond(AOTReferenceObjSupport::is_enabled());
-    objArrayOop array = objArrayOop(a);
+    refArrayOop array = oop_cast<refArrayOop>(a);
 
     _keep_alive_objs_table = new (mtClass)KeepAliveObjectsTable();
     for (int i = 0; i < array->length(); i++) {

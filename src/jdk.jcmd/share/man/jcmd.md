@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -77,8 +77,12 @@ jcmd - send diagnostic command requests to a running Java Virtual Machine
 
 The `jcmd` utility is used to send diagnostic command requests to the JVM. It
 must be used on the same machine on which the JVM is running, and have the same
-effective user and group identifiers that were used to launch the JVM. Each
-diagnostic command has its own set of options and arguments. To display the description,
+effective user and group identifiers that were used to launch the JVM. Both must
+use the same temporary file location for communication; this is true by default
+but also see the [`-XX:AltTempDir`](./java.html#-XX_AltTempDir) option that can be
+set for the JVM.
+
+Each diagnostic command has its own set of options and arguments. To display the description,
 syntax, and a list of available options and arguments for a diagnostic command, use the
 name of the command as the argument. For example:
 

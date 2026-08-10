@@ -58,8 +58,6 @@ CompileTask::CompileTask(int compile_id,
   _comp_level(comp_level),
   _compiler(CompileBroker::compiler(comp_level)),
   _comp_directive_matcher(method, static_cast<CompLevel>(comp_level)),
-  JVMCI_ONLY(_has_waiter(_compiler->is_jvmci()) COMMA)
-  JVMCI_ONLY(_blocking_jvmci_compile_state(nullptr) COMMA)
   _num_inlined_bytecodes(0),
   _next(nullptr),
   _prev(nullptr),

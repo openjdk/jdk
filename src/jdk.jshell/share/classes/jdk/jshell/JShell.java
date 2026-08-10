@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,11 @@ import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.io.PrintStream;
 import java.net.InetAddress;
+import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -100,6 +102,7 @@ public class JShell implements AutoCloseable {
     final List<String> extraRemoteVMOptions;
     final List<String> extraCompilerOptions;
     final Function<StandardJavaFileManager, StandardJavaFileManager> fileManagerMapping;
+    final Function<Path, Collection<? extends Path>> binarySourceMapping;
 
     private int nextKeyIndex = 1;
 
@@ -125,6 +128,7 @@ public class JShell implements AutoCloseable {
         this.extraRemoteVMOptions = b.extraRemoteVMOptions;
         this.extraCompilerOptions = b.extraCompilerOptions;
         this.fileManagerMapping = b.fileManagerMapping;
+        this.binarySourceMapping = b.binarySourceMapping;
         try {
             if (b.executionControlProvider != null) {
                 executionControl = b.executionControlProvider.generate(new ExecutionEnvImpl(),
@@ -183,6 +187,7 @@ public class JShell implements AutoCloseable {
         Map<String,String> executionControlParameters;
         String executionControlSpec;
         Function<StandardJavaFileManager, StandardJavaFileManager> fileManagerMapping;
+        Function<Path, Collection<? extends Path>> binarySourceMapping;
 
         Builder() { }
 
@@ -411,6 +416,38 @@ public class JShell implements AutoCloseable {
          */
         public Builder fileManager(Function<StandardJavaFileManager, StandardJavaFileManager> mapping) {
             this.fileManagerMapping = mapping;
+            return this;
+        }
+
+        /**
+         * Add a mapping from roots containing classfiles to roots containing
+         * their corresponding sources.
+         *
+         * <p>The given {@code binarySourceMapping} will be called for various paths
+         * used by JShell. Some of them may be distinct from roots specified in classpath
+         * and module path.
+         *
+         * <p>When looking for a source for a binary class or interface, the roots
+         * containing sources are searched in the given order, and once
+         * a source file corresponding to the given class or interface is found,
+         * the rest of the roots containing sources will be ignored.
+         *
+         * <p>The results of calling {@code binarySourceMapping} may be cached, and the
+         * same file may or may not be queried again.
+         *
+         * <p>The result of calling the {@code binarySourceMapping} may be {@code null},
+         * which will be treated the same way as an empty collection.
+         *
+         * <p>If the result value is of a type that is {@link AutoCloseable}, then it will
+         * be closed when not needed anymore.
+         *
+         * @param binarySourceMapping the binary to source mapper, or {@code null} if none.
+         * @return the {@code Builder} instance (for use in chained
+         *         initialization)
+         * @since 28
+         */
+        public Builder binarySourceMapping(Function<Path, Collection<? extends Path>> binarySourceMapping) {
+            this.binarySourceMapping = binarySourceMapping;
             return this;
         }
 

@@ -63,7 +63,6 @@ void ShenandoahArguments::initialize() {
 
   FLAG_SET_DEFAULT(ShenandoahSATBBarrier,            false);
   FLAG_SET_DEFAULT(ShenandoahLoadRefBarrier,         false);
-  FLAG_SET_DEFAULT(ShenandoahCASBarrier,             false);
   FLAG_SET_DEFAULT(ShenandoahCardBarrier,            false);
   FLAG_SET_DEFAULT(ShenandoahCloneBarrier,           false);
 
@@ -159,20 +158,6 @@ void ShenandoahArguments::initialize() {
       FLAG_SET_DEFAULT(LoopStripMiningIter, 1000);
     }
   }
-#ifdef ASSERT
-  // C2 barrier verification is only reliable when all default barriers are enabled
-  if (ShenandoahVerifyOptoBarriers &&
-          (!FLAG_IS_DEFAULT(ShenandoahSATBBarrier)            ||
-           !FLAG_IS_DEFAULT(ShenandoahLoadRefBarrier)         ||
-           !FLAG_IS_DEFAULT(ShenandoahCASBarrier)             ||
-           !FLAG_IS_DEFAULT(ShenandoahCloneBarrier)
-          )) {
-    warning("Unusual barrier configuration, disabling C2 barrier verification");
-    FLAG_SET_DEFAULT(ShenandoahVerifyOptoBarriers, false);
-  }
-#else
-  guarantee(!ShenandoahVerifyOptoBarriers, "Should be disabled");
-#endif // ASSERT
 #endif // COMPILER2
 
   // Record more information about previous cycles for improved debugging pleasure
@@ -221,6 +206,15 @@ void ShenandoahArguments::initialize() {
               "<= ShenandoahAllocRateSampleWindow (%u)",
         ShenandoahMomentaryAllocRateSampleWindow, ShenandoahRecentAllocRateSampleWindow,
         ShenandoahAllocRateSampleWindow));
+  }
+
+  if (Arguments::is_valhalla_enabled()) {
+    // Flat atomic payloads may contain embedded oops. Current Valhalla code does not handle
+    // it well, missing the GC barriers. As the temporary kludge, disable compressed oops:
+    // this would make flat atomic payloads contain at most one oop, which would be treated
+    // as the single oop field.
+    log_warning(gc)("Shenandoah disables compressed oops to avoid breaking with Valhalla");
+    FLAG_SET_ERGO(UseCompressedOops, false);
   }
 
   FullGCForwarding::initialize_flags(MaxHeapSize);

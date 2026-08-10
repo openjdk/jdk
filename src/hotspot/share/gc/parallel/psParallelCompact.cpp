@@ -78,12 +78,14 @@
 #include "memory/universe.hpp"
 #include "nmt/memTracker.hpp"
 #include "oops/access.inline.hpp"
+#include "oops/flatArrayKlass.inline.hpp"
 #include "oops/instanceClassLoaderKlass.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceMirrorKlass.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/safepoint.hpp"
@@ -96,9 +98,6 @@
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/stack.inline.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci.hpp"
-#endif
 
 #include <math.h>
 
@@ -647,7 +646,6 @@ void PSParallelCompact::post_compact()
   GCTraceTime(Info, gc, phases) tm("Post Compact", &_gc_timer);
   ParCompactionManager::remove_all_shadow_regions();
 
-  CodeCache::on_gc_marking_cycle_finish();
   CodeCache::arm_all_nmethods();
 
   // Need to clear claim bits for the next full-gc (marking and adjust-pointers).
@@ -701,9 +699,9 @@ void PSParallelCompact::post_compact()
 
   heap->prune_scavengable_nmethods();
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   DerivedPointerTable::update_pointers();
-#endif
+#endif // COMPILER2
 
   // Signal that we have completed a visit to all live objects.
   Universe::heap()->record_whole_heap_examined_timestamp();
@@ -977,9 +975,9 @@ bool PSParallelCompact::invoke(bool clear_all_soft_refs, bool should_do_max_comp
     // Let the size policy know we're starting
     size_policy->major_collection_begin();
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
     DerivedPointerTable::clear();
-#endif
+#endif // COMPILER2
 
     ref_processor()->start_discovery(clear_all_soft_refs);
 
@@ -987,10 +985,10 @@ bool PSParallelCompact::invoke(bool clear_all_soft_refs, bool should_do_max_comp
 
     summary_phase(should_do_max_compaction);
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
     assert(DerivedPointerTable::is_active(), "Sanity");
     DerivedPointerTable::set_active(false);
-#endif
+#endif // COMPILER2
 
     forward_to_new_addr();
 
@@ -1171,14 +1169,6 @@ public:
     _klass_cleaning_task() {}
 
   void work(uint worker_id) {
-#if INCLUDE_JVMCI
-    if (EnableJVMCI && worker_id == 0) {
-      // Serial work; only first worker.
-      // Clean JVMCI metadata handles.
-      JVMCI::do_unloading(_unloading_occurred);
-    }
-#endif
-
     // Do first pass of code cache cleaning.
     _code_cache_task.work(worker_id);
 
@@ -1227,6 +1217,7 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
 
   // This is the point where the entire marking should have completed.
   ParCompactionManager::verify_all_marking_stack_empty();
+  CodeCache::on_gc_marking_cycle_finish();
 
   {
     GCTraceTime(Debug, gc, phases) tm("Weak Processing", &_gc_timer);
@@ -1279,8 +1270,7 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
 #endif
 }
 
-template<typename Func>
-void PSParallelCompact::adjust_in_space_helper(SpaceId id, Atomic<uint>* claim_counter, Func&& on_stripe) {
+void PSParallelCompact::adjust_in_space_helper(SpaceId id, Atomic<uint>* claim_counter) {
   MutableSpace* sp = PSParallelCompact::space(id);
   HeapWord* const bottom = sp->bottom();
   HeapWord* const top = sp->top();
@@ -1299,53 +1289,46 @@ void PSParallelCompact::adjust_in_space_helper(SpaceId id, Atomic<uint>* claim_c
       break;
     }
     HeapWord* stripe_end = MIN2(cur_stripe + stripe_size, top);
-    on_stripe(cur_stripe, stripe_end);
+    adjust_in_stripe(cur_stripe, stripe_end);
+  }
+}
+
+size_t PSParallelCompact::adjust_in_obj_with_limit(HeapWord* obj_start, HeapWord* left, HeapWord* right) {
+  precond(mark_bitmap()->is_marked(obj_start));
+  oop obj = cast_to_oop(obj_start);
+  return obj->oop_iterate_size(&pc_adjust_pointer_closure, MemRegion(left, right));
+}
+
+void PSParallelCompact::adjust_in_stripe(HeapWord* stripe_start, HeapWord* stripe_end) {
+  precond(_summary_data.is_region_aligned(stripe_start));
+
+  RegionData* cur_region = _summary_data.addr_to_region_ptr(stripe_start);
+  HeapWord* obj_start;
+  if (cur_region->partial_obj_size() != 0) {
+    obj_start = cur_region->partial_obj_addr();
+    obj_start += adjust_in_obj_with_limit(obj_start, stripe_start, stripe_end);
+  } else {
+    obj_start = stripe_start;
+  }
+
+  while (obj_start < stripe_end) {
+    obj_start = mark_bitmap()->find_obj_beg(obj_start, stripe_end);
+    if (obj_start >= stripe_end) {
+      break;
+    }
+    obj_start += adjust_in_obj_with_limit(obj_start, stripe_start, stripe_end);
   }
 }
 
 void PSParallelCompact::adjust_in_old_space(Atomic<uint>* claim_counter) {
   // Regions in old-space shouldn't be split.
-  assert(!_space_info[old_space_id].split_info().is_valid(), "inv");
+  precond(!_space_info[old_space_id].split_info().is_valid());
 
-  auto scan_obj_with_limit = [&] (HeapWord* obj_start, HeapWord* left, HeapWord* right) {
-    assert(mark_bitmap()->is_marked(obj_start), "inv");
-    oop obj = cast_to_oop(obj_start);
-    return obj->oop_iterate_size(&pc_adjust_pointer_closure, MemRegion(left, right));
-  };
-
-  adjust_in_space_helper(old_space_id, claim_counter, [&] (HeapWord* stripe_start, HeapWord* stripe_end) {
-    assert(_summary_data.is_region_aligned(stripe_start), "inv");
-    RegionData* cur_region = _summary_data.addr_to_region_ptr(stripe_start);
-    HeapWord* obj_start;
-    if (cur_region->partial_obj_size() != 0) {
-      obj_start = cur_region->partial_obj_addr();
-      obj_start += scan_obj_with_limit(obj_start, stripe_start, stripe_end);
-    } else {
-      obj_start = stripe_start;
-    }
-
-    while (obj_start < stripe_end) {
-      obj_start = mark_bitmap()->find_obj_beg(obj_start, stripe_end);
-      if (obj_start >= stripe_end) {
-        break;
-      }
-      obj_start += scan_obj_with_limit(obj_start, stripe_start, stripe_end);
-    }
-  });
+  adjust_in_space_helper(old_space_id, claim_counter);
 }
 
 void PSParallelCompact::adjust_in_young_space(SpaceId id, Atomic<uint>* claim_counter) {
-  adjust_in_space_helper(id, claim_counter, [](HeapWord* stripe_start, HeapWord* stripe_end) {
-    HeapWord* obj_start = stripe_start;
-    while (obj_start < stripe_end) {
-      obj_start = mark_bitmap()->find_obj_beg(obj_start, stripe_end);
-      if (obj_start >= stripe_end) {
-        break;
-      }
-      oop obj = cast_to_oop(obj_start);
-      obj_start += obj->oop_iterate_size(&pc_adjust_pointer_closure);
-    }
-  });
+  adjust_in_space_helper(id, claim_counter);
 }
 
 void PSParallelCompact::adjust_pointers_in_spaces(uint worker_id, Atomic<uint>* claim_counters) {
@@ -1445,6 +1428,20 @@ static void split_regions_for_worker(size_t start, size_t end,
                 + (worker_id < remainder ? 1 : 0);
 }
 
+static bool safe_to_read_header(size_t words) {
+  precond(words > 0);
+
+  // Safe to read if we have enough words for the full header, i.e., both
+  // markWord and Klass pointer.
+  const bool safe = words >= (size_t)oopDesc::header_size();
+
+  // If using Compact Object Headers, the full header is inside the markWord,
+  // so will always be safe to read
+  assert(!UseCompactObjectHeaders || safe, "Compact Object Headers should always be safe");
+
+  return safe;
+}
+
 void PSParallelCompact::forward_to_new_addr() {
   GCTraceTime(Info, gc, phases) tm("Forward", &_gc_timer);
   uint nworkers = ParallelScavengeHeap::heap()->workers().active_workers();
@@ -1455,6 +1452,23 @@ void PSParallelCompact::forward_to_new_addr() {
     explicit ForwardTask(uint num_workers) :
       WorkerTask("PSForward task"),
       _num_workers(num_workers) {}
+
+    static bool should_preserve_mark(oop obj, HeapWord* end_addr) {
+      size_t remaining_words = pointer_delta(end_addr, cast_from_oop<HeapWord*>(obj));
+
+      if (Arguments::is_valhalla_enabled() && !safe_to_read_header(remaining_words)) {
+        // When using Valhalla, it might be necessary to preserve the Valhalla-
+        // specific bits in the markWord. If the entire object header is
+        // copied, the correct markWord (with the appropriate Valhalla bits)
+        // can be safely read from the Klass. However, if the full header is
+        // not copied, we cannot safely read the Klass to obtain this information.
+        // In such cases, we always preserve the markWord to ensure that all
+        // relevant bits, including Valhalla-specific ones, are retained.
+        return true;
+      } else {
+        return obj->mark().must_be_preserved();
+      }
+    }
 
     static void forward_objs_in_range(ParCompactionManager* cm,
                                       HeapWord* start,
@@ -1470,8 +1484,12 @@ void PSParallelCompact::forward_to_new_addr() {
         }
         assert(mark_bitmap()->is_marked(cur_addr), "inv");
         oop obj = cast_to_oop(cur_addr);
+
         if (new_addr != cur_addr) {
-          cm->preserved_marks()->push_if_necessary(obj, obj->mark());
+          if (should_preserve_mark(obj, end)) {
+            cm->preserved_marks()->push_always(obj, obj->mark());
+          }
+
           FullGCForwarding::forward_to(obj, cast_to_oop(new_addr));
         }
         size_t obj_size = obj->size();
@@ -2112,6 +2130,20 @@ HeapWord* PSParallelCompact::partial_obj_end(HeapWord* region_start_addr) {
   return region_start_addr + accumulated_size;
 }
 
+static markWord safe_mark_word_prototype(HeapWord* cur_addr, HeapWord* end_addr) {
+  // If the original markWord contains bits that cannot be reconstructed because
+  // the header cannot be safely read, a placeholder is used. In this case,
+  // the correct markWord is preserved before compaction and restored after
+  // compaction completes.
+  size_t remaining_words = pointer_delta(end_addr, cur_addr);
+
+  if (UseCompactObjectHeaders || (Arguments::is_valhalla_enabled() && safe_to_read_header(remaining_words))) {
+    return cast_to_oop(cur_addr)->klass()->prototype_header();
+  } else {
+    return markWord::prototype();
+  }
+}
+
 // Use region_idx as the destination region, and evacuate all live objs on its
 // source regions to this destination region.
 void PSParallelCompact::fill_region(ParCompactionManager* cm, MoveAndUpdateClosure& closure, size_t region_idx)
@@ -2227,7 +2259,12 @@ void PSParallelCompact::fill_region(ParCompactionManager* cm, MoveAndUpdateClosu
         // This obj doesn't extend into next region; size() is safe to use.
         obj_size = cast_to_oop(cur_addr)->size();
       }
-      closure.do_addr(cur_addr, obj_size);
+
+      markWord mark = safe_mark_word_prototype(cur_addr, end_addr);
+
+      // Perform the move and update of the object
+      closure.do_addr(cur_addr, obj_size, mark);
+
       cur_addr += obj_size;
     } while (cur_addr < end_addr && !closure.is_full());
 
@@ -2347,7 +2384,7 @@ void MoveAndUpdateClosure::complete_region(HeapWord* dest_addr, PSParallelCompac
   region_ptr->set_completed();
 }
 
-void MoveAndUpdateClosure::do_addr(HeapWord* addr, size_t words) {
+void MoveAndUpdateClosure::do_addr(HeapWord* addr, size_t words, markWord mark) {
   assert(destination() != nullptr, "sanity");
   _source = addr;
 
@@ -2366,7 +2403,7 @@ void MoveAndUpdateClosure::do_addr(HeapWord* addr, size_t words) {
     assert(FullGCForwarding::is_forwarded(cast_to_oop(source())), "inv");
     assert(FullGCForwarding::forwardee(cast_to_oop(source())) == cast_to_oop(destination()), "inv");
     Copy::aligned_conjoint_words(source(), copy_destination(), words);
-    cast_to_oop(copy_destination())->init_mark();
+    cast_to_oop(copy_destination())->set_mark(mark);
   }
 
   update_state(words);

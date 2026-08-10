@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -601,7 +601,7 @@ int suspendThreadAtMethod(jvmtiEnv *jvmti, jclass cls, jobject thread, jmethodID
 
     // We need to ensure that the thread is suspended at the right place when the top
     // frame belongs to the test rather than to incidental Java code (classloading,
-    // JVMCI, etc). Below we do resume/suspend in the loop until the target method
+    // etc). Below we do resume/suspend in the loop until the target method
     // is executed in the top frame or the loop counter exceeds the limit.
     for (int i = 0; i < 10; i++) {
         err = jvmti->GetFrameLocation(thread, 0, &method, &loc);
