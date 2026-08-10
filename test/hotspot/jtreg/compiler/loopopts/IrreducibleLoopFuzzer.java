@@ -42,6 +42,7 @@ import java.util.Collections;
 import java.util.Random;
 import jdk.test.lib.Utils;
 import java.util.stream.IntStream;
+import java.util.stream.Collectors;
 
 import compiler.lib.compile_framework.CompileFramework;
 
@@ -81,6 +82,8 @@ import jdk.test.lib.process.ProcessTools;
  *     - irreducible loop
  *     - random edge (arbitrary unstructured control flow)
  * - Variable types
+ *   - random method arguments
+ *   - random locals
  * - Stack height and types
  */
 public class IrreducibleLoopFuzzer {
@@ -88,51 +91,28 @@ public class IrreducibleLoopFuzzer {
 
     private static final long METHOD_TIMEOUT_SECONDS = 5;
 
-    private static final String RUNNER_SOURCE =
-        """
-        package compiler.loopopts.templated;
-
-        import java.lang.reflect.InvocationTargetException;
-
-        public class Runner {
-            public static void main(String[] args) throws Throwable {
-                if (args.length != 1) {
-                    throw new IllegalArgumentException("expected generated method name");
-                }
-
-                try {
-                    for (int i = 0; i < 10_000; i++) {
-                        Templated.class.getMethod(args[0]).invoke(null);
-                    }
-                } catch (InvocationTargetException e) {
-                    throw e.getCause();
-                }
-            }
-        }
-        """;
-
     public static void main(String[] args) throws Exception {
         // Create a new CompileFramework instance.
         CompileFramework comp = new CompileFramework();
 
-        List<String> methodNames = IntStream.range(0, 10)
-            .mapToObj(i -> "test" + i)
+        List<Method> methods = IntStream.range(0, 10)
+            .mapToObj(i -> new Method("test" + i, 10))
             .toList();
 
         // Add a java source file.
-        comp.addJasmSourceCode("compiler.loopopts.templated.Templated", generate(methodNames));
-        comp.addJavaSourceCode("compiler.loopopts.templated.Runner", RUNNER_SOURCE);
+        comp.addJasmSourceCode("compiler.loopopts.templated.Templated", generateMethods(methods));
+        comp.addJavaSourceCode("compiler.loopopts.templated.Runner", generateRunner(methods));
 
         // Compile the source file.
         comp.compile();
 
         int timeoutCount = 0;
-        for (String methodName : methodNames) {
-            if (!runMethod(comp, methodName)) {
+        for (Method method : methods) {
+            if (!runMethod(comp, method.methodName)) {
                 timeoutCount++;
             }
         }
-        System.out.println("Completed. Timeouts " + timeoutCount + " / " + methodNames.size());
+        System.out.println("Completed. Timeouts " + timeoutCount + " / " + methods.size());
     }
 
     private static boolean runMethod(CompileFramework comp, String methodName) throws Exception {
@@ -162,14 +142,17 @@ public class IrreducibleLoopFuzzer {
     static interface JasmType {
         String name();
         String prefix();
+        String descriptor();
         int slots();
         Object pushCon();
         List<Operation> ifGotoOperations(String label);
+        String genRnd();
     }
 
     static class IntType implements JasmType {
         public String name() { return "int"; }
         public String prefix() { return "i"; }
+        public String descriptor() { return "I"; }
         public int slots() { return 1; }
         public Object pushCon() { return "ldc_w " + RANDOM.nextInt() + ";\n"; }
 
@@ -183,11 +166,14 @@ public class IrreducibleLoopFuzzer {
                 new Operation(List.of(INTS, INTS),  List.of(),  "if_icmpeq " + label + ";\n")
             );
         }
+
+        public String genRnd() { return "0"; } // TODO: actually random
     }
 
     static class LongType implements JasmType {
         public String name() { return "long"; }
         public String prefix() { return "l"; }
+        public String descriptor() { return "J"; }
         public int slots() { return 2; }
         public Object pushCon() { return "ldc2_w " + RANDOM.nextLong() + "L;\n"; }
 
@@ -201,6 +187,8 @@ public class IrreducibleLoopFuzzer {
                 new Operation(List.of(LONGS, LONGS),  List.of(),  "lcmp; ifeq " + label + ";\n")
             );
         }
+
+        public String genRnd() { return "0"; } // TODO: actually random
     }
 
     static final JasmType INTS = new IntType();
@@ -281,9 +269,11 @@ public class IrreducibleLoopFuzzer {
     }
 
     static class Method {
-        private final String methodName;
+        public final String methodName;
         private final Block entry;
         private final List<Block> blocks = new ArrayList<Block>();
+
+        public final List<JasmType> argumentTypes = new ArrayList<JasmType>();
 
         private final List<Local> locals = new ArrayList<Local>();
         private final int localsSize;
@@ -293,10 +283,18 @@ public class IrreducibleLoopFuzzer {
             this.entry = new Block();
             blocks.add(this.entry);
 
-            int n = 1 + RANDOM.nextInt(10);
+            // Random Arguments
+            int a = RANDOM.nextInt(4);
+            for (int i = 0; i < a; i++) {
+                JasmType t = randomType();
+                argumentTypes.add(t);
+            }
+
+            // Locals (include arguments)
+            int n = a + 1 + RANDOM.nextInt(6);
             int j = 0;
             for (int i = 0; i < n; i++) {
-                JasmType t = randomType();
+                JasmType t = (i < a) ? argumentTypes.get(i) : randomType();
                 locals.add(new Local(j, t));
                 j += t.slots();
             }
@@ -460,12 +458,14 @@ public class IrreducibleLoopFuzzer {
             var template = Template.make(() -> scope(
                 let("methodName", methodName),
                 let("localsSize", localsSize),
+                let("args", argumentTypes.stream().map(JasmType::descriptor).collect(Collectors.joining())),
                 """
-                public static Method #methodName:"()V"
+                public static Method #methodName:"(#args)V"
                 stack 20 locals #localsSize
                 {
                 // Init locals:
                 """,
+                // TODO: avoid killing inputs
                 locals.stream().map(l -> scope(
                     l.type.pushCon(),
                     l.type.prefix() + "store " + l.index + ";\n"
@@ -483,17 +483,51 @@ public class IrreducibleLoopFuzzer {
         }
     }
 
-    public static String generate(List<String> methodNames) {
+    public static String generateMethods(List<Method> methods) {
         var template = Template.make(() -> scope(
             """
             package compiler/loopopts/templated;
 
             super public class Templated {
             """,
-            methodNames.stream().map(methodName ->
-                new Method(methodName, 10).token()
-            ).toList(),
+            methods.stream().map(Method::token).toList(),
             """
+            }
+            """
+        ));
+        return template.render();
+    }
+
+    public static String generateRunner(List<Method> methods) {
+        var template = Template.make(() -> scope(
+            """
+            package compiler.loopopts.templated;
+
+            import java.lang.reflect.InvocationTargetException;
+
+            public class Runner {
+                public static void main(String[] args) throws Throwable {
+                    if (args.length != 1) {
+                        throw new IllegalArgumentException("expected generated method name");
+                    }
+
+                    switch(args[0]) {
+            """,
+            methods.stream().map(method -> scope(
+                let("methodName", method.methodName),
+                let("args", method.argumentTypes.stream().map(JasmType::genRnd).collect(Collectors.joining(","))),
+                """
+                case "#methodName" -> {
+                    for (int i = 0; i < 10_000; i++) {
+                        Templated.#methodName(#args);
+                    }
+                }
+                """
+            )).toList(),
+            """
+                    default -> throw new RuntimeException("Not handled: " + args[0]);
+                    }
+                }
             }
             """
         ));
