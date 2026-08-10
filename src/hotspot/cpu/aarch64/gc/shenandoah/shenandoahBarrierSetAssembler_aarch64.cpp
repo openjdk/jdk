@@ -319,24 +319,24 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet d
   }
 }
 
-void ShenandoahBarrierSetAssembler::card_barrier(MacroAssembler* masm, Register obj) {
+void ShenandoahBarrierSetAssembler::card_barrier(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2) {
   assert(ShenandoahCardBarrier, "Should have been checked by caller");
+  assert_different_registers(obj, tmp1, tmp2);
+  assert(CardTable::dirty_card_val() == 0, "must be");
 
   __ lsr(obj, obj, CardTable::card_shift());
 
-  assert(CardTable::dirty_card_val() == 0, "must be");
-
   Address curr_ct_holder_addr(rthread, in_bytes(ShenandoahThreadLocalData::card_table_offset()));
-  __ ldr(rscratch1, curr_ct_holder_addr);
+  __ ldr(tmp1, curr_ct_holder_addr);
 
   if (UseCondCardMark) {
     Label L_already_dirty;
-    __ ldrb(rscratch2, Address(obj, rscratch1));
-    __ cbz(rscratch2, L_already_dirty);
-    __ strb(zr, Address(obj, rscratch1));
+    __ ldrb(tmp2, Address(obj, tmp1));
+    __ cbz(tmp2, L_already_dirty);
+    __ strb(zr, Address(obj, tmp1));
     __ bind(L_already_dirty);
   } else {
-    __ strb(zr, Address(obj, rscratch1));
+    __ strb(zr, Address(obj, tmp1));
   }
 }
 
@@ -373,7 +373,7 @@ void ShenandoahBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet 
   // 3: post-barrier: card barrier needs store address
   bool storing_non_null = (val != noreg);
   if (ShenandoahBarrierSet::need_card_barrier(decorators, type) && storing_non_null) {
-    card_barrier(masm, tmp3);
+    card_barrier(masm, tmp3, tmp1, tmp2);
   }
 }
 
@@ -418,6 +418,32 @@ void ShenandoahBarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembl
   // which case we need to take the slow path.
   __ tbnz(tmp, ShenandoahHeap::WEAK_ROOTS_BITPOS, slow_path);
   __ bind(done);
+}
+
+void ShenandoahBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& L_error) {
+  // Check if the oop is in the right area of memory
+  __ mov(tmp2, (intptr_t) Universe::verify_oop_mask());
+  __ andr(tmp1, obj, tmp2);
+  __ mov(tmp2, (intptr_t) Universe::verify_oop_bits());
+
+  // Compare tmp1 and tmp2.  We don't use a compare
+  // instruction here because the flags register is live.
+  __ eor(tmp1, tmp1, tmp2);
+  __ cbnz(tmp1, L_error);
+
+  // This routine is sometimes called before applying GC barriers.
+  // With +COH, loading the klass may end up loading forwarding pointer instead.
+  Label L_skip;
+  if (UseCompactObjectHeaders) {
+    Address gc_state(rthread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
+    __ ldrb(tmp1, gc_state);
+    __ tbnz(tmp1, ShenandoahHeap::HAS_FORWARDED_BITPOS, L_skip);
+  }
+
+  // Make sure klass is 'reasonable', which is not zero.
+  __ load_narrow_klass(tmp1, obj);
+  __ cbz(tmp1, L_error);
+  __ bind(L_skip);
 }
 
 void ShenandoahBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,

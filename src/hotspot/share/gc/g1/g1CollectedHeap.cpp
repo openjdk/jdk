@@ -868,7 +868,7 @@ void G1CollectedHeap::prepare_for_mutator_after_full_collection(size_t allocatio
 
   // Rebuild the code root lists for each region
   rebuild_code_roots();
-  finish_codecache_marking_cycle();
+  CodeCache::arm_all_nmethods();
 
   start_new_collection_set();
   _allocator->init_mutator_alloc_regions();
@@ -1761,12 +1761,11 @@ size_t G1CollectedHeap::unused_committed_regions_in_bytes() const {
 
 // Computes the sum of the storage used by the various regions.
 size_t G1CollectedHeap::used() const {
-  size_t result = _summary_bytes_used + _allocator->used_in_alloc_regions();
-  return result;
+  return used_unlocked() + _allocator->used_in_alloc_regions();
 }
 
 size_t G1CollectedHeap::used_unlocked() const {
-  return _summary_bytes_used;
+  return _summary_bytes_used.load_relaxed();
 }
 
 class SumUsedClosure: public G1HeapRegionClosure {
@@ -2299,7 +2298,7 @@ size_t G1CollectedHeap::tlab_capacity() const {
 }
 
 size_t G1CollectedHeap::tlab_used() const {
-  return _eden.length() * G1HeapRegion::GrainBytes;
+  return _eden.num_regions() * G1HeapRegion::GrainBytes;
 }
 
 // For G1 TLABs should not contain humongous objects, so the maximum TLAB size
@@ -2371,8 +2370,8 @@ void G1CollectedHeap::print_heap_regions() const {
   }
 }
 
-static void print_region_type(outputStream* st, const char* type, uint count, bool last = false) {
-  st->print("%u %s (%zuM)%s", count, type, count * G1HeapRegion::GrainBytes / M, last ? "\n" : ", ");
+static void print_region_type(outputStream* st, const char* type, uint num_regions, bool last = false) {
+  st->print("%u %s (%zuM)%s", num_regions, type, num_regions * G1HeapRegion::GrainBytes / M, last ? "\n" : ", ");
 }
 
 void G1CollectedHeap::print_heap_on(outputStream* st) const {
@@ -2388,10 +2387,10 @@ void G1CollectedHeap::print_heap_on(outputStream* st) const {
 
   StreamIndentor si(st, 1);
   st->print("region size %zuM, ", G1HeapRegion::GrainBytes / M);
-  print_region_type(st, "eden", eden_regions_count());
-  print_region_type(st, "survivor", survivor_regions_count());
-  print_region_type(st, "old", old_regions_count());
-  print_region_type(st, "humongous", humongous_regions_count());
+  print_region_type(st, "eden", num_eden_regions());
+  print_region_type(st, "survivor", num_survivor_regions());
+  print_region_type(st, "old", num_old_regions());
+  print_region_type(st, "humongous", num_humongous_regions());
   print_region_type(st, "free", num_free_regions(), true /* last */);
 
   if (_numa->is_enabled()) {
@@ -2625,7 +2624,7 @@ void G1CollectedHeap::start_new_collection_set() {
 
   clear_region_attr();
 
-  guarantee(_eden.length() == 0, "eden should have been cleared");
+  guarantee(_eden.num_regions() == 0, "eden should have been cleared");
   policy()->transfer_survivors_to_cset(survivor());
 
   // We redo the verification but now wrt to the new CSet which
@@ -2973,7 +2972,7 @@ void G1CollectedHeap::abandon_collection_set() {
 }
 
 size_t G1CollectedHeap::non_young_occupancy_after_allocation(size_t allocation_word_size) const {
-  const size_t cur_occupancy = (old_regions_count() + humongous_regions_count()) * G1HeapRegion::GrainBytes -
+  const size_t cur_occupancy = (num_old_regions() + num_humongous_regions()) * G1HeapRegion::GrainBytes -
                                _allocator->free_bytes_in_retained_old_region();
   // Humongous allocations will always be assigned to non-young heap, so consider
   // that allocation in the result as well. Otherwise the allocation will always
@@ -3004,7 +3003,7 @@ public:
 };
 
 bool G1CollectedHeap::check_no_young_regions() {
-  bool ret = (young_regions_count() == 0);
+  bool ret = (num_young_regions() == 0);
 
   NoYoungRegionsClosure closure;
   heap_region_iterate(&closure);
@@ -3034,18 +3033,18 @@ void G1CollectedHeap::prepare_region_for_full_compaction(G1HeapRegion* hr) {
 }
 
 void G1CollectedHeap::increase_used(size_t bytes) {
-  _summary_bytes_used += bytes;
+  _summary_bytes_used.add_then_fetch(bytes, memory_order_relaxed);
 }
 
 void G1CollectedHeap::decrease_used(size_t bytes) {
-  assert(_summary_bytes_used >= bytes,
+  assert(used_unlocked() >= bytes,
          "invariant: _summary_bytes_used: %zu should be >= bytes: %zu",
-         _summary_bytes_used, bytes);
-  _summary_bytes_used -= bytes;
+         used_unlocked(), bytes);
+  _summary_bytes_used.sub_then_fetch(bytes, memory_order_relaxed);
 }
 
 void G1CollectedHeap::set_used(size_t bytes) {
-  _summary_bytes_used = bytes;
+  _summary_bytes_used.store_relaxed(bytes);
 }
 
 class RebuildRegionSetsClosure : public G1HeapRegionClosure {
@@ -3166,7 +3165,7 @@ bool G1CollectedHeap::has_more_regions(G1HeapRegionAttr dest) {
   if (dest.is_old()) {
     return true;
   } else {
-    return survivor_regions_count() < policy()->max_survivor_regions();
+    return num_survivor_regions() < policy()->max_survivor_regions();
   }
 }
 
@@ -3342,9 +3341,4 @@ void G1CollectedHeap::start_codecache_marking_cycle_if_inactive(bool concurrent_
   if (concurrent_mark_start) {
     CodeCache::arm_all_nmethods();
   }
-}
-
-void G1CollectedHeap::finish_codecache_marking_cycle() {
-  CodeCache::on_gc_marking_cycle_finish();
-  CodeCache::arm_all_nmethods();
 }

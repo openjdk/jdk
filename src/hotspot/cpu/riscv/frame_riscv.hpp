@@ -182,6 +182,10 @@
   }
 
  public:
+  // Support for scalarized inline type calling convention
+  static intptr_t* repair_sender_sp(nmethod* nm, intptr_t* sp, intptr_t** saved_fp_addr);
+  bool was_augmented_on_entry(int& real_size) const;
+
   // Constructors
 
   frame(intptr_t* ptr_sp, intptr_t* ptr_fp, address pc);
@@ -217,8 +221,6 @@
 
   // deoptimization support
   void interpreter_frame_set_last_sp(intptr_t* last_sp);
-
-  static jint interpreter_frame_expression_stack_direction() { return -1; }
 
   // returns the sending frame, without applying any barriers
   inline frame sender_raw(RegisterMap* map) const;

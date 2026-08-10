@@ -24,14 +24,23 @@
 /**
  * @test
  * @summary Basic array hashCode functionality
+ * @library /test/lib
  * @run main/othervm --add-exports java.base/jdk.internal.util=ALL-UNNAMED
  *     --add-opens java.base/jdk.internal.util=ALL-UNNAMED -Xcomp -Xbatch HashCode
  */
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import jdk.test.lib.valueclass.AsValueClass;
 
 public class HashCode {
+
+    @AsValueClass
+    static class Point {
+        int x, y;
+        Point(int x, int y) {this.x = x; this.y = y;}
+    }
+
     private static String[] tests = { "", " ", "a", "abcdefg",
             "It was the best of times, it was the worst of times, it was the age of wisdom, it was the age of foolishness, it was the epoch of belief, it was the epoch of incredulity, it was the season of Light, it was the season of Darkness, it was the spring of hope, it was the winter of despair, we had everything before us, we had nothing before us, we were all going direct to Heaven, we were all going direct the other way- in short, the period was so far like the present period, that some of its noisiest authorities insisted on its being received, for good or for evil, in the superlative degree of comparison only.  -- Charles Dickens, Tale of Two Cities",
             "C'était le meilleur des temps, c'était le pire des temps, c'était l'âge de la sagesse, c'était l'âge de la folie, c'était l'époque de la croyance, c'était l'époque de l'incrédulité, c'était la saison de la Lumière, c'était C'était la saison des Ténèbres, c'était le printemps de l'espoir, c'était l'hiver du désespoir, nous avions tout devant nous, nous n'avions rien devant nous, nous allions tous directement au Ciel, nous allions tous directement dans l'autre sens bref, la période ressemblait tellement à la période actuelle, que certaines de ses autorités les plus bruyantes ont insisté pour qu'elle soit reçue, pour le bien ou pour le mal, au degré superlatif de la comparaison seulement. -- Charles Dickens, Tale of Two Cities (in French)",
@@ -167,8 +176,34 @@ public class HashCode {
             failed = true;
         }
 
+        try {
+            testValueClassArrayHashCode();
+            System.out.println("value class array hashCode tests passed");
+        } catch (RuntimeException e) {
+            System.out.println(e.getMessage());
+            failed = true;
+        }
+
         if (failed) {
             throw new RuntimeException("Some tests failed");
+        }
+    }
+
+    private static void testValueClassArrayHashCode() {
+        Point[] a = {new Point(1, 2), new Point(3, 4)};
+        Point[] b = {new Point(1, 2), new Point(3, 4)}; // distinct instances, same fields
+        int hashA = Arrays.hashCode(a);
+        int hashB = Arrays.hashCode(b);
+        if (Point.class.isValue()) {
+            if (hashA != hashB) {
+                throw new RuntimeException("testValueClassArrayHashCode: expected equal hash codes " +
+                    "for equal value class arrays, got " + hashA + " and " + hashB);
+            }
+            // Repeated calls should produce the same array hash code
+            if (hashA != Arrays.hashCode(a)) {
+                throw new RuntimeException("testValueClassArrayHashCode: " +
+                    "hash code not consistent across repeated calls");
+            }
         }
     }
 }
