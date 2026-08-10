@@ -861,13 +861,6 @@ bool CDSConfig::is_dumping_regenerated_lambdaform_invokers() {
   }
 }
 
-// Prevent the JVM from dumping or using the archived full module graph
-void CDSConfig::disable_full_module_graph() {
-  _is_dumping_full_module_graph = false;
-  _is_using_full_module_graph = false;
-}
-
-
 CDSConfig::DumperThreadMark::DumperThreadMark(JavaThread* current) {
   assert(_dumper_thread == nullptr, "sanity");
   _dumper_thread = current;
@@ -1014,6 +1007,12 @@ bool CDSConfig::is_using_klass_subgraphs() {
   return (is_loading_heap() &&
           !CDSConfig::is_using_aot_linked_classes() &&
           !CDSConfig::is_dumping_final_static_archive());
+}
+
+// Prevent the JVM from dumping or using the archived full module graph
+void CDSConfig::disable_full_module_graph() {
+  _is_dumping_full_module_graph = false;
+  _is_using_full_module_graph = false;
 }
 
 bool CDSConfig::is_using_full_module_graph() {
