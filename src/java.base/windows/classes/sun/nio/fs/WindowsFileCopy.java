@@ -250,6 +250,7 @@ class WindowsFileCopy {
                         RemoveDirectory(targetPath);
                     } catch (WindowsException ignore) { }
                 }
+                throw x;
             }
 
             // copy security attributes. If this fail it doesn't cause the move
@@ -280,7 +281,18 @@ class WindowsFileCopy {
         if (copyAttributes) {
             WindowsFileAttributeViews.Dos view =
                 WindowsFileAttributeViews.createDosView(target, false);
-            view.setAttributes(sourceAttrs);
+            try {
+                view.setAttributes(sourceAttrs);
+            } catch (IOException x) {
+                try {
+                    if (sourceAttrs.isDirectory()) {
+                        RemoveDirectory(targetPath);
+                    } else {
+                        DeleteFile(targetPath);
+                    }
+                } catch (WindowsException ignore) { }
+                throw x;
+            }
 
             try {
                 copySecurityAttributes(source, target, false);
