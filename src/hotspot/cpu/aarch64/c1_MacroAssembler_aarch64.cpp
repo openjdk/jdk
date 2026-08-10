@@ -284,9 +284,9 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
   }
 }
 
-void C1_MacroAssembler::remove_frame(int frame_size_in_bytes, bool needs_stack_repair) {
+void C1_MacroAssembler::remove_frame(int frame_size_in_bytes) {
   save_profile_rng();
-  MacroAssembler::remove_frame(frame_size_in_bytes, needs_stack_repair);
+  MacroAssembler::remove_frame(frame_size_in_bytes);
 }
 
 void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
