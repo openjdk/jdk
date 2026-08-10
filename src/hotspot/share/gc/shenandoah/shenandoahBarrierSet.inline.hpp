@@ -42,7 +42,7 @@
 #include "memory/iterator.inline.hpp"
 #include "oops/oop.inline.hpp"
 
-template <class T>
+template <typename T>
 inline oop ShenandoahBarrierSet::load_reference_barrier(DecoratorSet decorators, oop obj, T* load_addr) {
   if (obj == nullptr) {
     return nullptr;
@@ -81,7 +81,7 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(DecoratorSet decorators,
   return load_reference_barrier_slow(obj, load_addr);
 }
 
-template <class T>
+template <typename T>
 inline void ShenandoahBarrierSet::keepalive_barrier(DecoratorSet decorators, T* addr, oop obj, Filter filter) {
   // Uninitialized and no-keepalive loads/stores do not need barrier.
   if (((decorators & IS_DEST_UNINITIALIZED) != 0) ||
@@ -469,7 +469,7 @@ OopCopyResult ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_
   return result;
 }
 
-template <class T>
+template <typename T>
 void ShenandoahBarrierSet::arraycopy_barrier(T* src, T* dst, size_t count, bool dest_uninit) {
   if (count == 0) {
     // No elements to copy, no need for barrier

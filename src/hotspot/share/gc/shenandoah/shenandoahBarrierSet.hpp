@@ -113,28 +113,28 @@ public:
   template <typename T>
   inline void keepalive_barrier(DecoratorSet decorators, T* addr, oop obj, Filter filter);
 
-  template <class T>
+  template <typename T>
   inline oop load_reference_barrier(DecoratorSet decorators, oop obj, T* load_addr);
+
+  template <typename T>
+  inline void arraycopy_barrier(T* src, T* dst, size_t count, bool dest_uninit);
 
 private:
   void keepalive_barrier_slow(oop obj, Filter filter);
 
-  template <class T>
+  template <typename T>
   oop load_reference_barrier_slow(oop obj, T* load_addr);
 
-  template <bool IS_GENERATIONAL, class T>
+  template <bool IS_GENERATIONAL, typename T>
   bool is_above_tams(const ShenandoahMarkingContext* ctx, T* dst) const;
 
-  template <class T>
-  inline void arraycopy_barrier(T* src, T* dst, size_t count, bool dest_uninit);
-
-  template <bool IS_GENERATIONAL, class T>
+  template <bool IS_GENERATIONAL, typename T>
   void arraycopy_marking(T* dst, size_t count);
 
-  template <class T>
+  template <typename T>
   void arraycopy_evacuation(T* src, size_t count);
 
-  template <class T>
+  template <typename T>
   void arraycopy_update(T* src, size_t count);
 
   template <bool EVAC>

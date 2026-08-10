@@ -203,7 +203,7 @@ void ShenandoahBarrierSet::keepalive_barrier_slow(oop obj, Filter filter) {
   _satb_mark_queue_set.enqueue_known_active(queue, obj);
 }
 
-template <class T>
+template <typename T>
 oop ShenandoahBarrierSet::load_reference_barrier_slow(oop obj, T* load_addr) {
   if (!ShenandoahLoadRefBarrier || !_heap->in_collection_set(obj)) {
     return obj;
@@ -250,7 +250,7 @@ private:
   const ShenandoahCollectionSet* const _cset;
   Thread* const _thread;
 
-  template <class T>
+  template <typename T>
   inline void do_oop_work(T* p) {
     T o = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(o)) {
@@ -288,7 +288,7 @@ void ShenandoahBarrierSet::clone_work(oop obj) {
 template void ShenandoahBarrierSet::clone_work<false>(oop obj);
 template void ShenandoahBarrierSet::clone_work<true>(oop obj);
 
-template <bool IS_GENERATIONAL, class T>
+template <bool IS_GENERATIONAL, typename T>
 bool ShenandoahBarrierSet::is_above_tams(const ShenandoahMarkingContext* ctx, T* dst) const {
   // TAMS for an old region is unreliable during a young-only mark, so overwritten pointers in old dst arrays must
   // be enqueued to preserve old->young referents copied in and overwritten after init mark. See JDK-8373116.
@@ -302,7 +302,7 @@ inline bool ShenandoahBarrierSet::need_bulk_update(HeapWord* ary) const {
   return ary < _heap->heap_region_containing(ary)->get_update_watermark();
 }
 
-template <bool IS_GENERATIONAL, class T>
+template <bool IS_GENERATIONAL, typename T>
 void ShenandoahBarrierSet::arraycopy_marking(T* dst, size_t count) {
   assert(_heap->is_concurrent_mark_in_progress(), "only during marking");
   if (!ShenandoahSATBBarrier) {
@@ -335,7 +335,7 @@ template void ShenandoahBarrierSet::arraycopy_marking<false, narrowOop>(narrowOo
 template void ShenandoahBarrierSet::arraycopy_marking<true, oop>(oop* dst, size_t count);
 template void ShenandoahBarrierSet::arraycopy_marking<true, narrowOop>(narrowOop* dst, size_t count);
 
-template <class T>
+template <typename T>
 void ShenandoahBarrierSet::arraycopy_evacuation(T* src, size_t count) {
   assert(_heap->is_evacuation_in_progress(), "only during evacuation");
   if (!need_bulk_update(reinterpret_cast<HeapWord*>(src))) {
@@ -365,7 +365,7 @@ void ShenandoahBarrierSet::arraycopy_evacuation(T* src, size_t count) {
 template void ShenandoahBarrierSet::arraycopy_evacuation<oop>(oop* dst, size_t count);
 template void ShenandoahBarrierSet::arraycopy_evacuation<narrowOop>(narrowOop* dst, size_t count);
 
-template <class T>
+template <typename T>
 void ShenandoahBarrierSet::arraycopy_update(T* src, size_t count) {
   assert(_heap->is_update_refs_in_progress(), "only during update-refs");
   if (!need_bulk_update(reinterpret_cast<HeapWord*>(src))) {
