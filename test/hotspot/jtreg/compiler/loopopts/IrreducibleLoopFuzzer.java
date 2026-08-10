@@ -79,6 +79,7 @@ import jdk.test.lib.process.ProcessTools;
  *     - if-else
  *     - reducible loop
  *     - irreducible loop
+ *     - random edge (arbitrary unstructured control flow)
  * - Variable types
  * - Stack height and types
  */
@@ -315,6 +316,9 @@ public class IrreducibleLoopFuzzer {
                 insertLoopReducible(b);
             } else if (r < 60) {
                 insertLoopIrreducible(b);
+            } else if (r < 80) {
+                Block b2 = blocks.get(RANDOM.nextInt(blocks.size()));
+                insertRandomEdge(b, b2);
             } else {
                 insertIfElse(b);
             }
@@ -381,7 +385,15 @@ public class IrreducibleLoopFuzzer {
             b.out0 = loop[RANDOM.nextInt(loop.length)];;
             b.out1 = loop[RANDOM.nextInt(loop.length)];;
             // TODO: maybe more entries?
-            // TODO: or just complete random edges?
+        }
+
+        private void insertRandomEdge(Block b, Block b2) {
+            Block b3 = new Block();
+            b3.out0 = b.out0;
+            b3.out1 = b.out1;
+            b.out0 = b2;
+            b.out1 = b3;
+            blocks.add(b3);
         }
 
         public Object pushType(JasmType type) {
