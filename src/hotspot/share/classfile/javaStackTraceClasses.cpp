@@ -375,7 +375,7 @@ static inline const char* method_id_to_name(InstanceKlass* holder, int method_id
 
 static inline Symbol* method_id_to_name_symbol(InstanceKlass* holder, int method_id) {
   Method* method = holder->method_with_orig_idnum(method_id);
-  return (method == nullptr) ? SymbolTable::new_symbol("<redefined deleted>") : method->name();
+  return (method == nullptr) ? SymbolTable::new_symbol("unknown_deleted_by_redefinition") : method->name();
 }
 
 // Print stack trace element to the specified output stream.
