@@ -26,7 +26,7 @@
  * @bug 8362117
  * @summary Basic IR checks to verify that merge validation does not break concat optimizations.
  * @library /test/lib /
- * @run driver compiler.stringopts.TestStringConcatIR
+ * @run driver ${test.main.class}
  */
 
 package compiler.stringopts;

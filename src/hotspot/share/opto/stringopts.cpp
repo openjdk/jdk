@@ -54,7 +54,7 @@ class StringConcat : public ResourceObj {
                                        // to restart at the initial JVMState.
   Unique_Node_List    _allowed_compares; // validate_control_flow() needs to know which compare nodes are
                                          // accepted users of call results. In case of stacked concats,
-                                         // these need to be persisted across merged for validation.
+                                         // these need to be persisted across merges for validation.
 
   static constexpr uint STACKED_CONCAT_UPPER_BOUND = 256; // argument limit for a merged concat.
                                                           // The value 256 was derived by measuring
@@ -291,6 +291,7 @@ StringConcat* StringConcat::merge(StringConcat* other, Node* arg) {
   StringConcat* result = new StringConcat(_stringopts, _end);
 
   Unique_Node_List null_check_ifs;
+  Unique_Node_List skipped_phis;
 
   for (uint x = 0; x < _control.size(); x++) {
     Node* n = _control.at(x);
@@ -321,10 +322,11 @@ StringConcat* StringConcat::merge(StringConcat* other, Node* arg) {
       if (argument(x)->is_Phi()) {
         Node* phi = argument(x);
         assert(phi->as_Phi()->is_diamond_phi() > 0, "must be a diamond phi (ref. skip_string_null_check).");
-        Node* iff  = phi->in(0)->in(1)->in(0);
+        Node* iff = phi->in(0)->in(1)->in(0);
         Node* bol = iff->in(1);
         Node* cmpp = bol->as_Bool()->in(1);
         null_check_ifs.push(iff);
+        skipped_phis.push(phi);
         result->_allowed_compares.push(cmpp);
       }
     } else {
@@ -344,11 +346,24 @@ StringConcat* StringConcat::merge(StringConcat* other, Node* arg) {
     }
   }
 
-  // Verify that no null-check booleans are used in external tests.
-  // Do this pre-check before validate_control_flow() while we still
-  // have the information about the skipped diamond region available.
-  for (uint i = 0; i < null_check_ifs.size(); i++) {
-    Node* bol = null_check_ifs.at(i)->in(1);
+  // Verify that the diamond region isn't shared with non-null check phis;
+  // and that the associated bool doesn't have external uses.
+  for (uint i = 0; i < skipped_phis.size(); i++) {
+    Node* n = skipped_phis.at(i);
+    Node* r = n->in(0);
+    for (SimpleDUIterator j(r); j.has_next(); j.next()) {
+      Node* n2 = j.get();
+      if (n2->is_Phi() && !n2->is_memory_phi() && !skipped_phis.member(n2)) {
+#ifndef PRODUCT
+        if (PrintOptimizeStringConcat) {
+          tty->print_cr("null-check diamond region has external phi uses");
+        }
+#endif
+        return nullptr;
+      }
+    }
+    Node* iff = n->in(0)->in(1)->in(0);
+    Node* bol = iff->in(1);
     for (SimpleDUIterator j(bol); j.has_next(); j.next()) {
       if (!null_check_ifs.member(j.get())) {
 #ifndef PRODUCT
@@ -365,16 +380,20 @@ StringConcat* StringConcat::merge(StringConcat* other, Node* arg) {
   for (uint i = 0; i < _constructors.size(); i++) {
     result->add_constructor(_constructors.at(i));
   }
+
   for (uint i = 0; i < other->_constructors.size(); i++) {
     result->add_constructor(other->_constructors.at(i));
   }
+
   // We add previous _allowed_compares in case of repeated stacked concatenation.
   for (uint i = 0; i < _allowed_compares.size(); i++) {
     result->_allowed_compares.push(_allowed_compares.at(i));
   }
+
   for (uint i = 0; i < other->_allowed_compares.size(); i++) {
     result->_allowed_compares.push(other->_allowed_compares.at(i));
   }
+
   result->_multiple = true;
   return result;
 }
@@ -1051,13 +1070,12 @@ bool StringConcat::validate_control_flow() {
           // toString
           assert(_multiple, "if not _multiple, we should not have a toString on this control path");
           if (!_allowed_compares.member(cmp)) {
-            // Do not store the use in local allowed compares,
-            // as we could be confusing a supported toString null checks with other null checks or uncommon traps.
+            // Should have been populated during merge if valid.
             // This should also be caught in result use verification later but we can fail early here.
             fail = true;
 #ifndef PRODUCT
             if (PrintOptimizeStringConcat) {
-              tty->print_cr("Failing as compare is not part of a recognized string null check.");
+              tty->print_cr("Failing as toString()-dependent compare is not part of a recognized string null check.");
               cmp->dump();
             }
 #endif
@@ -1088,6 +1106,8 @@ bool StringConcat::validate_control_flow() {
               ((v1->is_Proj() && is_SB_toString(v1->in(0)) && ctrl_path.member(v1->in(0))) ||
                (v2->is_Proj() && is_SB_toString(v2->in(0)) && ctrl_path.member(v2->in(0))))) {
             // iftrue -> if -> bool -> cmpp -> resproj -> tostring
+            assert(!_allowed_compares.member(cmp) && !local_allowed_compares.member(cmp), "Unsound dependency on intermediate values");
+            // Would be caught by containment analysis later but we can fail early here.
             fail = true;
             break;
           }
@@ -1144,7 +1164,6 @@ bool StringConcat::validate_control_flow() {
         // XXX should check for possibly merging stores.  simple data merges are ok.
         // The IGVN will make this simple diamond go away when it
         // transforms the Region. Make sure it sees it.
-
         Compile::current()->record_for_igvn(ptr);
         _control.push(ptr);
         ptr = ptr->in(1)->in(0)->in(0);
@@ -1215,7 +1234,7 @@ bool StringConcat::validate_control_flow() {
       }
       int opc = use->Opcode();
       if (opc == Op_Node ||
-         (opc == Op_CmpP && (use->outcnt() == 1) // Inexpensive check. The cmpp validation assumes a unique use.
+         (opc == Op_CmpP && (use->outcnt() == 1) // The cmpp validation assumes a unique use.
                          && (local_allowed_compares.member(use) || _allowed_compares.member(use)))) {
         ctrl_path.push(use);
         continue;

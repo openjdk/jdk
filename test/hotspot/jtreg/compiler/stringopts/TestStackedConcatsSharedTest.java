@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,10 @@
  *          is used as a shared test by two diamond Ifs in the second StringBuilder.
  *          (f): make sure we don't crash outright
  *          (g): external null checks depending on the same test/removed call should not give a wrong result.
- * @run main/othervm compiler.stringopts.TestStackedConcatsSharedTest
- * @run main/othervm -XX:-TieredCompilation -Xcomp
- *                   -XX:CompileOnly=compiler.stringopts.TestStackedConcatsSharedTest::*
- *                   compiler.stringopts.TestStackedConcatsSharedTest
+ *          (h): multiple phis attached to the same diamond region; only one is a proper null check phi.
+ *          (i): non-null check phi reused after intermediate stacked concat: check for correct result
+ * @run main/othervm ${test.main.class}
+ * @run main/othervm -XX:-TieredCompilation -Xcomp -XX:CompileOnly=${test.main.class}::* ${test.main.class}
  */
 
 package compiler.stringopts;
@@ -44,9 +44,19 @@ public class TestStackedConcatsSharedTest {
         if (!s.equals("")) {
             throw new RuntimeException("wrong result");
         }
-        String z = g();
-        if (!z.equals("abcabcabc")) {
-            System.out.println(z);
+        s = g();
+        if (!s.equals("abcabcabc")) {
+            System.out.println(s);
+            throw new RuntimeException("wrong result");
+        }
+        s = h();
+        if (!s.equals("abcabcnotnull")) {
+            System.out.println(s);
+            throw new RuntimeException("wrong result");
+        }
+        s = i();
+        if (!s.equals("abcabcnotnull")) {
+            System.out.println(s);
             throw new RuntimeException("wrong result");
         }
     }
@@ -65,5 +75,32 @@ public class TestStackedConcatsSharedTest {
         s = new StringBuilder(s).toString();
         s = new StringBuilder(String.valueOf(s)).append(String.valueOf(s)).toString() + (s == null ? "def" : "abc");
         return s;
+    }
+
+    static String h() {
+        String s1 = new String("abc");
+        String s2 = new StringBuilder(s1).append(s1).toString();
+        // String arg1 = "";
+        String arg2 = "";
+        if (s2 == null) {
+          arg2 = "null";
+        } else {
+          arg2 = "notnull";
+        }
+        return new StringBuilder(s2).append(arg2).toString();
+    }
+
+    static String i() {
+        String s1 = new String("abc");
+        String s2 = new StringBuilder(s1).append(s1).toString();
+        String arg2 = "";
+        if (s2 == null) {
+          arg2 = "null";
+        } else {
+          arg2 = "notnull";
+        }
+        String s3 = new StringBuilder(s2).toString();
+        String s4 = new StringBuilder(s3).append(arg2).toString();
+        return s4;
     }
 }
