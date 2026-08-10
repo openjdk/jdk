@@ -1672,17 +1672,11 @@ public final class String
         while (sp < sl) {
             char c = StringUTF16.getChar(val, sp++);
             if (Character.isSurrogate(c)) {
-                int uc = -1;
-                char c2;
-                if (Character.isHighSurrogate(c) && sp < sl &&
-                        Character.isLowSurrogate(c2 = StringUTF16.getChar(val, sp))) {
-                    uc = Character.toCodePoint(c, c2);
-                }
-                if (uc < 0) {
+                if (!Character.isHighSurrogate(c) || sp == sl ||
+                        !Character.isLowSurrogate(StringUTF16.getChar(val, sp))) {
                     return true;
-                } else {
-                    sp++;  // 2 chars
                 }
+                sp++; // skip valid low surrogate
             }
         }
         return false;
@@ -2178,6 +2172,8 @@ public final class String
     }
 
     boolean bytesCompatible(Charset charset, int srcIndex, int numChars) {
+        Objects.requireNonNull(charset);
+        Objects.checkFromIndexSize(srcIndex, numChars, length());
         if (numChars == 0) {
             return charset == ISO_8859_1.INSTANCE
                     || charset == UTF_8.INSTANCE
@@ -2199,10 +2195,12 @@ public final class String
         return false;
     }
 
-    // This method is intended to be used together with bytesCompatible.
-    int copyToSegmentRaw(MemorySegment segment, long offset, int srcIndex, int srcLength) {
+    /** This method is intended to be used together with {@link #bytesCompatible(Charset, int, int)}. */
+    int copyToSegmentRaw(MemorySegment segment, long offset, int srcIndex, int numChars) {
+        Objects.requireNonNull(segment);
+        Objects.checkFromIndexSize(srcIndex, numChars, length());
         int byteOffset = srcIndex << coder;
-        int byteLength = srcLength << coder;
+        int byteLength = numChars << coder;
         MemorySegment.copy(value, byteOffset, segment, ValueLayout.JAVA_BYTE, offset, byteLength);
         return byteLength;
     }

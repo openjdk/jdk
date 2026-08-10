@@ -642,7 +642,7 @@ public interface JavaLangAccess {
     /**
      * Copy the string bytes to an existing segment, avoiding intermediate copies.
      */
-    int copyToSegmentRaw(String string, MemorySegment segment, long offset, int srcIndex, int srcLength);
+    int copyToSegmentRaw(String string, MemorySegment segment, long offset, int srcIndex, int numChars);
 
     /**
      * Are the string bytes compatible with the given charset?

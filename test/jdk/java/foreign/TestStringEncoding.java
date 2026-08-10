@@ -377,7 +377,9 @@ public class TestStringEncoding {
                             int byteLength = substring.encodedLength(charset);
                             String roundTrip = text.getString(byteOffset, charset, byteLength);
                             if (charset.newEncoder().canEncode(substring)) {
-                                assertEquals(roundTrip, substring);
+                                assertEquals(roundTrip, substring,
+                                        String.format("charset: %s, string: '%s', srcIndex: %d, numChars: %d",
+                                                charset, testString, srcIndex, numChars));
                             }
                         }
                     }
@@ -395,10 +397,14 @@ public class TestStringEncoding {
                         for (int numChars = 0; numChars <= testString.length() - srcIndex; numChars++) {
                             MemorySegment text = arena.allocateFrom(testString, charset, srcIndex, numChars);
                             String substring = testString.substring(srcIndex, srcIndex + numChars);
-                            assertEquals(text.byteSize(), substring.getBytes(charset).length);
+                            assertEquals(text.byteSize(), substring.getBytes(charset).length,
+                                    String.format("size mismatch - charset: %s, string: '%s', srcIndex: %d, numChars: %d",
+                                            charset, testString, srcIndex, numChars));
                             String roundTrip = text.getString(0, charset, text.byteSize());
                             if (charset.newEncoder().canEncode(substring)) {
-                                assertEquals(roundTrip, substring);
+                                assertEquals(roundTrip, substring,
+                                        String.format("roundtrip mismatch - charset: %s, string: '%s', srcIndex: %d, numChars: %d",
+                                                charset, testString, srcIndex, numChars));
                             }
                         }
                     }
@@ -420,8 +426,12 @@ public class TestStringEncoding {
                             long copied = MemorySegment.copy(testString, charset, srcIndex, text, 0, numChars);
                             String roundTrip = text.getString(0, charset, length);
                             if (charset.newEncoder().canEncode(substring)) {
-                                assertEquals(roundTrip, substring);
-                                assertEquals(copied, length);
+                                assertEquals(copied, length,
+                                        String.format("copied length mismatch - charset: %s, string: '%s', srcIndex: %d, numChars: %d",
+                                                charset, testString, srcIndex, numChars));
+                                assertEquals(roundTrip, substring,
+                                        String.format("roundtrip mismatch - charset: %s, string: '%s', srcIndex: %d, numChars: %d",
+                                                charset, testString, srcIndex, numChars));
                             }
                         }
                     }
@@ -610,9 +620,25 @@ public class TestStringEncoding {
             for (Charset charset : standardCharsets()) {
                 boolean expected = compatibleCharsets.contains(charset);
                 boolean actual = StringSupport.bytesCompatible(string, charset, 0, string.length());
-                assertEquals(actual, expected, String.format("charset: %s, string: '%s'", charset, string));
+                assertEquals(actual, expected,
+                        String.format("charset: %s, string: '%s'", charset, string));
             }
         }
+    }
+
+    @Test
+    public void testBytesCompatibleUnpairedSurrogates() {
+        // [a, high surrogate, low surrogate, b]
+        String testString = "a\uD83C\uDC00b";
+        Charset nativeUtf16 = nativeUtf16();
+        assertTrue(StringSupport.bytesCompatible(testString, nativeUtf16, 0, 1));
+        assertTrue(StringSupport.bytesCompatible(testString, nativeUtf16, 1, 2)); // full surrogate pair
+        assertTrue(StringSupport.bytesCompatible(testString, nativeUtf16, 3, 1));
+
+        assertFalse(StringSupport.bytesCompatible(testString, nativeUtf16, 1, 1)); // unpaired surrogate
+        assertFalse(StringSupport.bytesCompatible(testString, nativeUtf16, 2, 1)); // unpaired surrogate
+
+        assertFalse(StringSupport.bytesCompatible(testString, StandardCharsets.UTF_8, 1, 1));
     }
 
     @Test(dataProvider = "strings")
@@ -625,7 +651,31 @@ public class TestStringEncoding {
                             String substring = string.substring(srcIndex, srcIndex + numChars);
                             var segment = arena.allocate(substring.encodedLength(charset));
                             StringSupport.copyToSegmentRaw(string, segment, 0, srcIndex, numChars);
-                            assertEquals(segment.toArray(JAVA_BYTE), substring.getBytes(charset));
+                            assertEquals(segment.toArray(JAVA_BYTE), substring.getBytes(charset),
+                                    String.format("charset: %s, string: '%s', srcIndex: %d, numChars: %d",
+                                            charset, string, srcIndex, numChars));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Test(dataProvider = "strings")
+    public void testCopyToSegmentRawOffset(String string) {
+        for (Charset charset : standardCharsets()) {
+            for (int srcIndex = 0; srcIndex <= string.length(); srcIndex++) {
+                for (int numChars = 0; numChars <= string.length() - srcIndex; numChars++) {
+                    try (var arena = Arena.ofConfined()) {
+                        if (StringSupport.bytesCompatible(string, charset, srcIndex, numChars)) {
+                            String substring = string.substring(srcIndex, srcIndex + numChars);
+                            int offset = 6;
+                            int encodedLength = substring.encodedLength(charset);
+                            var segment = arena.allocate(encodedLength + offset * 2);
+                            StringSupport.copyToSegmentRaw(string, segment, offset, srcIndex, numChars);
+                            assertEquals(segment.asSlice(offset, encodedLength).toArray(JAVA_BYTE), substring.getBytes(charset),
+                                    String.format("charset: %s, string: '%s', srcIndex: %d, numChars: %d",
+                                            charset, string, srcIndex, numChars));
                         }
                     }
                 }
@@ -779,12 +829,15 @@ public class TestStringEncoding {
         return values.toArray(Object[][]::new);
     }
 
+    public static Charset nativeUtf16() {
+        return ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN
+                ? StandardCharsets.UTF_16LE
+                : StandardCharsets.UTF_16BE;
+    }
+
     @DataProvider
     public static Object[][] stringsAndCompatibleCharsets() {
-        Charset nativeUtf16 =
-                ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN
-                        ? StandardCharsets.UTF_16LE
-                        : StandardCharsets.UTF_16BE;
+        Charset nativeUtf16 = nativeUtf16();
         return new Object[][] {
             {
                 List.of(""),
@@ -820,7 +873,7 @@ public class TestStringEncoding {
                         "unpaired high surrogate: \uD83C",
                         "unpaired low surrogate: \uDC00",
                         "low surrogate followed by high surrogate: \uDC00\uD83C",
-                        "high surrogate followed by high surrogate: \uDC00\uD83C",
+                        "high surrogate followed by high surrogate: \uD83C\uD83C",
                         "high surrogate followed by a non-low surrogate: \uD83C\uE000",
                         "valid pair followed by an unpaired low surrogate: \uD83D\uDE00\uDC00",
                         "unpaired low surrogate followed by valid pair: \uDC00\uD83D\uDE00"),
