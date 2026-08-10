@@ -295,13 +295,8 @@ public class Thread implements Runnable {
         ThreadLocal.ThreadLocalMap terminatingThreadLocals;
 
         /**
-         * Component values:
-         * Zero -> no pool allocated yet
-         * Positive -> Pool released (available)
-         * Negative -> Pool acquired (not available)
-         *
-         * PTRDIFF_MAX (usually 2<sup>63</sup>-1) allows us to use the sign bit
-         * as a flag for acquire state without conflicting with malloc() return values.
+         * Lazily initialized cache storage managed by {@link ConfinedSegmentPool}.
+         * Access is confined to this platform thread, directly or as a carrier.
          */
         long[] confinedMemoryPools;
 
@@ -382,28 +377,20 @@ public class Thread implements Runnable {
     }
 
     long[] confinedMemoryPools() {
-        final FieldHolder holder = this.holder;
-        return holder != null
-                ? holder.confinedMemoryPools
-                : null;
+        return holder.confinedMemoryPools;
     }
 
     long[] getOrCreateConfinedMemoryPools() {
-        final FieldHolder holder = this.holder;
-        if (holder != null) {
-            long[] confinedMemoryPools = holder.confinedMemoryPools;
-            if (confinedMemoryPools == null) {
-                confinedMemoryPools = holder.confinedMemoryPools = new long[4];
-            }
-            return confinedMemoryPools;
+        long[] confinedMemoryPools = holder.confinedMemoryPools;
+        if (confinedMemoryPools == null) {
+            confinedMemoryPools = holder.confinedMemoryPools = new long[4];
         }
-        throw new UnsupportedOperationException("Virtual threads do not support a confined memory pool field");
+        return confinedMemoryPools;
     }
 
     boolean hasConfinedMemoryPools() {
-        final FieldHolder holder = this.holder;
-        final long[] confinedMemoryPools;
-        if (holder != null && (confinedMemoryPools = holder.confinedMemoryPools) != null) {
+        final long[] confinedMemoryPools = holder.confinedMemoryPools;
+        if (confinedMemoryPools != null) {
             for (long pool : confinedMemoryPools) {
                 if (pool != 0) {
                     return true;
@@ -1621,7 +1608,9 @@ public class Thread implements Runnable {
                 TerminatingThreadLocal.threadTerminated();
             }
         } finally {
-            if (isVirtual() || hasConfinedMemoryPools()) {
+            // Avoid initializing ConfinedSegmentPool for threads that
+            // have never used pooling.
+            if (hasConfinedMemoryPools()) {
                 ConfinedSegmentPool.releaseOnThreadExit(this);
             }
             clearReferences();

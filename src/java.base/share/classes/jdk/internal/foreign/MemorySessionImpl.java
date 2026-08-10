@@ -138,7 +138,6 @@ public abstract sealed class MemorySessionImpl
     protected MemorySessionImpl(Thread owner, ResourceList resourceList) {
         this.owner = owner;
         this.resourceList = resourceList;
-        super();
     }
 
     public static MemorySessionImpl createConfined(Thread thread) {

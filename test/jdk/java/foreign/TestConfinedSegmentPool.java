@@ -23,89 +23,74 @@
 
 /*
  * @test
- * @modules java.base/jdk.internal.foreign
+ * @modules java.base/jdk.internal.foreign:+open java.base/jdk.internal.access
  * @library /test/lib
- * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
- *                    --add-opens=java.base/jdk.internal.foreign=ALL-UNNAMED
- *                    -Djava.lang.foreign.native.confined.pool.power.size=0
- *                    TestConfinedSegmentPool
- * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
- *                    --add-opens=java.base/jdk.internal.foreign=ALL-UNNAMED
- *                    -Djava.lang.foreign.native.confined.pool.power.size=1
- *                    TestConfinedSegmentPool
- * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
- *                    --add-opens=java.base/jdk.internal.foreign=ALL-UNNAMED
- *                    -Djava.lang.foreign.native.confined.pool.power.size=2
- *                    TestConfinedSegmentPool
- * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
- *                    --add-opens=java.base/jdk.internal.foreign=ALL-UNNAMED
- *                    -Djava.lang.foreign.native.confined.pool.power.size=3
- *                    TestConfinedSegmentPool
- * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
- *                    --add-opens=java.base/jdk.internal.foreign=ALL-UNNAMED
- *                    -Djava.lang.foreign.native.confined.pool.power.size=4
- *                    TestConfinedSegmentPool
- * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
- *                    --add-opens=java.base/jdk.internal.foreign=ALL-UNNAMED
- *                    -Djava.lang.foreign.native.confined.pool.power.size=5
- *                    TestConfinedSegmentPool
- * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
- *                    --add-opens=java.base/jdk.internal.foreign=ALL-UNNAMED
- *                    -Djava.lang.foreign.native.confined.pool.power.size=6
- *                    TestConfinedSegmentPool
+ * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=0 TestConfinedSegmentPool
+ * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=1 TestConfinedSegmentPool
+ * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=2 TestConfinedSegmentPool
+ * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=3 TestConfinedSegmentPool
+ * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=4 TestConfinedSegmentPool
+ * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=5 TestConfinedSegmentPool
+ * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=6 TestConfinedSegmentPool
  */
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.ConfinedSegmentPool;
 import jdk.test.lib.thread.VThreadRunner;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.lang.IllegalStateException;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.lang.ref.Cleaner;
 import java.lang.ref.Reference;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.LockSupport;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 final class TestConfinedSegmentPool {
 
+    static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
     static final long POOLED_MEMORY_SIZE = ConfinedSegmentPool.pooledMemorySize();
 
-    static final boolean IS_POOL_ACCOMMODATES_TWO_LONGS = POOLED_MEMORY_SIZE >= Long.BYTES * 2;
+    static final boolean POOL_ACCOMMODATES_TWO_LONGS = POOLED_MEMORY_SIZE >= Long.BYTES * 2;
 
     @ParameterizedTest
     @MethodSource("threadFactories")
     void basic(String name, Thread.Builder threadBuilder) throws Throwable {
-        AtomicReference<Object> allocatorRef = new AtomicReference<>();
         AtomicReference<Throwable> failureRef = new AtomicReference<>();
         Thread thread = threadBuilder.factory().newThread(() -> {
             try {
-                assertEquals(0, confinedMemoryPool(Thread.currentThread()));
+                // Virtual threads are using the underlying carrier thread's pool so
+                // there might already be a pool there.
+                if (!Thread.currentThread().isVirtual()) {
+                    assertEquals(0, currentPool());
+                }
 
                 long firstAddress;
                 try (Arena arena = Arena.ofConfined()) {
-                    long allocator = confinedMemoryPool(Thread.currentThread());
-                    assertEquals(0, allocator);
-                    allocatorRef.set(allocator);
+                    long allocator = currentPool();
+                    if (!Thread.currentThread().isVirtual()) {
+                        assertEquals(0, allocator);
+                    }
 
                     MemorySegment firstSegment = arena.allocate(ValueLayout.JAVA_LONG);
                     MemorySegment secondSegment = arena.allocate(ValueLayout.JAVA_LONG);
                     firstAddress = firstSegment.address();
-                    if (IS_POOL_ACCOMMODATES_TWO_LONGS) {
-                        assertEquals(secondSegment.address(), firstAddress + ValueLayout.JAVA_LONG.byteSize());
+                    if (POOL_ACCOMMODATES_TWO_LONGS) {
+                        assertEquals(firstAddress + ValueLayout.JAVA_LONG.byteSize(), secondSegment.address());
                     }
                     firstSegment.set(ValueLayout.JAVA_LONG, 0, -1L);
                     secondSegment.set(ValueLayout.JAVA_LONG, 0, -1L);
@@ -114,12 +99,12 @@ final class TestConfinedSegmentPool {
                 try (Arena arena = Arena.ofConfined()) {
                     MemorySegment firstSegment = arena.allocate(ValueLayout.JAVA_LONG);
                     MemorySegment secondSegment = arena.allocate(ValueLayout.JAVA_LONG);
-                    if (IS_POOL_ACCOMMODATES_TWO_LONGS) {
-                        assertEquals(firstSegment.address(), firstAddress);
-                        assertEquals(secondSegment.address(), firstAddress + ValueLayout.JAVA_LONG.byteSize());
+                    if (POOL_ACCOMMODATES_TWO_LONGS) {
+                        assertEquals(firstAddress, firstSegment.address());
+                        assertEquals(firstAddress + ValueLayout.JAVA_LONG.byteSize(), secondSegment.address());
                     }
-                    assertEquals(firstSegment.get(ValueLayout.JAVA_LONG, 0), 0L);
-                    assertEquals(secondSegment.get(ValueLayout.JAVA_LONG, 0), 0L);
+                    assertEquals(0L, firstSegment.get(ValueLayout.JAVA_LONG, 0));
+                    assertEquals(0L, secondSegment.get(ValueLayout.JAVA_LONG, 0));
                 }
             } catch (Throwable ex) {
                 failureRef.set(ex);
@@ -133,18 +118,17 @@ final class TestConfinedSegmentPool {
             throw failureRef.get();
         }
 
-        if (thread.isVirtual()) {
-            // Give the virtual thread some time to clean up
-            long timeOut = System.nanoTime() + TimeUnit.SECONDS.toNanos(1);
-            while (System.nanoTime() < timeOut) {
-                if (confinedMemoryPool(thread) == 0) {
-                    break;
-                }
-                LockSupport.parkNanos(1_000_000L);
+        if (!thread.isVirtual()) {
+            long[] pools = JLA.getConfinedMemoryPools(thread);
+            if (isPoolEnabled()) {
+                assertNotNull(pools);
+                // Thread-exit cleanup must clear every cache entry.
+                assertArrayEquals(new long[4], pools);
+            } else {
+                // No pool array was ever allocated
+                assertNull(pools);
             }
         }
-
-        assertEquals(name, 0, confinedMemoryPool(thread));
     }
 
     static Stream<Arguments> threadFactories() {
@@ -188,7 +172,7 @@ final class TestConfinedSegmentPool {
 
     @Test
     void closedCachedSegmentCannotAccessReusedSlot() {
-        if (IS_POOL_ACCOMMODATES_TWO_LONGS) {
+        if (POOL_ACCOMMODATES_TWO_LONGS) {
             MemorySegment firstSegment;
             long firstAddress;
             try (Arena firstArena = Arena.ofConfined()) {
@@ -199,7 +183,7 @@ final class TestConfinedSegmentPool {
 
             try (Arena secondArena = Arena.ofConfined()) {
                 MemorySegment secondSegment = secondArena.allocate(ValueLayout.JAVA_LONG);
-                assertEquals(secondSegment.address(), firstAddress);
+                assertEquals(firstAddress, secondSegment.address());
                 secondSegment.set(ValueLayout.JAVA_LONG, 0, -1L);
                 assertThrows(IllegalStateException.class,
                         () -> firstSegment.get(ValueLayout.JAVA_LONG, 0));
@@ -229,11 +213,11 @@ final class TestConfinedSegmentPool {
 
         try (Arena thirdArena = Arena.ofConfined()) {
             MemorySegment thirdSegment = thirdArena.allocate(ValueLayout.JAVA_LONG);
-            if (IS_POOL_ACCOMMODATES_TWO_LONGS) {
-                assertEquals(thirdSegment.address(), firstAddress);
+            if (POOL_ACCOMMODATES_TWO_LONGS) {
+                assertEquals(firstAddress, thirdSegment.address());
             }
-            assertEquals(thirdSegment.get(ValueLayout.JAVA_LONG, 0), 0L);
-            assertEquals(secondSegment.get(ValueLayout.JAVA_LONG, 0), 42L);
+            assertEquals(0L, thirdSegment.get(ValueLayout.JAVA_LONG, 0));
+            assertEquals(42L, secondSegment.get(ValueLayout.JAVA_LONG, 0));
         }
 
         secondArena.close();
@@ -273,7 +257,7 @@ final class TestConfinedSegmentPool {
             try (Arena thirdArena = Arena.ofConfined()) {
                 MemorySegment segment = thirdArena.allocate(ValueLayout.JAVA_BYTE, POOLED_MEMORY_SIZE);
                 for (int j = 0; j < POOLED_MEMORY_SIZE; j++) {
-                    assertEquals(i + ", " + j, segment.get(ValueLayout.JAVA_BYTE, j), 0);
+                    assertEquals(0, segment.get(ValueLayout.JAVA_BYTE, j), i + ", " + j);
                 }
             }
         }
@@ -336,14 +320,12 @@ final class TestConfinedSegmentPool {
 
     @Test
     void noPoolAllocated() {
-        if (!isPoolEnabled()) {
-            try (Arena arena = Arena.ofConfined()) {
-                arena.allocate(1);
-            }
-            // Make sure we didn't allocate a confined memory pool via the above
-            // allocation or any other allocation in another test.
-            assertEquals(0L, confinedMemoryPool(Thread.currentThread()));
+        assumeTrue(isPoolEnabled());
+        long pool;
+        try (Arena arena = Arena.ofConfined()) {
+            pool = arena.allocate(1).address();
         }
+        assertEquals(pool, currentPool());
     }
 
     @Test
@@ -353,16 +335,16 @@ final class TestConfinedSegmentPool {
 
     @Test
     void fallbackAfterAcquirePool() {
-        if (isPoolEnabled()) {
-            try (Arena arena = Arena.ofConfined()) {
-                assertEquals(0L, confinedSessionSp(arena));
-                // From the pool
-                arena.allocate(1);
-                assertEquals(1L, confinedSessionSp(arena));
-                // Fallback allocation because we have already allocated a byte,
-                arena.allocate(POOLED_MEMORY_SIZE, 1);
-                assertEquals(1L, confinedSessionSp(arena));
-            }
+        assumeTrue(isPoolEnabled());
+        try (Arena arena = Arena.ofConfined()) {
+            assertEquals(0L, confinedSessionSp(arena));
+            // From the pool
+            arena.allocate(1);
+            assertEquals(1L, confinedSessionSp(arena));
+            // The full-size allocation no longer fits after consuming one byte and
+            // must use the regular allocator.
+            arena.allocate(POOLED_MEMORY_SIZE, 1);
+            assertEquals(1L, confinedSessionSp(arena));
         }
     }
 
@@ -373,14 +355,13 @@ final class TestConfinedSegmentPool {
 
     @Test
     void uniqueZeroAddresses() {
-        if (isPoolEnabled()) {
-            try (Arena arena = Arena.ofConfined()) {
-                MemorySegment first = arena.allocate(0, 1);
-                MemorySegment second = arena.allocate(0, 1);
-                assertEquals(0, first.byteSize());
-                assertEquals(0, second.byteSize());
-                assertNotEquals(first.address(), second.address());
-            }
+        assumeTrue(isPoolEnabled());
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment first = arena.allocate(0, 1);
+            MemorySegment second = arena.allocate(0, 1);
+            assertEquals(0, first.byteSize());
+            assertEquals(0, second.byteSize());
+            assertNotEquals(first.address(), second.address());
         }
     }
 
@@ -389,138 +370,103 @@ final class TestConfinedSegmentPool {
         VThreadRunner.run(this::uniqueZeroAddresses);
     }
 
-    @ParameterizedTest
-    @MethodSource("threadFactories")
-    void acquiredPoolIsCleanedUpOnThreadExit(String name, Thread.Builder threadBuilder) throws Throwable {
-        if (isPoolEnabled()) {
-            CountDownLatch acquired = new CountDownLatch(1);
-            CountDownLatch exit = new CountDownLatch(1);
-            AtomicReference<Throwable> failureRef = new AtomicReference<>();
+    @Test
+    void acquiredPoolIsCleanedUpOnThreadExit() throws Throwable {
+        assumeTrue(isPoolEnabled());
 
-            Thread thread = threadBuilder.factory().newThread(() -> {
-                boolean acquiredCountedDown = false;
-                try {
-                    // First, use a scratch arena so that the local pool gets registered
-                    // with the thread.
-                    try (Arena scratch = Arena.ofConfined()) {
-                        // Make sure to actually allocate something or else
-                        // no local pool is ever created.
-                        scratch.allocate(ValueLayout.JAVA_BYTE);
-                    }
-                    // Deliberately keep this second arena open until the thread completes
-                    Arena arena = Arena.ofConfined();
-                    arena.allocate(ValueLayout.JAVA_BYTE);
-                    assertNotEquals(0, confinedMemoryPool(Thread.currentThread()));
+        AtomicReference<Throwable> failure = new AtomicReference<>();
 
-                    acquired.countDown();
-                    acquiredCountedDown = true;
-                    assertTrue("timed out waiting to exit",
-                            exit.await(10, TimeUnit.SECONDS));
+        Thread thread = Thread.ofPlatform().unstarted(() -> {
+            Arena[] cached = new Arena[4];
+            Arena[] acquired = new Arena[2];
 
-                    Reference.reachabilityFence(arena);
-                } catch (Throwable ex) {
-                    failureRef.compareAndSet(null, ex);
-                    if (!acquiredCountedDown) {
-                        acquired.countDown();
-                    }
-                }
-            });
-
-            thread.start();
             try {
-                assertTrue("timed out waiting for " + name + " thread to acquire pool",
-                        acquired.await(10, TimeUnit.SECONDS));
-                if (failureRef.get() != null) {
-                    throw failureRef.get();
-                }
-                assertTrue(name + " thread did not acquire pool",
-                        confinedMemoryPool(thread) != 0);
+                allocateOneByte(cached);
+                closeAll(cached); // Four positive entries for released pools
+
+                allocateOneByte(acquired); // Two entries become negative as they now are acquired
+
+                long[] pools = JLA.getConfinedMemoryPools(Thread.currentThread());
+                assertNotNull(pools);
+                // Terminate with two available and two acquired pools.
+                assertEquals(2L, Arrays.stream(pools).filter(p -> p > 0).count());
+                assertEquals(2L, Arrays.stream(pools).filter(p -> p < 0).count());
+
+
+                // Deliberately leave the acquired arenas open.
+            } catch (Throwable ex) {
+                failure.set(ex);
             } finally {
-                exit.countDown();
-                thread.join(TimeUnit.SECONDS.toMillis(10));
+                Reference.reachabilityFence(acquired);
             }
+        });
 
-            assertFalse(name + " thread did not terminate", thread.isAlive());
-            awaitConfinedMemoryPoolCleared(thread);
+        thread.start();
+        thread.join(TimeUnit.SECONDS.toMillis(10));
 
-            if (failureRef.get() != null) {
-                throw failureRef.get();
-            }
-            assertEquals(name, 0, confinedMemoryPool(thread));
+        assertFalse(thread.isAlive(), "platform thread did not terminate");
+        if (failure.get() != null) {
+            throw failure.get();
         }
+
+        // Thread-exit cleanup must clear every cache entry.
+        assertArrayEquals(new long[4], JLA.getConfinedMemoryPools(thread));
     }
 
     @Test
-    void virtualThreadSlotContentionFallsBack() throws Throwable {
-        if (isPoolEnabled()) {
-            int slots = confinedSegmentPoolSlots();
-            int numberOfThreads = slots + 1;
-            CountDownLatch ready = new CountDownLatch(numberOfThreads);
-            CountDownLatch release = new CountDownLatch(1);
-            AtomicInteger pooledAllocations = new AtomicInteger();
-            AtomicInteger fallbackAllocations = new AtomicInteger();
-            AtomicReference<Throwable> failureRef = new AtomicReference<>();
-            List<Thread> threads = new ArrayList<>(numberOfThreads);
+    void cacheSaturation() {
+        assumeTrue(isPoolEnabled());
+        testCacheSaturation();
+    }
 
-            for (int i = 0; i < numberOfThreads; i++) {
-                Thread thread = Thread.ofVirtual().start(() -> {
-                    boolean readyCountedDown = false;
-                    try (Arena arena = Arena.ofConfined()) {
-                        MemorySegment segment = arena.allocate(ValueLayout.JAVA_BYTE);
-                        segment.set(ValueLayout.JAVA_BYTE, 0, (byte) 0x5A);
+    @Test
+    void cacheSaturationVt() {
+        assumeTrue(isPoolEnabled());
+        VThreadRunner.run(this::testCacheSaturation);
+    }
 
-                        if (confinedMemoryPool(Thread.currentThread()) == 0) {
-                            fallbackAllocations.incrementAndGet();
-                        } else {
-                            pooledAllocations.incrementAndGet();
-                        }
+    private void testCacheSaturation() {
+        Arena[] initial = new Arena[5];
+        Arena[] verification = new Arena[4];
 
-                        ready.countDown();
-                        readyCountedDown = true;
-                        assertTrue("timed out waiting for release",
-                                release.await(10, TimeUnit.SECONDS));
-                    } catch (Throwable ex) {
-                        failureRef.compareAndSet(null, ex);
-                        if (!readyCountedDown) {
-                            ready.countDown();
-                        }
-                    }
-                });
-                threads.add(thread);
+        try {
+            long[] addresses = allocateOneByte(initial);
+
+            // The first four releases fill the cache.
+            for (int i = 0; i < 4; i++) {
+                initial[i].close();
             }
 
-            try {
-                assertTrue("timed out waiting for virtual threads to allocate",
-                        ready.await(10, TimeUnit.SECONDS));
-                if (failureRef.get() != null) {
-                    throw failureRef.get();
-                }
-                assertEquals(numberOfThreads,
-                        pooledAllocations.get() + fallbackAllocations.get());
-                assertTrue("expected at least one allocation to fall back under slot contention",
-                        fallbackAllocations.get() > 0);
-                assertTrue("pooled allocations exceeded available virtual-thread slots",
-                        pooledAllocations.get() <= slots);
-            } finally {
-                release.countDown();
-                for (Thread thread : threads) {
-                    thread.join(TimeUnit.SECONDS.toMillis(10));
-                    assertFalse("virtual thread did not terminate: " + thread,
-                            thread.isAlive());
-                }
-            }
+            // The fifth release must free its pool.
+            initial[4].close();
 
-            if (failureRef.get() != null) {
-                throw failureRef.get();
-            }
-            for (Thread thread : threads) {
-                assertEquals(0, confinedMemoryPool(thread));
-            }
+            // All four cached pools must remain reusable.
+            long[] expected = Arrays.copyOf(addresses, 4);
+            long[] actual = allocateOneByte(verification);
+            Arrays.sort(expected);
+            Arrays.sort(actual);
+            assertArrayEquals(expected, actual);
+        } finally {
+            closeAll(initial);
+            closeAll(verification);
         }
     }
 
-    static long confinedMemoryPool(Thread thread) {
-        return ConfinedSegmentPool.currentPool(thread);
+    static long[] allocateOneByte(Arena[] arenas) {
+        long[] addresses = new long[arenas.length];
+        for (int i = 0; i < arenas.length; i++) {
+            arenas[i] = Arena.ofConfined();
+            addresses[i] = arenas[i].allocate(ValueLayout.JAVA_BYTE).address();
+        }
+        return addresses;
+    }
+
+    static void closeAll(Arena[] arenas) {
+        for (Arena arena : arenas) {
+            if (arena != null && arena.scope().isAlive()) {
+                arena.close();
+            }
+        }
     }
 
     static long confinedSessionSp(Arena arena) {
@@ -554,25 +500,25 @@ final class TestConfinedSegmentPool {
         return POOLED_MEMORY_SIZE > 0;
     }
 
-    static void awaitConfinedMemoryPoolCleared(Thread thread) {
-        long timeOut = System.nanoTime() + TimeUnit.SECONDS.toNanos(1);
-        while (System.nanoTime() < timeOut) {
-            if (confinedMemoryPool(thread) == 0) {
-                return;
-            }
-            LockSupport.parkNanos(1_000_000L);
+    static long currentPool() {
+        if (POOLED_MEMORY_SIZE <= 0) {
+            return 0;
         }
+        return currentPlatformPool(JLA.currentCarrierThread());
     }
 
-    static int confinedSegmentPoolSlots() {
-        try {
-            Class<?> poolClass = Class.forName("jdk.internal.foreign.ConfinedSegmentPool$VirtualThreadPool");
-            Field slotsField = poolClass.getDeclaredField("SLOTS");
-            slotsField.setAccessible(true);
-            return slotsField.getInt(null);
-        } catch (ReflectiveOperationException ex) {
-            throw new AssertionError(ex);
+    private static long currentPlatformPool(Thread thread) {
+        final long[] pools = JLA.getConfinedMemoryPools(thread);
+        if (pools == null) {
+            return 0;
         }
+        for (int i = 0; i < 4; i++) {
+            final long pool = pools[i];
+            if (pool != 0) {
+                return pool;
+            }
+        }
+        return 0;
     }
 
     static void awaitCleaner(CountDownLatch latch) throws InterruptedException {

@@ -23,81 +23,29 @@
 
 /*
  * @test
- * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
- *                    --add-opens=java.base/jdk.internal.foreign=ALL-UNNAMED
- *                    TestConfinedSegmentPoolConfig
- * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
- *                    --add-opens=java.base/jdk.internal.foreign=ALL-UNNAMED
- *                    -Djava.lang.foreign.native.confined.pool.power.size=0
- *                    -Djava.lang.foreign.native.confined.pool.power.slots=0
- *                    TestConfinedSegmentPoolConfig
- * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
- *                    --add-opens=java.base/jdk.internal.foreign=ALL-UNNAMED
- *                    -Djava.lang.foreign.native.confined.pool.power.size=1
- *                    -Djava.lang.foreign.native.confined.pool.power.slots=1
- *                    TestConfinedSegmentPoolConfig
- * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
- *                    --add-opens=java.base/jdk.internal.foreign=ALL-UNNAMED
- *                    -Djava.lang.foreign.native.confined.pool.power.size=2
- *                    -Djava.lang.foreign.native.confined.pool.power.slots=2
- *                    TestConfinedSegmentPoolConfig
- * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
- *                    --add-opens=java.base/jdk.internal.foreign=ALL-UNNAMED
- *                    -Djava.lang.foreign.native.confined.pool.power.size=3
- *                    -Djava.lang.foreign.native.confined.pool.power.slots=3
- *                    TestConfinedSegmentPoolConfig
- * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
- *                    --add-opens=java.base/jdk.internal.foreign=ALL-UNNAMED
- *                    -Djava.lang.foreign.native.confined.pool.power.size=4
- *                    -Djava.lang.foreign.native.confined.pool.power.slots=4
- *                    TestConfinedSegmentPoolConfig
- * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
- *                    --add-opens=java.base/jdk.internal.foreign=ALL-UNNAMED
- *                    -Djava.lang.foreign.native.confined.pool.power.size=5
- *                    -Djava.lang.foreign.native.confined.pool.power.slots=5
- *                    TestConfinedSegmentPoolConfig
- * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
- *                    --add-opens=java.base/jdk.internal.foreign=ALL-UNNAMED
- *                    -Djava.lang.foreign.native.confined.pool.power.size=6
- *                    -Djava.lang.foreign.native.confined.pool.power.slots=6
- *                    TestConfinedSegmentPoolConfig
- * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
- *                    --add-opens=java.base/jdk.internal.foreign=ALL-UNNAMED
- *                    -Djava.lang.foreign.native.confined.pool.power.size=7
- *                    -Djava.lang.foreign.native.confined.pool.power.slots=7
- *                    TestConfinedSegmentPoolConfig
- * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
- *                    --add-opens=java.base/jdk.internal.foreign=ALL-UNNAMED
- *                    -Djava.lang.foreign.native.confined.pool.power.size=24
- *                    -Djava.lang.foreign.native.confined.pool.power.slots=24
- *                    TestConfinedSegmentPoolConfig
- * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
- *                    --add-opens=java.base/jdk.internal.foreign=ALL-UNNAMED
- *                    -Djava.lang.foreign.native.confined.pool.power.size=-1
- *                    -Djava.lang.foreign.native.confined.pool.power.slots=-1
- *                    TestConfinedSegmentPoolConfig
- * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
- *                    --add-opens=java.base/jdk.internal.foreign=ALL-UNNAMED
- *                    -Djava.lang.foreign.native.confined.pool.power.size=23847682736221
- *                    -Djava.lang.foreign.native.confined.pool.power.slots=23847682736221
- *                    TestConfinedSegmentPoolConfig
- * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
- *                    --add-opens=java.base/jdk.internal.foreign=ALL-UNNAMED
- *                    -Djava.lang.foreign.native.confined.pool.power.size=TEXT
- *                    -Djava.lang.foreign.native.confined.pool.power.slots=TEXT
- *                    TestConfinedSegmentPoolConfig
- * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
- *                    --add-opens=java.base/jdk.internal.foreign=ALL-UNNAMED
- *                    -Dsun.nio.PageAlignDirectMemory=true
+ * @modules java.base/jdk.internal.foreign
+ * @run junit                                                                           TestConfinedSegmentPoolConfig
+ * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=0              TestConfinedSegmentPoolConfig
+ * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=1              TestConfinedSegmentPoolConfig
+ * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=2              TestConfinedSegmentPoolConfig
+ * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=3              TestConfinedSegmentPoolConfig
+ * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=4              TestConfinedSegmentPoolConfig
+ * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=5              TestConfinedSegmentPoolConfig
+ * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=6              TestConfinedSegmentPoolConfig
+ * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=7              TestConfinedSegmentPoolConfig
+ * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=24             TestConfinedSegmentPoolConfig
+ * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=-1             TestConfinedSegmentPoolConfig
+ * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=23847682736221 TestConfinedSegmentPoolConfig
+ * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=TEXT           TestConfinedSegmentPoolConfig
+ * @run junit/othervm -Dsun.nio.PageAlignDirectMemory=true
  *                    -Djava.lang.foreign.native.confined.pool.power.size=PAGE_ALIGN
  *                    TestConfinedSegmentPoolConfig
  */
 
+import jdk.internal.foreign.ConfinedSegmentPool;
 import org.junit.jupiter.api.Test;
 
-import java.lang.reflect.Field;
-
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 final class TestConfinedSegmentPoolConfig {
 
@@ -107,17 +55,11 @@ final class TestConfinedSegmentPoolConfig {
     static final long MAX = 64;
     static final long DISABLED = -1;
 
-    // Slots
-    static final int DEFAULT_SLOTS = defaultSlotCount();
-    static final int MIN_SLOTS = 1 << 1;
-    static final int MAX_SLOTS = 1 << 20;
-
     static final String POOLED_MEMORY_PROPERTY = "java.lang.foreign.native.confined.pool.power.size";
-    static final String SLOT_COUNT_PROPERTY = "java.lang.foreign.native.confined.pool.power.slots";
 
     @Test
     void pooledMemorySize() {
-        long actual = getPooledMemorySize();
+        long actual = ConfinedSegmentPool.pooledMemorySize();
         String configParameter = System.getProperty(POOLED_MEMORY_PROPERTY);
         long expected = switch (configParameter) {
             case null             -> DEFAULT;
@@ -137,56 +79,6 @@ final class TestConfinedSegmentPoolConfig {
             default -> throw new AssertionError(configParameter + " -> " + actual);
         };
         assertEquals(expected, actual);
-    }
-
-    @Test
-    void virtualThreadSlotCount() {
-        int actual = confinedSegmentPoolSlots();
-        String configParameter = System.getProperty(SLOT_COUNT_PROPERTY);
-        int expected = switch (configParameter) {
-            case null             -> DEFAULT_SLOTS;
-            case "0"              -> MIN_SLOTS;   // clamped to min power
-            case "1"              -> 1 << 1;
-            case "2"              -> 1 << 2;
-            case "3"              -> 1 << 3;
-            case "4"              -> 1 << 4;
-            case "5"              -> 1 << 5;
-            case "6"              -> 1 << 6;
-            case "7"              -> 1 << 7;
-            case "24"             -> MAX_SLOTS;
-            case "-1"             -> 1 << 1;
-            case "23847682736221" -> DEFAULT_SLOTS; // Too big for an int
-            case "TEXT"           -> DEFAULT_SLOTS; // Covers the case of a non-number
-            case "PAGE_ALIGN"     -> DEFAULT_SLOTS; // The text is used only as a flag
-            default -> throw new AssertionError(configParameter + " -> " + actual);
-        };
-        assertEquals(expected, actual);
-    }
-
-    static int defaultSlotCount() {
-        int target = Runtime.getRuntime().availableProcessors() << 1;
-        int power = Integer.SIZE - Integer.numberOfLeadingZeros(target - 1);
-        return 1 << Math.clamp(power, 1, 20);
-    }
-
-    static int confinedSegmentPoolSlots() {
-        try {
-            Class<?> poolClass = Class.forName("jdk.internal.foreign.ConfinedSegmentPool$VirtualThreadPool");
-            Field slotsField = poolClass.getDeclaredField("SLOTS");
-            slotsField.setAccessible(true);
-            return slotsField.getInt(null);
-        } catch (ReflectiveOperationException ex) {
-            throw new AssertionError(ex);
-        }
-    }
-
-    static long getPooledMemorySize() {
-        try {
-            Class<?> poolClass = Class.forName("jdk.internal.foreign.ConfinedSegmentPool");
-            return (long) poolClass.getMethod("pooledMemorySize").invoke(null);
-        } catch (ReflectiveOperationException ex) {
-            throw new AssertionError(ex);
-        }
     }
 
 }

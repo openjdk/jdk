@@ -29,20 +29,56 @@ import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
+import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 
 /**
- * Native memory pool used by confined sessions.
+ * Provides reusable native-memory pools for confined arenas.
+ *<p>
+ * Each platform thread lazily maintains a cache of up to {@value #PLATFORM_POOL_COUNT}
+ * fixed-size pools. Small allocations made by a confined arena are carved out from
+ * one pool. Allocations that do not fit in the pool use the regular native allocator.
+ * If no cached pool is available, the arena may allocate a local pool and
+ * attempt to cache it when the arena is closed.
+ *<p>
+ * A platform thread retains acquired pools in its cache, marking them as
+ * unavailable. This allows thread-exit cleanup to free pools held by confined
+ * arenas that were not closed before the owning thread terminated.
+ *<p>
+ * A virtual thread acquires pools from its current carrier thread. An
+ * acquired pool is removed from the carrier's cache and is owned exclusively
+ * by the arena until it is closed. This prevents the original carrier from
+ * freeing the pool if the virtual thread migrates and that carrier terminates.
+ * On close, the pool is returned to the current carrier's cache or freed if
+ * that cache is full. Carrier-thread termination still frees pools remaining
+ * in that carrier's cache but does not affect unclosed confined arenas.
+ *<p>
+ * Before a pool is released, the portion used by the arena is cleared.
+ * Together with clearing performed when a pool is initially allocated, this
+ * ensures that pooled allocations do not expose data written by an earlier
+ * arena.
+ *<p>
+ * The pool cache is accessed only by its owning platform thread, either
+ * directly or while that thread is acting as a virtual-thread carrier.
+ * Consequently, cache acquisition and release do not require synchronization.
+ *<p>
+ * Pool entries use the following representation:
+ * <ul>
+ *     <li>zero: empty cache entry;
+ *     <li>positive address: available pool;
+ *     <li>negative address: pool acquired by a platform-thread arena.
+ * </ul>
+ * Native pool addresses are required to be positive, allowing the sign to
+ * encode whether a cached pool is available or platform-arena-owned.
  * <p>
- * Platform threads lazily allocate one native-memory pool per thread. Virtual
- * threads use a fixed number of shared native-memory slots, where a virtual
- * thread maps to a candidate slot from its thread id and acquires the slot with
- * a CAS operation. A normal release zeroes the used memory and releases the
- * slot, making it available to other virtual threads. If the slot is already
- * acquired, allocation falls back to the regular native allocator.
- * <p>
- * For performance reasons, this class operates directly on native memory and
- * pointers via Unsafe.
+ * Pooling can be disabled through the internal pool-size configuration.
+ * When disabled, all allocations use the regular native allocator.
+ *<p>
+ * This class operates directly on native addresses using {@link Unsafe}.
+ * Its ownership and clearing invariants must therefore be preserved when
+ * acquisition, release, or thread-termination protocols are changed.
+ * Defensive release checks detect invalid sizes and duplicate releases, but
+ * cannot validate arbitrary native addresses.
  */
 public final class ConfinedSegmentPool {
 
@@ -54,19 +90,16 @@ public final class ConfinedSegmentPool {
 
     // Internal tuning knob; no behavioral or compatibility guarantees are given.
     // Setting the pool-size power to 0 disables confined pooling.
-   private static final String POOLED_MEMORY_PROPERTY = "java.lang.foreign.native.confined.pool.power.size";
+    private static final String POOLED_MEMORY_PROPERTY = "java.lang.foreign.native.confined.pool.power.size";
 
-    // The following values can be observed {-1 (disabled), 8, 16, 32 or 64} bytes
+    // -1 disables pooling; otherwise the pool size is 8, 16, 32, or 64 bytes.
     private static final long POOLED_MEMORY_SIZE = clampedPowerOfPropertyOr(POOLED_MEMORY_PROPERTY, 6);
 
     private static final int PLATFORM_POOL_COUNT = 4;
 
+    // Constant-folded away in release builds; checks owner-thread invariants
+    // in debug builds.
     private static final boolean DEBUG = !"release".equals(VM.getSavedProperty("jdk.debug"));
-
-    // Avoid initializing VirtualThreadPool from thread-exit cleanup unless it has
-    // already been initialized by a virtual-thread allocation. This flag is
-    // monotonic: false -> true and is not used on the critical hot allocation path.
-    private static volatile boolean virtualPoolInitialized;
 
     /**
      * Returns the size of the native memory pool.
@@ -75,22 +108,12 @@ public final class ConfinedSegmentPool {
         return POOLED_MEMORY_SIZE;
     }
 
-    /**
-     * Returns the pooled memory owned by the given thread, or zero if the
-     * thread does not own pooled memory.
-     */
-    public static long currentPool(Thread thread) {
-        if (POOLED_MEMORY_SIZE <= 0) {
-            return 0;
-        }
-        return thread.isVirtual()
-                ? (virtualPoolInitialized ? VirtualThreadPool.currentPool(thread) : 0)
-                : currentPlatformPool(thread);
-    }
 
     /**
-     * Returns a pointer to pooled memory owned by the given thread, or zero if
-     * pooled memory cannot be acquired.
+     * Acquires a pool for an arena owned by {@code thread}. A virtual-thread
+     * arena acquires from the current carrier's cache.
+     *
+     * @return a positive native address, or zero if no pool is available
      */
     @ForceInline
     static long acquire(Thread thread) {
@@ -99,66 +122,50 @@ public final class ConfinedSegmentPool {
             return 0;
         }
         return thread.isVirtual()
-                ? acquireVirtual(thread)
+                ? acquireVirtual(JLA.currentCarrierThread())
                 : acquirePlatform(thread);
     }
 
     /**
-     * Allocates a local platform-thread pool that is not yet associated with the
-     * current thread's pool cache.
-     *
-     * Unlike cached platform pools, this pool is not (potentially yet) visible to
-     * thread-exit cleanup; it is returned to the thread cache, or freed, when the
-     * owning arena is closed.
+     * Allocates a pool owned directly by the arena and not yet present in any
+     * thread cache. On arena close, the pool is cached or freed.
      */
     static long allocateLocal(Thread thread) {
         assertCurrentThreadInDebugMode(thread);
-        if (POOLED_MEMORY_SIZE <= 0 || thread.isVirtual()) {
+        if (POOLED_MEMORY_SIZE <= 0) {
             return 0;
         }
         return allocatePlatformPool();
     }
 
     /**
-     * Zeros out and releases pooled memory owned by the given thread.
-     */
-    @ForceInline
-    static void release(Thread thread, long size) {
-        release(thread, thread.isVirtual() ? currentPool(thread) : currentAcquiredPlatformPool(thread), size);
-    }
-
-    /**
-     * Zeros out and releases the given pooled memory owned by the given thread.
+     * Clears the used prefix and returns the pool to the appropriate cache.
+     * Platform-thread arenas return pools to their owner; virtual-thread arenas
+     * return pools to the current carrier.
      */
     @ForceInline
     static void release(Thread thread, long pool, long size) {
         assertCurrentThreadInDebugMode(thread);
-        if (thread.isVirtual()) {
-            releaseVirtual(thread, size);
-        } else {
-            releasePlatform(thread, pool, size);
-        }
+        final Thread cacheOwner = thread.isVirtual()
+                ? JLA.currentCarrierThread()
+                : thread;
+        releasePlatform(cacheOwner, pool, size);
     }
 
     /**
-     * Releases any pool still associated with a terminating thread.
+     * Frees all available and platform-arena-owned pools recorded in the
+     * terminating platform thread's cache.
      */
     public static void releaseOnThreadExit(Thread thread) {
-        if (thread.isVirtual()) {
-            if (virtualPoolInitialized) {
-                VirtualThreadPool.releaseIfOwned(thread, POOLED_MEMORY_SIZE);
-            }
-        } else {
-            final long[] pools = JLA.getConfinedMemoryPools(thread);
-            if (pools == null) {
-                return;
-            }
-            for (int i = 0; i < PLATFORM_POOL_COUNT; i++) {
-                final long pool = pools[i];
-                if (pool != 0) {
-                    U.freeMemory(Math.abs(pool));
-                    pools[i] = 0;
-                }
+        final long[] pools = JLA.getConfinedMemoryPools(thread);
+        if (pools == null) {
+            return;
+        }
+        for (int i = 0; i < PLATFORM_POOL_COUNT; i++) {
+            final long pool = pools[i];
+            if (pool != 0) {
+                U.freeMemory(Math.abs(pool));
+                pools[i] = 0;
             }
         }
     }
@@ -179,7 +186,32 @@ public final class ConfinedSegmentPool {
         for (int i = 0; i < PLATFORM_POOL_COUNT; i++) {
             final long pool = pools[i];
             if (pool > 0) {
-                pools[i] = -pool;
+                pools[i] = -pool; // available (+p) -> platform-owned (-p)
+                return pool;
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * Special acquire method for virtual threads utilizing the pool of the underlying
+     * carrier thread. This method does not store acquired pools in the array to protect
+     * against use-after-free or double-free after a virtual thread migrated to another
+     * carrier thread.
+     *
+     * @param carrier thread from which pools should be used
+     * @return the acquired pool or zero if no pool could be acquired.
+     */
+    @ForceInline
+    private static long acquireVirtual(Thread carrier) {
+        long[] pools = JLA.getConfinedMemoryPools(carrier);
+        if (pools == null) {
+            return 0;
+        }
+        for (int i = 0; i < PLATFORM_POOL_COUNT; i++) {
+            long pool = pools[i];
+            if (pool > 0) {
+                pools[i] = 0; // available (+p) -> arena-owned and detached; no free on thread exit
                 return pool;
             }
         }
@@ -203,76 +235,65 @@ public final class ConfinedSegmentPool {
 
     @ForceInline
     private static void releasePlatform(Thread thread, long pool, long size) {
-        if (pool <= 0) {
-            throw cannotReleasePooledMemory(thread);
+        // Reject invalid prefixes before zeroOutMemory performs unchecked writes.
+        if (pool <= 0 || size < 0 || size > POOLED_MEMORY_SIZE) {
+            throw cannotReleasePooledMemory(pool, size);
         }
-        final long[] pools = JLA.getOrCreateConfinedMemoryPools(thread);
+
+        long[] pools = JLA.getConfinedMemoryPools(thread);
+        if (pools == null) {
+            pools = createPoolCacheOrFree(thread, pool);
+            if (pools == null) {
+                return; // The `createPoolCacheOrFree` method freed the pool.
+            }
+        }
+
         zeroOutMemory(pool, size);
+
+        int empty = -1;
         for (int i = 0; i < PLATFORM_POOL_COUNT; i++) {
-            if (pools[i] == -pool) {
-                pools[i] = pool;
+            final long entry = pools[i];
+            if (entry == -pool) {
+                pools[i] = pool; // platform-owned (-p) -> available (+p)
                 return;
             }
-        }
-        for (int i = 0; i < PLATFORM_POOL_COUNT; i++) {
-            if (pools[i] == 0) {
-                pools[i] = pool;
-                return;
+            if (entry == pool) {
+                throw cannotReleasePooledMemory(pool, size); // already released
+            }
+            if (entry == 0 && empty < 0) {
+                empty = i;
             }
         }
-        U.freeMemory(pool);
-    }
-
-    private static long currentPlatformPool(Thread thread) {
-        final long[] pools = JLA.getConfinedMemoryPools(thread);
-        if (pools == null) {
-            return 0;
-        }
-        for (int i = 0; i < PLATFORM_POOL_COUNT; i++) {
-            final long pool = pools[i];
-            if (pool != 0) {
-                return pool;
-            }
-        }
-        return 0;
-    }
-
-    private static long currentAcquiredPlatformPool(Thread thread) {
-        final long[] pools = JLA.getConfinedMemoryPools(thread);
-        if (pools == null) {
-            return 0;
-        }
-        for (int i = 0; i < PLATFORM_POOL_COUNT; i++) {
-            final long pool = pools[i];
-            if (pool < 0) {
-                return -pool;
-            }
-        }
-        return 0;
-    }
-
-    @ForceInline
-    private static long acquireVirtual(Thread thread) {
-        return VirtualThreadPool.acquire(thread);
-    }
-
-    @ForceInline
-    private static void releaseVirtual(Thread thread, long size) {
-        if (!VirtualThreadPool.release(thread, size)) {
-            throw cannotReleasePooledMemory(thread);
+        if (empty >= 0) {
+            pools[empty] = pool;
+        } else {
+            U.freeMemory(pool);
         }
     }
 
-    private static IllegalStateException cannotReleasePooledMemory(Thread thread) {
-        return new IllegalStateException("Cannot release pooled memory: " + currentPool(thread));
+    // Support method to isolate exception handling from the hot inline path
+    @DontInline
+    private static long[] createPoolCacheOrFree(Thread thread, long pool) {
+        try {
+            return JLA.getOrCreateConfinedMemoryPools(thread);
+        } catch (OutOfMemoryError _) {
+            // In the unlikely event a `new long[]` fails we still need to free the
+            // pool and allow the rest of the Arena's cleanup operations to continue
+            U.freeMemory(pool);
+            return null;
+        }
+    }
+
+    @DontInline
+    private static IllegalStateException cannotReleasePooledMemory(long pool, long size) {
+        return new IllegalStateException("Cannot release pooled memory owned by " + JLA.currentCarrierThread() + ", pool = " + pool + ", size = " + size);
     }
 
     @SuppressWarnings("fallthrough")
     @ForceInline
     private static void zeroOutMemory(long address, long size) {
-        // Clear the 8-byte buckets covering the used range. It is safe to clear
-        // beyond `size` as long as we stay inside the pool.
-        // Note: we are using fallthrough here.
+        // Deliberate fall-through clears the required number of 8-byte buckets
+        // without a loop branch. The validated size guarantees writes remain in-pool.
         switch ((int) ((size + Long.BYTES - 1) >>> 3)) {
             case 8: U.putLong(address + 0x38, 0L);
             case 7: U.putLong(address + 0x30, 0L);
@@ -298,167 +319,4 @@ public final class ConfinedSegmentPool {
                 : 1 << Math.clamp(power, 3, 6);
     }
 
-    /**
-     * A shared confined segment pool for virtual threads.
-     */
-    private static final class VirtualThreadPool {
-
-        private VirtualThreadPool() { }
-
-        // We create an over-provisioned number of slots to reduce the
-        // probability that two virtual threads compete for the same slot.
-        private static final int SLOTS = slotCount();
-        private static final int SLOT_MASK = SLOTS - 1;
-        // The distance between each slot. This is usually larger than 1 to
-        // reduce contention.
-        private static final long SLOT_OFFSET = slotOffset();
-        // Slot owner states: zero     -> Free to acquire
-        //                    positive -> Acquired by a live virtual thread
-        private static final long RELEASED = 0;
-
-        // Sentinel value for no pooling.
-        private static final long NO_POOLING = -1;
-
-        // Raw memory pointer to the pool. The pool is then sliced into separate
-        // segments, each of which has a size of POOLED_MEMORY_SIZE.
-        private static final long POOL;
-        private static final long OWNERS;
-
-        static {
-            final long pool = allocatePool();
-            final long owners = allocateOwners();
-            if (pool == NO_POOLING || owners == NO_POOLING) {
-                if (pool > 0) {
-                    U.freeMemory(pool);
-                }
-                if (owners > 0) {
-                    U.freeMemory(owners);
-                }
-                POOL = NO_POOLING;
-                OWNERS = NO_POOLING;
-            } else {
-                POOL = pool;
-                OWNERS = owners;
-                virtualPoolInitialized = true;
-            }
-        }
-
-        @ForceInline
-        static long acquire(Thread thread) {
-            if (POOL == NO_POOLING) {
-                return 0;
-            }
-            final long owner = thread.threadId();
-            final long slot = slotFor(owner);
-            final long ownerAddress = ownerAddress(slot);
-            return U.compareAndSetLong(null, ownerAddress, RELEASED, owner)
-                    ? poolAddress(slot)
-                    : 0;
-        }
-
-        @ForceInline
-        static boolean release(Thread thread, long size) {
-            if (POOL == NO_POOLING) {
-                return false;
-            }
-            final long owner = thread.threadId();
-            final long slot = slotFor(owner);
-            final long ownerAddress = ownerAddress(slot);
-            if (U.getLongVolatile(null, ownerAddress) != owner) {
-                return false;
-            }
-            final long address = poolAddress(slot);
-            zeroOutMemory(address, size);
-            return U.compareAndSetLong(null, ownerAddress, owner, RELEASED);
-        }
-
-        @ForceInline
-        static void releaseIfOwned(Thread thread, long size) {
-            if (POOL == NO_POOLING) {
-                return;
-            }
-            final long owner = thread.threadId();
-            final long slot = slotFor(owner);
-            final long ownerAddress = ownerAddress(slot);
-            if (U.getLongVolatile(null, ownerAddress) == owner) {
-                final long address = poolAddress(slot);
-                zeroOutMemory(address, size);
-                if (!U.compareAndSetLong(null, ownerAddress, owner, RELEASED)) {
-                    throw new IllegalStateException("Cannot release pooled memory: " + thread);
-                }
-            }
-        }
-
-        @ForceInline
-        static long currentPool(Thread thread) {
-            if (POOL == NO_POOLING) {
-                return 0;
-            }
-            final long owner = thread.threadId();
-            final long slot = slotFor(owner);
-            return U.getLongVolatile(null, ownerAddress(slot)) == owner
-                    ? poolAddress(slot)
-                    : 0;
-        }
-
-        @ForceInline
-        private static long slotFor(long owner) {
-            return owner & SLOT_MASK;
-        }
-
-        @ForceInline
-        private static long poolAddress(long slot) {
-            return POOL + slot * POOLED_MEMORY_SIZE;
-        }
-
-        @ForceInline
-        private static long ownerAddress(long slot) {
-            return OWNERS + slot * SLOT_OFFSET;
-        }
-
-        private static long slotOffset() {
-            final int cacheLineSize = U.dataCacheLineFlushSize();
-            return cacheLineSize > 0
-                    ? Math.max(cacheLineSize, Long.BYTES)
-                    : Long.BYTES; // No cache line support
-        }
-
-        // Internal tuning knob; no behavioral or compatibility guarantees are given.
-        private static final String SLOT_COUNT_PROPERTY = "java.lang.foreign.native.confined.pool.power.slots";
-
-        // Always a power of two.
-        private static int slotCount() {
-            // Default carrier threads times two
-            final int target = Runtime.getRuntime().availableProcessors() << 1;
-            final int defaultSlotPower = powerOfTwoCeilExponent(target);
-            final int slotPower = Integer.getInteger(SLOT_COUNT_PROPERTY, defaultSlotPower);
-            return 1 << Math.clamp(slotPower, 1, 20);
-        }
-
-        // For value = 2 and upwards
-        static int powerOfTwoCeilExponent(int value) {
-            return Integer.SIZE - Integer.numberOfLeadingZeros(value - 1);
-        }
-
-        private static long allocatePool() {
-            return mallocAndZero(POOLED_MEMORY_SIZE * SLOTS);
-        }
-
-        private static long allocateOwners() {
-            return mallocAndZero(SLOTS * SLOT_OFFSET);
-        }
-
-        private static long mallocAndZero(long size) {
-            if (POOLED_MEMORY_SIZE <= 0) {
-                return NO_POOLING;
-            }
-            try {
-                final long pool = U.allocateMemory(size);
-                U.setMemory(pool, size, (byte) 0);
-                return pool;
-            } catch (OutOfMemoryError _) {
-                return NO_POOLING;
-            }
-        }
-    }
 }

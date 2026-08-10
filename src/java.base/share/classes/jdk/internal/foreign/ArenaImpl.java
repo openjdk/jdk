@@ -33,7 +33,7 @@ import java.lang.foreign.MemorySegment.Scope;
 
 public sealed class ArenaImpl implements Arena {
 
-    final MemorySessionImpl session;
+    protected final MemorySessionImpl session;
     private final boolean shouldReserve;
 
     ArenaImpl(MemorySessionImpl session) {
@@ -51,23 +51,20 @@ public sealed class ArenaImpl implements Arena {
         session.close();
     }
 
-    public final NativeMemorySegmentImpl allocateNoInit(long byteSize, long byteAlignment) {
-        return allocateLowLevel(byteSize, byteAlignment, false);
+    public NativeMemorySegmentImpl allocateNoInit(long byteSize, long byteAlignment) {
+        return SegmentFactories.allocateNativeSegment(byteSize, byteAlignment, session, shouldReserve, false);
     }
 
     @Override
-    public final NativeMemorySegmentImpl allocate(long byteSize, long byteAlignment) {
-        return allocateLowLevel(byteSize, byteAlignment, true);
-    }
-
-    NativeMemorySegmentImpl allocateLowLevel(long byteSize, long byteAlignment, boolean init) {
-        return SegmentFactories.allocateNativeSegment(byteSize, byteAlignment, session, shouldReserve, init);
+    public NativeMemorySegmentImpl allocate(long byteSize, long byteAlignment) {
+        return SegmentFactories.allocateNativeSegment(byteSize, byteAlignment, session, shouldReserve, true);
     }
 
     static final class OfConfined extends ArenaImpl {
 
         private static final long POOL_SIZE = ConfinedSegmentPool.pooledMemorySize();
 
+        // Set at most once: an arena never switches backing pools.
         @Stable
         private long pool;
         private long poolSp;
@@ -78,6 +75,7 @@ public sealed class ArenaImpl implements Arena {
 
         @Override
         public void close() {
+            // Invalidate every segment before making the pool reusable.
             session.justClose();
             // The session cleanup at the end of this method may throw, so we
             // need to release the acquired pooled memory first.
@@ -88,9 +86,20 @@ public sealed class ArenaImpl implements Arena {
         }
 
         @Override
+        public NativeMemorySegmentImpl allocateNoInit(long byteSize, long byteAlignment) {
+            return allocateLowLevel(byteSize, byteAlignment, false);
+        }
+
+        @Override
+        public NativeMemorySegmentImpl allocate(long byteSize, long byteAlignment) {
+            return allocateLowLevel(byteSize, byteAlignment, true);
+        }
+
         @ForceInline
         NativeMemorySegmentImpl allocateLowLevel(long byteSize, long byteAlignment, boolean init) {
-            if (byteSize <= POOL_SIZE) {
+            // Only alignments no greater than the pool size are guaranteed to have an
+            // aligned address within the pool. This also bounds the alignment arithmetic.
+            if (byteSize <= POOL_SIZE && byteAlignment <= POOL_SIZE) {
                 Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
                 session.checkValidState();
                 long pool = this.pool;
@@ -104,14 +113,16 @@ public sealed class ArenaImpl implements Arena {
                     }
                 }
                 // Preserve the invariant that zero-sized segments have unique addresses
-                // for any given Arena
+                // for any given Arena.
                 final long allocationByteSize = Math.max(1, byteSize);
                 final long address;
                 if (pool > 0 && (address = trySlice(pool, allocationByteSize, byteAlignment)) != 0) {
                     return SegmentFactories.makeNativeSegmentUnchecked(address, byteSize, session);
                 }
             }
-            return super.allocateLowLevel(byteSize, byteAlignment, init);
+            return init
+                    ? super.allocate(byteSize, byteAlignment)
+                    : super.allocateNoInit(byteSize, byteAlignment);
         }
 
         private long trySlice(long pool, long byteSize, long byteAlignment) {
