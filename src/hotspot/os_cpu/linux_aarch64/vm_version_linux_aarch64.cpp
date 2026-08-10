@@ -146,15 +146,17 @@ void VM_Version::get_os_cpu_info() {
       check_feature(auxv,  BIT_MASK(CPU_SHA2),       HWCAP_SHA2) |
       check_feature(auxv,  BIT_MASK(CPU_CRC32),      HWCAP_CRC32) |
       check_feature(auxv,  BIT_MASK(CPU_LSE),        HWCAP_ATOMICS) |
+      check_feature(auxv,  BIT_MASK(CPU_FPHP),       HWCAP_FPHP) |
+      check_feature(auxv,  BIT_MASK(CPU_ASIMDHP),    HWCAP_ASIMDHP) |
       check_feature(auxv,  BIT_MASK(CPU_DCPOP),      HWCAP_DCPOP) |
       check_feature(auxv,  BIT_MASK(CPU_SHA3),       HWCAP_SHA3) |
       check_feature(auxv,  BIT_MASK(CPU_SHA512),     HWCAP_SHA512) |
       check_feature(auxv,  BIT_MASK(CPU_SVE),        HWCAP_SVE) |
+      check_feature(auxv,  BIT_MASK(CPU_SB),         HWCAP_SB) |
       check_feature(auxv,  BIT_MASK(CPU_PACA),       HWCAP_PACA) |
-      check_feature(auxv,  BIT_MASK(CPU_FPHP),       HWCAP_FPHP) |
-      check_feature(auxv,  BIT_MASK(CPU_ASIMDHP),    HWCAP_ASIMDHP) |
-      check_feature(auxv2, BIT_MASK(CPU_SVE2),       HWCAP2_SVE2) |
       check_feature(auxv2, BIT_MASK(CPU_SVEBITPERM), HWCAP2_SVEBITPERM) |
+      check_feature(auxv2, BIT_MASK(CPU_SVE2),       HWCAP2_SVE2) |
+      // CPU_A53MAC is set in VM_Version::initialize().
       check_feature(auxv2, BIT_MASK(CPU_ECV),        HWCAP2_ECV) |
       check_feature(auxv2, BIT_MASK(CPU_WFXT),       HWCAP2_WFXT);
 
