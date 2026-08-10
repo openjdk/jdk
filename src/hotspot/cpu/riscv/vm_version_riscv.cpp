@@ -170,13 +170,18 @@ void VM_Version::common_initialize() {
     } else if (!JVM_TOOLCHAIN_USES_PSABI_ATOMICS) {
       // A JVM built by a pre-psABI toolchain contains C++ atomics whose
       // mapping is incompatible with the Zalasr sequences the JIT would
-      // emit; mixing them can break Java volatile semantics.
-      warning("UseZalasr requires a JVM built with a toolchain using the "
-              "psABI atomics mapping (gcc >= 13.3 or clang >= 19); "
-              "disabling Zalasr");
+      // emit; mixing them can break Java volatile semantics. Only warn when
+      // Zalasr was asked for explicitly: it is enabled by default whenever
+      // the CPU supports it, and a plain start-up should stay quiet.
+      if (!FLAG_IS_DEFAULT(UseZalasr)) {
+        warning("UseZalasr requires a JVM built with a toolchain using the "
+                "psABI atomics mapping (gcc >= 13.3 or clang >= 19); "
+                "disabling Zalasr");
+      }
       FLAG_SET_DEFAULT(UseZalasr, false);
     }
   }
+#undef JVM_TOOLCHAIN_USES_PSABI_ATOMICS
 
   if (FLAG_IS_DEFAULT(AvoidUnalignedAccesses)) {
     FLAG_SET_DEFAULT(AvoidUnalignedAccesses,
@@ -212,7 +217,6 @@ void VM_Version::common_initialize() {
   if (UseZtso && FLAG_IS_DEFAULT(UseZalasr)) {
     FLAG_SET_DEFAULT(UseZalasr, false);
   }
-
 
   if (UseZbb) {
     if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {

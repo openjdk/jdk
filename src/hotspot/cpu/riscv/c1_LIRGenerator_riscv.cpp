@@ -1191,5 +1191,9 @@ void LIRGenerator::volatile_field_store(LIR_Opr value, LIR_Address* address,
 void LIRGenerator::volatile_field_load(LIR_Address* address, LIR_Opr result,
                                        CodeEmitInfo* info) {
   __ volatile_load_mem_reg(address, result, info);
-  __ membar_acquire();
+  if (!UseZalasr) {
+    // With UseZalasr the load is emitted as a Zalasr load-acquire, which
+    // already provides the trailing acquire semantics.
+    __ membar_acquire();
+  }
 }

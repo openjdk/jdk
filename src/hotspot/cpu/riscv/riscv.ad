@@ -1185,7 +1185,8 @@ bool is_CAS(int opcode, bool maybe_volatile)
   }
 }
 
-// predicates controlling emit of fence before and after CAS
+// predicate controlling elision of the trailing MemBarAcquire of a
+// volatile/acquire load that is emitted as a Zalasr load-acquire
 
 bool unnecessary_acquire(const Node *barrier)
 {
@@ -4516,7 +4517,7 @@ instruct loadB_volatile(iRegINoSp dst, indirect mem)
   predicate(needs_acquiring_load(n));
 
   ins_cost(VOLATILE_REF_COST);
-  format %{ "lb.aq  $dst, $mem\t# byte, #@loadB" %}
+  format %{ "lb.aq  $dst, $mem\t# byte, #@loadB_volatile" %}
 
   ins_encode %{
     __ lb_aq($dst$$Register, Address($mem$$Register));
@@ -4547,7 +4548,7 @@ instruct loadB2L_volatile(iRegLNoSp dst, indirect mem)
   predicate(needs_acquiring_load(n->in(1)));
 
   ins_cost(VOLATILE_REF_COST);
-  format %{ "lb.aq  $dst, $mem\t# byte, #@loadB2L" %}
+  format %{ "lb.aq  $dst, $mem\t# byte, #@loadB2L_volatile" %}
 
   ins_encode %{
     __ lb_aq($dst$$Register, Address($mem$$Register));
@@ -4578,7 +4579,7 @@ instruct loadUB_volatile(iRegINoSp dst, indirect mem)
   predicate(needs_acquiring_load(n));
 
   ins_cost(VOLATILE_REF_COST);
-  format %{ "lb.aq  $dst, $mem\t# byte, #@loadUB\n\t"
+  format %{ "lb.aq  $dst, $mem\t# byte, #@loadUB_volatile\n\t"
             "zext $dst, $dst, 8"%}
 
   ins_encode %{
@@ -4611,7 +4612,7 @@ instruct loadUB2L_volatile(iRegLNoSp dst, indirect mem)
   predicate(needs_acquiring_load(n->in(1)));
 
   ins_cost(VOLATILE_REF_COST);
-  format %{ "lb.aq  $dst, $mem\t# byte, #@loadUB2L\n\t"
+  format %{ "lb.aq  $dst, $mem\t# byte, #@loadUB2L_volatile\n\t"
             "zext $dst, $dst, 8"%}
 
   ins_encode %{
@@ -4644,7 +4645,7 @@ instruct loadS_volatile(iRegINoSp dst, indirect mem)
   predicate(needs_acquiring_load(n));
 
   ins_cost(VOLATILE_REF_COST);
-  format %{ "lh.aq  $dst, $mem\t# short, #@loadS" %}
+  format %{ "lh.aq  $dst, $mem\t# short, #@loadS_volatile" %}
 
   ins_encode %{
     __ lh_aq($dst$$Register, Address($mem$$Register));
@@ -4675,7 +4676,7 @@ instruct loadS2L_volatile(iRegLNoSp dst, indirect mem)
   predicate(needs_acquiring_load(n->in(1)));
 
   ins_cost(VOLATILE_REF_COST);
-  format %{ "lh.aq  $dst, $mem\t# short, #@loadS2L" %}
+  format %{ "lh.aq  $dst, $mem\t# short, #@loadS2L_volatile" %}
 
   ins_encode %{
     __ lh_aq($dst$$Register, Address($mem$$Register));
@@ -4706,7 +4707,7 @@ instruct loadUS_volatile(iRegINoSp dst, indirect mem)
   predicate(needs_acquiring_load(n));
 
   ins_cost(VOLATILE_REF_COST);
-  format %{ "lh.aq  $dst, $mem\t# short, #@loadUS\n\t"
+  format %{ "lh.aq  $dst, $mem\t# short, #@loadUS_volatile\n\t"
             "zext $dst, $dst, 16"%}
 
   ins_encode %{
@@ -4739,7 +4740,7 @@ instruct loadUS2L_volatile(iRegLNoSp dst, indirect mem)
   predicate(needs_acquiring_load(n->in(1)));
 
   ins_cost(VOLATILE_REF_COST);
-  format %{ "lh.aq  $dst, $mem\t# short, #@loadUS2L\n\t"
+  format %{ "lh.aq  $dst, $mem\t# short, #@loadUS2L_volatile\n\t"
             "zext $dst, $dst, 16"%}
 
   ins_encode %{
@@ -4772,7 +4773,7 @@ instruct loadI_volatile(iRegINoSp dst, indirect mem)
   predicate(needs_acquiring_load(n));
 
   ins_cost(VOLATILE_REF_COST);
-  format %{ "lw.aq  $dst, $mem\t# int, #@loadI" %}
+  format %{ "lw.aq  $dst, $mem\t# int, #@loadI_volatile" %}
 
   ins_encode %{
     __ lw_aq($dst$$Register, Address($mem$$Register));
@@ -4786,7 +4787,6 @@ instruct loadI2L(iRegLNoSp dst, memory mem)
 %{
   match(Set dst (ConvI2L (LoadI mem)));
   predicate(!needs_acquiring_load(n->in(1)));
-
 
   ins_cost(LOAD_COST);
   format %{ "lw  $dst, $mem\t# int, #@loadI2L" %}
@@ -4804,7 +4804,7 @@ instruct loadI2L_volatile(iRegLNoSp dst, indirect mem)
   predicate(needs_acquiring_load(n->in(1)));
 
   ins_cost(VOLATILE_REF_COST);
-  format %{ "lw.aq  $dst, $mem\t# int, #@loadI2L" %}
+  format %{ "lw.aq  $dst, $mem\t# int, #@loadI2L_volatile" %}
 
   ins_encode %{
     __ lw_aq($dst$$Register, Address($mem$$Register));
@@ -4818,7 +4818,6 @@ instruct loadUI2L(iRegLNoSp dst, memory mem, immL_32bits mask)
 %{
   match(Set dst (AndL (ConvI2L (LoadI mem)) mask));
   predicate(!needs_acquiring_load(n->in(1)->in(1)));
-
 
   ins_cost(LOAD_COST);
   format %{ "lwu  $dst, $mem\t# int, #@loadUI2L" %}
@@ -4836,7 +4835,7 @@ instruct loadUI2L_volatile(iRegLNoSp dst, indirect mem, immL_32bits mask)
   predicate(needs_acquiring_load(n->in(1)->in(1)));
 
   ins_cost(VOLATILE_REF_COST);
-  format %{ "lw.aq  $dst, $mem\t# int, #@loadUI2L\n\t"
+  format %{ "lw.aq  $dst, $mem\t# int, #@loadUI2L_volatile\n\t"
             "zext $dst, $dst, 32"%}
 
   ins_encode %{
@@ -4869,7 +4868,7 @@ instruct loadL_volatile(iRegLNoSp dst, indirect mem)
   predicate(needs_acquiring_load(n));
 
   ins_cost(VOLATILE_REF_COST);
-  format %{ "ld.aq  $dst, $mem\t# int, #@loadL" %}
+  format %{ "ld.aq  $dst, $mem\t# int, #@loadL_volatile" %}
 
   ins_encode %{
     __ ld_aq($dst$$Register, Address($mem$$Register));
@@ -4915,7 +4914,7 @@ instruct loadP_volatile(iRegPNoSp dst, indirect mem)
   predicate(n->as_Load()->barrier_data() == 0 && needs_acquiring_load(n));
 
   ins_cost(VOLATILE_REF_COST);
-  format %{ "ld.aq  $dst, $mem\t# ptr, #@loadP" %}
+  format %{ "ld.aq  $dst, $mem\t# ptr, #@loadP_volatile" %}
 
   ins_encode %{
     __ ld_aq($dst$$Register, Address($mem$$Register));
@@ -4946,7 +4945,7 @@ instruct loadN_volatile(iRegNNoSp dst, indirect mem)
   predicate(n->as_Load()->barrier_data() == 0 && needs_acquiring_load(n));
 
   ins_cost(VOLATILE_REF_COST);
-  format %{ "lw.aq  $dst, $mem\t# compressed ptr, #@loadN\n\t"
+  format %{ "lw.aq  $dst, $mem\t# compressed ptr, #@loadN_volatile\n\t"
             "zext $dst, $dst, 32"%}
 
   ins_encode %{
@@ -4991,7 +4990,7 @@ instruct loadNKlass(iRegNNoSp dst, memory mem)
 
 instruct loadNKlassCompactHeaders(iRegNNoSp dst, memory mem)
 %{
-  predicate(UseCompactObjectHeaders);
+  predicate(UseCompactObjectHeaders && !needs_acquiring_load(n));
   match(Set dst (LoadNKlass mem));
 
   ins_cost(LOAD_COST);
@@ -5306,7 +5305,7 @@ instruct storeB_volatile(iRegIorL2I src, indirect mem)
   predicate(needs_releasing_store(n));
 
   ins_cost(VOLATILE_REF_COST);
-  format %{ "sb.rl $src, $mem\t# byte, #@storeB" %}
+  format %{ "sb.rl $src, $mem\t# byte, #@storeB_volatile" %}
 
   ins_encode %{
     __ sb_rl($src$$Register, Address($mem$$Register));
@@ -5336,7 +5335,7 @@ instruct storeimmB0_volatile(immI0 zero, indirect mem)
   predicate(needs_releasing_store(n));
 
   ins_cost(VOLATILE_REF_COST);
-  format %{ "sb.rl zr, $mem\t# byte, #@storeimmB0" %}
+  format %{ "sb.rl zr, $mem\t# byte, #@storeimmB0_volatile" %}
 
   ins_encode %{
     __ sb_rl(zr, Address($mem$$Register));
@@ -5367,7 +5366,7 @@ instruct storeC_volatile(iRegIorL2I src, indirect mem)
   predicate(needs_releasing_store(n));
 
   ins_cost(VOLATILE_REF_COST);
-  format %{ "sh.rl $src, $mem\t# char, #@storeC" %}
+  format %{ "sh.rl $src, $mem\t# char, #@storeC_volatile" %}
 
   ins_encode %{
     __ sh_rl($src$$Register, Address($mem$$Register));
@@ -5397,7 +5396,7 @@ instruct storeimmC0_volatile(immI0 zero, indirect mem)
   predicate(needs_releasing_store(n));
 
   ins_cost(VOLATILE_REF_COST);
-  format %{ "sh.rl zr, $mem\t# char, #@storeimmC0" %}
+  format %{ "sh.rl zr, $mem\t# char, #@storeimmC0_volatile" %}
 
   ins_encode %{
     __ sh_rl(zr, Address($mem$$Register));
@@ -5428,7 +5427,7 @@ instruct storeI_volatile(iRegIorL2I src, indirect mem)
   predicate(needs_releasing_store(n));
 
   ins_cost(VOLATILE_REF_COST);
-  format %{ "sw.rl $src, $mem\t# int, #@storeI" %}
+  format %{ "sw.rl $src, $mem\t# int, #@storeI_volatile" %}
 
   ins_encode %{
     __ sw_rl($src$$Register, Address($mem$$Register));
@@ -5458,7 +5457,7 @@ instruct storeimmI0_volatile(immI0 zero, indirect mem)
   predicate(needs_releasing_store(n));
 
   ins_cost(VOLATILE_REF_COST);
-  format %{ "sw.rl zr, $mem\t# int, #@storeimmI0" %}
+  format %{ "sw.rl zr, $mem\t# int, #@storeimmI0_volatile" %}
 
   ins_encode %{
     __ sw_rl(zr, Address($mem$$Register));
@@ -5489,7 +5488,7 @@ instruct storeL_volatile(iRegL src, indirect mem)
   predicate(needs_releasing_store(n));
 
   ins_cost(VOLATILE_REF_COST);
-  format %{ "sd.rl $src, $mem\t# long, #@storeL" %}
+  format %{ "sd.rl $src, $mem\t# long, #@storeL_volatile" %}
 
   ins_encode %{
     __ sd_rl($src$$Register, Address($mem$$Register));
@@ -5520,7 +5519,7 @@ instruct storeimmL0_volatile(immL0 zero, indirect mem)
   predicate(needs_releasing_store(n));
 
   ins_cost(VOLATILE_REF_COST);
-  format %{ "sd.rl zr, $mem\t# long, #@storeimmL0" %}
+  format %{ "sd.rl zr, $mem\t# long, #@storeimmL0_volatile" %}
 
   ins_encode %{
     __ sd_rl(zr, Address($mem$$Register));
@@ -5551,7 +5550,7 @@ instruct storeP_volatile(iRegP src, indirect mem)
   predicate(n->as_Store()->barrier_data() == 0 && needs_releasing_store(n));
 
   ins_cost(VOLATILE_REF_COST);
-  format %{ "sd.rl $src, $mem\t# ptr, #@storeP" %}
+  format %{ "sd.rl $src, $mem\t# ptr, #@storeP_volatile" %}
 
   ins_encode %{
     __ sd_rl($src$$Register, Address($mem$$Register));
@@ -5582,7 +5581,7 @@ instruct storeimmP0_volatile(immP0 zero, indirect mem)
   predicate(n->as_Store()->barrier_data() == 0 && needs_releasing_store(n));
 
   ins_cost(VOLATILE_REF_COST);
-  format %{ "sd.rl zr, $mem\t# ptr, #@storeimmP0" %}
+  format %{ "sd.rl zr, $mem\t# ptr, #@storeimmP0_volatile" %}
 
   ins_encode %{
     __ sd_rl(zr, Address($mem$$Register));
@@ -5613,7 +5612,7 @@ instruct storeN_volatile(iRegN src, indirect mem)
   predicate(n->as_Store()->barrier_data() == 0 && needs_releasing_store(n));
 
   ins_cost(VOLATILE_REF_COST);
-  format %{ "sw.rl $src, $mem\t# compressed ptr, #@storeN" %}
+  format %{ "sw.rl $src, $mem\t# compressed ptr, #@storeN_volatile" %}
 
   ins_encode %{
     __ sw_rl($src$$Register, Address($mem$$Register));
@@ -5643,7 +5642,7 @@ instruct storeImmN0_volatile(immN0 zero, indirect mem)
   predicate(n->as_Store()->barrier_data() == 0 && needs_releasing_store(n));
 
   ins_cost(VOLATILE_REF_COST);
-  format %{ "sw.rl zr, $mem\t# compressed ptr, #@storeImmN0" %}
+  format %{ "sw.rl zr, $mem\t# compressed ptr, #@storeImmN0_volatile" %}
 
   ins_encode %{
     __ sw_rl(zr, Address($mem$$Register));
@@ -5742,7 +5741,7 @@ instruct storeNKlass_volatile(iRegN src, indirect mem)
   predicate(needs_releasing_store(n));
 
   ins_cost(VOLATILE_REF_COST);
-  format %{ "sw.rl $src, $mem\t# compressed klass ptr, #@storeNKlass" %}
+  format %{ "sw.rl $src, $mem\t# compressed klass ptr, #@storeNKlass_volatile" %}
 
   ins_encode %{
     __ sw_rl($src$$Register, Address($mem$$Register));

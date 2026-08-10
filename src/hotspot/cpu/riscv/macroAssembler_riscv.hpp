@@ -1189,17 +1189,21 @@ public:
 
 #undef INSN
 
-#define INSN(NAME)                                                          \
-  void NAME(Register Rd, const Address& adr, Register temp = t0) {           \
-    assert(adr.getMode() == Address::base_plus_offset, "unsupported");       \
-    Register base = adr.base();                                              \
-    intptr_t disp = adr.offset();                                            \
-    Register addr = base;                                                    \
-    if (disp != 0) {                                                         \
-      la(temp, Address(base, disp));                                      \
-      addr = temp;                                                          \
-    }                                                                        \
-    Assembler::NAME(Rd, addr);                                               \
+// Zalasr accesses only support the 0(base) addressing mode. When the Address
+// carries a non-zero displacement the effective address is materialized into
+// temp, which is therefore clobbered. Callers that need the faulting PC of the
+// access itself (implicit null checks) must pass a base-only Address.
+#define INSN(NAME)                                                             \
+  void NAME(Register Rd, const Address& adr, Register temp = t0) {             \
+    assert(adr.getMode() == Address::base_plus_offset, "unsupported");         \
+    Register base = adr.base();                                               \
+    intptr_t disp = adr.offset();                                             \
+    Register addr = base;                                                     \
+    if (disp != 0) {                                                          \
+      la(temp, Address(base, disp));                                          \
+      addr = temp;                                                            \
+    }                                                                         \
+    Assembler::NAME(Rd, addr);                                                \
   }
 
 INSN(lb_aq);
@@ -1213,18 +1217,18 @@ INSN(ld_aqrl);
 
 #undef INSN
 
-#define INSN(NAME)                                                          \
-  void NAME(Register Rs2, const Address& adr, Register temp = t0) {          \
-    assert(adr.getMode() == Address::base_plus_offset, "unsupported");       \
-    Register base = adr.base();                                              \
-    intptr_t disp = adr.offset();                                            \
-    Register addr = base;                                                    \
-    if (disp != 0) {                                                         \
-      assert_different_registers(Rs2, temp);                                 \
-      la(temp, Address(base, disp));                                         \
-      addr = temp;                                                           \
-    }                                                                        \
-    Assembler::NAME(Rs2, addr);                                              \
+#define INSN(NAME)                                                             \
+  void NAME(Register Rs2, const Address& adr, Register temp = t0) {            \
+    assert(adr.getMode() == Address::base_plus_offset, "unsupported");         \
+    Register base = adr.base();                                               \
+    intptr_t disp = adr.offset();                                             \
+    Register addr = base;                                                     \
+    if (disp != 0) {                                                          \
+      assert_different_registers(Rs2, temp);                                   \
+      la(temp, Address(base, disp));                                          \
+      addr = temp;                                                            \
+    }                                                                         \
+    Assembler::NAME(Rs2, addr);                                               \
   }
 
 INSN(sb_rl);

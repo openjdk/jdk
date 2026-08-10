@@ -25,6 +25,7 @@
  */
 
 #include "asm/macroAssembler.inline.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -2651,6 +2652,37 @@ void TemplateTable::pop_and_check_object(Register r) {
   __ verify_oop(r);
 }
 
+// 8179954: We need to make sure that the code generated for volatile accesses
+// forms a sequentially-consistent set of operations when combined with the
+// Zalasr load-acquire and store-release instructions used by C2.
+//
+// With UseZalasr, C2 compiles a volatile store to a bare s{b|h|w|d}.rl and
+// elides the trailing StoreLoad fence, relying on RVWMO preserved program
+// order rule 7 ("a and b both have RCsc annotations") to order that store
+// before a later l{b|h|w|d}.aq. The interpreter reads volatile fields with a
+// plain load followed by a trailing fence, and a plain load carries no RCsc
+// annotation, so no preserved-program-order rule applies. Without a leading
+// fence it is possible for a simple Dekker test to fail if loads use
+// load;fence but stores use s.rl. This can happen if C2 compiles the stores
+// in one method and we interpret the loads in another.
+//
+// The fence is only needed when C2 may be used; flags must hold the resolved
+// field entry flags and t0 is clobbered.
+static bool needs_volatile_load_leading_fence() {
+  return UseZalasr && !CompilerConfig::is_c1_or_interpreter_only();
+}
+
+static void volatile_load_leading_fence(Register flags, InterpreterMacroAssembler* _masm) {
+  if (!needs_volatile_load_leading_fence()) {
+    return;
+  }
+  Label notVolatile;
+  __ test_bit(t0, flags, ResolvedFieldEntry::is_volatile_shift);
+  __ beqz(t0, notVolatile);
+  __ membar(MacroAssembler::AnyAny);
+  __ bind(notVolatile);
+}
+
 void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteControl rc) {
   const Register cache     = x12;
   const Register obj       = x14;
@@ -2669,6 +2701,8 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
     // obj is on the stack
     pop_and_check_object(obj);
   }
+
+  volatile_load_leading_fence(flags, _masm);
 
   __ add(off, obj, off);
   const Address field(off);
@@ -3372,6 +3406,8 @@ void TemplateTable::fast_accessfield(TosState state) {
   __ add(x11, x10, x11);
   const Address field(x11, 0);
 
+  volatile_load_leading_fence(x13 /* flags */, _masm);
+
   // access field
   switch (bytecode()) {
     case Bytecodes::_fast_vgetfield:
@@ -3429,6 +3465,11 @@ void TemplateTable::fast_xaccess(TosState state) {
 
   __ load_sized_value(x11, Address(x12, in_bytes(ResolvedFieldEntry::field_offset_offset())), sizeof(int), true /*is_signed*/);
   __ verify_field_offset(x11);
+
+  if (needs_volatile_load_leading_fence()) {
+    __ load_unsigned_byte(x13, Address(x12, in_bytes(ResolvedFieldEntry::flags_offset())));
+    volatile_load_leading_fence(x13 /* flags */, _masm);
+  }
 
   // make sure exception is reported in correct bcp range (getfield is
   // next instruction)

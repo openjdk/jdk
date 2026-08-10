@@ -1048,10 +1048,9 @@ protected:
     amo_base<funct5, width>(Rd, Rs1, Rs2->raw_encoding(), memory_order);
   }
 
-
-// ====================================
-// RISC-V Zalasr (Atomic, Load-Acquire Store-Release) extension
-// ====================================
+  // ====================================
+  // RISC-V Zalasr (Atomic, Load-Acquire Store-Release) extension
+  // ====================================
 
   enum ZalasrWidthFunct3 : uint8_t {
     ZALASR_WIDTH_BYTE       = 0b000,
@@ -1099,25 +1098,25 @@ protected:
   }
 
  public:
-// Load-acquire: aq is mandatory, rl is optional (aqrl).
-void lb_aq  (Register Rd, Register Rs1) { zalasr_base<ZALASR_LOAD_ACQUIRE,  ZALASR_WIDTH_BYTE      >(Rd, Rs1, (uint8_t)0, aq);   }
-void lb_aqrl(Register Rd, Register Rs1) { zalasr_base<ZALASR_LOAD_ACQUIRE,  ZALASR_WIDTH_BYTE      >(Rd, Rs1, (uint8_t)0, aqrl); }
-void lh_aq  (Register Rd, Register Rs1) { zalasr_base<ZALASR_LOAD_ACQUIRE,  ZALASR_WIDTH_HALFWORD  >(Rd, Rs1, (uint8_t)0, aq);   }
-void lh_aqrl(Register Rd, Register Rs1) { zalasr_base<ZALASR_LOAD_ACQUIRE,  ZALASR_WIDTH_HALFWORD  >(Rd, Rs1, (uint8_t)0, aqrl); }
-void lw_aq  (Register Rd, Register Rs1) { zalasr_base<ZALASR_LOAD_ACQUIRE,  ZALASR_WIDTH_WORD      >(Rd, Rs1, (uint8_t)0, aq);   }
-void lw_aqrl(Register Rd, Register Rs1) { zalasr_base<ZALASR_LOAD_ACQUIRE,  ZALASR_WIDTH_WORD      >(Rd, Rs1, (uint8_t)0, aqrl); }
-void ld_aq  (Register Rd, Register Rs1) { zalasr_base<ZALASR_LOAD_ACQUIRE,  ZALASR_WIDTH_DOUBLEWORD>(Rd, Rs1, (uint8_t)0, aq);   }
-void ld_aqrl(Register Rd, Register Rs1) { zalasr_base<ZALASR_LOAD_ACQUIRE,  ZALASR_WIDTH_DOUBLEWORD>(Rd, Rs1, (uint8_t)0, aqrl); }
+  // Load-acquire: aq is mandatory, rl is optional (aqrl).
+  void lb_aq  (Register Rd, Register Rs1) { zalasr_base<ZALASR_LOAD_ACQUIRE,  ZALASR_WIDTH_BYTE      >(Rd, Rs1, (uint8_t)0, aq);   }
+  void lb_aqrl(Register Rd, Register Rs1) { zalasr_base<ZALASR_LOAD_ACQUIRE,  ZALASR_WIDTH_BYTE      >(Rd, Rs1, (uint8_t)0, aqrl); }
+  void lh_aq  (Register Rd, Register Rs1) { zalasr_base<ZALASR_LOAD_ACQUIRE,  ZALASR_WIDTH_HALFWORD  >(Rd, Rs1, (uint8_t)0, aq);   }
+  void lh_aqrl(Register Rd, Register Rs1) { zalasr_base<ZALASR_LOAD_ACQUIRE,  ZALASR_WIDTH_HALFWORD  >(Rd, Rs1, (uint8_t)0, aqrl); }
+  void lw_aq  (Register Rd, Register Rs1) { zalasr_base<ZALASR_LOAD_ACQUIRE,  ZALASR_WIDTH_WORD      >(Rd, Rs1, (uint8_t)0, aq);   }
+  void lw_aqrl(Register Rd, Register Rs1) { zalasr_base<ZALASR_LOAD_ACQUIRE,  ZALASR_WIDTH_WORD      >(Rd, Rs1, (uint8_t)0, aqrl); }
+  void ld_aq  (Register Rd, Register Rs1) { zalasr_base<ZALASR_LOAD_ACQUIRE,  ZALASR_WIDTH_DOUBLEWORD>(Rd, Rs1, (uint8_t)0, aq);   }
+  void ld_aqrl(Register Rd, Register Rs1) { zalasr_base<ZALASR_LOAD_ACQUIRE,  ZALASR_WIDTH_DOUBLEWORD>(Rd, Rs1, (uint8_t)0, aqrl); }
 
-// Store-release: rl is mandatory, aq is optional (aqrl).
-void sb_rl  (Register Rs2, Register Rs1) { zalasr_base<ZALASR_STORE_RELEASE, ZALASR_WIDTH_BYTE      >(zr, Rs1, Rs2->raw_encoding(), rl);   }
-void sb_aqrl(Register Rs2, Register Rs1) { zalasr_base<ZALASR_STORE_RELEASE, ZALASR_WIDTH_BYTE      >(zr, Rs1, Rs2->raw_encoding(), aqrl); }
-void sh_rl  (Register Rs2, Register Rs1) { zalasr_base<ZALASR_STORE_RELEASE, ZALASR_WIDTH_HALFWORD  >(zr, Rs1, Rs2->raw_encoding(), rl);   }
-void sh_aqrl(Register Rs2, Register Rs1) { zalasr_base<ZALASR_STORE_RELEASE, ZALASR_WIDTH_HALFWORD  >(zr, Rs1, Rs2->raw_encoding(), aqrl); }
-void sw_rl  (Register Rs2, Register Rs1) { zalasr_base<ZALASR_STORE_RELEASE, ZALASR_WIDTH_WORD      >(zr, Rs1, Rs2->raw_encoding(), rl);   }
-void sw_aqrl(Register Rs2, Register Rs1) { zalasr_base<ZALASR_STORE_RELEASE, ZALASR_WIDTH_WORD      >(zr, Rs1, Rs2->raw_encoding(), aqrl); }
-void sd_rl  (Register Rs2, Register Rs1) { zalasr_base<ZALASR_STORE_RELEASE, ZALASR_WIDTH_DOUBLEWORD>(zr, Rs1, Rs2->raw_encoding(), rl);   }
-void sd_aqrl(Register Rs2, Register Rs1) { zalasr_base<ZALASR_STORE_RELEASE, ZALASR_WIDTH_DOUBLEWORD>(zr, Rs1, Rs2->raw_encoding(), aqrl); }
+  // Store-release: rl is mandatory, aq is optional (aqrl).
+  void sb_rl  (Register Rs2, Register Rs1) { zalasr_base<ZALASR_STORE_RELEASE, ZALASR_WIDTH_BYTE      >(zr, Rs1, Rs2->raw_encoding(), rl);   }
+  void sb_aqrl(Register Rs2, Register Rs1) { zalasr_base<ZALASR_STORE_RELEASE, ZALASR_WIDTH_BYTE      >(zr, Rs1, Rs2->raw_encoding(), aqrl); }
+  void sh_rl  (Register Rs2, Register Rs1) { zalasr_base<ZALASR_STORE_RELEASE, ZALASR_WIDTH_HALFWORD  >(zr, Rs1, Rs2->raw_encoding(), rl);   }
+  void sh_aqrl(Register Rs2, Register Rs1) { zalasr_base<ZALASR_STORE_RELEASE, ZALASR_WIDTH_HALFWORD  >(zr, Rs1, Rs2->raw_encoding(), aqrl); }
+  void sw_rl  (Register Rs2, Register Rs1) { zalasr_base<ZALASR_STORE_RELEASE, ZALASR_WIDTH_WORD      >(zr, Rs1, Rs2->raw_encoding(), rl);   }
+  void sw_aqrl(Register Rs2, Register Rs1) { zalasr_base<ZALASR_STORE_RELEASE, ZALASR_WIDTH_WORD      >(zr, Rs1, Rs2->raw_encoding(), aqrl); }
+  void sd_rl  (Register Rs2, Register Rs1) { zalasr_base<ZALASR_STORE_RELEASE, ZALASR_WIDTH_DOUBLEWORD>(zr, Rs1, Rs2->raw_encoding(), rl);   }
+  void sd_aqrl(Register Rs2, Register Rs1) { zalasr_base<ZALASR_STORE_RELEASE, ZALASR_WIDTH_DOUBLEWORD>(zr, Rs1, Rs2->raw_encoding(), aqrl); }
 
   void amoadd_b(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
     amo_base<AMO_ADD, AMO_WIDTH_BYTE>(Rd, Rs1, Rs2, memory_order);

@@ -157,7 +157,7 @@ instruct zStorePVolatile(indirect mem, iRegP src, iRegPNoSp tmp1, iRegPNoSp tmp2
   effect(TEMP tmp1, TEMP tmp2, KILL cr);
 
   ins_cost(VOLATILE_REF_COST);
-  format %{ "sd.rl  $mem, $src\t# ptr, @zStorePVolatile" %}
+  format %{ "sd.rl  $mem, $src\t# ptr, #@zStorePVolatile" %}
   ins_encode %{
     guarantee($mem$$disp == 0, "impossible encoding");
     z_store_barrier(masm, this, Address($mem$$Register), $src$$Register, $tmp1$$Register, $tmp2$$Register, false /* is_atomic */);
