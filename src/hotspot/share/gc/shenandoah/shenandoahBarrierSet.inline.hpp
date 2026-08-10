@@ -359,12 +359,12 @@ void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::clone_in_heap
 
   // Fix up src before doing the copy, if needed.
   const char gc_state = ShenandoahThreadLocalData::gc_state(Thread::current());
-  if (gc_state != 0 && ShenandoahCloneBarrier) {
+  if (gc_state != 0) {
     ShenandoahBarrierSet* bs = barrier_set();
     if ((gc_state & ShenandoahHeap::EVACUATION) != 0) {
-      bs->clone_work<true>(src);
+      bs->clone_evacuation(src);
     } else if ((gc_state & ShenandoahHeap::UPDATE_REFS) != 0) {
-      bs->clone_work<false>(src);
+      bs->clone_update(src);
     }
   }
 

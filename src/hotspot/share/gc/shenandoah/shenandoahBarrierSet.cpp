@@ -277,16 +277,29 @@ public:
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
 };
 
-template <bool EVAC>
-void ShenandoahBarrierSet::clone_work(oop obj) {
-  if (need_bulk_update(cast_from_oop<HeapWord*>(obj))) {
-    ShenandoahUpdateEvacForCloneOopClosure<EVAC> cl;
-    obj->oop_iterate(&cl);
+void ShenandoahBarrierSet::clone_evacuation(oop obj) {
+  if (!ShenandoahCloneBarrier) {
+    return;
   }
+  if (!need_bulk_update(cast_from_oop<HeapWord*>(obj))) {
+    return;
+  }
+
+  ShenandoahUpdateEvacForCloneOopClosure<true> cl;
+  obj->oop_iterate(&cl);
 }
 
-template void ShenandoahBarrierSet::clone_work<false>(oop obj);
-template void ShenandoahBarrierSet::clone_work<true>(oop obj);
+void ShenandoahBarrierSet::clone_update(oop obj) {
+  if (!ShenandoahCloneBarrier) {
+    return;
+  }
+  if (!need_bulk_update(cast_from_oop<HeapWord*>(obj))) {
+    return;
+  }
+
+  ShenandoahUpdateEvacForCloneOopClosure<false> cl;
+  obj->oop_iterate(&cl);
+}
 
 template <bool IS_GENERATIONAL, typename T>
 bool ShenandoahBarrierSet::is_above_tams(const ShenandoahMarkingContext* ctx, T* dst) const {

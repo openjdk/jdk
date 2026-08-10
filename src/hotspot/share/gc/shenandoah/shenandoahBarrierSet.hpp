@@ -137,8 +137,9 @@ private:
   template <typename T>
   void arraycopy_update(T* src, size_t count);
 
-  template <bool EVAC>
-  void clone_work(oop src);
+  void clone_evacuation(oop src);
+
+  void clone_update(oop src);
 
   template <typename T>
   inline void card_barrier(T* field, oop new_value);
