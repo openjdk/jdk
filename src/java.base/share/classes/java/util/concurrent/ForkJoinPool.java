@@ -2040,6 +2040,7 @@ public class ForkJoinPool extends AbstractExecutorService
     final void runWorker(WorkQueue w) {
         if (w != null) {
             int phase = w.phase, r = w.stackPred, src = UNSCANNED;
+            boolean canShutdown = (workerNamePrefix != null);
             for (long e; ((e = runState) & STOP) == 0L; ) {
                 long stat = scan(w, r, phase, src);
                 phase = (int)(stat & LMASK);
@@ -2055,6 +2056,9 @@ public class ForkJoinPool extends AbstractExecutorService
                             w.phase = ip;            // enqueue
                             if (!U.compareAndSetLong(this, CTL, pc, qc))
                                 w.phase = phase;     // back out on contention
+                            else if (canShutdown && (qc & RC_MASK) == 0L &&
+                                     quiescent() > 0)
+                                break;
                         }
                         else if (awaitWork(w, phase))
                             break;
@@ -2111,11 +2115,9 @@ public class ForkJoinPool extends AbstractExecutorService
                         else if (idle == 0) {
                             if (U.compareAndSetReference(a, bp, t, null)) {
                                 q.base = nb;
-                                w.source = qid;   // volatile
-                                if (src != qid || (qid & 1) == 0)
-                                    helpSignalWork(a, np);
-                                src = qid;
+                                w.source = src = qid;   // volatile
                                 taken = true;
+                                helpSignalWork(a, np);
                                 w.topLevelExec(t);
                             }
                             else if (src != qid || pb == (pb = b))
@@ -2136,6 +2138,7 @@ public class ForkJoinPool extends AbstractExecutorService
         }
         return (((long)src) << 32) | (phase & LMASK);
     }
+
 
     private int tryReactivate(WorkQueue w, int phase, int r, int qid, int qbase) {
         WorkQueue[] qs; WorkQueue v; int n, sp; long c;
@@ -2167,7 +2170,7 @@ public class ForkJoinPool extends AbstractExecutorService
      *
      * @param w the work queue
      * @param phase w's phase
-     * @return true if worker trimmed on timeout or pool known to be stopped
+     * @return true if worker trimmed on timeout
      */
     private boolean awaitWork(WorkQueue w, int phase) {
         if (w != null) {                     // currently always true
@@ -2186,16 +2189,11 @@ public class ForkJoinPool extends AbstractExecutorService
             int activePhase = phase + IDLE;
             while ((w.phase & IDLE) != 0) {
                 boolean trimmable = false;   // true if at ctl head and quiescent
-                long d = 0L, e, c;
+                long d = 0L, c;
                 Thread.interrupted();        // clear status
-                if (((e = runState) & STOP) != 0L)
-                    return true;
+                if ((runState & STOP) != 0L)
+                    break;
                 if (((c = ctl) & RC_MASK) == 0L) {
-                    DelayScheduler ds;
-                    if ((e & SHUTDOWN) != 0L &&
-                        ((ds = delayScheduler) == null || ds.canShutDown()) &&
-                        compareAndSetCtl(c, c) && casRunState(e, e | STOP))
-                        return true;        // quiescent termination
                     if ((int)c == activePhase) {
                         trimmable = true;
                         long now = System.currentTimeMillis();
