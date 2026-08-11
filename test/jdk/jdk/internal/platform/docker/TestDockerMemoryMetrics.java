@@ -76,7 +76,7 @@ public class TestDockerMemoryMetrics {
             }
             testOomKillFlag("100m", true);
 
-            testMemoryFailCount("128m" /*memory*/, "512m" /*heap*/, "1024m" /*memory_n_swap*/);
+            testMemoryFailCount("128m" /*memory*/, "768m" /*heap*/, "1024m" /*memory_n_swap*/);
 
             testMemorySoftLimit("500m","200m");
 

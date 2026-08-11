@@ -69,52 +69,54 @@ public class MetricsMemoryTester {
         final long memAndSwapLimit = metrics.getMemoryAndSwapLimit();
         final long memLimit = metrics.getMemoryLimit();
 
+        final int M = 1024 * 1024;
+
         // We need swap to execute this test. Otherwise OOM killer acts with
         // SIGSEGV before we read the fail counter.
-        if (memAndSwapLimit <= memLimit) {
-            System.out.println("No swap memory limits. Ignoring test!");
-        } else {
-            final long count = metrics.getMemoryFailCount();
 
-            System.out.printf("Memory limit: %dMiB\n", memLimit / (1024 * 1024));
-            System.out.printf("Memory and swap limit: %dMiB\n", memAndSwapLimit / (1024 * 1024));
-            System.out.println("Initial memory fail count:" + count);
+        final long maxHeapSize = Runtime.getRuntime().maxMemory();
+         if (maxHeapSize <= memLimit || maxHeapSize >= memAndSwapLimit) {
+            throw new RuntimeException(
+                    "Expected memory limit < maximum heap < memory-and-swap limit: "
+                            + "memory=" + memLimit / M + "M, "
+                            + "heap=" + maxHeapSize / M + "M, "
+                            + "memory-and-swap=" + memAndSwapLimit / M + "M");
+        }
 
-            // Allocate 512M of data in 1M chunks per iteration
-            byte[][] bytes = new byte[64 * 8][];
-            int allocations = 0;
-            for (int i = 0; i < 64 * 8; i++) {
-                try {
-                    bytes[i] = new byte[1024 * 1024];
-                    allocations++;
-                    // Break out as soon as we see an increase in failcount
-                    // to avoid getting killed by the OOM killer.
-                    if (metrics.getMemoryFailCount() > count) {
-                        break;
-                    }
-                } catch (OutOfMemoryError e) {
-                    System.out.println("Allocation stopped after " + allocations
-                            + " MiB: " + e);
-                    break;
-                }
+        final long initialFailCount = metrics.getMemoryFailCount();
+
+        System.out.println("Initial memory fail count: " + initialFailCount);
+
+        // Allocate 512M of data in 1M chunks per iteration
+        byte[][] bytes = new byte[512][];
+
+        for (int i = 0; i < 512; i++) {
+            if (i % 8 == 0) {
+                System.out.printf("Allocated: %3dM, Memory usage: %3dM, Memory and swap: %3dM\n",
+                        i,
+                        metrics.getMemoryUsage() / M,
+                        metrics.getMemoryAndSwapUsage() / M);
+            } else {
+                System.out.print(".");
             }
-            if (allocations == 0) {
-                System.out.println("Allocation failed immediately. Ignoring test!");
-                return;
-            }
-            // Be sure bytes allocations don't get optimized out
-            System.out.println("DEBUG: Bytes allocation length 1: " + bytes[0].length);
-            final long newCount = metrics.getMemoryFailCount();
-            System.out.printf("Allocated memory: %dMiB\n", allocations);
-            System.out.printf("Memory usage: %dMiB\n", metrics.getMemoryUsage() / (1024 * 1024));
-            System.out.printf("Memory and swap usage: %dMiB\n", metrics.getMemoryAndSwapUsage() / (1024 * 1024));
-            System.out.println("Final memory fail count: " + newCount);
-            if (newCount <= count) {
-                throw new RuntimeException("Memory fail count : new : ["
-                        + newCount + "]"
-                        + ", old : [" + count + "]");
+            bytes[i] = new byte[M];
+            Arrays.fill(bytes[i], (byte) 1);  // dirty every page
+            // Break out as soon as we see an increase in failcount
+            if (metrics.getMemoryFailCount() > initialFailCount) {
+                break;
             }
         }
+
+        // Be sure bytes allocations don't get optimized out
+        System.out.println("\nDEBUG: Bytes allocation length 1: " + bytes[0].length);
+        final long newCount = metrics.getMemoryFailCount();
+        System.out.println("Final memory fail count: " + newCount);
+
+        if (newCount <= initialFailCount) {
+            throw new RuntimeException("Memory fail count did not increase: initial="
+                    + initialFailCount + ", final=" + newCount);
+        }
+
         System.out.println("TEST PASSED!!!");
     }
 
