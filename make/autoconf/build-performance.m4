@@ -282,10 +282,13 @@ AC_DEFUN([BPERF_SETUP_SCCACHE],
         # Versions of sccache before 0.10.0 can restore stale or incorrect
         # dependency files for cached C/C++ compilations, breaking our build.
         SCCACHE_VERSION=[`$SCCACHE --version | head -n1 | $CUT -d " " -f 2 | $TR -d '\r'`]
+        if test "x$SCCACHE_VERSION" = x; then
+          AC_MSG_ERROR([Could not determine sccache version])
+        fi
         HAS_BAD_SCCACHE=[`$ECHO $SCCACHE_VERSION | \
             $GREP -e '^0\.[0-9]\.' -e '^0\.[0-9]$'`]
         if test "x$HAS_BAD_SCCACHE" != "x"; then
-          AC_MSG_ERROR([sccache 0.10.0 or later is required, found $SCCACHE_VERSION])
+          AC_MSG_ERROR([[sccache 0.10.0 or later is required, found $SCCACHE_VERSION]])
         fi
         SCCACHE_STATUS="Active ($SCCACHE_VERSION)"
       ],
