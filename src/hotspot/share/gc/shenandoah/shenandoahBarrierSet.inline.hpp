@@ -73,8 +73,8 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(DecoratorSet decorators,
     return obj;
   }
 
-  // No need for the barrier if there are no forwarded objects.
-  if (!_heap->has_forwarded_objects()) {
+  // No need for the barrier if object is not forwarded.
+  if (!_heap->has_forwarded_objects() || !_heap->in_collection_set(obj)) {
     return obj;
   }
 

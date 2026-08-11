@@ -206,10 +206,11 @@ void ShenandoahBarrierSet::keepalive_barrier_slow(oop obj, Filter filter) {
 
 template <typename T>
 oop ShenandoahBarrierSet::load_reference_barrier_slow(oop obj, T* load_addr) {
-  if (!ShenandoahLoadRefBarrier || !_heap->in_collection_set(obj)) {
+  if (!ShenandoahLoadRefBarrier) {
     return obj;
   }
   assert(_heap->has_forwarded_objects(), "Filtered by caller");
+  assert(_heap->in_collection_set(obj), "Filtered by caller");
   oop fwd = ShenandoahForwarding::get_forwardee(obj);
   if (obj == fwd && _heap->is_evacuation_in_progress()) {
     Thread* t = Thread::current();
