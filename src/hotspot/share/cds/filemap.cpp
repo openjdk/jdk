@@ -405,7 +405,7 @@ bool FileMapInfo::validate_class_location() {
   assert(CDSConfig::is_using_archive(), "runtime only");
 
   AOTClassLocationConfig* config = header()->class_location_config();
-  bool module_paths_mismatch = false;
+
   if (!config->validate(full_path(), header()->has_aot_linked_classes(), header()->has_full_module_graph())) {
     if (PrintSharedArchiveAndExit) {
       AOTMetaspace::set_archive_loading_failed();
