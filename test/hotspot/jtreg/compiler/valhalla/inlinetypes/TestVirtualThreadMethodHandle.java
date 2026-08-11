@@ -24,11 +24,11 @@
 /*
  * @test
  * @bug 8388596
- * @summary Test freezing a MethodHandle target frame with value class argument
+ * @summary Test freezing a c2 compiled MethodHandle target frame with a value class argument
  * @enablePreview
  * @requires vm.continuations
  * @library /test/lib
- * @run main/othervm -XX:-Inline TestVirtualThreadMethodHandle
+ * @run main/othervm -XX:-Inline -XX:CompileThreshold=100 -XX:-TieredCompilation TestVirtualThreadMethodHandle
  */
 
 import java.lang.invoke.*;
