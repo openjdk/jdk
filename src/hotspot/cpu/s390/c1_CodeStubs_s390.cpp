@@ -131,7 +131,6 @@ LoadFlattenedArrayStub::LoadFlattenedArrayStub(LIR_Opr array, LIR_Opr index, LIR
 
 void LoadFlattenedArrayStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
-  __ untested("LoadFlattenedArrayStub::emit_code");
   ce->store_parameter(_array->as_register(), 1);
   ce->store_parameter(_index->as_register(), 0);
   ce->emit_call_c(Runtime1::entry_for(StubId::c1_load_flat_array_id));
@@ -154,7 +153,6 @@ StoreFlattenedArrayStub::StoreFlattenedArrayStub(LIR_Opr array, LIR_Opr index, L
 
 void StoreFlattenedArrayStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
-  __ untested("StoreFlattenedArrayStub::emit_code");
   ce->store_parameter(_array->as_register(), 2);
   ce->store_parameter(_index->as_register(), 1);
   ce->store_parameter(_value->as_register(), 0);
