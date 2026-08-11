@@ -383,12 +383,18 @@
           "If compilation is stopped with an error, capture diagnostic "    \
           "information at the bailout point")                               \
                                                                             \
+  product(uint, StressSeed, 0, DIAGNOSTIC,                                  \
+          "Seed for randomized stress testing (if unset, a random one is "  \
+          "generated). The seed is recorded in the compilation log, if "    \
+          "available.")                                                     \
+          range(0, max_juint)                                               \
+                                                                            \
   product(int, ProfileCaptureRatio, 1, EXPERIMENTAL,                        \
           "Reduce and randomize tiered-compilation profile captures "       \
           "in order to reduce cache contention on shared method data. "     \
           "Must be a power of 2.")                                          \
           constraint(ProfileCaptureRatioConstraintFunc, AtParse)            \
-          range(1, 65536)
+          range(1, 65536)                                                   \
 
 // end of COMPILER_FLAGS
 
