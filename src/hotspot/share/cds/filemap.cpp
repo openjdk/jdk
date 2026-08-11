@@ -415,17 +415,22 @@ bool FileMapInfo::validate_class_location() {
     }
   }
 
-  // Note: module_paths_mismatch is a "soft" failure for traditional CDS, when AOTClassLinking
-  // is disabled: archived classes from the module path will not be loaded because
-  // they will be rejected by SystemDictionary::is_shared_class_visible().
   if (module_paths_mismatch) {
-    if (CDSConfig::is_dumping_final_static_archive()) {
-      AOTMetaspace::unrecoverable_writing_error("--module-path option is different");
-    }
-
-    if (header()->has_full_module_graph()) {
-      CDSConfig::disable_full_module_graph();
-      AOTMetaspace::report_loading_error("full module graph: disabled because extra module path(s) are specified");
+    if (CDSConfig::new_aot_flags_used()) {
+      // New AOT workflow requires --module-paths to be identical.
+      if (CDSConfig::is_dumping_final_static_archive()) {
+        AOTMetaspace::unrecoverable_writing_error("--module-path option is different");
+      } else {
+        AOTMetaspace::unrecoverable_loading_error("--module-path option is different");
+      }
+    } else {
+      // module_paths_mismatch is a "soft" failure for traditional CDS: archived
+      // classes from the module path will not be loaded if they are
+      // rejected by SystemDictionary::is_shared_class_visible().
+      if (header()->has_full_module_graph()) {
+        CDSConfig::disable_full_module_graph();
+        AOTMetaspace::report_loading_error("full module graph: disabled because extra module path(s) are specified");
+      }
     }
   }
 
