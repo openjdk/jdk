@@ -1254,8 +1254,20 @@ void TemplateTable::aastore() {
 
   __ bind(is_null);
   if (Arguments::is_valhalla_enabled()) {
-    NearLabel store_null;
-    __ test_null_free_array_oop(Rarray, Rscratch, store_null);
+    NearLabel write_null_to_null_free_array, store_null;
+    // A nullable flat array (NULLABLE_ATOMIC_FLAT) is flat but not null-free:
+    // storing null must go through flat_array_store to write the null marker
+    // into the payload.  Route all flat arrays there first, before the
+    // broader null-free check that would throw NPE too early.
+    if (UseArrayFlattening) {
+      __ load_klass(Rarray_klass, Rarray);
+      __ z_l(Rscratch, Address(Rarray_klass, Klass::layout_helper_offset()));
+      __ test_flat_array_layout(Rscratch, is_flat_array);
+    }
+    // Non-flat null-free array: throw NullPointerException directly.
+    __ test_null_free_array_oop(Rarray, Rscratch, write_null_to_null_free_array);
+    __ z_bru(store_null);
+    __ bind(write_null_to_null_free_array);
     __ load_absolute_address(Rscratch, Interpreter::_throw_NullPointerException_entry);
     __ z_br(Rscratch);
     __ bind(store_null);
