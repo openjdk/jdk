@@ -80,7 +80,6 @@ public class TestStackedConcatsSharedTest {
     static String h() {
         String s1 = new String("abc");
         String s2 = new StringBuilder(s1).append(s1).toString();
-        // String arg1 = "";
         String arg2 = "";
         if (s2 == null) {
           arg2 = "null";
