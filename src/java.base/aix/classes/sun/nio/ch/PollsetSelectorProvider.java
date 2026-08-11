@@ -26,8 +26,9 @@
 package sun.nio.ch;
 
 import java.io.IOException;
-import java.nio.channels.*;
-import java.nio.channels.spi.*;
+import java.nio.channels.Channel;
+import java.nio.channels.spi.SelectorProvider;
+import java.nio.channels.spi.AbstractSelector;
 
 public class PollsetSelectorProvider
         extends SelectorProviderImpl

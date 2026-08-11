@@ -38,7 +38,7 @@
 
 #include "sun_nio_ch_Pollset.h"
 
-static short POLLFD_SIZE = (short)(sizeof(struct pollfd));
+static short POLLCTL_SIZE = (short)(sizeof(struct poll_ctl));
 
 typedef pollset_t pollset_create_func(int maxfd);
 typedef int pollset_destroy_func(pollset_t ps);
@@ -49,6 +49,8 @@ static pollset_destroy_func* _pollset_destroy = NULL;
 static pollset_ctl_func* _pollset_ctl = NULL;
 static pollset_poll_func* _pollset_poll = NULL;
 
+// ISO C99 and later do not support implicit function declarations.
+// Therefore dlsym subroutine is used to achieve the goal.
 JNIEXPORT void JNICALL
 Java_sun_nio_ch_Pollset_init(JNIEnv* env, jclass this) {
     _pollset_create = (pollset_create_func*) dlsym(RTLD_DEFAULT, "pollset_create");
@@ -59,6 +61,26 @@ Java_sun_nio_ch_Pollset_init(JNIEnv* env, jclass this) {
         _pollset_ctl == NULL || _pollset_poll == NULL) {
         JNU_ThrowInternalError(env, "unable to get address of pollset functions");
     }
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_Pollset_pollCtlSize(JNIEnv* env, jclass this) {
+    return sizeof(struct poll_ctl);
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_Pollset_pollCtlCmdOffset(JNIEnv* env, jclass this) {
+    return offsetof(struct poll_ctl, cmd);
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_Pollset_pollCtlEventsOffset(JNIEnv* env, jclass this) {
+    return offsetof(struct poll_ctl, events);
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_Pollset_pollCtlFdOffset(JNIEnv* env, jclass this) {
+    return offsetof(struct poll_ctl, fd);
 }
 
 JNIEXPORT jint JNICALL
@@ -79,16 +101,6 @@ Java_sun_nio_ch_Pollset_reventsOffset(JNIEnv* env, jclass this) {
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_Pollset_fdOffset(JNIEnv* env, jclass this) {
     return offsetof(struct pollfd, fd);
-}
-
-JNIEXPORT jint JNICALL
-Java_sun_nio_ch_Pollset_fdLimit(JNIEnv *env, jclass this)
-{
-    struct rlimit rlp;
-    if (getrlimit(RLIMIT_NOFILE, &rlp) < 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "getrlimit failed");
-    }
-    return (jint)rlp.rlim_cur;
 }
 
 JNIEXPORT jint JNICALL
@@ -118,7 +130,7 @@ Java_sun_nio_ch_Pollset_pollsetCtl(JNIEnv *env, jclass c, jint ps,
 }
 
 JNIEXPORT void JNICALL
-Java_sun_nio_ch_PollsetArrayWrapper_pollsetBulkCtl(JNIEnv *env, jobject this,
+Java_sun_nio_ch_Pollset_pollsetBulkCtl(JNIEnv *env, jobject this,
                                 jint pollsetFD, jlong address, jint count)
 {
 
@@ -130,33 +142,28 @@ Java_sun_nio_ch_PollsetArrayWrapper_pollsetBulkCtl(JNIEnv *env, jobject this,
      * set to the appropriate code. The calling application must acknowledge that elements
      * in the array prior to the problem element were successfully processed and should
      * attempt to call pollset_ctl again with the elements of pollctl_array beyond the
-     * problematic element0.
+     * problematic element.
      */
 
     int res = 0;
 
-    while ( count > 0 ) {
+    while (count > 0) {
 
-        res = pollset_ctl(pollsetFD, (struct poll_ctl *)(intptr_t) address, count);
+        res = _pollset_ctl((pollset_t)pollsetFD, (struct poll_ctl *)(intptr_t) address, count);
 
         if (res == 0) {
             break;
         } else if (res == -1) {
-            if(errno == EINTR) {
-                continue;
-            }
-            address += POLLFD_SIZE;
+            // element 0 is the problem; skip it and continue with the remainder
+            address += POLLCTL_SIZE;
             count--;
-            continue;
         } else {
-            address += ( res + 1 ) * POLLFD_SIZE;
-            count -= ( res + 1 );
-            continue;
+            address += (res + 1) * POLLCTL_SIZE;
+            count -= (res + 1);
         }
     }
 
-
-    if (res < 0 && errno != EBADF && errno != ENOENT && errno!=EINVAL && errno != EPERM ) {
+    if (res < 0 && errno != EBADF && errno != ENOENT && errno != EINVAL && errno != EPERM) {
         JNU_ThrowIOExceptionWithLastError(env, "pollset_ctl failed");
     }
 }
