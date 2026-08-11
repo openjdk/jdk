@@ -4482,7 +4482,7 @@ instruct vmaskAllL(vRegMask dst, iRegL src) %{
 
 // ------------------------------ Vector mask basic OPs ------------------------
 
-// vector mask logical ops: and/or/xor
+// vector mask logical ops: and/and-not/or/xor
 
 instruct vmask_and(vRegMask dst, vRegMask src1, vRegMask src2) %{
   match(Set dst (AndVMask src1 src2));
@@ -4493,6 +4493,32 @@ instruct vmask_and(vRegMask dst, vRegMask src1, vRegMask src2) %{
     __ vmand_mm(as_VectorRegister($dst$$reg),
                 as_VectorRegister($src1$$reg),
                 as_VectorRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vmask_and_notI(vRegMask dst, vRegMask src1, vRegMask src2, immI_M1 m1) %{
+  match(Set dst (AndVMask src1 (XorVMask src2 (MaskAll m1))));
+  format %{ "vmask_and_notI $dst, $src1, $src2" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vmandn_mm(as_VectorRegister($dst$$reg),
+                 as_VectorRegister($src1$$reg),
+                 as_VectorRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vmask_and_notL(vRegMask dst, vRegMask src1, vRegMask src2, immL_M1 m1) %{
+  match(Set dst (AndVMask src1 (XorVMask src2 (MaskAll m1))));
+  format %{ "vmask_and_notL $dst, $src1, $src2" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vmandn_mm(as_VectorRegister($dst$$reg),
+                 as_VectorRegister($src1$$reg),
+                 as_VectorRegister($src2$$reg));
   %}
   ins_pipe(pipe_slow);
 %}
