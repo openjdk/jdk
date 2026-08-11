@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,19 +19,26 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- */
-
-/*
- * @test
- * @bug 8238756 8351889
- * @requires vm.debug == true & vm.flavor == "server"
- * @summary Run with -Xcomp to test -XX:VerifyIterativeGVN=1111111 in debug builds.
  *
- * @run main/othervm/timeout=300 -Xcomp -XX:VerifyIterativeGVN=1111111 compiler.c2.TestVerifyIterativeGVN
  */
-package compiler.c2;
 
-public class TestVerifyIterativeGVN {
-    public static void main(String[] args) {
-    }
-}
+#ifndef SHARE_COMPILER_STRESS_HPP
+#define SHARE_COMPILER_STRESS_HPP
+
+#include "compiler/compileLog.hpp"
+#include "compiler/compilerDefinitions.hpp"
+#include "compiler/compilerDirectives.hpp"
+#include "memory/allocation.hpp"
+
+class Stress : public StackObj {
+ private:
+  uint _stress_seed;
+
+ public:
+  Stress(DirectiveSet* directives, CompileLog* log, CompilerType comp);
+
+  uint random();
+  bool randomized_select(uint count);
+};
+
+#endif // SHARE_COMPILER_STRESS_HPP
