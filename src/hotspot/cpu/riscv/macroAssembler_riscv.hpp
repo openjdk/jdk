@@ -28,6 +28,7 @@
 #define CPU_RISCV_MACROASSEMBLER_RISCV_HPP
 
 #include "asm/assembler.inline.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/vmreg.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "oops/compressedOops.hpp"
@@ -1290,6 +1291,9 @@ public:
   }
 
   void load_byte_map_base(Register reg);
+
+  // Load a constant address in the AOT Runtime Constants area
+  void load_aotrc_address(Register reg, address a);
 
   void bang_stack_with_offset(int offset) {
     // stack grows down, caller passes positive offset
