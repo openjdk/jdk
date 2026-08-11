@@ -563,7 +563,6 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
 
   if (mem != old_mem) {
     set_req_X(MemNode::Memory, mem, phase);
-    if (phase->type(mem) == Type::TOP) return NodeSentinel;
     return this;
   }
 
@@ -2211,7 +2210,6 @@ Node* LoadNode::Ideal_load_common(PhaseGVN* phase, bool can_reshape) {
     Node* opt_mem = MemNode::optimize_memory_chain(mem, addr_t, this, phase);
     if (opt_mem != mem) {
       set_req_X(MemNode::Memory, opt_mem, phase);
-      if (phase->type(opt_mem) == Type::TOP) { return NodeSentinel; }
       return this;
     }
     const TypeOopPtr* t_oop = addr_t->isa_oopptr();
