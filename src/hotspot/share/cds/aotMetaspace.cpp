@@ -117,7 +117,6 @@ void* AOTMetaspace::_aot_metaspace_static_top = nullptr;
 intx AOTMetaspace::_relocation_delta;
 char* AOTMetaspace::_requested_base_address;
 Array<Method*>* AOTMetaspace::_archived_method_handle_intrinsics = nullptr;
-bool AOTMetaspace::_use_optimized_module_handling = true;
 int volatile AOTMetaspace::_preimage_static_archive_dumped = 0;
 FileMapInfo* AOTMetaspace::_output_mapinfo = nullptr;
 
@@ -1192,8 +1191,8 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
     AOTReferenceObjSupport::initialize(CHECK);
     AOTReferenceObjSupport::stabilize_cached_reference_objects(CHECK);
   } else {
-    log_info(aot)("Not dumping heap, reset CDSConfig::_is_using_optimized_module_handling");
-    CDSConfig::stop_using_optimized_module_handling();
+    log_info(aot)("Not dumping heap, disable full module graph");
+    CDSConfig::disable_full_module_graph();
   }
 #endif
 
@@ -1337,7 +1336,7 @@ static int exec_jvm_with_java_tool_options(const char* java_launcher_path, TRAPS
   //
   // Note: the env variables are set only for the child process. They are not changed
   // for the current process. See java.lang.ProcessBuilder::environment().
-  JavaValue result(T_OBJECT);
+  JavaValue result(T_INT);
   JavaCallArguments javacall_args(2);
   javacall_args.push_oop(launcher);
   javacall_args.push_oop(launcher_args);
@@ -1853,7 +1852,6 @@ MapArchiveResult AOTMetaspace::map_archives(FileMapInfo* static_mapinfo, FileMap
       }
     }
 #endif // INCLUDE_CLASS_SPACE
-    log_info(aot)("initial optimized module handling: %s", CDSConfig::is_using_optimized_module_handling() ? "enabled" : "disabled");
     log_info(aot)("initial full module graph: %s", CDSConfig::is_using_full_module_graph() ? "enabled" : "disabled");
   } else {
     unmap_archive(static_mapinfo);

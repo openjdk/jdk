@@ -1065,9 +1065,7 @@ void ciEnv::register_method(ciMethod* target,
     assert(compiler->type() == compiler_c2 ||
            offsets->value(CodeOffsets::Exceptions) != -1, "must have exception entry");
 
-    bool needs_stack_repair =
-        (compiler->is_c1() && method()->c1_needs_stack_repair()) ||
-        (compiler->is_c2() && method()->c2_needs_stack_repair());
+    bool needs_stack_repair = (compiler->is_c2() && method()->needs_stack_repair());
 
     nm =  nmethod::new_nmethod(method,
                                compile_id(),

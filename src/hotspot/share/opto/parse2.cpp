@@ -253,8 +253,14 @@ void Parse::array_store(BasicType bt) {
       // Array might be a flat array, emit runtime checks (for null, a simple inline_array_null_guard is sufficient).
       assert(UseArrayFlattening && !not_flat && elemtype->is_oopptr()->can_be_inline_type() &&
              (!array_type->klass_is_exact() || array_type->is_flat()), "array can't be a flat array");
-      // TODO 8350865 Depending on the available layouts, we can avoid this check in below flat/not-flat branches. Also the safe_for_replace arg is now always true.
-      array = inline_array_null_guard(array, stored_value_casted, 3, true);
+      // If by chance (or using layout disabling flags), only the nullable version is flattenable
+      // we could avoid this test in the else branch thereunder (the "Flat array" block) and do it
+      // only in the "Non-flat array" block.
+      // But it would be useful only if 1. the array is maybe-flat, 2. there is a nullable
+      // flat layout, 3. there is no null-free flat layout. Without flags, if a nullable
+      // array is flattenable, so would be the null-free version. So, this optimization would
+      // only apply with extra (experimental) flags which makes the optimization not worth.
+      array = inline_array_null_guard(array, stored_value_casted, 3);
       // Reload array type which could have been updated by inline_array_null_guard().
       array_type = _gvn.type(array)->is_aryptr();
       IdealKit ideal(this);
@@ -308,7 +314,7 @@ void Parse::array_store(BasicType bt) {
     } else if (!array_type->is_not_null_free()) {
       // Array is not flat but may be null free
       assert(elemtype->is_oopptr()->can_be_inline_type(), "array can't be null-free");
-      array = inline_array_null_guard(array, stored_value_casted, 3, true);
+      array = inline_array_null_guard(array, stored_value_casted, 3);
     }
   }
   inc_sp(3);
@@ -1783,7 +1789,7 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
 
   Node* counter = nullptr;
   Node* incr_store = nullptr;
-  bool do_stress_trap = StressUnstableIfTraps && ((C->random() % 2) == 0);
+  bool do_stress_trap = StressUnstableIfTraps && ((C->stress().random() % 2) == 0);
   if (do_stress_trap) {
     increment_trap_stress_counter(counter, incr_store);
   }
@@ -1887,7 +1893,7 @@ void Parse::do_if(BoolTest::mask btest, Node* c, bool can_trap, bool new_path, N
 
   Node* counter = nullptr;
   Node* incr_store = nullptr;
-  bool do_stress_trap = StressUnstableIfTraps && ((C->random() % 2) == 0);
+  bool do_stress_trap = StressUnstableIfTraps && ((C->stress().random() % 2) == 0);
   if (do_stress_trap) {
     increment_trap_stress_counter(counter, incr_store);
   }
@@ -2555,7 +2561,7 @@ void Parse::stress_trap(IfNode* orig_iff, Node* counter, Node* incr_store) {
   assert(success, "Trap already modified");
 
   // Add a check before the original if that will trap with a certain frequency and execute the original if otherwise
-  int freq_log = (C->random() % 31) + 1; // Random logarithmic frequency in [1, 31]
+  int freq_log = (C->stress().random() % 31) + 1; // Random logarithmic frequency in [1, 31]
   Node* mask = intcon(right_n_bits(freq_log));
   counter = _gvn.transform(new AndINode(counter, mask));
   Node* cmp = _gvn.transform(new CmpINode(counter, intcon(0)));
@@ -2579,7 +2585,7 @@ void Parse::stress_trap(IfNode* orig_iff, Node* counter, Node* incr_store) {
 
 bool Parse::path_is_suitable_for_uncommon_trap(float prob) const {
   // Randomly skip emitting an uncommon trap
-  if (StressUnstableIfTraps && ((C->random() % 2) == 0)) {
+  if (StressUnstableIfTraps && ((C->stress().random() % 2) == 0)) {
     return false;
   }
   // Don't want to speculate on uncommon traps when running with -Xcomp

@@ -351,6 +351,80 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
   return slot;
 }
 
+// InlineTypeReturnedAsFields is disabled, so we need to only care about the single return value
+// in this calling convention.
+const uint SharedRuntime::java_return_convention_max_int = 1;
+const uint SharedRuntime::java_return_convention_max_float = 1;
+
+int SharedRuntime::java_return_convention(const BasicType *sig_bt, VMRegPair *regs, int total_args_passed) {
+  uint int_args = 0;
+#ifdef __ABI_HARD__
+  uint fp_args = 0;
+#endif // __ABI_HARD__
+  for (int i = 0; i < total_args_passed; i++) {
+    switch (sig_bt[i]) {
+      case T_BOOLEAN:
+      case T_CHAR:
+      case T_BYTE:
+      case T_SHORT:
+      case T_INT:
+      case T_OBJECT:
+      case T_ARRAY:
+      case T_ADDRESS:
+      case T_METADATA:
+#ifndef __ABI_HARD__
+      case T_FLOAT:
+#endif // !__ABI_HARD__
+        if (int_args < java_return_convention_max_int) {
+          regs[i].set1(R0->as_VMReg());
+          int_args++;
+        } else {
+          return -1;
+        }
+        break;
+      case T_LONG:
+#ifndef __ABI_HARD__
+      case T_DOUBLE:
+#endif // !__ABI_HARD__
+        assert((i + 1) < total_args_passed && sig_bt[i + 1] == T_VOID, "expecting half");
+        if (int_args < java_return_convention_max_int) {
+          regs[i].set_pair(R1->as_VMReg(), R0->as_VMReg());
+          int_args++;
+        } else {
+          return -1;
+        }
+        break;
+#ifdef __ABI_HARD__
+      case T_FLOAT:
+        if (fp_args < java_return_convention_max_float) {
+          regs[i].set1(S0->as_VMReg());
+          fp_args++;
+        } else {
+          return -1;
+        }
+        break;
+      case T_DOUBLE:
+        assert((i + 1) < total_args_passed && sig_bt[i + 1] == T_VOID, "expecting half");
+        if (fp_args < java_return_convention_max_float) {
+          regs[i].set_pair(S1_reg->as_VMReg(), S0->as_VMReg());
+          fp_args++;
+        } else {
+          return -1;
+        }
+        break;
+#endif // !__ABI_HARD__
+      case T_VOID:
+        regs[i].set_bad();
+        break;
+      default:
+        ShouldNotReachHere();
+        break;
+    }
+  }
+
+  return int_args + fp_args;
+}
+
 int SharedRuntime::vector_calling_convention(VMRegPair *regs,
                                              uint num_bits,
                                              uint total_args_passed) {
@@ -625,10 +699,15 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler* masm,
                                             AdapterBlob*& new_adapter,
                                             bool allocate_code_blob) {
 
+  OopMapSet* oop_maps = new OopMapSet();
+  int frame_complete = CodeOffsets::frame_never_safe;
+  int frame_size_in_words = 0;
+
   entry_address[AdapterBlob::I2C] = __ pc();
   gen_i2c_adapter(masm, comp_args_on_stack, sig, regs);
 
   entry_address[AdapterBlob::C2I_Unverified] = __ pc();
+  entry_address[AdapterBlob::C2I_Unverified_Inline] = __ pc();
   Label skip_fixup;
   const Register receiver       = R0;
   const Register holder_klass   = Rtemp; // XXX should be OK for C2 but not 100% sure
@@ -642,9 +721,21 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler* masm,
   __ jump(SharedRuntime::get_ic_miss_stub(), relocInfo::runtime_call_type, noreg, ne);
 
   entry_address[AdapterBlob::C2I] = __ pc();
+  entry_address[AdapterBlob::C2I_Inline] = __ pc();
+  entry_address[AdapterBlob::C2I_Inline_RO] = __ pc();
+
   entry_address[AdapterBlob::C2I_No_Clinit_Check] = nullptr;
   gen_c2i_adapter(masm, comp_args_on_stack, sig, regs, skip_fixup);
-  return;
+
+  // The c2i adapters might safepoint and trigger a GC. The caller must make sure that
+  // the GC knows about the location of oop argument locations passed to the c2i adapter.
+  if (allocate_code_blob) {
+    bool caller_must_gc_arguments = (regs != regs_cc);
+    int entry_offset[AdapterHandlerEntry::ENTRIES_COUNT];
+    assert(AdapterHandlerEntry::ENTRIES_COUNT == 7, "sanity");
+    AdapterHandlerLibrary::address_to_offset(entry_address, entry_offset);
+    new_adapter = AdapterBlob::create(masm->code(), entry_offset, frame_complete, frame_size_in_words, oop_maps, caller_must_gc_arguments);
+  }
 }
 
 
@@ -1850,14 +1941,6 @@ RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
 }
 
 #endif // INCLUDE_JFR
-
-const uint SharedRuntime::java_return_convention_max_int = 0; // Argument::n_int_register_parameters_j;
-const uint SharedRuntime::java_return_convention_max_float = 0; // Argument::n_float_register_parameters_j;
-
-int SharedRuntime::java_return_convention(const BasicType *sig_bt, VMRegPair *regs, int total_args_passed) {
-  Unimplemented();
-  return 0;
-}
 
 BufferedInlineTypeBlob* SharedRuntime::generate_buffered_inline_type_adapter(const InlineKlass* vk) {
   Unimplemented();
