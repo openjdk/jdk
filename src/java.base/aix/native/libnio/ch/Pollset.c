@@ -163,7 +163,7 @@ Java_sun_nio_ch_Pollset_pollsetBulkCtl(JNIEnv *env, jobject this,
         }
     }
 
-    if (res < 0 && errno != EBADF && errno != ENOENT && errno != EINVAL && errno != EPERM) {
+    if (res < 0 && errno != EBADF && errno != ENOENT && errno != EINVAL && errno != EPERM && errno != ENOTSUP && errno != EINTR) {
         JNU_ThrowIOExceptionWithLastError(env, "pollset_ctl failed");
     }
 }
