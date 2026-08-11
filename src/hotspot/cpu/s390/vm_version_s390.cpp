@@ -337,10 +337,6 @@ void VM_Version::initialize() {
     warning("InlineTypeReturnedAsFields not supported on this CPU.");
     FLAG_SET_DEFAULT(InlineTypeReturnedAsFields, false);
   }
-  // TODO: Valhalla optimizations
-  if (UseArrayFlattening) {
-    FLAG_SET_DEFAULT(UseArrayFlattening, false);
-  }
 }
 
 
