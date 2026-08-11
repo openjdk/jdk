@@ -5006,7 +5006,14 @@ bool LibraryCallKit::inline_getArrayProperties(ArrayPropertiesCheck check) {
 // '_next_refined_array_klass' linked list being the default (see ObjArrayKlass::klass_with_properties).
 Node* LibraryCallKit::load_default_refined_array_klass(Node* klass_node, bool type_array_guard) {
   RegionNode* region = new RegionNode(2);
-  Node* phi = new PhiNode(region, TypeInstKlassPtr::OBJECT_OR_NULL);
+  const TypeAryKlassPtr* load_type = TypeAryKlassPtr::OBJECT_ARRAY_OR_NULL;
+  const TypeKlassPtr* phi_type;
+  if (type_array_guard) {
+    phi_type = TypeInstKlassPtr::OBJECT_OR_NULL; // Use very general type for Phi
+  } else {
+    phi_type = load_type;
+  }
+  Node* phi = new PhiNode(region, phi_type);
 
   if (type_array_guard) {
     generate_typeArray_guard(klass_node, region);
@@ -5015,7 +5022,7 @@ Node* LibraryCallKit::load_default_refined_array_klass(Node* klass_node, bool ty
     }
   }
   Node* adr_refined_klass = basic_plus_adr(top(), klass_node, in_bytes(ObjArrayKlass::next_refined_array_klass_offset()));
-  Node* refined_klass = _gvn.transform(LoadKlassNode::make(_gvn, immutable_memory(), adr_refined_klass, TypeRawPtr::BOTTOM, TypeInstKlassPtr::OBJECT_OR_NULL));
+  Node* refined_klass = _gvn.transform(LoadKlassNode::make(_gvn, immutable_memory(), adr_refined_klass, TypeRawPtr::BOTTOM, load_type));
 
   // Can be null if not initialized yet, just deopt
   Node* null_ctl = top();
@@ -5043,7 +5050,7 @@ Node* LibraryCallKit::load_non_refined_array_klass(Node* klass_node) {
     phi->add_req(klass_node);
   }
   Node* super_adr = basic_plus_adr(top(), klass_node, in_bytes(Klass::super_offset()));
-  Node* super_klass = _gvn.transform(LoadKlassNode::make(_gvn, immutable_memory(), super_adr, TypeRawPtr::BOTTOM, TypeInstKlassPtr::OBJECT));
+  Node* super_klass = _gvn.transform(LoadKlassNode::make(_gvn, immutable_memory(), super_adr, TypeRawPtr::BOTTOM, TypeAryKlassPtr::OBJECT_ARRAY));
 
   region->init_req(1, control());
   phi->init_req(1, super_klass);
@@ -5209,18 +5216,20 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
     klass_node = null_check(klass_node);
 
     const TypeAryPtr* src_t = _gvn.type(original)->is_aryptr();
-    const TypeKlassPtr* dest_klass_t = _gvn.type(klass_node)->is_klassptr()->is_klassptr();
+    const TypeKlassPtr* dest_klass_t = _gvn.type(klass_node)->is_klassptr();
 
-    Node* success_proj;
+    Node* bailout_ctrl;
     if (should_bail_out_on_non_ref_arrays(src_t, dest_klass_t)) {
-      success_proj = generate_non_refArray_guard(klass_node, bailout);
+      bailout_ctrl = generate_non_refArray_guard(klass_node, bailout);
     } else {
-      success_proj = generate_typeArray_guard(klass_node, bailout);
+      bailout_ctrl = generate_typeArray_guard(klass_node, bailout);
     }
 
     Node* refined_klass_node = load_default_refined_array_klass(klass_node, /* type_array_guard= */ false);
 
-    if (success_proj != nullptr) {
+    // The current path is dead if the default refined array klass is not initialized,
+    // yet, or the guard is always taken (i.e. bailout).
+    if (!stopped() && (bailout_ctrl != nullptr)) {
       // Improve the klass node's type from the new optimistic assumption:
       ciKlass* ak = ciArrayKlass::make(env()->Object_klass());
       bool not_flat = !UseArrayFlattening;
