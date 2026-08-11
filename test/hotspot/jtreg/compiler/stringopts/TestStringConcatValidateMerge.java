@@ -126,10 +126,8 @@ public class TestStringConcatValidateMerge {
         String arg1 = "";
         String arg2 = "";
         if (s2 == null) {
-          // arg1 = "null";
           arg2 = "null";
         } else {
-          // arg1 = s2;
           arg2 = "Some other string";
         }
         return new StringBuffer(s2).append(arg2).toString();
