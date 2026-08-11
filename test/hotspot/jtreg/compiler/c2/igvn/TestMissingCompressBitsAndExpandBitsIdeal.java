@@ -31,7 +31,7 @@ import jdk.test.lib.Utils;
  * @test
  * @bug 8389579
  * @key randomness
- * @summary Test missing Ideal optimization opportunity for CompressBits.
+ * @summary Test missing Ideal optimization opportunity for CompressBits and ExpandBits.
  * @library /test/lib /
  * @run main/othervm -Xcomp -XX:-TieredCompilation
  *      -XX:+IgnoreUnrecognizedVMOptions
@@ -41,10 +41,20 @@ import jdk.test.lib.Utils;
  * @run main ${test.main.class}
  */
 
-public class TestMissingCompressBitsIdeal {
+public class TestMissingCompressBitsAndExpandBitsIdeal {
     private static final Random R = Utils.getRandomInstance();
+    private static final int[] V = {43, 0x55555555};
+    private static final long[] L_V = {43L, 0x5555555555555555L};
 
     public static void main(String[] args) {
+        Asserts.assertEQ(testLShiftToExpand(), 1 << 11);
+        Asserts.assertEQ(testMinusOneLShiftToExpand(), 43 << 11);
+        Asserts.assertEQ(testLongLShiftToExpand(), 1L << 43);
+        Asserts.assertEQ(testLongMinusOneLShiftToExpand(), 43L << 43);
+
+        Asserts.assertEQ(testCompressToExpand(), 43 & 0x55555555);
+        Asserts.assertEQ(testLongCompressToExpand(), 43L & 0x5555555555555555L);
+
         for (int i = 0; i < 100; i++) {
             int intValue = R.nextInt();
             int intShift = R.nextInt(Integer.SIZE);
@@ -115,5 +125,67 @@ public class TestMissingCompressBitsIdeal {
         for (i = -10; i < -1; i++) { }
         long expandMask = i & mask;
         return Long.compress(Long.expand(val, expandMask), mask);
+    }
+
+    // expand(x, 1 << n) == (x & 1) << n
+    public static int testLShiftToExpand() {
+        int result = 0;
+        for (int i = 1; i >= 1; i--) {
+            int x = V[0];
+            result = Integer.expand(x, i << x);
+        }
+        return result;
+    }
+
+    // expand(x, -1 << n) == x << n
+    public static int testMinusOneLShiftToExpand() {
+        int result = 0;
+        for (int i = -1; i >= -1; i--) {
+            int x = V[0];
+            result = Integer.expand(x, i << x);
+        }
+        return result;
+    }
+
+     // expand(x, 1L << n) == (x & 1L) << n
+    public static long testLongLShiftToExpand() {
+        long result = 0;
+        for (long i = 1L; i >= 1L; i--) {
+            long x = L_V[0];
+            result = Long.expand(x, i << x);
+        }
+        return result;
+    }
+
+    // expand(x, -1L << n) == x << n
+    public static long testLongMinusOneLShiftToExpand() {
+        long result = 0;
+        for (long i = -1L; i >= -1L; i--) {
+            long x = L_V[0];
+            result = Long.expand(x, i << x);
+        }
+        return result;
+    }
+
+    // expand(compress(x, m), m) == x & m
+    public static int testCompressToExpand() {
+        int result = 0;
+        for (int i = 1; i >= 1; i--) {
+            int x = V[0];
+            int mask = V[1];
+            result = Integer.expand(Integer.compress(x, mask * i), mask);
+        }
+        return result;
+    }
+
+    // expand(compress(x, m), m) == x & m
+    public static long testLongCompressToExpand() {
+        long result = 0;
+        for (long i = 1L; i >= 1L; i--) {
+            long x = L_V[0];
+            long mask = L_V[1];
+            result = Long.expand(Long.compress(x, mask * i), mask);
+        }
+        return result;
     }
 }
