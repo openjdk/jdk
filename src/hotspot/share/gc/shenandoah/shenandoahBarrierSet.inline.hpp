@@ -185,11 +185,6 @@ inline void ShenandoahBarrierSet::oop_store_pre(DecoratorSet decorators, T* addr
 
   // Handle the previous value through SATB, as we are about to perform the store.
   keepalive_barrier(decorators, addr, nullptr, FILTER_WEAK_AND_MARKED);
-
-  // Handle card table updates if needed.
-  if (in_heap) {
-    card_barrier(addr, new_value);
-  }
 }
 
 template <typename T>
