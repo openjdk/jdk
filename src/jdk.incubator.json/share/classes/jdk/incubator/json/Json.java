@@ -105,11 +105,15 @@ public final class Json {
      * {@return the String representation of the given {@code JsonValue} that conforms
      * to the JSON syntax} As opposed to the compact output returned by {@link
      * JsonValue#toString()}, this method returns a JSON string that is better
-     * suited for display.
+     * suited for display. The {@code indent} parameter specifies the indentation
+     * string used for each line and may contain only JSON insignificant whitespace
+     * characters: space ({@code ' '}), horizontal tab ({@code '\t'}), line feed
+     * ({@code '\n'}), or carriage return ({@code '\r'}).
      *
      * @param value the {@code JsonValue} to create the display string from. Non-null.
      * @param indent the {@code String} for the indentation. Non-null.
-     * @throws IllegalArgumentException if {@code indent} contains non-JSON whitespace.
+     * @throws IllegalArgumentException if {@code indent} contains characters other
+     *      than insignificant whitespace characters.
      * @throws NullPointerException if {@code value} or {@code indent} is {@code null}
      * @see JsonValue#toString()
      */
@@ -118,7 +122,8 @@ public final class Json {
         Objects.requireNonNull(indent);
         if (!indent.chars().allMatch(c ->
             c == ' ' || c == '\t' || c == '\n' || c == '\r')) {
-            throw new IllegalArgumentException("indent contains non-JSON whitespace: " + indent);
+            throw new IllegalArgumentException("indent contains non-insignificant" +
+                " whitespace: " + indent);
         }
         var s = new StringBuilder();
         toDisplayString(value, s, 0, indent, false);

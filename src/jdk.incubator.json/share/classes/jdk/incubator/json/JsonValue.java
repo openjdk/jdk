@@ -147,8 +147,8 @@ import java.util.Optional;
  *
  * <h2 id="generation">Generating JSON documents</h2>
  * {@code JsonValue} overrides {@link Object#toString()} to generate RFC 8259
- * compliant JSON text in a compact representation with insignificant white
- * spaces and line separators eliminated.
+ * compliant JSON text in a compact representation with JSON insignificant white
+ * spaces eliminated.
  * For generating JSON documents suitable for display, use
  * the generation method {@link Json#toDisplayString(JsonValue, String)} instead.
  * <p>
