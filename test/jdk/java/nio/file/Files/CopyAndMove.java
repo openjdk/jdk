@@ -165,6 +165,19 @@ public class CopyAndMove {
             assertTrue(attrs1.size() == attrs2.size());
     }
 
+    static void setWindowsLinkAttributes(Path link) throws IOException {
+        // Set the timestamp to 2000-01-01T00:00:00Z.
+        FileTime time = FileTime.from(946684800, TimeUnit.SECONDS);
+
+        BasicFileAttributeView basicView =
+            getFileAttributeView(link, BasicFileAttributeView.class, NOFOLLOW_LINKS);
+        basicView.setTimes(/* mtime */ time, /* atime */ time, /* creation */ time);
+
+        DosFileAttributeView dosView =
+            getFileAttributeView(link, DosFileAttributeView.class, NOFOLLOW_LINKS);
+        dosView.setHidden(true);
+    }
+
     static void checkPosixAttributes(PosixFileAttributes attrs1,
                                      PosixFileAttributes attrs2)
     {
@@ -677,6 +690,59 @@ public class CopyAndMove {
         delete(source);
     }
 
+    static void checkCopiedAttributes(Path source, Path target,
+                                      BasicFileAttributes sourceAttrs)
+        throws IOException
+    {
+        checkBasicAttributes(sourceAttrs,
+            readAttributes(target, BasicFileAttributes.class));
+
+        if (!Platform.isWindows() && testPosixAttributes) {
+            checkPosixAttributes(
+                readAttributes(source, PosixFileAttributes.class),
+                readAttributes(target, PosixFileAttributes.class));
+        }
+
+        if (source.getFileSystem().provider() == target.getFileSystem().provider()) {
+            if (Platform.isWindows()) {
+                checkDosAttributes(
+                    readAttributes(source, DosFileAttributes.class),
+                    readAttributes(target, DosFileAttributes.class));
+            }
+
+            if (getFileStore(source).supportsFileAttributeView("xattr") &&
+                getFileStore(target).supportsFileAttributeView("xattr"))
+            {
+                checkUserDefinedFileAttributes(readUserDefinedFileAttributes(source),
+                                               readUserDefinedFileAttributes(target));
+            }
+        }
+    }
+
+    static void checkCopiedLinkAttributes(Path source, Path target,
+                                          BasicFileAttributes sourceAttrs)
+        throws IOException
+    {
+        BasicFileAttributes targetAttrs =
+            readAttributes(target, BasicFileAttributes.class, NOFOLLOW_LINKS);
+        checkBasicAttributes(sourceAttrs, targetAttrs);
+
+        if (Platform.isWindows()) {
+            assertTrue(sourceAttrs.creationTime().to(TimeUnit.SECONDS) ==
+                       targetAttrs.creationTime().to(TimeUnit.SECONDS));
+            assertTrue(sourceAttrs.lastModifiedTime().to(TimeUnit.SECONDS) ==
+                       targetAttrs.lastModifiedTime().to(TimeUnit.SECONDS));
+            assertTrue(sourceAttrs.lastAccessTime().to(TimeUnit.SECONDS) ==
+                       targetAttrs.lastAccessTime().to(TimeUnit.SECONDS));
+
+            if (source.getFileSystem().provider() == target.getFileSystem().provider()) {
+                checkDosAttributes(
+                    readAttributes(source, DosFileAttributes.class, NOFOLLOW_LINKS),
+                    readAttributes(target, DosFileAttributes.class, NOFOLLOW_LINKS));
+            }
+        }
+    }
+
     // copy source to target with verification
     static void copyAndVerify(Path source, Path target, CopyOption... options)
         throws IOException
@@ -707,35 +773,11 @@ public class CopyAndMove {
         if (basicAttributes.isSymbolicLink())
             assert(readSymbolicLink(source).equals(readSymbolicLink(target)));
 
-        // check that attributes are copied
-        if (copyAttributes && followLinks) {
-            checkBasicAttributes(basicAttributes,
-                readAttributes(source, BasicFileAttributes.class, linkOptions));
-
-            // check POSIX attributes are copied
-            if (!Platform.isWindows() && testPosixAttributes) {
-                checkPosixAttributes(
-                    readAttributes(source, PosixFileAttributes.class, linkOptions),
-                    readAttributes(target, PosixFileAttributes.class, linkOptions));
-            }
-
-            // verify other attributes when same provider
-            if (source.getFileSystem().provider() == target.getFileSystem().provider()) {
-                // check DOS attributes are copied
-                if (Platform.isWindows()) {
-                    checkDosAttributes(
-                        readAttributes(source, DosFileAttributes.class, linkOptions),
-                        readAttributes(target, DosFileAttributes.class, linkOptions));
-                }
-
-                // check named attributes are copied
-                if (followLinks &&
-                    getFileStore(source).supportsFileAttributeView("xattr") &&
-                    getFileStore(target).supportsFileAttributeView("xattr"))
-                {
-                    checkUserDefinedFileAttributes(readUserDefinedFileAttributes(source),
-                                                   readUserDefinedFileAttributes(target));
-                }
+        if (copyAttributes) {
+            if (followLinks) {
+                checkCopiedAttributes(source, target, basicAttributes);
+            } else if (basicAttributes.isSymbolicLink()) {
+                checkCopiedLinkAttributes(source, target, basicAttributes);
             }
         }
     }
@@ -971,6 +1013,23 @@ public class CopyAndMove {
         }
 
         /**
+         * Test: Copy link + attributes
+         */
+        if (supportsSymbolicLinks) {
+            source = createSourceFile(dir1);
+            link = dir1.resolve("link");
+            createSymbolicLink(link, source);
+            if (Platform.isWindows()) {
+                setWindowsLinkAttributes(link);
+            }
+
+            target = getTargetFile(dir2);
+            copyAndVerify(link, target, NOFOLLOW_LINKS, COPY_ATTRIBUTES);
+            delete(link);
+            delete(source);
+        }
+
+        /**
          * Test: Copy link (to directory)
          */
         if (supportsSymbolicLinks) {
@@ -980,6 +1039,24 @@ public class CopyAndMove {
             createSymbolicLink(link, source);
             target = getTargetFile(dir2);
             copyAndVerify(link, target, NOFOLLOW_LINKS);
+            delete(link);
+            delete(source);
+        }
+
+        /**
+         * Test: Copy link to directory + attributes
+         */
+        if (supportsSymbolicLinks) {
+            source = dir1.resolve("mydir");
+            createDirectory(source);
+            link = dir1.resolve("link");
+            createSymbolicLink(link, source);
+            if (Platform.isWindows()) {
+                setWindowsLinkAttributes(link);
+            }
+
+            target = getTargetFile(dir2);
+            copyAndVerify(link, target, NOFOLLOW_LINKS, COPY_ATTRIBUTES);
             delete(link);
             delete(source);
         }

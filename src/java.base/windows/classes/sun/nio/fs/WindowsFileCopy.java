@@ -285,7 +285,7 @@ class WindowsFileCopy {
                 view.setAttributes(sourceAttrs);
             } catch (IOException x) {
                 try {
-                    if (sourceAttrs.isDirectory()) {
+                    if (sourceAttrs.isDirectoryLink()) {
                         RemoveDirectory(targetPath);
                     } else {
                         DeleteFile(targetPath);
