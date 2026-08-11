@@ -503,7 +503,7 @@ void ZBarrierSetAssembler::generate_disjoint_oop_copy(MacroAssembler* masm, bool
   __ z_lmg(Z_R5, Z_R11, 16, Z_SP);
   __ pop_frame();
 
-  __ clear_reg(Z_RET);
+  __ clear_reg(Z_RET, true, false);
   __ z_br(Z_R14);
 
   copy_load_at_slow(masm, zpointer, Z_ARG1, load_bad, load_good);
@@ -532,7 +532,7 @@ void ZBarrierSetAssembler::generate_conjoint_oop_copy(MacroAssembler* masm, bool
   __ z_lmg(Z_R5, Z_R11, 16, Z_SP);
   __ pop_frame();
 
-  __ clear_reg(Z_RET);
+  __ clear_reg(Z_RET, true, false);
   __ z_br(Z_R14);
 
   copy_load_at_slow(masm, zpointer, Z_ARG1, load_bad, load_good);
