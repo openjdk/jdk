@@ -61,7 +61,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 /*
  * @test
- * @bug 8335181
+ * @bug 8335181 8371903
  * @summary verify that the HttpClient correctly handles incoming GOAWAY frames and
  *          retries any unprocessed requests on a new connection
  * @library /test/lib /test/jdk/java/net/httpclient/lib
