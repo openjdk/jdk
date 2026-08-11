@@ -3283,16 +3283,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         }
     }
 
-    private boolean isInitialPreferredWidthLayout() {
-        for (int i = 0; i < columnModel.getColumnCount(); i++) {
-            TableColumn column = columnModel.getColumn(i);
-            if (column.getPreferredWidth() != 75 && column.getWidth() == 75) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     private void accommodateLastColumnOnly() {
         int columnCount = getColumnCount();
         if (columnCount == 0) {
@@ -4670,7 +4660,10 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @see TableColumnModelListener
      */
     public void columnAdded(TableColumnModelEvent e) {
-        columnWidthsInitialized = false;
+        if (columnWidthsInitialized) {
+            TableColumn column = columnModel.getColumn(e.getToIndex());
+            column.setWidth(column.getPreferredWidth());
+        }
         // If I'm currently editing, then I should stop editing
         if (isEditing()) {
             removeEditor();
@@ -4687,7 +4680,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @see TableColumnModelListener
      */
     public void columnRemoved(TableColumnModelEvent e) {
-        columnWidthsInitialized = false;
         // If I'm currently editing, then I should stop editing
         if (isEditing()) {
             removeEditor();
