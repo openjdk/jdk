@@ -180,7 +180,7 @@ class DrainAmountPropertyTest {
         while (true) {
             int nextChar = inputStream.read();
             if (nextChar < 0) {
-                // `SocketException` is caught to detect the peer disconnect
+                // Peer disconnect is not expected, escalate it
                 throw new SocketException("EOF");
             }
             buffer.append((char) nextChar);
