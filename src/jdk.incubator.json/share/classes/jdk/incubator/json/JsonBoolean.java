@@ -37,7 +37,7 @@ import jdk.incubator.json.impl.JsonBooleanImpl;
  *
  * @spec https://datatracker.ietf.org/doc/html/rfc8259#section-3 RFC 8259:
  *      The JavaScript Object Notation (JSON) Data Interchange Format - Values
- * @since 99
+ * @since 28
  */
 public non-sealed interface JsonBoolean extends JsonValue {
 

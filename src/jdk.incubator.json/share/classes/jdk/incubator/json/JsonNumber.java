@@ -58,7 +58,7 @@ import jdk.incubator.json.impl.JsonNumberImpl;
  *
  * @spec https://datatracker.ietf.org/doc/html/rfc8259#section-6 RFC 8259:
  *      The JavaScript Object Notation (JSON) Data Interchange Format - Numbers
- * @since 99
+ * @since 28
  */
 public non-sealed interface JsonNumber extends JsonValue {
 
@@ -97,7 +97,9 @@ public non-sealed interface JsonNumber extends JsonValue {
 
     /**
      * {@return a finite {@code double} value from its string representation}
-     * The conversion is performed using {@link Double#parseDouble(String)}.
+     * The conversion is performed using {@link Double#parseDouble(String)},
+     * including rounding to the nearest representable {@code double} value
+     * and underflow to signed zero where applicable.
      * If the converted {@code double} value is {@link Double#POSITIVE_INFINITY}
      * or {@link Double#NEGATIVE_INFINITY}, a {@code JsonValueException} is thrown.
      *

@@ -40,7 +40,7 @@ import jdk.incubator.json.impl.JsonArrayImpl;
  *
  * @spec https://datatracker.ietf.org/doc/html/rfc8259#section-5 RFC 8259:
  *      The JavaScript Object Notation (JSON) Data Interchange Format - Arrays
- * @since 99
+ * @since 28
  */
 public non-sealed interface JsonArray extends JsonValue {
 
@@ -62,7 +62,7 @@ public non-sealed interface JsonArray extends JsonValue {
     }
 
     /**
-     * {@return the {@code JsonArray} created from the given
+     * {@return the {@code JsonArray} whose contents are copied from the given
      * list of {@code JsonValue}s}
      *
      * @param src the list of {@code JsonValue}s. Non-null.
@@ -72,10 +72,6 @@ public non-sealed interface JsonArray extends JsonValue {
     static JsonArray of(List<? extends JsonValue> src) {
         // Careful not to use List::contains on src for null checking which
         // throws NPE for immutable lists
-        return new JsonArrayImpl(src
-                .stream()
-                .map(Objects::requireNonNull)
-                .collect(Collectors.toCollection(ArrayList::new))
-        );
+        return new JsonArrayImpl(List.copyOf(src));
     }
 }

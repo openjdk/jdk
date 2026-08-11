@@ -25,7 +25,9 @@
 
 /**
  * Provides APIs for parsing JSON text, retrieving JSON values in the text, and
- * generating JSON text.
+ * generating JSON text. This package implements
+ * <a href="https://datatracker.ietf.org/doc/html/rfc8259">RFC 8259: The JavaScript
+ * Object Notation (JSON) Data Interchange Format</a>
  *
  * <h2><a>Parsing JSON documents</a></h2>
  *
@@ -34,10 +36,9 @@
  * {@snippet lang = java:
  * JsonValue root = Json.parse(jsonText);
  * }
- * A successful parse indicates that the JSON text adheres to the
- * <a href="https://datatracker.ietf.org/doc/html/rfc8259">JSON grammar</a>.
- * The parsing APIs provided do not accept JSON text that contains JSON objects
- * with duplicate names.
+ * A successful parse indicates that the JSON text adheres to the JSON grammar and
+ * contains no objects with duplicate member names. The parsing APIs provided
+ * do not accept JSON text that contains JSON objects with duplicate member names.
  *
  * <h2><a>Retrieving JSON values</a></h2>
  *
@@ -66,6 +67,6 @@
  *
  * @spec https://datatracker.ietf.org/doc/html/rfc8259 RFC 8259: The JavaScript
  *      Object Notation (JSON) Data Interchange Format
- * @since 99
+ * @since 28
  */
 package jdk.incubator.json;

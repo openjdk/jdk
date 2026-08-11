@@ -34,7 +34,7 @@ import java.io.Serial;
  * is not valid JSON syntax, or contains a JSON object with duplicate
  * names.
  *
- * @since 99
+ * @since 28
  */
 public final class JsonParseException extends RuntimeException {
 
