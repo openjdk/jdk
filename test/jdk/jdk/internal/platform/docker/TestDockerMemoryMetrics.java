@@ -108,7 +108,7 @@ public class TestDockerMemoryMetrics {
     private static void testMemoryFailCount(String memory, String heap, String memoryAndSwap) throws Exception {
         Common.logNewTestCase("testMemoryFailCount, memory = " + memory
                 + ", heap = " + heap
-                + ", memory and swap = " + memoryAndSwap);
+                + ", memory + swap = " + memoryAndSwap);
 
         // Check whether swapping really works for this test
         // On some systems there is no swap space enabled. And running
@@ -132,8 +132,8 @@ public class TestDockerMemoryMetrics {
         }
 
         //  0                   128                                                       1024
-        //  |---o----------------|---------------------------)----------------------------|
-        //      START            memory.max                  growth target                memory+swap limit
+        //  |---o----------------|---------------------------X--------------)-------------|
+        //      START            memory.max                  growth target  max heap      memory+swap limit
         //      o~~~~~>~>~>~>~>~>~>~>~>~>~>~>~>~>~>~>~>  (growth)                         OOM
         //  failcount: 0          1 2 3 ..... N
         //
