@@ -405,8 +405,8 @@ bool FileMapInfo::validate_class_location() {
   assert(CDSConfig::is_using_archive(), "runtime only");
 
   AOTClassLocationConfig* config = header()->class_location_config();
-  bool has_extra_module_paths = false;
-  if (!config->validate(full_path(), header()->has_aot_linked_classes(), &has_extra_module_paths)) {
+  bool module_paths_mismatch = false;
+  if (!config->validate(full_path(), header()->has_aot_linked_classes(), &module_paths_mismatch)) {
     if (PrintSharedArchiveAndExit) {
       AOTMetaspace::set_archive_loading_failed();
       return true;
@@ -415,9 +415,18 @@ bool FileMapInfo::validate_class_location() {
     }
   }
 
-  if (header()->has_full_module_graph() && has_extra_module_paths) {
-    CDSConfig::disable_full_module_graph();
-    AOTMetaspace::report_loading_error("full module graph: disabled because extra module path(s) are specified");
+  // Note: module_paths_mismatch is a "soft" failure for traditional CDS, when AOTClassLinking
+  // is disabled: archived classes from the module path will not be loaded because
+  // they will be rejected by SystemDictionary::is_shared_class_visible().
+  if (module_paths_mismatch) {
+    if (CDSConfig::is_dumping_final_static_archive()) {
+      AOTMetaspace::unrecoverable_writing_error("--module-path option is different");
+    }
+
+    if (header()->has_full_module_graph()) {
+      CDSConfig::disable_full_module_graph();
+      AOTMetaspace::report_loading_error("full module graph: disabled because extra module path(s) are specified");
+    }
   }
 
   if (CDSConfig::is_dumping_dynamic_archive()) {
@@ -431,7 +440,7 @@ bool FileMapInfo::validate_class_location() {
         "Dynamic archiving is disabled because base layer archive has appended boot classpath");
     }
     if (config->num_module_paths() > 0) {
-      if (has_extra_module_paths) {
+      if (module_paths_mismatch) {
         CDSConfig::disable_dumping_dynamic_archive();
         aot_log_warning(aot)(
           "Dynamic archiving is disabled because base layer archive has a different module path");

@@ -834,7 +834,7 @@ bool AOTClassLocationConfig::check_paths_existence(ClassLocationStream& runtime_
 
 bool AOTClassLocationConfig::check_module_paths(bool has_aot_linked_classes, int index_start, int index_end,
                                                 ClassLocationStream& runtime_css,
-                                                bool* has_extra_module_paths) const {
+                                                bool* module_paths_mismatch) const {
   if (index_start >= index_end && runtime_css.is_empty()) { // nothing to check
     return true;
   }
@@ -877,14 +877,16 @@ bool AOTClassLocationConfig::check_module_paths(bool has_aot_linked_classes, int
     while (true) {
       if (!runtime_css.has_next()) {
         aot_log_warning(aot)("module path has fewer elements than expected");
-        *has_extra_module_paths = true;
+        *module_paths_mismatch = true;
         return true;
       }
       // Both this->class_locations() and runtime_css are alphabetically sorted. Skip
       // items in runtime_css until we see dumptime_path.
       const char* runtime_path = runtime_css.get_next();
       if (!os::same_files(dumptime_path, runtime_path)) {
-        *has_extra_module_paths = true;
+        aot_log_warning(aot)("module path element [%d] is different: expected %s actual %s",
+                             i - index_start, dumptime_path, runtime_path);
+        *module_paths_mismatch = true;
         return true;
       } else {
         break;
@@ -893,7 +895,8 @@ bool AOTClassLocationConfig::check_module_paths(bool has_aot_linked_classes, int
   }
 
   if (runtime_css.has_next()) {
-    *has_extra_module_paths = true;
+    aot_log_warning(aot)("module path has more elements than expected");
+    *module_paths_mismatch = true;
   }
 
   return true;
@@ -967,7 +970,7 @@ bool AOTClassLocationConfig::need_lcp_match_helper(int start, int end, ClassLoca
   return true;
 }
 
-bool AOTClassLocationConfig::validate(const char* cache_filename, bool has_aot_linked_classes, bool* has_extra_module_paths) const {
+bool AOTClassLocationConfig::validate(const char* cache_filename, bool has_aot_linked_classes, bool* module_paths_mismatch) const {
   ResourceMark rm;
   AllClassLocationStreams all_css;
 
@@ -982,9 +985,9 @@ bool AOTClassLocationConfig::validate(const char* cache_filename, bool has_aot_l
   }
   if (class_locations()->length() == 1) {
     if ((module_path_start_index() >= module_path_end_index()) && Arguments::get_property("jdk.module.path") != nullptr) {
-      *has_extra_module_paths = true;
+      *module_paths_mismatch = true;
     } else {
-      *has_extra_module_paths = false;
+      *module_paths_mismatch = false;
     }
   } else {
     bool use_lcp_match = need_lcp_match(all_css);
@@ -1013,9 +1016,9 @@ bool AOTClassLocationConfig::validate(const char* cache_filename, bool has_aot_l
 
     if (success) {
       success = check_module_paths(has_aot_linked_classes, module_path_start_index(), module_path_end_index(),
-                                   all_css.module_path(), has_extra_module_paths);
+                                   all_css.module_path(), module_paths_mismatch);
       log_info(class, path)("Archived module path validation: %s%s", success ? "passed" : "failed",
-                            (*has_extra_module_paths) ? " (extra module paths found)" : "");
+                            (*module_paths_mismatch) ? " (module paths mismatch)" : "");
     }
 
     if (runtime_lcp_len > 0) {
@@ -1033,7 +1036,7 @@ bool AOTClassLocationConfig::validate(const char* cache_filename, bool has_aot_l
       if (CDSConfig::is_dumping_final_static_archive()) {
         aot_log_error(aot)("class path and/or module path are not compatible with the "
                        "ones specified when the AOTConfiguration file was recorded%s", hint_msg);
-        vm_exit_during_initialization("Unable to use create AOT cache.", nullptr);
+        AOTMetaspace::unrecoverable_writing_error("Unable to use create AOT cache.");
       } else {
         aot_log_error(aot)("%s%s", mismatch_msg, hint_msg);
         AOTMetaspace::unrecoverable_loading_error();
