@@ -1214,14 +1214,13 @@ void TemplateTable::aastore() {
 
   index_check(Rarray, Rindex, LogBytesPerHeapOop);
 
-  // (*) LEA: compute element address in-place.  Rindex is dead after this;
+  // (*) LEA: compute element address in-place.  Rindex is dead after this.
   __ load_address(Rstore_addr, Address(Rarray, Rindex, arrayOopDesc::base_offset_in_bytes(T_OBJECT)));
 
   // profile_multiple_element_types uses Rarray_klass as tmp3 scratch — it clobbers it.
   __ profile_array_type<ArrayStoreData>(Rarray, Rscratch, Rscratch2);
   __ profile_multiple_element_types(Rvalue, Rscratch, Rscratch2, Rarray_klass);
 
-  // Check for null before the flat-array check so the null path is clean
   __ compareU64_and_branch(Rvalue, (intptr_t)0, Assembler::bcondEqual, is_null);
 
   if (UseArrayFlattening) {
@@ -1242,32 +1241,23 @@ void TemplateTable::aastore() {
   __ load_absolute_address(Rscratch, Interpreter::_throw_ArrayStoreException_entry);
   __ z_br(Rscratch);
 
-  if (UseArrayFlattening) {
-    __ bind(is_flat_array);
-    __ load_ptr(0, Rvalue);
-    __ load_ptr(2, Rscratch);                                                   // array
-    __ z_lgf(Rscratch2, Address(Z_esp, Interpreter::expr_offset_in_bytes(1))); // raw index (int)
-    __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::flat_array_store),
-               Rvalue, Rscratch, Rscratch2);
-    __ z_bru(done);
-  }
-
+  // Null path
   __ bind(is_null);
   if (Arguments::is_valhalla_enabled()) {
-    NearLabel write_null_to_null_free_array, store_null;
     // A nullable flat array (NULLABLE_ATOMIC_FLAT) is flat but not null-free:
     // storing null must go through flat_array_store to write the null marker
     // into the payload.  Route all flat arrays there first, before the
-    // broader null-free check that would throw NPE too early.
+    // null-free check below.
     if (UseArrayFlattening) {
       __ load_klass(Rarray_klass, Rarray);
       __ z_l(Rscratch, Address(Rarray_klass, Klass::layout_helper_offset()));
       __ test_flat_array_layout(Rscratch, is_flat_array);
     }
-    // Non-flat null-free array: throw NullPointerException directly.
-    __ test_null_free_array_oop(Rarray, Rscratch, write_null_to_null_free_array);
-    __ z_bru(store_null);
-    __ bind(write_null_to_null_free_array);
+    // Non-flat null-free array: throw NullPointerException.
+    // test_non_null_free_array_oop branches to store_null when NOT null-free;
+    // falls through when null-free → NPE.
+    NearLabel store_null;
+    __ test_non_null_free_array_oop(Rarray, Rscratch, store_null);
     __ load_absolute_address(Rscratch, Interpreter::_throw_NullPointerException_entry);
     __ z_br(Rscratch);
     __ bind(store_null);
@@ -1277,11 +1267,23 @@ void TemplateTable::aastore() {
                Rsub_klass, Rscratch2, Rscratch, IS_ARRAY);
   __ z_bru(done);
 
-  // ── Subtype-check success path
+  // Subtype-check success path
   __ bind(ok_is_subtype);
   // Rvalue (Z_R2) and Rstore_addr (Z_R4) survived gen_subtype_check intact.
   do_oop_store(_masm, Address(Rstore_addr, (intptr_t)0), Rvalue,
                Rsub_klass, Rscratch2, Rscratch, IS_ARRAY | IS_NOT_NULL);
+  __ z_bru(done);
+
+  // Flat-array path (non-null and null into nullable flat)
+  if (UseArrayFlattening) {
+    __ bind(is_flat_array);
+    __ load_ptr(0, Rvalue);
+    __ load_ptr(2, Rscratch);                                                   // array
+    __ z_lgf(Rscratch2, Address(Z_esp, Interpreter::expr_offset_in_bytes(1))); // raw index (int)
+    __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::flat_array_store),
+               Rvalue, Rscratch, Rscratch2);
+    // fall through to done
+  }
 
   __ bind(done);
   __ add2reg(Z_esp, 3 * Interpreter::stackElementSize);
