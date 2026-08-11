@@ -2599,9 +2599,9 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   // Check for Max/Min(A, Max/Min(B, C)) where A == B or A == C
   // MinMaxNode::IdealI also optimizes these cases (if no overflow):
   //   MinI(AddI(x, -1), x) -> AddI(x, -1)
-  if (use->is_MinMax()) {
+  if (use->is_MinMax() || use->Opcode() == Op_AddI) {
     add_users_to_worklist_if(worklist, use, [](Node* u) {
-      return u->is_MinMax() || u->Opcode() == Op_AddI;
+      return u->is_MinMax();
     });
   }
   auto enqueue_init_mem_projs = [&](ProjNode* proj) {
@@ -2741,6 +2741,13 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   if (use_op == Op_MulI || use_op == Op_MulL) {
     const int add_op = (use_op == Op_MulI) ? Op_AddI : Op_AddL;
     add_users_to_worklist_if(worklist, use, [=](Node* u) { return u->Opcode() == add_op; });
+  }
+
+  // MulNode::Ideal distributes constant multiplication:
+  // e.g., (x + c1) * c2 -> x * c1 + (c1 * c2)
+  if (use_op == Op_AddI || use_op == Op_AddL) {
+    const int mul_op = (use_op == Op_AddI) ? Op_MulI : Op_MulL;
+    add_users_to_worklist_if(worklist, use, [=](Node* u) { return u->Opcode() == mul_op; });
   }
 
   // We may have a loop-phi that is about to close the AddI recurrence,
