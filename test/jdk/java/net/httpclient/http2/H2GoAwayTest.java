@@ -125,7 +125,7 @@ public class H2GoAwayTest {
                 final IOException ioe = assertThrows(IOException.class,
                         () -> client.send(req, BodyHandlers.discarding()));
                 final String actual = ioe.getMessage();
-                if (actual != null && actual.contains(ioe.getMessage())) {
+                if (actual != null && actual.contains(expectedExMsg)) {
                     receivedExpectedFailure = true;
                     System.err.println("iteration - " + i + " got the expected exception: " + ioe);
                     break; // no need to issue any more requests
