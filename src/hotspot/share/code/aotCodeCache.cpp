@@ -2239,20 +2239,18 @@ void AOTCodeAddressTable::set_stubgen_stubs_complete() {
 #endif
 static const int _c_str_base = _all_max;
 
-static GrowableArray<const char*>* _C_strings_old = nullptr; // Incoming strings
-static GrowableArray<const char*>* _C_strings_new = nullptr; // Cached duplicates
-static GrowableArray<int>* _C_strings_id = nullptr;  // id corresponding to index in _C_strings_new[]
-static GrowableArray<int>* _C_strings_ix = nullptr;  // index in _C_strings_new[] corresponding to id
+static GrowableArray<const char*>* _C_strings = nullptr; // Cached duplicates
+static GrowableArray<int>* _C_strings_id = nullptr;  // id corresponding to index in _C_strings[]
+static GrowableArray<int>* _C_strings_ix = nullptr;  // index in _C_strings[] corresponding to id
 
 static const char** _cached_C_strings = nullptr;
 static int _C_strings_count = 0;
 static int _C_strings_used = 0;
 
 void AOTCodeCache::init_C_strings_caching() {
-  assert(_C_strings_old == nullptr, "Initialize only once");
+  assert(_C_strings == nullptr, "Initialize only once");
   // Allocate arrays in C heap
-  _C_strings_old = new(mtCode) GrowableArray<const char*>(INITIAL_STR_CACHE_SIZE, 0, nullptr, mtCode);
-  _C_strings_new = new(mtCode) GrowableArray<const char*>(INITIAL_STR_CACHE_SIZE, 0, nullptr, mtCode);
+  _C_strings = new(mtCode) GrowableArray<const char*>(INITIAL_STR_CACHE_SIZE, 0, nullptr, mtCode);
   _C_strings_id  = new(mtCode) GrowableArray<int>(INITIAL_STR_CACHE_SIZE, 0, -1, mtCode);
   _C_strings_ix  = new(mtCode) GrowableArray<int>(INITIAL_STR_CACHE_SIZE, 0, -1, mtCode);
 }
@@ -2286,8 +2284,8 @@ void AOTCodeCache::load_strings() {
 }
 
 int AOTCodeCache::store_strings() {
+  MutexLocker ml(AOTCodeCStrings_lock, Mutex::_no_safepoint_check_flag);
   if (_C_strings_used > 0) {
-    MutexLocker ml(AOTCodeCStrings_lock, Mutex::_no_safepoint_check_flag);
     uint offset = _write_position;
     uint length = 0;
     uint* lengths = (uint *)reserve_bytes(sizeof(uint) * _C_strings_used);
@@ -2296,7 +2294,7 @@ int AOTCodeCache::store_strings() {
     }
     // Write strings into AOT cache in `id` order.
     for (int i = 0; i < _C_strings_used; i++) {
-      const char* str = _C_strings_new->at(_C_strings_ix->at(i));
+      const char* str = _C_strings->at(_C_strings_ix->at(i));
       log_trace(aot, codecache, stringtable)("store_strings: _C_strings[%d] " INTPTR_FORMAT " '%s'", i, p2i(str), str);
       uint len = (uint)strlen(str) + 1;
       length += len;
@@ -2323,22 +2321,20 @@ const char* AOTCodeCache::add_C_string(const char* str) {
   return str;
 }
 
+// Identical C strings get the same ID
 const char* AOTCodeAddressTable::add_C_string(const char* str) {
-  // Check previous strings address
+  assert_lock_strong(AOTCodeCStrings_lock);
   for (int i = 0; i < _C_strings_count; i++) {
-    const char* dup = _C_strings_new->at(i);
-    if (_C_strings_old->at(i) == str) {
-      return dup; // Found previous one - return our duplicate
-    } else if (strcmp(dup, str) == 0) {
+    const char* dup = _C_strings->at(i);
+    if (strcmp(dup, str) == 0) {
       return dup;
     }
   }
-  // Add new one string.
+  // Add one new string.
   // Passed in string can be freed and used space become inaccessible.
-  // Keep original address but duplicate string for future compare.
-  _C_strings_old->at_put_grow(_C_strings_count, str);
+  // Duplicate string for future compare.
   const char* dup = os::strdup(str);
-  _C_strings_new->at_put_grow(_C_strings_count, dup);
+  _C_strings->at_put_grow(_C_strings_count, dup);
   _C_strings_id->at_put_grow(_C_strings_count, -1);
   log_trace(aot, codecache, stringtable)("add_C_string: [%d] " INTPTR_FORMAT " '%s'", _C_strings_count, p2i(dup), dup);
   _C_strings_count++;
@@ -2352,7 +2348,7 @@ int AOTCodeAddressTable::id_for_C_string(address str) {
   }
   MutexLocker ml(AOTCodeCStrings_lock, Mutex::_no_safepoint_check_flag);
   for (int i = 0; i < _C_strings_count; i++) {
-    if (_C_strings_new->at(i) == (const char*)str) { // found
+    if (_C_strings->at(i) == (const char*)str) { // found
       int id = _C_strings_id->at(i);
       if (id >= 0) {
         assert(id < _C_strings_used, "%d >= %d", id , _C_strings_used);
@@ -2370,6 +2366,7 @@ int AOTCodeAddressTable::id_for_C_string(address str) {
 }
 
 address AOTCodeAddressTable::address_for_C_string(int idx) {
+  assert(AOTCodeCache::is_on_for_use(), "should be called only when loading from AOT code cache");
   assert((uint)idx < (uint)_C_strings_count, " %d >= %d", idx, _C_strings_count);
   precond(_cached_C_strings != nullptr);
   return (address)_cached_C_strings[idx];

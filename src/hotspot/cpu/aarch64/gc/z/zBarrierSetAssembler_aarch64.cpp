@@ -1352,6 +1352,7 @@ void ZBarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembler* masm,
 }
 
 void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error) {
+  assert_different_registers(obj, tmp1, tmp2);
   // C1 calls verfy_oop in the middle of barriers, before they have been uncolored
   // and after being colored. Therefore, we must deal with colored oops as well.
   Label done;
@@ -1393,7 +1394,6 @@ void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Registe
   // Check if the oop is in the right area of memory
 #if INCLUDE_CDS
   if (AOTCodeCache::is_on_for_dump()) {
-    assert_different_registers(tmp1, tmp2, obj);
     __ lea(tmp1, ExternalAddress(AOTRuntimeConstants::verify_oop_mask_address()));
     __ ldr(tmp1, Address(tmp1));
     __ andr(tmp1, tmp1, obj);

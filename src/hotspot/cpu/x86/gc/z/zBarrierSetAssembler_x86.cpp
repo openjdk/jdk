@@ -1502,10 +1502,11 @@ void ZBarrierSetAssembler::retrieve_reloc_addresses(address start, address end, 
   entries.append(nullptr);
 }
 
-// Add inderection for AOT code patching
+// Add indirection for AOT code patching
 address ZPointerLoadShiftTableAddr = (address)&ZPointerLoadShiftTable;
 
 void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error) {
+  assert_different_registers(obj, tmp1, tmp2);
   // C1 calls verfy_oop in the middle of barriers, before they have been uncolored
   // and after being colored. Therefore, we must deal with colored oops as well.
   Label done;
@@ -1565,7 +1566,6 @@ void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Registe
   __ movptr(tmp1, obj);
 #if INCLUDE_CDS
   if (AOTCodeCache::is_on_for_dump()) {
-    assert_different_registers(tmp1, tmp2);
     __ lea(tmp2, ExternalAddress(AOTRuntimeConstants::verify_oop_mask_address()));
     __ movptr(tmp2, Address(tmp2));
     __ andptr(tmp1, tmp2);

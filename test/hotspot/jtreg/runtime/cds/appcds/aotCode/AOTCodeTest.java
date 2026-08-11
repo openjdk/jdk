@@ -120,21 +120,32 @@ public class AOTCodeTest {
         if (args.length == 0) {
             throw new RuntimeException("Expected GC name");
         }
-        Tester t = new Tester(args[0]);
+        Tester t = new Tester(args[0], false);
         t.run(new String[] {"AOT", "--two-step-training"});
+
+        if (System.getProperty("jdk.debug", "").contains("debug")) {
+          // Run with VerifyOops which is only supported in debug VM
+          t = new Tester(args[0], true);
+          t.run(new String[] {"AOT", "--two-step-training"});
+        }
     }
 
     static class Tester extends CDSAppTester {
         private String gcName;
+        private boolean withVerifyOops;
 
-        public Tester(String name) {
+        public Tester(String name, boolean verifyOops) {
             super("AOTCodeTest");
             gcName = name;
+            withVerifyOops = verifyOops;
         }
 
         public List<String> getGCArgs() {
             List<String> args = new ArrayList<String>();
             args.add("-Xmx100M");
+            if (withVerifyOops) {
+              args.add("-XX:+VerifyOops");
+            }
             switch (gcName) {
             case "G1":
             case "Parallel":
@@ -177,7 +188,9 @@ public class AOTCodeTest {
                 out.shouldMatch("aot,codecache,exit.*\\s+AOT code cache size: [1-9]\\d+ bytes");
             } else if (runMode == RunMode.PRODUCTION) {
                 out.shouldMatch("aot,codecache,init.*\\s+Loaded [1-9]\\d+ AOT code entries from AOT Code Cache");
-                out.shouldMatch("aot,codecache,stubs.*\\s+Read blob.*kind=Adapter.*");
+                if (!withVerifyOops) { // Adapters are not cached for VerifyOops+Valhalla
+                    out.shouldMatch("aot,codecache,stubs.*\\s+Read blob.*kind=Adapter.*");
+                }
                 out.shouldMatch("aot,codecache,stubs.*\\s+Read blob.*kind=SharedBlob.*");
                 out.shouldMatch("aot,codecache,stubs.*\\s+Read blob.*kind=C1Blob.*");
             }

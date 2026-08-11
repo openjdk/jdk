@@ -406,10 +406,10 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
 }
 
 void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error) {
+  assert_different_registers(obj, tmp1, tmp2);
   // Check if the oop is in the right area of memory
 #if INCLUDE_CDS
   if (AOTCodeCache::is_on_for_dump()) {
-    assert_different_registers(tmp1, tmp2, obj);
     __ lea(tmp2, ExternalAddress(AOTRuntimeConstants::verify_oop_mask_address()));
     __ ldr(tmp2, Address(tmp2));
     __ andr(tmp1, obj, tmp2);
