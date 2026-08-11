@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test id=default
- * @bug 8295785
+ * @bug 8387853
  * @summary Tests the default value of `sun.net.httpserver.drainAmount`,
  *          which is 65,536.
  *
@@ -51,7 +51,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test id=negative
- * @bug 8295785 8387853
+ * @bug 8387853
  * @summary Verifies that configuring `sun.net.httpserver.drainAmount` to a
  *          negative value (-1, in this case) results in server closing the
  *          connection if the handler leaves behind an unconsumed request body
@@ -64,7 +64,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test id=0
- * @bug 8295785 8387853
+ * @bug 8387853
  * @summary Verifies that configuring `sun.net.httpserver.drainAmount` to 0
  *          results in server closing the connection if the handler leaves
  *          behind an unconsumed request body of length bigger than 0.
@@ -76,7 +76,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test id=1
- * @bug 8295785
+ * @bug 8387853
  * @summary Verifies that configuring `sun.net.httpserver.drainAmount` to 1
  *          results in server closing the connection if the handler leaves
  *          behind an unconsumed request body of length greater than or equal
