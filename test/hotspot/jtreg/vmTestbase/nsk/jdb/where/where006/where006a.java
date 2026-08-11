@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 package nsk.jdb.where.where006;
 
+import jdk.test.lib.thread.ThreadWrapper;
 import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdb.*;
@@ -52,7 +53,7 @@ public class where006a {
 
         for (int i = 0; i < numThreads ; i++) {
            locks[i] = new Lock();
-           holder[i] = new MyThread(locks[i],"MyThread-" + i);
+           holder[i] = new MyThread(locks[i],"MyThread-" + i).getThread();
         }
 
         // lock monitor to prevent threads from finishing after they started
@@ -104,12 +105,19 @@ class Lock {
    }
 }
 
-class MyThread extends Thread {
+class MyThread extends ThreadWrapper {
    Lock lock;
    String name;
-   MyThread(Lock l, String n) {this.lock = l; name = n;}
+   MyThread(Lock l, String n) {super(n); this.lock = l; name = n;}
+
+   // Each tested thread calls this once at startup. The debugger sets a
+   // breakpoint here: receiving the event is what makes a virtual thread
+   // visible to jdb with the default debug agent behavior, so the test
+   // does not need the -trackallthreads option.
+   static void threadStarted() {}
 
    public void run() {
+       threadStarted();
       // Concatenate strings in advance to avoid lambda calculations later
       final String ThreadFinished = "Thread finished: " + this.name;
       int square = func1(10);

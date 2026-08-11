@@ -91,6 +91,7 @@ void ShenandoahDegenGC::entry_degenerated() {
 
 void ShenandoahDegenGC::op_degenerated() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  heap->release_injected_pins();
   // Degenerated GC is STW, but it can also fail. Current mechanics communicates
   // GC failure via cancelled_concgc() flag. So, if we detect the failure after
   // some phase, we have to upgrade the Degenerate GC to Full GC.

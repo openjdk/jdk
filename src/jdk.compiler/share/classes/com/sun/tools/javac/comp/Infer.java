@@ -683,7 +683,13 @@ public class Infer {
 
         //step 1:
         List<Type> expressionTypes = List.nil();
-        List<Type> params = patternTypeSymbol.type.allparams();
+
+        // replace tvars in generic pattern type P<A1, ... An> with
+        // fresh tvars A1', ..., An' so that occurrences of A1, ..., An
+        // in the expression type are not confused with inference tvars
+        List<Type> declaredParams = patternTypeSymbol.type.allparams();
+        List<Type> params = types.newInstances(declaredParams);
+        Type patternType = types.subst(patternTypeSymbol.type, declaredParams, params);
         List<Type> capturedWildcards = List.nil();
         List<Type> todo = List.of(expressionType);
         while (todo.nonEmpty()) {
@@ -713,8 +719,8 @@ public class Infer {
         }
         //add synthetic captured ivars
         InferenceContext c = new InferenceContext(this, params);
-        Type patternType = c.asUndetVar(patternTypeSymbol.type);
-        List<Type> exprTypes = expressionTypes.map(t -> c.asUndetVar(t));
+        Type undetPatternType = c.asUndetVar(patternType);
+        List<Type> exprTypes = expressionTypes.map(c::asUndetVar);
 
         capturedWildcards.forEach(s -> ((UndetVar) c.asUndetVar(s)).setNormal());
 
@@ -723,9 +729,9 @@ public class Infer {
             for (Type exprType : exprTypes) {
                 if (exprType.isParameterized()) {
                     Type patternAsExpression =
-                            types.asSuper(patternType, exprType.tsym);
+                            types.asSuper(undetPatternType, exprType.tsym);
                     if (patternAsExpression == null ||
-                        !types.isSameType(patternAsExpression, exprType)) {
+                            !types.isSameType(patternAsExpression, exprType)) {
                         return null;
                     }
                 }
@@ -736,7 +742,7 @@ public class Infer {
             //step 3:
             List<Type> freshVars = instantiatePatternVars(params, c);
 
-            Type substituted = c.asInstType(patternTypeSymbol.type);
+            Type substituted = c.asInstType(patternType);
 
             //step 4:
             return types.upward(substituted, freshVars);
