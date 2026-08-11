@@ -112,10 +112,6 @@ MICROBENCHMARK_JAVA_FLAGS := \
     --add-modules jdk.unsupported \
     --limit-modules java.management
 
-MICROBENCHMARK_JAVA_PREVIEW_FLAGS := \
-    $(MICROBENCHMARK_JAVA_FLAGS) \
-    --enable-preview
-
 MICROBENCHMARK_DISABLED_WARNINGS := restricted this-escape processing \
     rawtypes removal cast serial preview unchecked deprecation \
     dangling-doc-comments
@@ -131,7 +127,7 @@ $(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK_PREVIEW, \
     SRC := $(MICROBENCHMARK_SRC), \
     BIN := $(MICROBENCHMARK_CLASSES), \
     JAVAC_FLAGS := $(MICROBENCHMARK_JAVAC_PREVIEW_FLAGS), \
-    JAVA_FLAGS := $(MICROBENCHMARK_JAVA_PREVIEW_FLAGS), \
+    JAVA_FLAGS := $(MICROBENCHMARK_JAVA_FLAGS), \
 ))
 
 $(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK, \
@@ -143,8 +139,8 @@ $(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK, \
     DISABLED_WARNINGS := $(MICROBENCHMARK_DISABLED_WARNINGS), \
     SRC := $(MICROBENCHMARK_SRC), \
     BIN := $(MICROBENCHMARK_CLASSES), \
-    JAVAC_FLAGS := $(MICROBENCHMARK_JAVAC_PREVIEW_FLAGS), \
-    JAVA_FLAGS := $(MICROBENCHMARK_JAVA_PREVIEW_FLAGS), \
+    JAVAC_FLAGS := $(MICROBENCHMARK_JAVAC_FLAGS), \
+    JAVA_FLAGS := $(MICROBENCHMARK_JAVA_FLAGS), \
 ))
 
 $(BUILD_JDK_MICROBENCHMARK_PREVIEW): $(JMH_COMPILE_JARS)
