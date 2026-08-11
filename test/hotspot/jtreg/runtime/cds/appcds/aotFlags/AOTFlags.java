@@ -148,9 +148,22 @@ public class AOTFlags {
             "-XX:+AOTCompatibleOopCompression", // avoid production run failure due to incompatible CompressedOops::base
             "-cp", appJar);
         out = CDSTestUtils.executeAndLog(pb, "asm");
-        out.shouldNotContain("AOTCache creation is complete");
-        out.shouldContain("AOT configuration file was created with AOTClassLinking enabled. It cannot be used when AOTClassLinking is disabled");
-        out.shouldHaveExitValue(1);
+        out.shouldContain("AOTClassLinking is updated to true (the same as when AOT configuration file");
+        out.shouldContain("AOTCache creation is complete");
+        out.shouldMatch("hello[.]aot");
+        out.shouldHaveExitValue(0);
+
+        //----------------------------------------------------------------------
+        printTestCase("Production Run with AOTCache created from the last step");
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-XX:AOTCache=" + aotCacheFile,
+            "-Xlog:aot",
+            "-cp", appJar, helloClass);
+        out = CDSTestUtils.executeAndLog(pb, "prod");
+        out.shouldContain("Using AOT-linked classes: true");
+        out.shouldContain("Opened AOT cache hello.aot.");
+        out.shouldContain("Hello World");
+        out.shouldHaveExitValue(0);
 
         //----------------------------------------------------------------------
         printTestCase("Training run with -XX:-AOTClassLinking, but assembly run with -XX:+AOTClassLinking");
@@ -173,32 +186,10 @@ public class AOTFlags {
             "-Xlog:aot=debug",
             "-cp", appJar);
         out = CDSTestUtils.executeAndLog(pb, "asm");
-        out.shouldNotContain("Writing AOTCache file:");
-        out.shouldContain("AOT configuration file was created with AOTClassLinking disabled. It cannot be used when AOTClassLinking is enabled");
-        out.shouldHaveExitValue(1);
-
-        //----------------------------------------------------------------------
-        printTestCase("Training and assembly runs with -XX:-AOTClassLinking");
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-            "-XX:AOTMode=create",
-            "-XX:-AOTClassLinking",
-            "-XX:AOTConfiguration=" + aotConfigFile,
-            "-XX:AOTCache=" + aotCacheFile,
-            "-Xlog:aot=debug",
-            "-cp", appJar);
-        out = CDSTestUtils.executeAndLog(pb, "asm");
+        out.shouldContain("AOTClassLinking is updated to false (the same as when AOT configuration file");
         out.shouldContain("Writing AOTCache file:");
         out.shouldMatch("aot.*hello[.]aot");
-        out.shouldHaveExitValue(0);
-
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-            "-XX:AOTCache=" + aotCacheFile,
-            "-Xlog:aot",
-            "-cp", appJar, helloClass);
-        out = CDSTestUtils.executeAndLog(pb, "prod");
-        out.shouldContain("Using AOT-linked classes: false (static archive: no aot-linked classes)");
-        out.shouldContain("Opened AOT cache hello.aot.");
-        out.shouldContain("Hello World");
+        out.shouldContain("Using AOT-linked classes: false");
         out.shouldHaveExitValue(0);
 
         //----------------------------------------------------------------------

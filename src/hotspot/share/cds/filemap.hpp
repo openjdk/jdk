@@ -236,6 +236,7 @@ public:
   char* mapped_base_address()              const { return _mapped_base_address; }
   bool has_platform_or_app_classes()       const { return _has_platform_or_app_classes; }
   bool has_aot_linked_classes()            const { return _has_aot_linked_classes; }
+  bool aot_class_linking_value()           const { return _aot_class_linking_value; }
   bool compressed_oops()                   const { return _compressed_oops; }
   bool compatible_oop_compression()        const { return _compatible_oop_compression; }
   int narrow_klass_pointer_bits()          const { return _narrow_klass_pointer_bits; }
@@ -326,7 +327,7 @@ public:
   FileMapHeader *header() const       { return _header; }
   static bool get_base_archive_name_from_header(const char* archive_name,
                                                 const char** base_archive_name);
-  static bool is_preimage_static_archive(const char* file);
+  static void check_preimage_static_archive(const char* file);
 
   bool init_from_file(int fd);
 
