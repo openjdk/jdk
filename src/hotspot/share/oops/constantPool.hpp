@@ -580,7 +580,7 @@ class ConstantPool : public Metadata {
     return symbol_at(signature_index);
   }
 
-  // Returns a resolved klass without trying to resolve the class.
+  // Returns a resolved klass or nullptr if not resolved.  Does not trying to resolve the class.
   Klass* resolved_klass_ref_at(int which, Bytecodes::Code code) {
     jint ref_index = klass_ref_index_at(which, code);
     return resolved_klass_at(ref_index);
