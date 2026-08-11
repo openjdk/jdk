@@ -320,7 +320,9 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_ato
   ShenandoahBarrierSet* bs = barrier_set();
   bs->oop_cmpxchg_pre(decorators, addr, compare_value, new_value, /* in_heap = */ false);
   oop result = Raw::oop_atomic_cmpxchg_not_in_heap(addr, compare_value, new_value);
-  bs->oop_store_post(decorators, addr, new_value, /* in_heap = */ false);
+  if (result == compare_value) {
+    bs->oop_store_post(decorators, addr, new_value, /* in_heap = */ false);
+  }
   return result;
 }
 
@@ -330,7 +332,9 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_ato
   ShenandoahBarrierSet* bs = barrier_set();
   bs->oop_cmpxchg_pre(decorators, addr, compare_value, new_value, /* in_heap = */ true);
   oop result = Raw::oop_atomic_cmpxchg_in_heap(addr, compare_value, new_value);
-  bs->oop_store_post(decorators, addr, new_value, /* in_heap = */ true);
+  if (result == compare_value) {
+    bs->oop_store_post(decorators, addr, new_value, /* in_heap = */ true);
+  }
   return result;
 }
 
@@ -342,7 +346,9 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_ato
   ShenandoahBarrierSet* bs = barrier_set();
   bs->oop_cmpxchg_pre(resolved_decorators, addr, compare_value, new_value, /* in_heap = */ true);
   oop result = Raw::oop_atomic_cmpxchg_in_heap(addr, compare_value, new_value);
-  bs->oop_store_post(resolved_decorators, addr, new_value, /* in_heap = */ true);
+  if (result == compare_value) {
+    bs->oop_store_post(resolved_decorators, addr, new_value, /* in_heap = */ true);
+  }
   return result;
 }
 
