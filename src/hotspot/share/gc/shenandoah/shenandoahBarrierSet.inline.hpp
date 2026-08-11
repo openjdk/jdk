@@ -269,6 +269,7 @@ inline oop ShenandoahBarrierSet::oop_xchg(DecoratorSet decorators, T* addr, oop 
 template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
 inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_load_common(DecoratorSet resolved_decorators, T* addr) {
+  // This raw access inherits decorators that are needed for proper memory ordering.
   oop value = Raw::template oop_load<oop>(addr);
   ShenandoahBarrierSet* bs = barrier_set();
   value = bs->load_reference_barrier(resolved_decorators, value, addr);
