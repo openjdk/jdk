@@ -868,7 +868,20 @@ void TemplateTable::aaload() {
   __ profile_array_type<ArrayLoadData>(/*array=*/Z_tmp_1, Z_tmp_2, Z_ARG2);
 
   if (UseArrayFlattening) {
-    __ stop("implement function TemplateTable::aaload");
+    Label is_flat_array, done;
+
+    __ test_flat_array_oop(Z_tmp_1, Z_tmp_2, is_flat_array);
+    // Non-flat path: normal oop load.
+    do_oop_load(_masm, Address(Z_tmp_1, index, arrayOopDesc::base_offset_in_bytes(T_OBJECT)), Z_tos,
+                Z_tmp_2, Z_tmp_3, IS_ARRAY);
+    __ verify_oop(Z_tos);
+    __ z_bru(done);
+
+    __ bind(is_flat_array);
+    // Flat path: delegate to runtime; result returned in Z_tos (= Z_RET).
+    __ call_VM(Z_tos, CAST_FROM_FN_PTR(address, InterpreterRuntime::flat_array_load),
+               Z_tmp_1, index);
+    __ bind(done);
   } else {
     // Now load array element.
     do_oop_load(_masm, Address(Z_tmp_1, index, arrayOopDesc::base_offset_in_bytes(T_OBJECT)), Z_tos,
