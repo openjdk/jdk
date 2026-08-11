@@ -26,9 +26,9 @@
  * @bug 8389873
  * @summary Check that Reduce Allocation Merges correctly handle the situation
  *          where the Phi was optimized out by IGVN during CG construction.
- * @requires vm.flagless & vm.compiler2.enabled & vm.opt.final.EliminateAllocations
- * @run main/othervm -XX:CompileCommand=compileonly,*TestReduceAllocationOptimizedOutPhi*::*
- *                   -Xcomp compiler.c2.TestReduceAllocationOptimizedOutPhi
+ * @requires vm.compiler2.enabled & vm.opt.final.EliminateAllocations
+ * @run main/othervm -XX:CompileCommand=compileonly,*@{test.main.class}*::*
+ *                   -Xcomp -XX:-TieredCompilation @{test.main.class}
  * @run main ${test.main.class}
  */
 
