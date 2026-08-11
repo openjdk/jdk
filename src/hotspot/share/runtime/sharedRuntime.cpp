@@ -2976,7 +2976,7 @@ void CompiledEntrySignature::compute_calling_conventions(bool link_time) {
 
     // Limit the scalarized stack argument area to ensure that generated entry
     // points fit into nmethod's uint16_t *_entry_offset fields.
-    const int max_stack_slots = 128;
+    const int max_stack_slots = UseShenandoahGC ? 64 : 128;
     if (MAX2(_args_on_stack_cc, _args_on_stack_cc_ro) <= max_stack_slots) {
       return; // Success
     }
