@@ -28,8 +28,9 @@
  * @run junit StreamAndSpliterator
  */
 
-
+import java.time.LocalDate;
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.Spliterators;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -43,6 +44,11 @@ public class StreamAndSpliterator {
         assertThrowsNPE(() -> Arrays.stream((long[]) null, 0, 0));
         assertThrowsNPE(() -> Arrays.stream((double[]) null, 0, 0));
         assertThrowsNPE(() -> Arrays.stream((String[]) null, 0, 0));
+
+        assertThrowsNPE(() -> Arrays.stream((Integer[]) null, 0, 0));
+        assertThrowsNPE(() -> Arrays.stream((Long[]) null, 0, 0));
+        assertThrowsNPE(() -> Arrays.stream((Optional[]) null, 0, 0));
+        assertThrowsNPE(() -> Arrays.stream((LocalDate[]) null, 0, 0));
     }
 
     @Test
@@ -53,17 +59,32 @@ public class StreamAndSpliterator {
         assertThrowsAIOOB(() -> Arrays.stream(new double[]{}, 1, 0));
         assertThrowsAIOOB(() -> Arrays.stream(new String[]{}, 1, 0));
 
+        assertThrowsAIOOB(() -> Arrays.stream(new Integer[]{}, 1, 0));
+        assertThrowsAIOOB(() -> Arrays.stream(new Long[]{}, 1, 0));
+        assertThrowsAIOOB(() -> Arrays.stream(new Optional[]{}, 1, 0));
+        assertThrowsAIOOB(() -> Arrays.stream(new LocalDate[]{}, 1, 0));
+
         // bad origin
         assertThrowsAIOOB(() -> Arrays.stream(new int[]{}, -1, 0));
         assertThrowsAIOOB(() -> Arrays.stream(new long[]{}, -1, 0));
         assertThrowsAIOOB(() -> Arrays.stream(new double[]{}, -1, 0));
         assertThrowsAIOOB(() -> Arrays.stream(new String[]{}, -1, 0));
 
+        assertThrowsAIOOB(() -> Arrays.stream(new Integer[]{}, -1, 0));
+        assertThrowsAIOOB(() -> Arrays.stream(new Long[]{}, -1, 0));
+        assertThrowsAIOOB(() -> Arrays.stream(new Optional[]{}, -1, 0));
+        assertThrowsAIOOB(() -> Arrays.stream(new LocalDate[]{}, -1, 0));
+
         // bad fence
         assertThrowsAIOOB(() -> Arrays.stream(new int[]{}, 0, 1));
         assertThrowsAIOOB(() -> Arrays.stream(new long[]{}, 0, 1));
         assertThrowsAIOOB(() -> Arrays.stream(new double[]{}, 0, 1));
         assertThrowsAIOOB(() -> Arrays.stream(new String[]{}, 0, 1));
+
+        assertThrowsAIOOB(() -> Arrays.stream(new Integer[]{}, 0, 1));
+        assertThrowsAIOOB(() -> Arrays.stream(new Long[]{}, 0, 1));
+        assertThrowsAIOOB(() -> Arrays.stream(new Optional[]{}, 0, 1));
+        assertThrowsAIOOB(() -> Arrays.stream(new LocalDate[]{}, 0, 1));
     }
 
 
@@ -73,6 +94,11 @@ public class StreamAndSpliterator {
         assertThrowsNPE(() -> Arrays.spliterator((long[]) null, 0, 0));
         assertThrowsNPE(() -> Arrays.spliterator((double[]) null, 0, 0));
         assertThrowsNPE(() -> Arrays.spliterator((String[]) null, 0, 0));
+
+        assertThrowsNPE(() -> Arrays.spliterator((Integer[]) null, 0, 0));
+        assertThrowsNPE(() -> Arrays.spliterator((Long[]) null, 0, 0));
+        assertThrowsNPE(() -> Arrays.spliterator((Optional[]) null, 0, 0));
+        assertThrowsNPE(() -> Arrays.spliterator((LocalDate[]) null, 0, 0));
     }
 
     @Test
@@ -103,6 +129,11 @@ public class StreamAndSpliterator {
         assertThrowsNPE(() -> Spliterators.spliterator((long[]) null, 0, 0, 0));
         assertThrowsNPE(() -> Spliterators.spliterator((double[]) null, 0, 0, 0));
         assertThrowsNPE(() -> Spliterators.spliterator((String[]) null, 0, 0, 0));
+
+        assertThrowsNPE(() -> Spliterators.spliterator((Integer[]) null, 0, 0, 0));
+        assertThrowsNPE(() -> Spliterators.spliterator((Long[]) null, 0, 0, 0));
+        assertThrowsNPE(() -> Spliterators.spliterator((Optional[]) null, 0, 0, 0));
+        assertThrowsNPE(() -> Spliterators.spliterator((LocalDate[]) null, 0, 0, 0));
     }
 
     @Test
