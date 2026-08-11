@@ -884,7 +884,7 @@ bool AOTClassLocationConfig::check_module_paths(bool has_aot_linked_classes, int
       // items in runtime_css until we see dumptime_path.
       const char* runtime_path = runtime_css.get_next();
       if (!os::same_files(dumptime_path, runtime_path)) {
-        aot_log_warning(aot)("module path element [%d] is different: expected %s actual %s",
+        aot_log_warning(aot)("the %d-th module path element is different: expected %s actual %s",
                              i - index_start, dumptime_path, runtime_path);
         *module_paths_mismatch = true;
         return true;
@@ -970,7 +970,7 @@ bool AOTClassLocationConfig::need_lcp_match_helper(int start, int end, ClassLoca
   return true;
 }
 
-bool AOTClassLocationConfig::validate(const char* cache_filename, bool has_aot_linked_classes, bool* module_paths_mismatch) const {
+bool AOTClassLocationConfig::validate(const char* cache_filename, bool has_aot_linked_classes, bool has_full_module_graph) const {
   ResourceMark rm;
   AllClassLocationStreams all_css;
 
@@ -983,11 +983,12 @@ bool AOTClassLocationConfig::validate(const char* cache_filename, bool has_aot_l
   if (!success) {
     return false;
   }
+
+  bool module_paths_mismatch = false;
+
   if (class_locations()->length() == 1) {
     if ((module_path_start_index() >= module_path_end_index()) && Arguments::get_property("jdk.module.path") != nullptr) {
-      *module_paths_mismatch = true;
-    } else {
-      *module_paths_mismatch = false;
+      module_paths_mismatch = true;
     }
   } else {
     bool use_lcp_match = need_lcp_match(all_css);
@@ -1016,13 +1017,34 @@ bool AOTClassLocationConfig::validate(const char* cache_filename, bool has_aot_l
 
     if (success) {
       success = check_module_paths(has_aot_linked_classes, module_path_start_index(), module_path_end_index(),
-                                   all_css.module_path(), module_paths_mismatch);
+                                   all_css.module_path(), &module_paths_mismatch);
       log_info(class, path)("Archived module path validation: %s%s", success ? "passed" : "failed",
-                            (*module_paths_mismatch) ? " (module paths mismatch)" : "");
+                            (module_paths_mismatch) ? " (module paths mismatch)" : "");
     }
 
     if (runtime_lcp_len > 0) {
       os::free((void*)runtime_lcp);
+    }
+  }
+
+  if (success && module_paths_mismatch) {
+    if (CDSConfig::new_aot_flags_used()) {
+      // New AOT workflow requires --module-paths to be identical.
+      success = false;
+    } else {
+      // module_paths_mismatch is a "soft" failure for traditional CDS: archived
+      // classes from the module path will not be loaded if they are
+      // rejected by SystemDictionary::is_shared_class_visible().
+      if (has_full_module_graph) {
+        CDSConfig::disable_full_module_graph();
+        AOTMetaspace::report_loading_error("full module graph: disabled because extra module path(s) are specified");
+      }
+
+      if (CDSConfig::is_dumping_dynamic_archive() && num_module_paths() > 0 && module_paths_mismatch) {
+        CDSConfig::disable_dumping_dynamic_archive();
+        aot_log_warning(aot)(
+          "Dynamic archiving is disabled because base layer archive has a different module path");
+      }
     }
   }
 

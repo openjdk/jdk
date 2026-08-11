@@ -270,7 +270,7 @@ public:
   AOTClassLocationConfig* write_to_archive() const;
 
   // Functions used only during runtime
-  bool validate(const char* cache_filename, bool has_aot_linked_classes, bool* module_paths_mismatch) const;
+  bool validate(const char* cache_filename, bool has_aot_linked_classes, bool has_full_module_graph) const;
 
   bool is_valid_classpath_index(int classpath_index, InstanceKlass* ik);
 

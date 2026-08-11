@@ -406,31 +406,12 @@ bool FileMapInfo::validate_class_location() {
 
   AOTClassLocationConfig* config = header()->class_location_config();
   bool module_paths_mismatch = false;
-  if (!config->validate(full_path(), header()->has_aot_linked_classes(), &module_paths_mismatch)) {
+  if (!config->validate(full_path(), header()->has_aot_linked_classes(), header()->has_full_module_graph())) {
     if (PrintSharedArchiveAndExit) {
       AOTMetaspace::set_archive_loading_failed();
       return true;
     } else {
       return false;
-    }
-  }
-
-  if (module_paths_mismatch) {
-    if (CDSConfig::new_aot_flags_used()) {
-      // New AOT workflow requires --module-paths to be identical.
-      if (CDSConfig::is_dumping_final_static_archive()) {
-        AOTMetaspace::unrecoverable_writing_error("--module-path option is different");
-      } else {
-        AOTMetaspace::unrecoverable_loading_error("--module-path option is different");
-      }
-    } else {
-      // module_paths_mismatch is a "soft" failure for traditional CDS: archived
-      // classes from the module path will not be loaded if they are
-      // rejected by SystemDictionary::is_shared_class_visible().
-      if (header()->has_full_module_graph()) {
-        CDSConfig::disable_full_module_graph();
-        AOTMetaspace::report_loading_error("full module graph: disabled because extra module path(s) are specified");
-      }
     }
   }
 
@@ -443,13 +424,6 @@ bool FileMapInfo::validate_class_location() {
       CDSConfig::disable_dumping_dynamic_archive();
       aot_log_warning(aot)(
         "Dynamic archiving is disabled because base layer archive has appended boot classpath");
-    }
-    if (config->num_module_paths() > 0) {
-      if (module_paths_mismatch) {
-        CDSConfig::disable_dumping_dynamic_archive();
-        aot_log_warning(aot)(
-          "Dynamic archiving is disabled because base layer archive has a different module path");
-      }
     }
   }
 

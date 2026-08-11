@@ -58,16 +58,14 @@ public class InvalidModuleOptions {
         {
             "<mp>", null,
             "module path has fewer elements than expected",
-            "--module-path option is different",
         },
         {
             "<mp>", "<mp2>",
-            "--module-path option is different",
+            "the 0-th module path element is different",
         },
         {
             null, "<mp>",
             "module path has more elements than expected",
-            "--module-path option is different",
         },
 
         // --add-modules
