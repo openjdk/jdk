@@ -30,11 +30,10 @@
  * @library /test/jdk/lib/testlibrary /test/lib
  * @build LambdaInExcludedClass
  * @run driver jdk.test.lib.helpers.ClassFileInstaller LambdaInExcludedClassApp
- * @run driver LambdaInExcludedClass STATIC
+ * @run driver LambdaInExcludedClass AOT
  */
 
 import jdk.test.lib.cds.CDSAppTester;
-import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class LambdaInExcludedClass {
