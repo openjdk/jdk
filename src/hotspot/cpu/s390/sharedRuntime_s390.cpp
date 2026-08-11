@@ -775,9 +775,6 @@ void SharedRuntime::restore_native_result(MacroAssembler *masm,
 int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
                                            VMRegPair *regs,
                                            int total_args_passed) {
-  if (UseArrayFlattening) {
-    fatal("implement function SharedRuntime::java_calling_convention");
-  }
   // c2c calling conventions for compiled-compiled calls.
 
   // An int/float occupies 1 slot here.
