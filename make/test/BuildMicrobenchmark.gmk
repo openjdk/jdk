@@ -80,7 +80,6 @@ MICROBENCHMARK_MANIFEST := Build: $(FULL_VERSION)\n\
 MICROBENCHMARK_PREVIEW_PACKAGES := org/openjdk/bench/valhalla \
     org/openjdk/bench/java/lang/stable
 
-
 # Build microbenchmark suite for the current JDK
 # Need to patch java.base to include preview classes not found in interim javac
 $(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK_PREVIEW, \
