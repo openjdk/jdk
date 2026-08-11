@@ -29,7 +29,7 @@
  * @requires vm.flagless & vm.compiler2.enabled & vm.opt.final.EliminateAllocations
  * @run main/othervm -XX:CompileCommand=compileonly,*TestReduceAllocationOptimizedOutPhi*::*
  *                   -Xcomp compiler.c2.TestReduceAllocationOptimizedOutPhi
- * @run main compiler.c2.TestReduceAllocationOptimizedOutPhi
+ * @run main ${test.main.class}
  */
 
 package compiler.c2;
