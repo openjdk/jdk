@@ -146,14 +146,15 @@ import java.util.Optional;
  * fallback value is used over throwing an exception.
  *
  * <h2 id="generation">Generating JSON documents</h2>
- * {@code JsonValue} overrides {@link Object#toString()} to generate RFC 8259 compliant
- * JSON text in a compact representation with white spaces eliminated.
+ * {@code JsonValue} overrides {@link Object#toString()} to generate RFC 8259
+ * compliant JSON text in a compact representation with insignificant white
+ * spaces and line separators eliminated.
  * For generating JSON documents suitable for display, use
  * the generation method {@link Json#toDisplayString(JsonValue, int)} instead.
  * <p>
  * Instances of {@code JsonValue} are immutable and thread safe.
  *
- * @since 99
+ * @since 28
  */
 public sealed interface JsonValue permits JsonString, JsonNumber, JsonObject, JsonArray, JsonBoolean, JsonNull {
 

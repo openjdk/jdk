@@ -33,7 +33,7 @@ import jdk.incubator.json.impl.JsonNullImpl;
  * A {@code JsonNull} can be produced by {@link Json#parse(String)}.
  * <p> Alternatively, {@link #of()} can be used to obtain a {@code JsonNull}.
  *
- * @since 99
+ * @since 28
  */
 public non-sealed interface JsonNull extends JsonValue {
 

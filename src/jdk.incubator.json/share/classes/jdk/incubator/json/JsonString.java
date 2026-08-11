@@ -35,12 +35,14 @@ import jdk.incubator.json.impl.Utils;
  * <p>
  * A {@code JsonString} can be produced by a {@link Json#parse(String)}.
  * Within a valid JSON string, any character may be escaped using either a
- * two-character escape sequence (if applicable) or a Unicode escape sequence.
+ * two-character escape sequence (if applicable) or one or two Unicode escape
+ * sequences. A supplementary character is represented by two Unicode escape
+ * sequences corresponding to its surrogate pair.
  * Quotation Mark (U+0022), Backslash (Reverse Solidus, U+005C), and the control
  * characters (U+0000 through U+001F) must be escaped.
  * <p> Alternatively, {@link #of(String)} can be used to obtain a {@code JsonString}
  * directly from a {@code String}. The {@code String} values of {@code JsonString}
- * instances produced by the following expressions are all equivalent,
+ * instances produced by the following expressions are all equivalent:
  * {@snippet lang = "java":
  *     Json.parse("\"foo\\t\"").asString();
  *     Json.parse("\"foo\\u0009\"").asString();
@@ -49,7 +51,7 @@ import jdk.incubator.json.impl.Utils;
  *
  * @spec https://datatracker.ietf.org/doc/html/rfc8259#section-7 RFC 8259:
  *      The JavaScript Object Notation (JSON) Data Interchange Format - Strings
- * @since 99
+ * @since 28
  */
 public non-sealed interface JsonString extends JsonValue {
 
