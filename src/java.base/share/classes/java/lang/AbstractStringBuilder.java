@@ -530,7 +530,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     }
 
     /**
-     * @since 27
+     * @since 28
      */
     public int codePointCount() {
         byte coder = this.coder;

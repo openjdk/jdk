@@ -1931,7 +1931,7 @@ public final class String
     }
 
     /**
-     * @since 27
+     * @since 28
      */
     public int codePointCount() {
         if (isLatin1()) {

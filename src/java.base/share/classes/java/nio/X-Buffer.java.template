@@ -2065,7 +2065,7 @@ public abstract sealed class $Type$Buffer
      * and the limit (exclusive).
      * Isolated surrogate code units count as one code point each.
      *
-     * @since 27
+     * @since 28
      */
     public final int codePointCount() {
         // Refer to the definition of length() (the above) and remaining() (Buffer.java)

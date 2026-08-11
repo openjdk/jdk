@@ -257,7 +257,7 @@ public interface CharSequence {
      * {@return the number of Unicode code points in this character sequence}
      * Isolated surrogate code units count as one code point each.
      *
-     * @since 27
+     * @since 28
      */
     public default int codePointCount() {
         final int length = length();
