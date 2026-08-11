@@ -1880,121 +1880,6 @@ ObjectMonitor* ObjectSynchronizer::inflate_locked_or_imse(oop obj, ObjectSynchro
   }
 }
 
-ObjectMonitor* ObjectSynchronizer::inflate_into_object_header(oop object, ObjectSynchronizer::InflateCause cause, JavaThread* locking_thread, Thread* current) {
-
-  // The JavaThread* locking parameter requires that the locking_thread == JavaThread::current,
-  // or is suspended throughout the call by some other mechanism.
-  // Even with fast locking the thread might be nullptr when called from a non
-  // JavaThread. (As may still be the case from FastHashCode). However it is only
-  // important for the correctness of the fast locking algorithm that the thread
-  // is set when called from ObjectSynchronizer::enter from the owning thread,
-  // ObjectSynchronizer::enter_for from any thread, or ObjectSynchronizer::exit.
-  EventJavaMonitorInflate event;
-
-  for (;;) {
-    const markWord mark = object->mark_acquire();
-
-    // The mark can be in one of the following states:
-    // *  inflated     - If the ObjectMonitor owner is anonymous and the
-    //                   locking_thread owns the object lock, then we make the
-    //                   locking_thread the ObjectMonitor owner and remove the
-    //                   lock from the locking_thread's lock stack.
-    // *  fast-locked  - Coerce it to inflated from fast-locked.
-    // *  unlocked     - Aggressively inflate the object.
-
-    // CASE: inflated
-    if (mark.has_monitor()) {
-      ObjectMonitor* inf = mark.monitor();
-      markWord dmw = inf->header();
-      assert(dmw.is_neutral(), "invariant: header=" INTPTR_FORMAT, dmw.value());
-      if (inf->has_anonymous_owner() &&
-          locking_thread != nullptr && locking_thread->lock_stack().contains(object)) {
-        inf->set_owner_from_anonymous(locking_thread);
-        size_t removed = locking_thread->lock_stack().remove(object);
-        inf->set_recursions(removed - 1);
-      }
-      return inf;
-    }
-
-    // CASE: fast-locked
-    // Could be fast-locked either by the locking_thread or by some other thread.
-    //
-    // Note that we allocate the ObjectMonitor speculatively, _before_
-    // attempting to set the object's mark to the new ObjectMonitor. If
-    // the locking_thread owns the monitor, then we set the ObjectMonitor's
-    // owner to the locking_thread. Otherwise, we set the ObjectMonitor's owner
-    // to anonymous. If we lose the race to set the object's mark to the
-    // new ObjectMonitor, then we just delete it and loop around again.
-    //
-    if (mark.is_fast_locked()) {
-      ObjectMonitor* monitor = new ObjectMonitor(object);
-      monitor->set_header(mark.set_unlocked());
-      bool own = locking_thread != nullptr && locking_thread->lock_stack().contains(object);
-      if (own) {
-        // Owned by locking_thread.
-        monitor->set_owner(locking_thread);
-      } else {
-        // Owned by somebody else.
-        monitor->set_anonymous_owner();
-      }
-      markWord monitor_mark = markWord::encode(monitor);
-      markWord old_mark = object->cas_set_mark(monitor_mark, mark);
-      if (old_mark == mark) {
-        // Success! Return inflated monitor.
-        if (own) {
-          size_t removed = locking_thread->lock_stack().remove(object);
-          monitor->set_recursions(removed - 1);
-        }
-        // Once the ObjectMonitor is configured and object is associated
-        // with the ObjectMonitor, it is safe to allow async deflation:
-        ObjectSynchronizer::_in_use_list.add(monitor);
-
-        log_inflate(current, object, cause);
-        if (event.should_commit()) {
-          post_monitor_inflate_event(&event, object, cause);
-        }
-        return monitor;
-      } else {
-        delete monitor;
-        continue;  // Interference -- just retry
-      }
-    }
-
-    // CASE: unlocked
-    // TODO-FIXME: for entry we currently inflate and then try to CAS _owner.
-    // If we know we're inflating for entry it's better to inflate by swinging a
-    // pre-locked ObjectMonitor pointer into the object header.   A successful
-    // CAS inflates the object *and* confers ownership to the inflating thread.
-    // In the current implementation we use a 2-step mechanism where we CAS()
-    // to inflate and then CAS() again to try to swing _owner from null to current.
-    // An inflateTry() method that we could call from enter() would be useful.
-
-    assert(mark.is_unlocked(), "invariant: header=" INTPTR_FORMAT, mark.value());
-    ObjectMonitor* m = new ObjectMonitor(object);
-    // prepare m for installation - set monitor to initial state
-    m->set_header(mark);
-
-    if (object->cas_set_mark(markWord::encode(m), mark) != mark) {
-      delete m;
-      m = nullptr;
-      continue;
-      // interference - the markword changed - just retry.
-      // The state-transitions are one-way, so there's no chance of
-      // live-lock -- "Inflated" is an absorbing state.
-    }
-
-    // Once the ObjectMonitor is configured and object is associated
-    // with the ObjectMonitor, it is safe to allow async deflation:
-    ObjectSynchronizer::_in_use_list.add(m);
-
-    log_inflate(current, object, cause);
-    if (event.should_commit()) {
-      post_monitor_inflate_event(&event, object, cause);
-    }
-    return m;
-  }
-}
-
 ObjectMonitor* ObjectSynchronizer::inflate_fast_locked_object(oop object, ObjectSynchronizer::InflateCause cause, JavaThread* locking_thread, JavaThread* current) {
   VerifyThreadState vts(locking_thread, current);
   assert(locking_thread->lock_stack().contains(object), "locking_thread must have object on its lock stack");
@@ -2204,10 +2089,6 @@ ObjectMonitor* ObjectSynchronizer::get_monitor_from_table(oop obj) {
   return ObjectMonitorTable::monitor_get(obj);
 }
 
-ObjectMonitor* ObjectSynchronizer::read_monitor(markWord mark) {
-  return mark.monitor();
-}
-
 ObjectMonitor* ObjectSynchronizer::read_monitor(oop obj) {
   return ObjectSynchronizer::read_monitor(obj, obj->mark());
 }
@@ -2247,8 +2128,7 @@ bool ObjectSynchronizer::quick_enter_internal(oop obj, BasicLock* lock, JavaThre
 #endif
 
   if (mark.has_monitor()) {
-    ObjectMonitor* monitor;
-    monitor = read_caches(current, lock, obj);
+    ObjectMonitor* monitor = read_caches(current, lock, obj);
 
     if (monitor == nullptr) {
       // Take the slow-path on a cache miss.
