@@ -587,47 +587,48 @@ Modules::ArchivedProperty& Modules::archived_prop(size_t i) {
 
 void Modules::ArchivedProperty::runtime_check() const {
   ResourceMark rm;
-  const char* current_value = get_flattened_value();
+  const char* old_value = _archived_value;
+  const char* new_value = get_flattened_value();
   aot_log_info(aot)("archived module property %s: %s", _prop,
-                _archived_value != nullptr ? _archived_value : "(null)");
+                old_value != nullptr ? old_value : "(null)");
 
   bool mismatch = false;
-  const char* previous;
-  const char* now;
-  const char* previous0;
-  const char* now0;
+  const char* old_label1;
+  const char* old_label2;
+  const char* new_label1;
+  const char* new_label2;
 
   if (CDSConfig::is_dumping_final_static_archive()) {
-    previous = "in AOTConfiguration";
-    now = "for current JVM";
-    previous0 = "AOTConfiguration";
-    now0 = "current";
+    old_label1 = "in AOTConfiguration";
+    old_label2 = ", AOTConfiguration =";
+    new_label1 = "for current JVM";
+    new_label2 = "current =";
   } else if (CDSConfig::new_aot_flags_used()) {
-    previous = "in AOTCache";
-    now = "for current JVM";
-    previous0 = "AOTCache";
-    now0 = "current";
+    old_label1 = "in AOTCache";
+    old_label2 = ", AOTCache =";
+    new_label1 = "for current JVM";
+    new_label2 = "current =";
   } else {
-    previous = "during dump time";
-    now = "during runtime";
-    previous0 = "dump time";
-    now0 = "runtime";
+    old_label1 = "during dump time";
+    old_label2 = " dump time";
+    new_label1 = "during runtime";
+    new_label2 = "runtime";
   }
 
-  if (current_value == nullptr) {
-    if (_archived_value != nullptr) {
-      AOTMetaspace::report_loading_error("Mismatched values for property %s: %s specified %s but not %s", 
-                                         _prop, _archived_value, previous, now);
+  if (new_value == nullptr) {
+    if (old_value != nullptr) {
+      AOTMetaspace::report_loading_error("Mismatched values for property %s: %s specified %s but not %s",
+                                         _prop, old_value, old_label1, new_label1);
       mismatch = true;
     }
   } else {
-    if (_archived_value == nullptr) {
+    if (old_value == nullptr) {
       AOTMetaspace::report_loading_error("Mismatched values for property %s: %s specified %s but not %s",
-                                         _prop, current_value, now, previous);
+                                         _prop, new_value, new_label1, old_label1);
       mismatch = true;
-    } else if (strcmp(current_value, _archived_value) != 0) {
-      AOTMetaspace::report_loading_error("Mismatched values for property %s: %s = %s, %s = %s",
-                                         _prop, previous0, _archived_value, now0, current_value);
+    } else if (strcmp(new_value, old_value) != 0) {
+      AOTMetaspace::report_loading_error("Mismatched values for property %s: %s %s%s %s",
+                                         _prop, new_label2, new_value, old_label2, old_value);
       mismatch = true;
     }
   }

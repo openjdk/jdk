@@ -56,7 +56,7 @@ public class InvalidModuleOptions {
             "Mismatched values for property jdk.module.addmods: java.instrument specified in AOTConfiguration but not for current JVM"},
         {
             "--add-modules=java.instrument", "--add-modules=java.base",
-            "Mismatched values for property jdk.module.addmods: AOTConfiguration = java.instrument, current = java.base"
+            "Mismatched values for property jdk.module.addmods: current = java.base, AOTConfiguration = java.instrument"
         },
         {
             null, "-Djdk.module.showModuleResolution=true",
