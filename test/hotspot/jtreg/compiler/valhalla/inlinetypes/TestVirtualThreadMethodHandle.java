@@ -33,8 +33,11 @@
 
 import java.lang.invoke.*;
 
+import jdk.test.lib.Asserts;
+
 public class TestVirtualThreadMethodHandle {
     static value class V { int a=0, b=0, c=0, d=0, e=0, f=0, g=0; }
+    static boolean failed;
 
     static MethodHandle MH;
 
@@ -43,12 +46,16 @@ public class TestVirtualThreadMethodHandle {
     static void run() {
         try {
             for (int n = 0; n < 5_000; n++) MH.invokeExact(new V());
-        } catch (Throwable t) { }
+        } catch (Throwable t) {
+            failed = true;
+            throw new RuntimeException("MethodHandle invocation failed", t);
+        }
     }
 
     public static void main(String[] args) throws Exception {
         MH = MethodHandles.lookup().findStatic(TestVirtualThreadMethodHandle.class, "target", MethodType.methodType(void.class, V.class));
         run();
         Thread.startVirtualThread(TestVirtualThreadMethodHandle::run).join();
+        Asserts.assertFalse(failed, "MethodHandle invocation failed");
     }
 }
