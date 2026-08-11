@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,10 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * An InputStream that reads bytes from a socket channel.
  */
 class SocketInputStream extends InputStream {
+    // Flag set by jdk.internal.event.JFRTracing to indicate if
+    // socket reads should be traced by JFR.
+    private static boolean jfrTracing;
+
     private final SocketChannelImpl sc;
     private final IntSupplier timeoutSupplier;
 
@@ -74,13 +78,13 @@ class SocketInputStream extends InputStream {
     @Override
     public int read(byte[] b, int off, int len) throws IOException {
         int timeout = timeoutSupplier.getAsInt();
-        if (!SocketReadEvent.enabled()) {
-            return implRead(b, off, len, timeout);
+        if (jfrTracing && SocketReadEvent.enabled()) {
+            long start = SocketReadEvent.timestamp();
+            int n = implRead(b, off, len, timeout);
+            SocketReadEvent.offer(start, n, sc.remoteAddress(), timeout);
+            return n;
         }
-        long start = SocketReadEvent.timestamp();
-        int n = implRead(b, off, len, timeout);
-        SocketReadEvent.offer(start, n, sc.remoteAddress(), timeout);
-        return n;
+        return implRead(b, off, len, timeout);
     }
 
     @Override

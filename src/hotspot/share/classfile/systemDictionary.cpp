@@ -979,7 +979,7 @@ bool SystemDictionary::is_shared_class_visible(Symbol* class_name,
 
   // (2) Check if we are loading into the same module from the same location as in dump time.
 
-  if (CDSConfig::is_using_optimized_module_handling()) {
+  if (CDSConfig::is_using_full_module_graph()) {
     // Class visibility has not changed between dump time and run time, so a class
     // that was visible (and thus archived) during dump time is always visible during runtime.
     assert(SystemDictionary::is_shared_class_visible_impl(class_name, ik, pkg_entry, class_loader),
