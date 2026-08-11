@@ -2498,7 +2498,12 @@ public class Types {
 
             @Override
             public Type visitTypeVar(TypeVar t, Boolean recurse) {
-                Type erased = erasure(t.getUpperBound(), recurse);
+                Type upperBound = t.getUpperBound();
+                /* upperBound can still be null if `t` is not yet attributed,
+                 * use Object as a recovery strategy the compiler will issue an error
+                 * anyways
+                 */
+                Type erased = erasure(upperBound != null ? upperBound : syms.objectType, recurse);
                 return combineMetadata(erased, t);
             }
         };

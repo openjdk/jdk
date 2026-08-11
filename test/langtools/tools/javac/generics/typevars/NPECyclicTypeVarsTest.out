@@ -1,0 +1,2 @@
+NPECyclicTypeVarsTest.java:13:40: compiler.err.type.found.req: B[], (compiler.misc.type.req.class)
+1 error
