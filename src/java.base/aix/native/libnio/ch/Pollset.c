@@ -131,8 +131,7 @@ Java_sun_nio_ch_Pollset_pollsetCtl(JNIEnv *env, jclass c, jint ps,
 
 JNIEXPORT void JNICALL
 Java_sun_nio_ch_Pollset_pollsetBulkCtl(JNIEnv *env, jobject this,
-                                jint pollsetFD, jlong address, jint count)
-{
+                                jint pollsetFD, jlong address, jint count) {
 
     /*
      * Upon success, pollset_ctl returns 0. Upon failure, pollset_ctl returns the
@@ -146,11 +145,8 @@ Java_sun_nio_ch_Pollset_pollsetBulkCtl(JNIEnv *env, jobject this,
      */
 
     int res = 0;
-
     while (count > 0) {
-
         res = _pollset_ctl((pollset_t)pollsetFD, (struct poll_ctl *)(intptr_t) address, count);
-
         if (res == 0) {
             break;
         } else if (res == -1) {
@@ -162,7 +158,6 @@ Java_sun_nio_ch_Pollset_pollsetBulkCtl(JNIEnv *env, jobject this,
             count -= (res + 1);
         }
     }
-
     if (res < 0 && errno != EBADF && errno != ENOENT && errno != EINVAL && errno != EPERM && errno != ENOTSUP && errno != EINTR) {
         JNU_ThrowIOExceptionWithLastError(env, "pollset_ctl failed");
     }
