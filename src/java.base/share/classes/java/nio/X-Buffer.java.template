@@ -2077,7 +2077,6 @@ public abstract sealed class $Type$Buffer
         // The first code unit of a surrogate pair is in [0, lastIndex).
         for (; i < lastIndex;) {
             if (Character.isHighSurrogate(get(i++))) {
-                if (i >= lastIndex) break;
                 if (Character.isLowSurrogate(get(i))) {
                     count--;
                     i++;
