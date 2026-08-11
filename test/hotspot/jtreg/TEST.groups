@@ -163,19 +163,6 @@ tier1_compiler_1 = \
   compiler/blackhole/ \
   compiler/c1/ \
   compiler/c2/ \
-  -compiler/arraycopy/stress \
-  -compiler/c2/Test6850611.java \
-  -compiler/c2/cr6890943/Test6890943.java \
-  -compiler/c2/Test6905845.java \
-  -compiler/c2/cr6340864 \
-  -compiler/c2/cr6589834 \
-  -compiler/c2/cr8004867 \
-  -compiler/c2/stemmer \
-  -compiler/c2/Test6792161.java \
-  -compiler/c2/Test6603011.java \
-  -compiler/c2/Test6912517.java
-
-tier1_compiler_2 = \
   compiler/ccp/ \
   compiler/ciTypeFlow/ \
   compiler/classUnloading/ \
@@ -187,6 +174,22 @@ tier1_compiler_2 = \
   compiler/escapeAnalysis/ \
   compiler/exceptions/ \
   compiler/floatingpoint/ \
+  -compiler/arraycopy/stress \
+  -compiler/c2/Test6850611.java \
+  -compiler/c2/cr6890943/Test6890943.java \
+  -compiler/c2/Test6905845.java \
+  -compiler/c2/cr6340864 \
+  -compiler/c2/cr6589834 \
+  -compiler/c2/cr8004867 \
+  -compiler/c2/stemmer \
+  -compiler/c2/Test6792161.java \
+  -compiler/c2/Test6603011.java \
+  -compiler/c2/Test6912517.java \
+  -compiler/classUnloading/methodUnloading/TestOverloadCompileQueues.java \
+  -compiler/codecache/stress \
+  -compiler/codegen/aes
+  
+tier1_compiler_2 = \
   compiler/gcbarriers/ \
   compiler/igvn/ \
   compiler/inlining/ \
@@ -196,9 +199,8 @@ tier1_compiler_2 = \
   compiler/jsr292/ \
   compiler/locks/ \
   compiler/loopopts/ \
-  -compiler/classUnloading/methodUnloading/TestOverloadCompileQueues.java \
-  -compiler/codecache/stress \
-  -compiler/codegen/aes \
+  compiler/macronodes/ \
+  compiler/memoryinitialization/ \
   -compiler/gcbarriers/PreserveFPRegistersTest.java \
   -compiler/igvn/TestMaskedStoreIdealization.java \
   -compiler/intrinsics/bmi \
@@ -208,8 +210,6 @@ tier1_compiler_2 = \
   -compiler/intrinsics/zip/TestAdler32.java
 
 tier1_compiler_3 = \
-  compiler/macronodes/ \
-  compiler/memoryinitialization/ \
   compiler/osr/ \
   compiler/predicates/ \
   compiler/profiling \
