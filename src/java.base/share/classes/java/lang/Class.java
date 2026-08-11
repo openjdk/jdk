@@ -816,8 +816,9 @@ public final class Class<T> implements java.io.Serializable,
      * <ul>
      * <li>If T is a primitive type or void, returns whether T and P are the same.
      * <li>If T is a class or interface, T is a supertype of P if and only if
-     *     (1) T is the same as P; (2) T is a superclass of P; or (3) T is a
-     *     superinterface of P.
+     *     (1) T is the same as P; (2) T is a superclass of P; (3) T is a
+     *     superinterface of P; or (4) T is the {@link Object} class, and P is
+     *     a reference type.
      * <li>Otherwise, T is an array type. If P is not an array type, this method
      *     returns false; otherwise, let TC be the component type of T, and PC
      *     be the component type of P, this method returns the recursive result
@@ -833,7 +834,7 @@ public final class Class<T> implements java.io.Serializable,
      * <li>The behavior for when T is a primitive type is useful for defining
      *     subtyping relationships for array types with primitive element types.
      * <li>The behavior for when T is a class or interface applies when P is
-     *     an array type - all array types extend {@link Object} and implement
+     *     an array type - all array types extend {@code Object} and implement
      *     {@link Cloneable} and {@link Serializable}.
      * <li>The behavior for when T is an array type could be considered as:
      * <ol><li>Denote the dimensions of T as N. P must be an array type with N
