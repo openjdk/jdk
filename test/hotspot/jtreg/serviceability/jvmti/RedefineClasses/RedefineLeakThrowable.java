@@ -44,7 +44,7 @@
  * @requires vm.jvmti
  * @requires vm.flagless
  * @requires vm.cds
- * @modules java.base./jdk.internal.misc
+ * @modules java.base/jdk.internal.misc
  * @modules java.instrument
  *          java.compiler
  * @run main RedefineClassHelper
