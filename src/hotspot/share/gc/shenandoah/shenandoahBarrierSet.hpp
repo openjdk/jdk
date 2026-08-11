@@ -99,16 +99,16 @@ public:
   };
 
   template <typename T>
-  inline oop oop_load(DecoratorSet decorators, T* addr, bool in_heap);
+  inline oop oop_load(DecoratorSet decorators, oop value, T* addr, bool in_heap);
 
   template <typename T>
   inline void oop_store(DecoratorSet decorators, T* addr, oop new_value, bool in_heap);
 
   template <typename T>
-  inline oop oop_cmpxchg(DecoratorSet decorators, T* addr, oop compare_value, oop new_value, bool in_heap);
+  inline void oop_cmpxchg(DecoratorSet decorators, T* addr, oop compare_value, oop new_value, bool in_heap);
 
   template <typename T>
-  inline oop oop_xchg(DecoratorSet decorators, T* addr, oop new_value, bool in_heap);
+  inline void oop_xchg(DecoratorSet decorators, T* addr, oop new_value, bool in_heap);
 
   template <typename T>
   inline void keepalive_barrier(DecoratorSet decorators, T* addr, oop obj, Filter filter);

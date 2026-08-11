@@ -152,13 +152,11 @@ inline void ShenandoahBarrierSet::card_barrier_array(HeapWord* start, size_t cou
 }
 
 template <typename T>
-inline oop ShenandoahBarrierSet::oop_load(DecoratorSet decorators, T* addr, bool in_heap) {
+inline oop ShenandoahBarrierSet::oop_load(DecoratorSet decorators, oop value, T* addr, bool in_heap) {
   assert((decorators & ON_UNKNOWN_OOP_REF) == 0, "Reference strength must be known");
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   shenandoah_assert_not_in_cset_loc_except(addr, !in_heap || heap->cancelled_gc());
-
-  oop value = RawAccess<>::oop_load(addr);
 
   // Perform LRB to handle evacuation and possibly weak loads.
   value = load_reference_barrier(decorators, value, addr);
@@ -188,8 +186,6 @@ inline void ShenandoahBarrierSet::oop_store(DecoratorSet decorators, T* addr, oo
   // Handle the previous value through SATB, as we are about to perform the store.
   keepalive_barrier(decorators, addr, nullptr, FILTER_WEAK_AND_MARKED);
 
-  RawAccess<>::oop_store(addr, new_value);
-
   // Handle card table updates if needed.
   if (in_heap) {
     card_barrier(addr, new_value);
@@ -197,7 +193,7 @@ inline void ShenandoahBarrierSet::oop_store(DecoratorSet decorators, T* addr, oo
 }
 
 template <typename T>
-inline oop ShenandoahBarrierSet::oop_cmpxchg(DecoratorSet decorators, T* addr, oop compare_value, oop new_value, bool in_heap) {
+inline void ShenandoahBarrierSet::oop_cmpxchg(DecoratorSet decorators, T* addr, oop compare_value, oop new_value, bool in_heap) {
   assert((decorators & AS_NO_KEEPALIVE) == 0, "CAS only with keep-alive");
   assert((decorators & ON_UNKNOWN_OOP_REF) == 0, "CAS should have resolved ref strength");
   assert((decorators & ON_STRONG_OOP_REF) != 0, "CAS only for strong refs");
@@ -218,18 +214,14 @@ inline oop ShenandoahBarrierSet::oop_cmpxchg(DecoratorSet decorators, T* addr, o
   // and the value loaded later by CAS is sanitized by some LRB, or is null.
   load_reference_barrier(decorators, prev, addr);
 
-  oop result = RawAccess<>::oop_atomic_cmpxchg(addr, compare_value, new_value);
-
   // Handle card table updates if needed.
   if (in_heap) {
     card_barrier(addr, new_value);
   }
-
-  return result;
 }
 
 template <typename T>
-inline oop ShenandoahBarrierSet::oop_xchg(DecoratorSet decorators, T* addr, oop new_value, bool in_heap) {
+inline void ShenandoahBarrierSet::oop_xchg(DecoratorSet decorators, T* addr, oop new_value, bool in_heap) {
   assert((decorators & AS_NO_KEEPALIVE) == 0, "XCHG only with keep-alive");
   assert((decorators & ON_UNKNOWN_OOP_REF) == 0, "XCHG should have resolved ref strength");
   assert((decorators & ON_STRONG_OOP_REF) != 0, "XCHG only for strong refs");
@@ -248,14 +240,10 @@ inline oop ShenandoahBarrierSet::oop_xchg(DecoratorSet decorators, T* addr, oop 
   // This guarantees the value loaded later by XCHG is sanitized by some LRB, or is null.
   load_reference_barrier(decorators, prev, addr);
 
-  oop result = RawAccess<>::oop_atomic_xchg(addr, new_value);
-
   // Handle card table updates if needed.
   if (in_heap) {
     card_barrier(addr, new_value);
   }
-
-  return result;
 }
 
 template <DecoratorSet decorators, typename BarrierSetT>
@@ -280,77 +268,89 @@ inline DecoratorSet ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>
 template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
 inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_load_not_in_heap(T* addr) {
-  return barrier_set()->oop_load(decorators, addr, /* in_heap = */ false);
+  oop value = Raw::oop_load_not_in_heap(addr);
+  return barrier_set()->oop_load(decorators, value, addr, /* in_heap = */ false);
 }
 
 template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
 inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_load_in_heap(T* addr) {
-  return barrier_set()->oop_load(decorators, addr, /* in_heap = */ true);
+  oop value = Raw::oop_load_in_heap(addr);
+  return barrier_set()->oop_load(decorators, value, addr, /* in_heap = */ true);
 }
 
 template <DecoratorSet decorators, typename BarrierSetT>
 inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_load_in_heap_at(oop base, ptrdiff_t offset) {
   DecoratorSet resolved_decorators = resolve_unknown(base, offset);
   auto addr = AccessInternal::oop_field_addr<decorators>(base, offset);
-  return barrier_set()->oop_load(resolved_decorators, addr, /* in_heap = */ true);
+  oop value = Raw::oop_load_in_heap(addr);
+  return barrier_set()->oop_load(resolved_decorators, value, addr, /* in_heap = */ true);
 }
 
 template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
 inline void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_store_not_in_heap(T* addr, oop value) {
   barrier_set()->oop_store(decorators, addr, value, /* in_heap = */ false);
+  Raw::oop_store_not_in_heap(addr, value);
 }
 
 template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
 inline void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_store_in_heap(T* addr, oop value) {
   barrier_set()->oop_store(decorators, addr, value, /* in_heap = */ true);
+  Raw::oop_store_in_heap(addr, value);
 }
 
 template <DecoratorSet decorators, typename BarrierSetT>
 inline void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_store_in_heap_at(oop base, ptrdiff_t offset, oop value) {
-  DecoratorSet resolved_decorators = resolve_unknown(base, offset);
   auto addr = AccessInternal::oop_field_addr<decorators>(base, offset);
+  DecoratorSet resolved_decorators = resolve_unknown(base, offset);
   barrier_set()->oop_store(resolved_decorators, addr, value, /* in_heap = */ true);
+  Raw::oop_store_in_heap(addr, value);
 }
 
 template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
 inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_atomic_cmpxchg_not_in_heap(T* addr, oop compare_value, oop new_value) {
-  return barrier_set()->oop_cmpxchg(decorators, addr, compare_value, new_value, /* in_heap = */ false);
+  barrier_set()->oop_cmpxchg(decorators, addr, compare_value, new_value, /* in_heap = */ false);
+  return Raw::oop_atomic_cmpxchg_not_in_heap(addr, compare_value, new_value);
 }
 
 template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
 inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_atomic_cmpxchg_in_heap(T* addr, oop compare_value, oop new_value) {
-  return barrier_set()->oop_cmpxchg(decorators, addr, compare_value, new_value, /* in_heap = */ true);
+  barrier_set()->oop_cmpxchg(decorators, addr, compare_value, new_value, /* in_heap = */ true);
+  return Raw::oop_atomic_cmpxchg_in_heap(addr, compare_value, new_value);
 }
 
 template <DecoratorSet decorators, typename BarrierSetT>
 inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_atomic_cmpxchg_in_heap_at(oop base, ptrdiff_t offset, oop compare_value, oop new_value) {
-  DecoratorSet resolved_decorators = resolve_unknown_to_strong(base, offset);
   auto addr = AccessInternal::oop_field_addr<decorators>(base, offset);
-  return barrier_set()->oop_cmpxchg(resolved_decorators, addr, compare_value, new_value, /* in_heap = */ true);
+  DecoratorSet resolved_decorators = resolve_unknown_to_strong(base, offset);
+  barrier_set()->oop_cmpxchg(resolved_decorators, addr, compare_value, new_value, /* in_heap = */ true);
+  return Raw::oop_atomic_cmpxchg_in_heap(addr, compare_value, new_value);
 }
 
 template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
 inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_atomic_xchg_not_in_heap(T* addr, oop new_value) {
-  return barrier_set()->oop_xchg(decorators, addr, new_value, /* in_heap = */ false);
+  barrier_set()->oop_xchg(decorators, addr, new_value, /* in_heap = */ false);
+  return Raw::oop_atomic_xchg_not_in_heap(addr, new_value);
 }
 
 template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
 inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_atomic_xchg_in_heap(T* addr, oop new_value) {
-  return barrier_set()->oop_xchg(decorators, addr, new_value, /* in_heap = */ true);
+  barrier_set()->oop_xchg(decorators, addr, new_value, /* in_heap = */ true);
+  return Raw::oop_atomic_xchg_in_heap(addr, new_value);
 }
 
 template <DecoratorSet decorators, typename BarrierSetT>
 inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_atomic_xchg_in_heap_at(oop base, ptrdiff_t offset, oop new_value) {
-  DecoratorSet resolved_decorators = resolve_unknown_to_strong(base, offset);
   auto addr = AccessInternal::oop_field_addr<decorators>(base, offset);
-  return barrier_set()->oop_xchg(resolved_decorators, addr, new_value, /* in_heap = */ true);
+  DecoratorSet resolved_decorators = resolve_unknown_to_strong(base, offset);
+  barrier_set()->oop_xchg(resolved_decorators, addr, new_value, /* in_heap = */ true);
+  return Raw::oop_atomic_xchg_in_heap(addr, new_value);
 }
 
 template <DecoratorSet decorators, typename BarrierSetT>
