@@ -4193,7 +4193,3 @@ JRT_BLOCK_ENTRY(void, SharedRuntime::store_inline_type_fields_to_buf(JavaThread*
   JRT_BLOCK_END;
 }
 JRT_END
-
-void SigEntry::metaspace_pointers_do(MetaspaceClosure* it) {
-  it->push(&_name);
-}
