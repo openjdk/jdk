@@ -1471,13 +1471,13 @@ void HeapShared::initialize_from_archived_subgraph(JavaThread* current, Klass* k
   }
 
   if (k->name()->equals("jdk/internal/module/ArchivedModuleGraph") &&
-      !CDSConfig::is_using_optimized_module_handling() &&
+      !CDSConfig::is_using_full_module_graph() &&
       // archive was created with --module-path
       AOTClassLocationConfig::runtime()->num_module_paths() > 0) {
     // ArchivedModuleGraph was created with a --module-path that's different than the runtime --module-path.
     // Thus, it might contain references to modules that do not exist at runtime. We cannot use it.
-    log_info(aot, heap)("Skip initializing ArchivedModuleGraph subgraph: is_using_optimized_module_handling=%s num_module_paths=%d",
-                        BOOL_TO_STR(CDSConfig::is_using_optimized_module_handling()),
+    log_info(aot, heap)("Skip initializing ArchivedModuleGraph subgraph: is_using_full_module_graph=%s num_module_paths=%d",
+                        BOOL_TO_STR(CDSConfig::is_using_full_module_graph()),
                         AOTClassLocationConfig::runtime()->num_module_paths());
     return;
   }

@@ -383,6 +383,12 @@
           "If compilation is stopped with an error, capture diagnostic "    \
           "information at the bailout point")                               \
                                                                             \
+  product(uint, StressSeed, 0, DIAGNOSTIC,                                  \
+          "Seed for randomized stress testing (if unset, a random one is "  \
+          "generated). The seed is recorded in the compilation log, if "    \
+          "available.")                                                     \
+          range(0, max_juint)                                               \
+                                                                            \
 // end of COMPILER_FLAGS
 
 DECLARE_FLAGS(COMPILER_FLAGS)

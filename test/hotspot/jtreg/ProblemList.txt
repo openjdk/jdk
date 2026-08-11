@@ -71,8 +71,6 @@ compiler/escapeAnalysis/TestBCEscapeAnalyzerOverflow.java 8387392 windows-aarch6
 
 compiler/vectorapi/VectorStoreMaskIdentityTest.java 8388281 generic-all
 
-compiler/igvn/TestMaskedStoreIdealization.java 8388490 generic-all
-
 #############################################################################
 
 # :hotspot_gc
@@ -109,7 +107,6 @@ runtime/Thread/TestAlwaysPreTouchStacks.java 8383372 macosx-aarch64
 applications/jcstress/copy.java 8229852 linux-all
 
 containers/docker/TestJFREvents.java 8327723 linux-x64
-containers/docker/TestJcmdWithSideCar.java 8341518 linux-all
 
 #############################################################################
 

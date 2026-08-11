@@ -111,12 +111,12 @@ size_t RefArrayKlass::oop_size(oop obj) const {
   return refArrayOop(obj)->object_size();
 }
 
-refArrayOop RefArrayKlass::allocate_instance(int length, TRAPS) {
+objArrayOop RefArrayKlass::allocate_instance(int length, TRAPS) {
   check_array_allocation_length(length, arrayOopDesc::max_array_length(T_OBJECT), CHECK_NULL);
   size_t size = refArrayOopDesc::object_size(length);
   oop array = Universe::heap()->array_allocate(
       this, size, length, /* do_zero */ true, CHECK_NULL);
-  return oop_cast<refArrayOop>(array);
+  return oop_cast<objArrayOop>(array);
 }
 
 static void throw_array_null_pointer_store_exception(arrayOop src, arrayOop dst, TRAPS) {
@@ -224,46 +224,7 @@ void RefArrayKlass::copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos,
     THROW_MSG(vmSymbols::java_lang_ArrayStoreException(), ss.as_string());
   }
 
-  // Check if all offsets and lengths are non negative
-  if (src_pos < 0 || dst_pos < 0 || length < 0) {
-    // Pass specific exception reason.
-    ResourceMark rm(THREAD);
-    stringStream ss;
-    if (src_pos < 0) {
-      ss.print("arraycopy: source index %d out of bounds for object array[%d]",
-               src_pos, s->length());
-    } else if (dst_pos < 0) {
-      ss.print(
-          "arraycopy: destination index %d out of bounds for object array[%d]",
-          dst_pos, d->length());
-    } else {
-      ss.print("arraycopy: length %d is negative", length);
-    }
-    THROW_MSG(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(),
-              ss.as_string());
-  }
-
-  // Check if the ranges are valid
-  if ((((unsigned int)length + (unsigned int)src_pos) >
-       (unsigned int)s->length()) ||
-      (((unsigned int)length + (unsigned int)dst_pos) >
-       (unsigned int)d->length())) {
-    // Pass specific exception reason.
-    ResourceMark rm(THREAD);
-    stringStream ss;
-    if (((unsigned int)length + (unsigned int)src_pos) >
-        (unsigned int)s->length()) {
-      ss.print(
-          "arraycopy: last source index %u out of bounds for object array[%d]",
-          (unsigned int)length + (unsigned int)src_pos, s->length());
-    } else {
-      ss.print("arraycopy: last destination index %u out of bounds for object "
-               "array[%d]",
-               (unsigned int)length + (unsigned int)dst_pos, d->length());
-    }
-    THROW_MSG(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(),
-              ss.as_string());
-  }
+  array_copy_offsets_and_range_check(s, src_pos, d, dst_pos, length, CHECK);
 
   // Special case. Boundary cases must be checked first
   // This allows the following call: copy_array(s, s.length(), d.length(), 0).

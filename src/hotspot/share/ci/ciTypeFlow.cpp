@@ -576,11 +576,9 @@ void ciTypeFlow::StateVector::push_translate(ciType* type) {
   }
 }
 
-// ------------------------------------------------------------------
-// ciTypeFlow::StateVector::do_aload
-void ciTypeFlow::StateVector::do_aload(ciBytecodeStream* str) {
+void ciTypeFlow::StateVector::do_aaload(ciBytecodeStream* str) {
   pop_int();
-  ciArrayKlass* array_klass = pop_objOrFlatArray();
+  ciObjArrayKlass* array_klass = pop_objArray();
   if (array_klass == nullptr) {
     // Did aload on a null reference; push a null and ignore the exception.
     // This instruction will never continue normally.  All we have to do
@@ -600,7 +598,6 @@ void ciTypeFlow::StateVector::do_aload(ciBytecodeStream* str) {
     return;
   }
   ciKlass* element_klass = array_klass->element_klass();
-  // TODO 8350865 Can we check that array_klass is null_free and use mark_as_null_free on the result here?
   if (!element_klass->is_loaded() && element_klass->is_instance_klass()) {
     Untested("unloaded array element class in ciTypeFlow");
     trap(str, element_klass,
@@ -608,7 +605,11 @@ void ciTypeFlow::StateVector::do_aload(ciBytecodeStream* str) {
          (Deoptimization::Reason_unloaded,
           Deoptimization::Action_reinterpret));
   } else {
-    push_object(element_klass);
+    ciType* maybe_null_free_element_klass = element_klass;
+    if (array_klass->is_refined() && array_klass->is_elem_null_free()) {
+      maybe_null_free_element_klass = outer()->mark_as_null_free(element_klass);
+    }
+    push(maybe_null_free_element_klass);
   }
 }
 
@@ -955,13 +956,13 @@ bool ciTypeFlow::StateVector::apply_one_bytecode(ciBytecodeStream* str) {
   }
 
   switch(str->cur_bc()) {
-  case Bytecodes::_aaload: do_aload(str);                           break;
+  case Bytecodes::_aaload: do_aaload(str);                           break;
 
   case Bytecodes::_aastore:
     {
       pop_object();
       pop_int();
-      pop_objOrFlatArray();
+      pop_objArray();
       break;
     }
   case Bytecodes::_aconst_null:
@@ -983,7 +984,7 @@ bool ciTypeFlow::StateVector::apply_one_bytecode(ciBytecodeStream* str) {
       if (!will_link) {
         trap(str, element_klass, str->get_klass_index());
       } else {
-        push_object(ciArrayKlass::make(element_klass));
+        push_object(ciObjArrayKlass::make(element_klass,/* refined_type = */ false));
       }
       break;
     }
@@ -3225,7 +3226,7 @@ void ciTypeFlow::record_failure(const char* reason) {
 }
 
 ciType* ciTypeFlow::mark_as_early_larval(ciType* type) {
-  // Wrap the type to carry the information that it is null-free
+  // Wrap the type to carry the information that it is "early larval"
   return env()->make_early_larval_wrapper(type);
 }
 
