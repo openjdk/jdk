@@ -277,8 +277,7 @@ static void store_barrier_buffer_add(MacroAssembler* masm,
   __ z_lg(temp1, buffer);
 
   // Combined pointer bump and check if the buffer is disabled or full
-  __ z_lg(temp2, Address(temp1, ZStoreBarrierBuffer::current_offset()));
-  __ z_cghi(temp2, (uint8_t)0);
+  __ z_ltg(temp2, Address(temp1, ZStoreBarrierBuffer::current_offset()));
   __ branch_optimized(Assembler::bcondEqual, slow_path);
 
   // Bump the pointer
@@ -504,7 +503,7 @@ void ZBarrierSetAssembler::generate_disjoint_oop_copy(MacroAssembler* masm, bool
   __ z_lmg(Z_R5, Z_R11, 16, Z_SP);
   __ pop_frame();
 
-  __ z_xgr(Z_RET, Z_RET);
+  __ clear_reg(Z_RET);
   __ z_br(Z_R14);
 
   copy_load_at_slow(masm, zpointer, Z_ARG1, load_bad, load_good);
@@ -514,8 +513,7 @@ void ZBarrierSetAssembler::generate_disjoint_oop_copy(MacroAssembler* masm, bool
 void ZBarrierSetAssembler::generate_conjoint_oop_copy(MacroAssembler* masm, bool dest_uninitialized) {
   const Register zpointer = Z_R1;
   Label done, loop, load_bad, load_good, store_bad, store_good;
-  __ z_sllg(Z_R0, Z_ARG3, 3);
-  __ z_ltgr(Z_R0, Z_R0);
+  __ z_slag(Z_R0, Z_ARG3, 3);
   __ branch_optimized(Assembler::bcondZero, done);
   // Point behind last elements and copy backwards.
   __ z_agr(Z_ARG1, Z_R0);
@@ -534,7 +532,7 @@ void ZBarrierSetAssembler::generate_conjoint_oop_copy(MacroAssembler* masm, bool
   __ z_lmg(Z_R5, Z_R11, 16, Z_SP);
   __ pop_frame();
 
-  __ z_xgr(Z_RET, Z_RET);
+  __ clear_reg(Z_RET);
   __ z_br(Z_R14);
 
   copy_load_at_slow(masm, zpointer, Z_ARG1, load_bad, load_good);
@@ -801,14 +799,13 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_stub(LIR_Assembler* ce,
 void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler *sasm,
                                                                  DecoratorSet decorators) const {
 
-  int nbytes_save = 15 * BytesPerWord;                               // R1 to R5, F0 to F7, SP, PC
-  int offset = frame::z_abi_160_size;
+  int nbytes_save = 13 * BytesPerWord;                               // R1 to R5, F0 to F7
 
-  __ push_frame_abi160(nbytes_save);         offset += 8;
-  __ save_return_pc();                       offset += 8;
-  __ save_volatile_regs(Z_SP, offset, true, false);
+  __ push_frame_abi160(nbytes_save);
+  __ save_return_pc();
+  __ save_volatile_regs(Z_SP, frame::z_abi_160_size, true, false);
 
-  offset = 16 + nbytes_save + frame::z_abi_160_size;
+  int offset = 16 + nbytes_save + frame::z_abi_160_size;
 
   __ z_lg(Z_ARG1, offset, Z_SP);             offset += 8;            // ref
   __ z_lg(Z_ARG2, offset, Z_SP);                                     // ref_addr
@@ -816,9 +813,8 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler *
   __ call_VM_leaf(ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr(decorators));
   __ z_lgr(Z_R0, Z_RET);
 
-  offset = frame::z_abi_160_size + 8;
-  __ restore_return_pc();                    offset += 8;
-  __ restore_volatile_regs(Z_SP, offset, true, false);
+  __ restore_return_pc();
+  __ restore_volatile_regs(Z_SP, frame::z_abi_160_size, true, false);
   __ pop_frame();
 
   __ z_br(Z_R14);
@@ -827,12 +823,11 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler *
 void ZBarrierSetAssembler::generate_c1_store_barrier_runtime_stub(StubAssembler* sasm,
                                                                   bool self_healing) const {
 
-  int nbytes_save = 15 * BytesPerWord;                               /* R1 to R5, F0 to F7, SP, PC */
-  int offset = frame::z_abi_160_size;
+  int nbytes_save = 13 * BytesPerWord;                               // R1 to R5, F0 to F7
 
-  __ push_frame_abi160(nbytes_save);         offset += 8;
-  __ save_return_pc();                       offset += 8;
-  __ save_volatile_regs(Z_SP, offset, true, false);
+  __ push_frame_abi160(nbytes_save);
+  __ save_return_pc();
+  __ save_volatile_regs(Z_SP, frame::z_abi_160_size, true, false);
 
   __ z_lg(Z_ARG1, frame::z_abi_160_size + nbytes_save + 16, Z_SP);
 
@@ -842,9 +837,8 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_runtime_stub(StubAssembler*
     __ call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr());
   }
 
-  offset = frame::z_abi_160_size + 8;
-  __ restore_return_pc();                   offset += 8;
-  __ restore_volatile_regs(Z_SP, offset, true, false);
+  __ restore_return_pc();
+  __ restore_volatile_regs(Z_SP, frame::z_abi_160_size, true, false);
   __ pop_frame();
 
   __ z_br(Z_R14);
