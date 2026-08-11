@@ -122,9 +122,9 @@ public class TestDockerMemoryMetrics {
         preOpts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/")
                 .addDockerOpts("--memory=" + memory)
                 .addDockerOpts("--memory-swap=" + memoryAndSwap)
-                .addDockerOpts("-XX:+AlwaysPreTouch")
-                .addDockerOpts("-Xms" + heap)
-                .addJavaOptsAppended("-Xmx" + heap);  // append so that this -Xms wins over externally set one
+                .addJavaOpts("-XX:+AlwaysPreTouch")
+                .addJavaOpts("-Xms" + heap)
+                .addJavaOptsAppended("-Xmx" + heap);
         OutputAnalyzer oa = DockerTestUtils.dockerRunJava(preOpts);
         String output = oa.getOutput();
         if (!output.contains("version")) {
@@ -144,9 +144,8 @@ public class TestDockerMemoryMetrics {
                 .addDockerOpts("--memory-swap=" + memoryAndSwap)
                 .addJavaOpts("-cp", "/test-classes/")
                 .addJavaOpts("--add-exports", "java.base/jdk.internal.platform=ALL-UNNAMED")
-                // flags set externally placed "after" the ones set with addJavaOpts() and thus win.
-                // Keep the required heap size after inherited jtreg options
-                .addJavaOptsAppended("-Xmx" + heap)  // append so that this -Xms wins over externally set one
+                // set the required heap size *after* inherited jtreg options
+                .addJavaOptsAppended("-Xmx" + heap)
                 .addClassOptions("failcount");
         oa = DockerTestUtils.dockerRunJava(opts);
         output = oa.getOutput();
