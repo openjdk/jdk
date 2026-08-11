@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,27 +21,17 @@
  * questions.
  */
 
-#include "gc/shared/gc_globals.hpp"
-#include "gc/shared/gcLogPrecious.hpp"
-#include "gc/z/zAddressSpaceLimit.hpp"
-#include "gc/z/zGlobals.hpp"
-#include "runtime/globals.hpp"
-#include "runtime/os.hpp"
-#include "utilities/align.hpp"
-#include "utilities/ostream.hpp"
+package gc.arguments;
 
-size_t ZAddressSpaceLimit::heap() {
-  // Allow the heap to occupy [100/MaxVirtMemFraction]% of the address space
-  const size_t limit = os::reserve_memory_limit() / MaxVirtMemFraction;
-  return align_down(limit, ZGranuleSize);
-}
+/**
+ * @test
+ * @bug 8376296
+ * @summary Test that ZGC does not crash with -XX:MaxVirtMemFraction=1
+ * @requires vm.debug
+ * @requires vm.gc.Z
+ * @run main/othervm -XX:+UseZGC -XX:MaxVirtMemFraction=1 ${test.main.class}
+ */
 
-void ZAddressSpaceLimit::print_limits() {
-  const size_t limit = os::reserve_memory_limit();
-
-  if (limit == SIZE_MAX) {
-    log_info_p(gc, init)("Address Space Size: unlimited");
-  } else {
-    log_info_p(gc, init)("Address Space Size: limited (" EXACTFMT ")", EXACTFMTARGS(limit));
-  }
+public class TestMaxVirtMemFractionZGC {
+    public static void main(String[] args) {}
 }
