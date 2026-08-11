@@ -77,12 +77,17 @@ MICROBENCHMARK_MANIFEST := Build: $(FULL_VERSION)\n\
 # jmh uses annotation processors to generate the benchmark jar and thus
 # requires the use of -processor option during benchmark compilation.
 
+MICROBENCHMARK_PREVIEW_PACKAGES := org/openjdk/bench/valhalla \
+    org/openjdk/bench/java/lang/stable
+
+
 # Build microbenchmark suite for the current JDK
 # Need to patch java.base to include preview classes not found in interim javac
-$(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK, \
+$(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK_PREVIEW, \
     TARGET_RELEASE := $(TARGET_RELEASE_NEWJDK_UPGRADED), \
     SMALL_JAVA := false, \
     CLASSPATH := $(JMH_COMPILE_JARS), \
+    INCLUDES := $(MICROBENCHMARK_PREVIEW_PACKAGES), \
     CREATE_API_DIGEST := true, \
     DISABLED_WARNINGS := restricted this-escape processing rawtypes removal cast \
         serial preview unchecked deprecation dangling-doc-comments, \
@@ -105,6 +110,41 @@ $(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK, \
         --add-exports java.base/sun.security.util.math.intpoly=ALL-UNNAMED \
         --enable-preview \
         --patch-module java.base=$(SUPPORT_OUTPUTDIR)/preview/java.base \
+        -XDsuppressNotes \
+        -processor org.openjdk.jmh.generators.BenchmarkProcessor \
+        -s $(MICROBENCHMARK_GENSRC), \
+    JAVA_FLAGS := \
+        --add-exports java.base/jdk.internal.vm=ALL-UNNAMED \
+        --add-modules jdk.unsupported \
+        --enable-preview \
+        --limit-modules java.management, \
+))
+
+$(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK, \
+    TARGET_RELEASE := $(TARGET_RELEASE_NEWJDK_UPGRADED), \
+    SMALL_JAVA := false, \
+    CLASSPATH := $(JMH_COMPILE_JARS), \
+    CREATE_API_DIGEST := true, \
+    EXCLUDES := $(MICROBENCHMARK_PREVIEW_PACKAGES), \
+    DISABLED_WARNINGS := restricted this-escape processing rawtypes removal cast \
+        serial unchecked deprecation dangling-doc-comments, \
+    SRC := $(MICROBENCHMARK_SRC), \
+    BIN := $(MICROBENCHMARK_CLASSES), \
+    JAVAC_FLAGS := \
+        --add-exports java.base/jdk.internal.classfile.components=ALL-UNNAMED \
+        --add-exports java.base/jdk.internal.classfile.impl=ALL-UNNAMED \
+        --add-exports java.base/jdk.internal.event=ALL-UNNAMED \
+        --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED \
+        --add-exports java.base/jdk.internal.jimage=ALL-UNNAMED \
+        --add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
+        --add-exports java.base/jdk.internal.util=ALL-UNNAMED \
+        --add-exports java.base/jdk.internal.value=ALL-UNNAMED \
+        --add-exports java.base/jdk.internal.vm=ALL-UNNAMED \
+        --add-exports java.base/jdk.internal.vm.annotation=ALL-UNNAMED \
+        --add-exports java.base/sun.invoke.util=ALL-UNNAMED \
+        --add-exports java.base/sun.security.util=ALL-UNNAMED \
+        --add-exports java.base/sun.security.util.math=ALL-UNNAMED \
+        --add-exports java.base/sun.security.util.math.intpoly=ALL-UNNAMED \
         -XDsuppressNotes \
         -processor org.openjdk.jmh.generators.BenchmarkProcessor \
         -s $(MICROBENCHMARK_GENSRC), \
@@ -139,12 +179,14 @@ $(eval $(call SetupCopyFiles, COPY_JAXP_TEST_XML, \
 
 # Create benchmarks JAR file with benchmarks for both the old and new JDK
 $(eval $(call SetupJarArchive, BUILD_JDK_JAR, \
-    DEPENDENCIES := $(BUILD_JDK_MICROBENCHMARK) $(JMH_UNPACKED_JARS_DONE) $(COPY_JAXP_TEST_XML), \
+    DEPENDENCIES := $(BUILD_JDK_MICROBENCHMARK_PREVIEW) $(BUILD_JDK_MICROBENCHMARK) $(JMH_UNPACKED_JARS_DONE) $(COPY_JAXP_TEST_XML), \
     SRCS := $(MICROBENCHMARK_CLASSES) $(JMH_UNPACKED_DIR), \
     BIN := $(MICROBENCHMARK_JAR_BIN), \
     SUFFIXES := .*, \
     EXCLUDE_FILES := _the.BUILD_JDK_MICROBENCHMARK_batch \
-        _the.BUILD_JDK_MICROBENCHMARK.vardeps _unpacked.marker, \
+        _the.BUILD_JDK_MICROBENCHMARK.vardeps _unpacked.marker \
+        _the.BUILD_JDK_MICROBENCHMARK_PREVIEW_batch \
+        _the.BUILD_JDK_MICROBENCHMARK_PREVIEW.vardeps, \
     EXTRA_MANIFEST_ATTR := $(MICROBENCHMARK_MANIFEST), \
     JARMAIN := org.openjdk.jmh.Main, \
     JAR := $(MICROBENCHMARK_JAR), \
