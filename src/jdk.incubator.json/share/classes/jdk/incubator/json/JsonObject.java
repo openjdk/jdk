@@ -48,7 +48,7 @@ import jdk.incubator.json.impl.JsonObjectImpl;
  *
  * @spec https://datatracker.ietf.org/doc/html/rfc8259#section-4 RFC 8259:
  *      The JavaScript Object Notation (JSON) Data Interchange Format - Objects
- * @since 99
+ * @since 28
  */
 public non-sealed interface JsonObject extends JsonValue {
 
@@ -98,7 +98,8 @@ public non-sealed interface JsonObject extends JsonValue {
      *
      * @param map the map of {@code JsonValue}s. Non-null.
      * @throws IllegalArgumentException if duplicate member names are given in
-     *      {@code map}.
+     *      {@code map}, including when they are encountered while iterating over
+     *      the mappings of an {@link java.util.IdentityHashMap}.
      * @throws NullPointerException if {@code map} is {@code null}, contains
      *      any keys that are {@code null}, or contains any values that are {@code null}.
      */

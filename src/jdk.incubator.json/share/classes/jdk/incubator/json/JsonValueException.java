@@ -38,9 +38,10 @@ import java.io.Serial;
  *     {@code asBoolean()} on a {@code JsonString}.
  *   </li>
  *   <li>
- *     An access method is invoked for a non-existent value, such as
- *     {@code get(String)} for a missing member in a {@code JsonObject}, or
- *     {@code get(int)} for an out-of-bounds index in a {@code JsonArray}.
+ *     An access method returning {@code JsonValue} is invoked for a non-existent
+ *     value, such as {@code get(String)} for a missing member in a
+ *     {@code JsonObject}, or {@code get(int)} for an out-of-bounds index in a
+ *     {@code JsonArray}.
  *   </li>
  *   <li>
  *     {@code asInt()} or {@code asLong()} is invoked on a {@code JsonNumber}
@@ -51,7 +52,7 @@ import java.io.Serial;
  *     representation cannot be converted to a finite {@code double}.
  *   </li>
  * </ul>
- * @since 99
+ * @since 28
  */
 public final class JsonValueException extends RuntimeException {
 

@@ -48,7 +48,7 @@ import jdk.incubator.json.impl.Utils;
  *
  * @spec https://datatracker.ietf.org/doc/html/rfc8259 RFC 8259: The JavaScript
  *      Object Notation (JSON) Data Interchange Format
- * @since 99
+ * @since 28
  */
 public final class Json {
 
@@ -58,8 +58,8 @@ public final class Json {
      * the JSON syntax. If the document contains any JSON object that has
      * duplicate names, a {@code JsonParseException} is thrown.
      * <p>
-     * {@code JsonObject}s preserve the order of their members declared in and parsed from
-     * the JSON document.
+     * {@code JsonObject}s preserve the order of members in the input JSON
+     * document.
      *
      * @implNote {@code JsonValue}s created by this method may produce their
      * underlying value representation lazily.
