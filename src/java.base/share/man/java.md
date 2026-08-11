@@ -90,30 +90,39 @@ To launch a source-file program:
 
 ## Description
 
-The `java` command starts a Java application. It does this by starting the Java
-Virtual Machine (JVM), loading the specified class, and calling that
-class's `main()` method. The method must be declared `public` and `static`, it
-must not return any value, and it must accept a `String` array as a parameter.
-The method declaration has the following form:
+The `java` command launches a Java application. It does this by starting the Java
+Virtual Machine (JVM), loading the main class of the application, and calling
+that class's `main()` method.
 
->   `public static void main(String[] args)`
+By default, the first argument that isn't an option of the `java` command indicates
+the fully qualified name of the main class. If `-jar` is specified, then its
+argument is the name of the JAR file containing class and resource files for the
+application, and the main class is indicated by the `Main-Class` attribute in
+the manifest of the JAR file.
 
-In source-file mode, the `java` command can launch a class declared in a source
-file. See [Using Source-File Mode to Launch Source-Code Programs]
-for a description of using the source-file mode.
+The `main()` method may be a static method or an instance method. It may
+declare a `String` array parameter for arguments passed to the `java`
+command after the main class name or the JAR file name; alternatively,
+it may declare no parameters. It must not return any value, and must
+have `public`, `protected`, or package access. The method declaration
+typically has one of the following forms:
 
-> **Note:** You can use the `JDK_JAVA_OPTIONS` launcher environment variable to prepend its
-content to the actual command line of the `java` launcher. See [Using the
-JDK\_JAVA\_OPTIONS Launcher Environment Variable].
+>    `public static void main(String[] args)`
+>
+>    `public static void main()`
+>
+>    `void main(String[] args)`
+>
+>    `void main()`
 
-By default, the first argument that isn't an option of the `java` command is
-the fully qualified name of the class to be called. If `-jar` is specified,
-then its argument is the name of the JAR file containing class and resource
-files for the application. The startup class must be indicated by the
-`Main-Class` manifest header in its manifest file.
+In source-file mode, the `java` command can launch an application whose main class
+is provided as source code instead of a class file.
+See [Using Source-File Mode to Launch Source-Code Programs] for a description of
+using the source-file mode.
 
-Arguments after the class file name or the JAR file name are passed to the
-`main()` method.
+> **Note:** You can use the `JDK_JAVA_OPTIONS` launcher environment variable to
+prepend its content to the actual command line of the java launcher.
+See [Using the JDK\_JAVA\_OPTIONS Launcher Environment Variable].
 
 ### `javaw`
 
@@ -483,7 +492,7 @@ the JVM.
         without any warnings.
 
     -   `warn`: This mode is identical to `allow` except that a warning message is
-        issued for the first illegal final field mutation performaed in a module.
+        issued for the first illegal final field mutation performed in a module.
         This mode is the default for the current JDK but will change in a future
         release.
 
@@ -911,10 +920,12 @@ the Java HotSpot Virtual Machine.
     :   Do not attempt to use shared class data.
 
 [`-XshowSettings`]{#-XshowSettings}
-:   Shows all settings and then continues.
+:   Shows all settings and continues. It exits normally if there is no Java
+    application to launch.
 
 [`-XshowSettings:`]{#-XshowSettings_}*category*
-:   Shows settings and continues. Possible *category* arguments for this option
+:   Shows settings and continues. It exits normally if there is no Java
+    application to launch. Possible *category* arguments for this option
     include the following:
 
     `all`
@@ -1148,8 +1159,10 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
     option is disabled.
 
 [`-XX:FlightRecorderOptions=`]{#-XX_FlightRecorderOptions}*parameter*`=`*value* (or) `-XX:FlightRecorderOptions:`*parameter*`=`*value*
-:   Sets the parameters that control the behavior of JFR. Multiple parameters can be specified
-    by separating them with a comma.
+:   Sets the parameters that control the behavior of JFR.
+    `-XX:FlightRecorderOptions:help` prints the available options, default
+    redaction filters, and example command lines. Multiple parameters can be
+    specified by separating them with a comma.
 
     The following list contains the available JFR *parameter*`=`*value*
     entries:
@@ -1195,6 +1208,45 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
     :   Specifies whether event classes should be retransformed using JVMTI. If
         false, instrumentation is added when event classes are loaded. By
         default, this parameter is enabled.
+
+    `redact-argument=`argument-filter
+    :   Replace command-line arguments that match a semicolon-separated list
+        of glob patterns, for example, `*secret*;password*`. Matching is
+        case-insensitive, and the supported wildcards are `*` and `?`. To redact
+        multiple arguments, use a literal space (`' '`) as a separator.
+        For example, to match the two arguments `--auth username:token`, use the
+        filter `--auth *:*`. Filters containing spaces must be quoted as a single
+        command-line argument, for example,
+        `-XX:FlightRecorderOptions='redact-argument=--auth *:*'`.
+        Arguments containing spaces might not be matched as expected. To load
+        patterns from a file (one per line) use `@<filename>`. To add to the
+        default patterns instead of replacing them, prefix the whole list with
+        `+`, for example, `+*foo*;@redact.txt`. Use `none` (lowercase) to disable
+        all redaction filters for command-line arguments. Redacted arguments will
+        be replaced with `[REDACTED]`. The option `redact-argument` is best-effort
+        and applies only to command-line arguments in the `jdk.JVMInformation`
+        event and to the `java.command` system property in the
+        `jdk.InitialSystemProperty` event, and to matching command-line argument
+        text in the values of `jdk.InitialEnvironmentVariable` events. Other
+        events, such as `jdk.ProcessStart` (child processes), are not redacted.
+        Use `-XX:FlightRecorderOptions:help` to see the default filters used by
+        the `redact-argument` option.
+
+    `redact-key=`key-filter
+    :   Replace the value of environment variables and system properties
+        whose key matches a semicolon-separated list of glob patterns,
+        for example, `*password*;*token*`. Matching is case-insensitive, and
+        the supported wildcards are `*` and `?`. To load patterns from a file
+        (one per line), use `@<filename>`. To add to the default patterns
+        instead of replacing them, prefix the whole list with `+`,
+        for example, `+*cred*;@keys.txt`. Use `none` (lowercase) to
+        disable all redaction filters for key matching. Redacted values
+        will be replaced with `[REDACTED]`. The option `redact-key` is
+        best-effort and applies only to the `jdk.InitialSystemProperty`,
+        `jdk.InitialEnvironmentVariable` and `jdk.JVMInformation` (-Dkey=...)
+        events. Other events, such as `jdk.InitialSecurityProperty`, are not
+        redacted. Use `-XX:FlightRecorderOptions:help` to see the default filters
+        used by the `redact-key` option.
 
     `stackdepth=`*depth*
     :   Stack depth for stack traces. By default, the depth is set to 64 method
@@ -1529,14 +1581,14 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
 
     This option is similar to `-Xss`.
 
-[`-XX:+UseCompactObjectHeaders`]{#-XX__UseCompactObjectHeaders}
-:   Enables compact object headers. By default, this option is disabled.
-    Enabling this option reduces memory footprint in the Java heap by
-    4 bytes per object (on average) and often improves performance.
+[`-XX:-UseCompactObjectHeaders`]{#-XX__UseCompactObjectHeaders}
+:   Disables compact object headers. By default, this option is enabled and
+    compact object headers are used.  Using compact object headers reduces
+    memory footprint in the Java heap by 4 bytes per object (on average) and
+    often improves performance.
 
-    The feature remains disabled by default while it continues to be evaluated.
-    In a future release it is expected to be enabled by default, and
-    eventually will be the only mode of operation.
+    This option can be used if performance regressions are suspected. In a future
+    release compact object headers is expected to become the only mode of operation.
 
 [`-XX:-UseCompressedOops`]{#-XX__UseCompressedOops}
 :   Disables the use of compressed pointers. By default, this option is
@@ -1799,6 +1851,35 @@ performed by the Java HotSpot VM.
 
         You can suppress this by specifying the `-XX:CompileCommand=quiet`
         option before other `-XX:CompileCommand` options.
+
+    Compilation levels can be specified in the `compileonly`, `exclude`, `print`,
+    and `break` commands using a bitmask as an optional value:
+
+    ```
+    -XX:CompileCommand=exclude,java/lang/String.indexOf,1011
+    -XX:CompileCommand=compileonly,java/lang/String.indexOf,100
+    -XX:CompileCommand=print,java/lang/String.indexOf,100
+    -XX:CompileCommand=break,java/lang/StringBuffer.append,1000
+    ```
+
+    The bitmask is calculated by summing the desired compilation level values:
+
+    `1`
+    : C1 JIT compiler without profiling.
+
+    `10`
+    : C1 JIT compiler with limited profiling.
+
+    `100`
+    : C1 JIT compiler with full profiling.
+
+    `1000`
+    : C2 JIT compiler: no profiling, full optimization.
+
+    If the bitmask is not specified, all levels are assumed.
+
+    Note: Excluding specific compilation levels may disrupt normal state transitions
+    between the levels, as the VM will not automatically work around the excluded ones.
 
 [`-XX:CompileCommandFile=`]{#-XX_CompileCommandFile}*filename*
 :   Sets the file from which JIT compiler commands are read. By default, the
@@ -2200,6 +2281,23 @@ performed by the Java HotSpot VM.
 These `java` options provide the ability to gather system information and
 perform extensive debugging.
 
+[`-XX:AltTempDir=`]{#-XX_AltTempDir}*/path*
+:   **Linux-only:** On Linux, the usual directory to use for temporary files is `/tmp`. In some secure container
+    environments however, `/tmp` is made read-only and so is unusable by the VM for its temporary files. To accommodate
+    this uncommon circumstance the `-XX:AltTempDir` flag can be used to tell the VM to use a different temporary directory.
+
+    It is important to note that this setting controls not only where the VM places its own temporary files, but also the location
+    it will look for the special files used by other VMs as part of the attach protocol for tools like `jcmd` and `jstack`. That
+    means that both VMs must use the same setting of this flag. For example, if you start a target VM with
+    `java -XX:AltTempDir=/scratch/vmTmp` then you must run e.g. `jcmd -J-XX:AltTempDir=/scratch/vmTmp` to interact with that target VM.
+
+    The directory path must of course be writable and accessible to both the target and tool VM, so the simplest arrangement
+    is to always run both in the same container.
+
+    The value for `AltTempDir` must be an absolute directory path starting with `/`. The length of the `AltTempDir` path should be
+    fairly small (less than approximately 80 characters) if it is to be used with the attach protocol due to path length limits
+    for socket files.
+
 [`-XX:+DisableAttachMechanism`]{#-XX__DisableAttachMechanism}
 :   Disables the mechanism that lets tools attach to the JVM. By default, this
     option is disabled, meaning that the attach mechanism is enabled and you
@@ -2350,11 +2448,11 @@ Java HotSpot VM.
     option is disabled by default and can be enabled only with the `-XX:+UseG1GC` option.
 
 [`-XX:G1AdaptiveIHOPNumInitialSamples=`]{#-XX_G1AdaptiveIHOPNumInitialSamples}*number*
-:   When `-XX:UseAdaptiveIHOP` is enabled, this option sets the number of
-    completed marking cycles used to gather samples until G1 adaptively
-    determines the optimum value of `-XX:InitiatingHeapOccupancyPercent`. Before,
-    G1 uses the value of `-XX:InitiatingHeapOccupancyPercent` directly for
-    this purpose. The default value is 3.
+:   When `-XX:UseAdaptiveIHOP` is enabled, this option sets the number
+    of completed concurrent cycles used to gather samples until G1
+    adaptively determines the optimum value of `-XX:G1IHOP`. Before,
+    G1 uses the value of `-XX:G1IHOP` directly for this purpose. The
+    default value is 3.
 
 [`-XX:G1HeapRegionSize=`]{#-XX_G1HeapRegionSize}*size*
 :   Sets the size of the regions into which the Java heap is subdivided when
@@ -2416,15 +2514,14 @@ Java HotSpot VM.
     >   `-XX:G1ReservePercent=20`
 
 [`-XX:+G1UseAdaptiveIHOP`]{#-XX__G1UseAdaptiveIHOP}
-:   Controls adaptive calculation of the old generation occupancy to start
-    background work preparing for an old generation collection. If enabled,
-    G1 uses `-XX:InitiatingHeapOccupancyPercent` for the first few times as
-    specified by the value of `-XX:G1AdaptiveIHOPNumInitialSamples`, and after
-    that adaptively calculates a new optimum value for the initiating
-    occupancy automatically.
-    Otherwise, the old generation collection process always starts at the
-    old generation occupancy determined by
-    `-XX:InitiatingHeapOccupancyPercent`.
+:   Controls adaptive calculation of the old generation occupancy to
+    start background work preparing for an old generation collection.
+    If enabled, G1 uses `-XX:G1IHOP` for the first few times as
+    specified by the value of `-XX:G1AdaptiveIHOPNumInitialSamples`,
+    and after that adaptively calculates a new optimum value for the
+    initiating occupancy automatically. Otherwise, the old generation
+    collection process always starts at the old generation occupancy
+    determined by `-XX:G1IHOP`.
 
     The default is enabled.
 
@@ -2454,8 +2551,8 @@ Java HotSpot VM.
 
 [`-XX:InitialRAMPercentage=`]{#-XX_InitialRAMPercentage}*percent*
 :   Sets the initial amount of memory that the JVM will use for the Java heap
-    before applying ergonomics heuristics as a percentage of the maximum amount
-    determined as described in the `-XX:MaxRAM` option.
+    before applying ergonomics heuristics as a percentage of the available memory
+    to the JVM process.
 
     The following example shows how to set the percentage of the initial
     amount of memory used for the Java heap:
@@ -2491,7 +2588,7 @@ Java HotSpot VM.
 
     >   `-XX:InitialSurvivorRatio=4`
 
-[`-XX:InitiatingHeapOccupancyPercent=`]{#-XX_InitiatingHeapOccupancyPercent}*percent*
+[`-XX:G1IHOP=`]{#-XX_G1IHOP}*percent*
 :   Sets the percentage of the old generation occupancy (0 to 100) at which to
     start the first few concurrent marking cycles for the G1 garbage collector.
 
@@ -2504,7 +2601,7 @@ Java HotSpot VM.
 
     The following example shows how to set the initiating heap occupancy to 75%:
 
-    >   `-XX:InitiatingHeapOccupancyPercent=75`
+    >   `-XX:G1IHOP=75`
 
 [`-XX:MaxGCPauseMillis=`]{#-XX_MaxGCPauseMillis}*time*
 :   Sets a target for the maximum GC pause time (in milliseconds). This is a
@@ -2575,9 +2672,8 @@ Java HotSpot VM.
 
 [`-XX:MaxRAMPercentage=`]{#-XX_MaxRAMPercentage}*percent*
 :   Sets the maximum amount of memory that the JVM may use for the Java heap
-    before applying ergonomics heuristics as a percentage of the maximum amount
-    determined as described in the `-XX:MaxRAM` option. The default value is 25
-    percent.
+    before applying ergonomics heuristics as a percentage of the available memory
+    to the JVM process. The default value is 25 percent.
 
     Specifying this option disables automatic use of compressed oops if
     the combined result of this and other options influencing the maximum amount
@@ -2591,9 +2687,9 @@ Java HotSpot VM.
 
 [`-XX:MinRAMPercentage=`]{#-XX_MinRAMPercentage}*percent*
 :   Sets the maximum amount of memory that the JVM may use for the Java heap
-    before applying ergonomics heuristics as a percentage of the maximum amount
-    determined as described in the `-XX:MaxRAM` option for small heaps. A small
-    heap is a heap of approximately 125 MB. The default value is 50 percent.
+    before applying ergonomics heuristics as a percentage of the available memory
+    to the JVM process for small heaps. A small heap is a heap of approximately
+    125 MB. The default value is 50 percent.
 
     The following example shows how to set the percentage of the maximum amount
     of memory used for the Java heap for small heaps:
@@ -2931,59 +3027,6 @@ they're used.
 :   Enables the use of Java Flight Recorder (JFR) during the runtime of the
     application. Since JDK 8u40 this option has not been required to use JFR.
 
-[`-XX:+ParallelRefProcEnabled`]{#-XX__ParallelRefProcEnabled}
-:   Enables parallel reference processing. By default, collectors employing multiple
-    threads perform parallel reference processing if the number of parallel threads
-    to use is larger than one.
-    The option is available only when the throughput or G1 garbage collector is used
-    (`-XX:+UseParallelGC` or `-XX:+UseG1GC`). Other collectors employing multiple
-    threads always perform reference processing in parallel.
-
-[`-XX:MaxRAM=`]{#-XX_MaxRAM}*size*
-:   Sets the maximum amount of memory that the JVM may use for the Java heap
-    before applying ergonomics heuristics. The default value is the amount of
-    available memory to the JVM process.
-
-    The maximum amount of available memory to the JVM process is the minimum
-    of the machine's physical memory and any constraints set by the environment
-    (e.g. container).
-
-    Specifying this option disables automatic use of compressed oops if
-    the combined result of this and other options influencing the maximum amount
-    of memory is larger than the range of memory addressable by compressed oops.
-    See `-XX:UseCompressedOops` for further information about compressed oops.
-
-    The following example shows how to set the maximum amount of available
-    memory for sizing the Java heap to 2 GB:
-
-    >   `-XX:MaxRAM=2G`
-
-[`-XX:+AggressiveHeap`]{#-XX__AggressiveHeap}
-:   Enables Java heap optimization. This sets various parameters to be
-    optimal for long-running jobs with intensive memory allocation, based on
-    the configuration of the computer (RAM and CPU). By default, the option
-    is disabled and the heap sizes are configured less aggressively.
-
-[`-XX:+NeverActAsServerClassMachine`]{#-XX__NeverActAsServerClassMachine}
-:   Enable the "Client VM emulation" mode which only uses the C1 JIT compiler,
-    a 32Mb CodeCache and the Serial GC. The maximum amount of memory that the
-    JVM may use (controlled by the `-XX:MaxRAM=n` flag) is set to 1GB by default.
-    The string "emulated-client" is added to the JVM version string.
-
-    By default the flag is set to `true` only on Windows in 32-bit mode and
-    `false` in all other cases.
-
-    The "Client VM emulation" mode will not be enabled if any of the following
-    flags are used on the command line:
-
-    ```
-    -XX:{+|-}TieredCompilation
-    -XX:CompilationMode=mode
-    -XX:TieredStopAtLevel=n
-    -XX:{+|-}EnableJVMCI
-    -XX:{+|-}UseJVMCICompiler
-    ```
-
 ## Obsolete Java Options
 
 These `java` options are still accepted but ignored, and a warning is issued
@@ -2998,9 +3041,47 @@ when they're used.
 
 ## Removed Java Options
 
-No documented java options have been removed in JDK @@VERSION_SPECIFICATION@@.
+These `java` options have been removed in JDK @@VERSION_SPECIFICATION@@ and using them results in an error of:
+
+>   `Unrecognized VM option` *option-name*
+
+[`-XX:+AggressiveHeap`]{#-XX__AggressiveHeap}
+:   Enabled Java heap optimization. This set various parameters to be
+    optimal for long-running jobs with intensive memory allocation, based on
+    the configuration of the computer (RAM and CPU). By default, the option
+    was disabled and the heap sizes configured less aggressively.
+
+[`-XX:+NeverActAsServerClassMachine`]{#-XX__NeverActAsServerClassMachine}
+:   Enabled the "Client VM emulation" mode, which used only the C1 JIT compiler,
+    a 32Mb CodeCache, and the Serial GC. The maximum amount of memory that the
+    JVM could use was set to 1GB by default. The string "emulated-client" was added
+    to the JVM version string.
+
+    By default the flag was set to `true` only on Windows in 32-bit mode and
+    `false` in all other cases.
+
+    The "Client VM emulation" mode was not enabled if any of the following
+    flags were used on the command line:
+
+    ```
+    -XX:{+|-}TieredCompilation
+    -XX:CompilationMode=mode
+    -XX:TieredStopAtLevel=n
+    -XX:{+|-}EnableJVMCI
+    -XX:{+|-}UseJVMCICompiler
+    ```
+
+[`-XX:+ParallelRefProcEnabled`]{#-XX__ParallelRefProcEnabled}
+:   Enables parallel reference processing. By default, collectors employing multiple
+    threads perform parallel reference processing if the number of parallel threads
+    to use is larger than one.
+    The option is available only when the throughput or G1 garbage collector is used
+    (`-XX:+UseParallelGC` or `-XX:+UseG1GC`). Other collectors employing multiple
+    threads always perform reference processing in parallel.
 
 For the lists and descriptions of options removed in previous releases see the *Removed Java Options* section in:
+
+-   [The `java` Command, Release 27](https://docs.oracle.com/en/java/javase/27/docs/specs/man/java.html)
 
 -   [The `java` Command, Release 26](https://docs.oracle.com/en/java/javase/26/docs/specs/man/java.html)
 
@@ -4100,13 +4181,17 @@ The AOT cache can be used with the following command-line options:
 
 [`-XX:AOTMode=`]{#-XX_AOTMode}*mode*
 :   Specifies the AOT Mode for this run.
-    *mode* must be one of the following: `auto`, `off`, `record`, `create`, or `on`.
+    *mode* must be one of the following: `auto`, `off`, `record`, `create`, `on`, or `required`.
+
+    Note that `on` is an alias for `required`. All discussion below about `required`
+    also applies to `on`. The use of `on` is discouraged. The support of `on` may be deprecated and
+    removed in future releases.
 
 -   `auto`: This AOT mode is the default, and takes effect if no `-XX:AOTMode` option
-    is present.  It automatically sets the AOT mode to `record`, `on`, or `off`, as follows:
+    is present.  It automatically sets the AOT mode to `record`, `required`, or `off`, as follows:
      - If `-XX:AOTCacheOutput=`*cachefile* is specified, the AOT mode is changed to `record`
        (a training run, with a subsequent `create` operation).
-     - Otherwise, if an AOT cache can be loaded, the AOT mode is changed to `on` (a production run).
+     - Otherwise, if an AOT cache can be loaded, the AOT mode is changed to `required` (a production run).
      - Otherwise, the AOT mode is changed to `off` (a production run with no AOT cache).
 
 -   `off`: No AOT cache is used.
@@ -4134,10 +4219,9 @@ The AOT cache can be used with the following command-line options:
      from *configfile* and writes the optimization artifacts into *cachefile*.
      Note that the application itself is not executed in this phase.
 
--   `on`: Execute the application in the Production phase.
-     If `-XX:AOTCache=`*cachefile* is specified, the JVM tries to
-     load *cachefile* as the AOT cache. Otherwise, the JVM tries to load
-     a *default CDS archive* from the JDK installation directory as the AOT cache.
+-   `required`: Execute the application in the Production phase.
+     `-XX:AOTCache=`*cachefile* must be specified. The JVM tries to
+     load *cachefile* as the AOT cache.
 
      The loading of an AOT cache can fail for a number of reasons:
 
@@ -4165,10 +4249,15 @@ The AOT cache can be used with the following command-line options:
        This allows your application to function correctly, although sometimes it may not
        benefit from the AOT cache.
 
-     - If `AOTMode` is `on`, the JVM will print an error message and exit immediately. This
+     - If `AOTMode` was originally `required`, the JVM will print an error message and exit immediately. This
        mode should be used only as a "fail-fast" debugging aid to check if your command-line
        options are compatible with the AOT cache. An alternative is to run your application with
        `-XX:AOTMode=auto -Xlog:aot` to see if the AOT cache can be used or not.
+
+     In production environments, `-XX:AOTMode=required` should be used with care. Your application may
+     fail to launch if an incompatible VM option is added without your knowledge. For example,
+     a cloud provider might run your JVM with a JVMTI class-file load hook for monitoring purposes.
+
 
 [`-XX:+AOTClassLinking`]{#-XX__AOTClassLinking}
 :   If this option is enabled, the JVM will perform more advanced optimizations (such

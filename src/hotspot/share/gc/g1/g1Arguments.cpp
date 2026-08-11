@@ -98,7 +98,7 @@ void G1Arguments::initialize_verification_types() {
       parse_verification_type(token);
       token = strtok_r(nullptr, delimiter, &save_ptr);
     }
-    FREE_C_HEAP_ARRAY(char, type_list);
+    FREE_C_HEAP_ARRAY(type_list);
   }
 }
 
@@ -148,8 +148,9 @@ void G1Arguments::initialize_card_set_configuration() {
 
   if (FLAG_IS_DEFAULT(G1RemSetArrayOfCardsEntries)) {
     uint max_cards_in_inline_ptr = G1CardSetConfiguration::max_cards_in_inline_ptr(G1HeapRegion::LogCardsPerRegion);
+    const JVMTypedFlagLimit<uint>* limit = JVMFlagLimit::get_range_at(FLAG_MEMBER_ENUM(G1RemSetArrayOfCardsEntries))->cast<uint>();
     FLAG_SET_ERGO(G1RemSetArrayOfCardsEntries, MAX2(max_cards_in_inline_ptr * 2,
-                                                    G1RemSetArrayOfCardsEntriesBase << region_size_log_mb));
+                                                    MIN2(G1RemSetArrayOfCardsEntriesBase << region_size_log_mb, limit->max())));
   }
 
   // Howl card set container globals.
@@ -240,10 +241,6 @@ void G1Arguments::initialize() {
   // pause time target is the default value).
   if (FLAG_IS_DEFAULT(GCPauseIntervalMillis)) {
     FLAG_SET_DEFAULT(GCPauseIntervalMillis, MaxGCPauseMillis + 1);
-  }
-
-  if (FLAG_IS_DEFAULT(ParallelRefProcEnabled) && ParallelGCThreads > 1) {
-    FLAG_SET_DEFAULT(ParallelRefProcEnabled, true);
   }
 
 #ifdef COMPILER2

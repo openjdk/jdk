@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "oops/arrayOop.hpp"
-#include "oops/bsmAttribute.inline.hpp"
+#include "oops/bsmAttribute.hpp"
 #include "oops/cpCache.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oopHandle.hpp"
@@ -80,7 +80,6 @@ public:
 
 class ConstantPool : public Metadata {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
   friend class BytecodeInterpreter;  // Directly extracts a klass in the pool for fast instanceof/checkcast
   friend class Universe;             // For null constructor
   friend class AOTConstantPoolResolver;
@@ -245,8 +244,8 @@ class ConstantPool : public Metadata {
                                       TRAPS);
 
   // resolved strings, methodHandles and callsite objects from the constant pool
-  objArrayOop resolved_references()  const;
-  objArrayOop resolved_references_or_null()  const;
+  refArrayOop resolved_references()  const;
+  refArrayOop resolved_references_or_null()  const;
   oop resolved_reference_at(int obj_index) const;
   oop set_resolved_reference_at(int index, oop new_value);
 
@@ -554,8 +553,8 @@ class ConstantPool : public Metadata {
   u2 bootstrap_argument_index_at(int cp_index, int j) {
     int bsmai = bootstrap_methods_attribute_index(cp_index);
     BSMAttributeEntry* bsme = bsm_attribute_entry(bsmai);
-    assert((uint)j < (uint)bsme->argument_count(), "oob");
-    return bsm_attribute_entry(bsmai)->argument(j);
+    assert(j < bsme->argument_count(), "oob");
+    return bsm_attribute_entry(bsmai)->argument(checked_cast<u2>(j));
   }
 
   // The following methods (name/signature/klass_ref_at, klass_ref_at_noresolve,
@@ -604,7 +603,7 @@ class ConstantPool : public Metadata {
 
 #if INCLUDE_CDS
   // CDS support
-  objArrayOop prepare_resolved_references_for_archiving() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
+  refArrayOop prepare_resolved_references_for_archiving() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
   void remove_unshareable_info();
   void restore_unshareable_info(TRAPS);
 private:
@@ -645,7 +644,7 @@ private:
 
   void copy_bootstrap_arguments_at(int cp_index,
                                    int start_arg, int end_arg,
-                                   objArrayHandle info, int pos,
+                                   refArrayHandle info, int pos,
                                    bool must_resolve, Handle if_not_available, TRAPS) {
     constantPoolHandle h_this(THREAD, this);
     copy_bootstrap_arguments_at_impl(h_this, cp_index, start_arg, end_arg,
@@ -744,7 +743,7 @@ private:
                                       bool* status_return, TRAPS);
   static void copy_bootstrap_arguments_at_impl(const constantPoolHandle& this_cp, int cp_index,
                                                int start_arg, int end_arg,
-                                               objArrayHandle info, int pos,
+                                               refArrayHandle info, int pos,
                                                bool must_resolve, Handle if_not_available, TRAPS);
 
   // Exception handling

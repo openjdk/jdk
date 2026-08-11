@@ -2,7 +2,7 @@
  * @test /nodynamiccopyright/
  * @summary Retain exhaustiveness properties of switches with a constant selector
  * @enablePreview
- * @compile/fail/ref=PrimitivePatternsSwitchConstants.out -XDrawDiagnostics -XDshould-stop.at=FLOW PrimitivePatternsSwitchConstants.java
+ * @compile/fail/ref=PrimitivePatternsSwitchConstants.out -XDrawDiagnostics -XDshould-stop.at=FLOW -XDexhaustivityMaxBaseChecks=0 PrimitivePatternsSwitchConstants.java
  */
 public class PrimitivePatternsSwitchConstants {
     void testConstExpressions() {

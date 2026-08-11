@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@
 #include "oops/access.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
@@ -797,7 +798,7 @@ void AOTStreamedHeapLoader::cleanup() {
     Universe::vm_global()->release(&handles[num_null_handles], num_handles - num_null_handles);
   }
 
-  FREE_C_HEAP_ARRAY(void*, _object_index_to_heap_object_table);
+  FREE_C_HEAP_ARRAY(_object_index_to_heap_object_table);
 
   // Unmap regions
   FileMapInfo::current_info()->unmap_region(AOTMetaspace::hp);
@@ -995,7 +996,7 @@ void AOTStreamedHeapLoader::initialize() {
   // We can't retire a TLAB until the filler klass is set; set it to the archived object klass.
   CollectedHeap::set_filler_object_klass(vmClasses::Object_klass());
 
-  objArrayOop roots = oopFactory::new_objectArray(_num_roots, CHECK);
+  refArrayOop roots = oopFactory::new_objectArray(_num_roots, CHECK);
   _roots = OopHandle(Universe::vm_global(), roots);
 
   _object_index_to_buffer_offset_table = (size_t*)(((address)_heap_region->mapped_base()) + forwarding_offset);
@@ -1051,7 +1052,7 @@ oop AOTStreamedHeapLoader::materialize_root(int root_index) {
   {
     MutexLocker ml(AOTHeapLoading_lock, Mutex::_safepoint_check_flag);
 
-    oop root = objArrayOop(_roots.resolve())->obj_at(root_index);
+    oop root = oop_cast<refArrayOop>(_roots.resolve())->obj_at(root_index);
 
     if (root != nullptr) {
       // The root has already been materialized
@@ -1070,7 +1071,7 @@ oop AOTStreamedHeapLoader::materialize_root(int root_index) {
 }
 
 oop AOTStreamedHeapLoader::get_root(int index) {
-  oop result = objArrayOop(_roots.resolve())->obj_at(index);
+  oop result = oop_cast<refArrayOop>(_roots.resolve())->obj_at(index);
   if (result == nullptr) {
     // Materialize root
     result = materialize_root(index);
@@ -1102,25 +1103,13 @@ void AOTStreamedHeapLoader::finish_initialization(FileMapInfo* static_mapinfo) {
 }
 
 AOTMapLogger::OopDataIterator* AOTStreamedHeapLoader::oop_iterator(FileMapInfo* info, address buffer_start, address buffer_end) {
-  class StreamedLoaderOopIterator : public AOTMapLogger::OopDataIterator {
-  private:
-    int _current;
-    int _next;
-
-    address _buffer_start;
-
-    int _num_archived_objects;
-
+  class StreamedLoaderOopIterator : public AOTStreamedHeapOopIterator {
   public:
     StreamedLoaderOopIterator(address buffer_start,
                               int num_archived_objects)
-      : _current(0),
-        _next(1),
-        _buffer_start(buffer_start),
-        _num_archived_objects(num_archived_objects) {
-    }
+      : AOTStreamedHeapOopIterator(buffer_start, num_archived_objects) {}
 
-    AOTMapLogger::OopData capture(int dfs_index) {
+    AOTMapLogger::OopData capture(int dfs_index) override {
       size_t buffered_offset = buffer_offset_for_object_index(dfs_index);
       address buffered_addr = _buffer_start + buffered_offset;
       oopDesc* raw_oop = (oopDesc*)buffered_addr;
@@ -1140,35 +1129,6 @@ AOTMapLogger::OopDataIterator* AOTStreamedHeapLoader::oop_iterator(FileMapInfo* 
                klass,
                size,
                false };
-    }
-
-    bool has_next() override {
-      return _next <= _num_archived_objects;
-    }
-
-    AOTMapLogger::OopData next() override {
-      _current = _next;
-      AOTMapLogger::OopData result = capture(_current);
-      _next = _current + 1;
-      return result;
-    }
-
-    AOTMapLogger::OopData obj_at(narrowOop* addr) override {
-      int dfs_index = (int)(*addr);
-      if (dfs_index == 0) {
-        return null_data();
-      } else {
-        return capture(dfs_index);
-      }
-    }
-
-    AOTMapLogger::OopData obj_at(oop* addr) override {
-      int dfs_index = (int)cast_from_oop<uintptr_t>(*addr);
-      if (dfs_index == 0) {
-        return null_data();
-      } else {
-        return capture(dfs_index);
-      }
     }
 
     GrowableArrayCHeap<AOTMapLogger::OopData, mtClass>* roots() override {

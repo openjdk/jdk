@@ -26,6 +26,9 @@
 #ifndef SHARE_RUNTIME_JAVATHREAD_HPP
 #define SHARE_RUNTIME_JAVATHREAD_HPP
 
+#ifndef PRODUCT
+#include "interpreter/bytecodeTracer.hpp"
+#endif // PRODUCT
 #include "jni.h"
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
@@ -57,7 +60,6 @@ class AsyncExceptionHandshakeClosure;
 class DeoptResourceMark;
 class InternalOOMEMark;
 class JNIHandleBlock;
-class JVMCIRuntime;
 
 class JvmtiDeferredUpdates;
 class JvmtiSampledObjectAllocEventCollector;
@@ -81,10 +83,10 @@ class JavaThread;
 typedef void (*ThreadFunction)(JavaThread*, TRAPS);
 
 class EventVirtualThreadPinned;
+class ThreadWXEnable;
 
 class JavaThread: public Thread {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
   friend class WhiteBox;
   friend class ThreadsSMRSupport; // to access _threadObj for exiting_threads_oops_do
   friend class HandshakeState;
@@ -228,16 +230,16 @@ class JavaThread: public Thread {
 
   // Asynchronous exception support
  private:
-  friend class InstallAsyncExceptionHandshakeClosure;
   friend class AsyncExceptionHandshakeClosure;
   friend class HandshakeState;
 
+  int _at_no_async_entry_count;  // Tracks JRT_xxx_NO_ASYNC entry points
+
   void handle_async_exception(oop java_throwable);
  public:
-  void install_async_exception(AsyncExceptionHandshakeClosure* aec = nullptr);
+  void install_async_exception(AsyncExceptionHandshakeClosure* aec);
   bool has_async_exception_condition();
   inline void set_pending_unsafe_access_error();
-  static void send_async_exception(JavaThread* jt, oop java_throwable);
 
   class NoAsyncExceptionDeliveryMark : public StackObj {
     friend JavaThread;
@@ -245,6 +247,20 @@ class JavaThread: public Thread {
     inline NoAsyncExceptionDeliveryMark(JavaThread *t);
     inline ~NoAsyncExceptionDeliveryMark();
   };
+
+  int at_no_async_entry_count() const {
+    assert(is_handshake_safe_for(Thread::current()), "Should only be invoked from within a handshake!");
+    assert(_at_no_async_entry_count >= 0, "");
+    return _at_no_async_entry_count;
+  }
+  void inc_at_no_async_entry_count() {
+    assert(_at_no_async_entry_count >= 0, "");
+    _at_no_async_entry_count++;
+  }
+  void dec_at_no_async_entry_count() {
+    _at_no_async_entry_count--;
+    assert(_at_no_async_entry_count >= 0, "");
+  }
 
   // Safepoint support
  public:                                                        // Expose _thread_state for SafeFetchInt()
@@ -289,6 +305,16 @@ class JavaThread: public Thread {
     return _visited_for_critical_count == safepoint_id;
   }
 #endif // ASSERT
+
+#ifndef PRODUCT
+ private:
+  BytecodeTracerData _bytecode_tracer_data;
+
+ public:
+  BytecodeTracerData* bytecode_tracer_data() {
+    return &_bytecode_tracer_data;
+  }
+#endif // PRODUCT
 
   // JavaThread termination support
  public:
@@ -344,94 +370,6 @@ class JavaThread: public Thread {
   // In scope of an InternalOOMEMark?
   bool _is_in_internal_oome_mark;
 
-#if INCLUDE_JVMCI
-  // The _pending_* fields below are used to communicate extra information
-  // from an uncommon trap in JVMCI compiled code to the uncommon trap handler.
-
-  // Communicates the DeoptReason and DeoptAction of the uncommon trap
-  int       _pending_deoptimization;
-
-  // Specifies whether the uncommon trap is to bci 0 of a synchronized method
-  // before the monitor has been acquired.
-  bool      _pending_monitorenter;
-
-  // Specifies if the DeoptReason for the last uncommon trap was Reason_transfer_to_interpreter
-  bool      _pending_transfer_to_interpreter;
-
-  // An id of a speculation that JVMCI compiled code can use to further describe and
-  // uniquely identify the speculative optimization guarded by an uncommon trap.
-  // See JVMCINMethodData::SPECULATION_LENGTH_BITS for further details.
-  jlong     _pending_failed_speculation;
-
-  // These fields are mutually exclusive in terms of live ranges.
-  union {
-    // Communicates the pc at which the most recent implicit exception occurred
-    // from the signal handler to a deoptimization stub.
-    address   _implicit_exception_pc;
-
-    // Communicates an alternative call target to an i2c stub from a JavaCall .
-    address   _alternate_call_target;
-  } _jvmci;
-
-  // The JVMCIRuntime in a JVMCI shared library
-  JVMCIRuntime* _libjvmci_runtime;
-
-  // Support for high precision, thread sensitive counters in JVMCI compiled code.
-  jlong*    _jvmci_counters;
-
-  // Fast thread locals for use by JVMCI
-  jlong      _jvmci_reserved0;
-  jlong      _jvmci_reserved1;
-  oop        _jvmci_reserved_oop0;
-
-  // This field is used to keep an nmethod visible to the GC so that it and its contained oops can
-  // be kept alive
-  nmethod*  _live_nmethod;
-
- public:
-  static jlong* _jvmci_old_thread_counters;
-  static void collect_counters(jlong* array, int length);
-
-  bool resize_counters(int current_size, int new_size);
-
-  static bool resize_all_jvmci_counters(int new_size);
-
-  void set_jvmci_reserved_oop0(oop value) {
-    _jvmci_reserved_oop0 = value;
-  }
-
-  oop get_jvmci_reserved_oop0() {
-    return _jvmci_reserved_oop0;
-  }
-
-  void set_jvmci_reserved0(jlong value) {
-    _jvmci_reserved0 = value;
-  }
-
-  jlong get_jvmci_reserved0() {
-    return _jvmci_reserved0;
-  }
-
-  void set_jvmci_reserved1(jlong value) {
-    _jvmci_reserved1 = value;
-  }
-
-  jlong get_jvmci_reserved1() {
-    return _jvmci_reserved1;
-  }
-
-  void set_live_nmethod(nmethod* nm) {
-    assert(_live_nmethod == nullptr, "only one");
-    _live_nmethod = nm;
-  }
-
-  void clear_live_nmethod() {
-    _live_nmethod = nullptr;
-  }
-
- private:
-#endif // INCLUDE_JVMCI
-
   StackOverflow    _stack_overflow_state;
 
   void pretouch_stack();
@@ -444,8 +382,11 @@ class JavaThread: public Thread {
   volatile address _exception_handler_pc;        // PC for handler of exception
 
  private:
-  // support for JNI critical regions
+  // support for JNI critical regions interaction with GC
   jint    _jni_active_critical;                  // count of entries into JNI critical region
+
+  // support for JNI critical regions deferral of JVM TI suspension
+  jint    _jni_deferred_suspension_count;
 
   // Checked JNI: function name requires exception check
   char* _pending_jni_exception_check_fn;
@@ -822,22 +763,6 @@ public:
   bool is_in_internal_oome_mark() const          { return _is_in_internal_oome_mark; }
   void set_is_in_internal_oome_mark(bool b)      { _is_in_internal_oome_mark = b;    }
 
-#if INCLUDE_JVMCI
-  jlong pending_failed_speculation() const        { return _pending_failed_speculation; }
-  void set_pending_monitorenter(bool b)           { _pending_monitorenter = b; }
-  void set_pending_deoptimization(int reason)     { _pending_deoptimization = reason; }
-  void set_pending_failed_speculation(jlong failed_speculation) { _pending_failed_speculation = failed_speculation; }
-  void set_pending_transfer_to_interpreter(bool b) { _pending_transfer_to_interpreter = b; }
-  void set_jvmci_alternate_call_target(address a) { assert(_jvmci._alternate_call_target == nullptr, "must be"); _jvmci._alternate_call_target = a; }
-  void set_jvmci_implicit_exception_pc(address a) { assert(_jvmci._implicit_exception_pc == nullptr, "must be"); _jvmci._implicit_exception_pc = a; }
-
-  JVMCIRuntime* libjvmci_runtime() const          { return _libjvmci_runtime; }
-  void set_libjvmci_runtime(JVMCIRuntime* rt) {
-    assert((_libjvmci_runtime == nullptr && rt != nullptr) || (_libjvmci_runtime != nullptr && rt == nullptr), "must be");
-    _libjvmci_runtime = rt;
-  }
-#endif // INCLUDE_JVMCI
-
   // Exception handling for compiled methods
   oop      exception_oop() const;
   address  exception_pc() const                  { return _exception_pc; }
@@ -883,13 +808,6 @@ public:
   static ByteSize thread_state_offset()          { return byte_offset_of(JavaThread, _thread_state); }
   static ByteSize saved_exception_pc_offset()    { return byte_offset_of(JavaThread, _saved_exception_pc); }
   static ByteSize osthread_offset()              { return byte_offset_of(JavaThread, _osthread); }
-#if INCLUDE_JVMCI
-  static ByteSize pending_deoptimization_offset() { return byte_offset_of(JavaThread, _pending_deoptimization); }
-  static ByteSize pending_monitorenter_offset()  { return byte_offset_of(JavaThread, _pending_monitorenter); }
-  static ByteSize jvmci_alternate_call_target_offset() { return byte_offset_of(JavaThread, _jvmci._alternate_call_target); }
-  static ByteSize jvmci_implicit_exception_pc_offset() { return byte_offset_of(JavaThread, _jvmci._implicit_exception_pc); }
-  static ByteSize jvmci_counters_offset()        { return byte_offset_of(JavaThread, _jvmci_counters); }
-#endif // INCLUDE_JVMCI
   static ByteSize exception_oop_offset()         { return byte_offset_of(JavaThread, _exception_oop); }
   static ByteSize exception_pc_offset()          { return byte_offset_of(JavaThread, _exception_pc); }
   static ByteSize exception_handler_pc_offset()  { return byte_offset_of(JavaThread, _exception_handler_pc); }
@@ -966,9 +884,18 @@ public:
     _jni_active_critical--;
     assert(_jni_active_critical >= 0, "JNI critical nesting problem?");
   }
-
   // Atomic version; invoked by a thread other than the owning thread.
   bool in_critical_atomic() { return AtomicAccess::load(&_jni_active_critical) > 0; }
+
+  bool jni_deferred_suspension() const { return AtomicAccess::load(&_jni_deferred_suspension_count); }
+  inline void enter_jni_deferred_suspension();
+  void exit_jni_deferred_suspension() {
+    precond(Thread::current() == this);
+    int sc = AtomicAccess::load(&_jni_deferred_suspension_count);
+    AtomicAccess::store(&_jni_deferred_suspension_count, sc - 1);
+    assert(_jni_deferred_suspension_count >= 0,
+           "JNI deferred suspension nesting problem?");
+  }
 
   // Checked JNI: is the programmer required to check for exceptions, if so specify
   // which function name. Returning to a Java frame should implicitly clear the
@@ -1070,9 +997,9 @@ public:
   void print_jni_stack();
 
   // Print stack traces in various internal formats
-  void trace_stack()                             PRODUCT_RETURN;
-  void trace_stack_from(vframe* start_vf)        PRODUCT_RETURN;
-  void trace_frames()                            PRODUCT_RETURN;
+  void trace_stack_on(outputStream* st)                            PRODUCT_RETURN;
+  void trace_stack_from(outputStream* st, vframe* start_vf)        PRODUCT_RETURN;
+  void trace_frames_on(outputStream* st)                           PRODUCT_RETURN;
 
   // Print an annotated view of the stack frames
   void print_frame_layout(int depth = 0, bool validate_only = false) NOT_DEBUG_RETURN;
@@ -1288,6 +1215,15 @@ public:
   bool get_and_clear_interrupted();
 
 private:
+
+#ifdef MACOS_AARCH64
+  friend class ThreadWXEnable;
+  friend class PosixSignals;
+
+  ThreadWXEnable* _cur_wx_enable;
+  WXMode* _cur_wx_mode;
+#endif
+
   LockStack _lock_stack;
   OMCache _om_cache;
 
@@ -1302,7 +1238,6 @@ public:
   static ByteSize lock_stack_base_offset() { return lock_stack_offset() + LockStack::base_offset(); }
 
   static ByteSize om_cache_offset()        { return byte_offset_of(JavaThread, _om_cache); }
-  static ByteSize om_cache_oops_offset()   { return om_cache_offset() + OMCache::entries_offset(); }
 
   void om_set_monitor_cache(ObjectMonitor* monitor);
   void om_clear_monitor_cache();
@@ -1413,6 +1348,27 @@ public:
   }
   ~ThrowingUnsafeAccessError() {
     _thread->set_throwing_unsafe_access_error(_prev);
+  }
+};
+
+// Tracks Java->VM entry points that defer async exception
+// processing on the transition back to Java (except the
+// safepoint poll from compiled code which is already
+// tracked by JavaThread::is_at_poll_safepoint()).
+class AtNoAsyncEntryMark : public StackObj {
+  JavaThread* _target;
+  bool _do_count;
+ public:
+  AtNoAsyncEntryMark(JavaThread* jt, bool do_count)
+    : _target(jt), _do_count(do_count) {
+    if (_do_count) {
+      _target->inc_at_no_async_entry_count();
+    }
+  }
+  ~AtNoAsyncEntryMark() {
+    if (_do_count) {
+      _target->dec_at_no_async_entry_count();
+    }
   }
 };
 

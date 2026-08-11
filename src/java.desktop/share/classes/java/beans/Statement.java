@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@ public class Statement {
     private static Object[] emptyArray = new Object[]{};
 
     static ExceptionListener defaultExceptionListener = new ExceptionListener() {
+        @Override
         public void exceptionThrown(Exception e) {
             System.err.println(e);
             // e.printStackTrace();
@@ -310,6 +311,7 @@ public class Statement {
     /**
      * Prints the value of this statement using a Java-style syntax.
      */
+    @Override
     public String toString() {
         // Respect a subclass's implementation here.
         Object target = getTarget();

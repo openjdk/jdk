@@ -34,7 +34,6 @@
 
 import java.io.*;
 
-
 abstract class SerialNonPrivateMethod implements Serializable {
     private static final long serialVersionUID = 42;
 

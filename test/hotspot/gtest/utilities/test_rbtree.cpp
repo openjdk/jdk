@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,6 +114,16 @@ struct ArrayAllocator {
 
   using IntrusiveTreeInt = IntrusiveRBTree<int, IntrusiveCmp>;
   using IntrusiveCursor = IntrusiveTreeInt::Cursor;
+
+  struct DestructionTracker {
+    static int destructed_count;
+    int value;
+
+    DestructionTracker(int value) : value(value) {}
+    ~DestructionTracker() { destructed_count++; }
+
+    static void reset() { destructed_count = 0; }
+  };
 
 public:
   void inserting_duplicates_results_in_one_value() {
@@ -607,6 +617,55 @@ public:
     }
   }
 
+  void test_remove_destructs() {
+    using Tree = RBTreeCHeap<int, DestructionTracker, Cmp, mtTest>;
+    using Node = RBNode<int, DestructionTracker>;
+    using Cursor = Tree::Cursor;
+
+    Tree tree;
+
+    // Test the 3 ways of removing a single node
+    tree.upsert(0, DestructionTracker(0));
+    tree.upsert(1, DestructionTracker(1));
+    tree.upsert(2, DestructionTracker(2));
+
+    DestructionTracker::reset();
+
+    tree.remove(0);
+
+    Node* n = tree.find_node(1);
+    tree.remove(n);
+
+    Cursor remove_cursor = tree.cursor(2);
+    tree.remove_at_cursor(remove_cursor);
+
+    EXPECT_EQ(3, DestructionTracker::destructed_count);
+
+    // Test clearing the tree
+    constexpr int num_nodes = 10;
+    for (int n = 0; n < num_nodes; n++) {
+      tree.upsert(n, DestructionTracker(n));
+    }
+
+    DestructionTracker::reset();
+
+    tree.remove_all();
+    EXPECT_EQ(num_nodes, DestructionTracker::destructed_count);
+
+    // Test replacing a node
+    tree.upsert(0, DestructionTracker(0));
+    Cursor replace_cursor = tree.cursor(0);
+    Node* new_node = tree.allocate_node(1, DestructionTracker(1));
+
+    DestructionTracker::reset();
+
+    tree.replace_at_cursor(new_node, replace_cursor);
+    EXPECT_EQ(1, DestructionTracker::destructed_count);
+
+    tree.remove_at_cursor(replace_cursor);
+    EXPECT_EQ(2, DestructionTracker::destructed_count);
+  }
+
   void test_cursor() {
     constexpr int num_nodes = 10;
     RBTreeInt tree;
@@ -792,6 +851,46 @@ public:
     tree.verify_self();
   }
 
+  void test_update_key() {
+    RBTreeInt tree;
+
+    tree.upsert(10, 10);
+    tree.upsert(20, 20);
+    tree.upsert(30, 30);
+
+    RBTreeIntNode* node = tree.find_node(20);
+    EXPECT_NOT_NULL(node);
+
+    tree.update_key(node, 25);
+
+    EXPECT_NULL(tree.find_node(20));
+
+    RBTreeIntNode* updated_node = tree.find_node(25);
+    EXPECT_NOT_NULL(updated_node);
+    EXPECT_EQ(updated_node, node);
+
+    EXPECT_EQ(25, updated_node->key());
+    EXPECT_EQ(20, updated_node->val());
+
+    RBTreeInt::Cursor cursor = tree.cursor(10);
+    EXPECT_TRUE(cursor.found());
+
+    tree.update_key(cursor, 20);
+
+    EXPECT_FALSE(tree.cursor(10).found());
+
+    RBTreeInt::Cursor updated_cursor = tree.cursor(20);
+    EXPECT_TRUE(updated_cursor.found());
+
+    RBTreeIntNode* updated_cursor_node = updated_cursor.node();
+    EXPECT_EQ(updated_cursor_node, cursor.node());
+
+    EXPECT_EQ(20, updated_cursor_node->key());
+    EXPECT_EQ(10, updated_cursor_node->val());
+
+    tree.verify_self();
+  }
+
   void test_intrusive() {
     IntrusiveTreeInt intrusive_tree;
     int num_iterations = 100;
@@ -971,6 +1070,11 @@ TEST_VM_F(RBTreeTest, NodeHints) {
   this->test_node_hints();
 }
 
+int RBTreeTest::DestructionTracker::destructed_count = 0;
+TEST_VM_F(RBTreeTest, RemoveDestructs) {
+  this->test_remove_destructs();
+}
+
 TEST_VM_F(RBTreeTest, CursorFind) {
   this->test_cursor();
 }
@@ -1103,9 +1207,28 @@ TEST_VM_F(RBTreeTest, CursorReplace) {
   this->test_cursor_replace();
 }
 
+TEST_VM_F(RBTreeTest, UpdateKey) {
+  this->test_update_key();
+}
+
 #ifdef ASSERT
 TEST_VM_F(RBTreeTest, NodesVisitedOnce) {
   this->test_nodes_visited_once();
+}
+
+TEST_VM_ASSERT_MSG(RBTreeTestNonFixture, UpdateKeyAssert,
+                   ".*updated key not LT next node's key.*") {
+  typedef RBTreeCHeap<int, int, IntCmp, mtTest> TreeType;
+
+  TreeType tree;
+  tree.upsert(10, 10);
+  tree.upsert(20, 20);
+  tree.upsert(30, 30);
+
+  RBNode<int, int>* node = tree.find_node(20);
+  ASSERT_NOT_NULL(node);
+
+  tree.update_key(node, 35);
 }
 
 TEST_VM_ASSERT_MSG(RBTreeTestNonFixture, CustomVerifyAssert, ".*failed on key = 7") {
@@ -1251,4 +1374,18 @@ TEST_VM_F(RBTreeTest, AllocatorMayReturnNull) {
   bool success = rbtree.upsert(5, 5);
   EXPECT_EQ(false, success);
   // The test didn't exit the VM, so it was succesful.
+}
+
+TEST_VM_F(RBTreeTest, ArenaAllocator) {
+  Arena arena(mtTest);
+  RBTreeArena<int, int, Cmp> rbtree(&arena);
+  bool success = rbtree.upsert(5, 5);
+  ASSERT_EQ(true, success);
+}
+
+TEST_VM_F(RBTreeTest, ResourceAreaAllocator) {
+  ResourceArea area(mtTest);
+  RBTreeResourceArea<int, int, Cmp> rbtree(&area);
+  bool success = rbtree.upsert(5, 5);
+  ASSERT_EQ(true, success);
 }

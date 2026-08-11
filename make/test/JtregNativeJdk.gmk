@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,8 @@ ifeq ($(call isTargetOs, windows), true)
   BUILD_JDK_JTREG_EXCLUDE += libDirectIO.c libInheritedChannel.c \
       libExplicitAttach.c libImplicitAttach.c \
       exelauncher.c libFDLeaker.c exeFDLeakTester.c \
-      libChangeSignalDisposition.c exePrintSignalDisposition.c
+      libChangeSignalDisposition.c exePrintSignalDisposition.c \
+      libConcNativeFork.c libPipesCloseOnExec.c
 
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeNullCallerTest := $(LIBCXX)
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exerevokeall := advapi32.lib
@@ -76,6 +77,9 @@ else
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libAsyncInvokers := -pthread
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libLinkerInvokerUnnamed := -pthread
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libLinkerInvokerModule := -pthread
+  BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libLoaderLookupInvoker := -pthread
+  BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libConcNativeFork := -pthread
+  BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libPipesCloseOnExec := -pthread
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libLoaderLookupInvoker := -pthread
 
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libExplicitAttach := -pthread

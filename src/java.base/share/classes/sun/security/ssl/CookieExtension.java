@@ -117,7 +117,8 @@ public class CookieExtension {
 
             // Is it a supported and enabled extension?
             if (!chc.sslConfig.isAvailable(SSLExtension.CH_COOKIE)) {
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine(
                             "Ignore unavailable cookie extension");
                 }
@@ -154,7 +155,8 @@ public class CookieExtension {
 
             // Is it a supported and enabled extension?
             if (!shc.sslConfig.isAvailable(SSLExtension.CH_COOKIE)) {
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine(
                             "Ignore unavailable cookie extension");
                 }
@@ -218,7 +220,8 @@ public class CookieExtension {
 
             // Is it a supported and enabled extension?
             if (!shc.sslConfig.isAvailable(SSLExtension.HRR_COOKIE)) {
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine(
                             "Ignore unavailable cookie extension");
                 }
@@ -253,7 +256,8 @@ public class CookieExtension {
 
             // Is it a supported and enabled extension?
             if (!chc.sslConfig.isAvailable(SSLExtension.HRR_COOKIE)) {
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine(
                             "Ignore unavailable cookie extension");
                 }
@@ -280,7 +284,8 @@ public class CookieExtension {
 
             // Is it a supported and enabled extension?
             if (!shc.sslConfig.isAvailable(SSLExtension.HRR_COOKIE)) {
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine(
                             "Ignore unavailable cookie extension");
                 }

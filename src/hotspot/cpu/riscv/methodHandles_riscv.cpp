@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -72,17 +72,22 @@ void MethodHandles::verify_klass(MacroAssembler* _masm,
   InstanceKlass** klass_addr = vmClasses::klass_addr_at(klass_id);
   Klass* klass = vmClasses::klass_at(klass_id);
   Register temp1 = t1;
-  Register temp2 = t0; // used by MacroAssembler::cmpptr
+  Register temp2 = t0;
   Label L_ok, L_bad;
   BLOCK_COMMENT("verify_klass {");
   __ verify_oop(obj);
   __ beqz(obj, L_bad);
+
   __ push_reg(RegSet::of(temp1, temp2), sp);
   __ load_klass(temp1, obj, temp2);
-  __ cmpptr(temp1, ExternalAddress((address) klass_addr), L_ok);
+  __ ld(temp2, ExternalAddress((address)klass_addr));
+  __ beq(temp1, temp2, L_ok);
+
   intptr_t super_check_offset = klass->super_check_offset();
   __ ld(temp1, Address(temp1, super_check_offset));
-  __ cmpptr(temp1, ExternalAddress((address) klass_addr), L_ok);
+  __ ld(temp2, ExternalAddress((address)klass_addr));
+  __ beq(temp1, temp2, L_ok);
+
   __ pop_reg(RegSet::of(temp1, temp2), sp);
   __ bind(L_bad);
   __ stop(error_message);
@@ -161,7 +166,11 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
     __ BIND(run_compiled_code);
   }
 
-  const ByteSize entry_offset = for_compiler_entry ? Method::from_compiled_offset() :
+  // The following jump might pass an inline type argument that was erased to Object as oop to a
+  // callee that expects inline type arguments to be passed as fields. We need to call the compiled
+  // value entry (_code->inline_entry_point() or _adapter->c2i_inline_entry()) which will take care
+  // of translating between the calling conventions.
+  const ByteSize entry_offset = for_compiler_entry ? Method::from_compiled_inline_offset() :
                                                      Method::from_interpreted_offset();
   __ ld(t1, Address(method, entry_offset));
   __ jr(t1);

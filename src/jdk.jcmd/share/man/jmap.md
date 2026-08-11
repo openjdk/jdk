@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -60,22 +60,27 @@ Debugging Tools for Windows must be installed to make these tools work. The
 that's used by the target process or the location from which the core dump file
 was produced.
 
+If the target JVM is started with an alternate temporary file location, `jmap` must
+use the same temporary file location for communication; this is true by default
+but see the [`-XX:AltTempDir`](./java.html#-XX_AltTempDir) option.
+
+
 ## Options for the jmap Command
 
-`-clstats` *pid*
+[`-clstats`]{#option-clstats} *pid*
 :   Connects to a running process and prints class loader statistics of Java
     heap.
 
-`-finalizerinfo` *pid*
+[`-finalizerinfo`]{#option-finalizerinfo} *pid*
 :   Connects to a running process and prints information on objects awaiting
     finalization.
 
-`-histo`\[`:live`\] *pid*
+[`-histo`]{#option-histo}\[`:live`\] *pid*
 :   Connects to a running process and prints a histogram of the Java object
     heap. If the `live` suboption is specified, it then counts only live
     objects.
 
-`-dump:`*dump\_options* *pid*
+[`-dump:`]{#option-dump_}*dump\_options* *pid*
 :   Connects to a running process and dumps the Java heap. The *dump\_options*
     include:
 

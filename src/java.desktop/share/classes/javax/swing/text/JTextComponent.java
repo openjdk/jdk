@@ -1181,7 +1181,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
         Hashtable<String, Action> h = new Hashtable<String, Action>();
         for (Action a : actions) {
             String value = (String)a.getValue(Action.NAME);
-            h.put((value!=null ? value:""), a);
+            h.put((value != null ? value : ""), a);
         }
         for (KeyBinding binding : bindings) {
             Action a = h.get(binding.actionName);

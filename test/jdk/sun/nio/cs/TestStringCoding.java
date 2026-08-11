@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 6636323 6636319 7040220 7096080 7183053 8080248 8054307
+ * @bug 6636323 6636319 7040220 7096080 7183053 8080248 8054307 8372353
  * @summary Test if StringCoding and NIO result have the same de/encoding result
  * @library /test/lib
  * @modules java.base/sun.nio.cs
@@ -168,6 +168,12 @@ public class TestStringCoding {
         baSC = str.getBytes(cs);
         if (!Arrays.equals(baSC, baNIO)) {
             throw new RuntimeException("getBytes(cs) failed  -> " + cs.name());
+        }
+        //encodedLength(cs);
+        int encodedLength = str.encodedLength(cs);
+        if (baSC.length != encodedLength) {
+            throw new RuntimeException(String.format("encodedLength failed (%d != %d) -> %s",
+                    baSC.length, encodedLength, cs.name()));
         }
         return baSC;
     }

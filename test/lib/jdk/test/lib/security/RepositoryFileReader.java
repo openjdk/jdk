@@ -148,4 +148,13 @@ public sealed interface RepositoryFileReader extends AutoCloseable {
             unpack = false)
     public static class CMS_ML_DSA {
     }
+
+    @Artifact(
+            organization = "jpg.tests.jdk.repos.lamps-wg",
+            name = "kyber-certificates",
+            revision = "29f3215",
+            extension = "zip",
+            unpack = false)
+    public static class KYBER_CERTIFICATES {
+    }
 }

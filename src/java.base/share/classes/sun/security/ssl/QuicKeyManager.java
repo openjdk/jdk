@@ -244,7 +244,7 @@ sealed abstract class QuicKeyManager
             if (toDiscard == null) {
                 return;
             }
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                 SSLLogger.finest("discarding keys (keyphase="
                         + toDiscard.writeCipher.getKeyPhase()
                         + ") of " + this.keySpace + " key space");
@@ -389,7 +389,7 @@ sealed abstract class QuicKeyManager
             if (toDiscard == null) {
                 return;
             }
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                 SSLLogger.finest("discarding keys (keyphase="
                         + toDiscard.writeCipher.getKeyPhase()
                         + ") of " + this.keySpace + " key space");
@@ -570,7 +570,7 @@ sealed abstract class QuicKeyManager
             if (series == null) {
                 return;
             }
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                 SSLLogger.finest("discarding key (series) of " +
                         this.keySpace + " key space");
             }
@@ -611,7 +611,7 @@ sealed abstract class QuicKeyManager
             if (series.canUseOldDecryptKey(packetNumber)) {
                 final QuicReadCipher oldReadCipher = series.old;
                 assert oldReadCipher != null : "old key is unexpectedly null";
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.finest("using old read key to decrypt packet: " +
                             packetNumber + ", with incoming key phase: " +
                             keyPhase + ", current key phase: " +
@@ -624,7 +624,7 @@ sealed abstract class QuicKeyManager
                 if (!series.current.usedByBothEndpoints()
                         && series.current.writeCipher.hasEncryptedAny()
                         && oneRttContext.getLargestPeerAckedPN()
-                                >= series.current.writeCipher.lowestEncryptedPktNum()) {
+                            >= series.current.writeCipher.lowestEncryptedPktNum()) {
                     // RFC-9001, section 6.2:
                     // An endpoint that receives an acknowledgment that is
                     // carried in a packet protected with old keys where any
@@ -633,7 +633,7 @@ sealed abstract class QuicKeyManager
                     // KEY_UPDATE_ERROR. This indicates that a peer has
                     // received and acknowledged a packet that initiates a key
                     // update, but has not updated keys in response.
-                    if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+                    if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                         SSLLogger.finest("peer used incorrect key, was" +
                                 " expected to use updated key of" +
                                 " key phase: " + currentKeyPhase +
@@ -646,7 +646,7 @@ sealed abstract class QuicKeyManager
                 }
                 return;
             }
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                 SSLLogger.finest("detected ONE_RTT key update, current key " +
                         "phase: " + currentKeyPhase
                         + ", incoming key phase: " + keyPhase
@@ -717,7 +717,7 @@ sealed abstract class QuicKeyManager
             }
             final long numEncrypted = cipher.getNumEncrypted();
             if (numEncrypted >= 0.8 * confidentialityLimit) {
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.finest("about to reach confidentiality limit, " +
                             "attempting to initiate a 1-RTT key update," +
                             " packet number: " +
@@ -732,7 +732,7 @@ sealed abstract class QuicKeyManager
                             : "key phase of updated key unexpectedly matches " +
                             "the key phase "
                             + cipher.getKeyPhase() + " of current keys";
-                    if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+                    if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                         SSLLogger.finest(
                                 "1-RTT key update initiated, new key phase: "
                                         + newKeyPhase);
@@ -755,7 +755,7 @@ sealed abstract class QuicKeyManager
                 // current key phase. This ensures that keys are
                 // available to both peers before
                 // another key update can be initiated.
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.finest(
                             "skipping key update initiation because peer " +
                             "hasn't yet sent us a packet encrypted with " +
@@ -803,7 +803,7 @@ sealed abstract class QuicKeyManager
                 // (we avoid timing attacks by not generating
                 // keys during decryption, our key generation
                 // only happens during encryption)
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.finest("next keys unavailable," +
                             " won't decrypt a packet which appears to be" +
                             " a key update");
@@ -815,7 +815,7 @@ sealed abstract class QuicKeyManager
             // use the next keys to attempt decrypting
             currentKeySeries.next.readCipher.decryptPacket(packetNumber, packet,
                     headerLength, output);
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                 SSLLogger.finest(
                         "decrypted using next keys for peer-initiated" +
                         " key update; will now switch to new key phase: " +
@@ -1025,14 +1025,14 @@ sealed abstract class QuicKeyManager
                 // update the key series
                 this.keySeries = newSeries;
                 if (oldReadCipher != null) {
-                    if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+                    if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                         SSLLogger.finest(
                                 "discarding old read key of key phase: " +
                                 oldReadCipher.getKeyPhase());
                     }
                     oldReadCipher.discard(false);
                 }
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.finest("discarding write key of key phase: " +
                             writeCipherToDiscard.getKeyPhase());
                 }

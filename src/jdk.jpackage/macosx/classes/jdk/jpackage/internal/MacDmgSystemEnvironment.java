@@ -31,6 +31,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.util.Result;
 
 record MacDmgSystemEnvironment(Path hdiutil, Path osascript, Optional<Path> setFileUtility) implements SystemEnvironment {
@@ -39,12 +40,22 @@ record MacDmgSystemEnvironment(Path hdiutil, Path osascript, Optional<Path> setF
     }
 
     static Result<MacDmgSystemEnvironment> create() {
-        final var errors = Stream.of(HDIUTIL, OSASCRIPT)
-                .map(ToolValidator::new)
-                .map(ToolValidator::checkExistsOnly)
-                .map(ToolValidator::validate)
-                .filter(Objects::nonNull)
-                .toList();
+
+        List<? extends Exception> errors;
+
+        if (OperatingSystem.isMacOS()) {
+            errors = Stream.of(HDIUTIL, OSASCRIPT)
+                    .map(ToolValidator::new)
+                    .map(ToolValidator::checkExistsOnly)
+                    .map(ToolValidator::validate)
+                    .filter(Objects::nonNull)
+                    .toList();
+        } else {
+            // The code runs on an OS other than macOS. Presume this is mock testing.
+            // Don't validate the tools; checking that their executables exist will fail in this environment.
+            errors = List.of();
+        }
+
         if (errors.isEmpty()) {
             return Result.ofValue(new MacDmgSystemEnvironment(HDIUTIL, OSASCRIPT, findSetFileUtility()));
         } else {
@@ -59,11 +70,11 @@ record MacDmgSystemEnvironment(Path hdiutil, Path osascript, Optional<Path> setF
         return SETFILE_KNOWN_PATHS.stream().filter(setFilePath -> {
             // Validate SetFile, if Xcode is not installed it will run, but exit with error code
             return Result.of(
-                    Executor.of(setFilePath.toString(), "-h").setQuiet(true)::executeExpectSuccess,
+                    Executor.of(setFilePath.toString(), "-h").quiet()::executeExpectSuccess,
                     IOException.class).hasValue();
         }).findFirst().or(() -> {
             // generic find attempt
-            final var executor = Executor.of("/usr/bin/xcrun", "-find", "SetFile").setQuiet(true).saveFirstLineOfOutput();
+            final var executor = Executor.of("/usr/bin/xcrun", "-find", "SetFile").quiet().saveFirstLineOfOutput();
 
             return Result.of(executor::executeExpectSuccess, IOException.class).flatMap(execResult -> {
                 return Result.of(() -> {

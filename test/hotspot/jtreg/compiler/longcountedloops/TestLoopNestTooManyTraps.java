@@ -25,6 +25,7 @@
  * @test
  * @bug 8350330
  * @summary C2: PhaseIdealLoop::add_parse_predicate() should mirror GraphKit::add_parse_predicate()
+ * @requires vm.flagless
  * @library /test/lib /
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,7 +121,12 @@ public class Types {
         capturedName = names.fromString("<captured wildcard>");
         messages = JavacMessages.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
-        noWarnings = new Warner(null);
+        noWarnings = new Warner(null) {
+            @Override
+            public String toString() {
+                return "NO_WARNINGS";
+            }
+        };
         Options options = Options.instance(context);
         dumpStacktraceOnError = options.isSet("dev") || options.isSet(DOE);
     }
@@ -993,10 +998,12 @@ public class Types {
 
        @Override
        public boolean test(Symbol sym) {
+           List<MethodSymbol> msyms;
            return sym.kind == MTH &&
                    (sym.flags() & (ABSTRACT | DEFAULT)) == ABSTRACT &&
                    !overridesObjectMethod(origin, sym) &&
-                   (interfaceCandidates(origin.type, (MethodSymbol)sym).head.flags() & DEFAULT) == 0;
+                   (msyms = interfaceCandidates(origin.type, (MethodSymbol)sym)).nonEmpty() &&
+                   (msyms.head.flags() & DEFAULT) == 0;
        }
     }
 
@@ -1436,7 +1443,7 @@ public class Types {
                     return visit(s, t);
 
                 return s.hasTag(ARRAY)
-                    && containsTypeEquivalent(t.elemtype, elemtype(s));
+                    && visit(t.elemtype, elemtype(s));
             }
 
             @Override
@@ -2858,13 +2865,17 @@ public class Types {
             hasSameArgs(t, erasure(s)) || hasSameArgs(erasure(t), s);
     }
 
-    public boolean overridesObjectMethod(TypeSymbol origin, Symbol msym) {
+    public Symbol overriddenObjectMethod(TypeSymbol origin, Symbol msym) {
         for (Symbol sym : syms.objectType.tsym.members().getSymbolsByName(msym.name)) {
             if (msym.overrides(sym, origin, Types.this, true)) {
-                return true;
+                return sym;
             }
         }
-        return false;
+        return null;
+    }
+
+    public boolean overridesObjectMethod(TypeSymbol origin, Symbol msym) {
+        return overriddenObjectMethod(origin, msym) != null;
     }
 
     /**
@@ -4101,7 +4112,8 @@ public class Types {
             //step 3 - for each element G in MEC, compute lci(Inv(G))
             List<Type> candidates = List.nil();
             for (Type erasedSupertype : mec) {
-                List<Type> lci = List.of(asSuper(ts[startIdx], erasedSupertype.tsym));
+                Type firstSuperType = asSuper(ts[startIdx], erasedSupertype.tsym);
+                List<Type> lci = firstSuperType != null ? List.of(firstSuperType) : List.nil();
                 for (int i = startIdx + 1 ; i < ts.length ; i++) {
                     Type superType = asSuper(ts[i], erasedSupertype.tsym);
                     lci = intersect(lci, superType != null ? List.of(superType) : List.nil());

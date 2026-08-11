@@ -27,6 +27,7 @@
 
 #include "gc/shared/workerThread.hpp"
 
+class ShenandoahGeneration;
 class ShenandoahGenerationalHeap;
 class ShenandoahHeapRegion;
 class ShenandoahRegionIterator;

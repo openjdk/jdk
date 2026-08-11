@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -418,7 +418,7 @@ void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
 
   if (ac->is_clone_array() && ary_ptr != nullptr) {
     BasicType bt = ary_ptr->elem()->array_element_basic_type();
-    if (is_reference_type(bt)) {
+    if (is_reference_type(bt) && !ary_ptr->is_flat()) {
       // Clone object array
       bt = T_OBJECT;
     } else {
@@ -442,9 +442,9 @@ void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
       assert(src_offset == dest_offset, "should be equal");
       const jlong offset = src_offset->get_long();
       if (offset != arrayOopDesc::base_offset_in_bytes(T_OBJECT)) {
-        assert(!UseCompressedClassPointers || UseCompactObjectHeaders, "should only happen without compressed class pointers");
+        assert(UseCompactObjectHeaders, "should only happen with COH");
         assert((arrayOopDesc::base_offset_in_bytes(T_OBJECT) - offset) == BytesPerLong, "unexpected offset");
-        length = phase->transform_later(new SubLNode(length, phase->longcon(1))); // Size is in longs
+        length = phase->transform_later(new SubXNode(length, phase->MakeConX(1))); // Size is in longs
         src_offset = phase->longcon(arrayOopDesc::base_offset_in_bytes(T_OBJECT));
         dest_offset = src_offset;
       }
@@ -473,7 +473,7 @@ void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
 
 #undef XTOP
 
-void ZBarrierSetC2::elide_dominated_barrier(MachNode* mach) const {
+void ZBarrierSetC2::elide_dominated_barrier(MachNode* mach, MachNode* dominator) const {
   mach->set_barrier_data(ZBarrierElided);
 }
 
@@ -551,7 +551,8 @@ void ZBarrierSetC2::analyze_dominating_barriers() const {
   elide_dominated_barriers(atomics, atomic_dominators);
 }
 
-void ZBarrierSetC2::eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const {
+
+void ZBarrierSetC2::eliminate_gc_barrier(PhaseIterGVN* igvn, Node* node) const {
   eliminate_gc_barrier_data(node);
 }
 

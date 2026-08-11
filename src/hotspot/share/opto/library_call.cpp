@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,21 @@
  */
 
 #include "asm/macroAssembler.hpp"
+#include "ci/ciArrayKlass.hpp"
+#include "ci/ciFlatArrayKlass.hpp"
+#include "ci/ciInstanceKlass.hpp"
 #include "ci/ciSymbols.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/vmIntrinsics.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
 #include "gc/shared/barrierSet.hpp"
+#include "gc/shared/c2/barrierSetC2.hpp"
 #include "jfr/support/jfrIntrinsics.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/accessDecorators.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/layoutKind.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "opto/addnode.hpp"
 #include "opto/arraycopynode.hpp"
@@ -40,25 +46,32 @@
 #include "opto/cfgnode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/countbitsnode.hpp"
+#include "opto/graphKit.hpp"
 #include "opto/idealKit.hpp"
+#include "opto/inlinetypenode.hpp"
 #include "opto/library_call.hpp"
 #include "opto/mathexactnode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/narrowptrnode.hpp"
 #include "opto/opaquenode.hpp"
+#include "opto/opcodes.hpp"
 #include "opto/parse.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
+#include "opto/type.hpp"
 #include "opto/vectornode.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/unsafe.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/mountUnmountDisabler.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -409,6 +422,9 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_putFloatOpaque:           return inline_unsafe_access( is_store, T_FLOAT,    Opaque, false);
   case vmIntrinsics::_putDoubleOpaque:          return inline_unsafe_access( is_store, T_DOUBLE,   Opaque, false);
 
+  case vmIntrinsics::_getFlatValue:             return inline_unsafe_flat_access(!is_store, Relaxed);
+  case vmIntrinsics::_putFlatValue:             return inline_unsafe_flat_access( is_store, Relaxed);
+
   case vmIntrinsics::_compareAndSetReference:   return inline_unsafe_load_store(T_OBJECT, LS_cmp_swap,      Volatile);
   case vmIntrinsics::_compareAndSetByte:        return inline_unsafe_load_store(T_BYTE,   LS_cmp_swap,      Volatile);
   case vmIntrinsics::_compareAndSetShort:       return inline_unsafe_load_store(T_SHORT,  LS_cmp_swap,      Volatile);
@@ -468,6 +484,11 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_storeStoreFence:
   case vmIntrinsics::_fullFence:                return inline_unsafe_fence(intrinsic_id());
 
+  case vmIntrinsics::_arrayInstanceBaseOffset:  return inline_arrayInstanceBaseOffset();
+  case vmIntrinsics::_arrayInstanceIndexScale:  return inline_arrayInstanceIndexScale();
+  case vmIntrinsics::_arrayLayout:              return inline_arrayLayout();
+  case vmIntrinsics::_getFieldMap:              return inline_getFieldMap();
+
   case vmIntrinsics::_onSpinWait:               return inline_onspinwait();
 
   case vmIntrinsics::_currentCarrierThread:     return inline_native_currentCarrierThread();
@@ -496,6 +517,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_counterTime:              return inline_native_time_funcs(CAST_FROM_FN_PTR(address, JfrTime::time_function()), "counterTime");
   case vmIntrinsics::_getEventWriter:           return inline_native_getEventWriter();
   case vmIntrinsics::_jvm_commit:               return inline_native_jvm_commit();
+  case vmIntrinsics::_tryUpdateEpochField:      return inline_native_try_update_epoch();
 #endif
   case vmIntrinsics::_currentTimeMillis:        return inline_native_time_funcs(CAST_FROM_FN_PTR(address, os::javaTimeMillis), "currentTimeMillis");
   case vmIntrinsics::_nanoTime:                 return inline_native_time_funcs(CAST_FROM_FN_PTR(address, os::javaTimeNanos), "nanoTime");
@@ -516,6 +538,12 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_allocateUninitializedArray: return inline_unsafe_newArray(true);
   case vmIntrinsics::_newArray:                   return inline_unsafe_newArray(false);
+  case vmIntrinsics::_newNullRestrictedNonAtomicArray: return inline_newArray(/* null_free */ true, /* atomic */ false);
+  case vmIntrinsics::_newNullRestrictedAtomicArray: return inline_newArray(/* null_free */ true, /* atomic */ true);
+  case vmIntrinsics::_newNullableAtomicArray:     return inline_newArray(/* null_free */ false, /* atomic */ true);
+  case vmIntrinsics::_isFlatArray:              return inline_getArrayProperties(IsFlat);
+  case vmIntrinsics::_isNullRestrictedArray:    return inline_getArrayProperties(IsNullRestricted);
+  case vmIntrinsics::_isAtomicArray:            return inline_getArrayProperties(IsAtomic);
 
   case vmIntrinsics::_isAssignableFrom:         return inline_native_subtype_check();
 
@@ -568,6 +596,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_Reference_get0:           return inline_reference_get0();
   case vmIntrinsics::_Reference_refersTo0:      return inline_reference_refersTo0(false);
+  case vmIntrinsics::_Reference_reachabilityFence: return inline_reference_reachabilityFence();
   case vmIntrinsics::_PhantomReference_refersTo0: return inline_reference_refersTo0(true);
   case vmIntrinsics::_Reference_clear0:         return inline_reference_clear0(false);
   case vmIntrinsics::_PhantomReference_clear0:  return inline_reference_clear0(true);
@@ -598,7 +627,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_sha3_implCompress:
     return inline_digestBase_implCompress(intrinsic_id());
   case vmIntrinsics::_double_keccak:
-    return inline_double_keccak();
+  case vmIntrinsics::_quad_keccak:
+    return inline_keccak(intrinsic_id());
 
   case vmIntrinsics::_digestBase_implCompressMB:
     return inline_digestBase_implCompressMB(predicate);
@@ -663,6 +693,10 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_intpoly_montgomeryMult_P256();
   case vmIntrinsics::_intpoly_assign:
     return inline_intpoly_assign();
+  case vmIntrinsics::_intpoly_mult_25519:
+    return inline_intpoly_mult_25519();
+  case vmIntrinsics::_intpoly_square_25519:
+    return inline_intpoly_square_25519();
   case vmIntrinsics::_encodeISOArray:
   case vmIntrinsics::_encodeByteISOArray:
     return inline_encodeISOArray(false);
@@ -843,6 +877,22 @@ void LibraryCallKit::set_result(RegionNode* region, PhiNode* value) {
   assert(value->type()->basic_type() == result()->bottom_type()->basic_type(), "sanity");
 }
 
+RegionNode* LibraryCallKit::create_bailout() {
+  RegionNode* bailout = new RegionNode(1);
+  record_for_igvn(bailout);
+  return bailout;
+}
+
+bool LibraryCallKit::check_bailout(RegionNode* bailout) {
+  if (bailout->req() > 1) {
+    bailout = _gvn.transform(bailout)->as_Region();
+    Node* frame = _gvn.transform(new ParmNode(C->start(), TypeFunc::FramePtr));
+    Node* halt = _gvn.transform(new HaltNode(bailout, frame, "unexpected guard failure in intrinsic"));
+    C->root()->add_req(halt);
+  }
+  return stopped();
+}
+
 //------------------------------generate_guard---------------------------
 // Helper function for generating guarded fast-slow graph structures.
 // The given 'test', if true, guards a slow path.  If the test fails
@@ -891,13 +941,16 @@ inline Node* LibraryCallKit::generate_fair_guard(Node* test, RegionNode* region)
 }
 
 inline Node* LibraryCallKit::generate_negative_guard(Node* index, RegionNode* region,
-                                                     Node* *pos_index) {
+                                                     Node** pos_index, bool with_opaque) {
   if (stopped())
     return nullptr;                // already stopped
   if (_gvn.type(index)->higher_equal(TypeInt::POS)) // [0,maxint]
     return nullptr;                // index is already adequately typed
   Node* cmp_lt = _gvn.transform(new CmpINode(index, intcon(0)));
   Node* bol_lt = _gvn.transform(new BoolNode(cmp_lt, BoolTest::lt));
+  if (with_opaque) {
+    bol_lt = _gvn.transform(new OpaqueConstantBoolNode(C, bol_lt, false));
+  }
   Node* is_neg = generate_guard(bol_lt, region, PROB_MIN);
   if (is_neg != nullptr && pos_index != nullptr) {
     // Emulate effect of Parse::adjust_map_after_if.
@@ -924,7 +977,8 @@ inline Node* LibraryCallKit::generate_negative_guard(Node* index, RegionNode* re
 inline Node* LibraryCallKit::generate_limit_guard(Node* offset,
                                                   Node* subseq_length,
                                                   Node* array_length,
-                                                  RegionNode* region) {
+                                                  RegionNode* region,
+                                                  bool with_opaque) {
   if (stopped())
     return nullptr;                // already stopped
   bool zero_offset = _gvn.type(offset) == TypeInt::ZERO;
@@ -935,34 +989,31 @@ inline Node* LibraryCallKit::generate_limit_guard(Node* offset,
     last = _gvn.transform(new AddINode(last, offset));
   Node* cmp_lt = _gvn.transform(new CmpUNode(array_length, last));
   Node* bol_lt = _gvn.transform(new BoolNode(cmp_lt, BoolTest::lt));
+  if (with_opaque) {
+    bol_lt = _gvn.transform(new OpaqueConstantBoolNode(C, bol_lt, false));
+  }
   Node* is_over = generate_guard(bol_lt, region, PROB_MIN);
   return is_over;
 }
 
 // Emit range checks for the given String.value byte array
-void LibraryCallKit::generate_string_range_check(Node* array, Node* offset, Node* count, bool char_count) {
+void LibraryCallKit::generate_string_range_check(Node* array,
+                                                 Node* offset,
+                                                 Node* count,
+                                                 bool char_count,
+                                                 RegionNode* region) {
   if (stopped()) {
     return; // already stopped
   }
-  RegionNode* bailout = new RegionNode(1);
-  record_for_igvn(bailout);
   if (char_count) {
     // Convert char count to byte count
     count = _gvn.transform(new LShiftINode(count, intcon(1)));
   }
-
   // Offset and count must not be negative
-  generate_negative_guard(offset, bailout);
-  generate_negative_guard(count, bailout);
+  generate_negative_guard(offset, region, nullptr, true);
+  generate_negative_guard(count, region, nullptr, true);
   // Offset + count must not exceed length of array
-  generate_limit_guard(offset, count, load_array_length(array), bailout);
-
-  if (bailout->req() > 1) {
-    PreserveJVMState pjvms(this);
-    set_control(_gvn.transform(bailout));
-    uncommon_trap(Deoptimization::Reason_intrinsic,
-                  Deoptimization::Action_maybe_recompile);
-  }
+  generate_limit_guard(offset, count, load_array_length(array), region, true);
 }
 
 Node* LibraryCallKit::current_thread_helper(Node*& tls_output, ByteSize handle_offset,
@@ -972,7 +1023,7 @@ Node* LibraryCallKit::current_thread_helper(Node*& tls_output, ByteSize handle_o
     = TypeOopPtr::make_from_klass(thread_klass)->cast_to_ptr_type(TypePtr::NotNull);
 
   Node* thread = _gvn.transform(new ThreadLocalNode());
-  Node* p = basic_plus_adr(top()/*!oop*/, thread, in_bytes(handle_offset));
+  Node* p = off_heap_plus_addr(thread, in_bytes(handle_offset));
   tls_output = thread;
 
   Node* thread_obj_handle
@@ -1111,7 +1162,7 @@ bool LibraryCallKit::inline_array_equals(StrIntrinsicNode::ArgEnc ae) {
   Node* arg2 = argument(1);
 
   const TypeAryPtr* mtype = (ae == StrIntrinsicNode::UU) ? TypeAryPtr::CHARS : TypeAryPtr::BYTES;
-  set_result(_gvn.transform(new AryEqNode(control(), memory(mtype), arg1, arg2, ae)));
+  set_result(_gvn.transform(new AryEqNode(control(), memory(mtype), mtype, arg1, arg2, ae)));
   clear_upper_avx();
 
   return true;
@@ -1119,11 +1170,8 @@ bool LibraryCallKit::inline_array_equals(StrIntrinsicNode::ArgEnc ae) {
 
 
 //------------------------------inline_countPositives------------------------------
+// int java.lang.StringCoding#countPositives0(byte[] ba, int off, int len)
 bool LibraryCallKit::inline_countPositives() {
-  if (too_many_traps(Deoptimization::Reason_intrinsic)) {
-    return false;
-  }
-
   assert(callee()->signature()->size() == 3, "countPositives has 3 parameters");
   // no receiver since it is static method
   Node* ba         = argument(0);
@@ -1131,12 +1179,12 @@ bool LibraryCallKit::inline_countPositives() {
   Node* len        = argument(2);
 
   ba = must_be_not_null(ba, true);
-
-  // Range checks
-  generate_string_range_check(ba, offset, len, false);
-  if (stopped()) {
+  RegionNode* bailout = create_bailout();
+  generate_string_range_check(ba, offset, len, false, bailout);
+  if (check_bailout(bailout)) {
     return true;
   }
+
   Node* ba_start = array_element_address(ba, offset, T_BYTE);
   Node* result = new CountPositivesNode(control(), memory(TypeAryPtr::BYTES), ba_start, len);
   set_result(_gvn.transform(result));
@@ -1265,9 +1313,6 @@ bool LibraryCallKit::inline_string_indexOf(StrIntrinsicNode::ArgEnc ae) {
 
 //-----------------------------inline_string_indexOfI-----------------------
 bool LibraryCallKit::inline_string_indexOfI(StrIntrinsicNode::ArgEnc ae) {
-  if (too_many_traps(Deoptimization::Reason_intrinsic)) {
-    return false;
-  }
   if (!Matcher::match_rule_supported(Op_StrIndexOf)) {
     return false;
   }
@@ -1289,9 +1334,10 @@ bool LibraryCallKit::inline_string_indexOfI(StrIntrinsicNode::ArgEnc ae) {
   Node* tgt_start = array_element_address(tgt, intcon(0), T_BYTE);
 
   // Range checks
-  generate_string_range_check(src, src_offset, src_count, ae != StrIntrinsicNode::LL);
-  generate_string_range_check(tgt, intcon(0), tgt_count, ae == StrIntrinsicNode::UU);
-  if (stopped()) {
+  RegionNode* bailout = create_bailout();
+  generate_string_range_check(src, src_offset, src_count, ae != StrIntrinsicNode::LL, bailout);
+  generate_string_range_check(tgt, intcon(0), tgt_count, ae == StrIntrinsicNode::UU, bailout);
+  if (check_bailout(bailout)) {
     return true;
   }
 
@@ -1386,7 +1432,11 @@ bool LibraryCallKit::inline_string_indexOfChar(StrIntrinsicNode::ArgEnc ae) {
   Node* src_count = _gvn.transform(new SubINode(max, from_index));
 
   // Range checks
-  generate_string_range_check(src, src_offset, src_count, ae == StrIntrinsicNode::U);
+  RegionNode* bailout = create_bailout();
+  generate_string_range_check(src, src_offset, src_count, ae == StrIntrinsicNode::U, bailout);
+  if (check_bailout(bailout)) {
+    return true;
+  }
 
   // Check for int_ch >= 0
   Node* int_ch_cmp = _gvn.transform(new CmpINode(int_ch, intcon(0)));
@@ -1430,15 +1480,12 @@ bool LibraryCallKit::inline_string_indexOfChar(StrIntrinsicNode::ArgEnc ae) {
 }
 //---------------------------inline_string_copy---------------------
 // compressIt == true --> generate a compressed copy operation (compress char[]/byte[] to byte[])
-//   int StringUTF16.compress(char[] src, int srcOff, byte[] dst, int dstOff, int len)
-//   int StringUTF16.compress(byte[] src, int srcOff, byte[] dst, int dstOff, int len)
+//   int StringUTF16.compress0(char[] src, int srcOff, byte[] dst, int dstOff, int len)
+//   int StringUTF16.compress0(byte[] src, int srcOff, byte[] dst, int dstOff, int len)
 // compressIt == false --> generate an inflated copy operation (inflate byte[] to char[]/byte[])
-//   void StringLatin1.inflate(byte[] src, int srcOff, char[] dst, int dstOff, int len)
-//   void StringLatin1.inflate(byte[] src, int srcOff, byte[] dst, int dstOff, int len)
+//   void StringLatin1.inflate0(byte[] src, int srcOff, char[] dst, int dstOff, int len)
+//   void StringLatin1.inflate0(byte[] src, int srcOff, byte[] dst, int dstOff, int len)
 bool LibraryCallKit::inline_string_copy(bool compress) {
-  if (too_many_traps(Deoptimization::Reason_intrinsic)) {
-    return false;
-  }
   int nargs = 5;  // 2 oops, 3 ints
   assert(callee()->signature()->size() == nargs, "string copy has 5 arguments");
 
@@ -1477,9 +1524,10 @@ bool LibraryCallKit::inline_string_copy(bool compress) {
   }
 
   // Range checks
-  generate_string_range_check(src, src_offset, length, convert_src);
-  generate_string_range_check(dst, dst_offset, length, convert_dst);
-  if (stopped()) {
+  RegionNode* bailout = create_bailout();
+  generate_string_range_check(src, src_offset, length, convert_src, bailout);
+  generate_string_range_check(dst, dst_offset, length, convert_dst, bailout);
+  if (check_bailout(bailout)) {
     return true;
   }
 
@@ -1527,12 +1575,10 @@ bool LibraryCallKit::inline_string_copy(bool compress) {
 #endif //_LP64
 
 //------------------------inline_string_toBytesU--------------------------
-// public static byte[] StringUTF16.toBytes(char[] value, int off, int len)
+// public static byte[] StringUTF16.toBytes0(char[] value, int off, int len)
 bool LibraryCallKit::inline_string_toBytesU() {
-  if (too_many_traps(Deoptimization::Reason_intrinsic)) {
-    return false;
-  }
   // Get the arguments.
+  assert(callee()->signature()->size() == 3, "character array encoder requires 3 arguments");
   Node* value     = argument(0);
   Node* offset    = argument(1);
   Node* length    = argument(2);
@@ -1540,30 +1586,18 @@ bool LibraryCallKit::inline_string_toBytesU() {
   Node* newcopy = nullptr;
 
   // Set the original stack and the reexecute bit for the interpreter to reexecute
-  // the bytecode that invokes StringUTF16.toBytes() if deoptimization happens.
+  // the bytecode that invokes StringUTF16.toBytes0() if deoptimization happens.
   { PreserveReexecuteState preexecs(this);
     jvms()->set_should_reexecute(true);
 
-    // Check if a null path was taken unconditionally.
-    value = null_check(value);
-
-    RegionNode* bailout = new RegionNode(1);
-    record_for_igvn(bailout);
-
-    // Range checks
-    generate_negative_guard(offset, bailout);
-    generate_negative_guard(length, bailout);
-    generate_limit_guard(offset, length, load_array_length(value), bailout);
+    value = must_be_not_null(value, true);
+    RegionNode* bailout = create_bailout();
+    generate_negative_guard(offset, bailout, nullptr, true);
+    generate_negative_guard(length, bailout, nullptr, true);
+    generate_limit_guard(offset, length, load_array_length(value), bailout, true);
     // Make sure that resulting byte[] length does not overflow Integer.MAX_VALUE
-    generate_limit_guard(length, intcon(0), intcon(max_jint/2), bailout);
-
-    if (bailout->req() > 1) {
-      PreserveJVMState pjvms(this);
-      set_control(_gvn.transform(bailout));
-      uncommon_trap(Deoptimization::Reason_intrinsic,
-                    Deoptimization::Action_maybe_recompile);
-    }
-    if (stopped()) {
+    generate_limit_guard(length, intcon(0), intcon(max_jint/2), bailout, true);
+    if (check_bailout(bailout)) {
       return true;
     }
 
@@ -1622,12 +1656,9 @@ bool LibraryCallKit::inline_string_toBytesU() {
 }
 
 //------------------------inline_string_getCharsU--------------------------
-// public void StringUTF16.getChars(byte[] src, int srcBegin, int srcEnd, char dst[], int dstBegin)
+// public void StringUTF16.getChars0(byte[] src, int srcBegin, int srcEnd, char dst[], int dstBegin)
 bool LibraryCallKit::inline_string_getCharsU() {
-  if (too_many_traps(Deoptimization::Reason_intrinsic)) {
-    return false;
-  }
-
+  assert(callee()->signature()->size() == 5, "StringUTF16.getChars0() has 5 arguments");
   // Get the arguments.
   Node* src       = argument(0);
   Node* src_begin = argument(1);
@@ -1640,8 +1671,8 @@ bool LibraryCallKit::inline_string_getCharsU() {
   AllocateArrayNode* alloc = tightly_coupled_allocation(dst);
 
   // Check if a null path was taken unconditionally.
-  src = null_check(src);
-  dst = null_check(dst);
+  src = must_be_not_null(src, true);
+  dst = must_be_not_null(dst, true);
   if (stopped()) {
     return true;
   }
@@ -1651,51 +1682,50 @@ bool LibraryCallKit::inline_string_getCharsU() {
   src_begin = _gvn.transform(new LShiftINode(src_begin, intcon(1)));
 
   // Range checks
-  generate_string_range_check(src, src_begin, length, true);
-  generate_string_range_check(dst, dst_begin, length, false);
-  if (stopped()) {
+  RegionNode* bailout = create_bailout();
+  generate_string_range_check(src, src_begin, length, true, bailout);
+  generate_string_range_check(dst, dst_begin, length, false, bailout);
+  if (check_bailout(bailout)) {
     return true;
   }
 
-  if (!stopped()) {
-    // Calculate starting addresses.
-    Node* src_start = array_element_address(src, src_begin, T_BYTE);
-    Node* dst_start = array_element_address(dst, dst_begin, T_CHAR);
+  // Calculate starting addresses.
+  Node* src_start = array_element_address(src, src_begin, T_BYTE);
+  Node* dst_start = array_element_address(dst, dst_begin, T_CHAR);
 
-    // Check if array addresses are aligned to HeapWordSize
-    const TypeInt* tsrc = gvn().type(src_begin)->is_int();
-    const TypeInt* tdst = gvn().type(dst_begin)->is_int();
-    bool aligned = tsrc->is_con() && ((arrayOopDesc::base_offset_in_bytes(T_BYTE) + tsrc->get_con() * type2aelembytes(T_BYTE)) % HeapWordSize == 0) &&
-                   tdst->is_con() && ((arrayOopDesc::base_offset_in_bytes(T_CHAR) + tdst->get_con() * type2aelembytes(T_CHAR)) % HeapWordSize == 0);
+  // Check if array addresses are aligned to HeapWordSize
+  const TypeInt* tsrc = gvn().type(src_begin)->is_int();
+  const TypeInt* tdst = gvn().type(dst_begin)->is_int();
+  bool aligned = tsrc->is_con() && ((arrayOopDesc::base_offset_in_bytes(T_BYTE) + tsrc->get_con() * type2aelembytes(T_BYTE)) % HeapWordSize == 0) &&
+                 tdst->is_con() && ((arrayOopDesc::base_offset_in_bytes(T_CHAR) + tdst->get_con() * type2aelembytes(T_CHAR)) % HeapWordSize == 0);
 
-    // Figure out which arraycopy runtime method to call (disjoint, uninitialized).
-    const char* copyfunc_name = "arraycopy";
-    address     copyfunc_addr = StubRoutines::select_arraycopy_function(T_CHAR, aligned, true, copyfunc_name, true);
-    Node* call = make_runtime_call(RC_LEAF|RC_NO_FP,
-                      OptoRuntime::fast_arraycopy_Type(),
-                      copyfunc_addr, copyfunc_name, TypeRawPtr::BOTTOM,
-                      src_start, dst_start, ConvI2X(length) XTOP);
-    // Do not let reads from the cloned object float above the arraycopy.
-    if (alloc != nullptr) {
-      if (alloc->maybe_set_complete(&_gvn)) {
-        // "You break it, you buy it."
-        InitializeNode* init = alloc->initialization();
-        assert(init->is_complete(), "we just did this");
-        init->set_complete_with_arraycopy();
-        assert(dst->is_CheckCastPP(), "sanity");
-        assert(dst->in(0)->in(0) == init, "dest pinned");
-      }
-      // Do not let stores that initialize this object be reordered with
-      // a subsequent store that would make this object accessible by
-      // other threads.
-      // Record what AllocateNode this StoreStore protects so that
-      // escape analysis can go from the MemBarStoreStoreNode to the
-      // AllocateNode and eliminate the MemBarStoreStoreNode if possible
-      // based on the escape status of the AllocateNode.
-      insert_mem_bar(Op_MemBarStoreStore, alloc->proj_out_or_null(AllocateNode::RawAddress));
-    } else {
-      insert_mem_bar(Op_MemBarCPUOrder);
+  // Figure out which arraycopy runtime method to call (disjoint, uninitialized).
+  const char* copyfunc_name = "arraycopy";
+  address     copyfunc_addr = StubRoutines::select_arraycopy_function(T_CHAR, aligned, true, copyfunc_name, true);
+  Node* call = make_runtime_call(RC_LEAF|RC_NO_FP,
+                    OptoRuntime::fast_arraycopy_Type(),
+                    copyfunc_addr, copyfunc_name, TypeRawPtr::BOTTOM,
+                    src_start, dst_start, ConvI2X(length) XTOP);
+  // Do not let reads from the cloned object float above the arraycopy.
+  if (alloc != nullptr) {
+    if (alloc->maybe_set_complete(&_gvn)) {
+      // "You break it, you buy it."
+      InitializeNode* init = alloc->initialization();
+      assert(init->is_complete(), "we just did this");
+      init->set_complete_with_arraycopy();
+      assert(dst->is_CheckCastPP(), "sanity");
+      assert(dst->in(0)->in(0) == init, "dest pinned");
     }
+    // Do not let stores that initialize this object be reordered with
+    // a subsequent store that would make this object accessible by
+    // other threads.
+    // Record what AllocateNode this StoreStore protects so that
+    // escape analysis can go from the MemBarStoreStoreNode to the
+    // AllocateNode and eliminate the MemBarStoreStoreNode if possible
+    // based on the escape status of the AllocateNode.
+    insert_mem_bar(Op_MemBarStoreStore, alloc->proj_out_or_null(AllocateNode::RawAddress));
+  } else {
+    insert_mem_bar(Op_MemBarCPUOrder);
   }
 
   C->set_has_split_ifs(true); // Has chance for split-if optimization
@@ -1707,9 +1737,16 @@ bool LibraryCallKit::inline_string_getCharsU() {
 // static void StringUTF16.putChar(byte[] val, int index, int c)
 // static char StringUTF16.getChar(byte[] val, int index)
 bool LibraryCallKit::inline_string_char_access(bool is_store) {
+  Node* ch;
+  if (is_store) {
+    assert(callee()->signature()->size() == 3, "StringUTF16.putChar() has 3 arguments");
+    ch = argument(2);
+  } else {
+    assert(callee()->signature()->size() == 2, "StringUTF16.getChar() has 2 arguments");
+    ch = nullptr;
+  }
   Node* value  = argument(0);
   Node* index  = argument(1);
-  Node* ch = is_store ? argument(2) : nullptr;
 
   // This intrinsic accesses byte[] array as char[] array. Computing the offsets
   // correctly requires matched array shapes.
@@ -1816,61 +1853,17 @@ bool LibraryCallKit::runtime_math(const TypeFunc* call_type, address funcAddr, c
 
 //------------------------------inline_math_pow-----------------------------
 bool LibraryCallKit::inline_math_pow() {
+  Node* base = argument(0);
   Node* exp = argument(2);
-  const TypeD* d = _gvn.type(exp)->isa_double_constant();
-  if (d != nullptr) {
-    if (d->getd() == 2.0) {
-      // Special case: pow(x, 2.0) => x * x
-      Node* base = argument(0);
-      set_result(_gvn.transform(new MulDNode(base, base)));
-      return true;
-    } else if (d->getd() == 0.5 && Matcher::match_rule_supported(Op_SqrtD)) {
-      // Special case: pow(x, 0.5) => sqrt(x)
-      Node* base = argument(0);
-      Node* zero = _gvn.zerocon(T_DOUBLE);
 
-      RegionNode* region = new RegionNode(3);
-      Node* phi = new PhiNode(region, Type::DOUBLE);
-
-      Node* cmp  = _gvn.transform(new CmpDNode(base, zero));
-      // According to the API specs, pow(-0.0, 0.5) = 0.0 and sqrt(-0.0) = -0.0.
-      // So pow(-0.0, 0.5) shouldn't be replaced with sqrt(-0.0).
-      // -0.0/+0.0 are both excluded since floating-point comparison doesn't distinguish -0.0 from +0.0.
-      Node* test = _gvn.transform(new BoolNode(cmp, BoolTest::le));
-
-      Node* if_pow = generate_slow_guard(test, nullptr);
-      Node* value_sqrt = _gvn.transform(new SqrtDNode(C, control(), base));
-      phi->init_req(1, value_sqrt);
-      region->init_req(1, control());
-
-      if (if_pow != nullptr) {
-        set_control(if_pow);
-        address target = StubRoutines::dpow() != nullptr ? StubRoutines::dpow() :
-                                                        CAST_FROM_FN_PTR(address, SharedRuntime::dpow);
-        const TypePtr* no_memory_effects = nullptr;
-        Node* trig = make_runtime_call(RC_LEAF, OptoRuntime::Math_DD_D_Type(), target, "POW",
-                                       no_memory_effects, base, top(), exp, top());
-        Node* value_pow = _gvn.transform(new ProjNode(trig, TypeFunc::Parms+0));
-#ifdef ASSERT
-        Node* value_top = _gvn.transform(new ProjNode(trig, TypeFunc::Parms+1));
-        assert(value_top == top(), "second value must be top");
-#endif
-        phi->init_req(2, value_pow);
-        region->init_req(2, _gvn.transform(new ProjNode(trig, TypeFunc::Control)));
-      }
-
-      C->set_has_split_ifs(true); // Has chance for split-if optimization
-      set_control(_gvn.transform(region));
-      record_for_igvn(region);
-      set_result(_gvn.transform(phi));
-
-      return true;
-    }
-  }
-
-  return StubRoutines::dpow() != nullptr ?
-    runtime_math(OptoRuntime::Math_DD_D_Type(), StubRoutines::dpow(),  "dpow") :
-    runtime_math(OptoRuntime::Math_DD_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dpow),  "POW");
+  CallNode* pow = new PowDNode(C, base, exp);
+  set_predefined_input_for_runtime_call(pow);
+  pow = _gvn.transform(pow)->as_CallLeafPure();
+  set_predefined_output_for_runtime_call(pow);
+  Node* result = _gvn.transform(new ProjNode(pow, TypeFunc::Parms + 0));
+  record_for_igvn(pow);
+  set_result(result);
+  return true;
 }
 
 //------------------------------inline_math_native-----------------------------
@@ -2158,7 +2151,7 @@ Node* LibraryCallKit::make_unsafe_address(Node*& base, Node* offset, BasicType t
   Node* uncasted_base = base;
   int kind = classify_unsafe_addr(uncasted_base, offset, type);
   if (kind == Type::RawPtr) {
-    return basic_plus_adr(top(), uncasted_base, offset);
+    return off_heap_plus_addr(uncasted_base, offset);
   } else if (kind == Type::AnyPtr) {
     assert(base == uncasted_base, "unexpected base change");
     if (can_cast) {
@@ -2178,13 +2171,13 @@ Node* LibraryCallKit::make_unsafe_address(Node*& base, Node* offset, BasicType t
         base = null_assert(base);
         Node* raw_base = _gvn.transform(new CastX2PNode(offset));
         offset = MakeConX(0);
-        return basic_plus_adr(top(), raw_base, offset);
+        return off_heap_plus_addr(raw_base, offset);
       }
     }
     // We don't know if it's an on heap or off heap access. Fall back
     // to raw memory access.
     Node* raw = _gvn.transform(new CheckCastPPNode(control(), base, TypeRawPtr::BOTTOM));
-    return basic_plus_adr(top(), raw, offset);
+    return off_heap_plus_addr(raw, offset);
   } else {
     assert(base == uncasted_base, "unexpected base change");
     // We know it's an on heap access so base can't be null
@@ -2320,19 +2313,22 @@ bool LibraryCallKit::inline_divmod_methods(vmIntrinsics::ID id) {
 const TypeOopPtr* LibraryCallKit::sharpen_unsafe_type(Compile::AliasType* alias_type, const TypePtr *adr_type) {
   // Attempt to infer a sharper value type from the offset and base type.
   ciKlass* sharpened_klass = nullptr;
+  bool null_free = false;
 
   // See if it is an instance field, with an object type.
   if (alias_type->field() != nullptr) {
     if (alias_type->field()->type()->is_klass()) {
       sharpened_klass = alias_type->field()->type()->as_klass();
+      null_free = alias_type->field()->is_null_free();
     }
   }
 
   const TypeOopPtr* result = nullptr;
   // See if it is a narrow oop array.
   if (adr_type->isa_aryptr()) {
-    if (adr_type->offset() >= objArrayOopDesc::base_offset_in_bytes()) {
+    if (adr_type->offset() >= refArrayOopDesc::base_offset_in_bytes()) {
       const TypeOopPtr* elem_type = adr_type->is_aryptr()->elem()->make_oopptr();
+      null_free = adr_type->is_aryptr()->is_null_free();
       if (elem_type != nullptr && elem_type->is_loaded()) {
         // Sharpen the value type.
         result = elem_type;
@@ -2345,6 +2341,9 @@ const TypeOopPtr* LibraryCallKit::sharpen_unsafe_type(Compile::AliasType* alias_
   if (result == nullptr && sharpened_klass != nullptr && sharpened_klass->is_loaded()) {
     // Sharpen the value type.
     result = TypeOopPtr::make_from_klass(sharpened_klass);
+    if (null_free) {
+      result = result->join_speculative(TypePtr::NOTNULL)->is_oopptr();
+    }
   }
   if (result != nullptr) {
 #ifndef PRODUCT
@@ -2373,47 +2372,6 @@ DecoratorSet LibraryCallKit::mo_decorator_for_access_kind(AccessKind kind) {
         ShouldNotReachHere();
         return 0;
   }
-}
-
-LibraryCallKit::SavedState::SavedState(LibraryCallKit* kit) :
-  _kit(kit),
-  _sp(kit->sp()),
-  _jvms(kit->jvms()),
-  _map(kit->clone_map()),
-  _discarded(false)
-{
-  for (DUIterator_Fast imax, i = kit->control()->fast_outs(imax); i < imax; i++) {
-    Node* out = kit->control()->fast_out(i);
-    if (out->is_CFG()) {
-      _ctrl_succ.push(out);
-    }
-  }
-}
-
-LibraryCallKit::SavedState::~SavedState() {
-  if (_discarded) {
-    _kit->destruct_map_clone(_map);
-    return;
-  }
-  _kit->jvms()->set_map(_map);
-  _kit->jvms()->set_sp(_sp);
-  _map->set_jvms(_kit->jvms());
-  _kit->set_map(_map);
-  _kit->set_sp(_sp);
-  for (DUIterator_Fast imax, i = _kit->control()->fast_outs(imax); i < imax; i++) {
-    Node* out = _kit->control()->fast_out(i);
-    if (out->is_CFG() && out->in(0) == _kit->control() && out != _kit->map() && !_ctrl_succ.member(out)) {
-      _kit->_gvn.hash_delete(out);
-      out->set_req(0, _kit->C->top());
-      _kit->C->record_for_igvn(out);
-      --i; --imax;
-      _kit->_gvn.hash_find_insert(out);
-    }
-  }
-}
-
-void LibraryCallKit::SavedState::discard() {
-  _discarded = true;
 }
 
 bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, const AccessKind kind, const bool unaligned) {
@@ -2473,6 +2431,43 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   // by oopDesc::field_addr.
   assert(Unsafe_field_offset_to_byte_offset(11) == 11,
          "fieldOffset must be byte-scaled");
+
+  if (base->is_InlineType()) {
+    assert(!is_store, "InlineTypeNodes are non-larval value objects");
+    InlineTypeNode* vt = base->as_InlineType();
+    if (offset->is_Con()) {
+      long off = find_long_con(offset, 0);
+      ciInlineKlass* vk = vt->type()->inline_klass();
+      if ((long)(int)off != off || !vk->contains_field_offset(off)) {
+        return false;
+      }
+
+      ciField* field = vk->get_non_flat_field_by_offset(off);
+      if (field != nullptr) {
+        BasicType bt = type2field[field->type()->basic_type()];
+        if (bt == T_ARRAY || bt == T_NARROWOOP) {
+          bt = T_OBJECT;
+        }
+        if (bt == type && !field->is_flat()) {
+          Node* value = vt->field_value_by_offset(off, false);
+          const Type* value_type = _gvn.type(value);
+          if (value_type->is_inlinetypeptr()) {
+            value = InlineTypeNode::make_from_oop(this, value, value_type->inline_klass());
+          }
+          set_result(value);
+          return true;
+        }
+      }
+    }
+    {
+      // Re-execute the unsafe access if allocation triggers deoptimization.
+      PreserveReexecuteState preexecs(this);
+      jvms()->set_should_reexecute(true);
+      vt = vt->buffer(this);
+    }
+    base = vt->get_oop();
+  }
+
   // 32-bit machines ignore the high half!
   offset = ConvL2X(offset);
 
@@ -2482,7 +2477,8 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   Node* adr = make_unsafe_address(base, offset, type, kind == Relaxed);
   assert(!stopped(), "Inlining of unsafe access failed: address construction stopped unexpectedly");
 
-  if (_gvn.type(base->uncast())->isa_ptr() == TypePtr::NULL_PTR) {
+  bool is_non_heap_access = (_gvn.type(base->uncast())->isa_ptr() == TypePtr::NULL_PTR);
+  if (is_non_heap_access) {
     if (type != T_OBJECT) {
       decorators |= IN_NATIVE; // off-heap primitive access
     } else {
@@ -2494,6 +2490,8 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
 
   // Can base be null? Otherwise, always on-heap access.
   bool can_access_non_heap = TypePtr::NULL_PTR->higher_equal(_gvn.type(base));
+
+  assert(!is_non_heap_access || can_access_non_heap, "sanity"); // is_non_heap_access implies can_access_non_heap
 
   if (!can_access_non_heap) {
     decorators |= IN_HEAP;
@@ -2510,13 +2508,44 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   Compile::AliasType* alias_type = C->alias_type(adr_type);
   assert(alias_type->index() != Compile::AliasIdxBot, "no bare pointers here");
 
+  assert((alias_type->index() == Compile::AliasIdxRaw) ==
+         (is_non_heap_access || (can_access_non_heap && alias_type->field() == nullptr)), "wrong alias");
+
   if (alias_type->adr_type() == TypeInstPtr::KLASS ||
       alias_type->adr_type() == TypeAryPtr::RANGE) {
     return false; // not supported
   }
 
   bool mismatched = false;
-  BasicType bt = alias_type->basic_type();
+  BasicType bt = T_ILLEGAL;
+  ciField* field = nullptr;
+  if (adr_type->isa_instptr()) {
+    const TypeInstPtr* instptr = adr_type->is_instptr();
+    ciInstanceKlass* k = instptr->instance_klass();
+    int off = instptr->offset();
+    if (instptr->const_oop() != nullptr &&
+        k == ciEnv::current()->Class_klass() &&
+        instptr->offset() >= (k->size_helper() * wordSize)) {
+      k = instptr->const_oop()->as_instance()->java_lang_Class_klass()->as_instance_klass();
+      field = k->get_field_by_offset(off, true);
+    } else {
+      field = k->get_non_flat_field_by_offset(off);
+    }
+    if (field != nullptr) {
+      bt = type2field[field->type()->basic_type()];
+    }
+    if (bt != alias_type->basic_type()) {
+      // Type mismatch. Is it an access to a nested flat field?
+      field = k->get_field_by_offset(off, false);
+      if (field != nullptr) {
+        bt = type2field[field->type()->basic_type()];
+      }
+    }
+    assert(bt == alias_type->basic_type(), "should match");
+  } else {
+    bt = alias_type->basic_type();
+  }
+
   if (bt != T_ILLEGAL) {
     assert(alias_type->adr_type()->is_oopptr(), "should be on-heap access");
     if (bt == T_BYTE && adr_type->isa_aryptr()) {
@@ -2550,10 +2579,16 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   // Figure out the memory ordering.
   decorators |= mo_decorator_for_access_kind(kind);
 
-  if (!is_store && type == T_OBJECT) {
-    const TypeOopPtr* tjp = sharpen_unsafe_type(alias_type, adr_type);
-    if (tjp != nullptr) {
-      value_type = tjp;
+  if (!is_store) {
+    if (type == T_OBJECT) {
+      const TypeOopPtr* tjp = sharpen_unsafe_type(alias_type, adr_type);
+      if (tjp != nullptr) {
+        value_type = tjp;
+      }
+    } else if (type == T_BOOLEAN) {
+      if (mismatched || alias_type->index() == Compile::AliasIdxRaw) {
+        value_type = TypeInt::UBYTE;
+      }
     }
   }
 
@@ -2569,39 +2604,26 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   if (!is_store) {
     Node* p = nullptr;
     // Try to constant fold a load from a constant field
-    ciField* field = alias_type->field();
-    if (heap_base_oop != top() && field != nullptr && field->is_constant() && !mismatched) {
+
+    if (heap_base_oop != top() && field != nullptr && field->is_constant() && !field->is_flat() && !mismatched) {
       // final or stable field
       p = make_constant_from_field(field, heap_base_oop);
     }
 
     if (p == nullptr) { // Could not constant fold the load
       p = access_load_at(heap_base_oop, adr, adr_type, value_type, type, decorators);
-      // Normalize the value returned by getBoolean in the following cases
-      if (type == T_BOOLEAN &&
-          (mismatched ||
-           heap_base_oop == top() ||                  // - heap_base_oop is null or
-           (can_access_non_heap && field == nullptr)) // - heap_base_oop is potentially null
-                                                      //   and the unsafe access is made to large offset
-                                                      //   (i.e., larger than the maximum offset necessary for any
-                                                      //   field access)
-            ) {
-          IdealKit ideal = IdealKit(this);
-#define __ ideal.
-          IdealVariable normalized_result(ideal);
-          __ declarations_done();
-          __ set(normalized_result, p);
-          __ if_then(p, BoolTest::ne, ideal.ConI(0));
-          __ set(normalized_result, ideal.ConI(1));
-          ideal.end_if();
-          final_sync(ideal);
-          p = __ value(normalized_result);
-#undef __
+      const TypeOopPtr* ptr = value_type->make_oopptr();
+      if (ptr != nullptr && ptr->is_inlinetypeptr()) {
+        // Load a non-flattened inline type from memory
+        p = InlineTypeNode::make_from_oop(this, p, ptr->inline_klass());
       }
     }
     if (type == T_ADDRESS) {
       p = gvn().transform(new CastP2XNode(nullptr, p));
       p = ConvX2UL(p);
+    } else if (type == T_BOOLEAN) {
+      // Truncate boolean values returned by unsafe operations.
+      p = gvn().transform(new AndINode(p, gvn().intcon(0x1)));
     }
     // The load node has the control of the preceding MemBarCPUOrder.  All
     // following nodes will have the control of the MemBarCPUOrder inserted at
@@ -2618,6 +2640,181 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   }
 
   return true;
+}
+
+bool LibraryCallKit::inline_unsafe_flat_access(bool is_store, AccessKind kind) {
+#ifdef ASSERT
+  {
+    ResourceMark rm;
+    // Check the signatures.
+    ciSignature* sig = callee()->signature();
+    assert(sig->type_at(0)->basic_type() == T_OBJECT, "base should be object, but is %s", type2name(sig->type_at(0)->basic_type()));
+    assert(sig->type_at(1)->basic_type() == T_LONG, "offset should be long, but is %s", type2name(sig->type_at(1)->basic_type()));
+    assert(sig->type_at(2)->basic_type() == T_INT, "layout kind should be int, but is %s", type2name(sig->type_at(3)->basic_type()));
+    assert(sig->type_at(3)->basic_type() == T_OBJECT, "value klass should be object, but is %s", type2name(sig->type_at(4)->basic_type()));
+    if (is_store) {
+      assert(sig->return_type()->basic_type() == T_VOID, "putter must not return a value, but returns %s", type2name(sig->return_type()->basic_type()));
+      assert(sig->count() == 5, "flat putter should have 5 arguments, but has %d", sig->count());
+      assert(sig->type_at(4)->basic_type() == T_OBJECT, "put value should be object, but is %s", type2name(sig->type_at(5)->basic_type()));
+    } else {
+      assert(sig->return_type()->basic_type() == T_OBJECT, "getter must return an object, but returns %s", type2name(sig->return_type()->basic_type()));
+      assert(sig->count() == 4, "flat getter should have 4 arguments, but has %d", sig->count());
+    }
+ }
+#endif // ASSERT
+
+  assert(kind == Relaxed, "Only plain accesses for now");
+  if (callee()->is_static()) {
+    // caller must have the capability!
+    return false;
+  }
+  C->set_has_unsafe_access(true);
+
+  const TypeInstPtr* value_klass_node = _gvn.type(argument(5))->isa_instptr();
+  if (value_klass_node == nullptr || value_klass_node->const_oop() == nullptr) {
+    // parameter valueType is not a constant
+    return false;
+  }
+  ciType* mirror_type = value_klass_node->const_oop()->as_instance()->java_mirror_type();
+  if (mirror_type == nullptr || !mirror_type->is_inlinetype()) {
+    // While mirror_type should not be null, there is no simple argument of that, so let's be safe, and bailout if it happens.
+    // Otherwise, if mirror_type is not null, but not an inline type, that is dead code. Bailout as well.
+    return false;
+  }
+  ciInlineKlass* value_klass = mirror_type->as_inline_klass();
+
+  const TypeInt* layout_type = _gvn.type(argument(4))->isa_int();
+  if (layout_type == nullptr || !layout_type->is_con()) {
+    // parameter layoutKind is not a constant
+    return false;
+  }
+  assert(layout_type->get_con() >= static_cast<int>(LayoutKind::REFERENCE) &&
+         layout_type->get_con() < static_cast<int>(LayoutKind::UNKNOWN),
+         "invalid layoutKind %d", layout_type->get_con());
+  LayoutKind layout = static_cast<LayoutKind>(layout_type->get_con());
+  assert(layout == LayoutKind::REFERENCE || LayoutKindHelper::is_flat(layout),
+         "unexpected layoutKind %d", layout_type->get_con());
+
+  null_check(argument(0));
+  if (stopped()) {
+    return true;
+  }
+
+  Node* base = must_be_not_null(argument(1), true);
+  Node* offset = argument(2);
+  const Type* base_type = _gvn.type(base);
+
+  Node* ptr;
+  bool immutable_memory = false;
+  DecoratorSet decorators = C2_UNSAFE_ACCESS | IN_HEAP | MO_UNORDERED;
+  if (base_type->isa_instptr()) {
+    const TypeLong* offset_type = _gvn.type(offset)->isa_long();
+    if (offset_type == nullptr || !offset_type->is_con()) {
+      // Offset into a non-array should be a constant
+      decorators |= C2_MISMATCHED;
+    } else {
+      int offset_con = checked_cast<int>(offset_type->get_con());
+      ciInstanceKlass* base_klass = base_type->is_instptr()->instance_klass();
+      ciField* field = base_klass->get_non_flat_field_by_offset(offset_con);
+      if (field == nullptr) {
+        assert(!base_klass->is_final(), "non-existence field at offset %d of class %s", offset_con, base_klass->name()->as_utf8());
+        decorators |= C2_MISMATCHED;
+      } else {
+        assert(field->type() == value_klass, "field at offset %d of %s is of type %s, but valueType is %s",
+               offset_con, base_klass->name()->as_utf8(), field->type()->name(), value_klass->name()->as_utf8());
+        immutable_memory = field->is_strict() && field->is_final();
+
+        if (base->is_InlineType()) {
+          assert(!is_store, "Cannot store into a non-larval value object");
+          set_result(base->as_InlineType()->field_value_by_offset(offset_con, false));
+          return true;
+        }
+      }
+    }
+
+    if (base->is_InlineType()) {
+      assert(!is_store, "Cannot store into a non-larval value object");
+      base = base->as_InlineType()->buffer(this, true);
+    }
+    ptr = basic_plus_adr(base, ConvL2X(offset));
+  } else if (base_type->isa_aryptr()) {
+    decorators |= IS_ARRAY;
+    if (layout == LayoutKind::REFERENCE) {
+      if (!base_type->is_aryptr()->is_not_flat()) {
+        const TypeAryPtr* array_type = base_type->is_aryptr()->cast_to_not_flat();
+        // TODO 8388444 This should be a CheckCastPP, can we add a test?
+        Node* new_base = _gvn.transform(new CastPPNode(control(), base, array_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing));
+        replace_in_map(base, new_base);
+        base = new_base;
+      }
+      ptr = basic_plus_adr(base, ConvL2X(offset));
+    } else {
+      if (UseArrayFlattening) {
+        // Flat array must have an exact type
+        bool is_null_free = !LayoutKindHelper::is_nullable_flat(layout);
+        bool is_atomic = LayoutKindHelper::is_atomic_flat(layout);
+        Node* new_base = cast_to_flat_array_exact(base, value_klass, is_null_free, is_atomic);
+        replace_in_map(base, new_base);
+        base = new_base;
+        ptr = basic_plus_adr(base, ConvL2X(offset));
+        const TypeAryPtr* ptr_type = _gvn.type(ptr)->is_aryptr();
+        if (ptr_type->field_offset().get() != 0) {
+          // TODO 8388444 This should be a CheckCastPP, can we add a test?
+          ptr = _gvn.transform(new CastPPNode(control(), ptr, ptr_type->with_field_offset(0), ConstraintCastNode::DependencyType::NonFloatingNarrowing));
+        }
+      } else {
+        uncommon_trap(Deoptimization::Reason_intrinsic,
+                      Deoptimization::Action_none);
+        return true;
+      }
+    }
+  } else {
+    decorators |= C2_MISMATCHED;
+    ptr = basic_plus_adr(base, ConvL2X(offset));
+  }
+
+  if (is_store) {
+    Node* value = argument(6);
+    const Type* value_type = _gvn.type(value);
+    if (!value_type->is_inlinetypeptr()) {
+      value_type = Type::get_const_type(value_klass)->filter_speculative(value_type);
+      Node* new_value = _gvn.transform(new CheckCastPPNode(control(), value, value_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing));
+      new_value = InlineTypeNode::make_from_oop(this, new_value, value_klass);
+      replace_in_map(value, new_value);
+      value = new_value;
+    }
+
+    assert(value_type == TypePtr::NULL_PTR || value_type->inline_klass() == value_klass,
+           "value is of type %s while value klass is %s", value_type->inline_klass()->name()->as_utf8(), value_klass->name()->as_utf8());
+    if (layout == LayoutKind::REFERENCE) {
+      const TypePtr* ptr_type = (decorators & C2_MISMATCHED) != 0 ? TypeRawPtr::BOTTOM : _gvn.type(ptr)->is_ptr();
+      access_store_at(base, ptr, ptr_type, value, value_type, T_OBJECT, decorators);
+    } else {
+      bool atomic = LayoutKindHelper::is_atomic_flat(layout);
+      bool null_free = !LayoutKindHelper::is_nullable_flat(layout);
+      if (null_free) {
+        null_check(value);
+      }
+      value->as_InlineType()->store_flat(this, base, ptr, atomic, immutable_memory, null_free, decorators);
+    }
+
+    return true;
+  } else {
+    decorators |= (C2_CONTROL_DEPENDENT_LOAD | C2_UNKNOWN_CONTROL_LOAD);
+    InlineTypeNode* result;
+    if (layout == LayoutKind::REFERENCE) {
+      const TypePtr* ptr_type = (decorators & C2_MISMATCHED) != 0 ? TypeRawPtr::BOTTOM : _gvn.type(ptr)->is_ptr();
+      Node* oop = access_load_at(base, ptr, ptr_type, Type::get_const_type(value_klass), T_OBJECT, decorators);
+      result = InlineTypeNode::make_from_oop(this, oop, value_klass);
+    } else {
+      bool atomic = LayoutKindHelper::is_atomic_flat(layout);
+      bool null_free = !LayoutKindHelper::is_nullable_flat(layout);
+      result = InlineTypeNode::make_from_flat(this, value_klass, base, ptr, atomic, immutable_memory, null_free, decorators);
+    }
+
+    set_result(result);
+    return true;
+  }
 }
 
 //----------------------------inline_unsafe_load_store----------------------------
@@ -2822,6 +3019,19 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
   if (is_reference_type(type)) {
     decorators |= IN_HEAP | ON_UNKNOWN_OOP_REF;
 
+    if (oldval != nullptr && oldval->is_InlineType()) {
+      // Re-execute the unsafe access if allocation triggers deoptimization.
+      PreserveReexecuteState preexecs(this);
+      jvms()->set_should_reexecute(true);
+      oldval = oldval->as_InlineType()->buffer(this)->get_oop();
+    }
+    if (newval != nullptr && newval->is_InlineType()) {
+      // Re-execute the unsafe access if allocation triggers deoptimization.
+      PreserveReexecuteState preexecs(this);
+      jvms()->set_should_reexecute(true);
+      newval = newval->as_InlineType()->buffer(this)->get_oop();
+    }
+
     // Transformation of a value which could be null pointer (CastPP #null)
     // could be delayed during Parse (for example, in adjust_map_after_if()).
     // Execute transformation here to avoid barrier generation in such case.
@@ -2882,12 +3092,104 @@ bool LibraryCallKit::inline_unsafe_fence(vmIntrinsics::ID id) {
       insert_mem_bar(Op_StoreStoreFence);
       return true;
     case vmIntrinsics::_fullFence:
-      insert_mem_bar(Op_MemBarVolatile);
+      insert_mem_bar(Op_MemBarFull);
       return true;
     default:
       fatal_unexpected_iid(id);
       return false;
   }
+}
+
+// private native int arrayInstanceBaseOffset0(Object[] array);
+bool LibraryCallKit::inline_arrayInstanceBaseOffset() {
+  Node* array = argument(1);
+  Node* klass_node = load_object_klass(array);
+
+  jint  layout_con = Klass::_lh_neutral_value;
+  Node* layout_val = get_layout_helper(klass_node, layout_con);
+  int   layout_is_con = (layout_val == nullptr);
+
+  Node* header_size = nullptr;
+  if (layout_is_con) {
+    int hsize = Klass::layout_helper_header_size(layout_con);
+    header_size = intcon(hsize);
+  } else {
+    Node* hss = intcon(Klass::_lh_header_size_shift);
+    Node* hsm = intcon(Klass::_lh_header_size_mask);
+    header_size = _gvn.transform(new URShiftINode(layout_val, hss));
+    header_size = _gvn.transform(new AndINode(header_size, hsm));
+  }
+  set_result(header_size);
+  return true;
+}
+
+// private native int arrayInstanceIndexScale0(Object[] array);
+bool LibraryCallKit::inline_arrayInstanceIndexScale() {
+  Node* array = argument(1);
+  Node* klass_node = load_object_klass(array);
+
+  jint  layout_con = Klass::_lh_neutral_value;
+  Node* layout_val = get_layout_helper(klass_node, layout_con);
+  int   layout_is_con = (layout_val == nullptr);
+
+  Node* element_size = nullptr;
+  if (layout_is_con) {
+    int log_element_size  = Klass::layout_helper_log2_element_size(layout_con);
+    int elem_size = 1 << log_element_size;
+    element_size = intcon(elem_size);
+  } else {
+    Node* ess = intcon(Klass::_lh_log2_element_size_shift);
+    Node* esm = intcon(Klass::_lh_log2_element_size_mask);
+    Node* log_element_size = _gvn.transform(new URShiftINode(layout_val, ess));
+    log_element_size = _gvn.transform(new AndINode(log_element_size, esm));
+    element_size = _gvn.transform(new LShiftINode(intcon(1), log_element_size));
+  }
+  set_result(element_size);
+  return true;
+}
+
+// private native int arrayLayout0(Object[] array);
+bool LibraryCallKit::inline_arrayLayout() {
+  RegionNode* region = new RegionNode(2);
+  Node* phi = new PhiNode(region, TypeInt::POS);
+
+  Node* array = argument(1);
+  Node* klass_node = load_object_klass(array);
+  generate_refArray_guard(klass_node, region);
+  if (region->req() == 3) {
+    phi->add_req(intcon((jint)LayoutKind::REFERENCE));
+  }
+
+  int layout_kind_offset = in_bytes(FlatArrayKlass::layout_kind_offset());
+  Node* layout_kind_addr = basic_plus_adr(top(), klass_node, layout_kind_offset);
+  Node* layout_kind = make_load(nullptr, layout_kind_addr, TypeInt::POS, T_INT, MemNode::unordered);
+
+  region->init_req(1, control());
+  phi->init_req(1, layout_kind);
+
+  set_control(_gvn.transform(region));
+  set_result(_gvn.transform(phi));
+  return true;
+}
+
+// private native int[] getFieldMap0(Class <?> c);
+//   int offset = c._klass._acmp_maps_offset;
+//   return (int[])c.obj_field(offset);
+bool LibraryCallKit::inline_getFieldMap() {
+  Node* mirror = argument(1);
+  Node* klass = load_klass_from_mirror(mirror, false, nullptr, 0);
+
+  int field_map_offset_offset = in_bytes(InstanceKlass::acmp_maps_offset_offset());
+  Node* field_map_offset_addr = basic_plus_adr(top(), klass, field_map_offset_offset);
+  Node* field_map_offset = make_load(nullptr, field_map_offset_addr, TypeInt::INT, T_INT, MemNode::unordered);
+  field_map_offset = _gvn.transform(ConvI2L(field_map_offset));
+
+  Node* map_addr = basic_plus_adr(mirror, field_map_offset);
+  const TypeAryPtr* val_type = TypeAryPtr::INTS->cast_to_ptr_type(TypePtr::NotNull)->with_offset(0);
+  Node* map = access_load_at(mirror, map_addr, TypeAryPtr::INTS, val_type, T_ARRAY, IN_HEAP | MO_UNORDERED);
+
+  set_result(map);
+  return true;
 }
 
 bool LibraryCallKit::inline_onspinwait() {
@@ -3000,7 +3302,7 @@ bool LibraryCallKit::inline_unsafe_allocate() {
     // Note:  The argument might still be an illegal value like
     // Serializable.class or Object[].class.   The runtime will handle it.
     // But we must make an explicit check for initialization.
-    Node* insp = basic_plus_adr(top(), kls, in_bytes(InstanceKlass::init_state_offset()));
+    Node* insp = off_heap_plus_addr(kls, in_bytes(InstanceKlass::init_state_offset()));
     // Use T_BOOLEAN for InstanceKlass::_init_state so the compiler
     // can generate code to load it as unsigned byte.
     Node* inst = make_load(nullptr, insp, TypeInt::UBYTE, T_BOOLEAN, MemNode::acquire);
@@ -3008,7 +3310,6 @@ bool LibraryCallKit::inline_unsafe_allocate() {
     test = _gvn.transform(new SubINode(inst, bits));
     // The 'test' is non-zero if we need to take a slow path.
   }
-
   Node* obj = new_instance(kls, test);
   set_result(obj);
   return true;
@@ -3044,26 +3345,27 @@ bool LibraryCallKit::inline_native_time_funcs(address funcAddr, const char* func
 //   slow path: runtime call
 // }
 bool LibraryCallKit::inline_native_vthread_start_transition(address funcAddr, const char* funcName, bool is_final_transition) {
-  Node* vt_oop = _gvn.transform(must_be_not_null(argument(0), true)); // VirtualThread this argument
+  Node* vt_oop = must_be_not_null(argument(0), true); // VirtualThread this argument
   IdealKit ideal(this);
 
   Node* thread = ideal.thread();
-  Node* jt_addr = basic_plus_adr(top(), thread, in_bytes(JavaThread::is_in_vthread_transition_offset()));
+  Node* jt_addr = off_heap_plus_addr(thread, in_bytes(JavaThread::is_in_vthread_transition_offset()));
   Node* vt_addr = basic_plus_adr(vt_oop, java_lang_Thread::is_in_vthread_transition_offset());
   access_store_at(nullptr, jt_addr, _gvn.type(jt_addr)->is_ptr(), ideal.ConI(1), TypeInt::BOOL, T_BOOLEAN, IN_NATIVE | MO_UNORDERED);
   access_store_at(nullptr, vt_addr, _gvn.type(vt_addr)->is_ptr(), ideal.ConI(1), TypeInt::BOOL, T_BOOLEAN, IN_NATIVE | MO_UNORDERED);
-  insert_mem_bar(Op_MemBarVolatile);
+  insert_mem_bar(Op_MemBarStoreLoad);
   ideal.sync_kit(this);
 
   Node* global_disable_addr = makecon(TypeRawPtr::make((address)MountUnmountDisabler::global_vthread_transition_disable_count_address()));
   Node* global_disable = ideal.load(ideal.ctrl(), global_disable_addr, TypeInt::INT, T_INT, Compile::AliasIdxRaw, true /*require_atomic_access*/);
   Node* vt_disable_addr = basic_plus_adr(vt_oop, java_lang_Thread::vthread_transition_disable_count_offset());
-  Node* vt_disable = ideal.load(ideal.ctrl(), vt_disable_addr, TypeInt::INT, T_INT, Compile::AliasIdxRaw, true /*require_atomic_access*/);
+  const TypePtr* vt_disable_addr_t = _gvn.type(vt_disable_addr)->is_ptr();
+  Node* vt_disable = ideal.load(ideal.ctrl(), vt_disable_addr, TypeInt::INT, T_INT, C->get_alias_index(vt_disable_addr_t), true /*require_atomic_access*/);
   Node* disabled = _gvn.transform(new AddINode(global_disable, vt_disable));
 
   ideal.if_then(disabled, BoolTest::ne, ideal.ConI(0)); {
     sync_kit(ideal);
-    Node* is_mount = is_final_transition ? ideal.ConI(0) : _gvn.transform(argument(1));
+    Node* is_mount = is_final_transition ? ideal.ConI(0) : argument(1);
     const TypeFunc* tf = OptoRuntime::vthread_transition_Type();
     make_runtime_call(RC_NO_LEAF, tf, funcAddr, funcName, TypePtr::BOTTOM, vt_oop, is_mount);
     ideal.sync_kit(this);
@@ -3075,7 +3377,7 @@ bool LibraryCallKit::inline_native_vthread_start_transition(address funcAddr, co
 }
 
 bool LibraryCallKit::inline_native_vthread_end_transition(address funcAddr, const char* funcName, bool is_first_transition) {
-  Node* vt_oop = _gvn.transform(must_be_not_null(argument(0), true)); // VirtualThread this argument
+  Node* vt_oop = must_be_not_null(argument(0), true); // VirtualThread this argument
   IdealKit ideal(this);
 
   Node* _notify_jvmti_addr = makecon(TypeRawPtr::make((address)MountUnmountDisabler::notify_jvmti_events_address()));
@@ -3083,13 +3385,13 @@ bool LibraryCallKit::inline_native_vthread_end_transition(address funcAddr, cons
 
   ideal.if_then(_notify_jvmti, BoolTest::eq, ideal.ConI(1)); {
     sync_kit(ideal);
-    Node* is_mount = is_first_transition ? ideal.ConI(1) : _gvn.transform(argument(1));
+    Node* is_mount = is_first_transition ? ideal.ConI(1) : argument(1);
     const TypeFunc* tf = OptoRuntime::vthread_transition_Type();
     make_runtime_call(RC_NO_LEAF, tf, funcAddr, funcName, TypePtr::BOTTOM, vt_oop, is_mount);
     ideal.sync_kit(this);
   } ideal.else_(); {
     Node* thread = ideal.thread();
-    Node* jt_addr = basic_plus_adr(top(), thread, in_bytes(JavaThread::is_in_vthread_transition_offset()));
+    Node* jt_addr = off_heap_plus_addr(thread, in_bytes(JavaThread::is_in_vthread_transition_offset()));
     Node* vt_addr = basic_plus_adr(vt_oop, java_lang_Thread::is_in_vthread_transition_offset());
 
     sync_kit(ideal);
@@ -3114,8 +3416,8 @@ bool LibraryCallKit::inline_native_notify_jvmti_sync() {
   {
     // unconditionally update the is_disable_suspend bit in current JavaThread
     Node* thread = ideal.thread();
-    Node* arg = _gvn.transform(argument(0)); // argument for notification
-    Node* addr = basic_plus_adr(top(), thread, in_bytes(JavaThread::is_disable_suspend_offset()));
+    Node* arg = argument(0); // argument for notification
+    Node* addr = off_heap_plus_addr(thread, in_bytes(JavaThread::is_disable_suspend_offset()));
     const TypePtr *addr_type = _gvn.type(addr)->isa_ptr();
 
     sync_kit(ideal);
@@ -3194,7 +3496,7 @@ bool LibraryCallKit::inline_native_classID() {
       ideal.set(result, _gvn.transform(new AddLNode(array_kls_trace_id, longcon(1))));
     } __ else_(); {
       // void class case
-      ideal.set(result, _gvn.transform(longcon(LAST_TYPE_ID + 1)));
+      ideal.set(result, longcon(LAST_TYPE_ID + 1));
     } __ end_if();
 
     Node* signaled_flag_address = makecon(TypeRawPtr::make(JfrIntrinsicSupport::signal_address()));
@@ -3222,12 +3524,12 @@ bool LibraryCallKit::inline_native_jvm_commit() {
   // TLS.
   Node* tls_ptr = _gvn.transform(new ThreadLocalNode());
   // Jfr java buffer.
-  Node* java_buffer_offset = _gvn.transform(new AddPNode(top(), tls_ptr, _gvn.transform(MakeConX(in_bytes(JAVA_BUFFER_OFFSET_JFR)))));
+  Node* java_buffer_offset = _gvn.transform(AddPNode::make_off_heap(tls_ptr, MakeConX(in_bytes(JAVA_BUFFER_OFFSET_JFR))));
   Node* java_buffer = _gvn.transform(new LoadPNode(control(), input_memory_state, java_buffer_offset, TypePtr::BOTTOM, TypeRawPtr::NOTNULL, MemNode::unordered));
-  Node* java_buffer_pos_offset = _gvn.transform(new AddPNode(top(), java_buffer, _gvn.transform(MakeConX(in_bytes(JFR_BUFFER_POS_OFFSET)))));
+  Node* java_buffer_pos_offset = _gvn.transform(AddPNode::make_off_heap(java_buffer, MakeConX(in_bytes(JFR_BUFFER_POS_OFFSET))));
 
   // Load the current value of the notified field in the JfrThreadLocal.
-  Node* notified_offset = basic_plus_adr(top(), tls_ptr, in_bytes(NOTIFY_OFFSET_JFR));
+  Node* notified_offset = off_heap_plus_addr(tls_ptr, in_bytes(NOTIFY_OFFSET_JFR));
   Node* notified = make_load(control(), notified_offset, TypeInt::BOOL, T_BOOLEAN, MemNode::unordered);
 
   // Test for notification.
@@ -3246,7 +3548,7 @@ bool LibraryCallKit::inline_native_jvm_commit() {
   // Iff notified, the return address of the commit method is the current position of the backing java buffer. This is used to reset the event writer.
   Node* current_pos_X = _gvn.transform(new LoadXNode(control(), input_memory_state, java_buffer_pos_offset, TypeRawPtr::NOTNULL, TypeX_X, MemNode::unordered));
   // Convert the machine-word to a long.
-  Node* current_pos = _gvn.transform(ConvX2L(current_pos_X));
+  Node* current_pos = ConvX2L(current_pos_X);
 
   // False branch, not notified.
   Node* not_notified = _gvn.transform(new IfFalseNode(iff_notified));
@@ -3256,7 +3558,7 @@ bool LibraryCallKit::inline_native_jvm_commit() {
   // Arg is the next position as a long.
   Node* arg = argument(0);
   // Convert long to machine-word.
-  Node* next_pos_X = _gvn.transform(ConvL2X(arg));
+  Node* next_pos_X = ConvL2X(arg);
 
   // Store the next_position to the underlying jfr java buffer.
   store_to_memory(control(), java_buffer_pos_offset, next_pos_X, LP64_ONLY(T_LONG) NOT_LP64(T_INT), MemNode::release);
@@ -3265,9 +3567,9 @@ bool LibraryCallKit::inline_native_jvm_commit() {
   set_all_memory(commit_memory);
 
   // Now load the flags from off the java buffer and decide if the buffer is a lease. If so, it needs to be returned post-commit.
-  Node* java_buffer_flags_offset = _gvn.transform(new AddPNode(top(), java_buffer, _gvn.transform(MakeConX(in_bytes(JFR_BUFFER_FLAGS_OFFSET)))));
+  Node* java_buffer_flags_offset = _gvn.transform(AddPNode::make_off_heap(java_buffer, MakeConX(in_bytes(JFR_BUFFER_FLAGS_OFFSET))));
   Node* flags = make_load(control(), java_buffer_flags_offset, TypeInt::UBYTE, T_BYTE, MemNode::unordered);
-  Node* lease_constant = _gvn.transform(_gvn.intcon(4));
+  Node* lease_constant = _gvn.intcon(4);
 
   // And flags with lease constant.
   Node* lease = _gvn.transform(new AndINode(flags, lease_constant));
@@ -3304,7 +3606,7 @@ bool LibraryCallKit::inline_native_jvm_commit() {
   lease_compare_rgn->init_req(_true_path, call_return_lease_control);
   lease_compare_rgn->init_req(_false_path, not_lease);
 
-  lease_compare_mem->init_req(_true_path, _gvn.transform(reset_memory()));
+  lease_compare_mem->init_req(_true_path, reset_memory());
   lease_compare_mem->init_req(_false_path, commit_memory);
 
   lease_compare_io->init_req(_true_path, i_o());
@@ -3397,7 +3699,7 @@ bool LibraryCallKit::inline_native_getEventWriter() {
   Node* tls_ptr = _gvn.transform(new ThreadLocalNode());
 
   // Load the address of java event writer jobject handle from the jfr_thread_local structure.
-  Node* jobj_ptr = basic_plus_adr(top(), tls_ptr, in_bytes(THREAD_LOCAL_WRITER_OFFSET_JFR));
+  Node* jobj_ptr = off_heap_plus_addr(tls_ptr, in_bytes(THREAD_LOCAL_WRITER_OFFSET_JFR));
 
   // Load the eventwriter jobject handle.
   Node* jobj = make_load(control(), jobj_ptr, TypeRawPtr::BOTTOM, T_ADDRESS, MemNode::unordered);
@@ -3462,10 +3764,10 @@ bool LibraryCallKit::inline_native_getEventWriter() {
                                            IN_HEAP | MO_UNORDERED | C2_MISMATCHED | C2_CONTROL_DEPENDENT_LOAD);
 
   // Mask off the excluded information from the epoch.
-  Node * vthread_is_excluded = _gvn.transform(new AndINode(vthread_epoch_raw, _gvn.transform(excluded_mask)));
+  Node * vthread_is_excluded = _gvn.transform(new AndINode(vthread_epoch_raw, excluded_mask));
 
   // Branch on excluded to conditionalize updating the epoch for the virtual thread.
-  Node* is_excluded_cmp = _gvn.transform(new CmpINode(vthread_is_excluded, _gvn.transform(excluded_mask)));
+  Node* is_excluded_cmp = _gvn.transform(new CmpINode(vthread_is_excluded, excluded_mask));
   Node* test_not_excluded = _gvn.transform(new BoolNode(is_excluded_cmp, BoolTest::ne));
   IfNode* iff_not_excluded = create_and_map_if(control(), test_not_excluded, PROB_MAX, COUNT_UNKNOWN);
 
@@ -3477,7 +3779,7 @@ bool LibraryCallKit::inline_native_getEventWriter() {
   set_control(included);
 
   // Get epoch value.
-  Node* epoch = _gvn.transform(new AndINode(vthread_epoch_raw, _gvn.transform(epoch_mask)));
+  Node* epoch = _gvn.transform(new AndINode(vthread_epoch_raw, epoch_mask));
 
   // Load the current epoch generation. The value is unsigned 16-bit, so we type it as T_CHAR.
   Node* epoch_generation_address = makecon(TypeRawPtr::make(JfrIntrinsicSupport::epoch_generation_address()));
@@ -3515,7 +3817,7 @@ bool LibraryCallKit::inline_native_getEventWriter() {
   // Update control and phi nodes.
   epoch_compare_rgn->init_req(_true_path, call_write_checkpoint_control);
   epoch_compare_rgn->init_req(_false_path, epoch_is_equal);
-  epoch_compare_mem->init_req(_true_path, _gvn.transform(reset_memory()));
+  epoch_compare_mem->init_req(_true_path, reset_memory());
   epoch_compare_mem->init_req(_false_path, input_memory_state);
   epoch_compare_io->init_req(_true_path, i_o());
   epoch_compare_io->init_req(_false_path, input_io_state);
@@ -3556,11 +3858,11 @@ bool LibraryCallKit::inline_native_getEventWriter() {
   vthread_compare_mem->init_req(_false_path, input_memory_state);
   vthread_compare_io->init_req(_true_path, _gvn.transform(exclude_compare_io));
   vthread_compare_io->init_req(_false_path, input_io_state);
-  tid->init_req(_true_path, _gvn.transform(vthread_tid));
-  tid->init_req(_false_path, _gvn.transform(thread_obj_tid));
-  exclusion->init_req(_true_path, _gvn.transform(vthread_is_excluded));
-  exclusion->init_req(_false_path, _gvn.transform(threadObj_is_excluded));
-  pinVirtualThread->init_req(_true_path, _gvn.transform(continuation_support));
+  tid->init_req(_true_path, vthread_tid);
+  tid->init_req(_false_path, thread_obj_tid);
+  exclusion->init_req(_true_path, vthread_is_excluded);
+  exclusion->init_req(_false_path, threadObj_is_excluded);
+  pinVirtualThread->init_req(_true_path, continuation_support);
   pinVirtualThread->init_req(_false_path, _gvn.intcon(0));
 
   // Update branch state.
@@ -3573,8 +3875,8 @@ bool LibraryCallKit::inline_native_getEventWriter() {
   assert(klass_EventWriter->is_loaded(), "invariant");
   ciInstanceKlass* const instklass_EventWriter = klass_EventWriter->as_instance_klass();
   const TypeKlassPtr* const aklass = TypeKlassPtr::make(instklass_EventWriter);
-  const TypeOopPtr* const xtype = aklass->as_instance_type();
-  Node* jobj_untagged = _gvn.transform(new AddPNode(top(), jobj, _gvn.MakeConX(-JNIHandles::TypeTag::global)));
+  const TypeOopPtr* const xtype = aklass->as_exact_instance_type();
+  Node* jobj_untagged = _gvn.transform(AddPNode::make_off_heap(jobj, _gvn.MakeConX(-JNIHandles::TypeTag::global)));
   Node* event_writer = access_load(jobj_untagged, xtype, T_OBJECT, IN_NATIVE | C2_CONTROL_DEPENDENT_LOAD);
 
   // Load the current thread id from the event writer object.
@@ -3618,9 +3920,9 @@ bool LibraryCallKit::inline_native_getEventWriter() {
   // Update control and phi nodes.
   event_writer_tid_compare_rgn->init_req(_true_path, tid_is_not_equal);
   event_writer_tid_compare_rgn->init_req(_false_path, tid_is_equal);
-  event_writer_tid_compare_mem->init_req(_true_path, _gvn.transform(reset_memory()));
+  event_writer_tid_compare_mem->init_req(_true_path, reset_memory());
   event_writer_tid_compare_mem->init_req(_false_path, _gvn.transform(vthread_compare_mem));
-  event_writer_tid_compare_io->init_req(_true_path, _gvn.transform(i_o()));
+  event_writer_tid_compare_io->init_req(_true_path, i_o());
   event_writer_tid_compare_io->init_req(_false_path, _gvn.transform(vthread_compare_io));
 
   // Result of top level CFG, Memory, IO and Value.
@@ -3635,14 +3937,14 @@ bool LibraryCallKit::inline_native_getEventWriter() {
 
   // Result memory.
   result_mem->init_req(_true_path, _gvn.transform(event_writer_tid_compare_mem));
-  result_mem->init_req(_false_path, _gvn.transform(input_memory_state));
+  result_mem->init_req(_false_path, input_memory_state);
 
   // Result IO.
   result_io->init_req(_true_path, _gvn.transform(event_writer_tid_compare_io));
-  result_io->init_req(_false_path, _gvn.transform(input_io_state));
+  result_io->init_req(_false_path, input_io_state);
 
   // Result value.
-  result_value->init_req(_true_path, _gvn.transform(event_writer)); // return event writer oop
+  result_value->init_req(_true_path, event_writer); // return event writer oop
   result_value->init_req(_false_path, null()); // return null
 
   // Set output state.
@@ -3689,7 +3991,7 @@ void LibraryCallKit::extend_setCurrentThread(Node* jt, Node* thread) {
   IfNode* iff_thread_not_equal_carrierThread =
     create_and_map_if(control(), test_thread_not_equal_carrierThread, PROB_FAIR, COUNT_UNKNOWN);
 
-  Node* vthread_offset = basic_plus_adr(top(), jt, in_bytes(THREAD_LOCAL_OFFSET_JFR + VTHREAD_OFFSET_JFR));
+  Node* vthread_offset = off_heap_plus_addr(jt, in_bytes(THREAD_LOCAL_OFFSET_JFR + VTHREAD_OFFSET_JFR));
 
   // False branch, is carrierThread.
   Node* thread_equal_carrierThread = _gvn.transform(new IfFalseNode(iff_thread_not_equal_carrierThread));
@@ -3708,17 +4010,17 @@ void LibraryCallKit::extend_setCurrentThread(Node* jt, Node* thread) {
                                    IN_HEAP | MO_UNORDERED | C2_MISMATCHED | C2_CONTROL_DEPENDENT_LOAD);
 
   // Mask off the excluded information from the epoch.
-  Node * const is_excluded = _gvn.transform(new AndINode(epoch_raw, _gvn.transform(excluded_mask)));
+  Node * const is_excluded = _gvn.transform(new AndINode(epoch_raw, excluded_mask));
 
   // Load the tid field from the thread.
   Node* tid = load_field_from_object(thread, "tid", "J");
 
   // Store the vthread tid to the jfr thread local.
-  Node* thread_id_offset = basic_plus_adr(top(), jt, in_bytes(THREAD_LOCAL_OFFSET_JFR + VTHREAD_ID_OFFSET_JFR));
+  Node* thread_id_offset = off_heap_plus_addr(jt, in_bytes(THREAD_LOCAL_OFFSET_JFR + VTHREAD_ID_OFFSET_JFR));
   Node* tid_memory = store_to_memory(control(), thread_id_offset, tid, T_LONG, MemNode::unordered, true);
 
   // Branch is_excluded to conditionalize updating the epoch .
-  Node* excluded_cmp = _gvn.transform(new CmpINode(is_excluded, _gvn.transform(excluded_mask)));
+  Node* excluded_cmp = _gvn.transform(new CmpINode(is_excluded, excluded_mask));
   Node* test_excluded = _gvn.transform(new BoolNode(excluded_cmp, BoolTest::eq));
   IfNode* iff_excluded = create_and_map_if(control(), test_excluded, PROB_MIN, COUNT_UNKNOWN);
 
@@ -3733,10 +4035,10 @@ void LibraryCallKit::extend_setCurrentThread(Node* jt, Node* thread) {
   Node* vthread_is_included = _gvn.intcon(0);
 
   // Get epoch value.
-  Node* epoch = _gvn.transform(new AndINode(epoch_raw, _gvn.transform(epoch_mask)));
+  Node* epoch = _gvn.transform(new AndINode(epoch_raw, epoch_mask));
 
   // Store the vthread epoch to the jfr thread local.
-  Node* vthread_epoch_offset = basic_plus_adr(top(), jt, in_bytes(THREAD_LOCAL_OFFSET_JFR + VTHREAD_EPOCH_OFFSET_JFR));
+  Node* vthread_epoch_offset = off_heap_plus_addr(jt, in_bytes(THREAD_LOCAL_OFFSET_JFR + VTHREAD_EPOCH_OFFSET_JFR));
   Node* included_memory = store_to_memory(control(), vthread_epoch_offset, epoch, T_CHAR, MemNode::unordered, true);
 
   RegionNode* excluded_rgn = new RegionNode(PATH_LIMIT);
@@ -3751,15 +4053,15 @@ void LibraryCallKit::extend_setCurrentThread(Node* jt, Node* thread) {
   excluded_rgn->init_req(_false_path, included);
   excluded_mem->init_req(_true_path, tid_memory);
   excluded_mem->init_req(_false_path, included_memory);
-  exclusion->init_req(_true_path, _gvn.transform(vthread_is_excluded));
-  exclusion->init_req(_false_path, _gvn.transform(vthread_is_included));
+  exclusion->init_req(_true_path, vthread_is_excluded);
+  exclusion->init_req(_false_path, vthread_is_included);
 
   // Set intermediate state.
   set_control(_gvn.transform(excluded_rgn));
   set_all_memory(excluded_mem);
 
   // Store the vthread exclusion state to the jfr thread local.
-  Node* thread_local_excluded_offset = basic_plus_adr(top(), jt, in_bytes(THREAD_LOCAL_OFFSET_JFR + VTHREAD_EXCLUDED_OFFSET_JFR));
+  Node* thread_local_excluded_offset = off_heap_plus_addr(jt, in_bytes(THREAD_LOCAL_OFFSET_JFR + VTHREAD_EXCLUDED_OFFSET_JFR));
   store_to_memory(control(), thread_local_excluded_offset, _gvn.transform(exclusion), T_BOOLEAN, MemNode::unordered, true);
 
   // Store release
@@ -3781,6 +4083,121 @@ void LibraryCallKit::extend_setCurrentThread(Node* jt, Node* thread) {
   // Set output state.
   set_control(_gvn.transform(thread_compare_rgn));
   set_all_memory(_gvn.transform(thread_compare_mem));
+}
+
+//------------------------inline_native_try_update_epoch------------------
+//
+// The generated code is a function of the argument type.
+//
+bool LibraryCallKit::inline_native_try_update_epoch() {
+  enum { _true_path = 1, _false_path = 2, PATH_LIMIT };
+
+  // Save input memory.
+  Node* input_memory_state = reset_memory();
+  set_all_memory(input_memory_state);
+
+  // Argument is an oop whose class has an injected instance field,
+  // called 'jfr_epoch' of type T_INT, used for holding a jfr epoch value.
+  Node* oop = argument(0);
+  const TypeInstPtr* tinst = _gvn.type(oop)->isa_instptr();
+  assert(tinst != nullptr, "oop is null");
+  assert(tinst->is_loaded(), "klass is not loaded");
+  ciInstanceKlass* const ik = tinst->instance_klass();
+
+  ciField* const field = ik->get_injected_instance_field_by_name(ciSymbol::make("jfr_epoch"),
+                                                                 ciSymbol::make("I"));
+
+  assert(field != nullptr, "field 'jfr_epoch' of type I not injected in klass %s", ik->name()->as_utf8());
+
+  const int jfr_epoch_field_offset = field->offset_in_bytes();
+  Node* oop_epoch_field_offset = basic_plus_adr(oop, jfr_epoch_field_offset);
+  const TypePtr* adr_type = _gvn.type(oop_epoch_field_offset)->isa_ptr();
+  const int alias_idx = C->get_alias_index(adr_type);
+  BasicType bt = field->layout_type();
+  const Type * oop_epoch_field_type = Type::get_const_basic_type(bt);
+
+  // Load the epoch value from the oop.
+  Node* oop_epoch = access_load_at(oop,
+                                   oop_epoch_field_offset,
+                                   adr_type, oop_epoch_field_type,
+                                   bt, IN_HEAP | MO_UNORDERED);
+
+  // Load the current JFR epoch generation. The value is unsigned 16-bit, so we type it as T_CHAR.
+  Node* epoch_generation_address = makecon(TypeRawPtr::make(JfrIntrinsicSupport::epoch_generation_address()));
+  Node* current_epoch_generation = make_load(control(), epoch_generation_address, TypeInt::CHAR, T_CHAR, MemNode::unordered);
+
+  // Compare the epoch in the oop against the current JFR epoch generation.
+  Node* const epochs_cmp = _gvn.transform(new CmpINode(current_epoch_generation, oop_epoch));
+  Node* epochs_equal_test = _gvn.transform(new BoolNode(epochs_cmp, BoolTest::eq));
+  IfNode* iff_epochs_equal = create_and_map_if(control(), epochs_equal_test, PROB_LIKELY(0.999), COUNT_UNKNOWN);
+
+  // True path.
+  Node* epochs_are_equal = _gvn.transform(new IfTrueNode(iff_epochs_equal));
+
+  // False path.
+  Node* epochs_are_not_equal = _gvn.transform(new IfFalseNode(iff_epochs_equal));
+
+  set_control(_gvn.transform(epochs_are_not_equal));
+
+  // Attempt to cas the current JFR epoch generation into the oop epoch field.
+  DecoratorSet decorators = IN_HEAP;
+  decorators |= mo_decorator_for_access_kind(Volatile);
+
+  Node* result = access_atomic_cmpxchg_val_at(oop,
+                                              oop_epoch_field_offset,
+                                              adr_type, alias_idx,
+                                              oop_epoch, // expected value
+                                              current_epoch_generation, // new value
+                                              oop_epoch_field_type,
+                                              bt,
+                                              decorators);
+
+  // Compare the result of the cas operation to the expected value.
+  Node* const cas_cmp_to_expected_value = _gvn.transform(new CmpINode(result, oop_epoch));
+  Node* cas_operation_test = _gvn.transform(new BoolNode(cas_cmp_to_expected_value, BoolTest::eq));
+  IfNode* iff_cas_success = create_and_map_if(control(), cas_operation_test, PROB_LIKELY(0.999), COUNT_UNKNOWN);
+
+  // True path.
+  Node* cas_success = _gvn.transform(new IfTrueNode(iff_cas_success));
+
+  // False path.
+  Node* cas_failure = _gvn.transform(new IfFalseNode(iff_cas_success));
+
+  // Cas result region and phi nodes.
+  RegionNode* cas_operation_rgn = new RegionNode(PATH_LIMIT);
+  record_for_igvn(cas_operation_rgn);
+  PhiNode* cas_operation_mem = new PhiNode(cas_operation_rgn, Type::MEMORY, TypePtr::BOTTOM);
+  record_for_igvn(cas_operation_mem);
+  PhiNode* cas_result = new PhiNode(cas_operation_rgn, TypeInt::BOOL);
+  record_for_igvn(cas_result);
+
+  cas_operation_rgn->init_req(_true_path, _gvn.transform(cas_success));
+  cas_operation_rgn->init_req(_false_path, _gvn.transform(cas_failure));
+  cas_operation_mem->init_req(_true_path, reset_memory());
+  cas_operation_mem->init_req(_false_path, input_memory_state);
+  cas_result->init_req(_true_path, _gvn.intcon(1));
+  cas_result->init_req(_false_path, _gvn.intcon(0));
+
+  // Epoch compare region and phi nodes.
+  RegionNode* epoch_compare_rgn = new RegionNode(PATH_LIMIT);
+  record_for_igvn(epoch_compare_rgn);
+  PhiNode* epoch_compare_mem = new PhiNode(epoch_compare_rgn, Type::MEMORY, TypePtr::BOTTOM);
+  record_for_igvn(epoch_compare_mem);
+  PhiNode* result_value = new PhiNode(epoch_compare_rgn, TypeInt::BOOL);
+  record_for_igvn(result_value);
+
+  epoch_compare_rgn->init_req(_true_path, _gvn.transform(epochs_are_equal));
+  epoch_compare_rgn->init_req(_false_path, _gvn.transform(cas_operation_rgn));
+  epoch_compare_mem->init_req(_true_path, _gvn.transform(input_memory_state));
+  epoch_compare_mem->init_req(_false_path, _gvn.transform(cas_operation_mem));
+  result_value->init_req(_true_path, _gvn.intcon(0));
+  result_value->init_req(_false_path, _gvn.transform(cas_result));
+
+  // Set output state.
+  set_result(epoch_compare_rgn, result_value);
+  set_all_memory(_gvn.transform(epoch_compare_mem));
+
+  return true;
 }
 
 #endif // JFR_HAVE_INTRINSICS
@@ -3805,16 +4222,15 @@ bool LibraryCallKit::inline_native_setCurrentThread() {
          "method changes current Thread but is not annotated ChangesCurrentThread");
   Node* arr = argument(1);
   Node* thread = _gvn.transform(new ThreadLocalNode());
-  Node* p = basic_plus_adr(top()/*!oop*/, thread, in_bytes(JavaThread::vthread_offset()));
+  Node* p = off_heap_plus_addr(thread, in_bytes(JavaThread::vthread_offset()));
   Node* thread_obj_handle
     = make_load(nullptr, p, p->bottom_type()->is_ptr(), T_OBJECT, MemNode::unordered);
-  thread_obj_handle = _gvn.transform(thread_obj_handle);
   const TypePtr *adr_type = _gvn.type(thread_obj_handle)->isa_ptr();
   access_store_at(nullptr, thread_obj_handle, adr_type, arr, _gvn.type(arr), T_OBJECT, IN_NATIVE | MO_UNORDERED);
 
   // Change the _monitor_owner_id of the JavaThread
   Node* tid = load_field_from_object(arr, "tid", "J");
-  Node* monitor_owner_id_offset = basic_plus_adr(top(), thread, in_bytes(JavaThread::monitor_owner_id_offset()));
+  Node* monitor_owner_id_offset = off_heap_plus_addr(thread, in_bytes(JavaThread::monitor_owner_id_offset()));
   store_to_memory(control(), monitor_owner_id_offset, tid, T_LONG, MemNode::unordered, true);
 
   JFR_ONLY(extend_setCurrentThread(thread, arr);)
@@ -3824,18 +4240,18 @@ bool LibraryCallKit::inline_native_setCurrentThread() {
 const Type* LibraryCallKit::scopedValueCache_type() {
   ciKlass* objects_klass = ciObjArrayKlass::make(env()->Object_klass());
   const TypeOopPtr* etype = TypeOopPtr::make_from_klass(env()->Object_klass());
-  const TypeAry* arr0 = TypeAry::make(etype, TypeInt::POS);
+  const TypeAry* arr0 = TypeAry::make(etype, TypeInt::POS, /* stable= */ false, /* flat= */ false, /* not_flat= */ true, /* not_null_free= */ true, true);
 
   // Because we create the scopedValue cache lazily we have to make the
   // type of the result BotPTR.
   bool xk = etype->klass_is_exact();
-  const Type* objects_type = TypeAryPtr::make(TypePtr::BotPTR, arr0, objects_klass, xk, 0);
+  const Type* objects_type = TypeAryPtr::make(TypePtr::BotPTR, arr0, objects_klass, xk, TypeAryPtr::Offset(0));
   return objects_type;
 }
 
 Node* LibraryCallKit::scopedValueCache_helper() {
   Node* thread = _gvn.transform(new ThreadLocalNode());
-  Node* p = basic_plus_adr(top()/*!oop*/, thread, in_bytes(JavaThread::scopedValueCache_offset()));
+  Node* p = off_heap_plus_addr(thread, in_bytes(JavaThread::scopedValueCache_offset()));
   // We cannot use immutable_memory() because we might flip onto a
   // different carrier thread, at which point we'll need to use that
   // carrier thread's cache.
@@ -3877,7 +4293,7 @@ bool LibraryCallKit::inline_native_Continuation_pinning(bool unpin) {
 
   // TLS
   Node* tls_ptr = _gvn.transform(new ThreadLocalNode());
-  Node* last_continuation_offset = basic_plus_adr(top(), tls_ptr, in_bytes(JavaThread::cont_entry_offset()));
+  Node* last_continuation_offset = off_heap_plus_addr(tls_ptr, in_bytes(JavaThread::cont_entry_offset()));
   Node* last_continuation = make_load(control(), last_continuation_offset, last_continuation_offset->get_ptr_type(), T_ADDRESS, MemNode::unordered);
 
   // Null check the last continuation object.
@@ -3894,7 +4310,7 @@ bool LibraryCallKit::inline_native_Continuation_pinning(bool unpin) {
   set_control(continuation_is_not_null);
 
   // Load the pin count from the last continuation.
-  Node* pin_count_offset = basic_plus_adr(top(), last_continuation, in_bytes(ContinuationEntry::pin_count_offset()));
+  Node* pin_count_offset = off_heap_plus_addr(last_continuation, in_bytes(ContinuationEntry::pin_count_offset()));
   Node* pin_count = make_load(control(), pin_count_offset, TypeInt::INT, T_INT, MemNode::unordered);
 
   // The loaded pin count is compared against a context specific rhs for over/underflow detection.
@@ -3904,7 +4320,7 @@ bool LibraryCallKit::inline_native_Continuation_pinning(bool unpin) {
   } else {
     pin_count_rhs = _gvn.intcon(UINT32_MAX);
   }
-  Node* pin_count_cmp = _gvn.transform(new CmpUNode(_gvn.transform(pin_count), pin_count_rhs));
+  Node* pin_count_cmp = _gvn.transform(new CmpUNode(pin_count, pin_count_rhs));
   Node* test_pin_count_over_underflow = _gvn.transform(new BoolNode(pin_count_cmp, BoolTest::eq));
   IfNode* iff_pin_count_over_underflow = create_and_map_if(control(), test_pin_count_over_underflow, PROB_MIN, COUNT_UNKNOWN);
 
@@ -3941,10 +4357,10 @@ bool LibraryCallKit::inline_native_Continuation_pinning(bool unpin) {
   PhiNode* result_mem = new PhiNode(result_rgn, Type::MEMORY, TypePtr::BOTTOM);
   record_for_igvn(result_mem);
 
-  result_rgn->init_req(_true_path, _gvn.transform(valid_pin_count));
-  result_rgn->init_req(_false_path, _gvn.transform(continuation_is_null));
-  result_mem->init_req(_true_path, _gvn.transform(reset_memory()));
-  result_mem->init_req(_false_path, _gvn.transform(input_memory_state));
+  result_rgn->init_req(_true_path, valid_pin_count);
+  result_rgn->init_req(_false_path, continuation_is_null);
+  result_mem->init_req(_true_path, reset_memory());
+  result_mem->init_req(_false_path, input_memory_state);
 
   // Set output state.
   set_control(_gvn.transform(result_rgn));
@@ -3956,7 +4372,7 @@ bool LibraryCallKit::inline_native_Continuation_pinning(bool unpin) {
 //---------------------------load_mirror_from_klass----------------------------
 // Given a klass oop, load its java mirror (a java.lang.Class oop).
 Node* LibraryCallKit::load_mirror_from_klass(Node* klass) {
-  Node* p = basic_plus_adr(top(), klass, in_bytes(Klass::java_mirror_offset()));
+  Node* p = off_heap_plus_addr(klass, in_bytes(Klass::java_mirror_offset()));
   Node* load = make_load(nullptr, p, TypeRawPtr::NOTNULL, T_ADDRESS, MemNode::unordered);
   // mirror = ((OopHandle)mirror)->resolve();
   return access_load(load, TypeInstPtr::MIRROR, T_OBJECT, IN_NATIVE);
@@ -3996,7 +4412,7 @@ Node* LibraryCallKit::generate_klass_flags_guard(Node* kls, int modifier_mask, i
                                                  ByteSize offset, const Type* type, BasicType bt) {
   // Branch around if the given klass has the given modifier bit set.
   // Like generate_guard, adds a new path onto the region.
-  Node* modp = basic_plus_adr(top(), kls, in_bytes(offset));
+  Node* modp = off_heap_plus_addr(kls, in_bytes(offset));
   Node* mods = make_load(nullptr, modp, type, bt, MemNode::unordered);
   Node* mask = intcon(modifier_mask);
   Node* bits = intcon(modifier_bits);
@@ -4005,6 +4421,7 @@ Node* LibraryCallKit::generate_klass_flags_guard(Node* kls, int modifier_mask, i
   Node* bol  = _gvn.transform(new BoolNode(cmp, BoolTest::ne));
   return generate_fair_guard(bol, region);
 }
+
 Node* LibraryCallKit::generate_interface_guard(Node* kls, RegionNode* region) {
   return generate_klass_flags_guard(kls, JVM_ACC_INTERFACE, 0, region,
                                     InstanceKlass::access_flags_offset(), TypeInt::CHAR, T_CHAR);
@@ -4130,17 +4547,19 @@ bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
       phi->add_req(null());
     }
     // If we fall through, it's a plain class.  Get its _super.
-    p = basic_plus_adr(top(), kls, in_bytes(Klass::super_offset()));
-    kls = _gvn.transform(LoadKlassNode::make(_gvn, immutable_memory(), p, TypeRawPtr::BOTTOM, TypeInstKlassPtr::OBJECT_OR_NULL));
-    null_ctl = top();
-    kls = null_check_oop(kls, &null_ctl);
-    if (null_ctl != top()) {
-      // If the guard is taken, Object.superClass is null (both klass and mirror).
-      region->add_req(null_ctl);
-      phi   ->add_req(null());
-    }
     if (!stopped()) {
-      query_value = load_mirror_from_klass(kls);
+      p = basic_plus_adr(top(), kls, in_bytes(Klass::super_offset()));
+      kls = _gvn.transform(LoadKlassNode::make(_gvn, immutable_memory(), p, TypeRawPtr::BOTTOM, TypeInstKlassPtr::OBJECT_OR_NULL));
+      null_ctl = top();
+      kls = null_check_oop(kls, &null_ctl);
+      if (null_ctl != top()) {
+        // If the guard is taken, Object.superClass is null (both klass and mirror).
+        region->add_req(null_ctl);
+        phi   ->add_req(null());
+      }
+      if (!stopped()) {
+        query_value = load_mirror_from_klass(kls);
+      }
     }
     break;
 
@@ -4157,6 +4576,7 @@ bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
   set_result(region, phi);
   return true;
 }
+
 
 //-------------------------inline_Class_cast-------------------
 bool LibraryCallKit::inline_Class_cast() {
@@ -4180,7 +4600,8 @@ bool LibraryCallKit::inline_Class_cast() {
       // Don't use intrinsic when class is not loaded.
       return false;
     } else {
-      int static_res = C->static_subtype_check(TypeKlassPtr::make(tm->as_klass(), Type::trust_interfaces), tp->as_klass_type());
+      const TypeKlassPtr* tklass = TypeKlassPtr::make(tm->as_klass(), Type::trust_interfaces);
+      int static_res = C->static_subtype_check(tklass, tp->as_klass_type());
       if (static_res == Compile::SSC_always_true) {
         // isInstance() is true - fold the code.
         set_result(obj);
@@ -4209,8 +4630,8 @@ bool LibraryCallKit::inline_Class_cast() {
     return true;
   }
 
-  // Not-subtype or the mirror's klass ptr is null (in case it is a primitive).
-  enum { _bad_type_path = 1, _prim_path = 2, PATH_LIMIT };
+  // Not-subtype or the mirror's klass ptr is nullptr (in case it is a primitive).
+  enum { _bad_type_path = 1, _prim_path = 2, _npe_path = 3, PATH_LIMIT };
   RegionNode* region = new RegionNode(PATH_LIMIT);
   record_for_igvn(region);
 
@@ -4220,17 +4641,30 @@ bool LibraryCallKit::inline_Class_cast() {
   Node* kls = load_klass_from_mirror(mirror, false, region, _prim_path);
 
   Node* res = top();
+  Node* io = i_o();
+  Node* mem = merged_memory();
+  SafePointNode* new_cast_failure_map = nullptr;
+
   if (!stopped()) {
+
     Node* bad_type_ctrl = top();
     // Do checkcast optimizations.
-    res = gen_checkcast(obj, kls, &bad_type_ctrl);
+    res = gen_checkcast(obj, kls, &bad_type_ctrl, &new_cast_failure_map);
     region->init_req(_bad_type_path, bad_type_ctrl);
   }
   if (region->in(_prim_path) != top() ||
-      region->in(_bad_type_path) != top()) {
+      region->in(_bad_type_path) != top() ||
+      region->in(_npe_path) != top()) {
     // Let Interpreter throw ClassCastException.
     PreserveJVMState pjvms(this);
+    if (new_cast_failure_map != nullptr) {
+      // The current map on the success path could have been modified. Use the dedicated failure path map.
+      set_map(new_cast_failure_map);
+    }
     set_control(_gvn.transform(region));
+    // Set IO and memory because gen_checkcast may override them when buffering inline types
+    set_i_o(io);
+    set_all_memory(mem);
     uncommon_trap(Deoptimization::Reason_intrinsic,
                   Deoptimization::Action_maybe_recompile);
   }
@@ -4258,14 +4692,17 @@ bool LibraryCallKit::inline_native_subtype_check() {
                                 // {P,P} & superc!=subc => false
     _prim_same_path,            // {P,P} & superc==subc => true
     _prim_1_path,               // {N,P} => false
+    _ref_same_path,             // {N,N} & superk==subk => true
     _ref_subtype_path,          // {N,N} & subtype check wins => true
     _both_ref_path,             // {N,N} & subtype check loses => false
     PATH_LIMIT
   };
 
   RegionNode* region = new RegionNode(PATH_LIMIT);
+  RegionNode* prim_region = new RegionNode(2);
   Node*       phi    = new PhiNode(region, TypeInt::BOOL);
   record_for_igvn(region);
+  record_for_igvn(prim_region);
 
   const TypePtr* adr_type = TypeRawPtr::BOTTOM;   // memory type of loads
   const TypeKlassPtr* kls_type = TypeInstKlassPtr::OBJECT_OR_NULL;
@@ -4290,8 +4727,11 @@ bool LibraryCallKit::inline_native_subtype_check() {
     Node* kls = klasses[which_arg];
     Node* null_ctl = top();
     kls = null_check_oop(kls, &null_ctl, never_see_null);
-    int prim_path = (which_arg == 0 ? _prim_0_path : _prim_1_path);
-    region->init_req(prim_path, null_ctl);
+    if (which_arg == 0) {
+      prim_region->init_req(1, null_ctl);
+    } else {
+      region->init_req(_prim_1_path, null_ctl);
+    }
     if (stopped())  break;
     klasses[which_arg] = kls;
   }
@@ -4300,20 +4740,30 @@ bool LibraryCallKit::inline_native_subtype_check() {
     // now we have two reference types, in klasses[0..1]
     Node* subk   = klasses[1];  // the argument to isAssignableFrom
     Node* superk = klasses[0];  // the receiver
+
+    // gen_subtype_check() refines exact array superklasses for comparison with
+    // (refined) klasses loaded from the header. Since both operands here are unrefined
+    // klasses, handle equality first. Unequal types then use the regular hierarchy check.
+    Node* cmp = _gvn.transform(new CmpPNode(subk, superk));
+    Node* bol = _gvn.transform(new BoolNode(cmp, BoolTest::eq));
+    IfNode* iff = create_and_xform_if(control(), bol, PROB_STATIC_FREQUENT, COUNT_UNKNOWN);
+    region->set_req(_ref_same_path, _gvn.transform(new IfTrueNode(iff)));
+    set_control(_gvn.transform(new IfFalseNode(iff)));
+
     region->set_req(_both_ref_path, gen_subtype_check(subk, superk));
-    // now we have a successful reference subtype check
     region->set_req(_ref_subtype_path, control());
   }
 
   // If both operands are primitive (both klasses null), then
   // we must return true when they are identical primitives.
   // It is convenient to test this after the first null klass check.
-  set_control(region->in(_prim_0_path)); // go back to first null check
+  // This path is also used if superc is a value mirror.
+  set_control(_gvn.transform(prim_region));
   if (!stopped()) {
     // Since superc is primitive, make a guard for the superc==subc case.
     Node* cmp_eq = _gvn.transform(new CmpPNode(args[0], args[1]));
     Node* bol_eq = _gvn.transform(new BoolNode(cmp_eq, BoolTest::eq));
-    generate_guard(bol_eq, region, PROB_FAIR);
+    generate_fair_guard(bol_eq, region);
     if (region->req() == PATH_LIMIT+1) {
       // A guard was added.  If the added guard is taken, superc==subc.
       region->swap_edges(PATH_LIMIT, _prim_same_path);
@@ -4324,6 +4774,7 @@ bool LibraryCallKit::inline_native_subtype_check() {
 
   // these are the only paths that produce 'true':
   phi->set_req(_prim_same_path,   intcon(1));
+  phi->set_req(_ref_same_path,    intcon(1));
   phi->set_req(_ref_subtype_path, intcon(1));
 
   // pull together the cases:
@@ -4344,30 +4795,27 @@ bool LibraryCallKit::inline_native_subtype_check() {
 }
 
 //---------------------generate_array_guard_common------------------------
-Node* LibraryCallKit::generate_array_guard_common(Node* kls, RegionNode* region,
-                                                  bool obj_array, bool not_array, Node** obj) {
+Node* LibraryCallKit::generate_array_guard_common(Node* kls, RegionNode* region, ArrayKind kind, Node** obj) {
 
   if (stopped()) {
     return nullptr;
   }
 
-  // If obj_array/non_array==false/false:
-  // Branch around if the given klass is in fact an array (either obj or prim).
-  // If obj_array/non_array==false/true:
-  // Branch around if the given klass is not an array klass of any kind.
-  // If obj_array/non_array==true/true:
-  // Branch around if the kls is not an oop array (kls is int[], String, etc.)
-  // If obj_array/non_array==true/false:
-  // Branch around if the kls is an oop array (Object[] or subtype)
-  //
   // Like generate_guard, adds a new path onto the region.
   jint  layout_con = 0;
   Node* layout_val = get_layout_helper(kls, layout_con);
   if (layout_val == nullptr) {
-    bool query = (obj_array
-                  ? Klass::layout_helper_is_objArray(layout_con)
-                  : Klass::layout_helper_is_array(layout_con));
-    if (query == not_array) {
+    bool query = 0;
+    switch(kind) {
+      case RefArray:       query = Klass::layout_helper_is_refArray(layout_con); break;
+      case NonRefArray:    query = !Klass::layout_helper_is_refArray(layout_con); break;
+      case TypeArray:      query = Klass::layout_helper_is_typeArray(layout_con); break;
+      case AnyArray:       query = Klass::layout_helper_is_array(layout_con); break;
+      case NonArray:       query = !Klass::layout_helper_is_array(layout_con); break;
+      default:
+        ShouldNotReachHere();
+    }
+    if (!query) {
       return nullptr;                       // never a branch
     } else {                             // always a branch
       Node* always_branch = control();
@@ -4377,29 +4825,242 @@ Node* LibraryCallKit::generate_array_guard_common(Node* kls, RegionNode* region,
       return always_branch;
     }
   }
+  unsigned int value = 0;
+  BoolTest::mask btest = BoolTest::illegal;
+  switch(kind) {
+    case RefArray:
+    case NonRefArray: {
+      value = Klass::_lh_array_tag_ref_value;
+      layout_val = _gvn.transform(new RShiftINode(layout_val, intcon(Klass::_lh_array_tag_shift)));
+      btest = (kind == RefArray) ? BoolTest::eq : BoolTest::ne;
+      break;
+    }
+    case TypeArray: {
+      value = Klass::_lh_array_tag_type_value;
+      layout_val = _gvn.transform(new RShiftINode(layout_val, intcon(Klass::_lh_array_tag_shift)));
+      btest = BoolTest::eq;
+      break;
+    }
+    case AnyArray:    value = Klass::_lh_neutral_value; btest = BoolTest::lt; break;
+    case NonArray:    value = Klass::_lh_neutral_value; btest = BoolTest::gt; break;
+    default:
+      ShouldNotReachHere();
+  }
   // Now test the correct condition.
-  jint  nval = (obj_array
-                ? (jint)(Klass::_lh_array_tag_type_value
-                   <<    Klass::_lh_array_tag_shift)
-                : Klass::_lh_neutral_value);
+  jint nval = (jint)value;
   Node* cmp = _gvn.transform(new CmpINode(layout_val, intcon(nval)));
-  BoolTest::mask btest = BoolTest::lt;  // correct for testing is_[obj]array
-  // invert the test if we are looking for a non-array
-  if (not_array)  btest = BoolTest(btest).negate();
   Node* bol = _gvn.transform(new BoolNode(cmp, btest));
   Node* ctrl = generate_fair_guard(bol, region);
-  Node* is_array_ctrl = not_array ? control() : ctrl;
+  Node* is_array_ctrl = kind == NonArray ? control() : ctrl;
   if (obj != nullptr && is_array_ctrl != nullptr && is_array_ctrl != top()) {
     // Keep track of the fact that 'obj' is an array to prevent
     // array specific accesses from floating above the guard.
-    *obj = _gvn.transform(new CastPPNode(is_array_ctrl, *obj, TypeAryPtr::BOTTOM));
+    *obj = _gvn.transform(new CheckCastPPNode(is_array_ctrl, *obj, TypeAryPtr::BOTTOM));
   }
   return ctrl;
 }
 
+// public static native Object[] ValueClass::newNullRestrictedAtomicArray(Class<?> componentType, int length, Object initVal);
+// public static native Object[] ValueClass::newNullRestrictedNonAtomicArray(Class<?> componentType, int length, Object initVal);
+// public static native Object[] ValueClass::newNullableAtomicArray(Class<?> componentType, int length);
+bool LibraryCallKit::inline_newArray(bool null_free, bool atomic) {
+  assert(null_free || atomic, "nullable implies atomic");
+  Node* componentType = argument(0);
+  Node* length = argument(1);
+  Node* init_val = null_free ? argument(2) : nullptr;
+
+  const TypeInstPtr* tp = _gvn.type(componentType)->isa_instptr();
+  if (tp != nullptr) {
+    ciInstanceKlass* ik = tp->instance_klass();
+    if (ik == C->env()->Class_klass()) {
+      ciType* t = tp->java_mirror_type();
+      if (t != nullptr && t->is_inlinetype()) {
+
+        ciArrayKlass* array_klass = ciArrayKlass::make(t, null_free, atomic, true);
+        assert(array_klass->is_elem_null_free() == null_free, "inconsistency");
+
+        // TODO 8350865 ZGC needs card marks on initializing oop stores
+        if ((UseZGC || UseShenandoahGC) && null_free && !array_klass->is_flat_array_klass()) {
+          return false;
+        }
+
+        if (array_klass->is_loaded() && array_klass->element_klass()->as_inline_klass()->is_initialized()) {
+          const TypeAryKlassPtr* array_klass_type = TypeAryKlassPtr::make(array_klass, Type::trust_interfaces);
+          if (null_free) {
+            if (init_val->is_InlineType()) {
+              if (array_klass_type->is_flat() && init_val->as_InlineType()->is_all_zero(&gvn(), /* flat */ true)) {
+                // Zeroing is enough because the init value is the all-zero value
+                init_val = nullptr;
+              } else {
+                init_val = init_val->as_InlineType()->buffer(this);
+              }
+            }
+            if (init_val != nullptr) {
+#ifdef ASSERT
+              init_val = null_check(init_val);
+              Node* wrong_type_ctl = gen_subtype_check(init_val, makecon(TypeKlassPtr::make(array_klass->element_klass())));
+              {
+                PreserveJVMState pjvms(this);
+                set_control(wrong_type_ctl);
+                halt(control(), frameptr(), "incompatible type for initVal in newArray");
+                stop_and_kill_map();
+              }
+#endif
+              init_val = _gvn.transform(new CheckCastPPNode(control(), init_val, TypeOopPtr::make_from_klass(array_klass->element_klass()), ConstraintCastNode::DependencyType::NonFloatingNarrowing));
+            }
+          }
+          Node* obj = new_array(makecon(array_klass_type), length, 0, nullptr, false, init_val);
+          const TypeAryPtr* arytype = gvn().type(obj)->is_aryptr();
+          assert(arytype->is_null_free() == null_free, "inconsistency");
+          assert(arytype->is_not_null_free() == !null_free, "inconsistency");
+          set_result(obj);
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+// public static native boolean ValueClass::isFlatArray(Object array);
+// public static native boolean ValueClass::isNullRestrictedArray(Object array);
+// public static native boolean ValueClass::isAtomicArray(Object array);
+bool LibraryCallKit::inline_getArrayProperties(ArrayPropertiesCheck check) {
+  Node* array = argument(0);
+
+  Node* bol;
+  switch(check) {
+    case IsFlat:
+      bol = flat_array_test(load_object_klass(array));
+      break;
+    case IsNullRestricted:
+      bol = null_free_array_test(array);
+      break;
+    case IsAtomic: {
+      // See conditions in JVM_IsAtomicArray
+      // 1. If not flat, then atomic, or else...
+      RegionNode* atomic_region = new RegionNode(1);
+      RegionNode* non_atomic_region = new RegionNode(1);
+      Node* array_klass = load_object_klass(array);
+      Node* is_flat_bol = flat_array_test(array_klass);
+      IfNode* iff_is_flat = create_and_xform_if(control(), is_flat_bol, PROB_FAIR, COUNT_UNKNOWN);
+      atomic_region->add_req(_gvn.transform(new IfFalseNode(iff_is_flat)));
+      set_control(_gvn.transform(new IfTrueNode(iff_is_flat)));
+
+      // 2. ...if the layout is atomic, then atomic, or else...
+      Node* layout_kind = atomic_layout_array_test_and_get_layout_kind(array, atomic_region);
+
+      // 3. ...if the element type is naturally atomic and null-free OR empty and nullable, then atomic, or else...
+      int element_klass_offset = in_bytes(ObjArrayKlass::element_klass_offset());
+      Node* array_element_klass_addr = off_heap_plus_addr(array_klass, element_klass_offset);
+      Node* array_element_klass = _gvn.transform(LoadKlassNode::make(_gvn, immutable_memory(), array_element_klass_addr, _gvn.type(array_klass)->is_klassptr()));
+      int klass_flags_offset = in_bytes(InstanceKlass::misc_flags_offset() + InstanceKlassFlags::flags_offset());
+      Node* array_element_klass_flags_addr = off_heap_plus_addr(array_element_klass, klass_flags_offset);
+      Node* array_element_klass_flags = make_load(control(), array_element_klass_flags_addr, TypeInt::INT, T_INT, MemNode::unordered);
+
+      // Here, layout can only be non-atomic, otherwise atomic_layout_array_test_and_get_layout_kind already decides the array to be atomic.
+      Node* is_null_free_cmp = _gvn.transform(new CmpINode(layout_kind, intcon(static_cast<jint>(LayoutKind::NULL_FREE_NON_ATOMIC_FLAT))));
+      Node* is_null_free_bol = _gvn.transform(new BoolNode(is_null_free_cmp, BoolTest::eq));
+      IfNode* iff_is_null_free_bol = create_and_xform_if(control(), is_null_free_bol, PROB_FAIR, COUNT_UNKNOWN);
+      Node* is_null_free_ctl = _gvn.transform(new IfTrueNode(iff_is_null_free_bol));
+      Node* is_nullable_ctl = _gvn.transform(new IfFalseNode(iff_is_null_free_bol));
+
+      Node* is_naturally_atomic_flag = _gvn.transform(new AndINode(array_element_klass_flags, intcon(InstanceKlassFlags::_misc_is_naturally_atomic)));
+      Node* is_naturally_atomic_cmp = _gvn.transform(new CmpINode(is_naturally_atomic_flag, intcon(0)));
+      Node* is_naturally_atomic_bol = _gvn.transform(new BoolNode(is_naturally_atomic_cmp, BoolTest::ne));
+      IfNode* iff_is_naturally_atomic = create_and_xform_if(is_null_free_ctl, is_naturally_atomic_bol, PROB_FAIR, COUNT_UNKNOWN);
+      Node* is_naturally_atomic_ctl = _gvn.transform(new IfTrueNode(iff_is_naturally_atomic));
+      Node* is_not_naturally_atomic_ctl = _gvn.transform(new IfFalseNode(iff_is_naturally_atomic));
+      atomic_region->add_req(is_naturally_atomic_ctl);
+      non_atomic_region->add_req(is_not_naturally_atomic_ctl);
+
+      Node* is_empty_inline_type_flag = _gvn.transform(new AndINode(array_element_klass_flags, intcon(InstanceKlassFlags::_misc_is_empty_inline_type)));
+      Node* is_empty_inline_type_cmp = _gvn.transform(new CmpINode(is_empty_inline_type_flag, intcon(0)));
+      Node* is_empty_inline_type_bol = _gvn.transform(new BoolNode(is_empty_inline_type_cmp, BoolTest::ne));
+      IfNode* iff_is_empty_inline_type = create_and_xform_if(is_nullable_ctl, is_empty_inline_type_bol, PROB_FAIR, COUNT_UNKNOWN);
+      Node* is_empty_inline_type_ctl = _gvn.transform(new IfTrueNode(iff_is_empty_inline_type));
+      Node* is_nonempty_inline_type_ctl = _gvn.transform(new IfFalseNode(iff_is_empty_inline_type));
+      atomic_region->add_req(is_empty_inline_type_ctl);
+      non_atomic_region->add_req(is_nonempty_inline_type_ctl);
+
+      // ...non-atomic, but we tried everything.
+      RegionNode* decision = new RegionNode(3);
+      decision->set_req(1, _gvn.transform(atomic_region));
+      decision->set_req(2, _gvn.transform(non_atomic_region));
+      PhiNode* result = PhiNode::make(decision, intcon(1), TypeInt::BOOL);
+      result->set_req(2, intcon(0));
+      set_control(_gvn.transform(decision));
+      set_result(_gvn.transform(result));
+      return true;
+    }
+    default:
+      ShouldNotReachHere();
+  }
+
+  Node* res = gvn().transform(new CMoveINode(bol, intcon(0), intcon(1), TypeInt::BOOL));
+  set_result(res);
+  return true;
+}
+
+// Load the default refined array klass from an ObjArrayKlass. This relies on the first entry in the
+// '_next_refined_array_klass' linked list being the default (see ObjArrayKlass::klass_with_properties).
+Node* LibraryCallKit::load_default_refined_array_klass(Node* klass_node, bool type_array_guard) {
+  RegionNode* region = new RegionNode(2);
+  const TypeAryKlassPtr* load_type = TypeAryKlassPtr::OBJECT_ARRAY_OR_NULL;
+  const TypeKlassPtr* phi_type;
+  if (type_array_guard) {
+    phi_type = TypeInstKlassPtr::OBJECT_OR_NULL; // Use very general type for Phi
+  } else {
+    phi_type = load_type;
+  }
+  Node* phi = new PhiNode(region, phi_type);
+
+  if (type_array_guard) {
+    generate_typeArray_guard(klass_node, region);
+    if (region->req() == 3) {
+      phi->add_req(klass_node);
+    }
+  }
+  Node* adr_refined_klass = basic_plus_adr(top(), klass_node, in_bytes(ObjArrayKlass::next_refined_array_klass_offset()));
+  Node* refined_klass = _gvn.transform(LoadKlassNode::make(_gvn, immutable_memory(), adr_refined_klass, TypeRawPtr::BOTTOM, load_type));
+
+  // Can be null if not initialized yet, just deopt
+  Node* null_ctl = top();
+  refined_klass = null_check_oop(refined_klass, &null_ctl, /* never_see_null= */ true);
+
+  region->init_req(1, control());
+  phi->init_req(1, refined_klass);
+
+  set_control(_gvn.transform(region));
+  return _gvn.transform(phi);
+}
+
+// Load the non-refined array klass from an ObjArrayKlass.
+Node* LibraryCallKit::load_non_refined_array_klass(Node* klass_node) {
+  const TypeAryKlassPtr* ary_klass_ptr = _gvn.type(klass_node)->isa_aryklassptr();
+  if (ary_klass_ptr != nullptr && ary_klass_ptr->klass_is_exact()) {
+    return _gvn.makecon(ary_klass_ptr->cast_to_refined_array_klass_ptr(false));
+  }
+
+  RegionNode* region = new RegionNode(2);
+  Node* phi = new PhiNode(region, TypeInstKlassPtr::OBJECT);
+
+  generate_typeArray_guard(klass_node, region);
+  if (region->req() == 3) {
+    phi->add_req(klass_node);
+  }
+  Node* super_adr = basic_plus_adr(top(), klass_node, in_bytes(Klass::super_offset()));
+  Node* super_klass = _gvn.transform(LoadKlassNode::make(_gvn, immutable_memory(), super_adr, TypeRawPtr::BOTTOM, TypeAryKlassPtr::OBJECT_ARRAY));
+
+  region->init_req(1, control());
+  phi->init_req(1, super_klass);
+
+  set_control(_gvn.transform(region));
+  return _gvn.transform(phi);
+}
 
 //-----------------------inline_native_newArray--------------------------
-// private static native Object java.lang.reflect.newArray(Class<?> componentType, int length);
+// private static native Object java.lang.reflect.Array.newArray(Class<?> componentType, int length);
 // private        native Object Unsafe.allocateUninitializedArray0(Class<?> cls, int size);
 bool LibraryCallKit::inline_unsafe_newArray(bool uninitialized) {
   Node* mirror;
@@ -4457,6 +5118,9 @@ bool LibraryCallKit::inline_unsafe_newArray(bool uninitialized) {
     // Normal case:  The array type has been cached in the java.lang.Class.
     // The following call works fine even if the array type is polymorphic.
     // It could be a dynamic mix of int[], boolean[], Object[], etc.
+
+    klass_node = load_default_refined_array_klass(klass_node);
+
     Node* obj = new_array(klass_node, count_val, 0);  // no arguments to push
     result_reg->init_req(_normal_path, control());
     result_val->init_req(_normal_path, obj);
@@ -4537,21 +5201,42 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
 
     Node* orig_length = load_array_length(original);
 
-    Node* klass_node = load_klass_from_mirror(array_type_mirror, false, nullptr, 0);
-    klass_node = null_check(klass_node);
-
-    RegionNode* bailout = new RegionNode(1);
+    RegionNode* bailout = new RegionNode(2);
     record_for_igvn(bailout);
 
-    // Despite the generic type of Arrays.copyOf, the mirror might be int, int[], etc.
-    // Bail out if that is so.
-    Node* not_objArray = generate_non_objArray_guard(klass_node, bailout);
-    if (not_objArray != nullptr) {
+    Node* klass_node = load_klass_from_mirror(array_type_mirror, false, bailout, 1);
+    if (stopped()) {
+      // Arrays.copyOf() uses a generic Class parameter which is erased to the raw type Class. This also allows
+      // passing in primitive class mirrors like int.class which do not have corresponding Klass* pointers.
+      // In these cases, klass_node will be top. Emit a trap to throw in the interpreter in this case.
+      bail_out_from_array_copyOf(bailout);
+      return true;
+    }
+
+    klass_node = null_check(klass_node);
+
+    const TypeAryPtr* src_t = _gvn.type(original)->is_aryptr();
+    const TypeKlassPtr* dest_klass_t = _gvn.type(klass_node)->is_klassptr();
+
+    Node* bailout_ctrl;
+    if (should_bail_out_on_non_ref_arrays(src_t, dest_klass_t)) {
+      bailout_ctrl = generate_non_refArray_guard(klass_node, bailout);
+    } else {
+      bailout_ctrl = generate_typeArray_guard(klass_node, bailout);
+    }
+
+    Node* refined_klass_node = load_default_refined_array_klass(klass_node, /* type_array_guard= */ false);
+
+    // The current path is dead if the default refined array klass is not initialized,
+    // yet, or the guard is always taken (i.e. bailout).
+    if (!stopped() && (bailout_ctrl != nullptr)) {
       // Improve the klass node's type from the new optimistic assumption:
       ciKlass* ak = ciArrayKlass::make(env()->Object_klass());
-      const Type* akls = TypeKlassPtr::make(TypePtr::NotNull, ak, 0/*offset*/);
-      Node* cast = new CastPPNode(control(), klass_node, akls);
-      klass_node = _gvn.transform(cast);
+      bool not_flat = !UseArrayFlattening;
+      bool not_null_free = !Arguments::is_valhalla_enabled();
+      const Type* akls = TypeAryKlassPtr::make(TypePtr::NotNull, ak, Type::Offset(0), Type::trust_interfaces, not_flat, not_null_free, false, false, not_flat, true);
+      Node* cast = new CastPPNode(control(), refined_klass_node, akls);
+      refined_klass_node = _gvn.transform(cast);
     }
 
     // Bail out if either start or end is negative.
@@ -4569,15 +5254,20 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
     // should be thrown
     generate_negative_guard(length, bailout, &length);
 
+    if (Arguments::is_valhalla_enabled()) {
+      // Handle inline type arrays
+      // TODO 8251971 This is too strong
+      generate_fair_guard(flat_array_test(load_object_klass(original)), bailout);
+      generate_fair_guard(flat_array_test(refined_klass_node), bailout);
+      generate_fair_guard(null_free_array_test(original), bailout);
+    }
+
     // Bail out if start is larger than the original length
     Node* orig_tail = _gvn.transform(new SubINode(orig_length, start));
     generate_negative_guard(orig_tail, bailout, &orig_tail);
 
     if (bailout->req() > 1) {
-      PreserveJVMState pjvms(this);
-      set_control(_gvn.transform(bailout));
-      uncommon_trap(Deoptimization::Reason_intrinsic,
-                    Deoptimization::Action_maybe_recompile);
+      bail_out_from_array_copyOf(bailout);
     }
 
     if (!stopped()) {
@@ -4628,7 +5318,7 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
       }
 
       if (!stopped()) {
-        newcopy = new_array(klass_node, length, 0);  // no arguments to push
+        newcopy = new_array(refined_klass_node, length, 0);  // no arguments to push
 
         ArrayCopyNode* ac = ArrayCopyNode::make(this, true, original, start, newcopy, intcon(0), moved, true, true,
                                                 load_object_klass(original), klass_node);
@@ -4655,6 +5345,60 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
   return true;
 }
 
+void LibraryCallKit::bail_out_from_array_copyOf(RegionNode* bailout_region) {
+  PreserveJVMState pjvms(this);
+  set_control(_gvn.transform(bailout_region));
+  uncommon_trap(Deoptimization::Reason_intrinsic,
+                Deoptimization::Action_maybe_recompile);
+}
+
+bool LibraryCallKit::should_bail_out_on_non_ref_arrays(const TypeAryPtr* src_type, const TypeKlassPtr* dest_klass_type) {
+  const TypeAryKlassPtr* dest_ary_klass_type = dest_klass_type->isa_aryklassptr();
+  if (dest_ary_klass_type == nullptr) {
+    // Dest klass is not known to be an array class. There are multiple cases:
+    // - Primitive class mirror: We already bailed out before.
+    // - Instance class mirror: We should bail out.
+    // - java.lang.Object (possible due to type erasure): Could be anything including primitive or instance class mirror
+    //   or also flat arrays. Bail out.
+    return true;
+  }
+
+  if (UseArrayFlattening) {
+    // The remaining checks revolve around array flatness. Without array flatness, we don't need the stronger non-ref
+    // runtime check excluding flat arrays.
+    return false;
+  }
+
+  // We now know that src and dest are proper array pointers.
+  const bool src_maybe_flat = !src_type->is_not_flat();
+  const bool dest_maybe_flat = !dest_ary_klass_type->is_not_flat();
+
+  // We could have abstract flat value class arrays whose layout we don't know. Bail out.
+  const bool can_src_be_abstract_flat_value_class_array = src_maybe_flat && !src_type->elem()->is_inlinetypeptr();
+  const bool can_dest_be_abstract_flat_value_class_array = dest_maybe_flat &&
+                                                           !dest_ary_klass_type->elem()->is_instklassptr()->instance_klass()->is_inlinetype();
+  if (can_src_be_abstract_flat_value_class_array || can_dest_be_abstract_flat_value_class_array) {
+    return true;
+  }
+
+  // Value class array may have object field that would require a write barrier. Conservatively bail out.
+  // TODO 8251971: Optimize for the case when flat src/dst are later found to not contain
+  //               oops (i.e., move this check to the macro expansion phase).
+  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+  if (bs->array_copy_requires_gc_barriers(true, T_OBJECT, false, false, BarrierSetC2::Parsing)) {
+    // No barriers required.
+    return false;
+  }
+
+  const bool can_src_be_flat_with_oops = src_maybe_flat && src_type->elem()->inline_klass()->contains_oops();
+  const bool can_dest_be_flat_with_oops = dest_maybe_flat && dest_ary_klass_type->elem()->is_instklassptr()->instance_klass()->as_inline_klass()->contains_oops();
+  if (can_src_be_flat_with_oops || can_dest_be_flat_with_oops) {
+    return true;
+  }
+
+  // Can handle remaining flat arrays.
+  return false;
+}
 
 //----------------------generate_virtual_guard---------------------------
 // Helper for hashCode and clone.  Peeks inside the vtable to avoid a call.
@@ -4665,10 +5409,10 @@ Node* LibraryCallKit::generate_virtual_guard(Node* obj_klass,
   assert(vtable_index >= 0 || vtable_index == Method::nonvirtual_vtable_index,
          "bad index %d", vtable_index);
   // Get the Method* out of the appropriate vtable entry.
-  int entry_offset  = in_bytes(Klass::vtable_start_offset()) +
+  int entry_offset = in_bytes(Klass::vtable_start_offset()) +
                      vtable_index*vtableEntry::size_in_bytes() +
                      in_bytes(vtableEntry::method_offset());
-  Node* entry_addr  = basic_plus_adr(top(), obj_klass, entry_offset);
+  Node* entry_addr = off_heap_plus_addr(obj_klass, entry_offset);
   Node* target_call = make_load(nullptr, entry_addr, TypePtr::NOTNULL, T_ADDRESS, MemNode::unordered);
 
   // Compare the target method with the expected method (e.g., Object.hashCode).
@@ -4700,11 +5444,11 @@ LibraryCallKit::generate_method_call(vmIntrinsicID method_id, bool is_virtual, b
   const TypeFunc* tf = TypeFunc::make(method);
   if (res_not_null) {
     assert(tf->return_type() == T_OBJECT, "");
-    const TypeTuple* range = tf->range();
+    const TypeTuple* range = tf->range_cc();
     const Type** fields = TypeTuple::fields(range->cnt());
     fields[TypeFunc::Parms] = range->field_at(TypeFunc::Parms)->filter_speculative(TypePtr::NOTNULL);
     const TypeTuple* new_range = TypeTuple::make(range->cnt(), fields);
-    tf = TypeFunc::make(tf->domain(), new_range);
+    tf = TypeFunc::make(tf->domain_cc(), new_range);
   }
   CallJavaNode* slow_call;
   if (is_static) {
@@ -4761,7 +5505,14 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
   PhiNode*    result_val = new PhiNode(result_reg, TypeInt::INT);
   PhiNode*    result_io  = new PhiNode(result_reg, Type::ABIO);
   PhiNode*    result_mem = new PhiNode(result_reg, Type::MEMORY, TypePtr::BOTTOM);
-  Node* obj = nullptr;
+  Node* obj = argument(0);
+
+  // Don't intrinsify hashcode on inline types for now.
+  // The "is locked" runtime check also subsumes the inline type check (as inline types cannot be locked) and goes to the slow path.
+  if (gvn().type(obj)->is_inlinetypeptr()) {
+    return false;
+  }
+
   if (!is_static) {
     // Check for hashing null object
     obj = null_check_receiver();
@@ -4771,7 +5522,6 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
   } else {
     // Do a null check, and return zero if null.
     // System.identityHashCode(null) == 0
-    obj = argument(0);
     Node* null_ctl = top();
     obj = null_check_oop(obj, &null_ctl);
     result_reg->init_req(_null_path, null_ctl);
@@ -4812,6 +5562,8 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
 
   if (!UseObjectMonitorTable) {
     // Test the header to see if it is safe to read w.r.t. locking.
+    // We cannot use the inline type mask as this may check bits that are overridden
+    // by an object monitor's pointer when inflating locking.
     Node *lock_mask      = _gvn.MakeConX(markWord::lock_mask_in_place);
     Node *lmasked_header = _gvn.transform(new AndXNode(header, lock_mask));
     Node *monitor_val   = _gvn.MakeConX(markWord::monitor_value);
@@ -4879,7 +5631,16 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
 //
 // Build special case code for calls to getClass on an object.
 bool LibraryCallKit::inline_native_getClass() {
-  Node* obj = null_check_receiver();
+  Node* obj = argument(0);
+  if (obj->is_InlineType()) {
+    const Type* t = _gvn.type(obj);
+    if (t->maybe_null()) {
+      null_check(obj);
+    }
+    set_result(makecon(TypeInstPtr::make(t->inline_klass()->java_mirror())));
+    return true;
+  }
+  obj = null_check_receiver();
   if (stopped())  return true;
   set_result(load_mirror_from_klass(load_object_klass(obj)));
   return true;
@@ -5143,7 +5904,7 @@ bool LibraryCallKit::inline_unsafe_copyMemory() {
   Node* dst_addr = make_unsafe_address(dst_base, dst_off);
 
   Node* thread = _gvn.transform(new ThreadLocalNode());
-  Node* doing_unsafe_access_addr = basic_plus_adr(top(), thread, in_bytes(JavaThread::doing_unsafe_access_offset()));
+  Node* doing_unsafe_access_addr = off_heap_plus_addr(thread, in_bytes(JavaThread::doing_unsafe_access_offset()));
   BasicType doing_unsafe_access_bt = T_BYTE;
   assert((sizeof(bool) * CHAR_BIT) == 8, "not implemented");
 
@@ -5198,7 +5959,7 @@ bool LibraryCallKit::inline_unsafe_setMemory() {
   Node* dst_addr = make_unsafe_address(dst_base, dst_off);
 
   Node* thread = _gvn.transform(new ThreadLocalNode());
-  Node* doing_unsafe_access_addr = basic_plus_adr(top(), thread, in_bytes(JavaThread::doing_unsafe_access_offset()));
+  Node* doing_unsafe_access_addr = off_heap_plus_addr(thread, in_bytes(JavaThread::doing_unsafe_access_offset()));
   BasicType doing_unsafe_access_bt = T_BYTE;
   assert((sizeof(bool) * CHAR_BIT) == 8, "not implemented");
 
@@ -5294,6 +6055,10 @@ void LibraryCallKit::copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, b
 // can be sharply typed as an object array, a type array, or an instance.
 //
 bool LibraryCallKit::inline_native_clone(bool is_virtual) {
+  if (too_many_traps(Deoptimization::Reason_intrinsic)) {
+    return false;
+  }
+
   PhiNode* result_val;
 
   // Set the reexecute bit for the interpreter to reexecute
@@ -5301,17 +6066,31 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
   { PreserveReexecuteState preexecs(this);
     jvms()->set_should_reexecute(true);
 
-    Node* obj = null_check_receiver();
+    Node* obj = argument(0);
+    obj = null_check_receiver();
     if (stopped())  return true;
 
     const TypeOopPtr* obj_type = _gvn.type(obj)->is_oopptr();
+    if (obj_type->is_inlinetypeptr()) {
+      // If the object to clone is an inline type, we can simply return it (i.e. a nop) since inline types have
+      // no identity. But we first need to check whether the value class is actually implementing the Cloneable
+      // interface. If not, we trap.
+      if (obj_type->inline_klass()->is_cloneable()) {
+        set_result(obj);
+      } else {
+        uncommon_trap(Deoptimization::Reason_intrinsic,
+                      Deoptimization::Action_maybe_recompile);
+      }
+      return true;
+    }
 
     // If we are going to clone an instance, we need its exact type to
     // know the number and types of fields to convert the clone to
     // loads/stores. Maybe a speculative type can help us.
     if (!obj_type->klass_is_exact() &&
         obj_type->speculative_type() != nullptr &&
-        obj_type->speculative_type()->is_instance_klass()) {
+        obj_type->speculative_type()->is_instance_klass() &&
+        !obj_type->speculative_type()->is_inlinetype()) {
       ciInstanceKlass* spec_ik = obj_type->speculative_type()->as_instance_klass();
       if (spec_ik->nof_nonstatic_fields() <= ArrayCopyLoadStoreMaxElem &&
           !spec_ik->has_injected_fields()) {
@@ -5341,61 +6120,75 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
     record_for_igvn(result_reg);
 
     Node* obj_klass = load_object_klass(obj);
+    // We only go to the fast case code if we pass a number of guards.
+    // The paths which do not pass are accumulated in the slow_region.
+    RegionNode* slow_region = new RegionNode(1);
+    record_for_igvn(slow_region);
+
     Node* array_obj = obj;
     Node* array_ctl = generate_array_guard(obj_klass, (RegionNode*)nullptr, &array_obj);
     if (array_ctl != nullptr) {
       // It's an array.
       PreserveJVMState pjvms(this);
       set_control(array_ctl);
-      Node* obj_length = load_array_length(array_obj);
-      Node* array_size = nullptr; // Size of the array without object alignment padding.
-      Node* alloc_obj = new_array(obj_klass, obj_length, 0, &array_size, /*deoptimize_on_exception=*/true);
 
       BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-      if (bs->array_copy_requires_gc_barriers(true, T_OBJECT, true, false, BarrierSetC2::Parsing)) {
-        // If it is an oop array, it requires very special treatment,
-        // because gc barriers are required when accessing the array.
-        Node* is_obja = generate_objArray_guard(obj_klass, (RegionNode*)nullptr);
-        if (is_obja != nullptr) {
-          PreserveJVMState pjvms2(this);
-          set_control(is_obja);
-          // Generate a direct call to the right arraycopy function(s).
-          // Clones are always tightly coupled.
-          ArrayCopyNode* ac = ArrayCopyNode::make(this, true, array_obj, intcon(0), alloc_obj, intcon(0), obj_length, true, false);
-          ac->set_clone_oop_array();
-          Node* n = _gvn.transform(ac);
-          assert(n == ac, "cannot disappear");
-          ac->connect_outputs(this, /*deoptimize_on_exception=*/true);
-
-          result_reg->init_req(_objArray_path, control());
-          result_val->init_req(_objArray_path, alloc_obj);
-          result_i_o ->set_req(_objArray_path, i_o());
-          result_mem ->set_req(_objArray_path, reset_memory());
-        }
+      const TypeAryPtr* ary_ptr = obj_type->isa_aryptr();
+      if (UseArrayFlattening && bs->array_copy_requires_gc_barriers(true, T_OBJECT, true, false, BarrierSetC2::Expansion) &&
+          obj_type->can_be_inline_array() &&
+          (ary_ptr == nullptr || (!ary_ptr->is_not_flat() && (!ary_ptr->is_flat() || ary_ptr->elem()->inline_klass()->contains_oops())))) {
+        // Flat inline type array may have object field that would require a
+        // write barrier. Conservatively, go to slow path.
+        generate_fair_guard(flat_array_test(obj_klass), slow_region);
       }
-      // Otherwise, there are no barriers to worry about.
-      // (We can dispense with card marks if we know the allocation
-      //  comes out of eden (TLAB)...  In fact, ReduceInitialCardMarks
-      //  causes the non-eden paths to take compensating steps to
-      //  simulate a fresh allocation, so that no further
-      //  card marks are required in compiled code to initialize
-      //  the object.)
 
       if (!stopped()) {
-        copy_to_clone(array_obj, alloc_obj, array_size, true);
+        Node* obj_length = load_array_length(array_obj);
+        Node* array_size = nullptr; // Size of the array without object alignment padding.
+        Node* alloc_obj = new_array(obj_klass, obj_length, 0, &array_size, /*deoptimize_on_exception=*/true);
 
-        // Present the results of the copy.
-        result_reg->init_req(_array_path, control());
-        result_val->init_req(_array_path, alloc_obj);
-        result_i_o ->set_req(_array_path, i_o());
-        result_mem ->set_req(_array_path, reset_memory());
+        BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+        if (bs->array_copy_requires_gc_barriers(true, T_OBJECT, true, false, BarrierSetC2::Parsing)) {
+          // If it is an oop array, it requires very special treatment,
+          // because gc barriers are required when accessing the array.
+          Node* is_obja = generate_refArray_guard(obj_klass, (RegionNode*)nullptr);
+          if (is_obja != nullptr) {
+            PreserveJVMState pjvms2(this);
+            set_control(is_obja);
+            // Generate a direct call to the right arraycopy function(s).
+            // Clones are always tightly coupled.
+            ArrayCopyNode* ac = ArrayCopyNode::make(this, true, array_obj, intcon(0), alloc_obj, intcon(0), obj_length, true, false);
+            ac->set_clone_oop_array();
+            Node* n = _gvn.transform(ac);
+            assert(n == ac, "cannot disappear");
+            ac->connect_outputs(this, /*deoptimize_on_exception=*/true);
+
+            result_reg->init_req(_objArray_path, control());
+            result_val->init_req(_objArray_path, alloc_obj);
+            result_i_o ->set_req(_objArray_path, i_o());
+            result_mem ->set_req(_objArray_path, reset_memory());
+          }
+        }
+        // Otherwise, there are no barriers to worry about.
+        // (We can dispense with card marks if we know the allocation
+        //  comes out of eden (TLAB)...  In fact, ReduceInitialCardMarks
+        //  causes the non-eden paths to take compensating steps to
+        //  simulate a fresh allocation, so that no further
+        //  card marks are required in compiled code to initialize
+        //  the object.)
+
+        if (!stopped()) {
+          copy_to_clone(obj, alloc_obj, array_size, true);
+
+          // Present the results of the copy.
+          result_reg->init_req(_array_path, control());
+          result_val->init_req(_array_path, alloc_obj);
+          result_i_o ->set_req(_array_path, i_o());
+          result_mem ->set_req(_array_path, reset_memory());
+        }
       }
     }
 
-    // We only go to the instance fast case code if we pass a number of guards.
-    // The paths which do not pass are accumulated in the slow_region.
-    RegionNode* slow_region = new RegionNode(1);
-    record_for_igvn(slow_region);
     if (!stopped()) {
       // It's an instance (we did array above).  Make the slow-path tests.
       // If this is a virtual call, we generate a funny guard.  We grab
@@ -5527,12 +6320,35 @@ SafePointNode* LibraryCallKit::create_safepoint_with_state_before_array_allocati
   for (uint i = 0; i < size; i++) {
     sfpt->init_req(i, alloc->in(i));
   }
+  int adjustment = 1;
+  const TypeAryKlassPtr* ary_klass_ptr = alloc->in(AllocateNode::KlassNode)->bottom_type()->is_aryklassptr();
+  if (ary_klass_ptr->is_null_free()) {
+    // A null-free, tightly coupled array allocation can only come from LibraryCallKit::inline_newArray which
+    // also requires the componentType and initVal on stack for re-execution.
+    // Re-create and push the componentType.
+    ciArrayKlass* klass = ary_klass_ptr->exact_klass()->as_array_klass();
+    ciInstance* instance = klass->component_mirror_instance();
+    const TypeInstPtr* t_instance = TypeInstPtr::make(instance);
+    sfpt->ins_req(old_jvms->stkoff() + old_jvms->sp(), makecon(t_instance));
+    adjustment++;
+  }
   // re-push array length for deoptimization
-  sfpt->ins_req(old_jvms->stkoff() + old_jvms->sp(), alloc->in(AllocateNode::ALength));
-  old_jvms->set_sp(old_jvms->sp()+1);
-  old_jvms->set_monoff(old_jvms->monoff()+1);
-  old_jvms->set_scloff(old_jvms->scloff()+1);
-  old_jvms->set_endoff(old_jvms->endoff()+1);
+  sfpt->ins_req(old_jvms->stkoff() + old_jvms->sp() + adjustment - 1, alloc->in(AllocateNode::ALength));
+  if (ary_klass_ptr->is_null_free()) {
+    // Re-create and push the initVal.
+    Node* init_val = alloc->in(AllocateNode::InitValue);
+    if (init_val == nullptr) {
+      init_val = InlineTypeNode::make_all_zero(_gvn, ary_klass_ptr->elem()->is_instklassptr()->instance_klass()->as_inline_klass());
+    } else if (UseCompressedOops) {
+      init_val = _gvn.transform(new DecodeNNode(init_val, init_val->bottom_type()->make_ptr()));
+    }
+    sfpt->ins_req(old_jvms->stkoff() + old_jvms->sp() + adjustment, init_val);
+    adjustment++;
+  }
+  old_jvms->set_sp(old_jvms->sp() + adjustment);
+  old_jvms->set_monoff(old_jvms->monoff() + adjustment);
+  old_jvms->set_scloff(old_jvms->scloff() + adjustment);
+  old_jvms->set_endoff(old_jvms->endoff() + adjustment);
   old_jvms->set_should_reexecute(true);
 
   sfpt->set_i_o(map()->i_o());
@@ -5565,11 +6381,10 @@ void LibraryCallKit::arraycopy_move_allocation_here(AllocateArrayNode* alloc, No
     _reexecute_sp = saved_reexecute_sp;
 
     // Remove the allocation from above the guards
-    CallProjections callprojs;
-    alloc->extract_projections(&callprojs, true);
+    CallProjections* callprojs = alloc->extract_projections(true);
     InitializeNode* init = alloc->initialization();
     Node* alloc_mem = alloc->in(TypeFunc::Memory);
-    C->gvn_replace_by(callprojs.fallthrough_ioproj, alloc->in(TypeFunc::I_O));
+    C->gvn_replace_by(callprojs->fallthrough_ioproj, alloc->in(TypeFunc::I_O));
     init->replace_mem_projs_by(alloc_mem, C);
 
     // The CastIINode created in GraphKit::new_array (in AllocateArrayNode::make_ideal_length) must stay below
@@ -5611,11 +6426,11 @@ void LibraryCallKit::arraycopy_move_allocation_here(AllocateArrayNode* alloc, No
     set_all_memory(mem);
     alloc->set_req(TypeFunc::Memory, mem);
     set_control(init->proj_out_or_null(TypeFunc::Control));
-    set_i_o(callprojs.fallthrough_ioproj);
+    set_i_o(callprojs->fallthrough_ioproj);
 
     // Update memory as done in GraphKit::set_output_for_allocation()
     const TypeInt* length_type = _gvn.find_int_type(alloc->in(AllocateNode::ALength));
-    const TypeOopPtr* ary_type = _gvn.type(alloc->in(AllocateNode::KlassNode))->is_klassptr()->as_instance_type();
+    const TypeOopPtr* ary_type = _gvn.type(alloc->in(AllocateNode::KlassNode))->is_klassptr()->as_exact_instance_type();
     if (ary_type->isa_aryptr() && length_type != nullptr) {
       ary_type = ary_type->is_aryptr()->cast_to_size(length_type);
     }
@@ -5961,7 +6776,7 @@ bool LibraryCallKit::inline_arraycopy() {
     if (is_reference_type(src_elem, true)) src_elem = T_OBJECT;
     if (is_reference_type(dest_elem, true)) dest_elem = T_OBJECT;
 
-    if (src_elem == dest_elem && src_elem == T_OBJECT) {
+    if (src_elem == dest_elem && top_src->is_flat() == top_dest->is_flat() && src_elem == T_OBJECT) {
       // If both arrays are object arrays then having the exact types
       // for both will remove the need for a subtype check at runtime
       // before the call and may make it possible to pick a faster copy
@@ -5988,9 +6803,13 @@ bool LibraryCallKit::inline_arraycopy() {
         // If we can have both exact types, emit the missing guards
         if (could_have_src && !src_spec) {
           src = maybe_cast_profiled_obj(src, src_k, true);
+          src_type = _gvn.type(src);
+          top_src = src_type->isa_aryptr();
         }
         if (could_have_dest && !dest_spec) {
           dest = maybe_cast_profiled_obj(dest, dest_k, true);
+          dest_type = _gvn.type(dest);
+          top_dest = dest_type->isa_aryptr();
         }
       }
     }
@@ -6006,8 +6825,7 @@ bool LibraryCallKit::inline_arraycopy() {
   bool negative_length_guard_generated = false;
 
   if (!C->too_many_traps(trap_method, trap_bci, Deoptimization::Reason_intrinsic) &&
-      can_emit_guards &&
-      !src->is_top() && !dest->is_top()) {
+      can_emit_guards && !src->is_top() && !dest->is_top()) {
     // validate arguments: enables transformation the ArrayCopyNode
     validated = true;
 
@@ -6048,17 +6866,42 @@ bool LibraryCallKit::inline_arraycopy() {
 
     // (9) each element of an oop array must be assignable
     Node* dest_klass = load_object_klass(dest);
+    Node* refined_dest_klass = dest_klass;
     if (src != dest) {
+      dest_klass = load_non_refined_array_klass(refined_dest_klass);
       Node* not_subtype_ctrl = gen_subtype_check(src, dest_klass);
-
-      if (not_subtype_ctrl != top()) {
-        PreserveJVMState pjvms(this);
-        set_control(not_subtype_ctrl);
-        uncommon_trap(Deoptimization::Reason_intrinsic,
-                      Deoptimization::Action_make_not_entrant);
-        assert(stopped(), "Should be stopped");
-      }
+      slow_region->add_req(not_subtype_ctrl);
     }
+
+    if (Arguments::is_valhalla_enabled()) {
+      // TODO 8251971 Improve this. What about atomicity? Make sure this is always folded for type arrays.
+      // If destination is null-restricted, source must be null-restricted as well: src_null_restricted || !dst_null_restricted
+      Node* src_klass = load_object_klass(src);
+      Node* adr_prop_src = basic_plus_adr(top(), src_klass, in_bytes(ArrayKlass::properties_offset()));
+      Node* prop_src = _gvn.transform(LoadNode::make(_gvn, control(), immutable_memory(), adr_prop_src,
+                                                     _gvn.type(adr_prop_src)->is_ptr(), TypeInt::INT, T_INT,
+                                                     MemNode::unordered));
+      Node* adr_prop_dest = basic_plus_adr(top(), refined_dest_klass, in_bytes(ArrayKlass::properties_offset()));
+      Node* prop_dest = _gvn.transform(LoadNode::make(_gvn, control(), immutable_memory(), adr_prop_dest,
+                                                      _gvn.type(adr_prop_dest)->is_ptr(), TypeInt::INT, T_INT,
+                                                      MemNode::unordered));
+
+      const ArrayProperties props_null_restricted = ArrayProperties::Default().with_null_restricted();
+      jint props_value = (jint)props_null_restricted.value();
+
+      prop_dest = _gvn.transform(new XorINode(prop_dest, intcon(props_value)));
+      prop_src = _gvn.transform(new OrINode(prop_dest, prop_src));
+      prop_src = _gvn.transform(new AndINode(prop_src, intcon(props_value)));
+
+      Node* chk = _gvn.transform(new CmpINode(prop_src, intcon(props_value)));
+      Node* tst = _gvn.transform(new BoolNode(chk, BoolTest::ne));
+      generate_fair_guard(tst, slow_region);
+
+      // TODO 8251971 This is too strong
+      generate_fair_guard(flat_array_test(src), slow_region);
+      generate_fair_guard(flat_array_test(dest), slow_region);
+    }
+
     {
       PreserveJVMState pjvms(this);
       set_control(_gvn.transform(slow_region));
@@ -6067,8 +6910,16 @@ bool LibraryCallKit::inline_arraycopy() {
       assert(stopped(), "Should be stopped");
     }
 
-    const TypeKlassPtr* dest_klass_t = _gvn.type(dest_klass)->is_klassptr();
-    const Type *toop = dest_klass_t->cast_to_exactness(false)->as_instance_type();
+    const TypeKlassPtr* dest_klass_t = _gvn.type(dest_klass)->isa_klassptr();
+    if (dest_klass_t == nullptr) {
+      // refined_dest_klass may not be an array, which leads to dest_klass being top. This means we
+      // are in a dead path.
+      uncommon_trap(Deoptimization::Reason_intrinsic,
+                    Deoptimization::Action_make_not_entrant);
+      return true;
+    }
+
+    const Type* toop = dest_klass_t->as_subtype_instance_type();
     src = _gvn.transform(new CheckCastPPNode(control(), src, toop));
     arraycopy_move_allocation_here(alloc, dest, saved_jvms_before_guards, saved_reexecute_sp, new_idx);
   }
@@ -6077,11 +6928,14 @@ bool LibraryCallKit::inline_arraycopy() {
     return true;
   }
 
+  Node* dest_klass = load_object_klass(dest);
+  dest_klass = load_non_refined_array_klass(dest_klass);
+
   ArrayCopyNode* ac = ArrayCopyNode::make(this, true, src, src_offset, dest, dest_offset, length, alloc != nullptr, negative_length_guard_generated,
                                           // Create LoadRange and LoadKlass nodes for use during macro expansion here
                                           // so the compiler has a chance to eliminate them: during macro expansion,
                                           // we have to set their control (CastPP nodes are eliminated).
-                                          load_object_klass(src), load_object_klass(dest),
+                                          load_object_klass(src), dest_klass,
                                           load_array_length(src), load_array_length(dest));
 
   ac->set_arraycopy(validated);
@@ -6171,6 +7025,9 @@ CallStaticJavaNode* LibraryCallKit::get_uncommon_trap_from_success_proj(Node* no
 }
 
 //-------------inline_encodeISOArray-----------------------------------
+// int sun.nio.cs.ISO_8859_1.Encoder#encodeISOArray0(byte[] sa, int sp, byte[] da, int dp, int len)
+// int java.lang.StringCoding#encodeISOArray0(byte[] sa, int sp, byte[] da, int dp, int len)
+// int java.lang.StringCoding#encodeAsciiArray0(char[] sa, int sp, byte[] da, int dp, int len)
 // encode char[] to byte[] in ISO_8859_1 or ASCII
 bool LibraryCallKit::inline_encodeISOArray(bool ascii) {
   assert(callee()->signature()->size() == 5, "encodeISOArray has 5 parameters");
@@ -6181,8 +7038,12 @@ bool LibraryCallKit::inline_encodeISOArray(bool ascii) {
   Node *dst_offset  = argument(3);
   Node *length      = argument(4);
 
+  // Cast source & target arrays to not-null
   src = must_be_not_null(src, true);
   dst = must_be_not_null(dst, true);
+  if (stopped()) {
+    return true;
+  }
 
   const TypeAryPtr* src_type = src->Value(&_gvn)->isa_aryptr();
   const TypeAryPtr* dst_type = dst->Value(&_gvn)->isa_aryptr();
@@ -6199,16 +7060,27 @@ bool LibraryCallKit::inline_encodeISOArray(bool ascii) {
     return false;
   }
 
+  // Check source & target bounds
+  RegionNode* bailout = create_bailout();
+  generate_string_range_check(src, src_offset, length, src_elem == T_BYTE, bailout);
+  generate_string_range_check(dst, dst_offset, length, false, bailout);
+  if (check_bailout(bailout)) {
+    return true;
+  }
+
   Node* src_start = array_element_address(src, src_offset, T_CHAR);
   Node* dst_start = array_element_address(dst, dst_offset, dst_elem);
   // 'src_start' points to src array + scaled offset
   // 'dst_start' points to dst array + scaled offset
 
-  const TypeAryPtr* mtype = TypeAryPtr::BYTES;
-  Node* enc = new EncodeISOArrayNode(control(), memory(mtype), src_start, dst_start, length, ascii);
+  // See GraphKit::compress_string
+  const TypePtr* adr_type;
+  Node* mem = capture_memory(adr_type, src_type, dst_type);
+  Node* enc = new EncodeISOArrayNode(control(), mem, adr_type, src_start, dst_start, length, ascii);
   enc = _gvn.transform(enc);
   Node* res_mem = _gvn.transform(new SCMemProjNode(enc));
-  set_memory(res_mem, mtype);
+  memory_effect(res_mem, src_type, dst_type);
+
   set_result(enc);
   clear_upper_avx();
 
@@ -6687,7 +7559,8 @@ bool LibraryCallKit::inline_vectorizedHashCode() {
   // Resolve address of first element
   Node* array_start = array_element_address(array, offset, bt);
 
-  set_result(_gvn.transform(new VectorizedHashCodeNode(control(), memory(TypeAryPtr::get_array_body_type(bt)),
+  const TypeAryPtr* in_adr_type = TypeAryPtr::get_array_body_type(bt);
+  set_result(_gvn.transform(new VectorizedHashCodeNode(control(), memory(in_adr_type), in_adr_type,
     array_start, length, initialValue, basic_type)));
   clear_upper_avx();
 
@@ -6719,7 +7592,7 @@ bool LibraryCallKit::inline_updateCRC32() {
 
   Node* base = makecon(TypeRawPtr::make(StubRoutines::crc_table_addr()));
   Node* offset = _gvn.transform(new LShiftINode(result, intcon(0x2)));
-  Node* adr = basic_plus_adr(top(), base, ConvI2X(offset));
+  Node* adr = off_heap_plus_addr(base, ConvI2X(offset));
   result = make_load(control(), adr, TypeInt::INT, T_INT, MemNode::unordered);
 
   crc = _gvn.transform(new URShiftINode(crc, intcon(8)));
@@ -6791,7 +7664,7 @@ bool LibraryCallKit::inline_updateByteBufferCRC32() {
   offset = ConvI2X(offset);
 
   // 'src_start' points to src array + scaled offset
-  Node* src_start = basic_plus_adr(top(), base, offset);
+  Node* src_start = off_heap_plus_addr(base, offset);
 
   // Call the stub.
   address stubAddr = StubRoutines::updateBytesCRC32();
@@ -6888,7 +7761,7 @@ bool LibraryCallKit::inline_updateDirectByteBufferCRC32C() {
   offset = ConvI2X(offset);
 
   // 'src_start' points to src array + scaled offset
-  Node* src_start = basic_plus_adr(top(), base, offset);
+  Node* src_start = off_heap_plus_addr(base, offset);
 
   // static final int[] byteTable in class CRC32C
   Node* table = get_table_from_crc32c_class(callee()->holder());
@@ -6972,7 +7845,7 @@ bool LibraryCallKit::inline_updateByteBufferAdler32() {
   offset = ConvI2X(offset);
 
   // 'src_start' points to src array + scaled offset
-  Node* src_start = basic_plus_adr(top(), base, offset);
+  Node* src_start = off_heap_plus_addr(base, offset);
 
   // Call the stub.
   address stubAddr = StubRoutines::updateBytesAdler32();
@@ -6998,7 +7871,8 @@ bool LibraryCallKit::inline_reference_get0() {
 
   DecoratorSet decorators = IN_HEAP | ON_WEAK_OOP_REF;
   Node* result = load_field_from_object(reference_obj, "referent", "Ljava/lang/Object;",
-                                        decorators, /*is_static*/ false, nullptr);
+                                        decorators, /*is_static*/ false,
+                                        env()->Reference_klass());
   if (result == nullptr) return false;
 
   // Add memory barrier to prevent commoning reads from this field
@@ -7021,7 +7895,8 @@ bool LibraryCallKit::inline_reference_refersTo0(bool is_phantom) {
   DecoratorSet decorators = IN_HEAP | AS_NO_KEEPALIVE;
   decorators |= (is_phantom ? ON_PHANTOM_OOP_REF : ON_WEAK_OOP_REF);
   Node* referent = load_field_from_object(reference_obj, "referent", "Ljava/lang/Object;",
-                                          decorators, /*is_static*/ false, nullptr);
+                                          decorators, /*is_static*/ false,
+                                          env()->Reference_klass());
   if (referent == nullptr) return false;
 
   // Add memory barrier to prevent commoning reads from this field
@@ -7092,6 +7967,14 @@ bool LibraryCallKit::inline_reference_clear0(bool is_phantom) {
   return true;
 }
 
+//-----------------------inline_reference_reachabilityFence-----------------
+// bool java.lang.ref.Reference.reachabilityFence();
+bool LibraryCallKit::inline_reference_reachabilityFence() {
+  Node* referent = argument(0);
+  insert_reachability_fence(referent);
+  return true;
+}
+
 Node* LibraryCallKit::load_field_from_object(Node* fromObj, const char* fieldName, const char* fieldTypeString,
                                              DecoratorSet decorators, bool is_static,
                                              ciInstanceKlass* fromKls) {
@@ -7100,8 +7983,6 @@ Node* LibraryCallKit::load_field_from_object(Node* fromObj, const char* fieldNam
     assert(tinst != nullptr, "obj is null");
     assert(tinst->is_loaded(), "obj is not loaded");
     fromKls = tinst->instance_klass();
-  } else {
-    assert(is_static, "only for static field access");
   }
   ciField* field = fromKls->get_field_by_name(ciSymbol::make(fieldName),
                                               ciSymbol::make(fieldTypeString),
@@ -7301,7 +8182,7 @@ bool LibraryCallKit::inline_cipherBlockChaining_AESCrypt(vmIntrinsics::ID id) {
 
   ciInstanceKlass* instklass_AESCrypt = klass_AESCrypt->as_instance_klass();
   const TypeKlassPtr* aklass = TypeKlassPtr::make(instklass_AESCrypt);
-  const TypeOopPtr* xtype = aklass->as_instance_type()->cast_to_ptr_type(TypePtr::NotNull);
+  const TypeOopPtr* xtype = aklass->as_exact_instance_type()->cast_to_ptr_type(TypePtr::NotNull);
   Node* aescrypt_object = new CheckCastPPNode(control(), embeddedCipherObj, xtype);
   aescrypt_object = _gvn.transform(aescrypt_object);
 
@@ -7388,7 +8269,7 @@ bool LibraryCallKit::inline_electronicCodeBook_AESCrypt(vmIntrinsics::ID id) {
 
   ciInstanceKlass* instklass_AESCrypt = klass_AESCrypt->as_instance_klass();
   const TypeKlassPtr* aklass = TypeKlassPtr::make(instklass_AESCrypt);
-  const TypeOopPtr* xtype = aklass->as_instance_type()->cast_to_ptr_type(TypePtr::NotNull);
+  const TypeOopPtr* xtype = aklass->as_exact_instance_type()->cast_to_ptr_type(TypePtr::NotNull);
   Node* aescrypt_object = new CheckCastPPNode(control(), embeddedCipherObj, xtype);
   aescrypt_object = _gvn.transform(aescrypt_object);
 
@@ -7457,7 +8338,7 @@ bool LibraryCallKit::inline_counterMode_AESCrypt(vmIntrinsics::ID id) {
   assert(klass_AESCrypt->is_loaded(), "predicate checks that this class is loaded");
   ciInstanceKlass* instklass_AESCrypt = klass_AESCrypt->as_instance_klass();
   const TypeKlassPtr* aklass = TypeKlassPtr::make(instklass_AESCrypt);
-  const TypeOopPtr* xtype = aklass->as_instance_type()->cast_to_ptr_type(TypePtr::NotNull);
+  const TypeOopPtr* xtype = aklass->as_exact_instance_type()->cast_to_ptr_type(TypePtr::NotNull);
   Node* aescrypt_object = new CheckCastPPNode(control(), embeddedCipherObj, xtype);
   aescrypt_object = _gvn.transform(aescrypt_object);
   // we need to get the start of the aescrypt_object's expanded key array
@@ -8310,6 +9191,70 @@ bool LibraryCallKit::inline_intpoly_assign() {
   return true;
 }
 
+bool LibraryCallKit::inline_intpoly_mult_25519() {
+  address stubAddr;
+  const char *stubName;
+  assert(UseIntPoly25519Intrinsics, "need intpoly25519 intrinsics support");
+  assert(callee()->signature()->size() == 3, "intpoly_mult_25519 has %d parameters", callee()->signature()->size());
+  stubAddr = StubRoutines::intpoly_mult_25519();
+  stubName = "intpoly_mult_25519";
+
+  if (!stubAddr) return false;
+  null_check_receiver();  // null-check receiver
+  if (stopped())  return true;
+
+  Node* a = argument(1);
+  Node* b = argument(2);
+  Node* r = argument(3);
+
+  a = must_be_not_null(a, true);
+  b = must_be_not_null(b, true);
+  r = must_be_not_null(r, true);
+
+  Node* a_start = array_element_address(a, intcon(0), T_LONG);
+  assert(a_start, "a array is null");
+  Node* b_start = array_element_address(b, intcon(0), T_LONG);
+  assert(b_start, "b array is null");
+  Node* r_start = array_element_address(r, intcon(0), T_LONG);
+  assert(r_start, "r array is null");
+
+  Node* call = make_runtime_call(RC_LEAF | RC_NO_FP,
+                                 OptoRuntime::intpoly_mult_25519_Type(),
+                                 stubAddr, stubName, TypePtr::BOTTOM,
+                                 a_start, b_start, r_start);
+  return true;
+}
+
+bool LibraryCallKit::inline_intpoly_square_25519() {
+  address stubAddr;
+  const char *stubName;
+  assert(UseIntPoly25519Intrinsics, "need intpoly25519 intrinsics support");
+  assert(callee()->signature()->size() == 2, "intpoly_mult_25519 has %d parameters", callee()->signature()->size());
+  stubAddr = StubRoutines::intpoly_square_25519();
+  stubName = "intpoly_square_25519";
+
+  if (!stubAddr) return false;
+  null_check_receiver();  // null-check receiver
+  if (stopped())  return true;
+
+  Node* a = argument(1);
+  Node* r = argument(2);
+
+  a = must_be_not_null(a, true);
+  r = must_be_not_null(r, true);
+
+  Node* a_start = array_element_address(a, intcon(0), T_LONG);
+  assert(a_start, "a array is null");
+  Node* r_start = array_element_address(r, intcon(0), T_LONG);
+  assert(r_start, "r array is null");
+
+  Node* call = make_runtime_call(RC_LEAF | RC_NO_FP,
+                                 OptoRuntime::intpoly_square_25519_Type(),
+                                 stubAddr, stubName, TypePtr::BOTTOM,
+                                 a_start, r_start);
+  return true;
+}
+
 //------------------------------inline_digestBase_implCompress-----------------------
 //
 // Calculate MD5 for single-block byte[] array.
@@ -8409,33 +9354,60 @@ bool LibraryCallKit::inline_digestBase_implCompress(vmIntrinsics::ID id) {
   return true;
 }
 
-//------------------------------inline_double_keccak
-bool LibraryCallKit::inline_double_keccak() {
-  address stubAddr;
+//------------------------------inline_keccak
+bool LibraryCallKit::inline_keccak(vmIntrinsics::ID id) {
+  address stubAddr = nullptr;
   const char *stubName;
   assert(UseSHA3Intrinsics, "need SHA3 intrinsics support");
-  assert(callee()->signature()->size() == 2, "double_keccak has 2 parameters");
+  assert((id == vmIntrinsics::_double_keccak && callee()->signature()->size() == 2) ||
+         (id == vmIntrinsics::_quad_keccak && callee()->signature()->size() == 4),
+          "double_keccak wrong number of parameters");
 
-  stubAddr = StubRoutines::double_keccak();
-  stubName = "double_keccak";
+  int parmCnt = 0;
+  switch (id) {
+    case vmIntrinsics::_double_keccak:
+      stubAddr = StubRoutines::double_keccak();
+      stubName = "double_keccak";
+      parmCnt = 2;
+      break;
+    case vmIntrinsics::_quad_keccak:
+      stubAddr = StubRoutines::quad_keccak();
+      stubName = "quad_keccak";
+      parmCnt = 4;
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+
   if (!stubAddr) return false;
 
-  Node* status0        = argument(0);
-  Node* status1        = argument(1);
+  Node* state[4];
+  for (int i = 0; i<parmCnt; i++) {
+      state[i] = must_be_not_null(argument(i), true);
+      state[i] = array_element_address(state[i], intcon(0), T_LONG);
+      assert(state[i], "state[%d] is null", i);
+  }
 
-  status0 = must_be_not_null(status0, true);
-  status1 = must_be_not_null(status1, true);
-
-  Node* status0_start  = array_element_address(status0, intcon(0), T_LONG);
-  assert(status0_start, "status0 is null");
-  Node* status1_start  = array_element_address(status1, intcon(0), T_LONG);
-  assert(status1_start, "status1 is null");
-  Node* double_keccak = make_runtime_call(RC_LEAF|RC_NO_FP,
+  Node* keccak;
+  switch (id) {
+    case vmIntrinsics::_double_keccak:
+      keccak = make_runtime_call(RC_LEAF|RC_NO_FP,
                                   OptoRuntime::double_keccak_Type(),
                                   stubAddr, stubName, TypePtr::BOTTOM,
-                                  status0_start, status1_start);
+                                  state[0], state[1]);
+      break;
+    case vmIntrinsics::_quad_keccak:
+      keccak = make_runtime_call(RC_LEAF|RC_NO_FP,
+                                  OptoRuntime::quad_keccak_Type(),
+                                  stubAddr, stubName, TypePtr::BOTTOM,
+                                  state[0], state[1], state[2], state[3]);
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+
   // return an int
-  Node* retvalue = _gvn.transform(new ProjNode(double_keccak, TypeFunc::Parms));
+  Node* retvalue = _gvn.transform(new ProjNode(keccak, TypeFunc::Parms));
   set_result(retvalue);
   return true;
 }
@@ -8539,7 +9511,7 @@ bool LibraryCallKit::inline_digestBase_implCompressMB(Node* digestBase_obj, ciIn
                                                       BasicType elem_type, address stubAddr, const char *stubName,
                                                       Node* src_start, Node* ofs, Node* limit) {
   const TypeKlassPtr* aklass = TypeKlassPtr::make(instklass_digestBase);
-  const TypeOopPtr* xtype = aklass->cast_to_exactness(false)->as_instance_type()->cast_to_ptr_type(TypePtr::NotNull);
+  const TypeOopPtr* xtype = aklass->as_subtype_instance_type()->cast_to_ptr_type(TypePtr::NotNull);
   Node* digest_obj = new CheckCastPPNode(control(), digestBase_obj, xtype);
   digest_obj = _gvn.transform(digest_obj);
 
@@ -8632,7 +9604,7 @@ bool LibraryCallKit::inline_galoisCounterMode_AESCrypt() {
   assert(klass_AESCrypt->is_loaded(), "predicate checks that this class is loaded");
   ciInstanceKlass* instklass_AESCrypt = klass_AESCrypt->as_instance_klass();
   const TypeKlassPtr* aklass = TypeKlassPtr::make(instklass_AESCrypt);
-  const TypeOopPtr* xtype = aklass->as_instance_type();
+  const TypeOopPtr* xtype = aklass->as_exact_instance_type();
   Node* aescrypt_object = new CheckCastPPNode(control(), embeddedCipherObj, xtype);
   aescrypt_object = _gvn.transform(aescrypt_object);
   // we need to get the start of the aescrypt_object's expanded key array

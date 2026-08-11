@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,17 +31,17 @@
  * @build CreateMultiReleaseTestJars
  *        jdk.test.lib.compiler.Compiler
  *        jdk.test.lib.util.JarBuilder
- * @run testng MultiReleaseJarHttpProperties
- * @run testng/othervm -Djdk.util.jar.version=0   MultiReleaseJarHttpProperties
- * @run testng/othervm -Djdk.util.jar.version=8   MultiReleaseJarHttpProperties
- * @run testng/othervm -Djdk.util.jar.version=9   MultiReleaseJarHttpProperties
- * @run testng/othervm -Djdk.util.jar.version=100 MultiReleaseJarHttpProperties
- * @run testng/othervm -Djdk.util.jar.version=8   -Djdk.util.jar.enableMultiRelease=false MultiReleaseJarHttpProperties
- * @run testng/othervm -Djdk.util.jar.version=9   -Djdk.util.jar.enableMultiRelease=false MultiReleaseJarHttpProperties
- * @run testng/othervm -Djdk.util.jar.version=8   -Djdk.util.jar.enableMultiRelease=force MultiReleaseJarHttpProperties
- * @run testng/othervm -Djdk.util.jar.version=9   -Djdk.util.jar.enableMultiRelease=force MultiReleaseJarHttpProperties
- * @run testng/othervm -Djdk.util.jar.enableMultiRelease=false MultiReleaseJarHttpProperties
- * @run testng/othervm -Djdk.util.jar.enableMultiRelease=force MultiReleaseJarHttpProperties
+ * @run junit MultiReleaseJarHttpProperties
+ * @run junit/othervm -Djdk.util.jar.version=0   MultiReleaseJarHttpProperties
+ * @run junit/othervm -Djdk.util.jar.version=8   MultiReleaseJarHttpProperties
+ * @run junit/othervm -Djdk.util.jar.version=9   MultiReleaseJarHttpProperties
+ * @run junit/othervm -Djdk.util.jar.version=100 MultiReleaseJarHttpProperties
+ * @run junit/othervm -Djdk.util.jar.version=8   -Djdk.util.jar.enableMultiRelease=false MultiReleaseJarHttpProperties
+ * @run junit/othervm -Djdk.util.jar.version=9   -Djdk.util.jar.enableMultiRelease=false MultiReleaseJarHttpProperties
+ * @run junit/othervm -Djdk.util.jar.version=8   -Djdk.util.jar.enableMultiRelease=force MultiReleaseJarHttpProperties
+ * @run junit/othervm -Djdk.util.jar.version=9   -Djdk.util.jar.enableMultiRelease=force MultiReleaseJarHttpProperties
+ * @run junit/othervm -Djdk.util.jar.enableMultiRelease=false MultiReleaseJarHttpProperties
+ * @run junit/othervm -Djdk.util.jar.enableMultiRelease=force MultiReleaseJarHttpProperties
  */
 
 import java.io.IOException;
@@ -56,16 +56,19 @@ import java.util.concurrent.Executors;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.SimpleFileServer;
 import jdk.test.lib.net.URIBuilder;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class MultiReleaseJarHttpProperties extends MultiReleaseJarProperties {
     private HttpServer server;
     private ExecutorService executor;
     static final String TESTCONTEXT = "/multi-release.jar";  //mapped to local file path
 
-    @BeforeClass
+    @BeforeAll
     public void initialize() throws Exception {
         server = SimpleFileServer.createFileServer(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0),
                 Path.of(System.getProperty("user.dir", ".")), SimpleFileServer.OutputLevel.INFO);
@@ -86,7 +89,7 @@ public class MultiReleaseJarHttpProperties extends MultiReleaseJarProperties {
         rootClass = cldr.loadClass("version.Main");
     }
 
-    @AfterClass
+    @AfterAll
     public void close() throws IOException {
         // Windows requires server to stop before file is deleted
         if (server != null) {

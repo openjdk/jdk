@@ -128,10 +128,6 @@ void ParallelArguments::initialize() {
     }
   }
 
-  if (FLAG_IS_DEFAULT(ParallelRefProcEnabled) && ParallelGCThreads > 1) {
-    FLAG_SET_DEFAULT(ParallelRefProcEnabled, true);
-  }
-
   FullGCForwarding::initialize_flags(heap_reserved_size_bytes());
 }
 

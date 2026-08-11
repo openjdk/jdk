@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2025, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2025, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -1889,7 +1889,7 @@ class StubGenerator: public StubCodeGenerator {
     __ sext(scratch_length, length, 32); // length (elements count, 32-bits value)
     __ bltz(scratch_length, L_failed);
 
-    __ load_klass(scratch_src_klass, src);
+    __ load_narrow_klass(scratch_src_klass, src);
 #ifdef ASSERT
     {
       BLOCK_COMMENT("assert klasses not null {");
@@ -1898,11 +1898,12 @@ class StubGenerator: public StubCodeGenerator {
       __ bind(L1);
       __ stop("broken null klass");
       __ bind(L2);
-      __ load_klass(t0, dst, t1);
+      __ load_narrow_klass(t0, dst);
       __ beqz(t0, L1);     // this would be broken also
       BLOCK_COMMENT("} assert klasses not null done");
     }
 #endif
+    __ decode_klass_not_null(scratch_src_klass, t0);
 
     // Load layout helper (32-bits)
     //
@@ -1924,9 +1925,16 @@ class StubGenerator: public StubCodeGenerator {
     __ load_klass(t1, dst);
     __ bne(t1, scratch_src_klass, L_failed);
 
-    // if src->is_Array() isn't null then return -1
-    // i.e. (lh >= 0)
-    __ bgez(lh, L_failed);
+    if (Arguments::is_valhalla_enabled()) {
+      // Check for flat inline type array -> return -1
+      __ test_flat_array_oop(src, t1, L_failed);
+
+      // Check for null-free (non-flat) inline type array -> handle as object array
+      __ test_null_free_array_oop(src, t1, L_objArray);
+    }
+
+    // if (!src->is_Array()) return -1;
+    __ bgez(lh, L_failed);  // i.e. (lh >= 0)
 
     // At this point, it is known to be a typeArray (array_tag 0x3).
 #ifdef ASSERT
@@ -3064,14 +3072,137 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  void gcm_counterMode_AESCrypt_blocks(int round, Register in, Register out, Register key, Register counter,
+                                       Register input_len, VectorRegister *working_vregs, Register blocks,
+                                       VectorRegister vtmp1, VectorRegister vtmp2, VectorRegister vtmp3) {
+    __ srli(blocks, input_len, 4);
+
+    const unsigned int BLOCK_SIZE = 16;
+    const unsigned int MASK_VALUE = 0b1000; // we need {1, 0, 0, 0} mask value here
+    __ vsetivli(x0, 1, Assembler::e8, Assembler::m1);
+    __ vmv_v_i(v0, MASK_VALUE);
+
+    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
+    // load keys to working_vregs according to round
+    aes_load_keys(key, working_vregs, round);
+
+    __ vle32_v(vtmp1, counter);
+    Label L_aes_ctr_loop;
+    __ bind(L_aes_ctr_loop);
+      __ vmv_v_v(vtmp2, vtmp1);
+      // encrypt counter according to round
+      aes_encrypt(vtmp2, working_vregs, round);
+      __ vle32_v(vtmp3, in);
+      __ vxor_vv(vtmp2, vtmp2, vtmp3);
+      __ vse32_v(vtmp2, out);
+      __ addi(out, out, BLOCK_SIZE);
+      __ addi(in, in, BLOCK_SIZE);
+      __ sub(blocks, blocks, 1);
+      __ vrev8_v(vtmp1, vtmp1, Assembler::VectorMask::v0_t);
+      __ vadd_vi(vtmp1, vtmp1, 0x1, Assembler::VectorMask::v0_t);
+      __ vrev8_v(vtmp1, vtmp1, Assembler::VectorMask::v0_t);
+      __ bnez(blocks, L_aes_ctr_loop);
+
+    __ vse32_v(vtmp1, counter);
+  }
+
+  void gcm_ghash_blocks(Register state, Register subkeyH, Register ct, Register input_len, Register blocks,
+                        VectorRegister vtmp1, VectorRegister vtmp2, VectorRegister vtmp3) {
+    __ srli(blocks, input_len, 4);
+
+    ghash_loop(state, subkeyH, ct, blocks, vtmp1, vtmp2, vtmp3);
+
+    __ mv(x10, input_len);
+    __ leave();
+    __ ret();
+  }
+
+
+  // Vector AES Galois Counter Mode implementation. Parameters:
+  //
+  // in = c_rarg0
+  // input_len = c_rarg1
+  // ct = c_rarg2 - ciphertext that ghash will read (out for encrypt, in for decrypt)
+  // out = c_rarg3
+  // key = c_rarg4
+  // state = c_rarg5 - GHASH.state
+  // subkeyHtbl = c_rarg6 - powers of H
+  // counter = c_rarg7 - 16 bytes of CTR
+  // return - number of processed bytes
+  address generate_galoisCounterMode_AESCrypt() {
+    assert(UseGHASHIntrinsics, "need GHASH instructions (Zvkg extension) and Zvbb support");
+    assert(UseAESCTRIntrinsics, "need AES instructions (Zvkned extension) and Zbb extension support");
+
+    __ align(CodeEntryAlignment);
+    StubId stub_id = StubId::stubgen_galoisCounterMode_AESCrypt_id;
+    StubCodeMark mark(this, stub_id);
+
+    const Register in         = c_rarg0;
+    const Register input_len  = c_rarg1;
+    const Register ct         = c_rarg2;
+    const Register out        = c_rarg3;
+    const Register key        = c_rarg4;
+    const Register state      = c_rarg5;
+    const Register subkeyHtbl = c_rarg6;
+    const Register counter    = c_rarg7;
+
+    const Register keylen     = x28;
+    const Register blocks     = x29;
+
+    VectorRegister working_vregs[] = {
+      v1, v2, v3, v4, v5, v6, v7, v8,
+      v9, v10, v11, v12, v13, v14, v15
+    };
+
+    VectorRegister vtmp1      = v16;
+    VectorRegister vtmp2      = v17;
+    VectorRegister vtmp3      = v18;
+
+    const address start = __ pc();
+    __ enter();
+
+    Label L_exit;
+    // Requires input_len (512) bytes to efficiently use the intrinsic
+    __ andi(input_len, input_len, -512);
+    __ beqz(input_len, L_exit);
+
+    Label L_aes128, L_aes192;
+    // Compute #rounds for AES based on the length of the key array
+    __ lwu(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
+    __ mv(t0, 52); // key length could be only {11, 13, 15} * 4 = {44, 52, 60}
+    __ bltu(keylen, t0, L_aes128);
+    __ beq(keylen, t0, L_aes192);
+    // Else we fallthrough to the biggest case (256-bit key size)
+
+    // Note: the following function performs crypt with key += 15*16
+    gcm_counterMode_AESCrypt_blocks(15, in, out, key, counter, input_len, working_vregs, blocks, vtmp1, vtmp2, vtmp3);
+    gcm_ghash_blocks(state, subkeyHtbl, ct, input_len, blocks, vtmp1, vtmp2, vtmp3);
+
+    // Note: the following function performs crypt with key += 13*16
+    __ bind(L_aes192);
+    gcm_counterMode_AESCrypt_blocks(13, in, out, key, counter, input_len, working_vregs, blocks, vtmp1, vtmp2, vtmp3);
+    gcm_ghash_blocks(state, subkeyHtbl, ct, input_len, blocks, vtmp1, vtmp2, vtmp3);
+
+    // Note: the following function performs crypt with key += 11*16
+    __ bind(L_aes128);
+    gcm_counterMode_AESCrypt_blocks(11, in, out, key, counter, input_len, working_vregs, blocks, vtmp1, vtmp2, vtmp3);
+    gcm_ghash_blocks(state, subkeyHtbl, ct, input_len, blocks, vtmp1, vtmp2, vtmp3);
+
+    __ bind(L_exit);
+    __ mv(x10, input_len);
+    __ leave();
+    __ ret();
+
+    return start;
+  }
+
   // code for comparing 8 characters of strings with Latin1 and Utf16 encoding
   void compare_string_8_x_LU(Register tmpL, Register tmpU,
                              Register strL, Register strU, Label& DIFF) {
     const Register tmp = x30, tmpLval = x12;
 
     int base_offset = arrayOopDesc::base_offset_in_bytes(T_BYTE);
-    assert((base_offset % (UseCompactObjectHeaders ? 4 :
-                           (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
+    assert((base_offset % (UseCompactObjectHeaders ? 4 : 8)) == 0, "Must be");
 
 #ifdef ASSERT
     if (AvoidUnalignedAccesses) {
@@ -3128,8 +3259,7 @@ class StubGenerator: public StubCodeGenerator {
                    tmp1 = x28, tmp2 = x29, tmp3 = x30, tmp4 = x12;
 
     int base_offset = arrayOopDesc::base_offset_in_bytes(T_BYTE);
-    assert((base_offset % (UseCompactObjectHeaders ? 4 :
-                           (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
+    assert((base_offset % (UseCompactObjectHeaders ? 4 : 8)) == 0, "Must be");
 
     Register strU = isLU ? str2 : str1,
              strL = isLU ? str1 : str2,
@@ -4756,7 +4886,7 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
 
 #undef __
 #define __ this->
@@ -6002,7 +6132,7 @@ class StubGenerator: public StubCodeGenerator {
       int64_t block_bytes = 16 * 4;
       __ addi(buf, buf, block_bytes);
 
-      __ bge(limit, buf, L_sha1_loop, true);
+      __ bge(limit, buf, L_sha1_loop, /* is_far */ true);
     }
 
     // store back the state.
@@ -6784,7 +6914,7 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
 
   // x10 = input (float16)
   // f10 = result (float)
@@ -7294,6 +7424,10 @@ static const int64_t right_3_bits = right_n_bits(3);
       StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks();
     }
 
+    if (UseAESCTRIntrinsics && UseGHASHIntrinsics) {
+      StubRoutines::_galoisCounterMode_AESCrypt = generate_galoisCounterMode_AESCrypt();
+    }
+
     if (UsePoly1305Intrinsics) {
       StubRoutines::_poly1305_processBlocks = generate_poly1305_processBlocks();
     }
@@ -7350,7 +7484,7 @@ static const int64_t right_3_bits = right_n_bits(3);
   }
 
  public:
-  StubGenerator(CodeBuffer* code, BlobId blob_id) : StubCodeGenerator(code, blob_id) {
+  StubGenerator(CodeBuffer* code, BlobId blob_id, AOTStubData* stub_data) : StubCodeGenerator(code, blob_id, stub_data) {
     switch(blob_id) {
     case BlobId::stubgen_preuniverse_id:
       generate_preuniverse_stubs();
@@ -7374,6 +7508,6 @@ static const int64_t right_3_bits = right_n_bits(3);
   }
 }; // end class declaration
 
-void StubGenerator_generate(CodeBuffer* code, BlobId blob_id) {
-  StubGenerator g(code, blob_id);
+void StubGenerator_generate(CodeBuffer* code, BlobId blob_id, AOTStubData* stub_data) {
+  StubGenerator g(code, blob_id, stub_data);
 }

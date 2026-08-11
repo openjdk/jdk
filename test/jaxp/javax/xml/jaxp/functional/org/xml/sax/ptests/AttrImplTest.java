@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,12 @@
  */
 package org.xml.sax.ptests;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNull;
-
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.AttributesImpl;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Class containing the test cases for AttributesImpl API.
@@ -34,7 +35,7 @@ import org.xml.sax.helpers.AttributesImpl;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm org.xml.sax.ptests.AttrImplTest
+ * @run junit/othervm org.xml.sax.ptests.AttrImplTest
  */
 public class AttrImplTest {
     private static final String CAR_URI = "http://www.cars.com/xml";
@@ -66,8 +67,8 @@ public class AttrImplTest {
         attr.addAttribute(CAR_URI, CAR_LOCALNAME, CAR_QNAME, CAR_TYPE, CAR_VALUE);
         attr.addAttribute(JEEP_URI, JEEP_LOCALNAME, JEEP_QNAME, JEEP_TYPE,
                 JEEP_VALUE);
-        assertEquals(attr.getIndex(CAR_QNAME), 0);
-        assertEquals(attr.getIndex(JEEP_QNAME), 1);
+        assertEquals(0, attr.getIndex(CAR_QNAME));
+        assertEquals(1, attr.getIndex(JEEP_QNAME));
     }
 
     /**
@@ -79,7 +80,7 @@ public class AttrImplTest {
         attr.addAttribute(CAR_URI, CAR_LOCALNAME, CAR_QNAME, CAR_TYPE, CAR_VALUE);
         attr.addAttribute(JEEP_URI, JEEP_LOCALNAME, JEEP_QNAME, JEEP_TYPE,
                 JEEP_VALUE);
-        assertEquals(attr.getIndex(JEEP_URI, JEEP_LOCALNAME), 1);
+        assertEquals(1, attr.getIndex(JEEP_URI, JEEP_LOCALNAME));
     }
 
     /**
@@ -88,7 +89,7 @@ public class AttrImplTest {
     @Test
     public void testcase03() {
         AttributesImpl attr = new AttributesImpl();
-        assertEquals(attr.getIndex(JEEP_URI, "whl"), -1);
+        assertEquals(-1, attr.getIndex(JEEP_URI, "whl"));
     }
 
     /**
@@ -100,8 +101,8 @@ public class AttrImplTest {
         attr.addAttribute(CAR_URI, CAR_LOCALNAME, CAR_QNAME, CAR_TYPE, CAR_VALUE);
         attr.addAttribute(JEEP_URI, JEEP_LOCALNAME, JEEP_QNAME, JEEP_TYPE,
                 JEEP_VALUE);
-        assertEquals(attr.getType(1), JEEP_TYPE);
-        assertEquals(attr.getType(JEEP_QNAME), JEEP_TYPE);
+        assertEquals(JEEP_TYPE, attr.getType(1));
+        assertEquals(JEEP_TYPE, attr.getType(JEEP_QNAME));
     }
 
     /**
@@ -113,9 +114,9 @@ public class AttrImplTest {
         attr.addAttribute(CAR_URI, CAR_LOCALNAME, CAR_QNAME, CAR_TYPE, CAR_VALUE);
         attr.addAttribute(JEEP_URI, JEEP_LOCALNAME, JEEP_QNAME, JEEP_TYPE,
                 JEEP_VALUE);
-        assertEquals(attr.getValue(1), JEEP_VALUE);
-        assertEquals(attr.getValue(attr.getQName(1)), JEEP_VALUE);
-        assertEquals(attr.getValue(attr.getURI(1), attr.getLocalName(1)), JEEP_VALUE);
+        assertEquals(JEEP_VALUE, attr.getValue(1));
+        assertEquals(JEEP_VALUE, attr.getValue(attr.getQName(1)));
+        assertEquals(JEEP_VALUE, attr.getValue(attr.getURI(1), attr.getLocalName(1)));
     }
 
     /**
@@ -129,11 +130,11 @@ public class AttrImplTest {
         attr.addAttribute(JEEP_URI, JEEP_LOCALNAME, JEEP_QNAME, JEEP_TYPE,
                 JEEP_VALUE);
         attr.setAttribute(1, "www.megginson.com", "author", "meg", "s", "SAX2");
-        assertEquals(attr.getLocalName(1), "author");
-        assertEquals(attr.getQName(1), "meg");
-        assertEquals(attr.getType(1), "s");
-        assertEquals(attr.getType("meg"), "s");
-        assertEquals(attr.getURI(1), "www.megginson.com");
+        assertEquals("author", attr.getLocalName(1));
+        assertEquals("meg", attr.getQName(1));
+        assertEquals("s", attr.getType(1));
+        assertEquals("s", attr.getType("meg"));
+        assertEquals("www.megginson.com", attr.getURI(1));
     }
 
     /**
@@ -152,11 +153,11 @@ public class AttrImplTest {
         attr.setValue(1, "SAX01");
         attr.setURI(1, "www.megginson.com/sax/sax01");
 
-        assertEquals(attr.getLocalName(1), "speclead");
-        assertEquals(attr.getQName(1), "megi");
-        assertEquals(attr.getType(1), "sax");
-        assertEquals(attr.getType("megi"), "sax");
-        assertEquals(attr.getURI(1), "www.megginson.com/sax/sax01");
+        assertEquals("speclead", attr.getLocalName(1));
+        assertEquals("megi", attr.getQName(1));
+        assertEquals("sax", attr.getType(1));
+        assertEquals("sax", attr.getType("megi"));
+        assertEquals("www.megginson.com/sax/sax01", attr.getURI(1));
     }
 
     /**
@@ -165,11 +166,11 @@ public class AttrImplTest {
     @Test
     public void testcase08() {
         AttributesImpl attr = new AttributesImpl();
-        assertEquals(attr.getLength(), 0);
+        assertEquals(0, attr.getLength());
         attr.addAttribute(CAR_URI, CAR_LOCALNAME, CAR_QNAME, CAR_TYPE, CAR_VALUE);
         attr.addAttribute(JEEP_URI, JEEP_LOCALNAME, JEEP_QNAME, JEEP_TYPE,
                 JEEP_VALUE);
-        assertEquals(attr.getLength(), 2);
+        assertEquals(2, attr.getLength());
     }
 
     /**
@@ -189,13 +190,13 @@ public class AttrImplTest {
      * Javadoc says java.lang.ArrayIndexOutOfBoundsException is thrown When the
      * supplied index does not point to an attribute in the list.
      */
-    @Test(expectedExceptions = ArrayIndexOutOfBoundsException.class)
+    @Test
     public void testcase10() {
         AttributesImpl attr = new AttributesImpl();
         attr.addAttribute(CAR_URI, CAR_LOCALNAME, CAR_QNAME, CAR_TYPE, CAR_VALUE);
         attr.addAttribute(JEEP_URI, JEEP_LOCALNAME, JEEP_QNAME, JEEP_TYPE,
                 JEEP_VALUE);
         attr.removeAttribute(1);
-        attr.removeAttribute(1);
+        assertThrows(ArrayIndexOutOfBoundsException.class, () -> attr.removeAttribute(1));
     }
 }

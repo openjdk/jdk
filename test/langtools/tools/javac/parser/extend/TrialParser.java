@@ -66,9 +66,8 @@ class TrialParser extends JavacParser {
     public TrialParser(ParserFactory fac,
             com.sun.tools.javac.parser.Lexer S,
             boolean keepDocComments,
-            boolean keepLineMap,
-            boolean keepEndPositions) {
-        super(fac, S, keepDocComments, keepLineMap, keepEndPositions);
+            boolean keepLineMap) {
+        super(fac, S, keepDocComments, keepLineMap);
     }
 
     @Override
@@ -102,7 +101,7 @@ class TrialParser extends JavacParser {
 
         boolean firstTypeDecl = true;
         while (token.kind != EOF) {
-            if (token.pos > 0 && token.pos <= endPosTable.errorEndPos) {
+            if (token.pos > 0 && token.pos <= errorEndPos) {
                 // error recovery
                 skip(true, false, false, false);
                 if (token.kind == EOF) {
@@ -139,7 +138,6 @@ class TrialParser extends JavacParser {
             storeEnd(toplevel, S.prevToken().endPos);
         }
         toplevel.lineMap = S.getLineMap();
-        toplevel.endPositions = this.endPosTable;
         return toplevel;
     }
 

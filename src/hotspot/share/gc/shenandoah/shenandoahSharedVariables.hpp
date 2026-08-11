@@ -27,7 +27,7 @@
 
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "memory/allocation.hpp"
-#include "runtime/atomicAccess.hpp"
+#include "runtime/atomic.hpp"
 
 typedef int32_t ShenandoahSharedValue;
 typedef struct ShenandoahSharedFlag {
@@ -37,7 +37,7 @@ typedef struct ShenandoahSharedFlag {
   };
 
   shenandoah_padding(0);
-  volatile ShenandoahSharedValue value;
+  Atomic<ShenandoahSharedValue> value;
   shenandoah_padding(1);
 
   ShenandoahSharedFlag() {
@@ -45,19 +45,19 @@ typedef struct ShenandoahSharedFlag {
   }
 
   void set() {
-    AtomicAccess::release_store_fence(&value, (ShenandoahSharedValue)SET);
+    value.release_store_fence((ShenandoahSharedValue)SET);
   }
 
   void unset() {
-    AtomicAccess::release_store_fence(&value, (ShenandoahSharedValue)UNSET);
+    value.release_store_fence((ShenandoahSharedValue)UNSET);
   }
 
   bool is_set() const {
-    return AtomicAccess::load_acquire(&value) == SET;
+    return value.load_acquire() == SET;
   }
 
   bool is_unset() const {
-    return AtomicAccess::load_acquire(&value) == UNSET;
+    return value.load_acquire() == UNSET;
   }
 
   void set_cond(bool val) {
@@ -72,7 +72,7 @@ typedef struct ShenandoahSharedFlag {
     if (is_set()) {
       return false;
     }
-    ShenandoahSharedValue old = AtomicAccess::cmpxchg(&value, (ShenandoahSharedValue)UNSET, (ShenandoahSharedValue)SET);
+    ShenandoahSharedValue old = value.compare_exchange((ShenandoahSharedValue)UNSET, (ShenandoahSharedValue)SET);
     return old == UNSET; // success
   }
 
@@ -80,17 +80,13 @@ typedef struct ShenandoahSharedFlag {
     if (!is_set()) {
       return false;
     }
-    ShenandoahSharedValue old = AtomicAccess::cmpxchg(&value, (ShenandoahSharedValue)SET, (ShenandoahSharedValue)UNSET);
+    ShenandoahSharedValue old = value.compare_exchange((ShenandoahSharedValue)SET, (ShenandoahSharedValue)UNSET);
     return old == SET; // success
-  }
-
-  volatile ShenandoahSharedValue* addr_of() {
-    return &value;
   }
 
 private:
   volatile ShenandoahSharedValue* operator&() {
-    fatal("Use addr_of() instead");
+    fatal("Not supported");
     return nullptr;
   }
 
@@ -105,7 +101,7 @@ private:
 
 typedef struct ShenandoahSharedBitmap {
   shenandoah_padding(0);
-  volatile ShenandoahSharedValue value;
+  Atomic<ShenandoahSharedValue> value;
   shenandoah_padding(1);
 
   ShenandoahSharedBitmap() {
@@ -116,7 +112,7 @@ typedef struct ShenandoahSharedBitmap {
     assert (mask < (sizeof(ShenandoahSharedValue) * CHAR_MAX), "sanity");
     ShenandoahSharedValue mask_val = (ShenandoahSharedValue) mask;
     while (true) {
-      ShenandoahSharedValue ov = AtomicAccess::load_acquire(&value);
+      ShenandoahSharedValue ov = value.load_acquire();
       // We require all bits of mask_val to be set
       if ((ov & mask_val) == mask_val) {
         // already set
@@ -124,7 +120,7 @@ typedef struct ShenandoahSharedBitmap {
       }
 
       ShenandoahSharedValue nv = ov | mask_val;
-      if (AtomicAccess::cmpxchg(&value, ov, nv) == ov) {
+      if (value.compare_exchange(ov, nv) == ov) {
         // successfully set: if value returned from cmpxchg equals ov, then nv has overwritten value.
         return;
       }
@@ -135,14 +131,14 @@ typedef struct ShenandoahSharedBitmap {
     assert (mask < (sizeof(ShenandoahSharedValue) * CHAR_MAX), "sanity");
     ShenandoahSharedValue mask_val = (ShenandoahSharedValue) mask;
     while (true) {
-      ShenandoahSharedValue ov = AtomicAccess::load_acquire(&value);
+      ShenandoahSharedValue ov = value.load_acquire();
       if ((ov & mask_val) == 0) {
         // already unset
         return;
       }
 
       ShenandoahSharedValue nv = ov & ~mask_val;
-      if (AtomicAccess::cmpxchg(&value, ov, nv) == ov) {
+      if (value.compare_exchange(ov, nv) == ov) {
         // successfully unset
         return;
       }
@@ -150,7 +146,7 @@ typedef struct ShenandoahSharedBitmap {
   }
 
   void clear() {
-    AtomicAccess::release_store_fence(&value, (ShenandoahSharedValue)0);
+    value.release_store_fence((ShenandoahSharedValue)0);
   }
 
   // Returns true iff any bit set in mask is set in this.value.
@@ -161,18 +157,18 @@ typedef struct ShenandoahSharedBitmap {
   // Returns true iff all bits set in mask are set in this.value.
   bool is_set_exactly(uint mask) const {
     assert (mask < (sizeof(ShenandoahSharedValue) * CHAR_MAX), "sanity");
-    uint uvalue = AtomicAccess::load_acquire(&value);
+    uint uvalue = value.load_acquire();
     return (uvalue & mask) == mask;
   }
 
   // Returns true iff all bits set in mask are unset in this.value.
   bool is_unset(uint mask) const {
     assert (mask < (sizeof(ShenandoahSharedValue) * CHAR_MAX), "sanity");
-    return (AtomicAccess::load_acquire(&value) & (ShenandoahSharedValue) mask) == 0;
+    return (value.load_acquire() & (ShenandoahSharedValue) mask) == 0;
   }
 
   bool is_clear() const {
-    return (AtomicAccess::load_acquire(&value)) == 0;
+    return (value.load_acquire()) == 0;
   }
 
   void set_cond(uint mask, bool val) {
@@ -183,17 +179,13 @@ typedef struct ShenandoahSharedBitmap {
     }
   }
 
-  volatile ShenandoahSharedValue* addr_of() {
-    return &value;
-  }
-
   ShenandoahSharedValue raw_value() const {
-    return value;
+    return value.load_relaxed();
   }
 
 private:
   volatile ShenandoahSharedValue* operator&() {
-    fatal("Use addr_of() instead");
+    fatal("Not supported");
     return nullptr;
   }
 
@@ -210,42 +202,36 @@ template<class T>
 struct ShenandoahSharedEnumFlag {
   typedef uint32_t EnumValueType;
   shenandoah_padding(0);
-  volatile EnumValueType value;
+  Atomic<EnumValueType> value;
   shenandoah_padding(1);
 
-  ShenandoahSharedEnumFlag() {
-    value = 0;
-  }
+  ShenandoahSharedEnumFlag() : value(0) {}
 
   void set(T v) {
     assert (v >= 0, "sanity");
     assert (v < (sizeof(EnumValueType) * CHAR_MAX), "sanity");
-    AtomicAccess::release_store_fence(&value, (EnumValueType)v);
+    value.release_store_fence((EnumValueType)v);
   }
 
   T get() const {
-    return (T)AtomicAccess::load_acquire(&value);
+    return (T)value.load_acquire();
   }
 
   T cmpxchg(T new_value, T expected) {
     assert (new_value >= 0, "sanity");
     assert (new_value < (sizeof(EnumValueType) * CHAR_MAX), "sanity");
-    return (T)AtomicAccess::cmpxchg(&value, (EnumValueType)expected, (EnumValueType)new_value);
+    return (T)value.compare_exchange((EnumValueType)expected, (EnumValueType)new_value);
   }
 
   T xchg(T new_value) {
     assert (new_value >= 0, "sanity");
     assert (new_value < (sizeof(EnumValueType) * CHAR_MAX), "sanity");
-    return (T)AtomicAccess::xchg(&value, (EnumValueType)new_value);
-  }
-
-  volatile EnumValueType* addr_of() {
-    return &value;
+    return (T)value.exchange((EnumValueType)new_value);
   }
 
 private:
   volatile T* operator&() {
-    fatal("Use addr_of() instead");
+    fatal("Not supported");
     return nullptr;
   }
 
@@ -260,7 +246,7 @@ private:
 
 typedef struct ShenandoahSharedSemaphore {
   shenandoah_padding(0);
-  volatile ShenandoahSharedValue value;
+  Atomic<ShenandoahSharedValue> value;
   shenandoah_padding(1);
 
   static uint max_tokens() {
@@ -269,17 +255,17 @@ typedef struct ShenandoahSharedSemaphore {
 
   ShenandoahSharedSemaphore(uint tokens) {
     assert(tokens <= max_tokens(), "sanity");
-    AtomicAccess::release_store_fence(&value, (ShenandoahSharedValue)tokens);
+    value.release_store_fence((ShenandoahSharedValue)tokens);
   }
 
   bool try_acquire() {
     while (true) {
-      ShenandoahSharedValue ov = AtomicAccess::load_acquire(&value);
+      ShenandoahSharedValue ov = value.load_acquire();
       if (ov == 0) {
         return false;
       }
       ShenandoahSharedValue nv = ov - 1;
-      if (AtomicAccess::cmpxchg(&value, ov, nv) == ov) {
+      if (value.compare_exchange(ov, nv) == ov) {
         // successfully set
         return true;
       }
@@ -287,7 +273,7 @@ typedef struct ShenandoahSharedSemaphore {
   }
 
   void claim_all() {
-    AtomicAccess::release_store_fence(&value, (ShenandoahSharedValue)0);
+    value.release_store_fence((ShenandoahSharedValue)0);
   }
 
 } ShenandoahSharedSemaphore;

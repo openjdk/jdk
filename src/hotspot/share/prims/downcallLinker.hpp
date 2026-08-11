@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "runtime/stubCodeGenerator.hpp"
 
 class RuntimeStub;
+class CodeBlob;
 
 class DowncallLinker: AllStatic {
 public:
@@ -41,8 +42,11 @@ public:
                                          int captured_state_mask,
                                          bool needs_transition);
 
-  // This is defined as JVM_LEAF which adds the JNICALL modifier.
-  static void JNICALL capture_state(int32_t* value_ptr, int captured_state_mask);
+  // These are defined as JVM_LEAF which adds the JNICALL modifier.
+  static void JNICALL capture_state_pre(int32_t* value_ptr, int captured_state_mask);
+  static void JNICALL capture_state_post(int32_t* value_ptr, int captured_state_mask);
+
+  static bool is_downcall_stub(const CodeBlob* cb);
 
   class StubGenerator : public StubCodeGenerator {
     BasicType* _signature;
@@ -71,7 +75,7 @@ public:
                   bool needs_return_buffer,
                   int captured_state_mask,
                   bool needs_transition)
-    : StubCodeGenerator(buffer, PrintMethodHandleStubs),
+      : StubCodeGenerator(buffer, PrintMethodHandleStubs),
       _signature(signature),
       _num_args(num_args),
       _ret_bt(ret_bt),

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @summary Testing ClassFile Verifier.
  * @bug 8333812 8361526
  * @run junit VerifierSelfTest
+ * @run junit/othervm --enable-preview VerifierSelfTest
  */
 import java.io.IOException;
 import java.lang.classfile.constantpool.PoolEntry;
@@ -37,12 +38,14 @@ import static java.lang.constant.ConstantDescs.*;
 
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandleInfo;
+import java.lang.invoke.MethodHandles;
 import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -59,6 +62,9 @@ import jdk.internal.classfile.impl.BufWriterImpl;
 import jdk.internal.classfile.impl.DirectClassBuilder;
 import jdk.internal.classfile.impl.UnboundAttribute;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -211,7 +217,6 @@ class VerifierSelfTest {
                                 cob.iconst_0()
                                    .ifThen(CodeBuilder::nop)
                                    .return_()
-                                   .with(new CloneAttribute(StackMapTableAttribute.of(List.of())))
                                    .with(new CloneAttribute(CharacterRangeTableAttribute.of(List.of())))
                                    .with(new CloneAttribute(LineNumberTableAttribute.of(List.of())))
                                    .with(new CloneAttribute(LocalVariableTableAttribute.of(List.of())))
@@ -331,12 +336,10 @@ class VerifierSelfTest {
                 Wrong Signature attribute length in method ParserVerificationTestClass::m()
                 Wrong Synthetic attribute length in method ParserVerificationTestClass::m()
                 Code attribute in native or abstract method ParserVerificationTestClass::m()
-                Wrong StackMapTable attribute length in Code attribute for method ParserVerificationTestClass::m()
                 Wrong CharacterRangeTable attribute length in Code attribute for method ParserVerificationTestClass::m()
                 Wrong LineNumberTable attribute length in Code attribute for method ParserVerificationTestClass::m()
                 Wrong LocalVariableTable attribute length in Code attribute for method ParserVerificationTestClass::m()
                 Wrong LocalVariableTypeTable attribute length in Code attribute for method ParserVerificationTestClass::m()
-                Multiple StackMapTable attributes in Code attribute for method ParserVerificationTestClass::m()
                 Multiple Signature attributes in Record component c of class ParserVerificationTestClass
                 Wrong Signature attribute length in Record component c of class ParserVerificationTestClass
                 Multiple RuntimeVisibleAnnotations attributes in Record component c of class ParserVerificationTestClass
@@ -416,6 +419,71 @@ class VerifierSelfTest {
             lst.add(new CloneAttribute(a));
         }
         return lst;
+    }
+
+    enum ComparisonInstruction {
+        IF_ACMPEQ(Opcode.IF_ACMPEQ, 2),
+        IF_ACMPNE(Opcode.IF_ACMPNE, 2),
+        IFNONNULL(Opcode.IFNONNULL, 1),
+        IFNULL(Opcode.IFNULL, 1);
+        final Opcode opcode;
+        final int argCount;
+        ComparisonInstruction(Opcode opcode, int argCount) {
+            this.opcode = opcode;
+            this.argCount = argCount;
+        }
+    }
+
+    enum UninitializeKind {
+        UNINITIALIZED, UNINITIALIZED_THIS
+    }
+
+    @ParameterizedTest
+    @MethodSource("uninitializedInBytecodeClasses")
+    public void testUninitializedInComparisons(ComparisonInstruction inst, UninitializeKind kind) throws Throwable {
+        var bytes = ClassFile.of(ClassFile.StackMapsOption.DROP_STACK_MAPS).build(ClassDesc.of("Test"), clb -> clb
+                .withMethodBody(INIT_NAME, MTD_void, 0, cob -> {
+                    StackMapFrameInfo.VerificationTypeInfo uninitializeInfo;
+                    if (kind == UninitializeKind.UNINITIALIZED) {
+                        uninitializeInfo = StackMapFrameInfo.UninitializedVerificationTypeInfo.of(cob.newBoundLabel());
+                        cob.new_(CD_Object);
+                    } else {
+                        uninitializeInfo = StackMapFrameInfo.SimpleVerificationTypeInfo.UNINITIALIZED_THIS;
+                        cob.aload(0);
+                    }
+
+                    // Stack: uninitializeInfo
+                    for (int i = 0; i < inst.argCount; i++) {
+                        cob.dup();
+                    }
+                    var dest = cob.newLabel();
+                    cob.branch(inst.opcode, dest)
+                       .nop()
+                       .labelBinding(dest)
+                       .with(StackMapTableAttribute.of(List.of(StackMapFrameInfo.of(dest,
+                               List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.UNINITIALIZED_THIS),
+                               List.of(uninitializeInfo)))))
+                       .invokespecial(CD_Object, INIT_NAME, MTD_void);
+                    if (kind == UninitializeKind.UNINITIALIZED) {
+                        // still need to call super constructor
+                        cob.aload(0)
+                           .invokespecial(CD_Object, INIT_NAME, MTD_void);
+                    }
+                    cob.return_();
+                }));
+        var errors = ClassFile.of().verify(bytes);
+        assertNotEquals(List.of(), errors, () -> errors + " : " + ClassFile.of().parse(bytes).toDebugString());
+        var lookup = MethodHandles.lookup();
+        assertThrows(VerifyError.class, () -> lookup.defineHiddenClass(bytes, true)); // force JVM verification
+    }
+
+    public static Stream<Arguments> uninitializedInBytecodeClasses() {
+        return Arrays.stream(ComparisonInstruction.values())
+                .mapMulti((inst, sink) -> {
+                    for (var kind : UninitializeKind.values()) {
+                        sink.accept(Arguments.of(inst, kind));
+                    }
+                });
     }
 
     @Test // JDK-8350029

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "memory/memRegion.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/align.hpp"
 
 // This kind of "BarrierSet" allows a "CollectedHeap" to detect and
@@ -49,7 +50,7 @@ class CardTableBarrierSet: public BarrierSet {
 
 protected:
   typedef CardTable::CardValue CardValue;
-  CardTable* _card_table;
+  Atomic<CardTable*> _card_table;
 
   CardTableBarrierSet(BarrierSetAssembler* barrier_set_assembler,
                       BarrierSetC1* barrier_set_c1,
@@ -82,23 +83,27 @@ public:
   // optimized by some barriers.
 
   // Below length is the # array elements being written
-  virtual void write_ref_array_pre(oop* dst, size_t length,
-                                   bool dest_uninitialized) {}
-  virtual void write_ref_array_pre(narrowOop* dst, size_t length,
-                                   bool dest_uninitialized) {}
+  virtual void write_ref_array_pre(oop* dst, size_t length) {}
+  virtual void write_ref_array_pre(narrowOop* dst, size_t length) {}
   // Below count is the # array elements being written, starting
   // at the address "start", which may not necessarily be HeapWord-aligned
   inline void write_ref_array(HeapWord* start, size_t count);
 
-  CardTable* card_table() const { return _card_table; }
+  CardTable* card_table() { return _card_table.load_relaxed(); }
+  CardTable* card_table() const { return _card_table.load_relaxed(); }
+
   CardValue* card_table_base_const() const {
     assert(UseSerialGC || UseParallelGC, "Only these GCs have constant card table base");
-    return _card_table->byte_map_base();
+    return card_table()->byte_map_base();
   }
 
   virtual void on_slowpath_allocation_exit(JavaThread* thread, oop new_obj);
 
   virtual void print_on(outputStream* st) const;
+
+  // The AOT code cache manager needs to know the region grain size
+  // shift for some barrier sets.
+  virtual uint grain_shift() { return 0; }
 
   template <DecoratorSet decorators, typename BarrierSetT = CardTableBarrierSet>
   class AccessBarrier: public BarrierSet::AccessBarrier<decorators, BarrierSetT> {
@@ -116,6 +121,11 @@ public:
     static OopCopyResult oop_arraycopy_in_heap(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
                                                arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
                                                size_t length);
+  private:
+    // Failing checkcast or check null during copy, still needs barrier
+    template <typename T>
+    static inline void oop_arraycopy_partial_barrier(BarrierSetT *bs, T* dst_raw, T* p);
+  public:
 
     static void clone_in_heap(oop src, oop dst, size_t size);
 
@@ -130,6 +140,9 @@ public:
     static oop oop_atomic_cmpxchg_in_heap_at(oop base, ptrdiff_t offset, oop compare_value, oop new_value) {
       return oop_atomic_cmpxchg_in_heap(AccessInternal::oop_field_addr<decorators>(base, offset), compare_value, new_value);
     }
+
+    static void value_copy_in_heap(const ValuePayload& src, const ValuePayload& dst);
+    static void value_store_null_in_heap(const ValuePayload& dst);
   };
 };
 

@@ -37,19 +37,14 @@ ShenandoahStaticHeuristics::ShenandoahStaticHeuristics(ShenandoahSpaceInfo* spac
   SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahImplicitGCInvokesConcurrent);
 }
 
-ShenandoahStaticHeuristics::~ShenandoahStaticHeuristics() {}
-
 bool ShenandoahStaticHeuristics::should_start_gc() {
   size_t capacity = ShenandoahHeap::heap()->soft_max_capacity();
   size_t available = _space_info->soft_mutator_available();
-  size_t allocated = _space_info->bytes_allocated_since_gc_start();
 
-  log_debug(gc, ergo)("should_start_gc calculation: available: " PROPERFMT ", soft_max_capacity: "  PROPERFMT ", "
-                "allocated_since_gc_start: "  PROPERFMT,
-                PROPERFMTARGS(available), PROPERFMTARGS(capacity), PROPERFMTARGS(allocated));
+  log_debug(gc, ergo)("should_start_gc calculation: available: " PROPERFMT ", soft_max_capacity: "  PROPERFMT,
+                PROPERFMTARGS(available), PROPERFMTARGS(capacity));
 
   size_t threshold_available = capacity / 100 * ShenandoahMinFreeThreshold;
-
   if (available < threshold_available) {
     log_trigger("Free (Soft) (" PROPERFMT ") is below minimum threshold (" PROPERFMT ")",
                  PROPERFMTARGS(available), PROPERFMTARGS(threshold_available));
@@ -59,9 +54,9 @@ bool ShenandoahStaticHeuristics::should_start_gc() {
   return ShenandoahHeuristics::should_start_gc();
 }
 
-size_t ShenandoahStaticHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
-                                                                         RegionData* data, size_t size,
-                                                                         size_t free) {
+void ShenandoahStaticHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
+                                                                       RegionData* data, size_t size,
+                                                                       size_t free) {
   size_t threshold = ShenandoahHeapRegion::region_size_bytes() * ShenandoahGarbageThreshold / 100;
 
   for (size_t idx = 0; idx < size; idx++) {
@@ -70,5 +65,4 @@ size_t ShenandoahStaticHeuristics::choose_collection_set_from_regiondata(Shenand
       cset->add_region(r);
     }
   }
-  return 0;
 }

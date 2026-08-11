@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,8 +166,6 @@ protected:
   virtual int Opcode() const;
   virtual uint ideal_reg() const = 0;
   bool carry_dependency() const { return !_dependency.cmp(DependencyType::FloatingNarrowing); }
-  // A cast node depends_only_on_test if and only if it is floating
-  virtual bool depends_only_on_test() const { return _dependency.is_floating(); }
   const DependencyType& dependency() const { return _dependency; }
   TypeNode* dominating_cast(PhaseGVN* gvn, PhaseTransform* pt) const;
   static Node* make_cast_for_basic_type(Node* c, Node* n, const Type* t, const DependencyType& dependency, BasicType bt);
@@ -191,6 +189,13 @@ protected:
   const Type* extra_type_at(int i) const {
     return _extra_types->field_at(i);
   }
+
+protected:
+  virtual bool depends_only_on_test_impl() const { return _dependency.is_floating(); }
+
+private:
+  virtual Node* pin_node_under_control_impl() const;
+  Node* ideal_cast_of_inline_type_node(PhaseGVN* phase);
 };
 
 //------------------------------CastIINode-------------------------------------
@@ -222,13 +227,15 @@ class CastIINode: public ConstraintCastNode {
 #endif
   }
 
-  CastIINode* pin_array_access_node() const;
   CastIINode* make_with(Node* parent, const TypeInteger* type, const DependencyType& dependency) const;
   void remove_range_check_cast(Compile* C);
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream* st) const;
 #endif
+
+private:
+  virtual CastIINode* pin_node_under_control_impl() const;
 };
 
 class CastLLNode: public ConstraintCastNode {
@@ -297,14 +304,18 @@ public:
 
 //------------------------------CastPPNode-------------------------------------
 // cast pointer to pointer (different type)
-class CastPPNode: public ConstraintCastNode {
-  public:
-  CastPPNode (Node* ctrl, Node* n, const Type* t, const DependencyType& dependency = DependencyType::FloatingNarrowing, const TypeTuple* types = nullptr)
+class CastPPNode : public ConstraintCastNode {
+public:
+  CastPPNode(Node* ctrl, Node* n, const Type* t, const DependencyType& dependency = DependencyType::FloatingNarrowing, const TypeTuple* types = nullptr)
     : ConstraintCastNode(ctrl, n, t, dependency, types) {
     init_class_id(Class_CastPP);
+    verify_type(n->bottom_type(), t);
   }
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegP; }
+
+private:
+  static void verify_type(const Type* in_type, const Type* out_type);
 };
 
 //------------------------------CheckCastPPNode--------------------------------
@@ -317,11 +328,15 @@ class CheckCastPPNode: public ConstraintCastNode {
     init_class_id(Class_CheckCastPP);
   }
 
+  virtual Node* Identity(PhaseGVN* phase);
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual int   Opcode() const;
   virtual uint  ideal_reg() const { return Op_RegP; }
-  bool depends_only_on_test() const { return !type()->isa_rawptr() && ConstraintCastNode::depends_only_on_test(); }
- };
+
+private:
+  virtual bool depends_only_on_test_impl() const { return !type()->isa_rawptr() && ConstraintCastNode::depends_only_on_test_impl(); }
+  virtual Node* pin_node_under_control_impl() const;
+};
 
 
 //------------------------------CastX2PNode-------------------------------------
@@ -337,6 +352,20 @@ class CastX2PNode : public Node {
   virtual const Type *bottom_type() const { return TypeRawPtr::BOTTOM; }
 };
 
+// Cast an integer to a narrow oop
+class CastI2NNode : public TypeNode {
+  public:
+  CastI2NNode(Node* ctrl, Node* n, const Type* t) : TypeNode(t, 2) {
+    init_req(0, ctrl);
+    init_req(1, n);
+  }
+  virtual int Opcode() const;
+  virtual uint ideal_reg() const { return Op_RegN; }
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
+};
+
 //------------------------------CastP2XNode-------------------------------------
 // Used in both 32-bit and 64-bit land.
 // Used for card-marks and unsafe pointer math.
@@ -349,10 +378,10 @@ class CastP2XNode : public Node {
   virtual Node* Identity(PhaseGVN* phase);
   virtual uint ideal_reg() const { return Op_RegX; }
   virtual const Type *bottom_type() const { return TypeX_X; }
+
+private:
   // Return false to keep node from moving away from an associated card mark.
-  virtual bool depends_only_on_test() const { return false; }
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
-
-
 
 #endif // SHARE_OPTO_CASTNODE_HPP

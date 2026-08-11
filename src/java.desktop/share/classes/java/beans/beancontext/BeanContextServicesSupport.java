@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,6 +131,7 @@ public class      BeanContextServicesSupport extends BeanContextSupport
      * call it directly.
      */
 
+    @Override
     public void initialize() {
         super.initialize();
         services     = new HashMap<>(serializable + 1);
@@ -592,6 +593,7 @@ public class      BeanContextServicesSupport extends BeanContextSupport
      * @param peer        the peer if the targetChild and peer are related by BeanContextProxy
      */
 
+    @Override
     protected BCSChild createBCSChild(Object targetChild, Object peer) {
         return new BCSSChild(targetChild, peer);
     }
@@ -655,6 +657,7 @@ public class      BeanContextServicesSupport extends BeanContextSupport
      * @throws NullPointerException if the argument is null
      */
 
+    @Override
     public void addBeanContextServicesListener(BeanContextServicesListener bcsl) {
         if (bcsl == null) throw new NullPointerException("bcsl");
 
@@ -670,6 +673,7 @@ public class      BeanContextServicesSupport extends BeanContextSupport
      * remove a BeanContextServicesListener
      */
 
+    @Override
     public void removeBeanContextServicesListener(BeanContextServicesListener bcsl) {
         if (bcsl == null) throw new NullPointerException("bcsl");
 
@@ -687,6 +691,7 @@ public class      BeanContextServicesSupport extends BeanContextSupport
      * @param bcsp the service provider
      */
 
+    @Override
     public boolean addService(Class<?> serviceClass, BeanContextServiceProvider bcsp) {
         return addService(serviceClass, bcsp, true);
     }
@@ -739,6 +744,7 @@ public class      BeanContextServicesSupport extends BeanContextSupport
      * @param revokeCurrentServicesNow whether or not to revoke the service
      */
 
+    @Override
     public void revokeService(Class<?> serviceClass, BeanContextServiceProvider bcsp, boolean revokeCurrentServicesNow) {
 
         if (serviceClass == null) throw new NullPointerException("serviceClass");
@@ -770,6 +776,7 @@ public class      BeanContextServicesSupport extends BeanContextSupport
      * has a service, which may be delegated
      */
 
+    @Override
     public synchronized boolean hasService(Class<?> serviceClass) {
         if (serviceClass == null) throw new NullPointerException("serviceClass");
 
@@ -807,6 +814,7 @@ public class      BeanContextServicesSupport extends BeanContextSupport
             nestingCtxt = bcs;
         }
 
+        @Override
         public Object getService(BeanContextServices bcs, Object requestor, Class<?> serviceClass, Object serviceSelector) {
             Object service = null;
 
@@ -819,14 +827,17 @@ public class      BeanContextServicesSupport extends BeanContextSupport
             return service;
         }
 
+        @Override
         public void releaseService(BeanContextServices bcs, Object requestor, Object service) {
             nestingCtxt.releaseService(bcs, requestor, service);
         }
 
+        @Override
         public Iterator<?> getCurrentServiceSelectors(BeanContextServices bcs, Class<?> serviceClass) {
             return nestingCtxt.getCurrentServiceSelectors(serviceClass);
         }
 
+        @Override
         public void serviceRevoked(BeanContextServiceRevokedEvent bcsre) {
             Iterator<BeanContextSupport.BCSChild> i = bcsChildren(); // get the BCSChild values.
 
@@ -848,6 +859,7 @@ public class      BeanContextServicesSupport extends BeanContextSupport
      * obtain a service which may be delegated
      */
 
+     @Override
      public Object getService(BeanContextChild child, Object requestor, Class<?> serviceClass, Object serviceSelector, BeanContextServiceRevokedListener bcsrl) throws TooManyListenersException {
         if (child        == null) throw new NullPointerException("child");
         if (serviceClass == null) throw new NullPointerException("serviceClass");
@@ -913,6 +925,7 @@ public class      BeanContextServicesSupport extends BeanContextSupport
      * release a service
      */
 
+    @Override
     public void releaseService(BeanContextChild child, Object requestor, Object service) {
         if (child     == null) throw new NullPointerException("child");
         if (requestor == null) throw new NullPointerException("requestor");
@@ -934,6 +947,7 @@ public class      BeanContextServicesSupport extends BeanContextSupport
      * @return an iterator for all the currently registered service classes.
      */
 
+    @Override
     public Iterator<Object> getCurrentServiceClasses() {
         return new BCSIterator(services.keySet().iterator());
     }
@@ -943,6 +957,7 @@ public class      BeanContextServicesSupport extends BeanContextSupport
      * (if any) available for the specified service.
      */
 
+    @Override
     public Iterator<?> getCurrentServiceSelectors(Class<?> serviceClass) {
 
         BCSSServiceProvider bcsssp = services.get(serviceClass);
@@ -960,6 +975,7 @@ public class      BeanContextServicesSupport extends BeanContextSupport
      * own propagation semantics.
      */
 
+     @Override
      public void serviceAvailable(BeanContextServiceAvailableEvent bcssae) {
         synchronized(BeanContext.globalHierarchyLock) {
             if (services.containsKey(bcssae.getServiceClass())) return;
@@ -992,6 +1008,7 @@ public class      BeanContextServicesSupport extends BeanContextSupport
      * own propagation semantics.
      */
 
+    @Override
     public void serviceRevoked(BeanContextServiceRevokedEvent bcssre) {
         synchronized(BeanContext.globalHierarchyLock) {
             if (services.containsKey(bcssre.getServiceClass())) return;
@@ -1040,6 +1057,7 @@ public class      BeanContextServicesSupport extends BeanContextSupport
      * own child removal side-effects.
      */
 
+    @Override
     protected void childJustRemovedHook(Object child, BCSChild bcsc) {
         BCSSChild bcssc = (BCSSChild)bcsc;
 
@@ -1055,6 +1073,7 @@ public class      BeanContextServicesSupport extends BeanContextSupport
      * subclasses may envelope this method to implement their own semantics.
      */
 
+    @Override
     protected synchronized void releaseBeanContextResources() {
         Object[] bcssc;
 
@@ -1081,6 +1100,7 @@ public class      BeanContextServicesSupport extends BeanContextSupport
      * subclasses may envelope this method to implement their own semantics.
      */
 
+    @Override
     protected synchronized void initializeBeanContextResources() {
         super.initializeBeanContextResources();
 
@@ -1167,6 +1187,7 @@ public class      BeanContextServicesSupport extends BeanContextSupport
      * processing that has to occur prior to serialization of the children
      */
 
+    @Override
     protected synchronized void bcsPreSerializationHook(ObjectOutputStream oos) throws IOException {
 
         oos.writeInt(serializable);
@@ -1210,6 +1231,7 @@ public class      BeanContextServicesSupport extends BeanContextSupport
      * processing that has to occur prior to serialization of the children
      */
 
+    @Override
     protected synchronized void bcsPreDeserializationHook(ObjectInputStream ois) throws IOException, ClassNotFoundException {
 
         serializable = ois.readInt();

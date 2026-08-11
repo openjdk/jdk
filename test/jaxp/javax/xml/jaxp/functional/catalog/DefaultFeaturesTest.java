@@ -23,42 +23,30 @@
 
 package catalog;
 
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import javax.xml.catalog.CatalogFeatures;
 import javax.xml.catalog.CatalogFeatures.Feature;
 
-import org.testng.Assert;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /*
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm catalog.DefaultFeaturesTest
+ * @run junit/othervm catalog.DefaultFeaturesTest
  * @summary This case tests if the default feature values are expected.
  */
 public class DefaultFeaturesTest {
-
-    private CatalogFeatures defaultFeature;
-
-    @BeforeClass
-    public void init() {
-        defaultFeature = CatalogFeatures.defaults();
-    }
-
-    @Test(dataProvider="feature-value")
+    @ParameterizedTest
+    @MethodSource("defaultFeaturesData")
     public void testDefaultFeatures(Feature feature, String expected) {
-        String featureValue = defaultFeature.get(feature);
-        if (expected != null) {
-            Assert.assertEquals(featureValue, expected);
-        } else {
-            Assert.assertNull(featureValue);
-        }
+        CatalogFeatures defaultFeature = CatalogFeatures.defaults();
+        assertEquals(expected, defaultFeature.get(feature));
     }
 
-    @DataProvider(name = "feature-value")
-    public Object[][] data() {
+    public static Object[][] defaultFeaturesData() {
         return new Object[][] {
                 { Feature.FILES, null },
                 { Feature.PREFER, CatalogTestUtils.PREFER_PUBLIC },

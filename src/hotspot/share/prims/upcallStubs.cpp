@@ -26,6 +26,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 
 JVM_ENTRY(static jboolean, UH_FreeUpcallStub0(JNIEnv *env, jobject _unused, jlong addr))
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
   // safe to call 'find_blob' without code cache lock, because stub is always alive
   CodeBlob* cb = CodeCache::find_blob((char*)addr);
   if (cb == nullptr) {

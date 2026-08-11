@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,9 +74,6 @@ class PathString : public CHeapObj<mtArguments> {
 
   PathString(const char* value);
   ~PathString();
-
-  // for JVM_ReadSystemPropertiesInfo
-  static int value_offset_in_bytes()  { return (int)offset_of(PathString, _value);  }
 };
 
 // ModulePatchPath records the module/path pair as specified to --patch-module.
@@ -90,6 +87,7 @@ public:
 
   inline const char* module_name() const { return _module_name; }
   inline char* path_string() const { return _path->value(); }
+  inline void append_path(const char* path) { _path->append_value(path); }
 };
 
 // Element describing System and User (-Dkey=value flags) defined property.
@@ -138,10 +136,6 @@ class SystemProperty : public PathString {
 
   // Constructor
   SystemProperty(const char* key, const char* value, bool writeable, bool internal = false);
-
-  // for JVM_ReadSystemPropertiesInfo
-  static int key_offset_in_bytes()  { return (int)offset_of(SystemProperty, _key);  }
-  static int next_offset_in_bytes() { return (int)offset_of(SystemProperty, _next); }
 };
 
 // Helper class for controlling the lifetime of JavaVMInitArgs objects.
@@ -199,10 +193,6 @@ class Arguments : AllStatic {
   static char* _java_command;
   // number of unique modules specified in the --add-modules option
   static unsigned int _addmods_count;
-#if INCLUDE_JVMCI
-  // was jdk.internal.vm.ci module specified in the --add-modules option?
-  static bool _jvmci_module_added;
-#endif
 
   // Property list
   static SystemProperty* _system_properties;
@@ -273,12 +263,6 @@ class Arguments : AllStatic {
   static void set_use_compressed_oops();
   static jint set_ergonomics_flags();
   static void set_compact_headers_flags();
-  // Limits the given heap size by the maximum amount of virtual
-  // memory this process is currently allowed to use. It also takes
-  // the virtual-to-physical ratio of the current GC into account.
-  static size_t limit_heap_by_allocatable_memory(size_t size);
-  // Setup heap size
-  static void set_heap_size();
 
   // Bytecode rewriting
   static void set_bytecode_flags();
@@ -302,8 +286,6 @@ class Arguments : AllStatic {
 
   // Aggressive optimization flags.
   static jint set_aggressive_opts_flags();
-
-  static jint set_aggressive_heap_flags();
 
   // Argument parsing
   static bool parse_argument(const char* arg, JVMFlagOrigin origin);
@@ -478,6 +460,7 @@ class Arguments : AllStatic {
 
   // Set up the underlying pieces of the boot class path
   static void add_patch_mod_prefix(const char *module_name, const char *path);
+
   static void set_boot_class_path(const char *value, bool has_jimage) {
     // During start up, set by os::set_boot_path()
     assert(get_boot_class_path() == nullptr, "Boot class path previously set");
@@ -508,6 +491,10 @@ class Arguments : AllStatic {
   // preview features
   static void set_enable_preview() { _enable_preview = true; }
   static bool enable_preview() { return _enable_preview; }
+  static bool is_valhalla_enabled() {
+    // Valhalla is a feature opted-in by --enable-preview
+    return enable_preview();
+  }
 
   // jdwp
   static bool has_jdwp_agent() { return _has_jdwp_agent; }

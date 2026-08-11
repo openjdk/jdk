@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,28 +101,29 @@ import javax.lang.model.SourceVersion;
  * supports, possibly an empty set.
  *
  * For a given round, the tool computes the set of annotation
- * interfaces that are present on the elements enclosed within the
- * root elements.  If there is at least one annotation interface
- * present, then as processors claim annotation interfaces, they are
- * removed from the set of unmatched annotation interfaces.  When the
- * set is empty or no more processors are available, the round has run
- * to completion.  If there are no annotation interfaces present,
- * annotation processing still occurs but only <i>universal
+ * interfaces that are present on the elements {@linkplain
+ * RoundEnvironment#getElementsAnnotatedWith(TypeElement) included}
+ * within the root elements.  If there is at least one annotation
+ * interface present, then as processors claim annotation interfaces,
+ * they are removed from the set of unmatched annotation interfaces.
+ * When the set is empty or no more processors are available, the
+ * round has run to completion.  If there are no annotation interfaces
+ * present, annotation processing still occurs but only <i>universal
  * processors</i> which support processing all annotation interfaces,
  * {@code "*"}, can claim the (empty) set of annotation interfaces.
  *
  * <p>An annotation interface is considered present if there is at least
- * one annotation of that interface present on an element enclosed within
+ * one annotation of that interface present on an element included within
  * the root elements of a round. For this purpose, a type parameter is
- * considered to be enclosed by its {@linkplain
+ * considered to be included by its {@linkplain
  * TypeParameterElement#getGenericElement generic
  * element}.
 
  * For this purpose, a package element is <em>not</em> considered to
- * enclose the top-level classes and interfaces within that
+ * include the top-level classes and interfaces within that
  * package. (A root element representing a package is created when a
  * {@code package-info} file is processed.) Likewise, for this
- * purpose, a module element is <em>not</em> considered to enclose the
+ * purpose, a module element is <em>not</em> considered to include the
  * packages within that module. (A root element representing a module
  * is created when a {@code module-info} file is processed.)
  *

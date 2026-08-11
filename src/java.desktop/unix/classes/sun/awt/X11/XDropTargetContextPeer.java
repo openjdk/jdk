@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import java.util.Iterator;
 import sun.awt.AWTAccessor;
 import sun.util.logging.PlatformLogger;
 
-import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 
 import sun.awt.dnd.SunDropTargetContextPeer;
@@ -55,20 +54,14 @@ final class XDropTargetContextPeer extends SunDropTargetContextPeer {
 
     private static final Unsafe unsafe = XlibWrapper.unsafe;
 
-    /*
-     * A key to store a peer instance for an AppContext.
-     */
-    private static final Object DTCP_KEY = "DropTargetContextPeer";
-
     private XDropTargetContextPeer() {}
 
-    static XDropTargetContextPeer getPeer(AppContext appContext) {
+    private static XDropTargetContextPeer peer;
+
+    static XDropTargetContextPeer getPeer() {
         synchronized (_globalLock) {
-            XDropTargetContextPeer peer =
-                (XDropTargetContextPeer)appContext.get(DTCP_KEY);
             if (peer == null) {
                 peer = new XDropTargetContextPeer();
-                appContext.put(DTCP_KEY, peer);
             }
 
             return peer;
@@ -261,17 +254,11 @@ final class XDropTargetContextPeer extends SunDropTargetContextPeer {
                                                  int eventID) {
             Object target = xwindow.getTarget();
 
-            // The Every component is associated with some AppContext.
             assert target instanceof Component;
 
             Component component = (Component)target;
 
-            AppContext appContext = SunToolkit.targetToAppContext(target);
-
-            // Every component is associated with some AppContext.
-            assert appContext != null;
-
-            XDropTargetContextPeer peer = XDropTargetContextPeer.getPeer(appContext);
+            XDropTargetContextPeer peer = XDropTargetContextPeer.getPeer();
 
             peer.postDropTargetEvent(component, x, y, dropAction, actions, formats,
                                      nativeCtxt, eventID,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,61 +25,54 @@
  * @test
  * @summary Test UnixDomainSocketAddress constructor
  * @library /test/lib
- * @run testng/othervm LengthTest
+ * @run junit/othervm ${test.main.class}
  */
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
-import static java.lang.System.out;
-import static java.net.StandardProtocolFamily.UNIX;
-import static jdk.test.lib.Asserts.assertTrue;
+import static java.lang.System.err;
 
 import java.net.UnixDomainSocketAddress;
-import java.io.IOException;
-import java.nio.channels.SocketChannel;
 import java.nio.file.Path;
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class LengthTest {
-    final int namelen = 100;    // length close to max
+    private static final int namelen = 100;    // length close to max
 
-    @DataProvider(name = "strings")
-    public Object[][] strings() {
-        if (namelen == -1)
-            return new Object[][] {new String[]{""}};
-
-        return new Object[][]{
-                {""},
-                {new String(new char[100]).replaceAll("\0", "x")},
-                {new String(new char[namelen]).replaceAll("\0", "x")},
-                {new String(new char[namelen-1]).replaceAll("\0", "x")},
-        };
+    public static List<String> strings() {
+        assert namelen > 0;
+        return List.of(
+                "",
+                "x".repeat(100),
+                "x".repeat(namelen),
+                "x".repeat(namelen - 1)
+        );
     }
 
-    @Test(dataProvider = "strings")
+    @ParameterizedTest
+    @MethodSource("strings")
     public void expectPass(String s) {
         var addr = UnixDomainSocketAddress.of(s);
-        assertTrue(addr.getPath().toString().equals(s), "getPathName.equals(s)");
+        assertEquals(s, addr.getPath().toString(), "getPathName.equals(s)");
         var p = Path.of(s);
         addr = UnixDomainSocketAddress.of(p);
-        assertTrue(addr.getPath().equals(p), "getPath.equals(p)");
+        assertEquals(p, addr.getPath(), "getPath.equals(p)");
     }
 
     @Test
     public void expectNPE() {
-        try {
-            String s = null;
-            UnixDomainSocketAddress.of(s);
-            throw new RuntimeException("Expected NPE");
-        } catch (NullPointerException npe) {
-            out.println("\tCaught expected exception: " + npe);
-        }
-        try {
-            Path p = null;
-            UnixDomainSocketAddress.of(p);
-            throw new RuntimeException("Expected NPE");
-        } catch (NullPointerException npe) {
-            out.println("\tCaught expected exception: " + npe);
-        }
+        String s = null;
+        NullPointerException npe =
+                assertThrows(NullPointerException.class, () -> UnixDomainSocketAddress.of(s));
+        err.println("\tCaugth expected NPE for UnixDomainSocketAddress.of(s): " + npe);
+        Path p = null;
+        npe = assertThrows(NullPointerException.class, () -> UnixDomainSocketAddress.of(p));
+        err.println("\tCaugth expected NPE for UnixDomainSocketAddress.of(p): " + npe);
     }
 }

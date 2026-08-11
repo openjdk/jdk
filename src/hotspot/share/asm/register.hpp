@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,15 +49,7 @@ class AbstractRegisterImpl {
 
 // Macros to help define all kinds of registers
 
-#ifndef USE_POINTERS_TO_REGISTER_IMPL_ARRAY
-
-#define AS_REGISTER(type,name)         ((type)name##_##type##EnumValue)
-
-#define CONSTANT_REGISTER_DECLARATION(type, name, value)                \
-const type name = ((type)value);                                        \
-enum { name##_##type##EnumValue = (value) }
-
-#else // USE_POINTERS_TO_REGISTER_IMPL_ARRAY
+#ifdef USE_POINTERS_TO_REGISTER_IMPL_ARRAY
 
 #define REGISTER_IMPL_DECLARATION(type, impl_type, reg_count)           \
 inline constexpr type as_ ## type(int encoding) {                       \
@@ -69,15 +61,7 @@ inline constexpr type impl_type::first() { return all_ ## type ## s + 1; }
 #define REGISTER_IMPL_DEFINITION(type, impl_type, reg_count)            \
 impl_type all_ ## type ## s[reg_count + 1];
 
-#define CONSTANT_REGISTER_DECLARATION(type, name, value)                \
-constexpr type name = as_ ## type(value);
-
 #endif // USE_POINTERS_TO_REGISTER_IMPL_ARRAY
-
-
-#define REGISTER_DECLARATION(type, name, value) \
-const type name = ((type)value)
-
 
 // For definitions of RegisterImpl* instances. To be redefined in an
 // OS-specific way.

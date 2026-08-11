@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @modules java.net.http/jdk.internal.net.http.http3
  * @modules java.net.http/jdk.internal.net.http.http3.frames
  * @modules java.net.http/jdk.internal.net.http.quic.streams
- * @run junit/othervm FramesDecoderTest
+ * @run junit/othervm ${test.main.class}
  * @summary Tests to check HTTP3 methods decode frames correctly
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
