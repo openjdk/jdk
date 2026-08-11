@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,23 @@
  *
  */
 
-module com.moretest {
-  exports com.moretest;
-}
+#ifndef SHARE_COMPILER_STRESS_HPP
+#define SHARE_COMPILER_STRESS_HPP
+
+#include "compiler/compileLog.hpp"
+#include "compiler/compilerDefinitions.hpp"
+#include "compiler/compilerDirectives.hpp"
+#include "memory/allocation.hpp"
+
+class Stress : public StackObj {
+ private:
+  uint _stress_seed;
+
+ public:
+  Stress(DirectiveSet* directives, CompileLog* log, CompilerType comp);
+
+  uint random();
+  bool randomized_select(uint count);
+};
+
+#endif // SHARE_COMPILER_STRESS_HPP
