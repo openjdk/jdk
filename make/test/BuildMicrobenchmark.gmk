@@ -77,46 +77,61 @@ MICROBENCHMARK_MANIFEST := Build: $(FULL_VERSION)\n\
 # jmh uses annotation processors to generate the benchmark jar and thus
 # requires the use of -processor option during benchmark compilation.
 
-MICROBENCHMARK_PREVIEW_PACKAGES := org/openjdk/bench/valhalla \
+MICROBENCHMARK_PREVIEW_PACKAGES := \
+    org/openjdk/bench/valhalla \
     org/openjdk/bench/java/lang/stable
 
+MICROBENCHMARK_JAVAC_FLAGS := \
+    --add-exports java.base/jdk.internal.classfile.components=ALL-UNNAMED \
+    --add-exports java.base/jdk.internal.classfile.impl=ALL-UNNAMED \
+    --add-exports java.base/jdk.internal.event=ALL-UNNAMED \
+    --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED \
+    --add-exports java.base/jdk.internal.jimage=ALL-UNNAMED \
+    --add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
+    --add-exports java.base/jdk.internal.util=ALL-UNNAMED \
+    --add-exports java.base/jdk.internal.value=ALL-UNNAMED \
+    --add-exports java.base/jdk.internal.vm=ALL-UNNAMED \
+    --add-exports java.base/jdk.internal.vm.annotation=ALL-UNNAMED \
+    --add-exports java.base/sun.invoke.util=ALL-UNNAMED \
+    --add-exports java.base/sun.security.util=ALL-UNNAMED \
+    --add-exports java.base/sun.security.util.math=ALL-UNNAMED \
+    --add-exports java.base/sun.security.util.math.intpoly=ALL-UNNAMED \
+    -XDsuppressNotes \
+    -processor org.openjdk.jmh.generators.BenchmarkProcessor \
+    -s $(MICROBENCHMARK_GENSRC)
+
+# For code built with --enable-preview we need to patch java.base
+# to include preview classes not found in interim javac
+MICROBENCHMARK_JAVAC_PREVIEW_FLAGS := \
+    $(MICROBENCHMARK_JAVAC_FLAGS) \
+    --enable-preview \
+    --patch-module java.base=$(SUPPORT_OUTPUTDIR)/preview/java.base
+
+MICROBENCHMARK_JAVA_FLAGS := \
+    --add-exports java.base/jdk.internal.vm=ALL-UNNAMED \
+    --add-modules jdk.unsupported \
+    --limit-modules java.management
+
+MICROBENCHMARK_JAVA_PREVIEW_FLAGS := \
+    $(MICROBENCHMARK_JAVA_FLAGS) \
+    --enable-preview
+
+MICROBENCHMARK_DISABLED_WARNINGS := restricted this-escape processing \
+    rawtypes removal cast serial preview unchecked deprecation \
+    dangling-doc-comments
+
 # Build microbenchmark suite for the current JDK
-# Need to patch java.base to include preview classes not found in interim javac
 $(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK_PREVIEW, \
     TARGET_RELEASE := $(TARGET_RELEASE_NEWJDK_UPGRADED), \
     SMALL_JAVA := false, \
     CLASSPATH := $(JMH_COMPILE_JARS), \
     INCLUDES := $(MICROBENCHMARK_PREVIEW_PACKAGES), \
     CREATE_API_DIGEST := true, \
-    DISABLED_WARNINGS := restricted this-escape processing rawtypes removal cast \
-        serial preview unchecked deprecation dangling-doc-comments, \
+    DISABLED_WARNINGS := $(MICROBENCHMARK_DISABLED_WARNINGS), \
     SRC := $(MICROBENCHMARK_SRC), \
     BIN := $(MICROBENCHMARK_CLASSES), \
-    JAVAC_FLAGS := \
-        --add-exports java.base/jdk.internal.classfile.components=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.classfile.impl=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.event=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.jimage=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.util=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.value=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.vm=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.vm.annotation=ALL-UNNAMED \
-        --add-exports java.base/sun.invoke.util=ALL-UNNAMED \
-        --add-exports java.base/sun.security.util=ALL-UNNAMED \
-        --add-exports java.base/sun.security.util.math=ALL-UNNAMED \
-        --add-exports java.base/sun.security.util.math.intpoly=ALL-UNNAMED \
-        --enable-preview \
-        --patch-module java.base=$(SUPPORT_OUTPUTDIR)/preview/java.base \
-        -XDsuppressNotes \
-        -processor org.openjdk.jmh.generators.BenchmarkProcessor \
-        -s $(MICROBENCHMARK_GENSRC), \
-    JAVA_FLAGS := \
-        --add-exports java.base/jdk.internal.vm=ALL-UNNAMED \
-        --add-modules jdk.unsupported \
-        --enable-preview \
-        --limit-modules java.management, \
+    JAVAC_FLAGS := $(MICROBENCHMARK_JAVAC_PREVIEW_FLAGS), \
+    JAVA_FLAGS := $(MICROBENCHMARK_JAVA_PREVIEW_FLAGS), \
 ))
 
 $(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK, \
@@ -125,34 +140,14 @@ $(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK, \
     CLASSPATH := $(JMH_COMPILE_JARS), \
     CREATE_API_DIGEST := true, \
     EXCLUDES := $(MICROBENCHMARK_PREVIEW_PACKAGES), \
-    DISABLED_WARNINGS := restricted this-escape processing rawtypes removal cast \
-        serial unchecked deprecation dangling-doc-comments, \
+    DISABLED_WARNINGS := $(MICROBENCHMARK_DISABLED_WARNINGS), \
     SRC := $(MICROBENCHMARK_SRC), \
     BIN := $(MICROBENCHMARK_CLASSES), \
-    JAVAC_FLAGS := \
-        --add-exports java.base/jdk.internal.classfile.components=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.classfile.impl=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.event=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.jimage=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.util=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.value=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.vm=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.vm.annotation=ALL-UNNAMED \
-        --add-exports java.base/sun.invoke.util=ALL-UNNAMED \
-        --add-exports java.base/sun.security.util=ALL-UNNAMED \
-        --add-exports java.base/sun.security.util.math=ALL-UNNAMED \
-        --add-exports java.base/sun.security.util.math.intpoly=ALL-UNNAMED \
-        -XDsuppressNotes \
-        -processor org.openjdk.jmh.generators.BenchmarkProcessor \
-        -s $(MICROBENCHMARK_GENSRC), \
-    JAVA_FLAGS := \
-        --add-exports java.base/jdk.internal.vm=ALL-UNNAMED \
-        --add-modules jdk.unsupported \
-        --enable-preview \
-        --limit-modules java.management, \
+    JAVAC_FLAGS := $(MICROBENCHMARK_JAVAC_PREVIEW_FLAGS), \
+    JAVA_FLAGS := $(MICROBENCHMARK_JAVA_PREVIEW_FLAGS), \
 ))
+
+$(BUILD_JDK_MICROBENCHMARK_PREVIEW): $(JMH_COMPILE_JARS)
 
 $(BUILD_JDK_MICROBENCHMARK): $(JMH_COMPILE_JARS)
 
