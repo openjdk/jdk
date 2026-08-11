@@ -997,9 +997,9 @@ public:
   void print_jni_stack();
 
   // Print stack traces in various internal formats
-  void trace_stack()                             PRODUCT_RETURN;
-  void trace_stack_from(vframe* start_vf)        PRODUCT_RETURN;
-  void trace_frames()                            PRODUCT_RETURN;
+  void trace_stack_on(outputStream* st)                            PRODUCT_RETURN;
+  void trace_stack_from(outputStream* st, vframe* start_vf)        PRODUCT_RETURN;
+  void trace_frames_on(outputStream* st)                           PRODUCT_RETURN;
 
   // Print an annotated view of the stack frames
   void print_frame_layout(int depth = 0, bool validate_only = false) NOT_DEBUG_RETURN;
