@@ -160,32 +160,32 @@ public class TestGenerate {
                 "foo",
                 42
             ]"""),
-        Arguments.of("\t",
+        Arguments.of("\t\r\n\u0020 ",
             """
             [
-            \t{
-            \t\t"name": "John",
-            \t\t"age": 30,
-            \t\t"city": "New-York"
-            \t},
-            \t{
-            \t\t"name": "Jane",
-            \t\t"age": 20,
-            \t\t"city": "Boston"
-            \t},
-            \ttrue,
-            \tfalse,
-            \tnull,
-            \t[
-            \t\t"array",
-            \t\t"inside",
-            \t\t{
-            \t\t\t"inner-obj": true,
-            \t\t\t"top-level": false
-            \t\t}
-            \t],
-            \t"foo",
-            \t42
+            \t\r\n\u0020 {
+            \t\r\n\u0020 \t\r\n\u0020 "name": "John",
+            \t\r\n\u0020 \t\r\n\u0020 "age": 30,
+            \t\r\n\u0020 \t\r\n\u0020 "city": "New-York"
+            \t\r\n\u0020 },
+            \t\r\n\u0020 {
+            \t\r\n\u0020 \t\r\n\u0020 "name": "Jane",
+            \t\r\n\u0020 \t\r\n\u0020 "age": 20,
+            \t\r\n\u0020 \t\r\n\u0020 "city": "Boston"
+            \t\r\n\u0020 },
+            \t\r\n\u0020 true,
+            \t\r\n\u0020 false,
+            \t\r\n\u0020 null,
+            \t\r\n\u0020 [
+            \t\r\n\u0020 \t\r\n\u0020 "array",
+            \t\r\n\u0020 \t\r\n\u0020 "inside",
+            \t\r\n\u0020 \t\r\n\u0020 {
+            \t\r\n\u0020 \t\r\n\u0020 \t\r\n\u0020 "inner-obj": true,
+            \t\r\n\u0020 \t\r\n\u0020 \t\r\n\u0020 "top-level": false
+            \t\r\n\u0020 \t\r\n\u0020 }
+            \t\r\n\u0020 ],
+            \t\r\n\u0020 "foo",
+            \t\r\n\u0020 42
             ]""")
     );
 
