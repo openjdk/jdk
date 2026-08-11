@@ -46,22 +46,24 @@ protected:
   NONCOPYABLE(G1YoungRegions);
 
 public:
-  uint regions_on_node(uint node_index) const { return _regions_on_node.count(node_index); }
+  uint regions_on_node(uint node_index) const {
+    return _regions_on_node.num_regions_per_node(node_index);
+  }
 
   void add_used_bytes(size_t used_bytes) { _used_bytes.add_then_fetch(used_bytes, memory_order_relaxed); }
   size_t used_bytes() const { return _used_bytes.load_relaxed(); }
 };
 
 class G1EdenRegions : public G1YoungRegions {
-  uint _length;
+  uint _num_regions;
 
 public:
-  G1EdenRegions() : G1YoungRegions(), _length(0) { }
+  G1EdenRegions() : G1YoungRegions(), _num_regions(0) { }
 
   void add(G1HeapRegion* r);
   void clear();
 
-  uint length() const { return _length; }
+  uint num_regions() const { return _num_regions; }
 };
 
 // Set of current survivor regions.
@@ -74,7 +76,7 @@ public:
   void add(G1HeapRegion* r);
   void clear();
 
-  uint length() const { return (uint)_regions.length(); }
+  uint num_regions() const { return (uint)_regions.length(); }
 
   void convert_to_eden();
 

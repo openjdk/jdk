@@ -2412,7 +2412,7 @@ bool CountedLoopConverter::is_counted_loop() {
 #endif
 
 #ifndef PRODUCT
-  if (StressCountedLoop && (_phase->C->random() % 2 == 0)) {
+  if (StressCountedLoop && (_phase->C->stress().random() % 2 == 0)) {
     return false;
   }
 #endif
