@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,8 +52,10 @@ import sun.security.util.*;
 public class DNSName implements GeneralNameInterface {
     private final String name;
 
-    private static final String alphaDigits =
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    private static final HostnameChecker HOSTNAME_CHECKER =
+            HostnameChecker.getInstance(HostnameChecker.TYPE_TLS);
+    private static final String DNS_ALLOWED =
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-";
 
     /**
      * Create the DNSName object from the passed encoded Der value.
@@ -73,52 +75,64 @@ public class DNSName implements GeneralNameInterface {
      * @throws IOException if the name is not a valid DNSName
      */
     public DNSName(String name, boolean allowWildcard) throws IOException {
-        if (name == null || name.isEmpty())
+
+        // Check the full name.
+        if (name == null || name.isEmpty()) {
             throw new IOException("DNSName must not be null or empty");
-        if (name.contains(" "))
-            throw new IOException("DNSName with blank components is not permitted");
-        if (name.startsWith(".") || name.endsWith("."))
+        }
+
+        if (name.contains(" ")) {
+            throw new IOException(
+                    "DNSName with blank labels is not permitted");
+        }
+
+        if (name.startsWith(".") || name.endsWith(".")) {
             throw new IOException("DNSName may not begin or end with a .");
-        /*
-         * Name will consist of label components separated by "."
-         * startIndex is the index of the first character of a component
-         * endIndex is the index of the last character of a component plus 1
-         */
-        for (int endIndex,startIndex = 0; startIndex < name.length(); startIndex = endIndex+1) {
-            endIndex = name.indexOf('.', startIndex);
-            if (endIndex < 0) {
-                endIndex = name.length();
-            }
-            if (endIndex - startIndex < 1)
-                throw new IOException("DNSName with empty components are not permitted");
+        }
 
-            if (allowWildcard) {
-                // RFC 1123: DNSName components must begin with a letter or digit
-                // or RFC 4592: the first component of a DNSName can have only a wildcard
-                // character * (asterisk), i.e. *.example.com. Asterisks at other components
-                // will not be allowed as a wildcard.
-                if (alphaDigits.indexOf(name.charAt(startIndex)) < 0) {
-                    // Checking to make sure the wildcard only appears in the first component,
-                    // and it has to be at least 3-char long with the form of *.[alphaDigit]
-                    if ((name.length() < 3) || (name.indexOf('*') != 0) ||
-                        (name.charAt(startIndex+1) != '.') ||
-                        (alphaDigits.indexOf(name.charAt(startIndex+2)) < 0))
-                        throw new IOException("DNSName components must begin with a letter, digit, "
-                            + "or the first component can have only a wildcard character *");
+        // RFC 1123 Section 2.1 and RFC 2181 Section 11
+        if (name.length() > 253) {
+            throw new IOException(
+                    "DNSName can't be longer than 253 characters");
+        }
+
+        // Check the labels.
+        String[] labels = name.split("\\.");
+
+        for (int i = 0; i < labels.length; i++) {
+            String label = labels[i];
+
+            if (label.isEmpty()) {
+                throw new IOException(
+                        "DNSName with empty labels is not permitted");
+            }
+
+            // RFC 1123 Section 2.1
+            if (label.length() > 63) {
+                throw new IOException(
+                        "DNSName label can't be longer than 63 characters");
+            }
+
+            // RFC 1035 Section 2.3.1
+            if (label.startsWith("-") || label.endsWith("-")) {
+                throw new IOException(
+                        "DNSName label may not begin or end with a hyphen");
+            }
+
+            // RFC 9525 Section 6.3
+            if (allowWildcard && label.equals("*") && i == 0
+                    && labels.length > 1) {
+                continue;
+            }
+
+            for (char c : label.toCharArray()) {
+                if (DNS_ALLOWED.indexOf(c) < 0) {
+                    throw new IOException("DNSName labels must consist of "
+                            + "letters, digits, and hyphens");
                 }
-            } else {
-                // RFC 1123: DNSName components must begin with a letter or digit
-                if (alphaDigits.indexOf(name.charAt(startIndex)) < 0)
-                    throw new IOException("DNSName components must begin with a letter or digit");
-            }
-
-            //nonStartIndex: index for characters in the component beyond the first one
-            for (int nonStartIndex=startIndex+1; nonStartIndex < endIndex; nonStartIndex++) {
-                char x = name.charAt(nonStartIndex);
-                if ((alphaDigits).indexOf(x) < 0 && x != '-')
-                    throw new IOException("DNSName components must consist of letters, digits, and hyphens");
             }
         }
+
         this.name = name;
     }
 
@@ -206,17 +220,22 @@ public class DNSName implements GeneralNameInterface {
      * For example, www.host.example.com would satisfy the constraint but
      * host1.example.com would not.
      * <p>
+     * RFC6125: Match wildcard pattern in the input name being constrained,
+     * any wildcard in this name will be matched as a literal character.
+     * <p>
      * RFC1034: By convention, domain names can be stored with arbitrary case, but
      * domain name comparisons for all present domain functions are done in a
      * case-insensitive manner, assuming an ASCII character set, and a high
      * order zero bit.
      *
      * @param inputName to be checked for being constrained
+     * @param matchWildcard whether to match a wildcard in inputName
      * @return constraint type above
      * @throws UnsupportedOperationException if name is not exact match, but narrowing and widening are
      *          not supported for this name type.
      */
-    public int constrains(GeneralNameInterface inputName) throws UnsupportedOperationException {
+    public int constrains(GeneralNameInterface inputName, boolean matchWildcard)
+            throws UnsupportedOperationException {
         int constraintType;
         if (inputName == null)
             constraintType = NAME_DIFF_TYPE;
@@ -226,7 +245,10 @@ public class DNSName implements GeneralNameInterface {
             String inName =
                 (((DNSName)inputName).getName()).toLowerCase(Locale.ENGLISH);
             String thisName = name.toLowerCase(Locale.ENGLISH);
-            if (inName.equals(thisName))
+
+            if (inName.equals(thisName) || (matchWildcard
+                    && inName.contains("*")
+                    && HOSTNAME_CHECKER.isMatched(thisName, inName, false)))
                 constraintType = NAME_MATCH;
             else if (thisName.endsWith(inName)) {
                 int inNdx = thisName.lastIndexOf(inName);
@@ -245,6 +267,10 @@ public class DNSName implements GeneralNameInterface {
             }
         }
         return constraintType;
+    }
+
+    public int constrains(GeneralNameInterface inputName) {
+        return constrains(inputName, false);
     }
 
     /**

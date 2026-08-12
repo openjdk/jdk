@@ -24,19 +24,26 @@
     ; Support for int get_sve_vector_length();
     ;
     ; Returns the current SVE vector length in bytes.
-    ; This function uses the INCB instruction which increments a register
-    ; by the number of bytes in an SVE vector register.
+    ; This function uses the RDVL instruction which reads a multiple of the
+    ; vector register size into a scalar register.
     ;
-    ; Note: This function will fault if SVE is not available or enabled.
-    ; The caller must ensure SVE support is detected before calling.
+    ; Note: This function will fault if SVE is not available or enabled.  The
+    ; caller must ensure SVE support is detected before calling.
 
     ALIGN  4
     EXPORT get_sve_vector_length
     AREA sve_text, CODE
 
 get_sve_vector_length
-    mov      x0, #0
-    incb     x0
+    ; Older versions of Visual Studio aren't aware of SVE mnemonics, so we use
+    ; the raw instruction encoding to satisfy the compiler.  This function call
+    ; is gated by `VM_Version::supports_sve()`, so this instruction will never
+    ; run on non-SVE hardware.
+    ;
+    ; See https://www.scs.stanford.edu/~zyedidia/arm64/rdvl_r_i.html for a quick
+    ; reference to the instruction encoding.
+
+    DCD      0x04BF5020   ; rdvl x0, #1 (i.e. x0 = 1 * vector_length_in_bytes)
     ret
 
     END

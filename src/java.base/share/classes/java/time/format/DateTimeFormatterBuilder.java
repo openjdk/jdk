@@ -125,7 +125,6 @@ import java.util.regex.Pattern;
 import jdk.internal.util.DateTimeHelper;
 import jdk.internal.util.DecimalDigits;
 
-import sun.text.spi.JavaTimeDateTimePatternProvider;
 import sun.util.locale.provider.CalendarDataUtility;
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.LocaleResources;
@@ -223,10 +222,10 @@ public final class DateTimeFormatterBuilder {
         if (dateStyle == null && timeStyle == null) {
             throw new IllegalArgumentException("Either dateStyle or timeStyle must be non-null");
         }
-        LocaleProviderAdapter adapter = LocaleProviderAdapter.getAdapter(JavaTimeDateTimePatternProvider.class, locale);
-        JavaTimeDateTimePatternProvider provider = adapter.getJavaTimeDateTimePatternProvider();
-        return provider.getJavaTimeDateTimePattern(convertStyle(timeStyle),
-                         convertStyle(dateStyle), chrono.getCalendarType(),
+        LocaleProviderAdapter adapter = LocaleProviderAdapter.getAdapter(DateTimeFormatterPatternProvider.class, locale);
+        DateTimeFormatterPatternProvider provider = adapter.getDateTimeFormatterPatternProvider();
+        return provider.getDateTimeFormatterPattern(dateStyle, timeStyle,
+                         chrono.getCalendarType(),
                          CalendarDataUtility.findRegionOverride(locale));
     }
 
@@ -259,9 +258,9 @@ public final class DateTimeFormatterBuilder {
         Objects.requireNonNull(chrono, "chrono");
         Objects.requireNonNull(locale, "locale");
         Locale override = CalendarDataUtility.findRegionOverride(locale);
-        LocaleProviderAdapter adapter = LocaleProviderAdapter.getAdapter(JavaTimeDateTimePatternProvider.class, override);
-        JavaTimeDateTimePatternProvider provider = adapter.getJavaTimeDateTimePatternProvider();
-        return provider.getJavaTimeDateTimePattern(requestedTemplate,
+        LocaleProviderAdapter adapter = LocaleProviderAdapter.getAdapter(DateTimeFormatterPatternProvider.class, override);
+        DateTimeFormatterPatternProvider provider = adapter.getDateTimeFormatterPatternProvider();
+        return provider.getDateTimeFormatterPattern(requestedTemplate,
                 chrono.getCalendarType(),
                 override);
     }

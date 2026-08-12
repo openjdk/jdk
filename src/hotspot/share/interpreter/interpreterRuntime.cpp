@@ -23,7 +23,9 @@
  */
 
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
@@ -45,6 +47,9 @@
 #include "memory/universe.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/cpCache.inline.hpp"
+#include "oops/flatArrayKlass.hpp"
+#include "oops/flatArrayOop.inline.hpp"
+#include "oops/inlineKlass.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
@@ -52,7 +57,9 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopsHierarchy.hpp"
 #include "oops/symbol.hpp"
+#include "oops/valuePayload.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "prims/nativeLookup.hpp"
@@ -76,6 +83,7 @@
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
 #include "utilities/exceptions.hpp"
+#include "utilities/globalDefinitions.hpp"
 #if INCLUDE_JFR
 #include "jfr/jfr.inline.hpp"
 #endif
@@ -226,6 +234,28 @@ JRT_ENTRY(void, InterpreterRuntime::_new(JavaThread* current, ConstantPool* pool
   current->set_vm_result_oop(obj);
 JRT_END
 
+JRT_BLOCK_ENTRY(void, InterpreterRuntime::read_flat_field(JavaThread* current, oopDesc* obj, ResolvedFieldEntry* entry))
+  assert(oopDesc::is_oop(obj), "Sanity check");
+
+  FlatFieldPayload payload(instanceOop(obj), entry);
+  if (payload.is_payload_null()) {
+    // If the payload is null return before entering the JRT_BLOCK.
+    current->set_vm_result_oop(nullptr);
+    return;
+  }
+  JRT_BLOCK
+    oop res = payload.read(CHECK);
+    current->set_vm_result_oop(res);
+  JRT_BLOCK_END
+JRT_END
+
+JRT_ENTRY(void, InterpreterRuntime::write_flat_field(JavaThread* current, oopDesc* obj, oopDesc* value, ResolvedFieldEntry* entry))
+  assert(oopDesc::is_oop(obj), "Sanity check");
+  assert(oopDesc::is_oop_or_null(value), "Sanity check");
+
+  FlatFieldPayload payload(instanceOop(obj), entry);
+  payload.write(inlineOop(value), CHECK);
+JRT_END
 
 JRT_ENTRY(void, InterpreterRuntime::newarray(JavaThread* current, BasicType type, jint size))
   oop obj = oopFactory::new_typeArray(type, size, CHECK);
@@ -239,6 +269,18 @@ JRT_ENTRY(void, InterpreterRuntime::anewarray(JavaThread* current, ConstantPool*
   current->set_vm_result_oop(obj);
 JRT_END
 
+JRT_ENTRY(void, InterpreterRuntime::flat_array_load(JavaThread* current, arrayOopDesc* array, int index))
+  assert(array->is_flatArray(), "Must be");
+  flatArrayOop farray = (flatArrayOop)array;
+  oop res = farray->obj_at(index, CHECK);
+  current->set_vm_result_oop(res);
+JRT_END
+
+JRT_ENTRY(void, InterpreterRuntime::flat_array_store(JavaThread* current, oopDesc* val, arrayOopDesc* array, int index))
+  assert(array->is_flatArray(), "Must be");
+  flatArrayOop farray = (flatArrayOop)array;
+  farray->obj_at_put(index, val, CHECK);
+JRT_END
 
 JRT_ENTRY(void, InterpreterRuntime::multianewarray(JavaThread* current, jint* first_size_address))
   // We may want to pass in more arguments - could make this slightly faster
@@ -274,6 +316,22 @@ JRT_ENTRY(void, InterpreterRuntime::register_finalizer(JavaThread* current, oopD
   InstanceKlass::register_finalizer(instanceOop(obj), CHECK);
 JRT_END
 
+JRT_ENTRY(jboolean, InterpreterRuntime::is_substitutable(JavaThread* current, oopDesc* aobj, oopDesc* bobj))
+  assert(oopDesc::is_oop(aobj) && oopDesc::is_oop(bobj), "must be valid oops");
+
+  Handle ha(THREAD, aobj);
+  Handle hb(THREAD, bobj);
+  JavaValue result(T_BOOLEAN);
+  JavaCallArguments args;
+  args.push_oop(ha);
+  args.push_oop(hb);
+  methodHandle method(current, Universe::is_substitutable_method());
+  method->method_holder()->initialize(CHECK_false); // Ensure class ValueObjectMethods is initialized
+  JavaCalls::call(&result, method, &args, THREAD);
+  Exceptions::wrap_exception_in_internal_error("Internal error in substitutability test", CHECK_false);
+
+  return result.get_jboolean();
+JRT_END
 
 // Quicken instance-of and check-cast bytecodes
 JRT_ENTRY(void, InterpreterRuntime::quicken_io_cc(JavaThread* current))
@@ -533,22 +591,6 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
     }
   } while (should_repeat == true);
 
-#if INCLUDE_JVMCI
-  if (EnableJVMCI && h_method->method_data() != nullptr) {
-    ResourceMark rm(current);
-    MethodData* mdo = h_method->method_data();
-
-    // Lock to read ProfileData, and ensure lock is not broken by a safepoint
-    MutexLocker ml(mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
-
-    ProfileData* pdata = mdo->allocate_bci_to_data(current_bci, nullptr);
-    if (pdata != nullptr && pdata->is_BitData()) {
-      BitData* bit_data = (BitData*) pdata;
-      bit_data->set_exception_seen();
-    }
-  }
-#endif
-
   // notify JVMTI of an exception throw; JVMTI will detect if this is a first
   // time throw or a stack unwinding throw and accordingly notify the debugger
   if (JvmtiExport::can_post_on_exceptions()) {
@@ -562,10 +604,10 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
     // handler in this method, or (b) after a stack overflow there is not yet
     // enough stack space available to reprotect the stack.
     continuation = Interpreter::remove_activation_entry();
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
     // Count this for compilation purposes
     h_method->interpreter_throwout_increment(THREAD);
-#endif
+#endif // COMPILER2
   } else {
     // handler in this method => change bci/bcp to handler bci/bcp and continue there
     handler_pc = h_method->code_base() + handler_bci;
@@ -620,7 +662,6 @@ JRT_ENTRY(void, InterpreterRuntime::throw_AbstractMethodErrorVerbose(JavaThread*
   methodHandle mh = methodHandle(current, missingMethod);
   LinkResolver::throw_abstract_method_error(mh, recvKlass, THREAD);
 JRT_END
-
 
 JRT_ENTRY(void, InterpreterRuntime::throw_IncompatibleClassChangeError(JavaThread* current))
   THROW(vmSymbols::java_lang_IncompatibleClassChangeError());
@@ -700,11 +741,25 @@ void InterpreterRuntime::resolve_get_put(Bytecodes::Code bytecode, int field_ind
   bool uninitialized_static = is_static && !klass->is_initialized();
   bool has_initialized_final_update = info.field_holder()->major_version() >= 53 &&
                                       info.has_initialized_final_update();
+  bool strict_static_final = info.is_strict() && info.is_static() && info.is_final();
   assert(!(has_initialized_final_update && !info.access_flags().is_final()), "Fields with initialized final updates must be final");
 
   Bytecodes::Code get_code = (Bytecodes::Code)0;
   Bytecodes::Code put_code = (Bytecodes::Code)0;
-  if (!uninitialized_static || VM_Version::supports_fast_class_init_checks()) {
+  if (uninitialized_static && (info.is_strict_static_unset() || strict_static_final)) {
+    // During <clinit>, closely track the state of strict statics.
+    // 1. if we are reading an uninitialized strict static, throw
+    // 2. if we are writing one, clear the "unset" flag
+    //
+    // Note: If we were handling an attempted write of a null to a
+    // null-restricted strict static, we would NOT clear the "unset"
+    // flag.
+    assert(klass->is_being_initialized(), "else should have thrown");
+    assert(klass->is_reentrant_initialization(THREAD),
+      "<clinit> must be running in current thread");
+    klass->notify_strict_static_access(info.index(), is_put, CHECK);
+    assert(!info.is_strict_static_unset(), "after initialization, no unset flags");
+  } else if (!uninitialized_static || VM_Version::supports_fast_class_init_checks()) {
     get_code = ((is_static) ? Bytecodes::_getstatic : Bytecodes::_getfield);
     if ((is_put && !has_initialized_final_update) || !info.access_flags().is_final()) {
       put_code = ((is_static) ? Bytecodes::_putstatic : Bytecodes::_putfield);
@@ -775,6 +830,21 @@ JRT_ENTRY(void, InterpreterRuntime::new_illegal_monitor_state_exception(JavaThre
   current->set_vm_result_oop(exception());
 JRT_END
 
+JRT_ENTRY(void, InterpreterRuntime::throw_identity_exception(JavaThread* current, oopDesc* obj))
+  Klass* klass = cast_to_oop(obj)->klass();
+  ResourceMark rm(THREAD);
+  const char* desc = "Cannot synchronize on an instance of value class ";
+  const char* className = klass->external_name();
+  size_t msglen = strlen(desc) + strlen(className) + 1;
+  char* message = NEW_RESOURCE_ARRAY(char, msglen);
+  if (nullptr == message) {
+    // Out of memory: can't create detailed error message
+    THROW_MSG(vmSymbols::java_lang_IdentityException(), className);
+  } else {
+    jio_snprintf(message, msglen, "%s%s", desc, className);
+    THROW_MSG(vmSymbols::java_lang_IdentityException(), message);
+  }
+JRT_END
 
 //------------------------------------------------------------------------------------------------------------------------
 // Invokes
@@ -1073,6 +1143,10 @@ JRT_ENTRY(nmethod*,
 
   LastFrameAccessor last_frame(current);
   assert(last_frame.is_interpreted_frame(), "must come from interpreter");
+
+  if (JvmtiExport::can_post_frame_pop() && JvmtiExport::has_frame_pop_for_top_frame(current)) {
+    return nullptr; // no OSR if there is a FramePop event request for top frame
+  }
   methodHandle method(current, last_frame.method());
   const int branch_bci = branch_bcp != nullptr ? method->bci_from(branch_bcp) : InvocationEntryBci;
   const int bci = branch_bcp != nullptr ? method->bci_from(last_frame.bcp()) : InvocationEntryBci;
@@ -1194,6 +1268,7 @@ JRT_ENTRY(void, InterpreterRuntime::post_field_access(JavaThread* current, oopDe
   if (!ik->field_status(index).is_access_watched()) return;
 
   bool is_static = (obj == nullptr);
+  bool is_flat = entry->is_flat();
   HandleMark hm(current);
 
   Handle h_obj;
@@ -1202,7 +1277,7 @@ JRT_ENTRY(void, InterpreterRuntime::post_field_access(JavaThread* current, oopDe
     h_obj = Handle(current, obj);
   }
   InstanceKlass* field_holder = entry->field_holder(); // HERE
-  jfieldID fid = jfieldIDWorkaround::to_jfieldID(field_holder, entry->field_offset(), is_static);
+  jfieldID fid = jfieldIDWorkaround::to_jfieldID(field_holder, entry->field_offset(), is_static, is_flat);
   LastFrameAccessor last_frame(current);
   JvmtiExport::post_field_access(current, last_frame.method(), last_frame.bcp(), field_holder, h_obj, fid);
 JRT_END
@@ -1230,10 +1305,12 @@ JRT_ENTRY(void, InterpreterRuntime::post_field_modification(JavaThread* current,
     case dtos: sig_type = JVM_SIGNATURE_DOUBLE;  break;
     default:  ShouldNotReachHere(); return;
   }
+
   bool is_static = (obj == nullptr);
+  bool is_flat = entry->is_flat();
 
   HandleMark hm(current);
-  jfieldID fid = jfieldIDWorkaround::to_jfieldID(ik, entry->field_offset(), is_static);
+  jfieldID fid = jfieldIDWorkaround::to_jfieldID(ik, entry->field_offset(), is_static, is_flat);
   jvalue fvalue;
 #ifdef _LP64
   fvalue = *value;
@@ -1487,23 +1564,32 @@ JRT_ENTRY(void, InterpreterRuntime::member_name_arg_or_null(JavaThread* current,
                                                             Method* method, address bcp))
   Bytecodes::Code code = Bytecodes::code_at(method, bcp);
   if (code != Bytecodes::_invokestatic) {
+    current->set_vm_result_oop(nullptr);
     return;
   }
+
   ConstantPool* cpool = method->constants();
   int cp_index = Bytes::get_native_u2(bcp + 1);
   Symbol* cname = cpool->klass_name_at(cpool->klass_ref_index_at(cp_index, code));
   Symbol* mname = cpool->name_ref_at(cp_index, code);
 
-  if (MethodHandles::has_member_arg(cname, mname)) {
-    oop member_name_oop = cast_to_oop(member_name);
-    if (java_lang_invoke_DirectMethodHandle::is_instance(member_name_oop)) {
-      // FIXME: remove after j.l.i.InvokerBytecodeGenerator code shape is updated.
-      member_name_oop = java_lang_invoke_DirectMethodHandle::member(member_name_oop);
-    }
-    current->set_vm_result_oop(member_name_oop);
-  } else {
+  if (!MethodHandles::has_member_arg(cname, mname)) {
     current->set_vm_result_oop(nullptr);
+    return;
   }
+
+  oop member_name_oop = cast_to_oop(member_name);
+
+  guarantee(member_name_oop != nullptr, "member_name_oop should not be nullptr");
+  guarantee(oopDesc::is_oop(member_name_oop), "member_name_oop should be an oop");
+  guarantee(java_lang_invoke_MemberName::is_instance(member_name_oop) ||
+    java_lang_invoke_DirectMethodHandle::is_instance(member_name_oop),
+    "member_name_oop is not MemberName or DMH");
+
+  if (java_lang_invoke_DirectMethodHandle::is_instance(member_name_oop)) {
+    member_name_oop = java_lang_invoke_DirectMethodHandle::member(member_name_oop);
+  }
+  current->set_vm_result_oop(member_name_oop);
 JRT_END
 #endif // INCLUDE_JVMTI
 
@@ -1517,7 +1603,9 @@ JRT_LEAF(intptr_t, InterpreterRuntime::trace_bytecode(JavaThread* current, intpt
   LastFrameAccessor last_frame(current);
   assert(last_frame.is_interpreted_frame(), "must be an interpreted frame");
   methodHandle mh(current, last_frame.method());
-  BytecodeTracer::trace_interpreter(mh, last_frame.bcp(), tos, tos2, tty);
+  stringStream st;
+  BytecodeTracer::trace_interpreter(mh, last_frame.get_frame().real_fp(), last_frame.bcp(), tos, tos2, &st);
+  tty->print("%s", st.freeze());
   return preserve_this_value;
 JRT_END
 #endif // !PRODUCT

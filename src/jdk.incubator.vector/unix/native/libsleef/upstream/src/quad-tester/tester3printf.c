@@ -1,4 +1,4 @@
-//   Copyright Naoki Shibata and contributors 2010 - 2021.
+//   Copyright Naoki Shibata and contributors 2010 - 2025.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -9,7 +9,11 @@
 #include <string.h>
 #include <assert.h>
 
-#include <openssl/md5.h>
+#ifndef SLEEF_USE_INTERNAL_SHA256
+#include <openssl/evp.h>
+#else
+#include "psha2_capi.h"
+#endif
 
 #include "sleefquad.h"
 
@@ -24,7 +28,7 @@ static void convertEndianness(void *ptr, int len) {
 #endif
 }
 
-static void testem(MD5_CTX *ctx, Sleef_quad val, char *types) {
+static void testem(EVP_MD_CTX *ctx, Sleef_quad val, char *types) {
   for(int alt=0;alt<2;alt++) {
     for(int zero=0;zero<2;zero++) {
       for(int left=0;left<2;left++) {
@@ -43,10 +47,10 @@ static void testem(MD5_CTX *ctx, Sleef_quad val, char *types) {
 
             r = Sleef_snprintf(buf, 99, fmt, &val);
             assert(r < 100);
-            MD5_Update(ctx, buf, r < 0 ? 0 : r);
+            EVP_DigestUpdate(ctx, buf, r < 0 ? 0 : r);
             q = Sleef_strtoq(buf, NULL);
             convertEndianness(&q, sizeof(q));
-            MD5_Update(ctx, &q, sizeof(Sleef_quad));
+            EVP_DigestUpdate(ctx, &q, sizeof(Sleef_quad));
 
             for(int width=0;width<=40;width += 2) {
               snprintf(fmt, 99, "%%%s%s%s%s%s%d.%s",
@@ -59,10 +63,10 @@ static void testem(MD5_CTX *ctx, Sleef_quad val, char *types) {
 
               r = Sleef_snprintf(buf, 99, fmt, &val);
               assert(r < 100);
-              MD5_Update(ctx, buf, r < 0 ? 0 : r);
+              EVP_DigestUpdate(ctx, buf, r < 0 ? 0 : r);
               q = Sleef_strtoq(buf, NULL);
               convertEndianness(&q, sizeof(q));
-              MD5_Update(ctx, &q, sizeof(Sleef_quad));
+              EVP_DigestUpdate(ctx, &q, sizeof(Sleef_quad));
             }
 
             for(int prec=0;prec<=40;prec += 3) {
@@ -77,10 +81,10 @@ static void testem(MD5_CTX *ctx, Sleef_quad val, char *types) {
 
                 r = Sleef_snprintf(buf, 99, fmt, &val);
                 assert(r < 100);
-                MD5_Update(ctx, buf, r < 0 ? 0 : r);
+                EVP_DigestUpdate(ctx, buf, r < 0 ? 0 : r);
                 q = Sleef_strtoq(buf, NULL);
                 convertEndianness(&q, sizeof(q));
-                MD5_Update(ctx, &q, sizeof(Sleef_quad));
+                EVP_DigestUpdate(ctx, &q, sizeof(Sleef_quad));
               }
 
               snprintf(fmt, 99, "%%%s%s%s%s%s.%d%s",
@@ -93,10 +97,10 @@ static void testem(MD5_CTX *ctx, Sleef_quad val, char *types) {
 
               r = Sleef_snprintf(buf, 99, fmt, &val);
               assert(r < 100);
-              MD5_Update(ctx, buf, r < 0 ? 0 : r);
+              EVP_DigestUpdate(ctx, buf, r < 0 ? 0 : r);
               q = Sleef_strtoq(buf, NULL);
               convertEndianness(&q, sizeof(q));
-              MD5_Update(ctx, &q, sizeof(Sleef_quad));
+              EVP_DigestUpdate(ctx, &q, sizeof(Sleef_quad));
             }
           }
         }
@@ -233,24 +237,44 @@ int main(int argc, char **argv) {
   //
 
   for(int j=0;j<4;j++) {
-    MD5_CTX ctx;
-    memset(&ctx, 0, sizeof(MD5_CTX));
-    MD5_Init(&ctx);
-
-    for(int i=0;i<sizeof(vals)/sizeof(Sleef_quad);i++) {
-      testem(&ctx, vals[i], types[j]);
-      testem(&ctx, Sleef_negq1_purec(vals[i]), types[j]);
+    // Init digest
+    EVP_MD_CTX *ctx; ctx = EVP_MD_CTX_new();
+    if (!ctx) {
+      fprintf(stderr, "Error creating context.\n");
+      return 0;
+    }
+    if (!EVP_DigestInit_ex(ctx, EVP_sha256(), NULL)) {
+      fprintf(stderr, "Error initializing context.\n");
+      return 0;
     }
 
-    unsigned char d[16], mes[64], buf[64];
-    MD5_Final(d, &ctx);
+    // Run test and update digest
+    for(int i=0;i<sizeof(vals)/sizeof(Sleef_quad);i++) {
+      testem(ctx, vals[i], types[j]);
+      testem(ctx, Sleef_negq1_purec(vals[i]), types[j]);
+    }
 
-    snprintf((char *)mes, 60, "%s %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
-             types[j], d[0],d[1],d[2],d[3],d[4],d[5],d[6],d[7],
-             d[8],d[9],d[10],d[11],d[12],d[13],d[14],d[15]);
+    // Check digest
+    unsigned int sha256_digest_len = EVP_MD_size(EVP_sha256());
+    unsigned char *sha256_digest;
+    sha256_digest = (unsigned char *)malloc(sha256_digest_len);
+    if (!EVP_DigestFinal_ex(ctx, sha256_digest, &sha256_digest_len)) {
+      fprintf(stderr, "Error finalizing digest.\n");
+      return 0;
+    }
+    EVP_MD_CTX_free(ctx);
+    unsigned char mes[256], buf[256];
+    memset(mes, 0, 256);
+    sprintf((char *)mes, "%s ", types[j]);
+    char tmp[3] = { 0 };
+    for (int i = 0; i < sha256_digest_len; i++) {
+      sprintf(tmp, "%02x", sha256_digest[i]);
+      strcat((char *)mes, tmp);
+    }
+    free(sha256_digest);
 
     if (fp != NULL) {
-      fgets((char *)buf, 60, fp);
+      fgets((char *)buf, 250, fp);
       if (strncmp((char *)mes, (char *)buf, strlen((char *)mes)) != 0) {
         puts((char *)mes);
         puts((char *)buf);

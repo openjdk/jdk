@@ -49,6 +49,12 @@ public:
 
 class ShenandoahStackWatermark : public StackWatermark {
 private:
+  // Start epochs from 1 to catch uninitialized paths.
+  // Wrap the epoch around smaller range to avoid truncation
+  // in StackWatermark encoding and verify the wraparound in tests.
+  static constexpr uint32_t MIN_EPOCH_ID = 1;
+  static constexpr uint32_t MAX_EPOCH_ID = (1 << 10);
+
   static uint32_t                      _epoch_id;
   ShenandoahHeap* const                _heap;
   ThreadLocalAllocStats                _stats;

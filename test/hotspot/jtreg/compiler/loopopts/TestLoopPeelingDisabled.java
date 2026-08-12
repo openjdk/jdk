@@ -51,11 +51,14 @@ public class TestLoopPeelingDisabled {
         // elide the {BEFORE,AFTER}_LOOP_PEELING compilation phases, causing the
         // test to throw an IRViolationException. We then check whether the
         // exception message matches our expectation (that the loop peeling
-        // phase was not found).
+        // phase was not found). If IR verification is disabled, this test will
+        // not throw an IRViolationException.
         try {
             TestFramework.runWithFlags("-XX:+UnlockDiagnosticVMOptions",
                                        "-XX:LoopPeeling=0");
-            Asserts.fail("Expected IRViolationException");
+            String verifyIR = System.getProperty("VerifyIR", "true");
+            String msg = "Expected IRViolationException when performing IR matching";
+            Asserts.assertFalse(Boolean.parseBoolean(verifyIR), msg);
         } catch (IRViolationException e) {
             String info = e.getExceptionInfo();
             if (!info.contains("NO compilation output found for this phase")) {

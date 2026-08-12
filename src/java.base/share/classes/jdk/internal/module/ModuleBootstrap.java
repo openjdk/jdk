@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -517,10 +517,13 @@ public final class ModuleBootstrap {
      * modular JAR files.
      */
     private static boolean allJrtOrModularJar(Configuration cf) {
-        return !cf.modules().stream()
-                .map(m -> m.reference().location().orElseThrow())
-                .anyMatch(uri -> !uri.getScheme().equalsIgnoreCase("jrt")
-                        && !isJarFile(uri));
+        for (ResolvedModule module : cf.modules()) {
+            URI uri = module.reference().location().orElseThrow();
+            if (!uri.getScheme().equalsIgnoreCase("jrt") && !isJarFile(uri)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -539,11 +542,16 @@ public final class ModuleBootstrap {
      * Returns true if the configuration contains modules with overlapping packages.
      */
     private static boolean containsSplitPackages(Configuration cf) {
-        boolean found = cf.modules().stream()
-                .map(m -> m.reference().descriptor().packages())
-                .flatMap(Set::stream)
-                .allMatch(new HashSet<>()::add);
-        return !found;
+        var allPackages = new HashSet<String>();
+        for (ResolvedModule module: cf.modules()) {
+            Set<String> packages = module.reference().descriptor().packages();
+            int expectedCount = allPackages.size() + packages.size();
+            allPackages.addAll(packages);
+            if (expectedCount > allPackages.size()) {
+                return true; // overlapping packages.
+            }
+        }
+        return false;
     }
 
     /**
@@ -1058,9 +1066,12 @@ public final class ModuleBootstrap {
      * Returns true if the configuration contains an incubator module.
      */
     private static boolean containsIncubatorModule(Configuration cf) {
-        return cf.modules().stream()
-                .map(ResolvedModule::reference)
-                .anyMatch(ModuleResolution::hasIncubatingWarning);
+        for (ResolvedModule module : cf.modules()) {
+            if (ModuleResolution.hasIncubatingWarning(module.reference())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ public class ResumptionUpdateBoundValues extends SSLContextTemplate {
     /*
      * Turn on SSL debugging?
      */
-    static boolean debug = false;
+    static boolean debug = Boolean.getBoolean("test.debug");
 
     /*
      * Define the server side of the test.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,7 @@ enum class CodeBlobType {
 //    AdapterBlob        : Used to hold C2I/I2C adapters
 //    VtableBlob         : Used for holding vtable chunks
 //    MethodHandlesAdapterBlob : Used to hold MethodHandles adapters
+//    BufferedInlineTypeBlob   : used for pack/unpack handlers
 //   RuntimeStub         : Call to VM runtime methods
 //   SingletonBlob       : Super-class for all blobs that exist in only one instance
 //    DeoptimizationBlob : Used for deoptimization
@@ -85,6 +86,7 @@ enum class CodeBlobKind : u1 {
   Adapter,
   Vtable,
   MHAdapter,
+  BufferedInlineType,
   RuntimeStub,
   Deoptimization,
   Safepoint,
@@ -109,7 +111,6 @@ class UncommonTrapBlob;
 
 class CodeBlob {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
 
 protected:
   // order fields from large to small to minimize padding between fields
@@ -124,14 +125,14 @@ protected:
   int      _data_offset;           // offset to where data region begins
   int      _frame_size;            // size of stack frame in words (NOT slots. On x64 these are 64bit words)
   int      _mutable_data_size;
+  int      _frame_complete_offset; // instruction offsets in [0.._frame_complete_offset) have
+                                   // not finished setting up their frame. Beware of pc's in
+                                   // that range. There is a similar range(s) on returns
+                                   // which we don't detect.
 
   S390_ONLY(int _ctable_offset;)
 
   uint16_t _header_size;           // size of header (depends on subclass)
-  int16_t  _frame_complete_offset; // instruction offsets in [0.._frame_complete_offset) have
-                                   // not finished setting up their frame. Beware of pc's in
-                                   // that range. There is a similar range(s) on returns
-                                   // which we don't detect.
 
   CodeBlobKind _kind;              // Kind of this code blob
 
@@ -161,7 +162,7 @@ protected:
   const Vptr* vptr() const;
 
   CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size, uint16_t header_size,
-           int16_t frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments,
+           int frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments,
            int mutable_data_size);
 
   // Simple CodeBlob used for simple BufferBlob.
@@ -219,6 +220,7 @@ public:
   bool is_adapter_blob() const                { return _kind == CodeBlobKind::Adapter; }
   bool is_vtable_blob() const                 { return _kind == CodeBlobKind::Vtable; }
   bool is_method_handles_adapter_blob() const { return _kind == CodeBlobKind::MHAdapter; }
+  bool is_buffered_inline_type_blob() const   { return _kind == CodeBlobKind::BufferedInlineType; }
   bool is_upcall_stub() const                 { return _kind == CodeBlobKind::Upcall; }
 
   // Casting
@@ -365,7 +367,7 @@ class RuntimeBlob : public CodeBlob {
     CodeBuffer* cb,
     int         size,
     uint16_t    header_size,
-    int16_t     frame_complete,
+    int         frame_complete,
     int         frame_size,
     OopMapSet*  oop_maps,
     bool        caller_must_gc_arguments = false
@@ -389,6 +391,7 @@ class BufferBlob: public RuntimeBlob {
   friend class AdapterBlob;
   friend class VtableBlob;
   friend class MethodHandlesAdapterBlob;
+  friend class BufferedInlineTypeBlob;
   friend class UpcallStub;
   friend class WhiteBox;
 
@@ -396,6 +399,7 @@ class BufferBlob: public RuntimeBlob {
   // Creation support
   BufferBlob(const char* name, CodeBlobKind kind, int size, uint16_t header_size = sizeof(BufferBlob));
   BufferBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size, uint16_t header_size = sizeof(BufferBlob));
+  BufferBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size, uint16_t header_size, int frame_complete, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments = false);
 
   void* operator new(size_t s, unsigned size) throw();
 
@@ -430,22 +434,40 @@ public:
   enum Entry {
     I2C,
     C2I,
+    C2I_Inline,
+    C2I_Inline_RO,
     C2I_Unverified,
+    C2I_Unverified_Inline,
     C2I_No_Clinit_Check,
     ENTRY_COUNT
   };
 private:
-  AdapterBlob(int size, CodeBuffer* cb, int entry_offset[ENTRY_COUNT]);
+  AdapterBlob(int size, CodeBuffer* cb, int entry_offset[ENTRY_COUNT], int frame_complete, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments = false);
+
   // _i2c_offset is always 0 so no need to store it
   int _c2i_offset;
+  int _c2i_inline_offset;
+  int _c2i_inline_ro_offset;
   int _c2i_unverified_offset;
+  int _c2i_unverified_inline_offset;
   int _c2i_no_clinit_check_offset;
 public:
   // Creation
+  static AdapterBlob* create(CodeBuffer* cb,
+                             int entry_offset[ENTRY_COUNT],
+                             int frame_complete,
+                             int frame_size,
+                             OopMapSet* oop_maps,
+                             bool caller_must_gc_arguments = false);
+
+  bool caller_must_gc_arguments(JavaThread* thread) const { return true; }
   static AdapterBlob* create(CodeBuffer* cb, int entry_offset[ENTRY_COUNT]);
   address i2c_entry() { return code_begin(); }
   address c2i_entry() { return i2c_entry() + _c2i_offset; }
+  address c2i_inline_entry() { return i2c_entry() + _c2i_inline_offset; }
+  address c2i_inline_ro_entry() { return i2c_entry() + _c2i_inline_ro_offset; }
   address c2i_unverified_entry() { return i2c_entry() + _c2i_unverified_offset; }
+  address c2i_unverified_inline_entry() { return i2c_entry() + _c2i_unverified_inline_offset; }
   address c2i_no_clinit_check_entry() { return _c2i_no_clinit_check_offset == -1 ? nullptr : i2c_entry() + _c2i_no_clinit_check_offset; }
 };
 
@@ -473,6 +495,25 @@ public:
   static MethodHandlesAdapterBlob* create(int buffer_size);
 };
 
+//----------------------------------------------------------------------------------------------------
+// BufferedInlineTypeBlob : used for pack/unpack handlers
+
+class BufferedInlineTypeBlob: public BufferBlob {
+private:
+  const int _pack_fields_off;
+  const int _pack_fields_jobject_off;
+  const int _unpack_fields_off;
+
+  BufferedInlineTypeBlob(int size, CodeBuffer* cb, int pack_fields_off, int pack_fields_jobject_off, int unpack_fields_off);
+
+public:
+  // Creation
+  static BufferedInlineTypeBlob* create(CodeBuffer* cb, int pack_fields_off, int pack_fields_jobject_off, int unpack_fields_off);
+
+  address pack_fields() const { return code_begin() + _pack_fields_off; }
+  address pack_fields_jobject() const { return code_begin() + _pack_fields_jobject_off; }
+  address unpack_fields() const { return code_begin() + _unpack_fields_off; }
+};
 
 //----------------------------------------------------------------------------------------------------
 // RuntimeStub: describes stubs used by compiled code to call a (static) C++ runtime routine
@@ -485,7 +526,7 @@ class RuntimeStub: public RuntimeBlob {
     const char* name,
     CodeBuffer* cb,
     int         size,
-    int16_t     frame_complete,
+    int         frame_complete,
     int         frame_size,
     OopMapSet*  oop_maps,
     bool        caller_must_gc_arguments
@@ -499,7 +540,7 @@ class RuntimeStub: public RuntimeBlob {
   static RuntimeStub* new_runtime_stub(
     const char* stub_name,
     CodeBuffer* cb,
-    int16_t     frame_complete,
+    int         frame_complete,
     int         frame_size,
     OopMapSet*  oop_maps,
     bool        caller_must_gc_arguments,
@@ -578,19 +619,13 @@ class SingletonBlob: public RuntimeBlob {
 
 class DeoptimizationBlob: public SingletonBlob {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
+
  private:
   int _unpack_offset;
   int _unpack_with_exception;
   int _unpack_with_reexecution;
 
   int _unpack_with_exception_in_tls;
-
-#if INCLUDE_JVMCI
-  // Offsets when JVMCI calls uncommon_trap.
-  int _uncommon_trap_offset;
-  int _implicit_exception_uncommon_trap_offset;
-#endif
 
   // Creation support
   DeoptimizationBlob(
@@ -604,7 +639,7 @@ class DeoptimizationBlob: public SingletonBlob {
   );
 
  public:
-  static const int ENTRY_COUNT = 4 JVMCI_ONLY(+ 2);
+  static const int ENTRY_COUNT = 4;
   // Creation
   static DeoptimizationBlob* create(
     CodeBuffer* cb,
@@ -629,21 +664,6 @@ class DeoptimizationBlob: public SingletonBlob {
     assert(code_contains(code_begin() + _unpack_with_exception_in_tls), "must be PC inside codeblob");
   }
   address unpack_with_exception_in_tls() const   { return code_begin() + _unpack_with_exception_in_tls; }
-
-#if INCLUDE_JVMCI
-  // Offsets when JVMCI calls uncommon_trap.
-  void set_uncommon_trap_offset(int offset) {
-    _uncommon_trap_offset = offset;
-    assert(contains(code_begin() + _uncommon_trap_offset), "must be PC inside codeblob");
-  }
-  address uncommon_trap() const                  { return (EnableJVMCI ? code_begin() + _uncommon_trap_offset : nullptr); }
-
-  void set_implicit_exception_uncommon_trap_offset(int offset) {
-    _implicit_exception_uncommon_trap_offset = offset;
-    assert(contains(code_begin() + _implicit_exception_uncommon_trap_offset), "must be PC inside codeblob");
-  }
-  address implicit_exception_uncommon_trap() const { return (EnableJVMCI ? code_begin() + _implicit_exception_uncommon_trap_offset : nullptr); }
-#endif // INCLUDE_JVMCI
 
   void post_restore_impl() {
     trace_new_stub(this, "DeoptimizationBlob");

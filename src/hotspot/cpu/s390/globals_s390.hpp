@@ -36,7 +36,7 @@ define_pd_global(bool,  ImplicitNullChecks,          true);  // Generate code fo
 define_pd_global(bool,  TrapBasedNullChecks,         true);
 define_pd_global(bool,  UncommonNullCast,            true);  // Uncommon-trap nulls passed to check cast.
 
-define_pd_global(bool,  DelayCompilerStubsGeneration, COMPILER2_OR_JVMCI);
+define_pd_global(bool,  DelayCompilerStubsGeneration, COMPILER2_PRESENT(true) NOT_COMPILER2(false));
 
 define_pd_global(size_t, CodeCacheSegmentSize,       256);
 // This shall be at least 32 for proper branch target alignment.
@@ -64,7 +64,7 @@ define_pd_global(intx,  StackRedPages,               DEFAULT_STACK_RED_PAGES);
 define_pd_global(intx,  StackShadowPages,            DEFAULT_STACK_SHADOW_PAGES);
 define_pd_global(intx,  StackReservedPages,          DEFAULT_STACK_RESERVED_PAGES);
 
-define_pd_global(bool,  VMContinuations, false);
+define_pd_global(bool,  VMContinuations, true);
 
 define_pd_global(bool, RewriteBytecodes,     true);
 define_pd_global(bool, RewriteFrequentPairs, true);
@@ -77,6 +77,9 @@ define_pd_global(bool, CompactStrings, true);
 
 // 8146801 (Short Array Allocation): No performance work done here yet.
 define_pd_global(intx, InitArrayShortSize, 1*BytesPerLong);
+
+define_pd_global(bool, InlineTypePassFieldsAsArgs, false);
+define_pd_global(bool, InlineTypeReturnedAsFields, false);
 
 #define ARCH_FLAGS(develop,                                                   \
                    product,                                                   \

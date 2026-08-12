@@ -102,10 +102,26 @@
   #include <elf.h>
 #endif
 
+#ifdef __FreeBSD__
+  #include <pthread_np.h>
+#endif
+
+#ifdef __NetBSD__
+#include <lwp.h>
+#endif
+
 #ifdef __APPLE__
   #include <libproc.h>
   #include <mach/task_info.h>
   #include <mach-o/dyld.h>
+
+  // needed by current_stack_base_and_size() workaround for Mavericks
+  #define DEFAULT_MAIN_THREAD_STACK_PAGES 2048
+  #define OS_X_10_9_0_KERNEL_MAJOR_VERSION 13
+#endif
+
+#if !defined(__APPLE__) && !defined(__NetBSD__)
+  #include <pthread_np.h>
 #endif
 
 #ifndef MAP_ANONYMOUS
@@ -865,23 +881,20 @@ pid_t os::Bsd::gettid() {
   mach_port_deallocate(mach_task_self(), port);
   return (pid_t)port;
 
+#elif defined(__FreeBSD__)
+  return ::pthread_getthreadid_np();
+#elif defined(__OpenBSD__)
+  retval = getthrid();
+#elif defined(__NetBSD__)
+  retval = (pid_t) _lwp_self();
 #else
-  #ifdef __FreeBSD__
-  retval = syscall(SYS_thr_self);
-  #else
-    #ifdef __OpenBSD__
-  retval = syscall(SYS_getthrid);
-    #else
-      #ifdef __NetBSD__
-  retval = (pid_t) syscall(SYS__lwp_self);
-      #endif
-    #endif
-  #endif
+#error "unsupported OS"
 #endif
 
   if (retval == -1) {
     return getpid();
   }
+  return retval;
 }
 
 // Returns the uid of a process or -1 on error.
@@ -1115,7 +1128,7 @@ bool os::dll_address_to_library_name(address addr, char* buf,
 // in case of error it checks if .dll/.so was built for the
 // same architecture as Hotspot is running on
 
-void *os::Bsd::dlopen_helper(const char *filename, int mode, char *ebuf, int ebuflen) {
+static void *dlopen_helper(const char *filename, char *ebuf, int ebuflen) {
   bool ieee_handling = IEEE_subnormal_handling_OK();
   if (!ieee_handling) {
     Events::log_dll_message(nullptr, "IEEE subnormal handling check failed before loading %s", filename);
@@ -1199,7 +1212,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 
   log_info(os)("attempting shared library load of %s", filename);
 
-  return os::Bsd::dlopen_helper(filename, RTLD_LAZY, ebuf, ebuflen);
+  return dlopen_helper(filename, ebuf, ebuflen);
 }
 #else
 void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
@@ -1210,7 +1223,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   log_info(os)("attempting shared library load of %s", filename);
 
   void* result;
-  result = os::Bsd::dlopen_helper(filename, RTLD_LAZY, ebuf, ebuflen);
+  result = dlopen_helper(filename, ebuf, ebuflen);
   if (result != nullptr) {
     return result;
   }
@@ -2545,6 +2558,106 @@ bool os::start_debugging(char *buf, int buflen) {
   return yes;
 }
 
+// Java thread:
+//
+//   Low memory addresses
+//    +------------------------+
+//    |                        |\  Java thread created by VM does not have glibc
+//    |    glibc guard page    | - guard, attached Java thread usually has
+//    |                        |/  1 glibc guard page.
+// P1 +------------------------+ Thread::stack_base() - Thread::stack_size()
+//    |                        |\
+//    |  HotSpot Guard Pages   | - red, yellow and reserved pages
+//    |                        |/
+//    +------------------------+ StackOverflow::stack_reserved_zone_base()
+//    |                        |\
+//    |      Normal Stack      | -
+//    |                        |/
+// P2 +------------------------+ Thread::stack_base()
+//
+// Non-Java thread:
+//
+//   Low memory addresses
+//    +------------------------+
+//    |                        |\
+//    |  glibc guard page      | - usually 1 page
+//    |                        |/
+// P1 +------------------------+ Thread::stack_base() - Thread::stack_size()
+//    |                        |\
+//    |      Normal Stack      | -
+//    |                        |/
+// P2 +------------------------+ Thread::stack_base()
+//
+// ** P1 (aka bottom) and size are the address and stack size
+//    returned from pthread_attr_getstack().
+// ** P2 (aka stack top or base) = P1 + size
+
+void os::current_stack_base_and_size(address* base, size_t* size) {
+  address bottom;
+#ifdef __APPLE__
+  pthread_t self = pthread_self();
+  *base = (address) pthread_get_stackaddr_np(self);
+  *size = pthread_get_stacksize_np(self);
+# ifdef __x86_64__
+  // workaround for OS X 10.9.0 (Mavericks)
+  // pthread_get_stacksize_np returns 128 pages even though the actual size is 2048 pages
+  if (pthread_main_np() == 1) {
+    // At least on Mac OS 10.12 we have observed stack sizes not aligned
+    // to pages boundaries. This can be provoked by e.g. setrlimit() (ulimit -s xxxx in the
+    // shell). Apparently Mac OS actually rounds upwards to next multiple of page size,
+    // however, we round downwards here to be on the safe side.
+    *size = align_down(*size, getpagesize());
+
+    if ((*size) < (DEFAULT_MAIN_THREAD_STACK_PAGES * (size_t)getpagesize())) {
+      char kern_osrelease[256];
+      size_t kern_osrelease_size = sizeof(kern_osrelease);
+      int ret = sysctlbyname("kern.osrelease", kern_osrelease, &kern_osrelease_size, nullptr, 0);
+      if (ret == 0) {
+        // get the major number, atoi will ignore the minor amd micro portions of the version string
+        if (atoi(kern_osrelease) >= OS_X_10_9_0_KERNEL_MAJOR_VERSION) {
+          *size = (DEFAULT_MAIN_THREAD_STACK_PAGES*getpagesize());
+        }
+      }
+    }
+  }
+# endif
+  bottom = *base - *size;
+#elif defined(__OpenBSD__)
+  stack_t ss;
+  int rslt = pthread_stackseg_np(pthread_self(), &ss);
+
+  if (rslt != 0)
+    fatal("pthread_stackseg_np failed with error = %d", rslt);
+
+  *base = (address) ss.ss_sp;
+  *size = ss.ss_size;
+  bottom = *base - *size;
+#else
+  pthread_attr_t attr;
+
+  int rslt = pthread_attr_init(&attr);
+
+  // JVM needs to know exact stack location, abort if it fails
+  if (rslt != 0)
+    fatal("pthread_attr_init failed with error = %d", rslt);
+
+  rslt = pthread_attr_get_np(pthread_self(), &attr);
+
+  if (rslt != 0)
+    fatal("pthread_attr_get_np failed with error = %d", rslt);
+
+  if (pthread_attr_getstackaddr(&attr, (void **)&bottom) != 0 ||
+      pthread_attr_getstacksize(&attr, size) != 0) {
+    fatal("Can not locate current stack attributes!");
+  }
+
+  *base = bottom + *size;
+
+  pthread_attr_destroy(&attr);
+#endif
+  assert(os::current_stack_pointer() >= bottom &&
+         os::current_stack_pointer() < *base, "just checking");
+}
 void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {}
 
 #if INCLUDE_JFR

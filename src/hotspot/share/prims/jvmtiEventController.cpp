@@ -34,6 +34,7 @@
 #include "prims/jvmtiThreadState.inline.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/threads.hpp"
@@ -102,9 +103,9 @@ static const jlong  MONITOR_BITS = MONITOR_CONTENDED_ENTER_BIT | MONITOR_CONTEND
                           MONITOR_WAIT_BIT | MONITOR_WAITED_BIT;
 static const jlong  EXCEPTION_BITS = EXCEPTION_THROW_BIT | EXCEPTION_CATCH_BIT;
 static const jlong  INTERP_EVENT_BITS =  SINGLE_STEP_BIT | METHOD_ENTRY_BIT | METHOD_EXIT_BIT |
-                                FRAME_POP_BIT | FIELD_ACCESS_BIT | FIELD_MODIFICATION_BIT;
+                                FIELD_ACCESS_BIT | FIELD_MODIFICATION_BIT;
 static const jlong  THREAD_FILTERED_EVENT_BITS = INTERP_EVENT_BITS | EXCEPTION_BITS | MONITOR_BITS | VTHREAD_FILTERED_EVENT_BITS |
-                                        BREAKPOINT_BIT | CLASS_LOAD_BIT | CLASS_PREPARE_BIT | THREAD_END_BIT |
+                                        BREAKPOINT_BIT | FRAME_POP_BIT | CLASS_LOAD_BIT | CLASS_PREPARE_BIT | THREAD_END_BIT |
                                         SAMPLED_OBJECT_ALLOC_BIT;
 static const jlong  NEED_THREAD_LIFE_EVENTS = THREAD_FILTERED_EVENT_BITS | THREAD_START_BIT | VTHREAD_START_BIT;
 static const jlong  EARLY_EVENT_BITS = CLASS_FILE_LOAD_HOOK_BIT | CLASS_LOAD_BIT | CLASS_PREPARE_BIT |
@@ -592,10 +593,6 @@ JvmtiEventControllerPrivate::recompute_thread_enabled(JvmtiThreadState *state) {
   }
   julong was_any_env_enabled = state->thread_event_enable()->_event_enabled.get_bits();
   julong any_env_enabled = 0;
-  // JVMTI_EVENT_FRAME_POP can be disabled (in the case FRAME_POP_BIT is not set),
-  // but we need to set interp_only if some JvmtiEnvThreadState has frame pop set
-  // to clear the request
-  bool has_frame_pops = false;
 
   {
     // This iteration will include JvmtiEnvThreadStates whose environments
@@ -604,7 +601,6 @@ JvmtiEventControllerPrivate::recompute_thread_enabled(JvmtiThreadState *state) {
     JvmtiEnvThreadStateIterator it(state);
     for (JvmtiEnvThreadState* ets = it.first(); ets != nullptr; ets = it.next(ets)) {
       any_env_enabled |= recompute_env_thread_enabled(ets, state);
-      has_frame_pops |= ets->has_frame_pops();
     }
   }
 
@@ -620,7 +616,7 @@ JvmtiEventControllerPrivate::recompute_thread_enabled(JvmtiThreadState *state) {
     }
   }
   // compute interp_only mode
-  bool should_be_interp = (any_env_enabled & INTERP_EVENT_BITS) != 0 || has_frame_pops;
+  bool should_be_interp = (any_env_enabled & INTERP_EVENT_BITS) != 0;
   bool is_now_interp = state->is_interp_only_mode() || state->is_pending_interp_only_mode();
 
   if (should_be_interp != is_now_interp) {
@@ -1250,6 +1246,9 @@ JvmtiEventController::vm_death() {
   // callbacks are complete. The count could rise again, but those "callbacks"
   // will immediately see `execution_finished()` and return (dropping the count).
   while (in_callback_count() > 0) {
+    // Ensure we are safepoint-safe else we may prevent progress of an active
+    // callback until the maximum wait time has passed.
+    ThreadBlockInVM tbivm(JavaThread::current());
     os::naked_short_sleep(100);
     if (os::elapsedTime() - start > max_wait_time) {
       break;

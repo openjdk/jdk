@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@ class RegisterMap;
 // Metadata stored in the continuation entry frame
 class ContinuationEntry {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
   ContinuationEntryPD _pd;
 #ifdef ASSERT
  private:

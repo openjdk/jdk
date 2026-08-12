@@ -558,6 +558,10 @@ public class Log extends AbstractLog {
      */
     public int nwarnings = 0;
 
+    /** The total number of non-lint warnings encountered so far.
+     */
+    public int nonLintWarnings = 0;
+
     /** Tracks whether any warnings have been encountered in each {@link LintCategory}.
      */
     public final EnumSet<LintCategory> lintWarnings = LintCategory.newEmptySet();
@@ -888,6 +892,7 @@ public class Log extends AbstractLog {
         lintWarnings.clear();
         nerrors = 0;
         nwarnings = 0;
+        nonLintWarnings = 0;
         nsuppressederrors = 0;
         nsuppressedwarns = 0;
         while (diagnosticHandler.prev != null)
@@ -981,7 +986,7 @@ public class Log extends AbstractLog {
             nwarnings++;
             Optional.of(diag)
               .map(JCDiagnostic::getLintCategory)
-              .ifPresent(lintWarnings::add);
+              .ifPresentOrElse(lintWarnings::add, () -> nonLintWarnings++);
             break;
         case ERROR:
             nerrors++;
@@ -1121,6 +1126,7 @@ public class Log extends AbstractLog {
         }
         prompt();
         nwarnings++;
+        nonLintWarnings++;
         warnWriter.flush();
     }
 

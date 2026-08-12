@@ -2413,7 +2413,7 @@ bool CountedLoopConverter::is_counted_loop() {
 #endif
 
 #ifndef PRODUCT
-  if (StressCountedLoop && (_phase->C->random() % 2 == 0)) {
+  if (StressCountedLoop && (_phase->C->stress().random() % 2 == 0)) {
     return false;
   }
 #endif
@@ -3130,8 +3130,12 @@ Node* LoopLimitNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-// Match increment with optional truncation:
-// CHAR: (i+1)&0x7fff, BYTE: ((i+1)<<8)>>8, or SHORT: ((i+1)<<16)>>16
+// CHAR: (i+1)&0x7fff      Note: does NOT work for char cast (0xffff)
+// BYTE: ((i+1)<<8)>>8     Note: does NOT work for byte cast (<< 24 >> 24)
+// SHORT: ((i+1)<<16)>>16
+//
+// Note: in the future, we should fix both the BYTE and the CHAR case,
+//       to allow proper optimization of byte/char cast truncation.
 void CountedLoopConverter::TruncatedIncrement::build(Node* expr) {
   _is_valid = false;
 
@@ -3147,15 +3151,19 @@ void CountedLoopConverter::TruncatedIncrement::build(Node* expr) {
   const TypeInteger* trunc_t = TypeInteger::bottom(_bt);
 
   if (_bt == T_INT) {
-    // Try to strip (n1 & M) or (n1 << N >> N) from n1.
     if (n1op == Op_AndI &&
-        n1->in(2)->is_Con() &&
-        n1->in(2)->bottom_type()->is_int()->get_con() == 0x7fff) {
-      // %%% This check should match any mask of 2**K-1.
-      t1 = n1;
-      n1 = t1->in(1);
-      n1op = n1->Opcode();
-      trunc_t = TypeInt::CHAR;
+        n1->in(2)->is_Con()) {
+      // Unsigned truncation.
+      // Pattern: ((i+1) & mask)
+      jint mask = n1->in(2)->bottom_type()->is_int()->get_con();
+      switch (mask) {
+        case 0x7fff: // Unsigned 15-bit truncation. For historical reasons.
+          t1 = n1;
+          n1 = t1->in(1);
+          n1op = n1->Opcode();
+          trunc_t = TypeInt::make_unsigned(0, mask, 0);
+          break;
+      }
     } else if (n1op == Op_RShiftI &&
                n1->in(1) != nullptr &&
                n1->in(1)->Opcode() == Op_LShiftI &&
@@ -3849,6 +3857,7 @@ const TypeInt* CountedLoopConverter::filtered_type(Node* n, Node* n_ctrl) {
     Node* region = phi->in(0);
     assert(n_ctrl == nullptr || n_ctrl == region, "ctrl parameter must be region");
     if (region && region != _phase->C->top()) {
+      // Compute the union over the types of the paths/inputs.
       for (uint i = 1; i < phi->req(); i++) {
         Node* val   = phi->in(i);
         Node* use_c = region->in(i);
@@ -3859,10 +3868,17 @@ const TypeInt* CountedLoopConverter::filtered_type(Node* n, Node* n_ctrl) {
           } else {
             filtered_t = filtered_t->meet(val_t)->is_int();
           }
+        } else {
+          // We found no constriant, so we have to assume that this path
+          // is unconstrained, i.e. it could have the whole int range.
+          filtered_t = TypeInt::INT;
         }
       }
     }
   }
+
+  // The filtered type may be worse than what we already know
+  // about n, so take the intersection.
   const TypeInt* n_t = _phase->igvn().type(n)->is_int();
   if (filtered_t != nullptr) {
     n_t = n_t->join(filtered_t)->is_int();
@@ -3873,6 +3889,8 @@ const TypeInt* CountedLoopConverter::filtered_type(Node* n, Node* n_ctrl) {
 
 //------------------------------filtered_type_from_dominators--------------------------------
 // Return a possibly more restrictive type for val based on condition control flow of dominators
+// Note: we can also return "nullptr", which means "no constraint", and should be interpreted
+//       as if we returned TypeInt::INT.
 const TypeInt* CountedLoopConverter::filtered_type_from_dominators(Node* val, Node* use_ctrl) {
   if (val->is_Con()) {
      return val->bottom_type()->is_int();
@@ -3893,7 +3911,16 @@ const TypeInt* CountedLoopConverter::filtered_type_from_dominators(Node* val, No
           if (rtn_t == nullptr) {
             rtn_t = if_t;
           } else {
-            rtn_t = rtn_t->join(if_t)->is_int();
+            const Type* join_t = rtn_t->join(if_t);
+            if (!join_t->isa_int()) {
+              // We may have encountered multiple if conditions, that have no
+              // overlap, and produce an empty/top type. Returning nullptr
+              // is conservative, it means we do not constrain the type, which
+              // will just prevent further optimiziations.
+              assert(join_t->empty(), "top");
+              return nullptr;
+            }
+            rtn_t = join_t->is_int();
           }
         }
       }
@@ -4013,7 +4040,7 @@ void IdealLoopTree::split_fall_in( PhaseIdealLoop *phase, int fall_in_cnt ) {
       // disappear it.  In JavaGrande I have a case where this useless
       // Phi is the loop limit and prevents recognizing a CountedLoop
       // which in turn prevents removing an empty loop.
-      Node *id_old_phi = old_phi->Identity(&igvn);
+      Node* id_old_phi = igvn.apply_identity(old_phi);
       if( id_old_phi != old_phi ) { // Found a simple identity?
         // Note that I cannot call 'replace_node' here, because
         // that will yank the edge from old_phi to the Region and
