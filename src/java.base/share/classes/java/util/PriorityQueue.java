@@ -361,6 +361,7 @@ public class PriorityQueue<E> extends AbstractQueue<E>
 
             Object[] es;
             int len;
+            boolean needsHeapify;
 
             Class<?> cClass = c.getClass();
             if (cClass == PriorityQueue.class) {
@@ -368,23 +369,27 @@ public class PriorityQueue<E> extends AbstractQueue<E>
                 if ((len = pq.size) == 0)
                     return false;
                 es = Arrays.copyOf(pq.queue, len);
-                if (pq.comparator != comparator)
-                    heapify(es, len, comparator);
+
+                needsHeapify = pq.comparator != comparator;
             } else {
                 es = c.toArray();
                 if ((len = es.length) == 0)
                     return false;
                 if (cClass != ArrayList.class)
                     es = Arrays.copyOf(es, len, Object[].class);
-                // A single element is not examined by heapify(), and a comparator
-                // may permit nulls, so explicitly reject null before committing the
-                // new array.
-                if (len == 1 || comparator != null)
-                    for (Object e : es)
-                        if (e == null)
-                            throw new NullPointerException();
-                heapify(es, len, comparator);
+
+                needsHeapify = true;
             }
+
+            for (Object e : es) {
+                if (e == null)
+                    throw new NullPointerException();
+                if (comparator == null)
+                    Comparable.class.cast(e);
+            }
+
+            if (needsHeapify)
+                heapify(es, len, comparator);
 
             modCount++;
             queue = es;

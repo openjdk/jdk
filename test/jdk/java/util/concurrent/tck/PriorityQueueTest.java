@@ -454,6 +454,32 @@ public class PriorityQueueTest extends JSR166TestCase {
     }
 
     /**
+     * addAll of a collection with non-Comparable elements throws CCE
+     */
+    public void testAddAllNonComparableSingleton() {
+        PriorityQueue<Object> q = new PriorityQueue<>();
+        assertThrows(ClassCastException.class,
+                () -> q.addAll(Arrays.asList(new Object())));
+        assertTrue(q.isEmpty());
+    }
+
+    /**
+     * addAll from a queue with a comparator to one using natural ordering
+     * rejects non-Comparable elements
+     */
+    public void testAddAllFromComparatorQueueToNaturalOrder() {
+        Comparator<Object> cmp = (a, b) -> 0;
+
+        PriorityQueue<Object> src = new PriorityQueue<>(cmp);
+        src.add(new Object());
+
+        PriorityQueue<Object> dst = new PriorityQueue<>();
+        assertThrows(ClassCastException.class,
+                () -> dst.addAll(src));
+        assertTrue(dst.isEmpty());
+    }
+
+    /**
      * poll succeeds unless empty
      */
     public void testPoll() {
