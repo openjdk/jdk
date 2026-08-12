@@ -608,8 +608,8 @@ void Modules::ArchivedProperty::runtime_check() const {
   }
 
   if (disable) {
-    AOTMetaspace::report_loading_error("Disabling optimized module handling");
-    CDSConfig::stop_using_optimized_module_handling();
+    AOTMetaspace::report_loading_error("Disabling full module graph");
+    CDSConfig::disable_full_module_graph();
   }
 }
 
@@ -686,7 +686,6 @@ void Modules::serialize_archived_module_info(SerializeClosure* soc) {
     archived_prop(i).serialize(soc);
   }
   if (soc->reading()) {
-    aot_log_info(aot)("optimized module handling: %s", CDSConfig::is_using_optimized_module_handling() ? "enabled" : "disabled");
     aot_log_info(aot)("full module graph: %s", CDSConfig::is_using_full_module_graph() ? "enabled" : "disabled");
   }
 }

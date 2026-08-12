@@ -24,6 +24,7 @@
  *
  */
 
+#include "code/aotCodeCache.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
@@ -213,13 +214,16 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
 
   // Test for in-cset
   if (is_strong) {
+#if INCLUDE_CDS
     if (AOTCodeCache::is_on_for_dump()) {
       __ lea(rscratch2, ExternalAddress(AOTRuntimeConstants::cset_base_address()));
       __ ldr(rscratch2, Address(rscratch2));
       __ lea(rscratch1, ExternalAddress(AOTRuntimeConstants::grain_shift_address()));
       __ ldrw(rscratch1, Address(rscratch1));
       __ lsrv(rscratch1, r0, rscratch1);
-    } else {
+    } else
+#endif
+    {
       __ mov(rscratch2, ShenandoahHeap::in_cset_fast_test_addr());
       __ lsr(rscratch1, r0, ShenandoahHeapRegion::region_size_bytes_shift_jint());
     }
@@ -421,11 +425,22 @@ void ShenandoahBarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembl
 }
 
 void ShenandoahBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& L_error) {
+  assert_different_registers(obj, tmp1, tmp2);
   // Check if the oop is in the right area of memory
-  __ mov(tmp2, (intptr_t) Universe::verify_oop_mask());
-  __ andr(tmp1, obj, tmp2);
-  __ mov(tmp2, (intptr_t) Universe::verify_oop_bits());
-
+#if INCLUDE_CDS
+  if (AOTCodeCache::is_on_for_dump()) {
+    __ lea(tmp2, ExternalAddress(AOTRuntimeConstants::verify_oop_mask_address()));
+    __ ldr(tmp2, Address(tmp2));
+    __ andr(tmp1, obj, tmp2);
+    __ lea(tmp2, ExternalAddress(AOTRuntimeConstants::verify_oop_bits_address()));
+    __ ldr(tmp2, Address(tmp2));
+  } else
+#endif
+  {
+    __ mov(tmp2, (intptr_t) Universe::verify_oop_mask());
+    __ andr(tmp1, obj, tmp2);
+    __ mov(tmp2, (intptr_t) Universe::verify_oop_bits());
+  }
   // Compare tmp1 and tmp2.  We don't use a compare
   // instruction here because the flags register is live.
   __ eor(tmp1, tmp1, tmp2);
