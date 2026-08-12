@@ -304,9 +304,14 @@ AC_DEFUN([BPERF_SETUP_SCCACHE],
   if test "x$with_sccache_dir" != x; then
     SCCACHE_DIR="$with_sccache_dir"
     SCCACHE_DIR_FOR_SCCACHE="$SCCACHE_DIR"
+
+    # Ideally, we'd use `UTIL_FIXUP_PATH()`, but it expects the supplied path to
+    # already exist, which might not be true for the sccache directory during
+    # the configure step.  As a workaround, we manually invoke fixpath.sh.
     if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
       SCCACHE_DIR_FOR_SCCACHE=`$FIXPATH_BASE -m print "$SCCACHE_DIR_FOR_SCCACHE"`
     fi
+
     SET_SCCACHE_DIR="SCCACHE_DIR=$SCCACHE_DIR_FOR_SCCACHE"
     if test "x$SCCACHE" = x; then
       AC_MSG_WARN([--with-sccache-dir has no meaning when sccache is not enabled])
