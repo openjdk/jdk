@@ -271,6 +271,8 @@ class VM_Version : public Abstract_VM_Version {
   decl(Zicntr      ,  RV_NO_FLAG_BIT,  true ,  NO_UPDATE_DEFAULT)                                      \
   /* Zicond Conditional operations */                                                                  \
   decl(Zicond      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZicond))                              \
+  /* Zibi Branch with immediate */                                                                     \
+  decl(Zibi        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZibi))                                \
   /* Zicsr Control and Status Register (CSR) Instructions */                                           \
   decl(Zicsr       ,  RV_NO_FLAG_BIT,  true ,  NO_UPDATE_DEFAULT)                                      \
   /* Zic64b Cache blocks must be 64 bytes in size, naturally aligned in the address space. */          \
@@ -512,6 +514,12 @@ private:
   // RISCV64 supports fast class initialization checks
   static bool supports_fast_class_init_checks() { return true; }
   static bool supports_fencei_barrier() { return ext_Zifencei.enabled(); }
+
+  // Whether the current CPU actually implements the Zibi branch-with-immediate
+  // extension. Distinct from the UseZibi flag: UseZibi merely requests codegen,
+  // while this reflects detected hardware capability. Used to guard tests that
+  // execute beqi/bnei so they do not SIGILL on hardware without Zibi.
+  static bool supports_Zibi() { return ext_Zibi.enabled(); }
 
   static bool supports_float16_float_conversion() {
     return UseZfh || UseZfhmin;

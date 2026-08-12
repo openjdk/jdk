@@ -772,6 +772,10 @@ class MacroAssembler: public Assembler {
   void bgtu(Register Rs, Register Rt, Label &l, bool is_far = false);
   void bleu(Register Rs, Register Rt, Label &l, bool is_far = false);
 
+  // Zibi branch-with-immediate (label form)
+  void beqi(Register Rs1, uint32_t cimm, Label &L, bool is_far = false);
+  void bnei(Register Rs1, uint32_t cimm, Label &L, bool is_far = false);
+
 #define INSN_ENTRY_RELOC(result_type, header)                               \
   result_type header {                                                      \
     guarantee(rtype == relocInfo::internal_word_type,                       \
@@ -798,6 +802,25 @@ class MacroAssembler: public Assembler {
   INSN(bgeu);
   INSN(blt);
   INSN(bltu);
+
+#undef INSN
+
+  // Zibi branch-with-immediate (address form)
+#define INSN(NAME)                                                                                       \
+  void NAME(Register Rs1, uint32_t cimm, const address dest) {                                           \
+    assert_cond(dest != nullptr);                                                                        \
+    int64_t offset = dest - pc();                                                                        \
+    guarantee(is_simm13(offset) && is_even(offset),                                                      \
+              "offset is invalid: is_simm_13: %s offset: " INT64_FORMAT,                                 \
+              BOOL_TO_STR(is_simm13(offset)), offset);                                                   \
+    Assembler::NAME(Rs1, cimm, offset);                                                                  \
+  }                                                                                                      \
+  INSN_ENTRY_RELOC(void, NAME(Register Rs1, uint32_t cimm, address dest, relocInfo::relocType rtype))    \
+    NAME(Rs1, cimm, dest);                                                                               \
+  }
+
+  INSN(beqi);
+  INSN(bnei);
 
 #undef INSN
 
@@ -883,10 +906,17 @@ public:
   typedef void (MacroAssembler::* compare_and_branch_label_insn)(Register Rs1, Register Rs2, Label &L, bool is_far);
   typedef void (MacroAssembler::* jal_jalr_insn)(Register Rt, address dest);
 
+  // Zibi branch-with-immediate (beqi/bnei).
+  typedef void (MacroAssembler::* cimm_branch_insn)(Register Rs1, uint32_t cimm, const address dest);
+  typedef void (MacroAssembler::* cimm_branch_label_insn)(Register Rs1, uint32_t cimm, Label &L, bool is_far);
+
   void wrap_label(Register r, Label &L, jal_jalr_insn insn);
   void wrap_label(Register r1, Register r2, Label &L,
                   compare_and_branch_insn insn,
                   compare_and_branch_label_insn neg_insn, bool is_far = false);
+  void wrap_label(Register r1, uint32_t cimm, Label &L,
+                  cimm_branch_insn insn,
+                  cimm_branch_label_insn neg_insn, bool is_far = false);
 
   void la(Register Rd, Label &label);
   void la(Register Rd, const address addr);
