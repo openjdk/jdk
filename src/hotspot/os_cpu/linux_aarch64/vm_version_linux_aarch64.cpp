@@ -156,7 +156,8 @@ void VM_Version::get_os_cpu_info() {
       check_feature(auxv,  BIT_MASK(CPU_PACA),       HWCAP_PACA) |
       check_feature(auxv2, BIT_MASK(CPU_SVEBITPERM), HWCAP2_SVEBITPERM) |
       check_feature(auxv2, BIT_MASK(CPU_SVE2),       HWCAP2_SVE2) |
-      // CPU_A53MAC is set in VM_Version::initialize().
+      // The synthetic CPU_A53MAC flag is set in VM_Version::initialize(), as
+      // there is no corresponding HWCAP flag.
       check_feature(auxv2, BIT_MASK(CPU_ECV),        HWCAP2_ECV) |
       check_feature(auxv2, BIT_MASK(CPU_WFXT),       HWCAP2_WFXT);
 
