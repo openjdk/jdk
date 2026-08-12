@@ -67,13 +67,19 @@ public class TestGenerate {
     }
 
     @Test
-    void testToDisplayString_NegativeIndent() {
+    void testToDisplayString_NullIndent() {
+        assertThrows(NullPointerException.class,
+            () -> Json.toDisplayString(JsonString.of("foo"), null));
+    }
+
+    @Test
+    void testToDisplayString_InvalidIndent() {
         assertThrows(IllegalArgumentException.class,
-            () -> Json.toDisplayString(JsonString.of("foo"), -1));
+            () -> Json.toDisplayString(JsonString.of("foo"), "abc"));
     }
 
     private static final List<Arguments> DISPLAYSTRING = List.of(
-        Arguments.of(0,
+        Arguments.of("",
             """
             [
             {
@@ -100,7 +106,7 @@ public class TestGenerate {
             "foo",
             42
             ]"""),
-        Arguments.of(2,
+        Arguments.of("  ",
             """
             [
               {
@@ -127,7 +133,7 @@ public class TestGenerate {
               "foo",
               42
             ]"""),
-        Arguments.of(4,
+        Arguments.of("    ",
             """
             [
                 {
@@ -153,19 +159,46 @@ public class TestGenerate {
                 ],
                 "foo",
                 42
+            ]"""),
+        Arguments.of("\t\r\n\u0020 ",
+            """
+            [
+            \t\r\n\u0020 {
+            \t\r\n\u0020 \t\r\n\u0020 "name": "John",
+            \t\r\n\u0020 \t\r\n\u0020 "age": 30,
+            \t\r\n\u0020 \t\r\n\u0020 "city": "New-York"
+            \t\r\n\u0020 },
+            \t\r\n\u0020 {
+            \t\r\n\u0020 \t\r\n\u0020 "name": "Jane",
+            \t\r\n\u0020 \t\r\n\u0020 "age": 20,
+            \t\r\n\u0020 \t\r\n\u0020 "city": "Boston"
+            \t\r\n\u0020 },
+            \t\r\n\u0020 true,
+            \t\r\n\u0020 false,
+            \t\r\n\u0020 null,
+            \t\r\n\u0020 [
+            \t\r\n\u0020 \t\r\n\u0020 "array",
+            \t\r\n\u0020 \t\r\n\u0020 "inside",
+            \t\r\n\u0020 \t\r\n\u0020 {
+            \t\r\n\u0020 \t\r\n\u0020 \t\r\n\u0020 "inner-obj": true,
+            \t\r\n\u0020 \t\r\n\u0020 \t\r\n\u0020 "top-level": false
+            \t\r\n\u0020 \t\r\n\u0020 }
+            \t\r\n\u0020 ],
+            \t\r\n\u0020 "foo",
+            \t\r\n\u0020 42
             ]""")
     );
 
     @ParameterizedTest
     @FieldSource("DISPLAYSTRING")
-    void testDisplayString(int indent, String expected) {
+    void testDisplayString(String indent, String expected) {
         assertEquals(expected, Json.toDisplayString(Json.parse(SRC), indent));
     }
 
     @Test
     void testEscapesMemberNames() {
         var json = Json.parse("{ \"a\\\"b\" : null }");
-        var display = Json.toDisplayString(json, 2);
+        var display = Json.toDisplayString(json, "  ");
 
         assertEquals("""
         {
