@@ -75,7 +75,7 @@ public class MetricsMemoryTester {
         // SIGSEGV before we read the fail counter.
 
         final long maxHeapSize = Runtime.getRuntime().maxMemory();
-         if (maxHeapSize <= memLimit || maxHeapSize >= memAndSwapLimit) {
+        if (maxHeapSize <= memLimit || maxHeapSize >= memAndSwapLimit) {
             throw new RuntimeException(
                     "Expected memory limit < maximum heap < memory-and-swap limit: "
                             + "memory=" + memLimit / M + "M, "
