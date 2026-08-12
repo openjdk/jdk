@@ -344,10 +344,7 @@ void ShenandoahMark::mark_through_ref(T *p, ShenandoahObjToScanQueue* q, Shenand
     if (in_generation<GENERATION>(heap, obj)) {
       mark_ref(q, mark_context, weak, obj);
       shenandoah_assert_marked(p, obj);
-      if (GENERATION == YOUNG && heap->is_in_old(p)) {
-        // Mark card as dirty because remembered set scanning still finds interesting pointer.
-        heap->old_generation()->mark_card_as_dirty((HeapWord*)p);
-      } else if (GENERATION == GLOBAL && heap->is_in_old(p) && heap->is_in_young(obj)) {
+      if (GENERATION == GLOBAL && heap->is_in_old(p) && heap->is_in_young(obj)) {
         // Mark card as dirty because GLOBAL marking finds interesting pointer.
         heap->old_generation()->mark_card_as_dirty((HeapWord*)p);
       }

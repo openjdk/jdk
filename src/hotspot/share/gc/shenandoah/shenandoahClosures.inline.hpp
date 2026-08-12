@@ -82,6 +82,23 @@ void ShenandoahMarkRefsSuperClosure::work(T* p) {
   ShenandoahMark::mark_through_ref<T, GENERATION>(p, _queue, _old_queue, _mark_context, _weak);
 }
 
+template<class T>
+void ShenandoahUpdateRememberedSetMarkClosure::do_oop_work(T* p) {
+  assert(ShenandoahHeap::heap()->is_in_old(p), "Expected old pointer");
+
+  // Mark as usual
+  ShenandoahMarkRefsSuperClosure::work<T, YOUNG>(p);
+  // Re-dirty write table for next cycle
+  T o = RawAccess<>::oop_load(p);
+  if (!CompressedOops::is_null(o)) {
+    oop obj = CompressedOops::decode_not_null(o);
+    if (_heap->is_in_young(obj)) {
+      // Still in young, re-dirty card
+      _heap->old_generation()->mark_card_as_dirty((HeapWord*)p);
+    }
+  }
+}
+
 ShenandoahForwardedIsAliveClosure::ShenandoahForwardedIsAliveClosure() :
   _mark_context(ShenandoahHeap::heap()->marking_context()) {}
 
