@@ -36,13 +36,13 @@ import jdk.internal.vm.annotation.LooselyConsistentValue;
 import jdk.internal.vm.annotation.NullRestricted;
 import jdk.test.whitebox.WhiteBox;
 
-import static compiler.lib.ir_framework.IRNode.STATIC_CALL_OF_METHOD;
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.CALL_UNSAFE;
 import static compiler.valhalla.inlinetypes.InlineTypes.rI;
 import static compiler.valhalla.inlinetypes.InlineTypes.rL;
 
+import static compiler.lib.ir_framework.IRNode.CALL_UNSAFE;
 import static compiler.lib.ir_framework.IRNode.LOAD;
 import static compiler.lib.ir_framework.IRNode.LOAD_KLASS;
+import static compiler.lib.ir_framework.IRNode.STATIC_CALL_OF_METHOD;
 
 /*
  * @test
