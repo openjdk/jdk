@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8192888
+ * @bug 8375573
  * @key headful
  * @summary Verifies JTable doesn't ignore setPreferredWidth during
  *          initial layout when AUTO_RESIZE_LAST_COLUMN is enabled
