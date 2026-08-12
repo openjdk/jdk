@@ -281,7 +281,6 @@ private:
 bool RegionIterator::next_committed(address& committed_start, size_t& committed_size) {
   if (end() <= _current_start) return false;
 
-  const size_t page_sz = os::vm_page_size();
   const size_t current_size = end() - _current_start;
   if (os::first_resident_in_range(_current_start, current_size, committed_start, committed_size)) {
     assert(committed_start != nullptr, "Must be");

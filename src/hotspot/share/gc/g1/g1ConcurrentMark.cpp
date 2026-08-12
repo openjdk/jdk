@@ -24,6 +24,7 @@
 
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
+#include "code/codeCache.hpp"
 #include "cppstdlib/new.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BatchedTask.hpp"
@@ -70,6 +71,7 @@
 #include "nmt/memTracker.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
@@ -1378,6 +1380,8 @@ void G1ConcurrentMark::remark() {
   if (mark_finished) {
     weak_refs_work();
 
+    CodeCache::on_gc_marking_cycle_finish();
+
     // Unload Klasses, String, Code Cache, etc.
     if (ClassUnloadingWithConcurrentMark) {
       G1CMIsAliveClosure is_alive(this);
@@ -1446,7 +1450,7 @@ void G1ConcurrentMark::remark() {
     // Completely reset the marking state (except bitmaps) since marking completed.
     reset_at_marking_complete();
 
-    G1CollectedHeap::finish_codecache_marking_cycle();
+    CodeCache::arm_all_nmethods();
 
     {
       GCTraceTime(Debug, gc, phases) debug("Report Object Count", _gc_timer_cm);
@@ -2444,7 +2448,7 @@ void G1CMTask::drain_local_queue(bool partially) {
 size_t G1CMTask::start_partial_array_processing(objArrayOop obj) {
   assert(obj->length() >= (int)ObjArrayMarkingStride, "Must be a large array object %d", obj->length());
 
-  // Mark objArray klass metadata
+  // Mark klass metadata
   process_klass(obj->klass());
 
   size_t array_length = obj->length();
@@ -2453,19 +2457,32 @@ size_t G1CMTask::start_partial_array_processing(objArrayOop obj) {
   process_array_chunk(obj, 0, initial_chunk_size);
 
   // Include object header size
-  return objArrayOopDesc::object_size(checked_cast<int>(initial_chunk_size));
+  if (obj->is_refArray()) {
+    return refArrayOopDesc::object_size(checked_cast<int>(initial_chunk_size));
+  } else {
+    FlatArrayKlass* fak = FlatArrayKlass::cast(obj->klass());
+    return flatArrayOopDesc::object_size(fak->layout_helper(), checked_cast<int>(initial_chunk_size));
+  }
 }
 
 size_t G1CMTask::process_partial_array(const G1TaskQueueEntry& task, bool stolen) {
   PartialArrayState* state = task.to_partial_array_state();
   // Access state before release by claim().
-  objArrayOop obj = objArrayOop(state->source());
+  objArrayOop obj = oop_cast<objArrayOop>(state->source());
 
   PartialArraySplitter::Claim claim =
     _partial_array_splitter.claim(state, _task_queue, stolen);
 
   process_array_chunk(obj, claim._start, claim._end);
-  return heap_word_size((claim._end - claim._start) * heapOopSize);
+
+  if (obj->is_refArray()) {
+    return heap_word_size((claim._end - claim._start) * heapOopSize);
+  } else {
+    assert(obj->is_flatArray(), "Must be!");
+    size_t element_byte_size = FlatArrayKlass::cast(obj->klass())->element_byte_size();
+    size_t nof_elements = claim._end - claim._start;
+    return heap_word_size(nof_elements * element_byte_size);
+  }
 }
 
 void G1CMTask::drain_global_stack(bool partially) {
