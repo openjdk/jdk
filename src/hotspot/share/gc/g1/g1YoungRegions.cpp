@@ -22,45 +22,45 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1EDENREGIONS_HPP
-#define SHARE_GC_G1_G1EDENREGIONS_HPP
-
 #include "gc/g1/g1HeapRegion.hpp"
-#include "gc/g1/g1RegionsOnNodes.hpp"
-#include "runtime/atomic.hpp"
-#include "runtime/globals.hpp"
+#include "gc/g1/g1YoungRegions.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/growableArray.hpp"
 
-class G1EdenRegions {
-  uint _length;
-  // Sum of used bytes from all retired eden regions.
-  // I.e. updated when mutator regions are retired.
-  Atomic<size_t> _used_bytes;
-  G1RegionsOnNodes  _regions_on_node;
+void G1YoungRegions::add_to_nodes(G1HeapRegion* r) {
+  _regions_on_node.add(r);
+}
 
-public:
-  G1EdenRegions() : _length(0), _used_bytes(0), _regions_on_node() { }
+void G1YoungRegions::clear_data() {
+  _used_bytes.store_relaxed(0);
+  _regions_on_node.clear();
+}
 
-  void add(G1HeapRegion* hr) {
-    assert(hr->is_eden(), "must be");
-    _length++;
-    _regions_on_node.add(hr);
+void G1EdenRegions::add(G1HeapRegion* r) {
+  assert(r->is_eden(), "must be");
+  add_to_nodes(r);
+  _num_regions++;
+}
+
+void G1EdenRegions::clear() {
+  clear_data();
+  _num_regions = 0;
+}
+
+void G1SurvivorRegions::add(G1HeapRegion* r) {
+  assert(r->is_survivor(), "should be flagged as survivor region");
+  add_to_nodes(r);
+  _regions.append(r);
+}
+
+void G1SurvivorRegions::convert_to_eden() {
+  for (G1HeapRegion* r : _regions) {
+    r->set_eden_pre_gc();
   }
+  clear();
+}
 
-  void clear() {
-    _length = 0;
-    _used_bytes.store_relaxed(0);
-    _regions_on_node.clear();
-  }
-
-  uint length() const { return _length; }
-  uint regions_on_node(uint node_index) const { return _regions_on_node.count(node_index); }
-
-  size_t used_bytes() const { return _used_bytes.load_relaxed(); }
-
-  void add_used_bytes(size_t used_bytes) {
-    _used_bytes.add_then_fetch(used_bytes, memory_order_relaxed);
-  }
-};
-
-#endif // SHARE_GC_G1_G1EDENREGIONS_HPP
+void G1SurvivorRegions::clear() {
+  clear_data();
+  _regions.clear();
+}

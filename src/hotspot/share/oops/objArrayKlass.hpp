@@ -100,9 +100,12 @@ class ObjArrayKlass : public ArrayKlass {
                                                 int n, Klass* element_klass, TRAPS);
 
   oop multi_allocate(int rank, jint* sizes, TRAPS) override;
+  virtual objArrayOop allocate_instance(int length, TRAPS);
 
   // Copying
   void copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos, int length, TRAPS) override;
+  void array_copy_offsets_and_range_check(arrayOop s, int src_pos,
+                                          arrayOop d, int dst_pos, int length, TRAPS);
 
   // Compute protection domain
   oop protection_domain() const override { return bottom_klass()->protection_domain(); }
