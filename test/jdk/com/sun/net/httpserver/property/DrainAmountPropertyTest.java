@@ -24,6 +24,7 @@
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import jdk.test.lib.format.Format;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -45,6 +46,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @summary Tests the default value of `sun.net.httpserver.drainAmount`,
  *          which is 65,536.
  *
+ * @library /test/lib
+ *
  * @run junit/othervm
  *      ${test.main.class}
  */
@@ -56,6 +59,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  *          negative value (-1, in this case) results in server closing the
  *          connection if the handler leaves behind an unconsumed request body
  *          of length bigger than 0.
+ *
+ * @library /test/lib
  *
  * @run junit/othervm
  *      -Dsun.net.httpserver.drainAmount=-1
@@ -69,6 +74,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  *          results in server closing the connection if the handler leaves
  *          behind an unconsumed request body of length bigger than 0.
  *
+ * @library /test/lib
+ *
  * @run junit/othervm
  *      -Dsun.net.httpserver.drainAmount=0
  *      ${test.main.class}
@@ -81,6 +88,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  *          results in server closing the connection if the handler leaves
  *          behind an unconsumed request body of length greater than or equal
  *          to 1.
+ *
+ * @library /test/lib
  *
  * @run junit/othervm
  *      -Dsun.net.httpserver.drainAmount=1
@@ -182,7 +191,7 @@ class DrainAmountPropertyTest {
             int nextChar = inputStream.read();
             if (nextChar < 0) {
                 // Peer disconnect is not expected, escalate it
-                throw new SocketException("EOF");
+                throw new SocketException("EOF after reading: " + Format.asLiteral(buffer));
             }
             buffer.append((char) nextChar);
             if (prevChar == '\r' && nextChar == '\n') {
