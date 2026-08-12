@@ -138,7 +138,7 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   _generation->ref_processor()->set_soft_reference_policy(
       GCCause::should_clear_all_soft_refs(cause));
 
-  ShenandoahConcurrentRootPhase gc_phase("Concurrent GC", ShenandoahPhaseTimings::conc_gc, /* log_heap_usage = */ true);
+  ShenandoahConcurrentRootPhase gc_phase(concurrent_gc_event_message(), ShenandoahPhaseTimings::conc_gc, /* log_heap_usage = */ true);
 
   ShenandoahBreakpointGCScope breakpoint_gc_scope(cause);
 
@@ -1296,6 +1296,10 @@ bool ShenandoahConcurrentGC::check_cancellation_and_abort(ShenandoahDegenPoint p
     return true;
   }
   return false;
+}
+
+const char* ShenandoahConcurrentGC::concurrent_gc_event_message() const {
+  SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent GC", "");
 }
 
 const char* ShenandoahConcurrentGC::init_mark_event_message() const {

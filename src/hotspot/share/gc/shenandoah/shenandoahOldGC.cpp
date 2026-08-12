@@ -86,7 +86,7 @@ bool ShenandoahOldGC::collect(GCCause::Cause cause) {
   assert(!_old_generation->is_preparing_for_mark(), "Old regions need to be parsable during concurrent mark.");
   heap->release_injected_pins();
 
-  ShenandoahConcurrentRootPhase gc_phase("Concurrent GC (Old)", ShenandoahPhaseTimings::conc_gc_old, /* log_heap_usage = */ true);
+  ShenandoahConcurrentRootPhase gc_phase(concurrent_gc_event_message(), ShenandoahPhaseTimings::conc_gc, /* log_heap_usage = */ true);
 
   // Enable preemption of old generation mark.
   _allow_preemption.set();
