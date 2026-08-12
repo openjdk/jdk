@@ -6557,9 +6557,8 @@ void MacroAssembler::cmp_x2i(Register dst, Register src1, Register src2,
   }
 
   // dst = (src1 > src2) - (src1 < src2)
-  assert(tmp != dst, "tmp must be different from dst");
-  assert(tmp != src1, "tmp must be different from src1");
-  assert(tmp != src2, "tmp must be different from src2");
+  assert_different_registers(tmp, dst);
+  assert_different_registers(tmp, src1, src2);
 
   if (is_signed) {
     slt(tmp, src2, src1);
@@ -6568,8 +6567,7 @@ void MacroAssembler::cmp_x2i(Register dst, Register src1, Register src2,
     sltu(tmp, src2, src1);
     sltu(dst, src1, src2);
   }
-  neg(dst, dst);
-  add(dst, tmp, dst);
+  sub(dst, tmp, dst);
 }
 
 void MacroAssembler::cmp_l2i(Register dst, Register src1, Register src2, Register tmp)
