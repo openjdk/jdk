@@ -29,7 +29,12 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.net.ProtocolException;
 import java.net.SocketException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.frame.ErrorFrame;
@@ -202,22 +207,15 @@ public abstract sealed class Http2TerminationCause {
         if (errCodeFromGoAway == ErrorFrame.NO_ERROR) {
             return original;
         }
-        Throwable eligibleException = null;
-        Throwable t = original.getCloseCause();
-        // if the original termination cause's exception chain doesn't contain an
-        // exception of some specific types, then we don't replace the original termination cause
-        while (t != null) {
-            // for now, we consider just these types as eligible to indiciate a connection
-            // termination that may be attributed to a GOAWAY that was previously received
-            // on the connection
-            if ((t instanceof SocketException) || (t instanceof EOFException)) {
-                eligibleException = t;
-                break;
-            }
-            t = t.getCause();
-        }
+        // for now, we consider just these types as eligible to indiciate a connection
+        // termination that may be attributed to a GOAWAY that was previously received
+        // on the connection
+        final Throwable eligibleException = findInCause(original.getCloseCause(),
+                List.of(SocketException.class, EOFException.class));
         if (eligibleException == null) {
-            // no eligible exception found in the chain, return the original termination cause
+            // if the original termination cause's exception chain doesn't contain an
+            // exception of some specific types, then we don't replace the original
+            // termination cause
             return original;
         }
         // construct and return a new inferred termination cause using the error code
@@ -229,6 +227,30 @@ public abstract sealed class Http2TerminationCause {
         // due to the replacement of the termination cause, we do lose the error code
         // from the original termination cause, but that's OK
         return new H2StandardError(errCodeFromGoAway, inferred);
+    }
+
+    // From the given exception's chain of causes, this method finds and returns an exception
+    // whose class type matches any of the given candidate types. Returns null if none found.
+    private static Throwable findInCause(final Throwable exception,
+                                         final Collection<Class<? extends Throwable>> candidateTypes) {
+
+        if (candidateTypes.isEmpty()) {
+            return null;
+        }
+        final Set<Throwable> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (Throwable t = exception; t != null; t = t.getCause()) {
+            if (!seen.add(t)) {
+                // cycle detected; no eligible exception found in the cause so far
+                return null;
+            }
+            for (final Class<? extends Throwable> exType : candidateTypes) {
+                if (exType.isInstance(t)) {
+                    // found the exception whose type matches some expected type
+                    return t;
+                }
+            }
+        }
+        return null;
     }
 
     private static IOException toReportedCause(final Throwable original,
