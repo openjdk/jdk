@@ -84,17 +84,19 @@ void ShenandoahMarkRefsSuperClosure::work(T* p) {
 
 template<class T>
 void ShenandoahUpdateRememberedSetMarkClosure::do_oop_work(T* p) {
-  assert(ShenandoahHeap::heap()->is_in_old(p), "Expected old pointer");
+  // Can't do this, we might walk into a young class loader or something else
+  // assert(ShenandoahHeap::heap()->is_in_old(p), "Expected old pointer");
 
   // Mark as usual
   ShenandoahMarkRefsSuperClosure::work<T, YOUNG>(p);
   // Re-dirty write table for next cycle
-  T o = RawAccess<>::oop_load(p);
-  if (!CompressedOops::is_null(o)) {
-    oop obj = CompressedOops::decode_not_null(o);
-    if (_heap->is_in_young(obj)) {
-      // Still in young, re-dirty card
-      _heap->old_generation()->mark_card_as_dirty((HeapWord*)p);
+  if (_heap->is_in_old(p)) {
+    T o = RawAccess<>::oop_load(p);
+    if (!CompressedOops::is_null(o)) {
+      oop obj = CompressedOops::decode_not_null(o);
+      if (_heap->is_in_young(obj)) {
+        _heap->old_generation()->mark_card_as_dirty((HeapWord*)p);
+      }
     }
   }
 }
