@@ -28,7 +28,7 @@
  * @enablePreview
  * @requires vm.continuations
  * @library /test/lib
- * @run main/othervm -XX:-Inline -XX:CompileThreshold=100 -XX:-TieredCompilation TestVirtualThreadMethodHandle
+ * @run main/othervm -XX:-Inline -Xbatch -XX:-TieredCompilation TestVirtualThreadMethodHandle
  */
 
 import java.lang.invoke.*;
@@ -45,7 +45,7 @@ public class TestVirtualThreadMethodHandle {
 
     static void run() {
         try {
-            for (int n = 0; n < 5_000; n++) MH.invokeExact(new V());
+            for (int n = 0; n < 20_000; n++) MH.invokeExact(new V());
         } catch (Throwable t) {
             failed = true;
             throw new RuntimeException("MethodHandle invocation failed", t);
