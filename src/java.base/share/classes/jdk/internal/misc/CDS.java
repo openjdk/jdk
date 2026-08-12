@@ -401,14 +401,20 @@ public class CDS {
 
     private static native boolean needsClassInitBarrier0(Class<?> c);
 
-    public static URL getResource(ClassLoader loader, URL zipName, String name) throws Exception {
+    /**
+     * Returns a resource located in a JAR file
+     * @param loader Class loader used by AOT
+     * @param jarURL URL of JAR archive which should contain the resource
+     * @param name Resource name
+     */
+    public static URL getResource(ClassLoader loader, URL jarURL, String name) throws Exception {
         URL resource = loader.getResource(name);
 
         if (resource != null) {
             // If the resource is not in the correct JAR file, discard it
-            if (resource.getProtocol().equals("jar")) {
+            if (resource.getProtocol().equalsIgnoreCase("jar")) {
                 JarURLConnection resourceJarURL = (JarURLConnection)resource.openConnection();
-                if (!resourceJarURL.getJarFileURL().equals(zipName)) {
+                if (!resourceJarURL.getJarFileURL().equals(jarURL)) {
                     return null;
                 }
             } else {

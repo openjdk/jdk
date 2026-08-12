@@ -383,13 +383,16 @@ bool ClassPathZipEntry::has_entry(JavaThread* current, const char* name, Handle 
     }
   }
 
-  // Make an upcall to ClassLoader.getResource() if name is in a multi-release JAR
+  // Make an upcall to ClassLoader.getResource() if "name" is in a multi-release JAR
+  // and was not found in the root of the JAR file. This will always be a built-in class
+  // loader but CDS.getResource() will ensure the resource is retrieved from the correct
+  // JAR file anyway.
   if (class_loader != nullptr && is_multi_release_jar) {
     JavaValue result(T_OBJECT);
     oop class_name_oop = java_lang_String::create_oop_from_str(name, current);
     oop zip_name_oop = CDSProtectionDomain::to_file_URL(_zip_name, Handle(), current);
-    Handle h_class_name = Handle(current, class_name_oop);
-    Handle h_zip_name = Handle(current, zip_name_oop);
+    Handle h_class_name(current, class_name_oop);
+    Handle h_zip_name(current, zip_name_oop);
 
     // URL ClassLoader.getResource(String name)
     JavaCalls::call_static(&result,
