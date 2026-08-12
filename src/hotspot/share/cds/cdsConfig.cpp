@@ -53,7 +53,6 @@ bool CDSConfig::_is_dumping_static_archive = false;
 bool CDSConfig::_is_dumping_preimage_static_archive = false;
 bool CDSConfig::_is_dumping_final_static_archive = false;
 bool CDSConfig::_is_dumping_dynamic_archive = false;
-bool CDSConfig::_is_using_optimized_module_handling = true;
 bool CDSConfig::_is_dumping_full_module_graph = true;
 bool CDSConfig::_is_using_full_module_graph = true;
 bool CDSConfig::_has_aot_linked_classes = false;
@@ -330,8 +329,8 @@ void CDSConfig::ergo_init_classic_archive_paths() {
 
 void CDSConfig::check_internal_module_property(const char* key, const char* value) {
   if (Arguments::is_incompatible_cds_internal_module_property(key)) {
-    stop_using_optimized_module_handling();
-    aot_log_info(aot)("optimized module handling: disabled due to incompatible property: %s=%s", key, value);
+    disable_full_module_graph();
+    aot_log_info(aot)("full mmodule graph: disabled due to incompatible property: %s=%s", key, value);
   }
 }
 
@@ -585,9 +584,8 @@ void CDSConfig::check_aotmode_record() {
   _is_dumping_static_archive = true;
   _is_dumping_preimage_static_archive = true;
 
-  // At VM exit, the module graph may be contaminated with program states.
+  // At the end of the training run, the module graph may be contaminated with program states.
   // We will rebuild the module graph when dumping the CDS final image.
-  _is_using_optimized_module_handling = false;
   _is_using_full_module_graph = false;
   _is_dumping_full_module_graph = false;
 }
@@ -886,13 +884,6 @@ bool CDSConfig::is_dumping_regenerated_lambdaform_invokers() {
   }
 }
 
-void CDSConfig::stop_using_optimized_module_handling() {
-  _is_using_optimized_module_handling = false;
-  _is_dumping_full_module_graph = false; // This requires is_using_optimized_module_handling()
-  _is_using_full_module_graph = false; // This requires is_using_optimized_module_handling()
-}
-
-
 CDSConfig::DumperThreadMark::DumperThreadMark(JavaThread* current) {
   assert(_dumper_thread == nullptr, "sanity");
   _dumper_thread = current;
@@ -1039,6 +1030,12 @@ bool CDSConfig::is_using_klass_subgraphs() {
   return (is_loading_heap() &&
           !CDSConfig::is_using_aot_linked_classes() &&
           !CDSConfig::is_dumping_final_static_archive());
+}
+
+// Prevent the JVM from dumping or using the archived full module graph
+void CDSConfig::disable_full_module_graph() {
+  _is_dumping_full_module_graph = false;
+  _is_using_full_module_graph = false;
 }
 
 bool CDSConfig::is_using_full_module_graph() {

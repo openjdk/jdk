@@ -79,12 +79,12 @@ class CompileTask : public CHeapObj<mtCompiler> {
       "replay",
       "whitebox",
       "must_be_compiled",
-      "bootstrap",
       "aot_load",
       "aot_preload",
       "aot_compile",
       "aot_compile_for_preload",
     };
+    STATIC_ASSERT(ARRAY_SIZE(reason_names) == Reason_Count);
     return reason_names[compile_reason];
   }
 

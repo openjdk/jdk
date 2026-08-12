@@ -64,12 +64,6 @@
   product(bool, StressUnstableIfTraps, false, DIAGNOSTIC,                   \
           "Randomly take unstable if traps")                                \
                                                                             \
-  product(uint, StressSeed, 0, DIAGNOSTIC,                                  \
-          "Seed for randomized stress testing (if unset, a random one is "  \
-          "generated). The seed is recorded in the compilation log, if "    \
-          "available.")                                                     \
-          range(0, max_juint)                                               \
-                                                                            \
   develop(bool, StressMethodHandleLinkerInlining, false,                    \
           "Stress inlining through method handle linkers")                  \
                                                                             \
@@ -733,7 +727,8 @@
           "the IGVN worklist drains")                                       \
                                                                             \
   develop(uint, VerifyIterativeGVN, 0,                                      \
-          "Verify Iterative Global Value Numbering =FEDCBA, with:"          \
+          "Verify Iterative Global Value Numbering =GFEDCBA, with:"         \
+          "  G: verify Node::Identity return an existing node"              \
           "  F: verify Node::Ideal does not return nullptr if the node"     \
                 "hash has changed"                                          \
           "  E: verify node specific invariants"                            \
