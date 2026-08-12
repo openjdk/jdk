@@ -111,35 +111,36 @@ public class Http1RequestEmptyBufferTest {
                     path,
                     null,
                     null);
-            HttpClient client = HttpClient.newBuilder()
+            try (HttpClient client = HttpClient.newBuilder()
                     .proxy(HttpClient.Builder.NO_PROXY)
                     .version(HttpClient.Version.HTTP_1_1)
-                    .build();
-            HttpRequest request = HttpRequest.newBuilder(uri)
-                    .PUT(HttpRequest.BodyPublishers.ofByteArrays(List.of(new byte[0])))
-                    .build();
-            CompletableFuture<HttpResponse<Void>> responseFuture =
-                    client.sendAsync(request, HttpResponse.BodyHandlers.discarding());
-            try (Socket connection = server.accept()) {
-                connection.setSoTimeout((int)Utils.adjustTimeout(1000));
-                InputStream input = connection.getInputStream();
-                byte[] headerBytes = readRequestHeaders(input);
-                String headerText = new String(headerBytes, StandardCharsets.US_ASCII)
-                        .toLowerCase(Locale.ROOT);
-                assertTrue(headerText.contains("transfer-encoding: chunked"),
-                        "Expected Transfer-Encoding: chunked header, got: "
-                        + headerText);
-                int terminalChunkCount = countTerminalChunks(input);
-                assertEquals(1, terminalChunkCount,
-                        "Expected exactly one terminal chunk, got: "
-                        + terminalChunkCount);
-                OutputStream os = connection.getOutputStream();
-                os.write(RESPONSE_HEADERS.getBytes(StandardCharsets.US_ASCII));
-                os.flush();
-                HttpResponse<Void> response = responseFuture.join();
-                assertEquals(200, response.statusCode(),
-                        "Expected response status 200, got: "
-                        + response.statusCode());
+                    .build()) {
+                HttpRequest request = HttpRequest.newBuilder(uri)
+                        .PUT(HttpRequest.BodyPublishers.ofByteArrays(List.of(new byte[0])))
+                        .build();
+                CompletableFuture<HttpResponse<Void>> responseFuture =
+                        client.sendAsync(request, HttpResponse.BodyHandlers.discarding());
+                try (Socket connection = server.accept()) {
+                    connection.setSoTimeout((int)Utils.adjustTimeout(1000));
+                    InputStream input = connection.getInputStream();
+                    byte[] headerBytes = readRequestHeaders(input);
+                    String headerText = new String(headerBytes, StandardCharsets.US_ASCII)
+                            .toLowerCase(Locale.ROOT);
+                    assertTrue(headerText.contains("transfer-encoding: chunked"),
+                            "Expected Transfer-Encoding: chunked header, got: "
+                            + headerText);
+                    int terminalChunkCount = countTerminalChunks(input);
+                    assertEquals(1, terminalChunkCount,
+                            "Expected exactly one terminal chunk, got: "
+                            + terminalChunkCount);
+                    OutputStream os = connection.getOutputStream();
+                    os.write(RESPONSE_HEADERS.getBytes(StandardCharsets.US_ASCII));
+                    os.flush();
+                    HttpResponse<Void> response = responseFuture.join();
+                    assertEquals(200, response.statusCode(),
+                            "Expected response status 200, got: "
+                            + response.statusCode());
+                }
             }
         }
     }
