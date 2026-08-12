@@ -654,6 +654,7 @@ class URICertStore extends CertStoreSpi {
                     }
                     lastModified = 0;
                     crl = null;
+                    return Collections.emptyList();
                 }
             }
             return getMatchingCRLs(crl, selector);
