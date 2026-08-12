@@ -31,6 +31,7 @@
 
 import jdk.test.lib.valueclass.AsValueClass;
 import java.util.*;
+import java.util.function.IntFunction;
 import java.util.stream.IntStream;
 
 public class PutNullKey {
@@ -115,24 +116,14 @@ public class PutNullKey {
     }
 
     public static void main(String[] args) throws Exception {
-        testCollidingHash();
-        testCollidingHashValue();
+        testCollidingHash(CollidingHash::new);
+        testCollidingHash(CollidingHashValue::new);
     }
 
-    private static void testCollidingHash() {
+    private static void testCollidingHash(IntFunction<?> function) {
         Map<Object,Object> m = new HashMap<>(INITIAL_CAPACITY, LOAD_FACTOR);
         IntStream.range(0, SIZE)
-                .mapToObj(CollidingHash::new)
-                .forEach(e -> { m.put(e, e); });
-
-        // kaboom?
-        m.put(null, null);
-    }
-
-    private static void testCollidingHashValue() {
-        Map<Object,Object> m = new HashMap<>(INITIAL_CAPACITY, LOAD_FACTOR);
-        IntStream.range(0, SIZE)
-                .mapToObj(CollidingHashValue::new)
+                .mapToObj(function)
                 .forEach(e -> { m.put(e, e); });
 
         // kaboom?

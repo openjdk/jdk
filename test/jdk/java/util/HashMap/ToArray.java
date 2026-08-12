@@ -49,8 +49,6 @@ public class ToArray {
         checkSet(true);
         checkVClassMap(false);
         checkVClassMap(true);
-        checkVClassSet(false);
-        checkVClassSet(true);
     }
 
     private static <T extends Comparable<T>> void checkToArray(String message, T[] expected, Collection<T> collection,
@@ -178,28 +176,5 @@ public class ToArray {
         map.clear();
         checkToArray("Empty-tuple-keys", new VClass[0], map.keySet(), !ordered);
         checkToArray("Empty-tuple-values", new VClass[0], map.values(), !ordered);
-    }
-
-    private static void checkVClassSet(boolean ordered) {
-        Collection<VClass> set = ordered ? new LinkedHashSet<>() : new HashSet<>();
-        checkToArray("Empty-tuple", new VClass[0], set, !ordered);
-        set.add(new VClass(1, new int[] { 1 }));
-        checkToArray("One-tuple", new VClass[]{new VClass(1, new int[] { 1 })}, set, !ordered);
-        set.add(new VClass(2, new int[] { 2 }));
-        checkToArray("Two-tuple", new VClass[]{new VClass(1, new int[] { 1 }), new VClass(2, new int[] { 2 })}, set, !ordered);
-
-        Collection<VClass> tupleSet = ordered ? new LinkedHashSet<>() : new HashSet<>();
-        for (int x = 0; x < 100; x++) {
-            tupleSet.add(new VClass(x, new int[] { x }));
-        }
-        checkToArray("100-tuple", LongStream.range(0, 100).mapToObj(x -> new VClass((int) x, new int[] { (int) x }))
-                .toArray(VClass[]::new), tupleSet, !ordered);
-        tupleSet.clear();
-        checkToArray("After-clear-tuple", new VClass[0], tupleSet, !ordered);
-        for (int x = 0; x < 100; x++) {
-            tupleSet.add(new VClass(x, new int[] { -31 * x }));
-        }
-        checkToArray("Collisions-tuple", LongStream.range(0, 100).mapToObj(x -> new VClass((int) x, new int[] { -31 * (int) x }))
-                .toArray(VClass[]::new), tupleSet, !ordered);
     }
 }

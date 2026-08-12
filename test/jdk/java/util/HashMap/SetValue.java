@@ -34,30 +34,16 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class SetValue {
-    static final String key      = "key";
-    static final String oldValue = "old";
-    static final String newValue = "new";
 
     public static void main(String[] args) throws Exception {
-        testStringValue();
-        testVClass();
+        test("key", "old", "new");
+        test("key", new VClass(1, new int[] { 1 }), new VClass(2, new int[] { 2 }));
     }
 
-    private static void testStringValue() {
+    private static void test(Object key, Object oldValue, Object newValue) {
         Map m = new HashMap();
         m.put(key, oldValue);
         Map.Entry e = (Map.Entry) m.entrySet().iterator().next();
-        Object returnVal = e.setValue(newValue);
-        if (!returnVal.equals(oldValue))
-            throw new RuntimeException("Return value: " + returnVal);
-    }
-
-    private static void testVClass() {
-        Map<String, VClass> m = new HashMap<>();
-        VClass oldValue = new VClass(1, new int[] { 1 });
-        VClass newValue = new VClass(2, new int[] { 2 });
-        m.put(key, oldValue);
-        Map.Entry<String, VClass> e = m.entrySet().iterator().next();
         Object returnVal = e.setValue(newValue);
         if (!returnVal.equals(oldValue))
             throw new RuntimeException("Return value: " + returnVal);

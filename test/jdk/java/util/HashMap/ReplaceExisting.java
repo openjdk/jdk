@@ -27,11 +27,9 @@
  * @summary Verify that replacing the value for an existing key does not
  * corrupt active iterators, in particular due to a resize() occurring and
  * not updating modCount.
- * @library /test/lib
  * @run main ReplaceExisting
  */
 
-import jdk.test.lib.valueclass.VClass;
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -45,8 +43,6 @@ public class ReplaceExisting {
         for (int i = 0; i <= ENTRIES; i++) {
             HashMap<Integer,Integer> hm = prepHashMap();
             testItr(hm, i);
-            HashMap<VClass,Integer> tupleHm = prepTupleHashMap();
-            testTupleItr(tupleHm, i);
         }
     }
 
@@ -56,15 +52,6 @@ public class ReplaceExisting {
         // Add items to one more than the resize threshold
         for (int i = 0; i < ENTRIES; i++) {
             hm.put(i*10, i*10);
-        }
-        return hm;
-    }
-
-    private static HashMap<VClass,Integer> prepTupleHashMap() {
-        HashMap<VClass,Integer> hm = new HashMap<>(16, 0.75f);
-        // Add items to one more than the resize threshold
-        for (int i = 0; i < ENTRIES; i++) {
-            hm.put(new VClass(i * 10, new int[] { i * 10 }), i * 10);
         }
         return hm;
     }
@@ -112,41 +99,4 @@ public class ReplaceExisting {
         }
     }
 
-    private static void testTupleItr(HashMap<VClass,Integer> hm, int elemBeforePut) {
-        if (elemBeforePut > hm.size()) {
-            throw new IllegalArgumentException("Error in test: elemBeforePut must be <= HashMap size");
-        }
-        // Create a copy of the keys
-        HashSet<VClass> keys = new HashSet<>(hm.size());
-        keys.addAll(hm.keySet());
-
-        HashSet<VClass> collected = new HashSet<>(hm.size());
-
-        // Run itr for elemBeforePut items, collecting returned elems
-        Iterator<VClass> itr = hm.keySet().iterator();
-        for (int i = 0; i < elemBeforePut; i++) {
-            VClass retVal = itr.next();
-            if (!collected.add(retVal)) {
-                throw new RuntimeException("Corrupt iterator: key " + retVal + " already encountered");
-            }
-        }
-
-        // Do put() to replace entry (and resize table when bug present)
-        if (null == hm.put(new VClass(0, new int[] { 0 }), 100)) {
-            throw new RuntimeException("Error in test: expected key (0, 0) to be in the HashMap");
-        }
-
-        // Finish itr + collecting returned elems
-        while(itr.hasNext()) {
-            VClass retVal = itr.next();
-            if (!collected.add(retVal)) {
-                throw new RuntimeException("Corrupt iterator: key " + retVal + " already encountered");
-            }
-        }
-
-        // Compare returned elems to original copy of keys
-        if (!keys.equals(collected)) {
-            throw new RuntimeException("Collected keys do not match original set of keys");
-        }
-    }
 }

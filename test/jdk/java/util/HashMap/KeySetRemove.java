@@ -47,7 +47,7 @@ public class KeySetRemove {
         for (int i = 0; i < valueMaps.length; i++) {
             valueMaps[i].put(new VClass(1, new int[] { 1 }), null);
             if (!valueMaps[i].keySet().remove(new VClass(1, new int[] { 1 })))
-                throw new Exception("Value banana was not removed: " + i);
+                throw new Exception("VClass{1, [1]} was not removed: " + i);
         }
     }
 }
