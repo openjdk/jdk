@@ -130,6 +130,20 @@ public:
 };
 
 /*
+ * ShenandoahPauseRootPhase tracks a pause GC phase and emits Shenandoah timing and
+ * a corresponding JFR event
+ */
+class ShenandoahPauseRootPhase : public ShenandoahTimingsTracker {
+private:
+  GCTraceTimeWrapper<LogLevel::Info, LOG_TAGS(gc)> _tracer;
+  ConcurrentGCTimer* const _timer;
+
+public:
+  ShenandoahPauseRootPhase(const char* title, ShenandoahPhaseTimings::Phase phase, bool log_heap_usage = false);
+  ~ShenandoahPauseRootPhase();
+};
+
+/*
  * ShenandoahConcurrentPhase tracks a concurrent GC phase and emits Shenandoah timing and
  * a corresponding JFR event
  */

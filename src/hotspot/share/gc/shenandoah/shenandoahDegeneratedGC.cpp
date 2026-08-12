@@ -73,7 +73,7 @@ void ShenandoahDegenGC::vmop_degenerated() {
 
 void ShenandoahDegenGC::entry_degenerated() {
   const char* msg = degen_event_message(_degen_point);
-  ShenandoahPausePhase gc_phase(msg, ShenandoahPhaseTimings::degen_gc, true /* log_heap_usage */);
+  ShenandoahPauseRootPhase gc_phase(msg, ShenandoahPhaseTimings::degen_gc, true /* log_heap_usage */);
   EventMark em("%s", msg);
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   ShenandoahWorkerScope scope(heap->workers(),

@@ -94,7 +94,7 @@ void ShenandoahFullGC::vmop_entry_full(GCCause::Cause cause) {
 
 void ShenandoahFullGC::entry_full(GCCause::Cause cause) {
   static const char* msg = "Pause Full";
-  ShenandoahPausePhase gc_phase(msg, ShenandoahPhaseTimings::full_gc, true /* log_heap_usage */);
+  ShenandoahPauseRootPhase gc_phase(msg, ShenandoahPhaseTimings::full_gc, true /* log_heap_usage */);
   EventMark em("%s", msg);
 
   ShenandoahWorkerScope scope(ShenandoahHeap::heap()->workers(),
