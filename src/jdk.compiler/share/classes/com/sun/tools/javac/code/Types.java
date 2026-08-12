@@ -3926,10 +3926,10 @@ public class Types {
         /* this cache could be used by several merge operations that can happen inside
          * an invocation to one of the public lub methods.
          */
-        Map<TypePair, Type> mergeOuterCache = new HashMap<>();
+        Map<TypePair, Type> mergeCache = new HashMap<>();
         private Type merge(Type c1, Type c2) {
             TypePair pair = new TypePair(c1, c2);
-            Type cached = mergeOuterCache.get(pair);
+            Type cached = mergeCache.get(pair);
             if (cached != null && cached != noType) return cached;
 
             ClassType class1 = (ClassType) c1;
@@ -3946,13 +3946,13 @@ public class Types {
                     merged.append(act2.head);
                 } else {
                     Type m;
-                    if (mergeOuterCache.get(pair) == null) {
-                        mergeOuterCache.put(pair, noType);
+                    if (mergeCache.get(pair) == null) {
+                        mergeCache.put(pair, noType);
                         m = new WildcardType(lubHelper(wildUpperBound(act1.head),
                                                        wildUpperBound(act2.head)),
                                              BoundKind.EXTENDS,
                                              syms.boundClass);
-                        mergeOuterCache.remove(pair, noType);
+                        mergeCache.remove(pair, noType);
                     } else {
                         m = new WildcardType(syms.objectType,
                                              BoundKind.UNBOUND,
@@ -3973,7 +3973,7 @@ public class Types {
              * that are equal but with different identity are created while determining the lub, in particular
              * when F-bounded generic classes are present
              */
-            mergeOuterCache.put(pair, result);
+            mergeCache.put(pair, result);
             return result;
         }
 
@@ -4036,7 +4036,7 @@ public class Types {
         try {
             return lubHelper(ts.toArray(new Type[ts.length()]));
         } finally {
-            mergeOuterCache.clear();
+            mergeCache.clear();
         }
     }
 
@@ -4048,7 +4048,7 @@ public class Types {
         try {
             return lubHelper(ts);
         } finally {
-            mergeOuterCache.clear();
+            mergeCache.clear();
         }
     }
 
