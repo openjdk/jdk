@@ -781,6 +781,39 @@ protected:
 
 #undef INSN
 
+  // ==========================
+  // RISC-V Zibi Extension
+  // ==========================
+  // Branch-with-immediate: same B-type instruction and immediate format as
+  // beq/bne, but the field that would carry rs2 in a B-type branch carries the
+  // 5-bit cimm constant. The cimm field is not sign-extended; cimm == 0 encodes
+  // the comparison value -1, while cimm 1..31 encode the values 1..31.
+#define INSN(NAME, op, funct3)                                                                           \
+  void NAME(Register Rs1, uint32_t cimm, const int64_t offset) {                                         \
+    guarantee(is_simm13(offset) && ((offset % 2) == 0), "offset is invalid.");                           \
+    guarantee(is_uimm5(cimm), "cimm is invalid.");                                                        \
+    unsigned insn = 0;                                                                                   \
+    uint32_t val  = offset & 0x1fff;                                                                     \
+    uint32_t val11 = (val >> 11) & 0x1;                                                                  \
+    uint32_t val12 = (val >> 12) & 0x1;                                                                  \
+    uint32_t low  = (val >> 1) & 0xf;                                                                    \
+    uint32_t high = (val >> 5) & 0x3f;                                                                   \
+    patch((address)&insn, 6, 0, op);                                                                     \
+    patch((address)&insn, 14, 12, funct3);                                                               \
+    patch_reg((address)&insn, 15, Rs1);                                                                  \
+    patch((address)&insn, 24, 20, cimm);                                                                 \
+    patch((address)&insn, 7, val11);                                                                     \
+    patch((address)&insn, 11, 8, low);                                                                   \
+    patch((address)&insn, 30, 25, high);                                                                 \
+    patch((address)&insn, 31, val12);                                                                    \
+    emit(insn);                                                                                          \
+  }
+
+  INSN(beqi, 0b1100011, 0b010);
+  INSN(bnei, 0b1100011, 0b011);
+
+#undef INSN
+
  private:
 
   enum StoreWidthFunct3 : uint8_t {
@@ -4058,6 +4091,19 @@ public:
   static bool is_uimm8(uint64_t x);
   static bool is_uimm9(uint64_t x);
   static bool is_uimm10(uint64_t x);
+
+  // Zibi: the comparison constant for beqi/bnei is either -1 or a value in the
+  // range [1, 31]. It is not the same as the encoded cimm field (see the
+  // beqi/bnei encoding above); use encode_zibi_cimm to map a valid constant to
+  // its 5-bit cimm encoding.
+  static bool is_zibi_cimm(int64_t c) {
+    return c == -1 || (c >= 1 && c <= 31);
+  }
+
+  static uint32_t encode_zibi_cimm(int64_t c) {
+    assert(is_zibi_cimm(c), "invalid Zibi comparison constant: " INT64_FORMAT, c);
+    return c == -1 ? 0 : (uint32_t)c;
+  }
 
   // The maximum range of a branch is fixed for the RISCV architecture.
   static const unsigned long branch_range = 1 * M;

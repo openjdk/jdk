@@ -1199,6 +1199,26 @@ void MacroAssembler::wrap_label(Register r1, Register r2, Label &L,
   }
 }
 
+// Zibi branch-with-immediate. The far form is realized by negating the
+// condition (beqi <-> bnei) over the same comparison constant and jumping.
+void MacroAssembler::wrap_label(Register r1, uint32_t cimm, Label &L,
+                                cimm_branch_insn insn,
+                                cimm_branch_label_insn neg_insn, bool is_far) {
+  if (is_far) {
+    Label done;
+    (this->*neg_insn)(r1, cimm, done, /* is_far */ false);
+    j(L);
+    bind(done);
+  } else {
+    if (L.is_bound()) {
+      (this->*insn)(r1, cimm, target(L));
+    } else {
+      L.add_patch_at(code(), locator());
+      (this->*insn)(r1, cimm, pc());
+    }
+  }
+}
+
 #define INSN(NAME, NEG_INSN)                                                              \
   void MacroAssembler::NAME(Register Rs1, Register Rs2, Label &L, bool is_far) {          \
     wrap_label(Rs1, Rs2, L, &MacroAssembler::NAME, &MacroAssembler::NEG_INSN, is_far);    \
@@ -1210,6 +1230,16 @@ void MacroAssembler::wrap_label(Register r1, Register r2, Label &L,
   INSN(bge,  blt);
   INSN(bltu, bgeu);
   INSN(bgeu, bltu);
+
+#undef INSN
+
+#define INSN(NAME, NEG_INSN)                                                              \
+  void MacroAssembler::NAME(Register Rs1, uint32_t cimm, Label &L, bool is_far) {         \
+    wrap_label(Rs1, cimm, L, &MacroAssembler::NAME, &MacroAssembler::NEG_INSN, is_far);   \
+  }
+
+  INSN(beqi, bnei);
+  INSN(bnei, beqi);
 
 #undef INSN
 

@@ -124,6 +124,11 @@
   void enc_cmpEqNe_imm0_branch(int cmpFlag, Register op,
                                Label& L, bool is_far = false);
 
+  // Zibi branch-with-immediate: compare op1 with a small constant (-1 or
+  // [1, 31]) and branch on eq/ne.
+  void cmpi_branch(int cmpFlag, Register op1, int64_t constant,
+                   Label& L, bool is_far = false);
+
   void enc_cmove(int cmpFlag,
                  Register op1, Register op2,
                  Register dst, Register src);
