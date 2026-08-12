@@ -297,6 +297,9 @@ inline void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_st
 template <DecoratorSet decorators, typename BarrierSetT>
 inline void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_store_in_heap_at(oop base, ptrdiff_t offset, oop value) {
   auto addr = AccessInternal::oop_field_addr<decorators>(base, offset);
+
+  // In contrast to CASes, we resolve unknown to weak/phantom access, because some code
+  // legitimately enters here, e.g. for clearing Reference.referent.
   DecoratorSet resolved_decorators = resolve_unknown(base, offset);
 
   ShenandoahBarrierSet* bs = barrier_set();
