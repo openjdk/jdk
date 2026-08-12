@@ -80,6 +80,10 @@ public:
     return (decorators & IN_NATIVE) != 0;
   }
 
+  static bool is_heap_access(DecoratorSet decorators) {
+    return (decorators & IN_HEAP) != 0;
+  }
+
   void print_on(outputStream* st) const override;
 
   // Support for optimizing compilers to call the barrier set on slow path allocations
@@ -99,19 +103,19 @@ public:
   };
 
   template <typename T>
-  inline oop oop_load_post(DecoratorSet decorators, oop value, T* addr, bool in_heap);
+  inline oop oop_load_post(DecoratorSet decorators, oop value, T* addr);
 
   template <typename T>
-  inline void oop_store_pre(DecoratorSet decorators, T* addr, oop new_value, bool in_heap);
+  inline void oop_store_pre(DecoratorSet decorators, T* addr, oop new_value);
 
   template <typename T>
-  inline void oop_cmpxchg_pre(DecoratorSet decorators, T* addr, oop compare_value, oop new_value, bool in_heap);
+  inline void oop_cmpxchg_pre(DecoratorSet decorators, T* addr, oop compare_value, oop new_value);
 
   template <typename T>
-  inline void oop_xchg_pre(DecoratorSet decorators, T* addr, oop new_value, bool in_heap);
+  inline void oop_xchg_pre(DecoratorSet decorators, T* addr, oop new_value);
 
   template <typename T>
-  inline void oop_store_post(DecoratorSet decorators, T* addr, oop new_value, bool in_heap);
+  inline void oop_store_post(DecoratorSet decorators, T* addr, oop new_value);
 
   template <typename T>
   inline void keepalive_barrier(DecoratorSet decorators, T* addr, oop obj, Filter filter);

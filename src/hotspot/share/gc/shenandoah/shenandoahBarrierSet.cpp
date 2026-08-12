@@ -96,8 +96,7 @@ bool ShenandoahBarrierSet::need_satb_barrier(DecoratorSet decorators, BasicType 
 bool ShenandoahBarrierSet::need_card_barrier(DecoratorSet decorators, BasicType type) {
   if (!ShenandoahCardBarrier) return false;
   if (!is_reference_type(type)) return false;
-  bool in_heap = (decorators & IN_HEAP) != 0;
-  return in_heap;
+  return is_heap_access(decorators);
 }
 
 void ShenandoahBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop new_obj) {
