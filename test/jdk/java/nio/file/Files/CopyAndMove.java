@@ -690,26 +690,30 @@ public class CopyAndMove {
         delete(source);
     }
 
-    static void checkCopiedAttributes(Path source, Path target,
+    static void checkTargetAttributes(Path source, Path target,
                                       BasicFileAttributes sourceAttrs)
         throws IOException
     {
         checkBasicAttributes(sourceAttrs,
             readAttributes(target, BasicFileAttributes.class));
 
+        // check POSIX attributes are copied
         if (!Platform.isWindows() && testPosixAttributes) {
             checkPosixAttributes(
                 readAttributes(source, PosixFileAttributes.class),
                 readAttributes(target, PosixFileAttributes.class));
         }
 
+        // verify other attributes when same provider
         if (source.getFileSystem().provider() == target.getFileSystem().provider()) {
+            // check DOS attributes are copied
             if (Platform.isWindows()) {
                 checkDosAttributes(
                     readAttributes(source, DosFileAttributes.class),
                     readAttributes(target, DosFileAttributes.class));
             }
 
+            // check named attributes are copied
             if (getFileStore(source).supportsFileAttributeView("xattr") &&
                 getFileStore(target).supportsFileAttributeView("xattr"))
             {
@@ -719,15 +723,18 @@ public class CopyAndMove {
         }
     }
 
-    static void checkCopiedLinkAttributes(Path source, Path target,
-                                          BasicFileAttributes sourceAttrs)
+    static void checkSymLinkAttributes(Path source, Path target,
+                                       BasicFileAttributes sourceAttrs)
         throws IOException
     {
+        assert(sourceAttrs.isSymbolicLink());
+
         BasicFileAttributes targetAttrs =
             readAttributes(target, BasicFileAttributes.class, NOFOLLOW_LINKS);
         checkBasicAttributes(sourceAttrs, targetAttrs);
 
         if (Platform.isWindows()) {
+            // check that timestamps on the source are retained for the target
             assertTrue(sourceAttrs.creationTime().to(TimeUnit.SECONDS) ==
                        targetAttrs.creationTime().to(TimeUnit.SECONDS));
             assertTrue(sourceAttrs.lastModifiedTime().to(TimeUnit.SECONDS) ==
@@ -735,7 +742,9 @@ public class CopyAndMove {
             assertTrue(sourceAttrs.lastAccessTime().to(TimeUnit.SECONDS) ==
                        targetAttrs.lastAccessTime().to(TimeUnit.SECONDS));
 
+            // verify other attributes when same provider
             if (source.getFileSystem().provider() == target.getFileSystem().provider()) {
+                // check DOS attributes are copied
                 checkDosAttributes(
                     readAttributes(source, DosFileAttributes.class, NOFOLLOW_LINKS),
                     readAttributes(target, DosFileAttributes.class, NOFOLLOW_LINKS));
@@ -773,11 +782,12 @@ public class CopyAndMove {
         if (basicAttributes.isSymbolicLink())
             assert(readSymbolicLink(source).equals(readSymbolicLink(target)));
 
+        // check that attributes are copied
         if (copyAttributes) {
             if (followLinks) {
-                checkCopiedAttributes(source, target, basicAttributes);
+                checkTargetAttributes(source, target, basicAttributes);
             } else if (basicAttributes.isSymbolicLink()) {
-                checkCopiedLinkAttributes(source, target, basicAttributes);
+                checkSymLinkAttributes(source, target, basicAttributes);
             }
         }
     }
