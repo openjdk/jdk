@@ -22,15 +22,24 @@
  */
 
 /*
- * @test
+ * @test id=headful
  * @bug 8388884
  * @key headful
  * @summary Checks dragEnabled defaults and explicit settings across installed L&Fs
  * @run main TextComponentDragEnabledTest
  */
 
+/*
+ * @test id=headless
+ * @bug 8388884
+ * @summary Checks dragEnabled defaults and explicit settings across installed L&Fs
+ * @run main/othervm -Djava.awt.headless=true TextComponentDragEnabledTest
+ */
+
 import java.util.List;
 import java.util.function.Supplier;
+
+import java.awt.GraphicsEnvironment;
 
 import javax.swing.JEditorPane;
 import javax.swing.JFormattedTextField;
@@ -68,7 +77,9 @@ public class TextComponentDragEnabledTest {
 
     private static void runTest() throws Exception {
         testDefaultsForAllLookAndFeels();
-        testExplicitSettingsForAllLookAndFeels();
+        if (!GraphicsEnvironment.isHeadless()) {
+            testExplicitSettingsForAllLookAndFeels();
+        }
     }
 
     private static void testDefaultsForAllLookAndFeels()
@@ -80,7 +91,8 @@ public class TextComponentDragEnabledTest {
 
             for (Supplier<JTextComponent> supplier : TEXT_COMPONENTS) {
                 JTextComponent component = supplier.get();
-                boolean expected = AQUA_LAF.equals(laf.getClassName());
+                boolean expected = AQUA_LAF.equals(laf.getClassName())
+                                   && !GraphicsEnvironment.isHeadless();
                 checkDragEnabled(component, expected,
                         "new component under " + laf.getClassName());
             }
