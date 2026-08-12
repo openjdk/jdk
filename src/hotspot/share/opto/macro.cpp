@@ -719,7 +719,7 @@ Node* PhaseMacroExpand::inline_type_from_mem(ciInlineKlass* vk, const TypeAryPtr
     const TypeAryPtr* nm_adr_type = elem_adr_type->with_field_offset(nm_offset_in_element);
     Node* nm_value = value_from_mem(sfpt, sfpt->control(), T_BOOLEAN, TypeInt::BOOL, nm_adr_type, alloc);
     bool force_scalarization_failure = StressEliminateAllocations &&
-                                       (C->random() % StressEliminateAllocationsMean == 0);
+                                       (C->stress().random() % StressEliminateAllocationsMean == 0);
     if (nm_value != nullptr && !force_scalarization_failure) {
       vt->set_null_marker(_igvn, nm_value);
     } else {
@@ -747,7 +747,7 @@ Node* PhaseMacroExpand::inline_type_from_mem(ciInlineKlass* vk, const TypeAryPtr
       const TypeAryPtr* field_adr_type = elem_adr_type->with_field_offset(field_offset_in_element);
       field_value = value_from_mem(sfpt, sfpt->control(), bt, ft, field_adr_type, alloc);
       bool force_scalarization_failure = StressEliminateAllocations &&
-                                         (C->random() % StressEliminateAllocationsMean == 0);
+                                         (C->stress().random() % StressEliminateAllocationsMean == 0);
       if (field_value == nullptr || force_scalarization_failure) {
         report_failure(field_offset_in_element, field_value != nullptr);
         return nullptr;
@@ -1091,7 +1091,7 @@ bool PhaseMacroExpand::add_array_elems_to_safepoint(AllocateNode* alloc, const T
       elem_val = value_from_mem(sfpt, sfpt->control(), basic_elem_type, elem_type, elem_adr_type, alloc);
     }
     bool force_scalarization_failure = StressEliminateAllocations &&
-                                       (C->random() % StressEliminateAllocationsMean == 0);
+                                       (C->stress().random() % StressEliminateAllocationsMean == 0);
     if (elem_val == nullptr || force_scalarization_failure) {
 #ifndef PRODUCT
       if (PrintEliminateAllocations) {
@@ -1156,7 +1156,7 @@ bool PhaseMacroExpand::add_inst_fields_to_safepoint(ciInstanceKlass* iklass, All
         int nm_offset = offset_minus_header + field->null_marker_offset();
         Node* null_marker = value_from_mem(sfpt, sfpt->control(), T_BOOLEAN, TypeInt::BOOL, base_type->with_offset(nm_offset), alloc);
         bool force_scalarization_failure = StressEliminateAllocations &&
-                                           (C->random() % StressEliminateAllocationsMean == 0);
+                                           (C->stress().random() % StressEliminateAllocationsMean == 0);
         if (null_marker == nullptr || force_scalarization_failure) {
           report_failure(nm_offset, null_marker != nullptr);
           return false;
@@ -1189,7 +1189,7 @@ bool PhaseMacroExpand::add_inst_fields_to_safepoint(ciInstanceKlass* iklass, All
     const TypeInstPtr* field_addr_type = base_type->add_offset(offset)->isa_instptr();
     Node* field_val = value_from_mem(sfpt, sfpt->control(), basic_elem_type, field_type, field_addr_type, alloc);
     bool force_scalarization_failure = StressEliminateAllocations &&
-                                       (C->random() % StressEliminateAllocationsMean == 0);
+                                       (C->stress().random() % StressEliminateAllocationsMean == 0);
     if (field_val == nullptr || force_scalarization_failure) {
       report_failure(offset, field_val != nullptr);
       return false;
