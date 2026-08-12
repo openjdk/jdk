@@ -81,9 +81,9 @@ uint G1FromCardCache::num_par_rem_sets() {
   return G1ConcRefinementThreads + ConcGCThreads;
 }
 
-void G1FromCardCache::clear(uint group_fcc_id) {
+void G1FromCardCache::clear(uint cardset_fcc_id) {
   uint num_par_remsets = num_par_rem_sets();
   for (uint i = 0; i < num_par_remsets; i++) {
-    set(i, group_fcc_id, InvalidCard);
+    set(i, cardset_fcc_id, InvalidCard);
   }
 }

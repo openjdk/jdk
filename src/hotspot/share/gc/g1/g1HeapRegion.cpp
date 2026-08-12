@@ -109,7 +109,7 @@ void G1HeapRegion::handle_evacuation_failure(bool retain) {
   move_to_old();
 
   _rem_set->clean_code_roots(this);
-  assert(!_rem_set->has_cset_group(), "must not have a card-set group");
+  assert(!_rem_set->has_cset_group(), "must not have a cardset group");
   if (retain) {
     assert(_rem_set->is_tracked(), "must be");
   } else {

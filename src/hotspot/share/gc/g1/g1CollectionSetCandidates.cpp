@@ -49,7 +49,9 @@ void G1CSetCandidateGroup::add(G1HeapRegion* hr) {
     precond(_fcc_id == InvalidFCCId);
     _fcc_id = hr->hrm_index();
 
-    // This row may have belonged to an earlier group.
+    // An evacuation-failed region may enter a retained group before its former
+    // cardset group is cleared, and may therefore reuse that group's FCC
+    // row. Clear the row before installing the new group.
     G1FromCardCache::clear(_fcc_id);
   }
   G1CollectionSetCandidateInfo c(hr);

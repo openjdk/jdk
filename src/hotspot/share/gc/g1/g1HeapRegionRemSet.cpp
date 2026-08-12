@@ -66,7 +66,7 @@ G1HeapRegionRemSet::~G1HeapRegionRemSet() {
 }
 
 void G1HeapRegionRemSet::clear() {
-  assert(cardset_is_empty(), "Group card set must already have been cleared");
+  assert(cardset_is_empty(), "Cardset must be empty");
   _code_roots.clear();
   set_state_untracked();
 }

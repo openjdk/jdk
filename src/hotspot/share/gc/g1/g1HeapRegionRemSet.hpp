@@ -148,8 +148,7 @@ public:
 
   inline void add_reference(OopOrNarrowOopStar from, uint tid);
 
-  // Clear the region-local remembered set state. Any group-owned card set
-  // must already have been cleared through the group.
+  // Clear the region-specific remset state.
   void clear();
 
   void reset_code_root_table_scanner();
@@ -201,10 +200,6 @@ public:
   // Returns the amount of memory, in bytes, currently
   // consumed by the code roots.
   size_t code_roots_mem_size();
-
-  static void invalidate_from_card_cache(uint start_idx, size_t num_regions) {
-    G1FromCardCache::invalidate(start_idx, num_regions);
-  }
 
 #ifndef PRODUCT
   static void print_from_card_cache() {

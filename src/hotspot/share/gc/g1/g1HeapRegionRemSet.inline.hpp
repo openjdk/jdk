@@ -126,9 +126,9 @@ void G1HeapRegionRemSet::add_reference(OopOrNarrowOopStar from, uint tid) {
 
   uintptr_t from_card = uintptr_t(from) >> CardTable::card_shift();
 
-  uint group_fcc_id = cset_group()->fcc_id();
+  uint cardset_fcc_id = cset_group()->fcc_id();
 
-  if (G1FromCardCache::contains_or_replace(tid, group_fcc_id, from_card)) {
+  if (G1FromCardCache::contains_or_replace(tid, cardset_fcc_id, from_card)) {
     // We can't check whether the card is in the remembered set - the card container
     // may be coarsened just now.
     //assert(contains_reference(from), "We just found " PTR_FORMAT " in the FromCardCache", p2i(from));

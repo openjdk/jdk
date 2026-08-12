@@ -29,23 +29,23 @@
 #include "utilities/ostream.hpp"
 
 // G1FromCardCache remembers the most recently processed card on the heap for
-// every card-set group and worker.
+// every cardset group and worker.
 class G1FromCardCache : public AllStatic {
 private:
-  // Cache of the most recently processed source card for each card-set group
-  // and worker. Rows are indexed by the group's FCC id and columns by worker id.
-  // Keeping all worker entries for a group contiguous makes clearing or reusing
-  // the group's cache row efficient.
+  // Cache of the most recently processed source card for each cardset group
+  // and worker. Rows are indexed by the cardset's FromCardCache (FCC) id and
+  // columns by worker id. Keeping all worker entries for a group contiguous
+  // makes clearing or reusing the group's cache row efficient.
   static uintptr_t** _cache;
   static uint _max_reserved_regions;
   static size_t _static_mem_size;
 #ifdef ASSERT
   static uint _max_workers;
 
-  static void check_bounds(uint worker_id, uint group_fcc_id) {
+  static void check_bounds(uint worker_id, uint cardset_fcc_id) {
     assert(worker_id < _max_workers, "Worker_id %u is larger than maximum %u", worker_id, _max_workers);
-    assert(group_fcc_id < _max_reserved_regions,
-           "Group FCC id %u is larger than maximum %u", group_fcc_id, _max_reserved_regions);
+    assert(cardset_fcc_id < _max_reserved_regions,
+           "Cardset group FCC id %u is larger than maximum %u", cardset_fcc_id, _max_reserved_regions);
   }
 #endif
 
@@ -58,33 +58,32 @@ private:
   // remembered sets in parallel.
   static uint num_par_rem_sets();
 
+  static void invalidate(uint start_idx, size_t num_regions);
 public:
-  static void clear(uint group_fcc_id);
+  static void clear(uint cardset_fcc_id);
 
   // Returns true if the given card is in the cache at the given location, or
   // replaces the card at that location and returns false.
-  static bool contains_or_replace(uint worker_id, uint group_fcc_id, uintptr_t card) {
-    uintptr_t card_in_cache = at(worker_id, group_fcc_id);
+  static bool contains_or_replace(uint worker_id, uint cardset_fcc_id, uintptr_t card) {
+    uintptr_t card_in_cache = at(worker_id, cardset_fcc_id);
     if (card_in_cache == card) {
       return true;
     }
-    set(worker_id, group_fcc_id, card);
+    set(worker_id, cardset_fcc_id, card);
     return false;
   }
 
-  static uintptr_t at(uint worker_id, uint group_fcc_id) {
-    DEBUG_ONLY(check_bounds(worker_id, group_fcc_id);)
-    return _cache[group_fcc_id][worker_id];
+  static uintptr_t at(uint worker_id, uint cardset_fcc_id) {
+    DEBUG_ONLY(check_bounds(worker_id, cardset_fcc_id);)
+    return _cache[cardset_fcc_id][worker_id];
   }
 
-  static void set(uint worker_id, uint group_fcc_id, uintptr_t val) {
-    DEBUG_ONLY(check_bounds(worker_id, group_fcc_id);)
-    _cache[group_fcc_id][worker_id] = val;
+  static void set(uint worker_id, uint cardset_fcc_id, uintptr_t val) {
+    DEBUG_ONLY(check_bounds(worker_id, cardset_fcc_id);)
+    _cache[cardset_fcc_id][worker_id] = val;
   }
 
   static void initialize(uint max_reserved_regions);
-
-  static void invalidate(uint start_idx, size_t num_regions);
 
   static void print(outputStream* out = tty) PRODUCT_RETURN;
 
