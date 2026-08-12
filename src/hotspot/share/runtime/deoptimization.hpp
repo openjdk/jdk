@@ -250,7 +250,7 @@ class Deoptimization : AllStatic {
     static ByteSize sender_sp_temp_offset()            { return byte_offset_of(UnrollBlock, _sender_sp_temp);            }
 
     BasicType return_type() const { return _return_type; }
-    void print();
+    void print_on(outputStream* st);
   };
 
   //** Returns an UnrollBlock continuing information

@@ -889,8 +889,8 @@ void CallGenerator::do_late_inline_helper() {
               oop->init_req(2, buffer_oop);
               mem->init_req(2, kit.merged_memory());
 
-              // Update oop input to buffer
-              kit.gvn().hash_delete(vt);
+              // Use cloned InlineTypeNode to propagate oop from now on
+              vt = vt->clone_if_required(&kit.gvn(), kit.map());
               vt->set_oop(kit.gvn(), kit.gvn().transform(oop));
               vt->set_is_buffered(kit.gvn());
               vt = kit.gvn().transform(vt)->as_InlineType();
