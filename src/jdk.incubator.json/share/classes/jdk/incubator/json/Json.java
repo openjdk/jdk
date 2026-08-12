@@ -157,7 +157,7 @@ public final class Json {
                     .append("\"")
                     .append(Utils.escape(name))
                     .append("\":");
-                Json.toDisplayString(val, s, depth + 1, indent, true);
+                toDisplayString(val, s, depth + 1, indent, true);
                 s.append(",\n");
             });
             s.setLength(s.length() - 2); // trim final comma
@@ -179,7 +179,7 @@ public final class Json {
         } else {
             s.append("[\n");
             for (JsonValue v : list) {
-                Json.toDisplayString(v, s, depth + 1, indent, false);
+                toDisplayString(v, s, depth + 1, indent, false);
                 s.append(",\n");
             }
             s.setLength(s.length() - 2); // trim final comma/newline
