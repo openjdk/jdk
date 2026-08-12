@@ -123,8 +123,8 @@ public class TestDockerMemoryMetrics {
                 .addDockerOpts("--memory=" + memory)
                 .addDockerOpts("--memory-swap=" + memoryAndSwap)
                 .addJavaOpts("-XX:+AlwaysPreTouch")
-                .addJavaOpts("-Xms" + heap)
-                .addJavaOptsAppended("-Xmx" + heap);
+                .addJavaOptsAppended("-XX:InitialHeapSize=" + heap)
+                .addJavaOptsAppended("-XX:MaxHeapSize=" + heap);
         OutputAnalyzer oa = DockerTestUtils.dockerRunJava(preOpts);
         String output = oa.getOutput();
         if (!output.contains("version")) {
@@ -133,9 +133,9 @@ public class TestDockerMemoryMetrics {
 
         //  0                   128                                                       1024
         //  |---o----------------|---------------------------X--------------)-------------|
-        //      START            memory.max                  growth target  max heap      memory+swap limit
-        //      o~~~~~>~>~>~>~>~>~>~>~>~>~>~>~>~>~>~>~>  (growth)                         OOM
-        //  failcount: 0          1 2 3 ..... N
+        //      START            memory.max                  growth target  MaxHeapSize   memory+swap limit
+        //      o~~~~~>~>~>~>~>~>~>~>~>~>~>~>~>~>~>~>~>  (growth)                          OOM
+        //  failcount: 0          1 2 3 . . . N
         //
         DockerRunOptions opts =
                 new DockerRunOptions(imageName, "/jdk/bin/java", "MetricsMemoryTester");
@@ -145,7 +145,7 @@ public class TestDockerMemoryMetrics {
                 .addJavaOpts("-cp", "/test-classes/")
                 .addJavaOpts("--add-exports", "java.base/jdk.internal.platform=ALL-UNNAMED")
                 // set the required heap size *after* inherited jtreg options
-                .addJavaOptsAppended("-Xmx" + heap)
+                .addJavaOptsAppended("-XX:MaxHeapSize=" + heap)
                 .addClassOptions("failcount");
         oa = DockerTestUtils.dockerRunJava(opts);
         output = oa.getOutput();
