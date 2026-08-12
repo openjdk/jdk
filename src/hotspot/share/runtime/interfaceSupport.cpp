@@ -85,10 +85,14 @@ unsigned int InterfaceSupport::_fullgc_alot_counter   = 1;
 intx InterfaceSupport::_fullgc_alot_invocation = 0;
 
 void InterfaceSupport::gc_alot() {
-  Thread *thread = Thread::current();
+  Thread* thread = Thread::current();
   if (!thread->is_Java_thread()) return; // Avoid concurrent calls
+  JavaThread* current_thread = JavaThread::cast(thread);
+  // If we are in a critical section, collectors deadlock when trying to start a GC.
+  // In_critical() is only set for those collectors where this is the case. Others
+  // like G1 do not and have no problem garbage collecting here.
+  if (current_thread->in_critical()) return;
   // Check for new, not quite initialized thread. A thread in new mode cannot initiate a GC.
-  JavaThread *current_thread = JavaThread::cast(thread);
   if (current_thread->active_handles() == nullptr) return;
 
   // Short-circuit any possible re-entrant gc-a-lot attempt
