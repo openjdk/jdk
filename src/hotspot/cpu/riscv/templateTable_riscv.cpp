@@ -164,13 +164,7 @@ void TemplateTable::patch_bytecode(Bytecodes::Code bc, Register bc_reg,
         __ la(temp_reg, Address(temp_reg, in_bytes(ResolvedFieldEntry::put_code_offset())));
       }
       // Load-acquire the bytecode to match store-release in ResolvedFieldEntry::fill_in()
-      if (UseZalasr) {
-        __ lb_aq(temp_reg, Address(temp_reg, 0));
-        __ zext(temp_reg, temp_reg, 8);
-      } else {
-        __ lbu(temp_reg, Address(temp_reg, 0));
-        __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
-      }
+      __ lbu_acquire(temp_reg, Address(temp_reg, 0));
       __ mv(bc_reg, bc);
       __ beqz(temp_reg, L_patch_done);
       break;
@@ -209,8 +203,7 @@ void TemplateTable::patch_bytecode(Bytecodes::Code bc, Register bc_reg,
   // in fast bytecode codelets. load_field_entry has a memory barrier that gains
   // the needed ordering, together with control dependency on entering the fast codelet
   // itself.
-  __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-  __ sb(bc_reg, at_bcp(0));
+  __ sb_release(bc_reg, at_bcp(0));
   __ bind(L_patch_done);
 }
 
@@ -309,13 +302,7 @@ void TemplateTable::ldc(LdcType type) {
   // get type
   __ addi(x13, x11, tags_offset);
   __ add(x13, x10, x13);
-  if (UseZalasr) {
-    __ lb_aq(x13, Address(x13, 0));
-    __ zext(x13, x13, 8);
-  } else {
-    __ lbu(x13, Address(x13, 0));
-    __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
-  }
+  __ lbu_acquire(x13, Address(x13, 0));
 
   // unresolved class - get the resolved class
   __ mv(t1, (u1)JVM_CONSTANT_UnresolvedClass);
@@ -2315,13 +2302,7 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
       break;
   }
   // Load-acquire the bytecode to match store-release in InterpreterRuntime
-  if (UseZalasr) {
-    __ lb_aq(temp, Address(temp, 0));
-    __ zext(temp, temp, 8);
-  } else {
-    __ lbu(temp, Address(temp, 0));
-    __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
-  }
+  __ lbu_acquire(temp, Address(temp, 0));
 
   __ mv(t0, (int) code);
 
@@ -2373,13 +2354,7 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
     __ la(temp, Address(Rcache, in_bytes(ResolvedFieldEntry::put_code_offset())));
   }
   // Load-acquire the bytecode to match store-release in ResolvedFieldEntry::fill_in()
-  if (UseZalasr) {
-    __ lb_aq(temp, Address(temp, 0));
-    __ zext(temp, temp, 8);
-  } else {
-    __ lbu(temp, Address(temp, 0));
-    __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
-  }
+  __ lbu_acquire(temp, Address(temp, 0));
   __ mv(t0, (int) code);  // have we resolved this bytecode?
 
   // Class initialization barrier for static fields
@@ -2552,12 +2527,7 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   Label resolved;
 
   __ load_resolved_indy_entry(cache, index);
-  if (UseZalasr) {
-    __ ld_aq(method, Address(cache, in_bytes(ResolvedIndyEntry::method_offset())));
-  } else {
-    __ ld(method, Address(cache, in_bytes(ResolvedIndyEntry::method_offset())));
-    __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
-  }
+  __ ld_acquire(method, Address(cache, in_bytes(ResolvedIndyEntry::method_offset())));
 
   // Compare the method to zero
   __ bnez(method, resolved);
@@ -2570,12 +2540,7 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   __ call_VM(noreg, entry, method);
   // Update registers with resolved info
   __ load_resolved_indy_entry(cache, index);
-  if (UseZalasr) {
-    __ ld_aq(method, Address(cache, in_bytes(ResolvedIndyEntry::method_offset())));
-  } else {
-    __ ld(method, Address(cache, in_bytes(ResolvedIndyEntry::method_offset())));
-    __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
-  }
+  __ ld_acquire(method, Address(cache, in_bytes(ResolvedIndyEntry::method_offset())));
 
 #ifdef ASSERT
   __ bnez(method, resolved);
@@ -3814,13 +3779,7 @@ void TemplateTable::_new() {
   const int tags_offset = Array<u1>::base_offset_in_bytes();
   __ add(t0, x10, x13);
   __ la(t0, Address(t0, tags_offset));
-  if (UseZalasr) {
-    __ lb_aq(t0, t0);
-    __ zext(t0, t0, 8);
-  } else {
-    __ lbu(t0, t0);
-    __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
-  }
+  __ lbu_acquire(t0, t0);
   __ subi(t1, t0, (u1)JVM_CONSTANT_Class);
   __ bnez(t1, slow_case);
 
@@ -3958,13 +3917,7 @@ void TemplateTable::checkcast() {
   // See if bytecode has already been quicked
   __ addi(t0, x13, Array<u1>::base_offset_in_bytes());
   __ add(x11, t0, x9);
-  if (UseZalasr) {
-    __ lb_aq(x11, x11);
-    __ zext(x11, x11, 8);
-  } else {
-    __ lbu(x11, x11);
-    __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
-  }
+  __ lbu_acquire(x11, x11);
   __ subi(t0, x11, (u1)JVM_CONSTANT_Class);
   __ beqz(t0, quicked);
 
@@ -4016,13 +3969,7 @@ void TemplateTable::instanceof() {
   // See if bytecode has already been quicked
   __ addi(t0, x13, Array<u1>::base_offset_in_bytes());
   __ add(x11, t0, x9);
-  if (UseZalasr) {
-    __ lb_aq(x11, x11);
-    __ zext(x11, x11, 8);
-  } else {
-    __ lbu(x11, x11);
-    __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
-  }
+  __ lbu_acquire(x11, x11);
   __ subi(t0, x11, (u1)JVM_CONSTANT_Class);
   __ beqz(t0, quicked);
 

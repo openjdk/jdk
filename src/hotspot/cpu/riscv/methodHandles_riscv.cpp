@@ -110,13 +110,7 @@ void MethodHandles::verify_method(MacroAssembler* _masm, Register method, vmIntr
     switch (iid) {
       case vmIntrinsicID::_invokeBasic:
         // Require compiled LambdaForm class to be fully initialized.
-        if (UseZalasr) {
-          __ lb_aq(t0, Address(method_holder, InstanceKlass::init_state_offset()));
-          __ zext(t0, t0, 8);
-        } else {
-          __ lbu(t0, Address(method_holder, InstanceKlass::init_state_offset()));
-          __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
-        }
+        __ lbu_acquire(t0, Address(method_holder, InstanceKlass::init_state_offset()));
         __ mv(t1, InstanceKlass::fully_initialized);
         __ beq(t0, t1, L_ok);
         break;
@@ -128,13 +122,7 @@ void MethodHandles::verify_method(MacroAssembler* _masm, Register method, vmIntr
       case vmIntrinsicID::_linkToSpecial:
       case vmIntrinsicID::_linkToInterface:
         // Class initialization check is too strong here. Just ensure that class initialization has been initiated.
-        if (UseZalasr) {
-          __ lb_aq(t0, Address(method_holder, InstanceKlass::init_state_offset()));
-          __ zext(t0, t0, 8);
-        } else {
-          __ lbu(t0, Address(method_holder, InstanceKlass::init_state_offset()));
-          __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
-        }
+        __ lbu_acquire(t0, Address(method_holder, InstanceKlass::init_state_offset()));
         __ mv(t1, InstanceKlass::being_initialized);
         __ bge(t0, t1, L_ok);
 
