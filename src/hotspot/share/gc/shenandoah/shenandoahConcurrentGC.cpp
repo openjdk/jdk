@@ -587,7 +587,7 @@ void ShenandoahConcurrentGC::entry_strong_roots() {
 void ShenandoahConcurrentGC::entry_cleanup_early() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent cleanup (early)", "");
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent cleanup", "");
   ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_cleanup_early, true /* log_heap_usage */);
   EventMark em("%s", msg);
 
@@ -651,7 +651,7 @@ void ShenandoahConcurrentGC::entry_update_refs() {
 void ShenandoahConcurrentGC::entry_cleanup_complete() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent cleanup (complete)", "");
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent cleanup", "");
   ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_cleanup_complete, true /* log_heap_usage */);
   EventMark em("%s", msg);
 
