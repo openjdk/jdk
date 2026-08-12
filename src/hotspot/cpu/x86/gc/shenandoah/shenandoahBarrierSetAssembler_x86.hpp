@@ -50,7 +50,7 @@ private:
                     Register pre_val,
                     Register tmp);
 
-  void card_barrier(MacroAssembler* masm, Register obj);
+  void card_barrier(MacroAssembler* masm, Register obj, Register tmp);
 
   void gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                         Register addr, Register count,
@@ -71,6 +71,7 @@ public:
   virtual void try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
                                              Register obj, Register tmp, Label& slowpath);
   virtual void try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj, Label& slowpath);
+  virtual void check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& L_error);
 
 #ifdef COMPILER1
   void keepalive_barrier_c1_stub(LIR_Assembler* ce, ShenandoahKeepaliveBarrierStub* stub);

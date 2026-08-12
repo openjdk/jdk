@@ -201,6 +201,53 @@ bool vframeArrayElement::should_reexecute(bool is_top_frame, int exec_mode) cons
   return reexec;
 }
 
+static void log_reconstructed(intptr_t* addr, const char* loc, int index) {
+#ifndef PRODUCT
+  if (const LogTarget(Debug, deoptimization) lt; lt.is_enabled()) {
+    LogStream ls(lt);
+    ls.print(" - Reconstructed %s %d (OBJECT): ", loc, index);
+    oop o = cast_to_oop((address)(*addr));
+    if (o == nullptr) {
+      ls.print_cr("null");
+    } else {
+      ResourceMark rm;
+      ls.print_raw(o->klass()->name()->as_C_string());
+    }
+  }
+#endif
+}
+
+static void log_reconstructed_frame(JavaThread* thread, Method* method, frame* iframe) {
+#ifndef PRODUCT
+  LogMessage(deoptimization) msg;
+  NonInterleavingLogStream ls(LogLevel::Debug, msg);
+
+  if (ls.is_enabled()) {
+    const bool print_codes = WizardMode && Verbose;
+    ResourceMark rm(thread);
+    stringStream codes_ss;
+    if (print_codes) {
+      // print_codes_on() may acquire MDOExtraData_lock (rank nosafepoint-1).
+      // To keep the lock acquisition order correct, call it before taking tty_lock.
+      // Avoid double buffering: set buffered=false.
+      method->print_codes_on(&codes_ss, 0, false);
+    }
+
+    ls.print("(%d) ", ++unpack_counter);
+    iframe->print_on(&ls);
+    RegisterMap map(thread,
+                    RegisterMap::UpdateMap::include,
+                    RegisterMap::ProcessFrames::include,
+                    RegisterMap::WalkContinuation::skip);
+    vframe* f = vframe::new_vframe(iframe, &map, thread);
+    f->print(&ls);
+    if (print_codes) {
+      ls.print_cr("%s", codes_ss.as_string());
+    }
+  }
+#endif // !PRODUCT
+}
+
 void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
                                          int callee_parameters,
                                          int callee_locals,
@@ -363,11 +410,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
     }
   }
 
-#ifndef PRODUCT
-  if (PrintDeoptimizationDetails) {
-    tty->print_cr("Expressions size: %d", expressions()->size());
-  }
-#endif // !PRODUCT
+  log_develop_debug(deoptimization)("Expressions size: %d", expressions()->size());
 
   // Unpack expression stack
   // If this is an intermediate frame (i.e. not top frame) then this
@@ -382,26 +425,11 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
     switch(value->type()) {
       case T_INT:
         *addr = value->get_intptr();
-#ifndef PRODUCT
-        if (PrintDeoptimizationDetails) {
-          tty->print_cr(" - Reconstructed expression %d (INT): %d", i, (int)(*addr));
-        }
-#endif // !PRODUCT
+        log_develop_debug(deoptimization)(" - Reconstructed expression %d (INT): %d", i, (int)(*addr));
         break;
       case T_OBJECT:
         *addr = value->get_intptr(T_OBJECT);
-#ifndef PRODUCT
-        if (PrintDeoptimizationDetails) {
-          tty->print(" - Reconstructed expression %d (OBJECT): ", i);
-          oop o = cast_to_oop((address)(*addr));
-          if (o == nullptr) {
-            tty->print_cr("null");
-          } else {
-            ResourceMark rm;
-            tty->print_raw_cr(o->klass()->name()->as_C_string());
-          }
-        }
-#endif // !PRODUCT
+        log_reconstructed(addr, "expression", i);
         break;
       case T_CONFLICT:
         // A dead stack slot.  Initialize to null in case it is an oop.
@@ -412,11 +440,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
     }
   }
 
-#ifndef PRODUCT
-  if (PrintDeoptimizationDetails) {
-    tty->print_cr("Locals size: %d", locals()->size());
-  }
-#endif // !PRODUCT
+  log_develop_debug(deoptimization)("Locals size: %d", locals()->size());
 
   // Unpack the locals
   for(i = 0; i < locals()->size(); i++) {
@@ -426,26 +450,11 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
     switch(value->type()) {
       case T_INT:
         *addr = value->get_intptr();
-#ifndef PRODUCT
-        if (PrintDeoptimizationDetails) {
-          tty->print_cr(" - Reconstructed local %d (INT): %d", i, (int)(*addr));
-        }
-#endif // !PRODUCT
+        log_develop_debug(deoptimization)(" - Reconstructed local %d (INT): %d", i, (int)(*addr));
         break;
       case T_OBJECT:
         *addr = value->get_intptr(T_OBJECT);
-#ifndef PRODUCT
-        if (PrintDeoptimizationDetails) {
-          tty->print(" - Reconstructed local %d (OBJECT): ", i);
-          oop o = cast_to_oop((address)(*addr));
-          if (o == nullptr) {
-            tty->print_cr("null");
-          } else {
-            ResourceMark rm;
-            tty->print_raw_cr(o->klass()->name()->as_C_string());
-          }
-        }
-#endif // !PRODUCT
+        log_reconstructed(addr, "local", i);
         break;
       case T_CONFLICT:
         // A dead location. If it is an oop then we need a null to prevent GC from following it
@@ -473,12 +482,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
              "expression stack size should have been extended");
 #endif // ASSERT
       int top_element = iframe()->interpreter_frame_expression_stack_size()-1;
-      intptr_t* base;
-      if (frame::interpreter_frame_expression_stack_direction() < 0) {
-        base = iframe()->interpreter_frame_expression_stack_at(top_element);
-      } else {
-        base = iframe()->interpreter_frame_expression_stack();
-      }
+      intptr_t* base = iframe()->interpreter_frame_expression_stack_at(top_element);
       Copy::conjoint_jbytes(saved_args,
                             base,
                             popframe_preserved_args_size_in_bytes);
@@ -486,32 +490,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
     }
   }
 
-#ifndef PRODUCT
-  if (PrintDeoptimizationDetails) {
-    const bool print_codes = WizardMode && Verbose;
-    ResourceMark rm(thread);
-    stringStream codes_ss;
-    if (print_codes) {
-      // print_codes_on() may acquire MDOExtraData_lock (rank nosafepoint-1).
-      // To keep the lock acquisition order correct, call it before taking tty_lock.
-      // Avoid double buffering: set buffered=false.
-      method()->print_codes_on(&codes_ss, 0, false);
-    }
-    ttyLocker ttyl;
-    tty->print_cr("[%d. Interpreted Frame]", ++unpack_counter);
-    iframe()->print_on(tty);
-    RegisterMap map(thread,
-                    RegisterMap::UpdateMap::include,
-                    RegisterMap::ProcessFrames::include,
-                    RegisterMap::WalkContinuation::skip);
-    vframe* f = vframe::new_vframe(iframe(), &map, thread);
-    f->print();
-    if (print_codes) {
-      tty->print("%s", codes_ss.as_string());
-    }
-    tty->cr();
-  }
-#endif // !PRODUCT
+  log_reconstructed_frame(thread, method(), iframe());
 
   // The expression stack and locals are in the resource area don't leave
   // a dangling pointer in the vframeArray we leave around for debug
@@ -633,14 +612,16 @@ void vframeArray::unpack_to_stack(frame &unpack_frame, int exec_mode, int caller
   Events::log_deopt_message(current, "DEOPT UNPACKING pc=" INTPTR_FORMAT " sp=" INTPTR_FORMAT " mode %d",
                             p2i(unpack_frame.pc()), p2i(unpack_frame.sp()), exec_mode);
 
-  if (TraceDeoptimization) {
-    ResourceMark rm;
-    stringStream st;
-    st.print_cr("DEOPT UNPACKING thread=" INTPTR_FORMAT " vframeArray=" INTPTR_FORMAT " mode=%d",
+
+  LogMessage(deoptimization) msg;
+  NonInterleavingLogStream ls(LogLevel::Debug, msg);
+
+  if (ls.is_enabled()) {
+    ls.print_cr("DEOPT UNPACKING thread=" INTPTR_FORMAT " vframeArray=" INTPTR_FORMAT " mode=%d",
                 p2i(current), p2i(this), exec_mode);
-    st.print_cr("   Virtual frames (outermost/oldest first):");
-    tty->print_raw(st.freeze());
+    ls.print_cr("   Virtual frames (outermost/oldest first):");
   }
+
 
   // Do the unpacking of interpreter frames; the frame at index 0 represents the top activation, so it has no callee
   // Unpack the frames from the oldest (frames() -1) to the youngest (0)
@@ -658,11 +639,11 @@ void vframeArray::unpack_to_stack(frame &unpack_frame, int exec_mode, int caller
       callee_parameters = callee->size_of_parameters() + (has_member_arg ? 1 : 0);
       callee_locals     = callee->max_locals();
     }
-    if (TraceDeoptimization) {
+
+    if (ls.is_enabled()) {
       ResourceMark rm;
-      stringStream st;
-      st.print("      VFrame %d (" INTPTR_FORMAT ")", index, p2i(elem));
-      st.print(" - %s", elem->method()->name_and_sig_as_C_string());
+      ls.print("      VFrame %d (" INTPTR_FORMAT ")", index, p2i(elem));
+      ls.print(" - %s", elem->method()->name_and_sig_as_C_string());
       int bci = elem->raw_bci();
       const char* code_name;
       if (bci == SynchronizationEntryBCI) {
@@ -671,11 +652,11 @@ void vframeArray::unpack_to_stack(frame &unpack_frame, int exec_mode, int caller
         Bytecodes::Code code = elem->method()->code_at(bci);
         code_name = Bytecodes::name(code);
       }
-      st.print(" - %s", code_name);
-      st.print(" @ bci=%d ", bci);
-      st.print_cr("sp=" PTR_FORMAT, p2i(elem->iframe()->sp()));
-      tty->print_raw(st.freeze());
+      ls.print(" - %s", code_name);
+      ls.print(" @ bci=%d ", bci);
+      ls.print_cr("sp=" PTR_FORMAT, p2i(elem->iframe()->sp()));
     }
+
     elem->unpack_on_stack(caller_actual_parameters,
                           callee_parameters,
                           callee_locals,
@@ -690,9 +671,6 @@ void vframeArray::unpack_to_stack(frame &unpack_frame, int exec_mode, int caller
     caller_actual_parameters = callee_parameters;
   }
   deallocate_monitor_chunks();
-  if (TraceDeoptimization) {
-    tty->cr();
-  }
 }
 
 void vframeArray::deallocate_monitor_chunks() {
