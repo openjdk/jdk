@@ -51,8 +51,6 @@ class G1HeapRegionRemSet : public CHeapObj<mtGC> {
   // Cached value of heap base address.
   static HeapWord* _heap_base_address;
 
-  void clear_fcc();
-
   G1CardSet* card_set() {
     assert(has_cset_group(), "pre-condition");
     return cset_group()->card_set();
@@ -150,9 +148,9 @@ public:
 
   inline void add_reference(OopOrNarrowOopStar from, uint tid);
 
-  // The region is being reclaimed; clear its remset, and any mention of
-  // entries for this region in other remsets.
-  void clear(bool only_cardset = false, bool keep_tracked = false);
+  // Clear the region-local remembered set state. Any group-owned card set
+  // must already have been cleared through the group.
+  void clear();
 
   void reset_code_root_table_scanner();
   void reset_table_scanner();

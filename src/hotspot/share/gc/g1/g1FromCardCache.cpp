@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,9 +81,9 @@ uint G1FromCardCache::num_par_rem_sets() {
   return G1ConcRefinementThreads + ConcGCThreads;
 }
 
-void G1FromCardCache::clear(uint region_idx) {
+void G1FromCardCache::clear(uint group_fcc_id) {
   uint num_par_remsets = num_par_rem_sets();
   for (uint i = 0; i < num_par_remsets; i++) {
-    set(i, region_idx, InvalidCard);
+    set(i, group_fcc_id, InvalidCard);
   }
 }

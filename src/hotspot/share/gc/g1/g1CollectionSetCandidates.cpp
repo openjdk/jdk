@@ -23,7 +23,9 @@
  */
 
 #include "gc/g1/g1CollectionSetCandidates.inline.hpp"
+#include "gc/g1/g1FromCardCache.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
+#include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "utilities/growableArray.hpp"
 
 uint G1CSetCandidateGroup::_next_group_id = G1CSetCandidateGroup::InitialId;
@@ -34,6 +36,7 @@ G1CSetCandidateGroup::G1CSetCandidateGroup(G1CardSetConfiguration* config, G1Mon
   _card_set(config, &_card_set_mm),
   _reclaimable_bytes(size_t(0)),
   _gc_efficiency(0.0),
+  _fcc_id(InvalidFCCId),
   _group_id(group_id)
 { }
 
@@ -42,6 +45,13 @@ G1CSetCandidateGroup::G1CSetCandidateGroup() :
 { }
 
 void G1CSetCandidateGroup::add(G1HeapRegion* hr) {
+  if (_candidates.is_empty()) {
+    precond(_fcc_id == InvalidFCCId);
+    _fcc_id = hr->hrm_index();
+
+    // This row may have belonged to an earlier group.
+    G1FromCardCache::clear(_fcc_id);
+  }
   G1CollectionSetCandidateInfo c(hr);
   _candidates.append(c);
   hr->install_cset_group(this);
@@ -64,15 +74,24 @@ double G1CSetCandidateGroup::liveness_percent() const {
 }
 
 void G1CSetCandidateGroup::clear(bool uninstall_group_cardset) {
+  clear_card_set();
   if (uninstall_group_cardset) {
     for (G1CollectionSetCandidateInfo ci : _candidates) {
       G1HeapRegion* r = ci._r;
       r->uninstall_cset_group();
-      r->rem_set()->clear(true /* only_cardset */);
+      r->rem_set()->set_state_untracked();
     }
   }
-  _card_set.clear();
   _candidates.clear();
+  _fcc_id = InvalidFCCId;
+}
+
+void G1CSetCandidateGroup::clear_card_set() {
+  if (_fcc_id != InvalidFCCId) {
+    G1FromCardCache::clear(_fcc_id);
+  }
+
+  _card_set.clear();
 }
 
 double G1CSetCandidateGroup::predict_group_total_time_ms() const {

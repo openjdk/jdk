@@ -38,19 +38,16 @@ void G1HeapRegionRemSet::set_state_untracked() {
   if (_state == Untracked) {
     return;
   }
-  clear_fcc();
   _state = Untracked;
 }
 
 void G1HeapRegionRemSet::set_state_updating() {
   guarantee(SafepointSynchronize::is_at_safepoint() && !is_tracked(),
             "Should only set to Updating from Untracked during safepoint but is %s", get_state_str());
-  clear_fcc();
   _state = Updating;
 }
 
 void G1HeapRegionRemSet::set_state_complete() {
-  clear_fcc();
   _state = Complete;
 }
 
@@ -124,14 +121,14 @@ uintptr_t G1HeapRegionRemSet::to_card(OopOrNarrowOopStar from) const {
 }
 
 void G1HeapRegionRemSet::add_reference(OopOrNarrowOopStar from, uint tid) {
-  assert(has_cset_group(), "pre-condition");
+  precond(has_cset_group());
+  precond(_state != Untracked);
 
-  assert(_state != Untracked, "must be");
-
-  uint cur_idx = _hr->hrm_index();
   uintptr_t from_card = uintptr_t(from) >> CardTable::card_shift();
 
-  if (G1FromCardCache::contains_or_replace(tid, cur_idx, from_card)) {
+  uint group_fcc_id = cset_group()->fcc_id();
+
+  if (G1FromCardCache::contains_or_replace(tid, group_fcc_id, from_card)) {
     // We can't check whether the card is in the remembered set - the card container
     // may be coarsened just now.
     //assert(contains_reference(from), "We just found " PTR_FORMAT " in the FromCardCache", p2i(from));

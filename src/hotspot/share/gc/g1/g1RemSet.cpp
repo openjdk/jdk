@@ -1078,7 +1078,10 @@ class G1MergeHeapRootsTask : public WorkerTask {
         // remembered sets for this region.
         // We want to continue collecting remembered set entries for humongous regions
         // that were not reclaimed.
-        r->rem_set()->clear(true /* only_cardset */, true /* keep_tracked */);
+        G1CSetCandidateGroup* group = r->rem_set()->cset_group();
+        assert(group != nullptr, "must have card-set group");
+        assert(group->length() == 1, "humongous group must be singleton");
+        group->clear_card_set();
       }
 
       // Postcondition

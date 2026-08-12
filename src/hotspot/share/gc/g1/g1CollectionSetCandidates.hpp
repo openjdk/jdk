@@ -64,6 +64,7 @@ using G1CSetCandidateGroupIterator = GrowableArrayIterator<G1CollectionSetCandid
 // regions in the group. We do not have track to cross-region references for regions that are in the
 // same group saving memory.
 class G1CSetCandidateGroup : public CHeapObj<mtGCCardSet>{
+  static const uint InvalidFCCId = UINT_MAX;
   GrowableArray<G1CollectionSetCandidateInfo> _candidates;
 
   G1CardSetMemoryManager _card_set_mm;
@@ -73,6 +74,10 @@ class G1CSetCandidateGroup : public CHeapObj<mtGCCardSet>{
 
   size_t _reclaimable_bytes;
   double _gc_efficiency;
+
+  // Index into G1FromCardCache, separate from _group_id. It uses the first
+  // member region's index and is therefore bounded by the maximum number of regions.
+  uint _fcc_id;
 
 public:
   // The _group_id uniquely identifies a candidate group when printing, making it
@@ -94,6 +99,11 @@ public:
   G1CSetCandidateGroup(G1CardSetConfiguration* config, G1MonotonicArenaFreePool* card_set_freelist_pool, uint group_id);
   ~G1CSetCandidateGroup() {
     assert(length() == 0, "post condition!");
+  }
+
+  uint fcc_id() const {
+    assert(_fcc_id != InvalidFCCId, "group must be non-empty");
+    return _fcc_id;
   }
 
   void add(G1HeapRegion* hr);
@@ -126,6 +136,9 @@ public:
   size_t cards_occupied() const {
     return _card_set.occupied();
   }
+
+  // Clear the group-owned card set and its associated FCC state.
+  void clear_card_set();
 
   void clear(bool uninstall_group_cardset = false);
 

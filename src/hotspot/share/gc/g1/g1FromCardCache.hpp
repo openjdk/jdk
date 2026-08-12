@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,24 +28,24 @@
 #include "memory/allStatic.hpp"
 #include "utilities/ostream.hpp"
 
-// G1FromCardCache remembers the most recently processed card on the heap on
-// a per-region and per-thread basis.
+// G1FromCardCache remembers the most recently processed card on the heap for
+// every card-set group and worker.
 class G1FromCardCache : public AllStatic {
 private:
-  // Array of card indices. Indexed by heap region (rows) and thread (columns) to minimize
-  // thread contention.
-  // This order minimizes the time to clear all entries for a given region during region
-  // freeing. I.e. a single clear of a single memory area instead of multiple separate
-  // accesses with a large stride per region.
+  // Cache of the most recently processed source card for each card-set group
+  // and worker. Rows are indexed by the group's FCC id and columns by worker id.
+  // Keeping all worker entries for a group contiguous makes clearing or reusing
+  // the group's cache row efficient.
   static uintptr_t** _cache;
   static uint _max_reserved_regions;
   static size_t _static_mem_size;
 #ifdef ASSERT
   static uint _max_workers;
 
-  static void check_bounds(uint worker_id, uint region_idx) {
+  static void check_bounds(uint worker_id, uint group_fcc_id) {
     assert(worker_id < _max_workers, "Worker_id %u is larger than maximum %u", worker_id, _max_workers);
-    assert(region_idx < _max_reserved_regions, "Region_idx %u is larger than maximum %u", region_idx, _max_reserved_regions);
+    assert(group_fcc_id < _max_reserved_regions,
+           "Group FCC id %u is larger than maximum %u", group_fcc_id, _max_reserved_regions);
   }
 #endif
 
@@ -54,36 +54,32 @@ private:
   // This means that the heap must not contain card zero.
   static const uintptr_t InvalidCard = 0;
 
-  // Gives an approximation on how many threads can be expected to add records to
-  // a remembered set in parallel. This is used for sizing the G1FromCardCache to
-  // decrease performance losses due to data structure sharing.
-  // Examples for quantities that influence this value are the maximum number of
-  // mutator threads, maximum number of concurrent refinement or GC threads.
+  // Number of refinement and concurrent GC workers that may add records to
+  // remembered sets in parallel.
   static uint num_par_rem_sets();
 
 public:
-  static void clear(uint region_idx);
+  static void clear(uint group_fcc_id);
 
   // Returns true if the given card is in the cache at the given location, or
   // replaces the card at that location and returns false.
-  static bool contains_or_replace(uint worker_id, uint region_idx, uintptr_t card) {
-    uintptr_t card_in_cache = at(worker_id, region_idx);
+  static bool contains_or_replace(uint worker_id, uint group_fcc_id, uintptr_t card) {
+    uintptr_t card_in_cache = at(worker_id, group_fcc_id);
     if (card_in_cache == card) {
       return true;
-    } else {
-      set(worker_id, region_idx, card);
-      return false;
     }
+    set(worker_id, group_fcc_id, card);
+    return false;
   }
 
-  static uintptr_t at(uint worker_id, uint region_idx) {
-    DEBUG_ONLY(check_bounds(worker_id, region_idx);)
-    return _cache[region_idx][worker_id];
+  static uintptr_t at(uint worker_id, uint group_fcc_id) {
+    DEBUG_ONLY(check_bounds(worker_id, group_fcc_id);)
+    return _cache[group_fcc_id][worker_id];
   }
 
-  static void set(uint worker_id, uint region_idx, uintptr_t val) {
-    DEBUG_ONLY(check_bounds(worker_id, region_idx);)
-    _cache[region_idx][worker_id] = val;
+  static void set(uint worker_id, uint group_fcc_id, uintptr_t val) {
+    DEBUG_ONLY(check_bounds(worker_id, group_fcc_id);)
+    _cache[group_fcc_id][worker_id] = val;
   }
 
   static void initialize(uint max_reserved_regions);

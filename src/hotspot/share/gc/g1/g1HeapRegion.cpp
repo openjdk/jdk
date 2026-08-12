@@ -109,7 +109,12 @@ void G1HeapRegion::handle_evacuation_failure(bool retain) {
   move_to_old();
 
   _rem_set->clean_code_roots(this);
-  _rem_set->clear(true /* only_cardset */, retain /* keep_tracked */);
+  assert(!_rem_set->has_cset_group(), "must not have a card-set group");
+  if (retain) {
+    assert(_rem_set->is_tracked(), "must be");
+  } else {
+    _rem_set->set_state_untracked();
+  }
 }
 
 void G1HeapRegion::unlink_from_list() {
