@@ -80,7 +80,8 @@ public final class Json {
      * Parses and creates a {@code JsonValue} from the given JSON document.
      * If parsing succeeds, it guarantees that the input document conforms to
      * the JSON syntax. If the document contains any JSON object that has
-     * duplicate names, a {@code JsonParseException} is thrown.
+     * duplicate names, a {@code JsonParseException} is thrown. After parsing,
+     * changes to the input array have no effect on the returned {@code JsonValue}.
      * <p>
      * {@code JsonObject}s preserve the order of their members declared in and parsed from
      * the JSON document.
