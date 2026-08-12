@@ -484,7 +484,7 @@ HeapWord* ParallelScavengeHeap::satisfy_failed_allocation(size_t size, bool is_t
   HeapWord* result = nullptr;
 
   if (!_is_heap_almost_full) {
-    // If young-gen can handle this allocation, attempt young-gc firstly, as young-gc is usually cheaper.
+    // If young-gen can handle this allocation, attempt young-gc first, as young-gc is usually cheaper.
     bool should_run_young_gc = is_tlab || should_alloc_in_eden(size);
 
     collect_at_safepoint(!should_run_young_gc, {size, is_tlab});
@@ -911,7 +911,7 @@ void ParallelScavengeHeap::resize_old_gen_after_full_gc() {
 
 void ParallelScavengeHeap::shrink_old_gen_after_young_gc(bool is_survivor_overflowing) {
   if (is_survivor_overflowing) {
-    // Shouldn't shrink if there is overflowing
+    // Shouldn't shrink if there is an overflow.
     return;
   }
 
@@ -1048,12 +1048,12 @@ void ParallelScavengeHeap::resize_after_young_gc(bool is_survivor_overflowing) {
 
 void ParallelScavengeHeap::resize_after_full_gc() {
   resize_old_gen_after_full_gc();
-  // We don't resize young-gen after full-gc because:
-  // 1. eden-size directly affects young-gc frequency (GCTimeRatio), and we
-  // don't have enough info to determine its desired size.
-  // 2. eden can contain live objs after a full-gc, which is unsafe for
-  // resizing. We will perform expansion on allocation if needed, in
-  // satisfy_failed_allocation().
+  // Young-gen was already handled by adjust_gen_boundary_after_full_gc():
+  // full-gc compacts all live objects into old-gen and leaves young-gen empty,
+  // possibly with a zero-sized reservation. We don't apply adaptive young-gen
+  // sizing here because full-gc produces no young-gc-specific
+  // measurements for choosing eden/survivor sizes. If needed, eden is expanded
+  // on allocation in satisfy_failed_allocation().
 }
 
 bool ParallelScavengeHeap::adjust_gen_boundary_after_full_gc(size_t live_bytes,
@@ -1134,6 +1134,11 @@ bool ParallelScavengeHeap::adjust_gen_boundary_after_full_gc(size_t live_bytes,
   }
 
   desired_shrink_bytes = MIN2(desired_shrink_bytes, MaxNewSize - young_reserved_before);
+  if (desired_shrink_bytes == 0) {
+    // Young gen already owns its full MaxNewSize reservation; there is
+    // nothing to shift. left_shift_gen_boundary() requires a strict shift.
+    return false;
+  }
   if (young_reserved_before + desired_shrink_bytes < young_gen_size_lower_bound()) {
     return false;
   }

@@ -91,6 +91,10 @@ class GenBoundaryWithFixedSizingWorkload {
     static final long NEW_SIZE = 48L * MB;
 
     public static void main(String[] args) {
+        // A low-live full GC while young gen still owns its full MaxNewSize
+        // reservation exercises the zero-shift boundary path.
+        WB.fullGC();
+
         List<byte[]> live = new ArrayList<>();
         // More than 64m of live data forces old gen to borrow young reservation.
         for (int i = 0; i < PRESSURE_OBJECTS; i++) {
