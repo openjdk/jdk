@@ -32,6 +32,8 @@ import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicTextAreaUI;
 import javax.swing.text.*;
 
+import sun.swing.SwingAccessor;
+
 public final class AquaTextAreaUI extends BasicTextAreaUI {
     public static ComponentUI createUI(final JComponent c) {
         return new AquaTextAreaUI();
@@ -67,12 +69,25 @@ public final class AquaTextAreaUI extends BasicTextAreaUI {
         super.uninstallListeners();
     }
 
+    private boolean oldDragState;
+
     @Override
-    protected void installDefaults() {
+    protected void installDefaults(){
+        oldDragState = getComponent().getDragEnabled();
         super.installDefaults();
         if (!GraphicsEnvironment.isHeadless()) {
             LookAndFeel.installProperty(getComponent(), "dragEnabled", true);
         }
+    }
+
+    @Override
+    protected void uninstallDefaults() {
+        if (!SwingAccessor.getJTextComponentAccessor()
+                          .isDragEnabledSet(getComponent())) {
+            LookAndFeel.installProperty(getComponent(), "dragEnabled",
+                                        oldDragState);
+        }
+        super.uninstallDefaults();
     }
 
     // Install a default keypress action which handles Cmd and Option keys

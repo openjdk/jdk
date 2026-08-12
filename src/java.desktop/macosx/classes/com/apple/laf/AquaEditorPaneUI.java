@@ -33,17 +33,32 @@ import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicEditorPaneUI;
 import javax.swing.text.*;
 
+import sun.swing.SwingAccessor;
+
 public final class AquaEditorPaneUI extends BasicEditorPaneUI {
     public static ComponentUI createUI(final JComponent c){
         return new AquaEditorPaneUI();
     }
 
+    private boolean oldDragState;
+
     @Override
     protected void installDefaults(){
+        oldDragState = getComponent().getDragEnabled();
         super.installDefaults();
         if (!GraphicsEnvironment.isHeadless()) {
             LookAndFeel.installProperty(getComponent(), "dragEnabled", true);
         }
+    }
+
+    @Override
+    protected void uninstallDefaults() {
+        if (!SwingAccessor.getJTextComponentAccessor()
+                          .isDragEnabledSet(getComponent())) {
+            LookAndFeel.installProperty(getComponent(), "dragEnabled",
+                                        oldDragState);
+        }
+        super.uninstallDefaults();
     }
 
     FocusListener focusListener;

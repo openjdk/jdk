@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import javax.swing.JEditorPane;
+import javax.swing.JFormattedTextField;
 import javax.swing.JPasswordField;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
@@ -52,7 +53,8 @@ public class TextComponentDragEnabledTest {
             JTextArea::new,
             JTextPane::new,
             JEditorPane::new,
-            JPasswordField::new
+            JPasswordField::new,
+            JFormattedTextField::new
     );
 
     public static void main(String[] args) throws Exception {
