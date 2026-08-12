@@ -81,9 +81,6 @@
 #define   RISCV_HWPROBE_EXT_ZACAS               (1ULL << 34)
 #define   RISCV_HWPROBE_EXT_ZICOND              (1ULL << 35)
 #define   RISCV_HWPROBE_EXT_ZCB                 (1ULL << 44)
-// TODO: verify against <asm/hwprobe.h> once Zalasr hwprobe support has
-// landed in the mainline kernel. A wrong bit here would enable UseZalasr by
-// default on hardware without the extension and trap on the first l*.aq.
 #define   RISCV_HWPROBE_EXT_ZALASR              (1ULL << 59)
 
 #define RISCV_HWPROBE_KEY_CPUPERF_0     5
