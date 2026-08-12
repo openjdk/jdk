@@ -171,6 +171,7 @@ class DrainAmountPropertyTest {
         socketOutput.flush();
         var inputStream = clientSocket.getInputStream();
         assertEquals("HTTP/1.1 204 No Content", readUntilCrLf(inputStream));
+        // Consume headers, including the terminating empty line
         while (!readUntilCrLf(inputStream).isEmpty());
     }
 
