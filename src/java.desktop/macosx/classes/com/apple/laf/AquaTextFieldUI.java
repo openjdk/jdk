@@ -84,7 +84,7 @@ public class AquaTextFieldUI extends BasicTextFieldUI {
     protected void uninstallDefaults() {
         if (!SwingAccessor.getJTextComponentAccessor()
                           .isDragEnabledSet(getComponent())) {
-            LookAndFeel.installProperty(getComponent(), "dragEnabled", 
+            LookAndFeel.installProperty(getComponent(), "dragEnabled",
                                         oldDragState);
         }
         super.uninstallDefaults();
