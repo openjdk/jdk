@@ -323,7 +323,8 @@ void InterpreterMacroAssembler::gen_subtype_check(Register Rsub_klass,
                                                   Register Rsuper_klass,
                                                   Label &not_subtype,
                                                   Register tmp1,
-                                                  Register tmp2) {
+                                                  Register tmp2,
+                                                  bool profile) {
 
   assert_different_registers(Rsub_klass, Rsuper_klass, tmp1, tmp2, Rtemp);
   Label ok_is_subtype, loop, update_cache;
@@ -331,8 +332,11 @@ void InterpreterMacroAssembler::gen_subtype_check(Register Rsub_klass,
   const Register super_check_offset = tmp1;
   const Register cached_super = tmp2;
 
-  // Profile the not-null value's klass.
-  profile_typecheck(tmp1, Rsub_klass);
+  // Profile the not-null value's klass. Only valid when the current bytecode
+  // has a checkcast-style ReceiverTypeData entry in the MethodData.
+  if (profile) {
+    profile_typecheck(tmp1, Rsub_klass);
+  }
 
   // Load the super-klass's check offset into
   ldr_u32(super_check_offset, Address(Rsuper_klass, Klass::super_check_offset_offset()));
@@ -1149,7 +1153,7 @@ void InterpreterMacroAssembler::profile_taken_branch(Register mdp, Register bump
 
 
 // Sets mdp, blows Rtemp.
-void InterpreterMacroAssembler::profile_not_taken_branch(Register mdp) {
+void InterpreterMacroAssembler::profile_not_taken_branch(Register mdp, bool acmp) {
   assert_different_registers(mdp, Rtemp);
 
   if (ProfileInterpreter) {
@@ -1162,9 +1166,30 @@ void InterpreterMacroAssembler::profile_not_taken_branch(Register mdp) {
     increment_mdp_data_at(mdp, in_bytes(BranchData::not_taken_offset()), Rtemp);
 
     // The method data pointer needs to be updated to correspond to the next bytecode
-    update_mdp_by_constant(mdp, in_bytes(BranchData::branch_data_size()));
+    update_mdp_by_constant(mdp, acmp ? in_bytes(ACmpData::acmp_data_size())
+                                     : in_bytes(BranchData::branch_data_size()));
 
     bind (profile_continue);
+  }
+}
+
+// Does not really profile, just moves MDP to match offsets.
+void InterpreterMacroAssembler::profile_array_load(Register mdp) {
+  if (ProfileInterpreter) {
+    Label L_skip;
+    test_method_data_pointer(mdp, L_skip);
+    update_mdp_by_constant(mdp, in_bytes(ArrayLoadData::array_load_data_size()));
+    bind(L_skip);
+  }
+}
+
+// Does not really profile, just moves MDP to match offsets.
+void InterpreterMacroAssembler::profile_array_store(Register mdp) {
+  if (ProfileInterpreter) {
+    Label L_skip;
+    test_method_data_pointer(mdp, L_skip);
+    update_mdp_by_constant(mdp, in_bytes(ArrayStoreData::array_store_data_size()));
+    bind(L_skip);
   }
 }
 

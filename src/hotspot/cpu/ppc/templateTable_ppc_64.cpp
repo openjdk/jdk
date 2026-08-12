@@ -2609,7 +2609,8 @@ void TemplateTable::jvmti_post_field_access(Register Rcache, Register Rscratch, 
       // Restore object pointer.
       __ pop_ptr(R17_tos);
       __ verify_oop(R17_tos);
-    } else {
+    }
+    if (Rcache.is_volatile()) {
       // Cache is still needed to get class or obj.
       __ load_field_entry(Rcache, Rscratch);
     }
@@ -3322,7 +3323,7 @@ void TemplateTable::fast_storefield(TosState state) {
     {
       Label is_flat, done;
       __ test_field_is_flat(Rflags, is_flat);
-      __ null_check_throw(Rclass_or_obj, -1, Rscratch);
+      __ null_check_throw(R17_tos, -1, Rscratch);
       do_oop_store(_masm, Rclass_or_obj, Roffset, R17_tos, Rscratch, Rscratch2, Rscratch3, IN_HEAP);
       __ b(done);
       __ bind(is_flat);
@@ -3384,7 +3385,7 @@ void TemplateTable::fast_accessfield(TosState state) {
   Label LisVolatile;
   ByteSize cp_base_offset = ConstantPoolCache::base_offset();
 
-  const Register Rcache        = R3_ARG1,
+  const Register Rcache        = R31, // Needs to survive C call.
                  Rclass_or_obj = R17_tos,
                  Roffset       = R22_tmp2,
                  Rflags        = R23_tmp3,
