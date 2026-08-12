@@ -280,7 +280,7 @@ AOTClassLocation* AOTClassLocation::allocate(JavaThread* current, const char* pa
   }
   assert(*(cs->manifest() + cs->manifest_length()) == '\0', "should be nul-terminated");
 
-  if (strstr(cs->manifest(), "Multi-Release: true") != nullptr) {
+  if (StringUtils::strstr_nocase(cs->manifest(), "Multi-Release: true") != nullptr) {
     cs->_is_multi_release_jar = true;
   }
 

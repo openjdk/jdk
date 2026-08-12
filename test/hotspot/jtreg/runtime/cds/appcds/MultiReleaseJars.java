@@ -108,11 +108,9 @@ public class MultiReleaseJars {
         String tempDir = CDSTestUtils.getOutputDir();
         File baseDir = new File(tempDir + File.separator + "base");
         File vDir    = new File(tempDir + File.separator + MAJOR_VERSION_STRING);
-        File aotBaseDir = new File(tempDir + File.separator + "aot");
 
         baseDir.mkdirs();
         vDir.mkdirs();
-        aotBaseDir.mkdirs();
 
         File fileMain = TestCommon.getOutputSourceFile("Main.java");
         writeFile(fileMain, getMain());
@@ -139,8 +137,9 @@ public class MultiReleaseJars {
         JarBuilder.build("version", baseDir, metainf.getAbsolutePath(),
             "--release", MAJOR_VERSION_STRING, "-C", vDir.getAbsolutePath(), ".");
 
-        // the following jar file is for testing case-insensitive "Multi-Release"
-        // attibute name
+        // version2.jar is exactly the same as version.jar, except that the manifest file contains
+        // "multi-Release" instead of "Multi-Release". This is for testing the case-insensitivity of
+        // the handling of attribute names.
         String[] meta2 = {
             "multi-Release: true",
             "Main-Class: version.Main"
@@ -150,14 +149,15 @@ public class MultiReleaseJars {
         JarBuilder.build("version2", baseDir, metainf.getAbsolutePath(),
             "--release", MAJOR_VERSION_STRING, "-C", vDir.getAbsolutePath(), ".");
 
-        // Use correct manifest
+        // version3.jar does not include version in the root directory and instead only has it
+        // in the version specific directory. A private version is used so as to avoid the JAR
+        // being rejected since there is no matching class in the root directory.
         File filePrivateVersion = TestCommon.getOutputSourceFile("Version.java");
+        (new File(baseDir, "version/Version.class")).delete();
         writeFile(filePrivateVersion, getPrivateVersion(BASE_VERSION));
         writeFile(metainf, meta);
-        JarBuilder.compile(aotBaseDir.getAbsolutePath(), fileMain.getAbsolutePath(),
-            "-cp", baseDir.getAbsolutePath(), "--release", MAJOR_VERSION_STRING);
         JarBuilder.compile(vDir.getAbsolutePath(), filePrivateVersion.getAbsolutePath(), "--release", MAJOR_VERSION_STRING);
-        JarBuilder.build("version3", aotBaseDir, metainf.getAbsolutePath(),
+        JarBuilder.build("version3", baseDir, metainf.getAbsolutePath(),
             "--release", MAJOR_VERSION_STRING, "-C", vDir.getAbsolutePath(), ".");
     }
 
@@ -268,7 +268,6 @@ public class MultiReleaseJars {
             .classpath(appJar3)
             .appCommandLine(mainClass)
             .setTrainingChecker((OutputAnalyzer out) -> {
-                // We should have only very minimal amount of gaps left unfilled. See JDK-8383503
                 out.shouldNotMatch("class version/Version cannot be archived because it was not defined");
             })
             .setProductionChecker((OutputAnalyzer out) -> {
