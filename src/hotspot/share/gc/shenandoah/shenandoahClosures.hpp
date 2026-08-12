@@ -117,6 +117,12 @@ class ShenandoahUpdateRememberedSetMarkClosure : public ShenandoahMarkRefsClosur
 public:
   ShenandoahUpdateRememberedSetMarkClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp, ShenandoahObjToScanQueue* old_q)
     : ShenandoahMarkRefsClosure(q, rp, old_q) {}
+
+  ALWAYSINLINE
+  void do_oop(narrowOop* p) override { do_oop_work(p); }
+
+  ALWAYSINLINE
+  void do_oop(oop* p) override { do_oop_work(p); }
 };
 
 class ShenandoahForwardedIsAliveClosure : public BoolObjectClosure {
