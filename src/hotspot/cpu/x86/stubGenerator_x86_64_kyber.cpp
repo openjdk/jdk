@@ -354,8 +354,8 @@ static void store4regs(Register address, int offset, int sourceRegs[],
 // Input:   xmm0-xmm7 (signed short coefficients)
 //          xmm16: Barrett multiplier
 //          xmm17: q
-// Output:  xmm0-xmm7 (reduced coefficients each in [0, q])
 // Scratch: xmm8-xmm15
+// Output:  xmm0-xmm7 (reduced coefficients each in [0, q])
 static void barrettReduce(MacroAssembler *_masm) {
   for (int i = 0; i < 8; i++) {
     __ evpmulhw(xmm(i + 8), k0, xmm(i), xmm16, false, Assembler::AVX_512bit);
