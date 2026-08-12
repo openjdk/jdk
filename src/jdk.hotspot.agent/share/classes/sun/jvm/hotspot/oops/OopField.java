@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,26 +27,62 @@ package sun.jvm.hotspot.oops;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.runtime.VM;
 import sun.jvm.hotspot.runtime.VMObject;
+import sun.jvm.hotspot.utilities.SystemDictionaryHelper;
 
 // The class for an oop field simply provides access to the value.
 public class OopField extends Field {
-  public OopField(FieldIdentifier id, long offset, boolean isVMField) {
+
+  private final InlineKlass inlineKlass;
+
+  public OopField(FieldIdentifier id, long offset, boolean isVMField, InlineKlass inlineKlass) {
     super(id, offset, isVMField);
+    this.inlineKlass = inlineKlass;
+  }
+
+  public OopField(FieldIdentifier id, long offset, boolean isVMField) {
+    this(id, offset, isVMField, null);
   }
 
   public OopField(sun.jvm.hotspot.types.OopField vmField, long startOffset) {
-    super(new NamedFieldIdentifier(vmField.getName()), vmField.getOffset() + startOffset, true);
+    this(new NamedFieldIdentifier(vmField.getName()), vmField.getOffset() + startOffset, true);
   }
 
   public OopField(InstanceKlass holder, int fieldArrayIndex) {
     super(holder, fieldArrayIndex);
+    inlineKlass = null;
+  }
+
+  public Klass getKlassFromSignature() {
+    var sig = getSignature().asString();
+    var klsName = sig.substring(1, sig.length() - 1); // extracts L(class name);
+    return SystemDictionaryHelper.findInstanceKlass(klsName);
+  }
+
+  @Override
+  public long getOffset() {
+    long ofs = super.getOffset();
+    if ((inlineKlass != null) || (inlineKlass == null && isFlat())) {
+      // Subtract payload offset because this field is flattened.
+      ofs -= ((InlineKlass)getKlassFromSignature()).members().payloadOffset();
+    }
+    return ofs;
   }
 
   public Oop getValue(Oop obj) {
     if (!isVMField() && !obj.isInstance() && !obj.isArray()) {
       throw new InternalError();
     }
-    return obj.getHeap().newOop(getValueAsOopHandle(obj));
+    var heap = obj.getHeap();
+    if (inlineKlass == null) {
+      if (isFlat()) {
+        InlineKlass kls = (InlineKlass)getKlassFromSignature();
+        return heap.newOop(obj.getHandle().addOffsetToAsOopHandle(getOffset()), kls);
+      } else {
+        return heap.newOop(getValueAsOopHandle(obj));
+      }
+    } else {
+      return heap.newOop(obj.getHandle().addOffsetToAsOopHandle(getOffset()), inlineKlass);
+    }
   }
 
   /** Debugging support */

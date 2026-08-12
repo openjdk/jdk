@@ -78,6 +78,7 @@ class InlineKlass: public InstanceKlass {
   //
   class Members {
     friend class InlineKlass;
+    friend class VMStructs;
 
     // Addresses used for inline type calling convention
     Array<SigEntry>* _extended_sig;

@@ -63,6 +63,7 @@ public class Instance extends Oop {
   }
 
   public boolean isInstance()          { return true; }
+  public boolean isInline()            { return false; }
 
   public void iterateFields(OopVisitor visitor, boolean doVMFields) {
     super.iterateFields(visitor, doVMFields);

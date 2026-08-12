@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,33 @@ import sun.jvm.hotspot.utilities.*;
 import sun.jvm.hotspot.utilities.Observable;
 import sun.jvm.hotspot.utilities.Observer;
 
-// An InstanceKlass is the VM level representation of a Java class.
+// An InlineKlass is the VM level representation of a flattable Java class.
 
 public class InlineKlass extends InstanceKlass {
+
+  public static class Members extends VMObject {
+
+    private static CIntField payloadOffsetField;
+
+    static {
+      VM.registerVMInitializedObserver((o, d) -> initialize(VM.getVM().getTypeDataBase()));
+    }
+
+    private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
+      Type type = db.lookupType("InlineKlass::Members");
+      payloadOffsetField = new CIntField(type.getCIntegerField("_payload_offset"), 0);
+    }
+
+    public Members(Address addr) {
+      super(addr);
+    }
+
+    public int payloadOffset() {
+      return (int)payloadOffsetField.getValue(this);
+    }
+
+  }
+
   static {
     VM.registerVMInitializedObserver(new Observer() {
         public void update(Observable o, Object data) {
@@ -53,4 +77,9 @@ public class InlineKlass extends InstanceKlass {
   public InlineKlass(Address addr) {
     super(addr);
   }
+
+  public Members members() {
+    return VMObjectFactory.newObject(Members.class, getAdrInlineKlassMembers());
+  }
+
 }

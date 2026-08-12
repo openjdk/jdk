@@ -183,6 +183,7 @@ public class ObjectHeap {
       if (klass instanceof FlatArrayKlass) return new FlatArray(handle, this);
       if (klass instanceof ObjArrayKlass) return new ObjArray(handle, this);
       if (klass instanceof InstanceKlass) return new Instance(handle, this);
+      if (klass instanceof InlineKlass)   return new Inline(handle, this);
     }
 
     if (DEBUG) {
@@ -191,6 +192,12 @@ public class ObjectHeap {
     }
 
     throw new UnknownOopException(handle.toString());
+  }
+
+  // This method would be used to instantiate flattened object.
+  public Oop newOop(OopHandle handle, InlineKlass klass) {
+    return (handle == null) ? null
+                            : new Inline(handle, this, klass);
   }
 
   // Print all objects in the object heap
