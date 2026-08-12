@@ -3394,7 +3394,7 @@ public class IRNode {
         callLeafNoFpOfMethodNodes(JLONG_ARRAYCOPY, "jlong_disjoint_arraycopy");
     }
 
-    // The following nodes are specific to testsin in compiler/valhalla/inlinetypes using one of the MyValue classes.
+    // The following nodes are specific to tests in in compiler/valhalla/inlinetypes using one of the MyValue classes.
     private static final String MYVALUE_KLASS = "compiler/valhalla/inlinetypes/.*MyValue\\w*";
     public static final String ALLOC_OF_MYVALUE_KLASS = PREFIX + "ALLOC_OF_MYVALUE_KLASS" + POSTFIX;
     static {
