@@ -127,7 +127,7 @@ class MaxIdleConnectionsPropertyTest {
 
         // Create the HTTP server
         var server = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
-        server.createContext("/", NoContentReturningHandler.INSTANCE);
+        server.createContext("/", new NoContentReturningHandler());
         server.start();
 
         try {
@@ -248,7 +248,7 @@ class MaxIdleConnectionsPropertyTest {
 
     }
 
-    private enum NoContentReturningHandler implements HttpHandler { INSTANCE;
+    private static final class NoContentReturningHandler implements HttpHandler {
 
         @Override
         public void handle(HttpExchange exchange) throws IOException {

@@ -24,6 +24,7 @@
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import jdk.test.lib.format.Format;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,6 +50,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @bug 8295785
  * @summary Verifies `HttpServer` behavior when
  *          `sun.net.httpserver.maxReqTime` is configured to 3 seconds.
+ *
+ * @library /test/lib
  *
  * @comment `sun.net.httpserver.timerMillis` determines the frequency the
  *          timeout check mechanism is triggered. Up its pace to increase
@@ -99,7 +102,7 @@ class MaxReqTimePropertyTest {
         } catch (IOException ioe) {
             throw new UncheckedIOException(ioe);
         }
-        server.createContext("/", NoContentReturningHandler.INSTANCE);
+        server.createContext("/", new NoContentReturningHandler());
         server.start();
         return server;
     }
@@ -246,6 +249,7 @@ class MaxReqTimePropertyTest {
         socketOutput.flush();
         var inputStream = clientSocket.getInputStream();
         assertEquals("HTTP/1.1 204 No Content", readUntilCrLf(inputStream));
+        // Consume headers, including the terminating empty line
         while (!readUntilCrLf(inputStream).isEmpty());
     }
 
@@ -256,7 +260,7 @@ class MaxReqTimePropertyTest {
             int nextChar = inputStream.read();
             if (nextChar < 0) {
                 // `SocketException` is caught to detect the peer disconnect
-                throw new SocketException("EOF");
+                throw new SocketException("EOF after reading: " + Format.asLiteral(buffer));
             }
             buffer.append((char) nextChar);
             if (prevChar == '\r' && nextChar == '\n') {
@@ -269,7 +273,7 @@ class MaxReqTimePropertyTest {
         return buffer.toString();
     }
 
-    private enum NoContentReturningHandler implements HttpHandler { INSTANCE;
+    private static final class NoContentReturningHandler implements HttpHandler {
 
         @Override
         public void handle(HttpExchange exchange) throws IOException {

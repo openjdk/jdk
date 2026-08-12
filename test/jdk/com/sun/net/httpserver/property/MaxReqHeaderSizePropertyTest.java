@@ -24,6 +24,7 @@
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import jdk.test.lib.format.Format;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,6 +56,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  *          `sun.net.httpserver.maxReqHeaderSize` is not configured, and left to
  *          its default, 389120.
  *
+ * @library /test/lib
+ *
  * @run junit/othervm ${test.main.class}
  */
 
@@ -63,6 +66,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @bug 8295785
  * @summary Verifies `HttpServer` behavior when
  *          `sun.net.httpserver.maxReqHeaderSize` is configured to 200.
+ *
+ * @library /test/lib
  *
  * @run junit/othervm -Dsun.net.httpserver.maxReqHeaderSize=200 ${test.main.class}
  */
@@ -93,7 +98,7 @@ class MaxReqHeaderSizePropertyTest {
         } catch (IOException ioe) {
             throw new UncheckedIOException(ioe);
         }
-        server.createContext("/", NoContentReturningHandler.INSTANCE);
+        server.createContext("/", new NoContentReturningHandler());
         server.start();
         return server;
     }
@@ -251,6 +256,7 @@ class MaxReqHeaderSizePropertyTest {
         socketOutput.flush();
         var inputStream = clientSocket.getInputStream();
         assertEquals("HTTP/1.1 204 No Content", readUntilCrLf(inputStream));
+        // Consume headers, including the terminating empty line
         while (!readUntilCrLf(inputStream).isEmpty());
     }
 
@@ -261,7 +267,7 @@ class MaxReqHeaderSizePropertyTest {
             int nextChar = inputStream.read();
             if (nextChar < 0) {
                 // `SocketException` is caught to detect the peer disconnect
-                throw new SocketException("EOF");
+                throw new SocketException("EOF after reading: " + Format.asLiteral(buffer));
             }
             buffer.append((char) nextChar);
             if (prevChar == '\r' && nextChar == '\n') {
@@ -274,7 +280,7 @@ class MaxReqHeaderSizePropertyTest {
         return buffer.toString();
     }
 
-    private enum NoContentReturningHandler implements HttpHandler { INSTANCE;
+    private static final class NoContentReturningHandler implements HttpHandler {
 
         @Override
         public void handle(HttpExchange exchange) throws IOException {

@@ -25,6 +25,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import jdk.test.lib.Utils;
+import jdk.test.lib.format.Format;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -154,7 +155,7 @@ class IdleIntervalPropertyTest {
 
         // Create the HTTP server
         var server = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
-        server.createContext("/", NoContentReturningHandler.INSTANCE);
+        server.createContext("/", new NoContentReturningHandler());
         server.start();
 
         // Create the client
@@ -189,6 +190,7 @@ class IdleIntervalPropertyTest {
         socketOutput.flush();
         var inputStream = clientSocket.getInputStream();
         assertEquals("HTTP/1.1 204 No Content", readUntilCrLf(inputStream));
+        // Consume headers, including the terminating empty line
         while (!readUntilCrLf(inputStream).isEmpty());
     }
 
@@ -199,7 +201,7 @@ class IdleIntervalPropertyTest {
             int nextChar = inputStream.read();
             if (nextChar < 0) {
                 // `SocketException` is caught to detect the peer disconnect
-                throw new SocketException("EOF");
+                throw new SocketException("EOF after reading: " + Format.asLiteral(buffer));
             }
             buffer.append((char) nextChar);
             if (prevChar == '\r' && nextChar == '\n') {
@@ -212,7 +214,7 @@ class IdleIntervalPropertyTest {
         return buffer.toString();
     }
 
-    private enum NoContentReturningHandler implements HttpHandler { INSTANCE;
+    private static final class NoContentReturningHandler implements HttpHandler {
 
         @Override
         public void handle(HttpExchange exchange) throws IOException {

@@ -24,6 +24,7 @@
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import jdk.test.lib.format.Format;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
@@ -50,6 +51,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @bug 8295785
  * @summary Verifies `HttpServer` behavior when
  *          `sun.net.httpserver.maxRspTime` is configured to 3 seconds.
+ *
+ * @library /test/lib
  *
  * @comment `sun.net.httpserver.timerMillis` determines the frequency the
  *          timeout check mechanism is triggered. Up its pace to increase
@@ -160,18 +163,8 @@ class MaxRspTimePropertyTest {
 
             // Read the response body
             LOGGER.info("Reading the response body");
-            var actualBodyBytes = new byte[expectedBodyBytes.length];
-            for (int bodyByteIndex = 0; bodyByteIndex < actualBodyBytes.length; bodyByteIndex++) {
-                int expectedBodyByte = expectedBodyBytes[bodyByteIndex] & 0xFF;
-                int actualBodyByte = inputStream.read();
-                if (actualBodyByte == -1) {
-                    // `SocketException` is caught to detect the peer disconnect
-                    throw new SocketException("EOF");
-                }
-                assertEquals(
-                        expectedBodyByte, actualBodyByte,
-                        "Body byte mismatch (byteIndex=%s)".formatted(bodyByteIndex));
-            }
+            var actualBodyBytes = inputStream.readNBytes(expectedBodyBytes.length);
+            assertEquals(new String(expectedBodyBytes, CHARSET), new String(actualBodyBytes, CHARSET));
 
         }
     }
@@ -183,7 +176,7 @@ class MaxRspTimePropertyTest {
             int nextChar = inputStream.read();
             if (nextChar < 0) {
                 // `SocketException` is caught to detect the peer disconnect
-                throw new SocketException("EOF");
+                throw new SocketException("EOF after reading: " + Format.asLiteral(buffer));
             }
             buffer.append((char) nextChar);
             if (prevChar == '\r' && nextChar == '\n') {

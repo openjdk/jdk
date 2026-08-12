@@ -24,6 +24,7 @@
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import jdk.test.lib.format.Format;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,6 +58,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  *          `sun.net.httpserver.maxReqHeaders` is not configured, and hence,
  *          falls back to its default, 200.
  *
+ * @library /test/lib
+ *
  * @run junit/othervm ${test.main.class}
  */
 
@@ -66,6 +69,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @summary Verifies `HttpServer` behavior when
  *          `sun.net.httpserver.maxReqHeaders` is configured to 0, which gets
  *          replaced with the default, 200.
+ *
+ * @library /test/lib
  *
  * @run junit/othervm -Dsun.net.httpserver.maxReqHeaders=0 ${test.main.class}
  */
@@ -77,6 +82,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  *          `sun.net.httpserver.maxReqHeaders` is configured to a negative value
  *          (-1, in this case), which gets replaced with the default, 200.
  *
+ * @library /test/lib
+ *
  * @run junit/othervm -Dsun.net.httpserver.maxReqHeaders=-1 ${test.main.class}
  */
 
@@ -86,6 +93,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @summary Verifies `HttpServer` behavior when
  *          `sun.net.httpserver.maxReqHeaders` is configured to a non-default
  *          valid value, which is 7 in this case.
+ *
+ * @library /test/lib
  *
  * @run junit/othervm -Dsun.net.httpserver.maxReqHeaders=7 ${test.main.class}
  */
@@ -116,7 +125,7 @@ class MaxReqHeadersPropertyTest {
         } catch (IOException ioe) {
             throw new UncheckedIOException(ioe);
         }
-        server.createContext("/", NoContentReturningHandler.INSTANCE);
+        server.createContext("/", new NoContentReturningHandler());
         server.start();
         return server;
     }
@@ -249,6 +258,7 @@ class MaxReqHeadersPropertyTest {
         socketOutput.flush();
         var inputStream = clientSocket.getInputStream();
         assertEquals("HTTP/1.1 204 No Content", readUntilCrLf(inputStream));
+        // Consume headers, including the terminating empty line
         while (!readUntilCrLf(inputStream).isEmpty());
     }
 
@@ -259,7 +269,7 @@ class MaxReqHeadersPropertyTest {
             int nextChar = inputStream.read();
             if (nextChar < 0) {
                 // `SocketException` is caught to detect the peer disconnect
-                throw new SocketException("EOF");
+                throw new SocketException("EOF after reading: " + Format.asLiteral(buffer));
             }
             buffer.append((char) nextChar);
             if (prevChar == '\r' && nextChar == '\n') {
@@ -272,7 +282,7 @@ class MaxReqHeadersPropertyTest {
         return buffer.toString();
     }
 
-    private enum NoContentReturningHandler implements HttpHandler { INSTANCE;
+    private static final class NoContentReturningHandler implements HttpHandler {
 
         @Override
         public void handle(HttpExchange exchange) throws IOException {
