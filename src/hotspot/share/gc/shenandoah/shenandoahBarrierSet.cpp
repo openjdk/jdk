@@ -376,8 +376,8 @@ void ShenandoahBarrierSet::arraycopy_evacuation(T* src, size_t count) {
   }
 }
 
-template void ShenandoahBarrierSet::arraycopy_evacuation<oop>(oop* dst, size_t count);
-template void ShenandoahBarrierSet::arraycopy_evacuation<narrowOop>(narrowOop* dst, size_t count);
+template void ShenandoahBarrierSet::arraycopy_evacuation<oop>(oop* src, size_t count);
+template void ShenandoahBarrierSet::arraycopy_evacuation<narrowOop>(narrowOop* src, size_t count);
 
 template <typename T>
 void ShenandoahBarrierSet::arraycopy_update(T* src, size_t count) {
@@ -402,5 +402,5 @@ void ShenandoahBarrierSet::arraycopy_update(T* src, size_t count) {
   }
 }
 
-template void ShenandoahBarrierSet::arraycopy_update<oop>(oop* dst, size_t count);
-template void ShenandoahBarrierSet::arraycopy_update<narrowOop>(narrowOop* dst, size_t count);
+template void ShenandoahBarrierSet::arraycopy_update<oop>(oop* src, size_t count);
+template void ShenandoahBarrierSet::arraycopy_update<narrowOop>(narrowOop* src, size_t count);
