@@ -63,7 +63,9 @@ public class OopField extends Field {
     long ofs = super.getOffset();
     if ((inlineKlass != null) || (inlineKlass == null && isFlat())) {
       // Subtract payload offset because this field is flattened.
-      ofs -= ((InlineKlass)getKlassFromSignature()).members().payloadOffset();
+      InlineKlass kls = (inlineKlass == null) ? (InlineKlass)getKlassFromSignature()
+                                              : inlineKlass;
+      ofs -= kls.members().payloadOffset();
     }
     return ofs;
   }
