@@ -23,9 +23,9 @@
 
 package compiler.c2.igvn;
 
-import java.util.Random;
+import compiler.lib.generators.*;
+import compiler.lib.ir_framework.*;
 import jdk.test.lib.Asserts;
-import jdk.test.lib.Utils;
 
 /*
  * @test
@@ -33,159 +33,263 @@ import jdk.test.lib.Utils;
  * @key randomness
  * @summary Test missing Ideal optimization opportunity for CompressBits and ExpandBits.
  * @library /test/lib /
- * @run main/othervm -Xcomp -XX:-TieredCompilation
- *      -XX:+IgnoreUnrecognizedVMOptions
- *      -XX:VerifyIterativeGVN=100
- *      -XX:CompileCommand=compileonly,${test.main.class}::test*
- *      ${test.main.class}
- * @run main ${test.main.class}
+ * @run driver ${test.main.class}
  */
 
 public class TestMissingCompressBitsAndExpandBitsIdeal {
-    private static final Random R = Utils.getRandomInstance();
-    private static final int[] V = {43, 0x55555555};
-    private static final long[] L_V = {43L, 0x5555555555555555L};
+    private static final Generator<Integer> INTS = Generators.G.ints();
+    private static final Generator<Long> LONGS = Generators.G.longs();
+
+    private static final RestrictableGenerator<Integer> INT_SHIFTS = Generators.G.ints()
+                                                                               .restricted(1, Integer.SIZE - 1);
+    private static final RestrictableGenerator<Integer> LONG_SHIFTS = Generators.G.ints()
+                                                                                .restricted(1, Long.SIZE - 1);
 
     public static void main(String[] args) {
-        Asserts.assertEQ(testLShiftToExpand(), 1 << 11);
-        Asserts.assertEQ(testMinusOneLShiftToExpand(), 43 << 11);
-        Asserts.assertEQ(testLongLShiftToExpand(), 1L << 43);
-        Asserts.assertEQ(testLongMinusOneLShiftToExpand(), 43L << 43);
-
-        Asserts.assertEQ(testCompressToExpand(), 43 & 0x55555555);
-        Asserts.assertEQ(testLongCompressToExpand(), 43L & 0x5555555555555555L);
-
-        for (int i = 0; i < 100; i++) {
-            int intValue = R.nextInt();
-            int intShift = R.nextInt(Integer.SIZE);
-            Asserts.assertEQ(testIntCompressWithOneLeftShift(intValue, intShift),
-                             (intValue >>> intShift) & 1);
-            Asserts.assertEQ(testIntCompressWithMinusOneLeftShift(intValue, intShift),
-                             intValue >>> intShift);
-            int intMask = R.nextInt();
-            Asserts.assertEQ(testIntCompressExpandWithSameMask(intValue, intMask),
-                             intValue & Integer.compress(intMask, intMask));
-
-            long longValue = R.nextLong();
-            int longShift = R.nextInt(Long.SIZE);
-            Asserts.assertEQ(testLongCompressWithOneLeftShift(longValue, longShift),
-                             (longValue >>> longShift) & 1L);
-            Asserts.assertEQ(testLongCompressWithMinusOneLeftShift(longValue, longShift),
-                             longValue >>> longShift);
-            long longMask = R.nextLong();
-            Asserts.assertEQ(testLongCompressExpandWithSameMask(longValue, longMask),
-                             longValue & Long.compress(longMask, longMask));
-
-        }
+        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions",
+                                   "-XX:VerifyIterativeGVN=100");
     }
 
-    // compress(x, 1 << n) == (x >> n & 1)
-    public static int testIntCompressWithOneLeftShift(int val, int Lshift) {
+    // compress(x, 1 << n) == (x >> n) & 1
+    @Test
+    @IR(counts = {IRNode.COMPRESS_BITS, "> 0"},
+        phase = {CompilePhase.AFTER_PARSING},
+        applyIfCPUFeature = {"bmi2", "true"})
+    @IR(failOn = {IRNode.COMPRESS_BITS},
+        applyIfCPUFeature = {"bmi2", "true"})
+    public static int testIntCompressWithOneLeftShift(int value, int shift) {
         int i;
-        for (i = -10; i < 1; i++) { }
-        int mask = i << Lshift;
-        return Integer.compress(val, mask);
+        for (i = -10; i < 1; i++) {
+        }
+        int mask = i << shift;
+        return Integer.compress(value, mask);
     }
 
     // compress(x, -1 << n) == x >>> n
-    public static int testIntCompressWithMinusOneLeftShift(int val, int Lshift) {
+    @Test
+    @IR(counts = {IRNode.COMPRESS_BITS, "> 0"},
+        phase = {CompilePhase.AFTER_PARSING},
+        applyIfCPUFeature = {"bmi2", "true"})
+    @IR(failOn = {IRNode.COMPRESS_BITS},
+        applyIfCPUFeature = {"bmi2", "true"})
+    public static int testIntCompressWithMinusOneLeftShift(int value, int shift) {
         int i;
-        for (i = -10; i < -1; i++) { }
-        int mask = i << Lshift;
-        return Integer.compress(val, mask);
+        for (i = -10; i < -1; i++) {
+        }
+        int mask = i << shift;
+        return Integer.compress(value, mask);
     }
 
-    // compress(x, 1L << n) == (x >> n & 1L)
-    public static long testLongCompressWithOneLeftShift(long val, int Lshift) {
+    // compress(x, 1L << n) == (x >> n) & 1L
+    @Test
+    @IR(counts = {IRNode.COMPRESS_BITS, "> 0"},
+        phase = {CompilePhase.AFTER_PARSING},
+        applyIfCPUFeature = {"bmi2", "true"})
+    @IR(failOn = {IRNode.COMPRESS_BITS},
+        applyIfCPUFeature = {"bmi2", "true"})
+    public static long testLongCompressWithOneLeftShift(long value, int shift) {
         long i;
-        for (i = -10; i < 1; i++) { }
-        long mask = i << Lshift;
-        return Long.compress(val, mask);
+        for (i = -10; i < 1; i++) {
+        }
+        long mask = i << shift;
+        return Long.compress(value, mask);
     }
 
     // compress(x, -1L << n) == x >>> n
-    public static long testLongCompressWithMinusOneLeftShift(long val, int Lshift) {
+    @Test
+    @IR(counts = {IRNode.COMPRESS_BITS, "> 0"},
+        phase = {CompilePhase.AFTER_PARSING},
+        applyIfCPUFeature = {"bmi2", "true"})
+    @IR(failOn = {IRNode.COMPRESS_BITS},
+        applyIfCPUFeature = {"bmi2", "true"})
+    public static long testLongCompressWithMinusOneLeftShift(long value, int shift) {
         long i;
-        for (i = -10; i < -1; i++) { }
-        long mask = i << Lshift;
-        return Long.compress(val, mask);
+        for (i = -10; i < -1; i++) {
+        }
+        long mask = i << shift;
+        return Long.compress(value, mask);
     }
 
     // compress(expand(x, m), m) == x & compress(m, m)
-    public static int testIntCompressExpandWithSameMask(int val, int mask) {
+    @Test
+    @IR(counts = {IRNode.EXPAND_BITS, "> 0",
+                  IRNode.COMPRESS_BITS, "> 0"},
+        phase = {CompilePhase.AFTER_PARSING},
+        applyIfCPUFeature = {"bmi2", "true"})
+    @IR(failOn = {IRNode.EXPAND_BITS},
+        applyIfCPUFeature = {"bmi2", "true"})
+    public static int testIntCompressExpandWithSameMask(int value, int mask) {
         int i;
-        for (i = -10; i < -1; i++) { }
-        int expandMask = i & mask;
-        return Integer.compress(Integer.expand(val, expandMask), mask);
+        for (i = -10; i < 1; i++) {
+        }
+        int expandMask = mask * i;
+        return Integer.compress(Integer.expand(value, expandMask), mask);
     }
 
     // compress(expand(x, m), m) == x & compress(m, m)
-    public static long testLongCompressExpandWithSameMask(long val, long mask) {
+    @Test
+    @IR(counts = {IRNode.EXPAND_BITS, "> 0",
+                  IRNode.COMPRESS_BITS, "> 0"},
+        phase = {CompilePhase.AFTER_PARSING},
+        applyIfCPUFeature = {"bmi2", "true"})
+    @IR(failOn = {IRNode.EXPAND_BITS},
+        applyIfCPUFeature = {"bmi2", "true"})
+    public static long testLongCompressExpandWithSameMask(long value, long mask) {
         long i;
-        for (i = -10; i < -1; i++) { }
-        long expandMask = i & mask;
-        return Long.compress(Long.expand(val, expandMask), mask);
+        for (i = -10; i < 1; i++) {
+        }
+        long expandMask = mask * i;
+        return Long.compress(Long.expand(value, expandMask), mask);
     }
 
     // expand(x, 1 << n) == (x & 1) << n
-    public static int testLShiftToExpand() {
+    @Test
+    @IR(counts = {IRNode.EXPAND_BITS, "> 0"},
+        phase = {CompilePhase.AFTER_PARSING},
+        applyIfCPUFeature = {"bmi2", "true"})
+    @IR(failOn = {IRNode.EXPAND_BITS},
+        applyIfCPUFeature = {"bmi2", "true"})
+    public static int testIntExpandWithOneLeftShift(int value, int shift) {
         int result = 0;
         for (int i = 1; i >= 1; i--) {
-            int x = V[0];
-            result = Integer.expand(x, i << x);
+            int x = value;
+            result = Integer.expand(x, i << shift);
         }
         return result;
     }
 
     // expand(x, -1 << n) == x << n
-    public static int testMinusOneLShiftToExpand() {
+    @Test
+    @IR(counts = {IRNode.EXPAND_BITS, "> 0"},
+        phase = {CompilePhase.AFTER_PARSING},
+        applyIfCPUFeature = {"bmi2", "true"})
+    @IR(failOn = {IRNode.EXPAND_BITS},
+        applyIfCPUFeature = {"bmi2", "true"})
+    public static int testIntExpandWithMinusOneLeftShift(int value, int shift) {
         int result = 0;
         for (int i = -1; i >= -1; i--) {
-            int x = V[0];
-            result = Integer.expand(x, i << x);
+            int x = value;
+            result = Integer.expand(x, i << shift);
         }
         return result;
     }
 
-     // expand(x, 1L << n) == (x & 1L) << n
-    public static long testLongLShiftToExpand() {
+    // expand(x, 1L << n) == (x & 1L) << n
+    @Test
+    @IR(counts = {IRNode.EXPAND_BITS, "> 0"},
+        phase = {CompilePhase.AFTER_PARSING},
+        applyIfCPUFeature = {"bmi2", "true"})
+    @IR(failOn = {IRNode.EXPAND_BITS},
+        applyIfCPUFeature = {"bmi2", "true"})
+    public static long testLongExpandWithOneLeftShift(long value, int shift) {
         long result = 0;
         for (long i = 1L; i >= 1L; i--) {
-            long x = L_V[0];
-            result = Long.expand(x, i << x);
+            long x = value;
+            result = Long.expand(x, i << shift);
         }
         return result;
     }
 
     // expand(x, -1L << n) == x << n
-    public static long testLongMinusOneLShiftToExpand() {
+    @Test
+    @IR(counts = {IRNode.EXPAND_BITS, "> 0"},
+        phase = {CompilePhase.AFTER_PARSING},
+        applyIfCPUFeature = {"bmi2", "true"})
+    @IR(failOn = {IRNode.EXPAND_BITS},
+        applyIfCPUFeature = {"bmi2", "true"})
+    public static long testLongExpandWithMinusOneLeftShift(long value, int shift) {
         long result = 0;
         for (long i = -1L; i >= -1L; i--) {
-            long x = L_V[0];
-            result = Long.expand(x, i << x);
+            long x = value;
+            result = Long.expand(x, i << shift);
         }
         return result;
     }
 
     // expand(compress(x, m), m) == x & m
-    public static int testCompressToExpand() {
+    @Test
+    @IR(counts = {IRNode.COMPRESS_BITS, "> 0",
+                  IRNode.EXPAND_BITS, "> 0"},
+        phase = {CompilePhase.AFTER_PARSING},
+        applyIfCPUFeature = {"bmi2", "true"})
+    @IR(failOn = {IRNode.EXPAND_BITS, IRNode.COMPRESS_BITS},
+        applyIfCPUFeature = {"bmi2", "true"})
+    public static int testIntExpandCompressWithSameMask(int value, int mask) {
         int result = 0;
         for (int i = 1; i >= 1; i--) {
-            int x = V[0];
-            int mask = V[1];
+            int x = value;
             result = Integer.expand(Integer.compress(x, mask * i), mask);
         }
         return result;
     }
 
     // expand(compress(x, m), m) == x & m
-    public static long testLongCompressToExpand() {
+    @Test
+    @IR(counts = {IRNode.COMPRESS_BITS, "> 0",
+                  IRNode.EXPAND_BITS, "> 0"},
+        phase = {CompilePhase.AFTER_PARSING},
+        applyIfCPUFeature = {"bmi2", "true"})
+    @IR(failOn = {IRNode.EXPAND_BITS, IRNode.COMPRESS_BITS},
+        applyIfCPUFeature = {"bmi2", "true"})
+    public static long testLongExpandCompressWithSameMask(long value, long mask) {
         long result = 0;
         for (long i = 1L; i >= 1L; i--) {
-            long x = L_V[0];
-            long mask = L_V[1];
+            long x = value;
             result = Long.expand(Long.compress(x, mask * i), mask);
         }
         return result;
+    }
+
+    @Run(test = {"testIntCompressWithOneLeftShift",
+                 "testIntCompressWithMinusOneLeftShift",
+                 "testLongCompressWithOneLeftShift",
+                 "testLongCompressWithMinusOneLeftShift",
+                 "testIntCompressExpandWithSameMask",
+                 "testLongCompressExpandWithSameMask",
+                 "testIntExpandWithOneLeftShift",
+                 "testIntExpandWithMinusOneLeftShift",
+                 "testLongExpandWithOneLeftShift",
+                 "testLongExpandWithMinusOneLeftShift",
+                 "testIntExpandCompressWithSameMask",
+                 "testLongExpandCompressWithSameMask"})
+    public static void runTest() {
+        for (int i = 0; i < 100; i++) {
+            int intValue = INTS.next();
+            int intShift = INT_SHIFTS.next();
+            int intMask = INTS.next();
+            long longValue = LONGS.next();
+            int longShift = LONG_SHIFTS.next();
+            long longMask = LONGS.next();
+
+            Asserts.assertEQ(testIntCompressWithOneLeftShift(intValue, intShift),
+                             (intValue >> intShift) & 1);
+            Asserts.assertEQ(testIntCompressWithMinusOneLeftShift(intValue, intShift),
+                             intValue >>> intShift);
+
+            Asserts.assertEQ(testLongCompressWithOneLeftShift(longValue, longShift),
+                             (longValue >> longShift) & 1L);
+            Asserts.assertEQ(testLongCompressWithMinusOneLeftShift(longValue, longShift),
+                             longValue >>> longShift);
+
+            Asserts.assertEQ(testIntCompressExpandWithSameMask(intValue, intMask),
+                             intValue & Integer.compress(intMask, intMask));
+            Asserts.assertEQ(testLongCompressExpandWithSameMask(longValue, longMask),
+                             longValue & Long.compress(longMask, longMask));
+
+            Asserts.assertEQ(testIntExpandWithOneLeftShift(intValue, intShift),
+                             (intValue & 1) << intShift);
+            Asserts.assertEQ(testIntExpandWithMinusOneLeftShift(intValue, intShift),
+                             intValue << intShift);
+
+            Asserts.assertEQ(testLongExpandWithOneLeftShift(longValue, longShift),
+                             (longValue & 1L) << longShift);
+            Asserts.assertEQ(testLongExpandWithMinusOneLeftShift(longValue, longShift),
+                             longValue << longShift);
+
+            Asserts.assertEQ(testIntExpandCompressWithSameMask(intValue, intMask),
+                             intValue & intMask);
+            Asserts.assertEQ(testLongExpandCompressWithSameMask(longValue, longMask),
+                             longValue & longMask);
+        }
     }
 }
