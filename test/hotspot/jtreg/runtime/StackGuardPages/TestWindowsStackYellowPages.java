@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Microsoft and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,27 @@
 
 /*
  * @test
- * @bug 8238756 8351889
- * @requires vm.debug == true & vm.flavor == "server"
- * @summary Run with -Xcomp to test -XX:VerifyIterativeGVN=1111111 in debug builds.
- *
- * @run main/othervm/timeout=300 -Xcomp -XX:VerifyIterativeGVN=1111111 compiler.c2.TestVerifyIterativeGVN
+ * @bug 8390002
+ * @summary Verifies that on Windows, there is are three yellow stack pages,
+ *          since Windows requires an additional yellow stack page for the
+ *          OS-managed stack-growth guard page
+ * @requires os.family == "windows"
+ * @library /test/lib
+ * @run driver TestWindowsStackYellowPages
  */
-package compiler.c2;
 
-public class TestVerifyIterativeGVN {
-    public static void main(String[] args) {
+import jdk.test.lib.process.ProcessTools;
+
+public class TestWindowsStackYellowPages {
+    private static final String FLAG = "StackYellowPages";
+
+    public static void main(String[] args) throws Exception {
+        ProcessTools.executeTestJava("-XX:+PrintFlagsFinal", "-version")
+                    .shouldMatch(FLAG + "[ ]+=[ ]+3")
+                    .shouldHaveExitValue(0);
+
+        ProcessTools.executeTestJava("-XX:" + FLAG + "=2", "-version")
+                    .shouldContain(FLAG + "=2 is outside the allowed range")
+                    .shouldNotHaveExitValue(0);
     }
 }

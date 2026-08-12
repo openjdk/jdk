@@ -1789,7 +1789,7 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
 
   Node* counter = nullptr;
   Node* incr_store = nullptr;
-  bool do_stress_trap = StressUnstableIfTraps && ((C->random() % 2) == 0);
+  bool do_stress_trap = StressUnstableIfTraps && ((C->stress().random() % 2) == 0);
   if (do_stress_trap) {
     increment_trap_stress_counter(counter, incr_store);
   }
@@ -1893,7 +1893,7 @@ void Parse::do_if(BoolTest::mask btest, Node* c, bool can_trap, bool new_path, N
 
   Node* counter = nullptr;
   Node* incr_store = nullptr;
-  bool do_stress_trap = StressUnstableIfTraps && ((C->random() % 2) == 0);
+  bool do_stress_trap = StressUnstableIfTraps && ((C->stress().random() % 2) == 0);
   if (do_stress_trap) {
     increment_trap_stress_counter(counter, incr_store);
   }
@@ -2561,7 +2561,7 @@ void Parse::stress_trap(IfNode* orig_iff, Node* counter, Node* incr_store) {
   assert(success, "Trap already modified");
 
   // Add a check before the original if that will trap with a certain frequency and execute the original if otherwise
-  int freq_log = (C->random() % 31) + 1; // Random logarithmic frequency in [1, 31]
+  int freq_log = (C->stress().random() % 31) + 1; // Random logarithmic frequency in [1, 31]
   Node* mask = intcon(right_n_bits(freq_log));
   counter = _gvn.transform(new AndINode(counter, mask));
   Node* cmp = _gvn.transform(new CmpINode(counter, intcon(0)));
@@ -2585,7 +2585,7 @@ void Parse::stress_trap(IfNode* orig_iff, Node* counter, Node* incr_store) {
 
 bool Parse::path_is_suitable_for_uncommon_trap(float prob) const {
   // Randomly skip emitting an uncommon trap
-  if (StressUnstableIfTraps && ((C->random() % 2) == 0)) {
+  if (StressUnstableIfTraps && ((C->stress().random() % 2) == 0)) {
     return false;
   }
   // Don't want to speculate on uncommon traps when running with -Xcomp
