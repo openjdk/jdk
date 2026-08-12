@@ -26,7 +26,6 @@
 package javax.swing;
 
 import java.awt.Font;
-import java.awt.HeadlessException;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.Color;
@@ -268,9 +267,6 @@ public abstract class LookAndFeel
      * @throws NullPointerException if {@code c} is {@code null}, or the
      *         named property has not been set by the developer and
      *         {@code propertyValue} is {@code null}
-     * @throws HeadlessException if {@code propertyName} is
-     *          {@code "dragEnabled"}, {@code propertyValue} is {@code true},
-     *          and the environment is headless
      * @param c target component to set the property on
      * @param propertyName name of the property to set
      * @param propertyValue value of the property

@@ -36,6 +36,7 @@ import java.awt.FocusTraversalPolicy;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
+import java.awt.GraphicsEnvironment;
 import java.awt.Insets;
 import java.awt.KeyboardFocusManager;
 import java.awt.Point;
@@ -4195,10 +4196,12 @@ public abstract class JComponent extends Container implements Serializable,
             }
         } else if ("dragEnabled".equals(propertyName)
                 && this instanceof JTextComponent textComponent) {
-            var accessor = SwingAccessor.getJTextComponentAccessor();
-            if (!accessor.isDragEnabledSet(textComponent)) {
-                accessor.setDragEnabledUIResource(textComponent,
-                                                  (Boolean) value);
+            if (!GraphicsEnvironment.isHeadless()) {
+                var accessor = SwingAccessor.getJTextComponentAccessor();
+                if (!accessor.isDragEnabledSet(textComponent)) {
+                    accessor.setDragEnabledUIResource(textComponent,
+                                                      (Boolean) value);
+                }
             }
         } else {
             throw new IllegalArgumentException("property \""+
