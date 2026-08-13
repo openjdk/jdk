@@ -96,6 +96,20 @@ static void initGroupSourceReq(JNIEnv* env, jbyteArray group, jint index,
 
 #ifdef _AIX
 
+static jboolean isIPv4MappedAddress(JNIEnv* env, jbyteArray address) {
+    jbyte caddr[16];
+    int i;
+
+    COPY_INET6_ADDRESS(env, address, caddr);
+    for (i = 0; i < 10; i++) {
+        if (caddr[i] != 0) {
+            return JNI_FALSE;
+        }
+    }
+    return (caddr[10] == (jbyte)0xff && caddr[11] == (jbyte)0xff)
+        ? JNI_TRUE : JNI_FALSE;
+}
+
 /*
  * Checks whether or not "socket extensions for multicast source filters" is supported.
  * Returns JNI_TRUE if it is supported, JNI_FALSE otherwise
@@ -769,7 +783,7 @@ Java_sun_nio_ch_Net_joinOrDrop6(JNIEnv *env, jobject this, jboolean join, jobjec
             return IOS_UNAVAILABLE;
 #ifdef _AIX
         // AIX rejects MCAST_*_SOURCE_GROUP for IPv4-mapped groups with EINVAL
-        if (source != NULL && errno == EINVAL)
+        if (source != NULL && errno == EINVAL && isIPv4MappedAddress(env, group))
             return IOS_UNAVAILABLE;
 #endif
         handleSocketErrorWithMessage(env, errno, "setsockopt failed");
@@ -798,7 +812,7 @@ Java_sun_nio_ch_Net_blockOrUnblock6(JNIEnv *env, jobject this, jboolean block, j
             return IOS_UNAVAILABLE;
 #ifdef _AIX
         // AIX rejects MCAST_BLOCK/UNBLOCK_SOURCE for IPv4-mapped groups with EINVAL
-        if (errno == EINVAL)
+        if (errno == EINVAL && isIPv4MappedAddress(env, group))
             return IOS_UNAVAILABLE;
 #endif
         handleSocketError(env, errno);
@@ -1000,4 +1014,3 @@ Java_sun_nio_ch_Net_sendOOB(JNIEnv* env, jclass this, jobject fdo, jbyte b)
     int n = send(fdval(env, fdo), (const void*)&b, 1, MSG_OOB);
     return convertReturnVal(env, n, JNI_FALSE);
 }
-
