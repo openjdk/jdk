@@ -1215,13 +1215,14 @@ int MachCallStaticJavaNode::ret_addr_offset() const
 
 int MachCallDynamicJavaNode::ret_addr_offset() const
 {
-  return NativeMovConstReg::movptr2_instruction_size + (3 * NativeInstruction::instruction_size); // movptr2, auipc + ld + jal
+  return MacroAssembler::movptr_instruction_size() + (3 * NativeInstruction::instruction_size); // movptr, auipc + ld + jal
 }
 
 int MachCallRuntimeNode::ret_addr_offset() const {
   // For address inside the code cache the call will be:
   //   auipc + jalr
   // For real runtime callouts it will be 8 instructions
+  // (7 on sv39, whose movptr is one instruction shorter)
   // see riscv_enc_java_to_runtime
   //   la(t0, retaddr)                                             ->  auipc + addi
   //   sd(t0, Address(xthread, JavaThread::last_Java_pc_offset())) ->  sd
@@ -1233,7 +1234,8 @@ int MachCallRuntimeNode::ret_addr_offset() const {
     // See CallLeafNoFPIndirect
     return 1 * NativeInstruction::instruction_size;
   } else {
-    return 8 * NativeInstruction::instruction_size;
+    // movptr_instruction_size() includes the trailing jalr
+    return 3 * NativeInstruction::instruction_size + MacroAssembler::movptr_instruction_size();
   }
 }
 
@@ -1255,11 +1257,11 @@ int CallStaticJavaDirectNode::compute_padding(int current_offset) const
 // ensure that it does not span a cache line so that it can be patched.
 int CallDynamicJavaDirectNode::compute_padding(int current_offset) const
 {
-  // skip the movptr2 in MacroAssembler::ic_call():
-  // lui, lui, slli, add, addi
-  // Though movptr2() has already 4-byte aligned with or without RVC,
+  // skip the movptr in MacroAssembler::ic_call():
+  // lui, lui, slli, add, addi (sv39: lui, addi, slli, addi)
+  // Though movptr() has already 4-byte aligned with or without RVC,
   // We need to prevent from further changes by explicitly calculating the size.
-  current_offset += NativeMovConstReg::movptr2_instruction_size;
+  current_offset += MacroAssembler::movptr_instruction_size();
   // to make sure the address of jal 4-byte aligned.
   return align_up(current_offset, alignment_required()) - current_offset;
 }

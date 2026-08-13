@@ -340,17 +340,18 @@ bool NativeInstruction::is_stop() {
 //-------------------------------------------------------------------
 
 void NativeGeneralJump::insert_unconditional(address code_pos, address entry) {
-  CodeBuffer cb(code_pos, instruction_size);
+  int jump_size = NativeGeneralJump::insn_size();
+  CodeBuffer cb(code_pos, jump_size);
   MacroAssembler a(&cb);
-  Assembler::IncompressibleScope scope(&a); // Fixed length: see NativeGeneralJump::get_instruction_size()
+  Assembler::IncompressibleScope scope(&a); // Fixed length: see NativeGeneralJump::insn_size()
 
   MacroAssembler::assert_alignment(code_pos);
 
   int32_t offset = 0;
-  a.movptr(t1, entry, offset, t0); // lui, lui, slli, add
+  a.movptr(t1, entry, offset, t0); // lui, lui, slli, add (sv39: lui, addi, slli)
   a.jr(t1, offset); // jalr
 
-  ICache::invalidate_range(code_pos, instruction_size);
+  ICache::invalidate_range(code_pos, jump_size);
 }
 
 // MT-safe patching of a long jump instruction.
