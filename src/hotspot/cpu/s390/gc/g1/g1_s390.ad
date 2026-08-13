@@ -95,8 +95,9 @@ instruct g1StoreLSpecialOneOopOff0(indirect mem, iRegL src, immI_0 off, iRegL tm
 
     __ z_stg($src$$Register, Address($mem$$Register, 0));
 
-    // Extract the narrow oop field value
-    __ z_llgfr($tmp1$$Register, $src$$Register);
+    // Extract the narrow oop at offset 0: on big-endian s390x the field at
+    // memory offset 0 occupies the HIGH 32 bits of the 64-bit register.
+    __ z_srlg($tmp1$$Register, $src$$Register, 32);
     __ oop_decoder($tmp1$$Register, $tmp1$$Register, true /* maybe_null */);
     write_barrier_post(masm, this,
                        $mem$$Register  /* store_addr */,
@@ -127,7 +128,9 @@ instruct g1StoreLSpecialOneOopOff4(indirect mem, iRegL src, immI_4 off, iRegL tm
 
     __ z_stg($src$$Register, Address($mem$$Register, 0));
 
-    __ z_srlg($tmp2$$Register, $src$$Register, 32);
+    // Extract the narrow oop at offset 4: on big-endian s390x the field at
+    // memory offset 4 occupies the LOW 32 bits of the 64-bit register.
+    __ z_llgfr($tmp2$$Register, $src$$Register);
     __ oop_decoder($tmp2$$Register, $tmp2$$Register, true /* maybe_null */);
     write_barrier_post(masm, this,
                        $tmp1$$Register /* store_addr */,
@@ -163,18 +166,20 @@ instruct g1StoreLSpecialTwoOops(indirect mem, iRegL src, iRegL tmp1, iRegL tmp2,
 
     __ z_stg($src$$Register, Address($mem$$Register, 0));
 
+    // Oop at offset 0: high 32 bits of register → memory address mem+0.
     __ z_srlg($tmp1$$Register, $src$$Register, 32);
     __ oop_decoder($tmp1$$Register, $tmp1$$Register, true /* maybe_null */);
     write_barrier_post(masm, this,
-                       $tmp4$$Register /* store_addr */,
+                       $mem$$Register  /* store_addr */,
                        $tmp1$$Register /* new_val */,
                        $tmp2$$Register /* tmp1 */,
                        $tmp3$$Register /* tmp2 */);
 
+    // Oop at offset 4: low 32 bits of register → memory address mem+4.
     __ z_llgfr($tmp1$$Register, $src$$Register);
     __ oop_decoder($tmp1$$Register, $tmp1$$Register, true /* maybe_null */);
     write_barrier_post(masm, this,
-                       $mem$$Register  /* store_addr */,
+                       $tmp4$$Register /* store_addr */,
                        $tmp1$$Register /* new_val */,
                        $tmp2$$Register /* tmp1 */,
                        $tmp3$$Register /* tmp2 */);
