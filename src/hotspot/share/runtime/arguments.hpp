@@ -262,7 +262,6 @@ class Arguments : AllStatic {
   static void set_conservative_max_heap_alignment();
   static void set_use_compressed_oops();
   static jint set_ergonomics_flags();
-  static void set_compact_headers_flags();
 
   // Bytecode rewriting
   static void set_bytecode_flags();

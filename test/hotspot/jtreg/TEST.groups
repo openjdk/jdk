@@ -553,8 +553,6 @@ hotspot_aot_classlinking = \
  -runtime/cds/appcds/aotProfile \
  -runtime/cds/appcds/ArchivedFieldMetadataMismatchTest.java \
  -runtime/cds/appcds/BadBSM.java \
- -runtime/cds/appcds/cacheObject/ArchivedFlatArrayTest.java \
- -runtime/cds/appcds/cacheObject/ArchiveHeapTestClass.java \
  -runtime/cds/appcds/cacheObject/ArchivedIntegerCacheTest.java \
  -runtime/cds/appcds/cacheObject/ArchivedModuleCompareTest.java \
  -runtime/cds/appcds/CDSandJFR.java \
