@@ -645,6 +645,9 @@ void PhaseOutput::shorten_branches(uint* blk_starts) {
           // We've got a winner.  Replace this branch.
           MachNode* replacement = mach->as_MachBranch()->short_branch_version();
 
+          // Do not lose the platform-specific flags on the node.
+          mach->pd_copy_flags_to(replacement);
+
           // Update the jmp_size.
           int new_size = replacement->size(C->regalloc());
           int diff     = br_size - new_size;
@@ -1683,6 +1686,9 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
             if (C->matcher()->is_short_branch_offset(mach->rule(), br_size, offset)) {
               // We've got a winner.  Replace this branch.
               MachNode* replacement = mach->as_MachBranch()->short_branch_version();
+
+              // Do not lose the platform-specific flags on the node.
+              mach->pd_copy_flags_to(replacement);
 
               // Update the jmp_size.
               int new_size = replacement->size(C->regalloc());

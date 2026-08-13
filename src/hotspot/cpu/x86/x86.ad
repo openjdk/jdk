@@ -2916,6 +2916,11 @@ int MachNode::pd_alignment_required() const {
   }
 }
 
+void MachNode::copy_flags_to(MachNode* replacement) const {
+  // Preserve the JCC erratum tag.
+  replacement->add_flag(flags() & Node::PD::Flag_intel_jcc_erratum);
+}
+
 int MachNode::compute_padding(int current_offset) const {
   if (flags() & Node::PD::Flag_intel_jcc_erratum) {
     Compile* C = Compile::current();

@@ -138,10 +138,15 @@ static FloatRegister reg_to_FloatRegister_object(int register_encoding);
 static Register reg_to_register_object(int register_encoding);
 
 void PhaseOutput::pd_perform_mach_node_analysis() {
+  // Nothing to do.
 }
 
 int MachNode::pd_alignment_required() const {
   return 1;
+}
+
+void MachNode::copy_flags_to(MachNode* replacement) const {
+  // Nothing to do.
 }
 
 int MachNode::compute_padding(int current_offset) const {
