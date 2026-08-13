@@ -33,6 +33,7 @@ class ShenandoahGeneration;
 class ShenandoahHeap;
 class ShenandoahCollectionSet;
 class RegionData;
+class ShenandoahGenerationalHeap;
 
 typedef struct {
   ShenandoahHeapRegion* _region;
@@ -58,12 +59,21 @@ public:
   void record_cycle_end() override;
 
 protected:
+  // Select regions for in place promotion and zero evacuation reserves
+  void prepare_for_abbreviated_cycle() override;
+
   // Wraps budget computation, subclass region selection, budget adjustment, and tracing.
   void choose_collection_set_from_regiondata(ShenandoahCollectionSet* set,
                                              RegionData* data, size_t data_size,
                                              size_t free) override;
 
 private:
+  // When we decide to do an abbreviated cycle, withdraw reserves so memory can be made available to mutators.
+  void adjust_reserves_for_abbreviated(ShenandoahGenerationalHeap* heap);
+
+  // Select regions for in place promotion during an abbreviated cycle
+  void select_regions_for_in_place_promotion(ShenandoahGenerationalHeap* heap);
+
   // Compute evacuation budgets prior to choosing collection set.
   void compute_evacuation_budgets(ShenandoahInPlacePromotionPlanner& in_place_promotions, ShenandoahHeap* const heap);
 

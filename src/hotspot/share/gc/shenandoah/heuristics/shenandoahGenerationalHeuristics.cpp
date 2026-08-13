@@ -77,6 +77,57 @@ ShenandoahGenerationalHeuristics::ShenandoahGenerationalHeuristics(ShenandoahGen
         : ShenandoahAdaptiveHeuristics(generation), _generation(generation), _add_regions_to_old(0) {
 }
 
+void ShenandoahGenerationalHeuristics::prepare_for_abbreviated_cycle() {
+  // There should be no regions configured for subsequent in-place-promotions carried over from the previous cycle.
+
+  auto const heap = ShenandoahGenerationalHeap::heap();
+
+  adjust_reserves_for_abbreviated(heap);
+
+  select_regions_for_in_place_promotion(heap);
+}
+
+void ShenandoahGenerationalHeuristics::adjust_reserves_for_abbreviated(ShenandoahGenerationalHeap* heap) {
+  // We are not going to evacuate because this is an abbreviated cycle.  Reset the reserves.
+  heap->young_generation()->set_evacuation_reserve(0UL);
+  heap->old_generation()->set_evacuation_reserve(0UL);
+  heap->old_generation()->set_promoted_reserve(0UL);
+}
+
+void ShenandoahGenerationalHeuristics::select_regions_for_in_place_promotion(ShenandoahGenerationalHeap* heap) {
+  assert_no_in_place_promotions();
+  ShenandoahInPlacePromotionPlanner in_place_promotions(heap);
+
+  for (size_t i = 0, num_regions = heap->num_regions(); i < num_regions; i++) {
+    ShenandoahHeapRegion* const r = heap->get_region(i);
+    if (r->is_empty() || !r->has_live() || !r->is_young()) {
+      // skip over regions that aren't young with some live data
+      continue;
+    }
+
+    if (!r->is_regular()) {
+      if (r->is_humongous_start() && heap->is_tenurable(r)) {
+        in_place_promotions.prepare(r);
+      }
+      // Nothing else to be done for humongous regions
+      continue;
+    }
+
+    if (heap->is_tenurable(r)) {
+      if (in_place_promotions.is_eligible(r)) {
+        // We prefer to promote this region in place because it has a small amount of garbage and a large usage.
+        // Note that if this region has been used recently for allocation, it will not be promoted, and it will
+        // not be selected for promotion by evacuation.
+        in_place_promotions.prepare(r);
+      }
+    }
+  }
+
+  in_place_promotions.complete_planning();
+
+  ShenandoahTracer::report_promotion_info(heap->collection_set(), &in_place_promotions);
+}
+
 void ShenandoahGenerationalHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* collection_set,
                                                                              RegionData* data, size_t data_size,
                                                                              size_t free) {
@@ -99,13 +150,7 @@ void ShenandoahGenerationalHeuristics::choose_collection_set_from_regiondata(She
     heap->shenandoah_policy()->record_mixed_cycle();
   }
 
-  ShenandoahTracer::report_promotion_info(collection_set,
-                                          in_place_promotions.humongous_region_stats().count,
-                                          in_place_promotions.humongous_region_stats().garbage,
-                                          in_place_promotions.humongous_region_stats().free,
-                                          in_place_promotions.regular_region_stats().count,
-                                          in_place_promotions.regular_region_stats().garbage,
-                                          in_place_promotions.regular_region_stats().free);
+  ShenandoahTracer::report_promotion_info(collection_set, &in_place_promotions);
 }
 
 void ShenandoahGenerationalHeuristics::compute_evacuation_budgets(ShenandoahInPlacePromotionPlanner& in_place_promotions,
