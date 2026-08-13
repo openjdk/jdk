@@ -48,6 +48,10 @@ void* C2ParseAccess::barrier_set_state() const {
 
 PhaseGVN& C2ParseAccess::gvn() const { return _kit->gvn(); }
 
+Node* C2ParseAccess::control() const {
+  return _ctl == nullptr ? _kit->control() : _ctl;
+}
+
 bool C2Access::needs_cpu_membar() const {
   bool mismatched   = (_decorators & C2_MISMATCHED) != 0;
   bool is_unordered = (_decorators & MO_UNORDERED) != 0;
@@ -207,7 +211,7 @@ Node* BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) con
   if (access.is_parse_access()) {
     C2ParseAccess& parse_access = static_cast<C2ParseAccess&>(access);
     GraphKit* kit = parse_access.kit();
-    Node* control = control_dependent ? kit->control() : nullptr;
+    Node* control = control_dependent ? parse_access.control() : nullptr;
 
     if (immutable) {
       Compile* C = Compile::current();
@@ -869,7 +873,7 @@ void BarrierSetC2::clone_in_runtime(PhaseMacroExpand* phase, ArrayCopyNode* ac,
                                            TypeRawPtr::BOTTOM,
                                            src, dst, full_size_in_heap_words XTOP);
   phase->transform_later(call);
-  phase->igvn().replace_node(ac, call);
+  phase->replace_node(ac, call);
 }
 
 void BarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac) const {
@@ -893,7 +897,7 @@ void BarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac
   Node* call = phase->make_leaf_call(ctrl, mem, call_type, copyfunc_addr, copyfunc_name, raw_adr_type, payload_src, payload_dst, length XTOP);
   phase->transform_later(call);
 
-  phase->igvn().replace_node(ac, call);
+  phase->replace_node(ac, call);
 }
 
 #undef XTOP

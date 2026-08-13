@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -216,13 +216,13 @@ public class WindowsAsynchronousFileChannelImpl
 
     @Override
     public void force(boolean metaData) throws IOException {
-        if (!FileForceEvent.enabled()) {
+        if (jfrTracing && FileForceEvent.enabled()) {
+            long start = FileForceEvent.timestamp();
             implForce(metaData);
+            FileForceEvent.offer(start, path, metaData);
             return;
         }
-        long start = FileForceEvent.timestamp();
         implForce(metaData);
-        FileForceEvent.offer(start, path, metaData);
     }
 
     // -- file locking --

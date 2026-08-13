@@ -205,7 +205,7 @@ public class BootAppendTests {
             "Test #6", BOOT_APPEND_CLASS, "true", "BOOT");
         TestCommon.checkExec(output);
         if (!TestCommon.isUnableToMap(output))
-            output.shouldContain("[class,load] sun.nio.cs.ext1.MyClass source: shared objects file");
+            output.shouldMatch("\\[class,load *\\] sun\\.nio\\.cs\\.ext1\\.MyClass source: shared objects file");
     }
 
 

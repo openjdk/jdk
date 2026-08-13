@@ -45,6 +45,7 @@
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
+#include "gc/shenandoah/shenandoahPrefetch.inline.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "gc/shenandoah/shenandoahWorkGroup.hpp"
 #include "oops/compressedOops.inline.hpp"
@@ -110,7 +111,7 @@ inline void ShenandoahHeap::non_conc_update_with_forwarded(T* p) {
       // set that are not really forwarded. We can still go and try and update them
       // (uselessly) to simplify the common path.
       shenandoah_assert_forwarded_except(p, obj, cancelled_gc());
-      oop fwd = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+      oop fwd = ShenandoahForwarding::get_forwardee(obj);
       shenandoah_assert_not_in_cset_except(p, fwd, cancelled_gc());
 
       // Unconditionally store the update: no concurrent updates expected.
@@ -129,7 +130,7 @@ inline void ShenandoahHeap::conc_update_with_forwarded(T* p) {
       // set that are not really forwarded. We can still go and try CAS-update them
       // (uselessly) to simplify the common path.
       shenandoah_assert_forwarded_except(p, obj, cancelled_gc());
-      oop fwd = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+      oop fwd = ShenandoahForwarding::get_forwardee(obj);
       shenandoah_assert_not_in_cset_except(p, fwd, cancelled_gc());
 
       // Sanity check: we should not be updating the cset regions themselves,
@@ -515,74 +516,35 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
 
 template<class T>
 inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, T* cl, HeapWord* limit) {
-  assert(! region->is_humongous_continuation(), "no humongous continuation regions here");
+  assert(!region->is_humongous_continuation(), "no humongous continuation regions here");
+  assert(limit <= region->top(), "sanity");
 
   ShenandoahMarkingContext* const ctx = marking_context();
 
   HeapWord* tams = ctx->top_at_mark_start(region);
-
-  size_t skip_bitmap_delta = 1;
-  HeapWord* start = region->bottom();
-  HeapWord* end = MIN2(tams, region->end());
-
-  // Step 1. Scan below the TAMS based on bitmap data.
   HeapWord* limit_bitmap = MIN2(limit, tams);
 
+  // Step 1. Scan below the TAMS based on bitmap data.
   // Try to scan the initial candidate. If the candidate is above the TAMS, it would
   // fail the subsequent "< limit_bitmap" checks, and fall through to Step 2.
-  HeapWord* cb = ctx->get_next_marked_addr(start, end);
+  HeapWord* cb = ctx->get_next_marked_addr(region->bottom(), limit_bitmap);
+  while (cb < limit_bitmap) {
+    assert (cb < tams,  "only objects below TAMS here: "  PTR_FORMAT " (" PTR_FORMAT ")", p2i(cb), p2i(tams));
+    assert (cb < limit, "only objects below limit here: " PTR_FORMAT " (" PTR_FORMAT ")", p2i(cb), p2i(limit));
+    oop obj = cast_to_oop(cb);
+    assert(oopDesc::is_oop(obj), "sanity");
+    assert(ctx->is_marked(obj), "object expected to be marked");
 
-  intx dist = ShenandoahMarkScanPrefetch;
-  if (dist > 0) {
-    // Batched scan that prefetches the oop data, anticipating the access to
-    // either header, oop field, or forwarding pointer. Not that we cannot
-    // touch anything in oop, while it still being prefetched to get enough
-    // time for prefetch to work. This is why we try to scan the bitmap linearly,
-    // disregarding the object size. However, since we know forwarding pointer
-    // precedes the object, we can skip over it. Once we cannot trust the bitmap,
-    // there is no point for prefetching the oop contents, as oop->size() will
-    // touch it prematurely.
-
-    // No variable-length arrays in standard C++, have enough slots to fit
-    // the prefetch distance.
-    static const int SLOT_COUNT = 256;
-    guarantee(dist <= SLOT_COUNT, "adjust slot count");
-    HeapWord* slots[SLOT_COUNT];
-
-    int avail;
-    do {
-      avail = 0;
-      for (int c = 0; (c < dist) && (cb < limit_bitmap); c++) {
-        Prefetch::read(cb, oopDesc::mark_offset_in_bytes());
-        slots[avail++] = cb;
-        cb += skip_bitmap_delta;
-        if (cb < limit_bitmap) {
-          cb = ctx->get_next_marked_addr(cb, limit_bitmap);
-        }
-      }
-
-      for (int c = 0; c < avail; c++) {
-        assert (slots[c] < tams,  "only objects below TAMS here: "  PTR_FORMAT " (" PTR_FORMAT ")", p2i(slots[c]), p2i(tams));
-        assert (slots[c] < limit, "only objects below limit here: " PTR_FORMAT " (" PTR_FORMAT ")", p2i(slots[c]), p2i(limit));
-        oop obj = cast_to_oop(slots[c]);
-        assert(oopDesc::is_oop(obj), "sanity");
-        assert(ctx->is_marked(obj), "object expected to be marked");
-        cl->do_object(obj);
-      }
-    } while (avail > 0);
-  } else {
-    while (cb < limit_bitmap) {
-      assert (cb < tams,  "only objects below TAMS here: "  PTR_FORMAT " (" PTR_FORMAT ")", p2i(cb), p2i(tams));
-      assert (cb < limit, "only objects below limit here: " PTR_FORMAT " (" PTR_FORMAT ")", p2i(cb), p2i(limit));
-      oop obj = cast_to_oop(cb);
-      assert(oopDesc::is_oop(obj), "sanity");
-      assert(ctx->is_marked(obj), "object expected to be marked");
-      cl->do_object(obj);
-      cb += skip_bitmap_delta;
-      if (cb < limit_bitmap) {
-        cb = ctx->get_next_marked_addr(cb, limit_bitmap);
-      }
+    // Compute the next object address and initiate prefetches for it,
+    // while we are processing current object.
+    constexpr size_t skip_bitmap_delta = 1;
+    cb += skip_bitmap_delta;
+    if (cb < limit_bitmap) {
+      cb = ctx->get_next_marked_addr(cb, limit_bitmap);
     }
+    ShenandoahPrefetch::prefetch(cast_to_oop(cb));
+
+    cl->do_object(obj);
   }
 
   // Step 2. Accurate size-based traversal, happens past the TAMS.
@@ -595,9 +557,13 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
     oop obj = cast_to_oop(cs);
     assert(oopDesc::is_oop(obj), "sanity");
     assert(ctx->is_marked(obj), "object expected to be marked");
-    size_t size = ShenandoahForwarding::size(obj);
+
+    // Compute the next object address and initiate prefetches for it,
+    // while we are processing current object.
+    cs += ShenandoahForwarding::size(obj);
+    ShenandoahPrefetch::prefetch(cast_to_oop(cs));
+
     cl->do_object(obj);
-    cs += size;
   }
 }
 
