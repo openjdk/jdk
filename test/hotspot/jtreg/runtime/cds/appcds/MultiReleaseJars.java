@@ -62,16 +62,6 @@ public class MultiReleaseJars {
     static String[] getVersion(int version) {
         String[] sts = {
             "package version;",
-            "public class Version {",
-            "    public int getVersion(){ return " + version + "; }",
-            "}"
-        };
-        return sts;
-    }
-
-    static String[] getPrivateVersion(int version) {
-        String[] sts = {
-            "package version;",
             "class Version {",
             "    public int getVersion(){ return " + version + "; }",
             "}"
@@ -152,11 +142,8 @@ public class MultiReleaseJars {
         // version3.jar does not include version in the root directory and instead only has it
         // in the version specific directory. A private version is used so as to avoid the JAR
         // being rejected since there is no matching class in the root directory.
-        File filePrivateVersion = TestCommon.getOutputSourceFile("Version.java");
         (new File(baseDir, "version/Version.class")).delete();
-        writeFile(filePrivateVersion, getPrivateVersion(BASE_VERSION));
         writeFile(metainf, meta);
-        JarBuilder.compile(vDir.getAbsolutePath(), filePrivateVersion.getAbsolutePath(), "--release", MAJOR_VERSION_STRING);
         JarBuilder.build("version3", baseDir, metainf.getAbsolutePath(),
             "--release", MAJOR_VERSION_STRING, "-C", vDir.getAbsolutePath(), ".");
     }
@@ -271,7 +258,7 @@ public class MultiReleaseJars {
                 out.shouldNotMatch("class version/Version cannot be archived because it was not defined");
             })
             .setProductionChecker((OutputAnalyzer out) -> {
-                out.shouldContain("I am running on version " + BASE_VERSION_STRING);
+                out.shouldContain("I am running on version " + MAJOR_VERSION_STRING);
             })
             .runAOTWorkflow();
     }
