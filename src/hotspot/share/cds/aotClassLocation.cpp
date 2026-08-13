@@ -834,14 +834,9 @@ bool AOTClassLocationConfig::check_paths_existence(ClassLocationStream& runtime_
 }
 
 bool AOTClassLocationConfig::check_module_paths(bool has_aot_linked_classes, bool has_full_module_graph,
-                                                ClassLocationStream& runtime_module_css) const {
+                                                ModulePathClassLocationStream& runtime_module_css) const {
   const int index_start = module_path_start_index();
   const int index_end = module_path_end_index();
-
-  if (index_start >= index_end && runtime_module_css.is_empty()) { // nothing to check
-    return true;
-  }
-
   ResourceMark rm;
 
   LogTarget(Info, class, path) lt;
@@ -895,7 +890,12 @@ bool AOTClassLocationConfig::check_module_paths(bool has_aot_linked_classes, boo
   return true;
 }
 
-bool AOTClassLocationConfig::check_module_paths_exact_match(ClassLocationStream& runtime_module_css) const {
+bool AOTClassLocationConfig::check_module_paths_exact_match(ModulePathClassLocationStream& runtime_module_css) const {
+  if (runtime_module_css.has_non_jar_modules()) {
+    AOTMetaspace::report_loading_error("module path contains sub-directories or non-JAR files (incompatible with full module graph)");
+    return false;
+  }
+
   const int index_start = module_path_start_index();
   const int index_end = module_path_end_index();
 
@@ -905,7 +905,7 @@ bool AOTClassLocationConfig::check_module_paths_exact_match(ClassLocationStream&
     const char* dumptime_path = cs->path();
 
     if (!runtime_module_css.has_next()) {
-      aot_log_warning(aot)("module path has fewer elements (%d) than expected (%d)", runtime_module_css.size(), num_module_paths());
+      AOTMetaspace::report_loading_error("module path has fewer elements (%d) than expected (%d)", runtime_module_css.size(), num_module_paths());
       return false;
     }
     int n = runtime_module_css.current();
@@ -913,14 +913,14 @@ bool AOTClassLocationConfig::check_module_paths_exact_match(ClassLocationStream&
     // Both dumptime and runtime module paths are alphabetically sorted, so we just need to
     // compare each element at the same position.
     if (!os::same_files(dumptime_path, runtime_path)) {
-      aot_log_warning(aot)("the %d-th module path element is different: expected %s actual %s",
-                           n, dumptime_path, runtime_path);
+      AOTMetaspace::report_loading_error("the %d-th module path element is different: expected %s actual %s",
+                                         n, dumptime_path, runtime_path);
       return false;
     }
   }
 
   if (runtime_module_css.has_next()) {
-    aot_log_warning(aot)("module path has more elements (%d) than expected (%d)", runtime_module_css.size(), num_module_paths());
+    AOTMetaspace::report_loading_error("module path has more elements (%d) than expected (%d)", runtime_module_css.size(), num_module_paths());
     return false;
   }
 

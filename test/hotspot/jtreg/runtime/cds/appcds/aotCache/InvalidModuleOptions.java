@@ -104,7 +104,7 @@ public class InvalidModuleOptions {
     };
 
     public static void main(String[] args) throws Exception {
-        CDSModulePackager modulePackager1 = new CDSModulePackager(modulesSrc, Paths.get("test-modules"));
+        CDSModulePackager modulePackager1 = new CDSModulePackager(modulesSrc, Paths.get("test-modules1"));
         modulePackager1.createModularJar("com.test");
         modulePath1 = modulePackager1.getOutputDir().toString();
 
@@ -136,7 +136,7 @@ public class InvalidModuleOptions {
                 "-XX:AOTMode=create",
                 "-XX:AOTConfiguration=" + aotConfigFile,
                 "-XX:AOTCache=" + aotCacheFile,
-                "-Xlog:cds,aot",
+                "-Xlog:cds,aot,class+path",
                 "-cp", appJar
             };
             if (assemblyOpt != null) {
