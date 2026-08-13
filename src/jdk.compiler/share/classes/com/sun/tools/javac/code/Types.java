@@ -3864,28 +3864,31 @@ public class Types {
      * Intersect two closures
      */
     public List<Type> intersect(List<Type> cl1, List<Type> cl2) {
-        if (cl1 == cl2)
-            return cl1;
-        if (cl1.isEmpty() || cl2.isEmpty())
-            return List.nil();
-        if (cl1.head.tsym.precedes(cl2.head.tsym, this))
-            return intersect(cl1.tail, cl2);
-        if (cl2.head.tsym.precedes(cl1.head.tsym, this))
-            return intersect(cl1, cl2.tail);
-        if (isSameType(cl1.head, cl2.head))
-            return intersect(cl1.tail, cl2.tail).prepend(cl1.head);
-        if (cl1.head.tsym == cl2.head.tsym &&
-            cl1.head.hasTag(CLASS) && cl2.head.hasTag(CLASS)) {
-            if (cl1.head.isParameterized() && cl2.head.isParameterized()) {
-                Type merge = merge(cl1.head,cl2.head);
-                return intersect(cl1.tail, cl2.tail).prepend(merge);
-            }
-            if (cl1.head.isRaw() || cl2.head.isRaw())
-                return intersect(cl1.tail, cl2.tail).prepend(erasure(cl1.head));
-        }
-        return intersect(cl1.tail, cl2.tail);
+        return intersectHelper(cl1, cl2, new HashMap<>());
     }
     // where
+        private List<Type> intersectHelper(List<Type> cl1, List<Type> cl2, Map<TypePair, Type> mergeCache) {
+            if (cl1 == cl2)
+                return cl1;
+            if (cl1.isEmpty() || cl2.isEmpty())
+                return List.nil();
+            if (cl1.head.tsym.precedes(cl2.head.tsym, this))
+                return intersectHelper(cl1.tail, cl2, mergeCache);
+            if (cl2.head.tsym.precedes(cl1.head.tsym, this))
+                return intersectHelper(cl1, cl2.tail, mergeCache);
+            if (isSameType(cl1.head, cl2.head))
+                return intersectHelper(cl1.tail, cl2.tail, mergeCache).prepend(cl1.head);
+            if (cl1.head.tsym == cl2.head.tsym &&
+                    cl1.head.hasTag(CLASS) && cl2.head.hasTag(CLASS)) {
+                if (cl1.head.isParameterized() && cl2.head.isParameterized()) {
+                    Type merge = merge(cl1.head,cl2.head, mergeCache);
+                    return intersectHelper(cl1.tail, cl2.tail, mergeCache).prepend(merge);
+                }
+                if (cl1.head.isRaw() || cl2.head.isRaw())
+                    return intersectHelper(cl1.tail, cl2.tail, mergeCache).prepend(erasure(cl1.head));
+            }
+            return intersectHelper(cl1.tail, cl2.tail, mergeCache);
+        }
         class TypePair {
             final Type t1;
             final Type t2;
@@ -3926,8 +3929,8 @@ public class Types {
         /* this cache could be used by several merge operations that can happen inside
          * an invocation to one of the public lub methods.
          */
-        Map<TypePair, Type> mergeCache = new HashMap<>();
-        private Type merge(Type c1, Type c2) {
+        //Map<TypePair, Type> mergeCache = new HashMap<>();
+        private Type merge(Type c1, Type c2, Map<TypePair, Type> mergeCache) {
             TypePair pair = new TypePair(c1, c2);
             Type cached = mergeCache.get(pair);
             if (cached != null && cached != noType) return cached;
@@ -3948,7 +3951,8 @@ public class Types {
                     Type m;
                     if (mergeCache.get(pair) == null) {
                         mergeCache.put(pair, noType);
-                        m = new WildcardType(lubHelper(wildUpperBound(act1.head),
+                        m = new WildcardType(lubHelper(mergeCache,
+                                                       wildUpperBound(act1.head),
                                                        wildUpperBound(act2.head)),
                                              BoundKind.EXTENDS,
                                              syms.boundClass);
@@ -4033,11 +4037,7 @@ public class Types {
      * not exist return null.
      */
     public Type lub(List<Type> ts) {
-        try {
-            return lubHelper(ts.toArray(new Type[ts.length()]));
-        } finally {
-            mergeCache.clear();
-        }
+        return lubHelper(new HashMap<>(), ts.toArray(new Type[ts.length()]));
     }
 
     /**
@@ -4045,18 +4045,14 @@ public class Types {
      * does not exist return the type of null (bottom).
      */
     public Type lub(Type... ts) {
-        try {
-            return lubHelper(ts);
-        } finally {
-            mergeCache.clear();
-        }
+        return lubHelper(new HashMap<>(), ts);
     }
 
-    private Type lubHelper(List<Type> ts) {
-        return lubHelper(ts.toArray(new Type[ts.length()]));
+    private Type lubHelper(Map<TypePair, Type> mergeCache, List<Type> ts) {
+        return lubHelper(mergeCache, ts.toArray(new Type[ts.length()]));
     }
 
-    private Type lubHelper(Type... ts) {
+    private Type lubHelper(Map<TypePair, Type> mergeCache, Type... ts) {
         final int UNKNOWN_BOUND = 0;
         final int ARRAY_BOUND = 1;
         final int CLASS_BOUND = 2;
@@ -4115,7 +4111,7 @@ public class Types {
                 }
             }
             // lub(A[], B[]) is lub(A, B)[]
-            return new ArrayType(lubHelper(elements), syms.arrayClass);
+            return new ArrayType(lubHelper(mergeCache, elements), syms.arrayClass);
 
         case CLASS_BOUND:
             // calculate lub(A, B)
@@ -4134,7 +4130,7 @@ public class Types {
             for (int i = startIdx + 1 ; i < ts.length ; i++) {
                 Type t = ts[i];
                 if (t.hasTag(CLASS) || t.hasTag(TYPEVAR))
-                    cl = intersect(cl, erasedSupertypes(t));
+                    cl = intersectHelper(cl, erasedSupertypes(t), mergeCache);
             }
             //step 2 - compute minimal erased candidate set (MEC)
             List<Type> mec = closureMin(cl);
@@ -4145,7 +4141,7 @@ public class Types {
                 List<Type> lci = firstSuperType != null ? List.of(firstSuperType) : List.nil();
                 for (int i = startIdx + 1 ; i < ts.length ; i++) {
                     Type superType = asSuper(ts[i], erasedSupertype.tsym);
-                    lci = intersect(lci, superType != null ? List.of(superType) : List.nil());
+                    lci = intersectHelper(lci, superType != null ? List.of(superType) : List.nil(), mergeCache);
                 }
                 candidates = candidates.appendList(lci);
             }
@@ -4161,7 +4157,7 @@ public class Types {
                     classes = classes.prepend(ts[i]);
             }
             // lub(A, B[]) is lub(A, arraySuperType)
-            return lubHelper(classes);
+            return lubHelper(mergeCache, classes);
         }
     }
 
