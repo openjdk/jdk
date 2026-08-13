@@ -569,14 +569,14 @@ public class TestTutorial {
 
                     void testRepeatAndJoin() {
                 """,
-                "        fiveInts(", repeatAndJoin(5, ", ", scope("0")), ");\n",
+               "        fiveInts(", repeatAndJoin(5, ", ", scope("0")), ");\n",
 
                 // If we want to have some ascending numbers, we can use the indexed repeatAndJoin() version:
-                "        fiveInts(", repeatAndJoin(5, ", ", index -> scope("" + index)), ");\n",
+               "        fiveInts(", repeatAndJoin(5, ", ", index -> scope("" + index)), ");\n",
 
                 // Let's assume you want to AND several conditions together. You can use the utility method mapAndJoin()
                 // that maps and then joins the resulting scopes together:
-                "        if (", mapAndJoin(List.of("flagA", "flagB", "flagC"), " && ", flag -> scope(flag)), ") {\n",
+               "        if (", mapAndJoin(List.of("flagA", "flagB", "flagC"), " && ", flag -> scope(flag)), ") {\n",
                 """
                         }
                     }
@@ -585,7 +585,7 @@ public class TestTutorial {
 
                 // You can also use the indexed version of mapAndJoin() which is useful, for example, to define a method
                 // with different parameter names:
-                "    void testJoin(",
+               "    void testJoin(",
             mapAndJoin(List.of("int", "float", "long"), ", ", (type, index) -> scope(
                 let("type", type),
                 let("index", index),
