@@ -158,7 +158,7 @@ static const char* as_internal_package(oop package_string, char* buf, size_t buf
 }
 
 static void define_javabase_module(Handle module_handle, jstring version, jstring location,
-                                   objArrayHandle pkgs, int num_packages, TRAPS) {
+                                   refArrayHandle pkgs, int num_packages, TRAPS) {
   ResourceMark rm(THREAD);
 
   // Obtain java.base's module version
@@ -297,7 +297,7 @@ void Modules::define_module(Handle module, jboolean is_open, jstring version,
   }
 
   // Resolve packages
-  objArrayHandle packages_h(THREAD, objArrayOop(JNIHandles::resolve(packages)));
+  refArrayHandle packages_h(THREAD, refArrayOop(JNIHandles::resolve(packages)));
   int num_packages = (packages_h.is_null() ? 0 : packages_h->length());
 
   // Special handling of java.base definition
@@ -608,8 +608,8 @@ void Modules::ArchivedProperty::runtime_check() const {
   }
 
   if (disable) {
-    AOTMetaspace::report_loading_error("Disabling optimized module handling");
-    CDSConfig::stop_using_optimized_module_handling();
+    AOTMetaspace::report_loading_error("Disabling full module graph");
+    CDSConfig::disable_full_module_graph();
   }
 }
 
@@ -686,7 +686,6 @@ void Modules::serialize_archived_module_info(SerializeClosure* soc) {
     archived_prop(i).serialize(soc);
   }
   if (soc->reading()) {
-    aot_log_info(aot)("optimized module handling: %s", CDSConfig::is_using_optimized_module_handling() ? "enabled" : "disabled");
     aot_log_info(aot)("full module graph: %s", CDSConfig::is_using_full_module_graph() ? "enabled" : "disabled");
   }
 }

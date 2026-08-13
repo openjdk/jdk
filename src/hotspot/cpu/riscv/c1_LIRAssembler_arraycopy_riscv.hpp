@@ -47,5 +47,6 @@
                             Register dst, Register dst_pos);
   void arraycopy_load_args(Register src, Register src_pos, Register length,
                            Register dst, Register dst_pos);
+  void arraycopy_inlinetype_check(Register obj, Register tmp, CodeStub* slow_path, bool is_dest, bool null_check);
 
 #endif // CPU_RISCV_C1_LIRASSEMBLER_ARRAYCOPY_RISCV_HPP
