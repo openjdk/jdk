@@ -34,7 +34,7 @@ import sun.jvm.hotspot.utilities.*;
 import sun.jvm.hotspot.utilities.Observable;
 import sun.jvm.hotspot.utilities.Observer;
 
-// An InlineKlass is the VM level representation of a flattable Java class.
+// An InlineKlass is the VM level representation of a flattenable Java class.
 
 public class InlineKlass extends InstanceKlass {
 
