@@ -518,7 +518,10 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
         OopMap* map = save_live_registers(sasm);
 
         // Called with store_parameter and not C abi
-        int arg_offset = FrameMap::first_available_sp_in_frame;
+        // Parameters were stored before save_live_registers pushed a frame,
+        // so we need to account for the frame size when loading them
+        int frame_size = RegisterSaver::live_reg_frame_size(RegisterSaver::all_registers);
+        int arg_offset = FrameMap::first_available_sp_in_frame + frame_size;
         __ z_lg(Z_ARG2, arg_offset + 1 * BytesPerWord, Z_SP); // array
         __ z_lg(Z_ARG3, arg_offset + 0 * BytesPerWord, Z_SP); // index
         int call_offset = __ call_RT(Z_R2, noreg, CAST_FROM_FN_PTR(address, load_flat_array), Z_ARG2, Z_ARG3);
@@ -539,7 +542,10 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
         OopMap* map = save_live_registers(sasm);
 
         // Called with store_parameter and not C abi
-        int arg_offset = FrameMap::first_available_sp_in_frame;
+        // Parameters were stored before save_live_registers pushed a frame,
+        // so we need to account for the frame size when loading them
+        int frame_size = RegisterSaver::live_reg_frame_size(RegisterSaver::all_registers);
+        int arg_offset = FrameMap::first_available_sp_in_frame + frame_size;
         __ z_lg(Z_ARG2, arg_offset + 2 * BytesPerWord, Z_SP); // array
         __ z_lg(Z_ARG3, arg_offset + 1 * BytesPerWord, Z_SP); // index
         __ z_lg(Z_ARG4, arg_offset + 0 * BytesPerWord, Z_SP); // value
