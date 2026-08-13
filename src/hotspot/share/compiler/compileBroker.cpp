@@ -1744,7 +1744,7 @@ void CompileBroker::compiler_thread_loop() {
       // Never compile a method if breakpoints are present in it
       if (method()->number_of_breakpoints() == 0) {
         // Compile the method.
-        if ((UseCompiler || AlwaysCompileLoopMethods) && CompileBroker::should_compile_new_jobs()) {
+        if (UseCompiler && CompileBroker::should_compile_new_jobs()) {
           invoke_compiler_on_method(task);
           thread->start_idle_timer();
         } else {
@@ -2152,7 +2152,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
  */
 void CompileBroker::handle_full_code_cache(CodeBlobType code_blob_type) {
   UseInterpreter = true;
-  if (UseCompiler || AlwaysCompileLoopMethods ) {
+  if (UseCompiler) {
     if (xtty != nullptr) {
       stringStream s;
       // Dump code cache state into a buffer before locking the tty,

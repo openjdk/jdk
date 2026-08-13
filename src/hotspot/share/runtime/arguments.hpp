@@ -253,7 +253,6 @@ class Arguments : AllStatic {
   static bool _has_jdwp_agent;
 
   // Used to save default settings
-  static bool _AlwaysCompileLoopMethods;
   static bool _UseOnStackReplacement;
   static bool _BackgroundCompilation;
   static bool _ClipInlining;
