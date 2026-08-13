@@ -2307,15 +2307,16 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
     }
   }
 
-#ifdef ASSERT
+  int start_alias = num_alias_types(); // Start of new aliases
   for (uint i = 0; i < memnodes.size(); i++) {
     Node* m = memnodes.at(i);
     const TypePtr* adr_type = m->adr_type();
+#ifdef ASSERT
     m->as_Mem()->set_adr_type(adr_type);
-  }
 #endif // ASSERT
+    get_alias_index(adr_type);
+  }
 
-  int start_alias = num_alias_types(); // Start of new aliases
   Node_Stack stack(0);
 #ifdef ASSERT
   VectorSet seen(Thread::current()->resource_area());
