@@ -2370,8 +2370,8 @@ public final class System {
             }
 
             @Override
-            public long[] getOrCreateConfinedMemoryPools(Thread thread) {
-                return thread.getOrCreateConfinedMemoryPools();
+            public long[] getOrCreateConfinedMemoryPools(Thread thread, int poolSlots) {
+                return thread.getOrCreateConfinedMemoryPools(poolSlots);
             }
 
         });

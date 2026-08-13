@@ -275,7 +275,7 @@ public final class ConfinedSegmentPool {
     @DontInline
     private static long[] createPoolCacheOrFree(Thread thread, long pool) {
         try {
-            return JLA.getOrCreateConfinedMemoryPools(thread);
+            return JLA.getOrCreateConfinedMemoryPools(thread, PLATFORM_POOL_COUNT);
         } catch (OutOfMemoryError _) {
             // In the unlikely event a `new long[]` fails we still need to free the
             // pool and allow the rest of the Arena's cleanup operations to continue

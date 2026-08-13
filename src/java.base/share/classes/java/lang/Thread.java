@@ -380,10 +380,10 @@ public class Thread implements Runnable {
         return holder.confinedMemoryPools;
     }
 
-    long[] getOrCreateConfinedMemoryPools() {
+    long[] getOrCreateConfinedMemoryPools(int poolSlots) {
         long[] confinedMemoryPools = holder.confinedMemoryPools;
         if (confinedMemoryPools == null) {
-            confinedMemoryPools = holder.confinedMemoryPools = new long[4];
+            confinedMemoryPools = holder.confinedMemoryPools = new long[poolSlots];
         }
         return confinedMemoryPools;
     }

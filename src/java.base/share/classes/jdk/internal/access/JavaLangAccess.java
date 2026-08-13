@@ -666,5 +666,5 @@ public interface JavaLangAccess {
      * initializes one if needed. The caller must provide owner-confined
      * access; the returned array is not synchronized.
      */
-    long[] getOrCreateConfinedMemoryPools(Thread thread);
+    long[] getOrCreateConfinedMemoryPools(Thread thread, int poolSlots);
 }
