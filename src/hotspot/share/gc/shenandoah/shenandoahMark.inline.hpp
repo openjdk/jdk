@@ -317,11 +317,11 @@ template<ShenandoahGenerationType GENERATION>
 bool ShenandoahMark::in_generation(ShenandoahHeap* const heap, oop obj) {
   // Each in-line expansion of in_generation() resolves GENERATION at compile time.
   if (GENERATION == YOUNG) {
-    return heap->is_in_young(obj);
+    return heap->has_affiliation(obj, YOUNG_GENERATION);
   }
 
   if (GENERATION == OLD) {
-    return heap->is_in_old(obj);
+    return heap->has_affiliation(obj, OLD_GENERATION);
   }
 
   assert((GENERATION == GLOBAL || GENERATION == NON_GEN), "Unexpected generation type");
@@ -344,7 +344,7 @@ void ShenandoahMark::mark_through_ref(T *p, ShenandoahObjToScanQueue* q, Shenand
     if (in_generation<GENERATION>(heap, obj)) {
       mark_ref(q, mark_context, weak, obj);
       shenandoah_assert_marked(p, obj);
-      if (GENERATION == GLOBAL && heap->is_in_old(p) && heap->is_in_young(obj)) {
+      if (GENERATION == GLOBAL && heap->has_affiliation(p, OLD_GENERATION) && heap->has_affiliation(obj, YOUNG_GENERATION)) {
         // Mark card as dirty because GLOBAL marking finds interesting pointer.
         heap->old_generation()->mark_card_as_dirty((HeapWord*)p);
       }
@@ -355,7 +355,7 @@ void ShenandoahMark::mark_through_ref(T *p, ShenandoahObjToScanQueue* q, Shenand
     } else if (GENERATION == OLD) {
       // Old mark, found a young pointer.
       if (heap->is_in(p)) {
-        assert(heap->is_in_young(obj), "Expected young object.");
+        assert(heap->has_affiliation(obj, YOUNG_GENERATION), "Expected young object.");
         heap->old_generation()->mark_card_as_dirty(p);
       }
     }

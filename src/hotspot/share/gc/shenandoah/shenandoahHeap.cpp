@@ -410,6 +410,7 @@ jint ShenandoahHeap::initialize() {
 
   _regions = NEW_C_HEAP_ARRAY(ShenandoahHeapRegion*, _num_regions, mtGC);
   _affiliations = NEW_C_HEAP_ARRAY(uint8_t, _num_regions, mtGC);
+  _biased_affiliations = _affiliations - (p2u(base()) >> ShenandoahHeapRegion::region_size_bytes_shift());
 
   {
     ShenandoahHeapLocker locker(lock());
