@@ -467,19 +467,17 @@ abstract class BaseThread extends Thread {
     public boolean checkStackTrace(StackTraceElement[] elements) {
         boolean res = true;
 
-        int length = stackTraceLength(elements);
-
         logger.trace(controller.THREAD_TRACE_LEVEL, "trace elements: "
-                + length);
+                + elements.length);
 
-        if (length > expectedLength) {
+        if (elements.length > expectedLength) {
             res = false;
-            logger.complain("Contains " + length + ", more then "
+            logger.complain("Contains " + elements.length + ", more then "
                     + expectedLength + " elements");
         }
 
         for (int j = 0; j < elements.length; j++) {
-            if (!checkElement(elements, j)) {
+            if (!checkElement(elements[j])) {
                 logger.complain("Unexpected method name: "
                                 + elements[j].getMethodName()
                                 + " at " + j + " position");
@@ -506,14 +504,6 @@ abstract class BaseThread extends Thread {
         logger.trace(controller.THREAD_TRACE_LEVEL, "\"" + name + "\""
                 + " is not expected method name");
         return false;
-    }
-
-    protected boolean checkElement(StackTraceElement[] elements, int index) {
-        return checkElement(elements[index]);
-    }
-
-    protected int stackTraceLength(StackTraceElement[] elements) {
-        return elements.length;
     }
 
     protected void recursiveMethod() {
@@ -663,6 +653,9 @@ class SleepingThread extends BaseThread {
 
         this.threadsGroupLocks = threadsGroupLocks;
 
+        expectedLength++;
+
+        expectedMethods.add(Thread.class.getName() + ".sleep");
         expectedMethods.add(SleepingThread.class.getName() + ".run");
 
         switch (controller.invocationType) {
@@ -693,25 +686,24 @@ class SleepingThread extends BaseThread {
         return state == Thread.State.TIMED_WAITING;
     }
 
-    protected boolean checkElement(StackTraceElement[] elements, int index) {
-        return super.checkElement(elements, index) ||
-               isJdkImplementationFrame(elements[index]);
-    }
-
-    protected int stackTraceLength(StackTraceElement[] elements) {
-        int count = 0;
-        for (StackTraceElement element : elements) {
-            if (!isJdkImplementationFrame(element))
-                count++;
+    public boolean checkStackTrace(StackTraceElement[] elements) {
+        if (elements.length == 0) {
+            // ThreadMXBean.getThreadInfo(long) and getThreadInfo(long[]) return
+            // ThreadInfo without a stack trace, so there is nothing to check.
+            return true;
         }
-        return count;
-    }
-
-    private static boolean isJdkImplementationFrame(StackTraceElement element) {
-        String className = element.getClassName();
-        return className.startsWith("java.") ||
-               className.startsWith("jdk.") ||
-               className.startsWith("sun.");
+        // Only the java.lang.Thread.sleep entry frame is required here.
+        // Frames above it are implementation details of sleep that change
+        // between releases, so they are not checked.
+        for (int i = elements.length - 1; i >= 0; i--) {
+            if (elements[i].getClassName().equals("java.lang.Thread")
+                    && elements[i].getMethodName().equals("sleep")) {
+                return super.checkStackTrace(
+                        Arrays.copyOfRange(elements, i, elements.length));
+            }
+        }
+        logger.complain("No java.lang.Thread.sleep frame in the stack trace");
+        return false;
     }
 
     public void run() {
