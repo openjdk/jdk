@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,9 @@
  */
 
 #include "ci/ciCallSite.hpp"
+#include "ci/ciFlatArray.hpp"
+#include "ci/ciFlatArrayKlass.hpp"
+#include "ci/ciInlineKlass.hpp"
 #include "ci/ciInstance.hpp"
 #include "ci/ciInstanceKlass.hpp"
 #include "ci/ciMemberName.hpp"
@@ -35,6 +38,7 @@
 #include "ci/ciObjArrayKlass.hpp"
 #include "ci/ciObject.hpp"
 #include "ci/ciObjectFactory.hpp"
+#include "ci/ciRefArrayKlass.hpp"
 #include "ci/ciReplay.hpp"
 #include "ci/ciSymbol.hpp"
 #include "ci/ciSymbols.hpp"
@@ -48,6 +52,7 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/universe.hpp"
+#include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/trainingData.hpp"
 #include "runtime/handles.inline.hpp"
@@ -83,6 +88,7 @@ ciObjectFactory::ciObjectFactory(Arena* arena,
                                  int expected_size)
                                  : _arena(arena),
                                    _ci_metadata(arena, expected_size, 0, nullptr),
+                                   _cached_init_state(arena, _shared_ident_limit, 0, (u1)0),
                                    _unloaded_methods(arena, 4, 0, nullptr),
                                    _unloaded_klasses(arena, 8, 0, nullptr),
                                    _unloaded_instances(arena, 4, 0, nullptr),
@@ -97,6 +103,28 @@ ciObjectFactory::ciObjectFactory(Arena* arena,
   // If the shared ci objects exist append them to this factory's objects
   if (_shared_ci_metadata != nullptr) {
     _ci_metadata.appendAll(_shared_ci_metadata);
+    // ciInstanceKlass for well-known class is shared by all
+    // compiler threads and can be updated concurrently by
+    // other compiler threads during compilation.
+    // Make local copy of class state to avoid state change
+    // during compilation.
+    int len = _ci_metadata.length();
+    for (int i = 0; i < len; i++) {
+      ciMetadata* obj = _ci_metadata.at(i);
+      if (obj->is_loaded() && obj->is_instance_klass()) {
+        ciInstanceKlass* cik = obj->as_instance_klass();
+        precond(cik->is_shared());
+        InstanceKlass::ClassState current_state = cik->_init_state;
+        InstanceKlass::ClassState state = InstanceKlass::fully_initialized;
+        if (current_state != state) {
+          GUARDED_VM_ENTRY( state = cik->get_instanceKlass()->init_state(); )
+          // Update state of shared ciInstanceKlass
+          cik->_init_state = state;
+        }
+        // Cache state for current compilation
+        _cached_init_state.at_put_grow(cik->ident(), (u1)state, 0);
+      }
+    }
   }
 }
 
@@ -144,7 +172,7 @@ void ciObjectFactory::init_shared_objects() {
 
   for (int i = T_BOOLEAN; i <= T_CONFLICT; i++) {
     BasicType t = (BasicType)i;
-    if (type2name(t) != nullptr && !is_reference_type(t) &&
+    if (type2name(t) != nullptr && t != T_FLAT_ELEMENT && !is_reference_type(t) &&
         t != T_NARROWOOP && t != T_NARROWKLASS) {
       ciType::_basic_types[t] = new (_arena) ciType(t);
       init_ident_of(ciType::_basic_types[t]);
@@ -375,12 +403,15 @@ ciObject* ciObjectFactory::create_new_object(oop o) {
       return new (arena()) ciMethodType(h_i);
     else
       return new (arena()) ciInstance(h_i);
-  } else if (o->is_objArray()) {
+  } else if (o->is_refArray()) {
     objArrayHandle h_oa(THREAD, (objArrayOop)o);
     return new (arena()) ciObjArray(h_oa);
   } else if (o->is_typeArray()) {
     typeArrayHandle h_ta(THREAD, (typeArrayOop)o);
     return new (arena()) ciTypeArray(h_ta);
+  } else if (o->is_flatArray()) {
+    flatArrayHandle h_ta(THREAD, (flatArrayOop)o);
+    return new (arena()) ciFlatArray(h_ta);
   }
 
   // The oop is of some type not supported by the compiler interface.
@@ -400,11 +431,19 @@ ciMetadata* ciObjectFactory::create_new_metadata(Metadata* o) {
 
   if (o->is_klass()) {
     Klass* k = (Klass*)o;
-    if (k->is_instance_klass()) {
+    if (k->is_inline_klass()) {
+      return new (arena()) ciInlineKlass(k);
+    } else if (k->is_instance_klass()) {
       assert(!ReplayCompiles || ciReplay::no_replay_state() || !ciReplay::is_klass_unresolved((InstanceKlass*)k), "must be whitelisted for replay compilation");
       return new (arena()) ciInstanceKlass(k);
     } else if (k->is_objArray_klass()) {
-      return new (arena()) ciObjArrayKlass(k);
+      if (k->is_flatArray_klass()) {
+        return new (arena()) ciFlatArrayKlass(k);
+      } else if (k->is_refArray_klass()) {
+        return new (arena()) ciRefArrayKlass(k);
+      } else {
+        return new (arena()) ciObjArrayKlass(k);
+      }
     } else if (k->is_typeArray_klass()) {
       return new (arena()) ciTypeArrayKlass(k);
     }
@@ -637,6 +676,18 @@ ciReturnAddress* ciObjectFactory::get_return_address(int bci) {
   init_ident_of(new_ret_addr);
   _return_addresses.append(new_ret_addr);
   return new_ret_addr;
+}
+
+ciWrapper* ciObjectFactory::make_early_larval_wrapper(ciType* type) {
+  ciWrapper* wrapper = new (arena()) ciWrapper(type, ciWrapper::EarlyLarval);
+  init_ident_of(wrapper);
+  return wrapper;
+}
+
+ciWrapper* ciObjectFactory::make_null_free_wrapper(ciType* type) {
+  ciWrapper* wrapper = new (arena()) ciWrapper(type, ciWrapper::NullFree);
+  init_ident_of(wrapper);
+  return wrapper;
 }
 
 // ------------------------------------------------------------------

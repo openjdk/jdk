@@ -71,8 +71,8 @@ class G1HeapRegionTable : public G1BiasedMappedArray<G1HeapRegion*> {
 //
 
 class G1HeapRegionManager: public CHeapObj<mtGC> {
-  friend class VMStructs;
   friend class G1HeapRegionClaimer;
+  friend class VMStructs;
 
   G1RegionToSpaceMapper* _bot_mapper;
   G1RegionToSpaceMapper* _card_table_mapper;
@@ -220,7 +220,7 @@ public:
 
   // Return the number of committed free regions in the heap.
   uint num_free_regions() const {
-    return _free_list.length();
+    return _free_list.num_regions();
   }
 
   uint num_used_regions() const { return num_committed_regions() - num_free_regions(); }
@@ -259,8 +259,8 @@ public:
 
   // Allocate the regions that contain the address range specified, committing the
   // regions if necessary. Return false if any of the regions is already committed
-  // and not free, and return the number of regions newly committed in commit_count.
-  bool allocate_containing_regions(MemRegion range, size_t* commit_count, WorkerThreads* pretouch_workers);
+  // and not free, and return the number of regions newly committed in num_regions_committed.
+  bool allocate_containing_regions(MemRegion range, size_t* num_regions_committed, WorkerThreads* pretouch_workers);
 
   // Apply blk->do_heap_region() on all committed regions in address order,
   // terminating the iteration early if do_heap_region() returns true.

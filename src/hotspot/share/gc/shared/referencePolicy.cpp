@@ -28,19 +28,19 @@
 #include "gc/shared/referencePolicy.hpp"
 #include "memory/universe.hpp"
 #include "runtime/globals.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/integerCast.hpp"
 
-void AbstractLRUReferencePolicy::set_max_interval(jlong max_interval) {
-  assert(max_interval >= 0, "Sanity check");
+void AbstractLRUReferencePolicy::set_max_interval(uint64_t max_interval) {
+  assert(max_interval <= MaximumMaxInterval, "Sanity check");
   _max_interval = max_interval;
 }
 
 // The oop passed in is the SoftReference object, and not
 // the object the SoftReference points to.
 bool AbstractLRUReferencePolicy::should_clear_reference(oop p, jlong timestamp_clock) {
-  assert(_max_interval >= 0, "Forgot to call setup");
-  jlong interval = timestamp_clock - java_lang_ref_SoftReference::timestamp(p);
-  assert(interval >= 0, "Sanity check");
+  assert(_max_interval <= MaximumMaxInterval, "Forgot to call setup");
+  const uint64_t interval = integer_cast<uint64_t>(java_subtract(timestamp_clock, java_lang_ref_SoftReference::timestamp(p)));
 
   // The interval will be zero if the ref was accessed since the last scavenge/gc.
   if(interval <= _max_interval) {
@@ -52,14 +52,16 @@ bool AbstractLRUReferencePolicy::should_clear_reference(oop p, jlong timestamp_c
 
 // Capture state (of-the-VM) information needed to evaluate the policy
 void LRUCurrentHeapPolicy::setup() {
-  set_max_interval(integer_cast<jlong>(Universe::heap()->free_at_last_gc() / M) * SoftRefLRUPolicyMSPerMB);
+  // How much of the current heap was not used at the last gc
+  const uint64_t current_heap = Universe::heap()->free_at_last_gc() / M;
+
+  set_max_interval(current_heap * integer_cast<uint64_t>(SoftRefLRUPolicyMSPerMB));
 }
 
 // Capture state (of-the-VM) information needed to evaluate the policy
 void LRUMaxHeapPolicy::setup() {
-  size_t max_heap = MaxHeapSize;
-  max_heap -= Universe::heap()->used_at_last_gc();
-  max_heap /= M;
+  // How much of the max heap was not used at the last gc
+  const uint64_t max_heap = (MaxHeapSize - Universe::heap()->used_at_last_gc()) / M;
 
-  set_max_interval(integer_cast<jlong>(max_heap) * SoftRefLRUPolicyMSPerMB);
+  set_max_interval(max_heap * integer_cast<uint64_t>(SoftRefLRUPolicyMSPerMB));
 }

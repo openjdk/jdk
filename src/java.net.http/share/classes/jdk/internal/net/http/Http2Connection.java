@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -646,7 +645,7 @@ class Http2Connection implements Closeable {
         }
     }
 
-    /*
+    /**
      * return true if the connection is marked as "final stream" and there
      * are no active streams on that connection and the connection isn't
      * reserved for a new stream.
@@ -1383,6 +1382,12 @@ class Http2Connection implements Closeable {
 
         goAwayRecvd.set(true);
         setFinalStream(); // don't allow any new streams on this connection
+
+        // let the connection terminator too know that a GOAWAY was received on the
+        // connection and any future errorneous termination of the connection may
+        // be attributed to the error code contained in the GOAWAY.
+        connTerminator.goAwayReceived(frame.getErrorCode(), frame.getDebugData());
+
         if (debug.on()) {
             debug.log("processing incoming GOAWAY with last processed stream id:%s in frame %s",
                     lastProcessedStream, frame);
@@ -1400,6 +1405,14 @@ class Http2Connection implements Closeable {
             prevLastProcessed = lastProcessedStreamInGoAway.get();
         }
         handlePeerUnprocessedStreams(lastProcessedStreamInGoAway.get());
+        // if there are no more active streams on the connection, then go ahead and close the
+        // connection
+        if (shouldClose()) {
+            final Http2TerminationCause tc = Http2TerminationCause.forH2Error(
+                    frame.getErrorCode(),
+                    "GOAWAY received from server");
+            close(tc);
+        }
     }
 
     private void handlePeerUnprocessedStreams(final long lastProcessedStream) {
@@ -1610,16 +1623,37 @@ class Http2Connection implements Closeable {
         return frames;
     }
 
-    // Dedicated cache for headers encoding ByteBuffer.
+    // Dedicated reusable ByteBuffer for headers encoding.
     // There can be no concurrent access to this  buffer as all access to this buffer
     // and its content happen within a single critical code block section protected
-    // by the sendLock. / (see sendFrame())
-    // private final ByteBufferPool headerEncodingPool = new ByteBufferPool();
+    // by the sendlock (see sendFrame()).
+    private ByteBuffer cachedHeaderBuffer;
+
+    // getCachedHeaderBuffer() is used only by tests and it should not be
+    // called in source code without also holding `sendlock`.
+    ByteBuffer getCachedHeaderBuffer() {
+        return cachedHeaderBuffer;
+    }
 
     private ByteBuffer getHeaderBuffer(int size) {
-        ByteBuffer buf = ByteBuffer.allocate(size);
-        buf.limit(size);
-        return buf;
+        assert sendlock.isHeldByCurrentThread() : "current thread is not holding sendlock";
+
+        if (cachedHeaderBuffer == null || cachedHeaderBuffer.capacity() < size) {
+            cachedHeaderBuffer = ByteBuffer.allocate(size);
+            return cachedHeaderBuffer;
+        }
+
+        cachedHeaderBuffer.clear();
+        cachedHeaderBuffer.limit(size);
+        return cachedHeaderBuffer;
+    }
+
+    private static ByteBuffer copyBuffer(ByteBuffer buffer) {
+        buffer.flip();
+        ByteBuffer copy = ByteBuffer.allocate(buffer.remaining());
+        copy.put(buffer);
+        copy.flip();
+        return copy;
     }
 
     /*
@@ -1634,8 +1668,8 @@ class Http2Connection implements Closeable {
      *     encoding in HTTP/2...
      */
     private List<ByteBuffer> encodeHeadersImpl(int bufferSize, HttpHeaders... headers) {
-        ByteBuffer buffer = getHeaderBuffer(bufferSize);
         List<ByteBuffer> buffers = new ArrayList<>();
+        ByteBuffer buffer = getHeaderBuffer(bufferSize);
         for (HttpHeaders header : headers) {
             for (Map.Entry<String, List<String>> e : header.map().entrySet()) {
                 String lKey = e.getKey().toLowerCase(Locale.US);
@@ -1644,16 +1678,17 @@ class Http2Connection implements Closeable {
                     hpackOut.header(lKey, value);
                     while (!hpackOut.encode(buffer)) {
                         if (!buffer.hasRemaining()) {
-                            buffer.flip();
-                            buffers.add(buffer);
-                            buffer = getHeaderBuffer(bufferSize);
+                            ByteBuffer copy = copyBuffer(buffer);
+                            buffers.add(copy);
+                            buffer.clear();
+                            buffer.limit(bufferSize);
                         }
                     }
                 }
             }
         }
-        buffer.flip();
-        buffers.add(buffer);
+        ByteBuffer copy = copyBuffer(buffer);
+        buffers.add(copy);
         return buffers;
     }
 
@@ -1710,7 +1745,7 @@ class Http2Connection implements Closeable {
         }
     }
 
-    private final Lock sendlock = new ReentrantLock();
+    private final ReentrantLock sendlock = new ReentrantLock();
 
     void sendFrame(Http2Frame frame) {
         try {
@@ -2007,6 +2042,10 @@ class Http2Connection implements Closeable {
 
     // Responsible for doing all the necessary work for closing a Http2Connection
     private final class Terminator {
+
+        private record IncomingGoAway(int errorCode, byte[] debugData) {
+        }
+
         // the cause for closing the connection. Must only be set in the
         // Terminator.terminate(Http2TerminationCause) method.
         private final AtomicReference<Http2TerminationCause> terminationCause = new AtomicReference<>();
@@ -2014,12 +2053,33 @@ class Http2Connection implements Closeable {
         // false otherwise. should be accessed only when holding the stateLock
         private boolean chosenForIdleTermination;
 
+        // the server is allowed to send more than one GOAWAY frames. for connection
+        // termination cause/diagnostics, we currently only the use last one received, and
+        // that should be OK.
+        private volatile IncomingGoAway incomingGoAway;
+
+        private void goAwayReceived(final int errorCode, final byte[] debugData) {
+            // we currently don't make use of or store the debug data from the incoming
+            // GOAWAY frame
+            this.incomingGoAway = new IncomingGoAway(errorCode, null);
+        }
+
         private void terminate(final Http2TerminationCause terminationCause) {
             Objects.requireNonNull(terminationCause, "termination cause cannot be null");
             // allow to be terminated only once
             stateLock.lock();
             try {
-                final boolean success = this.terminationCause.compareAndSet(null, terminationCause);
+                final IncomingGoAway rcvdGoAway = this.incomingGoAway;
+                // if the connection has previously received a GOAWAY then use the error
+                // code from that frame to determine whether the current termination
+                // cause can be attribtued to the error reported by the GOAWAY frame.
+                // if it can be, then use that inferred termination cause as the effective one
+                // to terminate the connection.
+                final Http2TerminationCause effectiveTC = rcvdGoAway == null
+                        ? terminationCause
+                        : Http2TerminationCause.inferFromGoAway(terminationCause,
+                        rcvdGoAway.errorCode);
+                final boolean success = this.terminationCause.compareAndSet(null, effectiveTC);
                 if (!success) {
                     // already terminated or is being terminated by some other thread
                     return;

@@ -44,7 +44,33 @@
 
 class ShenandoahThreadLocalData {
 private:
+  // Thread-local mirror for global GC state
   char _gc_state;
+
+  // Quickened version of GC state.
+  // This allows all architectures to quickly check the group of states by using a single byte load.
+  enum FastGCState {
+    FORWARDED               = ShenandoahHeap::HAS_FORWARDED,
+    MARKING                 = ShenandoahHeap::MARKING,
+    WEAK                    = ShenandoahHeap::WEAK_ROOTS,
+    FORWARDED_MARKING       = ShenandoahHeap::HAS_FORWARDED | ShenandoahHeap::MARKING,
+    FORWARDED_WEAK          = ShenandoahHeap::HAS_FORWARDED | ShenandoahHeap::WEAK_ROOTS,
+    MARKING_WEAK            = ShenandoahHeap::MARKING       | ShenandoahHeap::WEAK_ROOTS,
+    FORWARDED_MARKING_WEAK  = ShenandoahHeap::HAS_FORWARDED | ShenandoahHeap::MARKING    | ShenandoahHeap::WEAK_ROOTS
+  };
+
+  enum FastGCStatePos {
+    POS_FORWARDED               = 0,
+    POS_MARKING                 = 1,
+    POS_WEAK                    = 2,
+    POS_FORWARDED_MARKING       = 3,
+    POS_FORWARDED_WEAK          = 4,
+    POS_MARKING_WEAK            = 5,
+    POS_FORWARDED_MARKING_WEAK  = 6,
+    POS_MAX
+  };
+
+  char _gc_state_fast_array[POS_MAX];
 
   SATBMarkQueue           _satb_mark_queue;
 
@@ -66,6 +92,12 @@ private:
 
   Atomic<HeapWord*> _invisible_root;
   Atomic<size_t> _invisible_root_word_size;
+
+  // Thread-local pin cache used to increment/decrement the pin count for
+  // a region and flush the accumulated count to the shared pin counter.
+  // This avoids contended atomic updates of the shared pin counter.
+  size_t _pin_region_idx;
+  size_t _pin_count;
 
   ShenandoahThreadLocalData();
   ~ShenandoahThreadLocalData();
@@ -92,8 +124,28 @@ public:
     return data(thread)->_satb_mark_queue;
   }
 
+  static char gc_state_to_fast_array_index(char gc_state) {
+    if (gc_state == FORWARDED)              return POS_FORWARDED;
+    if (gc_state == MARKING)                return POS_MARKING;
+    if (gc_state == WEAK)                   return POS_WEAK;
+    if (gc_state == FORWARDED_MARKING)      return POS_FORWARDED_MARKING;
+    if (gc_state == FORWARDED_WEAK)         return POS_FORWARDED_WEAK;
+    if (gc_state == MARKING_WEAK)           return POS_MARKING_WEAK;
+    if (gc_state == FORWARDED_MARKING_WEAK) return POS_FORWARDED_MARKING_WEAK;
+    ShouldNotReachHere();
+    return 0;
+  }
+
   static void set_gc_state(Thread* thread, char gc_state) {
-    data(thread)->_gc_state = gc_state;
+    ShenandoahThreadLocalData* d = data(thread);
+    d->_gc_state = gc_state;
+    d->_gc_state_fast_array[POS_FORWARDED]              = (gc_state & FORWARDED) != 0;
+    d->_gc_state_fast_array[POS_MARKING]                = (gc_state & MARKING) != 0;
+    d->_gc_state_fast_array[POS_WEAK]                   = (gc_state & WEAK) != 0;
+    d->_gc_state_fast_array[POS_FORWARDED_MARKING]      = (gc_state & FORWARDED_MARKING) != 0;
+    d->_gc_state_fast_array[POS_FORWARDED_WEAK]         = (gc_state & FORWARDED_WEAK) != 0;
+    d->_gc_state_fast_array[POS_MARKING_WEAK]           = (gc_state & MARKING_WEAK) != 0;
+    d->_gc_state_fast_array[POS_FORWARDED_MARKING_WEAK] = (gc_state & FORWARDED_MARKING_WEAK) != 0;
   }
 
   static char gc_state(Thread* thread) {
@@ -170,6 +222,10 @@ public:
     return Thread::gc_data_offset() + byte_offset_of(ShenandoahThreadLocalData, _gc_state);
   }
 
+  static ByteSize gc_state_fast_array_offset(char gc_state) {
+    return Thread::gc_data_offset() + byte_offset_of(ShenandoahThreadLocalData, _gc_state_fast_array) + in_ByteSize(gc_state_to_fast_array_index(gc_state));
+  }
+
   static ByteSize card_table_offset() {
     return Thread::gc_data_offset() + byte_offset_of(ShenandoahThreadLocalData, _card_table);
   }
@@ -191,6 +247,22 @@ public:
 
   static size_t get_invisible_root_word_size(Thread* thread) {
     return data(thread)->_invisible_root_word_size.load_relaxed();
+  }
+
+  static size_t pin_cache_region(Thread* thread) {
+    return data(thread)->_pin_region_idx;
+  }
+
+  static size_t pin_cache_count(Thread* thread) {
+    return data(thread)->_pin_count;
+  }
+
+  static void pin_cache_set_region(Thread* thread, size_t region_idx) {
+    data(thread)->_pin_region_idx = region_idx;
+  }
+
+  static void pin_cache_set_count(Thread* thread, size_t new_count) {
+    data(thread)->_pin_count = new_count;
   }
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ public class GenericTest {
             Set<ObjectName> names3 =
                     checked(((MBeanServerConnection) mbs).queryNames(null, null),
                             ObjectName.class);
-            // If new MBean (e.g. Graal MBean) is registered while the test is running, names1,
+            // If new MBean is registered while the test is running, names1,
             // names2, and names3 will have different sizes. Repeat the test in this case.
             if (sameSize(names1, names2, names3) || isSecondAttempt) {
                 check("Set<ObjectName> MBeanServer.queryNames", names1.size() >= 1);
@@ -102,7 +102,7 @@ public class GenericTest {
             Set<ObjectInstance> mbeans3 =
                     checked(((MBeanServerConnection) mbs).queryMBeans(null, null),
                             ObjectInstance.class);
-            // If new MBean (e.g. Graal MBean) is registered while the test is running, mbeans1,
+            // If new MBean is registered while the test is running, mbeans1,
             // mbeans2, and mbeans3 will have different sizes. Repeat the test in this case.
             if (sameSize(mbeans1, mbeans2, mbeans3) || isSecondAttempt) {
                 check("Set<ObjectInstance> MBeanServer.queryMBeans",

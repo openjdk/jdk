@@ -124,7 +124,11 @@ const size_t minimumSymbolTableSize = 1024;
           "Use 32-bit object references in 64-bit VM. "                     \
           "lp64_product means flag is always constant in 32 bit VM")        \
                                                                             \
-  product(bool, UseCompactObjectHeaders, false,                             \
+  product(bool, AOTCompatibleOopCompression, false, DIAGNOSTIC,             \
+          "Always use HeapBasedNarrowOop mode, so that AOT code will "      \
+          "always work regardless of runtime heap range")                   \
+                                                                            \
+  product(bool, UseCompactObjectHeaders, true,                              \
           "Use compact 64-bit object headers in 64-bit VM")                 \
                                                                             \
   product(int, ObjectAlignmentInBytes, 8,                                   \
@@ -142,6 +146,7 @@ const size_t minimumSymbolTableSize = 1024;
                            range,                                           \
                            constraint)
 const bool UseCompressedOops = false;
+const bool AOTCompatibleOopCompression = false;
 const bool UseCompactObjectHeaders = false;
 const int ObjectAlignmentInBytes = 8;
 
@@ -224,8 +229,12 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, UsePoly1305Intrinsics, false, DIAGNOSTIC,                   \
           "Use intrinsics for sun.security.util.math.intpoly")              \
-  product(bool, UseIntPolyIntrinsics, false, DIAGNOSTIC,                   \
+                                                                            \
+  product(bool, UseIntPolyIntrinsics, false, DIAGNOSTIC,                    \
           "Use intrinsics for sun.security.util.math.intpoly.MontgomeryIntegerPolynomialP256") \
+                                                                            \
+  product(bool, UseIntPoly25519Intrinsics, false, DIAGNOSTIC,               \
+          "Use intrinsics for sun.security.util.math.intpoly.IntegerPolynomial25519") \
                                                                             \
   product(size_t, LargePageSizeInBytes, 0,                                  \
           "Maximum large page size used (0 will use the default large "     \
@@ -243,10 +252,6 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   develop(bool, TracePcPatching, false,                                     \
           "Trace usage of frame::patch_pc")                                 \
-                                                                            \
-  develop(bool, TraceRelocator, false,                                      \
-          "Trace the bytecode relocator")                                   \
-                                                                            \
                                                                             \
   product(bool, SafepointALot, false, DIAGNOSTIC,                           \
           "Generate a lot of safepoints. This works with "                  \
@@ -275,9 +280,6 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   develop(bool, TraceCodeBlobStacks, false,                                 \
           "Trace stack-walk of codeblobs")                                  \
-                                                                            \
-  develop(bool, PrintRewrites, false,                                       \
-          "Print methods that are being rewritten")                         \
                                                                             \
   product(bool, UseInlineCaches, true,                                      \
           "Use Inline Caches for virtual calls ")                           \
@@ -455,9 +457,6 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   develop(bool, VerifyStackAtCalls, false,                                  \
           "Verify that the stack pointer is unchanged after calls")         \
-                                                                            \
-  develop(bool, TraceJavaAssertions, false,                                 \
-          "Trace java language assertions")                                 \
                                                                             \
   develop(bool, VerifyCodeCache, false,                                     \
           "Verify code cache on memory allocation/deallocation")            \
@@ -804,8 +803,45 @@ const int ObjectAlignmentInBytes = 8;
           "Number of OutOfMemoryErrors preallocated with backtrace")        \
           range(0, 1024)                                                    \
                                                                             \
-  develop(bool, PrintFieldLayout, false,                                    \
+  product(bool, PrintFieldLayout, false, DIAGNOSTIC,                        \
           "Print field layout for each class")                              \
+                                                                            \
+  product(bool, PrintInlineLayout, false, DIAGNOSTIC,                       \
+          "Print field layout for each value class or class containing "    \
+          "inlined value fields")                                           \
+                                                                            \
+  product(bool, PrintFlatArrayLayout, false, DIAGNOSTIC,                    \
+          "Print array layout for each flattened value array")              \
+                                                                            \
+  product(bool, UseArrayFlattening, true, DIAGNOSTIC,                       \
+          "Allow the JVM to flatten arrays of concrete value objects "      \
+          "when it determines it is possible and beneficial to do so")      \
+                                                                            \
+  product(bool, UseFieldFlattening, true, DIAGNOSTIC,                       \
+          "Allow the JVM to inline the fields of concrete value objects "   \
+          "when it determines it is possible and beneficial to do so")      \
+                                                                            \
+  product(bool, UseNullableAtomicValueFlattening, true, DIAGNOSTIC,         \
+          "Allow the JVM to flatten some nullable atomic values")           \
+                                                                            \
+  product(bool, UseNullFreeNonAtomicValueFlattening, true, EXPERIMENTAL,    \
+          "Allow the JVM to flatten some null-free non-atomic values")      \
+                                                                            \
+  product(bool, UseNullFreeAtomicValueFlattening, true, EXPERIMENTAL,       \
+          "Allow the JVM to flatten some null-free atomic values")          \
+                                                                            \
+  product(bool, UseNullableNonAtomicValueFlattening, true, DIAGNOSTIC,      \
+          "Allow the JVM to flatten some strict final non-static fields")   \
+                                                                            \
+  product(intx, FlatArrayElementMaxOops, 4, DIAGNOSTIC,                     \
+          "Max number of embedded object references in a value container "  \
+          "before no flattening attempts are made, <0 indicates no limit")  \
+                                                                            \
+  product(uint, FlatteningBudget, 1024, EXPERIMENTAL,                       \
+          "Maximum size (in bytes) dedicated to flat fields in an instance")\
+          range(0, 1024 * 1024)                                             \
+  develop(ccstrlist, PrintInlineKlassFields, "",                            \
+          "Print fields collected by InlineKlass::collect_fields")          \
                                                                             \
   /* Need to limit the extent of the padding to reasonable size.          */\
   /* 8K is well beyond the reasonable HW cache line size, even with       */\
@@ -1189,7 +1225,7 @@ const int ObjectAlignmentInBytes = 8;
           "Use Just-In-Time compilation")                                   \
                                                                             \
   product(bool, AlwaysCompileLoopMethods, false,                            \
-          "When using recompilation, never interpret methods "              \
+          "(Deprecated) When using recompilation, never interpret methods " \
           "containing loops")                                               \
                                                                             \
   product(int,  AllocatePrefetchStyle, 1,                                   \
@@ -1221,16 +1257,6 @@ const int ObjectAlignmentInBytes = 8;
   product(intx,  AllocatePrefetchInstr, 0,                                  \
           "Select instruction to prefetch ahead of allocation pointer")     \
           constraint(AllocatePrefetchInstrConstraintFunc, AfterMemoryInit)  \
-                                                                            \
-  /* deoptimization */                                                      \
-  product(bool, TraceDeoptimization, false, DIAGNOSTIC,                     \
-          "Trace deoptimization")                                           \
-                                                                            \
-  develop(bool, PrintDeoptimizationDetails, false,                          \
-          "Print more information about deoptimization")                    \
-                                                                            \
-  develop(bool, DebugDeoptimization, false,                                 \
-          "Tracing various information while debugging deoptimization")     \
                                                                             \
   product(double, SelfDestructTimer, 0.0,                                   \
           "Will cause VM to terminate after a given time "                  \
@@ -1760,6 +1786,9 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, VerifyMethodHandles, trueInDebug, DIAGNOSTIC,               \
           "perform extra checks when constructing method handles")          \
                                                                             \
+  product(bool, IgnoreAssertUnsetFields, false, DIAGNOSTIC,                           \
+          "Ignore assert_unset_fields")                                     \
+                                                                            \
   product(bool, ShowHiddenFrames, false, DIAGNOSTIC,                        \
           "show method handle implementation frames (usually hidden)")      \
                                                                             \
@@ -1903,6 +1932,9 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, UseContinuationFastPath, true,                              \
           "Use fast-path frame walking in continuations")                   \
                                                                             \
+  develop(bool, ForceSingleFrameThaw, false,                                \
+          "Force thawing one frame at a time")                              \
+                                                                            \
   develop(int, VerifyMetaspaceInterval, DEBUG_ONLY(500) NOT_DEBUG(0),       \
                "Run periodic metaspace verifications (0 - none, "           \
                "1 - always, >1 every nth interval)")                        \
@@ -1928,6 +1960,23 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseFastUnorderedTimeStamps, false, EXPERIMENTAL,            \
           "Use platform unstable time where supported for timestamps only") \
                                                                             \
+  product_pd(bool, InlineTypePassFieldsAsArgs, DIAGNOSTIC,                  \
+          "Pass each inline type field as an argument at calls")            \
+                                                                            \
+  product_pd(bool, InlineTypeReturnedAsFields, DIAGNOSTIC,                  \
+          "Return fields instead of an inline type reference")              \
+                                                                            \
+  develop(bool, StressCallingConvention, false,                             \
+          "Stress the scalarized calling convention.")                      \
+                                                                            \
+  develop(bool, PreloadClasses, true,                                       \
+          "Preloading all classes from the LoadableDescriptors attribute")  \
+                                                                            \
+  product(ccstrlist, ForceNonTearable, "", DIAGNOSTIC,                      \
+          "List of inline classes which are forced to be atomic "           \
+          "(whitespace and commas separate names, "                         \
+          "and leading and trailing stars '*' are wildcards)")              \
+                                                                            \
   product(bool, DeoptimizeNMethodBarriersALot, false, DIAGNOSTIC,           \
                 "Make nmethod barriers deoptimise a lot.")                  \
                                                                             \
@@ -1935,10 +1984,6 @@ const int ObjectAlignmentInBytes = 8;
           false AARCH64_ONLY(DEBUG_ONLY(||true)),                           \
              "Mark all threads after a safepoint, and clear on a modify "   \
              "fence. Add cleanliness checks.")                              \
-                                                                            \
-  product(bool, UseObjectMonitorTable, true, DIAGNOSTIC,                    \
-          "Use a table to record inflated monitors rather than the first "  \
-          "word of the object.")                                            \
                                                                             \
   product(int, FastLockingSpins, 8, DIAGNOSTIC,                             \
           "Specifies the number of times fast locking will attempt to "     \
@@ -1986,6 +2031,8 @@ const int ObjectAlignmentInBytes = 8;
           "Minimal number of elements in a sorted collection to prefer"     \
           "binary search over simple linear search." )                      \
                                                                             \
+  product(bool, UseAcmpFastPath, true, DIAGNOSTIC,                          \
+          "Use fast path for acmp.")                                        \
 
 // end of RUNTIME_FLAGS
 
