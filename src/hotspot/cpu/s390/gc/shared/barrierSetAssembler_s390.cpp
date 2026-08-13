@@ -32,6 +32,7 @@
 #include "interpreter/interp_masm.hpp"
 #include "oops/compressedOops.hpp"
 #include "runtime/jniHandles.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
 #ifdef COMPILER2
