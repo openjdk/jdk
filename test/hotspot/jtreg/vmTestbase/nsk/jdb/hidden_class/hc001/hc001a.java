@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ class HiddenClass implements HCInterf {
 /* This is debuggee aplication */
 public class hc001a {
     static PrintStream log = null;
-    static void logMsg(String msg) { log.println(msg); log.flush(); }
+    static void logMsg(String msg) { log.display(msg); log.flush(); }
 
     static final String JAVA_CP = System.getProperty("java.class.path");
     static final String HC_NAME = HiddenClass.class.getName().replace(".", File.separator) + ".class";
