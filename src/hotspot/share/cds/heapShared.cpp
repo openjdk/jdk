@@ -61,6 +61,7 @@
 #include "memory/universe.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/fieldStreams.inline.hpp"
+#include "oops/flatArrayOop.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopCast.inline.hpp"
@@ -1715,6 +1716,79 @@ void HeapShared::init_box_classes(TRAPS) {
   }
 }
 
+class HeapShared::InlineKlassScanner : public FieldClosure {
+  KlassSubGraphInfo* _subgraph_info;
+  oop _obj;
+public:
+  InlineKlassScanner(KlassSubGraphInfo* subgraph_info, oop obj)
+    : _subgraph_info(subgraph_info), _obj(obj) {}
+  void do_field(fieldDescriptor* fd) override {
+    if (fd->is_flat()) {
+      precond(fd->field_type() == T_OBJECT);
+      int index = fd->index();
+      InlineKlass* vk = fd->field_holder()->get_inline_type_field_klass(index);
+      int field_offset = fd->offset() - vk->payload_offset();
+      address field_addr = _obj->field_addr<u_char>(field_offset);
+
+      if (fd->is_null_free_inline_type() || !vk->is_payload_marked_as_null(field_addr)) {
+        // We have a non-null flattened instance
+        add_inline_class(_subgraph_info, vk);
+        oop inline_obj = cast_to_oop(field_addr);
+        InlineKlassScanner scanner(_subgraph_info, inline_obj);
+        vk->do_nonstatic_fields(&scanner);
+      }
+    }
+  }
+};
+
+void HeapShared::add_inline_class(KlassSubGraphInfo* subgraph_info, InlineKlass* k) {
+  subgraph_info->add_subgraph_object_klass(k);
+  if (InstanceKlass::cast(k)->is_enum_subclass()
+      || (subgraph_info == _dump_time_special_subgraph)) {
+      AOTArtifactFinder::add_aot_inited_class(k);
+  }
+}
+
+// Recursively scan for any InlineKlass K that has least one non-null flattened instance
+// inside orig_oobj. K should be added with add_inline_class().
+// Example:
+//     value class Point { short x; short y; ... }
+//     value class Line {
+//         @NullRestricted Point p1;
+//         @NullRestricted Point p2; ... }
+//
+// Reason for doing this:
+//   If only a single instance of Line is archived, HeapShared::archive_object() would
+//   have never seen a (stand-alone) oop of Point, but we must store Point in
+//   AOT-initialized state. This function finds Point.
+void HeapShared::scan_inline_classes(KlassSubGraphInfo* subgraph_info, oop orig_obj) {
+  Klass* klass = orig_obj->klass();
+
+  if (klass->is_flatArray_klass()) {
+    FlatArrayKlass* fak = FlatArrayKlass::cast(klass);
+    precond(orig_obj->is_flatArray());
+    flatArrayOop fa = flatArrayOop(orig_obj);
+    InlineKlass* elem_k = fak->element_klass();
+    bool added = false;
+    for (int i = 0; i < fa->length(); i++) {
+      if (fak->is_null_free_array_klass() || !fa->obj_at_is_null(i)) {
+        if (!added) {
+          add_inline_class(subgraph_info, elem_k);
+        }
+        oop inline_obj = cast_to_oop((address)fa->value_at_addr(i, fak->layout_helper()) - elem_k->payload_offset());
+        InlineKlassScanner scanner(subgraph_info, inline_obj);
+        elem_k->do_nonstatic_fields(&scanner);
+      }
+    }
+  } else if (klass->is_instance_klass()) {
+    InstanceKlass* ik = InstanceKlass::cast(klass);
+    if (ik->has_inlined_fields()) {
+      InlineKlassScanner scanner(subgraph_info, orig_obj);
+      ik->do_nonstatic_fields(&scanner);
+    }
+  }
+}
+
 // (1) If orig_obj has not been archived yet, archive it.
 // (2) If orig_obj has not been seen yet (since start_recording_subgraph() was called),
 //     trace all  objects that are reachable from it, and make sure these objects are archived.
@@ -1849,6 +1923,8 @@ bool HeapShared::walk_one_object(PendingOopStack* stack, int level, KlassSubGrap
     OopFieldPusher pusher(stack, level, record_klasses_only, subgraph_info, orig_obj);
     orig_obj->oop_iterate(&pusher);
   }
+
+  scan_inline_classes(subgraph_info, orig_obj);
 
   if (CDSConfig::is_dumping_aot_linked_classes()) {
     // The enum klasses are archived with aot-initialized mirror.
