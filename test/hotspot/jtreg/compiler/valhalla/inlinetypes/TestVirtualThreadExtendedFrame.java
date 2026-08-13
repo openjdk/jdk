@@ -28,7 +28,7 @@
  * @enablePreview
  * @requires vm.debug == true & vm.continuations
  * @library /test/lib
- * @run main/othervm -XX:+VerifyContinuations TestVirtualThreadExtendedFrame
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+VerifyContinuations TestVirtualThreadExtendedFrame
  */
 
 public class TestVirtualThreadExtendedFrame {
