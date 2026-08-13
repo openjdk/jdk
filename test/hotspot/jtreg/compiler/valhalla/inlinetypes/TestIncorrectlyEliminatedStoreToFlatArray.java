@@ -34,9 +34,9 @@
  *                   -XX:+AlwaysIncrementalInline ${test.main.class}
  */
 
-                               
+
 import jdk.internal.value.ValueClass;
- 
+
 public class TestIncorrectlyEliminatedStoreToFlatArray {
     static value class IntegerBox {
         int value;
