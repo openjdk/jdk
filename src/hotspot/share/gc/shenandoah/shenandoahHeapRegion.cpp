@@ -817,15 +817,6 @@ void ShenandoahHeapRegion::set_state(RegionState to) {
   _state.release_store(to);
 }
 
-void ShenandoahHeapRegion::record_pin() {
-  _critical_pins.add_then_fetch((size_t)1);
-}
-
-void ShenandoahHeapRegion::record_unpin() {
-  assert(pin_count() > 0, "Region %zu should have non-zero pins", index());
-  _critical_pins.sub_then_fetch((size_t)1);
-}
-
 size_t ShenandoahHeapRegion::pin_count() const {
   return _critical_pins.load_relaxed();
 }

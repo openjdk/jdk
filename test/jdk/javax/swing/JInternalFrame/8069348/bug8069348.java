@@ -30,6 +30,7 @@ import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import java.awt.event.InputEvent;
+import javax.swing.DesktopManager;
 import javax.swing.JDesktopPane;
 import javax.swing.JFrame;
 import javax.swing.JInternalFrame;
@@ -78,14 +79,10 @@ public class bug8069348 {
             int dx = screenBounds.width / 2;
             int dy = screenBounds.height / 2;
 
-            robot.mouseMove(x, y);
+            dragInternalFrame(dx, dy);
             robot.waitForIdle();
 
-            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-            robot.mouseMove(x + dx, y + dy);
-            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-            robot.waitForIdle();
-
+            waitForFrameBounds(robot, screenBounds.x + dx, screenBounds.y + dy);
             int cx = screenBounds.x + screenBounds.width + dx / 2;
             int cy = screenBounds.y + screenBounds.height + dy / 2;
 
@@ -114,6 +111,37 @@ public class bug8069348 {
         }
         System.out.println("Test Passed");
     }
+
+    private static void dragInternalFrame(int dx, int dy) throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            DesktopManager dm = internalFrame.getDesktopPane().getDesktopManager();
+            Rectangle bounds = internalFrame.getBounds();
+
+            dm.beginDraggingFrame(internalFrame);
+            try {
+                dm.dragFrame(internalFrame, bounds.x + dx, bounds.y + dy);
+            } finally {
+                dm.endDraggingFrame(internalFrame);
+            }
+        });
+    }
+
+    private static void waitForFrameBounds(Robot robot, int x, int y)
+            throws Exception {
+        for (int i = 0; i < 10; i++) {
+            Rectangle bounds = getInternalFrameScreenBounds();
+            if (bounds.x == x && bounds.y == y) {
+                return;
+            }
+            robot.delay(100);
+            robot.waitForIdle();
+        }
+
+        Rectangle bounds = getInternalFrameScreenBounds();
+        throw new RuntimeException("Internal frame was not dragged to expected"
+                + " location. Expected: " + x + ", " + y
+                + "; actual: " + bounds.x + ", " + bounds.y);
+     }
 
     private static Rectangle getInternalFrameScreenBounds() throws Exception {
         Rectangle[] points = new Rectangle[1];
