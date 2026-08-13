@@ -31,7 +31,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -49,7 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @test
  * @bug 8308024
  * @summary Verify that the server observes the terminal chunk exactly once
- * when the HTTP/1.1 client request body publisher supplies an empty buffer.
+ *          when the HTTP/1.1 client request body publisher supplies an empty buffer.
  * @library /test/lib
  * @run junit/othervm ${test.main.class}
  */
@@ -74,30 +73,15 @@ public class Http1RequestEmptyBufferTest {
         throw new IOException("EOF reached before reaching end of headers");
     }
 
-    static final byte[] TERMINAL_CHUNK = new byte[] {'0', '\r', '\n', '\r', '\n'};
-
-    static int countTerminalChunks(InputStream input) throws IOException {
-        int terminalChunkMatch = 0, nextByte, terminalChunkCount = 0;
-        try {
-            while ((nextByte = input.read()) != -1) {
-                if (nextByte == TERMINAL_CHUNK[terminalChunkMatch]) {
-                    terminalChunkMatch++;
-                    if (terminalChunkMatch == 5) {
-                        terminalChunkCount++;
-                        terminalChunkMatch = 0;
-                    }
-                } else {
-                    terminalChunkMatch = 0;
-                }
-            }
-            throw new IOException("Unexpected EOF while reading terminal chunk");
-        } catch (SocketTimeoutException e) {
-            return terminalChunkCount;
-        }
-    }
+    static final String TERMINAL_CHUNK = "0\r\n\r\n";
 
     static final String RESPONSE_HEADERS = "HTTP/1.1 200 OK\r\n" +
-            "Content-Length: 0\r\n\r\n";
+            "Content-Length: 0\r\n" +
+            "Connection: close\r\n\r\n";
+
+    static String escape(String value) {
+        return value.replace("\r", "\\r").replace("\n", "\\n");
+    }
 
     @Test
     void test() throws Exception {
@@ -129,17 +113,15 @@ public class Http1RequestEmptyBufferTest {
                     assertTrue(headerText.contains("transfer-encoding: chunked"),
                             "Expected Transfer-Encoding: chunked header, got: "
                             + headerText);
-                    int terminalChunkCount = countTerminalChunks(input);
-                    assertEquals(1, terminalChunkCount,
-                            "Expected exactly one terminal chunk, got: "
-                            + terminalChunkCount);
+                    byte[] firstChunkBytes = input.readNBytes(TERMINAL_CHUNK.length());
                     OutputStream os = connection.getOutputStream();
                     os.write(RESPONSE_HEADERS.getBytes(StandardCharsets.US_ASCII));
                     os.flush();
+                    String requestBody = new String(firstChunkBytes, StandardCharsets.US_ASCII)
+                            + new String(input.readAllBytes(), StandardCharsets.US_ASCII);
+                    assertEquals(escape(TERMINAL_CHUNK), escape(requestBody));
                     HttpResponse<Void> response = responseFuture.join();
-                    assertEquals(200, response.statusCode(),
-                            "Expected response status 200, got: "
-                            + response.statusCode());
+                    assertEquals(200, response.statusCode());
                 }
             }
         }
