@@ -55,11 +55,6 @@ public class Inline extends Instance {
         this(handle, heap, null);
     }
 
-    @Override
-    public boolean isInline() {
-        return true;
-    }
-
     public boolean isFlattened() {
         return klass != null;
     }
