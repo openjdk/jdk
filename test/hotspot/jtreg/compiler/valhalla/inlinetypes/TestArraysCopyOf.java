@@ -221,9 +221,9 @@ public class TestArraysCopyOf {
 
                                 public #klass(\
                         """,
-                    mapAndJoin(primitiveTypes, ", ", (type, _) -> scope(type.name() + " _" + type.name())),
+                    mapAndJoin(primitiveTypes, ", ", type -> scope(type.name() + " _" + type.name())),
                         ") {\n",
-                    map(primitiveTypes, (type, _) -> scope(
+                    map(primitiveTypes, type -> scope(
                         let("type", type.name()),
                         "            this._#type = _#type;\n")),
                         // Initializer
@@ -233,7 +233,7 @@ public class TestArraysCopyOf {
                                 static #klass init() {
                                     return new #klass(\
                         """,
-                    mapAndJoin(primitiveTypes, ", ", (type, _) -> scope(type.con())),
+                    mapAndJoin(primitiveTypes, ", ", type -> scope(type.con())),
                         ");\n",
                         """
                                 }
