@@ -29,12 +29,15 @@ import jdk.internal.javac.PreviewFeature;
 /**
  * Thrown when an identity object is required but a value object is supplied.
  * <p>
- * Identity objects are required for synchronization and locking.
- * <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">Value-based</a>
- * objects do not have identity and cannot be used for synchronization, locking,
- * or any type of {@link java.lang.ref.Reference}.
+ * Identity objects are required for synchronization, locking, or any type
+ * of {@link java.lang.ref.Reference} that can track object liveness.
+ * Value objects are barred from these operations to avoid erroneous
+ * {@linkplain Object##Indistinguishability distinguishability}
+ * between copies of the same value.
+ * To test if an object is an identity object, use {@link java.util.Objects#hasIdentity}.
  *
  * @since 28
+ * @see Object##Indistinguishability object distinguishability
  */
 @PreviewFeature(feature = PreviewFeature.Feature.VALUE_OBJECTS)
 public final class IdentityException extends RuntimeException {

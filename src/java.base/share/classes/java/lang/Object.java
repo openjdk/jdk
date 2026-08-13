@@ -53,6 +53,187 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *          A {@linkplain java.lang.ref.Reference Reference object} can only refer to an
  *          object with identity. Creating a reference object with a value object as
  *          the referent throws {@code IdentityException}.
+ *          <p>
+ *          It is impossible to mutate any value object field, either directly
+ *          or {@linkplain java.lang.reflect.Field#set reflectively},
+ *          even if access to the field has been granted.
+ *
+ *          <h2 id="Indistinguishability">Object Distinguishability</h2>
+ *          Two value references appear to be exactly the same value
+ *          whenever their corresponding field values are likewise
+ *          exactly the same.  In that case the two references are
+ *          said to be <em>indistinguishable</em>.  One reference can
+ *          be substituted for the other with no change to program
+ *          behavior.  For all purposes in the JVM, the referenced
+ *          objects don't just appear to be the same value: they are
+ *          the same.
+ *          <p>
+ *          Value indistinguishability can be counter-intuitive when
+ *          the two values were created independently.  After all,
+ *          with identity objects, distinct creation events always
+ *          create distinct objects.  But two values created in
+ *          completely different places can turn out to be the same.
+ *          In this respect, value objects work like primitives.
+ *          The single number 4 is the same value everywhere,
+ *          regardless of how many places and times it was recomputed,
+ *          and regardless of where, how, and how many times it is
+ *          stored.  For a longer discussion of these points, see
+ *          <a href="https://openjdk.org/jeps/401#Programming-without-identity">
+ *          JEP 401, "Programming without identity" section</a>.
+ *          <p>
+ *          Any two objects might be told apart by observing a
+ *          difference between their field values (for immutable
+ *          fields).  But for two value objects, the JVM provides no
+ *          other way to make distinctions.  If they are fieldwise
+ *          equivalent, the VM makes them look exactly the same.
+ *          This is true whether they were created independently or
+ *          not, and whether they are stored in one heap location or
+ *          in many places on heap and stack.
+ *          <p>
+ *          In short, unlike a regular identity object, a value has no
+ *          object identity, leaving only its field states to carry
+ *          the full semantic weight.
+ *          <p>
+ *          In detail, two object references are said to be
+ *          <em>indistinguishable</em> if and only if
+ *          <ul>
+ *          <li>(a) both are the null reference, or</li>
+ *          <li>(b) both are the same identity object, or</li>
+ *          <li>(c) both refer to value objects of the same class, and</li>
+ *          <li><ul><li>their reference fields are pairwise indistinguishable,
+ *                      appealing recursively to this same definition, and</li>
+ *                  <li>their primitive fields are also pairwise
+ *                      indistinguishable, in the sense of bit-wise
+ *                      equivalence.</li>
+ *              </ul></li>
+ *          </ul>
+ *          The equality operator {@code ==} detects exactly this
+ *          condition of indistinguishability when applied directly to
+ *          any type, with the exception of {@code float} and {@code
+ *          double}.
+ *          <p>
+ *          There are special rules for {@code ==} when applied to
+ *          {@code float} and {@code double} operands, requiring
+ *          {@code -0.0 == 0.0} and {@code Double.NaN != Double.NaN},
+ *          even though the first pair of values are in fact
+ *          distinguishable, while the second pair are not.  Thus,
+ *          {@code ==} fails to detect indistinguishability of
+ *          floating-point values. The {@link Double#compare} method
+ *          also fails to detect indistinguishability, comparing all
+ *          {@code NaN} values as equal even if their raw bits differ.
+ *          See also {@linkplain Double##equivalenceRelation this
+ *          discussion of equivalence of floating-point values}.
+ *          Indistinguishability of floating-point values must be
+ *          tested by examining the bit-wise representation, as a
+ *          {@linkplain Float#floatToRawIntBits raw <code>int</code>} or
+ *          {@linkplain Double#doubleToRawLongBits raw <code>long</code>}.
+ *          <p>
+ *          While the {@code ==} operator performs a basic machine
+ *          word comparison for most operands, it is more complicated
+ *          when applied to value objects.  It may need to compare
+ *          several field values, or even walk recursively into nested
+ *          values.  Such walks are usually short.  And since values
+ *          are inherently acyclic, the recursion always bottoms out.
+ *          In its general structure, a value object is the root of a
+ *          tree of value objects, whose leaves are either primitives
+ *          or identity objects.
+ *          <p>
+ *          The {@code ==} operator on a deeply nested value has similar
+ *          costs to a call to {@link Object#equals} on a deeply nested
+ *          tree of {@link java.util.ArrayList ArrayList}s.
+ *          Both can require significant machine resources for
+ *          tree walking, because a large tree may need to be
+ *          walked, to prove there are no differences.
+ *          <p>
+ *          The authoritative definition of the equality operator,
+ *          including its connection to indistinguishability,
+ *          is found in the Java Language Specification
+ *          {@jls value-objects-15.21.3 Object Equality Operators}.
+ *          The JVM instruction which implements {@code ==} has also
+ *          been extended to detect indistinguishability; see JVMS
+ *          section 6.5, <i>if_acmp&lt;cond&gt;</i>, in the JEP 401 preview
+ *          specifications.
+ *          <p>
+ *          Equality methods and hash methods come in pairs, so the
+ *          similarity (for values) between the two forms of equality
+ *          ({@code ==} and {@code equals}) corresponds to an
+ *          analogous similarity between the two kinds of {@code
+ *          hashCode} methods.  Just as {@code ==} must walk over a pair
+ *          of value trees, {@link java.lang.System#identityHashCode}
+ *          must walk a value's tree as well, computing a hash based
+ *          on its structure and the field values at its leaves.
+ *          <p>
+ *          Note that the identity-sensitive operations (field
+ *          mutation, synchronization, weak references) provide ways
+ *          to make time-varying distinctions between two identity
+ *          objects, whether or not they have the same corresponding
+ *          field values.  Hypothetically extending those operations
+ *          to value objects would allow code to distinguish, over
+ *          time-varying conditions, values which would otherwise be
+ *          indistinguishable.  The JVM does not allow value objects
+ *          to vary over time, as it could cause a particular value
+ *          reference to change over time, even though it has not been
+ *          updated by assignment.
+ *          <p>
+ *          As a rule, both identity and value objects are created by
+ *          invoking constructors. (Arrays and deserialization can
+ *          break the rule.)  When a new object first becomes visible
+ *          as an assignable reference, it carries whatever field
+ *          values it was initially given.
+ *          If it is an identity object it also has a freshly assigned
+ *          identity.  If it is a value object, its fields will never
+ *          change, and because it has no identity, it will
+ *          immediately be indistinguishable from any previously
+ *          created value object with those same field values.  Thus,
+ *          object creation is subtly different between values and
+ *          identity objects.  For more details, see
+ *          {@jls value-objects-4.3.1 Objects} and
+ *          {@jls value-objects-15.9.4 Run-Time Evaluation of Class
+ *          Instance Creation Expressions}.
+ *          <p>
+ *          This difference applies evenly across all kinds of object
+ *          creation events: {@code new} expressions, creation by
+ *          reflection ({@code newInstance}) or method handle or JNI,
+ *          lambda capture or autoboxing, deserialization, and more.
+ *          When creating an identity object, you will always get
+ *          a fresh identity distinct from all others, but if it is a
+ *          value, it might be indistinguishable from some
+ *          already-existing value.
+ *          <p>
+ *          It is true that object creation events necessarily
+ *          allocate memory, somewhere, to hold the new object's
+ *          fields.  And one might suppose that the JVM secretly knows
+ *          the one heap block where the new value is stored.  One
+ *          might even guess that an object's memory address
+ *          determines its identity.  But that would be a fallacy of
+ *          oversimplification.  When the GC is working, any single
+ *          object might be stored temporarily in two blocks, linked
+ *          by some forwarding mechanism.  When the JVM creates any
+ *          kind of object it may delay or omit creation of the heap
+ *          block, and use some kind of bookkeeping (not a memory
+ *          address) to track the object's identity.  For identity
+ *          objects, this delay requires prior escape analysis; for
+ *          value objects it comes for free.
+ *          <p>
+ *          For values, the implementation possibilities are
+ *          boundless, because the whole value object lives in its
+ *          collection of individual field values, and nowhere else.
+ *          During or after construction, the JVM might choose to
+ *          store the value in one heap block, on the stack, split up
+ *          fieldwise in registers, or inlined into a containing
+ *          object or array.  It might use all these techniques
+ *          simultaneously, because the JVM can split one value into
+ *          many copies.  It might also merge two copies of a value
+ *          object into one stored value, if it can prove they are
+ *          indistinguishable.
+ *          <p>
+ *          Value objects are built into the core of the language
+ *          and JVM.  An historical approximation to the concept is
+ *          <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">
+ *          value-based objects</a>, which are regular identity objects
+ *          for which the use of both {@code ==} and identity-sensitive
+ *          operations is strongly discouraged.  Some classes previously
+ *          marked as value based are migrated to proper value classes.
  *      </div>
  * </div>
  *
@@ -167,15 +348,15 @@ public class Object {
      *
      * @implSpec
      * The {@code equals} method for class {@code Object} implements
-     * the most discriminating possible equivalence relation on objects;
-     * that is, for any non-null reference values {@code x} and
+     * the most discriminating possible equivalence relation on objects,
+     * which is {@linkplain ##Indistinguishability indistinguishability}.
+     * That is, for any non-null reference values {@code x} and
      * {@code y}, this method returns {@code true} if and only
-     * if {@code x} and {@code y} refer to the same identity object or
-     * <a id=equalsIndistinguishable>indistinguishable value objects ({@code x == y} has the value
-     * {@code true})</a>.
+     * if {@code x == y} has the value {@code true}.
      * <p>
      * In other words, under the object equality equivalence
-     * relation, each equivalence class only has a single element.
+     * relation, each equivalence class only has a single
+     * distinguishable element.
      *
      * @apiNote
      * It is generally necessary to override the {@link #hashCode() hashCode}
@@ -208,7 +389,8 @@ public class Object {
      * <pre>
      * x.clone().getClass() == x.getClass()</pre></blockquote>
      * will also be {@code true}, but these are not absolute requirements.
-     * The clone of a value object, in particular, may be indistinguishable from
+     * The clone of a value object, in particular, may be
+     * {@linkplain ##Indistinguishability indistinguishable} from
      * the original.
      * <p>
      * While it is typically the case that:
@@ -258,7 +440,8 @@ public class Object {
      * contents of the fields are not themselves cloned. Thus, this method
      * performs a "shallow copy" of this object, not a "deep copy" operation.
      * <p>
-     * For a value object, this method returns an object that is indistinguishable
+     * For a value object, this method returns an object that is
+     * {@linkplain ##Indistinguishability indistinguishable}
      * from this object.
      * <p>
      * The class {@code Object} does not itself implement the interface
