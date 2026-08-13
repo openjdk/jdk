@@ -5513,21 +5513,22 @@ Node* LibraryCallKit::get_hashcode_from_header(Node* header, RegionNode* unset_r
  * }
  *
  * cache_path:
- * if header is not safe to read { goto compute }
+ * if header is not safe to read { goto inline_fast_path }
  * hash = read_hash_from_header()
- * if hash is empty { goto compute }
+ * if hash is empty { goto inline_fast_path }
  * return hash
  *
- * inline_fast_path (for static call, goto slow otherwise):
+ * inline_fast_path:
+ * if not static { goto slow }
  * if not value object { goto slow }
  * if value klass has no fast path { goto slow }
  * if klass header is not safe to read { goto slow }
  * k_hash = read_hash_from_klass_header()
  * if k_hash is empty { goto slow }
- * return fast_hashcode_path...
+ * return fast_hashcode_path (see InlineKlass::Members::_fast_hashcode_offset et seqq. for details on how this is computed)
  *
  * slow:
- * runtime call to hash function
+ * runtime call to hash function (this may be replaced with the expanded form during IGVN. See CallStaticJavaNode::replace_identity_hash_code)
  *
  */
 bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {

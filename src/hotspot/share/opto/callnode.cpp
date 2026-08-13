@@ -1195,17 +1195,18 @@ Node* CallStaticJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     }
   }
 
-  // Try to replace the runtime call to the substitutability test emitted by acmp if we can reason
-  // about the operands
   if (can_reshape && !control()->is_top() && !memory()->is_top() && method() != nullptr) {
     if (method()->holder() == phase->C->env()->ValueObjectMethods_klass() &&
         method()->name() == ciSymbols::isSubstitutable_name()) {
+      // Try to replace the runtime call to the substitutability test emitted by acmp if we can reason
+      // about the operands
       Node* res = replace_is_substitutable(phase->is_IterGVN());
       if (res != nullptr) {
         return res;
       }
     } else if (method()->holder() == phase->C->env()->System_klass() &&
         method()->name() == ciSymbols::identityHashCode_name()) {
+      // Same with identityHashCode
       Node* res = replace_identity_hash_code(phase->is_IterGVN());
       if (res != nullptr) {
         return res;
