@@ -761,7 +761,7 @@ bool AOTClassLocationConfig::check_classpaths(bool is_boot_classpath, bool has_a
   LogTarget(Info, class, path) lt;
   if (lt.is_enabled()) {
     LogStream ls(lt);
-    ls.print("Checking %s classpath", which);
+    ls.print("Checking %s classpath from index [%d]", which, index_start);
     ls.print_cr("%s", use_lcp_match ? " (with longest common prefix substitution)" : "");
     ls.print("- expected : '");
     print_dumptime_classpath(ls, index_start, index_end, use_lcp_match, _dumptime_lcp_len, runtime_lcp, runtime_lcp_len);
@@ -842,7 +842,7 @@ bool AOTClassLocationConfig::check_module_paths(bool has_aot_linked_classes, boo
   LogTarget(Info, class, path) lt;
   if (lt.is_enabled()) {
     LogStream ls(lt);
-    ls.print_cr("Checking module paths");
+    ls.print_cr("Checking module paths from index [%d]", index_start);
     ls.print("- expected : '");
     print_dumptime_classpath(ls, index_start, index_end, false, 0, nullptr, 0);
     ls.print_cr("'");
@@ -859,7 +859,7 @@ bool AOTClassLocationConfig::check_module_paths(bool has_aot_linked_classes, boo
     const char* dumptime_path = cs->path();
 
     assert(!cs->from_cpattr(), "not applicable for module path");
-    log_info(class, path)("Checking '%s' %s", dumptime_path, cs->file_type_string());
+    log_info(class, path)("Checking [%d] '%s' %s", i, dumptime_path, cs->file_type_string());
 
     if (!cs->check(dumptime_path, has_aot_linked_classes)) {
       return false;
@@ -908,13 +908,12 @@ bool AOTClassLocationConfig::check_module_paths_exact_match(ModulePathClassLocat
       AOTMetaspace::report_loading_error("module path has fewer elements (%d) than expected (%d)", runtime_module_css.size(), num_module_paths());
       return false;
     }
-    int n = runtime_module_css.current();
     const char* runtime_path = runtime_module_css.get_next();
     // Both dumptime and runtime module paths are alphabetically sorted, so we just need to
     // compare each element at the same position.
     if (!os::same_files(dumptime_path, runtime_path)) {
-      AOTMetaspace::report_loading_error("the %d-th module path element is different: expected %s actual %s",
-                                         n, dumptime_path, runtime_path);
+      AOTMetaspace::report_loading_error("module path at [%d] is different: expected %s actual %s",
+                                         i, dumptime_path, runtime_path);
       return false;
     }
   }

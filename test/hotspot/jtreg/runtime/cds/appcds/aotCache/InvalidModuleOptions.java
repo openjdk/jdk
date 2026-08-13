@@ -64,11 +64,11 @@ public class InvalidModuleOptions {
         },
         {
             "<mp1>", "<mp2>",
-            "the 0-th module path element is different",
+            "module path at [2] is different",
         },
         {
             "<mp12>", "<mp13>",
-            "the 1-th module path element is different",
+            "module path at [3] is different",
         },
         {
             null, "<mp1>",
