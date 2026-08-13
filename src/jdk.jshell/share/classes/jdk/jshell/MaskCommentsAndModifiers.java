@@ -72,11 +72,14 @@ class MaskCommentsAndModifiers {
     // initial modifier section
     private boolean maskModifiers;
 
+    //should documentation comments be masked?
+    private boolean maskDocComments;
+
     // Does the string end with an unclosed '/*' style comment?
     private boolean openToken = false;
 
-    MaskCommentsAndModifiers(String s, boolean maskModifiers) {
-        this(s, maskModifiers, IGNORED_MODIFIERS);
+    MaskCommentsAndModifiers(String s, boolean maskModifiers, boolean maskDocComments) {
+        this(s, maskModifiers, IGNORED_MODIFIERS, maskDocComments);
     }
 
     MaskCommentsAndModifiers(String s, Set<String> ignoredModifiers) {
@@ -84,10 +87,15 @@ class MaskCommentsAndModifiers {
     }
 
     MaskCommentsAndModifiers(String s, boolean maskModifiers, Set<String> ignoredModifiers) {
+        this(s, maskModifiers, ignoredModifiers, true);
+    }
+
+    MaskCommentsAndModifiers(String s, boolean maskModifiers, Set<String> ignoredModifiers, boolean maskDocComments) {
         this.str = s;
         this.length = s.length();
         this.maskModifiers = maskModifiers;
         this.ignoredModifiers = ignoredModifiers;
+        this.maskDocComments = maskDocComments;
         read();
         while (c >= 0) {
             next();
@@ -154,6 +162,14 @@ class MaskCommentsAndModifiers {
         }
     }
 
+    private void writeMaskOrNotMask(int ch, boolean mask) {
+        if (mask) {
+            writeMask(ch);
+        } else {
+            write(ch);
+        }
+    }
+
     @SuppressWarnings("fallthrough")
     private void next() {
         switch (c) {
@@ -199,30 +215,50 @@ class MaskCommentsAndModifiers {
             case '/':
                 read();
                 switch (c) {
-                    case '*':
-                        writeMask('/');
-                        writeMask(c);
-                        int prevc = 0;
-                        while (read() >= 0 && (c != '/' || prevc != '*')) {
+                    case '*' -> {
+                        read();
+                        boolean mask;
+                        if (maskDocComments || c != '*') {
+                            writeMask("/*");
                             writeMask(c);
+                            mask = true;
+                        } else {
+                            read();
+                            if (c == '/') {
+                                //special case: /**/
+                                writeMask("/**/");
+                                openToken = false;
+                                break;
+                            }
+                            write("/**");
+                            write(c);
+                            mask = false; //do not mask javadoc comments
+                        }
+
+                        int prevc = c;
+                        while (read() >= 0 && (c != '/' || prevc != '*')) {
+                            writeMaskOrNotMask(c, mask);
                             prevc = c;
                         }
-                        writeMask(c);
+                        writeMaskOrNotMask(c, mask);
                         openToken = c < 0;
-                        break;
-                    case '/':
-                        writeMask('/');
-                        writeMask(c);
+                    }
+                    case '/' -> {
+                        read();
+                        boolean mask = maskDocComments || c != '/'; //do not mask javadoc comments
+                        writeMaskOrNotMask('/', mask);
+                        writeMaskOrNotMask('/', mask);
+                        writeMaskOrNotMask(c, mask);
                         while (read() >= 0 && c != '\n' && c != '\r') {
-                            writeMask(c);
+                            writeMaskOrNotMask(c, mask);
                         }
-                        writeMask(c);
-                        break;
-                    default:
+                        writeMaskOrNotMask(c, mask);
+                    }
+                    default -> {
                         maskModifiers = false;
                         write('/');
                         unread();
-                        break;
+                    }
                 }
                 break;
             case '@':

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2015, 2020, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -330,15 +330,6 @@ void ShenandoahHeap::increase_object_age(oop obj, uint additional_age) {
 uint ShenandoahHeap::get_object_age(oop obj) {
   markWord w = obj->mark();
   assert(!w.is_marked(), "must not be forwarded");
-  if (UseObjectMonitorTable) {
-    assert(w.age() <= markWord::max_age, "Impossible!");
-    return w.age();
-  }
-  if (w.has_monitor()) {
-    w = w.monitor()->header();
-  } else {
-    assert(!w.has_displaced_mark_helper(), "Mark word should not be displaced");
-  }
   assert(w.age() <= markWord::max_age, "Impossible!");
   return w.age();
 }
