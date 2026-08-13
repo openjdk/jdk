@@ -1088,7 +1088,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * @return      A list of ScopeTokens.
      */
     static List<ScopeToken> repeat(int count, ScopeToken scope) {
-        return Collections.nCopies(count, scope);
+        return repeat(count, _ -> scope);
     }
 
     /**
@@ -1116,6 +1116,9 @@ public sealed interface Template permits Template.ZeroArgs,
      * @return      A list of ScopeTokens.
      */
     static List<ScopeToken> repeat(int count, IntFunction<ScopeToken> scope) {
+        if (count < 0) {
+            throw new IllegalArgumentException("count must not be negative: " + count);
+        }
         return IntStream.range(0, count)
                         .mapToObj(scope)
                         .toList();
@@ -1151,7 +1154,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * <p>
      * {@snippet lang=java:
      * // Output:
-     * // Element 1, Element 2, Element 3
+     * // Element 0, Element 1, Element 2
      * Template.make(() -> scope(
      *     repeatAndJoin(3, ", ", (index) -> scope("Element " + index))
      * ));
@@ -1163,6 +1166,10 @@ public sealed interface Template permits Template.ZeroArgs,
      * @return          A list of ScopeTokens.
      */
     static List<ScopeToken> repeatAndJoin(int count, String delimiter, IntFunction<ScopeToken> scope) {
+        if (count < 0) {
+            throw new IllegalArgumentException("count must not be negative: " + count);
+        }
+
         List<ScopeToken> scopeTokens = new ArrayList<>();
         for (int i = 0; i < count; i++) {
             if (i > 0) {
@@ -1220,9 +1227,15 @@ public sealed interface Template permits Template.ZeroArgs,
      * @return      A list of ScopeTokens.
      */
     static <T> List<ScopeToken> map(List<T> list, BiFunction<T, Integer, ScopeToken> scope) {
-        return IntStream.range(0, list.size())
-                        .mapToObj(i -> scope.apply(list.get(i), i))
-                        .toList();
+        List<ScopeToken> scopeTokens = new ArrayList<>(list.size());
+        int i = 0;
+        for (T element : list) {
+            scopeTokens.add(scope.apply(element, i));
+            i++;
+        }
+
+        // Return an unmodifiable list.
+        return List.copyOf(scopeTokens);
     }
 
     /**
