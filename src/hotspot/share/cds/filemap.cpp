@@ -1481,7 +1481,12 @@ bool FileMapInfo::map_aot_code_region(ReservedSpace rs) {
 
     r->set_mapped_from_file(true);
     r->set_mapped_base(mapped_base);
-    relocate_pointers_in_aot_code_region();
+    if (!relocate_pointers_in_aot_code_region()) {
+      r->set_mapped_from_file(false);
+      r->set_mapped_base(nullptr);
+      os::unmap_memory(mapped_base, r->used_aligned());
+      return false;
+    }
     aot_log_info(aot)("Mapped static  region #%d at base " INTPTR_FORMAT " top " INTPTR_FORMAT " (%s)",
                   AOTMetaspace::ac, p2i(r->mapped_base()), p2i(r->mapped_end()),
                   shared_region_name[AOTMetaspace::ac]);
@@ -1516,13 +1521,14 @@ public:
   }
 };
 
-void FileMapInfo::relocate_pointers_in_aot_code_region() {
+bool FileMapInfo::relocate_pointers_in_aot_code_region() {
   FileMapRegion* r = region_at(AOTMetaspace::ac);
-  char* bitmap_base = map_bitmap_region();
-
+  if (map_bitmap_region() == nullptr) {
+    return false; // OOM, or CRC check failure
+  }
   BitMapView ac_ptrmap = ptrmap_view(AOTMetaspace::ac);
   if (ac_ptrmap.size() == 0) {
-    return;
+    return true;
   }
 
   address core_regions_requested_base = (address)header()->requested_base_address();
@@ -1533,6 +1539,7 @@ void FileMapInfo::relocate_pointers_in_aot_code_region() {
   CachedCodeRelocator patcher(ac_region_requested_base, ac_region_mapped_base,
                               core_regions_mapped_base - core_regions_requested_base);
   ac_ptrmap.iterate(&patcher);
+  return true;
 }
 
 class SharedDataRelocationTask : public ArchiveWorkerTask {

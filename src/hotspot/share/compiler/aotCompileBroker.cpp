@@ -72,7 +72,7 @@ public:
         // We do not include C1 full profiled methods at this time.
         return false;
       default:
-        assert(false, "Missed the case: %d", _comp_level);
+        assert(false, "Unexpected AOT compilation level: %d", _comp_level);
     }
     // Do not include methods by default.
     return false;

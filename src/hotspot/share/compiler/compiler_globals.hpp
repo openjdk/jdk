@@ -421,7 +421,7 @@
           "Use AOT code counter to trigger JIT compilation")                \
                                                                             \
   product(bool, VerifyAOTCode, false, DIAGNOSTIC,                           \
-          "Load AOT code but not publish")                                  \
+          "Load AOT code but not install into CodeCache")                   \
                                                                             \
   product(bool, AOTPreloadBlocking, false, DIAGNOSTIC,                      \
           "Preload code is processed with blocking. Startup would not "     \

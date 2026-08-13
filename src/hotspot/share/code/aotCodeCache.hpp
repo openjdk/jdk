@@ -41,7 +41,7 @@
  * during application training run.
  * In following "production" runs this code and data can be loaded into
  * Code Cache skipping its generation.
- * Additionaly special compiled code "preload" is generated with class initialization
+ * Additionally special compiled code "preload" is generated with class initialization
  * barriers which can be called on first Java method invocation.
  */
 
@@ -202,7 +202,7 @@ class AOTCodeAddressHashTable : public HashTable<
   AnyObj::C_HEAP,
   mtCode> {};
 
-// Addresses of stubs, blobs and runtime finctions called from compiled code.
+// Addresses of stubs, blobs and runtime functions called from compiled code.
 class AOTCodeAddressTable : public CHeapObj<mtCode> {
 private:
   AOTCodeAddressHashTable* _hash_table;
@@ -287,7 +287,7 @@ private:
   // Array of addresses owned by stubs. Each stub appends addresses to
   // this array as a block, whether at the end of generation or at the
   // end of restoration from the cache. The first two addresses in
-  // each block are the "start" and "end2 address of the stub. Any
+  // each block are the "start" and "end" address of the stub. Any
   // other visible addresses located within the range [start,end)
   // follow, either extra entries, data addresses or SEGV-protected
   // subrange start, end and handler addresses. In the special case

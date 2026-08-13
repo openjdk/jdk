@@ -1173,8 +1173,8 @@ nmethod* ciEnv::register_aot_method(JavaThread* thread,
     // The CodeCache is full.
     record_codecache_full();
   }
-  return nm;
   // safepoints are allowed again
+  return nm;
 }
 #endif
 
@@ -1290,11 +1290,6 @@ void ciEnv::register_method(ciMethod* target,
           int inline_size = ctd->inline_instructions_size();
           aot_code_entry->set_inline_instructions_size(inline_size);
           if (for_preload) {
-            // To have reference from method to AOT preload code
-            // during assembly phase.
-            MethodCounters* mc = method->get_method_counters(thread);
-            assert(mc != nullptr, "CompileBroker should create MethodCounters if it is missing");
-            mc->set_aot_preload_code_entry(aot_code_entry);
             // Set it only for printing purpose, otherwise it is unused
             // during assembly phase.
             nm->set_preloaded(true);

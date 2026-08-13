@@ -496,7 +496,7 @@ public:
 
   MapArchiveResult map_region(int i, intx addr_delta, char* mapped_base_address, ReservedSpace rs);
   bool  relocate_pointers_in_core_regions(intx addr_delta);
-  void  relocate_pointers_in_aot_code_region();
+  bool  relocate_pointers_in_aot_code_region();
   char* map_auxiliary_region(int region_index, bool read_only);
 
 public:

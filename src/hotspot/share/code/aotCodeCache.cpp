@@ -52,7 +52,6 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compileTask.hpp"
-#include "gc/g1/g1BarrierSetRuntime.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
@@ -189,7 +188,7 @@ static void report_store_failure() {
   AOTCodeCache::disable_caching();
 }
 
-// The sequence of AOT code caching flags and parametters settings.
+// The sequence of AOT code caching flags and parameters settings.
 //
 // 1. The initial AOT code caching flags setting is done
 // during call to CDSConfig::check_vm_args_consistency().
@@ -234,7 +233,7 @@ bool AOTCodeCache::is_using_code() {
   return AOTCodeCaching && is_on_for_use();
 }
 
-// This is used before AOTCodeCahe is initialized
+// This is used before AOTCodeCache is initialized
 // but after AOT (CDS) Cache flags consistency is checked.
 bool AOTCodeCache::maybe_dumping_code() {
   return AOTCodeCaching && CDSConfig::is_dumping_final_static_archive();
@@ -651,7 +650,17 @@ bool AOTCodeCache::Config::verify_cpu_features(AOTCodeCache* cache) const {
   LogStreamHandle(Debug, aot, codecache, init) log;
   uint offset = _cpu_features_offset;
   uint cpu_features_size = *(uint *)cache->addr(offset);
-  assert(cpu_features_size == (uint)VM_Version::cpu_features_size(), "must be");
+  if (cpu_features_size != (uint)VM_Version::cpu_features_size()) {
+    if (load_failure_log().is_enabled()) {
+      ResourceMark rm;
+      load_failure_log().print_cr("AOT Code Cache disabled: different cpu features size %d vs current %d",
+                                  cpu_features_size, (uint)VM_Version::cpu_features_size());
+    }
+    // Assert in debug VM
+    assert(false, "different cpu features size %d vs current %d",
+           cpu_features_size, (uint)VM_Version::cpu_features_size());
+    return false;
+  }
   offset += sizeof(uint);
 
   void* cached_cpu_features_buffer = (void *)cache->addr(offset);
@@ -959,6 +968,44 @@ uint AOTCodeCache::write_bytes(const void* buffer, uint nbytes) {
   return nbytes;
 }
 
+static bool skip_aot_code(uint comp_level) {
+  // DisableAOTCode uses decimal values as bitmask:
+  // Tier 1 (A1)                  |     1
+  // Tier 2 (A1 + counters)       |    10
+  // Tier 3 (A1 + counters + mdo) |   100
+  // Tier 4 (A4)                  |  1000
+  // Tier 5 (AP4)                 | 10000
+  // All C1 tiers                 |   111
+  // All tiers                    | 11111
+  switch (comp_level) {
+    case CompLevel_simple:
+      if ((DisableAOTCode % 10) == 1) {
+        return true;
+      }
+      break;
+    case CompLevel_limited_profile:
+      if ((DisableAOTCode / 10) % 10 == 1) {
+        return true;
+      }
+      break;
+    case CompLevel_full_profile: {
+      return true; // Tier3 is not cached now
+    }
+    case CompLevel_full_optimization:
+      if ((DisableAOTCode / 1000) % 10 == 1) {
+        return true;
+      }
+      break;
+    case CompLevel_full_optimization + 1:
+      if ((DisableAOTCode / 10000) % 10 == 1) {
+        return true;  // skip AOT preload code (level 5);
+      }
+      break;
+    default: return true;
+  }
+  return false;
+}
+
 AOTCodeEntry* AOTCodeCache::find_code_entry(const methodHandle& method, uint comp_level) {
   assert(is_using_code(), "AOT code caching should be enabled");
   if (!method->in_aot_cache()) {
@@ -971,32 +1018,8 @@ AOTCodeEntry* AOTCodeCache::find_code_entry(const methodHandle& method, uint com
     return nullptr; // Already requested JIT compilation
   }
 
-  // DisableAOTCode uses decimal values as bitmask:
-  // Tier 1 (A1)                  |     1
-  // Tier 2 (A1 + counters)       |    10
-  // Tier 3 (A1 + counters + mdo) |   100
-  // Tier 4 (A4)                  |  1000
-  // Tier 5 (AP4)                 | 10000
-  // All C1 tiers                 |   111
-  // All tiers                    | 11111
-  switch (comp_level) {
-    case CompLevel_simple:
-      if ((DisableAOTCode % 10) == 1) {
-        return nullptr;
-      }
-      break;
-    case CompLevel_limited_profile:
-      if ((DisableAOTCode / 10) % 10 == 1) {
-        return nullptr;
-      }
-      break;
-    case CompLevel_full_optimization:
-      if ((DisableAOTCode / 1000) % 10 == 1) {
-        return nullptr;
-      }
-      break;
-
-    default: return nullptr; // Level 1, 2, and 4 only
+  if (skip_aot_code(comp_level)) {
+    return nullptr;
   }
   TraceTime t1("Total time to find AOT code", &_t_totalFind, enable_timers(), false);
   if (is_on() && _cache->cache_buffer() != nullptr) {
@@ -2329,7 +2352,8 @@ bool AOTCodeReader::compile_nmethod(ciEnv* env, ciMethod* target, AbstractCompil
 
   bool preload = task->preload();
   if (VerifyAOTCode && !env->failing()) {
-    // Emulate success
+    // AOT code is not installed in CodeCache with VerifyAOTCode.
+    // Report AOT code sizes as the task result.
     task->mark_success();
     task->set_nm_content_size(archived_nm->content_size());
     task->set_nm_insts_size(archived_nm->insts_size());
@@ -2384,7 +2408,7 @@ void AOTCodeCache::preload_code(JavaThread* thread) {
     return;
   }
 
-  if ((DisableAOTCode / 10000) % 10 == 1) {
+  if (skip_aot_code(CompLevel_full_optimization + 1)) {
     return; // no preloaded code (level 5);
   }
   _cache->preload_aot_code(thread);
@@ -2398,13 +2422,13 @@ void AOTCodeCache::preload_aot_code(TRAPS) {
   }
   TraceTime t1("Total time to preload AOT code", &_t_totalPreload, enable_timers(), false);
   assert(_for_use, "sanity");
-  uint count = _load_header->entries_count();
   uint preload_entries_count = _load_header->preload_entries_count();
   if (preload_entries_count > 0) {
     load_info_log().print_cr("Read %d preload entries from AOT Code Cache", preload_entries_count);
     AOTCodeEntry* preload_entry = (AOTCodeEntry*)addr(_load_header->preload_entries_offset());
-    uint count = MIN2(preload_entries_count, AOTCodePreloadStop);
-    for (uint i = AOTCodePreloadStart; i < count; i++) {
+    // AOTCodePreloadStop is inclusive
+    uint last_preload_index = MIN2(preload_entries_count - 1, AOTCodePreloadStop);
+    for (uint i = AOTCodePreloadStart; i <= last_preload_index; i++) {
       AOTCodeEntry* entry = &preload_entry[i];
       if (entry->not_entrant()) {
         continue;
@@ -4040,12 +4064,14 @@ int AOTCodeAddressTable::id_for_address(address addr, RelocIterator reloc, CodeB
     // Search for a matching stub entry
     id = search_address(addr, _stubs_addr, _stubs_max);
     if (id == BAD_ADDRESS_ID) {
+#ifdef ASSERT
       StubCodeDesc* desc = StubCodeDesc::desc_for(addr);
       reloc.print_current_on(tty);
       code_blob->print_on(tty);
       code_blob->print_code_on(tty);
       const char* sub_name = (desc != nullptr) ? desc->name() : "<unknown>";
       assert(false, "Address " INTPTR_FORMAT " for Stub:%s is missing in AOT Code Cache addresses table", p2i(addr), sub_name);
+#endif
     } else {
       return id + _stubs_base;
     }
@@ -4053,6 +4079,7 @@ int AOTCodeAddressTable::id_for_address(address addr, RelocIterator reloc, CodeB
     // Search in runtime functions
     id = search_address(addr, _extrs_addr, _extrs_length);
     if (id == BAD_ADDRESS_ID) {
+#ifdef ASSERT
       ResourceMark rm;
       const int buflen = 1024;
       char* func_name = NEW_RESOURCE_ARRAY(char, buflen);
@@ -4069,6 +4096,7 @@ int AOTCodeAddressTable::id_for_address(address addr, RelocIterator reloc, CodeB
         os::find(addr, tty);
         assert(false, "Address " INTPTR_FORMAT " for <unknown>/('%s') is missing in AOT Code Cache addresses table", p2i(addr), (const char*)addr);
       }
+#endif
     } else {
       return _extrs_base + id;
     }

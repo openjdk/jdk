@@ -25,7 +25,7 @@
 /**
  * @test
  * @summary Sanity test of the diagnostic flag -XX:DisableAOTCode=n
- * @requires vm.cds.supports.aot.class.linking
+ * @requires vm.cds.supports.aot.code.caching
  * @requires vm.flagless
  * @requires vm.compiler1.enabled & vm.compiler2.enabled
  * @comment Both C1 and C2 JIT compilers are required because the test verifies
@@ -42,7 +42,6 @@
 
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.helpers.ClassFileInstaller;
-import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 

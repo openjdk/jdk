@@ -1629,7 +1629,7 @@ void AOTMetaspace::initialize_runtime_shared_and_meta_spaces() {
 
 // This is called very early at VM start up to get AOT cache header
 // and the size of the AOT code region during production run.
-// We need the size to reseve space in CodeCache to map code from AOT code region.
+// We need the size to reserve space in CodeCache to map code from AOT code region.
 void AOTMetaspace::get_aot_code_region_size() {
   if (!AOTCodeCache::is_caching_enabled() || CDSConfig::is_dumping_final_static_archive()) {
     return;

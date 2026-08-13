@@ -1118,7 +1118,7 @@ AsmRemarks::~AsmRemarks() {
   if (_remarks != nullptr) {
     clear();
   }
-  assert(_remarks == nullptr, "must be");
+  postcond(_remarks == nullptr);
 }
 
 void AsmRemarks::init() {
@@ -1178,7 +1178,7 @@ DbgStrings::~DbgStrings() {
   if (_strings != nullptr) {
     clear();
   }
-  assert(_strings == nullptr, "must be");
+  postcond(_strings == nullptr);
 }
 
 void DbgStrings::init() {

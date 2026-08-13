@@ -35,8 +35,6 @@
 #include "memory/virtualspace.hpp"
 #include "oops/instanceKlass.hpp"
 
-size_t _aot_code_region_size = 0;
-
 bool AOTCacheAccess::can_generate_aot_code(address addr) {
   assert(CDSConfig::is_dumping_final_static_archive(), "must be");
   return ArchiveBuilder::is_active() && ArchiveBuilder::current()->has_been_archived(addr);
@@ -74,6 +72,8 @@ void* AOTCacheAccess::allocate_aot_code_region(size_t size) {
   assert(CDSConfig::is_dumping_final_static_archive(), "must be");
   return (void*)ArchiveBuilder::ac_region_alloc(size);
 }
+
+static size_t _aot_code_region_size = 0;
 
 size_t AOTCacheAccess::get_aot_code_region_size() {
   return _aot_code_region_size;
