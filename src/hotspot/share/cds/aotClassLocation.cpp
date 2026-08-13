@@ -436,7 +436,7 @@ bool AOTClassLocation::check(const char* runtime_path, bool has_aot_linked_class
     }
   }
 
-  log_info(class, path)("ok");
+  log_info(class, path)("ok (file size and timestamp have not changed)");
   return true;
 }
 
