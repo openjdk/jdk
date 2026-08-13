@@ -36,7 +36,6 @@
 import java.lang.classfile.Attributes;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.attribute.CodeAttribute;
-import java.lang.classfile.attribute.LocalVariableTableAttribute;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -77,9 +76,7 @@ public class EmptyLocalVariableTableTest {
                 .forEach(mm -> {
                     CodeAttribute codeAttribute = mm.findAttribute(Attributes.code()).orElse(null);
                     Assertions.assertNotNull(codeAttribute);
-                    codeAttribute.attributes().stream()
-                            .filter(attr -> attr instanceof LocalVariableTableAttribute)
-                            .map(attr -> (LocalVariableTableAttribute) attr)
+                    codeAttribute.findAttributes(Attributes.localVariableTable()).stream()
                             .forEach(attr -> {
                                 Assertions.assertFalse(attr.localVariables().isEmpty(), "Empty LocalVariableTableAttribute found");
                             });
