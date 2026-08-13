@@ -137,7 +137,7 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   _generation->ref_processor()->set_soft_reference_policy(
       GCCause::should_clear_all_soft_refs(cause));
 
-  ShenandoahConcurrentRootPhase gc_phase(concurrent_gc_event_message(), ShenandoahPhaseTimings::conc_gc, /* log_heap_usage = */ true);
+  ShenandoahConcurrentRootPhase gc_phase("Concurrent GC", ShenandoahPhaseTimings::conc_gc, /* log_heap_usage = */ true);
 
   ShenandoahBreakpointGCScope breakpoint_gc_scope(cause);
 
@@ -1305,107 +1305,3 @@ bool ShenandoahConcurrentGC::check_cancellation_and_abort(ShenandoahDegenPoint p
   }
   return false;
 }
-<<<<<<< HEAD
-
-const char* ShenandoahConcurrentGC::concurrent_gc_event_message() const {
-  SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent GC", "");
-}
-
-const char* ShenandoahConcurrentGC::init_mark_event_message() const {
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  assert(!heap->has_forwarded_objects(), "Should not have forwarded objects here");
-  if (heap->unload_classes()) {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Pause Init Mark", " (unload classes)");
-  } else {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Pause Init Mark", "");
-  }
-}
-
-const char* ShenandoahConcurrentGC::final_mark_event_message() const {
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  assert(!heap->has_forwarded_objects() || heap->is_concurrent_old_mark_in_progress(),
-         "Should not have forwarded objects during final mark, unless old gen concurrent mark is running");
-
-  if (heap->unload_classes()) {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Pause Final Mark", " (unload classes)");
-  } else {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Pause Final Mark", "");
-  }
-}
-
-const char* ShenandoahConcurrentGC::conc_mark_event_message() const {
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  assert(!heap->has_forwarded_objects() || heap->is_concurrent_old_mark_in_progress(),
-         "Should not have forwarded objects concurrent mark, unless old gen concurrent mark is running");
-  if (heap->unload_classes()) {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent marking", " (unload classes)");
-  } else {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent marking", "");
-  }
-}
-
-const char* ShenandoahConcurrentGC::conc_reset_event_message() const {
-  if (ShenandoahHeap::heap()->unload_classes()) {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent reset", " (unload classes)");
-  } else {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent reset", "");
-  }
-}
-
-const char* ShenandoahConcurrentGC::conc_reset_after_collect_event_message() const {
-  if (ShenandoahHeap::heap()->unload_classes()) {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent reset after collect", " (unload classes)");
-  } else {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent reset after collect", "");
-  }
-}
-
-const char* ShenandoahConcurrentGC::verify_final_event_message() const {
-  if (ShenandoahHeap::heap()->unload_classes()) {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Pause Verify Final", " (unload classes)");
-  } else {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Pause Verify Final", "");
-  }
-}
-
-const char* ShenandoahConcurrentGC::conc_final_roots_event_message() const {
-  if (ShenandoahHeap::heap()->unload_classes()) {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent Final Roots", " (unload classes)");
-  } else {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent Final Roots", "");
-  }
-}
-
-const char* ShenandoahConcurrentGC::conc_weak_refs_event_message() const {
-  if (ShenandoahHeap::heap()->unload_classes()) {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent weak references", " (unload classes)");
-  } else {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent weak references", "");
-  }
-}
-
-const char* ShenandoahConcurrentGC::conc_weak_roots_event_message() const {
-  if (ShenandoahHeap::heap()->unload_classes()) {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent weak roots", " (unload classes)");
-  } else {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent weak roots", "");
-  }
-}
-
-const char* ShenandoahConcurrentGC::conc_cleanup_event_message() const {
-  if (ShenandoahHeap::heap()->unload_classes()) {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent cleanup", " (unload classes)");
-  } else {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent cleanup", "");
-  }
-}
-
-const char* ShenandoahConcurrentGC::conc_init_update_refs_event_message() const {
-  if (ShenandoahHeap::heap()->unload_classes()) {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent Init Update Refs", " (unload classes)");
-  } else {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent Init Update Refs", "");
-  }
-}
-=======
->>>>>>> master

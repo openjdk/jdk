@@ -128,8 +128,6 @@ protected:
   // Called when concurrent GC succeeds.
   void entry_reset_after_collect();
 
-  const char* concurrent_gc_event_message() const;
-
 private:
   void start_mark();
 
