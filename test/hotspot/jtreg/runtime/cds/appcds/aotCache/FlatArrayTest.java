@@ -34,11 +34,11 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
  *             FlatArrayTestApp
  *             MyAOTInitedClass
- *             valueclasses.BytePair 
- *             valueclasses.BytePairWrapper 
- *             valueclasses.BytePairWrapperWrapper 
- *             valueclasses.CharPair 
- *             valueclasses.IntegerWrapper 
+ *             valueclasses.BytePair
+ *             valueclasses.BytePairWrapper
+ *             valueclasses.BytePairWrapperWrapper
+ *             valueclasses.CharPair
+ *             valueclasses.IntegerWrapper
  *             valueclasses.ShortPair
  *             valueclasses.ShortPairWrapper
  *             valueclasses.ValueClassHelper
