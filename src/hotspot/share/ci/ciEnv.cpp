@@ -1046,7 +1046,7 @@ void ciEnv::make_code_usable(JavaThread* thread, ciMethod* target, bool preload,
   methodHandle method(thread, target->get_Method());
 
   if (entry_bci == InvocationEntryBci) {
-    if (TieredCompilation) {
+    if (TieredCompilation || is_aot_compile()) {
       // If there is an old version we're done with it
       nmethod* old = method->code();
       if (TraceMethodReplacement && old != nullptr) {
@@ -1300,7 +1300,7 @@ void ciEnv::register_method(ciMethod* target,
             nm->set_preloaded(true);
           }
         }
-      } else // No need to make AOT code usable during assembly phase
+      }
 #endif
       make_code_usable(THREAD, target, /* preload */ false, entry_bci, /* aot_code_entry */ nullptr, nm);
     }

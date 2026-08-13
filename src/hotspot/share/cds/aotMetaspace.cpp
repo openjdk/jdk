@@ -1233,7 +1233,7 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
     if (AOTCodeCache::is_dumping_code()) {
       // Let's run the AOT compiler.
       CDSConfig::enable_dumping_aot_code();
-      log_info(aot)("Compiling AOT code");
+      log_info(aot)("Compiling AOT code with %d compiler threads", (int)CICompilerCount);
       AOTCompileBroker::compile_aot_code(&builder, CHECK);
       log_info(aot)("Finished compiling AOT code");
       CDSConfig::disable_dumping_aot_code();

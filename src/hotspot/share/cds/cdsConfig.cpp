@@ -687,6 +687,11 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
         // with AOT and -Xcomp.
         Arguments::set_mode_flags(Arguments::_mixed);
       }
+      if (CompileThresholdScaling < 1.0) {
+        // Set flag to default value to avoid excessive normal JIT
+        // compilations during assembly phase.
+        FLAG_SET_ERGO(CompileThresholdScaling, 1.0);
+      }
     } else if (!mode_flag_cmd_line) {
       // By default, -Xshare:dump runs in interpreter-only mode, which is required for deterministic archive.
       //
