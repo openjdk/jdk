@@ -5560,19 +5560,6 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
   Node* no_ctrl = nullptr;
   Node* header = make_load(no_ctrl, header_addr, TypeX_X, TypeX_X->basic_type(), MemNode::unordered);
 
-  if (!UseObjectMonitorTable) {
-    // Test the header to see if it is safe to read w.r.t. locking.
-    // We cannot use the inline type mask as this may check bits that are overridden
-    // by an object monitor's pointer when inflating locking.
-    Node *lock_mask      = _gvn.MakeConX(markWord::lock_mask_in_place);
-    Node *lmasked_header = _gvn.transform(new AndXNode(header, lock_mask));
-    Node *monitor_val   = _gvn.MakeConX(markWord::monitor_value);
-    Node *chk_monitor   = _gvn.transform(new CmpXNode(lmasked_header, monitor_val));
-    Node *test_monitor  = _gvn.transform(new BoolNode(chk_monitor, BoolTest::eq));
-
-    generate_slow_guard(test_monitor, slow_region);
-  }
-
   // Get the hash value and check to see that it has been properly assigned.
   // We depend on hash_mask being at most 32 bits and avoid the use of
   // hash_mask_in_place because it could be larger than 32 bits in a 64-bit

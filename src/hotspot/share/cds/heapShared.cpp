@@ -823,6 +823,7 @@ void HeapShared::copy_and_rescan_aot_inited_mirror(InstanceKlass* ik) {
 
   oop orig_mirror;
   if (RegeneratedClasses::is_regenerated_object(ik)) {
+    assert(!ik->is_inline_klass(), "not supported");
     InstanceKlass* orig_ik = RegeneratedClasses::get_original_object(ik);
     precond(orig_ik->is_initialized());
     orig_mirror = orig_ik->java_mirror();
@@ -892,6 +893,16 @@ void HeapShared::copy_and_rescan_aot_inited_mirror(InstanceKlass* ik) {
     assert(success, "sanity");
   }
 
+  if (ik->is_inline_klass()) {
+    InlineKlass* ilk = InlineKlass::cast(ik);
+    if (ilk->supports_nullable_layouts()) {
+      oop null_reset_value = ilk->null_reset_value();
+      m->obj_field_put(ilk->null_reset_value_offset(), null_reset_value);
+      bool success = archive_reachable_objects_from(1, _dump_time_special_subgraph, null_reset_value);
+      assert(success, "sanity");
+    }
+  }
+
   if (log_is_enabled(Debug, aot, init)) {
     ResourceMark rm;
     log_debug(aot, init)("copied %3d field(s) in aot-initialized mirror %s%s%s", nfields, ik->external_name(),
@@ -921,14 +932,6 @@ void HeapShared::copy_java_mirror(oop orig_mirror, oop scratch_m) {
   Klass* k = java_lang_Class::as_Klass(orig_mirror);
   if (k != nullptr && k->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(k);
-
-    if (ik->is_inline_klass() && ik->is_initialized()) {
-      // Only concrete value classes need the null_reset field
-      InlineKlass* ilk = InlineKlass::cast(k);
-      if (ilk->supports_nullable_layouts()) {
-        scratch_m->obj_field_put(ilk->null_reset_value_offset(), ilk->null_reset_value());
-      }
-    }
 
     if (ik->has_acmp_maps_offset()) {
       int maps_offset = ik->acmp_maps_offset();
@@ -1144,8 +1147,13 @@ void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k) {
   } else if (orig_k->is_objArray_klass()) {
     Klass* abk = ObjArrayKlass::cast(orig_k)->bottom_klass();
     if (abk->is_instance_klass()) {
-      assert(InstanceKlass::cast(abk)->defined_by_boot_loader(),
-            "must be boot class");
+      if (!AOTClassInitializer::has_test_class()) {
+        // Without `-XX:AOTInitTestClass`, no Java code outside of the boot loader will
+        // be executed in the AOT assembly phase, so we can't have an initialized class
+        // outside of the boot loader.
+        assert(InstanceKlass::cast(abk)->defined_by_boot_loader(),
+               "must be boot class");
+      }
       check_allowed_klass(InstanceKlass::cast(ObjArrayKlass::cast(orig_k)->bottom_klass()));
     }
     if (orig_k == Universe::objectArrayKlass()) {
@@ -1471,13 +1479,13 @@ void HeapShared::initialize_from_archived_subgraph(JavaThread* current, Klass* k
   }
 
   if (k->name()->equals("jdk/internal/module/ArchivedModuleGraph") &&
-      !CDSConfig::is_using_optimized_module_handling() &&
+      !CDSConfig::is_using_full_module_graph() &&
       // archive was created with --module-path
       AOTClassLocationConfig::runtime()->num_module_paths() > 0) {
     // ArchivedModuleGraph was created with a --module-path that's different than the runtime --module-path.
     // Thus, it might contain references to modules that do not exist at runtime. We cannot use it.
-    log_info(aot, heap)("Skip initializing ArchivedModuleGraph subgraph: is_using_optimized_module_handling=%s num_module_paths=%d",
-                        BOOL_TO_STR(CDSConfig::is_using_optimized_module_handling()),
+    log_info(aot, heap)("Skip initializing ArchivedModuleGraph subgraph: is_using_full_module_graph=%s num_module_paths=%d",
+                        BOOL_TO_STR(CDSConfig::is_using_full_module_graph()),
                         AOTClassLocationConfig::runtime()->num_module_paths());
     return;
   }
