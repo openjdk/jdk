@@ -57,7 +57,7 @@ class HiddenClass implements HCInterf {
 /* This is debuggee aplication */
 public class hc001a {
     static PrintStream log = null;
-    static void logMsg(String msg) { log.display(msg); log.flush(); }
+    static void logMsg(String msg) { log.println(msg); log.flush(); }
 
     static final String JAVA_CP = System.getProperty("java.class.path");
     static final String HC_NAME = HiddenClass.class.getName().replace(".", File.separator) + ".class";

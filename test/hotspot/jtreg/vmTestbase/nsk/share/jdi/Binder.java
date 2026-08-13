@@ -698,12 +698,12 @@ public class Binder extends DebugeeBinder {
         try (InputStream is = e.process().getInputStream()) {
             msg.append("\tstdout: ").append(new String(readAllBytes(is))).append('\n');
         } catch (IOException e1) {
-            log.display("Could not read normal output from launched process:" + e1);
+            log.println("Could not read normal output from launched process:" + e1);
         }
         try (InputStream is = e.process().getErrorStream()) {
             msg.append("\tstderr: ").append(new String(readAllBytes(is)));
         } catch (IOException e1) {
-            log.display("Could not read error output from launched process:" + e1);
+            log.println("Could not read error output from launched process:" + e1);
         }
         return msg.toString();
     }
