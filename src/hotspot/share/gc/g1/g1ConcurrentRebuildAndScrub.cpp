@@ -93,8 +93,11 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
         reset_processed_words();
         // If a yield occurs (potential young-gc pause), must recheck for
         // potential regions reclamation.
-        if (_cm->do_yield_check() && !should_rebuild_or_scrub(hr)) {
-          return true;
+        if (_cm->do_yield_check()) {
+          _rebuild_closure.reset_from_card_cache();
+          if (!should_rebuild_or_scrub(hr)) {
+            return true;
+          }
         }
       }
       return _cm->has_aborted() || !should_rebuild_or_scrub(hr);
@@ -254,7 +257,9 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
 
     bool do_heap_region(G1HeapRegion* hr) {
       // Avoid stalling safepoints and stop iteration if mark cycle has been aborted.
-      _cm->do_yield_check();
+      if (_cm->do_yield_check()) {
+        _rebuild_closure.reset_from_card_cache();
+      }
       if (_cm->has_aborted()) {
         return true;
       }

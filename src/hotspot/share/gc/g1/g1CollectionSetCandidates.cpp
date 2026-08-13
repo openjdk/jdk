@@ -23,7 +23,6 @@
  */
 
 #include "gc/g1/g1CollectionSetCandidates.inline.hpp"
-#include "gc/g1/g1FromCardCache.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "utilities/growableArray.hpp"
@@ -48,11 +47,6 @@ void G1CSetCandidateGroup::add(G1HeapRegion* hr) {
   if (_candidates.is_empty()) {
     precond(_fcc_id == InvalidFCCId);
     _fcc_id = hr->hrm_index();
-
-    // An evacuation-failed region may enter a retained group before its former
-    // cardset group is cleared, and may therefore reuse that group's FCC
-    // row. Clear the row before installing the new group.
-    G1FromCardCache::clear(_fcc_id);
   }
   G1CollectionSetCandidateInfo c(hr);
   _candidates.append(c);
@@ -89,10 +83,6 @@ void G1CSetCandidateGroup::clear(bool uninstall_group_cardset) {
 }
 
 void G1CSetCandidateGroup::clear_card_set() {
-  if (_fcc_id != InvalidFCCId) {
-    G1FromCardCache::clear(_fcc_id);
-  }
-
   _card_set.clear();
 }
 

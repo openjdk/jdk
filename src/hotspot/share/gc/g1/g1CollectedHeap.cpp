@@ -1532,7 +1532,7 @@ jint G1CollectedHeap::initialize() {
   // The G1FromCardCache reserves card with value 0 as "invalid", so the heap must not
   // start within the first card.
   guarantee((uintptr_t)(heap_rs.base()) >= G1CardTable::card_size(), "Java heap must not start within the first card.");
-  G1FromCardCache::initialize(max_num_regions());
+  G1FromCardCache::initialize();
   // Also create a G1 rem set.
   _rem_set = new G1RemSet(this);
   _rem_set->initialize(max_num_regions());

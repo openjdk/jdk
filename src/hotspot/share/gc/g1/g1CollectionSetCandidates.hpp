@@ -75,16 +75,16 @@ class G1CSetCandidateGroup : public CHeapObj<mtGCCardSet>{
   size_t _reclaimable_bytes;
   double _gc_efficiency;
 
-  // Index into G1FromCardCache, separate from _group_id. It uses the first
-  // member region's index and is therefore bounded by the maximum number of regions.
+  // The FromCardCache id is the first member region's index. It is unique
+  // among installed groups and bounded by the maximum number of regions.
   uint _fcc_id;
 
 public:
-  // The _group_id uniquely identifies a candidate group when printing, making it
-  // easier to associate regions with their assigned G1CSetCandidateGroup, if any.
+  // The _group_id identifies a candidate group when printing, making it easier
+  // to associate regions with their assigned G1CSetCandidateGroup, if any.
   // Special values for the id:
   // * id 0 is reserved for regions that do not have a remembered set.
-  // * id 1 is reserved for the G1CollectionSetCandidate that contains all young regions.
+  // * id 1 is reserved for the group containing all young regions.
   // * other ids are handed out incrementally, starting from InitialId.
   static const uint NoRemSetId = 0;
   static const uint YoungRegionId = 1;
@@ -137,7 +137,7 @@ public:
     return _card_set.occupied();
   }
 
-  // Clear the group-owned card set and its associated FCC state.
+  // Clear the group-owned card set.
   void clear_card_set();
 
   void clear(bool uninstall_group_cardset = false);

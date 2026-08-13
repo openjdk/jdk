@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_GC_G1_G1OOPCLOSURES_HPP
 
 #include "classfile/classLoaderData.hpp"
+#include "gc/g1/g1FromCardCache.hpp"
 #include "gc/g1/g1HeapRegionAttr.hpp"
 #include "memory/iterator.hpp"
 #include "oops/markWord.hpp"
@@ -215,6 +216,7 @@ public:
     _worker_id(worker_id),
     _has_ref_to_cset(false),
     _has_ref_to_old(false) {
+    G1FromCardCache::reset(_worker_id);
   }
 
   bool has_ref_to_cset() const { return _has_ref_to_cset; }
@@ -233,7 +235,10 @@ class G1RebuildRemSetClosure : public BasicOopIterateClosure {
 
 public:
   G1RebuildRemSetClosure(G1CollectedHeap* g1h, uint worker_id) : _g1h(g1h), _worker_id(worker_id) {
+    G1FromCardCache::reset(_worker_id);
   }
+
+  void reset_from_card_cache() { G1FromCardCache::reset(_worker_id); }
 
   template <class T> void do_oop_work(T* p);
   virtual void do_oop(oop* p)       { do_oop_work(p); }
