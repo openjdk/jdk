@@ -35,7 +35,7 @@ import jdk.test.lib.net.IPSupport;
 
 /*
  * @test
- * @bug 8308807
+ * @bug 8390212
  * @summary MulticastSocket over a dual-stack IPv6 delegate must be able to
  *          join an IPv4 multicast group on every platform where the JDK's
  *          capability flags advertise support (canIPv6SocketJoinIPv4Group
