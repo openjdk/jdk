@@ -38,12 +38,12 @@ public class InvalidFinalizationOption {
 
         TestData[] testData = {
             new TestData(new String[] { "--finalization" },
-                        "Invalid finalization value"),
-            new TestData(new String[] { "--finalization", "azerty" },
                          "Invalid finalization value"),
             new TestData(new String[] { "--finalization=" },
                          "Invalid finalization value"),
             new TestData(new String[] { "--finalization=azerty" },
+                         "Invalid finalization value"),
+            new TestData(new String[] { "--finalization", "azerty" },
                          "Invalid finalization value")
         };
 
