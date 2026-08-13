@@ -52,7 +52,6 @@ class outputStream;
 
 #define SHENANDOAH_PHASE_DO(f)                                                                                       \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, conc_gc,                                         "Concurrent GC")                   \
-  SHENANDOAH_SIMPLE_PHASE_DEF(f, conc_gc_old,                                     "Concurrent GC (Old)")             \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, conc_reset,                                      "Concurrent Reset")                \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, init_mark_gross,                                 "Pause Init Mark (G)")             \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, init_mark,                                       "Pause Init Mark (N)")             \
