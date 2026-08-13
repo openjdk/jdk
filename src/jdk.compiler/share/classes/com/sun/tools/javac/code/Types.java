@@ -3926,10 +3926,6 @@ public class Types {
             }
         };
 
-        /* this cache could be used by several merge operations that can happen inside
-         * an invocation to one of the public lub methods.
-         */
-        //Map<TypePair, Type> mergeCache = new HashMap<>();
         private Type merge(Type c1, Type c2, Map<TypePair, Type> mergeCache) {
             TypePair pair = new TypePair(c1, c2);
             Type cached = mergeCache.get(pair);
