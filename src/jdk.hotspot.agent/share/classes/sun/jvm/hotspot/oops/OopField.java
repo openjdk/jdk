@@ -31,28 +31,19 @@ import sun.jvm.hotspot.utilities.SystemDictionaryHelper;
 
 // The class for an oop field simply provides access to the value.
 public class OopField extends Field {
-
-  private final InlineKlass inlineKlass;
-
-  public OopField(FieldIdentifier id, long offset, boolean isVMField, InlineKlass inlineKlass) {
-    super(id, offset, isVMField);
-    this.inlineKlass = inlineKlass;
-  }
-
   public OopField(FieldIdentifier id, long offset, boolean isVMField) {
-    this(id, offset, isVMField, null);
+    super(id, offset, isVMField);
   }
 
   public OopField(sun.jvm.hotspot.types.OopField vmField, long startOffset) {
-    this(new NamedFieldIdentifier(vmField.getName()), vmField.getOffset() + startOffset, true);
+    super(new NamedFieldIdentifier(vmField.getName()), vmField.getOffset() + startOffset, true);
   }
 
   public OopField(InstanceKlass holder, int fieldArrayIndex) {
     super(holder, fieldArrayIndex);
-    inlineKlass = null;
   }
 
-  public Klass getKlassFromSignature() {
+  private Klass getFieldKlass() {
     var sig = getSignature().asString();
     var klsName = sig.substring(1, sig.length() - 1); // extracts L(class name);
     return SystemDictionaryHelper.findInstanceKlass(klsName);
@@ -61,11 +52,9 @@ public class OopField extends Field {
   @Override
   public long getOffset() {
     long ofs = super.getOffset();
-    if ((inlineKlass != null) || (inlineKlass == null && isFlat())) {
+    if (isFlat()) {
       // Subtract payload offset because this field is flattened.
-      InlineKlass kls = (inlineKlass == null) ? (InlineKlass)getKlassFromSignature()
-                                              : inlineKlass;
-      ofs -= kls.members().payloadOffset();
+      ofs -= ((InlineKlass)getFieldKlass()).members().payloadOffset();
     }
     return ofs;
   }
@@ -75,16 +64,8 @@ public class OopField extends Field {
       throw new InternalError();
     }
     var heap = obj.getHeap();
-    if (inlineKlass == null) {
-      if (isFlat()) {
-        InlineKlass kls = (InlineKlass)getKlassFromSignature();
-        return heap.newOop(obj.getHandle().addOffsetToAsOopHandle(getOffset()), kls);
-      } else {
-        return heap.newOop(getValueAsOopHandle(obj));
-      }
-    } else {
-      return heap.newOop(obj.getHandle().addOffsetToAsOopHandle(getOffset()), inlineKlass);
-    }
+    return isFlat() ? heap.newOop(obj.getHandle().addOffsetToAsOopHandle(getOffset()), (InlineKlass)getFieldKlass())
+                    : heap.newOop(getValueAsOopHandle(obj));
   }
 
   /** Debugging support */

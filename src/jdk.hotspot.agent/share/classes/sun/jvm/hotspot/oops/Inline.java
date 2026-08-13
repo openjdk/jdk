@@ -36,6 +36,7 @@ import sun.jvm.hotspot.types.WrongTypeException;
 public class Inline extends Instance {
 
     private final InlineKlass klass;
+    private final boolean isFlattened;
 
     static {
         VM.registerVMInitializedObserver((o, d) -> initialize(VM.getVM().getTypeDataBase()));
@@ -49,6 +50,7 @@ public class Inline extends Instance {
     Inline(OopHandle handle, ObjectHeap heap, InlineKlass klass) {
         super(handle, heap);
         this.klass = klass;
+        isFlattened = klass != null; // Assumes this instance is flattened if klass is passed.
     }
 
     Inline(OopHandle handle, ObjectHeap heap) {
@@ -56,7 +58,7 @@ public class Inline extends Instance {
     }
 
     public boolean isFlattened() {
-        return klass != null;
+        return isFlattened;
     }
 
     @Override
