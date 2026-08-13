@@ -98,6 +98,7 @@ public:
 
   int current() const { return _current; }
   bool is_empty() const { return _array.length() == 0; }
+  int size() const { return _array.length(); }
 };
 
 class BootCpClassLocationStream : public ClassLocationStream {
@@ -832,10 +833,12 @@ bool AOTClassLocationConfig::check_paths_existence(ClassLocationStream& runtime_
   return exist;
 }
 
-bool AOTClassLocationConfig::check_module_paths(bool has_aot_linked_classes, int index_start, int index_end,
-                                                ClassLocationStream& runtime_css,
-                                                bool* module_paths_mismatch) const {
-  if (index_start >= index_end && runtime_css.is_empty()) { // nothing to check
+bool AOTClassLocationConfig::check_module_paths(bool has_aot_linked_classes, bool has_full_module_graph,
+                                                ClassLocationStream& runtime_module_css) const {
+  const int index_start = module_path_start_index();
+  const int index_end = module_path_end_index();
+
+  if (index_start >= index_end && runtime_module_css.is_empty()) { // nothing to check
     return true;
   }
 
@@ -849,11 +852,13 @@ bool AOTClassLocationConfig::check_module_paths(bool has_aot_linked_classes, int
     print_dumptime_classpath(ls, index_start, index_end, false, 0, nullptr, 0);
     ls.print_cr("'");
     ls.print("- actual   : '");
-    runtime_css.print(&ls);
+    runtime_module_css.print(&ls);
     ls.print_cr("'");
   }
 
-  // Make sure all the dumptime module paths exist and are unchanged
+  // All JAR files in the dumptime module paths must exist and must be unchanged,
+  // or else we have a "hard" failure, as we can no longer guarantee that archived
+  // classes from the module paths remain unchanged at runtime.
   for (int i = index_start; i < index_end; i++) {
     const AOTClassLocation* cs = class_location_at(i);
     const char* dumptime_path = cs->path();
@@ -866,37 +871,57 @@ bool AOTClassLocationConfig::check_module_paths(bool has_aot_linked_classes, int
     }
   }
 
-  // We allow runtime_css to be a superset of the module paths specified in dumptime. E.g.,
-  // Dumptime:    A:C
-  // Runtime:     A:B:C
-  runtime_css.start();
-  for (int i = index_start; i < index_end; i++) {
-    const AOTClassLocation* cs = class_location_at(i);
-    const char* dumptime_path = cs->path();
-
-    while (true) {
-      if (!runtime_css.has_next()) {
-        aot_log_warning(aot)("module path has fewer elements than expected");
-        *module_paths_mismatch = true;
-        return true;
+  if (!check_module_paths_exact_match(runtime_module_css)) {
+    if (CDSConfig::new_aot_flags_used()) {
+      // New AOT workflow requires an exact match for --module-paths.
+      return false;
+    } else {
+      // For classical CDS, we have a "soft" failure if the runtime module paths are
+      // not an exact match with the dumptime module paths:
+      //   Classes from the module path will not be loaded if they are
+      //   rejected by SystemDictionary::is_shared_class_visible().
+      if (has_full_module_graph) {
+        CDSConfig::disable_full_module_graph();
+        AOTMetaspace::report_loading_error("full module graph: disabled because extra module path(s) are specified");
       }
-      // Both this->class_locations() and runtime_css are alphabetically sorted. Skip
-      // items in runtime_css until we see dumptime_path.
-      const char* runtime_path = runtime_css.get_next();
-      if (!os::same_files(dumptime_path, runtime_path)) {
-        aot_log_warning(aot)("the %d-th module path element is different: expected %s actual %s",
-                             i - index_start, dumptime_path, runtime_path);
-        *module_paths_mismatch = true;
-        return true;
-      } else {
-        break;
+
+      if (CDSConfig::is_dumping_dynamic_archive() && num_module_paths() > 0) {
+        CDSConfig::disable_dumping_dynamic_archive();
+        aot_log_warning(aot)("Dynamic archiving is disabled because base layer archive has a different module path");
       }
     }
   }
 
-  if (runtime_css.has_next()) {
-    aot_log_warning(aot)("module path has more elements than expected");
-    *module_paths_mismatch = true;
+  return true;
+}
+
+bool AOTClassLocationConfig::check_module_paths_exact_match(ClassLocationStream& runtime_module_css) const {
+  const int index_start = module_path_start_index();
+  const int index_end = module_path_end_index();
+
+  runtime_module_css.start();
+  for (int i = index_start; i < index_end; i++) {
+    const AOTClassLocation* cs = class_location_at(i);
+    const char* dumptime_path = cs->path();
+
+    if (!runtime_module_css.has_next()) {
+      aot_log_warning(aot)("module path has fewer elements (%d) than expected (%d)", runtime_module_css.size(), num_module_paths());
+      return false;
+    }
+    int n = runtime_module_css.current();
+    const char* runtime_path = runtime_module_css.get_next();
+    // Both dumptime and runtime module paths are alphabetically sorted, so we just need to
+    // compare each element at the same position.
+    if (!os::same_files(dumptime_path, runtime_path)) {
+      aot_log_warning(aot)("the %d-th module path element is different: expected %s actual %s",
+                           n, dumptime_path, runtime_path);
+      return false;
+    }
+  }
+
+  if (runtime_module_css.has_next()) {
+    aot_log_warning(aot)("module path has more elements (%d) than expected (%d)", runtime_module_css.size(), num_module_paths());
+    return false;
   }
 
   return true;
@@ -976,6 +1001,7 @@ bool AOTClassLocationConfig::validate(const char* cache_filename, bool has_aot_l
 
   log_locations(cache_filename, /*is_write=*/false);
 
+  // (1) Check JRT modules image
   const char* jrt = ClassLoader::get_jrt_entry()->name();
   log_info(class, path)("Checking [0] (modules image)");
   bool success = class_location_at(0)->check(jrt, has_aot_linked_classes);
@@ -984,13 +1010,8 @@ bool AOTClassLocationConfig::validate(const char* cache_filename, bool has_aot_l
     return false;
   }
 
-  bool module_paths_mismatch = false;
-
-  if (class_locations()->length() == 1) {
-    if ((module_path_start_index() >= module_path_end_index()) && Arguments::get_property("jdk.module.path") != nullptr) {
-      module_paths_mismatch = true;
-    }
-  } else {
+  {
+    // (2) Check boot/app classpath
     bool use_lcp_match = need_lcp_match(all_css);
     const char* runtime_lcp;
     size_t runtime_lcp_len;
@@ -1015,36 +1036,14 @@ bool AOTClassLocationConfig::validate(const char* cache_filename, bool has_aot_l
       log_info(class, path)("Archived app classpath validation: %s", success ? "passed" : "failed");
     }
 
+    // (3) Check module paths
     if (success) {
-      success = check_module_paths(has_aot_linked_classes, module_path_start_index(), module_path_end_index(),
-                                   all_css.module_path(), &module_paths_mismatch);
-      log_info(class, path)("Archived module path validation: %s%s", success ? "passed" : "failed",
-                            (module_paths_mismatch) ? " (module paths mismatch)" : "");
+      success = check_module_paths(has_aot_linked_classes, has_full_module_graph, all_css.module_path());
+      log_info(class, path)("Archived module path validation: %s", success ? "passed" : "failed");
     }
 
     if (runtime_lcp_len > 0) {
       os::free((void*)runtime_lcp);
-    }
-  }
-
-  if (success && module_paths_mismatch) {
-    if (CDSConfig::new_aot_flags_used()) {
-      // New AOT workflow requires --module-paths to be identical.
-      success = false;
-    } else {
-      // module_paths_mismatch is a "soft" failure for traditional CDS: archived
-      // classes from the module path will not be loaded if they are
-      // rejected by SystemDictionary::is_shared_class_visible().
-      if (has_full_module_graph) {
-        CDSConfig::disable_full_module_graph();
-        AOTMetaspace::report_loading_error("full module graph: disabled because extra module path(s) are specified");
-      }
-
-      if (CDSConfig::is_dumping_dynamic_archive() && num_module_paths() > 0 && module_paths_mismatch) {
-        CDSConfig::disable_dumping_dynamic_archive();
-        aot_log_warning(aot)(
-          "Dynamic archiving is disabled because base layer archive has a different module path");
-      }
     }
   }
 

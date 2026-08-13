@@ -34,6 +34,7 @@
  * @run driver InvalidModuleOptions
  */
 
+import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import jdk.test.lib.cds.CDSModulePackager;
@@ -46,26 +47,32 @@ import jdk.test.lib.StringArrayUtils;
 public class InvalidModuleOptions {
     static final Path modulesSrc = Paths.get(System.getProperty("test.src")).resolve("modules");
     static final Path modulesSrc2 = Paths.get(System.getProperty("test.src")).resolve("modules2");
+    static final Path modulesSrc3 = Paths.get(System.getProperty("test.src")).resolve("modules3");
     static String appJar = ClassFileInstaller.getJarPath("hello.jar");
     static String aotConfigFile = "hello.aotconfig";
     static String aotCacheFile = "hello.aot";
     static String helloClass = "Hello";
-    static String modulePath;
+    static String modulePath1;
     static String modulePath2;
+    static String modulePath3;
 
     static String[][] testCases = {
         // --module-path
         {
-            "<mp>", null,
-            "module path has fewer elements than expected",
+            "<mp1>", null,
+            "module path has fewer elements (0) than expected (1)",
         },
         {
-            "<mp>", "<mp2>",
+            "<mp1>", "<mp2>",
             "the 0-th module path element is different",
         },
         {
-            null, "<mp>",
-            "module path has more elements than expected",
+            "<mp12>", "<mp13>",
+            "the 1-th module path element is different",
+        },
+        {
+            null, "<mp1>",
+            "module path has more elements (1) than expected (0)",
         },
 
         // --add-modules
@@ -97,13 +104,17 @@ public class InvalidModuleOptions {
     };
 
     public static void main(String[] args) throws Exception {
-        CDSModulePackager modulePackager = new CDSModulePackager(modulesSrc);
-        modulePackager.createModularJar("com.test");
-        modulePath = modulePackager.getOutputDir().toString();
+        CDSModulePackager modulePackager1 = new CDSModulePackager(modulesSrc, Paths.get("test-modules"));
+        modulePackager1.createModularJar("com.test");
+        modulePath1 = modulePackager1.getOutputDir().toString();
 
         CDSModulePackager modulePackager2 = new CDSModulePackager(modulesSrc2, Paths.get("test-modules2"));
         modulePackager2.createModularJar("com.moretest");
         modulePath2 = modulePackager2.getOutputDir().toString();
+
+        CDSModulePackager modulePackager3 = new CDSModulePackager(modulesSrc3, Paths.get("test-modules3"));
+        modulePackager3.createModularJar("com.evenmoretest");
+        modulePath3 = modulePackager3.getOutputDir().toString();
 
         for (int i = 0; i < testCases.length; i++) {
             String[] testSpec = testCases[i];
@@ -150,10 +161,14 @@ public class InvalidModuleOptions {
     }
 
     static String[] concat(String[] opts, String extra) {
-        if (extra.equals("<mp>")) {
-            return StringArrayUtils.concat(opts, "--module-path", modulePath);
+        if (extra.equals("<mp1>")) {
+            return StringArrayUtils.concat(opts, "--module-path", modulePath1);
         } else if (extra.equals("<mp2>")) {
             return StringArrayUtils.concat(opts, "--module-path", modulePath2);
+        } else if (extra.equals("<mp12>")) {
+            return StringArrayUtils.concat(opts, "--module-path", modulePath1 + File.pathSeparator + modulePath2);
+        } else if (extra.equals("<mp13>")) {
+            return StringArrayUtils.concat(opts, "--module-path", modulePath1 + File.pathSeparator + modulePath3);
         } else {
             return StringArrayUtils.concat(opts, extra);
         }
