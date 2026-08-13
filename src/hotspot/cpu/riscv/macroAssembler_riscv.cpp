@@ -2174,12 +2174,12 @@ void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register le
     mv(tmp5, 0xff);
 
     if (MaxVectorSize == 16) {
-      vsetivli(zr, N, Assembler::e32, Assembler::m4, Assembler::ma, Assembler::ta);
+      vsetivli(zr, N, Assembler::e32, Assembler::m4, Assembler::mu, Assembler::tu);
     } else if (MaxVectorSize == 32) {
-      vsetivli(zr, N, Assembler::e32, Assembler::m2, Assembler::ma, Assembler::ta);
+      vsetivli(zr, N, Assembler::e32, Assembler::m2, Assembler::mu, Assembler::tu);
     } else {
       assert(MaxVectorSize > 32, "sanity");
-      vsetivli(zr, N, Assembler::e32, Assembler::m1, Assembler::ma, Assembler::ta);
+      vsetivli(zr, N, Assembler::e32, Assembler::m1, Assembler::mu, Assembler::tu);
     }
 
     vmv_v_x(vcrc, zr);
@@ -3765,16 +3765,6 @@ void MacroAssembler::test_oop_prototype_bit(Register oop, Register temp_reg, int
   assert_different_registers(temp_reg, t0);
   // load mark word
   ld(temp_reg, Address(oop, oopDesc::mark_offset_in_bytes()));
-  if (!UseObjectMonitorTable) {
-    Label test_mark_word;
-    // check displaced
-    test_bit(t0, temp_reg, exact_log2(markWord::unlocked_value));
-    bnez(t0, test_mark_word);
-    // slow path use klass prototype
-    load_prototype_header(temp_reg, oop);
-
-    bind(test_mark_word);
-  }
   andi(temp_reg, temp_reg, tst_bit);
   if (jmp_set) {
     bnez(temp_reg, jmp_label, /* is_far */ true);
@@ -7035,10 +7025,8 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register tmp1,
   // instruction emitted as it is part of C1's null check semantics.
   ld(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
 
-  if (UseObjectMonitorTable) {
-    // Clear cache in case fast locking succeeds or we need to take the slow-path.
-    sd(zr, Address(basic_lock, BasicObjectLock::lock_offset() + in_ByteSize((BasicLock::object_monitor_cache_offset_in_bytes()))));
-  }
+  // Clear cache in case fast locking succeeds or we need to take the slow-path.
+  sd(zr, Address(basic_lock, BasicObjectLock::lock_offset() + in_ByteSize((BasicLock::object_monitor_cache_offset_in_bytes()))));
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(tmp1, obj);
@@ -7064,8 +7052,11 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register tmp1,
   // Try to lock. Transition lock-bits 0b01 => 0b00
   assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid a la");
   ori(mark, mark, markWord::unlocked_value);
-  // Mask inline_type bit such that we go to the slow path if object is an inline type
-  andi(mark, mark, ~((int) markWord::inline_type_bit_in_place));
+  if (Arguments::is_valhalla_enabled()) {
+    // Mask inline_type bit such that we go to the slow path if object is an inline type
+    andi(mark, mark, ~((int) markWord::inline_type_bit_in_place));
+  }
+
   xori(t, mark, markWord::unlocked_value);
   cmpxchg(/*addr*/ obj, /*expected*/ mark, /*new*/ t, Assembler::int64,
           /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ t);

@@ -26,6 +26,7 @@
 #include "cds/dynamicArchive.hpp"
 #include "ci/ciEnv.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/javaThreadStatus.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
@@ -1124,6 +1125,10 @@ void JavaThread::deoptimize() {
   StackFrameStream fst(this, false /* update */, true /* process_frames */);
   bool deopt = false;           // Dump stack only if a deopt actually happens.
   bool only_at = strlen(DeoptimizeOnlyAt) > 0;
+
+  LogMessage(deoptimization) msg;
+  NonInterleavingLogStream ls(LogLevel::Trace, msg);
+
   // Iterate over all frames in the thread and deoptimize
   for (; !fst.is_done(); fst.next()) {
     if (fst.current()->can_be_deoptimized()) {
@@ -1152,19 +1157,20 @@ void JavaThread::deoptimize() {
         }
       }
 
-      if (DebugDeoptimization && !deopt) {
+      if (!deopt && ls.is_enabled()) {
         deopt = true; // One-time only print before deopt
-        tty->print_cr("[BEFORE Deoptimization]");
-        trace_frames();
-        trace_stack();
+        ls.print_cr("[BEFORE Deoptimization]");
+        trace_frames_on(&ls);
+        trace_stack_on(&ls);
       }
       Deoptimization::deoptimize(this, *fst.current());
     }
   }
 
-  if (DebugDeoptimization && deopt) {
-    tty->print_cr("[AFTER Deoptimization]");
-    trace_frames();
+
+  if (deopt && ls.is_enabled()) {
+    ls.print_cr("[AFTER Deoptimization]");
+    trace_frames_on(&ls);
   }
 }
 
@@ -1730,13 +1736,12 @@ void JavaThread::popframe_free_preserved_args() {
 
 #ifndef PRODUCT
 
-void JavaThread::trace_frames() {
-  tty->print_cr("[Describe stack]");
+void JavaThread::trace_frames_on(outputStream* st) {
+  st->print_cr("[Describe stack]");
   int frame_no = 1;
   for (StackFrameStream fst(this, true /* update */, true /* process_frames */); !fst.is_done(); fst.next()) {
-    tty->print("  %d. ", frame_no++);
-    fst.current()->print_value_on(tty);
-    tty->cr();
+    st->print("  %d. ", frame_no++);
+    fst.current()->print_value_on(st);
   }
 }
 
@@ -1783,24 +1788,24 @@ void JavaThread::print_frame_layout(int depth, bool validate_only) {
 }
 #endif
 
-void JavaThread::trace_stack_from(vframe* start_vf) {
+void JavaThread::trace_stack_from(outputStream* st, vframe* start_vf) {
   ResourceMark rm;
   int vframe_no = 1;
   for (vframe* f = start_vf; f; f = f->sender()) {
     if (f->is_java_frame()) {
-      javaVFrame::cast(f)->print_activation(vframe_no++);
+      javaVFrame::cast(f)->print_activation(st, vframe_no++);
     } else {
-      f->print();
+      f->print(st);
     }
     if (vframe_no > StackPrintLimit) {
-      tty->print_cr("...<more frames>...");
+      st->print_cr("...<more frames>...");
       return;
     }
   }
 }
 
 
-void JavaThread::trace_stack() {
+void JavaThread::trace_stack_on(outputStream* st) {
   if (!has_last_Java_frame()) return;
   Thread* current_thread = Thread::current();
   ResourceMark rm(current_thread);
@@ -1809,7 +1814,7 @@ void JavaThread::trace_stack() {
                       RegisterMap::UpdateMap::include,
                       RegisterMap::ProcessFrames::include,
                       RegisterMap::WalkContinuation::skip);
-  trace_stack_from(last_java_vframe(&reg_map));
+  trace_stack_from(st, last_java_vframe(&reg_map));
 }
 
 

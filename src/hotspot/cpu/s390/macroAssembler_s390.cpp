@@ -26,6 +26,7 @@
 
 #include "asm/codeBuffer.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "ci/ciInlineKlass.hpp"
 #include "code/compiledIC.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -41,8 +42,10 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/methodData.hpp"
+#include "oops/resolvedFieldEntry.hpp"
 #include "prims/methodHandles.hpp"
 #include "registerSaver_s390.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/objectMonitor.hpp"
@@ -51,10 +54,15 @@
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/signature_cc.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "vmreg_s390.inline.hpp"
+#ifdef COMPILER2
+#include "opto/output.hpp"
+#endif
 
 #include <ucontext.h>
 
@@ -2405,6 +2413,10 @@ void MacroAssembler::call_VM(Register oop_result, Register last_java_sp, address
 
 // VM leaf calls.
 
+void MacroAssembler::super_call_VM_leaf(address entry_point) {
+  MacroAssembler::call_VM_leaf_base(entry_point, true);
+}
+
 void MacroAssembler::call_VM_leaf(address entry_point) {
   // Call takes possible detour via InterpreterMacroAssembler.
   call_VM_leaf_base(entry_point, true);
@@ -3909,6 +3921,43 @@ void MacroAssembler::null_check(Register reg, Register tmp, int64_t offset) {
 }
 
 //-------------------------------------
+//  Valhalla inline type support
+//-------------------------------------
+
+void MacroAssembler::test_markword_is_inline_type(Register markword, Label& is_inline_type) {
+  static_assert(markWord::inline_type_pattern <= 0x7FFF, "must fit in simm16 for z_chi");
+  z_nilf(markword, markWord::inline_type_pattern_mask);
+  z_chi(markword, markWord::inline_type_pattern);
+  branch_optimized(bcondEqual, is_inline_type);
+}
+
+void MacroAssembler::test_oop_is_not_inline_type(Register object, Register tmp, Label& not_inline_type, bool can_be_null) {
+  if (can_be_null) {
+    z_ltgr(object, object);
+    branch_optimized(bcondEqual, not_inline_type);
+  }
+  z_lg(tmp, oopDesc::mark_offset_in_bytes(), object);
+  z_nilf(tmp, markWord::inline_type_pattern_mask);
+  z_chi(tmp, markWord::inline_type_pattern);
+  branch_optimized(bcondNotEqual, not_inline_type);
+}
+
+void MacroAssembler::test_field_is_null_free_inline_type(Register flags, Label& is_null_free) {
+  testbit(flags, ResolvedFieldEntry::is_null_free_inline_type_shift);
+  z_brc(Assembler::bcondAllOne, is_null_free);
+}
+
+void MacroAssembler::test_field_is_not_null_free_inline_type(Register flags, Label& not_null_free_inline_type) {
+  testbit(flags, ResolvedFieldEntry::is_null_free_inline_type_shift);
+  z_brc(Assembler::bcondAllZero, not_null_free_inline_type);
+}
+
+void MacroAssembler::test_field_is_flat(Register flags, Label& is_flat) {
+  testbit(flags, ResolvedFieldEntry::is_flat_shift);
+  z_brc(Assembler::bcondAllOne, is_flat);
+}
+
+//-------------------------------------
 //  Compressed Klass Pointers
 //-------------------------------------
 
@@ -4179,6 +4228,19 @@ void MacroAssembler::load_klass(Register klass, Register src_oop) {
   }
 }
 
+void MacroAssembler::load_metadata(Register dst, Register src) {
+  if (UseCompactObjectHeaders) {
+    load_narrow_klass_compact(dst, src);
+  } else {
+    z_llgf(dst, oopDesc::klass_offset_in_bytes(), src);
+  }
+}
+
+void MacroAssembler::load_prototype_header(Register dst, Register src) {
+  load_klass(dst, src);
+  z_lg(dst, Address(dst, Klass::prototype_header_offset()));
+}
+
 void MacroAssembler::store_klass(Register klass, Register dst_oop, Register ck) {
   assert(!UseCompactObjectHeaders, "Don't use with compact headers");
   assert_different_registers(dst_oop, klass, Z_R0);
@@ -4196,6 +4258,59 @@ void MacroAssembler::store_klass_gap(Register s, Register d) {
   } else {
     z_mvhi(Address(d, oopDesc::klass_gap_offset_in_bytes()), 0);
   }
+}
+
+void MacroAssembler::test_oop_prototype_bit(Register oop, Register temp_reg, int32_t test_bit, bool jmp_set, Label& jmp_label) {
+  assert_different_registers(oop, temp_reg);
+  assert(test_bit <= 0xFFFF, "must fit in low 16 bits for z_tmll");
+  // Load mark word
+  z_lg(temp_reg, oopDesc::mark_offset_in_bytes(), oop);
+  z_tmll(temp_reg, test_bit);
+  // Use branch_optimized to handle both near and far branches automatically
+  branch_optimized(jmp_set ? Assembler::bcondNotAllZero : Assembler::bcondAllZero, jmp_label);
+}
+
+void MacroAssembler::test_flat_array_oop(Register oop, Register temp_reg, Label& is_flat_array) {
+  test_oop_prototype_bit(oop, temp_reg, markWord::flat_array_bit_in_place, true, is_flat_array);
+}
+
+void MacroAssembler::test_non_flat_array_oop(Register oop, Register temp_reg, Label& is_non_flat_array) {
+  test_oop_prototype_bit(oop, temp_reg, markWord::flat_array_bit_in_place, false, is_non_flat_array);
+}
+
+void MacroAssembler::test_null_free_array_oop(Register oop, Register temp_reg, Label& is_null_free_array) {
+  test_oop_prototype_bit(oop, temp_reg, markWord::null_free_array_bit_in_place, true, is_null_free_array);
+}
+
+void MacroAssembler::test_non_null_free_array_oop(Register oop, Register temp_reg, Label& is_non_null_free_array) {
+  test_oop_prototype_bit(oop, temp_reg, markWord::null_free_array_bit_in_place, false, is_non_null_free_array);
+}
+
+void MacroAssembler::test_flat_array_layout(Register lh, Label& is_flat_array) {
+  testbit(lh, exact_log2(Klass::_lh_array_tag_flat_value_bit_inplace));
+  z_brnaz(is_flat_array);
+}
+
+void MacroAssembler::inline_layout_info(Register holder_klass, Register index, Register layout_info) {
+  assert_different_registers(holder_klass, index, layout_info);
+  z_lg(layout_info, Address(holder_klass, InstanceKlass::inline_layout_info_array_offset()));
+#ifdef ASSERT
+  {
+    Label done;
+    z_ltgr(layout_info, layout_info);
+    z_brne(done);
+    stop("inline_layout_info_array is null");
+    bind(done);
+  }
+#endif
+  InlineLayoutInfo array[2];
+  int size = (char*)&array[1] - (char*)&array[0]; // computing size of array elements
+  if (is_power_of_2(size)) {
+    z_sllg(index, index, log2i_exact(size)); // Scale index by power of 2
+  } else {
+    z_msgfi(index, size); // Scale the index to be the entry index * array_element_size
+  }
+  z_lay(layout_info, Address(layout_info, index, Array<InlineLayoutInfo>::base_offset_in_bytes()));
 }
 
 // Compare klass ptr in memory against klass ptr in register.
@@ -4439,6 +4554,32 @@ void MacroAssembler::store_heap_oop(Register Roop, const Address &a,
                                     Register tmp1, Register tmp2, Register tmp3,
                                     DecoratorSet decorators) {
   access_store_at(T_OBJECT, IN_HEAP | decorators, a, Roop, tmp1, tmp2, tmp3);
+}
+
+void MacroAssembler::flat_field_copy(DecoratorSet decorators, Register src, Register dst,
+                                     Register inline_layout_info) {
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->flat_field_copy(this, decorators, src, dst, inline_layout_info);
+}
+
+void MacroAssembler::payload_offset(Register inline_klass, Register offset) {
+  z_lg(offset, Address(inline_klass, InlineKlass::adr_members_offset()));
+  z_llgf(offset, Address(offset, InlineKlass::payload_offset_offset()));
+}
+
+void MacroAssembler::payload_addr(Register oop, Register data, Register inline_klass) {
+  // ((address) (void*) o) + vk->payload_offset();
+  //
+  // oop must differ from inline_klass: payload_offset() overwrites inline_klass
+  // with the payload offset integer before we add it back to oop.
+  assert_different_registers(oop, inline_klass);
+  Register offset = (data == oop) ? Z_R1_scratch : data;
+  payload_offset(inline_klass, offset);
+  if (data == oop) {
+    z_agr(data, offset);
+  } else {
+    z_lay(data, Address(oop, offset));
+  }
 }
 
 //-------------------------------------------------
@@ -4725,6 +4866,11 @@ void MacroAssembler::load_method_holder(Register holder, Register method) {
   mem2reg_opt(holder, Address(holder, ConstantPool::pool_holder_offset()));
 }
 
+void MacroAssembler::load_method_holder_cld(Register result, Register method) {
+  load_method_holder(result, method);
+  z_lg(result, Address(result, InstanceKlass::class_loader_data_offset()));
+}
+
 //---------------------------------------------------------------
 //---  Operations on arrays.
 //---------------------------------------------------------------
@@ -4868,6 +5014,31 @@ unsigned int MacroAssembler::Clear_Array_Const_Big(long cnt, Register base_point
 
   int block_end = offset();
   return block_end - block_start;
+}
+
+// Fill words with a non-zero value.
+void MacroAssembler::fill_words(Register base, Register cnt, Register value, Register tmp) {
+  assert_different_registers(base, cnt, value, tmp);
+  NearLabel loop, loop_end;
+
+  BLOCK_COMMENT("fill_words {");
+
+  // 2x unrolled loop; cnt == 0 is handled correctly (both branches skip, falls to done)
+  z_srag(tmp, cnt, 1);    // tmp = cnt / 2, sets CC
+  z_bre(loop_end);         // skip pair loop if cnt < 2
+
+  bind(loop);
+  z_stg(value, 0, base);
+  z_stg(value, 8, base);
+  z_la(base, 16, base);
+  z_brctg(tmp, loop);      // 64-bit decrement-and-branch
+
+  bind(loop_end);
+
+  z_tmll(cnt, 1);
+  z_stocg(value, 0, base, bcondNotAllZero);
+
+  BLOCK_COMMENT("} fill_words");
 }
 
 // Allocator.
@@ -5972,15 +6143,19 @@ void MacroAssembler::restore_volatile_regs(Register src, int offset, bool includ
 
 // Plausibility check for oops.
 void MacroAssembler::verify_oop(Register oop, const char* msg) {
-  if (!VerifyOops) return;
+  if (!VerifyOops || VerifyAdapterSharing) {
+    // Below address of the code string confuses VerifyAdapterSharing
+    // because it may differ between otherwise equivalent adapters.
+    return;
+  }
 
   BLOCK_COMMENT("verify_oop {");
+  // 5 GPRs (Z_R1-Z_R5) + 8 FPRs (Z_F0-Z_F7) + 1 word for CC save (z_mvi writes 1 byte)
   unsigned int nbytes_save = (5 + 8 + 1) * BytesPerWord;
   address entry_addr = StubRoutines::verify_oop_subroutine_entry_address();
 
   save_return_pc();
 
-  // Push frame, but preserve flags
   z_lgr(Z_R0, Z_SP);
   z_lay(Z_SP, -((int64_t)nbytes_save + frame::z_abi_160_size), Z_SP);
   z_stg(Z_R0, _z_abi(callers_sp), Z_SP);
@@ -6001,7 +6176,11 @@ void MacroAssembler::verify_oop(Register oop, const char* msg) {
 }
 
 void MacroAssembler::verify_oop_addr(Address addr, const char* msg) {
-  if (!VerifyOops) return;
+  if (!VerifyOops || VerifyAdapterSharing) {
+    // Below address of the code string confuses VerifyAdapterSharing
+    // because it may differ between otherwise equivalent adapters.
+    return;
+  }
 
   BLOCK_COMMENT("verify_oop {");
   unsigned int nbytes_save = (5 + 8) * BytesPerWord;
@@ -6169,11 +6348,9 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register temp1
   // instruction emitted as it is part of C1's null check semantics.
   z_lg(mark, Address(obj, mark_offset));
 
-  if (UseObjectMonitorTable) {
-    // Clear cache in case fast locking succeeds or we need to take the slow-path.
-    const Address om_cache_addr = Address(basic_lock, BasicObjectLock::lock_offset() + in_ByteSize((BasicLock::object_monitor_cache_offset_in_bytes())));
-    z_mvghi(om_cache_addr, 0);
-  }
+  // Clear cache in case fast locking succeeds or we need to take the slow-path.
+  const Address om_cache_addr = Address(basic_lock, BasicObjectLock::lock_offset() + in_ByteSize((BasicLock::object_monitor_cache_offset_in_bytes())));
+  z_mvghi(om_cache_addr, 0);
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(temp1, obj);
@@ -6201,6 +6378,12 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register temp1
   { // Try to lock. Transition lock bits 0b01 => 0b00
     const Register locked_obj = top;
     z_oill(mark, markWord::unlocked_value);
+    if (Arguments::is_valhalla_enabled()) {
+      static_assert((uint32_t)markWord::inline_type_bit_in_place <= 0x7FFFFFFF,
+                     "inline_type_bit_in_place must fit in low 32 bits for z_nilf");
+      // Mask inline_type bit so CAS fails (-> slow) if object is an inline type.
+      z_nilf(mark, ~((uint32_t)markWord::inline_type_bit_in_place));
+    }
     z_lgr(locked_obj, mark);
     // Clear lock-bits from locked_obj (locked state)
     z_xilf(locked_obj, markWord::unlocked_value);
@@ -6312,10 +6495,8 @@ void MacroAssembler::compiler_fast_lock_object(Register obj, Register box, Regis
   // Finish fast lock unsuccessfully. MUST branch to with flag == EQ
   NearLabel slow_path;
 
-  if (UseObjectMonitorTable) {
-    // Clear cache in case fast locking succeeds or we need to take the slow-path.
-    z_mvghi(Address(box, BasicLock::object_monitor_cache_offset_in_bytes()), 0);
-  }
+  // Clear cache in case fast locking succeeds or we need to take the slow-path.
+  z_mvghi(Address(box, BasicLock::object_monitor_cache_offset_in_bytes()), 0);
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(tmp1, obj);
@@ -6358,6 +6539,12 @@ void MacroAssembler::compiler_fast_lock_object(Register obj, Register box, Regis
       assert(mark_offset == 0, "required to avoid a lea");
       const Register locked_obj = top;
       z_oill(mark, markWord::unlocked_value);
+      if (Arguments::is_valhalla_enabled()) {
+        static_assert((uint32_t)markWord::inline_type_bit_in_place <= 0x7FFFFFFF,
+                      "inline_type_bit_in_place must fit in low 32 bits for z_nilf");
+        // Mask inline_type bit so CAS fails (-> slow) if object is an inline type.
+        z_nilf(mark, ~((uint32_t)markWord::inline_type_bit_in_place));
+      }
       z_lgr(locked_obj, mark);
       // Clear lock-bits from locked_obj (locked state)
       z_xilf(locked_obj, markWord::unlocked_value);
@@ -6387,62 +6574,57 @@ void MacroAssembler::compiler_fast_lock_object(Register obj, Register box, Regis
     const ByteSize omc_monitor_offset = OMCache::monitor_offset();
     const ByteSize omc_obj_offset     = OMCache::obj_offset();
 
-    if (!UseObjectMonitorTable) {
-      assert(tmp1_monitor == mark, "should be the same here");
-    } else {
-      const Register tmp1_bucket = tmp1;
-      const Register hash  = Z_R0_scratch;
-      NearLabel monitor_found;
+    const Register tmp1_bucket = tmp1;
+    const Register hash  = Z_R0_scratch;
+    NearLabel monitor_found;
 
-      // Save the mark, we might need it to extract the hash.
-      z_lgr(hash, mark);
+    // Save the mark, we might need it to extract the hash.
+    z_lgr(hash, mark);
 
-      // Look for the monitor in the current thread's object monitor cache (omc).
+    // Look for the monitor in the current thread's object monitor cache (omc).
 
-      z_lg(tmp1_monitor, Address(Z_thread, thr_omc_offset + omc_monitor_offset));
-      z_cg(obj, Address(Z_thread, thr_omc_offset + omc_obj_offset));
-      z_bre(monitor_found);
+    z_lg(tmp1_monitor, Address(Z_thread, thr_omc_offset + omc_monitor_offset));
+    z_cg(obj, Address(Z_thread, thr_omc_offset + omc_obj_offset));
+    z_bre(monitor_found);
 
-      // Get the hash code.
-      z_srlg(hash, hash, markWord::hash_shift);
+    // Get the hash code.
+    z_srlg(hash, hash, markWord::hash_shift);
 
-      // Get the table and calculate the bucket's address.
-      load_const_optimized(tmp2, ObjectMonitorTable::current_table_address());
-      z_lg(tmp2, Address(tmp2));
-      z_ng(hash, Address(tmp2, ObjectMonitorTable::table_capacity_mask_offset()));
-      z_lg(tmp1_bucket, Address(tmp2, ObjectMonitorTable::table_buckets_offset()));
-      z_sllg(hash, hash, LogBytesPerWord);
-      z_agr(tmp1_bucket, hash);
+    // Get the table and calculate the bucket's address.
+    load_const_optimized(tmp2, ObjectMonitorTable::current_table_address());
+    z_lg(tmp2, Address(tmp2));
+    z_ng(hash, Address(tmp2, ObjectMonitorTable::table_capacity_mask_offset()));
+    z_lg(tmp1_bucket, Address(tmp2, ObjectMonitorTable::table_buckets_offset()));
+    z_sllg(hash, hash, LogBytesPerWord);
+    z_agr(tmp1_bucket, hash);
 
-      // Read the monitor from the bucket.
-      z_lg(tmp1_monitor, Address(tmp1_bucket));
+    // Read the monitor from the bucket.
+    z_lg(tmp1_monitor, Address(tmp1_bucket));
 
-      // Check if the monitor in the bucket is special (empty, tombstone or removed).
-      z_clgfi(tmp1_monitor, ObjectMonitorTable::SpecialPointerValues::below_is_special);
-      z_brl(slow_path);
+    // Check if the monitor in the bucket is special (empty, tombstone or removed).
+    z_clgfi(tmp1_monitor, ObjectMonitorTable::SpecialPointerValues::below_is_special);
+    z_brl(slow_path);
 
-      // Check if object matches.
-      z_lg(tmp2, Address(tmp1_monitor, ObjectMonitor::object_offset()));
-      BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
-      bs_asm->try_peek_weak_handle_in_nmethod(this, tmp2, tmp2, Z_R0_scratch, slow_path);
-      z_cgr(obj, tmp2);
-      z_brne(slow_path);
+    // Check if object matches.
+    z_lg(tmp2, Address(tmp1_monitor, ObjectMonitor::object_offset()));
+    BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+    bs_asm->try_peek_weak_handle_in_nmethod(this, tmp2, tmp2, Z_R0_scratch, slow_path);
+    z_cgr(obj, tmp2);
+    z_brne(slow_path);
 
-      // Store the monitor in the current thread's object monitor cache (omc).
-      z_stg(tmp1_monitor, Address(Z_thread, thr_omc_offset + omc_monitor_offset));
-      z_stg(obj, Address(Z_thread, thr_omc_offset + omc_obj_offset));
+    // Store the monitor in the current thread's object monitor cache (omc).
+    z_stg(tmp1_monitor, Address(Z_thread, thr_omc_offset + omc_monitor_offset));
+    z_stg(obj, Address(Z_thread, thr_omc_offset + omc_obj_offset));
 
-      bind(monitor_found);
-    }
+    bind(monitor_found);
+
     NearLabel monitor_locked;
     // lock the monitor
 
     const Register zero           = tmp2;
 
-    const ByteSize monitor_tag = in_ByteSize(UseObjectMonitorTable ? 0 : checked_cast<int>(markWord::monitor_value));
-    const Address owner_address(tmp1_monitor, ObjectMonitor::owner_offset() - monitor_tag);
-    const Address recursions_address(tmp1_monitor, ObjectMonitor::recursions_offset() - monitor_tag);
-
+    const Address owner_address(tmp1_monitor, ObjectMonitor::owner_offset());
+    const Address recursions_address(tmp1_monitor, ObjectMonitor::recursions_offset());
 
     // Try to CAS owner (no owner => current thread's _monitor_owner_id).
     // If csg succeeds then CR=EQ, otherwise, register zero is filled
@@ -6460,10 +6642,8 @@ void MacroAssembler::compiler_fast_lock_object(Register obj, Register box, Regis
     z_agsi(recursions_address, 1ll);
 
     bind(monitor_locked);
-    if (UseObjectMonitorTable) {
-      // Cache the monitor for unlock.
-      z_stg(tmp1_monitor, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
-    }
+    // Cache the monitor for unlock.
+    z_stg(tmp1_monitor, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
     // set the CC now
     z_cgr(obj, obj);
   }
@@ -6540,11 +6720,7 @@ void MacroAssembler::compiler_fast_unlock_object(Register obj, Register box, Reg
     // so that the runtime can fix any potential anonymous owner.
     z_lg(mark, Address(obj, mark_offset));
     z_tmll(mark, markWord::monitor_value);
-    if (!UseObjectMonitorTable) {
-      z_brnaz(inflated);
-    } else {
-      z_brnaz(push_and_slow_path);
-    }
+    z_brnaz(push_and_slow_path);
 
 #ifdef ASSERT
     // Check header not unlocked (0b01).
@@ -6603,25 +6779,20 @@ void MacroAssembler::compiler_fast_unlock_object(Register obj, Register box, Reg
 
     const Register tmp1_monitor = tmp1;
 
-    if (!UseObjectMonitorTable) {
-      assert(tmp1_monitor == mark, "should be the same here");
-    } else {
-      // Uses ObjectMonitorTable.  Look for the monitor in our BasicLock on the stack.
-      z_lg(tmp1_monitor, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
-      // null check with ZF == 0, no valid pointer below alignof(ObjectMonitor*)
-      z_cghi(tmp1_monitor, alignof(ObjectMonitor*));
+    // Uses ObjectMonitorTable.  Look for the monitor in our BasicLock on the stack.
+    z_lg(tmp1_monitor, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
+    // null check with ZF == 0, no valid pointer below alignof(ObjectMonitor*)
+    z_cghi(tmp1_monitor, alignof(ObjectMonitor*));
 
-      z_brl(slow_path);
-    }
+    z_brl(slow_path);
 
     // mark contains the tagged ObjectMonitor*.
     const Register monitor = mark;
 
-    const ByteSize monitor_tag = in_ByteSize(UseObjectMonitorTable ? 0 : checked_cast<int>(markWord::monitor_value));
-    const Address recursions_address{monitor, ObjectMonitor::recursions_offset() - monitor_tag};
-    const Address succ_address{monitor, ObjectMonitor::succ_offset() - monitor_tag};
-    const Address entry_list_address{monitor, ObjectMonitor::entry_list_offset() - monitor_tag};
-    const Address owner_address{monitor, ObjectMonitor::owner_offset() - monitor_tag};
+    const Address recursions_address{monitor, ObjectMonitor::recursions_offset()};
+    const Address succ_address{monitor, ObjectMonitor::succ_offset()};
+    const Address entry_list_address{monitor, ObjectMonitor::entry_list_offset()};
+    const Address owner_address{monitor, ObjectMonitor::owner_offset()};
 
     NearLabel not_recursive;
     const Register recursions = tmp2;
@@ -6657,9 +6828,6 @@ void MacroAssembler::compiler_fast_unlock_object(Register obj, Register box, Reg
 
     // Save the monitor pointer in the current thread, so we can try to
     // reacquire the lock in SharedRuntime::monitor_exit_helper().
-    if (!UseObjectMonitorTable) {
-      z_xilf(monitor, markWord::monitor_value);
-    }
     z_stg(monitor, Address(Z_thread, JavaThread::unlocked_inflated_monitor_offset()));
 
     z_ltgr(obj, obj); // Set flag = NE
@@ -6989,6 +7157,7 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
 // Unimplemented methods for inline types.
 int MacroAssembler::store_inline_type_fields_to_buf(ciInlineKlass* vk, bool from_interpreter) {
    Unimplemented();
+   return 0;
 }
 
 bool MacroAssembler::move_helper(VMReg from, VMReg to, BasicType bt, RegState reg_state[]) {

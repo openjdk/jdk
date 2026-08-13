@@ -134,11 +134,17 @@ class StackMapReader : StackObj {
   // Check if reading first entry
   bool _first;
 
+  // We track whether an uninitializedThis was in the previous frame's
+  // locals independently of the flags parameter as most StackMapTable
+  // frames reuse the same locals as the previous frame.  Chop and
+  // Full frames need to handle this specially.
+  bool _uninit_in_prev_frame_locals;
+
   StackMapFrame* next_helper(TRAPS);
   void check_offset(StackMapFrame* frame);
   void check_size(TRAPS);
   int32_t chop(VerificationType* locals, int32_t length, int32_t chops);
-  VerificationType parse_verification_type(u1* flags, TRAPS);
+  VerificationType parse_verification_type(u1* flags, bool parsing_locals, TRAPS);
   void check_verification_type_array_size(
       int32_t size, int32_t max_size, TRAPS) {
     if (size < 0 || size > max_size) {

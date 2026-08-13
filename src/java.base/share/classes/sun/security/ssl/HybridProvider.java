@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,8 +55,7 @@ public class HybridProvider {
             // Hybrid KeyPairGenerator/KeyFactory/KEM
 
             // The order of shares in the concatenation for group name
-            // X25519MLKEM768 has been reversed as per the current
-            // draft RFC.
+            // X25519MLKEM768 has been reversed as per RFC 10024.
             var attrs = Map.of("name", "X25519MLKEM768", "left", "ML-KEM-768",
                     "right", "X25519");
             putService(new HybridService(this, "KeyPairGenerator",
