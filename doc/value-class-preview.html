@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Migration of JDK Classes to Value Classes</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../make/data/docs-resources/resources/jdk-default.css" />
+  <style type="text/css">pre, code, tt { color: #1d6ae5; }</style>
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Migration of JDK Classes to Value Classes</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#introduction" id="toc-introduction">Introduction</a></li>
+<li><a href="#the-build-process" id="toc-the-build-process">The Build
+Process</a>
+<ul>
+<li><a href="#the-custom-handling-for-the-value-objects-jep"
+id="toc-the-custom-handling-for-the-value-objects-jep">The Custom
+Handling for the Value Objects JEP</a></li>
+<li><a href="#the-general-preview-source-to-binary-pipeline"
+id="toc-the-general-preview-source-to-binary-pipeline">The General
+Preview Source to Binary Pipeline</a></li>
+<li><a href="#non-goals" id="toc-non-goals">Non-Goals</a></li>
+</ul></li>
+<li><a href="#testing" id="toc-testing">Testing</a></li>
+<li><a href="#wrapper-class-caches"
+id="toc-wrapper-class-caches">Wrapper Class Caches</a></li>
+<li><a href="#editing-this-document"
+id="toc-editing-this-document">Editing This Document</a></li>
+</ul>
+</nav>
+<h2 id="introduction">Introduction</h2>
+<p>The Value Objects feature introduces value objects and migrates
+suitable classes to value classes. This means that when preview features
+are enabled, different class files are used for the migrated classes in
+the Java class library.</p>
+<p>To accomplish this, a built JDK uses <em>preview-specific</em> files
+in <code>META-INF/preview</code>, which overrides the regular files of
+the same name. For example,
+<code>META-INF/preview/java/lang/Integer.class</code> overrides
+<code>java/lang/Integer.class</code>.</p>
+<p>The JDK generates preview-specific source files (they may use preview
+language features), compiles class files from them, and distributes
+these class files in <code>META-INF/preview</code>.</p>
+<h2 id="the-build-process">The Build Process</h2>
+<h3 id="the-custom-handling-for-the-value-objects-jep">The Custom
+Handling for the Value Objects JEP</h3>
+<p>The Value Objects JEP requires a few select classes in the
+<code>java.base</code> module to become value classes when preview
+features are enabled.</p>
+<p>The build of <code>java.base</code> module first creates the source
+code of those value classes, done in <a
+href="../make/modules/java.base/gensrc/GensrcValueClasses.gmk"><code>GensrcValueClasses.gmk</code></a>.</p>
+<ol type="1">
+<li><p>A hardcoded list of regular source files are selected for
+preview-specific generation.</p></li>
+<li><p>Extract the content of each regular source file, search for any
+occurrences of <code>/*value*/ class</code> or
+<code>/*value*/ record</code>, and replace with <code>value class</code>
+or <code>value record</code>.</p></li>
+<li><p>The replaced contents are written to the preview-specific
+generated files, located in
+<code>support/gensrc-valueclasses/java.base/</code>. The regular source
+files remain unchanged in their original locations.</p></li>
+<li><p>The general preview source to binary build pipeline recognizes
+the <code>support/gensrc-valueclasses/java.base/</code> directory as
+where the <code>java.base</code> module places its preview-specific
+source files.</p></li>
+</ol>
+<h3 id="the-general-preview-source-to-binary-pipeline">The General
+Preview Source to Binary Pipeline</h3>
+<p>Once the preview-specific source files are ready, they are picked up
+by the build system into a fully automated pipeline handling all modules
+and all outcome images.</p>
+<ol type="1">
+<li><p>The <code>GENERATED_PREVIEW_SUBDIRS</code> variable in <a
+href="../make/common/Modules.gmk"><code>make/common/Modules.gmk</code></a>
+indicates where the source files are found.</p></li>
+<li><p>For each module that has preview-specific source files, a goal is
+created to compile these source files into class files.</p></li>
+<li><p>The class files from each of these tasks reside in
+<code>support/preview/&lt;module&gt;</code> for each module.</p></li>
+<li><p>These preview-specific class files and other resources are copied
+to the <code>META-INF/preview</code> directory of the regular output
+directory.</p></li>
+<li><p>At run-time, jimage will pick up the preview-specific overrides
+from <code>META-INF/preview</code> only when preview features are
+enabled.</p></li>
+<li><p>The interim javac used by the build system cannot pick up the
+preview-specific overrides; they must be supplied explicitly with the
+following javac flag for every single module where overrides are
+significant:</p>
+<pre><code>--patch-module &lt;module&gt;=$(SUPPORT_OUTPUTDIR)/preview/&lt;module&gt;</code></pre>
+<p>See <a
+href="../make/test/BuildMicrobenchmark.gmk"><code>BuildMicroBenchmarks.gmk</code></a>
+for an example.</p></li>
+</ol>
+<h3 id="non-goals">Non-Goals</h3>
+<p>The Value Objects JEP only plans to introduce value classes that
+are:</p>
+<ol type="1">
+<li><p>In the <code>java.base</code> module.</p>
+<p>There's no plan to migrate other classes in other modules.</p></li>
+<li><p>Migrated from existing classes.</p>
+<p>These classes are available as identity classes when preview features
+are disabled. There's no plan to introduce completely new value
+classes.</p></li>
+</ol>
+<p>Support for other value classes would require significant changes to
+the build system.</p>
+<h2 id="testing">Testing</h2>
+<p>In addition to tests that require preview features to be enabled,
+tests that do not depend on preview features wish to run with preview
+features enabled to ensure compatibility:</p>
+<ol type="1">
+<li><p>Some tests wish to run against the Java SE class library with
+value classes.</p>
+<p>The jtreg tests may be run with
+<code>JTREG=VM_OPTIONS=--enable-preview</code>.</p></li>
+<li><p>Some tests wish to run against their own classes migrated to
+value classes.</p>
+<p>The jtreg <a
+href="testing.html#VALUE_CLASS_PLUGIN">VALUE_CLASS_PLUGIN</a> allows
+tests to migrate their own classes to value classes when running with
+the plugin.</p></li>
+</ol>
+<h2 id="wrapper-class-caches">Wrapper Class Caches</h2>
+<p>Currently, wrapper class caches are retained even when preview
+features are enabled to address performance losses. They have no
+semantic impact to value objects.</p>
+<p>In interpreter or C1 execution in Hotspot, allocations of a value
+object to the heap as a full object with header happen when a value
+object is:</p>
+<ol type="1">
+<li>Loaded from a flat storage (field or array)</li>
+<li>Created by a constructor</li>
+<li>If C2 uses scalarized calling convention, at C2 to C1/interpreter
+calls and returns</li>
+</ol>
+<p>Ideally, C2 can eliminate such allocations, but this does not work if
+the resulting object is stored into references. Unfortunately, many uses
+of boxing conversions store the resulting wrapper objects as
+references.</p>
+<p>For the uses that store wrapper objects to references, if the boxing
+conversion is:</p>
+<ol type="1">
+<li>Returning a value object from a flat cache array</li>
+<li>Calling the value class constructor</li>
+</ol>
+<p>Then we would have heap allocation on every single use.</p>
+<p>To avoid the allocations, we fall back to returning a value object
+from a reference cache array, from which the loaded reference is
+directly storable into a destination that wants a reference without any
+allocation.</p>
+<p>Since Hotspot may create flat arrays if an array of value objects is
+requested by regular Java array creation mechanisms, we use
+<code>ValueClass.newReferenceArray</code> to ensure we always create a
+reference cache array.</p>
+<p>The cache array for value objects may be removed without notice if
+the performance losses from allocations are no longer significant.</p>
+<h2 id="editing-this-document">Editing This Document</h2>
+<p>If you want to contribute changes to this document, edit
+<code>doc/value-class-preview.md</code> and then run
+<code>make update-build-docs</code> to generate the same changes in
+<code>doc/value-class-preview.html</code>.</p>
+</body>
+</html>

@@ -38,7 +38,7 @@
 groups=TEST.groups
 
 # Minimum jtreg version
-requiredVersion=8.2.1+1
+requiredVersion=8.3+1
 
 
 # Path to libraries in the topmost test directory. This is needed so @library

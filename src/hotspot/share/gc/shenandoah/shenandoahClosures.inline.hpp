@@ -144,7 +144,7 @@ void ShenandoahEvacuateUpdateRootClosureBase<CONCURRENT, STABLE_THREAD>::do_oop(
 template <bool CONCURRENT, bool STABLE_THREAD>
 template <class T>
 void ShenandoahEvacuateUpdateRootClosureBase<CONCURRENT, STABLE_THREAD>::do_oop_work(T* p) {
-  assert(_heap->is_concurrent_weak_root_in_progress() ||
+  assert((_heap->is_concurrent_weak_root_in_progress() && _heap->is_evacuation_in_progress()) ||
          _heap->is_concurrent_strong_root_in_progress(),
          "Only do this in root processing phase");
 

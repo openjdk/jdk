@@ -532,6 +532,7 @@ class CompileTrainingData : public TrainingData {
 
   MethodTrainingData* _method;
   const short _level;
+  const bool _is_osr;
   const int _compile_id;
 
   // classes that should be initialized before this JIT task runs
@@ -648,9 +649,10 @@ private:
   CompileTrainingData();
   CompileTrainingData(MethodTrainingData* mtd,
                       int level,
+                      bool is_osr,
                       int compile_id)
       : TrainingData(),  // empty key
-        _method(mtd), _level(level), _compile_id(compile_id), _init_deps_left(0) { }
+        _method(mtd), _level(level), _is_osr(is_osr), _compile_id(compile_id), _init_deps_left(0) { }
 public:
   ciRecords& ci_records() { return _ci_records; }
   static CompileTrainingData* make(CompileTask* task) NOT_CDS_RETURN_(nullptr);
@@ -660,7 +662,7 @@ public:
   MethodTrainingData* method() const { return _method; }
 
   int level() const { return _level; }
-
+  bool is_osr() const { return _is_osr; }
   int compile_id() const { return _compile_id; }
 
   int init_dep_count() const {
@@ -719,8 +721,8 @@ public:
 
   void verify(bool verify_dep_counter);
 
-  static CompileTrainingData* allocate(MethodTrainingData* mtd, int level, int compile_id) {
-    return TrainingData::allocate<CompileTrainingData>(mtd, level, compile_id);
+  static CompileTrainingData* allocate(MethodTrainingData* mtd, int level, bool is_osr, int compile_id) {
+    return TrainingData::allocate<CompileTrainingData>(mtd, level, is_osr, compile_id);
   }
 };
 
