@@ -210,19 +210,6 @@ public class Log {
     }
 
     /**
-     * Print <code>message</code> to the assigned output stream.
-     *
-     * @deprecated  Test ought to be quiet if log mode is non-verbose
-     *              and there is no errors found by the test. Methods
-     *              <code>display()</code> and <code>complain()</code>
-     *              are enough for testing purposes.
-     */
-    @Deprecated
-    public synchronized void println(String message) {
-        doPrint(message);
-    }
-
-    /**
      * Print <code>message</code> to the assigned output stream,
      * if log mode is <i>non</i>-verbose.
      *
@@ -520,9 +507,9 @@ public class Log {
         }
 
         /**
-         * Print message by invoking <code>Log.println()</code>.
+         * Print message by invoking <code>Log.display()</code>.
          *
-         * @see Log#println
+         * @see Log#display
          */
         public void println(String message) {
             log.display(makeLogMessage(message));
