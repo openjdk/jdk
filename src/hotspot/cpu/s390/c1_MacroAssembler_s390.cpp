@@ -140,15 +140,18 @@ int C1_MacroAssembler::scalarized_entry(const CompiledEntrySignature* ces, int f
 
   assert(args_on_stack <= args_on_stack_cc, "Sanity check");
 
-  // Z_R14 (the buffered value array) is the val_array argument to
-  // shuffle_inline_args.  On aarch64 a dedicated callee-saved register is
-  // used because r0 may hold a live argument; on s390x Z_R14 holds the
-  // return address which has already been restored above, so it is free here.
-  // TODO (s390x): confirm this register choice is safe across shuffle_inline_args.
+  // Z_R2 holds the buffered value array returned by buffer_inline_args[_no_receiver].
+  // Z_R2 is also the first argument register (Z_ARG1).  shuffle_inline_args
+  // will overwrite Z_R2 as an argument destination for the very first argument,
+  // destroying val_array mid-loop and causing a null dereference in
+  // pack_inline_helper.  Move the pointer to a callee-saved non-argument
+  // register (Z_R11) before the shuffle.
+  // On x86 rax is used; rax is not an argument register so it is safe there.
+  z_lgr(Z_R11, Z_R2);
   shuffle_inline_args(true, is_inline_ro_entry, sig_cc,
                       args_passed_cc, args_on_stack_cc, regs_cc, // from
                       args_passed,    args_on_stack,    regs,    // to
-                      0, Z_R14);
+                      0, Z_R11);
 
   // Build the real frame.  The jump below skips the stack-bang and frame-setup
   // in verified_inline_entry (which uses a different real_frame_size).

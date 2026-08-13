@@ -495,19 +495,24 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
           "buffer_inline_args" : "buffer_inline_args_no_receiver";
         __ set_info(name, dont_gc_arguments);
 
-        // This is called from a C1 method's scalarized entry point
-        OopMap* map = save_live_registers(sasm);
+        // This is called from a C1 method's scalarized entry point.
+        // Use save_live_registers_except_r2 so Z_R2's frame slot is NOT
+        // recorded in the OopMap as a callee-saved live oop.  The GC must
+        // not visit that slot: before the call it holds an arbitrary live
+        // argument, and after the call it holds the result we want to keep.
+        OopMap* map = save_live_registers_except_r2(sasm);
         Register method = Z_R13;   // Incoming
         address entry = (id == StubId::c1_buffer_inline_args_id) ?
           CAST_FROM_FN_PTR(address, buffer_inline_args) :
           CAST_FROM_FN_PTR(address, buffer_inline_args_no_receiver);
 
-        int call_offset = __ call_RT(Z_R14, noreg, entry, method);
+        // Result (array of buffered value objects) is returned in Z_R2.
+        // Use restore_live_registers_except_r2 so the result is not overwritten.
+        int call_offset = __ call_RT(Z_R2, noreg, entry, method);
         oop_maps = new OopMapSet();
         oop_maps->add_gc_map(call_offset, map);
-        restore_live_registers(sasm);
-        __ z_lgr(Z_R1_scratch, Z_R14);
-        __ verify_oop(Z_R1_scratch);  // Z_R1_scratch: an array of buffered value objects
+        restore_live_registers_except_r2(sasm);
+        __ verify_oop(Z_R2);  // Z_R2: an array of buffered value objects
         __ z_br(Z_R14);
       }
       break;
@@ -520,7 +525,7 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
         // Called with store_parameter and not C abi
         // Parameters were stored before save_live_registers pushed a frame,
         // so we need to account for the frame size when loading them
-        int frame_size = RegisterSaver::live_reg_frame_size(RegisterSaver::all_registers);
+        const int frame_size = sasm->frame_size() * VMRegImpl::slots_per_word * VMRegImpl::stack_slot_size;
         int arg_offset = FrameMap::first_available_sp_in_frame + frame_size;
         __ z_lg(Z_ARG2, arg_offset + 1 * BytesPerWord, Z_SP); // array
         __ z_lg(Z_ARG3, arg_offset + 0 * BytesPerWord, Z_SP); // index
@@ -544,7 +549,7 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
         // Called with store_parameter and not C abi
         // Parameters were stored before save_live_registers pushed a frame,
         // so we need to account for the frame size when loading them
-        int frame_size = RegisterSaver::live_reg_frame_size(RegisterSaver::all_registers);
+        const int frame_size = sasm->frame_size() * VMRegImpl::slots_per_word * VMRegImpl::stack_slot_size;
         int arg_offset = FrameMap::first_available_sp_in_frame + frame_size;
         __ z_lg(Z_ARG2, arg_offset + 2 * BytesPerWord, Z_SP); // array
         __ z_lg(Z_ARG3, arg_offset + 1 * BytesPerWord, Z_SP); // index
