@@ -270,7 +270,6 @@ public interface CharSequence {
         // The first code unit of a surrogate pair is in [0, lastIndex).
         for (int i = 0; i < lastIndex;) {
             if (Character.isHighSurrogate(charAt(i++))) {
-                if (i >= lastIndex) break;
                 if (Character.isLowSurrogate(charAt(i))) {
                     n--;
                     i++;
