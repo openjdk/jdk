@@ -390,10 +390,11 @@ inline int frame::sender_sp_ret_address_offset() {
   return frame::sender_sp_offset - frame::return_addr_offset;
 }
 
-//------------------------------------------------------------------------------
-// frame::sender
-
-inline frame frame::sender(RegisterMap* map) const {
+// This method can be on a hot path. Since Valhalla made it a bit bigger, compilers are
+// not as eager to inline it, but in some cases, it makes a significant difference.
+// Let's encourage the compiler to inline sender all the way to frame::repair_sender_sp.
+// through frame::sender_for_compiled_frame.
+ALWAYSINLINE frame frame::sender(RegisterMap* map) const {
   frame result = sender_raw(map);
 
   if (map->process_frames() && !map->in_cont()) {
@@ -406,7 +407,7 @@ inline frame frame::sender(RegisterMap* map) const {
   return result;
 }
 
-inline frame frame::sender_raw(RegisterMap* map) const {
+ALWAYSINLINE frame frame::sender_raw(RegisterMap* map) const {
   // Default is we done have to follow them. The sender_for_xxx will
   // update it accordingly
   map->set_include_argument_oops(false);
@@ -427,7 +428,42 @@ inline frame frame::sender_raw(RegisterMap* map) const {
   return frame(sender_sp(), link(), sender_pc());
 }
 
-inline frame frame::sender_for_compiled_frame(RegisterMap* map) const {
+// Check for a method with scalarized inline type arguments that needs
+// a stack repair and return the repaired sender stack pointer.
+ALWAYSINLINE intptr_t* frame::repair_sender_sp(intptr_t* sender_sp, intptr_t** saved_fp_addr) const {
+  nmethod* nm = _cb->as_nmethod_or_null();
+  if (nm != nullptr && nm->needs_stack_repair()) {
+    // The stack increment resides just below the saved rbp on the stack
+    // and does not account for the return address and rbp (see MacroAssembler::remove_frame).
+    intptr_t* real_frame_size_addr = (intptr_t*) (saved_fp_addr - 1);
+    int real_frame_size = (*real_frame_size_addr / wordSize) + metadata_words_at_bottom;
+    assert(real_frame_size >= _cb->frame_size() && real_frame_size <= 1000000, "invalid frame size");
+    sender_sp = unextended_sp() + real_frame_size;
+  }
+  return sender_sp;
+}
+
+
+// See comment in MacroAssembler::remove_frame
+ALWAYSINLINE frame::CompiledFramePointers frame::compiled_frame_details() const {
+  // frame owned by optimizing compiler
+  assert(_cb->frame_size() > 0, "must have non-zero frame size");
+  intptr_t* sender_sp = unextended_sp() + _cb->frame_size();
+  assert(sender_sp == real_fp(), "");
+
+  // Repair the sender sp if the frame has been extended
+  sender_sp = repair_sender_sp(sender_sp, (intptr_t**)(sender_sp - frame::sender_sp_offset));
+
+  CompiledFramePointers cfp;
+  cfp.sender_sp = sender_sp;
+  cfp.saved_fp_addr = (intptr_t**)(sender_sp - frame::sender_sp_offset);
+  // On Intel the return_address is always the word on the stack
+  cfp.sender_pc_addr = (address*)(sender_sp - frame::return_addr_offset);
+
+  return cfp;
+}
+
+ALWAYSINLINE frame frame::sender_for_compiled_frame(RegisterMap* map) const {
   assert(map != nullptr, "map must be set");
   CompiledFramePointers cfp = compiled_frame_details();
 

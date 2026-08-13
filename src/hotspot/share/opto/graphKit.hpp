@@ -780,7 +780,7 @@ class GraphKit : public Phase {
   }
 
   bool too_many_traps_or_recompiles(Deoptimization::DeoptReason reason) {
-      return C->too_many_traps_or_recompiles(method(), bci(), reason);
+    return C->too_many_traps_or_recompiles(method(), bci(), reason);
   }
 
   // Returns the object (if any) which was created the moment before.
@@ -850,7 +850,7 @@ class GraphKit : public Phase {
   Node* null_free_array_test(Node* array, bool null_free = true);
   Node* null_free_atomic_array_test(Node* array, ciInlineKlass* vk);
   Node* atomic_layout_array_test_and_get_layout_kind(Node* array, RegionNode* atomic_region);
-  Node* inline_array_null_guard(Node* ary, Node* val, int nargs, bool safe_for_replace = false);
+  Node* inline_array_null_guard(Node* ary, Node* val, int nargs);
 
   Node* gen_subtype_check(Node* obj, Node* superklass);
 

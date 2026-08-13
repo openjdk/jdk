@@ -122,9 +122,9 @@ public:
   uint          field_index(int offset) const;
 
   // Replace InlineTypeNodes in debug info at safepoints with SafePointScalarObjectNodes
-  void make_scalar_in_safepoints(PhaseIterGVN* igvn, bool allow_oop = true);
+  [[nodiscard]] bool make_scalar_in_safepoints(PhaseIterGVN* igvn, bool allow_oop = true);
   // Variant that allows to limit to a single safepoint. If nullptr is given, all safepoint uses will be considered.
-  void make_scalar_in_safepoints(PhaseIterGVN* igvn, bool allow_oop, SafePointNode* safepoint);
+  [[nodiscard]] bool make_scalar_in_safepoints(PhaseIterGVN* igvn, bool allow_oop, SafePointNode* safepoint);
 
   // Store the inline type as a flat (headerless) representation
   void store_flat(GraphKit* kit, Node* base, Node* ptr, bool atomic, bool immutable_memory, bool null_free, DecoratorSet decorators);
@@ -132,7 +132,7 @@ public:
   void store_flat_array(GraphKit* kit, Node* base, Node* idx);
 
   // Implementation of the substitutability check for acmp
-  static bool can_emit_substitutability_check(Node* lhs, Node* rhs);
+  static bool can_emit_substitutability_check(PhaseGVN* phase, Node* lhs, Node* rhs);
   static Node* emit_substitutability_check(GraphKit* kit, Node* lhs, Node* rhs);
 
   // Implementation of identityHashCode for value classes with restrictions (e.g. no oops)

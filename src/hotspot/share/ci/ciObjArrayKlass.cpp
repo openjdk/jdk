@@ -190,12 +190,12 @@ ciObjArrayKlass* ciObjArrayKlass::make(ciKlass* element_klass, bool refined_type
   GUARDED_VM_ENTRY(return make_impl(element_klass, refined_type, null_free, atomic);)
 }
 
-ciArrayKlass* ciObjArrayKlass::make(ciKlass* element_klass, int dims) {
+ciObjArrayKlass* ciObjArrayKlass::make(ciKlass* element_klass, int dims) {
   ciKlass* klass = element_klass;
   for (int i = 0; i < dims; i++) {
-    klass = ciObjArrayKlass::make(klass, /* refined_type = */ false);
+    klass = make(klass, /* refined_type = */ false);
   }
-  return klass->as_array_klass();
+  return klass->as_obj_array_klass();
 }
 
 ciKlass* ciObjArrayKlass::exact_klass() {

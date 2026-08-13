@@ -240,7 +240,6 @@ intptr_t ciInstance::hash() const {
   oop obj = get_oop();
   markWord mark = obj->mark();
   if (mark.is_marked()) return markWord::no_hash;
-  if (!UseObjectMonitorTable && mark.has_monitor()) return markWord::no_hash;
   return mark.hash();
 }
 // ------------------------------------------------------------------

@@ -76,7 +76,7 @@ public:
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual void  calling_convention( BasicType* sig_bt, VMRegPair *parm_reg, uint length ) const;
   virtual const RegMask &in_RegMask(uint) const;
-  virtual Node *match(const ProjNode *proj, const Matcher *m, const RegMask* mask);
+  virtual Node* match(const ProjNode* proj, const Matcher* m);
   virtual uint ideal_reg() const { return 0; }
 #ifndef PRODUCT
   virtual void  dump_spec(outputStream *st) const;
@@ -799,7 +799,7 @@ public:
   virtual bool        cmp(const Node &n) const;
   virtual uint        size_of() const = 0;
   virtual void        calling_convention(BasicType* sig_bt, VMRegPair* parm_regs, uint argcnt) const;
-  virtual Node*       match(const ProjNode* proj, const Matcher* m, const RegMask* mask);
+  virtual Node*       match(const ProjNode* proj, const Matcher* m);
   virtual uint        ideal_reg() const { return NotAMachineReg; }
   // Are we guaranteed that this node is a safepoint?  Not true for leaf calls and
   // for some macro nodes whose expansion does not have a safepoint on the fast path.
