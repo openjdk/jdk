@@ -2916,7 +2916,7 @@ int MachNode::pd_alignment_required() const {
   }
 }
 
-void MachNode::copy_flags_to(MachNode* replacement) const {
+void MachNode::pd_copy_flags_to(MachNode* replacement) const {
   // Preserve the JCC erratum tag.
   replacement->add_flag(flags() & Node::PD::Flag_intel_jcc_erratum);
 }
