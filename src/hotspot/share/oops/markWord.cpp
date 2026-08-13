@@ -57,14 +57,6 @@ void markWord::print_on(outputStream* st, bool print_monitor_info) const {
     // have to check has_monitor() before is_locked()
     // Valhalla: inline types/arrays can't be monitored
     st->print(" monitor(" INTPTR_FORMAT ")=", value());
-    if (print_monitor_info && !UseObjectMonitorTable) {
-      ObjectMonitor* mon = monitor();
-      if (mon == nullptr) {
-        st->print("null (this should never be seen!)");
-      } else {
-        mon->print_on(st);
-      }
-    }
   } else if (is_locked()) {  // last bits != 01 => 00
     // thin locked
     // Valhalla: inline types can not possess an object monitor

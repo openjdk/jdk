@@ -1,5 +1,5 @@
 /*
- * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2026, Microsoft and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,20 +19,31 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-import jdk.internal.misc.CDS;
+/*
+ * @test
+ * @bug 8390002
+ * @summary Verifies that on Windows, there is are three yellow stack pages,
+ *          since Windows requires an additional yellow stack page for the
+ *          OS-managed stack-growth guard page
+ * @requires os.family == "windows"
+ * @library /test/lib
+ * @run driver TestWindowsStackYellowPages
+ */
 
-public class ArchivedIntegerHolder {
-    public static Object[] archivedObjects;
-    static {
-        CDS.initializeFromArchive(ArchivedIntegerHolder.class);
-        if (archivedObjects == null) {
-            archivedObjects = new Object[256];
-            for (int i = -128; i <= 127; i++) {
-                archivedObjects[i + 128] = Integer.valueOf(i);
-            }
-        }
+import jdk.test.lib.process.ProcessTools;
+
+public class TestWindowsStackYellowPages {
+    private static final String FLAG = "StackYellowPages";
+
+    public static void main(String[] args) throws Exception {
+        ProcessTools.executeTestJava("-XX:+PrintFlagsFinal", "-version")
+                    .shouldMatch(FLAG + "[ ]+=[ ]+3")
+                    .shouldHaveExitValue(0);
+
+        ProcessTools.executeTestJava("-XX:" + FLAG + "=2", "-version")
+                    .shouldContain(FLAG + "=2 is outside the allowed range")
+                    .shouldNotHaveExitValue(0);
     }
 }

@@ -1555,6 +1555,15 @@ the same sources. Your mileage may vary however, so we recommend evaluating it
 for yourself. To enable it, make sure it's on the path and configure with
 `--enable-ccache`.
 
+### Sccache
+
+The JDK build supports building with sccache when using gcc, clang, or Microsoft
+toolchains.  To enable it, make sure the sccache binary is on the path (or
+specify the path to the binary using the `SCCACHE` argument to the configure
+script) and configure with `--enable-sccache`.  To optionally specify where
+sccache stores its cache files, use `--with-sccache-dir`.  Precompiled headers
+are disabled when sccache is enabled.
+
 ### Precompiled Headers
 
 By default, the Hotspot build uses pre-compiled headers (PCH) on the toolchains
