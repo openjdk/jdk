@@ -2314,6 +2314,7 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
 #ifdef ASSERT
     m->as_Mem()->set_adr_type(adr_type);
 #endif // ASSERT
+    // This has the side effect of allocating new aliases for flat array accesses
     get_alias_index(adr_type);
   }
 
