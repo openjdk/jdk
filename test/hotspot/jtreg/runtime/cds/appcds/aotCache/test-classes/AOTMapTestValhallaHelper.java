@@ -21,13 +21,13 @@
  * questions.
  */
 
-import jdk.internal.misc.PreviewFeatures;
 import jdk.internal.value.ValueClass;
 import jdk.internal.vm.annotation.NullRestricted;
 
 // Test app for flat arrays in the AOT map
-public class AOTMapTestApp {
-
+// This class is AOT-initialized during the AOT assembly phase (see
+// the use of -XX:AOTInitTestClass in ../AOTMapTest.java)
+public class AOTMapTestValhallaHelper {
     public static value class Wrapper implements Comparable<Wrapper> {
         Integer i;
 
@@ -96,48 +96,42 @@ public class AOTMapTestApp {
             wrapperWrapper = new WrapperWrapper(0xbbbb6666);
             a = 0x7788;
             b = new Integer(0x8899);
+            super();
         }
     }
 
-    static ArchivedData archivedObjects;
-    static {
-        if (archivedObjects == null) {
-            archivedObjects = new ArchivedData();
-        } else {
-            System.out.println("Initialized from CDS");
-            System.out.println("boxArray " + archivedObjects.boxArray);
-            System.out.println("wrapperArray " + archivedObjects.wrapperArray);
-            System.out.println("wrapperWrapperArray " + archivedObjects.wrapperWrapperArray);
-            System.out.println("objArray " + archivedObjects.objArray);
-            System.out.println("wrapper " + archivedObjects.wrapper);
-            System.out.println("wrapperWrapper " + archivedObjects.wrapperWrapper);
-            System.out.println("a " + archivedObjects.a);
-            System.out.println("b " + archivedObjects.b);
-        }
-    }
+    // This object will be stored in the AOT cache.
+    static ArchivedData archivedObjects = new ArchivedData();
 
-    public static void main(String[] args) throws Exception {
-        System.out.println("Hello FlatAOTMapTestApp");
-        Class.forName("Hello");
+    // This is called by reflection code in AOTMapTestApp.main() in ../AOTMapTest.java
+    public AOTMapTestValhallaHelper() {
+        System.out.println("boxArray " + archivedObjects.boxArray);
+        System.out.println("wrapperArray " + archivedObjects.wrapperArray);
+        System.out.println("wrapperWrapperArray " + archivedObjects.wrapperWrapperArray);
+        System.out.println("objArray " + archivedObjects.objArray);
+        System.out.println("wrapper " + archivedObjects.wrapper);
+        System.out.println("wrapperWrapper " + archivedObjects.wrapperWrapper);
+        System.out.println("a " + archivedObjects.a);
+        System.out.println("b " + archivedObjects.b);
 
-        if (PreviewFeatures.isEnabled() && !ValueClass.isFlatArray(archivedObjects.boxArray)) {
+        if (!ValueClass.isFlatArray(archivedObjects.boxArray)) {
             throw new RuntimeException("Boxing class array should be flat");
         }
 
-        if (PreviewFeatures.isEnabled() && (!ValueClass.isNullRestrictedArray(archivedObjects.nullFreeBoxArray) ||
+        if ((!ValueClass.isNullRestrictedArray(archivedObjects.nullFreeBoxArray) ||
             !ValueClass.isFlatArray(archivedObjects.nullFreeBoxArray))) {
             throw new RuntimeException("Boxing class array should be null-free and flat");
         }
 
-        if (PreviewFeatures.isEnabled() && !ValueClass.isFlatArray(archivedObjects.wrapperArray)) {
+        if (!ValueClass.isFlatArray(archivedObjects.wrapperArray)) {
             throw new RuntimeException("Wrapper array should be flat");
         }
 
-        if (PreviewFeatures.isEnabled() && !ValueClass.isFlatArray(archivedObjects.wrapperWrapperArray)) {
+        if (!ValueClass.isFlatArray(archivedObjects.wrapperWrapperArray)) {
             throw new RuntimeException("WrapperWrapper array should be flat");
         }
 
-        if (PreviewFeatures.isEnabled() && ValueClass.isFlatArray(archivedObjects.objArray)) {
+        if (ValueClass.isFlatArray(archivedObjects.objArray)) {
             throw new RuntimeException("Object array should not be flat");
         }
     }

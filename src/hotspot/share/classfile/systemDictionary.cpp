@@ -937,9 +937,9 @@ InstanceKlass* SystemDictionary::resolve_from_stream(ClassFileStream* st,
                                                      const ClassLoadInfo& cl_info,
                                                      TRAPS) {
   if (cl_info.is_hidden()) {
-    return resolve_hidden_class_from_stream(st, class_name, class_loader, cl_info, CHECK_NULL);
+    return resolve_hidden_class_from_stream(st, class_name, class_loader, cl_info, THREAD);
   } else {
-    return resolve_class_from_stream(st, class_name, class_loader, cl_info, CHECK_NULL);
+    return resolve_class_from_stream(st, class_name, class_loader, cl_info, THREAD);
   }
 }
 
@@ -979,7 +979,7 @@ bool SystemDictionary::is_shared_class_visible(Symbol* class_name,
 
   // (2) Check if we are loading into the same module from the same location as in dump time.
 
-  if (CDSConfig::is_using_optimized_module_handling()) {
+  if (CDSConfig::is_using_full_module_graph()) {
     // Class visibility has not changed between dump time and run time, so a class
     // that was visible (and thus archived) during dump time is always visible during runtime.
     assert(SystemDictionary::is_shared_class_visible_impl(class_name, ik, pkg_entry, class_loader),
@@ -1003,7 +1003,7 @@ bool SystemDictionary::is_shared_class_visible_impl(Symbol* class_name,
     // has restricted the classes can be loaded at this step to be only:
     // [1] cs->is_modules_image(): classes in java.base, or,
     // [2] HeapShared::is_a_test_class_in_unnamed_module(ik): classes in bootstrap/unnamed module
-    assert(cl->is_modules_image() || HeapShared::is_a_test_class_in_unnamed_module(ik),
+    assert(cl->is_modules_image(),
            "only these classes can be loaded before the module system is initialized");
     assert(class_loader.is_null(), "sanity");
     return true;
