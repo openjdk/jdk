@@ -209,6 +209,9 @@
   develop(bool, StressLinearScan, false,                                    \
           "scramble block order used by LinearScan (stress test)")          \
                                                                             \
+  develop(bool, StressC1Spilling, false,                                    \
+          "Randomly spill intervals during C1 register allocation")         \
+                                                                            \
   develop(bool, TimeLinearScan, false,                                      \
           "detailed timing of LinearScan phases")                           \
                                                                             \
