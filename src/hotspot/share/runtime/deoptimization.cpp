@@ -1481,15 +1481,7 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
             ObjectMonitor* waiting_monitor = deoptee_thread->current_waiting_monitor();
             if (waiting_monitor != nullptr && waiting_monitor->object() == obj()) {
               assert(fr.is_deoptimized_frame(), "frame must be scheduled for deoptimization");
-              if (UseObjectMonitorTable) {
-                mon_info->lock()->clear_object_monitor_cache();
-              }
-#ifdef ASSERT
-              else {
-                assert(!UseObjectMonitorTable, "must be");
-                mon_info->lock()->set_bad_monitor_deopt();
-              }
-#endif
+              mon_info->lock()->clear_object_monitor_cache();
               JvmtiDeferredUpdates::inc_relock_count_after_wait(deoptee_thread);
               continue;
             }
@@ -1499,12 +1491,9 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
         // We have lost information about the correct state of the lock stack.
         // Entering may create an invalid lock stack. Inflate the lock if it
         // was fast_locked to restore the valid lock stack.
-        if (UseObjectMonitorTable) {
-          // UseObjectMonitorTable expects the BasicLock cache to be either a
-          // valid ObjectMonitor* or nullptr. Right now it is garbage, set it
-          // to nullptr.
-          lock->clear_object_monitor_cache();
-        }
+        // The BasicLock cache is expected to be either a valid ObjectMonitor*
+        // or nullptr. Right now it is garbage, hence we set it to nullptr.
+        lock->clear_object_monitor_cache();
         ObjectSynchronizer::enter_for(obj, lock, deoptee_thread);
         if (deoptee_thread->lock_stack().contains(obj())) {
             ObjectSynchronizer::inflate_fast_locked_object(obj(), ObjectSynchronizer::InflateCause::inflate_cause_vm_internal,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "oops/compressedKlass.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/globals.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 // The markWord describes the header of an object.
@@ -53,8 +54,7 @@
 //
 //    [header          | 00]  locked             locked regular object header (fast-locking in use)
 //    [header          | 01]  unlocked           regular object header
-//    [header          | 10]  monitor            inflated lock (UseObjectMonitorTable == true)
-//    [ptr             | 10]  monitor            inflated lock (UseObjectMonitorTable == false, header is swapped out)
+//    [header          | 10]  monitor            inflated lock
 //    [ptr             | 11]  marked             used to mark an object (header is swapped out)
 //
 //  - self-fwd - used by some GCs to indicate in-place forwarding.
@@ -254,21 +254,19 @@ class markWord {
     return markWord((value() & ~lock_mask_in_place) | monitor_value);
   }
   ObjectMonitor* monitor() const {
-    assert(has_monitor(), "check");
-    assert(!UseObjectMonitorTable, "Locking with OM table does not use markWord for monitors");
-    // Use xor instead of &~ to provide one extra tag-bit check.
-    return (ObjectMonitor*) (value() ^ monitor_value);
+    // Locking with OM table does not use markWord for monitors.
+    ShouldNotCallThis();
+    return (ObjectMonitor*) nullptr;
   }
 
   static markWord encode(ObjectMonitor* monitor) {
-    assert(!UseObjectMonitorTable, "Locking with OM table does not use markWord for monitors");
-    uintptr_t tmp = (uintptr_t) monitor;
-    return markWord(tmp | monitor_value);
+    // Locking with OM table does not use markWord for monitors.
+    ShouldNotCallThis();
+    return markWord(0);
   }
 
   bool has_monitor_pointer() const {
-    intptr_t lockbits = value() & lock_mask_in_place;
-    return !UseObjectMonitorTable && lockbits == monitor_value;
+    return false; // Locking with OM table does not use markWord for monitors.
   }
 
   bool has_displaced_mark_helper() const {
