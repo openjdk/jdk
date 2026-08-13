@@ -472,9 +472,9 @@ void value_primitive_and_oop_iterate(InlineKlass* klass,
 
     // Visit any previous unvisited primitive fields
     if (oop_offset > visited) {
-      const size_t primitive_size = oop_offset - visited;
-      primitive_function(visited, primitive_size);
-      visited += primitive_size;
+      const size_t size = oop_offset - visited;
+      primitive_function(visited, size);
+      visited += size;
     }
 
     // Visit the oop field
@@ -485,8 +485,8 @@ void value_primitive_and_oop_iterate(InlineKlass* klass,
   // Visit any trailing primitive payload after the last oop
   assert(visited <= payload_size, "Negative sized trailing payload segment");
   if (payload_size > visited) {
-    const size_t left = payload_size - visited;
-    primitive_function(visited, left);
+    const size_t size = payload_size - visited;
+    primitive_function(visited, size);
   }
 }
 
