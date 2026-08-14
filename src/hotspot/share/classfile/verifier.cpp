@@ -636,7 +636,7 @@ TypeOrigin ClassVerifier::ref_ctx(const char* sig) {
   return TypeOrigin::implicit(vt);
 }
 
-static bool supports_strict_fields(InstanceKlass* klass) {
+bool Verifier::supports_strict_fields(InstanceKlass* klass) {
   int ver = klass->major_version();
   return ver > Verifier::VALUE_TYPES_MAJOR_VERSION ||
          (ver == Verifier::VALUE_TYPES_MAJOR_VERSION && klass->minor_version() == Verifier::JAVA_PREVIEW_MINOR_VERSION);
@@ -2428,7 +2428,7 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
             }
           }
         }
-      } else if (supports_strict_fields(_klass)) {
+      } else if (Verifier::supports_strict_fields(_klass)) {
         // `strict` fields are not writable, but only local fields produce verification errors
         if (is_local_field && fd.access_flags().is_strict() && fd.access_flags().is_final()) {
           verify_error(ErrorContext::bad_code(bci),
