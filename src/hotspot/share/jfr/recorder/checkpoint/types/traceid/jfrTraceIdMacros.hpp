@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@
 // #define JDK_JFR_EVENT_SUBKLASS                 16
 // #define JDK_JFR_EVENT_KLASS                    32
 // #define EVENT_HOST_KLASS                       64
+// #define EVENT_MISC_BIT                         128
 
 // static bits
 #define META_SHIFT                                8
@@ -62,10 +63,13 @@
 #define TRACE_ID_SHIFT                            16
 #define METHOD_ID_NUM_MASK                        ((1 << TRACE_ID_SHIFT) - 1)
 #define META_BITS                                 (STICKY_BIT | SERIALIZED_BIT | TRANSIENT_BIT | LEAKP_BIT | EPOCH_1_CLEARED_BIT | EPOCH_0_CLEARED_BIT)
-#define EVENT_BITS                                (EVENT_HOST_KLASS | JDK_JFR_EVENT_KLASS | JDK_JFR_EVENT_SUBKLASS)
+#define EVENT_BITS                                (EVENT_MISC_BIT | EVENT_HOST_KLASS | JDK_JFR_EVENT_KLASS | JDK_JFR_EVENT_SUBKLASS)
 #define TAG_BITS                                  (EPOCH_1_METHOD_BIT | EPOCH_0_METHOD_BIT | EPOCH_1_BIT | EPOCH_0_BIT)
 #define ALL_BITS                                  (META_BITS | EVENT_BITS | TAG_BITS)
 #define ALL_BITS_MASK                             (~(ALL_BITS))
+#define PRELOAD_TAG_BIT_STICKY                    (EPOCH_1_METHOD_BIT)
+#define PRELOAD_TAG_BITS_MASK                     (EVENT_BITS)
+
 
 // epoch relative bits
 #define THIS_EPOCH_BIT                            (JfrTraceIdEpoch::this_epoch_bit())
@@ -78,19 +82,21 @@
 // operators
 #define TRACE_ID_RAW(ptr)                         (JfrTraceIdBits::load(ptr))
 #define TRACE_ID(ptr)                             (TRACE_ID_RAW(ptr) >> TRACE_ID_SHIFT)
-#define TRACE_ID_MASKED(ptr)                      (TRACE_ID_RAW(ptr) & ALL_BITS_MASK)
+#define TRACE_ID_MASKED(ptr, mask)                (TRACE_ID_RAW(ptr) & mask)
+#define TRACE_ID_MASKED_ALL_BITS(ptr)             (TRACE_ID_MASKED(ptr, ALL_BITS_MASK))
 #define TRACE_ID_PREDICATE(ptr, bits)             ((TRACE_ID_RAW(ptr) & bits) != 0)
 #define TRACE_ID_TAG(ptr, bits)                   (JfrTraceIdBits::store(bits, ptr))
 #define TRACE_ID_TAG_CAS(ptr, bits)               (JfrTraceIdBits::cas(bits, ptr))
 #define TRACE_ID_MASK_CLEAR(ptr, mask)            (JfrTraceIdBits::mask_store(mask, ptr))
 #define TRACE_ID_META_TAG(ptr, bits)              (JfrTraceIdBits::meta_store(bits, ptr))
 #define TRACE_ID_META_MASK_CLEAR(ptr, mask)       (JfrTraceIdBits::meta_mask_store(mask, ptr))
-#define METHOD_ID(kls, method)                    (TRACE_ID_MASKED(kls) | (method)->orig_method_idnum())
+#define METHOD_ID(kls, method)                    (TRACE_ID_MASKED_ALL_BITS(kls) | (method)->orig_method_idnum())
 #define METHOD_FLAG_PREDICATE(method, bits)       ((method)->is_trace_flag_set(bits))
 #define METHOD_FLAG_TAG(method, bits)             (JfrTraceIdBits::store(bits, method))
 #define METHOD_META_TAG(method, bits)             (JfrTraceIdBits::meta_store(bits, method))
 #define METHOD_FLAG_CLEAR(method, bits)           (JfrTraceIdBits::clear_cas(bits, method))
 #define METHOD_META_MASK_CLEAR(method, mask)      (JfrTraceIdBits::meta_mask_store(mask, method))
+#define PRELOAD_TAG_BITS(ptr)                     (TRACE_ID_MASKED(ptr, TAG_BITS))
 
 // predicates
 #define USED_THIS_EPOCH(ptr)                      (TRACE_ID_PREDICATE(ptr, (STICKY_BIT | TRANSIENT_BIT | THIS_EPOCH_BIT)))
@@ -110,6 +116,9 @@
 #define METHOD_FLAG_USED_PREVIOUS_EPOCH_BIT(method) (METHOD_FLAG_PREDICATE(method, (PREVIOUS_EPOCH_BIT)))
 #define METHOD_FLAG_NOT_USED_PREVIOUS_EPOCH(method) (!(METHOD_FLAG_USED_PREVIOUS_EPOCH(method)))
 #define IS_METHOD_BLESSED(method)                 (METHOD_FLAG_PREDICATE(method, BLESSED_METHOD_BIT))
+#define HAS_EVENT_MISC_BIT(ptr)                   (TRACE_ID_PREDICATE(ptr, EVENT_MISC_BIT))
+#define HAS_NOT_EVENT_MISC_BIT(ptr)               (!(HAS_EVENT_MISC_BIT(ptr)))
+#define HAS_PRELOAD_TAG_BIT_STICKY(ptr)           (TRACE_ID_PREDICATE(ptr, PRELOAD_TAG_BIT_STICKY))
 
 // setters
 #define SET_USED_THIS_EPOCH(ptr)                  (TRACE_ID_TAG(ptr, THIS_EPOCH_BIT))
@@ -119,6 +128,11 @@
 #define CLEAR_PREVIOUS_EPOCH_METHOD_AND_CLASS(kls) (TRACE_ID_MASK_CLEAR(kls, PREVIOUS_EPOCH_METHOD_AND_CLASS_BIT_MASK))
 #define CLEAR_PREVIOUS_EPOCH_METHOD_FLAG(method)  (METHOD_FLAG_CLEAR(method, PREVIOUS_EPOCH_BIT))
 #define BLESS_METHOD(method)                      (METHOD_FLAG_TAG(method, BLESSED_METHOD_BIT))
+#define SET_EVENT_MISC_BIT(ptr)                   (TRACE_ID_TAG(ptr, EVENT_MISC_BIT))
+#define EVENT_MISC_BIT_MASK                       ((uint8_t)(~(EVENT_MISC_BIT)))
+#define CLEAR_EVENT_MISC_BIT(ptr)                 (TRACE_ID_MASK_CLEAR(ptr, EVENT_MISC_BIT_MASK))
+#define SET_PRELOAD_TAG_BIT_STICKY(ptr)           (TRACE_ID_TAG(ptr, PRELOAD_TAG_BIT_STICKY))
+#define CLEAR_PRELOAD_TAG_BITS(ptr)               (TRACE_ID_MASK_CLEAR(ptr, PRELOAD_TAG_BITS_MASK))
 
 // types
 #define IS_JDK_JFR_EVENT_KLASS(kls)               (TRACE_ID_PREDICATE(kls, JDK_JFR_EVENT_KLASS))

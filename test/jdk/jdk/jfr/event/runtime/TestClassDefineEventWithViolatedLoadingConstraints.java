@@ -25,8 +25,12 @@ package jdk.jfr.event.runtime;
 
 import java.io.InputStream;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.nio.file.Path;
 import java.util.List;
-
+import java.security.CodeSigner;
+import java.security.CodeSource;
+import java.security.ProtectionDomain;
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedClass;
 import jdk.jfr.consumer.RecordedClassLoader;
@@ -48,6 +52,7 @@ public class TestClassDefineEventWithViolatedLoadingConstraints {
     private final static String EVENT_NAME = EventNames.ClassDefine;
     private final static String CLASS_NAME = TestClassDefineEventWithViolatedLoadingConstraints.class.getName();
     private final static String DEFINED_CLASS_NAME = CLASS_NAME + "$DuplicateDefinition";
+    private final static String FAKE_SOURCE_PATH = "/my/fake/synthetic/classloading/source.jar";
 
     static class DuplicateDefinition { }
 
@@ -55,8 +60,16 @@ public class TestClassDefineEventWithViolatedLoadingConstraints {
         DuplicateDefinitionClassLoader() {
             super(null);
         }
-        Class<?> define(byte[] bytes, String classname) {
-            return defineClass(classname, bytes, 0, bytes.length);
+
+        Class<?> define(byte[] bytes, String classname) throws Exception {
+            CodeSource cs = null;
+            try {
+                Path fakeJar = Path.of("my", "fake", "synthetic", "classloading", "source.jar");
+                cs = new CodeSource(fakeJar.toUri().toURL(), (CodeSigner[]) null);
+            } catch (MalformedURLException ex) {
+                throw ex;
+            }
+            return defineClass(classname, bytes, 0, bytes.length, new ProtectionDomain(cs, null));
         }
     }
 
@@ -113,7 +126,6 @@ public class TestClassDefineEventWithViolatedLoadingConstraints {
             System.out.println(event);
             RecordedClassLoader definingClassLoader = event.getValue("definingClassLoader");
             if (definingClassLoader == null) {
-                // class is_non_strong_hidden
                 continue;
             }
             RecordedClass classLoader = definingClassLoader.getType();
@@ -125,7 +137,8 @@ public class TestClassDefineEventWithViolatedLoadingConstraints {
                 RecordedClass definedClass = event.getValue("definedClass");
                 Asserts.assertNotNull(definedClass, "Defined Class should not be null");
                 if (DEFINED_CLASS_NAME.equals(definedClass.getName())) {
-                    Asserts.assertTrue(event.getString("source").equals("__JVM_DefineClass__"));
+                    Asserts.assertTrue(event.getString("source").startsWith("file://"));
+                    Asserts.assertTrue(event.getString("source").endsWith(FAKE_SOURCE_PATH));
                     numberOfDuplicateDefinitionClassDefinedEvents++;
                 }
             }

@@ -28,11 +28,14 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "jfr/instrumentation/jfrClassTransformer.hpp"
+#include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
 #include "jfr/support/jfrClassDefineEvent.hpp"
 #include "jfr/support/jfrSymbolTable.hpp"
 #include "jfrfiles/jfrEventClasses.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/oopsHierarchy.hpp"
 #include "runtime/javaThread.hpp"
 
  /*
@@ -51,8 +54,7 @@ static inline bool is_unnamed_module(const ModuleEntry* module) {
   return module == nullptr || !module->is_named();
 }
 
-static inline bool is_jdk_module(const ModuleEntry* module, JavaThread* jt) {
-  assert(jt != nullptr, "invariant");
+static inline bool is_jdk_module(const ModuleEntry* module) {
   if (is_unnamed_module(module)) {
     return false;
   }
@@ -61,10 +63,9 @@ static inline bool is_jdk_module(const ModuleEntry* module, JavaThread* jt) {
   return is_jdk_module(module_symbol->as_C_string());
 }
 
-static inline bool is_jdk_module(const InstanceKlass* ik, JavaThread* jt) {
+static inline bool is_jdk_module(const InstanceKlass* ik) {
   assert(ik != nullptr, "invariant");
-  assert(jt != nullptr, "invariant");
-  return is_jdk_module(ik->module(), jt);
+  return is_jdk_module(ik->module());
 }
 
 static const char* module_source(const InstanceKlass* ik, JavaThread* jt) {
@@ -83,6 +84,58 @@ static const char* module_source(const InstanceKlass* ik, JavaThread* jt) {
   }
   return nullptr;
 }
+
+// java_mirror -> ProtectionDomain -> CodeSource
+
+static const char* allocate(oop string, JavaThread* jt) {
+  char* str = nullptr;
+  const typeArrayOop value = java_lang_String::value(string);
+  if (value != nullptr) {
+    const size_t length = java_lang_String::utf8_length(string, value);
+    str = NEW_RESOURCE_ARRAY_IN_THREAD(jt, char, length + 1);
+    java_lang_String::as_utf8_string(string, value, str, length + 1);
+  }
+  return str;
+}
+
+static int compute_field_offset(const Klass* klass, const char* field_name, const char* field_signature) {
+  assert(klass != nullptr, "invariant");
+  Symbol* const name = SymbolTable::new_symbol(field_name);
+  assert(name != nullptr, "invariant");
+  Symbol* const signature = SymbolTable::new_symbol(field_signature);
+  assert(signature != nullptr, "invariant");
+  assert(klass->is_instance_klass(), "invariant");
+  fieldDescriptor fd;
+  InstanceKlass::cast(klass)->find_field(name, signature, false, &fd);
+  return fd.offset();
+}
+
+static const char* location_no_frag_string(oop codesource, JavaThread* jt) {
+  assert(codesource != nullptr, "invariant");
+  static int loc_no_frag_offset = compute_field_offset(codesource->klass(), "locationNoFragString", "Ljava/lang/String;");
+  guarantee(loc_no_frag_offset > 0, "invariant");
+  oop string = codesource->obj_field(loc_no_frag_offset);
+  return string != nullptr ? allocate(string, jt) : nullptr;
+}
+
+static oop code_source(oop pd) {
+  assert(pd != nullptr, "invariant");
+  static int codesource_offset = compute_field_offset(pd->klass(), "codesource", "Ljava/security/CodeSource;");
+  return pd->obj_field(codesource_offset);
+}
+
+static const char* code_source(const InstanceKlass* ik, JavaThread* jt) {
+  assert(ik != nullptr, "invariant");
+  assert(ik->java_mirror() != nullptr, "invariant");
+  oop pd = java_lang_Class::protection_domain(ik->java_mirror());
+  if (pd == nullptr) {
+    return nullptr;
+  }
+  oop cs = code_source(pd);
+  return cs != nullptr ? location_no_frag_string(cs, jt) : nullptr;
+}
+
+// Misc source info
 
 static const char* caller_source(const InstanceKlass* ik, JavaThread* jt) {
   assert(ik != nullptr, "invariant");
@@ -109,13 +162,9 @@ static const char* class_loader_source(const InstanceKlass* ik, JavaThread* jt) 
   return class_loader->klass()->external_name();
 }
 
-static inline bool is_not_retransforming(const InstanceKlass* ik, JavaThread* jt) {
-  return JfrClassTransformer::find_existing_klass(ik, jt) == nullptr;
-}
-
-static const char* get_source(const InstanceKlass* ik, JavaThread* jt) {
+static const char* misc_source(const InstanceKlass* ik, JavaThread* jt) {
   const char* source;
-  if (is_jdk_module(ik, jt)) {
+  if (is_jdk_module(ik)) {
     source = module_source(ik, jt);
   } else if (ik->class_loader_data()->is_the_null_class_loader_data()) {
     source = caller_source(ik, jt);
@@ -125,9 +174,30 @@ static const char* get_source(const InstanceKlass* ik, JavaThread* jt) {
   return source;
 }
 
-static inline void save_to_thread_local(const char* source, JavaThread* jt) {
-  assert(jt != nullptr, "invariant");
-  jt->jfr_thread_local()->push_symbol(source != nullptr ? SymbolTable::new_symbol(source) : nullptr);
+/*
+ *  Ordering:
+ *
+ *  1. from_boot_loader_modules_image -> module_source
+ *  2. code source -> the java_mirror->ProtectionDomain->CodeSource->locationNoFragString representation
+ *  3. misc source -> assorted source constants as a function of state (similar to log output)
+ */
+static const char* source(const InstanceKlass* ik, bool from_boot_loader_modules_image, JavaThread* jt) {
+  assert(ik != nullptr, "invariant");
+  const char* s = nullptr;
+  if (from_boot_loader_modules_image) {
+    assert(is_jdk_module(ik), "invariant");
+    s = module_source(ik, jt);
+  } else {
+    s = code_source(ik, jt);
+    if (s == nullptr) {
+      s = misc_source(ik, jt);
+    }
+  }
+  return s;
+}
+
+static inline bool is_not_retransforming(const InstanceKlass* ik, JavaThread* jt) {
+  return JfrClassTransformer::find_existing_klass(ik, jt) == nullptr;
 }
 
 void JfrClassDefineEvent::on_creation(const InstanceKlass* ik, const ClassFileParser& parser, JavaThread* jt) {
@@ -135,71 +205,47 @@ void JfrClassDefineEvent::on_creation(const InstanceKlass* ik, const ClassFilePa
   assert(ik->trace_id() != 0, "invariant");
   assert(!parser.is_internal(), "invariant");
   assert(jt != nullptr, "invariant");
-
-  if (EventClassDefine::is_enabled() && is_not_retransforming(ik, jt)) {
-    ResourceMark rm(jt);
-    const char* source;
-    const ClassFileStream& stream = parser.stream();
-    if (stream.source() != nullptr) {
-      if (stream.from_boot_loader_modules_image()) {
-        assert(is_jdk_module(ik, jt), "invariant");
-        source = module_source(ik, jt);
-      } else {
-        source = stream.source();
-      }
-    } else {
-      source = get_source(ik, jt);
+  if (is_not_retransforming(ik, jt)) {
+    if (parser.stream().from_boot_loader_modules_image()) {
+      JfrTraceId::set_misc_bit(ik);
     }
-    save_to_thread_local(source, jt);
-  }
-}
-
-void JfrClassDefineEvent::send_event(const Klass* k, const Symbol* source) {
-  assert(k != nullptr, "invariant");
-  assert(p2u(source) != max_julong, "invariant");
-  if (EventClassDefine::is_enabled() && k->is_instance_klass()) {
-    EventClassDefine event;
-    event.set_definedClass(k);
-    event.set_definingClassLoader(k->class_loader_data());
-    event.set_source(source != nullptr ? JfrSymbolTable::add(source) : 0);
-    event.commit();
   }
 }
 
 #if INCLUDE_CDS
-static const char* get_source(const AOTClassLocation* cl, JavaThread* jt) {
-  assert(cl != nullptr, "invariant");
-  assert(!cl->is_modules_image(), "invariant");
-  const char* const path = cl->path();
-  assert(path != nullptr, "invariant");
-  size_t len = strlen(path);
-  const char* file_type = cl->file_type_string();
-  assert(file_type != nullptr, "invariant");
-  len += strlen(file_type) + 3; // ":/" + null
-  char* const url = NEW_RESOURCE_ARRAY_IN_THREAD(jt, char, len);
-  jio_snprintf(url, len, "%s%s%s", file_type, ":/", path);
-  return url;
-}
-
-void JfrClassDefineEvent::on_restoration(const InstanceKlass* ik, const ClassFileStream* cfs, JavaThread* jt) {
+void JfrClassDefineEvent::on_restoration(const InstanceKlass* ik, JavaThread* jt) {
   assert(ik != nullptr, "invariant");
   assert(ik->trace_id() != 0, "invariant");
-  assert(jt != nullptr, "invariant");
-
-  if (EventClassDefine::is_enabled()) {
-    if (cfs != nullptr) {
-      assert(ik->defined_by_other_loaders(), "invariant");
-      assert(cfs->source() != nullptr, "Enforced in SystemDictionaryShared::lookup_from_stream()");
-      save_to_thread_local(cfs->source(), jt);
-    } else {
-      ResourceMark rm(jt);
-      assert(is_not_retransforming(ik, jt), "invariant");
-      const int index = ik->shared_classpath_index();
-      assert(index >= 0, "invariant");
-      const AOTClassLocation* const cl = AOTClassLocationConfig::runtime()->class_location_at(index);
-      assert(cl != nullptr, "invariant");
-      save_to_thread_local(cl->is_modules_image() ? module_source(ik, jt) : get_source(cl, jt), jt);
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(jt);)
+  assert(is_not_retransforming(ik, jt), "invariant");
+  if (!ik->defined_by_other_loaders()) {
+    const int index = ik->shared_classpath_index();
+    assert(index >= 0, "invariant");
+    const AOTClassLocation* const cl = AOTClassLocationConfig::runtime()->class_location_at(index);
+    assert(cl != nullptr, "invariant");
+    if (cl->is_modules_image()) {
+      JfrTraceId::set_misc_bit(ik);
     }
   }
 }
 #endif
+
+static inline void commit_event(const InstanceKlass* ik, const char* s) {
+  assert(ik != nullptr, "invariant");
+  EventClassDefine event;
+  event.set_definedClass(ik);
+  event.set_definingClassLoader(ik->class_loader_data());
+  event.set_source(s != nullptr ? JfrSymbolTable::add(s) : 0);
+  event.commit();
+}
+
+void JfrClassDefineEvent::send_event(const InstanceKlass* ik, bool from_boot_loader_modules_image, JavaThread* jt) {
+  assert(ik != nullptr, "invariant");
+  assert(!ik->is_loaded(), "invariant");
+  assert(is_not_retransforming(ik, jt), "invariant");
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(jt);)
+  if (EventClassDefine::is_enabled()) {
+    ResourceMark rm(jt);
+    commit_event(ik, source(ik, from_boot_loader_modules_image, jt));
+  }
+}

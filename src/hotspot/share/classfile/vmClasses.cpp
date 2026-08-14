@@ -44,7 +44,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "runtime/globals.hpp"
 #if INCLUDE_JFR
-#include "jfr/jfr.inline.hpp"
+#include "jfr/jfr.hpp"
 #endif
 
 InstanceKlass* vmClasses::_klasses[static_cast<int>(vmClassID::LIMIT)]
@@ -237,18 +237,6 @@ void vmClasses::resolve_all(TRAPS) {
 
 #if INCLUDE_CDS
 
-#if INCLUDE_JFR
-static void post_events(EventClassLoad* class_load_event, InstanceKlass* klass, ClassLoaderData* loader_data, JavaThread* jt) {
-  {
-    // The class is defined before loading is complete.
-    JfrDefineClassEvent class_define_event(klass, jt, true);
-  }
-  if (class_load_event->should_commit()) {
-    SystemDictionary::post_class_load_event(class_load_event, klass, loader_data);
-  }
-}
-#endif // INCLUDE_JFR
-
 void vmClasses::resolve_shared_class(InstanceKlass* klass, ClassLoaderData* loader_data, Handle domain, TRAPS) {
   assert(!Universe::is_fully_initialized(), "We can make short cuts only during VM initialization");
   assert(klass->in_aot_cache(), "Must be shared class");
@@ -275,11 +263,18 @@ void vmClasses::resolve_shared_class(InstanceKlass* klass, ClassLoaderData* load
 
   klass->restore_unshareable_info(loader_data, domain, nullptr, THREAD);
   SystemDictionary::load_shared_class_misc(klass, loader_data);
-  Dictionary* dictionary = loader_data->dictionary();
-  dictionary->add_klass(THREAD, klass->name(), klass);
+
+  JFR_ONLY(Jfr::on_definition(klass, THREAD));
+
   klass->add_to_hierarchy(THREAD);
   assert(klass->is_loaded(), "Must be in at least loaded state");
-  JFR_ONLY(post_events(&class_load_event, klass, loader_data, THREAD);)
+
+  Dictionary* dictionary = loader_data->dictionary();
+  dictionary->add_klass(THREAD, klass->name(), klass);
+
+  if (class_load_event.should_commit()) {
+    JFR_ONLY(SystemDictionary::post_class_load_event(&class_load_event, klass, loader_data);)
+  }
 }
 
 #endif // INCLUDE_CDS

@@ -40,13 +40,7 @@
 class Arena;
 class JavaThread;
 class JfrBuffer;
-class Symbol;
 class Thread;
-
-template <typename>
-class GrowableArray;
-
-typedef GrowableArrayCHeap<Symbol*, mtTracing> JfrSymbolStack;
 
 class JfrThreadLocal {
   friend class Jfr;
@@ -66,7 +60,6 @@ class JfrThreadLocal {
   JfrBuffer* _checkpoint_buffer_epoch_1;
   volatile int _sample_state;
   Arena* _dcmd_arena;
-  JfrSymbolStack* _symbol_stack;
   JfrBlobHandle _thread;
   mutable traceid _vthread_id;
   mutable traceid _jvm_thread_id;
@@ -371,9 +364,6 @@ class JfrThreadLocal {
   bool has_thread_blob() const;
   void set_thread_blob(const JfrBlobHandle& handle);
   const JfrBlobHandle& thread_blob() const;
-
-  void push_symbol(Symbol* symbol);
-  Symbol* pop_symbol();
 
   // CPU time sampling
 #ifdef LINUX
