@@ -101,7 +101,6 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
     }
 
     @SuppressWarnings("unchecked")
-    @DontInline
     private T getSlowPath() {
         preventReentry();
         synchronized (this) {
@@ -111,9 +110,9 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
                 // Don't use switch pattern matching here in order to improve startup time.
                 if (state instanceof Supplier<?> computingFunction) {
                     // This also allows the underlying supplier to be collected
+                    // and can be done using plain semantics.
                     this.state = Thread.currentThread().threadId();
                     try {
-                        @SuppressWarnings("unchecked")
                         final T newT = (T) computingFunction.get();
                         t = newT;
                         Objects.requireNonNull(t);
@@ -121,25 +120,35 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
                         // Publication is needed here for toString to work correctly
                         setRelease(STATUS_OFFSET, null);
                     } catch (Throwable ex) {
-                        // Release the original computing function and replace it with
-                        // an exception marker
-                        final String exceptionType = ex.getClass().getName().intern();
-                        this.state = exceptionType;
-                        throw unableToAccessConstant(exceptionType, ex);
+                        throw computationFailed(ex);
                     }
                 } else if (state instanceof String exceptionType) {
                     throw unableToAccessConstant(exceptionType, null);
                 } else {
-                    throw new InternalError("Cannot reach here");
+                    throw unexpectedState();
                 }
             }
             return t;
         }
     }
 
+    @DontInline
+    private NoSuchElementException computationFailed(Throwable ex) {
+        // replace the thread id with an exception marker
+        final String exceptionType = ex.getClass().getName().intern();
+        setRelease(STATUS_OFFSET, exceptionType);
+        return unableToAccessConstant(exceptionType, ex);
+    }
+
+    @DontInline
     static NoSuchElementException unableToAccessConstant(String exceptionType, Throwable cause) {
         return new NoSuchElementException("Unable to access the constant because " +
                 exceptionType + " was thrown at initial computation", cause);
+    }
+
+    @DontInline
+    private static InternalError unexpectedState() {
+        return new InternalError("Cannot reach here");
     }
 
     // For testing only
