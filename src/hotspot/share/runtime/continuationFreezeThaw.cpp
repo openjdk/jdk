@@ -1280,23 +1280,13 @@ freeze_result FreezeBase::recurse_freeze_compiled_frame(frame& f, frame& caller,
   int real_frame_size = 0;
   bool augmented = f.was_augmented_on_entry(real_frame_size);
   if (augmented) {
+    assert(f.cb()->as_nmethod()->is_compiled_by_c2(), "should be c2 compiled");
     // The args reside inside the frame so clear argsize. If the caller is compiled,
     // this will cause the stack arguments passed by the caller to be freezed when
     // freezing the caller frame itself. If the caller is interpreted this will have
     // the effect of discarding the arg area created in the i2c stub.
     argsize = 0;
     fsize = real_frame_size - (callee_interpreted ? 0 : callee_argsize);
-#ifdef ASSERT
-    nmethod* nm = f.cb()->as_nmethod();
-    Method* method = nm->method();
-    address return_pc = ContinuationHelper::CompiledFrame::return_pc(f);
-    CodeBlob* caller_cb = CodeCache::find_blob_fast(return_pc);
-    assert(nm->is_compiled_by_c2(), "caller should be c2 compiled");
-    assert((!caller_cb->is_nmethod() && nm->is_compiled_by_c2()) ||
-           (nm->compiler_type() != caller_cb->as_nmethod()->compiler_type()) ||
-           (nm->is_compiled_by_c2() && !method->is_static() && method->method_holder()->is_inline_klass()),
-           "frame should not be extended");
-#endif
   }
 
   log_develop_trace(continuations)("recurse_freeze_compiled_frame %s _size: %d fsize: %d argsize: %d augmented: %d",

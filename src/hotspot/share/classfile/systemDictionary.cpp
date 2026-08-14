@@ -1003,7 +1003,7 @@ bool SystemDictionary::is_shared_class_visible_impl(Symbol* class_name,
     // has restricted the classes can be loaded at this step to be only:
     // [1] cs->is_modules_image(): classes in java.base, or,
     // [2] HeapShared::is_a_test_class_in_unnamed_module(ik): classes in bootstrap/unnamed module
-    assert(cl->is_modules_image() || HeapShared::is_a_test_class_in_unnamed_module(ik),
+    assert(cl->is_modules_image(),
            "only these classes can be loaded before the module system is initialized");
     assert(class_loader.is_null(), "sanity");
     return true;
