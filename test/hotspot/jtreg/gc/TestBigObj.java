@@ -27,6 +27,7 @@ package gc;
  * @test TestBigObj
  * @bug 6845368
  * @summary ensure gc updates references > 64K bytes from the start of the obj
+ * @compile -XDnoTopInterfaceInjection TestBigObj.java
  * @run main/othervm/timeout=720 -Xmx256m -verbose:gc gc.TestBigObj
  */
 
