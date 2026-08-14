@@ -598,9 +598,7 @@ public class Object {
      * system resources or to perform other cleanup.
      * <div class="preview-block">
      *      <div class="preview-comment">
-     *          Value classes, including abstract ones, can not declare the
-     *          {@code finalize} method. Any such class should not be accepted
-     *          by any Java compiler.
+     *          Value classes can not declare the {@code finalize} method.
      *      </div>
      * </div>
      * <p>
