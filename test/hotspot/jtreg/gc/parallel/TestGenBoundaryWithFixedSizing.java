@@ -55,7 +55,7 @@ public class TestGenBoundaryWithFixedSizing {
     public static void main(String[] args) throws Exception {
         // The 128m heap and 64m maximum young generation leave at most 64m for
         // old gen before it must borrow reservation from young gen.
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
                 "-Xbootclasspath/a:.",
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+WhiteBoxAPI",
@@ -67,7 +67,6 @@ public class TestGenBoundaryWithFixedSizing {
                 "-XX:MaxNewSize=64m",
                 "-Xlog:gc+heap=debug",
                 GenBoundaryWithFixedSizingWorkload.class.getName());
-        OutputAnalyzer output = ProcessTools.executeProcess(pb);
         output.shouldHaveExitValue(0);
 
         Matcher matcher = RECOVERY.matcher(output.getStdout());

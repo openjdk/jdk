@@ -43,6 +43,7 @@
 #include "gc/shared/scavengableNMethods.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "logging/log.hpp"
+#include "memory/allocation.inline.hpp"
 #include "memory/iterator.hpp"
 #include "memory/metaspaceCounters.hpp"
 #include "memory/metaspaceUtils.hpp"
@@ -63,6 +64,30 @@
 PSAdaptiveSizePolicy* ParallelScavengeHeap::_size_policy = nullptr;
 GCPolicyCounters* ParallelScavengeHeap::_gc_policy_counters = nullptr;
 size_t ParallelScavengeHeap::_desired_page_size = 0;
+size_t ParallelScavengeHeap::_num_young_spaces = 0;
+
+size_t ParallelScavengeHeap::num_young_spaces() {
+  if (_num_young_spaces != 0) {
+    return _num_young_spaces;
+  }
+
+  size_t num_eden_spaces = 1;
+
+  if (UseNUMA) {
+    const size_t lgrp_limit = os::numa_get_groups_num();
+    assert(lgrp_limit > 0, "invalid NUMA topology");
+
+    uint* lgrp_ids = NEW_C_HEAP_ARRAY(uint, lgrp_limit, mtGC);
+    num_eden_spaces = os::numa_get_leaf_groups(lgrp_ids, lgrp_limit);
+    FREE_C_HEAP_ARRAY(lgrp_ids);
+
+    assert(num_eden_spaces > 0 && num_eden_spaces <= lgrp_limit,
+           "invalid number of NUMA locality groups");
+  }
+
+  _num_young_spaces = num_eden_spaces + 2;
+  return _num_young_spaces;
+}
 
 size_t ParallelScavengeHeap::young_gen_size_lower_bound() {
   // This is the structural minimum for a dynamic non-empty young generation,
@@ -1059,14 +1084,20 @@ void ParallelScavengeHeap::resize_after_full_gc() {
 bool ParallelScavengeHeap::adjust_gen_boundary_after_full_gc(size_t live_bytes,
                                                              PSPendingAllocation pending_allocation) {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
+  assert(live_bytes <= MaxHeapSize, "inv");
+
+  const size_t remaining_heap_bytes = MaxHeapSize - live_bytes;
 
   const bool has_pending_non_tlab_allocation = pending_allocation.is_present() && !pending_allocation._is_tlab;
-  // Adaptive sizing does not grow a non-empty young reservation here, while
-  // fixed sizing may restore it up to MaxNewSize during this full GC.
-  const size_t max_promotion = UseAdaptiveSizePolicy ? _young_gen->reserved_size() : MaxNewSize;
+  const size_t young_gen_bytes = UseAdaptiveSizePolicy ? _young_gen->reserved_size() : MaxNewSize;
+  // Use the young-gen reservation as the absolute upper bound on how much
+  // young-gen can promote.
   size_t required_old_free_bytes = MIN2(_size_policy->padded_average_promoted_in_bytes(),
-                                        max_promotion);
-  if (has_pending_non_tlab_allocation) {
+                                        young_gen_bytes);
+  // Ignore impossible requests for boundary sizing; the allocation will fail
+  // normally after GC without unnecessarily removing young-gen.
+  if (has_pending_non_tlab_allocation &&
+      pending_allocation._word_size <= remaining_heap_bytes / HeapWordSize) {
     // TLAB failures retry outside TLAB. Only non-TLAB requests need old-gen room here.
     required_old_free_bytes = MAX2(required_old_free_bytes,
                                    pending_allocation._word_size * HeapWordSize);
@@ -1081,8 +1112,9 @@ bool ParallelScavengeHeap::adjust_gen_boundary_after_full_gc(size_t live_bytes,
   char* const heap_low = (char*)reserved_region().start();
   char* const heap_high = (char*)reserved_region().end();
   char* const current_gen_boundary = _heap_vs->gen_boundary();
+  const size_t min_young_gen_size = young_gen_size_lower_bound();
 
-  if (MaxHeapSize - desired_old_capacity < young_gen_size_lower_bound()) {
+  if (MaxHeapSize - desired_old_capacity < min_young_gen_size) {
     desired_old_capacity = MaxHeapSize;
   }
 
@@ -1135,18 +1167,19 @@ bool ParallelScavengeHeap::adjust_gen_boundary_after_full_gc(size_t live_bytes,
 
   desired_shrink_bytes = MIN2(desired_shrink_bytes, MaxNewSize - young_reserved_before);
   if (desired_shrink_bytes == 0) {
-    // Young gen already owns its full MaxNewSize reservation; there is
-    // nothing to shift. left_shift_gen_boundary() requires a strict shift.
+    // Young gen already owns its full MaxNewSize reservation or the calculated shrink
+    // request is too small; there is nothing to shift. left_shift_gen_boundary()
+    // requires a strict shift.
     return false;
   }
-  if (young_reserved_before + desired_shrink_bytes < young_gen_size_lower_bound()) {
+  if (young_reserved_before + desired_shrink_bytes < min_young_gen_size) {
     return false;
   }
 
   desired_gen_boundary = current_gen_boundary - desired_shrink_bytes;
 
   size_t young_reserved_bytes = pointer_delta(heap_high, desired_gen_boundary, sizeof(char));
-  assert(young_reserved_bytes >= young_gen_size_lower_bound(), "postcondition");
+  assert(young_reserved_bytes >= min_young_gen_size, "postcondition");
 
   _heap_vs->left_shift_gen_boundary(desired_gen_boundary);
 

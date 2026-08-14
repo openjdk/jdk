@@ -55,7 +55,7 @@ public class TestGenBoundary {
             Pattern.DOTALL);
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
                 "-Xbootclasspath/a:.",
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+WhiteBoxAPI",
@@ -71,7 +71,6 @@ public class TestGenBoundary {
                 "-XX:GCTimeRatio=1000000",
                 "-Xlog:gc+heap=debug",
                 DynamicBoundaryWorkload.class.getName());
-        OutputAnalyzer output = ProcessTools.executeProcess(pb);
         output.shouldHaveExitValue(0);
 
         String stdout = output.getStdout();
@@ -96,12 +95,17 @@ public class TestGenBoundary {
         assertGT(youngGrowth.getLast().youngReserved(), 0L,
                  "Young gen is empty after young-GC growth");
 
-        // 4. Maximum old pressure removed the young generation.
+        // 4. An impossible allocation did not remove the young generation.
+        List<HeapState> impossibleAllocation = states(stdout, "IMPOSSIBLE_ALLOCATION");
+        assertGT(impossibleAllocation.getLast().youngReserved(), 0L,
+                 "Impossible allocation unexpectedly removed young gen");
+
+        // 5. Maximum feasible old pressure removed the young generation.
         List<HeapState> oldOnly = states(stdout, "OLD_ONLY");
         assertEQ(oldOnly.getLast().youngReserved(), 0L,
                  "Maximum old pressure did not enter old-only mode");
 
-        // 5. Removing old pressure recreated the young generation.
+        // 6. Removing old pressure recreated the young generation.
         List<HeapState> recreate = states(stdout, "RECREATE");
         assertEQ(recreate.getFirst().youngReserved(), 0L,
                  "Young gen was recreated before old pressure disappeared");
@@ -110,7 +114,7 @@ public class TestGenBoundary {
         assertGT(recreate.getFirst().boundary(), recreate.getLast().boundary(),
                  "Young-gen recreation did not move the boundary left");
 
-        // 6. Further young GCs reached a stable, non-empty boundary.
+        // 7. Further young GCs reached a stable, non-empty boundary.
         List<HeapState> stable = states(stdout, "STABLE");
         assertStableTail(stable, 6, "Young GCs did not reach a stable boundary");
         assertGT(stable.getLast().youngReserved(), 0L,
@@ -198,6 +202,8 @@ class DynamicBoundaryWorkload {
     private static final int MB = 1024 * 1024;
 
     private static byte[] oldPressure;
+    private static byte[] impossiblePressure;
+    private static List<byte[]> maximumOldPressure;
     private static byte[] additionalPressure;
     private static List<byte[]> youngPressure;
 
@@ -229,19 +235,37 @@ class DynamicBoundaryWorkload {
         WB.youngGC();
         phaseEnd("YOUNG_GROWTH");
 
-        // 4. Force old-only mode with maximum old pressure.
-        phaseBegin("OLD_ONLY");
+        // 4. An impossible pending allocation should fail without consuming
+        // the entire young reservation.
+        phaseBegin("IMPOSSIBLE_ALLOCATION");
+        boolean impossibleAllocationSucceeded = false;
         try {
-            // Together with the live 8m, this pending allocation requires the
-            // full heap as old reservation. The allocation itself may fail.
-            oldPressure = new byte[120 * MB];
+            impossiblePressure = new byte[120 * MB];
+            impossibleAllocationSucceeded = true;
+        } catch (OutOfMemoryError expected) {
+        } finally {
+            impossiblePressure = null;
+        }
+        if (impossibleAllocationSucceeded) {
+            throw new RuntimeException("Impossible allocation unexpectedly succeeded");
+        }
+        phaseEnd("IMPOSSIBLE_ALLOCATION");
+
+        // 5. Retain feasible allocations until live data forces old-only mode.
+        phaseBegin("OLD_ONLY");
+        maximumOldPressure = new ArrayList<>(128);
+        try {
+            while (true) {
+                maximumOldPressure.add(new byte[MB]);
+            }
         } catch (OutOfMemoryError expected) {
         }
         phaseEnd("OLD_ONLY");
 
-        // 5. Remove pressure; full GC should recreate young gen.
+        // 6. Remove pressure; full GC should recreate young gen.
         phaseBegin("RECREATE");
         oldPressure = null;
+        maximumOldPressure = null;
         youngPressure = null;
         WB.fullGC();
         phaseEnd("RECREATE");
@@ -250,9 +274,9 @@ class DynamicBoundaryWorkload {
         if (WB.getUintVMFlag("GCTimeRatio") != 0) {
             throw new RuntimeException("Could not disable throughput-driven young growth");
         }
-        // 6. Further young GCs should converge to a stable, non-empty boundary.
+        // 7. Further young GCs should converge to a stable, non-empty boundary.
         phaseBegin("STABLE");
-        for (int i = 0; i < 8; i++) {
+        for (int i = 0; i < 16; i++) {
             // Avoid asking for throughput-driven growth in an empty young gen.
             Thread.sleep(200);
             WB.youngGC();

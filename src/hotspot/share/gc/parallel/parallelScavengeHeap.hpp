@@ -98,6 +98,7 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   // At startup, calculate the desired OS page-size based on heap size and large-page flags.
   static size_t _desired_page_size;
+  static size_t _num_young_spaces;
 
   GCMemoryManager* _young_manager;
   GCMemoryManager* _old_manager;
@@ -168,14 +169,7 @@ public:
     return alignment;
   }
 
-  static size_t num_young_spaces() {
-    // When using NUMA, we create one MutableNUMASpace for each NUMA node
-    const size_t num_eden_spaces = UseNUMA ? os::numa_get_groups_num() : 1;
-
-    // The young generation must have room for eden + two survivors
-    return num_eden_spaces + 2;
-  }
-
+  static size_t num_young_spaces();
   static size_t young_gen_size_lower_bound();
 
   static void set_desired_page_size(size_t page_size) {

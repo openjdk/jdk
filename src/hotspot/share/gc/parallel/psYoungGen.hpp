@@ -64,6 +64,8 @@ class PSYoungGen : public CHeapObj<mtGC> {
   const size_t _min_gen_size;
   const size_t _max_gen_size;
 
+  size_t min_gen_size() const { return _min_gen_size; }
+
   // Current young-gen sizing state, updated after young-gen resizing.
   SizingState _sizing_state;
 
@@ -160,7 +162,6 @@ class PSYoungGen : public CHeapObj<mtGC> {
   size_t used_in_words() const;
   size_t free_in_words() const;
 
-  size_t min_gen_size() const { return _min_gen_size; }
   size_t max_gen_size() const { return _max_gen_size; }
 
   SizingState sizing_state() const { return _sizing_state; }
