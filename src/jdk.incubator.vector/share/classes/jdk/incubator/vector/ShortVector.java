@@ -3460,21 +3460,30 @@ public abstract sealed class ShortVector extends AbstractVector<Short>
 
     private static final JavaLangAccess LANG_ACCESS = SharedSecrets.getJavaLangAccess();
 
-    /** Loads a vector of UTF-16 code units from {@code string} starting at {@code charOffset}. */
+    /**
+     * {@return a {@link ShortVector} of UTF-16 code units from {@code string}}
+     *
+     * @param species species of the desired vector
+     * @param string the string
+     * @param offset the UTF-16 code unit offset into the string
+     * @throws IndexOutOfBoundsException
+     *         if {@code offset+N < 0} or {@code offset+N >= string.length()}
+     *         for any lane {@code N} in the vector
+     */
     @ForceInline
-    public static ShortVector fromString(VectorSpecies<Short> species, String string, int charOffset) {
+    public static ShortVector fromString(VectorSpecies<Short> species, String string, int offset) {
         Objects.requireNonNull(species);
         Objects.requireNonNull(string);
-        VectorIntrinsics.indexInRange(charOffset, species.length(), string.length());
+        VectorIntrinsics.indexInRange(offset, species.length(), string.length());
         byte coder = LANG_ACCESS.stringCoder(string);
         byte[] value = LANG_ACCESS.stringValue(string);
         VectorSpecies<Byte> byteSpecies = species.withLanes(byte.class);
         if (coder == 0) {
             VectorMask<Byte> byteMask = byteSpecies.indexInRange(0, species.length());
-            ByteVector byteVector = ByteVector.fromArray(byteSpecies, value, charOffset, byteMask);
+            ByteVector byteVector = ByteVector.fromArray(byteSpecies, value, offset, byteMask);
             return (ShortVector) byteVector.convertShape(ZERO_EXTEND_B2S, species, 0);
         } else {
-            return ByteVector.fromArray(byteSpecies, value, charOffset << 1).reinterpretAsShorts();
+            return ByteVector.fromArray(byteSpecies, value, offset << 1).reinterpretAsShorts();
         }
     }
 
