@@ -3966,6 +3966,26 @@ bool os::pd_release_memory(char* addr, size_t bytes) {
 }
 
 bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
+  // Windows lets us specify the minimum size of the stack using a call to the
+  // `SetThreadStackGuarantee()` function.  Since red pages are part of the
+  // unusable portion of the stack, only the yellow page count influences the
+  // argument to `SetThreadStackGuarantee()`.  The red page count continues to
+  // be used in the calculation of the total stack memory to reserve.
+  //
+  // However, there is an additional subtlety that because Windows doesn't
+  // commit all requested stack pages in one go (and instead commits pages as
+  // needed using an additional guard page), the minimum stack size (and thus
+  // the argument to `SetThreadStackGuarantee()`) needs to be one page less,
+  // relative to the yellow page count.
+  const size_t requested = StackOverflow::stack_yellow_reserved_zone_size()
+                           - os::vm_page_size();
+  ULONG uload_requested = checked_cast<ULONG>(requested);
+
+  if (SetThreadStackGuarantee(&uload_requested) == 0) {
+    log_warning(os, thread)("Failed to set thread stack guarantee to %zu bytes "
+                            "(error %lu)", requested, GetLastError());
+  }
+
   return os::commit_memory(addr, size, !ExecMem);
 }
 
