@@ -506,6 +506,84 @@ public class OptionsProcessorTest {
                 .create(args.toArray()).validate();
     }
 
+    /**
+     * Valid icon for the specified platform, but invalid bundling operation on the platform.
+     */
+    @ParameterizedTest
+    @EnumSource(names = { "WINDOWS", "LINUX", "MACOS" })
+    public void testInvalidBundlingOperationWithValidOption(OperatingSystem os, @TempDir Path workDir) throws IOException {
+
+        var iconSuffix = switch (os) {
+            case WINDOWS -> ".ico";
+            case LINUX -> ".png";
+            case MACOS -> ".icns";
+            default -> throw new AssertionError();
+        };
+
+        var bundlingOperation = switch (os) {
+            case WINDOWS -> "dmg";
+            case LINUX -> "msi";
+            case MACOS -> "rpm";
+            default -> throw new AssertionError();
+        };
+
+        var icon = workDir.resolve("icon" + iconSuffix);
+
+        Files.write(icon, new byte[0]);
+
+        build().os(os)
+                .expectValidationErrors(new JPackageException(I18N.format("ERR_InvalidInstallerType", bundlingOperation)))
+                .create("--type", bundlingOperation, "--icon", icon).validate();
+    }
+
+    /**
+     * Valid install directory for the specified platform, but invalid bundling operation on the platform.
+     */
+    @Test
+    public void testInvalidBundlingOperationWithValidOption2(@TempDir Path workDir) throws IOException {
+
+        var os = OperatingSystem.current();
+
+        var installDir = switch (os) {
+            case WINDOWS -> "Foo";
+            case LINUX -> "/opt/foo";
+            case MACOS -> "/Applications/foo";
+            default -> throw new AssertionError();
+        };
+
+        var bundlingOperation = switch (os) {
+            case WINDOWS -> "dmg";
+            case LINUX -> "msi";
+            case MACOS -> "rpm";
+            default -> throw new AssertionError();
+        };
+
+        build().os(os)
+                .expectValidationErrors(new JPackageException(I18N.format("ERR_InvalidInstallerType", bundlingOperation)))
+                .create("--type", bundlingOperation, "--install-dir", installDir).validate();
+    }
+
+    /**
+     * Invalid Linux bundling operation on the platform with valid Linux platform option.
+     */
+    @ParameterizedTest
+    @EnumSource(names = { "WINDOWS", "MACOS" })
+    public void testInvalidBundlingOperationWithValidOption3(OperatingSystem os) throws IOException {
+
+        final var formattedOS = operatingSystemLabel(os);
+
+        build().os(os)
+                .expectValidationErrors(
+                        new JPackageException(I18N.format("ERR_InvalidInstallerType", "rpm")),
+                        new JPackageException(I18N.format("ERR_UnsupportedOption", "--linux-package-name", formattedOS)))
+                .create("--type", "rpm", "--linux-package-name", "foo").validate();
+
+        build().os(os)
+                .expectValidationErrors(
+                        new JPackageException(I18N.format("ERR_InvalidInstallerType", "rpm")),
+                        new JPackageException(I18N.format("ERR_UnsupportedOption", "--linux-package-name", formattedOS)))
+                .create("--type", "rpm", "--linux-package-name", "#").validate();
+    }
 
     /**
      * Test that it will collect all errors when processing multiple property files
