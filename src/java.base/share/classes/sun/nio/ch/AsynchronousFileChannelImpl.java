@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,10 @@ abstract class AsynchronousFileChannelImpl
     extends AsynchronousFileChannel
 {
     private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
+
+    // Flag set by jdk.internal.event.JFRTracing to indicate if
+    // file force should be traced by JFR.
+    protected static boolean jfrTracing;
 
     // close support
     protected final ReadWriteLock closeLock = new ReentrantReadWriteLock();

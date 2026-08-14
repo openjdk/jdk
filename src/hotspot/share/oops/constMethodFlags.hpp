@@ -60,10 +60,9 @@ class ConstMethodFlags {
    flag(deprecated                , 1 << 19) \
    flag(deprecated_for_removal    , 1 << 20) \
    flag(has_scalarized_args       , 1 << 21) \
-   flag(c1_needs_stack_repair     , 1 << 22) \
-   flag(c2_needs_stack_repair     , 1 << 23) \
-   flag(mismatch                  , 1 << 24) \
-   flag(jvmti_hide_events         , 1 << 25) \
+   flag(needs_stack_repair        , 1 << 22) \
+   flag(mismatch                  , 1 << 23) \
+   flag(jvmti_hide_events         , 1 << 24) \
    /* end of list */
 
 #define CM_FLAGS_ENUM_NAME(name, value)    _misc_##name = value,

@@ -1174,6 +1174,8 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
 
 // Fill in default values for various fields
 void nmethod::init_defaults(CodeBuffer *code_buffer, CodeOffsets* offsets) {
+  assert(frame_complete_offset() == offsets->value(CodeOffsets::Frame_Complete), "offset truncated?");
+
   // avoid uninitialized fields, even for short time periods
   _exception_cache            = nullptr;
   _gc_data                    = nullptr;

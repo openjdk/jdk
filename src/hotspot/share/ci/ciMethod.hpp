@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -397,8 +397,7 @@ class ciMethod : public ciMetadata {
   bool has_scalarized_args() const;
   const GrowableArray<SigEntry>* get_sig_cc() const;
   bool mismatch() const;
-  bool c1_needs_stack_repair() const;
-  bool c2_needs_stack_repair() const;
+  bool needs_stack_repair() const;
 
   // Generally, a method cannot return a larval object or receive a larval argument. There are some
   // exceptions.

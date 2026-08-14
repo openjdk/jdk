@@ -180,7 +180,7 @@ public class Attr extends JCTree.Visitor {
 
         statInfo = new ResultInfo(KindSelector.NIL, Type.noType);
         varAssignmentInfo = new ResultInfo(KindSelector.ASG, Type.noType);
-        varAssignmentOpInfo = new ResultInfo(KindSelector.of(KindSelector.VAL, KindSelector.ASG), Type.noType);
+        varAssignmentOpInfo = new ResultInfo(KindSelector.ASG_OP, Type.noType);
         unknownExprInfo = new ResultInfo(KindSelector.VAL, Type.noType);
         methodAttrInfo = new MethodAttrInfo();
         unknownTypeInfo = new ResultInfo(KindSelector.TYP, Type.noType);
@@ -1965,7 +1965,7 @@ public class Attr extends JCTree.Visitor {
     }
 
     public void visitSynchronized(JCSynchronized tree) {
-        boolean identityType = chk.checkIdentityType(tree.pos(), attribExpr(tree.lock, env));
+        boolean identityType = chk.checkIdentityRefType(tree.pos(), attribExpr(tree.lock, env));
         if (identityType && tree.lock.type != null && tree.lock.type.isValueBased()) {
             log.warning(tree.pos(), LintWarnings.AttemptToSynchronizeOnInstanceOfValueBasedClass);
         }

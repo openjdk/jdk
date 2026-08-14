@@ -964,16 +964,54 @@ bool RegionNode::optimize_trichotomy(PhaseIterGVN* igvn) {
   bool commute = false;
   if (!cmp1->is_Cmp() || !cmp2->is_Cmp()) {
     return false; // No comparison
-  } else if (cmp1->Opcode() == Op_CmpF || cmp1->Opcode() == Op_CmpD ||
-             cmp2->Opcode() == Op_CmpF || cmp2->Opcode() == Op_CmpD ||
-             cmp1->Opcode() == Op_CmpP || cmp1->Opcode() == Op_CmpN ||
-             cmp2->Opcode() == Op_CmpP || cmp2->Opcode() == Op_CmpN ||
-             cmp1->is_SubTypeCheck() || cmp2->is_SubTypeCheck() ||
-             cmp1->is_FlatArrayCheck() || cmp2->is_FlatArrayCheck()) {
-    // Floats and pointers don't exactly obey trichotomy. To be on the safe side, don't transform their tests.
-    // SubTypeCheck is not commutative
+  }
+  if (cmp1->Opcode() != cmp2->Opcode()) {
+    // The Bool test codes are merged below, that only makes sense
+    // if the semantics of the CmpNode is the same.
     return false;
-  } else if (cmp1 != cmp2) {
+  }
+  switch (cmp1->Opcode()) {
+    // The following integer comparisons can be optimized.
+    case Op_CmpI:
+    case Op_CmpU:
+    case Op_CmpL:
+    case Op_CmpUL:
+      break;
+    default:
+      // If the assert below fails, consider if it is safe
+      // for optimization (add above), or should also be
+      // excluded (add below).
+      //
+      // Floats and pointers don't exactly obey trichotomy.
+      // To be on the safe side, don't transform their tests.
+      assert(cmp1->Opcode() == Op_CmpF ||
+             cmp1->Opcode() == Op_CmpD ||
+             cmp1->Opcode() == Op_CmpP ||
+             cmp1->Opcode() == Op_CmpN ||
+      // SubTypeCheck is not commutative.
+             cmp1->is_SubTypeCheck() ||
+      // FlatArrayCheck does not represent an ordering relation
+      // and therefore does not obey trichotomy.
+             cmp1->is_FlatArrayCheck() ||
+      // OverflowNode only use Bool[of], that should be rejected
+      // by mask merge anyway.
+             cmp1->Opcode() == Op_OverflowAddI ||
+             cmp1->Opcode() == Op_OverflowSubI ||
+             cmp1->Opcode() == Op_OverflowMulI ||
+             cmp1->Opcode() == Op_OverflowAddL ||
+             cmp1->Opcode() == Op_OverflowSubL ||
+             cmp1->Opcode() == Op_OverflowMulL ||
+      // VectorTestNode has an internal _predicate flag that
+      // would not be taken into account below.
+             cmp1->Opcode() == Op_VectorTest ||
+      // Locking nodes probably cannot create trichotomy
+      // shapes anyway.
+             cmp1->Opcode() == Op_FastUnlock ||
+             cmp1->Opcode() == Op_FastLock,
+             "unexpected: %s", NodeClassNames[cmp1->Opcode()]);
+      return false;
+  }
+  if (cmp1 != cmp2) {
     if (cmp1->in(1) == cmp2->in(2) &&
         cmp1->in(2) == cmp2->in(1)) {
       commute = true; // Same but swapped inputs, commute the test
@@ -2379,7 +2417,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
 
     // One unique input.
-    DEBUG_ONLY(Node* ident = Identity(phase));
+    DEBUG_ONLY(Node* ident = phase->apply_identity(this));
     // The unique input must eventually be detected by the Identity call.
 #ifdef ASSERT
     if (ident != uin && !ident->is_top() && !must_wait_for_region_in_irreducible_loop(phase)) {

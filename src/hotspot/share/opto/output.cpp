@@ -1736,7 +1736,12 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
       }
 
       // Verify that there is sufficient space remaining
-      masm->code()->insts()->maybe_expand_to_ensure_remaining(MAX_inst_size);
+      uint required_size = MAX_inst_size;
+      if (n->is_MachVEP()) {
+        // MachVEPNodes can be much larger because they unpack all scalarized arguments.
+        required_size += n->as_Mach()->size(C->regalloc());
+      }
+      masm->code()->insts()->maybe_expand_to_ensure_remaining(required_size);
       if ((masm->code()->blob() == nullptr) || (!CompileBroker::should_compile_new_jobs())) {
         C->record_failure("CodeCache is full");
         return;
@@ -3181,26 +3186,34 @@ void PhaseOutput::init_scratch_buffer_blob(int const_size) {
     _scratch_const_size = const_size;
     int size = C2Compiler::initial_code_buffer_size(const_size);
     if (C->has_scalarized_args()) {
-      // Inline type entry points (MachVEPNodes) require lots of space for GC barriers and oop verification
-      // when loading object fields from the buffered argument. Increase scratch buffer size accordingly.
-      int barrier_size = 7;
+      // Inline type entry points (MachVEPNodes) require lots of space when
+      // unpacking fields from buffered arguments. Increase the scratch buffer
+      // for field moves, GC barriers and oop verification accordingly.
+      const int move_size = 32;
+      int barrier_size = 7; // Base oop load barrier
       DEBUG_ONLY(barrier_size += 37;)
       if (UseShenandoahGC) {
         barrier_size += 700;
       } else if (UseZGC) {
-        barrier_size += 200;
+        // Covers the worst-case x64 APX save/restore of all extended general purpose
+        // registers, including the slow-path jump triggered by ForceUnreachable.
+        barrier_size += 400;
       }
       ciMethod* method = C->method();
+      auto add_inline_arg_size = [&](ciInlineKlass* vk) {
+        size += vk->inline_arg_length() * move_size;
+        size += vk->oop_count() * barrier_size;
+      };
       int arg_num = 0;
       if (!method->is_static()) {
         if (method->is_scalarized_arg(arg_num)) {
-          size += method->holder()->as_inline_klass()->oop_count() * barrier_size;
+          add_inline_arg_size(method->holder()->as_inline_klass());
         }
         arg_num++;
       }
       for (ciSignatureStream str(method->signature()); !str.at_return_type(); str.next()) {
         if (method->is_scalarized_arg(arg_num)) {
-          size += str.type()->as_inline_klass()->oop_count() * barrier_size;
+          add_inline_arg_size(str.type()->as_inline_klass());
         }
         arg_num++;
       }
