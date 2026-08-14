@@ -24,15 +24,16 @@
 /*
  * @test
  * @bug 8378071
- * @summary Test jdk.internal.vm.ThreadSnapshot.of(Thread) when thread has monitors
+ * @summary Test jdk.internal.vm.ThreadSnapshot.of(Thread) correctly initialize ThreadLock class
+ *
  * @modules java.base/jdk.internal.vm
- * @run main ThreadWithMonitors
- * @run main/othervm -Xcomp -XX:-Inline -XX:CompileCommand=compileonly,*ThreadSnapshot*::* ThreadWithMonitors
+ * @run main ThreadLockClassInit
+ * @run main/othervm -Xcomp -XX:-Inline -XX:CompileCommand=compileonly,*ThreadSnapshot*::* ThreadLockClassInit
  */
 
 import jdk.internal.vm.ThreadSnapshot;
 
-public class ThreadWithMonitors {
+public class ThreadLockClassInit {
     public static final Object LOCK = new Object();
 
     public static void main(String[] args) throws Exception {
