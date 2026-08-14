@@ -272,8 +272,8 @@ class WindowsFileAttributeViews {
             // as otherwise the last modified time may be wrong.
             setFileTimes(
                 WindowsFileAttributes.toWindowsTime(attrs.creationTime()),
-                WindowsFileAttributes.toWindowsTime(attrs.lastModifiedTime()),
-                WindowsFileAttributes.toWindowsTime(attrs.lastAccessTime()));
+                WindowsFileAttributes.toWindowsTime(attrs.lastAccessTime()),
+                WindowsFileAttributes.toWindowsTime(attrs.lastModifiedTime()));
         }
     }
 

@@ -171,7 +171,7 @@ public class CopyAndMove {
 
         BasicFileAttributeView basicView =
             getFileAttributeView(link, BasicFileAttributeView.class, NOFOLLOW_LINKS);
-        basicView.setTimes(/* mtime */ time, /* atime */ time, /* creation */ time);
+        basicView.setTimes(/* mtime */ time, /* atime */ null, /* creation */ time);
 
         DosFileAttributeView dosView =
             getFileAttributeView(link, DosFileAttributeView.class, NOFOLLOW_LINKS);
@@ -727,28 +727,28 @@ public class CopyAndMove {
                                        BasicFileAttributes sourceAttrs)
         throws IOException
     {
-        assert(sourceAttrs.isSymbolicLink());
+        assertTrue(sourceAttrs.isSymbolicLink());
 
         BasicFileAttributes targetAttrs =
             readAttributes(target, BasicFileAttributes.class, NOFOLLOW_LINKS);
         checkBasicAttributes(sourceAttrs, targetAttrs);
 
-        if (Platform.isWindows()) {
+        // verify other attributes when same provider and on Windows
+        if (Platform.isWindows() && source.getFileSystem().provider() ==
+                target.getFileSystem().provider()) {
             // check that timestamps on the source are retained for the target
-            assertTrue(sourceAttrs.creationTime().to(TimeUnit.SECONDS) ==
-                       targetAttrs.creationTime().to(TimeUnit.SECONDS));
-            assertTrue(sourceAttrs.lastModifiedTime().to(TimeUnit.SECONDS) ==
-                       targetAttrs.lastModifiedTime().to(TimeUnit.SECONDS));
-            assertTrue(sourceAttrs.lastAccessTime().to(TimeUnit.SECONDS) ==
-                       targetAttrs.lastAccessTime().to(TimeUnit.SECONDS));
+            FileTime srcCreationTime = sourceAttrs.creationTime();
+            FileTime tgtCreationTime = targetAttrs.creationTime();
+            assertTrue(srcCreationTime.equals(tgtCreationTime));
 
-            // verify other attributes when same provider
-            if (source.getFileSystem().provider() == target.getFileSystem().provider()) {
-                // check DOS attributes are copied
-                checkDosAttributes(
-                    readAttributes(source, DosFileAttributes.class, NOFOLLOW_LINKS),
-                    readAttributes(target, DosFileAttributes.class, NOFOLLOW_LINKS));
-            }
+            FileTime srcModTime = sourceAttrs.lastModifiedTime();
+            FileTime tgtModTime = targetAttrs.lastModifiedTime();
+            assertTrue(srcModTime.equals(tgtModTime));
+
+            // check DOS attributes are copied
+            checkDosAttributes(
+                readAttributes(source, DosFileAttributes.class, NOFOLLOW_LINKS),
+                readAttributes(target, DosFileAttributes.class, NOFOLLOW_LINKS));
         }
     }
 
@@ -780,7 +780,7 @@ public class CopyAndMove {
 
         // check link target if symbolic link
         if (basicAttributes.isSymbolicLink())
-            assert(readSymbolicLink(source).equals(readSymbolicLink(target)));
+            assertTrue(readSymbolicLink(source).equals(readSymbolicLink(target)));
 
         // check that attributes are copied
         if (copyAttributes) {
