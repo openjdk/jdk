@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@
 #define JDK_JFR_EVENT_SUBKLASS 16
 #define JDK_JFR_EVENT_KLASS    32
 #define EVENT_HOST_KLASS       64
-#define EVENT_RESERVED         128
+#define EVENT_MISC_BIT         ((uint8_t)128)
 #define EVENT_STICKY_BIT       8192
 #define IS_EVENT_KLASS(ptr) (((ptr)->trace_id() & (JDK_JFR_EVENT_KLASS | JDK_JFR_EVENT_SUBKLASS)) != 0)
 #define IS_EVENT_OR_HOST_KLASS(ptr) (((ptr)->trace_id() & (JDK_JFR_EVENT_KLASS | JDK_JFR_EVENT_SUBKLASS | EVENT_HOST_KLASS)) != 0)

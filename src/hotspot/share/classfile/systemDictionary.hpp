@@ -323,7 +323,7 @@ private:
                                             bool is_superclass, TRAPS);
   static bool check_shared_class_super_types(InstanceKlass* ik, Handle class_loader, TRAPS);
   // Second part of load_shared_class
-  static void load_shared_class_misc(InstanceKlass* ik, ClassLoaderData* loader_data, const ClassFileStream* cfs = nullptr) NOT_CDS_RETURN;
+  static void load_shared_class_misc(InstanceKlass* ik, ClassLoaderData* loader_data) NOT_CDS_RETURN;
   static void restore_archived_method_handle_intrinsics_impl(TRAPS) NOT_CDS_RETURN;
 
 protected:

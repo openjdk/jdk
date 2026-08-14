@@ -26,7 +26,7 @@
 #define SHARE_JFR_JFR_HPP
 
 #include "jfr/utilities/jfrTypes.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -35,7 +35,6 @@ class CallInfo;
 class ciKlass;
 class ciMethod;
 class ClassFileParser;
-class ClassFileStream;
 class GraphBuilder;
 class InstanceKlass;
 class JavaThread;
@@ -43,7 +42,6 @@ struct JavaVMOption;
 class Klass;
 class outputStream;
 class Parse;
-class Symbol;
 class Thread;
 
 extern "C" void JNICALL jfr_register_natives(JNIEnv*, jclass);
@@ -52,9 +50,6 @@ extern "C" void JNICALL jfr_register_natives(JNIEnv*, jclass);
 // The VM interface to Flight Recorder.
 //
 class Jfr : AllStatic {
-  friend class JfrDefineClassEvent;
- private:
-  static void emit_define_class_event(const Klass* k, const Symbol* source);
  public:
   static bool is_enabled();
   static bool is_disabled();
@@ -85,18 +80,9 @@ class Jfr : AllStatic {
   static bool has_sample_request(JavaThread* jt);
   static void check_and_process_sample_request(JavaThread* jt);
   static void on_report_java_out_of_memory();
-  CDS_ONLY(static void on_restoration(const Klass* k, const ClassFileStream* cfs, JavaThread* jt);)
-};
-
-class JfrDefineClassEvent : StackObj {
- private:
-  const Klass* const _k;
-  Symbol* const _source;
-  bool _commit;
- public:
-  JfrDefineClassEvent(const Klass* k, const JavaThread* jt, bool commit = false);
-  ~JfrDefineClassEvent();
-  void commit();
+  static void on_definition(const InstanceKlass* ik, JavaThread* jt);
+  static void on_deallocation(const Klass* k);
+  CDS_ONLY(static void on_restoration(const Klass* k, JavaThread* jt);)
 };
 
 #endif // SHARE_JFR_JFR_HPP

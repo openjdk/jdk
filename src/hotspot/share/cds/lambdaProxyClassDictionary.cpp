@@ -35,7 +35,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/klass.inline.hpp"
 #if INCLUDE_JFR
-#include "jfr/jfr.inline.hpp"
+#include "jfr/jfr.hpp"
 #endif
 
 DumpTimeLambdaProxyClassInfo::~DumpTimeLambdaProxyClassInfo() {
@@ -342,50 +342,44 @@ InstanceKlass* LambdaProxyClassDictionary::load_and_init_lambda_proxy_class(Inst
     return nullptr;
   }
 
-  InstanceKlass* loaded_lambda =
-      SystemDictionary::load_shared_class(lambda_ik, class_loader, protection_domain,
-                                          nullptr, pkg_entry, THREAD);
   {
-    // This construct is a scoped helper class, placed here to capture early returns.
-    JFR_ONLY(JfrDefineClassEvent class_define_event(loaded_lambda, THREAD);)
-
-    if (loaded_lambda != lambda_ik  || HAS_PENDING_EXCEPTION) {
-      // Changed by JVMTI or pending exception.
+    InstanceKlass* loaded_lambda =
+      SystemDictionary::load_shared_class(lambda_ik, class_loader, protection_domain,
+                                          nullptr, pkg_entry, CHECK_NULL);
+    if (loaded_lambda != lambda_ik) {
+      // changed by JVMTI
       return nullptr;
     }
-
-    assert(loaded_lambda == lambda_ik, "invariant");
-
-    assert(shared_nest_host->is_same_class_package(lambda_ik),
-           "lambda proxy class and its nest host must be in the same package");
-    // The lambda proxy class and its nest host have the same class loader and class loader data,
-    // as verified in add_lambda_proxy_class()
-    assert(shared_nest_host->class_loader() == class_loader(), "mismatched class loader");
-    assert(shared_nest_host->class_loader_data() == ClassLoaderData::class_loader_data(class_loader()), "mismatched class loader data");
-    lambda_ik->set_nest_host(shared_nest_host);
-
-    // Ensures the nest host is the same as the lambda proxy's
-    // nest host recorded at dump time.
-    InstanceKlass* nest_host = caller_ik->nest_host(THREAD);
-    assert(nest_host == shared_nest_host, "mismatched nest host");
-
-
-    // Add to class hierarchy, and do possible deoptimizations.
-    lambda_ik->add_to_hierarchy(THREAD);
-    // But, do not add to dictionary.
-
-    JFR_ONLY(class_define_event.commit());
   }
 
-  lambda_ik->link_class(CHECK_NULL);
+  assert(shared_nest_host->is_same_class_package(lambda_ik),
+         "lambda proxy class and its nest host must be in the same package");
+  // The lambda proxy class and its nest host have the same class loader and class loader data,
+  // as verified in add_lambda_proxy_class()
+  assert(shared_nest_host->class_loader() == class_loader(), "mismatched class loader");
+  assert(shared_nest_host->class_loader_data() == ClassLoaderData::class_loader_data(class_loader()), "mismatched class loader data");
+  lambda_ik->set_nest_host(shared_nest_host);
 
-  // notify jvmti
-  if (JvmtiExport::should_post_class_load()) {
-    JvmtiExport::post_class_load(THREAD, lambda_ik);
-  }
+  // Ensures the nest host is the same as the lambda proxy's
+  // nest host recorded at dump time.
+  InstanceKlass* nest_host = caller_ik->nest_host(THREAD);
+  assert(nest_host == shared_nest_host, "mismatched nest host");
+
+  JFR_ONLY(Jfr::on_definition(lambda_ik, THREAD);)
+
+  // Add to class hierarchy, and do possible deoptimizations.
+  lambda_ik->add_to_hierarchy(THREAD);
+  assert(lambda_ik->is_loaded(), "Must be in at least loaded state");
+  // But, do not add to dictionary.
 
   if (class_load_event.should_commit()) {
     JFR_ONLY(SystemDictionary::post_class_load_event(&class_load_event, lambda_ik, ClassLoaderData::class_loader_data(class_loader()));)
+  }
+
+  lambda_ik->link_class(CHECK_NULL);
+  // notify jvmti
+  if (JvmtiExport::should_post_class_load()) {
+    JvmtiExport::post_class_load(THREAD, lambda_ik);
   }
 
   lambda_ik->initialize(CHECK_NULL);
