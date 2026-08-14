@@ -26,6 +26,7 @@
  * @summary Basic test of Object methods on value objects
  * @enablePreview
  * @library /test/lib
+ * @compile ValueWithFinalizer.jcod AbstractValueWithFinalizer.jcod ValueObjects.java
  * @run junit ${test.main.class}
  */
 
@@ -72,6 +73,52 @@ class ValueObjects {
 
         var obj = new V();
         assertThrows(CloneNotSupportedException.class, obj::clone);
+    }
+
+    /**
+     * Test that the finalize method on a value class is not invoked by the GC.
+     *
+     * ValueWithFinalizer is supplied as ValueWithFinalizer.jcod rather than a local value
+     * class here, since javac no longer allows a value class to declare a method that
+     * overrides Object::finalize (JDK-8339188). See the jcod file for the source it was
+     * generated from.
+     */
+    @Test
+    void testValueClassFinalize() throws Exception {
+        var latch = new TimeoutAdjustingLatch();
+        var obj = new ValueWithFinalizer(latch);
+        obj = null;
+        for (int i = 0; i < 3; i++) {
+            System.gc();
+            // latch should not count down
+            assertFalse(latch.await(100, TimeUnit.MILLISECONDS));
+        }
+    }
+
+    /**
+     * Test that the finalize method on an abstract value value is not invoked by the GC.
+     *
+     * AbstractValueWithFinalizer is supplied as AbstractValueWithFinalizer.jcod rather than
+     * a local abstract value class here, since javac no longer allows a value class to
+     * declare a method that overrides Object::finalize (JDK-8339188). See the jcod file for
+     * the source it was generated from.
+     */
+    @Test
+    void testAbstractValueClassFinalize() throws Exception {
+        /*identity*/ class C extends AbstractValueWithFinalizer {
+            C(CountDownLatch latch) {
+                super(latch);
+            }
+        }
+
+        var latch = new TimeoutAdjustingLatch();
+        var obj = new C(latch);
+        obj = null;
+        for (int i = 0; i < 3; i++) {
+            System.gc();
+            // latch should not count down
+            assertFalse(latch.await(100, TimeUnit.MILLISECONDS));
+        }
     }
 
     /**
