@@ -1506,6 +1506,9 @@ oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, TRAPS) {
   refArrayHandle locks;
   if (cl._locks != nullptr && cl._locks->length() > 0) {
     locks = oopFactory::new_refArray_handle(lock_klass, cl._locks->length(), CHECK_NULL);
+    if (lock_klass->should_be_initialized()) {
+      lock_klass->initialize(CHECK_NULL);
+    }
     for (int n = 0; n < cl._locks->length(); n++) {
       GetThreadSnapshotHandshakeClosure::OwnedLock* lock_info = cl._locks->adr_at(n);
 
