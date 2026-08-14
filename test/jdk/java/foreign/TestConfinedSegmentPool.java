@@ -371,33 +371,23 @@ final class TestConfinedSegmentPool {
     }
 
     @Test
-    void acquiredPoolIsCleanedUpOnThreadExit() throws Throwable {
+    void availablePoolsAreCleanedUpOnThreadExit() throws Throwable {
         assumeTrue(isPoolEnabled());
 
         AtomicReference<Throwable> failure = new AtomicReference<>();
 
         Thread thread = Thread.ofPlatform().unstarted(() -> {
             Arena[] cached = new Arena[4];
-            Arena[] acquired = new Arena[2];
 
             try {
                 allocateOneByte(cached);
                 closeAll(cached); // Four positive entries for released pools
 
-                allocateOneByte(acquired); // Two entries become negative as they now are acquired
-
                 long[] pools = JLA.getConfinedMemoryPools(Thread.currentThread());
                 assertNotNull(pools);
-                // Terminate with two available and two acquired pools.
-                assertEquals(2L, Arrays.stream(pools).filter(p -> p > 0).count());
-                assertEquals(2L, Arrays.stream(pools).filter(p -> p < 0).count());
-
-
-                // Deliberately leave the acquired arenas open.
+                assertEquals(4L, Arrays.stream(pools).filter(p -> p > 0).count());
             } catch (Throwable ex) {
                 failure.set(ex);
-            } finally {
-                Reference.reachabilityFence(acquired);
             }
         });
 
@@ -411,6 +401,45 @@ final class TestConfinedSegmentPool {
 
         // Thread-exit cleanup must clear every cache entry.
         assertArrayEquals(new long[4], JLA.getConfinedMemoryPools(thread));
+    }
+
+    @Test
+    void threadExitCleanupDoesNotFreeAcquiredPool() throws Throwable {
+        assumeTrue(isPoolEnabled());
+
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+        Thread thread = Thread.ofPlatform().unstarted(() -> {
+            try {
+                long pool;
+                try (Arena scratch = Arena.ofConfined()) {
+                    pool = scratch.allocate(1).address();
+                }
+                assertEquals(pool, currentPool());
+
+                try (Arena arena = Arena.ofConfined()) {
+                    MemorySegment segment = arena.allocate(ValueLayout.JAVA_BYTE);
+                    assertEquals(pool, segment.address());
+                    assertEquals(0, currentPool());
+                    segment.set(ValueLayout.JAVA_BYTE, 0, (byte) 42);
+
+                    // Simulate thread-exit cleanup while the pool is detached and
+                    // exclusively owned by this still-open arena.
+                    ConfinedSegmentPool.releaseOnThreadExit(Thread.currentThread());
+                    assertEquals((byte) 42, segment.get(ValueLayout.JAVA_BYTE, 0));
+                }
+                assertEquals(pool, currentPool());
+            } catch (Throwable ex) {
+                failure.set(ex);
+            }
+        });
+
+        thread.start();
+        thread.join(TimeUnit.SECONDS.toMillis(10));
+
+        assertFalse(thread.isAlive(), "platform thread did not terminate");
+        if (failure.get() != null) {
+            throw failure.get();
+        }
     }
 
     @Test

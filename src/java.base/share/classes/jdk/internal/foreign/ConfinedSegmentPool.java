@@ -41,17 +41,18 @@ import jdk.internal.vm.annotation.ForceInline;
  * If no cached pool is available, the arena may allocate a local pool and
  * attempt to cache it when the arena is closed.
  *<p>
- * A platform thread retains acquired pools in its cache, marking them as
- * unavailable. This allows thread-exit cleanup to free pools held by confined
- * arenas that were not closed before the owning thread terminated.
+ * A platform thread acquires pools from its own cache, while a virtual thread
+ * acquires pools from its current carrier thread's cache. In both cases, an
+ * acquired pool is removed from the cache and owned exclusively by the arena
+ * until it is closed. Consequently, platform- or carrier-thread termination
+ * can free only available cached pools and does not affect pools owned by open
+ * arenas. Removing virtual-thread-owned pools from the carrier cache also
+ * prevents the original carrier from freeing such a pool if the virtual thread
+ * migrates and that carrier terminates.
  *<p>
- * A virtual thread acquires pools from its current carrier thread. An
- * acquired pool is removed from the carrier's cache and is owned exclusively
- * by the arena until it is closed. This prevents the original carrier from
- * freeing the pool if the virtual thread migrates and that carrier terminates.
- * On close, the pool is returned to the current carrier's cache or freed if
- * that cache is full. Carrier-thread termination still frees pools remaining
- * in that carrier's cache but does not affect unclosed confined arenas.
+ * When an arena is closed, its pool is returned to the owning platform
+ * thread's cache or, for a virtual thread, to the current carrier's cache. The
+ * pool is freed instead if the target cache is full.
  *<p>
  * Before a pool is released, the portion used by the arena is cleared.
  * Together with clearing performed when a pool is initially allocated, this
@@ -65,11 +66,9 @@ import jdk.internal.vm.annotation.ForceInline;
  * Pool entries use the following representation:
  * <ul>
  *     <li>zero: empty cache entry;
- *     <li>positive address: available pool;
- *     <li>negative address: pool acquired by a platform-thread arena.
+ *     <li>positive address: available pool.
  * </ul>
- * Native pool addresses are required to be positive, allowing the sign to
- * encode whether a cached pool is available or platform-arena-owned.
+ * Acquired pools are not represented in the cache.
  * <p>
  * Pooling can be disabled through the internal pool-size configuration.
  * When disabled, all allocations use the regular native allocator.
@@ -77,7 +76,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * This class operates directly on native addresses using {@link Unsafe}.
  * Its ownership and clearing invariants must therefore be preserved when
  * acquisition, release, or thread-termination protocols are changed.
- * Defensive release checks detect invalid sizes and duplicate releases, but
+ * Defensive release checks detect invalid sizes and some duplicate releases, but
  * cannot validate arbitrary native addresses.
  */
 public final class ConfinedSegmentPool {
@@ -110,8 +109,9 @@ public final class ConfinedSegmentPool {
 
 
     /**
-     * Acquires a pool for an arena owned by {@code thread}. A virtual-thread
-     * arena acquires from the current carrier's cache.
+     * Acquires and removes a pool from the appropriate cache for an arena owned
+     * by {@code thread}. A platform-thread arena uses its owner's cache, while
+     * a virtual-thread arena uses the current carrier's cache.
      *
      * @return a positive native address, or zero if no pool is available
      */
@@ -121,9 +121,7 @@ public final class ConfinedSegmentPool {
         if (POOLED_MEMORY_SIZE <= 0) {
             return 0;
         }
-        return thread.isVirtual()
-                ? acquireVirtual(JLA.currentCarrierThread())
-                : acquirePlatform(thread);
+        return acquireFromCache(cacheOwner(thread));
     }
 
     /**
@@ -146,25 +144,23 @@ public final class ConfinedSegmentPool {
     @ForceInline
     static void release(Thread thread, long pool, long size) {
         assertCurrentThreadInDebugMode(thread);
-        final Thread cacheOwner = thread.isVirtual()
-                ? JLA.currentCarrierThread()
-                : thread;
-        releasePlatform(cacheOwner, pool, size);
+        releaseToCache(cacheOwner(thread), pool, size);
     }
 
     /**
-     * Frees all available and platform-arena-owned pools recorded in the
-     * terminating platform thread's cache.
+     * Frees all available pools recorded in the terminating platform thread's
+     * cache. Pools owned by open arenas are detached from the cache and are not
+     * affected.
      */
-    public static void releaseOnThreadExit(Thread thread) {
-        final long[] pools = JLA.getConfinedMemoryPools(thread);
+    public static void releaseOnThreadExit(Thread cacheOwner) {
+        final long[] pools = JLA.getConfinedMemoryPools(cacheOwner);
         if (pools == null) {
             return;
         }
         for (int i = 0; i < PLATFORM_POOL_COUNT; i++) {
             final long pool = pools[i];
-            if (pool != 0) {
-                U.freeMemory(Math.abs(pool));
+            if (pool > 0) {
+                U.freeMemory(pool);
                 pools[i] = 0;
             }
         }
@@ -178,40 +174,15 @@ public final class ConfinedSegmentPool {
     }
 
     @ForceInline
-    private static long acquirePlatform(Thread thread) {
-        final long[] pools = JLA.getConfinedMemoryPools(thread);
+    private static long acquireFromCache(Thread cacheOwner) {
+        final long[] pools = JLA.getConfinedMemoryPools(cacheOwner);
         if (pools == null) {
             return 0;
         }
         for (int i = 0; i < PLATFORM_POOL_COUNT; i++) {
             final long pool = pools[i];
             if (pool > 0) {
-                pools[i] = -pool; // available (+p) -> platform-owned (-p)
-                return pool;
-            }
-        }
-        return 0;
-    }
-
-    /**
-     * Special acquire method for virtual threads utilizing the pool of the underlying
-     * carrier thread. This method does not store acquired pools in the array to protect
-     * against use-after-free or double-free after a virtual thread migrated to another
-     * carrier thread.
-     *
-     * @param carrier thread from which pools should be used
-     * @return the acquired pool or zero if no pool could be acquired.
-     */
-    @ForceInline
-    private static long acquireVirtual(Thread carrier) {
-        long[] pools = JLA.getConfinedMemoryPools(carrier);
-        if (pools == null) {
-            return 0;
-        }
-        for (int i = 0; i < PLATFORM_POOL_COUNT; i++) {
-            long pool = pools[i];
-            if (pool > 0) {
-                pools[i] = 0; // available (+p) -> arena-owned and detached; no free on thread exit
+                pools[i] = 0; // available -> arena-owned and detached
                 return pool;
             }
         }
@@ -234,15 +205,15 @@ public final class ConfinedSegmentPool {
     }
 
     @ForceInline
-    private static void releasePlatform(Thread thread, long pool, long size) {
+    private static void releaseToCache(Thread cacheOwner, long pool, long size) {
         // Reject invalid prefixes before zeroOutMemory performs unchecked writes.
         if (pool <= 0 || size < 0 || size > POOLED_MEMORY_SIZE) {
             throw cannotReleasePooledMemory(pool, size);
         }
 
-        long[] pools = JLA.getConfinedMemoryPools(thread);
+        long[] pools = JLA.getConfinedMemoryPools(cacheOwner);
         if (pools == null) {
-            pools = createPoolCacheOrFree(thread, pool);
+            pools = createPoolCacheOrFree(cacheOwner, pool);
             if (pools == null) {
                 return; // The `createPoolCacheOrFree` method freed the pool.
             }
@@ -250,32 +221,24 @@ public final class ConfinedSegmentPool {
 
         zeroOutMemory(pool, size);
 
-        int empty = -1;
         for (int i = 0; i < PLATFORM_POOL_COUNT; i++) {
             final long entry = pools[i];
-            if (entry == -pool) {
-                pools[i] = pool; // platform-owned (-p) -> available (+p)
-                return;
-            }
             if (entry == pool) {
                 throw cannotReleasePooledMemory(pool, size); // already released
             }
-            if (entry == 0 && empty < 0) {
-                empty = i;
+            if (entry == 0) {
+                pools[i] = pool;
+                return;
             }
         }
-        if (empty >= 0) {
-            pools[empty] = pool;
-        } else {
-            U.freeMemory(pool);
-        }
+        U.freeMemory(pool);
     }
 
     // Support method to isolate exception handling from the hot inline path
     @DontInline
-    private static long[] createPoolCacheOrFree(Thread thread, long pool) {
+    private static long[] createPoolCacheOrFree(Thread cacheOwner, long pool) {
         try {
-            return JLA.getOrCreateConfinedMemoryPools(thread, PLATFORM_POOL_COUNT);
+            return JLA.getOrCreateConfinedMemoryPools(cacheOwner, PLATFORM_POOL_COUNT);
         } catch (OutOfMemoryError _) {
             // In the unlikely event a `new long[]` fails we still need to free the
             // pool and allow the rest of the Arena's cleanup operations to continue
@@ -287,6 +250,11 @@ public final class ConfinedSegmentPool {
     @DontInline
     private static IllegalStateException cannotReleasePooledMemory(long pool, long size) {
         return new IllegalStateException("Cannot release pooled memory owned by " + JLA.currentCarrierThread() + ", pool = " + pool + ", size = " + size);
+    }
+
+    @ForceInline
+    private static Thread cacheOwner(Thread thread) {
+        return thread.isVirtual() ? JLA.currentCarrierThread() : thread;
     }
 
     @SuppressWarnings("fallthrough")

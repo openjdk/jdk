@@ -124,7 +124,7 @@ final class TestConfinedSegmentPoolDefensiveRelease {
                 arena.allocate(1);
                 assertThrows(IllegalStateException.class, () -> release(Thread.currentThread(), pool, ConfinedSegmentPool.pooledMemorySize() + 1));
                 assertThrows(IllegalStateException.class, () -> release(Thread.currentThread(), pool, -1));
-                assertEquals(-pool /* acquired and remembered */, currentPool());
+                assertEquals(0 /* acquired and detached */, currentPool());
             }
             assertEquals(pool /* released */, currentPool());
         });
