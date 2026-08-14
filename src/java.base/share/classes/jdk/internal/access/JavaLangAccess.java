@@ -491,7 +491,10 @@ public interface JavaLangAccess {
      */
     byte stringCoder(String str);
 
-    byte[] stringValue(String str);
+    /**
+     * {@return a {@linkplain MemorySegment#isReadOnly() read-only} {@link MemorySegment} of the given {@link String}}
+     */
+    MemorySegment asReadOnlyMemorySegment(String str);
 
     /**
      * Join strings

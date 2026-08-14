@@ -3476,14 +3476,15 @@ public abstract sealed class ShortVector extends AbstractVector<Short>
         Objects.requireNonNull(string);
         VectorIntrinsics.indexInRange(offset, species.length(), string.length());
         byte coder = LANG_ACCESS.stringCoder(string);
-        byte[] value = LANG_ACCESS.stringValue(string);
-        VectorSpecies<Byte> byteSpecies = species.withLanes(byte.class);
+        MemorySegment segment = LANG_ACCESS.asReadOnlyMemorySegment(string);
         if (coder == 0) {
+            VectorSpecies<Byte> byteSpecies = species.withLanes(byte.class);
             VectorMask<Byte> byteMask = byteSpecies.indexInRange(0, species.length());
-            ByteVector byteVector = ByteVector.fromArray(byteSpecies, value, offset, byteMask);
+            ByteVector byteVector =
+                    ByteVector.fromMemorySegment(byteSpecies, segment, offset, ByteOrder.nativeOrder(), byteMask);
             return (ShortVector) byteVector.convertShape(ZERO_EXTEND_B2S, species, 0);
         } else {
-            return ByteVector.fromArray(byteSpecies, value, offset << 1).reinterpretAsShorts();
+            return fromMemorySegment(species, segment, (long) offset << 1, ByteOrder.nativeOrder());
         }
     }
 

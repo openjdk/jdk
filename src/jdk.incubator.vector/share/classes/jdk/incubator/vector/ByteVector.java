@@ -3510,7 +3510,7 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
         if (!compatibleWith(string, charset)) {
             throw new IllegalArgumentException();
         }
-        return ByteVector.fromArray(species, LANG_ACCESS.stringValue(string), offset);
+        return fromMemorySegment(species, LANG_ACCESS.asReadOnlyMemorySegment(string), offset, ByteOrder.nativeOrder());
     }
 
     // Memory store operations
