@@ -27,6 +27,7 @@
  * @summary [Valhalla] Compile::adjust_flat_array_access_aliases asserts due SCMemProj
  * @enablePreview
  * @modules java.base/jdk.internal.misc
+ *          java.base/jdk.internal.value
  * @run main/othervm -XX:-BackgroundCompilation ${test.main.class}
  */
 
@@ -34,7 +35,7 @@ package compiler.valhalla.inlinetypes;
 
 import java.lang.reflect.Field;
 import jdk.internal.misc.Unsafe;
-import jdk.test.lib.Asserts;
+import jdk.internal.value.ValueClass;
 
 public class CompareAndSetFlatArrayField {
     static public value class MyValue {
@@ -44,13 +45,15 @@ public class CompareAndSetFlatArrayField {
         }
     }
 
+    static final Unsafe U = Unsafe.getUnsafe();
     private static final long BASE_OFFSET;
     private static final int INDEX_SCALE;
-    private static MyValue[] array = new MyValue[1];
+    private static MyValue[] array;
     private static final boolean FLATTENED_ARRAY;
     private static final int LAYOUT;
     static {
         try {
+            array = (MyValue[])ValueClass.newNullRestrictedAtomicArray(MyValue.class, 1, new MyValue(0));
             BASE_OFFSET = U.arrayInstanceBaseOffset(array);
             INDEX_SCALE = U.arrayInstanceIndexScale(array);
             FLATTENED_ARRAY = ValueClass.isFlatArray(array);
@@ -60,7 +63,7 @@ public class CompareAndSetFlatArrayField {
         }
     }
 
-    public boolean test(int oldVal, int newVal) {
+    static public boolean test(int oldVal, int newVal) {
         return U.compareAndSetInt(array, BASE_OFFSET, oldVal, newVal);
     }
 
