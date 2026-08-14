@@ -60,8 +60,8 @@
  * JsonValue#toString()} or {@link Json#toDisplayString(JsonValue, String)}.
  * These methods produce String representations of a {@code JsonValue}.
  * The returned text adheres to the JSON grammar defined in RFC 8259.
- * {@code JsonValue.toString()} produces the most compact representation which does not
- * include JSON insignificant whitespaces, preferable for network transaction
+ * {@code JsonValue.toString()} produces the compact representation which does not
+ * include JSON insignificant whitespaces, preferable for network transmission
  * or storage. {@code Json.toDisplayString(JsonValue, String)} produces a text which
  * is human friendly, preferable for debugging or logging.
  *
