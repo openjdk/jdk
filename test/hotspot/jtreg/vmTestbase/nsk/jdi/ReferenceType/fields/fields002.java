@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,6 @@ import java.io.*;
 public class fields002 {
     static ArgumentHandler argsHandler;
     static Log test_log_handler;
-    static boolean verbose_mode = false;  // test argument -verbose switches to true
-                                          // - for more easy failure evaluation
 
     /** The main class names of the debugger & debugee applications. */
     private final static String
@@ -54,7 +52,6 @@ public class fields002 {
 
     private final static String classLoaderName = package_prefix + "fields002aClassLoader";
     private final static String classFieldName = "loadedClass";
-
 
     public static void main (String argv[]) {
         int result = run(argv,System.out);
@@ -102,13 +99,9 @@ public class fields002 {
         print_log_on_verbose("    of the com.sun.jdi package for not prepared class\n");
 
         String debugee_launch_command = debugeeName;
-        if (verbose_mode) {
-            debugee_launch_command = debugeeName + " -vbs";
-        }
 
         Debugee debugee = binder.bindToDebugee(debugee_launch_command);
         IOPipe pipe = new IOPipe(debugee);
-
 
         debugee.redirectStderr(out);
         print_log_on_verbose("--> fields002: fields002a debugee launched");
