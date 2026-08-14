@@ -50,7 +50,7 @@ public class TestFinalizableValues {
         Collections.addAll(argsList, "-Dtest.class.path=" + System.getProperty("test.class.path", "."));
         Collections.addAll(argsList, "-XX:+IgnoreUnrecognizedVMOptions");
         Collections.addAll(argsList, "-XX:+TraceFinalizerRegistration");
-        Collections.addAll(argsList, "TestHelper");
+        Collections.addAll(argsList, "TestFinalizableValues$TestHelper");
         Collections.addAll(argsList, classname);
         Collections.addAll(argsList, args);
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(argsList);
@@ -66,66 +66,69 @@ public class TestFinalizableValues {
     }
     public static void main(String[] args) throws IOException {
         test("MyVal", false, "false", "false");
-        test("MyVal2", false, "false", "false");
-        test("MyId", false, "false", "false");
-        test("MyId2", true, "false", "true");
+        test("TestFinalizableValues$TestHelper$MyVal2", false, "false", "false");
+        test("TestFinalizableValues$TestHelper$MyId", false, "false", "false");
+        test("TestFinalizableValues$TestHelper$MyId2", true, "false", "true");
     }
-}
 
-/*
- * MyVal and MyAbstractVal are supplied as MyVal.jcod and MyAbstractVal.jcod: both are classes
- * that javac can no longer produce from source since JDK-8339188 forbids a (abstract) value
- * class from declaring a method that overrides Object::finalize. See the jcod files for the
- * source they were generated from. MyVal2, MyId and MyId2 don't declare finalize() themselves
- * (they only inherit it from MyAbstractVal), so javac still accepts them.
- */
+    /*
+     * MyVal and MyAbstractVal are supplied as MyVal.jcod and MyAbstractVal.jcod: both are
+     * classes that javac can no longer produce from source since JDK-8339188 forbids a
+     * (abstract) value class from declaring a method that overrides Object::finalize. See the
+     * jcod files for the source they were generated from. They are declared as top-level
+     * classes (rather than nested in TestHelper, as they were before this restriction existed)
+     * because javac cannot resolve a bare reference from freshly-compiled source to a nested
+     * sibling class that only exists as a precompiled class file. MyVal2, MyId and MyId2 don't
+     * declare finalize() themselves (they only inherit it from MyAbstractVal), so javac still
+     * accepts them from source and they can stay nested in TestHelper as before.
+     */
+    public static class TestHelper {
+        static value class MyVal2 extends MyAbstractVal {}
 
-value class MyVal2 extends MyAbstractVal {}
+        static class MyId extends MyAbstractVal {}
 
-class MyId extends MyAbstractVal {}
+        static class MyId2 extends MyAbstractVal {
+            static boolean finalizerWasCalled = false;
+            int i = 0;
 
-class MyId2 extends MyAbstractVal {
-    static boolean finalizerWasCalled = false;
-    int i = 0;
-
-    @SuppressWarnings("deprecation")
-    protected void finalize() {
-        finalizerWasCalled = true;
-    }
-}
-
-class TestHelper {
-    public static void main(String[] args) throws ClassNotFoundException {
-        Class<?> c = Class.forName(args[0]);
-        boolean expectFinalizer1 = Boolean.valueOf(args[1]);
-        boolean expectFinalizer2 = Boolean.valueOf(args[2]);
-
-        create(c);
-        for (int i = 0; i < 100; i++) {
-            System.gc();
-            try {
-                Thread.sleep(10L);
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
+            @SuppressWarnings("deprecation")
+            protected void finalize() {
+                finalizerWasCalled = true;
             }
         }
-        if (MyAbstractVal.finalizerWasCalled != expectFinalizer1) {
-            throw new RuntimeException("Finalizer1 was "
-                                       + (MyAbstractVal.finalizerWasCalled ? "" : "not ")
-                                       + "executed");
-        }
-        if (MyId2.finalizerWasCalled != expectFinalizer2) {
-            throw new RuntimeException("Finalizer2 was "
-                                       + (MyId2.finalizerWasCalled ? "" : "not ")
-                                       + "executed");
-        }
-    }
 
-    static void create(Class<?> c) {
-        try {
-            c.newInstance();
-        } catch(InstantiationException | IllegalAccessException e) {
-            throw new RuntimeException(e);
+        public static void main(String[] args) throws ClassNotFoundException {
+            Class<?> c = Class.forName(args[0]);
+            boolean expectFinalizer1 = Boolean.valueOf(args[1]);
+            boolean expectFinalizer2 = Boolean.valueOf(args[2]);
+
+            create(c);
+            for (int i = 0; i < 100; i++) {
+                System.gc();
+                try {
+                    Thread.sleep(10L);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+            if (MyAbstractVal.finalizerWasCalled != expectFinalizer1) {
+                throw new RuntimeException("Finalizer1 was "
+                                           + (MyAbstractVal.finalizerWasCalled ? "" : "not ")
+                                           + "executed");
+            }
+            if (MyId2.finalizerWasCalled != expectFinalizer2) {
+                throw new RuntimeException("Finalizer2 was "
+                                           + (MyId2.finalizerWasCalled ? "" : "not ")
+                                           + "executed");
+            }
+        }
+
+        static void create(Class<?> c) {
+            try {
+                c.newInstance();
+            } catch(InstantiationException | IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 }
