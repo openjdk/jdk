@@ -98,7 +98,7 @@ import java.util.Optional;
  *     <li>{@code asLong()} converts a {@code JsonNumber} instance to a Java
  *     {@code long} if its numeric value can be represented exactly.</li>
  *     <li>{@code asDouble()} converts a {@code JsonNumber} instance to a Java
- *     {@code double} if its numeric value can be represented accurately.</li>
+ *     {@code double} if its numeric value can be rounded to a finite Java {@code double}.</li>
  *     <li>{@code asBoolean()} converts a {@code JsonBoolean} instance to a Java
  *     {@code boolean} value of {@code true} or {@code false}.</li>
  *     <li>{@code asMap()} converts a {@code JsonObject} instance into an
