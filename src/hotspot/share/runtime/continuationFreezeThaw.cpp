@@ -1747,6 +1747,8 @@ static void verify_frame_kind(frame& top, Continuation::preempt_kind preempt_kin
   Method* m;
   const char* code_name;
   int bci;
+  ResourceMark rm;
+
   if (preempt_kind == Continuation::monitorenter) {
     assert(top.is_interpreted_frame() || top.is_runtime_frame(), "unexpected %sframe",
       top.is_compiled_frame() ? "compiled " : top.is_native_frame() ? "native " : "");
@@ -1763,7 +1765,6 @@ static void verify_frame_kind(frame& top, Continuation::preempt_kind preempt_kin
       bci = at_sync_method ? -1 : top.interpreter_frame_bci();
     } else {
       JavaThread* current = JavaThread::current();
-      ResourceMark rm(current);
       CodeBlob* cb = top.cb();
       RegisterMap reg_map(current,
                   RegisterMap::UpdateMap::skip,
