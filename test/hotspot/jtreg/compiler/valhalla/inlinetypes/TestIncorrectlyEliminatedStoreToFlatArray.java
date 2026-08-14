@@ -32,9 +32,11 @@
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-UseArrayLoadStoreProfile
  *                   -XX:CompileCommand=compileonly,${test.main.class}::test
  *                   -XX:+AlwaysIncrementalInline ${test.main.class}
+ * @run main ${test.main.class}
  */
 
 
+package compiler.valhalla.inlinetypes;
 import jdk.internal.value.ValueClass;
 
 public class TestIncorrectlyEliminatedStoreToFlatArray {
