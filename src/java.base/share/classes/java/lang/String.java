@@ -1932,7 +1932,7 @@ public final class String
 
     /**
      * {@return the number of Unicode code points in this {@code string}}
-     * Isolated surrogate code units count as one code point each.
+     * Unpaired surrogates count as one code point each.
      *
      * @since 28
      */
