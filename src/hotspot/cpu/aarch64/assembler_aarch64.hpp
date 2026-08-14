@@ -4360,20 +4360,6 @@ public:
   INSN(sve_smullt, /* is_unsigned */ false, /* is_top */ true ); // Signed widening multiply of top elements
 #undef INSN
 
-// SVE2 saturating operations - predicate
-#define INSN(NAME, op1, op2)                                                          \
-  void NAME(FloatRegister Zdn, SIMD_RegVariant T, PRegister Pg, FloatRegister Znm) {  \
-    assert(T != Q, "invalid register variant");                                       \
-    sve_predicate_reg_insn(op1, op2, Zdn, T, Pg, Znm);                                \
-  }
-
-  INSN(sve_sqadd, 0b01000100, 0b011000100); // signed saturating add
-  INSN(sve_sqsub, 0b01000100, 0b011010100); // signed saturating sub
-  INSN(sve_uqadd, 0b01000100, 0b011001100); // unsigned saturating add
-  INSN(sve_uqsub, 0b01000100, 0b011011100); // unsigned saturating sub
-
-#undef INSN
-
 // Advanced SIMD dot product
 #define INSN(NAME, is_unsigned)                                                                               \
   void NAME(FloatRegister Vd, SIMD_Arrangement Ta, FloatRegister Vn, FloatRegister Vm, SIMD_Arrangement Tb) { \
