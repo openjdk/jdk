@@ -52,6 +52,10 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
     private static final long CONSTANT_OFFSET =
             UNSAFE.objectFieldOffset(LazyConstantImpl.class, "constant");
 
+    // Unsafe offset for access of the `status` field
+    private static final long STATUS_OFFSET =
+            UNSAFE.objectFieldOffset(LazyConstantImpl.class, "state");
+
     // Generally, fields annotated with `@Stable` are accessed by the JVM using special
     // memory semantics rules (see `parse.hpp` and `parse(1|2|3).cpp`).
     //
@@ -65,52 +69,65 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
     @Stable
     private T constant;
 
-    // Underlying computing function to be used to compute the `constant` field.
-    // The field needs to be `volatile` as a lazy constant can be
-    // created by one thread and computed by another thread.
-    // After the function is successfully invoked, the field is set to
-    // `null` to allow the function to be collected. If the function fails, the field is
-    // set to the fully qualified name of the exception class. We are not storing the
-    // exception class as that would have pinned the class loader of the exception.
-    private volatile Object computingFunctionOrExceptionType;
+    // State of the lazy constant. The field needs somtimes be accessed by
+    // stronger-than-plain memory semantics.
+    //
+    // | Value                  | Meaning                                      |
+    // | ---------------------- | -------------------------------------------- |
+    // | `Supplier`             | Computing function, before computation       |
+    // | `Long`                 | Identifier of the thread computing the value |
+    // | `null`                 | Computation completed successfully           |
+    // | `String`               | Fully qualified name of a thrown exception   |
+    //
+    // The state moves monotonically as described in the above table and where either of
+    // the two last states can exist. I.e. the following transitions are possible:
+    //
+    // Supplier ---> Long -+-> null (completed successfully)
+    //                     +-> String (completed exeptionally)
+    //
+    // The exception class is not stored as that would pin its class loader.
+    private Object state;
 
     private LazyConstantImpl(Supplier<? extends T> computingFunction) {
-        this.computingFunctionOrExceptionType = computingFunction;
+        setRelease(STATUS_OFFSET, computingFunction);
     }
 
+    @SuppressWarnings("unchecked")
     @ForceInline
     @Override
     public T get() {
-        final T t = getAcquire();
+        final T t = (T) getAcquire(CONSTANT_OFFSET);
         return (t != null) ? t : getSlowPath();
     }
 
+    @SuppressWarnings("unchecked")
     @DontInline
     private T getSlowPath() {
         preventReentry();
         synchronized (this) {
-            T t = getAcquire();
+            T t = (T) getAcquire(CONSTANT_OFFSET);
             if (t == null) {
-                final Object cf = computingFunctionOrExceptionType;
+                final Object state = getAcquire(STATUS_OFFSET);
                 // Don't use switch pattern matching here in order to improve startup time.
-                if (cf instanceof Supplier<?> computingFunction) {
+                if (state instanceof Supplier<?> computingFunction) {
+                    // This also allows the underlying supplier to be collected
+                    this.state = Thread.currentThread().threadId();
                     try {
                         @SuppressWarnings("unchecked")
                         final T newT = (T) computingFunction.get();
                         t = newT;
                         Objects.requireNonNull(t);
-                        setRelease(t);
-                        // Allow the underlying supplier to be collected after
-                        // a successful initialization
-                        computingFunctionOrExceptionType = null;
+                        setRelease(CONSTANT_OFFSET, t);
+                        // Publication is needed here for toString to work correctly
+                        setRelease(STATUS_OFFSET, null);
                     } catch (Throwable ex) {
                         // Release the original computing function and replace it with
                         // an exception marker
                         final String exceptionType = ex.getClass().getName().intern();
-                        computingFunctionOrExceptionType = exceptionType;
+                        this.state = exceptionType;
                         throw unableToAccessConstant(exceptionType, ex);
                     }
-                } else if (cf instanceof String exceptionType) {
+                } else if (state instanceof String exceptionType) {
                     throw unableToAccessConstant(exceptionType, null);
                 } else {
                     throw new InternalError("Cannot reach here");
@@ -126,9 +143,10 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
     }
 
     // For testing only
+    @SuppressWarnings("unchecked")
     @ForceInline
     public T orElse(T other) {
-        final T t = getAcquire();
+        final T t = (T) getAcquire(CONSTANT_OFFSET);
         return (t == null) ? other : t;
     }
 
@@ -138,23 +156,26 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
     }
 
     private String toStringSuffix() {
-        final T t = getAcquire();
+        final Object t = getAcquire(CONSTANT_OFFSET);
         if (t == this) {
             return "(this LazyConstant)";
         } else if (t != null) {
             return t.toString();
         } else {
-            // Volatile read
-            final Object cf = computingFunctionOrExceptionType;
+            final Object state = getAcquire(STATUS_OFFSET);
             // There could be a race here
-            if (cf != null) {
-                return (cf instanceof Supplier<?> supplier)
-                        ? "computing function=" + isolateToString(supplier)
-                        : "failed with=" + cf;
+            if (state != null) {
+                if (state instanceof Long threadId) {
+                    return "computing thread=" + threadId;
+                }
+                if (state instanceof Supplier<?> supplier) {
+                    return "computing function=" + isolateToString(supplier);
+                }
+                return "failed with=" + state;
             }
-            // As we know `computingFunction` is `null` or via a volatile read, we
+            // As we know `state` is `null` via a volatile read, we
             // can now be sure that this lazy constant is initialized
-            return getAcquire().toString();
+            return getAcquire(CONSTANT_OFFSET).toString();
         }
     }
 
@@ -175,17 +196,20 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
 
     @SuppressWarnings("unchecked")
     @ForceInline
-    private T getAcquire() {
-        return (T) UNSAFE.getReferenceAcquire(this, CONSTANT_OFFSET);
+    private Object getAcquire(long offset) {
+        return UNSAFE.getReferenceAcquire(this, offset);
     }
 
-    private void setRelease(T newValue) {
-        UNSAFE.putReferenceRelease(this, CONSTANT_OFFSET, newValue);
+    private void setRelease(long offset, Object newValue) {
+        UNSAFE.putReferenceRelease(this, offset, newValue);
     }
 
+    // This method can use plain semantics as the threadId is only relevant for the same
+    // thread that set it. Aother thread would observe something that is not an instance
+    // of a Long or a long value that is not the same as the other thread's id.
     private void preventReentry() {
-        if (Thread.holdsLock(this)) {
-            throw new IllegalStateException("Recursive invocation of a LazyConstant's computing function: " + isolateToString(computingFunctionOrExceptionType));
+        if (state instanceof Long threadId && threadId == Thread.currentThread().threadId()) {
+            throw new IllegalStateException("Recursive invocation of a LazyConstant's computing function");
         }
     }
 

@@ -222,9 +222,9 @@ final class LazyConstantTest {
         ref.set(constant);
         var x = assertThrows(NoSuchElementException.class, constant::get);
         assertEquals(IllegalStateException.class, x.getCause().getClass());
-        assertEquals(1, cnt.get());
+        assertEquals(0, cnt.get());
         assertEquals("Unable to access the constant because java.lang.IllegalStateException was thrown at initial computation", x.getMessage());
-        assertTrue(x.getCause().getMessage().contains(NaughtySupplier.class.getName()),  x.getCause().getMessage());
+        assertEquals("Recursive invocation of a LazyConstant's computing function", x.getCause().getMessage());
     }
 
     @Test

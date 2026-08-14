@@ -168,7 +168,7 @@ final class LazyConstantTestUtil {
 
     static Object computingFunction(LazyConstant<?> o) {
         try {
-            final Field field = field(o.getClass(), "computingFunctionOrExceptionType");
+            final Field field = field(o.getClass(), "state");
             field.setAccessible(true);
             return field.get(o);
         } catch (ReflectiveOperationException e) {
