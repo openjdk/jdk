@@ -424,7 +424,7 @@ GrowableArray<JfrInstrumentedClass>* JfrMethodTracer::instrumented_classes() {
   return _instrumented_classes;
 }
 
-// Invoked from JfrTypeSet on class unloading  on deallocation of sticky bit-tagged classes.
+// Invoked from JfrTypeSet on class unloading of sticky bit-tagged classes.
 void JfrMethodTracer::add_to_unloaded_set(const Klass* k) {
   assert(k != nullptr, "invariant");
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);

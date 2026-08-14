@@ -35,7 +35,6 @@ class ClassFileParser;
 class InstanceKlass;
 class JavaThread;
 class JfrFilterClassClosure;
-class JfrMethodProcessor;
 class Klass;
 class ModuleEntry;
 
