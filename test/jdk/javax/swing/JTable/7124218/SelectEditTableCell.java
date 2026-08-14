@@ -24,7 +24,7 @@
 /*
  * @test
  * @key headful
- * @bug 7124218 8390288
+ * @bug 7124218
  * @summary verifies different behaviour of SPACE and ENTER in JTable
  * @run main SelectEditTableCell
  */
