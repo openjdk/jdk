@@ -71,9 +71,9 @@ class CompileTask : public CHeapObj<mtCompiler> {
       "tiered",
       "replay",
       "whitebox",
-      "must_be_compiled",
-      "bootstrap"
+      "must_be_compiled"
     };
+    STATIC_ASSERT(ARRAY_SIZE(reason_names) == Reason_Count);
     return reason_names[compile_reason];
   }
 

@@ -27,6 +27,7 @@
  * @summary Test the contents of -Xlog:aot+map with AOT workflow
  * @requires vm.cds.supports.aot.class.linking
  * @library /test/lib /test/hotspot/jtreg/runtime/cds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
+ * @modules java.base/jdk.internal.misc
  * @build AOTMapTest Hello
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar AOTMapTestApp
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar cust.jar Hello
@@ -39,6 +40,7 @@
  * @summary Test the contents of -Xlog:aot+map with dynamic CDS archive
  * @requires vm.cds.supports.aot.class.linking
  * @library /test/lib /test/hotspot/jtreg/runtime/cds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
+ * @modules java.base/jdk.internal.misc
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @build AOTMapTest Hello
@@ -55,16 +57,22 @@
  * @requires vm.cds.supports.aot.class.linking & vm.debug & vm.cds.write.archived.java.heap
  * @library /test/lib /test/hotspot/jtreg/runtime/cds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @modules java.base/jdk.internal.value java.base/jdk.internal.misc java.base/jdk.internal.vm.annotation
- * @build Hello
- * @compile test-classes/AOTMapTestApp.java
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar AOTMapTestApp AOTMapTestApp$Wrapper AOTMapTestApp$WrapperWrapper
- *                                                                  AOTMapTestApp$ArchivedData Hello
- * @run main/othervm/timeout=240 AOTMapTest STATIC
+ * @build Hello AOTMapTest
+ * @compile test-classes/AOTMapTestValhallaHelper.java
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
+ *                 AOTMapTestApp
+ *                 Hello
+ *                 AOTMapTestValhallaHelper
+ *                 AOTMapTestValhallaHelper$Wrapper
+ *                 AOTMapTestValhallaHelper$WrapperWrapper
+ *                 AOTMapTestValhallaHelper$ArchivedData
+ * @run main/othervm/timeout=240 AOTMapTest AOT --two-step-training
  */
 
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
+import jdk.internal.misc.PreviewFeatures;
 import java.util.ArrayList;
 import jdk.test.lib.cds.CDSAppTester;
 import jdk.test.lib.helpers.ClassFileInstaller;
@@ -126,15 +134,17 @@ public class AOTMapTest {
 
             vmArgs.add("-Xmx128M");
             vmArgs.add("-Xlog:aot=debug");
+            vmArgs.add("--add-exports");
+            vmArgs.add("java.base/jdk.internal.misc=ALL-UNNAMED");
 
-            if (isStaticWorkflow()) {
+            if (PreviewFeatures.isEnabled()) {
                 vmArgs.add("--enable-preview");
                 vmArgs.add("--add-exports");
                 vmArgs.add("java.base/jdk.internal.value=ALL-UNNAMED");
-                vmArgs.add("--add-exports");
-                vmArgs.add("java.base/jdk.internal.misc=ALL-UNNAMED");
-                vmArgs.add("-Xbootclasspath/a:" + appJar);
-                vmArgs.add("-XX:ArchiveHeapTestClass=AOTMapTestApp");
+
+                if (runMode == RunMode.ASSEMBLY) {
+                    vmArgs.add("-XX:AOTInitTestClass=AOTMapTestValhallaHelper");
+                }
             }
 
             // filesize=0 ensures that a large map file not broken up in multiple files.
@@ -165,6 +175,11 @@ class AOTMapTestApp {
     public static void main(String[] args) throws Exception {
         System.out.println("Hello AOTMapTestApp");
         testCustomLoader();
+
+        if (PreviewFeatures.isEnabled()) {
+            Class<?> c = Class.forName("AOTMapTestValhallaHelper");
+            c.newInstance();
+        }
     }
 
     static void testCustomLoader() throws Exception {
