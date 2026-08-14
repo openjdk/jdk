@@ -379,11 +379,7 @@ void CompilerConfig::set_compilation_policy_flags() {
 #if defined(COMPILER2) && defined(_LP64)
     // LP64 specific inlining tuning for C2
     if (FLAG_IS_DEFAULT(InlineSmallCode)) {
-      if (!UseAPX) {
-        FLAG_SET_DEFAULT(InlineSmallCode, 2500);
-      } else {
-        FLAG_SET_DEFAULT(InlineSmallCode, 2750);
-      }
+      FLAG_SET_DEFAULT(InlineSmallCode, 2500);
     }
 #endif
   }
