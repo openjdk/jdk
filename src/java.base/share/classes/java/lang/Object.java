@@ -598,7 +598,8 @@ public class Object {
      * system resources or to perform other cleanup.
      * <div class="preview-block">
      *      <div class="preview-comment">
-     *          Value classes can not declare the {@code finalize} method.
+     *          It is illegal for a value class, abstract or concrete, to declare
+     *          a {@code finalize} method.
      *      </div>
      * </div>
      * <p>
