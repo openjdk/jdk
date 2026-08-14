@@ -3979,9 +3979,9 @@ bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
   // relative to the yellow page count.
   const size_t requested = StackOverflow::stack_yellow_reserved_zone_size()
                            - os::vm_page_size();
-  ULONG uload_requested = checked_cast<ULONG>(requested);
+  ULONG ulong_requested = checked_cast<ULONG>(requested);
 
-  if (SetThreadStackGuarantee(&uload_requested) == 0) {
+  if (SetThreadStackGuarantee(&ulong_requested) == 0) {
     log_warning(os, thread)("Failed to set thread stack guarantee to %zu bytes "
                             "(error %lu)", requested, GetLastError());
   }
