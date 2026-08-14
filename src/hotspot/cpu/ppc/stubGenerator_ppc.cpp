@@ -3896,7 +3896,7 @@ class StubGenerator: public StubCodeGenerator {
     __ cmpwi(CR0, len, 16);
     __ blt(CR0, L_by1);
 
-    
+
     __ bind(L_by16_loop);
 
     generate_updateBytesAdler32_accum(s1, s2, buf, tmp0, tmp1,
@@ -3944,7 +3944,7 @@ class StubGenerator: public StubCodeGenerator {
     __ blr();
     return start;
   }
-  
+
   void generate_updateBytesAdler32_accum(Register s1, Register s2, Register buf,
                              Register tmp0, Register tmp1, VectorRegister vdata,
                              VectorRegister vones, VectorRegister vweights,
@@ -3952,7 +3952,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // save s1
     __ mr(tmp1, s1);
-    
+
     // load 16 input bytes
     __ lxvx(vdata.to_vsr(),  buf);
 
@@ -3970,7 +3970,7 @@ class StubGenerator: public StubCodeGenerator {
     // L3 : b12*4 + b13*3 + b14*2 + b15*1 + 0
     // vacc2 = {L0, L1, L2, L3}
     __ vmsumubm(vacc2, vdata, vweights, vacc2);
-    
+
     // reduce 4 lanes into 1 scalar
     // 1. vacc1 = rotate vacc2 by 8 bytes
     //    vacc1 = {L2, L3, L0, L1}
@@ -3987,12 +3987,12 @@ class StubGenerator: public StubCodeGenerator {
     // extract scalar from lane 0
     // tmp0 = weighted_sum
     __ mfvsrwz(tmp0, vacc2.to_vsr());
-    
+
     // s2 += s1*16 + weighted_sum
     __ slwi(tmp1, tmp1, 4);
     __ add(tmp0, tmp0, tmp1);
     __ add(s2, s2, tmp0);
-    
+
     // compute the byte sum
 
     // accumulator cleared to zero
@@ -4007,7 +4007,7 @@ class StubGenerator: public StubCodeGenerator {
     // L3 = b12 + b13 + b14 + b15 + 0
     // vacc1 = {L0, L1, L2, L3}
     __ vmsumubm(vacc1, vdata, vones, vacc1);
-    
+
     // reduce 4 lanes into 1 scalar
     // 1. vacc1 = rotate vacc2 by 8 bytes
     //    vacc1 = {L2, L3, L0, L1}
@@ -4020,14 +4020,14 @@ class StubGenerator: public StubCodeGenerator {
     // add all 4 lanes equal total
     __ vsldoi(vacc2, vacc1, vacc1, 4);
     __ vadduwm(vacc1, vacc1, vacc2);
-    
+
     // extract scalar from lane 0
     // tmp0 = byte_sum
     __ mfvsrwz(tmp0, vacc1.to_vsr());
-    
+
     // s1 = s1 + byte_sum
     __ add(s1, s1, tmp0);
-    
+
     // advance the buffer pointer
     __ addi(buf, buf, 16);
 
