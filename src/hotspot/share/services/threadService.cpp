@@ -1374,6 +1374,7 @@ public:
   }
 
   static Handle create(InstanceKlass* klass, int depth, int type_ordinal, OopHandle obj, TRAPS) {
+    klass->initialize(CHECK_NH);
     init(klass, CHECK_NH);
     Handle result = klass->allocate_instance_handle(CHECK_NH);
     result->int_field_put(_depth_offset, depth);
