@@ -1965,7 +1965,7 @@ public class Attr extends JCTree.Visitor {
     }
 
     public void visitSynchronized(JCSynchronized tree) {
-        boolean identityType = chk.checkIdentityType(tree.pos(), attribExpr(tree.lock, env));
+        boolean identityType = chk.checkIdentityRefType(tree.pos(), attribExpr(tree.lock, env));
         if (identityType && tree.lock.type != null && tree.lock.type.isValueBased()) {
             log.warning(tree.pos(), LintWarnings.AttemptToSynchronizeOnInstanceOfValueBasedClass);
         }
