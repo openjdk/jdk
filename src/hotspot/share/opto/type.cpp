@@ -6218,13 +6218,15 @@ const TypeAryPtr* TypeAryKlassPtr::as_exact_instance_type(bool klass_change) con
     // There are asserts that expect us to not be entirely naive about properties.
     // Only arrays of value classes can be null free. Otherwise, not_null_free == true. That is if the element type
     // is not an instance class, or this instance class cannot be an inline type, it's surely not null-restricted.
-    not_null_free = !elem()->isa_instklassptr() || !elem()->is_instklassptr()->can_be_inline_type();
+    not_null_free = is_java_primitive(elem()->basic_type()) ||
+                    elem()->isa_aryklassptr() != nullptr ||
+                    (elem()->isa_instklassptr() != nullptr && !elem()->is_instklassptr()->can_be_inline_type());
     bool array_can_be_flat;
     if (elem()->isa_instklassptr()) {
       FlatInArray elem_flat_in_array = elem()->is_instklassptr()->flat_in_array();
       array_can_be_flat = elem_flat_in_array == MaybeFlat || elem_flat_in_array == Flat;
     } else {
-      array_can_be_flat = false;
+      array_can_be_flat = elem() == Type::BOTTOM;
     }
     not_flat = !array_can_be_flat;
     atomic = !array_can_be_flat;
