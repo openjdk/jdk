@@ -549,8 +549,7 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                    }
                }
                """,
-               "Lib.Base _",
-               "or.use.default");
+               "Lib.Base _");
     }
 
     @Test
@@ -722,8 +721,7 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                    }
                }
                """,
-               "Lib.Base _",
-               "or.use.default");
+               "Lib.Base _");
     }
 
     @Test
@@ -879,8 +877,7 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                    }
                }
                """,
-               "lib.Lib.Base _",
-               "or.use.default");
+               "lib.Lib.Base _");
     }
 
     @Test
@@ -909,8 +906,7 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                    }
                }
                """,
-               "lib.Lib.Base _",
-               "or.use.default");
+               "lib.Lib.Base _");
     }
 
     @Test
@@ -1005,10 +1001,7 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
             .files(tb.findJavaFiles(src))
             .diagnosticListener((Diagnostic<?> d) -> {
                 if ("compiler.err.not.exhaustive.details".equals(d.getCode()) ||
-                    "compiler.err.not.exhaustive.statement.details".equals(d.getCode()) ||
-                    "compiler.err.not.exhaustive.details.use.default".equals(d.getCode()) ||
-                    "compiler.err.not.exhaustive.statement.details.use.default".equals(d.getCode())) {
-                    boolean useDefault = d.getCode().endsWith(".use.default");
+                    "compiler.err.not.exhaustive.statement.details".equals(d.getCode())) {
                     if (d instanceof DiagnosticSourceUnwrapper uw) {
                         d = uw.d;
                     }
@@ -1020,9 +1013,6 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                                 .stream()
                                 .map(fragment -> fragment.toString())
                                 .forEach(missingPatterns::add);
-                    }
-                    if (useDefault) {
-                        missingPatterns.add("or.use.default");
                     }
                 }
             })

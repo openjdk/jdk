@@ -729,7 +729,7 @@ public class Flow {
                         if (exhaustivenessResult.notExhaustiveDetails().isEmpty()) {
                             log.error(tree, Errors.NotExhaustiveStatement);
                         } else {
-                            logNotExhaustiveError(tree.pos(), tree.selector.type, exhaustivenessResult, "not.exhaustive.statement.details", "not.exhaustive.statement.details.use.default");
+                            logNotExhaustiveError(tree.pos(), exhaustivenessResult, "not.exhaustive.statement.details");
                         }
                     }
                 }
@@ -776,7 +776,7 @@ public class Flow {
                     if (exhaustivenessResult.notExhaustiveDetails().isEmpty()) {
                         log.error(tree, Errors.NotExhaustive);
                     } else {
-                        logNotExhaustiveError(tree.pos(), tree.selector.type, exhaustivenessResult, "not.exhaustive.details", "not.exhaustive.details.use.default");
+                        logNotExhaustiveError(tree.pos(), exhaustivenessResult, "not.exhaustive.details");
                     }
                 }
             }
@@ -786,10 +786,8 @@ public class Flow {
         }
 
         private void logNotExhaustiveError(DiagnosticPosition pos,
-                                           Type selectorType,
                                            ExhaustivenessResult exhaustivenessResult,
-                                           String errorKeyNoDefault,
-                                           String errorKeyWithDefault) {
+                                           String errorKey) {
             List<JCDiagnostic> details =
                     exhaustivenessResult.notExhaustiveDetails()
                                        .stream()
@@ -797,14 +795,9 @@ public class Flow {
                                        .sorted((d1, d2) -> d1.toString()
                                                              .compareTo(d2.toString()))
                                        .collect(List.collector());
-            boolean hasUnconditionalType =
-                    exhaustivenessResult.notExhaustiveDetails()
-                                        .stream()
-                                        .filter(pd -> pd instanceof BindingPattern)
-                                        .anyMatch(pd -> types.isSubtype(selectorType, pd.type()));
             JCDiagnostic missingCases = diags.fragment(Fragments.MissingCases);
             JCDiagnostic augmentedMissingCases = new JCDiagnostic.MultilineDiagnostic(missingCases, details);
-            JCDiagnostic d = diags.error(null, log.currentSource(), pos, hasUnconditionalType ? errorKeyWithDefault : errorKeyNoDefault, augmentedMissingCases);
+            JCDiagnostic d = diags.error(null, log.currentSource(), pos, errorKey, augmentedMissingCases);
             log.report(d);
         }
 
