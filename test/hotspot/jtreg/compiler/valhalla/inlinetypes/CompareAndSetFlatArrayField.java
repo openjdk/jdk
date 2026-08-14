@@ -39,21 +39,23 @@ import jdk.internal.value.ValueClass;
 
 public class CompareAndSetFlatArrayField {
     static public value class MyValue {
-        int field;
-        MyValue(int v) {
+        Object field;
+        MyValue(Object v) {
             field = v;
         }
     }
 
-    static final Unsafe U = Unsafe.getUnsafe();
+    private static final Unsafe U = Unsafe.getUnsafe();
     private static final long BASE_OFFSET;
     private static final int INDEX_SCALE;
     private static MyValue[] array;
     private static final boolean FLATTENED_ARRAY;
     private static final int LAYOUT;
+    private static Object o1 = new Object();
+    private static Object o2 = new Object();
     static {
         try {
-            array = (MyValue[])ValueClass.newNullRestrictedAtomicArray(MyValue.class, 1, new MyValue(0));
+            array = (MyValue[])ValueClass.newNullRestrictedAtomicArray(MyValue.class, 1, new MyValue(o1));
             BASE_OFFSET = U.arrayInstanceBaseOffset(array);
             INDEX_SCALE = U.arrayInstanceIndexScale(array);
             FLATTENED_ARRAY = ValueClass.isFlatArray(array);
@@ -63,8 +65,9 @@ public class CompareAndSetFlatArrayField {
         }
     }
 
-    static public boolean test(int oldVal, int newVal) {
-        return U.compareAndSetInt(array, BASE_OFFSET, oldVal, newVal);
+    static public boolean test(Object oldVal, Object newVal) {
+        array[0] = new MyValue(oldVal);
+        return U.compareAndSetReference(array, BASE_OFFSET, oldVal, newVal);
     }
 
     static public void main(String args[]) {
@@ -74,9 +77,8 @@ public class CompareAndSetFlatArrayField {
         if (INDEX_SCALE != 4) {
             throw new RuntimeException("unexpected layout");
         }
-        MyValue[] array = new MyValue[1];
         for (int i = 0; i < 20_000; i++) {
-            boolean res = test(i, i+1);
+            boolean res = test(o1, o2);
             if (!res) {
                 throw new RuntimeException("CAS failed");
             }
