@@ -27,6 +27,8 @@ package jdk.incubator.vector;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.nio.ByteOrder;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Function;
@@ -3461,20 +3463,42 @@ public abstract sealed class ShortVector extends AbstractVector<Short>
     private static final JavaLangAccess LANG_ACCESS = SharedSecrets.getJavaLangAccess();
 
     /**
-     * {@return a {@link ShortVector} of UTF-16 code units from {@code string}}
+     * {@return {@code true} if the given {@link String} can be loaded into a {@link ShortVector} as shorts in the
+     * specified {@link Charset}}
+     *
+     * @param string the string
+     * @param charset the charset representing the 16-bit character encoding
+     * @see ShortVector#fromString(VectorSpecies, String, Charset, int)
+     */
+    @ForceInline
+    public static boolean compatibleWith(String string, Charset charset) {
+        Objects.requireNonNull(string);
+        Objects.requireNonNull(charset);
+        return charset == StandardCharsets.UTF_16;
+    }
+
+    /**
+     * {@return a {@link ShortVector} loaded from the given {@link String} encoded in the given {@link Charset}}
      *
      * @param species species of the desired vector
      * @param string the string
-     * @param offset the UTF-16 code unit offset into the string
+     * @param charset the charset
+     * @param offset the offset into the string's encoded data
+     * @throws IllegalArgumentException if the string and charset are not
+     *         {@linkplain #compatibleWith(String, Charset) compatible}
      * @throws IndexOutOfBoundsException
      *         if {@code offset+N < 0} or {@code offset+N >= string.length()}
      *         for any lane {@code N} in the vector
      */
     @ForceInline
-    public static ShortVector fromString(VectorSpecies<Short> species, String string, int offset) {
+    public static ShortVector fromString(VectorSpecies<Short> species, String string, Charset charset, int offset) {
         Objects.requireNonNull(species);
         Objects.requireNonNull(string);
+        Objects.requireNonNull(charset);
         VectorIntrinsics.indexInRange(offset, species.length(), string.length());
+        if (!compatibleWith(string, charset)) {
+            throw new IllegalArgumentException();
+        }
         byte coder = LANG_ACCESS.stringCoder(string);
         MemorySegment segment = LANG_ACCESS.asReadOnlyMemorySegment(string);
         if (coder == 0) {
