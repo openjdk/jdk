@@ -1076,18 +1076,19 @@ void VM_Version::get_processor_features() {
       }
       FLAG_SET_DEFAULT(UseAPX, false);
     }
-    if (UseAPX) {
-      // update code buffer size
+  }
+  if (UseAPX) {
+    if (CompilerConfig::is_tiered() && CompilerConfig::is_c2_enabled()) {
 #if defined(COMPILER2) && defined(_LP64)
-     // LP64 specific inlining tuning for C2
-     if (FLAG_IS_DEFAULT(InlineSmallCode)) {
-       FLAG_SET_DEFAULT(InlineSmallCode, 2750);
-     }
-#else
-     if (FLAG_IS_DEFAULT(InlineSmallCode)) {
-       FLAG_SET_DEFAULT(InlineSmallCode, 1100);
-     }
+      // LP64 specific inlining tuning for C2
+      if (FLAG_IS_DEFAULT(InlineSmallCode)) {
+        FLAG_SET_DEFAULT(InlineSmallCode, 2750);
+      }
 #endif
+    } else {
+      if (FLAG_IS_DEFAULT(InlineSmallCode)) {
+        FLAG_SET_DEFAULT(InlineSmallCode, 1100);
+      }
     }
   }
 
