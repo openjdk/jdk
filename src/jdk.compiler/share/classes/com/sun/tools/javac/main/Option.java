@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,11 @@ import static com.sun.tools.javac.main.Option.OptionKind.*;
  * <p>Maintenance note: when adding new annotation processing related
  * options, the list of options regarded as requesting explicit
  * annotation processing in JavaCompiler should be updated.
+ *
+ * <p>Maintenance note: when adding or changing options that may cause javac
+ * to compile implicit sources (such as source/module/processor paths or
+ * annotation processing) or run compiler plugins, also update the launcher
+ * heuristic in {@code src/java.base/share/native/libjli/javac_heuristic.c}.
  *
  * <p><b>This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own

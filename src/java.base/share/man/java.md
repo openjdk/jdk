@@ -2107,6 +2107,10 @@ performed by the Java HotSpot VM.
 [`-XX:-TieredCompilation`]{#-XX__TieredCompilation}
 :   Disables the use of tiered compilation. By default, this option is enabled.
 
+[`-XX:TieredStopAtLevel=`]{#-XX_TieredStopAtLevel}*level*
+:   Stops tiered compilation at the given level, from 0 through 4. The default
+    is 4, which allows compilation to proceed to the C2 compiler.
+
 [`-XX:UseSSE=`]{#-XX_UseSSE}*version*
 :   Enables the use of SSE instruction set of a specified version.
     Is set by default to the highest supported version available (x86 only).

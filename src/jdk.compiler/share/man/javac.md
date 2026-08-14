@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -306,6 +306,13 @@ file system locations may be directories, JAR files or JMOD files.
     and variables is risky and often does not accomplish what you want. If you
     must customize the compiler implementation, then use the `-J` option to
     pass options through to the underlying Java launcher.
+
+    To speed up small compilations, the `javac` launcher may automatically add
+    `-XX:TieredStopAtLevel=1` to the runtime options based on an internal
+    heuristic. To explicitly specify the compilation level and override the
+    launcher's choice, pass `-J-XX:TieredStopAtLevel=`*level*.
+    `JAVA_TOOL_OPTIONS` does not override it, because the runtime applies
+    `JAVA_TOOL_OPTIONS` before the options that the launcher adds.
 
 <a id="option-limit-modules">`--limit-modules` *module*`,`*module*\*</a>
 :   Limits the universe of observable modules.

@@ -156,6 +156,13 @@ void AddOption(char *str, void *info);
 jboolean IsWhiteSpaceOption(const char* name);
 jlong CurrentTimeMicros();
 
+/*
+ * javac tool launcher heuristic: may add option "-XX:TieredStopAtLevel=1"
+ * for small explicit source sets.
+ */
+void JLI_ApplyJavacTieredStopHeuristic(const char *progname,
+                                       int argc, char **argv);
+
 // Utility function defined in args.c
 int isTerminalOpt(char *arg);
 jboolean IsJavaw();

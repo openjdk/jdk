@@ -109,6 +109,7 @@ static int numOptions, maxOptions;
  * Prototypes for functions internal to launcher.
  */
 static const char* GetFullVersion();
+static const char* GetProgramName();
 static jboolean IsJavaArgs();
 static void SetJavaLauncherProp();
 static void SetClassPath(const char *s);
@@ -297,6 +298,12 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
     --argc;
 
     if (IsJavaArgs()) {
+        /*
+         * Sees only the user's arguments and runs before ParseArguments so
+         * user -J-XX:TieredStopAtLevel=... comes later and wins under HotSpot
+         * last-wins semantics.
+         */
+        JLI_ApplyJavacTieredStopHeuristic(GetProgramName(), argc, argv);
         /* Preprocess wrapper arguments */
         TranslateApplicationArgs(jargc, jargv, &argc, &argv);
         if (!AddApplicationOptions(appclassc, appclassv)) {
