@@ -28,19 +28,19 @@ import jdk.test.whitebox.WhiteBox;
 
 /*
  * @test id=generational
+ * @bug 8390310
  * @requires vm.gc.Shenandoah
  * @summary Aged regions must be promoted in place during an abbreviated cycle
  *          (one that skips the evacuation and update-refs phases).
- * @bug 8390310
  * @library /testlibrary /test/lib /
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:.
  *      -Xms512m -Xmx512m
- *      -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *      -XX:ShenandoahGenerationalMinPIPUsage=1 -XX:ShenandoahOldGarbageThreshold=100
  *      -XX:ShenandoahRegionSize=1m
  *      -XX:ShenandoahImmediateThreshold=0
  *      -XX:ShenandoahGenerationalMinTenuringAge=1
@@ -51,8 +51,11 @@ public class TestPromoteInPlaceDuringAbbreviatedCycle {
 
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
 
-    // Make a humongous array (with 1MB regions, this will be humongous with and with out compressed oops).
+    // Make a humongous array (with 1MB regions, this will be humongous with and without compressed oops).
     private static final int HUMONGOUS_REFS = 512 * 1024;
+
+    // Also make a not humongous array to test regular region promotion path
+    private static final int REGULAR_REFS = 256;
 
     // Used to create pure garbage regions to satisfy immediate garbage threshold
     private static final int GARBAGE_BYTES = 2 * 1024 * 1024;
@@ -60,16 +63,18 @@ public class TestPromoteInPlaceDuringAbbreviatedCycle {
     // Test will fail if our humongous object isn't promoted in this many cycles
     private static final int MAX_CYCLES = 5;
 
-    // Strong reference so the array under test stays live and ages in young.
+    // Keep references so the arrays under test stay live and age in young.
     private static Object[] humongous;
+    private static Object[] regular;
 
-    // Strong reference used to publish, then drop, the per-cycle garbage.
+    // Reference used to publish, then drop, the per-cycle garbage (to keep local var from being eliminated)
     private static Object garbage;
 
     public static void main(String[] args) throws Exception {
         humongous = new Object[HUMONGOUS_REFS];
+        regular = new Object[REGULAR_REFS];
 
-        if (WB.isObjectInOldGen(humongous)) {
+        if (WB.isObjectInOldGen(humongous) || WB.isObjectInOldGen(regular)) {
             throw new IllegalStateException(
                     "Precondition failed: the humongous array should start in the young generation");
         }
@@ -79,18 +84,18 @@ public class TestPromoteInPlaceDuringAbbreviatedCycle {
             garbage = new byte[GARBAGE_BYTES];
             garbage = null;
 
-            // Runs a concurrent (global) cycle and blocks until it completes.
+            // Runs a concurrent young cycle and blocks until it completes.
             WB.youngGC();
 
-            if (WB.isObjectInOldGen(humongous)) {
-                System.out.println("Humongous array promoted in place during an abbreviated cycle after "
-                        + cycle + " cycle(s)");
+            if (WB.isObjectInOldGen(humongous) && WB.isObjectInOldGen(regular)) {
+                System.out.println("Humongous array and regular object were promoted in place during"
+                                   + "an abbreviated cycle after " + cycle + " cycle(s)");
                 return;
             }
         }
 
-        throw new RuntimeException("Humongous array was never promoted in place during an abbreviated cycle after "
-                + MAX_CYCLES + " cycles; in-place promotion is not happening on the abbreviated path");
+        throw new RuntimeException("Humongous array or regular object was never promoted in place during "
+                                  + "an abbreviated cycle after " + MAX_CYCLES + " cycles; in-place promotion "
+                                  + "is not happening on the abbreviated path");
     }
 }
-
