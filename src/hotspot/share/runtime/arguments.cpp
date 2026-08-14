@@ -3442,17 +3442,6 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   return JNI_OK;
 }
 
-void Arguments::set_compact_headers_flags() {
-#ifdef _LP64
-  if (UseCompactObjectHeaders && !UseObjectMonitorTable) {
-    if (FLAG_IS_CMDLINE(UseObjectMonitorTable)) {
-      warning("-UseObjectMonitorTable is incompatible with +UseCompactObjectHeaders; ignoring -UseObjectMonitorTable");
-    }
-    FLAG_SET_DEFAULT(UseObjectMonitorTable, true);
-  }
-#endif
-}
-
 jint Arguments::apply_ergo() {
   // Set flags based on ergonomics.
   jint result = set_ergonomics_flags();
@@ -3462,8 +3451,6 @@ jint Arguments::apply_ergo() {
   GCConfig::arguments()->set_heap_size();
 
   GCConfig::arguments()->initialize();
-
-  set_compact_headers_flags();
 
   CompressedKlassPointers::pre_initialize();
 

@@ -736,6 +736,10 @@ TempNewSymbol SigEntry::create_symbol(const GrowableArray<SigEntry>* sig) {
   return SymbolTable::new_symbol(sig_str);
 }
 
+void SigEntry::metaspace_pointers_do(MetaspaceClosure* it) {
+  it->push(&_name);
+}
+
 void SigEntry::print_on(outputStream* st) const {
   st->print("SigEntry: type=%d offset=%d null_marker=%d ", _bt, _offset, _null_marker);
   if (_name != nullptr) {
