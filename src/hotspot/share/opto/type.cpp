@@ -731,6 +731,9 @@ void Type::Initialize_shared(Compile* current) {
   TypeInstKlassPtr::OBJECT = TypeInstKlassPtr::make(TypePtr::NotNull, current->env()->Object_klass(), Offset(0));
   TypeInstKlassPtr::OBJECT_OR_NULL = TypeInstKlassPtr::make(TypePtr::BotPTR, current->env()->Object_klass(), Offset(0));
 
+  TypeAryKlassPtr::OBJECT_ARRAY = TypeAryKlassPtr::make(TypePtr::NotNull, TypeInstKlassPtr::OBJECT, nullptr, Offset(0), false, false, false, false, false, false);
+  TypeAryKlassPtr::OBJECT_ARRAY_OR_NULL = TypeAryKlassPtr::make(TypePtr::BotPTR, TypeInstKlassPtr::OBJECT, nullptr, Offset(0), false, false, false, false, false, false);
+
   const Type **fi2c = TypeTuple::fields(2);
   fi2c[TypeFunc::Parms+0] = TypeInstPtr::BOTTOM; // Method*
   fi2c[TypeFunc::Parms+1] = TypeRawPtr::BOTTOM; // argument pointer
@@ -6742,6 +6745,12 @@ void TypeInstKlassPtr::dump2(Dict& d, uint depth, outputStream* st) const {
   dump_flat_in_array(_flat_in_array, st);
 }
 #endif // PRODUCT
+
+//=============================================================================
+// Convenience common pre-built types.
+
+const TypeAryKlassPtr* TypeAryKlassPtr::OBJECT_ARRAY;         // Not-null object array klass
+const TypeAryKlassPtr* TypeAryKlassPtr::OBJECT_ARRAY_OR_NULL; // Maybe-null object array klass
 
 bool TypeAryKlassPtr::can_be_inline_array() const {
   return _elem->isa_instklassptr() && _elem->is_instklassptr()->_klass->can_be_inline_klass();
