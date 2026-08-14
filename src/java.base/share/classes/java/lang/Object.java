@@ -598,12 +598,9 @@ public class Object {
      * system resources or to perform other cleanup.
      * <div class="preview-block">
      *      <div class="preview-comment">
-     *          The {@code finalize} method of a value class is never directly
-     *          invoked by the garbage collector. This includes the case where an
-     *          abstract value class declares a {@code finalize} method and the
-     *          class is extended by an identity class; the garbage collector never
-     *          directly invokes the {@code finalize} method declared by the
-     *          abstract value class.
+     *          Value classes, including abstract ones, can not declare the
+     *          {@code finalize} method. Any such class should not be accepted
+     *          by any Java compiler.
      *      </div>
      * </div>
      * <p>
