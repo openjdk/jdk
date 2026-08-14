@@ -1224,10 +1224,6 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseCompiler, true,                                          \
           "Use Just-In-Time compilation")                                   \
                                                                             \
-  product(bool, AlwaysCompileLoopMethods, false,                            \
-          "(Deprecated) When using recompilation, never interpret methods " \
-          "containing loops")                                               \
-                                                                            \
   product(int,  AllocatePrefetchStyle, 1,                                   \
           "0 = no prefetch, "                                               \
           "1 = generate prefetch instructions for each allocation, "        \
