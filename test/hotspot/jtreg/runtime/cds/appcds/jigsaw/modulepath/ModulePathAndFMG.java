@@ -76,8 +76,6 @@ public class ModulePathAndFMG {
     private static String CLASS_NOT_FOUND_MESSAGE = "java.lang.ClassNotFoundException: com.foos.Test";
     private static String FIND_EXCEPTION_MESSAGE = "java.lang.module.FindException: Module com.foos not found, required by com.bars";
     private static String MODULE_NOT_RECOGNIZED = "Module format not recognized:.*modylibs.*com.bars.JAR";
-    private static String OPTIMIZE_ENABLED = "] optimized module handling: enabled";
-    private static String OPTIMIZE_DISABLED = "] optimized module handling: disabled";
     private static String FMG_ENABLED = "] full module graph: enabled";
     private static String FMG_DISABLED = "] full module graph: disabled";
     private static String MAIN_FROM_JAR = "class,load.*com.bars.Main.*[.]jar";
@@ -166,9 +164,7 @@ public class ModulePathAndFMG {
                                  libsDir.toString(), // --module-path
                                  MAIN_MODULE)        // -m
             .assertNormalExit(out -> {
-                out.shouldNotContain(OPTIMIZE_DISABLED)
-                   .shouldContain(OPTIMIZE_ENABLED)
-                   .shouldNotContain(FMG_DISABLED)
+                out.shouldNotContain(FMG_DISABLED)
                    .shouldContain(FMG_ENABLED)
                    .shouldMatch(MAIN_FROM_CDS)       // archived Main class is for module only
                    .shouldContain(CLASS_FOUND_MESSAGE);
@@ -183,8 +179,6 @@ public class ModulePathAndFMG {
                 out.shouldContain(CLASS_FOUND_MESSAGE)
                    .shouldMatch(MAIN_FROM_JAR)
                    .shouldMatch(TEST_FROM_JAR)
-                   .shouldContain(OPTIMIZE_DISABLED)
-                   .shouldNotContain(OPTIMIZE_ENABLED)
                    .shouldContain(FMG_DISABLED)
                    .shouldNotContain(FMG_ENABLED);
             });
@@ -198,8 +192,7 @@ public class ModulePathAndFMG {
             .assertNormalExit(out -> {
                 out.shouldContain(CLASS_NOT_FOUND_MESSAGE)
                    .shouldMatch(MAIN_FROM_JAR)
-                   .shouldNotContain(FMG_ENABLED)
-                   .shouldNotContain(OPTIMIZE_ENABLED);
+                   .shouldNotContain(FMG_ENABLED);
             });
 
         final String modularJarPath = mainJar.toString() + PATH_SEPARATOR + testJar.toString();
@@ -210,9 +203,7 @@ public class ModulePathAndFMG {
                                  modularJarPath,     // --module-path
                                  MAIN_MODULE)        // -m
             .assertNormalExit(out -> {
-                out.shouldNotContain(OPTIMIZE_DISABLED)
-                   .shouldContain(OPTIMIZE_ENABLED)
-                   .shouldNotContain(FMG_DISABLED)
+                out.shouldNotContain(FMG_DISABLED)
                    .shouldContain(FMG_ENABLED)
                    .shouldMatch(MAIN_FROM_CDS);       // archived Main class is for module only
             });
@@ -232,9 +223,7 @@ public class ModulePathAndFMG {
                                  libsDir.toString(), // --module-path
                                  MAIN_MODULE)        // -m
             .assertNormalExit(out -> {
-                out.shouldContain(OPTIMIZE_DISABLED)
-                   .shouldNotContain(OPTIMIZE_ENABLED)
-                   .shouldContain(FMG_DISABLED)
+                out.shouldContain(FMG_DISABLED)
                    .shouldNotContain(FMG_ENABLED)
                    .shouldMatch(MAIN_FROM_CDS)       // archived Main class is for module only
                    .shouldContain(CLASS_FOUND_MESSAGE);
@@ -246,9 +235,7 @@ public class ModulePathAndFMG {
                                  extraModulePath,    // --module-path
                                  MAIN_MODULE)        // -m
             .assertNormalExit(out -> {
-                out.shouldContain(OPTIMIZE_ENABLED)
-                   .shouldNotContain(OPTIMIZE_DISABLED)
-                   .shouldContain(FMG_ENABLED)
+                out.shouldContain(FMG_ENABLED)
                    .shouldNotContain(FMG_DISABLED)
                    .shouldMatch(MAIN_FROM_CDS)       // archived Main class is for module only
                    .shouldContain(CLASS_FOUND_MESSAGE);
@@ -269,9 +256,7 @@ public class ModulePathAndFMG {
                                  modularJarPath,     // --module-path
                                  MAIN_MODULE)        // -m
             .assertNormalExit(out -> {
-                out.shouldContain(OPTIMIZE_DISABLED)
-                   .shouldNotContain(OPTIMIZE_ENABLED)
-                   .shouldContain(FMG_DISABLED)
+                out.shouldContain(FMG_DISABLED)
                    .shouldNotContain(FMG_ENABLED)
                    .shouldMatch(MAIN_FROM_CDS)       // archived Main class is for module only
                    .shouldContain(CLASS_FOUND_MESSAGE);
@@ -283,9 +268,7 @@ public class ModulePathAndFMG {
                                  extraJarPath,       // --module-path
                                  MAIN_MODULE)        // -m
             .assertNormalExit(out -> {
-                out.shouldContain(OPTIMIZE_ENABLED)
-                   .shouldNotContain(OPTIMIZE_DISABLED)
-                   .shouldContain(FMG_ENABLED)
+                out.shouldContain(FMG_ENABLED)
                    .shouldNotContain(FMG_DISABLED)
                    .shouldMatch(MAIN_FROM_CDS)       // archived Main class is for module only
                    .shouldContain(CLASS_FOUND_MESSAGE);
@@ -296,9 +279,7 @@ public class ModulePathAndFMG {
                                  extraModulePath,    // --module-path
                                  MAIN_MODULE)        // -m
             .assertNormalExit(out -> {
-                out.shouldContain(OPTIMIZE_ENABLED)
-                   .shouldNotContain(OPTIMIZE_DISABLED)
-                   .shouldContain(FMG_ENABLED)
+                out.shouldContain(FMG_ENABLED)
                    .shouldNotContain(FMG_DISABLED)
                    .shouldMatch(MAIN_FROM_CDS)       // archived Main class is for module only
                    .shouldContain(CLASS_FOUND_MESSAGE);
@@ -346,9 +327,7 @@ public class ModulePathAndFMG {
                                  runModulePath, // --module-path
                                  MAIN_MODULE)        // -m
             .assertAbnormalExit(out -> {
-                out.shouldContain(OPTIMIZE_DISABLED)
-                   .shouldNotContain(OPTIMIZE_ENABLED)
-                   .shouldContain(FMG_DISABLED)
+                out.shouldContain(FMG_DISABLED)
                    .shouldNotContain(FMG_ENABLED)
                    .shouldContain(FIND_EXCEPTION_MESSAGE);
             });
@@ -360,9 +339,7 @@ public class ModulePathAndFMG {
                                  runModulePath, // --module-path
                                  MAIN_MODULE)        // -m
             .assertNormalExit(out -> {
-                out.shouldNotContain(OPTIMIZE_DISABLED)
-                   .shouldContain(OPTIMIZE_ENABLED)
-                   .shouldNotContain(FMG_DISABLED)
+                out.shouldNotContain(FMG_DISABLED)
                    .shouldContain(FMG_ENABLED)
                    .shouldMatch(TEST_FROM_CDS)
                    .shouldMatch(MAIN_FROM_CDS)
@@ -376,9 +353,7 @@ public class ModulePathAndFMG {
                                  runModulePath, // --module-path
                                  TEST_MODULE)        // -m
             .assertAbnormalExit(out -> {
-                out.shouldContain(OPTIMIZE_DISABLED)
-                   .shouldNotContain(OPTIMIZE_ENABLED)
-                   .shouldContain(FMG_DISABLED)
+                out.shouldContain(FMG_DISABLED)
                    .shouldNotContain(FMG_ENABLED)
                    .shouldMatch(MODULE_NOT_RECOGNIZED);
             });

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,10 @@
  * @bug     4809442 6366832 4974878 6372554 4890211 6483125
  * @summary Basic test for Collections.reverseOrder
  * @author  Josh Bloch, Martin Buchholz
+ * @library /test/lib
  */
 
+import jdk.test.lib.valueclass.VClass;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -35,6 +37,7 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedList;
@@ -66,6 +69,12 @@ public class ReverseOrder2 {
         test(new LinkedList<String>());
         test2(new ArrayList<Integer>());
         test2(new LinkedList<Integer>());
+
+        List<VClass> values = new ArrayList<>(Arrays.asList(new VClass(0, new int[] { 0 }), new VClass(1, new int[] { 1 }), new VClass(2, new int[] { 2 })));
+        Collections.shuffle(values);
+        Collections.sort(values, Collections.reverseOrder());
+        if (!values.equals(Arrays.asList(new VClass(2, new int[] { 2 }), new VClass(1, new int[] { 1 }), new VClass(0, new int[] { 0 }))))
+            throw new RuntimeException("value reverseOrder2 failed");
     }
 
     static void test(List<String> list) {

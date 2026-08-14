@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ inline void G1HeapRegionSetBase::add(G1HeapRegion* hr) {
   assert_heap_region_set(hr->next() == nullptr, "should not already be linked");
   assert_heap_region_set(hr->prev() == nullptr, "should not already be linked");
 
-  _length++;
+  _num_regions++;
   hr->set_containing_set(this);
   verify_region(hr);
 }
@@ -47,13 +47,13 @@ inline void G1HeapRegionSetBase::remove(G1HeapRegion* hr) {
   assert_heap_region_set(hr->prev() == nullptr, "should already be unlinked");
 
   hr->set_containing_set(nullptr);
-  assert_heap_region_set(_length > 0, "pre-condition");
-  _length--;
+  assert_heap_region_set(_num_regions > 0, "pre-condition");
+  _num_regions--;
 }
 
 inline void G1FreeRegionList::add_to_tail(G1HeapRegion* region_to_add) {
-  assert_free_region_list((length() == 0 && _head == nullptr && _tail == nullptr && _last == nullptr) ||
-                          (length() >  0 && _head != nullptr && _tail != nullptr && _tail->hrm_index() < region_to_add->hrm_index()),
+  assert_free_region_list((num_regions() == 0 && _head == nullptr && _tail == nullptr && _last == nullptr) ||
+                          (num_regions() >  0 && _head != nullptr && _tail != nullptr && _tail->hrm_index() < region_to_add->hrm_index()),
                           "invariant");
   // add() will verify the region and check mt safety.
   add(region_to_add);
@@ -72,8 +72,8 @@ inline void G1FreeRegionList::add_to_tail(G1HeapRegion* region_to_add) {
 }
 
 inline void G1FreeRegionList::add_ordered(G1HeapRegion* hr) {
-  assert_free_region_list((length() == 0 && _head == nullptr && _tail == nullptr && _last == nullptr) ||
-                          (length() >  0 && _head != nullptr && _tail != nullptr),
+  assert_free_region_list((num_regions() == 0 && _head == nullptr && _tail == nullptr && _last == nullptr) ||
+                          (num_regions() >  0 && _head != nullptr && _tail != nullptr),
                           "invariant");
   // add() will verify the region and check mt safety.
   add(hr);
@@ -152,7 +152,7 @@ inline G1HeapRegion* G1FreeRegionList::remove_region(bool from_head) {
   if (is_empty()) {
     return nullptr;
   }
-  assert_free_region_list(length() > 0 && _head != nullptr && _tail != nullptr, "invariant");
+  assert_free_region_list(num_regions() > 0 && _head != nullptr && _tail != nullptr, "invariant");
 
   G1HeapRegion* hr;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/inlineKlass.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -36,6 +37,7 @@
 #include "oops/typeArrayKlass.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
@@ -499,6 +501,21 @@ Symbol* SignatureStream::find_symbol() {
   return name;
 }
 
+InlineKlass* SignatureStream::as_inline_klass(InstanceKlass* holder) {
+  assert(InlineTypePassFieldsAsArgs || InlineTypeReturnedAsFields, "Not needed");
+  ThreadInVMfromUnknown tiv;
+  JavaThread* THREAD = JavaThread::current();
+  HandleMark hm(THREAD);
+  Handle class_loader(THREAD, holder->class_loader());
+  Klass* k = as_klass(class_loader, SignatureStream::CachedOrNull, THREAD);
+  assert(!HAS_PENDING_EXCEPTION, "Should never throw");
+  if (k != nullptr && k->is_inline_klass()) {
+    return InlineKlass::cast(k);
+  } else {
+    return nullptr;
+  }
+}
+
 Klass* SignatureStream::as_klass(Handle class_loader, FailureMode failure_mode, TRAPS) {
   if (!is_reference()) {
     return nullptr;
@@ -592,7 +609,7 @@ bool signature_constants_sane() {
   return true;
 }
 
-bool SignatureVerifier::is_valid_method_signature(Symbol* sig) {
+bool SignatureVerifier::is_valid_method_signature(const Symbol* sig) {
   const char* method_sig = (const char*)sig->bytes();
   ssize_t len = sig->utf8_length();
   ssize_t index = 0;
@@ -615,7 +632,7 @@ bool SignatureVerifier::is_valid_method_signature(Symbol* sig) {
   return false;
 }
 
-bool SignatureVerifier::is_valid_type_signature(Symbol* sig) {
+bool SignatureVerifier::is_valid_type_signature(const Symbol* sig) {
   const char* type_sig = (const char*)sig->bytes();
   ssize_t len = sig->utf8_length();
   return (type_sig != nullptr && len >= 1 &&
@@ -662,3 +679,72 @@ ssize_t SignatureVerifier::is_valid_type(const char* type, ssize_t limit) {
 }
 
 #endif // ASSERT
+
+// Adds an argument to the signature
+void SigEntry::add_entry(GrowableArray<SigEntry>* sig, BasicType bt, Symbol* name, int offset, bool null_marker, bool vt_oop) {
+  sig->append(SigEntry(bt, offset, name, null_marker, vt_oop));
+  if (bt == T_LONG || bt == T_DOUBLE) {
+    sig->append(SigEntry(T_VOID, offset, name, false, false)); // Longs and doubles take two stack slots
+  }
+}
+void SigEntry::add_null_marker(GrowableArray<SigEntry>* sig, Symbol* name, int offset) {
+  sig->append(SigEntry(T_BOOLEAN, offset, name, true, false));
+}
+
+// Returns true if the argument at index 'i' is not an inline type delimiter
+bool SigEntry::skip_value_delimiters(const GrowableArray<SigEntry>* sig, int i) {
+  return (sig->at(i)._bt != T_METADATA &&
+          (sig->at(i)._bt != T_VOID || sig->at(i-1)._bt == T_LONG || sig->at(i-1)._bt == T_DOUBLE));
+}
+
+// Fill basic type array from signature array
+int SigEntry::fill_sig_bt(const GrowableArray<SigEntry>* sig, BasicType* sig_bt) {
+  int count = 0;
+  for (int i = 0; i < sig->length(); i++) {
+    if (skip_value_delimiters(sig, i)) {
+      sig_bt[count++] = sig->at(i)._bt;
+    }
+  }
+  return count;
+}
+
+// Create a temporary symbol from the signature array
+TempNewSymbol SigEntry::create_symbol(const GrowableArray<SigEntry>* sig) {
+  ResourceMark rm;
+  int length = sig->length();
+  char* sig_str = NEW_RESOURCE_ARRAY(char, 2*length + 3);
+  int idx = 0;
+  sig_str[idx++] = '(';
+  for (int i = 0; i < length; i++) {
+    BasicType bt = sig->at(i)._bt;
+    if (bt == T_METADATA || bt == T_VOID) {
+      // Ignore
+    } else {
+      if (bt == T_ARRAY) {
+        bt = T_OBJECT; // We don't know the element type, treat as Object
+      }
+      sig_str[idx++] = type2char(bt);
+      if (bt == T_OBJECT) {
+        sig_str[idx++] = ';';
+      }
+    }
+  }
+  sig_str[idx++] = ')';
+  // Add a dummy return type. It won't be used but SignatureStream needs it.
+  sig_str[idx++] = 'V';
+  sig_str[idx++] = '\0';
+  return SymbolTable::new_symbol(sig_str);
+}
+
+void SigEntry::metaspace_pointers_do(MetaspaceClosure* it) {
+  it->push(&_name);
+}
+
+void SigEntry::print_on(outputStream* st) const {
+  st->print("SigEntry: type=%d offset=%d null_marker=%d ", _bt, _offset, _null_marker);
+  if (_name != nullptr) {
+    _name->print_on(st);
+  } else {
+    st->print("name=nullptr");
+  }
+}

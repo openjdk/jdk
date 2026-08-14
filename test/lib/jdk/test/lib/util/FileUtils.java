@@ -392,7 +392,11 @@ public final class FileUtils {
             stream.forEach(sourcePath -> {
                 try {
                     Path destPath = dst.resolve(src.relativize(sourcePath));
-                    Files.copy(sourcePath, destPath, StandardCopyOption.REPLACE_EXISTING);
+                    if (Files.isDirectory(sourcePath, LinkOption.NOFOLLOW_LINKS)) {
+                        Files.createDirectories(destPath);
+                    } else {
+                        Files.copy(sourcePath, destPath, StandardCopyOption.REPLACE_EXISTING);
+                    }
                     destPath.toFile().setWritable(true);
                 } catch (IOException e) {
                     throw new RuntimeException(e);

@@ -29,6 +29,7 @@
 #include "memory/resourceArea.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
+#include "runtime/jfieldIDWorkaround.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/safepoint.hpp"
 
@@ -80,7 +81,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   }
 
   __ mov   (roffset, c_rarg2);
-  __ shrptr(roffset, 2);                         // offset
+  __ shrptr(roffset, jfieldIDWorkaround::offset_shift);                         // offset
 
   // Both robj and rtmp are clobbered by try_resolve_jobject_in_native.
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
@@ -182,7 +183,7 @@ address JNI_FastGetField::generate_fast_get_float_field0(BasicType type) {
   DEBUG_ONLY(__ movl(rtmp, 0xDEADC0DE);)
 
   __ mov   (roffset, c_rarg2);
-  __ shrptr(roffset, 2);                         // offset
+  __ shrptr(roffset, jfieldIDWorkaround::offset_shift);                         // offset
 
   assert(count < LIST_CAPACITY, "LIST_CAPACITY too small");
   speculative_load_pclist[count] = __ pc();

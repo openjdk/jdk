@@ -32,26 +32,14 @@ import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 
 import java.util.function.ToIntBiFunction;
-import java.util.function.ToIntFunction;
 
 import static com.sun.tools.javac.code.TypeTag.ARRAY;
 import static com.sun.tools.javac.code.TypeTag.BOT;
 import static com.sun.tools.javac.code.TypeTag.DOUBLE;
 import static com.sun.tools.javac.code.TypeTag.INT;
 import static com.sun.tools.javac.code.TypeTag.LONG;
-import static com.sun.tools.javac.code.TypeTag.TYPEVAR;
+import static com.sun.tools.javac.code.TypeTag.UNINITIALIZED_THIS;
 import static com.sun.tools.javac.jvm.ByteCodes.*;
-import static com.sun.tools.javac.jvm.ClassFile.CONSTANT_Class;
-import static com.sun.tools.javac.jvm.ClassFile.CONSTANT_Double;
-import static com.sun.tools.javac.jvm.ClassFile.CONSTANT_Fieldref;
-import static com.sun.tools.javac.jvm.ClassFile.CONSTANT_Float;
-import static com.sun.tools.javac.jvm.ClassFile.CONSTANT_Integer;
-import static com.sun.tools.javac.jvm.ClassFile.CONSTANT_InterfaceMethodref;
-import static com.sun.tools.javac.jvm.ClassFile.CONSTANT_Long;
-import static com.sun.tools.javac.jvm.ClassFile.CONSTANT_MethodHandle;
-import static com.sun.tools.javac.jvm.ClassFile.CONSTANT_MethodType;
-import static com.sun.tools.javac.jvm.ClassFile.CONSTANT_Methodref;
-import static com.sun.tools.javac.jvm.ClassFile.CONSTANT_String;
 import static com.sun.tools.javac.jvm.UninitializedType.*;
 import static com.sun.tools.javac.jvm.ClassWriter.StackMapTableFrame;
 import java.util.Arrays;
@@ -199,6 +187,12 @@ public class Code {
 
     private int letExprStackPos = 0;
 
+    /** The initial unset strict fields in this method frame
+     */
+    public List<VarSymbol> initialUnsetFields = List.nil();
+
+    boolean generateEarlyLarvalFrame;
+
     /** Construct a code object, given the settings of the fatcode,
      *  debugging info switches and the CharacterRangeTable.
      */
@@ -211,7 +205,8 @@ public class Code {
                 CRTable crt,
                 Symtab syms,
                 Types types,
-                PoolWriter poolWriter) {
+                PoolWriter poolWriter,
+                boolean generateEarlyLarvalFrame) {
         this.meth = meth;
         this.fatcode = fatcode;
         this.lineMap = lineMap;
@@ -233,6 +228,17 @@ public class Code {
         }
         state = new State();
         lvar = new LocalVar[20];
+        this.generateEarlyLarvalFrame = generateEarlyLarvalFrame;
+    }
+
+    void initUnsetStrictFields(ClassSymbol csym) {
+        int strictFieldOffset = 0;
+        for (Symbol s : csym.members().getSymbols(Symbol::isStrictInstance)) {
+            VarSymbol strictField = (VarSymbol)s;
+            strictField.adr = strictFieldOffset++;
+            initialUnsetFields = initialUnsetFields.prepend(strictField); // lookup returns symbols in reversed order
+            state.unsetStrict.incl(strictField.adr);
+        }
     }
 
 
@@ -1056,7 +1062,13 @@ public class Code {
             markDead();
             break;
         case putfield:
-            state.pop(((Symbol)data).erasure(types));
+            VarSymbol field = (VarSymbol)data;
+            state.pop(field.erasure(types));
+            if (field.isStrictInstance() &&
+                    field.owner == meth.owner &&
+                    state.peek().hasTag(UNINITIALIZED_THIS)) {
+                state.unsetStrict.excl(field.adr);
+            }
             state.pop(1); // object ref
             break;
         case getfield:
@@ -1083,7 +1095,6 @@ public class Code {
         }
         // postop();
     }
-
     /** Emit an opcode with a four-byte operand field.
      */
     public void emitop4(int op, int od) {
@@ -1230,6 +1241,7 @@ public class Code {
         int pc;
         Type[] locals;
         Type[] stack;
+        List<VarSymbol> unsetFields;
     }
 
     /** A buffer of cldc stack map entries. */
@@ -1325,13 +1337,17 @@ public class Code {
         StackMapFrame frame = new StackMapFrame();
         frame.pc = pc;
 
+        boolean hasUninitializedThis = false;
         int localCount = 0;
         Type[] locals = new Type[localsSize];
         for (int i=0; i<localsSize; i++, localCount++) {
             if (state.defined.isMember(i) && lvar[i] != null) {
                 Type vtype = lvar[i].sym.type;
-                if (!(vtype instanceof UninitializedType))
+                if (!(vtype instanceof UninitializedType)) {
                     vtype = types.erasure(vtype);
+                } else if (vtype.hasTag(TypeTag.UNINITIALIZED_THIS)) {
+                    hasUninitializedThis = true;
+                }
                 locals[i] = vtype;
                 if (width(vtype) > 1) i++;
             }
@@ -1357,6 +1373,10 @@ public class Code {
             }
         }
 
+        List<VarSymbol> unsetStrictFields = collectUnsetStrictFields();
+        boolean encloseWithEarlyLarvalFrame = generateEarlyLarvalFrame && hasUninitializedThis
+                && !lastFrame.unsetFields.equals(unsetStrictFields);
+
         if (stackMapTableBuffer == null) {
             stackMapTableBuffer = new StackMapTableFrame[20];
         } else {
@@ -1364,11 +1384,24 @@ public class Code {
                                     stackMapTableBuffer,
                                     stackMapBufferSize);
         }
-        stackMapTableBuffer[stackMapBufferSize++] =
-                StackMapTableFrame.getInstance(frame, lastFrame.pc, lastFrame.locals, types);
+
+        StackMapTableFrame tableFrame = StackMapTableFrame.getInstance(frame, lastFrame, types, pc);
+        if (encloseWithEarlyLarvalFrame) {
+            tableFrame = new StackMapTableFrame.EarlyLarvalFrame(tableFrame, unsetStrictFields);
+            frame.unsetFields = unsetStrictFields;
+        } else {
+            frame.unsetFields = lastFrame.unsetFields;
+        }
+        stackMapTableBuffer[stackMapBufferSize++] = tableFrame;
 
         frameBeforeLast = lastFrame;
         lastFrame = frame;
+    }
+
+    List<VarSymbol> collectUnsetStrictFields() {
+        return initialUnsetFields.stream()
+                .filter(s -> state.unsetStrict.isMember(s.adr))
+                .collect(List.collector());
     }
 
     StackMapFrame getInitialFrame() {
@@ -1392,6 +1425,7 @@ public class Code {
         }
         frame.pc = -1;
         frame.stack = null;
+        frame.unsetFields = initialUnsetFields;
         return frame;
     }
 
@@ -1481,6 +1515,7 @@ public class Code {
     public void resolve(Chain chain, int target) {
         boolean changed = false;
         State newState = state;
+        int originalTarget = target;
         for (; chain != null; chain = chain.next) {
             Assert.check(state != chain.state
                     && (target > chain.pc || isStatementStart()));
@@ -1507,13 +1542,15 @@ public class Code {
                     break;
                 }
             } else {
-                if (fatcode)
+                if (fatcode) {
                     put4(chain.pc + 1, target - chain.pc);
+                }
                 else if (target - chain.pc < Short.MIN_VALUE ||
                          target - chain.pc > Short.MAX_VALUE)
                     fatcode = true;
-                else
+                else {
                     put2(chain.pc + 1, target - chain.pc);
+                }
                 Assert.check(!alive ||
                     chain.state.stacksize == newState.stacksize &&
                     chain.state.nlocks == newState.nlocks);
@@ -1657,6 +1694,9 @@ public class Code {
         /** The set of registers containing values. */
         Bits defined;
 
+        /** The unset strict fields. */
+        Bits unsetStrict;
+
         /** The (types of the) contents of the machine stack. */
         Type[] stack;
 
@@ -1669,6 +1709,7 @@ public class Code {
 
         State() {
             defined = new Bits();
+            unsetStrict = new Bits();
             stack = new Type[16];
         }
 
@@ -1676,6 +1717,7 @@ public class Code {
             try {
                 State state = (State)super.clone();
                 state.defined = new Bits(defined);
+                state.unsetStrict = new Bits(unsetStrict);
                 state.stack = stack.clone();
                 if (locks != null) state.locks = locks.clone();
                 if (debugCode) {
@@ -1804,6 +1846,7 @@ public class Code {
 
         State join(State other) {
             defined.andSet(other.defined);
+            unsetStrict.orSet(other.unsetStrict);
             Assert.check(stacksize == other.stacksize
                     && nlocks == other.nlocks);
             for (int i=0; i<stacksize; ) {

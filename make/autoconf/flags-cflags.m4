@@ -945,11 +945,21 @@ AC_DEFUN_ONCE([FLAGS_SETUP_BRANCH_PROTECTION],
 [
   # Is branch protection available?
   BRANCH_PROTECTION_AVAILABLE=false
-  BRANCH_PROTECTION_FLAG="-mbranch-protection=standard"
+  BRANCH_PROTECTION_CFLAG=""
+  BRANCH_PROTECTION_ASFLAG=""
 
   if test "x$OPENJDK_TARGET_CPU" = xaarch64; then
     if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
-      FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$BRANCH_PROTECTION_FLAG],
+      BRANCH_PROTECTION_CFLAG="-mbranch-protection=standard"
+      # The GCC/Clang assembler accepts the same flag as the compiler.
+      BRANCH_PROTECTION_ASFLAG="$BRANCH_PROTECTION_CFLAG"
+      FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$BRANCH_PROTECTION_CFLAG],
+          IF_TRUE: [BRANCH_PROTECTION_AVAILABLE=true])
+    elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+      BRANCH_PROTECTION_CFLAG="/guard:signret"
+      # MSVC's assembler does not support branch protection flags, so
+      # BRANCH_PROTECTION_ASFLAG is intentionally left empty.
+      FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$BRANCH_PROTECTION_CFLAG],
           IF_TRUE: [BRANCH_PROTECTION_AVAILABLE=true])
     fi
   fi
@@ -957,5 +967,5 @@ AC_DEFUN_ONCE([FLAGS_SETUP_BRANCH_PROTECTION],
   UTIL_ARG_ENABLE(NAME: branch-protection, DEFAULT: false,
       RESULT: BRANCH_PROTECTION_ENABLED, AVAILABLE: $BRANCH_PROTECTION_AVAILABLE,
       DESC: [enable branch protection when compiling C/C++],
-      IF_ENABLED: [BRANCH_PROTECTION_CFLAGS=$BRANCH_PROTECTION_FLAG])
+      IF_ENABLED: [BRANCH_PROTECTION_CFLAGS=$BRANCH_PROTECTION_CFLAG])
 ])

@@ -381,11 +381,13 @@
           "Threshold for the number of cards when reporting remembered set "\
           "card cost related prediction samples. A sample must involve "    \
           "the same or more than that number of cards to be used.")         \
+          range(1, UINT_MAX)                                                \
                                                                             \
   product(uint, G1NumCodeRootsCostSampleThreshold, 100, DIAGNOSTIC,         \
           "Threshold for the number of code roots when reporting code root "\
           "scan cost related prediction samples. A sample must involve "    \
           "the same or more than this number of code roots to be used.")    \
+          range(1, UINT_MAX)                                                \
                                                                             \
   develop(bool, G1ForceOptionalEvacuation, false,                           \
           "Force optional evacuation for all GCs where there are old gen "  \

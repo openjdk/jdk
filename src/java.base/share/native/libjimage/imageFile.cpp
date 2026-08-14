@@ -43,12 +43,6 @@
 // Map the full jimage, only with 64 bit addressing.
 bool ImageFileReader::memory_map_image = sizeof(void *) == 8;
 
-#ifdef WIN32
-const char FileSeparator = '\\';
-#else
-const char FileSeparator = '/';
-#endif
-
 // Image files are an alternate file format for storing classes and resources. The
 // goal is to supply file access which is faster and smaller than the jar format.
 //
@@ -428,7 +422,7 @@ void ImageFileReader::get_resource(ImageLocation& location, u1* uncompressed_dat
             compressed_data = new u1[(size_t)compressed_size];
             assert(compressed_data != NULL && "allocation failed");
             // Read bytes from offset beyond the image index.
-            bool is_read = read_at(compressed_data, compressed_size, _index_size + offset);
+            [[maybe_unused]] bool is_read = read_at(compressed_data, compressed_size, _index_size + offset);
             assert(is_read && "error reading from image or short read");
         } else {
             compressed_data = get_data_address() + offset;
@@ -444,7 +438,7 @@ void ImageFileReader::get_resource(ImageLocation& location, u1* uncompressed_dat
         }
     } else {
         // Read bytes from offset beyond the image index.
-        bool is_read = read_at(uncompressed_data, uncompressed_size, _index_size + offset);
+        [[maybe_unused]] bool is_read = read_at(uncompressed_data, uncompressed_size, _index_size + offset);
         assert(is_read && "error reading from image or short read");
     }
 }

@@ -336,8 +336,8 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
   // survivor regions from the previous pause:
   //   [Eden regions ++ Survivors from last pause].
 
-  uint num_eden_regions = _g1h->eden_regions_count();
-  uint num_survivor_regions = survivors->length();
+  uint num_eden_regions = _g1h->num_eden_regions();
+  uint num_survivor_regions = survivors->num_regions();
   prepare_for_collection(num_eden_regions, num_survivor_regions);
 
   verify_young_cset_indices();

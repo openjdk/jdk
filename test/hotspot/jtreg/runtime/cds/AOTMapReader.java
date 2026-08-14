@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,6 +195,17 @@ public class AOTMapReader {
     //  - final 'key' 'Ljava/lang/Object;' @16 0x00000007ffc68260 (0xfff8d04c) java.lang.String
     static Pattern oopFieldPattern2 = Pattern.compile(" - [^']* '([^']+)'.*@([0-9]+) 0x([0-9a-f]+) [(]0x([0-9a-f]+)[)] (.*)");
 
+    // - Flat inline type element 'java/lang/Integer': - Index   1 offset  24:
+    // or
+    // - Flat inline type field 'java/lang/Integer':
+    static Pattern flatFieldPattern = Pattern.compile(" - Flat inline type field '([^']+)':\\s*(null)?\\s*$");
+    static Pattern flatElementPattern = Pattern.compile(" - Flat inline type element '([^']+)':\\s*- Index\\s+(\\d+)\\s+offset\\s+(\\d+):\\s*(null)?\\s*$");
+
+    static Pattern flatNullFreeFieldPattern = Pattern.compile(" - Flat inline null-free type field '([^']+)':\\s*$");
+    static Pattern flatNullFreeElementPattern = Pattern.compile(" - Flat inline null-free type element '([^']+)':\\s*- Index\\s+(\\d+)\\s+offset\\s+(\\d+):\\s*$");
+
+    static Pattern nullMarkerPattern = Pattern.compile(" - \\[null_marker\\] @[0-9]+ Field marked as (.*)");
+
     // (injected module_entry)
     //  - injected 'module_entry' 'J' @16 0 (0x0000000000000000)
     static Pattern moduleEntryPattern = Pattern.compile("- injected 'module_entry' 'J' @[0-9]+[ ]+([0-9]+)");
@@ -222,6 +233,56 @@ public class AOTMapReader {
         mapFile.add(heapObject);
     }
 
+    private static void parseFlatNullFree(Matcher m) throws IOException {
+        if (line == null || !line.matches("^\s*-.*")) {
+            throw new RuntimeException("Malformed logging of flat field: " + line);
+        } else if ((m = match(line, flatFieldPattern)) != null) {
+            parseFlatField(m);
+        } else if ((m = match(line, flatElementPattern)) != null) {
+            parseFlatElement(m);
+        } else {
+            // Nested field
+        }
+    }
+
+    private static void parseFlatFieldOrElementHelper(Matcher m, String value) throws IOException {
+        nextLine();
+        while (line == null || (m = match(line, nullMarkerPattern)) == null) {
+            parseFlatNullFree(m);
+            nextLine();
+        }
+
+        String nullMarker = m.group(1);
+        if (nullMarker == null) {
+            throw new RuntimeException("missing null_marker: " + line);
+        } else {
+            nullMarker = nullMarker.replace(" ", "");
+            if (value.equals("null") != nullMarker.equals("null")) {
+                throw new RuntimeException("Incorrect null_marker value: " + value + " vs " + nullMarker);
+            }
+        }
+    }
+
+    private static void parseFlatElement(Matcher m) throws IOException {
+        String value = m.group(4);
+        if (value != null) {
+            value = value.replace(" ", ""); // Remove spaces
+        } else {
+            value = "";
+        }
+        parseFlatFieldOrElementHelper(m, value);
+    }
+
+    private static void parseFlatField(Matcher m) throws IOException {
+        String value = m.group(2);
+        if (value != null) {
+            value = value.replace(" ", ""); // Remove spaces
+        } else {
+            value = "";
+        }
+        parseFlatFieldOrElementHelper(m, value);
+    }
+
     private static HeapObject parseHeapObjectImpl(String className, String oop, String narrowOop) throws IOException {
         HeapObject heapObject = new HeapObject(className, oop, narrowOop);
         Matcher m;
@@ -243,7 +304,7 @@ public class AOTMapReader {
             }
             while (true) {
                 nextLine();
-                if (line == null || !line.startsWith(" - ")) {
+                if (line == null || !line.matches("^\s*-.*")) {
                     return heapObject;
                 }
                 if (!line.contains("marked metadata pointer")) {
@@ -251,6 +312,13 @@ public class AOTMapReader {
                         heapObject.addOopField(m.group(1), m.group(2), m.group(3), m.group(4));
                     } else if ((m = match(line, oopFieldPattern1)) != null) {
                         heapObject.addOopField(m.group(1), m.group(2), m.group(3), null);
+                    } else if ((m = match(line, flatFieldPattern)) != null) {
+                        parseFlatField(m);
+                    } else if ((m = match(line, flatElementPattern)) != null) {
+                        parseFlatElement(m);
+                    } else if ((m = match(line, flatNullFreeFieldPattern)) != null ||
+                               (m = match(line, flatNullFreeElementPattern)) != null) {
+                        parseFlatNullFree(m);
                     } else if ((m = match(line, moduleEntryPattern)) != null) {
                         String value = m.group(1);
                         if (!value.equals("0")) {
@@ -273,8 +341,14 @@ public class AOTMapReader {
             // TODO: read all the array elements
             while (true) {
                 nextLine();
-                if (line == null || !line.startsWith(" - ")) {
+                if (line == null || !line.matches("^\s*-.*")) { // Check for "-" with leading spaces
                     return heapObject;
+                }
+
+                if ((m = match(line, flatElementPattern)) != null) {
+                    parseFlatElement(m);
+                } else if ((m = match(line, flatNullFreeElementPattern)) != null) {
+                    parseFlatNullFree(m);
                 }
             }
         } else {

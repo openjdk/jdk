@@ -49,6 +49,8 @@
                                   const int STUB_THRESHOLD, Label *STUB, Label *DONE);
 
  public:
+  void entry_barrier();
+
   // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
   void fast_lock(Register object, Register box,
                  Register tmp1, Register tmp2, Register tmp3, Register tmp4);
@@ -298,6 +300,9 @@
 
   void extract_v(Register dst, VectorRegister src,
                  BasicType bt, int idx, VectorRegister vtmp);
+
+  void extract_v(Register dst, VectorRegister src,
+                 BasicType bt, Register idx, VectorRegister vtmp);
 
   void extract_fp_v(FloatRegister dst, VectorRegister src,
                     BasicType bt, int idx, VectorRegister vtmp);

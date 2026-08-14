@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,12 +55,7 @@ public class ObjectSynchronizer {
       // FIXME: can not generate marks in debugging system
       return mark.hash();
     } else if (mark.hasMonitor()) {
-      if (VM.getVM().getCommandLineFlag("UseObjectMonitorTable").getBool()) {
-        return mark.hash();
-      }
-      ObjectMonitor monitor = mark.monitor();
-      Mark temp = monitor.header();
-      return temp.hash();
+      return mark.hash();
     } else {
       if (Assert.ASSERTS_ENABLED) {
         Assert.that(VM.getVM().isDebugging(), "Can not access displaced header otherwise");

@@ -31,7 +31,9 @@
 #include "compiler/compiler_globals.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerDirectives.hpp"
+#include "compiler/stress.hpp"
 #include "runtime/deoptimization.hpp"
+#include "runtime/sharedRuntime.hpp"
 
 class CompilationFailureInfo;
 class CompilationResourceObj;
@@ -69,6 +71,7 @@ class Compilation: public StackObj {
   DirectiveSet*      _directive;
   ciEnv*             _env;
   CompileLog*        _log;
+  Stress             _stress;
   ciMethod*          _method;
   int                _osr_bci;
   IR*                _hir;
@@ -137,6 +140,7 @@ class Compilation: public StackObj {
   DirectiveSet* directive() const                { return _directive; }
   CompileLog* log() const                        { return _log; }
   AbstractCompiler* compiler() const             { return _compiler; }
+  Stress& stress()                               { return _stress; }
   bool has_exception_handlers() const            { return _has_exception_handlers; }
   bool has_fpu_code() const                      { return _has_fpu_code; }
   bool has_unsafe_access() const                 { return _has_unsafe_access; }
@@ -251,6 +255,10 @@ class Compilation: public StackObj {
   bool profile_return() {
     return env()->comp_level() == CompLevel_full_profile &&
       C1UpdateMethodData && MethodData::profile_return();
+  }
+  bool profile_array_accesses() {
+    return env()->comp_level() == CompLevel_full_profile &&
+      C1UpdateMethodData;
   }
 
   // will compilation make optimistic assumptions that might lead to

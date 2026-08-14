@@ -75,6 +75,9 @@ class WindowsConstants {
     public static final int IO_REPARSE_TAG_AF_UNIX              = 0x80000023;
     public static final int IO_REPARSE_TAG_MOUNT_POINT          = 0xA0000003;
     public static final int IO_REPARSE_TAG_SYMLINK              = 0xA000000C;
+    public static final int IO_REPARSE_TAG_DEDUP                = 0x80000013;
+    public static final int IO_REPARSE_TAG_CLOUD                = 0x9000001A;
+    public static final int IO_REPARSE_TAG_CLOUD_MASK           = 0x0000F000;
     public static final int MAXIMUM_REPARSE_DATA_BUFFER_SIZE    = 16 * 1024;
     public static final int SYMBOLIC_LINK_FLAG_DIRECTORY        = 0x1;
     public static final int SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE = 0x2;
@@ -96,6 +99,7 @@ class WindowsConstants {
     public static final int ERROR_NOT_SAME_DEVICE       = 17;
     public static final int ERROR_NOT_READY             = 21;
     public static final int ERROR_SHARING_VIOLATION     = 32;
+    public static final int ERROR_NOT_SUPPORTED         = 50;
     public static final int ERROR_NETWORK_ACCESS_DENIED = 65;
     public static final int ERROR_FILE_EXISTS           = 80;
     public static final int ERROR_INVALID_PARAMETER     = 87;

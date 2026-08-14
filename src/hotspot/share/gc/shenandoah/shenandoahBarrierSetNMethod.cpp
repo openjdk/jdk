@@ -61,7 +61,7 @@ bool ShenandoahBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
 
     // We can end up calling nmethods that are unloading
     // since we clear compiled ICs lazily. Returning false
-    // will re-resovle the call and update the compiled IC.
+    // will re-resolve the call and update the compiled IC.
     return false;
   }
 

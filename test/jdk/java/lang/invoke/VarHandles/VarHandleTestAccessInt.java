@@ -21,6 +21,8 @@
  * questions.
  */
 
+// -- This file was mechanically generated: Do not edit! -- //
+
 /*
  * @test
  * @run junit/othervm -Diters=10   -Xint                                                   VarHandleTestAccessInt

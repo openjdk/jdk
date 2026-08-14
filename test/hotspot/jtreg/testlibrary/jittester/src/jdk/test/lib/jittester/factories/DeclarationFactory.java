@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,14 +37,21 @@ class DeclarationFactory extends Factory<Declaration> {
     private final boolean isLocal;
     private final boolean exceptionSafe;
     private final TypeKlass ownerClass;
+    private final boolean isConstant;
 
     DeclarationFactory(TypeKlass ownerClass, long complexityLimit,
             int operatorLimit, boolean isLocal, boolean safe) {
+        this(ownerClass, complexityLimit, operatorLimit, isLocal, safe, /* isConstant */ false);
+    }
+
+    DeclarationFactory(TypeKlass ownerClass, long complexityLimit,
+            int operatorLimit, boolean isLocal, boolean safe, boolean isConstant) {
         this.ownerClass = ownerClass;
         this.isLocal = isLocal;
         this.exceptionSafe = safe;
         this.complexityLimit = complexityLimit;
         this.operatorLimit = operatorLimit;
+        this.isConstant = isConstant;
     }
 
     @Override
@@ -57,13 +64,15 @@ class DeclarationFactory extends Factory<Declaration> {
                 .setOperatorLimit(operatorLimit)
                 .setIsLocal(isLocal)
                 .setExceptionSafe(exceptionSafe);
-        rule.add("decl", builder
-                .setIsStatic(false)
-                .getVariableDeclarationFactory());
-        rule.add("decl_and_init", builder
-                .setIsConstant(false)
-                .setIsStatic(false)
-                .getVariableInitializationFactory());
+        if (!isConstant) {
+            rule.add("decl", builder
+                    .setIsStatic(false)
+                    .getVariableDeclarationFactory());
+            rule.add("decl_and_init", builder
+                    .setIsConstant(false)
+                    .setIsStatic(false)
+                    .getVariableInitializationFactory());
+        }
         if (!ProductionParams.disableFinalVariables.value()) {
             rule.add("const_decl_and_init", builder
                     .setIsConstant(true)

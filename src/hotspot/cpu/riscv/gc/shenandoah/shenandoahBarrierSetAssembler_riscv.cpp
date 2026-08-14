@@ -330,25 +330,25 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm,
   }
 }
 
-void ShenandoahBarrierSetAssembler::card_barrier(MacroAssembler* masm, Register obj) {
+void ShenandoahBarrierSetAssembler::card_barrier(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2) {
   assert(ShenandoahCardBarrier, "Should have been checked by caller");
+  assert(CardTable::dirty_card_val() == 0, "must be");
+  assert_different_registers(obj, tmp1, tmp2);
 
   __ srli(obj, obj, CardTable::card_shift());
 
-  assert(CardTable::dirty_card_val() == 0, "must be");
-
   Address curr_ct_holder_addr(xthread, in_bytes(ShenandoahThreadLocalData::card_table_offset()));
-  __ ld(t1, curr_ct_holder_addr);
-  __ add(t1, obj, t1);
+  __ ld(tmp1, curr_ct_holder_addr);
+  __ add(tmp1, obj, tmp1);
 
   if (UseCondCardMark) {
     Label L_already_dirty;
-    __ lbu(t0, Address(t1));
-    __ beqz(t0, L_already_dirty);
-    __ sb(zr, Address(t1));
+    __ lbu(tmp2, Address(tmp1));
+    __ beqz(tmp2, L_already_dirty);
+    __ sb(zr, Address(tmp1));
     __ bind(L_already_dirty);
   } else {
-    __ sb(zr, Address(t1));
+    __ sb(zr, Address(tmp1));
   }
 }
 
@@ -385,7 +385,7 @@ void ShenandoahBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet 
   // 3: post-barrier: card barrier needs store address
   bool storing_non_null = (val != noreg);
   if (ShenandoahBarrierSet::need_card_barrier(decorators, type) && storing_non_null) {
-    card_barrier(masm, tmp3);
+    card_barrier(masm, tmp3, tmp1, tmp2);
   }
 }
 

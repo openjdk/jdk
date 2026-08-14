@@ -874,8 +874,6 @@ public abstract sealed class DoubleVector extends AbstractVector<Double>
                     v0.bOp(v1, vm, (i, a, b) -> (double)Math.max(a, b));
             case VECTOR_OP_MIN: return (v0, v1, vm) ->
                     v0.bOp(v1, vm, (i, a, b) -> (double)Math.min(a, b));
-            case VECTOR_OP_OR: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> fromBits(toBits(a) | toBits(b)));
             case VECTOR_OP_ATAN2: return (v0, v1, vm) ->
                     v0.bOp(v1, vm, (i, a, b) -> (double) Math.atan2(a, b));
             case VECTOR_OP_POW: return (v0, v1, vm) ->

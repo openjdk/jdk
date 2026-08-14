@@ -159,13 +159,13 @@ public class TreePosRoundsTest extends AbstractProcessor {
             }
             //System.err.println("expect: " + expect);
 
-            int start = (int)sourcePositions.getStartPosition(unit, tree);
+            int start = (int)sourcePositions.getStartPosition(tree);
             if (start == Diagnostic.NOPOS) {
                 messager.printError("start pos not set for " + trim(tree));
                 return;
             }
 
-            int end = (int)sourcePositions.getEndPosition(unit, tree);
+            int end = (int)sourcePositions.getEndPosition(tree);
             if (end == Diagnostic.NOPOS) {
                 messager.printError("end pos not set for " + trim(tree));
                 return;

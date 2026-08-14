@@ -257,6 +257,11 @@ class SlowSignatureHandler
     }
   }
 
+  virtual void pass_valuetype() {
+    // values are handled with oops, like objects
+    pass_object();
+  }
+
   virtual void pass_long() {
     intptr_t value = *double_slot_addr();
     if (pass_gpr(value) < 0) {

@@ -350,6 +350,49 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseUnalignedAccesses, false);
   }
 
+  if (InlineTypePassFieldsAsArgs) {
+    warning("InlineTypePassFieldsAsArgs is not supported on this CPU");
+    FLAG_SET_DEFAULT(InlineTypePassFieldsAsArgs, false);
+  }
+  if (InlineTypeReturnedAsFields) {
+    warning("InlineTypeReturnedAsFields is not supported on this CPU");
+    FLAG_SET_DEFAULT(InlineTypeReturnedAsFields, false);
+  }
+  if (UseArrayFlattening) {
+    warning("UseArrayFlattening is not supported on this CPU");
+    FLAG_SET_DEFAULT(UseArrayFlattening, false);
+  }
+  if (UseFieldFlattening) {
+    warning("UseFieldFlattening is not supported on this CPU");
+    FLAG_SET_DEFAULT(UseFieldFlattening, false);
+  }
+  if (UseNullFreeNonAtomicValueFlattening) {
+    warning("UseNullFreeNonAtomicValueFlattening is not supported on this CPU");
+    FLAG_SET_DEFAULT(UseNullFreeNonAtomicValueFlattening, false);
+  }
+  if (UseNullableAtomicValueFlattening) {
+    warning("UseNullableAtomicValueFlattening is not supported on this CPU");
+    FLAG_SET_DEFAULT(UseNullableAtomicValueFlattening, false);
+  }
+  if (UseNullFreeAtomicValueFlattening) {
+    warning("UseNullFreeAtomicValueFlattening is not supported on this CPU");
+    FLAG_SET_DEFAULT(UseNullFreeAtomicValueFlattening, false);
+  }
+  if (UseNullableNonAtomicValueFlattening) {
+    warning("UseNullableNonAtomicValueFlattening is not supported on this CPU");
+    FLAG_SET_DEFAULT(UseNullableNonAtomicValueFlattening, false);
+  }
+
+#ifdef COMPILER2
+  // No profiling is actually happening, so C2 does not have the data to work from.
+  if (UseArrayLoadStoreProfile) {
+    FLAG_SET_DEFAULT(UseArrayLoadStoreProfile, false);
+  }
+  if (UseACmpProfile) {
+    FLAG_SET_DEFAULT(UseACmpProfile, false);
+  }
+#endif
+
   _is_initialized = true;
 }
 

@@ -28,7 +28,9 @@
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 
 ShenandoahSynchronizePinnedRegionStates::ShenandoahSynchronizePinnedRegionStates() :
-  _lock(ShenandoahHeap::heap()->lock()) { }
+  _lock(ShenandoahHeap::heap()->lock()) {
+  ShenandoahHeap::heap()->flush_region_pin_cache();
+}
 
 void ShenandoahSynchronizePinnedRegionStates::heap_region_do(ShenandoahHeapRegion* r) {
   // Drop "pinned" state from regions that no longer have a pinned count. Put

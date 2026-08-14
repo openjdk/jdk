@@ -43,6 +43,7 @@
 #include "oops/oopHandle.inline.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "oops/typeArrayOop.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -274,12 +275,13 @@ void AOTMappedHeapWriter::ensure_buffer_space(size_t min_bytes) {
 
 objArrayOop AOTMappedHeapWriter::allocate_root_segment(size_t offset, int element_count) {
   HeapWord* mem = offset_to_buffered_address<HeapWord *>(offset);
-  memset(mem, 0, objArrayOopDesc::object_size(element_count));
+  memset(mem, 0, refArrayOopDesc::object_size(element_count));
 
   // The initialization code is copied from MemAllocator::finish and ObjArrayAllocator::initialize.
   if (UseCompactObjectHeaders) {
     oopDesc::release_set_mark(mem, Universe::objectArrayKlass()->prototype_header());
   } else {
+    assert(!Arguments::is_valhalla_enabled() || Universe::objectArrayKlass()->prototype_header() == markWord::prototype(), "should be the same");
     oopDesc::set_mark(mem, markWord::prototype());
     oopDesc::release_set_klass(mem, Universe::objectArrayKlass());
   }
@@ -310,7 +312,7 @@ void AOTMappedHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassSh
          "Pre-condition: Roots start at aligned boundary: %zu", _buffer_used);
 
   int max_elem_count = ((MIN_GC_REGION_ALIGNMENT - arrayOopDesc::header_size_in_bytes()) / heapOopSize);
-  assert(objArrayOopDesc::object_size(max_elem_count)*HeapWordSize == MIN_GC_REGION_ALIGNMENT,
+  assert(refArrayOopDesc::object_size(max_elem_count)*HeapWordSize == MIN_GC_REGION_ALIGNMENT,
          "Should match exactly");
 
   HeapRootSegments segments(_buffer_used,
@@ -429,7 +431,7 @@ void AOTMappedHeapWriter::copy_source_objs_to_buffer(GrowableArrayCHeap<oop, mtC
 }
 
 size_t AOTMappedHeapWriter::filler_array_byte_size(int length) {
-  size_t byte_size = objArrayOopDesc::object_size(length) * HeapWordSize;
+  size_t byte_size = refArrayOopDesc::object_size(length) * HeapWordSize;
   return byte_size;
 }
 
@@ -457,6 +459,7 @@ HeapWord* AOTMappedHeapWriter::init_filler_array_at_buffer_top(int array_length,
   if (UseCompactObjectHeaders) {
     oopDesc::release_set_mark(mem, markWord::prototype().set_narrow_klass(nk));
   } else {
+    assert(!Arguments::is_valhalla_enabled() || Universe::objectArrayKlass()->prototype_header() == markWord::prototype(), "should be the same");
     oopDesc::set_mark(mem, markWord::prototype());
     cast_to_oop(mem)->set_narrow_klass(nk);
   }
@@ -728,7 +731,8 @@ void AOTMappedHeapWriter::update_header_for_requested_obj(oop requested_obj, oop
 
   oop fake_oop = cast_to_oop(buffered_addr);
   if (UseCompactObjectHeaders) {
-    fake_oop->set_mark(markWord::prototype().set_narrow_klass(nk));
+    markWord prototype_header = src_klass->prototype_header().set_narrow_klass(nk);
+    fake_oop->set_mark(prototype_header);
   } else {
     fake_oop->set_narrow_klass(nk);
   }
@@ -738,10 +742,12 @@ void AOTMappedHeapWriter::update_header_for_requested_obj(oop requested_obj, oop
   }
   // We need to retain the identity_hash, because it may have been used by some hashtables
   // in the shared heap.
-  if (!src_obj->fast_no_hash_check()) {
+  if (!src_obj->fast_no_hash_check() && (!(Arguments::is_valhalla_enabled() && src_obj->mark().is_inline_type()))) {
     intptr_t src_hash = src_obj->identity_hash();
     if (UseCompactObjectHeaders) {
-      fake_oop->set_mark(markWord::prototype().set_narrow_klass(nk).copy_set_hash(src_hash));
+      fake_oop->set_mark(fake_oop->mark().copy_set_hash(src_hash));
+    } else if (Arguments::is_valhalla_enabled()) {
+      fake_oop->set_mark(src_klass->prototype_header().copy_set_hash(src_hash));
     } else {
       fake_oop->set_mark(markWord::prototype().copy_set_hash(src_hash));
     }

@@ -686,6 +686,13 @@ public:
   void pin_object(JavaThread* thread, oop obj) override;
   void unpin_object(JavaThread* thread, oop obj) override;
 
+  // Flushes this thread's accumulated pin count to its cached region's
+  // shared counter and clears the thread's count.
+  void flush_region_pin_cache(JavaThread* thread);
+
+  // Flushes all Java threads' pin counts.
+  void flush_region_pin_cache();
+
   void sync_pinned_region_status();
   void assert_pinned_region_status() const NOT_DEBUG_RETURN;
   void assert_pinned_region_status(ShenandoahGeneration* generation) const NOT_DEBUG_RETURN;

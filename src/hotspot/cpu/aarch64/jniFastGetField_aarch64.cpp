@@ -30,6 +30,7 @@
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "runtime/jfieldIDWorkaround.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
@@ -152,7 +153,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->try_resolve_jobject_in_native(masm, c_rarg0, robj, rscratch1, slow);
 
-  __ lsr(roffset, c_rarg2, 2);                // offset
+  __ lsr(roffset, c_rarg2, jfieldIDWorkaround::offset_shift);       // offset
   __ add(result, robj, roffset);
 
   assert(count < LIST_CAPACITY, "LIST_CAPACITY too small");

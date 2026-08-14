@@ -21,7 +21,10 @@
  * questions.
  */
 
+import java.util.ArrayList;
 import java.util.List;
+
+import jdk.internal.misc.PreviewFeatures;
 
 import sun.jvm.hotspot.HotSpotAgent;
 import sun.jvm.hotspot.utilities.SystemDictionaryHelper;
@@ -105,17 +108,21 @@ public class TestInstanceKlassSizeForInterface {
                             String[] instanceKlassNames,
                             int lingeredAppPid) throws Exception {
         // Start a new process to attach to the LingeredApp process to get SA info
-        ProcessBuilder processBuilder = ProcessTools.createLimitedTestJavaProcessBuilder(
-            "--add-modules=jdk.hotspot.agent",
-            "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot=ALL-UNNAMED",
-            "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.utilities=ALL-UNNAMED",
-            "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.oops=ALL-UNNAMED",
-            "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.debugger=ALL-UNNAMED",
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:+WhiteBoxAPI",
-            "-Xbootclasspath/a:.",
-            "TestInstanceKlassSizeForInterface",
-            Integer.toString(lingeredAppPid));
+        List<String> args = new ArrayList<>();
+        if (PreviewFeatures.isEnabled()) {
+            args.add("--enable-preview");
+        }
+        args.add("--add-modules=jdk.hotspot.agent");
+        args.add("--add-exports=jdk.hotspot.agent/sun.jvm.hotspot=ALL-UNNAMED");
+        args.add("--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.utilities=ALL-UNNAMED");
+        args.add("--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.oops=ALL-UNNAMED");
+        args.add("--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.debugger=ALL-UNNAMED");
+        args.add("-XX:+UnlockDiagnosticVMOptions");
+        args.add("-XX:+WhiteBoxAPI");
+        args.add("-Xbootclasspath/a:.");
+        args.add("TestInstanceKlassSizeForInterface");
+        args.add(Integer.toString(lingeredAppPid));
+        ProcessBuilder processBuilder = ProcessTools.createLimitedTestJavaProcessBuilder(args);
         SATestUtils.addPrivilegesIfNeeded(processBuilder);
         OutputAnalyzer SAOutput = ProcessTools.executeProcess(processBuilder);
         SAOutput.shouldHaveExitValue(0);

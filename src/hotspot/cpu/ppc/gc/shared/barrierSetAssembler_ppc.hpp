@@ -60,6 +60,9 @@ public:
                        Register tmp1, Register tmp2,
                        MacroAssembler::PreservationLevel preservation_level, Label *L_handle_null = nullptr);
 
+  virtual void flat_field_copy(MacroAssembler* masm, DecoratorSet decorators,
+                               Register src, Register dst, Register inline_layout_info);
+
   virtual void resolve_jobject(MacroAssembler* masm, Register value,
                                Register tmp1, Register tmp2,
                                MacroAssembler::PreservationLevel preservation_level);

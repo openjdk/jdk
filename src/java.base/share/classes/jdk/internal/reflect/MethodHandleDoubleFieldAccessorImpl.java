@@ -90,7 +90,7 @@ class MethodHandleDoubleFieldAccessorImpl extends MethodHandleFieldAccessorImpl 
             } else {
                 return (double) getter.invokeExact(obj);
             }
-        } catch (IllegalArgumentException|NullPointerException e) {
+        } catch (IllegalArgumentException|IllegalStateException|NullPointerException e) {
             throw e;
         } catch (ClassCastException e) {
             throw newGetIllegalArgumentException(obj);
@@ -192,7 +192,7 @@ class MethodHandleDoubleFieldAccessorImpl extends MethodHandleFieldAccessorImpl 
             } else {
                 setter.invokeExact(obj, d);
             }
-        } catch (IllegalArgumentException|NullPointerException e) {
+        } catch (IllegalArgumentException|IllegalStateException|NullPointerException e) {
             throw e;
         } catch (ClassCastException e) {
             // receiver is of invalid type

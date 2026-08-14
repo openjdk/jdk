@@ -39,7 +39,9 @@ ShenandoahThreadLocalData::ShenandoahThreadLocalData() :
   _shenandoah_plab(nullptr),
   _evacuation_stats(new ShenandoahEvacuationStats()),
   _invisible_root(nullptr),
-  _invisible_root_word_size(0) {
+  _invisible_root_word_size(0),
+  _pin_region_idx(0),
+  _pin_count(0) {
 }
 
 ShenandoahThreadLocalData::~ShenandoahThreadLocalData() {

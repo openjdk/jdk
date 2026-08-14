@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@
 #include "runtime/synchronizer.hpp"
 #include "runtime/threadIdentifier.hpp"
 #include "utilities/checkedCast.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 inline int64_t ObjectMonitor::owner_id_from(JavaThread* thread) {
@@ -74,22 +75,22 @@ inline volatile uintptr_t* ObjectMonitor::metadata_addr() {
 }
 
 inline markWord ObjectMonitor::header() const {
-  assert(!UseObjectMonitorTable, "Locking with OM table does not use header");
+  // Locking with OM table does not use header.
+  ShouldNotCallThis();
   return markWord(metadata());
 }
 
 inline void ObjectMonitor::set_header(markWord hdr) {
-  assert(!UseObjectMonitorTable, "Locking with OM table does not use header");
+  // Locking with OM table does not use header.
+  ShouldNotCallThis();
   set_metadata(hdr.value());
 }
 
 inline intptr_t ObjectMonitor::hash() const {
-  assert(UseObjectMonitorTable, "Only used when locking with OM table");
   return metadata();
 }
 
 inline void ObjectMonitor::set_hash(intptr_t hash) {
-  assert(UseObjectMonitorTable, "Only used when locking with OM table");
   set_metadata(hash);
 }
 

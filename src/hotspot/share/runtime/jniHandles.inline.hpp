@@ -104,12 +104,6 @@ inline oop JNIHandles::resolve_no_keepalive(jobject handle) {
   return result;
 }
 
-inline bool JNIHandles::is_same_object(jobject handle1, jobject handle2) {
-  oop obj1 = resolve_no_keepalive(handle1);
-  oop obj2 = resolve_no_keepalive(handle2);
-  return obj1 == obj2;
-}
-
 inline oop JNIHandles::resolve_non_null(jobject handle) {
   assert(handle != nullptr, "JNI handle should not be null");
   oop result = resolve_impl<DECORATORS_NONE, false /* external_guard */>(handle);

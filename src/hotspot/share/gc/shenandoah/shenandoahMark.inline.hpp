@@ -73,6 +73,11 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
         InstanceKlass::cast(klass)->oop_oop_iterate<OT>(obj, cl);
         break;
       }
+      case Klass::InlineKlassKind: {
+        // Inline instance.
+        InlineKlass::cast(klass)->oop_oop_iterate<OT>(obj, cl);
+        break;
+      }
       case Klass::InstanceRefKlassKind: {
         // (Weak) reference instance.
         InstanceRefKlass::cast(klass)->oop_oop_iterate<OT>(obj, cl);
@@ -99,9 +104,17 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
         break;
       }
       case Klass::ObjArrayKlassKind: {
-        // Object array and no chunk is set. Must be the first
+        fatal("Unexpected unrefined object array klass");
+      }
+      case Klass::RefArrayKlassKind: {
+        // Reference array and no chunk is set. Must be the first
         // time we visit it, start the chunked processing.
         do_chunked_array_start<T, OT>(q, cl, obj, klass, weak);
+        break;
+      }
+      case Klass::FlatArrayKlassKind: {
+        // Flat array, all elements are embedded.
+        FlatArrayKlass::cast(klass)->oop_oop_iterate<OT>(obj, cl);
         break;
       }
       default: {
@@ -115,7 +128,7 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
       count_liveness<GENERATION>(live_data, obj, klass, worker_id);
     }
   } else {
-    // Object array chunk. Process it.
+    // Reference array chunk. Process it.
     do_chunked_array<T, OT>(q, cl, obj, klass, task->chunk(), task->pow(), weak);
   }
 }
@@ -182,18 +195,18 @@ void ShenandoahMark::count_liveness(ShenandoahLiveData* live_data, oop obj, Klas
 
 template <class T, class OT>
 void ShenandoahMark::do_chunked_array_start(ShenandoahObjToScanQueue* q, T* cl, oop obj, Klass* klass, bool weak) {
-  assert(obj->is_objArray(), "expect object array");
-  objArrayOop array = objArrayOop(obj);
+  assert(obj->is_refArray(), "expect ref array");
+  refArrayOop array = refArrayOop(obj);
   int len = array->length();
 
-  // Mark objArray klass metadata
+  // Mark reference array klass metadata
   if (Devirtualizer::do_metadata(cl)) {
     Devirtualizer::do_klass(cl, klass);
   }
 
   if (len <= (int) ObjArrayMarkingStride*2) {
     // A few slices only, process directly
-    ObjArrayKlass::cast(klass)->oop_oop_iterate_elements_range<OT>(array, cl, 0, len);
+    RefArrayKlass::cast(klass)->oop_oop_iterate_elements_range<OT>(array, cl, 0, len);
   } else {
     int bits = log2i_graceful(len);
     // Compensate for non-power-of-two arrays, cover the array in excess:
@@ -242,15 +255,15 @@ void ShenandoahMark::do_chunked_array_start(ShenandoahObjToScanQueue* q, T* cl, 
     // Process the irregular tail, if present
     int from = last_idx;
     if (from < len) {
-      ObjArrayKlass::cast(klass)->oop_oop_iterate_elements_range<OT>(array, cl, from, len);
+      RefArrayKlass::cast(klass)->oop_oop_iterate_elements_range<OT>(array, cl, from, len);
     }
   }
 }
 
 template <class T, class OT>
 void ShenandoahMark::do_chunked_array(ShenandoahObjToScanQueue* q, T* cl, oop obj, Klass* klass, int chunk, int pow, bool weak) {
-  assert(obj->is_objArray(), "expect object array");
-  objArrayOop array = objArrayOop(obj);
+  assert(obj->is_refArray(), "expect ref array");
+  refArrayOop array = refArrayOop(obj);
 
   // Split out tasks, as suggested in ShenandoahMarkTask docs. Avoid pushing tasks that
   // are known to start beyond the array.
@@ -272,7 +285,7 @@ void ShenandoahMark::do_chunked_array(ShenandoahObjToScanQueue* q, T* cl, oop ob
   assert (0 < to && to <= len, "to is sane: %d/%d", to, len);
 #endif
 
-  ObjArrayKlass::cast(klass)->oop_oop_iterate_elements_range<OT>(array, cl, from, to);
+  RefArrayKlass::cast(klass)->oop_oop_iterate_elements_range<OT>(array, cl, from, to);
 }
 
 template <ShenandoahGenerationType GENERATION>

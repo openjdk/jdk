@@ -73,3 +73,4 @@ compiler/arraycopy/TestCloneWithStressReflectiveCode.java 8323727 generic-all
 
 #############################################################################
 
+# Value Objects failures start here:

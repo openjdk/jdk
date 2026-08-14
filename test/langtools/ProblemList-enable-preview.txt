@@ -27,9 +27,11 @@
 # where the option IS specified in the task definition and NOT in the test.
 #
 # If the '--enable-preview' option is NOT specified in the task definition,
-# and the option IS specified in the test, then an entry here WILL NOT work.
+# and the option IS specified in the test, then an entry here WILL NOT work. 
 #
 # There are separate sub-sections for each preview project.
 #
 #############################################################################
+
+# Value Objects failures start here:
 

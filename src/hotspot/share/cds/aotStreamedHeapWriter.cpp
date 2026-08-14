@@ -371,14 +371,14 @@ template <typename T> void AOTStreamedHeapWriter::map_oop_field_in_buffer(oop ob
 void AOTStreamedHeapWriter::update_header_for_buffered_addr(address buffered_addr, oop src_obj,  Klass* src_klass) {
   narrowKlass nk = ArchiveBuilder::current()->get_requested_narrow_klass(src_klass);
 
-  markWord mw = markWord::prototype();
+  markWord mw = Arguments::enable_preview() ? src_klass->prototype_header() : markWord::prototype();
   oopDesc* fake_oop = (oopDesc*)buffered_addr;
 
   // We need to retain the identity_hash, because it may have been used by some hashtables
   // in the shared heap. This also has the side effect of pre-initializing the
   // identity_hash for all shared objects, so they are less likely to be written
   // into during run time, increasing the potential of memory sharing.
-  if (src_obj != nullptr) {
+  if (src_obj != nullptr && !src_klass->is_inline_klass()) {
     intptr_t src_hash = src_obj->identity_hash();
     mw = mw.copy_set_hash(src_hash);
   }

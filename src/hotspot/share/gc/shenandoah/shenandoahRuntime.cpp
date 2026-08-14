@@ -30,11 +30,11 @@
 #include "utilities/copy.hpp"
 
 JRT_LEAF(void, ShenandoahRuntime::arraycopy_barrier_oop(oop* src, oop* dst, size_t length))
-  ShenandoahBarrierSet::barrier_set()->arraycopy_barrier(src, dst, length);
+  ShenandoahBarrierSet::barrier_set()->arraycopy_barrier(src, dst, length, false);
 JRT_END
 
 JRT_LEAF(void, ShenandoahRuntime::arraycopy_barrier_narrow_oop(narrowOop* src, narrowOop* dst, size_t length))
-  ShenandoahBarrierSet::barrier_set()->arraycopy_barrier(src, dst, length);
+  ShenandoahBarrierSet::barrier_set()->arraycopy_barrier(src, dst, length, false);
 JRT_END
 
 JRT_LEAF(void, ShenandoahRuntime::write_barrier_pre(oopDesc* obj))

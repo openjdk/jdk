@@ -780,7 +780,6 @@ private:
     AwtPen*  m_penForeground;
     AwtBrush* m_brushBackground;
 
-    WNDPROC  m_DefWindowProc;
     // counter for messages being processed by this component
     UINT     m_MessagesProcessing;
 

@@ -89,6 +89,21 @@ public class PreviewVersion {
             }
         }
 
+        // Add 1 to class's major version.  The class should fail to load
+        // because it's major version is too new for this VM.
+        int next_major_version = prev_major_version + 2;
+        klassbuf[6] = (byte)((next_major_version >> 8) & 0xff);
+        klassbuf[7] = (byte)(next_major_version & 0xff);
+        try {
+            ByteCodeLoader.load("PVTest", klassbuf);
+            throw new RuntimeException("UnsupportedClassVersionError exception not thrown");
+        } catch (java.lang.UnsupportedClassVersionError e) {
+            if (!e.getMessage().contains("requires a newer Java runtime")) {
+              throw new RuntimeException(
+                  "Wrong UnsupportedClassVersionError exception: " + e.getMessage());
+            }
+        }
+
         // Set class's major version to 45.  The class should load because class
         // version 45.65535 is valid.
         klassbuf[6] = 0;

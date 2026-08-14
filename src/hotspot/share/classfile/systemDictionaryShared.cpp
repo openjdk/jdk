@@ -64,6 +64,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedKlass.inline.hpp"
+#include "oops/fieldStreams.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -298,6 +299,18 @@ class SystemDictionaryShared::ExclusionCheckCandidates
         return true; // Keep iterating.
       });
     }
+
+    // Inline fields need to have their layouts preserved between dumptime and runtime.
+    // To ensure this, the types of the fields must be stored in the archive along with
+    // the field holder.
+    if (k->has_inlined_fields() || k->has_null_restricted_static_fields()) {
+      for (AllFieldStream fs(k); !fs.done(); fs.next()) {
+        if (fs.is_flat() || fs.is_null_free_inline_type()) {
+          InlineKlass* field_klass = k->get_inline_type_field_klass(fs.index());
+          add_candidate(InstanceKlass::cast(field_klass));
+        }
+      }
+    }
   }
 
 public:
@@ -517,6 +530,20 @@ bool SystemDictionaryShared::check_dependencies_exclusion(InstanceKlass* k, Dump
     if (excluded) {
       // At least one verification constraint class has been excluded
       return true;
+    }
+  }
+
+  // If any of the null restricted or flat field types are excluded, the current
+  // klass must be excluded as well, otherwise there is no guarantee that the
+  // field layouts will be consistent at runtime.
+  if (k->has_inlined_fields() || k->has_null_restricted_static_fields()) {
+    for (AllFieldStream fs(k); !fs.done(); fs.next()) {
+      if (fs.is_flat() || fs.is_null_free_inline_type()) {
+        InlineKlass* field_klass = k->get_inline_type_field_klass(fs.index());
+        if (is_dependency_excluded(k, InstanceKlass::cast(field_klass), "inline field type")) {
+          return true;
+        }
+      }
     }
   }
 

@@ -182,6 +182,10 @@
   }
 
  public:
+  // Support for scalarized inline type calling convention
+  static intptr_t* repair_sender_sp(nmethod* nm, intptr_t* sp, intptr_t** saved_fp_addr);
+  bool was_augmented_on_entry(int& real_size) const;
+
   // Constructors
 
   frame(intptr_t* ptr_sp, intptr_t* ptr_fp, address pc);

@@ -77,7 +77,9 @@ public:
   }
 };
 
-// Makes regions pinned or unpinned according to the region's pin count
+// Makes regions pinned or unpinned according to the region's pin count.
+// On construction, it will flush all Java threads' pin caches into their
+// cached regions' pin counters.
 class ShenandoahSynchronizePinnedRegionStates : public ShenandoahHeapRegionClosure {
 private:
   ShenandoahHeapLock* const _lock;

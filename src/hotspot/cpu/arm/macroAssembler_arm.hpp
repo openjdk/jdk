@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,10 @@
 
 #include "code/relocInfo.hpp"
 #include "utilities/powerOfTwo.hpp"
+
+class ciInlineKlass;
+class SigEntry;
+class VMRegPair;
 
 // Introduced AddressLiteral and its subclasses to ease portability from
 // x86 and avoid relocation issues
@@ -1081,6 +1085,11 @@ public:
 
   static int ic_check_size();
   int ic_check(int end_alignment);
+
+  // Inline type specific methods
+  #include "asm/macroAssembler_common.hpp"
+
+  void remove_frame(int initial_framesize);
 };
 
 

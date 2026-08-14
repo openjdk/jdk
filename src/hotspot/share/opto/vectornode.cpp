@@ -1451,9 +1451,12 @@ Node* VectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     return n;
   }
 
+  bool inputs_have_been_swapped = false;
   // Sort inputs of commutative non-predicated vector operations to help value numbering.
   if (should_swap_inputs_to_help_global_value_numbering()) {
+    assert(in(1) != in(2), "it is useless to swap identical inputs");
     swap_edges(1, 2);
+    inputs_have_been_swapped = true;
   }
 
   n = push_through_replicate(phase);
@@ -1461,7 +1464,14 @@ Node* VectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     return n;
   }
 
-  return reassociate_vector_operation(phase);
+  n = reassociate_vector_operation(phase);
+  if (n != nullptr) {
+    return n;
+  }
+  if (inputs_have_been_swapped) {
+    return this;
+  }
+  return nullptr;
 }
 
 // Traverses a chain of VectorMaskCast and returns the first non VectorMaskCast node.
@@ -2323,6 +2333,9 @@ Node* VectorUnboxNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
       if (in_vt->length() == out_vt->length()) {
         Node* value = vbox->in(VectorBoxNode::Value);
+        if (phase->type(value) == Type::TOP) {
+          return nullptr;
+        }
 
         bool is_vector_mask = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorMask_klass());
         if (is_vector_mask) {

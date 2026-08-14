@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,32 +24,5 @@
 
 package gc.stress.gcbasher;
 
-class MethodInfo {
-    private String name;
-    private String descriptor;
-    private int codeLength;
-    private int codeStart;
-
-    public MethodInfo(String name, String descriptor, int codeLength, int codeStart) {
-        this.name = name;
-        this.descriptor = descriptor;
-        this.codeLength = codeLength;
-        this.codeStart = codeStart;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getDescriptor() {
-        return descriptor;
-    }
-
-    public int getCodeLength() {
-        return codeLength;
-    }
-
-    public int getCodeStart() {
-        return codeStart;
-    }
-}
+@jdk.test.lib.valueclass.AsValueClass
+record MethodInfo (String name, String descriptor, Integer codeLength, Integer codeStart) {}

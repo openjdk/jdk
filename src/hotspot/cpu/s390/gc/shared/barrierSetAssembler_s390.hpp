@@ -52,6 +52,9 @@ public:
   virtual void store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                         const Address& addr, Register val, Register tmp1, Register tmp2, Register tmp3);
 
+  virtual void flat_field_copy(MacroAssembler* masm, DecoratorSet decorators,
+                               Register src, Register dst, Register inline_layout_info);
+
   virtual void resolve_jobject(MacroAssembler* masm, Register value, Register tmp1, Register tmp2);
   virtual void resolve_global_jobject(MacroAssembler* masm, Register value, Register tmp1, Register tmp2);
 
@@ -64,8 +67,11 @@ public:
                                                Register tmp, Label& slow_path);
 
   virtual void nmethod_entry_barrier(MacroAssembler* masm);
+  virtual void c2i_entry_barrier(MacroAssembler* masm, Register tmp1, Register tmp2, Register tmp3);
 
   virtual void barrier_stubs_init() {}
+
+  virtual void check_oop(MacroAssembler* masm, Register oop, const char* msg);
 
 #ifdef COMPILER2
   OptoReg::Name refine_register(const Node* node,

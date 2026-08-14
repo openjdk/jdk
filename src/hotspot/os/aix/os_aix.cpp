@@ -1897,7 +1897,11 @@ static bool checked_mprotect(char* addr, size_t size, int prot) {
     }
   }
 
-  assert(rc == true, "mprotect failed.");
+  if (!rc) {
+    // Reporting success via mprotect but failing to mprotect is a symptom of calling mprotect
+    // on SystemV-memory. It should not happen for mmap-mode.
+    assert(!g_multipage_support.can_use_64K_mmap_pages, "Should only happen in old-style shmat mode");
+  }
 
   return rc;
 }

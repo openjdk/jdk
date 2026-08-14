@@ -170,14 +170,6 @@ public class HttpClient extends NetworkClient {
         }
     }
 
-    /**
-     * A NOP method kept for backwards binary compatibility
-     * @deprecated -- system properties are no longer cached.
-     */
-    @Deprecated
-    public static synchronized void resetProperties() {
-    }
-
     int getKeepAliveTimeout() {
         return keepAliveTimeout;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,9 +68,9 @@ class VerificationType {
 
     // Enum for the _data field
     enum : uint {
-      // Bottom two bits determine if the type is a reference, primitive,
-      // uninitialized or a query-type.
-      TypeMask           = 0x00000003,
+      // Bottom three bits determine if the type is a reference, inline type,
+      // primitive, uninitialized or a query-type.
+      TypeMask           = 0x00000007,
 
       // Topmost types encoding
       Reference          = 0x0,        // _sym contains the name
@@ -156,7 +156,7 @@ class VerificationType {
 
   // For reference types, store the actual Symbol
   static VerificationType reference_type(Symbol* sh) {
-      assert(((uintptr_t)sh & 0x3) == 0, "Symbols must be aligned");
+      assert(((uintptr_t)sh & TypeMask) == 0, "Symbols must be aligned");
       // If the above assert fails in the future because oop* isn't aligned,
       // then this type encoding system will have to change to have a tag value
       // to discriminate between oops and primitives.
@@ -185,8 +185,8 @@ class VerificationType {
   bool is_reference() const { return ((_u._data & TypeMask) == Reference); }
   bool is_category1() const {
     // This should return true for all one-word types, which are category1
-    // primitives, and references (including uninitialized refs).  Though
-    // the 'query' types should technically return 'false' here, if we
+    // primitives, references (including uninitialized refs) and inline types.
+    // Though the 'query' types should technically return 'false' here, if we
     // allow this to return true, we can perform the test using only
     // 2 operations rather than 8 (3 masks, 3 compares and 2 logical 'ands').
     // Since no one should call this on a query type anyway, this is ok.

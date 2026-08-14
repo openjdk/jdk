@@ -306,22 +306,25 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
 }
 
 bool ShenandoahControlThread::check_cancellation_or_degen(ShenandoahGC::ShenandoahDegenPoint point) {
+  // Only read the cancellation cause once. Other threads may change it.
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  if (heap->cancelled_gc()) {
-    if (heap->cancelled_cause() == GCCause::_shenandoah_stop_vm) {
-      return true;
-    }
-
-    if (ShenandoahCollectorPolicy::is_allocation_failure(heap->cancelled_cause())) {
-      assert (_degen_point == ShenandoahGC::_degenerated_outside_cycle,
-              "Should not be set yet: %s", ShenandoahGC::degen_point_to_string(_degen_point));
-      _degen_point = point;
-      return true;
-    }
-
-    fatal("Unexpected reason for cancellation: %s", GCCause::to_string(heap->cancelled_cause()));
+  const GCCause::Cause cancelled_cause = heap->cancelled_cause();
+  if (cancelled_cause == GCCause::_no_gc) {
+    return false;
   }
-  return false;
+
+  if (cancelled_cause == GCCause::_shenandoah_stop_vm) {
+    return true;
+  }
+
+  if (ShenandoahCollectorPolicy::is_allocation_failure(cancelled_cause)) {
+    assert (_degen_point == ShenandoahGC::_degenerated_outside_cycle,
+            "Should not be set yet: %s", ShenandoahGC::degen_point_to_string(_degen_point));
+    _degen_point = point;
+    return true;
+  }
+
+  fatal("Unexpected reason for cancellation: %s", GCCause::to_string(cancelled_cause));
 }
 
 void ShenandoahControlThread::stop_service() {

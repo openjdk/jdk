@@ -454,9 +454,10 @@ public interface ThreadReference extends ObjectReference {
      * Events, such as MethodExit, are generated as they would be in
      * a normal return.
      * <p>
-     * The called method must be a non-native Java programming
-     * language method. Forcing return on a thread with only one
-     * frame on the stack causes the thread to exit when resumed.
+     * The called method must not be a native method or the constructor of
+     * a {@linkplain Class#isValue() value class}. Forcing early return
+     * on a thread with only one frame on the stack causes the thread to
+     * exit when resumed.
      * <p>
      * The <code>value</code> argument is the value that the
      * method is to return.

@@ -530,7 +530,7 @@ void G1HeapRegionManager::iterate(G1HeapRegionIndexClosure* blk) const {
   }
 }
 
-bool G1HeapRegionManager::allocate_containing_regions(MemRegion range, size_t* commit_count, WorkerThreads* pretouch_workers) {
+bool G1HeapRegionManager::allocate_containing_regions(MemRegion range, size_t* num_regions_committed, WorkerThreads* pretouch_workers) {
   size_t commits = 0;
   uint start_index = (uint)_regions.get_index_by_address(range.start());
   uint last_index = (uint)_regions.get_index_by_address(range.last());
@@ -549,7 +549,7 @@ bool G1HeapRegionManager::allocate_containing_regions(MemRegion range, size_t* c
   }
 
   allocate_free_regions_starting_at(start_index, (last_index - start_index) + 1);
-  *commit_count = commits;
+  *num_regions_committed = commits;
   return true;
 }
 

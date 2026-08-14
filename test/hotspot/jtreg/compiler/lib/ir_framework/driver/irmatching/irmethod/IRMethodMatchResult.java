@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,10 @@
 package compiler.lib.ir_framework.driver.irmatching.irmethod;
 
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
-import compiler.lib.ir_framework.driver.irmatching.visitor.AcceptChildren;
+import compiler.lib.ir_framework.driver.irmatching.SubResults;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
 import java.lang.reflect.Method;
-import java.util.List;
 
 /**
  * This class represents a matching result of an {@link IRMethod}. It contains a list of all IR rule match results
@@ -36,26 +35,14 @@ import java.util.List;
  *
  * @see IRMethod
  */
-public class IRMethodMatchResult implements MatchResult {
-    private final AcceptChildren acceptChildren;
-    private final boolean failed;
-    private final Method method;
-    private final int failedIRRules;
-
-    public IRMethodMatchResult(Method method, List<MatchResult> matchResults) {
-        this.acceptChildren = new AcceptChildren(matchResults);
-        this.failed = !matchResults.isEmpty();
-        this.method = method;
-        this.failedIRRules = matchResults.size();
-    }
-
+public record IRMethodMatchResult(Method method, SubResults subResults) implements MatchResult {
     @Override
     public boolean fail() {
-        return failed;
+        return subResults.hasFailure();
     }
 
     @Override
     public void accept(MatchResultVisitor visitor) {
-        visitor.visitIRMethod(acceptChildren, method, failedIRRules);
+        visitor.visit(this);
     }
 }

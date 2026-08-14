@@ -123,7 +123,7 @@ public:
       bool is_clone_instance, ArrayCopyPhase phase) const;
 
   // Support for macro expanded GC barriers
-  virtual void eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const;
+  virtual void eliminate_gc_barrier(PhaseIterGVN* macro, Node* node) const;
   virtual void eliminate_gc_barrier_data(Node* node) const;
 
   // Allow barrier sets to have shared state that is preserved across a compilation unit.

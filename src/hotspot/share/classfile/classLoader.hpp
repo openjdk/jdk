@@ -335,7 +335,7 @@ class ClassLoader: AllStatic {
   // loaded system packages.
   // Note: The package names returned are "/"-separated and end with a
   // trailing "/".
-  static objArrayOop get_system_packages(TRAPS);
+  static refArrayOop get_system_packages(TRAPS);
 
   // Initialization
   static void initialize(TRAPS);
