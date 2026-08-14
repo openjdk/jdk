@@ -31,7 +31,7 @@ import jdk.test.whitebox.WhiteBox;
  * @requires vm.gc.Shenandoah
  * @summary Aged regions must be promoted in place during an abbreviated cycle
  *          (one that skips the evacuation and update-refs phases).
- * @bug 8387539
+ * @bug 8390310
  * @library /testlibrary /test/lib /
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
