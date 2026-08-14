@@ -43,44 +43,11 @@ public class TestFinalizableValues {
 
     static WhiteBox WB = WhiteBox.getWhiteBox();
 
-    static void test(String classname, boolean expectRegistration, String... args) throws IOException {
-        List<String> argsList = new ArrayList<>();
-        Collections.addAll(argsList, "--enable-preview");
-        Collections.addAll(argsList, "--add-exports", "java.base/jdk.internal.value=ALL-UNNAMED");
-        Collections.addAll(argsList, "-Dtest.class.path=" + System.getProperty("test.class.path", "."));
-        Collections.addAll(argsList, "-XX:+IgnoreUnrecognizedVMOptions");
-        Collections.addAll(argsList, "-XX:+TraceFinalizerRegistration");
-        Collections.addAll(argsList, "TestFinalizableValues$TestHelper");
-        Collections.addAll(argsList, classname);
-        Collections.addAll(argsList, args);
-        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(argsList);
-        OutputAnalyzer out = new OutputAnalyzer(pb.start());
-        if (WB.getBooleanVMFlag("TraceFinalizerRegistration")) {
-          if (expectRegistration) {
-            out.shouldContain("as finalizable");
-          } else {
-            out.shouldNotContain("as finalizable");
-          }
-        }
-        out.shouldHaveExitValue(0);
-    }
-    public static void main(String[] args) throws IOException {
-        test("MyVal", false, "false", "false");
-        test("TestFinalizableValues$TestHelper$MyVal2", false, "false", "false");
-        test("TestFinalizableValues$TestHelper$MyId", false, "false", "false");
-        test("TestFinalizableValues$TestHelper$MyId2", true, "false", "true");
-    }
-
     /*
      * MyVal and MyAbstractVal are supplied as MyVal.jcod and MyAbstractVal.jcod: both are
      * classes that javac can no longer produce from source since JDK-8339188 forbids a
-     * (abstract) value class from declaring a method that overrides Object::finalize. See the
-     * jcod files for the source they were generated from. They are declared as top-level
-     * classes (rather than nested in TestHelper, as they were before this restriction existed)
-     * because javac cannot resolve a bare reference from freshly-compiled source to a nested
-     * sibling class that only exists as a precompiled class file. MyVal2, MyId and MyId2 don't
-     * declare finalize() themselves (they only inherit it from MyAbstractVal), so javac still
-     * accepts them from source and they can stay nested in TestHelper as before.
+     * value class from declaring a method that overrides Object::finalize. See the
+     * jcod files for the source they were generated from.
      */
     public static class TestHelper {
         static value class MyVal2 extends MyAbstractVal {}
@@ -94,6 +61,14 @@ public class TestFinalizableValues {
             @SuppressWarnings("deprecation")
             protected void finalize() {
                 finalizerWasCalled = true;
+            }
+        }
+
+        static void create(Class<?> c) {
+            try {
+                c.newInstance();
+            } catch(InstantiationException | IllegalAccessException e) {
+                throw new RuntimeException(e);
             }
         }
 
@@ -122,13 +97,33 @@ public class TestFinalizableValues {
                                            + "executed");
             }
         }
+    }
 
-        static void create(Class<?> c) {
-            try {
-                c.newInstance();
-            } catch(InstantiationException | IllegalAccessException e) {
-                throw new RuntimeException(e);
-            }
+    static void test(String classname, boolean expectRegistration, String... args) throws IOException {
+        List<String> argsList = new ArrayList<>();
+        Collections.addAll(argsList, "--enable-preview");
+        Collections.addAll(argsList, "--add-exports", "java.base/jdk.internal.value=ALL-UNNAMED");
+        Collections.addAll(argsList, "-Dtest.class.path=" + System.getProperty("test.class.path", "."));
+        Collections.addAll(argsList, "-XX:+IgnoreUnrecognizedVMOptions");
+        Collections.addAll(argsList, "-XX:+TraceFinalizerRegistration");
+        Collections.addAll(argsList, "TestFinalizableValues$TestHelper");
+        Collections.addAll(argsList, classname);
+        Collections.addAll(argsList, args);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(argsList);
+        OutputAnalyzer out = new OutputAnalyzer(pb.start());
+        if (WB.getBooleanVMFlag("TraceFinalizerRegistration")) {
+          if (expectRegistration) {
+            out.shouldContain("as finalizable");
+          } else {
+            out.shouldNotContain("as finalizable");
+          }
         }
+        out.shouldHaveExitValue(0);
+    }
+    public static void main(String[] args) throws IOException {
+        test("MyVal", false, "false", "false");
+        test("TestFinalizableValues$TestHelper$MyVal2", false, "false", "false");
+        test("TestFinalizableValues$TestHelper$MyId", false, "false", "false");
+        test("TestFinalizableValues$TestHelper$MyId2", true, "false", "true");
     }
 }
