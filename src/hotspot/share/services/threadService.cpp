@@ -1374,8 +1374,6 @@ public:
   }
 
   static Handle create(InstanceKlass* klass, int depth, int type_ordinal, OopHandle obj, TRAPS) {
-    klass->initialize(CHECK_NH);
-    init(klass, CHECK_NH);
     Handle result = klass->allocate_instance_handle(CHECK_NH);
     result->int_field_put(_depth_offset, depth);
     result->int_field_put(_typeOrdinal_offset, type_ordinal);
@@ -1507,6 +1505,9 @@ oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, TRAPS) {
   refArrayHandle locks;
   if (cl._locks != nullptr && cl._locks->length() > 0) {
     locks = oopFactory::new_refArray_handle(lock_klass, cl._locks->length(), CHECK_NULL);
+    if (lock_klass->should_be_initialized()) {
+      lock_klass->initialize(CHECK_NULL);
+    }
     for (int n = 0; n < cl._locks->length(); n++) {
       GetThreadSnapshotHandshakeClosure::OwnedLock* lock_info = cl._locks->adr_at(n);
 
