@@ -685,6 +685,14 @@ Node* PhaseGVN::apply_ideal(Node* k, bool can_reshape) {
   return i;
 }
 
+Node* PhaseGVN::apply_identity(Node* n) {
+  DEBUG_ONLY(uint old_unique = is_verify_Identity_return() ? C->unique() : 0;)
+  Node* const i = n->Identity(this);
+  assert(!is_verify_Identity_return() || i->_idx < old_unique,
+         "Identity() must return an existing node");
+  return i;
+}
+
 //------------------------------transform--------------------------------------
 // Return a node which computes the same function as this node, but
 // in a faster or cheaper fashion.
@@ -736,7 +744,7 @@ Node* PhaseGVN::transform(Node* n) {
   }
 
   // Now check for Identities
-  i = k->Identity(this);        // Look for a nearby replacement
+  i = apply_identity(k);        // Look for a nearby replacement
   if (i != k) {                 // Found? Return replacement!
     set_progress();
     return i;
@@ -870,7 +878,7 @@ PhaseIterGVN::PhaseIterGVN() : _delay_transform(false),
 void PhaseIterGVN::shuffle_worklist() {
   if (_worklist.size() < 2) return;
   for (uint i = _worklist.size() - 1; i >= 1; i--) {
-    uint j = C->random() % (i + 1);
+    uint j = C->stress().random() % (i + 1);
     swap(_worklist.adr()[i], _worklist.adr()[j]);
   }
 }
@@ -2142,7 +2150,7 @@ void PhaseIterGVN::verify_Identity_for(Node* n) {
     return;
   }
 
-  Node* i = n->Identity(this);
+  Node* i = apply_identity(n);
   // If we cannot find any other Identity, we are happy.
   if (i == n) {
     verify_empty_worklist(n);
@@ -2306,7 +2314,7 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   }
 
   // Now check for Identities
-  i = k->Identity(this);      // Look for a nearby replacement
+  i = apply_identity(k);      // Look for a nearby replacement
   if (i != k) {                // Found? Return replacement!
     set_progress();
     add_users_to_worklist(k);
@@ -3075,7 +3083,7 @@ void PhaseCCP::verify_analyze(Unique_Node_List& worklist_verify) {
 // Fetch next node from worklist to be examined in this iteration.
 Node* PhaseCCP::fetch_next_node(Unique_Node_List& worklist) {
   if (StressCCP) {
-    return worklist.remove(C->random() % worklist.size());
+    return worklist.remove(C->stress().random() % worklist.size());
   } else {
     return worklist.pop();
   }

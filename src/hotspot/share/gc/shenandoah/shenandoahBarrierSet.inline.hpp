@@ -234,14 +234,6 @@ inline void ShenandoahBarrierSet::write_ref_field_post(T* field, oop new_value) 
 }
 
 template <typename T>
-inline oop ShenandoahBarrierSet::oop_load(DecoratorSet decorators, T* addr) {
-  oop value = RawAccess<>::oop_load(addr);
-  value = load_reference_barrier(decorators, value, addr);
-  keep_alive_if_weak(decorators, value);
-  return value;
-}
-
-template <typename T>
 inline oop ShenandoahBarrierSet::oop_cmpxchg(DecoratorSet decorators, T* addr, oop compare_value, oop new_value) {
   shenandoah_assert_not_in_cset_except(nullptr, compare_value, (compare_value == nullptr || ShenandoahHeap::heap()->cancelled_gc()));
   shenandoah_assert_not_in_cset_except(nullptr, new_value, (new_value == nullptr || ShenandoahHeap::heap()->cancelled_gc()));
@@ -276,25 +268,33 @@ inline oop ShenandoahBarrierSet::oop_xchg(DecoratorSet decorators, T* addr, oop 
 
 template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
+inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_load_common(DecoratorSet resolved_decorators, T* addr) {
+  // This raw access inherits decorators that are needed for proper memory ordering.
+  oop value = Raw::template oop_load<oop>(addr);
+  ShenandoahBarrierSet* bs = barrier_set();
+  value = bs->load_reference_barrier(resolved_decorators, value, addr);
+  bs->keep_alive_if_weak(resolved_decorators, value);
+  return value;
+}
+
+template <DecoratorSet decorators, typename BarrierSetT>
+template <typename T>
 inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_load_not_in_heap(T* addr) {
   assert((decorators & ON_UNKNOWN_OOP_REF) == 0, "must be absent");
-  ShenandoahBarrierSet* const bs = ShenandoahBarrierSet::barrier_set();
-  return bs->oop_load(decorators, addr);
+  return oop_load_common(decorators, addr);
 }
 
 template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
 inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_load_in_heap(T* addr) {
   assert((decorators & ON_UNKNOWN_OOP_REF) == 0, "must be absent");
-  ShenandoahBarrierSet* const bs = ShenandoahBarrierSet::barrier_set();
-  return bs->oop_load(decorators, addr);
+  return oop_load_common(decorators, addr);
 }
 
 template <DecoratorSet decorators, typename BarrierSetT>
 inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_load_in_heap_at(oop base, ptrdiff_t offset) {
-  ShenandoahBarrierSet* const bs = ShenandoahBarrierSet::barrier_set();
   DecoratorSet resolved_decorators = AccessBarrierSupport::resolve_possibly_unknown_oop_ref_strength<decorators>(base, offset);
-  return bs->oop_load(resolved_decorators, AccessInternal::oop_field_addr<decorators>(base, offset));
+  return oop_load_common(resolved_decorators, AccessInternal::oop_field_addr<decorators>(base, offset));
 }
 
 template <DecoratorSet decorators, typename BarrierSetT>
