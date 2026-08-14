@@ -638,8 +638,7 @@ TypeOrigin ClassVerifier::ref_ctx(const char* sig) {
 
 bool Verifier::supports_strict_fields(InstanceKlass* klass) {
   int ver = klass->major_version();
-  return ver > Verifier::VALUE_TYPES_MAJOR_VERSION ||
-         (ver == Verifier::VALUE_TYPES_MAJOR_VERSION && klass->minor_version() == Verifier::JAVA_PREVIEW_MINOR_VERSION);
+  return (ver >= Verifier::VALUE_TYPES_MAJOR_VERSION && klass->minor_version() == Verifier::JAVA_PREVIEW_MINOR_VERSION);
 }
 
 void ClassVerifier::verify_class(TRAPS) {

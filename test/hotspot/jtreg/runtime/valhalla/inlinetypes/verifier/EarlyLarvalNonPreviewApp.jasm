@@ -1,4 +1,27 @@
-final identity class EarlyLarvalNonPreviewApp extends java/lang/Record version 70:0
+/*
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+final identity class EarlyLarvalNonPreviewApp extends java/lang/Record version 72:0
 {
   public final Field x:I;
   public final Field y:I;
@@ -28,84 +51,4 @@ final identity class EarlyLarvalNonPreviewApp extends java/lang/Record version 7
          putfield          Field y:"I";
          return;
   }
-
-  public final Method toString:"()Ljava/lang/String;"
-    stack 1  locals 1
-  {
-         aload_0;
-         invokedynamic     InvokeDynamic REF_invokeStatic:Method java/lang/runtime/ObjectMethods.bootstrap:
-                           "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/TypeDescriptor;Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/invoke/MethodHandle;)Ljava/lang/Object;":
-                           toString:"(LEarlyLarvalNonPreviewApp;)Ljava/lang/String;" {
-                             class EarlyLarvalNonPreviewApp,
-                             String "x;y",
-                             MethodHandle REF_getField:EarlyLarvalNonPreviewApp.x:"I",
-                             MethodHandle REF_getField:EarlyLarvalNonPreviewApp.y:"I"
-                           };
-         areturn;
-  }
-
-  public final Method hashCode:"()I"
-    stack 1  locals 1
-  {
-         aload_0;
-         invokedynamic     InvokeDynamic REF_invokeStatic:Method java/lang/runtime/ObjectMethods.bootstrap:
-                           "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/TypeDescriptor;Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/invoke/MethodHandle;)Ljava/lang/Object;":
-                           hashCode:"(LEarlyLarvalNonPreviewApp;)I" {
-                             class EarlyLarvalNonPreviewApp,
-                             String "x;y",
-                             MethodHandle REF_getField:EarlyLarvalNonPreviewApp.x:"I",
-                             MethodHandle REF_getField:EarlyLarvalNonPreviewApp.y:"I"
-                           };
-         ireturn;
-  }
-
-  public final Method equals:"(Ljava/lang/Object;)Z"
-    stack 2  locals 2
-  {
-         aload_0;
-         aload_1;
-         invokedynamic     InvokeDynamic REF_invokeStatic:Method java/lang/runtime/ObjectMethods.bootstrap:
-                           "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/TypeDescriptor;Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/invoke/MethodHandle;)Ljava/lang/Object;":
-                           equals:"(LEarlyLarvalNonPreviewApp;Ljava/lang/Object;)Z" {
-                             class EarlyLarvalNonPreviewApp,
-                             String "x;y",
-                             MethodHandle REF_getField:EarlyLarvalNonPreviewApp.x:"I",
-                             MethodHandle REF_getField:EarlyLarvalNonPreviewApp.y:"I"
-                           };
-         ireturn;
-  }
-
-  public Method x:"()I"
-    stack 1  locals 1
-  {
-         aload_0;
-         getfield          Field x:"I";
-         ireturn;
-  }
-
-  public Method y:"()I"
-    stack 1  locals 1
-  {
-         aload_0;
-         getfield          Field y:"I";
-         ireturn;
-  }
-
-  SourceFile               "EarlyLarvalNonPreviewApp.java";
-
-  Record {
-    Component              x:I;
-    Component              y:I;
-  }
-
-  InnerClass               public static final Lookup = class java/lang/invoke/MethodHandles$Lookup of class java/lang/invoke/MethodHandles;
-
-  BootstrapMethod          REF_invokeStatic:java/lang/runtime/ObjectMethods.bootstrap:
-                           "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/TypeDescriptor;Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/invoke/MethodHandle;)Ljava/lang/Object;";
-                           {
-                             class EarlyLarvalNonPreviewApp,
-                             String "x;y",
-                             MethodHandle REF_getField:EarlyLarvalNonPreviewApp.x:"I",
-                             MethodHandle REF_getField:EarlyLarvalNonPreviewApp.y:"I"
-                           }
-} // end Class EarlyLarvalNonPreviewApp compiled from "EarlyLarvalNonPreviewApp.java"
+}
