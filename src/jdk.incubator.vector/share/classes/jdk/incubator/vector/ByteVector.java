@@ -27,15 +27,20 @@ package jdk.incubator.vector;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.nio.ByteOrder;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Function;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
+import sun.nio.cs.ISO_8859_1;
+import sun.nio.cs.US_ASCII;
 
 import static jdk.internal.vm.vector.VectorSupport.*;
 import static jdk.incubator.vector.VectorIntrinsics.*;
@@ -3464,6 +3469,27 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
         ((AbstractMask<Byte>)m)
             .checkIndexByLane(offset, ms.byteSize(), vsp.iota(), 1);
         return vsp.dummyVector().fromMemorySegment0(ms, offset, m, OFFSET_OUT_OF_RANGE).maybeSwap(bo);
+    }
+
+    private static final JavaLangAccess LANG_ACCESS = SharedSecrets.getJavaLangAccess();
+
+    @ForceInline
+    public static boolean compatibleWith(String string, Charset charset) {
+        Objects.requireNonNull(string);
+        Objects.requireNonNull(charset);
+        return LANG_ACCESS.stringCoder(string) == 0 && (charset == ISO_8859_1.INSTANCE || charset == US_ASCII.INSTANCE);
+    }
+
+    @ForceInline
+    public static ByteVector fromString(VectorSpecies<Byte> species, String string, Charset charset, int charOffset) {
+        Objects.requireNonNull(species);
+        Objects.requireNonNull(string);
+        Objects.requireNonNull(charset);
+        VectorIntrinsics.indexInRange(charOffset, species.length(), string.length());
+        if (!compatibleWith(string, charset)) {
+            throw new IllegalArgumentException();
+        }
+        return ByteVector.fromArray(species, LANG_ACCESS.stringValue(string), charOffset);
     }
 
     // Memory store operations

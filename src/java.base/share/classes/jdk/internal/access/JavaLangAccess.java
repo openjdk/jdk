@@ -491,6 +491,8 @@ public interface JavaLangAccess {
      */
     byte stringCoder(String str);
 
+    byte[] stringValue(String str);
+
     /**
      * Join strings
      */

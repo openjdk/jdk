@@ -31,6 +31,8 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Function;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.misc.Unsafe;
@@ -3454,6 +3456,26 @@ public abstract sealed class ShortVector extends AbstractVector<Short>
         ((AbstractMask<Short>)m)
             .checkIndexByLane(offset, ms.byteSize(), vsp.iota(), 2);
         return vsp.dummyVector().fromMemorySegment0(ms, offset, m, OFFSET_OUT_OF_RANGE).maybeSwap(bo);
+    }
+
+    private static final JavaLangAccess LANG_ACCESS = SharedSecrets.getJavaLangAccess();
+
+    /** Loads a vector of UTF-16 code units from {@code string} starting at {@code charOffset}. */
+    @ForceInline
+    public static ShortVector fromString(VectorSpecies<Short> species, String string, int charOffset) {
+        Objects.requireNonNull(species);
+        Objects.requireNonNull(string);
+        VectorIntrinsics.indexInRange(charOffset, species.length(), string.length());
+        byte coder = LANG_ACCESS.stringCoder(string);
+        byte[] value = LANG_ACCESS.stringValue(string);
+        VectorSpecies<Byte> byteSpecies = species.withLanes(byte.class);
+        if (coder == 0) {
+            VectorMask<Byte> byteMask = byteSpecies.indexInRange(0, species.length());
+            ByteVector byteVector = ByteVector.fromArray(byteSpecies, value, charOffset, byteMask);
+            return (ShortVector) byteVector.convertShape(ZERO_EXTEND_B2S, species, 0);
+        } else {
+            return ByteVector.fromArray(byteSpecies, value, charOffset << 1).reinterpretAsShorts();
+        }
     }
 
     // Memory store operations
