@@ -404,6 +404,7 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
       break;
     case StubId::c1_new_type_array_id:
     case StubId::c1_new_object_array_id:
+    case StubId::c1_new_null_free_array_id:
       {
         Register length   = Z_R13; // Incoming
         Register klass    = Z_R11; // Incoming
@@ -411,8 +412,12 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
 
         if (id == StubId::c1_new_type_array_id) {
           __ set_info("new_type_array", dont_gc_arguments);
-        } else {
+        } else if (id == StubId::c1_new_object_array_id) {
           __ set_info("new_object_array", dont_gc_arguments);
+        } else {
+          assert(id == StubId::c1_new_null_free_array_id, "must be");
+          __ untested("c1_new_null_free_array");
+          __ set_info("new_null_free_array", dont_gc_arguments);
         }
 
 #ifdef ASSERT
@@ -422,10 +427,23 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
           Register t0 = obj;
           __ mem2reg_opt(t0, Address(klass, Klass::layout_helper_offset()), false);
           __ z_sra(t0, Klass::_lh_array_tag_shift);
-          int tag = ((id == StubId::c1_new_type_array_id)
-                     ? Klass::_lh_array_tag_type_value : Klass::_lh_array_tag_ref_value);
-          __ compare32_and_branch(t0, tag, Assembler::bcondEqual, ok);
-          __ stop("assert(is an array klass)");
+          switch (id) {
+            case StubId::c1_new_type_array_id:
+              __ compare32_and_branch(t0, Klass::_lh_array_tag_type_value, Assembler::bcondEqual, ok);
+              __ stop("assert(is a type array klass)");
+              break;
+            case StubId::c1_new_object_array_id:
+              __ compare32_and_branch(t0, Klass::_lh_array_tag_ref_value, Assembler::bcondEqual, ok);
+              __ compare32_and_branch(t0, Klass::_lh_array_tag_flat_value, Assembler::bcondEqual, ok);
+              __ stop("assert(is an object or inline type array klass)");
+              break;
+            case StubId::c1_new_null_free_array_id:
+              __ compare32_and_branch(t0, Klass::_lh_array_tag_flat_value, Assembler::bcondEqual, ok);
+              __ compare32_and_branch(t0, Klass::_lh_array_tag_ref_value, Assembler::bcondEqual, ok);
+              __ stop("assert(is an object or inline type array klass)");
+              break;
+            default: ShouldNotReachHere();
+          }
           __ should_not_reach_here();
           __ bind(ok);
         }
@@ -435,8 +453,11 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
         int call_offset;
         if (id == StubId::c1_new_type_array_id) {
           call_offset = __ call_RT(obj, noreg, CAST_FROM_FN_PTR(address, new_type_array), klass, length);
-        } else {
+        } else if (id == StubId::c1_new_object_array_id) {
           call_offset = __ call_RT(obj, noreg, CAST_FROM_FN_PTR(address, new_object_array), klass, length);
+        } else {
+          assert(id == StubId::c1_new_null_free_array_id, "must be");
+          call_offset = __ call_RT(obj, noreg, CAST_FROM_FN_PTR(address, new_null_free_array), klass, length);
         }
 
         oop_maps = new OopMapSet();
@@ -463,6 +484,99 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
         // Z_R2,: new multi array
         __ verify_oop(Z_R2, FILE_AND_LINE);
         __ z_br(Z_R14);
+      }
+      break;
+
+    case StubId::c1_buffer_inline_args_id:
+    case StubId::c1_buffer_inline_args_no_receiver_id:
+      {
+        __ untested("c1_buffer_inline_args");
+        const char* name = (id == StubId::c1_buffer_inline_args_id) ?
+          "buffer_inline_args" : "buffer_inline_args_no_receiver";
+        __ set_info(name, dont_gc_arguments);
+
+        // This is called from a C1 method's scalarized entry point
+        OopMap* map = save_live_registers(sasm);
+        Register method = Z_R13;   // Incoming
+        address entry = (id == StubId::c1_buffer_inline_args_id) ?
+          CAST_FROM_FN_PTR(address, buffer_inline_args) :
+          CAST_FROM_FN_PTR(address, buffer_inline_args_no_receiver);
+
+        int call_offset = __ call_RT(Z_R14, noreg, entry, method);
+        oop_maps = new OopMapSet();
+        oop_maps->add_gc_map(call_offset, map);
+        restore_live_registers(sasm);
+        __ z_lgr(Z_R1_scratch, Z_R14);
+        __ verify_oop(Z_R1_scratch);  // Z_R1_scratch: an array of buffered value objects
+        __ z_br(Z_R14);
+      }
+      break;
+
+    case StubId::c1_load_flat_array_id:
+      {
+        __ untested("c1_load_flat_array");
+        __ set_info("load_flat_array", dont_gc_arguments);
+        OopMap* map = save_live_registers(sasm);
+
+        // Called with store_parameter and not C abi
+        int arg_offset = FrameMap::first_available_sp_in_frame;
+        __ z_lg(Z_ARG2, arg_offset + 1 * BytesPerWord, Z_SP); // array
+        __ z_lg(Z_ARG3, arg_offset + 0 * BytesPerWord, Z_SP); // index
+        int call_offset = __ call_RT(Z_R2, noreg, CAST_FROM_FN_PTR(address, load_flat_array), Z_ARG2, Z_ARG3);
+
+        // Ensure the stores that initialize the buffer are visible
+        // before many subsequent store that publishes this reference.
+        __ z_fence();
+
+        oop_maps = new OopMapSet();
+        oop_maps->add_gc_map(call_offset, map);
+        restore_live_registers_except_r2(sasm);
+
+        // Z_R2: loaded element at array[index]
+        __ verify_oop(Z_R2);
+        __ z_br(Z_R14);
+      }
+      break;
+
+    case StubId::c1_store_flat_array_id:
+      {
+        __ untested("c1_store_flat_array");
+        __ set_info("store_flat_array", dont_gc_arguments);
+        OopMap* map = save_live_registers(sasm);
+
+        // Called with store_parameter and not C abi
+        int arg_offset = FrameMap::first_available_sp_in_frame;
+        __ z_lg(Z_ARG2, arg_offset + 2 * BytesPerWord, Z_SP); // array
+        __ z_lg(Z_ARG3, arg_offset + 1 * BytesPerWord, Z_SP); // index
+        __ z_lg(Z_ARG4, arg_offset + 0 * BytesPerWord, Z_SP); // value
+        int call_offset = __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, store_flat_array), Z_ARG2, Z_ARG3, Z_ARG4);
+
+        oop_maps = new OopMapSet();
+        oop_maps->add_gc_map(call_offset, map);
+        restore_live_registers_except_r2(sasm);
+        __ z_br(Z_R14);
+      }
+      break;
+
+    case StubId::c1_substitutability_check_id:
+      {
+        __ set_info("substitutability_check", dont_gc_arguments);
+        OopMap* map = save_live_registers(sasm);
+
+        // Called with store_parameter and not C abi
+        const int frame_size = sasm->frame_size() * VMRegImpl::slots_per_word * VMRegImpl::stack_slot_size;
+        __ z_lg(Z_ARG2, 1 * BytesPerWord + FrameMap::first_available_sp_in_frame + frame_size, Z_SP); // left
+        __ z_lg(Z_ARG3, 0 * BytesPerWord + FrameMap::first_available_sp_in_frame + frame_size, Z_SP); // right
+        int call_offset = __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, substitutability_check), Z_ARG2, Z_ARG3);
+
+        oop_maps = new OopMapSet();
+        oop_maps->add_gc_map(call_offset, map);
+
+        restore_live_registers_except_r2(sasm);
+
+        __ z_br(Z_R14);
+
+        // Z_R2: are the two operands substitutable
       }
       break;
 
@@ -540,8 +654,23 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
     }
     break;
     case StubId::c1_throw_incompatible_class_change_error_id:
-      { __ set_info("throw_incompatible_class_cast_exception", dont_gc_arguments);
+      { __ set_info("throw_incompatible_class_change_error", dont_gc_arguments);
         oop_maps = generate_exception_throw(sasm, CAST_FROM_FN_PTR(address, throw_incompatible_class_change_error), false);
+      }
+      break;
+
+    case StubId::c1_throw_illegal_monitor_state_exception_id:
+      {
+        __ untested("c1_throw_illegal_monitor_state_exception");
+        __ set_info("c1_throw_illegal_monitor_state_exception", dont_gc_arguments);
+        oop_maps = generate_exception_throw(sasm, CAST_FROM_FN_PTR(address, throw_illegal_monitor_state_exception), false);
+      }
+      break;
+
+    case StubId::c1_throw_identity_exception_id:
+      {
+        __ set_info("throw_identity_exception", dont_gc_arguments);
+        oop_maps = generate_exception_throw(sasm, CAST_FROM_FN_PTR(address, throw_identity_exception), true);
       }
       break;
     case StubId::c1_slow_subtype_check_id:

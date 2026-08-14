@@ -259,17 +259,19 @@ public:
 
     enum : uint8_t {
       UNSAFE_ACCESS = 1 << 0,
-      WIDE_VECTORS  = 1 << 1,
-      MONITORS      = 1 << 2,
-      SCOPED_ACCESS = 1 << 3
+      WIDE_VECTORS = 1 << 1,
+      MONITORS = 1 << 2,
+      SCOPED_ACCESS = 1 << 3,
+      NEEDS_STACK_REPAIR = 1 << 4,
     };
 
     Flags() : _bits(0) {}
-    Flags(bool has_unsafe_access, bool has_wide_vectors, bool has_monitors, bool has_scoped_access) :
+    Flags(bool has_unsafe_access, bool has_wide_vectors, bool has_monitors, bool has_scoped_access, bool needs_stack_repair) :
       _bits((has_unsafe_access ? UNSAFE_ACCESS : 0) |
-            (has_wide_vectors  ? WIDE_VECTORS  : 0) |
-            (has_monitors      ? MONITORS      : 0) |
-            (has_scoped_access ? SCOPED_ACCESS : 0))
+            (has_wide_vectors ? WIDE_VECTORS : 0) |
+            (has_monitors ? MONITORS : 0) |
+            (has_scoped_access ? SCOPED_ACCESS : 0) |
+            (needs_stack_repair ? NEEDS_STACK_REPAIR : 0))
     {}
 
     // May fault due to unsafe access
@@ -283,6 +285,9 @@ public:
 
     // Used by shared scope closure (scopedMemoryAccess.cpp)
     bool has_scoped_access() const { return (_bits & SCOPED_ACCESS) != 0; }
+
+    // Stack has been extended and needs repair. See comment in MacroAssembler::remove_frame
+    bool needs_stack_repair() const { return (_bits & NEEDS_STACK_REPAIR) != 0; }
   };
 
 private:
@@ -739,16 +744,7 @@ public:
   bool  has_monitors() const                      { return _flags.has_monitors(); }
   bool  has_scoped_access() const                 { return _flags.has_scoped_access(); }
   bool  has_wide_vectors() const                  { return _flags.has_wide_vectors(); }
-
-  bool  needs_stack_repair() const {
-    if (is_compiled_by_c1()) {
-      return method()->c1_needs_stack_repair();
-    } else if (is_compiled_by_c2()) {
-      return method()->c2_needs_stack_repair();
-    } else {
-      return false;
-    }
-  }
+  bool  needs_stack_repair() const                { return _flags.needs_stack_repair(); }
 
   bool  has_flushed_dependencies() const          { return _has_flushed_dependencies; }
   void  set_has_flushed_dependencies(bool z)      {

@@ -253,6 +253,7 @@ inline uint VtableStubs::hash(bool is_vtable_stub, int vtable_index, bool caller
   // Assumption: receiver_location < 4 in most cases.
   int hash = ((vtable_index << 2) ^ VtableStub::receiver_location()->value()) + vtable_index;
   if (caller_is_c1) {
+    // We have different vtable stubs for C1 and C2. We therefore make sure to get different hashes.
     hash = 7 - hash;
   }
   return (is_vtable_stub ? ~hash : hash)  & mask;

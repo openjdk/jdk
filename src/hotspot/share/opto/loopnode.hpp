@@ -84,10 +84,10 @@ protected:
          LoopNestInnerLoop     = 1<<15,
          LoopNestLongOuterLoop = 1<<16,
          MultiversionFastLoop         = 1<<17,
-         MultiversionSlowLoop         = 2<<17,
+         MultiversionSlowLoop         = 2<<17, // 1<<18
          MultiversionDelayedSlowLoop  = 3<<17,
          MultiversionFlagsMask        = 3<<17,
-         FlatArrays            = 1<<18};
+         FlatArrays            = 1<<19};
   char _unswitch_count;
   enum { _unswitch_max=3 };
 
