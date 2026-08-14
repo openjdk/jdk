@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "oops/compressedKlass.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/globals.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 // The markWord describes the header of an object.
@@ -53,8 +54,7 @@
 //
 //    [header          | 00]  locked             locked regular object header (fast-locking in use)
 //    [header          | 01]  unlocked           regular object header
-//    [header          | 10]  monitor            inflated lock (UseObjectMonitorTable == true)
-//    [ptr             | 10]  monitor            inflated lock (UseObjectMonitorTable == false, header is swapped out)
+//    [header          | 10]  monitor            inflated lock
 //    [ptr             | 11]  marked             used to mark an object (header is swapped out)
 //
 //  - self-fwd - used by some GCs to indicate in-place forwarding.
@@ -66,7 +66,14 @@
 //
 //  - age - used by some GCs to track the age of objects.
 //
-//  - valhalla - reserved for valhalla
+//  - valhalla - only supported on 64-bit VMs
+//
+//    * inline types:      A value class instance
+//    * flat arrays:       An array with flattened value class elements
+//    * null-free arrays:  An array instance without null elements
+//    * valhalla reserved: Reserved for future use
+//
+//    Inline types cannot be locked and do not have an identity hash.
 //
 //  - hash - contains the identity hash value: largest value is 31 bits, see
 //    os::random().  Also, 64-bit VMs require a hash value no bigger than 32
@@ -116,25 +123,41 @@ class markWord {
   static const int lock_bits                      = 2;
   static const int self_fwd_bits                  = 1;
   static const int age_bits                       = 4;
-  static const int valhalla_reserved_bits         = LP64_ONLY(4) NOT_LP64(0);
-  static const int max_hash_bits                  = BitsPerWord - age_bits - lock_bits - self_fwd_bits - valhalla_reserved_bits;
+  static const int inline_type_bits               = LP64_ONLY(1) NOT_LP64(0);
+  static const int null_free_array_bits           = LP64_ONLY(1) NOT_LP64(0);
+  static const int flat_array_bits                = LP64_ONLY(1) NOT_LP64(0);
+  static const int valhalla_reserved_bits         = LP64_ONLY(1) NOT_LP64(0);
+  static const int max_hash_bits                  = BitsPerWord - age_bits - lock_bits - inline_type_bits - valhalla_reserved_bits - flat_array_bits - null_free_array_bits - self_fwd_bits;
   static const int hash_bits                      = max_hash_bits > 31 ? 31 : max_hash_bits;
 
   // Shifts
   static const int lock_shift                     = 0;
   static const int self_fwd_shift                 = lock_shift + lock_bits;
   static const int age_shift                      = self_fwd_shift + self_fwd_bits;
-  static const int valhalla_reserved_shift        = age_shift + age_bits;
+  static const int inline_type_shift              = age_shift + age_bits;
+  static const int null_free_array_shift          = inline_type_shift + inline_type_bits;
+  static const int flat_array_shift               = null_free_array_shift + null_free_array_bits;
+  static const int valhalla_reserved_shift        = flat_array_shift + flat_array_bits;
   static const int hash_shift                     = valhalla_reserved_shift + valhalla_reserved_bits;
 
   // Masks (in-place)
   static const uintptr_t lock_mask_in_place       = right_n_bits(lock_bits) << lock_shift;
   static const uintptr_t self_fwd_bit_in_place    = right_n_bits(self_fwd_bits) << self_fwd_shift;
   static const uintptr_t age_mask_in_place        = right_n_bits(age_bits) << age_shift;
+  static const uintptr_t inline_type_bit_in_place = right_n_bits(inline_type_bits) << inline_type_shift;
+  static const uintptr_t null_free_array_bit_in_place = right_n_bits(null_free_array_bits) << null_free_array_shift;
+  static const uintptr_t flat_array_bit_in_place  = right_n_bits(flat_array_bits) << flat_array_shift;
+  static const uintptr_t valhalla_reserved_bit_in_place = right_n_bits(valhalla_reserved_bits) << valhalla_reserved_shift;
   static const uintptr_t hash_mask_in_place       = right_n_bits(hash_bits) << hash_shift;
 
   // Verify that _bit_in_place refers to constants with only one bit.
   static_assert(is_power_of_2(self_fwd_bit_in_place));
+#ifdef _LP64
+  static_assert(is_power_of_2(inline_type_bit_in_place));
+  static_assert(is_power_of_2(null_free_array_bit_in_place));
+  static_assert(is_power_of_2(flat_array_bit_in_place));
+  static_assert(is_power_of_2(valhalla_reserved_bit_in_place));
+#endif
 
   // Masks (unshifted)
   static const uintptr_t lock_mask                = lock_mask_in_place >> lock_shift;
@@ -159,6 +182,9 @@ class markWord {
   static const uintptr_t monitor_value            = 2;
   static const uintptr_t marked_value             = 3;
 
+  static const uintptr_t inline_type_pattern      = inline_type_bit_in_place | unlocked_value;
+  static const uintptr_t inline_type_pattern_mask = inline_type_bit_in_place | lock_mask_in_place;
+
   static const uintptr_t no_hash                  = 0 ;  // no hash value assigned
   static const uintptr_t no_hash_in_place         = (uintptr_t)no_hash << hash_shift;
   static const uintptr_t no_lock_in_place         = unlocked_value;
@@ -167,6 +193,14 @@ class markWord {
 
   // Creates a markWord with all bits set to zero.
   static markWord zero() { return markWord(uintptr_t(0)); }
+
+  bool is_inline_type() const {
+#ifdef _LP64 // 64 bit encodings only
+    return (mask_bits(value(), inline_type_pattern_mask) == inline_type_pattern);
+#else
+    return false;
+#endif
+  }
 
   // lock accessors (note that these assume lock_shift == 0)
   bool is_locked()   const {
@@ -180,6 +214,8 @@ class markWord {
   }
 
   bool is_neutral()  const {  // Not locked, or marked - a "clean" neutral state
+    LP64_ONLY(assert(!is_unlocked() || mask_bits(value(), inline_type_bit_in_place) == 0,
+                     "Inline types should not be used for locking. _value: " PTR_FORMAT, _value));
     return (mask_bits(value(), lock_mask_in_place) == unlocked_value);
   }
 
@@ -190,6 +226,9 @@ class markWord {
 
   // Should this header be preserved during GC?
   bool must_be_preserved() const {
+    // The reserved bits are only guaranteed to be unset if the mark word is "unlocked"
+    LP64_ONLY(assert(!is_unlocked() || mask_bits(value(),  valhalla_reserved_bit_in_place) == 0,
+                     "Reserved bits should not be used. _value: " PTR_FORMAT, _value));
     return !is_unlocked() || !has_no_hash();
   }
 
@@ -215,21 +254,19 @@ class markWord {
     return markWord((value() & ~lock_mask_in_place) | monitor_value);
   }
   ObjectMonitor* monitor() const {
-    assert(has_monitor(), "check");
-    assert(!UseObjectMonitorTable, "Locking with OM table does not use markWord for monitors");
-    // Use xor instead of &~ to provide one extra tag-bit check.
-    return (ObjectMonitor*) (value() ^ monitor_value);
+    // Locking with OM table does not use markWord for monitors.
+    ShouldNotCallThis();
+    return (ObjectMonitor*) nullptr;
   }
 
   static markWord encode(ObjectMonitor* monitor) {
-    assert(!UseObjectMonitorTable, "Locking with OM table does not use markWord for monitors");
-    uintptr_t tmp = (uintptr_t) monitor;
-    return markWord(tmp | monitor_value);
+    // Locking with OM table does not use markWord for monitors.
+    ShouldNotCallThis();
+    return markWord(0);
   }
 
   bool has_monitor_pointer() const {
-    intptr_t lockbits = value() & lock_mask_in_place;
-    return !UseObjectMonitorTable && lockbits == monitor_value;
+    return false; // Locking with OM table does not use markWord for monitors.
   }
 
   bool has_displaced_mark_helper() const {
@@ -261,6 +298,26 @@ class markWord {
     return hash() == no_hash;
   }
 
+  bool is_flat_array() const {
+    assert(!has_monitor_pointer(), "Bits are not valid if replaced by a monitor pointer: " PTR_FORMAT, value());
+    assert(!is_marked(), "Bits might not be valid if marked by the GC: " PTR_FORMAT, value());
+#ifdef _LP64 // 64 bit encodings only
+    return (mask_bits(value(), flat_array_bit_in_place) != 0);
+#else
+    return false;
+#endif
+  }
+
+  bool is_null_free_array() const {
+    assert(!has_monitor_pointer(), "Bits are not valid if replaced by a monitor pointer: " PTR_FORMAT, value());
+    assert(!is_marked(), "Bits might not be valid if marked by the GC: " PTR_FORMAT, value());
+#ifdef _LP64 // 64 bit encodings only
+    return (mask_bits(value(), null_free_array_bit_in_place) != 0);
+#else
+    return false;
+#endif
+  }
+
   markWord copy_set_hash(intptr_t hash) const {
     uintptr_t tmp = value() & (~hash_mask_in_place);
     tmp |= ((hash & hash_mask) << hash_shift);
@@ -273,9 +330,29 @@ class markWord {
   inline narrowKlass narrow_klass() const;
   inline markWord set_narrow_klass(narrowKlass narrow_klass) const;
 
-  // Prototype mark for initialization
+  // Prototype marks for initialization
+
   static markWord prototype() {
     return markWord(unlocked_value);
+  }
+
+  static markWord inline_type_prototype() {
+    NOT_LP64(assert(false, "Should not be called in 32 bit mode"));
+    return markWord(unlocked_value | inline_type_bit_in_place);
+  }
+
+  static markWord flat_array_prototype(bool null_free) {
+    NOT_LP64(assert(false, "Should not be called in 32 bit mode"));
+    if (null_free) {
+      return markWord(unlocked_value | flat_array_bit_in_place | null_free_array_bit_in_place);
+    } else {
+      return markWord(unlocked_value | flat_array_bit_in_place);
+    }
+  }
+
+  static markWord null_free_array_prototype() {
+    NOT_LP64(assert(false, "Should not be called in 32 bit mode"));
+    return markWord(unlocked_value | null_free_array_bit_in_place);
   }
 
   // Debugging
