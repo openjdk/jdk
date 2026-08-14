@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,10 +138,10 @@ public class CopyAndMove {
                                      BasicFileAttributes attrs2)
     {
         // check file type
-        assertTrue(attrs1.isRegularFile() == attrs2.isRegularFile());
-        assertTrue(attrs1.isDirectory() == attrs2.isDirectory());
-        assertTrue(attrs1.isSymbolicLink() == attrs2.isSymbolicLink());
-        assertTrue(attrs1.isOther() == attrs2.isOther());
+        assertEquals(attrs1.isRegularFile(), attrs2.isRegularFile());
+        assertEquals(attrs1.isDirectory(), attrs2.isDirectory());
+        assertEquals(attrs1.isSymbolicLink(), attrs2.isSymbolicLink());
+        assertEquals(attrs1.isOther(), attrs2.isOther());
 
         // check last modified time if not a symbolic link
         if (!attrs1.isSymbolicLink()) {
@@ -162,7 +162,7 @@ public class CopyAndMove {
 
         // check size
         if (attrs1.isRegularFile())
-            assertTrue(attrs1.size() == attrs2.size());
+            assertEquals(attrs1.size(), attrs2.size());
     }
 
     static void setWindowsLinkAttributes(Path link) throws IOException {
@@ -194,11 +194,11 @@ public class CopyAndMove {
     static void checkDosAttributes(DosFileAttributes attrs1,
                                    DosFileAttributes attrs2)
     {
-        assertTrue(attrs1.isReadOnly() == attrs2.isReadOnly(),
+        assertEquals(attrs1.isReadOnly(), attrs2.isReadOnly(),
             "isReadOnly%n1: %s%n2: %s%n%n", attrs1.isReadOnly(), attrs2.isReadOnly());
-        assertTrue(attrs1.isHidden() == attrs2.isHidden(),
+        assertEquals(attrs1.isHidden(), attrs2.isHidden(),
             "isHidden%n1: %s%n2: %s%n%n", attrs1.isHidden(), attrs2.isHidden());
-        assertTrue(attrs1.isSystem() == attrs2.isSystem(),
+        assertEquals(attrs1.isSystem(), attrs2.isSystem(),
             "isSystem%n1: %s%n2: %s%n%n", attrs1.isSystem(), attrs2.isSystem());
     }
 
@@ -224,7 +224,7 @@ public class CopyAndMove {
             int size = view.size(name);
             ByteBuffer bb = ByteBuffer.allocate(size);
             int n = view.read(name, bb);
-            assertTrue(n == size);
+            assertEquals(n, size);
             bb.flip();
             result.put(name, bb);
         }
@@ -269,7 +269,7 @@ public class CopyAndMove {
 
         // move file
         Path result = move(source, target, options);
-        assertTrue(result == target);
+        assertEquals(result, target);
 
         // verify source does not exist
         assertTrue(notExists(source));
@@ -739,11 +739,11 @@ public class CopyAndMove {
             // check that timestamps on the source are retained for the target
             FileTime srcCreationTime = sourceAttrs.creationTime();
             FileTime tgtCreationTime = targetAttrs.creationTime();
-            assertTrue(srcCreationTime.equals(tgtCreationTime));
+            assertEquals(srcCreationTime, tgtCreationTime);
 
             FileTime srcModTime = sourceAttrs.lastModifiedTime();
             FileTime tgtModTime = targetAttrs.lastModifiedTime();
-            assertTrue(srcModTime.equals(tgtModTime));
+            assertEquals(srcModTime, tgtModTime);
 
             // check DOS attributes are copied
             checkDosAttributes(
@@ -757,7 +757,7 @@ public class CopyAndMove {
         throws IOException
     {
         Path result = copy(source, target, options);
-        assertTrue(result == target);
+        assertEquals(result, target);
 
         // get attributes of source and target file to verify copy
         boolean followLinks = true;
@@ -776,7 +776,7 @@ public class CopyAndMove {
 
         // check hash if regular file
         if (basicAttributes.isRegularFile())
-            assertTrue(computeHash(source) == computeHash(target));
+            assertEquals(computeHash(source), computeHash(target));
 
         // check link target if symbolic link
         if (basicAttributes.isSymbolicLink())
@@ -1208,9 +1208,9 @@ public class CopyAndMove {
                 } else {
                     n = copy(in, target);
                 }
-                assertTrue(in.read() == -1);   // EOF
-                assertTrue(n == size);
-                assertTrue(size(target) == size);
+                assertEquals(in.read(), -1);   // EOF
+                assertEquals(n, size);
+                assertEquals(size(target), size);
             } finally {
                 in.close();
             }
@@ -1258,15 +1258,15 @@ public class CopyAndMove {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
 
             long n = copy(source, out);
-            assertTrue(n == size);
-            assertTrue(out.size() == size);
+            assertEquals(n, size);
+            assertEquals(out.size(), size);
 
             byte[] read = out.toByteArray();
             assertTrue(Arrays.equals(read, b));
 
             // check output stream is open
             out.write(0);
-            assertTrue(out.size() == size+1);
+            assertEquals(out.size(), size+1);
         } finally {
             delete(source);
         }
@@ -1281,6 +1281,25 @@ public class CopyAndMove {
         if (!value) {
             System.err.format(format, args);
             throw new RuntimeException("Assertion failed");
+        }
+    }
+
+    static void assertEquals(long lhs, long rhs) {
+        if (lhs != rhs) {
+            throw new RuntimeException("assertEquals: " + lhs + " != " + rhs);
+        }
+    }
+
+    static void assertEquals(Object lhs, Object rhs) {
+        assertEquals(lhs, rhs, null);
+    }
+
+    static void assertEquals(Object lhs, Object rhs, String format, Object... args) {
+        if (!Objects.equals(lhs, rhs)) {
+            String msg = format == null
+                ? "assertEquals: " + Objects.toString(lhs) + " != " + Objects.toString(rhs)
+                : String.format(format, args);
+            throw new RuntimeException(msg);
         }
     }
 
