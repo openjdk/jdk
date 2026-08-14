@@ -28,6 +28,7 @@
  * @enablePreview
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.value
+ *          java.base/jdk.internal.vm.annotation
  * @run main/othervm -XX:-BackgroundCompilation ${test.main.class}
  */
 
@@ -36,6 +37,7 @@ package compiler.valhalla.inlinetypes;
 import java.lang.reflect.Field;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.value.ValueClass;
+import jdk.internal.vm.annotation.LooselyConsistentValue;
 
 public class CompareAndSetFlatArrayField {
     static public value class MyValue {
@@ -48,18 +50,24 @@ public class CompareAndSetFlatArrayField {
     private static final Unsafe U = Unsafe.getUnsafe();
     private static final long BASE_OFFSET;
     private static final int INDEX_SCALE;
-    private static MyValue[] array;
+    private static final MyValue[] array;
     private static final boolean FLATTENED_ARRAY;
     private static final int LAYOUT;
+    private static final long VALUE_HEADER_SIZE;
+    private static final long FIELD_OFFSET;
+    
     private static Object o1 = new Object();
     private static Object o2 = new Object();
     static {
         try {
-            array = (MyValue[])ValueClass.newNullRestrictedAtomicArray(MyValue.class, 1, new MyValue(o1));
+            array = (MyValue[])ValueClass.newNullRestrictedNonAtomicArray(MyValue.class, 1, new MyValue(o1));
             BASE_OFFSET = U.arrayInstanceBaseOffset(array);
             INDEX_SCALE = U.arrayInstanceIndexScale(array);
             FLATTENED_ARRAY = ValueClass.isFlatArray(array);
             LAYOUT = U.arrayLayout(array);
+            VALUE_HEADER_SIZE = U.valueHeaderSize(MyValue.class);
+            Field f = MyValue.class.getDeclaredField("field");
+            FIELD_OFFSET = U.objectFieldOffset(f);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -73,6 +81,10 @@ public class CompareAndSetFlatArrayField {
     static public void main(String args[]) {
         if (!FLATTENED_ARRAY) {
             throw new RuntimeException("flattened array expected");
+        }
+        System.out.println("XXX " + FIELD_OFFSET + " " + VALUE_HEADER_SIZE);
+        if (FIELD_OFFSET != VALUE_HEADER_SIZE) {
+            throw new RuntimeException("bad field offset");
         }
         if (INDEX_SCALE != 4) {
             throw new RuntimeException("unexpected layout");
