@@ -623,7 +623,7 @@ static bool no_side_effect_since_safepoint(Compile* C, const Node* head, const N
           if (m != mem->as_MergeMem()->base_memory()) {
             return false;
           }
-        } else {
+        } else if (m != mem) {
           return false;
         }
       } else {
