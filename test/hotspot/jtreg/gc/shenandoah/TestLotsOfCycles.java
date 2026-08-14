@@ -58,6 +58,12 @@
  *
  * @run main/othervm/timeout=480 -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
+ *      -XX:ShenandoahPinRegionRate=1000
+ *      -Dtarget=1000
+ *      TestLotsOfCycles
+ *
+ * @run main/othervm/timeout=480 -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
  *      -Dtarget=1000
  *      TestLotsOfCycles
  */

@@ -58,7 +58,6 @@ class AOTMetaspace : AllStatic {
   static void* _aot_metaspace_static_top;
   static intx _relocation_delta;
   static char* _requested_base_address;
-  static bool _use_optimized_module_handling;
   static Array<Method*>* _archived_method_handle_intrinsics;
   static int volatile _preimage_static_archive_dumped;
   static FileMapInfo* _output_mapinfo;
@@ -184,9 +183,8 @@ public:
     return is_windows;
   }
 
-  // Can we skip some expensive operations related to modules?
-  static bool use_optimized_module_handling() { return NOT_CDS(false) CDS_ONLY(_use_optimized_module_handling); }
-  static void disable_optimized_module_handling() { _use_optimized_module_handling = false; }
+  // Check if the supplied shared base address can be used as the encoding base.
+  static bool shared_base_valid(char* shared_base);
 
 private:
   static void read_extra_data(JavaThread* current, const char* filename) NOT_CDS_RETURN;

@@ -129,8 +129,6 @@ void G1HeapRegion::hr_clear(bool clear_space) {
 
   rem_set()->clear();
 
-  G1CollectedHeap::heap()->concurrent_mark()->reset_top_at_mark_start(this);
-
   _parsable_bottom.store_relaxed(bottom());
   _garbage_bytes.store_relaxed(0);
   _incoming_refs = 0;
@@ -415,6 +413,8 @@ bool G1HeapRegion::verify_code_roots(VerifyOption vo) const {
     return has_code_roots;
   }
 
+  rem_set()->reset_code_root_table_scanner();
+
   VerifyCodeRootNMethodClosure nm_cl(this);
   code_roots_do(&nm_cl);
 
@@ -439,7 +439,9 @@ void G1HeapRegion::print_on(outputStream* st) const {
   }
   G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
   st->print("|TAMS " PTR_FORMAT "| PB " PTR_FORMAT "| %-9s ",
-            p2i(cm->top_at_mark_start(this)), p2i(parsable_bottom_acquire()), rem_set()->get_state_str());
+            p2i(cm->top_at_mark_start_or_bottom(this)),
+            p2i(parsable_bottom_acquire()),
+            rem_set()->get_state_str());
   if (UseNUMA) {
     G1NUMA* numa = G1NUMA::numa();
     if (node_index() < numa->num_active_nodes()) {

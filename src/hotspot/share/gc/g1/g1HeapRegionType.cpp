@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,8 +45,7 @@ bool G1HeapRegionType::is_valid(Tag tag) {
 }
 
 const char* G1HeapRegionType::get_str() const {
-  hrt_assert_is_valid(_tag);
-  switch (_tag) {
+  switch (get()) {
     case FreeTag:               return "FREE";
     case EdenTag:               return "EDEN";
     case SurvTag:               return "SURV";
@@ -60,8 +59,7 @@ const char* G1HeapRegionType::get_str() const {
 }
 
 const char* G1HeapRegionType::get_short_str() const {
-  hrt_assert_is_valid(_tag);
-  switch (_tag) {
+  switch (get()) {
     case FreeTag:               return "F";
     case EdenTag:               return "E";
     case SurvTag:               return "S";
@@ -75,8 +73,7 @@ const char* G1HeapRegionType::get_short_str() const {
 }
 
 G1HeapRegionTraceType::Type G1HeapRegionType::get_trace_type() {
-  hrt_assert_is_valid(_tag);
-  switch (_tag) {
+  switch (get()) {
     case FreeTag:               return G1HeapRegionTraceType::Free;
     case EdenTag:               return G1HeapRegionTraceType::Eden;
     case SurvTag:               return G1HeapRegionTraceType::Survivor;

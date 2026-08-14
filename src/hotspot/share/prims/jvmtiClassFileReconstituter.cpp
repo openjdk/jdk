@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "classfile/symbolTable.hpp"
+#include "classfile/vmClasses.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "memory/universe.hpp"
 #include "oops/bsmAttribute.inline.hpp"
@@ -465,6 +466,26 @@ void JvmtiClassFileReconstituter::write_permitted_subclasses_attribute() {
   }
 }
 
+// LoadableDescriptors {
+//   u2 attribute_name_index;
+//   u4 attribute_length;
+//   u2 number_of_descriptors;
+//   u2 descriptors[number_of_descriptors];
+// }
+void JvmtiClassFileReconstituter::write_loadable_descriptors_attribute() {
+  Array<u2>* loadable_descriptors = ik()->loadable_descriptors();
+  int number_of_descriptors = loadable_descriptors->length();
+  int length = sizeof(u2) * (1 + number_of_descriptors); // '1 +' is for number_of_descriptors field
+
+  write_attribute_name_index("LoadableDescriptors");
+  write_u4(length);
+  write_u2(checked_cast<u2>(number_of_descriptors));
+  for (int i = 0; i < number_of_descriptors; i++) {
+    u2 utf8_index = loadable_descriptors->at(i);
+    write_u2(utf8_index);
+  }
+}
+
 //  Record {
 //    u2 attribute_name_index;
 //    u4 attribute_length;
@@ -545,7 +566,12 @@ void JvmtiClassFileReconstituter::write_inner_classes_attribute(int length) {
     write_u2(iter.inner_class_info_index());
     write_u2(iter.outer_class_info_index());
     write_u2(iter.inner_name_index());
-    write_u2(iter.inner_access_flags());
+    u2 flags = iter.inner_access_flags();
+    // ClassFileParser may add identity to inner class attributes, so remove it.
+    if (!ik()->supports_inline_types()) {
+      flags &= ~JVM_ACC_IDENTITY;
+    }
+    write_u2(flags);
   }
 }
 
@@ -804,6 +830,9 @@ void JvmtiClassFileReconstituter::write_class_attributes() {
   if (ik()->permitted_subclasses() != Universe::the_empty_short_array()) {
     ++attr_count;
   }
+  if (ik()->loadable_descriptors() != Universe::the_empty_short_array()) {
+    ++attr_count;
+  }
   if (ik()->record_components() != nullptr) {
     ++attr_count;
   }
@@ -833,6 +862,9 @@ void JvmtiClassFileReconstituter::write_class_attributes() {
   }
   if (ik()->permitted_subclasses() != Universe::the_empty_short_array()) {
     write_permitted_subclasses_attribute();
+  }
+  if (ik()->loadable_descriptors() != Universe::the_empty_short_array()) {
+    write_loadable_descriptors_attribute();
   }
   if (ik()->record_components() != nullptr) {
     write_record_attribute();
@@ -1028,7 +1060,7 @@ void JvmtiClassFileReconstituter::copy_bytecodes(const methodHandle& mh,
       case Bytecodes::_getstatic       :  // fall through
       case Bytecodes::_putstatic       :  // fall through
       case Bytecodes::_getfield        :  // fall through
-      case Bytecodes::_putfield        :  {
+      case Bytecodes::_putfield        : {
         int field_index = Bytes::get_native_u2(bcp+1);
         u2 pool_index = mh->constants()->resolved_field_entry_at(field_index)->constant_pool_index();
         assert(pool_index < mh->constants()->length(), "sanity check");

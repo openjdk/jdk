@@ -123,7 +123,7 @@ public:
       bool is_clone_instance, ArrayCopyPhase phase) const;
 
   // Support for macro expanded GC barriers
-  virtual void eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const;
+  virtual void eliminate_gc_barrier(PhaseIterGVN* macro, Node* node) const;
   virtual void eliminate_gc_barrier_data(Node* node) const;
 
   // Allow barrier sets to have shared state that is preserved across a compilation unit.
@@ -228,10 +228,10 @@ public:
     return needs_load_ref_barrier(node) || needs_keep_alive_barrier(node);
   }
 
-  static void load_post(MacroAssembler* masm, const MachNode* node, Register obj, Address addr, Register tmp1, Register tmp2, bool narrow);
-  static void store_pre(MacroAssembler* masm, const MachNode* node, Register obj, Address addr, Register tmp1, Register tmp2, bool narrow);
-  static void store_post(MacroAssembler* masm, const MachNode* node, Address addr, Register tmp1, Register tmp2);
-  static void load_store_pre(MacroAssembler* masm, const MachNode* node, Register obj, Address addr, Register tmp1, Register tmp2, bool narrow);
+  static void       load_post(MacroAssembler* masm, const MachNode* node, Register obj, Address addr,  Register tmp1, Register tmp2, bool narrow);
+  static void       store_pre(MacroAssembler* masm, const MachNode* node, Address addr, Register tmp1, Register tmp2, Register tmp3, bool narrow);
+  static void      store_post(MacroAssembler* masm, const MachNode* node, Address addr, Register tmp1, Register tmp2);
+  static void  load_store_pre(MacroAssembler* masm, const MachNode* node, Address addr, Register tmp1, Register tmp2, Register tmp3, bool narrow);
   static void load_store_post(MacroAssembler* masm, const MachNode* node, Address addr, Register tmp1, Register tmp2);
 
   void emit_code(MacroAssembler& masm);

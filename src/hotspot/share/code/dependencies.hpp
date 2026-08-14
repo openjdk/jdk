@@ -114,36 +114,37 @@ class Dependencies: public ResourceObj {
     evol_method,
     FIRST_TYPE = evol_method,
 
+    // This dependency means that some argument of this method was
+    // assumed to be always passed in scalarized form. In case of
+    // a mismatch with two super methods (one assuming scalarized
+    // and one assuming non-scalarized), all callers of this method
+    // (via virtual calls) now need to be recompiled.
+    // See CompiledEntrySignature::compute_calling_conventions
+    mismatch_calling_convention,
+
     // A context type CX is a leaf it if has no proper subtype.
     leaf_type,
 
     // An abstract class CX has exactly one concrete subtype CC.
     abstract_with_unique_concrete_subtype,
 
-    // Given a method M1 and a context class CX, the set MM(CX, M1) of
+    // Given a method M1 and a context class CX, the set MM(CX, M1, RC1, RM1) of
     // "concrete matching methods" in CX of M1 is the set of every
     // concrete M2 for which it is possible to create an invokevirtual
     // or invokeinterface call site that can reach either M1 or M2.
     // That is, M1 and M2 share a name, signature, and vtable index.
-    // We wish to notice when the set MM(CX, M1) is just {M1}, or
+    // We wish to notice when the set MM(CX, M1, RC1, RM1) is just {M1}, or
     // perhaps a set of two {M1,M2}, and issue dependencies on this.
 
-    // The set MM(CX, M1) can be computed by starting with any matching
+    // The set MM(CX, M1, RC1, RM1) can be computed by starting with any matching
     // concrete M2 that is inherited into CX, and then walking the
     // subtypes* of CX looking for concrete definitions.
 
-    // The parameters to this dependency are the method M1 and the
-    // context class CX.  M1 must be either inherited in CX or defined
-    // in a subtype* of CX.  It asserts that MM(CX, M1) is no greater
-    // than {M1}.
-    unique_concrete_method_2, // one unique concrete method under CX
-
-    // In addition to the method M1 and the context class CX, the parameters
-    // to this dependency are the resolved class RC1 and the
-    // resolved method RM1. It asserts that MM(CX, M1, RC1, RM1)
-    // is no greater than {M1}. RC1 and RM1 are used to improve the precision
-    // of the analysis.
-    unique_concrete_method_4, // one unique concrete method under CX
+    // The parameters to this dependency are the context class CX, the method M1,
+    // the resolved class RC1, and the resolved method RM1. M1 must be either inherited in CX
+    // or defined in a subtype* of CX. It asserts that MM(CX, M1, RC1, RM1) is
+    // no greater than {M1}. RC1 and RM1 are used to improve the precision of the analysis.
+    unique_concrete_method, // one unique concrete method under CX
 
     // This dependency asserts that interface CX has a unique implementor class.
     unique_implementor, // one unique implementor under CX
@@ -166,7 +167,7 @@ class Dependencies: public ResourceObj {
     non_klass_types     = (1 << call_site_target_value),
     klass_types         = all_types & ~non_klass_types,
 
-    non_ctxk_types      = (1 << evol_method) | (1 << call_site_target_value),
+    non_ctxk_types      = (1 << evol_method) | (1 << mismatch_calling_convention) | (1 << call_site_target_value),
     implicit_ctxk_types = 0,
     explicit_ctxk_types = all_types & ~(non_ctxk_types | implicit_ctxk_types),
 
@@ -179,7 +180,9 @@ class Dependencies: public ResourceObj {
     // If a dependency does not have a context type, there is a
     // default context, depending on the type of the dependency.
     // This bit signals that a default context has been compressed away.
-    default_context_type_bit = (1<<LG2_TYPE_LIMIT)
+    default_context_type_bit = (1<<LG2_TYPE_LIMIT),
+
+    method_types = (1 << evol_method) | (1 << mismatch_calling_convention),
   };
 
   static const char* dep_name(DepType dept);
@@ -189,6 +192,8 @@ class Dependencies: public ResourceObj {
 
   static bool has_explicit_context_arg(DepType dept) { return dept_in_mask(dept, explicit_ctxk_types); }
   static bool has_implicit_context_arg(DepType dept) { return dept_in_mask(dept, implicit_ctxk_types); }
+
+  static bool has_method_dep(DepType dept) { return dept_in_mask(dept, method_types); }
 
   static int           dep_context_arg(DepType dept) { return has_explicit_context_arg(dept) ? 0 : -1; }
   static int  dep_implicit_context_arg(DepType dept) { return has_implicit_context_arg(dept) ? 0 : -1; }
@@ -268,9 +273,9 @@ class Dependencies: public ResourceObj {
  public:
   // Adding assertions to a new dependency set at compile time:
   void assert_evol_method(ciMethod* m);
+  void assert_mismatch_calling_convention(ciMethod* m);
   void assert_leaf_type(ciKlass* ctxk);
   void assert_abstract_with_unique_concrete_subtype(ciKlass* ctxk, ciKlass* conck);
-  void assert_unique_concrete_method(ciKlass* ctxk, ciMethod* uniqm);
   void assert_unique_concrete_method(ciKlass* ctxk, ciMethod* uniqm, ciKlass* resolved_klass, ciMethod* resolved_method);
   void assert_unique_implementor(ciInstanceKlass* ctxk, ciInstanceKlass* uniqk);
   void assert_has_no_finalizable_subclasses(ciKlass* ctxk);
@@ -288,9 +293,6 @@ class Dependencies: public ResourceObj {
   static bool is_concrete_klass(Klass* k);    // k is instantiable
   static bool is_concrete_method(Method* m, Klass* k);  // m is invocable
   static Klass* find_finalizable_subclass(InstanceKlass* ik);
-
-  static bool is_concrete_root_method(Method* uniqm, InstanceKlass* ctxk);
-  static Klass* find_witness_AME(InstanceKlass* ctxk, Method* m, KlassDepChange* changes = nullptr);
 
   // These versions of the concreteness queries work through the CI.
   // The CI versions are allowed to skew sometimes from the VM
@@ -316,10 +318,10 @@ class Dependencies: public ResourceObj {
 
   // Checking old assertions at run-time (in the VM only):
   static Klass* check_evol_method(Method* m);
+  static Klass* check_mismatch_calling_convention(Method* m);
   static Klass* check_leaf_type(InstanceKlass* ctxk);
   static Klass* check_abstract_with_unique_concrete_subtype(InstanceKlass* ctxk, Klass* conck, NewKlassDepChange* changes = nullptr);
   static Klass* check_unique_implementor(InstanceKlass* ctxk, Klass* uniqk, NewKlassDepChange* changes = nullptr);
-  static Klass* check_unique_concrete_method(InstanceKlass* ctxk, Method* uniqm, NewKlassDepChange* changes = nullptr);
   static Klass* check_unique_concrete_method(InstanceKlass* ctxk, Method* uniqm, Klass* resolved_klass, Method* resolved_method, KlassDepChange* changes = nullptr);
   static Klass* check_has_no_finalizable_subclasses(InstanceKlass* ctxk, NewKlassDepChange* changes = nullptr);
   static Klass* check_call_site_target_value(oop call_site, oop method_handle, CallSiteDepChange* changes = nullptr);
@@ -339,8 +341,7 @@ class Dependencies: public ResourceObj {
 
   // Detecting possible new assertions:
   static Klass*  find_unique_concrete_subtype(InstanceKlass* ctxk);
-  static Method* find_unique_concrete_method(InstanceKlass* ctxk, Method* m,
-                                             Klass** participant = nullptr); // out parameter
+
   static Method* find_unique_concrete_method(InstanceKlass* ctxk, Method* m, Klass* resolved_klass, Method* resolved_method);
 
 #ifdef ASSERT

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ void G1FullGCResetMetadataTask::G1ResetMetadataClosure::reset_region_metadata(G1
          "Non-humongous regions must not have cset group");
   hr->rem_set()->clear();
   hr->clear_both_card_tables();
+  _g1h->concurrent_mark()->reset_region_marking_state(hr);
 }
 
 bool G1FullGCResetMetadataTask::G1ResetMetadataClosure::do_heap_region(G1HeapRegion* hr) {

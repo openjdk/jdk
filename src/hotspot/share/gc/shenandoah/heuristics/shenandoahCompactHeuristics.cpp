@@ -32,7 +32,8 @@
 #include "logging/logTag.hpp"
 
 ShenandoahCompactHeuristics::ShenandoahCompactHeuristics(ShenandoahSpaceInfo* space_info) :
-  ShenandoahHeuristics(space_info) {
+  ShenandoahHeuristics(space_info),
+  _bytes_used_at_end_of_gc(0) {
   SHENANDOAH_ERGO_ENABLE_FLAG(ExplicitGCInvokesConcurrent);
   SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahImplicitGCInvokesConcurrent);
   SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahUncommit);
@@ -46,9 +47,10 @@ ShenandoahCompactHeuristics::ShenandoahCompactHeuristics(ShenandoahSpaceInfo* sp
 }
 
 bool ShenandoahCompactHeuristics::should_start_gc() {
+  const size_t used = _space_info->used();
   const size_t capacity = ShenandoahHeap::heap()->soft_max_capacity();
   const size_t available = _space_info->soft_mutator_available();
-  const size_t bytes_allocated = estimate_bytes_allocated_since_gc_start();
+  const size_t bytes_allocated = used > _bytes_used_at_end_of_gc ? used - _bytes_used_at_end_of_gc : 0;
 
   log_debug(gc, ergo)("should_start_gc calculation: available: " PROPERFMT ", soft_max_capacity: "  PROPERFMT ", "
                 "allocated_since_gc_start: "  PROPERFMT,
@@ -74,6 +76,11 @@ bool ShenandoahCompactHeuristics::should_start_gc() {
   return ShenandoahHeuristics::should_start_gc();
 }
 
+void ShenandoahCompactHeuristics::record_cycle_end() {
+  ShenandoahHeuristics::record_cycle_end();
+  _bytes_used_at_end_of_gc = _space_info->used();
+}
+
 void ShenandoahCompactHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
                                                                         RegionData* data, size_t size,
                                                                         size_t actual_free) {
@@ -93,12 +100,4 @@ void ShenandoahCompactHeuristics::choose_collection_set_from_regiondata(Shenando
       cset->add_region(r);
     }
   }
-}
-
-size_t ShenandoahCompactHeuristics::estimate_bytes_allocated_since_gc_start() const {
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  const double average_allocation_rate = heap->alloc_rate().weighted_average();
-  const double now = os::elapsedTime();
-  const double elapsed_seconds = now - cycle_start_time_seconds();
-  return shenandoah_safe_size_cast(average_allocation_rate * elapsed_seconds);
 }

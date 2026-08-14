@@ -77,6 +77,8 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_verify_mxcsr();
 
+  address generate_hf2i_fixup();
+  address generate_hf2l_fixup();
   address generate_f2i_fixup();
   address generate_f2l_fixup();
   address generate_d2i_fixup();
@@ -495,6 +497,9 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_intpoly_montgomeryMult_P256();
   address generate_intpoly_assign();
+
+  address generate_intpoly_mult_25519();
+  address generate_intpoly_square_25519();
 
   // SHA3 stubs
   void generate_sha3_stubs();

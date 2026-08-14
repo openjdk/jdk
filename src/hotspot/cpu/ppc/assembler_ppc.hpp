@@ -1048,6 +1048,13 @@ class Assembler : public AbstractAssembler {
     return (julong)x < maxplus1;
   }
 
+  // Test if x has exactly one consecutive range of one bits (e.g. 00111000)
+  static bool has_consecutive_ones(julong x) {
+    if (x == max_julong) return true;
+    if (x == 0) return false;
+    return is_power_of_2((x >> count_trailing_zeros(x)) + 1);
+  }
+
  protected:
   // helpers
 
@@ -1606,7 +1613,8 @@ class Assembler : public AbstractAssembler {
   inline void isel_0( Register d, ConditionRegister cr, Condition cc, Register b = noreg);
 
   // PPC 1, section 3.3.11, Fixed-Point Logical Instructions
-         void andi(   Register a, Register s, long ui16);   // optimized version
+         void andi(   Register a, Register s, julong int_or_long_const); // optimized version, may clobber CR0
+  static bool andi_supports(julong int_or_long_const);
   inline void andi_(  Register a, Register s, int ui16);
   inline void andis_( Register a, Register s, int ui16);
   inline void ori(    Register a, Register s, int ui16);

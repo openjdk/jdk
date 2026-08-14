@@ -23,6 +23,7 @@
  */
 
 #include "classfile/vmClasses.hpp"
+#include "classfile/vmIntrinsics.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "jfr/support/jfrIntrinsics.hpp"
@@ -31,6 +32,7 @@
 #include "opto/optoreg.hpp"
 #include "opto/output.hpp"
 #include "opto/runtime.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -667,6 +669,7 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_getLong:
   case vmIntrinsics::_getFloat:
   case vmIntrinsics::_getDouble:
+  case vmIntrinsics::_getFlatValue:
   case vmIntrinsics::_putReference:
   case vmIntrinsics::_putBoolean:
   case vmIntrinsics::_putByte:
@@ -676,6 +679,7 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_putLong:
   case vmIntrinsics::_putFloat:
   case vmIntrinsics::_putDouble:
+  case vmIntrinsics::_putFlatValue:
   case vmIntrinsics::_getReferenceVolatile:
   case vmIntrinsics::_getBooleanVolatile:
   case vmIntrinsics::_getByteVolatile:
@@ -742,6 +746,10 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_storeFence:
   case vmIntrinsics::_storeStoreFence:
   case vmIntrinsics::_fullFence:
+  case vmIntrinsics::_arrayInstanceBaseOffset:
+  case vmIntrinsics::_arrayInstanceIndexScale:
+  case vmIntrinsics::_arrayLayout:
+  case vmIntrinsics::_getFieldMap:
   case vmIntrinsics::_currentCarrierThread:
   case vmIntrinsics::_currentThread:
   case vmIntrinsics::_setCurrentThread:
@@ -760,6 +768,12 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_allocateInstance:
   case vmIntrinsics::_allocateUninitializedArray:
   case vmIntrinsics::_newArray:
+  case vmIntrinsics::_newNullRestrictedNonAtomicArray:
+  case vmIntrinsics::_newNullRestrictedAtomicArray:
+  case vmIntrinsics::_newNullableAtomicArray:
+  case vmIntrinsics::_isFlatArray:
+  case vmIntrinsics::_isNullRestrictedArray:
+  case vmIntrinsics::_isAtomicArray:
   case vmIntrinsics::_getLength:
   case vmIntrinsics::_copyOf:
   case vmIntrinsics::_copyOfRange:
@@ -792,6 +806,7 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_sha5_implCompress:
   case vmIntrinsics::_sha3_implCompress:
   case vmIntrinsics::_double_keccak:
+  case vmIntrinsics::_quad_keccak:
   case vmIntrinsics::_digestBase_implCompressMB:
   case vmIntrinsics::_multiplyToLen:
   case vmIntrinsics::_squareToLen:
@@ -818,6 +833,8 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_poly1305_processBlocks:
   case vmIntrinsics::_intpoly_montgomeryMult_P256:
   case vmIntrinsics::_intpoly_assign:
+  case vmIntrinsics::_intpoly_mult_25519:
+  case vmIntrinsics::_intpoly_square_25519:
   case vmIntrinsics::_updateCRC32:
   case vmIntrinsics::_updateBytesCRC32:
   case vmIntrinsics::_updateByteBufferCRC32:

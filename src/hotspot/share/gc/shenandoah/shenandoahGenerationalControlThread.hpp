@@ -80,12 +80,12 @@ private:
   // A reference to the heap
   ShenandoahGenerationalHeap* _heap;
 
-  // This is used to keep track of whether to age objects during the current cycle.
-  uint _age_period;
-
   // This is true when the old generation cycle is in an interruptible phase (i.e., marking or
   // preparing for mark).
   ShenandoahSharedFlag _allow_old_preemption;
+
+  // True while the current cycle is the bootstrap of an old GC.
+  bool _do_old_gc_bootstrap;
 
 public:
   ShenandoahGenerationalControlThread();
@@ -141,9 +141,6 @@ private:
   void notify_control_thread(MonitorLocker& ml, GCCause::Cause cause);
   void notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation);
   void notify_control_thread(MonitorLocker& ml, GCCause::Cause cause, ShenandoahGeneration* generation);
-
-  // Configure the heap to age objects and regions if the aging period has elapsed.
-  void maybe_set_aging_cycle();
 
   // Take the _control_lock and check for a request to run a gc cycle. If a request is found,
   // the `prepare` methods are used to configure the heap and update heuristics accordingly.
