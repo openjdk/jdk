@@ -32,6 +32,7 @@
 #include "gc/z/zHeap.hpp"
 #include "gc/z/zNMethod.hpp"
 #include "gc/z/zUtils.inline.hpp"
+#include "oops/accessBackend.hpp"
 #include "oops/inlineKlass.inline.hpp"
 #include "oops/objArrayOop.hpp"
 #include "utilities/copy.hpp"
@@ -510,7 +511,8 @@ inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::value_copy_in_h
   auto oop_function = [&](size_t offset) {
     zpointer* const src_p = (zpointer*)(src_payload + offset);
     zpointer* const dst_p = (zpointer*)(dst_payload + offset);
-    oop_copy_one(dst_p, src_p);
+    const OopCopyResult result = oop_copy_one(dst_p, src_p);
+    assert(result == OopCopyResult::ok, "Unexpected copy checks");
   };
 
   value_primitive_and_oop_iterate(
@@ -546,7 +548,8 @@ inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::value_store_nul
 
   auto oop_function = [&](size_t offset) {
     zpointer* const p = (zpointer*)(dst_payload + offset);
-    oop_clear_one(p);
+    const OopCopyResult result = oop_clear_one(p);
+    assert(result == OopCopyResult::ok, "Unexpected copy checks");
   };
 
   value_primitive_and_oop_iterate(klass,
