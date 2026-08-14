@@ -33,7 +33,9 @@
 #include "interpreter/interpreter.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/markWord.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/basicLock.hpp"
+#include "runtime/frame.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -43,18 +45,117 @@ void C1_MacroAssembler::explicit_null_check(Register base) {
   ShouldNotCallThis(); // unused
 }
 
-void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_bytes) {
-  assert(bang_size_in_bytes >= frame_size_in_bytes, "stack bang size incorrect");
-  generate_stack_overflow_check(bang_size_in_bytes);
+// Private helper: builds the actual frame without the stack-overflow check or
+// nmethod entry barrier.  Called from both build_frame() and scalarized_entry()
+// so that scalarized_entry can re-use the same sequence without duplicating
+// the overflow check / barrier.
+void C1_MacroAssembler::build_frame_helper(int frame_size_in_bytes, int sp_offset_for_orig_pc,
+                                           bool reset_orig_pc) {
   save_return_pc();
   push_frame(frame_size_in_bytes);
 
+  if (reset_orig_pc) {
+    // Zero orig_pc slot so that deoptimisation during arg buffering is
+    // detected correctly.
+    //
+    // TODO (s390x): validate sp_offset_for_orig_pc against the s390x frame
+    // layout (z_abi_160 + compiler frame) once the feature is enabled.
+    ShouldNotCallThis(); // poison: remove once validated on s390x
+    z_mvghi(sp_offset_for_orig_pc, Z_SP, 0);
+  }
+}
+
+void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_bytes,
+                                    int sp_offset_for_orig_pc,
+                                    bool has_scalarized_args,
+                                    Label* verified_inline_entry_label) {
+  assert(bang_size_in_bytes >= frame_size_in_bytes, "stack bang size incorrect");
+  generate_stack_overflow_check(bang_size_in_bytes);
+
+  build_frame_helper(frame_size_in_bytes, sp_offset_for_orig_pc, has_scalarized_args);
+
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->nmethod_entry_barrier(this);
+
+  if (verified_inline_entry_label != nullptr) {
+    // Jump here from the scalarized entry points that already created the frame.
+    bind(*verified_inline_entry_label);
+  }
 }
 
 void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
   if (breakAtEntry) z_illtrap(0xC1);
+}
+
+// Scalarized entry point: buffers inline-type arguments, shuffles them into
+// the normal ABI layout, then falls through into the verified entry.
+//
+// NOTE: the entire body is guarded by ShouldNotCallThis() because
+// InlineTypePassFieldsAsArgs is forced off for s390x
+int C1_MacroAssembler::scalarized_entry(const CompiledEntrySignature* ces, int frame_size_in_bytes, int bang_size_in_bytes,
+                                        int sp_offset_for_orig_pc, Label& verified_inline_entry_label, bool is_inline_ro_entry) {
+  assert(InlineTypePassFieldsAsArgs, "sanity");
+  // Make sure there is enough stack space for this method's activation.
+  assert(bang_size_in_bytes >= frame_size_in_bytes, "stack bang size incorrect");
+  ShouldNotCallThis(); // poison: remove once validated on s390x
+  untested("scalarized_entry s390x");
+
+  generate_stack_overflow_check(bang_size_in_bytes);
+
+  GrowableArray<SigEntry>* sig    = ces->sig();
+  GrowableArray<SigEntry>* sig_cc = is_inline_ro_entry ? ces->sig_cc_ro() : ces->sig_cc();
+  VMRegPair* regs      = ces->regs();
+  VMRegPair* regs_cc   = is_inline_ro_entry ? ces->regs_cc_ro() : ces->regs_cc();
+  int args_on_stack    = ces->args_on_stack();
+  int args_on_stack_cc = is_inline_ro_entry ? ces->args_on_stack_cc_ro() : ces->args_on_stack_cc();
+
+  assert(sig->length() <= sig_cc->length(), "Zero-sized inline class not allowed!");
+  BasicType* sig_bt = NEW_RESOURCE_ARRAY(BasicType, sig_cc->length());
+  int args_passed    = sig->length();
+  int args_passed_cc = SigEntry::fill_sig_bt(sig_cc, sig_bt);
+
+  // Build a temp frame so we can call into the runtime.  Must be properly set
+  // up to accommodate GC (nmethod entry barrier runs inside).
+  build_frame_helper(frame_size_in_bytes, sp_offset_for_orig_pc, true);
+
+  // The runtime call might safepoint; make sure the nmethod entry barrier fires.
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->nmethod_entry_barrier(this);
+
+  // Z_R13 is the method register expected by c1_buffer_inline_args (see
+  // c1_Runtime1_s390.cpp, StubId::c1_buffer_inline_args_id handler).
+  load_const_optimized(Z_R13, (intptr_t)(ces->method()));
+  if (is_inline_ro_entry) {
+    call_c_opt(Runtime1::entry_for(StubId::c1_buffer_inline_args_no_receiver_id));
+  } else {
+    call_c_opt(Runtime1::entry_for(StubId::c1_buffer_inline_args_id));
+  }
+  int rt_call_offset = offset();
+
+  // Remove the temp frame.
+  // pop_frame() restores Z_SP from the saved callers_sp slot; then we
+  // restore the return address that save_return_pc() had stored.
+  pop_frame();
+  restore_return_pc();
+
+  assert(args_on_stack <= args_on_stack_cc, "Sanity check");
+
+  // Z_R14 (the buffered value array) is the val_array argument to
+  // shuffle_inline_args.  On aarch64 a dedicated callee-saved register is
+  // used because r0 may hold a live argument; on s390x Z_R14 holds the
+  // return address which has already been restored above, so it is free here.
+  // TODO (s390x): confirm this register choice is safe across shuffle_inline_args.
+  shuffle_inline_args(true, is_inline_ro_entry, sig_cc,
+                      args_passed_cc, args_on_stack_cc, regs_cc, // from
+                      args_passed,    args_on_stack,    regs,    // to
+                      0, Z_R14);
+
+  // Build the real frame.  The jump below skips the stack-bang and frame-setup
+  // in verified_inline_entry (which uses a different real_frame_size).
+  build_frame_helper(frame_size_in_bytes, sp_offset_for_orig_pc, false);
+
+  z_brul(verified_inline_entry_label);
+  return rt_call_offset;
 }
 
 void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox, Label& slow_case) {
@@ -97,13 +198,22 @@ void C1_MacroAssembler::try_allocate(
 
 void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register len, Register Rzero, Register t1) {
   assert_different_registers(obj, klass, len, t1, Rzero);
-  if (UseCompactObjectHeaders) {
+  if (UseCompactObjectHeaders || Arguments::is_valhalla_enabled()) {
+    // COH: Markword contains class pointer which is only known at runtime.
+    // Valhalla: Could have value class which has a different prototype header to a normal object.
+    // In both cases, we need to fetch dynamically.
     z_lg(t1, Address(klass, in_bytes(Klass::prototype_header_offset())));
     z_stg(t1, Address(obj, oopDesc::mark_offset_in_bytes()));
   } else {
+    // Otherwise: Can use the statically computed prototype header which is the same for every object.
     load_const_optimized(t1, (intx)markWord::prototype().value());
     z_stg(t1, Address(obj, oopDesc::mark_offset_in_bytes()));
-    store_klass(klass, obj, t1);
+  }
+
+  if (!UseCompactObjectHeaders) {
+    // COH: Markword already contains class pointer. Nothing else to do.
+    // Otherwise: Fetch klass pointer following the markword
+    store_klass(klass, obj, t1); // Take care not to kill klass
   }
 
   if (len->is_valid()) {
@@ -248,6 +358,7 @@ void C1_MacroAssembler::allocate_array(
 
   verify_oop(obj, FILE_AND_LINE);
 }
+
 
 
 #ifndef PRODUCT

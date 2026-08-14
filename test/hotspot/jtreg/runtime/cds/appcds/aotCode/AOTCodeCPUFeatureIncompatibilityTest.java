@@ -51,41 +51,77 @@ import jdk.test.whitebox.WhiteBox;
 import jdk.test.whitebox.cpuinfo.CPUInfo;
 
 public class AOTCodeCPUFeatureIncompatibilityTest {
+    enum IncompatibilityMode {
+        MISSING,
+        ADDITIONAL
+    }
     public static void main(String... args) throws Exception {
+        int mode;
         List<String> cpuFeatures = CPUInfo.getFeatures();
         if (Platform.isX64()) {
             // Minimum value of UseSSE required by JVM is 2. So the production run has to be executed with UseSSE=2.
             // To simulate the case of incmpatible SSE feature, we can run this test only on system with higher SSE level (sse3 or above).
             if (isSSE3Supported(cpuFeatures)) {
-                testIncompatibleFeature("-XX:UseSSE=2", "sse3");
+                testIncompatibleFeature("-XX:UseSSE=2", "sse3", IncompatibilityMode.MISSING);
+                testIncompatibleFeature("-XX:UseSSE=2", "sse3", IncompatibilityMode.ADDITIONAL);
             }
             if (isAVXSupported(cpuFeatures)) {
-                testIncompatibleFeature("-XX:UseAVX=0", "avx");
+                testIncompatibleFeature("-XX:UseAVX=0", "avx", IncompatibilityMode.MISSING);
+                testIncompatibleFeature("-XX:UseAVX=0", "avx", IncompatibilityMode.ADDITIONAL);
+            }
+        } else if (Platform.isAArch64()) {
+            if (isCRC32Supported(cpuFeatures)) {
+                testIncompatibleFeature("-XX:-UseCRC32", "crc32", IncompatibilityMode.MISSING);
+                testIncompatibleFeature("-XX:-UseCRC32", "crc32", IncompatibilityMode.ADDITIONAL);
             }
         }
     }
 
     // vmOption = command line option to disable CPU feature
     // featureName = name of the CPU feature used by the JVM in the log messages
-    public static void testIncompatibleFeature(String vmOption, String featureName) throws Exception {
+    public static void testIncompatibleFeature(String vmOption, String featureName, IncompatibilityMode mode) throws Exception {
         new CDSAppTester("AOTCodeCPUFeatureIncompatibilityTest") {
             @Override
             public String[] vmArgs(RunMode runMode) {
-                if (runMode == RunMode.PRODUCTION) {
-                    return new String[] {vmOption, "-Xlog:aot+codecache*=debug"};
-                } else {
-                    return new String[] {"-Xlog:aot+codecache*=debug"};
+                if (runMode == RunMode.ASSEMBLY) {
+                    if (mode == IncompatibilityMode.MISSING) {
+                        return new String[] {"-Xlog:aot+codecache*=debug"};
+                    } else {
+                        return new String[] {vmOption, "-Xlog:aot+codecache*=debug"};
+                    }
+                } else if (runMode == RunMode.PRODUCTION) {
+                    if (mode == IncompatibilityMode.MISSING) {
+                        return new String[] {vmOption,
+                                             "-XX:+UnlockDiagnosticVMOptions",
+                                             // Prevent exiting VM on failure
+                                             "-XX:-AbortVMOnAOTCodeFailure",
+                                             "-Xlog:aot+codecache*=debug"};
+                    } else {
+                        return new String[] {"-XX:+UnlockDiagnosticVMOptions",
+                                             // Prevent exiting VM on failure
+                                             "-XX:-AbortVMOnAOTCodeFailure",
+                                             "-Xlog:aot+codecache*=debug"};
+                    }
                 }
+                return new String[]{};
             }
             @Override
             public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception {
                 if (runMode == RunMode.ASSEMBLY || runMode == RunMode.PRODUCTION) {
-                    out.shouldMatch("CPU features recorded in AOTCodeCache:.*" + featureName + ".*");
+                    if (mode == IncompatibilityMode.MISSING) {
+                        out.shouldMatch("CPU features recorded in AOTCodeCache:.*" + featureName + ".*");
+                    } else {
+                        out.shouldNotMatch("CPU features recorded in AOTCodeCache:.*" + featureName + ".*");
+                    }
                 }
 
                 if (runMode == RunMode.PRODUCTION) {
-                    out.shouldMatch("AOT Code Cache disabled: required cpu features are missing:.*" + featureName + ".*");
-                    out.shouldContain("Unable to use AOT Code Cache");
+                    out.shouldMatch("AOT Code Cache disabled: cpu features are incompatible");
+                    if (mode == IncompatibilityMode.MISSING) {
+                        out.shouldMatch("cpu features that are required:.*" + featureName + ".*");
+                    } else {
+                        out.shouldMatch("cpu features that are additional:.*" + featureName + ".*");
+                    }
                 }
             }
             @Override
@@ -107,5 +143,10 @@ public class AOTCodeCPUFeatureIncompatibilityTest {
     // Only used on x86-64 platform
     static boolean isAVXSupported(List<String> cpuFeatures) {
         return cpuFeatures.contains("avx");
+    }
+
+    // Only used on aarch64 platofrm
+    static boolean isCRC32Supported(List<String> cpuFeatures) {
+        return cpuFeatures.contains("crc32");
     }
 }

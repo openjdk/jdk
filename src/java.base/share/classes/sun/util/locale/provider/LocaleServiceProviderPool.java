@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,10 +88,12 @@ public final class LocaleServiceProviderPool {
         java.text.spi.DateFormatSymbolsProvider.class,
         java.text.spi.DecimalFormatSymbolsProvider.class,
         java.text.spi.NumberFormatProvider.class,
+        java.time.format.DateTimeFormatterPatternProvider.class,
+        java.util.spi.CalendarDataProvider.class,
+        java.util.spi.CalendarNameProvider.class,
         java.util.spi.CurrencyNameProvider.class,
         java.util.spi.LocaleNameProvider.class,
         java.util.spi.TimeZoneNameProvider.class,
-        java.util.spi.CalendarDataProvider.class
     };
 
     /**
@@ -368,16 +370,10 @@ public final class LocaleServiceProviderPool {
                 locbld.clearExtensions();
                 lookupLocale = locbld.build();
             } catch (IllformedLocaleException e) {
-                // A Locale with non-empty extensions
-                // should have well-formed fields except
-                // for ja_JP_JP and th_TH_TH. Therefore,
-                // it should never enter in this catch clause.
-                System.getLogger(LocaleServiceProviderPool.class.getCanonicalName())
-                    .log(System.Logger.Level.INFO,
-                        "A locale(" + locale + ") has non-empty extensions, but has illformed fields.");
-
-                // Fallback - script field will be lost.
-                lookupLocale = Locale.of(locale.getLanguage(), locale.getCountry(), locale.getVariant());
+                // E.g. "en-Latn-US-a-foo-x-lvariant-xy"
+                // Extensions can exist while variant is ill-formed
+                // Simply strip the extensions so that all fields are preserved
+                lookupLocale = lookupLocale.stripExtensions();
             }
         }
         return lookupLocale;

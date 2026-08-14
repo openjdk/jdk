@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,13 +171,15 @@ public sealed interface ModuleExportInfo
      * @param exportFlags the export flags, as a bitmask
      * @param exportsTo the modules to which this package is exported, or empty
      *        if this is an unqualified export
-     * @throws IllegalArgumentException if {@code exportFlags} is not {@link
-     *         java.lang.classfile##u2 u2} or if the number of modules exceeds
+     * @throws IllegalArgumentException if {@code exports} represents an
+     *         unnamed package; if any of {@code exportsTo} represents an
+     *         unnamed module; if {@code exportFlags} is not {@link
+     *         java.lang.classfile##u2 u2}; or if the number of modules exceeds
      *         the limit of {@link java.lang.classfile##u2 u2}
      */
     static ModuleExportInfo of(PackageDesc exports, int exportFlags,
                                List<ModuleDesc> exportsTo) {
-        return of(TemporaryConstantPool.INSTANCE.packageEntry(TemporaryConstantPool.INSTANCE.utf8Entry(exports.internalName())),
+        return of(TemporaryConstantPool.INSTANCE.packageEntry(exports),
                 exportFlags,
                 Util.moduleEntryList(exportsTo));
     }
@@ -189,8 +191,10 @@ public sealed interface ModuleExportInfo
      * @param exportFlags the export flags
      * @param exportsTo the modules to which this package is exported, or empty
      *        if this is an unqualified export
-     * @throws IllegalArgumentException if any flag cannot be applied to the
-     *         {@link AccessFlag.Location#MODULE_EXPORTS} location, or if the
+     * @throws IllegalArgumentException if {@code exports} represents an
+     *         unnamed package; if any of {@code exportsTo} represents an
+     *         unnamed module; if any flag cannot be applied to the
+     *         {@link AccessFlag.Location#MODULE_EXPORTS} location; or if the
      *         number of modules exceeds the limit of {@link
      *         java.lang.classfile##u2 u2}
      */
@@ -206,8 +210,10 @@ public sealed interface ModuleExportInfo
      * @param exportFlags the export flags, as a bitmask
      * @param exportsTo the modules to which this package is exported, or empty
      *        if this is an unqualified export
-     * @throws IllegalArgumentException if {@code exportFlags} is not {@link
-     *         java.lang.classfile##u2 u2} or if the number of modules exceeds
+     * @throws IllegalArgumentException if {@code exports} represents an
+     *         unnamed package; if any of {@code exportsTo} represents an
+     *         unnamed module; if {@code exportFlags} is not {@link
+     *         java.lang.classfile##u2 u2}; or if the number of modules exceeds
      *         the limit of {@link java.lang.classfile##u2 u2}
      */
     static ModuleExportInfo of(PackageDesc exports,
@@ -223,8 +229,10 @@ public sealed interface ModuleExportInfo
      * @param exportFlags the export flags
      * @param exportsTo the modules to which this package is exported, or empty
      *        if this is an unqualified export
-     * @throws IllegalArgumentException if any flag cannot be applied to the
-     *         {@link AccessFlag.Location#MODULE_EXPORTS} location, or if the
+     * @throws IllegalArgumentException if {@code exports} represents an
+     *         unnamed package; if any of {@code exportsTo} represents an
+     *         unnamed module; if any flag cannot be applied to the
+     *         {@link AccessFlag.Location#MODULE_EXPORTS} location; or if the
      *         number of modules exceeds the limit of {@link
      *         java.lang.classfile##u2 u2}
      */

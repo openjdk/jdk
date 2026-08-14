@@ -807,7 +807,7 @@ void VMATree::SummaryDiff::grow_and_rehash() {
 
   // Clear previous -- if applicable
   if (_members != _small) {
-    FREE_C_HEAP_ARRAY(KVEntry, _members);
+    FREE_C_HEAP_ARRAY(_members);
   }
 
   _members = NEW_C_HEAP_ARRAY(KVEntry, new_len, mtNMT);
@@ -847,7 +847,7 @@ void VMATree::SummaryDiff::add(const SummaryDiff& other) {
 
 void VMATree::SummaryDiff::clear() {
   if (_members != _small) {
-    FREE_C_HEAP_ARRAY(KVEntry, _members);
+    FREE_C_HEAP_ARRAY(_members);
   }
   memset(_small, 0, sizeof(_small));
 }

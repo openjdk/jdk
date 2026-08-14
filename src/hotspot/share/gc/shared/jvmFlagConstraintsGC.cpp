@@ -28,13 +28,17 @@
 #include "gc/shared/gcConfig.hpp"
 #include "gc/shared/jvmFlagConstraintsGC.hpp"
 #include "gc/shared/plab.hpp"
+#include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/threadLocalAllocBuffer.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/javaThread.hpp"
 #include "utilities/align.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/integerCast.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 #if INCLUDE_G1GC
@@ -120,16 +124,28 @@ JVMFlag::Error MaxHeapFreeRatioConstraintFunc(uintx value, bool verbose) {
 }
 
 static JVMFlag::Error CheckMaxHeapSizeAndSoftRefLRUPolicyMSPerMB(size_t maxHeap, intx softRef, bool verbose) {
-  if ((softRef > 0) && ((maxHeap / M) > (max_uintx / softRef))) {
+  // SoftRefLRUPolicyMSPerMB option's range constraint
+  precond(softRef >= 0);
+
+  if (softRef == 0) {
+    // SoftRefLRUPolicyMSPerMB == 0 is always valid
+    return JVMFlag::SUCCESS;
+  }
+
+  // These are constrains to avoid overflows in the AbstractLRUReferencePolicy arithmetic
+  const size_t maxHeap_in_mb = maxHeap / M;
+  const uint64_t size_in_mb_for_maximum_max_interval = AbstractLRUReferencePolicy::MaximumMaxInterval / integer_cast<uint64_t>(softRef);
+
+  if (maxHeap_in_mb > size_in_mb_for_maximum_max_interval) {
     JVMFlag::printError(verbose,
                         "Desired lifetime of SoftReferences cannot be expressed correctly. "
                         "MaxHeapSize (%zu) or SoftRefLRUPolicyMSPerMB "
                         "(%zd) is too large\n",
                         maxHeap, softRef);
     return JVMFlag::VIOLATES_CONSTRAINT;
-  } else {
-    return JVMFlag::SUCCESS;
   }
+
+  return JVMFlag::SUCCESS;
 }
 
 JVMFlag::Error SoftRefLRUPolicyMSPerMBConstraintFunc(intx value, bool verbose) {
@@ -265,12 +281,12 @@ JVMFlag::Error InitialHeapSizeConstraintFunc(size_t value, bool verbose) {
 }
 
 JVMFlag::Error MaxHeapSizeConstraintFunc(size_t value, bool verbose) {
-  JVMFlag::Error status = MaxSizeForHeapAlignment("MaxHeapSize", value, verbose);
-
-  if (status == JVMFlag::SUCCESS) {
-    status = CheckMaxHeapSizeAndSoftRefLRUPolicyMSPerMB(value, SoftRefLRUPolicyMSPerMB, verbose);
+  if (JVMFlagLimit::validating_phase() >= JVMFlagConstraintPhase::AfterMemoryInit) {
+    JVMFlag::printError(verbose, "MaxHeapSize must not change after memory initialization\n");
+    return JVMFlag::VIOLATES_CONSTRAINT;
   }
-  return status;
+
+  return MaxSizeForHeapAlignment("MaxHeapSize", value, verbose);
 }
 
 JVMFlag::Error SoftMaxHeapSizeConstraintFunc(size_t value, bool verbose) {
@@ -283,7 +299,7 @@ JVMFlag::Error SoftMaxHeapSizeConstraintFunc(size_t value, bool verbose) {
 }
 
 JVMFlag::Error HeapBaseMinAddressConstraintFunc(size_t value, bool verbose) {
-  // If an overflow happened in Arguments::set_heap_size(), MaxHeapSize will have too large a value.
+  // If an overflow happened in GCArguments::set_heap_size(), MaxHeapSize will have too large a value.
   // Check for this by ensuring that MaxHeapSize plus the requested min base address still fit within max_uintx.
   if (value > (max_uintx - MaxHeapSize)) {
     JVMFlag::printError(verbose,

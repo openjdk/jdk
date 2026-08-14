@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -137,6 +137,27 @@ public class MallocStressTest {
         pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "statistics"});
         output = new OutputAnalyzer(pb.start());
         output.shouldNotContain("Tracking level has been downgraded due to lack of resources");
+
+        if (Platform.isDebugBuild()) {
+            String expectedCountString = output.firstMatch("\\s*Expected entry count: (\\d+)", 1);
+            String totalEntriesString = output.firstMatch("\\s*Total entries: (\\d+)", 1);
+
+            if (expectedCountString == null || totalEntriesString == null) {
+                throw new RuntimeException("Missing malloc site table entry counts in NMT statistics output");
+            }
+
+            int expectedCount = Integer.parseInt(expectedCountString);
+            int totalEntries = Integer.parseInt(totalEntriesString);
+
+            // The expected count is loaded after the total entries has accumulated (internal impl detail from hotspot).
+            // As this is a concurrent hashtable, we might have added more malloc sites.
+            // So, we're ok with the expectedCount being larger than totalEntries, but if it's *A lot* larger something
+            // really weird is going on.
+            if (expectedCount - totalEntries > 5) {
+                throw new RuntimeException("Malloc site table entry count mismatch: expected "
+                                           + expectedCount + ", walked " + totalEntries);
+            }
+        }
     }
 
     private static void sleep_wait(int n) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,7 @@
  * @bug 8013563 8028486
  * @summary Tests that windows are removed from windows list
  * @library /javax/swing/regtesthelpers
- * @modules java.desktop/sun.awt
- *          java.desktop/sun.java2d
+ * @modules java.desktop/sun.java2d
  * @build Util
  * @run main/othervm -Xms32M -Xmx32M WindowsLeak
 */
@@ -39,7 +38,6 @@ import java.awt.Window;
 import java.lang.ref.WeakReference;
 import java.util.Vector;
 
-import sun.awt.AppContext;
 import sun.java2d.Disposer;
 
 public class WindowsLeak {
@@ -61,11 +59,10 @@ public class WindowsLeak {
             Util.generateOOME();
         }
 
-        Vector<WeakReference<Window>> windowList =
-                        (Vector<WeakReference<Window>>) AppContext.getAppContext().get(Window.class);
+        Window[] windowList = Window.getWindows();
 
-        if (windowList != null && !windowList.isEmpty()) {
-            throw new RuntimeException("Test FAILED: Window list is not empty: " + windowList.size());
+        if (windowList != null && (windowList.length != 0)) {
+            throw new RuntimeException("Test FAILED: Window list is not empty: " + windowList.length);
         }
 
         System.out.println("Test PASSED");

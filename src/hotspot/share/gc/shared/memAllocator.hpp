@@ -32,7 +32,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
-// These fascilities are used for allocating, and initializing newly allocated objects.
+// These facilities are used for allocating, and initializing newly allocated objects.
 
 class MemAllocator: StackObj {
 protected:

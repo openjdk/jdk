@@ -73,7 +73,7 @@ public class VectorStoreMaskIdentityTest {
                    IRNode.VECTOR_LOAD_MASK, "= 0",
                    IRNode.VECTOR_STORE_MASK, "= 0",
                    IRNode.VECTOR_MASK_CAST, "= 0" },
-        applyIfCPUFeatureOr = { "asimd", "true", "avx", "true" },
+        applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" },
         applyIf = { "MaxVectorSize", ">= 16" })
     public static void testVectorMaskStoreIdentityByte() {
         VectorMask<Byte> mask_byte_64 = VectorMask.fromArray(B64, mask_in, 0);
@@ -93,7 +93,7 @@ public class VectorStoreMaskIdentityTest {
                    IRNode.VECTOR_LOAD_MASK, "= 0",
                    IRNode.VECTOR_STORE_MASK, "= 0",
                    IRNode.VECTOR_MASK_CAST, "= 0" },
-        applyIfCPUFeatureOr = { "sve", "true", "avx2", "true" },
+        applyIfCPUFeatureOr = { "sve", "true", "avx2", "true", "rvv", "true" },
         applyIf = { "MaxVectorSize", "> 16" })
     public static void testVectorMaskStoreIdentityByte256() {
         VectorMask<Byte> mask_byte_64 = VectorMask.fromArray(B64, mask_in, 0);
@@ -113,7 +113,7 @@ public class VectorStoreMaskIdentityTest {
                    IRNode.VECTOR_LOAD_MASK, "= 0",
                    IRNode.VECTOR_STORE_MASK, "= 0",
                    IRNode.VECTOR_MASK_CAST, "= 0" },
-        applyIfCPUFeatureOr = { "asimd", "true", "avx", "true" },
+        applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" },
         applyIf = { "MaxVectorSize", ">= 16" })
     public static void testVectorMaskStoreIdentityShort() {
         VectorMask<Short> mask_short_128 = VectorMask.fromArray(S128, mask_in, 0);
@@ -133,7 +133,7 @@ public class VectorStoreMaskIdentityTest {
                    IRNode.VECTOR_LOAD_MASK, "= 0",
                    IRNode.VECTOR_STORE_MASK, "= 0",
                    IRNode.VECTOR_MASK_CAST, "= 0" },
-        applyIfCPUFeatureOr = { "sve", "true", "avx2", "true" },
+        applyIfCPUFeatureOr = { "sve", "true", "avx2", "true", "rvv", "true" },
         applyIf = { "MaxVectorSize", "> 16" })
     public static void testVectorMaskStoreIdentityShort256() {
         VectorMask<Short> mask_short_128 = VectorMask.fromArray(S128, mask_in, 0);
@@ -153,7 +153,7 @@ public class VectorStoreMaskIdentityTest {
                    IRNode.VECTOR_LOAD_MASK, "= 0",
                    IRNode.VECTOR_STORE_MASK, "= 0",
                    IRNode.VECTOR_MASK_CAST, "= 0" },
-        applyIfCPUFeatureOr = { "asimd", "true", "avx", "true" },
+        applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" },
         applyIf = { "MaxVectorSize", ">= 16" })
     public static void testVectorMaskStoreIdentityInt() {
         VectorMask<Integer> mask_int_128 = VectorMask.fromArray(I128, mask_in, 0);
@@ -173,7 +173,7 @@ public class VectorStoreMaskIdentityTest {
                    IRNode.VECTOR_LOAD_MASK, "= 0",
                    IRNode.VECTOR_STORE_MASK, "= 0",
                    IRNode.VECTOR_MASK_CAST, "= 0" },
-        applyIfCPUFeatureOr = { "sve", "true", "avx2", "true" },
+        applyIfCPUFeatureOr = { "sve", "true", "avx2", "true", "rvv", "true" },
         applyIf = { "MaxVectorSize", "> 16" })
     public static void testVectorMaskStoreIdentityInt256() {
         VectorMask<Integer> mask_int_128 = VectorMask.fromArray(I128, mask_in, 0);
@@ -193,7 +193,7 @@ public class VectorStoreMaskIdentityTest {
                    IRNode.VECTOR_LOAD_MASK, "= 0",
                    IRNode.VECTOR_STORE_MASK, "= 0",
                    IRNode.VECTOR_MASK_CAST, "= 0" },
-        applyIfCPUFeatureOr = { "asimd", "true" },
+        applyIfCPUFeatureOr = { "asimd", "true", "rvv", "true" },
         applyIf = { "MaxVectorSize", ">= 16" })
     public static void testVectorMaskStoreIdentityLong() {
         VectorMask<Long> mask_long_128 = VectorMask.fromArray(L128, mask_in, 0);
@@ -213,7 +213,7 @@ public class VectorStoreMaskIdentityTest {
                    IRNode.VECTOR_LOAD_MASK, "= 0",
                    IRNode.VECTOR_STORE_MASK, "= 0",
                    IRNode.VECTOR_MASK_CAST, "= 0" },
-        applyIfCPUFeatureOr = { "sve", "true", "avx2", "true" },
+        applyIfCPUFeatureOr = { "sve", "true", "avx2", "true", "rvv", "true" },
         applyIf = { "MaxVectorSize", "> 16" })
     public static void testVectorMaskStoreIdentityLong256() {
         VectorMask<Long> mask_long_256 = VectorMask.fromArray(L256, mask_in, 0);
@@ -233,7 +233,7 @@ public class VectorStoreMaskIdentityTest {
                    IRNode.VECTOR_LOAD_MASK, "= 0",
                    IRNode.VECTOR_STORE_MASK, "= 0",
                    IRNode.VECTOR_MASK_CAST, "= 0" },
-        applyIfCPUFeatureOr = { "asimd", "true", "avx", "true" },
+        applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" },
         applyIf = { "MaxVectorSize", ">= 16" })
     public static void testVectorMaskStoreIdentityFloat() {
         VectorMask<Float> mask_float_128 = VectorMask.fromArray(F128, mask_in, 0);
@@ -253,7 +253,7 @@ public class VectorStoreMaskIdentityTest {
                    IRNode.VECTOR_LOAD_MASK, "= 0",
                    IRNode.VECTOR_STORE_MASK, "= 0",
                    IRNode.VECTOR_MASK_CAST, "= 0" },
-        applyIfCPUFeatureOr = { "sve", "true", "avx2", "true" },
+        applyIfCPUFeatureOr = { "sve", "true", "avx2", "true", "rvv", "true" },
         applyIf = { "MaxVectorSize", "> 16" })
     public static void testVectorMaskStoreIdentityFloat256() {
         VectorMask<Float> mask_float_128 = VectorMask.fromArray(F128, mask_in, 0);
@@ -273,7 +273,7 @@ public class VectorStoreMaskIdentityTest {
                    IRNode.VECTOR_LOAD_MASK, "= 0",
                    IRNode.VECTOR_STORE_MASK, "= 0",
                    IRNode.VECTOR_MASK_CAST, "= 0" },
-        applyIfCPUFeatureOr = { "asimd", "true" },
+        applyIfCPUFeatureOr = { "asimd", "true", "rvv", "true" },
         applyIf = { "MaxVectorSize", ">= 16" })
     public static void testVectorMaskStoreIdentityDouble() {
         VectorMask<Double> mask_double_128 = VectorMask.fromArray(D128, mask_in, 0);
@@ -293,7 +293,7 @@ public class VectorStoreMaskIdentityTest {
                    IRNode.VECTOR_LOAD_MASK, "= 0",
                    IRNode.VECTOR_STORE_MASK, "= 0",
                    IRNode.VECTOR_MASK_CAST, "= 0" },
-        applyIfCPUFeatureOr = { "sve", "true", "avx2", "true" },
+        applyIfCPUFeatureOr = { "sve", "true", "avx2", "true", "rvv", "true" },
         applyIf = { "MaxVectorSize", "> 16" })
     public static void testVectorMaskStoreIdentityDouble256() {
         VectorMask<Double> mask_double_256 = VectorMask.fromArray(D256, mask_in, 0);

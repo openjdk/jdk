@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,20 @@ private:
   ciInstance*            _java_mirror;
 
   ciConstantPoolCache*   _field_cache;  // cached map index->field
-  GrowableArray<ciField*>* _nonstatic_fields;  // ordered by JavaFieldStream
+
+  // Fields declared in the bytecode (without nested fields in flat fields),
+  // ordered in JavaFieldStream order, with superclasses first (i.e. from lang.java.Object
+  // to most derived class).
+  const GrowableArray<ciField*>* _declared_nonstatic_fields;
+
+  // Fields laid out in memory (flat fields are expanded into their components). The ciField object
+  // for each primitive component has the holder being this ciInstanceKlass or one of its
+  // superclasses.
+  // Fields are in the same order as in _declared_nonstatic_fields, but flat fields are replaced by
+  // the list of their own fields, ordered the same way (hierarchy traversed top-down, in
+  // JavaFieldStream order).
+  const GrowableArray<ciField*>* _nonstatic_fields;
+
   int                    _has_injected_fields; // any non static injected fields? lazily initialized.
 
   // The possible values of the _implementor fall into following three cases:
@@ -87,7 +100,7 @@ private:
 
 protected:
   ciInstanceKlass(Klass* k);
-  ciInstanceKlass(ciSymbol* name, jobject loader);
+  ciInstanceKlass(ciSymbol* name, jobject loader, BasicType bt = T_OBJECT); // for unloaded klasses
 
   InstanceKlass* get_instanceKlass() const {
     return InstanceKlass::cast(get_Klass());
@@ -106,43 +119,36 @@ protected:
 
   bool is_shared() { return _is_shared; }
 
-  void compute_shared_init_state();
+  InstanceKlass::ClassState compute_init_state();
   bool compute_shared_has_subklass();
-  int  compute_nonstatic_fields();
-  GrowableArray<ciField*>* compute_nonstatic_fields_impl(GrowableArray<ciField*>* super_fields);
+  void compute_nonstatic_fields();
+  void compute_nonstatic_fields_impl(const GrowableArray<ciField*>* super_declared_fields, const GrowableArray<ciField*>* super_fields);
   bool compute_has_trusted_loader();
-
-  // Update the init_state for shared klasses
-  void update_if_shared(InstanceKlass::ClassState expected) {
-    if (_is_shared && _init_state != expected) {
-      if (is_loaded()) compute_shared_init_state();
-    }
-  }
 
 public:
   // Has this klass been initialized?
   bool                   is_initialized() {
-    update_if_shared(InstanceKlass::fully_initialized);
-    return _init_state == InstanceKlass::fully_initialized;
+    InstanceKlass::ClassState state = compute_init_state();
+    return state == InstanceKlass::fully_initialized;
   }
   bool                   is_not_initialized() {
-    update_if_shared(InstanceKlass::fully_initialized);
-    return _init_state < InstanceKlass::being_initialized;
+    InstanceKlass::ClassState state = compute_init_state();
+    return state < InstanceKlass::being_initialized;
   }
   // Is this klass being initialized?
   bool                   is_being_initialized() {
-    update_if_shared(InstanceKlass::being_initialized);
-    return _init_state == InstanceKlass::being_initialized;
+    InstanceKlass::ClassState state = compute_init_state();
+    return state == InstanceKlass::being_initialized;
   }
   // Has this klass been linked?
   bool                   is_linked() {
-    update_if_shared(InstanceKlass::linked);
-    return _init_state >= InstanceKlass::linked;
+    InstanceKlass::ClassState state = compute_init_state();
+    return state >= InstanceKlass::linked;
   }
   // Is this klass in error state?
   bool                   is_in_error_state() {
-    update_if_shared(InstanceKlass::initialization_error);
-    return _init_state == InstanceKlass::initialization_error;
+    InstanceKlass::ClassState state = compute_init_state();
+    return state == InstanceKlass::initialization_error;
   }
 
   // General klass information.
@@ -215,14 +221,26 @@ public:
   ciInstanceKlass* get_canonical_holder(int offset);
   ciField* get_field_by_offset(int field_offset, bool is_static);
   ciField* get_field_by_name(ciSymbol* name, ciSymbol* signature, bool is_static);
+  // Get field descriptor at field_offset ignoring flattening
+  ciField* get_non_flat_field_by_offset(int field_offset);
+  // Get the index of the declared field that contains this offset
+  int field_index_by_offset(int offset);
+
+  // Total number of nonstatic fields (including inherited)
+  int nof_declared_nonstatic_fields() {
+    if (_declared_nonstatic_fields == nullptr) {
+      compute_nonstatic_fields();
+    }
+    return _declared_nonstatic_fields->length();
+  }
+  ciField* get_injected_instance_field_by_name(ciSymbol* name, ciSymbol* signature);
   BasicType get_field_type_by_offset(int field_offset, bool is_static);
 
-  // total number of nonstatic fields (including inherited):
   int nof_nonstatic_fields() {
-    if (_nonstatic_fields == nullptr)
-      return compute_nonstatic_fields();
-    else
-      return _nonstatic_fields->length();
+    if (_nonstatic_fields == nullptr) {
+      compute_nonstatic_fields();
+    }
+    return _nonstatic_fields->length();
   }
 
   bool has_injected_fields() {
@@ -234,7 +252,11 @@ public:
 
   bool has_object_fields() const;
 
-  // nth nonstatic field (presented by ascending address)
+  ciField* declared_nonstatic_field_at(int i) {
+    assert(_declared_nonstatic_fields != nullptr, "should be initialized");
+    return _declared_nonstatic_fields->at(i);
+  }
+
   ciField* nonstatic_field_at(int i) {
     assert(_nonstatic_fields != nullptr, "");
     return _nonstatic_fields->at(i);
@@ -245,7 +267,7 @@ public:
 
   bool has_class_initializer();
 
-  bool contains_field_offset(int offset);
+  bool contains_field_offset(int offset) const;
 
   // Get the instance of java.lang.Class corresponding to
   // this klass.  This instance is used for locking of
@@ -255,9 +277,9 @@ public:
   // Java access flags
   bool is_public      () { return flags().is_public(); }
   bool is_final       () { return flags().is_final(); }
-  bool is_super       () { return flags().is_super(); }
   bool is_interface   () { return flags().is_interface(); }
   bool is_abstract    () { return flags().is_abstract(); }
+  bool is_abstract_value_klass() { return is_abstract() && !flags().is_identity(); }
 
   ciMethod* find_method(ciSymbol* name, ciSymbol* signature);
   // Note:  To find a method from name and type strings, use ciSymbol::make,
@@ -272,6 +294,8 @@ public:
     ciInstanceKlass* impl = implementor();
     return (impl != this ? impl : nullptr);
   }
+
+  virtual bool can_be_inline_klass(bool is_exact = false);
 
   // Is the defining class loader of this class the default loader?
   bool uses_default_loader() const;
