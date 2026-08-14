@@ -4910,9 +4910,13 @@ private:
   }
 
   void try_add_predicates() {
+    if (!LoopPeeling) {
+      return;
+    }
     LoopNode* head = _loop->_head->as_Loop();
     Node* back_control = head->in(LoopNode::LoopBackControl);
 #ifdef ASSERT
+    // If there are stores on the backedge, find_safepoint() below should bail out
     bool has_store = false;
     for (DUIterator_Fast imax, i = back_control->fast_outs(imax); i < imax; i++) {
       Node* u = back_control->fast_out(i);
