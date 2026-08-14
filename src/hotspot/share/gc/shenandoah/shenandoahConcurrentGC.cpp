@@ -105,7 +105,7 @@ ShenandoahGC::ShenandoahDegenPoint ShenandoahConcurrentGC::degen_point() const {
 
 void ShenandoahConcurrentGC::entry_concurrent_update_refs_prepare(ShenandoahHeap* const heap) {
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Init update references", "");
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent init update refs", "");
   ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_update_refs_prepare);
   EventMark em("%s", msg);
 
@@ -117,7 +117,7 @@ void ShenandoahConcurrentGC::entry_concurrent_update_refs_prepare(ShenandoahHeap
 void ShenandoahConcurrentGC::entry_update_card_table() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Update cards", "");
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent update cards", "");
   ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_update_card_table);
   EventMark em("%s", msg);
 
@@ -297,7 +297,7 @@ void ShenandoahConcurrentGC::entry_complete_abbreviated_cycle() {
   ShenandoahGenerationalHeap* const heap = ShenandoahGenerationalHeap::heap();
 
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Complete abbreviated cycle", "");
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent complete abbreviated cycle", "");
   ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::complete_abbreviated);
   EventMark em("%s", msg);
 
@@ -444,7 +444,7 @@ void ShenandoahConcurrentGC::entry_reset() {
 
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
   {
-    SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Reset", "");
+    SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent reset", "");
     ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_reset);
     EventMark em("%s", msg);
 
@@ -460,7 +460,7 @@ void ShenandoahConcurrentGC::entry_scan_remembered_set() {
     ShenandoahHeap* const heap = ShenandoahHeap::heap();
     TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
 
-    SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Remembered set scanning", "");
+    SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent remembered set scanning", "");
     ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::init_scan_rset);
     EventMark em("%s", msg);
 
@@ -476,7 +476,7 @@ void ShenandoahConcurrentGC::entry_scan_remembered_set() {
 void ShenandoahConcurrentGC::entry_mark_roots() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Marking roots", "");
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent marking roots", "");
   ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_mark_roots);
   EventMark em("%s", msg);
 
@@ -494,7 +494,7 @@ void ShenandoahConcurrentGC::entry_mark() {
          "Should not have forwarded objects concurrent mark, unless old gen concurrent mark is running");
 
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Marking", "");
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent marking", "");
   ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_mark);
   EventMark em("%s", msg);
 
@@ -509,7 +509,7 @@ void ShenandoahConcurrentGC::entry_mark() {
 
 void ShenandoahConcurrentGC::entry_thread_roots() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Thread roots", "");
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent thread roots", "");
   ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_thread_roots);
   EventMark em("%s", msg);
 
@@ -524,7 +524,7 @@ void ShenandoahConcurrentGC::entry_thread_roots() {
 
 void ShenandoahConcurrentGC::entry_weak_refs() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Weak references", "");
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent weak references", "");
   ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_weak_refs);
   EventMark em("%s", msg);
 
@@ -540,7 +540,7 @@ void ShenandoahConcurrentGC::entry_weak_refs() {
 void ShenandoahConcurrentGC::entry_weak_roots() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Weak roots", "");
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent weak roots", "");
   ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_weak_roots);
   EventMark em("%s", msg);
 
@@ -556,7 +556,7 @@ void ShenandoahConcurrentGC::entry_weak_roots() {
 void ShenandoahConcurrentGC::entry_class_unloading() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Class unloading", "");
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent class unloading", "");
   ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_class_unload);
   EventMark em("%s", msg);
 
@@ -572,7 +572,7 @@ void ShenandoahConcurrentGC::entry_class_unloading() {
 void ShenandoahConcurrentGC::entry_strong_roots() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Strong roots", "");
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent strong roots", "");
   ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_strong_roots);
   EventMark em("%s", msg);
 
@@ -590,7 +590,7 @@ void ShenandoahConcurrentGC::entry_strong_roots() {
 void ShenandoahConcurrentGC::entry_cleanup_early() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Cleanup", "");
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent cleanup", "");
   ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_cleanup_early, false /* log_heap_usage */);
   EventMark em("%s", msg);
 
@@ -609,7 +609,7 @@ void ShenandoahConcurrentGC::entry_cleanup_early() {
 void ShenandoahConcurrentGC::entry_evacuate() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Evacuation", "");
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent evacuation", "");
   ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_evac);
   EventMark em("%s", msg);
 
@@ -625,7 +625,7 @@ void ShenandoahConcurrentGC::entry_evacuate() {
 void ShenandoahConcurrentGC::entry_update_thread_roots() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Update thread roots", "");
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent update thread roots", "");
   ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_update_thread_roots);
   EventMark em("%s", msg);
 
@@ -638,7 +638,7 @@ void ShenandoahConcurrentGC::entry_update_thread_roots() {
 void ShenandoahConcurrentGC::entry_update_refs() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Update references", "");
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent update references", "");
   ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_update_refs);
   EventMark em("%s", msg);
 
@@ -654,7 +654,7 @@ void ShenandoahConcurrentGC::entry_update_refs() {
 void ShenandoahConcurrentGC::entry_cleanup_complete() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Cleanup", "");
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent cleanup", "");
   ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_cleanup_complete, false /* log_heap_usage */);
   EventMark em("%s", msg);
 
@@ -666,7 +666,7 @@ void ShenandoahConcurrentGC::entry_cleanup_complete() {
 void ShenandoahConcurrentGC::entry_reset_after_collect() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Reset after collect", "");
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent reset after collect", "");
   ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_reset_after_collect);
   EventMark em("%s", msg);
 
@@ -1261,7 +1261,7 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
 void ShenandoahConcurrentGC::entry_final_roots() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Final roots", "");
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent final roots", "");
   ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_final_roots);
   EventMark em("%s", msg);
 
