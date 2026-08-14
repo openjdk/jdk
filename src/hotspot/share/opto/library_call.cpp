@@ -5620,15 +5620,6 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
   Node* no_ctrl = nullptr;
   Node* header = make_load(no_ctrl, header_addr, TypeX_X, TypeX_X->basic_type(), MemNode::unordered);
 
-  RegionNode* cache_region = new RegionNode(1);
-
-  // If inline type, directly go to cache region
-  Node* is_value = inline_type_test(obj);
-  generate_fair_guard(is_value, cache_region);
-
-  cache_region->add_req(control());
-
-  set_control(_gvn.transform(cache_region));
   Node* hash_val = get_hashcode_from_header(header, inline_fast_path_region);
 
   result_val->init_req(_cache_path, hash_val);
