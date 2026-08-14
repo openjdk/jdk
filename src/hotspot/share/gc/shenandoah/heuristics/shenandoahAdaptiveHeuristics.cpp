@@ -30,6 +30,7 @@
 #include "gc/shenandoah/shenandoahAllocRate.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
@@ -38,8 +39,22 @@
 
 #include <cmath>
 
+double shenandoah_signed_size_in_proper_unit(double s) {
+  if (s < 0) {
+    return 0.0 - byte_size_in_proper_unit(abs(s));
+  }
+  return byte_size_in_proper_unit(s);
+}
+
+const char* shenandoah_proper_unit_for_signed_size(double s) {
+  if (s < 0) {
+    return proper_unit_for_byte_size(abs(s));
+  }
+  return proper_unit_for_byte_size(s);
+}
+
 #define PROPERFMT_F         "%.1f %s"
-#define PROPERFMT_F_ARGS(s) byte_size_in_proper_unit(s), proper_unit_for_byte_size(s)
+#define PROPERFMT_F_ARGS(s) shenandoah_signed_size_in_proper_unit(s), shenandoah_proper_unit_for_signed_size(s)
 
 // These are used to decide if we want to make any adjustments at all
 // at the end of a successful concurrent cycle.
