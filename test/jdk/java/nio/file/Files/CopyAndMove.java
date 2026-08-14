@@ -181,13 +181,13 @@ public class CopyAndMove {
     static void checkPosixAttributes(PosixFileAttributes attrs1,
                                      PosixFileAttributes attrs2)
     {
-        assertTrue(attrs1.permissions().equals(attrs2.permissions()),
+        assertEquals(attrs1.permissions(), attrs2.permissions(),
             "permissions%n1 (%d): %s%n2 (%d): %s%n%n",
              attrs1.permissions().size(), attrs1.permissions(),
              attrs2.permissions().size(), attrs2.permissions());
-        assertTrue(attrs1.owner().equals(attrs2.owner()),
+        assertEquals(attrs1.owner(), attrs2.owner(),
              "owner%n1: %s%n2: %s%n%n", attrs1.owner(), attrs2.owner());
-        assertTrue(attrs1.group().equals(attrs2.group()),
+        assertEquals(attrs1.group(), attrs2.group(),
              "group%n1: %s%n2: %s%n%n", attrs1.group(), attrs2.group());
     }
 
@@ -210,7 +210,7 @@ public class CopyAndMove {
             ByteBuffer bb1 = attrs1.get(name);
             ByteBuffer bb2 = attrs2.get(name);
             assertTrue(bb2 != null);
-            assertTrue(bb1.equals(bb2));
+            assertEquals(bb1, bb2);
         }
     }
 
@@ -780,7 +780,7 @@ public class CopyAndMove {
 
         // check link target if symbolic link
         if (basicAttributes.isSymbolicLink())
-            assertTrue(readSymbolicLink(source).equals(readSymbolicLink(target)));
+            assertEquals(readSymbolicLink(source), readSymbolicLink(target));
 
         // check that attributes are copied
         if (copyAttributes) {
