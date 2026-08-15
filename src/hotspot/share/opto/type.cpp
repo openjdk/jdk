@@ -1159,9 +1159,8 @@ const Type* Type::meet_join_helper(F op, const Type* t1, const Type* t2, bool in
   return rt;
 }
 
-//------------------------------meet-------------------------------------------
-// Compute the MEET of two types.  NOT virtual.  It enforces that meet is
-// commutative and the lattice is symmetric.
+// Compute the meet and join of two types.  NOT virtual. It performs additional verification that
+// ensures the sanity of the implementation.
 const Type *Type::meet_helper(const Type *t, bool include_speculative) const {
   auto op = [](const Type* t1, const Type* t2) {
     return xmeet(t1, t2);
