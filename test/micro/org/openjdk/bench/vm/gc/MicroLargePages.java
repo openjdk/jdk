@@ -26,10 +26,12 @@ package org.openjdk.bench.vm.gc;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.infra.ThreadParams;
 
 @OutputTimeUnit(TimeUnit.MINUTES)
 @State(Scope.Thread)
-@Fork(jvmArgs = {"-XX:+UseLargePages", "-XX:LargePageSizeInBytes=1g", "-Xlog:pagesize"}, value = 5)
+@Threads(1)
+@Fork(jvmArgs = {"-Xmx256m", "-XX:+UseLargePages", "-XX:LargePageSizeInBytes=1g", "-Xlog:pagesize"}, value = 5)
 
 public class MicroLargePages {
 
@@ -43,7 +45,11 @@ public class MicroLargePages {
     public long[][] OUT;
 
     @Setup(Level.Trial)
-    public void BmSetup() {
+    public void BmSetup(ThreadParams params) {
+        if (params.getThreadCount() != 1) {
+            throw new IllegalStateException("MicroLargePages requires exactly one thread");
+        }
+
         INP = new long[NUM][ARRAYSIZE];
         OUT = new long[NUM][ARRAYSIZE];
         for (int i = 0; i < NUM; i++) {
