@@ -119,15 +119,14 @@ ParCompactionManager::gc_thread_compaction_manager(uint index) {
   return _manager_array[index];
 }
 
-void ParCompactionManager::push_objArray(oop obj) {
-  assert(obj->is_objArray(), "precondition");
+void ParCompactionManager::push_objArray(objArrayOop obj) {
+  assert(obj->is_array_with_oops(), "precondition");
   _mark_and_push_closure.do_klass(obj->klass());
 
-  objArrayOop obj_array = objArrayOop(obj);
-  size_t array_length = obj_array->length();
+  size_t array_length = obj->length();
   size_t initial_chunk_size =
-    _partial_array_splitter.start(&_marking_stack, obj_array, nullptr, array_length, ObjArrayMarkingStride);
-  follow_array(obj_array, 0, initial_chunk_size);
+    _partial_array_splitter.start(&_marking_stack, obj, nullptr, array_length, ObjArrayMarkingStride);
+  follow_array(obj, 0, initial_chunk_size);
 }
 
 void ParCompactionManager::process_array_chunk(PartialArrayState* state, bool stolen) {

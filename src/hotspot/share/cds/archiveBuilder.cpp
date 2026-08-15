@@ -367,7 +367,7 @@ address ArchiveBuilder::reserve_buffer() {
     size_t static_archive_size = _mapped_static_archive_top - _mapped_static_archive_bottom;
 
     // At run time, we will mmap the dynamic archive at my_archive_requested_bottom
-    _requested_static_archive_top = _requested_static_archive_bottom + static_archive_size;
+    _requested_static_archive_top = ArchiveUtils::offset_from_requested_base(_requested_static_archive_bottom, static_archive_size);
     my_archive_requested_bottom = align_up(_requested_static_archive_top, AOTMetaspace::core_region_alignment());
 
     _requested_dynamic_archive_bottom = my_archive_requested_bottom;
@@ -375,7 +375,7 @@ address ArchiveBuilder::reserve_buffer() {
 
   _buffer_to_requested_delta = my_archive_requested_bottom - _buffer_bottom;
 
-  address my_archive_requested_top = my_archive_requested_bottom + buffer_size;
+  address my_archive_requested_top = ArchiveUtils::offset_from_requested_base(my_archive_requested_bottom, buffer_size);
   if (my_archive_requested_bottom <  _requested_static_archive_bottom ||
       my_archive_requested_top    <= _requested_static_archive_bottom) {
     // Size overflow.
@@ -806,14 +806,20 @@ void ArchiveBuilder::make_klasses_shareable() {
       address narrow_klass_base = _requested_static_archive_bottom; // runtime encoding base == runtime mapping start
       const int narrow_klass_shift = precomputed_narrow_klass_shift();
       narrowKlass nk = CompressedKlassPointers::encode_not_null_without_asserts(requested_k, narrow_klass_base, narrow_klass_shift);
-      k->set_prototype_header(markWord::prototype().set_narrow_klass(nk));
+      k->set_prototype_header_klass(nk);
     }
 #endif //_LP64
-    if (k->is_objArray_klass()) {
+    if (k->is_flatArray_klass()) {
+      num_obj_array_klasses ++;
+      type = "flat array";
+    } else if (k->is_refArray_klass()) {
+        num_obj_array_klasses ++;
+        type = "ref array";
+    } else if (k->is_objArray_klass()) {
       // InstanceKlass and TypeArrayKlass will in turn call remove_unshareable_info
       // on their array classes.
       num_obj_array_klasses ++;
-      type = "array";
+      type = "obj array";
     } else if (k->is_typeArray_klass()) {
       num_type_array_klasses ++;
       type = "array";
@@ -982,7 +988,7 @@ size_t ArchiveBuilder::any_to_offset(address p) const {
 }
 
 address ArchiveBuilder::offset_to_buffered_address(size_t offset) const {
-  address requested_addr = _requested_static_archive_bottom + offset;
+  address requested_addr = ArchiveUtils::offset_from_requested_base(_requested_static_archive_bottom, offset);
   address buffered_addr = requested_addr - _buffer_to_requested_delta;
   assert(is_in_buffer_space(buffered_addr), "bad offset");
   return buffered_addr;
@@ -1048,7 +1054,7 @@ class RelocateBufferToRequested : public BitMapClosure {
 
     address bottom = _builder->buffer_bottom();
     address top = _builder->buffer_top();
-    address new_bottom = bottom + _buffer_to_requested_delta;
+    address new_bottom = bottom +  _buffer_to_requested_delta;
     address new_top = top + _buffer_to_requested_delta;
     aot_log_debug(aot)("Relocating archive from [" INTPTR_FORMAT " - " INTPTR_FORMAT "] to "
                    "[" INTPTR_FORMAT " - " INTPTR_FORMAT "]",
@@ -1109,7 +1115,7 @@ void ArchiveBuilder::relocate_to_requested() {
   size_t my_archive_size = buffer_top() - buffer_bottom();
 
   if (CDSConfig::is_dumping_static_archive()) {
-    _requested_static_archive_top = _requested_static_archive_bottom + my_archive_size;
+    _requested_static_archive_top = ArchiveUtils::offset_from_requested_base(_requested_static_archive_bottom, my_archive_size);
     RelocateBufferToRequested<true> patcher(this);
     patcher.doit();
   } else {

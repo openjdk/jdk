@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -347,7 +347,7 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   // helper methods for creating arrays of global JNI Handles from local Handles
   // allocated into environment specific storage
   jthread * new_jthreadArray(int length, Handle *handles);
-  jthreadGroup * new_jthreadGroupArray(int length, objArrayHandle groups);
+  jthreadGroup * new_jthreadGroupArray(int length, refArrayHandle groups);
 
   // convert to a jni jclass from a non-null Klass*
   jclass get_jni_class_non_null(Klass* k);
@@ -395,7 +395,7 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   static jvmtiError get_live_threads(JavaThread* current_thread, Handle group_hdl, jint *count_ptr, Handle **thread_objs_p);
 
   // enumerates the subgroups in the given thread group
-  static jvmtiError get_subgroups(JavaThread* current_thread, Handle group_hdl, jint *count_ptr, objArrayHandle *group_objs_p);
+  static jvmtiError get_subgroups(JavaThread* current_thread, Handle group_hdl, jint *count_ptr, refArrayHandle *group_objs_p);
 
   // JVMTI API helper functions which are called when target thread is suspended
   // or at safepoint / thread local handshake.
@@ -530,6 +530,17 @@ public:
     assert(_target_jt->jvmti_vthread() == target_h(), "sanity check");
     doit(_target_jt); // mounted virtual thread
   }
+};
+
+// HandshakeClosure to send an asynchronous exception to target.
+class StopThreadClosure : public JvmtiUnitedHandshakeClosure {
+ private:
+  Handle _exception;
+ public:
+  StopThreadClosure(JavaThread* current_thread, oop exception);
+  void doit(JavaThread* target);
+  void do_thread(Thread* target);
+  void do_vthread(Handle target_h);
 };
 
 // HandshakeClosure to update for pop top frame.

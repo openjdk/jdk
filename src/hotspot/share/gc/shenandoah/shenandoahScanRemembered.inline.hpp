@@ -197,7 +197,7 @@ void ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t cou
       // PREFIX: The object that straddles into this range of dirty cards
       // from the left may be subject to special treatment unless
       // it is an object array.
-      if (p < left && !obj->is_objArray()) {
+      if (p < left && !obj->is_refArray()) {
         // The mutator (both compiler and interpreter, but not JNI?)
         // typically dirty imprecisely (i.e. only the head of an object),
         // but GC closures typically dirty the object precisely. (It would
@@ -218,11 +218,16 @@ void ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t cou
           // for the next iteration of a dirty card loop.
           upper_bound = p;   // remember upper bound for next chunk
           if (p < start_addr) {
-            // if object starts in a previous slice, it'll be handled
-            // in its entirety by the thread processing that slice; we can
-            // skip over it and avoid an unnecessary extra scan.
             assert(obj == cast_to_oop(p), "Inconsistency detected");
-            p += obj->size();
+            if (use_write_table) {
+              // The head card may have become dirty after the worker
+              // responsible for the preceding slice passed it.
+              p += obj->oop_iterate_size(cl);
+            } else {
+              // The stable read table guarantees that the worker processing
+              // the preceding slice scanned this object in its entirety.
+              p += obj->size();
+            }
           } else {
             // the object starts in our slice, we scan it in its entirety
             assert(obj == cast_to_oop(p), "Inconsistency detected");
@@ -271,7 +276,7 @@ void ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t cou
         assert(last_p < right, "Error");
         // check if last_p suffix needs scanning
         const oop last_obj = cast_to_oop(last_p);
-        if (!last_obj->is_objArray()) {
+        if (!last_obj->is_refArray()) {
           // scan the remaining suffix of the object
           const MemRegion last_mr(right, p);
           assert(p == last_p + last_obj->size(), "Would miss portion of last_obj");

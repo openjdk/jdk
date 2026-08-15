@@ -43,6 +43,10 @@
   do_stub(initial, verify_mxcsr)                                        \
   do_arch_entry(x86, initial, verify_mxcsr, verify_mxcsr_entry,         \
                 verify_mxcsr_entry)                                     \
+  do_stub(initial, hf2i_fixup)                                          \
+  do_arch_entry(x86, initial, hf2i_fixup, hf2i_fixup, hf2i_fixup)       \
+  do_stub(initial, hf2l_fixup)                                          \
+  do_arch_entry(x86, initial, hf2l_fixup, hf2l_fixup, hf2l_fixup)       \
   do_stub(initial, f2i_fixup)                                           \
   do_arch_entry(x86, initial, f2i_fixup, f2i_fixup, f2i_fixup)          \
   do_stub(initial, f2l_fixup)                                           \

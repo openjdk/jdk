@@ -125,12 +125,6 @@ public interface JavaLangAccess {
     <E extends Enum<E>> E[] getEnumConstantsShared(Class<E> klass);
 
     /**
-     * Returns the big-endian packed minor-major version of the class file
-     * of this class.
-     */
-    int classFileVersion(Class<?> clazz);
-
-    /**
      * Set current thread's blocker field.
      */
     void blockedOn(Interruptible b);

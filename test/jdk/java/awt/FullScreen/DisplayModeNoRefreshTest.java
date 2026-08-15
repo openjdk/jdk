@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,7 @@ public class DisplayModeNoRefreshTest extends Frame {
     public static void main(String[] args) throws Exception {
         try {
             EventQueue.invokeAndWait(() -> {
-                System.setProperty("sun.java2d.noddraw", "true");
+                System.setProperty("sun.java2d.d3d", "false");
                 fs = new DisplayModeNoRefreshTest();
             });
         } finally {

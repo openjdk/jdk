@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -181,11 +181,7 @@ Currently, there are two command-line tools that use keystore implementations
 The default keystore implementation is `PKCS12`. This is a cross platform
 keystore based on the RSA PKCS12 Personal Information Exchange Syntax Standard.
 This standard is primarily meant for storing or transporting a user's private
-keys, certificates, and miscellaneous secrets. There is another built-in
-implementation, provided by Oracle. It implements the keystore as a file with a
-proprietary keystore type (format) named `JKS`. It protects each private key
-with its individual password, and also protects the integrity of the entire
-keystore with a (possibly different) password.
+keys, certificates, and miscellaneous secrets.
 
 Keystore implementations are provider-based, which means the application
 interfaces supplied by the `KeyStore` class are implemented in terms of a
@@ -237,15 +233,11 @@ specified by the following line in the security properties file:
 
 >   `keystore.type=pkcs12`
 
-Case doesn't matter in keystore type designations. For example, `JKS` is the
-same as `jks`.
+Case doesn't matter in keystore type designations. For example, `PKCS12` is the
+same as `pkcs12`.
 
 To have the tools utilize a keystore implementation other than the default, you
-can change that line to specify a different keystore type. For example, if you
-want to use the Oracle's `jks` keystore implementation, then change the line to
-the following:
-
->   `keystore.type=jks`
+can change that line to specify a different keystore type.
 
 ## Supported Algorithms
 

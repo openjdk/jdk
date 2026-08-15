@@ -369,7 +369,6 @@ public:
 
   static void disable_compilation_forever() {
     UseCompiler               = false;
-    AlwaysCompileLoopMethods  = false;
     AtomicAccess::xchg(&_should_compile_new_jobs, jint(shutdown_compilation));
   }
 

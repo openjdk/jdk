@@ -144,7 +144,7 @@ private:
     Atomic<TaskQueueEntryChunk*>* _buckets;
     char _pad0[DEFAULT_PADDING_SIZE];
     Atomic<size_t> _size;
-    char _pad4[DEFAULT_PADDING_SIZE - sizeof(size_t)];
+    char _pad4[DEFAULT_PADDING_SIZE - sizeof(_size)];
 
     size_t bucket_size(size_t bucket) {
       return (bucket == 0) ?
@@ -211,10 +211,10 @@ private:
 
   char _pad0[DEFAULT_PADDING_SIZE];
   Atomic<TaskQueueEntryChunk*> _free_list;  // Linked list of free chunks that can be allocated by users.
-  char _pad1[DEFAULT_PADDING_SIZE - sizeof(TaskQueueEntryChunk*)];
+  char _pad1[DEFAULT_PADDING_SIZE - sizeof(_free_list)];
   Atomic<TaskQueueEntryChunk*> _chunk_list; // List of chunks currently containing data.
   Atomic<size_t> _chunks_in_chunk_list;
-  char _pad2[DEFAULT_PADDING_SIZE - sizeof(TaskQueueEntryChunk*) - sizeof(_chunks_in_chunk_list)];
+  char _pad2[DEFAULT_PADDING_SIZE - sizeof(_chunk_list) - sizeof(_chunks_in_chunk_list)];
 
   // Atomically add the given chunk to the list.
   void add_chunk_to_list(Atomic<TaskQueueEntryChunk*>* list, TaskQueueEntryChunk* elem);

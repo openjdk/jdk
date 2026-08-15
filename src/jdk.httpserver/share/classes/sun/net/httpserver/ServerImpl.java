@@ -770,15 +770,24 @@ class ServerImpl {
                             requestLine, "Bad request line");
                     return;
                 }
+
+                // Read the request URI
                 String uriStr = requestLine.substring(start, space);
+                // Reject ambiguous URIs
+                if (uriStr.startsWith("//")) {
+                    reject(Code.HTTP_BAD_REQUEST,
+                            requestLine, "Bad request URI");
+                    return;
+                }
                 URI uri;
                 try {
                     uri = new URI(uriStr);
                 } catch (URISyntaxException e3) {
                     reject(Code.HTTP_BAD_REQUEST,
-                            requestLine, "URISyntaxException thrown");
+                            requestLine, "Bad request URI");
                     return;
                 }
+
                 start = space+1;
                 String version = requestLine.substring(start);
                 Headers headers = req.headers();

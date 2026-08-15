@@ -1,0 +1,71 @@
+/*
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+package compiler.valhalla.inlinetypes;
+
+import jdk.internal.vm.annotation.NullRestricted;
+import jdk.test.lib.Asserts;
+
+/*
+ * @test
+ * @bug 8389234
+ * @summary Test C1 delayed access with a field declared in an abstract value class.
+ * @library /test/lib
+ * @enablePreview
+ * @modules java.base/jdk.internal.vm.annotation
+ * @run main ${test.main.class}
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1
+ *                   ${test.main.class}
+ */
+public class TestAbstractDelayedAccess {
+    static abstract value class AbstractValue {
+        @NullRestricted
+        Integer i = 42;
+    }
+
+    static value class ConcreteValue extends AbstractValue { }
+
+    static class Holder {
+        @NullRestricted
+        ConcreteValue value;
+
+        Holder() {
+            value = new ConcreteValue();
+            super();
+        }
+    }
+
+    // Loading h.value starts a delayed flat field access. Resolving AbstractValue.i
+    // while it is pending must not cast the AbstractValue holder to ciInlineKlass.
+    static int test(Holder h) {
+        return h.value.i;
+    }
+
+    public static void main(String[] args) {
+        Holder h = new Holder();
+        for (int i = 0; i < 20_000; i++) {
+            Asserts.assertEQ(test(h), 42);
+        }
+    }
+}
+

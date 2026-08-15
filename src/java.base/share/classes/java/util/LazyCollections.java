@@ -675,6 +675,12 @@ final class LazyCollections {
         final long offset = offsetFor(index);
         final Object mutex = mutexes.acquireMutex(offset);
         if (mutex == null) {
+            // There might be a race where the value is already computed and
+            // the mutex is cleared, so we need to re-check the value again
+            final T t = (T) UNSAFE.getReferenceAcquire(array, offset);
+            if (t != null) {
+                return t;
+            }
             throwIfPreviousException(index, throwables, input);
             // There must be an exception
             throw cannotReachHere(functionHolder, input);

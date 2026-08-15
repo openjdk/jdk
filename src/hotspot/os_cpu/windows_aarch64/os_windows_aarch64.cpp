@@ -291,6 +291,19 @@ int os::extra_bang_size_in_bytes() {
 
 extern "C" {
   int SpinPause() {
-    return 0;
+    using spin_wait_func_ptr_t = void (*)();
+    spin_wait_func_ptr_t func = CAST_TO_FN_PTR(spin_wait_func_ptr_t, StubRoutines::aarch64::spin_wait());
+    assert(func != nullptr, "StubRoutines::aarch64::spin_wait must not be null.");
+    (*func)();
+    // If StubRoutines::aarch64::spin_wait consists of only a RET,
+    // SpinPause can be considered as implemented. There will be a sequence
+    // of instructions for:
+    // - call of SpinPause
+    // - load of StubRoutines::aarch64::spin_wait stub pointer
+    // - indirect call of the stub
+    // - return from the stub
+    // - return from SpinPause
+    // So '1' always is returned.
+    return 1;
   }
 };

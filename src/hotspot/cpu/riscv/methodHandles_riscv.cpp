@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -166,7 +166,11 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
     __ BIND(run_compiled_code);
   }
 
-  const ByteSize entry_offset = for_compiler_entry ? Method::from_compiled_offset() :
+  // The following jump might pass an inline type argument that was erased to Object as oop to a
+  // callee that expects inline type arguments to be passed as fields. We need to call the compiled
+  // value entry (_code->inline_entry_point() or _adapter->c2i_inline_entry()) which will take care
+  // of translating between the calling conventions.
+  const ByteSize entry_offset = for_compiler_entry ? Method::from_compiled_inline_offset() :
                                                      Method::from_interpreted_offset();
   __ ld(t1, Address(method, entry_offset));
   __ jr(t1);

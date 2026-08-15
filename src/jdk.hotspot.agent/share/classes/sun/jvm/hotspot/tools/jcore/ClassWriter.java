@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -371,11 +371,12 @@ public class ClassWriter implements /* imports */ ClassConstants
     protected void writeInterfaces() throws IOException {
         KlassArray interfaces = klass.getLocalInterfaces();
         final int len = interfaces.length();
+        int nb_interfaces = len;
 
-        if (DEBUG) debugMessage("number of interfaces = " + len);
+        if (DEBUG) debugMessage("number of interfaces = " + nb_interfaces);
 
         // write interfaces count
-        dos.writeShort((short) len);
+        dos.writeShort((short) nb_interfaces);
         for (int i = 0; i < len; i++) {
            Klass k = interfaces.getAt(i);
            Short index = classToIndex.get(k.getName().asString());
@@ -851,8 +852,17 @@ public class ClassWriter implements /* imports */ ClassConstants
             dos.writeShort(numInnerClasses);
             if (DEBUG) debugMessage("class has " + numInnerClasses + " inner class entries");
 
-            for (int index = 0; index < numInnerClasses * 4; index++) {
-                dos.writeShort(innerClasses.at(index));
+            for (int index = 0; index < numInnerClasses * 4; ) {
+                dos.writeShort(innerClasses.at(index++));
+                dos.writeShort(innerClasses.at(index++));
+                dos.writeShort(innerClasses.at(index++));
+
+                short accFlag = innerClasses.at(index++);
+                if (!klass.supportsInlineTypes()) {
+                    // Filter out ACC_IDENTITY from access flags for inner class.
+                    accFlag &= ~ (short) JVM_ACC_IDENTITY;
+                }
+                dos.writeShort(accFlag);
             }
         }
 

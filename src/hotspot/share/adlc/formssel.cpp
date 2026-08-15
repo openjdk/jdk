@@ -846,7 +846,11 @@ uint InstructForm::oper_input_base(FormDict &globals) {
       strcmp(_matrule->_opType,"TailJump"  )==0 ||
       strcmp(_matrule->_opType,"ForwardException")==0 ||
       strcmp(_matrule->_opType,"SafePoint" )==0 ||
-      strcmp(_matrule->_opType,"Halt"      )==0 )
+      strcmp(_matrule->_opType,"Halt"      )==0 ||
+      // This is required because PhaseMacroExpand::expand_mh_intrinsic_return() uses
+      // a special version of CallLeafNoFP that takes the target of the call as first
+      // argument
+      strcmp(_matrule->_opType,"CallLeafNoFP")==0)
     return AdlcVMDeps::Parms;   // Skip the machine-state edges
 
   if( _matrule->_rChild &&
@@ -3587,7 +3591,7 @@ void MatchNode::forms_do(FormClosure *f) {
 
 int MatchNode::needs_ideal_memory_edge(FormDict &globals) const {
   static const char *needs_ideal_memory_list[] = {
-    "StoreI","StoreL","StoreP","StoreN","StoreNKlass","StoreD","StoreF" ,
+    "StoreI","StoreL","StoreLSpecial","StoreP","StoreN","StoreNKlass","StoreD","StoreF" ,
     "StoreB","StoreC","Store" ,"StoreFP",
     "LoadI", "LoadL", "LoadP" ,"LoadN", "LoadD" ,"LoadF"  ,
     "LoadB" , "LoadUB", "LoadUS" ,"LoadS" ,"Load" ,

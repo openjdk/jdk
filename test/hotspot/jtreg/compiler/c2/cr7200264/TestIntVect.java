@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -555,12 +555,16 @@ public class TestIntVect {
         }
     }
 
-    // Not vectorized: no vector div. NOTE: This check does not document the
-    // _desired_ behavior of the system but the current behavior (no
-    // vectorization)
+    // Not vectorized: On AArch64 SVE, vectorization for this example results in
+    // DivVI nodes.
     @Test
+    @IR(counts = { IRNode.LOAD_VECTOR_I, "> 0",
+                   IRNode.STORE_VECTOR,  "> 0",
+                   IRNode.DIV_VI,        "> 0" },
+        applyIfCPUFeature = {"sve", "true"})
     @IR(counts = { IRNode.LOAD_VECTOR_I, "= 0",
-                   IRNode.STORE_VECTOR,  "= 0" })
+                   IRNode.STORE_VECTOR,  "= 0" },
+        applyIfCPUFeature = {"sve", "false"})
     void test_divv(int[] a0, int[] a1, int b) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]/b);

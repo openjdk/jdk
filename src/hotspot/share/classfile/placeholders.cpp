@@ -61,6 +61,8 @@ static InternalPlaceholderTable* _placeholders;
 // For DEFINE_CLASS, the head of the queue owns the
 // define token and the rest of the threads wait to return the
 // result the first thread gets.
+// For DETECT_CIRCULARITY, set when loading super class, interfaces, or inline type
+// fields for class circularity checking.
 class SeenThread: public CHeapObj<mtInternal> {
 private:
    JavaThread* _thread;

@@ -477,3 +477,4 @@ int os::extra_bang_size_in_bytes() {
 }
 
 void os::setup_fpu() {}
+

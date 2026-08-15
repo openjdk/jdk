@@ -162,6 +162,11 @@ public class Preview {
     /**
      * Report usage of a preview feature. Usages reported through this method will affect the
      * set of sourcefiles with dependencies on preview features.
+     * <p>
+     * If the source code does not use a preview language feature, but when preview features
+     * are enabled, a different translation strategy is used and the resulting classfile
+     * depends on preview features, we can just {@link #markUsesPreview} silently.
+     *
      * @param flag a flag to set on the diagnostic
      * @param pos the position at which the preview feature was used.
      * @param feature the preview feature used.
@@ -215,6 +220,7 @@ public class Preview {
     public boolean isPreview(Feature feature) {
         return switch (feature) {
             case PRIMITIVE_PATTERNS -> true;
+            case VALUE_CLASSES -> true;
             //Note: this is a backdoor which allows to optionally treat all features as 'preview' (for testing).
             //When real preview features will be added, this method can be implemented to return 'true'
             //for those selected features, and 'false' for all the others.

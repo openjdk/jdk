@@ -645,7 +645,7 @@ class Http2Connection implements Closeable {
         }
     }
 
-    /*
+    /**
      * return true if the connection is marked as "final stream" and there
      * are no active streams on that connection and the connection isn't
      * reserved for a new stream.
@@ -1382,6 +1382,12 @@ class Http2Connection implements Closeable {
 
         goAwayRecvd.set(true);
         setFinalStream(); // don't allow any new streams on this connection
+
+        // let the connection terminator too know that a GOAWAY was received on the
+        // connection and any future errorneous termination of the connection may
+        // be attributed to the error code contained in the GOAWAY.
+        connTerminator.goAwayReceived(frame.getErrorCode(), frame.getDebugData());
+
         if (debug.on()) {
             debug.log("processing incoming GOAWAY with last processed stream id:%s in frame %s",
                     lastProcessedStream, frame);
@@ -1399,6 +1405,14 @@ class Http2Connection implements Closeable {
             prevLastProcessed = lastProcessedStreamInGoAway.get();
         }
         handlePeerUnprocessedStreams(lastProcessedStreamInGoAway.get());
+        // if there are no more active streams on the connection, then go ahead and close the
+        // connection
+        if (shouldClose()) {
+            final Http2TerminationCause tc = Http2TerminationCause.forH2Error(
+                    frame.getErrorCode(),
+                    "GOAWAY received from server");
+            close(tc);
+        }
     }
 
     private void handlePeerUnprocessedStreams(final long lastProcessedStream) {
@@ -2028,6 +2042,10 @@ class Http2Connection implements Closeable {
 
     // Responsible for doing all the necessary work for closing a Http2Connection
     private final class Terminator {
+
+        private record IncomingGoAway(int errorCode, byte[] debugData) {
+        }
+
         // the cause for closing the connection. Must only be set in the
         // Terminator.terminate(Http2TerminationCause) method.
         private final AtomicReference<Http2TerminationCause> terminationCause = new AtomicReference<>();
@@ -2035,12 +2053,33 @@ class Http2Connection implements Closeable {
         // false otherwise. should be accessed only when holding the stateLock
         private boolean chosenForIdleTermination;
 
+        // the server is allowed to send more than one GOAWAY frames. for connection
+        // termination cause/diagnostics, we currently only the use last one received, and
+        // that should be OK.
+        private volatile IncomingGoAway incomingGoAway;
+
+        private void goAwayReceived(final int errorCode, final byte[] debugData) {
+            // we currently don't make use of or store the debug data from the incoming
+            // GOAWAY frame
+            this.incomingGoAway = new IncomingGoAway(errorCode, null);
+        }
+
         private void terminate(final Http2TerminationCause terminationCause) {
             Objects.requireNonNull(terminationCause, "termination cause cannot be null");
             // allow to be terminated only once
             stateLock.lock();
             try {
-                final boolean success = this.terminationCause.compareAndSet(null, terminationCause);
+                final IncomingGoAway rcvdGoAway = this.incomingGoAway;
+                // if the connection has previously received a GOAWAY then use the error
+                // code from that frame to determine whether the current termination
+                // cause can be attribtued to the error reported by the GOAWAY frame.
+                // if it can be, then use that inferred termination cause as the effective one
+                // to terminate the connection.
+                final Http2TerminationCause effectiveTC = rcvdGoAway == null
+                        ? terminationCause
+                        : Http2TerminationCause.inferFromGoAway(terminationCause,
+                        rcvdGoAway.errorCode);
+                final boolean success = this.terminationCause.compareAndSet(null, effectiveTC);
                 if (!success) {
                     // already terminated or is being terminated by some other thread
                     return;

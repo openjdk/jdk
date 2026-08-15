@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,7 @@
 
 package compiler.lib.ir_framework.driver.irmatching;
 
-import compiler.lib.ir_framework.driver.irmatching.visitor.AcceptChildren;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
-
-import java.util.List;
 
 /**
  * This class represents a matching result of a {@link TestClass}. It contains all IR method results, sorted by
@@ -34,22 +31,14 @@ import java.util.List;
  *
  * @see TestClass
  */
-public class TestClassMatchResult implements MatchResult {
-    private final AcceptChildren acceptChildren;
-    private final boolean failed;
-
-    public TestClassMatchResult(List<MatchResult> matchResults) {
-        this.acceptChildren = new AcceptChildren(matchResults);
-        this.failed = !matchResults.isEmpty();
-    }
-
+public record TestClassMatchResult(SubResults subResults) implements MatchResult {
     @Override
     public boolean fail() {
-        return failed;
+        return subResults.hasFailure();
     }
 
     @Override
     public void accept(MatchResultVisitor visitor) {
-        visitor.visitTestClass(acceptChildren);
+        visitor.visit(this);
     }
 }

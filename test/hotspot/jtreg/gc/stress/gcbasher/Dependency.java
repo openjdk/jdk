@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,11 @@
 
 package gc.stress.gcbasher;
 
+@jdk.test.lib.valueclass.AsValueClass
 class Dependency {
     private String methodName;
+
+    // Implicitly used in Set<Dependency> while comparing elements.
     private String methodDescriptor;
     private String target;
 
@@ -33,23 +36,6 @@ class Dependency {
         this.methodName = methodName;
         this.methodDescriptor = methodDescriptor;
         this.target = target;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (!(o instanceof Dependency)) {
-            return false;
-        }
-
-        Dependency other = (Dependency)o;
-        return target.equals(other.target) &&
-               methodName.equals(other.methodName) &&
-               methodDescriptor.equals(other.methodDescriptor);
-    }
-
-    @Override
-    public int hashCode() {
-        return methodName.hashCode() ^ methodDescriptor.hashCode() ^ target.hashCode();
     }
 
     public String getMethodName() {

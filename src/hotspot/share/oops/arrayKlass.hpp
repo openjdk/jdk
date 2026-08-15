@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,9 @@
 #ifndef SHARE_OOPS_ARRAYKLASS_HPP
 #define SHARE_OOPS_ARRAYKLASS_HPP
 
+#include "oops/arrayProperties.hpp"
 #include "oops/klass.hpp"
+#include "oops/layoutKind.hpp"
 
 class fieldDescriptor;
 class klassVtable;
@@ -35,18 +37,24 @@ class ObjArrayKlass;
 
 class ArrayKlass: public Klass {
   friend class VMStructs;
+
+ public:
+  static ArrayProperties array_properties_from_layout(LayoutKind lk);
+
  private:
   // If you add a new field that points to any metaspace object, you
   // must add this field to ArrayKlass::metaspace_pointers_do().
-  const int               _dimension;         // This is n'th-dimensional array.
+  int                     _dimension;         // This is n'th-dimensional array.
   ObjArrayKlass* volatile _higher_dimension;  // Refers the (n+1)'th-dimensional array (if present).
   ArrayKlass* volatile    _lower_dimension;   // Refers the (n-1)'th-dimensional array (if present).
+
+  const ArrayProperties   _properties;
 
  protected:
   // Constructors
   // The constructor with the Symbol argument does the real array
   // initialization, the other is a dummy
-  ArrayKlass(int n, Symbol* name, KlassKind kind);
+  ArrayKlass(int n, Symbol* name, KlassKind kind, ArrayProperties props);
   ArrayKlass();
 
  public:
@@ -63,6 +71,9 @@ class ArrayKlass: public Klass {
 
   // Instance variables
   int dimension() const                 { return _dimension;      }
+
+  ArrayProperties properties() const    { return _properties; }
+  static ByteSize properties_offset()   { return byte_offset_of(ArrayKlass, _properties); }
 
   ObjArrayKlass* higher_dimension() const     { return _higher_dimension; }
   inline ObjArrayKlass* higher_dimension_acquire() const; // load with acquire semantics
@@ -106,6 +117,8 @@ class ArrayKlass: public Klass {
   GrowableArray<Klass*>* compute_secondary_supers(int num_extra_slots,
                                                   Array<InstanceKlass*>* transitive_interfaces) override;
 
+  oop component_mirror() const;
+
   // Sizing
   static int static_size(int header_size);
 
@@ -137,5 +150,24 @@ class ArrayKlass: public Klass {
 
   void oop_verify_on(oop obj, outputStream* st) override;
 };
+
+class ArrayDescription : public StackObj {
+public:
+  Klass::KlassKind _kind;
+  ArrayProperties  _properties;
+  LayoutKind       _layout_kind;
+
+  ArrayDescription(Klass::KlassKind k, ArrayProperties p, LayoutKind lk) {
+    _kind = k;
+    _layout_kind = lk;
+    assert(lk == LayoutKind::REFERENCE || k != Klass::KlassKind::RefArrayKlassKind, "Sanity check");
+    assert(lk != LayoutKind::UNKNOWN, "Sanity check");
+
+    // Atomicity depends on the layout kind, which might be different than what
+    // the given properties says
+    const bool non_atomic = lk != LayoutKind::REFERENCE && !LayoutKindHelper::is_atomic_flat(lk);
+    _properties = p.with_non_atomic(non_atomic);
+  }
+ };
 
 #endif // SHARE_OOPS_ARRAYKLASS_HPP

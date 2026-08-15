@@ -960,8 +960,6 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
                     v0.bOp(v1, vm, (i, a, b) -> (float)Math.max(a, b));
             case VECTOR_OP_MIN: return (v0, v1, vm) ->
                     v0.bOp(v1, vm, (i, a, b) -> (float)Math.min(a, b));
-            case VECTOR_OP_OR: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> FloatVector.fromBits(FloatVector.toBits(a) | FloatVector.toBits(b)));
             case VECTOR_OP_ATAN2: return (v0, v1, vm) ->
                     v0.bOp(v1, vm, (i, a, b) -> (float) Math.atan2(a, b));
             case VECTOR_OP_POW: return (v0, v1, vm) ->

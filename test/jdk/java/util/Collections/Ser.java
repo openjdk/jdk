@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,17 +26,35 @@
  * @bug 4190323
  * @summary EMPTY_SET, EMPTY_LIST, and the collections returned by
  *          nCopies and singleton were spec'd to be serializable, but weren't.
+ * @library /test/lib
  */
 
+import jdk.test.lib.valueclass.AsValueClass;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
 public class Ser {
+
+    @AsValueClass
+    static final class SerV implements Serializable {
+        int x;
+        SerV(int x) { this.x = x; }
+        public boolean equals(Object o) { return o instanceof SerV v && x == v.x; }
+        public int hashCode() { return x; }
+        private Object writeReplace() { return new SerProxy(x); }
+        private static class SerProxy implements Serializable {
+            int x;
+            SerProxy(int x) { this.x = x; }
+            private Object readResolve() { return new SerV(x); }
+        }
+    }
+
     public static void main(String[] args) throws Exception {
 
         try {
@@ -95,6 +113,34 @@ public class Ser {
                 throw new RuntimeException("nCopies Ser/Deser failure.");
         } catch (Exception e) {
             throw new RuntimeException("Failed to serialize nCopies:" + e);
+        }
+
+        try {
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            ObjectOutputStream out = new ObjectOutputStream(bos);
+            Set<SerV> one = Collections.singleton(new SerV(1));
+            out.writeObject(one);
+            out.flush();
+            ObjectInputStream in = new ObjectInputStream(
+                    new ByteArrayInputStream(bos.toByteArray()));
+            if (!one.equals(in.readObject()))
+                throw new RuntimeException("value singleton Ser/Deser failure");
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to serialize value singleton: " + e);
+        }
+
+        try {
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            ObjectOutputStream out = new ObjectOutputStream(bos);
+            List<SerV> many = Collections.nCopies(5, new SerV(2));
+            out.writeObject(many);
+            out.flush();
+            ObjectInputStream in = new ObjectInputStream(
+                    new ByteArrayInputStream(bos.toByteArray()));
+            if (!many.equals(in.readObject()))
+                throw new RuntimeException("value nCopies Ser/Deser failure");
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to serialize value nCopies: " + e);
         }
     }
 }

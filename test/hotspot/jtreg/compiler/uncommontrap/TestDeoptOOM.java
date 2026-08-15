@@ -42,7 +42,7 @@
  *      -XX:CompileCommand=exclude,compiler.uncommontrap.TestDeoptOOM::m9_1
  *      -XX:+UnlockDiagnosticVMOptions
  *      -XX:-DisplayVMOutput -XX:+UseZGC -XX:+LogCompilation
- *      -XX:+PrintDeoptimizationDetails -XX:+TraceDeoptimization -XX:+Verbose
+ *      -Xlog:deoptimization=debug -XX:+Verbose
  *      compiler.uncommontrap.TestDeoptOOM
  */
 

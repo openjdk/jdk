@@ -120,12 +120,24 @@ public final class LinuxAARCH64CFrame extends DwarfCFrame {
      throw new DebuggerException("JavaThread not found");
    }
 
+   // Most of code is copied from AARCH64Frame.java.
+   // CFrame need to consider PAC in native frame even if -XX:UseBranchProtection is disabled.
+   // (_rop_protection in HotSpot)
+   private Address stripPAC(Address addr) {
+      return addr.andWithMask(AARCH64Frame.pacMask());
+   }
+
    @Override
    public CFrame sender(ThreadProxy thread, Address senderSP, Address senderFP, Address senderPC) {
       if (linuxDbg().isSignalTrampoline(pc())) {
         // SP points signal context
         //   https://github.com/torvalds/linux/blob/v6.17/arch/arm64/kernel/signal.c#L1357
         return getFrameFromReg(linuxDbg(), r -> LinuxAARCH64ThreadContext.getRegFromSignalTrampoline(sp(), r.intValue()));
+      }
+
+      if (hasNativeLibrary() && dwarf() == null) {
+        // Cannot find a sender frame if DWARF is missing even though PC in native library.
+        return null;
       }
 
       if (senderPC == null) {
@@ -167,6 +179,13 @@ public final class LinuxAARCH64CFrame extends DwarfCFrame {
         return null;
       }
 
+      // Strip PAC
+      if (((MachineDescriptionAArch64)linuxDbg().getMachineDescription()).isPACEnabled() &&
+          ((dwarf() != null && ((AARCH64DwarfParser)dwarf()).isRASigned() /* for native */ ) ||
+           (AARCH64Frame.ropProtection() != 0 /* for Java */ ))) {
+        senderPC = stripPAC(senderPC);
+      }
+
       DwarfParser senderDwarf = null;
       boolean fallback = false;
       try {
@@ -184,8 +203,11 @@ public final class LinuxAARCH64CFrame extends DwarfCFrame {
             return new LinuxAARCH64CFrame(linuxDbg(), senderSP, senderFP, null, senderPC, senderDwarf);
           }
 
-          // We cannot unwind anymore without appropriate DWARF.
-          return null;
+          // Returns CFrame if the sender is native frame even though it does not have DWARF,
+          // otherwise returns null because we cannot unwind anymore.
+          return linuxDbg().findLibPtrByAddress(senderPC) != null
+            ? new LinuxAARCH64CFrame(linuxDbg(), senderSP, senderFP, null /* no CFA */, senderPC, null /* no DWARF */)
+            : null;
         }
       }
 

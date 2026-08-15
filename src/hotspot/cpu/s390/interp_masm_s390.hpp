@@ -115,7 +115,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   // Generate a subtype check: branch to ok_is_subtype if sub_klass is
   // a subtype of super_klass. Blows registers tmp1, tmp2 and tmp3.
-  void gen_subtype_check(Register sub_klass, Register super_klass, Register tmp1, Register tmp2, Label &ok_is_subtype);
+  void gen_subtype_check(Register sub_klass, Register super_klass, Register tmp1, Register tmp2, Label &ok_is_subtype, bool profile = true);
 
   void load_resolved_indy_entry(Register cache, Register index);
   void load_field_entry (Register cache, Register index, int bcp_offset = 1);
@@ -269,6 +269,12 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void lock_object  (Register lock_reg, Register obj_reg);
   void unlock_object(Register lock_reg, Register obj_reg=noreg);
 
+  // Valhalla support for flat fields
+  void read_flat_field(Register entry, Register obj);
+  void write_flat_field(Register entry, Register field_offset,
+                        Register tmp1, Register tmp2,
+                        Register obj);
+
   // Interpreter profiling operations
   void set_method_data_pointer_for_bcp();
   void test_method_data_pointer(Register mdp, Label& zero_continue);
@@ -292,7 +298,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void update_mdp_for_ret(Register return_bci);
 
   void profile_taken_branch(Register mdp, Register bumped_count);
-  void profile_not_taken_branch(Register mdp);
+  void profile_not_taken_branch(Register mdp, bool acmp = false);
+  void profile_acmp(Register mdp, Register left, Register right, Register tmp);
   void profile_call(Register mdp);
   void profile_final_call(Register mdp);
   void profile_virtual_call(Register receiver, Register mdp,
@@ -308,6 +315,9 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void profile_arguments_type(Register mdp, Register callee, Register tmp, bool is_virtual);
   void profile_return_type(Register mdp, Register ret, Register tmp);
   void profile_parameters_type(Register mdp, Register tmp1, Register tmp2);
+  template <class ArrayData> void profile_array_type(Register array, Register tmp1, Register tmp2);
+  void profile_element_type(Register element, Register tmp1, Register tmp2);
+  void profile_multiple_element_types(Register element, Register tmp1, Register tmp2, Register tmp3);
 
   // Debugging
   void verify_oop(Register reg, TosState state = atos);    // Only if +VerifyOops && state == atos.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,12 @@
  * @test
  * @bug 5020931 8048207
  * @summary Unit test for Collections.checkedQueue
+ * @library /test/lib
  * @run testng CheckedQueue
  */
 
+import jdk.test.lib.valueclass.VClass;
+import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -148,5 +151,17 @@ public class CheckedQueue {
 
         // no room at the inn!
         assertFalse(q.offer("1"), "queue should be full");
+    }
+
+    @Test
+    public void testValueCheckedQueue() {
+        Queue<VClass> q = Collections.checkedQueue(new ArrayDeque<>(), VClass.class);
+        q.add(new VClass(1, new int[] { 1 }));
+        if (!q.peek().equals(new VClass(1, new int[] { 1 })))
+            fail("value checkedQueue peek failed");
+        try {
+            ((Queue) q).add("not a Tuple");
+            fail("value checkedQueue accepted wrong type");
+        } catch (ClassCastException expected) { }
     }
 }

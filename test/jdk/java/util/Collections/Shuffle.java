@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,10 @@
  * @bug     8294693
  * @summary Basic test for Collections.shuffle
  * @key     randomness
+ * @library /test/lib
  */
 
+import jdk.test.lib.valueclass.VClass;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -42,6 +44,7 @@ public class Shuffle {
     public static void main(String[] args) {
         test(new ArrayList<>());
         test(new LinkedList<>());
+        testValue();
     }
 
     static void test(List<Integer> list) {
@@ -60,6 +63,16 @@ public class Shuffle {
         checkRandom(list, l -> Collections.shuffle(l, new Random(1)));
         RandomGenerator.JumpableGenerator generator = RandomGenerator.JumpableGenerator.of("Xoshiro256PlusPlus");
         checkRandom(list, l -> Collections.shuffle(l, generator.copy()));
+    }
+
+    static void testValue() {
+        List<VClass> values = new ArrayList<>();
+        for (int i = 0; i < N; i++) values.add(new VClass(i, new int[] { i }));
+        Collections.shuffle(values, new Random(1));
+        if (values.size() != N) throw new RuntimeException("value shuffle size");
+        for (int i = 0; i < N; i++)
+            if (Collections.frequency(values, new VClass(i, new int[] { i })) != 1)
+                throw new RuntimeException("value shuffle lost " + i);
     }
 
     private static void checkRandom(List<Integer> list, Consumer<List<?>> randomizer) {

@@ -329,7 +329,7 @@ JVMFlag::Error TypeProfileLevelConstraintFunc(uint value, bool verbose) {
 }
 
 JVMFlag::Error VerifyIterativeGVNConstraintFunc(uint value, bool verbose) {
-  const int max_modes = 6;
+  const int max_modes = 7;
   uint original_value = value;
   for (int i = 0; i < max_modes; i++) {
     if (value % 10 > 1) {

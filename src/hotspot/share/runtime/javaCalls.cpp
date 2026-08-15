@@ -30,6 +30,7 @@
 #include "interpreter/interpreter.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "memory/universe.hpp"
+#include "oops/inlineKlass.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jniCheck.hpp"
@@ -134,22 +135,23 @@ void JavaCallWrapper::oops_do(OopClosure* f) {
 // Helper methods
 static BasicType runtime_type_from(JavaValue* result) {
   switch (result->get_type()) {
-    case T_BOOLEAN: // fall through
-    case T_CHAR   : // fall through
-    case T_SHORT  : // fall through
-    case T_INT    : // fall through
+    case T_BOOLEAN  : // fall through
+    case T_CHAR     : // fall through
+    case T_SHORT    : // fall through
+    case T_INT      : // fall through
 #ifndef _LP64
-    case T_OBJECT : // fall through
-    case T_ARRAY  : // fall through
+    case T_OBJECT   : // fall through
+    case T_ARRAY    : // fall through
+    case T_FLAT_ELEMENT: // fall through
 #endif
-    case T_BYTE   : // fall through
-    case T_VOID   : return T_INT;
-    case T_LONG   : return T_LONG;
-    case T_FLOAT  : return T_FLOAT;
-    case T_DOUBLE : return T_DOUBLE;
+    case T_BYTE     : // fall through
+    case T_VOID     : return T_INT;
+    case T_LONG     : return T_LONG;
+    case T_FLOAT    : return T_FLOAT;
+    case T_DOUBLE   : return T_DOUBLE;
 #ifdef _LP64
-    case T_ARRAY  : // fall through
-    case T_OBJECT:  return T_OBJECT;
+    case T_ARRAY    : // fall through
+    case T_OBJECT   : return T_OBJECT;
 #endif
     default:
       ShouldNotReachHere();
@@ -370,6 +372,18 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
     os::map_stack_shadow_pages(sp);
   }
 
+  jobject value_buffer = nullptr;
+  if (InlineTypeReturnedAsFields && (result->get_type() == T_OBJECT)) {
+    // Pre allocate a buffered inline type in case the result is returned
+    // flattened by compiled code
+    InlineKlass* vk = method->returns_inline_type();
+    if (vk != nullptr && vk->can_be_returned_as_fields()) {
+      oop instance = vk->allocate_instance(CHECK);
+      value_buffer = JNIHandles::make_local(thread, instance);
+      result->set_jobject(value_buffer);
+    }
+  }
+
   // do call
   { JavaCallWrapper link(method, receiver, result, CHECK);
     { HandleMark hm(thread);  // HandleMark used by HandleMarkCleaner
@@ -384,7 +398,8 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
         // The enter_interp_only_mode use handshake to set interp_only mode
         // so no safepoint should be allowed between is_interp_only_mode() and call
         NoSafepointVerifier nsv;
-        if (JvmtiExport::can_post_interpreter_events() && thread->is_interp_only_mode()) {
+        bool is_interp_only_mode = (StressCallingConvention && (os::random() % (1 << 10)) == 0) || thread->is_interp_only_mode();
+        if (JvmtiExport::can_post_interpreter_events() && is_interp_only_mode) {
           entry_point = method->interpreter_entry();
         } else {
           // Since the call stub sets up like the interpreter we call the from_interpreted_entry
@@ -423,6 +438,7 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
   if (oop_result_flag) {
     result->set_oop(thread->vm_result_oop());
     thread->set_vm_result_oop(nullptr);
+    JNIHandles::destroy_local(value_buffer);
   }
 }
 
@@ -571,7 +587,7 @@ void JavaCallArguments::verify(const methodHandle& method, BasicType return_type
   guarantee(method->size_of_parameters() == size_of_parameters(), "wrong no. of arguments pushed");
 
   // Treat T_OBJECT and T_ARRAY as the same
-  if (is_reference_type(return_type)) return_type = T_OBJECT;
+  if (return_type == T_ARRAY) return_type = T_OBJECT;
 
   // Check that oop information is correct
   Symbol* signature = method->signature();

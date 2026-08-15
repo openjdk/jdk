@@ -50,6 +50,11 @@ inline int fieldDescriptor::offset()                    const    { return field(
 inline bool fieldDescriptor::has_initial_value()        const    { return field().field_flags().is_initialized(); }
 inline int fieldDescriptor::initial_value_index()       const    { return field().initializer_index(); }
 
+inline bool fieldDescriptor::is_strict_static_unset() const {
+  return (is_strict() && is_static() &&
+          field_holder()->field_status(index()).is_strict_static_unset());
+}
+
 inline void fieldDescriptor::set_is_field_access_watched(const bool value) {
   field_holder()->fields_status()->adr_at(index())->update_access_watched(value);
 }
@@ -65,5 +70,9 @@ inline void fieldDescriptor::set_has_initialized_final_update(const bool value) 
 inline BasicType fieldDescriptor::field_type() const {
   return Signature::basic_type(signature());
 }
+
+inline bool fieldDescriptor::is_flat()  const  { return field().field_flags().is_flat(); }
+inline bool fieldDescriptor::is_null_free_inline_type() const { return field().field_flags().is_null_free_inline_type(); }
+inline bool fieldDescriptor::has_null_marker() const { return field().field_flags().has_null_marker(); }
 
 #endif // SHARE_RUNTIME_FIELDDESCRIPTOR_INLINE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "opto/callnode.hpp"
 #include "opto/cfgnode.hpp"
+#include "opto/inlinetypenode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/mathexactnode.hpp"
 #include "opto/multnode.hpp"
@@ -39,7 +40,7 @@ const RegMask &MultiNode::out_RegMask() const {
   return RegMask::EMPTY;
 }
 
-Node *MultiNode::match( const ProjNode *proj, const Matcher *m ) { return proj->clone(); }
+Node* MultiNode::match(const ProjNode* proj, const Matcher* m) { return proj->clone(); }
 
 //------------------------------proj_out---------------------------------------
 // Get a named projection or null if not found
@@ -130,11 +131,17 @@ const Type* ProjNode::proj_type(const Type* t) const {
     return Type::BOTTOM;
   }
   t = t->is_tuple()->field_at(_con);
-  Node* n = in(0);
-  if ((_con == TypeFunc::Parms) &&
-      n->is_CallStaticJava() && n->as_CallStaticJava()->is_boxing_method()) {
+  CallStaticJavaNode* call = in(0)->isa_CallStaticJava();
+  if (call != nullptr && call->is_boxing_method()) {
     // The result of autoboxing is always non-null on normal path.
-    t = t->join_speculative(TypePtr::NOTNULL);
+    if (call->tf()->returns_inline_type_as_fields()) {
+      // Last returned value is the null marker
+      if (_con == call->tf()->range_cc()->cnt() - 1) {
+        t = TypeInt::ONE;
+      }
+    } else if (_con == TypeFunc::Parms) {
+      t = t->join_speculative(TypePtr::NOTNULL);
+    }
   }
   return t;
 }
@@ -152,7 +159,10 @@ const TypePtr *ProjNode::adr_type() const {
       // Jumping over Tuples: the i-th projection of a Tuple is the i-th input of the Tuple.
       ctrl = ctrl->in(_con);
     }
-    if (ctrl == nullptr)  return nullptr; // node is dead
+    // node is dead or we are in the process of removing a dead subgraph
+    if (ctrl == nullptr || ctrl->is_top()) {
+      return nullptr;
+    }
     const TypePtr* adr_type = ctrl->adr_type();
     #ifdef ASSERT
     if (!VMError::is_error_reported() && !Node::in_dump())
@@ -200,6 +210,36 @@ Node* ProjNode::Identity(PhaseGVN* phase) {
   if (in(0) != nullptr && in(0)->Opcode() == Op_Tuple) {
     // Jumping over Tuples: the i-th projection of a Tuple is the i-th input of the Tuple.
     return in(0)->in(_con);
+  }
+
+  CallStaticJavaNode* call = in(0)->isa_CallStaticJava();
+  if (call != nullptr) {
+    if (call->is_boxing_method() && call->method()->return_type()->is_inlinetype()) {
+      // Boxing (for example, via Integer.valueOf(int))
+      if (call->tf()->returns_inline_type_as_fields()) {
+        if (_con == TypeFunc::Parms) {
+          // Oop projection: Keep it to avoid re-buffering. If unused,
+          // it will go away and enable removal of the boxing call.
+          return this;
+        } else if (_con == TypeFunc::Parms + 1) {
+          // Field projection: Use unboxed input value
+          return call->in(TypeFunc::Parms);
+        }
+        // The null marker projection is removed by ProjNode::proj_type.
+      }
+    } else if (call->is_unboxing_method() && _con == TypeFunc::Parms) {
+      // Unboxing (for example, via Integer.intValue())
+      // Use field value of boxed input value object
+      if (call->method()->has_scalarized_args()) {
+        return call->in(TypeFunc::Parms + 1);
+      } else {
+        Node* arg = call->in(TypeFunc::Parms);
+        if (arg->is_InlineType()) {
+          assert(!phase->type(arg)->maybe_null(), "missing receiver null check?");
+          return arg->as_InlineType()->field_value(0);
+        }
+      }
+    }
   }
   return this;
 }

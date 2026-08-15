@@ -79,8 +79,7 @@ bool CompilationPolicy::must_be_compiled(const methodHandle& m, int comp_level) 
   if (m->has_compiled_code()) return false;       // already compiled
   if (!can_be_compiled(m, comp_level)) return false;
 
-  return !UseInterpreter ||                                                                        // must compile all methods
-         (AlwaysCompileLoopMethods && m->has_loops() && CompileBroker::should_compile_new_jobs()); // eagerly compile loop methods
+  return !UseInterpreter; // must compile all methods
 }
 
 void CompilationPolicy::maybe_compile_early(const methodHandle& m, TRAPS) {

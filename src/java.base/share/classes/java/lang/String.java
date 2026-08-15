@@ -4054,7 +4054,7 @@ public final class String
      *   <td>(all)</td>
      *   <th scope="row" style="font-weight:normal; text-align:left">
      *       &Iota;&Chi;&Theta;&Upsilon;&Sigma;</th>
-     *   <td>&iota;&chi;&theta;&upsilon;&sigma;</td>
+     *   <td>&iota;&chi;&theta;&upsilon;&sigmaf;</td>
      *   <td>lowercased all chars in String</td>
      * </tr>
      * </tbody>

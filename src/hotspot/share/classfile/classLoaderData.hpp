@@ -210,6 +210,7 @@ private:
 
   void loaded_classes_do(KlassClosure* klass_closure);
   void classes_do(void f(InstanceKlass*));
+  void inline_classes_do(void f(InlineKlass*));
   void methods_do(void f(Method*));
   void modules_do(void f(ModuleEntry*));
   void packages_do(void f(PackageEntry*));

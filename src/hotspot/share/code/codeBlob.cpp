@@ -64,6 +64,7 @@ static_assert(!std::is_polymorphic<AdapterBlob>::value,        "no virtual metho
 static_assert(!std::is_polymorphic<VtableBlob>::value,         "no virtual methods are allowed in code blobs");
 static_assert(!std::is_polymorphic<MethodHandlesAdapterBlob>::value, "no virtual methods are allowed in code blobs");
 static_assert(!std::is_polymorphic<RuntimeStub>::value,        "no virtual methods are allowed in code blobs");
+static_assert(!std::is_polymorphic<BufferedInlineTypeBlob>::value,   "no virtual methods are allowed in code blobs");
 static_assert(!std::is_polymorphic<DeoptimizationBlob>::value, "no virtual methods are allowed in code blobs");
 static_assert(!std::is_polymorphic<SafepointBlob>::value,      "no virtual methods are allowed in code blobs");
 static_assert(!std::is_polymorphic<UpcallStub>::value,         "no virtual methods are allowed in code blobs");
@@ -94,6 +95,7 @@ const CodeBlob::Vptr* CodeBlob::vptr(CodeBlobKind kind) {
       &AdapterBlob::_vpntr,
       &VtableBlob::_vpntr,
       &MethodHandlesAdapterBlob::_vpntr,
+      &BufferedInlineTypeBlob::_vpntr,
       &RuntimeStub::_vpntr,
       &DeoptimizationBlob::_vpntr,
       &SafepointBlob::_vpntr,
@@ -127,7 +129,7 @@ unsigned int CodeBlob::allocation_size(CodeBuffer* cb, int header_size) {
 }
 
 CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size, uint16_t header_size,
-                   int16_t frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments,
+                   int frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments,
                    int mutable_data_size) :
   _oop_maps(nullptr), // will be set by set_oop_maps() call
   _name(name),
@@ -139,9 +141,9 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size
   _data_offset(_content_offset + align_up(cb->total_content_size(), oopSize)),
   _frame_size(frame_size),
   _mutable_data_size(mutable_data_size),
+  _frame_complete_offset(frame_complete_offset),
   S390_ONLY(_ctable_offset(0) COMMA)
   _header_size(header_size),
-  _frame_complete_offset(frame_complete_offset),
   _kind(kind),
   _caller_must_gc_arguments(caller_must_gc_arguments)
 {
@@ -181,9 +183,9 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, int size, uint16_t heade
   _data_offset(size),
   _frame_size(0),
   _mutable_data_size(0),
+  _frame_complete_offset(CodeOffsets::frame_never_safe),
   S390_ONLY(_ctable_offset(0) COMMA)
   _header_size(header_size),
-  _frame_complete_offset(CodeOffsets::frame_never_safe),
   _kind(kind),
   _caller_must_gc_arguments(false)
 {
@@ -319,7 +321,7 @@ RuntimeBlob::RuntimeBlob(
   CodeBuffer* cb,
   int         size,
   uint16_t    header_size,
-  int16_t     frame_complete,
+  int         frame_complete,
   int         frame_size,
   OopMapSet*  oop_maps,
   bool        caller_must_gc_arguments)
@@ -432,7 +434,7 @@ BufferBlob* BufferBlob::create(const char* name, CodeBuffer* cb) {
   assert(name != nullptr, "must provide a name");
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    blob = new (size) BufferBlob(name, CodeBlobKind::Buffer, cb, size);
+    blob = new (size) BufferBlob(name, CodeBlobKind::Buffer, cb, size, sizeof(BufferBlob));
   }
   // Track memory usage statistic after releasing CodeCache_lock
   MemoryService::track_code_cache_memory_usage();
@@ -448,14 +450,18 @@ void BufferBlob::free(BufferBlob *blob) {
   RuntimeBlob::free(blob);
 }
 
+BufferBlob::BufferBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size, uint16_t header_size, int frame_complete, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments)
+  : RuntimeBlob(name, kind, cb, size, header_size, frame_complete, frame_size, oop_maps, caller_must_gc_arguments)
+{}
+
 
 //----------------------------------------------------------------------------------------------------
 // Implementation of AdapterBlob
 
-AdapterBlob::AdapterBlob(int size, CodeBuffer* cb, int entry_offset[AdapterBlob::ENTRY_COUNT]) :
-  BufferBlob("I2C/C2I adapters", CodeBlobKind::Adapter, cb, size, sizeof(AdapterBlob)) {
-  assert(entry_offset[I2C] == 0, "sanity check");
+AdapterBlob::AdapterBlob(int size, CodeBuffer* cb, int entry_offset[AdapterBlob::ENTRY_COUNT], int frame_complete, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments) :
+  BufferBlob("I2C/C2I adapters", CodeBlobKind::Adapter, cb, size, sizeof(AdapterBlob), frame_complete, frame_size, oop_maps, caller_must_gc_arguments) {
 #ifdef ASSERT
+  assert(entry_offset[I2C] == 0, "sanity check");
   for (int i = 1; i < AdapterBlob::ENTRY_COUNT; i++) {
     // The entry is within the adapter blob or unset.
     int offset = entry_offset[i];
@@ -465,12 +471,15 @@ AdapterBlob::AdapterBlob(int size, CodeBuffer* cb, int entry_offset[AdapterBlob:
   }
 #endif // ASSERT
   _c2i_offset = entry_offset[C2I];
+  _c2i_inline_offset = entry_offset[C2I_Inline];
+  _c2i_inline_ro_offset = entry_offset[C2I_Inline_RO];
   _c2i_unverified_offset = entry_offset[C2I_Unverified];
+  _c2i_unverified_inline_offset = entry_offset[C2I_Unverified_Inline];
   _c2i_no_clinit_check_offset = entry_offset[C2I_No_Clinit_Check];
   CodeCache::commit(this);
 }
 
-AdapterBlob* AdapterBlob::create(CodeBuffer* cb, int entry_offset[AdapterBlob::ENTRY_COUNT]) {
+AdapterBlob* AdapterBlob::create(CodeBuffer* cb, int entry_offset[AdapterBlob::ENTRY_COUNT], int frame_complete, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments) {
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
 
   CodeCache::gc_on_allocation();
@@ -479,7 +488,7 @@ AdapterBlob* AdapterBlob::create(CodeBuffer* cb, int entry_offset[AdapterBlob::E
   unsigned int size = CodeBlob::allocation_size(cb, sizeof(AdapterBlob));
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    blob = new (size) AdapterBlob(size, cb, entry_offset);
+    blob = new (size) AdapterBlob(size, cb, entry_offset, frame_complete, frame_size, oop_maps, caller_must_gc_arguments);
   }
   // Track memory usage statistic after releasing CodeCache_lock
   MemoryService::track_code_cache_memory_usage();
@@ -563,13 +572,38 @@ MethodHandlesAdapterBlob* MethodHandlesAdapterBlob::create(int buffer_size) {
 }
 
 //----------------------------------------------------------------------------------------------------
+// Implementation of BufferedInlineTypeBlob
+BufferedInlineTypeBlob::BufferedInlineTypeBlob(int size, CodeBuffer* cb, int pack_fields_off, int pack_fields_jobject_off, int unpack_fields_off) :
+  BufferBlob("buffered inline type", CodeBlobKind::BufferedInlineType, cb, size, sizeof(BufferedInlineTypeBlob)),
+  _pack_fields_off(pack_fields_off),
+  _pack_fields_jobject_off(pack_fields_jobject_off),
+  _unpack_fields_off(unpack_fields_off) {
+  CodeCache::commit(this);
+}
+
+BufferedInlineTypeBlob* BufferedInlineTypeBlob::create(CodeBuffer* cb, int pack_fields_off, int pack_fields_jobject_off, int unpack_fields_off) {
+  ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
+
+  BufferedInlineTypeBlob* blob = nullptr;
+  unsigned int size = CodeBlob::allocation_size(cb, sizeof(BufferedInlineTypeBlob));
+  {
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    blob = new (size) BufferedInlineTypeBlob(size, cb, pack_fields_off, pack_fields_jobject_off, unpack_fields_off);
+  }
+  // Track memory usage statistic after releasing CodeCache_lock
+  MemoryService::track_code_cache_memory_usage();
+
+  return blob;
+}
+
+//----------------------------------------------------------------------------------------------------
 // Implementation of RuntimeStub
 
 RuntimeStub::RuntimeStub(
   const char* name,
   CodeBuffer* cb,
   int         size,
-  int16_t     frame_complete,
+  int         frame_complete,
   int         frame_size,
   OopMapSet*  oop_maps,
   bool        caller_must_gc_arguments
@@ -581,7 +615,7 @@ RuntimeStub::RuntimeStub(
 
 RuntimeStub* RuntimeStub::new_runtime_stub(const char* stub_name,
                                            CodeBuffer* cb,
-                                           int16_t frame_complete,
+                                           int frame_complete,
                                            int frame_size,
                                            OopMapSet* oop_maps,
                                            bool caller_must_gc_arguments,

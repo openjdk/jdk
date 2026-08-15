@@ -61,6 +61,13 @@ class InterpreterRuntime: AllStatic {
   static void    anewarray     (JavaThread* current, ConstantPool* pool, int index, jint size);
   static void    multianewarray(JavaThread* current, jint* first_size_address);
   static void    register_finalizer(JavaThread* current, oopDesc* obj);
+  static void    read_flat_field(JavaThread* current, oopDesc* object, ResolvedFieldEntry* entry);
+  static void    write_flat_field(JavaThread* current, oopDesc* object, oopDesc* value, ResolvedFieldEntry* entry);
+
+  static void flat_array_load(JavaThread* current, arrayOopDesc* array, int index);
+  static void flat_array_store(JavaThread* current, oopDesc* val, arrayOopDesc* array, int index);
+
+  static jboolean is_substitutable(JavaThread* current, oopDesc* aobj, oopDesc* bobj);
 
   // Quicken instance-of and check-cast bytecodes
   static void    quicken_io_cc(JavaThread* current);
@@ -121,6 +128,7 @@ private:
 
   static void    throw_illegal_monitor_state_exception(JavaThread* current);
   static void    new_illegal_monitor_state_exception(JavaThread* current);
+  static void    throw_identity_exception(JavaThread* current, oopDesc* obj);
 
   // Breakpoints
   static void _breakpoint(JavaThread* current, Method* method, address bcp);

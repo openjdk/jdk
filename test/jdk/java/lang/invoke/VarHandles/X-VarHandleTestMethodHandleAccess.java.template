@@ -21,8 +21,14 @@
  * questions.
  */
 
+#warn
+
 /*
  * @test
+#if[Value]
+ * @enablePreview
+ * @modules java.base/jdk.internal.vm.annotation
+#end[Value]
  * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop sets to 2000 iterations
  *          to hit compilation thresholds
  * @run junit/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1 VarHandleTestMethodHandleAccess$Type$

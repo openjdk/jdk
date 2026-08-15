@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -282,6 +282,8 @@ CollectedHeap::CollectedHeap() :
   _last_whole_heap_examined_time_ns(os::javaTimeNanos()),
   _total_collections(0),
   _total_full_collections(0),
+  NOT_PRODUCT(_promotion_failure_alot_count(0) COMMA)
+  NOT_PRODUCT(_promotion_failure_alot_gc_number(0) COMMA)
   _vmthread_cpu_time(0),
   _gc_cause(GCCause::_no_gc),
   _gc_lastcause(GCCause::_no_gc)
@@ -298,9 +300,6 @@ CollectedHeap::CollectedHeap() :
   const size_t elements_per_word = HeapWordSize / sizeof(jint);
   _filler_array_max_size = align_object_size(filler_array_hdr_size() +
                                              max_len / elements_per_word);
-
-  NOT_PRODUCT(_promotion_failure_alot_count = 0;)
-  NOT_PRODUCT(_promotion_failure_alot_gc_number = 0;)
 
   if (UsePerfData) {
     EXCEPTION_MARK;
@@ -622,35 +621,31 @@ size_t CollectedHeap::bootstrap_max_memory() const {
 
 #ifndef PRODUCT
 
-bool CollectedHeap::promotion_should_fail(volatile size_t* count) {
-  // Access to count is not atomic; the value does not have to be exact.
+bool CollectedHeap::promotion_should_fail() {
+  // Access to count is not atomic in any way - we can loose updates, overwrite never counts, etc;
+  // the value does not have to be exact.
   if (PromotionFailureALot) {
     const size_t gc_num = total_collections();
-    const size_t elapsed_gcs = gc_num - _promotion_failure_alot_gc_number;
+    const size_t elapsed_gcs = gc_num - _promotion_failure_alot_gc_number.load_relaxed();
     if (elapsed_gcs >= PromotionFailureALotInterval) {
-      // Test for unsigned arithmetic wrap-around.
-      if (++*count >= PromotionFailureALotCount) {
-        *count = 0;
+      // To avoid the base (x86-)costs for atomic RMW operations, use explicit load/store_relaxed() operations.
+      uintx new_count = _promotion_failure_alot_count.load_relaxed() + 1;
+      if (new_count >= PromotionFailureALotCount) {
+        _promotion_failure_alot_count.store_relaxed(0);
         return true;
+      } else {
+        _promotion_failure_alot_count.store_relaxed(new_count);
       }
     }
   }
   return false;
 }
 
-bool CollectedHeap::promotion_should_fail() {
-  return promotion_should_fail(&_promotion_failure_alot_count);
-}
-
-void CollectedHeap::reset_promotion_should_fail(volatile size_t* count) {
-  if (PromotionFailureALot) {
-    _promotion_failure_alot_gc_number = total_collections();
-    *count = 0;
-  }
-}
-
 void CollectedHeap::reset_promotion_should_fail() {
-  reset_promotion_should_fail(&_promotion_failure_alot_count);
+  if (PromotionFailureALot) {
+    _promotion_failure_alot_gc_number.store_relaxed(total_collections());
+    _promotion_failure_alot_count.store_relaxed(0);
+  }
 }
 
 #endif  // #ifndef PRODUCT

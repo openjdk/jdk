@@ -24,11 +24,11 @@
 /*
  * @test
  * @bug 8067144
- * @summary -XX:+TraceDeoptimization tries to print realloc'ed objects even when there are none
+ * @summary -Xlog:deoptimization=debug tries to print realloc'ed objects even when there are none
  *
  * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
  *                   -XX:+UnlockDiagnosticVMOptions -XX:-DisplayVMOutput
- *                   -XX:+TraceDeoptimization
+ *                   -Xlog:deoptimization=debug
  *                   compiler.uncommontrap.TraceDeoptimizationNoRealloc
  */
 

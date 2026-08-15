@@ -844,12 +844,11 @@ class BadIRAnnotations {
     public void mustSpecifyAtLeastOneConstraint3() {
     }
 
-    @FailCount(3)
+    @FailCount(2)
     @Test
-    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "50"}, applyIfNot = {"UseTLAB", "true"})
     @IR(failOn = IRNode.CALL, applyIfAnd = {"TLABRefillWasteFraction", "50", "UseTLAB", "true"},
         applyIfOr = {"TLABRefillWasteFraction", "50", "UseTLAB", "true"})
-    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "50"}, applyIfNot = {"TLABRefillWasteFraction", "50"},
+    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "50"},
         applyIfAnd = {"TLABRefillWasteFraction", "50", "UseTLAB", "true"},
         applyIfOr = {"TLABRefillWasteFraction", "50", "UseTLAB", "true"})
     public void onlyOneApply() {}
@@ -889,43 +888,6 @@ class BadIRAnnotations {
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "=<34"})
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "<"})
     public void applyIfFaultyComparator() {}
-
-    @FailCount(3)
-    @Test
-    @IR(failOn = IRNode.CALL, applyIfNot = {"TLABRefillWasteFraction", "50", "UseTLAB", "true"})
-    @IR(failOn = IRNode.CALL, applyIfNot = {"TLABRefillWasteFraction", "50", "UseTLAB"})
-    public void applyIfNotTooManyFlags() {}
-
-    @FailCount(2)
-    @Test
-    @IR(failOn = IRNode.CALL, applyIfNot = {"TLABRefillWasteFraction"})
-    @IR(failOn = IRNode.CALL, applyIfNot = {"Bla"})
-    public void applyIfNotMissingValue() {}
-
-    @FailCount(2)
-    @Test
-    @IR(failOn = IRNode.CALL, applyIfNot = {"PrintIdealGraphFilee", "true"})
-    @IR(failOn = IRNode.CALL, applyIfNot = {"Bla", "foo"})
-    public void applyIfNotUnknownFlag() {}
-
-    @FailCount(5)
-    @Test
-    @IR(failOn = IRNode.CALL, applyIfNot = {"PrintIdealGraphFile", ""})
-    @IR(failOn = IRNode.CALL, applyIfNot = {"UseTLAB", ""})
-    @IR(failOn = IRNode.CALL, applyIfNot = {"", "true"})
-    @IR(failOn = IRNode.CALL, applyIfNot = {"", ""})
-    @IR(failOn = IRNode.CALL, applyIfNot = {" ", " "})
-    public void applyIfNotEmptyValue() {}
-
-    @FailCount(5)
-    @Test
-    @IR(failOn = IRNode.CALL, applyIfNot = {"TLABRefillWasteFraction", "! 34"})
-    @IR(failOn = IRNode.CALL, applyIfNot = {"TLABRefillWasteFraction", "!== 34"})
-    @IR(failOn = IRNode.CALL, applyIfNot = {"TLABRefillWasteFraction", "<<= 34"})
-    @IR(failOn = IRNode.CALL, applyIfNot = {"TLABRefillWasteFraction", "=<34"})
-    @IR(failOn = IRNode.CALL, applyIfNot = {"TLABRefillWasteFraction", "<"})
-    public void applyIfNotFaultyComparator() {}
-
 
     @FailCount(2)
     @Test

@@ -131,7 +131,7 @@ public:
   virtual void late_barrier_analysis() const;
   virtual int estimate_stub_size() const;
   virtual void emit_stubs(CodeBuffer& cb) const;
-  virtual void eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const;
+  virtual void eliminate_gc_barrier(PhaseIterGVN* igvn, Node* node) const;
   virtual void eliminate_gc_barrier_data(Node* node) const;
 
 #ifndef PRODUCT

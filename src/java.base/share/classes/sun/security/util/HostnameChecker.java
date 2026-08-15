@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -263,7 +263,7 @@ public class HostnameChecker {
      * The <code>name</code> parameter should represent a DNS name.  The
      * <code>template</code> parameter may contain the wildcard character '*'.
      */
-    private boolean isMatched(String name, String template,
+    public boolean isMatched(String name, String template,
                               boolean chainsToPublicCA) {
 
         // Normalize to Unicode, because PSL is in Unicode.

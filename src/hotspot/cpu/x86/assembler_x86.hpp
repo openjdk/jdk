@@ -1302,6 +1302,10 @@ private:
   void vcvtps2ph(Address dst, XMMRegister src, int imm8, int vector_len);
   void vcvtph2ps(XMMRegister dst, Address src, int vector_len);
 
+  // Convert Packed Halffloat to Packed integral values
+  void evcvttph2dq(XMMRegister dst, XMMRegister src, int vector_len);
+  void evcvttph2qq(XMMRegister dst, XMMRegister src, int vector_len);
+
   // Convert Packed Signed Doubleword Integers to Packed Single-Precision Floating-Point Value
   void cvtdq2ps(XMMRegister dst, XMMRegister src);
   void vcvtdq2ps(XMMRegister dst, XMMRegister src, int vector_len);
@@ -1320,6 +1324,11 @@ private:
   void evcvttsd2sisl(Register dst, Address src);
   void evcvttsd2sisq(Register dst, XMMRegister src);
   void evcvttsd2sisq(Register dst, Address src);
+
+  // Convert with Truncation Scalar Half-Precision Floating-Point Value to Doubleword Integer
+  void evcvttsh2sil(Register dst, XMMRegister src);
+  // Convert with Truncation Scalar Half-Precision Floating-Point Value to Quadword Integer
+  void evcvttsh2siq(Register dst, XMMRegister src);
 
   // Convert with Truncation Scalar Single-Precision Floating-Point Value to Doubleword Integer
   void cvttss2sil(Register dst, XMMRegister src);
@@ -2560,7 +2569,7 @@ private:
   void vmulsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
   void vdivsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
   void vsqrtsh(XMMRegister dst, XMMRegister src);
-  void vfmadd132sh(XMMRegister dst, XMMRegister src1, XMMRegister src2);
+  void vfmadd231sh(XMMRegister dst, XMMRegister src1, XMMRegister src2);
 
   // Saturating packed insturctions.
   void vpaddsb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
@@ -2748,8 +2757,8 @@ private:
   void evminph(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void evmaxph(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void evmaxph(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
-  void evfmadd132ph(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
-  void evfmadd132ph(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+  void evfmadd231ph(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evfmadd231ph(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void evsqrtph(XMMRegister dst, XMMRegister src1, int vector_len);
   void evsqrtph(XMMRegister dst, Address src1, int vector_len);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1520,21 +1520,19 @@ public class Modules extends JCTree.Visitor {
         }
 
         Set<ModuleSymbol> readable = new LinkedHashSet<>();
-        Set<ModuleSymbol> requiresTransitive = new HashSet<>();
 
-        for (RequiresDirective d : msym.requires) {
-            d.module.complete();
-            readable.add(d.module);
-            Set<ModuleSymbol> s = retrieveRequiresTransitive(d.module);
-            Assert.checkNonNull(s, () -> "no entry in cache for " + d.module);
-            readable.addAll(s);
-            if (d.flags.contains(RequiresFlag.TRANSITIVE)) {
-                requiresTransitive.add(d.module);
-                requiresTransitive.addAll(s);
+        if ((msym.flags() & Flags.AUTOMATIC_MODULE) != 0) {
+            readable.addAll(allModules());
+            readable.remove(msym);
+            readable.forEach(Symbol::complete);
+        } else {
+            for (RequiresDirective d : msym.requires) {
+                d.module.complete();
+                readable.add(d.module);
+                readable.addAll(retrieveRequiresTransitive(d.module));
             }
         }
 
-        requiresTransitiveCache.put(msym, requiresTransitive);
         initVisiblePackages(msym, readable);
         for (ExportsDirective d: msym.exports) {
             if (d.packge != null) {
@@ -1576,6 +1574,7 @@ public class Modules extends JCTree.Visitor {
             }
 
             requiresTransitive.remove(msym);
+            requiresTransitiveCache.putIfAbsent(msym, requiresTransitive);
         }
 
         return requiresTransitive;

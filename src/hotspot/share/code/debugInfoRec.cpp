@@ -284,6 +284,7 @@ void DebugInformationRecorder::describe_scope(int         pc_offset,
                                               bool        reexecute,
                                               bool        rethrow_exception,
                                               bool        return_oop,
+                                              bool        return_scalarized,
                                               bool        has_ea_local_in_scope,
                                               bool        arg_escape,
                                               DebugToken* locals,
@@ -301,6 +302,7 @@ void DebugInformationRecorder::describe_scope(int         pc_offset,
   last_pd->set_should_reexecute(reexecute);
   last_pd->set_rethrow_exception(rethrow_exception);
   last_pd->set_return_oop(return_oop);
+  last_pd->set_return_scalarized(return_scalarized);
   last_pd->set_has_ea_local_in_scope(has_ea_local_in_scope);
   last_pd->set_arg_escape(arg_escape);
 

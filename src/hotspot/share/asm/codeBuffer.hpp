@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,9 @@ class CodeOffsets: public StackObj {
 public:
   enum Entries { Entry,
                  Verified_Entry,
+                 Inline_Entry,
+                 Verified_Inline_Entry,
+                 Verified_Inline_Entry_RO,
                  Frame_Complete, // Offset in the code where the frame setup is (for forte stackwalks) is complete
                  OSR_Entry,
                  Exceptions,     // Offset where exception handler lives
@@ -63,15 +66,20 @@ public:
   // special value to note codeBlobs where profile (forte) stack walking is
   // always dangerous and suspect.
 
-  enum { frame_never_safe = -1 };
+  static const int frame_never_safe = -1;
+  static const int no_such_entry_point = -1;
 
 private:
   int _values[max_Entries];
+  void check(int e) const { assert(0 <= e && e < max_Entries, "must be"); }
 
 public:
   CodeOffsets() {
     _values[Entry         ] = 0;
     _values[Verified_Entry] = 0;
+    _values[Inline_Entry  ] = 0;
+    _values[Verified_Inline_Entry   ] = no_such_entry_point;
+    _values[Verified_Inline_Entry_RO] = no_such_entry_point;
     _values[Frame_Complete] = frame_never_safe;
     _values[OSR_Entry     ] = 0;
     _values[Exceptions    ] = -1;
@@ -79,8 +87,8 @@ public:
     _values[UnwindHandler ] = -1;
   }
 
-  int value(Entries e) { return _values[e]; }
-  void set_value(Entries e, int val) { _values[e] = val; }
+  int value(Entries e) const { check(e); return _values[e]; }
+  void set_value(Entries e, int val) { check(e); _values[e] = val; }
 };
 
 // This class represents a stream of code and associated relocations.

@@ -47,19 +47,24 @@
 class GCTimer;
 class ShenandoahGeneration;
 
-#define SHENANDOAH_RETURN_EVENT_MESSAGE(generation_type, prefix, postfix) \
+#define SHENANDOAH_EVENT_MESSAGE(loc, generation_type, prefix, postfix)   \
+  const char* loc;                                                        \
   switch (generation_type) {                                              \
     case NON_GEN:                                                         \
-      return prefix postfix;                                              \
+      loc = prefix postfix;                                               \
+      break;                                                              \
     case GLOBAL:                                                          \
-      return prefix " (Global)" postfix;                                  \
+      loc = prefix " (Global)" postfix;                                   \
+      break;                                                              \
     case YOUNG:                                                           \
-      return prefix " (Young)" postfix;                                   \
+      loc = prefix " (Young)" postfix;                                    \
+      break;                                                              \
     case OLD:                                                             \
-      return prefix " (Old)" postfix;                                     \
+      loc = prefix " (Old)" postfix;                                      \
+      break;                                                              \
     default:                                                              \
       ShouldNotReachHere();                                               \
-      return prefix " (Unknown)" postfix;                                 \
+      loc = prefix " (Unknown)" postfix;                                  \
   }                                                                       \
 
 class ShenandoahGCSession : public StackObj {

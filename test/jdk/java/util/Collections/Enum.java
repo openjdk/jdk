@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,18 @@
  * @test
  * @bug 4323074
  * @summary Basic test for new Enumeration -> List converter
+ * @library /test/lib
  */
 
+import jdk.test.lib.valueclass.VClass;
 import java.util.Collections;
 import java.util.List;
 import java.util.Vector;
 
 public class Enum {
+
+    static final int SIZE = 10;
+
     public static void main(String[] args) throws Exception {
         int[] sizes = {0, 10, 100};
         for (int i=0; i<sizes.length; i++) {
@@ -43,5 +48,11 @@ public class Enum {
             if (!l.equals(v))
                 throw new Exception("Copy failed: "+size);
         }
+
+        Vector<VClass> vv = new Vector<>();
+        for (int j = 0; j < SIZE; j++) vv.add(new VClass(j, new int[] { j }));
+        List<VClass> vl = Collections.list(vv.elements());
+        if (!vl.equals(vv))
+            throw new RuntimeException("value Enumeration -> List failed");
     }
 }

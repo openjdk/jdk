@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,12 @@
 #define SHARE_MEMORY_OOPFACTORY_HPP
 
 #include "memory/referenceType.hpp"
+#include "oops/arrayKlass.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/exceptions.hpp"
+
+class InlineKlass;
 
 // oopFactory is a class used for creating new objects.
 
@@ -45,7 +48,7 @@ class oopFactory: AllStatic {
   static typeArrayOop    new_longArray  (int length, TRAPS);
 
   // create java.lang.Object[]
-  static objArrayOop     new_objectArray(int length, TRAPS);
+  static refArrayOop     new_objectArray(int length, TRAPS);
 
   static typeArrayOop    new_charArray(const char* utf8_str,  TRAPS);
 
@@ -55,9 +58,17 @@ class oopFactory: AllStatic {
 
   // Regular object arrays
   static objArrayOop     new_objArray(Klass* klass, int length, TRAPS);
+  static objArrayOop     new_objArray(Klass* klass, int length, ArrayProperties properties, TRAPS);
+
+  // Factories to create a reference arrays
+  static refArrayOop     new_refArray(Klass* klass, int length, TRAPS);
+  static refArrayOop     new_refArray(Klass* klass, int length, ArrayProperties properties, TRAPS);
+
+  // Factory to create flat arrays.
+  static flatArrayOop    new_flatArray(InlineKlass* klass, int length, ArrayProperties props, TRAPS);
 
   // Helper that returns a Handle
-  static objArrayHandle  new_objArray_handle(Klass* klass, int length, TRAPS);
+  static refArrayHandle  new_refArray_handle(Klass* klass, int length, TRAPS);
 };
 
 #endif // SHARE_MEMORY_OOPFACTORY_HPP

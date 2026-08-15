@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2559,6 +2559,10 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
   fatal("Type profiling not implemented on this platform");
 }
 
+void LIR_Assembler::emit_profile_inline_type(LIR_OpProfileInlineType* op) {
+  Unimplemented();
+}
+
 void LIR_Assembler::monitor_address(int monitor_no, LIR_Opr dst) {
   Address mon_addr = frame_map()->address_for_monitor_lock(monitor_no);
   __ add_slow(dst->as_pointer_register(), mon_addr.base(), mon_addr.disp());
@@ -2856,6 +2860,32 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
   __ cbnz_32(Rtemp, retry);
   __ membar(MacroAssembler::Membar_mask_bits(MacroAssembler::StoreLoad | MacroAssembler::StoreStore), Rtemp);
 
+}
+
+// Valhalla support
+
+void LIR_Assembler::check_orig_pc() {
+  Unimplemented();
+}
+
+int LIR_Assembler::store_inline_type_fields_to_buf(ciInlineKlass* vk) {
+  Unimplemented();
+  return 0;
+}
+
+void LIR_Assembler::emit_opFlattenedArrayCheck(LIR_OpFlattenedArrayCheck* op) {
+  Unimplemented();
+}
+
+void LIR_Assembler::emit_opNullFreeArrayCheck(LIR_OpNullFreeArrayCheck* op) {
+  // Since there is no markWord::null_free_array_bit_in_place on ARM32,
+  // setting the EQ flag by cmp(tmp, tmp) by will tell C1 that the array is NOT null-free.
+  Register tmp = op->tmp()->as_register();
+  __ cmp(tmp, tmp);
+}
+
+void LIR_Assembler::emit_opSubstitutabilityCheck(LIR_OpSubstitutabilityCheck* op) {
+  Unimplemented();
 }
 
 #undef __

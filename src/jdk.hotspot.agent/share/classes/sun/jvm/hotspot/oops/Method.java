@@ -102,6 +102,7 @@ public class Method extends Metadata {
     }
     return objectInitializerName;
   }
+
   private static String classInitializerName() {
     if (classInitializerName == null) {
       classInitializerName = "<clinit>";

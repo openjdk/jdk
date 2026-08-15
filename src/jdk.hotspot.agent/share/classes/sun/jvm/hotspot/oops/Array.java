@@ -32,7 +32,7 @@ import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.Observable;
 import sun.jvm.hotspot.utilities.Observer;
 
-// Array is an abstract superclass for TypeArray and ObjArray
+// Array is an abstract superclass for TypeArray, ObjArray, and FlatArray
 
 public class Array extends Oop {
   static {

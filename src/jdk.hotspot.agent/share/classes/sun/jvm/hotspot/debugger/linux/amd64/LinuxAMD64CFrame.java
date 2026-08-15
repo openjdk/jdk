@@ -87,6 +87,11 @@ public final class LinuxAMD64CFrame extends DwarfCFrame {
        return getFrameFromReg(linuxDbg(), r -> LinuxAMD64ThreadContext.getRegFromSignalTrampoline(sp(), r.intValue()));
      }
 
+     if (hasNativeLibrary() && dwarf() == null) {
+       // Cannot find a sender frame if DWARF is missing even though PC in native library.
+       return null;
+     }
+
      senderSP = getSenderSP(senderSP);
      if (senderSP == null) {
        return null;
@@ -95,6 +100,8 @@ public final class LinuxAMD64CFrame extends DwarfCFrame {
      if (senderPC == null) {
        return null;
      }
+
+     senderFP = getSenderFP(senderFP);
 
      DwarfParser senderDwarf = null;
      boolean fallback = false;
@@ -107,12 +114,13 @@ public final class LinuxAMD64CFrame extends DwarfCFrame {
          senderDwarf = createDwarfParser(linuxDbg(), senderPC.addOffsetTo(-1));
          fallback = true;
        } catch (DebuggerException _) {
-         // We cannot unwind anymore without appropriate DWARF.
-         return null;
+         // Returns CFrame if the sender is native frame even though it does not have DWARF,
+         // otherwise returns null because we cannot unwind anymore.
+         return linuxDbg().findLibPtrByAddress(senderPC) != null
+           ? new LinuxAMD64CFrame(linuxDbg(), senderSP, senderFP, null /* no CFA */, senderPC, null /* no DWARF */)
+           : null;
        }
      }
-
-     senderFP = getSenderFP(senderFP);
 
      try {
        Address senderCFA = getSenderCFA(senderDwarf, senderSP, senderFP);

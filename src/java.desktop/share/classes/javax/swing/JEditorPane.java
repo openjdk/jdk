@@ -1092,6 +1092,8 @@ public class JEditorPane extends JTextComponent {
             = "the currently installed kit for handling content")
     public void setEditorKit(EditorKit kit) {
         EditorKit old = this.kit;
+        AccessibleContext oldAccessibleContext = accessibleContext;
+
         isUserSetEditorKit = true;
         if (old != null) {
             old.deinstall(this);
@@ -1102,6 +1104,14 @@ public class JEditorPane extends JTextComponent {
             setDocument(this.kit.createDefaultDocument());
         }
         firePropertyChange("editorKit", old, kit);
+
+        if (oldAccessibleContext != null) {
+            AccessibleContext newAccessibleContext = getAccessibleContext();
+            if (oldAccessibleContext != newAccessibleContext) {
+                getDocument().removeDocumentListener(
+                        (AccessibleJTextComponent) oldAccessibleContext );
+            }
+        }
     }
 
     /**

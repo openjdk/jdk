@@ -3448,6 +3448,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public JCExpression expr;
         /**true if a expr should be run through Gen.genCond:*/
         public boolean needsCond;
+        public boolean needsLineNumberTableEntry;
         protected LetExpr(List<JCStatement> defs, JCExpression expr) {
             this.defs = defs;
             this.expr = expr;

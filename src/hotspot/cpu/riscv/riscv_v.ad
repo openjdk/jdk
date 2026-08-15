@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2020, 2023, Arm Limited. All rights reserved.
 // Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
 // Copyright (c) 2023, 2025, Rivos Inc. All rights reserved.
@@ -113,6 +113,7 @@ source %{
         break;
       case Op_VectorCastHF2F:
       case Op_VectorCastF2HF:
+        return UseZvfh || UseZvfhmin;
       case Op_AddVHF:
       case Op_SubVHF:
       case Op_MulVHF:
@@ -4344,14 +4345,15 @@ instruct vstringL_indexof_char(iRegP_R11 str1, iRegI_R12 cnt1, iRegI_R13 ch,
 %}
 
 // clearing of an array
-instruct vclearArray_reg_reg(iRegL_R29 cnt, iRegP_R28 base, Universe dummy,
-                             vReg_V4 v4, vReg_V5 v5, vReg_V6 v6, vReg_V7 v7)
+instruct vclearArray_reg_reg(iRegL_R29 cnt, iRegP_R28 base, immL0 zero,
+                             vReg_V4 v4, vReg_V5 v5, vReg_V6 v6, vReg_V7 v7,
+                             Universe dummy)
 %{
   predicate(!UseBlockZeroing && UseRVV);
-  match(Set dummy (ClearArray cnt base));
+  match(Set dummy (ClearArray (Binary cnt base) zero));
   effect(USE_KILL cnt, USE_KILL base, TEMP v4, TEMP v5, TEMP v6, TEMP v7);
 
-  format %{ "ClearArray $cnt, $base\t#@clearArray_reg_reg" %}
+  format %{ "ClearArray $cnt, $base\t#@vclearArray_reg_reg" %}
 
   ins_encode %{
     __ clear_array_v($base$$Register, $cnt$$Register);
@@ -5046,6 +5048,36 @@ instruct extractD(fRegD dst, vReg src, immI idx, vReg tmp)
   ins_encode %{
     __ extract_fp_v($dst$$FloatRegister, as_VectorRegister($src$$reg), T_DOUBLE,
                     (int)($idx$$constant), as_VectorRegister($tmp$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct extractUB_index_imm(iRegINoSp dst, vReg src, immI idx, vReg tmp)
+%{
+  match(Set dst (ExtractUB src idx));
+  effect(TEMP tmp);
+  format %{ "extractUB_index_imm $dst, $src, $idx\t# KILL $tmp" %}
+  ins_encode %{
+    // Input "src" is a vector of boolean represented as
+    // bytes with 0x00/0x01 as element values.
+    // "idx" is expected to be in range.
+    __ extract_v($dst$$Register, as_VectorRegister($src$$reg), T_BOOLEAN,
+                 (int)($idx$$constant), as_VectorRegister($tmp$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct extractUB_index_reg(iRegINoSp dst, vReg src, iRegI idx, vReg tmp)
+%{
+  match(Set dst (ExtractUB src idx));
+  effect(TEMP tmp);
+  format %{ "extractUB_index_reg $dst, $src, $idx\t# KILL $tmp" %}
+  ins_encode %{
+    // Input "src" is a vector of boolean represented as
+    // bytes with 0x00/0x01 as element values.
+    // "idx" is expected to be in range.
+    __ extract_v($dst$$Register, as_VectorRegister($src$$reg), T_BOOLEAN,
+                 $idx$$Register, as_VectorRegister($tmp$$reg));
   %}
   ins_pipe(pipe_slow);
 %}

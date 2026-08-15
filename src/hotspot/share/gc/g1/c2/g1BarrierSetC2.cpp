@@ -212,7 +212,7 @@ Node* G1BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) c
   return CardTableBarrierSetC2::load_at_resolved(access, val_type);
 }
 
-void G1BarrierSetC2::eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const {
+void G1BarrierSetC2::eliminate_gc_barrier(PhaseIterGVN* igvn, Node* node) const {
   eliminate_gc_barrier_data(node);
 }
 

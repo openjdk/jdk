@@ -93,6 +93,9 @@ JTREG_FAILURE_HANDLER := $(JTREG_FAILURE_HANDLER_DIR)/jtregFailureHandler.jar
 JTREG_TEST_THREAD_FACTORY_DIR := $(TEST_IMAGE_DIR)/jtreg_test_thread_factory
 JTREG_TEST_THREAD_FACTORY_JAR := $(JTREG_TEST_THREAD_FACTORY_DIR)/jtregTestThreadFactory.jar
 
+JTREG_VALUE_CLASS_PLUGIN_DIR := $(TEST_IMAGE_DIR)/jtreg_value_class_plugin
+JTREG_VALUE_CLASS_PLUGIN_JAR := $(JTREG_VALUE_CLASS_PLUGIN_DIR)/valueClassPlugin.jar
+
 JTREG_FAILURE_HANDLER_TIMEOUT ?= 0
 
 ifneq ($(wildcard $(JTREG_FAILURE_HANDLER)), )
@@ -206,7 +209,7 @@ $(eval $(call ParseKeywordVariable, JTREG, \
     SINGLE_KEYWORDS := JOBS TIMEOUT_FACTOR FAILURE_HANDLER_TIMEOUT \
         TEST_MODE ASSERT VERBOSE RETAIN TEST_THREAD_FACTORY JVMTI_STRESS_AGENT \
         MAX_MEM RUN_PROBLEM_LISTS RETRY_COUNT REPEAT_COUNT MAX_OUTPUT REPORT \
-        AOT_JDK MANUAL $(CUSTOM_JTREG_SINGLE_KEYWORDS), \
+        AOT_JDK MANUAL VALUE_CLASS_PLUGIN $(CUSTOM_JTREG_SINGLE_KEYWORDS), \
     STRING_KEYWORDS := OPTIONS JAVA_OPTIONS VM_OPTIONS KEYWORDS \
         EXTRA_PROBLEM_LISTS LAUNCHER_OPTIONS \
         $(CUSTOM_JTREG_STRING_KEYWORDS), \
@@ -874,6 +877,20 @@ define SetupRunJtregTestBody
     $1_JTREG_BASIC_OPTIONS += -testThreadFactory:$$(JTREG_TEST_THREAD_FACTORY)
     $1_JTREG_BASIC_OPTIONS += $$(addprefix $$(JTREG_PROBLEM_LIST_PREFIX), $$(wildcard \
         $$(addprefix $$($1_TEST_ROOT)/, ProblemList-$$(JTREG_TEST_THREAD_FACTORY).txt) \
+    ))
+  endif
+
+  ifneq ($$(JTREG_VALUE_CLASS_PLUGIN), )
+    ifneq ($$(wildcard $$(JTREG_VALUE_CLASS_PLUGIN_JAR)), )
+      $1_JTREG_BASIC_OPTIONS += -cpa:$$(JTREG_VALUE_CLASS_PLUGIN_JAR)
+    endif
+    $1_JTREG_BASIC_OPTIONS += -vmoption:--enable-preview
+    $1_JTREG_BASIC_OPTIONS += -javacoption:-XDaccessInternalAPI
+    $1_JTREG_BASIC_OPTIONS += -javacoption:--source -javacoption:$(VERSION_FEATURE)
+    $1_JTREG_BASIC_OPTIONS += -javacoption:--enable-preview
+    $1_JTREG_BASIC_OPTIONS += -javacoption:-Xplugin:ValueClassPlugin
+    $1_JTREG_BASIC_OPTIONS += $$(addprefix $$(JTREG_PROBLEM_LIST_PREFIX), $$(wildcard \
+        $$(addprefix $$($1_TEST_ROOT)/, ProblemList-ValueClass.txt) \
     ))
   endif
 

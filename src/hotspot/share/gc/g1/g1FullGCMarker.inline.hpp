@@ -83,6 +83,7 @@ inline bool G1FullGCMarker::is_task_queue_empty() {
 }
 
 inline void G1FullGCMarker::process_array_chunk(objArrayOop obj, size_t start, size_t end) {
+  precond(obj->is_array_with_oops());
   obj->oop_iterate_elements_range(mark_closure(),
                                   checked_cast<int>(start),
                                   checked_cast<int>(end));
@@ -95,7 +96,7 @@ inline void G1FullGCMarker::dispatch_task(const ScannerTask& task, bool stolen) 
   } else {
     oop obj = task.to_oop();
     assert(_bitmap->is_marked(obj), "should be marked");
-    if (obj->is_objArray()) {
+    if (obj->is_array_with_oops()) {
       // Handle object arrays explicitly to allow them to
       // be split into chunks if needed.
       start_partial_array_processing((objArrayOop)obj);
