@@ -46,8 +46,7 @@ public class suspend001a {
 
     static void threadStarted () {}
 
-    static Object lockSuspended          = new Object();
-    static Object lockMyThread           = new Object();
+    static Object lock                   = new Object();
     static Object waitnotify             = new Object();
     public static volatile int notSuspended = 0;
 
@@ -59,8 +58,7 @@ public class suspend001a {
         Thread myThread = new MyThread("MyThread").getThread();
 
         // lock monitor to prevent threads from finishing after they started
-        synchronized (lockSuspended) {
-            synchronized (lockMyThread) {
+        synchronized (lock) {
             synchronized (waitnotify) {
                     suspended.start();
                     try {
@@ -79,7 +77,6 @@ public class suspend001a {
                     }
             }
             breakHere();  // a break to get thread ids and then to suspend Suspended thread.
-            }
         }
 
         // wait for MyThread completion
@@ -128,7 +125,7 @@ class Suspended extends ThreadWrapper {
             suspend001a.waitnotify.notify();
         }
         // prevent thread from early finish
-        synchronized (suspend001a.lockSuspended) {}
+        synchronized (suspend001a.lock) {}
 
         suspend001a.notSuspended++;
 
@@ -154,7 +151,7 @@ class MyThread extends ThreadWrapper {
             suspend001a.waitnotify.notify();
         }
         // prevent thread from early finish
-        synchronized (suspend001a.lockMyThread) {}
+        synchronized (suspend001a.lock) {}
 
         suspend001a.notSuspended++;
 
