@@ -154,6 +154,14 @@ public class TypeAnnotations {
                 } else {
                     pos.push(env.enclMethod);
                 }
+                Env<AttrContext> env1 = env;
+                while (env1 != null && !env1.tree.hasTag(Tag.CLASSDEF)) {
+                    if (env1.tree instanceof JCLambda l) {
+                        pos.currentLambda = l;
+                        break;
+                    }
+                    env1 = env1.next;
+                }
                 pos.scan(tree);
             } finally {
                 log.useSource(oldSource);
@@ -472,11 +480,12 @@ public class TypeAnnotations {
                 Assert.check(tc.position == pos);
             }
 
-            if (type.hasTag(TypeTag.ARRAY))
-                return rewriteArrayType(typetree, (ArrayType)type, annotations, onlyTypeAnnotations, pos);
+            Type ret;
 
-            if (type.hasTag(TypeTag.TYPEVAR)) {
-                return type.annotatedType(onlyTypeAnnotations);
+            if (type.hasTag(TypeTag.ARRAY)) {
+                ret = rewriteArrayType(typetree, (ArrayType)type, annotations, onlyTypeAnnotations, pos);
+            } else if (type.hasTag(TypeTag.TYPEVAR)) {
+                ret = type.annotatedType(onlyTypeAnnotations);
             } else if (type.getKind() == TypeKind.UNION) {
                 // There is a TypeKind, but no TypeTag.
                 UnionClassType ut = (UnionClassType) type;
@@ -487,7 +496,7 @@ public class TypeAnnotations {
                 ListBuffer<Type> alternatives = new ListBuffer<>();
                 alternatives.add(res);
                 alternatives.addAll(ut.alternatives_field.tail);
-                return new UnionClassType((ClassType) ut.getLub(), alternatives.toList());
+                ret = new UnionClassType((ClassType) ut.getLub(), alternatives.toList());
             } else {
                 Type enclTy = type;
                 Element enclEl = type.asElement();
@@ -567,10 +576,10 @@ public class TypeAnnotations {
                     pos.location = pos.location.appendList(depth.toList());
                 }
 
-                Type ret = typeWithAnnotations(type, enclTy, annotations);
-                typetree.type = ret;
-                return ret;
+                ret = typeWithAnnotations(type, enclTy, annotations);
             }
+            typetree.type = ret;
+            return ret;
         }
 
         /**
@@ -696,7 +705,7 @@ public class TypeAnnotations {
 
                 @Override
                 public Type visitType(Type t, List<TypeCompound> s) {
-                    return t.annotatedType(s);
+                    return t.hasTag(TypeTag.VOID) ? t : t.annotatedType(s);
                 }
             };
 
@@ -1224,27 +1233,9 @@ public class TypeAnnotations {
             try {
                 currentLambda = tree;
 
-                int i = 0;
-                for (JCVariableDecl param : tree.params) {
-                    if (!param.mods.annotations.isEmpty()) {
-                        // Nothing to do for separateAnnotationsKinds if
-                        // there are no annotations of either kind.
-                        final TypeAnnotationPosition pos =  TypeAnnotationPosition
-                                .methodParameter(tree, i, param.vartype.pos);
-                        push(param);
-                        try {
-                            if (!param.declaredUsingVar()) {
-                                separateAnnotationsKinds(param, param.vartype, param.sym.type, param.sym, pos);
-                            }
-                        } finally {
-                            pop();
-                        }
-                    }
-                    ++i;
-                }
-
                 scan(tree.body);
-                scan(tree.params);
+
+                //parameters are handled separately as variables
             } finally {
                 currentLambda = prevLambda;
             }
@@ -1269,8 +1260,12 @@ public class TypeAnnotations {
                             TypeAnnotationPosition.exceptionParameter(currentLambda,
                                                                       tree.pos);
                         separateAnnotationsKinds(tree, tree.vartype, tree.sym.type, tree.sym, pos);
+                    } else if (currentLambda != null && !tree.declaredUsingVar() && currentLambda.params.contains(tree)) {
+                        final TypeAnnotationPosition pos =  TypeAnnotationPosition
+                                .methodParameter(currentLambda, currentLambda.params.indexOf(tree), tree.vartype.pos);
+                        separateAnnotationsKinds(tree, tree.vartype, tree.sym.type, tree.sym, pos);
                     } else {
-                        // (real) parameters are handled in visitMethodDef or visitLambda.
+                        // method parameters are handled in visitMethodDef.
                     }
                 }
             } else if (tree.sym.getKind() == ElementKind.FIELD) {

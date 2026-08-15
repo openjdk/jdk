@@ -38,7 +38,6 @@ class stringStream;
 
 class VM_Version : public Abstract_VM_Version {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
 
 protected:
   static int _cpu;
@@ -58,15 +57,21 @@ protected:
   // When _prefer_sve_merging_mode_cpy is true, `cpy (imm, zeroing)` is
   // implemented as `movi; cpy(imm, merging)`.
   static constexpr bool _prefer_sve_merging_mode_cpy = true;
+  static bool _cache_dic_enabled;
+  static bool _cache_idc_enabled;
+
+  // IC IVAU trap probe for Neoverse N1 erratum 1542419.
+  // Set by get_os_cpu_info() on Linux via ic_ivau_probe_linux_aarch64.S.
+  static bool _ic_ivau_trapped;
 
   static SpinWait _spin_wait;
 
   // Read additional info using OS-specific interfaces
   static void get_os_cpu_info();
 
-  // Sets the SVE length and returns a new actual value or negative on error.
-  // If the len is larger than the system largest supported SVE vector length,
-  // the function sets the largest supported value.
+  // Set the SVE vector length to len. If the vector length cannot be
+  // changed to len, set the length to the largest possible value.
+  // Return the length that will be used, or -ve if an error occurred.
   static int set_and_get_current_sve_vector_length(int len);
   static int get_current_sve_vector_length();
 
@@ -138,31 +143,32 @@ public:
     CPU_MODEL_ARM_NEOVERSE_N3   = 0xd8e,
   };
 
-#define CPU_FEATURE_FLAGS(decl)               \
-    decl(FP,            fp,            0)     \
-    decl(ASIMD,         asimd,         1)     \
-    decl(EVTSTRM,       evtstrm,       2)     \
-    decl(AES,           aes,           3)     \
-    decl(PMULL,         pmull,         4)     \
-    decl(SHA1,          sha1,          5)     \
-    decl(SHA2,          sha256,        6)     \
-    decl(CRC32,         crc32,         7)     \
-    decl(LSE,           lse,           8)     \
-    decl(FPHP,          fphp,          9)     \
-    decl(ASIMDHP,       asimdhp,       10)    \
-    decl(DCPOP,         dcpop,         16)    \
-    decl(SHA3,          sha3,          17)    \
-    decl(SHA512,        sha512,        21)    \
-    decl(SVE,           sve,           22)    \
-    decl(SB,            sb,            29)    \
-    decl(PACA,          paca,          30)    \
-    /* flags above must follow Linux HWCAP */ \
-    decl(SVEBITPERM,    svebitperm,    27)    \
-    decl(SVE2,          sve2,          28)    \
-    decl(A53MAC,        a53mac,        31)
+#define CPU_FEATURE_FLAGS(decl)            \
+    decl(FP,            fp            )    \
+    decl(ASIMD,         asimd         )    \
+    decl(EVTSTRM,       evtstrm       )    \
+    decl(AES,           aes           )    \
+    decl(PMULL,         pmull         )    \
+    decl(SHA1,          sha1          )    \
+    decl(SHA2,          sha256        )    \
+    decl(CRC32,         crc32         )    \
+    decl(LSE,           lse           )    \
+    decl(FPHP,          fphp          )    \
+    decl(ASIMDHP,       asimdhp       )    \
+    decl(DCPOP,         dcpop         )    \
+    decl(SHA3,          sha3          )    \
+    decl(SHA512,        sha512        )    \
+    decl(SVE,           sve           )    \
+    decl(SB,            sb            )    \
+    decl(PACA,          paca          )    \
+    decl(SVEBITPERM,    svebitperm    )    \
+    decl(SVE2,          sve2          )    \
+    decl(A53MAC,        a53mac        )    \
+    decl(ECV,           ecv           )    \
+    decl(WFXT,          wfxt          )
 
   enum Feature_Flag {
-#define DECLARE_CPU_FEATURE_FLAG(id, name, bit) CPU_##id = bit,
+#define DECLARE_CPU_FEATURE_FLAG(id, name) CPU_##id,
     CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_FLAG)
 #undef DECLARE_CPU_FEATURE_FLAG
     MAX_CPU_FEATURES
@@ -170,10 +176,10 @@ public:
 
   STATIC_ASSERT(sizeof(_features) * BitsPerByte >= MAX_CPU_FEATURES);
 
-  static const char* _features_names[MAX_CPU_FEATURES];
+  static const char* _features_names[];
 
   // Feature identification
-#define CPU_FEATURE_DETECTION(id, name, bit) \
+#define CPU_FEATURE_DETECTION(id, name) \
   static bool supports_##name() { return supports_feature(CPU_##id); }
   CPU_FEATURE_FLAGS(CPU_FEATURE_DETECTION)
 #undef CPU_FEATURE_DETECTION
@@ -190,6 +196,8 @@ public:
   static bool supports_feature(uint64_t features, Feature_Flag flag) {
     return (features & BIT_MASK(flag)) != 0;
   }
+
+  static bool cpu_supports_aes()      { return supports_feature(_cpu_features, CPU_AES); }
 
   static int cpu_family()                     { return _cpu; }
   static int cpu_model()                      { return _model; }
@@ -253,6 +261,10 @@ public:
     return vector_length_in_bytes <= 16;
   }
 
+  static bool is_cache_dic_enabled() { return _cache_dic_enabled; }
+  static bool is_cache_idc_enabled() { return _cache_idc_enabled; }
+  static bool is_ic_ivau_trapped()   { return _ic_ivau_trapped; }
+
   static void get_cpu_features_name(void* features_buffer, stringStream& ss);
 
   // Returns names of features present in features_set1 but not in features_set2
@@ -265,7 +277,7 @@ public:
   // Size of the buffer must be same as returned by cpu_features_size()
   static void store_cpu_features(void* buf);
 
-  static bool supports_features(void* features_to_test);
+  static bool verify_aot_code_cache_features(void* features_buffer);
 };
 
 #endif // CPU_AARCH64_VM_VERSION_AARCH64_HPP

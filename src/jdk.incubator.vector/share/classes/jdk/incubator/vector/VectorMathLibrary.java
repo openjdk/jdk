@@ -31,6 +31,7 @@ import jdk.internal.vm.vector.VectorSupport;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SymbolLookup;
+import java.util.Locale;
 import java.util.function.IntFunction;
 
 import static jdk.incubator.vector.Util.requires;
@@ -141,7 +142,7 @@ import static jdk.internal.vm.vector.Utils.debug;
             String elemType = (vspecies.elementType() == float.class ? "f" : "");
             boolean isFloatVector64 = (vspecies.elementType() == float.class) && (vspecies.length() == 2); // FloatVector64 or FloatVectorMax
             int vlen = (isFloatVector64 ? 4 : vspecies.length()); // reuse 128-bit variant for 64-bit float vectors
-            return String.format("__jsvml_%s%s%d_ha_%s", op.operatorName(), elemType, vlen, suffix);
+            return String.format(Locale.ROOT, "__jsvml_%s%s%d_ha_%s", op.operatorName(), elemType, vlen, suffix);
         }
 
         @Override
@@ -214,7 +215,7 @@ import static jdk.internal.vm.vector.Utils.debug;
             boolean isFloatVector64 = (vspecies.elementType() == float.class) && (vspecies.length() == 2); // FloatVector64 or FloatVectorMax
             int vlen = (isFloatVector64 ? 4 : vspecies.length()); // reuse 128-bit variant for 64-bit float vectors
             boolean isShapeAgnostic = isRISCV64() || (isAARCH64() && vspecies.vectorBitSize() > 128);
-            return String.format("%s%s%s_%s%s", op.operatorName(),
+            return String.format(Locale.ROOT, "%s%s%s_%s%s", op.operatorName(),
                                  (vspecies.elementType() == float.class ? "f" : "d"),
                                  (isShapeAgnostic ? "x" : Integer.toString(vlen)),
                                  precisionLevel(op),

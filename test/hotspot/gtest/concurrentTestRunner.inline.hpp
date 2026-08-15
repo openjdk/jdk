@@ -86,7 +86,7 @@ public:
       done.wait();
     }
 
-    FREE_C_HEAP_ARRAY(UnitTestThread**, t);
+    FREE_C_HEAP_ARRAY(t);
   }
 
 private:

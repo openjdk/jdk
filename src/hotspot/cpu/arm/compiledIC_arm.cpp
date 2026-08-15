@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 #include "runtime/safepoint.hpp"
 
 // ----------------------------------------------------------------------------
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
 #define __ masm->
 // emit call stub, compiled java to interpreter
 address CompiledDirectCall::emit_to_interp_stub(MacroAssembler *masm, address mark) {
@@ -86,7 +86,7 @@ address CompiledDirectCall::emit_to_interp_stub(MacroAssembler *masm, address ma
 int CompiledDirectCall::reloc_to_interp_stub() {
   return 10;  // 4 in emit_to_interp_stub + 1 in Java_Static_Call
 }
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
 
 int CompiledDirectCall::to_trampoline_stub_size() {
   // ARM doesn't use trampolines.

@@ -31,6 +31,7 @@
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderDataShared.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
@@ -279,6 +280,10 @@ void AOTLinkedClassBulkLoader::init_non_javabase_classes_impl(TRAPS) {
   if (AOTPrintTrainingInfo) {
     tty->print_cr("==================== archived_training_data ** after all classes preloaded ====================");
     TrainingData::print_archived_training_data_on(tty);
+  }
+  LogStreamHandle(Info, aot, training, data) log;
+  if (log.is_enabled()) {
+    TrainingData::print_archived_training_data_on(&log);
   }
 }
 

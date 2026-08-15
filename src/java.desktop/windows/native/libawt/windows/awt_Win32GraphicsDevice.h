@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,8 @@ public:
     unsigned int            *GetSystemPaletteEntries();
     unsigned char           *GetSystemInverseLUT();
     void                    SetJavaDevice(JNIEnv *env, jobject objPtr);
+    void                    TransferJavaDevice(JNIEnv *env,
+                                               AwtWin32GraphicsDevice *device);
     HPALETTE                SelectPalette(HDC hDC);
     void                    RealizePalette(HDC hDC);
     HPALETTE                GetPalette();

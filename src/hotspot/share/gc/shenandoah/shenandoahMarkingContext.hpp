@@ -55,8 +55,11 @@ public:
    * been marked by this thread. Returns false if the object has already been marked,
    * or if a competing thread succeeded in marking this object.
    */
-  inline bool mark_strong(oop obj, bool& was_upgraded);
-  inline bool mark_weak(oop obj);
+  ALWAYSINLINE
+  bool mark_strong(oop obj, bool& was_upgraded);
+
+  ALWAYSINLINE
+  bool mark_weak(oop obj);
 
   // Simple versions of marking accessors, to be used outside of marking (e.g. no possible concurrent updates)
   inline bool is_marked(oop obj) const;

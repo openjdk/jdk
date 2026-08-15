@@ -28,6 +28,7 @@ import compiler.lib.ir_framework.shared.TestFormatException;
 /**
  * Exception that is thrown if the Test VM has thrown any kind of exception (except for {@link TestFormatException}).
  */
+@SuppressWarnings("serial")
 public class TestVMException extends RuntimeException {
     private final String exceptionInfo;
 

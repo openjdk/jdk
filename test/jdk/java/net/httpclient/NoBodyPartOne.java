@@ -30,7 +30,7 @@
  * @run junit/othervm
  *      -Djdk.internal.httpclient.debug=true
  *      -Djdk.httpclient.HttpClient.log=all
- *      NoBodyPartOne
+ *      ${test.main.class}
  */
 
 import java.nio.file.Files;

@@ -30,7 +30,7 @@
  * @modules jdk.incubator.vector
  * @library /test/lib /
  * @compile ../lib/verify/Verify.java
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:CompileTaskTimeout=10000 compiler.igvn.ExpressionFuzzer
+ * @run driver compiler.igvn.ExpressionFuzzer
  */
 
 package compiler.igvn;
@@ -73,6 +73,10 @@ import static compiler.lib.template_framework.library.CodeGenerationDataNameType
 // - Some basic IR tests to ensure that the constraints / checksum mechanics work.
 //   We may even have to add some IGVN optimizations to be able to better observe things right.
 // - Lower the CompileTaskTimeout, if possible. It is chosen conservatively (rather high) for now.
+// - I also had to exclude the compilation of the following method. It would lead to compilation
+//   timeouts and even compilation memory limit reached. It is a really large method, so I'm not
+//   sure if that is to be expected, or if we could still improve the situation.
+//   compiler.lib.template_framework.library.Operations::generateVectorOperations
 public class ExpressionFuzzer {
     private static final Random RANDOM = Utils.getRandomInstance();
 
@@ -93,7 +97,8 @@ public class ExpressionFuzzer {
         comp.invoke("compiler.igvn.templated.ExpressionFuzzerInnerTest", "main", new Object[] {new String[] {
             "--add-modules=jdk.incubator.vector",
             "--add-opens", "jdk.incubator.vector/jdk.incubator.vector=ALL-UNNAMED",
-            "--add-opens", "java.base/java.lang=ALL-UNNAMED"
+            "--add-opens", "java.base/java.lang=ALL-UNNAMED",
+            "-XX:+IgnoreUnrecognizedVMOptions", "-XX:CompileTaskTimeout=10000"
         }});
     }
 

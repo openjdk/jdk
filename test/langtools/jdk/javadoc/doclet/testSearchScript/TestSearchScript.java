@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,19 +60,12 @@ public class TestSearchScript extends JavadocTester {
     }
 
     private Invocable getEngine() throws ScriptException, IOException, NoSuchMethodException {
-        // For installing and using GraalVM JS on stock JDK see
-        // https://github.com/oracle/graaljs/blob/master/docs/user/RunOnJDK.md
-        // and https://github.com/graalvm/graal-js-jdk11-maven-demo
         ScriptEngineManager engineManager = new ScriptEngineManager();
         // Use "js" engine name to use any available JavaScript engine.
         ScriptEngine engine = engineManager.getEngineByName("js");
         if (engine == null) {
             throw new SkippedException("JavaScript engine is not available.");
         }
-        // Set Nashorn compatibility mode via Bindings for use with GraalVM JS,
-        // see https://github.com/graalvm/graaljs/blob/master/docs/user/ScriptEngine.md
-        Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
-        bindings.put("polyglot.js.nashorn-compat", true);
         engine.eval(Files.newBufferedReader(Path.of(testSrc).resolve("javadoc-search.js")));
         Invocable inv = (Invocable) engine;
         inv.invokeFunction("loadIndexFiles", outputDir.toAbsolutePath().toString());

@@ -52,10 +52,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  *        RecordingSubscriber
  *        ReplayTestSupport
  *
- * @run junit OfByteArraysTest
+ * @run junit ${test.main.class}
  *
  * @comment Using `main/othervm` to initiate tests that depend on a custom-configured JVM
- * @run main/othervm -Xmx64m OfByteArraysTest testOOM
+ * @run main/othervm -Xmx64m ${test.main.class} testOOM
  */
 
 public class OfByteArraysTest extends ReplayTestSupport {

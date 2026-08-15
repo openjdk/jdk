@@ -28,6 +28,7 @@
 #include "memory/metaspace.hpp"
 #include "memory/resourceArea.hpp"
 #include "nmt/memTracker.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/os.hpp"
 #include "runtime/task.hpp"
 #include "utilities/ostream.hpp"
@@ -66,8 +67,23 @@ void FreeHeap(void* p) {
   os::free(p);
 }
 
+// These are used by the Serviceability Agent even if CDS is disabled
 void* MetaspaceObj::_aot_metaspace_base = nullptr;
 void* MetaspaceObj::_aot_metaspace_top  = nullptr;
+
+#if INCLUDE_CDS
+volatile bool MetaspaceObj::_aot_metaspace_range_initialized = false;
+
+void MetaspaceObj::set_aot_metaspace_range(void* base, void* top) {
+  _aot_metaspace_base = base;
+  _aot_metaspace_top = top;
+  AtomicAccess::release_store(&_aot_metaspace_range_initialized, true);
+}
+
+bool MetaspaceObj::aot_metaspace_range_initialized() {
+  return AtomicAccess::load_acquire(&_aot_metaspace_range_initialized);
+}
+#endif
 
 void* MetaspaceObj::operator new(size_t size, ClassLoaderData* loader_data,
                                  size_t word_size,
@@ -168,7 +184,8 @@ void AnyObj::set_in_aot_cache() {
 }
 
 bool AnyObj::in_aot_cache() const {
-  if (AOTMetaspace::in_aot_cache(this)) {
+  if (MetaspaceObj::is_pointer_in_aot_cache(this)) {
+    // "this" can be AOT space only if aot_metaspace_range_initialized()
     precond(_allocation_t[0] == 0);
     precond(_allocation_t[1] == 0);
     return true;

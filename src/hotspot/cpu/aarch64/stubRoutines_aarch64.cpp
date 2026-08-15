@@ -41,8 +41,12 @@ static void empty_spin_wait() { }
 #define DEFINE_ARCH_ENTRY_INIT(arch, blob_name, stub_name, field_name, getter_name, init_function) \
   address StubRoutines:: arch :: STUB_FIELD_NAME(field_name)  = CAST_FROM_FN_PTR(address, init_function);
 
-STUBGEN_ARCH_ENTRIES_DO(DEFINE_ARCH_ENTRY, DEFINE_ARCH_ENTRY_INIT)
+#define DEFINE_ARCH_ENTRY_ARRAY(arch, blob_name, stub_name, field_name, getter_name, count) \
+  address StubRoutines:: arch :: STUB_FIELD_NAME(field_name)  [count];
 
+STUBGEN_ARCH_ENTRIES_DO(DEFINE_ARCH_ENTRY, DEFINE_ARCH_ENTRY_INIT, DEFINE_ARCH_ENTRY_ARRAY)
+
+#undef DEFINE_ARCH_ENTRY_ARARAY
 #undef DEFINE_ARCH_ENTRY_INIT
 #undef DEFINE_ARCH_ENTRY
 
@@ -413,3 +417,36 @@ ATTRIBUTE_ALIGNED(64) jdouble StubRoutines::aarch64::_pio2[] = {
   2.73370053816464559624e-44, // 0x36E3822280000000
   2.16741683877804819444e-51, // 0x3569F31D00000000
 };
+
+#if INCLUDE_CDS
+extern void StubGenerator_init_AOTAddressTable(GrowableArray<address>& addresses);
+
+void StubRoutines::init_AOTAddressTable() {
+  ResourceMark rm;
+  GrowableArray<address> external_addresses;
+  // publish static addresses referred to by aarch64 generator
+  // n.b. we have to use use an extern call here because class
+  // StubGenerator, which provides the static method that knows how to
+  // add the relevant addresses, is declared in a source file rather
+  // than in a separately includeable header.
+  StubGenerator_init_AOTAddressTable(external_addresses);
+  // publish external data addresses defined in nested aarch64 class
+  StubRoutines::aarch64::init_AOTAddressTable(external_addresses);
+  AOTCodeCache::publish_external_addresses(external_addresses);
+}
+
+void StubRoutines::aarch64::init_AOTAddressTable(GrowableArray<address>& external_addresses) {
+#define ADD(addr) external_addresses.append((address)(addr));
+  ADD(_kyberConsts);
+  ADD(_dilithiumConsts);
+  // this is added in generic code
+  // ADD(_crc_table);
+  ADD(_adler_table);
+  ADD(_npio2_hw);
+  ADD(_dsin_coef);
+  ADD(_dcos_coef);
+  ADD(_two_over_pi);
+  ADD(_pio2);
+#undef ADD
+}
+#endif // INCLUDE_CDS

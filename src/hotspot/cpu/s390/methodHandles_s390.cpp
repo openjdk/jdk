@@ -120,16 +120,12 @@ void MethodHandles::verify_ref_kind(MacroAssembler* _masm, int ref_kind,
   __ z_nilf(temp, java_lang_invoke_MemberName::MN_REFERENCE_KIND_MASK);
   __ compare32_and_branch(temp, constant(ref_kind), Assembler::bcondEqual, L);
 
-  {
-    char *buf = NEW_C_HEAP_ARRAY(char, 100, mtInternal);
-
-    jio_snprintf(buf, 100, "verify_ref_kind expected %x", ref_kind);
-    if (ref_kind == JVM_REF_invokeVirtual || ref_kind == JVM_REF_invokeSpecial) {
-      // Could do this for all ref_kinds, but would explode assembly code size.
-      trace_method_handle(_masm, buf);
-    }
-    __ stop(buf);
+  const char* msg = ref_kind_to_verify_msg(ref_kind);
+  if (ref_kind == JVM_REF_invokeVirtual || ref_kind == JVM_REF_invokeSpecial) {
+    // Could do this for all ref_kinds, but would explode assembly code size.
+    trace_method_handle(_masm, msg);
   }
+  __ stop(msg);
 
   BLOCK_COMMENT("} verify_ref_kind");
 
@@ -142,7 +138,7 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
   assert(method == Z_method, "interpreter calling convention");
   __ verify_method_ptr(method);
 
-  assert(target != method, "don 't you kill the method reg!");
+  assert(target != method, "don't you kill the method reg!");
 
   Label L_no_such_method;
 
@@ -157,7 +153,7 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
     __ load_and_test_int(temp, Address(Z_thread, JavaThread::interp_only_mode_offset()));
     __ z_bre(run_compiled_code);
 
-    // Null method test is replicated below in compiled case.,
+    // Null method test is replicated below in compiled case.
     __ z_ltgr(temp, method);
     __ z_bre(L_no_such_method);
 
@@ -172,7 +168,7 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
   __ z_bre(L_no_such_method);
 
   ByteSize offset = for_compiler_entry ?
-                       Method::from_compiled_offset() : Method::from_interpreted_offset();
+                       Method::from_compiled_inline_offset() : Method::from_interpreted_offset();
   Address method_from(method, offset);
 
   __ z_lg(target, method_from);

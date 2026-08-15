@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -398,10 +398,28 @@ public final class Method extends Executable {
      * @jls 9.6.1 Annotation Interface Elements
      */
     public String toString() {
-        return sharedToString(Modifier.methodModifiers(),
-                              isDefault(),
-                              parameterTypes,
+        return sharedToString(parameterTypes,
                               exceptionTypes);
+    }
+
+    @Override
+    void appendModifiers(StringBuilder sb) {
+        int mods = getModifiers();
+        Reflection.appendAccessControlModifiers(sb, mods);
+        if (Modifier.isAbstract(mods))
+            sb.append("abstract ");
+        if (isDefault())
+            sb.append("default ");
+        if (Modifier.isStatic(mods))
+            sb.append("static ");
+        if (Modifier.isFinal(mods))
+            sb.append("final ");
+        if (Modifier.isSynchronized(mods))
+            sb.append("synchronized ");
+        if (Modifier.isNative(mods))
+            sb.append("native ");
+        if (Modifier.isStrict(mods))
+            sb.append("strictfp ");
     }
 
     @Override
@@ -469,7 +487,7 @@ public final class Method extends Executable {
      */
     @Override
     public String toGenericString() {
-        return sharedToGenericString(Modifier.methodModifiers(), isDefault());
+        return super.toGenericString();
     }
 
     @Override

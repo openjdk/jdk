@@ -26,7 +26,7 @@
  * @bug 8157105
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.HttpServerAdapters
- * @run junit/othervm/timeout=60 -Djavax.net.debug=ssl -Djdk.httpclient.HttpClient.log=all BadCipherSuiteErrorTest
+ * @run junit/othervm/timeout=60 -Djavax.net.debug=ssl -Djdk.httpclient.HttpClient.log=all ${test.main.class}
  * @summary check exception thrown when bad TLS parameters selected
  */
 

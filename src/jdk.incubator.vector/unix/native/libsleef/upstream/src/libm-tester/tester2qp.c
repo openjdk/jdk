@@ -1,4 +1,4 @@
-//   Copyright Naoki Shibata and contributors 2010 - 2024.
+//   Copyright Naoki Shibata and contributors 2010 - 2025.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -24,7 +24,7 @@
 
 #include "sleef.h"
 
-#include "f128util.h"
+#include "qtesterutil.h"
 
 #define DORENAME
 #include "rename.h"
@@ -165,7 +165,7 @@ int main(int argc,char **argv)
   mpfr_inits(fra, frb, frc, frd, frw, frx, fry, frz, NULL);
 
   conv_t cd;
-  Sleef_quad d, t, d2, zo;
+  Sleef_quad d, t; //, d2, zo;
 
   int cnt, ecnt = 0;
 
@@ -178,26 +178,26 @@ int main(int argc,char **argv)
   printf("%g\n", countULP2(cd.d, frx));
 #endif
 
-  const Sleef_quad rangemax = 1e+9;
+  //const Sleef_quad rangemax = 1e+9;
 
   for(cnt = 0;ecnt < 1000;cnt++) {
     switch(cnt & 7) {
     case 0:
       d = rnd();
-      d2 = rnd();
-      zo = rnd();
+      //d2 = rnd();
+      //zo = rnd();
       break;
     case 1:
       cd.d = rint((2 * (double)random() / RAND_MAX - 1) * 1e+10) * M_PI_4;
       cd.u128 += (random() & 0xff) - 0x7f;
       d = cd.d;
-      d2 = rnd();
-      zo = rnd();
+      //d2 = rnd();
+      //zo = rnd();
       break;
     default:
       d = rnd_fr();
-      d2 = rnd_fr();
-      zo = rnd_zo();
+      //d2 = rnd_fr();
+      //zo = rnd_zo();
       break;
     }
 

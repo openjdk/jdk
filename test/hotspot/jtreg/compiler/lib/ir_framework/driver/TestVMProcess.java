@@ -68,6 +68,7 @@ public class TestVMProcess {
         this.cmds = new ArrayList<>();
         TestFrameworkSocket socket = new TestFrameworkSocket();
         try (socket) {
+            socket.start();
             prepareTestVMFlags(additionalFlags, socket, testClass, helperClasses, defaultWarmup,
                                allowNotCompilable, testClassesOnBootClassPath);
             start();

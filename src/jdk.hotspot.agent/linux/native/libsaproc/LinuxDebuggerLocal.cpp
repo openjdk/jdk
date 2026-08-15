@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2019, 2021, NTT DATA.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, NTT DATA.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -289,6 +289,7 @@ JNIEXPORT void JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLocal_at
     snprintf(msg, sizeof(msg), "Can't attach to the process: %s", err_buf);
     THROW_NEW_DEBUGGER_EXCEPTION(msg);
   }
+
   env->SetLongField(this_obj, p_ps_prochandle_ID, (jlong)(intptr_t)ph);
   fillThreadsAndLoadObjects(env, this_obj, ph);
 }
@@ -313,6 +314,7 @@ JNIEXPORT void JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLocal_at
   if ( (ph = Pgrab_core(execName_cstr, coreName_cstr)) == NULL) {
     THROW_NEW_DEBUGGER_EXCEPTION("Can't attach to the core file. For more information, export LIBSAPROC_DEBUG=1 and try again.");
   }
+
   env->SetLongField(this_obj, p_ps_prochandle_ID, (jlong)(intptr_t)ph);
   fillThreadsAndLoadObjects(env, this_obj, ph);
 }

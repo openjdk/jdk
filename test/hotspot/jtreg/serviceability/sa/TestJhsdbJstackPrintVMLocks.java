@@ -22,6 +22,7 @@
  */
 
 import jdk.test.lib.JDKToolLauncher;
+import jdk.test.lib.Platform;
 import jdk.test.lib.SA.SATestUtils;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -43,6 +44,10 @@ public class TestJhsdbJstackPrintVMLocks {
 
     final static int MAX_ATTEMPTS = 5;
     public static void main(String[] args) throws Exception {
+        if (Platform.isMusl()) {
+            throw new SkippedException("This test does not work on musl libc.");
+        }
+
         SATestUtils.skipIfCannotAttach(); // throws SkippedException if attach not expected to work.
 
         LingeredApp theApp = null;

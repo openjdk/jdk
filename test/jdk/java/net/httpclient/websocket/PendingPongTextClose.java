@@ -26,7 +26,7 @@
  * @build DummyWebSocketServer
  * @run junit/othervm
  *      -Djdk.httpclient.sendBufferSize=8192
- *       PendingPongTextClose
+ *       ${test.main.class}
  */
 
 // This test produce huge logs (14Mb+) so disable logging by default

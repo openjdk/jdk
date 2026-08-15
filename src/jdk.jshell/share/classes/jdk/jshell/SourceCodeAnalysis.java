@@ -273,6 +273,14 @@ public abstract class SourceCodeAnalysis {
          */
         CONSIDERED_INCOMPLETE(false),
 
+        /**
+         * Snippet is likely a prefix of a real snippet. Typically, the snippet
+         * is a documentation comment, after which it is expected that a declaration
+         * will follow.
+         *
+         * @since 28
+         */
+        PREFIX(false),
 
         /**
          * An empty input.

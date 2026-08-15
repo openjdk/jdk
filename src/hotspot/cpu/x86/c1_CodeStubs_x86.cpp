@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "c1/c1_Runtime1.hpp"
 #include "classfile/javaClasses.hpp"
 #include "nativeInst_x86.hpp"
+#include "oops/objArrayKlass.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
@@ -115,6 +116,79 @@ void DivByZeroStub::emit_code(LIR_Assembler* ce) {
 }
 
 
+// Implementation of LoadFlattenedArrayStub
+
+LoadFlattenedArrayStub::LoadFlattenedArrayStub(LIR_Opr array, LIR_Opr index, LIR_Opr result, CodeEmitInfo* info) {
+  _array = array;
+  _index = index;
+  _result = result;
+  // Tell the register allocator that the runtime call will scratch rax.
+  _scratch_reg = FrameMap::rax_oop_opr;
+  _info = new CodeEmitInfo(info);
+}
+
+void LoadFlattenedArrayStub::emit_code(LIR_Assembler* ce) {
+  assert(__ rsp_offset() == 0, "frame size should be fixed");
+  __ bind(_entry);
+  ce->store_parameter(_array->as_register(), 1);
+  ce->store_parameter(_index->as_register(), 0);
+  __ call(RuntimeAddress(Runtime1::entry_for(StubId::c1_load_flat_array_id)));
+  ce->add_call_info_here(_info);
+  ce->verify_oop_map(_info);
+  if (_result->as_register() != rax) {
+    __ movptr(_result->as_register(), rax);
+  }
+  __ jmp(_continuation);
+}
+
+
+// Implementation of StoreFlattenedArrayStub
+
+StoreFlattenedArrayStub::StoreFlattenedArrayStub(LIR_Opr array, LIR_Opr index, LIR_Opr value, CodeEmitInfo* info) {
+  _array = array;
+  _index = index;
+  _value = value;
+  // Tell the register allocator that the runtime call will scratch rax.
+  _scratch_reg = FrameMap::rax_oop_opr;
+  _info = new CodeEmitInfo(info);
+}
+
+
+void StoreFlattenedArrayStub::emit_code(LIR_Assembler* ce) {
+  assert(__ rsp_offset() == 0, "frame size should be fixed");
+  __ bind(_entry);
+  ce->store_parameter(_array->as_register(), 2);
+  ce->store_parameter(_index->as_register(), 1);
+  ce->store_parameter(_value->as_register(), 0);
+  __ call(RuntimeAddress(Runtime1::entry_for(StubId::c1_store_flat_array_id)));
+  ce->add_call_info_here(_info);
+  ce->verify_oop_map(_info);
+  __ jmp(_continuation);
+}
+
+
+// Implementation of SubstitutabilityCheckStub
+
+SubstitutabilityCheckStub::SubstitutabilityCheckStub(LIR_Opr left, LIR_Opr right, CodeEmitInfo* info) {
+  _left = left;
+  _right = right;
+  // Tell the register allocator that the runtime call will scratch rax.
+  _scratch_reg = FrameMap::rax_oop_opr;
+  _info = new CodeEmitInfo(info);
+}
+
+void SubstitutabilityCheckStub::emit_code(LIR_Assembler* ce) {
+  assert(__ rsp_offset() == 0, "frame size should be fixed");
+  __ bind(_entry);
+  ce->store_parameter(_left->as_register(), 1);
+  ce->store_parameter(_right->as_register(), 0);
+  __ call(RuntimeAddress(Runtime1::entry_for(StubId::c1_substitutability_check_id)));
+  ce->add_call_info_here(_info);
+  ce->verify_oop_map(_info);
+  __ jmp(_continuation);
+}
+
+
 // Implementation of NewInstanceStub
 
 NewInstanceStub::NewInstanceStub(LIR_Opr klass_reg, LIR_Opr result, ciInstanceKlass* klass, CodeEmitInfo* info, StubId stub_id) {
@@ -167,11 +241,13 @@ void NewTypeArrayStub::emit_code(LIR_Assembler* ce) {
 
 // Implementation of NewObjectArrayStub
 
-NewObjectArrayStub::NewObjectArrayStub(LIR_Opr klass_reg, LIR_Opr length, LIR_Opr result, CodeEmitInfo* info) {
+NewObjectArrayStub::NewObjectArrayStub(LIR_Opr klass_reg, LIR_Opr length, LIR_Opr result,
+                                       CodeEmitInfo* info, bool is_null_free) {
   _klass_reg = klass_reg;
   _result = result;
   _length = length;
   _info = new CodeEmitInfo(info);
+  _is_null_free = is_null_free;
 }
 
 
@@ -180,7 +256,11 @@ void NewObjectArrayStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
   assert(_length->as_register() == rbx, "length must in rbx,");
   assert(_klass_reg->as_register() == rdx, "klass_reg must in rdx");
-  __ call(RuntimeAddress(Runtime1::entry_for(StubId::c1_new_object_array_id)));
+  if (_is_null_free) {
+    __ call(RuntimeAddress(Runtime1::entry_for(StubId::c1_new_null_free_array_id)));
+  } else {
+    __ call(RuntimeAddress(Runtime1::entry_for(StubId::c1_new_object_array_id)));
+  }
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
   assert(_result->as_register() == rax, "result must in rax,");
@@ -190,6 +270,15 @@ void NewObjectArrayStub::emit_code(LIR_Assembler* ce) {
 void MonitorEnterStub::emit_code(LIR_Assembler* ce) {
   assert(__ rsp_offset() == 0, "frame size should be fixed");
   __ bind(_entry);
+  if (_throw_ie_stub != nullptr) {
+    // When we come here, _obj_reg has already been checked to be non-null.
+    const int is_value_mask = markWord::inline_type_pattern;
+    Register mark = _scratch_reg->as_register();
+    __ movptr(mark, Address(_obj_reg->as_register(), oopDesc::mark_offset_in_bytes()));
+    __ andptr(mark, is_value_mask);
+    __ cmpl(mark, is_value_mask);
+    __ jcc(Assembler::equal, *_throw_ie_stub->entry());
+  }
   ce->store_parameter(_obj_reg->as_register(),  1);
   ce->store_parameter(_lock_reg->as_register(), 0);
   StubId enter_id;
@@ -293,7 +382,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
       address ptr = (address)(_pc_start + i);
       int a_byte = (*ptr) & 0xFF;
       __ emit_int8(a_byte);
-      *ptr = 0x90; // make the site look like a nop
+      *ptr = NativeInstruction::nop_instruction_code; // make the site look like a nop
     }
   }
 
@@ -342,6 +431,38 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
   assert(patch_info_pc - end_of_patch == bytes_to_skip, "incorrect patch info");
 
   address entry = __ pc();
+  // NativeGeneralJump::insert_unconditional will be writing a jmp rel32 at _pc_start over the existing instructions.
+  // There are 2 cases:
+  // - the existing instruction is a mov r64 imm64 from LIR_Assembler::klass2reg_with_patching
+  // - or there are nops there (from higher in this function).
+  // In the first case, since a jmp rel32 is 5-byte long, but a mov r64 imm64 is 10-byte long
+  // (resp. 11 if using a REX2 prefix), so we are left with the last 5 (resp. 6) bytes of the
+  // immediate operand (which are all 0x00). When debugging, this confuses the disassembler
+  // because it tries to recognize an instruction starting immediately after the jmp rel32,
+  // leading to wrong instructions, and possibly failure to disassemble further the whole function.
+  //
+  // To be disassembler-friendly, let's replace the leftover 0x00 with nops.
+  // There are 2 shapes:
+  // - without REX2 prefix: REX prefix | MOV r64
+  // - with REX2 prefix: REX2 prefix | REX prefix | MOV r64
+  // then, we know the 8 bytes after are the immediate operand.
+  if (NativeInstruction* ni = nativeInstruction_at(_pc_start); ni->is_mov_literal64()) {
+    int length_before_immediate = ni->has_rex2_prefix() ? 3 : 2;
+    assert(*(long long int*)(_pc_start + length_before_immediate) == 0, "imm64 must be 0 in mov r64, imm64");
+    // We don't need to replace the NativeGeneralJump::instruction_size first bytes, since insert_unconditional
+    // will overwrite.
+    for (int i = NativeGeneralJump::instruction_size; i < length_before_immediate + BytesPerLong; ++i) {
+      _pc_start[i] = NativeInstruction::nop_instruction_code;
+    }
+  }
+#ifdef ASSERT
+  else {  // and we make sure otherwise, we indeed have just nops.
+    for (int i = 0; i < NativeGeneralJump::instruction_size; ++i) {
+      assert(_pc_start[i] == NativeInstruction::nop_instruction_code, "patching over an unexpected instruction");
+    }
+  }
+#endif
+
   NativeGeneralJump::insert_unconditional((address)_pc_start, entry);
   address target = nullptr;
   relocInfo::relocType reloc_type = relocInfo::none;

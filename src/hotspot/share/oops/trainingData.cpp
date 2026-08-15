@@ -30,6 +30,7 @@
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
+#include "compiler/compileBroker.hpp"
 #include "compiler/compileTask.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
@@ -61,7 +62,7 @@ KlassTrainingData::KlassTrainingData() {
   assert(CDSConfig::is_dumping_static_archive() || UseSharedSpaces, "only for CDS");
 }
 
-CompileTrainingData::CompileTrainingData() : _level(-1), _compile_id(-1) {
+CompileTrainingData::CompileTrainingData() : _level(-1), _is_osr(false), _compile_id(-1) {
   // Used by cppVtables.cpp only
   assert(CDSConfig::is_dumping_static_archive() || UseSharedSpaces, "only for CDS");
 }
@@ -118,10 +119,23 @@ void TrainingData::verify() {
   }
 }
 
+static bool is_excluded(InstanceKlass* k) {
+  if (!k->is_loaded() || k->has_been_redefined()) {
+    return true;
+  }
+  if (CDSConfig::is_at_aot_safepoint()) {
+    // Check for AOT exclusion only at AOT safe point.
+    return SystemDictionaryShared::should_be_excluded(k) || !SystemDictionaryShared::is_builtin_loader(k->class_loader_data());
+  }
+  return false;
+}
+
 MethodTrainingData* MethodTrainingData::make(const methodHandle& method, bool null_if_not_found, bool use_cache) {
-  MethodTrainingData* mtd = nullptr;
   if (!have_data() && !need_data()) {
-    return mtd;
+    return nullptr;
+  }
+  if (is_excluded(method->method_holder())) {
+    return nullptr;
   }
   // Try grabbing the cached value first.
   // Cache value is stored in MethodCounters and the following are the
@@ -133,6 +147,7 @@ MethodTrainingData* MethodTrainingData::make(const methodHandle& method, bool nu
   //    i.e. null_if_no_found == true, then just return a null.
   // 3. Cache value is not null.
   //    Return it, the value of training_data_lookup_failed doesn't matter.
+  MethodTrainingData* mtd = nullptr;
   MethodCounters* mcs = method->method_counters();
   if (mcs != nullptr) {
     mtd = mcs->method_training_data();
@@ -175,6 +190,7 @@ MethodTrainingData* MethodTrainingData::make(const methodHandle& method, bool nu
           return nullptr; // allocation failure
         }
         td = training_data_set()->install(mtd);
+        assert(!is_excluded(method->method_holder()), "Should not be excluded");
         assert(td == mtd, "");
       } else {
         mtd = nullptr;
@@ -210,6 +226,7 @@ void MethodTrainingData::print_on(outputStream* st, bool name_only) const {
 
 CompileTrainingData* CompileTrainingData::make(CompileTask* task) {
   int level = task->comp_level();
+  bool is_osr = (task->osr_bci() != CompileBroker::standard_entry_bci);
   int compile_id = task->compile_id();
   Thread* thread = Thread::current();
   methodHandle m(thread, task->method());
@@ -223,16 +240,16 @@ CompileTrainingData* CompileTrainingData::make(CompileTask* task) {
   mtd->notice_compilation(level);
 
   TrainingDataLocker l;
-  CompileTrainingData* ctd = CompileTrainingData::allocate(mtd, level, compile_id);
-  if (ctd != nullptr) {
-    CompileTrainingData*& last_ctd = mtd->_last_toplevel_compiles[level - 1];
-    if (last_ctd != nullptr) {
-      assert(mtd->highest_top_level() >= level, "consistency");
-      if (last_ctd->compile_id() < compile_id) {
+  CompileTrainingData*& last_ctd = mtd->_last_toplevel_compiles[level - 1];
+  CompileTrainingData* ctd = nullptr;
+  if (last_ctd == nullptr ||                                                   // no previous CTD
+      (last_ctd->is_osr() == is_osr && last_ctd->compile_id() < compile_id) || // newer compile for same OSR status
+      (last_ctd->is_osr() && !is_osr)) {                                       // newer non-OSR compile after OSR compile
+    ctd = CompileTrainingData::allocate(mtd, level, is_osr, compile_id);
+    if (ctd != nullptr) {
+      if (last_ctd != nullptr) {
         last_ctd->clear_init_deps();
-        last_ctd = ctd;
       }
-    } else {
       last_ctd = ctd;
       mtd->notice_toplevel_compilation(level);
     }
@@ -376,6 +393,9 @@ void CompileTrainingData::prepare(Visitor& visitor) {
 }
 
 KlassTrainingData* KlassTrainingData::make(InstanceKlass* holder, bool null_if_not_found) {
+  if (is_excluded(holder)) {
+    return nullptr;
+  }
   Key key(holder);
   TrainingData* td = CDS_ONLY(have_data() ? lookup_archived_training_data(&key) :) nullptr;
   KlassTrainingData* ktd = nullptr;
@@ -401,6 +421,7 @@ KlassTrainingData* KlassTrainingData::make(InstanceKlass* holder, bool null_if_n
       }
       td = training_data_set()->install(ktd);
       assert(ktd == td, "");
+      assert(!is_excluded(holder), "Should not be excluded");
     } else {
       ktd = td->as_KlassTrainingData();
       guarantee(ktd->holder() != nullptr, "null holder");
@@ -543,18 +564,24 @@ void TrainingData::cleanup_training_data() {
   }
 }
 
+void TrainingData::cleanup_after_redefinition() {
+  if (need_data()) {
+    TrainingDataLocker l;
+    ResourceMark rm;
+    Visitor visitor(training_data_set()->size());
+    training_data_set()->iterate([&](TrainingData* td) {
+      td->cleanup(visitor);
+    });
+  }
+}
+
 void KlassTrainingData::cleanup(Visitor& visitor) {
   if (visitor.is_visited(this)) {
     return;
   }
   visitor.visit(this);
   if (has_holder()) {
-    bool is_excluded = !holder()->is_loaded();
-    if (CDSConfig::is_at_aot_safepoint()) {
-      // Check for AOT exclusion only at AOT safe point.
-      is_excluded |= SystemDictionaryShared::should_be_excluded(holder());
-    }
-    if (is_excluded) {
+    if (is_excluded(holder())) {
       ResourceMark rm;
       log_debug(aot, training)("Cleanup KTD %s", name()->as_klass_external_name());
       _holder = nullptr;
@@ -572,12 +599,8 @@ void MethodTrainingData::cleanup(Visitor& visitor) {
   }
   visitor.visit(this);
   if (has_holder()) {
-    if (CDSConfig::is_at_aot_safepoint() && SystemDictionaryShared::should_be_excluded(holder()->method_holder())) {
-      // Check for AOT exclusion only at AOT safe point.
+    if (is_excluded(holder()->method_holder())) {
       log_debug(aot, training)("Cleanup MTD %s::%s", name()->as_klass_external_name(), signature()->as_utf8());
-      if (_final_profile != nullptr && _final_profile->method() != _holder) {
-        log_warning(aot, training)("Stale MDO for  %s::%s", name()->as_klass_external_name(), signature()->as_utf8());
-      }
       _final_profile = nullptr;
       _final_counters = nullptr;
       _holder = nullptr;
@@ -593,6 +616,7 @@ void MethodTrainingData::cleanup(Visitor& visitor) {
 }
 
 void KlassTrainingData::verify() {
+  guarantee(!has_holder() || !is_excluded(holder()), "Bad holder");
   for (int i = 0; i < comp_dep_count(); i++) {
     CompileTrainingData* ctd = comp_dep(i);
     if (!ctd->_init_deps.contains(this)) {
@@ -604,6 +628,7 @@ void KlassTrainingData::verify() {
 }
 
 void MethodTrainingData::verify(bool verify_dep_counter) {
+  guarantee(!has_holder() || !is_excluded(holder()->method_holder()), "Bad holder");
   iterate_compiles([&](CompileTrainingData* ctd) {
     ctd->verify(verify_dep_counter);
   });
@@ -704,7 +729,7 @@ void TrainingData::metaspace_pointers_do(MetaspaceClosure* iter) {
 }
 
 bool TrainingData::Key::can_compute_cds_hash(const Key* const& k) {
-  return k->meta() == nullptr || MetaspaceObj::in_aot_cache(k->meta());
+  return k->meta() == nullptr || k->meta()->in_aot_cache();
 }
 
 uint TrainingData::Key::cds_hash(const Key* const& k) {

@@ -28,7 +28,7 @@
  * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
  * @run junit/othervm
  *       -Djdk.httpclient.HttpClient.log=trace,headers,requests
- *       RedirectWithCookie
+ *       ${test.main.class}
  */
 
 import java.io.IOException;

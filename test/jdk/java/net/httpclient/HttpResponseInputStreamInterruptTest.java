@@ -25,7 +25,7 @@
  * @test
  * @bug 8294047
  * @library /test/lib
- * @run junit HttpResponseInputStreamInterruptTest
+ * @run junit ${test.main.class}
  */
 
 import com.sun.net.httpserver.HttpExchange;

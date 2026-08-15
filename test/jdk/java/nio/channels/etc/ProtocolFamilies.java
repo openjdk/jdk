@@ -45,7 +45,6 @@ import static java.net.StandardProtocolFamily.INET;
 import static java.net.StandardProtocolFamily.INET6;
 import static jdk.test.lib.net.IPSupport.*;
 
-import jtreg.SkippedException;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -77,12 +76,7 @@ public class ProtocolFamilies {
     public static void setup() throws Exception {
         NetworkConfiguration.printSystemConfiguration(out);
         IPSupport.printPlatformSupport(out);
-        try {
-            throwSkippedExceptionIfNonOperational();
-        } catch (SkippedException skippedException) {
-            // jtreg.SkippedException would cause a JUnit test to fail
-            Assumptions.assumeTrue(false, skippedException.getMessage());
-        }
+        diagnoseConfigurationIssue().ifPresent(Assumptions::abort);
 
         ia4 = getLocalIPv4Address();
         ia6 = getLocalIPv6Address();

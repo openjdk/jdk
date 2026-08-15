@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3429,6 +3429,9 @@ public sealed interface CodeBuilder
      * @param defaultTarget the default jump target
      * @param cases the switch cases
      * @return this builder
+     * @throws IllegalArgumentException if the low value is greater than the
+     *         high value, or if there are too many targets between the low
+     *         and high values
      * @see Opcode#TABLESWITCH
      * @see TableSwitchInstruction
      */
@@ -3443,6 +3446,7 @@ public sealed interface CodeBuilder
      * @param defaultTarget the default jump target
      * @param cases the switch cases
      * @return this builder
+     * @throws IllegalArgumentException if {@code cases} is empty
      * @see Opcode#TABLESWITCH
      * @see #tableswitch(int, int, Label, List)
      * @see TableSwitchInstruction

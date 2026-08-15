@@ -121,9 +121,76 @@ The `jpackage` tool will take as input a Java application and a Java run-time im
 
 :   Vendor of the application
 
-<a id="option-verbose">`--verbose`</a>
+<a id="option-verbose">`--verbose` &lt;\[-\]key(,\[-\]key)*&gt;</a>
 
-:   Enables verbose output.
+:   Configures verbose output. Enables and/or disables log message categories using zero or more of the keys described below separated by commas.
+    The key `all` enables or disables all categories (respectively); other keys enable the corresponding category, or disable it if preceded by a hyphen (`-`).
+
+    Supported values for *key* are:
+
+    -   `all`: Enables console output and routing of all message categories to the logging framework through the [System.Logger API](../../api/java.base/java/lang/System.Logger.html). Equivalent to `console,log`.
+
+    -   `console`: Enables console output of all message categories. Equivalent to `all,-log`.
+
+    -   `errors`: Enables output of fatal errors.
+        If the key is specified without the `trace` key, error messages will be written to the console without the corresponding exception stacktraces.
+        If the key is specified with the `trace` key, error messages will be written to the console with the corresponding exception stacktraces.
+
+    -   `progress`: Enables output of progress messages.
+
+    -   `resources`: Enables output of messages about the use of the configurable resources.
+
+    -   `summary`: Enables output of the bundle properties and the versions of the tools being used.
+
+    -   `tools`: Enables output of commands being executed.
+        If the key is specified without the `trace` key, the jpackage will print the command lines without the output produced by executing these command lines.
+        Only command lines that are relevant to package customization will be written to the console.
+        If the key is specified with the `trace` key, the jpackage will print all command lines and their output.
+
+    -   `trace`: Enables output of stack traces of suppressed exceptions and details of the jpackage execution.
+        When combined with other keys, it enables additional information in messages from the corresponding message categories, as described above.
+
+    -   `warning`: Enables output of warnings.
+
+    -   `log`: Enables routing of all message categories to the logging framework through the [System.Logger API](../../api/java.base/java/lang/System.Logger.html).
+        The logger name will be "jdk.jpackage".
+
+    If the option is specified without the value, it is equivalent to:
+    ```
+    --verbose console,-trace
+    ```
+
+    If the option is not specified, it is equivalent to:
+    ```
+    --verbose errors,warnings
+    ```
+
+    Sample usage:
+
+    Suppress all console output, enable logging via the [System.Logger API](../../api/java.base/java/lang/System.Logger.html):
+    ```
+    --verbose log
+    ```
+
+    Enable all message categories in the console:
+    ```
+    --verbose console
+    ```
+
+    Enable all message categories, but "trace" and "tools" in the console:
+    ```
+    --verbose console,-trace,-tools
+    ```
+
+    Enable "trace" and "tools" message categories in the console:
+    ```
+    --verbose trace,tools
+    ```
+
+    Enable "trace" and "tools" message categories in the console and enable logging via the [System.Logger API](../../api/java.base/java/lang/System.Logger.html):
+    ```
+    --verbose log,trace,tools
+    ```
 
 <a id="option-version">`--version`</a>
 
