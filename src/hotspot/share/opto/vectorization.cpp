@@ -113,7 +113,7 @@ VStatus VLoop::check_preconditions_helper() {
 
     // See if we find the infrastructure for speculative runtime-checks.
     //  (1) Auto Vectorization Parse Predicate
-    Node* pre_ctrl = pre_loop_head()->in(LoopNode::EntryControl);
+    Node* pre_ctrl = pre_loop_entry();
     const Predicates predicates(pre_ctrl);
     const PredicateBlock* predicate_block = predicates.auto_vectorization_check_block();
     if (predicate_block->has_parse_predicate()) {

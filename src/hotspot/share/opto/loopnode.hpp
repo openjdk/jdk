@@ -632,6 +632,7 @@ public:
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 
+  CountedLoopEndNode* inner_counted_loop_end() const;
   bool is_expanded(PhaseGVN *phase) const;
 };
 
@@ -1537,7 +1538,8 @@ public:
 
   // Add pre and post loops around the given loop.  These loops are used
   // during RCE, unrolling and aligning loops.
-  void insert_pre_post_loops( IdealLoopTree *loop, Node_List &old_new, bool peel_only );
+  void insert_pre_post_loops(IdealLoopTree* loop, Node_List& old_new, bool peel_only,
+                             bool keep_side_loop_safepoints);
 
   // Find the last store in the body of an OuterStripMinedLoop when following memory uses
   Node *find_last_store_in_outer_loop(Node* store, const IdealLoopTree* outer_loop);
@@ -1545,7 +1547,8 @@ public:
   // Add post loop after the given loop.
   Node *insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
                          CountedLoopNode* main_head, CountedLoopEndNode* main_end,
-                         Node* incr, Node* limit, CountedLoopNode*& post_head);
+                         Node* incr, Node* limit, CountedLoopNode*& post_head,
+                         bool keep_side_loop_safepoints);
 
   // Add a vector post loop between a vector main loop and the current post loop
   void insert_vector_post_loop(IdealLoopTree *loop, Node_List &old_new);

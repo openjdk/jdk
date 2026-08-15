@@ -3199,7 +3199,7 @@ IfNode* CountedLoopNode::find_multiversion_if_from_multiversion_fast_main_loop()
   assert(is_main_loop() && is_multiversion_fast_loop(), "must be multiversion fast main loop");
   CountedLoopEndNode* pre_end = find_pre_loop_end();
   if (pre_end == nullptr) { return nullptr; }
-  Node* pre_entry = pre_end->loopnode()->in(LoopNode::EntryControl);
+  Node* pre_entry = pre_end->loopnode()->skip_strip_mined()->in(LoopNode::EntryControl);
   const Predicates predicates(pre_entry);
   IfTrueNode* before_predicates = predicates.entry()->isa_IfTrue();
   if (before_predicates != nullptr &&
@@ -3309,10 +3309,8 @@ Node* CountedLoopNode::skip_assertion_predicates_with_halt() {
     // Dying loop.
     return nullptr;
   }
-  if (is_main_loop()) {
-    ctrl = skip_strip_mined()->in(LoopNode::EntryControl);
-  }
   if (is_main_loop() || is_post_loop()) {
+    ctrl = skip_strip_mined()->in(LoopNode::EntryControl);
     AssertionPredicates assertion_predicates(ctrl);
     return assertion_predicates.entry();
   }
@@ -3791,6 +3789,10 @@ Node* OuterStripMinedLoopNode::register_control(Node* node, Node* loop, Node* id
   }
   iloop->register_control(node, iloop->get_loop(loop), idom);
   return node;
+}
+
+CountedLoopEndNode* OuterStripMinedLoopEndNode::inner_counted_loop_end() const {
+  return in(0)->as_SafePoint()->in(0)->as_IfFalse()->in(0)->as_CountedLoopEnd();
 }
 
 const Type* OuterStripMinedLoopEndNode::Value(PhaseGVN* phase) const {
@@ -6708,10 +6710,20 @@ CountedLoopEndNode* CountedLoopNode::find_pre_loop_end() {
   }
 
   Node* p_f = skip_assertion_predicates_with_halt()->in(0)->in(0);
-  if (!p_f->is_IfFalse() || !p_f->in(0)->is_CountedLoopEnd()) {
+  while (p_f->is_ReachabilityFence()) {
+    p_f = p_f->in(0);
+  }
+  if (!p_f->is_IfFalse()) {
     return nullptr;
   }
-  CountedLoopEndNode* pre_end = p_f->in(0)->as_CountedLoopEnd();
+  Node* pre_exit_test = p_f->in(0);
+  CountedLoopEndNode* pre_end = pre_exit_test->isa_CountedLoopEnd();
+  if (pre_exit_test->is_OuterStripMinedLoopEnd()) {
+    pre_end = pre_exit_test->as_OuterStripMinedLoopEnd()->inner_counted_loop_end();
+  }
+  if (pre_end == nullptr) {
+    return nullptr;
+  }
   CountedLoopNode* loop_node = pre_end->loopnode();
   if (loop_node == nullptr || !loop_node->is_pre_loop()) {
     return nullptr;

@@ -2784,7 +2784,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   Node* old_limit = pre_opaq->in(1);
 
   // Where we put new limit calculations.
-  Node* pre_ctrl = _vloop.pre_loop_head()->in(LoopNode::EntryControl);
+  Node* pre_ctrl = _vloop.pre_loop_entry();
 
   // Ensure the original loop limit is available from the pre-loop Opaque1 node.
   Node* orig_limit = pre_opaq->original_loop_limit();
