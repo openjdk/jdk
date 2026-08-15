@@ -99,6 +99,16 @@ private:
 
 private:
   static juint    _crc_table[];
+  static juint    _crc_table_ext[];
+  static juint*   _crc32c_table;
+  static juint*   _crc32c_table_ext;
+
+public:
+  // CRC32C table generation
+  static void generate_CRC32C_table();
+  static void generate_CRC32_ext_table();
+  static address crc_table_ext_addr();
+  static address crc32c_table_ext_addr();
 };
 
 #endif // CPU_RISCV_STUBROUTINES_RISCV_HPP
