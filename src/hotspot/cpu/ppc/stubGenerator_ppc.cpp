@@ -3200,7 +3200,7 @@ class StubGenerator: public StubCodeGenerator {
   // ==========================================================================
   // AES helper functions for PPC64
   //
-  // These emit the AES round machine instructions.
+  // These emit the AES round instructions.
   // Each call to these helpers emits a sequence of vcipher/vncipher
   // instructions.
   //
@@ -3211,9 +3211,6 @@ class StubGenerator: public StubCodeGenerator {
   // key:     register holding pointer to expanded key array
   // keypos:  scratch register for key offset
   // keylen:  register holding key length
-  // keyPerm: vector register holding key alignment permutation
-  // vKey1-vKey4: scratch vector registers for round keys
-  // vTmp1:   scratch vector register (carries raw key data between loads)
   //
   void aes_encrypt_rounds(VectorRegister vRet,
                            Register key, Register keypos, Register keylen,
@@ -3221,7 +3218,7 @@ class StubGenerator: public StubCodeGenerator {
                            VectorRegister vKey1, VectorRegister vKey2,
                            VectorRegister vKey3, VectorRegister vKey4,
                            VectorRegister vTmp1) {
-    Label L_doLast;
+    Label L_doLast, L_error, L_done;
 
     // load the 1st round key
     __ lvx             (vTmp1, key);
@@ -3307,6 +3304,10 @@ class StubGenerator: public StubCodeGenerator {
     // if AES-192 (keylen == 52), skip to final rounds
     __ cmpwi           (CR0, keylen, 52);
     __ beq             (CR0, L_doLast);
+#ifdef ASSERT
+    __ cmpwi           (CR0, keylen, 60);
+    __ bne             (CR0, L_error);
+#endif
 
     // AES-256: rounds 12-13
     __ vcipher         (vRet, vRet, vKey1);
@@ -3325,6 +3326,12 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(L_doLast);
     __ vcipher         (vRet, vRet, vKey1);
     __ vcipherlast     (vRet, vRet, vKey2);
+#ifdef ASSERT
+    __ b(L_done);
+    __ bind(L_error);
+    __ stop("aescrypt_decryptBlock: invalid key length");
+    __ bind(L_done);
+#endif
   }
 
 
@@ -3334,9 +3341,6 @@ class StubGenerator: public StubCodeGenerator {
   // key:     register holding pointer to expanded key array
   // keypos:  scratch register for key offset
   // keylen:  register holding key length (44/52/60)
-  // keyPerm: vector register holding key alignment permutation
-  // vKey1-vKey5: scratch vector registers for round keys
-  // vTmp1:   scratch vector register
   //
   void aes_decrypt_rounds(VectorRegister vRet,
                            Register key, Register keypos, Register keylen,
@@ -3345,13 +3349,17 @@ class StubGenerator: public StubCodeGenerator {
                            VectorRegister vKey3, VectorRegister vKey4,
                            VectorRegister vKey5,
                            VectorRegister vTmp1) {
-    Label L_doLast, L_do44, L_do52;
+    Label L_doLast, L_do44, L_do52, L_done, L_error;
 
     __ cmpwi           (CR0, keylen, 44);
     __ beq             (CR0, L_do44);
 
     __ cmpwi           (CR0, keylen, 52);
     __ beq             (CR0, L_do52);
+#ifdef ASSERT
+    __ cmpwi           (CR0, keylen, 60);
+    __ bne             (CR0, L_error);
+#endif
 
     // ---- AES-256: load round keys 15-11 (reverse order) ----
     __ li              (keypos, 240);
@@ -3382,7 +3390,7 @@ class StubGenerator: public StubCodeGenerator {
     __ vncipher        (vRet, vRet, vKey5);
 
     __ b               (L_doLast);
-
+    __ align(32);
     // ---- AES-192: load round keys 13-11 ----
     __ bind            (L_do52);
 
@@ -3405,7 +3413,7 @@ class StubGenerator: public StubCodeGenerator {
     __ vncipher        (vRet, vRet, vKey3);
 
     __ b               (L_doLast);
-
+    __ align(32);
     // ---- AES-128: load round key 11 ----
     __ bind            (L_do44);
 
@@ -3473,23 +3481,28 @@ class StubGenerator: public StubCodeGenerator {
     __ vncipher        (vRet, vRet, vKey3);
     __ vncipher        (vRet, vRet, vKey4);
     __ vncipherlast    (vRet, vRet, vKey5);
+#ifdef ASSERT
+    __ b(L_done);
+    __ bind(L_error);
+    __ stop("aescrypt_decryptBlock: invalid key length");
+    __ bind(L_done);
+#endif
   }
 
 
   // ==========================================================================
   // Helper: Unaligned load of 16 bytes with endian handling
-  //
-  // Loads 16 bytes from 'src' into 'vDst'.
-  // Uses 'fifteen' register (must hold 15), 'fromPerm' and 'fSplt' vectors.
   // ==========================================================================
   void aes_load_unaligned(VectorRegister vDst, Register src,
                            Register fifteen,
                            VectorRegister fromPerm, VectorRegister fSplt,
                            VectorRegister vTmp1) {
+    __ li              (fifteen, 15);
     __ lvx             (vDst, src);
     __ lvx             (vTmp1, fifteen, src);
     __ lvsl            (fromPerm, src);
 #ifdef VM_LITTLE_ENDIAN
+    __ vspltisb        (fSplt, 0x0f);
     __ vxor            (fromPerm, fromPerm, fSplt);
 #endif
     __ vperm           (vDst, vDst, vTmp1, fromPerm);
@@ -3498,13 +3511,10 @@ class StubGenerator: public StubCodeGenerator {
 
   // ==========================================================================
   // Helper: Unaligned store of 16 bytes with endian handling
-  //
-  // Stores vSrc to 'dst'. Clobbers 'hi' and 'lo' registers.
-  // On LE, requires 'toPerm' and 'fSplt' for byte-swap.
   // ==========================================================================
   void aes_store_unaligned(VectorRegister vSrc, Register dst,
                             Register hi, Register lo,
-                            VectorRegister toPerm, VectorRegister fSplt,
+                            VectorRegister toPerm,
                             VectorRegister vTmp1) {
 #ifdef VM_LITTLE_ENDIAN
     __ vperm           (vSrc, vSrc, vSrc, toPerm);
@@ -3543,8 +3553,9 @@ class StubGenerator: public StubCodeGenerator {
     Register keylen         = R8;
     Register temp           = R9;
     Register keypos         = R10;
+    Register len            = R11;
     Register fifteen        = R12;
-    Register len            = R14;
+
 
     VectorRegister vRet     = VR0;
     VectorRegister vKey1    = VR1;
@@ -3559,17 +3570,8 @@ class StubGenerator: public StubCodeGenerator {
     VectorRegister vTmp2    = VR10;
     VectorRegister vIn      = VR11;
     VectorRegister vIV      = VR12;
-
-    // Save non-volatile register
-    __ std             (R14, -8, R1_SP);
+    
     __ mr              (len, input_len);
-    __ li              (fifteen, 15);
-
-    // Setup fSplt for LE endian handling
-#ifdef VM_LITTLE_ENDIAN
-    __ vspltisb        (fSplt, 0x0f);
-#endif
-
     // Load IV
     aes_load_unaligned(vIV, rvec, fifteen, fromPerm, fSplt, vTmp1);
 
@@ -3609,11 +3611,11 @@ class StubGenerator: public StubCodeGenerator {
     // Ciphertext becomes next IV
     __ vor             (vIV, vRet, vRet);
 
-    // Store ciphertext
-    aes_store_unaligned(vRet, to, fifteen, temp, toPerm, fSplt, vTmp1);
+    // Store ciphertext,Reusing fifteen and temp
+    aes_store_unaligned(vRet, to, fifteen, temp, toPerm, vTmp1);
     __ addi            (to, to, 16);
 
-    // Reload fifteen (clobbered by store — hi=fifteen alias)
+    // Reload fifteen (value replaced by store)
     __ li              (fifteen, 15);
 
     // Loop control
@@ -3622,13 +3624,9 @@ class StubGenerator: public StubCodeGenerator {
     __ bne             (CR0, L_enc_loop);
 
     // Save final IV back to rvec
-    aes_store_unaligned(vIV, rvec, fifteen, temp, toPerm, fSplt, vTmp1);
-
-    // Return input_len
+    aes_store_unaligned(vIV, rvec, fifteen, temp, toPerm, vTmp1);
     __ mr              (R3_RET, input_len);
-    __ ld              (R14, -8, R1_SP);
     __ blr();
-
     return start;
   }
 
@@ -3659,8 +3657,9 @@ class StubGenerator: public StubCodeGenerator {
     Register keylen         = R8;
     Register temp           = R9;
     Register keypos         = R10;
+    Register len            = R11;
     Register fifteen        = R12;
-    Register len            = R14;
+
 
     VectorRegister vRet     = VR0;
     VectorRegister vKey1    = VR1;
@@ -3677,16 +3676,7 @@ class StubGenerator: public StubCodeGenerator {
     VectorRegister vIV      = VR12;
     VectorRegister vSavedCT = VR13;
 
-    // Save non-volatile register
-    __ std             (R14, -8, R1_SP);
     __ mr              (len, input_len);
-    __ li              (fifteen, 15);
-
-    // Setup fSplt for LE endian handling
-#ifdef VM_LITTLE_ENDIAN
-    __ vspltisb        (fSplt, 0x0f);
-#endif
-
     // Load IV
     aes_load_unaligned(vIV, rvec, fifteen, fromPerm, fSplt, vTmp1);
 
@@ -3730,7 +3720,7 @@ class StubGenerator: public StubCodeGenerator {
     __ vor             (vIV, vSavedCT, vSavedCT);
 
     // Store plaintext
-    aes_store_unaligned(vRet, to, fifteen, temp, toPerm, fSplt, vTmp1);
+    aes_store_unaligned(vRet, to, fifteen, temp, toPerm, vTmp1);
     __ addi            (to, to, 16);
 
     // Reload fifteen (clobbered by store)
@@ -3742,11 +3732,8 @@ class StubGenerator: public StubCodeGenerator {
     __ bne             (CR0, L_dec_loop);
 
     // Save final IV back to rvec
-    aes_store_unaligned(vIV, rvec, fifteen, temp, toPerm, fSplt, vTmp1);
-
-    // Return input_len
+    aes_store_unaligned(vIV, rvec, fifteen, temp, toPerm, vTmp1);
     __ mr              (R3_RET, input_len);
-    __ ld              (R14, -8, R1_SP);
     __ blr();
 
     return start;
