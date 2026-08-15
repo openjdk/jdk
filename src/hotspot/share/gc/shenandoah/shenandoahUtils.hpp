@@ -257,6 +257,35 @@ inline size_t shenandoah_safe_size_cast(const double d) {
   return static_cast<size_t>(d);
 }
 
+struct ShenandoahSignedSize {
+  const double value;
+  const char* unit;
+
+  static ShenandoahSignedSize get(double v) {
+    if (!std::isfinite(v)) {
+      return { v, "B"};
+    }
+
+    const double sign = v < 0 ? -1.0 : 1.0;
+    const double magnitude = fabsd(v);
+
+#ifdef _LP64
+    if (magnitude >= 100.0 * G) {
+      return { sign * magnitude / G, "G"};
+    }
+#endif
+
+    if (magnitude >= 100.0 * M) {
+      return { sign * magnitude / M, "M"};
+    }
+
+    if (magnitude >= 100.0 * K) {
+      return { sign * magnitude / K,"K"};
+    }
+
+    return { sign * magnitude, "B" };
+  }
+};
 
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHUTILS_HPP
