@@ -135,35 +135,6 @@ public class AddmodsOption {
           .shouldContain("WARNING: Using incubator modules: jdk.incubator.vector")
           .shouldHaveExitValue(0);
 
-        if (Compiler.isJVMCIEnabled()) {
-            // dump an archive with JVMCI option which indirectly adds the
-            // jdk.internal.vm.ci module using the --add-modules option
-            archiveName = TestCommon.getNewArchiveName("jvmci-module");
-            TestCommon.setCurrentArchiveName(archiveName);
-            oa = TestCommon.dumpBaseArchive(
-                archiveName,
-                loggingOption,
-                "-XX:+UnlockExperimentalVMOptions",
-                "-XX:+EagerJVMCI", "-XX:+UseJVMCICompiler",
-                "-version");
-            oa.shouldHaveExitValue(0);
-
-            // run with the JVMCI option
-            oa = TestCommon.execCommon(
-                loggingOption,
-                "-XX:+UnlockExperimentalVMOptions",
-                "-XX:+EagerJVMCI", "-XX:+UseJVMCICompiler",
-                "-version");
-            try {
-                oa.shouldHaveExitValue(0)
-                  .shouldMatch("aot,module.*Restored from archive: entry.0x.*name jdk.internal.vm.ci");
-            } catch (RuntimeException re) {
-                // JVMCI compile may not be available
-                oa.shouldHaveExitValue(1)
-                  .shouldContain("Cannot use JVMCI compiler: No JVMCI compiler found");
-            }
-        }
-
         // dump an archive with multiple modules in -add-modules
         archiveName = TestCommon.getNewArchiveName("muti-modules");
         TestCommon.setCurrentArchiveName(archiveName);

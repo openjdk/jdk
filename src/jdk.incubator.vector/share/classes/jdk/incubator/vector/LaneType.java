@@ -40,7 +40,8 @@ enum LaneType {
     BYTE(byte.class, Byte.class, byte[].class, 'I', -1, Byte.SIZE, byte.class),
     SHORT(short.class, Short.class, short[].class, 'I', -1, Short.SIZE, short.class),
     INT(int.class, Integer.class, int[].class, 'I', -1, Integer.SIZE, int.class),
-    LONG(long.class, Long.class, long[].class, 'I', -1, Long.SIZE, long.class);
+    LONG(long.class, Long.class, long[].class, 'I', -1, Long.SIZE, long.class),
+    FLOAT16(Float16.class, Short.class, short[].class, 'F', 11, Float16.SIZE, short.class);
 
     LaneType(Class<?> elementType,
              Class<?> genericElementType,
@@ -66,7 +67,7 @@ enum LaneType {
         // printName.  If we do unsigned or vector or bit lane types,
         // report that condition also.
         this.typeChar = genericElementType.getSimpleName().charAt(0);
-        assert("FDBSIL".indexOf(typeChar) == ordinal()) : this;
+        assert("FDBSILS".charAt(ordinal()) == typeChar) : this;
         this.carrierType = carrierType;
         assert(carrierType.isPrimitive());
 
@@ -181,7 +182,8 @@ enum LaneType {
         SK_SHORT    = 4,
         SK_INT      = 5,
         SK_LONG     = 6,
-        SK_LIMIT    = 7;
+        SK_FLOAT16  = 7,
+        SK_LIMIT    = 8;
 
     /*package-private*/
     @ForceInline
@@ -278,5 +280,6 @@ enum LaneType {
         assert(ofLaneTypeOrdinal(LT_SHORT) == SHORT);
         assert(ofLaneTypeOrdinal(LT_INT) == INT);
         assert(ofLaneTypeOrdinal(LT_LONG) == LONG);
+        assert(ofLaneTypeOrdinal(LT_FLOAT16) == FLOAT16);
     }
 }

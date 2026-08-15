@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -226,7 +226,7 @@ class frame {
   inline void interpreted_frame_oop_map(InterpreterOopMap* mask) const;
 
   // returns the sending frame
-  inline frame sender(RegisterMap* map) const;
+  ALWAYSINLINE frame sender(RegisterMap* map) const;
 
   bool safe_for_sender(JavaThread *thread);
 
@@ -239,7 +239,7 @@ class frame {
 
  private:
   // Helper methods for better factored code in frame::sender
-  inline frame sender_for_compiled_frame(RegisterMap* map) const;
+  ALWAYSINLINE frame sender_for_compiled_frame(RegisterMap* map) const;
   frame sender_for_entry_frame(RegisterMap* map) const;
   frame sender_for_interpreter_frame(RegisterMap* map) const;
   frame sender_for_upcall_stub_frame(RegisterMap* map) const;
@@ -282,6 +282,7 @@ class frame {
 
   // Support for deoptimization
   void deoptimize(JavaThread* thread);
+  void deoptimize(JavaThread* thread, stackChunkOop chunk);
 
   // The frame's original SP, before any extension by an interpreted callee;
   // used for packing debug info into vframeArray objects and vframeArray lookup.
@@ -478,13 +479,13 @@ class frame {
  public:
   // Memory management
   void oops_do(OopClosure* f, NMethodClosure* cf, const RegisterMap* map) {
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
     DerivedPointerIterationMode dpim = DerivedPointerTable::is_active() ?
                                        DerivedPointerIterationMode::_with_table :
                                        DerivedPointerIterationMode::_ignore;
-#else
+#else // COMPILER2
     DerivedPointerIterationMode dpim = DerivedPointerIterationMode::_ignore;;
-#endif
+#endif // COMPILER2
     oops_do_internal(f, cf, nullptr, dpim, map, true);
   }
 

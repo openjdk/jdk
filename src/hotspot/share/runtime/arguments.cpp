@@ -54,6 +54,7 @@
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/flags/jvmFlagAccess.hpp"
 #include "runtime/flags/jvmFlagLimit.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
@@ -74,6 +75,8 @@
 #include "jfr/jfr.hpp"
 #endif
 
+#include <string.h>
+
 static const char _default_java_launcher[] = "generic";
 
 #define DEFAULT_JAVA_LAUNCHER _default_java_launcher
@@ -84,9 +87,6 @@ int    Arguments::_num_jvm_flags                = 0;
 char** Arguments::_jvm_args_array               = nullptr;
 int    Arguments::_num_jvm_args                 = 0;
 unsigned int Arguments::_addmods_count          = 0;
-#if INCLUDE_JVMCI
-bool   Arguments::_jvmci_module_added           = false;
-#endif
 char*  Arguments::_java_command                 = nullptr;
 SystemProperty* Arguments::_system_properties   = nullptr;
 size_t Arguments::_conservative_max_heap_alignment = 0;
@@ -96,7 +96,6 @@ const char*  Arguments::_sun_java_launcher      = DEFAULT_JAVA_LAUNCHER;
 bool   Arguments::_executing_unit_tests         = false;
 
 // These parameters are reset in method parse_vm_init_args()
-bool   Arguments::_AlwaysCompileLoopMethods     = AlwaysCompileLoopMethods;
 bool   Arguments::_UseOnStackReplacement        = UseOnStackReplacement;
 bool   Arguments::_BackgroundCompilation        = BackgroundCompilation;
 bool   Arguments::_ClipInlining                 = ClipInlining;
@@ -532,6 +531,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "DynamicDumpSharedSpaces",      JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "RequireSharedSpaces",          JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "UseSharedSpaces",              JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
+  { "CompilationMode",              JDK_Version::jdk(28), JDK_Version::jdk(29), JDK_Version::jdk(30)},
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "InitiatingHeapOccupancyPercent", JDK_Version::jdk(27),  JDK_Version::jdk(28), JDK_Version::jdk(29) },
@@ -545,17 +545,7 @@ static SpecialFlag const special_jvm_flags[] = {
 #ifdef _LP64
   { "UseCompressedClassPointers",   JDK_Version::jdk(25),  JDK_Version::jdk(27), JDK_Version::undefined() },
 #endif
-
-  { "PSChunkLargeArrays",           JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "ParallelRefProcEnabled",       JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "ParallelRefProcBalancingEnabled", JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "MaxRAM",                       JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "NewSizeThreadIncrease",        JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "NeverActAsServerClassMachine", JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "AlwaysActAsServerClassMachine", JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "UseXMMForArrayCopy",           JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "UseNewLongLShift",             JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "AggressiveHeap",               JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
+  { "AlwaysCompileLoopMethods",     JDK_Version::jdk(27),  JDK_Version::jdk(28), JDK_Version::jdk(29) },
 
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
@@ -1367,7 +1357,6 @@ void Arguments::set_mode_flags(Mode mode) {
   // Default values may be platform/compiler dependent -
   // use the saved values
   ClipInlining               = Arguments::_ClipInlining;
-  AlwaysCompileLoopMethods   = Arguments::_AlwaysCompileLoopMethods;
   UseOnStackReplacement      = Arguments::_UseOnStackReplacement;
   BackgroundCompilation      = Arguments::_BackgroundCompilation;
 
@@ -1379,7 +1368,6 @@ void Arguments::set_mode_flags(Mode mode) {
   case _int:
     UseCompiler              = false;
     UseLoopCounter           = false;
-    AlwaysCompileLoopMethods = false;
     UseOnStackReplacement    = false;
     break;
   case _mixed:
@@ -1573,18 +1561,6 @@ bool Arguments::check_vm_args_consistency() {
   bool status = true;
 
   status = CompilerConfig::check_args_consistency(status);
-#if INCLUDE_JVMCI
-  if (status && EnableJVMCI) {
-    // Add the JVMCI module if not using libjvmci or EnableJVMCI
-    // was explicitly set on the command line or in the jimage.
-    if ((!UseJVMCINativeLibrary || FLAG_IS_CMDLINE(EnableJVMCI) || FLAG_IS_JIMAGE_RESOURCE(EnableJVMCI)) && ClassLoader::is_module_observable("jdk.internal.vm.ci") && !_jvmci_module_added) {
-      if (!create_numbered_module_property("jdk.module.addmods", "jdk.internal.vm.ci", _addmods_count++)) {
-        return false;
-      }
-    }
-  }
-#endif
-
 #if INCLUDE_JFR
   if (status && (FlightRecorderOptions || StartFlightRecording)) {
     if (!create_numbered_module_property("jdk.module.addmods", "jdk.jfr", _addmods_count++)) {
@@ -1697,7 +1673,6 @@ Arguments::ArgsRange Arguments::parse_memory_size(const char* s,
 
 jint Arguments::parse_vm_init_args(GrowableArrayCHeap<VMInitArgsGroup, mtArguments>* all_args) {
   // Save default settings for some mode flags
-  Arguments::_AlwaysCompileLoopMethods = AlwaysCompileLoopMethods;
   Arguments::_UseOnStackReplacement    = UseOnStackReplacement;
   Arguments::_ClipInlining             = ClipInlining;
   Arguments::_BackgroundCompilation    = BackgroundCompilation;
@@ -1727,6 +1702,7 @@ jint Arguments::parse_vm_init_args(GrowableArrayCHeap<VMInitArgsGroup, mtArgumen
   // needs to know about processor and memory resources must occur after
   // this point.
 
+  os::check_temp_directory();
   os::init_container_support();
 
   SystemMemoryBarrier::initialize();
@@ -1974,19 +1950,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
       if (!create_numbered_module_property("jdk.module.addmods", tail, _addmods_count++)) {
         return JNI_ENOMEM;
       }
-#if INCLUDE_JVMCI
-      if (!_jvmci_module_added) {
-        const char *jvmci_module = strstr(tail, "jdk.internal.vm.ci");
-        if (jvmci_module != nullptr) {
-          char before = *(jvmci_module - 1);
-          char after  = *(jvmci_module + strlen("jdk.internal.vm.ci"));
-          if ((before == '=' || before == ',') && (after == '\0' || after == ',')) {
-            FLAG_SET_DEFAULT(EnableJVMCI, true);
-            _jvmci_module_added = true;
-          }
-        }
-      }
-#endif
     } else if (match_option(option, "--enable-native-access=", &tail)) {
       if (!create_numbered_module_property("jdk.module.enable.native.access", tail, enable_native_access_count++)) {
         return JNI_ENOMEM;
@@ -2214,11 +2177,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
       if (FLAG_SET_CMDLINE(ThreadStackSize, value) != JVMFlag::SUCCESS) {
         return JNI_EINVAL;
       }
-    } else if (match_option(option, "-Xmaxjitcodesize", &tail) ||
-               match_option(option, "-XX:ReservedCodeCacheSize=", &tail)) {
-      if (match_option(option, "-Xmaxjitcodesize", &tail)) {
-        warning("Option -Xmaxjitcodesize was deprecated in JDK 26 and will likely be removed in a future release.");
-      }
+    } else if (match_option(option, "-Xmaxjitcodesize", &tail)) {
+      warning("Ignoring option %s; support was removed in JDK 27", option->optionString);
+    } else if (match_option(option, "-XX:ReservedCodeCacheSize=", &tail)) {
       julong long_ReservedCodeCacheSize = 0;
 
       ArgsRange errcode = parse_memory_size(tail, &long_ReservedCodeCacheSize, 1);
@@ -2521,46 +2482,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
           "ManagementServer is not supported in this VM.\n");
         return JNI_ERR;
 #endif // INCLUDE_MANAGEMENT
-#if INCLUDE_JVMCI
-    } else if (match_option(option, "-XX:-EnableJVMCIProduct") || match_option(option, "-XX:-UseGraalJIT")) {
-      if (EnableJVMCIProduct) {
-        jio_fprintf(defaultStream::error_stream(),
-                  "-XX:-EnableJVMCIProduct or -XX:-UseGraalJIT cannot come after -XX:+EnableJVMCIProduct or -XX:+UseGraalJIT\n");
-        return JNI_EINVAL;
-      }
-    } else if (match_option(option, "-XX:+EnableJVMCIProduct") || match_option(option, "-XX:+UseGraalJIT")) {
-      bool use_graal_jit = match_option(option, "-XX:+UseGraalJIT");
-      if (use_graal_jit) {
-        const char* jvmci_compiler = get_property("jvmci.Compiler");
-        if (jvmci_compiler != nullptr) {
-          if (strncmp(jvmci_compiler, "graal", strlen("graal")) != 0) {
-            jio_fprintf(defaultStream::error_stream(),
-              "Value of jvmci.Compiler incompatible with +UseGraalJIT: %s\n", jvmci_compiler);
-            return JNI_ERR;
-          }
-        } else if (!add_property("jvmci.Compiler=graal")) {
-            return JNI_ENOMEM;
-        }
-      }
-
-      // Just continue, since "-XX:+EnableJVMCIProduct" or "-XX:+UseGraalJIT" has been specified before
-      if (EnableJVMCIProduct) {
-        continue;
-      }
-      JVMFlag *jvmciFlag = JVMFlag::find_flag("EnableJVMCIProduct");
-      // Allow this flag if it has been unlocked.
-      if (jvmciFlag != nullptr && jvmciFlag->is_unlocked()) {
-        if (!JVMCIGlobals::enable_jvmci_product_mode(origin, use_graal_jit)) {
-          jio_fprintf(defaultStream::error_stream(),
-            "Unable to enable JVMCI in product mode\n");
-          return JNI_ERR;
-        }
-      }
-      // The flag was locked so process normally to report that error
-      else if (!process_argument(use_graal_jit ? "UseGraalJIT" : "EnableJVMCIProduct", args->ignoreUnrecognized, origin)) {
-        return JNI_EINVAL;
-      }
-#endif // INCLUDE_JVMCI
 #if INCLUDE_JFR
     } else if (match_jfr_option(&option)) {
       return JNI_EINVAL;
@@ -2701,7 +2622,7 @@ jint Arguments::finalize_vm_init_args() {
     FLAG_SET_ERGO(InitialTenuringThreshold, MaxTenuringThreshold);
   }
 
-#if !COMPILER2_OR_JVMCI
+#ifndef COMPILER2
   // Don't degrade server performance for footprint
   if (FLAG_IS_DEFAULT(UseLargePages) &&
       MaxHeapSize < LargePageHeapSizeThreshold) {
@@ -2712,12 +2633,15 @@ jint Arguments::finalize_vm_init_args() {
   }
 
   UNSUPPORTED_OPTION(ProfileInterpreter);
-#endif
+#endif // !COMPILER2
 
   // Parse the CompilationMode flag
   if (!CompilationModeFlag::initialize()) {
     return JNI_ERR;
   }
+
+  // Called after ClassLoader::lookup_vm_options() but before class loading begins.
+  ClassLoader::set_preview_mode(is_valhalla_enabled());
 
   if (!check_vm_args_consistency()) {
     return JNI_ERR;
@@ -3041,7 +2965,7 @@ static bool use_vm_log() {
   if (LogCompilation || !FLAG_IS_DEFAULT(LogFile) ||
       PrintCompilation || PrintInlining || PrintDependencies || PrintNativeNMethods ||
       PrintDebugInfo || PrintRelocations || PrintNMethods || PrintExceptionHandlers ||
-      PrintAssembly || TraceDeoptimization ||
+      PrintAssembly ||
       (VerifyDependencies && FLAG_IS_CMDLINE(VerifyDependencies))) {
     return true;
   }
@@ -3514,24 +3438,6 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   return JNI_OK;
 }
 
-void Arguments::set_compact_headers_flags() {
-#ifdef _LP64
-  if (UseCompactObjectHeaders && !UseObjectMonitorTable) {
-    // If UseCompactObjectHeaders is on the command line, turn on UseObjectMonitorTable.
-    if (FLAG_IS_CMDLINE(UseCompactObjectHeaders)) {
-      FLAG_SET_DEFAULT(UseObjectMonitorTable, true);
-
-      // If UseObjectMonitorTable is on the command line, turn off UseCompactObjectHeaders.
-    } else if (FLAG_IS_CMDLINE(UseObjectMonitorTable)) {
-      FLAG_SET_DEFAULT(UseCompactObjectHeaders, false);
-      // If neither on the command line, the defaults are incompatible, but turn on UseObjectMonitorTable.
-    } else {
-      FLAG_SET_DEFAULT(UseObjectMonitorTable, true);
-    }
-  }
-#endif
-}
-
 jint Arguments::apply_ergo() {
   // Set flags based on ergonomics.
   jint result = set_ergonomics_flags();
@@ -3541,8 +3447,6 @@ jint Arguments::apply_ergo() {
   GCConfig::arguments()->set_heap_size();
 
   GCConfig::arguments()->initialize();
-
-  set_compact_headers_flags();
 
   CompressedKlassPointers::pre_initialize();
 
@@ -3595,6 +3499,74 @@ jint Arguments::apply_ergo() {
     log_info(verification)("Turning on remote verification because local verification is on");
     FLAG_SET_DEFAULT(BytecodeVerificationRemote, true);
   }
+  if (!is_valhalla_enabled()) {
+#define WARN_IF_NOT_DEFAULT_FLAG(flag)                                                                       \
+    if (!FLAG_IS_DEFAULT(flag)) {                                                                            \
+      warning("Preview-specific flag \"%s\" has no effect when --enable-preview is not specified.", #flag);  \
+    }
+
+#define DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(flag)  \
+    WARN_IF_NOT_DEFAULT_FLAG(flag)                  \
+    FLAG_SET_DEFAULT(flag, false);
+
+    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(InlineTypePassFieldsAsArgs);
+    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(InlineTypeReturnedAsFields);
+    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(UseArrayFlattening);
+    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(UseFieldFlattening);
+    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(UseNullFreeNonAtomicValueFlattening);
+    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(UseNullableAtomicValueFlattening);
+    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(UseNullFreeAtomicValueFlattening);
+    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(UseNullableNonAtomicValueFlattening);
+    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(UseAcmpFastPath);
+    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(PrintInlineLayout);
+    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(PrintFlatArrayLayout);
+    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(IgnoreAssertUnsetFields);
+    WARN_IF_NOT_DEFAULT_FLAG(FlatArrayElementMaxOops);
+    WARN_IF_NOT_DEFAULT_FLAG(ForceNonTearable);
+#ifdef ASSERT
+    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(StressCallingConvention);
+    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(PreloadClasses);
+    WARN_IF_NOT_DEFAULT_FLAG(PrintInlineKlassFields);
+#endif
+#ifdef COMPILER1
+    DEBUG_ONLY(DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(C1UseDelayedFlattenedFieldReads);)
+#endif
+#ifdef COMPILER2
+    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(UseArrayLoadStoreProfile);
+    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(UseACmpProfile);
+#endif
+#undef DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT
+#undef WARN_IF_NOT_DEFAULT_FLAG
+  } else {
+#define DISABLE_FLAG_AND_WARN_IF_NO_FLATTENING(flag, fallback)                                        \
+    if (!FLAG_IS_DEFAULT(flag) && !UseArrayFlattening && !UseFieldFlattening) {                       \
+      warning("Flattening flag \"%s\" has no effect when all flattening modes are disabled.", #flag); \
+      FLAG_SET_DEFAULT(flag, fallback);                                                               \
+    }
+
+    DISABLE_FLAG_AND_WARN_IF_NO_FLATTENING(UseNullFreeNonAtomicValueFlattening, false);
+    DISABLE_FLAG_AND_WARN_IF_NO_FLATTENING(UseNullableAtomicValueFlattening, false);
+    DISABLE_FLAG_AND_WARN_IF_NO_FLATTENING(UseNullFreeAtomicValueFlattening, false);
+    DISABLE_FLAG_AND_WARN_IF_NO_FLATTENING(UseNullableNonAtomicValueFlattening, false);
+    DISABLE_FLAG_AND_WARN_IF_NO_FLATTENING(FlatArrayElementMaxOops, 0);
+    DISABLE_FLAG_AND_WARN_IF_NO_FLATTENING(FlatteningBudget, 0);
+#undef DISABLE_FLAG_AND_WARN_IF_NO_FLATTENING
+    if (is_interpreter_only() && !CDSConfig::is_dumping_archive() && !UseSharedSpaces) {
+      // Disable calling convention optimizations if inline types are not supported.
+      // Also these aren't useful in -Xint. However, don't disable them when dumping or using
+      // the CDS archive, as the values must match between dumptime and runtime.
+      FLAG_SET_DEFAULT(InlineTypePassFieldsAsArgs, false);
+      FLAG_SET_DEFAULT(InlineTypeReturnedAsFields, false);
+    }
+    if (!UseNullFreeNonAtomicValueFlattening &&
+        !UseNullableAtomicValueFlattening &&
+        !UseNullFreeAtomicValueFlattening &&
+        !UseNullableNonAtomicValueFlattening) {
+      // Flattening is disabled
+      FLAG_SET_DEFAULT(UseArrayFlattening, false);
+      FLAG_SET_DEFAULT(UseFieldFlattening, false);
+    }
+  }
 
 #ifndef PRODUCT
   if (!LogVMOutput && FLAG_IS_DEFAULT(LogVMOutput)) {
@@ -3608,7 +3580,7 @@ jint Arguments::apply_ergo() {
     JVMFlag::printSetFlags(tty);
   }
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   if (!FLAG_IS_DEFAULT(EnableVectorSupport) && !EnableVectorSupport) {
     if (!FLAG_IS_DEFAULT(EnableVectorReboxing) && EnableVectorReboxing) {
       warning("Disabling EnableVectorReboxing since EnableVectorSupport is turned off.");
@@ -3624,9 +3596,7 @@ jint Arguments::apply_ergo() {
     }
     FLAG_SET_DEFAULT(EnableVectorAggressiveReboxing, false);
   }
-#endif // COMPILER2_OR_JVMCI
 
-#ifdef COMPILER2
   if (!FLAG_IS_DEFAULT(UseLoopPredicate) && !UseLoopPredicate && UseProfiledLoopPredicate) {
     warning("Disabling UseProfiledLoopPredicate since UseLoopPredicate is turned off.");
     FLAG_SET_ERGO(UseProfiledLoopPredicate, false);

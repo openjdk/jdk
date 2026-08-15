@@ -41,22 +41,30 @@
 #include "runtime/vmThread.hpp"
 #include "services/memoryService.hpp"
 
+#include <cmath>
+#include <limits>
+
 class GCTimer;
 class ShenandoahGeneration;
 
-#define SHENANDOAH_RETURN_EVENT_MESSAGE(generation_type, prefix, postfix) \
+#define SHENANDOAH_EVENT_MESSAGE(loc, generation_type, prefix, postfix)   \
+  const char* loc;                                                        \
   switch (generation_type) {                                              \
     case NON_GEN:                                                         \
-      return prefix postfix;                                              \
+      loc = prefix postfix;                                               \
+      break;                                                              \
     case GLOBAL:                                                          \
-      return prefix " (Global)" postfix;                                  \
+      loc = prefix " (Global)" postfix;                                   \
+      break;                                                              \
     case YOUNG:                                                           \
-      return prefix " (Young)" postfix;                                   \
+      loc = prefix " (Young)" postfix;                                    \
+      break;                                                              \
     case OLD:                                                             \
-      return prefix " (Old)" postfix;                                     \
+      loc = prefix " (Old)" postfix;                                      \
+      break;                                                              \
     default:                                                              \
       ShouldNotReachHere();                                               \
-      return prefix " (Unknown)" postfix;                                 \
+      loc = prefix " (Unknown)" postfix;                                  \
   }                                                                       \
 
 class ShenandoahGCSession : public StackObj {
@@ -234,6 +242,21 @@ public:
     _heap->allow_uncommit();
   }
 };
+
+// Casting a double that cannot be represented as a size_t may result in undefined behavior.
+// This small function checks if the given double is representable in a size_t and returns
+// that representation if it is. Otherwise, if the double cannot be safely cast to a size_t
+// it returns zero.
+inline size_t shenandoah_safe_size_cast(const double d) {
+  static constexpr double size_max_as_double = static_cast<double>(std::numeric_limits<size_t>::max());
+  if (std::isnan(d) || d < 0 || d >= size_max_as_double) {
+    // NaN is unordered, all comparisons will be false.
+    // +Inf is always greater than, -Inf is always less than
+    return 0;
+  }
+  return static_cast<size_t>(d);
+}
+
 
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHUTILS_HPP
