@@ -1108,15 +1108,13 @@ address generate_kyberBarrettReduce_avx512(StubGenerator *stubgen,
 void StubGenerator::generate_kyber_stubs() {
   // Generate Kyber intrinsics code
   if (UseKyberIntrinsics) {
-    if (VM_Version::supports_evex()) {
-      StubRoutines::_kyberNtt = generate_kyberNtt_avx512(this, _masm);
-      StubRoutines::_kyberInverseNtt = generate_kyberInverseNtt_avx512(this, _masm);
-      StubRoutines::_kyberNttMult = generate_kyberNttMult_avx512(this, _masm);
-      StubRoutines::_kyberAddPoly_2 = generate_kyberAddPoly_2_avx512(this, _masm);
-      StubRoutines::_kyberAddPoly_3 = generate_kyberAddPoly_3_avx512(this, _masm);
-      StubRoutines::_kyber12To16 = generate_kyber12To16_avx512(this, _masm);
-      StubRoutines::_kyberBarrettReduce = generate_kyberBarrettReduce_avx512(this, _masm);
-    }
+    StubRoutines::_kyberNtt = generate_kyberNtt_avx512(this, _masm);
+    StubRoutines::_kyberInverseNtt = generate_kyberInverseNtt_avx512(this, _masm);
+    StubRoutines::_kyberNttMult = generate_kyberNttMult_avx512(this, _masm);
+    StubRoutines::_kyberAddPoly_2 = generate_kyberAddPoly_2_avx512(this, _masm);
+    StubRoutines::_kyberAddPoly_3 = generate_kyberAddPoly_3_avx512(this, _masm);
+    StubRoutines::_kyber12To16 = generate_kyber12To16_avx512(this, _masm);
+    StubRoutines::_kyberBarrettReduce = generate_kyberBarrettReduce_avx512(this, _masm);
   }
 }
 

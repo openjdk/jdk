@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,6 @@ void C2EntryBarrierStub::emit(C2_MacroAssembler& masm) {
   __ b(continuation());
 
   __ bind(guard());
-  __ relocate(entry_guard_Relocation::spec());
   __ emit_int32(0);   // nmethod guard value
 }
 

@@ -26,6 +26,7 @@
 #define SHARE_GC_G1_G1COLLECTIONSET_HPP
 
 #include "gc/g1/g1CollectionSetCandidates.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -142,14 +143,14 @@ class G1CollectionSet {
   // All regions in _regions below _num_regions are assumed to be part of the
   // collection set.
   // We assume that at any time there is at most only one writer and (one or more)
-  // concurrent readers. This means synchronization using storestore and loadload
-  // barriers on the writer and reader respectively only are sufficient.
+  // concurrent readers. This means synchronization using release and acquire
+  // on the writer and reader respectively only are sufficient.
   //
   // This corresponds to the regions referenced by the candidate groups further below.
   uint* _regions;
   uint _max_num_regions;
 
-  volatile uint _num_regions;
+  Atomic<uint> _num_regions;
 
   // Old gen groups selected for evacuation.
   G1CSetCandidateGroupList _groups;
@@ -285,7 +286,7 @@ public:
   // Returns the number of regions in the current collection set increment.
   uint num_regions_in_increment() const { return num_regions() - _regions_inc_part_start; }
   // Returns the total number of regions in the current collection set.
-  uint num_regions() const { return _num_regions; }
+  uint num_regions() const { return _num_regions.load_relaxed(); }
 
   // Iterate over the entire collection set (all increments calculated so far), applying
   // the given G1HeapRegionClosure on all of the regions.

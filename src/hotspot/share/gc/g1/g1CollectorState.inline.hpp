@@ -42,7 +42,7 @@ inline void G1CollectorState::set_in_full_gc() {
 
 inline void G1CollectorState::set_in_concurrent_start_gc() {
   _phase = Phase::YoungConcurrentStart;
-  _initiate_conc_mark_if_possible = false;
+  set_initiate_conc_mark_if_possible(false);
 }
 inline void G1CollectorState::set_in_prepare_mixed_gc() {
   _phase = Phase::YoungPrepareMixed;

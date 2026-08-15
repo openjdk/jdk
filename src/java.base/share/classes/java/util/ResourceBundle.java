@@ -2842,7 +2842,7 @@ public abstract class ResourceBundle {
             boolean isNorwegianBokmal = false;
             boolean isNorwegianNynorsk = false;
             if (language.equals("no")) {
-                if (region.equals("NO") && variant.equals("NY")) {
+                if (region.equals("NO") && variant.equals("NY") && script.isEmpty()) {
                     variant = "";
                     isNorwegianNynorsk = true;
                 } else {
