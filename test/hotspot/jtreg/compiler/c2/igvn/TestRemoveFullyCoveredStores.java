@@ -23,7 +23,6 @@
 
 package compiler.c2.igvn;
 
-
 import compiler.lib.compile_framework.*;
 import compiler.lib.ir_framework.*;
 import compiler.lib.template_framework.*;
@@ -106,8 +105,9 @@ public class TestRemoveFullyCoveredStores {
 
     // For vector test cases.
     enum StoreOperation {
-        // A later wide vector store fully covers earlier scalar array stores.
-        STORE_MIXED_ARRAY_VECTOR,
+        // A later wide vector store fully covers earlier scalar array
+        // and unsafe stores.
+        STORE_ARRAY_UNSAFE_VECTOR,
         // A later wide vector store fully covers earlier vector stores.
         STORE_VECTOR,
         // Masked vector stores at the same offset with the same mask.
@@ -134,20 +134,27 @@ public class TestRemoveFullyCoveredStores {
     private static TemplateToken sharedGeneratedCode() {
         return Template.make(() -> scope(
             """
-                static final Unsafe UNSAFE = Unsafe.getUnsafe();
+                static final class UnsafeHolder {
+                    static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
-                static final long BYTE_BASE = UNSAFE.arrayBaseOffset(byte[].class);
-                static final long SHORT_BASE = UNSAFE.arrayBaseOffset(short[].class);
-                static final long INT_BASE = UNSAFE.arrayBaseOffset(int[].class);
-                static final long LONG_BASE = UNSAFE.arrayBaseOffset(long[].class);
-                static final long FLOAT_BASE = UNSAFE.arrayBaseOffset(float[].class);
-                static final long DOUBLE_BASE = UNSAFE.arrayBaseOffset(double[].class);
+                    static final long BYTE_BASE = UNSAFE.arrayBaseOffset(byte[].class);
+                    static final long SHORT_BASE = UNSAFE.arrayBaseOffset(short[].class);
+                    static final long INT_BASE = UNSAFE.arrayBaseOffset(int[].class);
+                    static final long LONG_BASE = UNSAFE.arrayBaseOffset(long[].class);
+                    static final long FLOAT_BASE = UNSAFE.arrayBaseOffset(float[].class);
+                    static final long DOUBLE_BASE = UNSAFE.arrayBaseOffset(double[].class);
+                }
 
                 static final ValueLayout.OfShort SHORT_UNALIGNED = ValueLayout.JAVA_SHORT.withByteAlignment(1);
                 static final ValueLayout.OfInt INT_UNALIGNED = ValueLayout.JAVA_INT.withByteAlignment(1);
                 static final ValueLayout.OfLong LONG_UNALIGNED = ValueLayout.JAVA_LONG.withByteAlignment(1);
                 static final ValueLayout.OfFloat FLOAT_UNALIGNED = ValueLayout.JAVA_FLOAT.withByteAlignment(1);
                 static final ValueLayout.OfDouble DOUBLE_UNALIGNED = ValueLayout.JAVA_DOUBLE.withByteAlignment(1);
+
+                static final String STORE_B_RULE = IRNode.START + "StoreB" + IRNode.MID + "Memory: @aryptr:.*" + IRNode.END;
+                static final String STORE_C_RULE = IRNode.START + "StoreC" + IRNode.MID + "Memory: @aryptr:.*" + IRNode.END;
+                static final String STORE_I_RULE = IRNode.START + "StoreI" + IRNode.MID + "Memory: @aryptr:.*" + IRNode.END;
+                static final String STORE_L_RULE = IRNode.START + "StoreL" + IRNode.MID + "Memory: @aryptr:.*" + IRNode.END;
             """
         )).asToken();
     }
@@ -248,27 +255,27 @@ public class TestRemoveFullyCoveredStores {
             16,
             positive ?
             """
-            @IR(failOn = {IRNode.STORE_B,
-                          IRNode.STORE_C,
-                          IRNode.STORE_I},
-                counts = {IRNode.STORE_L, ">= 1"},
+            @IR(failOn = {STORE_B_RULE,
+                          STORE_C_RULE,
+                          STORE_I_RULE},
+                counts = {STORE_L_RULE, ">= 1"},
                 phase = CompilePhase.BEFORE_MATCHING)
             """ : "",
             Template.make(() -> scope(
                 positive ?
                 """
-                        UNSAFE.putByte(array, BYTE_BASE + 4, (byte)0x16);
-                        UNSAFE.putShort(array, BYTE_BASE + 3, (short)0x1582);
-                        UNSAFE.putInt(array, BYTE_BASE + 2, 0x12345678);
-                        UNSAFE.putInt(array, BYTE_BASE, 0x87654321);
-                        UNSAFE.putLong(array, BYTE_BASE, 0x1122334455667788L);
+                        UnsafeHolder.UNSAFE.putByte(array, UnsafeHolder.BYTE_BASE + 4, (byte)0x16);
+                        UnsafeHolder.UNSAFE.putShort(array, UnsafeHolder.BYTE_BASE + 3, (short)0x1582);
+                        UnsafeHolder.UNSAFE.putInt(array, UnsafeHolder.BYTE_BASE + 2, 0x12345678);
+                        UnsafeHolder.UNSAFE.putInt(array, UnsafeHolder.BYTE_BASE, 0x87654321);
+                        UnsafeHolder.UNSAFE.putLong(array, UnsafeHolder.BYTE_BASE, 0x1122334455667788L);
                 """ :
                 """
-                        UNSAFE.putLong(array, BYTE_BASE, 0x1122334455667788L);
-                        UNSAFE.putInt(array, BYTE_BASE, 0x87654321);
-                        UNSAFE.putInt(array, BYTE_BASE + 2, 0x12345678);
-                        UNSAFE.putShort(array, BYTE_BASE + 3, (short)0x1582);
-                        UNSAFE.putByte(array, BYTE_BASE + 4, (byte)0x16);
+                        UnsafeHolder.UNSAFE.putLong(array, UnsafeHolder.BYTE_BASE, 0x1122334455667788L);
+                        UnsafeHolder.UNSAFE.putInt(array, UnsafeHolder.BYTE_BASE, 0x87654321);
+                        UnsafeHolder.UNSAFE.putInt(array, UnsafeHolder.BYTE_BASE + 2, 0x12345678);
+                        UnsafeHolder.UNSAFE.putShort(array, UnsafeHolder.BYTE_BASE + 3, (short)0x1582);
+                        UnsafeHolder.UNSAFE.putByte(array, UnsafeHolder.BYTE_BASE + 4, (byte)0x16);
                 """
             )).asToken()
         );
@@ -333,8 +340,8 @@ public class TestRemoveFullyCoveredStores {
                                      vec, idx, caseType));
             }
 
-            // Array and vector store case.
-            cases.add(vectorCase(StoreOperation.STORE_MIXED_ARRAY_VECTOR,
+            // Array, unsafe and vector store case.
+            cases.add(vectorCase(StoreOperation.STORE_ARRAY_UNSAFE_VECTOR,
                                  vec, idx, caseType));
 
             // Masked vector store case.
@@ -368,14 +375,14 @@ public class TestRemoveFullyCoveredStores {
         int arraySize = switch (op) {
             // The final store was fixed to SPECIES_512 to fully cover earlier stores
             // with narrower species, so the array size is based on the 512-bit species.
-            case STORE_VECTOR               -> 512 * vec.length / vectorBitSize(vec);
+            case STORE_VECTOR              -> 512 * vec.length / vectorBitSize(vec);
             case STORE_VECTOR_MASK,
-                 STORE_MIXED_ARRAY_VECTOR   -> vec.length;
+                 STORE_ARRAY_UNSAFE_VECTOR -> vec.length;
             // Scatter index maps may access index vec.length after shifting lane indices,
             // so allocate one extra element.
             case STORE_VECTOR_SCATTER,
-                 STORE_VECTOR_SCATTER_MASK  -> vec.length + 1;
-            case STORE_RANDOM_MIXED         -> RANDOM_MIXED_ARRAY_SIZE;
+                 STORE_VECTOR_SCATTER_MASK -> vec.length + 1;
+            case STORE_RANDOM_MIXED        -> RANDOM_MIXED_ARRAY_SIZE;
         };
 
         Random testCaseRandom = new Random(RANDOM.nextInt());
@@ -394,7 +401,7 @@ public class TestRemoveFullyCoveredStores {
                vectorBitSize(vec) +
                caseType +
                switch (op) {
-                   case STORE_MIXED_ARRAY_VECTOR  -> "mixedArrayVectorStore";
+                   case STORE_ARRAY_UNSAFE_VECTOR -> "storeArrayUnsafeVector";
                    case STORE_VECTOR              -> "storeVectorCoversMaskedStoreVector";
                    case STORE_VECTOR_MASK         -> "storeVectorMaskedSameOffsetAndMask";
                    case STORE_VECTOR_SCATTER      -> "storeVectorScatterSameOffsetAndIndices";
@@ -411,10 +418,10 @@ public class TestRemoveFullyCoveredStores {
         }
 
         return switch (op) {
-            case STORE_MIXED_ARRAY_VECTOR ->
+            case STORE_ARRAY_UNSAFE_VECTOR ->
                 stableIR(op, vec) ?
                 """
-                @IR(failOn = {IRNode.STORE_I},
+                @IR(failOn = {STORE_I_RULE},
                     counts = {IRNode.STORE_VECTOR, "<= 1"},
                     phase = CompilePhase.BEFORE_MATCHING,
                     applyIf = {"MaxVectorSize", ">= 32"},
@@ -510,7 +517,7 @@ public class TestRemoveFullyCoveredStores {
         ));
 
         var generation = switch (op) {
-            case STORE_MIXED_ARRAY_VECTOR,
+            case STORE_ARRAY_UNSAFE_VECTOR,
                  STORE_RANDOM_MIXED        -> Template.make(() -> scope()).asToken();
             case STORE_VECTOR              -> maskGeneration.asToken();
             case STORE_VECTOR_MASK         -> maskGeneration.asToken();
@@ -521,19 +528,23 @@ public class TestRemoveFullyCoveredStores {
                     maskGeneration.asToken()
                 )).asToken();
         };
+        // Use a fixed byte offset to create an unaligned unsafe store that
+        // produces a Store node.
+        String unalignedUnsafeStore = randomUnsafeStore(3, vec,
+                                                        randomLiteral(vec, testCaseRandom));
 
         String body = switch (op) {
-            case STORE_MIXED_ARRAY_VECTOR  ->
+            case STORE_ARRAY_UNSAFE_VECTOR ->
                 positive ?
                 """
                         array[#idx] = #bv1;
-                        array[#idx2] = #bv2;
+                        #unalignedUnsafeStore
                         v3.intoArray(array, 0);
                 """ :
                 """
                         v3.intoArray(array, 0);
                         array[#idx] = #bv1;
-                        array[#idx2] = #bv2;
+                        #unalignedUnsafeStore
                 """;
 
             case STORE_VECTOR ->
@@ -623,6 +634,7 @@ public class TestRemoveFullyCoveredStores {
             let("bv1", literal(vec, 12)),
             let("bv2", literal(vec, 34)),
             let("bv3", literal(vec, 56)),
+            let("unalignedUnsafeStore", unalignedUnsafeStore),
             generation,
             op == StoreOperation.STORE_VECTOR ?
             """
@@ -657,8 +669,8 @@ public class TestRemoveFullyCoveredStores {
         // Unsafe stores.
         for (int i = 0; i < 2; i++) {
             int limit = (i == 0) ? vectorSize : arraySize;
-            int offset = random.nextInt(0, limit);
-            ops.add(randomUnsafeStore(offset, vec, randomLiteral(vec, random)));
+            int byteOffset = random.nextInt(0, limit) * vec.elementType.byteSize();
+            ops.add(randomUnsafeStore(byteOffset, vec, randomLiteral(vec, random)));
         }
 
         // MemorySegment stores.
@@ -704,19 +716,18 @@ public class TestRemoveFullyCoveredStores {
                """.replace("#ops", String.join("\n", ops));
     }
 
-    private static String randomUnsafeStore(int elementOffset,
+    private static String randomUnsafeStore(int byteOffset,
                                             VectorType.Vector vec,
                                             String value) {
-        String byteOffset = arrayBase(vec) + " + " +
-                            ((long) elementOffset * vec.elementType.byteSize());
+        String finalByteOffset = arrayBase(vec) + " + " + byteOffset;
 
         return switch (vec.elementType.name()) {
-            case "byte"   -> "        UNSAFE.putByte(array, " + byteOffset + ", " + value + ");";
-            case "short"  -> "        UNSAFE.putShort(array, " + byteOffset + ", " + value + ");";
-            case "int"    -> "        UNSAFE.putInt(array, " + byteOffset + ", " + value + ");";
-            case "long"   -> "        UNSAFE.putLong(array, " + byteOffset + ", " + value + ");";
-            case "float"  -> "        UNSAFE.putFloat(array, " + byteOffset + ", " + value + ");";
-            case "double" -> "        UNSAFE.putDouble(array, " + byteOffset + ", " + value + ");";
+            case "byte"   -> "        UnsafeHolder.UNSAFE.putByte(array, " + finalByteOffset + ", " + value + ");";
+            case "short"  -> "        UnsafeHolder.UNSAFE.putShort(array, " + finalByteOffset + ", " + value + ");";
+            case "int"    -> "        UnsafeHolder.UNSAFE.putInt(array, " + finalByteOffset + ", " + value + ");";
+            case "long"   -> "        UnsafeHolder.UNSAFE.putLong(array, " + finalByteOffset + ", " + value + ");";
+            case "float"  -> "        UnsafeHolder.UNSAFE.putFloat(array, " + finalByteOffset + ", " + value + ");";
+            case "double" -> "        UnsafeHolder.UNSAFE.putDouble(array, " + finalByteOffset + ", " + value + ");";
             default       ->
                throw new RuntimeException("unsupported vector element type: " +
                                           vec.elementType.name());
@@ -725,12 +736,12 @@ public class TestRemoveFullyCoveredStores {
 
     private static String arrayBase(VectorType.Vector vec) {
         return switch (vec.elementType.name()) {
-            case "byte"   -> "BYTE_BASE";
-            case "short"  -> "SHORT_BASE";
-            case "int"    -> "INT_BASE";
-            case "long"   -> "LONG_BASE";
-            case "float"  -> "FLOAT_BASE";
-            case "double" -> "DOUBLE_BASE";
+            case "byte"   -> "UnsafeHolder.BYTE_BASE";
+            case "short"  -> "UnsafeHolder.SHORT_BASE";
+            case "int"    -> "UnsafeHolder.INT_BASE";
+            case "long"   -> "UnsafeHolder.LONG_BASE";
+            case "float"  -> "UnsafeHolder.FLOAT_BASE";
+            case "double" -> "UnsafeHolder.DOUBLE_BASE";
             default       ->
                 throw new RuntimeException("unsupported vector element type: " +
                                            vec.elementType.name());
@@ -836,11 +847,14 @@ public class TestRemoveFullyCoveredStores {
     // are checked with IR verification.
     private static boolean stableIR(StoreOperation op, VectorType.Vector vec) {
         return switch (op) {
-            case STORE_VECTOR_SCATTER, STORE_VECTOR_SCATTER_MASK ->
+            case STORE_VECTOR_SCATTER,
+                 STORE_VECTOR_SCATTER_MASK ->
                 vec.elementType.name().equals("long") &&
                 vectorBitSize(vec) == 256;
 
-            case STORE_VECTOR_MASK, STORE_MIXED_ARRAY_VECTOR, STORE_VECTOR ->
+            case STORE_VECTOR_MASK,
+                 STORE_ARRAY_UNSAFE_VECTOR,
+                 STORE_VECTOR ->
                 vec.elementType.name().equals("int") &&
                 vectorBitSize(vec) == 256;
 
