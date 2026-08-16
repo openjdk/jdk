@@ -293,6 +293,9 @@ BPERF_SETUP_PRECOMPILED_HEADERS
 # Setup use of ccache, if available
 BPERF_SETUP_CCACHE
 
+# Setup use of sccache, if available
+BPERF_SETUP_SCCACHE
+
 ################################################################################
 #
 # And now the finish...

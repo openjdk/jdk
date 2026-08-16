@@ -132,20 +132,6 @@ private:
   void start_mark();
 
   static bool has_in_place_promotions(ShenandoahHeap* heap);
-
-  // Messages for GC trace events, they have to be immortal for
-  // passing around the logging/tracing systems
-  const char* init_mark_event_message() const;
-  const char* final_mark_event_message() const;
-  const char* verify_final_event_message() const;
-  const char* conc_final_roots_event_message() const;
-  const char* conc_mark_event_message() const;
-  const char* conc_reset_event_message() const;
-  const char* conc_reset_after_collect_event_message() const;
-  const char* conc_weak_refs_event_message() const;
-  const char* conc_weak_roots_event_message() const;
-  const char* conc_cleanup_event_message() const;
-  const char* conc_init_update_refs_event_message() const;
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTGC_HPP

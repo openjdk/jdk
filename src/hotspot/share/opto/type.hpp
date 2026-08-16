@@ -2230,6 +2230,10 @@ public:
   bool is_refined_type()  const { return _refined_type; }
   virtual bool can_be_inline_array() const;
 
+  // Convenience common pre-built types.
+  static const TypeAryKlassPtr* OBJECT_ARRAY;         // Not-null object array klass
+  static const TypeAryKlassPtr* OBJECT_ARRAY_OR_NULL; // Maybe-null object array klass
+
 #ifndef PRODUCT
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const; // Specialized per-Type dumping
 #endif
