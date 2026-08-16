@@ -785,9 +785,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   if (CDSConfig::is_using_aot_linked_classes()) {
     AOTLinkedClassBulkLoader::init_non_javabase_classes(THREAD);
   }
-#ifndef PRODUCT
-  HeapShared::initialize_test_class_from_archive(THREAD);
-#endif
 
   JFR_ONLY(Jfr::on_create_vm_2();)
 

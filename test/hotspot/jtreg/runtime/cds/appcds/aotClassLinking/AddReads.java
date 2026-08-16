@@ -162,7 +162,11 @@ public class AddReads {
         public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception {
             if (runMode == RunMode.PRODUCTION) {
                 out.shouldContain("full module graph: disabled");
-                out.shouldContain("Mismatched values for property jdk.module.addreads: runtime com.norequires=ALL-UNNAMED dump time com.norequires=org.astro");
+                if (isStaticWorkflow()) {
+                    out.shouldContain("Mismatched values for property jdk.module.addreads: runtime com.norequires=ALL-UNNAMED dump time com.norequires=org.astro");
+                } else {
+                    out.shouldContain("Mismatched values for property jdk.module.addreads: current = com.norequires=ALL-UNNAMED, AOTCache = com.norequires=org.astro");
+                }
             } else if (runMode == RunMode.ASSEMBLY) {
                 out.shouldMatch("(full module graph: enabled)|(Full module graph = enabled)");
              } else {

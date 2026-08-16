@@ -1493,6 +1493,7 @@ bool AOTMetaspace::in_aot_cache_static_region(void* p) {
 // - There's an error that indicates that the archive(s) files were corrupt or otherwise damaged.
 // - When -XX:+RequireSharedSpaces is specified, AND the JVM cannot load the archive(s) due
 //   to version or classpath mismatch.
+[[noreturn]]
 void AOTMetaspace::unrecoverable_loading_error(const char* message) {
   report_loading_error("%s", message);
 
@@ -1503,6 +1504,7 @@ void AOTMetaspace::unrecoverable_loading_error(const char* message) {
   } else {
     vm_exit_during_initialization("Unable to use shared archive. Unrecoverable archive loading error (run with -Xlog:aot,cds for details)", message);
   }
+  ShouldNotReachHere();
 }
 
 void AOTMetaspace::report_loading_error(const char* format, ...) {
@@ -1538,15 +1540,17 @@ void AOTMetaspace::report_loading_error(const char* format, ...) {
 
 // This function is called when the JVM is unable to write the specified CDS archive due to an
 // unrecoverable error.
+[[noreturn]]
 void AOTMetaspace::unrecoverable_writing_error(const char* message) {
   writing_error(message);
   vm_direct_exit(1);
+  ShouldNotReachHere();
 }
 
 // This function is called when the JVM is unable to write the specified CDS archive due to a
 // an error. The error will be propagated
 void AOTMetaspace::writing_error(const char* message) {
-  aot_log_error(aot)("An error has occurred while writing the shared archive file.");
+  aot_log_error(aot)("An error has occurred while writing the %s.", CDSConfig::type_of_archive_being_written());
   if (message != nullptr) {
     aot_log_error(aot)("%s", message);
   }

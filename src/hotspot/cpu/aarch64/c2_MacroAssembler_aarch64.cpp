@@ -182,10 +182,8 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register t1,
   // Finish fast lock unsuccessfully. MUST branch to with flag == NE
   Label slow_path;
 
-  if (UseObjectMonitorTable) {
-    // Clear cache in case fast locking succeeds or we need to take the slow-path.
-    str(zr, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
-  }
+  // Clear cache in case fast locking succeeds or we need to take the slow-path.
+  str(zr, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(t1, obj, rscratch2);
@@ -245,60 +243,55 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register t1,
     const ByteSize omc_monitor_offset = OMCache::monitor_offset();
     const ByteSize omc_obj_offset     = OMCache::obj_offset();
 
-    if (!UseObjectMonitorTable) {
-      assert(t1_monitor == t1_mark, "should be the same here");
-    } else {
-      const Register t1_hash = t1;
-      Label monitor_found;
+    const Register t1_hash = t1;
+    Label monitor_found;
 
-      // Save the mark, we might need it to extract the hash.
-      mov(t3, t1_mark);
+    // Save the mark, we might need it to extract the hash.
+    mov(t3, t1_mark);
 
-      // Look for the monitor in the current thread's object monitor cache (omc).
+    // Look for the monitor in the current thread's object monitor cache (omc).
 
-      ldr(t1_monitor, Address(rthread, thr_omc_offset + omc_monitor_offset));
-      ldr(t2, Address(rthread, thr_omc_offset + omc_obj_offset));
-      cmp(obj, t2);
-      br(Assembler::EQ, monitor_found);
+    ldr(t1_monitor, Address(rthread, thr_omc_offset + omc_monitor_offset));
+    ldr(t2, Address(rthread, thr_omc_offset + omc_obj_offset));
+    cmp(obj, t2);
+    br(Assembler::EQ, monitor_found);
 
-      // Look for the monitor in the table.
+    // Look for the monitor in the table.
 
-      // Get the hash code.
-      ubfx(t1_hash, t3, markWord::hash_shift, markWord::hash_bits);
+    // Get the hash code.
+    ubfx(t1_hash, t3, markWord::hash_shift, markWord::hash_bits);
 
-      // Get the table and calculate the bucket's address
-      lea(t3, ExternalAddress(ObjectMonitorTable::current_table_address()));
-      ldr(t3, Address(t3));
-      ldr(t2, Address(t3, ObjectMonitorTable::table_capacity_mask_offset()));
-      ands(t1_hash, t1_hash, t2);
-      ldr(t3, Address(t3, ObjectMonitorTable::table_buckets_offset()));
+    // Get the table and calculate the bucket's address
+    lea(t3, ExternalAddress(ObjectMonitorTable::current_table_address()));
+    ldr(t3, Address(t3));
+    ldr(t2, Address(t3, ObjectMonitorTable::table_capacity_mask_offset()));
+    ands(t1_hash, t1_hash, t2);
+    ldr(t3, Address(t3, ObjectMonitorTable::table_buckets_offset()));
 
-      // Read the monitor from the bucket.
-      ldr(t1_monitor, Address(t3, t1_hash, Address::lsl(LogBytesPerWord)));
+    // Read the monitor from the bucket.
+    ldr(t1_monitor, Address(t3, t1_hash, Address::lsl(LogBytesPerWord)));
 
-      // Check if the monitor in the bucket is special (empty, tombstone or removed).
-      cmp(t1_monitor, (unsigned char)ObjectMonitorTable::SpecialPointerValues::below_is_special);
-      br(Assembler::LO, slow_path);
+    // Check if the monitor in the bucket is special (empty, tombstone or removed).
+    cmp(t1_monitor, (unsigned char)ObjectMonitorTable::SpecialPointerValues::below_is_special);
+    br(Assembler::LO, slow_path);
 
-      // Check if object matches.
-      ldr(t3, Address(t1_monitor, ObjectMonitor::object_offset()));
-      BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
-      bs_asm->try_peek_weak_handle_in_nmethod(this, t3, t3, t2, slow_path);
-      cmp(t3, obj);
-      br(Assembler::NE, slow_path);
+    // Check if object matches.
+    ldr(t3, Address(t1_monitor, ObjectMonitor::object_offset()));
+    BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+    bs_asm->try_peek_weak_handle_in_nmethod(this, t3, t3, t2, slow_path);
+    cmp(t3, obj);
+    br(Assembler::NE, slow_path);
 
-      // Store the monitor in the current thread's object monitor cache (omc).
-      str(t1_monitor, Address(rthread, thr_omc_offset + omc_monitor_offset));
-      str(obj, Address(rthread, thr_omc_offset + omc_obj_offset));
+    // Store the monitor in the current thread's object monitor cache (omc).
+    str(t1_monitor, Address(rthread, thr_omc_offset + omc_monitor_offset));
+    str(obj, Address(rthread, thr_omc_offset + omc_obj_offset));
 
-      bind(monitor_found);
-    }
+    bind(monitor_found);
 
     const Register t2_owner_addr = t2;
     const Register t3_owner = t3;
-    const ByteSize monitor_tag = in_ByteSize(UseObjectMonitorTable ? 0 : checked_cast<int>(markWord::monitor_value));
-    const Address owner_address(t1_monitor, ObjectMonitor::owner_offset() - monitor_tag);
-    const Address recursions_address(t1_monitor, ObjectMonitor::recursions_offset() - monitor_tag);
+    const Address owner_address(t1_monitor, ObjectMonitor::owner_offset());
+    const Address recursions_address(t1_monitor, ObjectMonitor::recursions_offset());
 
     Label monitor_locked;
 
@@ -318,10 +311,8 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register t1,
     increment(recursions_address, 1);
 
     bind(monitor_locked);
-    if (UseObjectMonitorTable) {
-      // Cache the monitor for unlock.
-      str(t1_monitor, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
-    }
+    // Cache the monitor for unlock.
+    str(t1_monitor, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
   }
 
   bind(locked);
@@ -388,7 +379,7 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register box, Register t1,
     // Because we got here by popping (meaning we pushed in locked)
     // there will be no monitor in the box. So we need to push back the obj
     // so that the runtime can fix any potential anonymous owner.
-    tbnz(t1_mark, exact_log2(markWord::monitor_value), UseObjectMonitorTable ? push_and_slow_path : inflated);
+    tbnz(t1_mark, exact_log2(markWord::monitor_value), push_and_slow_path);
 
     // Try to unlock. Transition lock bits 0b00 => 0b01
     assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid lea");
@@ -430,17 +421,10 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register box, Register t1,
 
     const Register t1_monitor = t1;
 
-    if (!UseObjectMonitorTable) {
-      assert(t1_monitor == t1_mark, "should be the same here");
-
-      // Untag the monitor.
-      add(t1_monitor, t1_mark, -(int)markWord::monitor_value);
-    } else {
-      ldr(t1_monitor, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
-      // null check with Flags == NE, no valid pointer below alignof(ObjectMonitor*)
-      cmp(t1_monitor, checked_cast<uint8_t>(alignof(ObjectMonitor*)));
-      br(Assembler::LO, slow_path);
-    }
+    ldr(t1_monitor, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
+    // null check with Flags == NE, no valid pointer below alignof(ObjectMonitor*)
+    cmp(t1_monitor, checked_cast<uint8_t>(alignof(ObjectMonitor*)));
+    br(Assembler::LO, slow_path);
 
     const Register t2_recursions = t2;
     Label not_recursive;
