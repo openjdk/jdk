@@ -40,8 +40,6 @@ uint   G1FromCardCache::_max_workers = 0;
 void G1FromCardCache::initialize() {
   guarantee(_cache == nullptr, "Should not call this multiple times");
 
-  // A narrowOop is the smallest possible reference slot, so this is an upper
-  // bound on the number of distinct cardsets referenced by one source card.
   _max_entries = CardTable::card_size() / sizeof(narrowOop);
   guarantee(_max_entries > 0, "Card must be able to contain at least one reference");
 #ifdef ASSERT

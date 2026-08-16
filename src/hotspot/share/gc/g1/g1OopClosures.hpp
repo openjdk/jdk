@@ -235,7 +235,7 @@ class G1RebuildRemSetClosure : public BasicOopIterateClosure {
 
 public:
   G1RebuildRemSetClosure(G1CollectedHeap* g1h, uint worker_id) : _g1h(g1h), _worker_id(worker_id) {
-    G1FromCardCache::reset(_worker_id);
+    reset_from_card_cache();
   }
 
   void reset_from_card_cache() { G1FromCardCache::reset(_worker_id); }

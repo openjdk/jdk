@@ -32,9 +32,11 @@
 // encountered while a worker scans the current source card.
 class G1FromCardCache : public AllStatic {
 private:
-  // Each worker owns one row. A row contains the current source card, the
-  // number of populated entries, and an array of cardset FCC ids. Like
-  // G1CardSetArray, lookup linearly searches only the populated prefix.
+  // Each worker owns one row laid out as:
+  //   [ source-card | number-of-entries | FCC id | FCC id | ... ]
+  //          0                 1              2        3
+  // The count identifies the populated prefix of FCC ids, which is searched
+  // linearly like G1CardSetArray.
   static uintptr_t** _cache;
   static uint _max_entries;
   static size_t _static_mem_size;
