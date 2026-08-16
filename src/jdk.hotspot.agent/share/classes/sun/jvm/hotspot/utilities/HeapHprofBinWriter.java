@@ -706,11 +706,19 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         return (int) length;
     }
 
+    private boolean filterOutKlass(Klass k) {
+        return (k instanceof ObjArrayKlass) &&
+               !k.getKind().equals(Klass.KlassKind.ObjArrayKlassKind);
+    }
+
     private void writeClassDumpRecords() throws IOException {
         ClassLoaderDataGraph cldGraph = VM.getVM().getClassLoaderDataGraph();
         try {
              cldGraph.classesDo(new ClassLoaderDataGraph.ClassVisitor() {
                             public void visit(Klass k) {
+                                if (filterOutKlass(k)) {
+                                    return;
+                                }
                                 try {
                                     writeHeapRecordPrologue(calculateClassDumpRecordSize(k));
                                     writeClassDumpRecord(k);
@@ -1285,6 +1293,9 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         try {
             cldGraph.classesDo(new ClassLoaderDataGraph.ClassVisitor() {
                 public void visit(Klass k) {
+                    if (filterOutKlass(k)) {
+                        return;
+                    }
                     try {
                         Instance clazz = k.getJavaMirror();
                         writeHeader(HPROF_LOAD_CLASS, 2 * (OBJ_ID_SIZE + 4));
