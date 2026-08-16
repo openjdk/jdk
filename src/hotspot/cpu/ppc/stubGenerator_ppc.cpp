@@ -3224,7 +3224,7 @@ class StubGenerator: public StubCodeGenerator {
   // instructions.
   //
   // ==========================================================================
-  // Emit AES encrypt rounds.
+  // Emits the AES encrypt round instructions.
   //
   // vRet:    in/out — the AES state (plaintext in, ciphertext out)
   // key:     register holding pointer to expanded key array
@@ -3354,7 +3354,8 @@ class StubGenerator: public StubCodeGenerator {
   }
 
 
-  // Emit AES decrypt rounds.
+  // ==========================================================================
+  // Emits the AES decrypt round instructions.
   //
   // vRet:    in/out — the AES state (ciphertext in, plaintext out)
   // key:     register holding pointer to expanded key array
@@ -3510,7 +3511,7 @@ class StubGenerator: public StubCodeGenerator {
 
 
   // ==========================================================================
-  // Helper: Unaligned load of 16 bytes with endian handling
+  // Helper: Unaligned load of 16 bytes with endianness handling
   // ==========================================================================
   void aes_load_unaligned(VectorRegister vDst, Register src,
                            Register fifteen,
@@ -3529,7 +3530,7 @@ class StubGenerator: public StubCodeGenerator {
 
 
   // ==========================================================================
-  // Helper: Unaligned store of 16 bytes with endian handling
+  // Helper: Unaligned store of 16 bytes with endianness handling
   // ==========================================================================
   void aes_store_unaligned(VectorRegister vSrc, Register dst,
                             Register hi, Register lo,
@@ -3547,11 +3548,11 @@ class StubGenerator: public StubCodeGenerator {
 
 
   // ==========================================================================
-  // CBC Encrypt stub — using helper functions
-  // Arguments for generated stub:
-  //  R3_ARG1   - source byte array address
-  //  R4_ARG2   - destination byte array address
-  //  R5_ARG3   - round key array
+  // CBC Encrypt stub
+  // Arguments :
+  // R3_ARG1   - source byte array address
+  // R4_ARG2   - destination byte array address
+  // R5_ARG3   - round key array
   // ==========================================================================
 
   address generate_cipherBlockChaining_encryptAESCrypt() {
@@ -3651,11 +3652,11 @@ class StubGenerator: public StubCodeGenerator {
 
 
   // ==========================================================================
-  //  CBC Decrypt stub — using helper functions
-  //  Arguments for generated stub:
-  //   R3_ARG1   - source byte array address
-  //   R4_ARG2   - destination byte array address
-  //   R5_ARG3   - round key array
+  //  CBC Decrypt stub
+  //  Arguments:
+  //  R3_ARG1   - source byte array address
+  //  R4_ARG2   - destination byte array address
+  //  R5_ARG3   - round key array
   // ==========================================================================
 
   address generate_cipherBlockChaining_decryptAESCrypt() {
@@ -3725,7 +3726,7 @@ class StubGenerator: public StubCodeGenerator {
     aes_load_unaligned(vRet, from, fifteen, fromPerm, fSplt, vTmp1);
     __ addi            (from, from, 16);
 
-    // Save ciphertext (AES decrypt will destroy vRet)
+    // Save ciphertext
     __ vor             (vSavedCT, vRet, vRet);
 
     // AES decrypt rounds
