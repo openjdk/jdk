@@ -1651,12 +1651,13 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
                      is64, src_offset);
         } else {                    // stack --> stack copy
           assert(dst_lo_rc == rc_stack, "spill to bad register class");
+          // spill() may use t0 to materialize a large stack offset.
           if (this->ideal_reg() == Op_RegI) {
-            __ unspill(t0, is64, src_offset);
+            __ unspill(ra, is64, src_offset);
           } else { // zero extended for narrow oop or klass
-            __ unspillu(t0, is64, src_offset);
+            __ unspillu(ra, is64, src_offset);
           }
-          __ spill(t0, is64, dst_offset);
+          __ spill(ra, is64, dst_offset);
         }
         break;
       default:

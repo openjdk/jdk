@@ -178,9 +178,10 @@
 
   void spill_copy_vector_stack_to_stack(int src_offset, int dst_offset, uint vector_length_in_bytes) {
     assert(vector_length_in_bytes % 16 == 0, "unexpected vector reg size");
+    // spill() may use t0 to materialize a large stack offset.
     for (int i = 0; i < (int)vector_length_in_bytes / 8; i++) {
-      unspill(t0, true, src_offset + (i * 8));
-      spill(t0, true, dst_offset + (i * 8));
+      unspill(ra, true, src_offset + (i * 8));
+      spill(ra, true, dst_offset + (i * 8));
     }
   }
 
@@ -284,9 +285,10 @@
 
   void spill_copy_vmask_stack_to_stack(int src_offset, int dst_offset, uint vector_length_in_bytes) {
     assert(vector_length_in_bytes % 4 == 0, "unexpected vector mask reg size");
+    // spill() may use t0 to materialize a large stack offset.
     for (int i = 0; i < (int)vector_length_in_bytes / 4; i++) {
-      unspill(t0, false, src_offset + (i * 4));
-      spill(t0, false, dst_offset + (i * 4));
+      unspill(ra, false, src_offset + (i * 4));
+      spill(ra, false, dst_offset + (i * 4));
     }
   }
 
