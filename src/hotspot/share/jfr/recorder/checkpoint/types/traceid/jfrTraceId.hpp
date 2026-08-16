@@ -150,17 +150,16 @@ class JfrTraceId : public AllStatic {
   static void set_timing_bit(const InstanceKlass* ik);
   static void clear_timing_bit(const InstanceKlass* ik);
 
-  // Event misc bit
-  static bool has_misc_bit(const Klass* k);
-  static bool has_not_misc_bit(const Klass* k);
-  static void set_misc_bit(const Klass* k);
-  static void clear_misc_bit(const Klass* k);
-
   // Preload tag bits (only valid during class loading, before a klass is defined)
-  static bool has_preload_bit_sticky(const Klass* k);
-  static void set_preload_bit_sticky(const Klass* k);
-  static void clear_preload_bits(const Klass* k);
-  static traceid preload_bits(const Klass* k);
+  static bool has_preload_sticky_bit(const Klass* k);
+  static void set_preload_sticky_bit(const Klass* k);
+  static void clear_preload_sticky_bit(const Klass* k);
+
+  static bool has_preload_bootloader_bit(const Klass* k);
+  static void set_preload_bootloader_bit(const Klass* k);
+  static void clear_preload_bootloader_bit(const Klass* k);
+
+  DEBUG_ONLY(static traceid preload_bits(const Klass* k);)
 };
 
 #endif // SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEID_HPP

@@ -202,12 +202,13 @@ static inline bool is_not_retransforming(const InstanceKlass* ik, JavaThread* jt
 
 void JfrClassDefineEvent::on_creation(const InstanceKlass* ik, const ClassFileParser& parser, JavaThread* jt) {
   assert(ik != nullptr, "invariant");
+  assert(!ik->is_loaded(), "invarinat");
   assert(ik->trace_id() != 0, "invariant");
   assert(!parser.is_internal(), "invariant");
   assert(jt != nullptr, "invariant");
   if (is_not_retransforming(ik, jt)) {
     if (parser.stream().from_boot_loader_modules_image()) {
-      JfrTraceId::set_misc_bit(ik);
+      JfrTraceId::set_preload_bootloader_bit(ik);
     }
   }
 }
@@ -215,6 +216,7 @@ void JfrClassDefineEvent::on_creation(const InstanceKlass* ik, const ClassFilePa
 #if INCLUDE_CDS
 void JfrClassDefineEvent::on_restoration(const InstanceKlass* ik, JavaThread* jt) {
   assert(ik != nullptr, "invariant");
+  assert(!ik->is_loaded(), "invariant");
   assert(ik->trace_id() != 0, "invariant");
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(jt);)
   assert(is_not_retransforming(ik, jt), "invariant");
@@ -224,7 +226,7 @@ void JfrClassDefineEvent::on_restoration(const InstanceKlass* ik, JavaThread* jt
     const AOTClassLocation* const cl = AOTClassLocationConfig::runtime()->class_location_at(index);
     assert(cl != nullptr, "invariant");
     if (cl->is_modules_image()) {
-      JfrTraceId::set_misc_bit(ik);
+      JfrTraceId::set_preload_bootloader_bit(ik);
     }
   }
 }
