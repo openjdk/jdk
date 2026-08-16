@@ -87,7 +87,7 @@ void JfrTraceTagging::tag_sticky(const InstanceKlass* ik, const JfrMethodProcess
 void JfrTraceTagging::tag_preload_sticky(const InstanceKlass* ik) {
   assert(ik != nullptr, "invariant");
   assert(!ik->is_loaded(), "invariant");
-  JfrTraceId::set_preload_bit_sticky(ik);
+  JfrTraceId::set_preload_sticky_bit(ik);
 }
 
 void JfrTraceTagging::clear_sticky_for_placeholder(const InstanceKlass* ik) {

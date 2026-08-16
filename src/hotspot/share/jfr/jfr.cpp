@@ -178,11 +178,11 @@ void Jfr::on_report_java_out_of_memory() {
 }
 
 void Jfr::on_definition(const InstanceKlass* ik, JavaThread* jt) {
-  const bool from_boot_loader_modules_image = JfrTraceId::has_misc_bit(ik);
+  const bool from_boot_loader_modules_image = JfrTraceId::has_preload_bootloader_bit(ik);
   if (from_boot_loader_modules_image) {
-    JfrTraceId::clear_misc_bit(ik);
+    JfrTraceId::clear_preload_bootloader_bit(ik);
   }
-  if (JfrTraceId::has_preload_bit_sticky(ik)) {
+  if (JfrTraceId::has_preload_sticky_bit(ik)) {
     assert(JfrMethodTracer::in_use(), "invariant");
     JfrMethodTracer::on_definition(ik, jt);
   }

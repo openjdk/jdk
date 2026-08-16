@@ -231,48 +231,42 @@ inline void JfrTraceId::clear_timing_bit(const InstanceKlass* ik) {
   assert(!has_timing_bit(ik), "invariant");
 }
 
-inline bool JfrTraceId::has_misc_bit(const Klass* k) {
-  assert(k != nullptr, "invariant");
-  return HAS_EVENT_MISC_BIT(k);
-}
-
-inline bool JfrTraceId::has_not_misc_bit(const Klass* k) {
-  return !has_misc_bit(k);
-}
-
-inline void JfrTraceId::set_misc_bit(const Klass* k) {
-  assert(has_not_misc_bit(k), "invariant");
-  SET_EVENT_MISC_BIT(k);
-  assert(has_misc_bit(k), "invariant");
-}
-
-inline void JfrTraceId::clear_misc_bit(const Klass* k) {
-  assert(has_misc_bit(k), "invariant");
-  CLEAR_EVENT_MISC_BIT(k);
-  assert(has_not_misc_bit(k), "invariant");
-}
-
-inline traceid JfrTraceId::preload_bits(const Klass* k) {
-  assert(k != nullptr, "invariant");
-  return PRELOAD_TAG_BITS(k);
-}
-
-inline bool JfrTraceId::has_preload_bit_sticky(const Klass* k) {
+inline bool JfrTraceId::has_preload_sticky_bit(const Klass* k) {
   assert(k != nullptr, "invariant");
   return HAS_PRELOAD_TAG_BIT_STICKY(k);
 }
 
-inline void JfrTraceId::set_preload_bit_sticky(const Klass* k) {
+inline void JfrTraceId::set_preload_sticky_bit(const Klass* k) {
   assert(k != nullptr, "invariant");
-  assert(!has_preload_bit_sticky(k), "invariant");
+  assert(!has_preload_sticky_bit(k), "invariant");
   SET_PRELOAD_TAG_BIT_STICKY(k);
-  assert(has_preload_bit_sticky(k), "invariant");
+  assert(has_preload_sticky_bit(k), "invariant");
 }
 
-inline void JfrTraceId::clear_preload_bits(const Klass* k) {
+inline void JfrTraceId::clear_preload_sticky_bit(const Klass* k) {
   assert(k != nullptr, "invariant");
-  CLEAR_PRELOAD_TAG_BITS(k);
-  assert(0 == preload_bits(k), "invariant");
+  assert(has_preload_sticky_bit(k), "invariant");
+  CLEAR_PRELOAD_TAG_BIT_STICKY(k);
+  assert(!has_preload_sticky_bit(k), "invariant");
+}
+
+inline bool JfrTraceId::has_preload_bootloader_bit(const Klass* k) {
+  assert(k != nullptr, "invariant");
+  return HAS_PRELOAD_TAG_BIT_BOOTLOADER(k);
+}
+
+inline void JfrTraceId::set_preload_bootloader_bit(const Klass* k) {
+  assert(k != nullptr, "invariant");
+  assert(!has_preload_bootloader_bit(k), "invariant");
+  SET_PRELOAD_TAG_BIT_BOOTLOADER(k);
+  assert(has_preload_bootloader_bit(k), "invariant");
+}
+
+inline void JfrTraceId::clear_preload_bootloader_bit(const Klass* k) {
+  assert(k != nullptr, "invariant");
+  assert(has_preload_bootloader_bit(k), "invariant");
+  CLEAR_PRELOAD_TAG_BIT_BOOTLOADER(k);
+  assert(!has_preload_bootloader_bit(k), "invariant");
 }
 
 #endif // SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEID_INLINE_HPP

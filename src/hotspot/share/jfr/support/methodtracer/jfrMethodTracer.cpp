@@ -192,8 +192,7 @@ void JfrMethodTracer::handle_no_bytecode_result(const InstanceKlass* ik) {
   assert(ik != nullptr, "invariant");
   MutexLocker lock(ClassLoaderDataGraph_lock);
   if (JfrTraceId::has_sticky_bit(ik)) {
-    if (placeholder_table()->remove(JfrTraceId::load_raw(ik))) {
-      assert(!ik->is_loaded(), "invariant");
+    if (!ik->is_loaded() && placeholder_table()->remove(JfrTraceId::load_raw(ik))) {
       JfrTraceTagging::clear_sticky_for_placeholder(ik);
       return;
     }
@@ -241,8 +240,9 @@ void JfrMethodTracer::on_klass_creation(InstanceKlass*& ik, ClassFileParser& par
     JfrClassTransformer::rewrite_klass_pointer(ik, new_ik, parser, THREAD); // The ik is modified to point to new_ik here.
     mp.update_methods(existing_ik);
     existing_ik->module()->add_read(jdk_jfr_module());
+    const bool is_loaded = existing_ik->is_loaded();
     MutexLocker lock(ClassLoaderDataGraph_lock);
-    if (placeholder_table()->contains(JfrTraceId::load_raw(existing_ik))) {
+    if (!is_loaded && placeholder_table()->contains(JfrTraceId::load_raw(existing_ik))) {
       assert(JfrTraceId::has_sticky_bit(existing_ik), "invariant");
       if (mp.has_timing() && !JfrTraceId::has_timing_bit(existing_ik)) {
         JfrTraceId::set_timing_bit(existing_ik);
@@ -276,13 +276,6 @@ static inline void log_add(const InstanceKlass* ik) {
 void JfrMethodTracer::add_timing_entry(traceid klass_id) {
   assert(_timing_entries != nullptr, "invariant");
   _timing_entries->append(klass_id);
-}
-
-void JfrMethodTracer::on_definition(const InstanceKlass* ik, JavaThread* jt) {
-  assert(ik != nullptr, "invariant");
-  assert(JfrTraceId::has_preload_bit_sticky(ik), "invariant");
-  JfrTraceId::clear_preload_bits(ik);
-  add_instrumented_class(ik, jt);
 }
 
 // At this point we have installed our new retransformed methods into the original klass, which is ik.
@@ -352,6 +345,16 @@ void JfrMethodTracer::add_instrumented_class(const InstanceKlass* ik, JavaThread
   if (has_timing) {
     JfrUpcalls::publish_method_timers_for_klass(id, jt);
   }
+}
+
+void JfrMethodTracer::on_definition(const InstanceKlass* ik, JavaThread* jt) {
+  assert(ik != nullptr, "invariant");
+  assert(JfrTraceId::has_preload_sticky_bit(ik), "invariant");
+  assert(in_use(), "invariant");
+  JfrTraceId::clear_preload_sticky_bit(ik);
+  // Last station before the ik is enqueued. The lifespan of preload bits ends here.
+  assert(0 == JfrTraceId::preload_bits(ik), "invariant");
+  add_instrumented_class(ik, jt);
 }
 
 ModuleEntry* JfrMethodTracer::jdk_jfr_module() {
