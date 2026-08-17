@@ -125,11 +125,14 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
         // Don't use switch pattern matching here in order to improve startup time.
         if (state instanceof Supplier<?> computingFunction) {
             // A Thread subclass may also implement Supplier, so use the thread ID as
-            // a disjoint state marker in that exceptional case.
-            final Object computingState = currentThread instanceof Supplier<?>
+            // a disjoint state marker in that unusual case.
+            final Object nextState = currentThread instanceof Supplier<?>
                     ? currentThread.threadId() // Implies autoboxing (in many cases)
                     : currentThread;           // No extra object creation
-            if (UNSAFE.compareAndSetReference(this, STATUS_OFFSET, state, computingState)) {
+            final Object witness = UNSAFE.compareAndExchangeReference(this, STATUS_OFFSET, computingFunction, nextState);
+            // Did we see the old state?
+            if (witness == computingFunction) {
+                // Yes: we won the CAE race.
                 try {
                     final T newT = (T) computingFunction.get();
                     Objects.requireNonNull(newT);
@@ -141,10 +144,10 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
                     throw computationFailed(ex);
                 }
             }
-            // We lost the CAS race.
-            return awaitComputation(currentThread);
+            // No: We lost the CAE race.
+            return awaitComputation(currentThread, witness);
         } else if (state instanceof Thread || state instanceof Long) {
-            return awaitComputation(currentThread);
+            return awaitComputation(currentThread, state);
         } else if (state instanceof String exceptionType) {
             throw unableToAccessConstant(exceptionType, null);
         } else if (state != null) {
@@ -160,36 +163,50 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
 
     @SuppressWarnings("unchecked")
     @DontInline
-    private T awaitComputation(Thread currentThread) {
+    private T awaitComputation(Thread currentThread, Object computingState) {
+        final long currentThreadId = currentThread.threadId();
+        if (computingState instanceof Thread computingThread) {
+            if (computingThread == currentThread) {
+                throw recursiveInvocation(computingThread);
+            }
+        } else if (computingState instanceof Long computingThreadId) {
+            if (computingThreadId.longValue() == currentThreadId) {
+                throw recursiveInvocation(currentThread);
+            }
+        } else if (computingState instanceof String exceptionType) {
+            throw unableToAccessConstant(exceptionType, null);
+        } else if (computingState != null) {
+            throw unexpectedState(computingState);
+        } else {
+            final T t = (T) getAcquire(CONSTANT_OFFSET);
+            if (t == null) {
+                throw unexpectedState(computingState);
+            }
+            return t;
+        }
+
         int spins = SPIN_LIMIT;
         long backoffNanos = INITIAL_BACKOFF_NANOS;
         boolean restoreInterrupt = false;
 
         // Initial random seed
-        final long currentThreadId = currentThread.threadId();
         long random = currentThreadId * GOLDEN_GAMMA;
         try {
             // Only poll the `state` in the loop to minimize CPU cache
             // contention.
             for (;;) {
                 final Object state = getAcquire(STATUS_OFFSET);
-                // Don't use switch pattern matching here in order to improve startup time.
-                if (state instanceof Thread computingThread) {
-                    if (computingThread == currentThread) {
-                        throw recursiveInvocation(computingThread);
-                    }
-                } else if (state instanceof Long computingThreadId) {
-                    if (computingThreadId.longValue() == currentThreadId) {
-                        throw recursiveInvocation(currentThread);
-                    }
-                } else if (state instanceof String exceptionType) {
-                    throw unableToAccessConstant(exceptionType, null);
-                } else if (state != null) {
-                    throw unexpectedState(state);
-                } else {
-                    // state is `null` -> we have a computed constant
-                    final T t = (T) getAcquire(CONSTANT_OFFSET);
-                    if (t != null) {
+                if (state != computingState) {
+                    if (state instanceof String exceptionType) {
+                        throw unableToAccessConstant(exceptionType, null);
+                    } else if (state != null) {
+                        throw unexpectedState(state);
+                    } else {
+                        // state is `null` -> we have a computed constant
+                        final T t = (T) getAcquire(CONSTANT_OFFSET);
+                        if (t == null) {
+                            throw unexpectedState(state);
+                        }
                         return t;
                     }
                 }
