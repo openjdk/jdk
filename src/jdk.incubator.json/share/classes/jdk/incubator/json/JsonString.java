@@ -38,8 +38,8 @@ import jdk.incubator.json.impl.Utils;
  * two-character escape sequence (if applicable) or one or two Unicode escape
  * sequences. A supplementary character is represented by two Unicode escape
  * sequences corresponding to its surrogate pair.
- * Quotation Mark (U+0022), Backslash (Reverse Solidus, U+005C), and the control
- * characters (U+0000 through U+001F) must be escaped.
+ * <span id="escape-characters">Quotation Mark (U+0022), Backslash (Reverse Solidus, U+005C), and the control
+ * characters (U+0000 through U+001F) must be escaped.</span>
  * <p> Alternatively, {@link #of(String)} can be used to obtain a {@code JsonString}
  * directly from a {@code String}. The {@code String} values of {@code JsonString}
  * instances produced by the following expressions are all equivalent:
@@ -56,8 +56,11 @@ import jdk.incubator.json.impl.Utils;
 public non-sealed interface JsonString extends JsonValue {
 
     /**
-     * {@return the {@code JsonString} created from the given
-     * {@code String}}
+     * {@return the {@code JsonString} created from the given {@code String}}
+     * Unlike {@link Json#parse(String)}, {@code src} is not expected to be
+     * surrounded by quotation marks and the {@linkplain ##escape-characters special characters}
+     * do not need to be escaped. As a result, {@code src} is equal to {@code
+     * JsonString.of(src).asString()}.
      *
      * @param src the given source {@code String}. Non-null.
      * @throws NullPointerException if {@code src} is {@code null}
@@ -72,9 +75,9 @@ public non-sealed interface JsonString extends JsonValue {
      * {@return the JSON string represented by this {@code JsonString}}
      * If this {@code JsonString} was created by parsing a JSON document, it
      * preserves the original text representation of the corresponding JSON
-     * string. Otherwise, the source {@code String} passed to the factory method
-     * {@link #of(String)} is used to generate the JSON string, with special
-     * characters properly escaped.
+     * string. Otherwise, the returned JSON string is the source {@code String}
+     * passed to the factory method {@link #of(String)} surrounded by double quotes
+     * with {@linkplain ##escape-characters special characters} properly escaped.
      *
      * @see #asString()
      */
@@ -83,8 +86,7 @@ public non-sealed interface JsonString extends JsonValue {
 
     /**
      * {@return the {@code String} value represented by this {@code JsonString}}
-     * If this {@code JsonString} was created by parsing a JSON document, any
-     * escaped characters in the original JSON document are converted to their
+     * Any JSON escape sequences in this {@code JsonString} are converted to their
      * unescaped form.
      *
      * @see #toString()
