@@ -40,7 +40,8 @@ import jdk.test.whitebox.WhiteBox;
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
- *      -XX:ShenandoahGenerationalMinPIPUsage=1 -XX:ShenandoahOldGarbageThreshold=100
+ *      -XX:ShenandoahGenerationalMinPIPUsage=1
+ *      -XX:ShenandoahOldGarbageThreshold=100
  *      -XX:ShenandoahRegionSize=1m
  *      -XX:ShenandoahImmediateThreshold=0
  *      -XX:ShenandoahGenerationalMinTenuringAge=1
@@ -51,13 +52,15 @@ public class TestPromoteInPlaceDuringAbbreviatedCycle {
 
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
 
-    // Make a humongous array (with 1MB regions, this will be humongous with and without compressed oops).
+    // Make a humongous array (with 1MB regions, this will be humongous with
+    // and without compressed oops).
     private static final int HUMONGOUS_REFS = 512 * 1024;
 
     // Also make a not humongous array to test regular region promotion path
     private static final int REGULAR_REFS = 256;
 
-    // Used to create pure garbage regions to satisfy immediate garbage threshold
+    // Used to create pure garbage regions to satisfy immediate garbage
+    // threshold
     private static final int GARBAGE_BYTES = 2 * 1024 * 1024;
 
     // Test will fail if our humongous object isn't promoted in this many cycles
@@ -67,7 +70,8 @@ public class TestPromoteInPlaceDuringAbbreviatedCycle {
     private static Object[] humongous;
     private static Object[] regular;
 
-    // Reference used to publish, then drop, the per-cycle garbage (to keep local var from being eliminated)
+    // Reference used to publish, then drop, the per-cycle garbage (to keep
+    // local var from being eliminated)
     private static Object garbage;
 
     public static void main(String[] args) throws Exception {
@@ -76,7 +80,8 @@ public class TestPromoteInPlaceDuringAbbreviatedCycle {
 
         if (WB.isObjectInOldGen(humongous) || WB.isObjectInOldGen(regular)) {
             throw new IllegalStateException(
-                    "Precondition failed: the humongous array should start in the young generation");
+                    "Precondition failed: the humongous array should start "
+                    + "in the young generation");
         }
 
         for (int cycle = 1; cycle <= MAX_CYCLES; cycle++) {
@@ -88,14 +93,17 @@ public class TestPromoteInPlaceDuringAbbreviatedCycle {
             WB.youngGC();
 
             if (WB.isObjectInOldGen(humongous) && WB.isObjectInOldGen(regular)) {
-                System.out.println("Humongous array and regular object were promoted in place during"
-                                   + "an abbreviated cycle after " + cycle + " cycle(s)");
+                System.out.println(
+                    "Humongous array and regular object were promoted in "
+                    + "place during an abbreviated cycle after "
+                    + cycle + " cycle(s)");
                 return;
             }
         }
 
-        throw new RuntimeException("Humongous array or regular object was never promoted in place during "
-                                  + "an abbreviated cycle after " + MAX_CYCLES + " cycles; in-place promotion "
-                                  + "is not happening on the abbreviated path");
+        throw new RuntimeException(
+            "Humongous array or regular object was never promoted in place "
+            + "during an abbreviated cycle after " + MAX_CYCLES + " cycles; "
+            + "in-place promotion is not happening on the abbreviated path");
     }
 }
