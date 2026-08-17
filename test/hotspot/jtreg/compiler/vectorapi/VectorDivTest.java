@@ -145,6 +145,45 @@ public class VectorDivTest {
         va.lanewise(VectorOperators.DIV, vb).intoArray(lr, 0);
     }
 
+    // Unmasked vector-scalar DIV. The replicated scalar operand exercises the
+    // RISC-V vdiv.vx matching rules.
+
+    @Test
+    @IR(counts = { IRNode.DIV_VB, ">= 1",
+                   IRNode.REPLICATE_B, IRNode.VECTOR_SIZE_ANY, ">= 1" },
+        applyIfCPUFeature = { "rvv", "true" })
+    public static void testDivByteScalar() {
+        ByteVector va = ByteVector.fromArray(B_SPECIES, ba, 0);
+        va.div(bb[0]).intoArray(br, 0);
+    }
+
+    @Test
+    @IR(counts = { IRNode.DIV_VS, ">= 1",
+                   IRNode.REPLICATE_S, IRNode.VECTOR_SIZE_ANY, ">= 1" },
+        applyIfCPUFeature = { "rvv", "true" })
+    public static void testDivShortScalar() {
+        ShortVector va = ShortVector.fromArray(S_SPECIES, sa, 0);
+        va.div(sb[0]).intoArray(sr, 0);
+    }
+
+    @Test
+    @IR(counts = { IRNode.DIV_VI, ">= 1",
+                   IRNode.REPLICATE_I, IRNode.VECTOR_SIZE_ANY, ">= 1" },
+        applyIfCPUFeature = { "rvv", "true" })
+    public static void testDivIntScalar() {
+        IntVector va = IntVector.fromArray(I_SPECIES, ia, 0);
+        va.div(ib[0]).intoArray(ir, 0);
+    }
+
+    @Test
+    @IR(counts = { IRNode.DIV_VL, ">= 1",
+                   IRNode.REPLICATE_L, IRNode.VECTOR_SIZE_ANY, ">= 1" },
+        applyIfCPUFeature = { "rvv", "true" })
+    public static void testDivLongScalar() {
+        LongVector va = LongVector.fromArray(L_SPECIES, la, 0);
+        va.div(lb[0]).intoArray(lr, 0);
+    }
+
     @Test
     @IR(counts = { IRNode.DIV_VF, ">= 1" },
         applyIfCPUFeature = { "asimd", "true" })
@@ -210,6 +249,49 @@ public class VectorDivTest {
         LongVector va = LongVector.fromArray(L_SPECIES, la, 0);
         LongVector vb = LongVector.fromArray(L_SPECIES, lb, 0);
         va.lanewise(VectorOperators.DIV, vb, mask).intoArray(lr, 0);
+    }
+
+    // Masked vector-scalar DIV. These cases exercise the predicated RISC-V
+    // vdiv.vx matching rules.
+
+    @Test
+    @IR(counts = { IRNode.DIV_VB, ">= 1",
+                   IRNode.REPLICATE_B, IRNode.VECTOR_SIZE_ANY, ">= 1" },
+        applyIfCPUFeature = { "rvv", "true" })
+    public static void testMaskedDivByteScalar() {
+        VectorMask<Byte> mask = VectorMask.fromArray(B_SPECIES, mask_arr, 0);
+        ByteVector va = ByteVector.fromArray(B_SPECIES, ba, 0);
+        va.div(bb[0], mask).intoArray(br, 0);
+    }
+
+    @Test
+    @IR(counts = { IRNode.DIV_VS, ">= 1",
+                   IRNode.REPLICATE_S, IRNode.VECTOR_SIZE_ANY, ">= 1" },
+        applyIfCPUFeature = { "rvv", "true" })
+    public static void testMaskedDivShortScalar() {
+        VectorMask<Short> mask = VectorMask.fromArray(S_SPECIES, mask_arr, 0);
+        ShortVector va = ShortVector.fromArray(S_SPECIES, sa, 0);
+        va.div(sb[0], mask).intoArray(sr, 0);
+    }
+
+    @Test
+    @IR(counts = { IRNode.DIV_VI, ">= 1",
+                   IRNode.REPLICATE_I, IRNode.VECTOR_SIZE_ANY, ">= 1" },
+        applyIfCPUFeature = { "rvv", "true" })
+    public static void testMaskedDivIntScalar() {
+        VectorMask<Integer> mask = VectorMask.fromArray(I_SPECIES, mask_arr, 0);
+        IntVector va = IntVector.fromArray(I_SPECIES, ia, 0);
+        va.div(ib[0], mask).intoArray(ir, 0);
+    }
+
+    @Test
+    @IR(counts = { IRNode.DIV_VL, ">= 1",
+                   IRNode.REPLICATE_L, IRNode.VECTOR_SIZE_ANY, ">= 1" },
+        applyIfCPUFeature = { "rvv", "true" })
+    public static void testMaskedDivLongScalar() {
+        VectorMask<Long> mask = VectorMask.fromArray(L_SPECIES, mask_arr, 0);
+        LongVector va = LongVector.fromArray(L_SPECIES, la, 0);
+        va.div(lb[0], mask).intoArray(lr, 0);
     }
 
     @Test
