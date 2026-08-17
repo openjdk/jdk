@@ -26,14 +26,11 @@
  * @bug 8388310
  * @summary AtomicReferenceFieldUpdater does not perform a substitutability check
  * @enablePreview
- * @library /test/lib
  * @run junit ${test.main.class}
  */
 
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-import jdk.test.lib.Utils;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -89,6 +86,7 @@ public class AtomicReferenceFieldUpdaterValueObjectTest {
         assertSame(new Integer(-4), a.get(this));
         assertFalse(a.compareAndSet(this, new Integer(-5), new Integer(7)));
         assertNotSame(new Integer(7), a.get(this));
+        assertSame(new Integer(-4), a.get(this));
         assertTrue(a.compareAndSet(this, new Integer(-4), new Integer(7)));
         assertSame(new Integer(7), a.get(this));
     }
@@ -109,7 +107,7 @@ public class AtomicReferenceFieldUpdaterValueObjectTest {
         });
 
         assertTrue(a.compareAndSet(this, new Integer(1), new Integer(2)));
-        t.join(Utils.adjustTimeout(1000));
+        t.join();
         assertFalse(t.isAlive());
         assertSame(new Integer(3), a.get(this));
     }
