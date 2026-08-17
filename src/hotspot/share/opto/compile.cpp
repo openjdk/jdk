@@ -40,6 +40,7 @@
 #include "compiler/compilerOracle.hpp"
 #include "compiler/disassembler.hpp"
 #include "compiler/oopMap.hpp"
+#include "compiler/stress.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "jfr/jfrEvents.hpp"
@@ -683,7 +684,6 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _trace_opto_output(directive->TraceOptoOutputOption),
 #endif
       _clinit_barrier_on_entry(false),
-      _stress_seed(0),
       _comp_arena(mtCompiler, Arena::Tag::tag_comp),
       _barrier_set_state(BarrierSet::barrier_set()->barrier_set_c2()->create_barrier_state(comp_arena())),
       _env(ci_env),
@@ -703,6 +703,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _unstable_if_traps(comp_arena(), 8, 0, nullptr),
       _coarsened_locks(comp_arena(), 8, 0, nullptr),
       _congraph(nullptr),
+      _stress(directive, _log, compiler_c2),
       NOT_PRODUCT(_igv_printer(nullptr) COMMA)
       _unique(0),
       _dead_node_count(0),
@@ -769,14 +770,6 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
     // Make sure the method being compiled gets its own MDO,
     // so we can at least track the decompile_count().
     method()->ensure_method_data();
-  }
-
-  if (StressLCM || StressGCM || StressIGVN || StressCCP ||
-      StressIncrementalInlining || StressMacroExpansion ||
-      StressMacroElimination || StressUnstableIfTraps ||
-      StressBailout || StressLoopPeeling || StressCountedLoop ||
-      StressEliminateAllocations) {
-    initialize_stress_seed(directive);
   }
 
   Init(/*do_aliasing=*/ true);
@@ -994,7 +987,6 @@ Compile::Compile(ciEnv* ci_env,
       _trace_opto_output(directive->TraceOptoOutputOption),
 #endif
       _clinit_barrier_on_entry(false),
-      _stress_seed(0),
       _comp_arena(mtCompiler, Arena::Tag::tag_comp),
       _barrier_set_state(BarrierSet::barrier_set()->barrier_set_c2()->create_barrier_state(comp_arena())),
       _env(ci_env),
@@ -1005,6 +997,7 @@ Compile::Compile(ciEnv* ci_env,
       _for_post_loop_igvn(comp_arena(), 8, 0, nullptr),
       _for_merge_stores_igvn(comp_arena(), 8, 0, nullptr),
       _congraph(nullptr),
+      _stress(directive, _log, compiler_c2),
       NOT_PRODUCT(_igv_printer(nullptr) COMMA)
       _unique(0),
       _dead_node_count(0),
@@ -1063,10 +1056,6 @@ Compile::Compile(ciEnv* ci_env,
   _igvn_worklist = new (comp_arena()) Unique_Node_List(comp_arena());
   _types = new (comp_arena()) Type_Array(comp_arena());
   _node_hash = new (comp_arena()) NodeHash(comp_arena(), 255);
-
-  if (StressLCM || StressGCM || StressBailout) {
-    initialize_stress_seed(directive);
-  }
 
   {
     PhaseGVN gvn;
@@ -1424,7 +1413,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
 
   // Process weird unsafe references.
   if (offset == Type::OffsetBot && (tj->isa_instptr() /*|| tj->isa_klassptr()*/)) {
-    assert(InlineUnsafeOps || StressReflectiveCode || UseAcmpFastPath, "indeterminate pointers come only from unsafe ops");
+    assert(InlineUnsafeOps || StressReflectiveCode || UseAcmpFastPath || UseHashcodeFastPath, "indeterminate pointers come only from unsafe ops");
     assert(!is_known_inst, "scalarizable allocation should not have unsafe references");
     tj = TypeOopPtr::BOTTOM;
     ptr = tj->ptr();
@@ -2857,7 +2846,7 @@ static void shuffle_array(Compile& C, GrowableArray<E>& array) {
     return;
   }
   for (uint i = array.length() - 1; i >= 1; i--) {
-    uint j = C.random() % (i + 1);
+    uint j = C.stress().random() % (i + 1);
     swap(array.at(i), array.at(j));
   }
 }
@@ -4881,6 +4870,8 @@ bool Compile::final_graph_reshaping() {
 
       // Recheck with a better notion of 'required_outcnt'
       if (n->outcnt() != required_outcnt) {
+        DEBUG_ONLY(n->dump_bfs(3, nullptr, "-"));
+        assert(false, "malformed control flow");
         record_method_not_compilable("malformed control flow");
         return true;            // Not all targets reachable!
       }
@@ -5788,60 +5779,10 @@ void Compile::remove_speculative_types(PhaseIterGVN &igvn) {
 
 // Auxiliary methods to support randomized stressing/fuzzing.
 
-void Compile::initialize_stress_seed(const DirectiveSet* directive) {
-  if (FLAG_IS_DEFAULT(StressSeed) || (FLAG_IS_ERGO(StressSeed) && directive->RepeatCompilationOption)) {
-    _stress_seed = static_cast<uint>(Ticks::now().nanoseconds());
-    FLAG_SET_ERGO(StressSeed, _stress_seed);
-  } else {
-    _stress_seed = StressSeed;
-  }
-  if (_log != nullptr) {
-    _log->elem("stress_test seed='%u'", _stress_seed);
-  }
-}
-
-int Compile::random() {
-  _stress_seed = os::next_random(_stress_seed);
-  return static_cast<int>(_stress_seed);
-}
-
-// This method can be called the arbitrary number of times, with current count
-// as the argument. The logic allows selecting a single candidate from the
-// running list of candidates as follows:
-//    int count = 0;
-//    Cand* selected = null;
-//    while(cand = cand->next()) {
-//      if (randomized_select(++count)) {
-//        selected = cand;
-//      }
-//    }
-//
-// Including count equalizes the chances any candidate is "selected".
-// This is useful when we don't have the complete list of candidates to choose
-// from uniformly. In this case, we need to adjust the randomicity of the
-// selection, or else we will end up biasing the selection towards the latter
-// candidates.
-//
-// Quick back-envelope calculation shows that for the list of n candidates
-// the equal probability for the candidate to persist as "best" can be
-// achieved by replacing it with "next" k-th candidate with the probability
-// of 1/k. It can be easily shown that by the end of the run, the
-// probability for any candidate is converged to 1/n, thus giving the
-// uniform distribution among all the candidates.
-//
-// We don't care about the domain size as long as (RANDOMIZED_DOMAIN / count) is large.
-#define RANDOMIZED_DOMAIN_POW 29
-#define RANDOMIZED_DOMAIN (1 << RANDOMIZED_DOMAIN_POW)
-#define RANDOMIZED_DOMAIN_MASK ((1 << (RANDOMIZED_DOMAIN_POW + 1)) - 1)
-bool Compile::randomized_select(int count) {
-  assert(count > 0, "only positive");
-  return (random() & RANDOMIZED_DOMAIN_MASK) < (RANDOMIZED_DOMAIN / count);
-}
-
 #ifdef ASSERT
 // Failures are geometrically distributed with probability 1/StressBailoutMean.
 bool Compile::fail_randomly() {
-  if ((random() % StressBailoutMean) != 0) {
+  if ((stress().random() % StressBailoutMean) != 0) {
     return false;
   }
   record_failure("StressBailout");

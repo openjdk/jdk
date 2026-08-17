@@ -1144,10 +1144,11 @@ public class ClassWriter extends ClassFile {
         }
 
         // counter for number of generic local variables
-        if (code.varDebugInfo && code.varBufferSize > 0) {
+        int lvtSize = code.getLVTSize();
+        if (code.varDebugInfo && lvtSize > 0) {
             int nGenericVars = 0;
             int alenIdx = writeAttr(names.LocalVariableTable);
-            databuf.appendChar(code.getLVTSize());
+            databuf.appendChar(lvtSize);
             for (int i=0; i<code.varBufferSize; i++) {
                 Code.LocalVar var = code.varBuffer[i];
 
