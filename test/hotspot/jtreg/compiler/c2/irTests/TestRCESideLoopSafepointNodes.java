@@ -32,7 +32,7 @@ import compiler.lib.ir_framework.TestFramework;
 /*
  * @test
  * @bug 8381505
- * @summary Range check elimination must keep safepoints in pre- and post-loops
+ * @summary Keep only the pre- and post-loop safepoints required by range check elimination
  * @library /test/lib /
  * @requires vm.compiler2.enabled
  * @run driver compiler.c2.irTests.TestRCESideLoopSafepointNodes
@@ -69,8 +69,31 @@ public class TestRCESideLoopSafepointNodes {
         }
     }
 
+    @Test
+    @IR(counts = {IRNode.COUNTED_LOOP, "3"})
+    @IR(applyIf = {"LoopStripMiningIter", "1"},
+        counts = {IRNode.SAFEPOINT, "1"},
+        failOn = {IRNode.OUTER_STRIP_MINED_LOOP})
+    @IR(applyIf = {"LoopStripMiningIter", "> 1"},
+        counts = {IRNode.OUTER_STRIP_MINED_LOOP, "1",
+                  IRNode.SAFEPOINT, "1"})
+    private static void testRejectedRCE(int start, int limit, int bound) {
+        for (int i = start; i < limit; i++) {
+            Thread.onSpinWait();
+            java.lang.invoke.VarHandle.fullFence();
+            if (Integer.compareUnsigned(i * 2, bound) > 0) {
+                break;
+            }
+        }
+    }
+
     @Run(test = "test")
     private static void testRunner() {
         test(Integer.MIN_VALUE, Integer.MIN_VALUE + 10_000, Integer.MAX_VALUE);
+    }
+
+    @Run(test = "testRejectedRCE")
+    private static void testRejectedRCERunner() {
+        testRejectedRCE(0, 10_000, -1);
     }
 }

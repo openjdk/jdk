@@ -87,7 +87,8 @@ protected:
          MultiversionSlowLoop         = 2<<17, // 1<<18
          MultiversionDelayedSlowLoop  = 3<<17,
          MultiversionFlagsMask        = 3<<17,
-         FlatArrays            = 1<<19};
+         FlatArrays                    = 1<<19,
+         RedundantOuterStripMinedLoop  = 1<<20};
   char _unswitch_count;
   enum { _unswitch_max=3 };
 
@@ -373,6 +374,7 @@ public:
 
   Node* is_canonical_loop_entry();
   CountedLoopEndNode* find_pre_loop_end();
+  CountedLoopEndNode* find_post_loop_end();
 
   Node* uncasted_init_trip(bool uncasted);
 
@@ -618,6 +620,10 @@ public:
 
   Node* register_control(Node* node, Node* loop, Node* idom, PhaseIterGVN* igvn,
                          PhaseIdealLoop* iloop);
+
+  bool is_redundant() const { return (_loop_flags & RedundantOuterStripMinedLoop) != 0; }
+  void mark_redundant() { _loop_flags |= RedundantOuterStripMinedLoop; }
+  void clear_redundant() { _loop_flags &= ~RedundantOuterStripMinedLoop; }
 };
 
 class OuterStripMinedLoopEndNode : public IfNode {
@@ -1538,8 +1544,7 @@ public:
 
   // Add pre and post loops around the given loop.  These loops are used
   // during RCE, unrolling and aligning loops.
-  void insert_pre_post_loops(IdealLoopTree* loop, Node_List& old_new, bool peel_only,
-                             bool keep_side_loop_safepoints);
+  void insert_pre_post_loops(IdealLoopTree* loop, Node_List& old_new, bool peel_only);
 
   // Find the last store in the body of an OuterStripMinedLoop when following memory uses
   Node *find_last_store_in_outer_loop(Node* store, const IdealLoopTree* outer_loop);
@@ -1547,8 +1552,7 @@ public:
   // Add post loop after the given loop.
   Node *insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
                          CountedLoopNode* main_head, CountedLoopEndNode* main_end,
-                         Node* incr, Node* limit, CountedLoopNode*& post_head,
-                         bool keep_side_loop_safepoints);
+                         Node* incr, Node* limit, CountedLoopNode*& post_head);
 
   // Add a vector post loop between a vector main loop and the current post loop
   void insert_vector_post_loop(IdealLoopTree *loop, Node_List &old_new);
