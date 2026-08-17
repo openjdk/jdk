@@ -161,6 +161,11 @@ void ShenandoahInPlacePromoter::maybe_promote_region(ShenandoahHeapRegion* r) co
       // newly allocated objects do not have appropriate age; this region's age will be reset to zero at end of cycle.
       promote(r);
     }
+  } else if (r->get_top_before_promote() != nullptr) {
+    LogTarget(Warning, gc) lt;
+    LogStream ls(lt);
+    ls.print_cr("Not promoting region already scheduled for it");
+    r->print_on(&ls);
   }
 }
 
