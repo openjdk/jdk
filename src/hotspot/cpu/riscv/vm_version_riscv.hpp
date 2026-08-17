@@ -281,6 +281,8 @@ class VM_Version : public Abstract_VM_Version {
   decl(Zifencei    ,  RV_NO_FLAG_BIT,  true ,  NO_UPDATE_DEFAULT)                                      \
   /* Zihintpause Pause instruction HINT */                                                             \
   decl(Zihintpause ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZihintpause))                         \
+  /* Zilx Indexed integer loads; vendor detection may enable this until Linux defines a hwprobe bit */ \
+  decl(Zilx        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZilx))                                \
   /* Total Store Ordering */                                                                           \
   decl(Ztso        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZtso))                                \
   /* Vector Basic Bit-manipulation */                                                                  \

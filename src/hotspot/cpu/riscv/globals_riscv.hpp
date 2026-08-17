@@ -114,6 +114,7 @@ define_pd_global(intx, InlineSmallCode,          1000);
   product(bool, UseZicbop, false, EXPERIMENTAL, "Use Zicbop instructions")       \
   product(bool, UseZicboz, false, EXPERIMENTAL, "Use Zicboz instructions")       \
   product(bool, UseZicond, false, DIAGNOSTIC, "Use Zicond instructions")         \
+  product(bool, UseZilx, false, EXPERIMENTAL, "Use Zilx instructions")           \
   product(bool, UseZibi, false, EXPERIMENTAL,                                    \
           "Use Zibi (branch with immediate) instructions")                       \
   product(bool, UseZihintpause, false, EXPERIMENTAL,                             \

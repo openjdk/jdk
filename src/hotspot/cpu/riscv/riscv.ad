@@ -2127,6 +2127,13 @@ bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
   assert_cond(addp != nullptr);
   for (DUIterator_Fast imax, i = addp->fast_outs(imax); i < imax; i++) {
     Node* u = addp->fast_out(i);
+    if (u != nullptr && u->is_LoadStore()) {
+      // LoadStoreNodes (compare-and-swap, get-and-set, etc.) report is_Mem()
+      // but do not derive from MemNode, so as_Mem() below would be an invalid
+      // downcast. They also only accept a plain register-indirect address, so
+      // an AddPNode can never feed one: bail out. (Mirrors aarch64.ad.)
+      return false;
+    }
     if (u != nullptr && u->is_Mem()) {
       int opsize = u->as_Mem()->memory_size();
       assert(opsize > 0, "unexpected memory operand size");
@@ -2137,6 +2144,41 @@ bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
   }
   return true;
 }
+
+// Zilx indexed load helper. The access width and signedness of the C2 load is
+// captured by 'kind'; the addressing mode (unscaled / scaled / scaled with a
+// zero-extended 32-bit index) is captured by the matched memory operand's
+// 'opcode'. 'base' is the base register (rs2) and 'index' is the index
+// register (rs1). See the "Zilx" unprivileged extension specification.
+//
+// Note: a signed (ConvI2L) 32-bit index is never folded into a Zilx load,
+// because Zilx has no sign-extending index mode. Those addresses keep using
+// the generic shadd + base-load sequence, which stays correct for the whole
+// signed 32-bit range.
+enum ZilxKind { ZK_S8, ZK_U8, ZK_S16, ZK_U16, ZK_S32, ZK_U32, ZK_S64 };
+
+static void zilx_load(MacroAssembler* masm, ZilxKind kind, int opcode,
+                      Register dst, Register base, Register index) {
+  assert(UseZilx, "sanity");
+  // Zero-extended 32-bit index modes (lxsuw*).
+  const bool uw = (opcode == INDINDEXUWB || opcode == INDINDEXSCALEDUW);
+  // Scaled modes. Byte accesses have a scale of 1 and are always emitted as the
+  // scaled byte forms (lxsb/lxsbu/lxsuwb/lxsuwbu), so 'scaled' is only consulted
+  // for the halfword/word/doubleword kinds.
+  const bool scaled = (opcode == INDINDEXSCALEDL || opcode == INDINDEXSCALEDUW);
+  switch (kind) {
+    case ZK_S8:  if (uw) { masm->lxsuwb(dst, base, index); }  else { masm->lxsb(dst, base, index); }   break;
+    case ZK_U8:  if (uw) { masm->lxsuwbu(dst, base, index); } else { masm->lxsbu(dst, base, index); }  break;
+    case ZK_S16: if (uw) { masm->lxsuwh(dst, base, index); }  else if (scaled) { masm->lxsh(dst, base, index); }  else { masm->lxh(dst, base, index); }  break;
+    case ZK_U16: if (uw) { masm->lxsuwhu(dst, base, index); } else if (scaled) { masm->lxshu(dst, base, index); } else { masm->lxhu(dst, base, index); } break;
+    case ZK_S32: if (uw) { masm->lxsuww(dst, base, index); }  else if (scaled) { masm->lxsw(dst, base, index); }  else { masm->lxw(dst, base, index); }  break;
+    case ZK_U32: if (uw) { masm->lxsuwwu(dst, base, index); } else if (scaled) { masm->lxswu(dst, base, index); } else { masm->lxwu(dst, base, index); } break;
+    case ZK_S64: if (uw) { masm->lxsuwd(dst, base, index); }  else if (scaled) { masm->lxsd(dst, base, index); }  else { masm->lxd(dst, base, index); }  break;
+    default: ShouldNotReachHere();
+  }
+}
+
+
 
 // Binary src (Replicate scalar/immediate)
 static bool is_vector_scalar_bitwise_pattern(Node* n, Node* m) {
@@ -2198,7 +2240,59 @@ bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
 // to be subsumed into complex addressing expressions or compute them
 // into registers?
 bool Matcher::pd_clone_address_expressions(AddPNode* m, Matcher::MStack& mstack, VectorSet& address_visited) {
-  return clone_base_plus_offset_address(m, mstack, address_visited);
+  if (clone_base_plus_offset_address(m, mstack, address_visited)) {
+    return true;
+  }
+
+  // With Zilx we can subsume a (possibly scaled, possibly zero-extended)
+  // register index directly into the load's addressing mode. Clone the
+  // corresponding shift / ConvI2L / AndL subtree into the address so it is not
+  // separately computed into a register. A signed ConvI2L index is left alone:
+  // Zilx has no sign-extending index mode, so it must stay on the shadd path.
+  if (!UseZilx) {
+    return false;
+  }
+
+  Node *off = m->in(AddPNode::Offset);
+  if (off->Opcode() == Op_LShiftL && off->in(2)->is_Con() &&
+      size_fits_all_mem_uses(m, off->in(2)->get_int()) &&
+      // Are there other uses besides address expressions?
+      !is_visited(off)) {
+    address_visited.set(off->_idx); // Flag as address_visited
+    mstack.push(off->in(2), Visit);
+    Node *conv = off->in(1);
+    if (conv->Opcode() == Op_AndL && conv->in(2)->is_Con() &&
+        conv->in(2)->get_long() == 0xFFFFFFFFL &&
+        conv->in(1)->Opcode() == Op_ConvI2L &&
+        // Are there other uses besides address expressions?
+        !is_visited(conv) && !is_visited(conv->in(1))) {
+      // zext32(index) << scale
+      address_visited.set(conv->_idx); // Flag as address_visited
+      address_visited.set(conv->in(1)->_idx); // Flag as address_visited
+      mstack.push(conv->in(1)->in(1), Pre_Visit);
+    } else {
+      // index << scale (long index)
+      mstack.push(conv, Pre_Visit);
+    }
+    address_visited.test_set(m->_idx); // Flag as address_visited
+    mstack.push(m->in(AddPNode::Address), Pre_Visit);
+    mstack.push(m->in(AddPNode::Base), Pre_Visit);
+    return true;
+  } else if (off->Opcode() == Op_AndL && off->in(2)->is_Con() &&
+             off->in(2)->get_long() == 0xFFFFFFFFL &&
+             off->in(1)->Opcode() == Op_ConvI2L &&
+             // Are there other uses besides address expressions?
+             !is_visited(off) && !is_visited(off->in(1))) {
+    // zext32(index), unscaled
+    address_visited.test_set(m->_idx); // Flag as address_visited
+    address_visited.set(off->_idx); // Flag as address_visited
+    address_visited.set(off->in(1)->_idx); // Flag as address_visited
+    mstack.push(off->in(1)->in(1), Pre_Visit);
+    mstack.push(m->in(AddPNode::Address), Pre_Visit);
+    mstack.push(m->in(AddPNode::Base), Pre_Visit);
+    return true;
+  }
+  return false;
 }
 
 %}
@@ -3576,6 +3670,77 @@ operand indOffLN(iRegN reg, immLOffset off)
   %}
 %}
 
+//----------Zilx Indexed Memory Operands---------------------------------------
+// The Zilx extension provides integer loads whose effective address is formed
+// from a base register plus an (optionally scaled) index register. There is no
+// displacement, so only zero-displacement AddP trees are matched. A signed
+// (ConvI2L) 32-bit index is deliberately not matched here, because Zilx has no
+// sign-extending index mode; those addresses keep using shadd + base-load.
+
+// base + index  (long index, unscaled: lx*)
+operand indIndexL(iRegP reg, iRegL lreg)
+%{
+  predicate(UseZilx);
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP reg lreg);
+  op_cost(0);
+  format %{ "[$reg, $lreg]\t# zilx" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index($lreg);
+    scale(0x0);
+    disp(0x0);
+  %}
+%}
+
+// base + (index << log2(size))  (long index, scaled: lxs*)
+operand indIndexScaledL(iRegP reg, iRegL lreg, immIScale scale)
+%{
+  predicate(UseZilx && size_fits_all_mem_uses(n->as_AddP(), n->in(AddPNode::Offset)->in(2)->get_int()));
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP reg (LShiftL lreg scale));
+  op_cost(0);
+  format %{ "[$reg, $lreg << $scale]\t# zilx" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index($lreg);
+    scale($scale);
+    disp(0x0);
+  %}
+%}
+
+// base + zext32(index)  (zero-extended 32-bit index, unscaled/byte: lxsuw*)
+operand indIndexUwB(iRegP reg, iRegI ireg, immL_32bits mask)
+%{
+  predicate(UseZilx);
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP reg (AndL (ConvI2L ireg) mask));
+  op_cost(0);
+  format %{ "[$reg, zext32($ireg)]\t# zilx.uw" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index($ireg);
+    scale(0x0);
+    disp(0x0);
+  %}
+%}
+
+// base + (zext32(index) << log2(size))  (zero-extended 32-bit index, scaled: lxsuw*)
+operand indIndexScaledUw(iRegP reg, iRegI ireg, immL_32bits mask, immIScale scale)
+%{
+  predicate(UseZilx && size_fits_all_mem_uses(n->as_AddP(), n->in(AddPNode::Offset)->in(2)->get_int()));
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP reg (LShiftL (AndL (ConvI2L ireg) mask) scale));
+  op_cost(0);
+  format %{ "[$reg, zext32($ireg) << $scale]\t# zilx.uw" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index($ireg);
+    scale($scale);
+    disp(0x0);
+  %}
+%}
+
 //----------Special Memory Operands--------------------------------------------
 // Stack Slot Operand - This operand is used for loading and storing temporary
 //                      values on the stack where a match requires a value to
@@ -3808,6 +3973,15 @@ operand inline_cache_RegP(iRegP reg)
 // instruction defs. we can turn a memory op into an Address
 
 opclass memory(indirect, indOffI, indOffL, indirectN, indOffIN, indOffLN);
+
+// Zilx indexed memory operand classes. Byte accesses have a scale factor of 1,
+// so a byte load only ever uses the unscaled operands (indIndexL / indIndexUwB)
+// which map to the scaled byte forms lxsb/lxsbu/lxsuwb/lxsuwbu. Wider accesses
+// use the unscaled operand (base + index) plus the scaled operands whose
+// predicate constrains the shift amount to log2(access-size).
+opclass memoryZilxByte(indIndexL, indIndexUwB);
+opclass memoryZilxWide(indIndexL, indIndexScaledL, indIndexScaledUw);
+
 
 // iRegIorL2I is used for src inputs in rules for 32 bit int (I)
 // operations. it allows the src to be either an iRegI or a (ConvL2I
@@ -4604,6 +4778,221 @@ instruct loadL(iRegLNoSp dst, memory mem)
 
   ins_encode %{
     __ ld(as_Register($dst$$reg), Address(as_Register($mem$$base), $mem$$disp));
+  %}
+
+  ins_pipe(iload_reg_mem);
+%}
+
+// ============================================================================
+// Zilx indexed integer loads.
+//
+// These rules subsume a (possibly scaled, possibly zero-extended) register
+// index directly into the load, emitting a single lx*/lxs*/lxsuw* instruction
+// instead of a shadd + base-load pair. They are gated on UseZilx and only
+// match zero-displacement AddP trees (Zilx has no displacement field). Their
+// cost is one LOAD_COST (a single instruction), so they are preferred over the
+// generic shadd + memory-load sequence when applicable.
+// ============================================================================
+
+// Load Byte (8 bit signed)
+instruct loadB_zilx(iRegINoSp dst, memoryZilxByte mem)
+%{
+  predicate(UseZilx);
+  match(Set dst (LoadB mem));
+
+  ins_cost(LOAD_COST);
+  format %{ "lxsb  $dst, $mem\t# byte, #@loadB_zilx" %}
+
+  ins_encode %{
+    zilx_load(masm, ZK_S8, $mem->opcode(),
+              as_Register($dst$$reg), as_Register($mem$$base), as_Register($mem$$index));
+  %}
+
+  ins_pipe(iload_reg_mem);
+%}
+
+// Load Byte (8 bit signed) into long
+instruct loadB2L_zilx(iRegLNoSp dst, memoryZilxByte mem)
+%{
+  predicate(UseZilx);
+  match(Set dst (ConvI2L (LoadB mem)));
+
+  ins_cost(LOAD_COST);
+  format %{ "lxsb  $dst, $mem\t# byte, #@loadB2L_zilx" %}
+
+  ins_encode %{
+    zilx_load(masm, ZK_S8, $mem->opcode(),
+              as_Register($dst$$reg), as_Register($mem$$base), as_Register($mem$$index));
+  %}
+
+  ins_pipe(iload_reg_mem);
+%}
+
+// Load Byte (8 bit unsigned)
+instruct loadUB_zilx(iRegINoSp dst, memoryZilxByte mem)
+%{
+  predicate(UseZilx);
+  match(Set dst (LoadUB mem));
+
+  ins_cost(LOAD_COST);
+  format %{ "lxsbu  $dst, $mem\t# byte, #@loadUB_zilx" %}
+
+  ins_encode %{
+    zilx_load(masm, ZK_U8, $mem->opcode(),
+              as_Register($dst$$reg), as_Register($mem$$base), as_Register($mem$$index));
+  %}
+
+  ins_pipe(iload_reg_mem);
+%}
+
+// Load Byte (8 bit unsigned) into long
+instruct loadUB2L_zilx(iRegLNoSp dst, memoryZilxByte mem)
+%{
+  predicate(UseZilx);
+  match(Set dst (ConvI2L (LoadUB mem)));
+
+  ins_cost(LOAD_COST);
+  format %{ "lxsbu  $dst, $mem\t# byte, #@loadUB2L_zilx" %}
+
+  ins_encode %{
+    zilx_load(masm, ZK_U8, $mem->opcode(),
+              as_Register($dst$$reg), as_Register($mem$$base), as_Register($mem$$index));
+  %}
+
+  ins_pipe(iload_reg_mem);
+%}
+
+// Load Short (16 bit signed)
+instruct loadS_zilx(iRegINoSp dst, memoryZilxWide mem)
+%{
+  predicate(UseZilx);
+  match(Set dst (LoadS mem));
+
+  ins_cost(LOAD_COST);
+  format %{ "lxsh  $dst, $mem\t# short, #@loadS_zilx" %}
+
+  ins_encode %{
+    zilx_load(masm, ZK_S16, $mem->opcode(),
+              as_Register($dst$$reg), as_Register($mem$$base), as_Register($mem$$index));
+  %}
+
+  ins_pipe(iload_reg_mem);
+%}
+
+// Load Short (16 bit signed) into long
+instruct loadS2L_zilx(iRegLNoSp dst, memoryZilxWide mem)
+%{
+  predicate(UseZilx);
+  match(Set dst (ConvI2L (LoadS mem)));
+
+  ins_cost(LOAD_COST);
+  format %{ "lxsh  $dst, $mem\t# short, #@loadS2L_zilx" %}
+
+  ins_encode %{
+    zilx_load(masm, ZK_S16, $mem->opcode(),
+              as_Register($dst$$reg), as_Register($mem$$base), as_Register($mem$$index));
+  %}
+
+  ins_pipe(iload_reg_mem);
+%}
+
+// Load Char (16 bit unsigned)
+instruct loadUS_zilx(iRegINoSp dst, memoryZilxWide mem)
+%{
+  predicate(UseZilx);
+  match(Set dst (LoadUS mem));
+
+  ins_cost(LOAD_COST);
+  format %{ "lxshu  $dst, $mem\t# short, #@loadUS_zilx" %}
+
+  ins_encode %{
+    zilx_load(masm, ZK_U16, $mem->opcode(),
+              as_Register($dst$$reg), as_Register($mem$$base), as_Register($mem$$index));
+  %}
+
+  ins_pipe(iload_reg_mem);
+%}
+
+// Load Short/Char (16 bit unsigned) into long
+instruct loadUS2L_zilx(iRegLNoSp dst, memoryZilxWide mem)
+%{
+  predicate(UseZilx);
+  match(Set dst (ConvI2L (LoadUS mem)));
+
+  ins_cost(LOAD_COST);
+  format %{ "lxshu  $dst, $mem\t# short, #@loadUS2L_zilx" %}
+
+  ins_encode %{
+    zilx_load(masm, ZK_U16, $mem->opcode(),
+              as_Register($dst$$reg), as_Register($mem$$base), as_Register($mem$$index));
+  %}
+
+  ins_pipe(iload_reg_mem);
+%}
+
+// Load Integer (32 bit signed)
+instruct loadI_zilx(iRegINoSp dst, memoryZilxWide mem)
+%{
+  predicate(UseZilx);
+  match(Set dst (LoadI mem));
+
+  ins_cost(LOAD_COST);
+  format %{ "lxsw  $dst, $mem\t# int, #@loadI_zilx" %}
+
+  ins_encode %{
+    zilx_load(masm, ZK_S32, $mem->opcode(),
+              as_Register($dst$$reg), as_Register($mem$$base), as_Register($mem$$index));
+  %}
+
+  ins_pipe(iload_reg_mem);
+%}
+
+// Load Integer (32 bit signed) into long
+instruct loadI2L_zilx(iRegLNoSp dst, memoryZilxWide mem)
+%{
+  predicate(UseZilx);
+  match(Set dst (ConvI2L (LoadI mem)));
+
+  ins_cost(LOAD_COST);
+  format %{ "lxsw  $dst, $mem\t# int, #@loadI2L_zilx" %}
+
+  ins_encode %{
+    zilx_load(masm, ZK_S32, $mem->opcode(),
+              as_Register($dst$$reg), as_Register($mem$$base), as_Register($mem$$index));
+  %}
+
+  ins_pipe(iload_reg_mem);
+%}
+
+// Load Integer (32 bit unsigned) into long
+instruct loadUI2L_zilx(iRegLNoSp dst, memoryZilxWide mem, immL_32bits mask)
+%{
+  predicate(UseZilx);
+  match(Set dst (AndL (ConvI2L (LoadI mem)) mask));
+
+  ins_cost(LOAD_COST);
+  format %{ "lxswu  $dst, $mem\t# int, #@loadUI2L_zilx" %}
+
+  ins_encode %{
+    zilx_load(masm, ZK_U32, $mem->opcode(),
+              as_Register($dst$$reg), as_Register($mem$$base), as_Register($mem$$index));
+  %}
+
+  ins_pipe(iload_reg_mem);
+%}
+
+// Load Long (64 bit signed)
+instruct loadL_zilx(iRegLNoSp dst, memoryZilxWide mem)
+%{
+  predicate(UseZilx);
+  match(Set dst (LoadL mem));
+
+  ins_cost(LOAD_COST);
+  format %{ "lxsd  $dst, $mem\t# long, #@loadL_zilx" %}
+
+  ins_encode %{
+    zilx_load(masm, ZK_S64, $mem->opcode(),
+              as_Register($dst$$reg), as_Register($mem$$base), as_Register($mem$$index));
   %}
 
   ins_pipe(iload_reg_mem);

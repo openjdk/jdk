@@ -1261,6 +1261,106 @@ protected:
     amo_base<AMO_CAS, AMO_WIDTH_DOUBLEWORD>(Rd, Rs1, Rs2, memory_order);
   }
 
+ private:
+
+  // Zilx: indexed integer loads. These reuse the AMO major opcode, with the
+  // addressing mode selected by funct5 and the access width/signedness encoded
+  // in funct3 using the same encoding as the base integer loads. Zilx v0.1,
+  // "Indexed Load Classes" (norm:Zilx_operand_roles), explicitly assigns the
+  // index to rs1 and the base to rs2, matching the operand roles used by Zba
+  // shift-add instructions. See https://github.com/riscv/riscv-zilx.
+  // aq and rl must be 0.
+  enum ZilxModeFunct5 : uint8_t {
+    ZILX_UNSCALED  = 0b10010, // lx*    : base + index
+    ZILX_SCALED    = 0b11010, // lxs*   : base + (index << log2(access-size))
+    ZILX_SCALED_UW = 0b11110, // lxsuw* : base + (zext32(index) << log2(access-size))
+  };
+
+  template <ZilxModeFunct5 mode, LoadWidthFunct3 width>
+  void zilx_base(Register Rd, Register base, Register index) {
+    assert(UseZilx, "Must be");
+    unsigned insn = 0;
+    patch((address)&insn,  6,  0, OP_AMO_MAJOR);
+    patch_reg((address)&insn,  7, Rd);           // rd  = destination
+    patch((address)&insn, 14, 12, width);        // funct3 = width/sign
+    patch_reg((address)&insn, 15, index);        // rs1 = index
+    patch_reg((address)&insn, 20, base);         // rs2 = base
+    patch((address)&insn, 26, 25, 0b00);         // aq = rl = 0
+    patch((address)&insn, 31, 27, mode);         // funct5 = addressing mode
+    emit(insn);
+  }
+
+ public:
+
+  // Unscaled indexed loads (lx*): effective address = base + index
+  void lxh(Register Rd, Register base, Register index) {
+    zilx_base<ZILX_UNSCALED, LOAD_WIDTH_HALFWORD>(Rd, base, index);
+  }
+  void lxw(Register Rd, Register base, Register index) {
+    zilx_base<ZILX_UNSCALED, LOAD_WIDTH_WORD>(Rd, base, index);
+  }
+  void lxd(Register Rd, Register base, Register index) {
+    zilx_base<ZILX_UNSCALED, LOAD_WIDTH_DOUBLEWORD>(Rd, base, index);
+  }
+  void lxhu(Register Rd, Register base, Register index) {
+    zilx_base<ZILX_UNSCALED, LOAD_WIDTH_HALFWORD_UNSIGNED>(Rd, base, index);
+  }
+  void lxwu(Register Rd, Register base, Register index) {
+    zilx_base<ZILX_UNSCALED, LOAD_WIDTH_WORD_UNSIGNED>(Rd, base, index);
+  }
+
+  // Scaled indexed loads (lxs*): effective address = base + (index << log2(size))
+  void lxsb(Register Rd, Register base, Register index) {
+    zilx_base<ZILX_SCALED, LOAD_WIDTH_BYTE>(Rd, base, index);
+  }
+  void lxsh(Register Rd, Register base, Register index) {
+    zilx_base<ZILX_SCALED, LOAD_WIDTH_HALFWORD>(Rd, base, index);
+  }
+  void lxsw(Register Rd, Register base, Register index) {
+    zilx_base<ZILX_SCALED, LOAD_WIDTH_WORD>(Rd, base, index);
+  }
+  void lxsd(Register Rd, Register base, Register index) {
+    zilx_base<ZILX_SCALED, LOAD_WIDTH_DOUBLEWORD>(Rd, base, index);
+  }
+  void lxsbu(Register Rd, Register base, Register index) {
+    zilx_base<ZILX_SCALED, LOAD_WIDTH_BYTE_UNSIGNED>(Rd, base, index);
+  }
+  void lxshu(Register Rd, Register base, Register index) {
+    zilx_base<ZILX_SCALED, LOAD_WIDTH_HALFWORD_UNSIGNED>(Rd, base, index);
+  }
+  void lxswu(Register Rd, Register base, Register index) {
+    zilx_base<ZILX_SCALED, LOAD_WIDTH_WORD_UNSIGNED>(Rd, base, index);
+  }
+
+  // Scaled indexed loads with zero-extended 32-bit index (lxsuw*):
+  // effective address = base + (zext32(index) << log2(size))
+  void lxsuwb(Register Rd, Register base, Register index) {
+    zilx_base<ZILX_SCALED_UW, LOAD_WIDTH_BYTE>(Rd, base, index);
+  }
+  void lxsuwh(Register Rd, Register base, Register index) {
+    zilx_base<ZILX_SCALED_UW, LOAD_WIDTH_HALFWORD>(Rd, base, index);
+  }
+  void lxsuww(Register Rd, Register base, Register index) {
+    zilx_base<ZILX_SCALED_UW, LOAD_WIDTH_WORD>(Rd, base, index);
+  }
+  void lxsuwd(Register Rd, Register base, Register index) {
+    zilx_base<ZILX_SCALED_UW, LOAD_WIDTH_DOUBLEWORD>(Rd, base, index);
+  }
+  void lxsuwbu(Register Rd, Register base, Register index) {
+    zilx_base<ZILX_SCALED_UW, LOAD_WIDTH_BYTE_UNSIGNED>(Rd, base, index);
+  }
+  void lxsuwhu(Register Rd, Register base, Register index) {
+    zilx_base<ZILX_SCALED_UW, LOAD_WIDTH_HALFWORD_UNSIGNED>(Rd, base, index);
+  }
+  void lxsuwwu(Register Rd, Register base, Register index) {
+    zilx_base<ZILX_SCALED_UW, LOAD_WIDTH_WORD_UNSIGNED>(Rd, base, index);
+  }
+
+  // Assembler pseudoinstructions: a byte access has a scale factor of 1, so the
+  // scaled byte forms also serve as the "unscaled" byte loads.
+  void lxb(Register Rd, Register base, Register index)  { lxsb(Rd, base, index); }
+  void lxbu(Register Rd, Register base, Register index) { lxsbu(Rd, base, index); }
+
  public:
 
   enum operand_size { int8, int16, int32, uint32, int64 };
