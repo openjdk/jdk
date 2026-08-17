@@ -66,7 +66,7 @@ static const char* const default_compile_commands[] = {
 // 1 (C1)                  |    1
 // 2 (C1 + counters)       |   10
 // 3 (C1 + counters + mdo) |  100
-// 4 (C2/JVMCI)            | 1000
+// 4 (C2)                  | 1000
 // All C1 levels           |  111
 // All levels              | 1111
 

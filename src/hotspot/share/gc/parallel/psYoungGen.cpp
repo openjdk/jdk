@@ -43,6 +43,7 @@ PSYoungGen::PSYoungGen(ReservedSpace rs, size_t initial_size, size_t min_size, s
   _to_space(nullptr),
   _min_gen_size(min_size),
   _max_gen_size(max_size),
+  _sizing_state(SizingState::balanced),
   _gen_counters(nullptr),
   _eden_counters(nullptr),
   _from_counters(nullptr),
@@ -352,37 +353,92 @@ void PSYoungGen::compute_desired_sizes(bool is_survivor_overflowing,
   eden_size = align_up(eden_size, SpaceAlignment);
   assert(eden_size >= SpaceAlignment, "inv");
 
+  // from-space; survivor
+  const size_t survivor_used = from_space()->used_in_bytes();
+  // When survivor usage is below this ratio, consider survivor space sparse.
+  constexpr double survivor_sparse_threshold = 0.8;
+
   survivor_size = size_policy->compute_desired_survivor_size(current_survivor_size, max_gen_size());
   survivor_size = MAX3(survivor_size,
-                       from_space()->used_in_bytes(),
+                       survivor_used,
                        SpaceAlignment);
   survivor_size = align_up(survivor_size, SpaceAlignment);
 
-  log_debug(gc, ergo)("Desired size eden: %zu K, survivor: %zu K", eden_size/K, survivor_size/K);
+  log_debug(gc, ergo)("Desired size eden: %zu K, survivor: %zu K",
+                      eden_size / K,
+                      survivor_size / K);
 
-  const size_t new_gen_size = eden_size + 2 * survivor_size;
-  if (new_gen_size < min_gen_size()) {
-    // Keep survivor and adjust eden to meet min-gen-size
-    eden_size = min_gen_size() - 2 * survivor_size;
-  } else if (max_gen_size() < new_gen_size) {
-    log_info(gc, ergo)("Requested sizes exceeds MaxNewSize (K): %zu vs %zu", new_gen_size/K, max_gen_size()/K);
-    // New capacity would exceed max; need to revise these desired sizes.
-    // Favor survivor over eden in order to reduce promotion (overflow).
-    if (2 * survivor_size >= max_gen_size()) {
-      // If requested survivor size is too large
-      survivor_size = align_down((max_gen_size() - SpaceAlignment) / 2, SpaceAlignment);
-      eden_size = max_gen_size() - 2 * survivor_size;
-    } else {
+  _sizing_state = SizingState::balanced;
+
+  if (max_gen_size() < eden_size + 2 * survivor_size) {
+    log_info(gc, ergo)("Requested sizes exceed MaxNewSize (K): %zu vs %zu",
+                       (eden_size + 2 * survivor_size) / K,
+                       max_gen_size() / K);
+    // Must reduce eden/survivor to satisfy the max_gen_size constraint. Prioritize survivor_space to reduce promotion.
+    // Check if survivor is actually using its requested size.
+    if (!is_survivor_overflowing && survivor_used < survivor_sparse_threshold * survivor_size) {
+      // When survivor usage is sparse, trim survivor reservation and keep more room for eden.
+      size_t target_survivor_size = survivor_used + survivor_used / 4;
+      target_survivor_size = align_up(target_survivor_size, SpaceAlignment);
+      target_survivor_size = MAX2(target_survivor_size, SpaceAlignment);
+
+      if (target_survivor_size < survivor_size) {
+        // Decrease survivor gradually to avoid abrupt sizing swings.
+        // Simplified: new_survivor_size = survivor_size / 2 + 3 * survivor_used / 8.
+        const size_t survivor_delta = survivor_size - target_survivor_size;
+        const size_t survivor_decrement = align_up(survivor_delta / 2, SpaceAlignment);
+        survivor_size = MAX2(target_survivor_size, survivor_size - survivor_decrement);
+        log_debug(gc, ergo)("Trim survivor under MaxNewSize pressure (used: %zu K, target: %zu K, new: %zu K)",
+                            survivor_used / K,
+                            target_survivor_size / K,
+                            survivor_size / K);
+      }
+    }
+
+    // Recheck after potential survivor_size adjustment.
+    if (max_gen_size() < eden_size + 2 * survivor_size) {
+      if (2 * survivor_size >= max_gen_size()) {
+        // If requested survivor size is too large
+        survivor_size = align_down((max_gen_size() - SpaceAlignment) / 2, SpaceAlignment);
+      }
+
       // Respect survivor size and reduce eden
       eden_size = max_gen_size() - 2 * survivor_size;
+
+      _sizing_state = SizingState::constrained;
     }
   }
 
-  assert(eden_size >= SpaceAlignment, "inv");
-  assert(survivor_size >= SpaceAlignment, "inv");
+  if (eden_size + 2 * survivor_size < min_gen_size()) {
+    // Keep survivor and adjust eden to meet min-gen-size.
+    eden_size = min_gen_size() - 2 * survivor_size;
 
-  assert(is_aligned(eden_size, SpaceAlignment), "inv");
-  assert(is_aligned(survivor_size, SpaceAlignment), "inv");
+    _sizing_state = SizingState::surplus;
+  }
+
+  const size_t final_gen_size = eden_size + 2 * survivor_size;
+  // A balanced result fills max_gen_size; otherwise there is surplus young-gen headroom.
+  if (_sizing_state == SizingState::balanced) {
+    if (final_gen_size < max_gen_size()) {
+      _sizing_state = SizingState::surplus;
+    }
+  }
+
+#ifdef ASSERT
+  {
+    assert(eden_size >= SpaceAlignment, "inv");
+    assert(survivor_size >= SpaceAlignment, "inv");
+
+    assert(is_aligned(eden_size, SpaceAlignment), "inv");
+    assert(is_aligned(survivor_size, SpaceAlignment), "inv");
+
+    assert(final_gen_size >= min_gen_size(), "inv");
+    assert(final_gen_size <= max_gen_size(), "inv");
+    if (final_gen_size < max_gen_size()) {
+      assert(_sizing_state == SizingState::surplus, "inv");
+    }
+  }
+#endif
 }
 
 void PSYoungGen::resize_inner(size_t desired_eden_size,

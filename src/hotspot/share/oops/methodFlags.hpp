@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ class outputStream;
 
 class MethodFlags {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
    /* end of list */
 
 #define M_STATUS_DO(status)  \
@@ -58,6 +57,7 @@ class MethodFlags {
    status(has_loops_flag              , 1 << 13) /* Method has loops */ \
    status(has_loops_flag_init         , 1 << 14) /* The loop flag has been initialized */ \
    status(on_stack_flag               , 1 << 15) /* RedefineClasses support to keep Metadata from being cleaned */ \
+   status(has_scalarized_args         , 1 << 16) \
    /* end of list */
 
 #define M_STATUS_ENUM_NAME(name, value)    _misc_##name = value,

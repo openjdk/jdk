@@ -290,9 +290,8 @@
  * @summary Interoperability tests with Microsoft TLS root CAs
  * @library /test/lib
  * @build jtreg.SkippedException ValidatePathWithURL CAInterop
- * @run main/othervm/manual -Djava.security.debug=certpath,ocsp CAInterop microsoftrsa2017 OCSP
- * @run main/othervm/manual -Djava.security.debug=certpath,ocsp -Dcom.sun.security.ocsp.useget=false CAInterop microsoftrsa2017 OCSP
- * @run main/othervm/manual -Djava.security.debug=certpath CAInterop microsoftrsa2017 CRL
+ * @run main/othervm/manual -Djava.security.debug=certpath,ocsp CAInterop microsoftrsa2017 DEFAULT
+ * @run main/othervm/manual -Djava.security.debug=certpath,ocsp -Dcom.sun.security.ocsp.useget=false CAInterop microsoftrsa2017 DEFAULT
  */
 
 /*
@@ -607,8 +606,8 @@ public class CAInterop {
                     new CATestURLs("https://valid.business.ca22.ssl.buypass.no",
                     "https://revoked.business.ca22.ssl.buypass.no");
             case "buypassclass3ca" ->
-                    new CATestURLs("https://valid.qcevident.ca23.ssl.buypass.no",
-                    "https://revoked.qcevident.ca23.ssl.buypass.no");
+                    new CATestURLs("https://valid.evident.ca23.ssl.buypass.no",
+                    "https://revoked.evident.ca23.ssl.buypass.no");
 
             case "comodorsaca" ->
                     new CATestURLs("https://comodorsacertificationauthority-ev.comodoca.com",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,75 +79,122 @@ static void throwWindowsException(JNIEnv* env, DWORD lastError) {
     }
 }
 
+#if !defined(NTDDI_WIN10_NI) || !(NTDDI_VERSION >= NTDDI_WIN10_NI)
+
+typedef struct _FILE_STAT_BASIC_INFORMATION {
+    LARGE_INTEGER FileId;
+    LARGE_INTEGER CreationTime;
+    LARGE_INTEGER LastAccessTime;
+    LARGE_INTEGER LastWriteTime;
+    LARGE_INTEGER ChangeTime;
+    LARGE_INTEGER AllocationSize;
+    LARGE_INTEGER EndOfFile;
+    ULONG         FileAttributes;
+    ULONG         ReparseTag;
+    ULONG         NumberOfLinks;
+    ULONG         DeviceType;
+    ULONG         DeviceCharacteristics;
+    ULONG         Reserved;
+    LARGE_INTEGER VolumeSerialNumber;
+    FILE_ID_128   FileId128;
+} FILE_STAT_BASIC_INFORMATION;
+
+typedef enum _FILE_INFO_BY_NAME_CLASS {
+    FileStatByNameInfo,
+    FileStatLxByNameInfo,
+    FileCaseSensitiveByNameInfo,
+    FileStatBasicByNameInfo,
+    MaximumFileInfoByNameClass
+} FILE_INFO_BY_NAME_CLASS;
+
+#endif /* !defined(NTDDI_WIN10_NI) || !(NTDDI_VERSION >= NTDDI_WIN10_NI) */
+
+typedef BOOL (WINAPI *PGetFileInformationByName)(
+    PCWSTR, FILE_INFO_BY_NAME_CLASS, PVOID, ULONG);
+
+static PGetFileInformationByName pGetFileInformationByName = NULL;
+
 /**
  * Initializes jfieldIDs and get address of Win32 calls that are located
  * at runtime.
  */
-JNIEXPORT void JNICALL
-Java_sun_nio_fs_WindowsNativeDispatcher_initIDs(JNIEnv* env, jclass this)
+JNIEXPORT jint JNICALL
+Java_sun_nio_fs_WindowsNativeDispatcher_init(JNIEnv* env, jclass this)
 {
     jclass clazz;
+    jint capabilities = 0;
 
     clazz = (*env)->FindClass(env, "sun/nio/fs/WindowsNativeDispatcher$FirstFile");
-    CHECK_NULL(clazz);
+    CHECK_NULL_RETURN(clazz, 0);
     findFirst_handle = (*env)->GetFieldID(env, clazz, "handle", "J");
-    CHECK_NULL(findFirst_handle);
+    CHECK_NULL_RETURN(findFirst_handle, 0);
     findFirst_name = (*env)->GetFieldID(env, clazz, "name", "Ljava/lang/String;");
-    CHECK_NULL(findFirst_name);
+    CHECK_NULL_RETURN(findFirst_name, 0);
     findFirst_attributes = (*env)->GetFieldID(env, clazz, "attributes", "I");
-    CHECK_NULL(findFirst_attributes);
+    CHECK_NULL_RETURN(findFirst_attributes, 0);
 
     clazz = (*env)->FindClass(env, "sun/nio/fs/WindowsNativeDispatcher$FirstStream");
-    CHECK_NULL(clazz);
+    CHECK_NULL_RETURN(clazz, 0);
     findStream_handle = (*env)->GetFieldID(env, clazz, "handle", "J");
-    CHECK_NULL(findStream_handle);
+    CHECK_NULL_RETURN(findStream_handle, 0);
     findStream_name = (*env)->GetFieldID(env, clazz, "name", "Ljava/lang/String;");
-    CHECK_NULL(findStream_name);
+    CHECK_NULL_RETURN(findStream_name, 0);
 
     clazz = (*env)->FindClass(env, "sun/nio/fs/WindowsNativeDispatcher$VolumeInformation");
-    CHECK_NULL(clazz);
+    CHECK_NULL_RETURN(clazz, 0);
     volumeInfo_fsName = (*env)->GetFieldID(env, clazz, "fileSystemName", "Ljava/lang/String;");
-    CHECK_NULL(volumeInfo_fsName);
+    CHECK_NULL_RETURN(volumeInfo_fsName, 0);
     volumeInfo_volName = (*env)->GetFieldID(env, clazz, "volumeName", "Ljava/lang/String;");
-    CHECK_NULL(volumeInfo_volName);
+    CHECK_NULL_RETURN(volumeInfo_volName, 0);
     volumeInfo_volSN = (*env)->GetFieldID(env, clazz, "volumeSerialNumber", "I");
-    CHECK_NULL(volumeInfo_volSN);
+    CHECK_NULL_RETURN(volumeInfo_volSN, 0);
     volumeInfo_flags = (*env)->GetFieldID(env, clazz, "flags", "I");
-    CHECK_NULL(volumeInfo_flags);
+    CHECK_NULL_RETURN(volumeInfo_flags, 0);
 
     clazz = (*env)->FindClass(env, "sun/nio/fs/WindowsNativeDispatcher$DiskFreeSpace");
-    CHECK_NULL(clazz);
+    CHECK_NULL_RETURN(clazz, 0);
     diskSpace_bytesAvailable = (*env)->GetFieldID(env, clazz, "freeBytesAvailable", "J");
-    CHECK_NULL(diskSpace_bytesAvailable);
+    CHECK_NULL_RETURN(diskSpace_bytesAvailable, 0);
     diskSpace_totalBytes = (*env)->GetFieldID(env, clazz, "totalNumberOfBytes", "J");
-    CHECK_NULL(diskSpace_totalBytes);
+    CHECK_NULL_RETURN(diskSpace_totalBytes, 0);
     diskSpace_totalFree = (*env)->GetFieldID(env, clazz, "totalNumberOfFreeBytes", "J");
-    CHECK_NULL(diskSpace_totalFree);
+    CHECK_NULL_RETURN(diskSpace_totalFree, 0);
     diskSpace_bytesPerSector = (*env)->GetFieldID(env, clazz, "bytesPerSector", "J");
-    CHECK_NULL(diskSpace_bytesPerSector);
+    CHECK_NULL_RETURN(diskSpace_bytesPerSector, 0);
 
     clazz = (*env)->FindClass(env, "sun/nio/fs/WindowsNativeDispatcher$Account");
-    CHECK_NULL(clazz);
+    CHECK_NULL_RETURN(clazz, 0);
     account_domain = (*env)->GetFieldID(env, clazz, "domain", "Ljava/lang/String;");
-    CHECK_NULL(account_domain);
+    CHECK_NULL_RETURN(account_domain, 0);
     account_name = (*env)->GetFieldID(env, clazz, "name", "Ljava/lang/String;");
-    CHECK_NULL(account_name);
+    CHECK_NULL_RETURN(account_name, 0);
     account_use = (*env)->GetFieldID(env, clazz, "use", "I");
-    CHECK_NULL(account_use);
+    CHECK_NULL_RETURN(account_use, 0);
 
     clazz = (*env)->FindClass(env, "sun/nio/fs/WindowsNativeDispatcher$AclInformation");
-    CHECK_NULL(clazz);
+    CHECK_NULL_RETURN(clazz, 0);
     aclInfo_aceCount = (*env)->GetFieldID(env, clazz, "aceCount", "I");
-    CHECK_NULL(aclInfo_aceCount);
+    CHECK_NULL_RETURN(aclInfo_aceCount, 0);
 
     clazz = (*env)->FindClass(env, "sun/nio/fs/WindowsNativeDispatcher$CompletionStatus");
-    CHECK_NULL(clazz);
+    CHECK_NULL_RETURN(clazz, 0);
     completionStatus_error = (*env)->GetFieldID(env, clazz, "error", "I");
-    CHECK_NULL(completionStatus_error);
+    CHECK_NULL_RETURN(completionStatus_error, 0);
     completionStatus_bytesTransferred = (*env)->GetFieldID(env, clazz, "bytesTransferred", "I");
-    CHECK_NULL(completionStatus_bytesTransferred);
+    CHECK_NULL_RETURN(completionStatus_bytesTransferred, 0);
     completionStatus_completionKey = (*env)->GetFieldID(env, clazz, "completionKey", "J");
-    CHECK_NULL(completionStatus_completionKey);
+    CHECK_NULL_RETURN(completionStatus_completionKey, 0);
+
+    HMODULE hMod = GetModuleHandleW(L"kernel32.dll");
+    if (hMod != NULL) {
+        pGetFileInformationByName =
+            (PGetFileInformationByName)GetProcAddress(hMod, "GetFileInformationByName");
+        if (pGetFileInformationByName != NULL) {
+            capabilities |= sun_nio_fs_WindowsNativeDispatcher_SUPPORTS_GETFILEINFORMATIONBYNAME;
+        }
+    }
+
+    return capabilities;
 }
 
 JNIEXPORT jlong JNICALL
@@ -510,6 +557,23 @@ Java_sun_nio_fs_WindowsNativeDispatcher_GetFileAttributesEx0(JNIEnv* env, jclass
         throwWindowsException(env, GetLastError());
 }
 
+JNIEXPORT void JNICALL
+Java_sun_nio_fs_WindowsNativeDispatcher_GetFileInformationByName0(JNIEnv* env,
+    jclass this, jlong pathAddress, jint infoClass, jlong infoAddress, jint infoSize)
+{
+    LPCWSTR lpFileName = jlong_to_ptr(pathAddress);
+    PVOID pInfo = jlong_to_ptr(infoAddress);
+
+    if (pGetFileInformationByName == NULL) {
+        JNU_ThrowInternalError(env, "should not reach here");
+        return;
+    }
+
+    if (!pGetFileInformationByName(lpFileName, (FILE_INFO_BY_NAME_CLASS)infoClass,
+                                   pInfo, (ULONG)infoSize)) {
+        throwWindowsException(env, GetLastError());
+    }
+}
 
 JNIEXPORT void JNICALL
 Java_sun_nio_fs_WindowsNativeDispatcher_SetFileTime0(JNIEnv* env, jclass this,

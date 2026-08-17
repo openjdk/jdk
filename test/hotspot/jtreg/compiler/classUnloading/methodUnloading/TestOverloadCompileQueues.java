@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
  * @test TestOverloadCompileQueues
  * @bug 8163511 8230402
  * @summary Test overloading the C1 and C2 compile queues with tasks.
- * @requires !vm.graal.enabled
  * @run main/othervm/timeout=1200 -XX:-TieredCompilation -XX:CompileThreshold=2 -XX:CICompilerCount=1
  *                   compiler.classUnloading.methodUnloading.TestOverloadCompileQueues
  * @run main/othervm/timeout=1200 -XX:TieredCompileTaskTimeout=1000 -XX:CompileThresholdScaling=0.001 -XX:CICompilerCount=2
