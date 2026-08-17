@@ -207,10 +207,7 @@ public class StreamDecoder extends Reader {
 
             byte[] remaining = in.readAllBytes();
 
-            if (!decoderContainsBytes
-                    && decoder.malformedInputAction() == CodingErrorAction.REPLACE
-                    && decoder.unmappableCharacterAction() == CodingErrorAction.REPLACE
-                    && decoder.getClass() == cs.newDecoder().getClass())
+            if (decoderFromCharset && !decoderContainsBytes)
                 return new String(remaining, cs);
 
             int estimateSize = (haveLeftoverChar ? 1 : 0)
@@ -305,19 +302,28 @@ public class StreamDecoder extends Reader {
     private final InputStream in;
     private final ReadableByteChannel ch;
 
+    // true if decoder was created from cs, false if decoder was provided externally
+    private final boolean decoderFromCharset;
+
     StreamDecoder(InputStream in, Object lock, Charset cs) {
-        this(in, lock,
+        this(in, lock, cs,
             cs.newDecoder()
                 .onMalformedInput(CodingErrorAction.REPLACE)
-                .onUnmappableCharacter(CodingErrorAction.REPLACE));
+                .onUnmappableCharacter(CodingErrorAction.REPLACE),
+            true);
     }
 
     StreamDecoder(InputStream in, Object lock, CharsetDecoder dec) {
+        this(in, lock, dec.charset(), dec, false);
+    }
+
+    private StreamDecoder(InputStream in, Object lock, Charset cs, CharsetDecoder dec, boolean decoderFromCharset) {
         super(lock);
-        this.cs = dec.charset();
+        this.cs = cs;
         this.decoder = dec;
         this.in = in;
         this.ch = null;
+        this.decoderFromCharset = decoderFromCharset;
         this.bb = ByteBuffer.allocate(DEFAULT_BYTE_BUFFER_SIZE);
         bb.flip();                      // So that bb is initially empty
     }
@@ -327,6 +333,7 @@ public class StreamDecoder extends Reader {
         this.ch = ch;
         this.decoder = dec;
         this.cs = dec.charset();
+        this.decoderFromCharset = false;
         this.bb = ByteBuffer.allocate(mbc < 0
                                   ? DEFAULT_BYTE_BUFFER_SIZE
                                   : (mbc < MIN_BYTE_BUFFER_SIZE
