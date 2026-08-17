@@ -322,7 +322,8 @@ public final class VerifierImpl {
 
         // Collect the initial strict instance fields
         Set<NameAndTypeEntry> strict_fields = new HashSet<>();
-        if (m.name().equals(ConstantDescs.INIT_NAME)) {
+        // Hotspot runtime filters STRICT_INIT flag by classfile version, ClassFile API needs extra check
+        if (m.name().equals(ConstantDescs.INIT_NAME) && supports_strict_fields(_klass)) {
             for (var fs : current_class().clm.fields()) {
                 if (fs.flags().has(AccessFlag.STRICT_INIT) && !fs.flags().has(AccessFlag.STATIC)) {
                     var new_field = TemporaryConstantPool.INSTANCE.nameAndTypeEntry(fs.fieldName(), fs.fieldType());
@@ -1526,7 +1527,8 @@ public final class VerifierImpl {
                         // Set the type to the current type so the is_assignable check passes.
                         stack_object_type = current_type();
 
-                        if (fd.flags().has(AccessFlag.STRICT_INIT)) {
+                        // Hotspot runtime filters STRICT_INIT flag by classfile version, ClassFile API needs extra check
+                        if (fd.flags().has(AccessFlag.STRICT_INIT) && supports_strict_fields(_klass)) {
                             current_frame.satisfy_unset_field(fd.fieldName(), fd.fieldType());
                         }
                     }
