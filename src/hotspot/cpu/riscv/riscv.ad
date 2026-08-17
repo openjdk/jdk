@@ -1553,6 +1553,27 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
   int src_offset = ra_->reg2offset(src_lo);
   int dst_offset = ra_->reg2offset(dst_lo);
 
+  // Stack-to-stack copies use t0 for the value. Bail out if a destination
+  // address also needs t0 to materialize an offset outside the 12-bit range.
+  if (src_lo_rc == rc_stack && dst_lo_rc == rc_stack) {
+    int last_dst_offset = dst_offset;
+    if (bottom_type()->isa_pvectmask()) {
+      int vmask_size_in_bytes = Matcher::scalable_predicate_reg_slots() * 32 / 8;
+      last_dst_offset += vmask_size_in_bytes - 4;
+    } else if (ideal_reg() == Op_VecA) {
+      int vector_reg_size_in_bytes = Matcher::scalable_vector_reg_size(T_BYTE);
+      last_dst_offset += vector_reg_size_in_bytes - 8;
+    }
+
+    if (masm != nullptr && !Assembler::is_simm12(last_dst_offset)) {
+      // size() emits into a scratch buffer where recording a failure is not allowed.
+      if (!C->output()->in_scratch_emit_size()) {
+        C->record_method_not_compilable("unsupported large stack-to-stack spill copy");
+      }
+      return 0;
+    }
+  }
+
   if (bottom_type()->isa_vect() != nullptr) {
     uint ireg = ideal_reg();
     if (ireg == Op_VecA && masm) {
@@ -1651,13 +1672,12 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
                      is64, src_offset);
         } else {                    // stack --> stack copy
           assert(dst_lo_rc == rc_stack, "spill to bad register class");
-          // spill() may use t0 to materialize a large stack offset.
           if (this->ideal_reg() == Op_RegI) {
-            __ unspill(ra, is64, src_offset);
+            __ unspill(t0, is64, src_offset);
           } else { // zero extended for narrow oop or klass
-            __ unspillu(ra, is64, src_offset);
+            __ unspillu(t0, is64, src_offset);
           }
-          __ spill(ra, is64, dst_offset);
+          __ spill(t0, is64, dst_offset);
         }
         break;
       default:
