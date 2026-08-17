@@ -1224,10 +1224,6 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseCompiler, true,                                          \
           "Use Just-In-Time compilation")                                   \
                                                                             \
-  product(bool, AlwaysCompileLoopMethods, false,                            \
-          "(Deprecated) When using recompilation, never interpret methods " \
-          "containing loops")                                               \
-                                                                            \
   product(int,  AllocatePrefetchStyle, 1,                                   \
           "0 = no prefetch, "                                               \
           "1 = generate prefetch instructions for each allocation, "        \
@@ -1984,10 +1980,6 @@ const int ObjectAlignmentInBytes = 8;
           false AARCH64_ONLY(DEBUG_ONLY(||true)),                           \
              "Mark all threads after a safepoint, and clear on a modify "   \
              "fence. Add cleanliness checks.")                              \
-                                                                            \
-  product(bool, UseObjectMonitorTable, true, DIAGNOSTIC,                    \
-          "Use a table to record inflated monitors rather than the first "  \
-          "word of the object.")                                            \
                                                                             \
   product(int, FastLockingSpins, 8, DIAGNOSTIC,                             \
           "Specifies the number of times fast locking will attempt to "     \
