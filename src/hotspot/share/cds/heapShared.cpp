@@ -105,14 +105,6 @@ size_t HeapShared::_alloc_size[HeapShared::ALLOC_STAT_SLOTS];
 size_t HeapShared::_total_obj_count;
 size_t HeapShared::_total_obj_size;
 
-#ifndef PRODUCT
-#define ARCHIVE_TEST_FIELD_NAME "archivedObjects"
-static Array<char>* _archived_ArchiveHeapTestClass = nullptr;
-static const char* _test_class_name = nullptr;
-static Klass* _test_class = nullptr;
-static const ArchivedKlassSubGraphInfoRecord* _test_class_record = nullptr;
-#endif
-
 #ifdef ASSERT
 // All classes that have at least one instance in the cached heap.
 static ArchivableKlassTable* _dumptime_classes_with_cached_oops = nullptr;
@@ -142,9 +134,6 @@ static ArchivableStaticFieldInfo archive_subgraph_entry_fields[] = {
   {ARCHIVED_BOOT_LAYER_CLASS,                     ARCHIVED_BOOT_LAYER_FIELD},
   {"java/lang/Module$ArchivedData",               "archivedData"},
 
-#ifndef PRODUCT
-  {nullptr, nullptr}, // Extra slot for -XX:ArchiveHeapTestClass
-#endif
   {nullptr, nullptr},
 };
 
@@ -1204,19 +1193,9 @@ void KlassSubGraphInfo::check_allowed_klass(InstanceKlass* ik) {
     }
   }
 
-#ifndef PRODUCT
-  if (!ik->module()->is_named() && ik->package() == nullptr && ArchiveHeapTestClass != nullptr) {
-    // This class is loaded by ArchiveHeapTestClass
-    return;
-  }
-  const char* testcls_msg = ", or a test class in an unnamed package of an unnamed module";
-#else
-  const char* testcls_msg = "";
-#endif
-
   ResourceMark rm;
-  log_error(aot, heap)("Class %s not allowed in archive heap. Must be in java.base%s%s",
-                       ik->external_name(), lambda_msg, testcls_msg);
+  log_error(aot, heap)("Class %s not allowed in archive heap. Must be in java.base%s",
+                       ik->external_name(), lambda_msg);
   AOTMetaspace::unrecoverable_writing_error();
 }
 
@@ -1326,29 +1305,12 @@ void HeapShared::write_subgraph_info_table() {
   d_table->iterate(&copy);
   writer.dump(&_run_time_subgraph_info_table, "subgraphs");
 
-#ifndef PRODUCT
-  if (ArchiveHeapTestClass != nullptr) {
-    size_t len = strlen(ArchiveHeapTestClass) + 1;
-    Array<char>* array = ArchiveBuilder::new_ro_array<char>((int)len);
-    strncpy(array->adr_at(0), ArchiveHeapTestClass, len);
-    _archived_ArchiveHeapTestClass = array;
-  }
-#endif
   if (log_is_enabled(Info, aot, heap)) {
     print_stats();
   }
 }
 
 void HeapShared::serialize_tables(SerializeClosure* soc) {
-
-#ifndef PRODUCT
-  soc->do_ptr(&_archived_ArchiveHeapTestClass);
-  if (soc->reading() && _archived_ArchiveHeapTestClass != nullptr) {
-    _test_class_name = _archived_ArchiveHeapTestClass->adr_at(0);
-    setup_test_class(_test_class_name);
-  }
-#endif
-
   _run_time_subgraph_info_table.serialize_header(soc);
   soc->do_ptr(&_run_time_special_subgraph);
   DEBUG_ONLY(soc->do_ptr(&_runtime_classes_with_cached_oops));
@@ -1516,13 +1478,6 @@ HeapShared::resolve_or_init_classes_for_subgraph_of(Klass* k, bool do_init, TRAP
   }
   unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary_quick(k);
   const ArchivedKlassSubGraphInfoRecord* record = _run_time_subgraph_info_table.lookup(k, hash, 0);
-
-#ifndef PRODUCT
-  if (_test_class_name != nullptr && k->name()->equals(_test_class_name) && record != nullptr) {
-    _test_class = k;
-    _test_class_record = record;
-  }
-#endif
 
   // Initialize from archived data. Currently this is done only
   // during VM initialization time. No lock is needed.
@@ -2148,18 +2103,6 @@ void HeapShared::init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
     TempNewSymbol field_name =  SymbolTable::new_symbol(info->field_name);
     ResourceMark rm; // for stringStream::as_string() etc.
 
-#ifndef PRODUCT
-    bool is_test_class = (ArchiveHeapTestClass != nullptr) && (strcmp(info->klass_name, ArchiveHeapTestClass) == 0);
-    const char* test_class_name = ArchiveHeapTestClass;
-#else
-    bool is_test_class = false;
-    const char* test_class_name = ""; // avoid C++ printf checks warnings.
-#endif
-
-    if (is_test_class) {
-      log_warning(aot)("Loading ArchiveHeapTestClass %s ...", test_class_name);
-    }
-
     Klass* k = SystemDictionary::resolve_or_fail(klass_name, true, THREAD);
     if (HAS_PENDING_EXCEPTION) {
       CLEAR_PENDING_EXCEPTION;
@@ -2178,35 +2121,15 @@ void HeapShared::init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
     assert(InstanceKlass::cast(ik)->defined_by_boot_loader(),
            "Only support boot classes");
 
-    if (is_test_class) {
-      if (ik->module()->is_named()) {
-        // We don't want ArchiveHeapTestClass to be abused to easily load/initialize arbitrary
-        // core-lib classes. You need to at least append to the bootclasspath.
-        stringStream st;
-        st.print("ArchiveHeapTestClass %s is not in unnamed module", test_class_name);
-        THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), st.as_string());
-      }
-
-      if (ik->package() != nullptr) {
-        // This restriction makes HeapShared::is_a_test_class_in_unnamed_module() easy.
-        stringStream st;
-        st.print("ArchiveHeapTestClass %s is not in unnamed package", test_class_name);
-        THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), st.as_string());
-      }
-    } else {
-      if (ik->module()->name() != vmSymbols::java_base()) {
-        // We don't want to deal with cases when a module is unavailable at runtime.
-        // FUTURE -- load from archived heap only when module graph has not changed
-        //           between dump and runtime.
-        stringStream st;
-        st.print("%s is not in java.base module", info->klass_name);
-        THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), st.as_string());
-      }
+    if (ik->module()->name() != vmSymbols::java_base()) {
+      // We don't want to deal with cases when a module is unavailable at runtime.
+      // FUTURE -- load from archived heap only when module graph has not changed
+      //           between dump and runtime.
+      stringStream st;
+      st.print("%s is not in java.base module", info->klass_name);
+      THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), st.as_string());
     }
 
-    if (is_test_class) {
-      log_warning(aot)("Initializing ArchiveHeapTestClass %s ...", test_class_name);
-    }
     ik->initialize(CHECK);
 
     ArchivableStaticFieldFinder finder(ik, field_name);
@@ -2230,89 +2153,8 @@ void HeapShared::init_subgraph_entry_fields(TRAPS) {
   }
 }
 
-#ifndef PRODUCT
-void HeapShared::setup_test_class(const char* test_class_name) {
-  ArchivableStaticFieldInfo* p = archive_subgraph_entry_fields;
-  int num_slots = sizeof(archive_subgraph_entry_fields) / sizeof(ArchivableStaticFieldInfo);
-  assert(p[num_slots - 2].klass_name == nullptr, "must have empty slot that's patched below");
-  assert(p[num_slots - 1].klass_name == nullptr, "must have empty slot that marks the end of the list");
-
-  if (test_class_name != nullptr) {
-    p[num_slots - 2].klass_name = test_class_name;
-    p[num_slots - 2].field_name = ARCHIVE_TEST_FIELD_NAME;
-  }
-}
-
-// See if ik is one of the test classes that are pulled in by -XX:ArchiveHeapTestClass
-// during runtime. This may be called before the module system is initialized so
-// we cannot rely on InstanceKlass::module(), etc.
-bool HeapShared::is_a_test_class_in_unnamed_module(Klass* ik) {
-  if (_test_class != nullptr) {
-    if (ik == _test_class) {
-      return true;
-    }
-    Array<Klass*>* klasses = _test_class_record->subgraph_object_klasses();
-    if (klasses == nullptr) {
-      return false;
-    }
-
-    for (int i = 0; i < klasses->length(); i++) {
-      Klass* k = klasses->at(i);
-      if (k == ik) {
-        Symbol* name;
-        if (k->is_instance_klass()) {
-          name = InstanceKlass::cast(k)->name();
-        } else if (k->is_objArray_klass()) {
-          Klass* bk = ObjArrayKlass::cast(k)->bottom_klass();
-          if (!bk->is_instance_klass()) {
-            return false;
-          }
-          name = bk->name();
-        } else {
-          return false;
-        }
-
-        // See KlassSubGraphInfo::check_allowed_klass() - we only allow test classes
-        // to be:
-        //   (A) java.base classes (which must not be in the unnamed module)
-        //   (B) test classes which must be in the unnamed package of the unnamed module.
-        // So if we see a '/' character in the class name, it must be in (A);
-        // otherwise it must be in (B).
-        if (name->index_of_at(0, "/", 1)  >= 0) {
-          return false; // (A)
-        }
-
-        return true; // (B)
-      }
-    }
-  }
-
-  return false;
-}
-
-void HeapShared::initialize_test_class_from_archive(JavaThread* current) {
-  Klass* k = _test_class;
-  if (k != nullptr && is_archived_heap_in_use()) {
-    JavaThread* THREAD = current;
-    ExceptionMark em(THREAD);
-    const ArchivedKlassSubGraphInfoRecord* record =
-      resolve_or_init_classes_for_subgraph_of(k, /*do_init=*/false, THREAD);
-
-    // The _test_class is in the unnamed module, so it can't call CDS.initializeFromArchive()
-    // from its <clinit> method. So we set up its "archivedObjects" field first, before
-    // calling its <clinit>. This is not strictly clean, but it's a convenient way to write unit
-    // test cases (see test/hotspot/jtreg/runtime/cds/appcds/cacheObject/ArchiveHeapTestClass.java).
-    if (record != nullptr) {
-      init_archived_fields_for(k, record);
-    }
-    resolve_or_init_classes_for_subgraph_of(k, /*do_init=*/true, THREAD);
-  }
-}
-#endif
-
 void HeapShared::init_for_dumping(TRAPS) {
   if (CDSConfig::is_dumping_heap()) {
-    setup_test_class(ArchiveHeapTestClass);
     init_subgraph_entry_fields(CHECK);
   }
 }
