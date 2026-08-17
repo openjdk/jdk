@@ -64,9 +64,7 @@ public class StringConcatStress {
         }
 
         public String[] vmArgs(RunMode runMode) {
-            return new String[] {
-                "-XX:+AOTClassLinking", // by default enables AOTInvokeDynamicLinking
-            };
+            return new String[0];
         }
 
         @Override

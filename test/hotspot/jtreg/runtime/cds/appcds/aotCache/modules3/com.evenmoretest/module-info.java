@@ -1,5 +1,5 @@
 /*
- * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,17 +22,6 @@
  *
  */
 
-import jdk.internal.misc.CDS;
-
-public class ArchivedIntegerHolder {
-    public static Object[] archivedObjects;
-    static {
-        CDS.initializeFromArchive(ArchivedIntegerHolder.class);
-        if (archivedObjects == null) {
-            archivedObjects = new Object[256];
-            for (int i = -128; i <= 127; i++) {
-                archivedObjects[i + 128] = Integer.valueOf(i);
-            }
-        }
-    }
+module com.evenmoretest {
+  exports com.evenmoretest;
 }

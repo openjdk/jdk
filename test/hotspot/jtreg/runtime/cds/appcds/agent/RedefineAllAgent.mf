@@ -1,5 +1,5 @@
 Manifest-Version: 1.0
-Premain-Class: JavaAgentTransformer
-Agent-Class: JavaAgentTransformer
+Premain-Class: RedefineAllAgent
+Agent-Class: RedefineAllAgent
 Can-Retransform-Classes: true
 Can-Redefine-Classes: true

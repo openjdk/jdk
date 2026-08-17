@@ -2708,6 +2708,29 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       return u->Opcode() == Op_AndI || u->Opcode() == Op_AndL;
     });
   }
+  // If changed LShift inputs, check CompressBits and ExpandBits users for
+  // compress(x, 1 << n), compress(x, -1 << n),
+  // expand(x, 1 << n), expand(x, -1 << n) optimizations.
+  if (use_op == Op_LShiftI || use_op == Op_LShiftL) {
+    add_users_to_worklist_if(worklist, use, [&](Node* u) {
+      return (u->Opcode() == Op_CompressBits || u->Opcode() == Op_ExpandBits) &&
+             u->in(2) == use;
+    });
+  }
+  // If changed ExpandBits inputs, check CompressBits users for
+  // compress(expand(x, m), m) optimization.
+  if (use_op == Op_ExpandBits) {
+    add_users_to_worklist_if(worklist, use, [&](Node* u) {
+      return u->Opcode() == Op_CompressBits && u->in(1) == use;
+    });
+  }
+  // If changed CompressBits inputs, check ExpandBits users for
+  // expand(compress(x, m), m) optimization.
+  if (use_op == Op_CompressBits) {
+    add_users_to_worklist_if(worklist, use, [&](Node* u) {
+      return u->Opcode() == Op_ExpandBits && u->in(1) == use;
+    });
+  }
   // If changed AddI/SubI inputs, check CmpU for range check optimization.
   if (use_op == Op_AddI || use_op == Op_SubI) {
     add_users_to_worklist_if(worklist, use, [](Node* u) {
