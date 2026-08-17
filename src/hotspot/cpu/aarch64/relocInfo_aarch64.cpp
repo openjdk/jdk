@@ -122,3 +122,11 @@ void poll_Relocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffe
 
 void metadata_Relocation::pd_fix_value(address x) {
 }
+
+address trampoline_stub_Relocation::pd_destination() {
+  return nativeCallTrampolineStub_at(addr())->destination();
+}
+
+void trampoline_stub_Relocation::pd_set_destination(address x) {
+  nativeCallTrampolineStub_at(addr())->set_destination(x);
+}
