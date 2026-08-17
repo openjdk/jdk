@@ -27,6 +27,7 @@ package jdk.internal.classfile.impl.verifier;
 import java.lang.classfile.constantpool.NameAndTypeEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
 
 import jdk.internal.classfile.impl.TemporaryConstantPool;
@@ -56,7 +57,7 @@ class VerificationFrame {
         this._flags = flags;
         this._locals = locals;
         this._stack = stack;
-        this._assert_unset_fields = assert_unset_fields;
+        set_assert_unset_fields(assert_unset_fields);
         this._verifier = v;
     }
 
@@ -122,7 +123,7 @@ class VerificationFrame {
     }
 
     void set_assert_unset_fields(Set<NameAndTypeEntry> table) {
-        _assert_unset_fields = table;
+        _assert_unset_fields = new HashSet<>(table);
     }
 
     // Called when verifying putfields to mark strict instance fields as satisfied

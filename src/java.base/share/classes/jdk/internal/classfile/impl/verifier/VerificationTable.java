@@ -135,7 +135,14 @@ class VerificationTable {
         return result;
     }
 
-    void check_jump_target(VerificationFrame frame, int target) {
+    void check_jump_target(VerificationFrame frame, int bci, int offset) {
+        // Jump targets must be within the method and the method size is limited. See JVMS 4.11
+        int min_offset = -1 * 0xFFFF;
+        if (offset < min_offset || offset > 0xFFFF) {
+            _verifier.verifyError("Illegal target of jump or branch (bci %d + offset %d)".formatted(bci, offset));
+            return;
+        }
+        int target = bci + offset;
         boolean match = match_stackmap(frame, target, true, false);
         if (!match || (target < 0 || target >= _code_length)) {
             _verifier.verifyError(String.format("Inconsistent stackmap frames at branch target %d", target));
