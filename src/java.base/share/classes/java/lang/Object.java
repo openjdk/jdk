@@ -47,9 +47,6 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *          It is not possible to synchronize on a value object. An attempt to {@code
  *          synchronize} on a value object causes {@link IdentityException} to be thrown.
  *          <p>
- *          The {@link #finalize()} method of a value class will never be invoked by
- *          the garbage collector.
- *          <p>
  *          A {@linkplain java.lang.ref.Reference Reference object} can only refer to an
  *          object with identity. Creating a reference object with a value object as
  *          the referent throws {@code IdentityException}.
@@ -598,8 +595,7 @@ public class Object {
      * system resources or to perform other cleanup.
      * <div class="preview-block">
      *      <div class="preview-comment">
-     *          It is illegal for a value class, abstract or concrete, to declare
-     *          a {@code finalize} method.
+     *          Value class, abstract or concrete, cannot have {@code finalize} methods.
      *      </div>
      * </div>
      * <p>
