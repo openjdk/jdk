@@ -64,23 +64,24 @@ public class Utils {
                 if (sb == null) {
                     sb = new StringBuilder().append(str, 0, i);
                 }
+                sb.append('\\');
                 // Non-control characters
                 if (c == '\\' || c == '"') {
-                    sb.append('\\').append(c);
+                    sb.append(c);
                 // 2 Char escapes (Control characters)
                 } else if (c == '\b') {
-                    sb.append('\\').append('b');
+                    sb.append('b');
                 } else if (c == '\f') {
-                    sb.append('\\').append('f');
+                    sb.append('f');
                 } else if (c == '\n') {
-                    sb.append('\\').append('n');
+                    sb.append('n');
                 } else if (c == '\r') {
-                    sb.append('\\').append('r');
+                    sb.append('r');
                 } else if (c == '\t') {
-                    sb.append('\\').append('t');
+                    sb.append('t');
                 } else {
                     // All other chars requiring Unicode escape sequence
-                    sb.append('\\').append('u').append(String.format("%04X", (int) c));
+                    sb.append('u').append(String.format("%04X", (int) c));
                 }
             }
         }
