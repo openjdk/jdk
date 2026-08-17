@@ -99,7 +99,7 @@ public final class Json {
     public static JsonValue parse(char[] in) {
         Objects.requireNonNull(in);
         // Defensive copy on input. Ensure source is immutable.
-        return new JsonParser(Arrays.copyOf(in, in.length)).parseRoot();
+        return new JsonParser(in.clone()).parseRoot();
     }
 
     /**
