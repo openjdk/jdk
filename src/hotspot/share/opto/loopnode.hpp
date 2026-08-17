@@ -87,8 +87,7 @@ protected:
          MultiversionSlowLoop         = 2<<17, // 1<<18
          MultiversionDelayedSlowLoop  = 3<<17,
          MultiversionFlagsMask        = 3<<17,
-         FlatArrays                    = 1<<19,
-         RedundantOuterStripMinedLoop  = 1<<20};
+         FlatArrays            = 1<<19};
   char _unswitch_count;
   enum { _unswitch_max=3 };
 
@@ -620,10 +619,6 @@ public:
 
   Node* register_control(Node* node, Node* loop, Node* idom, PhaseIterGVN* igvn,
                          PhaseIdealLoop* iloop);
-
-  bool is_redundant() const { return (_loop_flags & RedundantOuterStripMinedLoop) != 0; }
-  void mark_redundant() { _loop_flags |= RedundantOuterStripMinedLoop; }
-  void clear_redundant() { _loop_flags &= ~RedundantOuterStripMinedLoop; }
 };
 
 class OuterStripMinedLoopEndNode : public IfNode {
@@ -638,7 +633,6 @@ public:
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 
-  CountedLoopEndNode* inner_counted_loop_end() const;
   bool is_expanded(PhaseGVN *phase) const;
 };
 
@@ -1544,7 +1538,7 @@ public:
 
   // Add pre and post loops around the given loop.  These loops are used
   // during RCE, unrolling and aligning loops.
-  void insert_pre_post_loops(IdealLoopTree* loop, Node_List& old_new, bool peel_only);
+  void insert_pre_post_loops( IdealLoopTree *loop, Node_List &old_new, bool peel_only );
 
   // Find the last store in the body of an OuterStripMinedLoop when following memory uses
   Node *find_last_store_in_outer_loop(Node* store, const IdealLoopTree* outer_loop);

@@ -57,7 +57,7 @@ public class TestRCESideLoopSafepointNodes {
         counts = {IRNode.SAFEPOINT, "3"},
         failOn = {IRNode.OUTER_STRIP_MINED_LOOP})
     @IR(applyIf = {"LoopStripMiningIter", "> 1"},
-        counts = {IRNode.OUTER_STRIP_MINED_LOOP, "3",
+        counts = {IRNode.OUTER_STRIP_MINED_LOOP, "1",
                   IRNode.SAFEPOINT, "3"})
     private static void test(int start, int limit, int bound) {
         for (int i = start; i < limit; i++) {

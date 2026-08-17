@@ -1942,25 +1942,7 @@ void Compile::remove_from_post_loop_opts_igvn(Node* n) {
   _for_post_loop_igvn.remove(n);
 }
 
-// Keep a uniform side-loop structure through loop opts, then remove the strip-mined shells that RCE did not require.
-static void remove_redundant_outer_strip_mined_loops(Compile* compile, PhaseIterGVN& igvn) {
-  bool removed = false;
-  for (int i = compile->macro_count(); i > 0; i--) {
-    Node* node = compile->macro_node(i - 1);
-    if (node->is_OuterStripMinedLoop() && node->as_OuterStripMinedLoop()->is_redundant()) {
-      node->as_OuterStripMinedLoop()->remove_outer_loop_and_safepoint(&igvn);
-      removed = true;
-    }
-  }
-  if (removed) {
-    igvn.optimize();
-  }
-}
-
 void Compile::process_for_post_loop_opts_igvn(PhaseIterGVN& igvn) {
-  remove_redundant_outer_strip_mined_loops(this, igvn);
-  if (failing()) return;
-
   // Verify that all previous optimizations produced a valid graph
   // at least to this point, even if no loop optimizations were done.
   PhaseIdealLoop::verify(igvn);

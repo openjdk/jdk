@@ -149,10 +149,6 @@ public:
     return head;
   };
 
-  Node* pre_loop_entry() const {
-    return pre_loop_head()->skip_strip_mined()->in(LoopNode::EntryControl);
-  }
-
   ParsePredicateSuccessProj* auto_vectorization_parse_predicate_proj() const {
     return _auto_vectorization_parse_predicate_proj;
   }

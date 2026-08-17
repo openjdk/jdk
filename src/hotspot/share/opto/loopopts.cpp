@@ -2136,11 +2136,7 @@ bool PhaseIdealLoop::ctrl_of_all_uses_out_of_loop(const Node* n, Node* n_ctrl, I
 bool PhaseIdealLoop::would_sink_below_pre_loop_exit(IdealLoopTree* n_loop, Node* ctrl) {
   if (n_loop->_head->is_CountedLoop() && n_loop->_head->as_CountedLoop()->is_pre_loop()) {
     CountedLoopNode* pre_loop = n_loop->_head->as_CountedLoop();
-    IfNode* pre_loop_end = pre_loop->loopexit();
-    if (pre_loop->is_strip_mined()) {
-      pre_loop_end = pre_loop->outer_loop_end();
-    }
-    if (is_dominator(pre_loop_end, ctrl)) {
+    if (is_dominator(pre_loop->loopexit(), ctrl)) {
       return true;
     }
   }
