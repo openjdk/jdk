@@ -89,8 +89,8 @@ public class TestPromoteInPlaceDuringAbbreviatedCycle {
             garbage = new byte[GARBAGE_BYTES];
             garbage = null;
 
-            // Runs a concurrent young cycle and blocks until it completes.
-            WB.youngGC();
+            // Runs a concurrent global cycle and blocks until it completes.
+            System.gc();
 
             if (WB.isObjectInOldGen(humongous) && WB.isObjectInOldGen(regular)) {
                 System.out.println(
