@@ -182,7 +182,7 @@ public sealed interface JsonValue permits JsonString, JsonNumber, JsonObject, Js
     /**
      * {@return the {@code boolean} value represented by this {@code JsonValue} if
      * it is an instance of {@link JsonBoolean}; otherwise, throws a
-     * {@code JsonValueException}}.
+     * {@code JsonValueException}}
      *
      * @implSpec
      * The default implementation provided by {@code JsonValue} throws {@code
@@ -267,7 +267,7 @@ public sealed interface JsonValue permits JsonString, JsonNumber, JsonObject, Js
     /**
      * {@return the {@code String} value represented by this {@code JsonValue} if
      * it is an instance of {@link JsonString}; otherwise, throws a
-     * {@code JsonValueException}}.
+     * {@code JsonValueException}}
      * If this {@code JsonString} was created by parsing a JSON document, any
      * escaped characters in the original JSON document are converted to their
      * unescaped form.
@@ -286,7 +286,7 @@ public sealed interface JsonValue permits JsonString, JsonNumber, JsonObject, Js
     /**
      * {@return an unmodifiable list of the {@code JsonValue}s if this
      * {@code JsonValue} is an instance of {@link JsonArray}; otherwise, throws a
-     * {@code JsonValueException}}.
+     * {@code JsonValueException}}
      *
      * @implSpec
      * The default implementation provided by {@code JsonValue} throws {@code
@@ -302,7 +302,7 @@ public sealed interface JsonValue permits JsonString, JsonNumber, JsonObject, Js
     /**
      * {@return an unmodifiable map of {@code String} to {@code JsonValue} if this
      * {@code JsonValue} is an instance of {@link JsonObject}; otherwise, throws a
-     * {@code JsonValueException}}.
+     * {@code JsonValueException}}
      *
      * @implSpec
      * The default implementation provided by {@code JsonValue} throws {@code

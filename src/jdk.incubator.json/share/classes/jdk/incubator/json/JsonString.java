@@ -31,9 +31,9 @@ import jdk.incubator.json.impl.JsonStringImpl;
 import jdk.incubator.json.impl.Utils;
 
 /**
- * The interface that represents a JSON string.
+ * The interface that represents JSON string.
  * <p>
- * A {@code JsonString} can be produced by a {@link Json#parse(String)}.
+ * A {@code JsonString} can be produced by {@link Json#parse(String)}.
  * Within a valid JSON string, any character may be escaped using either a
  * two-character escape sequence (if applicable) or one or two Unicode escape
  * sequences. A supplementary character is represented by two Unicode escape

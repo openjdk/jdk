@@ -36,7 +36,7 @@ import jdk.incubator.json.impl.JsonNumberImpl;
  * as long as the input number text adheres to the JSON number
  * <a href="https://datatracker.ietf.org/doc/html/rfc8259#section-6">
  * syntax</a>.
- * Alternatively, {@link #of(int)}, {@link #of(long)}, {@link #of(double)},
+ * <p> Alternatively, {@link #of(int)}, {@link #of(long)}, {@link #of(double)},
  * or {@link #of(String)} can be used to obtain a {@code JsonNumber}.
  * The value of the {@code JsonNumber} can be retrieved as an {@code int} with
  * {@link #asInt()}, as a {@code long} with {@link #asLong()}, or as a

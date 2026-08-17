@@ -27,9 +27,9 @@
  * Provides APIs for parsing JSON text, retrieving JSON values in the text, and
  * generating JSON text. This package implements
  * <a href="https://datatracker.ietf.org/doc/html/rfc8259">RFC 8259: The JavaScript
- * Object Notation (JSON) Data Interchange Format</a>
+ * Object Notation (JSON) Data Interchange Format</a>.
  *
- * <h2><a>Parsing JSON documents</a></h2>
+ * <h2>Parsing JSON documents</h2>
  *
  * Parsing produces a {@code JsonValue} from JSON text and is done using either
  * {@link Json#parse(java.lang.String)} or {@link Json#parse(char[])}.
@@ -40,7 +40,7 @@
  * contains no objects with duplicate member names. The parsing APIs provided
  * do not accept JSON text that contains JSON objects with duplicate member names.
  *
- * <h2><a>Retrieving JSON values</a></h2>
+ * <h2>Retrieving JSON values</h2>
  *
  * Retrieving a value from a JSON document is a two-step process: first navigate
  * the document structure by chaining "access" methods, then convert the result
@@ -54,7 +54,7 @@
  * to {@code asString()} converts that JSON value to a {@link String}.
  * For details on available access and conversion methods, see {@link JsonValue}.
  *
- * <h2><a>Generating JSON documents</a></h2>
+ * <h2>Generating JSON documents</h2>
  *
  * Generating JSON text is performed with either {@link
  * JsonValue#toString()} or {@link Json#toDisplayString(JsonValue, String)}.
