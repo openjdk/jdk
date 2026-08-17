@@ -33,6 +33,7 @@ import jdk.internal.vm.annotation.Stable;
 
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.concurrent.locks.LockSupport;
 import java.util.function.Supplier;
 
 /**
@@ -52,9 +53,19 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
     private static final long CONSTANT_OFFSET =
             UNSAFE.objectFieldOffset(LazyConstantImpl.class, "constant");
 
-    // Unsafe offset for access of the `status` field
+    // Unsafe offset for access of the `state` field
     private static final long STATUS_OFFSET =
             UNSAFE.objectFieldOffset(LazyConstantImpl.class, "state");
+
+    // The max number of busy spin loops we should do when checking if computation is
+    // completed by another thread before backing off to parking a thread.
+    private static final int SPIN_LIMIT = 1 << 8;
+    // The initial time in ns to park a thread waiting for another thread to complete
+    // computaiton.
+    private static final long INITIAL_BACKOFF_NANOS = 1L << 10;
+    // This is the maximum progressive waiting time for another thread to complete
+    // computation.
+    private static final long MAX_BACKOFF_NANOS = INITIAL_BACKOFF_NANOS << 10;
 
     // Generally, fields annotated with `@Stable` are accessed by the JVM using special
     // memory semantics rules (see `parse.hpp` and `parse(1|2|3).cpp`).
@@ -102,40 +113,94 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
 
     @SuppressWarnings("unchecked")
     private T getSlowPath() {
-        preventReentry();
-        synchronized (this) {
-            T t = (T) getAcquire(CONSTANT_OFFSET);
-            if (t == null) {
-                final Object state = getAcquire(STATUS_OFFSET);
-                // Don't use switch pattern matching here in order to improve startup time.
-                if (state instanceof Supplier<?> computingFunction) {
-                    // This also allows the underlying supplier to be collected
-                    // and can be done using plain semantics.
-                    this.state = Thread.currentThread().threadId();
+        final long threadId = Thread.currentThread().threadId();
+        for (;;) {
+            final T t = (T) getAcquire(CONSTANT_OFFSET);
+            if (t != null) {
+                return t;
+            }
+
+            final Object state = getAcquire(STATUS_OFFSET);
+            // Don't use switch pattern matching here in order to improve startup time.
+            if (state instanceof Supplier<?> computingFunction) {
+                if (UNSAFE.compareAndSetReference(this, STATUS_OFFSET, state, threadId)) {
                     try {
                         final T newT = (T) computingFunction.get();
-                        t = newT;
-                        Objects.requireNonNull(t);
-                        setRelease(CONSTANT_OFFSET, t);
+                        Objects.requireNonNull(newT);
+                        setRelease(CONSTANT_OFFSET, newT);
                         // Publication is needed here for toString to work correctly
                         setRelease(STATUS_OFFSET, null);
+                        return newT;
                     } catch (Throwable ex) {
                         throw computationFailed(ex);
                     }
+                }
+            } else if (state instanceof Long) {
+                return awaitComputation(threadId);
+            } else if (state instanceof String exceptionType) {
+                throw unableToAccessConstant(exceptionType, null);
+            } else if (state != null) {
+                throw unexpectedState();
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @DontInline
+    private T awaitComputation(long threadId) {
+        int spins = SPIN_LIMIT;
+        long backoffNanos = INITIAL_BACKOFF_NANOS;
+        boolean restoreInterrupt = false;
+        try {
+            for (;;) {
+                final T t = (T) getAcquire(CONSTANT_OFFSET);
+                if (t != null) {
+                    return t;
+                }
+
+                final Object state = getAcquire(STATUS_OFFSET);
+                // Don't use switch pattern matching here in order to improve startup time.
+                if (state instanceof Long computingThreadId) {
+                    if (computingThreadId == threadId) {
+                        throw recursiveInvocation();
+                    }
+                    if (spins > 0) {
+                        --spins;
+                        Thread.onSpinWait();
+                    } else {
+                        if (Thread.interrupted()) {
+                            restoreInterrupt = true;
+                        }
+                        LockSupport.parkNanos(this, backoffNanos);
+                        // Exponentially bump up the backoff time until the max
+                        // backoff time ie reached.
+                        backoffNanos = Math.min(backoffNanos << 1, MAX_BACKOFF_NANOS);
+                    }
                 } else if (state instanceof String exceptionType) {
                     throw unableToAccessConstant(exceptionType, null);
-                } else {
+                } else if (state != null) {
                     throw unexpectedState();
                 }
             }
-            return t;
+        } finally {
+            if (restoreInterrupt) {
+                Thread.currentThread().interrupt();
+            }
         }
     }
 
     @DontInline
     private NoSuchElementException computationFailed(Throwable ex) {
-        // replace the thread id with an exception marker
-        final String exceptionType = ex.getClass().getName().intern();
+        String exceptionType;
+        try {
+            // replace the thread id with an exception marker
+             exceptionType = ex.getClass().getName().intern();
+        } catch (Throwable ex2) {
+            // In very rare conditions (e.g., OOME) we might end up here and
+            // in order not to hog any waiting threads indefinitely, we need to at least
+            // publish something to let them continue.
+            exceptionType = "[unknown]";
+        }
         setRelease(STATUS_OFFSET, exceptionType);
         return unableToAccessConstant(exceptionType, ex);
     }
@@ -149,6 +214,11 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
     @DontInline
     private static InternalError unexpectedState() {
         return new InternalError("Cannot reach here");
+    }
+
+    @DontInline
+    private static IllegalStateException recursiveInvocation() {
+        return new IllegalStateException("Recursive invocation of a LazyConstant's computing function");
     }
 
     // For testing only
@@ -211,15 +281,6 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
 
     private void setRelease(long offset, Object newValue) {
         UNSAFE.putReferenceRelease(this, offset, newValue);
-    }
-
-    // This method can use plain semantics as the threadId is only relevant for the same
-    // thread that set it. Aother thread would observe something that is not an instance
-    // of a Long or a long value that is not the same as the other thread's id.
-    private void preventReentry() {
-        if (state instanceof Long threadId && threadId == Thread.currentThread().threadId()) {
-            throw new IllegalStateException("Recursive invocation of a LazyConstant's computing function");
-        }
     }
 
     public static String isolateToString(Object input) {

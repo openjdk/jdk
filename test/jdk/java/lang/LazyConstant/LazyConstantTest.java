@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.lang.LazyConstant;
@@ -307,6 +308,53 @@ final class LazyConstantTest {
             assertEquals(VALUE, computingThread.get(TIME_OUT_S, TimeUnit.SECONDS));
             assertEquals(VALUE, waitingThread.get(TIME_OUT_S, TimeUnit.SECONDS));
         }
+    }
+
+    @Test
+    void interruptStatusIsPreservedForWaitingThread() throws Exception {
+        CountDownLatch supplierRunning = new CountDownLatch(1);
+        CountDownLatch waiterStarted = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        AtomicReference<Boolean> interruptedAfterGet = new AtomicReference<>();
+
+        LazyConstant<Integer> constant = LazyConstant.of(() -> {
+            supplierRunning.countDown();
+            try {
+                assertTrue(release.await(TIME_OUT_S, TimeUnit.SECONDS));
+            } catch (InterruptedException e) {
+                throw new AssertionError(e);
+            }
+            return VALUE;
+        });
+
+        FutureTask<Integer> computingTask = new FutureTask<>(constant::get);
+        FutureTask<Integer> waitingTask = new FutureTask<>(() -> {
+            waiterStarted.countDown();
+            int value = constant.get();
+            interruptedAfterGet.set(Thread.currentThread().isInterrupted());
+            return value;
+        });
+        Thread computingThread = Thread.ofPlatform().start(computingTask);
+        Thread waitingThread = null;
+        try {
+            assertTrue(supplierRunning.await(TIME_OUT_S, TimeUnit.SECONDS));
+            waitingThread = Thread.ofPlatform().start(waitingTask);
+            assertTrue(waiterStarted.await(TIME_OUT_S, TimeUnit.SECONDS));
+            Thread.sleep(OVERLAP_TIME_MS);
+
+            waitingThread.interrupt();
+            assertFalse(waitingTask.isDone(), "interruption should not abort initialization wait");
+        } finally {
+            release.countDown();
+            computingThread.join(TimeUnit.SECONDS.toMillis(TIME_OUT_S));
+            if (waitingThread != null) {
+                waitingThread.join(TimeUnit.SECONDS.toMillis(TIME_OUT_S));
+            }
+        }
+
+        assertEquals(VALUE, computingTask.get(TIME_OUT_S, TimeUnit.SECONDS));
+        assertEquals(VALUE, waitingTask.get(TIME_OUT_S, TimeUnit.SECONDS));
+        assertTrue(interruptedAfterGet.get(), "get() cleared interrupt status");
     }
 
     @Test
