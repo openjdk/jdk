@@ -79,6 +79,11 @@ void ShenandoahGenerationalHeuristics::prepare_for_abbreviated_cycle() {
   auto const heap = ShenandoahGenerationalHeap::heap();
   adjust_reserves_for_abbreviated(heap);
 
+  if (heap->age_census()->get_tenurable_bytes() == 0) {
+    // Nothing at all to tenure, don't look for regions to promote in place
+    return;
+  }
+
   ShenandoahInPlacePromotionPlanner in_place_promotions(heap);
   prepare_regions_for_promotion(in_place_promotions, heap, nullptr);
 
