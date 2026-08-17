@@ -76,15 +76,16 @@ ShenandoahGenerationalHeuristics::ShenandoahGenerationalHeuristics(ShenandoahGen
 }
 
 void ShenandoahGenerationalHeuristics::prepare_for_abbreviated_cycle() {
-  // There should be no regions configured for subsequent in-place-promotions carried over from the previous cycle.
-
   auto const heap = ShenandoahGenerationalHeap::heap();
-
   adjust_reserves_for_abbreviated(heap);
 
   ShenandoahInPlacePromotionPlanner in_place_promotions(heap);
   prepare_regions_for_promotion(in_place_promotions, heap, nullptr);
-  compute_promotion_potential(heap);
+
+  // Only these in-place promotion regions will be tenured this cycle
+  const size_t tenurable_this_cycle = in_place_promotions.humongous_region_stats().usage + in_place_promotions.humongous_region_stats().usage;
+  compute_promotion_potential(heap, tenurable_this_cycle);
+
   ShenandoahTracer::report_promotion_info(heap->collection_set(), &in_place_promotions);
 }
 
@@ -352,14 +353,17 @@ size_t ShenandoahGenerationalHeuristics::select_aged_regions(ShenandoahInPlacePr
 
   add_tenured_regions_to_collection_set(old_promotion_reserve, heap, candidates, sorted_regions);
 
-  const size_t max_promotions = compute_promotion_potential(heap);
+  // Act as though everything that can be tenured, will be tenured. This overestimates how much will be promoted,
+  // but has the effect of tending to keep the old generation smaller because it believes less will be tenured
+  // on the next cycle.
+  const size_t tenurable_this_cycle = heap->age_census()->get_tenurable_bytes();
+  const size_t max_promotions = compute_promotion_potential(heap, tenurable_this_cycle);
   const size_t old_consumed = MIN2(max_promotions, old_promotion_reserve);
   return old_consumed;
 }
 
-size_t ShenandoahGenerationalHeuristics::compute_promotion_potential(ShenandoahGenerationalHeap* const heap) {
+size_t ShenandoahGenerationalHeuristics::compute_promotion_potential(ShenandoahGenerationalHeap* const heap, size_t tenurable_this_cycle) {
   const uint tenuring_threshold = heap->age_census()->tenuring_threshold();
-  const size_t tenurable_this_cycle = heap->age_census()->get_tenurable_bytes(tenuring_threshold);
   const size_t tenurable_next_cycle = heap->age_census()->get_tenurable_bytes(tenuring_threshold - 1);
   assert(tenurable_next_cycle >= tenurable_this_cycle,
          "Tenurable next cycle (" PROPERFMT ") should include tenurable this cycle (" PROPERFMT ")",

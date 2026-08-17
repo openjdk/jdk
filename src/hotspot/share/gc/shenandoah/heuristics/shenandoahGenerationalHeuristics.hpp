@@ -104,7 +104,7 @@ private:
                                              size_t candidates, AgedRegionData* sorted_regions);
 
   // Updates the anticipated promotions for the next cycle and returns the maximum promotions for the current cycle
-  size_t compute_promotion_potential(ShenandoahGenerationalHeap* heap);
+  size_t compute_promotion_potential(ShenandoahGenerationalHeap* heap, size_t tenurable_this_cycle);
 
   // Adjust evacuation budgets after choosing collection set.  On entry, the instance variable _regions_to_xfer
   // represents regions to be transferred to old based on decisions made in top_off_collection_set()
