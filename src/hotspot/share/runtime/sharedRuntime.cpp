@@ -3865,15 +3865,7 @@ JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *current) )
        kptr2 = fr.next_monitor_in_interpreter_frame(kptr2) ) {
     if (kptr2->obj() != nullptr) {         // Avoid 'holes' in the monitor array
       BasicLock *lock = kptr2->lock();
-      if (UseObjectMonitorTable) {
-        buf[i] = (intptr_t)lock->object_monitor_cache();
-      }
-#ifdef ASSERT
-      else {
-        buf[i] = badDispHeaderOSR;
-      }
-#endif
-      i++;
+      buf[i++] = (intptr_t)lock->object_monitor_cache();
       buf[i++] = cast_from_oop<intptr_t>(kptr2->obj());
     }
   }
