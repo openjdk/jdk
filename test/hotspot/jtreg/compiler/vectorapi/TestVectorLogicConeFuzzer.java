@@ -23,9 +23,11 @@
 
 /*
  * @test
- * @bug 8387204 8389669
+ * @bug 8387204
  * @key randomness
  * @summary Fuzzer for the C2 vector "logic cone" (MacroLogicV) packing optimization.
+ * @requires vm.compiler2.enabled
+ * @requires os.simpleArch == "x64"
  * @modules jdk.incubator.vector
  * @library /test/lib /
  * @compile ../../compiler/lib/verify/Verify.java
@@ -217,6 +219,19 @@ public class TestVectorLogicConeFuzzer {
                 receiveArgs.add(", boolean[] " + ma);
             }
 
+            // MacroLogicV IR matching is only asserted for non-masked cones; masked
+            // cones may not pack into MacroLogicV (e.g. mixed masks or partial predication).
+            Object testMethodHeader = numMasks == 0
+                ? """
+                @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.MACRO_LOGIC_V, " > 0 "})
+                @Test
+                public static Object $test(
+                """
+                : """
+                @Test
+                public static Object $test(
+                """;
+
             return scope(
                 let("leaves", expression.argumentTypes.size()),
                 let("masks", numMasks),
@@ -232,9 +247,8 @@ public class TestVectorLogicConeFuzzer {
                 """
                 }
 
-                @Test(allowNotCompilable = true)
-                public static Object $test(
                 """,
+                testMethodHeader,
                 receiveArgs,
                 """
                 ) {
