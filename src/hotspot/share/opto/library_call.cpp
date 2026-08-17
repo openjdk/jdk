@@ -5495,11 +5495,67 @@ LibraryCallKit::generate_method_call(vmIntrinsicID method_id, bool is_virtual, b
  * be virtual (invokevirtual) or bound (invokespecial). For each case we generate
  * slightly different code.
  */
+Node* LibraryCallKit::get_hashcode_from_header(Node* header, RegionNode* unset_region) {
+  // Get the hash value and check to see that it has been properly assigned.
+  // We depend on hash_mask being at most 32 bits and avoid the use of
+  // hash_mask_in_place because it could be larger than 32 bits in a 64-bit
+  // vm: see markWord.hpp.
+  Node* hash_mask = _gvn.intcon(markWord::hash_mask);
+  Node* hash_shift = _gvn.intcon(markWord::hash_shift);
+  Node* hshifted_header = _gvn.transform(new URShiftXNode(header, hash_shift));
+  // This hack lets the hash bits live anywhere in the mark object now, as long
+  // as the shift drops the relevant bits into the low 32 bits.  Note that
+  // Java spec says that HashCode is an int so there's no point in capturing
+  // an 'X'-sized hashcode (32 in 32-bit build or 64 in 64-bit build).
+  hshifted_header = ConvX2I(hshifted_header);
+  Node* hash_val = _gvn.transform(new AndINode(hshifted_header, hash_mask));
+
+  Node* no_hash_val = _gvn.intcon(markWord::no_hash);
+  Node* chk_assigned = _gvn.transform(new CmpINode( hash_val, no_hash_val));
+  Node* test_assigned = _gvn.transform(new BoolNode( chk_assigned, BoolTest::eq));
+
+  generate_slow_guard(test_assigned, unset_region);
+
+  return hash_val;
+}
+
+/* The overall logic is something like
+ *
+ * null_path:
+ * if receiver is null {
+ *   if static { return 0 } else { null pointer exception }
+ * }
+ *
+ * cache_path:
+ * if header is not safe to read { goto inline_fast_path }
+ * hash = read_hash_from_header()
+ * if hash is empty { goto inline_fast_path }
+ * return hash
+ *
+ * inline_fast_path:
+ * if not static { goto slow }
+ * if not value object { goto slow }
+ * if value klass has no fast path { goto slow }
+ * if klass header is not safe to read { goto slow }
+ * k_hash = read_hash_from_klass_header()
+ * if k_hash is empty { goto slow }
+ * return fast_hashcode_path (see InlineKlass::Members::_fast_hashcode_offset et seqq. for details on how this is computed)
+ *
+ * slow:
+ * runtime call to hash function (this may be replaced with the expanded form during IGVN. See CallStaticJavaNode::replace_identity_hash_code)
+ *
+ */
 bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
   assert(is_static == callee()->is_static(), "correct intrinsic selection");
   assert(!(is_virtual && is_static), "either virtual, special, or static");
 
-  enum { _slow_path = 1, _fast_path, _null_path, PATH_LIMIT };
+  enum {
+    _slow_path = 1,  // Actually perform the runtime call
+    _cache_path,  // Get the hash from the header
+    _null_path,  // If object is null, hash is 0.
+    _inline_fast_path,  // Fast path for value objects only (see InlineKlass::Members::_fast_hashcode_offset et seqq.)
+    PATH_LIMIT,
+  };
 
   RegionNode* result_reg = new RegionNode(PATH_LIMIT);
   PhiNode*    result_val = new PhiNode(result_reg, TypeInt::INT);
@@ -5507,10 +5563,11 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
   PhiNode*    result_mem = new PhiNode(result_reg, Type::MEMORY, TypePtr::BOTTOM);
   Node* obj = argument(0);
 
-  // Don't intrinsify hashcode on inline types for now.
-  // The "is locked" runtime check also subsumes the inline type check (as inline types cannot be locked) and goes to the slow path.
-  if (gvn().type(obj)->is_inlinetypeptr()) {
-    return false;
+  if (obj->is_InlineType()) {
+    PreserveReexecuteState preexecs(this);
+    inc_sp(2);
+    jvms()->set_should_reexecute(true);
+    obj = obj->as_InlineType()->buffer(this);
   }
 
   if (!is_static) {
@@ -5536,10 +5593,13 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
     return true;
   }
 
-  // We only go to the fast case code if we pass a number of guards.  The
-  // paths which do not pass are accumulated in the slow_region.
+  // We only go to the cache case code if we pass a number of guards. The paths which do
+  // not pass are accumulated in the inline_fast_path_region. The compute region tries
+  // to use the fast path for inline types. That also needs a lot of guards to be met.
+  // The paths which do not pass are accumulated in the slow_region, where we do the
+  // runtime call, which is the last resort.
+  RegionNode* inline_fast_path_region = new RegionNode(1);
   RegionNode* slow_region = new RegionNode(1);
-  record_for_igvn(slow_region);
 
   // If this is a virtual call, we generate a funny guard.  We pull out
   // the vtable entry corresponding to hashCode() from the target object.
@@ -5547,9 +5607,9 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
   // Object hashCode() method, we pass the guard.  We do not need this
   // guard for non-virtual calls -- the caller is known to be the native
   // Object hashCode().
+  // After null check, get the object's klass.
+  Node* obj_klass = load_object_klass(obj);
   if (is_virtual) {
-    // After null check, get the object's klass.
-    Node* obj_klass = load_object_klass(obj);
     generate_virtual_guard(obj_klass, slow_region);
   }
 
@@ -5560,35 +5620,94 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
   Node* no_ctrl = nullptr;
   Node* header = make_load(no_ctrl, header_addr, TypeX_X, TypeX_X->basic_type(), MemNode::unordered);
 
-  // Get the hash value and check to see that it has been properly assigned.
-  // We depend on hash_mask being at most 32 bits and avoid the use of
-  // hash_mask_in_place because it could be larger than 32 bits in a 64-bit
-  // vm: see markWord.hpp.
-  Node *hash_mask      = _gvn.intcon(markWord::hash_mask);
-  Node *hash_shift     = _gvn.intcon(markWord::hash_shift);
-  Node *hshifted_header= _gvn.transform(new URShiftXNode(header, hash_shift));
-  // This hack lets the hash bits live anywhere in the mark object now, as long
-  // as the shift drops the relevant bits into the low 32 bits.  Note that
-  // Java spec says that HashCode is an int so there's no point in capturing
-  // an 'X'-sized hashcode (32 in 32-bit build or 64 in 64-bit build).
-  hshifted_header      = ConvX2I(hshifted_header);
-  Node *hash_val       = _gvn.transform(new AndINode(hshifted_header, hash_mask));
+  Node* hash_val = get_hashcode_from_header(header, inline_fast_path_region);
 
-  Node *no_hash_val    = _gvn.intcon(markWord::no_hash);
-  Node *chk_assigned   = _gvn.transform(new CmpINode( hash_val, no_hash_val));
-  Node *test_assigned  = _gvn.transform(new BoolNode( chk_assigned, BoolTest::eq));
+  result_val->init_req(_cache_path, hash_val);
+  result_reg->init_req(_cache_path, control());
 
-  generate_slow_guard(test_assigned, slow_region);
+  set_control(_gvn.transform(inline_fast_path_region));
+  IfNode* fast_path_iff = nullptr;
+  if (!stopped()) {
+    if (UseHashcodeFastPath && is_static && !_gvn.type(obj)->is_inlinetypeptr()) {
+      Node* is_not_value = inline_type_test(obj, false);
+      generate_fair_guard(is_not_value, slow_region);
+      if (!stopped()) {
+        // See InlineKlass::Members::_fast_hashcode_offset et seqq. for details on the fast path logic
+        Node* members_addr = off_heap_plus_addr(obj_klass, in_bytes(InlineKlass::adr_members_offset()));
+        Node* members = make_load(control(), members_addr, TypeRawPtr::BOTTOM, T_ADDRESS, MemNode::unordered);
+        Node* offset_addr = off_heap_plus_addr(members, in_bytes(InlineKlass::fast_hashcode_offset_offset()));
+        Node* offset = make_load(control(), offset_addr, TypeInt::INT, T_INT, MemNode::unordered);
+        Node* bol_no_fast_path = BoolCmpI(offset, BoolTest::lt, zerocon(T_INT));
+        generate_slow_guard(bol_no_fast_path, slow_region);
+        if (!stopped()) {
+          if (control()->is_IfFalse()) {
+            fast_path_iff = control()->in(0)->as_If();
+          }
+          Node* klass_header_addr = off_heap_plus_addr(load_mirror_from_klass(obj_klass), oopDesc::mark_offset_in_bytes());
+          Node* klass_header = make_load(no_ctrl, klass_header_addr, TypeX_X, TypeX_X->basic_type(), MemNode::unordered);
+          Node* result_empty = get_hashcode_from_header(klass_header, slow_region);
+          if (!stopped()) {
+            // Now that we know fast path applies, there are 3 cases to distinguish here,
+            // that unmasked_region/unmasked_result merge:
+            // 1. the object has no segment, the hash is simply the hash of the class object
+            // 2. the object has one segment of size smaller than 8 (1, 2, 4)
+            // 3. the object has one segment of size 8 (long-sized)
+            // See inlineKlass.hpp on why and how to tell them apart.
+            RegionNode* unmasked_region = new RegionNode(4);
+            Node* unmasked_result = new PhiNode(unmasked_region, TypeInt::INT);
+
+            // Case 1. no segment
+            Node* bol_empty_object = BoolCmpI(offset, BoolTest::eq, zerocon(T_INT));
+            IfNode* iff_is_empty_object = create_and_map_if(control(), bol_empty_object, PROB_FAIR, COUNT_UNKNOWN);
+            unmasked_region->init_req(1, IfTrue(iff_is_empty_object));
+            unmasked_result->init_req(1, result_empty);
+
+            set_control(IfFalse(iff_is_empty_object));
+
+            Node* obj_payload_addr = basic_plus_adr(obj, ConvI2L(offset));
+            Node* obj_payload = make_load(control(), obj_payload_addr, TypeLong::LONG, T_LONG, MemNode::unordered, LoadNNode::DependsOnlyOnTest, false, true, true, true);
+
+            Node* shift_addr = off_heap_plus_addr(members, in_bytes(InlineKlass::fast_hashcode_shift_offset()));
+            Node* shift = make_load(control(), shift_addr, TypeInt::INT, T_INT, MemNode::unordered);
+#ifdef VM_LITTLE_ENDIAN
+            // *(obj + offset) >> shift
+            Node* obj_extracted = RShiftL(obj_payload, shift);
+#else
+            // (*(obj + offset) << shift) >> shift
+            Node* obj_payload_left_shifted = LShiftL(obj_payload, shift);
+            Node* obj_extracted = RShiftL(obj_payload_left_shifted, shift);
+#endif
+            Node* is_long_payload_bol = BoolCmpI(shift, BoolTest::eq, intcon(0));
+            IfNode* iff_is_long_payload = create_and_map_if(control(), is_long_payload_bol, PROB_FAIR, COUNT_UNKNOWN);
+
+            // Case 2. one segment, less than 8-byte long
+            Node* result_int = AddI(MulI(intcon(31), result_empty), ConvL2I(obj_extracted));
+            unmasked_region->init_req(2, IfFalse(iff_is_long_payload));
+            unmasked_result->init_req(2, result_int);
+
+            // Case 3. one segment, 8-byte long
+            Node* result_long = AddI(MulI(intcon(31), result_int), ConvL2I(URShiftL(obj_extracted, intcon(32))));
+            unmasked_region->init_req(3, IfTrue(iff_is_long_payload));
+            unmasked_result->init_req(3, result_long);
+
+            Node* fast_path_result = AndI(_gvn.transform(unmasked_result), intcon(markWord::hash_mask));
+            result_reg->init_req(_inline_fast_path, _gvn.transform(unmasked_region));
+            result_val->init_req(_inline_fast_path, fast_path_result);
+          }
+        }
+      }
+    } else {
+      slow_region->add_req(control());
+    }
+  }
 
   Node* init_mem = reset_memory();
-  // fill in the rest of the null path:
   result_io ->init_req(_null_path, i_o());
   result_mem->init_req(_null_path, init_mem);
-
-  result_val->init_req(_fast_path, hash_val);
-  result_reg->init_req(_fast_path, control());
-  result_io ->init_req(_fast_path, i_o());
-  result_mem->init_req(_fast_path, init_mem);
+  result_io ->init_req(_cache_path, i_o());
+  result_mem->init_req(_cache_path, init_mem);
+  result_io  ->set_req(_inline_fast_path, i_o());
+  result_mem ->set_req(_inline_fast_path, init_mem);
 
   // Generate code for the slow case.  We make a call to hashCode().
   set_control(_gvn.transform(slow_region));
@@ -5597,7 +5716,9 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
     set_all_memory(init_mem);
     vmIntrinsics::ID hashCode_id = is_static ? vmIntrinsics::_identityHashCode : vmIntrinsics::_hashCode;
     CallJavaNode* slow_call = generate_method_call(hashCode_id, is_virtual, is_static, false);
+    slow_call->set_req(TypeFunc::Parms, obj);  // This obj is not null
     Node* slow_result = set_results_for_java_call(slow_call);
+    assert(hashcode_fast_path_if_from_identity_hash_code_call(&_gvn, slow_call) == fast_path_iff, "");
     // this->control() comes from set_results_for_java_call
     result_reg->init_req(_slow_path, control());
     result_val->init_req(_slow_path, slow_result);
@@ -5611,6 +5732,73 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
 
   set_result(result_reg, result_val);
   return true;
+}
+IfNode* LibraryCallKit::hashcode_fast_path_if_from_identity_hash_code_call(PhaseGVN* phase, CallJavaNode* call) {
+  auto is_con_offset = [](Node* node, ByteSize n) -> bool {
+    if (!node->is_Con()) return false;
+    TypeNode* con = node->as_Type();
+    assert(con->type()->is_intptr_t(), "");
+    return con->type()->is_intptr_t()->is_con(in_bytes(n));
+  };
+
+  assert(call->in(TypeFunc::Control) != nullptr, "");
+  if (!call->in(TypeFunc::Control)->is_Region()) return nullptr;
+  RegionNode* region = call->in(TypeFunc::Control)->as_Region();
+  for (uint i = 1; i < region->req(); i++) {
+    assert(region->in(i) != nullptr, "");
+    if (!region->in(i)->is_IfProj()) continue;
+    IfProjNode* if_proj = region->in(i)->as_IfProj();
+    if (if_proj->_con != 1) continue;
+
+    assert(if_proj->in(0) != nullptr, "");
+    assert(if_proj->in(0)->is_If(), "");
+    IfNode* iff = if_proj->in(0)->as_If();
+
+    assert(iff->in(1) != nullptr, "");
+    if (!iff->in(1)->is_Bool()) continue;
+    BoolNode* lt = iff->in(1)->as_Bool();
+    if (lt->_test._test != BoolTest::lt) continue;
+
+    assert(lt->in(1) != nullptr, "");
+    if (lt->in(1)->Opcode() != Op_CmpI) continue;
+    CmpNode* cmp_i = lt->in(1)->as_Cmp();
+
+    assert(cmp_i->in(1) != nullptr, "");
+    assert(cmp_i->in(2) != nullptr, "");
+
+    if (cmp_i->in(1)->Opcode() != Op_LoadI) continue;
+    LoadNode* load_offset = cmp_i->in(1)->as_Load();
+    if (!cmp_i->in(2)->is_ConI()) continue;
+    ConINode* zero_i = cmp_i->in(2)->as_ConI();
+    assert(zero_i->type()->is_int() != nullptr, "");
+    if (!zero_i->type()->is_int()->is_con(0)) continue;
+
+    assert(load_offset->in(2) != nullptr, "");
+    if (!load_offset->in(2)->is_AddP()) continue;
+    AddPNode* offset_addr_add = load_offset->in(2)->as_AddP();
+
+    assert(offset_addr_add->in(AddPNode::Base) != nullptr, "");
+    assert(offset_addr_add->in(AddPNode::Address) != nullptr, "");
+    assert(offset_addr_add->in(AddPNode::Offset) != nullptr, "");
+    if (!offset_addr_add->in(AddPNode::Base)->is_top()) continue;
+    if (offset_addr_add->in(AddPNode::Address)->Opcode() != Op_LoadP) continue;
+    LoadNode* load_members = offset_addr_add->in(AddPNode::Address)->as_Load();
+    if (!is_con_offset(offset_addr_add->in(AddPNode::Offset), InlineKlass::fast_hashcode_offset_offset())) continue;
+
+    assert(load_members->in(2) != nullptr, "");
+    if (!load_members->in(2)->is_AddP()) continue;
+    AddPNode* members_addr_add = load_members->in(2)->as_AddP();
+
+    assert(members_addr_add->in(AddPNode::Base) != nullptr, "");
+    assert(members_addr_add->in(AddPNode::Address) != nullptr, "");
+    assert(members_addr_add->in(AddPNode::Offset) != nullptr, "");
+    if (!members_addr_add->in(AddPNode::Base)->is_top()) continue;
+    if (!phase->type(members_addr_add->in(AddPNode::Address))->isa_instklassptr()) continue;
+    if (!is_con_offset(members_addr_add->in(AddPNode::Offset), InlineKlass::adr_members_offset())) continue;
+
+    return iff;
+  }
+  return nullptr;
 }
 
 //---------------------------inline_native_getClass----------------------------
