@@ -1413,6 +1413,7 @@ public final class SunPKCS11 extends AuthProvider {
                 PKCS11Exception, NoSuchAlgorithmException {
             String algorithm = getAlgorithm();
             String type = getType();
+
             if (type == MD) {
                 return new P11Digest(token, algorithm, mechanism);
             } else if (type == CIP) {
@@ -1460,7 +1461,7 @@ public final class SunPKCS11 extends AuthProvider {
                         || algorithm == "SunTls12MasterSecret") {
                     return new P11TlsMasterSecretGenerator(
                         token, algorithm, mechanism);
-                } else if (algorithm == "SunTls12ExtendedMasterSecret") {
+                } else if (algorithm == "SunTlsExtendedMasterSecret") {
                     return new P11TlsExtendedMasterSecretGenerator(
                             token, algorithm, mechanism);
                 } else if (algorithm == "SunTlsKeyMaterial"

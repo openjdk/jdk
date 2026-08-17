@@ -26,11 +26,24 @@
  * @bug 8389135
  * @summary Verifies TLS 1.2 Extended Master Secret negotiation using SunPKCS11
  * @library /test/lib ..
- * @run main/othervm TestExtendedMasterSecretHandshake
+ * @modules java.base/sun.security.internal.spec
+ *
+ * @run main/othervm
+ *      -Djdk.tls.useExtendedMasterSecret=true
+ *      TestExtendedMasterSecretHandshake true
+ *
+ * @run main/othervm
+ *      -Djdk.tls.useExtendedMasterSecret=false
+ *      TestExtendedMasterSecretHandshake false
  */
 
 import jdk.test.lib.security.SSLSocketTest;
+import jtreg.SkippedException;
+import sun.security.internal.spec.TlsMasterSecretParameterSpec;
 
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
@@ -43,23 +56,106 @@ import java.security.Security;
 
 public class TestExtendedMasterSecretHandshake extends PKCS11Test {
 
+    private static boolean useExtendedMasterSecret;
+
     public static void main(String[] args) throws Exception {
+        useExtendedMasterSecret = Boolean.parseBoolean(args[0]);
+
         main(new TestExtendedMasterSecretHandshake(), args);
     }
 
     @Override
     public void main(Provider p) throws Exception {
-        if (p.getService("KeyGenerator", "SunTlsExtendedMasterSecret") == null) {
-            throw new RuntimeException("EMS service not available");
+        initialize(p);
+
+        if (!shouldRun(p)) {
+            throw new SkippedException(
+                    "Test skipped: SunTlsExtendedMasterSecret not supported by provider " + p.getName());
         }
 
+        if (useExtendedMasterSecret) {
+            verifyDirectEMSGeneration(p);
+        }
+
+        System.setProperty("javax.net.debug", "ssl,handshake");
+
+        String log = runHandshake();
+
+        if (!log.contains("TLS handshake and application data exchange succeeded")) {
+            throw new RuntimeException("Handshake failed");
+        }
+
+        if (useExtendedMasterSecret) {
+            if (countOccurrences(log, "Consumed extension: extended_master_secret") != 2 ||
+                    countOccurrences(log, "Ignore unavailable extension: extended_master_secret") != 0) {
+                throw new RuntimeException("EMS extension not negotiated on both sides");
+            }
+
+            if (!log.contains("TLS handshake and application data exchange succeeded")) {
+                throw new RuntimeException("Handshake did not complete");
+            }
+
+            System.out.println("Verified EMS derivation through PKCS11 enabled");
+        } else {
+            if (countOccurrences(log, "Consumed extension: extended_master_secret") != 0 ||
+                    countOccurrences(log, "Ignore unavailable extension: extended_master_secret") < 2) {
+                throw new RuntimeException("EMS extension negotiated although jdk.tls.useExtendedMasterSecret=false");
+            }
+
+            System.out.println("Verified EMS derivation through PKCS11 disabled");
+        }
+    }
+
+    private static void initialize(Provider p) {
         Security.insertProviderAt(p, 1);
+    }
 
-        System.setProperty(
-                "javax.net.debug",
-                "ssl,handshake,record");
+    private static boolean shouldRun(Provider p) {
+        return p.getService("KeyGenerator", "SunTlsExtendedMasterSecret") != null;
+    }
 
+    private static void verifyDirectEMSGeneration(Provider p) throws Exception {
+        KeyGenerator kg = KeyGenerator.getInstance("SunTlsExtendedMasterSecret", p);
+        if (kg.getProvider() != p) {
+            throw new RuntimeException("Unexpected provider: " + kg.getProvider().getName());
+        }
+
+        byte[] premaster = new byte[48];
+        byte[] sessionHash = new byte[32];
+        SecretKey premasterKey = new SecretKeySpec(premaster, "TlsPremasterSecret");
+
+        TlsMasterSecretParameterSpec spec = new TlsMasterSecretParameterSpec(
+                premasterKey,
+                3, 3,                    // TLS 1.2
+                sessionHash,
+                "SHA-256",
+                32,
+                64);
+        kg.init(spec);
+        SecretKey key = kg.generateKey();
+
+        if (key == null) {
+            throw new RuntimeException("Generated EMS key is null");
+        }
+
+        if (!"TlsMasterSecret".equals(key.getAlgorithm())) {
+            throw new RuntimeException("Unexpected algorithm: " + key.getAlgorithm());
+        }
+    }
+
+    private static int countOccurrences(String text, String needle) {
+        int count = 0;
+        int index = 0;
+        while ((index = text.indexOf(needle, index)) >= 0) {
+            count++;
+            index += needle.length();
+        }
+        return count;
+    }
+
+    private static String runHandshake() throws Exception {
         ByteArrayOutputStream byteLogOutput = new ByteArrayOutputStream();
+
         PrintStream ps = new PrintStream(byteLogOutput, true);
 
         PrintStream oldOut = System.out;
@@ -76,17 +172,7 @@ public class TestExtendedMasterSecretHandshake extends PKCS11Test {
             System.setErr(oldErr);
         }
 
-        String log = byteLogOutput.toString();
-
-        if (!log.contains("Consumed extension: extended_master_secret")) {
-            throw new RuntimeException("EMS was not negotiated");
-        }
-
-        if (!log.contains("\"extended_master_secret (23)\"")) {
-            throw new RuntimeException("EMS extension not present");
-        }
-
-        System.out.println("Verified EMS derivation through PKCS11");
+        return byteLogOutput.toString();
     }
 
     private static class HandshakeTest extends SSLSocketTest {
@@ -143,6 +229,10 @@ public class TestExtendedMasterSecretHandshake extends PKCS11Test {
 
             if (!"TLSv1.2".equals(clientSession.getProtocol())) {
                 throw new RuntimeException("Unexpected protocol: " + clientSession.getProtocol());
+            }
+
+            if (!"TLSv1.2".equals(serverSession.getProtocol())) {
+                throw new RuntimeException("Unexpected protocol: " + serverSession.getProtocol());
             }
 
             System.out.println("TLS handshake and application data exchange succeeded");
