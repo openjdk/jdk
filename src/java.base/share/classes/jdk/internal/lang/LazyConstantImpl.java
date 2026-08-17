@@ -87,18 +87,21 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
     // State of the lazy constant. The field needs sometimes be accessed by
     // stronger-than-plain memory semantics.
     //
-    // | Value                  | Meaning                                    |
-    // | ---------------------- | ------------------------------------------ |
-    // | `Supplier`             | Computing function, before computation     |
-    // | `Thread`               | Thread computing the value                 |
-    // | `null`                 | Computation completed successfully         |
-    // | `String`               | Fully qualified name of a thrown exception |
+    // | Value                  | Meaning                                          |
+    // | ---------------------- | ------------------------------------------------ |
+    // | `Supplier`             | Computing function, before computation           |
+    // |                        |                                                  |
+    // | `Thread`               | Thread computing the value                       |
+    // | `Long`                 | ID of a computing thread that is also a Supplier |
+    // |                        |                                                  |
+    // | `null`                 | Computation completed successfully               |
+    // | `String`               | Fully qualified name of a thrown exception       |
     //
     // The state moves monotonically as described in the above table and where either of
     // the two last states can exist. I.e. the following transitions are possible:
     //
-    // Supplier ---> Thread -+-> null (completed successfully)
-    //                       +-> String (completed exceptionally)
+    // Supplier ---> Thread/Long -+-> null (completed successfully)
+    //                            +-> String (completed exceptionally)
     //
     // The exception class is not stored as that would pin its class loader.
     private Object state;
@@ -118,35 +121,41 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
     @SuppressWarnings("unchecked")
     private T getSlowPath() {
         final Thread currentThread = Thread.currentThread();
-        for (;;) {
-            final T t = (T) getAcquire(CONSTANT_OFFSET);
-            if (t != null) {
-                return t;
-            }
-
-            final Object state = getAcquire(STATUS_OFFSET);
-            // Don't use switch pattern matching here in order to improve startup time.
-            if (state instanceof Supplier<?> computingFunction) {
-                if (UNSAFE.compareAndSetReference(this, STATUS_OFFSET, state, currentThread)) {
-                    try {
-                        final T newT = (T) computingFunction.get();
-                        Objects.requireNonNull(newT);
-                        setRelease(CONSTANT_OFFSET, newT);
-                        // Publication is needed here for toString to work correctly
-                        setRelease(STATUS_OFFSET, null);
-                        return newT;
-                    } catch (Throwable ex) {
-                        throw computationFailed(ex);
-                    }
+        final Object state = getAcquire(STATUS_OFFSET);
+        // Don't use switch pattern matching here in order to improve startup time.
+        if (state instanceof Supplier<?> computingFunction) {
+            // A Thread subclass may also implement Supplier, so use the thread ID as
+            // a disjoint state marker in that exceptional case.
+            final Object computingState = currentThread instanceof Supplier<?>
+                    ? currentThread.threadId() // Implies autoboxing (in many cases)
+                    : currentThread;           // No extra object creation
+            if (UNSAFE.compareAndSetReference(this, STATUS_OFFSET, state, computingState)) {
+                try {
+                    final T newT = (T) computingFunction.get();
+                    Objects.requireNonNull(newT);
+                    setRelease(CONSTANT_OFFSET, newT);
+                    // Publication is needed here for toString to work correctly
+                    setRelease(STATUS_OFFSET, null);
+                    return newT;
+                } catch (Throwable ex) {
+                    throw computationFailed(ex);
                 }
-            } else if (state instanceof Thread) {
-                return awaitComputation(currentThread);
-            } else if (state instanceof String exceptionType) {
-                throw unableToAccessConstant(exceptionType, null);
-            } else if (state != null) {
-                throw unexpectedState(state);
             }
+            // We lost the CAS race.
+            return awaitComputation(currentThread);
+        } else if (state instanceof Thread || state instanceof Long) {
+            return awaitComputation(currentThread);
+        } else if (state instanceof String exceptionType) {
+            throw unableToAccessConstant(exceptionType, null);
+        } else if (state != null) {
+            throw unexpectedState(state);
         }
+        // We first observed 'constant == null' and then 'state == null'
+        final T t = (T) getAcquire(CONSTANT_OFFSET);
+        if (t == null) {
+            throw unexpectedState(state);
+        }
+        return t;
     }
 
     @SuppressWarnings("unchecked")
@@ -157,51 +166,52 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
         boolean restoreInterrupt = false;
 
         // Initial random seed
-        long random = currentThread.threadId() * GOLDEN_GAMMA;
+        final long currentThreadId = currentThread.threadId();
+        long random = currentThreadId * GOLDEN_GAMMA;
         try {
+            // Only poll the `state` in the loop to minimize CPU cache
+            // contention.
             for (;;) {
-                final T t = (T) getAcquire(CONSTANT_OFFSET);
-                if (t != null) {
-                    return t;
+                final Object state = getAcquire(STATUS_OFFSET);
+                // Don't use switch pattern matching here in order to improve startup time.
+                if (state instanceof Thread computingThread) {
+                    if (computingThread == currentThread) {
+                        throw recursiveInvocation(computingThread);
+                    }
+                } else if (state instanceof Long computingThreadId) {
+                    if (computingThreadId.longValue() == currentThreadId) {
+                        throw recursiveInvocation(currentThread);
+                    }
+                } else if (state instanceof String exceptionType) {
+                    throw unableToAccessConstant(exceptionType, null);
+                } else if (state != null) {
+                    throw unexpectedState(state);
+                } else {
+                    // state is `null` -> we have a computed constant
+                    final T t = (T) getAcquire(CONSTANT_OFFSET);
+                    if (t != null) {
+                        return t;
+                    }
                 }
 
-                for (;;) {
-                    // Only check the `state` in the inner loop to minimize CPU cache
-                    // contention.
-                    final Object state = getAcquire(STATUS_OFFSET);
-                    // Don't use switch pattern matching here in order to improve startup time.
-                    if (state instanceof Thread computingThread) {
-                        if (computingThread == currentThread) {
-                            throw recursiveInvocation(computingThread);
-                        }
-                        if (spins > 0) {
-                            --spins;
-                            Thread.onSpinWait();
-                        } else {
-                            if (Thread.interrupted()) {
-                                restoreInterrupt = true;
-                            }
-                            //
-                            random = nextRandomLong(random);
-                            final long quarterBackoffNanos = backoffNanos >> 2;
-                            final long jitter = random & (quarterBackoffNanos - 1);
-                            // Prevent threads from being unparked in lock steps by
-                            // introducing a random jitter:
-                            // 75% fixed + 25% random
-                            final long nanos = quarterBackoffNanos * 3 + jitter;
-                            LockSupport.parkNanos(this, nanos);
-                            // Exponentially bump up the backoff time until the max
-                            // backoff time is reached.
-                            backoffNanos = Math.min(backoffNanos << 1, MAX_BACKOFF_NANOS);
-                        }
-                    } else if (state instanceof String exceptionType) {
-                        throw unableToAccessConstant(exceptionType, null);
-                    } else if (state != null) {
-                        throw unexpectedState(state);
-                    } else {
-                        // stat is `null` -> we have a computed constant
-                        break;
+                if (spins > 0) {
+                    --spins;
+                    Thread.onSpinWait();
+                } else {
+                    if (Thread.interrupted()) {
+                        restoreInterrupt = true;
                     }
+                    random = nextRandomLong(random);
+                    final long quarterBackoffNanos = backoffNanos >> 2;
+                    final long jitter = random & (quarterBackoffNanos - 1);
+                    // Prevent threads from being unparked in lock steps by
+                    // introducing a random jitter:
+                    // 75% fixed + 25% random
+                    final long nanos = quarterBackoffNanos * 3 + jitter;
+                    LockSupport.parkNanos(this, nanos);
+                    // Exponentially bump up the backoff time until the max
+                    // backoff time is reached.
+                    backoffNanos = Math.min(backoffNanos << 1, MAX_BACKOFF_NANOS);
                 }
             }
         } finally {
@@ -276,6 +286,11 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
             if (state != null) {
                 if (state instanceof Thread computingThread) {
                     return "computing thread=" + computingThread.threadId();
+                }
+                if (state instanceof Long computingThreadId) {
+                    // In this rare case, we only provide the thread id. Looking up the
+                    // actual Thread is expensive and deamed not worth the effort.
+                    return "computing thread id=" + computingThreadId;
                 }
                 if (state instanceof Supplier<?> supplier) {
                     return "computing function=" + isolateToString(supplier);

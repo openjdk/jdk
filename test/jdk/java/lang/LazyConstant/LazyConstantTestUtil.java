@@ -23,7 +23,6 @@
 
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.lang.reflect.Type;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.*;
@@ -166,7 +165,7 @@ final class LazyConstantTestUtil {
         }
     }
 
-    static Object computingFunction(LazyConstant<?> o) {
+    static Object state(LazyConstant<?> o) {
         try {
             final Field field = field(o.getClass(), "state");
             field.setAccessible(true);

@@ -246,7 +246,7 @@ final class LazyConstantTest {
 
             var f1 = CompletableFuture.supplyAsync(constant::get, testExecutor);
             assertTrue(entered.await(TIME_OUT_S, TimeUnit.SECONDS));
-            assertSame(computingThread.get(), LazyConstantTestUtil.computingFunction(constant));
+            assertSame(computingThread.get(), LazyConstantTestUtil.state(constant));
 
             var f2 = CompletableFuture.supplyAsync(() -> {
                 competing.countDown();
@@ -268,6 +268,68 @@ final class LazyConstantTest {
             assertEquals(VALUE, f3.get(TIME_OUT_S, TimeUnit.SECONDS));
             assertEquals(1, calls.get());
         }
+    }
+
+    @Test
+    void threadSupplierUsesDisjointComputingState() throws Exception {
+        AtomicReference<LazyConstant<Integer>> constantRef = new AtomicReference<>();
+        AtomicInteger calls = new AtomicInteger();
+        CountDownLatch entered = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        CountDownLatch waiterStarted = new CountDownLatch(1);
+
+        FutureTask<Integer> computingTask = new FutureTask<>(() -> constantRef.get().get());
+        // A SupplierThread implements both Thread and Supplier
+        final class SupplierThread extends Thread implements Supplier<Integer> {
+            SupplierThread(Runnable target) {
+                super(target);
+            }
+
+            @Override
+            public Integer get() {
+                calls.incrementAndGet();
+                entered.countDown();
+                try {
+                    assertTrue(release.await(TIME_OUT_S, TimeUnit.SECONDS));
+                } catch (InterruptedException e) {
+                    throw new AssertionError(e);
+                }
+                return VALUE;
+            }
+        }
+
+        SupplierThread computingThread = new SupplierThread(computingTask);
+        LazyConstant<Integer> constant = LazyConstant.of(computingThread);
+        constantRef.set(constant);
+
+        FutureTask<Integer> waitingTask = new FutureTask<>(() -> {
+            waiterStarted.countDown();
+            return constant.get();
+        });
+        Thread waitingThread = null;
+        try {
+            computingThread.start();
+            assertTrue(entered.await(TIME_OUT_S, TimeUnit.SECONDS));
+            // Make sure we use the fallback status
+            assertInstanceOf(Long.class, LazyConstantTestUtil.state(constant));
+
+            waitingThread = Thread.ofPlatform().start(waitingTask);
+            assertTrue(waiterStarted.await(TIME_OUT_S, TimeUnit.SECONDS));
+            Thread.sleep(OVERLAP_TIME_MS);
+
+            assertFalse(waitingTask.isDone(), "contending thread should be blocked");
+            assertEquals(1, calls.get());
+        } finally {
+            release.countDown();
+            computingThread.join(TimeUnit.SECONDS.toMillis(TIME_OUT_S));
+            if (waitingThread != null) {
+                waitingThread.join(TimeUnit.SECONDS.toMillis(TIME_OUT_S));
+            }
+        }
+
+        assertEquals(VALUE, computingTask.get(TIME_OUT_S, TimeUnit.SECONDS));
+        assertEquals(VALUE, waitingTask.get(TIME_OUT_S, TimeUnit.SECONDS));
+        assertEquals(1, calls.get());
     }
 
     @Test
@@ -409,10 +471,10 @@ final class LazyConstantTest {
         LazyConstantTestUtil.CountingSupplier<Integer> cs = new LazyConstantTestUtil.CountingSupplier<>(SUPPLIER);
         var f1 = factory.apply(cs);
 
-        Object underlyingBefore = LazyConstantTestUtil.computingFunction(f1);
+        Object underlyingBefore = LazyConstantTestUtil.state(f1);
         assertSame(cs, underlyingBefore);
         int v = f1.get();
-        Object underlyingAfter = LazyConstantTestUtil.computingFunction(f1);
+        Object underlyingAfter = LazyConstantTestUtil.state(f1);
         assertNull(underlyingAfter);
     }
 
@@ -424,13 +486,13 @@ final class LazyConstantTest {
         });
         var f1 = factory.apply(cs);
 
-        Object underlyingBefore = LazyConstantTestUtil.computingFunction(f1);
+        Object underlyingBefore = LazyConstantTestUtil.state(f1);
         assertSame(cs, underlyingBefore);
 
         var x = assertThrows(NoSuchElementException.class, f1::get);
         assertEquals(UnsupportedOperationException.class, x.getCause().getClass());
 
-        Object underlyingAfter = LazyConstantTestUtil.computingFunction(f1);
+        Object underlyingAfter = LazyConstantTestUtil.state(f1);
         assertEquals(UnsupportedOperationException.class.getName(), underlyingAfter);
     }
 
