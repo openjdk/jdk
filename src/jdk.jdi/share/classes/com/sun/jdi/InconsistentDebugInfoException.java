@@ -26,7 +26,7 @@
 package com.sun.jdi;
 
 /**
- * Thrown to indicate that there is an inconistency in the debug
+ * Thrown to indicate that there is an inconsistency in the debug
  * information provided by the target VM. For example, this exception
  * is thrown if there is a type mismatch between a retrieved value's
  * runtime type and its declared type as reported by the target VM.

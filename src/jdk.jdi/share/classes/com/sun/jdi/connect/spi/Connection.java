@@ -100,7 +100,7 @@ public abstract class Connection {
      *          the connection while the readPacket is in progress.
      *
      * @throws  java.io.IOException
-     *          If the length of the packet (as indictaed by the first
+     *          If the length of the packet (as indicated by the first
      *          4 bytes) is less than 11 bytes, or an I/O error occurs.
      *
      *

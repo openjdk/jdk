@@ -105,7 +105,7 @@ public interface ClassPrepareRequest extends EventRequest {
      *     refType.availableStrata();
      *
      * such that a name on the list returned by
-     *     refType.sourceNames(someStratam)
+     *     refType.sourceNames(someStratum)
      *
      * matches 'sourceNamePattern'.
      * Regular expressions are limited

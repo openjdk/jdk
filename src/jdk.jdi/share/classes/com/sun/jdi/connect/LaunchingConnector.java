@@ -54,7 +54,7 @@ public interface LaunchingConnector extends Connector {
      * received.
      * <p>
      * <b>Important note:</b> If a target VM is launched through this
-     * funcctions, its output and error streams must be read as it
+     * function, its output and error streams must be read as it
      * executes. These streams are available through the
      * {@link java.lang.Process Process} object returned by
      * {@link VirtualMachine#process}. If the streams are not periodically
