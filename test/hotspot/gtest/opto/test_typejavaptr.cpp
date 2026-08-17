@@ -985,9 +985,6 @@ constexpr void TypeAryPtrMirror::fill_samples_helper(R& res, size_t& sample_idx,
     res[sample_idx] = TypeAryPtrMirror(ptr, const_oop, ary, klass, klass_is_exact, offset, instance_id);
     sample_idx++;
   } else if (instance_id != TypeOopPtr::InstanceBot) {
-    int size_lo = 0;
-    int size_hi = 0;
-
     // Each klass is reserved 3 distinct instance_id, so we try to infer whether which instance this
     // is by finding its remainder modulo 3
     if (instance_id % 3 == 1) {
