@@ -41,7 +41,7 @@
 
 #define PROPERFMT_F         "%.1f %s"
 #define PROPERFMT_F_ARGS(s) byte_size_in_proper_unit(s), proper_unit_for_byte_size(s)
-#define PROPERFMTARGS_SIGNED(s) s.value, s.unit
+#define PROPERFMTARGS_SIGNED(s) (s).value, (s).unit
 
 // These are used to decide if we want to make any adjustments at all
 // at the end of a successful concurrent cycle.
@@ -409,7 +409,7 @@ bool ShenandoahAdaptiveHeuristics::trigger_accelerating_allocation_rate(const Sh
 void ShenandoahAdaptiveHeuristics::maybe_log_rate_trigger_parameters(const ShenandoahAnticipatedConsumption &consumption,
                                                                      size_t allocatable_bytes) const {
   if (log_is_enabled(Debug, gc, sampling)) {
-    ShenandoahSignedSize momentary_rate = ShenandoahSignedSize::get(consumption.momentary_consumption());
+    ShenandoahSignedSize momentary_rate = ShenandoahSignedSize::get(consumption.momentary_rate());
     ShenandoahSignedSize predicted_rate = ShenandoahSignedSize::get(consumption.predicted_rate());
     log_debug(gc, sampling)(
       "%s: Anticipated cycle duration: %.3fs, head room: " PROPERFMT ", margin of error: %.3f "
@@ -435,3 +435,4 @@ size_t ShenandoahAdaptiveHeuristics::min_free_threshold(size_t capacity) const {
 
 #undef PROPERFMT_F
 #undef PROPERFMT_F_ARGS
+#undef PROPERFMTARGS_SIGNED

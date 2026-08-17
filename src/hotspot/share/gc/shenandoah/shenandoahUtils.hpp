@@ -30,16 +30,15 @@
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
-#include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
-#include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 #include "services/memoryService.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 #include <cmath>
 #include <limits>
@@ -266,24 +265,23 @@ struct ShenandoahSignedSize {
       return { v, "B"};
     }
 
-    const double sign = v < 0 ? -1.0 : 1.0;
     const double magnitude = fabsd(v);
 
 #ifdef _LP64
     if (magnitude >= 100.0 * G) {
-      return { sign * magnitude / G, "G"};
+      return { std::copysign(magnitude / G, v), "G"};
     }
 #endif
 
     if (magnitude >= 100.0 * M) {
-      return { sign * magnitude / M, "M"};
+      return { std::copysign(magnitude / M, v), "M"};
     }
 
     if (magnitude >= 100.0 * K) {
-      return { sign * magnitude / K,"K"};
+      return { std::copysign(magnitude / K, v), "K"};
     }
 
-    return { sign * magnitude, "B" };
+    return { std::copysign(magnitude, v), "B" };
   }
 };
 
