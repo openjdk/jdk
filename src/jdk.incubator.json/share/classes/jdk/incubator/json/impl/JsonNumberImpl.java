@@ -38,14 +38,16 @@ public final class JsonNumberImpl implements JsonNumber, JsonValueImpl {
     private final int endOffset;
     private final int decimalOffset;
     private final int exponentOffset;
+    private final boolean fromFactory;
 
     private final LazyConstant<String> numString = LazyConstant.of(this::initNumString);
     private final LazyConstant<Optional<Integer>> numInteger = LazyConstant.of(this::initNumInteger);
     private final LazyConstant<Optional<Long>> numLong = LazyConstant.of(this::initNumLong);
     private final LazyConstant<Optional<Double>> numDouble = LazyConstant.of(this::initNumDouble);
 
-    public JsonNumberImpl(char[] doc, int start, int end, int dec, int exp) {
+    public JsonNumberImpl(char[] doc, boolean fac, int start, int end, int dec, int exp) {
         this.doc = doc;
+        fromFactory = fac;
         startOffset = start;
         endOffset = end;
         decimalOffset = dec;
@@ -72,12 +74,12 @@ public final class JsonNumberImpl implements JsonNumber, JsonValueImpl {
 
     @Override
     public char[] doc() {
-        return doc;
+        return fromFactory ? null : doc;
     }
 
     @Override
     public int offset() {
-        return startOffset;
+        return fromFactory ? -1 : startOffset;
     }
 
     @Override
@@ -163,4 +165,8 @@ public final class JsonNumberImpl implements JsonNumber, JsonValueImpl {
         return Optional.empty();
     }
 
+    // Helper which converts this JNI to one that sees itself as created from a factory
+    public JsonNumber toFactoryValue() {
+        return new JsonNumberImpl(doc, true, startOffset, endOffset, decimalOffset, exponentOffset);
+    }
 }

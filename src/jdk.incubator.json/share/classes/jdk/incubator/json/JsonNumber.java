@@ -128,7 +128,7 @@ public non-sealed interface JsonNumber extends JsonValue {
             throw new IllegalArgumentException("Not a valid JSON number");
         }
         var str = Double.toString(num);
-        return new JsonNumberImpl(str.toCharArray(), 0, str.length(), str.indexOf('.'), str.indexOf('E'));
+        return new JsonNumberImpl(str.toCharArray(), true, 0, str.length(), str.indexOf('.'), str.indexOf('E'));
     }
 
     /**
@@ -141,7 +141,7 @@ public non-sealed interface JsonNumber extends JsonValue {
      */
     static JsonNumber of(int num) {
         var str = Integer.toString(num);
-        return new JsonNumberImpl(str.toCharArray(), 0, str.length(), -1, -1);
+        return new JsonNumberImpl(str.toCharArray(), true, 0, str.length(), -1, -1);
     }
 
     /**
@@ -154,20 +154,13 @@ public non-sealed interface JsonNumber extends JsonValue {
      */
     static JsonNumber of(long num) {
         var str = Long.toString(num);
-        return new JsonNumberImpl(str.toCharArray(), 0, str.length(), -1, -1);
+        return new JsonNumberImpl(str.toCharArray(), true, 0, str.length(), -1, -1);
     }
 
     /**
      * Creates a {@code JsonNumber} from the given {@code String} value.
      * The string representation of the {@code JsonNumber} created is equivalent to
      * {@code num} with any leading or trailing JSON insignificant whitespaces removed.
-     *
-     * @implNote The value returned is equivalent to calling:
-     * {@snippet lang = "java":
-     * if (Json.parse(num) instanceof JsonNumber jn) {
-     *     return jn;
-     * }
-     * }
      *
      * @param num the given {@code String} value.
      * @throws IllegalArgumentException if {@code num} is not a valid string
@@ -177,8 +170,8 @@ public non-sealed interface JsonNumber extends JsonValue {
      */
     static JsonNumber of(String num) {
         try {
-            if (Json.parse(num) instanceof JsonNumber jn) {
-                return jn;
+            if (Json.parse(num) instanceof JsonNumberImpl jn) {
+                return jn.toFactoryValue();
             }
         } catch (JsonParseException _) {}
         throw new IllegalArgumentException("Not a JSON number");
