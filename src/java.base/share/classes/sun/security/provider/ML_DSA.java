@@ -1449,9 +1449,8 @@ public class ML_DSA {
 
     static void implDilithiumNttMultJava(int[] product, int[] coeffs1, int[] coeffs2) {
         for (int i = 0; i < ML_DSA_N; i++) {
-            // coeffs1 is in the ordinary NTT domain and coeffs2 is in the
-            // Montgomery NTT domain. Their ordinary product is therefore in
-            // the Montgomery domain; no conversion of coeffs2 is necessary.
+            // Both input coefficients are in the ordinary NTT domain, therefore
+            // the product is in the same domain.
             product[i] = barrettReduce((long) coeffs1[i] * coeffs2[i]);
         }
     }
