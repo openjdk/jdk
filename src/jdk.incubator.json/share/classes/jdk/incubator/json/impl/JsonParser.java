@@ -135,7 +135,7 @@ public final class JsonParser {
 
             if (members.putIfAbsent(name, parseValue()) != null) {
                 throw failure(nameStart, nameLine, nameLineStart,
-                    "The duplicate member name: \"%s\" was already parsed".formatted(name), startO, true);
+                    "Duplicate member name: \"%s\" was already parsed".formatted(name), startO, true);
             }
 
             // Ensure current char is either ',' or '}'
