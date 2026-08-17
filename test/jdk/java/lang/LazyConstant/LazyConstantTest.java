@@ -29,26 +29,20 @@
  * @run junit/othervm --add-opens java.base/jdk.internal.lang=ALL-UNNAMED LazyConstantTest
  */
 
+import jdk.test.lib.Utils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.lang.LazyConstant;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
-import jdk.test.lib.Utils;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 final class LazyConstantTest {
 
@@ -225,7 +219,7 @@ final class LazyConstantTest {
         assertEquals(IllegalStateException.class, x.getCause().getClass());
         assertEquals(0, cnt.get());
         assertEquals("Unable to access the constant because java.lang.IllegalStateException was thrown at initial computation", x.getMessage());
-        assertEquals("Recursive invocation of a LazyConstant's computing function", x.getCause().getMessage());
+        assertEquals("Recursive invocation of a LazyConstant's computing function: " + Thread.currentThread(), x.getCause().getMessage());
     }
 
     @Test
@@ -233,12 +227,14 @@ final class LazyConstantTest {
         // Mitigate thread starvation via a dedicated thread pool != FJP
         try (var testExecutor = Executors.newFixedThreadPool(3)) {
             AtomicInteger calls = new AtomicInteger();
+            AtomicReference<Thread> computingThread = new AtomicReference<>();
             CountDownLatch entered = new CountDownLatch(1);
             CountDownLatch release = new CountDownLatch(1);
             CountDownLatch competing = new CountDownLatch(2);
 
             LazyConstant<Integer> constant = LazyConstant.of(() -> {
                 calls.incrementAndGet();
+                computingThread.set(Thread.currentThread());
                 entered.countDown();
                 try {
                     assertTrue(release.await(TIME_OUT_S, TimeUnit.SECONDS));
@@ -250,6 +246,7 @@ final class LazyConstantTest {
 
             var f1 = CompletableFuture.supplyAsync(constant::get, testExecutor);
             assertTrue(entered.await(TIME_OUT_S, TimeUnit.SECONDS));
+            assertSame(computingThread.get(), LazyConstantTestUtil.computingFunction(constant));
 
             var f2 = CompletableFuture.supplyAsync(() -> {
                 competing.countDown();
