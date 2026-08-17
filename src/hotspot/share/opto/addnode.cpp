@@ -749,7 +749,7 @@ const Type* AddHFNode::add_ring(const Type* t0, const Type* t1) const {
 
 //------------------------------Ideal------------------------------------------
 Node* AddHFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  // Floating point additions are not associative because of boundary conditions (infinity)
+  // Float16 addition is commutative but not associative.
   return commute(phase, this) ? this : nullptr;
 }
 
