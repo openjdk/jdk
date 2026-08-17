@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @summary Volatile store in C1 followed by volatile load in interpreter.
+ * @summary A volatile store in C1 followed by a volatile load in interpreter.
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:TieredStopAtLevel=1 -XX:CICompilerCount=1 -Xbatch
  *      -XX:CompileCommand=dontinline,*DekkerTest_Interpreter_C1::interpreter_get_field_*
@@ -161,7 +161,7 @@ public class DekkerTest_Interpreter_C1 {
             test.reset();
         }
         if (failed > 0) {
-            throw new InternalError("FAILED. Got " + failed + " failed ITERATIONS");
+            throw new InternalError("FAILED. Got " + failed + " failures");
         }
         System.out.println("PASSED.");
     }

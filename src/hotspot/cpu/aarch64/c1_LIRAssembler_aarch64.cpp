@@ -151,7 +151,6 @@ bool LIR_Assembler::is_null_or_non_fp_zero_constant(BasicType type, LIR_Opr opr)
   case T_BOOLEAN: // fall through
   case T_BYTE:
     return (c->as_jint() == 0);
-    break;
   case T_LONG:
     return (c->as_jlong() == 0);
   case T_OBJECT:  // fall through
@@ -791,7 +790,7 @@ void LIR_Assembler::reg2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {
 
 
 void LIR_Assembler::reg2mem(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code, CodeEmitInfo* info, bool wide) {
-  return reg2mem(src, dest, type, patch_code, info, wide, /*is_volatile*/false);
+  reg2mem(src, dest, type, patch_code, info, wide, /*is_volatile*/false);
 }
 
 void LIR_Assembler::reg2mem(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code, CodeEmitInfo* info, bool wide, bool is_volatile) {
@@ -3074,7 +3073,7 @@ void LIR_Assembler::volatile_move_op(LIR_Opr src, LIR_Opr dest, BasicType type, 
       ShouldNotReachHere();
     }
   } else {
-    // Volatile operations should involve memory
+    // Volatile operations should involve memory and can't involve stack.
     ShouldNotReachHere();
   }
 }
