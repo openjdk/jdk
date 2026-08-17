@@ -32,14 +32,16 @@
  */
 
 import jdk.incubator.json.Json;
+import jdk.incubator.json.JsonArray;
+import jdk.incubator.json.JsonNumber;
 import jdk.incubator.json.JsonValueException;
-import jdk.incubator.json.JsonBoolean;
 import jdk.incubator.json.JsonNull;
 import jdk.incubator.json.JsonString;
 import jdk.incubator.json.JsonValue;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -182,5 +184,20 @@ public class TestAccess {
         assertThrows(NullPointerException.class, () -> JSON_ROOT_OBJECT.get(null));
         // NPE at JsonValue
         assertThrows(NullPointerException.class, () -> JSON_NESTED_ARRAY.get(null));
+    }
+
+    // Access on factory created JSON number/string should not have a path
+    @Test
+    void factoryPathTest() {
+        assertFalse(assertThrows(JsonValueException.class, () -> JsonArray.of(
+                List.of(JsonNumber.of(1.5))).get(0).asLong()).getMessage().contains("Path"));
+        assertFalse(assertThrows(JsonValueException.class, () -> JsonArray.of(
+                List.of(JsonNumber.of(1))).get(0).asBoolean()).getMessage().contains("Path"));
+        assertFalse(assertThrows(JsonValueException.class, () -> JsonArray.of(
+                List.of(JsonNumber.of(1L))).get(0).asBoolean()).getMessage().contains("Path"));
+        assertFalse(assertThrows(JsonValueException.class, () -> JsonArray.of(
+                List.of(JsonNumber.of("1.5"))).get(0).asBoolean()).getMessage().contains("Path"));
+        assertFalse(assertThrows(JsonValueException.class, () -> JsonArray.of(
+                List.of(JsonString.of("foo"))).get(0).asBoolean()).getMessage().contains("Path"));
     }
 }

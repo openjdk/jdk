@@ -146,7 +146,6 @@ module java.base {
     exports com.sun.security.ntlm to
         java.security.sasl;
     exports jdk.internal to
-        jdk.incubator.json,
         jdk.incubator.vector;
     // Note: all modules in the exported list participate in preview features,
     // normal or reflective.  They do not need to be compiled with "--enable-preview"

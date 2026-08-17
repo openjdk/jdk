@@ -36,7 +36,7 @@ import jdk.incubator.json.impl.JsonObjectImpl;
 /**
  * The interface that represents JSON object.
  * <p>
- * A {@code JsonObject} can be produced by a {@link Json#parse(String)}.
+ * A {@code JsonObject} can be produced by {@link Json#parse(String)}.
  * <p>
  * Alternatively, {@link #of(Map)} can be used to obtain a {@code JsonObject}.
  * <p>

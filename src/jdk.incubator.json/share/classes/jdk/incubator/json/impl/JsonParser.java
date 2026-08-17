@@ -28,6 +28,7 @@ package jdk.incubator.json.impl;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import jdk.incubator.json.JsonArray;
@@ -96,7 +97,7 @@ public final class JsonParser {
         // error on the value rather than its enclosing structure.
         if (hasInput()) {
             switch (doc[offset]) {
-                case ']', '}', ',', ' ', '\t','\r', '\n' -> {}
+                case ']', '}', ',', ' ', '\t', '\r', '\n' -> {}
                 default -> throw valueFailure(pathStart, "Unexpected content after JSON value");
             }
         }
@@ -134,7 +135,7 @@ public final class JsonParser {
 
             if (members.putIfAbsent(name, parseValue()) != null) {
                 throw failure(nameStart, nameLine, nameLineStart,
-                    "The duplicate member name: \"%s\" was already parsed".formatted(name), startO, true);
+                    "Duplicate member name: \"%s\" was already parsed".formatted(name), startO, true);
             }
 
             // Ensure current char is either ',' or '}'
@@ -190,7 +191,7 @@ public final class JsonParser {
             } else if (c == '\\') {
                 escape = true;
                 continue;
-            } else if (c == '\"') {
+            } else if (c == '"') {
                 offset++;
                 if (useBldr) {
                     var name = sb.get().toString();
@@ -260,8 +261,8 @@ public final class JsonParser {
             } else if (c == '\\') {
                 hasEscape = true;
                 escape = true;
-            } else if (c == '\"') {
-                return new JsonStringImpl(doc, start, ++offset, hasEscape);
+            } else if (c == '"') {
+                return new JsonStringImpl(doc, false, start, ++offset, hasEscape);
             } else if (c < ' ') {
                 throw valueFailure(start, UNESCAPED_CONTROL_CODE);
             }
@@ -365,7 +366,7 @@ public final class JsonParser {
         if (!havePart) {
             throw valueFailure(start, "Input expected after '[.|e|E]'");
         }
-        return new JsonNumberImpl(doc, start, offset, decOff, expOff);
+        return new JsonNumberImpl(doc, false, start, offset, decOff, expOff);
     }
 
     // Utility functions
@@ -416,7 +417,7 @@ public final class JsonParser {
     // see https://datatracker.ietf.org/doc/html/rfc8259#section-2
     private boolean notWhitespace() {
         return switch (doc[offset]) {
-            case ' ', '\t','\r' -> false;
+            case ' ', '\t', '\r' -> false;
             case '\n' -> {
                 // Increments the line and lineStart
                 line++;
@@ -455,8 +456,9 @@ public final class JsonParser {
         // Non-revealing message does not produce input source String
         var pos = off - ls;
         var path = Utils.getParsingPath(head, doc, structural);
-        return new JsonParseException("%s.%s Location: line %d, position %d."
-                .formatted(message, path, l, pos), l, pos);
+        return new JsonParseException(String.format(Locale.ROOT,
+            "%s.%s Location: line %d, position %d.",
+            message, path, l, pos), l, pos);
     }
 
     // Parsing error messages ----------------------

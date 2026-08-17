@@ -36,6 +36,7 @@ public final class JsonStringImpl implements JsonString, JsonValueImpl {
     private final int startOffset;
     private final int endOffset;
     private final boolean hasEscape;
+    private final boolean fromFactory;
 
     // The String instance representing this JSON string for `toString()`.
     // It always conforms to JSON syntax. If created by parsing a JSON document,
@@ -51,8 +52,9 @@ public final class JsonStringImpl implements JsonString, JsonValueImpl {
         return new String(doc, startOffset, endOffset - startOffset);
     }
 
-    public JsonStringImpl(char[] doc, int start, int end, boolean escape) {
+    public JsonStringImpl(char[] doc, boolean factory, int start, int end, boolean escape) {
         this.doc = doc;
+        fromFactory = factory;
         startOffset = start;
         endOffset = end;
         hasEscape = escape;
@@ -65,12 +67,12 @@ public final class JsonStringImpl implements JsonString, JsonValueImpl {
 
     @Override
     public char[] doc() {
-        return doc;
+        return fromFactory ? null : doc;
     }
 
     @Override
     public int offset() {
-        return startOffset;
+        return fromFactory ? -1 : startOffset;
     }
 
     @Override

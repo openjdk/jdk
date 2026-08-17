@@ -34,6 +34,8 @@ import jdk.incubator.json.JsonObject;
 import jdk.incubator.json.JsonString;
 import jdk.incubator.json.JsonValue;
 
+import java.util.Locale;
+
 /**
  * Shared utilities for Json classes.
  */
@@ -62,25 +64,24 @@ public class Utils {
                 if (sb == null) {
                     sb = new StringBuilder().append(str, 0, i);
                 }
-                // 2 Char escapes (Non-control characters)
-                if (c == '\\') {
-                    sb.append('\\').append(c);
-                } else if (c == '"') {
-                    sb.append('\\').append(c);
-                    // 2 Char escapes (Control characters)
+                sb.append('\\');
+                // Non-control characters
+                if (c == '\\' || c == '"') {
+                    sb.append(c);
+                // 2 Char escapes (Control characters)
                 } else if (c == '\b') {
-                    sb.append('\\').append('b');
+                    sb.append('b');
                 } else if (c == '\f') {
-                    sb.append('\\').append('f');
+                    sb.append('f');
                 } else if (c == '\n') {
-                    sb.append('\\').append('n');
+                    sb.append('n');
                 } else if (c == '\r') {
-                    sb.append('\\').append('r');
+                    sb.append('r');
                 } else if (c == '\t') {
-                    sb.append('\\').append('t');
-                    // All other chars requiring Unicode escape sequence
+                    sb.append('t');
                 } else {
-                    sb.append('\\').append('u').append(String.format("%04X", (int) c));
+                    // All other chars requiring Unicode escape sequence
+                    sb.append('u').append(String.format("%04X", (int) c));
                 }
             }
         }
@@ -135,9 +136,8 @@ public class Utils {
             if (structural) {
                 // Structural parsing cases
                 if (doc[offset] == '[') {
-                    sb.append( '[');
-                }
-                if (doc[offset] == '{') {
+                    sb.append('[');
+                } else if (doc[offset] == '{') {
                     sb.append('{');
                 }
             }
@@ -152,8 +152,9 @@ public class Utils {
             var jp = new JsonPath(jvi.offset(), jvi.doc());
             var path = jp.parseToRoot(sb);
             // After path is produced, line and pos should be value bearing
-            return " Path: \"%s\". Location: line %d, position %d.".formatted(
-                    path, jp.line, jp.pos);
+            return String.format(Locale.ROOT,
+                " Path: \"%s\". Location: line %d, position %d.",
+                path, jp.line, jp.pos);
         }
 
         private String parseToRoot(StringBuilder sb) {
@@ -173,12 +174,12 @@ public class Utils {
             }
         }
 
-        // Void return type, builds the passed StringBuilder
+        // StringBuilder is populated upon completion
         private void toPath(int offset, StringBuilder sb) {
             // Walk past starting char and white space
             offset = walkWhitespace(offset - 1);
             // If offset is -1, we found the root and are finished
-            if (offset != -1) {
+            while (offset > -1) {
                 // Node case
                 offset = switch (doc[offset]) {
                     // Does the actual appending
@@ -187,14 +188,14 @@ public class Utils {
                     case ':' -> objectNode(offset, sb);
                     default -> throw new InternalError();
                 };
-                toPath(offset, sb);
+                offset = walkWhitespace(offset - 1);
             }
         }
 
         private int walkWhitespace(int offset) {
             while (offset >= 0) {
                 var ws = switch (doc[offset]) {
-                    case ' ', '\t','\r' -> true;
+                    case ' ', '\t', '\r' -> true;
                     case '\n' -> {
                         addLine(offset);
                         yield true;

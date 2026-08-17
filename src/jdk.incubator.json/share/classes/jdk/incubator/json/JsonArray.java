@@ -53,6 +53,7 @@ public non-sealed interface JsonArray extends JsonValue {
      * @param index {@inheritDoc}
      * @throws JsonValueException if the given index is out of bounds
      */
+    @Override
     default JsonValue get(int index) {
         // Overridden to specify
         return JsonValue.super.get(index);

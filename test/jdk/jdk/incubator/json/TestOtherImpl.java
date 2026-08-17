@@ -31,16 +31,20 @@
  * @run junit TestOtherImpl
  */
 
-import org.junit.jupiter.api.Test;
-
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
 import jdk.incubator.json.Json;
+import jdk.incubator.json.JsonArray;
+import jdk.incubator.json.JsonBoolean;
+import jdk.incubator.json.JsonNull;
+import jdk.incubator.json.JsonNumber;
 import jdk.incubator.json.JsonObject;
 import jdk.incubator.json.JsonString;
+import jdk.incubator.json.JsonValue;
 
+import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TestOtherImpl {
 
@@ -79,6 +83,43 @@ public class TestOtherImpl {
         @Override
         public String toString() {
             return "\""+theString+"\"";
+        }
+    }
+
+    // These implementation classes exist to verify that each JsonValue
+    // sub-interface is non-sealed. No test execution is required;
+    // successful compilation is sufficient.
+    static class JsonFooArray implements JsonArray {
+        @Override
+        public List<JsonValue> asList() {
+            return List.of();
+        }
+    }
+    static class JsonFooBoolean implements JsonBoolean {
+        @Override
+        public boolean asBoolean() {
+            return false;
+        }
+    }
+    static class JsonFooNull implements JsonNull {}
+    static class JsonFooNumber implements JsonNumber {
+        @Override
+        public int asInt() {
+            return 0;
+        }
+        @Override
+        public long asLong() {
+            return 0;
+        }
+        @Override
+        public double asDouble() {
+            return 0;
+        }
+    }
+    static class JsonFooObject implements JsonObject {
+        @Override
+        public Map<String, JsonValue> asMap() {
+            return Map.of();
         }
     }
 }
