@@ -100,7 +100,17 @@ public class TestHotCodeHeapOptions {
                                                               "-XX:HotCodeMinSamplingMs=1000",
                                                               "-XX:HotCodeMaxSamplingMs=100",
                                                               "-version");
-        failsWith(pb, "HotCodeMinSamplingMs cannot be larger than HotCodeMaxSamplingMs");
+        failsWith(pb, "HotCodeMinSamplingMs cannot be larger than HotCodeMaxSamplingMs.");
+
+        // Invalid sampling periods when HotCodeHeap is ergonomically disabled
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+PrintFlagsFinal",
+                                                              "-XX:+UnlockExperimentalVMOptions",
+                                                              "-XX:+HotCodeHeap",
+                                                              "-XX:HotCodeMinSamplingMs=1000",
+                                                              "-XX:HotCodeMaxSamplingMs=100",
+                                                              "-XX:-SegmentedCodeCache",
+                                                              "-version");
+        failsWith(pb, "HotCodeMinSamplingMs cannot be larger than HotCodeMaxSamplingMs.");
 
         // SegmentedCodeCache enabled
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+PrintFlagsFinal",
@@ -166,13 +176,13 @@ public class TestHotCodeHeapOptions {
                                                               "-XX:+HotCodeHeap",
                                                               "-XX:-NMethodRelocation",
                                                               "-version");
-        failsWith(pb, "HotCodeHeap requires NMethodRelocation enabled");
+        warnsWith(pb, "HotCodeHeap disabled and HotCodeHeapSize zeroed because NMethodRelocation is disabled.");
 
         // HotCodeHeapSize set without HotCodeHeap
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+PrintFlagsFinal",
                                                               "-XX:+UnlockExperimentalVMOptions",
                                                               "-XX:HotCodeHeapSize=8m",
                                                               "-version");
-        failsWith(pb, "HotCodeHeapSize requires HotCodeHeap enabled");
+        failsWith(pb, "HotCodeHeapSize requires HotCodeHeap enabled.");
     }
 }

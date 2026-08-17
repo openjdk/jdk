@@ -272,42 +272,41 @@ void CompilerConfig::set_compilation_policy_flags() {
   }
 
 #ifdef COMPILER2
-  // HotCodeHeap ergonomic checks
-  // Disable HotCodeHeap if it is enabled with an unsupported configuration
+  // If HotCodeHeap is enabled with an invalid configuration, throw an error and exit.
+  // Otherwise, enable required flags if possible or disable HotCodeHeap if not.
   if (HotCodeHeap) {
+    if (HotCodeMinSamplingMs > HotCodeMaxSamplingMs) {
+      vm_exit_during_initialization("HotCodeMinSamplingMs cannot be larger than HotCodeMaxSamplingMs.");
+    }
+
+    const char* warn = nullptr;
     if (!is_c2_enabled()) {
-      warning("HotCodeHeap disabled and HotCodeHeapSize zeroed because C2 is disabled.");
+      warn = "HotCodeHeap disabled and HotCodeHeapSize zeroed because C2 is disabled.";
+    } else if (!SegmentedCodeCache && !FLAG_IS_DEFAULT(SegmentedCodeCache)) {
+      warn = "HotCodeHeap disabled and HotCodeHeapSize zeroed because SegmentedCodeCache is disabled.";
+    } else if (!NMethodRelocation && !FLAG_IS_DEFAULT(NMethodRelocation)) {
+      warn = "HotCodeHeap disabled and HotCodeHeapSize zeroed because NMethodRelocation is disabled.";
+    }
+
+    if (warn != nullptr) {
+      warning("%s", warn);
       FLAG_SET_ERGO(HotCodeHeap, false);
       FLAG_SET_ERGO(HotCodeHeapSize, 0);
-    } else if (!SegmentedCodeCache) {
+    } else {
       if (FLAG_IS_DEFAULT(SegmentedCodeCache)) {
         FLAG_SET_ERGO(SegmentedCodeCache, true);
-      } else {
-        warning("HotCodeHeap disabled and HotCodeHeapSize zeroed because SegmentedCodeCache is disabled.");
-        FLAG_SET_ERGO(HotCodeHeap, false);
-        FLAG_SET_ERGO(HotCodeHeapSize, 0);
+      }
+
+      if (FLAG_IS_DEFAULT(NMethodRelocation)) {
+        FLAG_SET_ERGO(NMethodRelocation, true);
       }
     }
-  }
-
-  // HotCodeHeap validation checks
-  // Throw an error and exit if HotCodeHeap is enabled with an invalid configuration
-  if (HotCodeHeap) {
-    if (FLAG_IS_DEFAULT(NMethodRelocation)) {
-      FLAG_SET_ERGO(NMethodRelocation, true);
-    } else if (!NMethodRelocation) {
-      vm_exit_during_initialization("HotCodeHeap requires NMethodRelocation enabled");
-    }
-
-    if (HotCodeMinSamplingMs > HotCodeMaxSamplingMs) {
-      vm_exit_during_initialization("HotCodeMinSamplingMs cannot be larger than HotCodeMaxSamplingMs");
-    }
   } else if (HotCodeHeapSize > 0) {
-    vm_exit_during_initialization("HotCodeHeapSize requires HotCodeHeap enabled");
+    vm_exit_during_initialization("HotCodeHeapSize requires HotCodeHeap enabled.");
   }
 #else
   if (HotCodeHeapSize > 0) {
-    vm_exit_during_initialization("HotCodeHeapSize requires C2 present");
+    vm_exit_during_initialization("HotCodeHeapSize requires C2 present.");
   }
 #endif // COMPILER2
 
