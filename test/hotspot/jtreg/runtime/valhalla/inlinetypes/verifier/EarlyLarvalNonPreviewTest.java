@@ -36,8 +36,11 @@ public class EarlyLarvalNonPreviewTest {
         try {
             var value = new EarlyLarvalNonPreviewApp(-1, -2);
             throw new RuntimeException("Expected ClassFormatError");
-        } catch (java.lang.ClassFormatError c) {
+        } catch (ClassFormatError c) {
             System.out.println("Test passed");
+            if (!c.getMessage().equals("StackMapTable format error: reserved frame type")) {
+                throw new RuntimeException("Unexpected ClassFormatError " + c.getMessage());
+            }
         }
     }
 }
