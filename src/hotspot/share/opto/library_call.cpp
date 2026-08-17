@@ -4631,7 +4631,7 @@ bool LibraryCallKit::inline_Class_cast() {
   }
 
   // Not-subtype or the mirror's klass ptr is nullptr (in case it is a primitive).
-  enum { _bad_type_path = 1, _prim_path = 2, _npe_path = 3, PATH_LIMIT };
+  enum { _bad_type_path = 1, _prim_path = 2, PATH_LIMIT };
   RegionNode* region = new RegionNode(PATH_LIMIT);
   record_for_igvn(region);
 
@@ -4653,8 +4653,7 @@ bool LibraryCallKit::inline_Class_cast() {
     region->init_req(_bad_type_path, bad_type_ctrl);
   }
   if (region->in(_prim_path) != top() ||
-      region->in(_bad_type_path) != top() ||
-      region->in(_npe_path) != top()) {
+      region->in(_bad_type_path) != top()) {
     // Let Interpreter throw ClassCastException.
     PreserveJVMState pjvms(this);
     if (new_cast_failure_map != nullptr) {
