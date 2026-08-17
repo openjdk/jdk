@@ -92,6 +92,12 @@ gc/stress/jfr/TestStressBigAllocationGCEventsWithShenandoah.java#default 8386964
 
 # :hotspot_runtime
 
+runtime/cds/appcds/aotCache/aotClassLinking/AOTClassLinkingVMOptions.java 8390485 generic-all
+runtime/cds/appcds/aotCache/aotClassLinking/AddExports.java 8390485 generic-all
+runtime/cds/appcds/aotCache/aotClassLinking/AddOpens.java 8390485 generic-all
+runtime/cds/appcds/aotCache/aotClassLinking/AddReads.java 8390485 generic-all
+runtime/cds/appcds/resolvedConstants/AOTLinkedLambdas.java 8390485 generic-all
+runtime/cds/appcds/resolvedConstants/AOTLinkedVarHandles.java 8390485 generic-all
 runtime/jni/terminatedThread/TestTerminatedThread.java 8317789 aix-ppc64
 runtime/Monitor/SyncOnValueBasedClassTest.java 8340995 linux-s390x
 runtime/os/TestTracePageSizes.java#no-options 8267460 linux-aarch64
