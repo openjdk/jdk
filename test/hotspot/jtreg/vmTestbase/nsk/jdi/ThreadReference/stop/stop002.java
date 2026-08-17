@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,15 +38,16 @@ import nsk.share.jdi.*;
  * The test checks that the JDI method:<br><code>com.sun.jdi.ThreadReference.stop()</code><br>
  * behaves properly in various situations. It consists of 5 subtests.
  *
- * TEST #1: Tests that stop() properly throws <i>InvalidTypeException</i> if
- * specified throwable is not an instance of java.lang.Throwable in the target VM.<p>
+ * TEST #1: Tests that stop() properly throws InvalidTypeException if
+ * specified throwable is not an instance of java.lang.Throwable in the target VM.
  *
  * TEST #2: Verify that stop() works when suspended at a breakpoint.
  *
  * TEST #3: Verify that stop() works when not suspended in a loop. For virtual threads
  * we expect an IncompatibleThreadStateException.
  *
- * TEST #4: Verify that stop() works when suspended in a loop.
+ * TEST #4: Verify that stop() works when suspended in a loop. For Virtual threads
+ * we may get OpaqueFrameException.
  *
  * TEST #5: Verify that stop() works when suspended in Thread.sleep(). For virtual
  * threads we expect an OpaqueFrameException.
@@ -222,6 +223,14 @@ public class stop002 {
                 log.display("TEST #4: thread is suspended.");
                 thrRef.stop(throwableRef);
                 log.display("TEST #4 PASSED: stop() call succeeded.");
+            } catch (OpaqueFrameException ofe) {
+                if (vthreadMode) {
+                    log.display("TEST #4 PASSED: stop() call resulted in OpaqueFrameException.");
+                } else {
+                    ofe.printStackTrace();
+                    log.complain("TEST #4 FAILED: caught unexpected " + ofe);
+                    tot_res = Consts.TEST_FAILED;
+                }
             } catch (Throwable ue) {
                 ue.printStackTrace();
                 log.complain("TEST #4 FAILED: caught unexpected " + ue);
@@ -229,8 +238,7 @@ public class stop002 {
             } finally {
                 log.display("TEST #4: resuming thread.");
                 thrRef.resume();
-                // Force the debuggee out of the loop. Not really needed if the stop() call
-                // successfully threw the async exception, but it's easier to just always do this.
+                // Force the debuggee out of the loop.
                 log.display("TEST #4: clearing loop flag.");
                 objRef.setValue(stopLoop2, vm.mirrorOf(true));
             }

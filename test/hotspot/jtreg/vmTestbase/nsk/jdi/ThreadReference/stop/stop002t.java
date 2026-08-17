@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,8 +141,13 @@ public class stop002t {
                 testNumReady = 4; // signal debugger side of test that we are ready
                 stopMeHere++; stopMeHere--;
             }
-            log.complain("TEST #4: Failed to throw expected exception");
-            return Consts.TEST_FAILED;
+            if (vthreadMode) {
+                // Exception not required when in vthread mode
+                log.display("TEST #4: did not throw exception while in vthread mode");
+            } else {
+                log.complain("TEST #4: Failed to throw expected exception");
+                return Consts.TEST_FAILED;
+            }
         } catch (Throwable t) {
             // Call Thread.interrupted(). Workaround for JDK-8306324
             log.display("TEST #4: interrupted = " + Thread.interrupted());
