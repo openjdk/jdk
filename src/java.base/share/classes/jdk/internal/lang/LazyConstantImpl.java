@@ -192,11 +192,16 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
         // Initial random seed
         long random = currentThreadId * GOLDEN_GAMMA;
         try {
-            // Only poll the `state` in the loop to minimize CPU cache
-            // contention.
             for (;;) {
-                final Object state = getAcquire(STATUS_OFFSET);
+                // Poll only the `state` using opaque loads while it remains unchanged,
+                // to minimize CPU cache contention and ordering costs. Once a (monotonic)
+                // change is observed, confirm it with an acquire load before consuming
+                // the result.
+                Object state = getOpaque(STATUS_OFFSET);
                 if (state != computingState) {
+                    // The state changed. Re-read it once under stronger-than-opaque
+                    // semantics.
+                    state = getAcquire(STATUS_OFFSET);
                     if (state instanceof String exceptionType) {
                         throw unableToAccessConstant(exceptionType, null);
                     } else if (state != null) {
@@ -339,6 +344,11 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
     @ForceInline
     private Object getAcquire(long offset) {
         return UNSAFE.getReferenceAcquire(this, offset);
+    }
+
+    @ForceInline
+    private Object getOpaque(long offset) {
+        return UNSAFE.getReferenceOpaque(this, offset);
     }
 
     private void setRelease(long offset, Object newValue) {
