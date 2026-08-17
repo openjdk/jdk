@@ -1586,6 +1586,8 @@ Node* MaxLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   }
   if (can_reshape) {
     return fold_subI_no_underflow_pattern(this, phase);
+  } else {
+    phase->record_for_igvn(this);
   }
   return nullptr;
 }
@@ -1618,6 +1620,8 @@ Node* MinLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   }
   if (can_reshape) {
     return fold_subI_no_underflow_pattern(this, phase);
+  } else {
+    phase->record_for_igvn(this);
   }
   return nullptr;
 }
