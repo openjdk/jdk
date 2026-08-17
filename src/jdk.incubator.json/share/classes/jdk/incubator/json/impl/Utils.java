@@ -64,12 +64,10 @@ public class Utils {
                 if (sb == null) {
                     sb = new StringBuilder().append(str, 0, i);
                 }
-                // 2 Char escapes (Non-control characters)
-                if (c == '\\') {
+                // Non-control characters
+                if (c == '\\' || c == '"') {
                     sb.append('\\').append(c);
-                } else if (c == '"') {
-                    sb.append('\\').append(c);
-                    // 2 Char escapes (Control characters)
+                // 2 Char escapes (Control characters)
                 } else if (c == '\b') {
                     sb.append('\\').append('b');
                 } else if (c == '\f') {
@@ -80,8 +78,8 @@ public class Utils {
                     sb.append('\\').append('r');
                 } else if (c == '\t') {
                     sb.append('\\').append('t');
-                    // All other chars requiring Unicode escape sequence
                 } else {
+                    // All other chars requiring Unicode escape sequence
                     sb.append('\\').append('u').append(String.format("%04X", (int) c));
                 }
             }
@@ -137,9 +135,8 @@ public class Utils {
             if (structural) {
                 // Structural parsing cases
                 if (doc[offset] == '[') {
-                    sb.append( '[');
-                }
-                if (doc[offset] == '{') {
+                    sb.append('[');
+                } else if (doc[offset] == '{') {
                     sb.append('{');
                 }
             }
@@ -197,7 +194,7 @@ public class Utils {
         private int walkWhitespace(int offset) {
             while (offset >= 0) {
                 var ws = switch (doc[offset]) {
-                    case ' ', '\t','\r' -> true;
+                    case ' ', '\t', '\r' -> true;
                     case '\n' -> {
                         addLine(offset);
                         yield true;

@@ -143,7 +143,7 @@ public final class Json {
                                           int depth, String indent, boolean isField) {
         var prefix = indent.repeat(depth);
         if (isField) {
-            s.append(" ");
+            s.append(' ');
         } else {
             s.append(prefix);
         }
@@ -154,14 +154,14 @@ public final class Json {
             s.append("{\n");
             map.forEach((name, val) -> {
                 s.append(indent.repeat(depth + 1))
-                    .append("\"")
+                    .append('\"')
                     .append(Utils.escape(name))
                     .append("\":");
                 toDisplayString(val, s, depth + 1, indent, true);
                 s.append(",\n");
             });
             s.setLength(s.length() - 2); // trim final comma
-            s.append("\n").append(prefix).append("}");
+            s.append('\n').append(prefix).append('}');
         }
     }
 
@@ -169,7 +169,7 @@ public final class Json {
                                           int depth, String indent, boolean isField) {
         var prefix = indent.repeat(depth);
         if (isField) {
-            s.append(" ");
+            s.append(' ');
         } else {
             s.append(prefix);
         }
@@ -182,8 +182,8 @@ public final class Json {
                 toDisplayString(v, s, depth + 1, indent, false);
                 s.append(",\n");
             }
-            s.setLength(s.length() - 2); // trim final comma/newline
-            s.append("\n").append(prefix).append("]");
+            s.setLength(s.length() - 2); // trim final comma
+            s.append('\n').append(prefix).append(']');
         }
     }
 

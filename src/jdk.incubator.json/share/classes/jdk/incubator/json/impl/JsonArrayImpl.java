@@ -84,11 +84,11 @@ public final class JsonArrayImpl implements JsonArray, JsonValueImpl {
         var s = new StringBuilder("[");
         var list = asList();
         for (var v: list) {
-            s.append(v.toString()).append(",");
+            s.append(v.toString()).append(',');
         }
         if (!list.isEmpty()) {
             s.setLength(s.length() - 1); // trim final comma
         }
-        return s.append("]").toString();
+        return s.append(']').toString();
     }
 }

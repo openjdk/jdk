@@ -91,13 +91,13 @@ public final class JsonObjectImpl implements JsonObject, JsonValueImpl {
         var map = asMap();
         for (var kv: map.entrySet()) {
             // Escape the key (which is stored as unescaped) to conform to JSON syntax
-            s.append("\"").append(Utils.escape(kv.getKey())).append("\":")
+            s.append('\"').append(Utils.escape(kv.getKey())).append("\":")
              .append(kv.getValue().toString())
-             .append(",");
+             .append(',');
         }
         if (!map.isEmpty()) {
             s.setLength(s.length() - 1); // trim final comma
         }
-        return s.append("}").toString();
+        return s.append('}').toString();
     }
 }

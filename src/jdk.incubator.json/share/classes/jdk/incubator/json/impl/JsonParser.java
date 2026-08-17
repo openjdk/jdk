@@ -97,7 +97,7 @@ public final class JsonParser {
         // error on the value rather than its enclosing structure.
         if (hasInput()) {
             switch (doc[offset]) {
-                case ']', '}', ',', ' ', '\t','\r', '\n' -> {}
+                case ']', '}', ',', ' ', '\t', '\r', '\n' -> {}
                 default -> throw valueFailure(pathStart, "Unexpected content after JSON value");
             }
         }
@@ -191,7 +191,7 @@ public final class JsonParser {
             } else if (c == '\\') {
                 escape = true;
                 continue;
-            } else if (c == '\"') {
+            } else if (c == '"') {
                 offset++;
                 if (useBldr) {
                     var name = sb.get().toString();
@@ -261,7 +261,7 @@ public final class JsonParser {
             } else if (c == '\\') {
                 hasEscape = true;
                 escape = true;
-            } else if (c == '\"') {
+            } else if (c == '"') {
                 return new JsonStringImpl(doc, false, start, ++offset, hasEscape);
             } else if (c < ' ') {
                 throw valueFailure(start, UNESCAPED_CONTROL_CODE);
@@ -417,7 +417,7 @@ public final class JsonParser {
     // see https://datatracker.ietf.org/doc/html/rfc8259#section-2
     private boolean notWhitespace() {
         return switch (doc[offset]) {
-            case ' ', '\t','\r' -> false;
+            case ' ', '\t', '\r' -> false;
             case '\n' -> {
                 // Increments the line and lineStart
                 line++;
