@@ -1159,9 +1159,9 @@ const Type* Type::meet_join_helper(F op, const Type* t1, const Type* t2, bool in
   return rt;
 }
 
-// Compute the meet and join of two types.  NOT virtual. It performs additional verification that
+// These methods compute the meet and join of two types. They perform additional verification that
 // ensures the sanity of the implementation.
-const Type *Type::meet_helper(const Type *t, bool include_speculative) const {
+const Type* Type::meet_helper(const Type* t, bool include_speculative) const {
   auto op = [](const Type* t1, const Type* t2) {
     return xmeet(t1, t2);
   };
@@ -5008,10 +5008,6 @@ const Type* TypeAryPtr::xjoin_helper(const Type* t) const {
     default:
       typerr(t);
   }
-}
-
-Type::Offset TypeAryPtr::meet_field_offset(const Type::Offset offset) const {
-  return _field_offset.meet(offset);
 }
 
 //------------------------------dump2------------------------------------------

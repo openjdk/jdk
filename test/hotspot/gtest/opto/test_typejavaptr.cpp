@@ -814,6 +814,9 @@ static constexpr size_t TypeAryPtr_1d_nonexact_samples_size() {
   return res;
 }
 
+// All test instances have is_stable() == false, is_auto_box_cache() == false, is_flat() == false,
+// is_not_flat() == true, is_null_free() == false, is_not_null_free() == true, is_atomic() == true,
+// field_offset() == Offset::bottom. All other parameters are included exhaustively.
 class TypeAryPtrMirror : public TypeOopPtrMirror {
 private:
   static constexpr size_t _1d_elem_samples_size = TypeAryPtr_1d_elem_samples_size();
@@ -1410,6 +1413,9 @@ static constexpr size_t TypeAryKlassPtr_1d_samples_notnull_size() {
   return res;
 }
 
+// All test instances have is_flat() == false, is_not_flat() == true, is_null_free() == false,
+// is_not_null_free() == true, is_atomic() == true, is_refined_type() == false. All other
+// parameters are included exhaustively.
 class TypeAryKlassPtrMirror : public TypeKlassPtrMirror {
 private:
   static constexpr size_t _1d_elem_samples_size = TypeAryKlassPtr_1d_elem_samples_size();

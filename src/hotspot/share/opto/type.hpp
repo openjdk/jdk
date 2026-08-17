@@ -1199,19 +1199,8 @@ protected:
 public:
   enum PTR { TopPTR, AnyNull, Constant, Null, NotNull, BotPTR, lastPTR };
 
-  // Only applies to TypeInstPtr and TypeInstKlassPtr. Since the common super class is TypePtr, it is defined here.
-  //
-  // FlatInArray defines the following Boolean Lattice structure
-  //
-  //     TopFlat
-  //    /      \
-  //  Flat   NotFlat
-  //    \      /
-  //   MaybeFlat
-  //
-  // with meet (see TypePtr::meet_flat_in_array()) and join (implemented over dual, see TypePtr::flat_in_array_dual)
   enum FlatInArray {
-    TopFlat,        // Dedicated top element and dual of MaybeFlat. Result when joining Flat and NotFlat.
+    TopFlat,        // Dedicated top element. Result when joining Flat and NotFlat.
     Flat,           // An instance is always flat in an array.
     NotFlat,        // An instance is never flat in an array.
     MaybeFlat,      // We don't know whether an instance is flat in an array.
@@ -1232,7 +1221,6 @@ protected:
   static const PTR ptr_dual[lastPTR];
   static const char * const ptr_msg[lastPTR];
 
-  static const FlatInArray flat_in_array_dual[Uninitialized];
   static const char* const flat_in_array_msg[Uninitialized];
 
   enum {
@@ -1682,10 +1670,6 @@ public:
   virtual const TypeInstPtr* cast_to_maybe_flat_in_array() const;
   virtual FlatInArray flat_in_array() const { return _flat_in_array; }
 
-  FlatInArray dual_flat_in_array() const {
-    return flat_in_array_dual[_flat_in_array];
-  }
-
   // the core of the computation of the meet of 2 types
   virtual const Type* xmeet_helper(const Type *t) const;
   virtual const Type* xjoin_helper(const Type *t) const;
@@ -1747,8 +1731,6 @@ class TypeAryPtr : public TypeOopPtr {
   // the array has its own memory slice so we need to keep track of
   // which field is accessed
   const Offset _field_offset;
-  Offset meet_field_offset(const Type::Offset offset) const;
-  Offset dual_field_offset() const;
 
   ciKlass* compute_klass() const;
 
@@ -2073,10 +2055,6 @@ public:
 
   virtual FlatInArray flat_in_array() const { return _flat_in_array; }
 
-  FlatInArray dual_flat_in_array() const {
-    return flat_in_array_dual[_flat_in_array];
-  }
-
   virtual bool can_be_inline_array() const;
 
   // Convenience common pre-built types.
@@ -2115,30 +2093,6 @@ class TypeAryKlassPtr : public TypeKlassPtr {
   virtual ciKlass* klass() const;
 
   virtual bool must_be_exact() const;
-
-  bool dual_flat() const {
-    return _flat;
-  }
-
-  bool meet_flat(bool other) const {
-    return _flat && other;
-  }
-
-  bool dual_null_free() const {
-    return _null_free;
-  }
-
-  bool meet_null_free(bool other) const {
-    return _null_free && other;
-  }
-
-  bool dual_atomic() const {
-    return _atomic;
-  }
-
-  bool meet_atomic(bool other) const {
-    return _atomic && other;
-  }
 
 public:
 
