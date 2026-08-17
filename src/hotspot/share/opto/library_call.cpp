@@ -8615,7 +8615,7 @@ bool LibraryCallKit::inline_kyberNtt() {
   if (!stubAddr) return false;
 
   Node* coeffs          = argument(0);
-  Node* ntt_zetas        = argument(1);
+  Node* ntt_zetas       = argument(1);
 
   coeffs = must_be_not_null(coeffs, true);
   ntt_zetas = must_be_not_null(ntt_zetas, true);
