@@ -262,7 +262,7 @@ public final class JsonParser {
                 hasEscape = true;
                 escape = true;
             } else if (c == '\"') {
-                return new JsonStringImpl(doc, start, ++offset, hasEscape);
+                return new JsonStringImpl(doc, false, start, ++offset, hasEscape);
             } else if (c < ' ') {
                 throw valueFailure(start, UNESCAPED_CONTROL_CODE);
             }

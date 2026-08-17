@@ -64,7 +64,7 @@ public non-sealed interface JsonString extends JsonValue {
      */
     static JsonString of(String src) {
         var escaped = '"' + Utils.escape(Objects.requireNonNull(src)) + '"';
-        return new JsonStringImpl(escaped.toCharArray(), 0, escaped.length(),
+        return new JsonStringImpl(escaped.toCharArray(), true, 0, escaped.length(),
                 escaped.length() != src.length() + 2);
     }
 

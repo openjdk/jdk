@@ -45,9 +45,9 @@ public final class JsonNumberImpl implements JsonNumber, JsonValueImpl {
     private final LazyConstant<Optional<Long>> numLong = LazyConstant.of(this::initNumLong);
     private final LazyConstant<Optional<Double>> numDouble = LazyConstant.of(this::initNumDouble);
 
-    public JsonNumberImpl(char[] doc, boolean fac, int start, int end, int dec, int exp) {
+    public JsonNumberImpl(char[] doc, boolean factory, int start, int end, int dec, int exp) {
         this.doc = doc;
-        fromFactory = fac;
+        fromFactory = factory;
         startOffset = start;
         endOffset = end;
         decimalOffset = dec;
