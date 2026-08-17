@@ -27,6 +27,7 @@ package jdk.incubator.json.impl;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
 import jdk.incubator.json.JsonArray;
 import jdk.incubator.json.JsonValue;
@@ -62,9 +63,9 @@ public final class JsonArrayImpl implements JsonArray, JsonValueImpl {
         try {
             return theValues.get(index);
         } catch (IndexOutOfBoundsException _) {
-            throw Utils.composeError(this,
-                    "JsonArray index %d out of bounds for length %d."
-                            .formatted(index, theValues.size()));
+            throw Utils.composeError(this, String.format(Locale.ROOT,
+                "JsonArray index %d out of bounds for length %d.",
+                index, theValues.size()));
         }
     }
 

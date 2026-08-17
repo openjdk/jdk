@@ -28,6 +28,7 @@ package jdk.incubator.json.impl;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import jdk.incubator.json.JsonArray;
@@ -455,8 +456,9 @@ public final class JsonParser {
         // Non-revealing message does not produce input source String
         var pos = off - ls;
         var path = Utils.getParsingPath(head, doc, structural);
-        return new JsonParseException("%s.%s Location: line %d, position %d."
-                .formatted(message, path, l, pos), l, pos);
+        return new JsonParseException(String.format(Locale.ROOT,
+            "%s.%s Location: line %d, position %d.",
+            message, path, l, pos), l, pos);
     }
 
     // Parsing error messages ----------------------

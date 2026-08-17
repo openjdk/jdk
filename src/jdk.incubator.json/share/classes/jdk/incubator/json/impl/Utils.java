@@ -34,6 +34,8 @@ import jdk.incubator.json.JsonObject;
 import jdk.incubator.json.JsonString;
 import jdk.incubator.json.JsonValue;
 
+import java.util.Locale;
+
 /**
  * Shared utilities for Json classes.
  */
@@ -152,8 +154,9 @@ public class Utils {
             var jp = new JsonPath(jvi.offset(), jvi.doc());
             var path = jp.parseToRoot(sb);
             // After path is produced, line and pos should be value bearing
-            return " Path: \"%s\". Location: line %d, position %d.".formatted(
-                    path, jp.line, jp.pos);
+            return String.format(Locale.ROOT,
+                " Path: \"%s\". Location: line %d, position %d.",
+                path, jp.line, jp.pos);
         }
 
         private String parseToRoot(StringBuilder sb) {

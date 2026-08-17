@@ -28,6 +28,7 @@ package jdk.incubator.json;
 import jdk.incubator.json.impl.Utils;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -384,9 +385,9 @@ public sealed interface JsonValue permits JsonString, JsonNumber, JsonObject, Js
         try {
             return elements.get(index);
         } catch (IndexOutOfBoundsException _) {
-            throw Utils.composeError(this,
-                    "JsonArray index %d out of bounds for length %d."
-                            .formatted(index, elements.size()));
+            throw Utils.composeError(this, String.format(Locale.ROOT,
+                "JsonArray index %d out of bounds for length %d.",
+                index, elements.size()));
         }
     }
 
