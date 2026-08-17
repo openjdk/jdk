@@ -1076,28 +1076,14 @@ void Klass::validate_array_description(const ArrayDescription& ad) {
     assert(ad._kind == KlassKind::RefArrayKlassKind, "Must be a reference array");
   } else {
     assert(is_inline_klass(), "Must be");
-    InlineKlass* ik = InlineKlass::cast(this);
-    switch(ad._layout_kind) {
-      case LayoutKind::BUFFERED:
-        fatal("Invalid layout for an array");
-        break;
-      case LayoutKind::NULL_FREE_ATOMIC_FLAT:
-        assert(ik->has_null_free_atomic_layout(), "Sanity check");
-        break;
-      case LayoutKind::NULL_FREE_NON_ATOMIC_FLAT:
-        assert(ik->has_null_free_non_atomic_layout(), "Sanity check");
-        break;
-      case LayoutKind::NULLABLE_ATOMIC_FLAT:
-        assert(ik->has_nullable_atomic_layout(), "Sanity check");
-        break;
-      case LayoutKind::NULLABLE_NON_ATOMIC_FLAT:
-        assert(ik->has_nullable_non_atomic_layout(), "Sanity check)");
-        break;
-      case LayoutKind::REFERENCE:
-        break;
-      default:
-        ShouldNotReachHere();
+    const InlineKlass* ik = InlineKlass::cast(this);
+    if (ad._layout_kind == LayoutKind::BUFFERED) {
+      fatal("Invalid layout for an array");
+    } else if(ad._layout_kind == LayoutKind::REFERENCE) {
+      assert(ad._kind == KlassKind::RefArrayKlassKind, "Must be a reference array");
+      return;
     }
+    assert(ik->layouts().has_a(ad._layout_kind), "Sanity check");
   }
 }
 #endif // ASSERT

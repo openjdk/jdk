@@ -38,76 +38,23 @@ inline bool InlineKlass::layout_has_null_marker(LayoutKind lk) const {
 }
 
 inline bool InlineKlass::is_layout_supported(LayoutKind lk) const {
-  switch(lk) {
-    case LayoutKind::NULL_FREE_NON_ATOMIC_FLAT:
-      return has_null_free_non_atomic_layout();
-      break;
-    case LayoutKind::NULL_FREE_ATOMIC_FLAT:
-      return has_null_free_atomic_layout();
-      break;
-    case LayoutKind::NULLABLE_ATOMIC_FLAT:
-      return has_nullable_atomic_layout();
-      break;
-    case LayoutKind::NULLABLE_NON_ATOMIC_FLAT:
-      return has_nullable_non_atomic_layout();
-      break;
-    case LayoutKind::BUFFERED:
-      return true;
-      break;
-    default:
-      ShouldNotReachHere();
-  }
+  return layouts().has_a(lk);
 }
 
-inline int InlineKlass::layout_size_in_bytes(LayoutKind kind) const {
-  switch(kind) {
-    case LayoutKind::NULL_FREE_NON_ATOMIC_FLAT:
-      assert(has_null_free_non_atomic_layout(), "Layout not available");
-      return null_free_non_atomic_size_in_bytes();
-      break;
-    case LayoutKind::NULL_FREE_ATOMIC_FLAT:
-      assert(has_null_free_atomic_layout(), "Layout not available");
-      return null_free_atomic_size_in_bytes();
-      break;
-    case LayoutKind::NULLABLE_ATOMIC_FLAT:
-      assert(has_nullable_atomic_layout(), "Layout not available");
-      return nullable_atomic_size_in_bytes();
-      break;
-    case LayoutKind::NULLABLE_NON_ATOMIC_FLAT:
-      assert(has_nullable_non_atomic_layout(), "Layout not available");
-      return nullable_non_atomic_size_in_bytes();
-      break;
-    case LayoutKind::BUFFERED:
-      return payload_size_in_bytes();
-      break;
-    default:
-      ShouldNotReachHere();
-  }
+inline int InlineKlass::layout_size_in_bytes(LayoutKind lk) const {
+  assert(layouts().has_a(lk), "Layout not available");
+  return members().layouts().size_in_bytes_of(lk);
 }
 
-inline int InlineKlass::layout_alignment(LayoutKind kind) const {
-  switch(kind) {
-    case LayoutKind::NULL_FREE_NON_ATOMIC_FLAT:
-      assert(has_null_free_non_atomic_layout(), "Layout not available");
-      return null_free_non_atomic_alignment();
-      break;
-    case LayoutKind::NULL_FREE_ATOMIC_FLAT:
-      assert(has_null_free_atomic_layout(), "Layout not available");
-      return null_free_atomic_size_in_bytes();
-      break;
-    case LayoutKind::NULLABLE_ATOMIC_FLAT:
-      assert(has_nullable_atomic_layout(), "Layout not available");
-      return nullable_atomic_size_in_bytes();
-      break;
-    case LayoutKind::NULLABLE_NON_ATOMIC_FLAT:
-      assert(has_nullable_non_atomic_layout(), "Layout not available");
-      return null_free_non_atomic_alignment();
-    break;
-    case LayoutKind::BUFFERED:
-      return payload_alignment();
-      break;
-    default:
-      ShouldNotReachHere();
+inline int InlineKlass::layout_alignment(LayoutKind lk) const {
+  assert(layouts().has_a(lk), "Layout not available");
+  if (lk == LayoutKind::BUFFERED) {
+    return layouts().payload_alignment();
+  } else if (lk == LayoutKind::NULL_FREE_NON_ATOMIC_FLAT ||
+             lk == LayoutKind::NULLABLE_NON_ATOMIC_FLAT) {
+    return layouts().non_atomic_alignment();
+  } else {
+    return layouts().size_in_bytes_of(lk);
   }
 }
 
