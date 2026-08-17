@@ -282,17 +282,19 @@ public class Options {
      * @return the specified set of categories
      * @throws IllegalArgumentException if there is no lint custom variant of {@code option}
      */
-    public EnumSet<LintCategory> getLintCategoriesOf(Option option, Supplier<? extends EnumSet<LintCategory>> defaults) {
+    public EnumSet<LintCategory> getLintCategoriesOf(Option option, Supplier<? extends EnumSet<LintCategory>> enabledByDefaultWhenLintMissing, Supplier<? extends EnumSet<LintCategory>> enabledByDefaultWhenLintPresent) {
 
         // Create the initial set
         EnumSet<LintCategory> categories;
         Option customOption = option.getLintCustom();
-        if (isSet(option) || isSet(customOption, Option.LINT_CUSTOM_ALL)) {
+        if (isSet(option)) {
+            categories = enabledByDefaultWhenLintPresent.get();
+        }else if (isSet(option) || isSet(customOption, Option.LINT_CUSTOM_ALL)) {
             categories = EnumSet.allOf(LintCategory.class);
         } else if (isSet(customOption, Option.LINT_CUSTOM_NONE)) {
             categories = EnumSet.noneOf(LintCategory.class);
         } else {
-            categories = defaults.get();
+            categories = enabledByDefaultWhenLintMissing.get();
         }
 
         // Apply specific overrides

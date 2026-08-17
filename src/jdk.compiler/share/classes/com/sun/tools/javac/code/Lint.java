@@ -136,14 +136,14 @@ public class Lint {
     // Process command line options on demand to allow use of root Lint early during startup
     private void initializeRootIfNeeded() {
         if (values == null) {
-            values = options.getLintCategoriesOf(Option.XLINT, this::getDefaults);
+            values = options.getLintCategoriesOf(Option.XLINT, this::getDefaultsLintMissing, this::getDefaultsLintPresent);
             suppressedValues = LintCategory.newEmptySet();
         }
     }
 
     // Obtain the set of on-by-default categories. Note that for a few categories,
     // whether the category is on-by-default depends on other compiler options.
-    private EnumSet<LintCategory> getDefaults() {
+    private EnumSet<LintCategory> getDefaultsLintMissing() {
         EnumSet<LintCategory> defaults = LintCategory.newEmptySet();
         Source source = Source.instance(context);
         Stream.of(LintCategory.values())
@@ -155,6 +155,14 @@ public class Lint {
                 default       -> lc.enabledByDefault;
             })
           .forEach(defaults::add);
+        return defaults;
+    }
+
+    private EnumSet<LintCategory> getDefaultsLintPresent() {
+        EnumSet<LintCategory> defaults = EnumSet.allOf(LintCategory.class);
+        if (options.isSet(Option.PREVIEW)) {
+            defaults.remove(LintCategory.PREVIEW);
+        }
         return defaults;
     }
 
