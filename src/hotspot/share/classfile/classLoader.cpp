@@ -370,6 +370,7 @@ ClassPathZipEntry::~ClassPathZipEntry() {
 }
 
 bool ClassPathZipEntry::has_entry(JavaThread* current, const char* name, Handle class_loader, bool is_multi_release_jar) {
+  assert(SystemDictionaryShared::is_builtin_loader(ClassLoaderData::class_loader_data(class_loader())), "must be");
   // check whether zip archive contains name
   jint name_len;
   jint filesize;
