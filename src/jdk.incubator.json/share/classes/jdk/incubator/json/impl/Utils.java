@@ -174,12 +174,12 @@ public class Utils {
             }
         }
 
-        // Void return type, builds the passed StringBuilder
+        // StringBuilder is populated upon completion
         private void toPath(int offset, StringBuilder sb) {
             // Walk past starting char and white space
             offset = walkWhitespace(offset - 1);
             // If offset is -1, we found the root and are finished
-            if (offset != -1) {
+            while (offset > -1) {
                 // Node case
                 offset = switch (doc[offset]) {
                     // Does the actual appending
@@ -188,7 +188,7 @@ public class Utils {
                     case ':' -> objectNode(offset, sb);
                     default -> throw new InternalError();
                 };
-                toPath(offset, sb);
+                offset = walkWhitespace(offset - 1);
             }
         }
 
