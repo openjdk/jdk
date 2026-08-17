@@ -210,6 +210,7 @@ void DwarfParser::parse_dwarf_instructions(uintptr_t begin, uintptr_t pc, const 
         break;
       case 0x0a: // DW_CFA_remember_state
         remember_state.push(_state);
+        remember_arch_specific_state();
         break;
       case 0x0b: // DW_CFA_restore_state
         if (remember_state.empty()) {
@@ -218,29 +219,18 @@ void DwarfParser::parse_dwarf_instructions(uintptr_t begin, uintptr_t pc, const 
         }
         _state = remember_state.top();
         remember_state.pop();
+        restore_arch_specific_state();
         break;
       case 0xc0: {// DW_CFA_restore
         enum DWARF_Register reg = static_cast<enum DWARF_Register>(opa);
         _state.offset_from_cfa[reg] = _initial_state.offset_from_cfa[reg];
         break;
       }
-#ifdef __aarch64__
-      // SA hasn't yet supported Pointer Authetication Code (PAC), so following
-      // instructions would be ignored with warning message.
-      //   https://github.com/ARM-software/abi-aa/blob/2025Q4/aadwarf64/aadwarf64.rst
-      case 0x2d: // DW_CFA_AARCH64_negate_ra_state
-        print_debug("DWARF: DW_CFA_AARCH64_negate_ra_state is unimplemented.\n", op);
-        break;
-      case 0x2c: // DW_CFA_AARCH64_negate_ra_state_with_pc
-        print_debug("DWARF: DW_CFA_AARCH64_negate_ra_state_with_pc is unimplemented.\n", op);
-        break;
-      case 0x2b: // DW_CFA_AARCH64_set_ra_state
-        print_debug("DWARF: DW_CFA_AARCH64_set_ra_state is unimplemented.\n", op);
-        break;
-#endif
       default:
-        print_debug("DWARF: Unknown opcode: 0x%x\n", op);
-        return;
+        if (!process_arch_specific_dwarf_instructions(op)) {
+          print_debug("DWARF: Unknown opcode: 0x%x\n", op);
+          return;
+        }
     }
   }
 }

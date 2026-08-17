@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -47,10 +47,10 @@
 extern "C" void bad_compiled_vtable_index(JavaThread* thread, oop receiver, int index);
 #endif
 
-VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
+VtableStub* VtableStubs::create_vtable_stub(int vtable_index, bool caller_is_c1) {
   // Read "A word on VtableStub sizing" in share/code/vtableStubs.hpp for details on stub sizing.
   const int stub_code_length = code_size_limit(true);
-  VtableStub* s = new(stub_code_length) VtableStub(true, vtable_index);
+  VtableStub* s = new(stub_code_length) VtableStub(true, vtable_index, caller_is_c1);
   // Can be null if there is no free space in the code cache.
   if (s == nullptr) {
     return nullptr;
@@ -62,6 +62,10 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   address   start_pc = nullptr;
   int       slop_bytes = 0;
   int       slop_delta = 0;
+
+  ByteSize  entry_offset = caller_is_c1
+                           ? Method::from_compiled_inline_offset()
+                           : Method::from_compiled_inline_ro_offset();
 
   ResourceMark    rm;
   CodeBuffer      cb(s->entry_point(), stub_code_length);
@@ -119,7 +123,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   if (DebugVtables) {
     Label L;
     __ beqz(xmethod, L);
-    __ ld(t0, Address(xmethod, Method::from_compiled_offset()));
+    __ ld(t0, Address(xmethod, entry_offset));
     __ bnez(t0, L);
     __ stop("Vtable entry is null");
     __ bind(L);
@@ -130,7 +134,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   // xmethod: Method*
   // x12: receiver
   address ame_addr = __ pc();
-  __ ld(t1, Address(xmethod, Method::from_compiled_offset()));
+  __ ld(t1, Address(xmethod, entry_offset));
   __ jr(t1);
 
   masm->flush();
@@ -139,10 +143,10 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   return s;
 }
 
-VtableStub* VtableStubs::create_itable_stub(int itable_index) {
+VtableStub* VtableStubs::create_itable_stub(int itable_index, bool caller_is_c1) {
   // Read "A word on VtableStub sizing" in share/code/vtableStubs.hpp for details on stub sizing.
   const int stub_code_length = code_size_limit(false);
-  VtableStub* s = new(stub_code_length) VtableStub(false, itable_index);
+  VtableStub* s = new(stub_code_length) VtableStub(false, itable_index, caller_is_c1);
   // Can be null if there is no free space in the code cache.
   if (s == nullptr) {
     return nullptr;
@@ -153,6 +157,10 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   address   start_pc = nullptr;
   int       slop_bytes = 0;
   int       slop_delta = 0;
+
+  ByteSize  entry_offset = caller_is_c1
+                           ? Method::from_compiled_inline_offset()
+                           : Method::from_compiled_inline_ro_offset();
 
   ResourceMark    rm;
   CodeBuffer      cb(s->entry_point(), stub_code_length);
@@ -216,7 +224,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   if (DebugVtables) {
     Label L2;
     __ beqz(xmethod, L2);
-    __ ld(t0, Address(xmethod, Method::from_compiled_offset()));
+    __ ld(t0, Address(xmethod, entry_offset));
     __ bnez(t0, L2);
     __ stop("compiler entrypoint is null");
     __ bind(L2);
@@ -226,7 +234,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   // xmethod: Method*
   // j_rarg0: receiver
   address ame_addr = __ pc();
-  __ ld(t1, Address(xmethod, Method::from_compiled_offset()));
+  __ ld(t1, Address(xmethod, entry_offset));
   __ jr(t1);
 
   __ bind(L_no_such_interface);
