@@ -91,7 +91,7 @@ void ShenandoahGenerationalHeuristics::prepare_for_abbreviated_cycle() {
   const size_t tenurable_this_cycle = in_place_promotions.humongous_region_stats().usage + in_place_promotions.humongous_region_stats().usage;
   compute_promotion_potential(heap, tenurable_this_cycle);
 
-  ShenandoahTracer::report_promotion_info(heap->collection_set(), &in_place_promotions);
+  ShenandoahTracer::report_promotion_info(heap->collection_set(), in_place_promotions);
 }
 
 void ShenandoahGenerationalHeuristics::adjust_reserves_for_abbreviated(ShenandoahGenerationalHeap* heap) {
@@ -167,7 +167,7 @@ void ShenandoahGenerationalHeuristics::choose_collection_set_from_regiondata(She
     heap->shenandoah_policy()->record_mixed_cycle();
   }
 
-  ShenandoahTracer::report_promotion_info(collection_set, &in_place_promotions);
+  ShenandoahTracer::report_promotion_info(collection_set, in_place_promotions);
 }
 
 void ShenandoahGenerationalHeuristics::compute_evacuation_budgets(ShenandoahInPlacePromotionPlanner& in_place_promotions,

@@ -40,7 +40,7 @@ public:
     size_t free_regions, size_t regions_immediate, size_t immediate_size);
 
   // Sends a JFR event summarizing in-place promotion activity (generational mode only)
-  static void report_promotion_info(const ShenandoahCollectionSet* cset, const ShenandoahInPlacePromotionPlanner* planner);
+  static void report_promotion_info(const ShenandoahCollectionSet* cset, const ShenandoahInPlacePromotionPlanner& planner);
 };
 
 #endif
