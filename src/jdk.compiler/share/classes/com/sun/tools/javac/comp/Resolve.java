@@ -2312,17 +2312,25 @@ public class Resolve {
                                    Type site,
                                    Name name,
                                    TypeSymbol c) {
+        return findInheritedMemberType(env, site, name, c, List.nil());
+    }
+
+    private Symbol findInheritedMemberType(Env<AttrContext> env,
+                                   Type site,
+                                   Name name,
+                                   TypeSymbol c,
+                                   List<TypeSymbol> seen) {
         Symbol bestSoFar = typeNotFound;
         Symbol sym;
         Type st = types.supertype(c.type);
         if (st != null && st.hasTag(CLASS)) {
-            sym = findMemberType(env, site, name, st.tsym);
+            sym = findMemberType(env, site, name, st.tsym, seen);
             bestSoFar = bestOf(bestSoFar, sym);
         }
         for (List<Type> l = types.interfaces(c.type);
              bestSoFar.kind != AMBIGUOUS && l.nonEmpty();
              l = l.tail) {
-            sym = findMemberType(env, site, name, l.head.tsym);
+            sym = findMemberType(env, site, name, l.head.tsym, seen);
             if (!bestSoFar.kind.isResolutionError() &&
                 !sym.kind.isResolutionError() &&
                 sym.owner != bestSoFar.owner)
@@ -2346,12 +2354,29 @@ public class Resolve {
                           Type site,
                           Name name,
                           TypeSymbol c) {
+        return findMemberType(env, site, name, c, List.nil());
+    }
+
+    private Symbol findMemberType(Env<AttrContext> env,
+                          Type site,
+                          Name name,
+                          TypeSymbol c,
+                          List<TypeSymbol> seen) {
+        if (seen.contains(c)) {
+            // Degenerate case in which the class hierarchy rooted at c is
+            // cyclic (e.g. an erroneous "class C extends C"). The cycle
+            // itself is reported elsewhere (see Check.checkNonCyclicDecl);
+            // here we just need to stop walking it so that resolution
+            // terminates instead of recursing until the stack overflows.
+            return typeNotFound;
+        }
+
         Symbol sym = findImmediateMemberType(env, site, name, c);
 
         if (sym != typeNotFound)
             return sym;
 
-        return findInheritedMemberType(env, site, name, c);
+        return findInheritedMemberType(env, site, name, c, seen.prepend(c));
 
     }
 
