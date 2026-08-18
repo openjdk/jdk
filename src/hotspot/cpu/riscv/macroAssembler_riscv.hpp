@@ -771,7 +771,7 @@ class MacroAssembler: public Assembler {
   // is used to keep the entry address for jalr/movptr.
   // Uses call() for intra code cache, else movptr + jalr.
   // Clobebrs t1
-  void rt_call(address dest, Register tmp = t1);
+  void rt_call(address dest, Register tmp1 = t1, Register tmp2 = noreg);
 
   // ret: jalr x0, 0(x1)
   inline void ret() {

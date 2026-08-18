@@ -2400,14 +2400,7 @@ encode %{
       // Make the anchor frame walkable
       __ la(t0, retaddr);
       __ sd(t0, Address(xthread, JavaThread::last_Java_pc_offset()));
-      // Use a relocation so that the target address can be fixed up when
-      // this code is loaded from the AOT code cache in a new JVM instance.
-      RuntimeAddress target(entry);
-      __ relocate(target.rspec(), [&] {
-        int32_t offset = 0;
-        __ movptr(t1, target.target(), offset, t0); // lui + lui + slli + add
-        __ jalr(t1, offset);
-      });
+      __ rt_call(entry, t1, t0);
       __ bind(retaddr);
       __ post_call_nop();
     }

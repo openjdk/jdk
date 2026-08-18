@@ -917,14 +917,7 @@ void MacroAssembler::call_VM_leaf_base(address entry_point,
                                        int number_of_arguments,
                                        Label *retaddr) {
   push_reg(RegSet::of(t1, xmethod), sp);   // push << t1 & xmethod >> to sp
-  // Use a relocation so that the target address can be fixed up when
-  // this code is loaded from the AOT code cache in a new JVM instance.
-  RuntimeAddress target(entry_point);
-  relocate(target.rspec(), [&] {
-    int32_t offset;
-    movptr(t1, target.target(), offset, t0);
-    jalr(t1, offset);
-  });
+  rt_call(entry_point, t1, t0);
   if (retaddr != nullptr) {
     bind(*retaddr);
   }
@@ -1174,16 +1167,16 @@ void MacroAssembler::jalr(Register Rs, int32_t offset) {
   Assembler::jalr(x1, Rs, offset);
 }
 
-void MacroAssembler::rt_call(address dest, Register tmp) {
-  assert(tmp != x5, "tmp register must not be x5.");
+void MacroAssembler::rt_call(address dest, Register tmp1, Register tmp2) {
+  assert(tmp1 != x5, "tmp register must not be x5.");
   RuntimeAddress target(dest);
   if (CodeCache::contains(dest)) {
-    far_call(target, tmp);
+    far_call(target, tmp1);
   } else {
     relocate(target.rspec(), [&] {
       int32_t offset;
-      movptr(tmp, target.target(), offset);
-      jalr(tmp, offset);
+      movptr(tmp1, target.target(), offset, tmp2);
+      jalr(tmp1, offset);
     });
   }
 }
@@ -5399,14 +5392,7 @@ void MacroAssembler::get_thread(Register thread) {
                       RegSet::range(x28, x31) + ra - thread;
   push_reg(saved_regs, sp);
 
-  // Use a relocation so that the target address can be fixed up when
-  // this code is loaded from the AOT code cache in a new JVM instance.
-  RuntimeAddress target(CAST_FROM_FN_PTR(address, Thread::current));
-  relocate(target.rspec(), [&] {
-    int32_t offset;
-    movptr(t1, target.target(), offset, t0);
-    jalr(t1, offset);
-  });
+  rt_call(CAST_FROM_FN_PTR(address, Thread::current), t1, t0);
   if (thread != c_rarg0) {
     mv(thread, c_rarg0);
   }
