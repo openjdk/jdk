@@ -30,11 +30,10 @@
  * @library /test/jdk/lib/testlibrary /test/lib
  * @build LambdaInExcludedClass
  * @run driver jdk.test.lib.helpers.ClassFileInstaller LambdaInExcludedClassApp
- * @run driver LambdaInExcludedClass STATIC
+ * @run driver LambdaInExcludedClass AOT
  */
 
 import jdk.test.lib.cds.CDSAppTester;
-import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class LambdaInExcludedClass {
@@ -42,7 +41,7 @@ public class LambdaInExcludedClass {
 
     public static void main(String[] args) throws Exception {
         Tester t = new Tester();
-        t.run(args);
+        t.runAOTWorkflow(args);
     }
 
     static class Tester extends CDSAppTester {
@@ -60,8 +59,8 @@ public class LambdaInExcludedClass {
         @Override
         public String[] vmArgs(RunMode runMode) {
             return new String[] {
+                "-Xlog:aot",
                 "-Xmx128m",
-                "-XX:+AOTClassLinking",
                 "-XX:+UnlockExperimentalVMOptions",
                 "-XX:+UseEpsilonGC",
             };
@@ -76,10 +75,9 @@ public class LambdaInExcludedClass {
 
         @Override
         public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception {
-            if (runMode == RunMode.DUMP_STATIC) {
+            if (runMode == RunMode.TRAINING) {
                 out.shouldContain("Skipping LambdaInExcludedClassApp: Unsupported location");
-                out.shouldContain("Cannot aot-resolve constants for LambdaInExcludedClassApp because it is excluded");
-            } else {
+            } else if (runMode == RunMode.PRODUCTION) {
                 out.shouldContain("Hello LambdaInExcludedClassApp");
             }
         }
