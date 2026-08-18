@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026 IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,26 +21,47 @@
  * questions.
  */
 
-package com.sun.jdi;
-
-/**
- * Thrown to indicate that there is an inconsistency in the debug
- * information provided by the target VM. For example, this exception
- * is thrown if there is a type mismatch between a retrieved value's
- * runtime type and its declared type as reported by the target VM.
- *
- * @author Gordon Hirsch
- * @since  1.3
+/*
+ * @test
+ * @bug 8390467
+ * @summary C2: _map != nullptr assert failure in LibraryCallKit::inline_Class_cast()
+ * @run main/othervm  -XX:CompileOnly=${test.main.class}::test1 -Xcomp ${test.main.class}
  */
-public class InconsistentDebugInfoException extends RuntimeException {
 
-    private static final long serialVersionUID = 7964236415376861808L;
+package compiler.intrinsics;
 
-    public InconsistentDebugInfoException() {
-        super();
+public class TestClassCastDeadPath {
+    public static void main(String[] args) {
+        B b = new B();
+        C c = new C();
+        A.class.cast(b);
+        try {
+            test1(c);
+        } catch (ClassCastException cce) {
+        }
     }
 
-    public InconsistentDebugInfoException(String s) {
-        super(s);
+    private static void test1(Object o) {
+        if (!(o instanceof I)) {
+            throw new RuntimeException("never taken");
+        }
+        A.class.cast(o);
     }
+
+    static abstract class A {
+
+    }
+
+    static class B extends A {
+
+    }
+
+    interface I {
+
+    }
+
+    static class C implements I {
+
+    }
+
 }
