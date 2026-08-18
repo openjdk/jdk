@@ -25,6 +25,14 @@
 package gc.shenandoah.generational;
 
 import jdk.test.whitebox.WhiteBox;
+import java.util.concurrent.atomic.*;
+import javax.management.*;
+import java.lang.management.*;
+import javax.management.openmbean.*;
+
+import jdk.test.lib.Utils;
+
+import com.sun.management.GarbageCollectionNotificationInfo;
 
 /*
  * @test id=generational
@@ -74,14 +82,59 @@ public class TestPromoteInPlaceDuringAbbreviatedCycle {
     // local var from being eliminated)
     private static Object garbage;
 
+    private static boolean isCollectorNotification(Notification n) {
+        return n.getType().equals(GarbageCollectionNotificationInfo.GARBAGE_COLLECTION_NOTIFICATION);
+    }
+
+    private static void subscribeToCollectorNotifications(NotificationListener listener) {
+        for (GarbageCollectorMXBean b : ManagementFactory.getGarbageCollectorMXBeans()) {
+            ((NotificationEmitter) b).addNotificationListener(listener, null, null);
+        }
+    }
+
+    private static void unsubscribeToCollectorNotifications(NotificationListener listener) throws Exception {
+        for (GarbageCollectorMXBean b : ManagementFactory.getGarbageCollectorMXBeans()) {
+            ((NotificationEmitter) b).removeNotificationListener(listener, null, null);
+        }
+    }
+
+    private static GarbageCollectorMXBean cycleBean() {
+        for (GarbageCollectorMXBean b : ManagementFactory.getGarbageCollectorMXBeans()) {
+            if (b.getName().equals("Shenandoah Cycles")) {
+                return b;
+            }
+        }
+        throw new IllegalStateException("No \"Shenandoah Cycles\" bean found");
+    }
+
     public static void main(String[] args) throws Exception {
         humongous = new Object[HUMONGOUS_REFS];
         regular = new Object[REGULAR_REFS];
 
-        if (WB.isObjectInOldGen(humongous) || WB.isObjectInOldGen(regular)) {
-            throw new IllegalStateException(
-                    "Precondition failed: the humongous array should start "
-                    + "in the young generation");
+        // Listen for events to detect if a non-abbreviated cycle runs
+        final AtomicLong updateReferencePauses = new AtomicLong();
+        final AtomicLong cycleNotifications   = new AtomicLong();
+        NotificationListener listener = (Notification n, Object o) -> {
+            if (isCollectorNotification(n)) {
+                GarbageCollectionNotificationInfo info = GarbageCollectionNotificationInfo.from((CompositeData) n.getUserData());
+                if (info.getGcName().equals("Shenandoah Pauses") && info.getGcAction().contains("Update Refs")) {
+                    updateReferencePauses.incrementAndGet();
+                } else if (info.getGcName().equals("Shenandoah Cycles")) {
+                    cycleNotifications.incrementAndGet();
+                }
+            }
+        };
+
+        subscribeToCollectorNotifications(listener);
+
+        GarbageCollectorMXBean cycles = cycleBean();
+
+        if (WB.isObjectInOldGen(humongous)) {
+            throw new IllegalStateException("Expected young humongous array");
+        }
+
+        if (WB.isObjectInOldGen(regular)) {
+            throw new IllegalStateException("Expected young regular array");
         }
 
         for (int cycle = 1; cycle <= MAX_CYCLES; cycle++) {
@@ -92,18 +145,37 @@ public class TestPromoteInPlaceDuringAbbreviatedCycle {
             // Runs a concurrent global cycle and blocks until it completes.
             System.gc();
 
+            // Both objects are in old, exit the test loop
             if (WB.isObjectInOldGen(humongous) && WB.isObjectInOldGen(regular)) {
-                System.out.println(
-                    "Humongous array and regular object were promoted in "
-                    + "place during an abbreviated cycle after "
-                    + cycle + " cycle(s)");
-                return;
+                break;
             }
         }
 
-        throw new RuntimeException(
-            "Humongous array or regular object was never promoted in place "
-            + "during an abbreviated cycle after " + MAX_CYCLES + " cycles; "
-            + "in-place promotion is not happening on the abbreviated path");
+        // Flush gc notification events
+        long targetCycles = cycles.getCollectionCount();
+        long deadlineMillis = System.currentTimeMillis() + 30_000;
+        while (cycleNotifications.get() < targetCycles) {
+            if (System.currentTimeMillis() > deadlineMillis) {
+                throw new RuntimeException("Timed out flushing GC notifications: delivered "
+                                           + cycleNotifications.get() + " of "
+                                           + targetCycles + " cycle notifications");
+            }
+            Thread.sleep(10);
+        }
+
+        unsubscribeToCollectorNotifications(listener);
+
+        if (updateReferencePauses.get() != 0) {
+            throw new RuntimeException(updateReferencePauses.get()
+                                       + " non-abbreviated cycles happened");
+        }
+
+        if (!WB.isObjectInOldGen(humongous)) {
+            throw new RuntimeException("Humongous region was not promoted in place.");
+        }
+
+        if (!WB.isObjectInOldGen(regular)) {
+            throw new RuntimeException("Regular region was not promoted in place");
+        }
     }
 }
