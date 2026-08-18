@@ -27,8 +27,8 @@
  * @summary Test that UTF-16 string concat overflow does not produce a negative size backing array
  * @requires vm.compiler2.enabled & os.maxMemory > 4G
  * @library /test/lib /
- * @run main/othervm -XX:-OptoScheduling ${test.main.class}
- * @run main/othervm -Xint ${test.main.class}
+ * @run main/othervm -Xmx4g -XX:-OptoScheduling ${test.main.class}
+ * @run main/othervm -Xmx4g -Xint ${test.main.class}
  * @run main/othervm -Xmx4g -XX:-TieredCompilation -Xcomp -XX:-OptoScheduling
  *                   -XX:CompileOnly=${test.main.class}::f
  *                   ${test.main.class}
@@ -52,9 +52,11 @@ public class TestStackedConcatsManyUTF16Overflow {
             }
             Asserts.assertEQ(s, z);
         } catch (OutOfMemoryError e) {
-          // expected
+          Asserts.assertTrue(e.getMessage().equals("Required array length 1073741824 + 1073741824 is too large"));
+          // Specifically, we should not get "`main' threw exception: java.lang.NegativeArraySizeException: -2147483648"
+          return;
         }
-        // we should not get "`main' threw exception: java.lang.NegativeArraySizeException: -2147483648"
+        throw new RuntimeException("Unreachable.");
     }
 
     static String f() {
