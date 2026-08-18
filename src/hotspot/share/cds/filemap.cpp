@@ -405,19 +405,14 @@ bool FileMapInfo::validate_class_location() {
   assert(CDSConfig::is_using_archive(), "runtime only");
 
   AOTClassLocationConfig* config = header()->class_location_config();
-  bool has_extra_module_paths = false;
-  if (!config->validate(full_path(), header()->has_aot_linked_classes(), &has_extra_module_paths)) {
+
+  if (!config->validate(full_path(), header()->has_aot_linked_classes(), header()->has_full_module_graph())) {
     if (PrintSharedArchiveAndExit) {
       AOTMetaspace::set_archive_loading_failed();
       return true;
     } else {
       return false;
     }
-  }
-
-  if (header()->has_full_module_graph() && has_extra_module_paths) {
-    CDSConfig::disable_full_module_graph();
-    AOTMetaspace::report_loading_error("full module graph: disabled because extra module path(s) are specified");
   }
 
   if (CDSConfig::is_dumping_dynamic_archive()) {
@@ -429,13 +424,6 @@ bool FileMapInfo::validate_class_location() {
       CDSConfig::disable_dumping_dynamic_archive();
       aot_log_warning(aot)(
         "Dynamic archiving is disabled because base layer archive has appended boot classpath");
-    }
-    if (config->num_module_paths() > 0) {
-      if (has_extra_module_paths) {
-        CDSConfig::disable_dumping_dynamic_archive();
-        aot_log_warning(aot)(
-          "Dynamic archiving is disabled because base layer archive has a different module path");
-      }
     }
   }
 
@@ -1868,6 +1856,13 @@ bool FileMapInfo::validate_aot_class_linking() {
       return false;
     }
 #endif
+  }
+
+  if (CDSConfig::is_dumping_final_static_archive() && header()->aot_class_linking_value() && !CDSConfig::is_dumping_aot_linked_classes()) {
+    ResourceMark rm;
+    const char* msg = err_msg("AOT class linking was enabled in training run but has been disabled%s",
+                              (CDSConfig::is_dumping_full_module_graph() ? "" : " due to incompatible module options"));
+    AOTMetaspace::unrecoverable_writing_error(msg);
   }
 
   return true;
