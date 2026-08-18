@@ -3018,20 +3018,14 @@ void C2_MacroAssembler::sve_sdiv_short(FloatRegister dst_src1, FloatRegister src
   sve_uzp1(dst_src1, H, vtmp1, src1);
 }
 
-void C2_MacroAssembler::jump_table_switch(Register switch_val, uint jump_table_entry_size) {
+void C2_MacroAssembler::jump_table_switch(Register switch_val, BasicType bt) {
   assert(Matcher::use_compressed_jump_table,
          "jump_table_switch should only be used with compressed jump tables");
   Label jump_table;
-  int scale = exact_log2(jump_table_entry_size);
-  int instruction_size_log2 = exact_log2(Assembler::instruction_size);
+  int scale = exact_log2(type2aelembytes(bt));
   adr(rscratch1, jump_table);
-  switch (scale) {
-    case 1: ldrsh(rscratch2, Address(rscratch1, switch_val, Address::uxtw(scale))); break;
-    case 2: ldrsw(rscratch2, Address(rscratch1, switch_val, Address::uxtw(scale))); break;
-    default:
-      ShouldNotReachHere();
-  }
-  add(rscratch1, rscratch1, rscratch2, LSL, instruction_size_log2); // target = jump table base + relative offset
+  load(rscratch2, Address(rscratch1, switch_val, Address::uxtw(scale)), bt);
+  lea(rscratch1, Address(rscratch1, rscratch2, Address::lsl(exact_log2(instruction_size))));
   br(rscratch1);
 
   bind(jump_table);
