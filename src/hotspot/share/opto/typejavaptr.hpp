@@ -69,7 +69,8 @@ private:
 
     if (base1 != base2) {
       TypePtr::PTR ptr = t1->ptr() == TypePtr::BotPTR || t2->ptr() == TypePtr::BotPTR ? TypePtr::BotPTR : TypePtr::NotNull;
-      return OopType::InstType::make(ptr, OopType::ciEnv::current()->Object_klass(), interfaces, false, nullptr, offset, flat_in_array, instance_id, speculative, inline_depth);
+      return OopType::InstType::make(ptr, OopType::ciEnv::current()->Object_klass(), interfaces, false, nullptr, offset,
+                                     flat_in_array, instance_id, speculative, inline_depth);
     } else if (base1 == Type::InstPtr) {
       return instptr_type_xmeet(t1->is_instptr(), t2->is_instptr(), offset, interfaces, flat_in_array, instance_id, speculative, inline_depth);
     } else {
@@ -79,8 +80,8 @@ private:
 
   template <class InstOopType, class PtrType, class InterfacesType>
   static const InstOopType* instptr_type_xmeet(const InstOopType* t1, const InstOopType* t2, Type::Offset offset, InterfacesType interfaces,
-                                       TypePtr::FlatInArray flat_in_array, int instance_id, const PtrType* speculative, int inline_depth) {
-    using ConstOopType = std::invoke_result_t<decltype(&InstOopType::const_oop), InstOopType>;
+                                               TypePtr::FlatInArray flat_in_array, int instance_id, const PtrType* speculative, int inline_depth) {
+    using ConstOopType = decltype(t1->const_oop());
 
     auto k1 = t1->instance_klass();
     auto k2 = t2->instance_klass();
@@ -103,11 +104,12 @@ private:
   }
 
   template <class AryOopType, class PtrType>
-  static const AryOopType* aryptr_type_xmeet(const AryOopType* t1, const AryOopType* t2, Type::Offset offset, int instance_id, const PtrType* speculative, int inline_depth) {
-    using PointeeType = std::remove_pointer_t<std::invoke_result_t<decltype(&AryOopType::ary), AryOopType>>;
-    using ConstOopType = std::invoke_result_t<decltype(&AryOopType::const_oop), AryOopType>;
-    using ElemType = std::invoke_result_t<decltype(&AryOopType::elem), AryOopType>;
-    using KlassType = std::invoke_result_t<decltype(&AryOopType::klass), AryOopType>;
+  static const AryOopType* aryptr_type_xmeet(const AryOopType* t1, const AryOopType* t2, Type::Offset offset, int instance_id,
+                                             const PtrType* speculative, int inline_depth) {
+    using AryType = std::remove_pointer_t<decltype(t1->ary())>;
+    using ConstOopType = decltype(t1->const_oop());
+    using ElemType = decltype(t1->elem());
+    using KlassType = decltype(t1->klass());
 
     TypePtr::PTR ptr;
     ConstOopType const_oop = nullptr;
@@ -124,7 +126,7 @@ private:
     bool null_free = t1->is_null_free() && t2->is_null_free();
     bool not_null_free = t1->is_not_null_free() && t2->is_not_null_free();
     bool atomic = t1->is_atomic() && t2->is_atomic();
-    auto ary = PointeeType::make(elem, size, stable, flat, not_flat, null_free, not_null_free, atomic);
+    auto ary = AryType::make(elem, size, stable, flat, not_flat, null_free, not_null_free, atomic);
     bool xk = t1->klass_is_exact() && t2->klass_is_exact() && !aryptr_klass_disjoint(t1, t2);
     auto field_offset = t1->field_offset().meet(t2->field_offset());
     bool autobox_cache = t1->is_autobox_cache() && t2->is_autobox_cache();
@@ -155,7 +157,7 @@ private:
 
   template <class InstKlassType, class InterfacesType>
   static const InstKlassType* instklassptr_type_xmeet(const InstKlassType* t1, const InstKlassType* t2, Type::Offset offset, InterfacesType interfaces,
-                                            TypePtr::FlatInArray flat_in_array) {
+                                                      TypePtr::FlatInArray flat_in_array) {
     TypePtr::PTR ptr = meet_inst_klass_ptr(t1, t2);
     auto klass = t1->instance_klass()->least_common_ancestor(t2->instance_klass())->as_instance_klass();
     return InstKlassType::make(ptr, klass, interfaces, offset, flat_in_array);
@@ -163,8 +165,8 @@ private:
 
   template <class AryKlassType>
   static const AryKlassType* aryklassptr_type_xmeet(const AryKlassType* t1, const AryKlassType* t2, Type::Offset offset) {
-    using ElemType = std::invoke_result_t<decltype(&AryKlassType::elem), AryKlassType>;
-    using KlassType = std::invoke_result_t<decltype(&AryKlassType::klass), AryKlassType>;
+    using ElemType = decltype(t1->elem());
+    using KlassType = decltype(t1->klass());
 
     TypePtr::PTR ptr = meet_ary_klass_ptr(t1, t2);
     ElemType elem;
@@ -193,7 +195,7 @@ private:
   static int meet_instance_id(const OopType* t1, const OopType* t2) {
     int id1 = t1->instance_id();
     int id2 = t2->instance_id();
-    assert(id1 != TypeOopPtr::InstanceTop && id2 != TypeOopPtr::InstanceTop, "must not be top");
+    assert(id1 != TypeOopPtr::InstanceTop && id2 != TypeOopPtr::InstanceTop, "InstanceTop must be normalized to TypePtr::TopPTR");
     return id1 == id2 ? id1 : TypeOopPtr::InstanceBot;
   }
 
@@ -261,7 +263,7 @@ private:
   static TypePtr::FlatInArray meet_flat_in_array(const PtrType* t1, const PtrType* t2) {
     auto v1 = t1->flat_in_array();
     auto v2 = t2->flat_in_array();
-    assert(v1 != TypePtr::TopFlat && v2 != TypePtr::TopFlat, "must not be top");
+    assert(v1 != TypePtr::TopFlat && v2 != TypePtr::TopFlat, "TopFlat must be normalized to TypePtr::TopPTR");
     return v1 == v2 ? v1 : TypePtr::MaybeFlat;
   }
 
@@ -271,9 +273,9 @@ private:
     const ElemType* elem2 = t2->elem();
     assert(!elem1->empty() && !elem2->empty(), "cannot be top");
     if (elem1->base() == elem2->base()) {
-      if (elem1->base() != Type::Int) {
-        elem = elem1->meet_speculative(elem2);
-      } else {
+      if (elem1->base() == Type::Int) {
+        // byte[], short[], char[], int[] all use some kinds of TypeInt as their, klass is used to
+        // distinguish between them. As a result, different kinds of array should result int bot[]
         CIKlassType klass1 = t1->klass();
         CIKlassType klass2 = t2->klass();
         assert(klass1 != nullptr && klass2 != nullptr, "ambiguous array");
@@ -283,6 +285,8 @@ private:
         } else {
           elem = ElemType::BOTTOM;
         }
+      } else {
+        elem = elem1->meet_speculative(elem2);
       }
     } else {
       if (elem1->make_ptr() != nullptr && elem2->make_ptr() != nullptr) {
@@ -293,27 +297,33 @@ private:
     }
   }
 
+  // TypeAryPtr is tricky, an exact Number[][] and an exact Integer[][] should be disjoint.
+  // However, their elements are non-exact Number[] and exact Integer[], respectively, which are
+  // not disjoint. This function specifically handle those cases.
   template <class AryOopType>
   static bool aryptr_klass_disjoint(const AryOopType* t1, const AryOopType* t2) {
     if (!t1->klass_is_exact() && !t2->klass_is_exact()) {
-      // If t1 and t2 are disjoint, their elems should be disjoint, too, should have been handled
-      // already
+      // If t1 and t2 are both non-exact and disjoint, their elems should be disjoint, too. As a
+      // result, we do not need to handle that case here.
       return false;
     }
 
-    std::invoke_result_t<decltype(&AryOopType::is_oopptr), AryOopType> exact_type;
-    std::invoke_result_t<decltype(&AryOopType::is_oopptr), AryOopType> other_type;
-    bool other_is_exact;
+    decltype(t1->is_oopptr()) exact_type;
+    decltype(t1->is_oopptr()) other_type;
+    bool both_are_exact;
     if (t1->klass_is_exact()) {
       exact_type = t1;
       other_type = t2;
-      other_is_exact = t2->klass_is_exact();
+      both_are_exact = t2->klass_is_exact();
     } else {
       exact_type = t2;
       other_type = t1;
-      other_is_exact = t1->klass_is_exact();
+      both_are_exact = t1->klass_is_exact();
     }
 
+    // At each iteration, walk down from the array klasses to their element types. Keep
+    // both_are_exact because the element type of an exact Number[][] is a non-exact Number[], but
+    // we need to remember that the original type is an exact array.
     while (true) {
       if (exact_type->base() == Type::InstPtr) {
         if (other_type->base() == Type::AryPtr) {
@@ -322,7 +332,7 @@ private:
 
         auto exact_klass = exact_type->is_instptr()->instance_klass();
         auto other_klass = other_type->is_instptr()->instance_klass();
-        if (other_is_exact) {
+        if (both_are_exact) {
           return exact_klass != other_klass || exact_type->interfaces() != other_type->interfaces();
         } else {
           return !exact_klass->is_subtype_of(other_klass) || !exact_type->interfaces()->contains(other_type->interfaces());
@@ -331,13 +341,13 @@ private:
 
       if (other_type->base() == Type::InstPtr) {
         auto other_inst_type = other_type->is_instptr();
-        return other_is_exact || !other_inst_type->instance_klass()->is_java_lang_Object() ||
+        return both_are_exact || !other_inst_type->instance_klass()->is_java_lang_Object() ||
                !AryOopType::_array_interfaces->contains(other_inst_type->interfaces());
       }
 
       auto exact_ary_type = exact_type->is_aryptr();
       auto other_ary_type = other_type->is_aryptr();
-      if (other_is_exact) {
+      if (both_are_exact) {
         if (exact_ary_type->is_flat() != other_ary_type->is_flat() || exact_ary_type->is_not_flat() != other_ary_type->is_not_flat() ||
             exact_ary_type->is_not_null_free() != other_ary_type->is_not_null_free() || exact_ary_type->is_atomic() != other_ary_type->is_atomic()) {
           return true;
@@ -351,7 +361,7 @@ private:
       auto exact_elem = exact_ary_type->elem();
       auto other_elem = other_ary_type->elem();
       assert(exact_elem->base() != Type::Bottom, "cannot have an exact bot[]");
-      assert(!other_is_exact || other_elem->base() != Type::Bottom, "cannot have an exact bot[]");
+      assert(!both_are_exact || other_elem->base() != Type::Bottom, "cannot have an exact bot[]");
       if (other_elem->base() == Type::Bottom) {
         return false;
       }
@@ -411,7 +421,7 @@ private:
     if (offset == Type::Offset::top) {
       return OopType::PtrType::make(Type::AnyPtr, TypePtr::TopPTR, offset, speculative, inline_depth);
     } else if ((t1->ptr() == TypePtr::Constant || t2->ptr() == TypePtr::Constant) && instance_id != TypeOopPtr::InstanceBot) {
-      // A constant cannot be allocated locally
+      // A constant oop cannot be produced by an allocation in the current compilation
       return OopType::PtrType::make(Type::AnyPtr, TypePtr::TopPTR, offset, speculative, inline_depth);
     } else if (flat_in_array == TypePtr::TopFlat || instance_id == TypeOopPtr::InstanceTop) {
       TypePtr::PTR ptr = (t1->ptr() == TypePtr::BotPTR && t2->ptr() == TypePtr::BotPTR) ? TypePtr::Null : TypePtr::TopPTR;
@@ -430,10 +440,14 @@ private:
       }
 
       TypePtr::PTR ptr = join_ptr(t1, t2);
-      if (inst_type->instance_klass()->is_java_lang_Object() && !inst_type->klass_is_exact() &&
-          OopType::AryType::_array_interfaces->contains(inst_type->interfaces())) {
-        return OopType::AryType::make(ptr, ary_type->const_oop(), ary_type->ary(), ary_type->klass(), ary_type->klass_is_exact(), offset, ary_type->field_offset(), instance_id, speculative, inline_depth, ary_type->is_autobox_cache());
+      bool inst_type_can_contain_arrays = inst_type->instance_klass()->is_java_lang_Object() && !inst_type->klass_is_exact() &&
+                                          OopType::AryType::_array_interfaces->contains(inst_type->interfaces());
+      if (inst_type_can_contain_arrays) {
+        return OopType::AryType::make(ptr, ary_type->const_oop(), ary_type->ary(), ary_type->klass(), ary_type->klass_is_exact(), offset, ary_type->field_offset(),
+                                      instance_id, speculative, inline_depth, ary_type->is_autobox_cache());
       } else {
+        // If 2 types does not intersect at any not-null value, they can always intersect at null
+        // if both are BotPTR. Similar for other cases below.
         return OopType::PtrType::make(Type::AnyPtr, ptr == TypePtr::BotPTR ? TypePtr::Null : TypePtr::TopPTR, offset, speculative, inline_depth);
       }
     } else if (base1 == Type::InstPtr) {
@@ -445,7 +459,7 @@ private:
 
   template <class InstOopType, class PtrType, class InterfacesType>
   static const typename InstOopType::PtrType* instptr_type_xjoin(const InstOopType* t1, const InstOopType* t2, Type::Offset offset, InterfacesType interfaces,
-                                                         TypePtr::FlatInArray flat_in_array, int instance_id, const PtrType* speculative, int inline_depth) {
+                                                                 TypePtr::FlatInArray flat_in_array, int instance_id, const PtrType* speculative, int inline_depth) {
     // Join 2 constants
     if (t1->const_oop() != nullptr && t2->const_oop() != nullptr) {
       if (t1->const_oop() != t2->const_oop()) {
@@ -457,7 +471,7 @@ private:
 
     // From here, at least one of the operand is not constant
     TypePtr::PTR ptr = join_ptr(t1, t2);
-    auto oop = t1->const_oop() != nullptr ? t1->const_oop() : t2->const_oop();
+    auto const_oop = t1->const_oop() != nullptr ? t1->const_oop() : t2->const_oop();
     auto klass1 = t1->instance_klass();
     auto klass2 = t2->instance_klass();
     bool xk1 = t1->klass_is_exact();
@@ -465,30 +479,27 @@ private:
 
     if (xk1 && xk2) {
       if (t1->instance_klass() == t2->instance_klass()) {
-        return InstOopType::make(ptr, klass1, interfaces, true, oop, offset, flat_in_array, instance_id, speculative, inline_depth);
+        return InstOopType::make(ptr, klass1, interfaces, true, const_oop, offset, flat_in_array, instance_id, speculative, inline_depth);
       } else {
         return InstOopType::PtrType::make(Type::AnyPtr, ptr == TypePtr::BotPTR ? TypePtr::Null : TypePtr::TopPTR, offset, speculative, inline_depth);
       }
     } else if (xk1) {
       assert(klass1->is_loaded(), "pointer to an oop of an exact type must be loaded");
-      if ((klass1->is_java_lang_Object() && klass2->is_java_lang_Object() && t1->interfaces() == interfaces) ||
-          (klass2->is_loaded() && klass1->is_subtype_of(klass2) && interfaces->eq(klass1))) {
-        // Supertypes of a loaded class should also be loaded
-        return InstOopType::make(ptr, klass1, interfaces, true, oop, offset, flat_in_array, instance_id, speculative, inline_depth);
+      if (non_exact_type_contains_exact_type(t2, t1, interfaces)) {
+        return InstOopType::make(ptr, klass1, interfaces, true, const_oop, offset, flat_in_array, instance_id, speculative, inline_depth);
       } else {
         return InstOopType::PtrType::make(Type::AnyPtr, ptr == TypePtr::BotPTR ? TypePtr::Null : TypePtr::TopPTR, offset, speculative, inline_depth);
       }
     } else if (xk2) {
       assert(klass2->is_loaded(), "pointer to an oop of an exact type must be loaded");
-      if ((klass2->is_java_lang_Object() && klass1->is_java_lang_Object() && t2->interfaces() == interfaces) ||
-          (klass1->is_loaded() && klass2->is_subtype_of(klass1) && interfaces->eq(klass2))) {
-        return InstOopType::make(ptr, klass2, interfaces, true, oop, offset, flat_in_array, instance_id, speculative, inline_depth);
+      if (non_exact_type_contains_exact_type(t1, t2, interfaces)) {
+        return InstOopType::make(ptr, klass2, interfaces, true, const_oop, offset, flat_in_array, instance_id, speculative, inline_depth);
       } else {
         return InstOopType::PtrType::make(Type::AnyPtr, ptr == TypePtr::BotPTR ? TypePtr::Null : TypePtr::TopPTR, offset, speculative, inline_depth);
       }
     }
 
-    assert(oop == nullptr && ptr != TypePtr::Constant, "const oop should have exact klass");
+    assert(const_oop == nullptr && ptr != TypePtr::Constant, "const oop should have exact klass");
     if (!klass1->is_loaded() || !klass2->is_loaded()) {
       // Consider an unloaded class to be a direct child of j.l.O and not have any subclass
       if (klass1->is_java_lang_Object()) {
@@ -514,10 +525,11 @@ private:
   }
 
   template <class AryOopType, class PtrType>
-  static const typename AryOopType::PtrType* aryptr_type_xjoin(const AryOopType* t1, const AryOopType* t2, Type::Offset offset, int instance_id, const PtrType* speculative, int inline_depth) {
-    using PointeeType = std::remove_pointer_t<std::invoke_result_t<decltype(&AryOopType::ary), AryOopType>>;
-    using ElemType = std::invoke_result_t<decltype(&AryOopType::elem), AryOopType>;
-    using KlassType = std::invoke_result_t<decltype(&AryOopType::klass), AryOopType>;
+  static const typename AryOopType::PtrType* aryptr_type_xjoin(const AryOopType* t1, const AryOopType* t2, Type::Offset offset, int instance_id,
+                                                               const PtrType* speculative, int inline_depth) {
+    using AryType = std::remove_pointer_t<decltype(t1->ary())>;
+    using ElemType = decltype(t1->elem());
+    using KlassType = decltype(t1->klass());
 
     // Join of 2 different constants
     if (t1->const_oop() != nullptr && t2->const_oop() != nullptr && t1->const_oop() != t2->const_oop()) {
@@ -541,7 +553,7 @@ private:
       return AryOopType::PtrType::make(Type::AnyPtr, ptr == TypePtr::BotPTR ? TypePtr::Null : TypePtr::TopPTR, offset, speculative, inline_depth);
     }
 
-    auto oop = t1->const_oop() != nullptr ? t1->const_oop() : t2->const_oop();
+    auto const_oop = t1->const_oop() != nullptr ? t1->const_oop() : t2->const_oop();
     bool stable = t1->is_stable() || t2->is_stable();
     bool flat = t1->is_flat() || t2->is_flat();
     bool not_flat = t1->is_not_flat() || t2->is_not_flat();
@@ -553,10 +565,10 @@ private:
       return AryOopType::PtrType::make(Type::AnyPtr, ptr == TypePtr::BotPTR ? TypePtr::Null : TypePtr::TopPTR, offset, speculative, inline_depth);
     }
 
-    auto ary = PointeeType::make(elem, size, stable, flat, not_flat, null_free, not_null_free, atomic);
+    auto ary = AryType::make(elem, size, stable, flat, not_flat, null_free, not_null_free, atomic);
     bool xk = t1->klass_is_exact() || t2->klass_is_exact();
     bool autobox_cache = t1->is_autobox_cache() || t2->is_autobox_cache();
-    return AryOopType::make(ptr, oop, ary, klass, xk, offset, field_offset, instance_id, speculative, inline_depth, autobox_cache);
+    return AryOopType::make(ptr, const_oop, ary, klass, xk, offset, field_offset, instance_id, speculative, inline_depth, autobox_cache);
   }
 
   template <class KlassType>
@@ -604,8 +616,8 @@ private:
   }
 
   template <class InstKlassType, class InterfacesType>
-  static const typename InstKlassType::PtrType* instklassptr_type_xjoin(const InstKlassType* t1, const InstKlassType* t2, Type::Offset offset, InterfacesType interfaces,
-                                                              TypePtr::FlatInArray flat_in_array) {
+  static const typename InstKlassType::PtrType* instklassptr_type_xjoin(const InstKlassType* t1, const InstKlassType* t2, Type::Offset offset,
+                                                                        InterfacesType interfaces, TypePtr::FlatInArray flat_in_array) {
     auto klass1 = t1->instance_klass();
     auto klass2 = t2->instance_klass();
     // Beware, when the exact klass pointer is an interface, instance_klass() is j.l.O and
@@ -617,15 +629,13 @@ private:
         return InstKlassType::PtrType::make(Type::AnyPtr, TypePtr::TopPTR, offset);
       }
     } else if (t1->ptr() == TypePtr::Constant) {
-      if ((klass1->is_java_lang_Object() && klass2->is_java_lang_Object() && t1->interfaces() == interfaces) ||
-          (klass1->is_subtype_of(klass2) && interfaces->eq(klass1))) {
+      if (non_exact_type_contains_exact_type(t2, t1, interfaces)) {
         return InstKlassType::make(TypePtr::Constant, klass1, interfaces, offset, flat_in_array);
       } else {
         return InstKlassType::PtrType::make(Type::AnyPtr, TypePtr::TopPTR, offset);
       }
     } else if (t2->ptr() == TypePtr::Constant) {
-      if ((klass2->is_java_lang_Object() && klass1->is_java_lang_Object() && t2->interfaces() == interfaces) ||
-          (klass2->is_subtype_of(klass1) && interfaces->eq(klass2))) {
+      if (non_exact_type_contains_exact_type(t1, t2, interfaces)) {
         return InstKlassType::make(TypePtr::Constant, klass2, interfaces, offset, flat_in_array);
       } else {
         return InstKlassType::PtrType::make(Type::AnyPtr, TypePtr::TopPTR, offset);
@@ -644,8 +654,8 @@ private:
 
   template <class AryKlassType>
   static const typename AryKlassType::PtrType* aryklassptr_type_xjoin(const AryKlassType* t1, const AryKlassType* t2, Type::Offset offset) {
-    using ElemType = std::invoke_result_t<decltype(&AryKlassType::elem), AryKlassType>;
-    using KlassType = std::invoke_result_t<decltype(&AryKlassType::klass), AryKlassType>;
+    using ElemType = decltype(t1->elem());
+    using KlassType = decltype(t1->klass());
 
     TypePtr::PTR ptr = join_ptr(t1, t2);
     ElemType elem;
@@ -700,7 +710,7 @@ private:
   static int join_instance_id(const OopType* t1, const OopType* t2) {
     int id1 = t1->instance_id();
     int id2 = t2->instance_id();
-    assert(id1 != TypeOopPtr::InstanceTop && id2 != TypeOopPtr::InstanceTop, "must not be top");
+    assert(id1 != TypeOopPtr::InstanceTop && id2 != TypeOopPtr::InstanceTop, "InstanceTop must be normalized to TypePtr::TopPTR");
     if (id1 == TypeOopPtr::InstanceBot) {
       return id2;
     } else if (id2 == TypeOopPtr::InstanceBot) {
@@ -737,7 +747,7 @@ private:
   static TypePtr::FlatInArray join_flat_in_array(const PtrType* t1, const PtrType* t2) {
     auto v1 = t1->flat_in_array();
     auto v2 = t2->flat_in_array();
-    assert(v1 != TypePtr::TopFlat && v2 != TypePtr::TopFlat, "must not be top");
+    assert(v1 != TypePtr::TopFlat && v2 != TypePtr::TopFlat, "TopFlat must be normalized to TopPTR");
     if (v1 == TypePtr::MaybeFlat) {
       return v2;
     } else if (v2 == TypePtr::MaybeFlat) {
@@ -774,6 +784,8 @@ private:
     if (elem1->base() != elem2->base()) {
       elem = ElemType::TOP;
     } else if (elem1->base() == Type::Int) {
+      // byte[], short[], char[], int[] all use some kinds of TypeInt as their, klass is used to
+      // distinguish between them. As a result, different kinds of array should result int bot[]
       if (t1->klass() != t2->klass()) {
         elem = ElemType::TOP;
       } else {
@@ -785,7 +797,14 @@ private:
     }
   }
 
-
+  template <class InstType, class InterfacesType>
+  static bool non_exact_type_contains_exact_type(const InstType* non_exact_type, const InstType* exact_type, InterfacesType interfaces) {
+    auto non_exact_klass = non_exact_type->instance_klass();
+    auto exact_klass = exact_type->instance_klass();
+    // Supertypes of a loaded class should also be loaded
+    return (exact_klass->is_java_lang_Object() && non_exact_klass->is_java_lang_Object() && exact_type->interfaces() == interfaces) ||
+           (non_exact_klass->is_loaded() && exact_klass->is_subtype_of(non_exact_klass) && interfaces->eq(exact_klass));
+  }
 };
 
 #endif // SHARE_OPTO_TYPEJAVAPTR_HPP
