@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,10 @@ public class weak005 extends ThreadedGCTest {
             for (int i = 1; i < length; ++i) {
                 references[i] = new WeakReference(references[i - 1]);
             }
-            for (int i = 0; i < length - 1; ++i) {
+            // Release the chain from the end. Otherwise a GC that runs while
+            // an entry is still reachable from the array can clear it and put
+            // it on the pending list, which keeps it alive for the last check.
+            for (int i = length - 2; i >= 0; --i) {
                 references[i] = null;
             }
         }
