@@ -88,7 +88,7 @@ void ShenandoahGenerationalHeuristics::prepare_for_abbreviated_cycle() {
   prepare_regions_for_promotion(in_place_promotions, heap, nullptr);
 
   // Only these in-place promotion regions will be tenured this cycle
-  const size_t tenurable_this_cycle = in_place_promotions.humongous_region_stats().usage;
+  const size_t tenurable_this_cycle = in_place_promotions.regular_region_stats().usage;
   compute_promotion_potential(heap, tenurable_this_cycle);
 
   ShenandoahTracer::report_promotion_info(heap->collection_set(), in_place_promotions);
