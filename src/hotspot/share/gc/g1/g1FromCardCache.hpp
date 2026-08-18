@@ -32,11 +32,14 @@
 // encountered while a worker scans the current source card.
 class G1FromCardCache : public AllStatic {
 private:
+  static const uint SourceCardIndex = 0;
+  static const uint NumEntriesIndex = 1;
+  static const uint EntriesStartIndex = 2;
   // Each worker owns one row laid out as:
   //   [ source-card | number-of-entries | FCC id | FCC id | ... ]
   //          0                 1              2        3
-  // The count identifies the populated prefix of FCC ids, which is searched
-  // linearly like G1CardSetArray.
+  // The count identifies the populated prefix of FCC ids, which is
+  //  searched linearly.
   static uintptr_t** _cache;
   static uint _max_entries;
   static size_t _static_mem_size;
@@ -48,14 +51,10 @@ private:
   }
 #endif
 
-  static const uint SourceCardIndex = 0;
-  static const uint NumEntriesIndex = 1;
-  static const uint EntriesStartIndex = 2;
-
   // This card index indicates that the row is unused. This allows us to use
   // the OS lazy backing of memory with zero-filled pages to avoid initial
   // actual memory use. This means that the heap must not contain card zero.
-  static const uintptr_t InvalidCard = 0;
+  static const uintptr_t InvalidSourceCard = 0;
 
   // Number of refinement and concurrent GC workers that may add records to
   // remembered sets in parallel.
@@ -72,7 +71,7 @@ public:
   // worker begins a new refinement or rebuild scan and after a rebuild yield.
   static void reset(uint worker_id) {
     uintptr_t* const cache = row(worker_id);
-    cache[SourceCardIndex] = InvalidCard;
+    cache[SourceCardIndex] = InvalidSourceCard;
     cache[NumEntriesIndex] = 0;
   }
 
@@ -80,6 +79,7 @@ public:
   // worker_id was scanning source_card. Otherwise, records the id and returns
   // false.
   static bool contains_or_add(uint worker_id, uintptr_t source_card, uint cardset_fcc_id) {
+    precond(source_card != InvalidSourceCard);
     uintptr_t* const cache = row(worker_id);
 
     if (cache[SourceCardIndex] != source_card) {
@@ -94,9 +94,6 @@ public:
       }
     }
 
-    // There cannot be more distinct destination cardsets than reference slots
-    // in the source card. Keep the product fallback conservative because this
-    // is only a cache.
     assert(num_entries < _max_entries, "source card has too many destination cardsets");
     if (num_entries < _max_entries) {
       cache[EntriesStartIndex + num_entries] = cardset_fcc_id;
