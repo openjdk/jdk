@@ -267,11 +267,9 @@ struct ShenandoahSignedSize {
 
     const double magnitude = fabsd(v);
 
-#ifdef _LP64
     if (magnitude >= 100.0 * G) {
       return { std::copysign(magnitude / G, v), "G" };
     }
-#endif
 
     if (magnitude >= 100.0 * M) {
       return { std::copysign(magnitude / M, v), "M" };
@@ -284,6 +282,5 @@ struct ShenandoahSignedSize {
     return { std::copysign(magnitude, v), "B" };
   }
 };
-
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHUTILS_HPP
