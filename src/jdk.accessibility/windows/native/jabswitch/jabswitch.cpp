@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,23 +52,6 @@ static LPCTSTR STR_ACCESSBRIDGE =
 
 FILE* origFile;
 FILE* tempFile;
-
-bool isXP()
-{
-    static bool isXPFlag = false;
-    OSVERSIONINFO  osvi;
-
-    // Initialize the OSVERSIONINFO structure.
-    ZeroMemory( &osvi, sizeof( osvi ) );
-    osvi.dwOSVersionInfoSize = sizeof( osvi );
-
-    GetVersionEx( &osvi );
-
-    if ( osvi.dwMajorVersion == 5 ) // For Windows XP and Windows 2000
-        isXPFlag = true;
-
-    return isXPFlag ;
-}
 
 void enableJAB() {
     // Copy lines from orig to temp modifying the line containing
@@ -299,12 +282,14 @@ void printVersion() {
     char* pVersionData = new char[nVersionSize];
     if (!GetFileVersionInfo(executableFileName, 0, nVersionSize, pVersionData)) {
         printf("Unable to get version info.\n");
+        delete[] pVersionData;
         return;
     }
     LPVOID pVersionInfo;
     UINT nSize;
     if (!VerQueryValue(pVersionData, _T("\\"), &pVersionInfo, &nSize)) {
         printf("Unable to query version value.\n");
+        delete[] pVersionData;
         return;
     }
     VS_FIXEDFILEINFO *pVSInfo = (VS_FIXEDFILEINFO *)pVersionInfo;
@@ -319,11 +304,11 @@ void printVersion() {
         "jabswitch enables or disables the Java Access Bridge.\n",
         versionString
     );
+    delete[] pVersionData;
 }
 
 int regEnable() {
     HKEY hKey;
-    DWORD retval = -1;
     LSTATUS err;
     err = RegOpenKeyEx(HKEY_CURRENT_USER, ACCESSIBILITY_USER_KEY, NULL, KEY_READ|KEY_WRITE, &hKey);
     if (err == ERROR_SUCCESS) {
@@ -331,7 +316,6 @@ int regEnable() {
         DWORD dataLength = DEFAULT_ALLOC;
         TCHAR dataBuffer[DEFAULT_ALLOC];
         TCHAR *data = dataBuffer;
-        bool freeData = false;
         err = RegQueryValueEx(hKey, ACCESSIBILITY_CONFIG, 0, &dataType, (BYTE *)data, &dataLength);
         if (err == ERROR_MORE_DATA) {
             if (dataLength > 0 && dataLength < MAX_ALLOC) {
@@ -342,9 +326,13 @@ int regEnable() {
         if (err == ERROR_SUCCESS) {
             err = _tcslwr_s(dataBuffer, DEFAULT_ALLOC);
             if (err) {
+                if (data != dataBuffer) delete[] data;
+                RegCloseKey(hKey);
                 return -1;
             }
             if (_tcsstr(dataBuffer, STR_ACCESSBRIDGE) != NULL) {
+                if (data != dataBuffer) delete[] data;
+                RegCloseKey(hKey);
                 return 0;  // This is OK, e.g. ran enable twice and the value is there.
             } else {
                 // add oracle_javaaccessbridge to Config key for HKCU
@@ -353,9 +341,11 @@ int regEnable() {
                 if (newStr != NULL) {
                     wsprintf(newStr, L"%s,%s", dataBuffer, STR_ACCESSBRIDGE);
                     RegSetValueEx(hKey, ACCESSIBILITY_CONFIG, 0, REG_SZ, (BYTE *)newStr, dataLength);
+                    delete[] newStr;
                 }
             }
         }
+        if (data != dataBuffer) delete[] data;
         RegCloseKey(hKey);
     }
     return err;
@@ -364,7 +354,6 @@ int regEnable() {
 int regDeleteValue(HKEY hFamilyKey, LPCWSTR lpSubKey)
 {
     HKEY hKey;
-    DWORD retval = -1;
     LSTATUS err;
     err = RegOpenKeyEx(hFamilyKey, lpSubKey, NULL, KEY_READ|KEY_WRITE|KEY_WOW64_64KEY, &hKey);
     if (err != ERROR_SUCCESS)
@@ -376,7 +365,6 @@ int regDeleteValue(HKEY hFamilyKey, LPCWSTR lpSubKey)
         TCHAR dataBuffer[DEFAULT_ALLOC];
         TCHAR searchBuffer[DEFAULT_ALLOC];
         TCHAR *data = dataBuffer;
-        bool freeData = false;
         err = RegQueryValueEx(hKey, ACCESSIBILITY_CONFIG, 0, &dataType, (BYTE *)data, &dataLength);
         if (err == ERROR_MORE_DATA) {
             if (dataLength > 0 && dataLength < MAX_ALLOC) {
@@ -387,9 +375,13 @@ int regDeleteValue(HKEY hFamilyKey, LPCWSTR lpSubKey)
         if (err == ERROR_SUCCESS) {
             err = _tcslwr_s(dataBuffer, DEFAULT_ALLOC);
             if (err) {
+                if (data != dataBuffer) delete[] data;
+                RegCloseKey(hKey);
                 return -1;
             }
             if (_tcsstr(dataBuffer, STR_ACCESSBRIDGE) == NULL) {
+                if (data != dataBuffer) delete[] data;
+                RegCloseKey(hKey);
                 return 0;  // This is OK, e.g. ran disable twice and the value is not there.
             } else {
                 // remove oracle_javaaccessbridge from Config key
@@ -403,6 +395,9 @@ int regDeleteValue(HKEY hFamilyKey, LPCWSTR lpSubKey)
                     _tcscpy_s(searchBuffer, DEFAULT_ALLOC, tok);
                     err = _tcslwr_s(searchBuffer, DEFAULT_ALLOC);
                     if (err) {
+                        delete[] newStr;
+                        if (data != dataBuffer) delete[] data;
+                        RegCloseKey(hKey);
                         return -1;
                     }
                     if (_tcsstr(searchBuffer, STR_ACCESSBRIDGE) == NULL) {
@@ -416,8 +411,10 @@ int regDeleteValue(HKEY hFamilyKey, LPCWSTR lpSubKey)
                 }
                 dataLength = (_tcslen(newStr) + 1) * sizeof(TCHAR);
                 RegSetValueEx(hKey, ACCESSIBILITY_CONFIG, 0, REG_SZ, (BYTE *)newStr, dataLength);
+                delete[] newStr;
             }
         }
+        if (data != dataBuffer) delete[] data;
         RegCloseKey(hKey);
     }
     return err;
@@ -458,16 +455,14 @@ int main(int argc, char* argv[]) {
                 enableWasRequested = true;
                 error = modify(true);
                 if (error == 0) {
-                   if( !isXP() )
-                      regEnable();
+                    regEnable();
                 }
             } else if (_stricmp(argv[1], "-disable") == 0 || _stricmp(argv[1], "/disable") == 0) {
                 badParams = false;
                 disableWasRequested = true;
                 error = modify(false);
                 if (error == 0) {
-                   if( !isXP() )
-                      regDisable();
+                    regDisable();
                 }
             }
         }

@@ -237,6 +237,7 @@ void TemplateTable::patch_bytecode(Bytecodes::Code bc,
   BLOCK_COMMENT("patch_bytecode {");
 
   switch (bc) {
+    case Bytecodes::_fast_vputfield:
     case Bytecodes::_fast_aputfield:
     case Bytecodes::_fast_bputfield:
     case Bytecodes::_fast_zputfield:
@@ -864,10 +865,17 @@ void TemplateTable::aaload() {
   // Index is in Z_tos.
   Register index = Z_tos;
   index_check(Z_tmp_1, index, shift);
-  // Now load array element.
-  do_oop_load(_masm, Address(Z_tmp_1, index, arrayOopDesc::base_offset_in_bytes(T_OBJECT)), Z_tos,
-              Z_tmp_2, Z_tmp_3, IS_ARRAY);
-  __ verify_oop(Z_tos);
+  __ profile_array_type<ArrayLoadData>(/*array=*/Z_tmp_1, Z_tmp_2, Z_ARG2);
+
+  if (UseArrayFlattening) {
+    __ stop("implement function TemplateTable::aaload");
+  } else {
+    // Now load array element.
+    do_oop_load(_masm, Address(Z_tmp_1, index, arrayOopDesc::base_offset_in_bytes(T_OBJECT)), Z_tos,
+                Z_tmp_2, Z_tmp_3, IS_ARRAY);
+    __ verify_oop(Z_tos);
+  }
+  __ profile_element_type(Z_tos, Z_tmp_1, Z_tmp_2);
 }
 
 void TemplateTable::baload() {
@@ -1055,7 +1063,7 @@ void TemplateTable::lstore() {
 void TemplateTable::fstore() {
   transition(ftos, vtos);
   locals_index(Z_R1_scratch);
-  __ freg2mem_opt(Z_ftos, faddress(_masm, Z_R1_scratch));
+  __ freg2mem_opt(Z_ftos, faddress(_masm, Z_R1_scratch), false);
 }
 
 void TemplateTable::dstore() {
@@ -1161,11 +1169,10 @@ void TemplateTable::dastore() {
 }
 
 void TemplateTable::aastore() {
-  NearLabel is_null, ok_is_subtype, done;
+  NearLabel is_null, is_flat_array, ok_is_subtype, done;
   transition(vtos, vtos);
 
   // stack: ..., array, index, value
-
   Register Rvalue = Z_tos;
   Register Rarray = Z_ARG2;
   Register Rindex = Z_ARG3; // Convention for index_check().
@@ -1177,24 +1184,44 @@ void TemplateTable::aastore() {
   unsigned const int shift = LogBytesPerHeapOop;
   index_check(Rarray, Rindex, shift); // side effect: Rindex = Rindex << shift
   Register Rstore_addr  = Rindex;
-  // Address where the store goes to, i.e. &(Rarry[index])
+  // Address where the store goes to, i.e. &(Rarray[index])
   __ load_address(Rstore_addr, Address(Rarray, Rindex, arrayOopDesc::base_offset_in_bytes(T_OBJECT)));
+
+  Register Rscratch = Z_tmp_1;
+  Register Rscratch2 = Z_tmp_2;
+  Register Rarray_klass = Z_ARG4;
+
+  __ profile_array_type<ArrayStoreData>(Rarray, Rscratch, Rscratch2);
+  __ profile_multiple_element_types(Z_tos, Rscratch, Rscratch2, Rarray_klass);
+
+  if (UseArrayFlattening) {
+    __ load_klass(Rarray_klass, Rarray);
+    __ z_l(Rscratch, Address(Rarray_klass, Klass::layout_helper_offset()));
+    __ test_flat_array_layout(Rscratch, is_flat_array);
+  }
 
   // do array store check - check for null value first.
   __ compareU64_and_branch(Rvalue, (intptr_t)0, Assembler::bcondEqual, is_null);
 
-  Register Rsub_klass   = Z_ARG4;
-  Register Rsuper_klass = Z_ARG5;
+  // Rindex is dead after this point
+  Register Rscratch3 = Rindex;
+
+  if (!UseArrayFlattening) {
+    __ load_klass(Rarray_klass, Rarray); // haven't done this above
+  }
+
+  Register Rsub_klass   = Z_ARG5;
+  Register Rsuper_klass = Rarray_klass; // Reuse Rarray_klass for superklass
+
   __ load_klass(Rsub_klass, Rvalue);
-  // Load superklass.
-  __ load_klass(Rsuper_klass, Rarray);
+  // Load array element superklass into Rsuper_klass (which is Rarray_klass)
   __ z_lg(Rsuper_klass, Address(Rsuper_klass, ObjArrayKlass::element_klass_offset()));
 
   // Generate a fast subtype check.  Branch to ok_is_subtype if no failure.
   // Throw if failure.
   Register tmp1 = Z_tmp_1;
   Register tmp2 = Z_tmp_2;
-  __ gen_subtype_check(Rsub_klass, Rsuper_klass, tmp1, tmp2, ok_is_subtype);
+  __ gen_subtype_check(Rsub_klass, Rsuper_klass, tmp1, tmp2, ok_is_subtype, false);
 
   // Fall through on failure.
   // Object is in Rvalue == Z_tos.
@@ -1202,16 +1229,33 @@ void TemplateTable::aastore() {
   __ load_absolute_address(tmp1, Interpreter::_throw_ArrayStoreException_entry);
   __ z_br(tmp1);
 
-  Register tmp3 = Rsub_klass;
+  if (UseArrayFlattening) {
+    __ bind(is_flat_array); // Store non-null value to flat
+    __ load_ptr(0, Rvalue);    // value
+    __ z_l(Rindex, Address(Z_esp, Interpreter::expr_offset_in_bytes(1))); // index
+    __ load_ptr(2, Rarray);    // array
+    __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::flat_array_store), Rvalue, Rarray, Rindex);
+    __ z_bru(done);
+  }
 
-  // Have a null in Rvalue.
   __ bind(is_null);
-  __ profile_null_seen(tmp1);
+  NearLabel is_null_into_value_array_npe;
+  if (Arguments::is_valhalla_enabled()) {
+    // No way to store null in a null-free array
+    __ test_null_free_array_oop(Rarray, Rscratch, is_null_into_value_array_npe);
+  }
 
-  // Store a null.
+  // Store a null
+  Register tmp3 = Rsub_klass;
   do_oop_store(_masm, Address(Rstore_addr, (intptr_t)0), noreg,
                tmp3, tmp2, tmp1, IS_ARRAY);
   __ z_bru(done);
+
+  if (Arguments::is_valhalla_enabled()) {
+    __ bind(is_null_into_value_array_npe);
+    __ load_absolute_address(tmp1, Interpreter::_throw_NullPointerException_entry);
+    __ z_br(tmp1);
+  }
 
   // Come here on success.
   __ bind(ok_is_subtype);
@@ -2017,7 +2061,7 @@ void TemplateTable::if_0cmp(Condition cc) {
 
   // Assume branch is more often taken than not (loops use backward branches).
   NearLabel not_taken;
-  __ compare32_and_branch(Z_tos, (intptr_t) 0, j_not(cc), not_taken);
+  __ compare32_and_branch(Z_tos, (intptr_t)0, j_not(cc), not_taken);
   branch(false, false);
   __ bind(not_taken);
   __ profile_not_taken_branch(Z_tos);
@@ -2038,9 +2082,9 @@ void TemplateTable::if_icmp(Condition cc) {
 void TemplateTable::if_nullcmp(Condition cc) {
   transition(atos, vtos);
 
-  // Assume branch is more often taken than not (loops use backward branches) .
+  // Assume branch is more often taken than not (loops use backward branches).
   NearLabel not_taken;
-  __ compare64_and_branch(Z_tos, (intptr_t) 0, j_not(cc), not_taken);
+  __ compare64_and_branch(Z_tos, (intptr_t)0, j_not(cc), not_taken);
   branch(false, false);
   __ bind(not_taken);
   __ profile_not_taken_branch(Z_tos);
@@ -2049,14 +2093,49 @@ void TemplateTable::if_nullcmp(Condition cc) {
 void TemplateTable::if_acmp(Condition cc) {
   transition(atos, vtos);
   // Assume branch is more often taken than not (loops use backward branches).
-  NearLabel not_taken;
-  __ pop_ptr(Z_ARG2);
-  __ verify_oop(Z_ARG2);
-  __ verify_oop(Z_tos);
-  __ compareU64_and_branch(Z_tos, Z_ARG2, j_not(cc), not_taken);
+  Label taken, not_taken;
+  __ pop_ptr(Z_ARG5);
+
+  __ profile_acmp(Z_tmp_1, Z_ARG5, Z_tos, Z_tmp_2);
+
+  if (Arguments::is_valhalla_enabled()) {
+    __ compareU64_and_branch(Z_tos, Z_ARG5, Assembler::bcondEqual, (cc == equal) ? taken : not_taken);
+
+    // Use z_ltgr for efficient null checks
+    __ z_ltgr(Z_tos, Z_tos);
+    __ z_brc(Assembler::bcondEqual, (cc == equal) ? not_taken : taken);
+    __ z_ltgr(Z_ARG5, Z_ARG5);
+    __ z_brc(Assembler::bcondEqual, (cc == equal) ? not_taken : taken);
+
+    __ z_llill(Z_ARG3, markWord::inline_type_pattern);
+    __ z_ng(Z_ARG3, Address(Z_tos, oopDesc::mark_offset_in_bytes()));
+    __ z_ng(Z_ARG3, Address(Z_ARG5, oopDesc::mark_offset_in_bytes()));
+    __ z_chi(Z_ARG3, markWord::inline_type_pattern);
+    __ branch_optimized(Assembler::bcondNotEqual, (cc == equal) ? not_taken : taken);
+
+    __ load_metadata(Z_ARG3, Z_tos);
+    __ load_metadata(Z_ARG4, Z_ARG5);
+    __ compareU64_and_branch(Z_ARG3, Z_ARG4, Assembler::bcondNotEqual, (cc == equal) ? not_taken : taken);
+
+    if (cc == equal) {
+      invoke_is_substitutable(Z_tos, Z_ARG5, taken, not_taken);
+    } else {
+      invoke_is_substitutable(Z_tos, Z_ARG5, not_taken, taken);
+    }
+    __ stop("Not reachable");
+  }
+
+  __ compareU64_and_branch(Z_tos, Z_ARG5, j_not(cc), not_taken);
+  __ bind(taken);
   branch(false, false);
   __ bind(not_taken);
-  __ profile_not_taken_branch(Z_ARG3);
+  __ profile_not_taken_branch(Z_tos, true);
+}
+
+void TemplateTable::invoke_is_substitutable(Register aobj, Register bobj, Label& is_subst, Label& not_subst) {
+  __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::is_substitutable), aobj, bobj);
+  __ compareU64_and_branch(Z_RET, (intptr_t)0, Assembler::bcondEqual, not_subst);
+  __ z_bru(is_subst);
 }
 
 void TemplateTable::ret() {
@@ -2336,7 +2415,9 @@ void TemplateTable::_return(TosState state) {
     __ z_tm(poll_byte_addr, SafepointMechanism::poll_bit());
     __ z_braz(no_safepoint);
     __ push(state);
+    __ push_cont_fastpath();
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint));
+    __ pop_cont_fastpath();
     __ pop(state);
     __ bind(no_safepoint);
   }
@@ -2395,7 +2476,7 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
   // Class initialization barrier slow path lands here as well.
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
   __ load_const_optimized(Z_ARG2, (int)code);
-  __ call_VM(noreg, entry, Z_ARG2);
+  __ call_VM_preemptable(noreg, entry, Z_ARG2);
 
   // Update registers with resolved info.
   __ load_method_entry(Rcache, index);
@@ -2445,7 +2526,7 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
   // Class initialization barrier slow path lands here as well.
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
   __ load_const_optimized(Z_ARG2, (int)code);
-  __ call_VM(noreg, entry, Z_ARG2);
+  __ call_VM_preemptable(noreg, entry, Z_ARG2);
 
   // Update registers with resolved info.
   __ load_field_entry(cache, index);
@@ -2620,13 +2701,21 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   const Register off           = Z_tmp_2;
   const Register cache         = Z_tmp_1;
   const Register index         = Z_tmp_2;
-  const Register flags         = Z_R1_scratch; // flags are not used in getfield
+  const Register flags         = Z_R1_scratch; // flags are not used in non-atos BTB entries
   const Register br_tab        = Z_R1_scratch;
   const Register tos_state     = Z_ARG4;
   const Register bc_reg        = Z_tmp_1;
   const Register patch_tmp     = Z_ARG4;
   const Register oopLoad_tmp1  = Z_R1_scratch;
   const Register oopLoad_tmp2  = Z_ARG5;
+  // In the Valhalla atosHandler, flags (Z_R1_scratch) and cache (Z_tmp_1) are both
+  // clobbered before we arrive there: Z_R1_scratch by br_tab dispatch and oopLoad_tmp1
+  // uses in every BTB entry; Z_tmp_1 by pop_and_check_object which overwrites cache
+  // with obj.  We reload both via load_field_entry inside atosHandler using Z_ARG4 and
+  // Z_ARG5, which are dead at the point of the z_bru(atosHandler) branch.
+  const Register atos_entry    = Z_ARG5;   // ResolvedFieldEntry* reloaded in atosHandler
+  const Register atos_index    = Z_ARG4;   // scratch for load_field_entry
+  const Register atos_flags    = Z_ARG4;   // reused to hold reloaded flags byte after entry load
 #ifdef ASSERT
   const Register br_tab_temp   = Z_R0_scratch;  // for branch table verification code only
 #endif
@@ -2637,7 +2726,8 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   //  cache, index          : short-lived. Their life ends after load_resolved_field_entry.
   //  obj (overwrites cache): long-lived. Used in branch table entries.
   //  off (overwrites index): long-lived. Used in branch table entries.
-  //  flags                 : unused in getfield.
+  //  flags (Z_R1_scratch)  : valid after load_resolved_field_entry but clobbered by
+  //                          br_tab dispatch — not usable in atosHandler. Reload there.
   //  br_tab                : short-lived. Only used to address branch table, and for verification in BTB_BEGIN macro.
   //  tos_state             : short-lived. Only used to index the branch table entry.
   //  bc_reg                : short-lived. Used as work register in patch_bytecode.
@@ -2831,11 +2921,44 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
                       // to here is compensated for by the fallthru to "Done".
   {
     unsigned int b_off = __ offset();
-    do_oop_load(_masm, field, Z_tos, oopLoad_tmp1, oopLoad_tmp2, IN_HEAP);
-    __ verify_oop(Z_tos);
-    __ push(atos);
-    if (do_rewrite) {
-      patch_bytecode(Bytecodes::_fast_agetfield, bc_reg, patch_tmp);
+    if (!Arguments::is_valhalla_enabled()) {
+      do_oop_load(_masm, field, Z_tos, oopLoad_tmp1, oopLoad_tmp2, IN_HEAP);
+      __ verify_oop(Z_tos);
+      __ push(atos);
+      if (do_rewrite) {
+        patch_bytecode(Bytecodes::_fast_agetfield, bc_reg, patch_tmp);
+      }
+    } else { // Valhalla
+      if (is_static) {
+        __ load_heap_oop(Z_tos, field, oopLoad_tmp1, oopLoad_tmp2);
+        __ push(atos);
+      } else {
+        // Both flags (Z_R1_scratch) and cache (Z_tmp_1 == obj) are clobbered by the
+        // time we reach here.  Reload the ResolvedFieldEntry pointer fresh.
+        // atos_entry (Z_ARG5) and atos_index (Z_ARG4) are dead at this point.
+        __ load_field_entry(atos_entry, atos_index);
+        // Read the 1-byte flags field into atos_flags (Z_ARG4); atos_entry (Z_ARG5)
+        // still holds the ResolvedFieldEntry* for read_flat_field below.
+        __ load_sized_value(atos_flags, Address(atos_entry, in_bytes(ResolvedFieldEntry::flags_offset())), sizeof(u1), false);
+        Label is_flat;
+        __ test_field_is_flat(atos_flags, is_flat);
+        __ load_heap_oop(Z_tos, field, oopLoad_tmp1, oopLoad_tmp2);
+        __ push(atos);
+        if (do_rewrite) {
+          patch_bytecode(Bytecodes::_fast_agetfield, bc_reg, patch_tmp);
+        }
+        __ z_bru(Done);
+        __ bind(is_flat);
+        // field is flat (null-free or nullable with a null-marker).
+        // atos_entry (Z_ARG5) still holds the ResolvedFieldEntry* here.
+        __ z_lgr(Z_tos, obj);
+        __ read_flat_field(atos_entry, Z_tos);
+        __ verify_oop(Z_tos);
+        __ push(atos);
+        if (do_rewrite) {
+          patch_bytecode(Bytecodes::_fast_vgetfield, bc_reg, patch_tmp);
+        }
+      }
     }
     unsigned int e_off = __ offset();
   }
@@ -2951,9 +3074,9 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   const Register tos_state     = Z_ARG4;
   const Register bc_reg        = Z_tmp_2;
   const Register patch_tmp     = Z_ARG4;
-  const Register oopStore_tmp1 = Z_R1_scratch;
-  const Register oopStore_tmp2 = Z_ARG5;       // tmp2 must be non-volatile reg
-  const Register oopStore_tmp3 = Z_R0_scratch;
+  const Register oopStore_tmp1 = Z_ARG3;
+  const Register oopStore_tmp2 = Z_R1_scratch;
+  const Register oopStore_tmp3 = Z_ARG2;
 #ifdef ASSERT
   const Register br_tab_temp   = Z_R0_scratch; // for branch table verification code only
 #endif
@@ -2968,7 +3091,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
  *  br_tab                : short-lived, Only used to address branch table, and for verification in BTB_BEGIN macro.
  *  tos_state             : short-live, Only used to index the branch table entry.
  *  bc_reg                : short-lived, Used as work register in patch_bytecode.
-*/
+ */
   resolve_cache_and_index_for_field(byte_no, cache, index);
   jvmti_post_field_mod(cache, index, is_static);
   load_resolved_field_entry(obj, cache, tos_state, off, flags, is_static);
@@ -3183,17 +3306,73 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
                       // to here is compensated for by the fallthru to "Done".
   {
     unsigned int b_off = __ offset();
-    __ pop(atos);
-    if (!is_static) {
-      pop_and_check_object(obj);
-      __ z_agr(fieldAddr, obj);
-    }
-    // Store into the field
-    do_oop_store(_masm, field, Z_tos,
-                 oopStore_tmp1, oopStore_tmp2, oopStore_tmp3, IN_HEAP);
-    if (do_rewrite) {
-      patch_bytecode(Bytecodes::_fast_aputfield, bc_reg, patch_tmp, true, byte_no);
-    }
+    if (!Arguments::is_valhalla_enabled()) {
+      __ pop(atos);
+      if (!is_static) {
+        pop_and_check_object(obj);
+        __ z_agr(fieldAddr, obj);
+      }
+      // Store into the field
+      do_oop_store(_masm, field, Z_tos,
+                   oopStore_tmp1, oopStore_tmp2, oopStore_tmp3, IN_HEAP);
+      if (do_rewrite) {
+        patch_bytecode(Bytecodes::_fast_aputfield, bc_reg, patch_tmp, true, byte_no);
+      }
+    } else { // Valhalla
+      __ pop(atos);
+      if (is_static) {
+        Label is_nullable;
+        __ z_tmll(flags, 1 << ResolvedFieldEntry::is_null_free_inline_type_shift);
+        __ branch_optimized(Assembler::bcondAllZero, is_nullable);
+        __ null_check(Z_tos);  // FIXME JDK-8341120
+        __ bind(is_nullable);
+        // Note: fieldAddr already contains the complete address (obj + offset), look at the start of method
+        do_oop_store(_masm, field, Z_tos,
+                     oopStore_tmp1, oopStore_tmp2, oopStore_tmp3, IN_HEAP);
+      } else {
+        Label null_free_reference, is_flat, rewrite_inline, done_valhalla;
+        __ z_tmll(flags, 1 << ResolvedFieldEntry::is_flat_shift);
+        __ branch_optimized(Assembler::bcondAllOne, is_flat);
+        __ z_tmll(flags, 1 << ResolvedFieldEntry::is_null_free_inline_type_shift);
+        __ branch_optimized(Assembler::bcondAllOne, null_free_reference);
+        pop_and_check_object(obj);
+        __ z_agr(fieldAddr, obj);
+        // Store into the field
+        do_oop_store(_masm, field, Z_tos,
+                     oopStore_tmp1, oopStore_tmp2, oopStore_tmp3, IN_HEAP);
+        if (do_rewrite) {
+          patch_bytecode(Bytecodes::_fast_aputfield, bc_reg, patch_tmp, true, byte_no);
+        }
+        __ z_bru(done_valhalla);
+        // Implementation of the inline type semantic
+        __ bind(null_free_reference);
+        __ null_check(Z_tos);  // FIXME JDK-8341120
+        pop_and_check_object(obj);
+        __ z_agr(fieldAddr, obj);
+        // Store into the field
+        do_oop_store(_masm, field, Z_tos,
+                     oopStore_tmp1, oopStore_tmp2, oopStore_tmp3, IN_HEAP);
+        __ z_bru(rewrite_inline);
+        __ bind(is_flat);
+        pop_and_check_object(oopStore_tmp1);
+        {
+          // cache (Z_ARG5) is dead here — overwritten by load_resolved_field_entry.
+          // tos_state (Z_ARG4) is dead here — its life ended after branch-table dispatch.
+          // Reload the ResolvedFieldEntry pointer into tos_state (Z_ARG4); use
+          // oopStore_tmp2 (Z_R1_scratch) as the index scratch.
+          // Pass oopStore_tmp3 (Z_ARG2) as tmp2 so that flags (Z_tmp_1) is not
+          // clobbered; flags must survive to the volatility check after Done.
+          Register flat_entry = tos_state;
+          Register flat_index = oopStore_tmp2; // Z_R1_scratch (index scratch, discarded after load)
+          __ load_field_entry(flat_entry, flat_index);
+          __ write_flat_field(flat_entry, off, flat_index, oopStore_tmp3, oopStore_tmp1);
+        }__ bind(rewrite_inline);
+        if (do_rewrite) {
+          patch_bytecode(Bytecodes::_fast_vputfield, bc_reg, patch_tmp, true, byte_no);
+        }
+        __ bind(done_valhalla);
+      }
+    } // Valhalla
     // __ z_bru(Done); // fallthru
     unsigned int e_off = __ offset();
   }
@@ -3257,6 +3436,7 @@ void TemplateTable::jvmti_post_fast_field_mod() {
   // to do it for every data type, we use the saved values as the
   // jvalue object.
   switch (bytecode()) {          // Load values into the jvalue object.
+    case Bytecodes::_fast_vputfield: // fall through
     case Bytecodes::_fast_aputfield:
       __ push_ptr(Z_tos);
       break;
@@ -3295,6 +3475,7 @@ void TemplateTable::jvmti_post_fast_field_mod() {
              obj, fieldEntry, value);
 
   switch (bytecode()) {             // Restore tos values.
+    case Bytecodes::_fast_vputfield: // fall through
     case Bytecodes::_fast_aputfield:
       __ pop_ptr(Z_tos);
       break;
@@ -3347,6 +3528,38 @@ void TemplateTable::fast_storefield(TosState state) {
 
   // access field
   switch (bytecode()) {
+    case Bytecodes::_fast_vputfield:
+      {
+        // Register state at this point:
+        //   obj/cache = Z_tmp_1 (R10) = target object  (pop_and_check_object wrote obj here,
+        //                               overwriting the entry pointer that cache held earlier)
+        //   off       = Z_tmp_2 (R11) = field offset
+        //   flags     = Z_ARG5  (R6)  = field flags
+        //   Z_tos     = Z_ARG1  (R2)  = value oop being stored
+        //
+        // For write_flat_field we need the ResolvedFieldEntry pointer.
+        // Re-load it into Z_ARG3 (R4) using Z_ARG4 (R5) as the index scratch;
+        // both are volatile and not carrying live values at this point.
+        Label is_flat, done;
+        __ test_field_is_flat(flags, is_flat);
+        __ null_check(Z_tos);  // Value being stored must not be null for null-free flat field.
+        do_oop_store(_masm, field, Z_tos,
+                     Z_ARG2, Z_ARG3, Z_ARG4, IN_HEAP);
+        __ branch_optimized(Assembler::bcondAlways, done);
+        __ bind(is_flat);
+        {
+          // Reload the ResolvedFieldEntry pointer.  pop_and_check_object above
+          // overwrote cache/Z_tmp_1 with the object.
+          Register flat_entry = Z_ARG4;  // R5  — safe for call_VM arg_3 slot
+          Register flat_index = Z_ARG3;  // R4  — discarded after load_field_entry
+          __ load_field_entry(flat_entry, flat_index);
+          // entry=R5, field_offset=off=R11, tmp1=Z_ARG2=R3, tmp2=flat_index=Z_ARG3=R4, obj=Z_tmp_1=R10
+          // All five are distinct; obj(R10) != Z_tos(R2) so flat_field_copy is safe.
+          __ write_flat_field(flat_entry, off, Z_ARG2, flat_index, obj);
+        }
+        __ bind(done);
+      }
+    break;
     case Bytecodes::_fast_aputfield:
       do_oop_store(_masm, field, Z_tos,
                    Z_ARG2, Z_ARG3, Z_ARG4, IN_HEAP);
@@ -3441,6 +3654,11 @@ void TemplateTable::fast_accessfield(TosState state) {
 
   // access field
   switch (bytecode()) {
+    case Bytecodes::_fast_vgetfield:
+      // field is flat; cache (Z_tmp_1) holds ResolvedFieldEntry*, obj (Z_tos) is receiver/result
+      __ read_flat_field(cache, obj);
+      __ verify_oop(Z_tos);
+      return;
     case Bytecodes::_fast_agetfield:
       do_oop_load(_masm, field, Z_tos, Z_tmp_1, Z_tmp_2, IN_HEAP);
       __ verify_oop(Z_tos);
@@ -3504,7 +3722,7 @@ void TemplateTable::fast_xaccess(TosState state) {
       __ verify_oop(Z_tos);
       break;
     case ftos:
-      __ mem2freg_opt(Z_ftos, field);
+      __ mem2freg_opt(Z_ftos, field, false);
       break;
     default:
       ShouldNotReachHere();
@@ -3913,7 +4131,6 @@ void TemplateTable::invokedynamic(int byte_no) {
 //    spec jbb2005 shows no measurable performance degradation.
 void TemplateTable::_new() {
   transition(vtos, atos);
-  address prev_instr_address = nullptr;
   Register tags  = Z_tmp_1;
   Register RallocatedObject   = Z_tos;
   Register cpool = Z_ARG2;
@@ -3969,16 +4186,13 @@ void TemplateTable::_new() {
     Register Rzero = Z_R1_scratch;
     __ clear_reg(Rzero, true /*whole reg*/, false); // Load 0L into Rzero. Don't set CC.
 
-    if (!ZeroTLAB) {
+   if (!ZeroTLAB) {
       // The object is initialized before the header. If the object size is
       // zero, go directly to the header initialization.
-      if (UseCompactObjectHeaders) {
-        assert(is_aligned(oopDesc::base_offset_in_bytes(), BytesPerLong), "oop base offset must be 8-byte-aligned");
-        __ z_aghi(Rsize, (int)-oopDesc::base_offset_in_bytes());
-      } else {
-        __ z_aghi(Rsize, (int)-sizeof(oopDesc)); // Subtract header size, set CC.
-      }
-      __ z_bre(initialize_header);             // Jump if size of fields is zero.
+      int header_size = oopDesc::header_size() * HeapWordSize;
+      assert(is_aligned(header_size, BytesPerLong), "oop header size must be 8-byte-aligned");
+      __ z_aghi(Rsize, -header_size); // Subtract header size, set CC.
+      __ z_bre(initialize_header);    // Jump if size of fields is zero.
 
       // Initialize object fields.
       // See documentation for MVCLE instruction!!!
@@ -3989,22 +4203,20 @@ void TemplateTable::_new() {
 
       // Set Rzero to 0 and use it as src length, then mvcle will copy nothing
       // and fill the object with the padding value 0.
-      if (UseCompactObjectHeaders) {
-        __ add2reg(RobjectFields, oopDesc::base_offset_in_bytes(), RallocatedObject);
-      } else {
-        __ add2reg(RobjectFields, sizeof(oopDesc), RallocatedObject);
-      }
+      __ add2reg(RobjectFields, header_size, RallocatedObject);
       __ move_long_ext(RobjectFields, as_Register(Rzero->encoding() - 1), 0);
     }
 
     // Initialize object header only.
     __ bind(initialize_header);
-    if (UseCompactObjectHeaders) {
+    if (UseCompactObjectHeaders || Arguments::is_valhalla_enabled()) {
       __ z_lg(tmp, Address(iklass, in_bytes(Klass::prototype_header_offset())));
       __ z_stg(tmp, Address(RallocatedObject, oopDesc::mark_offset_in_bytes()));
     } else {
       __ store_const(Address(RallocatedObject, oopDesc::mark_offset_in_bytes()),
                      (long) markWord::prototype().value());
+    }
+    if (!UseCompactObjectHeaders) {
       __ store_klass_gap(Rzero, RallocatedObject);  // Zero klass gap for compressed oops.
       __ store_klass(iklass, RallocatedObject);     // Store klass last.
     }
@@ -4022,7 +4234,7 @@ void TemplateTable::_new() {
   __ bind(slow_case);
   __ get_constant_pool(Z_ARG2);
   __ get_2_byte_integer_at_bcp(Z_ARG3/*dest*/, 1, InterpreterMacroAssembler::Unsigned);
-  call_VM(Z_tos, CAST_FROM_FN_PTR(address, InterpreterRuntime::_new), Z_ARG2, Z_ARG3);
+  __ call_VM_preemptable(Z_tos, CAST_FROM_FN_PTR(address, InterpreterRuntime::_new), Z_ARG2, Z_ARG3);
   __ verify_oop(Z_tos);
 
   // continue
@@ -4118,13 +4330,12 @@ void TemplateTable::checkcast() {
 
   __ z_lgr(Z_tos, receiver); // Restore object.
 
+  __ z_bru(done);
+  __ bind(is_null);
+
   // Collect counts on whether this test sees nulls a lot or not.
   if (ProfileInterpreter) {
-    __ z_bru(done);
-    __ bind(is_null);
     __ profile_null_seen(Z_tmp_1);
-  } else {
-    __ bind(is_null);   // Same as 'done'.
   }
 
   __ bind(done);
@@ -4277,6 +4488,11 @@ void TemplateTable::monitorenter() {
 
   // Check for null object.
   __ null_check(Z_tos);
+
+  // Check for inline type (Valhalla feature)
+  NearLabel is_inline_type;
+  __ z_lg(Z_R1_scratch, Address(Z_tos, oopDesc::mark_offset_in_bytes()));
+  __ test_markword_is_inline_type(Z_R1_scratch, is_inline_type);
   const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
   NearLabel allocated;
   // Initialize entry pointer.
@@ -4355,6 +4571,12 @@ void TemplateTable::monitorenter() {
   // next instruction.
   __ dispatch_next(vtos);
 
+  // Handle inline type exception (Valhalla feature)
+  __ bind(is_inline_type);
+  __ call_VM(noreg, CAST_FROM_FN_PTR(address,
+                    InterpreterRuntime::throw_identity_exception), Z_tos);
+  __ should_not_reach_here();
+
   BLOCK_COMMENT("} monitorenter");
 }
 
@@ -4366,6 +4588,17 @@ void TemplateTable::monitorexit() {
 
   // Check for null object.
   __ null_check(Z_tos);
+
+  // Check for inline type (Valhalla feature)
+  NearLabel is_inline_type, has_identity;
+  __ z_lg(Z_R1_scratch, Address(Z_tos, oopDesc::mark_offset_in_bytes()));
+  __ test_markword_is_inline_type(Z_R1_scratch, is_inline_type);
+  __ z_bru(has_identity);
+  __ bind(is_inline_type);
+  __ call_VM(noreg, CAST_FROM_FN_PTR(address,
+                     InterpreterRuntime::throw_illegal_monitor_state_exception));
+  __ should_not_reach_here();
+  __ bind(has_identity);
 
   NearLabel found, not_found;
   const Register Rcurr_monitor = Z_ARG2;

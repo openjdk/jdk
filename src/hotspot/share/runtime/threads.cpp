@@ -414,6 +414,7 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   initialize_class(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), CHECK);
   initialize_class(vmSymbols::java_lang_StackOverflowError(), CHECK);
   initialize_class(vmSymbols::java_lang_IllegalMonitorStateException(), CHECK);
+  initialize_class(vmSymbols::java_lang_IdentityException(), CHECK);
   initialize_class(vmSymbols::java_lang_IllegalArgumentException(), CHECK);
   initialize_class(vmSymbols::java_lang_InternalError(), CHECK);
 }
@@ -783,9 +784,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   if (CDSConfig::is_using_aot_linked_classes()) {
     AOTLinkedClassBulkLoader::init_non_javabase_classes(THREAD);
   }
-#ifndef PRODUCT
-  HeapShared::initialize_test_class_from_archive(THREAD);
-#endif
 
   JFR_ONLY(Jfr::on_create_vm_2();)
 
@@ -1040,6 +1038,7 @@ jboolean Threads::is_supported_jni_version(jint version) {
   if (version == JNI_VERSION_20) return JNI_TRUE;
   if (version == JNI_VERSION_21) return JNI_TRUE;
   if (version == JNI_VERSION_24) return JNI_TRUE;
+  if (version == JNI_VERSION_28) return JNI_TRUE;
   return JNI_FALSE;
 }
 
@@ -1364,7 +1363,7 @@ void Threads::print_on(outputStream* st, bool print_stacks,
     p->print_on(st, print_extended_info);
     if (print_stacks) {
       if (internal_format) {
-        p->trace_stack();
+        p->trace_stack_on(st);
       } else {
         p->print_stack_on(st);
         if (p->is_vthread_mounted()) {
