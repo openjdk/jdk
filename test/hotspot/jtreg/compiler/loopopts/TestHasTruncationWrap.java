@@ -27,14 +27,14 @@
  * @summary Test CountedLoopConverter::has_truncation_wrap logic that checks if
  *          a truncated iv (e.g. byte or char iv) is still a valid counted loop.
  * @library /test/lib /
- * @run main ${test.main.class}
+ * @run driver ${test.main.class}
  */
 
 /*
  * @test id=Xcomp
  * @bug 8385855
  * @library /test/lib /
- * @run main ${test.main.class} -Xcomp -XX:-TieredCompilation -XX:CompileCommand=compileonly,${test.main.class}::test*
+ * @run driver ${test.main.class} -Xcomp -XX:-TieredCompilation -XX:CompileCommand=compileonly,${test.main.class}::test*
  */
 
 package compiler.loopopts;

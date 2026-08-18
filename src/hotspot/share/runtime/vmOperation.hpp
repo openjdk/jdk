@@ -59,6 +59,7 @@
   template(G1PauseCleanup)                        \
   template(G1TryInitiateConcMark)                 \
   template(G1RendezvousGCThreads)                 \
+  template(G1StopMarking)                         \
   template(ZMarkEndOld)                           \
   template(ZMarkEndYoung)                         \
   template(ZMarkFlushOperation)                   \
@@ -108,6 +109,7 @@
   template(GTestExecuteAtSafepoint)               \
   template(GTestStopSafepoint)                    \
   template(JFROldObject)                          \
+  template(ClassPrintLayout)                      \
   template(RendezvousGCThreads)                   \
   template(JFRInitializeCPUTimeSampler)           \
   template(JFRTerminateCPUTimeSampler)            \

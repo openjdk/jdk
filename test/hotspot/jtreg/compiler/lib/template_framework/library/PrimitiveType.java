@@ -40,8 +40,19 @@ import static compiler.lib.template_framework.Template.let;
  * The {@link PrimitiveType} models Java's primitive types, and provides a set
  * of useful methods for code generation, such as the {@link #byteSize} and
  * {@link #boxedTypeName}.
+ *
+ * <p>{@link PrimitiveType} is a Java <em>scalar</em> type and additionally
+ * doubles as a {@link VectorElementType} for those Vector API lane types whose
+ * lane carrier is itself a Java primitive (e.g. {@code IntVector}'s lane
+ * carrier is {@code int}). For these primitive lane types
+ * {@link #carrierTypeName} coincides with {@link #name}.
+ *
+ * <p>Non-primitive lane types, such as the {@code Float16Vector} lane, are
+ * modeled by separate {@link VectorElementType} implementations (see
+ * {@link ShortCarriesFloat16Type}). They do <strong>not</strong> appear in any of
+ * the scalar {@code PRIMITIVE_TYPES}/{@code FLOATING_TYPES} lists.
  */
-public final class PrimitiveType implements CodeGenerationDataNameType {
+public final class PrimitiveType implements VectorElementType {
     private static final Random RANDOM = Utils.getRandomInstance();
     private static final RestrictableGenerator<Integer> GEN_BYTE = Generators.G.safeRestrict(Generators.G.ints(), Byte.MIN_VALUE, Byte.MAX_VALUE);
     private static final RestrictableGenerator<Integer> GEN_CHAR = Generators.G.safeRestrict(Generators.G.ints(), Character.MIN_VALUE, Character.MAX_VALUE);
@@ -108,6 +119,23 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
     }
 
     @Override
+    public String carrierTypeName() {
+        return name();
+    }
+
+    @Override
+    public String vectorElementClass() {
+        // For primitive lanes the code-usable name and the lane element class
+        // token coincide (e.g. "int" -> int.class). boolean/char are not real
+        // Vector API lane element types, so we fail fast during code generation
+        // rather than emitting code that would only break at compile/runtime.
+        if (kind == Kind.BOOLEAN || kind == Kind.CHAR) {
+            throw new UnsupportedOperationException(name() + " is not a Vector API lane element type");
+        }
+        return name();
+    }
+
+    @Override
     public String toString() {
         return name();
     }
@@ -132,6 +160,7 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
      * @return Size of the type in bytes.
      * @throws UnsupportedOperationException for boolean which has no defined size.
      */
+    @Override
     public int byteSize() {
         return switch (kind) {
             case BYTE    -> 1;
@@ -147,6 +176,7 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
      *
      * @return the name of the boxed type.
      */
+    @Override
     public String boxedTypeName() {
         return switch (kind) {
             case BYTE    -> "Byte";
@@ -194,6 +224,7 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
      *
      * @return true iff the type is a floating point type.
      */
+    @Override
     public boolean isFloating() {
         return switch (kind) {
             case BYTE, SHORT, CHAR, INT, LONG, BOOLEAN -> false;
@@ -213,6 +244,7 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
      * @return the token representing the method call to obtain a
      *         random value for the given type at runtime.
      */
+    @Override
     public Object callLibraryRNG() {
         return switch (kind) {
             case BYTE    -> "LibraryRNG.nextByte()";
@@ -230,6 +262,12 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
      * Generates the {@code LibraryRNG} class, which makes a set of pseudo
      * random number generators available, wrapping {@link Generators}. This
      * is supposed to be used in tandem with {@link #callLibraryRNG}.
+     *
+     * <p>In addition to the Java primitive generators, this also emits
+     * helpers for {@code Float16Vector}'s {@code short} carrier
+     * ({@code nextFloat16()} / {@code fill_float16(short[])}) so that
+     * {@link ShortCarriesFloat16Type#callLibraryRNG()} can be used with vector
+     * fuzzers without depending on this class importing Float16Vector itself.
      *
      * Note: you must ensure that all required imports are performed:
      *       {@code java.util.Random}
@@ -250,6 +288,7 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
                 private static final RestrictableGenerator<Long> GEN_LONG = Generators.G.longs();
                 private static final Generator<Double> GEN_DOUBLE = Generators.G.doubles();
                 private static final Generator<Float> GEN_FLOAT = Generators.G.floats();
+                private static final Generator<Short> GEN_FLOAT16 = Generators.G.float16s();
 
                 public static byte nextByte() {
                     return GEN_BYTE.next().byteValue();
@@ -281,6 +320,17 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
 
                 public static boolean nextBoolean() {
                     return RANDOM.nextBoolean();
+                }
+
+                // Float16Vector lane helpers. Float16 lanes are carried in short[].
+                public static short nextFloat16() {
+                    return GEN_FLOAT16.next();
+                }
+
+                public static void fill_float16(short[] a) {
+                    for (int i = 0; i < a.length; i++) {
+                        a[i] = nextFloat16();
+                    }
                 }
 
             """,
