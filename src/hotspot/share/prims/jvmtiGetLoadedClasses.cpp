@@ -27,6 +27,7 @@
 #include "classfile/javaClasses.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/universe.hpp"
+#include "oops/inlineKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "prims/jvmtiGetLoadedClasses.hpp"
 #include "runtime/handles.inline.hpp"
@@ -57,8 +58,18 @@ private:
   }
 
   // Return current size of the Stack
-  int get_count() {
+  int get_count() const {
     return (int)_classStack.size();
+  }
+
+  // Some klasses should not be reported by GetLoadedClasses/GetClassLoaderClasses
+  bool exclude_klass(Klass* k) const {
+    // Direct instances of ObjArrayKlass represent the Java types that Java code can see.
+    // RefArrayKlass/FlatArrayKlass describe different implementations of the arrays, filter them out.
+    if (k->is_objArray_klass() && k->kind() != Klass::KlassKind::ObjArrayKlassKind) {
+      return true;
+    }
+    return false;
   }
 
 public:
@@ -70,12 +81,16 @@ public:
 
   void do_klass(Klass* k) {
     // Collect all jclasses
-    _classStack.push((jclass) _env->jni_reference(Handle(_cur_thread, k->java_mirror())));
+    if (!exclude_klass(k)) {
+      _classStack.push((jclass)_env->jni_reference(Handle(_cur_thread, k->java_mirror())));
+    }
     if (_dictionary_walk) {
       // Collect array classes this way when walking the dictionary (because array classes are
       // not in the dictionary).
       for (Klass* l = k->array_klass_or_null(); l != nullptr; l = l->array_klass_or_null()) {
-        _classStack.push((jclass) _env->jni_reference(Handle(_cur_thread, l->java_mirror())));
+        if (!exclude_klass(l)) {
+          _classStack.push((jclass)_env->jni_reference(Handle(_cur_thread, l->java_mirror())));
+        }
       }
     }
   }

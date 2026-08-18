@@ -29,6 +29,10 @@ serviceability/AsyncGetCallTrace/MyPackage/ASGCTBaseTest.java 8308026 generic-al
 serviceability/jvmti/Heap/IterateHeapWithEscapeAnalysisEnabled.java 8264699 generic-all
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manyDiff_a/TestDescription.java 8308367 generic-all
 
+vmTestbase/nsk/jvmti/unit/functions/Dispose/JvmtiTest/TestDescription.java 8387429 generic-all
+vmTestbase/nsk/jvmti/scenarios/capability/CM02/cm02t001/TestDescription.java 8299217 generic-all
+
+
 ####
 ## Classes not unloaded as expected (TODO, need to check if FJ keeps a reference)
 
@@ -56,6 +60,9 @@ vmTestbase/nsk/jdb/where/where005/where005.java 8278470 generic-all
 
 vmTestbase/nsk/jdb/list/list003/list003.java        8300707 generic-all
 vmTestbase/nsk/jdb/repeat/repeat001/repeat001.java  8300707 generic-all
+###
+# suspend001 hangs with virtual threads until the suspended-successor issue is fixed.
+vmTestbase/nsk/jdb/suspend/suspend001/suspend001.java 8390031 generic-all
 
 ####
 ## NSK JDI tests failing with wrapper
@@ -93,3 +100,5 @@ vmTestbase/nsk/jdi/ThreadReference/isSuspended/issuspended002/TestDescription.ja
 # implementation or test code.
 
 #############################################################################
+
+# Value Objects failures start here:

@@ -75,21 +75,44 @@ int Assembler::branch_destination(int inst, int pos) {
   return r;
 }
 
-// Low-level andi-one-instruction-macro.
-void Assembler::andi(Register a, Register s, const long ui16) {
-  if (is_power_of_2(((unsigned long) ui16)+1)) {
+// Low-level andi-one-instruction-macro. May clobber CR0.
+void Assembler::andi(Register a, Register s, julong int_or_long_const) {
+  // Instructions which don't set CR0 are preferred.
+  if (int_or_long_const == 0) {
+    // should not be handled as pow2minus1
+    li(a, 0);
+  } else if (is_power_of_2(int_or_long_const + 1)) {
     // pow2minus1
-    clrldi(a, s, 64 - log2i_exact((((unsigned long) ui16)+1)));
-  } else if (is_power_of_2((jlong) ui16)) {
-    // pow2
-    rlwinm(a, s, 0, 31 - log2i_exact((jlong) ui16), 31 - log2i_exact((jlong) ui16));
-  } else if (is_power_of_2((jlong)-ui16)) {
-    // negpow2
-    clrrdi(a, s, log2i_exact((jlong)-ui16));
+    clrldi(a, s, 64 - log2i_exact(int_or_long_const + 1));
+  } else if (is_power_of_2(-int_or_long_const)) {
+    // negpow2 (includes (julong)min_jlong)
+    clrrdi(a, s, log2i_exact(-int_or_long_const));
+  } else if (is_uimm((jlong)int_or_long_const, 32) && has_consecutive_ones(int_or_long_const)) {
+    // consecutive ones
+    rlwinm(a, s, 0, count_leading_zeros((uint32_t)int_or_long_const),
+                    31 - count_trailing_zeros((uint32_t)int_or_long_const));
+  } else if (is_uimm((jlong)int_or_long_const, 16)) {
+    // side effect: clobbers CR0
+    andi_(a, s, int_or_long_const);
   } else {
-    assert(is_uimm(ui16, 16), "must be 16-bit unsigned immediate");
-    andi_(a, s, ui16);
+    assert(is_uimm((jlong)int_or_long_const, 32) && (int_or_long_const & 0xFFFF) == 0,
+           "not encodable: " UINT64_FORMAT_X, int_or_long_const);
+    // side effect: clobbers CR0
+    andis_(a, s, int_or_long_const >> 16);
   }
+}
+
+// Check if int_or_long_const is supported by Assembler::andi.
+bool Assembler::andi_supports(julong int_or_long_const) {
+  // 16 bit always possible by andi_ (but other instructions are preferred)
+  if (is_uimm((jlong)int_or_long_const, 16)) return true;
+
+  // special cases 32 bit: higher 16 bit and consecutive ones are supported
+  if (is_uimm((jlong)int_or_long_const, 32) &&
+   ((int_or_long_const & 0xFFFF) == 0 || has_consecutive_ones(int_or_long_const))) return true;
+
+  // special cases 64 bit: clrldi, clrrdi
+  return is_power_of_2(int_or_long_const + 1) || is_power_of_2(-int_or_long_const);
 }
 
 // RegisterOrConstant version.

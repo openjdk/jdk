@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import jdk.jfr.internal.Repository;
 import jdk.jfr.internal.Options;
@@ -127,7 +128,8 @@ public class TestJcmdConfigure {
     }
 
     private static void testRepository(){
-        final String findWhat = "[info][jfr] Same base repository path " + REPOSITORYPATH_1 + " is set";
+        final Pattern findWhat = Pattern.compile("\\[info *\\]\\[jfr *\\] Same base repository path " +
+                                                 Pattern.quote(REPOSITORYPATH_1) + " is set");
 
         try {
             JcmdHelper.jcmd("JFR.configure", REPOSITORYPATH_SETTING_1);
@@ -138,7 +140,7 @@ public class TestJcmdConfigure {
             Asserts.assertTrue(samePath.equals(initialPath));
 
             List<String> lines = Files.readAllLines(Paths.get(JFR_UNIFIED_LOG_FILE));
-            Asserts.assertTrue(lines.stream().anyMatch(l->l.contains(findWhat)));
+            Asserts.assertTrue(lines.stream().anyMatch(l -> findWhat.matcher(l).find()));
 
             JcmdHelper.jcmd("JFR.configure", REPOSITORYPATH_SETTING_2);
             Path changedPath = Repository.getRepository().getRepositoryPath();

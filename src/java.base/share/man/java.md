@@ -90,30 +90,39 @@ To launch a source-file program:
 
 ## Description
 
-The `java` command starts a Java application. It does this by starting the Java
-Virtual Machine (JVM), loading the specified class, and calling that
-class's `main()` method. The method must be declared `public` and `static`, it
-must not return any value, and it must accept a `String` array as a parameter.
-The method declaration has the following form:
+The `java` command launches a Java application. It does this by starting the Java
+Virtual Machine (JVM), loading the main class of the application, and calling
+that class's `main()` method.
 
->   `public static void main(String[] args)`
+By default, the first argument that isn't an option of the `java` command indicates
+the fully qualified name of the main class. If `-jar` is specified, then its
+argument is the name of the JAR file containing class and resource files for the
+application, and the main class is indicated by the `Main-Class` attribute in
+the manifest of the JAR file.
 
-In source-file mode, the `java` command can launch a class declared in a source
-file. See [Using Source-File Mode to Launch Source-Code Programs]
-for a description of using the source-file mode.
+The `main()` method may be a static method or an instance method. It may
+declare a `String` array parameter for arguments passed to the `java`
+command after the main class name or the JAR file name; alternatively,
+it may declare no parameters. It must not return any value, and must
+have `public`, `protected`, or package access. The method declaration
+typically has one of the following forms:
 
-> **Note:** You can use the `JDK_JAVA_OPTIONS` launcher environment variable to prepend its
-content to the actual command line of the `java` launcher. See [Using the
-JDK\_JAVA\_OPTIONS Launcher Environment Variable].
+>    `public static void main(String[] args)`
+>
+>    `public static void main()`
+>
+>    `void main(String[] args)`
+>
+>    `void main()`
 
-By default, the first argument that isn't an option of the `java` command is
-the fully qualified name of the class to be called. If `-jar` is specified,
-then its argument is the name of the JAR file containing class and resource
-files for the application. The startup class must be indicated by the
-`Main-Class` manifest header in its manifest file.
+In source-file mode, the `java` command can launch an application whose main class
+is provided as source code instead of a class file.
+See [Using Source-File Mode to Launch Source-Code Programs] for a description of
+using the source-file mode.
 
-Arguments after the class file name or the JAR file name are passed to the
-`main()` method.
+> **Note:** You can use the `JDK_JAVA_OPTIONS` launcher environment variable to
+prepend its content to the actual command line of the java launcher.
+See [Using the JDK\_JAVA\_OPTIONS Launcher Environment Variable].
 
 ### `javaw`
 
@@ -483,7 +492,7 @@ the JVM.
         without any warnings.
 
     -   `warn`: This mode is identical to `allow` except that a warning message is
-        issued for the first illegal final field mutation performaed in a module.
+        issued for the first illegal final field mutation performed in a module.
         This mode is the default for the current JDK but will change in a future
         release.
 
@@ -911,10 +920,12 @@ the Java HotSpot Virtual Machine.
     :   Do not attempt to use shared class data.
 
 [`-XshowSettings`]{#-XshowSettings}
-:   Shows all settings and then continues.
+:   Shows all settings and continues. It exits normally if there is no Java
+    application to launch.
 
 [`-XshowSettings:`]{#-XshowSettings_}*category*
-:   Shows settings and continues. Possible *category* arguments for this option
+:   Shows settings and continues. It exits normally if there is no Java
+    application to launch. Possible *category* arguments for this option
     include the following:
 
     `all`
@@ -1148,8 +1159,10 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
     option is disabled.
 
 [`-XX:FlightRecorderOptions=`]{#-XX_FlightRecorderOptions}*parameter*`=`*value* (or) `-XX:FlightRecorderOptions:`*parameter*`=`*value*
-:   Sets the parameters that control the behavior of JFR. Multiple parameters can be specified
-    by separating them with a comma.
+:   Sets the parameters that control the behavior of JFR.
+    `-XX:FlightRecorderOptions:help` prints the available options, default
+    redaction filters, and example command lines. Multiple parameters can be
+    specified by separating them with a comma.
 
     The following list contains the available JFR *parameter*`=`*value*
     entries:
@@ -1195,6 +1208,45 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
     :   Specifies whether event classes should be retransformed using JVMTI. If
         false, instrumentation is added when event classes are loaded. By
         default, this parameter is enabled.
+
+    `redact-argument=`argument-filter
+    :   Replace command-line arguments that match a semicolon-separated list
+        of glob patterns, for example, `*secret*;password*`. Matching is
+        case-insensitive, and the supported wildcards are `*` and `?`. To redact
+        multiple arguments, use a literal space (`' '`) as a separator.
+        For example, to match the two arguments `--auth username:token`, use the
+        filter `--auth *:*`. Filters containing spaces must be quoted as a single
+        command-line argument, for example,
+        `-XX:FlightRecorderOptions='redact-argument=--auth *:*'`.
+        Arguments containing spaces might not be matched as expected. To load
+        patterns from a file (one per line) use `@<filename>`. To add to the
+        default patterns instead of replacing them, prefix the whole list with
+        `+`, for example, `+*foo*;@redact.txt`. Use `none` (lowercase) to disable
+        all redaction filters for command-line arguments. Redacted arguments will
+        be replaced with `[REDACTED]`. The option `redact-argument` is best-effort
+        and applies only to command-line arguments in the `jdk.JVMInformation`
+        event and to the `java.command` system property in the
+        `jdk.InitialSystemProperty` event, and to matching command-line argument
+        text in the values of `jdk.InitialEnvironmentVariable` events. Other
+        events, such as `jdk.ProcessStart` (child processes), are not redacted.
+        Use `-XX:FlightRecorderOptions:help` to see the default filters used by
+        the `redact-argument` option.
+
+    `redact-key=`key-filter
+    :   Replace the value of environment variables and system properties
+        whose key matches a semicolon-separated list of glob patterns,
+        for example, `*password*;*token*`. Matching is case-insensitive, and
+        the supported wildcards are `*` and `?`. To load patterns from a file
+        (one per line), use `@<filename>`. To add to the default patterns
+        instead of replacing them, prefix the whole list with `+`,
+        for example, `+*cred*;@keys.txt`. Use `none` (lowercase) to
+        disable all redaction filters for key matching. Redacted values
+        will be replaced with `[REDACTED]`. The option `redact-key` is
+        best-effort and applies only to the `jdk.InitialSystemProperty`,
+        `jdk.InitialEnvironmentVariable` and `jdk.JVMInformation` (-Dkey=...)
+        events. Other events, such as `jdk.InitialSecurityProperty`, are not
+        redacted. Use `-XX:FlightRecorderOptions:help` to see the default filters
+        used by the `redact-key` option.
 
     `stackdepth=`*depth*
     :   Stack depth for stack traces. By default, the depth is set to 64 method
@@ -1529,14 +1581,14 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
 
     This option is similar to `-Xss`.
 
-[`-XX:+UseCompactObjectHeaders`]{#-XX__UseCompactObjectHeaders}
-:   Enables compact object headers. By default, this option is disabled.
-    Enabling this option reduces memory footprint in the Java heap by
-    4 bytes per object (on average) and often improves performance.
+[`-XX:-UseCompactObjectHeaders`]{#-XX__UseCompactObjectHeaders}
+:   Disables compact object headers. By default, this option is enabled and
+    compact object headers are used.  Using compact object headers reduces
+    memory footprint in the Java heap by 4 bytes per object (on average) and
+    often improves performance.
 
-    The feature remains disabled by default while it continues to be evaluated.
-    In a future release it is expected to be enabled by default, and
-    eventually will be the only mode of operation.
+    This option can be used if performance regressions are suspected. In a future
+    release compact object headers is expected to become the only mode of operation.
 
 [`-XX:-UseCompressedOops`]{#-XX__UseCompressedOops}
 :   Disables the use of compressed pointers. By default, this option is
@@ -2228,6 +2280,23 @@ performed by the Java HotSpot VM.
 
 These `java` options provide the ability to gather system information and
 perform extensive debugging.
+
+[`-XX:AltTempDir=`]{#-XX_AltTempDir}*/path*
+:   **Linux-only:** On Linux, the usual directory to use for temporary files is `/tmp`. In some secure container
+    environments however, `/tmp` is made read-only and so is unusable by the VM for its temporary files. To accommodate
+    this uncommon circumstance the `-XX:AltTempDir` flag can be used to tell the VM to use a different temporary directory.
+
+    It is important to note that this setting controls not only where the VM places its own temporary files, but also the location
+    it will look for the special files used by other VMs as part of the attach protocol for tools like `jcmd` and `jstack`. That
+    means that both VMs must use the same setting of this flag. For example, if you start a target VM with
+    `java -XX:AltTempDir=/scratch/vmTmp` then you must run e.g. `jcmd -J-XX:AltTempDir=/scratch/vmTmp` to interact with that target VM.
+
+    The directory path must of course be writable and accessible to both the target and tool VM, so the simplest arrangement
+    is to always run both in the same container.
+
+    The value for `AltTempDir` must be an absolute directory path starting with `/`. The length of the `AltTempDir` path should be
+    fairly small (less than approximately 80 characters) if it is to be used with the attach protocol due to path length limits
+    for socket files.
 
 [`-XX:+DisableAttachMechanism`]{#-XX__DisableAttachMechanism}
 :   Disables the mechanism that lets tools attach to the JVM. By default, this
@@ -2958,14 +3027,6 @@ they're used.
 :   Enables the use of Java Flight Recorder (JFR) during the runtime of the
     application. Since JDK 8u40 this option has not been required to use JFR.
 
-[`-XX:+ParallelRefProcEnabled`]{#-XX__ParallelRefProcEnabled}
-:   Enables parallel reference processing. By default, collectors employing multiple
-    threads perform parallel reference processing if the number of parallel threads
-    to use is larger than one.
-    The option is available only when the throughput or G1 garbage collector is used
-    (`-XX:+UseParallelGC` or `-XX:+UseG1GC`). Other collectors employing multiple
-    threads always perform reference processing in parallel.
-
 ## Obsolete Java Options
 
 These `java` options are still accepted but ignored, and a warning is issued
@@ -2977,6 +3038,18 @@ when they're used.
     This option was deprecated in JDK 16 by [JEP
     396](https://openjdk.org/jeps/396) and made obsolete in JDK 17
     by [JEP 403](https://openjdk.org/jeps/403).
+
+## Removed Java Options
+
+These `java` options have been removed in JDK @@VERSION_SPECIFICATION@@ and using them results in an error of:
+
+>   `Unrecognized VM option` *option-name*
+
+[`-XX:+AggressiveHeap`]{#-XX__AggressiveHeap}
+:   Enabled Java heap optimization. This set various parameters to be
+    optimal for long-running jobs with intensive memory allocation, based on
+    the configuration of the computer (RAM and CPU). By default, the option
+    was disabled and the heap sizes configured less aggressively.
 
 [`-XX:+NeverActAsServerClassMachine`]{#-XX__NeverActAsServerClassMachine}
 :   Enabled the "Client VM emulation" mode, which used only the C1 JIT compiler,
@@ -2998,17 +3071,17 @@ when they're used.
     -XX:{+|-}UseJVMCICompiler
     ```
 
-[`-XX:+AggressiveHeap`]{#-XX__AggressiveHeap}
-:   Enabled Java heap optimization. This set various parameters to be
-    optimal for long-running jobs with intensive memory allocation, based on
-    the configuration of the computer (RAM and CPU). By default, the option
-    was disabled and the heap sizes configured less aggressively.
-
-## Removed Java Options
-
-No documented java options have been removed in JDK @@VERSION_SPECIFICATION@@.
+[`-XX:+ParallelRefProcEnabled`]{#-XX__ParallelRefProcEnabled}
+:   Enables parallel reference processing. By default, collectors employing multiple
+    threads perform parallel reference processing if the number of parallel threads
+    to use is larger than one.
+    The option is available only when the throughput or G1 garbage collector is used
+    (`-XX:+UseParallelGC` or `-XX:+UseG1GC`). Other collectors employing multiple
+    threads always perform reference processing in parallel.
 
 For the lists and descriptions of options removed in previous releases see the *Removed Java Options* section in:
+
+-   [The `java` Command, Release 27](https://docs.oracle.com/en/java/javase/27/docs/specs/man/java.html)
 
 -   [The `java` Command, Release 26](https://docs.oracle.com/en/java/javase/26/docs/specs/man/java.html)
 
