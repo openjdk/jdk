@@ -25,17 +25,22 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHSTACKCHUNKGCDATA_HPP
 
 #include "oops/oopsHierarchy.hpp"
+#include "runtime/atomic.hpp"
 
 class ShenandoahStackChunkGCData {
 private:
-  // The GC state when chunk was allocated
-  char _gc_state;
+  static Atomic<size_t> _stack_chunk_epoch_id;
+
+  // The GC epoch when chunk was allocated
+  size_t _epoch;
 
   static ShenandoahStackChunkGCData* data(stackChunkOop chunk);
 
 public:
+  static void change_epoch_id();
+
   static void initialize(stackChunkOop chunk);
-  static char gc_state(stackChunkOop chunk);
+  static bool is_different_epoch(stackChunkOop chunk);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHSTACKCHUNKGCDATA_HPP

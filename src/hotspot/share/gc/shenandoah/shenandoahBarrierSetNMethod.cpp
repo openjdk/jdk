@@ -25,6 +25,8 @@
 
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetNMethod.hpp"
+
+#include "shenandoahStackChunkGCData.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCodeRoots.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
@@ -109,4 +111,7 @@ void ShenandoahBarrierSetNMethod::arm_all_nmethods() {
   // Arming should also activate stack watermark machinery.
   // See ShenandoahNMethod::patch_barrier.
   ShenandoahStackWatermark::change_epoch_id();
+
+  // All currently allocated stack chunks now need to be fixed up.
+  ShenandoahStackChunkGCData::change_epoch_id();
 }

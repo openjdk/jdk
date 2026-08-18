@@ -21,23 +21,12 @@
  * questions.
  */
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHSTACKCHUNKGCDATA_INLINE_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHSTACKCHUNKGCDATA_INLINE_HPP
-
 #include "gc/shenandoah/shenandoahStackChunkGCData.hpp"
 
-#include "oops/stackChunkOop.inline.hpp"
+#include "runtime/atomic.hpp"
 
-inline ShenandoahStackChunkGCData* ShenandoahStackChunkGCData::data(stackChunkOop chunk) {
-  return reinterpret_cast<ShenandoahStackChunkGCData*>(chunk->gc_data());
+Atomic<size_t> ShenandoahStackChunkGCData::_stack_chunk_epoch_id;
+
+void ShenandoahStackChunkGCData::change_epoch_id() {
+  _stack_chunk_epoch_id.and_then_fetch(1U, memory_order_relaxed);
 }
-
-inline void ShenandoahStackChunkGCData::initialize(stackChunkOop chunk) {
-  data(chunk)->_epoch = _stack_chunk_epoch_id.load_relaxed();
-}
-
-inline bool ShenandoahStackChunkGCData::is_different_epoch(stackChunkOop chunk) {
-  return data(chunk)->_epoch != _stack_chunk_epoch_id.load_relaxed();
-}
-
-#endif // SHARE_GC_SHENANDOAH_SHENANDOAHSTACKCHUNKGCDATA_INLINE_HPP

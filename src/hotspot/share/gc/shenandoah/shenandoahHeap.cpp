@@ -2939,7 +2939,7 @@ bool ShenandoahHeap::requires_barriers(stackChunkOop obj) const {
   }
 
   // Nmethods referenced by stack chunk may need the barrier fixups.
-  if (ShenandoahStackChunkGCData::gc_state(obj) != gc_state()) {
+  if (ShenandoahStackChunkGCData::is_different_epoch(obj)) {
     return true;
   }
 
