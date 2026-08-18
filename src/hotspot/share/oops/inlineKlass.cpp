@@ -137,9 +137,12 @@ bool InlineKlass::maybe_flat_in_array() const {
     return false;
   }
   // No flat layout?
-  if (!layouts().has_nullable_atomic_layout() && !layouts().has_null_free_atomic_layout() && !layouts().has_null_free_non_atomic_layout()) {
+  if (!layouts().has_any(LayoutKind::NULLABLE_ATOMIC_FLAT,
+                         LayoutKind::NULL_FREE_ATOMIC_FLAT,
+                         LayoutKind::NULL_FREE_NON_ATOMIC_FLAT)) {
     return false;
   }
+
   return true;
 }
 
@@ -514,10 +517,10 @@ void InlineKlass::print_on(outputStream* st) const {
   members().print_on(st);
   st->print_cr(BULLET"---- LayoutKinds:");
   auto print_layout_kind = [&](LayoutKind lk) {
-    if (is_layout_supported(lk)) {
+    if (layouts().has_a(lk)) {
       st->print_cr(BULLET"%s layout: %d/%d",
                    LayoutKindHelper::layout_kind_as_string(lk),
-                   layout_size_in_bytes(lk), layout_alignment(lk));
+                   layouts().size_in_bytes_of(lk), layouts().alignment_of(lk));
     } else {
       st->print_cr(BULLET"%s layout: -/-",
                    LayoutKindHelper::layout_kind_as_string(lk));

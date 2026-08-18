@@ -1295,12 +1295,12 @@ static int reassign_fields_by_klass(InstanceKlass* klass, frame* fr, RegisterMap
       // Recursively re-assign flat inline type fields
       InstanceKlass* vk = fields->at(i)._klass;
       assert(vk != nullptr, "must be resolved");
-      offset -= InlineKlass::cast(vk)->payload_offset(); // Adjust offset to omit oop header
+      offset -= InlineKlass::cast(vk)->layouts().payload_offset(); // Adjust offset to omit oop header
       svIndex = reassign_fields_by_klass(vk, fr, reg_map, sv, svIndex, obj, offset, CHECK_0);
       if (!fields->at(i)._is_null_free) {
         ScopeValue* scope_field = sv->field_at(svIndex);
         StackValue* value = StackValue::create_stack_value(fr, reg_map, scope_field);
-        int nm_offset = offset + InlineKlass::cast(vk)->null_marker_offset();
+        int nm_offset = offset + InlineKlass::cast(vk)->layouts().null_marker_offset();
         obj->bool_field_put(nm_offset, value->get_jint() & 1);
         svIndex++;
       }
@@ -1389,7 +1389,7 @@ void Deoptimization::reassign_flat_array_elements(frame* fr, RegisterMap* reg_ma
   InlineKlass* vk = vak->element_klass();
   assert(vk->maybe_flat_in_array(), "should only be used for flat inline type arrays");
   // Adjust offset to omit oop header
-  int base_offset = arrayOopDesc::base_offset_in_bytes(T_FLAT_ELEMENT) - vk->payload_offset();
+  int base_offset = arrayOopDesc::base_offset_in_bytes(T_FLAT_ELEMENT) - vk->layouts().payload_offset();
   // Initialize all elements of the flat inline type array
   for (int i = 0; i < sv->field_size(); i++) {
     ObjectValue* val = sv->field_at(i)->as_ObjectValue();
@@ -1402,7 +1402,7 @@ void Deoptimization::reassign_flat_array_elements(frame* fr, RegisterMap* reg_ma
       } else {
         null_marker_value = 1;
       }
-      obj->bool_field_put(offset + vk->null_marker_offset(), null_marker_value);
+      obj->bool_field_put(offset + vk->layouts().null_marker_offset(), null_marker_value);
     }
   }
 }

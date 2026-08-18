@@ -192,18 +192,18 @@ ArrayDescription ObjArrayKlass::array_layout_selection(const Klass* element, Arr
   if (props.is_null_restricted()) {
     if (props.is_non_atomic()) {
       // Null-restricted + non-atomic
-      if (vk->layouts().has_null_free_non_atomic_layout()) {
+      if (vk->layouts().has_a(LayoutKind::NULL_FREE_NON_ATOMIC_FLAT)) {
         return ArrayDescription(FlatArrayKlassKind, props, LayoutKind::NULL_FREE_NON_ATOMIC_FLAT);
-      } else if (vk->layouts().has_null_free_atomic_layout()) {
+      } else if (vk->layouts().has_a(LayoutKind::NULL_FREE_ATOMIC_FLAT)) {
         return ArrayDescription(FlatArrayKlassKind, props, LayoutKind::NULL_FREE_ATOMIC_FLAT);
       } else {
         return ArrayDescription(RefArrayKlassKind, props, LayoutKind::REFERENCE);
       }
     } else {
       // Null-restricted + atomic
-      if (vk->is_naturally_atomic(true /* null-free */) && vk->layouts().has_null_free_non_atomic_layout()) {
+      if (vk->is_naturally_atomic(true /* null-free */) && vk->layouts().has_a(LayoutKind::NULL_FREE_NON_ATOMIC_FLAT)) {
         return ArrayDescription(FlatArrayKlassKind, props, LayoutKind::NULL_FREE_NON_ATOMIC_FLAT);
-      } else if (vk->layouts().has_null_free_atomic_layout()) {
+      } else if (vk->layouts().has_a(LayoutKind::NULL_FREE_ATOMIC_FLAT)) {
         return ArrayDescription(FlatArrayKlassKind, props, LayoutKind::NULL_FREE_ATOMIC_FLAT);
       } else {
         return ArrayDescription(RefArrayKlassKind, props, LayoutKind::REFERENCE);

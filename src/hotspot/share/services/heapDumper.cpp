@@ -1335,7 +1335,7 @@ void DumperSupport::dump_instance(AbstractDumpWriter* writer, uintptr_t id, oop 
   if (offset != 0) {
     // the object itself if flattened, so all fields are stored without headers
     InlineKlass* inline_klass = InlineKlass::cast(ik);
-    offset -= inline_klass->payload_offset();
+    offset -= inline_klass->layouts().payload_offset();
   }
 
   dump_instance_fields(writer, o, offset, cache_entry, flat_fields);

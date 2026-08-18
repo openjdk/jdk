@@ -65,7 +65,7 @@ void FlatArrayKlass::oop_oop_iterate_elements_specialized_bounded(flatArrayOop a
   const int addr_incr = 1 << shift;
   uintptr_t elem_addr = (uintptr_t)a->base();
   uintptr_t stop_addr = elem_addr + ((uintptr_t)a->length() << shift);
-  const int oop_offset = element_klass()->payload_offset();
+  const int oop_offset = element_klass()->layouts().payload_offset();
 
   if (elem_addr < lo) {
     uintptr_t diff = lo - elem_addr;

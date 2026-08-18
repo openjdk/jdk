@@ -84,7 +84,7 @@ class FieldLayoutInfo : public ResourceObj {
   int _instance_size;
   int _nonstatic_field_size;
   int _static_field_size;
-  AvailableLayouts _available_layouts;
+  LayoutDescriptions _available_layouts;
   int _null_reset_value_offset;
   int _acmp_maps_offset;
   bool _has_nonstatic_fields;

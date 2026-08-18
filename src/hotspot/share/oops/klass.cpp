@@ -1079,7 +1079,7 @@ void Klass::validate_array_description(const ArrayDescription& ad) {
     const InlineKlass* ik = InlineKlass::cast(this);
     if (ad._layout_kind == LayoutKind::BUFFERED) {
       fatal("Invalid layout for an array");
-    } else if(ad._layout_kind == LayoutKind::REFERENCE) {
+    } else if (ad._layout_kind == LayoutKind::REFERENCE) {
       assert(ad._kind == KlassKind::RefArrayKlassKind, "Must be a reference array");
       return;
     }

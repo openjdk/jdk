@@ -161,7 +161,7 @@ oop FlatArrayKlass::multi_allocate(int rank, jint* last_size, TRAPS) {
 
 jint FlatArrayKlass::array_layout_helper(InlineKlass* vk, LayoutKind lk) {
   BasicType etype = T_FLAT_ELEMENT;
-  int esize = log2i_exact(round_up_power_of_2(vk->layout_size_in_bytes(lk)));
+  int esize = log2i_exact(round_up_power_of_2(vk->layouts().size_in_bytes_of(lk)));
   int hsize = arrayOopDesc::base_offset_in_bytes(etype);
   bool null_free = !LayoutKindHelper::is_nullable_flat(lk);
   int lh = Klass::array_layout_helper(_lh_array_tag_flat_value, null_free, hsize, etype, esize);
@@ -429,7 +429,7 @@ void FlatArrayKlass::oop_print_elements_on(flatArrayOop fa, outputStream* st) {
   for(int index = 0; index < print_len; index++) {
     int off = (address) fa->value_at_addr(index, layout_helper()) - cast_from_oop<address>(fa);
     st->print_cr(" - Index %3d offset %3d: ", index, off);
-    oop obj = cast_to_oop((address)fa->value_at_addr(index, layout_helper()) - vk->payload_offset());
+    oop obj = cast_to_oop((address)fa->value_at_addr(index, layout_helper()) - vk->layouts().payload_offset());
     FieldPrinter print_field(st, obj);
     vk->do_nonstatic_fields(&print_field);
     st->cr();

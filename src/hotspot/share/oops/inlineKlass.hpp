@@ -88,9 +88,9 @@ class InlineKlass: public InstanceKlass {
     address _unpack_handler;
 
     int _null_reset_value_offset;
-    AvailableLayouts _available_layouts;
-    AvailableLayouts& layouts() { return _available_layouts; }
-    const AvailableLayouts& layouts() const { return _available_layouts; }
+    LayoutDescriptions _available_layouts;
+    LayoutDescriptions& layouts() { return _available_layouts; }
+    const LayoutDescriptions& layouts() const { return _available_layouts; }
 
     // When we can't intrinsify the substitutability check, we can still avoid the call to isSubstitutable at runtime if the
     // value object is small enough.  If all the fields are contained at once in a single long, we can load such a long from
@@ -127,27 +127,17 @@ class InlineKlass: public InstanceKlass {
     return *reinterpret_cast<Members*>(_adr_inline_klass_members);
   }
 
-  AvailableLayouts& layouts() {
-    return members().layouts();
-  }
-
   inline const Members& members() const {
     InlineKlass* ik = const_cast<InlineKlass*>(this);
     return const_cast<const Members&>(ik->members());
   }
 
 public:
-  int payload_offset() const {
-    return layouts().payload_offset();
-  }
-  int null_marker_offset() const {
-    return layouts().null_marker_offset();
-  }
-  int null_marker_offset_in_payload() const {
-    return layouts().null_marker_offset_in_payload();
+  LayoutDescriptions& layouts() {
+    return members().layouts();
   }
 
-  const AvailableLayouts& layouts() const {
+  const LayoutDescriptions& layouts() const {
     return members().layouts();
   }
 
@@ -180,10 +170,9 @@ public:
   }
   void set_null_reset_value_offset(int offset)                { members()._null_reset_value_offset = offset; }
 
-  void set_layouts(AvailableLayouts& other) {
+  void set_layouts(LayoutDescriptions& other) {
     members().layouts() = other;
   }
-
 
   int fast_acmp_offset() const                                { return members()._fast_acmp_offset; }
   void set_fast_acmp_offset(int offset)                       { members()._fast_acmp_offset = offset; }
@@ -192,7 +181,7 @@ public:
   void set_fast_acmp_mask(int64_t mask)                       { members()._fast_acmp_mask = mask; }
 
   bool supports_nullable_layouts() const {
-    return members().layouts().has_nullable_non_atomic_layout() || members().layouts().has_nullable_atomic_layout();
+    return members().layouts().has_any(LayoutKind::NULLABLE_NON_ATOMIC_FLAT, LayoutKind::NULLABLE_ATOMIC_FLAT);
   }
 
   jbyte* null_marker_address(address payload) const {
@@ -216,11 +205,6 @@ public:
   }
 
   inline bool layout_has_null_marker(LayoutKind lk) const;
-
-  inline bool is_layout_supported(LayoutKind lk) const;
-
-  inline int layout_alignment(LayoutKind kind) const;
-  inline int layout_size_in_bytes(LayoutKind kind) const;
 
 #if INCLUDE_CDS
   void remove_unshareable_info() override;
@@ -298,11 +282,11 @@ public:
   }
 
   static ByteSize payload_offset_offset() {
-    return byte_offset_of(Members, _available_layouts) + byte_offset_of(AvailableLayouts, _payload_offset);
+    return byte_offset_of(Members, _available_layouts) + byte_offset_of(LayoutDescriptions, _payload_offset);
   }
 
   static ByteSize null_marker_offset_offset() {
-    return byte_offset_of(Members, _available_layouts) + byte_offset_of(AvailableLayouts, _null_marker_offset);
+    return byte_offset_of(Members, _available_layouts) + byte_offset_of(LayoutDescriptions, _null_marker_offset);
   }
 
   static ByteSize fast_acmp_offset_offset() {

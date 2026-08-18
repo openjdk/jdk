@@ -84,8 +84,8 @@ static bool equal_value_objects(oop obj1, int offset1, oop obj2, int offset2, In
     if (fld.access_flags().is_static()) {
       continue;
     }
-    int field_offset1 = offset1 + fld.offset() - (offset1 > 0 ? klass->payload_offset() : 0);
-    int field_offset2 = offset2 + fld.offset() - (offset2 > 0 ? klass->payload_offset() : 0);
+    int field_offset1 = offset1 + fld.offset() - (offset1 > 0 ? klass->layouts().payload_offset() : 0);
+    int field_offset2 = offset2 + fld.offset() - (offset2 > 0 ? klass->layouts().payload_offset() : 0);
     if (fld.is_flat()) { // flat value field
       InstanceKlass* holder_klass = fld.field_holder();
       InlineKlass* field_klass = holder_klass->get_inline_type_field_klass(fld.index());

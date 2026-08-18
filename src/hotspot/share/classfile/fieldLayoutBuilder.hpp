@@ -286,7 +286,7 @@ class FieldLayoutBuilder : public ResourceObj {
   FieldLayout* _static_layout;
   GrowableArray<AcmpMapSegment>* _nonoop_acmp_map;
   GrowableArray<int>* _oop_acmp_map;
-  AvailableLayouts _available_layouts;
+  LayoutDescriptions _available_layouts;
   int _nonstatic_oopmap_count;
   int _fields_size_sum;
   int _declared_nonstatic_fields_count;

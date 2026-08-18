@@ -339,7 +339,7 @@ inline void RawAccessBarrier<decorators>::value_copy(const ValuePayload& src, co
   const InlineKlass* klass = src.klass();
   const LayoutKind copy_layout = LayoutKindHelper::get_copy_layout(
       src.layout_kind(), dst.layout_kind());
-  const int size = klass->layout_size_in_bytes(copy_layout);
+  const int size = klass->layouts().size_in_bytes_of(copy_layout);
 
   AccessInternal::value_copy_internal(src.addr(), dst.addr(),
                                       static_cast<size_t>(size));
@@ -350,7 +350,7 @@ inline void RawAccessBarrier<decorators>::value_store_null(const ValuePayload& d
   address dst_addr = dst.addr();
   const LayoutKind lk = dst.layout_kind();
   const InlineKlass* klass = dst.klass();
-  const int size = klass->layout_size_in_bytes(lk);
+  const int size = klass->layouts().size_in_bytes_of(lk);
 
   AccessInternal::value_store_null(dst_addr, static_cast<size_t>(size));
 }

@@ -132,7 +132,7 @@ class LayoutKindHelper : AllStatic {
 };
 
 // The different layouts available for a particular Klass
-struct AvailableLayouts {
+struct LayoutDescriptions {
   constexpr static int MissingValue = -1; // Missing layouts are assigned this value
   int _payload_alignment; // Alignment required for payload
   int _non_atomic_alignment; // Alignment requirement for the non-atomic layouts
@@ -140,17 +140,29 @@ struct AvailableLayouts {
   int _null_marker_offset;
   // Size of each LayoutKind. For atomic layouts, the size also acts as alignment.
   int _sizes[static_cast<size_t>(LayoutKind::COUNT) - 1]; // REFERENCE has no size, so we remove 1
-  AvailableLayouts()
+  LayoutDescriptions()
   : _payload_alignment(MissingValue),
     _non_atomic_alignment(MissingValue),
     _payload_offset(MissingValue),
     _null_marker_offset(MissingValue),
     _sizes() {
-    size_in_bytes_of(LayoutKind::BUFFERED) = MissingValue;
-    size_in_bytes_of(LayoutKind::NULL_FREE_NON_ATOMIC_FLAT) = MissingValue;
-    size_in_bytes_of(LayoutKind::NULL_FREE_ATOMIC_FLAT) = MissingValue;
-    size_in_bytes_of(LayoutKind::NULLABLE_ATOMIC_FLAT) = MissingValue;
-    size_in_bytes_of(LayoutKind::NULLABLE_NON_ATOMIC_FLAT) = MissingValue;
+    set_size_in_bytes_of(LayoutKind::BUFFERED, MissingValue);
+    set_size_in_bytes_of(LayoutKind::NULL_FREE_NON_ATOMIC_FLAT, MissingValue);
+    set_size_in_bytes_of(LayoutKind::NULL_FREE_ATOMIC_FLAT, MissingValue);
+    set_size_in_bytes_of(LayoutKind::NULLABLE_ATOMIC_FLAT, MissingValue);
+    set_size_in_bytes_of(LayoutKind::NULLABLE_NON_ATOMIC_FLAT, MissingValue);
+  }
+
+  void set_size_in_bytes_of(LayoutKind lk, int value) {
+    _sizes[static_cast<size_t>(lk) - 1] = value;
+  }
+
+  // Returns default value if missing
+  int size_in_bytes_of(LayoutKind lk, int default_value = -1) const {
+    assert(lk != LayoutKind::REFERENCE, "must be");
+    // - 1 to ignore REFERENCE
+    auto sz = _sizes[static_cast<size_t>(lk) - 1];
+    return sz == MissingValue ? default_value : sz;
   }
 
   int& size_in_bytes_of(LayoutKind lk) {
@@ -158,21 +170,21 @@ struct AvailableLayouts {
     // - 1 to ignore REFERENCE
     return _sizes[static_cast<size_t>(lk) - 1];
   }
-  const int& size_in_bytes_of(LayoutKind lk) const {
-    assert(lk != LayoutKind::REFERENCE, "must be");
-    // - 1 to ignore REFERENCE
-    return _sizes[static_cast<size_t>(lk) - 1];
-  }
 
   int alignment_of(LayoutKind lk) const {
     assert(has_a(lk), "Layout not available");
-    if (lk == LayoutKind::BUFFERED) {
+    switch (lk) {
+    case LayoutKind::BUFFERED:
       return _payload_alignment;
-    } else if (lk == LayoutKind::NULL_FREE_NON_ATOMIC_FLAT ||
-               lk == LayoutKind::NULLABLE_NON_ATOMIC_FLAT) {
-      return _non_atomic_alignment;
-    } else {
+    case LayoutKind::NULLABLE_ATOMIC_FLAT:
+    case LayoutKind::NULL_FREE_ATOMIC_FLAT:
       return size_in_bytes_of(lk);
+    case LayoutKind::NULL_FREE_NON_ATOMIC_FLAT:
+    case LayoutKind::NULLABLE_NON_ATOMIC_FLAT:
+      return _non_atomic_alignment;
+    case LayoutKind::REFERENCE:
+    case LayoutKind::UNKNOWN:
+      ShouldNotReachHere();
     }
   }
 
@@ -183,36 +195,28 @@ struct AvailableLayouts {
   int& null_marker_offset() { return _null_marker_offset; }
   int null_marker_offset_in_payload() const { return null_marker_offset() - payload_offset(); }
 
-  int  payload_size_in_bytes() const { return size_in_bytes_of(LayoutKind::BUFFERED); }
   int&  payload_size_in_bytes()   { return size_in_bytes_of(LayoutKind::BUFFERED); }
-
-  int   null_free_non_atomic_size_in_bytes() const { return size_in_bytes_of(LayoutKind::NULL_FREE_NON_ATOMIC_FLAT); }
-  int&  null_free_non_atomic_size_in_bytes()       { return size_in_bytes_of(LayoutKind::NULL_FREE_NON_ATOMIC_FLAT); }
-
-  int   null_free_atomic_size_in_bytes() const { return size_in_bytes_of(LayoutKind::NULL_FREE_ATOMIC_FLAT); }
-  int&  null_free_atomic_size_in_bytes()       { return size_in_bytes_of(LayoutKind::NULL_FREE_ATOMIC_FLAT); }
-
-  int  nullable_atomic_size_in_bytes() const { return size_in_bytes_of(LayoutKind::NULLABLE_ATOMIC_FLAT); }
-  int&  nullable_atomic_size_in_bytes() { return size_in_bytes_of(LayoutKind::NULLABLE_ATOMIC_FLAT); }
-
-  int  nullable_non_atomic_size_in_bytes() const { return size_in_bytes_of(LayoutKind::NULLABLE_NON_ATOMIC_FLAT); }
   int& nullable_non_atomic_size_in_bytes() { return size_in_bytes_of(LayoutKind::NULLABLE_NON_ATOMIC_FLAT); }
 
   int  payload_alignment() const {
-    assert(_payload_alignment != AvailableLayouts::MissingValue, "Uninitialized");
+    assert(_payload_alignment != LayoutDescriptions::MissingValue, "Uninitialized");
     return _payload_alignment;
   }
   int& payload_alignment()                    { return _payload_alignment; }
   int  non_atomic_alignment() const { return _non_atomic_alignment; }
+  void set_non_atomic_alignment(int alignment) { _non_atomic_alignment = alignment; }
   int& non_atomic_alignment()                  { return _non_atomic_alignment; }
 
 
   bool has_a(LayoutKind lk) const {
     return size_in_bytes_of(lk) != MissingValue;
   }
-  bool has_null_free_non_atomic_layout() const { return has_a(LayoutKind::NULL_FREE_NON_ATOMIC_FLAT); }
-  bool has_null_free_atomic_layout()     const { return has_a(LayoutKind::NULL_FREE_ATOMIC_FLAT); }
-  bool has_nullable_non_atomic_layout() const  { return has_a(LayoutKind::NULLABLE_NON_ATOMIC_FLAT); }
+
+  template<typename... Ts>
+  bool has_any(Ts... lks) const {
+    return (has_a(lks) || ...);
+  }
+
   bool has_nullable_atomic_layout() const      { return has_a(LayoutKind::NULLABLE_ATOMIC_FLAT); }
 
   void print_on(outputStream& st) const {

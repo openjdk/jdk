@@ -32,34 +32,13 @@
 #include "utilities/devirtualizer.inline.hpp"
 
 inline bool InlineKlass::layout_has_null_marker(LayoutKind lk) const {
-  assert(is_layout_supported(lk), "Must be");
+  assert(layouts().has_a(lk), "Must be");
   return LayoutKindHelper::is_nullable_flat(lk) ||
          (lk == LayoutKind::BUFFERED && supports_nullable_layouts());
 }
 
-inline bool InlineKlass::is_layout_supported(LayoutKind lk) const {
-  return layouts().has_a(lk);
-}
-
-inline int InlineKlass::layout_size_in_bytes(LayoutKind lk) const {
-  assert(layouts().has_a(lk), "Layout not available");
-  return members().layouts().size_in_bytes_of(lk);
-}
-
-inline int InlineKlass::layout_alignment(LayoutKind lk) const {
-  assert(layouts().has_a(lk), "Layout not available");
-  if (lk == LayoutKind::BUFFERED) {
-    return layouts().payload_alignment();
-  } else if (lk == LayoutKind::NULL_FREE_NON_ATOMIC_FLAT ||
-             lk == LayoutKind::NULLABLE_NON_ATOMIC_FLAT) {
-    return layouts().non_atomic_alignment();
-  } else {
-    return layouts().size_in_bytes_of(lk);
-  }
-}
-
 inline address InlineKlass::payload_addr(oop o) const {
-  return cast_from_oop<address>(o) + payload_offset();
+  return cast_from_oop<address>(o) + layouts().payload_offset();
 }
 
 template <typename T, class OopClosureType>

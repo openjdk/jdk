@@ -478,7 +478,7 @@ inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::value_copy_in_h
   if (md->contains_oops()) {
     assert(!LayoutKindHelper::is_atomic_flat(lk) ||
                (md->nonstatic_oop_map_count() == 1 &&
-                md->layout_size_in_bytes(lk) == sizeof(zpointer)),
+                md->layouts().size_in_bytes_of(lk) == sizeof(zpointer)),
            "ZGC can only handle atomic flat values with a single oop");
 
     // Iterate over each oop map, performing:
@@ -490,10 +490,10 @@ inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::value_copy_in_h
     // the object header, adjust address to account for this discrepancy.
     const address src_addr = src.addr();
     const address dst_addr = dst.addr();
-    const address oop_map_adjusted_src_addr = src_addr - md->payload_offset();
+    const address oop_map_adjusted_src_addr = src_addr - md->layouts().payload_offset();
     OopMapBlock* map = md->start_of_nonstatic_oop_maps();
     const OopMapBlock* const end = map + md->nonstatic_oop_map_count();
-    size_t size_in_bytes = md->layout_size_in_bytes(lk);
+    size_t size_in_bytes = md->layouts().size_in_bytes_of(lk);
     size_t copied_bytes = 0;
     while (map != end) {
       zpointer* src_p = (zpointer*)(oop_map_adjusted_src_addr + map->offset());
@@ -529,7 +529,7 @@ inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::value_store_nul
   if (md->contains_oops()) {
     assert(!LayoutKindHelper::is_atomic_flat(lk) ||
                (md->nonstatic_oop_map_count() == 1 &&
-                md->layout_size_in_bytes(lk) == sizeof(zpointer)),
+                md->layouts().size_in_bytes_of(lk) == sizeof(zpointer)),
            "ZGC can only handle atomic flat values with a single oop");
 
     // Iterate over each oop map, performing:
@@ -540,10 +540,10 @@ inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::value_store_nul
     // addr() points at the payload start, the oop map offset are relative to
     // the object header, adjust address to account for this discrepancy.
     const address dst_addr = dst.addr();
-    const address oop_map_adjusted_dst_addr = dst_addr - md->payload_offset();
+    const address oop_map_adjusted_dst_addr = dst_addr - md->layouts().payload_offset();
     OopMapBlock* map = md->start_of_nonstatic_oop_maps();
     const OopMapBlock* const end = map + md->nonstatic_oop_map_count();
-    size_t size_in_bytes = md->layout_size_in_bytes(lk);
+    size_t size_in_bytes = md->layouts().size_in_bytes_of(lk);
     size_t copied_bytes = 0;
     while (map != end) {
       zpointer* dst_p = (zpointer*)(oop_map_adjusted_dst_addr + map->offset());

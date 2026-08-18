@@ -312,7 +312,7 @@ inline void ValuePayload::assert_is_flat_field(const InstanceKlass* klass, int o
     // Nested flat field
     postcond(offset >= field_descriptor.offset());
     const InlineKlass* const field_klass = inline_layout_info.klass();
-    const int payload_offset = field_klass->payload_offset();
+    const int payload_offset = field_klass->layouts().payload_offset();
     assert_is_flat_field(field_klass, offset - field_descriptor.offset() + payload_offset);
   }
 }
@@ -327,7 +327,7 @@ inline void ValuePayload::assert_post_construction_invariants() const {
 
   postcond(layout_kind() != LayoutKind::REFERENCE);
   postcond(layout_kind() != LayoutKind::UNKNOWN);
-  postcond(klass()->is_layout_supported(layout_kind()));
+  postcond(klass()->layouts().has_a(layout_kind()));
 
   if (!uses_absolute_addr()) {
     postcond(container() != nullptr);
@@ -351,7 +351,7 @@ inline void ValuePayload::assert_post_construction_invariants() const {
               (checked_cast<int>(this->offset()) -
                checked_cast<int>(flatArrayOopDesc::base_offset_in_bytes())) %
               container_flat_array_klass->element_byte_size();
-          const int payload_offset = element_klass->payload_offset();
+          const int payload_offset = element_klass->layouts().payload_offset();
           assert_is_flat_field(element_klass, element_offset + payload_offset);
         }
       }
@@ -401,14 +401,14 @@ inline void ValuePayload::assert_pre_copy_invariants(const ValuePayload& src,
 
   if (src_is_buffered) {
     oop container = src.uses_absolute_addr()
-        ? cast_to_oop(src.addr() - src_klass->payload_offset())
+                    ? cast_to_oop(src.addr() - src_klass->layouts().payload_offset())
         : src.container();
 
     precond(!src_klass->supports_nullable_layouts() || container != src_klass->null_reset_value());
   }
 
-  const int src_layout_size_in_bytes = src_klass->layout_size_in_bytes(src.layout_kind());
-  const int dst_layout_size_in_bytes = dst_klass->layout_size_in_bytes(dst.layout_kind());
+  const int src_layout_size_in_bytes = src_klass->layouts().size_in_bytes_of(src.layout_kind());
+  const int dst_layout_size_in_bytes = dst_klass->layouts().size_in_bytes_of(dst.layout_kind());
   const int copy_layout_size_in_bytes =
       src_has_copy_layout
           ? src_layout_size_in_bytes
@@ -466,7 +466,7 @@ inline BufferedValuePayload::BufferedValuePayload(inlineOop buffer)
 
 inline BufferedValuePayload::BufferedValuePayload(inlineOop buffer,
                                                   InlineKlass* klass)
-    : ValuePayload(buffer, klass->payload_offset(), klass, LayoutKind::BUFFERED) {}
+: ValuePayload(buffer, klass->layouts().payload_offset(), klass, LayoutKind::BUFFERED) {}
 
 inline inlineOop BufferedValuePayload::container() const {
   return inlineOop(ValuePayload::container());
