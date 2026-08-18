@@ -363,7 +363,7 @@ void ShenandoahOldGeneration::cancel_gc() {
     validate_idle();
 #endif
   } else {
-    log_info(gc)("Terminating old gc cycle.");
+    log_info(gc, phases)("Terminating old gc cycle.");
     // Stop marking
     cancel_marking();
     // Stop tracking old regions
