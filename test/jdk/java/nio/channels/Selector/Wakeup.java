@@ -27,6 +27,12 @@
  * @library .. /test/lib
  */
 
+/* @test
+ * @requires (os.family == "aix")
+ * @library .. /test/lib
+ * @run main/othervm -Djava.nio.channels.spi.SelectorProvider=sun.nio.ch.PollSelectorProvider Wakeup
+ */
+
 import java.io.*;
 import java.net.*;
 import java.nio.*;
