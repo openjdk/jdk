@@ -381,7 +381,7 @@ bool ShenandoahAdaptiveHeuristics::trigger_average_allocation_rate(const Shenand
 // a sample period of roughly 15 ms, spanning approximately 120 ms of execution.
 bool ShenandoahAdaptiveHeuristics::trigger_accelerating_allocation_rate(const ShenandoahAnticipatedConsumption& rate, const size_t allocatable_bytes) {
   if (rate.momentary_consumption() > allocatable_bytes) {
-    ShenandoahSignedSize momentary_rate = ShenandoahSignedSize::get(rate.momentary_consumption());
+    ShenandoahSignedSize momentary_rate = ShenandoahSignedSize::get(rate.momentary_rate());
     assert(rate.accelerated_consumption() == 0, "Momentary trigger is meant to exclude acceleration trigger");
     log_trigger("Momentary spike consumption (" PROPERFMT ") exceeds free headroom (" PROPERFMT ") at "
                 "current rate (" PROPERFMT_F "/s) for anticipated GC duration (%.2f ms)",
