@@ -627,15 +627,24 @@ public final class ErrorTest {
     }
 
     public static Collection<Object[]> invalidAppVersion() {
-        return toTestArgs(Stream.of(
-                // Invalid app version. Just cover all different error messages.
-                // Extensive testing of invalid version strings is done in DottedVersionTest unit test.
-                testSpec().addArgs("--app-version", "").error("error.version-string-empty"),
-                testSpec().addArgs("--app-version", "1.").error("error.version-string-zero-length-component", "1."),
-                testSpec().addArgs("--app-version", "1.b.3").error("error.version-string-invalid-component", "1.b.3", "b.3")
-        ).map(builder -> {
+
+        Collection<TestSpec.Builder> builders = new ArrayList<>();
+
+        // Invalid app version. Just cover all different error messages.
+        // Extensive testing of invalid version strings is done in DottedVersionTest unit test.
+        builders.add(testSpec().addArgs("--app-version", "").error("error.parameter-not-version", "", "--app-version", BUNDLE_TYPE_LABEL));
+        if (!TKit.isLinux()) {
+            for (var ver : List.of("1.", "1.b.3")) {
+                builders.add(testSpec().addArgs("--app-version", ver).error("error.parameter-not-version", ver, "--app-version", BUNDLE_TYPE_LABEL));
+            }
+        }
+
+        return toTestArgs(builders.stream().map(builder -> {
             if (TKit.isOSX()) {
-                builder.advice("error.invalid-cfbundle-version.advice");
+                builder.advice("error.parameter-not-mac-version.advice", BUNDLE_TYPE_LABEL);
+            };
+            if (TKit.isWindows()) {
+                builder.advice("error.parameter-not-win-version.advice", BUNDLE_TYPE_LABEL);
             };
             return builder;
         }));
@@ -973,24 +982,48 @@ public final class ErrorTest {
                             .error("error.missing-service-installer")
                             .advice("error.missing-service-installer.advice"),
                     // The below version strings are invalid for msi and exe packaging.
-                    // They are valid for app image packaging.
                     testSpec().type(type).addArgs("--app-version", "1234")
-                            .error("error.msi-product-version-components", "1234")
-                            .advice("error.version-string-wrong-format.advice"),
+                            .error("error.parameter-not-version", "1234", "--app-version", BUNDLE_TYPE_LABEL)
+                            .advice("error.parameter-not-msi-version.advice", BUNDLE_TYPE_LABEL),
                     testSpec().type(type).addArgs("--app-version", "1.2.3.4.5")
-                            .error("error.msi-product-version-components", "1.2.3.4.5")
-                            .advice("error.version-string-wrong-format.advice"),
+                            .error("error.parameter-not-version", "1.2.3.4.5", "--app-version", BUNDLE_TYPE_LABEL)
+                            .advice("error.parameter-not-msi-version.advice", BUNDLE_TYPE_LABEL),
                     testSpec().type(type).addArgs("--app-version", "256.1")
-                            .error("error.msi-product-version-major-out-of-range")
-                            .advice("error.version-string-wrong-format.advice"),
+                            .error("error.parameter-not-version.major-out-of-range", "256.1", "--app-version", BUNDLE_TYPE_LABEL, "256")
+                            .advice("error.parameter-not-msi-version.advice", BUNDLE_TYPE_LABEL),
                     testSpec().type(type).addArgs("--app-version", "1.256")
-                            .error("error.msi-product-version-minor-out-of-range")
-                            .advice("error.version-string-wrong-format.advice"),
+                            .error("error.parameter-not-version.minor-out-of-range", "1.256", "--app-version", BUNDLE_TYPE_LABEL, "256")
+                            .advice("error.parameter-not-msi-version.advice", BUNDLE_TYPE_LABEL),
                     testSpec().type(type).addArgs("--app-version", "1.2.65536")
-                            .error("error.msi-product-version-build-out-of-range")
-                            .advice("error.version-string-wrong-format.advice")
+                            .error("error.parameter-not-version.build-out-of-range", "1.2.65536", "--app-version", BUNDLE_TYPE_LABEL, "65536")
+                            .advice("error.parameter-not-msi-version.advice", BUNDLE_TYPE_LABEL),
+                    testSpec().type(type).addArgs("--app-version", "1.2.3.65536")
+                            .error("error.parameter-not-version.revision-out-of-range", "1.2.3.65536", "--app-version", BUNDLE_TYPE_LABEL, "65536")
+                            .advice("error.parameter-not-msi-version.advice", BUNDLE_TYPE_LABEL)
             );
         }).flatMap(x -> x).map(TestSpec.Builder::create).toList());
+
+        Stream.of(
+                // The below version strings are invalid for Windows app image packaging packaging.
+                testSpec().addArgs("--app-version", "1.2.3.4.5")
+                        .error("error.parameter-not-version", "1.2.3.4.5", "--app-version", BUNDLE_TYPE_LABEL)
+                        .advice("error.parameter-not-win-version.advice", BUNDLE_TYPE_LABEL),
+                testSpec().addArgs("--app-version", "65536")
+                        .error("error.parameter-not-version.major-out-of-range", "65536", "--app-version", BUNDLE_TYPE_LABEL, "65536")
+                        .advice("error.parameter-not-win-version.advice", BUNDLE_TYPE_LABEL),
+                testSpec().addArgs("--app-version", "65536.1")
+                        .error("error.parameter-not-version.major-out-of-range", "65536.1", "--app-version", BUNDLE_TYPE_LABEL, "65536")
+                        .advice("error.parameter-not-win-version.advice", BUNDLE_TYPE_LABEL),
+                testSpec().addArgs("--app-version", "1.65536")
+                        .error("error.parameter-not-version.minor-out-of-range", "1.65536", "--app-version", BUNDLE_TYPE_LABEL, "65536")
+                        .advice("error.parameter-not-win-version.advice", BUNDLE_TYPE_LABEL),
+                testSpec().addArgs("--app-version", "1.2.65536")
+                        .error("error.parameter-not-version.build-out-of-range", "1.2.65536", "--app-version", BUNDLE_TYPE_LABEL, "65536")
+                        .advice("error.parameter-not-win-version.advice", BUNDLE_TYPE_LABEL),
+                testSpec().addArgs("--app-version", "1.2.3.65536")
+                        .error("error.parameter-not-version.revision-out-of-range", "1.2.3.65536", "--app-version", BUNDLE_TYPE_LABEL, "65536")
+                        .advice("error.parameter-not-win-version.advice", BUNDLE_TYPE_LABEL)
+        ).map(TestSpec.Builder::create).forEach(testCases::add);
 
         invalidShortcut(testCases::add, "--win-menu");
         invalidShortcut(testCases::add, "--win-shortcut");
@@ -1318,6 +1351,10 @@ public final class ErrorTest {
     }
 
     private static final Pattern LINE_SEP_REGEXP = Pattern.compile("\\R");
+
+    private static final JPackageCommand.CannedArgument BUNDLE_TYPE_LABEL = JPackageCommand.cannedArgument(cmd -> {
+        return cmd.packageType().bundleTypeLabel().getValue();
+    }, "@@BUNDLE_TYPE_LABEL@@");
 
     private final class SignEnvMock {
 

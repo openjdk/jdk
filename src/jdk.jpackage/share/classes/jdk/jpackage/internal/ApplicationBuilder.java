@@ -36,10 +36,10 @@ import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.UnaryOperator;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
+import jdk.jpackage.internal.model.BundleVersion;
 import jdk.jpackage.internal.model.ExternalApplication;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.LauncherIcon;
@@ -69,11 +69,18 @@ final class ApplicationBuilder {
         runtimeBuilder = other.runtimeBuilder;
         launchers = other.launchers;
         runtimeReleaseFile = other.runtimeReleaseFile;
-        derivedVersionNormalizer = other.derivedVersionNormalizer;
+        derivedVersionConverter = other.derivedVersionConverter;
     }
 
     ApplicationBuilder copy() {
         return new ApplicationBuilder(this);
+    }
+
+    interface DerivedValueOrigin {}
+
+    enum StandardDerivedValueOrigin implements DerivedValueOrigin {
+        MODULE_INFO,
+        RELEASE_FILE,
     }
 
     Application create() {
@@ -145,12 +152,12 @@ final class ApplicationBuilder {
         return this;
     }
 
-    ApplicationBuilder version(String v) {
+    ApplicationBuilder version(BundleVersion v) {
         version = v;
         return this;
     }
 
-    Optional<String> version() {
+    Optional<BundleVersion> version() {
         return Optional.ofNullable(version);
         }
 
@@ -179,34 +186,38 @@ final class ApplicationBuilder {
         return this;
     }
 
-    ApplicationBuilder derivedVersionNormalizer(UnaryOperator<String> v) {
-        derivedVersionNormalizer = v;
+    ApplicationBuilder derivedVersionConverter(BiFunction<DerivedValueOrigin, String, Optional<BundleVersion>> v) {
+        derivedVersionConverter = v;
         return this;
     }
 
-    private String validatedVersion() {
+    Optional<BiFunction<DerivedValueOrigin, String, Optional<BundleVersion>>> derivedVersionConverter() {
+        return Optional.ofNullable(derivedVersionConverter);
+    }
+
+    private BundleVersion validatedVersion() {
         return Optional.ofNullable(version).or(() -> {
             // Application version has not been specified explicitly. Derive it.
-            var derivedVersion = derivedVersion();
-            if (derivedVersionNormalizer != null) {
-                derivedVersion = derivedVersion.map(v -> {
-                    var mappedVersion = derivedVersionNormalizer.apply(v);
-                    if (!mappedVersion.equals(v)) {
-                        Log.trace("Normalize derived bundle version from [%s] to [%s]", v, mappedVersion);
+            return derivedVersion().flatMap(v -> {
+                var mappedVersion = derivedVersionConverter().orElse((_, ver) -> {
+                    return Optional.of(BundleVersion.of(ver));
+                }).apply(v.getKey(), v.getValue());
+                mappedVersion.map(BundleVersion::toString).ifPresent(ver -> {
+                    if (!ver.equals(v.getValue())) {
+                        Log.trace("Normalize derived bundle version from [%s] to [%s]", v.getValue(), ver);
                     }
-                    return mappedVersion;
                 });
-            }
-            return derivedVersion;
+                return mappedVersion;
+            });
         }).orElseGet(DEFAULTS::version);
     }
 
-    private Optional<String> derivedVersion() {
+    private Optional<Map.Entry<DerivedValueOrigin, String>> derivedVersion() {
         if (appImageLayout instanceof RuntimeLayout && runtimeReleaseFile != null) {
             try {
                 var releaseVersion = new RuntimeReleaseFile(runtimeReleaseFile).getJavaVersion().toString();
                 Log.trace("Derive bundle version [%s] from [%s] file", releaseVersion, runtimeReleaseFile);
-                return Optional.of(releaseVersion);
+                return Optional.of(Map.entry(StandardDerivedValueOrigin.RELEASE_FILE, releaseVersion));
             } catch (Exception ex) {
                 Log.trace(ex, "Failed to derive bundle version from [%s] file", runtimeReleaseFile);
                 return Optional.empty();
@@ -221,6 +232,8 @@ final class ApplicationBuilder {
                             Log.trace("Derive bundle version [%s] from [%s] module", v, modularStartupInfo.moduleName());
                         });
                         return moduleVersion;
+                    }).map(ver -> {
+                        return Map.entry(StandardDerivedValueOrigin.MODULE_INFO, ver);
                     });
         } else {
             return Optional.empty();
@@ -374,7 +387,7 @@ final class ApplicationBuilder {
         }
     }
 
-    private record Defaults(String version, String vendor) {
+    private record Defaults(BundleVersion version, String vendor) {
         String copyright() {
             return I18N.format("param.copyright.default", new Date());
         }
@@ -382,7 +395,7 @@ final class ApplicationBuilder {
 
     private String name;
     private String description;
-    private String version;
+    private BundleVersion version;
     private String vendor;
     private String copyright;
     private Collection<RootedPath> appDirSources;
@@ -392,9 +405,9 @@ final class ApplicationBuilder {
     private RuntimeBuilder runtimeBuilder;
     private ApplicationLaunchers launchers;
     private Path runtimeReleaseFile;
-    private UnaryOperator<String> derivedVersionNormalizer;
+    private BiFunction<DerivedValueOrigin, String, Optional<BundleVersion>> derivedVersionConverter;
 
     private static final Defaults DEFAULTS = new Defaults(
-            "1.0",
+            BundleVersion.of("1.0"),
             I18N.getString("param.vendor.default"));
 }

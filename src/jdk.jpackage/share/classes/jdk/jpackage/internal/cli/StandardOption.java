@@ -60,16 +60,18 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.cli.CannedException.CannedExceptionCarrier;
 import jdk.jpackage.internal.cli.OptionValueExceptionFactory.StandardArgumentsMapper;
 import jdk.jpackage.internal.log.LogEnvironment;
 import jdk.jpackage.internal.model.AppImageBundleType;
 import jdk.jpackage.internal.model.BundleType;
+import jdk.jpackage.internal.model.BundleVersion;
 import jdk.jpackage.internal.model.BundlingOperationDescriptor;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.LauncherShortcut;
-import jdk.jpackage.internal.model.PackageType;
 import jdk.jpackage.internal.model.LauncherShortcutStartupDirectory;
+import jdk.jpackage.internal.model.PackageType;
 import jdk.jpackage.internal.model.SelfContainedException;
 import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.RootedPath;
@@ -196,7 +198,19 @@ public final class StandardOption {
 
     public static final OptionValue<Path> LICENSE_FILE = fileOption("license-file").create();
 
-    public static final OptionValue<String> APP_VERSION = stringOption("app-version").create();
+    public static final OptionValue<BundleVersion> APP_VERSION = option("app-version", BundleVersion.class)
+            .converter(BundleVersion::of)
+            .mutate(createOptionSpecBuilderMutator((b, context) -> {
+                context.bundlingOperation().map(StandardBundlingOperation::bundleType).ifPresent(bundleType -> {
+                    b.validator(StandardValidator.versionValidator(bundleType));
+                    b.validatorExceptionFactory((optionName, optionValue, formatString, cause) -> {
+                        return ((CannedExceptionCarrier)cause.orElseThrow()).resolve(
+                                new CannedFormattedMessage.Context(optionName, optionValue.value(), context));
+                    });
+                    b.validatorExceptionFormatString("");
+                });
+            }))
+            .create();
 
     public static final OptionValue<String> ABOUT_URL = urlOption("about-url")
             .scope(CREATE_NATIVE).inScope(NOT_BUILDING_APP_IMAGE)

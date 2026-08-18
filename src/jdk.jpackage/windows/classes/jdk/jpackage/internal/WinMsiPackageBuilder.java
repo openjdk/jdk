@@ -33,7 +33,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import jdk.jpackage.internal.model.Application;
-import jdk.jpackage.internal.model.MsiVersion;
 import jdk.jpackage.internal.model.WinMsiPackage;
 import jdk.jpackage.internal.model.WinMsiPackageMixin;
 
@@ -46,14 +45,6 @@ final class WinMsiPackageBuilder {
     WinMsiPackage create() {
         var pkg = pkgBuilder.create();
 
-        try {
-            MsiVersion.of(pkg.version());
-        } catch (IllegalArgumentException ex) {
-            throw buildConfigException(ex)
-                    .advice("error.version-string-wrong-format.advice")
-                    .create();
-        }
-
         if (pkg.app().isService() && (serviceInstaller == null || !Files.exists(serviceInstaller))) {
             throw buildConfigException()
                     .message("error.missing-service-installer")
@@ -62,7 +53,6 @@ final class WinMsiPackageBuilder {
         }
 
         return WinMsiPackage.create(pkg, new WinMsiPackageMixin.Stub(
-                MsiVersion.of(pkg.version()),
                 withInstallDirChooser,
                 withShortcutPrompt,
                 withUi,
@@ -71,7 +61,7 @@ final class WinMsiPackageBuilder {
                 Optional.ofNullable(startMenuGroupName).orElseGet(DEFAULTS::startMenuGroupName),
                 isSystemWideInstall,
                 Optional.ofNullable(upgradeCode).orElseGet(() -> upgradeCode(pkg.app())),
-                productCode(pkg.app(), pkg.version()),
+                productCode(pkg.app(), pkg.version().toString()),
                 Optional.ofNullable(serviceInstaller)));
     }
 

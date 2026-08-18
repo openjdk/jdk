@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,7 +117,7 @@ public non-sealed interface Package extends BundleSpec {
      * Gets the version of this package.
      * @return the version of this package
      */
-    String version();
+    BundleVersion version();
 
     /**
      * Gets the "About" URL of this package if available or an empty
@@ -265,7 +265,7 @@ public non-sealed interface Package extends BundleSpec {
     /**
      * Default implementation of {@link Package} interface.
      */
-    record Stub(Application app, PackageType type, String packageName, String description, String version,
+    record Stub(Application app, PackageType type, String packageName, String description, BundleVersion version,
             Optional<String> aboutURL, Optional<Path> licenseFile, Optional<Path> predefinedAppImage,
             AppImageLayout installedPackageLayout, Path relativeInstallDir) implements Package {
     }

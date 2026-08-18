@@ -304,11 +304,12 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
         // Linux
         map.put(PackageType.LINUX_IMAGE, version);
-        map.put(PackageType.LINUX_DEB, version);
         if (dotted.getUnprocessedSuffix().contains("-")) {
             map.put(PackageType.LINUX_RPM, dotted.toComponentsString());
+            map.put(PackageType.LINUX_DEB, dotted.toComponentsString());
         } else {
             map.put(PackageType.LINUX_RPM, version);
+            map.put(PackageType.LINUX_DEB, version);
         }
 
         // macOS

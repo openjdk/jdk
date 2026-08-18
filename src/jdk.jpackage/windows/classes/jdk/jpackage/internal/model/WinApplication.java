@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,21 @@ package jdk.jpackage.internal.model;
 
 import jdk.jpackage.internal.util.CompositeProxy;
 
-public interface WinApplication extends Application, WinApplicationMixin {
+/**
+ * Windows application.
+ * <p>
+ * Use {@link #create} method to create objects implementing this interface.
+ */
+public interface WinApplication extends Application {
 
+    /**
+     * Creates {@link WinApplication} instance from the given {@link Application}
+     * instance.
+     *
+     * @param app the generic application
+     * @return the proxy dispatching calls to the given {@link Application} instance
+     */
     public static WinApplication create(Application app) {
-        return CompositeProxy.create(WinApplication.class, app, new WinApplicationMixin.Stub(app));
+        return CompositeProxy.create(WinApplication.class, app);
     }
 }

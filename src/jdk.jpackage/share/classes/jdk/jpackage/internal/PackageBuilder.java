@@ -29,6 +29,7 @@ import java.util.Objects;
 import java.util.Optional;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.Application;
+import jdk.jpackage.internal.model.BundleVersion;
 import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.model.Package.Stub;
 import jdk.jpackage.internal.model.PackageType;
@@ -93,12 +94,12 @@ final class PackageBuilder {
         return Optional.ofNullable(description);
     }
 
-    PackageBuilder version(String v) {
+    PackageBuilder version(BundleVersion v) {
         version = v;
         return this;
     }
 
-    Optional<String> version() {
+    Optional<BundleVersion> version() {
         return Optional.ofNullable(version);
     }
 
@@ -238,7 +239,7 @@ final class PackageBuilder {
     private String name;
     private Path fileName;
     private String description;
-    private String version;
+    private BundleVersion version;
     private String aboutURL;
     private Path licenseFile;
     private Path predefinedAppImage;

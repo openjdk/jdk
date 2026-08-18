@@ -31,6 +31,7 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.UUID;
 import java.util.function.Function;
+import jdk.jpackage.internal.model.BundleVersion;
 import jdk.jpackage.internal.model.LauncherShortcut;
 import jdk.jpackage.internal.model.ParseUtils;
 import jdk.jpackage.internal.util.RootedPath;
@@ -91,6 +92,10 @@ final class StandardValueConverter {
         private boolean withPathFileName;
     }
 
+    static ValueConverter<String, BundleVersion> versionConv() {
+        return VERSION_CONV;
+    }
+
     private static final ValueConverter<String, String> IDENTITY_CONV = ValueConverter.create(x -> x, String.class);
 
     private static final ValueConverter<String, Path> PATH_CONV = ValueConverter.create(str -> {
@@ -130,4 +135,11 @@ final class StandardValueConverter {
 
         return items;
     }
+
+    private static final ValueConverter<String, BundleVersion> VERSION_CONV = ValueConverter.create(str -> {
+        if (str.isEmpty()) {
+            throw new IllegalArgumentException("Version must be non-empty string");
+        }
+        return BundleVersion.of(str);
+    }, BundleVersion.class);
 }

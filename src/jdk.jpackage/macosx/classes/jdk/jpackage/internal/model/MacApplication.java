@@ -24,7 +24,6 @@
  */
 package jdk.jpackage.internal.model;
 
-import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toUnmodifiableMap;
 import static jdk.jpackage.internal.cli.StandardAppImageFileOption.MAC_APP_STORE;
 import static jdk.jpackage.internal.cli.StandardAppImageFileOption.MAC_MAIN_CLASS;
@@ -33,7 +32,6 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.cli.OptionValue;
 import jdk.jpackage.internal.util.CompositeProxy;
@@ -41,19 +39,10 @@ import jdk.jpackage.internal.util.CompositeProxy;
 public interface MacApplication extends Application, MacApplicationMixin {
 
     default DottedVersion shortVersion() {
-        final var verComponents = DottedVersion.lazy(version()).getComponents();
         // Short version should have exactly three components according to
         // https://developer.apple.com/documentation/bundleresources/information-property-list/cfbundleshortversionstring
-        int maxComponentCount = 3;
         // However, if the number of components is less than three, historically, jpackage will not add missing components.
-        maxComponentCount = Integer.min(maxComponentCount, verComponents.length);
-        return DottedVersion.greedy(IntStream.range(0, maxComponentCount).mapToObj(idx -> {
-            if (idx < verComponents.length) {
-                return verComponents[idx].toString();
-            } else {
-                return "0";
-            }
-        }).collect(joining(".")));
+        return version().asDottedVersion().orElseThrow().trim(3);
     }
 
     @Override

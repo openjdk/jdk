@@ -63,7 +63,7 @@ public non-sealed interface Application extends BundleSpec {
      *
      * @return the version of this application
      */
-    String version();
+    BundleVersion version();
 
     /**
      * Gets the vendor of this application.
@@ -247,7 +247,7 @@ public non-sealed interface Application extends BundleSpec {
     record Stub(
             String name,
             String description,
-            String version,
+            BundleVersion version,
             String vendor,
             String copyright,
             Collection<RootedPath> appDirSources,

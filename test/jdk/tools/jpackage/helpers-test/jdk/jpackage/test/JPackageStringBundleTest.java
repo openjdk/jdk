@@ -40,13 +40,13 @@ class JPackageStringBundleTest {
 
     @Test
     void test_cannedFormattedString() {
-        assertFalse(JPackageStringBundle.MAIN.cannedFormattedString("error.version-string-empty").getValue().isBlank());
+        assertFalse(JPackageStringBundle.MAIN.cannedFormattedString("summary.property.version").getValue().isBlank());
     }
 
     @Test
     void test_cannedFormattedString_equals() {
-        var a = JPackageStringBundle.MAIN.cannedFormattedString("error.version-string-empty");
-        var b = JPackageStringBundle.MAIN.cannedFormattedString("error.version-string-empty");
+        var a = JPackageStringBundle.MAIN.cannedFormattedString("summary.property.version");
+        var b = JPackageStringBundle.MAIN.cannedFormattedString("summary.property.version");
 
         assertEquals(a, b);
 
@@ -63,9 +63,9 @@ class JPackageStringBundleTest {
 
     @Test
     void test_cannedFormattedStringAsPattern() {
-        var pred = JPackageStringBundle.MAIN.cannedFormattedStringAsPattern("error.version-string-empty", UNREACHABLE_FORMAT_ARG_MAPPER).asMatchPredicate();
+        var pred = JPackageStringBundle.MAIN.cannedFormattedStringAsPattern("summary.property.version", UNREACHABLE_FORMAT_ARG_MAPPER).asMatchPredicate();
 
-        var str = JPackageStringBundle.MAIN.cannedFormattedString("error.version-string-empty").getValue();
+        var str = JPackageStringBundle.MAIN.cannedFormattedString("summary.property.version").getValue();
         assertTrue(pred.test(str));
         assertFalse(pred.test(str + str));
     }
@@ -90,7 +90,7 @@ class JPackageStringBundleTest {
     @Test
     void test_cannedFormattedStringAsPattern_wrong_argument_count() {
         assertThrowsExactly(IllegalArgumentException.class, () -> {
-            JPackageStringBundle.MAIN.cannedFormattedStringAsPattern("error.version-string-empty", UNREACHABLE_FORMAT_ARG_MAPPER, "foo");
+            JPackageStringBundle.MAIN.cannedFormattedStringAsPattern("summary.property.version", UNREACHABLE_FORMAT_ARG_MAPPER, "foo");
         });
 
         assertThrowsExactly(IllegalArgumentException.class, () -> {
@@ -104,7 +104,7 @@ class JPackageStringBundleTest {
 
     private static Collection<CannedFormattedString> test_cannedFormattedString_wrong_argument_count() {
         return List.of(
-                JPackageStringBundle.MAIN.cannedFormattedString("error.version-string-empty", "foo"),
+                JPackageStringBundle.MAIN.cannedFormattedString("summary.property.version", "foo"),
                 JPackageStringBundle.MAIN.cannedFormattedString("message.error-header"),
                 JPackageStringBundle.MAIN.cannedFormattedString("message.error-header", "foo", "bar")
         );

@@ -62,6 +62,7 @@ import jdk.jpackage.internal.cli.OptionValue;
 import jdk.jpackage.internal.cli.Options;
 import jdk.jpackage.internal.cli.StandardFaOption;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
+import jdk.jpackage.internal.model.BundleVersion;
 import jdk.jpackage.internal.model.DottedVersion;
 import jdk.jpackage.internal.model.ExternalApplication;
 import jdk.jpackage.internal.model.FileAssociation;
@@ -236,7 +237,7 @@ final class MacFromOptions {
             superAppBuilder.launchers(new ApplicationLaunchers(MacLauncher.create(mainLauncher), launchers.additionalLaunchers()));
         }
 
-        superAppBuilder.derivedVersionNormalizer(MacFromOptions::normalizeVersion);
+        superAppBuilder.derivedVersionConverter(MacFromOptions::deriveVersion);
 
         return superAppBuilder;
     }
@@ -398,10 +399,10 @@ final class MacFromOptions {
         return options.contains(MAC_SIGNING_KEY_NAME) || options.contains(MAC_INSTALLER_SIGN_IDENTITY);
     }
 
-    private static String normalizeVersion(String version) {
+    private static Optional<BundleVersion> deriveVersion(ApplicationBuilder.DerivedValueOrigin origin, String version) {
         // macOS requires 1, 2 or 3 components version string.
         // When reading from release file it can be 1 or 3 or maybe more.
         // We will always normalize to 3 components if needed.
-        return DottedVersion.lazy(version).trim(3).toComponentsString();
+        return Optional.of(BundleVersion.of(DottedVersion.lazy(version).trim(3).stripUnprocessedSuffix()));
     }
 }

@@ -37,9 +37,12 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
+import jdk.jpackage.internal.cli.CannedException.CannedExceptionCarrier;
+import jdk.jpackage.internal.cli.Validator.ValidatingConsumerException;
+import jdk.jpackage.internal.model.BundleType;
+import jdk.jpackage.internal.model.BundleVersion;
 import jdk.jpackage.internal.model.PackageType;
 import jdk.jpackage.internal.model.StandardPackageType;
-import jdk.jpackage.internal.cli.Validator.ValidatingConsumerException;
 import jdk.jpackage.internal.util.FileUtils;
 import jdk.jpackage.internal.util.MacBundle;
 
@@ -210,6 +213,20 @@ public final class StandardValidator {
 
             return true;
         };
+    }
+
+    static Consumer<BundleVersion> versionValidator(BundleType type) {
+        var validator = VersionValidator.create(type);
+        return ver -> {
+            var cannedEx = validator.validate(ver);
+            if (cannedEx.isPresent()) {
+                throw new ValidatingConsumerException(new CannedExceptionCarrier(cannedEx.orElseThrow()));
+            }
+        };
+    }
+
+    public static Predicate<BundleVersion> isVersionPredicate(BundleType type) {
+        return toPredicate(versionValidator(type));
     }
 
     public static final class DirectoryListingIOException extends RuntimeException {

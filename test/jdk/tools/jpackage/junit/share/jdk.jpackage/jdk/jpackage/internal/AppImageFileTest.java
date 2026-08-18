@@ -62,6 +62,7 @@ import jdk.jpackage.internal.cli.WithOptionIdentifier;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
 import jdk.jpackage.internal.model.ApplicationLayout;
+import jdk.jpackage.internal.model.BundleVersion;
 import jdk.jpackage.internal.model.ExternalApplication;
 import jdk.jpackage.internal.model.ExternalApplication.LauncherInfo;
 import jdk.jpackage.internal.model.JPackageException;
@@ -161,7 +162,7 @@ public class AppImageFileTest {
     private static final class AppBuilder {
 
         AppBuilder version(String v) {
-            version = Objects.requireNonNull(v);
+            version = BundleVersion.of(v);
             return this;
         }
 
@@ -364,7 +365,7 @@ public class AppImageFileTest {
         }
 
 
-        private String version = "1.0";
+        private BundleVersion version = BundleVersion.of("1.0");
         private String appName = "Foo";
         private String mainClass = "Main";
         private final ExtraPropertyBuilder extra = new ExtraPropertyBuilder();
@@ -657,6 +658,9 @@ public class AppImageFileTest {
                 })
                 .subst(ExternalApplication.class, "extra", obj -> {
                     return toPropertyMap(obj.extra());
+                })
+                .subst(ExternalApplication.class, "appVersion", obj -> {
+                    return obj.appVersion().toString();
                 })
                 .subst(LauncherInfo.class, "extra", obj -> {
                     return toPropertyMap(obj.extra());

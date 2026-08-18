@@ -340,7 +340,7 @@ record MacPkgPackager(BuildEnv env, MacPkgPackage pkg, Optional<Services> servic
         xml.writeEndElement(); // </choice>
         xml.writeStartElement("pkg-ref");
         xml.writeAttribute("id", internalPkg.identifier());
-        xml.writeAttribute("version", pkg.version());
+        xml.writeAttribute("version", pkg.version().toString());
         xml.writeAttribute("onConclusion", "none");
         try {
             xml.writeCharacters(new URI(null, null, internalPkg.path().getFileName().toString(), null).toASCIIString());
