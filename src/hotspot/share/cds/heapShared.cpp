@@ -1716,23 +1716,27 @@ void HeapShared::init_box_classes(TRAPS) {
   }
 }
 
+// Used by HeapShared::scan_inline_classes().
 class HeapShared::InlineKlassScanner : public FieldClosure {
   KlassSubGraphInfo* _subgraph_info;
   oop _obj;
 public:
+  // obj can point to a regular heap object, or an element of a flattened array,
+  // or a flattened field embedded inside a heap object.
   InlineKlassScanner(KlassSubGraphInfo* subgraph_info, oop obj)
-    : _subgraph_info(subgraph_info), _obj(obj) {}
+    : _subgraph_info(subgraph_info), _obj(obj) {
+    precond(obj != nullptr);
+  }
   void do_field(fieldDescriptor* fd) override {
     if (fd->is_flat()) {
       precond(fd->field_type() == T_OBJECT);
       int index = fd->index();
       InlineKlass* vk = fd->field_holder()->get_inline_type_field_klass(index);
       int field_offset = fd->offset() - vk->payload_offset();
-      address field_addr = _obj->field_addr<u_char>(field_offset);
+      address field_addr = cast_from_oop<address>(_obj) + field_offset;
 
       if (fd->is_null_free_inline_type() || !vk->is_payload_marked_as_null(field_addr)) {
-        // We have a non-null flattened instance
-        add_inline_class(_subgraph_info, vk);
+        add_inline_class(_subgraph_info, vk); // Found a non-null flattened instance. Record it.
         oop inline_obj = cast_to_oop(field_addr);
         InlineKlassScanner scanner(_subgraph_info, inline_obj);
         vk->do_nonstatic_fields(&scanner);
@@ -1750,7 +1754,7 @@ void HeapShared::add_inline_class(KlassSubGraphInfo* subgraph_info, InlineKlass*
 }
 
 // Recursively scan for any InlineKlass K that has least one non-null flattened instance
-// inside orig_oobj. K should be added with add_inline_class().
+// inside orig_obj. K should be recorded with add_inline_class().
 // Example:
 //     value class Point { short x; short y; ... }
 //     value class Line {
@@ -1761,6 +1765,8 @@ void HeapShared::add_inline_class(KlassSubGraphInfo* subgraph_info, InlineKlass*
 //   If only a single instance of Line is archived, HeapShared::archive_object() would
 //   have never seen a (stand-alone) oop of Point, but we must store Point in
 //   AOT-initialized state. This function finds Point.
+//
+// Note: klasses of non-flattened instances are already recorded by HeapShared::archive_object().
 void HeapShared::scan_inline_classes(KlassSubGraphInfo* subgraph_info, oop orig_obj) {
   Klass* klass = orig_obj->klass();
 
