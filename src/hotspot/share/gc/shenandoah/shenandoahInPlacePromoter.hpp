@@ -84,7 +84,7 @@ class ShenandoahInPlacePromotionPlanner {
     RegionPromotionStats() : count(0), usage(0), free(0), garbage(0) {}
     void update(ShenandoahHeapRegion* region) {
       count++;
-      usage += region->used();
+      usage += region->get_live_data_bytes();
       free += region->free();
       garbage += region->garbage();
     }
@@ -121,6 +121,11 @@ public:
   const RegionPromotionStats& humongous_region_stats() const { return _pip_humongous_stats; }
 
   size_t old_garbage_threshold() const { return _old_garbage_threshold; }
+
+  // Return the total amount of live bytes that will be promoted in place
+  size_t live_bytes() const {
+    return regular_region_stats().usage + humongous_region_stats().usage;
+  }
 };
 
 // For regions that have been selected and prepared for promotion, this class
