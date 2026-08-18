@@ -72,7 +72,7 @@ public class MetricsMemoryTester {
         final int M = 1024 * 1024;
 
         // We need swap to execute this test. Otherwise OOM killer acts with
-        // SIGSEGV before we read the fail counter.
+        // SIGKILL before we read the fail counter.
 
         final long maxHeapSize = Runtime.getRuntime().maxMemory();
         if (maxHeapSize <= memLimit || maxHeapSize >= memAndSwapLimit) {
