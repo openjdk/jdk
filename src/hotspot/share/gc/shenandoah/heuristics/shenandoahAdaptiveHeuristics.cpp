@@ -198,7 +198,7 @@ void ShenandoahAdaptiveHeuristics::record_success_concurrent(bool abbreviated) {
   }
 
   if (add_sample) {
-    _cycles.record_duration(_cycle_start, elapsed_cycle_time());
+    _cycles.record_duration(_cycle_start, gc_time);
   }
 
   double z_score = 0.0;
