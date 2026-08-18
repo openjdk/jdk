@@ -34,6 +34,8 @@ import jdk.incubator.json.JsonObject;
 import jdk.incubator.json.JsonString;
 import jdk.incubator.json.JsonValue;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -130,41 +132,39 @@ public class Utils {
         // value, but can occur in the structure itself. The offsets in the exception
         // message should ultimately be derived from the parser state.
         private static String getParsingPath(int offset, char[] doc, boolean structural) {
-            var sb = new StringBuilder();
+            var pathParts = new ArrayList<String>();
             // If we encounter an error within the structural state, but not within a value itself
             // we need to manually insert the brace otherwise backtracking skips it
             if (structural) {
                 // Structural parsing cases
                 if (doc[offset] == '[') {
-                    sb.append('[');
+                    pathParts.add("[");
                 } else if (doc[offset] == '{') {
-                    sb.append('{');
+                    pathParts.add("{");
                 }
             }
-            return " Path: \"%s\".".formatted(
-                    new JsonPath(offset, doc).parseToRoot(sb));
+            return " Path: \"%s\".".formatted(new JsonPath(offset, doc).parseToRoot(pathParts));
         }
 
         // JsonValueException path produces a path that always leads to a value, and should provide
         // the correct line and pos positions derived from the JV itself
         private static String getValuePath(JsonValueImpl jvi) {
-            var sb = new StringBuilder();
+            var pathParts = new ArrayList<String>();
             var jp = new JsonPath(jvi.offset(), jvi.doc());
-            var path = jp.parseToRoot(sb);
+            var path = jp.parseToRoot(pathParts);
             // After path is produced, line and pos should be value bearing
             return String.format(Locale.ROOT,
                 " Path: \"%s\". Location: line %d, position %d.",
                 path, jp.line, jp.pos);
         }
 
-        private String parseToRoot(StringBuilder sb) {
-            // Updates the sb
-            toPath(offset, sb);
+        private String parseToRoot(List<String> pathParts) {
+            toPath(offset, pathParts);
             // If no new line encountered, pos is the starting offset value
             if (line == 0) {
                 pos = offset;
             }
-            return sb.toString();
+            return String.join("", pathParts.reversed());
         }
 
         private void addLine(int curr) {
@@ -175,7 +175,7 @@ public class Utils {
         }
 
         // StringBuilder is populated upon completion
-        private void toPath(int offset, StringBuilder sb) {
+        private void toPath(int offset, List<String> pathParts) {
             // Walk past starting char and white space
             offset = walkWhitespace(offset - 1);
             // If offset is -1, we found the root and are finished
@@ -184,8 +184,8 @@ public class Utils {
                 offset = switch (doc[offset]) {
                     // Does the actual appending
                     // Walks to the node's starting [ or {
-                    case ',', '[' -> arrayNode(offset, sb);
-                    case ':' -> objectNode(offset, sb);
+                    case ',', '[' -> arrayNode(offset, pathParts);
+                    case ':' -> objectNode(offset, pathParts);
                     default -> throw new InternalError();
                 };
                 offset = walkWhitespace(offset - 1);
@@ -212,7 +212,7 @@ public class Utils {
 
         // Backtracking from an element in a JsonArray either expects a ',' or '['
         // E.g. " [ val ... " or " [ foo, val "
-        private int arrayNode(int offset, StringBuilder sb) {
+        private int arrayNode(int offset, List<String> pathParts) {
             int aDepth = 0;
             int oDepth = 0;
             int values = 0;
@@ -245,13 +245,13 @@ public class Utils {
                 }
                 offset--;
             }
-            sb.insert(0, '[' + String.valueOf(values));
+            pathParts.add('[' + String.valueOf(values));
             return offset;
         }
 
         // Unlike arrayNode, always expects a ':'
         // Regardless of value position, always preceded by a member name and colon
-        private int objectNode(int offset, StringBuilder sb) {
+        private int objectNode(int offset, List<String> pathParts) {
             offset--; // Walk past ':'
             int depth = 0;
             int nameStart = 0;
@@ -275,7 +275,7 @@ public class Utils {
             }
 
             // Add the name
-            sb.insert(0, '{' + new String(doc, nameStart, nameEnd - nameStart));
+            pathParts.add('{' + new String(doc, nameStart, nameEnd - nameStart));
 
             boolean inString = false;
             // Move to parent offset
