@@ -467,7 +467,7 @@ public final class JsonParser {
     private static final String UNEXPECTED_VAL =
             "Unexpected value. Expected a JSON Object, Array, String, Number, Boolean, or Null";
     private static final String UNRECOGNIZED_ESCAPE_SEQUENCE =
-            "Unrecognized escape sequence: \"\\0x%04X\"";
+            "Unrecognized escape sequence: \"\\\\u%04X\"";
     private static final String UNESCAPED_CONTROL_CODE =
             "Unescaped control code";
     private static final String UNCLOSED_STRING =
