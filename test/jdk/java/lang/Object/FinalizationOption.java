@@ -26,10 +26,11 @@
  * @bug 8276422 8387729
  * @summary add command-line option to disable finalization
  * @library /test/lib
- * @run main/othervm                         FinalizationOption yes
- * @run main/othervm --finalization=enabled  FinalizationOption yes
- * @run main/othervm --finalization=disabled FinalizationOption no
- * @run main FinalizationOption whitespace
+ * @run main FinalizationOption enabled  default
+ * @run main FinalizationOption enabled  equals
+ * @run main FinalizationOption enabled  whitespace
+ * @run main FinalizationOption disabled equals
+ * @run main FinalizationOption disabled whitespace
  */
 
 import jdk.test.lib.process.ProcessTools;
@@ -109,23 +110,30 @@ public class FinalizationOption {
         return passed;
     }
 
-    public static void main(String[] args) throws Exception{
-        if ("whitespace".equals(args[0])) {
-            ProcessTools.executeTestJava("--finalization", "enabled",
-                                         "FinalizationOption", "yes")
-                        .shouldHaveExitValue(0);
+    static void launch(String mode, String form) throws Exception {
+        String[] javaArgs = switch (form) {
+            case "default"    -> new String[] {"FinalizationOption", mode};
+            case "equals"     -> new String[] {"--finalization=" + mode,
+                                               "FinalizationOption", mode};
+            case "whitespace" -> new String[] {"--finalization", mode,
+                                               "FinalizationOption", mode};
+            default -> throw new AssertionError("Unexpected option form: " + form);
+        };
 
-            ProcessTools.executeTestJava("--finalization", "disabled",
-                                         "FinalizationOption", "no")
-                        .shouldHaveExitValue(0);
+        ProcessTools.executeTestJava(javaArgs).shouldHaveExitValue(0);
+    }
+
+    public static void main(String[] args) throws Exception {
+        if (args.length == 2) {
+            launch(args[0], args[1]);
             return;
         }
 
         boolean finalizationEnabled = switch (args[0]) {
-            case "yes" -> true;
-            case "no"  -> false;
+            case "enabled"  -> true;
+            case "disabled" -> false;
             default -> {
-                throw new AssertionError("usage: FinalizationOption yes|no");
+                throw new AssertionError("usage: FinalizationOption enabled|disabled");
             }
         };
 
