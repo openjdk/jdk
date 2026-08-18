@@ -26,18 +26,24 @@
 
 #include "gc/shenandoah/shenandoahStackChunkGCData.hpp"
 
+#include "oops/instanceStackChunkKlass.hpp"
 #include "oops/stackChunkOop.inline.hpp"
 
 inline ShenandoahStackChunkGCData* ShenandoahStackChunkGCData::data(stackChunkOop chunk) {
+#ifdef ASSERT
+  size_t data_size = sizeof(ShenandoahStackChunkGCData);
+  size_t avail_size = InstanceStackChunkKlass::gc_data_size(chunk->stack_size()) * HeapWordSize;
+  assert(data_size <= avail_size, "Data of size %zu must fit in %zu space", data_size, avail_size);
+#endif
   return reinterpret_cast<ShenandoahStackChunkGCData*>(chunk->gc_data());
 }
 
 inline void ShenandoahStackChunkGCData::initialize(stackChunkOop chunk) {
-  data(chunk)->_epoch = _stack_chunk_epoch_id.load_relaxed();
+  data(chunk)->_epoch = _epoch_id_counter.load_relaxed();
 }
 
 inline bool ShenandoahStackChunkGCData::is_different_epoch(stackChunkOop chunk) {
-  return data(chunk)->_epoch != _stack_chunk_epoch_id.load_relaxed();
+  return data(chunk)->_epoch != _epoch_id_counter.load_relaxed();
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHSTACKCHUNKGCDATA_INLINE_HPP

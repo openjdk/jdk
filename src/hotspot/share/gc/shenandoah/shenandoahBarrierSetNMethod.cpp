@@ -25,13 +25,12 @@
 
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetNMethod.hpp"
-
-#include "shenandoahStackChunkGCData.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCodeRoots.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
+#include "gc/shenandoah/shenandoahStackChunkGCData.hpp"
 #include "gc/shenandoah/shenandoahStackWatermark.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "memory/iterator.hpp"

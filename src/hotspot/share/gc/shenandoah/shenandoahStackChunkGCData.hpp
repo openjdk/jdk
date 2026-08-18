@@ -29,9 +29,11 @@
 
 class ShenandoahStackChunkGCData {
 private:
-  static Atomic<int64_t> _stack_chunk_epoch_id;
+  // Monotonically increasing epoch counter.
+  // Must not wrap to track the epoch accurately.
+  static Atomic<int64_t> _epoch_id_counter;
 
-  // The GC epoch when chunk was allocated
+  // The GC epoch when chunk was allocated.
   int64_t _epoch;
 
   static ShenandoahStackChunkGCData* data(stackChunkOop chunk);

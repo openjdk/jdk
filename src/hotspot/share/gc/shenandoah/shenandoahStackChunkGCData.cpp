@@ -21,12 +21,14 @@
  * questions.
  */
 
+#include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahStackChunkGCData.hpp"
-
+#include "gc/shenandoah/shenandoahUtils.hpp"
 #include "runtime/atomic.hpp"
 
-Atomic<int64_t> ShenandoahStackChunkGCData::_stack_chunk_epoch_id;
+Atomic<int64_t> ShenandoahStackChunkGCData::_epoch_id_counter;
 
 void ShenandoahStackChunkGCData::change_epoch_id() {
-  _stack_chunk_epoch_id.add_then_fetch(1, memory_order_relaxed);
+  shenandoah_assert_safepoint();
+  _epoch_id_counter.add_then_fetch(1, memory_order_relaxed);
 }
