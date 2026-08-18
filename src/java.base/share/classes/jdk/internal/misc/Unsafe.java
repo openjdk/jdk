@@ -313,6 +313,15 @@ public final class Unsafe {
 
     private native int fieldLayout0(Object o);
 
+    /**
+     * Returns an array compatible with the requested layout layout kind.
+     * The returned array does not necessarily contain initialized data.
+     * It is the responsibility of the caller to ensure that each read index is initialized.
+     * @param componentType class of the elements of the array
+     * @param length length of the array
+     * @param layoutKind opaque value describing the requested layout of the array's content
+     * @return an array whose contents is potentially uninitialized
+     */
     public native Object[] newSpecialArray(Class<?> componentType,
                                                   int length, int layoutKind);
 
