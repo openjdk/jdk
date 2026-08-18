@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package sun.security.provider;
 
 import sun.security.pkcs.NamedPKCS8Key;
-import sun.security.util.RawKeySpec;
 import sun.security.x509.NamedX509Key;
 
 import java.security.AsymmetricKey;
@@ -53,7 +52,6 @@ import java.util.Arrays;
 /// 2. It writes to a RAW [EncodedKeySpec] if `getKeySpec(key, EncodedKeySpec.class)`
 ///    is called. The format of the output is "RAW" and the algorithm is
 ///    intentionally left unspecified.
-/// 3. It reads from and writes to the internal type [RawKeySpec].
 ///
 /// When reading from a RAW format, it needs enough info to derive the
 /// parameter set name.
@@ -98,13 +96,6 @@ public abstract class NamedKeyFactory extends KeyFactorySpi {
                     throw new InvalidKeySpecException(e);
                 }
             }
-            case RawKeySpec rks -> {
-                if (pnames.length == 1) {
-                    yield new NamedX509Key(fname, pnames[0], rks.getKeyArr());
-                } else {
-                    throw new InvalidKeySpecException("Parameter set name unavailable");
-                }
-            }
             case EncodedKeySpec espec when espec.getFormat().equalsIgnoreCase("RAW") -> {
                 if (pnames.length == 1) {
                     yield new NamedX509Key(fname, pnames[0], espec.getEncoded());
@@ -132,18 +123,6 @@ public abstract class NamedKeyFactory extends KeyFactorySpi {
                     throw new InvalidKeySpecException(e);
                 } finally {
                     Arrays.fill(bytes, (byte) 0);
-                }
-            }
-            case RawKeySpec rks -> {
-                if (pnames.length == 1) {
-                    var raw = rks.getKeyArr();
-                    try {
-                        yield fromRaw(pnames[0], raw);
-                    } catch (InvalidKeyException e) {
-                        throw new InvalidKeySpecException("Invalid key input", e);
-                    }
-                } else {
-                    throw new InvalidKeySpecException("Parameter set name unavailable");
                 }
             }
             case EncodedKeySpec espec when espec.getFormat().equalsIgnoreCase("RAW") -> {
@@ -212,8 +191,6 @@ public abstract class NamedKeyFactory extends KeyFactorySpi {
                 if (keySpec == PKCS8EncodedKeySpec.class) {
                     return keySpec.cast(
                             new PKCS8EncodedKeySpec(bytes = key.getEncoded()));
-                } else if (keySpec == RawKeySpec.class) {
-                    return keySpec.cast(new RawKeySpec(nk.getRawBytes()));
                 } else if (keySpec.isAssignableFrom(EncodedKeySpec.class)) {
                     return keySpec.cast(
                             new RawEncodedKeySpec(nk.getRawBytes()));
@@ -229,8 +206,6 @@ public abstract class NamedKeyFactory extends KeyFactorySpi {
             if (keySpec == X509EncodedKeySpec.class
                     && key.getFormat().equalsIgnoreCase("X.509")) {
                 return keySpec.cast(new X509EncodedKeySpec(key.getEncoded()));
-            } else if (keySpec == RawKeySpec.class) {
-                return keySpec.cast(new RawKeySpec(nk.getRawBytes()));
             } else if (keySpec.isAssignableFrom(EncodedKeySpec.class)) {
                 return keySpec.cast(new RawEncodedKeySpec(nk.getRawBytes()));
             } else {

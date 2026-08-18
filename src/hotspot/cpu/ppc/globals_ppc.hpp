@@ -36,7 +36,7 @@ define_pd_global(bool, ImplicitNullChecks,    true);  // Generate code for impli
 define_pd_global(bool, TrapBasedNullChecks,   true);
 define_pd_global(bool, UncommonNullCast,      true);  // Uncommon-trap nulls passed to check cast.
 
-define_pd_global(bool, DelayCompilerStubsGeneration, COMPILER2_OR_JVMCI);
+define_pd_global(bool, DelayCompilerStubsGeneration, COMPILER2_PRESENT(true) NOT_COMPILER2(false));
 
 #define DEFAULT_STACK_YELLOW_PAGES (2)
 #define DEFAULT_STACK_RED_PAGES (1)
@@ -76,6 +76,9 @@ define_pd_global(bool, CompactStrings, true);
 
 // 2x unrolled loop is shorter with more than 9 HeapWords.
 define_pd_global(intx, InitArrayShortSize, 9*BytesPerLong);
+
+define_pd_global(bool, InlineTypePassFieldsAsArgs, false);
+define_pd_global(bool, InlineTypeReturnedAsFields, false);
 
 // Platform dependent flag handling: flags only defined on this platform.
 #define ARCH_FLAGS(develop,                                                 \

@@ -451,10 +451,20 @@ public:
   // Helper to call Node::Ideal() and BarrierSetC2::ideal_node().
   Node* apply_ideal(Node* i, bool can_reshape);
 
+  // Helper to call Node::Identity() and verify that it returns an existing node.
+  Node* apply_identity(Node* n);
+
 #ifdef ASSERT
   void dump_infinite_loop_info(Node* n, const char* where);
   // Check for a simple dead loop when a data node references itself.
   void dead_loop_check(Node *n);
+#endif
+
+#ifndef PRODUCT
+  static bool is_verify_Identity_return() {
+    // '-XX:VerifyIterativeGVN=1000000'
+    return ((VerifyIterativeGVN % 10'000'000) / 1'000'000) == 1;
+  }
 #endif
 };
 
@@ -524,7 +534,7 @@ public:
 
   // Idealize new Node 'n' with respect to its inputs and its value
   virtual Node *transform( Node *a_node );
-  virtual void record_for_igvn(Node *n) { }
+  virtual void record_for_igvn(Node *n) { _worklist.push(n); }
 
   // Iterative worklist. Reference to "C->igvn_worklist()".
   Unique_Node_List &_worklist;
@@ -610,6 +620,8 @@ public:
     hash_delete(old); // Yank from hash before hacking edges
     subsume_node(old, nn);
   }
+
+  void replace_in_uses(Node* n, Node* m);
 
   // Delayed node rehash: remove a node from the hash table and rehash it during
   // next optimizing pass
@@ -710,6 +722,7 @@ class PhaseCCP : public PhaseIterGVN {
   static void push_catch(Unique_Node_List& worklist, const Node* use);
   void push_cmpu(Unique_Node_List& worklist, const Node* use) const;
   static void push_counted_loop_phi(Unique_Node_List& worklist, Node* parent, const Node* use);
+  static void push_cast(Unique_Node_List& worklist, const Node* use);
   void push_loadp(Unique_Node_List& worklist, const Node* use) const;
   static void push_load_barrier(Unique_Node_List& worklist, const BarrierSetC2* barrier_set, const Node* use);
   void push_and(Unique_Node_List& worklist, const Node* parent, const Node* use) const;
