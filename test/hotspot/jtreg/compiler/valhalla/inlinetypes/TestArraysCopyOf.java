@@ -112,13 +112,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiFunction;
-import java.util.function.IntFunction;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import static compiler.lib.template_framework.Template.*;
-import static compiler.lib.template_framework.Template.scope;
 
 public class TestArraysCopyOf {
     private static final RestrictableGenerator<Integer> RANDOM_LENGTH = Generators.G.ints().restricted(0, 32);
@@ -226,9 +221,9 @@ public class TestArraysCopyOf {
 
                                 public #klass(\
                         """,
-                concat(primitiveTypes, (type, _) -> scope(type.name() + " _" + type.name())),
+                    mapAndJoin(primitiveTypes, ", ", type -> scope(type.name() + " _" + type.name())),
                         ") {\n",
-                loop(primitiveTypes, (type, _) -> scope(
+                    map(primitiveTypes, type -> scope(
                         let("type", type.name()),
                         "            this._#type = _#type;\n")),
                         // Initializer
@@ -238,7 +233,7 @@ public class TestArraysCopyOf {
                                 static #klass init() {
                                     return new #klass(\
                         """,
-                concat(primitiveTypes, (type, _) -> scope(type.con())),
+                    mapAndJoin(primitiveTypes, ", ", type -> scope(type.con())),
                         ");\n",
                         """
                                 }
@@ -249,7 +244,7 @@ public class TestArraysCopyOf {
                             static Object[] oArr = new Object[1];
                         """,
                 // Passing A.class, int.class etc. Should always throw.
-                loop(instanceAndPrimitiveClasses.size(), i -> scope(
+                repeat(instanceAndPrimitiveClasses.size(), i -> scope(
                         let("i", uniqueIndex.getAndIncrement()),
                         let("klass", instanceAndPrimitiveClasses.get(i)),
                         let("test", "testNonArrayClass_" + instanceAndPrimitiveClasses.get(i)),
@@ -267,7 +262,7 @@ public class TestArraysCopyOf {
                             }
                         """)),
                 // Passing in primitive type arrays which like int[].class which should throw.
-                loop(primitiveTypeClasses.size(), i -> scope(
+                repeat(primitiveTypeClasses.size(), i -> scope(
                         let("i", uniqueIndex.getAndIncrement()),
                         let("klass", primitiveTypeClasses.get(i) + "[]"),
                         let("test", "testPrimitiveArrayClass_" + primitiveTypeClasses.get(i)),
@@ -285,7 +280,7 @@ public class TestArraysCopyOf {
                             }
                         """)),
                 // Normal tests with non-primitive type arrays.
-                loop(concreteInstanceClasses.size(), i -> scope(
+                repeat(concreteInstanceClasses.size(), i -> scope(
                         let("i", uniqueIndex.getAndIncrement()),
                         let("klass_name", concreteInstanceClasses.get(i).name()),
                         let("klass", concreteInstanceClasses.get(i).name() + "[]"),
@@ -312,7 +307,7 @@ public class TestArraysCopyOf {
                             }
                         """)),
                 // Normal tests with value class arrays.
-                loop(newValueClassArrayScopes, (init, i) -> scope(
+                map(newValueClassArrayScopes, (init, i) -> scope(
                         let("i", uniqueIndex.getAndIncrement()),
                         let("klass_name", valueClasses.get(i).name()),
                         let("klass", valueClasses.get(i).name() + "[]"),
@@ -359,29 +354,5 @@ public class TestArraysCopyOf {
                         return Arrays.copyOf(arr, length, c);
                     }
                 """;
-    }
-
-    static List<ScopeToken> loop(int limit, IntFunction<ScopeToken> function) {
-        return IntStream.range(0, limit)
-                .mapToObj(function)
-                .toList();
-    }
-
-    static <T> List<ScopeToken> loop(List<T> items, BiFunction<T, Integer, ScopeToken> function) {
-        return IntStream.range(0, items.size())
-                .mapToObj(i -> function.apply(items.get(i), i))
-                .toList();
-    }
-
-    static <T> List<ScopeToken> concat(List<T> items, BiFunction<T, Integer, ScopeToken> function) {
-        return IntStream.range(0, items.size())
-                .boxed()
-                .flatMap(i -> {
-                    ScopeToken token = function.apply(items.get(i), i);
-                    return i == items.size() - 1 ?
-                            Stream.of(token) :
-                            Stream.of(token, scope(", "));
-                })
-                .toList();
     }
 }
