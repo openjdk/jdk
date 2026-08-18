@@ -39,7 +39,6 @@ ShenandoahInPlacePromotionPlanner::ShenandoahInPlacePromotionPlanner(const Shena
   , _marking_context(_heap->marking_context())
   , _mutator_regions(_free_set)
   , _collector_regions(_free_set)
-  , _pip_padding_bytes(0)
 {
 }
 
@@ -105,7 +104,6 @@ void ShenandoahInPlacePromotionPlanner::prepare(ShenandoahHeapRegion* r) {
       remnant_bytes = 0;
     }
 
-    _pip_padding_bytes += remnant_bytes;
     _free_set->prepare_to_promote_in_place(i, remnant_bytes);
   } else {
     // Since the remnant is so small that this region has already been retired, we don't have to worry about any

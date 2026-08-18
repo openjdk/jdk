@@ -101,9 +101,6 @@ class ShenandoahInPlacePromotionPlanner {
   RegionPromotions _mutator_regions;
   RegionPromotions _collector_regions;
 
-  // Tracks the padding of space above top in regions eligible for promotion in place
-  size_t _pip_padding_bytes;
-
   // Tracks stats for in place promotions
   RegionPromotionStats _pip_regular_stats;
   RegionPromotionStats _pip_humongous_stats;
