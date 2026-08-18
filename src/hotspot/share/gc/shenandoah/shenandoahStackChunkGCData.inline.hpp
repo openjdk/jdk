@@ -26,7 +26,7 @@
 
 #include "gc/shenandoah/shenandoahStackChunkGCData.hpp"
 
-#include "oops/instanceStackChunkKlass.hpp"
+#include "oops/instanceStackChunkKlass.inline.hpp"
 #include "oops/stackChunkOop.inline.hpp"
 
 inline ShenandoahStackChunkGCData* ShenandoahStackChunkGCData::data(stackChunkOop chunk) {
