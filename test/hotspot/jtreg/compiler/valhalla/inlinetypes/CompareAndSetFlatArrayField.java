@@ -119,11 +119,11 @@ public class CompareAndSetFlatArrayField {
             throw new RuntimeException("unexpected layout");
         }
         for (int i = 0; i < 20_000; i++) {
-            // boolean res = test1(o1, o2);
-            // if (!res) {
-            //     throw new RuntimeException("CAS failed");
-            // }
-            boolean res = test2(42, 0x42);
+            boolean res = test1(o1, o2);
+            if (!res) {
+                throw new RuntimeException("CAS failed");
+            }
+            res = test2(42, 0x42);
             if (!res) {
                 throw new RuntimeException("CAS failed");
             }
