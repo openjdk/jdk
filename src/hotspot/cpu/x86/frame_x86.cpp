@@ -649,41 +649,6 @@ frame::frame(void* sp, void* fp, void* pc) {
 
 #endif
 
-// Check for a method with scalarized inline type arguments that needs
-// a stack repair and return the repaired sender stack pointer.
-intptr_t* frame::repair_sender_sp(intptr_t* sender_sp, intptr_t** saved_fp_addr) const {
-  nmethod* nm = _cb->as_nmethod_or_null();
-  if (nm != nullptr && nm->needs_stack_repair()) {
-    // The stack increment resides just below the saved rbp on the stack
-    // and does not account for the return address and rbp (see MacroAssembler::remove_frame).
-    intptr_t* real_frame_size_addr = (intptr_t*) (saved_fp_addr - 1);
-    int real_frame_size = (*real_frame_size_addr / wordSize) + metadata_words_at_bottom;
-    assert(real_frame_size >= _cb->frame_size() && real_frame_size <= 1000000, "invalid frame size");
-    sender_sp = unextended_sp() + real_frame_size;
-  }
-  return sender_sp;
-}
-
-
-// See comment in MacroAssembler::remove_frame
-frame::CompiledFramePointers frame::compiled_frame_details() const {
-  // frame owned by optimizing compiler
-  assert(_cb->frame_size() > 0, "must have non-zero frame size");
-  intptr_t* sender_sp = unextended_sp() + _cb->frame_size();
-  assert(sender_sp == real_fp(), "");
-
-  // Repair the sender sp if the frame has been extended
-  sender_sp = repair_sender_sp(sender_sp, (intptr_t**)(sender_sp - frame::sender_sp_offset));
-
-  CompiledFramePointers cfp;
-  cfp.sender_sp = sender_sp;
-  cfp.saved_fp_addr = (intptr_t**)(sender_sp - frame::sender_sp_offset);
-  // On Intel the return_address is always the word on the stack
-  cfp.sender_pc_addr = (address*)(sender_sp - frame::return_addr_offset);
-
-  return cfp;
-}
-
 intptr_t* frame::repair_sender_sp(nmethod* nm, intptr_t* sp, intptr_t** saved_fp_addr) {
   assert(nm != nullptr && nm->needs_stack_repair(), "");
   // The stack increment resides just below the saved rbp on the stack
@@ -695,8 +660,8 @@ intptr_t* frame::repair_sender_sp(nmethod* nm, intptr_t* sp, intptr_t** saved_fp
 }
 
 bool frame::was_augmented_on_entry(int& real_size) const {
-  assert(is_compiled_frame(), "");
-  if (_cb->as_nmethod_or_null()->needs_stack_repair()) {
+  assert(_cb != nullptr && _cb->is_nmethod(), "");
+  if (_cb->as_nmethod()->needs_stack_repair()) {
     // The stack increment resides just below the saved rbp on the stack
     // and does not account for the return address and rbp (see MacroAssembler::remove_frame).
     intptr_t* real_frame_size_addr = unextended_sp() + _cb->frame_size() - sender_sp_offset - 1;

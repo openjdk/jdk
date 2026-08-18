@@ -119,6 +119,72 @@ void DivByZeroStub::emit_code(LIR_Assembler* ce) {
   DEBUG_ONLY(__ should_not_reach_here());
 }
 
+// Implementation of LoadFlattenedArrayStub
+
+LoadFlattenedArrayStub::LoadFlattenedArrayStub(LIR_Opr array, LIR_Opr index, LIR_Opr result, CodeEmitInfo* info) {
+  _array = array;
+  _index = index;
+  _result = result;
+  _scratch_reg = FrameMap::Z_R2_oop_opr;
+  _info = new CodeEmitInfo(info);
+}
+
+void LoadFlattenedArrayStub::emit_code(LIR_Assembler* ce) {
+  __ bind(_entry);
+  __ untested("LoadFlattenedArrayStub::emit_code");
+  ce->store_parameter(_array->as_register(), 1);
+  ce->store_parameter(_index->as_register(), 0);
+  ce->emit_call_c(Runtime1::entry_for(StubId::c1_load_flat_array_id));
+  CHECK_BAILOUT();
+  ce->add_call_info_here(_info);
+  ce->verify_oop_map(_info);
+  __ lgr_if_needed(_result->as_register(), Z_R2);
+  __ branch_optimized(Assembler::bcondAlways, _continuation);
+}
+
+// Implementation of StoreFlattenedArrayStub
+
+StoreFlattenedArrayStub::StoreFlattenedArrayStub(LIR_Opr array, LIR_Opr index, LIR_Opr value, CodeEmitInfo* info) {
+  _array = array;
+  _index = index;
+  _value = value;
+  _scratch_reg = FrameMap::Z_R2_oop_opr;
+  _info = new CodeEmitInfo(info);
+}
+
+void StoreFlattenedArrayStub::emit_code(LIR_Assembler* ce) {
+  __ bind(_entry);
+  __ untested("StoreFlattenedArrayStub::emit_code");
+  ce->store_parameter(_array->as_register(), 2);
+  ce->store_parameter(_index->as_register(), 1);
+  ce->store_parameter(_value->as_register(), 0);
+  ce->emit_call_c(Runtime1::entry_for(StubId::c1_store_flat_array_id));
+  CHECK_BAILOUT();
+  ce->add_call_info_here(_info);
+  ce->verify_oop_map(_info);
+  __ branch_optimized(Assembler::bcondAlways, _continuation);
+}
+
+// Implementation of SubstitutabilityCheckStub
+
+SubstitutabilityCheckStub::SubstitutabilityCheckStub(LIR_Opr left, LIR_Opr right, CodeEmitInfo* info) {
+  _left = left;
+  _right = right;
+  _scratch_reg = FrameMap::Z_R2_oop_opr;
+  _info = new CodeEmitInfo(info);
+}
+
+void SubstitutabilityCheckStub::emit_code(LIR_Assembler* ce) {
+  __ bind(_entry);
+  ce->store_parameter(_left->as_register(), 1);
+  ce->store_parameter(_right->as_register(), 0);
+  ce->emit_call_c(Runtime1::entry_for(StubId::c1_substitutability_check_id));
+  CHECK_BAILOUT();
+  ce->add_call_info_here(_info);
+  ce->verify_oop_map(_info);
+  __ branch_optimized(Assembler::bcondAlways, _continuation);
+}
+
 void ImplicitNullCheckStub::emit_code(LIR_Assembler* ce) {
   address a;
   if (_info->deoptimize_on_exception()) {
@@ -200,14 +266,22 @@ NewObjectArrayStub::NewObjectArrayStub(LIR_Opr klass_reg, LIR_Opr length, LIR_Op
   _length = length;
   _result = result;
   _info = new CodeEmitInfo(info);
-  _is_null_free = is_null_free; // unimplemented
+  _is_null_free = is_null_free;
 }
 
 void NewObjectArrayStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
   assert(_klass_reg->as_register() == Z_R11, "call target expects klass in Z_R11");
   __ lgr_if_needed(Z_R13, _length->as_register());
-  address a = Runtime1::entry_for (StubId::c1_new_object_array_id);
+
+  address a;
+  if (_is_null_free) {
+    __ untested("NewObjectArrayStub::emit_code");
+    a = Runtime1::entry_for(StubId::c1_new_null_free_array_id);
+  } else {
+    a = Runtime1::entry_for(StubId::c1_new_object_array_id);
+  }
+
   ce->emit_call_c(a);
   CHECK_BAILOUT();
   ce->add_call_info_here(_info);
@@ -218,6 +292,15 @@ void NewObjectArrayStub::emit_code(LIR_Assembler* ce) {
 
 void MonitorEnterStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
+  if (_throw_ie_stub != nullptr) {
+    static_assert(markWord::inline_type_pattern <= 0x7FFF, "must fit in simm16 for z_chi");
+    // When we come here, _obj_reg has already been checked to be non-null.
+    Register scratch = _scratch_reg->as_register();
+    __ z_lg(scratch, oopDesc::mark_offset_in_bytes(), _obj_reg->as_register());
+    __ z_nilf(scratch, markWord::inline_type_pattern_mask);
+    __ z_chi(scratch, markWord::inline_type_pattern);
+    __ branch_optimized(Assembler::bcondEqual, *_throw_ie_stub->entry());
+  }
   StubId enter_id;
   if (ce->compilation()->has_fpu_code()) {
     enter_id = StubId::c1_monitorenter_id;
@@ -446,30 +529,4 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
   __ branch_optimized(Assembler::bcondAlways, _continuation);
 }
 
-// Implementation of SubstitutabilityCheckStub
-SubstitutabilityCheckStub::SubstitutabilityCheckStub(LIR_Opr left, LIR_Opr right, CodeEmitInfo* info) {
-  Unimplemented();
-}
-
-void SubstitutabilityCheckStub::emit_code(LIR_Assembler* ce) {
-  Unimplemented();
-}
-
-LoadFlattenedArrayStub::LoadFlattenedArrayStub(LIR_Opr array, LIR_Opr index, LIR_Opr result, CodeEmitInfo* info) {
-  Unimplemented();
-}
-
-void LoadFlattenedArrayStub::emit_code(LIR_Assembler* ce) {
-  Unimplemented();
-}
-
-// Implementation of StoreFlattenedArrayStub
-
-StoreFlattenedArrayStub::StoreFlattenedArrayStub(LIR_Opr array, LIR_Opr index, LIR_Opr value, CodeEmitInfo* info) {
-  Unimplemented();
-}
-
-void StoreFlattenedArrayStub::emit_code(LIR_Assembler* ce) {
-  Unimplemented();
-}
 #undef __

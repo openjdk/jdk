@@ -26,6 +26,7 @@
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/stackMapFrame.hpp"
 #include "classfile/stackMapTable.hpp"
 #include "classfile/stackMapTableFormat.hpp"
@@ -747,6 +748,12 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
     }
   }
 
+  // The stackmap table will receive a read-only deep copy of the initial strict fields since
+  // the "current frame" will modify this table when a putfield is encountered during verification.
+  // When parsing the StackMapTable attribute, the reader will allocate new tables for frames if
+  // they are EARLY_LARVAL, otherwise this read-only initial set will be shared.
+  StackMapFrame::AssertUnsetFieldTable* read_only_strict_fields = StackMapFrame::copy_unset_fields(strict_fields);
+
   // Initial stack map frame: offset is 0, stack is initially empty.
   StackMapFrame current_frame(max_locals, max_stack, strict_fields, this);
   // Set initial locals
@@ -775,7 +782,7 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
 
   Array<u1>* stackmap_data = m->stackmap_data();
   StackMapStream stream(stackmap_data);
-  StackMapReader reader(this, &stream, code_data, code_length, &current_frame, max_locals, max_stack, strict_fields, THREAD);
+  StackMapReader reader(this, &stream, code_data, code_length, &current_frame, max_locals, max_stack, read_only_strict_fields, THREAD);
   StackMapTable stackmap_table(&reader, CHECK_VERIFY(this));
 
   LogTarget(Debug, verification) lt;

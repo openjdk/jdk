@@ -36,14 +36,13 @@ import jdk.internal.vm.annotation.LooselyConsistentValue;
 import jdk.internal.vm.annotation.NullRestricted;
 import jdk.test.whitebox.WhiteBox;
 
-import static compiler.lib.ir_framework.IRNode.STATIC_CALL_OF_METHOD;
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.CALL_UNSAFE;
 import static compiler.valhalla.inlinetypes.InlineTypes.rI;
 import static compiler.valhalla.inlinetypes.InlineTypes.rL;
 
+import static compiler.lib.ir_framework.IRNode.CALL_UNSAFE;
 import static compiler.lib.ir_framework.IRNode.LOAD;
 import static compiler.lib.ir_framework.IRNode.LOAD_KLASS;
-import static compiler.valhalla.inlinetypes.InlineTypes.*;
+import static compiler.lib.ir_framework.IRNode.STATIC_CALL_OF_METHOD;
 
 /*
  * @test
@@ -2086,9 +2085,8 @@ public class TestIntrinsics {
 
     // Test correctness of the ValueClass::isAtomicArray intrinsic
     @Test
-    // TODO 8350865 Implemented intrinsic
-    // @IR(failOn = {STATIC_CALL_OF_METHOD, "jdk.internal.value.ValueClass::isAtomicArray",
-    //               STATIC_CALL_OF_METHOD, "jdk.internal.value.ValueClass::isAtomicArray0"})
+    @IR(failOn = {STATIC_CALL_OF_METHOD, "jdk.internal.value.ValueClass::isAtomicArray",
+                  STATIC_CALL_OF_METHOD, "jdk.internal.value.ValueClass::isAtomicArray0"})
     public boolean test87(Object[] array) {
         return ValueClass.isAtomicArray(array);
     }
@@ -2104,9 +2102,8 @@ public class TestIntrinsics {
 
     // Verify that ValueClass::isAtomicArray checks with statically known classes are folded
     @Test
-    // TODO 8350865 Implemented intrinsic
-    // @IR(failOn = {LOAD_KLASS, STATIC_CALL_OF_METHOD, "jdk.internal.value.ValueClass::isAtomicArray",
-    //               STATIC_CALL_OF_METHOD, "jdk.internal.value.ValueClass::isAtomicArray0"})
+    @IR(failOn = {LOAD_KLASS, STATIC_CALL_OF_METHOD, "jdk.internal.value.ValueClass::isAtomicArray",
+                  STATIC_CALL_OF_METHOD, "jdk.internal.value.ValueClass::isAtomicArray0"})
     public boolean test88() {
         boolean check1 = ValueClass.isAtomicArray(TEST_ARRAY1);
         if (!TEST_ARRAY1_IS_ATOMIC) {

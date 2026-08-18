@@ -14264,6 +14264,30 @@ instruct convD2F_reg_mem(regF dst, memory src)
   ins_pipe(pipe_slow); // XXX
 %}
 
+instruct convHF2I_reg_reg(rRegI dst, rRegI src, regF xtmp, rFlagsReg cr)
+%{
+  predicate(VM_Version::supports_avx512_fp16());
+  match(Set dst (ConvF2I (ConvHF2F src)));
+  effect(TEMP dst, KILL cr, TEMP xtmp);
+  format %{ "convert_hf2i $dst, $src !\t using $xtmp as TEMP" %}
+  ins_encode %{
+    __ convertHF2X(T_INT, $dst$$Register, $src$$Register, $xtmp$$XMMRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct convHF2L_reg_reg(rRegL dst, rRegI src, regF xtmp, rFlagsReg cr)
+%{
+  predicate(VM_Version::supports_avx512_fp16());
+  match(Set dst (ConvF2L (ConvHF2F src)));
+  effect(TEMP dst, KILL cr, TEMP xtmp);
+  format %{ "convert_hf2l $dst, $src !\t using $xtmp as TEMP" %}
+  ins_encode %{
+    __ convertHF2X(T_LONG, $dst$$Register, $src$$Register, $xtmp$$XMMRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // XXX do mem variants
 instruct convF2I_reg_reg(rRegI dst, regF src, rFlagsReg cr)
 %{
@@ -22032,6 +22056,30 @@ instruct vcastLtoX_evex(vec dst, vec src) %{
   ins_pipe( pipe_slow );
 %}
 
+instruct castHFtoX_reg_evex(vec dst, vec src, vec xtmp1, vec xtmp2, kReg ktmp1, kReg ktmp2, rFlagsReg cr) %{
+  predicate(VM_Version::supports_avx512_fp16() &&
+            is_integral_type(Matcher::vector_element_basic_type(n)));
+  match(Set dst (VectorCastF2X (VectorCastHF2F src)));
+  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP ktmp1, TEMP ktmp2, KILL cr);
+  format %{ "vector_cast_hf2x $dst,$src\t! using $xtmp1, $xtmp2, $ktmp1 and $ktmp2 as TEMP" %}
+  ins_encode %{
+    BasicType to_elem_bt = Matcher::vector_element_basic_type(this);
+    int vlen = Matcher::vector_length(this);
+    if (to_elem_bt == T_LONG) {
+      int vlen_enc = vector_length_encoding(vlen * type2aelembytes(T_LONG));
+      __ vector_castHF2L_evex($dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister,
+                              $xtmp2$$XMMRegister, $ktmp1$$KRegister, $ktmp2$$KRegister,
+                              ExternalAddress(vector_double_signflip()), noreg, vlen_enc);
+    } else {
+      int vlen_enc = vector_length_encoding(vlen * type2aelembytes(T_INT));
+      __ vector_castHF2I_evex(to_elem_bt, $dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister,
+                              $xtmp2$$XMMRegister, $ktmp1$$KRegister, $ktmp2$$KRegister,
+                              ExternalAddress(vector_float_signflip()), noreg, vlen_enc);
+    }
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 instruct vcastFtoD_reg(vec dst, vec src) %{
   predicate(Matcher::vector_element_basic_type(n) == T_DOUBLE);
   match(Set dst (VectorCastF2X src));
@@ -24721,16 +24769,16 @@ instruct mask_not_imm(kReg dst, kReg src, immI_M1 cnt) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct long_to_maskLE8_avx(vec dst, rRegL src, rRegL rtmp1, rRegL rtmp2) %{
+instruct long_to_maskLE8_avx(vec dst, rRegL src, rRegL rtmp1) %{
   predicate(n->bottom_type()->isa_pvectmask() == nullptr && Matcher::vector_length(n) <= 8);
   match(Set dst (VectorLongToMask src));
-  effect(TEMP dst, TEMP rtmp1, TEMP rtmp2);
-  format %{ "long_to_mask_avx $dst, $src\t! using $rtmp1, $rtmp2" %}
+  effect(TEMP dst, TEMP rtmp1);
+  format %{ "long_to_mask_avx $dst, $src\t! using $rtmp1" %}
   ins_encode %{
     int mask_len = Matcher::vector_length(this);
     int vec_enc  = vector_length_encoding(mask_len);
     __ vector_long_to_maskvec($dst$$XMMRegister, $src$$Register, $rtmp1$$Register,
-                              $rtmp2$$Register, xnoreg, mask_len, vec_enc);
+                              noreg, xnoreg, mask_len, vec_enc);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -24761,12 +24809,11 @@ instruct long_to_mask_evex(kReg dst, rRegL src) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct mask_opers_evex(kReg dst, kReg src1, kReg src2, kReg kscratch) %{
+instruct mask_opers_evex(kReg dst, kReg src1, kReg src2) %{
   match(Set dst (AndVMask src1 src2));
   match(Set dst (OrVMask src1 src2));
   match(Set dst (XorVMask src1 src2));
-  effect(TEMP kscratch);
-  format %{ "mask_opers_evex $dst, $src1, $src2\t! using $kscratch as TEMP" %}
+  format %{ "mask_opers_evex $dst, $src1, $src2" %}
   ins_encode %{
     const MachNode* mask1 = static_cast<const MachNode*>(this->in(this->operand_index($src1)));
     const MachNode* mask2 = static_cast<const MachNode*>(this->in(this->operand_index($src2)));
@@ -25199,11 +25246,10 @@ instruct scalar_minmax_HF_reg(regF dst, regF src1, regF src2, kReg ktmp, regF xt
 
 instruct scalar_fma_HF_reg(regF dst, regF src1, regF src2)
 %{
-  match(Set dst (FmaHF  src2 (Binary dst src1)));
-  effect(DEF dst);
-  format %{ "scalar_fma_fp16 $dst, $src1, $src2\t# $dst = $dst * $src1 + $src2 fma packedH" %}
+  match(Set dst (FmaHF dst (Binary src1 src2)));
+  format %{ "scalar_fma_fp16 $dst, $src1, $src2\t# $dst = $src1 * $src2 + $dst fma packedH" %}
   ins_encode %{
-    __ vfmadd132sh($dst$$XMMRegister, $src2$$XMMRegister, $src1$$XMMRegister);
+    __ vfmadd231sh($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -25222,6 +25268,7 @@ instruct vector_sqrt_HF_reg(vec dst, vec src)
 
 instruct vector_sqrt_HF_mem(vec dst, memory src)
 %{
+  predicate(Matcher::vector_length_in_bytes(n) > 8);
   match(Set dst (SqrtVHF (VectorReinterpret (LoadVector src))));
   format %{ "vector_sqrt_fp16_mem $dst, $src" %}
   ins_encode %{
@@ -25249,6 +25296,7 @@ instruct vector_binOps_HF_reg(vec dst, vec src1, vec src2)
 
 instruct vector_binOps_HF_mem(vec dst, vec src1, memory src2)
 %{
+  predicate(Matcher::vector_length_in_bytes(n) > 8);
   match(Set dst (AddVHF src1 (VectorReinterpret (LoadVector src2))));
   match(Set dst (DivVHF src1 (VectorReinterpret (LoadVector src2))));
   match(Set dst (MulVHF src1 (VectorReinterpret (LoadVector src2))));
@@ -25264,29 +25312,30 @@ instruct vector_binOps_HF_mem(vec dst, vec src1, memory src2)
 
 instruct vector_fma_HF_reg(vec dst, vec src1, vec src2)
 %{
-  match(Set dst (FmaVHF src2 (Binary dst src1)));
-  format %{ "vector_fma_fp16 $dst, $src1, $src2\t# $dst = $dst * $src1 + $src2 fma packedH" %}
+  match(Set dst (FmaVHF dst (Binary src1 src2)));
+  format %{ "vector_fma_fp16 $dst, $src1, $src2\t# $dst = $src1 * $src2 + $dst fma packedH" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
-    __ evfmadd132ph($dst$$XMMRegister, $src2$$XMMRegister, $src1$$XMMRegister, vlen_enc);
+    __ evfmadd231ph($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct vector_fma_HF_mem(vec dst, memory src1, vec src2)
+instruct vector_fma_HF_mem(vec dst, vec src1, memory src2)
 %{
-  match(Set dst (FmaVHF src2 (Binary dst (VectorReinterpret (LoadVector src1)))));
-  format %{ "vector_fma_fp16_mem $dst, $src1, $src2\t# $dst = $dst * $src1 + $src2 fma packedH" %}
+  predicate(Matcher::vector_length_in_bytes(n) > 8);
+  match(Set dst (FmaVHF dst (Binary src1 (VectorReinterpret (LoadVector src2)))));
+  format %{ "vector_fma_fp16_mem $dst, $src1, $src2\t# $dst = $src1 * $src2 + $dst fma packedH" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
-    __ evfmadd132ph($dst$$XMMRegister, $src2$$XMMRegister, $src1$$Address, vlen_enc);
+    __ evfmadd231ph($dst$$XMMRegister, $src1$$XMMRegister, $src2$$Address, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
 
 instruct vector_minmax_HF_mem_avx10_2(vec dst, vec src1, memory src2)
 %{
-  predicate(VM_Version::supports_avx10_2());
+  predicate(VM_Version::supports_avx10_2() && Matcher::vector_length_in_bytes(n) > 8);
   match(Set dst (MinVHF src1 (VectorReinterpret (LoadVector src2))));
   match(Set dst (MaxVHF src1 (VectorReinterpret (LoadVector src2))));
   format %{ "vector_min_max_fp16_mem $dst, $src1, $src2" %}
