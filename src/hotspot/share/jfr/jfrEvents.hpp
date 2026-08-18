@@ -29,7 +29,6 @@
  *
  * Include this header to access the machine generated event class.
  */
-#include "jfr/utilities/jfrEpochShiftLock.hpp"
 #include "jfrfiles/jfrEventClasses.hpp"
 #include "jfrfiles/jfrEventIds.hpp"
 

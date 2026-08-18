@@ -39,7 +39,7 @@
 * Non-primitive types (e.g. InstanceKlass, Method, CLD, etc.) are tagged as part of commit() with
 * epoch-relative bits and must therfore be guarded not to interleave with a concurrent epoch shift.
 *
-* Currently, this lock is a nop unless using a concurrent GC, such as Shenandoah and ZGC.
+* Currently, this lock is a nop unless using a concurrent GC, such as Shenandoah or ZGC.
 *
 */
 

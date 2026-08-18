@@ -109,6 +109,7 @@
 #endif
 #if INCLUDE_JFR
 #include "jfr/jfrEvents.hpp"
+#include "jfr/utilities/jfrEpochShiftLock.hpp"
 #endif
 
 #ifdef DTRACE_ENABLED

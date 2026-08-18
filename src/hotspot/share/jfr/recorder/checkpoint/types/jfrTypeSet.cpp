@@ -88,8 +88,13 @@ static inline bool previous_epoch() {
 template <typename T>
 static inline bool used(const T* ptr) {
   assert(ptr != nullptr, "invariant");
-  return flushpoint() ? USED_THIS_EPOCH(ptr) :
-    unloading() ? USED_THIS_EPOCH(ptr) || USED_PREVIOUS_EPOCH(ptr) : USED_PREVIOUS_EPOCH(ptr);
+  if (flushpoint()) {
+    return USED_THIS_EPOCH(ptr);
+  }
+  if (unloading()) {
+    return USED_THIS_EPOCH(ptr) || USED_PREVIOUS_EPOCH(ptr);
+  }
+  return USED_PREVIOUS_EPOCH(ptr);
 }
 
 template <typename T>
