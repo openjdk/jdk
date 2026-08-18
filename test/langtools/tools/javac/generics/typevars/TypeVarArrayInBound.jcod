@@ -1,9 +1,10 @@
-// A hand-crafted classfile carrying a generic ClassSignature attribute of
-// the form "<A:[TB;:Ljava/lang/Runnable;B:Ljava/lang/Object;>Ljava/lang/Object;"
-// i.e. the classfile-level equivalent of:
-//
-//   class SigCyclic<A extends B[] & Runnable, B> {}
-class SigCyclic {
+/* A hand-crafted classfile carrying a generic ClassSignature attribute of
+ * the form "<A:[TB;:Ljava/lang/Runnable;B:Ljava/lang/Object;>Ljava/lang/Object;"
+ * i.e. the classfile-level equivalent of:
+ *
+ *   class TypeVarArrayInBound<A extends B[] & Runnable, B> {}
+ */
+class TypeVarArrayInBound {
   0xCAFEBABE;
   0; // minor version
   72; // version
@@ -16,13 +17,13 @@ class SigCyclic {
     Utf8 "<init>"; // #5
     Utf8 "()V"; // #6
     class #8; // #7
-    Utf8 "SigCyclic"; // #8
+    Utf8 "TypeVarArrayInBound"; // #8
     Utf8 "Code"; // #9
     Utf8 "LineNumberTable"; // #10
     Utf8 "Signature"; // #11
     Utf8 "<A:[TB;:Ljava/lang/Runnable;B:Ljava/lang/Object;>Ljava/lang/Object;"; // #12
     Utf8 "SourceFile"; // #13
-    Utf8 "SigCyclic.java"; // #14
+    Utf8 "TypeVarArrayInBound.java"; // #14
   } // Constant Pool
 
   0x0020; // access
@@ -70,4 +71,4 @@ class SigCyclic {
       #14;
     } // end SourceFile
   } // Attributes
-} // end class SigCyclic
+} // end class TypeVarArrayInBound
