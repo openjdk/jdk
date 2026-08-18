@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8362394
+ * @bug 8387014
  * @summary Test that UTF-16 string concat overflow does not produce a negative size backing array
  * @requires vm.compiler2.enabled & os.maxMemory > 4G
  * @library /test/lib /
