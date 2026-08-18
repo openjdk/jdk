@@ -589,6 +589,7 @@ public class LingeredApp {
         };
         steadyStateThread.setName("SteadyStateThread");
         steadyStateThread.start();
+
         // Wait until the thread has started running.
         while (!steadyStateReached) {
             Thread.onSpinWait();
@@ -637,6 +638,7 @@ public class LingeredApp {
             System.err.println("Too many arguments specified: "  + args.length);
             System.exit(7);
         }
+
         if (args.length == 2) {
             if (args[1].equals("forceCrash")) {
                 forceCrash = true;
@@ -645,8 +647,10 @@ public class LingeredApp {
                 System.exit(7);
             }
         }
+
         String theLockFileName = args[0];
         Path path = Paths.get(theLockFileName);
+
         try {
             Object steadyStateObj = new SteadyStateLock();
             synchronized(steadyStateObj) {
@@ -681,6 +685,7 @@ public class LingeredApp {
             // Leave exit_code = 1 to Java launcher
             System.exit(3);
         }
+
         System.exit(0);
     }
 }
