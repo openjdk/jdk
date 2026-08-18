@@ -951,7 +951,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // change thread state
   __ movl(Address(thread, JavaThread::thread_state_offset()),
-          thread_in_vm);
+          _thread_in_vm);
 
   // Force this write out before the read below
   if (!UseSystemMemoryBarrier) {
