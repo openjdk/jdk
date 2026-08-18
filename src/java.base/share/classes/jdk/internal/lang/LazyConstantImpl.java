@@ -54,8 +54,11 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
     private static final long STATUS_OFFSET =
             UNSAFE.objectFieldOffset(LazyConstantImpl.class, "state");
 
-    // Maximum number of busy-spin iterations before timed backoff.
-    private static final int SPIN_LIMIT = 1 << 8;
+    // Maximum number of busy-spin iterations for a platform thread before timed backoff.
+    private static final int SPIN_LIMIT_PT = 1 << 8;
+    // Maximum number of busy-spin iterations for a virtual thread before timed backoff.
+    // We'd like to keep this small as to not hog carrier threads.
+    private static final int SPIN_LIMIT_VT = 1 << 4;
     // The initial requested timed backoff in nanoseconds to park a thread while waiting
     // for another thread to complete computation. Needs to be a power of two.
     private static final long INITIAL_BACKOFF_NANOS = 1L << 10;
@@ -192,7 +195,17 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
             return valueAfterComputation(computingState);
         }
 
-        int spins = SPIN_LIMIT;
+        int spins;
+        final long maxBackoffNanos;
+        if (currentThread.isVirtual()) {
+            spins = SPIN_LIMIT_VT;
+            // Repeated timed parking and scheduling could be expensive for
+            // virtual threads so keep it to just one park.
+            maxBackoffNanos = INITIAL_BACKOFF_NANOS;
+        } else {
+            spins = SPIN_LIMIT_PT;
+            maxBackoffNanos = MAX_BACKOFF_NANOS;
+        }
         long backoffNanos = INITIAL_BACKOFF_NANOS;
         boolean restoreInterrupt = false;
 
@@ -222,7 +235,7 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
                     // Spin wait
                     --spins;
                     Thread.onSpinWait();
-                } else if (backoffNanos <= MAX_BACKOFF_NANOS) {
+                } else if (backoffNanos <= maxBackoffNanos) {
                     // Park the thread using progressively longer durations.
                     if (Thread.interrupted()) {
                         restoreInterrupt = true;
@@ -249,8 +262,8 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
                     return valueAfterComputation(state);
                 }
                 waiter.next = state instanceof Waiter head ? head : null;
-                final Object witness = UNSAFE.compareAndExchangeReference(this, STATUS_OFFSET, state, waiter);
-                if (witness == state) {
+                // Successful registration only needs release semantics.
+                if (UNSAFE.weakCompareAndSetReferenceRelease(this, STATUS_OFFSET, state, waiter)) {
                     break;
                 }
             }
