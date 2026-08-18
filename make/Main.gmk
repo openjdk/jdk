@@ -1046,7 +1046,7 @@ else
   # Setup the minimal set of generated native source dependencies for hotspot
   $(foreach v, $(JVM_VARIANTS), \
     $(eval hotspot-$v-libs-compile-commands: hotspot-$v-gensrc) \
-    $(foreach m, $(filter java.desktop jdk.hotspot.agent, $(GENSRC_MODULES)), \
+    $(foreach m, $(filter java.desktop, $(GENSRC_MODULES)), \
       $(eval hotspot-$v-libs-compile-commands: $m-gensrc)) \
   )
 

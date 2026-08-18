@@ -49,11 +49,6 @@ include $(TOPDIR)/make/conf/build-module-sets.conf
 # Depending on the configuration, we might need to filter out some modules that
 # normally should have been included
 
-# Some platforms don't have the serviceability agent
-ifeq ($(INCLUDE_SA), false)
-  MODULES_FILTER += jdk.hotspot.agent
-endif
-
 # jpackage is only on windows, macosx, and linux
 ifeq ($(call isTargetOs, windows macosx linux), false)
   MODULES_FILTER += jdk.jpackage
