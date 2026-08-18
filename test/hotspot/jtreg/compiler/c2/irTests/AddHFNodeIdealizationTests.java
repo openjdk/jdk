@@ -25,7 +25,7 @@ package compiler.c2.irTests;
 import compiler.lib.ir_framework.*;
 import compiler.lib.verify.Verify;
 import jdk.incubator.vector.Float16;
-import static jdk.incubator.vector.Float16.*;
+import static jdk.incubator.vector.Float16.valueOf;
 
 /*
  * @test
@@ -55,6 +55,13 @@ public class AddHFNodeIdealizationTests {
 
     public static void main(String[] args) {
         TestFramework.runWithFlags("--add-modules=jdk.incubator.vector");
+    }
+
+    // Same semantics as Float16.add, but force-inlined so the ConvF2HF idealization
+    // can pattern-match ConvF2HF(AddF(ConvHF2F(x), ConvHF2F(y))) into AddHF.
+    @ForceInline
+    private static Float16 add(Float16 x, Float16 y) {
+        return valueOf(x.floatValue() + y.floatValue());
     }
 
     @DontCompile
