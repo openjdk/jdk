@@ -96,7 +96,6 @@ const char*  Arguments::_sun_java_launcher      = DEFAULT_JAVA_LAUNCHER;
 bool   Arguments::_executing_unit_tests         = false;
 
 // These parameters are reset in method parse_vm_init_args()
-bool   Arguments::_AlwaysCompileLoopMethods     = AlwaysCompileLoopMethods;
 bool   Arguments::_UseOnStackReplacement        = UseOnStackReplacement;
 bool   Arguments::_BackgroundCompilation        = BackgroundCompilation;
 bool   Arguments::_ClipInlining                 = ClipInlining;
@@ -536,7 +535,6 @@ static SpecialFlag const special_jvm_flags[] = {
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "InitiatingHeapOccupancyPercent", JDK_Version::jdk(27),  JDK_Version::jdk(28), JDK_Version::jdk(29) },
-  { "AlwaysCompileLoopMethods",     JDK_Version::jdk(27),  JDK_Version::jdk(28), JDK_Version::jdk(29) },
 
   // -------------- Obsolete Flags - sorted by expired_in --------------
 
@@ -547,6 +545,7 @@ static SpecialFlag const special_jvm_flags[] = {
 #ifdef _LP64
   { "UseCompressedClassPointers",   JDK_Version::jdk(25),  JDK_Version::jdk(27), JDK_Version::undefined() },
 #endif
+  { "AlwaysCompileLoopMethods",     JDK_Version::jdk(27),  JDK_Version::jdk(28), JDK_Version::jdk(29) },
 
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
@@ -1358,7 +1357,6 @@ void Arguments::set_mode_flags(Mode mode) {
   // Default values may be platform/compiler dependent -
   // use the saved values
   ClipInlining               = Arguments::_ClipInlining;
-  AlwaysCompileLoopMethods   = Arguments::_AlwaysCompileLoopMethods;
   UseOnStackReplacement      = Arguments::_UseOnStackReplacement;
   BackgroundCompilation      = Arguments::_BackgroundCompilation;
 
@@ -1370,7 +1368,6 @@ void Arguments::set_mode_flags(Mode mode) {
   case _int:
     UseCompiler              = false;
     UseLoopCounter           = false;
-    AlwaysCompileLoopMethods = false;
     UseOnStackReplacement    = false;
     break;
   case _mixed:
@@ -1676,7 +1673,6 @@ Arguments::ArgsRange Arguments::parse_memory_size(const char* s,
 
 jint Arguments::parse_vm_init_args(GrowableArrayCHeap<VMInitArgsGroup, mtArguments>* all_args) {
   // Save default settings for some mode flags
-  Arguments::_AlwaysCompileLoopMethods = AlwaysCompileLoopMethods;
   Arguments::_UseOnStackReplacement    = UseOnStackReplacement;
   Arguments::_ClipInlining             = ClipInlining;
   Arguments::_BackgroundCompilation    = BackgroundCompilation;
@@ -2969,7 +2965,7 @@ static bool use_vm_log() {
   if (LogCompilation || !FLAG_IS_DEFAULT(LogFile) ||
       PrintCompilation || PrintInlining || PrintDependencies || PrintNativeNMethods ||
       PrintDebugInfo || PrintRelocations || PrintNMethods || PrintExceptionHandlers ||
-      PrintAssembly || TraceDeoptimization ||
+      PrintAssembly ||
       (VerifyDependencies && FLAG_IS_CMDLINE(VerifyDependencies))) {
     return true;
   }
@@ -3442,17 +3438,6 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   return JNI_OK;
 }
 
-void Arguments::set_compact_headers_flags() {
-#ifdef _LP64
-  if (UseCompactObjectHeaders && !UseObjectMonitorTable) {
-    if (FLAG_IS_CMDLINE(UseObjectMonitorTable)) {
-      warning("-UseObjectMonitorTable is incompatible with +UseCompactObjectHeaders; ignoring -UseObjectMonitorTable");
-    }
-    FLAG_SET_DEFAULT(UseObjectMonitorTable, true);
-  }
-#endif
-}
-
 jint Arguments::apply_ergo() {
   // Set flags based on ergonomics.
   jint result = set_ergonomics_flags();
@@ -3462,8 +3447,6 @@ jint Arguments::apply_ergo() {
   GCConfig::arguments()->set_heap_size();
 
   GCConfig::arguments()->initialize();
-
-  set_compact_headers_flags();
 
   CompressedKlassPointers::pre_initialize();
 
@@ -3535,6 +3518,7 @@ jint Arguments::apply_ergo() {
     DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(UseNullFreeAtomicValueFlattening);
     DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(UseNullableNonAtomicValueFlattening);
     DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(UseAcmpFastPath);
+    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(UseHashcodeFastPath);
     DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(PrintInlineLayout);
     DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(PrintFlatArrayLayout);
     DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(IgnoreAssertUnsetFields);

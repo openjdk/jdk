@@ -559,7 +559,6 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
 
   if (mem != old_mem) {
     set_req_X(MemNode::Memory, mem, phase);
-    if (phase->type(mem) == Type::TOP) return NodeSentinel;
     return this;
   }
 
@@ -1990,7 +1989,7 @@ Node* LoadNode::split_through_phi(PhaseGVN* phase, bool ignore_missing_instance_
 
   // Do nothing here if Identity will find a value
   // (to avoid infinite chain of value phis generation).
-  if (this != Identity(phase)) {
+  if (this != phase->apply_identity(this)) {
     return nullptr;
   }
 
@@ -2105,7 +2104,7 @@ Node* LoadNode::split_through_phi(PhaseGVN* phase, bool ignore_missing_instance_
       // otherwise it will be not updated during igvn->transform since
       // igvn->type(x) is set to x->Value() already.
       x->raise_bottom_type(t);
-      Node* y = x->Identity(igvn);
+      Node* y = igvn->apply_identity(x);
       if (y != x) {
         x = y;
       } else {
@@ -2207,7 +2206,6 @@ Node* LoadNode::Ideal_load_common(PhaseGVN* phase, bool can_reshape) {
     Node* opt_mem = MemNode::optimize_memory_chain(mem, addr_t, this, phase);
     if (opt_mem != mem) {
       set_req_X(MemNode::Memory, opt_mem, phase);
-      if (phase->type(opt_mem) == Type::TOP) { return NodeSentinel; }
       return this;
     }
     const TypeOopPtr* t_oop = addr_t->isa_oopptr();
@@ -2391,7 +2389,7 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
     // expression (LShiftL quux 3) independently optimized to the constant 8.
     if ((t->isa_int() == nullptr) && (t->isa_long() == nullptr)
         && (_type->isa_vect() == nullptr)
-        && !ary->is_flat()
+        && ary->is_not_flat()
         && Opcode() != Op_LoadKlass && Opcode() != Op_LoadNKlass) {
       // t might actually be lower than _type, if _type is a unique
       // concrete subclass of abstract class t.
@@ -6204,7 +6202,7 @@ Node* MergeMemNode::Identity(PhaseGVN* phase) {
 //------------------------------Ideal------------------------------------------
 // This method is invoked recursively on chains of MergeMem nodes
 Node *MergeMemNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  if (Identity(phase) != this) {
+  if (phase->apply_identity(this) != this) {
     // Let Identity handle this case
     return nullptr;
   }
