@@ -5483,6 +5483,34 @@ void ClassFileParser::set_fast_acmp_members(InlineKlass* vk) const {
 #endif // VM_LITTLE_ENDIAN
 }
 
+// See the declarations of _fast_hashcode_offset and _fast_hashcode_shift in InlineKlass::Members
+// for details about the fast path logic, and the meaning of these values.
+void ClassFileParser::set_fast_hashcode_members(InlineKlass* vk) const {
+  if (_layout_info->_oop_acmp_map->length() > 0) {  // Oops are not allowed in the fast path
+    return;
+  }
+  if (_layout_info->_nonoop_acmp_map->length() >= 2) {  // We handle at most one segment...
+    return;
+  }
+
+  if (_layout_info->_nonoop_acmp_map->length() == 0) {
+    vk->set_fast_hashcode_offset(0);
+    vk->set_fast_hashcode_shift(0);
+    return;
+  }
+
+  assert(_layout_info->_nonoop_acmp_map->length() == 1, "trivially");
+
+  int piece_size = _layout_info->_nonoop_acmp_map->at(0)._size;
+  if (piece_size != 1 && piece_size != 2 && piece_size != 4 && piece_size != 8) {  // ...and it must have a convenient size
+    return;
+  }
+
+  int piece_start = _layout_info->_nonoop_acmp_map->at(0)._offset;
+  vk->set_fast_hashcode_offset(piece_start - (BytesPerLong - piece_size));
+  vk->set_fast_hashcode_shift(BitsPerByte * (BytesPerLong - piece_size));
+}
+
 void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
                                           bool changed_by_loadhook,
                                           const ClassInstanceInfo& cl_inst_info,
@@ -5720,6 +5748,10 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
 
     if (UseAcmpFastPath) {
       set_fast_acmp_members(vk);
+    }
+
+    if (UseHashcodeFastPath) {
+      set_fast_hashcode_members(vk);
     }
 
     vk->initialize_calling_convention(CHECK);

@@ -854,7 +854,7 @@ void ShenandoahBarrierStubC2::lrb(MacroAssembler& masm) {
     // Save the result where needed. Narrow entries return narrowOop (32 bits)
     // we need to zero the upper 32 bits of x10.
     if (_narrow) {
-      __ zext_w(_obj, x10);
+      __ zext(_obj, x10, 32);
     } else {
       __ mv(_obj, x10);
     }
