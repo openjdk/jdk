@@ -405,7 +405,7 @@ final class MacPackagingPipeline {
         Map<String, String> data = new HashMap<>();
         data.put("CF_BUNDLE_IDENTIFIER", app.bundleIdentifier());
         data.put("CF_BUNDLE_NAME", app.bundleName());
-        data.put("CF_BUNDLE_VERSION", app.version());
+        data.put("CF_BUNDLE_VERSION", app.version().toString());
         data.put("CF_BUNDLE_SHORT_VERSION_STRING", app.shortVersion().toString());
         if (useRuntimeInfoPlist) {
             data.put("CF_BUNDLE_VENDOR", app.vendor());
@@ -462,7 +462,7 @@ final class MacPackagingPipeline {
         data.put("DEPLOY_BUNDLE_COPYRIGHT", app.copyright());
         data.put("DEPLOY_LAUNCHER_NAME", app.mainLauncher().orElseThrow().executableNameWithSuffix());
         data.put("DEPLOY_BUNDLE_SHORT_VERSION", app.shortVersion().toString());
-        data.put("DEPLOY_BUNDLE_CFBUNDLE_VERSION", app.version());
+        data.put("DEPLOY_BUNDLE_CFBUNDLE_VERSION", app.version().toString());
         data.put("DEPLOY_BUNDLE_NAME", app.bundleName());
         data.put("DEPLOY_BUNDLE_IDENTIFIER", app.bundleIdentifier());
         data.put("DEPLOY_APP_CATEGORY", app.category());

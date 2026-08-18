@@ -73,7 +73,7 @@ import org.xml.sax.SAXException;
 final class AppImageFile {
 
     AppImageFile(Application app) {
-        appVersion = Objects.requireNonNull(app.version());
+        appVersion = Objects.requireNonNull(app.version().toString());
         extra = Objects.requireNonNull(app.extraAppImageFileData());
         launcherInfos = app.launchers().stream().map(LauncherInfo::new).toList();
     }

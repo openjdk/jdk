@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ public sealed interface ExternalApplication {
      * Returns application version.
      * @return the application version
      */
-    String appVersion();
+    BundleVersion appVersion();
 
     /**
      * Returns application name.
@@ -140,7 +140,7 @@ public sealed interface ExternalApplication {
             }
 
             @Override
-            public String appVersion() {
+            public BundleVersion appVersion() {
                 return APP_VERSION.getFrom(options);
             }
 

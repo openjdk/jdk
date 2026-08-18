@@ -42,7 +42,9 @@ import static jdk.jpackage.internal.cli.StandardOption.WIN_UPGRADE_UUID;
 import static jdk.jpackage.internal.cli.StandardOption.WIN_WITH_UI;
 import static jdk.jpackage.internal.model.StandardPackageType.WIN_MSI;
 
+import java.util.Optional;
 import jdk.jpackage.internal.cli.Options;
+import jdk.jpackage.internal.model.BundleVersion;
 import jdk.jpackage.internal.model.DottedVersion;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.WinApplication;
@@ -78,7 +80,7 @@ final class WinFromOptions {
 
         appBuilder.launchers().map(WinPackagingPipeline::normalizeShortcuts).ifPresent(appBuilder::launchers);
 
-        appBuilder.derivedVersionNormalizer(WinFromOptions::normalizeVersion);
+        appBuilder.derivedVersionConverter(WinFromOptions::deriveVersion);
 
         return WinApplication.create(appBuilder.create());
     }
@@ -127,10 +129,10 @@ final class WinFromOptions {
         return pkgBuilder.create();
     }
 
-    private static String normalizeVersion(String version) {
+    private static Optional<BundleVersion> deriveVersion(ApplicationBuilder.DerivedValueOrigin origin, String version) {
         // Windows requires between 2 and 4 components version string.
         // When reading from release file it can be 1 or 3 or maybe more.
         // One component will be normalized to 2 and more then 4 will be trim to 4.
-        return DottedVersion.lazy(version).trim(4).pad(2).toComponentsString();
+        return Optional.of(BundleVersion.of(DottedVersion.lazy(version).trim(4).pad(2).stripUnprocessedSuffix()));
     }
 }

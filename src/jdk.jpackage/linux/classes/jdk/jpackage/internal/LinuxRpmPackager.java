@@ -108,7 +108,7 @@ final class LinuxRpmPackager extends LinuxPackager<LinuxRpmPackage> {
         var properties = List.of(
                 new PackageProperty("Name", pkg.packageName(),
                         "APPLICATION_PACKAGE", specFileName),
-                new PackageProperty("Version", pkg.version(),
+                new PackageProperty("Version", pkg.version().toString(),
                         "APPLICATION_VERSION", specFileName),
                 new PackageProperty("Release", pkg.release().orElseThrow(),
                         "APPLICATION_RELEASE", specFileName),

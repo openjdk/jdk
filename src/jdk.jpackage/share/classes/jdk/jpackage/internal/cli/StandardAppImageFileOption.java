@@ -27,6 +27,7 @@ package jdk.jpackage.internal.cli;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.fromOptionName;
+import static jdk.jpackage.internal.cli.StandardOptionValueExceptionFactory.ERROR_WITH_VALUE_AND_OPTION_NAME;
 
 import java.nio.file.Path;
 import java.util.Collections;
@@ -36,6 +37,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.model.BundleVersion;
 import jdk.jpackage.internal.model.LauncherShortcut;
 
 /**
@@ -87,10 +89,14 @@ public final class StandardAppImageFileOption {
     /**
      * The version of the application.
      */
-    public static final OptionValue<String> APP_VERSION = stringOption("app-version")
+    public static final OptionValue<BundleVersion> APP_VERSION = option("app-version", BundleVersion.class)
             .inScope(AppImageFileOptionScope.APP)
             .inScope(MandatoryOption.VALUE)
-            .toOptionValueBuilder().id(StandardOption.APP_VERSION.id()).create();
+            .converter(StandardValueConverter.versionConv())
+            .converterExceptionFactory(ERROR_WITH_VALUE_AND_OPTION_NAME)
+            .converterExceptionFormatString("error.parameter-invalid-value")
+            .toOptionValueBuilder().id(StandardOption.APP_VERSION.id())
+            .create();
 
     /**
      * Should install a launcher as a service?
