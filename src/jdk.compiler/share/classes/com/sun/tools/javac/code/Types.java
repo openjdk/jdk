@@ -2498,12 +2498,7 @@ public class Types {
 
             @Override
             public Type visitTypeVar(TypeVar t, Boolean recurse) {
-                Type upperBound = t.getUpperBound();
-                /* upperBound can still be null if `t` is not yet attributed,
-                 * use Object as a recovery strategy the compiler will issue an error
-                 * anyways
-                 */
-                Type erased = erasure(upperBound != null ? upperBound : syms.objectType, recurse);
+                Type erased = erasure(t.getUpperBound(), recurse);
                 return combineMetadata(erased, t);
             }
         };
@@ -2557,7 +2552,7 @@ public class Types {
                             syms.noSymbol);
         IntersectionClassType intersectionType = new IntersectionClassType(bounds, bc, allInterfaces);
         bc.type = intersectionType;
-        bc.erasure_field = (bounds.head.hasTag(TYPEVAR)) ?
+        bc.erasure_field = (bounds.head.hasTag(TYPEVAR)) || bounds.head.hasTag(ARRAY) ?
                 syms.objectType : // error condition, recover
                 erasure(firstExplicitBound);
         bc.members_field = WriteableScope.create(bc);
