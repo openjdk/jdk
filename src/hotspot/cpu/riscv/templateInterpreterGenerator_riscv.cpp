@@ -1213,7 +1213,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // Force all preceding writes to be observed prior to thread state change
   __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
 
-  __ mv(t0, _thread_in_native_trans);
+  __ mv(t0, _thread_in_vm);
   __ sw(t0, Address(xthread, JavaThread::thread_state_offset()));
 
   // Force this write out before the read below

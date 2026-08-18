@@ -1541,18 +1541,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // In order for GC to work, don't clear the last_Java_sp until after
   // blocking.
 
-  //=============================================================================
-  // Switch thread to "native transition" state before reading the
-  // synchronization state. This additional state is necessary
-  // because reading and testing the synchronization state is not
-  // atomic w.r.t. GC, as this scenario demonstrates: Java thread A,
-  // in _thread_in_native state, loads _not_synchronized and is
-  // preempted. VM thread changes sync state to synchronizing and
-  // suspends threads for GC. Thread A is resumed to finish this
-  // native method, but doesn't block here since it didn't see any
-  // synchronization is progress, and escapes.
-
-  __ set_thread_state(_thread_in_native_trans);
+  __ set_thread_state(_thread_in_vm);
   if (!UseSystemMemoryBarrier) {
     __ z_fence();
   }
@@ -1578,7 +1567,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   //=============================================================================
   // Back in Interpreter Frame.
 
-  // We are in thread_in_native_trans here and back in the normal
+  // We are in _thread_in_native_vm here and back in the normal
   // interpreter frame. We don't have to do anything special about
   // safepoints and we can switch to Java mode anytime we are ready.
 
