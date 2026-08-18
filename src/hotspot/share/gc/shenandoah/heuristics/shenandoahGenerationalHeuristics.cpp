@@ -79,13 +79,11 @@ void ShenandoahGenerationalHeuristics::prepare_for_abbreviated_cycle() {
   auto const heap = ShenandoahGenerationalHeap::heap();
   adjust_reserves_for_abbreviated(heap);
 
-  if (heap->age_census()->get_tenurable_bytes() == 0) {
-    // Nothing at all to tenure, don't look for regions to promote in place
-    return;
-  }
-
   ShenandoahInPlacePromotionPlanner in_place_promotions(heap);
-  prepare_regions_for_promotion(in_place_promotions, heap, nullptr);
+  if (heap->age_census()->get_tenurable_bytes() != 0) {
+    prepare_regions_for_promotion(in_place_promotions, heap, nullptr);
+  }
+  in_place_promotions.complete_planning();
 
   // Only these in-place promotion regions will be tenured this cycle
   const size_t tenurable_this_cycle = in_place_promotions.regular_region_stats().usage;
@@ -139,8 +137,6 @@ size_t ShenandoahGenerationalHeuristics::prepare_regions_for_promotion(Shenandoa
       }
     }
   }
-
-  in_place_promotions.complete_planning();
 
   return candidates;
 }
@@ -355,6 +351,7 @@ size_t ShenandoahGenerationalHeuristics::select_aged_regions(ShenandoahInPlacePr
   ResourceMark rm;
   AgedRegionData* sorted_regions = NEW_RESOURCE_ARRAY(AgedRegionData, heap->num_regions());
   const size_t candidates = prepare_regions_for_promotion(in_place_promotions, heap, sorted_regions);
+  in_place_promotions.complete_planning();
 
   add_tenured_regions_to_collection_set(old_promotion_reserve, heap, candidates, sorted_regions);
 
