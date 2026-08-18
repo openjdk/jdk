@@ -87,7 +87,7 @@ bool ShenandoahOldGC::collect(GCCause::Cause cause) {
   heap->release_injected_pins();
 
   SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent GC", "");
-  ShenandoahConcurrentRootPhase gc_phase(msg, ShenandoahPhaseTimings::conc_gc, /* log_heap_usage = */ true);
+  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_gc, /* log_heap_usage = */ true);
 
   // Enable preemption of old generation mark.
   _allow_preemption.set();
