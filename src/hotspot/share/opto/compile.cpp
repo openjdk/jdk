@@ -1413,7 +1413,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
 
   // Process weird unsafe references.
   if (offset == Type::OffsetBot && (tj->isa_instptr() /*|| tj->isa_klassptr()*/)) {
-    assert(InlineUnsafeOps || StressReflectiveCode || UseAcmpFastPath, "indeterminate pointers come only from unsafe ops");
+    assert(InlineUnsafeOps || StressReflectiveCode || UseAcmpFastPath || UseHashcodeFastPath, "indeterminate pointers come only from unsafe ops");
     assert(!is_known_inst, "scalarizable allocation should not have unsafe references");
     tj = TypeOopPtr::BOTTOM;
     ptr = tj->ptr();
@@ -4870,6 +4870,8 @@ bool Compile::final_graph_reshaping() {
 
       // Recheck with a better notion of 'required_outcnt'
       if (n->outcnt() != required_outcnt) {
+        DEBUG_ONLY(n->dump_bfs(3, nullptr, "-"));
+        assert(false, "malformed control flow");
         record_method_not_compilable("malformed control flow");
         return true;            // Not all targets reachable!
       }

@@ -2182,7 +2182,7 @@ void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register le
       vsetivli(zr, N, Assembler::e32, Assembler::m1, Assembler::mu, Assembler::tu);
     }
 
-    vmv_v_x(vcrc, zr);
+    vmv_v_i(vcrc, 0);
     vmv_s_x(vcrc, crc);
 
     // multiple of 64
@@ -2327,7 +2327,7 @@ void MacroAssembler::kernel_crc32_vclmul_fold_vectorsize_16(Register crc, Regist
   vle64_v(v6, buf); addi(buf, buf, STEP);
   vle64_v(v7, buf); addi(buf, buf, STEP);
 
-  vmv_v_x(v31, zr);
+  vmv_v_i(v31, 0);
   vsetivli(zr, 1, Assembler::e32, Assembler::m1, Assembler::mu, Assembler::tu);
   vmv_s_x(v31, crc);
   vsetivli(zr, N, Assembler::e64, Assembler::m1, Assembler::mu, Assembler::tu);
@@ -2450,7 +2450,7 @@ void MacroAssembler::kernel_crc32_vclmul_fold_vectorsize_32(Register crc, Regist
   //    now, v1 should contains: 010101...
 
   // initial crc
-  vmv_v_x(v24, zr);
+  vmv_v_i(v24, 0);
   vsetivli(zr, 1, Assembler::e32, Assembler::m4, Assembler::mu, Assembler::tu);
   vmv_s_x(v24, crc);
   vsetivli(zr, N, Assembler::e64, Assembler::m4, Assembler::mu, Assembler::tu);
@@ -3765,16 +3765,6 @@ void MacroAssembler::test_oop_prototype_bit(Register oop, Register temp_reg, int
   assert_different_registers(temp_reg, t0);
   // load mark word
   ld(temp_reg, Address(oop, oopDesc::mark_offset_in_bytes()));
-  if (!UseObjectMonitorTable) {
-    Label test_mark_word;
-    // check displaced
-    test_bit(t0, temp_reg, exact_log2(markWord::unlocked_value));
-    bnez(t0, test_mark_word);
-    // slow path use klass prototype
-    load_prototype_header(temp_reg, oop);
-
-    bind(test_mark_word);
-  }
   andi(temp_reg, temp_reg, tst_bit);
   if (jmp_set) {
     bnez(temp_reg, jmp_label, /* is_far */ true);
@@ -7035,10 +7025,8 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register tmp1,
   // instruction emitted as it is part of C1's null check semantics.
   ld(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
 
-  if (UseObjectMonitorTable) {
-    // Clear cache in case fast locking succeeds or we need to take the slow-path.
-    sd(zr, Address(basic_lock, BasicObjectLock::lock_offset() + in_ByteSize((BasicLock::object_monitor_cache_offset_in_bytes()))));
-  }
+  // Clear cache in case fast locking succeeds or we need to take the slow-path.
+  sd(zr, Address(basic_lock, BasicObjectLock::lock_offset() + in_ByteSize((BasicLock::object_monitor_cache_offset_in_bytes()))));
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(tmp1, obj);
