@@ -65,7 +65,6 @@ void FlatArrayKlass::oop_oop_iterate_elements_specialized_bounded(flatArrayOop a
   const int addr_incr = 1 << shift;
   uintptr_t elem_addr = (uintptr_t)a->base();
   uintptr_t stop_addr = elem_addr + ((uintptr_t)a->length() << shift);
-  const int oop_offset = element_klass()->payload_offset();
 
   if (elem_addr < lo) {
     uintptr_t diff = lo - elem_addr;
@@ -78,7 +77,7 @@ void FlatArrayKlass::oop_oop_iterate_elements_specialized_bounded(flatArrayOop a
 
   const uintptr_t end = stop_addr;
   while (elem_addr < end) {
-    element_klass()->oop_iterate_specialized_bounded<T>((address)(elem_addr - oop_offset), closure, lo, hi);
+    element_klass()->oop_iterate_value_payload_bounded<T>((address)elem_addr, closure, lo, hi);
     elem_addr += addr_incr;
   }
 }

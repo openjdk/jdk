@@ -79,6 +79,9 @@
 #include "utilities/population_count.hpp"
 #include "utilities/vmError.hpp"
 #include "windbghelp.hpp"
+#if defined(_M_ARM64)
+#include CPU_HEADER(pauth)
+#endif
 #if INCLUDE_JFR
 #include "jfr/jfrEvents.hpp"
 #include "jfr/support/jfrNativeLibraryLoadEvent.hpp"
@@ -6637,6 +6640,19 @@ bool os::win32::platform_print_native_stack(outputStream* st, const void* contex
   int count = 0;
   address lastpc_internal = 0;
   while (count++ < StackPrintLimit) {
+#if defined(_M_ARM64)
+    // On Windows/ARM64, when the CPU is using authenticated pointers, return
+    // addresses are signed.  Unfortunately, `StackWalk64()` does not strip the
+    // pointer signature, so we need to do this ourself.  Since stripping the
+    // signature is an idempotent operation, we don't need to guard this call
+    // based on whether pointer authentication is enabled.
+    address original = (address)stk.AddrPC.Offset;
+    address stripped = pauth_strip_pointer(original);
+    stk.AddrPC.Offset = (DWORD64)(uintptr_t)stripped;
+
+    // We updated the stack frame's PC, so keep the context's PC in sync.
+    ctx.Pc = stk.AddrPC.Offset;
+#endif
     intptr_t* sp = (intptr_t*)stk.AddrStack.Offset;
     intptr_t* fp = (intptr_t*)stk.AddrFrame.Offset; // NOT necessarily the same as ctx.Rbp!
     address pc = (address)stk.AddrPC.Offset;

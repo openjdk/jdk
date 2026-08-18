@@ -1420,6 +1420,9 @@ clean: $(CLEAN_DIR_TARGETS)
 clean-docs:
 	$(call CleanDocs)
 
+clean-microbenchmark:
+	$(call CleanMicrobenchmark)
+
 clean-compile-commands:
 	$(call CleanMakeSupportDir,compile-commands)
 
@@ -1468,7 +1471,8 @@ dist-clean: clean
 	)
 	$(ECHO) Cleaned everything, you will have to re-run configure.
 
-ALL_TARGETS += clean clean-docs clean-compile-commands dist-clean $(CLEAN_DIR_TARGETS) \
+ALL_TARGETS += clean clean-docs clean-microbenchmark clean-compile-commands \
+    dist-clean $(CLEAN_DIR_TARGETS) \
     $(CLEAN_SUPPORT_DIR_TARGETS) $(CLEAN_TEST_TARGETS) $(CLEAN_PHASE_TARGETS) \
     $(CLEAN_MODULE_TARGETS) $(CLEAN_MODULE_PHASE_TARGETS)
 
