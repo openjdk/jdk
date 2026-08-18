@@ -3199,6 +3199,17 @@ void PhaseMacroExpand::refine_strip_mined_loop_macro_nodes() {
   }
 }
 
+// Clean up the graph so we're less likely to hit the maximum node limit
+static bool cleanup_graph(PhaseIterGVN& igvn) {
+  igvn.set_delay_transform(false);
+  igvn.optimize();
+  if (igvn.C->failing()) {
+    return true;
+  }
+  igvn.set_delay_transform(true);
+  return false;
+}
+
 //---------------------------eliminate_macro_nodes----------------------
 // Eliminate scalar replaced allocations and associated locks.
 void PhaseMacroExpand::eliminate_macro_nodes(bool eliminate_locks) {
@@ -3312,12 +3323,9 @@ void PhaseMacroExpand::eliminate_macro_nodes(bool eliminate_locks) {
     // other macro nodes can remove all these safepoints, allowing the allocation to be removed.
     // Hence after igvn we retry removing macro nodes if some progress that has been made in this
     // iteration.
-    _igvn.set_delay_transform(false);
-    _igvn.optimize();
-    if (C->failing()) {
-      return;
+    if (cleanup_graph(_igvn)) {
+      return; // failing
     }
-    _igvn.set_delay_transform(true);
 
     if (!progress) {
       break;
@@ -3413,13 +3421,10 @@ bool PhaseMacroExpand::expand_macro_nodes() {
     C->shuffle_macro_nodes();
   }
 
-  // Clean up the graph so we're less likely to hit the maximum node
-  // limit
-  _igvn.set_delay_transform(false);
-  _igvn.optimize();
-  if (C->failing())  return true;
-  _igvn.set_delay_transform(true);
-
+  // Clean up after eliminate_opaque_looplimit_macro_nodes()
+  if (cleanup_graph(_igvn)) {
+    return true; // failing
+  }
 
   // Because we run IGVN after each expansion, some macro nodes may go
   // dead and be removed from the list as we iterate over it. Move
@@ -3429,25 +3434,33 @@ bool PhaseMacroExpand::expand_macro_nodes() {
   // the list due to nodes going dead.
   C->sort_macro_nodes();
 
-  // expand arraycopy "macro" nodes first
   // For ReduceBulkZeroing, we must first process all arraycopy nodes
-  // before the allocate nodes are expanded.
+  // before the allocate nodes are expanded. Sorting macro nodes list
+  // enforces it.
+
+  // Worst case is a macro node gets expanded into about 200 nodes.
+  // Allow 50% more for optimization.
+  static const uint macro_expansion_estimate = 300;
+  const uint macro_expansion_margin = macro_expansion_estimate * MacroExpansionCleanupCount;
+  const uint macro_expansion_limit  = C->max_node_limit() > macro_expansion_margin ?
+                                      C->max_node_limit() - macro_expansion_margin : 0;
+  uint pending_expansions_to_cleanup = 0;
+
   while (C->macro_count() > 0) {
     int macro_count = C->macro_count();
-    Node * n = C->macro_node(macro_count-1);
+    Node* n = C->macro_node(macro_count-1);
     assert(n->is_macro(), "only macro nodes expected here");
     if (_igvn.type(n) == Type::TOP || (n->in(0) != nullptr && n->in(0)->is_top())) {
       // node is unreachable, so don't try to expand it
       C->remove_macro_node(n);
       continue;
     }
+    // Reached Allocate nodes - jump to second pass to prcess them.
     if (n->is_Allocate()) {
       break;
     }
     // Make sure expansion will not cause node limit to be exceeded.
-    // Worst case is a macro node gets expanded into about 200 nodes.
-    // Allow 50% more for optimization.
-    if (C->check_node_count(300, "out of nodes before macro expansion")) {
+    if (C->check_node_count(macro_expansion_margin, "out of nodes before macro expansion")) {
       return true;
     }
 
@@ -3488,22 +3501,27 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       }
     }
     assert(C->macro_count() == (old_macro_count - 1), "expansion must have deleted one node from macro list");
-    if (C->failing())  return true;
+    if (C->failing()) {
+      return true;
+    }
     C->print_method(PHASE_AFTER_MACRO_EXPANSION_STEP, 5, n);
 
-    // Clean up the graph so we're less likely to hit the maximum node
-    // limit
-    _igvn.set_delay_transform(false);
-    _igvn.optimize();
-    if (C->failing())  return true;
-    _igvn.set_delay_transform(true);
+    pending_expansions_to_cleanup++;
+    if (pending_expansions_to_cleanup < MacroExpansionCleanupCount &&
+        C->live_nodes() < macro_expansion_limit) {
+      // skip clean up
+      continue;
+    }
+    if (cleanup_graph(_igvn)) {
+      return true; // failing
+    }
+    pending_expansions_to_cleanup = 0;
   }
 
   // All nodes except Allocate nodes are expanded now. There could be
   // new optimization opportunities (such as folding newly created
   // load from a just allocated object). Run IGVN.
 
-  // expand "macro" nodes
   // nodes are removed from the macro list as they are processed
   while (C->macro_count() > 0) {
     int macro_count = C->macro_count();
@@ -3515,9 +3533,7 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       continue;
     }
     // Make sure expansion will not cause node limit to be exceeded.
-    // Worst case is a macro node gets expanded into about 200 nodes.
-    // Allow 50% more for optimization.
-    if (C->check_node_count(300, "out of nodes before macro expansion")) {
+    if (C->check_node_count(macro_expansion_margin, "out of nodes before macro expansion")) {
       return true;
     }
     switch (n->class_id()) {
@@ -3534,14 +3550,22 @@ bool PhaseMacroExpand::expand_macro_nodes() {
     if (C->failing())  return true;
     C->print_method(PHASE_AFTER_MACRO_EXPANSION_STEP, 5, n);
 
-    // Clean up the graph so we're less likely to hit the maximum node
-    // limit
-    _igvn.set_delay_transform(false);
-    _igvn.optimize();
-    if (C->failing())  return true;
-    _igvn.set_delay_transform(true);
+    pending_expansions_to_cleanup++;
+    if (pending_expansions_to_cleanup < MacroExpansionCleanupCount &&
+        C->live_nodes() < macro_expansion_limit) {
+      // skip clean up
+      continue;
+    }
+    if (cleanup_graph(_igvn)) {
+      return true; // failing
+    }
+    pending_expansions_to_cleanup = 0;
   }
-
+  if (pending_expansions_to_cleanup > 0) {
+    if (cleanup_graph(_igvn)) {
+      return true; // failing
+    }
+  }
   _igvn.set_delay_transform(false);
   return false;
 }

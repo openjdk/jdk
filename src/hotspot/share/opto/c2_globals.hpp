@@ -726,6 +726,11 @@
           "Re-process nodes that could benefit from a deep revisit after "  \
           "the IGVN worklist drains")                                       \
                                                                             \
+  product(uint, MacroExpansionCleanupCount, 32, DIAGNOSTIC,                 \
+          "Execute IGVN optimization to clean graph after this number of "  \
+          "macro nodes are expanded")                                       \
+          range(0, 100)                                                     \
+                                                                            \
   develop(uint, VerifyIterativeGVN, 0,                                      \
           "Verify Iterative Global Value Numbering =GFEDCBA, with:"         \
           "  G: verify Node::Identity return an existing node"              \
