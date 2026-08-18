@@ -7248,12 +7248,14 @@ bool LibraryCallKit::inline_encodeISOArray(bool ascii) {
   // 'dst_start' points to dst array + scaled offset
 
   // See GraphKit::compress_string
+  const TypeAryPtr* src_memory_type = TypeAryPtr::get_array_body_type(src_elem);
+  const TypeAryPtr* dst_memory_type = TypeAryPtr::get_array_body_type(dst_elem);
   const TypePtr* adr_type;
-  Node* mem = capture_memory(adr_type, src_type, dst_type);
+  Node* mem = capture_memory(adr_type, src_memory_type, dst_memory_type);
   Node* enc = new EncodeISOArrayNode(control(), mem, adr_type, src_start, dst_start, length, ascii);
   enc = _gvn.transform(enc);
   Node* res_mem = _gvn.transform(new SCMemProjNode(enc));
-  memory_effect(res_mem, src_type, dst_type);
+  memory_effect(res_mem, src_memory_type, dst_memory_type);
 
   set_result(enc);
   clear_upper_avx();
