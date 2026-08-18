@@ -163,6 +163,7 @@ void ShenandoahInPlacePromoter::maybe_promote_region(ShenandoahHeapRegion* r) co
     LogStream ls(lt);
     ls.print_cr("Not promoting region already scheduled for it");
     r->print_on(&ls);
+    fatal("Did not promote region: %zu as expected", r->index());
   }
 }
 
