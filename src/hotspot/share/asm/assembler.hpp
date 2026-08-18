@@ -147,7 +147,8 @@ class Label {
    * @param branch_loc the locator of the branch instruction in the code buffer
    */
   void add_patch_at(CodeBuffer* cb, int branch_loc, const char* file = nullptr,
-                    int line = 0, LabelPatchKind pk = LPK_FULL_ADDRESS);
+                    int line = 0, LabelPatchKind pk = LPK_FULL_ADDRESS,
+                    int patch_shift = 0);
 
   /**
    * Iterate over the list of patches, resolving the instructions
@@ -426,36 +427,41 @@ class AbstractAssembler : public ResourceObj  {
   //
   // We must remember the code section (insts or stubs) in c1
   // so we can reset to the proper section in end_a_const().
-  template <typename T>
-  address numeric_constant(T c) {
+  address int_constant(jint c) {
     CodeSection* c1 = _code_section;
-    address ptr = start_a_const(sizeof(T), sizeof(T));
+    address ptr = start_a_const(sizeof(c), sizeof(c));
     if (ptr != nullptr) {
-      code_section()->emit_native(c);
+      emit_int32(c);
       end_a_const(c1);
     }
     return ptr;
   }
-
-  address byte_constant(jubyte c) {
-    return numeric_constant(c);
-  }
-
-  address short_constant(jushort c) {
-    return numeric_constant(c);
-  }
-
-  address int_constant(jint c) {
-    return numeric_constant(c);
-  }
   address long_constant(jlong c) {
-    return numeric_constant(c);
+    CodeSection* c1 = _code_section;
+    address ptr = start_a_const(sizeof(c), sizeof(c));
+    if (ptr != nullptr) {
+      emit_int64(c);
+      end_a_const(c1);
+    }
+    return ptr;
   }
   address double_constant(jdouble c) {
-    return numeric_constant(c);
+    CodeSection* c1 = _code_section;
+    address ptr = start_a_const(sizeof(c), sizeof(c));
+    if (ptr != nullptr) {
+      emit_double(c);
+      end_a_const(c1);
+    }
+    return ptr;
   }
   address float_constant(jfloat c) {
-    return numeric_constant(c);
+    CodeSection* c1 = _code_section;
+    address ptr = start_a_const(sizeof(c), sizeof(c));
+    if (ptr != nullptr) {
+      emit_float(c);
+      end_a_const(c1);
+    }
+    return ptr;
   }
   address address_constant(address c) {
     CodeSection* c1 = _code_section;

@@ -257,7 +257,7 @@ GrowableArray<PatchInfo>* CodeBuffer::create_patch_overflow() {
 // Helper function for managing labels and their target addresses.
 // Returns a sensible address, and if it is not the label's final
 // address, notes the dependency (at 'branch_pc') on the label.
-address CodeSection::target(Label& L, address branch_pc, LabelPatchKind pk) {
+address CodeSection::target(Label& L, address branch_pc, LabelPatchKind pk, int patch_shift) {
   if (L.is_bound()) {
     int loc = L.loc();
     if (index() == CodeBuffer::locator_sect(loc)) {
@@ -269,7 +269,7 @@ address CodeSection::target(Label& L, address branch_pc, LabelPatchKind pk) {
     assert(allocates2(branch_pc), "sanity");
     address base = start();
     int patch_loc = CodeBuffer::locator(branch_pc - base, index());
-    L.add_patch_at(outer(), patch_loc, nullptr, 0, pk);
+    L.add_patch_at(outer(), patch_loc, nullptr, 0, pk, patch_shift);
 
     // Need to return a pc, doesn't matter what it is since it will be
     // replaced during resolution later.
@@ -591,16 +591,13 @@ void CodeBuffer::finalize_oop_references(const methodHandle& mh) {
   }
 }
 
-void CodeBuffer::set_jump_table_entry(int slot_size, address slot_addr, uintptr_t value, bool checked) {
-  switch (slot_size) {
-  case 1:
-    *(uint8_t*)slot_addr = jt_cast<uint8_t>(value, checked);
-    break;
+void CodeBuffer::set_jump_table_entry(int entry_size, address entry_addr, intptr_t value) {
+  switch (entry_size) {
   case 2:
-    *(uint16_t*)slot_addr = jt_cast<uint16_t>(value, checked);
+    *(int16_t*)entry_addr = jt_cast<int16_t>(value);
     break;
   case 4:
-    *(uint32_t*)slot_addr = jt_cast<uint32_t>(value, checked);
+    *(int32_t*)entry_addr = jt_cast<int32_t>(value);
     break;
   default:
     ShouldNotReachHere();

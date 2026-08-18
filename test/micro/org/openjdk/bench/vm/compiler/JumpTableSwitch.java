@@ -28,11 +28,13 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.bench.util.InMemoryJavaCompiler;
+import org.openjdk.bench.vm.compiler.JumpTableSwitch.InputState;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OperationsPerInvocation;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
@@ -48,7 +50,8 @@ import org.openjdk.jmh.infra.Blackhole;
 @Fork(3)
 public class JumpTableSwitch {
 
-    private static final int MASK = 1023;
+    private static final int OPERATIONS = 1024;
+    private static final int MASK = OPERATIONS - 1;
     private static final boolean PRINT_GENERATED_SOURCE =
         Boolean.getBoolean("JumpTableSwitch.printGeneratedSource");
 
@@ -67,13 +70,16 @@ public class JumpTableSwitch {
         private final int[] values = new int[MASK + 1];
 
         @Param({"4", "8", "9", "10", "12", "16", "24", "32", "64", "72",
-                "80", "96", "112", "120", "128", "256", "512", "1024"})
+                "80", "96", "112", "120", "128", "256", "512", "768",
+                "1024", "1280", "1536", "1792", "2048"})
         public int cases;
 
-        @Param({"1", "10", "11"})
+        // Steps 1, 2, and 4 exercise jump tables with different densities.
+        // Step 10 is a sparse comparison-tree control on typical configurations.
+        @Param({"1", "2", "4", "10"})
         public int step;
 
-        @Param({"even", "defaultHeavy", "hotCase"})
+        @Param({"even", "defaultHeavy", "hotFirst", "hotLast"})
         public String distribution;
 
         private MethodHandle switchMethod;
@@ -119,7 +125,8 @@ public class JumpTableSwitch {
                 values[i] = switch (distribution) {
                     case "even" -> value;
                     case "defaultHeavy" -> ((seed & 3) == 0) ? value : size + value;
-                    case "hotCase" -> ((seed & 3) == 0) ? value : 0;
+                    case "hotFirst" -> ((seed & 3) == 0) ? value : 0;
+                    case "hotLast" -> ((seed & 3) == 0) ? value : size - 1;
                     default -> throw new IllegalStateException("unexpected distribution: " + distribution);
                 };
             }
@@ -133,7 +140,8 @@ public class JumpTableSwitch {
                 values[i] = switch (distribution) {
                     case "even" -> value;
                     case "defaultHeavy" -> ((seed & 3) == 0) ? value : (cases + Integer.remainderUnsigned(seed, cases)) * step;
-                    case "hotCase" -> ((seed & 3) == 0) ? value : 0;
+                    case "hotFirst" -> ((seed & 3) == 0) ? value : 0;
+                    case "hotLast" -> ((seed & 3) == 0) ? value : (cases - 1) * step;
                     default -> throw new IllegalStateException("unexpected distribution: " + distribution);
                 };
             }
@@ -162,10 +170,13 @@ public class JumpTableSwitch {
     }
 
     @Benchmark
+    @OperationsPerInvocation(OPERATIONS)
     public void switchCase(InputState state, Blackhole blackhole) throws Throwable {
         MethodHandle switchMethod = state.switchMethod;
-        for (int i = 0; i < MASK; i++) {
-            blackhole.consume((int) switchMethod.invokeExact(state.next()));
+        int result = 0;
+        for (int i = 0; i < OPERATIONS; i++) {
+            result += (int) switchMethod.invokeExact(state.next());
         }
+        blackhole.consume(result);
     }
 }

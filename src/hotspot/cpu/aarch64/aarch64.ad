@@ -8598,8 +8598,8 @@ instruct jumptable_switch_offset(iRegIorL2I switch_val) %{
   %}
 
   ins_encode %{
-    __ jump_table_switch($switch_val$$Register, $constantoffset,
-                         ra_->C->output()->constant_table().jump_table_slot_size());
+    __ jump_table_switch($switch_val$$Register,
+                         ra_->C->output()->jump_table_entry_size());
   %}
 
   ins_pipe(pipe_class_default);
@@ -8613,8 +8613,8 @@ instruct jumptable_switch(iRegL switch_val) %{
   %}
 
   ins_encode %{
-    __ jump_table_switch($switch_val$$Register, $constantoffset,
-                         ra_->C->output()->constant_table().jump_table_slot_size());
+    __ jump_table_switch($switch_val$$Register,
+                         ra_->C->output()->jump_table_entry_size());
   %}
 
   ins_pipe(pipe_class_default);

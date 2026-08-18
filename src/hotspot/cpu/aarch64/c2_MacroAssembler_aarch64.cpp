@@ -3018,29 +3018,21 @@ void C2_MacroAssembler::sve_sdiv_short(FloatRegister dst_src1, FloatRegister src
   sve_uzp1(dst_src1, H, vtmp1, src1);
 }
 
-void C2_MacroAssembler::jump_table_switch(Register switch_val, int jump_table_offset, uint jump_table_slot_size) {
-  assert(Matcher::use_compressed_jump_table, "");
-  int scale = exact_log2(jump_table_slot_size);
-  // On AArch64, when use_compressed_jump_table is enabled, jump_table_offset may not be 4-byte aligned.
-  uint64_t offset;
-  int jump_table_offset_low_2_bits = jump_table_offset & 3;
-  int jump_table_offset_high_bits = jump_table_offset ^ jump_table_offset_low_2_bits;
-
-  adrp(rscratch1, InternalAddress(code()->consts()->start() + jump_table_offset_high_bits), offset);
-  add(rscratch1, rscratch1, offset);
-  if (jump_table_offset != 0) {
-    add(rscratch1, rscratch1, jump_table_offset_low_2_bits);
-  }
+void C2_MacroAssembler::jump_table_switch(Register switch_val, uint jump_table_entry_size) {
+  assert(Matcher::use_compressed_jump_table,
+         "jump_table_switch should only be used with compressed jump tables");
+  Label jump_table;
+  int scale = exact_log2(jump_table_entry_size);
+  int instruction_size_log2 = exact_log2(Assembler::instruction_size);
+  adr(rscratch1, jump_table);
   switch (scale) {
-    case 0: ldrb(rscratch1, Address(rscratch1, switch_val)); break;
-    case 1: ldrh(rscratch1, Address(rscratch1, switch_val, Address::lsl(scale))); break;
-    case 2: ldrw(rscratch1, Address(rscratch1, switch_val, Address::lsl(scale))); break;
+    case 1: ldrsh(rscratch2, Address(rscratch1, switch_val, Address::uxtw(scale))); break;
+    case 2: ldrsw(rscratch2, Address(rscratch1, switch_val, Address::uxtw(scale))); break;
     default:
-      assert(scale == 3, "");
-      ldr(rscratch1, Address(rscratch1, switch_val, Address::lsl(scale)));
-      break;
+      ShouldNotReachHere();
   }
-  adr(rscratch2, InternalAddress(code()->insts_begin())); // rscratch2 = instruction section base
-  add(rscratch2, rscratch1, rscratch2); // target = instruction section base + relative offset
-  br(rscratch2);
+  add(rscratch1, rscratch1, rscratch2, LSL, instruction_size_log2); // target = jump table base + relative offset
+  br(rscratch1);
+
+  bind(jump_table);
 }

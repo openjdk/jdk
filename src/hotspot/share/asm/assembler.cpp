@@ -150,12 +150,12 @@ void AbstractAssembler::generate_stack_overflow_check(int frame_size_in_bytes) {
 }
 
 void Label::add_patch_at(CodeBuffer* cb, int branch_loc, const char* file,
-                         int line, LabelPatchKind pk) {
+                         int line, LabelPatchKind lpk, int patch_shift) {
   assert(_loc == -1, "Label is unbound");
   // Don't add patch locations during scratch emit.
   if (cb->insts()->scratch_emit()) { return; }
   if (_patch_index < PatchCacheSize) {
-    _patches[_patch_index].set(branch_loc, pk);
+    _patches[_patch_index].set(branch_loc, lpk, patch_shift);
 #ifdef ASSERT
     _lines[_patch_index] = line;
     _files[_patch_index] = file;
@@ -164,7 +164,7 @@ void Label::add_patch_at(CodeBuffer* cb, int branch_loc, const char* file,
     if (_patch_overflow == nullptr) {
       _patch_overflow = cb->create_patch_overflow();
     }
-    _patch_overflow->push(PatchInfo(branch_loc, pk));
+    _patch_overflow->push(PatchInfo(branch_loc, lpk, patch_shift));
   }
   ++_patch_index;
 }
@@ -172,7 +172,6 @@ void Label::add_patch_at(CodeBuffer* cb, int branch_loc, const char* file,
 void Label::patch_instructions(MacroAssembler* masm) {
   assert(is_bound(), "Label is bound");
   CodeBuffer* cb = masm->code();
-  int target_sect = CodeBuffer::locator_sect(loc());
   address target = cb->locator_address(loc());
   while (_patch_index > 0) {
     --_patch_index;
@@ -190,23 +189,31 @@ void Label::patch_instructions(MacroAssembler* masm) {
     }
     int branch_loc = pchi.branch_loc();
     LabelPatchKind pk = pchi.patch_kind();
-    int branch_sect = CodeBuffer::locator_sect(branch_loc);
-    address branch = cb->locator_address(branch_loc);
-    if (branch_sect == CodeBuffer::SECT_CONSTS) {
-      if (pk != LPK_FULL_ADDRESS) {
-        assert(pk == LPK_COMPRESSED_OFFSET_8 ||
-               pk == LPK_COMPRESSED_OFFSET_16 ||
-               pk == LPK_COMPRESSED_OFFSET_32, "Must use compressed jump table");
-        CodeBuffer::set_jump_table_entry(1 << pk, branch, target - cb->insts_begin(), true);
-        continue;
-      }
+    int patch_shift = pchi.patch_shift();
+    int patch_sect = CodeBuffer::locator_sect(branch_loc);
+    address jump_entry_addr = cb->locator_address(branch_loc);
+    if (pk != LPK_FULL_ADDRESS) {
+      assert(pk == LPK_COMPRESSED_OFFSET_16 ||
+             pk == LPK_COMPRESSED_OFFSET_32, "Must use compressed jump table");
+      address slot_addr = jump_entry_addr;
+      uintptr_t slot_offset = (pk == LPK_COMPRESSED_OFFSET_16) ?
+                              *(uint16_t*)jump_entry_addr : *(uint32_t*)jump_entry_addr;
+      slot_offset <<= pk;
+      address jump_table_addr = slot_addr - slot_offset;
+      intptr_t offset = target - jump_table_addr;
+      assert(((offset >> patch_shift) << patch_shift) == offset, "misaligned target");
+      offset >>= patch_shift;
+      CodeBuffer::set_jump_table_entry(1 << pk, jump_entry_addr, offset);
+      continue;
+    }
+    if (patch_sect == CodeBuffer::SECT_CONSTS) {
       // The thing to patch is a constant word.
-      *(address*)branch = target;
+      *(address*)jump_entry_addr = target;
       continue;
     }
 
-    // Push the target offset into the branch instruction.
-    masm->pd_patch_instruction(branch, target, file, line);
+    // Push the target offset into the jump_entry_addr instruction.
+    masm->pd_patch_instruction(jump_entry_addr, target, file, line);
   }
 }
 
