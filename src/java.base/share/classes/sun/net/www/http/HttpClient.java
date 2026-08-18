@@ -27,6 +27,7 @@ package sun.net.www.http;
 
 import java.io.*;
 import java.net.*;
+import java.net.Proxy.Type;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.OptionalInt;
@@ -180,6 +181,13 @@ public class HttpClient extends NetworkClient {
 
     int getKeepAliveTimeout() {
         return keepAliveTimeout;
+    }
+
+    public Proxy getHttpProxy() {
+        if (proxy != null && proxy.type() == Type.HTTP) {
+            return proxy;
+        }
+        return null;
     }
 
     static String normalizeCBT(String s) {
