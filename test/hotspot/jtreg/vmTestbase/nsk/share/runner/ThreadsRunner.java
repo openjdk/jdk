@@ -123,7 +123,11 @@ public class ThreadsRunner implements MultiRunner, LogAware, RunParamsAware {
                 if (test instanceof OOMStress && isCausedByOOM(t)) {
                     // Test stressing OOM, not a failure. The OOME may arrive
                     // wrapped in another exception.
-                    log.info("Caught " + t + " in OOM stress test, omitting exception.");
+                    try {
+                        log.info("Caught " + t + " in OOM stress test, omitting exception.");
+                    } catch (OutOfMemoryError oom) {
+                        // no memory left to log, still not a failure
+                    }
                 } else {
                     failWithException(t);
                 }
