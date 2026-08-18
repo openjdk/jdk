@@ -24,15 +24,20 @@
 
 package gc.shenandoah.generational;
 
-import jdk.test.whitebox.WhiteBox;
-import java.util.concurrent.atomic.*;
-import javax.management.*;
-import java.lang.management.*;
-import javax.management.openmbean.*;
-
-import jdk.test.lib.Utils;
-
 import com.sun.management.GarbageCollectionNotificationInfo;
+
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.TimeUnit;
+
+import javax.management.Notification;
+import javax.management.NotificationEmitter;
+import javax.management.NotificationListener;
+import javax.management.openmbean.CompositeData;
+
+import jdk.test.whitebox.WhiteBox;
+
 
 /*
  * @test id=generational
@@ -86,6 +91,11 @@ public class TestPromoteInPlaceDuringAbbreviatedCycle {
         return n.getType().equals(GarbageCollectionNotificationInfo.GARBAGE_COLLECTION_NOTIFICATION);
     }
 
+    private static boolean isIllegalPause(GarbageCollectionNotificationInfo info) {
+      return info.getGcName().equals("Shenandoah Pauses")
+          && (info.getGcAction().contains("Update Refs") || info.getGcAction().contains("Degen"));
+    }
+
     private static void subscribeToCollectorNotifications(NotificationListener listener) {
         for (GarbageCollectorMXBean b : ManagementFactory.getGarbageCollectorMXBeans()) {
             ((NotificationEmitter) b).addNotificationListener(listener, null, null);
@@ -112,22 +122,24 @@ public class TestPromoteInPlaceDuringAbbreviatedCycle {
         regular = new Object[REGULAR_REFS];
 
         // Listen for events to detect if a non-abbreviated cycle runs
-        final AtomicLong updateReferencePauses = new AtomicLong();
-        final AtomicLong cycleNotifications   = new AtomicLong();
+        final GarbageCollectorMXBean cycles = cycleBean();
+        final AtomicLong illegalPauses = new AtomicLong();
+        final AtomicLong maxCycleId = new AtomicLong();
         NotificationListener listener = (Notification n, Object o) -> {
             if (isCollectorNotification(n)) {
                 GarbageCollectionNotificationInfo info = GarbageCollectionNotificationInfo.from((CompositeData) n.getUserData());
-                if (info.getGcName().equals("Shenandoah Pauses") && info.getGcAction().contains("Update Refs")) {
-                    updateReferencePauses.incrementAndGet();
+                if (isIllegalPause(info)) {
+                    illegalPauses.incrementAndGet();
                 } else if (info.getGcName().equals("Shenandoah Cycles")) {
-                    cycleNotifications.incrementAndGet();
+                    long gcId = info.getGcInfo().getId();
+                    if (gcId > maxCycleId.get()) {
+                        maxCycleId.set(gcId);
+                    }
                 }
             }
         };
 
         subscribeToCollectorNotifications(listener);
-
-        GarbageCollectorMXBean cycles = cycleBean();
 
         if (WB.isObjectInOldGen(humongous)) {
             throw new IllegalStateException("Expected young humongous array");
@@ -153,9 +165,9 @@ public class TestPromoteInPlaceDuringAbbreviatedCycle {
 
         // Flush gc notification events
         long targetCycles = cycles.getCollectionCount();
-        long deadlineMillis = System.currentTimeMillis() + 30_000;
-        while (cycleNotifications.get() < targetCycles) {
-            if (System.currentTimeMillis() > deadlineMillis) {
+        long deadlineNanos = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
+        while (maxCycleId.get() < targetCycles) {
+            if (System.nanoTime() > deadlineNanos) {
                 throw new RuntimeException("Timed out flushing GC notifications: delivered "
                                            + cycleNotifications.get() + " of "
                                            + targetCycles + " cycle notifications");
@@ -165,9 +177,8 @@ public class TestPromoteInPlaceDuringAbbreviatedCycle {
 
         unsubscribeToCollectorNotifications(listener);
 
-        if (updateReferencePauses.get() != 0) {
-            throw new RuntimeException(updateReferencePauses.get()
-                                       + " non-abbreviated cycles happened");
+        if (illegalPauses.get() != 0) {
+            throw new RuntimeException(illegalPauses.get() + " non-abbreviated cycles happened");
         }
 
         if (!WB.isObjectInOldGen(humongous)) {
