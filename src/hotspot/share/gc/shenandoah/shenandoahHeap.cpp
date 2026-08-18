@@ -73,6 +73,7 @@
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
+#include "gc/shenandoah/shenandoahStackChunkGCData.inline.hpp"
 #include "gc/shenandoah/shenandoahStackWatermark.hpp"
 #include "gc/shenandoah/shenandoahSTWMark.hpp"
 #include "gc/shenandoah/shenandoahUncommitThread.hpp"
@@ -2926,17 +2927,19 @@ void ShenandoahHeap::flush_liveness_cache(uint worker_id) {
 }
 
 bool ShenandoahHeap::requires_barriers(stackChunkOop obj) const {
-  if (is_idle()) return false;
-
-  // Objects allocated after marking start are implicitly alive, don't need any barriers during
-  // marking phase.
-  if (is_concurrent_mark_in_progress() &&
-     !marking_context()->allocated_after_mark_start(obj)) {
+  // Can not guarantee obj is deeply good.
+  if (has_forwarded_objects()) {
     return true;
   }
 
-  // Can not guarantee obj is deeply good.
-  if (has_forwarded_objects()) {
+  // Objects allocated after marking start are implicitly alive.
+  if (is_concurrent_mark_in_progress() &&
+      !marking_context()->allocated_after_mark_start(obj)) {
+    return true;
+  }
+
+  // Nmethods referenced by stack chunk may need the barrier fixups.
+  if (ShenandoahStackChunkGCData::gc_state(obj) != gc_state()) {
     return true;
   }
 
