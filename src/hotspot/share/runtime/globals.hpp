@@ -2029,6 +2029,9 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, UseAcmpFastPath, true, DIAGNOSTIC,                          \
           "Use fast path for acmp.")                                        \
+                                                                            \
+  product(bool, UseHashcodeFastPath, true, DIAGNOSTIC,                      \
+          "Use fast path for identityHashCode.")                            \
 
 // end of RUNTIME_FLAGS
 
