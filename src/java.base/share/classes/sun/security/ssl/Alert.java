@@ -181,11 +181,13 @@ public enum Alert {
 
         AlertMessage(TransportContext context,
                 ByteBuffer m) throws IOException {
-            // From RFC 8446 "Implementations
-            // MUST NOT send Handshake and Alert records that have a zero-length
-            // TLSInnerPlaintext.content; if such a message is received, the
-            // receiving implementation MUST terminate the connection with an
-            // "unexpected_message" alert."
+
+            // From RFC 8446: TLSv1.3
+            //
+            // Implementations MUST NOT send Handshake and Alert records that
+            // have a zero-length TLSInnerPlaintext.content; if such a message
+            // is received, the receiving implementation MUST terminate the
+            // connection with an "unexpected_message" alert.
             if (m.remaining() == 0) {
                 throw context.fatal(Alert.UNEXPECTED_MESSAGE,
                         "Alert fragments must not be zero length.");
@@ -264,27 +266,39 @@ public enum Alert {
             } else if ((level == Level.WARNING) && (alert != null)) {
                 // Terminate the connection if an alert with a level of warning
                 // is received during handshaking, except the no_certificate
-                // warning.
-                if (alert.handshakeOnly && (tc.handshakeContext != null)) {
-                    // It's OK to get a no_certificate alert from a client of
-                    // which we requested client authentication.  However,
-                    // if we required it, then this is not acceptable.
-                    if (tc.sslConfig.isClientMode ||
-                            alert != Alert.NO_CERTIFICATE ||
-                            (tc.sslConfig.clientAuthType !=
+                // warning for SSLv3.
+                HandshakeContext hc = tc.handshakeContext;
+                if (alert.handshakeOnly && (hc != null)) {
+                    // In SSLv3, it's OK to get a no_certificate alert from a
+                    // client where we requested (want) client authentication.
+                    // If we required it (need), this is not acceptable
+                    // and must fail.
+                    //
+                    // no_certificate alerts are not acceptable in TLSv1.*.
+                    //
+                    if (!tc.sslConfig.isClientMode &&
+                            (hc.negotiatedProtocol == ProtocolVersion.SSL30) &&
+                            (alert == Alert.NO_CERTIFICATE) &&
+                            (tc.sslConfig.clientAuthType ==
                                     ClientAuthType.CLIENT_AUTH_REQUESTED)) {
-                        throw tc.fatal(Alert.HANDSHAKE_FAILURE,
-                            "received handshake warning: " + alert.description);
-                    } else {
-                        // Otherwise, ignore the warning but remove the
-                        // Certificate and CertificateVerify handshake
-                        // consumer so the state machine doesn't expect it.
-                        tc.handshakeContext.handshakeConsumers.remove(
-                                SSLHandshake.CERTIFICATE.id);
-                        tc.handshakeContext.handshakeConsumers.remove(
+
+                        // We'll ignore the warning and remove the Certificate,
+                        // CompressedCertificate and CertificateVerify handshake
+                        // consumers so the state machine isn't expecting them.
+                        if (hc.handshakeConsumers.remove(
+                                SSLHandshake.CERTIFICATE.id) != null) {
+                            hc.handshakeConsumers.remove(
                                 SSLHandshake.COMPRESSED_CERTIFICATE.id);
-                        tc.handshakeContext.handshakeConsumers.remove(
+                            hc.handshakeConsumers.remove(
                                 SSLHandshake.CERTIFICATE_VERIFY.id);
+                        } else {
+                            throw tc.fatal(Alert.HANDSHAKE_FAILURE,
+                                    "NO_CERTIFICATE alert received when certs" +
+                                    " were not expected or already received");
+                        }
+                    } else {
+                        throw tc.fatal(Alert.HANDSHAKE_FAILURE,
+                            "Received handshake warning: " + alert.description);
                     }
                 }  // Otherwise, ignore the warning
             } else {    // fatal or unknown

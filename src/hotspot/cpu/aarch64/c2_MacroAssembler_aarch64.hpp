@@ -77,6 +77,8 @@
  public:
   using Assembler::sve_cpy;
 
+  void entry_barrier();
+
   // jdk.internal.util.ArraysSupport.vectorizedHashCode
   address arrays_hashcode(Register ary, Register cnt, Register result, FloatRegister vdata0,
                           FloatRegister vdata1, FloatRegister vdata2, FloatRegister vdata3,
@@ -253,5 +255,10 @@
   void sve_cpy(FloatRegister dst, SIMD_RegVariant T, PRegister pg, int imm8,
                bool isMerge);
   int vector_iota_entry_index(BasicType bt);
+
+  void sve_sdiv_byte(FloatRegister dst_src1, FloatRegister src2, FloatRegister vtmp1,
+                     FloatRegister vtmp2, FloatRegister vtmp3, FloatRegister vtmp4);
+  void sve_sdiv_short(FloatRegister dst_src1, FloatRegister src2,
+                      FloatRegister vtmp1, FloatRegister vtmp2);
   void jump_table_switch(Register switch_val, int jump_table_offset, uint jump_table_slot_size);
 #endif // CPU_AARCH64_C2_MACROASSEMBLER_AARCH64_HPP

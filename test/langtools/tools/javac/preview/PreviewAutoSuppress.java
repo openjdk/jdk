@@ -94,10 +94,12 @@ public class PreviewAutoSuppress extends TestRunner {
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
 
+        // As of Valhalla, j.l.Record is a preview class
         List<String> expected =
-                List.of("Outer.java:3:5: compiler.warn.preview.feature.use.plural: (compiler.misc.feature.records)",
+                List.of("- compiler.warn.preview.feature.use.classfile: Record.class, " + FEATURE_VERSION,
                         "Outer.java:3:5: compiler.warn.preview.feature.use.plural: (compiler.misc.feature.records)",
-                        "2 warnings");
+                        "Outer.java:3:5: compiler.warn.preview.feature.use.plural: (compiler.misc.feature.records)",
+                        "3 warnings");
         if (!log.equals(expected))
             throw new Exception("expected output not found" + log);
         checkPreviewClassfile(classes.resolve("test").resolve("Outer.class"), true); //TODO: correct?
