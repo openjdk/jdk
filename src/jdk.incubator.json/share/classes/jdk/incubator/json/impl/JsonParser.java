@@ -123,9 +123,9 @@ public final class JsonParser {
             // Get the member name, which should be unescaped
             // Why not parse the name as a JsonString and then return its value()?
             // Would require 2 passes; we should build the String as we parse.
-            var name = parseName(startO);
-            var nameLine = line;
-            var nameLineStart = lineStart;
+            String name = parseName(startO);
+            int nameLine = line;
+            int nameLineStart = lineStart;
 
             // Move from name to ':'
             skipWhitespaces();
@@ -133,9 +133,11 @@ public final class JsonParser {
                 throw structureFailure(startO, "Expected a colon after the member name");
             }
 
-            if (members.putIfAbsent(name, parseValue()) != null) {
+            if (members.containsKey(name)) {
                 throw failure(nameStart, nameLine, nameLineStart,
                     "Duplicate member name: \"%s\" was already parsed".formatted(name), startO, true);
+            } else {
+                members.put(name, parseValue());
             }
 
             // Ensure current char is either ',' or '}'
@@ -180,7 +182,7 @@ public final class JsonParser {
                         c = codeUnit(objStart, true);
                         escapeLength = 4;
                     }
-                    default -> throw structureFailure(objStart, UNRECOGNIZED_ESCAPE_SEQUENCE.formatted(c));
+                    default -> throw structureFailure(objStart, UNRECOGNIZED_ESCAPE_SEQUENCE.formatted((int)c));
                 }
                 if (!useBldr) {
                     // Append everything up to the first escape sequence
@@ -255,7 +257,7 @@ public final class JsonParser {
                     // Allowed JSON escapes
                     case '"', '\\', '/', 'b', 'f', 'n', 'r', 't' -> {}
                     case 'u' -> codeUnit(start, false);
-                    default -> throw valueFailure(start, UNRECOGNIZED_ESCAPE_SEQUENCE.formatted(c));
+                    default -> throw valueFailure(start, UNRECOGNIZED_ESCAPE_SEQUENCE.formatted((int)c));
                 }
                 escape = false;
             } else if (c == '\\') {
@@ -465,7 +467,7 @@ public final class JsonParser {
     private static final String UNEXPECTED_VAL =
             "Unexpected value. Expected a JSON Object, Array, String, Number, Boolean, or Null";
     private static final String UNRECOGNIZED_ESCAPE_SEQUENCE =
-            "Unrecognized escape sequence: \"\\%c\"";
+            "Unrecognized escape sequence: \"\\0x%04X\"";
     private static final String UNESCAPED_CONTROL_CODE =
             "Unescaped control code";
     private static final String UNCLOSED_STRING =

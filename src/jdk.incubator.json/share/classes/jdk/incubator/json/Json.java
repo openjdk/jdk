@@ -154,7 +154,7 @@ public final class Json {
             s.append("{\n");
             map.forEach((name, val) -> {
                 s.append(indent.repeat(depth + 1))
-                    .append('\"')
+                    .append('"')
                     .append(Utils.escape(name))
                     .append("\":");
                 toDisplayString(val, s, depth + 1, indent, true);
