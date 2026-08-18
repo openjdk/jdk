@@ -368,7 +368,7 @@ void ShenandoahConcurrentGC::vmop_entry_final_roots() {
   ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::final_roots_gross);
 
   // This phase does not use workers, no need for setup
-  heap->try_inject_alloc_failure();
+  heap->try_inject_pin();
   VM_ShenandoahFinalRoots op(this);
   VMThread::execute(&op);
 }
