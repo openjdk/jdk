@@ -210,8 +210,6 @@ compiler/vectorapi/TestVectorReassociations.java 8388927 generic-all
 
 serviceability/sa/TestJhsdbJstackMixedWithXComp.java#xcomp-disable-tiered-compilation 8386674 linux-aarch64
 
-vmTestbase/nsk/jvmti/IterateOverReachableObjects/iterreachobj002/TestDescription.java 8384882 linux-all
-
 # The following test failure(s) DID NOT reproduce during Tier[1-8] testing
 # done for 8377828. Further analysis was done with 8376235 and just one
 # sub-test needed to remain on the ProblemList via 8361089.
