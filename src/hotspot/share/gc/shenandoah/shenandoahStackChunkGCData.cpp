@@ -25,8 +25,8 @@
 
 #include "runtime/atomic.hpp"
 
-Atomic<size_t> ShenandoahStackChunkGCData::_stack_chunk_epoch_id;
+Atomic<int64_t> ShenandoahStackChunkGCData::_stack_chunk_epoch_id;
 
 void ShenandoahStackChunkGCData::change_epoch_id() {
-  _stack_chunk_epoch_id.and_then_fetch(1U, memory_order_relaxed);
+  _stack_chunk_epoch_id.add_then_fetch(1, memory_order_relaxed);
 }

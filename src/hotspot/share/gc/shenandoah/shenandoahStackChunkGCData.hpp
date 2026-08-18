@@ -29,10 +29,10 @@
 
 class ShenandoahStackChunkGCData {
 private:
-  static Atomic<size_t> _stack_chunk_epoch_id;
+  static Atomic<int64_t> _stack_chunk_epoch_id;
 
   // The GC epoch when chunk was allocated
-  size_t _epoch;
+  int64_t _epoch;
 
   static ShenandoahStackChunkGCData* data(stackChunkOop chunk);
 
