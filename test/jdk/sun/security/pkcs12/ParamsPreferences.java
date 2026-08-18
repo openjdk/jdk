@@ -118,6 +118,32 @@ public class ParamsPreferences {
                 PBES2, HmacSHA256, AES_256$CBC$NoPadding, 10000,
                 PBMAC1, 10000);
 
+        // configure PBMAC1 MAC with system property
+        test(c++,
+                Map.of("keystore.pkcs12.certProtectionAlgorithm", "PBEWithSHA1AndDESede",
+                        "keystore.pkcs12.certPbeIterationCount", 3000,
+                        "keystore.pkcs12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_40",
+                        "keystore.pkcs12.keyPbeIterationCount", 4000,
+                        "keystore.pkcs12.macAlgorithm", "PBEWithHmacSHA256",
+                        "keystore.pkcs12.macIterationCount", 2000),
+                Map.of(),
+                PBEWithSHA1AndDESede, 3000,
+                PBEWithSHA1AndRC2_40, 4000,
+                PBMAC1, 2000);
+
+        // configure PBMAC1 MAC with security property
+        test(c++,
+                Map.of(),
+                Map.of("keystore.pkcs12.certProtectionAlgorithm", "PBEWithSHA1AndDESede",
+                        "keystore.pkcs12.certPbeIterationCount", 3000,
+                        "keystore.pkcs12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_40",
+                        "keystore.pkcs12.keyPbeIterationCount", 4000,
+                        "keystore.pkcs12.macAlgorithm", "PBEWithHmacSHA256",
+                        "keystore.pkcs12.macIterationCount", 2000),
+                PBEWithSHA1AndDESede, 3000,
+                PBEWithSHA1AndRC2_40, 4000,
+                PBMAC1, 2000);
+
         // change everything with system property
         test(c++,
                 Map.of("keystore.pkcs12.certProtectionAlgorithm", "PBEWithSHA1AndDESede",
