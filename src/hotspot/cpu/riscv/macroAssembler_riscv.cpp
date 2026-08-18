@@ -28,6 +28,7 @@
 #include "asm/assembler.inline.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "ci/ciInlineKlass.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -515,7 +516,11 @@ void MacroAssembler::clinit_barrier(Register klass, Register tmp, Label* L_fast_
 }
 
 void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, int line) {
-  if (!VerifyOops) { return; }
+  if (!VerifyOops || VerifyAdapterSharing) {
+    // Below address of the code string confuses VerifyAdapterSharing
+    // because it may differ between otherwise equivalent adapters.
+    return;
+  }
 
   // Pass register number to verify_oop_subroutine
   const char* b = nullptr;
@@ -523,7 +528,15 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
     ResourceMark rm;
     stringStream ss;
     ss.print("verify_oop: %s: %s (%s:%d)", reg->name(), s, file, line);
-    b = code_string(ss.as_string());
+#if INCLUDE_CDS
+    if (AOTCodeCache::is_on_for_dump() && !code_section()->scratch_emit()) {
+      // This will duplicate string to preserve it.
+      b = AOTCodeCache::add_C_string(ss.as_string());
+    } else
+#endif
+    {
+      b = code_string(ss.as_string());
+    }
   }
   BLOCK_COMMENT("verify_oop {");
 
@@ -535,7 +548,7 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
     // on the address of the char buffer so that the size of mach nodes for
     // scratch emit and normal emit matches.
     IncompressibleScope scope(this); // Fixed length
-    movptr(t0, (address) b);
+    la(t0, ExternalAddress((address)b));
   }
 
   // Call indirectly to solve generation ordering problem
@@ -700,7 +713,9 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
 }
 
 void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* file, int line) {
-  if (!VerifyOops) {
+  if (!VerifyOops || VerifyAdapterSharing) {
+    // Below address of the code string confuses VerifyAdapterSharing
+    // because it may differ between otherwise equivalent adapters.
     return;
   }
 
@@ -709,7 +724,15 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
     ResourceMark rm;
     stringStream ss;
     ss.print("verify_oop_addr: %s (%s:%d)", s, file, line);
-    b = code_string(ss.as_string());
+#if INCLUDE_CDS
+    if (AOTCodeCache::is_on_for_dump() && !code_section()->scratch_emit()) {
+      // This will duplicate string to preserve it.
+      b = AOTCodeCache::add_C_string(ss.as_string());
+    } else
+#endif
+    {
+      b = code_string(ss.as_string());
+    }
   }
   BLOCK_COMMENT("verify_oop_addr {");
 
@@ -727,7 +750,7 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
     // on the address of the char buffer so that the size of mach nodes for
     // scratch emit and normal emit matches.
     IncompressibleScope scope(this); // Fixed length
-    movptr(t0, (address) b);
+    la(t0, ExternalAddress((address)b));
   }
 
   // Call indirectly to solve generation ordering problem
