@@ -211,6 +211,32 @@ class BacktraceBuilder: public StackObj {
     return hidden != nullptr;
   }
 
+  void expand(TRAPS) {
+    refArrayHandle old_head(THREAD, _head);
+    PauseNoSafepointVerifier pnsv(&_nsv);
+
+    refArrayOop head = oopFactory::new_objectArray(trace_size, CHECK);
+    refArrayHandle new_head(THREAD, head);
+
+    typeArrayOop methods = oopFactory::new_longArray(trace_chunk_size, CHECK);
+    typeArrayHandle new_methods(THREAD, methods);
+
+    refArrayOop mirrors = oopFactory::new_objectArray(trace_chunk_size, CHECK);
+    refArrayHandle new_mirrors(THREAD, mirrors);
+
+    if (!old_head.is_null()) {
+      old_head->obj_at_put(trace_next_offset, new_head());
+    }
+    new_head->obj_at_put(trace_methods_offset, new_methods());
+    new_head->obj_at_put(trace_mirrors_offset, new_mirrors());
+    new_head->obj_at_put(trace_hidden_offset, nullptr);
+
+    _head    = new_head();
+    _methods_and_bcis = new_methods();
+    _mirrors = new_mirrors();
+    _index = 0;
+  }
+
  public:
 
   // Offsets into oop for backtrace() and constants.
@@ -240,34 +266,6 @@ class BacktraceBuilder: public StackObj {
     // head is the preallocated backtrace
     _head = backtrace();
     _backtrace = refArrayHandle(thread, _head);
-    _index = 0;
-  }
-
- private:
-  // Move this up.
-  void expand(TRAPS) {
-    refArrayHandle old_head(THREAD, _head);
-    PauseNoSafepointVerifier pnsv(&_nsv);
-
-    refArrayOop head = oopFactory::new_objectArray(trace_size, CHECK);
-    refArrayHandle new_head(THREAD, head);
-
-    typeArrayOop methods = oopFactory::new_longArray(trace_chunk_size, CHECK);
-    typeArrayHandle new_methods(THREAD, methods);
-
-    refArrayOop mirrors = oopFactory::new_objectArray(trace_chunk_size, CHECK);
-    refArrayHandle new_mirrors(THREAD, mirrors);
-
-    if (!old_head.is_null()) {
-      old_head->obj_at_put(trace_next_offset, new_head());
-    }
-    new_head->obj_at_put(trace_methods_offset, new_methods());
-    new_head->obj_at_put(trace_mirrors_offset, new_mirrors());
-    new_head->obj_at_put(trace_hidden_offset, nullptr);
-
-    _head    = new_head();
-    _methods_and_bcis = new_methods();
-    _mirrors = new_mirrors();
     _index = 0;
   }
 
@@ -1153,6 +1151,7 @@ void java_lang_LiveStackFrameInfo::set_operands(oop obj, oop value) {
 void java_lang_LiveStackFrameInfo::set_mode(oop obj, int value) {
   obj->int_field_put(_mode_offset, value);
 }
+
 
 // java_lang_StackTraceElement
 

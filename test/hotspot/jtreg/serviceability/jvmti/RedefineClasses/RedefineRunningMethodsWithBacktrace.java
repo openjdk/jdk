@@ -130,11 +130,15 @@ public class RedefineRunningMethodsWithBacktrace {
                source.equals("RedefineRunningMethodsWithBacktrace_B.java");
     }
 
+    static final int firstLineNumber = 82;
+    static final int cleanedupLineNumber = -1;
+    static final int rerunLineNumber = 13;
+
     private static boolean matchLineNumber(int lineNumber) {
         // Line number of the throw in the each version of the redefined class.
         // The first version of this method is running so we have the line number,
         // the second is cleaned up, so we don't, the third version is current so we do.
-        return lineNumber == 82 || lineNumber == -1 || lineNumber == 13;
+        return lineNumber == firstLineNumber || lineNumber == cleanedupLineNumber || lineNumber == rerunLineNumber;
     }
 
     private static void touchRedefinedMethodInBacktrace(Throwable throwable) {
