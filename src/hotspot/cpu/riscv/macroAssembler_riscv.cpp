@@ -1168,7 +1168,8 @@ void MacroAssembler::jalr(Register Rs, int32_t offset) {
 }
 
 void MacroAssembler::rt_call(address dest, Register tmp1, Register tmp2) {
-  assert(tmp1 != x5, "tmp register must not be x5.");
+  assert_different_registers(tmp1, x5);
+  assert_different_registers(tmp1, tmp2);
   RuntimeAddress target(dest);
   if (CodeCache::contains(dest)) {
     far_call(target, tmp1);
