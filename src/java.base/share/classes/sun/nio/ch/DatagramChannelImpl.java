@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1501,9 +1501,7 @@ class DatagramChannelImpl
 
         // check multicast address is compatible with this socket
         if (group instanceof Inet4Address) {
-            if (family == StandardProtocolFamily.INET6
-                    && !Net.canIPv6SocketJoinIPv4Group()
-                    && !Net.canJoin6WithIPv4Group())
+            if (family == StandardProtocolFamily.INET6 && !Net.canIPv6SocketJoinIPv4Group())
                 throw new IllegalArgumentException("IPv6 socket cannot join IPv4 multicast group");
         } else if (group instanceof Inet6Address) {
             if (family != StandardProtocolFamily.INET6)
