@@ -49,7 +49,6 @@ final class LazyConstantTest {
     private static final int VALUE = 42;
     private static final Supplier<Integer> SUPPLIER = () -> VALUE;
     private static final long TIME_OUT_S = Utils.adjustTimeout(5);
-    private static final long OVERLAP_TIME_MS = 100;
 
     @Test
     void factoryInvariants() {
@@ -71,7 +70,7 @@ final class LazyConstantTest {
     @ParameterizedTest
     @MethodSource("factories")
     void exceptionInComputingFunction(Function<Supplier<Integer>, LazyConstant<Integer>> factory) {
-        // Test different Throwable categories
+        // Test different Throwable categories.
         for (LazyConstantTestUtil.Thrower thrower : LazyConstantTestUtil.throwers()) {
             AtomicReference<Throwable> exceptionThrown = new AtomicReference<>();
             LazyConstantTestUtil.CountingSupplier<Integer> cs = new LazyConstantTestUtil.CountingSupplier<>(() -> {
@@ -99,7 +98,7 @@ final class LazyConstantTest {
                                       String message) {
         var lazy = factory.apply(cs);
         var ix = assertThrows(NoSuchElementException.class, lazy::get);
-        // Now we can look at the throwable
+        // Now we can look at the throwable.
         var causeType = causeTypeSupplier.get();
         assertEquals(causeType, ix.getCause().getClass());
         if (message != null) {
@@ -127,7 +126,7 @@ final class LazyConstantTest {
         var lazy = factory.apply(cs);
         assertEquals(System.identityHashCode(lazy), lazy.hashCode());
         assertEquals(System.identityHashCode(lazy), lazy.hashCode());
-        // The supplier should never be invoked
+        // The supplier should never be invoked.
         assertEquals(0, cs.cnt());
     }
 
@@ -141,7 +140,7 @@ final class LazyConstantTest {
         assertNotEquals(different, lazy);
         assertNotEquals(lazy, different);
         assertNotEquals("a", lazy);
-        // The supplier should never be invoked
+        // The supplier should never be invoked.
         assertEquals(0, cs.cnt());
     }
 
@@ -224,7 +223,7 @@ final class LazyConstantTest {
 
     @Test
     void atMostOnceComputationUnderContention() throws Exception {
-        // Mitigate thread starvation via a dedicated thread pool != FJP
+        // Use a dedicated fixed thread pool to avoid starvation in the common ForkJoinPool.
         try (var testExecutor = Executors.newFixedThreadPool(3)) {
             AtomicInteger calls = new AtomicInteger();
             AtomicReference<Thread> computingThread = new AtomicReference<>();
@@ -258,8 +257,11 @@ final class LazyConstantTest {
             }, testExecutor);
 
             assertTrue(competing.await(TIME_OUT_S, TimeUnit.SECONDS));
-            // While computation is blocked, only one thread should have entered supplier
+            // While computation is blocked, only one thread should have entered supplier.
             assertEquals(1, calls.get());
+            assertTrue(Utils.waitForCondition(
+                    () -> LazyConstantTestUtil.waiterCount(constant) == 2,
+                    TimeUnit.SECONDS.toMillis(TIME_OUT_S), 1));
 
             release.countDown();
 
@@ -279,7 +281,7 @@ final class LazyConstantTest {
         CountDownLatch waiterStarted = new CountDownLatch(1);
 
         FutureTask<Integer> computingTask = new FutureTask<>(() -> constantRef.get().get());
-        // A SupplierThread implements both Thread and Supplier
+        // A SupplierThread implements both Thread and Supplier.
         final class SupplierThread extends Thread implements Supplier<Integer> {
             SupplierThread(Runnable target) {
                 super(target);
@@ -310,12 +312,14 @@ final class LazyConstantTest {
         try {
             computingThread.start();
             assertTrue(entered.await(TIME_OUT_S, TimeUnit.SECONDS));
-            // Make sure we use the fallback status
+            // Verify that the disjoint Long owner marker is used.
             assertInstanceOf(Long.class, LazyConstantTestUtil.state(constant));
 
             waitingThread = Thread.ofPlatform().start(waitingTask);
             assertTrue(waiterStarted.await(TIME_OUT_S, TimeUnit.SECONDS));
-            Thread.sleep(OVERLAP_TIME_MS);
+            assertTrue(Utils.waitForCondition(
+                    () -> LazyConstantTestUtil.waiterCount(constant) == 1,
+                    TimeUnit.SECONDS.toMillis(TIME_OUT_S), 1));
 
             assertFalse(waitingTask.isDone(), "contending thread should be blocked");
             assertEquals(1, calls.get());
@@ -334,7 +338,7 @@ final class LazyConstantTest {
 
     @Test
     void competingThreadsBlockUntilInitializationCompletes() throws Exception {
-        // Mitigate thread starvation via a dedicated thread pool != FJP
+        // Use a dedicated fixed thread pool to avoid starvation in the common ForkJoinPool.
         try (var testExecutor = Executors.newFixedThreadPool(2)) {
             CountDownLatch entered = new CountDownLatch(1);
             CountDownLatch release = new CountDownLatch(1);
@@ -359,7 +363,9 @@ final class LazyConstantTest {
             }, testExecutor);
 
             assertTrue(waiting.await(TIME_OUT_S, TimeUnit.SECONDS));
-            Thread.sleep(OVERLAP_TIME_MS);
+            assertTrue(Utils.waitForCondition(
+                    () -> LazyConstantTestUtil.waiterCount(constant) == 1,
+                    TimeUnit.SECONDS.toMillis(TIME_OUT_S), 1));
             assertFalse(waitingThread.isDone(), "contending thread should be be blocked");
 
             release.countDown();
@@ -367,6 +373,58 @@ final class LazyConstantTest {
             assertEquals(VALUE, computingThread.get(TIME_OUT_S, TimeUnit.SECONDS));
             assertEquals(VALUE, waitingThread.get(TIME_OUT_S, TimeUnit.SECONDS));
         }
+    }
+
+    @Test
+    void waitingThreadIsSignalledAfterFailedComputation() throws Exception {
+        CountDownLatch supplierRunning = new CountDownLatch(1);
+        CountDownLatch waiterStarted = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+
+        LazyConstant<Integer> constant = LazyConstant.of(() -> {
+            supplierRunning.countDown();
+            try {
+                assertTrue(release.await(TIME_OUT_S, TimeUnit.SECONDS));
+            } catch (InterruptedException e) {
+                throw new AssertionError(e);
+            }
+            throw new UnsupportedOperationException();
+        });
+
+        FutureTask<Integer> computingTask = new FutureTask<>(constant::get);
+        FutureTask<Integer> waitingTask = new FutureTask<>(() -> {
+            waiterStarted.countDown();
+            return constant.get();
+        });
+        Thread computingThread = Thread.ofPlatform().start(computingTask);
+        Thread waitingThread = null;
+        try {
+            assertTrue(supplierRunning.await(TIME_OUT_S, TimeUnit.SECONDS));
+            waitingThread = Thread.ofVirtual().start(waitingTask);
+            assertTrue(waiterStarted.await(TIME_OUT_S, TimeUnit.SECONDS));
+            assertTrue(Utils.waitForCondition(
+                    () -> LazyConstantTestUtil.waiterCount(constant) == 1,
+                    TimeUnit.SECONDS.toMillis(TIME_OUT_S), 1));
+            assertFalse(waitingTask.isDone(), "contending thread should be blocked");
+        } finally {
+            release.countDown();
+            computingThread.join(TimeUnit.SECONDS.toMillis(TIME_OUT_S));
+            if (waitingThread != null) {
+                waitingThread.join(TimeUnit.SECONDS.toMillis(TIME_OUT_S));
+            }
+        }
+
+        ExecutionException computingException = assertThrows(ExecutionException.class,
+                () -> computingTask.get(TIME_OUT_S, TimeUnit.SECONDS));
+        NoSuchElementException computingFailure = assertInstanceOf(NoSuchElementException.class,
+                computingException.getCause());
+        assertInstanceOf(UnsupportedOperationException.class, computingFailure.getCause());
+
+        ExecutionException waitingException = assertThrows(ExecutionException.class,
+                () -> waitingTask.get(TIME_OUT_S, TimeUnit.SECONDS));
+        NoSuchElementException waitingFailure = assertInstanceOf(NoSuchElementException.class,
+                waitingException.getCause());
+        assertNull(waitingFailure.getCause());
     }
 
     @Test
@@ -399,7 +457,9 @@ final class LazyConstantTest {
             assertTrue(supplierRunning.await(TIME_OUT_S, TimeUnit.SECONDS));
             waitingThread = Thread.ofPlatform().start(waitingTask);
             assertTrue(waiterStarted.await(TIME_OUT_S, TimeUnit.SECONDS));
-            Thread.sleep(OVERLAP_TIME_MS);
+            assertTrue(Utils.waitForCondition(
+                    () -> LazyConstantTestUtil.waiterCount(constant) == 1,
+                    TimeUnit.SECONDS.toMillis(TIME_OUT_S), 1));
 
             waitingThread.interrupt();
             assertFalse(waitingTask.isDone(), "interruption should not abort initialization wait");

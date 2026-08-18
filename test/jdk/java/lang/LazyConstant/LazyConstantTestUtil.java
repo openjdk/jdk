@@ -175,6 +175,22 @@ final class LazyConstantTestUtil {
         }
     }
 
+    static int waiterCount(LazyConstant<?> o) {
+        try {
+            Object state = state(o);
+            int count = 0;
+            while (state != null && state.getClass().getSimpleName().equals("Waiter")) {
+                count++;
+                final Field next = field(state.getClass(), "next");
+                next.setAccessible(true);
+                state = next.get(state);
+            }
+            return count;
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     static Field field(Class<?> clazz, String name) {
         if (clazz.equals(Object.class)) {
             throw new RuntimeException("No " + name);

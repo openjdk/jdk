@@ -26,10 +26,7 @@
 package jdk.internal.lang;
 
 import jdk.internal.misc.Unsafe;
-import jdk.internal.vm.annotation.AOTSafeClassInitializer;
-import jdk.internal.vm.annotation.DontInline;
-import jdk.internal.vm.annotation.ForceInline;
-import jdk.internal.vm.annotation.Stable;
+import jdk.internal.vm.annotation.*;
 
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -57,24 +54,23 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
     private static final long STATUS_OFFSET =
             UNSAFE.objectFieldOffset(LazyConstantImpl.class, "state");
 
-    // The max number of busy spin loops we should do when checking if computation is
-    // completed by another thread before backing off to parking a thread.
+    // Maximum number of busy-spin iterations before timed backoff.
     private static final int SPIN_LIMIT = 1 << 8;
-    // The initial time in ns to park a thread while waiting for another thread to
-    // complete computation. Needs to be a power of two.
+    // The initial requested timed backoff in nanoseconds to park a thread while waiting
+    // for another thread to complete computation. Needs to be a power of two.
     private static final long INITIAL_BACKOFF_NANOS = 1L << 10;
-    // This is the maximum progressive waiting time for another thread to complete
-    // computation. Needs to be a power of two.
-    private static final long MAX_BACKOFF_NANOS = INITIAL_BACKOFF_NANOS << 16;
-    // Used by a makeshift random generator allowing us to avoid using
+    // This is the maximum requested timed backoff before a thread registers for
+    // completion signalling. Needs to be a power of two.
+    private static final long MAX_BACKOFF_NANOS = INITIAL_BACKOFF_NANOS << 6;
+    // Used by a small xorshift random generator allowing us to avoid using
     // ThreadLocalRandom early in the init phase.
     // floor(2^64 / golden ratio); spreads sequential thread IDs in a good way
     private static final long GOLDEN_GAMMA = 0x9E3779B97F4A7C15L;
 
     // Generally, fields annotated with `@Stable` are accessed by the JVM using special
-    // memory semantics rules (see `parse.hpp` and `parse(1|2|3).cpp`).
+    // memory semantics rules (see `parse.hpp`, `parse1.cpp`, `parse2.cpp`, and `parse3.cpp`).
     //
-    // This field is used reflectively via Unsafe using explicit memory semantics.
+    // This field is accessed via Unsafe using explicit memory semantics.
     //
     // | Value           | Meaning        |
     // | --------------- | -------------- |
@@ -84,8 +80,8 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
     @Stable
     private T constant;
 
-    // State of the lazy constant. The field needs sometimes be accessed by
-    // stronger-than-plain memory semantics.
+    // State of the lazy constant. Some accesses require stronger-than-plain memory
+    // semantics.
     //
     // | Value                  | Meaning                                          |
     // | ---------------------- | ------------------------------------------------ |
@@ -94,32 +90,39 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
     // | `Thread`               | Thread computing the value                       |
     // | `Long`                 | ID of a computing thread that is also a Supplier |
     // |                        |                                                  |
+    // | `Waiter`               | Head of the stack of registered waiting threads  |
+    // |                        |                                                  |
     // | `null`                 | Computation completed successfully               |
     // | `String`               | Fully qualified name of a thrown exception       |
     //
-    // The state moves monotonically as described in the above table and where either of
-    // the two last states can exist. I.e. the following transitions are possible:
+    // The state phase moves monotonically as described above, ending in either of the
+    // two terminal states. The following transitions are possible:
     //
-    // Supplier ---> Thread/Long -+-> null (completed successfully)
-    //                            +-> String (completed exceptionally)
+    //                                                   +--> null
+    // Supplier --> Thread/Long --> [Waiter --> ...] --> |
+    //                                                   +--> String
     //
     // The exception class is not stored as that would pin its class loader.
     private Object state;
+
 
     private LazyConstantImpl(Supplier<? extends T> computingFunction) {
         setRelease(STATUS_OFFSET, computingFunction);
     }
 
+    // First tier: force-inline the initialized fast path and keep it minimal.
     @SuppressWarnings("unchecked")
     @ForceInline
     @Override
     public T get() {
         final T t = (T) getAcquire(CONSTANT_OFFSET);
-        return (t != null) ? t : getSlowPath();
+        return (t != null) ? t : getSecondTier();
     }
 
+    // Second tier: leave inlining to C2's normal heuristics and keep the method small
+    // enough to remain eligible at hot call sites.
     @SuppressWarnings("unchecked")
-    private T getSlowPath() {
+    private T getSecondTier() {
         final Thread currentThread = Thread.currentThread();
         final Object state = getAcquire(STATUS_OFFSET);
         // Don't use switch pattern matching here in order to improve startup time.
@@ -127,33 +130,38 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
             // A Thread subclass may also implement Supplier, so use the thread ID as
             // a disjoint state marker in that unusual case.
             final Object nextState = currentThread instanceof Supplier<?>
-                    ? currentThread.threadId() // Implies autoboxing (in many cases)
+                    ? currentThread.threadId() // Boxes the thread ID; usually allocates
                     : currentThread;           // No extra object creation
             final Object witness = UNSAFE.compareAndExchangeReference(this, STATUS_OFFSET, computingFunction, nextState);
             // Did we see the old state?
             if (witness == computingFunction) {
                 // Yes: we won the CAE race.
+                final T newT;
                 try {
-                    final T newT = (T) computingFunction.get();
+                    newT = (T) computingFunction.get();
                     Objects.requireNonNull(newT);
-                    setRelease(CONSTANT_OFFSET, newT);
-                    // Publication is needed here for toString to work correctly
-                    setRelease(STATUS_OFFSET, null);
-                    return newT;
                 } catch (Throwable ex) {
                     throw computationFailed(ex);
                 }
+                setRelease(CONSTANT_OFFSET, newT);
+                // Atomically publish successful completion and detach any registered
+                // waiter stack.
+                final Object previousState = UNSAFE.getAndSetReference(this, STATUS_OFFSET, null);
+                if (previousState instanceof Waiter waiter) {
+                    signalWaiters(waiter);
+                }
+                return newT;
             }
             // No: We lost the CAE race.
             return awaitComputation(currentThread, witness);
-        } else if (state instanceof Thread || state instanceof Long) {
+        } else if (state instanceof Thread || state instanceof Long || state instanceof Waiter) {
             return awaitComputation(currentThread, state);
         } else if (state instanceof String exceptionType) {
             throw unableToAccessConstant(exceptionType, null);
         } else if (state != null) {
             throw unexpectedState(state);
         }
-        // We first observed 'constant == null' and then 'state == null'
+        // We first observed `constant == null` and then `state == null`.
         final T t = (T) getAcquire(CONSTANT_OFFSET);
         if (t == null) {
             throw unexpectedState(state);
@@ -161,80 +169,106 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
         return t;
     }
 
-    @SuppressWarnings("unchecked")
+    // Third tier: keep the contention path out of compiled callers.
+    // It busy-spins briefly, performs bounded timed parks, and finally registers
+    // the waiter and parks until signalled.
+    // This creates a balance between CPU usage, scheduler pressure, and
+    // completion-detection latency.
     @DontInline
     private T awaitComputation(Thread currentThread, Object computingState) {
         final long currentThreadId = currentThread.threadId();
-        if (computingState instanceof Thread computingThread) {
+        final Object computingOwner = computingState instanceof Waiter waiter
+                ? waiter.owner
+                : computingState;
+        if (computingOwner instanceof Thread computingThread) {
             if (computingThread == currentThread) {
                 throw recursiveInvocation(computingThread);
             }
-        } else if (computingState instanceof Long computingThreadId) {
+        } else if (computingOwner instanceof Long computingThreadId) {
             if (computingThreadId.longValue() == currentThreadId) {
                 throw recursiveInvocation(currentThread);
             }
-        } else if (computingState instanceof String exceptionType) {
-            throw unableToAccessConstant(exceptionType, null);
-        } else if (computingState != null) {
-            throw unexpectedState(computingState);
         } else {
-            final T t = (T) getAcquire(CONSTANT_OFFSET);
-            if (t == null) {
-                throw unexpectedState(computingState);
-            }
-            return t;
+            return valueAfterComputation(computingState);
         }
 
         int spins = SPIN_LIMIT;
         long backoffNanos = INITIAL_BACKOFF_NANOS;
         boolean restoreInterrupt = false;
 
-        // Initial random seed
+        // Initial random seed.
         long random = currentThreadId * GOLDEN_GAMMA;
         try {
             for (;;) {
-                // Poll only the `state` using opaque loads while it remains unchanged,
-                // to minimize CPU cache contention and ordering costs. Once a (monotonic)
-                // change is observed, confirm it with an acquire load before consuming
-                // the result.
+                // Poll state opaquely while it remains unchanged, avoiding acquire
+                // ordering on every iteration. If it changes, reread it with acquire
+                // semantics before examining the published state.
                 Object state = getOpaque(STATUS_OFFSET);
                 if (state != computingState) {
-                    // The state changed. Re-read it once under stronger-than-opaque
-                    // semantics.
+                    // The state changed. Re-read it.
                     state = getAcquire(STATUS_OFFSET);
-                    if (state instanceof String exceptionType) {
-                        throw unableToAccessConstant(exceptionType, null);
-                    } else if (state != null) {
-                        throw unexpectedState(state);
-                    } else {
-                        // state is `null` -> we have a computed constant
-                        final T t = (T) getAcquire(CONSTANT_OFFSET);
-                        if (t == null) {
-                            throw unexpectedState(state);
-                        }
-                        return t;
+                    if (!isComputingState(state, computingOwner)) {
+                        return valueAfterComputation(state);
                     }
+                    computingState = state;
+                }
+
+                // If waiter registration has already begun, register immediately.
+                if (computingState instanceof Waiter) {
+                    break;
                 }
 
                 if (spins > 0) {
+                    // Spin wait
                     --spins;
                     Thread.onSpinWait();
-                } else {
+                } else if (backoffNanos <= MAX_BACKOFF_NANOS) {
+                    // Park the thread using progressively longer durations.
                     if (Thread.interrupted()) {
                         restoreInterrupt = true;
                     }
                     random = nextRandomLong(random);
                     final long quarterBackoffNanos = backoffNanos >> 2;
                     final long jitter = random & (quarterBackoffNanos - 1);
-                    // Prevent threads from being unparked in lock steps by
-                    // introducing a random jitter:
-                    // 75% fixed + 25% random
+                    // Prevent waiters from waking in lockstep by adding a 0–25%
+                    // random jitter to a 75% fixed delay.
                     final long nanos = quarterBackoffNanos * 3 + jitter;
                     LockSupport.parkNanos(this, nanos);
-                    // Exponentially bump up the backoff time until the max
-                    // backoff time is reached.
-                    backoffNanos = Math.min(backoffNanos << 1, MAX_BACKOFF_NANOS);
+                    backoffNanos <<= 1;
+                } else {
+                    break;
                 }
+            }
+
+            final Waiter waiter = new Waiter(computingOwner, currentThread);
+            // Retry registration while computation remains active; return directly
+            // if a terminal state is observed.
+            for (;;) {
+                final Object state = getAcquire(STATUS_OFFSET);
+                if (!isComputingState(state, computingOwner)) {
+                    return valueAfterComputation(state);
+                }
+                waiter.next = state instanceof Waiter head ? head : null;
+                final Object witness = UNSAFE.compareAndExchangeReference(this, STATUS_OFFSET, state, waiter);
+                if (witness == state) {
+                    break;
+                }
+            }
+
+            // A permit granted before park is retained, preventing a lost signal.
+            // LockSupport.park may also return because of interruption or spuriously, so
+            // recheck state after every park return.
+            for (;;) {
+                final Object state = getAcquire(STATUS_OFFSET);
+                if (!isComputingState(state, computingOwner)) {
+                    return valueAfterComputation(state);
+                }
+                if (Thread.interrupted()) {
+                    restoreInterrupt = true;
+                }
+                // Park the current thread and rely on completion signalling by the
+                // computing thread.
+                LockSupport.park(this);
             }
         } finally {
             if (restoreInterrupt) {
@@ -244,26 +278,58 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
     }
 
     private static long nextRandomLong(long seed) {
-        // Scramble the random seed by shifting some prime-number steps.
+        // Advance the per-waiter xorshift64 state.
         seed ^= seed << 13;
         seed ^= seed >>> 7;
         seed ^= seed << 17;
         return seed;
     }
 
+    private static boolean isComputingState(Object state, Object computingOwner) {
+        return state == computingOwner ||
+                state instanceof Waiter waiter && waiter.owner == computingOwner;
+    }
+
+    @SuppressWarnings("unchecked")
+    private T valueAfterComputation(Object state) {
+        if (state instanceof String exceptionType) {
+            throw unableToAccessConstant(exceptionType, null);
+        } else if (state != null) {
+            throw unexpectedState(state);
+        }
+        final T t = (T) getAcquire(CONSTANT_OFFSET);
+        if (t == null) {
+            throw unexpectedState(state);
+        }
+        return t;
+    }
+
+    // Keep the O(number of registered waiters) signalling path out of the computation
+    // path's compiled body.
+    @DontInline
+    private static void signalWaiters(Waiter waiter) {
+        do {
+            LockSupport.unpark(waiter.thread);
+            waiter = waiter.next;
+        } while (waiter != null);
+    }
+
     @DontInline
     private NoSuchElementException computationFailed(Throwable ex) {
         String exceptionType;
         try {
-            // Replace the computing thread with an exception marker.
+            // Derive the exception marker.
             exceptionType = ex.getClass().getName().intern();
         } catch (Throwable ex2) {
-            // In very rare conditions (e.g., OOME) we might end up here and
-            // in order not to hog any waiting threads indefinitely, we need to at least
-            // publish something to let them continue.
+            // If deriving the exception marker fails, for example because of OOME,
+            // use a fallback marker so registered waiters are still released.
             exceptionType = "[unknown]";
         }
-        setRelease(STATUS_OFFSET, exceptionType);
+        // Publish the exception marker and detach any registered waiter stack.
+        final Object previousState = UNSAFE.getAndSetReference(this, STATUS_OFFSET, exceptionType);
+        if (previousState instanceof Waiter waiter) {
+            signalWaiters(waiter);
+        }
         return unableToAccessConstant(exceptionType, ex);
     }
 
@@ -303,15 +369,18 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
         } else if (t != null) {
             return t.toString();
         } else {
-            final Object state = getAcquire(STATUS_OFFSET);
-            // There could be a race here
+            Object state = getAcquire(STATUS_OFFSET);
+            // Diagnostic snapshot only; computation may complete after this read.
             if (state != null) {
+                if (state instanceof Waiter waiter) {
+                    state = waiter.owner;
+                }
                 if (state instanceof Thread computingThread) {
                     return "computing thread=" + computingThread.threadId();
                 }
                 if (state instanceof Long computingThreadId) {
                     // In this rare case, we only provide the thread id. Looking up the
-                    // actual Thread is expensive and deamed not worth the effort.
+                    // actual Thread is expensive and deemed not worth the effort.
                     return "computing thread id=" + computingThreadId;
                 }
                 if (state instanceof Supplier<?> supplier) {
@@ -319,8 +388,8 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
                 }
                 return "failed with=" + state;
             }
-            // As we know `state` is `null` via a volatile read, we
-            // can now be sure that this lazy constant is initialized
+            // As we know `state` is `null` via an acquire read, we
+            // can now be sure that this lazy constant is initialized.
             return getAcquire(CONSTANT_OFFSET).toString();
         }
     }
@@ -328,18 +397,13 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
 
     // Discussion on the memory semantics used.
     // ----------------------------------------
-    // Using acquire/release semantics on the `constant` field is the cheapest way to
-    // establish a happens-before (HB) relation between load and store operations. Every
-    // implementation of a method defined in the interface `LazyConstant` except
-    // `equals()` starts with a load of the `constant` field using acquire semantics.
+    // A release store publishes the computed reference. An acquire load that observes
+    // that publication orders the computing thread's preceding actions before subsequent
+    // actions by that reader. This ordering is tied to the observed publication; it is
+    // not a global fence. Acquire access is needed because the supplier may return
+    // an existing object, for which construction-time final-field guarantees alone are
+    // not sufficient.
     //
-    // If the underlying supplier was guaranteed to always create a new object,
-    // a fence after creation and subsequent plain loads would suffice to ensure
-    // new objects' state are always correctly observed. However, no such restriction is
-    // imposed on the underlying supplier. Hence, the docs state there should be an
-    // HB relation meaning we will have to pay a price (on certain platforms) on every
-    // `get()` operation that is not constant-folded.
-
     @SuppressWarnings("unchecked")
     @ForceInline
     private Object getAcquire(long offset) {
@@ -363,6 +427,23 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
             return Objects.toIdentityString(input);
         }
     }
+
+    // A node in a lock-free stack of threads waiting for computation to complete.
+    // The owner is repeated in every node so recursive invocation remains an O(1)
+    // check as waiters are registered. The next field is only changed before this
+    // node is successfully published in `state`.
+    @TrustFinalFields
+    private static final class Waiter {
+        private final Object owner;
+        private final Thread thread;
+        private Waiter next;
+
+        private Waiter(Object owner, Thread thread) {
+            this.owner = owner;
+            this.thread = thread;
+        }
+    }
+
 
     // Factory
 
