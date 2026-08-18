@@ -597,13 +597,15 @@ void ClassPrintLayout::class_print_layout(outputStream* st, char* class_name) {
     return;
   }
 
-  for (char* p = class_name; *p != '\0'; p++) {
+  ResourceMark rm;
+  char* normalized_name = ResourceArea::strdup(class_name);
+  for (char* p = normalized_name; *p != '\0'; p++) {
     if (*p == JVM_SIGNATURE_DOT) {
       *p = JVM_SIGNATURE_SLASH;
     }
   }
 
-  Symbol* classname = SymbolTable::probe(class_name, (int)strlen(class_name));
+  Symbol* classname = SymbolTable::probe(normalized_name, (int)strlen(normalized_name));
 
   GrowableArray<Klass*>* klasses = new (mtServiceability) GrowableArray<Klass*>(100, mtServiceability);
 
