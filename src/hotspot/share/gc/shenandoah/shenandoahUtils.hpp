@@ -262,23 +262,23 @@ struct ShenandoahSignedSize {
 
   static ShenandoahSignedSize get(double v) {
     if (!std::isfinite(v)) {
-      return { v, "B"};
+      return { v, "B" };
     }
 
     const double magnitude = fabsd(v);
 
 #ifdef _LP64
     if (magnitude >= 100.0 * G) {
-      return { std::copysign(magnitude / G, v), "G"};
+      return { std::copysign(magnitude / G, v), "G" };
     }
 #endif
 
     if (magnitude >= 100.0 * M) {
-      return { std::copysign(magnitude / M, v), "M"};
+      return { std::copysign(magnitude / M, v), "M" };
     }
 
     if (magnitude >= 100.0 * K) {
-      return { std::copysign(magnitude / K, v), "K"};
+      return { std::copysign(magnitude / K, v), "K" };
     }
 
     return { std::copysign(magnitude, v), "B" };
