@@ -1616,64 +1616,6 @@ instruct vdiv_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
   ins_pipe(pipe_slow);
 %}
 
-// vector-scalar integer div
-
-instruct vdiv_vx(vReg dst, vReg src1, iRegIorL2I src2) %{
-  match(Set dst (DivVB src1 (Replicate src2)));
-  match(Set dst (DivVS src1 (Replicate src2)));
-  match(Set dst (DivVI src1 (Replicate src2)));
-  format %{ "vdiv_vx $dst, $src1, $src2" %}
-  ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    __ vsetvli_helper(bt, Matcher::vector_length(this));
-    __ vdiv_vx(as_VectorRegister($dst$$reg),
-               as_VectorRegister($src1$$reg),
-               as_Register($src2$$reg));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct vdivL_vx(vReg dst, vReg src1, iRegL src2) %{
-  match(Set dst (DivVL src1 (Replicate src2)));
-  format %{ "vdivL_vx $dst, $src1, $src2" %}
-  ins_encode %{
-    __ vsetvli_helper(T_LONG, Matcher::vector_length(this));
-    __ vdiv_vx(as_VectorRegister($dst$$reg),
-               as_VectorRegister($src1$$reg),
-               as_Register($src2$$reg));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-// vector-scalar integer div - predicated
-
-instruct vdiv_vx_masked(vReg dst_src, iRegIorL2I src2, vRegMask_V0 v0) %{
-  match(Set dst_src (DivVB (Binary dst_src (Replicate src2)) v0));
-  match(Set dst_src (DivVS (Binary dst_src (Replicate src2)) v0));
-  match(Set dst_src (DivVI (Binary dst_src (Replicate src2)) v0));
-  format %{ "vdiv_vx_masked $dst_src, $dst_src, $src2, $v0" %}
-  ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    __ vsetvli_helper(bt, Matcher::vector_length(this));
-    __ vdiv_vx(as_VectorRegister($dst_src$$reg),
-               as_VectorRegister($dst_src$$reg),
-               as_Register($src2$$reg), Assembler::v0_t);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct vdivL_vx_masked(vReg dst_src, iRegL src2, vRegMask_V0 v0) %{
-  match(Set dst_src (DivVL (Binary dst_src (Replicate src2)) v0));
-  format %{ "vdivL_vx_masked $dst_src, $dst_src, $src2, $v0" %}
-  ins_encode %{
-    __ vsetvli_helper(T_LONG, Matcher::vector_length(this));
-    __ vdiv_vx(as_VectorRegister($dst_src$$reg),
-               as_VectorRegister($dst_src$$reg),
-               as_Register($src2$$reg), Assembler::v0_t);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
 // vector float div
 
 instruct vdiv_hfp(vReg dst, vReg src1, vReg src2) %{
