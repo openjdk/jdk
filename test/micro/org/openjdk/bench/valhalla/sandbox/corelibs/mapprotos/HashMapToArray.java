@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.openjdk.bench.valhalla.sandbox.corelibs.corelibs.mapprotos;
+package org.openjdk.bench.valhalla.sandbox.corelibs.mapprotos;
 
 
 import org.openjdk.jmh.annotations.Benchmark;
@@ -57,8 +57,8 @@ public class HashMapToArray {
 
 
     @Param(value = {
-            "org.openjdk.bench.valhalla.corelibs.mapprotos.HashMap",
-//            "org.openjdk.bench.valhalla.corelibs.mapprotos.XHashMap",
+            "org.openjdk.bench.valhalla.sandbox.corelibs.mapprotos.HashMap",
+//            "org.openjdk.bench.valhalla.sandbox.corelibs.mapprotos.XHashMap",
             "java.util.HashMap",
         })
     private String mapType;
