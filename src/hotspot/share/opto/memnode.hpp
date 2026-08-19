@@ -129,6 +129,10 @@ public:
     return DEBUG_ONLY(_adr_type) NOT_DEBUG(nullptr);
   }
 
+#ifdef ASSERT
+  void set_adr_type(const TypePtr* adr_type) { _adr_type = adr_type; }
+#endif
+
   // Return the barrier data of n, if available, or 0 otherwise.
   static uint8_t barrier_data(const Node* n);
 
@@ -267,6 +271,7 @@ protected:
 
   virtual Node* find_previous_arraycopy(PhaseValues* phase, Node* ld_alloc, Node*& mem, bool can_see_stored_value) const;
   Node* can_see_stored_value_through_membars(Node* st, PhaseValues* phase) const;
+  Node* Ideal_load_common(PhaseGVN* phase, bool can_reshape);
 public:
 
   LoadNode(Node *c, Node *mem, Node *adr, const TypePtr* at, const Type *rt, MemOrd mo, ControlDependency control_dependency)
@@ -318,6 +323,7 @@ public:
   // Common methods for LoadKlass and LoadNKlass nodes.
   const Type* klass_value_common(PhaseGVN* phase) const;
   Node* klass_identity_common(PhaseGVN* phase);
+  Node* find_known_klass(PhaseGVN* phase) const;
 
   virtual uint ideal_reg() const;
   virtual const Type *bottom_type() const;
@@ -568,6 +574,7 @@ class LoadNNode : public LoadNode {
 public:
   LoadNNode(Node *c, Node *mem, Node *adr, const TypePtr *at, const Type* t, MemOrd mo, ControlDependency control_dependency = DependsOnlyOnTest)
     : LoadNode(c, mem, adr, at, t, mo, control_dependency) {}
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegN; }
   virtual int store_Opcode() const { return Op_StoreN; }
@@ -613,8 +620,8 @@ public:
 
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
-
 
 //------------------------------StoreNode--------------------------------------
 // Store value; requires Store, Address and Value
@@ -771,6 +778,25 @@ public:
 #endif
 };
 
+// Special StoreL for flat stores that emits GC barriers for field at 'oop_off' in the backend
+class StoreLSpecialNode : public StoreNode {
+
+public:
+  StoreLSpecialNode(Node* c, Node* mem, Node* adr, const TypePtr* at, Node* val, Node* oop_off, MemOrd mo)
+    : StoreNode(c, mem, adr, at, val, mo) {
+    set_mismatched_access();
+    if (oop_off != nullptr) {
+      add_req(oop_off);
+    }
+  }
+  virtual int Opcode() const;
+  virtual BasicType value_basic_type() const { return T_LONG; }
+
+  virtual uint match_edge(uint idx) const { return idx == MemNode::Address ||
+                                                   idx == MemNode::ValueIn ||
+                                                   idx == MemNode::ValueIn + 1; }
+};
+
 //------------------------------StoreFNode-------------------------------------
 // Store float to memory
 class StoreFNode : public StoreNode {
@@ -879,6 +905,10 @@ public:
 
   uint8_t barrier_data() { return _barrier_data; }
   void set_barrier_data(uint8_t barrier_data) { _barrier_data = barrier_data; }
+
+#ifndef PRODUCT
+  virtual void dump_spec(outputStream *st) const;
+#endif
 
 private:
   virtual bool depends_only_on_test_impl() const { return false; }
@@ -1124,11 +1154,16 @@ public:
 //------------------------------ClearArray-------------------------------------
 class ClearArrayNode: public Node {
 private:
+  // True if cnt is larger than InitArrayShortSize
   bool _is_large;
+  // True if the fill value is a non-constant or non-zero 64-bit value. Such a
+  // value must be copied as a complete word and cannot use byte-wise zeroing.
+  bool _requires_word_fill;
   static Node* make_address(Node* dest, Node* offset, bool raw_base, PhaseGVN* phase);
 public:
-  ClearArrayNode( Node *ctrl, Node *arymem, Node *word_cnt, Node *base, bool is_large)
-    : Node(ctrl,arymem,word_cnt,base), _is_large(is_large) {
+  ClearArrayNode( Node *ctrl, Node *arymem, Node *word_cnt, Node *base, Node* val, bool is_large)
+    : Node(ctrl, arymem, word_cnt, base, val), _is_large(is_large),
+      _requires_word_fill(val->bottom_type()->isa_long() && (!val->bottom_type()->is_long()->is_con() || val->bottom_type()->is_long()->get_con() != 0)) {
     init_class_id(Class_ClearArray);
   }
   virtual int         Opcode() const;
@@ -1140,6 +1175,8 @@ public:
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual uint match_edge(uint idx) const;
   bool is_large() const { return _is_large; }
+  bool is_zero_fill() const { return !_requires_word_fill; }
+  bool requires_word_fill() const { return _requires_word_fill; }
   virtual uint size_of() const { return sizeof(ClearArrayNode); }
   virtual uint hash() const { return Node::hash() + _is_large; }
   virtual bool cmp(const Node& n) const {
@@ -1151,16 +1188,21 @@ public:
   // The end offset must always be aligned mod BytesPerLong.
   // Return the new memory.
   static Node* clear_memory(Node* control, Node* mem, Node* dest,
+                            Node* val,
+                            Node* raw_val,
                             intptr_t start_offset,
                             intptr_t end_offset,
                             bool raw_base,
                             PhaseGVN* phase);
   static Node* clear_memory(Node* control, Node* mem, Node* dest,
+                            Node* val,
+                            Node* raw_val,
                             intptr_t start_offset,
                             Node* end_offset,
                             bool raw_base,
                             PhaseGVN* phase);
   static Node* clear_memory(Node* control, Node* mem, Node* dest,
+                            Node* raw_val,
                             Node* start_offset,
                             Node* end_offset,
                             bool raw_base,
@@ -1216,7 +1258,7 @@ public:
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual uint match_edge(uint idx) const { return 0; }
   virtual const Type *bottom_type() const { return TypeTuple::MEMBAR; }
-  virtual Node *match( const ProjNode *proj, const Matcher *m );
+  virtual Node* match(const ProjNode* proj, const Matcher* m);
   // Factory method.  Builds a wide or narrow membar.
   // Optional 'precedent' becomes an extra edge if not null.
   static MemBarNode* make(Compile* C, int opcode,

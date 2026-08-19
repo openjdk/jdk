@@ -27,6 +27,7 @@ package sun.net.www.http;
 
 import java.io.*;
 import java.net.*;
+import java.net.Proxy.Type;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.OptionalInt;
@@ -170,16 +171,15 @@ public class HttpClient extends NetworkClient {
         }
     }
 
-    /**
-     * A NOP method kept for backwards binary compatibility
-     * @deprecated -- system properties are no longer cached.
-     */
-    @Deprecated
-    public static synchronized void resetProperties() {
-    }
-
     int getKeepAliveTimeout() {
         return keepAliveTimeout;
+    }
+
+    public Proxy getHttpProxy() {
+        if (proxy != null && proxy.type() == Type.HTTP) {
+            return proxy;
+        }
+        return null;
     }
 
     static String normalizeCBT(String s) {
