@@ -213,6 +213,45 @@ public class PreviewLint extends TestRunner {
                 "2 warnings");
 
         tb.checkEqual(expected, log);
+
+        //combine -Xlint and -Xlint:all
+        log = new JavacTask(tb, Task.Mode.CMDLINE)
+                .outdir(testClasses)
+                .options("--patch-module", "java.base=" + apiClasses.toString(),
+                        "--add-exports", "java.base/preview.api=ALL-UNNAMED",
+                        "--enable-preview", "--source", System.getProperty("java.specification.version"),
+                        "-Xlint:all", "-Xlint",
+                        "-XDrawDiagnostics")
+                .files(tb.findJavaFiles(testSrc))
+                .run(Task.Expect.SUCCESS)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        expected = List.of(
+                "UseClass.java:5:5: compiler.warn.is.preview: preview.api.Preview",
+                "UseClass.java:6:5: compiler.warn.is.preview.reflective: preview.api.ReflectivePreview",
+                "2 warnings");
+
+        tb.checkEqual(expected, log);
+
+        log = new JavacTask(tb, Task.Mode.CMDLINE)
+                .outdir(testClasses)
+                .options("--patch-module", "java.base=" + apiClasses.toString(),
+                        "--add-exports", "java.base/preview.api=ALL-UNNAMED",
+                        "--enable-preview", "--source", System.getProperty("java.specification.version"),
+                        "-Xlint", "-Xlint:all",
+                        "-XDrawDiagnostics")
+                .files(tb.findJavaFiles(testSrc))
+                .run(Task.Expect.SUCCESS)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        expected = List.of(
+                "UseClass.java:5:5: compiler.warn.is.preview: preview.api.Preview",
+                "UseClass.java:6:5: compiler.warn.is.preview.reflective: preview.api.ReflectivePreview",
+                "2 warnings");
+
+        tb.checkEqual(expected, log);
     }
 
 }
