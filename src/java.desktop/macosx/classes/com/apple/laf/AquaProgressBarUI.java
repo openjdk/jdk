@@ -189,35 +189,42 @@ public final class AquaProgressBarUI extends ProgressBarUI implements ChangeList
 
     protected void paint(final Graphics g) {
         final Insets i = progressBar.getInsets();
-        final int width = progressBar.getWidth() - (i.right + i.left);
-        final int height = progressBar.getHeight() - (i.bottom + i.top);
+        final int componentWidth = progressBar.getWidth();
+        final int componentHeight = progressBar.getHeight();
+        final int width = componentWidth - (i.right + i.left);
+        final int height = componentHeight - (i.bottom + i.top);
 
         Graphics2D g2;
         BufferedImage image = null;
+
         if (g instanceof Graphics2D) {
-            g2 = (Graphics2D)g;
+            g2 = (Graphics2D) g;
         } else {
-            image = new BufferedImage(width, height,
-                                                    BufferedImage.TYPE_INT_RGB);
+            image = new BufferedImage(componentWidth, componentHeight,
+                                      BufferedImage.TYPE_INT_RGB);
             g2 = image.createGraphics();
             g2.setColor(progressBar.getBackground());
-            g2.fillRect(0, 0, width, height);
+            g2.fillRect(0, 0, componentWidth, componentHeight);
         }
+
         final AffineTransform savedAT = g2.getTransform();
         if (!progressBar.getComponentOrientation().isLeftToRight()) {
             //Scale operation: Flips component about pivot
             //Translate operation: Moves component back into original position
             g2.scale(-1, 1);
-            g2.translate(-progressBar.getWidth(), 0);
+            g2.translate(-componentWidth, 0);
         }
         painter.paint(g2, progressBar, i.left, i.top, width, height);
         g2.setTransform(savedAT);
-        if (progressBar.isStringPainted() && !progressBar.isIndeterminate()) {
-            paintString(g2, i.left, i.top, width, height);
-        }
+
         if (image != null) {
-            g.drawImage(image, 0, 0, width, height, null);
+            if (progressBar.isStringPainted() && !progressBar.isIndeterminate()) {
+                paintString(g2, i.left, i.top, width, height);
+            }
             g2.dispose();
+            g.drawImage(image, 0, 0, null);
+        } else if (progressBar.isStringPainted() && !progressBar.isIndeterminate()) {
+            paintString(g, i.left, i.top, width, height);
         }
     }
 
