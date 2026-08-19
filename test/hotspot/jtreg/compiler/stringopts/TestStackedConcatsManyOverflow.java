@@ -29,40 +29,23 @@
  * @library /test/lib /
  * @run main/othervm ${test.main.class}
  * @run main/othervm -XX:-TieredCompilation -Xcomp
- *                   -XX:CompileOnly=compiler.stringopts.TestStackedConcatsManyOverflow::*
- *                   -XX:CompileCommand=inline,compiler.stringopts.TestStackedConcatsManyOverflow::double30
+ *                   -XX:CompileOnly=${test.main.class}::*
+ *                   -XX:CompileCommand=inline,${test.main.class}::double30
  *                   -XX:CompileCommand=dontinline,java.lang.String::valueOf
  *                   ${test.main.class}
  */
 
 package compiler.stringopts;
 
+import jdk.test.lib.Asserts;
+
 public class TestStackedConcatsManyOverflow {
 
     public static void main (String... args) {
         new StringBuilder(); // Trigger loading of the StringBuilder class.
-
-        try {
-            String s = f();
-            throw new RuntimeException("unreachable");
-        }
-        catch (OutOfMemoryError e) {
-          // expected OOME, for example "java.lang.OutOfMemoryError: Required array length 1073741824 + 1073741824 is too large"
-          ;
-        }
-
-        try {
-            String s = g();
-            throw new RuntimeException("unreachable");
-        }
-        catch (OutOfMemoryError e) {}
-
-        try {
-            String s = h();
-            throw new RuntimeException("unreachable");
-        }
-        catch (OutOfMemoryError e) {}
-
+        Asserts.assertThrows(OutOfMemoryError.class, TestStackedConcatsManyOverflow::f);
+        Asserts.assertThrows(OutOfMemoryError.class, TestStackedConcatsManyOverflow::g);
+        Asserts.assertThrows(OutOfMemoryError.class, TestStackedConcatsManyOverflow::h);
     }
 
     static String double30() {
