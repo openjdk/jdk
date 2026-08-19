@@ -56,42 +56,65 @@ public class CompareAndSetFlatArrayField {
     private static final Unsafe U = Unsafe.getUnsafe();
     
     private static final MyValue1[] array1;
-    private static final long BASE_OFFSET1;
-    private static final int INDEX_SCALE1;
-    private static final boolean FLATTENED_ARRAY1;
-    private static final int LAYOUT1;
-    private static final long VALUE_HEADER_SIZE1;
-    private static final long FIELD_OFFSET1;
+    private static final long ARRAY1_BASE_OFFSET;
+    private static final int ARRAY1_INDEX_SCALE;
+    private static final boolean ARRAY1_FLATTENED;
+    private static final int ARRAY_LAYOUT1;
+    private static final long VALUE1_HEADER_SIZE;
+    private static final long VALUE1_FIELD_OFFSET;
     
     private static final MyValue2[] array2;
-    private static final long BASE_OFFSET2;
-    private static final int INDEX_SCALE2;
-    private static final boolean FLATTENED_ARRAY2;
-    private static final int LAYOUT2;
-    private static final long VALUE_HEADER_SIZE2;
+    private static final long ARRAY2_BASE_OFFSET;
+    private static final int ARRAY2_INDEX_SCALE;
+    private static final boolean ARRAY2_FLATTENED;
+    private static final int ARRAY2_LAYOUT;
+    private static final long VALUE2_HEADER_SIZE;
     private static final long FIELD_OFFSET2;
+
+    private MyValue1 field1;
+    private static final boolean FLAT_FIELD1;
+    private static final long FIELD1_OFFSET;
+    private static final int FIELD1_LAYOUT;
+    
+    private MyValue2 field2;
+    private static final boolean FLAT_FIELD2;
+    private static final long FIELD2_OFFSET;
+    private static final int FIELD2_LAYOUT;
 
     private static Object o1 = new Object();
     private static Object o2 = new Object();
+
+    private static CompareAndSetFlatArrayField testObject = new CompareAndSetFlatArrayField();
+
     static {
         try {
             array1 = (MyValue1[])ValueClass.newNullRestrictedNonAtomicArray(MyValue1.class, 1, new MyValue1(o1));
-            BASE_OFFSET1 = U.arrayInstanceBaseOffset(array1);
-            INDEX_SCALE1 = U.arrayInstanceIndexScale(array1);
-            FLATTENED_ARRAY1 = ValueClass.isFlatArray(array1);
-            LAYOUT1 = U.arrayLayout(array1);
-            VALUE_HEADER_SIZE1 = U.valueHeaderSize(MyValue1.class);
+            ARRAY1_BASE_OFFSET = U.arrayInstanceBaseOffset(array1);
+            ARRAY1_INDEX_SCALE = U.arrayInstanceIndexScale(array1);
+            ARRAY1_FLATTENED = ValueClass.isFlatArray(array1);
+            ARRAY_LAYOUT1 = U.arrayLayout(array1);
+            VALUE1_HEADER_SIZE = U.valueHeaderSize(MyValue1.class);
             Field f = MyValue1.class.getDeclaredField("field");
-            FIELD_OFFSET1 = U.objectFieldOffset(f);
+            VALUE1_FIELD_OFFSET = U.objectFieldOffset(f);
 
             array2 = (MyValue2[])ValueClass.newNullRestrictedNonAtomicArray(MyValue2.class, 1, new MyValue2(42));
-            BASE_OFFSET2 = U.arrayInstanceBaseOffset(array2);
-            INDEX_SCALE2 = U.arrayInstanceIndexScale(array2);
-            FLATTENED_ARRAY2 = ValueClass.isFlatArray(array2);
-            LAYOUT2 = U.arrayLayout(array2);
-            VALUE_HEADER_SIZE2 = U.valueHeaderSize(MyValue2.class);
+            ARRAY2_BASE_OFFSET = U.arrayInstanceBaseOffset(array2);
+            ARRAY2_INDEX_SCALE = U.arrayInstanceIndexScale(array2);
+            ARRAY2_FLATTENED = ValueClass.isFlatArray(array2);
+            ARRAY2_LAYOUT = U.arrayLayout(array2);
+            VALUE2_HEADER_SIZE = U.valueHeaderSize(MyValue2.class);
             f = MyValue2.class.getDeclaredField("field");
             FIELD_OFFSET2 = U.objectFieldOffset(f);
+
+            f = CompareAndSetFlatArrayField.class.getDeclaredField("field1");
+            FIELD1_OFFSET = U.objectFieldOffset(f);
+            FLAT_FIELD1 = U.isFlatField(f);
+            FIELD1_LAYOUT = U.fieldLayout(f);
+
+            f = CompareAndSetFlatArrayField.class.getDeclaredField("field2");
+            FIELD2_OFFSET = U.objectFieldOffset(f);
+            FLAT_FIELD2 = U.isFlatField(f);
+            FIELD2_LAYOUT = U.fieldLayout(f);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -99,24 +122,40 @@ public class CompareAndSetFlatArrayField {
 
     static public boolean test1(Object oldVal, Object newVal) {
         array1[0] = new MyValue1(oldVal);
-        return U.compareAndSetReference(array1, BASE_OFFSET1, oldVal, newVal);
+        return U.compareAndSetReference(array1, ARRAY1_BASE_OFFSET, oldVal, newVal);
     }
 
     static public boolean test2(int oldVal, int newVal) {
         array2[0] = new MyValue2(oldVal);
-        return U.compareAndSetFlatValue(array2, BASE_OFFSET2, LAYOUT2, MyValue2.class, new MyValue2(oldVal), new MyValue2(newVal));
+        return U.compareAndSetFlatValue(array2, ARRAY2_BASE_OFFSET, ARRAY2_LAYOUT, MyValue2.class, new MyValue2(oldVal), new MyValue2(newVal));
+    }
+
+    static public boolean test3(Object oldVal, Object newVal) {
+        testObject.field1 = new MyValue1(oldVal);
+        return U.compareAndSetReference(testObject, FIELD1_OFFSET, oldVal, newVal);
+    }
+
+    static public boolean test4(int oldVal, int newVal) {
+        testObject.field2 = new MyValue2(oldVal);
+        return U.compareAndSetFlatValue(testObject, FIELD2_OFFSET, FIELD2_LAYOUT, MyValue2.class, new MyValue2(oldVal), new MyValue2(newVal));
     }
 
     static public void main(String args[]) {
-        if (!FLATTENED_ARRAY1) {
+        if (!ARRAY1_FLATTENED) {
             throw new RuntimeException("flattened array expected");
         }
-        System.out.println("XXX " + FIELD_OFFSET1 + " " + VALUE_HEADER_SIZE1);
-        if (FIELD_OFFSET1 != VALUE_HEADER_SIZE1) {
+        System.out.println("XXX " + VALUE1_FIELD_OFFSET + " " + VALUE1_HEADER_SIZE);
+        if (VALUE1_FIELD_OFFSET != VALUE1_HEADER_SIZE) {
             throw new RuntimeException("bad field offset");
         }
-        if (INDEX_SCALE1 != 4) {
+        if (ARRAY1_INDEX_SCALE != 4) {
             throw new RuntimeException("unexpected layout");
+        }
+        if (!FLAT_FIELD1) {
+            throw new RuntimeException("flat field expected");
+        }
+        if (!FLAT_FIELD2) {
+            throw new RuntimeException("flat field expected");
         }
         for (int i = 0; i < 20_000; i++) {
             boolean res = test1(o1, o2);
@@ -124,6 +163,14 @@ public class CompareAndSetFlatArrayField {
                 throw new RuntimeException("CAS failed");
             }
             res = test2(42, 0x42);
+            if (!res) {
+                throw new RuntimeException("CAS failed");
+            }
+            res = test3(o1, o2);
+            if (!res) {
+                throw new RuntimeException("CAS failed");
+            }
+            res = test4(42, 0x42);
             if (!res) {
                 throw new RuntimeException("CAS failed");
             }
