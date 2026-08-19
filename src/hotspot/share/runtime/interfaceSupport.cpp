@@ -88,10 +88,13 @@ void InterfaceSupport::gc_alot() {
   Thread* thread = Thread::current();
   if (!thread->is_Java_thread()) return; // Avoid concurrent calls
   JavaThread* current_thread = JavaThread::cast(thread);
-  // If we are in a critical section, collectors deadlock when trying to start a GC.
-  // In_critical() is only set for those collectors where this is the case. Others
-  // like G1 do not and have no problem garbage collecting here.
+  // Do not request a GC in a critical section: garbage collectors in this state
+  // cannot complete a GC until all threads have left the JNI critical sections,
+  // and threads cannot leave while they are waiting for GC, thus deadlocking.
   if (current_thread->in_critical()) return;
+  // A GC would try to acquire Heap_lock in the prologue. Do not try to acquire the
+  // lock recursively as this would cause a hang.
+  if (Heap_lock->owned_by_self()) return;
   // Check for new, not quite initialized thread. A thread in new mode cannot initiate a GC.
   if (current_thread->active_handles() == nullptr) return;
 
