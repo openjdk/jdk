@@ -446,9 +446,7 @@ private:
         return OopType::AryType::make(ptr, ary_type->const_oop(), ary_type->ary(), ary_type->klass(), ary_type->klass_is_exact(), offset, ary_type->field_offset(),
                                       instance_id, speculative, inline_depth, ary_type->is_autobox_cache());
       } else {
-        // If 2 types does not intersect at any not-null value, they can always intersect at null
-        // if both are BotPTR. Similar for other cases below.
-        return OopType::PtrType::make(Type::AnyPtr, ptr == TypePtr::BotPTR ? TypePtr::Null : TypePtr::TopPTR, offset, speculative, inline_depth);
+        return OopType::PtrType::make(Type::AnyPtr, join_ptr_with_null(ptr), offset, speculative, inline_depth);
       }
     } else if (base1 == Type::InstPtr) {
       return instptr_type_xjoin(t1->is_instptr(), t2->is_instptr(), offset, interfaces, flat_in_array, instance_id, speculative, inline_depth);
@@ -481,21 +479,21 @@ private:
       if (t1->instance_klass() == t2->instance_klass()) {
         return InstOopType::make(ptr, klass1, interfaces, true, const_oop, offset, flat_in_array, instance_id, speculative, inline_depth);
       } else {
-        return InstOopType::PtrType::make(Type::AnyPtr, ptr == TypePtr::BotPTR ? TypePtr::Null : TypePtr::TopPTR, offset, speculative, inline_depth);
+        return InstOopType::PtrType::make(Type::AnyPtr, join_ptr_with_null(ptr), offset, speculative, inline_depth);
       }
     } else if (xk1) {
       assert(klass1->is_loaded(), "pointer to an oop of an exact type must be loaded");
       if (non_exact_type_contains_exact_type(t2, t1, interfaces)) {
         return InstOopType::make(ptr, klass1, interfaces, true, const_oop, offset, flat_in_array, instance_id, speculative, inline_depth);
       } else {
-        return InstOopType::PtrType::make(Type::AnyPtr, ptr == TypePtr::BotPTR ? TypePtr::Null : TypePtr::TopPTR, offset, speculative, inline_depth);
+        return InstOopType::PtrType::make(Type::AnyPtr, join_ptr_with_null(ptr), offset, speculative, inline_depth);
       }
     } else if (xk2) {
       assert(klass2->is_loaded(), "pointer to an oop of an exact type must be loaded");
       if (non_exact_type_contains_exact_type(t1, t2, interfaces)) {
         return InstOopType::make(ptr, klass2, interfaces, true, const_oop, offset, flat_in_array, instance_id, speculative, inline_depth);
       } else {
-        return InstOopType::PtrType::make(Type::AnyPtr, ptr == TypePtr::BotPTR ? TypePtr::Null : TypePtr::TopPTR, offset, speculative, inline_depth);
+        return InstOopType::PtrType::make(Type::AnyPtr, join_ptr_with_null(ptr), offset, speculative, inline_depth);
       }
     }
 
@@ -509,7 +507,7 @@ private:
       } else if (klass1 == klass2) {
         return InstOopType::make(ptr, klass1, interfaces, false, nullptr, offset, flat_in_array, instance_id, speculative, inline_depth);
       } else {
-        return InstOopType::PtrType::make(Type::AnyPtr, ptr == TypePtr::BotPTR ? TypePtr::Null : TypePtr::TopPTR, offset, speculative, inline_depth);
+        return InstOopType::PtrType::make(Type::AnyPtr, join_ptr_with_null(ptr), offset, speculative, inline_depth);
       }
     }
 
@@ -520,7 +518,7 @@ private:
     } else if (klass2->is_subtype_of(klass1)) {
       return InstOopType::make(ptr, klass2, interfaces, false, nullptr, offset, flat_in_array, instance_id, speculative, inline_depth);
     } else {
-      return InstOopType::PtrType::make(Type::AnyPtr, ptr == TypePtr::BotPTR ? TypePtr::Null : TypePtr::TopPTR, offset, speculative, inline_depth);
+      return InstOopType::PtrType::make(Type::AnyPtr, join_ptr_with_null(ptr), offset, speculative, inline_depth);
     }
   }
 
@@ -541,16 +539,16 @@ private:
     KlassType klass = nullptr;
     join_ary_elem(elem, klass, t1, t2);
     if (elem->empty()) {
-      return AryOopType::PtrType::make(Type::AnyPtr, ptr == TypePtr::BotPTR ? TypePtr::Null : TypePtr::TopPTR, offset, speculative, inline_depth);
+      return AryOopType::PtrType::make(Type::AnyPtr, join_ptr_with_null(ptr), offset, speculative, inline_depth);
     }
 
     if (TypeJavaPtrMeetHelper::aryptr_klass_disjoint(t1, t2)) {
-      return AryOopType::PtrType::make(Type::AnyPtr, ptr == TypePtr::BotPTR ? TypePtr::Null : TypePtr::TopPTR, offset, speculative, inline_depth);
+      return AryOopType::PtrType::make(Type::AnyPtr, join_ptr_with_null(ptr), offset, speculative, inline_depth);
     }
 
     auto size = t1->size()->join(t2->size())->isa_int();
     if (size == nullptr) {
-      return AryOopType::PtrType::make(Type::AnyPtr, ptr == TypePtr::BotPTR ? TypePtr::Null : TypePtr::TopPTR, offset, speculative, inline_depth);
+      return AryOopType::PtrType::make(Type::AnyPtr, join_ptr_with_null(ptr), offset, speculative, inline_depth);
     }
 
     auto const_oop = t1->const_oop() != nullptr ? t1->const_oop() : t2->const_oop();
@@ -562,7 +560,7 @@ private:
     bool atomic = t1->is_atomic() || t2->is_atomic();
     auto field_offset = t1->field_offset().join(t2->field_offset());
     if ((flat && not_flat) || (null_free && not_null_free) || field_offset == Type::Offset::top) {
-      return AryOopType::PtrType::make(Type::AnyPtr, ptr == TypePtr::BotPTR ? TypePtr::Null : TypePtr::TopPTR, offset, speculative, inline_depth);
+      return AryOopType::PtrType::make(Type::AnyPtr, join_ptr_with_null(ptr), offset, speculative, inline_depth);
     }
 
     auto ary = AryType::make(elem, size, stable, flat, not_flat, null_free, not_null_free, atomic);
@@ -606,7 +604,7 @@ private:
         return KlassType::AryType::make(ptr, ary_type->elem(), ary_type->klass(), offset, ary_type->is_not_flat(), ary_type->is_not_null_free(),
                                  ary_type->is_flat(), ary_type->is_null_free(), ary_type->is_atomic(), ary_type->is_refined_type());
       } else {
-        return KlassType::PtrType::make(Type::AnyPtr, ptr == TypePtr::BotPTR ? TypePtr::Null : TypePtr::TopPTR, offset);
+        return KlassType::PtrType::make(Type::AnyPtr, join_ptr_with_null(ptr), offset);
       }
     } else if (base1 == Type::InstKlassPtr) {
       return instklassptr_type_xjoin(t1->is_instklassptr(), t2->is_instklassptr(), offset, interfaces, flat_in_array);
@@ -647,7 +645,7 @@ private:
       } else if (klass2->is_subtype_of(klass1)) {
         return InstKlassType::make(ptr, klass2, interfaces, offset, flat_in_array);
       } else {
-        return InstKlassType::PtrType::make(Type::AnyPtr, ptr == TypePtr::BotPTR ? TypePtr::Null : TypePtr::TopPTR, offset);
+        return InstKlassType::PtrType::make(Type::AnyPtr, join_ptr_with_null(ptr), offset);
       }
     }
   }
@@ -666,18 +664,18 @@ private:
     bool flat = t1->is_flat() || t2->is_flat();
     bool null_free = t1->is_null_free() || t2->is_null_free();
     if (elem->empty() || (flat && not_flat) || (null_free && not_null_free)) {
-      return AryKlassType::PtrType::make(Type::AnyPtr, ptr == TypePtr::BotPTR ? TypePtr::Null : TypePtr::TopPTR, offset);
+      return AryKlassType::PtrType::make(Type::AnyPtr, join_ptr_with_null(ptr), offset);
     }
 
     bool atomic = t1->is_atomic() || t2->is_atomic();
     bool refined = t1->is_refined_type() || t2->is_refined_type();
     if (t1->klass_is_exact() && (not_flat != t1->is_not_flat() || not_null_free != t1->is_not_null_free() || flat != t1->is_flat() ||
                                  null_free != t1->is_null_free() || atomic != t1->is_atomic() || refined != t1->is_refined_type())) {
-      return AryKlassType::PtrType::make(Type::AnyPtr, ptr == TypePtr::BotPTR ? TypePtr::Null : TypePtr::TopPTR, offset);
+      return AryKlassType::PtrType::make(Type::AnyPtr, join_ptr_with_null(ptr), offset);
     }
     if (t2->klass_is_exact() && (not_flat != t2->is_not_flat() || not_null_free != t2->is_not_null_free() || flat != t2->is_flat() ||
                                  null_free != t2->is_null_free() || atomic != t2->is_atomic() || refined != t2->is_refined_type())) {
-      return AryKlassType::PtrType::make(Type::AnyPtr, ptr == TypePtr::BotPTR ? TypePtr::Null : TypePtr::TopPTR, offset);
+      return AryKlassType::PtrType::make(Type::AnyPtr, join_ptr_with_null(ptr), offset);
     }
 
     return AryKlassType::make(ptr, elem, klass, offset, not_flat, not_null_free, flat, null_free, atomic, refined);
@@ -694,6 +692,12 @@ private:
     } else {
       return TypePtr::BotPTR;
     }
+  }
+
+  // When 2 TypePtrs seem unrelated, they may still join at null if both of them are
+  // TypePtr::BotPTR.
+  static TypePtr::PTR join_ptr_with_null(TypePtr::PTR ptr) {
+    return ptr == TypePtr::BotPTR ? TypePtr::Null : TypePtr::TopPTR;
   }
 
   template <class PtrType>
