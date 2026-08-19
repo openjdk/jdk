@@ -26,10 +26,10 @@
  * @bug 8361140
  * @summary Test ConnectionGraph::reduce_phi_on_cmp when OptimizePtrCompare is disabled
  * @library /test/lib /
- * @run driver compiler.c2.TestReducePhiOnCmpWithNoOptPtrCompare
+ * @run driver compiler.escapeAnalysis.TestReducePhiOnCmpWithNoOptPtrCompare
  */
 
-package compiler.c2;
+package compiler.escapeAnalysis;
 
 import java.util.Random;
 import jdk.test.lib.Asserts;

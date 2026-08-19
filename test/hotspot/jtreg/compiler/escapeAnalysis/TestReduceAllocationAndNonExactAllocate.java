@@ -35,10 +35,10 @@
  *                   -XX:-TieredCompilation
  *                   -Xbatch
  *                   -Xcomp
- *                   compiler.c2.TestReduceAllocationAndNonExactAllocate
+ *                   compiler.escapeAnalysis.TestReduceAllocationAndNonExactAllocate
  */
 
-package compiler.c2;
+package compiler.escapeAnalysis;
 
 import jdk.internal.misc.Unsafe;
 
