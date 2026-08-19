@@ -220,11 +220,14 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
 
   // Test for in-cset
   if (is_strong) {
+#if INCLUDE_CDS
     if (AOTCodeCache::is_on_for_dump()) {
       __ ld(t1, ExternalAddress(AOTRuntimeConstants::cset_base_address()));
       __ lwu(t0, ExternalAddress(AOTRuntimeConstants::grain_shift_address()));
       __ srl(t0, x10, t0);
-    } else {
+    } else
+#endif
+    {
       __ mv(t1, ShenandoahHeap::in_cset_fast_test_addr());
       __ srli(t0, x10, ShenandoahHeapRegion::region_size_bytes_shift_jint());
     }
