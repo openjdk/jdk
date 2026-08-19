@@ -54,7 +54,7 @@ public class CompareAndSetFlatArrayField {
     }
 
     private static final Unsafe U = Unsafe.getUnsafe();
-    
+
     private static final MyValue1[] array1;
     private static final long ARRAY1_BASE_OFFSET;
     private static final int ARRAY1_INDEX_SCALE;
@@ -62,7 +62,7 @@ public class CompareAndSetFlatArrayField {
     private static final int ARRAY_LAYOUT1;
     private static final long VALUE1_HEADER_SIZE;
     private static final long VALUE1_FIELD_OFFSET;
-    
+
     private static final MyValue2[] array2;
     private static final long ARRAY2_BASE_OFFSET;
     private static final int ARRAY2_INDEX_SCALE;
@@ -75,7 +75,7 @@ public class CompareAndSetFlatArrayField {
     private static final boolean FLAT_FIELD1;
     private static final long FIELD1_OFFSET;
     private static final int FIELD1_LAYOUT;
-    
+
     private MyValue2 field2;
     private static final boolean FLAT_FIELD2;
     private static final long FIELD2_OFFSET;
