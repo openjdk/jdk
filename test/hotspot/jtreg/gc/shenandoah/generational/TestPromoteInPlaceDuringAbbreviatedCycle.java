@@ -169,7 +169,7 @@ public class TestPromoteInPlaceDuringAbbreviatedCycle {
         while (maxCycleId.get() < targetCycles) {
             if (System.nanoTime() > deadlineNanos) {
                 throw new RuntimeException("Timed out flushing GC notifications: delivered "
-                                           + cycleNotifications.get() + " of "
+                                           + maxCycleId.get() + " of "
                                            + targetCycles + " cycle notifications");
             }
             Thread.sleep(10);
