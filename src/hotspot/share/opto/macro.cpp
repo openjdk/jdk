@@ -3455,7 +3455,7 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       C->remove_macro_node(n);
       continue;
     }
-    // Reached Allocate nodes - jump to second pass to prcess them.
+    // Reached Allocate nodes - jump to second pass to process them.
     if (n->is_Allocate()) {
       break;
     }
