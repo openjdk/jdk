@@ -140,7 +140,7 @@ class StackMapReader : StackObj {
   // Full frames need to handle this specially.
   bool _uninit_in_prev_frame_locals;
 
-  StackMapFrame* next_helper(TRAPS);
+  StackMapFrame* next_helper(bool& parsed_early_larval, TRAPS);
   void check_offset(StackMapFrame* frame);
   void check_size(TRAPS);
   int32_t chop(VerificationType* locals, int32_t length, int32_t chops);

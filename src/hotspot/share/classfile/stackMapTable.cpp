@@ -253,10 +253,23 @@ VerificationType StackMapReader::parse_verification_type(u1* flags, bool parsing
 
 StackMapFrame* StackMapReader::next(TRAPS) {
   _parsed_frame_count++;
+  bool parsed_early_larval = false;
   check_size(CHECK_NULL);
-  StackMapFrame* frame = next_helper(CHECK_VERIFY_(_verifier, nullptr));
+  StackMapFrame* frame = next_helper(parsed_early_larval, CHECK_VERIFY_(_verifier, nullptr));
   if (frame != nullptr) {
     check_offset(frame);
+
+    // The early_larval frame has been parsed correctly but such frames require uninitializedThis
+    // which will only be detected once the nested frame has been processed.
+    if (parsed_early_larval) {
+      if (!frame->flag_this_uninit()) {
+        frame->verifier()->verify_error(
+          ErrorContext::bad_strict_fields(_prev_frame->offset(), _prev_frame),
+          "Cannot have uninitialized strict fields after class initialization");
+        return nullptr;
+      }
+    }
+
     if (frame->verifier()->has_error()) {
       return nullptr;
     }
@@ -265,7 +278,7 @@ StackMapFrame* StackMapReader::next(TRAPS) {
   return frame;
 }
 
-StackMapFrame* StackMapReader::next_helper(TRAPS) {
+StackMapFrame* StackMapReader::next_helper(bool& parsed_early_larval, TRAPS) {
   StackMapFrame* frame;
   int offset;
   VerificationType* locals = nullptr;
@@ -300,15 +313,7 @@ StackMapFrame* StackMapReader::next_helper(TRAPS) {
       }
     }
 
-    // Only modify strict instance fields if the frame has uninitialized this
-    if (_prev_frame->flag_this_uninit()) {
-      _assert_unset_fields_buffer = _prev_frame->merge_unset_fields(new_fields);
-    } else if (new_fields->number_of_entries() > 0) {
-      _prev_frame->verifier()->verify_error(
-        ErrorContext::bad_strict_fields(_prev_frame->offset(), _prev_frame),
-        "Cannot have uninitialized strict fields after class initialization");
-      return nullptr;
-    }
+    _assert_unset_fields_buffer = _prev_frame->merge_unset_fields(new_fields);
 
     // Continue reading frame data
     if (at_end()) {
@@ -325,6 +330,9 @@ StackMapFrame* StackMapReader::next_helper(TRAPS) {
         "Early larval frame must be followed by a base frame");
       return nullptr;
     }
+
+    // Only count as parsed if no errors were encountered
+    parsed_early_larval = true;
   }
 
   if (frame_type <= SAME_FRAME_END) {
