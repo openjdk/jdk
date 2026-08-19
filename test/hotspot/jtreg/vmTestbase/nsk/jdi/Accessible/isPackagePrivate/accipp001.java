@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import java.io.*;
  * of the JDI interface <code>Accessible</code> works fine with
  * the <code>ArrayType</code> sub-interface.
  */
-public class accipp001 extends Log {
+public class accipp001 {
     final static boolean MODE_VERBOSE = false;
 
     /** The main class names of the debugger & debugee applications. */
