@@ -248,10 +248,10 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
     }
 
   public:
-    G1RebuildRSAndScrubRegionClosure(G1ConcurrentMark* cm, bool should_rebuild_remset, uint worker_id) :
+    G1RebuildRSAndScrubRegionClosure(G1ConcurrentMark* cm, bool should_rebuild_remset) :
       _cm(cm),
       _bitmap(_cm->mark_bitmap()),
-      _rebuild_closure(G1CollectedHeap::heap(), worker_id + cm->worker_id_offset()),
+      _rebuild_closure(G1CollectedHeap::heap()),
       _should_rebuild_remset(should_rebuild_remset),
       _processed_words(0) { }
 
@@ -299,7 +299,8 @@ public:
     SuspendibleThreadSetJoiner sts_join;
 
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    G1RebuildRSAndScrubRegionClosure cl(_cm, _should_rebuild_remset, worker_id);
+    G1RebuildRSAndScrubRegionClosure cl(_cm, _should_rebuild_remset);
+
     g1h->heap_region_par_iterate_from_worker_offset(&cl, &_hr_claimer, worker_id);
   }
 };

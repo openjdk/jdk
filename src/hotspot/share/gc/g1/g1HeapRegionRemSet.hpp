@@ -146,7 +146,7 @@ public:
   inline void set_state_updating();
   inline void set_state_complete();
 
-  inline void add_reference(OopOrNarrowOopStar from, uint tid);
+  inline void add_reference(OopOrNarrowOopStar from, G1FromCardCache& fcc);
 
   // Clear the region-specific remset state.
   void clear();
@@ -165,7 +165,7 @@ public:
   // Returns the memory occupancy of all static data structures associated
   // with remembered sets.
   static size_t static_mem_size() {
-    return G1CardSet::static_mem_size() + G1FromCardCache::static_mem_size();
+    return G1CardSet::static_mem_size();
   }
 
   static void print_static_mem_size(outputStream* out);
@@ -202,10 +202,6 @@ public:
   size_t code_roots_mem_size();
 
 #ifndef PRODUCT
-  static void print_from_card_cache() {
-    G1FromCardCache::print();
-  }
-
   static void test();
 #endif
 };

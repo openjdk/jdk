@@ -25,90 +25,36 @@
 #ifndef SHARE_GC_G1_G1FROMCARDCACHE_HPP
 #define SHARE_GC_G1_G1FROMCARDCACHE_HPP
 
-#include "memory/allStatic.hpp"
-#include "utilities/ostream.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // G1FromCardCache remembers which destination cardsets have been
 // encountered while a worker scans the current source card.
-class G1FromCardCache : public AllStatic {
-private:
-  static const uint SourceCardIndex = 0;
-  static const uint NumEntriesIndex = 1;
-  static const uint EntriesStartIndex = 2;
-  // Each worker owns one row laid out as:
-  //   [ source-card | number-of-entries | FCC id | FCC id | ... ]
-  //          0                 1              2        3
-  // The count identifies the populated prefix of FCC ids, which is
-  //  searched linearly.
-  static uintptr_t** _cache;
-  static uint _max_entries;
-  static size_t _static_mem_size;
-#ifdef ASSERT
-  static uint _max_workers;
+class G1FromCardCache {
+  // GCCardSizeInBytes is constrained to NOT_LP64(512) LP64_ONLY(1024).
+  static constexpr uint MaxCardSizeInBytes = NOT_LP64(512) LP64_ONLY(1024);
+  static constexpr uint MaxCardsets = MaxCardSizeInBytes / sizeof(narrowOop);
 
-  static void check_worker_bounds(uint worker_id) {
-    assert(worker_id < _max_workers, "Worker_id %u is larger than maximum %u", worker_id, _max_workers);
-  }
-#endif
+  uintptr_t _source_card;
+  uint _num_cardsets;
+  uint _cardset_ids[MaxCardsets];
 
-  // This card index indicates that the row is unused. This allows us to use
-  // the OS lazy backing of memory with zero-filled pages to avoid initial
-  // actual memory use. This means that the heap must not contain card zero.
-  static const uintptr_t InvalidSourceCard = 0;
+  NONCOPYABLE(G1FromCardCache);
 
-  // Number of refinement and concurrent GC workers that may add records to
-  // remembered sets in parallel.
-  static uint num_par_rem_sets();
-
-  static uintptr_t* row(uint worker_id) {
-    DEBUG_ONLY(check_worker_bounds(worker_id);)
-    return _cache[worker_id];
-  }
-
-  static void invalidate();
 public:
-  // Discard the state associated with worker_id. This must be called before a
-  // worker begins a new refinement or rebuild scan and after a rebuild yield.
-  static void reset(uint worker_id) {
-    uintptr_t* const cache = row(worker_id);
-    cache[SourceCardIndex] = InvalidSourceCard;
-    cache[NumEntriesIndex] = 0;
+  G1FromCardCache()
+    : _source_card(0),
+      _num_cardsets(0) {}
+
+  // Discard the state associated with the _source_card. This must be called before
+  // a worker begins a new refinement or rebuild scan and after a rebuild yield.
+  void reset() {
+    _num_cardsets = 0;
   }
 
   // Returns true if cardset_fcc_id has already been encountered while
-  // worker_id was scanning source_card. Otherwise, records the id and returns
-  // false.
-  static bool contains_or_add(uint worker_id, uintptr_t source_card, uint cardset_fcc_id) {
-    precond(source_card != InvalidSourceCard);
-    uintptr_t* const cache = row(worker_id);
-
-    if (cache[SourceCardIndex] != source_card) {
-      cache[SourceCardIndex] = source_card;
-      cache[NumEntriesIndex] = 0;
-    }
-
-    const uint num_entries = static_cast<uint>(cache[NumEntriesIndex]);
-    for (uint i = 0; i < num_entries; i++) {
-      if (cache[EntriesStartIndex + i] == cardset_fcc_id) {
-        return true;
-      }
-    }
-
-    assert(num_entries < _max_entries, "source card has too many destination cardsets");
-    if (num_entries < _max_entries) {
-      cache[EntriesStartIndex + num_entries] = cardset_fcc_id;
-      cache[NumEntriesIndex] = num_entries + 1;
-    }
-    return false;
-  }
-
-  static void initialize();
-
-  static void print(outputStream* out = tty) PRODUCT_RETURN;
-
-  static size_t static_mem_size() {
-    return _static_mem_size;
-  }
+  // scanning source_card. Otherwise, records the id and returns false.
+  inline bool contains_or_add(uintptr_t source_card, uint cardset_fcc_id);
 };
 
 #endif // SHARE_GC_G1_G1FROMCARDCACHE_HPP

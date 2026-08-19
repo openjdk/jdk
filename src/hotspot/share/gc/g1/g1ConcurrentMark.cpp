@@ -448,7 +448,6 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
 
   _finger(nullptr), // _finger set in set_non_marking_state
 
-  _worker_id_offset(G1ConcRefinementThreads), // The refinement control thread does not refine cards, so it's just the worker threads.
   _max_num_tasks(MAX2(ConcGCThreads, ParallelGCThreads)),
   _num_active_tasks(0), // _num_active_tasks set in set_non_marking_state()
   _tasks(nullptr),
@@ -502,7 +501,7 @@ void G1ConcurrentMark::fully_initialize() {
     vm_shutdown_during_initialization("Could not create ConcurrentMarkThread");
   }
 
-  log_debug(gc)("ConcGCThreads: %u offset %u", ConcGCThreads, _worker_id_offset);
+  log_debug(gc)("ConcGCThreads: %u", ConcGCThreads);
   log_debug(gc)("ParallelGCThreads: %u", ParallelGCThreads);
 
   _max_concurrent_workers = ConcGCThreads;

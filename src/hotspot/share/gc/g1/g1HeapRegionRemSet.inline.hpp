@@ -29,6 +29,7 @@
 
 #include "gc/g1/g1CardSet.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1FromCardCache.inline.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
 
@@ -120,16 +121,15 @@ uintptr_t G1HeapRegionRemSet::to_card(OopOrNarrowOopStar from) const {
   return pointer_delta(from, _heap_base_address, 1) >> CardTable::card_shift();
 }
 
-void G1HeapRegionRemSet::add_reference(OopOrNarrowOopStar from, uint tid) {
+void G1HeapRegionRemSet::add_reference(OopOrNarrowOopStar from, G1FromCardCache& fcc) {
   precond(has_cset_group());
   precond(_state != Untracked);
 
   uintptr_t from_card = uintptr_t(from) >> CardTable::card_shift();
 
-  if (G1FromCardCache::contains_or_add(tid, from_card, cset_group()->fcc_id())) {
+  if (fcc.contains_or_add(from_card, cset_group()->fcc_id())) {
     // We can't check whether the card is in the remembered set - the card container
     // may be coarsened just now.
-    //assert(contains_reference(from), "We just found " PTR_FORMAT " in the FromCardCache", p2i(from));
     return;
   }
 
