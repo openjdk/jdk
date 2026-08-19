@@ -213,8 +213,8 @@ public class SimpleCDSAppTester {
         return this;
     }
 
-    public SimpleCDSAppTester runAOTAssemblyWorkflow() throws Exception {
-        tester.runAOTAssemblyWorkflow();
+    public SimpleCDSAppTester runAOTTrainingAndAssemblyWorkflow() throws Exception {
+        tester.runAOTTrainingAndAssemblyWorkflow();
         return this;
     }
 

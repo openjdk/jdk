@@ -64,7 +64,7 @@ public class AOTLinkedVarHandles {
                 output.shouldMatch(s + "java/lang/invoke/VarHandle.get:\\(\\[DI\\)D => ");
                 output.shouldNotContain("rejected .* CP entry.*");
             })
-            .runAOTAssemblyWorkflow();
+            .runAOTTrainingAndAssemblyWorkflow();
 
         t.setVmArgs("-Xlog:cds,aot", "-esa")
         .setProductionChecker((OutputAnalyzer output) -> {

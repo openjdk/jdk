@@ -61,7 +61,7 @@ public class AOTClassLinkingVMOptions {
             .classpath(appJar)
             .addVmArgs("-XX:+AOTClassLinking")
             .appCommandLine(mainClass)
-            .runAOTAssemblyWorkflow();
+            .runAOTTrainingAndAssemblyWorkflow();
 
         testCase("Archived full module graph must be enabled at runtime");
         t.setVmArgs("-Djdk.module.validation=1")
@@ -119,7 +119,7 @@ public class AOTClassLinkingVMOptions {
         t.setVmArgs("-XX:+UnlockDiagnosticVMOptions", "-XX:+AOTClassLinking", "-XX:-AOTInvokeDynamicLinking")
             .appCommandLine(mainClass)
             .setCheckExitValue(true)
-            .runAOTAssemblyWorkflow();
+            .runAOTTrainingAndAssemblyWorkflow();
 
         testCase("Use the archive that was created with -XX:-AOTInvokeDynamicLinking.");
         t.setVmArgs()
@@ -165,7 +165,7 @@ public class AOTClassLinkingVMOptions {
             .modulepath(modulePath)
             .addVmArgs("-XX:+AOTClassLinking")
             .appCommandLine("-m", MAIN_MODULE)
-            .runAOTAssemblyWorkflow();
+            .runAOTTrainingAndAssemblyWorkflow();
 
         t.setVmArgs("-Xlog:aot", "-Xlog:cds")
             .modulepath(modulePath)
@@ -187,10 +187,10 @@ public class AOTClassLinkingVMOptions {
 
         testCase("Cannot use mis-matched --add-modules");
         t.setVmArgs("-XX:+AOTClassLinking", "--add-modules", MAIN_MODULE)
-        .modulepath(modulePath)
-        .appCommandLine(MAIN_CLASS)
-        .setCheckExitValue(true)
-        .runAOTAssemblyWorkflow();
+            .modulepath(modulePath)
+            .appCommandLine(MAIN_CLASS)
+            .setCheckExitValue(true)
+            .runAOTTrainingAndAssemblyWorkflow();
 
         t.setVmArgs("-Xlog:aot", "-Xlog:cds", "--add-modules", MAIN_MODULE)
             .modulepath(modulePath)

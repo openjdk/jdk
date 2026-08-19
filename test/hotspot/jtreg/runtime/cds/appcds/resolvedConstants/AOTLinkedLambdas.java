@@ -73,7 +73,7 @@ public class AOTLinkedLambdas {
                 dumpOut.shouldContain("Cannot aot-resolve Lambda proxy of interface type IG2");
                 dumpOut.shouldContain("Cannot aot-resolve Lambda proxy of interface type IH3"); // unsupported = IH1
             })
-            .runAOTAssemblyWorkflow();
+            .runAOTTrainingAndAssemblyWorkflow();
 
         t.setProductionChecker((OutputAnalyzer out) -> {
                 out.shouldContain("Hello AOTLinkedLambdasApp");
