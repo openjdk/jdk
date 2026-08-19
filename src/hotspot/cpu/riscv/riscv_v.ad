@@ -1580,6 +1580,42 @@ instruct vnotL_masked(vReg dst_src, immI_M1 m1, vRegMask_V0 v0) %{
   ins_pipe(pipe_slow);
 %}
 
+// vector integer div
+
+instruct vdiv(vReg dst, vReg src1, vReg src2) %{
+  match(Set dst (DivVB src1 src2));
+  match(Set dst (DivVS src1 src2));
+  match(Set dst (DivVI src1 src2));
+  match(Set dst (DivVL src1 src2));
+  format %{ "vdiv $dst, $src1, $src2" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vdiv_vv(as_VectorRegister($dst$$reg),
+               as_VectorRegister($src1$$reg),
+               as_VectorRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector integer div - predicated
+
+instruct vdiv_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
+  match(Set dst_src1 (DivVB (Binary dst_src1 src2) v0));
+  match(Set dst_src1 (DivVS (Binary dst_src1 src2) v0));
+  match(Set dst_src1 (DivVI (Binary dst_src1 src2) v0));
+  match(Set dst_src1 (DivVL (Binary dst_src1 src2) v0));
+  format %{ "vdiv_masked $dst_src1, $dst_src1, $src2, $v0" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vdiv_vv(as_VectorRegister($dst_src1$$reg),
+               as_VectorRegister($dst_src1$$reg),
+               as_VectorRegister($src2$$reg), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // vector float div
 
 instruct vdiv_hfp(vReg dst, vReg src1, vReg src2) %{

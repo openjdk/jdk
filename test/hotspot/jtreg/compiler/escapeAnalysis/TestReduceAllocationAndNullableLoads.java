@@ -31,10 +31,10 @@
  * @run main/othervm -XX:CompileCommand=compileonly,*TestReduceAllocationAndNullableLoads*::*
  *                   -XX:CompileCommand=dontinline,*TestReduceAllocationAndNullableLoads*::*
  *                   -XX:-TieredCompilation -Xcomp
- *                   compiler.c2.TestReduceAllocationAndNullableLoads
+ *                   compiler.escapeAnalysis.TestReduceAllocationAndNullableLoads
  */
 
-package compiler.c2;
+package compiler.escapeAnalysis;
 
 public class TestReduceAllocationAndNullableLoads {
     public static void main(String[] args) {
