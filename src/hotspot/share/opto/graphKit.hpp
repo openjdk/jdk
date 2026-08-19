@@ -345,6 +345,7 @@ class GraphKit : public Phase {
   Node* DivI(Node* ctl, Node* l, Node* r)     { return _gvn.transform(new DivINode(ctl, l, r));  }
 
   Node* AndI(Node* l, Node* r)                { return _gvn.transform(new AndINode(l, r));       }
+  Node* AndL(Node* l, Node* r)                { return _gvn.transform(new AndLNode(l, r));       }
   Node* OrI(Node* l, Node* r)                 { return _gvn.transform(new OrINode(l, r));        }
   Node* XorI(Node* l, Node* r)                { return _gvn.transform(new XorINode(l, r));       }
 
@@ -352,13 +353,20 @@ class GraphKit : public Phase {
   Node* MinI(Node* l, Node* r)                { return _gvn.transform(new MinINode(l, r));       }
 
   Node* LShiftI(Node* l, Node* r)             { return _gvn.transform(new LShiftINode(l, r));    }
+  Node* LShiftL(Node* l, Node* r)             { return _gvn.transform(new LShiftLNode(l, r));    }
   Node* RShiftI(Node* l, Node* r)             { return _gvn.transform(new RShiftINode(l, r));    }
+  Node* RShiftL(Node* l, Node* r)             { return _gvn.transform(new RShiftLNode(l, r));    }
   Node* URShiftI(Node* l, Node* r)            { return _gvn.transform(new URShiftINode(l, r));   }
+  Node* URShiftL(Node* l, Node* r)            { return _gvn.transform(new URShiftLNode(l, r));   }
+  Node* URShiftX(Node* l, Node* r)            { return _gvn.transform(new URShiftXNode(l, r));   }
 
   Node* CmpI(Node* l, Node* r)                { return _gvn.transform(new CmpINode(l, r));       }
   Node* CmpL(Node* l, Node* r)                { return _gvn.transform(new CmpLNode(l, r));       }
   Node* CmpP(Node* l, Node* r)                { return _gvn.transform(new CmpPNode(l, r));       }
   Node* Bool(Node* cmp, BoolTest::mask relop) { return _gvn.transform(new BoolNode(cmp, relop)); }
+  Node* BoolCmpI(Node* l, BoolTest::mask relop, Node* r)       { return Bool(CmpI(l, r), relop); }
+  Node* BoolCmpL(Node* l, BoolTest::mask relop, Node* r)       { return Bool(CmpL(l, r), relop); }
+  Node* BoolCmpP(Node* l, BoolTest::mask relop, Node* r)       { return Bool(CmpP(l, r), relop); }
 
   Node* AddP(Node* b, Node* a, Node* o)       { return _gvn.transform(AddPNode::make_with_base(b, a, o)); }
 
@@ -878,8 +886,7 @@ class GraphKit : public Phase {
   Node* load_String_coder(Node* str, bool set_ctrl);
   void store_String_value(Node* str, Node* value);
   void store_String_coder(Node* str, Node* value);
-  Node* capture_memory(const TypePtr*& combined_type, const TypePtr* src_type, const TypePtr* dst_type);
-  void memory_effect(Node* res_mem, const TypePtr* src_type, const TypePtr* dst_type);
+  Node* capture_memory(const TypePtr* src_type, const TypePtr* dst_type);
   Node* compress_string(Node* src, const TypeAryPtr* src_type, Node* dst, Node* count);
   void inflate_string(Node* src, Node* dst, const TypeAryPtr* dst_type, Node* count);
   void inflate_string_slow(Node* src, Node* dst, Node* start, Node* count);

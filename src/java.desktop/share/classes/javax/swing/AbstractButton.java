@@ -417,7 +417,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * the label.
      *
      * @return an <code>Insets</code> object specifying the margin
-     *          between the botton's border and the label
+     *          between the button's border and the label
      * @see #setMargin
      */
     public Insets getMargin() {
