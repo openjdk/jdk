@@ -1173,7 +1173,7 @@ public class AutomaticModules extends ModuleTestBase {
 
         try (ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(automaticJar))) {
             out.putNextEntry(new ZipEntry("aut/Aut.class"));
-            Files.copy(automaticClasses.resolve("aut").resolve("Aut1.class"), out);
+            Files.copy(automaticClasses.resolve("aut").resolve("Aut.class"), out);
         }
 
         Path src = base.resolve("src");
