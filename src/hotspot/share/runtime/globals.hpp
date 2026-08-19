@@ -1524,12 +1524,11 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(size_t, HotCodeHeapSize, 0, EXPERIMENTAL,                         \
           "Size of code heap with predicted hot methods (in bytes)")        \
-          range(0, SIZE_MAX)                                                \
+          constraint(CodeHeapSizeConstraintFunc, AtParse)                   \
                                                                             \
   product_pd(size_t, CodeCacheExpansionSize,                                \
           "Code cache expansion size (in bytes)")                           \
-          range(32*K, SIZE_MAX)                                             \
-          constraint(VMPageSizeConstraintFunc, AtParse)                     \
+          constraint(CodeCacheExpansionSizeConstraintFunc, AtParse)         \
                                                                             \
   product_pd(size_t, CodeCacheMinBlockLength, DIAGNOSTIC,                   \
           "Minimum number of segments in a code cache block")               \

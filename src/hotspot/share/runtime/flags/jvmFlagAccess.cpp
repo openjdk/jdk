@@ -379,11 +379,17 @@ void JVMFlagAccess::print_range(outputStream* st, const JVMFlag* flag) {
     if (limit != nullptr) {
       void* func = limit->constraint_func();
 
-      // Two special cases where the lower limit of the range is defined by an os:: function call
+      // Special cases where range limits are defined by an os:: function calls
       // and cannot be initialized at compile time with constexpr.
-      if (func == (void*)VMPageSizeConstraintFunc) {
+      if (func == (void*)VMPageSizeConstraintFunc || func == (void*)CodeHeapSizeConstraintFunc) {
         size_t min = os::vm_page_size();
-        size_t max = align_down(SIZE_MAX, min);
+        size_t max = align_down(CODE_CACHE_SIZE_LIMIT, min);
+
+        JVMTypedFlagLimit<size_t> tmp(0, min, max);
+        access_impl(flag)->print_range(st, &tmp);
+      } else if (func == (void*)CodeCacheExpansionSizeConstraintFunc) {
+        size_t min = 32*K;
+        size_t max = align_down(SIZE_MAX, os::vm_page_size());
 
         JVMTypedFlagLimit<size_t> tmp(0, min, max);
         access_impl(flag)->print_range(st, &tmp);

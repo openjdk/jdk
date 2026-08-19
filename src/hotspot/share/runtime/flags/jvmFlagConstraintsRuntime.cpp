@@ -110,7 +110,7 @@ JVMFlag::Error ContendedPaddingWidthConstraintFunc(int value, bool verbose) {
 
 JVMFlag::Error VMPageSizeConstraintFunc(size_t value, bool verbose) {
   size_t min = os::vm_page_size();
-  size_t max = align_down(SIZE_MAX, min);
+  size_t max = align_down(CODE_CACHE_SIZE_LIMIT, min);
   if (value < min || value > max) {
     JVMFlag::printError(verbose,
                         "%s %s=%zu is outside the allowed range [ %zu"
@@ -124,15 +124,15 @@ JVMFlag::Error VMPageSizeConstraintFunc(size_t value, bool verbose) {
   return JVMFlag::SUCCESS;
 }
 
-//For code heap size flags where 0 means heap disabled.
-//Non-zero values must be page aligned and must not overflow
-//when rounded up to a page boundary.
+// For code heap size flags where 0 means heap disabled, set internally by
+// FLAG_SET_ERGO. Non-zero values must be page aligned and must not exceed
+// the platform code cache limit.
 JVMFlag::Error CodeHeapSizeConstraintFunc(size_t value, bool verbose) {
   if (value == 0) {
     return JVMFlag::SUCCESS;
   }
   size_t min = os::vm_page_size();
-  size_t max = align_down(SIZE_MAX, min);
+  size_t max = align_down(CODE_CACHE_SIZE_LIMIT, min);
   if (value < min || value > max) {
     JVMFlag::printError(verbose,
                         "%s %s=%zu is outside the allowed range [ %zu"
@@ -140,6 +140,24 @@ JVMFlag::Error CodeHeapSizeConstraintFunc(size_t value, bool verbose) {
                         JVMFlagLimit::last_checked_flag()->type_string(),
                         JVMFlagLimit::last_checked_flag()->name(),
                         value, min, max);
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+
+  return JVMFlag::SUCCESS;
+}
+
+// CodeCacheExpansionSize is an expansion increment, not a heap capacity.
+// It must not overflow when rounded up to page boundary.
+JVMFlag::Error CodeCacheExpansionSizeConstraintFunc(size_t value, bool verbose) {
+  size_t min = 32*K;
+  size_t max = align_down(SIZE_MAX, os::vm_page_size());
+  if (value < min || value > max) {
+    JVMFlag::printError(verbose,
+                       "%s %s=%zu is outside the allowed range [ %zu"
+                       " ... %zu ]\n",
+                       JVMFlagLimit::last_checked_flag()->type_string(),
+                       JVMFlagLimit::last_checked_flag()->name(),
+                       value, min, max);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
 
