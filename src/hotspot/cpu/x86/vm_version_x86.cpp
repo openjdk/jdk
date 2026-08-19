@@ -1077,19 +1077,19 @@ void VM_Version::get_processor_features() {
       FLAG_SET_DEFAULT(UseAPX, false);
     }
   }
+#if defined(COMPILER2) && defined(_LP64)
   if (UseAPX) {
     if (CompilerConfig::is_tiered() && CompilerConfig::is_c2_enabled()) {
-#if defined(COMPILER2) && defined(_LP64)
       if (FLAG_IS_DEFAULT(InlineSmallCode)) {
         FLAG_SET_DEFAULT(InlineSmallCode, 2750);
       }
-#endif
     } else {
       if (FLAG_IS_DEFAULT(InlineSmallCode)) {
         FLAG_SET_DEFAULT(InlineSmallCode, 1100);
       }
     }
   }
+#endif
 
   CHECK_CPU_FEATURE(UseCLMUL, CLMUL, supports_clmul(), "CLMUL" MULTI_INST_WARNING_MSG);
   CHECK_CPU_FEATURE(UseAES, AES, supports_aes(), "AES" MULTI_INST_WARNING_MSG);
