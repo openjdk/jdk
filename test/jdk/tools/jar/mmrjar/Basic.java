@@ -486,7 +486,7 @@ public class Basic {
         ),
         NEW_CONCEALED_PACKAGE_WARNING(
             " is a public class" +
-            " in a concealed package, placing this JAR on the class path will result" +
+            " in a concealed package, placing this JAR file on the class path will result" +
             " in incompatible public interfaces"
         );
 
