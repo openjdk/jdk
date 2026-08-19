@@ -28,7 +28,7 @@
  * @modules java.base/jdk.internal.vm.annotation
  *          java.base/jdk.internal.value
  * @compile EarlyLarvalNonPreviewApp.jasm
- * @run driver EarlyLarvalNonPreviewTest
+ * @run main EarlyLarvalNonPreviewTest
  */
 
 public class EarlyLarvalNonPreviewTest {
@@ -37,10 +37,10 @@ public class EarlyLarvalNonPreviewTest {
             var value = new EarlyLarvalNonPreviewApp(-1, -2);
             throw new RuntimeException("Expected ClassFormatError");
         } catch (ClassFormatError c) {
-            System.out.println("Test passed");
             if (!c.getMessage().equals("StackMapTable format error: reserved frame type")) {
                 throw new RuntimeException("Unexpected ClassFormatError " + c.getMessage());
             }
+            System.out.println("Test passed");
         }
     }
 }
