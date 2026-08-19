@@ -269,7 +269,6 @@ jdk.dynalink.linker
 jdk.dynalink.linker.support
 jdk.dynalink.support
 module:jdk.editpad
-module:jdk.hotspot.agent
 module:jdk.httpserver
 com.sun.net.httpserver
 com.sun.net.httpserver.spi

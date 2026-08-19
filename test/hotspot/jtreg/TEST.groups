@@ -366,7 +366,6 @@ tier2_gc_shenandoah = \
   gc/logging/TestUnifiedLoggingSwitchStress.java \
   runtime/Metaspace/DefineClass.java \
   gc/shenandoah/ \
-  serviceability/sa/TestHeapDumpForInvokeDynamic.java \
   -gc/shenandoah/TestStringDedupStress.java \
   -:tier1_gc_shenandoah
 
@@ -506,8 +505,6 @@ hotspot_cds_relocation = \
   runtime/modules/PatchModule/PatchModuleCDS.java \
   runtime/modules/PatchModule/PatchModuleClassList.java \
   runtime/NMT \
-  serviceability/sa \
- -serviceability/sa/TestJhsdbJstackPrintVMLocks.java \
  -runtime/cds/DeterministicDump.java
 
 hotspot_cds_verify_shared_spaces = \
@@ -660,11 +657,7 @@ tier1_serviceability = \
   -serviceability/jvmti/RedefineClasses/RedefinePreviousVersions.java \
   -serviceability/jvmti/RedefineClasses/RedefineRunningMethods.java \
   -serviceability/jvmti/RedefineClasses/RedefineRunningMethodsWithBacktrace.java \
-  -serviceability/jvmti/RedefineClasses/TestRedefineObject.java \
-  -serviceability/sa/ClhsdbScanOops.java \
-  -serviceability/sa/ClhsdbJstackXcompStress.java \
-  -serviceability/sa/TestJmapCore.java \
-  -serviceability/sa/TestJmapCoreMetaspace.java
+  -serviceability/jvmti/RedefineClasses/TestRedefineObject.java
 
 tier1_serviceability_no_valhalla = \
   :tier1_serviceability \

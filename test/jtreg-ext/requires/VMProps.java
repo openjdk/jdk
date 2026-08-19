@@ -105,9 +105,6 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.flightRecorder", this::vmFlightRecorder);
         map.put("vm.simpleArch", this::vmArch);
         map.put("vm.debug", this::vmDebug);
-        // vm.hasSA is "true" if the VM contains the serviceability agent
-        // and jhsdb.
-        map.put("vm.hasSA", this::vmHasSA);
         // vm.hasJFR is "true" if JFR is included in the build of the VM and
         // so tests can be executed.
         map.put("vm.hasJFR", this::vmHasJFR);
@@ -355,13 +352,6 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     protected void vmOptFinalIntxFlags(SafeMap map) {
         vmOptFinalIntxFlag(map, "MaxVectorSize");
-    }
-
-    /**
-     * @return "true" if VM has a serviceability agent.
-     */
-    protected String vmHasSA() {
-        return "" + Platform.hasSA();
     }
 
     /**

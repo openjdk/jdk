@@ -37,7 +37,6 @@ import jtreg.SkippedException;
 /**
  * @test
  * @summary Test deadlock detection
- * @requires vm.hasSA
  * @library /test/lib
  * @build jdk.test.lib.apps.*
  * @build DeadlockDetectionTest

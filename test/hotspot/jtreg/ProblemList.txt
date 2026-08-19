@@ -112,24 +112,10 @@ containers/docker/TestJFREvents.java 8327723 linux-x64
 
 # :hotspot_serviceability
 
-# 8239062 and 8270326 only affects macosx-x64,macosx-aarch64
-serviceability/sa/sadebugd/DebugdConnectTest.java 8239062,8270326 generic-all
-serviceability/sa/TestRevPtrsForInvokeDynamic.java 8241235 generic-all
-
 serviceability/jvmti/vthread/GetThreadStateMountedTest/GetThreadStateMountedTest.java 8318090,8318729 generic-all
 serviceability/jvmti/vthread/GetSetLocalTest/GetSetLocalTest.java 8286836 generic-all
 serviceability/jvmti/vthread/CarrierThreadEventNotification/CarrierThreadEventNotification.java 8333681 generic-all
 serviceability/dcmd/gc/RunFinalizationTest.java 8227120 generic-all
-
-serviceability/sa/ClhsdbCDSCore.java              8318754 macosx-aarch64
-serviceability/sa/ClhsdbFindPC.java#xcomp-core    8318754 macosx-aarch64
-serviceability/sa/ClhsdbFindPC.java#no-xcomp-core 8318754 macosx-aarch64
-serviceability/sa/ClhsdbPmap.java#core            8318754 macosx-aarch64
-serviceability/sa/ClhsdbPstack.java#core          8318754 macosx-aarch64
-serviceability/sa/TestJmapCore.java               8318754 macosx-aarch64
-serviceability/sa/TestJmapCoreMetaspace.java      8318754 macosx-aarch64
-
-serviceability/sa/ClhsdbThreadContext.java        8356704 windows-x64
 
 serviceability/jvmti/stress/StackTrace/NotSuspended/GetStackTraceNotSuspendedStressTest.java 8315980 linux-all,windows-x64
 
@@ -200,8 +186,6 @@ applications/ctw/modules/java_base_2.java 8375645 generic-all
 compiler/codegen/TestRedundantLea.java#Spill                            8361089 generic-all
 
 compiler/vectorapi/TestVectorReassociations.java 8388927 generic-all
-
-serviceability/sa/TestJhsdbJstackMixedWithXComp.java#xcomp-disable-tiered-compilation 8386674 linux-aarch64
 
 vmTestbase/nsk/jvmti/IterateOverReachableObjects/iterreachobj002/TestDescription.java 8384882 linux-all
 

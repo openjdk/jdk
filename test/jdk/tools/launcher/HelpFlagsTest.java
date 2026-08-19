@@ -133,7 +133,6 @@ public class HelpFlagsTest extends TestHelper {
         new ToolHelpSpec("jdeprscan",   1,   1,   1,   0,         0,    0,     1),     // -?, -h, --help
         new ToolHelpSpec("jdeps",       1,   1,   1,   0,         1,    0,     2),     // -?, -h, --help, -help accepted but not documented.
         new ToolHelpSpec("jfr",         1,   1,   1,   0,         0,    0,     2),     // -?, -h, --help
-        new ToolHelpSpec("jhsdb",       0,   0,   0,   0,         0,    0,     0),     // none, prints help message anyways.
         new ToolHelpSpec("jimage",      1,   1,   1,   0,         0,    0,     2),     // -?, -h, --help
         new ToolHelpSpec("jinfo",       1,   1,   1,   0,         1,    1,     1),     // -?, -h, --help -help, Documents -help
         new ToolHelpSpec("jjs",         0,   1,   1, 100,         0,    0,   100),     //     -h, --help, return code 100

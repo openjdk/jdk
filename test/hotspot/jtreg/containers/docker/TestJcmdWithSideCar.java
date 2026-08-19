@@ -115,12 +115,6 @@ public class TestJcmdWithSideCar {
                     }
                     long mainProcPid = testCase01(mainContainer, attachStrategy, elevated);
 
-                    // Excluding the test case below until JDK-8228850 is fixed
-                    // JDK-8228850: jhsdb jinfo fails with ClassCastException:
-                    // s.j.h.oops.TypeArray cannot be cast to s.j.h.oops.Instance
-                    // mainContainer.assertIsAlive();
-                    // testCase02(mainContainer, mainProcPid, attachStrategy, elevated);
-
                     mainContainer.assertIsAlive();
                     testCase03(mainContainer, mainProcPid, attachStrategy, elevated);
                 }
@@ -144,14 +138,6 @@ public class TestJcmdWithSideCar {
         }
 
         return pid;
-    }
-
-    // run jhsdb jinfo <PID> (jhsdb uses PTRACE)
-    private static void testCase02(MainContainer mainContainer, long pid, AttachStrategy attachStrategy, boolean elevated) throws Exception {
-        runSideCar(mainContainer, attachStrategy, elevated, "/jdk/bin/jhsdb", "jinfo", "--pid", "" + pid)
-            .shouldHaveExitValue(0)
-            .shouldContain("Java System Properties")
-            .shouldContain("VM Flags");
     }
 
     // test jcmd with some commands (help, start JFR recording)
