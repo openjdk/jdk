@@ -36,7 +36,7 @@ import jdk.incubator.json.JsonValue;
 /**
  * JsonObject implementation class
  */
-public final class JsonObjectImpl implements JsonObject, JsonValueImpl {
+public final class JsonObjectImpl implements JsonObject, JsonValueSupport {
 
     private final Map<String, JsonValue> theMembers;
     private final int offset;

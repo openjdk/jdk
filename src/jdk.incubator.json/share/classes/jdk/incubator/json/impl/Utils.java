@@ -92,7 +92,7 @@ public class Utils {
 
     public static JsonValueException composeError(JsonValue jv, String message) {
         return new JsonValueException(message +
-                (jv instanceof JsonValueImpl jvi && jvi.doc() != null ? JsonPath.getValuePath(jvi) : ""));
+                (jv instanceof JsonValueSupport jvs && jvs.doc() != null ? JsonPath.getValuePath(jvs) : ""));
     }
 
     // Use to compose an exception when casting to an incorrect type
@@ -148,9 +148,9 @@ public class Utils {
 
         // JsonValueException path produces a path that always leads to a value, and should provide
         // the correct line and pos positions derived from the JV itself
-        private static String getValuePath(JsonValueImpl jvi) {
+        private static String getValuePath(JsonValueSupport jvs) {
             var pathParts = new ArrayList<String>();
-            var jp = new JsonPath(jvi.offset(), jvi.doc());
+            var jp = new JsonPath(jvs.offset(), jvs.doc());
             var path = jp.parseToRoot(pathParts);
             // After path is produced, line and pos should be value bearing
             return String.format(Locale.ROOT,

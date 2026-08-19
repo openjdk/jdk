@@ -30,7 +30,7 @@ import jdk.incubator.json.JsonBoolean;
 /**
  * JsonBoolean implementation class
  */
-public final class JsonBooleanImpl implements JsonBoolean, JsonValueImpl {
+public final class JsonBooleanImpl implements JsonBoolean, JsonValueSupport {
 
     private final boolean theBoolean;
     private final int offset;

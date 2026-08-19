@@ -26,9 +26,10 @@
 package jdk.incubator.json.impl;
 
 /**
- * Used for JsonValueException error message building.
+ * Provides support methods for {@code JsonValue} implementation classes,
+ * primarily for constructing {@code JsonValueException} error messages.
  */
-public sealed interface JsonValueImpl
+public sealed interface JsonValueSupport
         permits JsonArrayImpl, JsonBooleanImpl, JsonNullImpl, JsonNumberImpl, JsonObjectImpl, JsonStringImpl {
 
     /**

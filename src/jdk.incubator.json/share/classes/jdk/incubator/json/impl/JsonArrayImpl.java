@@ -35,7 +35,7 @@ import jdk.incubator.json.JsonValue;
 /**
  * JsonArray implementation class
  */
-public final class JsonArrayImpl implements JsonArray, JsonValueImpl {
+public final class JsonArrayImpl implements JsonArray, JsonValueSupport {
 
     private final List<JsonValue> theValues;
     private final int offset;
