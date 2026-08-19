@@ -37,6 +37,7 @@ public class stop002t {
     private IOPipe pipe;
     volatile boolean stopLooping1 = false;
     volatile boolean stopLooping2 = false;
+    volatile boolean gotOpaqueFrameException = false;
     volatile static int testNumReady = 0;
     static final boolean vthreadMode = "Virtual".equals(System.getProperty("test.thread.factory"));
     static Thread testThread = null;
@@ -142,8 +143,13 @@ public class stop002t {
                 stopMeHere++; stopMeHere--;
             }
             if (vthreadMode) {
-                // Exception not required when in vthread mode
-                log.display("TEST #4: did not throw exception while in vthread mode");
+                if (gotOpaqueFrameException) {
+                    // Exception not required when in vthread mode if OpaqueFrameException thrown
+                    log.display("TEST #4: threw OpaqueFrameException while in vthread mode");
+                } else {
+                    log.complain("TEST #4: Failed to throw expected exception and " +
+                                 "failed to throw debugger side OpaqueFrameException");
+                }
             } else {
                 log.complain("TEST #4: Failed to throw expected exception");
                 return Consts.TEST_FAILED;

@@ -66,9 +66,11 @@ public class stop002 {
     // debuggee fields used to indicate to exit infinite loops
     static final String DEBUGGEE_STOP_LOOP1_FIELD = "stopLooping1";
     static final String DEBUGGEE_STOP_LOOP2_FIELD = "stopLooping2";
+    // debuggee field used to indicate that debugger got OpaqueFrameException
+    static final String DEBUGGEE_GOT_OPE_FIELD = "gotOpaqueFrameException";
 
     // debuggee source line where it should be stopped
-    static final int DEBUGGEE_STOPATLINE = 90;
+    static final int DEBUGGEE_STOPATLINE = 91;
 
     static final int DELAY = 500; // in milliseconds
 
@@ -118,6 +120,7 @@ public class stop002 {
 
         Field stopLoop1 = null;
         Field stopLoop2 = null;
+        Field gotOpaqueFrameException = null;
         ObjectReference objRef = null;
         ObjectReference throwableRef = null;
 
@@ -142,6 +145,11 @@ public class stop002 {
             stopLoop2 = mainClass.fieldByName(DEBUGGEE_STOP_LOOP2_FIELD);
             if (stopLoop1 == null || stopLoop2 == null) {
                 throw new RuntimeException("Failed to find a \"stop loop\" field");
+            }
+
+            gotOpaqueFrameException = mainClass.fieldByName(DEBUGGEE_GOT_OPE_FIELD);
+            if (gotOpaqueFrameException == null) {
+                throw new RuntimeException("Failed to find a \"gotOpaqueFrameException\" field");
             }
 
             log.display("non-throwable object: \"" + objRef + "\"");
@@ -223,6 +231,7 @@ public class stop002 {
                 log.display("TEST #4: thread is suspended.");
                 thrRef.stop(throwableRef);
                 log.display("TEST #4 PASSED: stop() call succeeded.");
+                objRef.setValue(gotOpaqueFrameException, vm.mirrorOf(false));
             } catch (OpaqueFrameException ofe) {
                 if (vthreadMode) {
                     log.display("TEST #4 PASSED: stop() call resulted in OpaqueFrameException.");
@@ -231,10 +240,12 @@ public class stop002 {
                     log.complain("TEST #4 FAILED: caught unexpected " + ofe);
                     tot_res = Consts.TEST_FAILED;
                 }
+                objRef.setValue(gotOpaqueFrameException, vm.mirrorOf(true));
             } catch (Throwable ue) {
                 ue.printStackTrace();
                 log.complain("TEST #4 FAILED: caught unexpected " + ue);
                 tot_res = Consts.TEST_FAILED;
+                objRef.setValue(gotOpaqueFrameException, vm.mirrorOf(false));
             } finally {
                 log.display("TEST #4: resuming thread.");
                 thrRef.resume();
