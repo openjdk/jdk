@@ -458,12 +458,10 @@ public:
   void dump_infinite_loop_info(Node* n, const char* where);
   // Check for a simple dead loop when a data node references itself.
   void dead_loop_check(Node *n);
-#endif
 
-#ifndef PRODUCT
-  static bool is_verify_Identity_return() {
-    // '-XX:VerifyIterativeGVN=1000000'
-    return ((VerifyIterativeGVN % 10'000'000) / 1'000'000) == 1;
+  static bool is_verify_IGVN_method_return() {
+    // '-XX:VerifyIterativeGVN=100000'
+    return ((VerifyIterativeGVN % 1'000'000) / 100'000) == 1;
   }
 #endif
 };
@@ -687,10 +685,6 @@ public:
   static bool is_verify_invariants() {
     // '-XX:VerifyIterativeGVN=10000'
     return ((VerifyIterativeGVN % 100000) / 10000) == 1;
-  }
-  static bool is_verify_Ideal_return() {
-    // '-XX:VerifyIterativeGVN=100000'
-    return ((VerifyIterativeGVN % 1000000) / 100000) == 1;
   }
 protected:
   // Sub-quadratic implementation of '-XX:VerifyIterativeGVN=1' (Use-Def verification).
