@@ -27,6 +27,7 @@
 runtime/jni/critical/SuspendInCritical.java 8384369 generic-all
 serviceability/AsyncGetCallTrace/MyPackage/ASGCTBaseTest.java 8308026 generic-all
 serviceability/jvmti/Heap/IterateHeapWithEscapeAnalysisEnabled.java 8264699 generic-all
+serviceability/sa/TestHeapDumpForInvokeDynamic.java 8390689 generic-all
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manyDiff_a/TestDescription.java 8308367 generic-all
 
 vmTestbase/nsk/jvmti/unit/functions/Dispose/JvmtiTest/TestDescription.java 8387429 generic-all
