@@ -8575,6 +8575,157 @@ instruct convI2L_reg_reg(iRegLNoSp dst, iRegIorL2I src)
   ins_pipe(ialu_reg);
 %}
 
+// Fused int-producer + ConvI2L rules.
+instruct convI2L_addI_reg_reg(iRegLNoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
+  match(Set dst (ConvI2L (AddI src1 src2)));
+
+  ins_cost(ALU_COST);
+  format %{ "addw  $dst, $src1, $src2\t#@convI2L_addI_reg_reg" %}
+
+  ins_encode %{
+    __ addw(as_Register($dst$$reg),
+            as_Register($src1$$reg),
+            as_Register($src2$$reg));
+  %}
+
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct convI2L_addI_reg_imm(iRegLNoSp dst, iRegIorL2I src1, immIAdd src2) %{
+  match(Set dst (ConvI2L (AddI src1 src2)));
+
+  ins_cost(ALU_COST);
+  format %{ "addiw  $dst, $src1, $src2\t#@convI2L_addI_reg_imm" %}
+
+  ins_encode %{
+    __ addiw(as_Register($dst$$reg),
+             as_Register($src1$$reg),
+             $src2$$constant);
+  %}
+
+  ins_pipe(ialu_reg_imm);
+%}
+
+instruct convI2L_subI_reg_reg(iRegLNoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
+  match(Set dst (ConvI2L (SubI src1 src2)));
+
+  ins_cost(ALU_COST);
+  format %{ "subw  $dst, $src1, $src2\t#@convI2L_subI_reg_reg" %}
+
+  ins_encode %{
+    __ subw(as_Register($dst$$reg),
+            as_Register($src1$$reg),
+            as_Register($src2$$reg));
+  %}
+
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct convI2L_mulI_reg_reg(iRegLNoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
+  match(Set dst (ConvI2L (MulI src1 src2)));
+
+  ins_cost(IMUL_COST);
+  format %{ "mulw  $dst, $src1, $src2\t#@convI2L_mulI_reg_reg" %}
+
+  ins_encode %{
+    __ mulw(as_Register($dst$$reg),
+            as_Register($src1$$reg),
+            as_Register($src2$$reg));
+  %}
+
+  ins_pipe(imul_reg_reg);
+%}
+
+instruct convI2L_lShiftI_reg_reg(iRegLNoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
+  match(Set dst (ConvI2L (LShiftI src1 src2)));
+
+  ins_cost(ALU_COST);
+  format %{ "sllw  $dst, $src1, $src2\t#@convI2L_lShiftI_reg_reg" %}
+
+  ins_encode %{
+    __ sllw(as_Register($dst$$reg),
+            as_Register($src1$$reg),
+            as_Register($src2$$reg));
+  %}
+
+  ins_pipe(ialu_reg_reg_vshift);
+%}
+
+instruct convI2L_lShiftI_reg_imm(iRegLNoSp dst, iRegIorL2I src1, immI src2) %{
+  match(Set dst (ConvI2L (LShiftI src1 src2)));
+
+  ins_cost(ALU_COST);
+  format %{ "slliw  $dst, $src1, ($src2 & 0x1f)\t#@convI2L_lShiftI_reg_imm" %}
+
+  ins_encode %{
+    __ slliw(as_Register($dst$$reg),
+             as_Register($src1$$reg),
+             (unsigned) $src2$$constant & 0x1f);
+  %}
+
+  ins_pipe(ialu_reg_shift);
+%}
+
+instruct convI2L_urShiftI_reg_reg(iRegLNoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
+  match(Set dst (ConvI2L (URShiftI src1 src2)));
+
+  ins_cost(ALU_COST);
+  format %{ "srlw  $dst, $src1, $src2\t#@convI2L_urShiftI_reg_reg" %}
+
+  ins_encode %{
+    __ srlw(as_Register($dst$$reg),
+            as_Register($src1$$reg),
+            as_Register($src2$$reg));
+  %}
+
+  ins_pipe(ialu_reg_reg_vshift);
+%}
+
+instruct convI2L_urShiftI_reg_imm(iRegLNoSp dst, iRegIorL2I src1, immI src2) %{
+  match(Set dst (ConvI2L (URShiftI src1 src2)));
+
+  ins_cost(ALU_COST);
+  format %{ "srliw  $dst, $src1, ($src2 & 0x1f)\t#@convI2L_urShiftI_reg_imm" %}
+
+  ins_encode %{
+    __ srliw(as_Register($dst$$reg),
+             as_Register($src1$$reg),
+             (unsigned) $src2$$constant & 0x1f);
+  %}
+
+  ins_pipe(ialu_reg_shift);
+%}
+
+instruct convI2L_rShiftI_reg_reg(iRegLNoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
+  match(Set dst (ConvI2L (RShiftI src1 src2)));
+
+  ins_cost(ALU_COST);
+  format %{ "sraw  $dst, $src1, $src2\t#@convI2L_rShiftI_reg_reg" %}
+
+  ins_encode %{
+    __ sraw(as_Register($dst$$reg),
+            as_Register($src1$$reg),
+            as_Register($src2$$reg));
+  %}
+
+  ins_pipe(ialu_reg_reg_vshift);
+%}
+
+instruct convI2L_rShiftI_reg_imm(iRegLNoSp dst, iRegIorL2I src1, immI src2) %{
+  match(Set dst (ConvI2L (RShiftI src1 src2)));
+
+  ins_cost(ALU_COST);
+  format %{ "sraiw  $dst, $src1, ($src2 & 0x1f)\t#@convI2L_rShiftI_reg_imm" %}
+
+  ins_encode %{
+    __ sraiw(as_Register($dst$$reg),
+             as_Register($src1$$reg),
+             (unsigned) $src2$$constant & 0x1f);
+  %}
+
+  ins_pipe(ialu_reg_shift);
+%}
+
 instruct convL2I_reg(iRegINoSp dst, iRegL src) %{
   match(Set dst (ConvL2I src));
 
