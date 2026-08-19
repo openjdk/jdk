@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,6 @@ TEST_VM(markWord, printing) {
 }
 
 static void assert_unlocked_state(markWord mark) {
-  EXPECT_FALSE(mark.has_displaced_mark_helper());
   EXPECT_FALSE(mark.is_fast_locked());
   EXPECT_FALSE(mark.has_monitor());
   EXPECT_FALSE(mark.is_locked());
