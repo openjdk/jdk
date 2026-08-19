@@ -399,7 +399,7 @@ bool ConnectionGraph::compute_escape() {
   if (VerifyReduceAllocationMerges) {
     for (uint i = 0; i < reducible_merges.size(); i++ ) {
       Node* n = reducible_merges.at(i);
-      if (!can_reduce_phi(n->as_Phi())) {
+      if (n->outcnt() > 0 && !can_reduce_phi(n->as_Phi())) {
         TraceReduceAllocationMerges = true;
         n->dump(2);
         n->dump(-2);
@@ -666,7 +666,7 @@ bool ConnectionGraph::can_reduce_phi(PhiNode* ophi) const {
   // If there was an error attempting to reduce allocation merges for this
   // method we might have disabled the compilation and be retrying with RAM
   // disabled.
-  if (!_compile->do_reduce_allocation_merges() || ophi->region()->Opcode() != Op_Region) {
+  if (!_compile->do_reduce_allocation_merges() || ophi->region() == nullptr || ophi->region()->Opcode() != Op_Region) {
     return false;
   }
 
