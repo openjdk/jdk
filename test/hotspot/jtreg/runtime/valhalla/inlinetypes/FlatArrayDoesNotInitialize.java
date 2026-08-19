@@ -25,7 +25,6 @@
 /*
  * @test
  * @summary Test that creating an array of T does not initialize class T
- * @library /test/lib
  * @enablePreview
  * @compile FlatArrayDoesNotInitialize.java
  * @run main/othervm runtime.valhalla.inlinetypes.FlatArrayDoesNotInitialize
