@@ -898,35 +898,35 @@ bool Type::is_nan()    const {
 }
 
 #ifdef ASSERT
-class VerifyMeet;
-class VerifyMeetResult : public ArenaObj {
-  friend class VerifyMeet;
+class VerifyMeetJoin;
+class VerifyMeetJoinResult : public ArenaObj {
+  friend class VerifyMeetJoin;
   friend class Type;
 private:
-  class VerifyMeetResultEntry {
+  class CacheEntry {
   private:
     const Type* _in1;
     const Type* _in2;
     const Type* _res;
   public:
-    VerifyMeetResultEntry(const Type* in1, const Type* in2, const Type* res):
+    CacheEntry(const Type* in1, const Type* in2, const Type* res):
             _in1(in1), _in2(in2), _res(res) {
     }
-    VerifyMeetResultEntry():
+    CacheEntry():
             _in1(nullptr), _in2(nullptr), _res(nullptr) {
     }
 
-    bool operator==(const VerifyMeetResultEntry& rhs) const {
+    bool operator==(const CacheEntry& rhs) const {
       return _in1 == rhs._in1 &&
              _in2 == rhs._in2 &&
              _res == rhs._res;
     }
 
-    bool operator!=(const VerifyMeetResultEntry& rhs) const {
+    bool operator!=(const CacheEntry& rhs) const {
       return !(rhs == *this);
     }
 
-    static int compare(const VerifyMeetResultEntry& v1, const VerifyMeetResultEntry& v2) {
+    static int compare(const CacheEntry& v1, const CacheEntry& v2) {
       if ((intptr_t) v1._in1 < (intptr_t) v2._in1) {
         return -1;
       } else if (v1._in1 == v2._in1) {
@@ -944,8 +944,8 @@ private:
   };
 
   uint _depth;
-  GrowableArray<VerifyMeetResultEntry> _meet_cache;
-  GrowableArray<VerifyMeetResultEntry> _join_cache;
+  GrowableArray<CacheEntry> _meet_cache;
+  GrowableArray<CacheEntry> _join_cache;
 
   // With verification code, the meet/join of A and B causes the computation of:
   // 1-  meet(A, B)
@@ -980,34 +980,34 @@ private:
   // 2- meet(B[], A[])
   //   2.1-  meet(B, A) = 1.2
   //   2.2-  meet(A, B) = 1.1
-  //   1.3-  join(B, A) = 1.4
-  //   1.4-  join(A, B) = 1.3
-  //   1.5-  meet(B, meet(B, A)) = 1.6
-  //   1.6-  meet(A, meet(B, A)) = 1.5
-  //   1.7-  join(B, meet(B, A)) = 1.8
-  //   1.8-  join(A, meet(B, A)) = 1.7
-  //   1.9-  meet(B, join(B, A)) = 1.10
-  //   1.10- meet(A, join(B, A)) = 1.9
-  //   1.11- join(B, join(B, A)) = 1.12
-  //   1.12- join(A, join(B, A)) = 1.11
+  //   2.3-  join(B, A) = 1.4
+  //   2.4-  join(A, B) = 1.3
+  //   2.5-  meet(B, meet(B, A)) = 1.6
+  //   2.6-  meet(A, meet(B, A)) = 1.5
+  //   2.7-  join(B, meet(B, A)) = 1.8
+  //   2.8-  join(A, meet(B, A)) = 1.7
+  //   2.9-  meet(B, join(B, A)) = 1.10
+  //   2.10- meet(A, join(B, A)) = 1.9
+  //   2.11- join(B, join(B, A)) = 1.12
+  //   2.12- join(A, join(B, A)) = 1.11
   // etc.
   //
   // When the dimensions of the arrays increase, the number of performed operations grows
   // exponentially but the number of distinct operations grows linearly. The function below caches
   // the results for the duration of the operation at the root of the recursive calls.
   template <class F>
-  static const Type* meet_join(F op, GrowableArray<VerifyMeetResultEntry>& cache, const Type* t1, const Type* t2) {
+  static const Type* meet_join(F op, GrowableArray<CacheEntry>& cache, const Type* t1, const Type* t2) {
     bool found = false;
-    const VerifyMeetResultEntry entry(t1, t2, nullptr);
-    int pos = cache.find_sorted<VerifyMeetResultEntry, VerifyMeetResultEntry::compare>(entry, found);
+    const CacheEntry entry(t1, t2, nullptr);
+    int pos = cache.find_sorted<CacheEntry, CacheEntry::compare>(entry, found);
     const Type* res = nullptr;
     if (found) {
       res = cache.at(pos).res();
     } else {
       res = op(t1, t2);
-      cache.insert_sorted<VerifyMeetResultEntry::compare>(VerifyMeetResultEntry(t1, t2, res));
+      cache.insert_sorted<CacheEntry::compare>(CacheEntry(t1, t2, res));
       found = false;
-      cache.find_sorted<VerifyMeetResultEntry, VerifyMeetResultEntry::compare>(entry, found);
+      cache.find_sorted<CacheEntry, CacheEntry::compare>(entry, found);
       assert(found, "should be in table after it's added");
     }
     return res;
@@ -1027,34 +1027,29 @@ private:
     return meet_join(op, _join_cache, t1, t2);
   }
 
-  bool cache_is_empty() const {
-    assert(_meet_cache.is_empty() == _join_cache.is_empty(), "must be simultaneously empty or non-empty");
-    return _meet_cache.is_empty();
-  }
-
   void empty_cache() {
     _meet_cache.trunc_to(0);
     _join_cache.trunc_to(0);
   }
 public:
-  VerifyMeetResult(Compile* C) : _depth(0),
-                                 _meet_cache(C->comp_arena(), 2, 0, VerifyMeetResultEntry()),
-                                 _join_cache(C->comp_arena(), 2, 0, VerifyMeetResultEntry()) {
+  VerifyMeetJoinResult(Compile* C) : _depth(0),
+                                 _meet_cache(C->comp_arena(), 2, 0, CacheEntry()),
+                                 _join_cache(C->comp_arena(), 2, 0, CacheEntry()) {
   }
 };
 
-class VerifyMeet {
+class VerifyMeetJoin {
 private:
   Compile* _C;
 public:
-  VerifyMeet(Compile* C) : _C(C) {
+  VerifyMeetJoin(Compile* C) : _C(C) {
     if (C->_type_verify == nullptr) {
-      C->_type_verify = new (C->comp_arena())VerifyMeetResult(C);
+      C->_type_verify = new (C->comp_arena())VerifyMeetJoinResult(C);
     }
     _C->_type_verify->_depth++;
   }
 
-  ~VerifyMeet() {
+  ~VerifyMeetJoin() {
     assert(_C->_type_verify->_depth != 0, "");
     _C->_type_verify->_depth--;
     if (_C->_type_verify->_depth == 0) {
@@ -1071,8 +1066,7 @@ public:
   }
 };
 
-void Type::check_fundamental_laws(const Type* t1, const Type* t2, VerifyMeet& verify) {
-  Compile* C = Compile::current();
+void Type::check_fundamental_laws(const Type* t1, const Type* t2, VerifyMeetJoin& verify) {
   const Type* mt1 = verify.meet(t1, t2);
   const Type* mt2 = verify.meet(t2, t1);
   if (mt1 != mt2) {
@@ -1129,6 +1123,32 @@ void Type::check_fundamental_laws(const Type* t1, const Type* t2, VerifyMeet& ve
     ss.print("t1 joins jt      = "); t1jjt->dump_on(&ss); ss.cr();
     ss.print("t2 joins jt      = "); t2jjt->dump_on(&ss); ss.cr();
 
+    ss.print_cr("Failed laws:");
+    if (t1mmt != mt) {
+      ss.print_cr("t1 meets mt == mt");
+    }
+    if (t2mmt != mt) {
+      ss.print_cr("t2 meets mt == mt");
+    }
+    if (t1jmt != t1) {
+      ss.print_cr("t1 joins mt == t1");
+    }
+    if (t2jmt != t2) {
+      ss.print_cr("t2 joins mt == t2");
+    }
+    if (t1mjt != t1) {
+      ss.print_cr("t1 meets jt == t1");
+    }
+    if (t2mjt != t2) {
+      ss.print_cr("t2 meets jt == t2");
+    }
+    if (t1jjt != jt) {
+      ss.print_cr("t1 joins jt == jt");
+    }
+    if (t2jjt != jt) {
+      ss.print_cr("t2 joins jt == jt");
+    }
+
     tty->print("%s", ss.as_string());
     fatal("Fundamental Laws Violation");
   }
@@ -1152,7 +1172,7 @@ const Type* Type::meet_join_helper(F op, const Type* t1, const Type* t2, bool in
 
 #ifdef ASSERT
   Compile* C = Compile::current();
-  VerifyMeet verify(C);
+  VerifyMeetJoin verify(C);
   check_fundamental_laws(t1, t2, verify);
 #endif
 
@@ -1731,7 +1751,7 @@ const TypeD *TypeD::make(double d) {
 }
 
 const Type* TypeD::xmeet(const Type* t) const {
-  // Current "this->_base" is FloatCon
+  // Current "this->_base" is DoubleCon
   switch (t->base()) {
     case DoubleTop:
       return this;
@@ -1746,7 +1766,7 @@ const Type* TypeD::xmeet(const Type* t) const {
 }
 
 const Type* TypeD::xjoin(const Type* t) const {
-  // Current "this->_base" is FloatCon
+  // Current "this->_base" is DoubleCon
   switch (t->base()) {
     case DoubleTop:
       return t;
@@ -2341,7 +2361,7 @@ const Type **TypeTuple::fields( uint arg_cnt ) {
 const Type* TypeTuple::xmeet(const Type* t) const {
   const TypeTuple* x = t->is_tuple();
   assert(_cnt == x->_cnt, "mismatched shape: %d != %d", _cnt, x->_cnt);
-  const Type** fields = (const Type**)(Compile::current()->type_arena()->AmallocWords(_cnt * sizeof(Type*)));
+  const Type** fields = static_cast<const Type**>(Compile::current()->type_arena()->AmallocWords(_cnt * sizeof(Type*)));
   for (uint i = 0; i < _cnt; i++) {
     fields[i] = field_at(i)->meet_speculative(x->field_at(i));
   }
@@ -2351,7 +2371,7 @@ const Type* TypeTuple::xmeet(const Type* t) const {
 const Type* TypeTuple::xjoin(const Type* t) const {
   const TypeTuple* x = t->is_tuple();
   assert(_cnt == x->_cnt, "mismatched shape: %d != %d", _cnt, x->_cnt);
-  const Type** fields = (const Type**)(Compile::current()->type_arena()->AmallocWords(_cnt * sizeof(Type*)));
+  const Type** fields = static_cast<const Type**>(Compile::current()->type_arena()->AmallocWords(_cnt * sizeof(Type*)));
   for (uint i = 0; i < _cnt; i++) {
     fields[i] = field_at(i)->join_speculative(x->field_at(i));
   }
@@ -2751,7 +2771,7 @@ const Type* TypePtr::xmeet_helper(const Type* t) const {
     case KlassPtr:
     case InstKlassPtr:
     case AryKlassPtr:
-      // Call in reverse direction
+      // Call in reverse direction, delegate to the subtypes to implement the meet
       return t->is_ptr()->xmeet(this);
     default:
       typerr(t);
@@ -2901,27 +2921,22 @@ const Type* TypePtr::cleanup_speculative() const {
  * @param other  type to meet with
  */
 const TypePtr* TypePtr::xmeet_speculative(const TypePtr* other) const {
-  bool this_has_spec = (_speculative != nullptr);
-  bool other_has_spec = (other->speculative() != nullptr);
+  bool this_no_spec = speculative() == nullptr;
+  bool other_no_spec = other->speculative() == nullptr;
 
-  if (!this_has_spec && !other_has_spec) {
+  if (this_no_spec && other_no_spec) {
     return nullptr;
   }
 
-  // If we are at a point where control flow meets and one branch has
-  // a speculative type and the other has not, we meet the speculative
-  // type of one branch with the actual type of the other. If the
-  // actual type is exact and the speculative is as well, then the
-  // result is a speculative type which is exact and we can continue
-  // speculation further.
-  const TypePtr* this_spec = _speculative;
+  // Use the static type if speculative is nullptr
+  const TypePtr* this_spec = speculative();
   const TypePtr* other_spec = other->speculative();
 
-  if (!this_has_spec) {
+  if (this_no_spec) {
     this_spec = this;
   }
 
-  if (!other_has_spec) {
+  if (other_no_spec) {
     other_spec = other;
   }
 
@@ -2929,27 +2944,22 @@ const TypePtr* TypePtr::xmeet_speculative(const TypePtr* other) const {
 }
 
 const TypePtr* TypePtr::xjoin_speculative(const TypePtr* other) const {
-  bool this_has_spec = (_speculative != nullptr);
-  bool other_has_spec = (other->speculative() != nullptr);
+  bool this_no_spec = speculative() == nullptr;
+  bool other_no_spec = other->speculative() == nullptr;
 
-  if (!this_has_spec && !other_has_spec) {
+  if (this_no_spec && other_no_spec) {
     return nullptr;
   }
 
-  // If we are at a point where control flow meets and one branch has
-  // a speculative type and the other has not, we join the speculative
-  // type of one branch with the actual type of the other. If the
-  // actual type is exact and the speculative is as well, then the
-  // result is a speculative type which is exact and we can continue
-  // speculation further.
-  const TypePtr* this_spec = _speculative;
+  // Use the static type if speculative is nullptr
+  const TypePtr* this_spec = speculative();
   const TypePtr* other_spec = other->speculative();
 
-  if (!this_has_spec) {
+  if (this_no_spec) {
     this_spec = this;
   }
 
-  if (!other_has_spec) {
+  if (other_no_spec) {
     other_spec = other;
   }
 
@@ -3260,14 +3270,17 @@ intptr_t TypeRawPtr::get_con() const {
 //------------------------------meet-------------------------------------------
 // Compute the MEET of two types.  It returns a new Type object.
 const Type* TypeRawPtr::xmeet(const Type* t) const {
-  // Current "this->_base" is RawPtr
+  if (base() != RawPtr) {
+    typerr(t);
+  }
+
   switch (t->base()) {
   case AnyPtr:
     break;
   case RawPtr: {
-    enum PTR tptr = t->is_ptr()->ptr();
-    enum PTR ptr = meet_ptr( tptr );
-    if( ptr == Constant ) {
+    PTR tptr = t->is_ptr()->ptr();
+    PTR ptr = meet_ptr(tptr);
+    if (ptr == Constant) {
       // Same constant cases have been handled in Type::xmeet(const Type*, const Type*)
       if( tptr == Constant && _ptr != Constant)  return t;
       if( _ptr == Constant && tptr != Constant)  return this;
@@ -3298,7 +3311,10 @@ const Type* TypeRawPtr::xmeet(const Type* t) const {
 }
 
 const Type* TypeRawPtr::xjoin(const Type* t) const {
-  // Current "this->_base" is RawPtr
+  if (base() != RawPtr) {
+    typerr(t);
+  }
+
   switch (t->base()) {
     case AnyPtr: {
       const TypePtr* tp = t->is_ptr();
@@ -3317,7 +3333,7 @@ const Type* TypeRawPtr::xjoin(const Type* t) const {
 
     case RawPtr: {
       const TypeRawPtr* tp = t->is_rawptr();
-      enum PTR ptr = join_ptr(tp->ptr());
+      PTR ptr = join_ptr(tp->ptr());
       // this->ptr() can only be Constant, NotNull, BotPTR
       if (ptr != Constant) {
         // Neither is a constant
@@ -5384,7 +5400,6 @@ const Type *TypeMetadataPtr::xmeet( const Type *t ) const {
     typerr(t);
   }
 
-  // Current "this->_base" is OopPtr
   switch (t->base()) {          // switch on original type
   default:                      // All else is a mistake
     typerr(t);
@@ -5958,6 +5973,7 @@ bool TypeAryPtr::can_be_inline_array() const {
 
 const TypeAryKlassPtr *TypeAryKlassPtr::make(PTR ptr, const Type* elem, ciKlass* k, Offset offset, bool not_flat, bool not_null_free, bool flat, bool null_free, bool atomic, bool refined_type) {
   if (ptr == TypePtr::Constant && elem->isa_klassptr() != nullptr) {
+    // If an array klass ptr is a constant, its element is also a constant
     elem = elem->is_klassptr()->cast_to_exactness(true);
   }
   return (TypeAryKlassPtr*)(new TypeAryKlassPtr(ptr, elem, k, offset, not_flat, not_null_free, flat, null_free, atomic, refined_type))->hashcons();
@@ -6237,7 +6253,10 @@ const TypeAryPtr* TypeAryKlassPtr::as_subtype_instance_type(bool klass_change) c
 //------------------------------xmeet------------------------------------------
 // Compute the MEET of two types, return a new Type object.
 const Type* TypeAryKlassPtr::xmeet(const Type* t) const {
-  // Current "this->_base" is Pointer
+  if (base() != AryKlassPtr) {
+    typerr(t);
+  }
+
   switch (t->base()) {          // switch on original type
   default:                      // All else is a mistake
     typerr(t);

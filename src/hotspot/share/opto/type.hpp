@@ -74,7 +74,7 @@ class     TypeKlassPtr;
 class       TypeInstKlassPtr;
 class       TypeAryKlassPtr;
 class     TypeMetadataPtr;
-class VerifyMeet;
+class VerifyMeetJoin;
 
 template <class T, class U>
 class TypeIntPrototype;
@@ -85,6 +85,7 @@ class TypeIntPrototype;
 // different kind of Type exists.  Types are never modified after creation, so
 // all their interesting fields are constant.
 class Type {
+  friend class VerifyMeetJoinResult;
 
 public:
   enum TYPES {
@@ -203,17 +204,14 @@ private:
 
   const Type* meet_helper(const Type* t, bool include_speculative) const;
 
-  static void check_fundamental_laws(const Type* t1, const Type* t2, VerifyMeet& verify) NOT_DEBUG_RETURN;
+  static void check_fundamental_laws(const Type* t1, const Type* t2, VerifyMeetJoin& verify) NOT_DEBUG_RETURN;
 
   static const Type* xmeet(const Type* t1, const Type* t2);
   static const Type* xjoin(const Type* t1, const Type* t2);
 
-  // Compute meet dependent on base type
+  // Compute meet and join, overriden by subclasses
   virtual const Type* xmeet(const Type* t) const;
   virtual const Type* xjoin(const Type* t) const;
-
-friend class VerifyMeetResult;
-
 protected:
   // Each class of type is also identified by its base.
   const TYPES _base;          // Enum of Types type
@@ -221,8 +219,8 @@ protected:
   Type(TYPES t) : _base(t) {} // Simple types
   // ~Type();                 // Use fast deallocation
   const Type* hashcons();     // Hash-cons the type
-  virtual const Type* filter_helper(const Type *kills, bool include_speculative) const;
-  const Type* join_helper(const Type *t, bool include_speculative) const;
+  virtual const Type* filter_helper(const Type* kills, bool include_speculative) const;
+  const Type* join_helper(const Type* t, bool include_speculative) const;
 
 public:
 
@@ -1256,7 +1254,6 @@ protected:
   void dump_offset(outputStream* st) const;
 #endif
 
-protected:
   template <class T1, class T2> static bool is_java_subtype_of_helper_for_instance(const T1* this_one, const T2* other, bool this_exact, bool other_exact);
   template <class T1, class T2> static bool is_same_java_type_as_helper_for_instance(const T1* this_one, const T2* other);
   template <class T1, class T2> static bool maybe_java_subtype_of_helper_for_instance(const T1* this_one, const T2* other, bool this_exact, bool other_exact);
@@ -1553,8 +1550,8 @@ public:
   virtual const TypePtr* with_instance_id(int instance_id) const;
 
   // the core of the computation of the meet for TypeOopPtr and for its subclasses
-  virtual const Type *xmeet_helper(const Type* t) const;
-  virtual const Type *xjoin_helper(const Type* t) const;
+  virtual const Type* xmeet_helper(const Type* t) const;
+  virtual const Type* xjoin_helper(const Type* t) const;
 
   // Convenience common pre-built type.
   static const TypeOopPtr *BOTTOM;
@@ -1671,8 +1668,8 @@ public:
   virtual FlatInArray flat_in_array() const { return _flat_in_array; }
 
   // the core of the computation of the meet of 2 types
-  virtual const Type* xmeet_helper(const Type *t) const;
-  virtual const Type* xjoin_helper(const Type *t) const;
+  virtual const Type* xmeet_helper(const Type* t) const;
+  virtual const Type* xjoin_helper(const Type* t) const;
 
   const TypeKlassPtr* as_klass_type(bool try_for_exact = false) const;
 
@@ -1803,7 +1800,7 @@ public:
 
   // the core of the computation of the meet of 2 types
   virtual const Type* xmeet_helper(const Type* t) const;
-  virtual const Type* xjoin_helper(const Type *t) const;
+  virtual const Type* xjoin_helper(const Type* t) const;
 
   // Inline type array properties
   const TypeAryPtr* cast_to_flat(bool flat) const;

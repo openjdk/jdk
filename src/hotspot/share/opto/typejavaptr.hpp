@@ -274,8 +274,9 @@ private:
     assert(!elem1->empty() && !elem2->empty(), "cannot be top");
     if (elem1->base() == elem2->base()) {
       if (elem1->base() == Type::Int) {
-        // byte[], short[], char[], int[] all use some kinds of TypeInt as their, klass is used to
-        // distinguish between them. As a result, different kinds of array should result int bot[]
+        // boolean[], byte[], short[], char[], int[] all use some kinds of TypeInt as their element
+        // types, klass is used to distinguish between them. As a result, different kinds of array
+        // should result in bot[]
         CIKlassType klass1 = t1->klass();
         CIKlassType klass2 = t2->klass();
         assert(klass1 != nullptr && klass2 != nullptr, "ambiguous array");
@@ -599,8 +600,9 @@ private:
       }
 
       TypePtr::PTR ptr = join_ptr(t1, t2);
-      if (inst_type->instance_klass()->is_java_lang_Object() && !inst_type->klass_is_exact() &&
-          KlassType::AryType::_array_interfaces->contains(inst_type->interfaces())) {
+      bool inst_type_can_contain_arrays = inst_type->instance_klass()->is_java_lang_Object() && !inst_type->klass_is_exact() &&
+                                          KlassType::AryType::_array_interfaces->contains(inst_type->interfaces());
+      if (inst_type_can_contain_arrays) {
         return KlassType::AryType::make(ptr, ary_type->elem(), ary_type->klass(), offset, ary_type->is_not_flat(), ary_type->is_not_null_free(),
                                  ary_type->is_flat(), ary_type->is_null_free(), ary_type->is_atomic(), ary_type->is_refined_type());
       } else {
@@ -788,8 +790,9 @@ private:
     if (elem1->base() != elem2->base()) {
       elem = ElemType::TOP;
     } else if (elem1->base() == Type::Int) {
-      // byte[], short[], char[], int[] all use some kinds of TypeInt as their, klass is used to
-      // distinguish between them. As a result, different kinds of array should result int bot[]
+      // boolean[], byte[], short[], char[], int[] all use some kinds of TypeInt as their element
+      // type, klass is used to distinguish between them. As a result, different kinds of array
+      // should result in top
       if (t1->klass() != t2->klass()) {
         elem = ElemType::TOP;
       } else {
@@ -803,6 +806,7 @@ private:
 
   template <class InstType, class InterfacesType>
   static bool non_exact_type_contains_exact_type(const InstType* non_exact_type, const InstType* exact_type, InterfacesType interfaces) {
+    assert(!non_exact_type->klass_is_exact() && exact_type->klass_is_exact(), "invalid arguments");
     auto non_exact_klass = non_exact_type->instance_klass();
     auto exact_klass = exact_type->instance_klass();
     // Supertypes of a loaded class should also be loaded
