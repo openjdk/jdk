@@ -34,6 +34,7 @@
  *          ControlFlowAlias.jasm
  *          TryCatchChildBad.jasm
  *          UninitThisOnStack.jasm
+ *          EarlyLarvalNoUninitThis.jasm
  *          NestedEarlyLarval.jcod
  *          EndsInEarlyLarval.jcod
  *          EarlyLarvalNotSubset.jcod
@@ -134,6 +135,9 @@ public class StrictInstanceFieldsTest {
 
         // Early_Larval frame contains another early_larval instead of a base frame
         negativeTest(NestedEarlyLarval.class, "Early larval frame must be followed by a base frame", true, false);
+
+        // Frame nested inside early_larval does not have uninitializedThis flag
+        negativeTest(EarlyLarvalNoUninitThis.class, "Cannot have uninitialized strict fields after class initialization");
 
         // Stack map table ends in early_larval frame without base frame
         negativeTest(EndsInEarlyLarval.class, "Early larval frame must be followed by a base frame", true, false);
