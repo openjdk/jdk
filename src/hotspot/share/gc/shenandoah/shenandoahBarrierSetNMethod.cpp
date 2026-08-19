@@ -108,7 +108,7 @@ void ShenandoahBarrierSetNMethod::arm_all_nmethods() {
   BarrierSetNMethod::arm_all_nmethods();
 
   // Arming should also activate stack watermark machinery.
-  // See ShenandoahNMethod::patch_barrier.
+  // See ShenandoahNMethod::patch_jump.
   ShenandoahStackWatermark::change_epoch_id();
 
   // All currently allocated stack chunks now need to be fixed up.

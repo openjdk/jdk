@@ -34,7 +34,6 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/memAllocator.hpp"
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
-#include "gc/shenandoah/shenandoahStackChunkGCData.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
