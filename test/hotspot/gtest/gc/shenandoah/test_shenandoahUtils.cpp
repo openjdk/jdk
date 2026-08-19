@@ -23,11 +23,12 @@
  */
 
 #include "gc/shenandoah/shenandoahUtils.hpp"
-#include "unittest.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 #include <cmath>
 #include <limits>
+
+#include "unittest.hpp"
 
 static void test_units(double value, double expected_value, const char* expected_unit) {
   ShenandoahSignedSize s = ShenandoahSignedSize::get(value);
@@ -93,8 +94,7 @@ TEST(ShenandoahUtilsTest, format_nan_double) {
 }
 
 TEST(ShenandoahUtilsTest, format_unit_boundaries) {
-  // nextafter moves _toward_ the argument, so moving to zero gets the next
-  // number representable as a double that is closer to the value on the unit boundary.
+  // nextafter returns the next representable value of first argument in the direction of the second
   EXPECT_STREQ("B", ShenandoahSignedSize::get(std::nextafter(100.0 * K, 0.0)).unit);
   EXPECT_STREQ("K", ShenandoahSignedSize::get(std::nextafter(100.0 * M, 0.0)).unit);
   EXPECT_STREQ("M", ShenandoahSignedSize::get(std::nextafter(100.0 * G, 0.0)).unit);
