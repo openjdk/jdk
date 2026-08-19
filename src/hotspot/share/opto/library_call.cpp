@@ -2548,27 +2548,20 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
 
   if (bt != T_ILLEGAL) {
     assert(alias_type->adr_type()->is_oopptr(), "should be on-heap access");
-    if (adr_type->isa_aryptr() && adr_type->is_flat()) {
-      if (type == T_OBJECT) {
-        return false;
-      }
-      mismatched = true;
-    } else {
-      if (bt == T_BYTE && adr_type->isa_aryptr()) {
-        // Alias type doesn't differentiate between byte[] and boolean[]).
-        // Use address type to get the element type.
-        bt = adr_type->is_aryptr()->elem()->array_element_basic_type();
-      }
-      if (is_reference_type(bt, true)) {
-        // accessing an array field with getReference is not a mismatch
-        bt = T_OBJECT;
-      }
-      if ((bt == T_OBJECT) != (type == T_OBJECT)) {
-        // Don't intrinsify mismatched object accesses
-        return false;
-      }
-      mismatched = (bt != type);
+    if (bt == T_BYTE && adr_type->isa_aryptr()) {
+      // Alias type doesn't differentiate between byte[] and boolean[]).
+      // Use address type to get the element type.
+      bt = adr_type->is_aryptr()->elem()->array_element_basic_type();
     }
+    if (is_reference_type(bt, true)) {
+      // accessing an array field with getReference is not a mismatch
+      bt = T_OBJECT;
+    }
+    if ((bt == T_OBJECT) != (type == T_OBJECT)) {
+      // Don't intrinsify mismatched object accesses
+      return false;
+    }
+    mismatched = (bt != type);
   } else if (alias_type->adr_type()->isa_oopptr()) {
     mismatched = true; // conservatively mark all "wide" on-heap accesses as mismatched
   }

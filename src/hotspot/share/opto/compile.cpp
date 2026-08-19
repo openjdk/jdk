@@ -2311,11 +2311,7 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
   for (uint i = 0; i < memnodes.size(); i++) {
     Node* m = memnodes.at(i);
     const TypePtr* adr_type = m->adr_type();
-    if (m->is_LoadStore()) {
-      m->as_LoadStore()->set_adr_type(adr_type);
-    } else {
-      m->as_Mem()->set_adr_type(adr_type);
-    }
+    m->as_Mem()->set_adr_type(adr_type);
   }
 #endif // ASSERT
 
@@ -2343,7 +2339,6 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
       // time, in reverse order, and move them to the right slice
       // by changing their memory edges.
       if ((n->is_Phi() && n->adr_type() != TypePtr::BOTTOM) || n->is_Mem() ||
-          n->Opcode() == Op_SCMemProj ||
           (n->adr_type() == TypeAryPtr::INLINES && !n->is_NarrowMemProj())) {
         assert(!seen.test_set(n->_idx), "");
         // Uses (a load for instance) will need to be moved to the
@@ -2388,9 +2383,6 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
         } else if (n->is_Mem()) {
           stack.push(n, n->req());
           n = n->in(MemNode::Memory);
-        } else if (n->Opcode() == Op_SCMemProj) {
-          stack.push(n, n->req());
-          n = n->in(0)->in(MemNode::Memory);
         } else {
           assert(n->is_Proj() && n->in(0)->Opcode() == Op_MemBarCPUOrder, "");
           stack.push(n, n->req());
@@ -2462,13 +2454,6 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
             int alias = get_alias_index(adr_type);
             Node* prev = mm->memory_at(alias);
             igvn.replace_input_of(m, MemNode::Memory, prev);
-            mm->set_memory_at(alias, m);
-          } else if (m->Opcode() == Op_SCMemProj) {
-            // Move memory node to its new slice
-            const TypePtr* adr_type = m->adr_type();
-            int alias = get_alias_index(adr_type);
-            Node* prev = mm->memory_at(alias);
-            igvn.replace_input_of(m->in(0), MemNode::Memory, prev);
             mm->set_memory_at(alias, m);
           } else if (m->is_Phi()) {
             // We need as many new phis as there are new aliases

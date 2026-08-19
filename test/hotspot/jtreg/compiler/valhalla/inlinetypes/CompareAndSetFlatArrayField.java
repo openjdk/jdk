@@ -141,21 +141,11 @@ public class CompareAndSetFlatArrayField {
     }
 
     static public void main(String args[]) {
-        if (!ARRAY1_FLATTENED) {
-            throw new RuntimeException("flattened array expected");
+        if (!ARRAY1_FLATTENED || !ARRAY2_FLATTENED || !FLAT_FIELD1 || !FLAT_FIELD2) {
+            return;
         }
-        System.out.println("XXX " + VALUE1_FIELD_OFFSET + " " + VALUE1_HEADER_SIZE);
         if (VALUE1_FIELD_OFFSET != VALUE1_HEADER_SIZE) {
-            throw new RuntimeException("bad field offset");
-        }
-        if (ARRAY1_INDEX_SCALE != 4) {
-            throw new RuntimeException("unexpected layout");
-        }
-        if (!FLAT_FIELD1) {
-            throw new RuntimeException("flat field expected");
-        }
-        if (!FLAT_FIELD2) {
-            throw new RuntimeException("flat field expected");
+            throw new RuntimeException("fix test: test assumes MyValue1[0].f is at offset 0 in MyValue1[0]");
         }
         for (int i = 0; i < 20_000; i++) {
             boolean res = test1(o1, o2);

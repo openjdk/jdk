@@ -906,11 +906,7 @@ public:
   uint8_t barrier_data() { return _barrier_data; }
   void set_barrier_data(uint8_t barrier_data) { _barrier_data = barrier_data; }
 
-#ifdef ASSERT
-  void set_adr_type(const TypePtr* adr_type) { _adr_type = adr_type; }
-#endif
-
-  #ifndef PRODUCT
+#ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
 #endif
 
