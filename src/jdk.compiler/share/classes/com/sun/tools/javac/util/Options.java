@@ -278,11 +278,14 @@ public class Options {
      * Unrecognized {@code key}s are ignored.
      *
      * @param option the plain (non-custom) version of the option (e.g., {@link Option#XLINT})
-     * @param defaults populates the default set, or null for an empty default set
+     * @param enabledByDefaultWhenLintAbsent the default categories enabled when the option is not present
+     * @param enabledByDefaultWhenLintPresent the default categories enabled when the option is present without details
      * @return the specified set of categories
      * @throws IllegalArgumentException if there is no lint custom variant of {@code option}
      */
-    public EnumSet<LintCategory> getLintCategoriesOf(Option option, Supplier<? extends EnumSet<LintCategory>> enabledByDefaultWhenLintMissing, Supplier<? extends EnumSet<LintCategory>> enabledByDefaultWhenLintPresent) {
+    public EnumSet<LintCategory> getLintCategoriesOf(Option option,
+                                                     Supplier<? extends EnumSet<LintCategory>> enabledByDefaultWhenLintAbsent,
+                                                     Supplier<? extends EnumSet<LintCategory>> enabledByDefaultWhenLintPresent) {
 
         // Create the initial set
         EnumSet<LintCategory> categories;
@@ -294,7 +297,7 @@ public class Options {
         } else if (isSet(customOption, Option.LINT_CUSTOM_NONE)) {
             categories = EnumSet.noneOf(LintCategory.class);
         } else {
-            categories = enabledByDefaultWhenLintMissing.get();
+            categories = enabledByDefaultWhenLintAbsent.get();
         }
 
         // Apply specific overrides
