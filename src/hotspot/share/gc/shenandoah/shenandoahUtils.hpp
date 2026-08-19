@@ -31,6 +31,7 @@
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
 #include "gc/shared/workerThread.hpp"
+#include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/allocation.hpp"
