@@ -446,11 +446,15 @@ public class ApplicableIRRulesPrinter {
             TestFormat.failNoThrow("Provided empty flag" + failAt());
             return false;
         }
+        Object actualFlagValue = WHITE_BOX.getStringVMFlag(flag);
+        if (actualFlagValue != null) {
+            return value.equals(actualFlagValue);
+        }
         if (value.isEmpty()) {
             TestFormat.failNoThrow("Provided empty value for flag " + flag + failAt());
             return false;
         }
-        Object actualFlagValue = WHITE_BOX.getBooleanVMFlag(flag);
+        actualFlagValue = WHITE_BOX.getBooleanVMFlag(flag);
         if (actualFlagValue != null) {
             return checkBooleanFlag(flag, value, (Boolean) actualFlagValue);
         }
@@ -462,9 +466,8 @@ public class ApplicableIRRulesPrinter {
         if (actualFlagValue != null) {
             return checkFlag(Double::parseDouble, "floating point", flag, value, (Double) actualFlagValue);
         }
-        actualFlagValue = WHITE_BOX.getStringVMFlag(flag);
-        if (actualFlagValue != null) {
-            return value.equals(actualFlagValue);
+        if (flag.equals("enable-valhalla")) {
+            return checkBooleanFlag(flag, value, Integer.class.isValue());
         }
 
         // This could be improved if the Whitebox offers a "isVMFlag" function. For now, just check if we can actually set

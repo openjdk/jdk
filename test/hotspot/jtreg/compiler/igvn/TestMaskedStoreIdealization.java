@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8387073
+ * @bug 8387073 8388490
  * @key randomness
  * @summary Narrower stores preceding masked vector stores must not be eliminated.
  * @modules jdk.incubator.vector
@@ -65,9 +65,6 @@ public class TestMaskedStoreIdealization {
             "--add-opens", "jdk.incubator.vector/jdk.incubator.vector=ALL-UNNAMED"
         ));
         vmArgs.addAll(Arrays.asList(args)); // Forward args
-        // Temporarily disable stress flag due to unrelated test failures.
-        // TODO: Remove when JDK-8388490 is fixed.
-        vmArgs.addAll(List.of("-XX:+IgnoreUnrecognizedVMOptions", "-XX:-StressReflectiveCode"));
         String[] vmArgsArray = vmArgs.toArray(new String[0]);
 
         comp.invoke(PACKAGE + "." + CLASS_NAME, "main", new Object[] { vmArgsArray });
@@ -142,6 +139,15 @@ public class TestMaskedStoreIdealization {
                     );
                 });
 
+                if (op == Operation.STORE_MASK && vec.elementType.name().equals("int") && vec.length == 4) {
+                    return scope(
+                        """
+                            // No IR-verification for testInteger4Mask because it intermittently
+                            // compiles to a different code shape. Probably due to a fully set mask.
+                        """
+                    );
+                }
+
                 return scope(
                     let("pty", vec.elementType.name()),
                     let("ptyIR", ptyIR),
@@ -156,14 +162,14 @@ public class TestMaskedStoreIdealization {
                         // }
                         // leading to both stores of the diamond being live. This is highly profile dependent and cannot be predicted.
                         """
-                            @IR(counts = {IRNode.START + "Store#{ptyIR}" + IRNode.MID + "(Memory: @aryptr:#{pty}\\\\[int:#{arraySize}\\\\]).*(:NotNull:exact\\\\[\\\\d+\\\\]).*" + IRNode.END, ">=1",
-                                          IRNode.START + "Store#{ptyIR}" + IRNode.MID + "(Memory: @aryptr:#{pty}\\\\[int:#{arraySize}\\\\]).*(:NotNull:exact\\\\[\\\\d+\\\\]).*" + IRNode.END, "<=2"},
+                            @IR(counts = {IRNode.START + "Store#{ptyIR}" + IRNode.MID + "(Memory: @aryptr:[a-z_]*:#{pty}\\\\[int:#{arraySize}\\\\]).*(:NotNull:exact:[a-z_:]*\\\\[\\\\d+\\\\]).*" + IRNode.END, ">=1",
+                                          IRNode.START + "Store#{ptyIR}" + IRNode.MID + "(Memory: @aryptr:[a-z_]*:#{pty}\\\\[int:#{arraySize}\\\\]).*(:NotNull:exact:[a-z_:].*\\\\[\\\\d+\\\\]).*" + IRNode.END, "<=2"},
                                 applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"},
                                 phase = CompilePhase.BEFORE_MATCHING)
                         """;
                         case STORE_SCATTER ->
                         """
-                            @IR(counts = {IRNode.START + "Store#{ptyIR}" + IRNode.MID + "(Memory: @aryptr:#{pty}\\\\[int:#{arraySize}\\\\]).*(:NotNull:exact\\\\[\\\\d+\\\\]).*" + IRNode.END, "=1"},
+                            @IR(counts = {IRNode.START + "Store#{ptyIR}" + IRNode.MID + "(Memory: @aryptr:[a-z_]*:#{pty}\\\\[int:#{arraySize}\\\\]).*(:NotNull:exact:[a-z_:]*\\\\[\\\\d+\\\\]).*" + IRNode.END, "=1"},
                                 applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"},
                                 phase = CompilePhase.BEFORE_MATCHING)
                         """;

@@ -79,6 +79,9 @@
 #include "utilities/population_count.hpp"
 #include "utilities/vmError.hpp"
 #include "windbghelp.hpp"
+#if defined(_M_ARM64)
+#include CPU_HEADER(pauth)
+#endif
 #if INCLUDE_JFR
 #include "jfr/jfrEvents.hpp"
 #include "jfr/support/jfrNativeLibraryLoadEvent.hpp"
@@ -2671,14 +2674,6 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
   return EXCEPTION_CONTINUE_EXECUTION;
 }
 
-static inline void report_error(Thread* t, DWORD exception_code,
-                                address addr, void* siginfo, void* context) {
-  VMError::report_and_die(t, exception_code, addr, siginfo, context);
-
-  // If UseOSErrorReporting, this will return here and save the error file
-  // somewhere where we can find it in the minidump.
-}
-
 //-----------------------------------------------------------------------------
 JNIEXPORT
 LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
@@ -2750,9 +2745,8 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
         // Fatal red zone violation.
         overflow_state->disable_stack_red_zone();
         tty->print_raw_cr("An unrecoverable stack overflow has occurred.");
-        report_error(t, exception_code, pc, exception_record,
-                      exceptionInfo->ContextRecord);
-        return EXCEPTION_CONTINUE_SEARCH;
+        VMError::report_and_die(t, exception_code, pc, exception_record,
+                                exceptionInfo->ContextRecord);
       }
     } else if (exception_code == EXCEPTION_ACCESS_VIOLATION) {
       if (in_java) {
@@ -2789,9 +2783,8 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
           address stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL);
           if (stub != nullptr) return Handle_Exception(exceptionInfo, stub);
         }
-        report_error(t, exception_code, pc, exception_record,
-                      exceptionInfo->ContextRecord);
-        return EXCEPTION_CONTINUE_SEARCH;
+        VMError::report_and_die(t, exception_code, pc, exception_record,
+                                exceptionInfo->ContextRecord);
       }
 
       // Special care for fast JNI field accessors.
@@ -2803,9 +2796,8 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
       }
 
       // Stack overflow or null pointer exception in native code.
-      report_error(t, exception_code, pc, exception_record,
-                   exceptionInfo->ContextRecord);
-      return EXCEPTION_CONTINUE_SEARCH;
+      VMError::report_and_die(t, exception_code, pc, exception_record,
+                              exceptionInfo->ContextRecord);
     } // /EXCEPTION_ACCESS_VIOLATION
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -2873,8 +2865,8 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
 #endif
 
   if (should_report_error) {
-    report_error(t, exception_code, pc, exception_record,
-                 exceptionInfo->ContextRecord);
+    VMError::report_and_die(t, exception_code, pc, exception_record,
+                            exceptionInfo->ContextRecord);
   }
 
   return EXCEPTION_CONTINUE_SEARCH;
@@ -2894,8 +2886,8 @@ LONG WINAPI topLevelUnhandledExceptionFilter(struct _EXCEPTION_POINTERS* excepti
     Thread* thread = Thread::current_or_null_safe();
 
     if (exceptionCode != EXCEPTION_BREAKPOINT) {
-      report_error(thread, exceptionCode, pc, exceptionInfo->ExceptionRecord,
-                  exceptionInfo->ContextRecord);
+      VMError::report_and_die(thread, exceptionCode, pc, exceptionInfo->ExceptionRecord,
+                              exceptionInfo->ContextRecord);
     }
   }
 
@@ -6648,6 +6640,19 @@ bool os::win32::platform_print_native_stack(outputStream* st, const void* contex
   int count = 0;
   address lastpc_internal = 0;
   while (count++ < StackPrintLimit) {
+#if defined(_M_ARM64)
+    // On Windows/ARM64, when the CPU is using authenticated pointers, return
+    // addresses are signed.  Unfortunately, `StackWalk64()` does not strip the
+    // pointer signature, so we need to do this ourself.  Since stripping the
+    // signature is an idempotent operation, we don't need to guard this call
+    // based on whether pointer authentication is enabled.
+    address original = (address)stk.AddrPC.Offset;
+    address stripped = pauth_strip_pointer(original);
+    stk.AddrPC.Offset = (DWORD64)(uintptr_t)stripped;
+
+    // We updated the stack frame's PC, so keep the context's PC in sync.
+    ctx.Pc = stk.AddrPC.Offset;
+#endif
     intptr_t* sp = (intptr_t*)stk.AddrStack.Offset;
     intptr_t* fp = (intptr_t*)stk.AddrFrame.Offset; // NOT necessarily the same as ctx.Rbp!
     address pc = (address)stk.AddrPC.Offset;
