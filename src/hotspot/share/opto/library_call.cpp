@@ -2978,10 +2978,9 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
   BasicType bt = alias_type->basic_type();
   if (bt != T_ILLEGAL) {
     if (adr_type->isa_aryptr() && adr_type->is_flat()) {
-      if (type == T_OBJECT) {
-        return false;
-      }
-    } else if (is_reference_type(bt) != (type == T_OBJECT)) {
+      return false;
+    }
+    if (is_reference_type(bt) != (type == T_OBJECT)) {
       // Don't intrinsify mismatched object accesses.
       return false;
     }
