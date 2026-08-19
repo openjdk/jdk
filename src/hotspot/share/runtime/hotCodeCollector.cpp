@@ -26,6 +26,7 @@
 
 #include "code/codeCache.hpp"
 #include "code/compiledIC.hpp"
+#include "code/nmethod.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
@@ -112,13 +113,16 @@ void HotCodeCollector::thread_entry(JavaThread* thread, TRAPS) {
 }
 
 void HotCodeCollector::do_grouping(Candidates& candidates) {
+  // Number of nmethods relocated (candidate + callees)
   int num_relocated = 0;
+  int num_skipped = 0;
+
+  bool hot_code_heap_exhausted = false;
 
   // Sort nmethods by increasing sample count so pop() returns the hottest
   candidates.sort();
 
-  while (candidates.has_candidates()) {
-
+  while (candidates.has_candidates() && !hot_code_heap_exhausted) {
     double percent_from_hot = candidates.get_hot_sample_percent();
     log_debug(hotcode)("Percentage of samples from hot code heap: %f", percent_from_hot);
     if (percent_from_hot >= HotCodeSamplePercent) {
@@ -132,27 +136,43 @@ void HotCodeCollector::do_grouping(Candidates& candidates) {
     MutexLocker ml_CompiledIC_lock(CompiledIC_lock, Mutex::_no_safepoint_check_flag);
     MutexLocker ml_CodeCache_lock(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
-    num_relocated += do_relocation(candidate, 0);
+    switch (do_relocation(candidate, 0, &num_relocated)) {
+      case RelocationResult::Success:
+        break;
+      case RelocationResult::NoSpaceInCodeHeap: {
+        CodeHeap* hot_heap = CodeCache::get_code_heap(CodeBlobType::MethodHot);
+        log_info(hotcode)("Not enough free space in MethodHot heap: %zu bytes free. "
+                          "Bailing out.",
+                          hot_heap->unallocated_capacity());
+        hot_code_heap_exhausted = true;
+        break;
+      }
+      case RelocationResult::NotRelocatable:
+        num_skipped++;
+        break;
+    }
   }
 
-  log_info(hotcode)("Collection done. Relocated %d nmethods to the MethodHot heap", num_relocated);
+  log_info(hotcode)("Collection done. Relocated %d nmethods to the MethodHot heap. Skipped %d.", num_relocated, num_skipped);
 }
 
-int HotCodeCollector::do_relocation(void* candidate, uint call_level) {
+HotCodeCollector::RelocationResult HotCodeCollector::do_relocation(void* candidate, uint call_level, int* num_relocated) {
+  assert(num_relocated != nullptr, "num_relocated must be provided");
+
   if (candidate == nullptr) {
-    return 0;
+    return RelocationResult::NotRelocatable;
   }
 
   // Verify that address still points to CodeBlob
   CodeBlob* blob = CodeCache::find_blob(candidate);
   if (blob == nullptr) {
-    return 0;
+    return RelocationResult::NotRelocatable;
   }
 
   // Verify that blob is nmethod
   nmethod* nm = blob->as_nmethod_or_null();
   if (nm == nullptr || nm->method() == nullptr) {
-    return 0;
+    return RelocationResult::NotRelocatable;
   }
 
   // The candidate may have been recompiled or already relocated.
@@ -161,34 +181,38 @@ int HotCodeCollector::do_relocation(void* candidate, uint call_level) {
 
   // Verify the nmethod is still valid for relocation
   if (nm == nullptr || !nm->is_in_use() || !nm->is_compiled_by_c2()) {
-    return 0;
+    return RelocationResult::NotRelocatable;
   }
-
-  // Verify code heap has space
-  if (CodeCache::get_code_heap(CodeBlobType::MethodHot)->unallocated_capacity() < (size_t)nm->size()) {
-    log_info(hotcode)("Not enough free space in MethodHot heap (%zd bytes) to relocate nm (%d bytes). Bailing out",
-      CodeCache::get_code_heap(CodeBlobType::MethodHot)->unallocated_capacity(), nm->size());
-    return 0;
-  }
-
-  // Number of nmethods relocated (candidate + callees)
-  int num_relocated = 0;
 
   // Pointer to nmethod in hot heap
   nmethod* hot_nm = nullptr;
 
   if (CodeCache::get_code_blob_type(nm) != CodeBlobType::MethodHot) {
+    if (!nm->is_relocatable()) {
+      return RelocationResult::NotRelocatable;
+    }
+
+    // Verify code heap has space
+    CodeHeap* hot_heap = CodeCache::get_code_heap(CodeBlobType::MethodHot);
+    if (hot_heap->unallocated_capacity() < (size_t)nm->size()) {
+      log_debug(hotcode)("Not enough free space in MethodHot heap (%zu bytes) to relocate nm (%d bytes).",
+        hot_heap->unallocated_capacity(), nm->size());
+      return RelocationResult::NoSpaceInCodeHeap;
+    }
+
     CompiledICLocker ic_locker(nm);
-    hot_nm = nm->relocate(CodeBlobType::MethodHot);
+    bool out_of_space = false;
+    hot_nm = nm->relocate(CodeBlobType::MethodHot, &out_of_space);
 
     if (hot_nm != nullptr) {
+      assert(CodeCache::get_code_blob_type(hot_nm) == CodeBlobType::MethodHot, "Must be relocated to HotCodeHeap");
       // Successfully relocated nmethod. Update counts and proceed to callee relocation.
       log_debug(hotcode)("Successful relocation: nmethod (%p), method (%s), call level (%d)", nm, hot_nm->method()->name_and_sig_as_C_string(), call_level);
-      num_relocated++;
+      (*num_relocated)++;
     } else {
       // Relocation failed so return and do not attempt to relocate callees
       log_debug(hotcode)("Failed relocation: nmethod (%p), call level (%d)", nm, call_level);
-      return 0;
+      return (out_of_space) ? RelocationResult::NoSpaceInCodeHeap : RelocationResult::NotRelocatable;
     }
   } else {
     // Skip relocation since already in hot heap, but still relocate callees
@@ -213,11 +237,13 @@ int HotCodeCollector::do_relocation(void* candidate, uint call_level) {
       address dest = ((CallRelocation*) reloc)->destination();
 
       // Recursively relocate callees
-      num_relocated += do_relocation(dest, call_level + 1);
+      if (do_relocation(dest, call_level + 1, num_relocated) == RelocationResult::NoSpaceInCodeHeap) {
+        return RelocationResult::NoSpaceInCodeHeap;
+      }
     }
   }
 
-  return num_relocated;
+  return RelocationResult::Success;
 }
 
 void HotCodeCollector::unregister_nmethod(nmethod* nm) {

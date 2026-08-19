@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@
 
 /*
  * @test OverflowCodeCacheTest
- * @bug 8059550 8279356 8326205
+ * @bug 8059550 8279356 8326205 8390662
  * @requires vm.compiler2.enabled
  * @summary testing of code cache segments overflow
  * @library /test/lib
@@ -171,18 +171,7 @@ public class OverflowCodeCacheTest {
     }
 
     CodeCacheConstraints getCodeCacheConstraints(final BlobType type) {
-        if (Long.valueOf(0).equals(WHITE_BOX.getVMFlag("HotCodeHeapSize"))) {
-            return new CodeCacheConstraints();
-        } else if (BlobType.MethodHot == type) {
-            // NonProfiledHeap is used when HotCodeHeap runs out of space.
-            return new CodeCacheConstraints() {
-                final int nonProfiledCount = WHITE_BOX.getCodeHeapEntries(BlobType.MethodNonProfiled.id).length;
-                @Override
-                void check() {
-                    Asserts.assertLT(nonProfiledCount, WHITE_BOX.getCodeHeapEntries(BlobType.MethodNonProfiled.id).length);
-                }
-            };
-        } else {
+        if (Boolean.TRUE.equals(WHITE_BOX.getBooleanVMFlag("HotCodeHeap")) && type != BlobType.MethodHot) {
             // HotCodeHeap should not be used when other heap runs out of space.
             return new CodeCacheConstraints() {
                 final int hotCount = WHITE_BOX.getCodeHeapEntries(BlobType.MethodHot.id).length;
@@ -192,5 +181,7 @@ public class OverflowCodeCacheTest {
                 }
             };
         }
+
+        return new CodeCacheConstraints();
     }
 }
