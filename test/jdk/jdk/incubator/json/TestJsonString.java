@@ -95,7 +95,7 @@ public class TestJsonString {
                 Arguments.of("\"\t", "Unescaped control code. Path: \"\". Location: line 0, position 1."),
                 Arguments.of("\"foo\\a \"", "Unrecognized escape sequence: \"\\\\u0061\". Path: \"\". Location: line 0, position 5."),
                 Arguments.of("\"foo\\u0\"", "Invalid Unicode escape sequence. Expected four hex digits. Path: \"\". Location: line 0, position 5."),
-                Arguments.of("\"foo\\uZZZZ\"", "Invalid Unicode escape sequence. 'Z' is not a hex digit. Path: \"\". Location: line 0, position 6."),
+                Arguments.of("\"foo\\uZZZZ\"", "Invalid Unicode escape sequence. '\\u005A' is not a hex digit. Path: \"\". Location: line 0, position 6."),
                 Arguments.of("\"foo ", "JSON String is not closed with a quotation mark. Path: \"\". Location: line 0, position 5."));
 
         @ParameterizedTest

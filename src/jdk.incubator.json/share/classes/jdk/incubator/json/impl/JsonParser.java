@@ -394,7 +394,7 @@ public final class JsonParser {
                         case 'a', 'b', 'c', 'd', 'e', 'f' -> c - 'a' + 10;
                         case 'A', 'B', 'C', 'D', 'E', 'F' -> c - 'A' + 10;
                         default -> throw failure(
-                                "Invalid Unicode escape sequence. '%c' is not a hex digit".formatted(c),
+                                "Invalid Unicode escape sequence. '\\u%04X' is not a hex digit".formatted((int)c),
                                 start, structural);
                     });
         }
