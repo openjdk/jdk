@@ -35,9 +35,10 @@ class ShenandoahDegenGC : public ShenandoahGC {
 private:
   const ShenandoahDegenPoint  _degen_point;
   bool _abbreviated;
+  const bool _do_old_gc_bootstrap;
 
 public:
-  ShenandoahDegenGC(ShenandoahDegenPoint degen_point, ShenandoahGeneration* generation);
+  ShenandoahDegenGC(ShenandoahDegenPoint degen_point, ShenandoahGeneration* generation, bool do_old_gc_bootstrap = false);
   bool collect(GCCause::Cause cause) override;
 
 private:

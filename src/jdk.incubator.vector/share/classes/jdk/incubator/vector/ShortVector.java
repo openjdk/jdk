@@ -4149,22 +4149,14 @@ public abstract sealed class ShortVector extends AbstractVector<Short>
 
     /**
      * {@inheritDoc} <!--workaround-->
-     *
-     * @implNote This method always throws
-     * {@code UnsupportedOperationException}, because there is no floating
-     * point type of the same size as {@code short}.  The return type
-     * of this method is arbitrarily designated as
-     * {@code Vector<?>}.  Future versions of this API may change the return
-     * type if additional floating point types become available.
      */
     @ForceInline
     @Override
     public final
-    Vector<?>
+    Float16Vector
     viewAsFloatingLanes() {
         LaneType flt = LaneType.SHORT.asFloating();
-        // asFloating() will throw UnsupportedOperationException for the unsupported type short
-        throw new AssertionError("Cannot reach here");
+        return (Float16Vector) asVectorRaw(flt);
     }
 
     // ================================================

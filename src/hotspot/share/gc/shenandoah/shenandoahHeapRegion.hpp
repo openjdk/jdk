@@ -224,8 +224,8 @@ public:
   RegionState state()              const { return _state.load_acquire(); }
   int  state_ordinal()             const { return region_state_to_ordinal(state()); }
 
-  void record_pin();
-  void record_unpin();
+  inline void record_pin(size_t value = 1);
+  inline void record_unpin(size_t value = 1);
   size_t pin_count() const;
 
 private:
@@ -280,6 +280,7 @@ private:
   // clears the self_fwd bits. Safety-net reset on region recycle.
   ShenandoahSharedFlag _has_self_forwards;
 
+  // This is only read/written by a gc worker to avoid unnecessary bitmap resets
   bool _needs_bitmap_reset;
 
 public:
@@ -447,7 +448,7 @@ public:
   // This is used by old-gen GC following concurrent marking to make old-gen HeapRegions parsable. Old regions must be
   // parsable because the mark bitmap is not reliable during the concurrent old mark.
   // Return true iff region is completely coalesced and filled.  Returns false if cancelled before task is complete.
-  bool oop_coalesce_and_fill(bool cancellable);
+  bool oop_coalesce_and_fill(bool cancellable, bool do_card_table_updates = true);
 
   // Invoke closure on every reference contained within the humongous object that spans this humongous
   // region if the reference is contained within a DIRTY card and the reference is no more than words following

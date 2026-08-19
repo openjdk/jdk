@@ -85,4 +85,23 @@ inline ClassLoaderData* ClassLoaderData::class_loader_data(oop loader) {
   return loader_data;
 }
 
+inline bool ClassLoaderData::try_claim(int claim) {
+  for (;;) {
+    int old_claim = AtomicAccess::load(&_claim);
+    if ((old_claim & claim) == claim) {
+      return false;
+    }
+    int new_claim = old_claim | claim;
+    if (AtomicAccess::cmpxchg(&_claim, old_claim, new_claim) == old_claim) {
+      return true;
+    }
+  }
+}
+
+inline void ClassLoaderData::oops_do(OopClosure* f, int claim_value, bool clear_mod_oops) {
+  if (claim_value == _claim_none || try_claim(claim_value)) {
+    oops_do_slow(f, clear_mod_oops);
+  }
+}
+
 #endif // SHARE_CLASSFILE_CLASSLOADERDATA_INLINE_HPP

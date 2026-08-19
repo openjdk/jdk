@@ -144,25 +144,14 @@ public class Log {
 
     /////////////////////////////////////////////////////////////////
 
-    /**
-     * Create new Log's only with <code>Log(out)</code> or with
-     * <code>Log(out,argsHandler)</code> constructors.
-     *
-     * @deprecated  Extending test class with Log is obsolete.
-     */
-    @Deprecated
-    protected Log() {
-        // Don't log exceptions from this method. It would just add unnecessary logs.
-        loggedExceptions.add("nsk.share.jdi.SerialExecutionDebugger.executeTests");
-    }
-
 
     /**
      * Incarnate new Log for the given <code>stream</code> and
      * for non-verbose mode.
      */
     public Log(PrintStream stream) {
-        this();
+        // Don't log exceptions from this method. It would just add unnecessary logs.
+        loggedExceptions.add("nsk.share.jdi.SerialExecutionDebugger.executeTests");
         out = stream;
     }
 
@@ -336,19 +325,6 @@ public class Log {
     }
 
     /////////////////////////////////////////////////////////////////
-
-    /**
-     * Redirect log to the given <code>stream</code>.
-     *
-     * @deprecated  This method is obsolete.
-     */
-    @Deprecated
-    protected synchronized void logTo(PrintStream stream) {
-        if (out != null) {
-            out.flush();
-        }
-        out = stream;
-    }
 
     /////////////////////////////////////////////////////////////////
 
