@@ -116,14 +116,14 @@ You can use the following options to customize the actions of any operation
 mode included in the `jar` command.
 
 [`-C`]{#option-C} *DIR*
-:   When used with the create operation mode, changes the specified directory
+:   When used with the create operation mode, changes to the specified directory
     and includes the *file* that follows in the command line.
 
     `jar` \[*OPTION* ...\] \[ \[`--release` *VERSION*\] \[`-C` *dir*\]
     *file*\]
 
-    When used in create operation mode, if the file is a directory then
-    it is processed recursively.
+    When used in create mode, if the file is a directory then it is
+    processed recursively.
 
     When used with the extract operation mode, specifies the destination directory
     where the JAR file will be extracted. Unlike with the create operation mode,
