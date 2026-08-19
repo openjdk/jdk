@@ -2976,7 +2976,7 @@ void CompiledEntrySignature::compute_calling_conventions(bool link_time) {
 
     // Limit the scalarized stack argument area to ensure that generated entry
     // points fit into nmethod's uint16_t *_entry_offset fields.
-    const int max_stack_slots = 128;
+    const int max_stack_slots = UseShenandoahGC ? 64 : 128;
     if (MAX2(_args_on_stack_cc, _args_on_stack_cc_ro) <= max_stack_slots) {
       return; // Success
     }
@@ -3404,8 +3404,6 @@ void AdapterHandlerEntry::remove_unshareable_info() {
 #endif // ASSERT
    _adapter_blob = nullptr;
    _linked = false;
-   _sig_cc = nullptr;
-   _sig_cc_ro = nullptr;
 }
 
 class CopyAdapterTableToArchive : StackObj {
@@ -3489,23 +3487,6 @@ void AdapterHandlerEntry::link() {
     if (_adapter_blob == nullptr) {
       log_warning(aot)("Failed to link AdapterHandlerEntry (fp=%s) to its code in the AOT code cache", _fingerprint->as_basic_args_string());
       generate_code = true;
-    }
-
-    if (get_sig_cc() == nullptr) {
-      // Calling conventions have to be regenerated at runtime and are accessed through method adapters,
-      // which are archived in the AOT code cache. If the adapters are not regenerated, the
-      // calling conventions should be regenerated here.
-      CompiledEntrySignature ces;
-      ces.initialize_from_fingerprint(_fingerprint);
-      if (ces.has_scalarized_args()) {
-        // Save a C heap allocated version of the scalarized signature and store it in the adapter
-        GrowableArray<SigEntry>* heap_sig = new (mtCode) GrowableArray<SigEntry>(ces.sig_cc()->length(), mtCode);
-        heap_sig->appendAll(ces.sig_cc());
-        set_sig_cc(heap_sig);
-        heap_sig = new (mtCode) GrowableArray<SigEntry>(ces.sig_cc_ro()->length(), mtCode);
-        heap_sig->appendAll(ces.sig_cc_ro());
-        set_sig_cc_ro(heap_sig);
-      }
     }
   } else {
     generate_code = true;
@@ -3598,6 +3579,8 @@ void AdapterHandlerEntry::metaspace_pointers_do(MetaspaceClosure* it) {
     lsh.cr();
   }
   it->push(&_fingerprint);
+  it->push(&_sig_cc);
+  it->push(&_sig_cc_ro);
 }
 
 AdapterHandlerEntry::~AdapterHandlerEntry() {
@@ -3887,15 +3870,7 @@ JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *current) )
        kptr2 = fr.next_monitor_in_interpreter_frame(kptr2) ) {
     if (kptr2->obj() != nullptr) {         // Avoid 'holes' in the monitor array
       BasicLock *lock = kptr2->lock();
-      if (UseObjectMonitorTable) {
-        buf[i] = (intptr_t)lock->object_monitor_cache();
-      }
-#ifdef ASSERT
-      else {
-        buf[i] = badDispHeaderOSR;
-      }
-#endif
-      i++;
+      buf[i++] = (intptr_t)lock->object_monitor_cache();
       buf[i++] = cast_from_oop<intptr_t>(kptr2->obj());
     }
   }

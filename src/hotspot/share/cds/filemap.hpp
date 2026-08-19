@@ -173,9 +173,6 @@ private:
   bool   _has_platform_or_app_classes;  // Archive contains app or platform classes
   char*  _requested_base_address;       // Archive relocation is not necessary if we map with this base address.
   char*  _mapped_base_address;          // Actual base address where archive is mapped.
-
-  bool   _use_optimized_module_handling;// No module-relation VM options were specified, so we can skip
-                                        // some expensive operations.
   bool   _has_aot_linked_classes;       // Was the CDS archive created with -XX:+AOTClassLinking
   bool   _aot_class_linking_value;      // The value of the AOTClassLinking variable when this archive was created
   bool   _has_full_module_graph;        // Does this CDS archive contain the full archived module graph?
