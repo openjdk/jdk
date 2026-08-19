@@ -3518,6 +3518,14 @@ bool PhaseMacroExpand::expand_macro_nodes() {
     pending_expansions_to_cleanup = 0;
   }
 
+  // Cleanup graph before expanding Allocate nodes.
+  if (pending_expansions_to_cleanup > 0) {
+    if (cleanup_graph(_igvn)) {
+      return true; // failing
+    }
+    pending_expansions_to_cleanup = 0;
+  }
+
   // All nodes except Allocate nodes are expanded now. There could be
   // new optimization opportunities (such as folding newly created
   // load from a just allocated object). Run IGVN.
