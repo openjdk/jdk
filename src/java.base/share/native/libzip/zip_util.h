@@ -33,12 +33,6 @@
 #include "jni.h"
 
 /*
- * Supported compression methods
- */
-#define STORED      0
-#define DEFLATED    8
-
-/*
  * Support for reading ZIP/JAR files. Some things worth noting:
  *
  * - Zip file entries larger than 2**32 bytes are not supported.
