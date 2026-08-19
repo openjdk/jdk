@@ -231,7 +231,7 @@ class BacktraceBuilder: public StackObj {
     new_head->obj_at_put(trace_mirrors_offset, new_mirrors());
     new_head->obj_at_put(trace_hidden_offset, nullptr);
 
-    _head    = new_head();
+    _head = new_head();
     _methods_and_bcis = new_methods();
     _mirrors = new_mirrors();
     _index = 0;
