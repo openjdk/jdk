@@ -5186,7 +5186,7 @@ void C2_MacroAssembler::vector_castF2X_avx(BasicType to_elem_bt, XMMRegister dst
 void C2_MacroAssembler::vector_castF2X_evex(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
                                             XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2, AddressLiteral float_sign_flip,
                                             Register rscratch, int vec_enc) {
-  [[maybe_unused]] int to_elem_sz = type2aelembytes(to_elem_bt);
+  DEBUG_ONLY(int to_elem_sz = type2aelembytes(to_elem_bt);)
   assert(to_elem_sz <= 4, "");
   vcvttps2dq(dst, src, vec_enc);
   vector_cast_fp_to_int_special_cases_evex(T_FLOAT, dst, src, xtmp1, xtmp2, ktmp1, ktmp2, rscratch, float_sign_flip, vec_enc);

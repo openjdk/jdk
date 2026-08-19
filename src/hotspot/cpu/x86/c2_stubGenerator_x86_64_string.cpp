@@ -220,7 +220,7 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
 
   assert(StubInfo::entry_count(stub_id) == 1, "sanity check");
   GrowableArray<address> extras;
-  [[maybe_unused]] const int expected_extra_count = 2 * NUMBER_OF_CASES;
+  DEBUG_ONLY(const int expected_extra_count = 2 * NUMBER_OF_CASES;)
   address start = stubgen->load_archive_data(stub_id, nullptr, &extras);
   if (start != nullptr) {
     assert(extras.length() == expected_extra_count,

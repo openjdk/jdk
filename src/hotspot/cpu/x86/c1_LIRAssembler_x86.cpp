@@ -2339,7 +2339,7 @@ void LIR_Assembler::emit_static_call_stub() {
     return;
   }
 
-  [[maybe_unused]] int start = __ offset();
+  DEBUG_ONLY(int start = __ offset();)
 
   // make sure that the displacement word of the call ends up word aligned
   __ align(BytesPerWord, __ offset() + NativeMovConstReg::instruction_size_rex + NativeCall::displacement_offset);
