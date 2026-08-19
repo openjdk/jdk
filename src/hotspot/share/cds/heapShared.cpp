@@ -35,7 +35,7 @@
 #include "cds/aotStreamedHeapLoader.hpp"
 #include "cds/aotStreamedHeapWriter.hpp"
 #include "cds/archiveBuilder.hpp"
-#include "cds/archiveUtils.hpp"
+#include "cds/archiveUtils.inline.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cdsEnumKlass.hpp"
@@ -67,6 +67,7 @@
 #include "oops/oopHandle.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "prims/resolvedMethodTable.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/globals_extension.hpp"
@@ -142,6 +143,8 @@ ArchivedKlassSubGraphInfoRecord* HeapShared::_run_time_special_subgraph;
 GrowableArrayCHeap<oop, mtClassShared>* HeapShared::_pending_roots = nullptr;
 OopHandle HeapShared::_scratch_basic_type_mirrors[T_VOID+1];
 MetaspaceObjToOopHandleTable* HeapShared::_scratch_objects_table = nullptr;
+static GrowableArray<int>* _dumptime_resolved_methods = nullptr;
+static Array<int>* _runtime_resolved_methods = nullptr;
 
 static bool is_subgraph_root_class_of(ArchivableStaticFieldInfo fields[], InstanceKlass* ik) {
   for (int i = 0; fields[i].valid(); i++) {
@@ -640,6 +643,7 @@ bool HeapShared::archive_object(oop obj, oop referrer, KlassSubGraphInfo* subgra
         m = RegeneratedClasses::maybe_get_regenerated_object(m);
         InstanceKlass* method_holder = m->method_holder();
         AOTArtifactFinder::add_cached_class(method_holder);
+        _dumptime_resolved_methods->append(HeapShared::append_root(obj));
       }
     }
   }
@@ -712,6 +716,7 @@ void HeapShared::remove_scratch_resolved_references(ConstantPool* src) {
 
 void HeapShared::init_dumping() {
   _scratch_objects_table = new (mtClass)MetaspaceObjToOopHandleTable();
+  _dumptime_resolved_methods = new (mtClassShared) GrowableArray<int>(100, mtClassShared);
   _pending_roots = new GrowableArrayCHeap<oop, mtClassShared>(500);
   _pending_roots->append(nullptr); // root index 0 represents a null oop
   DEBUG_ONLY(_dumptime_classes_with_cached_oops = new (mtClassShared)ArchivableKlassTable());
@@ -1024,6 +1029,10 @@ void HeapShared::write_heap(AOTMappedHeapInfo* mapped_heap_info, AOTStreamedHeap
   delete _pending_roots;
   _pending_roots = nullptr;
 
+  _runtime_resolved_methods = ArchiveUtils::archive_array(_dumptime_resolved_methods);
+  delete _dumptime_resolved_methods;
+  _dumptime_resolved_methods = nullptr;
+
   make_archived_object_cache_gc_safe();
 }
 
@@ -1313,7 +1322,25 @@ void HeapShared::write_subgraph_info_table() {
 void HeapShared::serialize_tables(SerializeClosure* soc) {
   _run_time_subgraph_info_table.serialize_header(soc);
   soc->do_ptr(&_run_time_special_subgraph);
+  soc->do_ptr(&_runtime_resolved_methods);
   DEBUG_ONLY(soc->do_ptr(&_runtime_classes_with_cached_oops));
+}
+
+void HeapShared::load_cached_resolved_methods() {
+  precond(CDSConfig::is_using_aot_linked_classes());
+  if (_runtime_resolved_methods != nullptr) {
+    JavaThread* current = JavaThread::current();
+    HandleMark hm(current);
+    for (int i = 0; i < _runtime_resolved_methods->length(); i++) {
+      int root_index = _runtime_resolved_methods->at(i);
+      Handle mem_name(current,  get_root(root_index, /*clear=*/true));
+      Method* method = java_lang_invoke_ResolvedMethodName::vmtarget(mem_name());
+      InstanceKlass* holder = method->method_holder();
+      holder->set_has_resolved_methods();
+      oop o = ResolvedMethodTable::add_method(method, mem_name);
+      precond(o == mem_name());
+    }
+  }
 }
 
 static void verify_the_heap(Klass* k, const char* which) {

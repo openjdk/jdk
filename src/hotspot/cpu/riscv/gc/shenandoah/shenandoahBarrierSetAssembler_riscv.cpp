@@ -219,8 +219,14 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
 
   // Test for in-cset
   if (is_strong) {
-    __ mv(t1, ShenandoahHeap::in_cset_fast_test_addr());
-    __ srli(t0, x10, ShenandoahHeapRegion::region_size_bytes_shift_jint());
+    if (AOTCodeCache::is_on_for_dump()) {
+      __ ld(t1, ExternalAddress(AOTRuntimeConstants::cset_base_address()));
+      __ lwu(t0, ExternalAddress(AOTRuntimeConstants::grain_shift_address()));
+      __ srl(t0, x10, t0);
+    } else {
+      __ mv(t1, ShenandoahHeap::in_cset_fast_test_addr());
+      __ srli(t0, x10, ShenandoahHeapRegion::region_size_bytes_shift_jint());
+    }
     __ add(t1, t1, t0);
     __ lbu(t1, Address(t1));
     __ test_bit(t0, t1, 0);
@@ -815,8 +821,14 @@ void ShenandoahBarrierStubC2::lrb(MacroAssembler& masm) {
     __ mv(_tmp2, _obj);
   }
 
-  __ mv(_tmp1, ShenandoahHeap::in_cset_fast_test_addr());
-  __ srli(_tmp2, _tmp2, ShenandoahHeapRegion::region_size_bytes_shift_jint());
+  if (AOTCodeCache::is_on_for_dump()) {
+    __ lwu(_tmp1, ExternalAddress(AOTRuntimeConstants::grain_shift_address()));
+    __ srl(_tmp2, _tmp2, _tmp1);
+    __ ld(_tmp1, ExternalAddress(AOTRuntimeConstants::cset_base_address()));
+  } else {
+    __ mv(_tmp1, ShenandoahHeap::in_cset_fast_test_addr());
+    __ srli(_tmp2, _tmp2, ShenandoahHeapRegion::region_size_bytes_shift_jint());
+  }
   __ add(_tmp1, _tmp1, _tmp2);
   __ lbu(_tmp1, Address(_tmp1, 0));
   maybe_far_jump_if_zero(masm, _tmp1);
@@ -854,7 +866,7 @@ void ShenandoahBarrierStubC2::lrb(MacroAssembler& masm) {
     // Save the result where needed. Narrow entries return narrowOop (32 bits)
     // we need to zero the upper 32 bits of x10.
     if (_narrow) {
-      __ zext_w(_obj, x10);
+      __ zext(_obj, x10, 32);
     } else {
       __ mv(_obj, x10);
     }
