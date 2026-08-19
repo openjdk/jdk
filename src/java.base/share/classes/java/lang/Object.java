@@ -59,14 +59,39 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *          even if access to the field has been granted.
  *
  *          <h2 id="Indistinguishability">Object Distinguishability</h2>
- *          Two value references appear to be exactly the same value
- *          whenever their corresponding field values are (recursively)
- *          exactly the same.  In that case the two references are
- *          said to be <em>indistinguishable</em>.  One reference can
- *          be substituted for the other with no change to program
+ *          As defined by the Java Language Specification 4.3.1
+ *          {@jls value-objects-4.3.1 Objects},
+ *          any Java object, whether a value object or identity
+ *          object, is reachable only via one or more references;
+ *          conversely every non-null reference refers to a Java
+ *          object.  Java variables contain references, and Java
+ *          expressions produce references.
+ *          <p>
+ *          Even if the JVM chooses to format a reference internally
+ *          as a flattened set of field values (which can happen
+ *          with value objects), those flattened field values are
+ *          made to behave exactly the same as a "classic" indirect
+ *          representation, a pointer to an object header with fields.
+ *          Such an indirect object is called a <em>buffered</em>
+ *          value (not a boxed one, since boxes might have observable
+ *          identity).  The JVM is free to buffer a flattened value's
+ *          fields into the heap, or else copy the flattened field
+ *          values out of a buffer, and all such representations are
+ *          fully indistinguishable from each other, as long as they
+ *          agree on the field values.  Such tricks of representation
+ *          shifting only work if the JVM makes it impossible to
+ *          observe when and where the tricks are being played.
+ *          <p>
+ *          Therefore, two references must appear to refer to exactly
+ *          the same value object whenever the corresponding object
+ *          field values are (recursively) exactly the same.  In this
+ *          case, the references are said to be <em>indistinguishable</em>.
+ *          Under such rules, one indistinguishable reference can be
+ *          substituted for the other with no change to program
  *          behavior.  For all purposes in the JVM, the referenced
  *          objects don't just appear to be the same value: they are
- *          the same.
+ *          the same, even as the JVM shifts them, below the virtual
+ *          metal, through many physical representations.
  *          <p>
  *          Value indistinguishability can be counter-intuitive when
  *          the two values were created independently.  After all,
@@ -85,10 +110,10 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *          difference between their field values (for immutable
  *          fields).  But for two value objects, the JVM provides no
  *          other way to make distinctions.  If they are fieldwise
- *          equivalent, the VM makes them look exactly the same.
+ *          equivalent, the JVM makes them look exactly the same.
  *          This is true whether they were created independently or
- *          not, and whether they are stored in one heap location or
- *          in many places on heap and stack.
+ *          not, and regardless of any invisible physical
+ *          representation tricks the JVM might be playing.
  *          <p>
  *          In short, unlike a regular identity object, a value has no
  *          object identity, leaving only its field states to carry
@@ -196,13 +221,13 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *          the same kind of tree-walking work twice, once for {@code
  *          ==} as a failed optimization, and once for {@code equals}
  *          to get the real answer.  Just call {@code equals} or
- *          {@link java.util.Objects::equals}.
+ *          {@link java.util.Objects#equals Objects.equals}.
  *          As a special case, if a value class documents a commitment
  *          never to override {@code Object.equals}, and in that case
  *          only, {@code ==} will be a shorthand for {@code equals}.
  *          There is no special accommodation to make {@code ==}
  *          easier to use, and
- *          <a href="https://openjdk.org/jeps/401#Non-Goals"> JEP 401
+ *          <a href="https://openjdk.org/jeps/401#Non-Goals">JEP 401
  *          explicitly disavows</a> fixing {@code ==} to make it align
  *          more closely with value objects or {@code equals}.
  *          <p>
@@ -223,8 +248,8 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *          to value objects would allow code to distinguish, over
  *          time-varying conditions, values which would otherwise be
  *          indistinguishable.  The JVM does not allow value objects
- *          to vary over time, as it could cause a particular value
- *          reference to change over time, even though it has not been
+ *          to vary over time, as it could cause a particular reference
+ *          to a value to change over time, even though it has not been
  *          updated by assignment.
  *          <p>
  *          As a rule, both identity and value objects are created by
@@ -238,10 +263,9 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *          immediately be indistinguishable from any previously
  *          created value object with those same field values.  Thus,
  *          object creation is subtly different between values and
- *          identity objects.  For more details, see
- *          {@jls value-objects-4.3.1 Objects} and
- *          {@jls value-objects-15.9.4 Run-Time Evaluation of Class
- *          Instance Creation Expressions}.
+ *          identity objects.  For more details, see the Java Language
+ *          Specification 15.9.4 {@jls value-objects-15.9.4 Run-Time
+ *          Evaluation of Class Instance Creation Expressions}.
  *          <p>
  *          This difference applies evenly across all kinds of object
  *          creation events: {@code new} expressions, creation by
