@@ -1075,7 +1075,7 @@ static void load_classes_from_loadable_descriptors_attribute(InstanceKlass *ik, 
       TempNewSymbol class_name = Signature::strip_envelope(sig);
       if (class_name == ik->name()) continue;
       log_info(class, preload)("Preloading of class %s during linking of class %s "
-                               "because of the class is listed in the LoadableDescriptors attribute",
+                               "because the class is listed in the LoadableDescriptors attribute",
                                sig->as_C_string(), ik->name()->as_C_string());
       oop loader = ik->class_loader();
       Klass* klass = nullptr;
@@ -1091,7 +1091,7 @@ static void load_classes_from_loadable_descriptors_attribute(InstanceKlass *ik, 
         klass = SystemDictionary::find_instance_or_array_klass(THREAD, class_name, Handle(THREAD, loader));
       } else {
         klass = SystemDictionary::resolve_or_null(class_name,
-                                                        Handle(THREAD, loader), THREAD);
+                                                  Handle(THREAD, loader), THREAD);
       }
       if (HAS_PENDING_EXCEPTION) {
         CLEAR_PENDING_EXCEPTION;

@@ -24,12 +24,13 @@
 
 /*
  * @test
- * @summary Handling of missing loadable descriptors.
+ * @summary Handling of missing classes referred to by loadable descriptors.
  * @bug 8390613
  * @requires vm.cds.supports.aot.class.linking
  * @library /test/lib
  * @enablePreview
  * @build LoadableDescriptorTest
+ * @comment Omit the Line class when creating app.jar
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar LoadableDescriptorApp Point
  * @run driver LoadableDescriptorTest -XX:+AOTClassLinking
  * @run driver LoadableDescriptorTest -XX:-AOTClassLinking
