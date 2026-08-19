@@ -59,11 +59,11 @@ also enables individual entries in a file to be signed so that their origin can
 be authenticated. A JAR file can be used as a class path entry, whether or not
 it's compressed.
 
-An archive becomes a modular JAR when you include a module descriptor,
+A JAR file becomes a modular JAR when you include a module descriptor,
 `module-info.class`, in the root of the given directories or in the root of
-the `.jar` archive. The following operations described in [Operation Modifiers
+the JAR itself. The following operations described in [Operation Modifiers
 Valid Only in Create and Update Modes] are valid only when creating or
-updating a modular jar or updating an existing non-modular jar:
+updating a modular JAR or updating an existing non-modular JAR:
 
 -   `--module-version`
 
@@ -117,10 +117,13 @@ mode included in the `jar` command.
 
 [`-C`]{#option-C} *DIR*
 :   When used with the create operation mode, changes the specified directory
-    and includes the *files* specified at the end of the command line.
+    and includes the *file* that follows in the command line.
 
     `jar` \[*OPTION* ...\] \[ \[`--release` *VERSION*\] \[`-C` *dir*\]
-    *files*\]
+    *file*\]
+
+    When used in create operation mode, if the file is a directory then
+    it is processed recursively.
 
     When used with the extract operation mode, specifies the destination directory
     where the JAR file will be extracted. Unlike with the create operation mode,
@@ -196,7 +199,7 @@ or `--create`) the update (`-u` or `--update` ) and the generate-index (`-i` or
 
 [`-k`]{#option--keep-old-files} or `--keep-old-files`
 :   Do not overwrite existing files.
-    If a Jar file entry with the same name exists in the target directory, the
+    If a JAR file entry with the same name exists in the target directory, the
     existing file will not be overwritten.
     As a result, if a file appears more than once in an archive, later copies will not overwrite
     earlier copies.
@@ -222,18 +225,18 @@ As a JAR file is based on ZIP format, it is possible to create a JAR file using 
 other than the `jar` command. The --validate option may be used to perform the following
 integrity checks against a JAR file:
 
-- That there are no duplicate Zip entry file names
-- Verify that the Zip entry file name:
+- That there are no duplicate ZIP entry file names
+- Verify that the ZIP entry file name:
     - is not an absolute path
     - the file name is not '.' or '..'
     - does not contain a backslash, '\\'
     - does not contain a drive letter
     - path element does not include '.' or '..
-- The API exported by a multi-release jar archive is consistent across all different release
+- The API exported by a multi-release JAR is consistent across all different release
   versions.
 
-The jar tool exits with a status of 0 if there were no integrity issues encountered and >0 if an
-error/warning occurred.
+The `jar` tool exits with a status of `0` if there were no integrity issues encountered and `> 0`
+if an error/warning occurred.
 
 When an integrity issue is reported, it will often require that the JAR file is re-created by the
 original source of the JAR file.
@@ -250,21 +253,22 @@ original source of the JAR file.
 
     >   `jar --create --date="2021-01-06T14:36:00+02:00" --file=classes.jar Foo.class Bar.class`
 
--   Create an archive, `classes.jar`, by using an existing manifest,
-    `mymanifest`, that contains all of the files in the directory `foo/`.
+-   Create a JAR file, `classes.jar`, using an existing manifest `mymanifest`,
+    and with all the files from the `foo` directory.
 
-    >   `jar --create --file classes.jar --manifest mymanifest -C foo/`
+    >   `jar --create --file classes.jar --manifest mymanifest -C foo/ .`
 
--   Create a modular JAR archive,`foo.jar`, where the module descriptor is
-    located in `classes/module-info.class`.
+-   Create a modular JAR file, `foo.jar`, whose module descriptor is located in the `foo/classes`
+    directory.
 
     >   `jar --create --file foo.jar --main-class com.foo.Main
-        --module-version 1.0 -C foo/classes resources`
+        --module-version 1.0 -C foo/classes module-info.class`
 
--   Update an existing non-modular JAR, `foo.jar`, to a modular JAR file.
+-   Update an existing non-modular JAR, `foo.jar`, to a modular JAR, with the `module-info.class`
+    located in the `resources` directory.
 
     >   `jar --update --file foo.jar --main-class com.foo.Main
-        --module-version 1.0 -C foo/module-info.class`
+        --module-version 1.0 -C resources module-info.class`
 
 -   Create a versioned or multi-release JAR, `foo.jar`, that places the files
     in the `classes` directory at the root of the JAR, and the files in the
@@ -276,7 +280,7 @@ original source of the JAR file.
     version of the `com.foo.NameProvider` class, this one containing JDK 10
     specific code and compiled for JDK 10.
 
-    Given this setup, create a multirelease JAR file `foo.jar` by running the
+    Given this setup, create a multi-release JAR file `foo.jar` by running the
     following command from the directory containing the directories `classes`
     and `classes-10` .
 
@@ -300,7 +304,7 @@ original source of the JAR file.
     ```
 
     As well as other information, the file `META-INF/MANIFEST.MF`, will contain
-    the following lines to indicate that this is a multirelease JAR file with
+    the following lines to indicate that this is a multi-release JAR file with
     an entry point of `com.foo.Hello`.
 
     ```
@@ -327,7 +331,8 @@ original source of the JAR file.
 
     >   `jar --create --file my.jar @classes.list`
 
-    If one or more entries in the arg file cannot be found then the jar command fails without creating the JAR file.
+    If one or more entries in the arg file cannot be found then the `jar` command fails without
+    creating the JAR file.
 
 -   Extract the JAR file `foo.jar` to `/tmp/bar/` directory:
 
