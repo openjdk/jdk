@@ -1695,7 +1695,7 @@ void LIRGenerator::do_StoreField(StoreField* x) {
       }
       // Load payload (if not empty) and set null marker (if not null-free)
       if (!vk->is_empty()) {
-        access_load_at(decorators, bt, value, LIR_OprFact::intConst(vk->payload_offset()), payload);
+        access_load_at(decorators, bt, value, LIR_OprFact::intConst(vk->payload_offset()), payload, nullptr, nullptr, vk);
       }
       if (!field->is_null_free()) {
         __ logical_or(payload, null_marker_mask(bt, field), payload);
@@ -1797,7 +1797,7 @@ LIR_Opr LIRGenerator::access_flat_array(bool is_load, LIRItem& array, LIRItem& i
     LIRItem elm_item(elm_resolved_addr, this);
     DecoratorSet decorators = IN_HEAP;
     if (is_load) {
-      access_load_at(decorators, bt, elm_item, LIR_OprFact::intConst(0), payload, nullptr, nullptr);
+      access_load_at(decorators, bt, elm_item, LIR_OprFact::intConst(0), payload, nullptr, nullptr, elem_klass);
       access_store_at(decorators, bt, obj_item, LIR_OprFact::intConst(elem_klass->payload_offset()), payload,
                       nullptr, nullptr, elem_klass);
       // Null check is performed in the caller
@@ -1808,7 +1808,8 @@ LIR_Opr LIRGenerator::access_flat_array(bool is_load, LIRItem& array, LIRItem& i
 
       if (null_free) {
         if (!elem_klass->is_empty()) {
-          access_load_at(decorators, bt, obj_item, LIR_OprFact::intConst(elem_klass->payload_offset()), payload);
+          access_load_at(decorators, bt, obj_item, LIR_OprFact::intConst(elem_klass->payload_offset()), payload,
+                         nullptr, nullptr, elem_klass);
         }
       } else {
         bool is_constant_null = obj_item.is_constant() && obj_item.value()->is_null_obj();
@@ -1821,7 +1822,8 @@ LIR_Opr LIRGenerator::access_flat_array(bool is_load, LIRItem& array, LIRItem& i
           }
           // Load payload (if not empty) and set null marker.
           if (!elem_klass->is_empty()) {
-            access_load_at(decorators, bt, obj_item, LIR_OprFact::intConst(elem_klass->payload_offset()), payload);
+            access_load_at(decorators, bt, obj_item, LIR_OprFact::intConst(elem_klass->payload_offset()), payload,
+                           nullptr, nullptr, elem_klass);
           }
           __ logical_or(payload, null_marker_mask(bt, elem_klass->null_marker_offset_in_payload()), payload);
           if (needs_null_check) {
@@ -2042,9 +2044,10 @@ void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
 
 void LIRGenerator::access_load_at(DecoratorSet decorators, BasicType type,
                                   LIRItem& base, LIR_Opr offset, LIR_Opr result,
-                                  CodeEmitInfo* patch_info, CodeEmitInfo* load_emit_info) {
+                                  CodeEmitInfo* patch_info, CodeEmitInfo* load_emit_info,
+                                  ciValueKlass* vk) {
   decorators |= ACCESS_READ;
-  LIRAccess access(this, decorators, base, offset, type, patch_info, load_emit_info);
+  LIRAccess access(this, decorators, base, offset, type, patch_info, load_emit_info, vk);
   if (access.is_raw()) {
     _barrier_set->BarrierSetC1::load_at(access, result);
   } else {
@@ -2196,7 +2199,7 @@ void LIRGenerator::do_LoadField(LoadField* x) {
     LIR_Opr payload = new_register((bt == T_LONG) ? bt : T_INT);
     access_load_at(decorators, bt, object, LIR_OprFact::intConst(field->offset_in_bytes()), payload,
                    // Make sure to emit an implicit null check
-                   info ? new CodeEmitInfo(info) : nullptr, info);
+                   info ? new CodeEmitInfo(info) : nullptr, info, vk);
 
     if (assert_null) {
       // Deoptimize on non-null because buffering requires the value class to be initialized
