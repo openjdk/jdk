@@ -33,6 +33,7 @@
 class ShenandoahHeap;
 class ShenandoahBarrierSetAssembler;
 class ShenandoahCardTable;
+class ShenandoahMarkingContext;
 
 class ShenandoahBarrierSet: public BarrierSet {
 private:
@@ -82,7 +83,7 @@ public:
   void print_on(outputStream* st) const override;
 
   template <class T>
-  inline void arraycopy_barrier(T* src, T* dst, size_t count);
+  inline void arraycopy_barrier(T* src, T* dst, size_t count, bool dest_uninit);
 
   // Support for optimizing compilers to call the barrier set on slow path allocations
   // that did not enter a TLAB. Used for e.g. ReduceInitialCardMarks to take any
@@ -92,9 +93,6 @@ public:
   void on_thread_destroy(Thread* thread) override;
   void on_thread_attach(Thread* thread) override;
   void on_thread_detach(Thread* thread) override;
-
-  static inline oop resolve_forwarded_not_null(oop p);
-  static inline oop resolve_forwarded(oop p);
 
   template <DecoratorSet decorators, typename T>
   inline void satb_barrier(T* field);
@@ -113,34 +111,32 @@ public:
   inline oop load_reference_barrier(DecoratorSet decorators, oop obj, T* load_addr);
 
   template <typename T>
-  inline oop oop_load(DecoratorSet decorators, T* addr);
-
-  template <typename T>
   inline oop oop_cmpxchg(DecoratorSet decorators, T* addr, oop compare_value, oop new_value);
 
   template <typename T>
   inline oop oop_xchg(DecoratorSet decorators, T* addr, oop new_value);
 
   template <DecoratorSet decorators, typename T>
-  void write_ref_field_post(T* field);
+  void write_ref_field_post(T* field, oop new_value);
 
   void write_ref_array(HeapWord* start, size_t count);
 
 private:
   template <bool IS_GENERATIONAL, class T>
   void arraycopy_marking(T* dst, size_t count);
+
+  template <bool IS_GENERATIONAL, class T>
+  bool is_above_tams(const ShenandoahMarkingContext* ctx, T* dst) const;
+
   template <class T>
   inline void arraycopy_evacuation(T* src, size_t count);
   template <class T>
   inline void arraycopy_update(T* src, size_t count);
 
-  inline void clone_evacuation(oop src);
-  inline void clone_update(oop src);
+  template <bool EVAC>
+  inline void clone_work(oop src);
 
-  template <class T, bool HAS_FWD, bool EVAC, bool ENQUEUE>
-  inline void arraycopy_work(T* src, size_t count);
-
-  inline bool need_bulk_update(HeapWord* dst);
+  inline bool need_bulk_update(HeapWord* dst) const;
 public:
   // Callbacks for runtime accesses.
   template <DecoratorSet decorators, typename BarrierSetT = ShenandoahBarrierSet>
@@ -148,6 +144,9 @@ public:
     typedef BarrierSet::AccessBarrier<decorators, BarrierSetT> Raw;
 
   private:
+    template <typename T>
+    static oop oop_load_common(DecoratorSet resolved_decorators, T* addr);
+
     template <typename T>
     static void oop_store_common(T* addr, oop value);
 
@@ -178,6 +177,10 @@ public:
 
     // Clone barrier support
     static void clone_in_heap(oop src, oop dst, size_t size);
+
+    // Valhalla support
+    static void value_copy_in_heap(const ValuePayload& src, const ValuePayload& dst);
+    static void value_store_null_in_heap(const ValuePayload& dst);
 
     // Support for concurrent roots evacuation, updating and weak roots clearing
     template <typename T>
