@@ -3460,7 +3460,7 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       break;
     }
     // Make sure expansion will not cause node limit to be exceeded.
-    if (C->check_node_count(macro_expansion_margin, "out of nodes before macro expansion")) {
+    if (C->check_node_count(macro_expansion_estimate, "out of nodes before macro expansion")) {
       return true;
     }
 
@@ -3541,7 +3541,7 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       continue;
     }
     // Make sure expansion will not cause node limit to be exceeded.
-    if (C->check_node_count(macro_expansion_margin, "out of nodes before macro expansion")) {
+    if (C->check_node_count(macro_expansion_estimate, "out of nodes before macro expansion")) {
       return true;
     }
     switch (n->class_id()) {
