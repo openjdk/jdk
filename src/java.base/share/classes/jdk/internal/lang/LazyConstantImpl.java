@@ -106,11 +106,14 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
     //                                                   +--> String
     //
     // The exception class is not stored as that would pin its class loader.
-    private Object state;
+    private volatile /* Use volatile access by default*/ Object state;
 
 
     private LazyConstantImpl(Supplier<? extends T> computingFunction) {
-        setRelease(STATUS_OFFSET, computingFunction);
+        // Use a direct volatile store because resolving Unsafe.putReferenceRelease during
+        // early bootstrap may initialize StaticProperty before system properties are
+        // available.
+        state = computingFunction;
     }
 
     // First tier: force-inline the initialized fast path and keep it minimal.
