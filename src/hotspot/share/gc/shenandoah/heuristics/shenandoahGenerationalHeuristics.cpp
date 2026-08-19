@@ -80,7 +80,8 @@ void ShenandoahGenerationalHeuristics::prepare_for_abbreviated_cycle() {
   adjust_reserves_for_abbreviated(heap);
 
   ShenandoahInPlacePromotionPlanner in_place_promotions(heap);
-  if (heap->age_census()->get_tenurable_bytes() != 0) {
+  ShenandoahAgeCensus* census = heap->age_census();
+  if (census->get_tenurable_bytes(census->effective_threshold()) != 0) {
     prepare_regions_for_promotion(in_place_promotions, heap, nullptr);
   }
   in_place_promotions.complete_planning();
@@ -364,15 +365,22 @@ size_t ShenandoahGenerationalHeuristics::select_aged_regions(ShenandoahInPlacePr
   return old_consumed;
 }
 
-size_t ShenandoahGenerationalHeuristics::compute_promotion_potential(ShenandoahGenerationalHeap* const heap, size_t tenurable_this_cycle) {
-  const uint tenuring_threshold = heap->age_census()->tenuring_threshold();
-  const size_t tenurable_next_cycle = heap->age_census()->get_tenurable_bytes(tenuring_threshold - 1);
+size_t ShenandoahGenerationalHeuristics::compute_promotion_potential(ShenandoahGenerationalHeap* const heap,
+                                                                     size_t tenurable_this_cycle) {
+  const uint effective_threshold = heap->age_census()->effective_threshold();
+  const uint next_threshold = effective_threshold > 0 ? effective_threshold - 1 : 0;
+  const size_t tenurable_next_cycle = heap->age_census()->get_tenurable_bytes(next_threshold);
+
+  // This assertion still holds even when tenurable_this_cycle is derived from in-place-promotions
+  // alone. The census cohort index is the region age plus the object's age, so every byte in a pip
+  // region is counted in the census.
   assert(tenurable_next_cycle >= tenurable_this_cycle,
          "Tenurable next cycle (" PROPERFMT ") should include tenurable this cycle (" PROPERFMT ")",
          PROPERFMTARGS(tenurable_next_cycle), PROPERFMTARGS(tenurable_this_cycle));
 
   // Don't include the bytes we expect to promote in this cycle in the next cycle
-  const size_t promo_potential = (tenurable_next_cycle - tenurable_this_cycle) * ShenandoahPromoEvacWaste;
+  const size_t remaining = tenurable_next_cycle > tenurable_this_cycle ? tenurable_next_cycle - tenurable_this_cycle : 0;
+  const size_t promo_potential = remaining * ShenandoahPromoEvacWaste;
   heap->old_generation()->set_promotion_potential(promo_potential);
   log_info(gc, ergo)("Promotion potential of aged regions with sufficient garbage: " PROPERFMT, PROPERFMTARGS(promo_potential));
   return tenurable_this_cycle * ShenandoahPromoEvacWaste;

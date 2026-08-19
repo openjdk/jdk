@@ -90,11 +90,10 @@ private:
   // being those of at least tenuring_threshold age that have lower garbage
   // density.
   //
-  // Updates promotion_potential and pad_for_promote_in_place fields
-  // of the heap. Returns bytes of live object memory in the preselected
-  // regions, which are marked in the preselected_regions() indicator
-  // array of the heap's collection set, which should be initialized
-  // to false.
+  // Updates promotion_potential field of the heap. Returns bytes of live object
+  // memory in the preselected regions, which are marked in the
+  // preselected_regions() indicator array of the heap's collection set, which
+  // should be initialized to false.
   size_t select_aged_regions(ShenandoahInPlacePromotionPlanner& in_place_promotions, const size_t old_promotion_reserve);
 
   // Select regions for inclusion in the collection set that are tenured, but do

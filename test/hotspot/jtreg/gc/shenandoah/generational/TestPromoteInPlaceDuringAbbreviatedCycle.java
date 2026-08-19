@@ -59,8 +59,33 @@ import jdk.test.whitebox.WhiteBox;
  *      -XX:ShenandoahImmediateThreshold=0
  *      -XX:ShenandoahGenerationalMinTenuringAge=1
  *      -XX:ShenandoahGenerationalMaxTenuringAge=1
+ *      -XX:-DisableExplicitGC -XX:+ExplicitGCInvokesConcurrent
  *      gc.shenandoah.generational.TestPromoteInPlaceDuringAbbreviatedCycle
  */
+
+ /*
+  * @test id=generational-always-tenure
+  * @bug 8390310
+  * @requires vm.gc.Shenandoah
+  * @summary Tests that promotion potential is correct when the always tenure
+  *          override is in effect (set by WB.fullGC())
+  * @library /testlibrary /test/lib /
+  * @build jdk.test.whitebox.WhiteBox
+  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+  * @run main/othervm -Xbootclasspath/a:.
+  *      -Xms512m -Xmx512m
+  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+  *      -XX:+UnlockExperimentalVMOptions
+  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+  *      -XX:ShenandoahGenerationalMinPIPUsage=1
+  *      -XX:ShenandoahOldGarbageThreshold=100
+  *      -XX:ShenandoahRegionSize=1m
+  *      -XX:ShenandoahImmediateThreshold=0
+  *      -XX:ShenandoahGenerationalMinTenuringAge=2
+  *      -XX:ShenandoahGenerationalMaxTenuringAge=2
+  *      -XX:-DisableExplicitGC -XX:+ExplicitGCInvokesConcurrent
+  *      gc.shenandoah.generational.TestPromoteInPlaceDuringAbbreviatedCycle always-tenure
+  */
 public class TestPromoteInPlaceDuringAbbreviatedCycle {
 
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
@@ -93,7 +118,9 @@ public class TestPromoteInPlaceDuringAbbreviatedCycle {
 
     private static boolean isIllegalPause(GarbageCollectionNotificationInfo info) {
       return info.getGcName().equals("Shenandoah Pauses")
-          && (info.getGcAction().contains("Update Refs") || info.getGcAction().contains("Degen"));
+          &&  (info.getGcAction().contains("Update Refs")
+            || info.getGcAction().contains("Degen")
+            || info.getGcAction().contains("Full"));
     }
 
     private static void subscribeToCollectorNotifications(NotificationListener listener) {
@@ -118,6 +145,7 @@ public class TestPromoteInPlaceDuringAbbreviatedCycle {
     }
 
     public static void main(String[] args) throws Exception {
+        boolean alwaysTenure = args.length > 0 && "always-tenure".equals(args[0]);
         humongous = new Object[HUMONGOUS_REFS];
         regular = new Object[REGULAR_REFS];
 
@@ -154,8 +182,13 @@ public class TestPromoteInPlaceDuringAbbreviatedCycle {
             garbage = new byte[GARBAGE_BYTES];
             garbage = null;
 
-            // Runs a concurrent global cycle and blocks until it completes.
-            System.gc();
+            if (alwaysTenure) {
+                // This also runs a global cycle, but with an effective tenuring threshold of zero
+                WB.fullGC();
+            } else {
+                // Runs a concurrent global cycle and blocks until it completes.
+                System.gc();
+            }
 
             // Both objects are in old, exit the test loop
             if (WB.isObjectInOldGen(humongous) && WB.isObjectInOldGen(regular)) {
