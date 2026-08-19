@@ -2363,11 +2363,10 @@ public class Resolve {
                           TypeSymbol c,
                           List<TypeSymbol> seen) {
         if (seen.contains(c)) {
-            // Degenerate case in which the class hierarchy rooted at c is
-            // cyclic (e.g. an erroneous "class C extends C"). The cycle
-            // itself is reported elsewhere (see Check.checkNonCyclicDecl);
-            // here we just need to stop walking it so that resolution
-            // terminates instead of recursing until the stack overflows.
+            /* In this case we have a class hierarchy that is cyclic (like "class C extends C").
+             * The cycle is reported elsewhere, Check::checkNonCyclicDecl, here we just need to detect the cycle
+             * and stop recursing so that resolution terminates.
+             */
             return typeNotFound;
         }
 
