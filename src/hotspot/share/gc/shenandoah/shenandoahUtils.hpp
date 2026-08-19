@@ -258,6 +258,7 @@ inline size_t shenandoah_safe_size_cast(const double d) {
   return static_cast<size_t>(d);
 }
 
+// Convert a possibly signed double into a smaller number with appropriate engineering units.
 struct ShenandoahSignedSize {
   const double value;
   const char* unit;
