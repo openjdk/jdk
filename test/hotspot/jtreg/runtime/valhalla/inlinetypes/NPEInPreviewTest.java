@@ -29,6 +29,7 @@
  *          java.base/jdk.internal.vm.annotation
  *          java.base/jdk.internal.misc
  * @library /test/lib
+ * @requires vm.flagless
  * @enablePreview
  * @compile -g NPEInPreviewTest.java
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+ShowCodeDetailsInExceptionMessages NPEInPreviewTest interpreter
@@ -100,6 +101,9 @@ public class NPEInPreviewTest {
 
     static void testActualNullFieldError() {
         String expectedMessage = "Cannot assign field \"nullVal\" because \"self\" is null";
+        // In C1 Xcomp mode, the field or klass isn't resolved, so no idea which this is.
+        String c1ExpectedMessage = "Cannot assign field \"nullVal\" because \"self\" is null or \"nullVal\" is a null " +
+                                   "restricted field and there's an attempt to store null in it";
 
         try {
             NPEInPreviewTest self = null;
@@ -107,7 +111,11 @@ public class NPEInPreviewTest {
         } catch (NullPointerException npe) {
             String message = npe.getMessage();
             System.out.println("*** " + message);
-            Asserts.assertEquals(expectedMessage, message);
+            if (c1Mode) {
+                Asserts.assertEquals(c1ExpectedMessage, message);
+            } else {
+                Asserts.assertEquals(expectedMessage, message);
+            }
         }
     }
 
