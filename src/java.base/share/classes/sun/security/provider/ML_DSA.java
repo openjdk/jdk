@@ -744,7 +744,7 @@ public class ML_DSA {
         int[][] aHatZ = integerMatrixAlloc(mlDsa_k, ML_DSA_N);
         matrixVectorPointwiseMultiply(aHatZ, aHat, sig.response());
 
-        int[][] t1Hat = vectorConstMul(1 << ML_DSA_D, pk.t1());
+        int[][] t1Hat = vectorConstMul(pk.t1());
         mlDsaVectorNtt(t1Hat);
 
         int[][] ct1 = integerMatrixAlloc(mlDsa_k, ML_DSA_N);
@@ -1536,13 +1536,13 @@ public class ML_DSA {
         }
     }
 
-    private int[][] vectorConstMul(int c, int[][] vec) {
+    // Multiplies t1 by 2^D. Since t1 < 2^10, the product is at most
+    // q - 1 and needs no reduction.
+    private int[][] vectorConstMul(int[][] vec) {
         int[][] res = integerMatrixAlloc(vec.length, vec[0].length);
         for (int i = 0; i < vec.length; i++) {
             for (int j = 0; j < vec[0].length; j++) {
-                // This is only used for 2^D * t1. Since t1 < 2^10,
-                // the product is at most q - 1 and needs no reduction.
-                res[i][j] = c * vec[i][j];
+                res[i][j] = (1 << ML_DSA_D) * vec[i][j];
             }
         }
         return res; // 0 <= res[i][j] < q
@@ -1624,9 +1624,9 @@ public class ML_DSA {
 
     // Reduces a product of two NTT coefficients modulo ML_DSA_Q to its
     // canonical representative. The product is bounded by ML_DSA_Q squared.
-    private static int barrettReduce(long value) {
-        long quotient = Math.multiplyHigh(value, BARRETT_MULTIPLIER) << 1;
-        long r = value - quotient * ML_DSA_Q;
+    private static int barrettReduce(long product) {
+        long quotient = Math.multiplyHigh(product, BARRETT_MULTIPLIER) << 1;
+        long r = product - quotient * ML_DSA_Q;
         r -= ML_DSA_Q & ~((r - ML_DSA_Q) >> 63);
         r += (r >> 63) & ML_DSA_Q;
         return (int) r;
