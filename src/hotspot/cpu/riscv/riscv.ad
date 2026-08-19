@@ -1067,6 +1067,7 @@ public:
 bool is_CAS(int opcode, bool maybe_volatile);
 
 // predicate controlling emit of fence before and after CAS
+bool cas_membar_elidable(int opcode);
 bool unnecessary_acquire(const Node *barrier);
 bool unnecessary_release(const Node *barrier);
 
@@ -1180,6 +1181,81 @@ bool is_CAS(int opcode, bool maybe_volatile)
 
 // predicates controlling emit of fence before and after CAS
 
+// Return true if the leading MemBarRelease and trailing MemBarAcquire around a
+// CAS-like LoadStore node may be elided, that is if the node is matched to a
+// single AMO instruction carrying both the aq and rl annotations:
+// amoswap/amoadd/amocas with .aqrl.
+//
+// Such an AMO is fully-ordered under RVWMO: PPO rule 5 orders it, including
+// its store, before every subsequent memory access, and PPO rule 6 orders
+// every preceding access before it. That subsumes both membars.
+//
+// An LR/SC based CAS is weaker. lr.aq + sc.rl only provides release-acquire,
+// not a sequentially consistent read-modify-write: the aq annotation sits on
+// the LR, so PPO rule 5 orders the *load* before later accesses, while the rl
+// annotation sits on the SC, so PPO rule 6 only orders earlier accesses before
+// the *store*. Nothing orders the SC's store before a subsequent load, so that
+// store may still be buffered when a load of an unrelated address is
+// satisfied.
+//
+// Emitting the membars does not supply that missing StoreLoad edge either,
+// since MemBarAcquire lowers to `fence r,rw`, whose predecessor set holds only
+// reads. Java code that needs the edge has to request it explicitly, and code
+// which fails to do so can lose a wakeup; see JDK-8387644. Elision is
+// nevertheless restricted here to the fully-ordered AMO forms, so that the
+// LR/SC path keeps the strength it had before the membars started being
+// elided. The leading MemBarRelease on its own would be safe to elide for
+// LR/SC too, since the rl annotation on the SC covers it by PPO rule 6, but
+// both are gated together to keep the two predicates symmetric.
+//
+// Whether the aq annotation is actually set is decided per node by
+// needs_acquiring_load_reserved(), which selects the *Acq instruct variants.
+// It holds for every opcode listed below on the paths reaching the two callers,
+// which assert as much.
+bool cas_membar_elidable(int opcode)
+{
+  assert(is_CAS(opcode, true), "expecting a compare and swap");
+
+  switch (opcode) {
+    // Always matched to the acquiring variant, hence amoswap/amoadd.aqrl.
+    case Op_GetAndSetI:
+    case Op_GetAndSetL:
+    case Op_GetAndSetP:
+    case Op_GetAndSetN:
+    case Op_GetAndAddI:
+    case Op_GetAndAddL:
+      return true;
+    // Matched to amocas.{w|d}.aqrl only when Zacas is available.
+    case Op_CompareAndSwapI:
+    case Op_CompareAndSwapL:
+    case Op_CompareAndSwapP:
+    case Op_CompareAndSwapN:
+    case Op_CompareAndExchangeI:
+    case Op_CompareAndExchangeL:
+    case Op_CompareAndExchangeP:
+    case Op_CompareAndExchangeN:
+    case Op_WeakCompareAndSwapI:
+    case Op_WeakCompareAndSwapL:
+    case Op_WeakCompareAndSwapP:
+    case Op_WeakCompareAndSwapN:
+      return UseZacas;
+    // Sub-word forms additionally require Zabha for amocas.{b|h}. Without it
+    // they are open coded around a narrow lr.w/sc.w or amocas.w, see
+    // cmpxchg_narrow_value(). The Zacas variant of that sequence can leave
+    // through its failure path having executed nothing but a plain lw, so it
+    // carries no ordering at all and its membars must be kept.
+    case Op_CompareAndSwapB:
+    case Op_CompareAndSwapS:
+    case Op_CompareAndExchangeB:
+    case Op_CompareAndExchangeS:
+    case Op_WeakCompareAndSwapB:
+    case Op_WeakCompareAndSwapS:
+      return UseZacas && UseZabha;
+    default:
+      return false;
+  }
+}
+
 bool unnecessary_acquire(const Node *barrier)
 {
   assert(barrier->is_MemBar(), "expecting a membar");
@@ -1189,7 +1265,10 @@ bool unnecessary_acquire(const Node *barrier)
   if (mb->trailing_load_store()) {
     Node* load_store = mb->in(MemBarNode::Precedent);
     assert(load_store->is_LoadStore(), "unexpected graph shape");
-    return is_CAS(load_store->Opcode(), true);
+    int opcode = load_store->Opcode();
+    assert(!cas_membar_elidable(opcode) || needs_acquiring_load_reserved(load_store),
+           "an elidable membar requires an acquiring AMO");
+    return cas_membar_elidable(opcode);
   }
 
   return false;
@@ -1214,7 +1293,10 @@ bool unnecessary_release(const Node *barrier)
     if (!mem->is_Store()) {
       assert(mem->is_LoadStore(), "");
       assert(trailing_mb->Opcode() == Op_MemBarAcquire, "");
-      return is_CAS(mem->Opcode(), true);
+      int opcode = mem->Opcode();
+      assert(!cas_membar_elidable(opcode) || needs_acquiring_load_reserved(mem),
+             "an elidable membar requires an acquiring AMO");
+      return cas_membar_elidable(opcode);
     }
   }
   return false;
