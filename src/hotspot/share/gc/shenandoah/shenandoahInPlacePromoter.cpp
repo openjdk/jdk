@@ -133,37 +133,32 @@ void ShenandoahInPlacePromotionPlanner::complete_planning() const {
 }
 
 void ShenandoahInPlacePromoter::maybe_promote_region(ShenandoahHeapRegion* r) const {
-  if (r->is_young() && r->is_active() && _heap->is_tenurable(r)) {
-    if (r->is_humongous_start()) {
-      // We promote humongous_start regions along with their affiliated continuations during evacuation rather than
-      // doing this work during a safepoint.  We cannot put humongous regions into the collection set because that
-      // triggers the load-reference barrier (LRB) to copy on reference fetch.
-      //
-      // Aged humongous continuation regions are handled with their start region.  If an aged regular region has
-      // more garbage than ShenandoahOldGarbageThreshold, we'll promote by evacuation.  If there is room for evacuation
-      // in this cycle, the region will be in the collection set.  If there is no room, the region will be promoted
-      // by evacuation in some future GC cycle.
+  if (r->is_regular_or_regular_pinned() && (r->get_top_before_promote() != nullptr)) {
+    // This region was scheduled for promotion. The promotion must be completed.
+    // The 'always_tenure' override flag set by WB.fullGC() is not carried over
+    // into the degenerated cycle so we cannot rely on is_tenurable again. We checked
+    // it when we made the plan for this region, that plan is authoritative.
+    assert(r->is_young() && r->is_active(), "Region scheduled for promotion must still be young and active");
+    promote(r);
+    return;
+  }
 
-      // We do not promote primitive arrays because there's no performance penalty keeping them in young.  When/if they
-      // become garbage, reclaiming the memory from young is much quicker and more efficient than reclaiming them from old.
-      oop obj = cast_to_oop(r->bottom());
-      if (!obj->is_typeArray()) {
-        promote_humongous(r);
-      }
-    } else if (r->is_regular_or_regular_pinned() && (r->get_top_before_promote() != nullptr)) {
-      // Likewise, we cannot put promote-in-place regions into the collection set because that would also trigger
-      // the LRB to copy on reference fetch.
-      //
-      // If an aged regular region has received allocations during the current cycle, we do not promote because the
-      // newly allocated objects do not have appropriate age; this region's age will be reset to zero at end of cycle.
-      promote(r);
+  if (r->is_young() && r->is_active() && r->is_humongous_start() && _heap->is_tenurable(r)) {
+    // We promote humongous_start regions along with their affiliated continuations during evacuation rather than
+    // doing this work during a safepoint.  We cannot put humongous regions into the collection set because that
+    // triggers the load-reference barrier (LRB) to copy on reference fetch.
+    //
+    // Aged humongous continuation regions are handled with their start region.  If an aged regular region has
+    // more garbage than ShenandoahOldGarbageThreshold, we'll promote by evacuation.  If there is room for evacuation
+    // in this cycle, the region will be in the collection set.  If there is no room, the region will be promoted
+    // by evacuation in some future GC cycle.
+
+    // We do not promote primitive arrays because there's no performance penalty keeping them in young.  When/if they
+    // become garbage, reclaiming the memory from young is much quicker and more efficient than reclaiming them from old.
+    oop obj = cast_to_oop(r->bottom());
+    if (!obj->is_typeArray()) {
+      promote_humongous(r);
     }
-  } else if (r->get_top_before_promote() != nullptr) {
-    LogTarget(Warning, gc) lt;
-    LogStream ls(lt);
-    ls.print_cr("Not promoting region already scheduled for it");
-    r->print_on(&ls);
-    fatal("Did not promote region: %zu as expected", r->index());
   }
 }
 
@@ -185,7 +180,6 @@ void ShenandoahInPlacePromoter::promote(ShenandoahHeapRegion* region) const {
            "Region %zu has too much garbage for promotion", region->index());
     assert(region->is_young(), "Only young regions can be promoted");
     assert(region->is_regular_or_regular_pinned(), "Use different service to promote humongous regions");
-    assert(_heap->is_tenurable(region), "Only promote regions that are sufficiently aged");
     assert(region->get_top_before_promote() == tams, "Region %zu has been used for allocations before promotion", region->index());
   }
 
