@@ -48,7 +48,7 @@ import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(1)
+@Fork(value = 1, jvmArgsAppend = {"--enable-preview"})
 @State(Scope.Thread)
 public class HashMapToArray {
 
