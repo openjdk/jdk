@@ -174,7 +174,8 @@ public class Utils {
             }
         }
 
-        // StringBuilder is populated upon completion
+        // List is populated upon completion. It contains the path
+        // to the root in reverse order.
         private void toPath(int offset, List<String> pathParts) {
             // Walk past starting char and white space
             offset = walkWhitespace(offset - 1);
