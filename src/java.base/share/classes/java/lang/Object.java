@@ -60,7 +60,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *
  *          <h2 id="Indistinguishability">Object Distinguishability</h2>
  *          Two value references appear to be exactly the same value
- *          whenever their corresponding field values are likewise
+ *          whenever their corresponding field values are (recursively)
  *          exactly the same.  In that case the two references are
  *          said to be <em>indistinguishable</em>.  One reference can
  *          be substituted for the other with no change to program
@@ -135,15 +135,20 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *          values.  Such walks are usually short.  And since values
  *          are inherently acyclic, the recursion always bottoms out.
  *          In its general structure, a value object is the root of a
- *          tree of value objects, whose leaves are either primitives
- *          or identity objects.
+ *          tree of value objects, whose leaves can be any mix of primitives
+ *          and identity objects.
+ *          The tree can also contain {@code null}s; those can be
+ *          thought of as either a kind of internal tree structure, or
+ *          as a third kind of leaf.
  *          <p>
  *          The {@code ==} operator on a deeply nested value has similar
  *          costs to a call to {@link Object#equals} on a deeply nested
  *          tree of {@link java.util.ArrayList ArrayList}s.
  *          Both can require significant machine resources for
  *          tree walking, because a large tree may need to be
- *          walked, to prove there are no differences.
+ *          walked, to prove there are no differences.  See also
+ *          <a href="https://openjdk.org/jeps/401#Comparing-value-objects">
+ *          JEP 401, "Comparing value objects" section</a>.
  *          <p>
  *          The authoritative definition of the equality operator,
  *          including its connection to indistinguishability,
@@ -153,6 +158,53 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *          been extended to detect indistinguishability; see JVMS
  *          section 6.5, <i>if_acmp&lt;cond&gt;</i>, in the JEP 401 preview
  *          specifications.
+ *          <p>
+ *          The {@code ==} operator supplies the behavior of the
+ *          default {@link Object#equals} method.  As a consequence,
+ *          that built-in method can sometimes be used, without any
+ *          override, for comparing the structure of two values.  This
+ *          affects the design of value classes.  An author of a new
+ *          value class must determine, within the class's own
+ *          semantic rules, whether two <em>distinguishable</em>
+ *          instances of that class ({@code x!=y}) should ever be
+ *          regarded as <em>interchangeable</em> (semantically
+ *          equivalent, {@code x.equals(y)}).  For example, does the
+ *          class contain an array (or string or list) whose identity
+ *          is insignificant?  If so, the class must override the
+ *          {@code equals} and {@code hashCode} methods, providing
+ *          logic which discounts non-semantic representational
+ *          differences (such as the identity of an array, string, or
+ *          list).  But for some simple classes, if values are at all
+ *          distinguishable (if they have any differing leaf items),
+ *          then {@code equals} should return {@code false}; it should
+ *          never hide any representational differences.  In that
+ *          case, the class author should let the JVM do what it
+ *          already knows how to do, and refrain from overriding the
+ *          {@code equals} and {@code hashCode} methods.
+ *          <p>
+ *          These considerations (of whether to override {@code
+ *          equals} or not) affect clients as well as authors of value
+ *          classes.  There is a long-standing practice to precede an
+ *          {@code equals} call comparing two identity objects with
+ *          {@code ==}, as a cheap way to sometimes avoid calling the
+ *          more expensive {@code equals} method.  (It looks like
+ *          {@code x==y || x.equals(y)}.)  But users of value classes
+ *          should know that using {@code ==} first is <em>not</em>
+ *          likely to be much cheaper than calling {@code equals}.
+ *          The idiom created for identity objects is not incorrect
+ *          for value objects, but you are likely to ask the JVM to do
+ *          the same kind of tree-walking work twice, once for {@code
+ *          ==} as a failed optimization, and once for {@code equals}
+ *          to get the real answer.  Just call {@code equals} or
+ *          {@link java.util.Objects::equals}.
+ *          As a special case, if a value class documents a commitment
+ *          never to override {@code Object.equals}, and in that case
+ *          only, {@code ==} will be a shorthand for {@code equals}.
+ *          There is no special accommodation to make {@code ==}
+ *          easier to use, and
+ *          <a href="https://openjdk.org/jeps/401#Non-Goals"> JEP 401
+ *          explicitly disavows</a> fixing {@code ==} to make it align
+ *          more closely with value objects or {@code equals}.
  *          <p>
  *          Equality methods and hash methods come in pairs, so the
  *          similarity (for values) between the two forms of equality
