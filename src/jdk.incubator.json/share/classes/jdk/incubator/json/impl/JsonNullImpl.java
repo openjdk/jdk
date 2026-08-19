@@ -30,7 +30,7 @@ import jdk.incubator.json.JsonNull;
 /**
  * JsonNull implementation class
  */
-public final class JsonNullImpl implements JsonNull, JsonValueImpl {
+public final class JsonNullImpl implements JsonNull, JsonValueSupport {
 
     private final int offset;
     private final char[] doc;

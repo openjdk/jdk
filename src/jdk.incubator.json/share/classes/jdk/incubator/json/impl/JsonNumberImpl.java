@@ -31,7 +31,7 @@ import jdk.incubator.json.JsonNumber;
 /**
  * JsonNumber implementation class
  */
-public final class JsonNumberImpl implements JsonNumber, JsonValueImpl {
+public final class JsonNumberImpl implements JsonNumber, JsonValueSupport {
 
     private final char[] doc;
     private final int startOffset;

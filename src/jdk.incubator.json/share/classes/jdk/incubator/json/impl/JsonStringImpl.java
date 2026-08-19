@@ -30,7 +30,7 @@ import jdk.incubator.json.JsonString;
 /**
  * JsonString implementation class
  */
-public final class JsonStringImpl implements JsonString, JsonValueImpl {
+public final class JsonStringImpl implements JsonString, JsonValueSupport {
 
     private final char[] doc;
     private final int startOffset;
