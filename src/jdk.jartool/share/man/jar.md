@@ -59,7 +59,7 @@ also enables individual entries in a file to be signed so that their origin can
 be authenticated. A JAR file can be used as a class path entry, whether or not
 it's compressed.
 
-A JAR file becomes a modular JAR when you include a module descriptor,
+A JAR file becomes a modular JAR file when you include a module descriptor,
 `module-info.class`, in the root of the given directories or in the root of
 the JAR itself. The following operations described in [Operation Modifiers
 Valid Only in Create and Update Modes] are valid only when creating or
