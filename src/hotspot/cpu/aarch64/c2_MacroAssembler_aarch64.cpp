@@ -2436,7 +2436,8 @@ void C2_MacroAssembler::neon_reverse_bytes(FloatRegister dst, FloatRegister src,
 void C2_MacroAssembler::neon_rearrange_hsd(FloatRegister dst, FloatRegister src,
                                            FloatRegister shuffle, FloatRegister tmp,
                                            BasicType bt, bool isQ) {
-  assert_different_registers(dst, src, shuffle, tmp);
+  assert_different_registers(dst, src, tmp);
+  assert_different_registers(shuffle, tmp);
   SIMD_Arrangement size1 = isQ ? T16B : T8B;
   SIMD_Arrangement size2 = esize2arrangement((uint)type2aelembytes(bt), isQ);
 
