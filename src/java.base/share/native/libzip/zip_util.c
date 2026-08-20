@@ -59,11 +59,6 @@
 #define MDESTROY(lock) JVM_RawMonitorDestroy(lock)
 
 #define CENSIZE(cen) (CENHDR + CENNAM(cen) + CENEXT(cen) + CENCOM(cen))
-/*
- * Index representing end of hash chain
- */
-#define ZIP_ENDCHAIN ((jint)-1)
-
 
 static jzfile *zfiles = 0;      /* currently open zip files */
 static void *zfiles_lock = 0;

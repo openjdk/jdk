@@ -146,6 +146,11 @@
 #define DEFLATED    8
 
 /*
+ * Index representing end of hash chain
+ */
+#define ZIP_ENDCHAIN ((jint) -1)
+
+/*
  * Support for reading ZIP/JAR files. Some things worth noting:
  *
  * - Zip file entries larger than 2**32 bytes are not supported.
