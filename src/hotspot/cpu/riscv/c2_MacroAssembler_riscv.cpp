@@ -1156,10 +1156,9 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
 
     if (!AvoidUnalignedAccesses) {
       const int chars_per_word = wordSize / haystack_chr_size;
-      subi(t0, haystack_len, chars_per_word);
-      bltz(t0, DO1_SHORT);
-
       subi(result_tmp, haystack_len, chars_per_word);
+      bltz(result_tmp, DO1_SHORT); // note: ch1 (t0) holds the broadcast needle, must not be clobbered here
+
       slli(tmp3, result_tmp, haystack_chr_shift);
       add(haystack, haystack, tmp3);
       neg(hlen_neg, tmp3);
@@ -1188,8 +1187,8 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
       addi(hlen_neg, hlen_neg, wordSize);
       bltz(hlen_neg, CH1_LOOP);
 
-      mv(t0, wordSize);
-      blt(hlen_neg, t0, DO1_TAIL);
+      mv(tmp3, wordSize); // note: ch1 (t0) still holds the broadcast needle used by compute_match_mask
+      blt(hlen_neg, tmp3, DO1_TAIL);
       j(NOMATCH);
 
       bind(DO1_TAIL);
