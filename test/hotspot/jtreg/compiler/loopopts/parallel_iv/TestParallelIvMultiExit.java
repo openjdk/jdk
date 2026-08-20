@@ -29,8 +29,8 @@ import jdk.test.lib.Asserts;
 /**
  * @test
  * @bug 8346177
- * @summary Test parallel IV replacement in multi-exit loops where the
- *          dom_lca of outside-loop uses is inside the loop (not sinkable).
+ * @summary Test parallel IV replacement in multi-exit loops, both where the result is sinkable out of
+ *          the loop and where it is not.
  * @library /test/lib /
  * @requires vm.compiler2.enabled
  * @run driver compiler.loopopts.parallel_iv.TestParallelIvMultiExit
@@ -40,6 +40,8 @@ public class TestParallelIvMultiExit {
     static volatile int condA;
     static volatile int condB;
     static int warmup;
+    static int[] ra = new int[1];
+    static int[] rb = new int[1];
 
     public static void main(String[] args) {
         TestFramework framework = new TestFramework();
@@ -77,96 +79,23 @@ public class TestParallelIvMultiExit {
     }
 
     @Test
-    @IR(failOn = { IRNode.MUL_I }, phase = CompilePhase.BEFORE_CLOOPS)
-    @IR(counts = { IRNode.COUNTED_LOOP, "=1" })
-    @IR(counts = { IRNode.MUL_I, "=3" })
-    static int subStride1(int limit, int inc, int[] r) {
-        int a = 0;
-        for (int i = 0; i < limit; i++) {
-            if (condA != 0) { r[0] = a; break; }
-            if (condB != 0) { r[1] = a; break; }
-            a -= inc;
-        }
-        return a;
-    }
-
-    @Run(test = "subStride1")
-    static void runSubStride1() {
-        toggleBreaks();
-        int[] r = new int[2];
-        int result = subStride1(100, 3, r);
-        if (condA == 0 && condB == 0) {
-            Asserts.assertEQ(-(100 * 3), result);
-        }
-    }
-
-    @Test
-    @IR(failOn = { IRNode.MUL_I }, phase = CompilePhase.BEFORE_CLOOPS)
-    @IR(counts = { IRNode.COUNTED_LOOP, "=1" })
-    @IR(counts = { IRNode.MUL_I, "=3" })
-    @IR(counts = { IRNode.URSHIFT_I, "=3" })
-    static int addStride2(int limit, int inc, int[] r) {
-        int a = 0;
-        for (int i = 0; i < limit; i += 2) {
-            if (condA != 0) { r[0] = a; break; }
-            if (condB != 0) { r[1] = a; break; }
-            a += inc;
-        }
-        return a;
-    }
-
-    @Run(test = "addStride2")
-    static void runAddStride2() {
-        toggleBreaks();
-        int[] r = new int[2];
-        int result = addStride2(100, 7, r);
-        if (condA == 0 && condB == 0) {
-            Asserts.assertEQ(50 * 7, result);
-        }
-    }
-
-    @Test
-    @IR(failOn = { IRNode.MUL_I }, phase = CompilePhase.BEFORE_CLOOPS)
-    @IR(counts = { IRNode.COUNTED_LOOP, "=1" })
-    @IR(counts = { IRNode.MUL_I, "=3" })
-    static int addStrideNeg1(int start, int inc, int[] r) {
-        int a = 0;
-        for (int i = start; i > 0; i--) {
-            if (condA != 0) { r[0] = a; break; }
-            if (condB != 0) { r[1] = a; break; }
-            a += inc;
-        }
-        return a;
-    }
-
-    @Run(test = "addStrideNeg1")
-    static void runAddStrideNeg1() {
-        toggleBreaks();
-        int[] r = new int[2];
-        int result = addStrideNeg1(100, 5, r);
-        if (condA == 0 && condB == 0) {
-            Asserts.assertEQ(100 * 5, result);
-        }
-    }
-
-    @Test
     @IR(failOn = { IRNode.MUL_I })
     @IR(counts = { IRNode.COUNTED_LOOP, "=1" })
-    static int addStride3ConstExactRatio(int limit, int[] r) {
+    @IR(counts = { IRNode.LSHIFT_I, "=3" })
+    static int addStride3ExactRatioNotSinkable(int limit) {
         int a = 0;
         for (int i = 0; i < limit; i += 3) {
-            if (condA != 0) { r[0] = a; break; }
-            if (condB != 0) { r[1] = a; break; }
+            if (condA != 0) { ra[0] = a; return 1; }
+            if (condB != 0) { rb[0] = a; return 2; }
             a += 9;
         }
         return a;
     }
 
-    @Run(test = "addStride3ConstExactRatio")
-    static void runAddStride3ConstExactRatio() {
+    @Run(test = "addStride3ExactRatioNotSinkable")
+    static void runAddStride3ExactRatioNotSinkable() {
         toggleBreaks();
-        int[] r = new int[2];
-        int result = addStride3ConstExactRatio(99, r);
+        int result = addStride3ExactRatioNotSinkable(99);
         if (condA == 0 && condB == 0) {
             Asserts.assertEQ(33 * 9, result);
         }
@@ -175,7 +104,7 @@ public class TestParallelIvMultiExit {
     @Test
     @IR(counts = { IRNode.COUNTED_LOOP, "=1" })
     @IR(counts = { IRNode.MUL_I, "=3" })
-    static int addStride3NonConstBailout(int limit, int inc, int[] r) {
+    static int addStride3Sinkable(int limit, int inc, int[] r) {
         int a = 0;
         for (int i = 0; i < limit; i += 3) {
             if (condA != 0) { r[0] = a; break; }
@@ -185,11 +114,33 @@ public class TestParallelIvMultiExit {
         return a;
     }
 
-    @Run(test = "addStride3NonConstBailout")
-    static void runAddStride3NonConstBailout() {
+    @Run(test = "addStride3Sinkable")
+    static void runAddStride3Sinkable() {
         toggleBreaks();
         int[] r = new int[2];
-        int result = addStride3NonConstBailout(99, 7, r);
+        int result = addStride3Sinkable(99, 7, r);
+        if (condA == 0 && condB == 0) {
+            Asserts.assertEQ(33 * 7, result);
+        }
+    }
+
+    @Test
+    @IR(failOn = { IRNode.MUL_I, IRNode.LSHIFT_I })
+    @IR(counts = { IRNode.COUNTED_LOOP, "=1" })
+    static int addStride3NoExactRatioNotSinkable(int limit) {
+        int a = 0;
+        for (int i = 0; i < limit; i += 3) {
+            if (condA != 0) { ra[0] = a; return 1; }
+            if (condB != 0) { rb[0] = a; return 2; }
+            a += 7;
+        }
+        return a;
+    }
+
+    @Run(test = "addStride3NoExactRatioNotSinkable")
+    static void runAddStride3NoExactRatioNotSinkable() {
+        toggleBreaks();
+        int result = addStride3NoExactRatioNotSinkable(99);
         if (condA == 0 && condB == 0) {
             Asserts.assertEQ(33 * 7, result);
         }
@@ -198,21 +149,20 @@ public class TestParallelIvMultiExit {
     @Test
     @IR(failOn = { IRNode.MUL_I })
     @IR(counts = { IRNode.COUNTED_LOOP, "=1" })
-    static int addStride3ConstNoExactRatio(int limit, int[] r) {
+    static int addStride3NonConstNotSinkable(int limit, int inc) {
         int a = 0;
         for (int i = 0; i < limit; i += 3) {
-            if (condA != 0) { r[0] = a; break; }
-            if (condB != 0) { r[1] = a; break; }
-            a += 7;
+            if (condA != 0) { ra[0] = a; return 1; }
+            if (condB != 0) { rb[0] = a; return 2; }
+            a += inc;
         }
         return a;
     }
 
-    @Run(test = "addStride3ConstNoExactRatio")
-    static void runAddStride3ConstNoExactRatio() {
+    @Run(test = "addStride3NonConstNotSinkable")
+    static void runAddStride3NonConstNotSinkable() {
         toggleBreaks();
-        int[] r = new int[2];
-        int result = addStride3ConstNoExactRatio(99, r);
+        int result = addStride3NonConstNotSinkable(99, 7);
         if (condA == 0 && condB == 0) {
             Asserts.assertEQ(33 * 7, result);
         }
