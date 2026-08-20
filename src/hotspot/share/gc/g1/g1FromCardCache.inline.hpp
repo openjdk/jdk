@@ -27,22 +27,22 @@
 
 #include "gc/g1/g1FromCardCache.hpp"
 
-bool G1FromCardCache::contains_or_add(uintptr_t source_card, uint cardset_fcc_id) {
+bool G1FromCardCache::contains_or_add(uintptr_t source_card, uint cardset_id) {
   if (_num_cardsets == 0 || _source_card != source_card) {
     _source_card = source_card;
     _num_cardsets = 0;
   }
 
   for (uint i = 0; i < _num_cardsets; i++) {
-    if (_cardset_ids[i] == cardset_fcc_id) {
+    if (_cardset_ids[i] == cardset_id) {
       return true;
     }
   }
 
-  assert(_num_cardsets < MaxCardsets, "source card has too many destination cardsets");
+  assert(_num_cardsets < MaxNumCardsets, "source card has too many destination cardsets");
 
-  if (_num_cardsets < MaxCardsets) {
-    _cardset_ids[_num_cardsets++] = cardset_fcc_id;
+  if (_num_cardsets < MaxNumCardsets) {
+    _cardset_ids[_num_cardsets++] = cardset_id;
   }
   return false;
 }

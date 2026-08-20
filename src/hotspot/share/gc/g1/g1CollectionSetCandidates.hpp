@@ -64,7 +64,6 @@ using G1CSetCandidateGroupIterator = GrowableArrayIterator<G1CollectionSetCandid
 // regions in the group. We do not have track to cross-region references for regions that are in the
 // same group saving memory.
 class G1CSetCandidateGroup : public CHeapObj<mtGCCardSet>{
-  static const uint InvalidFCCId = UINT_MAX;
   GrowableArray<G1CollectionSetCandidateInfo> _candidates;
 
   G1CardSetMemoryManager _card_set_mm;
@@ -74,36 +73,20 @@ class G1CSetCandidateGroup : public CHeapObj<mtGCCardSet>{
 
   size_t _reclaimable_bytes;
   double _gc_efficiency;
-
-  // The FromCardCache id is the first member region's index. It is unique
-  // among installed groups and bounded by the maximum number of regions.
-  uint _fcc_id;
+  uint _group_id;
 
 public:
-  // The _group_id identifies a candidate group when printing, making it easier
-  // to associate regions with their assigned G1CSetCandidateGroup, if any.
-  // Special values for the id:
-  // * id 0 is reserved for regions that do not have a remembered set.
-  // * id 1 is reserved for the group containing all young regions.
-  // * other ids are handed out incrementally, starting from InitialId.
-  static const uint NoRemSetId = 0;
-  static const uint YoungRegionId = 1;
-  static const uint InitialId = 2;
+  // The group id identifies a candidate group in logging and in the
+  // FromCardCache.
+  static constexpr uint NoGroupId = 0;
+  static constexpr uint YoungId = NoGroupId + 1;
+  static constexpr uint FirstNonYoungId = YoungId + 1;
+  static constexpr uint InvalidId = UINT_MAX;
 
-private:
-  const uint _group_id;
-  static uint _next_group_id;
-
-public:
   G1CSetCandidateGroup();
   G1CSetCandidateGroup(G1CardSetConfiguration* config, G1MonotonicArenaFreePool* card_set_freelist_pool, uint group_id);
   ~G1CSetCandidateGroup() {
     assert(length() == 0, "post condition!");
-  }
-
-  uint fcc_id() const {
-    assert(_fcc_id != InvalidFCCId, "group must be non-empty");
-    return _fcc_id;
   }
 
   void add(G1HeapRegion* hr);
@@ -150,10 +133,9 @@ public:
     return _candidates.end();
   }
 
-  uint group_id() const { return _group_id; }
-
-  static void reset_next_group_id() {
-    _next_group_id = InitialId;
+  uint group_id() const {
+    assert(_group_id != InvalidId, "group must have an assigned id");
+    return _group_id;
   }
 };
 

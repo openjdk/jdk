@@ -33,11 +33,11 @@
 class G1FromCardCache {
   // GCCardSizeInBytes is constrained to NOT_LP64(512) LP64_ONLY(1024).
   static constexpr uint MaxCardSizeInBytes = NOT_LP64(512) LP64_ONLY(1024);
-  static constexpr uint MaxCardsets = MaxCardSizeInBytes / sizeof(narrowOop);
+  static constexpr uint MaxNumCardsets = MaxCardSizeInBytes / sizeof(narrowOop);
 
   uintptr_t _source_card;
   uint _num_cardsets;
-  uint _cardset_ids[MaxCardsets];
+  uint _cardset_ids[MaxNumCardsets];
 
   NONCOPYABLE(G1FromCardCache);
 
@@ -54,7 +54,7 @@ public:
 
   // Returns true if cardset_fcc_id has already been encountered while
   // scanning source_card. Otherwise, records the id and returns false.
-  inline bool contains_or_add(uintptr_t source_card, uint cardset_fcc_id);
+  inline bool contains_or_add(uintptr_t source_card, uint cardset_id);
 };
 
 #endif // SHARE_GC_G1_G1FROMCARDCACHE_HPP

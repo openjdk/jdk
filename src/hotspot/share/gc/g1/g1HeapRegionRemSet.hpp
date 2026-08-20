@@ -29,12 +29,12 @@
 #include "gc/g1/g1CardSetMemory.hpp"
 #include "gc/g1/g1CodeRootSet.hpp"
 #include "gc/g1/g1CollectionSetCandidates.hpp"
-#include "gc/g1/g1FromCardCache.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/bitMap.hpp"
 
 class G1CardSetMemoryManager;
+class G1FromCardCache;
 class G1CSetCandidateGroup;
 class outputStream;
 

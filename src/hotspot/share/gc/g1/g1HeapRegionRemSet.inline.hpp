@@ -127,7 +127,7 @@ void G1HeapRegionRemSet::add_reference(OopOrNarrowOopStar from, G1FromCardCache&
 
   uintptr_t from_card = uintptr_t(from) >> CardTable::card_shift();
 
-  if (fcc.contains_or_add(from_card, cset_group()->fcc_id())) {
+  if (fcc.contains_or_add(from_card, cset_group()->group_id())) {
     // We can't check whether the card is in the remembered set - the card container
     // may be coarsened just now.
     return;

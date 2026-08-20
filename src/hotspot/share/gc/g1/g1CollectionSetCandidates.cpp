@@ -27,26 +27,25 @@
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "utilities/growableArray.hpp"
 
-uint G1CSetCandidateGroup::_next_group_id = G1CSetCandidateGroup::InitialId;
-
 G1CSetCandidateGroup::G1CSetCandidateGroup(G1CardSetConfiguration* config, G1MonotonicArenaFreePool* card_set_freelist_pool, uint group_id) :
   _candidates(4, mtGCCardSet),
   _card_set_mm(config, card_set_freelist_pool),
   _card_set(config, &_card_set_mm),
   _reclaimable_bytes(size_t(0)),
   _gc_efficiency(0.0),
-  _fcc_id(InvalidFCCId),
   _group_id(group_id)
 { }
 
 G1CSetCandidateGroup::G1CSetCandidateGroup() :
-  G1CSetCandidateGroup(G1CollectedHeap::heap()->card_set_config(), G1CollectedHeap::heap()->card_set_freelist_pool(), _next_group_id++)
+  G1CSetCandidateGroup(G1CollectedHeap::heap()->card_set_config(), G1CollectedHeap::heap()->card_set_freelist_pool(), InvalidId)
 { }
 
 void G1CSetCandidateGroup::add(G1HeapRegion* hr) {
-  if (_candidates.is_empty()) {
-    precond(_fcc_id == InvalidFCCId);
-    _fcc_id = hr->hrm_index();
+  precond(hr->is_young() == (_group_id == YoungId));
+
+  if (_candidates.is_empty() && _group_id != YoungId) {
+    precond(_group_id == InvalidId);
+    _group_id = FirstNonYoungId + hr->hrm_index();
   }
   G1CollectionSetCandidateInfo c(hr);
   _candidates.append(c);
@@ -79,7 +78,9 @@ void G1CSetCandidateGroup::clear(bool uninstall_group_cardset) {
     }
   }
   _candidates.clear();
-  _fcc_id = InvalidFCCId;
+  if (_group_id != YoungId) {
+    _group_id = InvalidId;
+  }
 }
 
 void G1CSetCandidateGroup::clear_card_set() {
@@ -278,7 +279,6 @@ void G1CollectionSetCandidates::set_candidates_from_marking(GrowableArrayCHeap<G
   // the same Mixed GC.
   uint group_limit = p->calc_min_old_cset_length(num_candidates);
 
-  G1CSetCandidateGroup::reset_next_group_id();
   G1CSetCandidateGroup* current = nullptr;
 
   current = new G1CSetCandidateGroup();
