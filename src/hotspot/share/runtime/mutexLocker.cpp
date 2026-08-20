@@ -283,7 +283,7 @@ void mutex_init() {
   MUTEX_DEFN(JfrMsg_lock                     , PaddedMonitor, event);
   MUTEX_DEFN(JfrStacktrace_lock              , PaddedMutex  , event);
   MUTEX_DEFN(SuspendedThreadTask_lock        , PaddedMutex  , nosafepoint);
-  MUTEX_DEFN(JfrEpochShift_lock              , PaddedMutex  , event);
+  MUTEX_DEFN(JfrEpochShift_lock              , PaddedMutex  , service-5); // lets keep this just above event
 #endif
 
   MUTEX_DEFN(ContinuationRelativize_lock     , PaddedMonitor, nosafepoint-3);
