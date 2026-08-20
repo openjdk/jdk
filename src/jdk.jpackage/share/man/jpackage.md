@@ -255,6 +255,9 @@ The `jpackage` tool will take as input a Java application and a Java run-time im
 :   A comma separated list of paths to files and/or directories
     to add to the application payload.
 
+    --app-content is processed before --app-resources, independent
+    of command-line order.
+
     This option can be used more than once.
 
     macOS note: The value should be a directory with the "Resources"
@@ -262,6 +265,22 @@ The `jpackage` tool will take as input a Java application and a Java run-time im
                 "Contents" directory of the application bundle). Otherwise,
                 jpackage may produce invalid application bundle which may fail
                 code signing and/or notarization.
+
+<a id="option-app-resources">`--app-resources` *additional-resources*</a>
+
+:   A list of paths to files and/or directories separated by the
+    platform-specific path separator (`:` on Linux and macOS; `;` on Windows),
+    to add to the application resources directory.
+
+    A colliding file from --app-resources replaces
+    one from --app-content.
+
+    This option can be used more than once.
+
+    Destination:
+        Windows: application image root
+        Linux: application image lib directory
+        macOS: Contents/Resources
 
 ### Options for creating the application launcher(s):
 

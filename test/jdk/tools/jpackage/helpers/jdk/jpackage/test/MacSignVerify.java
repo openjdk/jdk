@@ -226,7 +226,7 @@ public final class MacSignVerify {
             }).reduce(Consumer::andThen).orElseThrow().accept(result.getOutput().iterator());
         } else if (!sudo && result.getOutput().stream().findFirst().filter(str -> {
             // By some reason /usr/bin/codesign command fails for some installed bundles.
-            // It is known to fail for some AppContentTest test cases and all FileAssociationsTest test cases.
+            // It is known to fail for some AppContentAndResourcesTest test cases and all FileAssociationsTest test cases.
             // Rerunning the command with "sudo" works, though.
             return str.equals(String.format("%s: Permission denied", path));
         }).isPresent()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,7 @@ import jdk.jpackage.test.TKit;
  * <ul>
  * <li>input directory (--input)
  * <li>app content (--app-content)
+ * <li>app resources (--app-resources)
  * <ul>
  */
 public class AppImageFillOrderTest {
@@ -122,6 +123,48 @@ public class AppImageFillOrderTest {
 
         TKit.trace(String.format("Parse [%s] file...", AppImageFile.getPathInAppImage(outputBundle)));
         AppImageFile.load(outputBundle);
+    }
+
+    @Test
+    @Parameter("false")
+    @Parameter("true")
+    public void testAppResourcesOverrideAppContent(boolean resourcesFirst) throws IOException {
+        var cmd = createJPackage().setFakeRuntime();
+
+        var appLayout = APP_IMAGE_LAYOUT.resolveAt(cmd.outputBundle());
+        var outputFile = appLayout.resourcesDirectory().resolve("shared.txt");
+
+        // Create --app-content input
+        var appContentRoot = TKit.createTempDirectory("app-content");
+        Path appContentFile;
+        if (TKit.isOSX()) {
+            appContentFile = Files.createDirectory(appContentRoot.resolve("Resources"))
+                .resolve("shared.txt");
+        } else {
+            appContentFile = appContentRoot.resolve("shared.txt");
+        }
+        TKit.createTextFile(appContentFile, List.of("app-content"));
+
+        // Create --app-resources input
+        var appResourcesFile = TKit.createTempDirectory("app-resources").resolve("shared.txt");
+        TKit.createTextFile(appResourcesFile, List.of("app-resources"));
+
+        var appContentArg = TKit.isOSX() ? appContentFile.getParent() : appContentFile;
+        var appResourcesArg = appResourcesFile;
+
+        if (resourcesFirst) {
+            cmd.addArguments("--app-resources", appResourcesArg);
+            cmd.addArguments("--app-content", appContentArg);
+        } else {
+            cmd.addArguments("--app-content", appContentArg);
+            cmd.addArguments("--app-resources", appResourcesArg);
+        }
+
+        cmd.executeAndAssertImageCreated();
+
+        // --app-resources must overwrite --app-content
+        TKit.assertSameFileContent(appResourcesFile, outputFile);
+        TKit.assertMismatchFileContent(appContentFile, outputFile);
     }
 
     private static void test(JPackageCommand cmd, AppImageOverlay... overlays) {
