@@ -346,7 +346,7 @@ void ShenandoahMark::mark_through_ref(T *p, ShenandoahObjToScanQueue* q, Shenand
       shenandoah_assert_marked(p, obj);
       if (GENERATION == GLOBAL && heap->has_affiliation(p, OLD_GENERATION) && heap->has_affiliation(obj, YOUNG_GENERATION)) {
         // Mark card as dirty because GLOBAL marking finds interesting pointer.
-        heap->old_generation()->mark_card_as_dirty((HeapWord*)p);
+        heap->old_generation()->mark_card_as_dirty(p);
       }
     } else if (old_q != nullptr) {
       // Young mark, bootstrapping old_q or concurrent with old_q marking.
@@ -354,7 +354,7 @@ void ShenandoahMark::mark_through_ref(T *p, ShenandoahObjToScanQueue* q, Shenand
       shenandoah_assert_marked(p, obj);
     } else if (GENERATION == OLD) {
       // Old mark, found a young pointer.
-      if (heap->is_in(p)) {
+      if (heap->is_in_reserved(p)) {
         assert(heap->has_affiliation(obj, YOUNG_GENERATION), "Expected young object.");
         heap->old_generation()->mark_card_as_dirty(p);
       }
