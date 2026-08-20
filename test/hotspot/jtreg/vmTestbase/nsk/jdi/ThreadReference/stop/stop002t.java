@@ -149,6 +149,7 @@ public class stop002t {
                 } else {
                     log.complain("TEST #4: Failed to throw expected exception and " +
                                  "failed to throw debugger side OpaqueFrameException");
+                    return Consts.TEST_FAILED;
                 }
             } else {
                 log.complain("TEST #4: Failed to throw expected exception");
