@@ -66,9 +66,6 @@ public final class JsonParser {
         final int startOffset;
         final Map<String, JsonValue> members = new LinkedHashMap<>();
         String name;
-        int nameStart;
-        int nameLine;
-        int nameLineStart;
         ObjectState state = ObjectState.NAME_OR_END;
 
         ObjectContainer(int startOffset) {
@@ -87,7 +84,7 @@ public final class JsonParser {
 
     // Object/Array container states for the next possible input
     private enum ObjectState {
-        NAME_OR_END, COLON, VALUE, COMMA_OR_END
+        NAME_OR_END, VALUE, COMMA_OR_END
     }
     private enum ArrayState {
         VALUE_OR_END, COMMA_OR_END
@@ -170,21 +167,20 @@ public final class JsonParser {
                     return;
                 }
 
-                oc.nameStart = offset;
-                oc.name = parseName(oc.startOffset);
-                oc.nameLine = line;
-                oc.nameLineStart = lineStart;
-                oc.state = ObjectState.COLON;
-            }
-            case COLON -> {
+                int nameStart = offset;
+                var name = parseName(oc.startOffset);
+                int nameLine = line;
+                int nameLineStart = lineStart;
+
                 skipWhitespaces();
                 if (!charEquals(':')) {
                     throw structureFailure(oc.startOffset, "Expected a colon after the member name");
                 }
-                if (oc.members.containsKey(oc.name)) {
-                    throw failure(oc.nameStart, oc.nameLine, oc.nameLineStart,
-                        "Duplicate member name: \"%s\" was already parsed".formatted(Utils.escape(oc.name)), oc.startOffset, true);
+                if (oc.members.containsKey(name)) {
+                    throw failure(nameStart, nameLine, nameLineStart,
+                        "Duplicate member name: \"%s\" was already parsed".formatted(Utils.escape(name)), oc.startOffset, true);
                 }
+                oc.name = name;
                 oc.state = ObjectState.VALUE;
             }
             case VALUE -> parseValue();
@@ -203,12 +199,7 @@ public final class JsonParser {
 
     private void finishObject(ObjectContainer oc) {
         containers.pop();
-
-        var jo = oc.members.isEmpty()
-            ? new JsonObjectImpl(Map.of(), oc.startOffset, doc)
-            : new JsonObjectImpl(oc.members, oc.startOffset, doc);
-
-        finishValue(jo, oc.startOffset);
+        finishValue(new JsonObjectImpl(oc.members, oc.startOffset, doc), oc.startOffset);
     }
 
     /*
@@ -244,12 +235,7 @@ public final class JsonParser {
 
     private void finishArray(ArrayContainer ac) {
         containers.pop();
-
-        var ja = ac.elements.isEmpty()
-            ? new JsonArrayImpl(List.of(), ac.startOffset, doc)
-            : new JsonArrayImpl(ac.elements, ac.startOffset, doc);
-
-        finishValue(ja, ac.startOffset);
+        finishValue(new JsonArrayImpl(ac.elements, ac.startOffset, doc), ac.startOffset);
     }
 
     // Place the value as either the root, an object member, or an array element.
