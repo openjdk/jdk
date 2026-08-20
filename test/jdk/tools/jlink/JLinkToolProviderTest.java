@@ -25,7 +25,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Phaser;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.IntStream;
@@ -49,13 +49,11 @@ public class JLinkToolProviderTest {
     }
 
     private static void checkConcurrentAccess(int count) throws Exception {
-        CountDownLatch readyLatch = new CountDownLatch(count);
-        CountDownLatch startLatch = new CountDownLatch(1);
+        Phaser startBarrier = new Phaser(count);
 
         try (var executor = Executors.newFixedThreadPool(count)) {
             List<Future<String>> futures = IntStream.range(0, count).mapToObj(idx -> executor.submit(() -> {
-                readyLatch.countDown();
-                startLatch.await();
+                startBarrier.arriveAndAwaitAdvance();
 
                 StringWriter out = new StringWriter();
                 StringWriter err = new StringWriter();
@@ -64,12 +62,6 @@ public class JLinkToolProviderTest {
                         "--output", Path.of(".").resolve("image-" + idx).toString());
                 return code + ":" + out.toString().trim() + ":" + err.toString().trim();
             })).toList();
-
-            try {
-                readyLatch.await();
-            } finally {
-                startLatch.countDown();
-            }
 
             for (Future<String> future : futures) {
                 String result = future.get();
@@ -83,6 +75,6 @@ public class JLinkToolProviderTest {
     public static void main(String[] args) throws Exception {
         checkJlinkOptions("--help");
         checkJlinkOptions("--list-plugins");
-        checkConcurrentAccess(3);
+        checkConcurrentAccess(Math.max(2, Runtime.getRuntime().availableProcessors() / 4));
     }
 }
