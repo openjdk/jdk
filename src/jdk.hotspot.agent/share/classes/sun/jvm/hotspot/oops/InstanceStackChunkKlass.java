@@ -53,9 +53,7 @@ public class InstanceStackChunkKlass extends InstanceKlass {
   }
 
   public long getObjectSize(Oop object) {
-    // Mirrors InstanceStackChunkKlass::oop_size in the VM: the fixed part, the
-    // copied stack (the chunk's size field, in words) and the GC bitmap, one
-    // bit per potential oop address in the stack, aligned up to a word.
+    // Mirrors InstanceStackChunkKlass::oop_size in the VM.
     long stackSizeInWords = ((IntField) findField("size", "I")).getValue(object);
     VM vm = VM.getVM();
     long bitsPerWord = vm.getBytesPerWord() * 8L;
