@@ -1441,6 +1441,9 @@ public class ML_DSA {
     }
 
 
+    // Computes the pointwise product of two ordinary NTT-domain polynomials.
+    // The Java fallback uses Barrett reduction. Intrinsic implementations may use
+    // Montgomery multiplication internally, but produce the same result modulo q.
     @IntrinsicCandidate
     static int implDilithiumNttMult(int[] product, int[] coeffs1, int[] coeffs2) {
         implDilithiumNttMultJava(product, coeffs1, coeffs2);
