@@ -155,6 +155,15 @@ public class InlineTypes {
             ),
     };
 
+    static {
+        // Force inline the methods called by ValueClass::validateArrayArguments used by the array factories
+        for (Scenario scenario : DEFAULT_SCENARIOS) {
+            scenario.addFlags("-XX:CompileCommand=inline,jdk.internal.value.ValueClass::isConcreteValueClass",
+                              "-XX:CompileCommand=inline,java.lang.Class::isValue",
+                              "-XX:CompileCommand=inline,java.lang.reflect.Modifier::isAbstract");
+        }
+    }
+
     public static TestFramework getFramework() {
         StackWalker walker = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
         return new TestFramework(walker.getCallerClass()).setDefaultWarmup(251);
