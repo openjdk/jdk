@@ -516,11 +516,7 @@ void MacroAssembler::clinit_barrier(Register klass, Register tmp, Label* L_fast_
 }
 
 void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, int line) {
-  if (!VerifyOops || VerifyAdapterSharing) {
-    // Below address of the code string confuses VerifyAdapterSharing
-    // because it may differ between otherwise equivalent adapters.
-    return;
-  }
+  if (!VerifyOops) { return; }
 
   // Pass register number to verify_oop_subroutine
   const char* b = nullptr;
@@ -713,9 +709,7 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
 }
 
 void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* file, int line) {
-  if (!VerifyOops || VerifyAdapterSharing) {
-    // Below address of the code string confuses VerifyAdapterSharing
-    // because it may differ between otherwise equivalent adapters.
+  if (!VerifyOops) {
     return;
   }
 
