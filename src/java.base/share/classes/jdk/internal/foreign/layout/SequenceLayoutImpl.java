@@ -178,7 +178,7 @@ public final class SequenceLayoutImpl extends AbstractLayout<SequenceLayoutImpl>
         long count = elementCount();
         MemoryLayout elemLayout = elementLayout();
         while (elemLayout instanceof SequenceLayoutImpl elemSeq) {
-            count = count * elemSeq.elementCount();
+            count = Math.multiplyExact(count ,elemSeq.elementCount());
             elemLayout = elemSeq.elementLayout();
         }
         return MemoryLayout.sequenceLayout(count, elemLayout);
