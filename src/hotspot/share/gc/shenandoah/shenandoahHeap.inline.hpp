@@ -400,6 +400,11 @@ inline bool ShenandoahHeap::has_affiliation(const void* p, ShenandoahAffiliation
   return _biased_affiliations[index] == affiliation;
 }
 
+inline bool ShenandoahHeap::has_affiliation(oop obj, ShenandoahAffiliation affiliation) const {
+  const size_t index = p2u(obj) >> ShenandoahHeapRegion::region_size_bytes_shift();
+  return _biased_affiliations[index] == affiliation;
+}
+
 inline bool ShenandoahHeap::is_in_old_during_young_collection(oop obj) const {
   return active_generation()->is_young() && is_in_old(obj);
 }
