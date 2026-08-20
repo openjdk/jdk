@@ -5401,7 +5401,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
           // They overwrite memory edge corresponding to destination array,
           memnode_worklist.push(use);
         } else if (!(BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier_node(use) ||
-              use->is_memory_access_intrinsic() || op == Op_FlatArrayCheck)) {
+                     use->is_memory_access_intrinsic() || op == Op_FlatArrayCheck)) {
           n->dump();
           use->dump();
           assert(false, "EA: missing memory path");
