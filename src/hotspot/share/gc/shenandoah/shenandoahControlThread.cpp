@@ -282,7 +282,7 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   //
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (check_cancellation_or_degen(ShenandoahGC::_degenerated_outside_cycle)) {
-    log_info(gc)("Cancelled");
+    log_info(gc, phases)("Cancelled");
     return;
   }
   heap->increment_total_collections(false);
@@ -371,7 +371,7 @@ void ShenandoahControlThread::notify_control_thread(GCCause::Cause cause) {
 
 void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
   if (should_terminate()) {
-    log_info(gc)("Control thread is terminating, no more GCs");
+    log_info(gc, phases)("Control thread is terminating, no more GCs");
     return;
   }
 
