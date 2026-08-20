@@ -135,7 +135,7 @@ public final class JsonParser {
 
             if (members.containsKey(name)) {
                 throw failure(nameStart, nameLine, nameLineStart,
-                    "Duplicate member name: \"%s\" was already parsed".formatted(name), startO, true);
+                    "Duplicate member name: \"%s\" was already parsed".formatted(Utils.escape(name)), startO, true);
             } else {
                 members.put(name, parseValue());
             }
