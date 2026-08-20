@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,6 @@ void StackMapFrame::unsatisfied_strict_fields_error(InstanceKlass* klass, int bc
     }
   };
   assert_unset_fields()->iterate_all(find_unset);
-  print_strict_fields(assert_unset_fields());
 
   verifier()->verify_error(
     ErrorContext::bad_strict_fields(bci, this),
