@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,13 @@
 
 package sun.reflect.generics.repository;
 
+import java.lang.classfile.ClassSignature;
+import java.lang.classfile.MethodSignature;
+import java.lang.classfile.Signature;
 import java.lang.reflect.TypeVariable;
+import java.util.List;
+
 import sun.reflect.generics.factory.GenericsFactory;
-import sun.reflect.generics.tree.FormalTypeParameter;
-import sun.reflect.generics.tree.Signature;
 import sun.reflect.generics.visitor.Reifier;
 
 
@@ -39,7 +42,7 @@ import sun.reflect.generics.visitor.Reifier;
  * The code is not dependent on a particular reflective implementation.
  * It is designed to be used unchanged by at least core reflection and JDI.
  */
-public abstract class GenericDeclRepository<S extends Signature>
+public abstract class GenericDeclRepository<S>
     extends AbstractRepository<S> {
 
     public static final TypeVariable<?>[] EMPTY_TYPE_VARS = new TypeVariable<?>[0];
@@ -76,9 +79,9 @@ public abstract class GenericDeclRepository<S extends Signature>
 
     private TypeVariable<?>[] computeTypeParameters() {
         // first, extract type parameter subtree(s) from AST
-        FormalTypeParameter[] ftps = getTree().getFormalTypeParameters();
+        List<Signature.TypeParam> ftps = getTree() instanceof ClassSignature cs ? cs.typeParameters() : ((MethodSignature) getTree()).typeParameters() ;
         // create array to store reified subtree(s)
-        int length = ftps.length;
+        int length = ftps.size();
         if (length == 0) {
             return EMPTY_TYPE_VARS;
         }
@@ -86,9 +89,7 @@ public abstract class GenericDeclRepository<S extends Signature>
         // reify all subtrees
         for (int i = 0; i < length; i++) {
             Reifier r = getReifier(); // obtain visitor
-            ftps[i].accept(r); // reify subtree
-            // extract result from visitor and store it
-            typeParameters[i] = (TypeVariable<?>) r.getResult();
+            typeParameters[i] = r.reify(ftps.get(i));
         }
         return typeParameters;
     }
