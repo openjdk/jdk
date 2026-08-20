@@ -214,8 +214,7 @@ public class stop002 {
                     tot_res = Consts.TEST_FAILED;
                 }
             } finally {
-                // Force the debuggee out of the loop. Not really needed if the stop() call
-                // successfully threw the async exception, but it's easier to just always do this.
+                // Make sure the debuggee exits the loop even if the async exception was not thrown.
                 log.display("TEST #3: clearing loop flag.");
                 objRef.setValue(stopLoop1, vm.mirrorOf(true));
             }
@@ -249,7 +248,7 @@ public class stop002 {
             } finally {
                 log.display("TEST #4: resuming thread.");
                 thrRef.resume();
-                // Force the debuggee out of the loop.
+                // Make sure the debuggee exits the loop even if the async exception was not thrown.
                 log.display("TEST #4: clearing loop flag.");
                 objRef.setValue(stopLoop2, vm.mirrorOf(true));
             }
