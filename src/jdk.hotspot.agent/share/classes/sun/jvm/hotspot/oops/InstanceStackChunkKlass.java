@@ -63,4 +63,47 @@ public class InstanceStackChunkKlass extends InstanceKlass {
     long sizeInWords = getSizeHelper() + stackSizeInWords + gcDataInWords;
     return Oop.alignObjectSize(sizeInWords * vm.getAddressSize());
   }
+
+  public void iterateNonStaticFields(OopVisitor visitor, Oop obj) {
+    super.iterateNonStaticFields(visitor, obj);
+    // Visit the oops in the copied stack. Mirrors the bitmap path of
+    // oop_oop_iterate_stack in the VM. Chunks the GC has not transformed
+    // yet have no bitmap and their frames are not visited here.
+    byte flags = ((ByteField) findField("flags", "B")).getValue(obj);
+    if ((flags & 0x10) == 0) {   // FLAG_HAS_BITMAP
+      return;
+    }
+    VM vm = VM.getVM();
+    long wordSize = vm.getAddressSize();
+    long oopSize = vm.getHeapOopSize();
+    long stackSizeInWords = ((IntField) findField("size", "I")).getValue(obj);
+    long headerBytes = getSizeHelper() * wordSize;
+    long bitmapBytes = headerBytes + stackSizeInWords * wordSize;
+    long bitsPerWord = wordSize * 8L;
+    long slotCount = stackSizeInWords * (wordSize / oopSize);
+    Address base = obj.getHandle();
+    for (long w = 0; w * bitsPerWord < slotCount; w++) {
+      long word = base.getCIntegerAt(bitmapBytes + w * wordSize, wordSize, true);
+      if (word == 0) {
+        continue;
+      }
+      for (long b = 0; b < bitsPerWord; b++) {
+        long index = w * bitsPerWord + b;
+        if (index >= slotCount) {
+          break;
+        }
+        if (((word >>> b) & 1) == 0) {
+          continue;
+        }
+        long offset = headerBytes + index * oopSize;
+        OopField field;
+        if (vm.isCompressedOopsEnabled()) {
+          field = new NarrowOopField(new IndexableFieldIdentifier((int) index), offset, false);
+        } else {
+          field = new OopField(new IndexableFieldIdentifier((int) index), offset, false);
+        }
+        visitor.doOop(field, false);
+      }
+    }
+  }
 }
