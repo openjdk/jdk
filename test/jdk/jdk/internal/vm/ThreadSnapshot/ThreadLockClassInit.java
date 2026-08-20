@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,23 @@
 
 /*
  * @test
- * @bug 8238756 8351889
- * @requires vm.debug == true & vm.flavor == "server"
- * @summary Run with -Xcomp to test -XX:VerifyIterativeGVN=111111 in debug builds.
+ * @bug 8378071
+ * @summary Test jdk.internal.vm.ThreadSnapshot.of(Thread) correctly initialize ThreadLock class
  *
- * @run main/othervm/timeout=300 -Xcomp -XX:VerifyIterativeGVN=111111 compiler.c2.TestVerifyIterativeGVN
+ * @modules java.base/jdk.internal.vm
+ * @run main ThreadLockClassInit
+ * @run main/othervm -Xcomp -XX:-Inline -XX:CompileCommand=compileonly,*ThreadSnapshot*::* ThreadLockClassInit
  */
-package compiler.c2;
 
-public class TestVerifyIterativeGVN {
-    public static void main(String[] args) {
-    }
+import jdk.internal.vm.ThreadSnapshot;
+
+public class ThreadLockClassInit {
+    public static final Object LOCK = new Object();
+
+    public static void main(String[] args) throws Exception {
+        synchronized (LOCK) {
+            // The ThreadSnapshot doesn't have any public methods so nothing to check.
+            ThreadSnapshot.of(Thread.currentThread());
+        }
+     }
 }
