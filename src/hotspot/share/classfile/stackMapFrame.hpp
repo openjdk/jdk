@@ -172,7 +172,11 @@ class StackMapFrame : public ResourceObj {
   }
 
   void set_assert_unset_fields(AssertUnsetFieldTable* table) {
-    _assert_unset_fields = copy_unset_fields(table);
+    if (table == nullptr) {
+      _assert_unset_fields = nullptr;
+    } else {
+      _assert_unset_fields = copy_unset_fields(table);
+    }
   }
 
   // Called when verifying putfields to mark strict instance fields as satisfied

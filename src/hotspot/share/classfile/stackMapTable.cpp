@@ -254,6 +254,15 @@ VerificationType StackMapReader::parse_verification_type(u1* flags, bool parsing
   return VerificationType::bogus_type();
 }
 
+void StackMapReader::check_unset_fields_allowed(u1 flags) {
+  // Unset fields only have meaning in during initialization, so once
+    // a class has been initialized, the unset fields list should be
+    // discarded.
+    if (!(flags & FLAG_THIS_UNINIT) && _assert_unset_fields_buffer != nullptr) {
+      _assert_unset_fields_buffer = nullptr;
+    }
+}
+
 StackMapFrame* StackMapReader::next(TRAPS) {
   _parsed_frame_count++;
   bool parsed_early_larval = false;
@@ -362,12 +371,7 @@ StackMapFrame* StackMapReader::next_helper(bool& parsed_early_larval, TRAPS) {
 
     u1 flags = (u1)_uninit_in_prev_frame_locals;
 
-    // Unset fields only have meaning in during initialization, so once
-    // a class has been initialized, the unset fields list should be
-    // discarded.
-    if (!(flags & FLAG_THIS_UNINIT) && _assert_unset_fields_buffer != nullptr) {
-      _assert_unset_fields_buffer = nullptr;
-    }
+    check_unset_fields_allowed(flags);
 
     frame = new StackMapFrame(
       offset, flags, _prev_frame->locals_size(), 0,
@@ -404,12 +408,7 @@ StackMapFrame* StackMapReader::next_helper(bool& parsed_early_larval, TRAPS) {
     check_verification_type_array_size(
       stack_size, _max_stack, CHECK_VERIFY_(_verifier, nullptr));
 
-    // Unset fields only have meaning in during initialization, so once
-    // a class has been initialized, the unset fields list should be
-    // discarded.
-    if (!(flags & FLAG_THIS_UNINIT) && _assert_unset_fields_buffer != nullptr) {
-      _assert_unset_fields_buffer = nullptr;
-    }
+    check_unset_fields_allowed(flags);
 
     frame = new StackMapFrame(
       offset, flags, _prev_frame->locals_size(), stack_size,
@@ -455,12 +454,7 @@ StackMapFrame* StackMapReader::next_helper(bool& parsed_early_larval, TRAPS) {
     check_verification_type_array_size(
       stack_size, _max_stack, CHECK_VERIFY_(_verifier, nullptr));
 
-    // Unset fields only have meaning in during initialization, so once
-    // a class has been initialized, the unset fields list should be
-    // discarded.
-    if (!(flags & FLAG_THIS_UNINIT) && _assert_unset_fields_buffer != nullptr) {
-      _assert_unset_fields_buffer = nullptr;
-    }
+    check_unset_fields_allowed(flags);
 
     frame = new StackMapFrame(
       offset, flags, _prev_frame->locals_size(), stack_size,
@@ -509,12 +503,7 @@ StackMapFrame* StackMapReader::next_helper(bool& parsed_early_larval, TRAPS) {
       offset = _prev_frame->offset() + offset_delta + 1;
     }
 
-    // Unset fields only have meaning in during initialization, so once
-    // a class has been initialized, the unset fields list should be
-    // discarded.
-    if (!(flags & FLAG_THIS_UNINIT) && _assert_unset_fields_buffer != nullptr) {
-      _assert_unset_fields_buffer = nullptr;
-    }
+    check_unset_fields_allowed(flags);
 
     frame = new StackMapFrame(
       offset, flags, new_length, 0, _max_locals, _max_stack,
@@ -553,12 +542,7 @@ StackMapFrame* StackMapReader::next_helper(bool& parsed_early_larval, TRAPS) {
       offset = _prev_frame->offset() + offset_delta + 1;
     }
 
-    // Unset fields only have meaning in during initialization, so once
-    // a class has been initialized, the unset fields list should be
-    // discarded.
-    if (!(flags & FLAG_THIS_UNINIT) && _assert_unset_fields_buffer != nullptr) {
-      _assert_unset_fields_buffer = nullptr;
-    }
+    check_unset_fields_allowed(flags);
 
     frame = new StackMapFrame(
       offset, flags, real_length, 0, _max_locals,
@@ -611,12 +595,7 @@ StackMapFrame* StackMapReader::next_helper(bool& parsed_early_larval, TRAPS) {
       offset = _prev_frame->offset() + offset_delta + 1;
     }
 
-    // Unset fields only have meaning in during initialization, so once
-    // a class has been initialized, the unset fields list should be
-    // discarded.
-    if (!(flags & FLAG_THIS_UNINIT) && _assert_unset_fields_buffer != nullptr) {
-      _assert_unset_fields_buffer = nullptr;
-    }
+    check_unset_fields_allowed(flags);
 
     frame = new StackMapFrame(
       offset, flags, real_locals_size, real_stack_size,
