@@ -43,6 +43,10 @@
   do_stub(initial, verify_mxcsr)                                        \
   do_arch_entry(x86, initial, verify_mxcsr, verify_mxcsr_entry,         \
                 verify_mxcsr_entry)                                     \
+  do_stub(initial, hf2i_fixup)                                          \
+  do_arch_entry(x86, initial, hf2i_fixup, hf2i_fixup, hf2i_fixup)       \
+  do_stub(initial, hf2l_fixup)                                          \
+  do_arch_entry(x86, initial, hf2l_fixup, hf2l_fixup, hf2l_fixup)       \
   do_stub(initial, f2i_fixup)                                           \
   do_arch_entry(x86, initial, f2i_fixup, f2i_fixup, f2i_fixup)          \
   do_stub(initial, f2l_fixup)                                           \
@@ -178,8 +182,17 @@
   /* other arches use arch-specific entries */                          \
   /* this really needs rationalising */                                 \
   do_stub(compiler, string_indexof_linear_ll)                           \
+  do_arch_entry(x86, compiler, string_indexof_linear_ll,                \
+                string_indexof_linear_ll,                               \
+                string_indexof_linear_ll)                               \
   do_stub(compiler, string_indexof_linear_uu)                           \
+  do_arch_entry(x86, compiler, string_indexof_linear_uu,                \
+                string_indexof_linear_uu,                               \
+                string_indexof_linear_uu)                               \
   do_stub(compiler, string_indexof_linear_ul)                           \
+  do_arch_entry(x86, compiler, string_indexof_linear_ul,                \
+                string_indexof_linear_ul,                               \
+                string_indexof_linear_ul)                               \
   do_stub(compiler, pshuffle_byte_flip_mask_sha512)                     \
   do_arch_entry(x86, compiler, pshuffle_byte_flip_mask_sha512,          \
                 pshuffle_byte_flip_mask_addr_sha512,                    \

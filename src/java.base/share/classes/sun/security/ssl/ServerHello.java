@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -805,6 +805,15 @@ final class ServerHello {
         public byte[] produce(ConnectionContext context,
                 HandshakeMessage message) throws IOException {
             ServerHandshakeContext shc = (ServerHandshakeContext) context;
+
+
+            if (shc.sentHRR) {
+                throw shc.conContext.fatal(
+                        Alert.HANDSHAKE_FAILURE,
+                        "TLS 1.3 server MUST NOT send a second HelloRetryRequest " +
+                        "in the same connection");
+            }
+
             ClientHelloMessage clientHello = (ClientHelloMessage) message;
 
             // negotiate the cipher suite.
@@ -840,6 +849,7 @@ final class ServerHello {
             // Output the handshake message.
             hhrm.write(shc.handshakeOutput);
             shc.handshakeOutput.flush();
+            shc.sentHRR = true;
 
             // In TLS1.3 middlebox compatibility mode the server sends a
             // dummy change_cipher_spec record immediately after its
@@ -1461,6 +1471,11 @@ final class ServerHello {
             chc.handshakeConsumers.put(
                     SSLHandshake.CERTIFICATE_REQUEST.id,
                     SSLHandshake.CERTIFICATE_REQUEST);
+            if (chc.certInflaters != null && !chc.certInflaters.isEmpty()) {
+                chc.handshakeConsumers.put(
+                        SSLHandshake.COMPRESSED_CERTIFICATE.id,
+                        SSLHandshake.COMPRESSED_CERTIFICATE);
+            }
             chc.handshakeConsumers.put(
                     SSLHandshake.CERTIFICATE.id,
                     SSLHandshake.CERTIFICATE);

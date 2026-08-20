@@ -186,7 +186,7 @@ final class MacFromOptions {
 
         pkgSigningIdentityBuilder.ifPresent(pkgBuilder::signingBuilder);
 
-        return pkgBuilder.create();
+        return pkgBuilder.summary(OptionUtils.summary(options)).create();
     }
 
     private record ApplicationWithDetails(MacApplication app, Optional<ExternalApplication> externalApp) {
@@ -242,6 +242,8 @@ final class MacFromOptions {
     private static ApplicationWithDetails createMacApplicationInternal(Options options) {
 
         final var appBuilder = new MacApplicationBuilder(createApplicationBuilder(options));
+
+        appBuilder.summary(OptionUtils.summary(options));
 
         if (OptionUtils.isRuntimeInstaller(options)) {
             // Predefined runtime image, if specified, can be a macOS bundle or regular directory.
@@ -343,6 +345,8 @@ final class MacFromOptions {
                     .map(MacPackagingPipeline::isSigned)
                     .ifPresent(builder::predefinedAppImageSigned);
         }
+
+        builder.summary(OptionUtils.summary(options));
 
         return builder;
     }

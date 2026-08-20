@@ -109,6 +109,70 @@ class os::win32 {
   // load dll from Windows system directory or Windows directory
   static HINSTANCE load_Windows_dll(const char* name, char *ebuf, int ebuflen);
 
+  // Resolve a symbol from KernelBase.dll, returns nullptr if not found.
+  static void* lookup_kernelbase_symbol(const char* name);
+
+  // VirtualAlloc2 (since Windows version 1803)
+  // Resolved from KernelBase during os::init_2() or nullptr if unavailable.
+  typedef PVOID (WINAPI *VirtualAlloc2Fn)(HANDLE, PVOID, SIZE_T, ULONG, ULONG, MEM_EXTENDED_PARAMETER*, ULONG);
+  static VirtualAlloc2Fn VirtualAlloc2;
+
+  // MapViewOfFile3 (since Windows version 1803)
+  // Resolved from KernelBase during os::init_2() or nullptr if unavailable.
+  typedef PVOID (WINAPI *MapViewOfFile3Fn)(HANDLE, HANDLE, PVOID, ULONG64, SIZE_T, ULONG, ULONG, MEM_EXTENDED_PARAMETER*, ULONG);
+  static MapViewOfFile3Fn MapViewOfFile3;
+
+  // A "reserved" region of address space that can be split or converted to a
+  // normal reservation. Conceptually distinct from a reserved region:
+  // callers must NOT call commit_memory, map_memory, or other operations
+  // directly on the raw address. They must first convert it via
+  // convert_to_reserved().
+  class PlaceholderRegion {
+      char* const  _base;
+      size_t const _size;
+  public:
+      PlaceholderRegion() : _base(nullptr), _size(0) {}
+      PlaceholderRegion(char* base, size_t size) : _base(base), _size(size) {
+        if (base != nullptr) {
+          assert(size > 0, "Non-empty Placeholder must have positive size.");
+          assert(is_aligned(base, os::vm_allocation_granularity()), "New Placeholder base should be aligned to allocation granularity.");
+          assert(is_aligned(size, os::vm_page_size()), "New Placeholder size should be page-aligned");
+        } else {
+          assert(size == 0, "Empty Placeholder must have zero size.");
+        }
+      }
+      PlaceholderRegion(const PlaceholderRegion& source) : PlaceholderRegion(source._base, source._size) {}
+      char*  base() const { return _base; }
+      size_t size() const { return _size; }
+      bool   is_empty() const { return _base == nullptr; }
+  };
+
+  struct PlaceholderRegionPair {
+    PlaceholderRegion left;
+    PlaceholderRegion right;
+  };
+
+  // Reserves a virtual memory region that can be split after allocation.
+  // The returned region must be converted via convert_to_reserved() before committing.
+  // If the returned PlaceholderRegion is empty, the reservation failed.
+  // This should only be called after os::init_2() has completed, otherwise the Windows API may not be initialized.
+  // Uses VirtualAlloc2, which requires the base address be null or aligned to allocation granularity.
+  static PlaceholderRegion reserve_placeholder_memory(size_t bytes, char* addr);
+
+  // Split 'orig' at 'offset'. Returns left and right placeholder pieces as a PlaceholderRegionPair.
+  // The caller must not use 'orig' afterward.
+  // Offset must be aligned to allocation granularity.
+  // If offset == orig.size(), returns { orig, empty }.
+  // If offset == 0, returns { empty, orig }.
+  // This should not fail. If unsuccessful, this function fails fatally.
+  static PlaceholderRegionPair split_memory(const PlaceholderRegion& orig, size_t offset);
+
+  // Convert a placeholder region into a regular reserved region via VirtualAlloc2(MEM_REPLACE_PLACEHOLDER).
+  // After conversion the Placeholder region should no longer be used.
+  // This should not fail. If unsuccessful, this function fails fatally.
+  // If numa_node >= 0, binds the reservation to that NUMA node.
+  static char* convert_to_reserved(PlaceholderRegion region, int numa_node = -1);
+
  private:
 
   static void initialize_performance_counter();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,6 +80,7 @@ public class suspend001 extends JdbTest {
     static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
     static final String FIRST_BREAK    = DEBUGGEE_CLASS + ".main";
     static final String LAST_BREAK     = DEBUGGEE_CLASS + ".breakHere";
+    static final String THREAD_STARTED_BREAK = DEBUGGEE_CLASS + ".threadStarted";
 
     static final String SUSPENDED       = "Suspended";
     static final String DEBUGGEE_THREAD = PACKAGE_NAME + "." + SUSPENDED;
@@ -94,9 +95,9 @@ public class suspend001 extends JdbTest {
         String[] threads;
 
         jdb.setBreakpointInMethod(LAST_BREAK);
-        reply = jdb.receiveReplyFor(JdbCommand.cont);
+        waitForTestedThreadStarts(THREAD_STARTED_BREAK, 2);
         while (true) {
-            threads = jdb.getThreadIds(DEBUGGEE_THREAD);
+            threads = jdb.getThreadIdsByName(SUSPENDED);
             if (threads.length != 1) {
                 log.complain("jdb should report 1 instance of " + DEBUGGEE_THREAD);
                 log.complain("Found: " + threads.length);

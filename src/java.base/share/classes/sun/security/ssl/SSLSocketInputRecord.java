@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,10 +27,10 @@
 package sun.security.ssl;
 
 import java.io.EOFException;
-import java.io.InterruptedIOException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
@@ -180,7 +180,7 @@ final class SSLSocketInputRecord extends InputRecord implements SSLRecord {
             if (plaintext == null) {
                 plaintext = decodeInputRecord();
             }
-        } catch(InterruptedIOException e) {
+        } catch (SocketTimeoutException e) {
             // do not clean header and recordBody in case of Socket Timeout
             cleanInBuffer = false;
             throw e;

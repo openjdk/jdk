@@ -627,9 +627,13 @@ void ZBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, R
   __ block_comment("} try_resolve_jobject_in_native (zgc)");
 }
 
-void ZBarrierSetAssembler::try_resolve_weak_handle(MacroAssembler* masm, Register obj, Register tmp, Label& slow_path) {
-  // Resolve weak handle using the standard implementation.
-  BarrierSetAssembler::try_resolve_weak_handle(masm, obj, tmp, slow_path);
+void ZBarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj,
+                                                           Register tmp, Label& slow_path) {
+  assert_different_registers(weak_handle, tmp, noreg);
+  assert_different_registers(obj, tmp, noreg);
+
+  // Peek weak handle using the standard implementation.
+  BarrierSetAssembler::try_peek_weak_handle_in_nmethod(masm, weak_handle, obj, tmp, slow_path);
 
   // Check if the oop is bad, in which case we need to take the slow path.
   __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatMarkBadMask);

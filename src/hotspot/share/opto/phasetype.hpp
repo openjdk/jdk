@@ -145,6 +145,8 @@
   flags(FINAL_CODE,                     "Final Code") \
   flags(END,                            "End") \
   flags(FAILURE,                        "Failure") \
+  flags(SPLIT_INLINES_ARRAY,            "Split inlines array") \
+  flags(SPLIT_INLINES_ARRAY_IGVN,       "IGVN after split inlines array") \
   flags(ALL,                            "All") \
   flags(DEBUG,                          "Debug")
 
@@ -204,7 +206,7 @@ class PhaseNameValidator {
 
   ~PhaseNameValidator() {
     if (_bad != nullptr) {
-      FREE_C_HEAP_ARRAY(char, _bad);
+      FREE_C_HEAP_ARRAY(_bad);
     }
   }
 

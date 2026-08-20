@@ -3254,7 +3254,7 @@ public abstract class JComponent extends Container implements Serializable,
      * locations). If you do not wish for this component to respond in any way
      * to drops, you can disable drop support entirely either by removing the
      * drop target ({@code setDropTarget(null)}) or by de-activating it
-     * ({@code getDropTaget().setActive(false)}).
+     * ({@code getDropTarget().setActive(false)}).
      * <p>
      * If the new {@code TransferHandler} is {@code null}, this method removes
      * the drop target.
@@ -5070,7 +5070,6 @@ public abstract class JComponent extends Container implements Serializable,
         this.paintingChild = paintingChild;
     }
 
-    @SuppressWarnings("removal")
     void _paintImmediately(int x, int y, int w, int h) {
         Graphics g;
         Container c;

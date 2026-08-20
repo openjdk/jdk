@@ -735,7 +735,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone mzone="Atlantic"/>
 			</timezone>
 			<timezone type="America/Vancouver">
-				<usesMetazone mzone="America_Pacific"/>
+				<usesMetazone mzone="America_Pacific" stdOffset="-08" dstOffset="-07"/>
 			</timezone>
 			<timezone type="America/Whitehorse">
 				<usesMetazone to="2020-11-01 07:00" mzone="America_Pacific"/>
