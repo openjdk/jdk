@@ -1075,11 +1075,24 @@ static void load_classes_from_loadable_descriptors_attribute(InstanceKlass *ik, 
       TempNewSymbol class_name = Signature::strip_envelope(sig);
       if (class_name == ik->name()) continue;
       log_info(class, preload)("Preloading of class %s during linking of class %s "
-                               "because of the class is listed in the LoadableDescriptors attribute",
+                               "because the class is listed in the LoadableDescriptors attribute",
                                sig->as_C_string(), ik->name()->as_C_string());
       oop loader = ik->class_loader();
-      Klass* klass = SystemDictionary::resolve_or_null(class_name,
-                                                        Handle(THREAD, loader), THREAD);
+      Klass* klass = nullptr;
+
+      if (CDSConfig::is_using_aot_linked_classes() && ik->in_aot_cache() && !ik->defined_by_other_loaders()) {
+        // + We come to here during AOTLinkedClassBulkLoader::link_classes() and it's too early to
+        //   execute any Java code.
+        // + All loadable descriptors that can be resolved would have been resolved during the AOT assembly
+        //   phase, and would have been loaded earlier by AOTLinkedClassBulkLoader, so they can be found in
+        //   the system dictionary.
+        // + If no class of the given name have been loaded yet, it's most likely because the class
+        //   is missing from JAR files. Just ignore it.
+        klass = SystemDictionary::find_instance_or_array_klass(THREAD, class_name, Handle(THREAD, loader));
+      } else {
+        klass = SystemDictionary::resolve_or_null(class_name,
+                                                  Handle(THREAD, loader), THREAD);
+      }
       if (HAS_PENDING_EXCEPTION) {
         CLEAR_PENDING_EXCEPTION;
       }
