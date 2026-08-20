@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,5 +50,19 @@ public class InstanceStackChunkKlass extends InstanceKlass {
 
   public InstanceStackChunkKlass(Address addr) {
     super(addr);
+  }
+
+  public long getObjectSize(Oop object) {
+    // Mirrors InstanceStackChunkKlass::oop_size in the VM: the fixed part, the
+    // copied stack (the chunk's size field, in words) and the GC bitmap, one
+    // bit per potential oop address in the stack, aligned up to a word.
+    long stackSizeInWords = ((IntField) findField("size", "I")).getValue(object);
+    VM vm = VM.getVM();
+    long bitsPerWord = vm.getBytesPerWord() * 8L;
+    long bitmapBits = stackSizeInWords * (vm.getBytesPerWord() / vm.getHeapOopSize());
+    bitmapBits = (bitmapBits + bitsPerWord - 1) & ~(bitsPerWord - 1);
+    long gcDataInWords = bitmapBits / bitsPerWord;
+    long sizeInWords = getSizeHelper() + stackSizeInWords + gcDataInWords;
+    return Oop.alignObjectSize(sizeInWords * vm.getAddressSize());
   }
 }
