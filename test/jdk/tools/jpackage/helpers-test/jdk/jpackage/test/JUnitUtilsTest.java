@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,21 @@ package jdk.jpackage.test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.io.IOException;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import jdk.jpackage.test.JUnitUtils.ArrayConverter;
+import jdk.jpackage.test.JUnitUtils.ExceptionPattern;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.converter.ConvertWith;
+import org.junit.jupiter.params.provider.CsvSource;
 
-public class JUnitUtilsTest {
+class JUnitUtilsTest {
 
     @Test
-    public void test_assertArrayEquals() {
+    void test_assertArrayEquals() {
         JUnitUtils.assertArrayEquals(new int[] {1, 2, 3}, new int[] {1, 2, 3});
         JUnitUtils.assertArrayEquals(new long[] {1, 2, 3}, new long[] {1, 2, 3});
         JUnitUtils.assertArrayEquals(new boolean[] {true, true}, new boolean[] {true, true});
@@ -39,19 +47,148 @@ public class JUnitUtilsTest {
     }
 
     @Test
-    public void test_assertArrayEquals_negative() {
+    void test_assertArrayEquals_negative() {
         assertThrows(AssertionError.class, () -> {
             JUnitUtils.assertArrayEquals(new int[] {1, 2, 3}, new int[] {2, 3});
         });
     }
 
     @Test
-    public void test_exceptionAsPropertyMapWithMessageWithoutCause() {
+    void test_exceptionAsPropertyMapWithMessageWithoutCause() {
 
         var ex = new Exception("foo");
 
         var map = JUnitUtils.exceptionAsPropertyMap(ex);
 
         assertEquals(Map.of("getClass", Exception.class.getName(), "getMessage", "foo"), map);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+        "'a,b,c','100,200,300'",
+    })
+    void test_ArrayConverter(
+            @ConvertWith(ArrayConverter.class) String[] strArray,
+            @ConvertWith(ArrayConverter.class) Integer[] intArray) {
+
+        assertEquals(List.of("a", "b", "c"), List.of(strArray));
+        assertEquals(List.of(100, 200, 300), List.of(intArray));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+        ",true,true",
+        "FOO,true,false",
+        "NULL,false,true",
+        "BAR,false,false",
+    })
+    void test_ExceptionPattern_hasMessage(ExceptionPatternMessageMode mode, boolean exWithMessageMatch, boolean exWithoutMessageMatch) {
+
+        var exWithMessage = new Exception(ExceptionPatternMessageMode.FOO.name());
+        var exWithoutMessage = new Exception();
+
+        var pattern = new ExceptionPattern();
+        Optional.ofNullable(mode).ifPresent(m -> {
+            switch (m) {
+                case NULL -> pattern.hasMessage(null);
+                default -> pattern.hasMessage(m.name());
+            }
+        });
+
+        assertEquals(exWithMessageMatch, pattern.match(exWithMessage));
+        assertEquals(exWithoutMessageMatch, pattern.match(exWithoutMessage));
+    }
+
+    enum ExceptionPatternMessageMode {
+        NULL,
+        FOO,
+        BAR,
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+        ",true,true",
+        "NULL,false,true",
+        "IllegalArgumentException,true,false",
+        "RuntimeException,true,false",
+        "Exception,true,false",
+        "IOException,false,false",
+        "NullPointerException,false,false",
+        "TRUE,true,false",
+        "FALSE,false,true",
+        "TRUE_DEFAULT,true,false",
+    })
+    void test_ExceptionPattern_hasCause(ExceptionPatternCauseMode mode, boolean exWithCauseMatch, boolean exWithoutCauseMatch) {
+
+        var exWithCause = new Exception(new IllegalArgumentException());
+        var exWithoutCause = new Exception();
+
+        var pattern = new ExceptionPattern();
+        Optional.ofNullable(mode).ifPresent(m -> {
+            switch (m) {
+                case NULL -> pattern.isCauseInstanceOf(null);
+                case IllegalArgumentException -> pattern.isCauseInstanceOf(IllegalArgumentException.class);
+                case RuntimeException -> pattern.isCauseInstanceOf(RuntimeException.class);
+                case Exception -> pattern.isCauseInstanceOf(Exception.class);
+                case IOException -> pattern.isCauseInstanceOf(IOException.class);
+                case NullPointerException -> pattern.isCauseInstanceOf(NullPointerException.class);
+                case TRUE -> pattern.hasCause(true);
+                case FALSE -> pattern.hasCause(false);
+                case TRUE_DEFAULT -> pattern.hasCause();
+            }
+        });
+
+        assertEquals(exWithCauseMatch, pattern.match(exWithCause));
+        assertEquals(exWithoutCauseMatch, pattern.match(exWithoutCause));
+    }
+
+    enum ExceptionPatternCauseMode {
+        NULL,
+        IllegalArgumentException,
+        RuntimeException,
+        Exception,
+        IOException,
+        NullPointerException,
+        TRUE,
+        FALSE,
+        TRUE_DEFAULT,
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+        ",true",
+        "NULL,true",
+        "IllegalArgumentException,true",
+        "RuntimeException,true",
+        "Exception,true",
+        "IOException,false,false",
+        "NullPointerException,false",
+    })
+    void test_ExceptionPattern_isInstanceOf(ExceptionPatternTypeMode mode, boolean match) {
+
+        var ex = new IllegalArgumentException();
+
+        var pattern = new ExceptionPattern();
+        Optional.ofNullable(mode).ifPresent(m -> {
+            switch (m) {
+                case NULL -> pattern.isInstanceOf(null);
+                case IllegalArgumentException -> pattern.isInstanceOf(IllegalArgumentException.class);
+                case RuntimeException -> pattern.isInstanceOf(RuntimeException.class);
+                case Exception -> pattern.isInstanceOf(Exception.class);
+                case IOException -> pattern.isInstanceOf(IOException.class);
+                case NullPointerException -> pattern.isInstanceOf(NullPointerException.class);
+            }
+        });
+
+        assertEquals(match, pattern.match(ex));
+    }
+
+    enum ExceptionPatternTypeMode {
+        NULL,
+        IllegalArgumentException,
+        RuntimeException,
+        Exception,
+        NullPointerException,
+        IOException,
     }
 }
