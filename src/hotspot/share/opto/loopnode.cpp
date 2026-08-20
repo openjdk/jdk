@@ -1807,13 +1807,13 @@ Node* PhaseIdealLoop::LoopExitTest::speculatively_narrow_limit(PhaseIterGVN& igv
 
   // Optimistically transform "(long) i < long_limit" to "i < (int) long_limit".
   _narrowed_limit = igvn.register_new_node_with_optimizer(new ConvL2INode(_limit), _limit);
-  _phase->set_early_ctrl(_narrowed_limit, _phase->get_ctrl(_limit));
+  _phase->set_ctrl(_narrowed_limit, _phase->get_ctrl(_limit));
 
   _narrowed_cmp = _cmp->in(1) == _incr
                          ? new CmpINode(narrowed_incr, _narrowed_limit)
                          : new CmpINode(_narrowed_limit, narrowed_incr);
-   igvn.register_new_node_with_optimizer(_narrowed_cmp, _cmp);
-   _phase->set_early_ctrl(_narrowed_cmp, _phase->get_ctrl(_cmp));
+  igvn.register_new_node_with_optimizer(_narrowed_cmp, _cmp);
+  _phase->set_ctrl(_narrowed_cmp, _phase->get_ctrl(_cmp));
 
   assert(_loop->is_invariant(_narrowed_limit), "limit must be a loop invariant");
 
