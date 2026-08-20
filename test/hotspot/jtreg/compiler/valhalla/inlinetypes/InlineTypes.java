@@ -109,17 +109,17 @@ public class InlineTypes {
     static {
         // Add common flags
         for (Scenario scenario : DEFAULT_SCENARIOS) {
-            scenario.addFlags("--enable-preview",
-                              "--add-exports", "java.base/jdk.internal.value=ALL-UNNAMED",
-                              "--add-exports", "java.base/jdk.internal.vm.annotation=ALL-UNNAMED",
-                              "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
-                              "-XX:+UnlockDiagnosticVMOptions",
-                              "-XX:+UnlockExperimentalVMOptions",
-                              "-XX:+IgnoreUnrecognizedVMOptions",
-                              // Force inline the methods called by ValueClass::validateArrayArguments used by the array factories
-                              "-XX:CompileCommand=inline,jdk.internal.value.ValueClass::isConcreteValueClass",
-                              "-XX:CompileCommand=inline,java.lang.Class::isValue",
-                              "-XX:CompileCommand=inline,java.lang.reflect.Modifier::isAbstract");
+            scenario.prependFlags("--enable-preview",
+                                  "--add-exports", "java.base/jdk.internal.value=ALL-UNNAMED",
+                                  "--add-exports", "java.base/jdk.internal.vm.annotation=ALL-UNNAMED",
+                                  "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
+                                  "-XX:+UnlockDiagnosticVMOptions",
+                                  "-XX:+UnlockExperimentalVMOptions",
+                                  "-XX:+IgnoreUnrecognizedVMOptions",
+                                  // Force inline the methods called by ValueClass::validateArrayArguments used by the array factories
+                                  "-XX:CompileCommand=inline,jdk.internal.value.ValueClass::isConcreteValueClass",
+                                  "-XX:CompileCommand=inline,java.lang.Class::isValue",
+                                  "-XX:CompileCommand=inline,java.lang.reflect.Modifier::isAbstract");
         }
     }
 
