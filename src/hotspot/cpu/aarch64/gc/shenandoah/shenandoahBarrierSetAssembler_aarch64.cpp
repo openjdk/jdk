@@ -744,24 +744,74 @@ void ShenandoahBarrierStubC2::cardtable(MacroAssembler& masm, Address address, R
   }
 }
 
-void ShenandoahBarrierStubC2::patchable_jump(MacroAssembler& masm, const char gc_state, bool jump_when_state, Label* L_target) {
+void ShenandoahBarrierStubC2::patchable_jump(MacroAssembler& masm, const char gc_state, bool jump_when_state, Register tmp, Label* L_target) {
+  const size_t check_size = 7;
+
   PhaseOutput* const output = Compile::current()->output();
   if (output->in_scratch_emit_size()) {
-    // Avoid binding L_target in scratch emits.
-    // We know the patched check is exactly one instruction long.
-    __ nop();
+    // Avoid binding L_target and emitting more branches in scratch emits.
+    // We know the patched check is exactly 1 instruction long in release,
+    // and verification adds more instructions.
+    for (size_t c = 0; c < 1 + DEBUG_ONLY(check_size); c++) {
+      __ nop();
+    }
     return;
   }
 
+#ifdef ASSERT
+  address check_start = __ pc();
+
+  Label L_fake_entry, L_real_entry, L_skip;
+  Address gc_state_addr(rthread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
+
+  __ ldrb(tmp, gc_state_addr);
+  __ andr(tmp, tmp, gc_state);
+#endif
+
+  __ relocate(patchable_barrier_Relocation::spec(ShenandoahNMethod::encode_to_reloc(gc_state, jump_when_state)));
+
+#ifdef ASSERT
+  // Emit the secondary jump and use it to cross-check against the actual GC state.
+  // This also checks that all interesting GC state transitions are done non-racily
+  // from the perspective of the thread executing the nmethod.
+  __ b(L_fake_entry);
+
+  // Currently hot-patched to NOP.
+  if (jump_when_state) {
+    __ cbz(tmp, L_skip);
+  } else {
+    __ cbnz(tmp, L_skip);
+  }
+  __ hlt(0);
+
+  // Currently hot-patched to JUMP.
+  __ bind(L_fake_entry);
+  if (jump_when_state) {
+    __ cbnz(tmp, L_real_entry);
+  } else {
+    __ cbz(tmp, L_real_entry);
+  }
+  __ hlt(0);
+
+  __ bind(L_real_entry);
+
+  address check_end = __ pc();
+  size_t actual_check_size = pointer_delta(check_end, check_start, Assembler::instruction_size);
+  assert(check_size == actual_check_size, "Must match: %zu != %zu", check_size, actual_check_size);
+#endif
+
   // Emit the unconditional branch in the first version of the method.
   // Let the rest of runtime figure out how to manage it.
-  __ relocate(patchable_barrier_Relocation::spec(ShenandoahNMethod::encode_to_reloc(gc_state, jump_when_state)));
   __ b(*L_target);
+
+#ifdef ASSERT
+  __ bind(L_skip);
+#endif
 }
 
-void ShenandoahBarrierStubC2::enter_if_gc_state(MacroAssembler& masm, const char test_state) {
+void ShenandoahBarrierStubC2::enter_if_gc_state(MacroAssembler& masm, const char test_state, Register tmp) {
   Assembler::InlineSkippedInstructionsCounter skip_counter(&masm);
-  patchable_jump_if_gc_state(masm, test_state, entry());
+  patchable_jump_if_gc_state(masm, test_state, tmp, entry());
   __ bind(*continuation());
 }
 
@@ -843,7 +893,7 @@ void ShenandoahBarrierStubC2::keepalive(MacroAssembler& masm, Label* L_done) {
   if (_needs_load_ref_barrier) {
     assert(L_done == nullptr, "Should be");
     char state_to_check = ShenandoahHeap::MARKING;
-    patchable_jump_if_not_gc_state(masm, state_to_check, &L_through);
+    patchable_jump_if_not_gc_state(masm, state_to_check, _tmp1, &L_through);
   }
 
   // Fast-path: put object into buffer.
@@ -896,14 +946,14 @@ void ShenandoahBarrierStubC2::lrb(MacroAssembler& masm) {
   // If another barrier is enabled as well, do a check for a specific barrier.
   if (_needs_keep_alive_barrier) {
     char state_to_check = ShenandoahHeap::HAS_FORWARDED | (_needs_load_ref_weak_barrier ? ShenandoahHeap::WEAK_ROOTS : 0);
-    patchable_jump_if_not_gc_state(masm, state_to_check, continuation());
+    patchable_jump_if_not_gc_state(masm, state_to_check, _tmp1, continuation());
   }
 
   // If weak references are being processed, weak/phantom loads need to go slow,
   // regardless of their cset status.
   if (_needs_load_ref_weak_barrier) {
     char state_to_check = ShenandoahHeap::WEAK_ROOTS;
-    patchable_jump_if_gc_state(masm, state_to_check, &L_slow);
+    patchable_jump_if_gc_state(masm, state_to_check, _tmp1, &L_slow);
   }
 
   // Cset-check. Fall-through to slow if in collection set.

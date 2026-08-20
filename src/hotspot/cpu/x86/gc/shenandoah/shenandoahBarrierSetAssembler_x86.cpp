@@ -826,12 +826,11 @@ void ShenandoahBarrierStubC2::cardtable(MacroAssembler& masm, Address addr, Regi
   __ bind(L_done);
 }
 
-void ShenandoahBarrierStubC2::patchable_jump(MacroAssembler& masm, const char gc_state, bool jump_when_state, Label* L_target) {
+void ShenandoahBarrierStubC2::patchable_jump(MacroAssembler& masm, const char gc_state, bool jump_when_state, Register tmp, Label* L_target) {
+#ifdef ASSERT
   Label L_fake_entry, L_real_entry, L_skip;
   Address gc_state_addr(r15_thread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
-
-  // Emit the unconditional branch in the first version of the method.
-  // Let the rest of runtime figure out how to manage it.
+#endif
 
   PhaseOutput* const output = Compile::current()->output();
   if (!output->in_scratch_emit_size()) {
@@ -859,6 +858,8 @@ void ShenandoahBarrierStubC2::patchable_jump(MacroAssembler& masm, const char gc
 #endif
 
   if (!output->in_scratch_emit_size()) {
+    // Emit the unconditional branch in the first version of the method.
+    // Let the rest of runtime figure out how to manage it.
     __ jmp(*L_target, /* maybe_short = */ false);
   } else {
     // Avoid binding L_target in scratch emits.
@@ -871,9 +872,9 @@ void ShenandoahBarrierStubC2::patchable_jump(MacroAssembler& masm, const char gc
 #endif
 }
 
-void ShenandoahBarrierStubC2::enter_if_gc_state(MacroAssembler& masm, const char test_state) {
+void ShenandoahBarrierStubC2::enter_if_gc_state(MacroAssembler& masm, const char test_state, Register tmp) {
   Assembler::InlineSkippedInstructionsCounter skip_counter(&masm);
-  patchable_jump_if_gc_state(masm, test_state, entry());
+  patchable_jump_if_gc_state(masm, test_state, tmp, entry());
   __ bind(*continuation());
 }
 
@@ -931,7 +932,7 @@ void ShenandoahBarrierStubC2::keepalive(MacroAssembler& masm, Label* L_done) {
   if (_needs_load_ref_barrier) {
     assert(L_done == nullptr, "Should be");
     char state_to_check = ShenandoahHeap::MARKING;
-    patchable_jump_if_not_gc_state(masm, state_to_check, &L_through);
+    patchable_jump_if_not_gc_state(masm, state_to_check, noreg, &L_through);
   }
 
   // Need temp to work, allocate one now.
@@ -1004,14 +1005,14 @@ void ShenandoahBarrierStubC2::lrb(MacroAssembler& masm) {
   // If another barrier is enabled as well, do a check for a specific barrier.
   if (_needs_keep_alive_barrier) {
     char state_to_check = ShenandoahHeap::HAS_FORWARDED | (_needs_load_ref_weak_barrier ? ShenandoahHeap::WEAK_ROOTS : 0);
-    patchable_jump_if_not_gc_state(masm, state_to_check, continuation());
+    patchable_jump_if_not_gc_state(masm, state_to_check, noreg, continuation());
   }
 
   // If weak references are being processed, weak/phantom loads need to go slow,
   // regardless of their cset status.
   if (_needs_load_ref_weak_barrier) {
     char state_to_check = ShenandoahHeap::WEAK_ROOTS;
-    patchable_jump_if_gc_state(masm, state_to_check, &L_slow);
+    patchable_jump_if_gc_state(masm, state_to_check, noreg, &L_slow);
   }
 
   bool is_aot = AOTCodeCache::is_on_for_dump();
