@@ -30,16 +30,17 @@
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
-#include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/workerThread.hpp"
+#include "gc/shenandoah/shenandoahGenerationType.hpp"
+#include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
-#include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 #include "services/memoryService.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 #include <cmath>
 #include <limits>
@@ -257,6 +258,32 @@ inline size_t shenandoah_safe_size_cast(const double d) {
   return static_cast<size_t>(d);
 }
 
+// Convert a possibly signed double into a smaller number with appropriate engineering units.
+struct ShenandoahSignedSize {
+  const double value;
+  const char* unit;
 
+  static ShenandoahSignedSize get(double v) {
+    if (!std::isfinite(v)) {
+      return { v, "B" };
+    }
+
+    const double magnitude = fabsd(v);
+
+    if (magnitude >= 100.0 * G) {
+      return { std::copysign(magnitude / G, v), "G" };
+    }
+
+    if (magnitude >= 100.0 * M) {
+      return { std::copysign(magnitude / M, v), "M" };
+    }
+
+    if (magnitude >= 100.0 * K) {
+      return { std::copysign(magnitude / K, v), "K" };
+    }
+
+    return { std::copysign(magnitude, v), "B" };
+  }
+};
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHUTILS_HPP
