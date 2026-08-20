@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @modules java.base/jdk.internal.foreign:+open java.base/jdk.internal.access
+ * @modules java.base/jdk.internal.foreign:+open java.base/jdk.internal.access java.base/jdk.internal.misc java.base/jdk.internal.util
  * @library /test/lib
  * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=0 TestConfinedSegmentPool
  * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=1 TestConfinedSegmentPool
@@ -37,6 +37,9 @@
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.ConfinedSegmentPool;
+import jdk.internal.misc.Unsafe;
+import jdk.internal.util.Architecture;
+import jdk.internal.util.OperatingSystem;
 import jdk.test.lib.thread.VThreadRunner;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -381,11 +384,11 @@ final class TestConfinedSegmentPool {
 
             try {
                 allocateOneByte(cached);
-                closeAll(cached); // Four positive entries for released pools
+                closeAll(cached); // Four non-zero entries for released pools
 
                 long[] pools = JLA.getConfinedMemoryPools(Thread.currentThread());
                 assertNotNull(pools);
-                assertEquals(4L, Arrays.stream(pools).filter(p -> p > 0).count());
+                assertEquals(4L, Arrays.stream(pools).filter(p -> p != 0).count());
             } catch (Throwable ex) {
                 failure.set(ex);
             }
@@ -452,6 +455,70 @@ final class TestConfinedSegmentPool {
     void cacheSaturationVt() {
         assumeTrue(isPoolEnabled());
         VThreadRunner.run(this::testCacheSaturation);
+    }
+
+    // This test can only be run on certain platforms and we are using an
+    // address alias to simulate negative values in order to test the inner workings
+    // of a confined arena using such an address.
+    @Test
+    void negativeAddress() throws InterruptedException {
+        assumeTrue(isPoolEnabled());
+        // Tagged memory can only be used on Aarch64
+        assumeTrue(Architecture.isAARCH64());
+        // Top Byte Ignore (TBI) is only guaranteed on these OSes
+        assumeTrue(OperatingSystem.isLinux() || OperatingSystem.isMacOS());
+
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+
+        // Run on a fresh platform thread so that we can manipulate the cache
+        // freely and isolated from the main thread.
+        Thread thread = Thread.ofPlatform().start(() -> {
+
+            final Unsafe u = Unsafe.getUnsafe();
+
+            long originalAddress = 0;
+            long negativeAliasAddress = 0;
+            long[] pools = null;
+
+            try {
+
+                originalAddress = u.allocateMemory(POOLED_MEMORY_SIZE);
+                negativeAliasAddress = originalAddress | Long.MIN_VALUE;
+                pools = JLA.getOrCreateConfinedMemoryPools(Thread.currentThread(), 4);
+
+
+                u.setMemory(originalAddress, POOLED_MEMORY_SIZE, (byte) 0);
+                pools[0] = negativeAliasAddress;
+
+                try (Arena arena = Arena.ofConfined()) {
+                    MemorySegment segment = arena.allocate(1, 1);
+                    assertEquals(negativeAliasAddress, segment.address());
+                    segment.set(ValueLayout.JAVA_BYTE, 0, (byte) 42);
+                    assertEquals((byte) 42, u.getByte(originalAddress));
+                }
+
+                assertEquals(negativeAliasAddress, pools[0]);
+                assertEquals((byte) 0, u.getByte(originalAddress));
+            } catch (Throwable ex) {
+                failure.set(ex);
+            } finally {
+                // Prevent thread-exit cleanup from freeing the alias as we cannot
+                // directly free memory using a tagged address.
+                if (pools != null) {
+                    Arrays.fill(pools, 0);
+                }
+                if (originalAddress != 0) {
+                    u.freeMemory(originalAddress);
+                }
+            }
+        });
+
+        thread.join();
+        assertFalse(thread.isAlive(), "platform thread did not terminate");
+        if (failure.get() != null) {
+            throw new AssertionError("Thread failed", failure.get());
+        }
+
     }
 
     private void testCacheSaturation() {

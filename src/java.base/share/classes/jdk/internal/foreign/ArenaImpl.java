@@ -79,7 +79,7 @@ public sealed class ArenaImpl implements Arena {
             session.justClose();
             // The session cleanup at the end of this method may throw, so we
             // need to release the acquired pooled memory first.
-            if (pool > 0) {
+            if (pool != 0) {
                 ConfinedSegmentPool.release(session.owner, pool, poolSp);
             }
             session.resourceList.cleanup();
@@ -108,7 +108,7 @@ public sealed class ArenaImpl implements Arena {
                     if (pool == 0) {
                         pool = ConfinedSegmentPool.allocateLocal(session.owner);
                     }
-                    if (pool > 0) {
+                    if (pool != 0) {
                         this.pool = pool;
                     }
                 }
@@ -116,7 +116,7 @@ public sealed class ArenaImpl implements Arena {
                 // for any given Arena.
                 final long allocationByteSize = Math.max(1, byteSize);
                 final long address;
-                if (pool > 0 && (address = trySlice(pool, allocationByteSize, byteAlignment)) != 0) {
+                if (pool != 0 && (address = trySlice(pool, allocationByteSize, byteAlignment)) != 0) {
                     return SegmentFactories.makeNativeSegmentUnchecked(address, byteSize, session);
                 }
             }

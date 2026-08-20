@@ -66,7 +66,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * Pool entries use the following representation:
  * <ul>
  *     <li>zero: empty cache entry;
- *     <li>positive address: available pool.
+ *     <li>non-zero: available pool.
  * </ul>
  * Acquired pools are not represented in the cache.
  * <p>
@@ -113,7 +113,7 @@ public final class ConfinedSegmentPool {
      * by {@code thread}. A platform-thread arena uses its owner's cache, while
      * a virtual-thread arena uses the current carrier's cache.
      *
-     * @return a positive native address, or zero if no pool is available
+     * @return a non-zero native address, or zero if no pool is available
      */
     @ForceInline
     static long acquire(Thread thread) {
@@ -159,7 +159,7 @@ public final class ConfinedSegmentPool {
         }
         for (int i = 0; i < PLATFORM_POOL_COUNT; i++) {
             final long pool = pools[i];
-            if (pool > 0) {
+            if (pool != 0) {
                 U.freeMemory(pool);
                 pools[i] = 0;
             }
@@ -181,7 +181,7 @@ public final class ConfinedSegmentPool {
         }
         for (int i = 0; i < PLATFORM_POOL_COUNT; i++) {
             final long pool = pools[i];
-            if (pool > 0) {
+            if (pool != 0) {
                 pools[i] = 0; // available -> arena-owned and detached
                 return pool;
             }
@@ -193,21 +193,17 @@ public final class ConfinedSegmentPool {
         final long address;
         try {
             address = U.allocateMemory(POOLED_MEMORY_SIZE);
-            if (address < 0) {
-                throw new InternalError("Allocated memory pool is negative contrary to" +
-                        " the non-negative pointer invariant: 0x" + Long.toHexString(address));
-            }
         } catch (OutOfMemoryError _) {
             return 0;
         }
-        U.setMemory(address, POOLED_MEMORY_SIZE, (byte) 0);
+        zeroOutMemory(address, POOLED_MEMORY_SIZE);
         return address;
     }
 
     @ForceInline
     private static void releaseToCache(Thread cacheOwner, long pool, long size) {
         // Reject invalid prefixes before zeroOutMemory performs unchecked writes.
-        if (pool <= 0 || size < 0 || size > POOLED_MEMORY_SIZE) {
+        if (pool == 0 || size < 0 || size > POOLED_MEMORY_SIZE) {
             throw cannotReleasePooledMemory(pool, size);
         }
 

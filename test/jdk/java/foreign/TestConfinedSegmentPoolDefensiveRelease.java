@@ -159,7 +159,7 @@ final class TestConfinedSegmentPoolDefensiveRelease {
                 arena.allocate(1);
             }
             long pool = currentPool();
-            assertTrue(pool > 0, "Pool was not allocated");
+            assertNotEquals(0L, pool, "Pool was not allocated");
             try {
                 c.accept(pool);
             } catch (Throwable throwable) {
