@@ -745,7 +745,7 @@ void ShenandoahBarrierStubC2::cardtable(MacroAssembler& masm, Address address, R
 }
 
 void ShenandoahBarrierStubC2::patchable_jump(MacroAssembler& masm, const char gc_state, bool jump_when_state, Register tmp1, Register tmp2, Label* L_target) {
-  const size_t check_size = 7;
+  const size_t check_size = 8;
 
   PhaseOutput* const output = Compile::current()->output();
   if (output->in_scratch_emit_size()) {
@@ -765,7 +765,8 @@ void ShenandoahBarrierStubC2::patchable_jump(MacroAssembler& masm, const char gc
   address check_start = __ pc();
 
   __ ldrb(tmp1, gc_state_addr);
-  __ andr(tmp2, tmp1, gc_state);
+  __ mov(tmp2, gc_state);
+  __ andr(tmp2, tmp1, tmp2);
 
   // Emit the secondary jump and use it to cross-check against the actual GC state.
   // This also checks that all interesting GC state transitions are done non-racily
