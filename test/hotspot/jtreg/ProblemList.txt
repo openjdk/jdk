@@ -87,6 +87,11 @@ gc/stress/jfr/TestStressAllocationGCEventsWithShenandoah.java#generational 83869
 gc/stress/jfr/TestStressAllocationGCEventsWithShenandoah.java#default 8386964 generic-all
 gc/stress/jfr/TestStressBigAllocationGCEventsWithShenandoah.java#generational 8386964 generic-all
 gc/stress/jfr/TestStressBigAllocationGCEventsWithShenandoah.java#default 8386964 generic-all
+gc/TestGCALotAtAllSafepoints.java#Parallel 8390661 generic-all
+gc/TestGCALotAtAllSafepoints.java#Serial 8390661 generic-all
+gc/TestGCALotAtAllSafepoints.java#G1 8390661 generic-all
+gc/TestGCALotAtAllSafepoints.java#Z 8390661 generic-all
+gc/TestGCALotAtAllSafepoints.java#Shenandoah 8390661 generic-all
 
 #############################################################################
 
@@ -203,8 +208,6 @@ compiler/codegen/TestRedundantLea.java#Spill                            8361089 
 compiler/vectorapi/TestVectorReassociations.java 8388927 generic-all
 
 serviceability/sa/TestJhsdbJstackMixedWithXComp.java#xcomp-disable-tiered-compilation 8386674 linux-aarch64
-
-vmTestbase/nsk/jvmti/IterateOverReachableObjects/iterreachobj002/TestDescription.java 8384882 linux-all
 
 # The following test failure(s) DID NOT reproduce during Tier[1-8] testing
 # done for 8377828. Further analysis was done with 8376235 and just one
