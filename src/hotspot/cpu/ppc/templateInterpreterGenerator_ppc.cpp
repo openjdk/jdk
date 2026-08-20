@@ -1526,7 +1526,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   //=============================================================================
   // <<<<<< Back in Interpreter Frame >>>>>
 
-  // We are in thread_in_native_trans here and back in the normal
+  // We are in _thread_in_vm here and back in the normal
   // interpreter frame. We don't have to do anything special about
   // safepoints and we can switch to Java mode anytime we are ready.
 
