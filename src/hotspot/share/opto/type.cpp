@@ -1122,6 +1122,7 @@ void Type::check_fundamental_laws(const Type* t1, const Type* t2, VerifyMeetJoin
     ss.print("t2 meets jt      = "); t2mjt->dump_on(&ss); ss.cr();
     ss.print("t1 joins jt      = "); t1jjt->dump_on(&ss); ss.cr();
     ss.print("t2 joins jt      = "); t2jjt->dump_on(&ss); ss.cr();
+    ss.cr();
 
     ss.print_cr("Failed laws:");
     if (t1mmt != mt) {
@@ -2928,7 +2929,7 @@ const TypePtr* TypePtr::xmeet_speculative(const TypePtr* other) const {
     return nullptr;
   }
 
-  // Use the static type if speculative is nullptr
+  // Use the static type if speculative() is nullptr
   const TypePtr* this_spec = speculative();
   const TypePtr* other_spec = other->speculative();
 
@@ -2951,7 +2952,7 @@ const TypePtr* TypePtr::xjoin_speculative(const TypePtr* other) const {
     return nullptr;
   }
 
-  // Use the static type if speculative is nullptr
+  // Use the static type if speculative() is nullptr
   const TypePtr* this_spec = speculative();
   const TypePtr* other_spec = other->speculative();
 

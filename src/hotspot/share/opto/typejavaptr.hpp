@@ -276,7 +276,7 @@ private:
       if (elem1->base() == Type::Int) {
         // boolean[], byte[], short[], char[], int[] all use some kinds of TypeInt as their element
         // types, klass is used to distinguish between them. As a result, different kinds of array
-        // should result in bot[]
+        // should result in bot[].
         CIKlassType klass1 = t1->klass();
         CIKlassType klass2 = t2->klass();
         assert(klass1 != nullptr && klass2 != nullptr, "ambiguous array");
@@ -425,7 +425,7 @@ private:
       // A constant oop cannot be produced by an allocation in the current compilation
       return OopType::PtrType::make(Type::AnyPtr, TypePtr::TopPTR, offset, speculative, inline_depth);
     } else if (flat_in_array == TypePtr::TopFlat || instance_id == TypeOopPtr::InstanceTop) {
-      TypePtr::PTR ptr = (t1->ptr() == TypePtr::BotPTR && t2->ptr() == TypePtr::BotPTR) ? TypePtr::Null : TypePtr::TopPTR;
+      TypePtr::PTR ptr = join_ptr_with_null(join_ptr(t1, t2));
       return OopType::PtrType::make(Type::AnyPtr, ptr, offset, speculative, inline_depth);
     }
 
@@ -584,7 +584,7 @@ private:
     if (offset == Type::Offset::top) {
       return KlassType::PtrType::make(Type::AnyPtr, TypePtr::TopPTR, offset);
     } else if (flat_in_array == TypePtr::TopFlat) {
-      TypePtr::PTR ptr = (t1->ptr() == TypePtr::BotPTR && t2->ptr() == TypePtr::BotPTR) ? TypePtr::Null : TypePtr::TopPTR;
+      TypePtr::PTR ptr = join_ptr_with_null(join_ptr(t1, t2));
       return KlassType::PtrType::make(Type::AnyPtr, ptr, offset);
     }
 
@@ -792,7 +792,7 @@ private:
     } else if (elem1->base() == Type::Int) {
       // boolean[], byte[], short[], char[], int[] all use some kinds of TypeInt as their element
       // type, klass is used to distinguish between them. As a result, different kinds of array
-      // should result in top
+      // should result in top.
       if (t1->klass() != t2->klass()) {
         elem = ElemType::TOP;
       } else {
