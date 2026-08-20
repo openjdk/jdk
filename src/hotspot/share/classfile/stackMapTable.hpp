@@ -131,6 +131,9 @@ class StackMapReader : StackObj {
   // Contains assert_unset_fields generated from classfile
   StackMapFrame::AssertUnsetFieldTable* _assert_unset_fields_buffer;
 
+  // Cached set of initial unset fields
+  StackMapFrame::AssertUnsetFieldTable* _initial_unset_fields;
+
   // Check if reading first entry
   bool _first;
 

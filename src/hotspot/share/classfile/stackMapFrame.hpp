@@ -189,6 +189,8 @@ class StackMapFrame : public ResourceObj {
   // Verify that all strict fields have been initialized
   // Strict fields must be initialized before the super constructor is called
   bool verify_unset_fields_satisfied() {
+    assert(_assert_unset_fields != nullptr, "must be");
+
     bool all_satisfied = true;
     auto check_satisfied = [&] (const NameAndSig& key, const bool& value) {
       all_satisfied &= value;
@@ -199,13 +201,13 @@ class StackMapFrame : public ResourceObj {
 
   // Merge incoming unset strict fields from StackMapTable with
   // initial strict instance fields
-  AssertUnsetFieldTable* merge_unset_fields(AssertUnsetFieldTable* new_fields) {
+  static AssertUnsetFieldTable* merge_unset_fields(AssertUnsetFieldTable* initial_fields, AssertUnsetFieldTable* new_fields) {
     auto merge_satisfied = [&] (const NameAndSig& key, const bool& value) {
       if (!new_fields->contains(key)) {
         new_fields->put(key, true);
       }
     };
-    _assert_unset_fields->iterate_all(merge_satisfied);
+    initial_fields->iterate_all(merge_satisfied);
     return new_fields;
   }
 

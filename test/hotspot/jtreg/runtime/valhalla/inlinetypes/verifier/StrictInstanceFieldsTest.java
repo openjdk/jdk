@@ -35,6 +35,7 @@
  *          TryCatchChildBad.jasm
  *          UninitThisOnStack.jasm
  *          EarlyLarvalNoUninitThis.jasm
+ *          EarlyLarvalFrameOrdering.jasm
  *          NestedEarlyLarval.jcod
  *          EndsInEarlyLarval.jcod
  *          EarlyLarvalNotSubset.jcod
@@ -110,6 +111,9 @@ public class StrictInstanceFieldsTest {
 
         UninitThisOnStack c6 = new UninitThisOnStack();
         System.out.println(c6);
+
+        EarlyLarvalFrameOrdering c7 = new EarlyLarvalFrameOrdering();
+        System.out.println(c7);
 
         // --------------
         // NEGATIVE TESTS

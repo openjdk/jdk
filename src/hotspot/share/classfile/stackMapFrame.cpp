@@ -64,6 +64,7 @@ void StackMapFrame::unsatisfied_strict_fields_error(InstanceKlass* klass, int bc
     }
   };
   assert_unset_fields()->iterate_all(find_unset);
+  print_strict_fields(assert_unset_fields());
 
   verifier()->verify_error(
     ErrorContext::bad_strict_fields(bci, this),
@@ -229,23 +230,25 @@ bool StackMapFrame::is_assignable_to(
     return false;
   }
 
-  // Check that assert unset fields are compatible
-  bool compatible = verify_unset_fields_compatibility(target->assert_unset_fields());
-  if (!compatible) {
-    print_strict_fields(assert_unset_fields());
-    print_strict_fields(target->assert_unset_fields());
-    *ctx = ErrorContext::strict_fields_mismatch(target->offset(),
-        (StackMapFrame*)this, (StackMapFrame*)target);
-    return false;
-  }
-
-  if ((_flags | target->flags()) == target->flags()) {
-    return true;
-  } else {
+  if ((_flags | target->flags()) != target->flags()) {
     *ctx = ErrorContext::bad_flags(target->offset(),
         (StackMapFrame*)this, (StackMapFrame*)target);
     return false;
   }
+
+  if (flag_this_uninit()) {
+    // Check that assert unset fields are compatible
+    bool compatible = verify_unset_fields_compatibility(target->assert_unset_fields());
+    if (!compatible) {
+      print_strict_fields(assert_unset_fields());
+      print_strict_fields(target->assert_unset_fields());
+      *ctx = ErrorContext::strict_fields_mismatch(target->offset(),
+          (StackMapFrame*)this, (StackMapFrame*)target);
+      return false;
+    }
+  }
+
+  return true;
 }
 
 VerificationType StackMapFrame::pop_stack_ex(VerificationType type, TRAPS) {
