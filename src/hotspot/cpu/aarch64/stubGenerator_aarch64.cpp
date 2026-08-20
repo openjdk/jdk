@@ -5062,18 +5062,22 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  void store_keccak_state(Register a[], Register state) {
-    for (int i = 0; i < 24; i += 2) {
-      __ stp(a[i], a[i + 1], Address(state, i * 8));
+  void store_keccak_state(const Register a[], Register state) {
+    int i;
+
+    for (i = 0; i < 24; i += 2) {
+      __ stp(a[i], a[i + 1], Address(state, i * wordSize));
     }
-    __ str(a[24], Address(state, 192));
+    __ str(a[i], Address(state, i * wordSize));
   }
 
-  void load_keccak_state(Register a[], Register state) {
-    for (int i = 0; i < 24; i += 2) {
-      __ ldp(a[i], a[i + 1], Address(state, i * 8));
+  void load_keccak_state(const Register a[], Register state) {
+    int i;
+
+    for (i = 0; i < 24; i += 2) {
+      __ ldp(a[i], a[i + 1], Address(state, i * wordSize));
     }
-    __ ldr(a[24], Address(state, 192));
+    __ ldr(a[i], Address(state, i * wordSize));
   }
 
   // Inputs:
@@ -5098,7 +5102,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // use r3.r17,r19..r28 to keep a0..a24.
     // a0..a24 are respective locals from SHA3.java
-    Register a[25] = {
+    const Register a[25] = {
         r25, r26, r27, r3, r4, r5, r6, r7, rscratch1, rscratch2, r10, r11, r12,
         r13, r14, r15, r16, r17, r28, r19, r20, r21, r22, r23, r24 };
     Register tmp0 = r0, tmp1 = r1, tmp2 = r2, tmp3 = r30;
@@ -5160,11 +5164,7 @@ class StubGenerator: public StubCodeGenerator {
     store_keccak_state(a, state1);
 
     // restore callee-saved registers
-    __ ldp(r19, r20, Address(sp, 16));
-    __ ldp(r21, r22, Address(sp, 32));
-    __ ldp(r23, r24, Address(sp, 48));
-    __ ldp(r25, r26, Address(sp, 64));
-    __ ldp(r27, r28, Address(sp, 80));
+    __ pop(saved_regs, sp);
     if (can_use_fp && can_use_r18) {
       __ ldr(r18_tls, Address(sp, 96));
       __ add(rfp, sp, 112); // leave() will copy rfp to sp below
@@ -8909,7 +8909,7 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   void keccak_round_gpr(bool can_use_fp, bool can_use_r18, Register rc,
-                        Register a[], Register tmp0, Register tmp1,
+                        const Register a[], Register tmp0, Register tmp1,
                         Register tmp2) {
     __ eor3(tmp1, a[4], a[9], a[14]);
     __ eor3(tmp0, tmp1, a[19], a[24]); // tmp0 = a4^a9^a14^a19^a24 = c4
@@ -9043,7 +9043,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // use r3.r17,r19..r28 to keep a0..a24.
     // a0..a24 are respective locals from SHA3.java
-    Register a[25] = {
+    const Register a[25] = {
         r25, r26, r27, r3, r4, r5, r6, r7, rscratch1, rscratch2, r10, r11, r12,
         r13, r14, r15, r16, r17, r28, r19, r20, r21, r22, r23, r24 };
     Register tmp0 = block_size, tmp1 = buf, tmp2 = state, tmp3 = r30;
@@ -9060,20 +9060,18 @@ class StubGenerator: public StubCodeGenerator {
     __ enter();
 
     // save almost all yet unsaved gpr registers on stack
-    __ str(block_size, __ pre(sp, -128));
+    auto saved_regs = RegSet::range(r19, r28);
+    __ push(saved_regs, sp);
+    __ sub(sp, sp, 48);
+
+    __ str(block_size, sp);
     if (multi_block) {
       __ stpw(ofs, limit, Address(sp, 8));
     }
-    // 8 bytes at sp+16 will be used to keep buf
-    __ stp(r19, r20, Address(sp, 32));
-    __ stp(r21, r22, Address(sp, 48));
-    __ stp(r23, r24, Address(sp, 64));
-    __ stp(r25, r26, Address(sp, 80));
-    __ stp(r27, r28, Address(sp, 96));
     if (can_use_r18 && can_use_fp) {
-      __ stp(r18_tls, state, Address(sp, 112));
+      __ stp(r18_tls, state, Address(sp, 24));
     } else {
-      __ str(state, Address(sp, 112));
+      __ str(state, Address(sp, 24));
     }
 
     // begin sha3 calculations: loading a0..a24 from state arrary
@@ -9169,22 +9167,19 @@ class StubGenerator: public StubCodeGenerator {
       __ movw(c_rarg0, tmp2); // return offset
     }
     if (can_use_fp && can_use_r18) {
-      __ ldp(r18_tls, state, Address(sp, 112));
+      __ ldp(r18_tls, state, Address(sp, 24));
     } else {
-      __ ldr(state, Address(sp, 112));
+      __ ldr(state, Address(sp, 24));
     }
 
     // save calculated sha3 state
     store_keccak_state(a, state);
 
     // restore required registers from stack
-    __ ldp(r19, r20, Address(sp, 32));
-    __ ldp(r21, r22, Address(sp, 48));
-    __ ldp(r23, r24, Address(sp, 64));
-    __ ldp(r25, r26, Address(sp, 80));
-    __ ldp(r27, r28, Address(sp, 96));
+    __ add(sp, sp, 48);
+    __ pop(saved_regs, sp);
     if (can_use_fp && can_use_r18) {
-      __ add(rfp, sp, 128); // leave() will copy rfp to sp below
+      __ mov(rfp, sp); // leave() will copy rfp to sp below
     } // else no need to recalculate rfp, since it wasn't changed
 
     __ leave();
