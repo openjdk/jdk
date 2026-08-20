@@ -3966,17 +3966,17 @@ bool os::pd_release_memory(char* addr, size_t bytes) {
 }
 
 bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
-  // Windows lets us specify the minimum size of the stack using a call to the
-  // `SetThreadStackGuarantee()` function.  Since red pages are part of the
-  // unusable portion of the stack, only the yellow page count influences the
-  // argument to `SetThreadStackGuarantee()`.  The red page count continues to
-  // be used in the calculation of the total stack memory to reserve.
+  // `SetThreadStackGuarantee()` specifies the minimum amount of stack that
+  // remains available when Windows raises `EXCEPTION_STACK_OVERFLOW`.  HotSpot
+  // uses the yellow and reserved zones to handle recoverable stack overflows,
+  // so their combined size decides the argument to `SetThreadStackGuarantee().
+  // The red zone is used only for unrecoverable overflows and is therefore
+  // excluded, although it remains part of the total stack guard-zone size.
   //
-  // However, there is an additional subtlety that because Windows doesn't
-  // commit all requested stack pages in one go (and instead commits pages as
-  // needed using an additional guard page), the minimum stack size (and thus
-  // the argument to `SetThreadStackGuarantee()`) needs to be one page less,
-  // relative to the yellow page count.
+  // One page of the yellow and reserved zones is the guard page whose access
+  // triggers the stack overflow exception.  That page is not part of the stack
+  // that is available to handle the exception, so we request one page less than
+  // the combined yellow and reserved zone size.
   const size_t requested = StackOverflow::stack_yellow_reserved_zone_size()
                            - os::vm_page_size();
   ULONG ulong_requested = checked_cast<ULONG>(requested);
