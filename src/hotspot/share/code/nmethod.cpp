@@ -2452,7 +2452,8 @@ void nmethod::purge(bool unregister_nmethod) {
     delete[] _compiled_ic_data;
   }
 
-  if (_immutable_data != blob_end() && !AOTCodeCache::is_address_in_aot_cache((address)_oop_maps)) {
+  // Don't remove _immutable_data reference from AOT code
+  if (_immutable_data != blob_end() && !AOTCodeCache::is_address_in_aot_cache((address)_immutable_data)) {
     // Free memory if this was the last nmethod referencing immutable data
     if (dec_immutable_data_ref_count() == 0) {
       os::free(_immutable_data);

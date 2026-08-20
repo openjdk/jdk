@@ -411,11 +411,11 @@
                                                                             \
   product(double, AOTCodeInvokeBase, 100.0, DIAGNOSTIC,                     \
           "AOT code invocation base limit")                                 \
-          range(1.0, DBL_MAX)                                               \
+          range(1.0, 10000.0)                                               \
                                                                             \
   product(double, AOTCodeInvokeScale, 1.0, DIAGNOSTIC,                      \
           "scale AOT code invocation limit")                                \
-          range(0.001, DBL_MAX)                                             \
+          range(0.001, 1000.0)                                              \
                                                                             \
   product(bool, UseAOTCodeCounters, true, DIAGNOSTIC,                       \
           "Use AOT code counter to trigger JIT compilation")                \

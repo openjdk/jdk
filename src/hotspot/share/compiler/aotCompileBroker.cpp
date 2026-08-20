@@ -33,6 +33,7 @@
 #include "compiler/compiler_globals.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/trainingData.hpp"
 #include "runtime/handles.inline.hpp"
 
@@ -152,7 +153,8 @@ public:
     for (int i = 0; i < _methods.length(); i++) {
       Method* m = _methods.at(i);
 
-      bool is_success = !m->is_not_compilable(_comp_level);
+      bool is_success = !m->is_not_compilable(_comp_level) &&
+                        m->has_compiled_code() && m->code()->is_aot();
       if (is_success) {
         success_count++;
       }
@@ -160,7 +162,7 @@ public:
       LogStreamHandle(Debug, aot, compilation) log;
       if (log.is_enabled()) {
         ResourceMark rm;
-        log.print("[%4d] T%d Compiled %s [%p", i, log_comp_level, m->external_name(), m);
+        log.print("[%4d] A%d Compiled %s [%p", i, log_comp_level, m->external_name(), m);
         if (builder != nullptr) {
           Method* requested_m = builder->to_requested(builder->get_buffered_addr(m));
           log.print(" -> %p", requested_m);
@@ -169,7 +171,7 @@ public:
       }
     }
 
-    logi.print_cr("AOT Compilation for level %d finished (%d successful out of %d total)",
+    logi.print_cr("AOT Compilation for level A%d finished (%d successful out of %d total)",
                   log_comp_level, success_count, _methods.length());
   }
 

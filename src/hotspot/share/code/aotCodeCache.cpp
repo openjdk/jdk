@@ -446,8 +446,7 @@ void AOTCodeCache::init3() {
 }
 
 void AOTCodeCache::dump() {
-  if (is_on()) {
-    assert(is_on_for_dump(), "should be called only when dumping AOT code");
+  if (is_on_for_dump()) { // It will also return false if there was failure
     MutexLocker ml(Compile_lock);
     _cache->finish_write();
   }

@@ -255,7 +255,6 @@ void print_statistics_before_exit() {
   LogStreamHandle(Info, aot, codecache, stats) aot_log;
   if (CITime) {
     CompileBroker::print_times();
-    AOTCodeCache::print_timers_on(tty);
   } else if (aot_log.is_enabled()) {
     AOTCodeCache::print_timers_on(&aot_log);
   }
