@@ -25,6 +25,7 @@
 #include "ci/ciSymbols.hpp"
 #include "classfile/javaClasses.hpp"
 #include "compiler/compileLog.hpp"
+#include "opto/c2compiler.hpp"
 #include "opto/callnode.hpp"
 #include "opto/graphKit.hpp"
 #include "opto/idealKit.hpp"
@@ -717,7 +718,7 @@ PhaseStringOpts::PhaseStringOpts(PhaseGVN* gvn):
   Phase(StringOpts),
   _gvn(gvn) {
 
-  assert(OptimizeStringConcat, "shouldn't be here");
+  assert(C->do_stringopts(), "shouldn't be here");
 
   // Collect the types needed to talk about the various slices of memory
   byte_adr_idx = C->get_alias_index(TypeAryPtr::BYTES);
@@ -2074,9 +2075,9 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
       overflow->set_req(argi, __ IfTrue(iff));
       if (!prev_stopped && kit.stopped()) {
         // There could be downstream users in either a later call to replace_string_concat
-        // or late inlines that expect a live result.  This is an edge case:
+        // or late inlines that expect a live result. This is an edge case:
         // having a statically known overflowing concat, where we would throw an OOM error at runtime if it is reached,
-        // and at this point we have done destructive graph updates; hence do a hard bailout.
+        // and at this point we have done destructive graph updates; hence do a bailout (with retry).
         static_overflow = true;
         break;
       }
@@ -2085,7 +2086,7 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
 
   if (kit.stopped()) {
     assert(static_overflow, "no reachable success path for a non-overflow case.");
-    C->record_method_not_compilable("StringConcat replacement did not produce a reachable success path.");
+    C->record_failure(C2Compiler::retry_no_stringopts());
     return;
   }
 
