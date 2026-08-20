@@ -33,7 +33,10 @@
 
 import java.util.List;
 import jdk.incubator.json.Json;
+import jdk.incubator.json.JsonArray;
+import jdk.incubator.json.JsonNumber;
 import jdk.incubator.json.JsonString;
+import jdk.incubator.json.JsonValue;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -206,5 +209,26 @@ public class TestGenerate {
         }""", display);
 
         assertDoesNotThrow(() -> Json.parse(display));
+    }
+
+    @Test
+    void testDeepNestingToString() {
+        final var jv  = deepNest();
+        assertDoesNotThrow(() -> jv.toString());
+    }
+
+    @Test
+    void testDeepNestingToDisplayString() {
+        final var jv  = deepNest();
+        assertDoesNotThrow(() -> Json.toDisplayString(jv, ""));
+    }
+
+    private static JsonValue deepNest() {
+        int depth = 10_000;
+        JsonValue jv = JsonNumber.of(0);
+        for (int i = 0; i < depth; i++) {
+            jv = JsonArray.of(List.of(jv));
+        }
+        return jv;
     }
 }

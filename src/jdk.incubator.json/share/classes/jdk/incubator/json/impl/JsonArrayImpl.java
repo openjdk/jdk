@@ -81,14 +81,6 @@ public final class JsonArrayImpl implements JsonArray, JsonValueSupport {
 
     @Override
     public String toString() {
-        var s = new StringBuilder("[");
-        var list = asList();
-        for (var v: list) {
-            s.append(v.toString()).append(',');
-        }
-        if (!list.isEmpty()) {
-            s.setLength(s.length() - 1); // trim final comma
-        }
-        return s.append(']').toString();
+        return JsonGenerator.toCompactString(this);
     }
 }

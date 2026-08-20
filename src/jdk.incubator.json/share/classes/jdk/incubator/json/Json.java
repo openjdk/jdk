@@ -24,11 +24,10 @@
  */
 package jdk.incubator.json;
 
-import java.util.Arrays;
 import java.util.Objects;
 
 import jdk.incubator.json.impl.JsonParser;
-import jdk.incubator.json.impl.Utils;
+import jdk.incubator.json.impl.JsonGenerator;
 
 /**
  * This class provides static methods for parsing and generating JSON documents.
@@ -126,65 +125,7 @@ public final class Json {
             throw new IllegalArgumentException("indent contains non-insignificant" +
                 " whitespace: " + indent);
         }
-        var s = new StringBuilder();
-        toDisplayString(value, s, 0, indent, false);
-        return s.toString();
-    }
-
-    private static void toDisplayString(JsonValue jv, StringBuilder s, int depth, String indent, boolean isField) {
-        switch (jv) {
-            case JsonObject jo -> toDisplayString(jo, s, depth, indent, isField);
-            case JsonArray ja -> toDisplayString(ja, s, depth, indent, isField);
-            default -> s.append(isField ? " " : indent.repeat(depth)).append(jv);
-        }
-    }
-
-    private static void toDisplayString(JsonObject jo, StringBuilder s,
-                                          int depth, String indent, boolean isField) {
-        var prefix = indent.repeat(depth);
-        if (isField) {
-            s.append(' ');
-        } else {
-            s.append(prefix);
-        }
-        var map = jo.asMap();
-        if (map.isEmpty()) {
-            s.append("{}");
-        } else {
-            s.append("{\n");
-            map.forEach((name, val) -> {
-                s.append(indent.repeat(depth + 1))
-                    .append('"')
-                    .append(Utils.escape(name))
-                    .append("\":");
-                toDisplayString(val, s, depth + 1, indent, true);
-                s.append(",\n");
-            });
-            s.setLength(s.length() - 2); // trim final comma
-            s.append('\n').append(prefix).append('}');
-        }
-    }
-
-    private static void toDisplayString(JsonArray ja, StringBuilder s,
-                                          int depth, String indent, boolean isField) {
-        var prefix = indent.repeat(depth);
-        if (isField) {
-            s.append(' ');
-        } else {
-            s.append(prefix);
-        }
-        var list = ja.asList();
-        if (list.isEmpty()) {
-            s.append("[]");
-        } else {
-            s.append("[\n");
-            for (JsonValue v : list) {
-                toDisplayString(v, s, depth + 1, indent, false);
-                s.append(",\n");
-            }
-            s.setLength(s.length() - 2); // trim final comma
-            s.append('\n').append(prefix).append(']');
-        }
+        return JsonGenerator.toDisplayString(value, indent);
     }
 
     // no instantiation is allowed for this class

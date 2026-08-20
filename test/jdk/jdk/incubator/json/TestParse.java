@@ -231,4 +231,12 @@ public class TestParse {
             assertThrows(IllegalArgumentException.class, () -> new JsonParseException("Foo", -1, 1));
         }
     }
+
+    @Test
+    void testDeepNestingParse() {
+        int depth = 10_000;
+        var json = "[".repeat(depth) + "0" + "]".repeat(depth);
+        var parsed = assertDoesNotThrow(() -> Json.parse(json));
+        assertEquals(json, parsed.toString());
+    }
 }
