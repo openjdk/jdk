@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,6 +25,7 @@
 /**
  * @test
  * @bug 8193518 8249608
+ * @requires vm.compMode != "Xcomp"
  * @summary C2: Vector registers are sometimes corrupted at safepoint
  * @run main/othervm -XX:-BackgroundCompilation -XX:+IgnoreUnrecognizedVMOptions -XX:+UseCountedLoopSafepoints -XX:LoopStripMiningIter=2 -XX:-TieredCompilation TestVectorsNotSavedAtSafepoint test1
  * @run main/othervm -XX:-BackgroundCompilation TestVectorsNotSavedAtSafepoint test2

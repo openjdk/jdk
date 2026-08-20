@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,10 +43,10 @@ public class UnsupportedClassFileVersion implements Opcodes {
         writeClassFile();
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder("-cp", ".",  "ClassFile");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("ClassFile has been compiled by a more recent version of the " +
-                            "Java Runtime (class file version 99.0), this version of " +
-                            "the Java Runtime only recognizes class file versions up to " +
-                            System.getProperty("java.class.version"));
+        output.shouldMatch("ClassFile requires a newer Java runtime. The runtime in use, Java " +
+                           Runtime.getRuntime().version().feature() + ", supports class file versions up to " +
+                           System.getProperty("java.class.version") +
+                           ", but the class file version of ClassFile is 99.0");
 
         output.shouldHaveExitValue(1);
     }

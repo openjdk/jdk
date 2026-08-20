@@ -467,17 +467,18 @@ public final class LocaleMatcher {
                 try {
                     w = Double.parseDouble(range.substring(index));
                 }
-                catch (Exception e) {
-                    throw new IllegalArgumentException("weight=\""
+                catch (NumberFormatException _) {
+                    throw new IllegalArgumentException("The weight \""
                                   + range.substring(index)
-                                  + "\" for language range \"" + r + "\"");
+                                  + "\" for language range \"" + r + "\""
+                                  + " must be between " + MIN_WEIGHT
+                                  + " and " + MAX_WEIGHT + ", inclusive.");
                 }
-
                 if (w < MIN_WEIGHT || w > MAX_WEIGHT) {
-                    throw new IllegalArgumentException("weight=" + w
-                                  + " for language range \"" + r
-                                  + "\". It must be between " + MIN_WEIGHT
-                                  + " and " + MAX_WEIGHT + ".");
+                    throw new IllegalArgumentException("The weight \"" + w
+                                  + "\" for language range \"" + r + "\""
+                                  + " must be between " + MIN_WEIGHT
+                                  + " and " + MAX_WEIGHT + ", inclusive.");
                 }
             }
 

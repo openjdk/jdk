@@ -87,7 +87,7 @@ public class IRNode {
     /**
      * Prefix for normal IR nodes.
      */
-    private static final String PREFIX = "_#";
+    public static final String PREFIX = "_#";
     /**
      * Prefix for composite IR nodes.
      */
@@ -392,8 +392,12 @@ public class IRNode {
 
     public static final String ALLOC_OF = COMPOSITE_PREFIX + "ALLOC_OF" + POSTFIX;
     static {
-        String regex = START + "Allocate\\b" + MID + "allocationKlass:.*\\b" + IS_REPLACED + "\\s.*" + END;
-        macroNodes(ALLOC_OF, regex);
+        allocateOfNodes(ALLOC_OF, IS_REPLACED);
+    }
+
+    public static void allocateOfNodes(String irNodePlaceholder, String allocatee) {
+        String regex = START + "Allocate\\b" + MID + "allocationKlass:.*\\b" + allocatee + "\\s.*" + END;
+        macroNodes(irNodePlaceholder, regex);
     }
 
     public static final String ALLOC_ARRAY = PREFIX + "ALLOC_ARRAY" + POSTFIX;
@@ -404,6 +408,10 @@ public class IRNode {
 
     public static final String ALLOC_ARRAY_OF = COMPOSITE_PREFIX + "ALLOC_ARRAY_OF" + POSTFIX;
     static {
+        allocateArrayOfNodes(ALLOC_ARRAY_OF, IS_REPLACED);
+    }
+
+    public static void allocateArrayOfNodes(String irNodePlaceholder, String allocatee) {
         // Assuming we are looking for an array of "some/package/MyClass". The printout is
         // [Lsome/package/MyClass;
         // or, with more dimensions
@@ -422,9 +430,9 @@ public class IRNode {
         //   but will eat the package path prefix in the cases described above
         // - the name we are looking for
         // - the final ";".
-        String name_part = "\\[+.(" + partial_name_prefix + ")?" + IS_REPLACED + ";";
+        String name_part = "\\[+.(" + partial_name_prefix + ")?" + allocatee + ";";
         String regex = START + "AllocateArray\\b" + MID + "allocationKlass:" + name_part + ".*" + END;
-        macroNodes(ALLOC_ARRAY_OF, regex);
+        macroNodes(irNodePlaceholder, regex);
     }
 
     public static final String OR = PREFIX + "OR" + POSTFIX;
@@ -489,17 +497,40 @@ public class IRNode {
 
     public static final String CALL_OF = COMPOSITE_PREFIX + "CALL_OF" + POSTFIX;
     static {
-        callOfNodes(CALL_OF, "Call.*");
+        callOfNodes(CALL_OF, "Call.*", IS_REPLACED + " " );
     }
 
     public static final String CALL_OF_METHOD = COMPOSITE_PREFIX + "CALL_OF_METHOD" + POSTFIX;
     static {
-        callOfNodes(CALL_OF_METHOD, "Call.*Java");
+        callOfNodes(CALL_OF_METHOD, "Call.*Java", IS_REPLACED + " ");
+    }
+
+    public static final String STATIC_CALL = PREFIX + "STATIC_CALL" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(STATIC_CALL, "CallStaticJava");
     }
 
     public static final String STATIC_CALL_OF_METHOD = COMPOSITE_PREFIX + "STATIC_CALL_OF_METHOD" + POSTFIX;
     static {
-        callOfNodes(STATIC_CALL_OF_METHOD, "CallStaticJava");
+        staticCallOfMethodNodes(STATIC_CALL_OF_METHOD, IS_REPLACED + " ");
+    }
+
+    public static void staticCallOfMethodNodes(String irNodePlaceholder, String calleeRegex) {
+        callOfNodes(irNodePlaceholder, "CallStaticJava", calleeRegex);
+    }
+
+    public static final String CALL_LEAF_NO_FP = PREFIX + "CALL_LEAF_NO_FP" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CALL_LEAF_NO_FP, "CallLeafNoFP");
+    }
+
+    public static final String CALL_LEAF_NO_FP_OF_METHOD = COMPOSITE_PREFIX + "CALL_LEAF_NO_FP_OF_METHOD" + POSTFIX;
+    static {
+        callLeafNoFpOfMethodNodes(CALL_LEAF_NO_FP_OF_METHOD, IS_REPLACED);
+    }
+
+    public static void callLeafNoFpOfMethodNodes(String irNodePlaceholder, String calleeRegex) {
+        callOfNodes(irNodePlaceholder, "CallLeafNoFP", calleeRegex);
     }
 
     public static final String CAST_II = PREFIX + "CAST_II" + POSTFIX;
@@ -624,6 +655,11 @@ public class IRNode {
     public static final String CMP_N = PREFIX + "CMP_N" + POSTFIX;
     static {
         beforeMatchingNameRegex(CMP_N, "CmpN");
+    }
+
+    public static final String CMP_P_OR_N = PREFIX + "CMP_P_OR_N" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CMP_P_OR_N, "Cmp(P|N)");
     }
 
     public static final String CMP_LT_MASK = PREFIX + "CMP_LT_MASK" + POSTFIX;
@@ -763,6 +799,26 @@ public class IRNode {
         beforeMatchingNameRegex(DIV_MOD_L, "DivModL");
     }
 
+    public static final String DIV_VB = VECTOR_PREFIX + "DIV_VB" + POSTFIX;
+    static {
+        vectorNode(DIV_VB, "DivVB", TYPE_BYTE);
+    }
+
+    public static final String DIV_VS = VECTOR_PREFIX + "DIV_VS" + POSTFIX;
+    static {
+        vectorNode(DIV_VS, "DivVS", TYPE_SHORT);
+    }
+
+    public static final String DIV_VI = VECTOR_PREFIX + "DIV_VI" + POSTFIX;
+    static {
+        vectorNode(DIV_VI, "DivVI", TYPE_INT);
+    }
+
+    public static final String DIV_VL = VECTOR_PREFIX + "DIV_VL" + POSTFIX;
+    static {
+        vectorNode(DIV_VL, "DivVL", TYPE_LONG);
+    }
+
     public static final String DIV_VHF = VECTOR_PREFIX + "DIV_VHF" + POSTFIX;
     static {
         vectorNode(DIV_VHF, "DivVHF", TYPE_SHORT);
@@ -790,7 +846,7 @@ public class IRNode {
 
     public static final String DYNAMIC_CALL_OF_METHOD = COMPOSITE_PREFIX + "DYNAMIC_CALL_OF_METHOD" + POSTFIX;
     static {
-        callOfNodes(DYNAMIC_CALL_OF_METHOD, "CallDynamicJava");
+        callOfNodes(DYNAMIC_CALL_OF_METHOD, "CallDynamicJava", IS_REPLACED);
     }
 
     public static final String EXPAND_BITS = PREFIX + "EXPAND_BITS" + POSTFIX;
@@ -926,6 +982,11 @@ public class IRNode {
         beforeMatchingNameRegex(IF, "If\\b");
     }
 
+    public static final String INLINE_TYPE = PREFIX + "INLINE_TYPE" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(INLINE_TYPE, "InlineType");
+    }
+
     public static final String INTRINSIC_TRAP = PREFIX + "INTRINSIC_TRAP" + POSTFIX;
     static {
         trapNodes(INTRINSIC_TRAP, "intrinsic");
@@ -966,7 +1027,11 @@ public class IRNode {
 
     public static final String LOAD_OF_CLASS = COMPOSITE_PREFIX + "LOAD_OF_CLASS" + POSTFIX;
     static {
-        loadOfNodes(LOAD_OF_CLASS, "Load(B|UB|S|US|I|L|F|D|P|N)");
+        anyLoadOfNodes(LOAD_OF_CLASS, IS_REPLACED);
+    }
+
+    public static void anyLoadOfNodes(String irNodePlaceholder, String fieldHolder) {
+        loadOfNodes(irNodePlaceholder, "Load(B|UB|S|US|I|L|F|D|P|N)", fieldHolder);
     }
 
     public static final String LOAD_B = PREFIX + "LOAD_B" + POSTFIX;
@@ -976,7 +1041,7 @@ public class IRNode {
 
     public static final String LOAD_B_OF_CLASS = COMPOSITE_PREFIX + "LOAD_B_OF_CLASS" + POSTFIX;
     static {
-        loadOfNodes(LOAD_B_OF_CLASS, "LoadB");
+        loadOfNodes(LOAD_B_OF_CLASS, "LoadB", IS_REPLACED);
     }
 
     public static final String LOAD_D = PREFIX + "LOAD_D" + POSTFIX;
@@ -986,7 +1051,7 @@ public class IRNode {
 
     public static final String LOAD_D_OF_CLASS = COMPOSITE_PREFIX + "LOAD_D_OF_CLASS" + POSTFIX;
     static {
-        loadOfNodes(LOAD_D_OF_CLASS, "LoadD");
+        loadOfNodes(LOAD_D_OF_CLASS, "LoadD", IS_REPLACED);
     }
 
     public static final String LOAD_F = PREFIX + "LOAD_F" + POSTFIX;
@@ -996,7 +1061,7 @@ public class IRNode {
 
     public static final String LOAD_F_OF_CLASS = COMPOSITE_PREFIX + "LOAD_F_OF_CLASS" + POSTFIX;
     static {
-        loadOfNodes(LOAD_F_OF_CLASS, "LoadF");
+        loadOfNodes(LOAD_F_OF_CLASS, "LoadF", IS_REPLACED);
     }
 
     public static final String LOAD_I = PREFIX + "LOAD_I" + POSTFIX;
@@ -1006,7 +1071,7 @@ public class IRNode {
 
     public static final String LOAD_I_OF_CLASS = COMPOSITE_PREFIX + "LOAD_I_OF_CLASS" + POSTFIX;
     static {
-        loadOfNodes(LOAD_I_OF_CLASS, "LoadI");
+        loadOfNodes(LOAD_I_OF_CLASS, "LoadI", IS_REPLACED);
     }
 
     public static final String LOAD_KLASS = PREFIX + "LOAD_KLASS" + POSTFIX;
@@ -1031,7 +1096,7 @@ public class IRNode {
 
     public static final String LOAD_L_OF_CLASS = COMPOSITE_PREFIX + "LOAD_L_OF_CLASS" + POSTFIX;
     static {
-        loadOfNodes(LOAD_L_OF_CLASS, "LoadL");
+        loadOfNodes(LOAD_L_OF_CLASS, "LoadL", IS_REPLACED);
     }
 
     public static final String LOAD_N = PREFIX + "LOAD_N" + POSTFIX;
@@ -1041,7 +1106,7 @@ public class IRNode {
 
     public static final String LOAD_N_OF_CLASS = COMPOSITE_PREFIX + "LOAD_N_OF_CLASS" + POSTFIX;
     static {
-        loadOfNodes(LOAD_N_OF_CLASS, "LoadN");
+        loadOfNodes(LOAD_N_OF_CLASS, "LoadN", IS_REPLACED);
     }
 
     public static final String LOAD_OF_FIELD = COMPOSITE_PREFIX + "LOAD_OF_FIELD" + POSTFIX;
@@ -1057,7 +1122,7 @@ public class IRNode {
 
     public static final String LOAD_P_OF_CLASS = COMPOSITE_PREFIX + "LOAD_P_OF_CLASS" + POSTFIX;
     static {
-        loadOfNodes(LOAD_P_OF_CLASS, "LoadP");
+        loadOfNodes(LOAD_P_OF_CLASS, "LoadP", IS_REPLACED);
     }
 
     public static final String LOAD_S = PREFIX + "LOAD_S" + POSTFIX;
@@ -1067,7 +1132,7 @@ public class IRNode {
 
     public static final String LOAD_S_OF_CLASS = COMPOSITE_PREFIX + "LOAD_S_OF_CLASS" + POSTFIX;
     static {
-        loadOfNodes(LOAD_S_OF_CLASS, "LoadS");
+        loadOfNodes(LOAD_S_OF_CLASS, "LoadS", IS_REPLACED);
     }
 
     public static final String LOAD_UB = PREFIX + "LOAD_UB" + POSTFIX;
@@ -1077,7 +1142,7 @@ public class IRNode {
 
     public static final String LOAD_UB_OF_CLASS = COMPOSITE_PREFIX + "LOAD_UB_OF_CLASS" + POSTFIX;
     static {
-        loadOfNodes(LOAD_UB_OF_CLASS, "LoadUB");
+        loadOfNodes(LOAD_UB_OF_CLASS, "LoadUB", IS_REPLACED);
     }
 
     public static final String LOAD_US = PREFIX + "LOAD_US" + POSTFIX;
@@ -1087,7 +1152,7 @@ public class IRNode {
 
     public static final String LOAD_US_OF_CLASS = COMPOSITE_PREFIX + "LOAD_US_OF_CLASS" + POSTFIX;
     static {
-        loadOfNodes(LOAD_US_OF_CLASS, "LoadUS");
+        loadOfNodes(LOAD_US_OF_CLASS, "LoadUS", IS_REPLACED);
     }
 
     public static final String LOAD_VECTOR_B = VECTOR_PREFIX + "LOAD_VECTOR_B" + POSTFIX;
@@ -2083,7 +2148,7 @@ public class IRNode {
 
     public static final String STORE_B_OF_CLASS = COMPOSITE_PREFIX + "STORE_B_OF_CLASS" + POSTFIX;
     static {
-        storeOfNodes(STORE_B_OF_CLASS, "StoreB");
+        storeOfNodes(STORE_B_OF_CLASS, "StoreB", IS_REPLACED);
     }
 
     public static final String STORE_C = PREFIX + "STORE_C" + POSTFIX;
@@ -2093,7 +2158,7 @@ public class IRNode {
 
     public static final String STORE_C_OF_CLASS = COMPOSITE_PREFIX + "STORE_C_OF_CLASS" + POSTFIX;
     static {
-        storeOfNodes(STORE_C_OF_CLASS, "StoreC");
+        storeOfNodes(STORE_C_OF_CLASS, "StoreC", IS_REPLACED);
     }
 
     public static final String STORE_D = PREFIX + "STORE_D" + POSTFIX;
@@ -2103,7 +2168,7 @@ public class IRNode {
 
     public static final String STORE_D_OF_CLASS = COMPOSITE_PREFIX + "STORE_D_OF_CLASS" + POSTFIX;
     static {
-        storeOfNodes(STORE_D_OF_CLASS, "StoreD");
+        storeOfNodes(STORE_D_OF_CLASS, "StoreD", IS_REPLACED);
     }
 
     public static final String STORE_F = PREFIX + "STORE_F" + POSTFIX;
@@ -2113,7 +2178,7 @@ public class IRNode {
 
     public static final String STORE_F_OF_CLASS = COMPOSITE_PREFIX + "STORE_F_OF_CLASS" + POSTFIX;
     static {
-        storeOfNodes(STORE_F_OF_CLASS, "StoreF");
+        storeOfNodes(STORE_F_OF_CLASS, "StoreF", IS_REPLACED);
     }
 
     public static final String STORE_I = PREFIX + "STORE_I" + POSTFIX;
@@ -2123,7 +2188,7 @@ public class IRNode {
 
     public static final String STORE_I_OF_CLASS = COMPOSITE_PREFIX + "STORE_I_OF_CLASS" + POSTFIX;
     static {
-        storeOfNodes(STORE_I_OF_CLASS, "StoreI");
+        storeOfNodes(STORE_I_OF_CLASS, "StoreI", IS_REPLACED);
     }
 
     public static final String STORE_L = PREFIX + "STORE_L" + POSTFIX;
@@ -2133,7 +2198,7 @@ public class IRNode {
 
     public static final String STORE_L_OF_CLASS = COMPOSITE_PREFIX + "STORE_L_OF_CLASS" + POSTFIX;
     static {
-        storeOfNodes(STORE_L_OF_CLASS, "StoreL");
+        storeOfNodes(STORE_L_OF_CLASS, "StoreL", IS_REPLACED);
     }
 
     public static final String STORE_N = PREFIX + "STORE_N" + POSTFIX;
@@ -2143,12 +2208,16 @@ public class IRNode {
 
     public static final String STORE_N_OF_CLASS = COMPOSITE_PREFIX + "STORE_N_OF_CLASS" + POSTFIX;
     static {
-        storeOfNodes(STORE_N_OF_CLASS, "StoreN");
+        storeOfNodes(STORE_N_OF_CLASS, "StoreN", IS_REPLACED);
     }
 
     public static final String STORE_OF_CLASS = COMPOSITE_PREFIX + "STORE_OF_CLASS" + POSTFIX;
     static {
-        storeOfNodes(STORE_OF_CLASS, "Store(B|C|S|I|L|F|D|P|N)");
+        anyStoreOfNodes(STORE_OF_CLASS, IS_REPLACED);
+    }
+
+    public static void anyStoreOfNodes(String irNodePlaceholder, String fieldHolder) {
+        storeOfNodes(irNodePlaceholder, "Store(B|C|S|I|L|F|D|P|N)", fieldHolder);
     }
 
     public static final String STORE_OF_FIELD = COMPOSITE_PREFIX + "STORE_OF_FIELD" + POSTFIX;
@@ -2164,7 +2233,7 @@ public class IRNode {
 
     public static final String STORE_P_OF_CLASS = COMPOSITE_PREFIX + "STORE_P_OF_CLASS" + POSTFIX;
     static {
-        storeOfNodes(STORE_P_OF_CLASS, "StoreP");
+        storeOfNodes(STORE_P_OF_CLASS, "StoreP", IS_REPLACED);
     }
 
     public static final String STORE_VECTOR = PREFIX + "STORE_VECTOR" + POSTFIX;
@@ -2264,7 +2333,8 @@ public class IRNode {
 
     public static final String SUBTYPE_CHECK = PREFIX + "SUBTYPE_CHECK" + POSTFIX;
     static {
-        beforeMatchingNameRegex(SUBTYPE_CHECK, "SubTypeCheck");
+        String regex = START + "SubTypeCheck" + MID + END;
+        macroNodes(SUBTYPE_CHECK, regex);
     }
 
     public static final String TRAP = PREFIX + "TRAP" + POSTFIX;
@@ -2863,6 +2933,26 @@ public class IRNode {
         machOnlyNameRegex(X86_VMULDQ_REG, "vmuldq_reg");
     }
 
+    public static final String AARCH64_VMULL_UINT_SVE2 = PREFIX + "AARCH64_VMULL_UINT_SVE2" + POSTFIX;
+    static {
+        machOnlyNameRegex(AARCH64_VMULL_UINT_SVE2, "vmulL_uint_sve2");
+    }
+
+    public static final String AARCH64_VMULL_INT_SVE2 = PREFIX + "AARCH64_VMULL_INT_SVE2" + POSTFIX;
+    static {
+        machOnlyNameRegex(AARCH64_VMULL_INT_SVE2, "vmulL_int_sve2");
+    }
+
+    public static final String AARCH64_VMULL_UINT_NEON = PREFIX + "AARCH64_VMULL_UINT_NEON" + POSTFIX;
+    static {
+        machOnlyNameRegex(AARCH64_VMULL_UINT_NEON, "vmulL_uint_neon");
+    }
+
+    public static final String AARCH64_VMULL_INT_NEON = PREFIX + "AARCH64_VMULL_INT_NEON" + POSTFIX;
+    static {
+        machOnlyNameRegex(AARCH64_VMULL_INT_NEON, "vmulL_int_neon");
+    }
+
     public static final String X86_SCONV_D2I = PREFIX + "X86_SCONV_D2I" + POSTFIX;
     static {
         machOnlyNameRegex(X86_SCONV_D2I, "convD2I_reg_reg");
@@ -2921,6 +3011,21 @@ public class IRNode {
     public static final String X86_VCAST_D2X_AVX10_2 = PREFIX + "X86_VCAST_D2X_AVX10_2" + POSTFIX;
     static {
         machOnlyNameRegex(X86_VCAST_D2X_AVX10_2, "castDtoX_(reg|mem)_avx10_2");
+    }
+
+    public static final String X86_SCONV_HF2I = PREFIX + "X86_SCONV_HF2I" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_SCONV_HF2I, "convHF2I_reg_reg");
+    }
+
+    public static final String X86_SCONV_HF2L = PREFIX + "X86_SCONV_HF2L" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_SCONV_HF2L, "convHF2L_reg_reg");
+    }
+
+    public static final String X86_VCAST_HF2X = PREFIX + "X86_VCAST_HF2X" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VCAST_HF2X, "castHFtoX_reg_evex");
     }
 
     public static final String XOR = PREFIX + "XOR" + POSTFIX;
@@ -3251,6 +3356,74 @@ public class IRNode {
     }
 
     /*
+     * Inline type nodes.
+     */
+
+    public static final String CALL_UNSAFE = PREFIX + "CALL_UNSAFE" + POSTFIX;
+    static {
+        staticCallOfMethodNodes(CALL_UNSAFE, "# Static  jdk.internal.misc.Unsafe::");
+    }
+
+    public static final String STORE_INLINE_FIELDS = PREFIX + "STORE_INLINE_FIELDS" + POSTFIX;
+    static {
+        staticCallOfMethodNodes(STORE_INLINE_FIELDS, "store_inline_type_fields");
+    }
+
+    public static final String LOAD_UNKNOWN_INLINE = PREFIX + "LOAD_UNKNOWN_INLINE" + POSTFIX;
+    static {
+        staticCallOfMethodNodes(LOAD_UNKNOWN_INLINE, "load_unknown_inline_blob \\(C2 runtime\\)");
+    }
+
+    public static final String STORE_UNKNOWN_INLINE = PREFIX + "STORE_UNKNOWN_INLINE" + POSTFIX;
+    static {
+        staticCallOfMethodNodes(STORE_UNKNOWN_INLINE, "store_unknown_inline_blob \\(C2 runtime\\)");
+    }
+
+    public static final String INLINE_ARRAY_NULL_GUARD = PREFIX + "INLINE_ARRAY_NULL_GUARD" + POSTFIX;
+    static {
+        staticCallOfMethodNodes(INLINE_ARRAY_NULL_GUARD, "null_check' action='none'");
+    }
+
+    public static final String CLONE_INTRINSIC_SLOW_PATH = PREFIX + "CLONE_INTRINSIC_SLOW_PATH" + POSTFIX;
+    static {
+        staticCallOfMethodNodes(CLONE_INTRINSIC_SLOW_PATH, "java.lang.Object::clone");
+    }
+
+    public static final String JLONG_ARRAYCOPY = PREFIX + "JLONG_ARRAYCOPY" + POSTFIX;
+    static {
+        callLeafNoFpOfMethodNodes(JLONG_ARRAYCOPY, "jlong_disjoint_arraycopy");
+    }
+
+    // The following nodes are specific to tests in in compiler/valhalla/inlinetypes using one of the MyValue classes.
+    private static final String MYVALUE_KLASS = "compiler/valhalla/inlinetypes/.*MyValue\\w*";
+    public static final String ALLOC_OF_MYVALUE_KLASS = PREFIX + "ALLOC_OF_MYVALUE_KLASS" + POSTFIX;
+    static {
+        allocateOfNodes(ALLOC_OF_MYVALUE_KLASS, MYVALUE_KLASS);
+    }
+
+    public static final String ALLOC_ARRAY_OF_MYVALUE_KLASS = PREFIX + "ALLOC_ARRAY_OF_MYVALUE_KLASS" + POSTFIX;
+    static {
+        allocateArrayOfNodes(ALLOC_ARRAY_OF_MYVALUE_KLASS, MYVALUE_KLASS);
+    }
+
+    private static final String ANY_KLASS = "compiler/valhalla/inlinetypes/[\\w/]*";
+
+    // TODO: Revisit with JDK-8380875
+    public static final String LOAD_OF_ANY_KLASS = PREFIX + "LOAD_OF_ANY_KLASS" + POSTFIX;
+    static {
+        String loadNode = "Load(B|UB|S|US|I|L|F|D|P|N)";
+        String valueClass = "@instptr:" + ANY_KLASS;
+        String regex = START + loadNode + MID + valueClass + END;
+        beforeMatching(LOAD_OF_ANY_KLASS, regex);
+    }
+
+    // TODO: Revisit with JDK-8380875
+    public static final String STORE_OF_ANY_KLASS = PREFIX + "STORE_OF_ANY_KLASS" + POSTFIX;
+    static {
+        anyStoreOfNodes(STORE_OF_ANY_KLASS, ANY_KLASS);
+    }
+
+    /*
      * Utility methods to set up IR_NODE_MAPPINGS.
      */
 
@@ -3258,7 +3431,7 @@ public class IRNode {
      * Apply {@code regex} on all machine independent ideal graph phases up to and including
      * {@link CompilePhase#BEFORE_MATCHING}.
      */
-    private static void beforeMatching(String irNodePlaceholder, String regex) {
+    public static void beforeMatching(String irNodePlaceholder, String regex) {
         IR_NODE_MAPPINGS.put(irNodePlaceholder, new RegexTypeEntry(RegexType.IDEAL_INDEPENDENT, regex));
     }
 
@@ -3294,8 +3467,8 @@ public class IRNode {
                                                                           CompilePhase.BEFORE_MACRO_EXPANSION));
     }
 
-    private static void callOfNodes(String irNodePlaceholder, String callRegex) {
-        String regex = START + callRegex + MID + IS_REPLACED + " " +  END;
+    private static void callOfNodes(String irNodePlaceholder, String callRegex, String calleeRegex) {
+        String regex = START + callRegex + MID + calleeRegex + END;
         IR_NODE_MAPPINGS.put(irNodePlaceholder, new RegexTypeEntry(RegexType.IDEAL_INDEPENDENT, regex));
     }
 
@@ -3303,7 +3476,7 @@ public class IRNode {
      * Apply {@code regex} on all machine dependant ideal graph phases (i.e. on the mach graph) starting from
      * {@link CompilePhase#MATCHING}.
      */
-    private static void optoOnly(String irNodePlaceholder, String regex) {
+    public static void optoOnly(String irNodePlaceholder, String regex) {
         IR_NODE_MAPPINGS.put(irNodePlaceholder, new RegexTypeEntry(RegexType.OPTO_ASSEMBLY, regex));
     }
 
@@ -3397,13 +3570,13 @@ public class IRNode {
     // .* tries to match the remaining of the pattern
     private static final String LOAD_STORE_SUFFIX = "( \\([^\\)]+\\))?:\\w+.*";
 
-    private static void loadOfNodes(String irNodePlaceholder, String irNodeRegex) {
-        String regex = START + irNodeRegex + MID + LOAD_STORE_PREFIX + IS_REPLACED + LOAD_STORE_SUFFIX + END;
+    private static void loadOfNodes(String irNodePlaceholder, String irNodeRegex, String loadee) {
+        String regex = START + irNodeRegex + MID + LOAD_STORE_PREFIX + loadee + LOAD_STORE_SUFFIX + END;
         beforeMatching(irNodePlaceholder, regex);
     }
 
-    private static void storeOfNodes(String irNodePlaceholder, String irNodeRegex) {
-        String regex = START + irNodeRegex + MID + LOAD_STORE_PREFIX + IS_REPLACED + LOAD_STORE_SUFFIX + END;
+    private static void storeOfNodes(String irNodePlaceholder, String irNodeRegex, String storee) {
+        String regex = START + irNodeRegex + MID + LOAD_STORE_PREFIX + storee + LOAD_STORE_SUFFIX + END;
         beforeMatching(irNodePlaceholder, regex);
     }
 
