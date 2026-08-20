@@ -48,7 +48,7 @@ public class TestUnsafeAccessWithZeroOffset {
         }
         return null;
     }
-    
+
     static Object testLoadStore(Object obj, Object expected, Object x, boolean b) {
         Object unused = new Object(); // Trigger EA
         if (b) {
