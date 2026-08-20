@@ -255,7 +255,7 @@ class Compilation: public StackObj {
   }
   bool profile_array_accesses() {
     return env()->comp_level() == CompLevel_full_profile &&
-      C1UpdateMethodData;
+      C1UpdateMethodData && MethodData::profile_array_accesses();
   }
 
   // will compilation make optimistic assumptions that might lead to
