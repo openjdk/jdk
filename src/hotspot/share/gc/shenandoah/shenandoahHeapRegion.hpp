@@ -514,6 +514,7 @@ public:
   }
 
   void reset_age() {
+    assert(get_top_before_promote() == nullptr, "Cannot reset age on region (%zu) scheduled for promotion", index());
     CENSUS_NOISE(_youth += _age;)
     _age = 0;
   }
