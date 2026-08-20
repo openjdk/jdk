@@ -87,11 +87,6 @@ gc/stress/jfr/TestStressAllocationGCEventsWithShenandoah.java#generational 83869
 gc/stress/jfr/TestStressAllocationGCEventsWithShenandoah.java#default 8386964 generic-all
 gc/stress/jfr/TestStressBigAllocationGCEventsWithShenandoah.java#generational 8386964 generic-all
 gc/stress/jfr/TestStressBigAllocationGCEventsWithShenandoah.java#default 8386964 generic-all
-gc/TestGCALotAtAllSafepoints.java#Parallel 8390661 generic-all
-gc/TestGCALotAtAllSafepoints.java#Serial 8390661 generic-all
-gc/TestGCALotAtAllSafepoints.java#G1 8390661 generic-all
-gc/TestGCALotAtAllSafepoints.java#Z 8390661 generic-all
-gc/TestGCALotAtAllSafepoints.java#Shenandoah 8390661 generic-all
 
 #############################################################################
 
