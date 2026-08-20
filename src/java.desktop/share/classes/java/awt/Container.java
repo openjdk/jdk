@@ -4875,8 +4875,7 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
                 ((Container)target).dispatchEventToSelf(retargeted);
             } else {
                 if (nativeContainer.modalComp != null) {
-                    if (target == nativeContainer.modalComp ||
-                            ((Container)nativeContainer.modalComp).isAncestorOf(target)) {
+                    if (((Container)nativeContainer.modalComp).isAncestorOf(target)) {
                         target.dispatchEvent(retargeted);
                     } else {
                         e.consume();
