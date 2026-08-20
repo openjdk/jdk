@@ -139,7 +139,6 @@ ciSymbol* ciObjArrayKlass::construct_array_name(ciSymbol* element_name,
 // Implementation of make.
 ciObjArrayKlass* ciObjArrayKlass::make_impl(ciKlass* element_klass, bool refined_type, bool null_free,
                                             bool atomic, bool force_ref_layout) {
-  assert(refined_type || !force_ref_layout, "Only refined types have a layout");
   if (element_klass->is_loaded()) {
     EXCEPTION_CONTEXT;
     // The element klass is loaded
