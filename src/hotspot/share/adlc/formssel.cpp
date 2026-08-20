@@ -3742,17 +3742,19 @@ int MatchNode::cisc_spill_match(FormDict& globals, RegisterForm* registers, Matc
       // or if neither operand is a DEF (pos is -1)
       int from_def_pos = from_instr->operand_position(this->_name, Component::DEF);
       int to_def_pos   = to_instr->operand_position(mRule2->_name, Component::DEF);
-      if (from_def_pos < 0 && to_def_pos < 0) {   // not sure this is a great idea to allow cisc spilling here
-          // fprintf(stderr, "!!! Neither operand is DEF\n");
-          // int from_use_pos = from_instr->operand_position(this->_name, Component::USE);
-          // int to_use_pos   = to_instr->operand_position(mRule2->_name, Component::USE);
-          // if (from_use_pos != to_use_pos) {     // doesn't happen in x86
-          //   fprintf(stderr, "!!! USE positions don't match\n");
-          //   fprintf(stderr, "from_instr %s: operand %s USE index: %d\n", from_instr->_ident, this->_name, from_use_pos);
-          //   fprintf(stderr, "to_instr %s: operand %s USE index: %d\n", to_instr->_ident, mRule2->_name, to_use_pos);
-          // }
-          return Not_cisc_spillable;
-      }
+      // if (from_def_pos < 0 && to_def_pos < 0) {   // not sure this is a great idea to allow cisc spilling here
+      //     fprintf(stderr, "!!! Neither operand is DEF\n");
+      //   fprintf(stderr, "from_instr %s: operand %s DEF index: %d\n", from_instr->_ident, _name, from_def_pos);
+      //   fprintf(stderr, "to_instr %s: operand %s DEF index: %d\n", to_instr->_ident, mRule2->_name, to_def_pos);
+      //     int from_use_pos = from_instr->operand_position(this->_name, Component::USE);
+      //     int to_use_pos   = to_instr->operand_position(mRule2->_name, Component::USE);
+      //     if (from_use_pos != to_use_pos) {     // doesn't happen in x86
+      //       fprintf(stderr, "!!! USE positions don't match\n");
+      //       fprintf(stderr, "from_instr %s: operand %s USE index: %d\n", from_instr->_ident, this->_name, from_use_pos);
+      //       fprintf(stderr, "to_instr %s: operand %s USE index: %d\n", to_instr->_ident, mRule2->_name, to_use_pos);
+      //     }
+      //     return Not_cisc_spillable;
+      // }
       if (from_def_pos != to_def_pos) {
          if (from_def_pos < 0 || to_def_pos < 0) {
           // fprintf(stderr, "One operand is DEF and the other isn't\n");
