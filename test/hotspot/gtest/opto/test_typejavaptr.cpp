@@ -42,6 +42,15 @@ class TypeKlassPtrMirror;
 class TypeInstKlassPtrMirror;
 class TypeAryKlassPtrMirror;
 
+// This file contains unit tests for the implementation of TypeJavaPtrMeetHelper and
+// TypeJavaPtrJoinHelper. We use mirror instances that mimic the behaviour of the real objects.
+// There are several advantages in using them:
+// - It is really hard to create a Type instance, while we can create mirror instances at will.
+// - Type::make can be used to create an arbitrary instance, while we can limit the corresponding
+//   factories to only return some expected instances. This greatly increases the rigor of the
+//   tests.
+// - Mirror instances are created at compile time, ensuring the absence of unexpected behaviors.
+
 class InterfaceSet {
 public:
   bool _i0;
@@ -231,6 +240,9 @@ public:
   }
 };
 
+// byte[] and int[] shares the same element base when they are expressed as a TypeAryPtr, while
+// they have a different base from float[], so these 3 are used as representatives of primitive
+// arrays
 constexpr std::array<ciArrayKlassMirror, ciArrayKlassMirror::_samples_size> ciArrayKlassMirror::_samples = {
   ciArrayKlassMirror(T_BYTE, false, -1, 25),
   ciArrayKlassMirror(T_INT, false, -1, 28),
@@ -341,25 +353,25 @@ public:
   }
 };
 
-template <class PT>
+template <class PtrType>
 class AryElemType {
 private:
   static constexpr size_t _1d_samples_size = ciInstanceKlassMirror::_samples.size() + 5;
 
   BasicType _bt;
-  const PT* _ptr_type;
+  const PtrType* _ptr_type;
 
 public:
   static const AryElemType* const TOP;
   static const AryElemType* const BOTTOM;
 
-  constexpr AryElemType(BasicType bt, const PT* ptr_type) : _bt(bt), _ptr_type(ptr_type) {
+  constexpr AryElemType(BasicType bt, const PtrType* ptr_type) : _bt(bt), _ptr_type(ptr_type) {
     assert((bt == T_OBJECT) == (ptr_type != nullptr), "");
   }
 
   constexpr AryElemType() : AryElemType(T_ILLEGAL, nullptr) {}
 
-  static constexpr const AryElemType* find(BasicType bt, const PT* ptr_type) {
+  static constexpr const AryElemType* find(BasicType bt, const PtrType* ptr_type) {
     auto res = find_1d(bt, ptr_type);
     if (res != nullptr) {
       return res;
@@ -370,12 +382,12 @@ public:
     return res;
   }
 
-  static constexpr const AryElemType* find_1d(BasicType bt, const PT* ptr_type);
-  static constexpr const AryElemType* find_2d(BasicType bt, const PT* ptr_type);
+  static constexpr const AryElemType* find_1d(BasicType bt, const PtrType* ptr_type);
+  static constexpr const AryElemType* find_2d(BasicType bt, const PtrType* ptr_type);
 
-  constexpr BasicType basic_type() const { return _bt; }
-  constexpr bool      empty()      const { return _bt == T_ILLEGAL; }
-  constexpr const PT* make_ptr()   const { return _ptr_type; }
+  constexpr BasicType      basic_type() const { return _bt; }
+  constexpr bool           empty()      const { return _bt == T_ILLEGAL; }
+  constexpr const PtrType* make_ptr()   const { return _ptr_type; }
 
   constexpr Type::TYPES base() const {
     if (_bt == T_VOID) {
@@ -418,7 +430,7 @@ public:
       return TOP;
     }
 
-    return find(T_OBJECT, static_cast<const PT*>(ptr_type));
+    return find(T_OBJECT, static_cast<const PtrType*>(ptr_type));
   }
 };
 
@@ -1669,6 +1681,7 @@ constexpr auto TypeAryKlassPtrMirror::generate_2d_samples() {
 
 constexpr std::array<TypeAryKlassPtrMirror, TypeAryKlassPtrMirror::_2d_samples_size> TypeAryKlassPtrMirror::_2d_samples = generate_2d_samples();
 
+// OopPtrMirror is the mirror of oop
 class OopPtrMirror {
 private:
   static constexpr size_t _samples_size = (ciInstanceKlassMirror::_samples.size() + ciArrayKlassMirror::_samples.size()) * 18 + 3;
@@ -1685,8 +1698,8 @@ public:
 
   constexpr OopPtrMirror() : _pointee(nullptr), _instance_id(0), _offset(0) {}
 
-  template <class PT>
-  static bool klass_satisfies(const ciKlassMirror* klass, const PT* type, bool type_is_exact) {
+  template <class PtrType>
+  static bool klass_satisfies(const ciKlassMirror* klass, const PtrType* type, bool type_is_exact) {
     type_is_exact |= type->klass_is_exact();
 
     if (klass->is_inst()) {
@@ -1700,8 +1713,8 @@ public:
         inst_klass = ciEnvMirror::current()->Object_klass();
       }
 
-      const typename PT::InstType* type_inst;
-      if constexpr (PT::is_oopptr_type) {
+      const typename PtrType::InstType* type_inst;
+      if constexpr (PtrType::is_oopptr_type) {
         type_inst = type->is_oopptr()->is_instptr();
       } else {
         type_inst = type->is_klassptr()->is_instklassptr();
@@ -1717,8 +1730,8 @@ public:
     }
 
     if (type->base() == Type::InstPtr || type->base() == Type::InstKlassPtr) {
-      const typename PT::InstType* type_inst;
-      if constexpr (PT::is_oopptr_type) {
+      const typename PtrType::InstType* type_inst;
+      if constexpr (PtrType::is_oopptr_type) {
         type_inst = type->is_oopptr()->is_instptr();
       } else {
         type_inst = type->is_klassptr()->is_instklassptr();
@@ -1728,8 +1741,8 @@ public:
              TypeAryKlassPtrMirror::_array_interfaces.contains(type_inst->interfaces());
     }
 
-    const typename PT::AryType* type_ary;
-    if constexpr (PT::is_oopptr_type) {
+    const typename PtrType::AryType* type_ary;
+    if constexpr (PtrType::is_oopptr_type) {
       type_ary = type->is_oopptr()->is_aryptr();
     } else {
       type_ary = type->is_klassptr()->is_aryklassptr();
@@ -1748,7 +1761,7 @@ public:
     if (type_elem->basic_type() != T_OBJECT) {
       return true;
     } else {
-      return klass_satisfies<PT>(ary_klass->elem(), type_elem->make_ptr(), type_is_exact);
+      return klass_satisfies<PtrType>(ary_klass->elem(), type_elem->make_ptr(), type_is_exact);
     }
   }
 
@@ -1835,6 +1848,7 @@ constexpr auto OopPtrMirror::generate_samples() {
 
 constexpr std::array<OopPtrMirror, OopPtrMirror::_samples_size> OopPtrMirror::_samples = generate_samples();
 
+// KlassPtrMirror is the mirror of Klass*
 class KlassPtrMirror {
 private:
   static constexpr size_t _samples_size = (ciInstanceKlassMirror::_samples.size() + ciArrayKlassMirror::_samples.size() + 1) * 3;
@@ -1905,42 +1919,42 @@ constexpr auto KlassPtrMirror::generate_samples() {
 
 constexpr std::array<KlassPtrMirror, KlassPtrMirror::_samples_size> KlassPtrMirror::_samples = generate_samples();
 
-template <class PT, class P>
+template <class PtrType, class Ptr>
 static void test_meet_join() {
-  constexpr size_t samples_size = PT::InstType::_samples.size() + PT::AryType::_1d_samples.size() + PT::AryType::_2d_samples.size();
-  if constexpr (PT::is_oopptr_type) {
+  constexpr size_t samples_size = PtrType::InstType::_samples.size() + PtrType::AryType::_1d_samples.size() + PtrType::AryType::_2d_samples.size();
+  if constexpr (PtrType::is_oopptr_type) {
     static_assert(samples_size == 2040);
   } else {
     static_assert(samples_size == 471);
   }
 
   // Running all instances takes a lot of time, so we only run a fraction of them regularly
-  auto sample_hit = []() {
+  auto sample_hit = [] {
     constexpr double sampling_prob = 0.02;
     return uint(os::random()) < max_juint * sampling_prob;
   };
 
-  GrowableArray<const PT*> type_samples(samples_size, MemTag::mtOther);
-  for (auto& sample : PT::InstType::_samples) {
+  GrowableArray<const PtrType*> type_samples(samples_size, MemTag::mtOther);
+  for (auto& sample : PtrType::InstType::_samples) {
     if (sample_hit()) {
       type_samples.append(&sample);
     }
   }
-  for (auto& sample : PT::AryType::_1d_samples) {
+  for (auto& sample : PtrType::AryType::_1d_samples) {
     if (sample_hit()) {
       type_samples.append(&sample);
     }
   }
-  for (auto& sample : PT::AryType::_2d_samples) {
+  for (auto& sample : PtrType::AryType::_2d_samples) {
     if (sample_hit()) {
       type_samples.append(&sample);
     }
   }
 
   for (int i = 0; i < type_samples.length(); i++) {
-    const PT* t1 = type_samples.at(i);
+    const PtrType* t1 = type_samples.at(i);
     for (int j = i; j < type_samples.length(); j++) {
-      const PT* t2 = type_samples.at(j);
+      const PtrType* t2 = type_samples.at(j);
       auto meet = TypeJavaPtrMeetHelper::javaptr_type_xmeet(t1, t2);
       auto join = TypeJavaPtrJoinHelper::javaptr_type_xjoin(t1, t2);
 
@@ -1955,8 +1969,8 @@ static void test_meet_join() {
       ASSERT_EQ(TypeJavaPtrJoinHelper::javaptr_type_xjoin(t2, meet), t2);
 
       if (join->base() != Type::AnyPtr) {
-        const PT* typed_join;
-        if constexpr (PT::is_oopptr_type) {
+        const PtrType* typed_join;
+        if constexpr (PtrType::is_oopptr_type) {
           typed_join = join->is_oopptr();
         } else {
           typed_join = join->is_klassptr();
@@ -1970,7 +1984,7 @@ static void test_meet_join() {
       }
 
       // Element-wise verification
-      for (auto& elem : P::_samples) {
+      for (auto& elem : Ptr::_samples) {
         bool in_t1 = elem.satisfies(t1);
         bool in_t2 = elem.satisfies(t2);
         bool in_meet = elem.satisfies(meet);
