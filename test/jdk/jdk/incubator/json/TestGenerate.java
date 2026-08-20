@@ -213,14 +213,12 @@ public class TestGenerate {
 
     @Test
     void testDeepNestingToString() {
-        final var jv  = deepNest();
-        assertDoesNotThrow(() -> jv.toString());
+        assertDoesNotThrow(() -> deepNest().toString());
     }
 
     @Test
     void testDeepNestingToDisplayString() {
-        final var jv  = deepNest();
-        assertDoesNotThrow(() -> Json.toDisplayString(jv, ""));
+        assertDoesNotThrow(() -> Json.toDisplayString(deepNest(), ""));
     }
 
     private static JsonValue deepNest() {
