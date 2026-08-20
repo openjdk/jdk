@@ -1376,6 +1376,7 @@ public:
     bool _should_speculatively_narrow_limit;
     Node* _narrowed_cmp;
     Node* _narrowed_limit;
+    const TypeInteger* _limit_t;
 
   public:
     LoopExitTest(const Node* back_control, const IdealLoopTree* loop, PhaseIdealLoop* phase) :
@@ -1390,7 +1391,8 @@ public:
       _cl_prob(0.0f),
       _should_speculatively_narrow_limit(false),
       _narrowed_cmp(nullptr),
-      _narrowed_limit(nullptr) {}
+      _narrowed_limit(nullptr),
+      _limit_t(nullptr) {}
 
     void build();
     void canonicalize_mask(jlong stride_con);
@@ -1434,18 +1436,32 @@ public:
       }
       return _limit;
     }
+
     const TypeInteger* limit_t(PhaseIterGVN& igvn, BasicType bt) const {
       if (_should_speculatively_narrow_limit) {
-        return TypeLong::INT->filter(igvn.type(_limit)->is_long())->is_long();
+        assert(_limit_t != nullptr && _limit_t != Type::TOP,
+          "checked in can_speculatively_narrow_limit()");
+        return _limit_t;
       }
       return igvn.type(_limit)->is_integer(bt);
     }
 
-    bool can_speculatively_narrow_limit() {
+    bool can_speculatively_narrow_limit(PhaseIterGVN& igvn) {
       assert(!is_valid_with_bt(T_INT), "must not be a valid int loop");
 
       // pattern must be: (long) i < some_long (with any comparison operator)
       _should_speculatively_narrow_limit = is_valid_with_bt(T_LONG) && _incr->Opcode() == Op_ConvI2L;
+
+      if (_should_speculatively_narrow_limit) {
+        // The limit must overlap with the int range; otherwise narrowing is provably impossible.
+        const Type* narrowed = TypeLong::INT->filter(igvn.type(_limit));
+        if (narrowed == Type::TOP) {
+          _should_speculatively_narrow_limit = false;
+        } else {
+          _limit_t = narrowed->is_long();
+        }
+      }
+
       return _should_speculatively_narrow_limit;
     }
     bool should_speculatively_narrow_limit() const { return _should_speculatively_narrow_limit; }
