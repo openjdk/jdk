@@ -1431,7 +1431,7 @@ void PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape, bool deep_revisit
     //   }
     //   break; // keep verifying
 
-    // AddFNode::Ideal calls "commute", which can reorder the inputs for this:
+    // AddFPNode::Ideal calls "commute", which can reorder the inputs for this:
     //   Check for tight loop increments: Loop-phi of Add of loop-phi
     // It wants to take the phi into in(1):
     //    471  Phi  === 435 38 390
