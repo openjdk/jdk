@@ -52,7 +52,6 @@ public class JOptionPaneInternalFrameNotClosableTest {
     public static void main(String[] args) throws Exception {
         List<String> closableLafs = new ArrayList<>();
 
-        
         for (UIManager.LookAndFeelInfo laf
                     : UIManager.getInstalledLookAndFeels()) {
             System.out.println("Testing L&F: " + laf.getClassName());
