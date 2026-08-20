@@ -1312,4 +1312,3 @@ bool ShenandoahConcurrentGC::check_cancellation_and_abort(ShenandoahDegenPoint p
   }
   return false;
 }
-
