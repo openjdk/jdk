@@ -47,6 +47,7 @@
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/mutex.hpp"
 #include "runtime/thread.inline.hpp"
 #include "utilities/accessFlags.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -1347,6 +1348,7 @@ void JfrTypeSet::clear(JfrCheckpointWriter* writer, JfrCheckpointWriter* leakp_w
 }
 
 size_t JfrTypeSet::on_unloading_classes(JfrCheckpointWriter* writer) {
+  assert(!(UseShenandoahGC || UseZGC) || JfrEpochShift_lock->owned_by_self(), "invariant");
   // JfrTraceIdEpoch::has_changed_tag_state_no_reset() is a load-acquire we issue to see side-effects (i.e. tags).
   // The JfrRecorderThread does this as part of normal processing, but with concurrent class unloading, which can
   // happen in arbitrary threads, we invoke it explicitly.

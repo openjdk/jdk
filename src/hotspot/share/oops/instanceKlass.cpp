@@ -109,7 +109,6 @@
 #endif
 #if INCLUDE_JFR
 #include "jfr/jfrEvents.hpp"
-#include "jfr/utilities/jfrEpochShiftLock.hpp"
 #endif
 
 #ifdef DTRACE_ENABLED
@@ -3343,7 +3342,7 @@ void InstanceKlass::unload_class(InstanceKlass* ik) {
     EventClassUnload event;
     event.set_unloadedClass(ik);
     event.set_definingClassLoader(ik->class_loader_data());
-    JfrEpochShiftLock lock(current);
+    ConditionalMutexLocker ml(JfrEpochShift_lock, UseShenandoahGC || UseZGC, Mutex::_no_safepoint_check_flag);
     event.commit();
   }
 #endif

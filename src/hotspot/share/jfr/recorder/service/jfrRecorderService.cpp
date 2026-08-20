@@ -41,7 +41,6 @@
 #include "jfr/support/jfrDeprecationManager.hpp"
 #include "jfr/support/jfrSymbolTable.inline.hpp"
 #include "jfr/utilities/jfrAllocation.hpp"
-#include "jfr/utilities/jfrEpochShiftLock.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
@@ -470,7 +469,7 @@ void JfrRecorderService::safepoint_clear() {
   JfrStackTraceRepository::clear();
   // Ensure that non-Java threads cannot perform tagging, enqueuing,
   // or event writing that interleaves with the epoch shift.
-  JfrEpochShiftLock lock;
+  ConditionalMutexLocker lock(JfrEpochShift_lock, UseShenandoahGC || UseZGC, Mutex::_no_safepoint_check_flag);
   _storage.clear();
   _chunkwriter.set_time_stamp();
   _checkpoint_manager.shift_epoch();
@@ -584,7 +583,7 @@ void JfrRecorderService::safepoint_write() {
   write_stacktrace(_stack_trace_repository, _chunkwriter, true);
   // Ensure that non-Java threads cannot perform tagging, enqueuing,
   // or event writing that interleaves with the epoch shift.
-  JfrEpochShiftLock lock;
+  ConditionalMutexLocker lock(JfrEpochShift_lock, UseShenandoahGC || UseZGC, Mutex::_no_safepoint_check_flag);
   _storage.write_at_safepoint();
   _chunkwriter.set_time_stamp();
   _checkpoint_manager.shift_epoch();

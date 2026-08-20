@@ -43,7 +43,6 @@
 #include "jfr/support/jfrKlassUnloading.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/utilities/jfrBigEndian.hpp"
-#include "jfr/utilities/jfrEpochShiftLock.hpp"
 #include "jfr/utilities/jfrIterator.hpp"
 #include "jfr/utilities/jfrLinkedList.inline.hpp"
 #include "jfr/utilities/jfrSignal.hpp"
@@ -634,7 +633,7 @@ void JfrCheckpointManager::on_unloading_classes() {
   Thread* const current = Thread::current();
   // Take the epoch shift lock to ensure no epoch shift
   // occurs during artifact serialization (for concurrent GCs).
-  JfrEpochShiftLock lock(current);
+  ConditionalMutexLocker lock(current, JfrEpochShift_lock, UseShenandoahGC || UseZGC, Mutex::_no_safepoint_check_flag);
   JfrCheckpointWriter writer(current);
   JfrTypeSet::on_unloading_classes(&writer);
   JfrAddRefCountedBlob add_blob(writer, false /* move */, false /* reset */);
