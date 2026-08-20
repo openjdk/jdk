@@ -51,9 +51,9 @@ import org.openjdk.jmh.infra.Blackhole;
 public class JumpTableSwitch {
 
     private static final int OPERATIONS = 1024;
-    private static final int MASK = OPERATIONS - 1;
     private static final boolean PRINT_GENERATED_SOURCE =
         Boolean.getBoolean("JumpTableSwitch.printGeneratedSource");
+    private static final char[] OPERATORS = {'+', '-', '*', '^', '|', '&'};
 
     private static final class GeneratedClassLoader extends ClassLoader {
         GeneratedClassLoader() {
@@ -67,23 +67,23 @@ public class JumpTableSwitch {
 
     @State(Scope.Thread)
     public static class InputState {
-        private final int[] values = new int[MASK + 1];
+        private final int[] values = new int[OPERATIONS];
 
-        @Param({"4", "8", "9", "10", "12", "16", "24", "32", "64", "72",
-                "80", "96", "112", "120", "128", "256", "512", "768",
-                "1024", "1280", "1536", "1792", "2048"})
+        @Param({"10", "12", "16", "24", "32", "64", "72",
+                "80", "96", "112", "120", "128", "256", "300"})
         public int cases;
 
-        // Steps 1, 2, and 4 exercise jump tables with different densities.
-        // Step 10 is a sparse comparison-tree control on typical configurations.
-        @Param({"1", "2", "4", "10"})
+        // For these parameters, the table span is (cases - 1) * step + 1,
+        // ranging from 10 to 1197. This is within [MinJumpTableSize,
+        // MaxJumpTableSize] and no sparser than MaxJumpTableSparseness (5),
+        // so every combination generates a jump table.
+        @Param({"1", "2", "4"})
         public int step;
 
-        @Param({"even", "defaultHeavy", "hotFirst", "hotLast"})
+        @Param({"even", "defaultHeavy"})
         public String distribution;
 
         private MethodHandle switchMethod;
-        private int index;
 
         @Setup
         public void setup() throws ReflectiveOperationException {
@@ -108,62 +108,58 @@ public class JumpTableSwitch {
             byte[] bytecode = InMemoryJavaCompiler.compile(className, source);
             Class<?> generatedClass = new GeneratedClassLoader().define(className, bytecode);
             switchMethod = MethodHandles.publicLookup().findStatic(generatedClass, "switchValue",
-                MethodType.methodType(int.class, int.class));
-            index = 0;
+                MethodType.methodType(int.class, int[].class));
         }
 
-        private int next() {
-            int value = values[index];
-            index = (index + 1) & MASK;
-            return value;
-        }
-
-        private int fillDense(int[] values, int size, int seed) {
+        private void fillDense(int[] values, int size, int seed) {
             for (int i = 0; i < values.length; i++) {
                 seed = nextSeed(seed);
                 int value = Integer.remainderUnsigned(seed, size);
                 values[i] = switch (distribution) {
                     case "even" -> value;
                     case "defaultHeavy" -> ((seed & 3) == 0) ? value : size + value;
-                    case "hotFirst" -> ((seed & 3) == 0) ? value : 0;
-                    case "hotLast" -> ((seed & 3) == 0) ? value : size - 1;
                     default -> throw new IllegalStateException("unexpected distribution: " + distribution);
                 };
             }
-            return seed;
         }
 
-        private int fillSparse(int[] values, int cases, int step, int seed) {
+        private void fillSparse(int[] values, int cases, int step, int seed) {
             for (int i = 0; i < values.length; i++) {
                 seed = nextSeed(seed);
                 int value = Integer.remainderUnsigned(seed, cases) * step;
                 values[i] = switch (distribution) {
                     case "even" -> value;
                     case "defaultHeavy" -> ((seed & 3) == 0) ? value : (cases + Integer.remainderUnsigned(seed, cases)) * step;
-                    case "hotFirst" -> ((seed & 3) == 0) ? value : 0;
-                    case "hotLast" -> ((seed & 3) == 0) ? value : (cases - 1) * step;
                     default -> throw new IllegalStateException("unexpected distribution: " + distribution);
                 };
             }
-            return seed;
         }
+    }
 
-        private static int nextSeed(int seed) {
-            return seed * 1664525 + 1013904223;
-        }
+    private static int nextSeed(int seed) {
+        return seed * 1664525 + 1013904223;
     }
 
     private static String switchSource(String className, int cases, int step) {
         StringBuilder source = new StringBuilder()
             .append("public class ").append(className).append(" {\n")
-            .append("  public static int switchValue(int value) {\n")
-            .append("    return switch (value) {\n");
+            .append("  public static int switchValue(int[] values) {\n")
+            .append("    int result = 0;\n")
+            .append("    for (int value : values) {\n")
+            .append("      switch (value) {\n");
+        int seed = 0xC0FFEE;
         for (int i = 0; i < cases; i++) {
-            source.append("      case ").append(i * step).append(" -> ")
-                .append(100000 - i).append(";\n");
+            seed = nextSeed(seed);
+            char operator = OPERATORS[Integer.remainderUnsigned(seed, OPERATORS.length)];
+            seed = nextSeed(seed);
+            int constant = Integer.remainderUnsigned(seed, 200_001) - 100_000;
+            source.append("        case ").append(i * step).append(": result ")
+                .append(operator).append("= ").append(constant).append("; break;\n");
         }
-        return source.append("      default -> 0;\n")
-            .append("    };\n")
+        return source.append("        default: result ^= value;\n")
+            .append("      }\n")
+            .append("    }\n")
+            .append("    return result;\n")
             .append("  }\n")
             .append("}\n")
             .toString();
@@ -172,11 +168,7 @@ public class JumpTableSwitch {
     @Benchmark
     @OperationsPerInvocation(OPERATIONS)
     public void switchCase(InputState state, Blackhole blackhole) throws Throwable {
-        MethodHandle switchMethod = state.switchMethod;
-        int result = 0;
-        for (int i = 0; i < OPERATIONS; i++) {
-            result += (int) switchMethod.invokeExact(state.next());
-        }
+        int result = (int) state.switchMethod.invokeExact(state.values);
         blackhole.consume(result);
     }
 }
