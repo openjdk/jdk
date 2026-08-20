@@ -58,11 +58,6 @@
 #define MUNLOCK(lock)  JVM_RawMonitorExit(lock)
 #define MDESTROY(lock) JVM_RawMonitorDestroy(lock)
 
-/*
- * Supported compression methods
- */
-#define STORED      0
-#define DEFLATED    8
 
 /*
  * Header signatures
