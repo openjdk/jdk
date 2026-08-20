@@ -729,7 +729,7 @@
   product(uint, MacroExpansionCleanupCount, 32, DIAGNOSTIC,                 \
           "Execute IGVN optimization to clean graph after this number of "  \
           "macro nodes are expanded")                                       \
-          range(0, 100)                                                     \
+          range(1, 100)                                                     \
                                                                             \
   develop(uint, VerifyIterativeGVN, 0,                                      \
           "Verify Iterative Global Value Numbering =GFEDCBA, with:"         \
