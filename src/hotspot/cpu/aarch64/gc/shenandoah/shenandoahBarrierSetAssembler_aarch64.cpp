@@ -759,21 +759,18 @@ void ShenandoahBarrierStubC2::patchable_jump(MacroAssembler& masm, const char gc
   }
 
 #ifdef ASSERT
-  address check_start = __ pc();
-
-  Label L_fake_entry, L_real_entry, L_skip;
+  Label L_fake_entry, L_skip;
   Address gc_state_addr(rthread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
+
+  address check_start = __ pc();
 
   __ ldrb(tmp, gc_state_addr);
   __ andr(tmp, tmp, gc_state);
-#endif
 
-  __ relocate(patchable_barrier_Relocation::spec(ShenandoahNMethod::encode_to_reloc(gc_state, jump_when_state)));
-
-#ifdef ASSERT
   // Emit the secondary jump and use it to cross-check against the actual GC state.
   // This also checks that all interesting GC state transitions are done non-racily
   // from the perspective of the thread executing the nmethod.
+  __ relocate(patchable_barrier_Relocation::spec(ShenandoahNMethod::encode_to_reloc(gc_state, jump_when_state)));
   __ b(L_fake_entry);
 
   // Currently hot-patched to NOP.
@@ -787,13 +784,13 @@ void ShenandoahBarrierStubC2::patchable_jump(MacroAssembler& masm, const char gc
   // Currently hot-patched to JUMP.
   __ bind(L_fake_entry);
   if (jump_when_state) {
-    __ cbnz(tmp, L_real_entry);
+    __ cbnz(tmp, L_skip);
   } else {
-    __ cbz(tmp, L_real_entry);
+    __ cbz(tmp, L_skip);
   }
   __ hlt(0);
 
-  __ bind(L_real_entry);
+  __ bind(L_skip);
 
   address check_end = __ pc();
   size_t actual_check_size = pointer_delta(check_end, check_start, Assembler::instruction_size);
@@ -802,11 +799,8 @@ void ShenandoahBarrierStubC2::patchable_jump(MacroAssembler& masm, const char gc
 
   // Emit the unconditional branch in the first version of the method.
   // Let the rest of runtime figure out how to manage it.
+  __ relocate(patchable_barrier_Relocation::spec(ShenandoahNMethod::encode_to_reloc(gc_state, jump_when_state)));
   __ b(*L_target);
-
-#ifdef ASSERT
-  __ bind(L_skip);
-#endif
 }
 
 void ShenandoahBarrierStubC2::enter_if_gc_state(MacroAssembler& masm, const char test_state, Register tmp) {
