@@ -1797,7 +1797,7 @@ void PhaseIdealLoop::LoopExitTest::canonicalize_mask(jlong stride_con) {
 //    trap: loop_limit_check
 //  }
 //
-// When StressLoopLimitSpeculativeNarrowing is set, we guard (byte) long_limit == long_limit instead 
+// When StressLoopLimitSpeculativeNarrowing is set, we guard (byte) long_limit == long_limit instead
 // for  more deopts.
 Node* PhaseIdealLoop::LoopExitTest::speculatively_narrow_limit(PhaseIterGVN& igvn) {
   assert(_should_speculatively_narrow_limit, "must call can_speculatively_narrow_limit() first");
@@ -1819,7 +1819,7 @@ Node* PhaseIdealLoop::LoopExitTest::speculatively_narrow_limit(PhaseIterGVN& igv
 
   // Finally, we assumed the limit is within int range, so add guards and traps if it's not.
   Node* guard_value = _narrowed_limit;
-  
+
   #ifdef ASSERT
   // Instead of guarding (int) limit == limit, we guard (byte) limit == limit to trigger more deopts
   if (StressLoopLimitSpeculativeNarrowing) {
@@ -1918,7 +1918,7 @@ void CountedLoopConverter::LoopStructure::build() {
 
   _exit_test.build();
   if (!_exit_test.is_valid_with_bt(_iv_bt) &&
-      !(_iv_bt == T_INT && _exit_test.can_speculatively_narrow_limit())) {
+      !(_iv_bt == T_INT && _exit_test.can_speculatively_narrow_limit(_phase->igvn()))) {
     return; // Avoid pointer & float
   }
 
