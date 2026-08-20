@@ -110,31 +110,25 @@ public class FinalizationOption {
         return passed;
     }
 
-    static void launch(String mode, String form) throws Exception {
+    static void launch(String option, String form) throws Exception {
         String[] javaArgs = switch (form) {
-            case "default"    -> new String[] {"FinalizationOption", mode};
-            case "equals"     -> new String[] {"--finalization=" + mode,
-                                               "FinalizationOption", mode};
-            case "whitespace" -> new String[] {"--finalization", mode,
-                                               "FinalizationOption", mode};
+            case "default"    -> new String[] {"FinalizationOption", option};
+            case "equals"     -> new String[] {"--finalization=" + option,
+                                               "FinalizationOption", option};
+            case "whitespace" -> new String[] {"--finalization", option,
+                                               "FinalizationOption", option};
             default -> throw new AssertionError("Unexpected option form: " + form);
         };
 
         ProcessTools.executeTestJava(javaArgs).shouldHaveExitValue(0);
     }
 
-    public static void main(String[] args) throws Exception {
-        if (args.length == 2) {
-            launch(args[0], args[1]);
-            return;
-        }
-
-        boolean finalizationEnabled = switch (args[0]) {
+    static void test(String option) throws Exception {
+        boolean finalizationEnabled = switch (option) {
             case "enabled"  -> true;
             case "disabled" -> false;
-            default -> {
-                throw new AssertionError("usage: FinalizationOption enabled|disabled");
-            }
+            default -> throw new AssertionError(
+                "usage: FinalizationOption enabled|disabled");
         };
 
         boolean threadPass = checkFinalizerThread(finalizationEnabled);
@@ -142,5 +136,28 @@ public class FinalizationOption {
 
         if (!threadPass || !calledPass)
             throw new AssertionError("Test failed.");
+    }
+
+    /*
+     * Each @run invocation enters main() twice:
+     *
+     * 1. jtreg invokes main() with two arguments. This calls launch()
+     *    to start a test process.
+     *
+     * 2. The launched test process invokes main() with one argument and
+     *    performs the actual test.
+     */
+    public static void main(String[] args) throws Exception {
+        switch (args.length) {
+            case 2:
+                launch(args[0], args[1]);
+                return;
+            case 1:
+                test(args[0]);
+                return;
+            default:
+                throw new AssertionError(
+                    "expected one or two arguments");
+        }
     }
 }
