@@ -29,11 +29,11 @@
  * @run main/othervm -XX:CompileCommand=compileonly,*TestReduceAllocationAndPointerComparisons*::*
  *                   -XX:CompileCommand=dontinline,*TestReduceAllocationAndPointerComparisons*::*
  *                   -XX:-TieredCompilation -Xcomp
- *                   compiler.c2.TestReduceAllocationAndPointerComparisons
- * @run main compiler.c2.TestReduceAllocationAndPointerComparisons
+ *                   compiler.escapeAnalysis.TestReduceAllocationAndPointerComparisons
+ * @run main compiler.escapeAnalysis.TestReduceAllocationAndPointerComparisons
  */
 
-package compiler.c2;
+package compiler.escapeAnalysis;
 
 public class TestReduceAllocationAndPointerComparisons {
     public static void main(String[] args) {

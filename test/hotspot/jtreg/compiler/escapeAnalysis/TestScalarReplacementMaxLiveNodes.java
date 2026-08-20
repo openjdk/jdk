@@ -28,10 +28,10 @@
  * @library /test/lib /
  * @requires vm.debug & vm.compiler2.enabled
  * @compile -XDstringConcat=inline TestScalarReplacementMaxLiveNodes.java
- * @run main/othervm/timeout=480 compiler.c2.TestScalarReplacementMaxLiveNodes
+ * @run main/othervm/timeout=480 compiler.escapeAnalysis.TestScalarReplacementMaxLiveNodes
  * @run main/othervm/timeout=480 -Xbatch -XX:-OptimizeStringConcat -XX:-TieredCompilation
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+ReduceAllocationMerges
- *                   -XX:CompileCommand=dontinline,compiler.c2.TestScalarReplacementMaxLiveNodes::test
+ *                   -XX:CompileCommand=dontinline,compiler.escapeAnalysis.TestScalarReplacementMaxLiveNodes::test
  *                   -XX:CompileCommand=compileonly,*TestScalarReplacementMaxLiveNodes*::*test*
  *                   -XX:CompileCommand=inline,*String*::*
  *                   -XX:CompileCommand=dontinline,*StringBuilder*::ensureCapacityInternal
@@ -39,9 +39,9 @@
  *                   -XX:NodeCountInliningCutoff=220000
  *                   -XX:DesiredMethodLimit=100000
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:CompileTaskTimeout=0
- *                   compiler.c2.TestScalarReplacementMaxLiveNodes
+ *                   compiler.escapeAnalysis.TestScalarReplacementMaxLiveNodes
  */
-package compiler.c2;
+package compiler.escapeAnalysis;
 
 public class TestScalarReplacementMaxLiveNodes {
     public static void main(String[] args) {

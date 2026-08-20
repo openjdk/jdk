@@ -352,11 +352,26 @@ public:
 #define AOTCODECACHE_CONFIGS_X86_DO(do_var, do_fun)
 #endif
 
+#if defined(RISCV64) && !defined(ZERO)
+#define AOTCODECACHE_CONFIGS_RISCV_DO(do_var, do_fun) \
+  do_var(intx,  BlockZeroingLowLimit)                   /* zero blocks stub */ \
+  do_var(bool,  UseBlockZeroing)                        /* zero blocks stub and nmethods */ \
+  do_var(bool,  UseConservativeFence)                   /* fence encoding in stubs and nmethods */ \
+  do_var(bool,  UseCtxFencei)                           /* method entry barrier stub */ \
+  do_var(bool,  UseSecondarySupersCache)                /* secondary supers cache in nmethods */ \
+  do_var(bool,  UseZabha)                               /* narrow cmpxchg selection in nmethods */ \
+  do_fun(int,   RVZicbozBlockSize,                      (int)VM_Version::zicboz_block_size.value()) \
+  // END
+#else
+#define AOTCODECACHE_CONFIGS_RISCV_DO(do_var, do_fun)
+#endif
+
 #define AOTCODECACHE_CONFIGS_DO(do_var, do_fun) \
   AOTCODECACHE_CONFIGS_GENERIC_DO(do_var, do_fun) \
   AOTCODECACHE_CONFIGS_COMPILER2_DO(do_var, do_fun) \
   AOTCODECACHE_CONFIGS_AARCH64_DO(do_var, do_fun) \
   AOTCODECACHE_CONFIGS_X86_DO(do_var, do_fun) \
+  AOTCODECACHE_CONFIGS_RISCV_DO(do_var, do_fun) \
   // END
 
 #define AOTCODECACHE_DECLARE_VAR(type, name) type _saved_ ## name;
@@ -377,7 +392,7 @@ protected:
     bool _useUnalignedLoadStores;
 #endif
 
-#if defined(AARCH64) && !defined(ZERO)
+#if (defined(AARCH64) || defined(RISCV64)) && !defined(ZERO)
     bool _avoidUnalignedAccesses;
 #endif
 

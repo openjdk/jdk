@@ -29,10 +29,10 @@
  * @requires vm.compiler2.enabled
  * @run main/othervm -XX:CompileCommand=compileonly,*TestReduceAllocationAndMemoryLoop*::test*
  *                   -XX:-TieredCompilation -Xbatch
- *                   compiler.c2.TestReduceAllocationAndMemoryLoop
+ *                   compiler.escapeAnalysis.TestReduceAllocationAndMemoryLoop
  */
 
-package compiler.c2;
+package compiler.escapeAnalysis;
 
 public class TestReduceAllocationAndMemoryLoop {
     public static void main(String[] args) throws Exception {

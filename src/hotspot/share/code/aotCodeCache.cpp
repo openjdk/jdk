@@ -204,7 +204,7 @@ uint AOTCodeCache::max_aot_code_size() {
 // At this point all AOT class linking seetings are finilized
 // and AOT cache is open so we can map AOT code region.
 void AOTCodeCache::initialize() {
-#if defined(ZERO) || !(defined(AMD64) || defined(AARCH64))
+#if defined(ZERO) || !(defined(AMD64) || defined(AARCH64) || defined(RISCV64))
   log_info(aot, codecache, init)("AOT Code Cache is not supported on this platform.");
   disable_caching();
   return;
@@ -263,7 +263,7 @@ void AOTCodeCache::initialize() {
     FLAG_SET_DEFAULT(ForceUnreachable, true);
   }
   FLAG_SET_DEFAULT(DelayCompilerStubsGeneration, false);
-#endif // defined(AMD64) || defined(AARCH64)
+#endif // defined(AMD64) || defined(AARCH64) || defined(RISCV64)
 }
 
 static AOTCodeCache*  opened_cache = nullptr; // Use this until we verify the cache
@@ -471,7 +471,7 @@ void AOTCodeCache::Config::record(uint cpu_features_offset) {
   _useUnalignedLoadStores = UseUnalignedLoadStores;
 #endif
 
-#if defined(AARCH64)  && !defined(ZERO)
+#if (defined(AARCH64) || defined(RISCV64)) && !defined(ZERO)
   _avoidUnalignedAccesses = AvoidUnalignedAccesses;
 #endif
 
@@ -601,14 +601,14 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
   }
 #endif // defined(X86) && !defined(ZERO)
 
-#if defined(AARCH64) && !defined(ZERO)
+#if (defined(AARCH64) || defined(RISCV64)) && !defined(ZERO)
   // switching on AvoidUnalignedAccesses may affect validity of array
   // copy stubs and nmethods
   if (!_avoidUnalignedAccesses && AvoidUnalignedAccesses) {
     log_config_mismatch(_avoidUnalignedAccesses, AvoidUnalignedAccesses, "AvoidUnalignedAccesses");
     return false;
   }
-#endif // defined(AARCH64) && !defined(ZERO)
+#endif // (defined(AARCH64) || defined(RISCV64)) && !defined(ZERO)
 
   return true;
 }
@@ -1941,6 +1941,8 @@ void AOTCodeAddressTable::init_extrs() {
   ADD_EXTERNAL_ADDRESS(SharedRuntime::allocate_inline_types);
 #if defined(AARCH64) && !defined(ZERO)
   ADD_EXTERNAL_ADDRESS(JavaThread::aarch64_get_thread_helper);
+#endif
+#if (defined(AARCH64) || defined(RISCV64)) && !defined(ZERO)
   ADD_EXTERNAL_ADDRESS(BarrierSetAssembler::patching_epoch_addr());
 #endif
 
