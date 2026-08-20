@@ -34,13 +34,6 @@ public class InlineTypes {
 
     public static final Scenario[] DEFAULT_SCENARIOS = {
             new Scenario(0,
-                         "--enable-preview",
-                         "--add-exports", "java.base/jdk.internal.value=ALL-UNNAMED",
-                         "--add-exports", "java.base/jdk.internal.vm.annotation=ALL-UNNAMED",
-                         "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
-                         "-XX:+UnlockDiagnosticVMOptions",
-                         "-XX:+UnlockExperimentalVMOptions",
-                         "-XX:+IgnoreUnrecognizedVMOptions",
                          "-XX:-UseACmpProfile",
                          "-XX:+AlwaysIncrementalInline",
                          "-XX:FlatArrayElementMaxOops=5",
@@ -51,13 +44,6 @@ public class InlineTypes {
                          "-XX:+InlineTypeReturnedAsFields"
             ),
             new Scenario(1,
-                         "--enable-preview",
-                         "--add-exports", "java.base/jdk.internal.value=ALL-UNNAMED",
-                         "--add-exports", "java.base/jdk.internal.vm.annotation=ALL-UNNAMED",
-                         "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
-                         "-XX:+UnlockDiagnosticVMOptions",
-                         "-XX:+UnlockExperimentalVMOptions",
-                         "-XX:+IgnoreUnrecognizedVMOptions",
                          "-XX:-UseACmpProfile",
                          "-XX:-UseCompressedOops",
                          "-XX:FlatArrayElementMaxOops=5",
@@ -68,13 +54,6 @@ public class InlineTypes {
                          "-XX:-InlineTypeReturnedAsFields"
             ),
             new Scenario(2,
-                         "--enable-preview",
-                         "--add-exports", "java.base/jdk.internal.value=ALL-UNNAMED",
-                         "--add-exports", "java.base/jdk.internal.vm.annotation=ALL-UNNAMED",
-                         "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
-                         "-XX:+UnlockDiagnosticVMOptions",
-                         "-XX:+UnlockExperimentalVMOptions",
-                         "-XX:+IgnoreUnrecognizedVMOptions",
                          "-XX:-UseACmpProfile",
                          "-XX:-UseCompressedOops",
                          "-XX:FlatArrayElementMaxOops=0",
@@ -85,13 +64,6 @@ public class InlineTypes {
                          "-XX:+InlineTypeReturnedAsFields"
             ),
             new Scenario(3,
-                         "--enable-preview",
-                         "--add-exports", "java.base/jdk.internal.value=ALL-UNNAMED",
-                         "--add-exports", "java.base/jdk.internal.vm.annotation=ALL-UNNAMED",
-                         "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
-                         "-XX:+UnlockDiagnosticVMOptions",
-                         "-XX:+UnlockExperimentalVMOptions",
-                         "-XX:+IgnoreUnrecognizedVMOptions",
                          "-DVerifyIR=false",
                          "-XX:+AlwaysIncrementalInline",
                          "-XX:FlatArrayElementMaxOops=0",
@@ -101,13 +73,6 @@ public class InlineTypes {
                          "-XX:+InlineTypeReturnedAsFields"
             ),
             new Scenario(4,
-                         "--enable-preview",
-                         "--add-exports", "java.base/jdk.internal.value=ALL-UNNAMED",
-                         "--add-exports", "java.base/jdk.internal.vm.annotation=ALL-UNNAMED",
-                         "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
-                         "-XX:+UnlockDiagnosticVMOptions",
-                         "-XX:+UnlockExperimentalVMOptions",
-                         "-XX:+IgnoreUnrecognizedVMOptions",
                          "-DVerifyIR=false",
                          "-XX:FlatArrayElementMaxOops=-1",
                          "-XX:+UseArrayFlattening",
@@ -117,13 +82,6 @@ public class InlineTypes {
                          "-XX:-ReduceInitialCardMarks"
             ),
             new Scenario(5,
-                         "--enable-preview",
-                         "--add-exports", "java.base/jdk.internal.value=ALL-UNNAMED",
-                         "--add-exports", "java.base/jdk.internal.vm.annotation=ALL-UNNAMED",
-                         "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
-                         "-XX:+UnlockDiagnosticVMOptions",
-                         "-XX:+UnlockExperimentalVMOptions",
-                         "-XX:+IgnoreUnrecognizedVMOptions",
                          "-XX:-UseACmpProfile",
                          "-XX:+AlwaysIncrementalInline",
                          "-XX:FlatArrayElementMaxOops=5",
@@ -134,13 +92,6 @@ public class InlineTypes {
                          "-XX:-InlineTypeReturnedAsFields"
             ),
             new Scenario(6,
-                         "--enable-preview",
-                         "--add-exports", "java.base/jdk.internal.value=ALL-UNNAMED",
-                         "--add-exports", "java.base/jdk.internal.vm.annotation=ALL-UNNAMED",
-                         "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
-                         "-XX:+UnlockDiagnosticVMOptions",
-                         "-XX:+UnlockExperimentalVMOptions",
-                         "-XX:+IgnoreUnrecognizedVMOptions",
                          "-XX:-UseACmpProfile",
                          "-XX:+AlwaysIncrementalInline",
                          "-XX:FlatArrayElementMaxOops=5",
@@ -156,9 +107,17 @@ public class InlineTypes {
     };
 
     static {
-        // Force inline the methods called by ValueClass::validateArrayArguments used by the array factories
+        // Add common flags
         for (Scenario scenario : DEFAULT_SCENARIOS) {
-            scenario.addFlags("-XX:CompileCommand=inline,jdk.internal.value.ValueClass::isConcreteValueClass",
+            scenario.addFlags("--enable-preview",
+                              "--add-exports", "java.base/jdk.internal.value=ALL-UNNAMED",
+                              "--add-exports", "java.base/jdk.internal.vm.annotation=ALL-UNNAMED",
+                              "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
+                              "-XX:+UnlockDiagnosticVMOptions",
+                              "-XX:+UnlockExperimentalVMOptions",
+                              "-XX:+IgnoreUnrecognizedVMOptions",
+                              // Force inline the methods called by ValueClass::validateArrayArguments used by the array factories
+                              "-XX:CompileCommand=inline,jdk.internal.value.ValueClass::isConcreteValueClass",
                               "-XX:CompileCommand=inline,java.lang.Class::isValue",
                               "-XX:CompileCommand=inline,java.lang.reflect.Modifier::isAbstract");
         }
