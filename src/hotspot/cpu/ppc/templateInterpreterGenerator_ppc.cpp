@@ -1496,7 +1496,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // Now before we return to java we must look for a current safepoint
   // (a new safepoint can not start since we entered _thread_in_vm).
-  // We must check here because a current safepoint could in progress.
+  // We must check here because a current safepoint could be in progress.
 
   // Acquire isn't strictly necessary here because of the fence, but
   // sync_state is declared to be volatile, so we do it anyway
