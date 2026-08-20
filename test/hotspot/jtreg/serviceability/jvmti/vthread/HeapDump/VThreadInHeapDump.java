@@ -152,8 +152,7 @@ class VThreadInHeapDumpTarg extends LingeredApp {
             pthread.waitReady();
 
             // We are ready.
-            // Run the app on the current thread. The test limits the virtual
-            // thread scheduler to one carrier, which the mounted thread keeps.
+            // Run the app on the current thread, the scheduler is limited to one carrier.
             LingeredApp.mainLoop(args);
 
         } finally {

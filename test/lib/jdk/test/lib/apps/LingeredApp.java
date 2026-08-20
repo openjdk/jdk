@@ -630,8 +630,6 @@ public class LingeredApp {
 
     /**
      * Runs the app on the current thread regardless of the test thread factory.
-     * For apps that cannot run on a virtual thread, e.g. when the test limits
-     * the virtual thread scheduler.
      */
     @SuppressWarnings("restricted")
     public static void mainLoop(String[] args) {
