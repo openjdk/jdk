@@ -1773,7 +1773,7 @@ void HeapShared::scan_inline_classes(KlassSubGraphInfo* subgraph_info, oop orig_
   if (klass->is_flatArray_klass()) {
     FlatArrayKlass* fak = FlatArrayKlass::cast(klass);
     precond(orig_obj->is_flatArray());
-    flatArrayOop fa = flatArrayOop(orig_obj);
+    flatArrayOop fa = oop_cast<flatArrayOop>(orig_obj);
     InlineKlass* elem_k = fak->element_klass();
     bool added = false;
     for (int i = 0; i < fa->length(); i++) {
