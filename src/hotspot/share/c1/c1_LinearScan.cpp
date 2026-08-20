@@ -542,6 +542,9 @@ void LinearScan::set_live_gen_kill(Value value, LIR_Op* op, BitMap& live_gen, Bi
   if ((con == nullptr || con->is_pinned()) && opr->is_register()) {
     assert(reg_num(opr) == opr->vreg_number() && !is_valid_reg_num(reg_numHi(opr)), "invalid optimization below");
     int reg = opr->vreg_number();
+    if (UseNewCode && reg == 610) {
+      return; // Added only for debugging purposes, according to comment
+    }
     if (!live_kill.at(reg)) {
       live_gen.set_bit(reg);
       TRACE_LINEAR_SCAN(4, tty->print_cr("  Setting live_gen for value %c%d, LIR op_id %d, register number %d", value->type()->tchar(), value->id(), op->id(), reg));
@@ -635,9 +638,12 @@ void LinearScan::compute_local_live_sets() {
 
       // Add uses of live locals from interpreter's point of view for proper debug information generation
       n = visitor.info_count();
+      TRACE_LINEAR_SCAN(4, tty->print("op: "); op->print(); tty->cr());
       for (k = 0; k < n; k++) {
+        TRACE_LINEAR_SCAN(4, tty->print_cr("  k: %d", k));
         CodeEmitInfo* info = visitor.info_at(k);
         ValueStack* stack = info->stack();
+        TRACE_LINEAR_SCAN(4, tty->print("stack: "); stack->print(); tty->cr());
         for_each_state_value(stack, value,
           set_live_gen_kill(value, op, live_gen, live_kill);
           local_has_fpu_registers = local_has_fpu_registers || value->type()->is_float_kind();
@@ -745,6 +751,7 @@ void LinearScan::compute_global_live_sets() {
   // The loop is executed until a fixpoint is reached (no changes in an iteration)
   // Exception handlers must be processed because not all live values are
   // present in the state array, e.g. because of global value numbering
+  // TODO: does this assume exception handlers are always jumped to from the end of a block?
   do {
     change_occurred = false;
 
@@ -760,14 +767,26 @@ void LinearScan::compute_global_live_sets() {
       if (n + e > 0) {
         // block has successors
         if (n > 0) {
+          if (TraceLinearScanLevel >= 4) {
+            tty->print("live_out B%d u= live_in B%d = ", block->block_id(), block->sux_at(0)->block_id());
+            print_bitmap(block->sux_at(0)->live_in());
+          }
           live_out.set_from(block->sux_at(0)->live_in());
           for (int j = 1; j < n; j++) {
+            if (TraceLinearScanLevel >= 4) {
+              tty->print("live_out B%d u= live_in B%d = ", block->block_id(), block->sux_at(j)->block_id());
+              print_bitmap(block->sux_at(j)->live_in());
+            }
             live_out.set_union(block->sux_at(j)->live_in());
           }
         } else {
           live_out.clear();
         }
         for (int j = 0; j < e; j++) {
+          if (TraceLinearScanLevel >= 4) {
+            tty->print("live_out B%d u= live_in B%d = ", block->block_id(), block->exception_handler_at(j)->block_id());
+            print_bitmap(block->exception_handler_at(j)->live_in());
+          }
           live_out.set_union(block->exception_handler_at(j)->live_in());
         }
 
@@ -894,6 +913,9 @@ void LinearScan::add_def(LIR_Opr opr, int def_pos, IntervalUseKind use_kind) {
 }
 
 void LinearScan::add_use(LIR_Opr opr, int from, int to, IntervalUseKind use_kind) {
+  if (UseNewCode && reg_num(opr) == 610 && from == 24 && to == 35) {
+    return; // Added only for debugging purposes, according to comment
+  }
   TRACE_LINEAR_SCAN(2, tty->print(" use "); opr->print(tty); tty->print_cr(" from %d to %d (%d)", from, to, use_kind));
   assert(opr->is_register(), "should not be called otherwise");
 
@@ -3016,25 +3038,38 @@ void LinearScan::assign_reg_num() {
 
 
 void LinearScan::do_linear_scan() {
+  TRACE_LINEAR_SCAN(3, tty->print_cr("number_instructions()"));
   number_instructions();
 
   NOT_PRODUCT(print_lir(1, "Before Register Allocation"));
 
+  TRACE_LINEAR_SCAN(3, tty->print_cr("compute_local_live_sets()"));
   compute_local_live_sets();
+  TRACE_LINEAR_SCAN(3, tty->print_cr("compute_global_live_sets()"));
   compute_global_live_sets();
   CHECK_BAILOUT();
 
+  TRACE_LINEAR_SCAN(3, tty->print_cr("build_intervals()"));
   build_intervals();
   CHECK_BAILOUT();
+  TRACE_LINEAR_SCAN(3, tty->print_cr("sort_intervals()"));
   sort_intervals_before_allocation();
 
   NOT_PRODUCT(print_intervals("Before Register Allocation"));
   NOT_PRODUCT(LinearScanStatistic::compute(this, _stat_before_alloc));
 
+  TRACE_LINEAR_SCAN(3, tty->print_cr("allocate_registers()"));
   allocate_registers();
   CHECK_BAILOUT();
 
+  NOT_PRODUCT(print_lir(1, "After allocate_registers"));
+  NOT_PRODUCT(print_intervals("After allocate_registers"));
+
   resolve_data_flow();
+
+  NOT_PRODUCT(print_lir(1, "After resolve_data_flow"));
+  NOT_PRODUCT(print_intervals("After resolve_data_flow"));
+
   if (compilation()->has_exception_handlers()) {
     resolve_exception_handlers();
   }
