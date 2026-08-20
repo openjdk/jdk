@@ -26,12 +26,15 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentRefineStats.inline.hpp"
 #include "gc/g1/g1ConcurrentRefineSweepTask.hpp"
+#include "gc/g1/g1OopClosures.hpp"
 
 class G1RefineRegionClosure : public G1HeapRegionClosure {
   using CardValue = G1CardTable::CardValue;
 
   G1RemSet* _rem_set;
   G1CardTableClaimTable* _scan_state;
+
+  G1ConcurrentRefineOopClosure _conc_refine_cl;
 
   bool has_work(G1HeapRegion* r) {
     return _scan_state->has_unclaimed_cards(r->hrm_index());
@@ -53,7 +56,7 @@ class G1RefineRegionClosure : public G1HeapRegionClosure {
   void do_dirty_card(CardValue* source_card, CardValue* dest_card) {
     verify_card_pair_refers_to_same_card(source_card, dest_card);
 
-    G1RemSet::RefineResult res = _rem_set->refine_card_concurrently(source_card);
+    G1RemSet::RefineResult res = _rem_set->refine_card_concurrently(source_card, _conc_refine_cl);
     // Gather statistics based on the result.
     switch (res) {
       case G1RemSet::HasRefToCSet: {
@@ -96,6 +99,7 @@ public:
     G1HeapRegionClosure(),
     _rem_set(G1CollectedHeap::heap()->rem_set()),
     _scan_state(scan_state),
+    _conc_refine_cl(G1CollectedHeap::heap()),
     _completed(true),
     _per_worker_refine_data() { }
 

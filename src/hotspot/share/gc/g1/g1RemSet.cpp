@@ -1266,7 +1266,8 @@ inline void check_card_ptr(CardTable::CardValue* card_ptr, G1CardTable* ct) {
 #endif
 }
 
-G1RemSet::RefineResult G1RemSet::refine_card_concurrently(CardValue* const card_ptr) {
+G1RemSet::RefineResult G1RemSet::refine_card_concurrently(CardValue* const card_ptr,
+                                                          G1ConcurrentRefineOopClosure& conc_refine_cl) {
   assert(!_g1h->is_stw_gc_active(), "Only call concurrently");
   G1CardTable* ct = _g1h->refinement_table();
   check_card_ptr(card_ptr, ct);
@@ -1296,7 +1297,8 @@ G1RemSet::RefineResult G1RemSet::refine_card_concurrently(CardValue* const card_
   MemRegion dirty_region(start, MIN2(scan_limit, end));
   assert(!dirty_region.is_empty(), "sanity");
 
-  G1ConcurrentRefineOopClosure conc_refine_cl(_g1h);
+  conc_refine_cl.reset_for_scan();
+
   if (r->oops_on_memregion_seq_iterate_careful<false>(dirty_region, &conc_refine_cl) != nullptr) {
     if (conc_refine_cl.has_ref_to_cset()) {
       return HasRefToCSet;
