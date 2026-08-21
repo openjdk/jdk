@@ -29,7 +29,7 @@ import java.io.Serial;
 
 /**
  * Signals that an error has been detected while parsing the
- * JSON document. This exception is thrown if the value supplied
+ * JSON text. This exception is thrown if the value supplied
  * to either {@link Json#parse(String)} or {@link Json#parse(char[])}
  * is not valid JSON syntax, or contains a JSON object with duplicate
  * names.

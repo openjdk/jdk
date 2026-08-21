@@ -26,14 +26,17 @@
 /*
  * @test
  * @bug 8381976
- * @summary Tests methods that generate JSON documents
+ * @summary Tests methods that generate JSON texts
  * @modules jdk.incubator.json
  * @run junit TestGenerate
  */
 
 import java.util.List;
 import jdk.incubator.json.Json;
+import jdk.incubator.json.JsonArray;
+import jdk.incubator.json.JsonNumber;
 import jdk.incubator.json.JsonString;
+import jdk.incubator.json.JsonValue;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -206,5 +209,24 @@ public class TestGenerate {
         }""", display);
 
         assertDoesNotThrow(() -> Json.parse(display));
+    }
+
+    @Test
+    void testDeepNestingToString() {
+        assertDoesNotThrow(() -> deepNest().toString());
+    }
+
+    @Test
+    void testDeepNestingToDisplayString() {
+        assertDoesNotThrow(() -> Json.toDisplayString(deepNest(), ""));
+    }
+
+    private static JsonValue deepNest() {
+        int depth = 10_000;
+        JsonValue jv = JsonNumber.of(0);
+        for (int i = 0; i < depth; i++) {
+            jv = JsonArray.of(List.of(jv));
+        }
+        return jv;
     }
 }

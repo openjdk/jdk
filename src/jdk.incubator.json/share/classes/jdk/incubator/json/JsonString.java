@@ -73,7 +73,7 @@ public non-sealed interface JsonString extends JsonValue {
 
     /**
      * {@return the JSON string represented by this {@code JsonString}}
-     * If this {@code JsonString} was created by parsing a JSON document, it
+     * If this {@code JsonString} was created by parsing a JSON text, it
      * preserves the original text representation of the corresponding JSON
      * string. Otherwise, the returned JSON string is the source {@code String}
      * passed to the factory method {@link #of(String)} surrounded by double quotes

@@ -24,14 +24,13 @@
  */
 package jdk.incubator.json;
 
-import java.util.Arrays;
 import java.util.Objects;
 
 import jdk.incubator.json.impl.JsonParser;
-import jdk.incubator.json.impl.Utils;
+import jdk.incubator.json.impl.JsonGenerator;
 
 /**
- * This class provides static methods for parsing and generating JSON documents.
+ * This class provides static methods for parsing and generating JSON texts.
  *
  * <p>
  * {@link #parse(String)} and {@link #parse(char[])} produce a {@code JsonValue}
@@ -53,20 +52,20 @@ import jdk.incubator.json.impl.Utils;
 public final class Json {
 
     /**
-     * Parses and creates a {@code JsonValue} from the given JSON document.
-     * If parsing succeeds, it guarantees that the input document conforms to
-     * the JSON syntax. If the document contains any JSON object that has
+     * Parses and creates a {@code JsonValue} from the given JSON text.
+     * If parsing succeeds, it guarantees that the input text conforms to
+     * the JSON syntax. If the text contains any JSON object that has
      * duplicate names, a {@code JsonParseException} is thrown.
      * <p>
      * {@code JsonObject}s preserve the order of members in the input JSON
-     * document.
+     * text.
      *
      * @implNote {@code JsonValue}s created by this method may produce their
      * underlying value representation lazily.
      *
-     * @param in the input JSON document as {@code String}. Non-null.
-     * @throws JsonParseException if the input JSON document does not conform
-     *      to the JSON document format or a JSON object containing
+     * @param in the input JSON text as {@code String}. Non-null.
+     * @throws JsonParseException if the input JSON text does not conform
+     *      to the JSON text format or a JSON object containing
      *      duplicate names is encountered.
      * @throws NullPointerException if {@code in} is {@code null}
      * @return the parsed {@code JsonValue}
@@ -77,21 +76,21 @@ public final class Json {
     }
 
     /**
-     * Parses and creates a {@code JsonValue} from the given JSON document.
-     * If parsing succeeds, it guarantees that the input document conforms to
-     * the JSON syntax. If the document contains any JSON object that has
+     * Parses and creates a {@code JsonValue} from the given JSON text.
+     * If parsing succeeds, it guarantees that the input text conforms to
+     * the JSON syntax. If the text contains any JSON object that has
      * duplicate names, a {@code JsonParseException} is thrown. After parsing,
      * changes to the input array have no effect on the returned {@code JsonValue}.
      * <p>
      * {@code JsonObject}s preserve the order of their members declared in and parsed from
-     * the JSON document.
+     * the JSON text.
      *
      * @implNote {@code JsonValue}s created by this method may produce their
      * underlying value representation lazily.
      *
-     * @param in the input JSON document as {@code char[]}. Non-null.
-     * @throws JsonParseException if the input JSON document does not conform
-     *      to the JSON document format or a JSON object containing
+     * @param in the input JSON text as {@code char[]}. Non-null.
+     * @throws JsonParseException if the input JSON text does not conform
+     *      to the JSON text format or a JSON object containing
      *      duplicate names is encountered.
      * @throws NullPointerException if {@code in} is {@code null}
      * @return the parsed {@code JsonValue}
@@ -126,65 +125,7 @@ public final class Json {
             throw new IllegalArgumentException("indent contains non-insignificant" +
                 " whitespace: " + indent);
         }
-        var s = new StringBuilder();
-        toDisplayString(value, s, 0, indent, false);
-        return s.toString();
-    }
-
-    private static void toDisplayString(JsonValue jv, StringBuilder s, int depth, String indent, boolean isField) {
-        switch (jv) {
-            case JsonObject jo -> toDisplayString(jo, s, depth, indent, isField);
-            case JsonArray ja -> toDisplayString(ja, s, depth, indent, isField);
-            default -> s.append(isField ? " " : indent.repeat(depth)).append(jv);
-        }
-    }
-
-    private static void toDisplayString(JsonObject jo, StringBuilder s,
-                                          int depth, String indent, boolean isField) {
-        var prefix = indent.repeat(depth);
-        if (isField) {
-            s.append(' ');
-        } else {
-            s.append(prefix);
-        }
-        var map = jo.asMap();
-        if (map.isEmpty()) {
-            s.append("{}");
-        } else {
-            s.append("{\n");
-            map.forEach((name, val) -> {
-                s.append(indent.repeat(depth + 1))
-                    .append('"')
-                    .append(Utils.escape(name))
-                    .append("\":");
-                toDisplayString(val, s, depth + 1, indent, true);
-                s.append(",\n");
-            });
-            s.setLength(s.length() - 2); // trim final comma
-            s.append('\n').append(prefix).append('}');
-        }
-    }
-
-    private static void toDisplayString(JsonArray ja, StringBuilder s,
-                                          int depth, String indent, boolean isField) {
-        var prefix = indent.repeat(depth);
-        if (isField) {
-            s.append(' ');
-        } else {
-            s.append(prefix);
-        }
-        var list = ja.asList();
-        if (list.isEmpty()) {
-            s.append("[]");
-        } else {
-            s.append("[\n");
-            for (JsonValue v : list) {
-                toDisplayString(v, s, depth + 1, indent, false);
-                s.append(",\n");
-            }
-            s.setLength(s.length() - 2); // trim final comma
-            s.append('\n').append(prefix).append(']');
-        }
+        return JsonGenerator.toDisplayString(value, indent);
     }
 
     // no instantiation is allowed for this class

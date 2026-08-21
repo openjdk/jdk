@@ -29,7 +29,7 @@
  * <a href="https://datatracker.ietf.org/doc/html/rfc8259">RFC 8259: The JavaScript
  * Object Notation (JSON) Data Interchange Format</a>.
  *
- * <h2>Parsing JSON documents</h2>
+ * <h2>Parsing JSON texts</h2>
  *
  * Parsing produces a {@code JsonValue} from JSON text and is done using either
  * {@link Json#parse(java.lang.String)} or {@link Json#parse(char[])}.
@@ -42,8 +42,8 @@
  *
  * <h2>Retrieving JSON values</h2>
  *
- * Retrieving a value from a JSON document is a two-step process: first navigate
- * the document structure by chaining "access" methods, then convert the result
+ * Retrieving a value from a JSON text is a two-step process: first navigate
+ * the text structure by chaining "access" methods, then convert the result
  * to the desired type using a "conversion" method. For example:
  * {@snippet lang=java:
  * String name = root.get("foo").get("bar").get(0).asString();
@@ -54,7 +54,7 @@
  * to {@code asString()} converts that JSON value to a {@link String}.
  * For details on available access and conversion methods, see {@link JsonValue}.
  *
- * <h2>Generating JSON documents</h2>
+ * <h2>Generating JSON texts</h2>
  *
  * Generating JSON text is performed with either {@link
  * JsonValue#toString()} or {@link Json#toDisplayString(JsonValue, String)}.

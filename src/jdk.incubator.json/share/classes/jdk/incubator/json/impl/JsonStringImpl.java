@@ -39,7 +39,7 @@ public final class JsonStringImpl implements JsonString, JsonValueSupport {
     private final boolean fromFactory;
 
     // The String instance representing this JSON string for `toString()`.
-    // It always conforms to JSON syntax. If created by parsing a JSON document,
+    // It always conforms to JSON syntax. If created by parsing a JSON text,
     // it matches the original text exactly. If created via the factory method,
     // non-conformant characters are properly escaped.
     private final LazyConstant<String> jsonStr = LazyConstant.of(this::initJsonStr);
@@ -106,7 +106,7 @@ public final class JsonStringImpl implements JsonString, JsonValueSupport {
                     case 'r' -> c = '\r';
                     case 't' -> c = '\t';
                     case 'u' -> {
-                        // Will not throw NFE, document parse already validated input
+                        // Will not throw NFE, text parse already validated input
                         c = (char) Integer.parseInt(new String(doc, offset + 1, 4), 16);
                         offset += 4;
                     }

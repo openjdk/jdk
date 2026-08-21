@@ -35,11 +35,11 @@ import java.util.Optional;
 
 /**
  * The interface that represents a JSON value. {@code JsonValue} is a wrapper
- * around a syntactic element within a JSON document. The {@code JsonValue} subtypes
+ * around a syntactic element within a JSON text. The {@code JsonValue} subtypes
  * correspond to the JSON types, while {@code JsonValue} itself provides a uniform
  * interface for navigation, conversion, and generation.
  * <p>
- * A root {@code JsonValue} can be produced by parsing a JSON document with
+ * A root {@code JsonValue} can be produced by parsing a JSON text with
  * {@link Json#parse(String)}. Use the {@link ##access access} methods to navigate
  * to the desired {@code JsonValue}. From there, use the {@link ##conversion conversion}
  * methods to extract a corresponding Java value. Code that relies on equality
@@ -48,10 +48,10 @@ import java.util.Optional;
  * <p>
  * JSON text can be produced using the {@link ##generation generation} methods.
  *
- * <h2 id="access">Navigating JSON documents</h2>
+ * <h2 id="access">Navigating JSON texts</h2>
  * Use the access methods to navigate to the desired JSON value. {@link
  * #get(String)} is provided for JSON object and {@link #get(int)} for JSON array.
- * Given the JSON document:
+ * Given the JSON text:
  * {@snippet lang=java:
  * JsonValue json = Json.parse("""
  *     { "foo": ["bar", true, 42], "baz": null }
@@ -132,7 +132,7 @@ import java.util.Optional;
  *     default -> throw new JsonValueException("unexpected type");
  * }
  *}
- * There may be times when a JSON document can vary, but providing a fallback
+ * There may be times when a JSON text can vary, but providing a fallback
  * value is preferable to throwing an exception. For example:
  * {@snippet lang = java:
  * Optional.of(json)
@@ -142,15 +142,15 @@ import java.util.Optional;
  *     .map(JsonValue::asString)
  *     .orElse("bar");
  *}
- * The code above ensures that if the root JSON document is not an object,
+ * The code above ensures that if the root JSON text is not an object,
  * the member "foo" does not exist, or if "foo" is not a String, that the "bar"
  * fallback value is used over throwing an exception.
  *
- * <h2 id="generation">Generating JSON documents</h2>
+ * <h2 id="generation">Generating JSON texts</h2>
  * {@code JsonValue} overrides {@link Object#toString()} to generate RFC 8259
  * compliant JSON text in a compact representation with JSON insignificant white
  * spaces eliminated.
- * For generating JSON documents suitable for display, use
+ * For generating JSON texts suitable for display, use
  * the generation method {@link Json#toDisplayString(JsonValue, String)} instead.
  * <p>
  * Instances of {@code JsonValue} are immutable and thread safe.
@@ -166,7 +166,7 @@ public sealed interface JsonValue permits JsonString, JsonNumber, JsonObject, Js
      * The returned string represents the same JSON value as this object and
      * does not contain insignificant whitespace or line separators. It is not
      * required to preserve the exact lexical representation of the input JSON
-     * document or to produce a canonical representation. Subinterfaces may
+     * text or to produce a canonical representation. Subinterfaces may
      * specify stronger preservation behavior for their corresponding JSON type.
      * <p>
      * For a String representation suitable for display, use
@@ -268,8 +268,8 @@ public sealed interface JsonValue permits JsonString, JsonNumber, JsonObject, Js
      * {@return the {@code String} value represented by this {@code JsonValue} if
      * it is an instance of {@link JsonString}; otherwise, throws a
      * {@code JsonValueException}}
-     * If this {@code JsonString} was created by parsing a JSON document, any
-     * escaped characters in the original JSON document are converted to their
+     * If this {@code JsonString} was created by parsing a JSON text, any
+     * escaped characters in the original JSON text are converted to their
      * unescaped form.
      *
      * @implSpec
