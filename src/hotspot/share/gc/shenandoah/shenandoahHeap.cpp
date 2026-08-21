@@ -1280,7 +1280,7 @@ void ShenandoahHeap::evacuate_collection_set(ShenandoahGeneration* generation) {
     // mutators from attempting to evacuate the object during update refs. We could,
     // alternatively, have the LRB distinguish between the evacuation phase and the
     // self-update phase, but this would increase barrier complexity.
-    log_info(gc)("Cleaning up failed evacuations");
+    log_debug(gc)("Cleaning up failed evacuations");
     ShenandoahSelfForwardTask self_forward_task(this, _collection_set);
     workers()->run_task(&self_forward_task);
   }
