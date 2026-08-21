@@ -408,11 +408,9 @@ public:
 };
 
 class ciArrayLoadData : public ArrayLoadData {
-
 public:
   ciArrayLoadData(DataLayout* layout) : ArrayLoadData(layout) {}
 
-  // ciSingleTypeEntry* array() const { return (ciSingleTypeEntry*)ArrayLoadData::array(); }
   ciSingleTypeEntry* element() const { return (ciSingleTypeEntry*)ArrayLoadData::element(); }
   ciMegamorphicTypeData* megamorphic_type_data() const { return (ciMegamorphicTypeData*)ArrayLoadData::megamorphic_type_data(); }
 

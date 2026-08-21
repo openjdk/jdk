@@ -1255,10 +1255,7 @@ public:
   static ByteSize receiver_count_offset(int base, uint row) {
     return ProfileData::cell_offset(static_receiver_count_cell_index(base, row));
   }
-  // static ByteSize receiver_type_data_size() {
-  //   return cell_offset(static_cell_count());
-  // }
-  //
+
   // GC support
   void clean_weak_klass_links(bool always_clean);
 
@@ -2084,6 +2081,17 @@ public:
   virtual void print_data_on(outputStream* st, const char* extra = nullptr) const;
 };
 
+// Profile:
+// - element type
+// - if the array is flat:
+//   - a few types for the array (up to 2 by default)
+//   - if all entries are used, one the following counters is incremented:
+//     - nullable counter
+//     - null free/atomic counter
+//     - null free/not atomic counter
+//  - if the array is not flat, one the following counters is incremented:
+//    - not flat/null free counter
+//    - not flat/nullable counter
 class ArrayLoadData : public ProfileData {
 private:
   enum {
@@ -2236,9 +2244,6 @@ public:
   static ByteSize receiver_count_offset(uint row) {
     return cell_offset(MegamorphicTypeData::static_receiver_count_cell_index(base_of_megamorphic_type_data(), row));
   }
-  // static ByteSize receiver_type_data_size() {
-  //   return cell_offset(static_cell_count());
-  // }
 
   virtual void clean_weak_klass_links(bool always_clean) {
     _megamorphic_type_data.clean_weak_klass_links(always_clean);

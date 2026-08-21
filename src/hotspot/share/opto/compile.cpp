@@ -3197,7 +3197,7 @@ void Compile::Optimize() {
   // Loop transforms on the ideal graph.  Range Check Elimination,
   // peeling, unrolling, etc.
 
-  bool split_if_progress = false;;
+  bool split_if_progress = false;
   // Set loop opts counter
   if((_loop_opts_cnt > 0) && (has_loops() || has_split_ifs())) {
     {
@@ -3252,6 +3252,8 @@ void Compile::Optimize() {
 
   if (failing())  return;
 
+  // We had some success with split if when we ran first, make sure to run loop opts one more time in case, there are
+  // more opportunities for split if.
   if (split_if_progress && !major_progress()) {
     set_major_progress();
   }

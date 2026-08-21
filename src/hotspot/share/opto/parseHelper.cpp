@@ -181,11 +181,9 @@ Node* Parse::array_store_check(const Type*& elemtype) {
       reason = Deoptimization::Reason_class_check;
       if (!too_many_traps(reason)) {
         ciKlass* array_type = nullptr;
-        ciKlass* element_type = nullptr;
-        ProfilePtrKind element_ptr = ProfileMaybeNull;
         bool flat_array = true;
         bool null_free_array = true;
-        method()->array_access_profiled_type(bci(), array_type, element_type, element_ptr, flat_array, null_free_array);
+        method()->array_access_profiled_array_type(bci(), array_type, flat_array, null_free_array);
         if (array_type != nullptr) {
           extak = TypeKlassPtr::make(array_type)->is_aryklassptr();
         }

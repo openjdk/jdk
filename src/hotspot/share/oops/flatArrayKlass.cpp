@@ -392,8 +392,7 @@ void FlatArrayKlass::print_value_on(outputStream* st) const {
   assert(is_klass(), "must be klass");
 
   element_klass()->print_value_on(st);
-  st->print("[] ");
-  LayoutKindHelper::print_on(layout_kind(), st);
+  st->print("[]");
 }
 
 #ifndef PRODUCT

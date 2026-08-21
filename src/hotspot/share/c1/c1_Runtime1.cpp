@@ -501,22 +501,18 @@ static void profile_flat_array(JavaThread* current, bool load, bool null_free) {
 
     ProfileData* data = md->bci_to_data(bci);
     assert(data != nullptr, "incorrect profiling entry");
-    if (data->is_ArrayLoadData()) {
-    } else {
-      assert(data->is_ArrayStoreData(), "");
-      assert(!load, "should be an array store");
-      ArrayStoreData* store_data = (ArrayStoreData*) data;
-      store_data->set_flat_array();
-      if (null_free) {
-        store_data->set_null_free_array();
-      }
+    assert(data->is_ArrayStoreData(), "");
+    assert(!load, "should be an array store");
+    ArrayStoreData* store_data = (ArrayStoreData*) data;
+    store_data->set_flat_array();
+    if (null_free) {
+      store_data->set_null_free_array();
     }
   }
 }
 
 JRT_ENTRY(void, Runtime1::load_flat_array(JavaThread* current, flatArrayOopDesc* array, int index))
   assert(array->klass()->is_flatArray_klass(), "should not be called");
-  profile_flat_array(current, true, array->is_null_free_array());
 
   NOT_PRODUCT(_load_flat_array_slowcase_cnt++;)
   assert(array->length() > 0 && index < array->length(), "already checked");

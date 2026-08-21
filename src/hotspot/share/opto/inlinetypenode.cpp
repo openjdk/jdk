@@ -1558,7 +1558,6 @@ InlineTypeNode* InlineTypeNode::make_from_flat_array(GraphKit* kit, ciInlineKlas
   InlineTypeNode* vt_nullable = nullptr;
   InlineTypeNode* vt_null_free = nullptr;
   InlineTypeNode* vt_non_atomic = nullptr;
-  Node *top = kit->C->top();
 
   RegionNode* region = new RegionNode(4);
   gvn.set_type(region, Type::CONTROL);

@@ -689,38 +689,17 @@ static void update_flags_from_type(ciKlass* array_type, bool& flat_array, bool& 
   }
 }
 
-bool ciMethod::array_access_profiled_type(int bci, ciKlass*& array_type, ciKlass*& element_type, ProfilePtrKind& element_ptr, bool &flat_array, bool &null_free_array) {
+bool ciMethod::array_access_profiled_element_type(int bci, ciKlass*& element_type, ProfilePtrKind& element_ptr) {
   if (method_data() != nullptr && method_data()->is_mature()) {
     ciProfileData* data = method_data()->bci_to_data(bci);
     if (data != nullptr) {
       if (data->is_ArrayLoadData()) {
-        // ciCallProfile profile = call_profile_at_bci(bci);
         ciArrayLoadData* array_access = (ciArrayLoadData*) data->as_ArrayLoadData();
-        array_type = nullptr; //array_access->array()->valid_type();
         element_type = array_access->element()->valid_type();
         element_ptr = array_access->element()->ptr_kind();
-        flat_array = false;
-        null_free_array = false;
-        array_type = nullptr;
-        // if (profile.morphism() == 1 && flat_array) {
-        //   array_type = profile.receiver(0);
-        // }
-#ifdef ASSERT
-        if (array_type != nullptr) {
-          bool flat = array_type->is_flat_array_klass();
-          bool null_free = array_type->as_array_klass()->is_elem_null_free();
-          assert(!flat || flat_array, "inconsistency");
-          assert(!null_free || null_free_array, "inconsistency");
-        }
-#endif
-        update_flags_from_type(array_type, flat_array, null_free_array);
         return true;
       } else if (data->is_ArrayStoreData()) {
         ciArrayStoreData* array_access = (ciArrayStoreData*) data->as_ArrayStoreData();
-        array_type = array_access->array()->valid_type();
-        flat_array = array_access->flat_array();
-        null_free_array = array_access->null_free_array();
-        update_flags_from_type(array_type, flat_array, null_free_array);
         ciCallProfile call_profile = call_profile_at_bci(bci);
         if (call_profile.morphism() == 1) {
           element_type = call_profile.receiver(0);
@@ -734,6 +713,27 @@ bool ciMethod::array_access_profiled_type(int bci, ciKlass*& array_type, ciKlass
         } else {
           element_ptr = ProfileMaybeNull;
         }
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+bool ciMethod::array_access_profiled_array_type(int bci, ciKlass*& array_type, bool &flat_array, bool &null_free_array) {
+  if (method_data() != nullptr && method_data()->is_mature()) {
+    ciProfileData* data = method_data()->bci_to_data(bci);
+    if (data != nullptr) {
+      if (data->is_ArrayLoadData()) {
+        ShouldNotReachHere();
+        return false;
+      }
+      if (data->is_ArrayStoreData()) {
+        ciArrayStoreData* array_access = (ciArrayStoreData*) data->as_ArrayStoreData();
+        array_type = array_access->array()->valid_type();
+        flat_array = array_access->flat_array();
+        null_free_array = array_access->null_free_array();
+        update_flags_from_type(array_type, flat_array, null_free_array);
         return true;
       }
     }

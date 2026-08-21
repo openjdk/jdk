@@ -5073,8 +5073,8 @@ void MacroAssembler::profile_receiver_type_helper(Register recv, Register mdp, L
   Register shifted_recv = recv;
   if (recv == rax || mdp == rax) {
     spare_reg = (recv != rbx && mdp != rbx) ? rbx :
-                  (recv != rcx && mdp != rcx) ? rcx :
-                    rdx;
+                (recv != rcx && mdp != rcx) ? rcx :
+                rdx;
     assert_different_registers(mdp, recv, offset, spare_reg);
 
     push(spare_reg);
