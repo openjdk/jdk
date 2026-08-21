@@ -70,9 +70,8 @@ public class weak005 extends ThreadedGCTest {
             for (int i = 1; i < length; ++i) {
                 references[i] = new WeakReference(references[i - 1]);
             }
-            // Release the chain from the end. Otherwise a GC that runs while
-            // an entry is still reachable from the array can clear it and put
-            // it on the pending list, which keeps it alive for the last check.
+            // Release in reverse order, otherwise an entry cleared mid release
+            // can sit on the pending list and keep the last referent alive.
             for (int i = length - 2; i >= 0; --i) {
                 references[i] = null;
             }
