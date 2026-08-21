@@ -54,25 +54,22 @@ inline size_t get_unflushed_size(const u1* top, Type* t) {
 
 template <typename Operation>
 inline bool ConcurrentWriteOp<Operation>::process(typename Operation::Type* t) {
-  const bool is_retired = t->retired();
-  // acquire_critical_section_top() must be read before pos() for stable access
-  const u1* const top = is_retired ? t->top() : t->acquire_critical_section_top();
+  // A buffer can be accessed concurrently (e.g. JfrBuffer::move() during promotion,
+  // or a buffer being recycled through the free list), so top is read through the
+  // critical-section protocol. acquire_critical_section_top() reads top via
+  // stable_top(), so it never observes the TOP_CRITICAL_SECTION sentinel, and its
+  // CAS grants exclusive access to top for the duration of the operation, keeping
+  // the pos - top delta parsable. acquire_critical_section_top() must be read
+  // before pos() for stable access.
+  const u1* const top = t->acquire_critical_section_top();
   const size_t unflushed_size = get_unflushed_size(top, t);
   assert((intptr_t)unflushed_size >= 0, "invariant");
   if (unflushed_size == 0) {
-    if (is_retired) {
-      t->set_top(top);
-    } else {
-      t->release_critical_section_top(top);
-    }
+    t->release_critical_section_top(top);
     return true;
   }
   const bool result = _operation.write(t, top, unflushed_size);
-  if (is_retired) {
-    t->set_top(top + unflushed_size);
-  } else {
-    t->release_critical_section_top(top + unflushed_size);
-  }
+  t->release_critical_section_top(top + unflushed_size);
   return result;
 }
 
