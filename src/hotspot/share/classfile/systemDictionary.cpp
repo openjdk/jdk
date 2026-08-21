@@ -1559,19 +1559,6 @@ void SystemDictionary::define_instance_class(InstanceKlass* k, Handle class_load
   // which will require a token to perform the define class
   check_constraints(k, loader_data, true, CHECK);
 
-  // Register class just loaded with class loader (placed in ArrayList)
-  // Note we do this before updating the dictionary, as this can
-  // fail with an OutOfMemoryError (if it does, we will *not* put this
-  // class in the dictionary and will not update the class hierarchy).
-  // JVMTI FollowReferences needs to find the classes this way.
-  if (k->class_loader() != nullptr) {
-    methodHandle m(THREAD, Universe::loader_addClass_method());
-    JavaValue result(T_VOID);
-    JavaCallArguments args(class_loader);
-    args.push_oop(Handle(THREAD, k->java_mirror()));
-    JavaCalls::call(&result, m, &args, CHECK);
-  }
-
   // Add to class hierarchy, and do possible deoptimizations.
   k->add_to_hierarchy(THREAD);
 
