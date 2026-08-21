@@ -200,7 +200,6 @@ int ShenandoahCollectorPolicy::cause_priority(GCCause::Cause cause) {
   switch (cause) {
     case GCCause::_shenandoah_stop_vm: return 7;
     case GCCause::_shenandoah_upgrade_to_full_gc: return 6;
-    // case is_explicit_gc(cause): return 5;
     case GCCause::_shenandoah_humongous_allocation_failure: return 4;
     case GCCause::_shenandoah_allocation_failure_evac: return 3;
     case GCCause::_allocation_failure: return 2;
