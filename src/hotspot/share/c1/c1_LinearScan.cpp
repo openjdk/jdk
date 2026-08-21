@@ -1399,39 +1399,38 @@ void LinearScan::build_intervals() {
       // BEGIN OF PROTOTYPE SOLUTION
 
       // If the currently visited operation 'op' may branch into an exception
-      // handler block 'B_handler', add all live-in registers of 'B_handler' as
+      // handler block 'handler', add all live-in registers of 'handler' as
       // virtual uses of 'op'. This ensures that all such registers are live
       // into 'op', which might otherwise not happen if 'op' is scheduled within
       // a hole of their corresponding intervals, as in the following
       // post-compute_global_live_sets() scenario:
       //
       // R
-      // |  B_loop:
+      // |  block:
       // |    live-in:  {.., R, ..}
       // |    ..
       // -    kill R
       //      ..
-      //      op: branch [BE] .. // may branch into B_handler
+      //      op: branch [BE] .. // may branch into 'handler'
       //      ..
       // -    def R
       // |    ..
-      // |    branch into B_loop
+      // |    branch into 'block'
       // |    live-out: {.., R, ..}
       // |
-      // |  B_handler:
+      // |  handler:
       // |    live-in:  {.., R, ..}
       // |    ..
       assert(op_id != -1, "expect regular operation");
       if (has_info(op_id)) {
         XHandlers* xhandlers = visitor.all_xhandler();
         for (int k = 0; k < xhandlers->length(); k++) {
-          XHandler* handler = xhandlers->handler_at(k);
-          BlockBegin* entry = handler->entry_block();
-          ResourceBitMap& live_in = entry->live_in();
+          BlockBegin* handler = xhandlers->handler_at(k)->entry_block();
+          ResourceBitMap& live_in = handler->live_in();
           TRACE_LINEAR_SCAN(
                             4, tty->print("  op %d branches to exception handler entry B%d. "
                                           "live-in(B%d) = ",
-                                          op_id, entry->block_id(), entry->block_id());
+                                          op_id, handler->block_id(), handler->block_id());
                             print_bitmap(live_in);
                             );
           // TBD: iterate using live_in.iterate, see code at the beginning of LinearScan::build_intervals
