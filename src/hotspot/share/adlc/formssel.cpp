@@ -3732,11 +3732,8 @@ int MatchNode::cisc_spill_match(FormDict& globals, RegisterForm* registers, Matc
   if( form == form2 ) {
     if (form->is_operand()) {
       // Disallow cisc-spilling if only 1 operand is a DEF, or both are DEFs but at different positions.
-      //     from_instr: andI_rReg_ndd, MatchRule: ( Set dst (AndI  src1 src2) )
-      //     MatchNode this: src (position(DEF) = -1, position(USE) = 1)
-      //
-      //     to_instr: andI_rReg_mem, MatchRule: ( Set dst (AndI  dst (LoadI  src)) )
-      //     MatchNode mRule2: dst (position(DEF) = 0, position(USE) = 1)
+      //     from_instr: andI_rReg_ndd, MatchRule: ( Set dst (AndI  src1 src2) ).       src1: (position(DEF) = -1, position(USE) = 1)
+      //     to_instr: andI_rReg_mem, MatchRule:   ( Set dst (AndI  dst (LoadI  src)) ). dst: (position(DEF) = 0,  position(USE) = 1)
       if (from_instr->operand_position(this->_name, Component::DEF) != to_instr->operand_position(mRule2->_name, Component::DEF)) {
         return Not_cisc_spillable;
       }
