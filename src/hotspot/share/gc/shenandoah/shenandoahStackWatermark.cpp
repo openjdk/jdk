@@ -41,6 +41,8 @@ ShenandoahOnStackNMethodClosure::ShenandoahOnStackNMethodClosure() :
 void ShenandoahOnStackNMethodClosure::do_nmethod(nmethod* nm) {
   assert(nm != nullptr, "Sanity");
   const bool result = _bs_nm->nmethod_entry_barrier(nm);
+  // Need to sync up in case nmethod patched the code.
+  OrderAccess::cross_modify_fence();
   assert(result, "NMethod on-stack must be alive");
 }
 
