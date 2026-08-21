@@ -3243,7 +3243,8 @@ int os::create_file_for_heap(const char* dir) {
     return -1;
   }
 
-  assert(heap_file_handle == INVALID_HANDLE_VALUE, "Heap backing file already exists");
+  guarantee(heap_file_handle == INVALID_HANDLE_VALUE,
+            "Heap backing file already exists");
 
   HANDLE process = GetCurrentProcess();
   HANDLE file_handle = (HANDLE)_get_osfhandle(fd);
