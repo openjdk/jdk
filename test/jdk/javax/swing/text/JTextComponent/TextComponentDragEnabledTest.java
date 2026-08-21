@@ -53,6 +53,11 @@ import javax.swing.plaf.metal.MetalLookAndFeel;
 import javax.swing.text.JTextComponent;
 import javax.swing.UnsupportedLookAndFeelException;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+
 public class TextComponentDragEnabledTest {
 
     private static final String AQUA_LAF = "com.apple.laf.AquaLookAndFeel";
@@ -121,8 +126,29 @@ public class TextComponentDragEnabledTest {
 
                     checkDragEnabled(component, expected,
                         "after switching to " + laf.getClassName());
+
+                    testSerialization(component, expected);
                 }
             }
+        }
+    }
+
+    private static void testSerialization(JTextComponent component, boolean expected) throws Exception {
+        JTextComponent copy = serializeAndDeserialize(component);
+        checkDragEnabled(copy, expected, "after deserializing application value");
+    }
+
+    private static JTextComponent serializeAndDeserialize(JTextComponent component)
+                                  throws Exception {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+
+        try (ObjectOutputStream out = new ObjectOutputStream(bytes)) {
+            out.writeObject(component);
+        }
+
+        try (ObjectInputStream in = new ObjectInputStream(
+                new ByteArrayInputStream(bytes.toByteArray()))) {
+            return (JTextComponent) in.readObject();
         }
     }
 
