@@ -706,7 +706,7 @@ public class Modules extends JCTree.Visitor {
             throw new IllegalStateException(ex);
         }
     }
-    ///where:
+        //where:
         private void findPackages(ModuleSymbol msym,
                                   Location location,
                                   Set<Kind> fileObjectKinds,
