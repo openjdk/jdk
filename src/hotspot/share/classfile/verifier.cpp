@@ -733,7 +733,7 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
   assert(SignatureVerifier::is_valid_method_signature(m->signature()),
          "Invalid method signature");
 
-  // Collect the initial strict instance fields
+  // Collect the initial strict instance fields if there are any
   StackMapFrame::AssertUnsetFieldTable* strict_fields = new StackMapFrame::AssertUnsetFieldTable();
   if (m->is_object_constructor()) {
     for (AllFieldStream fs(m->method_holder()); !fs.done(); fs.next()) {
@@ -746,6 +746,10 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
         }
       }
     }
+  }
+
+  if (strict_fields->number_of_entries() == 0) {
+    strict_fields = nullptr;
   }
 
   // The stackmap table will receive a read-only deep copy of the initial strict fields since
@@ -2515,6 +2519,22 @@ void ClassVerifier::verify_invoke_init(
       return;
     } else if (ref_class_type.name() == superk->name()) {
       // Strict final fields must be satisfied by this point
+      bool has_strict_instance_fields = false;
+      for (AllFieldStream fs(_klass); !fs.done(); fs.next()) {
+        if (fs.access_flags().is_strict() && !fs.access_flags().is_static()) {
+          has_strict_instance_fields = true;
+          break;
+        }
+      }
+
+      if (has_strict_instance_fields && current_frame->assert_unset_fields() == nullptr) {
+        // This frame is malformed, it has no unset fields table even though it should.
+        verify_error(
+          ErrorContext::bad_strict_fields(bci, current_frame),
+          "All strict final fields must be initialized before super()");
+        return;
+      }
+
       if (!current_frame->verify_unset_fields_satisfied()) {
         log_info(verification)("Strict instance fields not initialized");
         StackMapFrame::print_strict_fields(current_frame->assert_unset_fields());

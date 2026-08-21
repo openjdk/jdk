@@ -77,13 +77,17 @@ void StackMapFrame::unsatisfied_strict_fields_error(InstanceKlass* klass, int bc
 
 void StackMapFrame::print_strict_fields(AssertUnsetFieldTable* table) {
   ResourceMark rm;
-  auto printfields = [&] (const NameAndSig& key, const bool& value) {
-    log_info(verification)("Strict field: %s%s (Satisfied: %s)",
-                           key._name->as_C_string(),
-                           key._signature->as_C_string(),
-                           value ? "true" : "false");
-  };
-  table->iterate_all(printfields);
+  if (table != nullptr) {
+    auto printfields = [&] (const NameAndSig& key, const bool& value) {
+      log_info(verification)("Strict field: %s%s (Satisfied: %s)",
+                            key._name->as_C_string(),
+                            key._signature->as_C_string(),
+                            value ? "true" : "false");
+    };
+    table->iterate_all(printfields);
+  } else {
+    log_info(verification)("No strict fields");
+  }
 }
 
 StackMapFrame* StackMapFrame::frame_in_exception_handler(u1 flags) {
@@ -111,6 +115,9 @@ void StackMapFrame::initialize_object(
   if (old_object == VerificationType::uninitialized_this_type()) {
     // "this" has been initialized - reset flags
     _flags = 0;
+
+    // Clear unset fields if they exist
+    set_assert_unset_fields(nullptr);
   }
 }
 
@@ -235,7 +242,19 @@ bool StackMapFrame::is_assignable_to(
     return false;
   }
 
-  if (flag_this_uninit()) {
+  // There are four permutations of the source and target unset fields:
+  //   1. Source and target unset fields are null
+  //     We are merging frames with no unset fields strict information so we can ignore the unset fields.
+  //   2. Source unset fields are null, target unset fields are non-null
+  //     This is not possible as we are trying to go from either an initialized state
+  //     back to an uninitialized state.
+  //   3. Source unset fields are non-null, target unset fields are null
+  //     Error case, We are jumping from an uninitialized state to an initialized one
+  //     or from a frame with unset strict field information to one that doesn't.
+  //   4. Source and target unset fields are non-null
+  //     We are merging from one frame with unset strict fields information to another
+  //     and must ensure the unset fields lists are compatible.
+  if (assert_unset_fields() != nullptr) {
     // Check that assert unset fields are compatible
     bool compatible = verify_unset_fields_compatibility(target->assert_unset_fields());
     if (!compatible) {

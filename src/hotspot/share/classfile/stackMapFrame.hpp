@@ -163,6 +163,10 @@ class StackMapFrame : public ResourceObj {
   }
 
   static AssertUnsetFieldTable* copy_unset_fields(AssertUnsetFieldTable* unset_fields) {
+    if (unset_fields == nullptr) {
+      return nullptr;
+    }
+
     AssertUnsetFieldTable* new_table = new AssertUnsetFieldTable();
     auto copy_unset_field = [&] (const NameAndSig& key, const bool& value) {
       new_table->put(key, value);
@@ -181,6 +185,10 @@ class StackMapFrame : public ResourceObj {
 
   // Called when verifying putfields to mark strict instance fields as satisfied
   bool satisfy_unset_field(Symbol* name, Symbol* signature) {
+    if (_assert_unset_fields == nullptr) {
+      return false;
+    }
+
     NameAndSig dummy_field(name, signature);
 
     if (_assert_unset_fields->contains(dummy_field)) {
@@ -193,7 +201,11 @@ class StackMapFrame : public ResourceObj {
   // Verify that all strict fields have been initialized
   // Strict fields must be initialized before the super constructor is called
   bool verify_unset_fields_satisfied() {
-    assert(_assert_unset_fields != nullptr, "must be");
+    // A frame without uninitializedThis or otherwise without any strict fields
+    // will have a null unset field table.
+    if (_assert_unset_fields == nullptr) {
+      return true;
+    }
 
     bool all_satisfied = true;
     auto check_satisfied = [&] (const NameAndSig& key, const bool& value) {
@@ -206,6 +218,10 @@ class StackMapFrame : public ResourceObj {
   // Merge incoming unset strict fields from StackMapTable with
   // initial strict instance fields
   static AssertUnsetFieldTable* merge_unset_fields(AssertUnsetFieldTable* initial_fields, AssertUnsetFieldTable* new_fields) {
+    if (initial_fields == nullptr) {
+      return new_fields;
+    }
+
     auto merge_satisfied = [&] (const NameAndSig& key, const bool& value) {
       if (!new_fields->contains(key)) {
         new_fields->put(key, true);
@@ -218,6 +234,10 @@ class StackMapFrame : public ResourceObj {
   // Verify that strict fields are compatible between the current frame and the successor
   // Called during merging of frames
   bool verify_unset_fields_compatibility(AssertUnsetFieldTable* target_table) const {
+    if (target_table == nullptr) {
+      return false;
+    }
+
     bool compatible = true;
     auto is_unset = [&] (const NameAndSig& key, const bool& satisfied) {
       // Successor must have same (or more) unsatisfied debts as current frame.

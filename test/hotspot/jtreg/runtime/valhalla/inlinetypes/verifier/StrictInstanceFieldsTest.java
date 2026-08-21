@@ -36,6 +36,9 @@
  *          UninitThisOnStack.jasm
  *          EarlyLarvalNoUninitThis.jasm
  *          EarlyLarvalFrameOrdering.jasm
+ *          LateOrdinaryStrictFrame.jasm
+ *          NoUnsetFieldsSuper.jasm
+ *          StrictFieldNoEarlyLarval.jasm
  *          NestedEarlyLarval.jcod
  *          EndsInEarlyLarval.jcod
  *          EarlyLarvalNotSubset.jcod
@@ -45,7 +48,7 @@
  *             StrictInstanceFieldsTest
  *             Child ControlFlowChild TryCatchChild AssignedInConditionalChild
  *             SwitchCaseChild NestedConstructorChild FinalChild
- * @run main/othervm -Xlog:verification StrictInstanceFieldsTest
+ * @run main/othervm -Xlog:verification -Xverify:all StrictInstanceFieldsTest
  */
 
 import java.util.Arrays;
@@ -151,6 +154,12 @@ public class StrictInstanceFieldsTest {
 
         // Early_larval frame includes a constant pool index that doesn't point to a NameAndType
         negativeTest(InvalidIndexInEarlyLarval.class, "Invalid constant pool index in early larval frame", true, false);
+
+        negativeTest(LateOrdinaryStrictFrame.class, "Inconsistent stackmap frames at branch target");
+
+        negativeTest(NoUnsetFieldsSuper.class, "All strict final fields must be initialized before super()");
+
+        negativeTest(StrictFieldNoEarlyLarval.class, "Initializing unknown strict field: x:I");
 
         System.out.println("Passed");
     }

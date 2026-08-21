@@ -256,11 +256,11 @@ VerificationType StackMapReader::parse_verification_type(u1* flags, bool parsing
 
 void StackMapReader::check_unset_fields_allowed(u1 flags) {
   // Unset fields only have meaning in during initialization, so once
-    // a class has been initialized, the unset fields list should be
-    // discarded.
-    if (!(flags & FLAG_THIS_UNINIT) && _assert_unset_fields_buffer != nullptr) {
-      _assert_unset_fields_buffer = nullptr;
-    }
+  // a class has been initialized, the unset fields list should be
+  // discarded.
+  if (!(flags & FLAG_THIS_UNINIT)) {
+    _assert_unset_fields_buffer = nullptr;
+  }
 }
 
 StackMapFrame* StackMapReader::next(TRAPS) {
@@ -272,22 +272,15 @@ StackMapFrame* StackMapReader::next(TRAPS) {
     check_offset(frame);
 
 
-    if (!frame->flag_this_uninit()) {
+    if (parsed_early_larval) {
       // The early_larval frame has been parsed correctly but such frames require uninitializedThis
       // which will only be detected once the nested frame has been processed.
-      if (parsed_early_larval) {
+      if (!frame->flag_this_uninit()) {
         frame->verifier()->verify_error(
           ErrorContext::bad_strict_fields(_prev_frame->offset(), _prev_frame),
           "Cannot have uninitialized strict fields after class initialization");
         return nullptr;
-      } else {
-        assert(frame->assert_unset_fields() == nullptr, "set of unset fields must be cleared");
       }
-    } else if (frame->assert_unset_fields() == nullptr && (_initial_unset_fields->number_of_entries() > 0)) {
-      frame->verifier()->verify_error(
-        ErrorContext::bad_strict_fields(_prev_frame->offset(), _prev_frame),
-        "Uninitialized frame requires a set of unset fields");
-      return nullptr;
     }
 
     if (frame->verifier()->has_error()) {
@@ -321,7 +314,7 @@ StackMapFrame* StackMapReader::next_helper(bool& parsed_early_larval, TRAPS) {
       Symbol* sig = _cp->symbol_at(_cp->signature_ref_index_at(index));
       NameAndSig tmp(name, sig);
 
-      if (!_initial_unset_fields->contains(tmp)) {
+      if (_initial_unset_fields == nullptr || !_initial_unset_fields->contains(tmp)) {
         log_info(verification)("NameAndType %s%s(CP index: %d) is not found among initial strict instance fields", name->as_C_string(), sig->as_C_string(), index);
         StackMapFrame::print_strict_fields(_initial_unset_fields);
         _prev_frame->verifier()->verify_error(
