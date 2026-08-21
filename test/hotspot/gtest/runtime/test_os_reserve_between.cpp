@@ -36,7 +36,14 @@
 
 // Must be the same as in os::attempt_reserve_memory_between()
 struct ARMB_constants {
-  static constexpr uintptr_t absolute_max = NOT_LP64(G * 3) LP64_ONLY(G * 128 * 1024);
+  static uintptr_t absolute_max() {
+    // see attempt_reserve_memory_between()
+#ifdef _LP64
+    return MIN2(os::vm_max_address() + 1, nth_bit<uintptr_t>(48));
+#else
+    return 3 * G;
+#endif
+  }
   static constexpr unsigned max_attempts = 32;
   static constexpr unsigned min_random_value_range = 16;
   static constexpr unsigned total_shuffle_threshold = 1024;
@@ -70,7 +77,7 @@ static char* call_attempt_reserve_memory_between(char* min, char* max, size_t by
     EXPECT_TRUE(is_aligned(addr, alignment)) << ERRINFO;
     EXPECT_TRUE(is_aligned(addr, allocation_granularity())) << ERRINFO;
     EXPECT_LE(addr, max - bytes) << ERRINFO;
-    EXPECT_LE(addr, (char*)ARMB_constants::absolute_max - bytes) << ERRINFO;
+    EXPECT_LE(addr, (char*)ARMB_constants::absolute_max() - bytes) << ERRINFO;
     EXPECT_GE(addr, min) << ERRINFO;
     EXPECT_GE(addr, (char*)os::vm_min_address()) << ERRINFO;
   }
@@ -156,7 +163,7 @@ public:
       // We reserve at weird outlier addresses, in order to minimize the chance of concurrent mmaps grabbing
       // the hole.
       const uintptr_t candidate = nth_bit(i);
-      if ((candidate + _len) <= ARMB_constants::absolute_max) {
+      if ((candidate + _len) <= ARMB_constants::absolute_max()) {
         _base = os::attempt_reserve_memory_at((char*)candidate, _len, mtTest);
       }
     }
