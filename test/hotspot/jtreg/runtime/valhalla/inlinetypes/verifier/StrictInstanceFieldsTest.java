@@ -118,6 +118,9 @@ public class StrictInstanceFieldsTest {
         EarlyLarvalFrameOrdering c7 = new EarlyLarvalFrameOrdering();
         System.out.println(c7);
 
+        NoUnsetFieldsSuper c8 = new NoUnsetFieldsSuper();
+        System.out.println(c8);
+
         // --------------
         // NEGATIVE TESTS
         // --------------
@@ -144,7 +147,7 @@ public class StrictInstanceFieldsTest {
         negativeTest(NestedEarlyLarval.class, "Early larval frame must be followed by a base frame", true, false);
 
         // Frame nested inside early_larval does not have uninitializedThis flag
-        negativeTest(EarlyLarvalNoUninitThis.class, "Cannot have uninitialized strict fields after class initialization");
+        negativeTest(EarlyLarvalNoUninitThis.class, "Cannot have uninitialized strict fields without an uninitializedThis");
 
         // Stack map table ends in early_larval frame without base frame
         negativeTest(EndsInEarlyLarval.class, "Early larval frame must be followed by a base frame", true, false);
@@ -157,9 +160,7 @@ public class StrictInstanceFieldsTest {
 
         negativeTest(LateOrdinaryStrictFrame.class, "Inconsistent stackmap frames at branch target");
 
-        negativeTest(NoUnsetFieldsSuper.class, "All strict final fields must be initialized before super()");
-
-        negativeTest(StrictFieldNoEarlyLarval.class, "Initializing unknown strict field: x:I");
+        negativeTest(StrictFieldNoEarlyLarval.class, "Constructor must call super() or this() before return");
 
         System.out.println("Passed");
     }

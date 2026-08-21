@@ -254,15 +254,6 @@ VerificationType StackMapReader::parse_verification_type(u1* flags, bool parsing
   return VerificationType::bogus_type();
 }
 
-void StackMapReader::check_unset_fields_allowed(u1 flags) {
-  // Unset fields only have meaning in during initialization, so once
-  // a class has been initialized, the unset fields list should be
-  // discarded.
-  if (!(flags & FLAG_THIS_UNINIT)) {
-    _assert_unset_fields_buffer = nullptr;
-  }
-}
-
 StackMapFrame* StackMapReader::next(TRAPS) {
   _parsed_frame_count++;
   bool parsed_early_larval = false;
@@ -271,22 +262,11 @@ StackMapFrame* StackMapReader::next(TRAPS) {
   if (frame != nullptr) {
     check_offset(frame);
 
-
-    if (parsed_early_larval) {
-      // The early_larval frame has been parsed correctly but such frames require uninitializedThis
-      // which will only be detected once the nested frame has been processed.
-      if (!frame->flag_this_uninit()) {
-        frame->verifier()->verify_error(
-          ErrorContext::bad_strict_fields(_prev_frame->offset(), _prev_frame),
-          "Cannot have uninitialized strict fields after class initialization");
-        return nullptr;
-      }
-    }
-
     if (frame->verifier()->has_error()) {
       return nullptr;
     }
     _prev_frame = frame;
+    _assert_unset_fields_buffer = frame->assert_unset_fields();
   }
   return frame;
 }
@@ -296,7 +276,15 @@ StackMapFrame* StackMapReader::next_helper(bool& parsed_early_larval, TRAPS) {
   int offset;
   VerificationType* locals = nullptr;
   u1 frame_type = _stream->get_u1(CHECK_NULL);
+
   if (frame_type == EARLY_LARVAL) {
+    if (parsed_early_larval) {
+      _prev_frame->verifier()->verify_error(
+        ErrorContext::bad_strict_fields(_prev_frame->offset(), _prev_frame),
+        "Early larval frame must be followed by a base frame");
+      return nullptr;
+    }
+
     u2 num_unset_fields = _stream->get_u2(CHECK_NULL);
     StackMapFrame::AssertUnsetFieldTable* new_fields = new StackMapFrame::AssertUnsetFieldTable();
 
@@ -336,16 +324,21 @@ StackMapFrame* StackMapReader::next_helper(bool& parsed_early_larval, TRAPS) {
       return nullptr;
     }
 
-    frame_type = _stream->get_u1(CHECK_NULL);
-    if (frame_type == EARLY_LARVAL) {
-      _prev_frame->verifier()->verify_error(
-        ErrorContext::bad_strict_fields(_prev_frame->offset(), _prev_frame),
-        "Early larval frame must be followed by a base frame");
-      return nullptr;
-    }
-
     // Only count as parsed if no errors were encountered
     parsed_early_larval = true;
+    // Early_larval must wrap another frame - read that frame now
+    frame = next_helper(parsed_early_larval, CHECK_VERIFY_(_verifier, nullptr));
+    if (frame != nullptr) {
+      if (!frame->flag_this_uninit()) {
+        // The early_larval frame has been parsed correctly but such frames require uninitializedThis
+        // which will only be detected once the nested frame has been processed.
+        frame->verifier()->verify_error(
+          ErrorContext::bad_strict_fields(frame->offset(), frame),
+          "Cannot have uninitialized strict fields without an uninitializedThis");
+        return nullptr;
+      }
+    }
+    return frame;
   }
 
   if (frame_type <= SAME_FRAME_END) {
@@ -363,8 +356,6 @@ StackMapFrame* StackMapReader::next_helper(bool& parsed_early_larval, TRAPS) {
     }
 
     u1 flags = (u1)_uninit_in_prev_frame_locals;
-
-    check_unset_fields_allowed(flags);
 
     frame = new StackMapFrame(
       offset, flags, _prev_frame->locals_size(), 0,
@@ -400,8 +391,6 @@ StackMapFrame* StackMapReader::next_helper(bool& parsed_early_larval, TRAPS) {
     }
     check_verification_type_array_size(
       stack_size, _max_stack, CHECK_VERIFY_(_verifier, nullptr));
-
-    check_unset_fields_allowed(flags);
 
     frame = new StackMapFrame(
       offset, flags, _prev_frame->locals_size(), stack_size,
@@ -446,8 +435,6 @@ StackMapFrame* StackMapReader::next_helper(bool& parsed_early_larval, TRAPS) {
     }
     check_verification_type_array_size(
       stack_size, _max_stack, CHECK_VERIFY_(_verifier, nullptr));
-
-    check_unset_fields_allowed(flags);
 
     frame = new StackMapFrame(
       offset, flags, _prev_frame->locals_size(), stack_size,
@@ -496,8 +483,6 @@ StackMapFrame* StackMapReader::next_helper(bool& parsed_early_larval, TRAPS) {
       offset = _prev_frame->offset() + offset_delta + 1;
     }
 
-    check_unset_fields_allowed(flags);
-
     frame = new StackMapFrame(
       offset, flags, new_length, 0, _max_locals, _max_stack,
       locals, nullptr,
@@ -534,8 +519,6 @@ StackMapFrame* StackMapReader::next_helper(bool& parsed_early_larval, TRAPS) {
     } else {
       offset = _prev_frame->offset() + offset_delta + 1;
     }
-
-    check_unset_fields_allowed(flags);
 
     frame = new StackMapFrame(
       offset, flags, real_length, 0, _max_locals,
@@ -587,8 +570,6 @@ StackMapFrame* StackMapReader::next_helper(bool& parsed_early_larval, TRAPS) {
     } else {
       offset = _prev_frame->offset() + offset_delta + 1;
     }
-
-    check_unset_fields_allowed(flags);
 
     frame = new StackMapFrame(
       offset, flags, real_locals_size, real_stack_size,

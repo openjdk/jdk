@@ -133,7 +133,12 @@ class StackMapFrame : public ResourceObj {
                                     _max_stack(max_stack),  _flags(flags),
                                     _locals(locals), _stack(stack),
                                     _assert_unset_fields(assert_unset_fields),
-                                    _verifier(v) { }
+                                    _verifier(v) {
+    // Must have the uninitialized_this flag set to be allowed to have unset fields.
+    if ((flags & FLAG_THIS_UNINIT) != FLAG_THIS_UNINIT) {
+      _assert_unset_fields = nullptr;
+    }
+  }
 
   static StackMapFrame* copy(StackMapFrame* smf) {
     return new StackMapFrame(*smf);
@@ -186,7 +191,7 @@ class StackMapFrame : public ResourceObj {
   // Called when verifying putfields to mark strict instance fields as satisfied
   bool satisfy_unset_field(Symbol* name, Symbol* signature) {
     if (_assert_unset_fields == nullptr) {
-      return false;
+      return true;
     }
 
     NameAndSig dummy_field(name, signature);
@@ -200,7 +205,7 @@ class StackMapFrame : public ResourceObj {
 
   // Verify that all strict fields have been initialized
   // Strict fields must be initialized before the super constructor is called
-  bool verify_unset_fields_satisfied() {
+  bool verify_unset_fields_satisfied() const {
     // A frame without uninitializedThis or otherwise without any strict fields
     // will have a null unset field table.
     if (_assert_unset_fields == nullptr) {
@@ -234,8 +239,16 @@ class StackMapFrame : public ResourceObj {
   // Verify that strict fields are compatible between the current frame and the successor
   // Called during merging of frames
   bool verify_unset_fields_compatibility(AssertUnsetFieldTable* target_table) const {
+    // It is valid to inherit more debts, so if the current frame's unset fields
+    // list is null, any set of unset fields is compatible
+    if (_assert_unset_fields == nullptr) {
+      return true;
+    }
+
+    // The target frame is does not have uninitializedThis, meaning the unset fields must
+    // all be satisfied at this point.
     if (target_table == nullptr) {
-      return false;
+      return verify_unset_fields_satisfied();
     }
 
     bool compatible = true;
