@@ -51,6 +51,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 import javax.swing.text.JTextComponent;
+import javax.swing.UnsupportedLookAndFeelException;
 
 public class TextComponentDragEnabledTest {
 
@@ -87,7 +88,12 @@ public class TextComponentDragEnabledTest {
         for (UIManager.LookAndFeelInfo laf :
                 UIManager.getInstalledLookAndFeels()) {
             System.out.println("Testing L&F " + laf.getClassName());
-            UIManager.setLookAndFeel(laf.getClassName());
+            try {
+                UIManager.setLookAndFeel(laf.getClassName());
+            } catch (UnsupportedLookAndFeelException e) {
+                System.out.println("Skipping unsupported L&F: " + laf.getClassName());
+                continue;
+            }
 
             for (Supplier<JTextComponent> supplier : TEXT_COMPONENTS) {
                 JTextComponent component = supplier.get();
