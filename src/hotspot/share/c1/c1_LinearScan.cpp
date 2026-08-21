@@ -542,9 +542,6 @@ void LinearScan::set_live_gen_kill(Value value, LIR_Op* op, BitMap& live_gen, Bi
   if ((con == nullptr || con->is_pinned()) && opr->is_register()) {
     assert(reg_num(opr) == opr->vreg_number() && !is_valid_reg_num(reg_numHi(opr)), "invalid optimization below");
     int reg = opr->vreg_number();
-    if (UseNewCode && reg == 610) {
-      return; // Added only for debugging purposes, according to comment
-    }
     if (!live_kill.at(reg)) {
       live_gen.set_bit(reg);
       TRACE_LINEAR_SCAN(4, tty->print_cr("  Setting live_gen for value %c%d, LIR op_id %d, register number %d", value->type()->tchar(), value->id(), op->id(), reg));
@@ -922,9 +919,6 @@ void LinearScan::add_def(LIR_Opr opr, int def_pos, IntervalUseKind use_kind) {
 }
 
 void LinearScan::add_use(LIR_Opr opr, int from, int to, IntervalUseKind use_kind) {
-  if (UseNewCode && reg_num(opr) == 610 && from == 24 && to == 35) {
-    return; // Added only for debugging purposes, according to comment
-  }
   TRACE_LINEAR_SCAN(2, tty->print(" use "); opr->print(tty); tty->print_cr(" from %d to %d (%d)", from, to, use_kind));
   assert(opr->is_register(), "should not be called otherwise");
 
