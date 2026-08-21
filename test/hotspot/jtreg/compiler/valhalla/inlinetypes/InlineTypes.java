@@ -35,13 +35,14 @@ public class InlineTypes {
     public static final Scenario[] DEFAULT_SCENARIOS = {
             new Scenario(0,
                          "-XX:-UseACmpProfile",
-                         "-XX:+AlwaysIncrementalInline",
                          "-XX:FlatArrayElementMaxOops=5",
                          "-XX:+UseArrayFlattening",
                          "-XX:-UseArrayLoadStoreProfile",
                          "-XX:+UseFieldFlattening",
                          "-XX:+InlineTypePassFieldsAsArgs",
-                         "-XX:+InlineTypeReturnedAsFields"
+                         "-XX:+InlineTypeReturnedAsFields",
+                         "-XX:+IgnoreUnrecognizedVMOptions",
+                         "-XX:+AlwaysIncrementalInline"
             ),
             new Scenario(1,
                          "-XX:-UseACmpProfile",
@@ -65,12 +66,13 @@ public class InlineTypes {
             ),
             new Scenario(3,
                          "-DVerifyIR=false",
-                         "-XX:+AlwaysIncrementalInline",
                          "-XX:FlatArrayElementMaxOops=0",
                          "-XX:-UseArrayFlattening",
                          "-XX:-UseFieldFlattening",
                          "-XX:+InlineTypePassFieldsAsArgs",
-                         "-XX:+InlineTypeReturnedAsFields"
+                         "-XX:+InlineTypeReturnedAsFields",
+                         "-XX:+IgnoreUnrecognizedVMOptions",
+                         "-XX:+AlwaysIncrementalInline"
             ),
             new Scenario(4,
                          "-DVerifyIR=false",
@@ -83,17 +85,17 @@ public class InlineTypes {
             ),
             new Scenario(5,
                          "-XX:-UseACmpProfile",
-                         "-XX:+AlwaysIncrementalInline",
                          "-XX:FlatArrayElementMaxOops=5",
                          "-XX:+UseArrayFlattening",
                          "-XX:-UseArrayLoadStoreProfile",
                          "-XX:+UseFieldFlattening",
                          "-XX:-InlineTypePassFieldsAsArgs",
-                         "-XX:-InlineTypeReturnedAsFields"
+                         "-XX:-InlineTypeReturnedAsFields",
+                         "-XX:+IgnoreUnrecognizedVMOptions",
+                         "-XX:+AlwaysIncrementalInline"
             ),
             new Scenario(6,
                          "-XX:-UseACmpProfile",
-                         "-XX:+AlwaysIncrementalInline",
                          "-XX:FlatArrayElementMaxOops=5",
                          "-XX:+UseArrayFlattening",
                          "-XX:-UseArrayLoadStoreProfile",
@@ -102,7 +104,9 @@ public class InlineTypes {
                          "-XX:+UseNullFreeAtomicValueFlattening",
                          "-XX:+UseNullFreeNonAtomicValueFlattening",
                          "-XX:+InlineTypePassFieldsAsArgs",
-                         "-XX:+InlineTypeReturnedAsFields"
+                         "-XX:+InlineTypeReturnedAsFields",
+                         "-XX:+IgnoreUnrecognizedVMOptions",
+                         "-XX:+AlwaysIncrementalInline"
             ),
     };
 
@@ -115,7 +119,6 @@ public class InlineTypes {
                                   "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
                                   "-XX:+UnlockDiagnosticVMOptions",
                                   "-XX:+UnlockExperimentalVMOptions",
-                                  "-XX:+IgnoreUnrecognizedVMOptions",
                                   // Force inline the methods called by ValueClass::validateArrayArguments used by the array factories
                                   "-XX:CompileCommand=inline,jdk.internal.value.ValueClass::isConcreteValueClass",
                                   "-XX:CompileCommand=inline,java.lang.Class::isValue",
