@@ -1938,16 +1938,15 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
            throw new IOException("public key protected PKCS12 not supported");
         }
 
+        // reset the counters at the start
+        privateKeyCount = 0;
+        secretKeyCount = 0;
+        certificateCount = 0;
+
         if (authSafeData != null) {
             DerInputStream as = new DerInputStream(authSafeData);
             DerValue[] safeContentsArray = as.getSequence(2);
             int count = safeContentsArray.length;
-
-            // reset the counters at the start
-            privateKeyCount = 0;
-            secretKeyCount = 0;
-            certificateCount = 0;
-
             boolean seeEncBag = false;
 
             /*
