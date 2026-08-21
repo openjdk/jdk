@@ -26,24 +26,46 @@
 package jdk.incubator.json.impl;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Deque;
+import java.util.Iterator;
+import java.util.Map;
 
 import jdk.incubator.json.JsonArray;
 import jdk.incubator.json.JsonObject;
 import jdk.incubator.json.JsonValue;
 
 /**
- * Generates JSON text for JsonValue, either for toString() or toDisplayString()
+ * Generates JSON text for JsonValue, either for toString() or toDisplayString().
  */
 public final class JsonGenerator {
 
-    // Types of output items: either literal string or a JSON value to generate
-    private sealed interface Output permits LiteralOutput, JsonValueOutput {}
-    private record JsonValueOutput(JsonValue jv, int depth, boolean isField) implements Output {}
-    private record LiteralOutput(String literal) implements Output {}
+    private sealed interface StructureFrame permits ArrayFrame, ObjectFrame {}
 
-    // Generates JSON text for JsonObject/JsonArray.toString()
+    private static final class ArrayFrame implements StructureFrame {
+        private final Iterator<JsonValue> values;
+        private final int depth; // For indentation
+        private boolean first; // Whether iterator points to first value
+
+        private ArrayFrame(Iterator<JsonValue> values, int depth) {
+            this.values = values;
+            this.depth = depth;
+            first = true;
+        }
+    }
+
+    private static final class ObjectFrame implements StructureFrame {
+        private final Iterator<Map.Entry<String, JsonValue>> members;
+        private final int depth; // For indentation
+        private boolean first; // Whether iterator points to first entry
+
+        private ObjectFrame(Iterator<Map.Entry<String, JsonValue>> members, int depth) {
+            this.members = members;
+            this.depth = depth;
+            first = true;
+        }
+    }
+
+    // Generates JSON text for Json[Object|Array].toString()
     public static String toCompactString(JsonValue jv) {
         return generate(jv, "", false);
     }
@@ -55,21 +77,44 @@ public final class JsonGenerator {
 
     private static String generate(JsonValue root, String indent, boolean isDisplay) {
         var sb = new StringBuilder();
-        Deque<Output> outputs = new ArrayDeque<>();
-        outputs.push(new JsonValueOutput(root, 0, false));
+        Deque<StructureFrame> stack = new ArrayDeque<>();
+        enterValue(root, sb, stack, 0, isDisplay);
 
-        while (!outputs.isEmpty()) {
-            switch (outputs.pop()) {
-                case LiteralOutput(String literal) -> sb.append(literal);
-                case JsonValueOutput(JsonValue jv, int depth, boolean isField) -> {
-                    // append prefix
-                    if (isDisplay) {
-                        sb.append(isField ? " " : indent.repeat(depth));
+        while (!stack.isEmpty()) {
+            switch (stack.peek()) {
+                case ArrayFrame af -> {
+                    var values = af.values;
+                    if (values.hasNext()) {
+                        if (af.first) {
+                            af.first = false;
+                        } else {
+                            sb.append(isDisplay ? ",\n" : ",");
+                        }
+                        sb.append(isDisplay ? indent.repeat(af.depth + 1) : "");
+                        enterValue(values.next(), sb, stack, af.depth + 1, isDisplay);
+                    } else {
+                        sb.append(isDisplay ? "\n" + indent.repeat(af.depth) : "").append("]");
+                        stack.pop();
                     }
-                    switch (jv) {
-                        case JsonObject jo -> generateObject(jo, sb, outputs, indent, depth, isDisplay);
-                        case JsonArray ja -> generateArray(ja, sb, outputs, indent, depth, isDisplay);
-                        default -> sb.append(jv);
+                }
+                case ObjectFrame of -> {
+                    var members = of.members;
+                    if (members.hasNext()) {
+                        if (of.first) {
+                            of.first = false;
+                        } else {
+                            sb.append(isDisplay ? ",\n" : ",");
+                        }
+                        var entry = members.next();
+                        sb.append(isDisplay ? indent.repeat(of.depth + 1) : "")
+                                .append('"')
+                                .append(Utils.escape(entry.getKey()))
+                                .append("\":")
+                                .append(isDisplay ? " " : "");
+                        enterValue(entry.getValue(), sb, stack, of.depth + 1, isDisplay);
+                    } else {
+                        sb.append(isDisplay ? "\n" + indent.repeat(of.depth) : "").append("}");
+                        stack.pop();
                     }
                 }
             }
@@ -77,50 +122,28 @@ public final class JsonGenerator {
         return sb.toString();
     }
 
-    private static void generateObject(JsonObject jo, StringBuilder sb, Deque<Output> outputs,
-                                       String indent, int depth, boolean isDisplay) {
-        // Needs a list to process members backward
-        var members = new ArrayList<>(jo.asMap().entrySet());
-        if (members.isEmpty()) {
-            sb.append("{}");
-            return;
-        }
-
-        sb.append(isDisplay ? "{\n" : "{");
-
-        // push outputs backward
-        outputs.push(new LiteralOutput((isDisplay ? "\n" + indent.repeat(depth) : "") + "}"));
-        var iter = members.reversed().iterator();
-        while (iter.hasNext()) {
-            var member = iter.next();
-            outputs.push(new JsonValueOutput(member.getValue(), depth + 1, true));
-            outputs.push(new LiteralOutput((isDisplay ? indent.repeat(depth + 1) : "")
-                + '"' + Utils.escape(member.getKey()) + "\":"));
-            if (iter.hasNext()) {
-                outputs.push(new LiteralOutput(isDisplay ? ",\n" : ","));
+    private static void enterValue(JsonValue jv, StringBuilder sb, Deque<StructureFrame> stack,
+                                   int depth, boolean isDisplay) {
+        switch (jv) {
+            case JsonArray ja -> {
+                var values = ja.asList().iterator();
+                if (!values.hasNext()) {
+                    sb.append("[]");
+                } else {
+                    sb.append(isDisplay ? "[\n" : "[");
+                    stack.push(new ArrayFrame(values, depth));
+                }
             }
-        }
-    }
-
-    private static void generateArray(JsonArray ja, StringBuilder sb, Deque<Output> outputs,
-                                      String indent, int depth, boolean isDisplay) {
-        var elements = ja.asList();
-        if (elements.isEmpty()) {
-            sb.append("[]");
-            return;
-        }
-
-        sb.append(isDisplay ? "[\n" : "[");
-
-        // push outputs backward
-        outputs.push(new LiteralOutput((isDisplay ? "\n" + indent.repeat(depth) : "") + "]"));
-        var iter = elements.reversed().iterator();
-        while (iter.hasNext()) {
-            var element = iter.next();
-            outputs.push(new JsonValueOutput(element, depth + 1, false));
-            if (iter.hasNext()) {
-                outputs.push(new LiteralOutput(isDisplay ? ",\n" : ","));
+            case JsonObject jo -> {
+                var members = jo.asMap().entrySet().iterator();
+                if (!members.hasNext()) {
+                    sb.append("{}");
+                } else {
+                    sb.append(isDisplay ? "{\n" : "{");
+                    stack.push(new ObjectFrame(members, depth));
+                }
             }
+            default -> sb.append(jv);
         }
     }
 
