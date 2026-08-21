@@ -1077,16 +1077,11 @@ void VM_Version::get_processor_features() {
       FLAG_SET_DEFAULT(UseAPX, false);
     }
   }
-#if defined(COMPILER2) && defined(_LP64)
+#if defined(COMPILER2)
   if (UseAPX) {
-    if (CompilerConfig::is_tiered() && CompilerConfig::is_c2_enabled()) {
-      if (FLAG_IS_DEFAULT(InlineSmallCode)) {
-        FLAG_SET_DEFAULT(InlineSmallCode, 2750);
-      }
-    } else {
-      if (FLAG_IS_DEFAULT(InlineSmallCode)) {
-        FLAG_SET_DEFAULT(InlineSmallCode, 1100);
-      }
+    // Increase InlineSmallCode by 10%
+    if (FLAG_IS_DEFAULT(InlineSmallCode)) {
+      FLAG_SET_DEFAULT(InlineSmallCode, InlineSmallCode * 1.10);
     }
   }
 #endif
