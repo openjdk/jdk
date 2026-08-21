@@ -49,7 +49,6 @@ import jdk.test.lib.process.OutputBuffer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.StreamPumper;
 import jdk.test.lib.util.CoreUtils;
-import jdk.test.lib.thread.TestThreadFactory;
 
 /**
  * This is a framework to launch an app that could be synchronized with caller
@@ -615,9 +614,9 @@ public class LingeredApp {
      */
     @SuppressWarnings("restricted")
     public static void main(String args[]) {
-        if (TestThreadFactory.isTestThreadFactorySet()) {
-            Thread t = TestThreadFactory.newThread(() -> mainLoop(args));
-            t.start();
+        // Checks the property directly so the app keeps working with a minimal classpath.
+        if ("Virtual".equals(System.getProperty("test.thread.factory"))) {
+            Thread t = Thread.ofVirtual().start(() -> mainLoop(args));
             try {
                 t.join();
             } catch (InterruptedException e) {
