@@ -62,6 +62,8 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Modifier;
+import java.net.URI;
+import java.util.Arrays;
 import java.text.AttributedCharacterIterator;
 import java.text.AttributedString;
 import java.text.BreakIterator;
@@ -2118,5 +2120,28 @@ public class SwingUtilities2 {
         var newTx = newGC != null ? newGC.getDefaultTransform() : null;
         var oldTx = oldGC != null ? oldGC.getDefaultTransform() : null;
         return !Objects.equals(newTx, oldTx);
+    }
+
+    /**
+     * Returns whether or not Desktop.browse() will open URI in browser or
+     * in associated allowed app
+     *
+     * @param uri URI to be browsed
+     * @return whether or not associated app will be opened
+     * @since 28
+     */
+    public static boolean isBrowseInsecureAllowed(URI uri) {
+        String allowList = System.getProperty("awt.desktop.browse_insecure");
+        String scheme = uri.getScheme();
+
+        // For http,https scheme URL should always open in browser
+        // For other schemes, it will depend on whether scheme is in allowList
+
+        return scheme != null && !(scheme.equals("http") || scheme.equals("https"))
+               && allowList != null
+               && (allowList.equals("*")
+                   || Arrays.stream(allowList.split(","))
+                            .map(String::trim)
+                            .anyMatch(allowed -> allowed.equalsIgnoreCase(scheme)));
     }
 }

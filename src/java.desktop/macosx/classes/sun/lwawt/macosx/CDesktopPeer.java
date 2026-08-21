@@ -38,7 +38,8 @@ import java.lang.annotation.Native;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
+
+import sun.swing.SwingUtilities2;
 
 /**
  * Concrete implementation of the interface {@code DesktopPeer} for MacOS X
@@ -80,19 +81,7 @@ public final class CDesktopPeer implements DesktopPeer {
 
     @Override
     public void browse(URI uri) throws IOException {
-         this.lsOpen(uri, isBrowseInsecureAllowed(uri) ? OPEN : BROWSE);
-    }
-
-    private static boolean isBrowseInsecureAllowed(URI uri) {
-        String allowList = System.getProperty("awt.desktop.browse_insecure");
-        String scheme = uri.getScheme();
-
-        return scheme != null
-               && allowList != null
-               && (allowList.equals("*")
-                   || Arrays.stream(allowList.split(","))
-                            .map(String::trim)
-                            .anyMatch(allowed -> allowed.equalsIgnoreCase(scheme)));
+         this.lsOpen(uri, SwingUtilities2.isBrowseInsecureAllowed(uri) ? OPEN : BROWSE);
     }
 
     @Override

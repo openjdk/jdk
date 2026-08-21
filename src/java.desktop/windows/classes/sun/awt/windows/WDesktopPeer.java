@@ -44,6 +44,7 @@ import java.util.List;
 import javax.swing.event.EventListenerList;
 
 import sun.awt.shell.ShellFolder;
+import sun.swing.SwingUtilities2;
 
 /**
  * Concrete implementation of the interface {@code DesktopPeer} for
@@ -105,17 +106,7 @@ final class WDesktopPeer implements DesktopPeer {
 
     @Override
     public void browse(URI uri) throws IOException {
-        String allowList = System.getProperty("awt.desktop.browse_insecure");
-        String scheme = uri.getScheme();
-
-        // For http,https scheme URL should always open in browser
-        // For other schemes, it will depend on whether scheme is in allowList
-        if (scheme != null && !(scheme.equals("http") || scheme.equals("https"))
-            && allowList != null
-            && (allowList.equals("*")
-                || Arrays.stream(allowList.split(","))
-                         .map(String::trim)
-                         .anyMatch(allowed -> allowed.equalsIgnoreCase(scheme)))) {
+        if (SwingUtilities2.isBrowseInsecureAllowed(uri)) {
             this.ShellExecute(uri, ACTION_OPEN_VERB);
         } else {
             // Fall back to opening the URI in browser
