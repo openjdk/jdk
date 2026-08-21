@@ -241,7 +241,7 @@ instruct g1StorePVolatile(indirect mem, iRegP src, iRegPNoSp tmp1, iRegPNoSp tmp
                        $tmp2$$Register /* tmp1 */,
                        $tmp3$$Register /* tmp2 */);
   %}
-  ins_pipe(pipe_class_memory);
+  ins_pipe(pipe_serial);
 %}
 
 instruct g1StoreN(indirect mem, iRegN src, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, rFlagsReg cr)
@@ -305,7 +305,7 @@ instruct g1StoreNVolatile(indirect mem, iRegN src, iRegPNoSp tmp1, iRegPNoSp tmp
                        $tmp2$$Register /* tmp1 */,
                        $tmp3$$Register /* tmp2 */);
   %}
-  ins_pipe(pipe_class_memory);
+  ins_pipe(pipe_serial);
 %}
 
 instruct g1EncodePAndStoreN(indirect mem, iRegP src, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, rFlagsReg cr)
@@ -367,7 +367,7 @@ instruct g1EncodePAndStoreNVolatile(indirect mem, iRegP src, iRegPNoSp tmp1, iRe
                        $tmp2$$Register /* tmp1 */,
                        $tmp3$$Register /* tmp2 */);
   %}
-  ins_pipe(pipe_class_memory);
+  ins_pipe(pipe_serial);
 %}
 
 instruct g1CompareAndExchangeP(iRegPNoSp res, indirect mem, iRegP oldval, iRegP newval, iRegPNoSp tmp1, iRegPNoSp tmp2, rFlagsReg cr)
