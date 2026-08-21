@@ -31,7 +31,7 @@
 // G1FromCardCache remembers which destination cardsets have been
 // encountered while a worker scans the current source card.
 class G1FromCardCache {
-  // GCCardSizeInBytes is constrained to NOT_LP64(512) LP64_ONLY(1024).
+  // Match GCCardSizeInBytes limits NOT_LP64(512) LP64_ONLY(1024).
   static constexpr uint MaxCardSizeInBytes = NOT_LP64(512) LP64_ONLY(1024);
   static constexpr uint MaxNumCardsets = MaxCardSizeInBytes / sizeof(narrowOop);
 
