@@ -567,7 +567,7 @@ file system locations may be directories, JAR files or JMOD files.
 
 <a id="option-Xlint">`-Xlint`</a>
 :   Enables recommended lint warning categories. In this release, all available
-    lint warning categories exception `preview` are recommended. The `preview` category
+    lint warning categories except `preview` are recommended. The `preview` category
     is recommended when compiling without `--enable-preview`.
 
 <a id="option-Xlint-custom">`-Xlint:`\[`-`\]*key*(`,`\[`-`\]*key*)\*</a>
