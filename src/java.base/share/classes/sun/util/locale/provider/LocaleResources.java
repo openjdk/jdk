@@ -517,7 +517,7 @@ public class LocaleResources {
                 pattern = switch (Objects.requireNonNull(dateTimePattern)) {
                     case "{1} {0}" -> datePattern + " " + timePattern;
                     case "{0} {1}" -> timePattern + " " + datePattern;
-                    default -> MessageFormat.format(dateTimePattern.replaceAll("'", "''"), timePattern, datePattern);
+                    default -> MessageFormat.format(dateTimePattern.replace("'", "''"), timePattern, datePattern);
                 };
             } else {
                 pattern = timePattern;
@@ -633,7 +633,7 @@ public class LocaleResources {
                     default -> 3;
                 };
                 var dateTimePattern = getDateTimePattern(null, "DateTimePatterns", style, calType);
-                matched = MessageFormat.format(dateTimePattern.replaceAll("'", "''"), timeMatched, dateMatched);
+                matched = MessageFormat.format(dateTimePattern.replace("'", "''"), timeMatched, dateMatched);
             }
         }
 
