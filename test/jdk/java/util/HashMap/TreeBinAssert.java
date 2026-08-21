@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,11 @@
  * @test
  * @bug 8205399
  * @summary Check for AssertionError from HashMap TreeBin after Iterator.remove
+ * @library /test/lib
  * @run testng/othervm -esa TreeBinAssert
  */
 
+import jdk.test.lib.valueclass.AsValueClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.testng.annotations.BeforeTest;
@@ -170,6 +172,64 @@ public class TreeBinAssert {
 
         @Override public int compareTo(Key k) {
             return Integer.compare(this.hash, k.hash);
+        }
+    }
+
+    @AsValueClass
+    static class KeyVClass implements Comparable<KeyVClass> {
+        final int hash;
+
+        public KeyVClass(int desiredHash) {
+            // Account for processing done by HashMap
+            this.hash = desiredHash ^ (desiredHash >>> 16);
+        }
+
+        @Override public int hashCode() { return this.hash; }
+
+        @Override public boolean equals(Object o) {
+            return o.hashCode() == this.hashCode();
+        }
+
+        @Override public int compareTo(KeyVClass k) {
+            return Integer.compare(this.hash, k.hash);
+        }
+    }
+
+    @Test(dataProvider = "SizeAndHashes")
+    public void testMapVClass(int size, int[] hashes) {
+        Map<KeyVClass,Integer> map = new HashMap<>(size);
+
+        doTestVClass(map, hashes,
+                     (c,k) -> { ((Map<KeyVClass,Integer>)c).put(k,0); },
+                     (c)   -> { return ((Map<KeyVClass,Integer>)c).keySet().iterator(); }
+        );
+    }
+
+    @Test(dataProvider = "SizeAndHashes")
+    public void testSetVClass(int size, int[] hashes) {
+        Set<KeyVClass> set = new LinkedHashSet<>(size);
+
+        doTestVClass(set, hashes,
+                     (c,k) -> { ((Set<KeyVClass>)c).add(k); },
+                     (c)   -> { return ((Set<KeyVClass>)c).iterator(); }
+        );
+    }
+
+    private void doTestVClass(Object collection, int[] hashes,
+                              BiConsumer<Object,KeyVClass> addKey,
+                              Function<Object,Iterator<KeyVClass>> mkItr) {
+        Iterator<KeyVClass> itr = null;
+        for (int h : hashes) {
+            if (h == ITR_RM) {
+                if (itr == null) {
+                    itr = mkItr.apply(collection);
+                }
+                itr.next();
+                itr.remove();
+            } else {
+                itr = null;
+                addKey.accept(collection, new KeyVClass(h));
+            }
         }
     }
 }
