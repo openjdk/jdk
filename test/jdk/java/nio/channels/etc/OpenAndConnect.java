@@ -42,7 +42,6 @@ import static java.net.StandardProtocolFamily.INET;
 import static java.net.StandardProtocolFamily.INET6;
 import static jdk.test.lib.net.IPSupport.*;
 
-import jtreg.SkippedException;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -89,12 +88,7 @@ public class OpenAndConnect {
     public static void setup() {
         NetworkConfiguration.printSystemConfiguration(out);
         IPSupport.printPlatformSupport(out);
-        try {
-            throwSkippedExceptionIfNonOperational();
-        } catch (SkippedException skippedException) {
-            // jtreg.SkippedException would cause a JUnit test to fail
-            Assumptions.assumeTrue(false, skippedException.getMessage());
-        }
+        diagnoseConfigurationIssue().ifPresent(Assumptions::abort);
 
         out.println("IA4LOCAL:    " + IA4LOCAL);
         out.println("IA6LOCAL:    " + IA6LOCAL);

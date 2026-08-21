@@ -51,10 +51,10 @@ JfrFilter::~JfrFilter() {
     Symbol::maybe_decrement_refcount(_method_names[i]);
     Symbol::maybe_decrement_refcount(_annotation_names[i]);
   }
-  FREE_C_HEAP_ARRAY(Symbol*, _class_names);
-  FREE_C_HEAP_ARRAY(Symbol*, _method_names);
-  FREE_C_HEAP_ARRAY(Symbol*, _annotation_names);
-  FREE_C_HEAP_ARRAY(int, _modifications);
+  FREE_C_HEAP_ARRAY(_class_names);
+  FREE_C_HEAP_ARRAY(_method_names);
+  FREE_C_HEAP_ARRAY(_annotation_names);
+  FREE_C_HEAP_ARRAY(_modifications);
 }
 
 bool JfrFilter::can_instrument_module(const ModuleEntry* module) const {

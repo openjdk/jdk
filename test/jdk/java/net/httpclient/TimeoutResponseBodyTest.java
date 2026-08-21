@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  *      -Djdk.httpclient.disableRetryConnect
  *      -Djdk.httpclient.redirects.retrylimit=0
  *      -Dtest.requestTimeoutMillis=1000
- *      TimeoutResponseBodyTest
+ *      ${test.main.class}
  */
 
 /*
@@ -79,7 +79,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  *      -Djdk.httpclient.redirects.retrylimit=3
  *      -Dtest.requestTimeoutMillis=1000
  *      -Dtest.responseFailureWaitDurationMillis=600
- *      TimeoutResponseBodyTest
+ *      ${test.main.class}
  */
 
 /**

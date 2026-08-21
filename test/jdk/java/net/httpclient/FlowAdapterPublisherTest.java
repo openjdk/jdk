@@ -64,7 +64,7 @@ import org.junit.jupiter.params.provider.MethodSource;
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.test.lib.net.SimpleSSLContext
- * @run junit/othervm -Djdk.internal.httpclient.debug=err FlowAdapterPublisherTest
+ * @run junit/othervm -Djdk.internal.httpclient.debug=err ${test.main.class}
  */
 
 public class FlowAdapterPublisherTest implements HttpServerAdapters {

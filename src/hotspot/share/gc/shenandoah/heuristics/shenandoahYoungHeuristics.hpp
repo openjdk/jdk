@@ -27,6 +27,8 @@
 #include "gc/shenandoah/heuristics/shenandoahGenerationalHeuristics.hpp"
 
 class ShenandoahYoungGeneration;
+class ShenandoahOldGeneration;
+class ShenandoahOldHeuristics;
 
 /*
  * This is a specialization of the generational heuristic which chooses
@@ -72,11 +74,6 @@ protected:
 
 public:
   explicit ShenandoahYoungHeuristics(ShenandoahYoungGeneration* generation);
-
-
-  void choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
-                                             RegionData* data, size_t size,
-                                             size_t actual_free) override;
 
   bool should_start_gc() override;
 
@@ -171,11 +168,22 @@ public:
                                              size_t promo_potential_words, size_t pip_potential_words,
                                              size_t mixed_candidate_live_words, size_t mixed_candidate_garbage_words);
 
+protected:
+  void select_collection_set_regions(ShenandoahCollectionSet* cset,
+                                     RegionData* data, size_t size,
+                                     size_t actual_free) override;
+
 private:
   void choose_young_collection_set(ShenandoahCollectionSet* cset,
                                    const RegionData* data,
                                    size_t size, size_t actual_free) const;
 
+  bool old_collection_needs_more_time(ShenandoahOldGeneration* old_generation,
+                                      ShenandoahOldHeuristics* old_heuristics);
+
+  bool trigger_expedite_promotions(ShenandoahGenerationalHeap* heap, ShenandoahOldGeneration* old_generation);
+
+  bool trigger_expedite_mixed(ShenandoahGenerationalHeap* heap, ShenandoahOldHeuristics* old_heuristics);
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHYOUNGHEURISTICS_HPP

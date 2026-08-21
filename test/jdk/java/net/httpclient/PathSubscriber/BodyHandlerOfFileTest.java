@@ -36,7 +36,7 @@
  *        jdk.httpclient.test.lib.http2.Queue
  *        jdk.test.lib.net.SimpleSSLContext
  *        jdk.test.lib.Platform jdk.test.lib.util.FileUtils
- * @run junit/othervm BodyHandlerOfFileTest
+ * @run junit/othervm ${test.main.class}
  */
 
 import jdk.test.lib.net.SimpleSSLContext;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @summary Stress test of StructuredTaskScope cancellation with running and starting threads
  * @enablePreview
- * @run junit StressCancellation
+ * @run junit ${test.main.class}
  */
 
 import java.time.Duration;
@@ -65,7 +65,7 @@ class StressCancellation {
     @ParameterizedTest
     @MethodSource("testCases")
     void test(ThreadFactory factory, int beforeCancel, int afterCancel) throws Exception {
-        var joiner = new Joiner<Boolean, Void>() {
+        var joiner = new Joiner<Boolean, Void, RuntimeException>() {
             @Override
             public boolean onComplete(Subtask<Boolean> subtask) {
                 boolean cancel = subtask.get();
@@ -73,6 +73,10 @@ class StressCancellation {
             }
             @Override
             public Void result() {
+                return null;
+            }
+            @Override
+            public Void timeout() {
                 return null;
             }
         };

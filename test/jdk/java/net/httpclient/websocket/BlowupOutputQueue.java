@@ -27,7 +27,7 @@
  * @run junit/othervm
  *      -Djdk.internal.httpclient.debug=true
  *      -Djdk.internal.httpclient.websocket.debug=true
- *       BlowupOutputQueue
+ *       ${test.main.class}
  */
 
 import java.io.IOException;

@@ -71,7 +71,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /*
  * @test
- * @bug 8373409
+ * @bug 8373409 8377181
  * @key intermittent
  * @comment testResetControlStream may fail if the client doesn't read the stream type
  *              before the stream is reset,
@@ -84,7 +84,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @build java.net.http/jdk.internal.net.http.Http3ConnectionAccess
  * @run junit/othervm
  *              -Djdk.internal.httpclient.debug=true
- *              -Djdk.httpclient.HttpClient.log=requests,responses,errors H3ErrorHandlingTest
+ *              -Djdk.httpclient.HttpClient.log=requests,responses,errors ${test.main.class}
  */
 public class H3ErrorHandlingTest implements HttpServerAdapters {
 

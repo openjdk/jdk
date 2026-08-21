@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ public final class ModuleAttributeBuilderImpl
     }
 
     public ModuleAttributeBuilderImpl(ModuleDesc moduleName) {
-        this(TemporaryConstantPool.INSTANCE.moduleEntry(TemporaryConstantPool.INSTANCE.utf8Entry(moduleName.name())));
+        this(TemporaryConstantPool.INSTANCE.moduleEntry(moduleName));
     }
 
     public ModuleAttribute build() {
@@ -72,7 +72,7 @@ public final class ModuleAttributeBuilderImpl
     @Override
     public ModuleAttributeBuilder moduleName(ModuleDesc moduleName) {
         Objects.requireNonNull(moduleName);
-        moduleEntry = TemporaryConstantPool.INSTANCE.moduleEntry(TemporaryConstantPool.INSTANCE.utf8Entry(moduleName.name()));
+        moduleEntry = TemporaryConstantPool.INSTANCE.moduleEntry(moduleName);
         return this;
     }
 
@@ -91,7 +91,7 @@ public final class ModuleAttributeBuilderImpl
     @Override
     public ModuleAttributeBuilder requires(ModuleDesc module, int flags, String version) {
         Objects.requireNonNull(module);
-        return requires(ModuleRequireInfo.of(TemporaryConstantPool.INSTANCE.moduleEntry(TemporaryConstantPool.INSTANCE.utf8Entry(module.name())), flags, version == null ? null : TemporaryConstantPool.INSTANCE.utf8Entry(version)));
+        return requires(ModuleRequireInfo.of(module, flags, version));
     }
 
     @Override
@@ -103,11 +103,7 @@ public final class ModuleAttributeBuilderImpl
 
     @Override
     public ModuleAttributeBuilder exports(PackageDesc pkge, int flags, ModuleDesc... exportsToModules) {
-        Objects.requireNonNull(pkge);
-        var exportsTo = new ArrayList<ModuleEntry>(exportsToModules.length);
-        for (var e : exportsToModules)
-            exportsTo.add(TemporaryConstantPool.INSTANCE.moduleEntry(TemporaryConstantPool.INSTANCE.utf8Entry(e.name())));
-        return exports(ModuleExportInfo.of(TemporaryConstantPool.INSTANCE.packageEntry(TemporaryConstantPool.INSTANCE.utf8Entry(pkge.internalName())), flags, exportsTo));
+        return exports(ModuleExportInfo.of(pkge, flags, exportsToModules));
     }
 
     @Override
@@ -119,11 +115,7 @@ public final class ModuleAttributeBuilderImpl
 
     @Override
     public ModuleAttributeBuilder opens(PackageDesc pkge, int flags, ModuleDesc... opensToModules) {
-        Objects.requireNonNull(pkge);
-        var opensTo = new ArrayList<ModuleEntry>(opensToModules.length);
-        for (var e : opensToModules)
-            opensTo.add(TemporaryConstantPool.INSTANCE.moduleEntry(TemporaryConstantPool.INSTANCE.utf8Entry(e.name())));
-        return opens(ModuleOpenInfo.of(TemporaryConstantPool.INSTANCE.packageEntry(TemporaryConstantPool.INSTANCE.utf8Entry(pkge.internalName())), flags, opensTo));
+        return opens(ModuleOpenInfo.of(pkge, flags, opensToModules));
     }
 
     @Override
@@ -148,11 +140,7 @@ public final class ModuleAttributeBuilderImpl
 
     @Override
     public ModuleAttributeBuilder provides(ClassDesc service, ClassDesc... implClasses) {
-        Objects.requireNonNull(service);
-        var impls = new ArrayList<ClassEntry>(implClasses.length);
-        for (var seq : implClasses)
-            impls.add(TemporaryConstantPool.INSTANCE.classEntry(seq));
-        return provides(ModuleProvideInfo.of(TemporaryConstantPool.INSTANCE.classEntry(service), impls));
+        return provides(ModuleProvideInfo.of(service, implClasses));
     }
 
     @Override

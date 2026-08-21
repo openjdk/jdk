@@ -31,7 +31,10 @@
  * @build ReturnIntegerAsString
  * @build AOTCacheSupportForCustomLoaders
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar AppWithCustomLoaders AppWithCustomLoaders$MyLoader
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar cust.jar AppWithCustomLoaders$MyLoadeeA AppWithCustomLoaders$MyLoadeeB ReturnIntegerAsString
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar cust.jar
+ *                 AppWithCustomLoaders$MyLoadeeA AppWithCustomLoaders$MyLoadeeB
+ *                 AppWithCustomLoaders$MyLoadeeC AppWithCustomLoaders$MyLoadeeD
+ *                 ReturnIntegerAsString
  * @run driver AOTCacheSupportForCustomLoaders AOT
  */
 
@@ -40,6 +43,7 @@ import java.lang.module.ModuleFinder;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.io.File;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Set;
@@ -62,10 +66,17 @@ public class AOTCacheSupportForCustomLoaders {
                        "--module-path=" + modulePath,
                        "--add-modules=com.test")
             .appCommandLine("AppWithCustomLoaders", modulePath)
+            .setTrainingChecker((OutputAnalyzer out) -> {
+                    out.shouldContain("Skipping AppWithCustomLoaders$MyLoadeeC: Not loaded from \"file:\" code source")
+                       .shouldContain("Skipping AppWithCustomLoaders$MyLoadeeD: super AppWithCustomLoaders$MyLoadeeC is excluded")
+                       .shouldContain("Skipping ReturnIntegerAsString: Failed verification");
+                })
             .setAssemblyChecker((OutputAnalyzer out) -> {
                     out.shouldMatch(",class.*unreg AppWithCustomLoaders[$]MyLoadeeA")
                        .shouldMatch(",class.*unreg com.test.Foo")
                        .shouldMatch(",class.*array \\[LAppWithCustomLoaders[$]MyLoadeeA;")
+                       .shouldNotMatch("class.*unreg.*MyLoadeeC") // not from "file:" code source
+                       .shouldNotMatch("class.*unreg.*MyLoadeeD") // parent is not from "file:" code source
                        .shouldNotMatch(",class.* ReturnIntegerAsString");
                 })
             .setProductionChecker((OutputAnalyzer out) -> {
@@ -76,7 +87,7 @@ public class AOTCacheSupportForCustomLoaders {
 }
 
 class AppWithCustomLoaders {
-    static MyLoader loader; // keep alive so its classes can be cached.
+    static MyLoader loader; // keep alive
 
     public static void main(String args[]) throws Exception {
         File custJar = new File("cust.jar");
@@ -86,6 +97,7 @@ class AppWithCustomLoaders {
         test1(loader);
         test2(loader);
         test3(args[0]);
+        test4(loader);
 
         // TODO: more test cases JDK-8354557
     }
@@ -147,9 +159,36 @@ class AppWithCustomLoaders {
         }
     }
 
+    // Test 4: classes that don't use file: code source should be excluded
+    static void test4(MyLoader loader) throws Exception {
+        Class c = loader.loadLoadeeC();
+        Class d = loader.loadClass("AppWithCustomLoaders$MyLoadeeD");
+
+        URL ccs = c.getProtectionDomain().getCodeSource().getLocation();
+
+        if (ccs != null) {
+            throw new RuntimeException("MyLoadeeC should have null CodeSource but got: " + ccs);
+        }
+
+        if (d.getSuperclass() != c) {
+            throw new RuntimeException("MyLoadeeC should be super class of MyLoadeeD");
+        }
+    }
+
     public static class MyLoader extends URLClassLoader {
         public MyLoader(URL[] urls, ClassLoader parent) {
             super(urls, parent);
+        }
+
+        public Class<?> loadLoadeeC() throws Exception {
+            try (InputStream in = getResourceAsStream("AppWithCustomLoaders$MyLoadeeC.class")) {
+                byte[] b = in.readAllBytes();
+                // Define MyLoadeeC without specifying a ProtectionDomain. As a result, this
+                // class will get an empty ProtectionDomain whose CodeSource location will be null.
+                //
+                // This class should be excluded from the AOT cache. See JDK-8380291
+                return defineClass(b, 0, b.length);
+            }
         }
     }
 
@@ -180,4 +219,9 @@ class AppWithCustomLoaders {
     }
 
     public static class MyLoadeeB extends MyLoadeeA {}
+
+
+    public static class MyLoadeeC {}
+
+    public static class MyLoadeeD extends MyLoadeeC {}
 }

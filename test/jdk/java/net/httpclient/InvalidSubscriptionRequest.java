@@ -30,7 +30,7 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext ReferenceTracker
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
- * @run junit/othervm InvalidSubscriptionRequest
+ * @run junit/othervm ${test.main.class}
  */
 
 import jdk.test.lib.net.SimpleSSLContext;

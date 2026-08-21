@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,19 @@
 #define JVM_W_OK    W_OK
 #define JVM_X_OK    X_OK
 #define JVM_F_OK    F_OK
+
+#if defined(AIX)
+#include "jni_md.h"
+#include "dl_info.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+JNIEXPORT int JVM_dladdr(void* addr, Dl_info* info);
+#ifdef __cplusplus
+}
+#endif
+#endif
 
 /*
  * File I/O

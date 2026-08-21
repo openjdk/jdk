@@ -138,8 +138,9 @@ class ComputeCallStack : public SignatureIterator {
     _idx    = 0;
     _effect = effect;
 
-    if (!is_static)
+    if (!is_static) {
       effect[_idx++] = CellTypeState::ref;
+    }
 
     do_parameters_on(this);
 
@@ -1168,42 +1169,46 @@ void GenerateOopMap::interp_bb(BasicBlock *bb) {
 }
 
 void GenerateOopMap::do_exception_edge(BytecodeStream* itr) {
-  // Only check exception edge, if bytecode can trap
-  if (!Bytecodes::can_trap(itr->code())) return;
-  switch (itr->code()) {
-    case Bytecodes::_aload_0:
-      // These bytecodes can trap for rewriting.  We need to assume that
-      // they do not throw exceptions to make the monitor analysis work.
-      return;
 
-    case Bytecodes::_ireturn:
-    case Bytecodes::_lreturn:
-    case Bytecodes::_freturn:
-    case Bytecodes::_dreturn:
-    case Bytecodes::_areturn:
-    case Bytecodes::_return:
-      // If the monitor stack height is not zero when we leave the method,
-      // then we are either exiting with a non-empty stack or we have
-      // found monitor trouble earlier in our analysis.  In either case,
-      // assume an exception could be taken here.
-      if (_monitor_top == 0) {
+  // Only check exception edge, if bytecode can trap or if async exceptions can be thrown
+  // from any bytecode in the interpreter when single stepping.
+  if (!_all_exception_edges) {
+    if (!Bytecodes::can_trap(itr->code())) return;
+    switch (itr->code()) {
+      case Bytecodes::_aload_0:
+        // These bytecodes can trap for rewriting.  We need to assume that
+        // they do not throw exceptions to make the monitor analysis work.
         return;
-      }
-      break;
 
-    case Bytecodes::_monitorexit:
-      // If the monitor stack height is bad_monitors, then we have detected a
-      // monitor matching problem earlier in the analysis.  If the
-      // monitor stack height is 0, we are about to pop a monitor
-      // off of an empty stack.  In either case, the bytecode
-      // could throw an exception.
-      if (_monitor_top != bad_monitors && _monitor_top != 0) {
-        return;
-      }
-      break;
+      case Bytecodes::_ireturn:
+      case Bytecodes::_lreturn:
+      case Bytecodes::_freturn:
+      case Bytecodes::_dreturn:
+      case Bytecodes::_areturn:
+      case Bytecodes::_return:
+        // If the monitor stack height is not zero when we leave the method,
+        // then we are either exiting with a non-empty stack or we have
+        // found monitor trouble earlier in our analysis.  In either case,
+        // assume an exception could be taken here.
+        if (_monitor_top == 0) {
+          return;
+        }
+        break;
 
-    default:
-      break;
+      case Bytecodes::_monitorexit:
+        // If the monitor stack height is bad_monitors, then we have detected a
+        // monitor matching problem earlier in the analysis.  If the
+        // monitor stack height is 0, we are about to pop a monitor
+        // off of an empty stack.  In either case, the bytecode
+        // could throw an exception.
+        if (_monitor_top != bad_monitors && _monitor_top != 0) {
+          return;
+        }
+        break;
+
+      default:
+        break;
+    }
   }
 
   if (_has_exceptions) {
@@ -1594,11 +1599,11 @@ void GenerateOopMap::interp1(BytecodeStream *itr) {
     case Bytecodes::_getfield:          do_field(true,   false, itr->get_index_u2(), itr->bci(), itr->code()); break;
     case Bytecodes::_putfield:          do_field(false,  false, itr->get_index_u2(), itr->bci(), itr->code()); break;
 
+    case Bytecodes::_invokeinterface:
     case Bytecodes::_invokevirtual:
-    case Bytecodes::_invokespecial:     do_method(false, false, itr->get_index_u2(), itr->bci(), itr->code()); break;
-    case Bytecodes::_invokestatic:      do_method(true,  false, itr->get_index_u2(), itr->bci(), itr->code()); break;
-    case Bytecodes::_invokedynamic:     do_method(true,  false, itr->get_index_u4(), itr->bci(), itr->code()); break;
-    case Bytecodes::_invokeinterface:   do_method(false, true,  itr->get_index_u2(), itr->bci(), itr->code()); break;
+    case Bytecodes::_invokespecial:     do_method(false, itr->get_index_u2(), itr->bci(), itr->code()); break;
+    case Bytecodes::_invokestatic:      do_method(true , itr->get_index_u2(), itr->bci(), itr->code()); break;
+    case Bytecodes::_invokedynamic:     do_method(true , itr->get_index_u4(), itr->bci(), itr->code()); break;
     case Bytecodes::_newarray:
     case Bytecodes::_anewarray:         pp_new_ref(vCTS, itr->bci()); break;
     case Bytecodes::_checkcast:         do_checkcast(); break;
@@ -1943,13 +1948,15 @@ void GenerateOopMap::do_field(int is_get, int is_static, int idx, int bci, Bytec
     out = epsilonCTS;
     i   = copy_cts(in, eff);
   }
-  if (!is_static) in[i++] = CellTypeState::ref;
+  if (!is_static) {
+    in[i++] = CellTypeState::ref;
+  }
   in[i] = CellTypeState::bottom;
   assert(i<=3, "sanity check");
   pp(in, out);
 }
 
-void GenerateOopMap::do_method(int is_static, int is_interface, int idx, int bci, Bytecodes::Code bc) {
+void GenerateOopMap::do_method(int is_static, int idx, int bci, Bytecodes::Code bc) {
  // Dig up signature for field in constant pool
   ConstantPool* cp  = _method->constants();
   Symbol* signature   = cp->signature_ref_at(idx, bc);
@@ -2055,12 +2062,12 @@ void GenerateOopMap::print_time() {
 //
 //  ============ Main Entry Point ===========
 //
-GenerateOopMap::GenerateOopMap(const methodHandle& method) {
+GenerateOopMap::GenerateOopMap(const methodHandle& method, bool all_exception_edges) :
   // We have to initialize all variables here, that can be queried directly
-  _method = method;
-  _max_locals=0;
-  _init_vars = nullptr;
-}
+  _method(method),
+  _max_locals(0),
+  _all_exception_edges(all_exception_edges),
+  _init_vars(nullptr) {}
 
 bool GenerateOopMap::compute_map(Thread* current) {
 #ifndef PRODUCT
@@ -2187,7 +2194,7 @@ void GenerateOopMap::result_for_basicblock(int bci) {
   // Find basicblock and report results
   BasicBlock* bb = get_basic_block_containing(bci);
   guarantee(bb != nullptr, "no basic block for bci");
-  assert(bb->is_reachable(), "getting result from unreachable basicblock %d", bci);
+  assert(bb->is_reachable(), "getting result from unreachable basicblock at bci %d", bci);
   bb->set_changed(true);
   interp_bb(bb);
 }
@@ -2238,9 +2245,9 @@ void GenerateOopMap::rewrite_refval_conflicts()
   // Tracing flag
   _did_rewriting = true;
 
-  if (log_is_enabled(Trace, generateoopmap)) {
+  if (log_is_enabled(Debug, generateoopmap)) {
     ResourceMark rm;
-    LogStream st(Log(generateoopmap)::trace());
+    LogStream st(Log(generateoopmap)::debug());
     st.print_cr("ref/value conflict for method %s - bytecodes are getting rewritten", method()->name()->as_C_string());
     method()->print_on(&st);
     method()->print_codes_on(&st);
@@ -2498,32 +2505,9 @@ void GenerateOopMap::update_ret_adr_at_TOS(int bci, int delta) {
 
 // ===================================================================
 
-#ifndef PRODUCT
-int ResolveOopMapConflicts::_nof_invocations  = 0;
-int ResolveOopMapConflicts::_nof_rewrites     = 0;
-int ResolveOopMapConflicts::_nof_relocations  = 0;
-#endif
-
 methodHandle ResolveOopMapConflicts::do_potential_rewrite(TRAPS) {
   if (!compute_map(THREAD)) {
     THROW_HANDLE_(exception(), methodHandle());
   }
-
-#ifndef PRODUCT
-  // Tracking and statistics
-  if (PrintRewrites) {
-    _nof_invocations++;
-    if (did_rewriting()) {
-      _nof_rewrites++;
-      if (did_relocation()) _nof_relocations++;
-      tty->print("Method was rewritten %s: ", (did_relocation()) ? "and relocated" : "");
-      method()->print_value(); tty->cr();
-      tty->print_cr("Cand.: %d rewrts: %d (%d%%) reloc.: %d (%d%%)",
-          _nof_invocations,
-          _nof_rewrites,    (_nof_rewrites    * 100) / _nof_invocations,
-          _nof_relocations, (_nof_relocations * 100) / _nof_invocations);
-    }
-  }
-#endif
   return methodHandle(THREAD, method());
 }

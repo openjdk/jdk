@@ -74,7 +74,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.httpclient.test.lib.http2.Http2TestServer
  *        jdk.test.lib.net.IPSupport
- * @run junit UserAuthWithAuthenticator
+ * @run junit ${test.main.class}
  */
 class UserAuthWithAuthenticator {
 

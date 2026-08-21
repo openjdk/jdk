@@ -31,6 +31,7 @@
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderDataShared.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
@@ -84,6 +85,9 @@ void AOTLinkedClassBulkLoader::preload_classes_impl(TRAPS) {
   initiate_loading(THREAD, "app", h_system_loader, table->boot2());
   initiate_loading(THREAD, "app", h_system_loader, table->platform());
   preload_classes_in_table(table->app(), "app", h_system_loader, CHECK);
+
+  // Do this after all boot/platform/app classes are loaded, but before bytecode execution.
+  HeapShared::load_cached_resolved_methods();
 }
 
 void AOTLinkedClassBulkLoader::preload_classes_in_table(Array<InstanceKlass*>* classes,
@@ -279,6 +283,10 @@ void AOTLinkedClassBulkLoader::init_non_javabase_classes_impl(TRAPS) {
   if (AOTPrintTrainingInfo) {
     tty->print_cr("==================== archived_training_data ** after all classes preloaded ====================");
     TrainingData::print_archived_training_data_on(tty);
+  }
+  LogStreamHandle(Info, aot, training, data) log;
+  if (log.is_enabled()) {
+    TrainingData::print_archived_training_data_on(&log);
   }
 }
 

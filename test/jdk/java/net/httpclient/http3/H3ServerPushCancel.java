@@ -29,7 +29,7 @@
  *      -Djdk.internal.httpclient.debug=true
  *      -Djdk.httpclient.HttpClient.log=errors,requests,responses,trace
  *      -Djdk.httpclient.http3.maxConcurrentPushStreams=45
- *      H3ServerPushCancel
+ *      ${test.main.class}
  * @summary This test checks that the client deals correctly with a
  *      CANCEL_PUSH frame sent by the server
  */

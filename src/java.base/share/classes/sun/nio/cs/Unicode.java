@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,5 +94,24 @@ abstract class Unicode extends Charset
                 || (cs.name().equals("x-ISO-2022-CN-GB"))
                 || (cs.name().equals("x-Johab"))
                 || (cs.name().equals("Shift_JIS")));
+    }
+
+    static boolean isValidUnicode(CharSequence cs) {
+        int length = cs.length();
+        for (int i = 0; i < length;) {
+            char c = cs.charAt(i++);
+            if (Character.isHighSurrogate(c)) {
+                if (i == length) {
+                    return false;
+                }
+                char low = cs.charAt(i++);
+                if (!Character.isLowSurrogate(low)) {
+                    return false;
+                }
+            } else if (Character.isLowSurrogate(c)) {
+                return false;
+            }
+        }
+        return true;
     }
 }

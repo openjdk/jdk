@@ -90,7 +90,7 @@ G1CardSetMemoryManager::~G1CardSetMemoryManager() {
   for (uint i = 0; i < num_mem_object_types(); i++) {
     _allocators[i].~G1CardSetAllocator();
   }
-  FREE_C_HEAP_ARRAY(G1CardSetAllocator<G1CardSetContainer>, _allocators);
+  FREE_C_HEAP_ARRAY(_allocators);
 }
 
 void G1CardSetMemoryManager::free(uint type, void* value) {

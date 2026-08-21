@@ -65,6 +65,9 @@ public class CharsetCanEncode {
     // sun.nio.cs.UTF_16LE
     private CharsetEncoder utf16le = Charset.forName("UTF-16LE").newEncoder();
 
+    // sun.nio.cs.UTF_32LE
+    private CharsetEncoder utf32le = Charset.forName("UTF-32LE").newEncoder();
+
     @Benchmark
     public boolean asciiCanEncodeCharYes() {
         return ascii.canEncode('D');
@@ -183,5 +186,25 @@ public class CharsetCanEncode {
     @Benchmark
     public boolean utf16leCanEncodeStringNo() {
         return utf16le.canEncode(String.valueOf(Character.MIN_SURROGATE));
+    }
+
+    @Benchmark
+    public boolean utf32leCanEncodeCharYes() {
+        return utf32le.canEncode('D');
+    }
+
+    @Benchmark
+    public boolean utf32leCanEncodeStringYes() {
+        return utf32le.canEncode("D");
+    }
+
+    @Benchmark
+    public boolean utf32leCanEncodeCharNo() {
+        return utf32le.canEncode(Character.MIN_SURROGATE);
+    }
+
+    @Benchmark
+    public boolean utf32leCanEncodeStringNo() {
+        return utf32le.canEncode(String.valueOf(Character.MIN_SURROGATE));
     }
 }

@@ -129,7 +129,7 @@ bool MountUnmountDisabler::is_start_transition_disabled(JavaThread* thread, oop 
   int base_disable_count = notify_jvmti_events() ? 1 : 0;
   return java_lang_Thread::vthread_transition_disable_count(vthread) > 0
          || global_vthread_transition_disable_count() > base_disable_count
-         JVMTI_ONLY(|| (!thread->is_vthread_transition_disabler() &&
+         JVMTI_ONLY(|| (!thread->is_vthread_transition_disabler() && !thread->is_disable_suspend() &&
                         (JvmtiVTSuspender::is_vthread_suspended(java_lang_Thread::thread_id(vthread)) || thread->is_suspended())));
 }
 

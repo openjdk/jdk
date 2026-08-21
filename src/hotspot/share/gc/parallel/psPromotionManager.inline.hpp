@@ -121,10 +121,10 @@ inline void InstanceRefKlass::oop_oop_iterate_reverse<narrowOop, PSPushContentsC
   InstanceKlass::oop_oop_iterate_reverse<narrowOop>(obj, closure);
 }
 
-inline void PSPromotionManager::push_contents(oop obj) {
-  if (!obj->klass()->is_typeArray_klass()) {
+inline void PSPromotionManager::push_contents(oop obj, Klass* klass) {
+  if (!klass->is_typeArray_klass()) {
     PSPushContentsClosure pcc(this);
-    obj->oop_iterate_backwards(&pcc);
+    obj->oop_iterate_backwards(&pcc, klass);
   }
 }
 
@@ -292,18 +292,18 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
       assert(young_space()->contains(new_obj), "Attempt to push non-promoted obj");
     }
 
-    ContinuationGCSupport::transform_stack_chunk(new_obj);
+    ContinuationGCSupport::transform_stack_chunk(new_obj, klass);
 
     // Do the size comparison first with new_obj_size, which we
     // already have. Hopefully, only a few objects are larger than
     // _min_array_size_for_chunking, and most of them will be arrays.
-    // So, the objArray test would be very infrequent.
+    // So, the is_array_with_oops test would be very infrequent.
     if (new_obj_size > _min_array_size_for_chunking &&
-        klass->is_objArray_klass()) {
+        new_obj->is_array_with_oops()) {
       push_objArray(o, new_obj);
     } else {
       // we'll just push its contents
-      push_contents(new_obj);
+      push_contents(new_obj, klass);
 
       if (StringDedup::is_enabled_string(klass) &&
           psStringDedup::is_candidate_from_evacuation(new_obj, new_obj_is_tenured)) {

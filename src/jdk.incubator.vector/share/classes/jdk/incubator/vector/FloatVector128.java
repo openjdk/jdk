@@ -25,7 +25,6 @@
 package jdk.incubator.vector;
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Objects;
@@ -35,9 +34,8 @@ import jdk.internal.ValueBased;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
 
-import static jdk.internal.vm.vector.VectorSupport.*;
-
 import static jdk.incubator.vector.VectorOperators.*;
+import static jdk.internal.vm.vector.VectorSupport.*;
 
 // -- This file was mechanically generated: Do not edit! -- //
 
@@ -360,7 +358,7 @@ final class FloatVector128 extends FloatVector {
     @Override
     @ForceInline
     public final FloatShuffle128 toShuffle() {
-        return (FloatShuffle128) toShuffle(vspecies(), false);
+        return (FloatShuffle128) toShuffle(VSPECIES, false);
     }
 
     // Specialized unary testing
@@ -613,7 +611,7 @@ final class FloatVector128 extends FloatVector {
 
         @Override
         FloatMask128 uOp(MUnOp f) {
-            boolean[] res = new boolean[vspecies().laneCount()];
+            boolean[] res = new boolean[VSPECIES.laneCount()];
             boolean[] bits = getBits();
             for (int i = 0; i < res.length; i++) {
                 res[i] = f.apply(i, bits[i]);
@@ -623,7 +621,7 @@ final class FloatVector128 extends FloatVector {
 
         @Override
         FloatMask128 bOp(VectorMask<Float> m, MBinOp f) {
-            boolean[] res = new boolean[vspecies().laneCount()];
+            boolean[] res = new boolean[VSPECIES.laneCount()];
             boolean[] bits = getBits();
             boolean[] mbits = ((FloatMask128)m).getBits();
             for (int i = 0; i < res.length; i++) {
@@ -773,16 +771,16 @@ final class FloatVector128 extends FloatVector {
         @ForceInline
         public boolean anyTrue() {
             return VectorSupport.test(BT_ne, FloatMask128.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> anyTrueHelper(((FloatMask128)m).getBits()));
+                                         this, VSPECIES.maskAll(true),
+                                         (m, _) -> anyTrueHelper(((FloatMask128)m).getBits()));
         }
 
         @Override
         @ForceInline
         public boolean allTrue() {
             return VectorSupport.test(BT_overflow, FloatMask128.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> allTrueHelper(((FloatMask128)m).getBits()));
+                                         this, VSPECIES.maskAll(true),
+                                         (m, _) -> allTrueHelper(((FloatMask128)m).getBits()));
         }
 
         @ForceInline
@@ -790,7 +788,7 @@ final class FloatVector128 extends FloatVector {
         static FloatMask128 maskAll(boolean bit) {
             return VectorSupport.fromBitsCoerced(FloatMask128.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                                  (bit ? -1 : 0), MODE_BROADCAST, null,
-                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+                                                 (v, _) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final FloatMask128  TRUE_MASK = new FloatMask128(true);
         private static final FloatMask128 FALSE_MASK = new FloatMask128(false);
@@ -839,7 +837,7 @@ final class FloatVector128 extends FloatVector {
         @Override
         @ForceInline
         public FloatVector128 toVector() {
-            return (FloatVector128) toBitsVector().castShape(vspecies(), 0);
+            return (FloatVector128) toBitsVector().castShape(VSPECIES, 0);
         }
 
         @Override
@@ -850,7 +848,7 @@ final class FloatVector128 extends FloatVector {
 
         @Override
         IntVector128 toBitsVector0() {
-            return ((IntVector128) vspecies().asIntegral().dummyVector()).vectorFactory(indices());
+            return ((IntVector128) VSPECIES.asIntegral().dummyVector()).vectorFactory(indices());
         }
 
         @Override
@@ -875,7 +873,7 @@ final class FloatVector128 extends FloatVector {
         @ForceInline
         public final FloatMask128 laneIsValid() {
             return (FloatMask128) toBitsVector().compare(VectorOperators.GE, 0)
-                    .cast(vspecies());
+                    .cast(VSPECIES);
         }
 
         @ForceInline
@@ -883,7 +881,7 @@ final class FloatVector128 extends FloatVector {
         public final FloatShuffle128 rearrange(VectorShuffle<Float> shuffle) {
             FloatShuffle128 concreteShuffle = (FloatShuffle128) shuffle;
             return (FloatShuffle128) toBitsVector().rearrange(concreteShuffle.cast(IntVector.SPECIES_128))
-                    .toShuffle(vspecies(), false);
+                    .toShuffle(VSPECIES, false);
         }
 
         @ForceInline
@@ -896,7 +894,7 @@ final class FloatVector128 extends FloatVector {
                 v = (IntVector128) v.blend(v.lanewise(VectorOperators.ADD, length()),
                             v.compare(VectorOperators.LT, 0));
             }
-            return (FloatShuffle128) v.toShuffle(vspecies(), false);
+            return (FloatShuffle128) v.toShuffle(VSPECIES, false);
         }
 
         private static int[] prepare(int[] indices, int offset) {

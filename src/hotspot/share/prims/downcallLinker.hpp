@@ -28,6 +28,7 @@
 #include "runtime/stubCodeGenerator.hpp"
 
 class RuntimeStub;
+class CodeBlob;
 
 class DowncallLinker: AllStatic {
 public:
@@ -44,6 +45,8 @@ public:
   // These are defined as JVM_LEAF which adds the JNICALL modifier.
   static void JNICALL capture_state_pre(int32_t* value_ptr, int captured_state_mask);
   static void JNICALL capture_state_post(int32_t* value_ptr, int captured_state_mask);
+
+  static bool is_downcall_stub(const CodeBlob* cb);
 
   class StubGenerator : public StubCodeGenerator {
     BasicType* _signature;
@@ -72,7 +75,7 @@ public:
                   bool needs_return_buffer,
                   int captured_state_mask,
                   bool needs_transition)
-    : StubCodeGenerator(buffer, PrintMethodHandleStubs),
+      : StubCodeGenerator(buffer, PrintMethodHandleStubs),
       _signature(signature),
       _num_args(num_args),
       _ret_bt(ret_bt),

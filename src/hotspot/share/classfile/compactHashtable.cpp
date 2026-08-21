@@ -69,7 +69,7 @@ CompactHashtableWriter::~CompactHashtableWriter() {
     delete bucket;
   }
 
-  FREE_C_HEAP_ARRAY(GrowableArray<Entry>*, _buckets);
+  FREE_C_HEAP_ARRAY(_buckets);
 }
 
 // Add an entry to the temporary hash table
@@ -230,7 +230,7 @@ HashtableTextDump::HashtableTextDump(const char* filename) : _fd(-1) {
   if (_fd < 0) {
     quit("Unable to open hashtable dump file", filename);
   }
-  _base = os::map_memory(_fd, filename, 0, nullptr, _size, mtNone, true, false);
+  _base = os::map_memory(_fd, filename, 0, nullptr, _size, true /* read_only */, mtNone, false /* allow_exec */);
   if (_base == nullptr) {
     quit("Unable to map hashtable dump file", filename);
   }

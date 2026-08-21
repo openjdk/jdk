@@ -461,10 +461,6 @@ class Assembler : public AbstractAssembler {
     FRIN_OPCODE   = (63u << OPCODE_SHIFT | 392u << 1),
     FRIP_OPCODE   = (63u << OPCODE_SHIFT | 456u << 1),
     FRIM_OPCODE   = (63u << OPCODE_SHIFT | 488u << 1),
-    // These are special Power6 opcodes, reused for "lfdepx" and "stfdepx"
-    // on Power7.  Do not use.
-    // MFFGPR_OPCODE  = (31u << OPCODE_SHIFT | 607u << 1),
-    // MFTGPR_OPCODE  = (31u << OPCODE_SHIFT | 735u << 1),
     CMPB_OPCODE    = (31u << OPCODE_SHIFT |  508  << 1),
     POPCNTB_OPCODE = (31u << OPCODE_SHIFT |  122  << 1),
     POPCNTW_OPCODE = (31u << OPCODE_SHIFT |  378  << 1),
@@ -518,7 +514,6 @@ class Assembler : public AbstractAssembler {
     FSQRT_OPCODE   = (63u << OPCODE_SHIFT |   22u << 1),            // A-FORM
     FSQRTS_OPCODE  = (59u << OPCODE_SHIFT |   22u << 1),            // A-FORM
 
-    // Vector instruction support for >= Power6
     // Vector Storage Access
     LVEBX_OPCODE   = (31u << OPCODE_SHIFT |    7u << 1),
     LVEHX_OPCODE   = (31u << OPCODE_SHIFT |   39u << 1),
@@ -1053,6 +1048,13 @@ class Assembler : public AbstractAssembler {
     return (julong)x < maxplus1;
   }
 
+  // Test if x has exactly one consecutive range of one bits (e.g. 00111000)
+  static bool has_consecutive_ones(julong x) {
+    if (x == max_julong) return true;
+    if (x == 0) return false;
+    return is_power_of_2((x >> count_trailing_zeros(x)) + 1);
+  }
+
  protected:
   // helpers
 
@@ -1236,7 +1238,7 @@ class Assembler : public AbstractAssembler {
   static int u(        int         x)  { return  opp_u_field(x,             19, 16); }
   static int ui(       int         x)  { return  opp_u_field(x,             31, 16); }
 
-  // Support vector instructions for >= Power6.
+  // Support vector instructions.
   static int vra(      int         x)  { return  opp_u_field(x,             15, 11); }
   static int vrb(      int         x)  { return  opp_u_field(x,             20, 16); }
   static int vrc(      int         x)  { return  opp_u_field(x,             25, 21); }
@@ -1611,7 +1613,8 @@ class Assembler : public AbstractAssembler {
   inline void isel_0( Register d, ConditionRegister cr, Condition cc, Register b = noreg);
 
   // PPC 1, section 3.3.11, Fixed-Point Logical Instructions
-         void andi(   Register a, Register s, long ui16);   // optimized version
+         void andi(   Register a, Register s, julong int_or_long_const); // optimized version, may clobber CR0
+  static bool andi_supports(julong int_or_long_const);
   inline void andi_(  Register a, Register s, int ui16);
   inline void andis_( Register a, Register s, int ui16);
   inline void ori(    Register a, Register s, int ui16);
@@ -2036,7 +2039,7 @@ class Assembler : public AbstractAssembler {
   inline void stqcx_( Register s, Register a, Register b);
 
   // Instructions for adjusting thread priority for simultaneous
-  // multithreading (SMT) on Power5.
+  // multithreading (SMT).
  private:
   inline void smt_prio_very_low();
   inline void smt_prio_medium_high();
@@ -2204,7 +2207,7 @@ class Assembler : public AbstractAssembler {
   inline void fsqrt( FloatRegister d, FloatRegister b);
   inline void fsqrts(FloatRegister d, FloatRegister b);
 
-  // Vector instructions for >= Power6.
+  // Vector instructions.
   inline void lvebx(    VectorRegister d, Register s1, Register s2);
   inline void lvehx(    VectorRegister d, Register s1, Register s2);
   inline void lvewx(    VectorRegister d, Register s1, Register s2);

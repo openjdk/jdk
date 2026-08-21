@@ -24,6 +24,7 @@
 package jdk.jpackage.test;
 
 import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
@@ -47,6 +48,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -61,11 +63,12 @@ import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import jdk.jpackage.internal.cli.LogConfigParser;
 import jdk.jpackage.internal.model.DottedVersion;
 import jdk.jpackage.internal.util.MacBundle;
 import jdk.jpackage.internal.util.Result;
 import jdk.jpackage.internal.util.RuntimeReleaseFile;
-import jdk.jpackage.internal.util.function.ExceptionBox;
+import jdk.jpackage.internal.util.SetBuilder;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.internal.util.function.ThrowingFunction;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
@@ -81,19 +84,18 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     @SuppressWarnings("this-escape")
     public JPackageCommand() {
         toolProviderSource = new ToolProviderSource();
+        executorPrototype = new Executor().dumpOutput(true);
         prerequisiteActions = new Actions();
         verifyActions = new Actions();
         excludeStandardAsserts(StandardAssert.MAIN_LAUNCHER_DESCRIPTION);
         removeOldOutputBundle = true;
+        logConfig = new LogConfig();
     }
 
     private JPackageCommand(JPackageCommand cmd, boolean immutable) {
         args.addAll(cmd.args);
         toolProviderSource = cmd.toolProviderSource.copy();
-        saveConsoleOutput = cmd.saveConsoleOutput;
-        discardStdout = cmd.discardStdout;
-        discardStderr = cmd.discardStderr;
-        suppressOutput = cmd.suppressOutput;
+        executorPrototype = cmd.executorPrototype.copy();
         ignoreDefaultRuntime = cmd.ignoreDefaultRuntime;
         ignoreDefaultVerbose = cmd.ignoreDefaultVerbose;
         removeOldOutputBundle = cmd.removeOldOutputBundle;
@@ -107,6 +109,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         winMsiLogFile = cmd.winMsiLogFile;
         unpackedPackageDirectory = cmd.unpackedPackageDirectory;
         explicitVersion = cmd.explicitVersion;
+        logConfig = cmd.logConfig;
     }
 
     JPackageCommand createImmutableCopy() {
@@ -347,6 +350,14 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         return this;
     }
 
+    public String fullVersion() {
+        if (isImagePackageType() || !PackageType.LINUX.contains(packageType())) {
+            return version();
+        } else {
+            return version() + LinuxHelper.getReleaseSuffix(this);
+        }
+    }
+
     public String name() {
         return nameFromAppImage().or(this::nameFromBasicArgs).or(this::nameFromRuntimeImage).orElseThrow();
     }
@@ -495,8 +506,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     public static Path createInputRuntimeImage(RuntimeImageType role) {
         Objects.requireNonNull(role);
 
-        final Path runtimeImageDir;
-        switch (role) {
+        return switch (role) {
 
             case RUNTIME_TYPE_FAKE -> {
                 Consumer<Path> createBulkFile = ThrowingConsumer.toConsumer(path -> {
@@ -508,7 +518,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
                     }
                 });
 
-                runtimeImageDir = TKit.createTempDirectory("fake_runtime");
+                var runtimeImageDir = TKit.createTempDirectory("fake_runtime");
 
                 TKit.trace(String.format("Init fake runtime in [%s] directory", runtimeImageDir));
 
@@ -521,32 +531,28 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
                 // Package bundles with 0KB size are unexpected and considered
                 // an error by PackageTest.
                 createBulkFile.accept(runtimeImageDir.resolve(Path.of("lib", "bulk")));
+
+                yield runtimeImageDir;
             }
 
             case RUNTIME_TYPE_HELLO_APP -> {
-                if (JPackageCommand.DEFAULT_RUNTIME_IMAGE != null && !isFakeRuntime(DEFAULT_RUNTIME_IMAGE)) {
-                    runtimeImageDir = JPackageCommand.DEFAULT_RUNTIME_IMAGE;
-                } else {
-                    runtimeImageDir = TKit.createTempDirectory("runtime-image").resolve("data");
+                yield DEFAULT_RUNTIME_IMAGE.filter(Predicate.not(JPackageCommand::isFakeRuntime)).orElseGet(() -> {
+                    var dir = TKit.createTempDirectory("runtime-image").resolve("data");
 
                     new Executor().setToolProvider(JavaTool.JLINK)
                             .dumpOutput()
                             .addArguments(
-                                    "--output", runtimeImageDir.toString(),
+                                    "--output", dir.toString(),
                                     "--add-modules", "java.desktop",
                                     "--strip-debug",
                                     "--no-header-files",
                                     "--no-man-pages")
                             .execute();
-                }
-            }
 
-            default -> {
-                throw ExceptionBox.reachedUnreachable();
+                    return dir;
+                });
             }
-        }
-
-        return runtimeImageDir;
+        };
     }
 
     public JPackageCommand setPackageType(PackageType type) {
@@ -868,6 +874,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         } else if (TKit.isLinux()) {
             criticalRuntimeFiles = LinuxHelper.CRITICAL_RUNTIME_FILES;
         } else if (TKit.isOSX()) {
+            runtimeDir = MacBundle.fromPath(runtimeDir).map(MacBundle::homeDir).orElse(runtimeDir);
             criticalRuntimeFiles = MacHelper.CRITICAL_RUNTIME_FILES;
         } else {
             throw TKit.throwUnknownPlatformError();
@@ -941,27 +948,39 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         return this;
     }
 
+    public JPackageCommand removeEnvVars(String ... envVarName) {
+        verifyMutable();
+        List.of(envVarName).forEach(executorPrototype::removeEnvVar);
+        return this;
+    }
+
+    public JPackageCommand setEnvVar(String envVarName, String envVarValue) {
+        verifyMutable();
+        executorPrototype.setEnvVar(envVarName, envVarValue);
+        return this;
+    }
+
     public JPackageCommand saveConsoleOutput(boolean v) {
         verifyMutable();
-        saveConsoleOutput = v;
+        executorPrototype.saveOutput(v);
         return this;
     }
 
     public JPackageCommand discardStdout(boolean v) {
         verifyMutable();
-        discardStdout = v;
+        executorPrototype.discardStdout(v);
         return this;
     }
 
     public JPackageCommand discardStderr(boolean v) {
         verifyMutable();
-        discardStderr = v;
+        executorPrototype.discardStderr(v);
         return this;
     }
 
     public JPackageCommand dumpOutput(boolean v) {
         verifyMutable();
-        suppressOutput = !v;
+        executorPrototype.dumpOutput(v);
         return this;
     }
 
@@ -972,14 +991,45 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public JPackageCommand ignoreFakeRuntime() {
-        return ignoreDefaultRuntime(Optional.ofNullable(DEFAULT_RUNTIME_IMAGE)
-                .map(JPackageCommand::isFakeRuntime).orElse(false));
+        return ignoreDefaultRuntime(DEFAULT_RUNTIME_IMAGE.map(JPackageCommand::isFakeRuntime).orElse(false));
     }
 
     public JPackageCommand ignoreDefaultVerbose(boolean v) {
         verifyMutable();
         ignoreDefaultVerbose = v;
         return this;
+    }
+
+    public JPackageCommand setEnabledMessageCategories(Set<MessageCategory> categories) {
+        verifyMutable();
+        logConfig = new LogConfig(
+                categories,
+                SetBuilder.build(logConfig.remove()).remove(categories).emptyAllowed(true).create());
+        return this;
+    }
+
+    public JPackageCommand setEnabledMessageCategories(MessageCategory... categories) {
+        return setEnabledMessageCategories(Set.of(categories));
+    }
+
+    public JPackageCommand setDisabledMessageCategories(Set<MessageCategory> categories) {
+        verifyMutable();
+        logConfig = new LogConfig(
+                SetBuilder.build(logConfig.add()).remove(categories).emptyAllowed(true).create(),
+                categories);
+        return this;
+    }
+
+    public JPackageCommand setDisabledMessageCategories(MessageCategory... categories) {
+        return setDisabledMessageCategories(Set.of(categories));
+    }
+
+    public static Set<MessageCategory> messageCategoriesConsoleAll() {
+        return Stream.of(MessageCategory.values()).filter(MessageCategory::isConsole).collect(toSet());
+    }
+
+    public static Set<MessageCategory> messageCategoriesConsoleNoTrace() {
+        return SetBuilder.build(messageCategoriesConsoleAll()).remove(MessageCategory.TRACE).create();
     }
 
     /**
@@ -1058,8 +1108,32 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         return makeAdvice(JPackageStringBundle.MAIN.cannedFormattedString(key, args));
     }
 
+    public static CannedFormattedString makeProgressWarning(CannedFormattedString v) {
+        return v.addPrefix("progress.warning-header");
+    }
+
+    public static CannedFormattedString makeProgressWarning(String key, Object ... args) {
+        return makeProgressWarning(JPackageStringBundle.MAIN.cannedFormattedString(key, args));
+    }
+
+    public static CannedFormattedString makeSummaryWarning(CannedFormattedString v) {
+        return v.addPrefix("summary.warning");
+    }
+
+    public static CannedFormattedString makeSummaryWarning(String key, Object ... args) {
+        return makeSummaryWarning(JPackageStringBundle.MAIN.cannedFormattedString(key, args));
+    }
+
+    public static CannedFormattedString makeSummaryMultiLineWarning(CannedFormattedString v) {
+        return v.addPrefix("summary.multi-line-warning");
+    }
+
+    public static CannedFormattedString makeSummaryMultiLineWarning(String key, Object ... args) {
+        return makeSummaryMultiLineWarning(JPackageStringBundle.MAIN.cannedFormattedString(key, args));
+    }
+
     public String getValue(CannedFormattedString str) {
-        return new CannedFormattedString(str.formatter(), str.key(), str.args().stream().map(arg -> {
+        return new CannedFormattedString(str.formatter(), str.format(), str.args().stream().map(arg -> {
             if (arg instanceof CannedArgument cannedArg) {
                 return cannedArg.value(this);
             } else {
@@ -1091,7 +1165,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
         var messageSpecs = messageGroup.getEnumConstants();
 
-        var expectMessageFormats = expectedMessages.stream().map(CannedFormattedString::key).toList();
+        var expectMessageFormats = expectedMessages.stream().map(CannedFormattedString::format).toList();
 
         var groupMessageFormats = Stream.of(messageSpecs)
                 .map(CannedFormattedString.Spec::format)
@@ -1135,18 +1209,16 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     Executor createExecutor() {
-        Executor exec = new Executor()
-                .saveOutput(saveConsoleOutput).dumpOutput(!suppressOutput)
-                .discardStdout(discardStdout).discardStderr(discardStderr)
+        Executor exec = executorPrototype.copy()
                 .setDirectory(executeInDirectory)
                 .addArguments(args);
 
         toolProviderSource.toolProvider().ifPresentOrElse(exec::setToolProvider, () -> {
-                    exec.setExecutable(JavaTool.JPACKAGE);
-                    if (TKit.isWindows()) {
-                        exec.setWindowsTmpDir(System.getProperty("java.io.tmpdir"));
-                    }
-                });
+            exec.setExecutable(JavaTool.JPACKAGE);
+            if (TKit.isWindows()) {
+                exec.setWindowsTmpDir(System.getProperty("java.io.tmpdir"));
+            }
+        });
 
         return exec;
     }
@@ -1253,7 +1325,125 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         return this;
     }
 
-    public static enum Macro {
+    public enum MessageCategory {
+        SUMMARY,
+        WARNINGS,
+        ERRORS,
+        PROGRESS,
+        TRACE,
+        RESOURCES,
+        TOOLS,
+        SYSTEM_LOGGER,
+        ;
+
+        MessageCategory() {
+            // Ensure this item has a peer with the same name in LogConfigParser.MessageCategory enum.
+            LogConfigParser.MessageCategory.valueOf(name());
+        }
+
+        static Set<MessageCategory> parseVerboseOptionValue(String str) {
+            return LogConfigParser.tokenize(str).stream()
+                    .map(Enum::name)
+                    .map(MessageCategory::valueOf)
+                    .collect(toSet());
+        }
+
+        static String toVerboseOptionValue(Set<MessageCategory> categories) {
+            Objects.requireNonNull(categories);
+
+            String negativeRoot;
+
+            if (categories.contains(SYSTEM_LOGGER)) {
+                negativeRoot = "all";
+            } else {
+                negativeRoot = "console";
+            }
+
+            var str = categories.stream()
+                    .map(Enum::name)
+                    .map(String::toLowerCase)
+                    .sorted()
+                    .collect(joining(","));
+
+            var negateStr = Stream.concat(
+                    Stream.of(negativeRoot),
+                    messageCategoriesConsoleAll().stream()
+                            .filter(Predicate.not(categories::contains))
+                            .map(Enum::name)
+                            .map(String::toLowerCase)
+                            .map(v -> {
+                                return "-" + v;
+                            }).sorted()
+            ).collect(joining(","));
+
+            if (str.length() < negateStr.length()) {
+                return str;
+            } else {
+                return negateStr;
+            }
+        }
+
+        boolean isConsole() {
+            switch (this) {
+                case SYSTEM_LOGGER -> {
+                    return false;
+                }
+                default -> {
+                    return true;
+                }
+            }
+        }
+    }
+
+    static {
+        Function<Class<? extends Enum<?>>, String[]> names = enumType -> {
+            return Stream.of(enumType.getEnumConstants()).map(Enum::name).toArray(String[]::new);
+        };
+
+        var missingEnumItems = SetBuilder.build(names.apply(LogConfigParser.MessageCategory.class))
+                .remove(names.apply(MessageCategory.class))
+                .emptyAllowed(true)
+                .create();
+
+        if (!missingEnumItems.isEmpty()) {
+            throw new AssertionError(
+                    String.format("%s is missing items: %s", MessageCategory.class, missingEnumItems));
+        }
+    }
+
+    private record LogConfig(Set<MessageCategory> add, Set<MessageCategory> remove) {
+        LogConfig {
+            Objects.requireNonNull(add);
+            Objects.requireNonNull(remove);
+
+            var common = Comm.compare(add, remove).common();
+            if (!common.isEmpty()) {
+                throw new IllegalArgumentException(String.format("Overlap: %s", common));
+            }
+
+            add = Set.copyOf(add);
+            remove = Set.copyOf(remove);
+        }
+
+        LogConfig() {
+            this(Set.of(), Set.of());
+        }
+
+        Set<MessageCategory> filter(Set<MessageCategory> categories) {
+            Objects.requireNonNull(categories);
+            if (categories.containsAll(add) && Collections.disjoint(categories, remove)) {
+                return categories;
+            } else {
+                return SetBuilder.build(categories).add(add).remove(remove).emptyAllowed(true).create();
+            }
+        }
+
+        static Set<MessageCategory> quiet() {
+            return Set.of(MessageCategory.ERRORS, MessageCategory.WARNINGS);
+        }
+    }
+
+    public enum Macro {
         APPDIR(cmd -> {
             return cmd.appLayout().appDirectory().toString();
         }),
@@ -1801,15 +1991,85 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             // to allow the jlink process to print exception stacktraces on any failure
             addArgument("-J-Djlink.debug=true");
         }
-        if (!hasArgument("--runtime-image") && !hasArgument("--jlink-options") && !hasArgument("--app-image") && DEFAULT_RUNTIME_IMAGE != null && !ignoreDefaultRuntime) {
-            addArguments("--runtime-image", DEFAULT_RUNTIME_IMAGE);
+
+        DEFAULT_RUNTIME_IMAGE.filter(_ -> {
+            return Stream.of("--runtime-image", "--jlink-options", "--app-image").noneMatch(this::hasArgument) && !ignoreDefaultRuntime;
+        }).ifPresent(defaultRuntime -> {
+            addArguments("--runtime-image", defaultRuntime);
+        });
+
+        if (!hasArgument("--verbose")) {
+            final Set<MessageCategory> unfilteredCategories;
+            if (ignoreDefaultVerbose) {
+                unfilteredCategories = LogConfig.quiet();
+            } else {
+                unfilteredCategories = DEFAULT_VERBOSE;
+            }
+
+            final var categories = logConfig.filter(unfilteredCategories);
+
+            if (!categories.equals(LogConfig.quiet())) {
+                setArgumentValue("--verbose", MessageCategory.toVerboseOptionValue(categories));
+            }
         }
 
-        if (!hasArgument("--verbose") && TKit.verboseJPackage() && !ignoreDefaultVerbose) {
-            addArgument("--verbose");
-        }
+        addNoOpDMGScriptIfNeeded();
 
         return this;
+    }
+
+    private void addNoOpDMGScriptIfNeeded() {
+        if (!checkIfNoOpDMGScriptIsNeeded()) {
+            return;
+        }
+
+        Path resourceDir = getArgumentValue("--resource-dir", () -> null, Path::of);
+        if (resourceDir == null) {
+            resourceDir = TKit.createTempDirectory("resources-dir-noop-dmg-script")
+                    .toAbsolutePath();
+            setArgumentValue("--resource-dir", resourceDir);
+        } else if (!Files.isDirectory(resourceDir)) {
+            // If we have invalid resource dir, just keep it in case if test
+            // wants it.
+            return;
+        }
+
+        final String baseName;
+        try {
+            baseName = installerName();
+        } catch (RuntimeException _) {
+            return;
+        }
+
+        final String scriptName = baseName + "-dmg-setup.scpt";
+        if (Files.exists(resourceDir.resolve(scriptName))) {
+            // We already have script provided. Do not overwrite it.
+            return;
+        }
+
+        // Create no-op DMG script
+        try {
+            Files.writeString(resourceDir.resolve(scriptName), "return\n",
+                    StandardCharsets.UTF_8);
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
+    }
+
+    private boolean checkIfNoOpDMGScriptIsNeeded() {
+        if (!TKit.isOSX()) {
+            return false;
+        }
+
+        if (!hasArgument("--type")) {
+            return false;
+        }
+
+        if (packageType() != PackageType.MAC_DMG) {
+            return false;
+        }
+
+        return !ENABLE_DEFAULT_DMG_OSASCRIPT;
     }
 
     public String getPrintableCommandLine() {
@@ -2015,26 +2275,23 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         }
 
         Optional<ToolProvider> toolProvider() {
-            switch (mode) {
+            return switch (mode) {
                 case USE_PROCESS -> {
-                    return Optional.empty();
+                    yield Optional.empty();
                 }
                 case USE_TOOL_PROVIDER -> {
                     if (customToolProvider != null) {
-                        return Optional.of(customToolProvider);
+                        yield Optional.of(customToolProvider);
                     } else {
-                        return TKit.state().findProperty(DefaultToolProviderKey.VALUE).map(ToolProvider.class::cast).or(() -> {
+                        yield TKit.state().findProperty(DefaultToolProviderKey.VALUE).map(ToolProvider.class::cast).or(() -> {
                             return Optional.of(JavaTool.JPACKAGE.asToolProvider());
                         });
                     }
                 }
                 case INHERIT_DEFAULTS -> {
-                    return TKit.state().findProperty(DefaultToolProviderKey.VALUE).map(ToolProvider.class::cast);
+                    yield TKit.state().findProperty(DefaultToolProviderKey.VALUE).map(ToolProvider.class::cast);
                 }
-                default -> {
-                    throw ExceptionBox.reachedUnreachable();
-                }
-            }
+            };
         }
 
         ToolProviderSource() {
@@ -2057,10 +2314,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     private final ToolProviderSource toolProviderSource;
-    private boolean saveConsoleOutput;
-    private boolean discardStdout;
-    private boolean discardStderr;
-    private boolean suppressOutput;
+    private final Executor executorPrototype;
     private boolean ignoreDefaultRuntime;
     private boolean ignoreDefaultVerbose;
     private boolean removeOldOutputBundle;
@@ -2071,6 +2325,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     private Path winMsiLogFile;
     private Path unpackedPackageDirectory;
     private String explicitVersion;
+    private LogConfig logConfig;
     private Set<ReadOnlyPathAssert> readOnlyPathAsserts = Set.of(ReadOnlyPathAssert.values());
     private Set<StandardAssert> standardAsserts = Set.of(StandardAssert.values());
     private List<Consumer<Executor.Result>> validators = new ArrayList<>();
@@ -2088,9 +2343,17 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     // The value of the property will be automatically appended to
     // jpackage command line if the command line doesn't have
     // `--runtime-image` parameter set.
-    public static final Path DEFAULT_RUNTIME_IMAGE = Optional.ofNullable(TKit.getConfigProperty("runtime-image")).map(Path::of).orElse(null);
+    private static final Optional<Path> DEFAULT_RUNTIME_IMAGE = Optional.ofNullable(TKit.getConfigProperty("runtime-image")).map(Path::of);
+
+    private static final Set<MessageCategory> DEFAULT_VERBOSE = MessageCategory.parseVerboseOptionValue(
+            Optional.ofNullable(TKit.getConfigProperty("verbose")).orElse("console" /* Set max verbose level by default */)
+    );
 
     public static final String DEFAULT_VERSION = "1.0";
+
+    private final static boolean ENABLE_DEFAULT_DMG_OSASCRIPT = TKit.getConfigBooleanProperty("enable-default-dmg-osascript").orElseGet(() -> {
+        return TKit.getConfigBooleanProperty("SQETest").orElse(false);
+    });
 
     // [HH:mm:ss.SSS]
     private static final Pattern TIMESTAMP_REGEXP = Pattern.compile(

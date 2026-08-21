@@ -23,6 +23,7 @@
  */
 
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1CollectorState.inline.hpp"
 #include "gc/g1/g1YoungGCAllocationFailureInjector.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
 
@@ -55,7 +56,7 @@ G1YoungGCAllocationFailureInjector::G1YoungGCAllocationFailureInjector()
 void G1YoungGCAllocationFailureInjector::select_allocation_failure_regions() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   _allocation_failure_regions.reinitialize(g1h->max_num_regions());
-  SelectAllocationFailureRegionClosure closure(_allocation_failure_regions, g1h->collection_set()->cur_length());
+  SelectAllocationFailureRegionClosure closure(_allocation_failure_regions, g1h->collection_set()->num_regions());
   g1h->collection_set_iterate_all(&closure);
 }
 

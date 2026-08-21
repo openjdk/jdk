@@ -152,9 +152,9 @@ class SystemProcess : public CHeapObj<mtInternal> {
   }
 
   virtual ~SystemProcess(void) {
-    FREE_C_HEAP_ARRAY(char, _name);
-    FREE_C_HEAP_ARRAY(char, _path);
-    FREE_C_HEAP_ARRAY(char, _command_line);
+    FREE_C_HEAP_ARRAY(_name);
+    FREE_C_HEAP_ARRAY(_path);
+    FREE_C_HEAP_ARRAY(_command_line);
   }
 };
 

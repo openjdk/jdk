@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -336,11 +336,6 @@ public class Head extends Content {
     }
 
     private void addStylesheets(HtmlTree head) {
-        if (index) {
-            // Add JQuery-UI stylesheet first so its rules can be overridden.
-            addStylesheet(head, DocPaths.RESOURCE_FILES.resolve(DocPaths.JQUERY_UI_CSS));
-        }
-
         if (mainStylesheet == null) {
             mainStylesheet = DocPaths.STYLESHEET;
         }
@@ -381,8 +376,6 @@ public class Head extends Content {
                         .append("loadScripts();\n")
                         .append("initTheme();\n");
             }
-            addScriptElement(head, DocPaths.JQUERY_JS);
-            addScriptElement(head, DocPaths.JQUERY_UI_JS);
         }
         for (HtmlConfiguration.JavaScriptFile javaScriptFile : additionalScripts) {
             addScriptElement(head, javaScriptFile);

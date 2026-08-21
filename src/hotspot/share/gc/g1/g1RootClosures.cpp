@@ -22,6 +22,7 @@
  *
  */
 
+#include "gc/g1/g1CollectorState.inline.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1RootClosures.hpp"
 #include "gc/g1/g1SharedClosures.hpp"
