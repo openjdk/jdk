@@ -75,8 +75,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-#include <initializer_list>
-
 //---------------------------make_vm_intrinsic----------------------------
 CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
   vmIntrinsicID id = m->intrinsic_id();
