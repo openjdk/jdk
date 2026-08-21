@@ -1439,11 +1439,14 @@ void LinearScan::build_intervals() {
               // The T_ILLEGAL type is used by add_use as a sentinel value
               // indicating the type is unknown (rather than illegal) so that
               // the type of the interval corresponding to reg is not updated.
-              TRACE_LINEAR_SCAN(2, tty->print_cr(" use [R%d|?] from %d to %d (%d)", reg, block_from, op_id, noUse));
+              // The use is extended beyond op (to = op_id + 1) so that liveness
+              // is preserved across possible registers killed by op (e.g.
+              // caller-saved registers if op is a call).
+              TRACE_LINEAR_SCAN(2, tty->print_cr(" use [R%d|?] from %d to %d (%d)", reg, block_from, op_id + 1, noUse));
               // TBD: review 'noUse': should it be a "should" or a "must"
               // register? Or is it correct to use 'noUse' since the register is
               // not physically read by op?
-              add_use(reg, block_from, op_id, noUse, T_ILLEGAL);
+              add_use(reg, block_from, op_id + 1, noUse, T_ILLEGAL);
             }
           }
         }
