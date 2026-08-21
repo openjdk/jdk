@@ -751,7 +751,7 @@ void LinearScan::compute_global_live_sets() {
   // The loop is executed until a fixpoint is reached (no changes in an iteration)
   // Exception handlers must be processed because not all live values are
   // present in the state array, e.g. because of global value numbering
-  // TODO: does this assume exception handlers are always jumped to from the end of a block?
+  // TBD: extend comment, write that we complement this at the local level by adding virtual uses below.
   do {
     change_occurred = false;
 
