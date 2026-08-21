@@ -1557,12 +1557,16 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
   // address also needs t0 to materialize an offset outside the 12-bit range.
   if (src_lo_rc == rc_stack && dst_lo_rc == rc_stack) {
     int last_dst_offset = dst_offset;
-    if (bottom_type()->isa_pvectmask()) {
-      int vmask_size_in_bytes = Matcher::scalable_predicate_reg_slots() * 32 / 8;
-      last_dst_offset += vmask_size_in_bytes - 4;
-    } else if (ideal_reg() == Op_VecA) {
-      int vector_reg_size_in_bytes = Matcher::scalable_vector_reg_size(T_BYTE);
-      last_dst_offset += vector_reg_size_in_bytes - 8;
+    if (bottom_type()->isa_vect() != nullptr) {
+      if (!bottom_type()->isa_pvectmask()) {
+        assert(ideal_reg() == Op_VecA, "Must be Op_VecA");
+        int vector_reg_size_in_bytes = Matcher::scalable_vector_reg_size(T_BYTE);
+        last_dst_offset += vector_reg_size_in_bytes - 8;
+      } else {
+        assert(ideal_reg() == Op_RegVectMask, "Must be Op_RegVectMask");
+        int vmask_size_in_bytes = Matcher::scalable_predicate_reg_slots() * 32 / 8;
+        last_dst_offset += vmask_size_in_bytes - 4;
+      }
     }
 
     if (masm != nullptr && !Assembler::is_simm12(last_dst_offset)) {
@@ -1574,9 +1578,9 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
     }
   }
 
-  if (bottom_type()->isa_vect() != nullptr) {
-    uint ireg = ideal_reg();
-    if (ireg == Op_VecA && masm) {
+  if (bottom_type()->isa_vect() != nullptr && masm != nullptr) {
+    if (!bottom_type()->isa_pvectmask()) {
+      assert(ideal_reg() == Op_VecA, "Must be Op_VecA");
       int vector_reg_size_in_bytes = Matcher::scalable_vector_reg_size(T_BYTE);
       if (src_lo_rc == rc_stack && dst_lo_rc == rc_stack) {
         // stack to stack
@@ -1595,7 +1599,8 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
       } else {
         ShouldNotReachHere();
       }
-    } else if (bottom_type()->isa_pvectmask() && masm) {
+    } else {
+      assert(ideal_reg() == Op_RegVectMask, "Must be Op_RegVectMask");
       int vmask_size_in_bytes = Matcher::scalable_predicate_reg_slots() * 32 / 8;
       if (src_lo_rc == rc_stack && dst_lo_rc == rc_stack) {
         // stack to stack
@@ -1698,14 +1703,11 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
       st->print("%s", Matcher::regName[dst_lo]);
     }
     if (bottom_type()->isa_vect() && !bottom_type()->isa_pvectmask()) {
-      int vsize = 0;
-      if (ideal_reg() == Op_VecA) {
-        vsize = Matcher::scalable_vector_reg_size(T_BYTE) * 8;
-      } else {
-        ShouldNotReachHere();
-      }
+      assert(ideal_reg() == Op_VecA, "Must be Op_VecA");
+      int vsize = Matcher::scalable_vector_reg_size(T_BYTE) * 8;
       st->print("\t# vector spill size = %d", vsize);
-    } else if (ideal_reg() == Op_RegVectMask) {
+    } else if (bottom_type()->isa_pvectmask()) {
+      assert(ideal_reg() == Op_RegVectMask, "Must be Op_RegVectMask");
       assert(Matcher::supports_scalable_vector(), "bad register type for spill");
       int vsize = Matcher::scalable_predicate_reg_slots() * 32;
       st->print("\t# vmask spill size = %d", vsize);

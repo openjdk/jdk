@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -597,7 +597,15 @@ void ClassPrintLayout::class_print_layout(outputStream* st, char* class_name) {
     return;
   }
 
-  Symbol* classname = SymbolTable::probe(class_name, (int)strlen(class_name));
+  ResourceMark rm;
+  char* normalized_name = ResourceArea::strdup(class_name);
+  for (char* p = normalized_name; *p != '\0'; p++) {
+    if (*p == JVM_SIGNATURE_DOT) {
+      *p = JVM_SIGNATURE_SLASH;
+    }
+  }
+
+  Symbol* classname = SymbolTable::probe(normalized_name, (int)strlen(normalized_name));
 
   GrowableArray<Klass*>* klasses = new (mtServiceability) GrowableArray<Klass*>(100, mtServiceability);
 
@@ -608,9 +616,9 @@ void ClassPrintLayout::class_print_layout(outputStream* st, char* class_name) {
     Klass* klass = klasses->at(i);
     if (!klass->is_instance_klass()) continue;  // Skip
     InstanceKlass* ik = InstanceKlass::cast(klass);
-    st->print_cr("Class %s [@%s]:", klass->name()->as_C_string(),
-        klass->class_loader_data()->loader_name());
     ResourceMark rm;
+    st->print_cr("Class %s [@%s]:", klass->external_name(),
+                 klass->class_loader_data()->loader_name());
     GrowableArray<FieldDesc>* fields = new (mtServiceability) GrowableArray<FieldDesc>(100, mtServiceability);
     for (AllFieldStream fd(ik); !fd.done(); fd.next()) {
       if (!fd.access_flags().is_static()) {
