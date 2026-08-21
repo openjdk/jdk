@@ -2444,18 +2444,6 @@ void MacroAssembler::test_field_is_flat(Register flags, Register temp_reg, Label
 void MacroAssembler::test_oop_prototype_bit(Register oop, Register temp_reg, int32_t test_bit, bool jmp_set, Label& jmp_label) {
   // load mark word
   movptr(temp_reg, Address(oop, oopDesc::mark_offset_in_bytes()));
-  if (!UseObjectMonitorTable) {
-    Label test_mark_word;
-    // check displaced
-    testl(temp_reg, markWord::unlocked_value);
-    jccb(Assembler::notZero, test_mark_word);
-    // slow path use klass prototype
-    push(rscratch1);
-    load_prototype_header(temp_reg, oop, rscratch1);
-    pop(rscratch1);
-
-    bind(test_mark_word);
-  }
   testl(temp_reg, test_bit);
   jcc((jmp_set) ? Assembler::notZero : Assembler::zero, jmp_label);
 }
@@ -4912,7 +4900,15 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
     ResourceMark rm;
     stringStream ss;
     ss.print("verify_oop: %s: %s (%s:%d)", reg->name(), s, file, line);
-    b = code_string(ss.as_string());
+#if INCLUDE_CDS
+    if (AOTCodeCache::is_on_for_dump() && !code_section()->scratch_emit()) {
+      // this will duplicate string to preserve it
+      b = AOTCodeCache::add_C_string(ss.as_string());
+    } else
+#endif
+    {
+      b = code_string(ss.as_string());
+    }
   }
   AddressLiteral buffer((address) b, external_word_Relocation::spec_for_immediate());
   pushptr(buffer.addr(), rscratch1);
@@ -5177,7 +5173,15 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
     ResourceMark rm;
     stringStream ss;
     ss.print("verify_oop_addr: %s (%s:%d)", s, file, line);
-    b = code_string(ss.as_string());
+#if INCLUDE_CDS
+    if (AOTCodeCache::is_on_for_dump() && !code_section()->scratch_emit()) {
+      // this will duplicate string to preserve it
+      b = AOTCodeCache::add_C_string(ss.as_string());
+    } else
+#endif
+    {
+      b = code_string(ss.as_string());
+    }
   }
   AddressLiteral buffer((address) b, external_word_Relocation::spec_for_immediate());
   pushptr(buffer.addr(), rscratch1);
@@ -10595,10 +10599,8 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register reg_r
   // instruction emitted as it is part of C1's null check semantics.
   movptr(reg_rax, Address(obj, oopDesc::mark_offset_in_bytes()));
 
-  if (UseObjectMonitorTable) {
-    // Clear cache in case fast locking succeeds or we need to take the slow-path.
-    movptr(Address(basic_lock, BasicObjectLock::lock_offset() + in_ByteSize((BasicLock::object_monitor_cache_offset_in_bytes()))), 0);
-  }
+  // Clear cache in case fast locking succeeds or we need to take the slow-path.
+  movptr(Address(basic_lock, BasicObjectLock::lock_offset() + in_ByteSize((BasicLock::object_monitor_cache_offset_in_bytes()))), 0);
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(tmp, obj, rscratch1);

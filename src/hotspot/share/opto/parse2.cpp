@@ -253,8 +253,14 @@ void Parse::array_store(BasicType bt) {
       // Array might be a flat array, emit runtime checks (for null, a simple inline_array_null_guard is sufficient).
       assert(UseArrayFlattening && !not_flat && elemtype->is_oopptr()->can_be_inline_type() &&
              (!array_type->klass_is_exact() || array_type->is_flat()), "array can't be a flat array");
-      // TODO 8350865 Depending on the available layouts, we can avoid this check in below flat/not-flat branches. Also the safe_for_replace arg is now always true.
-      array = inline_array_null_guard(array, stored_value_casted, 3, true);
+      // If by chance (or using layout disabling flags), only the nullable version is flattenable
+      // we could avoid this test in the else branch thereunder (the "Flat array" block) and do it
+      // only in the "Non-flat array" block.
+      // But it would be useful only if 1. the array is maybe-flat, 2. there is a nullable
+      // flat layout, 3. there is no null-free flat layout. Without flags, if a nullable
+      // array is flattenable, so would be the null-free version. So, this optimization would
+      // only apply with extra (experimental) flags which makes the optimization not worth.
+      array = inline_array_null_guard(array, stored_value_casted, 3);
       // Reload array type which could have been updated by inline_array_null_guard().
       array_type = _gvn.type(array)->is_aryptr();
       IdealKit ideal(this);
@@ -308,7 +314,7 @@ void Parse::array_store(BasicType bt) {
     } else if (!array_type->is_not_null_free()) {
       // Array is not flat but may be null free
       assert(elemtype->is_oopptr()->can_be_inline_type(), "array can't be null-free");
-      array = inline_array_null_guard(array, stored_value_casted, 3, true);
+      array = inline_array_null_guard(array, stored_value_casted, 3);
     }
   }
   inc_sp(3);
@@ -1783,7 +1789,7 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
 
   Node* counter = nullptr;
   Node* incr_store = nullptr;
-  bool do_stress_trap = StressUnstableIfTraps && ((C->random() % 2) == 0);
+  bool do_stress_trap = StressUnstableIfTraps && ((C->stress().random() % 2) == 0);
   if (do_stress_trap) {
     increment_trap_stress_counter(counter, incr_store);
   }
@@ -1887,7 +1893,7 @@ void Parse::do_if(BoolTest::mask btest, Node* c, bool can_trap, bool new_path, N
 
   Node* counter = nullptr;
   Node* incr_store = nullptr;
-  bool do_stress_trap = StressUnstableIfTraps && ((C->random() % 2) == 0);
+  bool do_stress_trap = StressUnstableIfTraps && ((C->stress().random() % 2) == 0);
   if (do_stress_trap) {
     increment_trap_stress_counter(counter, incr_store);
   }
@@ -2108,13 +2114,13 @@ void Parse::do_acmp(BoolTest::mask btest, Node* left, Node* right) {
   // Leverage profiling at acmp
   if (UseACmpProfile) {
     method()->acmp_profiled_type(bci(), left_type, right_type, left_ptr, right_ptr, left_inline_type, right_inline_type);
-    if (too_many_traps_or_recompiles(Deoptimization::Reason_class_check)) {
+    if (too_many_traps_or_recompiles(Deoptimization::Reason_class_check) || too_many_traps_or_recompiles(Deoptimization::Reason_speculate_class_check)) {
       left_type = nullptr;
       right_type = nullptr;
       left_inline_type = true;
       right_inline_type = true;
     }
-    if (too_many_traps_or_recompiles(Deoptimization::Reason_null_check)) {
+    if (too_many_traps_or_recompiles(Deoptimization::Reason_null_check) || too_many_traps_or_recompiles(Deoptimization::Reason_null_assert)) {
       left_ptr = ProfileUnknownNull;
       right_ptr = ProfileUnknownNull;
     }
@@ -2332,11 +2338,10 @@ void Parse::do_acmp(BoolTest::mask btest, Node* left, Node* right) {
     Node* offset_addr = off_heap_plus_addr(members, in_bytes(InlineKlass::fast_acmp_offset_offset()));
     Node* offset = make_load(control(), offset_addr, TypeInt::INT, T_INT, MemNode::unordered);
 
-    Node* offset_cmp = CmpI(offset, zerocon(T_INT));
-    Node* offset_bol = _gvn.transform(new BoolNode(offset_cmp, BoolTest::lt));
+    Node* offset_bol = BoolCmpI(offset, BoolTest::lt, zerocon(T_INT));
     mask_iff = create_and_map_if(control(), offset_bol, PROB_FAIR, COUNT_UNKNOWN);
-    Node* slow_path_ctl = _gvn.transform(new IfTrueNode(mask_iff));
-    Node* fast_path_ctl = _gvn.transform(new IfFalseNode(mask_iff));
+    Node* slow_path_ctl = IfTrue(mask_iff);
+    Node* fast_path_ctl = IfFalse(mask_iff);
     set_control(slow_path_ctl);
 
     {
@@ -2350,11 +2355,11 @@ void Parse::do_acmp(BoolTest::mask btest, Node* left, Node* right) {
       // *(left + offset) & mask == *(right + offset) & mask
       Node* left_payload_addr = basic_plus_adr(not_null_left, offset_l);
       Node* left_payload = make_load(control(), left_payload_addr, TypeLong::LONG, T_LONG, MemNode::unordered, LoadNNode::DependsOnlyOnTest, false, true, true, true);
-      Node* left_masked = _gvn.transform(new AndLNode(left_payload, fast_acmp_mask));
+      Node* left_masked = AndL(left_payload, fast_acmp_mask);
 
       Node* right_payload_addr = basic_plus_adr(not_null_right, offset_l);
       Node* right_payload = make_load(control(), right_payload_addr, TypeLong::LONG, T_LONG, MemNode::unordered, LoadNNode::DependsOnlyOnTest, false, true, true, true);
-      Node* right_masked = _gvn.transform(new AndLNode(right_payload, fast_acmp_mask));
+      Node* right_masked = AndL(right_payload, fast_acmp_mask);
 
       Node* masked_cmp = CmpL(left_masked, right_masked);
 
@@ -2555,7 +2560,7 @@ void Parse::stress_trap(IfNode* orig_iff, Node* counter, Node* incr_store) {
   assert(success, "Trap already modified");
 
   // Add a check before the original if that will trap with a certain frequency and execute the original if otherwise
-  int freq_log = (C->random() % 31) + 1; // Random logarithmic frequency in [1, 31]
+  int freq_log = (C->stress().random() % 31) + 1; // Random logarithmic frequency in [1, 31]
   Node* mask = intcon(right_n_bits(freq_log));
   counter = _gvn.transform(new AndINode(counter, mask));
   Node* cmp = _gvn.transform(new CmpINode(counter, intcon(0)));
@@ -2579,7 +2584,7 @@ void Parse::stress_trap(IfNode* orig_iff, Node* counter, Node* incr_store) {
 
 bool Parse::path_is_suitable_for_uncommon_trap(float prob) const {
   // Randomly skip emitting an uncommon trap
-  if (StressUnstableIfTraps && ((C->random() % 2) == 0)) {
+  if (StressUnstableIfTraps && ((C->stress().random() % 2) == 0)) {
     return false;
   }
   // Don't want to speculate on uncommon traps when running with -Xcomp

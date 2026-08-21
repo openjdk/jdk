@@ -307,10 +307,12 @@ public class TestLayouts {
         }
     }
 
-    @Test(dataProvider="layoutsAndAlignments", expectedExceptions = IllegalArgumentException.class)
+    @Test(dataProvider="layoutsAndAlignments")
     public void testBadSequenceElementAlignmentTooBig(MemoryLayout layout, long byteAlign) {
-        layout = layout.withByteAlignment(layout.byteSize() * 2); // hyper-align
-        MemoryLayout.sequenceLayout(1, layout);
+        MemoryLayout elementLayout = layout.withByteAlignment(nextPowerOfTwo(layout.byteSize() * 2)); // hyper-align
+        IllegalArgumentException iae = expectThrows(IllegalArgumentException.class,
+                () -> MemoryLayout.sequenceLayout(1, elementLayout));
+        assertEquals(iae.getMessage(), "Element layout size is not multiple of alignment");
     }
 
     @Test(dataProvider="layoutsAndAlignments")
@@ -348,15 +350,16 @@ public class TestLayouts {
         }
     }
 
-    @Test(dataProvider="layoutsAndAlignments", expectedExceptions = IllegalArgumentException.class)
+    @Test(dataProvider="layoutsAndAlignments")
     public void testBadStruct(MemoryLayout layout, long byteAlign) {
-        layout = layout.withByteAlignment(layout.byteSize() * 2); // hyper-align
-        MemoryLayout.structLayout(layout, layout);
+        MemoryLayout elementLayout = layout.withByteAlignment(nextPowerOfTwo(layout.byteSize() * 2)); // hyper-align
+        IllegalArgumentException iae = expectThrows(IllegalArgumentException.class,
+                () -> MemoryLayout.structLayout(elementLayout, elementLayout));
+        assertTrue(iae.getMessage().contains("Invalid alignment constraint for member layout"));
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testSequenceElement() {
-        SequenceLayout layout = MemoryLayout.sequenceLayout(10, JAVA_INT);
         // Step must be != 0
         PathElement.sequenceElement(3, 0);
     }
@@ -543,4 +546,8 @@ public class TestLayouts {
             ValueLayout.JAVA_LONG,
             ValueLayout.JAVA_DOUBLE,
     };
+
+    private static long nextPowerOfTwo(long input) {
+        return 1L << -Long.numberOfLeadingZeros(input - 1);
+    }
 }

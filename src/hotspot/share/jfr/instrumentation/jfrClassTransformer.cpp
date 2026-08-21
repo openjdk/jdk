@@ -26,6 +26,7 @@
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "jfr/instrumentation/jfrClassTransformer.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"

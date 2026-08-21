@@ -104,8 +104,8 @@ bool JfrKlassUnloading::on_unload(const Klass* k) {
   if (IS_JDK_JFR_EVENT_SUBKLASS(k)) {
     ++event_klass_unloaded_count;
   }
-  add_to_unloaded_set(k);
-  return USED_THIS_EPOCH(k);
+  add_to_unloaded_set(JfrTraceId::load_raw(k));
+  return USED_THIS_EPOCH(k) || USED_PREVIOUS_EPOCH(k);
 }
 
 static inline bool is_unloaded(const JfrCHeapTraceIdSet* set, const traceid& id) {
