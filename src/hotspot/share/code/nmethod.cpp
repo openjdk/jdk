@@ -3892,7 +3892,8 @@ const char* nmethod::reloc_string_for(u_char* begin, u_char* end) {
         case relocInfo::patchable_barrier_type: {
           patchable_barrier_Relocation* const reloc = iter.patchable_barrier_reloc();
           stringStream st;
-          st.print("patchable_barrier metadata=%x target_offset=%x", reloc->metadata(), reloc->target_offset());
+          st.print("patchable_barrier metadata=0x%x target=" PTR_FORMAT,
+                   reloc->metadata(), (intptr_t)code_begin() + reloc->target_offset());
           return st.as_string();
         }
 
