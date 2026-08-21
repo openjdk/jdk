@@ -44,7 +44,6 @@ import java.util.List;
 import javax.swing.event.EventListenerList;
 
 import sun.awt.shell.ShellFolder;
-import sun.swing.SwingUtilities2;
 
 /**
  * Concrete implementation of the interface {@code DesktopPeer} for
@@ -106,7 +105,7 @@ final class WDesktopPeer implements DesktopPeer {
 
     @Override
     public void browse(URI uri) throws IOException {
-        if (SwingUtilities2.isBrowseInsecureAllowed(uri)) {
+        if (isBrowseInsecureAllowed(uri)) {
             this.ShellExecute(uri, ACTION_OPEN_VERB);
         } else {
             // Fall back to opening the URI in browser

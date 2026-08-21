@@ -39,8 +39,6 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import sun.swing.SwingUtilities2;
-
 /**
  * Concrete implementation of the interface {@code DesktopPeer} for MacOS X
  *
@@ -81,7 +79,7 @@ public final class CDesktopPeer implements DesktopPeer {
 
     @Override
     public void browse(URI uri) throws IOException {
-         this.lsOpen(uri, SwingUtilities2.isBrowseInsecureAllowed(uri) ? OPEN : BROWSE);
+         this.lsOpen(uri, isBrowseInsecureAllowed(uri) ? OPEN : BROWSE);
     }
 
     @Override

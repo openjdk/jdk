@@ -38,6 +38,7 @@ import java.awt.desktop.SystemEventListener;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.util.Arrays;
 
 import javax.swing.JMenuBar;
 
@@ -281,4 +282,25 @@ public interface DesktopPeer {
         return false;
     }
 
+    /**
+     * Returns whether or not Desktop.browse() will open URI in browser or
+     * in associated allowed app
+     *
+     * @param uri URI to be browsed
+     * @return whether or not associated app will be opened
+     */
+    default boolean isBrowseInsecureAllowed(URI uri) {
+        String allowList = System.getProperty("awt.desktop.browse_insecure");
+        String scheme = uri.getScheme();
+
+        // For http,https scheme URL should always open in browser
+        // For other schemes, it will depend on whether scheme is in allowList
+
+        return scheme != null && !(scheme.equals("http") || scheme.equals("https"))
+               && allowList != null
+               && (allowList.equals("*")
+                   || Arrays.stream(allowList.split(","))
+                            .map(String::trim)
+                            .anyMatch(allowed -> allowed.equalsIgnoreCase(scheme)));
+    }
 }
