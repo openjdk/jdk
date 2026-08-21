@@ -27,10 +27,10 @@
  * @summary Check that the JVM is able to dump the heap even when there are ReduceAllocationMerge in the scope.
  * @library /test/lib /
  * @requires vm.flavor == "server"
- * @run main/othervm compiler.c2.TestReduceAllocationAndHeapDump
+ * @run main/othervm compiler.escapeAnalysis.TestReduceAllocationAndHeapDump
  */
 
-package compiler.c2;
+package compiler.escapeAnalysis;
 
 import java.io.File;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -49,8 +49,8 @@ public class TestReduceAllocationAndHeapDump {
                 "-XX:CompileThresholdScaling=0.01",
                 "-XX:+HeapDumpAfterFullGC",
                 "-XX:HeapDumpPath=" + dumpDirectory.getAbsolutePath(),
-                "-XX:CompileCommand=compileonly,compiler.c2.HeapDumper::testIt",
-                "-XX:CompileCommand=exclude,compiler.c2.HeapDumper::dummy",
+                "-XX:CompileCommand=compileonly,compiler.escapeAnalysis.HeapDumper::testIt",
+                "-XX:CompileCommand=exclude,compiler.escapeAnalysis.HeapDumper::dummy",
                 HeapDumper.class.getName()
             };
 
