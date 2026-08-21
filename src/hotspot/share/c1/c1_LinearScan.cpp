@@ -1390,8 +1390,6 @@ void LinearScan::build_intervals() {
         add_use(opr, block_from, op_id, use_kind_of_input_operand(op, opr));
       }
 
-      // BEGIN OF PROTOTYPE SOLUTION
-
       // If the currently visited operation 'op' may branch into an exception
       // handler block 'handler', add all live-in registers of 'handler' as
       // virtual uses of 'op'. This ensures that all such registers are live
@@ -1415,37 +1413,24 @@ void LinearScan::build_intervals() {
       // |  handler:
       // |    live-in:  {.., R, ..}
       // |    ..
-      assert(op_id != -1, "expect regular operation");
-      if (has_info(op_id)) {
+      if (op_id != -1 && has_info(op_id)) {
         XHandlers* xhandlers = visitor.all_xhandler();
         for (int k = 0; k < xhandlers->length(); k++) {
           BlockBegin* handler = xhandlers->handler_at(k)->entry_block();
-          ResourceBitMap& live_in = handler->live_in();
-          TRACE_LINEAR_SCAN(
-                            4, tty->print("  op %d branches to exception handler entry B%d. "
-                                          "live-in(B%d) = ",
-                                          op_id, handler->block_id(), handler->block_id());
-                            print_bitmap(live_in);
-                            );
-          // TBD: iterate using live_in.iterate, see code at the beginning of LinearScan::build_intervals
-          for (unsigned int reg = 0; reg < live_in.size(); reg++) {
-            if (live_in.at(reg)) {
-              // The T_ILLEGAL type is used by add_use as a sentinel value
-              // indicating the type is unknown (rather than illegal) so that
-              // the type of the interval corresponding to reg is not updated.
-              // The use is extended beyond op (to = op_id + 1) so that liveness
-              // is preserved across possible registers killed by op (e.g.
-              // caller-saved registers if op is a call).
-              TRACE_LINEAR_SCAN(2, tty->print_cr(" use [R%d|?] from %d to %d (%d)", reg, block_from, op_id + 1, noUse));
-              // TBD: review 'noUse': should it be a "should" or a "must"
-              // register? Or is it correct to use 'noUse' since the register is
-              // not physically read by op?
-              add_use(reg, block_from, op_id + 1, noUse, T_ILLEGAL);
-            }
-          }
+          auto add_virtual_use = [&](BitMap::idx_t index) {
+            int reg = static_cast<int>(index);
+            // The T_ILLEGAL type is used by add_use as a sentinel value
+            // indicating the type is unknown (rather than illegal) so that the
+            // type of the interval corresponding to reg is not updated. The use
+            // is extended beyond op (to = op_id + 1) so that liveness is
+            // preserved across possible registers killed by op (e.g.
+            // caller-saved registers if op is a call).
+            TRACE_LINEAR_SCAN(2, tty->print_cr(" use [R%d] from %d to %d (%d)", reg, block_from, op_id + 1, noUse));
+            add_use(reg, block_from, op_id + 1, noUse, T_ILLEGAL);
+          };
+          handler->live_in().iterate(add_virtual_use);
         }
       }
-      // END OF PROTOTYPE SOLUTION
 
       // Add uses of live locals from interpreter's point of view for proper
       // debug information generation
