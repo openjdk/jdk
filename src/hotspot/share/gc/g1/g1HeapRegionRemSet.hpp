@@ -46,8 +46,6 @@ class G1HeapRegionRemSet : public CHeapObj<mtGC> {
   // The collection set groups to which the region owning this RSet is assigned.
   G1CSetCandidateGroup* _cset_group;
 
-  G1HeapRegion* _hr;
-
   // Cached value of heap base address.
   static HeapWord* _heap_base_address;
 
@@ -62,7 +60,7 @@ class G1HeapRegionRemSet : public CHeapObj<mtGC> {
   }
 
 public:
-  G1HeapRegionRemSet(G1HeapRegion* hr);
+  G1HeapRegionRemSet();
   ~G1HeapRegionRemSet();
 
   bool cardset_is_empty() const {

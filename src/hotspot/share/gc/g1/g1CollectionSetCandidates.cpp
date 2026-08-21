@@ -69,7 +69,7 @@ double G1CSetCandidateGroup::liveness_percent() const {
 }
 
 void G1CSetCandidateGroup::clear(bool uninstall_group_cardset) {
-  clear_card_set();
+  clear_cardset();
   if (uninstall_group_cardset) {
     for (G1CollectionSetCandidateInfo ci : _candidates) {
       G1HeapRegion* r = ci._r;
@@ -83,7 +83,7 @@ void G1CSetCandidateGroup::clear(bool uninstall_group_cardset) {
   }
 }
 
-void G1CSetCandidateGroup::clear_card_set() {
+void G1CSetCandidateGroup::clear_cardset() {
   _card_set.clear();
 }
 

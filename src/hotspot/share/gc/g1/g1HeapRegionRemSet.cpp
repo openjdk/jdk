@@ -55,10 +55,9 @@ void G1HeapRegionRemSet::uninstall_cset_group() {
   _cset_group = nullptr;
 }
 
-G1HeapRegionRemSet::G1HeapRegionRemSet(G1HeapRegion* hr) :
+G1HeapRegionRemSet::G1HeapRegionRemSet() :
   _code_roots(),
   _cset_group(nullptr),
-  _hr(hr),
   _state(Untracked) { }
 
 G1HeapRegionRemSet::~G1HeapRegionRemSet() {

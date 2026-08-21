@@ -52,7 +52,7 @@ public:
     _num_cardsets = 0;
   }
 
-  // Returns true if cardset_fcc_id has already been encountered while
+  // Returns true if cardset_id has already been encountered while
   // scanning source_card. Otherwise, records the id and returns false.
   inline bool contains_or_add(uintptr_t source_card, uint cardset_id);
 };

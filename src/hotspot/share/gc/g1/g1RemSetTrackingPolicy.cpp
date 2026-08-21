@@ -107,7 +107,7 @@ void G1RemSetTrackingPolicy::update_after_rebuild(G1HeapRegion* r) {
       assert(group != nullptr, "humongous start must have group");
       assert(group->length() == 1, "humongous group must have only one region");
 
-      group->clear_card_set();
+      group->clear_cardset();
       g1h->humongous_obj_regions_iterate(r,
                                          [&] (G1HeapRegion* r) {
                                            assert(!r->is_continues_humongous() || r->rem_set()->is_empty(),
