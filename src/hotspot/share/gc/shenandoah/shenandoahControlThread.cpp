@@ -49,14 +49,14 @@ ShenandoahControlThread::ShenandoahControlThread() :
 
 void ShenandoahControlThread::run_service() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  const GCMode default_mode = concurrent_normal;
-  const GCCause::Cause default_cause = GCCause::_shenandoah_concurrent_gc;
-  int sleep = ShenandoahControlIntervalMin;
+  constexpr GCMode default_mode = concurrent_normal;
+  constexpr GCCause::Cause default_cause = GCCause::_shenandoah_concurrent_gc;
 
+  int sleep = ShenandoahControlIntervalMin;
   double last_sleep_adjust_time = os::elapsedTime();
+  double most_recent_wake_time = last_sleep_adjust_time;
 
   ShenandoahHeuristics* const heuristics = heap->heuristics();
-  double most_recent_wake_time = os::elapsedTime();
   while (!should_terminate()) {
     const GCCause::Cause cancelled_cause = heap->cancelled_cause();
     if (cancelled_cause == GCCause::_shenandoah_stop_vm) {
@@ -65,18 +65,21 @@ void ShenandoahControlThread::run_service() {
     assert(cancelled_cause == GCCause::_no_gc, "Cannot be cancelled for: %s", GCCause::to_string(cancelled_cause));
 
     // Figure out if we have pending requests.
-    const bool is_gc_requested = _gc_requested.try_unset();
-    const GCCause::Cause requested_gc_cause = _requested_gc_cause;
+    GCCause::Cause cause;
+    {
+      MonitorLocker controller(&_control_lock, Mutex::_no_safepoint_check_flag);
+      cause = _requested_gc_cause;
+      _requested_gc_cause = GCCause::_no_gc;
+    }
 
     // Choose which GC mode to run in. The block below should select a single mode.
     GCMode mode = none;
-    GCCause::Cause cause = GCCause::_last_gc_cause;
-
-    if (is_gc_requested) {
-      cause = requested_gc_cause;
+    bool clear_soft_references = ShenandoahAlwaysClearSoftRefs;
+    if (cause != GCCause::_no_gc) {
+      // A cycle was requested, clear soft references
       heuristics->log_trigger("GC request (%s)", GCCause::to_string(cause));
       heuristics->record_requested_gc();
-
+      clear_soft_references = true;
       if (ShenandoahCollectorPolicy::should_run_full_gc(cause)) {
         mode = stw_full;
       } else {
@@ -84,27 +87,19 @@ void ShenandoahControlThread::run_service() {
         // Unload and clean up everything
         heap->set_unload_classes(heuristics->can_unload_classes());
       }
-    } else {
-      // Potential normal cycle: ask heuristics if it wants to act
-      if (heuristics->should_start_gc()) {
-        mode = default_mode;
-        cause = default_cause;
-      }
-
+    } else if (heuristics->should_start_gc()) {
+      // Nobody requested a cycle, but heuristics want to run one
+      mode = default_mode;
+      cause = default_cause;
       // Ask policy if this cycle wants to process references or unload classes
       heap->set_unload_classes(heuristics->should_unload_classes());
     }
 
-    // Blow all soft references on this cycle, if handling allocation failure,
-    // either implicit or explicit GC request,  or we are requested to do so unconditionally.
-    if (is_gc_requested || ShenandoahAlwaysClearSoftRefs) {
-      heap->global_generation()->ref_processor()->set_soft_reference_policy(true);
-    }
+    if (mode != none) {
+      assert(cause != GCCause::_no_gc, "GC cause should be set");
 
-    const bool gc_requested = (mode != none);
-    assert (!gc_requested || cause != GCCause::_last_gc_cause, "GC cause should be set");
+      heap->global_generation()->ref_processor()->set_soft_reference_policy(clear_soft_references);
 
-    if (gc_requested) {
       // Cannot uncommit bitmap slices during concurrent reset
       ShenandoahNoUncommitMark forbid_region_uncommit(heap);
 
@@ -183,7 +178,7 @@ void ShenandoahControlThread::run_service() {
     if (ShenandoahUncommit) {
       if (heap->check_soft_max_changed()) {
         heap->notify_soft_max_changed();
-      } else if (is_gc_requested) {
+      } else if (ShenandoahCollectorPolicy::is_explicit_gc(cause)) {
         heap->notify_explicit_gc_requested();
       }
     }
@@ -202,11 +197,11 @@ void ShenandoahControlThread::run_service() {
     ml.wait(sleep);
     most_recent_wake_time = os::elapsedTime();
     // Record a conservative estimate of the longest anticipated sleep duration until we sample again.
-    double planned_sleep_interval = MIN2<int>(ShenandoahControlIntervalMax, MAX2(1, sleep * 2)) / 1000.0;
+    const double planned_sleep_interval = MIN2<int>(ShenandoahControlIntervalMax, MAX2(1, sleep * 2)) / 1000.0;
     heuristics->update_should_start_query_times(most_recent_wake_time, planned_sleep_interval);
     if (LogTarget(Debug, gc, thread)::is_enabled()) {
-      double elapsed = most_recent_wake_time - before_sleep_time;
-      double hiccup = elapsed - double(sleep) / 1000.0;
+      const double elapsed = most_recent_wake_time - before_sleep_time;
+      const double hiccup = elapsed - static_cast<double>(sleep) / 1000.0;
       if (hiccup > 0.001) {
         log_debug(gc, thread)("Control Thread hiccup time: %.3fs", hiccup);
       }
@@ -301,7 +296,6 @@ void ShenandoahControlThread::notify_control_thread(GCCause::Cause cause) {
   } else {
     _requested_gc_cause = cause;
   }
-  _gc_requested.set();
   controller.notify();
 }
 

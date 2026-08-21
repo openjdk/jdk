@@ -40,22 +40,22 @@ private:
     stw_full
   } GCMode;
 
-  ShenandoahSharedFlag _gc_requested;
-  GCCause::Cause       _requested_gc_cause;
+  GCCause::Cause _requested_gc_cause;
 
-  // This lock is used to coordinate waking up the control thread
+  // This lock is used to coordinate waking up the control thread and
+  // protecting _requested_gc_cause.
   Monitor _control_lock;
 
-public:
-  ShenandoahControlThread();
-
+protected:
   void run_service() override;
   void stop_service() override;
 
+public:
+  ShenandoahControlThread();
   void request_gc(GCCause::Cause cause) override;
 
 private:
-  // Sets the requested cause and flag and notifies the control thread
+  // Sets the requested cause and notifies the control thread
   void notify_control_thread(GCCause::Cause cause);
 
   bool check_cancellation();
