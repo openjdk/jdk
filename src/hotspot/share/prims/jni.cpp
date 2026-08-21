@@ -203,14 +203,14 @@ bool jfieldIDWorkaround::is_valid_jfieldID(Klass* k, jfieldID id) {
 }
 
 
-intptr_t jfieldIDWorkaround::encode_klass_hash(Klass* k, int offset) {
+intptr_t jfieldIDWorkaround::encode_klass_hash(InstanceKlass* k, int offset) {
   if (offset <= small_offset_mask) {
-    Klass* field_klass = k;
-    Klass* super_klass = field_klass->super();
+    InstanceKlass* field_klass = k;
+    InstanceKlass* super_klass = field_klass->super();
     // With compressed oops the most super class with nonstatic fields would
     // be the owner of fields embedded in the header.
-    while (InstanceKlass::cast(super_klass)->has_nonstatic_fields() &&
-           InstanceKlass::cast(super_klass)->contains_field_offset(offset)) {
+    while (super_klass->has_nonstatic_fields() &&
+           super_klass->contains_field_offset(offset)) {
       field_klass = super_klass;   // super contains the field also
       super_klass = field_klass->super();
     }
@@ -397,7 +397,7 @@ JNI_ENTRY(jfieldID, jni_FromReflectedField(JNIEnv *env, jobject field))
   // field is a handle to a java.lang.reflect.Field object
   oop reflected   = JNIHandles::resolve_non_null(field);
   oop mirror      = java_lang_reflect_Field::clazz(reflected);
-  Klass* k1       = java_lang_Class::as_Klass(mirror);
+  InstanceKlass* k1 = java_lang_Class::as_InstanceKlass(mirror);
   int slot        = java_lang_reflect_Field::slot(reflected);
   int modifiers   = java_lang_reflect_Field::modifiers(reflected);
 
@@ -406,8 +406,8 @@ JNI_ENTRY(jfieldID, jni_FromReflectedField(JNIEnv *env, jobject field))
 
   // First check if this is a static field
   if (modifiers & JVM_ACC_STATIC) {
-    int offset = InstanceKlass::cast(k1)->field_offset( slot );
-    JNIid* id = InstanceKlass::cast(k1)->jni_id_for(offset);
+    int offset = k1->field_offset( slot );
+    JNIid* id = k1->jni_id_for(offset);
     assert(id != nullptr, "corrupt Field object");
     DEBUG_ONLY(id->set_is_static_field_id();)
     // A jfieldID for a static field is a JNIid specifying the field holder and the offset within the Klass*
@@ -418,9 +418,9 @@ JNI_ENTRY(jfieldID, jni_FromReflectedField(JNIEnv *env, jobject field))
   // The slot is the index of the field description in the field-array
   // The jfieldID is the offset of the field within the object
   // It may also have hash bits for k, if VerifyJNIFields is turned on.
-  int offset = InstanceKlass::cast(k1)->field_offset( slot );
-  bool is_flat = InstanceKlass::cast(k1)->field_is_flat(slot);
-  assert(InstanceKlass::cast(k1)->contains_field_offset(offset), "stay within object");
+  int offset = k1->field_offset( slot );
+  bool is_flat = k1->field_is_flat(slot);
+  assert(k1->contains_field_offset(offset), "stay within object");
   ret = jfieldIDWorkaround::to_instance_jfieldID(k1, offset, is_flat);
   return ret;
 JNI_END
@@ -1762,16 +1762,22 @@ JNI_ENTRY(jfieldID, jni_GetFieldID(JNIEnv *env, jclass clazz,
   // Make sure class is initialized before handing id's out to fields
   k->initialize(CHECK_NULL);
 
+  if (!k->is_instance_klass()) {
+    ResourceMark rm;
+    THROW_MSG_NULL(vmSymbols::java_lang_NoSuchFieldError(), err_msg("%s.%s %s", k->external_name(), name, sig));
+  }
+
+  InstanceKlass* ik = InstanceKlass::cast(k);
+
   fieldDescriptor fd;
-  if (!k->is_instance_klass() ||
-      !InstanceKlass::cast(k)->find_field(fieldname, signame, false, &fd)) {
+  if (!ik->find_field(fieldname, signame, false, &fd)) {
     ResourceMark rm;
     THROW_MSG_NULL(vmSymbols::java_lang_NoSuchFieldError(), err_msg("%s.%s %s", k->external_name(), name, sig));
   }
 
   // A jfieldID for a non-static field is simply the offset of the field within the instanceOop
   // It may also have hash bits for k, if VerifyJNIFields is turned on.
-  ret = jfieldIDWorkaround::to_instance_jfieldID(k, fd.offset(), fd.is_flat());
+  ret = jfieldIDWorkaround::to_instance_jfieldID(ik, fd.offset(), fd.is_flat());
   return ret;
 JNI_END
 
