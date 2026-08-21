@@ -25,6 +25,7 @@
  * @test
  * @bug 8390550
  * @key stress
+ * @requires vm.compiler2.enabled
  * @summary Test scalarized calls and entry points around calling convention limits.
  * @library /test/lib /
  * @run driver ${test.main.class}
