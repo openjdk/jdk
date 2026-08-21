@@ -50,11 +50,9 @@ protected:
   ShenandoahMark(ShenandoahGeneration* generation);
 
 public:
-  template<class T, ShenandoahGenerationType GENERATION>
+  template<class T, ShenandoahGenerationType GENERATION, bool REDIRTY = false>
   ALWAYSINLINE
   static void mark_through_ref(T* p, ShenandoahObjToScanQueue* q, ShenandoahObjToScanQueue* old_q, ShenandoahMarkingContext* const mark_context, bool weak);
-  ALWAYSINLINE
-  static void mark_ref(ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context, bool weak, oop obj);
 
   // Loom support
   void start_mark();
@@ -97,6 +95,9 @@ private:
   template <class T>
   ALWAYSINLINE
   static void mark_non_generational_ref(T *p, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context, bool weak);
+
+  ALWAYSINLINE
+  static void mark_ref(ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context, bool weak, oop obj);
 
   ALWAYSINLINE
   static void dedup_string(oop obj, StringDedup::Requests* const req);

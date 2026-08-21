@@ -76,35 +76,10 @@ ShenandoahMarkRefsSuperClosure::ShenandoahMarkRefsSuperClosure(ShenandoahObjToSc
         _mark_context(ShenandoahHeap::heap()->marking_context()),
         _weak(false) {}
 
-template<class T, ShenandoahGenerationType GENERATION>
+template<class T, ShenandoahGenerationType GENERATION, bool REDIRTY>
 ALWAYSINLINE
 void ShenandoahMarkRefsSuperClosure::work(T* p) {
-  ShenandoahMark::mark_through_ref<T, GENERATION>(p, _queue, _old_queue, _mark_context, _weak);
-}
-
-template<class T>
-void ShenandoahRedirtyCardsMarkClosure::do_oop_work(T* p) {
-  T o = RawAccess<>::oop_load(p);
-  if (CompressedOops::is_null(o)) {
-    return;
-  }
-
-  oop obj = CompressedOops::decode_not_null(o);
-  shenandoah_assert_not_forwarded(p, obj);
-  shenandoah_assert_not_in_cset_except(p, obj, ShenandoahGenerationalHeap::heap()->cancelled_gc());
-
-  if (_heap->has_affiliation(obj, YOUNG_GENERATION)) {
-    ShenandoahMark::mark_ref(_queue, _mark_context, _weak, obj);
-    shenandoah_assert_marked(p, obj);
-    if (_heap->has_affiliation(p, OLD_GENERATION)) {
-      // Even though we are walking the remembered set, the object iterator
-      // may visit class metadata that lives outside the heap so we cannot
-      // assume (or assert) that `p` is in old.
-      _heap->old_generation()->mark_card_as_dirty((HeapWord*)p);
-    }
-  } else if (_old_queue != nullptr) {
-    ShenandoahMark::mark_ref(_old_queue, _mark_context, _weak, obj);
-  }
+  ShenandoahMark::mark_through_ref<T, GENERATION, REDIRTY>(p, _queue, _old_queue, _mark_context, _weak);
 }
 
 ShenandoahForwardedIsAliveClosure::ShenandoahForwardedIsAliveClosure() :

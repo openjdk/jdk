@@ -329,48 +329,55 @@ bool ShenandoahMark::in_generation(ShenandoahHeap* const heap, oop obj) {
   return true;
 }
 
-template<class T, ShenandoahGenerationType GENERATION>
+template<class T, ShenandoahGenerationType GENERATION, bool REDIRTY>
 void ShenandoahMark::mark_through_ref(T *p, ShenandoahObjToScanQueue* q, ShenandoahObjToScanQueue* old_q, ShenandoahMarkingContext* const mark_context, bool weak) {
+  static_assert(GENERATION != NON_GEN, "Should use the non-generational specialization");
+
   // Note: This is a very hot code path, so the code should be conditional on GENERATION template
   // parameter where possible, in order to generate the most efficient code.
-
   T o = RawAccess<>::oop_load(p);
-  if (!CompressedOops::is_null(o)) {
-    oop obj = CompressedOops::decode_not_null(o);
+  if (CompressedOops::is_null(o)) {
+    return;
+  }
 
-    ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
-    shenandoah_assert_not_forwarded(p, obj);
-    shenandoah_assert_not_in_cset_except(p, obj, heap->cancelled_gc());
-    if (in_generation<GENERATION>(heap, obj)) {
-      mark_ref(q, mark_context, weak, obj);
-      shenandoah_assert_marked(p, obj);
-      if (GENERATION == GLOBAL && heap->has_affiliation(p, OLD_GENERATION) && heap->has_affiliation(obj, YOUNG_GENERATION)) {
-        // Mark card as dirty because GLOBAL marking finds interesting pointer.
-        heap->old_generation()->mark_card_as_dirty(p);
-      }
-    } else if (old_q != nullptr) {
-      // Young mark, bootstrapping old_q or concurrent with old_q marking.
-      mark_ref(old_q, mark_context, weak, obj);
-      shenandoah_assert_marked(p, obj);
-    } else if (GENERATION == OLD) {
-      // Old mark, found a young pointer.
-      if (heap->is_in_reserved(p)) {
-        assert(heap->has_affiliation(obj, YOUNG_GENERATION), "Expected young object.");
-        heap->old_generation()->mark_card_as_dirty(p);
-      }
+  ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
+  oop obj = CompressedOops::decode_not_null(o);
+  shenandoah_assert_not_forwarded(p, obj);
+  shenandoah_assert_not_in_cset_except(p, obj, heap->cancelled_gc());
+  if (in_generation<GENERATION>(heap, obj)) {
+    mark_ref(q, mark_context, weak, obj);
+    shenandoah_assert_marked(p, obj);
+    if (REDIRTY && heap->has_affiliation(p, OLD_GENERATION)) {
+      // We are redirtying the remembered set, the object iterator
+      // may visit class metadata that lives outside the heap so we cannot
+      // assume (or assert) that `p` is in old.
+      heap->old_generation()->mark_card_as_dirty(p);
+    } else if (GENERATION == GLOBAL && heap->has_affiliation(p, OLD_GENERATION) && heap->has_affiliation(obj, YOUNG_GENERATION)) {
+      // Mark card as dirty because GLOBAL marking finds interesting pointer.
+      heap->old_generation()->mark_card_as_dirty(p);
+    }
+  } else if (old_q != nullptr) {
+    // Young mark, bootstrapping old_q or concurrent with old_q marking.
+    mark_ref(old_q, mark_context, weak, obj);
+    shenandoah_assert_marked(p, obj);
+  } else if (GENERATION == OLD) {
+    // Old mark, found a young pointer.
+    if (heap->is_in_reserved(p)) {
+      assert(heap->has_affiliation(obj, YOUNG_GENERATION), "Expected young object.");
+      heap->old_generation()->mark_card_as_dirty(p);
     }
   }
 }
 
 template<>
 ALWAYSINLINE
-void ShenandoahMark::mark_through_ref<oop, ShenandoahGenerationType::NON_GEN>(oop *p, ShenandoahObjToScanQueue* q, ShenandoahObjToScanQueue* old_q, ShenandoahMarkingContext* const mark_context, bool weak) {
+void ShenandoahMark::mark_through_ref<oop, NON_GEN, false>(oop *p, ShenandoahObjToScanQueue* q, ShenandoahObjToScanQueue* old_q, ShenandoahMarkingContext* const mark_context, bool weak) {
   mark_non_generational_ref(p, q, mark_context, weak);
 }
 
 template<>
 ALWAYSINLINE
-void ShenandoahMark::mark_through_ref<narrowOop, ShenandoahGenerationType::NON_GEN>(narrowOop *p, ShenandoahObjToScanQueue* q, ShenandoahObjToScanQueue* old_q, ShenandoahMarkingContext* const mark_context, bool weak) {
+void ShenandoahMark::mark_through_ref<narrowOop, NON_GEN, false>(narrowOop *p, ShenandoahObjToScanQueue* q, ShenandoahObjToScanQueue* old_q, ShenandoahMarkingContext* const mark_context, bool weak) {
   mark_non_generational_ref(p, q, mark_context, weak);
 }
 

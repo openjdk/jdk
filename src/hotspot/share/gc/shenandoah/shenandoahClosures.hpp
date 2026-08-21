@@ -64,13 +64,14 @@ public:
 };
 
 class ShenandoahMarkRefsSuperClosure : public ShenandoahSuperClosure {
-protected:
+private:
   ShenandoahObjToScanQueue* _queue;
   ShenandoahObjToScanQueue* _old_queue;
   ShenandoahMarkingContext* const _mark_context;
   bool _weak;
 
-  template <class T, ShenandoahGenerationType GENERATION>
+protected:
+  template <class T, ShenandoahGenerationType GENERATION, bool REDIRTY=false>
   void work(T *p);
 
 public:
@@ -108,14 +109,15 @@ public:
   void do_oop(oop* p) override { do_oop_work(p); }
 };
 
-class ShenandoahRedirtyCardsMarkClosure : public ShenandoahMarkRefsClosure<YOUNG> {
+class ShenandoahRedirtyCardsMarkClosure : public ShenandoahMarkRefsSuperClosure {
+private:
   template <class T>
   ALWAYSINLINE
-  void do_oop_work(T* p);
+  void do_oop_work(T* p) { work<T, YOUNG, true>(p); }
 
 public:
   ShenandoahRedirtyCardsMarkClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp, ShenandoahObjToScanQueue* old_q)
-    : ShenandoahMarkRefsClosure(q, rp, old_q) {}
+    : ShenandoahMarkRefsSuperClosure(q, rp, old_q) {}
 
   ALWAYSINLINE
   void do_oop(narrowOop* p) override { do_oop_work(p); }
