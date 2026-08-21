@@ -370,7 +370,6 @@ ClassPathZipEntry::~ClassPathZipEntry() {
 }
 
 bool ClassPathZipEntry::has_entry(JavaThread* current, const char* name, Handle class_loader, bool is_multi_release_jar) {
-  assert(SystemDictionaryShared::is_builtin_loader(ClassLoaderData::class_loader_data(class_loader())), "must be");
   // check whether zip archive contains name
   jint name_len;
   jint filesize;
@@ -384,11 +383,13 @@ bool ClassPathZipEntry::has_entry(JavaThread* current, const char* name, Handle 
     }
   }
 
+#if INCLUDE_CDS
   // Make an upcall to ClassLoader.getResource() if "name" is in a multi-release JAR
   // and was not found in the root of the JAR file. This will always be a built-in class
   // loader but CDS.getResource() will ensure the resource is retrieved from the correct
   // JAR file anyway.
   if (class_loader != nullptr && is_multi_release_jar) {
+    assert(SystemDictionaryShared::is_builtin_loader(ClassLoaderData::class_loader_data(class_loader())), "must be");
     JavaValue result(T_OBJECT);
     oop class_name_oop = java_lang_String::create_oop_from_str(name, current);
     oop zip_name_oop = CDSProtectionDomain::to_file_URL(_zip_name, Handle(), current);
@@ -416,6 +417,7 @@ bool ClassPathZipEntry::has_entry(JavaThread* current, const char* name, Handle 
       return true;
     }
   }
+#endif // INCLUDE_CDS
 
   return false;
 }
