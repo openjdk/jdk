@@ -2978,6 +2978,9 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
   BasicType bt = alias_type->basic_type();
   if (bt != T_ILLEGAL) {
     if (adr_type->isa_aryptr() && adr_type->is_flat()) {
+      // mismatched access to a flat array element:
+      // type=T_OBJECT doesn't make sense (and breaks Compile::adjust_flat_array_access_aliases()).
+      // Some other type may need to be supported so this may need to be relaxed.
       return false;
     }
     if (is_reference_type(bt) != (type == T_OBJECT)) {
