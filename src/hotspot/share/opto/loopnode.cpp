@@ -3756,8 +3756,9 @@ void OuterStripMinedLoopNode::transform_to_counted_loop(PhaseIterGVN* igvn, Phas
         }
         wq.push(in);
       }
-      assert(!loop->_body.contains(n), "Shouldn't append node to body twice");
-      loop->_body.push(n);
+      if (!loop->_body.contains(n)) {
+        loop->_body.push(n);
+      }
     }
     iloop->set_loop(safepoint, loop);
     loop->_body.push(safepoint);
@@ -6717,6 +6718,53 @@ CountedLoopEndNode* CountedLoopNode::find_pre_loop_end() {
     return nullptr;
   }
   return pre_end;
+}
+
+static CountedLoopNode* find_immediate_post_loop(CountedLoopNode* loop) {
+  CountedLoopEndNode* loop_end = loop->loopexit_or_null();
+  IfFalseNode* loop_exit = loop_end != nullptr ? loop_end->false_proj_or_null() : nullptr;
+  if (loop->is_strip_mined()) {
+    loop_exit = loop->outer_loop_exit();
+  }
+  if (loop_exit == nullptr) {
+    return nullptr;
+  }
+
+  Node* control = loop_exit->unique_ctrl_out_or_null();
+  if (control != nullptr && control->is_Region()) {
+    control = control->unique_ctrl_out_or_null();
+  }
+  IfNode* zero_trip_guard = control != nullptr ? control->isa_If() : nullptr;
+  Node* post_entry = zero_trip_guard != nullptr ? zero_trip_guard->true_proj_or_null() : nullptr;
+  while (post_entry != nullptr) {
+    Node* next = post_entry->unique_ctrl_out_or_null();
+    if (next == nullptr) {
+      return nullptr;
+    }
+    if (next->is_Loop()) {
+      LoopNode* post_loop_head = next->as_Loop();
+      CountedLoopNode* post_loop = post_loop_head->is_OuterStripMinedLoop() ?
+          post_loop_head->as_OuterStripMinedLoop()->inner_counted_loop() : post_loop_head->isa_CountedLoop();
+      if (post_loop == nullptr || !post_loop->is_post_loop() ||
+          post_loop_head->in(LoopNode::EntryControl) != post_entry) {
+        return nullptr;
+      }
+      return post_loop;
+    }
+    IfNode* predicate = next->isa_If();
+    post_entry = predicate != nullptr ? predicate->true_proj_or_null() : nullptr;
+  }
+  return nullptr;
+}
+
+// Find the scalar post-loop end from the main loop. Returns nullptr if none.
+CountedLoopEndNode* CountedLoopNode::find_post_loop_end() {
+  assert(is_main_loop(), "Can only find post-loop from main-loop");
+  CountedLoopNode* post_loop = find_immediate_post_loop(this);
+  if (post_loop != nullptr && post_loop->is_vectorized_loop()) {
+    post_loop = find_immediate_post_loop(post_loop);
+  }
+  return post_loop != nullptr ? post_loop->loopexit_or_null() : nullptr;
 }
 
 Node* CountedLoopNode::uncasted_init_trip(bool uncast) {
