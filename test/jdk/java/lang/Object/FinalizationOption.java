@@ -110,34 +110,6 @@ public class FinalizationOption {
         return passed;
     }
 
-    static void launch(String option, String form) throws Exception {
-        String[] javaArgs = switch (form) {
-            case "default"    -> new String[] {"FinalizationOption", option};
-            case "equals"     -> new String[] {"--finalization=" + option,
-                                               "FinalizationOption", option};
-            case "whitespace" -> new String[] {"--finalization", option,
-                                               "FinalizationOption", option};
-            default -> throw new AssertionError("Unexpected option form: " + form);
-        };
-
-        ProcessTools.executeTestJava(javaArgs).shouldHaveExitValue(0);
-    }
-
-    static void test(String option) throws Exception {
-        boolean finalizationEnabled = switch (option) {
-            case "enabled"  -> true;
-            case "disabled" -> false;
-            default -> throw new AssertionError(
-                "usage: FinalizationOption enabled|disabled");
-        };
-
-        boolean threadPass = checkFinalizerThread(finalizationEnabled);
-        boolean calledPass = checkFinalizerCalled(finalizationEnabled);
-
-        if (!threadPass || !calledPass)
-            throw new AssertionError("Test failed.");
-    }
-
     /*
      * Each @run invocation enters main() twice:
      *
@@ -159,5 +131,39 @@ public class FinalizationOption {
                 throw new AssertionError(
                     "expected one or two arguments");
         }
+    }
+
+    /**
+     * Launch a test process with the given command-line option form.
+     */
+    static void launch(String option, String form) throws Exception {
+        String[] javaArgs = switch (form) {
+            case "default"    -> new String[] {"FinalizationOption", option};
+            case "equals"     -> new String[] {"--finalization=" + option,
+                                               "FinalizationOption", option};
+            case "whitespace" -> new String[] {"--finalization", option,
+                                               "FinalizationOption", option};
+            default -> throw new AssertionError("Unexpected option form: " + form);
+        };
+
+        ProcessTools.executeTestJava(javaArgs).shouldHaveExitValue(0);
+    }
+
+    /**
+     * Perform the actual finalization test.
+     */
+    static void test(String option) throws Exception {
+        boolean finalizationEnabled = switch (option) {
+            case "enabled"  -> true;
+            case "disabled" -> false;
+            default -> throw new AssertionError(
+                "usage: FinalizationOption enabled|disabled");
+        };
+
+        boolean threadPass = checkFinalizerThread(finalizationEnabled);
+        boolean calledPass = checkFinalizerCalled(finalizationEnabled);
+
+        if (!threadPass || !calledPass)
+            throw new AssertionError("Test failed.");
     }
 }
