@@ -2119,5 +2119,4 @@ public class SwingUtilities2 {
         var oldTx = oldGC != null ? oldGC.getDefaultTransform() : null;
         return !Objects.equals(newTx, oldTx);
     }
-
 }
