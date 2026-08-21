@@ -1417,6 +1417,7 @@ void LinearScan::build_intervals() {
         XHandlers* xhandlers = visitor.all_xhandler();
         for (int k = 0; k < xhandlers->length(); k++) {
           BlockBegin* handler = xhandlers->handler_at(k)->entry_block();
+          // TBD: extract into a separate function ('add_uses_from_livein' or similar)
           auto add_virtual_use = [&](BitMap::idx_t index) {
             int reg = static_cast<int>(index);
             // The T_ILLEGAL type is used by add_use as a sentinel value
