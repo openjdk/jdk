@@ -90,10 +90,16 @@ public final class JsonGenerator {
                         } else {
                             sb.append(isDisplay ? ",\n" : ",");
                         }
-                        sb.append(isDisplay ? indent.repeat(af.depth + 1) : "");
+                        if (isDisplay) {
+                            sb.repeat(indent, af.depth + 1);
+                        }
                         enterValue(values.next(), sb, stack, af.depth + 1, isDisplay);
                     } else {
-                        sb.append(isDisplay ? "\n" + indent.repeat(af.depth) : "").append("]");
+                        if (isDisplay) {
+                            sb.append("\n");
+                            sb.repeat(indent, af.depth);
+                        }
+                        sb.append("]");
                         stack.pop();
                     }
                 }
@@ -106,14 +112,20 @@ public final class JsonGenerator {
                             sb.append(isDisplay ? ",\n" : ",");
                         }
                         var entry = members.next();
-                        sb.append(isDisplay ? indent.repeat(of.depth + 1) : "")
-                                .append('"')
+                        if (isDisplay) {
+                            sb.repeat(indent, of.depth + 1);
+                        }
+                        sb.append('"')
                                 .append(Utils.escape(entry.getKey()))
                                 .append("\":")
                                 .append(isDisplay ? " " : "");
                         enterValue(entry.getValue(), sb, stack, of.depth + 1, isDisplay);
                     } else {
-                        sb.append(isDisplay ? "\n" + indent.repeat(of.depth) : "").append("}");
+                        if (isDisplay) {
+                            sb.append("\n");
+                            sb.repeat(indent, of.depth);
+                        }
+                        sb.append("}");
                         stack.pop();
                     }
                 }
