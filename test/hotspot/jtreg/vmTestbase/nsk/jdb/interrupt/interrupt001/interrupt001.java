@@ -136,7 +136,7 @@ public class interrupt001 extends JdbTest {
         // every thread except for the main thread.
         reply = jdb.receiveReplyFor(JdbCommand.suspend + mainThread);
         reply = jdb.receiveReplyFor(JdbCommand.resume, false); // don't expect a compound prompt
-        reply = jdb.receiveReplyFor(JdbCommand.thread + mainThread); // get compund prompt back
+        reply = jdb.receiveReplyFor(JdbCommand.thread + mainThread); // get compound prompt back
 
         for (int i = 0; i < threads.length; i++) {
             reply = jdb.receiveReplyFor(JdbCommand.interrupt + threads[i]);
