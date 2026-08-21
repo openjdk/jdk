@@ -42,12 +42,12 @@ public final class JsonGenerator {
     private sealed interface StructureFrame permits ArrayFrame, ObjectFrame {}
 
     private static final class ArrayFrame implements StructureFrame {
-        private final Iterator<JsonValue> values;
+        private final Iterator<JsonValue> elements;
         private final int depth; // For indentation
         private boolean first; // Whether iterator points to first value
 
-        private ArrayFrame(Iterator<JsonValue> values, int depth) {
-            this.values = values;
+        private ArrayFrame(Iterator<JsonValue> elements, int depth) {
+            this.elements = elements;
             this.depth = depth;
             first = true;
         }
@@ -83,8 +83,8 @@ public final class JsonGenerator {
         while (!stack.isEmpty()) {
             switch (stack.peek()) {
                 case ArrayFrame af -> {
-                    var values = af.values;
-                    if (values.hasNext()) {
+                    var elements = af.elements;
+                    if (elements.hasNext()) {
                         if (af.first) {
                             af.first = false;
                         } else {
@@ -93,7 +93,7 @@ public final class JsonGenerator {
                         if (isDisplay) {
                             sb.repeat(indent, af.depth + 1);
                         }
-                        enterValue(values.next(), sb, stack, af.depth + 1, isDisplay);
+                        enterValue(elements.next(), sb, stack, af.depth + 1, isDisplay);
                     } else {
                         if (isDisplay) {
                             sb.append("\n");
@@ -138,12 +138,12 @@ public final class JsonGenerator {
                                    int depth, boolean isDisplay) {
         switch (jv) {
             case JsonArray ja -> {
-                var values = ja.asList().iterator();
-                if (!values.hasNext()) {
+                var elements = ja.asList().iterator();
+                if (!elements.hasNext()) {
                     sb.append("[]");
                 } else {
                     sb.append(isDisplay ? "[\n" : "[");
-                    stack.push(new ArrayFrame(values, depth));
+                    stack.push(new ArrayFrame(elements, depth));
                 }
             }
             case JsonObject jo -> {
