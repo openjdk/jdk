@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,17 @@
  * @test
  * @bug 4224271
  * @summary A null Comparator is now specified to indicate natural ordering.
+ * @library /test/lib
  */
 
+import jdk.test.lib.valueclass.VClass;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 public class NullComparator {
+
     public static void main(String[] args) throws Exception {
         List list = new ArrayList(100);
         for (int i=0; i<100; i++)
@@ -61,5 +64,18 @@ public class NullComparator {
             throw new Exception("Collections.min");
         if (!Collections.max(list, null).equals(new Integer(99)))
             throw new Exception("Collections.max");
+
+        List<VClass> vlist = new ArrayList<>();
+        for (int i = 0; i < 100; i++) vlist.add(new VClass(i, new int[] { i }));
+        Collections.shuffle(vlist);
+        Collections.sort(vlist, null);
+        for (int i = 0; i < 100; i++)
+            if (!vlist.get(i).equals(new VClass(i, new int[] { i }))) throw new Exception("value Collections.sort");
+        if (Collections.binarySearch(vlist, new VClass(69, new int[] { 69 }), null) != 69)
+            throw new Exception("value binarySearch");
+        if (!Collections.min(vlist, null).equals(new VClass(0, new int[] { 0 })))
+            throw new Exception("value min");
+        if (!Collections.max(vlist, null).equals(new VClass(99, new int[] { 99 })))
+            throw new Exception("value max");
     }
 }

@@ -27,6 +27,7 @@
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/divnode.hpp"
+#include "opto/inlinetypenode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/movenode.hpp"
 #include "opto/mulnode.hpp"
@@ -66,6 +67,12 @@ const Type* Conv2BNode::Value(PhaseGVN* phase) const {
 }
 
 Node* Conv2BNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (in(1)->is_InlineType()) {
+    // Null checking a scalarized but nullable inline type. Check the null marker
+    // input instead of the oop input to avoid keeping buffer allocations alive.
+    set_req_X(1, in(1)->as_InlineType()->get_null_marker(), phase);
+    return this;
+  }
   if (!Matcher::match_rule_supported(Op_Conv2B)) {
     if (phase->C->post_loop_opts_phase()) {
       // Get type of comparison to make
@@ -755,6 +762,13 @@ bool Compile::push_thru_add(PhaseGVN* phase, Node* z, const TypeInteger* tz, con
 
 //------------------------------Ideal------------------------------------------
 Node* ConvI2LNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (in(1) != nullptr && phase->type(in(1)) != Type::TOP) {
+    Node* progress = TypeNode::Ideal(phase, can_reshape);
+    if (progress != nullptr) {
+      return progress;
+    }
+  }
+
   const TypeLong* this_type = this->type()->is_long();
   if (can_reshape && !phase->C->post_loop_opts_phase()) {
     // makes sure we run ::Value to potentially remove type assertion after loop opts
@@ -857,6 +871,13 @@ const Type* ConvL2INode::Value(PhaseGVN* phase) const {
 // Return a node which is more "ideal" than the current node.
 // Blow off prior masking to int
 Node* ConvL2INode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (in(1) != nullptr && phase->type(in(1)) != Type::TOP) {
+    Node* progress = TypeNode::Ideal(phase, can_reshape);
+    if (progress != nullptr) {
+      return progress;
+    }
+  }
+
   Node *andl = in(1);
   uint andl_op = andl->Opcode();
   if( andl_op == Op_AndL ) {

@@ -62,7 +62,6 @@
  * @test id=aot
  * @summary Dump time resolution of constant pool entries (AOT workflow).
  * @requires vm.cds
- * @requires vm.cds.supports.aot.class.linking
  * @requires vm.compMode != "Xcomp"
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes/
  * @build OldProvider OldClass OldConsumer StringConcatTestOld
@@ -89,7 +88,7 @@ public class ResolvedConstants {
     static boolean aotClassLinking;
     public static void main(String[] args) throws Exception {
         test(args, false);
-        if (!args[0].equals("DYNAMIC")) {
+        if (args[0].equals("AOT")) {
             test(args, true);
         }
     }
