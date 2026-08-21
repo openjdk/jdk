@@ -655,9 +655,6 @@ class MacroAssembler: public Assembler {
   void bltz(Register Rs, const address dest);
   void bgtz(Register Rs, const address dest);
 
-  // Zicond conditional select: cond must hold the comparison result before calling.
-  // cmov_zicond_eqz: dst = (cond == 0) ? src : dst
-  // cmov_zicond_nez: dst = (cond != 0) ? src : dst
   void cmov_zicond_eqz(Register dst, Register src, Register cond);
   void cmov_zicond_nez(Register dst, Register src, Register cond);
 
