@@ -1397,6 +1397,30 @@ void LinearScan::build_intervals() {
       }
 
       // BEGIN OF PROTOTYPE SOLUTION
+
+      // If the currently visited operation 'op' may branch into an exception
+      // handler block 'B_handler', add all live-in registers of 'B_handler' as
+      // virtual uses of 'op'. This ensures that all such registers are live
+      // into 'op', which might otherwise not happen if 'op' is scheduled within
+      // a hole of their corresponding intervals, as in the following
+      // post-compute_global_live_sets() scenario:
+      //
+      // R
+      // |  B_loop:
+      // |    live-in:  {.., R, ..}
+      // |    ..
+      // -    kill R
+      //      ..
+      //      op: branch [BE] .. // may branch into B_handler
+      //      ..
+      // -    def R
+      // |    ..
+      // |    branch into B_loop
+      // |    live-out: {.., R, ..}
+      // |
+      // |  B_handler:
+      // |    live-in:  {.., R, ..}
+      // |    ..
       assert(op_id != -1, "expect regular operation");
       if (has_info(op_id)) {
         XHandlers* xhandlers = visitor.all_xhandler();
