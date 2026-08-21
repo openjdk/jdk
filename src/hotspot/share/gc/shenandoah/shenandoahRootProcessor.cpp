@@ -235,8 +235,6 @@ public:
     if (_bs_nm != nullptr) {
       // Make sure it only sees to-space objects
       _bs_nm->nmethod_entry_barrier(nm);
-      // Need to sync up in case nmethod patched the code.
-      OrderAccess::cross_modify_fence();
     }
     ShenandoahNMethod* const snm = ShenandoahNMethod::gc_data(nm);
     assert(snm != nullptr, "Sanity");

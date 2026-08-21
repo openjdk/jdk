@@ -39,8 +39,9 @@
 
 bool ShenandoahBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
   if (!is_armed(nm)) {
-    // Some other thread got here first and healed the oops
-    // and disarmed the nmethod. No need to continue.
+    // Some other thread got here first and healed the oops.
+    // No need to continue. We only need to sync up the changes done by others.
+    OrderAccess::cross_modify_fence();
     return true;
   }
 
@@ -49,8 +50,9 @@ bool ShenandoahBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
   ShenandoahNMethodLocker locker(lock);
 
   if (!is_armed(nm)) {
-    // Some other thread managed to complete while we were
-    // waiting for lock. No need to continue.
+    // Some other thread managed to complete while we were waiting for lock.
+    // No need to continue. We only need to sync up the changes done by others.
+    OrderAccess::cross_modify_fence();
     return true;
   }
 
@@ -84,6 +86,10 @@ bool ShenandoahBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
 
   // Disarm
   ShenandoahNMethod::disarm_nmethod(nm);
+
+  // Paranoia: sync up the changes done by others, even though we did a lot ourselves.
+  OrderAccess::cross_modify_fence();
+
   return true;
 }
 
