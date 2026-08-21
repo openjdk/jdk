@@ -3731,40 +3731,13 @@ int MatchNode::cisc_spill_match(FormDict& globals, RegisterForm* registers, Matc
   const Form *form2 = globals[mRule2->_opType];
   if( form == form2 ) {
     if (form->is_operand()) {
-      // Make sure that the "from" operand and the "to" operand match in terms of being a DEF or USE. For example:
-      // from_instr: andI_rReg_ndd, MatchRule: ( Set dst (AndI  src1 src2) )
-      // MatchNode this: src (position(DEF) = -1, position(USE) = 1)
+      // Disallow cisc-spilling if only 1 operand is a DEF, or both are DEFs but at different positions.
+      //     from_instr: andI_rReg_ndd, MatchRule: ( Set dst (AndI  src1 src2) )
+      //     MatchNode this: src (position(DEF) = -1, position(USE) = 1)
       //
-      // to_instr: andI_rReg_mem, MatchRule: ( Set dst (AndI  dst (LoadI  src)) )
-      // MatchNode mRule2: dst (position(DEF) = 0, position(USE) = 1)
-      //
-      // The test below allows cisc-spilling if both operands are DEFS at the same position,
-      // or if neither operand is a DEF (pos is -1)
-      int from_def_pos = from_instr->operand_position(this->_name, Component::DEF);
-      int to_def_pos   = to_instr->operand_position(mRule2->_name, Component::DEF);
-      // if (from_def_pos < 0 && to_def_pos < 0) {   // not sure this is a great idea to allow cisc spilling here
-      //     fprintf(stderr, "!!! Neither operand is DEF\n");
-      //   fprintf(stderr, "from_instr %s: operand %s DEF index: %d\n", from_instr->_ident, _name, from_def_pos);
-      //   fprintf(stderr, "to_instr %s: operand %s DEF index: %d\n", to_instr->_ident, mRule2->_name, to_def_pos);
-      //     int from_use_pos = from_instr->operand_position(this->_name, Component::USE);
-      //     int to_use_pos   = to_instr->operand_position(mRule2->_name, Component::USE);
-      //     if (from_use_pos != to_use_pos) {     // doesn't happen in x86
-      //       fprintf(stderr, "!!! USE positions don't match\n");
-      //       fprintf(stderr, "from_instr %s: operand %s USE index: %d\n", from_instr->_ident, this->_name, from_use_pos);
-      //       fprintf(stderr, "to_instr %s: operand %s USE index: %d\n", to_instr->_ident, mRule2->_name, to_use_pos);
-      //     }
-      //     return Not_cisc_spillable;
-      // }
-      if (from_def_pos != to_def_pos) {
-         if (from_def_pos < 0 || to_def_pos < 0) {
-          // fprintf(stderr, "One operand is DEF and the other isn't\n");
-          // fprintf(stderr, "from_instr %s: operand %s DEF index: %d\n", from_instr->_ident, _name, from_def_pos);
-          // fprintf(stderr, "to_instr %s: operand %s DEF index: %d\n", to_instr->_ident, mRule2->_name, to_def_pos);
-        } else if (from_def_pos != to_def_pos) { // doesn't happen in x86
-          // fprintf(stderr, "!!! DEF positions don't match\n");
-          // fprintf(stderr, "from_instr %s: operand %s DEF index: %d\n", from_instr->_ident, _name, from_def_pos);
-          // fprintf(stderr, "to_instr %s: operand %s DEF index: %d\n", to_instr->_ident, mRule2->_name, to_def_pos);
-        }
+      //     to_instr: andI_rReg_mem, MatchRule: ( Set dst (AndI  dst (LoadI  src)) )
+      //     MatchNode mRule2: dst (position(DEF) = 0, position(USE) = 1)
+      if (from_instr->operand_position(this->_name, Component::DEF) != to_instr->operand_position(mRule2->_name, Component::DEF)) {
         return Not_cisc_spillable;
       }
     }
