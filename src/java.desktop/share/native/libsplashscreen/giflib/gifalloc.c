@@ -167,9 +167,9 @@ ColorMapObject *GifUnionColorMap(const ColorMapObject *ColorIn1,
          * of table 1.  This is very useful if your display is limited to
          * 16 colors.
          */
-        while (ColorIn1->Colors[CrntSlot - 1].Red == 0 &&
+        while (CrntSlot > 0 && (ColorIn1->Colors[CrntSlot - 1].Red == 0 &&
                ColorIn1->Colors[CrntSlot - 1].Green == 0 &&
-               ColorIn1->Colors[CrntSlot - 1].Blue == 0) {
+                            ColorIn1->Colors[CrntSlot - 1].Blue == 0)) {
                 CrntSlot--;
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,11 @@ static void initGroupSourceReq(JNIEnv* env, jbyteArray group, jint index,
 }
 
 #ifdef _AIX
+
+static jboolean isIPv4MappedGroup(struct group_source_req *req) {
+    struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)&req->gsr_group;
+    return IN6_IS_ADDR_V4MAPPED(&sin6->sin6_addr) ? JNI_TRUE : JNI_FALSE;
+}
 
 /*
  * Checks whether or not "socket extensions for multicast source filters" is supported.
@@ -225,7 +230,7 @@ Java_sun_nio_ch_Net_shouldSetBothIPv4AndIPv6Options0(JNIEnv* env, jclass cl)
 JNIEXPORT jboolean JNICALL
 Java_sun_nio_ch_Net_canIPv6SocketJoinIPv4Group0(JNIEnv* env, jclass cl)
 {
-#if defined(__linux__) || defined(__APPLE__)
+#if defined(__linux__) || defined(__APPLE__) || defined(_AIX)
     /* IPv6 sockets can join IPv4 multicast groups */
     return JNI_TRUE;
 #else
@@ -237,7 +242,7 @@ Java_sun_nio_ch_Net_canIPv6SocketJoinIPv4Group0(JNIEnv* env, jclass cl)
 JNIEXPORT jboolean JNICALL
 Java_sun_nio_ch_Net_canJoin6WithIPv4Group0(JNIEnv* env, jclass cl)
 {
-#if defined(__APPLE__)
+#if defined(__APPLE__) || defined(_AIX)
     /* IPV6_ADD_MEMBERSHIP can be used to join IPv4 multicast groups */
     return JNI_TRUE;
 #else
@@ -767,6 +772,11 @@ Java_sun_nio_ch_Net_joinOrDrop6(JNIEnv *env, jobject this, jboolean join, jobjec
     if (n < 0) {
         if (join && (errno == ENOPROTOOPT || errno == EOPNOTSUPP))
             return IOS_UNAVAILABLE;
+#ifdef _AIX
+        // AIX rejects MCAST_*_SOURCE_GROUP for IPv4-mapped groups with EINVAL
+        if (source != NULL && errno == EINVAL && isIPv4MappedGroup(&req))
+            return IOS_UNAVAILABLE;
+#endif
         handleSocketErrorWithMessage(env, errno, "setsockopt failed");
     }
     return 0;
@@ -791,6 +801,11 @@ Java_sun_nio_ch_Net_blockOrUnblock6(JNIEnv *env, jobject this, jboolean block, j
     if (n < 0) {
         if (block && (errno == ENOPROTOOPT || errno == EOPNOTSUPP))
             return IOS_UNAVAILABLE;
+#ifdef _AIX
+        // AIX rejects MCAST_BLOCK/UNBLOCK_SOURCE for IPv4-mapped groups with EINVAL
+        if (errno == EINVAL && isIPv4MappedGroup(&req))
+            return IOS_UNAVAILABLE;
+#endif
         handleSocketError(env, errno);
     }
     return 0;
@@ -929,13 +944,13 @@ Java_sun_nio_ch_Net_pollConnect(JNIEnv *env, jobject this, jobject fdo, jlong ti
         errno = 0;
         result = getsockopt(fd, SOL_SOCKET, SO_ERROR, &error, &n);
         if (result < 0) {
-            handleSocketError(env, errno);
+            handleSocketErrorWithMessage(env, errno, "getsockopt failed");
             return JNI_FALSE;
         } else if (error) {
-            handleSocketError(env, error);
+            handleSocketErrorWithMessage(env, error, "connect failed");
             return JNI_FALSE;
         } else if ((poller.revents & POLLHUP) != 0) {
-            handleSocketError(env, ENOTCONN);
+            handleSocketErrorWithMessage(env, ENOTCONN, "peer closed connection after accepting");
             return JNI_FALSE;
         }
         // connected
@@ -990,4 +1005,3 @@ Java_sun_nio_ch_Net_sendOOB(JNIEnv* env, jclass this, jobject fdo, jbyte b)
     int n = send(fdval(env, fdo), (const void*)&b, 1, MSG_OOB);
     return convertReturnVal(env, n, JNI_FALSE);
 }
-

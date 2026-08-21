@@ -43,12 +43,6 @@
 // Map the full jimage, only with 64 bit addressing.
 bool ImageFileReader::memory_map_image = sizeof(void *) == 8;
 
-#ifdef WIN32
-const char FileSeparator = '\\';
-#else
-const char FileSeparator = '/';
-#endif
-
 // Image files are an alternate file format for storing classes and resources. The
 // goal is to supply file access which is faster and smaller than the jar format.
 //
@@ -357,8 +351,8 @@ u4 ImageFileReader::find_location_index(const char* path, u8 *size) const {
         ImageLocation location(data);
         // Make sure result is not a false positive.
         if (verify_location(location, path)) {
-                *size = (jlong)location.get_attribute(ImageLocation::ATTRIBUTE_UNCOMPRESSED);
-                return offset;
+            *size = (jlong)location.get_attribute(ImageLocation::ATTRIBUTE_UNCOMPRESSED);
+            return offset;
         }
     }
     return 0;            // not found
@@ -389,7 +383,7 @@ bool ImageFileReader::verify_location(ImageLocation& location, const char* path)
     }
     // Get base name string.
     const char* base = location.get_attribute(ImageLocation::ATTRIBUTE_BASE, strings);
-    // Compare with basne name.
+    // Compare with base name.
     if (!(next = ImageStrings::starts_with(next, base))) return false;
     // Get extension string.
     const char* extension = location.get_attribute(ImageLocation::ATTRIBUTE_EXTENSION, strings);
@@ -428,7 +422,7 @@ void ImageFileReader::get_resource(ImageLocation& location, u1* uncompressed_dat
             compressed_data = new u1[(size_t)compressed_size];
             assert(compressed_data != NULL && "allocation failed");
             // Read bytes from offset beyond the image index.
-            bool is_read = read_at(compressed_data, compressed_size, _index_size + offset);
+            [[maybe_unused]] bool is_read = read_at(compressed_data, compressed_size, _index_size + offset);
             assert(is_read && "error reading from image or short read");
         } else {
             compressed_data = get_data_address() + offset;
@@ -444,7 +438,7 @@ void ImageFileReader::get_resource(ImageLocation& location, u1* uncompressed_dat
         }
     } else {
         // Read bytes from offset beyond the image index.
-        bool is_read = read_at(uncompressed_data, uncompressed_size, _index_size + offset);
+        [[maybe_unused]] bool is_read = read_at(uncompressed_data, uncompressed_size, _index_size + offset);
         assert(is_read && "error reading from image or short read");
     }
 }

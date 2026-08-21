@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,178 +24,145 @@
 /*
  * @test
  * @bug 4387949 4302197
- * @summary Need to add Sockets and key arrays to the
- *      X509KeyManager.choose*Alias() methods & There's no mechanism
- *      to select one key out of many in a keystore
- *
- *      chooseServerAlias method is reverted back to accept a single
- *      keytype as a parameter, please see RFE: 4501014
- *      The part of the test on the server-side is changed to test
- *      passing in a single keytype parameter to chooseServerAlias method.
- *
- * @author Brad Wetmore
+ * @summary Verify X509KeyManager selects the correct RSA or DSA key
+ * @modules java.base/sun.security.x509
+ *          java.base/sun.security.util
+ * @library /test/lib
  */
 
-import java.io.*;
-import java.net.*;
-import java.security.*;
-import javax.net.ssl.*;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.security.CertificateBuilder;
+
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.X509KeyManager;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.KeyStore;
+import java.security.SecureRandom;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.Arrays;
 
 public class SelectOneKeyOutOfMany {
-
-    /*
-     * =============================================================
-     * Set the various variables needed for the tests, then
-     * specify what tests to run on each side.
-     */
-
-    /*
-     * Where do we find the keystores?
-     */
-    static String pathToStores = "../../../../javax/net/ssl/etc";
-    static String keyStoreFile = "keystore";
-    static String passwd = "passphrase";
+    private static final String NOTHING = "nothing";
+    private static final String RSA = "RSA";
+    private static final String DSA = "DSA";
+    private static final String RSA_ALIAS = "dummyrsa";
+    private static final String DSA_ALIAS = "dummydsa";
 
     public static void main(String[] args) throws Exception {
-        KeyStore ks;
-        KeyManagerFactory kmf;
-        X509KeyManager km;
+        X509KeyManager km = getKeyManager();
 
-        char[] passphrase = passwd.toCharArray();
+        // String[] getClientAliases(String keyType, Principal[] issuers)
+        Asserts.assertNull(km.getClientAliases(NOTHING, null),
+                "getClientAliases shouldn't return alias for unknown type");
 
-        String keyFilename =
-            System.getProperty("test.src", ".") + "/" + pathToStores +
-                "/" + keyStoreFile;
-        /*
-         * Setup the tests.
-         */
-        kmf = KeyManagerFactory.getInstance("SunX509");
-        ks = KeyStore.getInstance(new File(keyFilename), passphrase);
+        Asserts.assertTrue(Arrays.stream(km.getClientAliases(RSA,
+                                null)).toList().contains(RSA_ALIAS),
+                "getClientAliases should return RSA alias: " +
+                        Arrays.toString(km.getClientAliases(RSA, null)));
+
+        Asserts.assertTrue(Arrays.stream(km.getClientAliases(DSA,
+                                null)).toList().contains(DSA_ALIAS),
+                "getClientAliases should return DSA alias: " +
+                        Arrays.toString(km.getClientAliases(DSA, null)));
+
+
+        // String[] getServerAliases(String keyType, Principal[] issuers)
+        Asserts.assertNull(km.getServerAliases(NOTHING, null),
+                "getServerAliases shouldn't return alias for unknown type");
+
+        Asserts.assertTrue(Arrays.stream(km.getServerAliases(RSA,
+                                null)).toList().contains(RSA_ALIAS),
+                "getServerAliases should return RSA alias: " +
+                        Arrays.toString(km.getServerAliases(RSA, null)));
+
+        Asserts.assertTrue(Arrays.stream(km.getServerAliases(DSA,
+                                null)).toList().contains(DSA_ALIAS),
+                "getServerAliases should return DSA alias: " +
+                        Arrays.toString(km.getServerAliases(DSA, null)));
+
+
+        //  String chooseClientAlias(String[] keyType, Principal[] issuers, Socket socket)
+        Asserts.assertNull(km.chooseClientAlias(new String[]{NOTHING},
+                        null,
+                        null),
+                "chooseClientAlias shouldn't return alias for unknown type");
+
+        Asserts.assertEQ(
+                km.chooseClientAlias(new String[]{RSA}, null, null),
+                RSA_ALIAS,
+                "chooseClientAlias should return RSA alias");
+
+        Asserts.assertEQ(
+                km.chooseClientAlias(new String[]{DSA}, null, null),
+                DSA_ALIAS,
+                "chooseClientAlias should return DSA alias");
+
+        Asserts.assertEQ(
+                km.chooseClientAlias(new String[]{RSA, DSA}, null, null),
+                RSA_ALIAS,
+                "chooseClientAlias should return RSA alias");
+
+        Asserts.assertEQ(
+                km.chooseClientAlias(new String[]{DSA, RSA}, null, null),
+                DSA_ALIAS,
+                "chooseClientAlias should return DSA alias");
+
+
+        //  String chooseServerAlias(String keyType, Principal[] issuers, Socket socket)
+        Asserts.assertNull(km.chooseServerAlias(NOTHING, null, null),
+                "chooseServerAlias shouldn't return alias for unknown type");
+
+        Asserts.assertEQ(km.chooseServerAlias(RSA, null, null),
+                RSA_ALIAS,
+                "chooseServerAlias should return RSA alias");
+
+        Asserts.assertEQ(km.chooseServerAlias(DSA, null, null),
+                DSA_ALIAS,
+                "chooseServerAlias should return DSA alias");
+    }
+
+    private static X509KeyManager getKeyManager() throws Exception {
+        char[] passphrase = "passphrase".toCharArray();
+
+        KeyPair rsaKey = KeyPairGenerator.getInstance(RSA).generateKeyPair();
+        KeyPair dsaKey = KeyPairGenerator.getInstance(DSA).generateKeyPair();
+
+        // create a key store
+        KeyStore ks = KeyStore.getInstance("PKCS12");
+        ks.load(null, passphrase);
+
+        ks.setKeyEntry(RSA_ALIAS,
+                rsaKey.getPrivate(),
+                passphrase,
+                new Certificate[]{createSelfSignedCert(rsaKey,
+                        "SHA256withRSA")});
+        ks.setKeyEntry(DSA_ALIAS,
+                dsaKey.getPrivate(),
+                passphrase,
+                new Certificate[]{createSelfSignedCert(dsaKey,
+                        "SHA256withDSA")});
+
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
         kmf.init(ks, passphrase);
-        km = (X509KeyManager) kmf.getKeyManagers()[0];
 
-        /*
-         * There should be one of each key type here.
-         */
-        String [] nothing = new String [] { "nothing" };
-        String [] rsa = new String [] { "RSA" };
-        String [] dsa = new String [] { "DSA" };
-        String [] rsaDsa = new String [] { "RSA", "DSA" };
-        String [] dsaRsa = new String [] { "DSA", "RSA" };
+        return (X509KeyManager) kmf.getKeyManagers()[0];
+    }
 
-        String resultsRsaDsa, resultsDsaRsa;
-        String resultsRsa, resultsDsa;
-        String resultsNone;
-
-        String [] resultArrayRSA;
-        String [] resultArrayDSA;
-
-        /*
-         * Check get*Aliases for null returns
-         */
-        if (km.getClientAliases("nothing", null) != null)
-            throw new Exception("km.getClientAliases(nothing) != null");
-        System.out.println("km.getClientAlias(nothing) returning nulls");
-
-        if (km.getServerAliases("nothing", null) != null)
-            throw new Exception("km.getServerAliases(nothing) != null");
-        System.out.println("km.getServerAlias(nothing) returning nulls");
-        System.out.println("=====");
-
-        System.out.println("Dumping Certs...");
-        if ((resultArrayRSA = km.getServerAliases("RSA", null)) == null)
-            throw new Exception("km.getServerAliases(RSA) == null");
-        for (int i = 0; i < resultArrayRSA.length; i++) {
-            System.out.println("        resultArrayRSA#" + i + ": " +
-                resultArrayRSA[i]);
-        }
-
-        if ((resultArrayDSA = km.getServerAliases("DSA", null)) == null)
-            throw new Exception("km.getServerAliases(DSA) == null");
-        for (int i = 0; i < resultArrayDSA.length; i++) {
-            System.out.println("        resultArrayDSA#" + i + ": " +
-                resultArrayDSA[i]);
-        }
-        System.out.println("=====");
-
-        /*
-         * Check chooseClientAliases for null returns
-         */
-        resultsNone = km.chooseClientAlias(nothing, null, null);
-        if (resultsNone != null) {
-            throw new Exception("km.chooseClientAlias(nothing) != null");
-        }
-        System.out.println("km.ChooseClientAlias(nothing) passed");
-
-        /*
-         * Check chooseClientAlias for RSA keys.
-         */
-        resultsRsa = km.chooseClientAlias(rsa, null, null);
-        if (resultsRsa == null)  {
-            throw new Exception(
-                "km.chooseClientAlias(rsa, null, null) != null");
-        }
-        System.out.println("km.chooseClientAlias(rsa) passed");
-
-        /*
-         * Check chooseClientAlias for DSA keys.
-         */
-        resultsDsa = km.chooseClientAlias(dsa, null, null);
-        if (resultsDsa == null) {
-            throw new Exception(
-                "km.chooseClientAlias(dsa, null, null) != null");
-        }
-        System.out.println("km.chooseClientAlias(dsa) passed");
-
-        /*
-         * There should be both an rsa and a dsa entry in the
-         * keystore.
-         *
-         * Check chooseClientAlias for RSA/DSA keys and be sure
-         * the ordering is correct.
-         */
-        resultsRsaDsa = km.chooseClientAlias(rsaDsa, null, null);
-        if ((resultsRsaDsa == null) || (resultsRsaDsa != resultsRsa)) {
-            throw new Exception("km.chooseClientAlias(rsaDsa) failed");
-        }
-        System.out.println("km.chooseClientAlias(rsaDsa) passed");
-
-        resultsDsaRsa = km.chooseClientAlias(dsaRsa, null, null);
-        if ((resultsDsaRsa == null) || (resultsDsaRsa != resultsDsa)) {
-            throw new Exception("km.chooseClientAlias(DsaRsa) failed");
-        }
-        System.out.println("km.chooseClientAlias(DsaRsa) passed");
-
-        System.out.println("=====");
-
-        /*
-         * Check chooseServerAliases for null returns
-         */
-        resultsNone = km.chooseServerAlias("nothing", null, null);
-        if (resultsNone != null) {
-            throw new Exception("km.chooseServerAlias(\"nothing\") != null");
-        }
-        System.out.println("km.ChooseServerAlias(\"nothing\") passed");
-
-        /*
-         * Check chooseServerAlias for RSA keys.
-         */
-        resultsRsa = km.chooseServerAlias("RSA", null, null);
-        if (resultsRsa == null)  {
-            throw new Exception(
-                "km.chooseServerAlias(\"RSA\", null, null) != null");
-        }
-        System.out.println("km.chooseServerAlias(\"RSA\") passed");
-
-        /*
-         * Check chooseServerAlias for DSA keys.
-         */
-        resultsDsa = km.chooseServerAlias("DSA", null, null);
-        if (resultsDsa == null) {
-            throw new Exception(
-                "km.chooseServerAlias(\"DSA\", null, null) != null");
-        }
-        System.out.println("km.chooseServerAlias(\"DSA\") passed");
-
+    private static X509Certificate createSelfSignedCert(KeyPair caKeys,
+                                                        String keyAlg)
+            throws CertificateException, IOException {
+        return (new CertificateBuilder()
+                .setSubjectName("CN=dummy.example.com, OU=Dummy, " +
+                        "O=Dummy, L=Cupertino, ST=CA, C=US")
+                .setPublicKey(caKeys.getPublic())
+                .setOneHourValidity()
+                .setSerialNumber(BigInteger.valueOf(
+                        new SecureRandom().nextLong(1000000) + 1))
+        ).build(null, caKeys.getPrivate(), keyAlg);
     }
 }

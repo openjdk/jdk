@@ -23,6 +23,7 @@
  */
 
 #include "asm/assembler.inline.hpp"
+#include "ci/ciFlatArrayKlass.hpp"
 #include "code/aotCodeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "code/debugInfo.hpp"
@@ -33,7 +34,9 @@
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "memory/allocation.hpp"
+#include "oops/arrayKlass.hpp"
 #include "opto/ad.hpp"
 #include "opto/block.hpp"
 #include "opto/c2_MacroAssembler.hpp"
@@ -222,15 +225,12 @@ PhaseOutput::PhaseOutput()
     _code_offsets(),
     _node_bundling_limit(0),
     _node_bundling_base(nullptr),
-    _orig_pc_slot(0),
     _orig_pc_slot_offset_in_bytes(0),
     _buf_sizes(),
     _block(nullptr),
     _index(0) {
   C->set_output(this);
-  if (C->stub_name() == nullptr) {
-    _orig_pc_slot = C->fixed_slots() - (sizeof(address) / VMRegImpl::stack_slot_size);
-  }
+
 }
 
 PhaseOutput::~PhaseOutput() {
@@ -270,24 +270,34 @@ void PhaseOutput::Output() {
   const StartNode *start = entry->head()->as_Start();
 
   // Replace StartNode with prolog
-  MachPrologNode *prolog = new MachPrologNode();
+  Label verified_entry;
+  MachPrologNode* prolog = new MachPrologNode(&verified_entry);
   entry->map_node(prolog, 0);
   C->cfg()->map_node_to_block(prolog, entry);
   C->cfg()->unmap_node_from_block(start); // start is no longer in any block
 
   // Virtual methods need an unverified entry point
-
-  if( C->is_osr_compilation() ) {
-    if( PoisonOSREntry ) {
+  if (C->is_osr_compilation()) {
+    if (PoisonOSREntry) {
       // TODO: Should use a ShouldNotReachHereNode...
       C->cfg()->insert( broot, 0, new MachBreakpointNode() );
     }
   } else {
-    if( C->method() && !C->method()->flags().is_static() ) {
-      // Insert unvalidated entry point
-      C->cfg()->insert( broot, 0, new MachUEPNode() );
+    if (C->method()) {
+      if (C->method()->has_scalarized_args()) {
+        // Add entry point to unpack all inline type arguments
+        C->cfg()->insert(broot, 0, new MachVEPNode(&verified_entry, /* verified */ true, /* receiver_only */ false));
+        if (!C->method()->is_static()) {
+          // Add verified/unverified entry points to only unpack inline type receiver at interface calls
+          C->cfg()->insert(broot, 0, new MachVEPNode(&verified_entry, /* verified */ false, /* receiver_only */ false));
+          C->cfg()->insert(broot, 0, new MachVEPNode(&verified_entry, /* verified */ true,  /* receiver_only */ true));
+          C->cfg()->insert(broot, 0, new MachVEPNode(&verified_entry, /* verified */ false, /* receiver_only */ true));
+        }
+      } else if (!C->method()->is_static()) {
+        // Insert unvalidated entry point
+        C->cfg()->insert(broot, 0, new MachUEPNode());
+      }
     }
-
   }
 
   // Break before main entry point
@@ -327,6 +337,31 @@ void PhaseOutput::Output() {
   blk_starts[0] = 0;
   shorten_branches(blk_starts);
 
+  if (!C->is_osr_compilation() && C->has_scalarized_args()) {
+    // Compute the offsets of the entry points required by the inline type calling convention
+    if (!C->method()->is_static()) {
+      // We have entries at the beginning of the method, implemented by the first 4 nodes.
+      // Entry                     (unverified) @ offset 0
+      // Verified_Inline_Entry_RO
+      // Inline_Entry              (unverified)
+      // Verified_Inline_Entry
+      uint offset = 0;
+      _code_offsets.set_value(CodeOffsets::Entry, offset);
+
+      offset += ((MachVEPNode*)broot->get_node(0))->size(C->regalloc());
+      _code_offsets.set_value(CodeOffsets::Verified_Inline_Entry_RO, offset);
+
+      offset += ((MachVEPNode*)broot->get_node(1))->size(C->regalloc());
+      _code_offsets.set_value(CodeOffsets::Inline_Entry, offset);
+
+      offset += ((MachVEPNode*)broot->get_node(2))->size(C->regalloc());
+      _code_offsets.set_value(CodeOffsets::Verified_Inline_Entry, offset);
+    } else {
+      _code_offsets.set_value(CodeOffsets::Entry, CodeOffsets::no_such_entry_point); // will be patched later
+      _code_offsets.set_value(CodeOffsets::Verified_Inline_Entry, 0);
+    }
+  }
+
   ScheduleAndBundle();
   if (C->failing()) {
     return;
@@ -348,6 +383,11 @@ void PhaseOutput::Output() {
 
   C2_MacroAssembler masm(cb);
   fill_buffer(&masm, blk_starts);
+  if (C->failing()) {
+    // If we bailed out during matching, not all nodes were visited and the
+    // label might be in inconsistent state (used but not bound). Reset it.
+    verified_entry.reset();
+  }
 }
 
 bool PhaseOutput::need_stack_bang(int frame_size_in_bytes) const {
@@ -479,7 +519,9 @@ void PhaseOutput::shorten_branches(uint* blk_starts) {
           MachCallNode *mcall = mach->as_MachCall();
           // This destination address is NOT PC-relative
 
-          mcall->method_set((intptr_t)mcall->entry_point());
+          if (mcall->entry_point() != nullptr) {
+            mcall->method_set((intptr_t)mcall->entry_point());
+          }
 
           if (mcall->is_MachCallJava() && mcall->as_MachCallJava()->_method) {
             stub_size  += CompiledDirectCall::to_interp_stub_size();
@@ -705,6 +747,22 @@ void PhaseOutput::set_sv_for_object_node(GrowableArray<ScopeValue*> *objs,
   objs->append(sv);
 }
 
+static jint array_description_value(const TypeAryPtr* ary_type) {
+  ciArrayKlass* array_klass = ary_type->exact_klass()->as_array_klass();
+  const bool is_element_inline = array_klass->element_klass()->is_inlinetype();
+  ArrayProperties properties = ArrayProperties::Default()
+      .with_null_restricted(is_element_inline && array_klass->is_elem_null_free())
+      .with_non_atomic(is_element_inline && !array_klass->is_elem_atomic());
+
+  LayoutKind layout_kind = LayoutKind::REFERENCE;
+  Klass::KlassKind kind = Klass::RefArrayKlassKind;
+  if (ary_type->is_flat()) {
+    layout_kind = array_klass->as_flat_array_klass()->layout_kind();
+    kind = Klass::FlatArrayKlassKind;
+  }
+  return (jint)ArrayDescription(kind, properties, layout_kind).value();
+}
+
 
 void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
                             GrowableArray<ScopeValue*> *array,
@@ -734,11 +792,30 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
       ciKlass* cik = t->is_oopptr()->exact_klass();
       assert(cik->is_instance_klass() ||
              cik->is_array_klass(), "Not supported allocation.");
+      uint first_ind = spobj->first_index(sfpt->jvms());
+      // Nullable, scalarized inline types have a null_marker input
+      // that needs to be checked before using the field values.
+      ScopeValue* properties = nullptr;
+      if (cik->is_inlinetype()) {
+        Node* null_marker_node = sfpt->in(first_ind++);
+        assert(null_marker_node != nullptr, "null_marker node not found");
+        if (!null_marker_node->is_top()) {
+          const TypeInt* null_marker_type = null_marker_node->bottom_type()->is_int();
+          if (null_marker_node->is_Con()) {
+            properties = new ConstantIntValue(null_marker_type->get_con());
+          } else {
+            OptoReg::Name null_marker_reg = C->regalloc()->get_reg_first(null_marker_node);
+            properties = new_loc_value(C->regalloc(), null_marker_reg, Location::normal);
+          }
+        }
+      }
+      if (cik->is_array_klass() && !cik->is_type_array_klass()) {
+        properties = new ConstantIntValue(array_description_value(t->is_aryptr()));
+      }
       sv = new ObjectValue(spobj->_idx,
-                           new ConstantOopWriteValue(cik->java_mirror()->constant_encoding()));
+                           new ConstantOopWriteValue(cik->java_mirror()->constant_encoding()), true, properties);
       set_sv_for_object_node(objs, sv);
 
-      uint first_ind = spobj->first_index(sfpt->jvms());
       for (uint i = 0; i < spobj->n_fields(); i++) {
         Node* fld_node = sfpt->in(first_ind+i);
         (void)FillLocArray(sv->field_values()->length(), sfpt, fld_node, sv->field_values(), objs);
@@ -984,6 +1061,7 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
 
   int safepoint_pc_offset = current_offset;
   bool return_oop = false;
+  bool return_scalarized = false;
   bool has_ea_local_in_scope = sfn->_has_ea_local_in_scope;
   bool arg_escape = false;
 
@@ -999,8 +1077,11 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
     }
 
     // Check if a call returns an object.
-    if (mcall->returns_pointer()) {
+    if (mcall->returns_pointer() || mcall->returns_scalarized()) {
       return_oop = true;
+    }
+    if (mcall->returns_scalarized()) {
+      return_scalarized = true;
     }
     safepoint_pc_offset += mcall->ret_addr_offset();
     C->debug_info()->add_safepoint(safepoint_pc_offset, mcall->_oop_map);
@@ -1070,8 +1151,13 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
           ciKlass* cik = t->is_oopptr()->exact_klass();
           assert(cik->is_instance_klass() ||
                  cik->is_array_klass(), "Not supported allocation.");
+          assert(!cik->is_inlinetype(), "Synchronization on value object?");
+          ScopeValue* properties = nullptr;
+          if (cik->is_array_klass() && !cik->is_type_array_klass()) {
+            properties = new ConstantIntValue(array_description_value(t->is_aryptr()));
+          }
           ObjectValue* sv = new ObjectValue(spobj->_idx,
-                                            new ConstantOopWriteValue(cik->java_mirror()->constant_encoding()));
+                                            new ConstantOopWriteValue(cik->java_mirror()->constant_encoding()), true, properties);
           PhaseOutput::set_sv_for_object_node(objs, sv);
 
           uint first_ind = spobj->first_index(youngest_jvms);
@@ -1178,6 +1264,7 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
       jvms->should_reexecute(),
       rethrow_exception,
       return_oop,
+      return_scalarized,
       has_ea_local_in_scope,
       arg_escape,
       locvals,
@@ -1286,7 +1373,16 @@ void PhaseOutput::estimate_buffer_size(int& const_req) {
 
   // Compute the byte offset where we can store the deopt pc.
   if (C->fixed_slots() != 0) {
-    _orig_pc_slot_offset_in_bytes = C->regalloc()->reg2offset(OptoReg::stack2reg(_orig_pc_slot));
+    // Skip other fixed slots
+    int current_slot = C->fixed_slots();
+    if (C->needs_stack_repair()) {
+      current_slot -= VMRegImpl::slots_per_word;
+    }
+    if (C->needs_nm_slot()) {
+      current_slot -= VMRegImpl::slots_per_word;
+    }
+    int orig_pc_slot = current_slot - VMRegImpl::slots_per_word;
+    _orig_pc_slot_offset_in_bytes = C->regalloc()->reg2offset(OptoReg::stack2reg(orig_pc_slot));
   }
 
   // Compute prolog code size
@@ -1531,8 +1627,10 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
         if (is_mcall) {
           MachCallNode *mcall = mach->as_MachCall();
 
-          // This destination address is NOT PC-relative
-          mcall->method_set((intptr_t)mcall->entry_point());
+          if (mcall->entry_point() != nullptr) {
+            // This destination address is NOT PC-relative
+            mcall->method_set((intptr_t)mcall->entry_point());
+          }
 
           // Save the return address
           call_returns[block->_pre_order] = current_offset + mcall->ret_addr_offset();
@@ -1642,7 +1740,12 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
       }
 
       // Verify that there is sufficient space remaining
-      masm->code()->insts()->maybe_expand_to_ensure_remaining(MAX_inst_size);
+      uint required_size = MAX_inst_size;
+      if (n->is_MachVEP()) {
+        // MachVEPNodes can be much larger because they unpack all scalarized arguments.
+        required_size += n->as_Mach()->size(C->regalloc());
+      }
+      masm->code()->insts()->maybe_expand_to_ensure_remaining(required_size);
       if ((masm->code()->blob() == nullptr) || (!CompileBroker::should_compile_new_jobs())) {
         C->record_failure("CodeCache is full");
         return;
@@ -1670,7 +1773,6 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
 
       assert(!is_mcall || (call_returns[block->_pre_order] <= (uint)current_offset),
              "ret_addr_offset() not within emitted code");
-
 #ifdef ASSERT
       uint n_size = n->size(C->regalloc());
       if (n_size < (current_offset-instr_offset)) {
@@ -2787,6 +2889,7 @@ void Scheduling::anti_do_def( Block *b, Node *def, OptoReg::Name def_reg, int is
         // Yes, found a use/kill pinch-point
         pinch->set_req(0,nullptr);  //
         pinch->replace_by(kill); // Move anti-dep edges up
+        _pinch_free_list.push(pinch);
         pinch = kill;
         _reg_node.map(def_reg,pinch);
         return;
@@ -2926,6 +3029,7 @@ void Scheduling::ComputeRegisterAntidependencies(Block *b) {
           break;
         }
       }
+
       // A CheckCastPP whose input is still RawPtr must stay above the following safepoint.
       // Otherwise post-regalloc block-local scheduling can leave a live raw oop at the safepoint.
       if (!need_safept_prec && m->is_Mach() &&
@@ -3086,6 +3190,39 @@ void PhaseOutput::init_scratch_buffer_blob(int const_size) {
     ResourceMark rm;
     _scratch_const_size = const_size;
     int size = C2Compiler::initial_code_buffer_size(const_size);
+    if (C->has_scalarized_args()) {
+      // Inline type entry points (MachVEPNodes) require lots of space when
+      // unpacking fields from buffered arguments. Increase the scratch buffer
+      // for field moves, GC barriers and oop verification accordingly.
+      const int move_size = 32;
+      int barrier_size = 7; // Base oop load barrier
+      DEBUG_ONLY(barrier_size += 37;)
+      if (UseShenandoahGC) {
+        barrier_size += 700;
+      } else if (UseZGC) {
+        // Covers the worst-case x64 APX save/restore of all extended general purpose
+        // registers, including the slow-path jump triggered by ForceUnreachable.
+        barrier_size += 400;
+      }
+      ciMethod* method = C->method();
+      auto add_inline_arg_size = [&](ciInlineKlass* vk) {
+        size += vk->inline_arg_length() * move_size;
+        size += vk->oop_count() * barrier_size;
+      };
+      int arg_num = 0;
+      if (!method->is_static()) {
+        if (method->is_scalarized_arg(arg_num)) {
+          add_inline_arg_size(method->holder()->as_inline_klass());
+        }
+        arg_num++;
+      }
+      for (ciSignatureStream str(method->signature()); !str.at_return_type(); str.next()) {
+        if (method->is_scalarized_arg(arg_num)) {
+          add_inline_arg_size(str.type()->as_inline_klass());
+        }
+        arg_num++;
+      }
+    }
     blob = BufferBlob::create("Compile::scratch_buffer", size);
     // Record the buffer blob for next time.
     set_scratch_buffer_blob(blob);
@@ -3156,8 +3293,10 @@ uint PhaseOutput::scratch_emit_size(const Node* n) {
   // Emitting into the scratch buffer should not fail
   assert(!C->failing_internal() || C->failure_is_artificial(), "Must not have pending failure. Reason is: %s", C->failure_reason());
 
-  if (is_branch) // Restore label.
+  // Restore label.
+  if (is_branch) {
     n->as_MachBranch()->label_set(saveL, save_bnum);
+  }
 
   // End scratch_emit_size section.
   set_in_scratch_emit_size(false);
@@ -3198,31 +3337,34 @@ void PhaseOutput::install_code(ciMethod*         target,
       _code_offsets.set_value(CodeOffsets::Verified_Entry, 0);
       _code_offsets.set_value(CodeOffsets::OSR_Entry, _first_block_size);
     } else {
-      if (!target->is_static()) {
-        // The UEP of an nmethod ensures that the VEP is padded. However, the padding of the UEP is placed
-        // before the inline cache check, so we don't have to execute any nop instructions when dispatching
-        // through the UEP, yet we can ensure that the VEP is aligned appropriately.
-        _code_offsets.set_value(CodeOffsets::Entry, _first_block_size - MacroAssembler::ic_check_size());
-      }
       _code_offsets.set_value(CodeOffsets::Verified_Entry, _first_block_size);
+      if (_code_offsets.value(CodeOffsets::Verified_Inline_Entry) == CodeOffsets::no_such_entry_point) {
+        _code_offsets.set_value(CodeOffsets::Verified_Inline_Entry, _first_block_size);
+      }
+      if (_code_offsets.value(CodeOffsets::Verified_Inline_Entry_RO) == CodeOffsets::no_such_entry_point) {
+        _code_offsets.set_value(CodeOffsets::Verified_Inline_Entry_RO, _first_block_size);
+      }
+      if (_code_offsets.value(CodeOffsets::Entry) == CodeOffsets::no_such_entry_point) {
+        _code_offsets.set_value(CodeOffsets::Entry, _first_block_size);
+      }
       _code_offsets.set_value(CodeOffsets::OSR_Entry, 0);
     }
 
     C->env()->register_method(target,
-                                     entry_bci,
-                                     &_code_offsets,
-                                     _orig_pc_slot_offset_in_bytes,
-                                     code_buffer(),
-                                     frame_size_in_words(),
-                                     oop_map_set(),
-                                     &_handler_table,
-                                     inc_table(),
-                                     compiler,
-                                     has_unsafe_access,
-                                     SharedRuntime::is_wide_vector(C->max_vector_size()),
-                                     C->has_monitors(),
-                                     C->has_scoped_access(),
-                                     0);
+                              entry_bci,
+                              &_code_offsets,
+                              _orig_pc_slot_offset_in_bytes,
+                              code_buffer(),
+                              frame_size_in_words(),
+                              _oop_map_set,
+                              &_handler_table,
+                              inc_table(),
+                              compiler,
+                              has_unsafe_access,
+                              SharedRuntime::is_wide_vector(C->max_vector_size()),
+                              C->has_monitors(),
+                              C->has_scoped_access(),
+                              0);
 
     if (C->log() != nullptr) { // Print code cache state into compiler log
       C->log()->code_cache_state();
