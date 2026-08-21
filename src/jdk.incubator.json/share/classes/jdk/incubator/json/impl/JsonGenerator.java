@@ -43,7 +43,7 @@ public final class JsonGenerator {
     private record JsonValueOutput(JsonValue jv, int depth, boolean isField) implements Output {}
     private record LiteralOutput(String literal) implements Output {}
 
-    // Generates JSON text for Json[Object|Array].toString()
+    // Generates JSON text for JsonObject/JsonArray.toString()
     public static String toCompactString(JsonValue jv) {
         return generate(jv, "", false);
     }
@@ -91,7 +91,7 @@ public final class JsonGenerator {
         // push outputs backward
         outputs.push(new LiteralOutput((isDisplay ? "\n" + indent.repeat(depth) : "") + "}"));
         var iter = members.reversed().iterator();
-        while(iter.hasNext()) {
+        while (iter.hasNext()) {
             var member = iter.next();
             outputs.push(new JsonValueOutput(member.getValue(), depth + 1, true));
             outputs.push(new LiteralOutput((isDisplay ? indent.repeat(depth + 1) : "")
@@ -115,7 +115,7 @@ public final class JsonGenerator {
         // push outputs backward
         outputs.push(new LiteralOutput((isDisplay ? "\n" + indent.repeat(depth) : "") + "]"));
         var iter = elements.reversed().iterator();
-        while(iter.hasNext()) {
+        while (iter.hasNext()) {
             var element = iter.next();
             outputs.push(new JsonValueOutput(element, depth + 1, false));
             if (iter.hasNext()) {
