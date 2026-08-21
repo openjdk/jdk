@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @bug 8390866
  * @library /test/lib /
  * @requires vm.flagless
  * @enablePreview
