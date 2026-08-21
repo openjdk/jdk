@@ -718,7 +718,6 @@ public class Modules extends JCTree.Visitor {
                 String pack = binName.lastIndexOf('.') != (-1) ? binName.substring(0, binName.lastIndexOf('.')) : ""; //unnamed package????
                 if (seenPackages.add(pack)) {
                     ExportsDirective d = new ExportsDirective(syms.enterPackage(msym, names.fromString(pack)), null);
-                    //TODO: opens?
                     directives.add(d);
                     exports.add(d);
                 }
