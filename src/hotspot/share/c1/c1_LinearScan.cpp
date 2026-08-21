@@ -567,6 +567,7 @@ void LinearScan::compute_local_live_sets() {
   // iterate all blocks
   for (int i = 0; i < num_blocks; i++) {
     BlockBegin* block = block_at(i);
+    TRACE_LINEAR_SCAN(4, tty->print_cr("B%d", block->block_id()));
 
     ResourceBitMap live_gen(live_size);
     ResourceBitMap live_kill(live_size);
@@ -586,6 +587,7 @@ void LinearScan::compute_local_live_sets() {
     assert(visitor.no_operands(instructions->at(0)), "first operation must always be a label");
     for (int j = 1; j < num_inst; j++) {
       LIR_Op* op = instructions->at(j);
+      TRACE_LINEAR_SCAN(4, tty->print_cr("op%d", op->id()));
 
       // visit operation to collect all operands
       visitor.visit(op);
@@ -608,6 +610,7 @@ void LinearScan::compute_local_live_sets() {
         if (opr->is_virtual_register()) {
           assert(reg_num(opr) == opr->vreg_number() && !is_valid_reg_num(reg_numHi(opr)), "invalid optimization below");
           reg = opr->vreg_number();
+          TRACE_LINEAR_SCAN(4, tty->print_cr("  input virtual register %d", reg));
           if (!live_kill.at(reg)) {
             live_gen.set_bit(reg);
             TRACE_LINEAR_SCAN(4, tty->print_cr("  Setting live_gen for register %d at instruction %d", reg, op->id()));
@@ -1317,6 +1320,7 @@ void LinearScan::build_intervals() {
   // iterate all blocks in reverse order
   for (i = block_count() - 1; i >= 0; i--) {
     BlockBegin* block = block_at(i);
+    TRACE_LINEAR_SCAN(2, tty->print_cr("B%d", block->block_id()));
     LIR_OpList* instructions = block->lir()->instructions_list();
     int         block_from =   block->first_lir_instruction_id();
     int         block_to =     block->last_lir_instruction_id();
@@ -1352,6 +1356,7 @@ void LinearScan::build_intervals() {
     for (int j = instructions->length() - 1; j >= 1; j--) {
       LIR_Op* op = instructions->at(j);
       int op_id = op->id();
+      TRACE_LINEAR_SCAN(2, tty->print_cr("op%d", op_id));
 
       // visit operation to collect all operands
       visitor.visit(op);
@@ -1390,6 +1395,37 @@ void LinearScan::build_intervals() {
         assert(opr->is_register(), "visitor should only return register operands");
         add_use(opr, block_from, op_id, use_kind_of_input_operand(op, opr));
       }
+
+      // BEGIN OF PROTOTYPE SOLUTION
+      assert(op_id != -1, "expect regular operation");
+      if (has_info(op_id)) {
+        XHandlers* xhandlers = visitor.all_xhandler();
+        for (int k = 0; k < xhandlers->length(); k++) {
+          XHandler* handler = xhandlers->handler_at(k);
+          BlockBegin* entry = handler->entry_block();
+          ResourceBitMap& live_in = entry->live_in();
+          TRACE_LINEAR_SCAN(
+                            4, tty->print("  op %d branches to exception handler entry B%d. "
+                                          "live-in(B%d) = ",
+                                          op_id, entry->block_id(), entry->block_id());
+                            print_bitmap(live_in);
+                            );
+          // TBD: iterate using live_in.iterate, see code at the beginning of LinearScan::build_intervals
+          for (unsigned int reg = 0; reg < live_in.size(); reg++) {
+            if (live_in.at(reg)) {
+              // The T_ILLEGAL type is used by add_use as a sentinel value
+              // indicating the type is unknown (rather than illegal) so that
+              // the type of the interval corresponding to reg is not updated.
+              TRACE_LINEAR_SCAN(2, tty->print_cr(" use [R%d|?] from %d to %d (%d)", reg, block_from, op_id, noUse));
+              // TBD: review 'noUse': should it be a "should" or a "must"
+              // register? Or is it correct to use 'noUse' since the register is
+              // not physically read by op?
+              add_use(reg, block_from, op_id, noUse, T_ILLEGAL);
+            }
+          }
+        }
+      }
+      // END OF PROTOTYPE SOLUTION
 
       // Add uses of live locals from interpreter's point of view for proper
       // debug information generation
