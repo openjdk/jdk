@@ -25,10 +25,12 @@
 
 package java.lang.foreign;
 
+import jdk.internal.ValueBased;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.foreign.SegmentBulkOperations;
 import jdk.internal.foreign.SegmentFactories;
+import jdk.internal.foreign.StringSupport;
 import jdk.internal.javac.Restricted;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.vm.annotation.ForceInline;
@@ -2811,5 +2813,105 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
          */
         @Override
         int hashCode();
+    }
+
+    /**
+     * {@return an immutable, zero-copy {@link StringView} of the given {@link String}}
+     *
+     * <p>Unlike {@link String#getBytes(Charset)} and {@link SegmentAllocator#allocateFrom(String, Charset)},
+     * no character replacement is performed. If the string contains ill-formed or unpaired
+     * surrogates, the corresponding code units are included in the result without replacement.
+     *
+     * <p>The returned segment is {@linkplain MemorySegment#isReadOnly() read-only}. The scope is an automatic
+     * scope that keeps the given string reachable. The returned segment is always accessible, from any
+     * thread.
+     *
+     * <p>The {@linkplain StringView#charset() charset} is implementation dependent.
+     *
+     * @implNote In this implementation, strings are currently stored using one of the following encodings:
+     *     <ol>
+     *       <li>{@link StandardCharsets#ISO_8859_1}, with elements accessed using {@link
+     *           ValueLayout#JAVA_BYTE}
+     *       <li>{@link StandardCharsets#UTF_16LE} or {@link StandardCharsets#UTF_16BE} (in platform
+     *           {@link ByteOrder#nativeOrder() native byte order}), with elements accessed using {@link
+     *           ValueLayout#JAVA_CHAR_UNALIGNED}
+     *     </ol>
+     *     Future implementations may use other charsets, such as {@link StandardCharsets#UTF_8}
+     * @param string the source string
+     * @throws NullPointerException if {@code string} is {@code null}
+     * @since 28
+     */
+    static StringView ofString(String string) {
+        Objects.requireNonNull(string);
+        return new StringView(
+                StringSupport.asReadOnlySegment(string),
+                StringSupport.stringCharset(string));
+    }
+
+    /**
+     * {@return an immutable, zero-copy {@link StringView} of a subrange of the given {@link String}}
+     *
+     * @param string   the source string
+     * @param srcIndex the starting character index in the source string
+     * @param numChars the number of characters to include in the view
+     * @see #ofString(String)
+     * @throws NullPointerException if {@code string} is {@code null}
+     * @throws IndexOutOfBoundsException if {@code srcIndex < 0}, {@code numChars < 0},
+     *                                   or {@code srcIndex > string.length() - numChars}
+     * @since 28
+     */
+    static StringView ofString(String string, int srcIndex, int numChars) {
+        Objects.requireNonNull(string);
+        Objects.checkFromIndexSize(srcIndex, numChars, string.length());
+        return new StringView(
+                StringSupport.asReadOnlySegment(string, srcIndex, numChars),
+                StringSupport.stringCharset(string));
+    }
+
+    /**
+     * An immutable, zero-copy view of a {@link String}'s storage code units and corresponding
+     * {@link Charset}.
+     *
+     * @see MemorySegment#ofString(String)
+     * @since 28
+     */
+    @ValueBased
+    final class StringView {
+        private final MemorySegment segment;
+        private final Charset charset;
+
+        StringView(MemorySegment segment, Charset charset) {
+            Objects.requireNonNull(segment);
+            Objects.requireNonNull(charset);
+            this.segment = segment;
+            this.charset = charset;
+        }
+
+        /** {@return the {@link MemorySegment} of the {@link String}'s storage code units} */
+        public MemorySegment segment() {
+            return segment;
+        }
+
+        /** {@return the {@link Charset} the {@link #segment()} is encoded in} */
+        public Charset charset() {
+            return charset;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return obj instanceof StringView stringView
+                    && segment.equals(stringView.segment)
+                    && charset.equals(stringView.charset);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(segment, charset);
+        }
+
+        @Override
+        public String toString() {
+            return "StringView[segment=" + segment + ", charset=" + charset + "]";
+        }
     }
 }

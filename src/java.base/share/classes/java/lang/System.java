@@ -2350,8 +2350,18 @@ public final class System {
             }
 
             @Override
-            public void copyToSegmentRaw(String string, MemorySegment segment, long offset, int srcIndex, int srcLength) {
-                string.copyToSegmentRaw(segment, offset, srcIndex, srcLength);
+            public MemorySegment asReadOnlySegment(String string) {
+                return string.asReadOnlySegment();
+            }
+
+            @Override
+            public MemorySegment asReadOnlySegment(String string, int srcIndex, int numChars) {
+                return string.asReadOnlySegment(srcIndex, numChars);
+            }
+
+            @Override
+            public Charset stringCharset(String string) {
+                return string.charset();
             }
 
             @Override

@@ -31,6 +31,7 @@ import java.nio.charset.CharsetEncoder;
 
 public class UTF_16BE extends Unicode
 {
+    public static final UTF_16BE INSTANCE = new UTF_16BE();
 
     public UTF_16BE() {
         super("UTF-16BE", StandardCharsets.aliases_UTF_16BE());
