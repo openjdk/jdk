@@ -206,7 +206,7 @@ private:
   Node* dividend() const override { return in(TypeFunc::Parms + 0); }
   Node* divisor() const override { return in(TypeFunc::Parms + 2); }
   const Type* get_result_if_constant(const Type* dividend, const Type* divisor) const override;
-  TupleNode* make_tuple_of_input_state_and_result(PhaseIterGVN* phase, Node* result, Node* control = nullptr);
+  TupleNode* make_tuple_of_input_state_and_result(PhaseIterGVN* phase, Node* result);
 
 public:
   ModDNode(Compile* C, Node* a, Node* b);

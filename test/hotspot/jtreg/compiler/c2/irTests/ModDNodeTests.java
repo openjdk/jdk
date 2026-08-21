@@ -237,8 +237,8 @@ public class ModDNodeTests {
     @Test
     @IR(counts = {IRNode.MOD_D, "3"},
         phase = CompilePhase.AFTER_PARSING)
-    @IR(counts = {IRNode.MOD_D, "1"},
-        phase = CompilePhase.AFTER_CLOOPS) // drop the useless one + ModD with integer constant divisor optimized to ModL
+    @IR(counts = {IRNode.MOD_D, "2"},
+        phase = CompilePhase.AFTER_CLOOPS) // drop the useless one
     @IR(failOn = {IRNode.MOD_D},
         phase = CompilePhase.PHASEIDEALLOOP1) // drop the rest
     @IR(failOn = {".*CallLeaf.*drem.*"},

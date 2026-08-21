@@ -91,6 +91,7 @@ class ConvD2LNode : public ConvertNode {
   virtual const Type* in_type() const { return Type::DOUBLE; }
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
 //------------------------------ConvF2DNode------------------------------------
@@ -187,7 +188,6 @@ public:
   virtual int Opcode() const;
   virtual const Type* in_type() const { return TypeLong::LONG; }
   virtual const Type* Value(PhaseGVN* phase) const;
-  virtual Node* Identity(PhaseGVN* phase);
 };
 
 //------------------------------ConvL2FNode------------------------------------

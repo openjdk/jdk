@@ -45,8 +45,8 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Thread)
 public class DremFrem {
 
-    private static final int DEFAULT_X_RANGE = 1 << 16;
-    private static final int DEFAULT_Y_RANGE = 1 << 8;
+    private static final int DEFAULT_X_RANGE = 1 << 11;
+    private static final int DEFAULT_Y_RANGE = 1 << 11;
     private static boolean regressionValue = false;
 
     private int[] ints;
@@ -167,18 +167,16 @@ public class DremFrem {
         regressionValue = sum % 2 == 1;
     }
 
+    // The loop exit value j == 1 is known only after loop opts, so the dividend is not
+    // provably integral until then.
     @Benchmark
     @OperationsPerInvocation(DEFAULT_X_RANGE)
     public void foldedAfterLoopOpts() {
-        int a = 77;
-        int b = 0;
-        do {
-            a--;
-            b++;
-        } while (a > 0);
+        int j;
+        for (j = -10; j < 1; j++) { }
         double sum = 0;
         for (int i = 0; i < DEFAULT_X_RANGE; i++) {
-            double x = (double) i + (b == 77 ? 0.0 : 0.5);
+            double x = (double) i * j;
             sum += x % 42.0D;
         }
         regressionValue = sum % 2 == 1;

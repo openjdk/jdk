@@ -23,7 +23,6 @@
 package compiler.c2.irTests;
 
 import jdk.test.lib.Asserts;
-import compiler.lib.generators.Generator;
 import compiler.lib.ir_framework.*;
 
 import static compiler.lib.generators.Generators.G;
@@ -55,7 +54,7 @@ public class ModDIntegerOptTests {
                  "staticConvL2D", "staticNegD", "staticNegF", "staticAbsD", "staticAbsF",
                  "staticDivisorOne", "staticNegativeDivisor", "staticLargeDivisor",
                  "staticDepth4", "staticDepth5",
-                 "speculativeDouble", "nonIntegerDivisor",
+                 "nonIntegralDividend", "nonIntegerDivisor",
                  "divisorZero", "divisorNaN", "divisorInf", "divisorLarge"})
     public void runner() {
         int a = G.ints().next();
@@ -83,8 +82,8 @@ public class ModDIntegerOptTests {
                 "staticFloatLargeConst(" + v + ")");
             assertDremEQ(staticHugeConst(v), ((double)v + (1L << 62)) % 42.0d,
                 "staticHugeConst(" + v + ")");
-            // Also exercise int values through speculative path
-            assertDremEQ(speculativeDouble((double)v), (double)v % 42.0d, "speculative(int " + v + ")");
+            // Also exercise int values through the unoptimized path
+            assertDremEQ(nonIntegralDividend((double)v), (double)v % 42.0d, "nonIntegralDividend(int " + v + ")");
         }
         assertDremEQ(staticSumOfInts(a, b, c),
             ((double)a + (double)b + (double)c) % 7.0d,
@@ -104,7 +103,7 @@ public class ModDIntegerOptTests {
         for (int i = 0; i < 5; i++) { depth5ref += (double)((i % 2 == 0) ? b : a); }
         assertDremEQ(staticDepth5(a, b), depth5ref % 42.0d, "staticDepth5(" + a + "," + b + ")");
 
-        // Speculative path: edge-case doubles including 2^31, 2^53 and 2^63 boundaries
+        // Unoptimized path: edge-case doubles including 2^31, 2^53 and 2^63 boundaries
         final double TWO_31 = (double)(1L << 31);
         final double TWO_53 = (double)(1L << 53);   // double mantissa precision boundary
         final double TWO_59 = (double)(1L << 59);   // constant magnitude bound (63 - D)
@@ -129,7 +128,7 @@ public class ModDIntegerOptTests {
         };
 
         for (double x : values) {
-            assertDremEQ(speculativeDouble(x), x % 42.0d, "speculative(" + x + ")");
+            assertDremEQ(nonIntegralDividend(x), x % 42.0d, "nonIntegralDividend(" + x + ")");
             assertDremEQ(nonIntegerDivisor(x), x % 31.5d, "nonIntegerDivisor(" + x + ")");
             // Divisor bail-out correctness: optimization doesn't fire, fmod handles it
             assertDremEQ(divisorZero(x), x % 0.0d, "divisorZero(" + x + ")");
@@ -194,7 +193,7 @@ public class ModDIntegerOptTests {
         return ((float)a + 3e10f) % 42.0d;
     }
 
-    // Constant at 2^62 (depth-1 bound, strict <) rejected, falls to speculative
+    // Constant at 2^62 (depth-1 bound, strict <) rejected, not optimized
     @Test
     @IR(counts = {".*CallLeaf.*drem.*", "1"}, phase = CompilePhase.BEFORE_MATCHING)
     public double staticHugeConst(int a) {
@@ -276,7 +275,7 @@ public class ModDIntegerOptTests {
         return v % 42.0d;
     }
 
-    // Depth 5: exceeds limit, falls to speculative (drem on slow path)
+    // Depth 5: exceeds limit, not optimized
     @Test
     @IR(counts = {".*CallLeaf.*drem.*", "1"}, phase = CompilePhase.BEFORE_MATCHING)
     public double staticDepth5(int a, int b) {
@@ -289,29 +288,31 @@ public class ModDIntegerOptTests {
         return v % 42.0d;
     }
 
-    // Speculative: two guards (roundtrip check + saturation check)
+    // Dividend not provably integral: not optimized
     @Test
     @IR(counts = {IRNode.MOD_D, "1"}, phase = CompilePhase.AFTER_PARSING)
-    @IR(failOn = {IRNode.MOD_D})
-    @IR(counts = {IRNode.CONV_D2L, "1", IRNode.CMP_D, "1", IRNode.IF, "2"})
+    @IR(counts = {IRNode.MOD_D, "1"})
+    @IR(failOn = {IRNode.CONV_D2L})
     @IR(counts = {".*CallLeaf.*drem.*", "1"}, phase = CompilePhase.BEFORE_MATCHING)
-    public double speculativeDouble(double x) {
+    public double nonIntegralDividend(double x) {
         return x % 42.0d;
     }
 
     @Test
     @IR(counts = {IRNode.MOD_D, "1"}, phase = CompilePhase.AFTER_PARSING)
     @IR(counts = {IRNode.MOD_D, "1"})
-    @IR(failOn = {IRNode.CONV_D2L, IRNode.IF})
+    @IR(failOn = {IRNode.CONV_D2L})
     @IR(counts = {".*CallLeaf.*drem.*", "1"}, phase = CompilePhase.BEFORE_MATCHING)
     public double nonIntegerDivisor(double x) {
         return x % 31.5d;
     }
 
     @Test
+    @Warmup(0)
     @Arguments(values = {Argument.NUMBER_42})
+    @IR(counts = {IRNode.MOD_D, "1"}, phase = CompilePhase.BEFORE_LOOP_OPTS)
     @IR(failOn = {".*CallLeaf.*drem.*"}, phase = CompilePhase.BEFORE_MATCHING)
-    public double foldedAfterLoopOpts(int input) {
+    public double foldedAfterLoopOptsPhi(int input) {
         int a = 77;
         int b = 0;
         do {
@@ -323,25 +324,36 @@ public class ModDIntegerOptTests {
     }
 
     @Test
-    @IR(failOn = {IRNode.CONV_D2L, IRNode.IF})
+    @Arguments(values = {Argument.NUMBER_42})
+    @IR(counts = {IRNode.MOD_D, "1"}, phase = CompilePhase.BEFORE_LOOP_OPTS)
+    @IR(failOn = {".*CallLeaf.*drem.*"}, phase = CompilePhase.BEFORE_MATCHING)
+    public double foldedAfterLoopOptsMul(int input) {
+        int i;
+        for (i = -10; i < 1; i++) { }
+        double x = (double) input * i;
+        return x % 42.0d;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.CONV_D2L})
     public double divisorZero(double x) {
         return x % 0.0d;
     }
 
     @Test
-    @IR(failOn = {IRNode.CONV_D2L, IRNode.IF})
+    @IR(failOn = {IRNode.CONV_D2L})
     public double divisorNaN(double x) {
         return x % Double.NaN;
     }
 
     @Test
-    @IR(failOn = {IRNode.CONV_D2L, IRNode.IF})
+    @IR(failOn = {IRNode.CONV_D2L})
     public double divisorInf(double x) {
         return x % Double.POSITIVE_INFINITY;
     }
 
     @Test
-    @IR(failOn = {IRNode.CONV_D2L, IRNode.IF})
+    @IR(failOn = {IRNode.CONV_D2L})
     public double divisorLarge(double x) {
         return x % 9007199254740993.0d;
     }

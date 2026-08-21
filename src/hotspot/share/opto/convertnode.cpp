@@ -38,26 +38,9 @@
 // Max recursion depth for is_integral_fp. Increasing accepts deeper expression trees
 // but grows worst-case compile cost (2^D recursive calls).
 //
-// Expressions beyond the limit fall to the speculative path (correct, just less optimized).
+// Expressions beyond the limit are not optimized.
 static const int INTEGRAL_FP_DEPTH_LIMIT = 4;
 
-// Check if a node provably produces an integral floating-point value that fits
-// in jlong (-2^63 <= value < 2^63), so ConvD2L does not saturate.
-//
-// Integrality is inductive: IEEE 754 add/sub/neg/abs of integral values always yields an
-// integral result. A sub-tree at depth d has magnitude < 2^(63-d).
-// Constants at depth d capped at < 2^(63-d); AddD/SubD doubles the bound per level up.
-// ConvI2D/ConvI2F leaves (max 2^31) have more headroom.
-// ConvL2D is depth-0 only (arithmetic above it could sum past 2^63).
-//
-// Recognized patterns (d = node depth):
-//   ConF(c) where |c| < 2^(63-d) and c == (float)(jlong)c  -> true
-//   ConD(c) where |c| < 2^(63-d) and c == (double)(jlong)c -> true
-//   ConvI2F/ConvI2D(x)                                     -> true
-//   ConvF2D(integral_fp)                                   -> true
-//   ConvL2D(x) at depth 0, type(x) won't round to 2^63     -> true
-//   NegD/AbsD/CastDD/NegF/AbsF/CastFF(integral_fp)         -> true
-//   AddD/SubD/AddF/SubF(integral_fp, integral_fp)          -> true
 bool is_integral_fp(const PhaseGVN* phase, const Node* n, int depth) {
   if (depth > INTEGRAL_FP_DEPTH_LIMIT) return false;
   switch (n->Opcode()) {
@@ -269,14 +252,7 @@ Node* ConvD2INode::Identity(PhaseGVN* phase) {
 const Type* ConvD2LNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return Type::TOP;
-  if(t == Type::DOUBLE) {
-    // is_integral_fp guarantees |value| < 2^63, so ConvD2L never saturates
-    // to max_jlong. max_jlong isn't representable as double (rounds to 2^63),
-    // so the output is always < max_jlong.
-    return is_integral_fp(phase, in(1), 0)
-      ? TypeLong::make(min_jlong, max_jlong - 1, Type::WidenMax)
-      : TypeLong::LONG;
-  }
+  if( t == Type::DOUBLE ) return TypeLong::LONG;
   const TypeD *td = t->is_double_constant();
   return TypeLong::make( SharedRuntime::d2l( td->getd() ) );
 }
@@ -287,11 +263,16 @@ Node* ConvD2LNode::Identity(PhaseGVN* phase) {
   if( in(1)       ->Opcode() == Op_ConvL2D &&
      in(1)->in(1)->Opcode() == Op_ConvD2L )
   return in(1)->in(1);
+  return this;
+}
+
+//------------------------------Ideal------------------------------------------
+Node* ConvD2LNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // ConvI2D->ConvD2L => ConvI2L
   if (in(1)->Opcode() == Op_ConvI2D) {
     return phase->transform(new ConvI2LNode(in(1)->in(1)));
   }
-  return this;
+  return nullptr;
 }
 
 //=============================================================================
@@ -907,14 +888,6 @@ const Type* ConvL2DNode::Value(PhaseGVN* phase) const {
   const TypeLong *tl = t->is_long();
   if( tl->is_con() ) return TypeD::make( (double)tl->get_con() );
   return Type::DOUBLE;
-}
-
-//----------------------------Identity-----------------------------------------
-Node* ConvL2DNode::Identity(PhaseGVN* phase) {
-  // Convert L2D(D2L(x)) => x when x is provably integral
-  return (in(1)->Opcode() == Op_ConvD2L && is_integral_fp(phase, in(1)->in(1)))
-    ? in(1)->in(1)
-    : this;
 }
 
 //=============================================================================
