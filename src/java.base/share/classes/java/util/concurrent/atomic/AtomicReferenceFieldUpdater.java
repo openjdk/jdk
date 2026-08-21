@@ -39,7 +39,9 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
-import jdk.internal.misc.Unsafe;
+
+import jdk.internal.access.JavaLangInvokeAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.vm.annotation.TrustFinalFields;
@@ -317,8 +319,8 @@ public abstract class AtomicReferenceFieldUpdater<T,V> {
     @TrustFinalFields
     private static final class AtomicReferenceFieldUpdaterImpl<T,V>
         extends AtomicReferenceFieldUpdater<T,V> {
-        private static final Unsafe U = Unsafe.getUnsafe();
-        private final long offset;
+        private static final JavaLangInvokeAccess JLIA = SharedSecrets.getJavaLangInvokeAccess();
+        private final VarHandle handle;
         /**
          * if field is protected, the subclass constructing updater, else
          * the same as tclass
@@ -382,7 +384,11 @@ public abstract class AtomicReferenceFieldUpdater<T,V> {
                           ? caller : tclass;
             this.tclass = tclass;
             this.vclass = vclass;
-            this.offset = U.objectFieldOffset(field);
+            try {
+                this.handle = JLIA.unreflectFieldVarHandle(field);
+            } catch (IllegalAccessException e) {
+                throw new InternalError(e);
+            }
         }
 
         /**
@@ -449,39 +455,39 @@ public abstract class AtomicReferenceFieldUpdater<T,V> {
         public final boolean compareAndSet(T obj, V expect, V update) {
             accessCheck(obj);
             valueCheck(update);
-            return U.compareAndSetReference(obj, offset, expect, update);
+            return handle.compareAndSet(obj, expect, update);
         }
 
         public final boolean weakCompareAndSet(T obj, V expect, V update) {
             // same implementation as strong form for now
             accessCheck(obj);
             valueCheck(update);
-            return U.compareAndSetReference(obj, offset, expect, update);
+            return handle.weakCompareAndSet(obj, expect, update);
         }
 
         public final void set(T obj, V newValue) {
             accessCheck(obj);
             valueCheck(newValue);
-            U.putReferenceVolatile(obj, offset, newValue);
+            handle.setVolatile(obj, newValue);
         }
 
         public final void lazySet(T obj, V newValue) {
             accessCheck(obj);
             valueCheck(newValue);
-            U.putReferenceRelease(obj, offset, newValue);
+            handle.setRelease(obj, newValue);
         }
 
         @SuppressWarnings("unchecked")
         public final V get(T obj) {
             accessCheck(obj);
-            return (V)U.getReferenceVolatile(obj, offset);
+            return (V) handle.get(obj);
         }
 
         @SuppressWarnings("unchecked")
         public final V getAndSet(T obj, V newValue) {
             accessCheck(obj);
             valueCheck(newValue);
-            return (V)U.getAndSetReference(obj, offset, newValue);
+            return (V) handle.getAndSet(obj, newValue);
         }
     }
 }
