@@ -1007,8 +1007,7 @@ public:
   // Recursive version of check in MatchRule
   int        cisc_spill_match(FormDict& globals, RegisterForm* registers,
                               MatchNode* mRule2, const char* &operand,
-                              const char* &reg_type,
-                              InstructForm *from_instr, InstructForm *to_instr);
+                              const char* &reg_type, InstructForm *from_instr, InstructForm *to_instr);
   int        cisc_spill_merge(int left_result, int right_result);
 
   virtual bool equivalent(FormDict& globals, MatchNode* mNode2);
