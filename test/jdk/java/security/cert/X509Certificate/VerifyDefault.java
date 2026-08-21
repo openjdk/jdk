@@ -180,6 +180,15 @@ public class VerifyDefault {
         Asserts.assertThrows(CertificateNotYetValidException.class,
                 () -> cert.checkValidity(notYetValidInstant));
 
+        // checking the default checkValidity(Instant) implementation:
+        // instants outside the range representable by Date must not throw
+        // IllegalArgumentException; they are clamped to the nearest Date
+        X509Certificate defaultImplCert = new TestX509Certificate(cert);
+        Asserts.assertThrows(CertificateExpiredException.class,
+                () -> defaultImplCert.checkValidity(Instant.MAX));
+        Asserts.assertThrows(CertificateNotYetValidException.class,
+                () -> defaultImplCert.checkValidity(Instant.MIN));
+
         cert.checkValidity(Date.from(validInstant));
         Asserts.assertThrows(CertificateExpiredException.class,
                 () -> cert.checkValidity(Date.from(expiredInstant)));

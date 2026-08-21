@@ -178,7 +178,14 @@ public abstract non-sealed class X509Certificate extends Certificate
      *
      * @implSpec
      * The default implementation converts the specified {@code Instant} to
-     * a {@code Date} and calls {@code checkValidity(Date)} with it.
+     * a {@code Date} using the {@link Date#from(Instant)} method and calls
+     * {@code checkValidity(Date)} on the result. Note that converting to a
+     * {@code Date} will cause any excess nanoseconds in the instant to be
+     * truncated. If {@code instant} falls outside the range representable by
+     * {@code Date}, the nearest {@code Date} is used. For instants too large
+     * to be represented as a {@code Date}, {@code new Date(Long.MAX_VALUE)}
+     * is used, and for instants too small to be represented as a {@code Date},
+     * {@code new Date(Long.MIN_VALUE)} is used.
      *
      * @param instant the {@code Instant} to check against to see if this
      *                certificate is valid at that instant.
@@ -188,8 +195,6 @@ public abstract non-sealed class X509Certificate extends Certificate
      * @throws    CertificateNotYetValidException if the certificate is not
      * yet valid with respect to the {@code instant} supplied.
      * @throws    NullPointerException if the supplied instant is {@code null}.
-     * @throws    IllegalArgumentException if supplied instant is outside the
-     * range supported by Date (e.g., Instant.MAX).
      *
      * @see #checkValidity()
      * @since 28
@@ -197,7 +202,13 @@ public abstract non-sealed class X509Certificate extends Certificate
     public void checkValidity(Instant instant)
         throws CertificateExpiredException, CertificateNotYetValidException {
 
-        final Date date = Date.from(instant);
+        Date date;
+        try {
+            date = Date.from(instant);
+        } catch (IllegalArgumentException e) {
+            date = instant.isBefore(Instant.EPOCH)
+                    ? new Date(Long.MIN_VALUE) : new Date(Long.MAX_VALUE);
+        }
         checkValidity(date);
     }
 
@@ -362,8 +373,7 @@ public abstract non-sealed class X509Certificate extends Certificate
 
     /**
      * Gets the {@code notAfter} date from the validity period of
-     * the certificate
-     * for relevant ASN.1 definitions.
+     * the certificate.
      *
      * @return the end date of the validity period.
      * @see #checkValidity()
