@@ -95,11 +95,11 @@ ShenandoahConcurrentGC::ShenandoahConcurrentGC(ShenandoahController* controller,
   _controller(controller),
   _abbreviated(false),
   _do_old_gc_bootstrap(do_old_gc_bootstrap) {
-  _controller->set_phase(ShenandoahController::INITIALIZING);
+  update_phase(ShenandoahController::INITIALIZING);
 }
 
 ShenandoahConcurrentGC::~ShenandoahConcurrentGC() {
-  _controller->set_phase(ShenandoahController::UNSET);
+  update_phase(ShenandoahController::UNSET);
 }
 
 void ShenandoahConcurrentGC::entry_concurrent_update_refs_prepare(ShenandoahHeap* const heap) {
@@ -480,7 +480,7 @@ void ShenandoahConcurrentGC::entry_mark_roots() {
                               ShenandoahWorkerPolicy::calc_workers_for_conc_marking(),
                               "concurrent marking roots");
 
-  _controller->set_phase(ShenandoahController::ROOTS);
+  update_phase(ShenandoahController::ROOTS);
   heap->try_inject_alloc_failure();
   op_mark_roots();
 }
@@ -499,7 +499,7 @@ void ShenandoahConcurrentGC::entry_mark() {
                               ShenandoahWorkerPolicy::calc_workers_for_conc_marking(),
                               "concurrent marking");
 
-  _controller->set_phase(ShenandoahController::MARK);
+  update_phase(ShenandoahController::MARK);
   heap->try_inject_alloc_failure();
   op_mark();
   heap->try_inject_pin();
@@ -615,7 +615,7 @@ void ShenandoahConcurrentGC::entry_evacuate() {
                               ShenandoahWorkerPolicy::calc_workers_for_conc_evac(),
                               "concurrent evacuation");
 
-  _controller->set_phase(ShenandoahController::EVAC);
+  update_phase(ShenandoahController::EVAC);
   heap->try_inject_alloc_failure();
   heap->try_inject_pin();
   op_evacuate();
@@ -645,7 +645,7 @@ void ShenandoahConcurrentGC::entry_update_refs() {
                               ShenandoahWorkerPolicy::calc_workers_for_conc_update_ref(),
                               "concurrent reference update");
 
-  _controller->set_phase(ShenandoahController::UPDATE_REFS);
+  update_phase(ShenandoahController::UPDATE_REFS);
   heap->try_inject_alloc_failure();
   heap->try_inject_pin();
   op_update_refs();
@@ -671,6 +671,12 @@ void ShenandoahConcurrentGC::entry_reset_after_collect() {
   EventMark em("%s", msg);
 
   op_reset_after_collect();
+}
+
+void ShenandoahConcurrentGC::update_phase(ShenandoahController::ShenandoahCollectorPhase phase) const {
+  if (_controller != nullptr) {
+    update_phase(phase);
+  }
 }
 
 void ShenandoahConcurrentGC::op_reset() {

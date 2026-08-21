@@ -36,8 +36,8 @@
 #include "utilities/events.hpp"
 
 
-ShenandoahOldGC::ShenandoahOldGC(ShenandoahController* controller, ShenandoahOldGeneration* generation, ShenandoahSharedFlag& allow_preemption)
-  : ShenandoahConcurrentGC(controller, generation, false)
+ShenandoahOldGC::ShenandoahOldGC(ShenandoahOldGeneration* generation, ShenandoahSharedFlag& allow_preemption)
+  : ShenandoahConcurrentGC(nullptr, generation, false)
   , _old_generation(generation)
   , _allow_preemption(allow_preemption) {
 }

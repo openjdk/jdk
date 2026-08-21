@@ -28,6 +28,7 @@
 
 #include "gc/shared/gcCause.hpp"
 #include "gc/shenandoah/shenandoahConcurrentMark.hpp"
+#include "gc/shenandoah/shenandoahController.hpp"
 #include "gc/shenandoah/shenandoahGC.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 
@@ -129,6 +130,7 @@ protected:
   // Called when concurrent GC succeeds.
   void entry_reset_after_collect();
 
+  void update_phase(ShenandoahController::ShenandoahCollectorPhase phase) const;
 private:
   void start_mark();
 

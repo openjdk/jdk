@@ -426,7 +426,7 @@ void ShenandoahGenerationalControlThread::resume_concurrent_old_cycle(Shenandoah
   // We can only tolerate being cancelled during concurrent marking or during preparation for mixed
   // evacuation. This flag here (passed by reference) is used to control precisely where the regulator
   // is allowed to cancel a GC.
-  ShenandoahOldGC gc(this, generation, _allow_old_preemption);
+  ShenandoahOldGC gc(generation, _allow_old_preemption);
   if (gc.collect(cause)) {
     _heap->notify_gc_progress();
     generation->heuristics()->record_concurrent_completion();
