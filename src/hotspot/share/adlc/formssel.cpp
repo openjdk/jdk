@@ -3905,14 +3905,14 @@ void MatchNode::count_commutative_op(int& count) {
     "MaxI","MinI","MaxHF","MinHF","MaxF","MinF","MaxD","MinD",
     "MulI","MulL","MulHF","MulF","MulD",
     "OrI","OrL",
-    "XorI","XorL"
+    "XorI","XorL",
   };
 
   static const char *commut_vector_op_list[] = {
     "AddVB", "AddVS", "AddVI", "AddVL", "AddVHF", "AddVF", "AddVD",
     "MulVB", "MulVS", "MulVI", "MulVL", "MulVHF", "MulVF", "MulVD",
     "AndV", "OrV", "XorV", "AndVMask", "OrVMask", "XorVMask",
-    "MaxVHF", "MinVHF", "MaxV", "MinV", "UMaxV", "UMinV"
+    "MaxVHF", "MinVHF", "MaxV", "MinV", "UMaxV", "UMinV",
   };
 
   if (_lChild && _rChild && (_lChild->_lChild || _rChild->_lChild)) {
