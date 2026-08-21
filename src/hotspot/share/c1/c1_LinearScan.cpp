@@ -767,26 +767,32 @@ void LinearScan::compute_global_live_sets() {
       if (n + e > 0) {
         // block has successors
         if (n > 0) {
+#ifdef ASSERT
           if (TraceLinearScanLevel >= 4) {
             tty->print("live_out B%d u= live_in B%d = ", block->block_id(), block->sux_at(0)->block_id());
             print_bitmap(block->sux_at(0)->live_in());
           }
+#endif
           live_out.set_from(block->sux_at(0)->live_in());
           for (int j = 1; j < n; j++) {
+#ifdef ASSERT
             if (TraceLinearScanLevel >= 4) {
               tty->print("live_out B%d u= live_in B%d = ", block->block_id(), block->sux_at(j)->block_id());
               print_bitmap(block->sux_at(j)->live_in());
             }
+#endif
             live_out.set_union(block->sux_at(j)->live_in());
           }
         } else {
           live_out.clear();
         }
         for (int j = 0; j < e; j++) {
+#ifdef ASSERT
           if (TraceLinearScanLevel >= 4) {
             tty->print("live_out B%d u= live_in B%d = ", block->block_id(), block->exception_handler_at(j)->block_id());
             print_bitmap(block->exception_handler_at(j)->live_in());
           }
+#endif
           live_out.set_union(block->exception_handler_at(j)->live_in());
         }
 
