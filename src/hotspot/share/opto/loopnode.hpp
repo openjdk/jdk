@@ -1459,11 +1459,8 @@ public:
       if (_should_speculatively_narrow_limit) {
         // The limit must overlap with the int range; otherwise narrowing is provably impossible.
         const Type* narrowed = TypeLong::INT->filter(igvn.type(_limit));
-        if (narrowed == Type::TOP) {
-          _should_speculatively_narrow_limit = false;
-        } else {
-          _limit_t = narrowed->is_long();
-        }
+        assert (narrowed != Type::TOP, "IGVN should have folded the CmpL/ConvI2L away");
+        _limit_t = narrowed->is_long();
       }
 
       return _should_speculatively_narrow_limit;
