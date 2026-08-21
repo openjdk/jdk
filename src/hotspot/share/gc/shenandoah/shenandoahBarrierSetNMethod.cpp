@@ -41,7 +41,7 @@ bool ShenandoahBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
   if (!is_armed(nm)) {
     // Some other thread got here first and healed the oops.
     // No need to continue. We only need to sync up the changes done by others.
-    OrderAccess::cross_modify_fence();
+    cross_modify_fence();
     return true;
   }
 
@@ -52,7 +52,7 @@ bool ShenandoahBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
   if (!is_armed(nm)) {
     // Some other thread managed to complete while we were waiting for lock.
     // No need to continue. We only need to sync up the changes done by others.
-    OrderAccess::cross_modify_fence();
+    cross_modify_fence();
     return true;
   }
 
@@ -88,9 +88,19 @@ bool ShenandoahBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
   ShenandoahNMethod::disarm_nmethod(nm);
 
   // Paranoia: sync up the changes done by others, even though we did a lot ourselves.
-  OrderAccess::cross_modify_fence();
+  cross_modify_fence();
 
   return true;
+}
+
+void ShenandoahBarrierSetNMethod::cross_modify_fence() {
+  // For Java threads that can execute the nmethod code, we need to sync up
+  // the code changes with current execution. Non-Java threads do not execute
+  // the code, and thus do not need this fence. (VM has VerifyCrossModifyFence code
+  // that barfs when we attempt to do this.)
+  if (Thread::current()->is_Java_thread()) {
+    OrderAccess::cross_modify_fence();
+  }
 }
 
 void ShenandoahBarrierSetNMethod::finalize_relocations(nmethod* nm) {

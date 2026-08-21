@@ -35,6 +35,8 @@ class ShenandoahBarrierSetNMethod : public BarrierSetNMethod {
 private:
   ShenandoahHeap* _heap;
 
+  void cross_modify_fence();
+
 public:
   ShenandoahBarrierSetNMethod(ShenandoahHeap* heap) : _heap(heap) {
   }
