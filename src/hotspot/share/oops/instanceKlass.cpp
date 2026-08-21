@@ -3344,14 +3344,21 @@ void InstanceKlass::unload_class(InstanceKlass* ik) {
     log_info(class, unload)("unloading class %s " PTR_FORMAT, ik->external_name(), p2i(ik));
   }
 
-  Events::log_class_unloading(Thread::current(), ik);
+  Thread* const current = Thread::current();
+  Events::log_class_unloading(current, ik);
 
 #if INCLUDE_JFR
   assert(ik != nullptr, "invariant");
-  EventClassUnload event;
-  event.set_unloadedClass(ik);
-  event.set_definingClassLoader(ik->class_loader_data());
-  event.commit();
+  // For concurrent unloading, we need the ik, the cld, and the event
+  // to end up in the correct JFR epoch, hence the acquisition of the
+  // epoch shift lock before the event.commit().
+  if (EventClassUnload::is_enabled()) {
+    EventClassUnload event;
+    event.set_unloadedClass(ik);
+    event.set_definingClassLoader(ik->class_loader_data());
+    ConditionalMutexLocker ml(JfrEpochShift_lock, UseShenandoahGC || UseZGC, Mutex::_no_safepoint_check_flag);
+    event.commit();
+  }
 #endif
 }
 
