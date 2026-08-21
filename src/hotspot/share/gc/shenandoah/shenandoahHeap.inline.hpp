@@ -397,12 +397,13 @@ inline bool ShenandoahHeap::has_affiliation(const void* p, ShenandoahAffiliation
   }
 
   const size_t index = p2u(p) >> ShenandoahHeapRegion::region_size_bytes_shift();
-  return _biased_affiliations[index] == affiliation;
+  return AtomicAccess::load(_biased_affiliations + index) == affiliation;
 }
 
 inline bool ShenandoahHeap::has_affiliation(oop obj, ShenandoahAffiliation affiliation) const {
+  assert(is_in_reserved(obj), "Expected decoded oop (" PTR_FORMAT ") to be in the heap", p2i(obj));
   const size_t index = p2u(obj) >> ShenandoahHeapRegion::region_size_bytes_shift();
-  return _biased_affiliations[index] == affiliation;
+  return AtomicAccess::load(_biased_affiliations + index) == affiliation;
 }
 
 inline bool ShenandoahHeap::is_in_old_during_young_collection(oop obj) const {
