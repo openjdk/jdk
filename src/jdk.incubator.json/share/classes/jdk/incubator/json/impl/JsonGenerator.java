@@ -39,11 +39,11 @@ import jdk.incubator.json.JsonValue;
 public final class JsonGenerator {
 
     // Types of output items: either literal string or a JSON value to generate
-    private sealed interface Output permits LiteralOut, JsonValueOut {}
-    private record JsonValueOut(JsonValue jv, int depth, boolean isField) implements Output {}
-    private record LiteralOut(String text) implements Output {}
+    private sealed interface Output permits LiteralOutput, JsonValueOutput {}
+    private record JsonValueOutput(JsonValue jv, int depth, boolean isField) implements Output {}
+    private record LiteralOutput(String literal) implements Output {}
 
-    // Generates JSON text for toString()
+    // Generates JSON text for Json[Object|Array].toString()
     public static String toCompactString(JsonValue jv) {
         return generate(jv, "", false);
     }
@@ -56,12 +56,12 @@ public final class JsonGenerator {
     private static String generate(JsonValue root, String indent, boolean isDisplay) {
         var sb = new StringBuilder();
         Deque<Output> outputs = new ArrayDeque<>();
-        outputs.push(new JsonValueOut(root, 0, false));
+        outputs.push(new JsonValueOutput(root, 0, false));
 
         while (!outputs.isEmpty()) {
             switch (outputs.pop()) {
-                case LiteralOut(String text) -> sb.append(text);
-                case JsonValueOut(JsonValue jv, int depth, boolean isField) -> {
+                case LiteralOutput(String literal) -> sb.append(literal);
+                case JsonValueOutput(JsonValue jv, int depth, boolean isField) -> {
                     // append prefix
                     if (isDisplay) {
                         sb.append(isField ? " " : indent.repeat(depth));
@@ -80,8 +80,8 @@ public final class JsonGenerator {
     private static void generateObject(JsonObject jo, StringBuilder sb, Deque<Output> outputs,
                                        String indent, int depth, boolean isDisplay) {
         // Needs a list to process members backward
-        var entries = new ArrayList<>(jo.asMap().entrySet());
-        if (entries.isEmpty()) {
+        var members = new ArrayList<>(jo.asMap().entrySet());
+        if (members.isEmpty()) {
             sb.append("{}");
             return;
         }
@@ -89,22 +89,23 @@ public final class JsonGenerator {
         sb.append(isDisplay ? "{\n" : "{");
 
         // push outputs backward
-        outputs.push(new LiteralOut((isDisplay ? "\n" + indent.repeat(depth) : "") + "}"));
-        for (int i = entries.size() - 1; i >= 0; i--) {
-            var entry = entries.get(i);
-            outputs.push(new JsonValueOut(entry.getValue(), depth + 1, true));
-            outputs.push(new LiteralOut((isDisplay ? indent.repeat(depth + 1) : "")
-                + '"' + Utils.escape(entry.getKey()) + "\":"));
-            if (i > 0) {
-                outputs.push(new LiteralOut(isDisplay ? ",\n" : ","));
+        outputs.push(new LiteralOutput((isDisplay ? "\n" + indent.repeat(depth) : "") + "}"));
+        var iter = members.reversed().iterator();
+        while(iter.hasNext()) {
+            var member = iter.next();
+            outputs.push(new JsonValueOutput(member.getValue(), depth + 1, true));
+            outputs.push(new LiteralOutput((isDisplay ? indent.repeat(depth + 1) : "")
+                + '"' + Utils.escape(member.getKey()) + "\":"));
+            if (iter.hasNext()) {
+                outputs.push(new LiteralOutput(isDisplay ? ",\n" : ","));
             }
         }
     }
 
     private static void generateArray(JsonArray ja, StringBuilder sb, Deque<Output> outputs,
                                       String indent, int depth, boolean isDisplay) {
-        var values = ja.asList();
-        if (values.isEmpty()) {
+        var elements = ja.asList();
+        if (elements.isEmpty()) {
             sb.append("[]");
             return;
         }
@@ -112,11 +113,13 @@ public final class JsonGenerator {
         sb.append(isDisplay ? "[\n" : "[");
 
         // push outputs backward
-        outputs.push(new LiteralOut((isDisplay ? "\n" + indent.repeat(depth) : "") + "]"));
-        for (int i = values.size() - 1; i >= 0; i--) {
-            outputs.push(new JsonValueOut(values.get(i), depth + 1, false));
-            if (i > 0) {
-                outputs.push(new LiteralOut(isDisplay ? ",\n" : ","));
+        outputs.push(new LiteralOutput((isDisplay ? "\n" + indent.repeat(depth) : "") + "]"));
+        var iter = elements.reversed().iterator();
+        while(iter.hasNext()) {
+            var element = iter.next();
+            outputs.push(new JsonValueOutput(element, depth + 1, false));
+            if (iter.hasNext()) {
+                outputs.push(new LiteralOutput(isDisplay ? ",\n" : ","));
             }
         }
     }
