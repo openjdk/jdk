@@ -698,6 +698,13 @@ const Type *AddLNode::add_ring( const Type *t0, const Type *t1 ) const {
 
 
 //=============================================================================
+//------------------------------Ideal------------------------------------------
+Node* AddFPNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  // Floating-point addition is commutative but not associative.
+  return commute(phase, this) ? this : nullptr;
+}
+
+//=============================================================================
 //------------------------------add_of_identity--------------------------------
 // Check for addition of the identity
 const Type *AddFNode::add_of_identity( const Type *t1, const Type *t2 ) const {
@@ -722,12 +729,6 @@ const Type *AddFNode::add_ring( const Type *t0, const Type *t1 ) const {
     return bottom_type();
   }
   return TypeF::make( t0->getf() + t1->getf() );
-}
-
-//------------------------------Ideal------------------------------------------
-Node *AddFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  // Floating point additions are not associative because of boundary conditions (infinity)
-  return commute(phase, this) ? this : nullptr;
 }
 
 //=============================================================================
@@ -771,12 +772,6 @@ const Type *AddDNode::add_ring( const Type *t0, const Type *t1 ) const {
     return bottom_type();
   }
   return TypeD::make( t0->getd() + t1->getd() );
-}
-
-//------------------------------Ideal------------------------------------------
-Node *AddDNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  // Floating point additions are not associative because of boundary conditions (infinity)
-  return commute(phase, this) ? this : nullptr;
 }
 
 

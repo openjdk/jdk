@@ -37,7 +37,7 @@ import java.io.*;
  * for ClassType, InterfaceType
  */
 
-public class modifiers001 extends Log {
+public class modifiers001 {
     static java.io.PrintStream out_stream;
     static boolean verbose_mode = false;
 
