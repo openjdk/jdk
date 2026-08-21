@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,12 @@ public class PKCS12KeyStores {
     private byte[] bs10000;     // Default new
     private byte[] bs2048;
 
+    private byte[] bw2048_PBMAC1;
+    private byte[] bw50000_PBMAC1;     // Default old
+    private byte[] bs50000_PBMAC1;
+    private byte[] bs10000_PBMAC1;     // Default new
+    private byte[] bs2048_PBMAC1;
+
     // Decodes HEX string to byte array
     private static byte[] xeh(String in) {
         return new BigInteger(in, 16).toByteArray();
@@ -88,6 +94,12 @@ public class PKCS12KeyStores {
         bs50000 = outstrong50000();
         bs10000 = outstrong10000_New();
         bs2048 = outstrong2048();
+
+        bw2048_PBMAC1 = outweak2048_PBMAC1();
+        bw50000_PBMAC1 = outweak50000_Old_PBMAC1();
+        bs50000_PBMAC1 = outstrong50000_PBMAC1();
+        bs10000_PBMAC1 = outstrong10000_New_PBMAC1();
+        bs2048_PBMAC1 = outstrong2048_PBMAC1();
     }
 
     // Reads in a pkcs12 keystore
@@ -146,6 +158,33 @@ public class PKCS12KeyStores {
         return in(bs2048);
     }
 
+    // repeat the previous benchmarks with a PBMAC1-protected keystore
+
+    @Benchmark
+    public KeyStore inweak2048_PBMAC1() throws Exception {
+        return in(bw2048_PBMAC1);
+    }
+
+    @Benchmark
+    public KeyStore inweak50000_Old_PBMAC1() throws Exception {
+        return in(bw50000_PBMAC1);
+    }
+
+    @Benchmark
+    public KeyStore instrong50000_PBMAC1() throws Exception {
+        return in(bs50000_PBMAC1);
+    }
+
+    @Benchmark
+    public KeyStore instrong10000_New_PBMAC1() throws Exception {
+        return in(bs10000_PBMAC1);
+    }
+
+    @Benchmark
+    public KeyStore instrong2048_PBMAC1() throws Exception {
+        return in(bs2048_PBMAC1);
+    }
+
     // Writing a keystore
     @Benchmark
     public byte[] outweak2048() throws Exception {
@@ -182,5 +221,44 @@ public class PKCS12KeyStores {
         return out("PBEWithHmacSHA256AndAES_256", "2048",
                 "PBEWithHmacSHA256AndAES_256", "2048",
                 "HmacPBESHA256", "2048");
+    }
+
+    // repeat the previous benchmarks with a PBMAC1-protected keystore
+
+    @Benchmark
+    public byte[] outweak2048_PBMAC1() throws Exception {
+        return out("PBEWithSHA1AndRC2_40", "2048",
+                "PBEWithSHA1AndDESede", "2048",
+                "PBEWithHmacSHA256", "2048");
+    }
+
+    @Benchmark
+    public byte[] outweak50000_Old_PBMAC1() throws Exception {
+        return out("PBEWithSHA1AndRC2_40", "50000",
+                "PBEWithSHA1AndDESede", "50000",
+                "PBEWithHmacSHA256", "100000");
+                // Attention: 100000 is old default Mac ic
+    }
+
+    @Benchmark
+    public byte[] outstrong50000_PBMAC1() throws Exception {
+        return out("PBEWithHmacSHA256AndAES_256", "50000",
+                "PBEWithHmacSHA256AndAES_256", "50000",
+                "PBEWithHmacSHA256", "100000");
+                // Attention: 100000 is old default Mac ic
+    }
+
+    @Benchmark
+    public byte[] outstrong10000_New_PBMAC1() throws Exception {
+        return out("PBEWithHmacSHA256AndAES_256", "10000",
+                "PBEWithHmacSHA256AndAES_256", "10000",
+                "PBEWithHmacSHA256", "10000");
+    }
+
+    @Benchmark
+    public byte[] outstrong2048_PBMAC1() throws Exception {
+        return out("PBEWithHmacSHA256AndAES_256", "2048",
+                "PBEWithHmacSHA256AndAES_256", "2048",
+                "PBEWithHmacSHA256", "2048");
     }
 }
