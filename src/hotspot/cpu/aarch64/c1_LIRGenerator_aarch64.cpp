@@ -76,7 +76,7 @@ LIR_Opr LIRGenerator::shiftCountOpr()   { Unimplemented(); return LIR_OprFact::i
 LIR_Opr LIRGenerator::syncLockOpr()     { return new_register(T_INT); }
 LIR_Opr LIRGenerator::syncTempOpr()     { return FrameMap::r0_opr; }
 LIR_Opr LIRGenerator::getThreadTemp()   { return LIR_OprFact::illegalOpr; }
-
+LIR_Opr LIRGenerator::profile_rng_opr() { return FrameMap::profile_rng_opr; }
 
 LIR_Opr LIRGenerator::result_register_for(ValueType* type, bool callee) {
   LIR_Opr opr;
