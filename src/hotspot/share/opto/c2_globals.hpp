@@ -727,10 +727,8 @@
           "the IGVN worklist drains")                                       \
                                                                             \
   develop(uint, VerifyIterativeGVN, 0,                                      \
-          "Verify Iterative Global Value Numbering =GFEDCBA, with:"         \
-          "  G: verify Node::Identity return an existing node"              \
-          "  F: verify Node::Ideal does not return nullptr if the node"     \
-                "hash has changed"                                          \
+          "Verify Iterative Global Value Numbering =FEDCBA, with:"          \
+          "  F: verify IGVN method return invariants"                       \
           "  E: verify node specific invariants"                            \
           "  D: verify Node::Identity did not miss opportunities"           \
           "  C: verify Node::Ideal did not miss opportunities"              \

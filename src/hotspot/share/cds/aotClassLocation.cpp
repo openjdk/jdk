@@ -994,61 +994,64 @@ bool AOTClassLocationConfig::need_lcp_match_helper(int start, int end, ClassLoca
   return true;
 }
 
-bool AOTClassLocationConfig::validate(const char* cache_filename, bool has_aot_linked_classes, bool has_full_module_graph) const {
+bool AOTClassLocationConfig::validate_helper(const char* cache_filename, bool has_aot_linked_classes, bool has_full_module_graph) const {
   ResourceMark rm;
   AllClassLocationStreams all_css;
 
   log_locations(cache_filename, /*is_write=*/false);
 
-  // (1) Check JRT modules image
-  const char* jrt = ClassLoader::get_jrt_entry()->name();
-  log_info(class, path)("Checking [0] (modules image)");
-  bool success = class_location_at(0)->check(jrt, has_aot_linked_classes);
-  log_info(class, path)("Modules image %s validation: %s", jrt, success ? "passed" : "failed");
-  if (!success) {
+  if (!check_jrt(has_aot_linked_classes)) {
     return false;
   }
 
-  {
-    // (2) Check boot/app classpath
-    bool use_lcp_match = need_lcp_match(all_css);
-    const char* runtime_lcp;
-    size_t runtime_lcp_len;
-
-    log_info(class, path)("Longest common prefix substitution in boot/app classpath matching: %s",
-                          use_lcp_match ? "yes" : "no");
-    if (use_lcp_match) {
-      runtime_lcp = find_lcp(all_css.boot_and_app_cp(), runtime_lcp_len);
-      log_info(class, path)("Longest common prefix: %s (%zu chars)", runtime_lcp, runtime_lcp_len);
-    } else {
-      runtime_lcp = nullptr;
-      runtime_lcp_len = 0;
-    }
-
-    success = check_classpaths(true, has_aot_linked_classes, boot_cp_start_index(), boot_cp_end_index(), all_css.boot_cp(),
-                               use_lcp_match, runtime_lcp, runtime_lcp_len);
-    log_info(class, path)("Archived boot classpath validation: %s", success ? "passed" : "failed");
-
-    if (success && need_to_check_app_classpath()) {
-      success = check_classpaths(false, has_aot_linked_classes, app_cp_start_index(), app_cp_end_index(), all_css.app_cp(),
-                                 use_lcp_match, runtime_lcp, runtime_lcp_len);
-      log_info(class, path)("Archived app classpath validation: %s", success ? "passed" : "failed");
-    }
-
-    // (3) Check module paths
-    if (success) {
-      success = check_module_paths(has_aot_linked_classes, has_full_module_graph, all_css.module_path());
-      log_info(class, path)("Archived module path validation: %s", success ? "passed" : "failed");
-    }
-
-    if (runtime_lcp_len > 0) {
-      os::free((void*)runtime_lcp);
-    }
+  if (!check_classpaths(has_aot_linked_classes, all_css)) {
+    return false;
   }
 
-  if (success) {
-    _runtime_instance = this;
-  } else {
+  bool status = check_module_paths(has_aot_linked_classes, has_full_module_graph, all_css.module_path());
+  log_info(class, path)("Archived module path validation: %s", status ? "passed" : "failed");
+  return status;
+}
+
+bool AOTClassLocationConfig::check_jrt(bool has_aot_linked_classes) const {
+  const char* jrt = ClassLoader::get_jrt_entry()->name();
+  log_info(class, path)("Checking [0] (modules image)");
+  bool status = class_location_at(0)->check(jrt, has_aot_linked_classes);
+  log_info(class, path)("Modules image %s validation: %s", jrt, status ? "passed" : "failed");
+  return status;
+}
+
+bool AOTClassLocationConfig::check_classpaths(bool has_aot_linked_classes, AllClassLocationStreams& all_css) const {
+  const char* runtime_lcp = nullptr;
+  size_t runtime_lcp_len = 0;
+
+  bool use_lcp_match = need_lcp_match(all_css);
+  log_info(class, path)("Longest common prefix substitution in boot/app classpath matching: %s",
+                        use_lcp_match ? "yes" : "no");
+  if (use_lcp_match) {
+    runtime_lcp = find_lcp(all_css.boot_and_app_cp(), runtime_lcp_len);
+    log_info(class, path)("Longest common prefix: %s (%zu chars)", runtime_lcp, runtime_lcp_len);
+  }
+
+  bool status = check_classpaths(true, has_aot_linked_classes, boot_cp_start_index(), boot_cp_end_index(), all_css.boot_cp(),
+                                 use_lcp_match, runtime_lcp, runtime_lcp_len);
+  log_info(class, path)("Archived boot classpath validation: %s", status ? "passed" : "failed");
+
+  if (status && need_to_check_app_classpath()) {
+    status = check_classpaths(false, has_aot_linked_classes, app_cp_start_index(), app_cp_end_index(), all_css.app_cp(),
+                              use_lcp_match, runtime_lcp, runtime_lcp_len);
+    log_info(class, path)("Archived app classpath validation: %s", status ? "passed" : "failed");
+  }
+
+  if (runtime_lcp_len > 0) {
+    os::free((void*)runtime_lcp);
+  }
+
+  return status;
+}
+
+bool AOTClassLocationConfig::validate(const char* cache_filename, bool has_aot_linked_classes, bool has_full_module_graph) const {
+  if (!validate_helper(cache_filename, has_aot_linked_classes, has_full_module_graph)) {
     const char* mismatch_msg = "shared class paths mismatch";
     const char* hint_msg = log_is_enabled(Info, class, path) ?
         "" : " (hint: enable -Xlog:class+path=info to diagnose the failure)";
@@ -1064,8 +1067,23 @@ bool AOTClassLocationConfig::validate(const char* cache_filename, bool has_aot_l
     } else {
       AOTMetaspace::report_loading_error("%s%s", mismatch_msg, hint_msg);
     }
+    return false;
   }
-  return success;
+
+  if (CDSConfig::is_dumping_dynamic_archive()) {
+    // Only support dynamic dumping with the usage of the default CDS archive
+    // or a simple base archive.
+    // If the base layer archive contains additional path component besides
+    // the runtime image and the -cp, dynamic dumping is disabled.
+    if (num_boot_classpaths() > 0) {
+      CDSConfig::disable_dumping_dynamic_archive();
+      aot_log_warning(aot)(
+        "Dynamic archiving is disabled because base layer archive has appended boot classpath");
+    }
+  }
+
+  _runtime_instance = this;
+  return true;
 }
 
 void AOTClassLocationConfig::log_locations(const char* cache_filename, bool is_write) const {
