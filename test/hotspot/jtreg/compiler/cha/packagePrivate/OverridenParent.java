@@ -1,5 +1,5 @@
 /*
- * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,28 +19,15 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+package compiler.cha.packagePrivate;
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHTRACE_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHTRACE_HPP
-
-#include "gc/shared/gcTrace.hpp"
-#include "memory/allocation.hpp"
-
-class ShenandoahCollectionSet;
-class ShenandoahInPlacePromotionPlanner;
-
-class ShenandoahTracer : public GCTracer, public CHeapObj<mtGC> {
-public:
-  ShenandoahTracer() : GCTracer(Shenandoah) {}
-
-  // Sends a JFR event summarizing the composition of the collection set
-  static void report_evacuation_info(const ShenandoahCollectionSet* cset,
-    size_t free_regions, size_t regions_immediate, size_t immediate_size);
-
-  // Sends a JFR event summarizing in-place promotion activity (generational mode only)
-  static void report_promotion_info(const ShenandoahCollectionSet* cset, const ShenandoahInPlacePromotionPlanner& planner);
-};
-
-#endif
+/**
+ * An abstract class such that all of its concrete subclasses have a single implementation of
+ * {@link #call} that is defined in a subclass of this class.
+ */
+public abstract class OverridenParent {
+    int call() {
+        return 0;
+    }
+}

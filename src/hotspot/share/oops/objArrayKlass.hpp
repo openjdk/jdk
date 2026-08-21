@@ -50,7 +50,6 @@ class ObjArrayKlass : public ArrayKlass {
 
   static ArrayDescription array_layout_selection(Klass* element, ArrayProperties properties);
   ObjArrayKlass* allocate_klass_from_description(ArrayDescription ad, TRAPS);
-  ObjArrayKlass* klass_from_description(ArrayDescription adesc, TRAPS);
 
   inline ObjArrayKlass* next_refined_array_klass_acquire() const;
   inline void release_set_next_refined_klass(ObjArrayKlass* ak);
@@ -74,6 +73,7 @@ class ObjArrayKlass : public ArrayKlass {
   Klass* element_klass() const      { return _element_klass; }
 
   ObjArrayKlass* klass_with_properties(ArrayProperties props, TRAPS);
+  ObjArrayKlass* klass_from_description(ArrayDescription adesc, TRAPS);
 
   ObjArrayKlass* next_refined_array_klass() const   { return _next_refined_array_klass; }
   bool find_refined_array_klass(ObjArrayKlass* k);

@@ -1,5 +1,5 @@
 /*
- * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,28 +19,21 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+package compiler.cha.packagePrivate;
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHTRACE_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHTRACE_HPP
+/**
+ * This class provides the unique implementation for {@link OverridenParent#call}, it is abstract
+ * so that {@code ciInstanceKlass::unique_concrete_subklass} does not find it.
+ */
+public abstract class OverridingChild extends OverridenParent {
+    // 3 concrete implementations to defeat the bimorphic inlining heuristic
+    public static class GrandChild1 extends OverridingChild {}
+    public static class GrandChild2 extends OverridingChild {}
+    public static class GrandChild3 extends OverridingChild {}
 
-#include "gc/shared/gcTrace.hpp"
-#include "memory/allocation.hpp"
-
-class ShenandoahCollectionSet;
-class ShenandoahInPlacePromotionPlanner;
-
-class ShenandoahTracer : public GCTracer, public CHeapObj<mtGC> {
-public:
-  ShenandoahTracer() : GCTracer(Shenandoah) {}
-
-  // Sends a JFR event summarizing the composition of the collection set
-  static void report_evacuation_info(const ShenandoahCollectionSet* cset,
-    size_t free_regions, size_t regions_immediate, size_t immediate_size);
-
-  // Sends a JFR event summarizing in-place promotion activity (generational mode only)
-  static void report_promotion_info(const ShenandoahCollectionSet* cset, const ShenandoahInPlacePromotionPlanner& planner);
-};
-
-#endif
+    @Override
+    int call() {
+        return 1;
+    }
+}
