@@ -1250,6 +1250,7 @@ ShenandoahSelfForwardTask::ShenandoahSelfForwardTask(ShenandoahHeap* heap, Shena
 
 void ShenandoahSelfForwardTask::work(uint worker_id) {
   ShenandoahConcurrentWorkerSession worker_session(worker_id);
+  SuspendibleThreadSetJoiner joiner;
   ShenandoahHeapRegion* r;
   while ((r = _cs->claim_next()) != nullptr) {
     ShenandoahSelfForwardClosure cl;
