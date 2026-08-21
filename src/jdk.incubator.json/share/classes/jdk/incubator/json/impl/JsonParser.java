@@ -296,7 +296,8 @@ public final class JsonParser {
                         c = codeUnit(objStart, true);
                         escapeLength = 4;
                     }
-                    default -> throw structureFailure(objStart, UNRECOGNIZED_ESCAPE_SEQUENCE.formatted((int)c));
+                    default -> throw structureFailure(objStart,
+                        UNRECOGNIZED_ESCAPE_SEQUENCE.formatted(formatChar(c)));
                 }
                 if (!useBldr) {
                     // Append everything up to the first escape sequence
@@ -345,7 +346,8 @@ public final class JsonParser {
                     // Allowed JSON escapes
                     case '"', '\\', '/', 'b', 'f', 'n', 'r', 't' -> {}
                     case 'u' -> codeUnit(start, false);
-                    default -> throw valueFailure(start, UNRECOGNIZED_ESCAPE_SEQUENCE.formatted((int)c));
+                    default -> throw valueFailure(start,
+                        UNRECOGNIZED_ESCAPE_SEQUENCE.formatted((formatChar(c))));
                 }
                 escape = false;
             } else if (c == '\\') {
@@ -482,7 +484,8 @@ public final class JsonParser {
                         case 'a', 'b', 'c', 'd', 'e', 'f' -> c - 'a' + 10;
                         case 'A', 'B', 'C', 'D', 'E', 'F' -> c - 'A' + 10;
                         default -> throw failure(
-                                "Invalid Unicode escape sequence. '\\u%04X' is not a hex digit".formatted((int)c),
+                                "Invalid Unicode escape sequence. '%s' is not a hex digit"
+                                    .formatted((formatChar(c))),
                                 start, structural);
                     });
         }
@@ -551,11 +554,17 @@ public final class JsonParser {
             message, path, l, pos), l, pos);
     }
 
+    private static String formatChar(char c) {
+        return Character.isISOControl(c) ?
+            String.format(Locale.ROOT, "\\u%04X", (int)c) :
+            Character.toString(c);
+    }
+
     // Parsing error messages ----------------------
     private static final String UNEXPECTED_VAL =
             "Unexpected value. Expected a JSON Object, Array, String, Number, Boolean, or Null";
     private static final String UNRECOGNIZED_ESCAPE_SEQUENCE =
-            "Unrecognized escape sequence: \"\\\\u%04X\"";
+            "Unrecognized escape sequence: \"\\%s\"";
     private static final String UNESCAPED_CONTROL_CODE =
             "Unescaped control code";
     private static final String UNCLOSED_STRING =
