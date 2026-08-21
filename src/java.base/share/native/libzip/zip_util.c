@@ -801,11 +801,12 @@ ZIP_Get_From_Cache(const char *name, char **pmsg, jlong lastModified)
     MLOCK(zfiles_lock);
     for (zip = zfiles; zip != NULL; zip = zip->next) {
         if (strcmp(name, zip->name) == 0
-            && (zip->lastModified == lastModified || zip->lastModified == 0)
-            && zip->refs < MAXREFS) {
+                && (zip->lastModified == lastModified || zip->lastModified == 0)
+                && zip->refs < MAXREFS) {
+
             zip->refs++;
             break;
-            }
+        }
     }
     MUNLOCK(zfiles_lock);
     return zip;
