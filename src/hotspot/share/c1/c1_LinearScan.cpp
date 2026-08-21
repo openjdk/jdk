@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,9 +62,9 @@
 
 // Map BasicType to spill size in 32-bit words, matching VMReg's notion of words
 #ifdef _LP64
-static int type2spill_size[T_CONFLICT+1]={ -1, 0, 0, 0, 1, 1, 1, 2, 1, 1, 1, 2, 2, 2, 0, 2,  1, 2, 1, -1};
+static int type2spill_size[T_CONFLICT+1]={ -1, 0, 0, 0, 1, 1, 1, 2, 1, 1, 1, 2, 2, 2, 2, 0, 2,  1, 2, 1, -1};
 #else
-static int type2spill_size[T_CONFLICT+1]={ -1, 0, 0, 0, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 0, 1, -1, 1, 1, -1};
+static int type2spill_size[T_CONFLICT+1]={ -1, 0, 0, 0, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 0, 1, -1, 1, 1, -1};
 #endif
 
 
@@ -2888,7 +2888,7 @@ IRScopeDebugInfo* LinearScan::compute_debug_info_for_scope(int op_id, IRScope* c
     }
   }
 
-  return new IRScopeDebugInfo(cur_scope, cur_state->bci(), locals, expressions, monitors, caller_debug_info);
+  return new IRScopeDebugInfo(cur_scope, cur_state->bci(), locals, expressions, monitors, caller_debug_info, cur_state->should_reexecute());
 }
 
 

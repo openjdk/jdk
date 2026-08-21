@@ -108,3 +108,4 @@ override EXTRA_LDFLAGS :=
 # hsdis is not needed
 HSDIS_BACKEND := none
 ENABLE_HSDIS_BUNDLING := false
+DEFAULT_PRINT_ASSEMBLY_OPTIONS :=

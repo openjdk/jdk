@@ -39,7 +39,7 @@ import jdk.test.lib.jfr.Events;
  * @requires vm.hasJFR & vm.gc.Shenandoah
  * @requires vm.flagless
  * @library /test/lib /test/jdk
- * @run main/othervm -Xmx64m -XX:+UnlockExperimentalVMOptions -XX:ShenandoahRegionSize=1m -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational jdk.jfr.event.gc.detailed.TestShenandoahPromotionInformationEvent
+ * @run main/othervm -Xmx64m -XX:+UnlockExperimentalVMOptions -XX:ShenandoahRegionSize=1m -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -XX:ShenandoahGenerationalMinPIPUsage=100 -XX:ShenandoahImmediateThreshold=100 jdk.jfr.event.gc.detailed.TestShenandoahPromotionInformationEvent
  */
 
 public class TestShenandoahPromotionInformationEvent {

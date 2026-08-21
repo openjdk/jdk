@@ -206,14 +206,7 @@ class CustomMediaSizeName extends MediaSizeName {
             if (value.getStandardMedia() == null) {
                 // add this new custom media size name to MediaSize array
                 if ((width > 0.0) && (length > 0.0)) {
-                    try {
-                        new MediaSize(width, length, Size2DSyntax.INCH, value);
-                    } catch (IllegalArgumentException e) {
-                        /* PDF printer in Linux for Ledger paper causes
-                        "IllegalArgumentException: X dimension > Y dimension".
-                        We rotate based on IPP spec. */
-                        new MediaSize(length, width, Size2DSyntax.INCH, value);
-                    }
+                    new MediaSize(width, length, Size2DSyntax.INCH, value);
                 }
             }
         }

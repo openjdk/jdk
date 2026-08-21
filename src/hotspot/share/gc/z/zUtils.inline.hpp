@@ -72,6 +72,13 @@ inline void ZUtils::object_copy_conjoint(zaddress from, zaddress to, size_t size
   }
 }
 
+inline void ZUtils::object_copy_disjoint_atomic(zaddress from, zaddress to, size_t offset, size_t size) {
+  const uintptr_t from_addr = untype(from) + offset;
+  const uintptr_t to_addr = untype(to) + offset;
+
+  Copy::disjoint_words_atomic((HeapWord*)from_addr, (HeapWord*)to_addr, bytes_to_words(size));
+}
+
 template <typename T>
 inline void ZUtils::copy_disjoint(T* dest, const T* src, size_t count) {
   memcpy(dest, src, sizeof(T) * count);

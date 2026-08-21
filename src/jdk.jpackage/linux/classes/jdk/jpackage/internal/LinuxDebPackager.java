@@ -108,8 +108,9 @@ final class LinuxDebPackager extends LinuxPackager<LinuxDebPackage> {
 
         Map<String, String> actualValues = Executor.of(cmdline)
                 .saveOutput(true)
+                .quiet()
                 .executeExpectSuccess()
-                .getOutput().stream()
+                .stdout().stream()
                         .map(line -> line.split(":\\s+", 2))
                         .collect(Collectors.toMap(
                                 components -> components[0],
@@ -149,9 +150,7 @@ final class LinuxDebPackager extends LinuxPackager<LinuxDebPackage> {
 
         List<String> cmdline = new ArrayList<>();
         Stream.of(sysEnv.fakeroot(), sysEnv.dpkgdeb()).map(Path::toString).forEach(cmdline::add);
-        if (Log.isVerbose()) {
-            cmdline.add("--verbose");
-        }
+        cmdline.add("--verbose");
         cmdline.addAll(List.of("-b", env.appImageDir().toString(), debFile.toAbsolutePath().toString()));
 
         // run dpkg
@@ -276,8 +275,9 @@ final class LinuxDebPackager extends LinuxPackager<LinuxDebPackage> {
         var debArch = sysEnv.packageArch().value();
 
         Executor.of(sysEnv.dpkg().toString(), "-S", file.toString())
+                .quiet()
                 .saveOutput(true).executeExpectSuccess()
-                .getOutput().forEach(line -> {
+                .stdout().forEach(line -> {
                     Matcher matcher = PACKAGE_NAME_REGEX.matcher(line);
                     if (matcher.find()) {
                         String name = matcher.group(1);
