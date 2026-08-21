@@ -1495,7 +1495,7 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
   post_init();
 }
 
-nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
+nmethod* nmethod::relocate(CodeBlobType code_blob_type, bool* out_of_space) {
   assert(NMethodRelocation, "must enable use of function");
 
   // Locks required to be held by caller to ensure the nmethod
@@ -1512,6 +1512,9 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
   nmethod* nm_copy = new (size(), code_blob_type) nmethod(*this);
 
   if (nm_copy == nullptr) {
+    if (out_of_space != nullptr) {
+      *out_of_space = true;
+    }
     return nullptr;
   }
 
@@ -1597,7 +1600,10 @@ void* nmethod::operator new(size_t size, int nmethod_size, int comp_level) throw
 }
 
 void* nmethod::operator new(size_t size, int nmethod_size, CodeBlobType code_blob_type) throw () {
-  return CodeCache::allocate(nmethod_size, code_blob_type);
+  // HotCodeHeap is used for grouping hot code which is relocated, not compiled, there.
+  // It getting full should not stop compilation.
+  bool handle_alloc_failure = (code_blob_type != CodeBlobType::MethodHot);
+  return CodeCache::allocate(nmethod_size, code_blob_type, handle_alloc_failure);
 }
 
 void* nmethod::operator new(size_t size, int nmethod_size, bool allow_NonNMethod_space) throw () {

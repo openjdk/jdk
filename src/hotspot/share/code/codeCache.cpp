@@ -639,9 +639,6 @@ CodeBlob* CodeCache::allocate(uint size, CodeBlobType code_blob_type, bool handl
             type = CodeBlobType::MethodNonProfiled;
           }
           break;
-        case CodeBlobType::MethodHot:
-          type = CodeBlobType::MethodNonProfiled;
-          break;
         default:
           break;
         }

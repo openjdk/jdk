@@ -32,6 +32,12 @@ class Candidates;
 
 class HotCodeCollector : public JavaThread {
  private:
+  enum class RelocationResult {
+    Success,
+    NotRelocatable,
+    NoSpaceInCodeHeap
+  };
+
   static bool _is_initialized;
 
   static int _new_c2_nmethods_count;
@@ -41,7 +47,7 @@ class HotCodeCollector : public JavaThread {
 
   static void do_grouping(Candidates& candidates);
 
-  static int do_relocation(void* candidate, uint call_level);
+  static RelocationResult do_relocation(void* candidate, uint call_level, int* num_relocated);
 
  public:
   static void initialize();
