@@ -21,7 +21,7 @@
  * questions.
  */
 
-package compiler.c2;
+package compiler.escapeAnalysis;
 
 /*
  * @test
@@ -29,12 +29,12 @@ package compiler.c2;
  * @summary Test case where we had escape analysis tell us that we can possibly eliminate
  *          the array allocation, then MergeStores introduces a mismatched store, which
  *          the actual elimination does not verify for. That led to wrong results.
- * @run main/othervm -XX:CompileCommand=compileonly,compiler.c2.TestMergeStoresAndAllocationElimination::test
- *                   -XX:CompileCommand=exclude,compiler.c2.TestMergeStoresAndAllocationElimination::dontinline
+ * @run main/othervm -XX:CompileCommand=compileonly,compiler.escapeAnalysis.TestMergeStoresAndAllocationElimination::test
+ *                   -XX:CompileCommand=exclude,compiler.escapeAnalysis.TestMergeStoresAndAllocationElimination::dontinline
  *                   -XX:-TieredCompilation -Xbatch
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-CICompileOSR
- *                   compiler.c2.TestMergeStoresAndAllocationElimination
- * @run main compiler.c2.TestMergeStoresAndAllocationElimination
+ *                   compiler.escapeAnalysis.TestMergeStoresAndAllocationElimination
+ * @run main compiler.escapeAnalysis.TestMergeStoresAndAllocationElimination
  */
 
 public class TestMergeStoresAndAllocationElimination {
