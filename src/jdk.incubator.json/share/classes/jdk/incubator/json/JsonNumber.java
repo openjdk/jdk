@@ -180,10 +180,10 @@ public non-sealed interface JsonNumber extends JsonValue {
     /**
      * {@return the string representation of this {@code JsonNumber}}
      *
-     * If this {@code JsonNumber} is created by parsing a JSON number in a JSON document,
-     * it preserves the string representation in the document, regardless of its
+     * If this {@code JsonNumber} is created by parsing a JSON number in a JSON text,
+     * it preserves the string representation in the JSON text, regardless of its
      * precision or range. For example, a JSON number like
-     * {@code 3.141592653589793238462643383279} in the JSON document will be
+     * {@code 3.141592653589793238462643383279} in the JSON text will be
      * returned exactly as it appears.
      * If this {@code JsonNumber} is created via one of the factory methods,
      * such as {@link JsonNumber#of(double)}, then the string representation is

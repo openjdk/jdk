@@ -30,7 +30,7 @@ import jdk.incubator.json.impl.JsonParser;
 import jdk.incubator.json.impl.JsonGenerator;
 
 /**
- * This class provides static methods for parsing and generating JSON documents.
+ * This class provides static methods for parsing and generating JSON texts.
  *
  * <p>
  * {@link #parse(String)} and {@link #parse(char[])} produce a {@code JsonValue}
@@ -52,20 +52,20 @@ import jdk.incubator.json.impl.JsonGenerator;
 public final class Json {
 
     /**
-     * Parses and creates a {@code JsonValue} from the given JSON document.
-     * If parsing succeeds, it guarantees that the input document conforms to
-     * the JSON syntax. If the document contains any JSON object that has
+     * Parses and creates a {@code JsonValue} from the given JSON text.
+     * If parsing succeeds, it guarantees that the input text conforms to
+     * the JSON syntax. If the text contains any JSON object that has
      * duplicate names, a {@code JsonParseException} is thrown.
      * <p>
      * {@code JsonObject}s preserve the order of members in the input JSON
-     * document.
+     * text.
      *
      * @implNote {@code JsonValue}s created by this method may produce their
      * underlying value representation lazily.
      *
-     * @param in the input JSON document as {@code String}. Non-null.
-     * @throws JsonParseException if the input JSON document does not conform
-     *      to the JSON document format or a JSON object containing
+     * @param in the input JSON text as {@code String}. Non-null.
+     * @throws JsonParseException if the input JSON text does not conform
+     *      to the JSON text format or a JSON object containing
      *      duplicate names is encountered.
      * @throws NullPointerException if {@code in} is {@code null}
      * @return the parsed {@code JsonValue}
@@ -76,21 +76,21 @@ public final class Json {
     }
 
     /**
-     * Parses and creates a {@code JsonValue} from the given JSON document.
-     * If parsing succeeds, it guarantees that the input document conforms to
-     * the JSON syntax. If the document contains any JSON object that has
+     * Parses and creates a {@code JsonValue} from the given JSON text.
+     * If parsing succeeds, it guarantees that the input text conforms to
+     * the JSON syntax. If the text contains any JSON object that has
      * duplicate names, a {@code JsonParseException} is thrown. After parsing,
      * changes to the input array have no effect on the returned {@code JsonValue}.
      * <p>
      * {@code JsonObject}s preserve the order of their members declared in and parsed from
-     * the JSON document.
+     * the JSON text.
      *
      * @implNote {@code JsonValue}s created by this method may produce their
      * underlying value representation lazily.
      *
-     * @param in the input JSON document as {@code char[]}. Non-null.
-     * @throws JsonParseException if the input JSON document does not conform
-     *      to the JSON document format or a JSON object containing
+     * @param in the input JSON text as {@code char[]}. Non-null.
+     * @throws JsonParseException if the input JSON text does not conform
+     *      to the JSON text format or a JSON object containing
      *      duplicate names is encountered.
      * @throws NullPointerException if {@code in} is {@code null}
      * @return the parsed {@code JsonValue}

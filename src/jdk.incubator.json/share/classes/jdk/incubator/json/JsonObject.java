@@ -58,7 +58,7 @@ public non-sealed interface JsonObject extends JsonValue {
      * The JDK platform implementation of {@code JsonObject} preserves the
      * encounter order of members. When a {@code JsonObject} is created by
      * parsing, this corresponds to the order of members in the source JSON
-     * document. When created via the {@link #of(Map)} factory method, the order
+     * text. When created via the {@link #of(Map)} factory method, the order
      * follows the encounter order of the provided map.
      */
     @Override
