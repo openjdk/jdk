@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8388319 8389843
  * @enablePreview
  * @library /test/lib
  * @build jdk.test.lib.ByteCodeLoader
@@ -37,9 +38,11 @@ import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassFileVersion;
 import java.lang.classfile.ClassTransform;
 import java.lang.classfile.FieldModel;
+import java.lang.classfile.Label;
 import java.lang.classfile.attribute.StackMapFrameInfo;
 import java.lang.classfile.attribute.StackMapTableAttribute;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.constantpool.NameAndTypeEntry;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandles;
@@ -54,11 +57,35 @@ import org.junit.jupiter.api.Test;
 
 import static java.lang.classfile.ClassFile.*;
 import static java.lang.constant.ConstantDescs.*;
+import static jdk.internal.classfile.impl.StackMapGenerator.EARLY_LARVAL;
 import static org.junit.jupiter.api.Assertions.*;
 
 class StrictStackMapsTest {
+    private static Label dummyLabel() {
+        Label[] capture = new Label[1];
+        ClassFile.of().build(CD_Object, clb -> clb.withMethodBody("test", MTD_void, 0, cob -> {
+            capture[0] = cob.startLabel();
+            cob.return_();
+        }));
+        return capture[0];
+    }
+
     @Test
-    void basicBranchTest() throws Throwable {
+    void stackMapFrameInfoFactoryValidationTest() {
+        Label label = dummyLabel();
+        NameAndTypeEntry nat = ConstantPoolBuilder.of().nameAndTypeEntry("f", CD_int);
+        assertDoesNotThrow(() -> StackMapFrameInfo.of(label,
+                List.of(), List.of(), List.of()));
+        assertThrows(IllegalArgumentException.class, () -> StackMapFrameInfo.of(label,
+                List.of(), List.of(), List.of(nat)));
+        assertDoesNotThrow(() -> StackMapFrameInfo.of(label,
+                List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.UNINITIALIZED_THIS), List.of(), List.of(nat)));
+        assertDoesNotThrow(() -> StackMapFrameInfo.of(label,
+                List.of(), List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.UNINITIALIZED_THIS), List.of(nat)));
+    }
+
+    @Test
+    void basicBranchTest() {
         var className = "Test";
         var classDesc = ClassDesc.of(className);
         var classBytes = ClassFile.of().build(classDesc, clb -> clb
@@ -85,11 +112,11 @@ class StrictStackMapsTest {
         var ctorModel = classModel.methods().getFirst();
         var stackMaps = ctorModel.code().orElseThrow().findAttribute(Attributes.stackMapTable()).orElseThrow();
         assertEquals(2, stackMaps.entries().size(), "if -> else, then -> end");
-        var elseFrame = stackMaps.entries().get(0);
-        assertEquals(246, elseFrame.frameType(), "if -> else");
+        var elseFrame = stackMaps.entries().getFirst();
+        assertEquals(EARLY_LARVAL, elseFrame.frameType(), "if -> else");
         assertEquals(List.of(ConstantPoolBuilder.of().nameAndTypeEntry("fsf", CD_int)), elseFrame.unsetFields());
         var mergedFrame = stackMaps.entries().get(1);
-        assertEquals(246, mergedFrame.frameType(), "then -> merge");
+        assertEquals(EARLY_LARVAL, mergedFrame.frameType(), "then -> merge");
         assertEquals(List.of(), mergedFrame.unsetFields());
     }
 
@@ -121,16 +148,16 @@ class StrictStackMapsTest {
         var ctorModel = classModel.methods().getFirst();
         var stackMaps = ctorModel.code().orElseThrow().findAttribute(Attributes.stackMapTable()).orElseThrow();
         assertEquals(2, stackMaps.entries().size(), "if -> else, then -> end");
-        var elseFrame = stackMaps.entries().get(0);
-        assertNotEquals(246, elseFrame.frameType(), "if -> else");
+        var elseFrame = stackMaps.entries().getFirst();
+        assertNotEquals(EARLY_LARVAL, elseFrame.frameType(), "if -> else");
         assertEquals(List.of(), elseFrame.unsetFields());
         var mergedFrame = stackMaps.entries().get(1);
-        assertNotEquals(246, mergedFrame.frameType(), "then -> merge");
+        assertNotEquals(EARLY_LARVAL, mergedFrame.frameType(), "then -> merge");
         assertEquals(List.of(), mergedFrame.unsetFields());
     }
 
     @Test
-    void skipUnnecessaryUnsetFramesTest() throws Throwable {
+    void skipUnnecessaryUnsetFramesTest() {
         var className = "Test";
         var classDesc = ClassDesc.of(className);
         var classBytes = ClassFile.of().build(classDesc, clb -> clb
@@ -161,17 +188,17 @@ class StrictStackMapsTest {
         var ctorModel = classModel.methods().getFirst();
         var stackMaps = ctorModel.code().orElseThrow().findAttribute(Attributes.stackMapTable()).orElseThrow();
         assertEquals(2, stackMaps.entries().size(), "if -> else, then -> end");
-        var elseFrame = stackMaps.entries().get(0);
-        assertEquals(246, elseFrame.frameType(), "if -> else");
+        var elseFrame = stackMaps.entries().getFirst();
+        assertEquals(EARLY_LARVAL, elseFrame.frameType(), "if -> else");
         assertEquals(List.of(ConstantPoolBuilder.of().nameAndTypeEntry("fsf", CD_int)), elseFrame.unsetFields());
         var mergedFrame = stackMaps.entries().get(1);
-        assertNotEquals(246, mergedFrame.frameType(), "then -> end, no redundant larval");
+        assertNotEquals(EARLY_LARVAL, mergedFrame.frameType(), "then -> end, no redundant larval");
         assertEquals(elseFrame.unsetFields(), mergedFrame.unsetFields(), "larval carries over in parsing");
     }
 
     // Also tests no larval_frame after ctor call
     @Test
-    void clearUnsetAfterThisConstructorCallTest() throws Throwable {
+    void clearUnsetAfterThisConstructorCallTest() {
         var className = "Test";
         var classDesc = ClassDesc.of(className);
         var fullArgsCtorDesc = MethodTypeDesc.of(CD_void, CD_int, CD_int);
@@ -213,15 +240,15 @@ class StrictStackMapsTest {
                 .findFirst().orElseThrow();
         var stackMaps = delegatingCtorModel.code().orElseThrow().findAttribute(Attributes.stackMapTable()).orElseThrow();
         assertEquals(2, stackMaps.entries().size(), "if -> else, then -> merge");
-        var elseFrame = stackMaps.entries().get(0);
-        assertNotEquals(246, elseFrame.frameType(), "if -> else, no uninitializedThis, no larval frame needed to clear unset");
+        var elseFrame = stackMaps.entries().getFirst();
+        assertNotEquals(EARLY_LARVAL, elseFrame.frameType(), "if -> else, no uninitializedThis, no larval frame needed to clear unset");
         assertEquals(List.of(), elseFrame.unsetFields(), "cleared by constructor call");
         var mergeFrame = stackMaps.entries().get(1);
-        assertNotEquals(246, mergeFrame.frameType(), "then -> merge");
+        assertNotEquals(EARLY_LARVAL, mergeFrame.frameType(), "then -> merge");
     }
 
     @Test
-    void allowMultiAssignTest() throws Throwable {
+    void allowMultiAssignTest() {
         var className = "Test";
         var classDesc = ClassDesc.of(className);
         var classBytes = ClassFile.of().build(classDesc, clb -> clb
@@ -253,10 +280,10 @@ class StrictStackMapsTest {
         var ctorModel = classModel.methods().getFirst();
         var stackMaps = ctorModel.code().orElseThrow().findAttribute(Attributes.stackMapTable()).orElseThrow();
         assertEquals(2, stackMaps.entries().size(), () -> stackMaps.entries().toString());
-        var elseFrame = stackMaps.entries().get(0);
+        var elseFrame = stackMaps.entries().getFirst();
         var mergeFrame = stackMaps.entries().get(1);
-        assertNotEquals(246, elseFrame.frameType(), "if -> else, no redundant larval frames");
-        assertNotEquals(246, mergeFrame.frameType(), "then -> merge, no redundant larval frames");
+        assertNotEquals(EARLY_LARVAL, elseFrame.frameType(), "if -> else, no redundant larval frames");
+        assertNotEquals(EARLY_LARVAL, mergeFrame.frameType(), "then -> merge, no redundant larval frames");
         var cpb = ConstantPoolBuilder.of();
         assertEquals(Set.of(cpb.nameAndTypeEntry("fsf", CD_int), cpb.nameAndTypeEntry("fs", CD_int)),
                 Set.copyOf(elseFrame.unsetFields()), "retains initial unsets");
@@ -264,7 +291,7 @@ class StrictStackMapsTest {
     }
 
     @Test
-    void failOnUnsetNotClearTest() throws Throwable {
+    void failOnUnsetNotClearTest() {
         var className = "Test";
         var classDesc = ClassDesc.of(className);
         assertThrows(IllegalArgumentException.class, () -> ClassFile.of().build(classDesc, clb -> clb
@@ -287,7 +314,7 @@ class StrictStackMapsTest {
 
     // Ensures stack maps are updated when fields are transformed to be strict
     @Test
-    void basicTransformToStrictTest() throws Throwable {
+    void basicTransformToStrictTest() {
         var className = "Test";
         var classDesc = ClassDesc.of(className);
         // this class has no strict
@@ -324,16 +351,16 @@ class StrictStackMapsTest {
         var ctorModel = classModel.methods().getFirst();
         var stackMaps = ctorModel.code().orElseThrow().findAttribute(Attributes.stackMapTable()).orElseThrow();
         assertEquals(2, stackMaps.entries().size(), "if -> else, then -> merge");
-        var elseFrame = stackMaps.entries().get(0);
-        assertEquals(246, elseFrame.frameType(), "if -> else");
+        var elseFrame = stackMaps.entries().getFirst();
+        assertEquals(EARLY_LARVAL, elseFrame.frameType(), "if -> else");
         assertEquals(List.of(ConstantPoolBuilder.of().nameAndTypeEntry("fsf", CD_int)), elseFrame.unsetFields());
         var mergedFrame = stackMaps.entries().get(1);
-        assertEquals(246, mergedFrame.frameType(), "then -> merge");
+        assertEquals(EARLY_LARVAL, mergedFrame.frameType(), "then -> merge");
         assertEquals(List.of(), mergedFrame.unsetFields());
     }
 
     @Test
-    void explicitWriteFramesTest() throws Throwable {
+    void explicitWriteFramesTest() {
         var className = "Test";
         var classDesc = ClassDesc.of(className);
         var classBytes = ClassFile.of(StackMapsOption.DROP_STACK_MAPS).build(classDesc, clb -> clb
@@ -381,19 +408,19 @@ class StrictStackMapsTest {
         var ctorModel = classModel.methods().getFirst();
         var stackMaps = ctorModel.code().orElseThrow().findAttribute(Attributes.stackMapTable()).orElseThrow();
         assertEquals(3, stackMaps.entries().size(), "if -> else, then -> end, post larval");
-        var elseFrame = stackMaps.entries().get(0);
+        var elseFrame = stackMaps.entries().getFirst();
         assertEquals(List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.UNINITIALIZED_THIS), elseFrame.locals());
-        // frame type for else may or may not be 246... no unset field changes but may have reorders
+        // frame type for else may or may not be EARLY_LARVAL... no unset field changes but may have reorders
         assertEquals(2, elseFrame.unsetFields().size(), "if -> else");
         var cpb = ConstantPoolBuilder.of();
         assertEquals(Set.of(cpb.nameAndTypeEntry("fs", CD_int), cpb.nameAndTypeEntry("fsf", CD_int)),
                 Set.copyOf(elseFrame.unsetFields()));
         var mergedFrame = stackMaps.entries().get(1);
         assertEquals(List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.UNINITIALIZED_THIS), mergedFrame.locals());
-        assertEquals(246, mergedFrame.frameType(), "then -> merge");
+        assertEquals(EARLY_LARVAL, mergedFrame.frameType(), "then -> merge");
         assertEquals(List.of(cpb.nameAndTypeEntry("fs", CD_int)), mergedFrame.unsetFields());
         var postLarvalFrame = stackMaps.entries().get(2);
-        assertNotEquals(246, postLarvalFrame.frameType(), "postLarval"); // no larval frame here
+        assertNotEquals(EARLY_LARVAL, postLarvalFrame.frameType(), "postLarval"); // no larval frame here
         assertEquals(List.of(StackMapFrameInfo.ObjectVerificationTypeInfo.of(classDesc)), postLarvalFrame.locals());
         assertEquals(List.of(), postLarvalFrame.unsetFields());
     }
@@ -480,6 +507,70 @@ class StrictStackMapsTest {
         var frame = frames.getFirst();
         assertEquals(List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.UNINITIALIZED_THIS), frame.locals());
         assertEquals(List.of(ConstantPoolBuilder.of().nameAndTypeEntry("f", CD_int)), frame.unsetFields());
+
+        runtimeVerify(testName, bytes);
+    }
+
+    @Test
+    void uninitThisOnStackTest() {
+        var testName = "Test";
+        var testDesc = ClassDesc.of(testName);
+        var bytes = ClassFile.of().build(testDesc, clb -> clb
+                .withVersion(latestMajorVersion(), PREVIEW_MINOR_VERSION)
+                .withFlags(ACC_PUBLIC | ACC_IDENTITY)
+                .withField("f", CD_int, ACC_STRICT_INIT)
+                .withMethodBody(INIT_NAME, MTD_void, 0, cob -> {
+                    cob.aload(0) // stack for invokespecial
+                       .dup() // stack for putfield
+                       .iconst_4()
+                       .iconst_m1() // stack for astore
+                       .istore(0) // nuke uninitializedThis from locals
+                       .iconst_3(); // stack for branch
+                    var elseLabel = cob.newLabel();
+                    var endIfLabel = cob.newLabel();
+                    cob.ifeq(elseLabel)
+                       .putfield(testDesc, "f", CD_int)
+                       .goto_(endIfLabel)
+                       .labelBinding(elseLabel)
+                       .putfield(testDesc, "f", CD_int)
+                       .labelBinding(endIfLabel)
+                       .invokespecial(CD_Object, INIT_NAME, MTD_void);
+                    var else2Label = cob.newLabel();
+                    var endIf2Label = cob.newLabel();
+                    cob.iconst_1()
+                       .ifeq(else2Label)
+                       .nop()
+                       .goto_(endIf2Label)
+                       .labelBinding(else2Label)
+                       .nop()
+                       .labelBinding(endIf2Label)
+                       .return_();
+                }));
+        var parsed = ClassFile.of().parse(bytes);
+        var frames = parsed.methods().getFirst().code().orElseThrow()
+                .findAttribute(Attributes.stackMapTable()).orElseThrow().entries();
+        assertEquals(4, frames.size());
+        var elseFrame = frames.getFirst();
+        assertEquals(List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.INTEGER), elseFrame.locals());
+        assertEquals(List.of(
+                StackMapFrameInfo.SimpleVerificationTypeInfo.UNINITIALIZED_THIS,
+                StackMapFrameInfo.SimpleVerificationTypeInfo.UNINITIALIZED_THIS,
+                StackMapFrameInfo.SimpleVerificationTypeInfo.INTEGER), elseFrame.stack());
+        assertEquals(List.of(ConstantPoolBuilder.of().nameAndTypeEntry("f", CD_int)), elseFrame.unsetFields());
+        var endIfFrame = frames.get(1);
+        assertEquals(EARLY_LARVAL, endIfFrame.frameType());
+        assertEquals(List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.INTEGER), endIfFrame.locals());
+        assertEquals(List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.UNINITIALIZED_THIS), endIfFrame.stack());
+        assertEquals(List.of(), endIfFrame.unsetFields());
+        var else2Frame = frames.get(2);
+        assertNotEquals(EARLY_LARVAL, else2Frame.frameType());
+        assertEquals(List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.INTEGER), else2Frame.locals());
+        assertEquals(List.of(), else2Frame.stack());
+        assertEquals(List.of(), else2Frame.unsetFields());
+        var endIf2Frame = frames.get(3);
+        assertEquals(List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.INTEGER), endIf2Frame.locals());
+        assertEquals(List.of(), endIf2Frame.stack());
+        assertEquals(List.of(), endIf2Frame.unsetFields());
 
         runtimeVerify(testName, bytes);
     }
