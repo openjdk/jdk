@@ -726,9 +726,9 @@
           "Re-process nodes that could benefit from a deep revisit after "  \
           "the IGVN worklist drains")                                       \
                                                                             \
-  product(uint, MacroExpansionCleanupCount, 32, DIAGNOSTIC,                 \
-          "Execute IGVN optimization to clean graph after this number of "  \
-          "macro nodes are expanded")                                       \
+  product(uint, MacroExpansionCleanupCount, 16, DIAGNOSTIC,                 \
+          "Run IGVN to clean the graph after this many macro nodes are "    \
+          "expanded or when we approach the max live node limit.")          \
           range(1, 100)                                                     \
                                                                             \
   develop(uint, VerifyIterativeGVN, 0,                                      \

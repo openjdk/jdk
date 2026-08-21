@@ -3204,10 +3204,10 @@ static bool cleanup_graph(PhaseIterGVN& igvn) {
   igvn.set_delay_transform(false);
   igvn.optimize();
   if (igvn.C->failing()) {
-    return true;
+    return false;
   }
   igvn.set_delay_transform(true);
-  return false;
+  return true;
 }
 
 //---------------------------eliminate_macro_nodes----------------------
@@ -3323,7 +3323,7 @@ void PhaseMacroExpand::eliminate_macro_nodes(bool eliminate_locks) {
     // other macro nodes can remove all these safepoints, allowing the allocation to be removed.
     // Hence after igvn we retry removing macro nodes if some progress that has been made in this
     // iteration.
-    if (cleanup_graph(_igvn)) {
+    if (!cleanup_graph(_igvn)) {
       return; // failing
     }
 
@@ -3415,18 +3415,18 @@ void PhaseMacroExpand::eliminate_opaque_looplimit_macro_nodes() {
 }
 
 //------------------------------expand_macro_nodes----------------------
-//  Returns true if a failure occurred.
+//  Returns false if a failure occurred.
 bool PhaseMacroExpand::expand_macro_nodes() {
   if (StressMacroExpansion) {
     C->shuffle_macro_nodes();
   }
 
   // Clean up after eliminate_opaque_looplimit_macro_nodes()
-  if (cleanup_graph(_igvn)) {
-    return true; // failing
+  if (!cleanup_graph(_igvn)) {
+    return false; // failing
   }
 
-  // Because we run IGVN after each expansion, some macro nodes may go
+  // Because we run IGVN after set of expansions, some macro nodes may go
   // dead and be removed from the list as we iterate over it. Move
   // Allocate nodes (processed in a second pass) at the beginning of
   // the list and then iterate from the last element of the list until
@@ -3461,7 +3461,7 @@ bool PhaseMacroExpand::expand_macro_nodes() {
     }
     // Make sure expansion will not cause node limit to be exceeded.
     if (C->check_node_count(macro_expansion_estimate, "out of nodes before macro expansion")) {
-      return true;
+      return false;
     }
 
     DEBUG_ONLY(int old_macro_count = C->macro_count();)
@@ -3502,7 +3502,7 @@ bool PhaseMacroExpand::expand_macro_nodes() {
     }
     assert(C->macro_count() == (old_macro_count - 1), "expansion must have deleted one node from macro list");
     if (C->failing()) {
-      return true;
+      return false;
     }
     C->print_method(PHASE_AFTER_MACRO_EXPANSION_STEP, 5, n);
 
@@ -3512,16 +3512,16 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       // skip clean up
       continue;
     }
-    if (cleanup_graph(_igvn)) {
-      return true; // failing
+    if (!cleanup_graph(_igvn)) {
+      return false; // failing
     }
     pending_expansions_to_cleanup = 0;
   }
 
   // Cleanup graph before expanding Allocate nodes.
   if (pending_expansions_to_cleanup > 0) {
-    if (cleanup_graph(_igvn)) {
-      return true; // failing
+    if (!cleanup_graph(_igvn)) {
+      return false; // failing
     }
     pending_expansions_to_cleanup = 0;
   }
@@ -3542,7 +3542,7 @@ bool PhaseMacroExpand::expand_macro_nodes() {
     }
     // Make sure expansion will not cause node limit to be exceeded.
     if (C->check_node_count(macro_expansion_estimate, "out of nodes before macro expansion")) {
-      return true;
+      return false;
     }
     switch (n->class_id()) {
     case Node::Class_Allocate:
@@ -3555,7 +3555,9 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       assert(false, "unknown node type in macro list");
     }
     assert(C->macro_count() < macro_count, "must have deleted a node from macro list");
-    if (C->failing())  return true;
+    if (C->failing()) {
+      return false;
+    }
     C->print_method(PHASE_AFTER_MACRO_EXPANSION_STEP, 5, n);
 
     pending_expansions_to_cleanup++;
@@ -3564,18 +3566,18 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       // skip clean up
       continue;
     }
-    if (cleanup_graph(_igvn)) {
-      return true; // failing
+    if (!cleanup_graph(_igvn)) {
+      return false; // failing
     }
     pending_expansions_to_cleanup = 0;
   }
   if (pending_expansions_to_cleanup > 0) {
-    if (cleanup_graph(_igvn)) {
-      return true; // failing
+    if (!cleanup_graph(_igvn)) {
+      return false; // failing
     }
   }
   _igvn.set_delay_transform(false);
-  return false;
+  return true;
 }
 
 #ifndef PRODUCT
