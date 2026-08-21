@@ -975,13 +975,17 @@ public final class LinuxHelper {
         private static boolean isDebian() {
             // we are just going to run "dpkg -s coreutils" and assume Debian
             // or derivative if no error is returned.
-            return Result.of(Executor.of("dpkg", "-s", "coreutils")::execute).hasValue();
+            return Result.of(Executor.of("dpkg", "-s", "coreutils")::executeWithoutExitCodeCheck).value().filter(result -> {
+                return result.getExitCode() == 0;
+            }).isPresent();
         }
 
         private static boolean isRpm() {
             // we are just going to run "rpm -q rpm" and assume RPM
             // or derivative if no error is returned.
-            return Result.of(Executor.of("rpm", "-q", "rpm")::execute).hasValue();
+            return Result.of(Executor.of("rpm", "-q", "rpm")::executeWithoutExitCodeCheck).value().filter(result -> {
+                return result.getExitCode() == 0;
+            }).isPresent();
         }
 
         static {
