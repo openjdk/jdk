@@ -32,17 +32,20 @@ import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Preview;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
+import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
+import com.sun.tools.javac.tree.JCTree.JCImport;
+import com.sun.tools.javac.tree.JCTree.JCImportBase;
 import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.Context;
 
 /**
  * A javac plugin that transforms classes annotated with
- * {@code @jdk.test.valueclass.AsValueClass} into value classes when
+ * {@code @jdk.test.lib.valueclass.AsValueClass} into value classes when
  * {@code --enable-preview} is active.
  *
  * <p>The plugin hooks into the PARSE phase. After a compilation unit is
  * parsed it walks the AST looking for class declarations whose modifier list
- * contains an annotation whose simple name ends with {@code "ValueClass"}.
+ * contains an {@code AsValueClass} annotation.
  * For each such class it adds the internal {@code VALUE_CLASS} modifier flag
  * and clears the {@code IDENTITY_TYPE} flag (which is set by default on all
  * classes), causing the compiler to treat the class as a value class for all
@@ -74,12 +77,14 @@ public class ValueClassPlugin implements Plugin {
                 Preview preview = Preview.instance(ctx);
                 if (!preview.isEnabled()) return;
 
+                JCCompilationUnit unit = (JCCompilationUnit) e.getCompilationUnit();
+                Imports imports = Imports.get(unit);
                 new TreeScanner() {
                     @Override
                     public void visitClassDef(JCClassDecl tree) {
                         boolean hasAnnotation = tree.mods.annotations.stream()
-                                .anyMatch(a -> a.annotationType.toString()
-                                        .equals("AsValueClass"));
+                                .anyMatch(a ->
+                                    imports.isAsValueClassAnnotation(a.annotationType.toString()));
                         if (hasAnnotation) {
                             tree.mods.flags |= Flags.VALUE_CLASS;
                             tree.mods.flags &= ~Flags.IDENTITY_TYPE;
@@ -90,8 +95,63 @@ public class ValueClassPlugin implements Plugin {
                         }
                         super.visitClassDef(tree);
                     }
-                }.scan((JCTree) e.getCompilationUnit());
+                }.scan(unit);
             }
         });
+    }
+
+    private record Imports(String packageName, boolean fullyQualified,
+                           boolean packageStar, boolean otherClass) {
+        private static final String PACKAGE = "jdk.test.lib.valueclass";
+        private static final String CLASS = "AsValueClass";
+        private static final String FULLY_QUALIFIED = PACKAGE + "." + CLASS;
+        private static final String PACKAGE_STAR = PACKAGE + ".*";
+
+        static Imports get(JCCompilationUnit unit) {
+            String packageName = unit.getPackageName() == null ? "" : unit.getPackageName().toString();
+            boolean fullyQualified = false;
+            boolean packageStar = false;
+            boolean otherClass = false;
+
+            for (JCImportBase importBase : unit.getImports()) {
+                if (!(importBase instanceof JCImport importTree) || importTree.isStatic()) {
+                    // Only care about non-module, non-static imports
+                    continue;
+                }
+
+                String imported = importTree.qualid.toString();
+                if (imported.equals(FULLY_QUALIFIED)) {
+                    fullyQualified = true;
+                } else if (imported.equals(PACKAGE_STAR)) {
+                    packageStar = true;
+                } else if (imported.endsWith("." + CLASS)) {
+                    otherClass = true;
+                }
+            }
+
+            return new Imports(packageName, fullyQualified, packageStar, otherClass);
+        }
+
+        boolean isAsValueClassAnnotation(String annotationType) {
+            if (annotationType.equals(FULLY_QUALIFIED)) {
+                // Fully qualified use
+                return true;
+            }
+            if (!annotationType.equals(CLASS)) {
+                // Different annotation
+                return false;
+            }
+            if (otherClass) {
+                // Other annotation with same name
+                return false;
+            }
+            if (packageName.equals(PACKAGE)) {
+                // Same package
+                return true;
+            }
+
+            // Fully qualified import or package star import
+            return fullyQualified || packageStar;
+        }
     }
 }
