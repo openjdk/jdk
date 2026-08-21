@@ -4348,7 +4348,9 @@ bool ConnectionGraph::split_AddP(Node *addp, Node *base) {
   // for the instance type. Note: C++ will not remove it since the call
   // has side effect.
   int alias_idx = _compile->get_alias_index(tinst);
-  igvn->set_type(addp, tinst);
+  if (igvn->type(addp)->isa_oopptr()) {
+    igvn->set_type(addp, tinst);
+  }
   // record the allocation in the node map
   set_map(addp, get_map(base->_idx));
   // Set addp's Base and Address to 'base'.
@@ -5229,6 +5231,47 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       }
     }
 
+  }
+
+
+  {
+    Unique_Node_List wq;
+    wq.push(_compile->root());
+    for (uint i = 0; i < wq.size(); ++i) {
+      Node* n = wq.at(i);
+      switch (n->Opcode()) {
+        case Op_CastPP:
+        case Op_AddP:
+        case Op_LoadP:
+        case Op_LoadN: {
+          Node* base = nullptr;
+          if (n->Opcode() == Op_CastPP) {
+            base = n->in(1);
+          } else {
+            Node* addp = nullptr;
+            if (n->Opcode() == Op_LoadP || n->Opcode() == Op_LoadN) {
+              addp = n->in(MemNode::Address);
+              if (!addp->is_AddP()) {
+                addp = nullptr;
+              }
+            } else {
+              assert(n->Opcode() == Op_AddP, "");
+              addp = n;
+            }
+            base = addp != nullptr ? get_addp_base(addp) : nullptr;
+          }
+          assert(base == nullptr || unique_java_object(base) == nullptr || !unique_java_object(base)->scalar_replaceable() ||
+                 (n->_idx < nodes_size() && ptnode_adr(n->_idx) != nullptr), "missing node");
+          break;
+        }
+        default:
+          break;
+      }
+      for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
+        Node* u = n->fast_out(j);
+        wq.push(u);
+      }
+    }
   }
 
 #ifdef ASSERT
