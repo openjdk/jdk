@@ -7350,7 +7350,7 @@ ciKlass* TypeAryKlassPtr::exact_klass_helper() const {
       return nullptr;
     }
     assert(!k->is_array_klass() || !k->as_array_klass()->is_refined(), "no mechanism to create an array of refined arrays %s", k->name()->as_utf8());
-    k = ciArrayKlass::make(k, is_null_free(), is_atomic(), _refined_type);
+    k = ciObjArrayKlass::make(k, _refined_type, is_null_free(), is_atomic(), is_not_flat());
     return k;
   }
 
