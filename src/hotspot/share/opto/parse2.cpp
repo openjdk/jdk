@@ -103,7 +103,6 @@ void Parse::array_load(BasicType bt) {
         ary_type = ary_type->cast_to_not_flat();
         Node* not_flat_ary = _gvn.transform(new CheckCastPPNode(control(), prep_array, ary_type));
         Node* adr = get_ptr_to_array_element(not_flat_ary, array_index, bt, ary_type->size(), control());
-        const TypeAryPtr* adr_type = TypeAryPtr::get_array_body_type(bt);
         DecoratorSet decorator_set = IN_HEAP | IS_ARRAY | C2_CONTROL_DEPENDENT_LOAD;
         if (needs_range_check(ary_type->size(), array_index)) {
           // We've emitted a RangeCheck but now insert an additional check between the range check and the actual load.
@@ -111,7 +110,7 @@ void Parse::array_load(BasicType bt) {
           // possibly float above the range check at any point.
           decorator_set |= C2_UNKNOWN_CONTROL_LOAD;
         }
-        Node* ld = access_load_at(not_flat_ary, adr, adr_type, element_ptr, bt, decorator_set);
+        Node* ld = access_load_at(not_flat_ary, adr, element_ptr, bt, decorator_set);
         if (element_ptr->is_inlinetypeptr()) {
           ld = InlineTypeNode::make_from_oop(this, ld, element_ptr->inline_klass());
         }
@@ -151,9 +150,8 @@ void Parse::array_load(BasicType bt) {
   if (elemtype == TypeInt::BOOL) {
     bt = T_BOOLEAN;
   }
-  const TypeAryPtr* adr_type = TypeAryPtr::get_array_body_type(bt);
   Node* adr = get_ptr_to_array_element(prep_array, array_index, bt, array_type->size(), control());
-  Node* ld = access_load_at(array, adr, adr_type, elemtype, bt,
+  Node* ld = access_load_at(array, adr, elemtype, bt,
                             IN_HEAP | IS_ARRAY | C2_CONTROL_DEPENDENT_LOAD);
   ld = record_profile_for_speculation_at_array_load(ld);
   // Loading an inline type from a non-flat array
@@ -214,7 +212,6 @@ void Parse::array_store(BasicType bt) {
   Node* array = pop();                     // The array itself
 
   const TypeAryPtr* array_type = _gvn.type(array)->is_aryptr();
-  const TypeAryPtr* adr_type = TypeAryPtr::get_array_body_type(bt);
 
   if (elemtype == TypeInt::BOOL) {
     bt = T_BOOLEAN;
@@ -270,7 +267,7 @@ void Parse::array_store(BasicType bt) {
           sync_kit(ideal);
           assert(array_type->is_not_flat() || ideal.ctrl()->in(0)->as_If()->is_flat_array_check(&_gvn), "Should be found");
           inc_sp(3);
-          access_store_at(array, adr, adr_type, stored_value_casted, elemtype, bt, MO_UNORDERED | IN_HEAP | IS_ARRAY, false);
+          access_store_at(array, adr, stored_value_casted, elemtype, bt, MO_UNORDERED | IN_HEAP | IS_ARRAY, false);
           dec_sp(3);
           ideal.sync_kit(this);
         }
@@ -318,7 +315,7 @@ void Parse::array_store(BasicType bt) {
     }
   }
   inc_sp(3);
-  access_store_at(array, adr, adr_type, stored_value, elemtype, bt, MO_UNORDERED | IN_HEAP | IS_ARRAY);
+  access_store_at(array, adr, stored_value, elemtype, bt, MO_UNORDERED | IN_HEAP | IS_ARRAY);
   dec_sp(3);
 }
 

@@ -314,7 +314,7 @@ Node* PhaseMacroExpand::mark_word_test(Node** ctrl, Node* obj, MergeMemNode* mem
   Node* klass_adr = basic_plus_adr(obj, oopDesc::klass_offset_in_bytes());
   Node* klass = transform_later(LoadKlassNode::make(_igvn, C->immutable_memory(), klass_adr, TypeInstPtr::KLASS, TypeInstKlassPtr::OBJECT));
   Node* proto_adr = basic_plus_adr(top(), klass, in_bytes(Klass::prototype_header_offset()));
-  Node* proto = transform_later(LoadNode::make(_igvn, *ctrl, C->immutable_memory(), proto_adr, proto_adr->bottom_type()->is_ptr(), TypeX_X, TypeX_X->basic_type(), MemNode::unordered));
+  Node* proto = transform_later(LoadNode::make(_igvn, *ctrl, C->immutable_memory(), proto_adr, TypeX_X, TypeX_X->basic_type(), MemNode::unordered));
 
   locked_region->init_req(2, *ctrl);
   mark_phi->init_req(2, proto);
@@ -1039,7 +1039,7 @@ void PhaseMacroExpand::generate_clear_array(Node* ctrl, MergeMemNode* merge_mem,
         Node* p1 = basic_plus_adr(dest, x1, raw_base);
         if (val == nullptr) {
           assert(raw_val == nullptr, "val may not be null");
-          mem = StoreNode::make(_igvn, ctrl, mem, p1, adr_type, intcon(0), T_INT, MemNode::unordered);
+          mem = StoreNode::make(_igvn, ctrl, mem, p1, intcon(0), T_INT, MemNode::unordered);
         } else {
           assert(_igvn.type(val)->isa_narrowoop(), "should be narrow oop");
           mem = new StoreNNode(ctrl, mem, p1, adr_type, val, MemNode::unordered);
@@ -1099,11 +1099,11 @@ bool PhaseMacroExpand::generate_block_arraycopy(Node** ctrl, MergeMemNode** mem,
       uint d_alias_idx = C->get_alias_index(adr_type);
       bool is_mismatched = (basic_elem_type != T_INT);
       Node* sval = transform_later(
-          LoadNode::make(_igvn, *ctrl, (*mem)->memory_at(s_alias_idx), sptr, s_adr_type,
+          LoadNode::make(_igvn, *ctrl, (*mem)->memory_at(s_alias_idx), sptr,
                          TypeInt::INT, T_INT, MemNode::unordered, LoadNode::DependsOnlyOnTest,
                          false /*require_atomic_access*/, false /*unaligned*/, is_mismatched));
       Node* st = transform_later(
-          StoreNode::make(_igvn, *ctrl, (*mem)->memory_at(d_alias_idx), dptr, adr_type,
+          StoreNode::make(_igvn, *ctrl, (*mem)->memory_at(d_alias_idx), dptr,
                           sval, T_INT, MemNode::unordered));
       if (is_mismatched) {
         st->as_Store()->set_mismatched_access();
