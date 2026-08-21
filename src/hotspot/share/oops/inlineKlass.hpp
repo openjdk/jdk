@@ -105,7 +105,7 @@ class InlineKlass: public InstanceKlass {
     //
     // This doesn't always apply, for instance, if there are oops among the fields, we shouldn't carelessly load and compare:
     // the GC might move the object in between.
-    // To signal this fast path cannot be done on this current class, simply put 0 in _fast_acmp_mask.
+    // To signal this fast path cannot be done on this current class, simply put -1 in _fast_acmp_offset.
     //
     // We also should take care of not loading further than the object, even if it means reading part of the header.
     // For this reason, we can't use _payload_offset, but we need our special offset.
@@ -113,6 +113,60 @@ class InlineKlass: public InstanceKlass {
     //
     int _fast_acmp_offset;    // if < 0, fast acmp doesn't apply
     int64_t _fast_acmp_mask;  // can be 0 for empty value classes
+
+    // When we can't intrinsify the identityHashCode, we can still avoid the Java call at runtime if the value object is nice
+    // enough. This fast path basically implements the method ValueObjectMethods::valueObjectHashCode in a special case. This
+    // special case is when there is at most one no-oop segment in the acmp maps, that this segment (if it exists) is 1, 2, 4
+    // or 8 byte long, and there is no oop in the acmp maps. Basically, valueObjectHashCode makes 0 or 1 iteration of the big
+    // outer loop, and one iteration of one of the inner loops. The fast path loads a long at the given offset, isolates the
+    // numeric value we are interested in, and does the arithmetic.
+    //
+    // There are cases:
+    // 1. hashcode fast path doesn't apply: we set _fast_hashcode_offset < 0
+    // 2. the object has no segments (i.e. it is empty): we set _fast_hashcode_offset = 0
+    // 3. the object has one segment: we set _fast_hashcode_offset according to where we should load.
+    //
+    // Alike for the acmp fast path, we must not load further than the object, and we use the same trick as for acmp, and we
+    // load possibly some part of the header. The cases 2. and 3. cannot collide since loading at offset 0 would read only the
+    // header, and no payload.
+    //
+    // But unlike acmp, we need the actual arithmetic value, and resetting irrelevant bits is not correct. To do that, we need
+    // to have a different logic wrt. endianness. Moreover, the fast path needs to handle differently when the segment is 8-byte
+    // long, just as valueObjectHashCode does, while the arithmetic for segments of size 1, 2 or 4 is the same. This is also known
+    // by a endianness-dependent test.
+    int _fast_hashcode_offset;   // if < 0, fast hashcode doesn't apply
+
+    // It turns out we need the same helping data for little and big endian at the moment. Yet, the logic is not quite the same.
+    //
+    // === LITTLE ENDIAN ===
+    // In little endian, the memory layout, with a 4-byte segment whose value (as returned by getInt) would be 0x01 02 03 04. The
+    // memory layout of the object would be something like:
+    //                v- start of payload
+    // ....header.... | 04 03 02 01
+    //    \___________|___________/
+    // Not to load too far, we load at offset "start of payload" - 4, so, we get some header bytes, and we get the long value
+    // 0x01 02 03 04 HH HH HH HH, where HH are header bytes. To get the integer value, we can simply do an arithmetic right shift,
+    // by 4 bytes (32 bits) in this case. By doing an arithmetic right shift, we conserve the mathematical value, even if we cut
+    // higher bits (as long as we leave at least as much as the block we load).
+    //
+    // === BIG ENDIAN ===
+    // In big endian, the memory layout, with a 4-byte segment whose value (as returned by getInt) would be 0x01 02 03 04. The
+    // memory layout of the object would be something like:
+    //                v- start of payload
+    // ....header.... | 01 02 03 04
+    //    \___________|___________/
+    // Not to load too far, we load at offset "start of payload" - 4, so, we get some header bytes, and we get the long value
+    // 0xHH HH HH HH 01 02 03 04, where HH are header bytes. To get the integer value, we can simply so a left shift, which
+    // fills the lower bits with 0, followed by a arithmetic right shift, to preserve the mathematical value. The shift magnitude
+    // is equal to the number of bits we need to discard. In this example, that is 32.
+    //
+    // === COMMON ===
+    // This field is saying by how much we need to shift. Since we keep 1, 2, 4 or 8 bytes, the legal values of _fast_hashcode_shift
+    // are 8 * (8 - (1, 2, 4, 8)) = 8 * (7, 6, 4, 0) = 56, 48, 32, 0.
+    //
+    // The fast path is aware we are loading a long if the shift is 0.
+    // Value is not specified (and does not matter) if _fast_hashcode_offset <= 0
+    int _fast_hashcode_shift;
 
     Members();
 
@@ -212,6 +266,12 @@ class InlineKlass: public InstanceKlass {
   int64_t fast_acmp_mask() const                              { return members()._fast_acmp_mask; }
   void set_fast_acmp_mask(int64_t mask)                       { members()._fast_acmp_mask = mask; }
 
+  int fast_hashcode_offset() const                            { return members()._fast_hashcode_offset; }
+  void set_fast_hashcode_offset(int offset)                   { members()._fast_hashcode_offset = offset; }
+
+  int fast_hashcode_shift() const                             { return members()._fast_hashcode_shift; }
+  void set_fast_hashcode_shift(int shift)                     { members()._fast_hashcode_shift = shift; }
+
   bool supports_nullable_layouts() const {
     return has_nullable_non_atomic_layout() || has_nullable_atomic_layout();
   }
@@ -279,12 +339,17 @@ class InlineKlass: public InstanceKlass {
   bool contains_oops() const { return nonstatic_oop_map_count() > 0; }
   int nonstatic_oop_count();
 
-  // oop iterate raw inline type data pointer (where oop_addr may not be an oop, but backing/array-element)
-  template <typename T, class OopClosureType>
-  inline void oop_iterate_specialized(const address oop_addr, OopClosureType* closure);
+  // oop iterate the payload of a value object.
+  //
+  // * Function: void function(T* p)
+  template <typename T, typename Function>
+  inline void oop_iterate_value_payload_f(address payload, Function function);
 
   template <typename T, class OopClosureType>
-  inline void oop_iterate_specialized_bounded(const address oop_addr, OopClosureType* closure, uintptr_t lo, uintptr_t hi);
+  inline void oop_iterate_value_payload(address payload, OopClosureType* closure);
+
+  template <typename T, class OopClosureType>
+  inline void oop_iterate_value_payload_bounded(address payload, OopClosureType* closure, uintptr_t lo, uintptr_t hi);
 
   // Support for the scalarized calling convention
   void initialize_calling_convention(TRAPS);
@@ -332,6 +397,14 @@ class InlineKlass: public InstanceKlass {
 
   static ByteSize fast_acmp_mask_offset() {
     return byte_offset_of(Members, _fast_acmp_mask);
+  }
+
+  static ByteSize fast_hashcode_offset_offset() {
+    return byte_offset_of(Members, _fast_hashcode_offset);
+  }
+
+  static ByteSize fast_hashcode_shift_offset() {
+    return byte_offset_of(Members, _fast_hashcode_shift);
   }
 
   oop null_reset_value() const;

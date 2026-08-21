@@ -36,6 +36,7 @@
 #include "ci/ciInlineKlass.hpp"
 #include "ci/ciInstance.hpp"
 #include "ci/ciObjArrayKlass.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "nativeInst_riscv.hpp"
@@ -43,6 +44,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/threadIdentifier.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "vmreg_riscv.inline.hpp"
 
@@ -441,6 +443,19 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
 
     case T_LONG:
       assert(patch_code == lir_patch_none, "no patching handled here");
+#if INCLUDE_CDS
+      if (AOTCodeCache::is_on_for_dump()) {
+        address b = c->as_pointer();
+        if (b == (address)ThreadIdentifier::unsafe_offset()) {
+          __ la(dest->as_register_lo(), ExternalAddress(b));
+          break;
+        }
+        if (AOTRuntimeConstants::contains(b)) {
+          __ load_aotrc_address(dest->as_register_lo(), b);
+          break;
+        }
+      }
+#endif
       __ mv(dest->as_register_lo(), (intptr_t)c->as_jlong());
       break;
 

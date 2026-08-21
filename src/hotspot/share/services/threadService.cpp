@@ -1499,12 +1499,15 @@ oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, TRAPS) {
   }
 
   // Locks
-  Symbol* lock_sym = vmSymbols::jdk_internal_vm_ThreadLock();
-  Klass* lock_k = SystemDictionary::resolve_or_fail(lock_sym, true, CHECK_NULL);
-  InstanceKlass* lock_klass = InstanceKlass::cast(lock_k);
-
   refArrayHandle locks;
   if (cl._locks != nullptr && cl._locks->length() > 0) {
+    Symbol* lock_sym = vmSymbols::jdk_internal_vm_ThreadLock();
+    Klass* lock_k = SystemDictionary::resolve_or_fail(lock_sym, true, CHECK_NULL);
+    if (lock_k->should_be_initialized()) {
+      lock_k->initialize(CHECK_NULL);
+    }
+
+    InstanceKlass* lock_klass = InstanceKlass::cast(lock_k);
     locks = oopFactory::new_refArray_handle(lock_klass, cl._locks->length(), CHECK_NULL);
     for (int n = 0; n < cl._locks->length(); n++) {
       GetThreadSnapshotHandshakeClosure::OwnedLock* lock_info = cl._locks->adr_at(n);

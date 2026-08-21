@@ -23,6 +23,7 @@
  */
 
 #include "asm/assembler.inline.hpp"
+#include "ci/ciFlatArrayKlass.hpp"
 #include "code/aotCodeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "code/debugInfo.hpp"
@@ -35,6 +36,7 @@
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "memory/allocation.hpp"
+#include "oops/arrayKlass.hpp"
 #include "opto/ad.hpp"
 #include "opto/block.hpp"
 #include "opto/c2_MacroAssembler.hpp"
@@ -745,6 +747,22 @@ void PhaseOutput::set_sv_for_object_node(GrowableArray<ScopeValue*> *objs,
   objs->append(sv);
 }
 
+static jint array_description_value(const TypeAryPtr* ary_type) {
+  ciArrayKlass* array_klass = ary_type->exact_klass()->as_array_klass();
+  const bool is_element_inline = array_klass->element_klass()->is_inlinetype();
+  ArrayProperties properties = ArrayProperties::Default()
+      .with_null_restricted(is_element_inline && array_klass->is_elem_null_free())
+      .with_non_atomic(is_element_inline && !array_klass->is_elem_atomic());
+
+  LayoutKind layout_kind = LayoutKind::REFERENCE;
+  Klass::KlassKind kind = Klass::RefArrayKlassKind;
+  if (ary_type->is_flat()) {
+    layout_kind = array_klass->as_flat_array_klass()->layout_kind();
+    kind = Klass::FlatArrayKlassKind;
+  }
+  return (jint)ArrayDescription(kind, properties, layout_kind).value();
+}
+
 
 void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
                             GrowableArray<ScopeValue*> *array,
@@ -792,14 +810,7 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
         }
       }
       if (cik->is_array_klass() && !cik->is_type_array_klass()) {
-        ciArrayKlass* ciak = cik->as_array_klass();
-        const bool is_element_inline = ciak->element_klass()->is_inlinetype();
-
-        const ArrayProperties props = ArrayProperties::Default()
-          .with_null_restricted(is_element_inline && ciak->is_elem_null_free())
-          .with_non_atomic(is_element_inline && !ciak->is_elem_atomic());
-
-        properties = new ConstantIntValue((jint)props.value());
+        properties = new ConstantIntValue(array_description_value(t->is_aryptr()));
       }
       sv = new ObjectValue(spobj->_idx,
                            new ConstantOopWriteValue(cik->java_mirror()->constant_encoding()), true, properties);
@@ -1143,14 +1154,7 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
           assert(!cik->is_inlinetype(), "Synchronization on value object?");
           ScopeValue* properties = nullptr;
           if (cik->is_array_klass() && !cik->is_type_array_klass()) {
-            ciArrayKlass* ciak = cik->as_array_klass();
-            const bool is_element_inline = ciak->element_klass()->is_inlinetype();
-
-            const ArrayProperties props = ArrayProperties::Default()
-              .with_null_restricted(is_element_inline && ciak->is_elem_null_free())
-              .with_non_atomic(is_element_inline && !ciak->is_elem_atomic());
-
-            properties = new ConstantIntValue((jint)props.value());
+            properties = new ConstantIntValue(array_description_value(t->is_aryptr()));
           }
           ObjectValue* sv = new ObjectValue(spobj->_idx,
                                             new ConstantOopWriteValue(cik->java_mirror()->constant_encoding()), true, properties);
@@ -2885,6 +2889,7 @@ void Scheduling::anti_do_def( Block *b, Node *def, OptoReg::Name def_reg, int is
         // Yes, found a use/kill pinch-point
         pinch->set_req(0,nullptr);  //
         pinch->replace_by(kill); // Move anti-dep edges up
+        _pinch_free_list.push(pinch);
         pinch = kill;
         _reg_node.map(def_reg,pinch);
         return;
