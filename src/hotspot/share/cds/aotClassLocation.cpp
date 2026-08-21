@@ -39,8 +39,10 @@
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/array.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/handles.inline.hpp"
 #include "utilities/classpathStream.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/stringUtils.hpp"
@@ -279,7 +281,7 @@ AOTClassLocation* AOTClassLocation::allocate(JavaThread* current, const char* pa
   }
   assert(*(cs->manifest() + cs->manifest_length()) == '\0', "should be nul-terminated");
 
-  if (strstr(cs->manifest(), "Multi-Release: true") != nullptr) {
+  if (StringUtils::strstr_nocase(cs->manifest(), "Multi-Release: true") != nullptr) {
     cs->_is_multi_release_jar = true;
   }
 
@@ -719,7 +721,9 @@ bool AOTClassLocationConfig::is_valid_classpath_index(int classpath_index, Insta
       const char* const class_name = ik->name()->as_C_string();
       const char* const file_name = ClassLoader::file_name_for_class_name(class_name,
                                                                           ik->name()->utf8_length());
-      if (!zip->has_entry(current, file_name)) {
+      Handle class_loader(current, ik->class_loader());
+      const AOTClassLocation* cl = AOTClassLocationConfig::class_location_at(classpath_index);
+      if (!zip->has_entry(current, file_name, class_loader, cl->is_multi_release_jar())) {
         aot_log_warning(aot)("class %s cannot be archived because it was not defined from %s as claimed",
                          class_name, zip->name());
         return false;
