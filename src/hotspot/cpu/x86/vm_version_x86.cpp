@@ -1077,6 +1077,14 @@ void VM_Version::get_processor_features() {
       FLAG_SET_DEFAULT(UseAPX, false);
     }
   }
+#if defined(COMPILER2)
+  if (UseAPX) {
+    // Increase InlineSmallCode by 10%
+    if (FLAG_IS_DEFAULT(InlineSmallCode)) {
+      FLAG_SET_DEFAULT(InlineSmallCode, InlineSmallCode * 1.10);
+    }
+  }
+#endif
 
   CHECK_CPU_FEATURE(UseCLMUL, CLMUL, supports_clmul(), "CLMUL" MULTI_INST_WARNING_MSG);
   CHECK_CPU_FEATURE(UseAES, AES, supports_aes(), "AES" MULTI_INST_WARNING_MSG);
