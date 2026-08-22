@@ -1104,6 +1104,7 @@ class XorVNode : public VectorNode {
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   Node* Ideal_XorV_VectorMaskCmp(PhaseGVN* phase, bool can_reshape);
   Node* Ideal_XorV_to_VectorBitwiseBlend(PhaseGVN* phase, bool can_reshape);
+  Node* Ideal_XorV_And_to_AndNot(PhaseGVN* phase, bool can_reshape);
 };
 
 // Vector xor byte, short, int, long as a reduction
