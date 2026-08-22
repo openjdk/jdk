@@ -706,6 +706,9 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         return (int) length;
     }
 
+    // Direct instances of ObjArrayKlass represent the Java types that Java code can see.
+    // RefArrayKlass/FlatArrayKlass describe different implementations of the arrays,
+    // filter them out to avoid duplicates.
     private boolean filterOutKlass(Klass k) {
         return (k instanceof ObjArrayKlass) &&
                !k.getKind().equals(Klass.KlassKind.ObjArrayKlassKind);
