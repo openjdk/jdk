@@ -2636,27 +2636,87 @@ void C2_MacroAssembler::java_round_double_v(VectorRegister dst, VectorRegister s
 }
 
 void C2_MacroAssembler::element_compare(Register a1, Register a2, Register result, Register cnt, Register tmp1, Register tmp2,
-                                        VectorRegister vr1, VectorRegister vr2, VectorRegister vrs, bool islatin, Label &DONE,
-                                        Assembler::LMUL lmul) {
-  Label loop;
+                                        bool islatin, Label &DONE, bool use_vcpop) {
   Assembler::SEW sew = islatin ? Assembler::e8 : Assembler::e16;
 
-  bind(loop);
-  vsetvli(tmp1, cnt, sew, lmul);
-  vlex_v(vr1, a1, sew);
-  vlex_v(vr2, a2, sew);
-  vmsne_vv(vrs, vr1, vr2);
-  vfirst_m(tmp2, vrs);
-  bgez(tmp2, DONE);
-  sub(cnt, cnt, tmp1);
-  if (!islatin) {
-    slli(tmp1, tmp1, 1); // get byte counts
-  }
-  add(a1, a1, tmp1);
-  add(a2, a2, tmp1);
-  bnez(cnt, loop);
+  Label loop, medium2, medium4, wide, same;
+  const VectorRegister va = v4;
+  const VectorRegister vb = v8;
+  const int elems_m1 = MaxVectorSize / (islatin ? 1 : 2);
+  const int elems_m4 = 4 * elems_m1;
+  const int bytes_m4 = 4 * MaxVectorSize;
 
-  mv(result, true);
+  beqz(cnt, same);
+
+  // Short input: one vl-bounded m1 compare, no loop.
+  mv(tmp1, elems_m1);
+  bgt(cnt, tmp1, medium2);
+  vsetvli(tmp1, cnt, sew, Assembler::m1, Assembler::ma, Assembler::ta);
+  vlex_v(va, a1, sew);
+  vlex_v(vb, a2, sew);
+  vmsne_vv(va, va, vb);
+  vfirst_m(tmp2, va);
+  bgez(tmp2, DONE);
+  j(same);
+
+  // Medium input: one vl-bounded m2 compare.
+  bind(medium2);
+  mv(tmp1, 2 * elems_m1);
+  bgt(cnt, tmp1, medium4);
+  vsetvli(tmp1, cnt, sew, Assembler::m2, Assembler::ma, Assembler::ta);
+  vlex_v(va, a1, sew);
+  vlex_v(vb, a2, sew);
+  vmsne_vv(va, va, vb);
+  vfirst_m(tmp2, va);
+  bgez(tmp2, DONE);
+  j(same);
+
+  // Medium input: one vl-bounded m4 compare.
+  bind(medium4);
+  mv(tmp1, elems_m4);
+  bgt(cnt, tmp1, wide);
+  vsetvli(tmp1, cnt, sew, Assembler::m4, Assembler::ma, Assembler::ta);
+  vlex_v(va, a1, sew);
+  vlex_v(vb, a2, sew);
+  vmsne_vv(va, va, vb);
+  vfirst_m(tmp2, va);
+  bgez(tmp2, DONE);
+  j(same);
+
+  // Long input: full m4 groups at fixed vl, then one vl-bounded
+  // compare covering the tail.
+  bind(wide);
+  vsetvli(tmp1, x0, sew, Assembler::m4, Assembler::ma, Assembler::ta);
+
+  bind(loop);
+  vlex_v(va, a1, sew);
+  vlex_v(vb, a2, sew);
+  vmsne_vv(va, va, vb);
+  if (use_vcpop) {
+    vcpop_m(tmp2, va);
+    bnez(tmp2, DONE);
+  } else {
+    vfirst_m(tmp2, va);
+    bgez(tmp2, DONE);
+  }
+  sub(cnt, cnt, tmp1);
+  addi(a1, a1, bytes_m4);
+  addi(a2, a2, bytes_m4);
+  bge(cnt, tmp1, loop);
+  beqz(cnt, same);
+
+  // Tail: one vl-bounded compare covers the rest.
+  vsetvli(tmp1, cnt, sew, Assembler::m4, Assembler::ma, Assembler::ta);
+  vlex_v(va, a1, sew);
+  vlex_v(vb, a2, sew);
+  vmsne_vv(va, va, vb);
+  vfirst_m(tmp2, va);
+  bgez(tmp2, DONE);
+
+  bind(same);
+  if (result != zr) {
+    mv(result, true);
+  }
 }
 
 void C2_MacroAssembler::string_equals_v(Register a1, Register a2, Register result, Register cnt) {
@@ -2668,7 +2728,7 @@ void C2_MacroAssembler::string_equals_v(Register a1, Register a2, Register resul
 
   mv(result, false);
 
-  element_compare(a1, a2, result, cnt, tmp1, tmp2, v2, v4, v2, true, DONE, Assembler::m2);
+  element_compare(a1, a2, result, cnt, tmp1, tmp2, true, DONE);
 
   bind(DONE);
   BLOCK_COMMENT("} string_equals_v");
@@ -2726,7 +2786,7 @@ void C2_MacroAssembler::arrays_equals_v(Register a1, Register a2, Register resul
   la(a1, Address(a1, base_offset));
   la(a2, Address(a2, base_offset));
 
-  element_compare(a1, a2, result, cnt1, tmp1, tmp2, v2, v4, v2, elem_size == 1, DONE, Assembler::m2);
+  element_compare(a1, a2, result, cnt1, tmp1, tmp2, elem_size == 1, DONE, true);
 
   bind(DONE);
 
@@ -2735,7 +2795,7 @@ void C2_MacroAssembler::arrays_equals_v(Register a1, Register a2, Register resul
 
 void C2_MacroAssembler::string_compare_v(Register str1, Register str2, Register cnt1, Register cnt2,
                                          Register result, Register tmp1, Register tmp2, int encForm) {
-  Label DIFFERENCE, DONE, L, loop;
+  Label DIFFERENCE, DONE, L, SMALL_STRING, SMALL_LOOP, SMALL_DIFFERENCE;
   bool encLL = encForm == StrIntrinsicNode::LL;
   bool encLU = encForm == StrIntrinsicNode::LU;
   bool encUL = encForm == StrIntrinsicNode::UL;
@@ -2761,17 +2821,14 @@ void C2_MacroAssembler::string_compare_v(Register str1, Register str2, Register 
   mv(cnt2, cnt1);
   bind(L);
 
+  mv(tmp1, minCharsInWord);
+  ble(cnt2, tmp1, SMALL_STRING);
+
   // We focus on the optimization of small sized string.
   // Please check below document for string size distribution statistics.
   // https://cr.openjdk.org/~shade/density/string-density-report.pdf
   if (str1_isL == str2_isL) { // LL or UU
-    // Below construction of v regs and lmul is based on test on 2 different boards,
-    // vlen == 128 and vlen == 256 respectively.
-    if (!encLL && MaxVectorSize == 16) { // UU
-      element_compare(str1, str2, zr, cnt2, tmp1, tmp2, v4, v8, v4, encLL, DIFFERENCE, Assembler::m4);
-    } else { // UU + MaxVectorSize or LL
-      element_compare(str1, str2, zr, cnt2, tmp1, tmp2, v2, v4, v2, encLL, DIFFERENCE, Assembler::m2);
-    }
+    element_compare(str1, str2, zr, cnt2, tmp1, tmp2, encLL, DIFFERENCE);
 
     j(DONE);
   } else { // LU or UL
@@ -2780,21 +2837,68 @@ void C2_MacroAssembler::string_compare_v(Register str1, Register str2, Register 
     VectorRegister vstr1 = encLU ? v8 : v4;
     VectorRegister vstr2 = encLU ? v4 : v8;
 
-    bind(loop);
-    vsetvli(tmp1, cnt2, Assembler::e8, Assembler::m2);
+    Label wide, fixed_loop;
+    const int elems_m2 = 2 * MaxVectorSize;
+
+    mv(tmp1, elems_m2);
+    bgt(cnt2, tmp1, wide);
+
+    // One vl-bounded compare covers the whole string.
+    vsetvli(tmp1, cnt2, Assembler::e8, Assembler::m2, Assembler::ma, Assembler::ta);
     vle8_v(vstr1, strL);
-    vsetvli(tmp1, cnt2, Assembler::e16, Assembler::m4);
+    vsetvli(tmp1, cnt2, Assembler::e16, Assembler::m4, Assembler::ma, Assembler::ta);
+    vzext_vf2(vstr2, vstr1);
+    vle16_v(vstr1, strU);
+    vmsne_vv(v4, vstr2, vstr1);
+    vfirst_m(tmp2, v4);
+    bgez(tmp2, DIFFERENCE);
+    j(DONE);
+
+    bind(wide);
+    vsetvli(tmp1, x0, Assembler::e8, Assembler::m2, Assembler::ma, Assembler::ta);
+
+    bind(fixed_loop);
+    vsetvli(zr, tmp1, Assembler::e8, Assembler::m2, Assembler::ma, Assembler::ta);
+    vle8_v(vstr1, strL);
+    vsetvli(zr, tmp1, Assembler::e16, Assembler::m4, Assembler::ma, Assembler::ta);
     vzext_vf2(vstr2, vstr1);
     vle16_v(vstr1, strU);
     vmsne_vv(v4, vstr2, vstr1);
     vfirst_m(tmp2, v4);
     bgez(tmp2, DIFFERENCE);
     sub(cnt2, cnt2, tmp1);
-    add(strL, strL, tmp1);
-    shadd(strU, tmp1, strU, tmp1, 1);
-    bnez(cnt2, loop);
+    beqz(cnt2, DONE);
+    addi(strL, strL, 2 * MaxVectorSize);
+    addi(strU, strU, 4 * MaxVectorSize);
+    bge(cnt2, tmp1, fixed_loop);
+
+    // Tail: one vl-bounded compare covers the rest.
+    vsetvli(tmp1, cnt2, Assembler::e8, Assembler::m2, Assembler::ma, Assembler::ta);
+    vle8_v(vstr1, strL);
+    vsetvli(tmp1, cnt2, Assembler::e16, Assembler::m4, Assembler::ma, Assembler::ta);
+    vzext_vf2(vstr2, vstr1);
+    vle16_v(vstr1, strU);
+    vmsne_vv(v4, vstr2, vstr1);
+    vfirst_m(tmp2, v4);
+    bgez(tmp2, DIFFERENCE);
     j(DONE);
   }
+
+  bind(SMALL_STRING);
+  beqz(cnt2, DONE);
+  bind(SMALL_LOOP);
+  str1_isL ? lbu(tmp1, Address(str1, 0)) : lhu(tmp1, Address(str1, 0));
+  str2_isL ? lbu(tmp2, Address(str2, 0)) : lhu(tmp2, Address(str2, 0));
+  bne(tmp1, tmp2, SMALL_DIFFERENCE);
+  addi(str1, str1, str1_isL ? 1 : 2);
+  addi(str2, str2, str2_isL ? 1 : 2);
+  subi(cnt2, cnt2, 1);
+  bnez(cnt2, SMALL_LOOP);
+  j(DONE);
+
+  bind(SMALL_DIFFERENCE);
+  sub(result, tmp1, tmp2);
+  j(DONE);
 
   bind(DIFFERENCE);
   slli(tmp1, tmp2, 1);
