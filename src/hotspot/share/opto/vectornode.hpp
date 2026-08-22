@@ -2304,4 +2304,18 @@ public:
   virtual int Opcode() const;
 };
 
+// Vector dot product of bytes to ints
+class DotVNode : public VectorNode {
+public:
+  DotVNode(Node* in1, Node* in2, Node* in3, const TypeVect* vt) : VectorNode(in1, in2, in3, vt) {}
+  virtual int Opcode() const;
+};
+
+// Vector unsigned dot product of bytes to ints
+class UDotVNode : public VectorNode {
+public:
+  UDotVNode(Node* in1, Node* in2, Node* in3, const TypeVect* vt) : VectorNode(in1, in2, in3, vt) {}
+  virtual int Opcode() const;
+};
+
 #endif // SHARE_OPTO_VECTORNODE_HPP

@@ -2619,6 +2619,101 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
     public abstract
     ByteVector selectFrom(Vector<Byte> v1, Vector<Byte> v2);
 
+    /**
+     * Performs dot product of bytes.
+     *
+     * Each accumulator lane receives the sum of the four products of byte lanes.
+     *
+     * @param v input vector to perform dot product against the current vector
+     * @param acc vector to accumulate result into
+     * @return new vector of accumulated dot product
+     *
+     * @throws IllegalArgumentException if the species of v differs from the species of this vector
+     * @throws IllegalArgumentException if the shape of this vector differs from the shape of the acc vector
+     * @throws IllegalArgumentException if the acc vector element type is not int
+     */
+    @ForceInline
+    public final IntVector dot(Vector<Byte> v, Vector<Integer> acc) {
+        if (!this.species().equals(v.species())) {
+            throw new IllegalArgumentException("Bad species: this=" + this.species() + " v=" + v.species());
+        }
+
+        if (this.species().vectorShape() != acc.species().vectorShape()) {
+            throw new IllegalArgumentException("Bad shape: this=" + this.species().vectorShape() + " acc=" + acc.species().vectorShape());
+        }
+
+        if (acc.elementType() != int.class) {
+            throw new IllegalArgumentException("Accumulator element type should be int but is " + acc.elementType());
+        }
+
+        ByteVector bv = (ByteVector) v;
+        IntVector  iv = (IntVector) acc;
+
+        return VectorSupport.dot(VECTOR_OP_DOT, getClass(), laneTypeOrdinal(), length(), iv.getClass(), iv.laneTypeOrdinal(), iv.length(), this, bv, iv, (v1, v2, v3) -> {
+            byte[] b1 = v1.vec();
+            byte[] b2 = v2.vec();
+            int[] res = v3.toArray();
+
+            for (int resIndex = 0; resIndex < res.length; resIndex++) {
+                int bIndex = resIndex * 4;
+
+                res[resIndex] += b1[bIndex]     * b2[bIndex]     +
+                                 b1[bIndex + 1] * b2[bIndex + 1] +
+                                 b1[bIndex + 2] * b2[bIndex + 2] +
+                                 b1[bIndex + 3] * b2[bIndex + 3];
+            }
+
+            return IntVector.fromArray(v3.species(), res, 0);
+        });
+    }
+
+    /**
+     * Performs dot product of unsigned zero extended bytes.
+     *
+     * Each accumulator lane receives the sum of the four products of byte lanes.
+     *
+     * @param v input vector to perform dot product against the current vector
+     * @param acc vector to accumulate result into
+     * @return new vector of accumulated dot product
+     *
+     * @throws IllegalArgumentException if the species of v differs from the species of this vector
+     * @throws IllegalArgumentException if the shape of this vector differs from the shape of the acc vector
+     * @throws IllegalArgumentException if the acc vector element type is not int
+     */
+    @ForceInline
+    public final IntVector dotUnsigned(Vector<Byte> v, Vector<Integer> acc) {
+        if (!this.species().equals(v.species())) {
+            throw new IllegalArgumentException("Bad species: this=" + this.species() + " v=" + v.species());
+        }
+
+        if (this.species().vectorShape() != acc.species().vectorShape()) {
+            throw new IllegalArgumentException("Bad shape: this=" + this.species().vectorShape() + " acc=" + acc.species().vectorShape());
+        }
+
+        if (acc.elementType() != int.class) {
+            throw new IllegalArgumentException("Accumulator element type should be int but is " + acc.elementType());
+        }
+
+        ByteVector bv = (ByteVector) v;
+        IntVector  iv = (IntVector) acc;
+
+        return VectorSupport.dot(VECTOR_OP_UDOT, getClass(), laneTypeOrdinal(), length(), iv.getClass(), iv.laneTypeOrdinal(), iv.length(), this, bv, iv, (v1, v2, v3) -> {
+            byte[] b1 = v1.vec();
+            byte[] b2 = v2.vec();
+            int[] res = v3.toArray();
+
+            for (int resIndex = 0; resIndex < res.length; resIndex++) {
+                int bIndex = resIndex * 4;
+
+                res[resIndex] += Byte.toUnsignedInt(b1[bIndex])     * Byte.toUnsignedInt(b2[bIndex])     +
+                                 Byte.toUnsignedInt(b1[bIndex + 1]) * Byte.toUnsignedInt(b2[bIndex + 1]) +
+                                 Byte.toUnsignedInt(b1[bIndex + 2]) * Byte.toUnsignedInt(b2[bIndex + 2]) +
+                                 Byte.toUnsignedInt(b1[bIndex + 3]) * Byte.toUnsignedInt(b2[bIndex + 3]);
+            }
+
+            return IntVector.fromArray(v3.species(), res, 0);
+        });
+    }
 
     /*package-private*/
     @ForceInline

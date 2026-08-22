@@ -1105,6 +1105,21 @@ class methodHandle;
                                         "Ljdk/internal/vm/vector/VectorSupport$Vector;")                                                       \
    do_name(vector_ternary_op_name,     "ternaryOp")                                                                                            \
                                                                                                                                                \
+  do_intrinsic(_VectorDotOp, jdk_internal_vm_vector_VectorSupport, vector_dot_name, vector_dot_sig, F_S)                                       \
+   do_signature(vector_dot_sig, "(I"                                                                                                           \
+                                 "Ljava/lang/Class;"                                                                                           \
+                                 "I"                                                                                                           \
+                                 "I"                                                                                                           \
+                                 "Ljava/lang/Class;"                                                                                           \
+                                 "I"                                                                                                           \
+                                 "I"                                                                                                           \
+                                 "Ljdk/internal/vm/vector/VectorSupport$VectorPayload;"                                                        \
+                                 "Ljdk/internal/vm/vector/VectorSupport$VectorPayload;"                                                        \
+                                 "Ljdk/internal/vm/vector/VectorSupport$VectorPayload;"                                                        \
+                                 "Ljdk/internal/vm/vector/VectorSupport$VectorDotOp;)"                                                         \
+                                 "Ljdk/internal/vm/vector/VectorSupport$VectorPayload;")                                                       \
+   do_name(vector_dot_name,     "dot")                                                                                                         \
+                                                                                                                                               \
   do_intrinsic(_VectorSelectFromTwoVectorOp, jdk_internal_vm_vector_VectorSupport, vector_select_from_op_name, vector_select_from_op_sig, F_S) \
    do_signature(vector_select_from_op_sig, "(Ljava/lang/Class;"                                                                                \
                                             "I"                                                                                                \

@@ -2869,6 +2869,117 @@ static Node* LowerSelectFromTwoVectorOperation(PhaseGVN& phase, Node* index_vec,
   return new VectorBlendNode(p2, p1, mask);
 }
 
+//  <VOUT extends VectorPayload,
+//   VIN extends VectorPayload>
+//   VOUT dot(int oprId, Class<?> fromVectorClass, int fromLaneType, int fromVLen,
+//            Class<?> toVectorClass, int toLaneType, int toVLen, VIN v1, VIN v2, VOUT acc,
+//            VectorDotOp<VOUT, VIN> defaultImpl)
+bool LibraryCallKit::inline_vector_dot() {
+  const TypeInt* operId = gvn().type(argument(0))->isa_int();
+  if (operId == nullptr || !operId->is_con()) {
+    log_if_needed("  ** missing operation id");
+    return false;
+  }
+
+  int oper = operId->get_con();
+  int op;
+  if (oper == VectorSupport::VECTOR_OP_DOT) {
+    op = Op_DotV;
+  } else if (oper == VectorSupport::VECTOR_OP_UDOT) {
+    op = Op_UDotV;
+  } else {
+    log_if_needed("  ** unsupported operation id: %d", oper);
+    return false;
+  }
+
+  const TypeInstPtr* from_vector_klass = gvn().type(argument(1))->isa_instptr();
+  const TypeInt* from_lane_type = gvn().type(argument(2))->isa_int();
+  const TypeInt* from_vlen = gvn().type(argument(3))->isa_int();
+
+  if (from_vector_klass == nullptr || from_lane_type == nullptr || from_vlen == nullptr ||
+      from_vector_klass->const_oop() == nullptr || !from_lane_type->is_con() || !from_vlen->is_con()) {
+    log_if_needed("  ** missing from constant: vclass=%s etype=%s vlen=%s",
+                    NodeClassNames[argument(1)->Opcode()],
+                    NodeClassNames[argument(2)->Opcode()],
+                    NodeClassNames[argument(3)->Opcode()]);
+    return false;
+  }
+
+  const TypeInstPtr* to_vector_klass = gvn().type(argument(4))->isa_instptr();
+  const TypeInt* to_lane_type = gvn().type(argument(5))->isa_int();
+  const TypeInt* to_vlen = gvn().type(argument(6))->isa_int();
+
+  if (to_vector_klass == nullptr || to_lane_type == nullptr || to_vlen == nullptr ||
+      to_vector_klass->const_oop() == nullptr || !to_lane_type->is_con() || !to_vlen->is_con()) {
+    log_if_needed("  ** missing to constant: vclass=%s etype=%s vlen=%s",
+                    NodeClassNames[argument(4)->Opcode()],
+                    NodeClassNames[argument(5)->Opcode()],
+                    NodeClassNames[argument(6)->Opcode()]);
+    return false;
+  }
+
+  if (!is_klass_initialized(from_vector_klass) || !is_klass_initialized(to_vector_klass)) {
+    log_if_needed("  ** klass argument not initialized");
+    return false;
+  }
+
+  int from_num_elem = from_vlen->get_con();
+  int to_num_elem = to_vlen->get_con();
+
+  if (from_num_elem != to_num_elem * 4) {
+    log_if_needed("  ** invalid input to output ratio: input=%d output=%d", from_num_elem, to_num_elem);
+    return false;
+  }
+
+  BasicType from_elem_bt = get_vector_primitive_lane_type(static_cast<VectorSupport::LaneType>(from_lane_type->get_con()));
+  BasicType to_elem_bt = get_vector_primitive_lane_type(static_cast<VectorSupport::LaneType>(to_lane_type->get_con()));
+
+  if (from_elem_bt != T_BYTE || to_elem_bt != T_INT) {
+    log_if_needed("  ** invalid element types: input=%s output=%s", type2name(from_elem_bt), type2name(to_elem_bt));
+    return false;
+  }
+
+  const TypeInstPtr* from_vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, from_vector_klass->const_oop()->as_instance()->java_lang_Class_klass());
+  const TypeInstPtr* to_vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, to_vector_klass->const_oop()->as_instance()->java_lang_Class_klass());
+
+  if (!arch_supports_vector(op, to_num_elem, to_elem_bt, VecMaskNotUsed)) {
+    log_if_needed("  ** not supported: opc=%s vlen=%d etype=%s ismask=no",
+                    NodeClassNames[op], to_num_elem, type2name(to_elem_bt));
+    return false;
+  }
+
+  if (!arch_supports_vector(Op_VectorReinterpret, from_num_elem, from_elem_bt, VecMaskNotUsed)) {
+    log_if_needed("  ** not supported: opc=%s vlen=%d etype=%s ismask=no",
+                    NodeClassNames[Op_VectorReinterpret], from_num_elem, type2name(from_elem_bt));
+    return false;
+  }
+
+  Node* opd1 = unbox_vector(argument(7), from_vbox_type, from_elem_bt, from_num_elem);
+  if (opd1 == nullptr) {
+    log_if_needed("  ** unbox failed v1=%s",
+                  NodeClassNames[argument(7)->Opcode()]);
+    return false;
+  }
+  Node* opd2 = unbox_vector(argument(8), from_vbox_type, from_elem_bt, from_num_elem);
+  if (opd2 == nullptr) {
+    log_if_needed("  ** unbox failed v2=%s",
+                  NodeClassNames[argument(8)->Opcode()]);
+    return false;
+  }
+  Node* opd3 = unbox_vector(argument(9), to_vbox_type, to_elem_bt, to_num_elem);
+  if (opd3 == nullptr) {
+    log_if_needed("  ** unbox failed v3=%s",
+                  NodeClassNames[argument(9)->Opcode()]);
+    return false;
+  }
+
+  const TypeVect* vt = TypeVect::make(to_elem_bt, to_num_elem);
+  Node* node = gvn().transform(VectorNode::make(op, opd1, opd2, opd3, vt));
+  set_result(box_vector(node, to_vbox_type, to_elem_bt, to_num_elem));
+
+  return true;
+}
+
 //
 //  <V extends Vector<E>,
 //   E>

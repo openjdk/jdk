@@ -4360,6 +4360,31 @@ public:
   INSN(sve_smullt, /* is_unsigned */ false, /* is_top */ true ); // Signed widening multiply of top elements
 #undef INSN
 
+// Advanced SIMD dot product
+#define INSN(NAME, is_unsigned)                                                                               \
+  void NAME(FloatRegister Vd, SIMD_Arrangement Ta, FloatRegister Vn, FloatRegister Vm, SIMD_Arrangement Tb) { \
+    starti;                                                                                                   \
+    assert((Ta == T4S && Tb == T16B) || (Ta == T2S && Tb == T8B), "invalid simd arrangement");                \
+    f(0, 31), f(Tb & 1, 30), f(is_unsigned, 29), f(0b01110100, 28, 21);                                       \
+    rf(Vm, 16), f(0b100101, 15, 10), rf(Vn, 5), rf(Vd, 0);                                                    \
+  }
+
+  INSN(sdot, /* is_unsigned */ false);
+  INSN(udot, /* is_unsigned */ true);
+#undef INSN
+
+// SVE 4-way vector dot product
+#define INSN(NAME, is_unsigned)                                      \
+  void NAME(FloatRegister Zda, FloatRegister Zn, FloatRegister Zm) { \
+    starti;                                                          \
+    f(0b01000100100, 31, 21), rf(Zm, 16), f(0b00000, 15, 11);        \
+    f(is_unsigned, 10), rf(Zn, 5), rf(Zda, 0);                       \
+  }
+
+  INSN(sve_sdot, /* is_unsigned */ false);
+  INSN(sve_udot, /* is_unsigned */ true);
+#undef INSN
+
   Assembler(CodeBuffer* code) : AbstractAssembler(code) {
     MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
   }
