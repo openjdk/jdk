@@ -27,6 +27,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.nio.file.Path;
 import jdk.jpackage.test.CannedFormattedStringTest.Formatter;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 class CannedArgumentTest {
 
@@ -35,5 +37,16 @@ class CannedArgumentTest {
         var a = Formatter.MESSAGE_FORMAT.create("Current directory: {0}", CannedArgument.cannedAbsolutePath("foo"));
         assertEquals("Current directory: " + Path.of("foo").toAbsolutePath(), a.getValue());
         assertEquals("Current directory: {0}+[AbsolutePath(foo)]", a.toString());
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+        ",,null",
+        "a,a,a"
+    })
+    void test_ofString(String str, String getValue, String toString) {
+        var canned = CannedArgument.ofString(str);
+        assertEquals(getValue, canned.getValue());
+        assertEquals(toString, canned.toString());
     }
 }
