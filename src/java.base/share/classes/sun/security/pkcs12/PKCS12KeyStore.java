@@ -1938,140 +1938,141 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
            throw new IOException("public key protected PKCS12 not supported");
         }
 
-        DerInputStream as = new DerInputStream(authSafeData);
-        DerValue[] safeContentsArray = as.getSequence(2);
-        int count = safeContentsArray.length;
-
         // reset the counters at the start
         privateKeyCount = 0;
         secretKeyCount = 0;
         certificateCount = 0;
 
-        boolean seeEncBag = false;
+        if (authSafeData != null) {
+            DerInputStream as = new DerInputStream(authSafeData);
+            DerValue[] safeContentsArray = as.getSequence(2);
+            int count = safeContentsArray.length;
+            boolean seeEncBag = false;
 
-        /*
-         * Spin over the ContentInfos.
-         */
-        for (int i = 0; i < count; i++) {
-            ContentInfo safeContents;
-            DerInputStream sci;
-            byte[] eAlgId = null;
+            /*
+             * Spin over the ContentInfos.
+             */
+            for (int i = 0; i < count; i++) {
+                ContentInfo safeContents;
+                DerInputStream sci;
+                byte[] eAlgId = null;
 
-            sci = new DerInputStream(safeContentsArray[i].toByteArray());
-            safeContents = new ContentInfo(sci);
-            contentType = safeContents.getContentType();
-            if (contentType.equals(ContentInfo.DATA_OID)) {
-
-                if (debug != null) {
-                    debug.println("Loading PKCS#7 data");
-                }
-
-                loadSafeContents(new DerInputStream(safeContents.getData()));
-            } else if (contentType.equals(ContentInfo.ENCRYPTED_DATA_OID)) {
-                if (password == null) {
+                sci = new DerInputStream(safeContentsArray[i].toByteArray());
+                safeContents = new ContentInfo(sci);
+                contentType = safeContents.getContentType();
+                if (contentType.equals(ContentInfo.DATA_OID)) {
 
                     if (debug != null) {
-                        debug.println("Warning: skipping PKCS#7 encryptedData" +
-                            " - no password was supplied");
-                    }
-                    // No password to decrypt ENCRYPTED_DATA_OID. *Skip it*.
-                    // This means user will see a PrivateKeyEntry without
-                    // certificates and a whole TrustedCertificateEntry will
-                    // be lost. This is not a perfect solution but alternative
-                    // solutions are more disruptive:
-                    //
-                    // We cannot just fail, since KeyStore.load(is, null)
-                    // has been known to never fail because of a null password.
-                    //
-                    // We cannot just throw away the whole PrivateKeyEntry,
-                    // this is too silent and no one will notice anything.
-                    //
-                    // We also cannot fail when getCertificate() on such a
-                    // PrivateKeyEntry is called, since the method has not
-                    // specified this behavior.
-                    continue;
-                }
-
-                DerInputStream edi =
-                                safeContents.getContent().toDerInputStream();
-                int edVersion = edi.getInteger();
-                DerValue[] seq = edi.getSequence(3);
-                if (seq.length != 3) {
-                    // We require the encryptedContent field, even though
-                    // it is optional
-                    throw new IOException("Invalid length for EncryptedContentInfo");
-                }
-                ObjectIdentifier edContentType = seq[0].getOID();
-                eAlgId = seq[1].toByteArray();
-                if (!seq[2].isContextSpecific((byte)0)) {
-                    throw new IOException("unsupported encrypted content type "
-                                          + seq[2].tag);
-                }
-                byte newTag = DerValue.tag_OctetString;
-                if (seq[2].isConstructed())
-                   newTag |= 0x20;
-                seq[2].resetTag(newTag);
-                byte[] rawData = seq[2].getOctetString();
-
-                // parse Algorithm parameters
-                AlgorithmId aid = AlgorithmId.parse(seq[1]);
-                AlgorithmParameters algParams = aid.getParameters();
-
-                PBEParameterSpec pbeSpec;
-                int ic = 0;
-
-                if (algParams != null) {
-                    try {
-                        pbeSpec =
-                            algParams.getParameterSpec(PBEParameterSpec.class);
-                    } catch (InvalidParameterSpecException ipse) {
-                        throw new IOException(
-                            "Invalid PBE algorithm parameters");
-                    }
-                    ic = pbeSpec.getIterationCount();
-
-                    if (ic > MAX_ITERATION_COUNT) {
-                        throw new IOException("cert PBE iteration count too large");
+                        debug.println("Loading PKCS#7 data");
                     }
 
-                    certProtectionAlgorithm = aid.getName();
-                    certPbeIterationCount = ic;
-                    seeEncBag = true;
-                }
+                    loadSafeContents(new DerInputStream(safeContents.getData()));
+                } else if (contentType.equals(ContentInfo.ENCRYPTED_DATA_OID)) {
+                    if (password == null) {
 
-                if (debug != null) {
-                    debug.println("Loading PKCS#7 encryptedData " +
-                        "(" + certProtectionAlgorithm +
-                        " iterations: " + ic + ")");
-                }
-
-                try {
-                    RetryWithZero.run(pass -> {
-                        // Use JCE
-                        Cipher cipher = Cipher.getInstance(certProtectionAlgorithm);
-                        SecretKey skey = getPBEKey(pass);
-                        try {
-                            cipher.init(Cipher.DECRYPT_MODE, skey, algParams);
-                        } finally {
-                            KeyUtil.destroySecretKeys(skey);
+                        if (debug != null) {
+                            debug.println("Warning: skipping PKCS#7 encryptedData" +
+                                " - no password was supplied");
                         }
-                        loadSafeContents(new DerInputStream(cipher.doFinal(rawData)));
-                        return null;
-                    }, password);
-                } catch (Exception e) {
-                    throw new IOException("keystore password was incorrect",
-                            new UnrecoverableKeyException(
-                                    "failed to decrypt safe contents entry: " + e));
-                }
-            } else {
-                throw new IOException("public key protected PKCS12" +
-                                        " not supported");
-            }
-        }
+                        // No password to decrypt ENCRYPTED_DATA_OID. *Skip it*.
+                        // This means user will see a PrivateKeyEntry without
+                        // certificates and a whole TrustedCertificateEntry will
+                        // be lost. This is not a perfect solution but alternative
+                        // solutions are more disruptive:
+                        //
+                        // We cannot just fail, since KeyStore.load(is, null)
+                        // has been known to never fail because of a null password.
+                        //
+                        // We cannot just throw away the whole PrivateKeyEntry,
+                        // this is too silent and no one will notice anything.
+                        //
+                        // We also cannot fail when getCertificate() on such a
+                        // PrivateKeyEntry is called, since the method has not
+                        // specified this behavior.
+                        continue;
+                    }
 
-        // No ENCRYPTED_DATA_OID but see certificate. Must be passwordless.
-        if (!seeEncBag && certificateCount > 0) {
-            certProtectionAlgorithm = "NONE";
+                    DerInputStream edi =
+                                    safeContents.getContent().toDerInputStream();
+                    int edVersion = edi.getInteger();
+                    DerValue[] seq = edi.getSequence(3);
+                    if (seq.length != 3) {
+                        // We require the encryptedContent field, even though
+                        // it is optional
+                        throw new IOException("Invalid length for EncryptedContentInfo");
+                    }
+                    ObjectIdentifier edContentType = seq[0].getOID();
+                    eAlgId = seq[1].toByteArray();
+                    if (!seq[2].isContextSpecific((byte)0)) {
+                        throw new IOException("unsupported encrypted content type "
+                                              + seq[2].tag);
+                    }
+                    byte newTag = DerValue.tag_OctetString;
+                    if (seq[2].isConstructed())
+                       newTag |= 0x20;
+                    seq[2].resetTag(newTag);
+                    byte[] rawData = seq[2].getOctetString();
+
+                    // parse Algorithm parameters
+                    AlgorithmId aid = AlgorithmId.parse(seq[1]);
+                    AlgorithmParameters algParams = aid.getParameters();
+
+                    PBEParameterSpec pbeSpec;
+                    int ic = 0;
+
+                    if (algParams != null) {
+                        try {
+                            pbeSpec =
+                                algParams.getParameterSpec(PBEParameterSpec.class);
+                        } catch (InvalidParameterSpecException ipse) {
+                            throw new IOException(
+                                "Invalid PBE algorithm parameters");
+                        }
+                        ic = pbeSpec.getIterationCount();
+
+                        if (ic > MAX_ITERATION_COUNT) {
+                            throw new IOException("cert PBE iteration count too large");
+                        }
+
+                        certProtectionAlgorithm = aid.getName();
+                        certPbeIterationCount = ic;
+                        seeEncBag = true;
+                    }
+
+                    if (debug != null) {
+                        debug.println("Loading PKCS#7 encryptedData " +
+                            "(" + certProtectionAlgorithm +
+                            " iterations: " + ic + ")");
+                    }
+
+                    try {
+                        RetryWithZero.run(pass -> {
+                            // Use JCE
+                            Cipher cipher = Cipher.getInstance(certProtectionAlgorithm);
+                            SecretKey skey = getPBEKey(pass);
+                            try {
+                                cipher.init(Cipher.DECRYPT_MODE, skey, algParams);
+                            } finally {
+                                KeyUtil.destroySecretKeys(skey);
+                            }
+                            loadSafeContents(new DerInputStream(cipher.doFinal(rawData)));
+                            return null;
+                        }, password);
+                    } catch (Exception e) {
+                        throw new IOException("keystore password was incorrect",
+                                new UnrecoverableKeyException(
+                                        "failed to decrypt safe contents entry: " + e));
+                    }
+                } else {
+                    throw new IOException("public key protected PKCS12" +
+                                            " not supported");
+                }
+            }
+
+            // No ENCRYPTED_DATA_OID but see certificate. Must be passwordless.
+            if (!seeEncBag && certificateCount > 0) {
+                certProtectionAlgorithm = "NONE";
+            }
         }
 
         // The MacData is optional.
