@@ -56,6 +56,7 @@ import sun.jvm.hotspot.gc.shared.CollectedHeap;
 import sun.jvm.hotspot.gc.g1.G1CollectedHeap;
 import sun.jvm.hotspot.oops.DefaultHeapVisitor;
 import sun.jvm.hotspot.oops.HeapVisitor;
+import sun.jvm.hotspot.oops.Inline;
 import sun.jvm.hotspot.oops.InstanceKlass;
 import sun.jvm.hotspot.oops.Klass;
 import sun.jvm.hotspot.oops.Metadata;
@@ -256,12 +257,20 @@ public class CommandProcessor {
             out.println("Usage: " + usage);
         }
 
-        void printNode(SimpleTreeNode node) {
+        void printNode(SimpleTreeNode node, int indent) {
+            String blanks = (indent == 0) ? ""
+                                          : String.format("%" + (indent * 2) + "s", "");
             int count = node.getChildCount();
             for (int i = 0; i < count; i++) {
+                out.print(blanks);
                 try {
                     SimpleTreeNode field = node.getChild(i);
-                    out.println(field);
+                    if (field instanceof OopTreeNodeAdapter of && of.getOop() instanceof Inline oop) {
+                        out.println(of.getName() + ": ");
+                        printNode(new OopTreeNodeAdapter(oop, null), indent + 1);
+                    } else {
+                        out.println(field);
+                    }
                 } catch (Exception e) {
                     out.println();
                     out.println("Error: " + e);
@@ -270,6 +279,10 @@ public class CommandProcessor {
                     }
                 }
             }
+        }
+
+        void printNode(SimpleTreeNode node) {
+            printNode(node, 0);
         }
     }
 

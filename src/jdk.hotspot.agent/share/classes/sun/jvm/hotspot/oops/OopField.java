@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.jvm.hotspot.oops;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.runtime.VM;
 import sun.jvm.hotspot.runtime.VMObject;
+import sun.jvm.hotspot.utilities.SystemDictionaryHelper;
 
 // The class for an oop field simply provides access to the value.
 public class OopField extends Field {
@@ -42,11 +43,33 @@ public class OopField extends Field {
     super(holder, fieldArrayIndex);
   }
 
+  private Klass getFieldKlass() {
+    var sig = getSignature().asString();
+    var klsName = sig.substring(1, sig.length() - 1); // extracts L(class name);
+    return SystemDictionaryHelper.findInstanceKlass(klsName);
+  }
+
+  @Override
+  public long getOffset() {
+    long ofs = super.getOffset();
+    if (isFlat()) {
+      // Subtract payload offset because this field is flattened.
+      ofs -= ((InlineKlass)getFieldKlass()).members().payloadOffset();
+    }
+    return ofs;
+  }
+
   public Oop getValue(Oop obj) {
     if (!isVMField() && !obj.isInstance() && !obj.isArray()) {
       throw new InternalError();
     }
-    return obj.getHeap().newOop(getValueAsOopHandle(obj));
+    var heap = obj.getHeap();
+    if (isFlat()) {
+      var handle = obj.getHandle().addOffsetToAsOopHandle(getOffset());
+      return heap.newOop(handle, (InlineKlass)getFieldKlass());
+    } else {
+      return heap.newOop(getValueAsOopHandle(obj));
+    }
   }
 
   /** Debugging support */
