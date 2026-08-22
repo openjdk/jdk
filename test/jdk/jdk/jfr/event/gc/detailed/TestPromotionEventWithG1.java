@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,6 @@ package jdk.jfr.event.gc.detailed;
  * @requires vm.flagless
  * @summary Test that events are created when an object is aged or promoted during a GC and the copying of the object requires a new PLAB or direct heap allocation
  * @requires vm.hasJFR
- *
- * @requires (vm.gc == "G1" | vm.gc == null)
- *           & vm.opt.ExplicitGCInvokesConcurrent != true
  * @library /test/lib /test/jdk
  * @run main/othervm -Xmx32m -Xms32m -Xmn12m -XX:+UseG1GC -XX:-UseStringDeduplication -XX:MaxTenuringThreshold=5 -XX:InitialTenuringThreshold=5 jdk.jfr.event.gc.detailed.TestPromotionEventWithG1
  * @run main/othervm -Xmx32m -Xms32m -Xmn12m -XX:AllocatePrefetchLines=1 -XX:AllocateInstancePrefetchLines=1 -XX:AllocatePrefetchStepSize=16 -XX:AllocatePrefetchDistance=1 -XX:+UseG1GC
