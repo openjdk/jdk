@@ -62,23 +62,16 @@ void MemoryCounter::update_peak(size_t size, size_t cnt) {
 }
 
 void MallocMemorySnapshot::copy_to(MallocMemorySnapshot* s) {
-  // Use lock to make sure that mtChunks don't get deallocated while the
-  // copy is going on, because their size is adjusted using this
-  // buffer in make_adjustment().
-  ChunkPoolLocker::LockStrategy ls = ChunkPoolLocker::LockStrategy::Lock;
-  if (VMError::is_error_reported() && VMError::is_error_reported_in_current_thread()) {
-    ls = ChunkPoolLocker::LockStrategy::Try;
-  }
-  ChunkPoolLocker cpl(ls);
   s->_all_mallocs = _all_mallocs;
   size_t total_size = 0;
   size_t total_count = 0;
   for (int index = 0; index < mt_number_of_tags; index ++) {
     s->_malloc[index] = _malloc[index];
-    total_size += s->_malloc[index].malloc_size();
+    total_size += s->_malloc[index].malloc_size() + s->_malloc[index].arena_size();
     total_count += s->_malloc[index].malloc_count();
   }
   // malloc counters may be updated concurrently
+  // Update total here for consistency with saved values of individual sizes.
   s->_all_mallocs.set_size_and_count(total_size, total_count);
 }
 
@@ -89,15 +82,6 @@ size_t MallocMemorySnapshot::total_arena() const {
     amount += _malloc[index].arena_size();
   }
   return amount;
-}
-
-// Make adjustment by subtracting chunks used by arenas
-// from total chunks to get total free chunk size
-void MallocMemorySnapshot::make_adjustment() {
-  size_t arena_size = total_arena();
-  int chunk_idx = NMTUtil::tag_to_index(mtChunk);
-  _malloc[chunk_idx].record_free(arena_size);
-  _all_mallocs.deallocate(arena_size);
 }
 
 void MallocMemorySummary::initialize() {
@@ -201,6 +185,50 @@ void* MallocTracker::record_malloc(void* malloc_base, size_t size, MemTag mem_ta
 #endif
   MallocHeader::revive_block(memblock);
   return memblock;
+}
+
+void MallocTracker::chunk_assigned_to_arena(void* memblock, MemTag new_tag, const NativeCallStack& new_stack) {
+  MallocHeader* header = (MallocHeader*)memblock - 1;
+
+  // Only decrement per-tag counters, leave the total malloc amounts unchanged.
+  MallocMemorySummary::as_snapshot()->by_tag(header->mem_tag())->record_free(header->size());
+
+  uint32_t new_mst_marker = 0;
+  if (MemTracker::tracking_level() == NMT_detail && header->mem_tag() != new_tag) {
+    MallocSiteTable::deallocation_at(header->size(), header->mst_marker());
+    if (!MallocSiteTable::allocation_at(new_stack, header->size(), &new_mst_marker, new_tag)) {
+      fatal("NMT is now out of sync.");
+    }
+  }
+
+  // Arena only accounts for payload. Account for the header size and count. Attribute it to the arena's tag.
+  MallocMemorySummary::as_snapshot()->by_tag(new_tag)->record_malloc(Chunk::aligned_overhead_size());
+
+  if (header->mem_tag() != new_tag) {
+    header->set_mem_tag(new_tag);
+    header->set_mst_marker(new_mst_marker);
+  }
+}
+
+void MallocTracker::add_chunk_to_pool(void* memblock, const NativeCallStack& new_stack) {
+  MallocHeader* header = (MallocHeader*)memblock - 1;
+  assert(header->mem_tag() != mtChunk, "Should only be operating on arena chunks");
+
+  // Only increment mtChunk, leave the total malloc amounts unchanged.
+  MallocMemorySummary::as_snapshot()->by_tag(mtChunk)->record_malloc(header->size());
+
+  uint32_t new_mst_marker = 0;
+  if (MemTracker::tracking_level() == NMT_detail) {
+    MallocSiteTable::deallocation_at(header->size(), header->mst_marker());
+    if (!MallocSiteTable::allocation_at(new_stack, header->size(), &new_mst_marker, mtChunk)) {
+      fatal("NMT is now out of sync.");
+    }
+  }
+
+  MallocMemorySummary::as_snapshot()->by_tag(header->mem_tag())->record_free(Chunk::aligned_overhead_size());
+
+  header->set_mem_tag(mtChunk);
+  header->set_mst_marker(new_mst_marker);
 }
 
 void* MallocTracker::record_free_block(void* memblock) {
