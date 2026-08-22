@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,7 @@ typeArrayOop TypeArrayKlass::allocate_common(int length, bool do_zero, TRAPS) {
   check_array_allocation_length(length, max_length(), CHECK_NULL);
   size_t size = typeArrayOopDesc::object_size(layout_helper(), length);
   return (typeArrayOop)Universe::heap()->array_allocate(this, size, length,
-                                                        do_zero, CHECK_NULL);
+                                                        do_zero, THREAD);
 }
 
 oop TypeArrayKlass::multi_allocate(int rank, jint* last_size, TRAPS) {

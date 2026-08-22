@@ -698,6 +698,28 @@ bool ciInstanceKlass::has_object_fields() const {
     );
 }
 
+int ciInstanceKlass::number_of_nonoop_entries_in_acmp_map() const {
+  VM_ENTRY_MARK;
+  return get_instanceKlass()->acmp_maps_array()->at(0);
+}
+int ciInstanceKlass::number_of_oop_entries_in_acmp_map() const {
+  VM_ENTRY_MARK;
+  const Array<int>* acmp_maps = get_instanceKlass()->acmp_maps_array();
+  int number_of_nonoop_entries = acmp_maps->at(0);
+  return acmp_maps->length() - number_of_nonoop_entries * 2 - 1;
+}
+AcmpMapSegment ciInstanceKlass::get_nonoop_segment_of_acmp_map(int i) const {
+  VM_ENTRY_MARK;
+  const Array<int>* acmp_maps = get_instanceKlass()->acmp_maps_array();
+#ifdef ASSERT
+  int number_of_nonoop_entries = acmp_maps->at(0);
+  assert(0 <= i && i < number_of_nonoop_entries, "illegal index, should be in range [0, %d)", number_of_nonoop_entries);
+#endif
+  int offset = acmp_maps->at(2 * i + 1);
+  int size = acmp_maps->at(2 * i + 2);
+  return AcmpMapSegment(offset, size);
+}
+
 bool ciInstanceKlass::compute_has_trusted_loader() {
   ASSERT_IN_VM;
   oop loader_oop = loader();
@@ -838,8 +860,8 @@ public:
     StaticFieldPrinter(out), _obj(obj) {
   }
   void do_field(fieldDescriptor* fd) {
-    do_field_helper(fd, _obj, true);
     _out->print(" ");
+    do_field_helper(fd, _obj, true);
   }
 };
 
@@ -865,27 +887,48 @@ void StaticFieldPrinter::do_field_helper(fieldDescriptor* fd, oop mirror, bool i
     case T_ARRAY:  // fall-through
     case T_OBJECT:
       if (!fd->is_null_free_inline_type()) {
-        _out->print("%s ", fd->signature()->as_quoted_ascii());
+        _out->print("%s", fd->signature()->as_quoted_ascii());
         oop value =  mirror->obj_field_acquire(fd->offset());
         if (value == nullptr) {
           if (field_type == T_ARRAY) {
-            _out->print("%d", -1);
+            _out->print(" %d", -1);
           }
-          _out->cr();
         } else if (value->is_instance()) {
           assert(field_type == T_OBJECT, "");
           if (value->is_a(vmClasses::String_klass())) {
             const char* ascii_value = java_lang_String::as_quoted_ascii(value);
-            _out->print("\"%s\"", (ascii_value != nullptr) ? ascii_value : "");
+            _out->print(" \"%s\"", (ascii_value != nullptr) ? ascii_value : "");
           } else {
             const char* klass_name  = value->klass()->name()->as_quoted_ascii();
-            _out->print("%s", klass_name);
+            _out->print(" %s", klass_name);
           }
         } else if (value->is_array()) {
           arrayOop a = (arrayOop)value;
-          _out->print("%d", a->length());
+          _out->print(" %d", a->length());
           if (value->is_objArray()) {
             objArrayOop oa = (objArrayOop)value;
+            if (value->is_flatArray()) {
+              FlatArrayKlass* klass = ((flatArrayOop)oa)->klass();
+              LayoutKind lk = klass->layout_kind();
+              _out->print(" flat");
+              if (LayoutKindHelper::is_nullable_flat(lk)) {
+                _out->print(" nullable");
+              } else {
+                _out->print(" null-free");
+              }
+              if (LayoutKindHelper::is_atomic_flat(lk)) {
+                _out->print(" atomic");
+              } else {
+                _out->print(" non-atomic");
+              }
+            } else {
+              _out->print(" ref");
+              if (oa->klass()->is_null_free_array_klass()) {
+                _out->print(" null-free");
+              } else {
+                _out->print(" nullable");
+              }
+            }
             const char* klass_name  = value->klass()->name()->as_quoted_ascii();
             _out->print(" %s", klass_name);
           }
@@ -895,6 +938,7 @@ void StaticFieldPrinter::do_field_helper(fieldDescriptor* fd, oop mirror, bool i
         break;
       } else {
         // handling of null free inline type
+        _out->print("%s", fd->signature()->as_quoted_ascii());
         ResetNoHandleMark rnhm;
         Thread* THREAD = Thread::current();
         SignatureStream ss(fd->signature(), false);

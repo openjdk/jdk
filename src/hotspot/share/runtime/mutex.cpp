@@ -61,7 +61,7 @@ void Mutex::check_block_state(Thread* thread) {
          "locking not allowed when crash protection is set");
 }
 
-void Mutex::check_safepoint_state(Thread* thread) {
+void Mutex::check_safepoint_state(Thread* thread, bool allow_gcalot) {
   check_block_state(thread);
 
   // If the lock acquisition checks for safepoint, verify that the lock was created with rank that
@@ -72,7 +72,7 @@ void Mutex::check_safepoint_state(Thread* thread) {
 
   if (thread->is_active_Java_thread()) {
     // Also check NoSafepointVerifier, and thread state is _thread_in_vm
-    JavaThread::cast(thread)->check_for_valid_safepoint_state();
+    JavaThread::cast(thread)->check_for_valid_safepoint_state(allow_gcalot);
   }
 }
 
@@ -116,7 +116,7 @@ void Mutex::lock_contended(Thread* self) {
 void Mutex::lock(Thread* self) {
   assert(owner() != self, "invariant");
 
-  check_safepoint_state(self);
+  check_safepoint_state(self, true /* allow_gcalot */);
   check_rank(self);
 
   OrderAccess::fence();
@@ -245,7 +245,11 @@ bool Monitor::wait(uint64_t timeout) {
   set_owner(nullptr);
 
   // Check safepoint state after resetting owner and possible NSV.
-  check_safepoint_state(self);
+  // Although the (HotSpot) monitor is logically released, the underlying
+  // OS monitor is still held. If this is the Heap_lock we would
+  // deadlock in the GC prologue trying to acquire the lock recursively.
+  // Suppress GC-a-lot in that case.
+  check_safepoint_state(self, this != Heap_lock);
 
   int wait_status;
   InFlightMutexRelease ifmr(this);

@@ -31,6 +31,7 @@
 // ciFlatArray
 //
 // This class represents a flatArrayOop in the HotSpot virtual machine.
+// TODO 8388127: Sync ciArray class hierarchy with arrayOopDesc class hierarchy.
 class ciFlatArray : public ciArray {
   CI_PACKAGE_ACCESS
 

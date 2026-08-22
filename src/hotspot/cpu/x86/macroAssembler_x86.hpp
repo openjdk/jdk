@@ -1970,15 +1970,16 @@ public:
   // Inline type specific methods
   #include "asm/macroAssembler_common.hpp"
 
-  // clear memory of size 'cnt' qwords, starting at 'base';
-  // if 'is_large' is set, do not try to produce short loop
-  void clear_mem(Register base, Register cnt, Register val, XMMRegister xtmp, bool is_large, bool word_copy_only, KRegister mask=knoreg);
+  // Clear or fill 'cnt' qwords starting at 'base'. If 'requires_word_fill' is
+  // set, use 'val' as the fill value; otherwise, create zero in 'val'. If
+  // 'is_large' is set, do not try to produce a short loop.
+  void clear_mem(Register base, Register cnt, Register val, XMMRegister xtmp, bool is_large, bool requires_word_fill, KRegister mask=knoreg);
 
   // clear memory initialization sequence for constant size;
   void clear_mem(Register base, int cnt, Register rtmp, XMMRegister xtmp, KRegister mask=knoreg);
 
-  // clear memory of size 'cnt' qwords, starting at 'base' using XMM/YMM registers
-  void xmm_clear_mem(Register base, Register cnt, Register rtmp, XMMRegister xtmp, KRegister mask=knoreg);
+  // Fill memory with 'val', for 'cnt' qwords starting at 'base', using XMM/YMM/ZMM registers.
+  void xmm_fill_mem(Register base, Register cnt, Register val, XMMRegister xtmp, KRegister mask=knoreg);
 
   // Fill primitive arrays
   void generate_fill(BasicType t, bool aligned,

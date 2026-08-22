@@ -784,9 +784,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   if (CDSConfig::is_using_aot_linked_classes()) {
     AOTLinkedClassBulkLoader::init_non_javabase_classes(THREAD);
   }
-#ifndef PRODUCT
-  HeapShared::initialize_test_class_from_archive(THREAD);
-#endif
 
   JFR_ONLY(Jfr::on_create_vm_2();)
 
@@ -1366,7 +1363,7 @@ void Threads::print_on(outputStream* st, bool print_stacks,
     p->print_on(st, print_extended_info);
     if (print_stacks) {
       if (internal_format) {
-        p->trace_stack();
+        p->trace_stack_on(st);
       } else {
         p->print_stack_on(st);
         if (p->is_vthread_mounted()) {

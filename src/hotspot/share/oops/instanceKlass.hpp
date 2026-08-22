@@ -669,6 +669,8 @@ public:
 
   // find local field, returns true if found
   bool find_local_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const;
+  // find local field, returns true if found
+  bool find_local_field(Symbol* name, Symbol* sig, fieldDescriptor* fd, bool also_internal) const;
   // find field in direct superinterfaces, returns the interface in which the field is defined
   Klass* find_interface_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const;
   // find field according to JVM spec 5.4.3.2, returns the klass in which the field is defined
@@ -769,6 +771,7 @@ public:
   Symbol* source_file_name() const;
   u2 source_file_name_index() const;
   void set_source_file_name_index(u2 sourcefile_index);
+  Symbol* source_file_name(int version) const;
 
   // minor and major version numbers of class file
   u2 minor_version() const;
