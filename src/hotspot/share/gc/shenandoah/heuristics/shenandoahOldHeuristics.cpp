@@ -1,6 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -850,16 +850,16 @@ void ShenandoahOldHeuristics::adjust_old_garbage_threshold() {
   }
 }
 
-void ShenandoahOldHeuristics::record_success_concurrent() {
+void ShenandoahOldHeuristics::record_success_concurrent(bool abbreviated) {
   // Forget any triggers that occurred while OLD GC was ongoing.  If we really need to start another, it will retrigger.
   clear_triggers();
-  this->ShenandoahHeuristics::record_success_concurrent();
+  this->ShenandoahHeuristics::record_success_concurrent(abbreviated);
 }
 
-void ShenandoahOldHeuristics::record_degenerated(bool is_generational_global) {
+void ShenandoahOldHeuristics::record_degenerated(bool abbreviated, bool is_generational_global) {
   // Forget any triggers that occurred while OLD GC was ongoing.  If we really need to start another, it will retrigger.
   clear_triggers();
-  this->ShenandoahHeuristics::record_degenerated(is_generational_global);
+  this->ShenandoahHeuristics::record_degenerated(abbreviated, is_generational_global);
 }
 
 void ShenandoahOldHeuristics::record_success_full() {

@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
  * Copyright (C) 2022, Tencent. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -295,7 +296,7 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   if (gc.collect(cause)) {
     // Cycle is complete.  There were no failed allocation requests and no degeneration, so count this as good progress.
     heap->notify_gc_progress();
-    heap->global_generation()->heuristics()->record_success_concurrent();
+    heap->global_generation()->heuristics()->record_success_concurrent(gc.abbreviated());
     heap->shenandoah_policy()->record_success_concurrent(false, gc.abbreviated());
     heap->log_heap_status("At end of GC");
   } else {
