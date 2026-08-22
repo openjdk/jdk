@@ -225,6 +225,9 @@ void LambdaFormInvokers::regenerate_class(char* class_name, ClassFileStream& st,
                                                    cl_info,
                                                    CHECK);
 
+  // The result InstanceKlass* is never used during the JVM process lifetime.
+  // We create it only for writing to the CDS archive, and so it need not be monitored by JVMTI or JFR.
+
   assert(result->java_mirror() != nullptr, "must be");
   RegeneratedClasses::add_class(InstanceKlass::cast(klass), result);
 
