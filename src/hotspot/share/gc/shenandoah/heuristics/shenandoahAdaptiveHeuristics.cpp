@@ -58,6 +58,11 @@ constexpr double MAXIMUM_CONFIDENCE = 3.291; // 99.9%
 
 ShenandoahAdaptiveHeuristics::ShenandoahAdaptiveHeuristics(ShenandoahSpaceInfo* space_info) :
   ShenandoahHeuristics(space_info),
+  _cached_acceleration(0.0),
+  _cached_rate(0.0),
+  _cached_weighted_average_rate(0.0),
+  _cached_momentary_rate(0.0),
+  _timestamp_of_cache(0.0),
   _margin_of_error_sd(ShenandoahAdaptiveInitialConfidence),
   _last_trigger(OTHER),
   _available(Moving_Average_Samples),
@@ -161,15 +166,18 @@ void ShenandoahAdaptiveHeuristics::add_degenerated_gc_time(double time_at_start,
   }
 }
 
-// Marking effort is assumed to be a function of how many words are marked.  During steady state, marking efforts should be
-// constant.  During initialization, marking may increase linearly as data is retained for promotion.
-void ShenandoahAdaptiveHeuristics::record_mark_end(double now, size_t marked_words) {
+// Marking effort is assumed to be a function of how many words are processed, including words scanned in the remembered
+// set and total words contained within marked objects. Differences in density of pointers within marked objects between
+// different workloads are represented by differences in the constants that represent best fit to linear prediction model.
+// A non-constant linear model corresponds to evolution of a workload's behavior, such as initialization of data structures,
+// replacement of data structures, changes in patterns of client requests.
+void ShenandoahAdaptiveHeuristics::record_mark_end(double now, size_t words_processed) {
   // mark will be followed by evac or final_roots, we're not sure which
   _phase_stats[ShenandoahMajorGCPhase::_evac].set_most_recent_start_time(now);
   _phase_stats[ShenandoahMajorGCPhase::_final_roots].set_most_recent_start_time(now);
   double start_phase_time = _phase_stats[ShenandoahMajorGCPhase::_mark].get_most_recent_start_time();
   double duration = now - start_phase_time;
-  record_phase_duration(ShenandoahMajorGCPhase::_mark, (double) marked_words, duration);
+  record_phase_duration(ShenandoahMajorGCPhase::_mark, (double) words_processed, duration);
 }
 
 // Evacuation effort is assumed to be a function of words evacuated or promoted in place.  In non-generational mode,
@@ -206,8 +214,8 @@ void ShenandoahAdaptiveHeuristics::record_final_roots_end(double now, size_t pro
   record_phase_duration(ShenandoahMajorGCPhase::_final_roots, (double) promoted_in_place_words, duration);
 }
 
-double ShenandoahAdaptiveHeuristics::predict_mark_time(size_t anticipated_marked_words) {
-  return _phase_stats[ShenandoahMajorGCPhase::_mark].predict_at((double) anticipated_marked_words);
+double ShenandoahAdaptiveHeuristics::predict_mark_time(size_t anticipated_words_processed) {
+  return _phase_stats[ShenandoahMajorGCPhase::_mark].predict_at((double) anticipated_words_processed);
 }
 
 double ShenandoahAdaptiveHeuristics::predict_evac_time(size_t anticipated_evac_words, size_t anticipated_pip_words) {
@@ -217,8 +225,8 @@ double ShenandoahAdaptiveHeuristics::predict_evac_time(size_t anticipated_evac_w
   return _phase_stats[ShenandoahMajorGCPhase::_evac].predict_at((double) (5 * anticipated_evac_words));
 }
 
-double ShenandoahAdaptiveHeuristics::predict_update_time(size_t anticipated_update_words) {
-  return _phase_stats[ShenandoahMajorGCPhase::_update].predict_at((double) anticipated_update_words);
+double ShenandoahAdaptiveHeuristics::predict_update_time(size_t anticipated_words_processed) {
+  return _phase_stats[ShenandoahMajorGCPhase::_update].predict_at((double) anticipated_words_processed);
 }
 
 double ShenandoahAdaptiveHeuristics::predict_final_roots_time(size_t pip_words) {
@@ -229,6 +237,10 @@ double ShenandoahAdaptiveHeuristics::predict_final_roots_time(size_t pip_words) 
 
 void ShenandoahAdaptiveHeuristics::record_cycle_start() {
   ShenandoahHeuristics::record_cycle_start();
+#ifdef KELVIN_NEEDS_WORK
+  // This is the wrong API?
+  _allocation_rate.allocation_count_reset();
+#endif
   double now = os::elapsedTime();
   _phase_stats[ShenandoahMajorGCPhase::_mark].set_most_recent_start_time(now);
 }
@@ -375,17 +387,6 @@ void ShenandoahAdaptiveHeuristics::record_phase_duration(ShenandoahMajorGCPhase 
   _phase_stats[phase].add_sample(x, duration);
 }
 
-ShenandoahPhaseTimeEstimator::ShenandoahPhaseTimeEstimator(const char* name) :
-  _name(name),
-  _changed(true),
-  _changed_no_stdev(true),
-  _first_index(0),
-  _num_samples(0),
-  _sum_of_x(0.0),
-  _sum_of_y(0.0),
-  _sum_of_xx(0.0),
-  _sum_of_xy(0.0) { }
-
 // We use the history of recent phase execution times to predict the time required to execute this phase in the future.
 // The x_value represents an input parameter for the size of the phase's work.  For example, the evacuation phase is
 // parameterized by the amount of memory that we expect to evacuate.  The y-value is the time required to execute the phase.
@@ -393,7 +394,7 @@ ShenandoahPhaseTimeEstimator::ShenandoahPhaseTimeEstimator(const char* name) :
 // The samples are calibrated under the assumption that workers are not surged.  Our current approach is to
 //  only add samples that result from measurement of "unsurged execution phases".
 
-void ShenandoahPhaseTimeEstimator::add_sample(double x_value, double y_value) {
+void ShenandoahGCQuantityEstimator::add_sample(double x_value, double y_value) {
   if (_num_samples >= MaxSamples) {
     _sum_of_x -= _x_values[_first_index];
     _sum_of_xx -= _x_values[_first_index] * _x_values[_first_index];
@@ -408,7 +409,7 @@ void ShenandoahPhaseTimeEstimator::add_sample(double x_value, double y_value) {
   _sum_of_x += x_value;
   _sum_of_xx += x_value * x_value;
   _sum_of_xy += x_value * y_value;
-  assert(_num_samples < MaxSamples, "Unexpected overflow of ShenandoahPhaseTimeEstimator samples");
+  assert(_num_samples < MaxSamples, "Unexpected overflow of ShenandoahGCQuantityeEstimator samples");
   assert(_first_index < MaxSamples, "Unexpected overflow");
   _sum_of_y += y_value;;
   _x_values[(_first_index + _num_samples) % MaxSamples] = x_value;
@@ -416,7 +417,11 @@ void ShenandoahPhaseTimeEstimator::add_sample(double x_value, double y_value) {
   _changed = true;
 }
 
-double ShenandoahPhaseTimeEstimator::predict_at_without_stdev(double predict_at_x_value) {
+double ShenandoahGCQuantityEstimator::most_recent_sample() {
+  return _y_values[(_first_index + _num_samples++) % MaxSamples];
+}
+
+double ShenandoahGCQuantityEstimator::predict_at_without_stdev(double predict_at_x_value) {
   if (!_changed_no_stdev && (_most_recent_prediction_x_value_no_stdev == predict_at_x_value)) {
     return _most_recent_prediction_no_stdev;
   } else if (_num_samples > 2) {
@@ -436,7 +441,7 @@ double ShenandoahPhaseTimeEstimator::predict_at_without_stdev(double predict_at_
   }
 }
 
-double ShenandoahPhaseTimeEstimator::predict_at(double predict_at_x_value) {
+double ShenandoahGCQuantityEstimator::predict_at(double predict_at_x_value) {
   if (!_changed && (_most_recent_prediction_x_value == predict_at_x_value)) {
     return _most_recent_prediction;
   } else if (_num_samples > 2) {
@@ -614,3 +619,161 @@ size_t ShenandoahAdaptiveHeuristics::min_free_threshold(size_t capacity) const {
 
 #undef PROPERFMT_F
 #undef PROPERFMT_F_ARGS
+
+// return 0.0 if se don't have basis for prediction.
+double ShenandoahAdaptiveHeuristics::predict_gc_time_by_phases(double anticipated_start_time) {
+
+  size_t anticipated_young_marked = predict_marked_young_words(anticipated_start_time);
+  if (anticipated_young_marked == 0) {
+    return 0.0;                 // insufficient history to make prediction
+  }
+  size_t anticipated_stable_remset_words = predict_stable_remset_words(anticipated_start_time);
+  size_t anticipated_burst_remset_words = most_recent_burst_remset_words();
+  double predicted_mark_time = predict_gc_mark_time(anticipated_young_marked, anticipated_stable_remset_words,
+                                                    anticipated_burst_remset_words);
+  
+  ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
+  ShenandoahOldGeneration* old_generation = gen_heap->old_generation();
+  size_t anticipated_promotion = old_generation->get_promoted_reserve() / (ShenandoahPromoEvacWaste * HeapWordSize);
+  size_t anticipated_old_evac = old_generation->get_evacuation_reserve() / (ShenandoahOldEvacWaste * HeapWordSize);
+  size_t anticipated_young_evac = predict_young_evacuation_words(anticipated_start_time);
+  // The conservative estimate of evac time assumes all promotion is by evacuation.  
+  double predicted_evac_time = predict_gc_evac_time(anticipated_young_evac, anticipated_old_evac, anticipated_promotion, 0UL);
+
+  // The work of updating depends on the GC mode:
+  // A "normal" young GC cycle ends up with a very small amount of live data within young following evacuation.
+  // However, a GC cycle that takes longer than normal for marking (such as a global GC cycle), may accumulate much more
+  //  than normal "floating garbage" within the young generation.
+  // The young-generation update load is marked-data-within-young plus accumulated allocations during marking.
+  double avg_alloc_rate = _allocation_rate.upper_bound(_margin_of_error_sd);
+  size_t anticipated_allocations = avg_alloc_rate * predicted_mark_time;
+  // This is a bit imprecise, as we don't know when the most recent instantaneous rate was "sampled". We want to make
+  // conservative approximations here, so consider it anyway.
+#ifdef KELVIN_NEEDS_WORK
+  double instantaneous_rate = _allocation_rate.most_recent_instantaneous();
+  bool is_spiking = _allocation_rate.is_spiking(instantaneous_rate, _spike_threshold_sd);
+  if (is_spiking) {
+    size_t instantaneous_allocations = instantaneous_rate * predicted_mark_time;
+    if (instantaneous_allocations > anticipated_allocations) {
+      anticipated_allocations = instantaneous_allocations;
+    }
+  }
+  double acceleration;
+  double momentary_rate;
+  size_t accelerated_allocations = accelerated_consumption_from_cached_values(acceleration, momentary_rate,
+                                                                              avg_alloc_rate / HeapWordSize,
+                                                                              anticipated_start_time, 0.0, predicted_mark_time);
+#else
+  // This is a placeholder until I fix up the above
+  size_t accelerated_allocations = 0;
+#endif
+  if (accelerated_allocations > anticipated_allocations) {
+    anticipated_allocations = accelerated_allocations;
+  }
+  size_t young_update_words = anticipated_young_marked + anticipated_allocations;
+
+  // If we anticipate old evacuations, then we update all of old except what is evacuated (no remembered set scanning)
+  // Otherwise, the remembered set scan is the sum of:
+  //   a linear prediction of old-to-young pointers within the established old generation,
+  //   the sume of newly promoted memory, all of which is assumed to be "dirty"
+  size_t old_update_words;
+  size_t remset_words;
+  if (anticipated_old_evac > 0) {
+    size_t total_old_update = total_old_update_words();
+    assert(anticipated_old_evac <= total_old_update, "sanity");
+    old_update_words = total_old_update - anticipated_old_evac;
+    remset_words = 0;
+  } else {
+    size_t established_remset_words = predict_stable_remset_words(anticipated_start_time);
+    remset_words = established_remset_words + anticipated_promotion;
+    old_update_words = 0;
+  }
+  double predicted_update_time = predict_gc_update_time(remset_words, young_update_words, old_update_words);
+  return predicted_mark_time + predicted_evac_time + predicted_update_time;
+}
+
+double ShenandoahAdaptiveHeuristics::predict_gc_update_time(size_t remset_words,
+                                                            size_t young_update_words, size_t old_update_words) {
+  return predict_update_time(remset_words + young_update_words + old_update_words);
+}
+
+size_t ShenandoahAdaptiveHeuristics::predict_global_update_time_after_trigger(double at_gc_start_time, double predicted_mark_time)
+{
+  // same as predict_update_time_before_trigger() with mixed evac
+  size_t anticipated_young_evac = predict_young_evacuation_words(at_gc_start_time);
+  size_t anticipated_young_marked = predict_marked_young_words(at_gc_start_time);
+
+  double avg_alloc_rate = _allocation_rate.upper_bound(_margin_of_error_sd);
+  size_t anticipated_allocations = avg_alloc_rate * predicted_mark_time;
+  // This is a bit imprecise, as we don't know when the most recent instantaneous rate was "sampled". We want to make
+  // conservative approximations here, so consider it anyway.
+#ifdef KELVIN_NEEDS_WORK
+  double instantaneous_rate = _allocation_rate.most_recent_instantaneous();
+  bool is_spiking = _allocation_rate.is_spiking(instantaneous_rate, _spike_threshold_sd);
+  if (is_spiking) {
+    size_t instantaneous_allocations = instantaneous_rate * predicted_mark_time;
+    if (instantaneous_allocations > anticipated_allocations) {
+      anticipated_allocations = instantaneous_allocations;
+    }
+  }
+  double acceleration;
+  double momentary_rate;
+  size_t accelerated_allocations = accelerated_consumption_from_cached_values(acceleration, momentary_rate,
+                                                                              avg_alloc_rate / HeapWordSize,
+                                                                              at_gc_start_time, 0.0, predicted_mark_time);
+#else
+  // This is a placeholder until I fixup the above
+  size_t accelerated_allocations = 0;
+#endif
+  if (accelerated_allocations > anticipated_allocations) {
+    anticipated_allocations = accelerated_allocations;
+  }
+
+  // The burst remset inherited from previous GC cycle will have been processed and eliminated by the time we update.
+  size_t anticipated_steady_remset = predict_stable_remset_words(at_gc_start_time);
+
+  ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
+  ShenandoahOldGeneration* old_gen = gen_heap->old_generation();
+  ShenandoahYoungGeneration* young_gen = gen_heap->young_generation();
+  size_t anticipated_promotions = (old_gen->get_promoted_reserve() * 100) / ShenandoahOldEvacWaste;
+
+  // Assume sharing of young and old evac reserves.  Anything not consumed by anticipated_young_evac will be
+  //  evacuated from old, approximately.
+  size_t anticipated_old_evac_words =
+    ((old_gen->get_evacuation_reserve() + young_gen->get_evacuation_reserve()
+      - anticipated_young_evac * ShenandoahEvacWaste / 100) * 100) / ShenandoahOldEvacWaste;
+
+  size_t old_live = most_recent_marked_old_words() + words_promoted_since_start_of_most_recently_completed_old_gc();
+  size_t anticipated_old_update = (old_live - anticipated_old_evac_words) + anticipated_promotions;
+  size_t total_processed_words =
+    (anticipated_young_marked - anticipated_young_evac) + anticipated_allocations + anticipated_old_update;
+
+  return predict_update_time(total_processed_words);
+}
+
+size_t ShenandoahAdaptiveHeuristics::predict_update_time_after_mark(ShenandoahCollectionSet* collection_set, double start_time) {
+  double update_time;
+  // now we know exactly how much old, young, allocated_during_mark, etc to be updated.
+  size_t young_evac = collection_set->get_live_bytes_in_untenurable_regions() / HeapWordSize;
+  size_t young_promo = collection_set->get_live_bytes_in_tenurable_regions() / HeapWordSize;
+  size_t old_evac = collection_set->get_live_bytes_in_old_regions() / HeapWordSize;
+
+  size_t young_live = most_recently_marked_young_words();;
+
+  // If we're just starting out, most_recent_marked_old_words() and words_promoted_since_start_of_most_recently_completed_old_gc()
+  // are both zero.
+  size_t old_live = most_recent_marked_old_words() + words_promoted_since_start_of_most_recently_completed_old_gc();
+
+  bool is_mixed = (old_evac > 0);
+  size_t old_update = (is_mixed)? old_live - old_evac:
+    most_recent_words_promoted_by_evacuation() + most_recent_words_promoted_in_place() + predict_stable_remset_words(start_time);
+  size_t young_update = most_recently_marked_young_words() + most_recent_words_allocated_during_mark() - young_evac;
+  size_t total_update_words = old_update + young_update;
+  return predict_update_time(total_update_words);
+}
+
+double ShenandoahAdaptiveHeuristics::predict_gc_evac_time(size_t anticipated_young_evac, size_t anticipated_old_evac,
+                                                   size_t anticipated_promo_by_evac, size_t anticipated_promo_in_place) {
+  return predict_evac_time(anticipated_young_evac + anticipated_old_evac + anticipated_promo_by_evac, anticipated_promo_in_place);
+}
+

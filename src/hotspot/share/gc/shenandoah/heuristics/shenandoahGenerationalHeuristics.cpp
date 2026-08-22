@@ -100,6 +100,32 @@ void ShenandoahGenerationalHeuristics::choose_collection_set_from_regiondata(She
     heap->shenandoah_policy()->record_mixed_cycle();
   }
 
+  if (ShenandoahHeuristics::is_promotion_significant(collection_set->get_live_bytes_in_tenurable_regions(),
+                                                     collection_set->get_live_bytes_in_untenurable_regions())) {
+    gc_cycle_has_significant_promotion();
+  }
+  if (collection_set->has_old_regions()) {
+    gc_cycle_has_old();
+  }
+#ifdef KELVIN_NEEDS_WORK
+  // Where do I get immediate_garbage from?  and total_garbage?
+  if (immediate_garbage == total_garbage) {
+    gc_cycle_is_abbreviated();
+  }
+#endif
+  if (in_place_promotions.humongous_region_stats().count + in_place_promotions.regular_region_stats().count > 0) {
+    gc_cycle_has_promote_in_place();
+  }
+
+  heap->old_generation()->set_expected_humongous_region_in_place_promotions(in_place_promotions.humongous_region_stats().count);
+  size_t humongous_live_words_promoted = in_place_promotions.humongous_region_stats().usage / HeapWordSize;
+  heap->old_generation()->set_expected_in_place_promotable_humongous_region_live_data_words(humongous_live_words_promoted);
+  heap->old_generation()->set_expected_regular_region_in_place_promotions(in_place_promotions.regular_region_stats().count);
+  size_t regular_regions_promoted_live_words =
+    (in_place_promotions.regular_region_stats().usage - in_place_promotions.regular_region_stats().garbage) / HeapWordSize;
+  heap->old_generation()->set_expected_in_place_promotable_regular_region_live_data_words(regular_regions_promoted_live_words);
+  log_words_promoted_in_place(regular_regions_promoted_live_words + humongous_live_words_promoted);
+
   ShenandoahTracer::report_promotion_info(collection_set,
                                           in_place_promotions.humongous_region_stats().count,
                                           in_place_promotions.humongous_region_stats().garbage,
@@ -193,7 +219,6 @@ void ShenandoahGenerationalHeuristics::compute_evacuation_budgets(ShenandoahInPl
   }
   assert(old_evacuation_reserve <= old_available, "Error");
 
-
   // We see too many old-evacuation failures if we force ourselves to evacuate into regions that are not initially empty.
   // So we limit the old-evacuation reserve to unfragmented memory.  Even so, old-evacuation is free to fill in nooks and
   // crannies within existing partially used regions and it generally tries to do so.
@@ -208,7 +233,8 @@ void ShenandoahGenerationalHeuristics::compute_evacuation_budgets(ShenandoahInPl
   // If is_global(), we let garbage-first heuristic determine cset membership.  Otherwise, we give priority
   // to tenurable regions by preselecting regions for promotion by evacuation (obtaining the live data to seed promoted_reserve).
   // This also identifies regions that will be promoted in place. These use the tenuring threshold.
-  const size_t consumed_by_advance_promotion = select_aged_regions(in_place_promotions, _generation->is_global()? 0: old_promo_reserve);
+  const size_t consumed_by_advance_promotion = select_aged_regions(in_place_promotions,
+                                                                   _generation->is_global()? 0: old_promo_reserve);
   assert(consumed_by_advance_promotion <= old_promo_reserve, "Do not promote more than budgeted");
 
   // The young evacuation reserve can be no larger than young_unaffiliated.  Planning to evacuate into partially consumed
@@ -227,6 +253,9 @@ void ShenandoahGenerationalHeuristics::compute_evacuation_budgets(ShenandoahInPl
   young_generation->set_evacuation_reserve(young_evacuation_reserve);
   old_generation->set_evacuation_reserve(old_evacuation_reserve);
   old_generation->set_promoted_reserve(old_promo_reserve);
+
+  size_t anticipated_words_promoted_by_evac = (size_t) (old_evacuation_reserve / ShenandoahPromoEvacWaste);
+  add_to_words_promoted_since_start_of_old_gc(anticipated_words_promoted_by_evac);
 
   // There is no need to expand OLD because all memory used here was set aside at end of previous GC, except in the
   // case of a GLOBAL gc.  During choose_collection_set() of GLOBAL, old will be expanded on demand.
@@ -270,8 +299,7 @@ void ShenandoahGenerationalHeuristics::add_tenured_regions_to_collection_set(con
   }
 }
 
-// Select for inclusion into the collection set all regions whose age is at or
-// above tenure age and for which the
+// Select for inclusion into the collection set all regions whose age is at or above tenure age and for which the
 // garbage percentage exceeds a dynamically adjusted threshold (known as the old-garbage threshold percentage).
 //
 // Without this prioritization, we found that the aged regions tend to be ignored because they typically have

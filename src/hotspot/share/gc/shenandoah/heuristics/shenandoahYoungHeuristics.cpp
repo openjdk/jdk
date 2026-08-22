@@ -137,7 +137,6 @@ void ShenandoahYoungHeuristics::choose_young_collection_set(ShenandoahCollection
   log_info(gc, ergo)(
           "Adaptive CSet Selection for YOUNG. Max Evacuation: " PROPERFMT ", Actual Free: " PROPERFMT,
           PROPERFMTARGS(max_cset), PROPERFMTARGS(actual_free));
-
   for (size_t idx = 0; idx < size; idx++) {
     ShenandoahHeapRegion* r = data[idx].get_region();
     if (cset->is_in(r) || r->get_top_before_promote() != nullptr) {
@@ -278,6 +277,7 @@ size_t ShenandoahYoungHeuristics::bytes_of_allocation_runway_before_gc_trigger(s
   return MIN2(evac_slack_avg, evac_min_threshold);
 }
 
+#ifdef KELVIN_DEPRECATE
 double ShenandoahYoungHeuristics::predict_gc_time(size_t mark_words) {
   assert(mark_words != 0, "(mark_words == 0) implies linear prediction of gc time");
   double mark_time = predict_mark_time(mark_words);
@@ -290,6 +290,7 @@ double ShenandoahYoungHeuristics::predict_gc_time(size_t mark_words) {
     return result;
   }
 }
+#endif
 
 double ShenandoahYoungHeuristics::predict_evac_time(size_t anticipated_evac_words, size_t anticipated_pip_words) {
   return _phase_stats[ShenandoahMajorGCPhase::_evac].predict_at((double) (5 * anticipated_evac_words + anticipated_pip_words));
@@ -299,6 +300,7 @@ double ShenandoahYoungHeuristics::predict_final_roots_time(size_t anticipated_pi
   return _phase_stats[ShenandoahMajorGCPhase::_final_roots].predict_at((double) anticipated_pip_words);
 }
 
+#ifdef KELVIN_REPLACE_THIS
 void ShenandoahYoungHeuristics:: update_anticipated_after_completed_gc(size_t old_cset_regions, size_t young_cset_regions,
                                                                        ShenandoahOldGeneration* old_gen,
                                                                        ShenandoahYoungGeneration* young_gen,
@@ -410,3 +412,4 @@ void ShenandoahYoungHeuristics:: update_anticipated_after_completed_gc(size_t ol
     set_anticipated_update_words(anticipated_old_update + anticipated_young_update);
   }
 }
+#endif
