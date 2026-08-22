@@ -354,7 +354,7 @@ public class setvalues001a {
 
     // class with static fields with the tested objects
     public static class ObjectClass {
-        // static field with the tested objects
+        // static fields with the tested objects
         public static TestedClass object = null;
         public static TestedFinalClass finalObject = null;
     }

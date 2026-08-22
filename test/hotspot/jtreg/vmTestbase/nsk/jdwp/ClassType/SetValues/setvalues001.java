@@ -453,9 +453,9 @@ public class setvalues001 {
      */
     void checkJDWPValuesChanged(long testedClassID, long testedFieldIDs[],
                                 JDWP.Value targetValues[]) {
-        // verify that JDWP ClassType.Getvalues returns the expected values
+        // verify that JDWP ClassType.GetValues returns the expected values
         int count = targetValues.length;
-        log.display("\n>>> getting field values using JDWP ClassType.GetValues \n");
+        log.display("\n>>> Getting field values using JDWP ClassType.GetValues \n");
         JDWP.Value[] actualValues = queryClassFieldValues(testedClassID, testedFieldIDs);
         log.display("  got actual values: " + actualValues.length);
         if (actualValues.length != count) {
@@ -466,10 +466,10 @@ public class setvalues001 {
             log.display("    field #" + i +":");
             log.display("      fieldID: " + testedFieldIDs[i]);
 
-            JDWP.Value actuallValue = actualValues[i];
+            JDWP.Value actualValue = actualValues[i];
             JDWP.Value targetValue = targetValues[i];
             JDWP.UntaggedValue untaggedActualValue =
-                new JDWP.UntaggedValue(actuallValue.getValue());
+                new JDWP.UntaggedValue(actualValue.getValue());
             JDWP.UntaggedValue untaggedTargetValue =
                 new JDWP.UntaggedValue(targetValue.getValue());
             log.display("      untaggedActualValue: " + untaggedActualValue.getValue());
@@ -480,7 +480,7 @@ public class setvalues001 {
             }
         }
         if (success) {
-            log.display("Verfied using JDWP ClassType.Getvalues that all static fields values have been correctly set");
+            log.display("Verfied using JDWP ClassType.GetValues that all static fields values have been correctly set");
         }
     }
 }
