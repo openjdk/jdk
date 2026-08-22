@@ -278,9 +278,12 @@ The `jpackage` tool will take as input a Java application and a Java run-time im
     This option can be used more than once.
 
     Destination:
-        Windows: application image root
-        Linux: application image lib directory
-        macOS: Contents/Resources
+
+    -   Windows: application image root
+
+    -   Linux: application image lib directory
+
+    -   macOS: Contents/Resources
 
 ### Options for creating the application launcher(s):
 

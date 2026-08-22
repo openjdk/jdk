@@ -228,9 +228,7 @@ public final class StandardOption {
             .outOfScope(NOT_BUILDING_APP_IMAGE)
             .map(explodedPathOptionMapper(explodedPathConverter().withPathFileName().create()))
             .mutate(createOptionSpecBuilderMutator((b, context) -> {
-                if (context.os() == OperatingSystem.WINDOWS) {
-                    b.description("help.option.app-resources" + resourceKeySuffix(context.os()));
-                }
+                b.description("help.option.app-resources" + resourceKeySuffix(context.os()));
             }))
             .createArray(toExplodedPathList());
 

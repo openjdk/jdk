@@ -48,7 +48,6 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-
 import jdk.jpackage.internal.util.FileUtils;
 import jdk.jpackage.internal.util.IdentityWrapper;
 import jdk.jpackage.internal.util.function.ThrowingSupplier;
@@ -78,25 +77,25 @@ import jdk.jpackage.test.TKit;
  * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
- * @build AppContentAndResourcesTest
+ * @build AppContentTest
  * @run main/othervm/timeout=1440 -Xmx512m jdk.jpackage.test.Main
- *  --jpt-run=AppContentAndResourcesTest
+ *  --jpt-run=AppContentTest
  */
-public class AppContentAndResourcesTest {
+public class AppContentTest {
 
     @Test
     @ParameterSupplier
     @ParameterSupplier(value="testSymlink", ifNotOS = WINDOWS)
-    public void test(TestCase testCase) throws Exception {
-        testCase.test(new ConfigurationTarget(new PackageTest().configureHelloApp()));
+    public void test(TestSpec testSpec) throws Exception {
+        testSpec.test(new ConfigurationTarget(new PackageTest().configureHelloApp()));
     }
 
     @Test
     @ParameterSupplier("test")
     @ParameterSupplier(value="testSymlink", ifNotOS = WINDOWS)
     @ParameterSupplier
-    public void testAppImage(TestCase testCase) throws Exception {
-        testCase.test(new ConfigurationTarget(JPackageCommand.helloAppImage()));
+    public void testAppImage(TestSpec testSpec) throws Exception {
+        testSpec.test(new ConfigurationTarget(JPackageCommand.helloAppImage()));
     }
 
     @Test(ifOS = MACOS)
@@ -132,9 +131,9 @@ public class AppContentAndResourcesTest {
             //
             // Typical codesign error:
             //
-            // foo/output/WarningsAppContentAndResourcesTest.app: replacing existing signature
-            // foo/output/WarningsAppContentAndResourcesTest.app: code object is not signed at all
-            // In subcomponent: foo/output/WarningsAppContentAndResourcesTest.app/Contents/dukeplug.png
+            // foo/output/WarningsAppContentTest.app: replacing existing signature
+            // foo/output/WarningsAppContentTest.app: code object is not signed at all
+            // In subcomponent: foo/output/WarningsAppContentTest.app/Contents/dukeplug.png
             //
 
             var errorValidator = new FailedCommandErrorValidator(Pattern.compile(cmdlinePattern))
@@ -179,9 +178,9 @@ public class AppContentAndResourcesTest {
         private Path appContent;
     }
 
-    private static Collection<Object[]> withOptions(Stream<TestSpec> specs) {
-        return specs.flatMap(spec -> Stream.of(AppFilesOption.values())
-                .map(option -> new Object[] { new TestCase(option, spec) }))
+    private static Collection<Object[]> withOptions(Stream<TestSpec.Builder> specs) {
+        return specs.flatMap(builder -> Stream.of(AppFilesOption.values())
+                .map(option -> new Object[] { builder.create(option) }))
                 .toList();
     }
 
@@ -202,7 +201,7 @@ public class AppContentAndResourcesTest {
                 build().add(createTextFileContent("a/b/c/d", "Foo")).add(createTextFileContent("a", "Bar")),
                 // Same name: one is a file, another is a directory.
                 build().add(createTextFileContent("a", "Bar")).add(createTextFileContent("a/b/c/d", "Foo"))
-        ).map(TestSpec.Builder::create);
+        );
 
         return withOptions(tests);
     }
@@ -210,7 +209,7 @@ public class AppContentAndResourcesTest {
     public static Collection<Object[]> testAppImage() {
         var tests = Stream.of(
                 build().add(NonExistentPath.create("*output-app-image*", JPackageCommand::outputBundle))
-        ).map(TestSpec.Builder::create);
+        );
 
         return withOptions(tests);
     }
@@ -220,13 +219,13 @@ public class AppContentAndResourcesTest {
                 build().add(TEST_JAVA)
                         .add(new SymlinkContentFactory("Links", "duke-link", "duke-target"))
                         .add(new SymlinkContentFactory("", "a/b/foo-link", "c/bar-target"))
-        ).map(TestSpec.Builder::create);
+        );
 
         return withOptions(tests);
     }
 
     private enum AppFilesOption {
-        CONTENT("--app-content", ",", ApplicationLayout::contentDirectory, true),
+        CONTENT("--app-content", ",", ApplicationLayout::contentDirectory, TKit.isOSX()),
         RESOURCES("--app-resources", File.pathSeparator,
             ApplicationLayout::resourcesDirectory, false);
 
@@ -252,7 +251,7 @@ public class AppContentAndResourcesTest {
 
         Path outputRoot(JPackageCommand cmd) {
             var root = outputRoot.apply(cmd.appLayout());
-            return wrapInResourcesOnMac && TKit.isOSX()
+            return wrapInResourcesOnMac
                     ? root.resolve(RESOURCES_DIR)
                     : root;
         }
@@ -262,7 +261,7 @@ public class AppContentAndResourcesTest {
         }
 
         boolean wrapInResourcesOnMac() {
-            return wrapInResourcesOnMac && TKit.isOSX();
+            return wrapInResourcesOnMac;
         }
 
         private final String optionName;
@@ -277,30 +276,28 @@ public class AppContentAndResourcesTest {
         private final boolean wrapInResourcesOnMac;
     }
 
-    private record TestCase(AppFilesOption option, TestSpec spec) {
-        void test(ConfigurationTarget target) {
-            spec.test(option, target);
-        }
-
-        @Override
-        public String toString() {
-            return option.optionName() + ": " + spec;
-        }
-    }
-
-    private record TestSpec(List<List<ContentFactory>> contentFactories) {
+    private record TestSpec(AppFilesOption option,
+            List<List<ContentFactory>> contentFactories) {
         public TestSpec {
+            Objects.requireNonNull(option);
             contentFactories.stream().flatMap(List::stream).forEach(Objects::requireNonNull);
+            if (contentFactories.isEmpty()) {
+                throw new IllegalArgumentException();
+            }
         }
 
         @Override
         public String toString() {
-            return contentFactories.stream().map(group -> {
+            var sb = new StringBuilder();
+
+            sb.append(option).append(" ").append(contentFactories.stream().map(group -> {
                 return group.stream().map(ContentFactory::toString).collect(joining(","));
-            }).collect(joining("; "));
+            }).collect(joining("; ")));
+
+            return sb.toString();
         }
 
-        void test(AppFilesOption option, ConfigurationTarget target) {
+        void test(ConfigurationTarget target) {
             final int expectedJPackageExitCode;
             if (contentFactories.stream().flatMap(List::stream).anyMatch(NonExistentPath.class::isInstance)) {
                 expectedJPackageExitCode = 1;
@@ -392,8 +389,8 @@ public class AppContentAndResourcesTest {
         }
 
         static final class Builder {
-            TestSpec create() {
-                return new TestSpec(groups);
+            TestSpec create(AppFilesOption option) {
+                return new TestSpec(option, groups);
             }
 
             final class GroupBuilder {
@@ -560,7 +557,7 @@ public class AppContentAndResourcesTest {
                             return new RegularFileVerifier(dstFile, srcFile);
                         } else {
                             return new DirectoryVerifier(dstFile,
-                                    toFunction(AppContentAndResourcesTest::isDirectoryEmpty).apply(srcFile),
+                                    toFunction(AppContentTest::isDirectoryEmpty).apply(srcFile),
                                     new IdentityWrapper<>(this));
                         }
                     }).toList());

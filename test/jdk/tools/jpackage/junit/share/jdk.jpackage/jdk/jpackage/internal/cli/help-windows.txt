@@ -140,8 +140,6 @@ Options for creating the application image:
           This option can be used more than once.
           Destination:
               Windows: application image root
-              Linux: application image lib directory
-              macOS: Contents/Resources
   --input -i <directory path>
           Path of the input directory that contains the files to be packaged
           (absolute path or relative to the current directory)
