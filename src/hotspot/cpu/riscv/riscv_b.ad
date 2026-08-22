@@ -622,3 +622,87 @@ instruct convI2Bool_andI_reg_immIpowerOf2(iRegINoSp dst, iRegIorL2I src, immIpow
 
   ins_pipe(ialu_reg_reg);
 %}
+
+// AndL 0b0..010..0 + ConvI2B
+instruct convI2Bool_andL_reg_immLpowerOf2(iRegINoSp dst, iRegL src, immLpowerOf2 mask) %{
+  predicate(UseZbs);
+  match(Set dst (Conv2B (AndL src mask)));
+  ins_cost(ALU_COST);
+
+  format %{ "bexti  $dst, $src, $mask\t#@convI2Bool_andL_reg_immLpowerOf2" %}
+  ins_encode %{
+    __ bexti($dst$$Register, $src$$Register, exact_log2_long((julong)($mask$$constant)));
+  %}
+
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct extractI_reg_reg(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2, immI_1 one) %{
+  predicate(UseZbs);
+  match(Set dst (AndI (URShiftI src1 src2) one));
+  ins_cost(ALU_COST);
+
+  format %{ "bext  $dst, $src1, $src2\t#@extractI_reg_reg" %}
+  ins_encode %{
+    __ bext(as_Register($dst$$reg), as_Register($src1$$reg),
+            as_Register($src2$$reg));
+  %}
+
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct extractL_reg_reg(iRegLNoSp dst, iRegL src1, iRegIorL2I src2, immL_1 one) %{
+  predicate(UseZbs);
+  match(Set dst (AndL (URShiftL src1 src2) one));
+  ins_cost(ALU_COST);
+
+  format %{ "bext  $dst, $src1, $src2\t#@extractL_reg_reg" %}
+  ins_encode %{
+    __ bext(as_Register($dst$$reg), as_Register($src1$$reg),
+            as_Register($src2$$reg));
+  %}
+
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct orL_reg_lshiftL_1(iRegLNoSp dst, iRegL src, immL_1 one, iRegIorL2I shift) %{
+  predicate(UseZbs);
+  match(Set dst (OrL src (LShiftL one shift)));
+  ins_cost(ALU_COST);
+
+  format %{ "bset  $dst, $src, $shift\t#@orL_reg_lshiftL_1" %}
+  ins_encode %{
+    __ bset(as_Register($dst$$reg), as_Register($src$$reg),
+            as_Register($shift$$reg));
+  %}
+
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct xorL_reg_lshiftL_1(iRegLNoSp dst, iRegL src, immL_1 one, iRegIorL2I shift) %{
+  predicate(UseZbs);
+  match(Set dst (XorL src (LShiftL one shift)));
+  ins_cost(ALU_COST);
+
+  format %{ "binv  $dst, $src, $shift\t#@xorL_reg_lshiftL_1" %}
+  ins_encode %{
+    __ binv(as_Register($dst$$reg), as_Register($src$$reg),
+            as_Register($shift$$reg));
+  %}
+
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct andL_reg_lshiftL_1_not(iRegLNoSp dst, iRegL src, immL_1 one, iRegIorL2I shift, immL_M1 m1) %{
+  predicate(UseZbs);
+  match(Set dst (AndL src (XorL (LShiftL one shift) m1)));
+  ins_cost(ALU_COST);
+
+  format %{ "bclr  $dst, $src, $shift\t#@andL_reg_lshiftL_1_not" %}
+  ins_encode %{
+    __ bclr(as_Register($dst$$reg), as_Register($src$$reg),
+            as_Register($shift$$reg));
+  %}
+
+  ins_pipe(ialu_reg_reg);
+%}

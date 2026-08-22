@@ -2850,6 +2850,14 @@ operand immIpowerOf2() %{
   interface(CONST_INTER);
 %}
 
+operand immLpowerOf2() %{
+  predicate(is_power_of_2((julong)(n->get_long())));
+  match(ConL);
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 // Long Immediate: low 32-bit mask
 operand immL_32bits()
 %{
@@ -2864,6 +2872,16 @@ operand immL_32bits()
 operand immL_M1()
 %{
   predicate(n->get_long() == -1);
+  match(ConL);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immL_1()
+%{
+  predicate(n->get_long() == 1);
   match(ConL);
 
   op_cost(0);
