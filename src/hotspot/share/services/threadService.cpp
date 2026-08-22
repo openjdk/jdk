@@ -1095,7 +1095,7 @@ ThreadsListEnumerator::ThreadsListEnumerator(Thread* cur_thread,
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {
     // skips JavaThreads in the process of exiting
     // and also skips VM internal JavaThreads
-    // Threads in _thread_new or _thread_new_trans state are included.
+    // Threads in _thread_new state are included.
     // i.e. threads have been started but not yet running.
     if (jt->threadObj() == nullptr   ||
         jt->is_exiting() ||
