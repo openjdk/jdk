@@ -2679,7 +2679,7 @@ public class Utils {
             }
         }
         String previewFeatureTag = configuration.getOptions().previewFeatureTag();
-        if (previewFeatureTag != null && hasBlockTag(el, UNKNOWN_BLOCK_TAG, previewFeatureTag)) {
+        if (previewFeatureTag != null && hasBlockTag(el, NOTE, previewFeatureTag)) {
             return true;
         }
         boolean previewAPI = configuration.workArounds.isPreviewAPI(el);
@@ -2767,8 +2767,7 @@ public class Utils {
                        || !previewAPIs.previewAPI.isEmpty()
                        || !previewAPIs.reflectivePreviewAPI.isEmpty()
                        || !previewAPIs.declaredUsingPreviewFeature.isEmpty()
-                       || (   previewFeatureTag != null
-                           && hasBlockTag(el, Kind.UNKNOWN_BLOCK_TAG, previewFeatureTag)))
+                       || (previewFeatureTag != null && hasBlockTag(el, NOTE, previewFeatureTag)))
                    && !hasNoPreviewAnnotation(el);
         }
     };
