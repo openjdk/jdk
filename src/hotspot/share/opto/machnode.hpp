@@ -841,6 +841,14 @@ public:
   MachJumpNode() : MachConstantNode() {
     init_class_id(Class_MachJump);
   }
+  virtual void eval_constant(Compile* C) {
+    assert(Matcher::use_compressed_jump_table, "inline jump table expected");
+  }
+  virtual uint mach_constant_base_node_input() const {
+    return Matcher::use_compressed_jump_table ?
+           (uint)-1 : MachConstantNode::mach_constant_base_node_input();
+  }
+  virtual uint size(PhaseRegAlloc* ra_) const;
   virtual uint size_of() const { return sizeof(MachJumpNode); }
 };
 
