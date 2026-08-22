@@ -179,7 +179,7 @@
           "GC mode to use.  Among other things, this defines which "        \
           "barriers are in in use. Possible values are:"                    \
           " satb - snapshot-at-the-beginning concurrent GC (three pass mark-evac-update);"  \
-          " passive - stop the world GC only (either degenerated or full);" \
+          " passive - stop the world full GC only (diagnostic mode);"       \
           " generational - generational concurrent GC")                     \
                                                                             \
   product(ccstr, ShenandoahGCHeuristics, "adaptive",                        \
@@ -233,7 +233,7 @@
           "heap or generation, trigger a learning cycle if we are "         \
           "in learning mode.  Learning mode happens during initialization " \
           "and following a drastic state change, such as following a "      \
-          "degenerated or Full GC cycle.  In percents of soft max "         \
+          "System.GC call or a Full GC cycle.  In percents of soft max "    \
           "heap size.")                                                     \
           range(0,100)                                                      \
                                                                             \
@@ -423,20 +423,13 @@
                                                                             \
   product(uintx, ShenandoahCriticalFreeThreshold, 1, EXPERIMENTAL,          \
           "How much of the heap needs to be free after recovery cycles, "   \
-          "either Degenerated or Full GC to be claimed successful. If this "\
-          "much space is not available, next recovery step would be "       \
-          "triggered.")                                                     \
+          "for a Full GC to be claimed successful. If this much space is "  \
+          "not available, next recovery step would be triggered.")          \
           range(0, 100)                                                     \
                                                                             \
-  product(bool, ShenandoahDegeneratedGC, true, DIAGNOSTIC,                  \
-          "Enable Degenerated GC as the graceful degradation step. "        \
-          "Disabling this option leads to degradation to Full GC instead. " \
-          "When running in passive mode, this can be toggled to measure "   \
-          "either Degenerated GC or Full GC costs.")                        \
-                                                                            \
   product(uintx, ShenandoahFullGCThreshold, 3, EXPERIMENTAL,                \
-          "How many back-to-back Degenerated GCs should happen before "     \
-          "going to a Full GC.")                                            \
+          "How many consecutive concurrent GCs a thread will wait for "     \
+          "before going to a Full GC.")                                     \
                                                                             \
   product(uintx, ShenandoahNoProgressThreshold, 5, EXPERIMENTAL,            \
           "After this number of consecutive Full GCs fail to make "         \
@@ -445,7 +438,7 @@
                                                                             \
   product(bool, ShenandoahImplicitGCInvokesConcurrent, false, EXPERIMENTAL, \
           "Should internally-caused GC requests invoke concurrent cycles, " \
-          "should they do the stop-the-world (Degenerated / Full GC)? "     \
+          "or should they do the stop-the-world Full GC? "                  \
           "Many heuristics automatically enable this. This option is "      \
           "similar to global ExplicitGCInvokesConcurrent.")                 \
                                                                             \

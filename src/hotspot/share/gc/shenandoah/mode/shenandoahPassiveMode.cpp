@@ -22,27 +22,21 @@
  *
  */
 
-#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahPassiveHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/mode/shenandoahPassiveMode.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "logging/log.hpp"
-#include "logging/logTag.hpp"
 #include "runtime/globals_extension.hpp"
-#include "runtime/java.hpp"
 
 void ShenandoahPassiveMode::initialize_flags() const {
   // Do not allow concurrent cycles.
   FLAG_SET_DEFAULT(ExplicitGCInvokesConcurrent, false);
   FLAG_SET_DEFAULT(ShenandoahImplicitGCInvokesConcurrent, false);
 
-  // No need for evacuation reserve with Full GC, only for Degenerated GC.
-  if (!ShenandoahDegeneratedGC) {
-    if (FLAG_IS_DEFAULT(ShenandoahEvacReserve)) {
-      log_info(gc)("Heuristics sets -XX:ShenandoahEvacReserve=0");
-      FLAG_SET_DEFAULT(ShenandoahEvacReserve, 0);
-    }
+  // No need for evacuation reserve with Full GC
+  if (FLAG_IS_DEFAULT(ShenandoahEvacReserve)) {
+    log_info(gc)("Heuristics sets -XX:ShenandoahEvacReserve=0");
+    FLAG_SET_DEFAULT(ShenandoahEvacReserve, 0);
   }
 
   // Disable known barriers by default.

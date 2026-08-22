@@ -140,14 +140,6 @@ void ShenandoahMmuTracker::record_mixed(size_t gcid) {
   update_utilization(gcid, "Mixed Concurrent GC");
 }
 
-void ShenandoahMmuTracker::record_degenerated(size_t gcid, const char* msg) {
-  if ((gcid == _most_recent_gcid) && _most_recent_is_full) {
-    // Do nothing.  This is a redundant recording for the full gc that just completed.
-  } else {
-    update_utilization(gcid, msg);
-  }
-}
-
 void ShenandoahMmuTracker::record_full(size_t gcid) {
   update_utilization(gcid, "Full GC");
   _most_recent_is_full = true;

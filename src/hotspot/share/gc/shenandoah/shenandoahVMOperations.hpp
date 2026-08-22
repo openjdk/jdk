@@ -28,7 +28,6 @@
 #include "gc/shared/gcVMOperations.hpp"
 
 class ShenandoahConcurrentGC;
-class ShenandoahDegenGC;
 class ShenandoahFullGC;
 
 // VM_operations for the Shenandoah Collector.
@@ -41,7 +40,6 @@ class ShenandoahFullGC;
 //   - VM_ShenandoahFinalVerify: final verification at the end of the cycle
 //   - VM_ShenandoahReferenceOperation:
 //       - VM_ShenandoahFullGC: do full GC
-//       - VM_ShenandoahDegeneratedGC: do STW degenerated GC
 
 class VM_ShenandoahOperation : public VM_Operation {
 protected:
@@ -87,15 +85,6 @@ public:
   explicit VM_ShenandoahFinalMarkStartEvac(ShenandoahConcurrentGC* gc);
   VM_Operation::VMOp_Type type() const override { return VMOp_ShenandoahFinalMarkStartEvac; }
   const char* name()             const override { return "Shenandoah Final Mark and Start Evacuation"; }
-  void doit() override;
-};
-
-class VM_ShenandoahDegeneratedGC: public VM_ShenandoahReferenceOperation {
-  ShenandoahDegenGC* const _gc;
-public:
-  explicit VM_ShenandoahDegeneratedGC(ShenandoahDegenGC* gc);
-  VM_Operation::VMOp_Type type() const override { return VMOp_ShenandoahDegeneratedGC; }
-  const char* name()             const override { return "Shenandoah Degenerated GC"; }
   void doit() override;
 };
 
