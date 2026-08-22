@@ -73,23 +73,16 @@ class G1CSetCandidateGroup : public CHeapObj<mtGCCardSet>{
 
   size_t _reclaimable_bytes;
   double _gc_efficiency;
+  uint _group_id;
 
 public:
-  // The _group_id uniquely identifies a candidate group when printing, making it
-  // easier to associate regions with their assigned G1CSetCandidateGroup, if any.
-  // Special values for the id:
-  // * id 0 is reserved for regions that do not have a remembered set.
-  // * id 1 is reserved for the G1CollectionSetCandidate that contains all young regions.
-  // * other ids are handed out incrementally, starting from InitialId.
-  static const uint NoRemSetId = 0;
-  static const uint YoungRegionId = 1;
-  static const uint InitialId = 2;
+  // The group id identifies a candidate group in logging and in the
+  // FromCardCache.
+  static constexpr uint NoGroupId = 0;
+  static constexpr uint YoungId = NoGroupId + 1;
+  static constexpr uint FirstNonYoungId = YoungId + 1;
+  static constexpr uint InvalidId = UINT_MAX;
 
-private:
-  const uint _group_id;
-  static uint _next_group_id;
-
-public:
   G1CSetCandidateGroup();
   G1CSetCandidateGroup(G1CardSetConfiguration* config, G1MonotonicArenaFreePool* card_set_freelist_pool, uint group_id);
   ~G1CSetCandidateGroup() {
@@ -127,6 +120,9 @@ public:
     return _card_set.occupied();
   }
 
+  // Clear the group-owned card set.
+  void clear_cardset();
+
   void clear(bool uninstall_group_cardset = false);
 
   G1CSetCandidateGroupIterator begin() const {
@@ -137,10 +133,9 @@ public:
     return _candidates.end();
   }
 
-  uint group_id() const { return _group_id; }
-
-  static void reset_next_group_id() {
-    _next_group_id = InitialId;
+  uint group_id() const {
+    assert(_group_id != InvalidId, "group must have an assigned id");
+    return _group_id;
   }
 };
 

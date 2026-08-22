@@ -29,12 +29,12 @@
 #include "gc/g1/g1CardSetMemory.hpp"
 #include "gc/g1/g1CodeRootSet.hpp"
 #include "gc/g1/g1CollectionSetCandidates.hpp"
-#include "gc/g1/g1FromCardCache.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/bitMap.hpp"
 
 class G1CardSetMemoryManager;
+class G1FromCardCache;
 class G1CSetCandidateGroup;
 class outputStream;
 
@@ -46,12 +46,8 @@ class G1HeapRegionRemSet : public CHeapObj<mtGC> {
   // The collection set groups to which the region owning this RSet is assigned.
   G1CSetCandidateGroup* _cset_group;
 
-  G1HeapRegion* _hr;
-
   // Cached value of heap base address.
   static HeapWord* _heap_base_address;
-
-  void clear_fcc();
 
   G1CardSet* card_set() {
     assert(has_cset_group(), "pre-condition");
@@ -64,7 +60,7 @@ class G1HeapRegionRemSet : public CHeapObj<mtGC> {
   }
 
 public:
-  G1HeapRegionRemSet(G1HeapRegion* hr);
+  G1HeapRegionRemSet();
   ~G1HeapRegionRemSet();
 
   bool cardset_is_empty() const {
@@ -148,11 +144,10 @@ public:
   inline void set_state_updating();
   inline void set_state_complete();
 
-  inline void add_reference(OopOrNarrowOopStar from, uint tid);
+  inline void add_reference(OopOrNarrowOopStar from, G1FromCardCache& fcc);
 
-  // The region is being reclaimed; clear its remset, and any mention of
-  // entries for this region in other remsets.
-  void clear(bool only_cardset = false, bool keep_tracked = false);
+  // Clear the region-specific remset state.
+  void clear();
 
   void reset_code_root_table_scanner();
   void reset_table_scanner();
@@ -168,7 +163,7 @@ public:
   // Returns the memory occupancy of all static data structures associated
   // with remembered sets.
   static size_t static_mem_size() {
-    return G1CardSet::static_mem_size() + G1FromCardCache::static_mem_size();
+    return G1CardSet::static_mem_size();
   }
 
   static void print_static_mem_size(outputStream* out);
@@ -204,15 +199,7 @@ public:
   // consumed by the code roots.
   size_t code_roots_mem_size();
 
-  static void invalidate_from_card_cache(uint start_idx, size_t num_regions) {
-    G1FromCardCache::invalidate(start_idx, num_regions);
-  }
-
 #ifndef PRODUCT
-  static void print_from_card_cache() {
-    G1FromCardCache::print();
-  }
-
   static void test();
 #endif
 };
