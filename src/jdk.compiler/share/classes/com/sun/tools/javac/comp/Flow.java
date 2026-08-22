@@ -721,7 +721,7 @@ public class Flow {
                                 TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases);
             if (exhaustiveSwitch) {
                 if (!tree.isExhaustive) {
-                    ExhaustivenessResult exhaustivenessResult = exhaustiveness.exhausts(tree.selector, tree.cases);
+                    ExhaustivenessResult exhaustivenessResult = exhaustiveness.exhausts(attrEnv, tree.selector, tree.cases);
 
                     tree.isExhaustive = exhaustivenessResult.exhaustive();
 
@@ -729,7 +729,7 @@ public class Flow {
                         if (exhaustivenessResult.notExhaustiveDetails().isEmpty()) {
                             log.error(tree, Errors.NotExhaustiveStatement);
                         } else {
-                            logNotExhaustiveError(tree.pos(), exhaustivenessResult, Errors.NotExhaustiveStatementDetails);
+                            logNotExhaustiveError(tree.pos(), exhaustivenessResult, "not.exhaustive.statement.details");
                         }
                     }
                 }
@@ -768,7 +768,7 @@ public class Flow {
                 TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases)) {
                 tree.isExhaustive = true;
             } else {
-                ExhaustivenessResult exhaustivenessResult = exhaustiveness.exhausts(tree.selector, tree.cases);
+                ExhaustivenessResult exhaustivenessResult = exhaustiveness.exhausts(attrEnv, tree.selector, tree.cases);
 
                 tree.isExhaustive = exhaustivenessResult.exhaustive();
 
@@ -776,7 +776,7 @@ public class Flow {
                     if (exhaustivenessResult.notExhaustiveDetails().isEmpty()) {
                         log.error(tree, Errors.NotExhaustive);
                     } else {
-                        logNotExhaustiveError(tree.pos(), exhaustivenessResult, Errors.NotExhaustiveDetails);
+                        logNotExhaustiveError(tree.pos(), exhaustivenessResult, "not.exhaustive.details");
                     }
                 }
             }
@@ -787,7 +787,7 @@ public class Flow {
 
         private void logNotExhaustiveError(DiagnosticPosition pos,
                                            ExhaustivenessResult exhaustivenessResult,
-                                           Error errorKey) {
+                                           String errorKey) {
             List<JCDiagnostic> details =
                     exhaustivenessResult.notExhaustiveDetails()
                                        .stream()
@@ -795,8 +795,9 @@ public class Flow {
                                        .sorted((d1, d2) -> d1.toString()
                                                              .compareTo(d2.toString()))
                                        .collect(List.collector());
-            JCDiagnostic main = diags.error(null, log.currentSource(), pos, errorKey);
-            JCDiagnostic d = new JCDiagnostic.MultilineDiagnostic(main, details);
+            JCDiagnostic missingCases = diags.fragment(Fragments.MissingCases);
+            JCDiagnostic augmentedMissingCases = new JCDiagnostic.MultilineDiagnostic(missingCases, details);
+            JCDiagnostic d = diags.error(null, log.currentSource(), pos, errorKey, augmentedMissingCases);
             log.report(d);
         }
 

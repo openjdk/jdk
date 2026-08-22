@@ -23,11 +23,15 @@
 
 // key: compiler.err.not.exhaustive.details
 // key: compiler.misc.binding.pattern
+// key: compiler.misc.missing.cases
 
 class BindingPattern {
-    int t(Object o) {
-        return switch (o) {
-            case String s -> 0;
+    int t(I i) {
+        return switch (i) {
+            case R1 _ -> 0;
         };
     }
+    sealed interface I {}
+    record R1() implements I {}
+    record R2() implements I {}
 }
