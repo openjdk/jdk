@@ -23,12 +23,15 @@
  */
 
 
+#include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetNMethod.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCodeRoots.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
+#include "gc/shenandoah/shenandoahStackChunkGCData.hpp"
+#include "gc/shenandoah/shenandoahStackWatermark.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
@@ -36,8 +39,9 @@
 
 bool ShenandoahBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
   if (!is_armed(nm)) {
-    // Some other thread got here first and healed the oops
-    // and disarmed the nmethod. No need to continue.
+    // Some other thread got here first and healed the oops.
+    // No need to continue. We only need to sync up the changes done by others.
+    cross_modify_fence();
     return true;
   }
 
@@ -46,8 +50,9 @@ bool ShenandoahBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
   ShenandoahNMethodLocker locker(lock);
 
   if (!is_armed(nm)) {
-    // Some other thread managed to complete while we were
-    // waiting for lock. No need to continue.
+    // Some other thread managed to complete while we were waiting for lock.
+    // No need to continue. We only need to sync up the changes done by others.
+    cross_modify_fence();
     return true;
   }
 
@@ -65,13 +70,63 @@ bool ShenandoahBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
     return false;
   }
 
-  // Heal oops
-  ShenandoahNMethod::heal_nmethod(nm);
+  bool changed = false;
+
+  // Handle oops and jumps.
+  changed |= ShenandoahNMethod::handle_oops(nm);
+  changed |= ShenandoahNMethod::handle_jumps(nm);
+
+  // If any code changed, bulk invalidate the entire nmethod.
+  if (changed) {
+    ICache::invalidate_range(nm->code_begin(), nm->code_size());
+  }
 
   // CodeCache unloading support
   nm->mark_as_maybe_on_stack();
 
   // Disarm
   ShenandoahNMethod::disarm_nmethod(nm);
+
+  // Paranoia: sync up the changes done by others, even though we did a lot ourselves.
+  cross_modify_fence();
+
   return true;
+}
+
+void ShenandoahBarrierSetNMethod::cross_modify_fence() {
+  // For Java threads that can execute the nmethod code, we need to sync up
+  // the code changes with current execution. Non-Java threads do not execute
+  // the code, and thus do not need this fence. (VM has VerifyCrossModifyFence code
+  // that barfs when we attempt to do this.)
+  if (Thread::current()->is_Java_thread()) {
+    OrderAccess::cross_modify_fence();
+  }
+}
+
+void ShenandoahBarrierSetNMethod::finalize_relocations(nmethod* nm) {
+  RelocIterator iter(nm);
+  while (iter.next()) {
+    if (iter.type() == relocInfo::patchable_barrier_type) {
+      patchable_barrier_Relocation* r = iter.patchable_barrier_reloc();
+      if (!r->is_target_offset_resolved()) {
+        address pc = r->addr();
+        address target = ShenandoahBarrierSetAssembler::parse_jump_address(pc);
+        r->set_target_offset(target - nm->code_begin());
+      } else {
+        // Already set. This is likely nmethod relocation, so just trust
+        // the existing relocation data.
+      }
+    }
+  }
+}
+
+void ShenandoahBarrierSetNMethod::arm_all_nmethods() {
+  BarrierSetNMethod::arm_all_nmethods();
+
+  // Arming should also activate stack watermark machinery.
+  // See ShenandoahNMethod::patch_jump.
+  ShenandoahStackWatermark::change_epoch_id();
+
+  // All currently allocated stack chunks now need to be fixed up.
+  ShenandoahStackChunkGCData::change_epoch_id();
 }

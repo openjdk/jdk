@@ -64,6 +64,7 @@ ShenandoahStackWatermark::ShenandoahStackWatermark(JavaThread* jt) :
   StackWatermark(jt, StackWatermarkKind::gc, _epoch_id),
   _heap(ShenandoahHeap::heap()),
   _stats(),
+  _no_op_cl(),
   _keep_alive_cl(),
   _evac_update_oop_cl(),
   _nm_cl() {
@@ -73,9 +74,6 @@ ShenandoahStackWatermark::ShenandoahStackWatermark(JavaThread* jt) :
 
 OopClosure* ShenandoahStackWatermark::closure_from_context(void* context) {
   if (context != nullptr) {
-    assert((_heap->is_concurrent_weak_root_in_progress() && _heap->is_evacuation_in_progress()) ||
-           _heap->is_concurrent_mark_in_progress(),
-           "Only these two phases");
     assert(Thread::current()->is_Worker_thread(), "Unexpected thread passing in context: " PTR_FORMAT, p2i(context));
     return reinterpret_cast<OopClosure*>(context);
   } else {
@@ -84,8 +82,7 @@ OopClosure* ShenandoahStackWatermark::closure_from_context(void* context) {
     } else if (_heap->is_concurrent_mark_in_progress()) {
       return &_keep_alive_cl;
     } else {
-      ShouldNotReachHere();
-      return nullptr;
+      return &_no_op_cl;
     }
   }
 }
@@ -93,26 +90,21 @@ OopClosure* ShenandoahStackWatermark::closure_from_context(void* context) {
 void ShenandoahStackWatermark::start_processing_impl(void* context) {
   NoSafepointVerifier nsv;
 
-  // Process the non-frame part of the thread
   if (_heap->is_concurrent_weak_root_in_progress() && _heap->is_evacuation_in_progress()) {
-    // Retire the TLABs, which will force threads to reacquire their TLABs.
     // This is needed for two reasons. Strong one: new allocations would be with new freeset,
     // which would be outside the collection set, so no cset writes would happen there.
     // Weaker one: new allocations would happen past update watermark, and so less work would
     // be needed for reference updates (would update the large filler instead).
     retire_tlab();
-
-    _jt->oops_do_no_frames(closure_from_context(context), &_nm_cl);
   } else if (_heap->is_concurrent_mark_in_progress()) {
     // We need to reset all TLABs because they might be below the TAMS, and we need to mark
     // the objects in them. Do not let mutators allocate any new objects in their current TLABs.
     // It is also a good place to resize the TLAB sizes for future allocations.
     retire_tlab();
-
-    _jt->oops_do_no_frames(closure_from_context(context), &_nm_cl);
-  } else {
-    ShouldNotReachHere();
   }
+
+  // Process the non-frame part of the thread
+  _jt->oops_do_no_frames(closure_from_context(context), &_nm_cl);
 
   // Publishes the processing start to concurrent threads
   StackWatermark::start_processing_impl(context);
@@ -132,8 +124,5 @@ void ShenandoahStackWatermark::retire_tlab() {
 void ShenandoahStackWatermark::process(const frame& fr, RegisterMap& register_map, void* context) {
   OopClosure* oops = closure_from_context(context);
   assert(oops != nullptr, "Should not get to here");
-  assert((_heap->is_concurrent_weak_root_in_progress() && _heap->is_evacuation_in_progress()) ||
-         _heap->is_concurrent_mark_in_progress(),
-         "Only these two phases");
   fr.oops_do(oops, &_nm_cl, &register_map, DerivedPointerIterationMode::_directly);
 }
