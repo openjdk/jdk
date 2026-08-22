@@ -68,19 +68,11 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *          expressions produce references.
  *          <p>
  *          Even if the JVM chooses to format a reference internally
- *          as a flattened set of field values (which can happen
- *          with value objects), those flattened field values are
+ *          as a flattened or scalarized group of field values
+ *          (which can happen with value objects &mdash; see below),
+ *          those loose sets of field values are
  *          made to behave exactly the same as a "classic" indirect
  *          representation, a pointer to an object header with fields.
- *          Such an indirect object is called a <em>buffered</em>
- *          value (not a boxed one, since boxes might have observable
- *          identity).  The JVM is free to buffer a flattened value's
- *          fields into the heap, or else copy the flattened field
- *          values out of a buffer, and all such representations are
- *          fully indistinguishable from each other, as long as they
- *          agree on the field values.  Such tricks of representation
- *          shifting only work if the JVM makes it impossible to
- *          observe when and where the tricks are being played.
  *          <p>
  *          Therefore, two references must appear to refer to exactly
  *          the same value object whenever the corresponding object
@@ -104,7 +96,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *          and regardless of where, how, and how many times it is
  *          stored.  For a longer discussion of these points, see
  *          <a href="https://openjdk.org/jeps/401#Programming-without-identity">
- *          JEP 401, "Programming without identity" section</a>.
+ *          JEP 401, "Programming without identity"</a>.
  *          <p>
  *          Any two objects might be told apart by observing a
  *          difference between their field values (for immutable
@@ -157,8 +149,10 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *          word comparison for most operands, it is more complicated
  *          when applied to value objects.  It may need to compare
  *          several field values, or even walk recursively into nested
- *          values.  Such walks are usually short.  And since values
- *          are inherently acyclic, the recursion always bottoms out.
+ *          values.  Such walks are usually short.  And since
+ *          <a href="https://openjdk.org/jeps/401#Safe-construction-of-value-objects">
+ *          values are inherently acyclic</a>,
+ *          the recursion always bottoms out.
  *          In its general structure, a value object is the root of a
  *          tree of value objects, whose leaves can be any mix of primitives
  *          and identity objects.
@@ -173,7 +167,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *          tree walking, because a large tree may need to be
  *          walked, to prove there are no differences.  See also
  *          <a href="https://openjdk.org/jeps/401#Comparing-value-objects">
- *          JEP 401, "Comparing value objects" section</a>.
+ *          JEP 401, "Comparing value objects"</a>.
  *          <p>
  *          The authoritative definition of the equality operator,
  *          including its connection to indistinguishability,
@@ -183,7 +177,9 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *          been extended to detect indistinguishability; see JVMS
  *          section 6.5, <i>if_acmp&lt;cond&gt;</i>, in the JEP 401 preview
  *          specifications.
- *          <p>
+ *
+ *          <h2 id="ValueEqualsHash">Equality and hashing for value classes</h2>
+ *
  *          The {@code ==} operator supplies the behavior of the
  *          default {@link Object#equals} method.  As a consequence,
  *          that built-in method can sometimes be used, without any
@@ -206,6 +202,10 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *          case, the class author should let the JVM do what it
  *          already knows how to do, and refrain from overriding the
  *          {@code equals} and {@code hashCode} methods.
+ *          For more about interactions between {@code Object} methods
+ *          and value classes, see
+ *          <a href="https://openjdk.org/jeps/401#Inherited-methods-of-java-lang-Object">
+ *          JEP 401, "Inherited methods of {@code java.lang.Object}"</a>.
  *          <p>
  *          These considerations (of whether to override {@code
  *          equals} or not) affect clients as well as authors of value
@@ -231,7 +231,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *          explicitly disavows</a> fixing {@code ==} to make it align
  *          more closely with value objects or {@code equals}.
  *          <p>
- *          Equality methods and hash methods come in pairs, so the
+ *          Since equality methods and hash methods come in pairs, the
  *          similarity (for values) between the two forms of equality
  *          ({@code ==} and {@code equals}) corresponds to an
  *          analogous similarity between the two kinds of {@code
@@ -239,33 +239,56 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *          of value trees, {@link java.lang.System#identityHashCode}
  *          must walk a value's tree as well, computing a hash based
  *          on its structure and the field values at its leaves.
+ *
+ *          <h2 id="ValuesIdentities">Values versus identities</h2>
+ *          A value object is fully determined at creation, and there
+ *          is no way to witness any change in the value, at any time.
+ *          This may be surprising when one considers that the JVM
+ *          interpreter allocates a heap block (via the {@code new}
+ *          instruction), calls a constructor ({@code invokespecial}),
+ *          and stores value fields into the heap ({@code putfield}).
+ *          It would seem the self-reference {@code this} within a value
+ *          class constructor can violate all the rules of mutability and
+ *          indistinguishability, except that {@code this} is in a
+ *          <em>larval</em> condition.  Its reference cannot escape to
+ *          be tested for equality against any other object, nor can
+ *          any field mutations (via {@code putfield}) be observed.
+ *          Until the object exits its larval condition, it can initialize
+ *          itself but none of the state changes are visible;
+ *          afterwards it is fully immutable.  No escape analysis is
+ *          required to prove these facts.  For more on value
+ *          construction, see
+ *          <a href="https://openjdk.org/jeps/401#Safe-construction-of-value-objects">
+ *          JEP 401, "Safe construction of value objects"</a>.
+ *          For the basic details, see the Java Language
+ *          Specification 15.9.4 {@jls value-objects-15.9.4 Run-Time
+ *          Evaluation of Class Instance Creation Expressions}.
  *          <p>
- *          Note that the identity-sensitive operations (field
- *          mutation, synchronization, weak references) provide ways
- *          to make time-varying distinctions between two identity
- *          objects, whether or not they have the same corresponding
- *          field values.  Hypothetically extending those operations
- *          to value objects would allow code to distinguish, over
- *          time-varying conditions, values which would otherwise be
- *          indistinguishable.  The JVM does not allow value objects
- *          to vary over time, as it could cause a particular reference
- *          to a value to change over time, even though it has not been
- *          updated by assignment.
+ *          The identity-sensitive object operations &mdash; field
+ *          mutation, synchronization, weak references &mdash; provide
+ *          many ways to make time-varying distinctions between two
+ *          identity objects, whether or not they have the same
+ *          corresponding field values.  Hypothetically extending
+ *          those operations to value objects would allow code to
+ *          distinguish, over time-varying conditions, values which
+ *          would otherwise be indistinguishable.  If the JVM were to
+ *          allow value object states to vary over time, a particular
+ *          variable, a reference to a value, could appear to change
+ *          over time, without being updated by assignment.
  *          <p>
  *          As a rule, both identity and value objects are created by
  *          invoking constructors. (Arrays and deserialization can
- *          break the rule.)  When a new object first becomes visible
+ *          break this rule.)  When a new object first becomes visible
  *          as an assignable reference, it carries whatever field
  *          values it was initially given.
  *          If it is an identity object it also has a freshly assigned
- *          identity.  If it is a value object, its fields will never
+ *          identity, which supports identity-sensitive operations.
+ *          If it is a value object, its fields will never
  *          change, and because it has no identity, it will
  *          immediately be indistinguishable from any previously
- *          created value object with those same field values.  Thus,
- *          object creation is subtly different between values and
- *          identity objects.  For more details, see the Java Language
- *          Specification 15.9.4 {@jls value-objects-15.9.4 Run-Time
- *          Evaluation of Class Instance Creation Expressions}.
+ *          created value object with those same field values.
+ *          Identity and fieldwise indistinguishability are mutually
+ *          exclusive.
  *          <p>
  *          This difference applies evenly across all kinds of object
  *          creation events: {@code new} expressions, creation by
@@ -279,7 +302,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *          It is true that object creation events necessarily
  *          allocate memory, somewhere, to hold the new object's
  *          fields.  And one might suppose that the JVM secretly knows
- *          the one heap block where the new value is stored.  One
+ *          the unique heap block where the new value is stored.  One
  *          might even guess that an object's memory address
  *          determines its identity.  But that would be a fallacy of
  *          oversimplification.  When the GC is working, any single
@@ -295,13 +318,21 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *          boundless, because the whole value object lives in its
  *          collection of individual field values, and nowhere else.
  *          During or after construction, the JVM might choose to
- *          store the value in one heap block, on the stack, split up
- *          fieldwise in registers, or inlined into a containing
- *          object or array.  It might use all these techniques
+ *          store the value many ways: buffered in a heap block
+ *          (or "boxed", though that term wrongly suggests autoboxing),
+ *          scalarized fieldwise in registers, spilled to the stack,
+ *          or flattened (allocated inline) within some containing object or array.
+ *          (For a full discussion about value object encodings, see
+ *          <a href="https://openjdk.org/jeps/401#Run-time-optimizations-for-value-objects">
+ *          JEP 401, "Run-time optimizations for value objects"</a>.)
+ *          Such techniques will often be applied
  *          simultaneously, because the JVM can split one value into
  *          many copies.  It might also merge two copies of a value
  *          object into one stored value, if it can prove they are
  *          indistinguishable.
+ *          All of these optimizations require that value objects have
+ *          no identity, and instead become indistinguishable whenever
+ *          their field values are identical.
  *          <p>
  *          Value objects are built into the core of the language
  *          and JVM.  An historical approximation to the concept is
@@ -310,6 +341,10 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *          for which the use of both {@code ==} and identity-sensitive
  *          operations is strongly discouraged.  Some classes previously
  *          marked as value based are migrated to proper value classes.
+ *          Other application and library classes may also be candidates
+ *          for such migration.  See
+ *          <a href="https://openjdk.org/jeps/401#Migrating-to-value-classes">
+ *          JEP 401, "Migrating to value classes"</a>, for more details.
  *      </div>
  * </div>
  *
