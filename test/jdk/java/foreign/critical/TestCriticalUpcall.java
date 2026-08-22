@@ -25,10 +25,9 @@
  * @test
  * @library ../ /test/lib
  * @requires jdk.foreign.linker != "FALLBACK"
- * @run testng/othervm/native --enable-native-access=ALL-UNNAMED TestCriticalUpcall
+ * @run junit/othervm/native --enable-native-access=ALL-UNNAMED TestCriticalUpcall
  */
 
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.lang.foreign.FunctionDescriptor;
@@ -37,7 +36,8 @@ import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 import java.util.List;
 
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.Test;
 
 public class TestCriticalUpcall extends UpcallTestHelper {
 

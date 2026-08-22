@@ -26,10 +26,10 @@
  * @requires vm.flavor != "zero"
  * @modules java.base/jdk.internal.vm.annotation java.base/jdk.internal.misc
  * @key randomness
- * @run testng/othervm TestMappedHandshake
- * @run testng/othervm -Xint TestMappedHandshake
- * @run testng/othervm -XX:TieredStopAtLevel=1 TestMappedHandshake
- * @run testng/othervm -XX:-TieredCompilation TestMappedHandshake
+ * @run junit/othervm TestMappedHandshake
+ * @run junit/othervm -Xint TestMappedHandshake
+ * @run junit/othervm -XX:TieredStopAtLevel=1 TestMappedHandshake
+ * @run junit/othervm -XX:-TieredCompilation TestMappedHandshake
  */
 
 import java.io.File;
@@ -44,9 +44,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 public class TestMappedHandshake {
 

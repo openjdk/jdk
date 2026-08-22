@@ -33,7 +33,7 @@
  *          java.base/jdk.internal.foreign.abi.riscv64
  *          java.base/jdk.internal.foreign.abi.riscv64.linux
  * @build CallArrangerTestBase
- * @run testng TestRISCV64CallArranger
+ * @run junit TestRISCV64CallArranger
  */
 
 import java.lang.foreign.FunctionDescriptor;
@@ -45,8 +45,6 @@ import jdk.internal.foreign.abi.LinkerOptions;
 import jdk.internal.foreign.abi.riscv64.linux.LinuxRISCV64CallArranger;
 import jdk.internal.foreign.abi.StubLocations;
 import jdk.internal.foreign.abi.VMStorage;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodType;
@@ -58,10 +56,15 @@ import static jdk.internal.foreign.abi.riscv64.RISCV64Architecture.*;
 import static jdk.internal.foreign.abi.riscv64.RISCV64Architecture.Regs.*;
 import static platform.PlatformLayouts.RISCV64.*;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestRISCV64CallArranger extends CallArrangerTestBase {
 
     private static final short STACK_SLOT_SIZE = 8;
@@ -76,8 +79,8 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
 
         assertFalse(bindings.isInMemoryReturn());
         CallingSequence callingSequence = bindings.callingSequence();
-        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, MemorySegment.class));
-        assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS));
+        assertEquals(mt.insertParameterTypes(0, MemorySegment.class), callingSequence.callerMethodType());
+        assertEquals(fd.insertArgumentLayouts(0, ADDRESS), callingSequence.functionDesc());
 
         checkArgumentBindings(callingSequence, new Binding[][]{
             { unboxAddress(), vmStore(TARGET_ADDRESS_STORAGE, long.class) }
@@ -100,8 +103,8 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
 
         assertFalse(bindings.isInMemoryReturn());
         CallingSequence callingSequence = bindings.callingSequence();
-        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, MemorySegment.class));
-        assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS));
+        assertEquals(mt.insertParameterTypes(0, MemorySegment.class), callingSequence.callerMethodType());
+        assertEquals(fd.insertArgumentLayouts(0, ADDRESS), callingSequence.functionDesc());
 
         checkArgumentBindings(callingSequence, new Binding[][]{
             { unboxAddress(), vmStore(TARGET_ADDRESS_STORAGE, long.class) },
@@ -128,8 +131,8 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
 
         assertFalse(bindings.isInMemoryReturn());
         CallingSequence callingSequence = bindings.callingSequence();
-        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, MemorySegment.class));
-        assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS));
+        assertEquals(mt.insertParameterTypes(0, MemorySegment.class), callingSequence.callerMethodType());
+        assertEquals(fd.insertArgumentLayouts(0, ADDRESS), callingSequence.functionDesc());
 
         checkArgumentBindings(callingSequence, new Binding[][]{
             { unboxAddress(), vmStore(TARGET_ADDRESS_STORAGE, long.class) },
@@ -142,7 +145,8 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
         checkReturnBindings(callingSequence, new Binding[]{});
     }
 
-    @Test(dataProvider = "structs")
+    @ParameterizedTest
+    @MethodSource("structs")
     public void testStruct(MemoryLayout struct, Binding[] expectedBindings) {
         MethodType mt = MethodType.methodType(void.class, MemorySegment.class);
         FunctionDescriptor fd = FunctionDescriptor.ofVoid(struct);
@@ -150,8 +154,8 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
 
         assertFalse(bindings.isInMemoryReturn());
         CallingSequence callingSequence = bindings.callingSequence();
-        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, MemorySegment.class));
-        assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS));
+        assertEquals(mt.insertParameterTypes(0, MemorySegment.class), callingSequence.callerMethodType());
+        assertEquals(fd.insertArgumentLayouts(0, ADDRESS), callingSequence.functionDesc());
 
         checkArgumentBindings(callingSequence, new Binding[][]{
             { unboxAddress(), vmStore(TARGET_ADDRESS_STORAGE, long.class) },
@@ -161,7 +165,6 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
         checkReturnBindings(callingSequence, new Binding[]{});
     }
 
-    @DataProvider
     public static Object[][] structs() {
         MemoryLayout struct1 = MemoryLayout.structLayout(C_INT, C_INT, C_DOUBLE, C_INT);
         return new Object[][]{
@@ -226,8 +229,8 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
 
         assertFalse(bindings.isInMemoryReturn());
         CallingSequence callingSequence = bindings.callingSequence();
-        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, MemorySegment.class, MemorySegment.class));
-        assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS, ADDRESS));
+        assertEquals(mt.insertParameterTypes(0, MemorySegment.class, MemorySegment.class), callingSequence.callerMethodType());
+        assertEquals(fd.insertArgumentLayouts(0, ADDRESS, ADDRESS), callingSequence.functionDesc());
 
         checkArgumentBindings(callingSequence, new Binding[][]{
             { unboxAddress(), vmStore(RETURN_BUFFER_STORAGE, long.class) },
@@ -264,8 +267,8 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
 
         assertFalse(bindings.isInMemoryReturn());
         CallingSequence callingSequence = bindings.callingSequence();
-        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, MemorySegment.class, MemorySegment.class));
-        assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS, ADDRESS));
+        assertEquals(mt.insertParameterTypes(0, MemorySegment.class, MemorySegment.class), callingSequence.callerMethodType());
+        assertEquals(fd.insertArgumentLayouts(0, ADDRESS, ADDRESS), callingSequence.functionDesc());
 
         checkArgumentBindings(callingSequence, new Binding[][]{
             { unboxAddress(), vmStore(RETURN_BUFFER_STORAGE, long.class) },
@@ -305,8 +308,8 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
 
         assertFalse(bindings.isInMemoryReturn());
         CallingSequence callingSequence = bindings.callingSequence();
-        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, MemorySegment.class));
-        assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS));
+        assertEquals(mt.insertParameterTypes(0, MemorySegment.class), callingSequence.callerMethodType());
+        assertEquals(fd.insertArgumentLayouts(0, ADDRESS), callingSequence.functionDesc());
 
         checkArgumentBindings(callingSequence, new Binding[][]{
             { unboxAddress(), vmStore(TARGET_ADDRESS_STORAGE, long.class) },
@@ -336,8 +339,8 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
 
         assertFalse(bindings.isInMemoryReturn());
         CallingSequence callingSequence = bindings.callingSequence();
-        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, MemorySegment.class));
-        assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS));
+        assertEquals(mt.insertParameterTypes(0, MemorySegment.class), callingSequence.callerMethodType());
+        assertEquals(fd.insertArgumentLayouts(0, ADDRESS), callingSequence.functionDesc());
 
         checkArgumentBindings(callingSequence, new Binding[][]{
             { unboxAddress(), vmStore(TARGET_ADDRESS_STORAGE, long.class) },
@@ -384,8 +387,8 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
 
         assertFalse(bindings.isInMemoryReturn());
         CallingSequence callingSequence = bindings.callingSequence();
-        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, MemorySegment.class));
-        assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS));
+        assertEquals(mt.insertParameterTypes(0, MemorySegment.class), callingSequence.callerMethodType());
+        assertEquals(fd.insertArgumentLayouts(0, ADDRESS), callingSequence.functionDesc());
 
         checkArgumentBindings(callingSequence, new Binding[][]{
             { unboxAddress(), vmStore(TARGET_ADDRESS_STORAGE, long.class) },
@@ -413,8 +416,8 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
 
         assertFalse(bindings.isInMemoryReturn());
         CallingSequence callingSequence = bindings.callingSequence();
-        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, MemorySegment.class));
-        assertEquals(callingSequence.functionDesc(), fdExpected);
+        assertEquals(mt.insertParameterTypes(0, MemorySegment.class), callingSequence.callerMethodType());
+        assertEquals(fdExpected, callingSequence.functionDesc());
 
         // This is identical to the non-variadic calling sequence
         checkArgumentBindings(callingSequence, new Binding[][]{
@@ -442,8 +445,8 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
 
         assertFalse(bindings.isInMemoryReturn());
         CallingSequence callingSequence = bindings.callingSequence();
-        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, MemorySegment.class));
-        assertEquals(callingSequence.functionDesc(), fdExpected);
+        assertEquals(mt.insertParameterTypes(0, MemorySegment.class), callingSequence.callerMethodType());
+        assertEquals(fdExpected, callingSequence.functionDesc());
 
         // This is identical to the non-variadic calling sequence
         checkArgumentBindings(callingSequence, new Binding[][]{
@@ -474,11 +477,9 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
 
         assertTrue(bindings.isInMemoryReturn());
         CallingSequence callingSequence = bindings.callingSequence();
-        assertEquals(callingSequence.callerMethodType(),
-            MethodType.methodType(void.class, MemorySegment.class, MemorySegment.class,
-                int.class, int.class, float.class));
-        assertEquals(callingSequence.functionDesc(),
-            FunctionDescriptor.ofVoid(ADDRESS, C_POINTER, C_INT, C_INT, C_FLOAT));
+        assertEquals(            MethodType.methodType(void.class, MemorySegment.class, MemorySegment.class,
+                int.class, int.class, float.class), callingSequence.callerMethodType());
+        assertEquals(            FunctionDescriptor.ofVoid(ADDRESS, C_POINTER, C_INT, C_INT, C_FLOAT), callingSequence.functionDesc());
 
         checkArgumentBindings(callingSequence, new Binding[][]{
             { unboxAddress(), vmStore(TARGET_ADDRESS_STORAGE, long.class) },
@@ -501,8 +502,8 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
 
         assertFalse(bindings.isInMemoryReturn());
         CallingSequence callingSequence = bindings.callingSequence();
-        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, MemorySegment.class, MemorySegment.class));
-        assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS, ADDRESS));
+        assertEquals(mt.insertParameterTypes(0, MemorySegment.class, MemorySegment.class), callingSequence.callerMethodType());
+        assertEquals(fd.insertArgumentLayouts(0, ADDRESS, ADDRESS), callingSequence.functionDesc());
 
         checkArgumentBindings(callingSequence, new Binding[][]{
             { unboxAddress(), vmStore(RETURN_BUFFER_STORAGE, long.class) },

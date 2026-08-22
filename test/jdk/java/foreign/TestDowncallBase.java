@@ -33,6 +33,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.TestInstance;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestDowncallBase extends CallGeneratorHelper {
 
     Object doCall(MemorySegment symbol, SegmentAllocator allocator, FunctionDescriptor descriptor, Object[] args) throws Throwable {

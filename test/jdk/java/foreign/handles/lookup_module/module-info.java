@@ -22,7 +22,7 @@
  */
 
 open module lookup_module {
-    requires org.testng;
+    requires org.junit.platform.console.standalone;
     requires invoker_module;
     exports handle.lookup;
 }

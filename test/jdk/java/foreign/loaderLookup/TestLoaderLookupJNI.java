@@ -21,15 +21,15 @@
  * questions.
  */
 
-import org.testng.annotations.Test;
 
 import java.lang.foreign.SymbolLookup;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 /*
  * @test
- * @run testng/othervm/native TestLoaderLookupJNI
+ * @run junit/othervm/native TestLoaderLookupJNI
  */
 public class TestLoaderLookupJNI {
 
