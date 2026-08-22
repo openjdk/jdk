@@ -27,6 +27,7 @@
 #include "gc/parallel/parallelInitLogger.hpp"
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
 #include "gc/parallel/psAdaptiveSizePolicy.hpp"
+#include "gc/parallel/psHeapVirtualSpace.hpp"
 #include "gc/parallel/psMemoryPool.hpp"
 #include "gc/parallel/psParallelCompact.inline.hpp"
 #include "gc/parallel/psPromotionManager.hpp"
@@ -42,6 +43,7 @@
 #include "gc/shared/scavengableNMethods.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "logging/log.hpp"
+#include "memory/allocation.inline.hpp"
 #include "memory/iterator.hpp"
 #include "memory/metaspaceCounters.hpp"
 #include "memory/metaspaceUtils.hpp"
@@ -62,6 +64,36 @@
 PSAdaptiveSizePolicy* ParallelScavengeHeap::_size_policy = nullptr;
 GCPolicyCounters* ParallelScavengeHeap::_gc_policy_counters = nullptr;
 size_t ParallelScavengeHeap::_desired_page_size = 0;
+size_t ParallelScavengeHeap::_num_young_spaces = 0;
+
+size_t ParallelScavengeHeap::num_young_spaces() {
+  if (_num_young_spaces != 0) {
+    return _num_young_spaces;
+  }
+
+  size_t num_eden_spaces = 1;
+
+  if (UseNUMA) {
+    const size_t lgrp_limit = os::numa_get_groups_num();
+    assert(lgrp_limit > 0, "invalid NUMA topology");
+
+    uint* lgrp_ids = NEW_C_HEAP_ARRAY(uint, lgrp_limit, mtGC);
+    num_eden_spaces = os::numa_get_leaf_groups(lgrp_ids, lgrp_limit);
+    FREE_C_HEAP_ARRAY(lgrp_ids);
+
+    assert(num_eden_spaces > 0 && num_eden_spaces <= lgrp_limit,
+           "invalid number of NUMA locality groups");
+  }
+
+  _num_young_spaces = num_eden_spaces + 2;
+  return _num_young_spaces;
+}
+
+size_t ParallelScavengeHeap::young_gen_size_lower_bound() {
+  // This is the structural minimum for a dynamic non-empty young generation,
+  // not MinNewSize, which is derived for the startup generation split.
+  return num_young_spaces() * SpaceAlignment;
+}
 
 jint ParallelScavengeHeap::initialize() {
   const size_t reserved_heap_size = ParallelArguments::heap_reserved_size_bytes();
@@ -77,13 +109,16 @@ jint ParallelScavengeHeap::initialize() {
   trace_actual_reserved_page_size(reserved_heap_size, heap_rs);
 
   initialize_reserved_region(heap_rs);
-  // Layout the reserved space for the generations.
-  ReservedSpace old_rs   = heap_rs.first_part(MaxOldSize, SpaceAlignment);
-  ReservedSpace young_rs = heap_rs.last_part(MaxOldSize, SpaceAlignment);
-  assert(young_rs.size() == MaxNewSize, "Didn't reserve all of the heap");
+
+  const size_t min_old_reserved = reserved_heap_size - MaxNewSize;
+  char* gen_boundary = heap_rs.base() + MAX2(MaxOldSize, min_old_reserved);
+  _heap_vs = new PSHeapVirtualSpace(heap_rs, SpaceAlignment, gen_boundary);
 
   PSCardTable* card_table = new PSCardTable(_reserved);
-  card_table->initialize(old_rs.base(), young_rs.base());
+  card_table->initialize(heap_rs.base(), gen_boundary);
+
+  // For the complete heap
+  _start_array = new ObjectStartArray(_reserved);
 
   CardTableBarrierSet* const barrier_set = new CardTableBarrierSet(card_table);
   BarrierSet::set_barrier_set(barrier_set);
@@ -92,28 +127,15 @@ jint ParallelScavengeHeap::initialize() {
   _workers.initialize_workers();
 
   // Create and initialize the generations.
-  _young_gen = new PSYoungGen(
-      young_rs,
-      NewSize,
-      MinNewSize,
-      MaxNewSize);
-  _old_gen = new PSOldGen(
-      old_rs,
-      OldSize,
-      MinOldSize,
-      MaxOldSize);
+  _young_gen = new PSYoungGen(_heap_vs, NewSize, young_gen_size_lower_bound(), MaxNewSize);
 
-  assert(young_gen()->max_gen_size() == young_rs.size(),"Consistency check");
-  assert(old_gen()->max_gen_size() == old_rs.size(), "Consistency check");
+  _old_gen = new PSOldGen(_heap_vs, _start_array, OldSize, reserved_heap_size);
 
   double max_gc_pause_sec = ((double) MaxGCPauseMillis)/1000.0;
 
   _size_policy = new PSAdaptiveSizePolicy(SpaceAlignment,
                                           max_gc_pause_sec);
 
-  assert((old_gen()->virtual_space()->high_boundary() ==
-          young_gen()->virtual_space()->low_boundary()),
-         "Boundaries must meet");
   // initialize the policy counters - 2 collectors, 2 generations
   _gc_policy_counters = new GCPolicyCounters("ParScav:MSC", 2, 2);
 
@@ -178,16 +200,28 @@ void ParallelScavengeHeap::post_initialize() {
 }
 
 void ParallelScavengeHeap::gc_epilogue(bool full) {
+  size_t capacity_bytes = max_capacity();
+  size_t free_bytes = capacity_bytes - used();
+  double free_percent = percent_of(free_bytes, capacity_bytes);
+
   if (_is_heap_almost_full) {
-    // Reset emergency state if eden is empty after a young/full gc
-    if (_young_gen->eden_space()->is_empty()) {
+    // Reset emergency state once young gen and sufficient allocation headroom return.
+    if (_young_gen->reserved_size() > 0 && free_percent > HeapAlmostFullThresholdPercent) {
       log_debug(gc)("Leaving memory constrained state; back to normal");
       _is_heap_almost_full = false;
     }
   } else {
-    if (full && !_young_gen->eden_space()->is_empty()) {
-      log_debug(gc)("Non-empty young-gen after full-gc; in memory constrained state");
-      _is_heap_almost_full = true;
+    if (full) {
+      if (_young_gen->reserved_size() == 0) {
+        log_debug(gc)("After full-gc, young-gen has become zero-sized, free space: %zu / %zu (K); entering memory constrained state",
+                      free_bytes / K, capacity_bytes / K);
+        _is_heap_almost_full = true;
+      } else if (free_percent < HeapAlmostFullThresholdPercent) {
+        // Skip a likely futile normal collection on the next allocation failure.
+        log_debug(gc)("After full-gc, limited (<10%%) free space: %zu / %zu (K); entering memory constrained state",
+                      free_bytes / K, capacity_bytes / K);
+        _is_heap_almost_full = true;
+      }
     }
   }
 }
@@ -210,13 +244,7 @@ size_t ParallelScavengeHeap::used() const {
 }
 
 size_t ParallelScavengeHeap::max_capacity() const {
-  size_t estimated = reserved_region().byte_size();
-  if (UseAdaptiveSizePolicy) {
-    estimated -= _size_policy->max_survivor_size(young_gen()->max_gen_size());
-  } else {
-    estimated -= young_gen()->to_space()->capacity_in_bytes();
-  }
-  return MAX2(estimated, capacity());
+  return reserved_region().byte_size();
 }
 
 bool ParallelScavengeHeap::is_in(const void* p) const {
@@ -378,8 +406,8 @@ bool ParallelScavengeHeap::should_attempt_young_gc() const {
   const bool ShouldRunYoungGC = true;
   const bool ShouldRunFullGC = false;
 
-  if (!_young_gen->to_space()->is_empty()) {
-    log_debug(gc, ergo)("To-space is not empty; run full-gc instead.");
+  if (_young_gen->reserved_size() == 0) {
+    // Young-gen is zero-sized.
     return ShouldRunFullGC;
   }
 
@@ -389,7 +417,7 @@ bool ParallelScavengeHeap::should_attempt_young_gc() const {
   size_t avg_promoted = (size_t) policy->padded_average_promoted_in_bytes();
   size_t promotion_estimate = MIN2(avg_promoted, _young_gen->used_in_bytes());
   // Total free size after possible old gen expansion
-  size_t free_in_old_gen_with_expansion = _old_gen->max_gen_size() - _old_gen->used_in_bytes();
+  size_t free_in_old_gen_with_expansion = _old_gen->reserved_size() - _old_gen->used_in_bytes();
 
   log_trace(gc, ergo)("average_promoted %zu; padded_average_promoted %zu",
               (size_t) policy->average_promoted_in_bytes(),
@@ -405,11 +433,11 @@ bool ParallelScavengeHeap::should_attempt_young_gc() const {
     // Also checking OS has enough free memory to commit and expand old-gen.
     // Otherwise, the recorded gc-pause-time might be inflated to include time
     // of OS preparing free memory, resulting in inaccurate young-gen resizing.
-    assert(_old_gen->committed().byte_size() >= _old_gen->used_in_bytes(), "inv");
+    assert(_old_gen->committed_size() >= _old_gen->used_in_bytes(), "inv");
     // Use uint64_t instead of size_t for 32bit compatibility.
     uint64_t free_mem_in_os;
     if (os::free_memory(free_mem_in_os)) {
-      size_t actual_free = (size_t)MIN2(_old_gen->committed().byte_size() - _old_gen->used_in_bytes() + free_mem_in_os,
+      size_t actual_free = (size_t)MIN2(_old_gen->committed_size() - _old_gen->used_in_bytes() + free_mem_in_os,
                                         (uint64_t)SIZE_MAX);
       if (promotion_estimate > actual_free) {
         log_debug(gc, ergo)("Run full-gc; predicted promotion size > free space in old-gen and OS: %zu > %zu",
@@ -423,10 +451,6 @@ bool ParallelScavengeHeap::should_attempt_young_gc() const {
   return ShouldRunYoungGC;
 }
 
-static bool check_gc_heap_free_limit(size_t free_bytes, size_t capacity_bytes) {
-  return (free_bytes * 100 / capacity_bytes) < GCHeapFreeLimit;
-}
-
 bool ParallelScavengeHeap::check_gc_overhead_limit() {
   assert(SafepointSynchronize::is_at_safepoint(), "precondition");
 
@@ -434,13 +458,16 @@ bool ParallelScavengeHeap::check_gc_overhead_limit() {
     // The goal here is to return null prematurely so that apps can exit
     // gracefully when GC takes the most time.
     bool little_mutator_time = _size_policy->mutator_time_percent() * 100 < (100 - GCTimeLimit);
-    bool little_free_space = check_gc_heap_free_limit(_young_gen->free_in_bytes(), _young_gen->capacity_in_bytes())
-                          && check_gc_heap_free_limit(  _old_gen->free_in_bytes(),   _old_gen->capacity_in_bytes());
 
-    log_debug(gc)("GC Overhead Limit: GC Time %f Free Space Young %f Old %f Counter %zu",
+    size_t heap_capacity_bytes = capacity();
+    size_t heap_free_bytes = heap_capacity_bytes - used();
+    double heap_free_percent = percent_of(heap_free_bytes, heap_capacity_bytes);
+    bool little_free_space = heap_free_percent < GCHeapFreeLimit;
+
+    log_debug(gc)("Checking GC Overhead: GC Time %.1f%% Free Space %zuK (%.1f%%) Counter %zu",
                   (100 - _size_policy->mutator_time_percent()),
-                  percent_of(_young_gen->free_in_bytes(), _young_gen->capacity_in_bytes()),
-                  percent_of(_old_gen->free_in_bytes(), _old_gen->capacity_in_bytes()),
+                  heap_free_bytes / K,
+                  heap_free_percent,
                   _gc_overhead_counter);
 
     if (little_mutator_time && little_free_space) {
@@ -482,10 +509,10 @@ HeapWord* ParallelScavengeHeap::satisfy_failed_allocation(size_t size, bool is_t
   HeapWord* result = nullptr;
 
   if (!_is_heap_almost_full) {
-    // If young-gen can handle this allocation, attempt young-gc firstly, as young-gc is usually cheaper.
+    // If young-gen can handle this allocation, attempt young-gc first, as young-gc is usually cheaper.
     bool should_run_young_gc = is_tlab || should_alloc_in_eden(size);
 
-    collect_at_safepoint(!should_run_young_gc);
+    collect_at_safepoint(!should_run_young_gc, {size, is_tlab});
 
     // If gc-overhead is reached, we will skip allocation.
     if (!check_gc_overhead_limit()) {
@@ -500,7 +527,9 @@ HeapWord* ParallelScavengeHeap::satisfy_failed_allocation(size_t size, bool is_t
   {
     const bool clear_all_soft_refs = true;
     const bool should_do_max_compaction = true;
-    PSParallelCompact::invoke(clear_all_soft_refs, should_do_max_compaction);
+    PSParallelCompact::invoke(clear_all_soft_refs,
+                              should_do_max_compaction,
+                              {size, is_tlab});
   }
 
   if (check_gc_overhead_limit()) {
@@ -569,20 +598,28 @@ void ParallelScavengeHeap::collect(GCCause::Cause cause) {
   VMThread::execute(&op);
 }
 
-void ParallelScavengeHeap::collect_at_safepoint(bool is_full) {
+void ParallelScavengeHeap::collect_at_safepoint(bool is_full,
+                                                PSPendingAllocation pending_allocation) {
   assert(!GCLocker::is_active(), "precondition");
   bool clear_soft_refs = GCCause::should_clear_all_soft_refs(_gc_cause);
+  size_t promoted_before_full_gc = 0;
 
   if (!is_full && should_attempt_young_gc()) {
+    const size_t old_used_before = old_gen()->used_in_bytes();
     bool young_gc_success = PSScavenge::invoke(clear_soft_refs);
     if (young_gc_success) {
       return;
     }
+    assert(old_gen()->used_in_bytes() >= old_used_before, "inv");
+    promoted_before_full_gc = old_gen()->used_in_bytes() - old_used_before;
     log_debug(gc, heap)("Upgrade to Full-GC since Young-gc failed.");
   }
 
   const bool should_do_max_compaction = false;
-  PSParallelCompact::invoke(clear_soft_refs, should_do_max_compaction);
+  PSParallelCompact::invoke(clear_soft_refs,
+                            should_do_max_compaction,
+                            pending_allocation,
+                            promoted_before_full_gc);
 }
 
 void ParallelScavengeHeap::object_iterate(ObjectClosure* cl) {
@@ -682,15 +719,16 @@ void ParallelScavengeHeap::prepare_for_verify() {
 
 PSHeapSummary ParallelScavengeHeap::create_ps_heap_summary() {
   PSOldGen* old = old_gen();
-  HeapWord* old_committed_end = (HeapWord*)old->virtual_space()->committed_high_addr();
-  HeapWord* old_reserved_start = old->reserved().start();
-  HeapWord* old_reserved_end = old->reserved().end();
-  VirtualSpaceSummary old_summary(old_reserved_start, old_committed_end, old_reserved_end);
-  SpaceSummary old_space(old_reserved_start, old_committed_end, old->used_in_bytes());
+  HeapWord* old_committed_end = old->committed().end();
+  MemRegion old_reserved = old->reserved();
+  VirtualSpaceSummary old_summary(old_reserved.start(), old_committed_end, old_reserved.end());
+  SpaceSummary old_space(old_reserved.start(), old_committed_end, old->used_in_bytes());
 
   PSYoungGen* young = young_gen();
-  VirtualSpaceSummary young_summary(young->reserved().start(),
-    (HeapWord*)young->virtual_space()->committed_high_addr(), young->reserved().end());
+  MemRegion young_reserved = young->reserved();
+  VirtualSpaceSummary young_summary(young_reserved.start(),
+                                    young->committed().end(),
+                                    young_reserved.end());
 
   MutableSpace* eden = young_gen()->eden_space();
   SpaceSummary eden_space(eden->bottom(), eden->end(), eden->used_in_bytes());
@@ -839,15 +877,17 @@ static size_t calculate_free_from_free_ratio_flag(size_t live, uintx free_percen
 }
 
 size_t ParallelScavengeHeap::calculate_desired_old_gen_capacity(size_t old_gen_live_size) {
-  // If min free percent is 100%, the old-gen should always be in its max capacity
+  // If min free percent is 100%, the old-gen should stay fully committed,
+  // i.e. using all reserved size.
   if (MinHeapFreeRatio == 100) {
-    return _old_gen->max_gen_size();
+    return _old_gen->reserved_size();
   }
 
   // Using recorded data to calculate the new capacity of old-gen to avoid
   // excessive expansion but also keep footprint low
 
-  size_t promoted_estimate = _size_policy->padded_average_promoted_in_bytes();
+  size_t promoted_estimate = MIN2(_size_policy->padded_average_promoted_in_bytes(),
+                                  _young_gen->reserved_size());
   // Should have at least this free room for the next young-gc promotion.
   size_t free_size = promoted_estimate;
 
@@ -872,6 +912,14 @@ void ParallelScavengeHeap::resize_old_gen_after_full_gc() {
   size_t current_capacity = _old_gen->capacity_in_bytes();
   size_t desired_capacity = calculate_desired_old_gen_capacity(old_gen()->used_in_bytes());
 
+  // MinHeapSize constraint.
+  size_t young_gen_committed_size = young_gen()->committed_size();
+  size_t min_old_gen_size = old_gen()->min_gen_size();
+  if (young_gen_committed_size + min_old_gen_size < MinHeapSize) {
+    min_old_gen_size = MinHeapSize - young_gen_committed_size;
+  }
+  desired_capacity = MAX2(desired_capacity, min_old_gen_size);
+
   // If MinHeapFreeRatio is at its default value; shrink cautiously. Otherwise, users expect prompt shrinking.
   if (FLAG_IS_DEFAULT(MinHeapFreeRatio)) {
     if (desired_capacity < current_capacity) {
@@ -886,50 +934,264 @@ void ParallelScavengeHeap::resize_old_gen_after_full_gc() {
   _old_gen->resize(desired_capacity);
 }
 
-void ParallelScavengeHeap::resize_after_young_gc(bool is_survivor_overflowing) {
-  _young_gen->resize_after_young_gc(is_survivor_overflowing);
+void ParallelScavengeHeap::shrink_old_gen_after_young_gc(bool is_survivor_overflowing) {
+  if (is_survivor_overflowing) {
+    // Shouldn't shrink if there is an overflow.
+    return;
+  }
 
-  // Consider if should shrink old-gen
-  if (!is_survivor_overflowing) {
-    assert(old_gen()->capacity_in_bytes() >= old_gen()->min_gen_size(), "inv");
+  // MinHeapSize constraint.
+  size_t young_gen_committed_size = young_gen()->committed_size();
+  size_t min_old_gen_size = old_gen()->min_gen_size();
+  if (young_gen_committed_size + min_old_gen_size < MinHeapSize) {
+    min_old_gen_size = MinHeapSize - young_gen_committed_size;
+  }
+  assert(old_gen()->capacity_in_bytes() >= min_old_gen_size, "inv");
+  if (old_gen()->capacity_in_bytes() == min_old_gen_size) {
+    // Already minimal; can't shrink
+    return;
+  }
 
-    // Old gen min_gen_size constraint.
-    const size_t max_shrink_bytes_gen_size_constraint = old_gen()->capacity_in_bytes() - old_gen()->min_gen_size();
+  const size_t max_shrink_bytes_gen_size_constraint =
+    old_gen()->capacity_in_bytes() - min_old_gen_size;
 
-    // Per-step delta to avoid too aggressive shrinking.
-    const size_t max_shrink_bytes_per_step_constraint = SpaceAlignment;
+  // Per-step delta to avoid too aggressive shrinking.
+  const size_t max_shrink_bytes_per_step_constraint = SpaceAlignment;
 
-    // Combining the above two constraints.
-    const size_t max_shrink_bytes = MIN2(max_shrink_bytes_gen_size_constraint,
-                                         max_shrink_bytes_per_step_constraint);
+  // Combining the above two constraints.
+  const size_t max_shrink_bytes = MIN2(max_shrink_bytes_gen_size_constraint,
+                                       max_shrink_bytes_per_step_constraint);
 
-    size_t shrink_bytes = _size_policy->compute_old_gen_shrink_bytes(old_gen()->free_in_bytes(), max_shrink_bytes);
+  size_t shrink_bytes = _size_policy->compute_old_gen_shrink_bytes(old_gen()->free_in_bytes(),
+                                                                   max_shrink_bytes);
 
-    assert(old_gen()->capacity_in_bytes() >= shrink_bytes, "inv");
-    assert(old_gen()->capacity_in_bytes() - shrink_bytes >= old_gen()->min_gen_size(), "inv");
+  assert(old_gen()->capacity_in_bytes() >= shrink_bytes, "inv");
+  assert(old_gen()->capacity_in_bytes() - shrink_bytes >= old_gen()->min_gen_size(), "inv");
+  if (shrink_bytes == 0) {
+    return;
+  }
 
-    if (shrink_bytes != 0) {
-      if (MinHeapFreeRatio != 0) {
-        size_t new_capacity = old_gen()->capacity_in_bytes() - shrink_bytes;
-        size_t new_free_size = old_gen()->free_in_bytes() - shrink_bytes;
-        if ((double)new_free_size / new_capacity * 100 < MinHeapFreeRatio) {
-          // Would violate MinHeapFreeRatio
-          return;
-        }
-      }
-      old_gen()->shrink(shrink_bytes);
+  if (MinHeapFreeRatio != 0) {
+    size_t new_capacity = old_gen()->capacity_in_bytes() - shrink_bytes;
+    size_t new_free_size = old_gen()->free_in_bytes() - shrink_bytes;
+    if ((double)new_free_size / new_capacity * 100 < MinHeapFreeRatio) {
+      // Would violate MinHeapFreeRatio
+      return;
     }
   }
+
+  old_gen()->shrink(shrink_bytes);
+}
+
+void ParallelScavengeHeap::resize_young_gen_after_young_gc(bool is_survivor_overflowing) {
+  size_t eden_size = 0;
+  size_t survivor_size = 0;
+
+  // Whether old-gen can lend some space to young-gen.
+  size_t old_gen_lendable_size;
+  assert(_young_gen->reserved_size() <= MaxNewSize, "inv");
+  if (_young_gen->reserved_size() == MaxNewSize) {
+    // No headroom to expand young-gen at the expense of old-gen.
+    old_gen_lendable_size = 0;
+  } else {
+    // Gen-boundary has right-shifted. Check if we can move it back.
+    old_gen_lendable_size = _old_gen->uncommitted_size() + _old_gen->free_in_bytes();
+
+    // Reserve headroom for expected promotion into old gen.
+    size_t avg_promoted = MIN2(size_policy()->padded_average_promoted_in_bytes(),
+                               MaxNewSize);
+    old_gen_lendable_size = (old_gen_lendable_size > avg_promoted)
+                            ? old_gen_lendable_size - avg_promoted
+                            : 0;
+
+    old_gen_lendable_size = MIN2(old_gen_lendable_size,
+                                 MaxNewSize - _young_gen->reserved_size());
+    old_gen_lendable_size = align_down(old_gen_lendable_size, SpaceAlignment);
+  }
+
+  // First try resizing with the current gen-boundary
+  if (_young_gen->try_resize(is_survivor_overflowing,
+                             old_gen_lendable_size,
+                             &eden_size,
+                             &survivor_size)) {
+    return;
+  }
+
+  // The current gen-boundary can't satisfy requested eden/survivor sizes.
+  // Expand young-gen on both left and right edges.
+
+  // From-space might contain live objs, so it needs to stay in-place.
+  // Additionally, the two survivor spaces must have the same capacity,
+  // so the left-edge moves by to-capacity.
+
+  // 1. Left-edge expansion
+  // before:  |old-gen      | from  to  eden  |
+  // after:   |old-gen | to   from  eden      |
+  //                        ^ previous gen-boundary
+  {
+    const size_t delta_bytes = survivor_size;
+    assert(align_down(_old_gen->uncommitted_size() + _old_gen->free_in_bytes(), SpaceAlignment) >= delta_bytes,
+           "enough space for left-shift");
+
+    const bool is_old_gen_committed_mr_changed = delta_bytes > _old_gen->uncommitted_size();
+
+    // left-shift by delta
+    char* desired_gen_boundary = _heap_vs->gen_boundary() - delta_bytes;
+    _heap_vs->left_shift_gen_boundary(desired_gen_boundary);
+    assert(_heap_vs->gen_boundary() == desired_gen_boundary, "postcondition");
+
+    if (is_old_gen_committed_mr_changed) {
+      _old_gen->reinit_after_committed_mr_change();
+    }
+  }
+
+  // 2. Right-edge expansion
+  {
+    size_t young_gen_uncommitted_size = _young_gen->uncommitted_size();
+    if (young_gen_uncommitted_size != 0) {
+      if (!_heap_vs->expand_young_gen(young_gen_uncommitted_size)) {
+        vm_exit_out_of_memory(young_gen_uncommitted_size, OOM_MMAP_ERROR, "resize_young_gen_after_young_gc");
+      }
+      assert(_young_gen->uncommitted_size() == 0, "postcondition");
+    }
+  }
+
+  PSScavenge::reset_young_gen_reserved(_young_gen->reserved());
+
+  card_table()->left_shift_gen_boundary(_old_gen->committed(),
+                                        _young_gen->committed());
+
+  _young_gen->reinit_to_from_layout(eden_size, survivor_size);
+}
+
+void ParallelScavengeHeap::resize_after_young_gc(bool is_survivor_overflowing) {
+  // Old-gen is expanded when it's actually needed; we perform only shrinking in this context to reduce footprint.
+  shrink_old_gen_after_young_gc(is_survivor_overflowing);
+
+  resize_young_gen_after_young_gc(is_survivor_overflowing);
 }
 
 void ParallelScavengeHeap::resize_after_full_gc() {
   resize_old_gen_after_full_gc();
-  // We don't resize young-gen after full-gc because:
-  // 1. eden-size directly affects young-gc frequency (GCTimeRatio), and we
-  // don't have enough info to determine its desired size.
-  // 2. eden can contain live objs after a full-gc, which is unsafe for
-  // resizing. We will perform expansion on allocation if needed, in
-  // satisfy_failed_allocation().
+  // Young-gen was already handled by adjust_gen_boundary_after_full_gc():
+  // full-gc compacts all live objects into old-gen and leaves young-gen empty,
+  // possibly with a zero-sized reservation. We don't apply adaptive young-gen
+  // sizing here because full-gc produces no young-gc-specific
+  // measurements for choosing eden/survivor sizes. If needed, eden is expanded
+  // on allocation in satisfy_failed_allocation().
+}
+
+bool ParallelScavengeHeap::adjust_gen_boundary_after_full_gc(size_t live_bytes,
+                                                             PSPendingAllocation pending_allocation) {
+  assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
+  assert(live_bytes <= MaxHeapSize, "inv");
+
+  const size_t remaining_heap_bytes = MaxHeapSize - live_bytes;
+
+  const bool has_pending_non_tlab_allocation = pending_allocation.is_present() && !pending_allocation._is_tlab;
+  const size_t young_gen_bytes = UseAdaptiveSizePolicy ? _young_gen->reserved_size() : MaxNewSize;
+  // Use the young-gen reservation as the absolute upper bound on how much
+  // young-gen can promote.
+  size_t required_old_free_bytes = MIN2(_size_policy->padded_average_promoted_in_bytes(),
+                                        young_gen_bytes);
+  // Ignore impossible requests for boundary sizing; the allocation will fail
+  // normally after GC without unnecessarily removing young-gen.
+  if (has_pending_non_tlab_allocation &&
+      pending_allocation._word_size <= remaining_heap_bytes / HeapWordSize) {
+    // TLAB failures retry outside TLAB. Only non-TLAB requests need old-gen room here.
+    required_old_free_bytes = MAX2(required_old_free_bytes,
+                                   pending_allocation._word_size * HeapWordSize);
+  }
+
+  size_t requested_old_capacity = align_up(live_bytes + required_old_free_bytes,
+                                           SpaceAlignment);
+  size_t desired_old_capacity = clamp(requested_old_capacity,
+                                      SpaceAlignment,
+                                      MaxHeapSize);
+
+  char* const heap_low = (char*)reserved_region().start();
+  char* const heap_high = (char*)reserved_region().end();
+  char* const current_gen_boundary = _heap_vs->gen_boundary();
+  const size_t min_young_gen_size = young_gen_size_lower_bound();
+
+  if (MaxHeapSize - desired_old_capacity < min_young_gen_size) {
+    desired_old_capacity = MaxHeapSize;
+  }
+
+  char* desired_gen_boundary = heap_low + desired_old_capacity;
+  assert(desired_gen_boundary <= heap_high, "inv");
+
+  // Right-shift
+  if (desired_gen_boundary > current_gen_boundary) {
+    // Old-gen needs more reserved space for live data, promotion headroom, or a pending allocation.
+    MemRegion original_old_gen_committed = _old_gen->committed();
+    _heap_vs->right_shift_gen_boundary(desired_gen_boundary);
+    assert(_heap_vs->old_gen_committed_high_addr() == _heap_vs->young_gen_low_addr(), "inv");
+    _old_gen->reinit_after_committed_mr_change();
+    _young_gen->reinit_after_gen_boundary_change();
+    card_table()->right_shift_gen_boundary(_old_gen->committed(),
+                                           _young_gen->committed());
+    // Check newly joined old-gen have clean cards.
+    card_table()->verify_clean_cards(MemRegion{original_old_gen_committed.end(),
+                                               _old_gen->committed().end()});
+    return true;
+  }
+
+  if (desired_gen_boundary == current_gen_boundary) {
+    // No adjustment needed.
+    return false;
+  }
+
+  assert(desired_gen_boundary < current_gen_boundary, "inv");
+
+  // Left-shift. Adaptive sizing recovers from old-gen-only mode gradually;
+  // fixed sizing returns borrowed reservation up to the startup MaxNewSize.
+  const size_t young_reserved_before = _young_gen->reserved_size();
+  size_t free_bytes_in_old_gen = _old_gen->reserved_size() - desired_old_capacity;
+  assert(is_aligned(free_bytes_in_old_gen, SpaceAlignment), "inv");
+
+  size_t desired_shrink_bytes;
+  if (UseAdaptiveSizePolicy) {
+    // With a non-empty young reservation, adaptive young-GC sizing owns rebalancing.
+    if (young_reserved_before > 0) {
+      return false;
+    }
+    // Recover one eighth at a time to retain promotion headroom. If the result is
+    // smaller than the minimum young size, stay in old-only mode until enough
+    // free space accumulates.
+    desired_shrink_bytes = align_down(free_bytes_in_old_gen / 8, SpaceAlignment);
+  } else {
+    // Recover the startup reservation without allowing young gen to exceed MaxNewSize.
+    desired_shrink_bytes = free_bytes_in_old_gen;
+  }
+
+  desired_shrink_bytes = MIN2(desired_shrink_bytes, MaxNewSize - young_reserved_before);
+  if (desired_shrink_bytes == 0) {
+    // Young gen already owns its full MaxNewSize reservation or the calculated shrink
+    // request is too small; there is nothing to shift. left_shift_gen_boundary()
+    // requires a strict shift.
+    return false;
+  }
+  if (young_reserved_before + desired_shrink_bytes < min_young_gen_size) {
+    return false;
+  }
+
+  desired_gen_boundary = current_gen_boundary - desired_shrink_bytes;
+
+  size_t young_reserved_bytes = pointer_delta(heap_high, desired_gen_boundary, sizeof(char));
+  assert(young_reserved_bytes >= min_young_gen_size, "postcondition");
+
+  _heap_vs->left_shift_gen_boundary(desired_gen_boundary);
+
+  _old_gen->reinit_after_committed_mr_change();
+  _young_gen->reinit_after_gen_boundary_change();
+  card_table()->left_shift_gen_boundary(_old_gen->committed(),
+                                        _young_gen->committed());
+
+  log_debug(gc, heap)("Young generation reservation after full GC: %zuK -> %zuK",
+                      young_reserved_before / K, young_reserved_bytes / K);
+
+  return true;
 }
 
 HeapWord* ParallelScavengeHeap::allocate_loaded_archive_space(size_t size) {

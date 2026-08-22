@@ -37,14 +37,6 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-static size_t num_young_spaces() {
-  // When using NUMA, we create one MutableNUMASpace for each NUMA node
-  const size_t num_eden_spaces = UseNUMA ? os::numa_get_groups_num() : 1;
-
-  // The young generation must have room for eden + two survivors
-  return num_eden_spaces + 2;
-}
-
 static size_t num_old_spaces() {
   return 1;
 }
@@ -56,7 +48,7 @@ void ParallelArguments::initialize_alignments() {
   SpaceAlignment = ParallelScavengeHeap::default_space_alignment();
 
   if (UseLargePages) {
-    const size_t total_spaces = num_young_spaces() + num_old_spaces();
+    const size_t total_spaces = ParallelScavengeHeap::num_young_spaces() + num_old_spaces();
     const size_t page_size =  os::page_size_for_region_unaligned(MaxHeapSize, total_spaces);
     ParallelScavengeHeap::set_desired_page_size(page_size);
 
@@ -154,7 +146,7 @@ CollectedHeap* ParallelArguments::create_heap() {
 }
 
 size_t ParallelArguments::young_gen_size_lower_bound() {
-  return num_young_spaces() * SpaceAlignment;
+  return ParallelScavengeHeap::young_gen_size_lower_bound();
 }
 
 size_t ParallelArguments::old_gen_size_lower_bound() {
