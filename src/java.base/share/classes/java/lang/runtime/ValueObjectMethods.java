@@ -42,10 +42,15 @@ final class ValueObjectMethods {
     }
 
     /**
-     * Return whether two value objects of the same class are indistinguishable,
-     * as used by {@code ==} operator.
+     * Return whether two value objects of the same class are
+     * {@linkplain Object##Indistinguishability indistinguishable},
+     * as determined by {@code ==} operator.
      * The fields to compare are determined by Unsafe.getFieldMap.
      * This method is called by the JVM.
+     *
+     * The name {@code isSubstitutable} is historic, referring to the
+     * fact that indistinguishable references can be safely
+     * substituted for each other.
      *
      * @param a a value class instance, non-null
      * @param b a value class instance of the same class as {@code a}, non-null
