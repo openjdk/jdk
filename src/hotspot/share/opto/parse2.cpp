@@ -3721,26 +3721,20 @@ void Parse::do_one_bytecode() {
     maybe_add_safepoint(iter().get_dest());
     a = null();
     b = pop();
-    if (b->is_InlineType()) {
-      // Null checking a scalarized but nullable inline type. Check the null marker
-      // input instead of the oop input to avoid keeping buffer allocations alive
-      c = _gvn.transform(new CmpINode(b->as_InlineType()->get_null_marker(), zerocon(T_INT)));
-    } else {
-      if (!_gvn.type(b)->speculative_maybe_null() &&
-          !too_many_traps(Deoptimization::Reason_speculate_null_check)) {
-        inc_sp(1);
-        Node* null_ctl = top();
-        b = null_check_oop(b, &null_ctl, true, true, true);
-        assert(null_ctl->is_top(), "no null control here");
-        dec_sp(1);
-      } else if (_gvn.type(b)->speculative_always_null() &&
-                 !too_many_traps(Deoptimization::Reason_speculate_null_assert)) {
-        inc_sp(1);
-        b = null_assert(b);
-        dec_sp(1);
-      }
-      c = _gvn.transform( new CmpPNode(b, a) );
+    if (!_gvn.type(b)->speculative_maybe_null() &&
+        !too_many_traps(Deoptimization::Reason_speculate_null_check)) {
+      inc_sp(1);
+      Node* null_ctl = top();
+      b = null_check_oop(b, &null_ctl, true, true, true);
+      assert(null_ctl->is_top(), "no null control here");
+      dec_sp(1);
+    } else if (_gvn.type(b)->speculative_always_null() &&
+               !too_many_traps(Deoptimization::Reason_speculate_null_assert)) {
+      inc_sp(1);
+      b = null_assert(b);
+      dec_sp(1);
     }
+    c = _gvn.transform(new CmpPNode(b, a));
     do_ifnull(btest, c);
     break;
 

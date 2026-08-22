@@ -7073,7 +7073,16 @@ bool LibraryCallKit::inline_arraycopy() {
 
       // TODO 8251971 This is too strong
       generate_fair_guard(flat_array_test(src), slow_region);
+      if (const TypeAryPtr* src_ary_type = _gvn.type(src)->isa_aryptr(); src_ary_type != nullptr && !src_ary_type->is_flat()) {
+        const TypeAryPtr* not_flat_src = src_ary_type->cast_to_not_flat();
+        src = _gvn.transform(new CheckCastPPNode(control(), src, not_flat_src, ConstraintCastNode::DependencyType::NonFloatingNarrowing));
+      }
+
       generate_fair_guard(flat_array_test(dest), slow_region);
+      if (const TypeAryPtr* dst_ary_type = _gvn.type(dest)->isa_aryptr(); dst_ary_type != nullptr && !dst_ary_type->is_flat()) {
+        const TypeAryPtr* not_flat_dst = dst_ary_type->cast_to_not_flat();
+        dest = _gvn.transform(new CheckCastPPNode(control(), dest, not_flat_dst, ConstraintCastNode::DependencyType::NonFloatingNarrowing));
+      }
     }
 
     {

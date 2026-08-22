@@ -1142,9 +1142,16 @@ Node* CmpPNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* uncast_in1 = in(1)->uncast();
   Node* uncast_in2 = in(2)->uncast();
   if (uncast_in1->is_InlineType() && phase->type(uncast_in2)->is_zero_type()) {
-    // Null checking a scalarized but nullable inline type. Check the null marker
-    // input instead of the oop input to avoid keeping buffer allocations alive.
-    return new CmpINode(uncast_in1->as_InlineType()->get_null_marker(), phase->intcon(0));
+    if (can_reshape) {
+      // Null checking a scalarized but nullable inline type. Check the null marker input instead
+      // of the oop input to avoid keeping buffer allocations alive.
+      return new CmpINode(uncast_in1->as_InlineType()->get_null_marker(), phase->intcon(0));
+    } else {
+      // Keep the CmpP during parsing so that the parser can recognize the compare-against-null
+      // pattern
+      phase->record_for_igvn(this);
+      return nullptr;
+    }
   }
   if (uncast_in1->is_InlineType() || uncast_in2->is_InlineType()) {
     // In C2 IR, CmpP on value objects is a pointer comparison, not a value comparison.
