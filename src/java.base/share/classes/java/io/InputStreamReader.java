@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,6 +181,11 @@ public class InputStreamReader extends Reader {
      */
     public int read(char[] cbuf, int off, int len) throws IOException {
         return sd.read(cbuf, off, len);
+    }
+
+    @Override
+    public String readAllAsString() throws IOException {
+        return sd.readAllAsString();
     }
 
     /**

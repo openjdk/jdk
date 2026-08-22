@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ public class StreamDecoder extends Reader {
     private static final int MIN_BYTE_BUFFER_SIZE = 32;
     private static final int DEFAULT_BYTE_BUFFER_SIZE = 8192;
 
+    private volatile boolean decoderContainsBytes;
     private volatile boolean closed;
 
     private void ensureOpen() throws IOException {
@@ -192,6 +193,78 @@ public class StreamDecoder extends Reader {
         }
     }
 
+    private static CharBuffer ensureFree(CharBuffer cb, int minFree) {
+        return cb.remaining() < minFree ? CharBuffer.allocate(cb.position() + minFree).put(cb.flip()) : cb;
+    }
+
+    @Override
+    public String readAllAsString() throws IOException {
+        synchronized (lock) {
+            ensureOpen();
+
+            if (in == null)
+                return super.readAllAsString();
+
+            byte[] remaining = in.readAllBytes();
+
+            if (!decoderContainsBytes
+                    && decoder.malformedInputAction() == CodingErrorAction.REPLACE
+                    && decoder.unmappableCharacterAction() == CodingErrorAction.REPLACE
+                    && decoder.getClass() == cs.newDecoder().getClass())
+                return new String(remaining, cs);
+
+            int estimateSize = (haveLeftoverChar ? 1 : 0)
+                    + (int) Math.ceil((bb.remaining() + remaining.length)
+                    * decoder.maxCharsPerByte());
+            int initialSize = Math.max(estimateSize, DEFAULT_BYTE_BUFFER_SIZE);
+            CharBuffer cb = CharBuffer.allocate(initialSize);
+
+            if (haveLeftoverChar) {
+                cb.put(leftoverChar);
+                haveLeftoverChar = false;
+            }
+
+            if (bb.hasRemaining() || remaining.length > 0) {
+                while (bb.hasRemaining()) {
+                    CoderResult cr = decoder.decode(bb, cb, remaining.length == 0);
+                    if (cr.isError())
+                        cr.throwException();
+                    if (cr.isOverflow())
+                        cb = ensureFree(cb, bb.remaining());
+                    if (cr.isUnderflow())
+                        break;
+                }
+
+                ByteBuffer bbuf = !bb.hasRemaining()
+                        ? ByteBuffer.wrap(remaining)
+                        : bb.capacity() - bb.remaining() >= remaining.length
+                        ? bb.compact().put(remaining).flip()
+                        : ByteBuffer.allocate(bb.remaining() + remaining.length)
+                                .put(bb).put(remaining).flip();
+
+                while (bbuf.hasRemaining()) {
+                    CoderResult cr = decoder.decode(bbuf, cb, true);
+                    if (cr.isError())
+                        cr.throwException();
+                    if (cr.isOverflow())
+                        cb = ensureFree(cb, bbuf.remaining());
+                    if (cr.isUnderflow())
+                        break;
+                }
+
+                CoderResult cr = decoder.flush(cb);
+                while (cr.isOverflow()) {
+                    cb = ensureFree(cb, 1);
+                    cr = decoder.flush(cb);
+                }
+                if (cr.isError())
+                    cr.throwException();
+            }
+
+            return cb.flip().toString();
+        }
+    }
+
     public boolean ready() throws IOException {
         synchronized (lock) {
             ensureOpen();
@@ -283,6 +356,7 @@ public class StreamDecoder extends Reader {
                     throw new IOException("Underlying input stream returned zero bytes");
                 assert (n <= rem) : "n = " + n + ", rem = " + rem;
                 bb.position(pos + n);
+                decoderContainsBytes = true;
             }
         } finally {
             // Flip even when an IOException is thrown,

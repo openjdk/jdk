@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,16 @@
  * @key randomness
  */
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.SequenceInputStream;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -190,5 +195,75 @@ public class ReadAll {
             string = r.readAllAsString();
         }
         assertEquals(stringExpected.substring(n), string);
+
+        // InputStreamReader implementation: Called directly after construction (Fast Path)
+        try (InputStreamReader isr = new InputStreamReader(new ByteArrayInputStream(stringExpected.getBytes()))) {
+            string = isr.readAllAsString();
+        }
+        assertEquals(stringExpected, string);
+
+        // InputStreamReader implementation: Called on empty stream (Fast Path)
+        try (InputStreamReader isr = new InputStreamReader(InputStream.nullInputStream())) {
+            string = isr.readAllAsString();
+        }
+        assertEquals("", string);
+
+        // InputStreamReader implementation: Stream ends mid-character (here: last byte of three-byte UTF-8 character missing) (Fast Path)
+        try (InputStreamReader isr = new InputStreamReader(
+                new ByteArrayInputStream(new byte[] { (byte) 0xE2, (byte) 0x82 }), StandardCharsets.UTF_8)) {
+            string = isr.readAllAsString();
+        }
+        assertEquals("\uFFFD", string);
+
+        // InputStreamReader implementation: Complete character + incomplete sequence (Slow Path)
+        try (InputStreamReader isr = new InputStreamReader(
+                new ByteArrayInputStream(new byte[] { (byte) 0x41, (byte) 0xE2 }),
+                StandardCharsets.UTF_8)) {
+            assertEquals('A', isr.read());
+            string = isr.readAllAsString();
+        }
+        assertEquals("\uFFFD", string);
+
+        // InputStreamReader implementation: Two Complete characters + incomplete sequence (Slow Path)
+        try (InputStreamReader isr = new InputStreamReader(
+                new ByteArrayInputStream(new byte[] { (byte) 0x41, (byte) 0x42, (byte) 0xE2 }),
+                StandardCharsets.UTF_8)) {
+            assertEquals('A', isr.read());
+            string = isr.readAllAsString();
+        }
+        assertEquals("B\uFFFD", string);
+
+        // InputStreamReader implementation: Three Complete characters + incomplete sequence (Slow Path)
+        try (InputStreamReader isr = new InputStreamReader(
+                new ByteArrayInputStream(new byte[] { (byte) 0x41, (byte) 0x42, (byte) 0x43, (byte) 0xE2 }),
+                StandardCharsets.UTF_8)) {
+            assertEquals('A', isr.read());
+            assertEquals('B', isr.read());
+            string = isr.readAllAsString();
+        }
+        assertEquals("C\uFFFD", string);
+
+        // InputStreamReader implementation: Four Complete characters (Slow Path)
+        try (InputStreamReader isr = new InputStreamReader(
+                new ByteArrayInputStream(new byte[] { (byte) 0x41, (byte) 0x42, (byte) 0x43, (byte) 0x44 }),
+                StandardCharsets.UTF_8)) {
+            assertEquals('A', isr.read());
+            assertEquals('B', isr.read());
+            string = isr.readAllAsString();
+        }
+        assertEquals("CD", string);
+
+        // InputStreamReader implementation: 8K+ Complete characters (Slow Path)
+        int plen = PHRASE.length();
+        String p8192 = PHRASE.repeat((8192 + plen - 1) / plen);
+        try (InputStreamReader isr = new InputStreamReader(new SequenceInputStream(
+                new ByteArrayInputStream(new byte[] { (byte) 0x41, (byte) 0x42, (byte) 0x43, (byte) 0x44 }),
+                new ByteArrayInputStream(p8192.getBytes(StandardCharsets.UTF_8))),
+                StandardCharsets.UTF_8)) {
+            assertEquals('A', isr.read());
+            assertEquals('B', isr.read());
+            string = isr.readAllAsString();
+        }
+        assertEquals("CD" + p8192, string);
     }
 }
