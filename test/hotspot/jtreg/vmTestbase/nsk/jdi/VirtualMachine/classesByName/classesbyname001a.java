@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
-
 /**
  * This class is used as debugee application for the classesbyname001 JDI test.
  */
@@ -40,19 +39,14 @@ public class classesbyname001a {
     static final int FAILED = 2;
     static final int PASS_BASE = 95;
 
-
      //--------------------------------------------------   log procedures
 
-    static boolean verbose_mode = false;  // debugger may switch to true
-
     private static void log1(String message) {
-        if (verbose_mode)
-            System.err.println("**> classesbyname001a: " + message);
+        System.err.println("**> classesbyname001a: " + message);
     }
 
     private static void logErr(String message) {
-        if (verbose_mode)
-            System.err.println("!!**> classesbyname001a: " + message);
+        System.err.println("!!**> classesbyname001a: " + message);
     }
 
     //====================================================== test program
@@ -63,19 +57,12 @@ public class classesbyname001a {
 
     public static void main (String argv[]) {
 
-        for (int i=0; i<argv.length; i++) {
-            if ( argv[i].equals("-vbs") || argv[i].equals("-verbose") ) {
-                verbose_mode = true;
-                break;
-            }
-        }
         log1("debugee started!");
 
         // informing debuger of readyness
         ArgumentHandler argHandler = new ArgumentHandler(argv);
         IOPipe pipe = argHandler.createDebugeeIOPipe();
         pipe.println("ready");
-
 
         int exitCode = PASSED;
         for (int i = 0; ; i++) {
@@ -122,14 +109,11 @@ public class classesbyname001a {
                                 pipe.println("checkready");
                                 break ;
 
-
                 // not a fully qualified name
 
                 case 7:
                                 pipe.println("checkready");
                                 break ;
-
-
 
     //-------------------------------------------------    standard end section
 
@@ -149,7 +133,6 @@ public class classesbyname001a {
         System.exit(exitCode + PASS_BASE);
     }
 }
-
 
 class Class1ForCheck {
 
