@@ -26,6 +26,7 @@ import static java.util.stream.Collectors.toMap;
 import static jdk.internal.util.OperatingSystem.LINUX;
 import static jdk.internal.util.OperatingSystem.MACOS;
 import static jdk.internal.util.OperatingSystem.WINDOWS;
+import static jdk.jpackage.internal.util.OperatingSystemUtils.operatingSystemLabel;
 import static jdk.jpackage.internal.util.PListWriter.writePList;
 import static jdk.jpackage.internal.util.XmlUtils.createXml;
 import static jdk.jpackage.internal.util.XmlUtils.toXmlConsumer;
@@ -402,7 +403,9 @@ public final class ErrorTest {
             }
 
             Builder unsupportedPlatformOption(String arg, String ... otherArgs) {
-                return addArgs(arg).addArgs(otherArgs).error("ERR_UnsupportedOption", arg);
+                return addArgs(arg)
+                        .addArgs(otherArgs)
+                        .error("ERR_UnsupportedOption", arg, operatingSystemLabel(OperatingSystem.current()));
             }
 
             TestSpec create() {
@@ -1226,8 +1229,11 @@ public final class ErrorTest {
         }
 
         TestSpec toTestSpec() {
-            return value.map(v -> testSpec().unsupportedPlatformOption(name, v)).orElseGet(
-                    () -> testSpec().unsupportedPlatformOption(name)).create();
+            return value.map(v -> {
+                return testSpec().unsupportedPlatformOption(name, v);
+            }).orElseGet(() -> {
+                return testSpec().unsupportedPlatformOption(name);
+            }).create();
         }
 
         static Collection<Object[]> createTestArgs(UnsupportedPlatformOption... options) {
