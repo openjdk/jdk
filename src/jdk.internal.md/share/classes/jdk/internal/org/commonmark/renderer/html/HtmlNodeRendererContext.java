@@ -49,8 +49,8 @@ public interface HtmlNodeRendererContext {
     /**
      * Let extensions modify the HTML tag attributes.
      *
-     * @param node the node for which the attributes are applied
-     * @param tagName the HTML tag name that these attributes are for (e.g. {@code h1}, {@code pre}, {@code code}).
+     * @param node       the node for which the attributes are applied
+     * @param tagName    the HTML tag name that these attributes are for (e.g. {@code h1}, {@code pre}, {@code code}).
      * @param attributes the attributes that were calculated by the renderer
      * @return the extended attributes with added/updated/removed entries
      */
@@ -78,6 +78,11 @@ public interface HtmlNodeRendererContext {
      * @return whether HTML blocks and tags should be escaped or not
      */
     boolean shouldEscapeHtml();
+
+    /**
+     * @return whether documents that only contain a single paragraph should be rendered without the {@code <p>} tag
+     */
+    boolean shouldOmitSingleParagraphP();
 
     /**
      * @return true if the {@link UrlSanitizer} should be used.

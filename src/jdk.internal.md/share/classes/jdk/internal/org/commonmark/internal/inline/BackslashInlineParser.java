@@ -35,8 +35,9 @@ package jdk.internal.org.commonmark.internal.inline;
 import jdk.internal.org.commonmark.internal.util.Escaping;
 import jdk.internal.org.commonmark.node.HardLineBreak;
 import jdk.internal.org.commonmark.node.Text;
-import jdk.internal.org.commonmark.parser.beta.Scanner;
+import jdk.internal.org.commonmark.parser.beta.*;
 
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -62,6 +63,18 @@ public class BackslashInlineParser implements InlineContentParser {
             return ParsedInline.of(new Text(String.valueOf(next)), scanner.position());
         } else {
             return ParsedInline.of(new Text("\\"), scanner.position());
+        }
+    }
+
+    public static class Factory implements InlineContentParserFactory {
+        @Override
+        public Set<Character> getTriggerCharacters() {
+            return Set.of('\\');
+        }
+
+        @Override
+        public InlineContentParser create() {
+            return new BackslashInlineParser();
         }
     }
 }
