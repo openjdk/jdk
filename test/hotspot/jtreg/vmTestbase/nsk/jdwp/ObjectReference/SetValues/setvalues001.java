@@ -184,7 +184,7 @@ public class setvalues001 {
                 log.display("Getting tested final classID by signature:\n"
                             + "  " + TESTED_FINAL_CLASS_SIGNATURE);
                 long testedFinalClassID = debugee.getReferenceTypeID(TESTED_FINAL_CLASS_SIGNATURE);
-                log.display("  got tested final classID: " + testedClassID);
+                log.display("  got tested final classID: " + testedFinalClassID);
 
                 // query debugee for fieldIDs of tested final class fields
                 log.display("Getting fieldIDs for tested fields of the tested final class");
@@ -565,6 +565,8 @@ public class setvalues001 {
                 success = false;
             }
         }
-        log.display("Verfied using JDWP ObjectReference.Getvalues that all fields values have been correctly set");
+        if (success) {
+            log.display("Verfied using JDWP ObjectReference.Getvalues that all fields values have been correctly set");
+        }
     }
 }

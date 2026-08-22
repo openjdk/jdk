@@ -479,6 +479,8 @@ public class setvalues001 {
                 success = false;
             }
         }
-        log.display("Verfied using JDWP ClassType.Getvalues that all static fields values have been correctly set");
+        if (success) {
+            log.display("Verfied using JDWP ClassType.Getvalues that all static fields values have been correctly set");
+        }
     }
 }
