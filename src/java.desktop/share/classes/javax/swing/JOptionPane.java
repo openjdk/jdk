@@ -1520,7 +1520,7 @@ public class JOptionPane extends JComponent implements Accessible
         }
 
         // Option dialogs should be closable only
-        final JInternalFrame  iFrame = new JInternalFrame(title, false, true,
+        final JInternalFrame  iFrame = new JInternalFrame(title, false, false,
                                                            false, false);
 
         iFrame.putClientProperty("JInternalFrame.frameType", "optionDialog");
