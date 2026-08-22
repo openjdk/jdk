@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025 Alibaba Group Holding Limited. All Rights Reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,13 +46,15 @@ public class TestRedundantSafepointElimination {
 
     // Test for a top-level counted loop.
     // There should be a non-call safepoint in the loop.
+    // Use loop-variant increment (someInts0 + i) to prevent loop elimination
+    // by parallel IV replacement.
     @Test
     @IR(counts = {IRNode.SAFEPOINT, "1"},
         phase = CompilePhase.AFTER_LOOP_OPTS)
     public int testTopLevelCountedLoop() {
         int sum = 0;
         for (int i = 0; i < 100000; i++) {
-            sum += someInts0;
+            sum += someInts0 + i;
         }
         return sum;
     }
@@ -108,6 +111,8 @@ public class TestRedundantSafepointElimination {
     // There should be only one safepoint in the inner loop.
     // Before JDK-8347499, this test would fail due to C2 exiting
     // prematurely when encountering the local non-call safepoint.
+    // Use loop-variant increment (someInts1 + j) to prevent inner loop elimination
+    // by parallel IV replacement.
     @Test
     @IR(counts = {IRNode.SAFEPOINT, "1"},
         phase = CompilePhase.AFTER_LOOP_OPTS)
@@ -116,7 +121,7 @@ public class TestRedundantSafepointElimination {
         for (int i = 0; i < 100; i += someInts0) {
             empty();
             for (int j = 0; j < 1000; j++) {
-                sum += someInts1;
+                sum += someInts1 + j;
             }
         }
         return sum;
@@ -146,6 +151,8 @@ public class TestRedundantSafepointElimination {
     // Test for nested loops, where the outer loop has a local
     // non-call safepoint.
     // There should be a safepoint in both loops.
+    // Use loop-variant increment (someInts1 + j) to prevent inner loop elimination
+    // by parallel IV replacement.
     @Test
     @IR(counts = {IRNode.SAFEPOINT, "2"},
         phase = CompilePhase.AFTER_LOOP_OPTS)
@@ -153,7 +160,7 @@ public class TestRedundantSafepointElimination {
         int sum = 0;
         for (int i = 0; i < 100; i += someInts0) {
             for (int j = 0; j < 1000; j++) {
-                sum += someInts1;
+                sum += someInts1 + j;
             }
         }
         return sum;
