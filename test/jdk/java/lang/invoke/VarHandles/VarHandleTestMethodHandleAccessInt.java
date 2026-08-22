@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,9 +46,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 public class VarHandleTestMethodHandleAccessInt extends VarHandleBaseTest {
     static final int static_final_v = 0x01234567;
 
-    static int static_v;
+    static int static_v = 0x01234567;
 
-    final int final_v = 0x01234567;
+    final int final_v;
 
     int v;
 
@@ -61,6 +61,12 @@ public class VarHandleTestMethodHandleAccessInt extends VarHandleBaseTest {
     VarHandle vhStaticFinalField;
 
     VarHandle vhArray;
+
+    public VarHandleTestMethodHandleAccessInt() {
+        final_v = 0x01234567;
+        v = 0x01234567;
+        super();
+    }
 
     @BeforeAll
     public void setup() throws Exception {
