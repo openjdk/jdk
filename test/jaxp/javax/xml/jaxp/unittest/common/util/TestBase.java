@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.io.InputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.Objects;
-import java.util.regex.Pattern;
 import javax.xml.XMLConstants;
 import javax.xml.catalog.CatalogFeatures;
 import javax.xml.parsers.DocumentBuilder;
@@ -44,6 +43,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXSource;
@@ -53,8 +53,8 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
-import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
@@ -90,8 +90,8 @@ public class TestBase {
     private static final String CONFIG_FILE = "java.xml.config.file";
 
     // CATALOG Abbreviation: C
-    static final String C_FILE = CatalogFeatures.Feature.FILES.getPropertyName();
-    static final String C_RESOLVE = CatalogFeatures.Feature.RESOLVE.getPropertyName();
+    public static final String C_FILE = CatalogFeatures.Feature.FILES.getPropertyName();
+    public static final String C_RESOLVE = CatalogFeatures.Feature.RESOLVE.getPropertyName();
 
     // Xerces Property
     public static final String DISALLOW_DTD = "http://apache.org/xml/features/disallow-doctype-decl";
@@ -106,14 +106,30 @@ public class TestBase {
     public static final String SP_CATALOG = "jdk.xml.jdkcatalog.resolve";
     public static final String OVERRIDE_PARSER = "jdk.xml.overrideDefaultParser";
 
+    //System Properties corresponding to ACCESS_EXTERNAL_* properties
+    public static final String SP_ACCESS_EXTERNAL_STYLESHEET = "javax.xml.accessExternalStylesheet";
+    public static final String SP_ACCESS_EXTERNAL_DTD = "javax.xml.accessExternalDTD";
+    public static final String SP_ACCESS_EXTERNAL_SCHEMA = "javax.xml.accessExternalSchema";
+    //Values for the ACCESS_EXTERNAL_* properties
+    public static final String ACCESS_EXTERNAL_ALL = "all";
+    public static final String ACCESS_EXTERNAL_NONE = "";
+
+    // JDK 27
+    public static final String SP_ACCESS = "jdk.xml.resource.access";
+
     // DTD/CATALOG constants
     public static final String RESOLVE_CONTINUE = "continue";
     public static final String RESOLVE_IGNORE = "ignore";
     public static final String RESOLVE_STRICT = "strict";
+    public static final String RESOLVE_STRICT_NONLOCAL = "strict:non-local";
 
     public static final String DTD_ALLOW = "allow";
     public static final String DTD_IGNORE = "ignore";
     public static final String DTD_DENY = "deny";
+
+    // resource access constants
+    public static final String ACCESS_ALLOW = "*";
+    public static final String ACCESS_DENY = "";
 
     // JAXP Configuration File(JCF) location
     // DTD = deny
@@ -126,6 +142,8 @@ public class TestBase {
     public static final String CONFIG_DEFAULT = "jaxp.properties";
     public static final String CONFIG_STRICT = "jaxp-strict.properties";
     public static final String CONFIG_TEMPLATE_STRICT = "jaxp-strict.properties.template";
+    public static final String CONFIG_COMPAT = "jaxp-compat.properties";
+    public static final String CONFIG_TEMPLATE_COMPAT = "jaxp-compat.properties.template";
 
     public static final String UNKNOWN_HOST = "invalid.site.com";
 
@@ -150,6 +168,16 @@ public class TestBase {
         CATALOG0(SP_CATALOG, "ditto", Type.PROPERTY, RESOLVE_CONTINUE),
         CATALOG1(SP_CATALOG, "ditto", Type.PROPERTY, RESOLVE_IGNORE),
         CATALOG2(SP_CATALOG, "ditto", Type.PROPERTY, RESOLVE_STRICT),
+        CATALOG_NONLOCAL(SP_CATALOG, "ditto", Type.PROPERTY, RESOLVE_STRICT_NONLOCAL),
+        AED0(XMLConstants.ACCESS_EXTERNAL_DTD, SP_ACCESS_EXTERNAL_DTD, Type.PROPERTY, ACCESS_EXTERNAL_ALL),
+        AED2(XMLConstants.ACCESS_EXTERNAL_DTD, SP_ACCESS_EXTERNAL_DTD, Type.PROPERTY, ACCESS_EXTERNAL_NONE),
+        AES0(XMLConstants.ACCESS_EXTERNAL_SCHEMA, SP_ACCESS_EXTERNAL_SCHEMA, Type.PROPERTY, ACCESS_EXTERNAL_ALL),
+        AES2(XMLConstants.ACCESS_EXTERNAL_SCHEMA, SP_ACCESS_EXTERNAL_SCHEMA, Type.PROPERTY, ACCESS_EXTERNAL_NONE),
+        AEX0(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, SP_ACCESS_EXTERNAL_STYLESHEET, Type.PROPERTY, ACCESS_EXTERNAL_ALL),
+        AEX2(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, SP_ACCESS_EXTERNAL_STYLESHEET, Type.PROPERTY, ACCESS_EXTERNAL_NONE),
+
+        ACCESS0(SP_ACCESS, "ditto", Type.PROPERTY, ACCESS_ALLOW),
+        ACCESS1(SP_ACCESS, "ditto", Type.PROPERTY, ACCESS_DENY),
 
         // StAX properties
         SUPPORT_DTD(XMLInputFactory.SUPPORT_DTD, null, Type.FEATURE, "true"),
@@ -243,10 +271,21 @@ public class TestBase {
             String error) throws Exception {
         //dbf.setAttribute(CatalogFeatures.Feature.RESOLVE.getPropertyName(), "continue");
         DocumentBuilder builder = dbf.newDocumentBuilder();
+        builder.setEntityResolver((String publicId, String systemId) -> {
+            InputSource dtd = null;
+            InputStream is = null;
+            if ("http://foo.bar/dtd/test.dtd".equals(systemId)) {
+                is = getClass().getResourceAsStream("/local/store/path/test.dtd");
+            }
+            if (is != null) {
+                dtd =  new InputSource(is);
+            }
+            return dtd;
+        });
         File file = new File(getPath(TEST_SOURCE_DIR, filename));
         try {
-            Document document = builder.parse(file);
-            Assert.assertTrue(!expectError);
+            builder.parse(file);
+            processResult(expectError, error);
         } catch (Exception e) {
             e.printStackTrace();
             processError(expectError, error, e);
@@ -259,7 +298,7 @@ public class TestBase {
         File file = new File(getPath(TEST_SOURCE_DIR, filename));
         try {
             parser.parse(file, new DefaultHandler());
-            Assert.assertTrue(!expectError);
+            processResult(expectError, error);
         } catch (Exception e) {
             //e.printStackTrace();
             processError(expectError, error, e);
@@ -275,8 +314,7 @@ public class TestBase {
             XMLStreamReader streamReader = xif.createXMLStreamReader(xml, entityxml);
             String text = getText(streamReader, XMLStreamConstants.CHARACTERS);
             System.out.println("Text: [" + text.trim() + "]");
-            Assert.assertTrue(Pattern.matches(expected, text.trim()));
-            Assert.assertTrue(!expectError);
+            processResult(expectError, expected);
         } catch (Exception e) {
             e.printStackTrace();
             processError(expectError, expected, e);
@@ -289,8 +327,8 @@ public class TestBase {
         String xsd = getPath(TEST_SOURCE_DIR, filename);
         try {
             Schema schema = sf.newSchema(new StreamSource(new File(xsd)));
-            Assert.assertTrue(!expectError);
-        } catch (Exception e) {
+            processResult(expectError, expected);
+        } catch (SAXException e) {
             e.printStackTrace();
             processError(expectError, expected, e);
         }
@@ -303,8 +341,8 @@ public class TestBase {
             SAXSource xslSource = new SAXSource(new InputSource(xsl));
             xslSource.setSystemId(xsl);
             Transformer transformer = tf.newTransformer(xslSource);
-            Assert.assertTrue(!expectError);
-        } catch (Exception e) {
+            processResult(expectError, expected);
+        } catch (TransformerConfigurationException e) {
             //e.printStackTrace();
             processError(expectError, expected, e);
         }
@@ -320,7 +358,7 @@ public class TestBase {
             Transformer transformer = tf.newTransformer(xslSource);
             StringWriter sw = new StringWriter();
             transformer.transform(getSource(SourceType.STREAM, xmlSysId), new StreamResult(sw));
-            Assert.assertTrue(!expectError);
+            processResult(expectError, expected);
         } catch (Exception e) {
             processError(expectError, expected, e);
         }
@@ -333,16 +371,23 @@ public class TestBase {
             Schema schema = sf.newSchema();
             Validator validator = schema.newValidator();
             validator.validate(new StreamSource(new File(xml)));
-            Assert.assertTrue(!expectError);
+            processResult(expectError, expected);
         } catch (Exception e) {
             e.printStackTrace();
             processError(expectError, expected, e);
         }
     }
 
+    protected void processResult(boolean expectError, String expected) {
+        if (expectError) {
+            Assert.assertTrue(false, "Expected error, but processing succeeded.");
+        }
+    }
+
     protected void processError(boolean expectError, String error, Exception e)
             throws Exception {
         String str = e.getMessage();
+        String errorText = getErrorText(e);
         if (!expectError) {
             Assert.assertTrue(false, "Expected pass, but Exception is thrown " + str);
         } else {
@@ -351,9 +396,31 @@ public class TestBase {
             if (UNKNOWN_HOST.equals(error)) {
                 Assert.assertTrue((str != null) && str.equals(error));
             } else {
-                Assert.assertTrue((str != null) && str.contains(error));
+                String matched = null;
+                for (String err : error.split(",")) {
+                    String trimmed = err.trim();
+                    if (!trimmed.isEmpty() && errorText.contains(trimmed)) {
+                        matched = trimmed;
+                        break;
+                    }
+                }
+                if (matched == null) {
+                    Assert.assertTrue(false,"Missing expected error code(s): " + error);
+                }
+                Assert.assertTrue(true, "Found expected error code: " + matched);
             }
         }
+    }
+
+    private String getErrorText(Throwable t) {
+        StringBuilder sb = new StringBuilder();
+        while (t != null) {
+            if (t.getMessage() != null) {
+                sb.append(t.getMessage()).append('\n');
+            }
+            t = t.getCause();
+        }
+        return sb.toString();
     }
 
     /**
@@ -667,11 +734,15 @@ public class TestBase {
                 System.setProperty(property.spName, property.value);
                 break;
             case CONFIG_FILE:
-                System.setProperty(CONFIG_FILE, config.value);
+                if (config != null) {
+                    System.setProperty(CONFIG_FILE, config.value);
+                }
                 break;
             case CONFIG_FILE_SYSTEM:
             case CONFIG_FILE_SYSTEM_API:
-                System.setProperty(CONFIG_FILE, config.value);
+                if (config != null) {
+                    System.setProperty(CONFIG_FILE, config.value);
+                }
                 if (property != null) {
                     System.setProperty(property.spName, property.value);
                 }
@@ -714,7 +785,7 @@ public class TestBase {
         }
     }
 
-    static String getPath(String base, String file) {
+    public static String getPath(String base, String file) {
         String temp = base + file;
         if (IS_WINDOWS) {
             temp = "/" + temp;
@@ -734,6 +805,8 @@ public class TestBase {
                 } else {
                     throw new RuntimeException("Expected true but was false. ");
                 }
+            } else if (message != null && !message.isEmpty()) {
+                System.out.println("Passed: " + message);
             }
         }
 

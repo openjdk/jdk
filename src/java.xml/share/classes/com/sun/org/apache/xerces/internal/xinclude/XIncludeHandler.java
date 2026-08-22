@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -78,6 +78,7 @@ import javax.xml.catalog.CatalogResolver;
 import javax.xml.transform.Source;
 import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.JdkXmlUtils;
+import jdk.xml.internal.SecuritySupport;
 import jdk.xml.internal.XMLSecurityManager;
 import jdk.xml.internal.XMLSecurityPropertyManager;
 import org.xml.sax.InputSource;
@@ -128,7 +129,7 @@ import org.xml.sax.InputSource;
  *
  *
  * @see XIncludeNamespaceSupport
- * @LastModified: Apr 2025
+ * @LastModified: July 2026
  */
 public class XIncludeHandler
     implements XMLComponent, XMLDocumentFilter, XMLDTDFilter {
@@ -1704,6 +1705,23 @@ public class XIncludeHandler
         }
 
         if (includedSource == null) {
+            String expandedSystemId;
+            try {
+                expandedSystemId = XMLEntityManager.expandSystemId(
+                        href, fCurrentBaseURI.getExpandedSystemId(), false);
+            } catch (MalformedURIException e) {
+                reportResourceError("XMLResourceError",
+                        new Object[] { href, e.getMessage()}, e);
+                return false;
+            }
+            String accessError = SecuritySupport.checkAccess(expandedSystemId,
+                    fSecurityManager, null, JdkConstants.ACCESS_EXTERNAL_ALL);
+            if (accessError != null) {
+                reportFatalError("XMLResourceError",
+                        new Object[] { href, accessError});
+                return false;
+            }
+
             // setup an HTTPInputSource if either of the content negotation attributes were specified.
             if (accept != null || acceptLanguage != null) {
                 includedSource = createInputSource(null, href, fCurrentBaseURI.getExpandedSystemId(), accept, acceptLanguage);
