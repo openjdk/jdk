@@ -27,6 +27,11 @@
  *     into a key's ready set when the key is already in the selected-key set
  */
 
+/* @test
+ * @requires (os.family == "aix")
+ * @run junit/othervm -Djava.nio.channels.spi.SelectorProvider=sun.nio.ch.PollSelectorProvider UpdateReadyOps
+ */
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetAddress;

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2023, IBM Corp.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, IBM Corp.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,28 @@ public class Pollset {
     public static final int OFFSETOF_REVENTS = reventsOffset();
     public static final int OFFSETOF_FD      = fdOffset();
 
+    /**
+     * struct poll_ctl {
+     *     short cmd;
+     *     short events;
+     *     int   fd;
+     * }
+     */
+    public static final int SIZEOF_POLLCTL           = pollCtlSize();
+    public static final int OFFSETOF_POLLCTL_CMD     = pollCtlCmdOffset();
+    public static final int OFFSETOF_POLLCTL_EVENTS  = pollCtlEventsOffset();
+    public static final int OFFSETOF_POLLCTL_FD      = pollCtlFdOffset();
+
+    /**
+     * Writes a poll_ctl entry at the given base address + index.
+     */
+    public static void putPollCtlEntry(long base, int index, int cmd, int fd, int events) {
+        long addr = base + (long) index * SIZEOF_POLLCTL;
+        unsafe.putShort(addr + OFFSETOF_POLLCTL_CMD,    (short) cmd);
+        unsafe.putShort(addr + OFFSETOF_POLLCTL_EVENTS, (short) events);
+        unsafe.putInt  (addr + OFFSETOF_POLLCTL_FD,     fd);
+    }
+
     // opcodes
     public static final int PS_ADD     = 0x0;
     public static final int PS_MOD     = 0x1;
@@ -58,6 +80,13 @@ public class Pollset {
     public static final char PS_POLLERR  = 0x4000;
 
     public static final int PS_NO_TIMEOUT = -1;
+
+    /**
+     * Allocates a poll_ctl array to hold up to {@code count} entries.
+     */
+    public static long allocatePollCtlArray(int count) {
+        return unsafe.allocateMemory((long) count * SIZEOF_POLLCTL);
+    }
 
     /**
      * Allocates a poll array to handle up to {@code count} events.
@@ -106,17 +135,25 @@ public class Pollset {
         return (revents & PS_POLLNVAL) != 0 || (revents & PS_POLLERR) != 0;
     }
 
+    static {
+        init();
+    }
     // -- Native methods --
     public static native int pollsetCreate() throws IOException;
     public static native int pollsetCtl(int pollset, int opcode, int fd, int events);
     public static native int pollsetPoll(int pollset, long pollAddress, int numfds, int timeout)
         throws IOException;
     public static native void pollsetDestroy(int pollset);
+    public static native void pollsetBulkCtl(int pollsetFd, long pollCtlArrayAddress, int count);
     public static native void init();
     public static native int eventSize();
     public static native int eventsOffset();
     public static native int reventsOffset();
     public static native int fdOffset();
+    public static native int pollCtlSize();
+    public static native int pollCtlCmdOffset();
+    public static native int pollCtlEventsOffset();
+    public static native int pollCtlFdOffset();
     public static native void socketpair(int[] sv) throws IOException;
     public static native void interrupt(int fd) throws IOException;
     public static native void drain1(int fd) throws IOException;

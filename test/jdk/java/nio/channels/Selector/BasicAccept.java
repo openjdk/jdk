@@ -26,6 +26,12 @@
  * @library ..
  */
 
+/* @test
+ * @requires (os.family == "aix")
+ * @library ..
+ * @run junit/othervm -Djava.nio.channels.spi.SelectorProvider=sun.nio.ch.PollSelectorProvider BasicAccept
+ */
+
 import java.io.*;
 import java.net.*;
 import java.nio.*;
