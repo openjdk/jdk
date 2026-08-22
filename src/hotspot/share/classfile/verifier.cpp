@@ -733,7 +733,7 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
   assert(SignatureVerifier::is_valid_method_signature(m->signature()),
          "Invalid method signature");
 
-  // Collect the initial strict instance fields
+  // Collect the initial strict instance fields if there are any
   StackMapFrame::AssertUnsetFieldTable* strict_fields = new StackMapFrame::AssertUnsetFieldTable();
   if (m->is_object_constructor()) {
     for (AllFieldStream fs(m->method_holder()); !fs.done(); fs.next()) {
@@ -746,6 +746,10 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
         }
       }
     }
+  }
+
+  if (strict_fields->number_of_entries() == 0) {
+    strict_fields = nullptr;
   }
 
   // The stackmap table will receive a read-only deep copy of the initial strict fields since

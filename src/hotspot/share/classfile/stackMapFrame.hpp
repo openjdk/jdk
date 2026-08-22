@@ -133,7 +133,12 @@ class StackMapFrame : public ResourceObj {
                                     _max_stack(max_stack),  _flags(flags),
                                     _locals(locals), _stack(stack),
                                     _assert_unset_fields(assert_unset_fields),
-                                    _verifier(v) { }
+                                    _verifier(v) {
+    // Must have the uninitialized_this flag set to be allowed to have unset fields.
+    if ((flags & FLAG_THIS_UNINIT) != FLAG_THIS_UNINIT) {
+      _assert_unset_fields = nullptr;
+    }
+  }
 
   static StackMapFrame* copy(StackMapFrame* smf) {
     return new StackMapFrame(*smf);
@@ -163,6 +168,10 @@ class StackMapFrame : public ResourceObj {
   }
 
   static AssertUnsetFieldTable* copy_unset_fields(AssertUnsetFieldTable* unset_fields) {
+    if (unset_fields == nullptr) {
+      return nullptr;
+    }
+
     AssertUnsetFieldTable* new_table = new AssertUnsetFieldTable();
     auto copy_unset_field = [&] (const NameAndSig& key, const bool& value) {
       new_table->put(key, value);
@@ -172,11 +181,19 @@ class StackMapFrame : public ResourceObj {
   }
 
   void set_assert_unset_fields(AssertUnsetFieldTable* table) {
-    _assert_unset_fields = copy_unset_fields(table);
+    if (table == nullptr) {
+      _assert_unset_fields = nullptr;
+    } else {
+      _assert_unset_fields = copy_unset_fields(table);
+    }
   }
 
   // Called when verifying putfields to mark strict instance fields as satisfied
   bool satisfy_unset_field(Symbol* name, Symbol* signature) {
+    if (_assert_unset_fields == nullptr) {
+      return true;
+    }
+
     NameAndSig dummy_field(name, signature);
 
     if (_assert_unset_fields->contains(dummy_field)) {
@@ -188,7 +205,13 @@ class StackMapFrame : public ResourceObj {
 
   // Verify that all strict fields have been initialized
   // Strict fields must be initialized before the super constructor is called
-  bool verify_unset_fields_satisfied() {
+  bool verify_unset_fields_satisfied() const {
+    // A frame without uninitializedThis or otherwise without any strict fields
+    // will have a null unset field table.
+    if (_assert_unset_fields == nullptr) {
+      return true;
+    }
+
     bool all_satisfied = true;
     auto check_satisfied = [&] (const NameAndSig& key, const bool& value) {
       all_satisfied &= value;
@@ -199,19 +222,35 @@ class StackMapFrame : public ResourceObj {
 
   // Merge incoming unset strict fields from StackMapTable with
   // initial strict instance fields
-  AssertUnsetFieldTable* merge_unset_fields(AssertUnsetFieldTable* new_fields) {
+  static AssertUnsetFieldTable* merge_unset_fields(AssertUnsetFieldTable* initial_fields, AssertUnsetFieldTable* new_fields) {
+    if (initial_fields == nullptr) {
+      return new_fields;
+    }
+
     auto merge_satisfied = [&] (const NameAndSig& key, const bool& value) {
       if (!new_fields->contains(key)) {
         new_fields->put(key, true);
       }
     };
-    _assert_unset_fields->iterate_all(merge_satisfied);
+    initial_fields->iterate_all(merge_satisfied);
     return new_fields;
   }
 
   // Verify that strict fields are compatible between the current frame and the successor
   // Called during merging of frames
   bool verify_unset_fields_compatibility(AssertUnsetFieldTable* target_table) const {
+    // It is valid to inherit more debts, so if the current frame's unset fields
+    // list is null, any set of unset fields is compatible
+    if (_assert_unset_fields == nullptr) {
+      return true;
+    }
+
+    // The target frame is does not have uninitializedThis, meaning the unset fields must
+    // all be satisfied at this point.
+    if (target_table == nullptr) {
+      return verify_unset_fields_satisfied();
+    }
+
     bool compatible = true;
     auto is_unset = [&] (const NameAndSig& key, const bool& satisfied) {
       // Successor must have same (or more) unsatisfied debts as current frame.

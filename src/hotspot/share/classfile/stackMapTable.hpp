@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,6 +131,9 @@ class StackMapReader : StackObj {
   // Contains assert_unset_fields generated from classfile
   StackMapFrame::AssertUnsetFieldTable* _assert_unset_fields_buffer;
 
+  // Cached set of initial unset fields
+  StackMapFrame::AssertUnsetFieldTable* _initial_unset_fields;
+
   // Check if reading first entry
   bool _first;
 
@@ -140,7 +143,7 @@ class StackMapReader : StackObj {
   // Full frames need to handle this specially.
   bool _uninit_in_prev_frame_locals;
 
-  StackMapFrame* next_helper(TRAPS);
+  StackMapFrame* next_helper(bool& parsed_early_larval, TRAPS);
   void check_offset(StackMapFrame* frame);
   void check_size(TRAPS);
   int32_t chop(VerificationType* locals, int32_t length, int32_t chops);
@@ -190,6 +193,7 @@ class StackMapReader : StackObj {
 
   StackMapFrame* next(TRAPS);
   void check_end(TRAPS);
+  void check_unset_fields_allowed(u1 flags);
 };
 
 #endif // SHARE_CLASSFILE_STACKMAPTABLE_HPP
