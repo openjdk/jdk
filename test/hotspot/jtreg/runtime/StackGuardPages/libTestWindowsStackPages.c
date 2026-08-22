@@ -21,29 +21,18 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8390002
- * @summary Verifies that on Windows, there is are three yellow stack pages,
- *          since Windows requires an additional yellow stack page for the
- *          OS-managed stack-growth guard page
- * @requires os.family == "windows"
- * @library /test/lib
- * @run driver TestWindowsStackYellowPages
- */
+#include <jni.h>
+#include <windows.h>
 
-import jdk.test.lib.process.ProcessTools;
-
-public class TestWindowsStackYellowPages {
-    private static final String FLAG = "StackYellowPages";
-
-    public static void main(String[] args) throws Exception {
-        ProcessTools.executeTestJava("-XX:+PrintFlagsFinal", "-version")
-                    .shouldMatch(FLAG + "[ ]+=[ ]+3")
-                    .shouldHaveExitValue(0);
-
-        ProcessTools.executeTestJava("-XX:" + FLAG + "=2", "-version")
-                    .shouldContain(FLAG + "=2 is outside the allowed range")
-                    .shouldNotHaveExitValue(0);
+JNIEXPORT jlong JNICALL
+Java_TestWindowsStackPages_getStackGuarantee(JNIEnv* env, jclass cls) {
+    ULONG stack_guarantee = 0;
+    if (SetThreadStackGuarantee(&stack_guarantee) == 0) {
+        jclass exception = (*env)->FindClass(env, "java/lang/RuntimeException");
+        if (exception != NULL) {
+            (*env)->ThrowNew(env, exception, "SetThreadStackGuarantee query failed");
+        }
+        return 0;
     }
+    return (jlong)stack_guarantee;
 }

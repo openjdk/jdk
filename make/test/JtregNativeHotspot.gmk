@@ -91,7 +91,8 @@ ifeq ($(call isTargetOs, windows), true)
 else
   HOTSPOT_JTREG_EXECUTABLES_JDK_LIBS_exeGetCreatedJavaVMs := java.base:libjvm
 
-  HOTSPOT_JTREG_EXCLUDE += libNativeException.c exeGetProcessorInfo.c
+  HOTSPOT_JTREG_EXCLUDE += libNativeException.c exeGetProcessorInfo.c \
+      libTestWindowsStackPages.c
 endif
 
 ################################################################################

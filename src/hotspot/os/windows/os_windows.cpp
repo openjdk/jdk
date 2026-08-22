@@ -3984,6 +3984,26 @@ bool os::pd_release_memory(char* addr, size_t bytes) {
 }
 
 bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
+  // `SetThreadStackGuarantee()` specifies the minimum amount of stack that
+  // remains available when Windows raises `EXCEPTION_STACK_OVERFLOW`.  HotSpot
+  // uses the yellow and reserved zones to handle recoverable stack overflows,
+  // so their combined size decides the argument to `SetThreadStackGuarantee().
+  // The red zone is used only for unrecoverable overflows and is therefore
+  // excluded, although it remains part of the total stack guard-zone size.
+  //
+  // One page of the yellow and reserved zones is the guard page whose access
+  // triggers the stack overflow exception.  That page is not part of the stack
+  // that is available to handle the exception, so we request one page less than
+  // the combined yellow and reserved zone size.
+  const size_t requested = StackOverflow::stack_yellow_reserved_zone_size()
+                           - os::vm_page_size();
+  ULONG ulong_requested = checked_cast<ULONG>(requested);
+
+  if (SetThreadStackGuarantee(&ulong_requested) == 0) {
+    log_warning(os, thread)("Failed to set thread stack guarantee to %zu bytes "
+                            "(error %lu)", requested, GetLastError());
+  }
+
   return os::commit_memory(addr, size, !ExecMem);
 }
 
