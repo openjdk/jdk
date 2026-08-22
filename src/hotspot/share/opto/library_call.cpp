@@ -75,6 +75,8 @@
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+#include <initializer_list>
+
 //---------------------------make_vm_intrinsic----------------------------
 CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
   vmIntrinsicID id = m->intrinsic_id();
@@ -532,8 +534,14 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_copyOfRange:              return inline_array_copyOf(true);
   case vmIntrinsics::_equalsB:                  return inline_array_equals(StrIntrinsicNode::LL);
   case vmIntrinsics::_equalsC:                  return inline_array_equals(StrIntrinsicNode::UU);
-  case vmIntrinsics::_Preconditions_checkIndex: return inline_preconditions_checkIndex(T_INT);
-  case vmIntrinsics::_Preconditions_checkLongIndex: return inline_preconditions_checkIndex(T_LONG);
+
+  case vmIntrinsics::_Preconditions_checkIndex:             return inline_preconditions_checkIndex(T_INT);
+  case vmIntrinsics::_Preconditions_checkLongIndex:         return inline_preconditions_checkIndex(T_LONG);
+  case vmIntrinsics::_Preconditions_checkFromToIndex:       return inline_preconditions_checkFromToIndex(T_INT);
+  case vmIntrinsics::_Preconditions_checkLongFromToIndex:   return inline_preconditions_checkFromToIndex(T_LONG);
+  case vmIntrinsics::_Preconditions_checkFromIndexSize:     return inline_preconditions_checkFromIndexSize(T_INT);
+  case vmIntrinsics::_Preconditions_checkLongFromIndexSize: return inline_preconditions_checkFromIndexSize(T_LONG);
+
   case vmIntrinsics::_clone:                    return inline_native_clone(intrinsic()->is_virtual());
 
   case vmIntrinsics::_allocateUninitializedArray: return inline_unsafe_newArray(true);
@@ -1192,66 +1200,263 @@ bool LibraryCallKit::inline_countPositives() {
   return true;
 }
 
+// Helper function for inserting an uncommon trap for non-negative (>= 0) checks for intrinsic arguments. Returns a
+// casted target node with improved lower bond, or nullptr if the check is known to always fail at compile time and the
+// caller should stop inlining.
+Node* insert_non_negative_check(LibraryCallKit& kit, Node* target, BoolTest::mask mask, BasicType bt) {
+  assert(mask == BoolTest::gt || mask == BoolTest::ge, "");
+  PhaseGVN& gvn = kit.gvn();
+
+  Node* cmp = gvn.transform(CmpNode::make(target, kit.integercon(0, bt), bt));
+  Node* bol = gvn.transform(new BoolNode(cmp, mask));
+
+  // Branch to slow path
+  {
+    BuildCutout unless(&kit, bol, PROB_MAX);
+    kit.uncommon_trap(Deoptimization::Reason_intrinsic,
+                  Deoptimization::Action_make_not_entrant);
+  }
+
+  if (kit.stopped()) {
+    // Non-negative is known to always fail during compilation and the IR graph so far constructed is good so return
+    // success
+    return nullptr;
+  }
+
+  // target is now known positive, add a cast node to make this explicit
+  jlong upper_bound = gvn.type(target)->is_integer(bt)->hi_as_long();
+
+  Node* casted = ConstraintCastNode::make_cast_for_basic_type(
+      kit.control(),
+      target,
+      TypeInteger::make(mask == BoolTest::ge ? 0 : 1, upper_bound, Type::WidenMax, bt),
+      ConstraintCastNode::DependencyType::FloatingNarrowing, bt);
+  return gvn.transform(casted);
+}
+
+// Helper function for inserting an unsigned range check: lhs u< rhs. Uses strict less-than (not <=)
+// because range check elimination only recognizes BoolTest::lt comparisons. Callers that need a <=
+// semantic should pre-transform the bound (e.g., check lhs u< rhs+1 instead of lhs u<= rhs).
+// Returns a casted lhs node with improved upper bound if can be deduced from rhs, or nullptr if
+// the check is known to always fail at compile time and the caller should stop inlining.
+// Requires rhs known to be a signed positive.
+Node* insert_unsigned_range_check(LibraryCallKit& kit, Node* lhs, Node* rhs, BasicType bt) {
+  PhaseGVN& gvn = kit.gvn();
+
+  Node* rc_cmp = gvn.transform(CmpNode::make(lhs, rhs, bt, true));
+  Node* rc_bool = gvn.transform(new BoolNode(rc_cmp, BoolTest::lt));
+  RangeCheckNode* rc = new RangeCheckNode(kit.control(), rc_bool, PROB_MAX, COUNT_UNKNOWN);
+  gvn.set_type(rc, rc->Value(&gvn));
+  if (!rc_bool->is_Con()) {
+    kit.record_for_igvn(rc);
+  }
+
+  kit.set_control(gvn.transform(new IfTrueNode(rc)));
+
+  // Branch to slow path
+  {
+    PreserveJVMState pjvms(&kit);
+    kit.set_control(gvn.transform(new IfFalseNode(rc)));
+    kit.uncommon_trap(Deoptimization::Reason_range_check,
+                  Deoptimization::Action_make_not_entrant);
+  }
+
+  if (kit.stopped()) {
+    // Range check is known to always fail during compilation and the IR graph so far constructed is good so return
+    // success
+    return nullptr;
+  }
+
+  // 'lhs' is now known to be u< 'rhs', so cast its type to be more specific.
+  jlong lo_lhs = 0; // implied from unsigned comparisons
+  jlong hi_rhs = gvn.type(rhs)->is_integer(bt)->hi_as_long();
+  assert(lo_lhs <= hi_rhs, "");
+
+  Node* result = ConstraintCastNode::make_cast_for_basic_type(
+      kit.control(), lhs, TypeInteger::make(lo_lhs, hi_rhs, Type::WidenMax, bt),
+        ConstraintCastNode::DependencyType::FloatingNarrowing, bt);
+  return gvn.transform(result);
+}
+
+// checkIndex(index, length): !(index < 0 || index >= length)
+//                         => index >= 0 && index < length
 bool LibraryCallKit::inline_preconditions_checkIndex(BasicType bt) {
+  // (IILjava/util/function/BiFunction;)I]: (0: index),   (1: length),   (3: biFunction)
+  // (JJLjava/util/function/BiFunction;)J]: (0-1: index), (2-3: length), (6: biFunction)
   Node* index = argument(0);
   Node* length = bt == T_INT ? argument(1) : argument(2);
+
   if (too_many_traps(Deoptimization::Reason_intrinsic) || too_many_traps(Deoptimization::Reason_range_check)) {
     return false;
   }
 
-  // check that length is positive
-  Node* len_pos_cmp = _gvn.transform(CmpNode::make(length, integercon(0, bt), bt));
-  Node* len_pos_bol = _gvn.transform(new BoolNode(len_pos_cmp, BoolTest::ge));
-
-  {
-    BuildCutout unless(this, len_pos_bol, PROB_MAX);
-    uncommon_trap(Deoptimization::Reason_intrinsic,
-                  Deoptimization::Action_make_not_entrant);
-  }
-
-  if (stopped()) {
-    // Length is known to be always negative during compilation and the IR graph so far constructed is good so return success
+  // Check that length is positive
+  Node* casted_length = insert_non_negative_check(*this, length, BoolTest::ge, bt);
+  if (casted_length == nullptr) {
+    // Length is known to be always negative during compilation and the IR graph so far constructed is good so return
+    // success
     return true;
   }
-
-  // length is now known positive, add a cast node to make this explicit
-  jlong upper_bound = _gvn.type(length)->is_integer(bt)->hi_as_long();
-  Node* casted_length = ConstraintCastNode::make_cast_for_basic_type(
-      control(), length, TypeInteger::make(0, upper_bound, Type::WidenMax, bt),
-      ConstraintCastNode::DependencyType::FloatingNarrowing, bt);
-  casted_length = _gvn.transform(casted_length);
-  replace_in_map(length, casted_length);
-  length = casted_length;
 
   // Use an unsigned comparison for the range check itself
-  Node* rc_cmp = _gvn.transform(CmpNode::make(index, length, bt, true));
-  BoolTest::mask btest = BoolTest::lt;
-  Node* rc_bool = _gvn.transform(new BoolNode(rc_cmp, btest));
-  RangeCheckNode* rc = new RangeCheckNode(control(), rc_bool, PROB_MAX, COUNT_UNKNOWN);
-  _gvn.set_type(rc, rc->Value(&_gvn));
-  if (!rc_bool->is_Con()) {
-    record_for_igvn(rc);
-  }
-  set_control(_gvn.transform(new IfTrueNode(rc)));
-  {
-    PreserveJVMState pjvms(this);
-    set_control(_gvn.transform(new IfFalseNode(rc)));
-    uncommon_trap(Deoptimization::Reason_range_check,
-                  Deoptimization::Action_make_not_entrant);
-  }
-
-  if (stopped()) {
-    // Range check is known to always fail during compilation and the IR graph so far constructed is good so return success
+  Node* casted_index = insert_unsigned_range_check(*this, index, casted_length, bt);
+  if (casted_index == nullptr) {
+    // Range check is known to always fail during compilation and the IR graph so far constructed is good so return
+    // success
     return true;
   }
 
-  // index is now known to be >= 0 and < length, cast it
-  Node* result = ConstraintCastNode::make_cast_for_basic_type(
-      control(), index, TypeInteger::make(0, upper_bound, Type::WidenMax, bt),
-      ConstraintCastNode::DependencyType::FloatingNarrowing, bt);
-  result = _gvn.transform(result);
-  set_result(result);
-  replace_in_map(index, result);
+  replace_in_map(length, casted_length);
+  replace_in_map(index, casted_index);
+
+  set_result(casted_index);
+  return true;
+}
+
+// checkFromIndexSize(from, size, length): !((length | from | size) < 0 || size > length - from)
+//                                      => from >= 0 && size >= 0 && from + size <= length
+//                                      => size >= 0 && from u< length + 1 && (from + size) u<= length
+//
+// In total, we have 4 checks: 2 non-negative guards + 2 range checks
+//    1) size        >=  0            (non-negative guard)
+//    2) length      >=  0            (non-negative guard)
+//    3) from        u<= length       (range check, RCE-hoistable)
+//    4) from + size u<= length       (range check, RCE-hoistable)
+//
+// Although `from u<= length` is logically redundant (implied by `size >= 0` and `from + size <= length`),
+// encoding `from >= 0` as a range check against loop-invariant `length` allows RCE to hoist it.
+// Therefore, this 4-check approach is preferred over the more apparent 3-check alternative.
+//
+// Additionally, due to current RCE limitation on only recognizing strict < (not <=), we workaround
+// this issue by transforming `a u<= b` to `a u< b+1`. Therefore, the updated checks are
+//    1) size        >=  0            (non-negative guard)
+//    2) length + 1  >   0            (non-negative guard)
+//    3) from        u< length + 1    (range check, RCE-hoistable)
+//    4) from + size u< length + 1    (range check, RCE-hoistable)
+//
+// This introduces a limitation where a is max_jint or max_jlong: overflow to min_jint or min_jlong
+// will cause guard to de-opt. Falling back to bytecode is acceptable since `lengths = MAX_VALUE` is
+// extremely rare in practice.
+bool LibraryCallKit::inline_preconditions_checkFromIndexSize(BasicType bt) {
+  assert(bt == T_INT || bt == T_LONG, "");
+
+  if (too_many_traps(Deoptimization::Reason_intrinsic) || too_many_traps(Deoptimization::Reason_range_check)) {
+    return false;
+  }
+
+  // (IIILjava/util/function/BiFunction;)I]: (0: from),   (1: size),   (2: length),   (3: biFunction)
+  // (JJJLjava/util/function/BiFunction;)J]: (0-1: from), (2-3: size), (4-5: length), (6: biFunction)
+  Node* from = argument(0);
+  Node* size = bt == T_INT ? argument(1) : argument(2);
+  Node* length = bt == T_INT ? argument(2) : argument(4);
+
+  // 1) size >= 0 — non-negative check (loop-invariant, computed once)
+  Node* casted_size = insert_non_negative_check(*this, size, BoolTest::ge, bt);
+
+  // 2) length + 1 > 0 — guard ensuring length >= 0 and producing [1, MAX] type for RCE.
+  // FIXME: RCE only recognizes patterns with strict <. We implement <= by incrementing RHS. This
+  //        will cause type widening / runtime overflow when length is max_jint or max_jlong. This
+  //        is caught by next non-negative check and will cause de-opt. This is acceptable since it
+  //        rarely happens and de-opt still produces correct result.
+  Node* length_plus_one = _gvn.transform(AddNode::make(length, _gvn.integercon(1, bt), bt));
+  Node* casted_length_plus_one = insert_non_negative_check(*this, length_plus_one, BoolTest::gt, bt);
+
+  if (stopped()) {
+    return true;
+  }
+
+  // 3) from u< length + 1 — range check (RCE-hoistable, encodes from >= 0 && from <= length)
+  Node* casted_from = insert_unsigned_range_check(*this, from, casted_length_plus_one, bt);
+  if (casted_from == nullptr) {
+    return true;
+  }
+
+  // 4) (from + size) u< length + 1 — range check (RCE-hoistable, encodes from + size <= length)
+  Node* from_plus_size = _gvn.transform(AddNode::make(from, size, bt));
+  Node* casted_from_plus_size = insert_unsigned_range_check(*this, from_plus_size, casted_length_plus_one, bt);
+  if (casted_from_plus_size == nullptr) {
+    return true;
+  }
+
+  replace_in_map(from, casted_from);
+  replace_in_map(size, casted_size);
+
+  set_result(casted_from);
+  return true;
+}
+
+// checkFromToIndex(from, to, length): !(from < 0 || from > to || to > length)
+//                                  => from >= 0 && from <= to && to <= length
+//                                  => from u< length + 1 && (to - from) u< length + 1 && to u< length + 1
+//
+// In total, we have 4 checks:
+//     1) length     >=  0            (non-negative guard)
+//     2) from      u<= length        (range check, RCE-hoistable)
+//     3) to - from u<= length        (range check, RCE-hoistable)
+//     4) to        u<= length        (range check, RCE-hoistable)
+//
+// Similar to checkFromIndexSize(), `from u<= length` is logically redundant (implied by `to - from >= 0`
+// and `to <= length`), but encoding `from >= 0` as a range check against the likely loop-invariant
+// `length` allows RCE to hoist it. Similarly `(to - from) u< length + 1` is redundant in its bound,
+// but encodes `to - from >= 0`.
+// Therefore, this 4-check approach is preferred over the more apparent 3-check alternative.
+//
+// As explained in inline_preconditions_checkFromIndexSize(), the limitation on RCE forces us to
+// transform above checks to:
+//     1) length + 1  >  0            (non-negative guard)
+//     2) from       u< length + 1    (range check, RCE-hoistable)
+//     3) to - from  u< length + 1    (range check, RCE-hoistable)
+//     4) to         u< length + 1    (range check, RCE-hoistable)
+//
+// `length` being max_jint or max_jlong will also cause de-opt, but it rarely happens in practice.
+bool LibraryCallKit::inline_preconditions_checkFromToIndex(BasicType bt) {
+  assert(bt == T_INT || bt == T_LONG, "");
+
+  if (too_many_traps(Deoptimization::Reason_intrinsic) || too_many_traps(Deoptimization::Reason_range_check)) {
+    return false;
+  }
+
+  // (IIILjava/util/function/BiFunction;)I]: (0: from),   (1: to),   (2: length),   (3: biFunction)
+  // (JJJLjava/util/function/BiFunction;)J]: (0-1: from), (2-3: to), (4-5: length), (6: biFunction)
+  Node* from = argument(0);
+  Node* to = bt == T_INT ? argument(1) : argument(2);
+  Node* length = bt == T_INT ? argument(2) : argument(4);
+
+  // 1) length + 1 > 0 — guard ensuring length >= 0 and producing [1, MAX] type for RCE.
+  // FIXME: RCE only recognizes patterns with strict <. We implement <= by incrementing RHS. This
+  //        will cause type widening / runtime overflow when length is max_jint or max_jlong. This
+  //        is caught by next non-negative check and will cause de-opt. This is acceptable since it
+  //        rarely happens and de-opt still produces correct result.
+  Node* length_plus_one = _gvn.transform(AddNode::make(length, _gvn.integercon(1, bt), bt));
+  Node* casted_length_plus_one = insert_non_negative_check(*this, length_plus_one, BoolTest::gt, bt);
+
+  if (stopped()) {
+    return true;
+  }
+
+  // 2) from u< length + 1 — range check (RCE-hoistable, encodes from >= 0 && from <= length)
+  Node* casted_from = insert_unsigned_range_check(*this, from, casted_length_plus_one, bt);
+  if (casted_from == nullptr) {
+    return true;
+  }
+
+  // 3) (to - from) u< length + 1 — range check (RCE-hoistable, encodes from <= to)
+  Node* subtracted_size = _gvn.transform(SubNode::make(to, from, bt));
+  insert_unsigned_range_check(*this, subtracted_size, casted_length_plus_one, bt);
+  if (stopped()) {
+    return true;
+  }
+
+  // 4) to u< length + 1 — range check (RCE-hoistable, encodes to <= length)
+  Node* casted_to = insert_unsigned_range_check(*this, to, casted_length_plus_one, bt);
+  if (casted_to == nullptr) {
+    return true;
+  }
+
+  replace_in_map(from, casted_from);
+  replace_in_map(to, casted_to);
+
+  set_result(casted_from);
   return true;
 }
 
