@@ -952,6 +952,10 @@ JvmtiEnv::SuspendThread(jthread thread) {
 
     // Do not use MountUnmountDisabler in context of self suspend to avoid deadlocks.
     if (java_thread != current) {
+      bool is_virtual = thread_oop != nullptr && thread_oop->is_a(vmClasses::BaseVirtualThread_klass());
+      // Allow other VTs to progress by explicitly releasing the transition disabler.
+      disabler.reenable_all_except(current, is_virtual ? thread_oop : nullptr);
+
       err = suspend_thread(thread_oop, java_thread, /* single_suspend */ true);
       return err;
     }
