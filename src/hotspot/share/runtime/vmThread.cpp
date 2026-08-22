@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -378,7 +378,7 @@ void VMThread::inner_execute(VM_Operation* op) {
   assert(Thread::current()->is_VM_thread(), "Must be the VM thread");
 
   VM_Operation* prev_vm_operation = nullptr;
-  if (_cur_vm_operation != nullptr) {
+  if (_cur_vm_operation != nullptr && !Thread::is_revived()) {
     // Check that the VM operation allows nested VM operation.
     // This is normally not the case, e.g., the compiler
     // does not allow nested scavenges or compiles.
