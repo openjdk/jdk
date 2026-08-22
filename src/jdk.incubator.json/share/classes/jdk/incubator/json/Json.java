@@ -1,0 +1,133 @@
+/*
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+package jdk.incubator.json;
+
+import java.util.Objects;
+
+import jdk.incubator.json.impl.JsonParser;
+import jdk.incubator.json.impl.JsonGenerator;
+
+/**
+ * This class provides static methods for parsing and generating JSON texts.
+ *
+ * <p>
+ * {@link #parse(String)} and {@link #parse(char[])} produce a {@code JsonValue}
+ * by parsing data adhering to the JSON syntax defined in RFC 8259.
+ * {@snippet lang = java:
+ * JsonValue root = Json.parse(jsonText);
+ * }
+ * Successful parsing guarantees there are no syntax errors. Unsuccessful
+ * parsing throws a {@link JsonParseException}. Note that duplicate names in
+ * a {@code JsonObject} also result in this exception.
+ * <p>
+ * {@link #toDisplayString(JsonValue, String)} produces a
+ * JSON text representation of the given {@code JsonValue} suitable for display.
+ *
+ * @spec https://datatracker.ietf.org/doc/html/rfc8259 RFC 8259: The JavaScript
+ *      Object Notation (JSON) Data Interchange Format
+ * @since 28
+ */
+public final class Json {
+
+    /**
+     * Parses and creates a {@code JsonValue} from the given JSON text.
+     * If parsing succeeds, it guarantees that the input text conforms to
+     * the JSON syntax. If the text contains any JSON object that has
+     * duplicate names, a {@code JsonParseException} is thrown.
+     * <p>
+     * {@code JsonObject}s preserve the order of members in the input JSON
+     * text.
+     *
+     * @implNote {@code JsonValue}s created by this method may produce their
+     * underlying value representation lazily.
+     *
+     * @param in the input JSON text as {@code String}. Non-null.
+     * @throws JsonParseException if the input JSON text does not conform
+     *      to the JSON text format or a JSON object containing
+     *      duplicate names is encountered.
+     * @throws NullPointerException if {@code in} is {@code null}
+     * @return the parsed {@code JsonValue}
+     */
+    public static JsonValue parse(String in) {
+        Objects.requireNonNull(in);
+        return new JsonParser(in.toCharArray()).parseRoot();
+    }
+
+    /**
+     * Parses and creates a {@code JsonValue} from the given JSON text.
+     * If parsing succeeds, it guarantees that the input text conforms to
+     * the JSON syntax. If the text contains any JSON object that has
+     * duplicate names, a {@code JsonParseException} is thrown. After parsing,
+     * changes to the input array have no effect on the returned {@code JsonValue}.
+     * <p>
+     * {@code JsonObject}s preserve the order of their members declared in and parsed from
+     * the JSON text.
+     *
+     * @implNote {@code JsonValue}s created by this method may produce their
+     * underlying value representation lazily.
+     *
+     * @param in the input JSON text as {@code char[]}. Non-null.
+     * @throws JsonParseException if the input JSON text does not conform
+     *      to the JSON text format or a JSON object containing
+     *      duplicate names is encountered.
+     * @throws NullPointerException if {@code in} is {@code null}
+     * @return the parsed {@code JsonValue}
+     */
+    public static JsonValue parse(char[] in) {
+        Objects.requireNonNull(in);
+        // Defensive copy on input. Ensure source is immutable.
+        return new JsonParser(in.clone()).parseRoot();
+    }
+
+    /**
+     * {@return the String representation of the given {@code JsonValue} that conforms
+     * to the JSON syntax} As opposed to the compact output returned by {@link
+     * JsonValue#toString()}, this method returns a JSON string that is better
+     * suited for display. The {@code indent} parameter specifies the indentation
+     * string used for each line and may contain only JSON insignificant whitespace
+     * characters: space ({@code ' '}), horizontal tab ({@code '\t'}), line feed
+     * ({@code '\n'}), or carriage return ({@code '\r'}).
+     *
+     * @param value the {@code JsonValue} to create the display string from. Non-null.
+     * @param indent the {@code String} for the indentation. Non-null.
+     * @throws IllegalArgumentException if {@code indent} contains characters other
+     *      than insignificant whitespace characters.
+     * @throws NullPointerException if {@code value} or {@code indent} is {@code null}
+     * @see JsonValue#toString()
+     */
+    public static String toDisplayString(JsonValue value, String indent) {
+        Objects.requireNonNull(value);
+        Objects.requireNonNull(indent);
+        if (!indent.chars().allMatch(c ->
+            c == ' ' || c == '\t' || c == '\n' || c == '\r')) {
+            throw new IllegalArgumentException("indent contains non-insignificant" +
+                " whitespace: " + indent);
+        }
+        return JsonGenerator.toDisplayString(value, indent);
+    }
+
+    // no instantiation is allowed for this class
+    private Json() {}
+}
