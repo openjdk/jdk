@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,6 @@ D3DPipelineManager *D3DPipelineManager::pMgr = NULL;
 D3DPipelineManager * D3DPipelineManager::CreateInstance(void)
 {
     if (!IsD3DEnabled() ||
-        FAILED((D3DPipelineManager::CheckOSVersion())) ||
         FAILED((D3DPipelineManager::GDICheckForBadHardware())))
     {
         return NULL;
@@ -319,31 +318,6 @@ HRESULT D3DPipelineManager::InitAdapters()
 
 // static
 HRESULT
-D3DPipelineManager::CheckOSVersion()
-{
-    // require Windows XP or newer client-class OS
-    if (IS_WINVER_ATLEAST(5, 1) &&
-        !D3DPPLM_OsVersionMatches(OS_WINSERV_2008R2|OS_WINSERV_2008|
-                                  OS_WINSERV_2003))
-    {
-        J2dTraceLn(J2D_TRACE_INFO,
-                   "D3DPPLM::CheckOSVersion: Windows XP or newer client-classs"\
-                   " OS detected, passed");
-        return S_OK;
-    }
-    J2dRlsTraceLn(J2D_TRACE_ERROR,
-                  "D3DPPLM::CheckOSVersion: Windows 2000 or earlier (or a "\
-                  "server) OS detected, failed");
-    if (bNoHwCheck) {
-        J2dRlsTraceLn(J2D_TRACE_WARNING,
-                      "  OS check overridden via J2D_D3D_NO_HWCHECK");
-        return S_OK;
-    }
-    return E_FAIL;
-}
-
-// static
-HRESULT
 D3DPipelineManager::GDICheckForBadHardware()
 {
     DISPLAY_DEVICE dd;
@@ -414,55 +388,35 @@ BOOL D3DPPLM_OsVersionMatches(USHORT osInfo) {
         bVersOk = GetVersionEx((OSVERSIONINFO *) &osvi);
 
         J2dRlsTrace(J2D_TRACE_INFO, "[I] OS Version = ");
-        if (bVersOk && osvi.dwPlatformId == VER_PLATFORM_WIN32_NT &&
-            osvi.dwMajorVersion > 4)
-        {
-            if (osvi.dwMajorVersion >= 6 && osvi.dwMinorVersion == 0) {
+        if (bVersOk) {
+            if (osvi.dwMajorVersion == 10 && osvi.dwMinorVersion == 0) {
                 if (osvi.wProductType == VER_NT_WORKSTATION) {
-                    J2dRlsTrace(J2D_TRACE_INFO, "OS_VISTA\n");
-                    currentOS = OS_VISTA;
+                    J2dRlsTrace(J2D_TRACE_INFO, "OS_WINDOWS10_11 or newer\n");
+                    currentOS = OS_WINDOWS10_11;
                 } else {
-                    J2dRlsTrace(J2D_TRACE_INFO, "OS_WINSERV_2008\n");
-                    currentOS = OS_WINSERV_2008;
-                }
-            } else if (osvi.dwMajorVersion >= 6 && osvi.dwMinorVersion >= 1) {
-                if (osvi.wProductType == VER_NT_WORKSTATION) {
-                    J2dRlsTrace(J2D_TRACE_INFO, "OS_WINDOWS7 or newer\n");
-                    currentOS = OS_WINDOWS7;
-                } else {
-                    J2dRlsTrace(J2D_TRACE_INFO, "OS_WINSERV_2008R2 or newer\n");
-                    currentOS = OS_WINSERV_2008R2;
-                }
-            } else if (osvi.dwMajorVersion == 5 && osvi.dwMinorVersion == 2) {
-                if (osvi.wProductType == VER_NT_WORKSTATION) {
-                    J2dRlsTrace(J2D_TRACE_INFO, "OS_WINXP_64\n");
-                    currentOS = OS_WINXP_64;
-                } else {
-                    J2dRlsTrace(J2D_TRACE_INFO, "OS_WINSERV_2003\n");
-                    currentOS = OS_WINSERV_2003;
-                }
-            } else if (osvi.dwMajorVersion == 5 && osvi.dwMinorVersion == 1) {
-                J2dRlsTrace(J2D_TRACE_INFO, "OS_WINXP ");
-                currentOS = OS_WINXP;
-                if (osvi.wSuiteMask & VER_SUITE_PERSONAL) {
-                    J2dRlsTrace(J2D_TRACE_INFO, "Home\n");
-                } else {
-                    J2dRlsTrace(J2D_TRACE_INFO, "Pro\n");
+                    J2dRlsTrace(J2D_TRACE_INFO, "OS_WINSERV_2016 or newer\n");
+                    currentOS = OS_WINSERV_2016_PLUS;
                 }
             } else {
-                J2dRlsTrace(J2D_TRACE_INFO,
-                            "OS_UNKNOWN: dwMajorVersion=%d dwMinorVersion=%d\n",
-                            osvi.dwMajorVersion, osvi.dwMinorVersion);
-                currentOS = OS_UNKNOWN;
+                if (osvi.dwMajorVersion == 6 && osvi.dwMinorVersion >= 1) {
+                    if (osvi.wProductType == VER_NT_WORKSTATION) {
+                        J2dRlsTrace(J2D_TRACE_INFO, "OS_WINDOWS7 or newer\n");
+                        // this detects also Win8
+                        currentOS = OS_WINDOWS7;
+                    } else {
+                        J2dRlsTrace(J2D_TRACE_INFO, "OS_WINSERV_2008R2 or newer\n");
+                        // this detects also 2012 (R2)
+                        currentOS = OS_WINSERV_2008R2;
+                    }
+                } else {
+                    J2dRlsTrace(J2D_TRACE_INFO,
+                                "OS_UNKNOWN: dwMajorVersion=%d dwMinorVersion=%d\n",
+                                osvi.dwMajorVersion, osvi.dwMinorVersion);
+                    currentOS = OS_UNKNOWN;
+                }
             }
         } else {
-            if (bVersOk) {
-                J2dRlsTrace(J2D_TRACE_INFO,
-                            "OS_UNKNOWN: dwPlatformId=%d dwMajorVersion=%d\n",
-                            osvi.dwPlatformId, osvi.dwMajorVersion);
-            } else {
-                J2dRlsTrace(J2D_TRACE_INFO,"OS_UNKNOWN: GetVersionEx failed\n");
-            }
+            J2dRlsTrace(J2D_TRACE_INFO,"OS_UNKNOWN: GetVersionEx failed\n");
             currentOS = OS_UNKNOWN;
         }
     }
