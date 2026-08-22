@@ -2878,6 +2878,13 @@ Node* XorVNode::Ideal_XorV_to_VectorBitwiseBlend(PhaseGVN* phase, bool can_resha
     return nullptr;
   }
 
+  // Dead code can leave TOP on the inputs. TOP is a unique node, so the
+  // identity checks above match it spuriously, and VectorBitwiseBlendNode
+  // requires all of its inputs to be vectors.
+  if (a->is_top() || b->is_top() || sel->is_top()) {
+    return nullptr;
+  }
+
   Node* blend = new VectorBitwiseBlendNode(a, b, sel, vt);
   if (!is_masked) {
     return blend;
