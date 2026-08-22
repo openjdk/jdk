@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package sun.security.pkcs;
 import java.io.*;
 import java.math.BigInteger;
 import java.net.URI;
+import java.time.Instant;
 import java.util.*;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
@@ -805,7 +806,7 @@ public class PKCS7 {
                     new PKCS9Attribute(PKCS9Attribute.CONTENT_TYPE_OID,
                             ContentInfo.DATA_OID),
                     new PKCS9Attribute(PKCS9Attribute.SIGNING_TIME_OID,
-                            new Date()),
+                            Instant.now()),
                     new PKCS9Attribute(PKCS9Attribute.CMS_ALGORITHM_PROTECTION_OID,
                             derAp.toByteArray()),
                     new PKCS9Attribute(PKCS9Attribute.MESSAGE_DIGEST_OID,
