@@ -64,8 +64,12 @@ public class OopField extends Field {
       throw new InternalError();
     }
     var heap = obj.getHeap();
-    return isFlat() ? heap.newOop(obj.getHandle().addOffsetToAsOopHandle(getOffset()), (InlineKlass)getFieldKlass())
-                    : heap.newOop(getValueAsOopHandle(obj));
+    if (isFlat()) {
+      var handle = obj.getHandle().addOffsetToAsOopHandle(getOffset());
+      return heap.newOop(handle, (InlineKlass)getFieldKlass());
+    } else {
+      return heap.newOop(getValueAsOopHandle(obj));
+    }
   }
 
   /** Debugging support */
