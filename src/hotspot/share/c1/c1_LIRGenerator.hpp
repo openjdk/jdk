@@ -493,8 +493,9 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void profile_parameters(Base* x);
   void profile_parameters_at_call(ProfileCall* x);
   void profile_flags(ciMethodData* md, ciProfileData* load_store, int flag, LIR_Condition condition = lir_cond_always);
-  void profile_null_free_array(LIRItem array, ciMethodData* md, ciProfileData* load_store);
-  template <class ArrayData> void profile_array_type(AccessIndexed* x, ciMethodData*& md, ArrayData*& load_store);
+  template <class ArrayData> void profile_null_free_array(LIRItem array, ciMethodData* md, ArrayData* load_store);
+  void profile_array_type(AccessIndexed* x, ciMethodData*& md, ciArrayStoreData* store);
+  void profile_multiple_array_types(AccessIndexed* x, LIRItem array, ciMethodData* md, ciArrayLoadData* load);
   void profile_element_type(Value element, ciMethodData* md, ciArrayLoadData* load_store);
   bool profile_inline_klass(ciMethodData* md, ciProfileData* data, Value value, int flag);
   LIR_Opr mask_boolean(LIR_Opr array, LIR_Opr value, CodeEmitInfo*& null_check_info);

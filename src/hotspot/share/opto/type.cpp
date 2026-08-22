@@ -5181,9 +5181,17 @@ const TypeAryPtr* TypeAryPtr::cast_to_null_free(bool null_free) const {
   } else {
     new_elem = new_elem->meet_speculative(TypePtr::NULL_PTR);
   }
+  const TypePtr* speculative = _speculative;
+  if (speculative != nullptr && speculative->isa_aryptr()) {
+    if (null_free && speculative->is_aryptr()->is_not_null_free()) {
+      speculative = nullptr;
+    } else {
+      speculative = speculative->is_aryptr()->cast_to_null_free(null_free);
+    }
+  }
   new_elem = elem->isa_narrowoop() ? new_elem->make_narrowoop() : new_elem;
   const TypeAry* new_ary = TypeAry::make(new_elem, size(), is_stable(), is_flat(), is_not_flat(), is_not_null_free(), is_atomic());
-  const TypeAryPtr* res = make(ptr(), const_oop(), new_ary, klass(), klass_is_exact(), _offset, _field_offset, _instance_id, _speculative, _inline_depth, _is_autobox_cache);
+  const TypeAryPtr* res = make(ptr(), const_oop(), new_ary, klass(), klass_is_exact(), _offset, _field_offset, _instance_id, speculative, _inline_depth, _is_autobox_cache);
   if (res->speculative() == res->remove_speculative()) {
     return res->remove_speculative();
   }

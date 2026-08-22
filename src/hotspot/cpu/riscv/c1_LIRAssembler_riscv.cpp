@@ -1900,6 +1900,14 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
   COMMENT("} emit_profile_type");
 }
 
+void LIR_Assembler::emit_profile_inline_type(LIR_OpProfileInlineType* op) {
+  Unimplemented();
+}
+
+void LIR_Assembler::emit_profile_multiple_array_types(LIR_OpProfileMultipleArrayTypes* op) {
+  Unimplemented();
+}
+
 void LIR_Assembler::align_backward_branch_target() { }
 
 void LIR_Assembler::negate(LIR_Opr left, LIR_Opr dest, LIR_Opr tmp) {

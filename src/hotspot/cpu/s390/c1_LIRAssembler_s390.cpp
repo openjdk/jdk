@@ -3057,6 +3057,10 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
   }
 }
 
+void LIR_Assembler::emit_profile_multiple_array_types(LIR_OpProfileMultipleArrayTypes* op) {
+  Unimplemented();
+}
+
 void LIR_Assembler::emit_profile_inline_type(LIR_OpProfileInlineType* op) {
   Register obj = op->obj()->as_register();
   Register tmp = op->tmp()->as_pointer_register();

@@ -697,10 +697,6 @@
   develop(bool, InlineAccessors, true,                                      \
           "inline accessor methods (get/set)")                              \
                                                                             \
-  product(intx, TypeProfileMajorReceiverPercent, 90,                        \
-          "% of major receiver type to all profiled receivers")             \
-          range(0, 100)                                                     \
-                                                                            \
   product(bool, PrintIntrinsics, false, DIAGNOSTIC,                         \
           "prints attempted and successful inlining of intrinsics")         \
                                                                             \

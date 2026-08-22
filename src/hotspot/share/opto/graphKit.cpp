@@ -2660,12 +2660,9 @@ Node* GraphKit::record_profiled_receiver_for_speculation(Node* n) {
     ciProfileData* data = method()->method_data()->bci_to_data(bci());
     if (data != nullptr) {
       if (java_bc() == Bytecodes::_aastore) {
-        ciKlass* array_type = nullptr;
         ciKlass* element_type = nullptr;
         ProfilePtrKind element_ptr = ProfileMaybeNull;
-        bool flat_array = true;
-        bool null_free_array = true;
-        method()->array_access_profiled_type(bci(), array_type, element_type, element_ptr, flat_array, null_free_array);
+        method()->array_access_profiled_element_type(bci(), element_type, element_ptr);
         exact_kls = element_type;
         ptr_kind = element_ptr;
       } else {
@@ -3477,12 +3474,9 @@ Node* GraphKit::maybe_cast_profiled_receiver(Node* not_null_obj,
   ciKlass* exact_kls = spec_klass;
   if (exact_kls == nullptr) {
     if (java_bc() == Bytecodes::_aastore) {
-      ciKlass* array_type = nullptr;
       ciKlass* element_type = nullptr;
       ProfilePtrKind element_ptr = ProfileMaybeNull;
-      bool flat_array = true;
-      bool null_free_array = true;
-      method()->array_access_profiled_type(bci(), array_type, element_type, element_ptr, flat_array, null_free_array);
+      method()->array_access_profiled_element_type(bci(), element_type, element_ptr);
       exact_kls = element_type;
     } else {
       exact_kls = profile_has_unique_klass();
@@ -3864,8 +3858,8 @@ Node* GraphKit::gen_checkcast(Node* obj, Node* superklass, Node** failure_contro
     } else if (array_obj->is_Phi()) {
       Node* region = array_obj->in(0);
       // TODO make this more robust (see JDK-8231346)
-      if (region->req() == 3 && region->in(2) != nullptr && region->in(2)->in(0) != nullptr) {
-        IfNode* iff = region->in(2)->in(0)->isa_If();
+      if (region->req() == 3 && region->in(1) != nullptr && region->in(1)->in(0) != nullptr) {
+        IfNode* iff = region->in(1)->in(0)->isa_If();
         if (iff != nullptr) {
           iff->is_flat_array_check(&_gvn, &array);
         }

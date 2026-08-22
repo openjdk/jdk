@@ -22,6 +22,7 @@
  *
  */
 
+#include "ci/ciFlatArrayKlass.hpp"
 #include "ci/ciInlineKlass.hpp"
 #include "ci/ciMethodData.hpp"
 #include "ci/ciSymbols.hpp"
@@ -59,12 +60,9 @@ extern uint explicit_null_checks_inserted,
 Node* Parse::record_profile_for_speculation_at_array_load(Node* ld) {
   // Feed unused profile data to type speculation
   if (UseTypeSpeculation && UseArrayLoadStoreProfile) {
-    ciKlass* array_type = nullptr;
     ciKlass* element_type = nullptr;
     ProfilePtrKind element_ptr = ProfileMaybeNull;
-    bool flat_array = true;
-    bool null_free_array = true;
-    method()->array_access_profiled_type(bci(), array_type, element_type, element_ptr, flat_array, null_free_array);
+    method()->array_access_profiled_element_type(bci(), element_type, element_ptr);
     if (element_type != nullptr || element_ptr != ProfileMaybeNull) {
       ld = record_profile_for_speculation(ld, element_type, element_ptr);
     }
@@ -72,96 +70,584 @@ Node* Parse::record_profile_for_speculation_at_array_load(Node* ld) {
   return ld;
 }
 
+class ArrayLoad {
+private:
+  BasicType _bt;
+  Parse& _parse;
+  PhaseGVN& _gvn;
+  const Type* _elemtype;
+  Node* _array_index;
+  Node* _array;
+
+  Node* _region;
+  Node* _res_phi;
+  Node* _io_phi;
+  Node* _mem_phi;
+  Node* _mem;
+  Node* _io;
+
+  bool emit_null_and_range_checks() {
+    _array = _parse.null_check(_array, T_ARRAY);
+    // Compile-time detect of null-exception?
+    if (_parse.stopped())  return true; // _kit.top();
+
+    const TypeAryPtr* arytype  = _gvn.type(_array)->is_aryptr();
+    const TypeInt*    sizetype = arytype->size();
+    _elemtype = arytype->elem();
+
+    if (UseUniqueSubclasses) {
+      const Type* el = _elemtype->make_ptr();
+      if (el && el->isa_instptr()) {
+        const TypeInstPtr* toop = el->is_instptr();
+        if (toop->instance_klass()->unique_concrete_subklass()) {
+          // If we load from "AbstractClass[]" we must see "ConcreteSubClass".
+          const Type* subklass = Type::get_const_type(toop->instance_klass());
+          _elemtype = subklass->join_speculative(el);
+        }
+      }
+    }
+
+    if (!arytype->is_loaded()) {
+      // Only fails for some -Xcomp runs
+      // The class is unloaded.  We have to run this bytecode in the interpreter.
+      ciKlass* klass = arytype->unloaded_klass();
+
+      _parse.uncommon_trap(Deoptimization::Reason_unloaded,
+                           Deoptimization::Action_reinterpret,
+                           klass, "!loaded array");
+      return true; // top();
+    }
+
+    cast_to_speculative_array_type(arytype);
+
+    if (_parse.needs_range_check(sizetype, _array_index)) {
+      _parse.create_range_check(_array_index, _array, sizetype);
+    } else if (_parse.C->log() != nullptr) {
+      _parse.C->log()->elem("observe that='!need_range_check'");
+    }
+    return false;
+  }
+
+  ciArrayLoadData* profile_data() const {
+    if (!UseArrayLoadStoreProfile) {
+      return nullptr;
+    }
+    ciMethodData* md = _parse.method()->method_data();
+    if (md == nullptr) {
+      return nullptr;
+    }
+    if (!md->is_mature()) {
+      return nullptr;
+    }
+    ciProfileData* data = md->bci_to_data(_parse.bci());
+    if (data == nullptr) {
+      return nullptr;
+    }
+    if (!data->is_ArrayLoadData()) {
+      return nullptr;
+    }
+    return (ciArrayLoadData*) data->as_ArrayLoadData();
+  }
+
+  int profiled_not_flat_count() const {
+    if (profile_data()->not_flat_count() < 0) {
+      return max_jint;
+    }
+    return profile_data()->not_flat_count();
+  }
+
+public:
+  ArrayLoad(BasicType bt, Parse &parse) : _bt(bt), _parse(parse), _gvn(parse.gvn()), _elemtype((nullptr)),
+                                          _array_index(nullptr), _array(nullptr), _region(nullptr), _res_phi(nullptr),
+                                          _io_phi(nullptr), _mem_phi(nullptr), _mem(nullptr), _io(nullptr) {
+    _array_index = _parse.peek(0);   // Get from stack without popping
+    _array = _parse.peek(1);   // in case of exception
+  }
+
+  void pop_stack() {
+    Node* array_index = _parse.pop();
+    Node* array = _parse.pop();
+    assert(array_index == _array_index, "");
+    assert(array == _array, "");
+  }
+
+  Node* emit_plain_load(Node* array, bool pin_if_range_check = false, bool safe_for_replace_in_map = false) {
+    const TypeAryPtr* array_type = _gvn.type(array)->is_aryptr();
+    const TypeOopPtr* element_ptr = _elemtype->make_oopptr();
+    const TypeAryPtr* adr_type = TypeAryPtr::get_array_body_type(_bt);
+    DecoratorSet decorator_set = IN_HEAP | IS_ARRAY | C2_CONTROL_DEPENDENT_LOAD;
+    if (pin_if_range_check && _parse.needs_range_check(array_type->size(), _array_index)) {
+      // We've emitted a RangeCheck but now insert an additional check between the range check and the actual load.
+      // We cannot pin the load to two separate nodes. Instead, we pin it conservatively here such that it cannot
+      // possibly float above the range check at any point.
+      decorator_set |= C2_UNKNOWN_CONTROL_LOAD;
+    }
+    const TypeInt*    sizetype = array_type->size();
+    if (element_ptr != nullptr && element_ptr->can_be_inline_type() && !array_type->is_null_free()) {
+      ciArrayLoadData* array_load = profile_data();
+      Deoptimization::DeoptReason reason = Deoptimization::Reason_none;
+      if (array_type->speculative() != nullptr &&
+        !array_type->speculative()->isa_aryptr()->is_not_null_free() &&
+        !_parse.too_many_traps_or_recompiles(Deoptimization::Reason_speculate_class_check)) {
+        reason = Deoptimization::Reason_speculate_class_check;
+      } else if (array_load != nullptr && array_load->not_flat_nullable_count() == 0 && array_load->
+                 not_flat_null_free_count() > 0 &&
+                 !_parse.too_many_traps_or_recompiles(Deoptimization::Reason_class_check)) {
+        reason = Deoptimization::Reason_class_check;
+      }
+      if (reason != Deoptimization::Reason_none) {
+        Node* test = _parse.null_free_array_test(_array, false);
+        IfNode* iff = _parse.create_and_xform_if(_parse.control(), test, PROB_MIN, COUNT_UNKNOWN);
+        _parse.set_control(_gvn.transform(new IfTrueNode(iff)));
+        {
+          PreserveJVMState pjvms(&_parse);
+          _parse.uncommon_trap_exact(reason, Deoptimization::Action_maybe_recompile);
+        }
+        _parse.set_control(_gvn.transform(new IfFalseNode(iff)));
+        if (_parse.stopped()) {
+          if (safe_for_replace_in_map) {
+            pop_stack();
+          }
+          return _parse.C->top();
+        }
+        const TypeAryPtr* array_type = _gvn.type(_array)->is_aryptr()->cast_to_null_free(true);
+        array = _gvn.transform(new CheckCastPPNode(_parse.control(), array, array_type));
+        if (_parse.needs_range_check(array_type->size(), _array_index)) {
+          decorator_set |= C2_UNKNOWN_CONTROL_LOAD;
+        }
+      }
+    }
+
+    Node* adr = _parse.array_element_address(array, _array_index, _bt, sizetype, _parse.control());
+    assert(adr != _parse.top(), "top should go hand-in-hand with stopped");
+    Node* ld = _parse.access_load_at(array, adr, adr_type, _elemtype, _bt, decorator_set);
+    if (element_ptr != nullptr && element_ptr->is_inlinetypeptr()) {
+      assert(!array_type->is_null_free() || !element_ptr->maybe_null(), "inline type array elements should never be null");
+      ld = InlineTypeNode::make_from_oop(&_parse, ld, element_ptr->inline_klass());
+    }
+    if (safe_for_replace_in_map) {
+      pop_stack();
+      _parse.replace_in_map(_array, array);
+    }
+    return ld;
+  }
+
+  void test_non_flat_array_and_emit_reference_load(float p) {
+    const TypeAryPtr* array_type = _gvn.type(_array)->is_aryptr();
+    Node* test = _parse.flat_array_test(_array, /* flat = */ false);
+    float this_prob = clamp(p, PROB_MIN, PROB_MAX);
+    IfNode* iff = _parse.create_and_xform_if(_parse.control(), test, this_prob, COUNT_UNKNOWN);
+    _parse.set_control(_gvn.transform(new IfTrueNode(iff)));
+    assert(array_type->is_flat() || _parse.control()->in(0)->as_If()->is_flat_array_check(&_gvn),
+           "Should be found");
+    if (!_parse.stopped()) {
+      Node *casted_array = _gvn.
+          transform(new CheckCastPPNode(_parse.control(), _array, array_type->cast_to_not_flat()));
+      Node *ld = emit_plain_load(casted_array, true);
+      _res_phi->add_req(ld);
+      _region->add_req(_parse.control());
+      _io_phi->add_req(_parse.i_o());
+      _mem_phi->add_req(_parse.reset_memory());
+    }
+    _parse.set_control(_gvn.transform(new IfFalseNode(iff)));
+    _parse.set_all_memory(_mem);
+    _parse.set_i_o(_io);
+  }
+
+  void test_known_flat_array_and_emit_load_flat(ciKlass* klass, float p) {
+    float this_prob = clamp(p, PROB_MIN, PROB_MAX);
+    Node* casted_array = nullptr;
+    Node* next_ctrl = _parse.type_check_receiver(_array, klass, this_prob, &casted_array);
+    if (_parse.stopped()) {
+      _parse.set_control(next_ctrl);
+      _parse.set_all_memory(_mem);
+      _parse.set_i_o(_io);
+      return;
+    }
+    InlineTypeNode* vt = InlineTypeNode::make_from_flat_array(
+      &_parse, klass->as_flat_array_klass()->element_klass()->as_inline_klass(), casted_array, _array_index);
+    Node* null_ctl = _parse.top();
+
+    _parse.null_check_common(vt->get_null_marker(), T_INT, false, &null_ctl);
+
+    Node* mem = _parse.reset_memory();
+    _parse.set_all_memory(mem);
+    if (!null_ctl->is_top()) {
+      _res_phi->add_req(_parse.zerocon(T_OBJECT));
+      _region->add_req(null_ctl);
+      _io_phi->add_req(_parse.i_o());
+      _mem_phi->add_req(mem);
+    }
+
+
+    Node* ld = _gvn.transform(vt->buffer(&_parse));
+    _res_phi->add_req(ld);
+    _region->add_req(_parse.control());
+    _io_phi->add_req(_parse.i_o());
+    _mem_phi->add_req(_parse.reset_memory());
+    _parse.set_control(next_ctrl);
+    _parse.set_all_memory(_mem);
+    _parse.set_i_o(_io);
+  }
+
+  Node* load_from_unknown_flat_array(const TypeOopPtr* element_ptr) {
+    Node* ld = nullptr;
+
+    Node* array = _array;
+    if (element_ptr->is_inlinetypeptr()) {
+      ciArrayLoadData* array_load = profile_data();
+      float null_free_prob = PROB_FAIR;
+      float null_free_atomic_prob = PROB_FAIR;
+      if (array_load != nullptr && !_parse.too_many_traps_or_recompiles(Deoptimization::Reason_class_check)) {
+        int flat_nullable_count = array_load->flat_nullable_count();
+        int flat_nullfree_atomic_count = array_load->flat_nullfree_atomic_count();
+        int flat_nullfree_not_atomic_count = array_load->flat_nullfree_not_atomic_count();
+        ciMegamorphicTypeData* megamorphic_type_data = array_load->megamorphic_type_data();
+        for (uint i = 0; i < megamorphic_type_data->row_limit(); ++i) {
+          ciKlass* receiver = megamorphic_type_data->receiver(i);
+          if (receiver != nullptr && receiver->is_subtype_of(element_ptr->is_instptr()->instance_klass())) {
+            ciFlatArrayKlass* flat_array_klass = receiver->as_flat_array_klass();;
+            if (!flat_array_klass->is_elem_null_free()) {
+              saturated_add(flat_nullable_count, megamorphic_type_data->receiver_count(i));
+            } else {
+              if (flat_array_klass->is_elem_atomic()) {
+                saturated_add(flat_nullfree_atomic_count, megamorphic_type_data->receiver_count(i));
+              } else {
+                saturated_add(flat_nullfree_not_atomic_count, megamorphic_type_data->receiver_count(i));
+              }
+            }
+          }
+        }
+        float count = saturated_add(flat_nullable_count, saturated_add(flat_nullfree_atomic_count, flat_nullfree_not_atomic_count));
+        if (flat_nullable_count == 0) {
+          null_free_prob = 1;
+        } else if (flat_nullable_count == count) {
+          null_free_prob = 0;
+        } else {
+          null_free_prob = clamp(1 - (float)flat_nullable_count / count, PROB_MIN, PROB_MAX);
+        }
+        float null_free_count = saturated_add(flat_nullfree_atomic_count, flat_nullfree_not_atomic_count);
+        if (flat_nullfree_atomic_count == 0) {
+          null_free_atomic_prob = 0;
+        } else if (flat_nullfree_atomic_count == null_free_count) {
+          null_free_atomic_prob = 1;
+        } else {
+          null_free_atomic_prob = clamp((float) flat_nullfree_atomic_count / null_free_count, PROB_MIN, PROB_MAX);
+        }
+      }
+
+      ciInlineKlass* vk = element_ptr->inline_klass();
+      Node* flat_array = _parse.cast_to_flat_array(array, vk);
+
+      InlineTypeNode* vt = InlineTypeNode::make_from_flat_array(&_parse, vk, flat_array, _array_index, null_free_prob, null_free_atomic_prob);
+      ld = vt;
+
+      if (_region != nullptr && 0) {
+        Node* null_ctl = _parse.top();
+        _parse.null_check_common(vt->get_null_marker(), T_INT, false, &null_ctl);
+
+        _res_phi->add_req(_parse.zerocon(T_OBJECT));
+        _region->add_req(null_ctl);
+        _io_phi->add_req(_parse.i_o());
+        _mem_phi->add_req(_parse.reset_memory());
+        _parse.set_all_memory(_mem);
+      }
+    } else {
+      ld = _parse.load_from_unknown_flat_array(array, _array_index, element_ptr);
+      const TypeAryPtr* array_type = _gvn.type(array)->is_aryptr();
+      bool is_null_free = array_type->is_null_free() ||
+        (!UseNullableAtomicValueFlattening && !UseNullableNonAtomicValueFlattening);
+      if (is_null_free) {
+        ld = _parse.cast_not_null(ld);
+      }
+    }
+
+    if (_region != nullptr) {
+      _region->add_req(_parse.control());
+      _res_phi->add_req(ld);
+      _mem_phi->add_req(_parse.reset_memory());
+      _io_phi->add_req(_parse.i_o());
+      return nullptr;
+    } else {
+      return ld;
+    }
+  }
+
+  void create_merge_point() {
+    _region = new RegionNode(1);
+    _res_phi = new PhiNode(_region, _elemtype->make_oopptr());
+    _io_phi = new PhiNode(_region, Type::ABIO);
+    _mem = _parse.reset_memory();
+    _io = _parse.i_o();
+    _parse.set_all_memory(_mem);
+    _mem_phi = new PhiNode(_region, Type::MEMORY, TypePtr::BOTTOM);
+  }
+
+  void record_array_profile_for_speculation() {
+    ciArrayLoadData* array_load = profile_data();
+    if (UseTypeSpeculation && array_load != nullptr && array_load->nullable_count() > 0 && array_load->null_free_count() == 0) {
+      const TypeAryPtr* array_type = _gvn.type(_array)->is_aryptr();
+      if (!array_type->is_not_null_free() && array_type->speculative() == nullptr) {
+        const TypeAryPtr* spec_array_type = TypeAryPtr::BOTTOM->cast_to_not_null_free();
+        const TypeOopPtr* spec_type = TypeOopPtr::make(TypePtr::BotPTR, Type::Offset::bottom, TypeOopPtr::InstanceBot, spec_array_type);
+        Node* cast = new CheckCastPPNode(_parse.control(), _array, array_type->remove_speculative()->join_speculative(spec_type));
+        cast = _gvn.transform(cast);
+        _parse.replace_in_map(_array, cast);
+      }
+    }
+  }
+
+  void finish_merge_point() {
+    _parse.record_for_igvn(_region);
+    _parse.set_control(_gvn.transform(_region));
+    Node* base = nullptr;
+    for (uint i = 1; i < _mem_phi->req(); ++i) {
+      Node* in = _mem_phi->in(i);
+      Node* new_base = in;
+      if (in->is_MergeMem()) {
+        new_base = in->as_MergeMem()->base_memory();
+      }
+      if (base == nullptr) {
+        base = new_base;
+      } else if (base != new_base) {
+        base = NodeSentinel;
+      }
+    }
+    assert(base != nullptr, "");
+    if (base != NodeSentinel) {
+      MergeMemNode* mm = MergeMemNode::make(base);
+      for (uint i = 1; i < _mem_phi->req(); ++i) {
+        MergeMemNode* in = _mem_phi->in(i)->isa_MergeMem();
+        if (in != nullptr) {
+          for (MergeMemStream mms(in); mms.next_non_empty(); ) {
+            if (mms.at_base_memory()) {
+              continue;
+            }
+            Node* mem = mms.memory();
+            if (mm->memory_at(mms.alias_idx()) == base) {
+              Node* phi = PhiNode::make(_region, base, Type::MEMORY, mms.adr_type());
+              _gvn.set_type(phi, phi->bottom_type());
+              _parse.record_for_igvn(phi);
+              mm->set_memory_at(mms.alias_idx(), phi);
+            }
+            PhiNode* phi = mm->memory_at(mms.alias_idx())->as_Phi();
+            phi->set_req(i, mem);
+          }
+        }
+      }
+      _parse.set_all_memory(_gvn.transform(mm));
+    } else {
+      _parse.record_for_igvn(_mem_phi);
+      _parse.set_all_memory(_gvn.transform(_mem_phi));
+    }
+    _parse.set_i_o(_gvn.transform(_io_phi));
+    Node* ld = _gvn.transform(_res_phi);
+    ld = _parse.record_profile_for_speculation_at_array_load(ld);
+    pop_stack();
+    _parse.push_node(_bt, ld);
+  }
+
+  void cast_to_speculative_array_type(const TypeAryPtr *&array_type) {
+    if (!array_type->is_flat() && !array_type->is_not_flat()) {
+      // For arrays that might be flat, speculate that the array has the exact type reported in the profile data such that
+      // we can rely on a fixed memory layout (i.e. either a flat layout or not).
+      Deoptimization::DeoptReason reason = Deoptimization::Reason_speculate_class_check;
+      ciKlass* speculative_array_type = array_type->speculative_type();
+      if (speculative_array_type != nullptr && !_parse.too_many_traps_or_recompiles(reason)) {
+        // Speculate that this array has the exact type reported by profile data
+        Node* casted_array = nullptr;
+        DEBUG_ONLY(Node* old_control = _parse.control();)
+        Node* slow_ctl = _parse.type_check_receiver(_array, speculative_array_type, 1.0, &casted_array);
+        if (_parse.stopped()) {
+          // The check always fails and therefore profile information is incorrect. Don't use it.
+          assert(old_control == slow_ctl, "type check should have been removed");
+          _parse.set_control(slow_ctl);
+        } else if (!slow_ctl->is_top()) {
+          { PreserveJVMState pjvms(&_parse);
+            _parse.set_control(slow_ctl);
+            _parse.uncommon_trap_exact(reason, Deoptimization::Action_maybe_recompile);
+          }
+          _parse.replace_in_map(_array, casted_array);
+          array_type = _gvn.type(casted_array)->is_aryptr();
+          _elemtype = array_type->elem();
+          _array = casted_array;
+        }
+      }
+    }
+    if (!array_type->is_flat() && !array_type->is_not_flat()) {
+      Deoptimization::DeoptReason reason = Deoptimization::Reason_speculate_class_check;
+      if (array_type->speculative() != nullptr &&
+          array_type->speculative()->is_aryptr()->is_not_flat() &&
+          !_parse.too_many_traps_or_recompiles(reason)) {
+        { // Deoptimize if flat array
+          BuildCutout unless(&_parse, _parse.flat_array_test(_array, /* flat = */ false), PROB_MAX);
+          _parse.uncommon_trap_exact(reason, Deoptimization::Action_maybe_recompile);
+        }
+        assert(!_parse.stopped(), "flat array should have been caught earlier");
+        Node* casted_array = _gvn.transform(new CheckCastPPNode(_parse.control(), _array, array_type->cast_to_not_flat()));
+        _parse.replace_in_map(_array, casted_array);
+        array_type = _gvn.type(casted_array)->is_aryptr();
+        _elemtype = array_type->elem();
+        _array = casted_array;
+      }
+    }
+  }
+
+  void emit() {
+    emit_null_and_range_checks();
+
+    // Check for always knowing you are throwing a range-check exception
+    if (_parse.stopped())  return;
+
+    const TypeAryPtr* array_type = _gvn.type(_array)->is_aryptr();
+    const TypeOopPtr* element_ptr = _elemtype->make_oopptr();
+
+    if (array_type->is_not_flat()) {
+      if (_elemtype == TypeInt::BOOL) {
+        _bt = T_BOOLEAN;
+      }
+      Node* ld = emit_plain_load(_array, false, true);
+      _parse.push_node(_bt, ld);
+      ld = _parse.record_profile_for_speculation_at_array_load(ld);
+      return;
+    }
+
+    if (array_type->is_flat() && element_ptr->is_inlinetypeptr()) {
+      pop_stack();
+      ciInlineKlass* vk = element_ptr->inline_klass();
+      Node* flat_array = _array;
+      Node* vt = InlineTypeNode::make_from_flat_array(&_parse, vk, flat_array, _array_index);
+      Node* ld = _gvn.transform(vt);
+      _parse.push_node(_bt, ld);
+      return;
+    }
+
+    // Cannot statically determine if array is a flat array, emit runtime check
+    assert(UseArrayFlattening && is_reference_type(_bt) && element_ptr->can_be_inline_type() &&
+           (!element_ptr->is_inlinetypeptr() || element_ptr->inline_klass()->maybe_flat_in_array()),
+           "array can't be flat");
+
+    ciArrayLoadData* array_load = profile_data();
+    if (array_load != nullptr) {
+      int not_flat_count = profiled_not_flat_count();
+      Deoptimization::DeoptReason not_flat_reason = Deoptimization::Reason_none;
+      if (not_flat_count != 0) {
+        if (array_type->speculative() != nullptr &&
+            array_type->speculative()->is_aryptr()->is_flat()) {
+          not_flat_count = 0;
+          not_flat_reason = Deoptimization::Reason_speculate_class_check;
+        }
+      } else {
+        not_flat_reason = Deoptimization::Reason_class_check;
+      }
+      ciCallProfile profile = _parse.method()->call_profile_at_bci(_parse.bci());
+      int flat_count = profile.count();
+      int flat_and_not_flat_count = saturated_add(flat_count, not_flat_count);
+      if (profile.morphism() > 0 || profile.has_major_receiver()) {
+        bool not_flat_checked = false;
+        float prob = 1;
+        create_merge_point();
+        int limit = MAX2(profile.morphism(), 1);
+        bool done = false;
+        for (int i = 0; i < limit || !not_flat_checked;) {
+          assert(!_parse.stopped(), "");
+          int count = i < limit ? profile.receiver_count(i) : not_flat_count;
+          if (not_flat_count >= count && !not_flat_checked) {
+            not_flat_checked = true;
+            if (profile.morphism() > 0 && not_flat_count == 0 && !_parse.
+                too_many_traps_or_recompiles(not_flat_reason)) {
+              PreserveJVMState pjvms(&_parse);
+              _parse.uncommon_trap_exact(not_flat_reason, Deoptimization::Action_maybe_recompile);
+              done = true;
+            } else if (profile.morphism() <= 0 && not_flat_count == 0 && !_parse.too_many_traps_or_recompiles(
+                         not_flat_reason)) {
+              const TypeAryPtr* array_type = _gvn.type(_array)->is_aryptr();
+              Node* test = _parse.flat_array_test(_array, /* flat = */ false);
+              IfNode* iff = _parse.create_and_xform_if(_parse.control(), test, PROB_MIN, COUNT_UNKNOWN);
+              _parse.set_control(_gvn.transform(new IfTrueNode(iff)));
+              assert(array_type->is_flat() || _parse.control()->in(0)->as_If()->is_flat_array_check(&_gvn),
+                     "Should be found"); {
+                PreserveJVMState pjvms(&_parse);
+                _parse.uncommon_trap_exact(not_flat_reason, Deoptimization::Action_maybe_recompile);
+              }
+              _parse.set_control(_gvn.transform(new IfFalseNode(iff)));
+              load_from_unknown_flat_array(element_ptr);
+              done = true;
+            } else {
+              float p = ((float) not_flat_count) / ((float) flat_and_not_flat_count);
+              test_non_flat_array_and_emit_reference_load(p / prob);
+              prob = 1 - p;
+            }
+          } else {
+            float p = ((float) profile.receiver_count(i)) / ((float) flat_and_not_flat_count);
+            ciKlass* klass = profile.receiver(i);
+            test_known_flat_array_and_emit_load_flat(klass, p / prob);
+            i++;
+            prob = 1 - p;
+          }
+        }
+        if (!done) {
+          if (!_parse.too_many_traps_or_recompiles(Deoptimization::Reason_class_check)) {
+            PreserveJVMState pjvms(&_parse);
+            _parse.uncommon_trap_exact(Deoptimization::Reason_class_check, Deoptimization::Action_maybe_recompile);
+          } else {
+            load_from_unknown_flat_array(element_ptr);
+          }
+        }
+        finish_merge_point();
+        return;
+      }
+      if (flat_count == 0 && not_flat_count > 0 && !_parse.too_many_traps_or_recompiles(
+            Deoptimization::Reason_class_check)) {
+        {
+          // Deoptimize if flat array
+          BuildCutout unless(&_parse, _parse.flat_array_test(_array, /* flat = */ false), PROB_MAX);
+          _parse.uncommon_trap_exact(Deoptimization::Reason_class_check, Deoptimization::Action_maybe_recompile);
+        }
+        assert(!_parse.stopped(), "flat array should have been caught earlier");
+        Node* casted_array = _gvn.transform(
+          new CheckCastPPNode(_parse.control(), _array, array_type->cast_to_not_flat()));
+        _parse.replace_in_map(_array, casted_array);
+        _array = casted_array;
+        Node* ld = emit_plain_load(casted_array, true);
+        ld = _parse.record_profile_for_speculation_at_array_load(ld);
+        pop_stack();
+        _parse.push_node(_bt, ld);
+        record_array_profile_for_speculation();
+        return;
+      }
+      if (flat_count != 0 && not_flat_count == 0 && !_parse.too_many_traps_or_recompiles(not_flat_reason)) {
+        {
+          // Deoptimize if not flat array
+          BuildCutout unless(&_parse, _parse.flat_array_test(_array, /* flat = */ true), PROB_MAX);
+          _parse.uncommon_trap_exact(not_flat_reason, Deoptimization::Action_maybe_recompile);
+        }
+        assert(!_parse.stopped(), "non flat array should have been caught earlier");
+        Node* ld = load_from_unknown_flat_array(element_ptr);
+        pop_stack();
+        _parse.push_node(_bt, ld);
+        return;
+      }
+      if (flat_count != 0 && not_flat_count != 0) {
+        create_merge_point();
+        float p = ((float) not_flat_count) / ((float) flat_and_not_flat_count);
+        test_non_flat_array_and_emit_reference_load(p);
+        load_from_unknown_flat_array(element_ptr);
+        finish_merge_point();
+        return;
+      }
+    }
+    create_merge_point();
+    test_non_flat_array_and_emit_reference_load(PROB_FAIR);
+    load_from_unknown_flat_array(element_ptr);
+    finish_merge_point();
+  }
+};
 
 //---------------------------------array_load----------------------------------
 void Parse::array_load(BasicType bt) {
-  const Type* elemtype = Type::TOP;
-  Node* prep_array = prepare_array_addressing(bt, 0, elemtype);
-  if (stopped())  return;     // guaranteed null or range check
-
-  Node* array_index = pop();
-  Node* array = pop();
-
-  // Handle inline type arrays
-  const TypeOopPtr* element_ptr = elemtype->make_oopptr();
-  const TypeAryPtr* array_type = _gvn.type(array)->is_aryptr();
-
-  if (!array_type->is_not_flat()) {
-    // Cannot statically determine if array is a flat array, emit runtime check
-    assert(UseArrayFlattening && is_reference_type(bt) && element_ptr->can_be_inline_type() &&
-           (!element_ptr->is_inlinetypeptr() || element_ptr->inline_klass()->maybe_flat_in_array()), "array can't be flat");
-    IdealKit ideal(this);
-    IdealVariable res(ideal);
-    ideal.declarations_done();
-    ideal.if_then(flat_array_test(array, /* flat = */ false)); {
-      // Non-flat array
-      sync_kit(ideal);
-      if (!array_type->is_flat()) {
-        assert(array_type->is_flat() || control()->in(0)->as_If()->is_flat_array_check(&_gvn), "Should be found");
-        // Loading from a non-flat array, casting array to not flat.
-        const TypeAryPtr* ary_type = _gvn.type(prep_array)->is_aryptr();
-        ary_type = ary_type->cast_to_not_flat();
-        Node* not_flat_ary = _gvn.transform(new CheckCastPPNode(control(), prep_array, ary_type));
-        Node* adr = get_ptr_to_array_element(not_flat_ary, array_index, bt, ary_type->size(), control());
-        const TypeAryPtr* adr_type = TypeAryPtr::get_array_body_type(bt);
-        DecoratorSet decorator_set = IN_HEAP | IS_ARRAY | C2_CONTROL_DEPENDENT_LOAD;
-        if (needs_range_check(ary_type->size(), array_index)) {
-          // We've emitted a RangeCheck but now insert an additional check between the range check and the actual load.
-          // We cannot pin the load to two separate nodes. Instead, we pin it conservatively here such that it cannot
-          // possibly float above the range check at any point.
-          decorator_set |= C2_UNKNOWN_CONTROL_LOAD;
-        }
-        Node* ld = access_load_at(not_flat_ary, adr, adr_type, element_ptr, bt, decorator_set);
-        if (element_ptr->is_inlinetypeptr()) {
-          ld = InlineTypeNode::make_from_oop(this, ld, element_ptr->inline_klass());
-        }
-        ideal.set(res, ld);
-      }
-      ideal.sync_kit(this);
-    } ideal.else_(); {
-      // Flat array
-      sync_kit(ideal);
-      if (!array_type->is_not_flat()) {
-        if (element_ptr->is_inlinetypeptr()) {
-          ciInlineKlass* vk = element_ptr->inline_klass();
-          Node* flat_array = cast_to_flat_array(array, vk);
-          Node* vt = InlineTypeNode::make_from_flat_array(this, vk, flat_array, array_index);
-          ideal.set(res, vt);
-        } else {
-          // Element type is unknown, and thus we cannot statically determine the exact flat array layout. Emit a
-          // runtime call to correctly load the inline type element from the flat array.
-          Node* inline_type = load_from_unknown_flat_array(array, array_index, element_ptr);
-          bool is_null_free = array_type->is_null_free() ||
-                              (!UseNullableAtomicValueFlattening && !UseNullableNonAtomicValueFlattening);
-          if (is_null_free) {
-            inline_type = cast_not_null(inline_type);
-          }
-          ideal.set(res, inline_type);
-        }
-      }
-      ideal.sync_kit(this);
-    } ideal.end_if();
-    sync_kit(ideal);
-    Node* ld = _gvn.transform(ideal.value(res));
-    ld = record_profile_for_speculation_at_array_load(ld);
-    push_node(bt, ld);
-    return;
-  }
-
-  if (elemtype == TypeInt::BOOL) {
-    bt = T_BOOLEAN;
-  }
-  const TypeAryPtr* adr_type = TypeAryPtr::get_array_body_type(bt);
-  Node* adr = get_ptr_to_array_element(prep_array, array_index, bt, array_type->size(), control());
-  Node* ld = access_load_at(array, adr, adr_type, elemtype, bt,
-                            IN_HEAP | IS_ARRAY | C2_CONTROL_DEPENDENT_LOAD);
-  ld = record_profile_for_speculation_at_array_load(ld);
-  // Loading an inline type from a non-flat array
-  if (element_ptr != nullptr && element_ptr->is_inlinetypeptr()) {
-    assert(!array_type->is_null_free() || !element_ptr->maybe_null(), "inline type array elements should never be null");
-    ld = InlineTypeNode::make_from_oop(this, ld, element_ptr->inline_klass());
-  }
-  push_node(bt, ld);
+  ArrayLoad array_load(bt, *this);
+  array_load.emit();
 }
 
 Node* Parse::load_from_unknown_flat_array(Node* array, Node* array_index, const TypeOopPtr* element_ptr) {
@@ -175,7 +661,6 @@ Node* Parse::load_from_unknown_flat_array(Node* array, Node* array_index, const 
     PreserveReexecuteState preexecs(this);
     jvms()->set_bci(_bci);
     jvms()->set_should_reexecute(true);
-    inc_sp(2);
     kill_dead_locals();
     call = make_runtime_call(RC_NO_LEAF | RC_NO_IO,
                              OptoRuntime::load_unknown_inline_Type(),
@@ -499,12 +984,9 @@ Node* Parse::cast_to_speculative_array_type(Node* const array, const TypeAryPtr*
     speculative_array_type = nullptr;
     reason = Deoptimization::Reason_class_check;
     if (UseArrayLoadStoreProfile && !too_many_traps_or_recompiles(reason)) {
-      ciKlass* profiled_element_type = nullptr;
-      ProfilePtrKind element_ptr = ProfileMaybeNull;
       bool flat_array = true;
       bool null_free_array = true;
-      method()->array_access_profiled_type(bci(), speculative_array_type, profiled_element_type, element_ptr, flat_array,
-                                           null_free_array);
+      method()->array_access_profiled_array_type(bci(), speculative_array_type, flat_array, null_free_array);
     }
   }
   if (speculative_array_type != nullptr) {
@@ -533,11 +1015,9 @@ Node* Parse::cast_to_speculative_array_type(Node* const array, const TypeAryPtr*
 // Create a CheckCastPP when the speculative type can improve the current type.
 Node* Parse::cast_to_profiled_array_type(Node* const array) {
   ciKlass* array_type = nullptr;
-  ciKlass* element_type = nullptr;
-  ProfilePtrKind element_ptr = ProfileMaybeNull;
   bool flat_array = true;
   bool null_free_array = true;
-  method()->array_access_profiled_type(bci(), array_type, element_type, element_ptr, flat_array, null_free_array);
+  method()->array_access_profiled_array_type(bci(), array_type, flat_array, null_free_array);
   if (array_type != nullptr) {
     return record_profile_for_speculation(array, array_type, ProfileMaybeNull);
   }
@@ -556,11 +1036,8 @@ Node* Parse::speculate_non_null_free_array(Node* const array, const TypeAryPtr*&
     reason = Deoptimization::Reason_speculate_class_check;
   } else if (UseArrayLoadStoreProfile && !too_many_traps_or_recompiles(Deoptimization::Reason_class_check)) {
     ciKlass* profiled_array_type = nullptr;
-    ciKlass* profiled_element_type = nullptr;
-    ProfilePtrKind element_ptr = ProfileMaybeNull;
     bool flat_array = true;
-    method()->array_access_profiled_type(bci(), profiled_array_type, profiled_element_type, element_ptr, flat_array,
-                                         null_free_array);
+    method()->array_access_profiled_array_type(bci(), profiled_array_type, flat_array, null_free_array);
     reason = Deoptimization::Reason_class_check;
   }
   if (!null_free_array) {
@@ -589,11 +1066,8 @@ Node* Parse::speculate_non_flat_array(Node* const array, const TypeAryPtr* const
     reason = Deoptimization::Reason_speculate_class_check;
   } else if (UseArrayLoadStoreProfile && !too_many_traps_or_recompiles(Deoptimization::Reason_class_check)) {
     ciKlass* profiled_array_type = nullptr;
-    ciKlass* profiled_element_type = nullptr;
-    ProfilePtrKind element_ptr = ProfileMaybeNull;
     bool null_free_array = true;
-    method()->array_access_profiled_type(bci(), profiled_array_type, profiled_element_type, element_ptr, flat_array,
-                                         null_free_array);
+    method()->array_access_profiled_array_type(bci(), profiled_array_type, flat_array, null_free_array);
     reason = Deoptimization::Reason_class_check;
   }
   if (!flat_array) {

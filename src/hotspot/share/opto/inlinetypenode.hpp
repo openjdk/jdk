@@ -88,7 +88,7 @@ public:
   // Create and initialize by loading the field values from a flat field or array
   static InlineTypeNode* make_from_flat(GraphKit* kit, ciInlineKlass* vk, Node* base, Node* ptr,
                                         bool atomic, bool immutable_memory, bool null_free, DecoratorSet decorators);
-  static InlineTypeNode* make_from_flat_array(GraphKit* kit, ciInlineKlass* vk, Node* base, Node* idx);
+  static InlineTypeNode* make_from_flat_array(GraphKit* kit, ciInlineKlass* vk, Node* base, Node* idx, float null_free_prob = PROB_FAIR, float null_free_atomic_prob = PROB_FAIR);
   // Create and initialize with the inputs or outputs of a MultiNode (method entry or call)
   static InlineTypeNode* make_from_multi(GraphKit* kit, MultiNode* multi, ciInlineKlass* vk, uint& base_input, bool in, bool null_free = true);
   // Create with null field values

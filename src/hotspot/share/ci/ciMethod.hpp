@@ -37,6 +37,7 @@
 #include "utilities/vmEnums.hpp"
 
 class ciMethodBlocks;
+class ciMegamorphicTypeData;
 class MethodLiveness;
 class Arena;
 class BCEscapeAnalyzer;
@@ -266,13 +267,14 @@ class ciMethod : public ciMetadata {
   ciTypeFlow*   get_flow_analysis();
   ciTypeFlow*   get_osr_flow_analysis(int osr_bci);  // alternate entry point
   ciCallProfile call_profile_at_bci(int bci);
+  ciCallProfile megamorphic_profile_at_bci(int bci, int count, ciMegamorphicTypeData* megamorphic_type_data);
 
   // Does type profiling provide any useful information at this point?
   bool          argument_profiled_type(int bci, int i, ciKlass*& type, ProfilePtrKind& ptr_kind);
   bool          parameter_profiled_type(int i, ciKlass*& type, ProfilePtrKind& ptr_kind);
   bool          return_profiled_type(int bci, ciKlass*& type, ProfilePtrKind& ptr_kind);
-  bool          array_access_profiled_type(int bci, ciKlass*& array_type, ciKlass*& element_type, ProfilePtrKind& element_ptr,
-                                           bool& flat_array, bool& null_free);
+  bool          array_access_profiled_array_type(int bci, ciKlass*& array_type, bool &flat_array, bool &null_free);
+  bool          array_access_profiled_element_type(int bci, ciKlass*& element_type, ProfilePtrKind& element_ptr);
   bool          acmp_profiled_type(int bci, ciKlass*& left_type, ciKlass*& right_type,
                                    ProfilePtrKind& left_ptr, ProfilePtrKind& right_ptr,
                                    bool& left_inline_type, bool& right_inline_type);

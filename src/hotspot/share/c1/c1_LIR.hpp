@@ -897,6 +897,7 @@ class    LIR_OpLoadKlass;
 class    LIR_OpProfileCall;
 class    LIR_OpProfileType;
 class    LIR_OpProfileInlineType;
+class    LIR_OpProfileMultipleArrayTypes;
 #ifdef ASSERT
 class    LIR_OpAssert;
 #endif
@@ -1012,6 +1013,7 @@ enum LIR_Code {
     , lir_profile_call
     , lir_profile_type
     , lir_profile_inline_type
+    , lir_profile_multiple_array_types
   , end_opMDOProfile
   , begin_opAssert
     , lir_assert
@@ -1158,6 +1160,7 @@ class LIR_Op: public CompilationResourceObj {
   virtual LIR_OpProfileCall* as_OpProfileCall() { return nullptr; }
   virtual LIR_OpProfileType* as_OpProfileType() { return nullptr; }
   virtual LIR_OpProfileInlineType* as_OpProfileInlineType() { return nullptr; }
+  virtual LIR_OpProfileMultipleArrayTypes* as_OpProfileMultipleArrayTypes() { return nullptr; }
 #ifdef ASSERT
   virtual LIR_OpAssert* as_OpAssert() { return nullptr; }
 #endif
@@ -2146,6 +2149,34 @@ class LIR_OpProfileInlineType : public LIR_Op {
   virtual void print_instr(outputStream* out) const PRODUCT_RETURN;
 };
 
+class LIR_OpProfileMultipleArrayTypes : public LIR_Op {
+  friend class LIR_OpVisitState;
+  ciMethodData* _md;
+  ciArrayLoadData* _load;
+  LIR_Opr      _array;
+  LIR_Opr      _tmp1;
+  LIR_Opr      _tmp2;
+public:
+  LIR_OpProfileMultipleArrayTypes(ciMethodData* md, ciArrayLoadData* load, LIR_Opr array, LIR_Opr tmp1, LIR_Opr tmp2)
+    : LIR_Op(lir_profile_multiple_array_types, LIR_OprFact::illegalOpr, nullptr)
+      , _md(md)
+      , _load(load)
+      , _array(array)
+      , _tmp1(tmp1)
+      , _tmp2(tmp2) {
+
+  }
+  ciMethodData* md()               const            { return _md;                }
+  ciArrayLoadData* load()          const            { return _load;              }
+  LIR_Opr      array()             const            { return _array;             }
+  LIR_Opr      tmp1()              const            { return _tmp1;              }
+  LIR_Opr      tmp2()              const            { return _tmp2;              }
+
+  virtual void emit_code(LIR_Assembler* masm);
+  virtual LIR_OpProfileMultipleArrayTypes* as_OpProfileMultipleArrayTypes() { return this; }
+  virtual void print_instr(outputStream* out) const PRODUCT_RETURN;
+};
+
 class LIR_InsertionBuffer;
 
 //--------------------------------LIR_List---------------------------------------------------
@@ -2446,6 +2477,9 @@ class LIR_List: public CompilationResourceObj {
   }
   void profile_inline_type(LIR_Address* mdp, LIR_Opr obj, int flag, LIR_Opr tmp, bool not_null) {
     append(new LIR_OpProfileInlineType(LIR_OprFact::address(mdp), obj, flag, tmp, not_null));
+  }
+  void profile_multiple_array_types(ciMethodData* md, ciArrayLoadData* load, LIR_Opr array, LIR_Opr tmp1, LIR_Opr tmp2) {
+    append(new LIR_OpProfileMultipleArrayTypes(md, load, array, tmp1, tmp2));
   }
 
   void xadd(LIR_Opr src, LIR_Opr add, LIR_Opr res, LIR_Opr tmp) { append(new LIR_Op2(lir_xadd, src, add, res, tmp)); }
