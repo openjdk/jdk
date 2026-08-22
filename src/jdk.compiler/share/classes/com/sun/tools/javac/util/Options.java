@@ -266,9 +266,10 @@ public class Options {
      * <p>
      * The set of categories is calculated as follows. First, an initial set is created:
      * <ul>
-     *  <li>If {@code -Flag} or {@code -Flag:all} appears, the initial set contains all categories; otherwise,
+     *  <li>If {@code -Flag:all} appears, the initial set contains all categories; otherwise,
+     *  <li>If {@code -Flag} appears, the {@code enabledByDefaultWhenLintPresent} parameter is invoked to construct an initial set; otherwise,
      *  <li>If {@code -Flag:none} appears, the initial set is empty; otherwise,
-     *  <li>The {@code defaults} parameter is invoked to construct an initial set.
+     *  <li>The {@code enabledByDefaultWhenLintAbsent} parameter is invoked to construct an initial set.
      * </ul>
      * Next, for each lint category key {@code key}:
      * <ul>
@@ -278,21 +279,25 @@ public class Options {
      * Unrecognized {@code key}s are ignored.
      *
      * @param option the plain (non-custom) version of the option (e.g., {@link Option#XLINT})
-     * @param defaults populates the default set, or null for an empty default set
+     * @param enabledByDefaultWhenLintAbsent the default categories enabled when the option is not present
+     * @param enabledByDefaultWhenLintPresent the default categories enabled when the option is present without details
      * @return the specified set of categories
      * @throws IllegalArgumentException if there is no lint custom variant of {@code option}
      */
-    public EnumSet<LintCategory> getLintCategoriesOf(Option option, Supplier<? extends EnumSet<LintCategory>> defaults) {
-
+    public EnumSet<LintCategory> getLintCategoriesOf(Option option,
+                                                     Supplier<? extends EnumSet<LintCategory>> enabledByDefaultWhenLintAbsent,
+                                                     Supplier<? extends EnumSet<LintCategory>> enabledByDefaultWhenLintPresent) {
         // Create the initial set
         EnumSet<LintCategory> categories;
         Option customOption = option.getLintCustom();
-        if (isSet(option) || isSet(customOption, Option.LINT_CUSTOM_ALL)) {
+        if (isSet(customOption, Option.LINT_CUSTOM_ALL)) {
             categories = EnumSet.allOf(LintCategory.class);
+        } else if (isSet(option)) {
+            categories = enabledByDefaultWhenLintPresent.get();
         } else if (isSet(customOption, Option.LINT_CUSTOM_NONE)) {
             categories = EnumSet.noneOf(LintCategory.class);
         } else {
-            categories = defaults.get();
+            categories = enabledByDefaultWhenLintAbsent.get();
         }
 
         // Apply specific overrides
