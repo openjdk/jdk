@@ -956,9 +956,17 @@ public:
   void movptr(Register Rd, address addr, Register tmp = noreg);
   void movptr(Register Rd, address addr, int32_t &offset, Register tmp = noreg);
 
+  // True when the shorter sv39 movptr sequence is emitted (satp mode is sv39).
+  static bool use_movptr_sv39();
+
+  static int movptr_instruction_size() {
+    return use_movptr_sv39() ? movptr_sv39_instruction_size : movptr2_instruction_size;
+  }
+
  private:
   void movptr1(Register Rd, uintptr_t addr, int32_t &offset);
   void movptr2(Register Rd, uintptr_t addr, int32_t &offset, Register tmp);
+  void movptr_sv39(Register Rd, uintptr_t addr, int32_t &offset);
  public:
   // float imm move
   static bool can_hf_imm_load(short imm);
@@ -1701,6 +1709,7 @@ public:
     // movptr
     movptr1_instruction_size = 6 * MacroAssembler::instruction_size, // lui, addi, slli, addi, slli, addi.  See movptr1().
     movptr2_instruction_size = 5 * MacroAssembler::instruction_size, // lui, lui, slli, add, addi.  See movptr2().
+    movptr_sv39_instruction_size = 4 * MacroAssembler::instruction_size, // lui, addi, slli, addi.  See movptr_sv39().
     load_pc_relative_instruction_size = 2 * MacroAssembler::instruction_size // auipc, ld
   };
 
@@ -1738,6 +1747,7 @@ public:
 
   static bool is_movptr1_at(address instr);
   static bool is_movptr2_at(address instr);
+  static bool is_movptr_sv39_at(address instr);
 
   static bool is_lwu_to_zr(address instr);
 
@@ -1790,6 +1800,23 @@ public:
            extract_rs1(slli) == extract_rd(lui1) &&
            extract_rd(slli) == extract_rd(lui1) &&
            extract_rs1(last_instr) == extract_rd(add);
+  }
+
+  // the instruction sequence of movptr_sv39 is as below:
+  //     lui
+  //     addi
+  //     slli
+  //     addi/jalr/load
+  static bool check_movptr_sv39_data_dependency(address instr) {
+    address lui = instr;
+    address addi = lui + MacroAssembler::instruction_size;
+    address slli = addi + MacroAssembler::instruction_size;
+    address last_instr = slli + MacroAssembler::instruction_size;
+    return extract_rs1(addi) == extract_rd(lui) &&
+           extract_rs1(addi) == extract_rd(addi) &&
+           extract_rs1(slli) == extract_rd(addi) &&
+           extract_rs1(slli) == extract_rd(slli) &&
+           extract_rs1(last_instr) == extract_rd(slli);
   }
 
   // the instruction sequence of li16u is as below:

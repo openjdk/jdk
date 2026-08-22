@@ -63,9 +63,11 @@ class NativeInstruction {
 
   bool is_jal()                             const { return MacroAssembler::is_jal_at(addr_at(0));         }
   bool is_movptr()                          const { return MacroAssembler::is_movptr1_at(addr_at(0)) ||
-                                                           MacroAssembler::is_movptr2_at(addr_at(0));     }
+                                                           MacroAssembler::is_movptr2_at(addr_at(0)) ||
+                                                           MacroAssembler::is_movptr_sv39_at(addr_at(0)); }
   bool is_movptr1()                         const { return MacroAssembler::is_movptr1_at(addr_at(0));     }
   bool is_movptr2()                         const { return MacroAssembler::is_movptr2_at(addr_at(0));     }
+  bool is_movptr_sv39()                     const { return MacroAssembler::is_movptr_sv39_at(addr_at(0)); }
   bool is_auipc()                           const { return MacroAssembler::is_auipc_at(addr_at(0));       }
   bool is_jump()                            const { return MacroAssembler::is_jump_at(addr_at(0));        }
   bool is_call()                            const { return is_call_at(addr_at(0));                        }
@@ -169,6 +171,7 @@ class NativeMovConstReg: public NativeInstruction {
   enum RISCV_specific_constants {
     movptr1_instruction_size            =    MacroAssembler::movptr1_instruction_size, // lui, addi, slli, addi, slli, addi.  See movptr1().
     movptr2_instruction_size            =    MacroAssembler::movptr2_instruction_size, // lui, lui, slli, add, addi.  See movptr2().
+    movptr_sv39_instruction_size        =    MacroAssembler::movptr_sv39_instruction_size, // lui, addi, slli, addi.  See movptr_sv39().
     load_pc_relative_instruction_size   =    MacroAssembler::load_pc_relative_instruction_size // auipc, ld
   };
 
@@ -194,6 +197,14 @@ class NativeMovConstReg: public NativeInstruction {
       } else {
         // Assume: lui, lui, slli, add
         return addr_at(movptr2_instruction_size - NativeInstruction::instruction_size);
+      }
+    } else if (MacroAssembler::is_movptr_sv39_at(instruction_address())) {
+      if (MacroAssembler::is_addi_at(addr_at(movptr_sv39_instruction_size - NativeInstruction::instruction_size))) {
+        // Assume: lui, addi, slli, addi
+        return addr_at(movptr_sv39_instruction_size);
+      } else {
+        // Assume: lui, addi, slli
+        return addr_at(movptr_sv39_instruction_size - NativeInstruction::instruction_size);
       }
     } else if (MacroAssembler::is_load_pc_relative_at(instruction_address())) {
       // Assume: auipc, ld
@@ -279,7 +290,12 @@ class NativeGeneralJump: public NativeJump {
 public:
   enum RISCV_specific_constants {
     instruction_size            =    5 * NativeInstruction::instruction_size, // lui, lui, slli, add, jalr
+    instruction_size_sv39       =    4 * NativeInstruction::instruction_size, // lui, addi, slli, jalr
   };
+
+  static int insn_size() {
+    return MacroAssembler::use_movptr_sv39() ? instruction_size_sv39 : instruction_size;
+  }
 
   address jump_destination() const;
 
