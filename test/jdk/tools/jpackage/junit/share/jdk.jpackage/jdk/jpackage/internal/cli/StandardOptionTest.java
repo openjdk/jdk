@@ -33,6 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.DirectoryNotEmptyException;
@@ -213,10 +214,19 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
         assertEquals(I18N.format("ERR_InvalidInstallerType", name), ex.getMessage());
     }
 
-    @Test
-    public void test_APP_CONTENT_valid(@TempDir Path workDir) throws IOException {
+    private static Stream<Arguments> pathOptionsValid() {
+        return Stream.of(
+            Arguments.of(StandardOption.APP_CONTENT, ","),
+            Arguments.of(StandardOption.APP_RESOURCES, File.pathSeparator)
+        );
+    }
 
-        var spec = StandardOption.APP_CONTENT.getSpec();
+    @ParameterizedTest
+    @MethodSource("pathOptionsValid")
+    public void test_APP_CONTENT_OR_RESOURCES_valid(OptionValue<List<Collection<RootedPath>>> option,
+            String delimiter, @TempDir Path workDir) throws IOException {
+
+        var spec = option.getSpec();
 
         var contentDir = workDir.resolve("a");
         var emptyDir = contentDir.resolve("b/empty-dir");
@@ -228,10 +238,10 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
 
         Object convertedValue = spec.convert(
                 spec.name(),
-                StringToken.of(Stream.of(contentDir, file).map(Path::toString).collect(joining(",")))
+                StringToken.of(Stream.of(contentDir, file).map(Path::toString).collect(joining(delimiter)))
         ).orElseThrow();
 
-        var paths = StandardOption.APP_CONTENT.getFrom(Options.of(Map.of(StandardOption.APP_CONTENT, convertedValue)));
+        var paths = option.getFrom(Options.of(Map.of(option, convertedValue)));
         var sortedPathList = paths.stream().flatMap(Collection::stream).map(RootedPath::branch).sorted().toList();
 
         var expectedPathList = Stream.of(
@@ -245,9 +255,15 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
         assertEquals(expectedPathList, sortedPathList);
     }
 
-    @Test
-    public void test_APP_CONTENT_invalid(@TempDir Path workDir) throws IOException {
-        var spec = StandardOption.APP_CONTENT.getSpec();
+    private static Stream<OptionValue<List<Collection<RootedPath>>>> pathOptionsInvalid() {
+        return Stream.of(StandardOption.APP_CONTENT, StandardOption.APP_RESOURCES);
+    }
+
+    @ParameterizedTest
+    @MethodSource("pathOptionsInvalid")
+    public void test_APP_CONTENT_OR_RESOURCES_invalid(OptionValue<List<Collection<RootedPath>>> option,
+            @TempDir Path workDir) throws IOException {
+        var spec = option.getSpec();
 
         var token = StringToken.of(workDir.resolve("nonexistent").toString());
         var result = spec.convert(spec.name(), token);

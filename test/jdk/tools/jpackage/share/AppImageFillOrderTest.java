@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.AppImageFile;
 import jdk.jpackage.test.ApplicationLayout;
+import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.TKit;
 
@@ -48,6 +49,7 @@ import jdk.jpackage.test.TKit;
  * @test
  * @summary test order in which jpackage fills app image
  * @library /test/jdk/tools/jpackage/helpers
+ * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @compile -Xlint:all -Werror AppImageFillOrderTest.java
  * @run main/othervm/timeout=1440 -Xmx512m
@@ -64,6 +66,7 @@ import jdk.jpackage.test.TKit;
  * <ul>
  * <li>input directory (--input)
  * <li>app content (--app-content)
+ * <li>app resources (--app-resources)
  * <ul>
  */
 public class AppImageFillOrderTest {
@@ -122,6 +125,83 @@ public class AppImageFillOrderTest {
 
         TKit.trace(String.format("Parse [%s] file...", AppImageFile.getPathInAppImage(outputBundle)));
         AppImageFile.load(outputBundle);
+    }
+
+    @Test
+    @Parameter("false")
+    @Parameter("true")
+    public void testAppResourcesOverrideAppContent(boolean resourcesFirst)
+            throws IOException {
+        var cmd = createJPackage().setFakeRuntime();
+        var inputs = AppResourcesOverrideInputs.create();
+
+        inputs.addTo(cmd, resourcesFirst);
+
+        cmd.executeAndAssertImageCreated();
+
+        inputs.verify(cmd);
+    }
+
+    @Test
+    @Parameter("false")
+    @Parameter("true")
+    public void testAppResourcesOverrideAppContentInPackage(
+            boolean resourcesFirst) throws IOException {
+        var inputs = AppResourcesOverrideInputs.create();
+
+        new PackageTest()
+                .configureHelloApp()
+                .addInitializer(JPackageCommand::setFakeRuntime)
+                .addInitializer(cmd -> inputs.addTo(cmd, resourcesFirst))
+                .addInstallVerifier(inputs::verify)
+                .run();
+    }
+
+    private record AppResourcesOverrideInputs(
+            Path appContentFile,
+            Path appResourcesFile,
+            Path appContentArg) {
+
+        static AppResourcesOverrideInputs create() throws IOException {
+            var appContentRoot = TKit.createTempDirectory("app-content");
+
+            Path appContentFile;
+            Path appContentArg;
+            if (TKit.isOSX()) {
+                appContentArg = Files.createDirectory(
+                        appContentRoot.resolve("Resources"));
+                appContentFile = appContentArg.resolve("shared.txt");
+            } else {
+                appContentFile = appContentRoot.resolve("shared.txt");
+                appContentArg = appContentFile;
+            }
+            TKit.createTextFile(appContentFile, List.of("app-content"));
+
+            var appResourcesFile = TKit.createTempDirectory("app-resources")
+                    .resolve("shared.txt");
+            TKit.createTextFile(appResourcesFile, List.of("app-resources"));
+
+            return new AppResourcesOverrideInputs(
+                    appContentFile, appResourcesFile, appContentArg);
+        }
+
+        void addTo(JPackageCommand cmd, boolean resourcesFirst) {
+            if (resourcesFirst) {
+                cmd.addArguments("--app-resources", appResourcesFile);
+                cmd.addArguments("--app-content", appContentArg);
+            } else {
+                cmd.addArguments("--app-content", appContentArg);
+                cmd.addArguments("--app-resources", appResourcesFile);
+            }
+        }
+
+        void verify(JPackageCommand cmd) {
+            var outputFile = cmd.appLayout().resourcesDirectory()
+                    .resolve("shared.txt");
+
+            TKit.assertSameFileContent(appResourcesFile, outputFile);
+            TKit.assertMismatchFileContent(appContentFile, outputFile);
+        }
     }
 
     private static void test(JPackageCommand cmd, AppImageOverlay... overlays) {

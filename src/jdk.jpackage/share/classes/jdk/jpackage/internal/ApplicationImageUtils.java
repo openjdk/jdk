@@ -85,7 +85,8 @@ final class ApplicationImageUtils {
         return env -> {
             for (var e : List.of(
                     Map.entry(env.app().appDirSources(), env.resolvedLayout().appDirectory()),
-                    Map.entry(env.app().contentDirSources(), env.resolvedLayout().contentDirectory())
+                    Map.entry(env.app().contentDirSources(), env.resolvedLayout().contentDirectory()),
+                    Map.entry(env.app().resourcesDirSources(), env.resolvedLayout().resourcesDirectory())
             )) {
                 RootedPath.copy(e.getKey().stream(), e.getValue(),
                         StandardCopyOption.REPLACE_EXISTING, LinkOption.NOFOLLOW_LINKS);

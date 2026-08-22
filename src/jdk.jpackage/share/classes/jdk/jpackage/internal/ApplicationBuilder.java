@@ -65,6 +65,7 @@ final class ApplicationBuilder {
         appDirSources = other.appDirSources;
         externalApp = other.externalApp;
         contentDirSources = other.contentDirSources;
+        resourcesDirSources = other.resourcesDirSources;
         appImageLayout = other.appImageLayout;
         runtimeBuilder = other.runtimeBuilder;
         launchers = other.launchers;
@@ -96,6 +97,7 @@ final class ApplicationBuilder {
                 Optional.ofNullable(copyright).orElseGet(DEFAULTS::copyright),
                 Optional.ofNullable(appDirSources).orElseGet(List::of),
                 Optional.ofNullable(contentDirSources).orElseGet(List::of),
+                Optional.ofNullable(resourcesDirSources).orElseGet(List::of),
                 appImageLayout,
                 Optional.ofNullable(runtimeBuilder),
                 launchersAsList,
@@ -176,6 +178,11 @@ final class ApplicationBuilder {
 
     ApplicationBuilder contentDirSources(Collection<RootedPath> v) {
         contentDirSources = v;
+        return this;
+    }
+
+    ApplicationBuilder resourcesDirSources(Collection<RootedPath> v) {
+        resourcesDirSources = v;
         return this;
     }
 
@@ -339,6 +346,7 @@ final class ApplicationBuilder {
                 app.copyright(),
                 app.appDirSources(),
                 app.contentDirSources(),
+                app.resourcesDirSources(),
                 Objects.requireNonNull(appImageLayout),
                 app.runtimeBuilder(),
                 app.launchers(),
@@ -388,6 +396,7 @@ final class ApplicationBuilder {
     private Collection<RootedPath> appDirSources;
     private ExternalApplication externalApp;
     private Collection<RootedPath> contentDirSources;
+    private Collection<RootedPath> resourcesDirSources;
     private AppImageLayout appImageLayout;
     private RuntimeBuilder runtimeBuilder;
     private ApplicationLaunchers launchers;
