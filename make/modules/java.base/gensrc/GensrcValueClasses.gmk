@@ -59,6 +59,7 @@ JAVA_BASE_VALUE_CLASS_REPLACEMENTS := \
     java/time/chrono/HijrahDate.java \
     java/time/chrono/JapaneseDate.java \
     java/time/chrono/ThaiBuddhistDate.java \
+    jdk/internal/vm/vector/VectorSupport.java \
     #
 
 JAVA_BASE_VALUE_CLASS_SRC_PATHS := \

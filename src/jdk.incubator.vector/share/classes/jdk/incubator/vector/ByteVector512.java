@@ -41,7 +41,7 @@ import static jdk.internal.vm.vector.VectorSupport.*;
 
 @SuppressWarnings("cast")  // warning: redundant cast
 @ValueBased
-final class ByteVector512 extends ByteVector {
+final /*value*/ class ByteVector512 extends ByteVector {
     static final ByteSpecies VSPECIES =
         (ByteSpecies) ByteVector.SPECIES_512;
 
@@ -695,7 +695,7 @@ final class ByteVector512 extends ByteVector {
 
     // Mask
     @ValueBased
-    static final class ByteMask512 extends AbstractMask<Byte> {
+    static final /*value*/ class ByteMask512 extends AbstractMask<Byte> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 
         static final Class<Byte> CTYPE = byte.class; // used by the JVM
@@ -928,7 +928,7 @@ final class ByteVector512 extends ByteVector {
 
     // Shuffle
     @ValueBased
-    static final class ByteShuffle512 extends AbstractShuffle<Byte> {
+    static final /*value*/ class ByteShuffle512 extends AbstractShuffle<Byte> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 
         static final Class<Byte> CTYPE = byte.class; // used by the JVM
