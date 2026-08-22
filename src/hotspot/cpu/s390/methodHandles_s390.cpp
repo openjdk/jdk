@@ -197,17 +197,17 @@ void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
   __ load_heap_oop(method_temp,
                    Address(recv,
                            NONZERO(java_lang_invoke_MethodHandle::form_offset())),
-                   noreg, noreg, IS_NOT_NULL);
+                   temp2, temp3, IS_NOT_NULL);
   __ verify_oop(method_temp, FILE_AND_LINE);
   __ load_heap_oop(method_temp,
                    Address(method_temp,
                            NONZERO(java_lang_invoke_LambdaForm::vmentry_offset())),
-                   noreg, noreg, IS_NOT_NULL);
+                   temp2, temp3, IS_NOT_NULL);
   __ verify_oop(method_temp, FILE_AND_LINE);
   __ load_heap_oop(method_temp,
                    Address(method_temp,
                            NONZERO(java_lang_invoke_MemberName::method_offset())),
-                   noreg, noreg, IS_NOT_NULL);
+                   temp2, temp3, IS_NOT_NULL);
   __ verify_oop(method_temp, FILE_AND_LINE);
   __ z_lg(method_temp,
           Address(method_temp,
@@ -433,7 +433,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       Register temp2_defc = temp2;
 
       __ load_heap_oop(temp2_defc, member_clazz,
-                       noreg, noreg, IS_NOT_NULL);
+                       temp3, temp4, IS_NOT_NULL);
       load_klass_from_Class(_masm, temp2_defc, temp3, temp4);
       __ verify_klass_ptr(temp2_defc);
       __ check_klass_subtype(temp1_recv_klass, temp2_defc, temp3, temp4, L_ok);
@@ -460,7 +460,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
         verify_ref_kind(_masm, JVM_REF_invokeSpecial, member_reg, temp3);
       }
       __ load_heap_oop(Z_method, member_vmtarget,
-                       noreg, noreg, IS_NOT_NULL);
+                       temp1, temp2, IS_NOT_NULL);
       __ z_lg(Z_method, vmtarget_method);
       method_is_live = true;
       break;
@@ -470,7 +470,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
         verify_ref_kind(_masm, JVM_REF_invokeStatic, member_reg, temp3);
       }
       __ load_heap_oop(Z_method, member_vmtarget,
-                       noreg, noreg, IS_NOT_NULL);
+                       temp1, temp2, IS_NOT_NULL);
       __ z_lg(Z_method, vmtarget_method);
       method_is_live = true;
       break;
@@ -512,7 +512,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       Register temp3_intf = temp3;
 
       __ load_heap_oop(temp3_intf, member_clazz,
-                       noreg, noreg, IS_NOT_NULL);
+                       temp2, temp4, IS_NOT_NULL);
       load_klass_from_Class(_masm, temp3_intf, temp2, temp4);
 
       Register Z_index = Z_method;

@@ -1213,7 +1213,8 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   // Get mirror and store it in the frame as GC root for this Method*.
   __ mem2reg_opt(Z_R1_scratch, Address(constants_addr, ConstantPool::pool_holder_offset()));
   __ mem2reg_opt(Z_R1_scratch, Address(Z_R1_scratch, Klass::java_mirror_offset()));
-  __ resolve_oop_handle(Z_R1_scratch, Z_R0_scratch, Z_R1_scratch);
+  Register mirror_tmp = Z_R4;
+  __ resolve_oop_handle(Z_R1_scratch, mirror_tmp, Z_R0_scratch);
   __ z_stg(Z_R1_scratch, _z_ijava_state_neg(mirror), fp);
 
   BLOCK_COMMENT("} generate_fixed_frame: initialize interpreter state");
@@ -1599,7 +1600,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // Check for safepoint operation in progress and/or pending suspend requests.
   {
     Label Continue, do_safepoint;
-    __ safepoint_poll(do_safepoint, Z_R1);
+    __ safepoint_poll(do_safepoint, Z_R1, true /* at_return */, false /* in_nmethod */);
     // Check for suspend.
     __ load_and_test_int(Z_R0/*suspend_flags*/, thread_(suspend_flags));
     __ z_bre(Continue); // 0 -> no flag set -> not suspended
@@ -1908,7 +1909,7 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
   Label    slow_path;
 
   // If we need a safepoint check, generate full interpreter entry.
-  __ safepoint_poll(slow_path, Z_R1);
+  __ safepoint_poll(slow_path, Z_R1, false /* at_return */, false /* in_nmethod */);
 
   BLOCK_COMMENT("CRC32_update {");
 
@@ -1957,7 +1958,7 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
   Label    slow_path;
 
   // If we need a safepoint check, generate full interpreter entry.
-  __ safepoint_poll(slow_path, Z_R1);
+  __ safepoint_poll(slow_path, Z_R1, false /* at_return */, false /* in_nmethod */);
 
   // We don't generate local frame and don't align stack because
   // we call stub code and there is no safepoint on this path.
@@ -2097,7 +2098,7 @@ address TemplateInterpreterGenerator::generate_currentThread() {
   uint64_t entry_off = __ offset();
 
   __ z_lg(Z_RET, Address(Z_thread, JavaThread::vthread_offset()));
-  __ resolve_oop_handle(Z_RET, Z_R0_scratch, Z_R1_scratch);
+  __ resolve_oop_handle(Z_RET, Z_R1_scratch, Z_R0_scratch);
 
   // Restore caller sp for c2i case.
   __ resize_frame_absolute(Z_R10, Z_R0, true); // Cut the stack back to where the caller started.

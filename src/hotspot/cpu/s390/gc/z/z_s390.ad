@@ -1,0 +1,222 @@
+//
+// Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2026 IBM Corporation. All rights reserved.
+// DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+//
+// This code is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 2 only, as
+// published by the Free Software Foundation.
+//
+// This code is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// version 2 for more details (a copy is included in the LICENSE file that
+// accompanied this code).
+//
+// You should have received a copy of the GNU General Public License version
+// 2 along with this work; if not, write to the Free Software Foundation,
+// Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+//
+// Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+// or visit www.oracle.com if you need additional information or have any
+// questions.
+//
+
+source_hpp %{
+
+#include "gc/shared/gc_globals.hpp"
+#include "gc/z/c2/zBarrierSetC2.hpp"
+#include "gc/z/zThreadLocalData.hpp"
+
+%}
+
+source %{
+
+#include "gc/z/zBarrierSetAssembler.hpp"
+
+static void z_color(MacroAssembler* masm, const MachNode* node, Register dst, Register src) {
+  assert_different_registers(src, dst);
+  __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeLoad);
+  __ z_llill(dst, barrier_Relocation::unpatched);
+  if (src != noreg) {
+    __ z_rosbg(dst, src, 0, 63 - ZPointerLoadShift, ZPointerLoadShift);
+  }
+}
+
+static void z_uncolor(MacroAssembler* masm, const MachNode* node, Register ref) {
+  __ z_srlg(ref, ref, ZPointerLoadShift);
+}
+
+static void z_keep_alive_load_barrier(MacroAssembler* masm, const MachNode* node, Address ref_addr, Register ref) {
+  assert(ref != Z_R0_scratch, "ref must not be R0");
+  __ z_lgr(Z_R0_scratch, ref);
+  __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatMarkBadBeforeTest);
+  __ z_nill(Z_R0_scratch, barrier_Relocation::unpatched);
+
+  ZLoadBarrierStubC2* const stub = ZLoadBarrierStubC2::create(node, ref_addr, ref);
+  __ branch_optimized(Assembler::bcondNotZero, *stub->entry());
+
+  z_uncolor(masm, node, ref);
+
+  __ bind(*stub->continuation());
+}
+
+static void z_load_barrier(MacroAssembler* masm, const MachNode* node, Address ref_addr, Register ref) {
+  Assembler::InlineSkippedInstructionsCounter skipped_counter(masm);
+  if (node->barrier_data() == ZBarrierElided) {
+    z_uncolor(masm, node, ref);
+    return;
+  }
+
+  const bool on_non_strong =
+      ((node->barrier_data() & ZBarrierWeak) != 0) ||
+      ((node->barrier_data() & ZBarrierPhantom) != 0);
+
+  if (on_non_strong) {
+    z_keep_alive_load_barrier(masm, node, ref_addr, ref);
+    return;
+  }
+
+  ZLoadBarrierStubC2* const stub = ZLoadBarrierStubC2::create(node, ref_addr, ref);
+  __ z_lgr(Z_R0_scratch, ref);
+  __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadBadBeforeTest);
+  __ z_nill(Z_R0_scratch, barrier_Relocation::unpatched);
+  __ branch_optimized(Assembler::bcondNotZero, *stub->entry());
+
+  z_uncolor(masm, node, ref);
+  __ bind(*stub->continuation());
+}
+
+static void z_store_barrier(MacroAssembler* masm, const MachNode* node, Address ref_addr, Register rnew_zaddress, Register rnew_zpointer, bool is_atomic) {
+  Assembler::InlineSkippedInstructionsCounter skipped_counter(masm);
+  if (node->barrier_data() == ZBarrierElided) {
+    z_color(masm, node, rnew_zpointer, rnew_zaddress);
+  } else {
+    bool is_native = (node->barrier_data() & ZBarrierNative) != 0;
+    bool is_nokeepalive = (node->barrier_data() & ZBarrierNoKeepalive) != 0;
+    ZStoreBarrierStubC2* const stub = ZStoreBarrierStubC2::create(node, ref_addr, rnew_zaddress, rnew_zpointer, is_native, is_atomic, is_nokeepalive);
+    ZBarrierSetAssembler* bs_asm = ZBarrierSet::assembler();
+    bs_asm->store_barrier_fast(masm, ref_addr, rnew_zaddress, rnew_zpointer, true /* in_nmethod */, is_atomic, *stub->entry(), *stub->continuation());
+  }
+}
+
+%}
+
+// Load Pointer
+instruct zLoadP(iRegP dst, memory mem, flagsReg cr) %{
+  match(Set dst (LoadP mem));
+  predicate(UseZGC && n->as_Load()->barrier_data() != 0);
+  effect(TEMP dst, KILL cr);
+  ins_cost(MEMORY_REF_COST);
+  ins_is_late_expanded_null_check_candidate(true);
+
+  format %{ "LG      $dst,$mem\t # ptr" %}
+
+  ins_encode %{
+    __ z_lg($dst$$Register, $mem$$Address);
+    z_load_barrier(masm, this, $mem$$Address, $dst$$Register);
+  %}
+
+  ins_pipe(pipe_class_dummy);
+%}
+
+// Store Pointer
+instruct zStoreP(memory mem, iRegP src, iRegP temp, flagsReg cr) %{
+  predicate(UseZGC && n->as_Store()->barrier_data() != 0);
+  match(Set mem (StoreP mem src));
+  effect(TEMP temp, KILL cr);
+  ins_cost(2 * MEMORY_REF_COST);
+
+  format %{ "STG     $src,$mem\t # ptr" %}
+  ins_encode %{
+    z_store_barrier(masm, this, $mem$$Address, $src$$Register, $temp$$Register, false /* is_atomic */);
+    __ z_stg($temp$$Register, $mem$$Address);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+// Store Null Pointer
+instruct zStorePNull(memory mem, immP0 zero, iRegP temp, flagsReg cr) %{
+  predicate(UseZGC && n->as_Store()->barrier_data() != 0);
+  match(Set mem (StoreP mem zero));
+  effect(TEMP temp, KILL cr);
+  ins_cost(2 * MEMORY_REF_COST);
+
+  format %{ "STG     $mem,null\t # ptr" %}
+  ins_encode %{
+    z_store_barrier(masm, this, $mem$$Address, noreg, $temp$$Register, false /* is_atomic */);
+    __ z_stg($temp$$Register, $mem$$Address);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct zCompareAndExchangeP(iRegP res, iRegP mem, iRegP oldval, iRegP newval, iRegP newval_temp, flagsReg cr) %{
+  match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
+  predicate(UseZGC && n->as_LoadStore()->barrier_data() != 0);
+  effect(TEMP_DEF res, USE mem,  TEMP newval_temp, KILL cr);
+
+  format %{ "CompareAndExchangeP $oldval, $newval, $mem" %}
+  ins_encode %{
+    assert_different_registers($oldval$$Register, $mem$$Register);
+    const Address mem_addr = Address($mem$$Register, 0);
+
+    z_store_barrier(masm, this, mem_addr, $newval$$Register, $newval_temp$$Register, true);
+    z_color(masm, this, $res$$Register, $oldval$$Register);
+    __ z_csg($res$$Register, $newval_temp$$Register, mem_addr);
+    z_uncolor(masm, this, $res$$Register);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct zCompareAndSwap(iRegI res, iRegP mem, iRegP oldval, iRegP newval, iRegP oldval_temp, iRegP newval_temp, flagsReg cr) %{
+  match(Set res (CompareAndSwapP mem (Binary oldval newval)));
+  match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
+  predicate(UseZGC && n->as_LoadStore()->barrier_data() != 0);
+  effect(TEMP_DEF res, USE mem, USE oldval, TEMP oldval_temp, TEMP newval_temp, KILL cr);
+
+  format %{ "CompareAndSwapP $oldval,$newval,$mem" %}
+
+  ins_encode %{
+    assert_different_registers($oldval$$Register, $mem$$Register);
+    const Address mem_addr = Address($mem$$Register, 0);
+    z_store_barrier(masm, this, mem_addr, $newval$$Register, $newval_temp$$Register, true /* is_atomic */);
+    z_color(masm, this, $oldval_temp$$Register, $oldval$$Register);
+
+    __ z_csg($oldval_temp$$Register, $newval_temp$$Register, mem_addr);
+    if (VM_Version::has_LoadStoreConditional()) {
+      __ load_const_optimized(Z_R0_scratch, 0L);           // false (failed)
+      __ load_const_optimized($res$$Register, 1L);         // true  (succeed)
+      __ z_locgr($res$$Register, Z_R0_scratch, Assembler::bcondNotEqual);
+    } else {
+      Label done;
+      __ load_const_optimized($res$$Register, 0L);         // false (failed)
+      __ z_brne(done);                                     // Assume true to be the common case.
+      __ load_const_optimized($res$$Register, 1L);         // true  (succeed)
+      __ bind(done);
+    }
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct zGetAndSetP(iRegP newval, iRegP mem, iRegP temp1, iRegP temp2, flagsReg cr) %{
+  match(Set newval (GetAndSetP mem newval));
+  predicate(UseZGC && n->as_LoadStore()->barrier_data() != 0);
+  effect(TEMP temp1, TEMP temp2, KILL cr);
+
+  format %{ "GetAndSetP   $newval,[$mem]\t # EXCHANGE (oop, atomic), temp $temp1" %}
+
+  ins_encode %{
+    Label retry;
+    const Address mem_addr = Address($mem$$Register, 0);
+
+    z_store_barrier(masm, this, mem_addr, $newval$$Register, $temp1$$Register, true /* is_atomic */);
+    __ z_lg($temp2$$Register, mem_addr);
+    __ bind(retry);
+    __ z_csg($temp2$$Register, $temp1$$Register, mem_addr);
+    __ branch_optimized(Assembler::bcondNotEqual, retry);
+    __ z_lgr($newval$$Register, $temp2$$Register);
+    z_uncolor(masm, this, $newval$$Register);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
