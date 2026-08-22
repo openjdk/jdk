@@ -1148,11 +1148,61 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
   }
 
   if (needle_con_cnt == -1 || needle_con_cnt == 1) {
-    Label DO1_LOOP;
+    Label CH1_LOOP, HAS_ZERO, DO1_TAIL, DO1_SHORT, DO1_LOOP;
 
     BLOCK_COMMENT("string_indexof DO1 {");
     bind(DO1);
     (this->*needle_load_1chr)(ch1, Address(needle), noreg);
+
+    if (!AvoidUnalignedAccesses) {
+      const int chars_per_word = wordSize / haystack_chr_size;
+      subi(result_tmp, haystack_len, chars_per_word);
+      bltz(result_tmp, DO1_SHORT); // note: ch1 (t0) holds the broadcast needle, must not be clobbered here
+
+      slli(tmp3, result_tmp, haystack_chr_shift);
+      add(haystack, haystack, tmp3);
+      neg(hlen_neg, tmp3);
+
+      if (haystack_isL) {
+        slli(ch2, ch1, 8);
+        orr(ch1, ch2, ch1);
+      }
+      slli(ch2, ch1, 16);
+      orr(ch1, ch2, ch1);
+      slli(ch2, ch1, 32);
+      orr(ch1, ch2, ch1);
+
+      uint64_t mask0101 = UCONST64(0x0101010101010101);
+      uint64_t mask0001 = UCONST64(0x0001000100010001);
+      mv(nlen_tmp, haystack_isL ? mask0101 : mask0001);
+      uint64_t mask7f7f = UCONST64(0x7f7f7f7f7f7f7f7f);
+      uint64_t mask7fff = UCONST64(0x7fff7fff7fff7fff);
+      mv(hlen_tmp, haystack_isL ? mask7f7f : mask7fff);
+
+      bind(CH1_LOOP);
+      add(tmp3, haystack, hlen_neg);
+      ld(ch2, Address(tmp3));
+      compute_match_mask(ch2, ch1, tmp3, nlen_tmp, hlen_tmp);
+      bnez(tmp3, HAS_ZERO);
+      addi(hlen_neg, hlen_neg, wordSize);
+      bltz(hlen_neg, CH1_LOOP);
+
+      mv(tmp3, wordSize); // note: ch1 (t0) still holds the broadcast needle used by compute_match_mask
+      blt(hlen_neg, tmp3, DO1_TAIL);
+      j(NOMATCH);
+
+      bind(DO1_TAIL);
+      mv(hlen_neg, zr);
+      j(CH1_LOOP);
+
+      bind(HAS_ZERO);
+      ctzc_bits(tmp3, tmp3, haystack_isL, ch2, nlen_tmp);
+      srli(tmp3, tmp3, LogBitsPerByte);
+      add(hlen_neg, hlen_neg, tmp3);
+      j(MATCH);
+    }
+
+    bind(DO1_SHORT);
     subi(result_tmp, haystack_len, 1);
     slli(tmp3, result_tmp, haystack_chr_shift);
     add(haystack, haystack, tmp3);
