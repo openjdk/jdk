@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,12 +88,6 @@ public class SSLEngineExplorerWithSrv extends SSLEngineService {
         // Accept a socket channel.
         SocketChannel sc = ssc.accept();
 
-        // Complete connection.
-        while (!sc.finishConnect()) {
-            Thread.sleep(50);
-            // waiting for the connection completed.
-        }
-
         ByteBuffer buffer = ByteBuffer.allocate(0xFF);
         int position = 0;
         SSLCapabilities capabilities = null;
@@ -179,18 +173,11 @@ public class SSLEngineExplorerWithSrv extends SSLEngineService {
             Thread.sleep(50);
         }
 
-        // Create a non-blocking socket channel.
+        // Create a socket channel.
         SocketChannel sc = SocketChannel.open();
-        sc.configureBlocking(false);
         InetSocketAddress isa =
                 new InetSocketAddress(InetAddress.getLocalHost(), serverPort);
         sc.connect(isa);
-
-        // Complete connection.
-        while (!sc.finishConnect() ) {
-            Thread.sleep(50);
-            // waiting for the connection completed.
-        }
 
         // handshaking
         ByteBuffer peerNetData = handshaking(ssle, sc, null);
