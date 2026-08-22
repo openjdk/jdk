@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2014, 2024, Red Hat, Inc. All rights reserved.
-// Copyright 2025 Arm Limited and/or its affiliates.
+// Copyright 2025, 2026 Arm Limited and/or its affiliates.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -16156,18 +16156,50 @@ instruct stringU_indexof_char_sve(iRegP_R1 str1, iRegI_R2 cnt1, iRegI_R3 ch,
   ins_pipe(pipe_class_memory);
 %}
 
-instruct string_equalsL(iRegP_R1 str1, iRegP_R3 str2, iRegI_R4 cnt,
-                        iRegI_R0 result, rFlagsReg cr)
+instruct string_equalsL_sve(
+    iRegP_R1   str1,      // str1 (kill)
+    iRegP_R3   str2,      // str2 (kill)
+    iRegINoSp   cnt,       // int length
+    iRegINoSp   result,    // boolean
+    vecA ztmp1, vecA ztmp2, // SVE z registers
+    pRegGov pg, pReg pdata, // SVE predicate registers
+    rFlagsReg  cr)
 %{
-  predicate(((StrEqualsNode*)n)->encoding() == StrIntrinsicNode::LL);
+  predicate(UseSVE > 0 && ((StrEqualsNode*)n)->encoding() == StrIntrinsicNode::LL);
   match(Set result (StrEquals (Binary str1 str2) cnt));
-  effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt, KILL cr);
+  effect(USE_KILL str1, USE_KILL str2, USE cnt, TEMP ztmp1, TEMP ztmp2, TEMP pg, TEMP pdata, KILL cr);
+
+  format %{ "String Equals $str1,$str2,$cnt -> $result" %}
+  ins_encode %{
+    // Count is in 8-bit bytes; non-Compact chars are 16 bits.
+    __ string_equals_sve($str1$$Register, $str2$$Register,
+                     $result$$Register, $cnt$$Register,
+                     $ztmp1$$FloatRegister,
+                     $ztmp2$$FloatRegister, $pg$$PRegister,
+                     $pdata$$PRegister);
+  %}
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct string_equalsL(
+    iRegP_R1   str1,      // str1 (kill)
+    iRegP_R3   str2,      // str2 (kill)
+    iRegI_R4   cnt,       // int length (kill)
+    iRegI_R0   result,    // boolean
+    iRegINoSp  str1_hi,     // temp: str1 high 8B
+    iRegINoSp  str2_hi,     // temp: str2 high 8B (reused as shift amount in SMALL)
+    rFlagsReg  cr)
+%{
+  predicate(UseSVE == 0 && ((StrEqualsNode*)n)->encoding() == StrIntrinsicNode::LL);
+  match(Set result (StrEquals (Binary str1 str2) cnt));
+  effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt, TEMP str1_hi, TEMP str2_hi, KILL cr);
 
   format %{ "String Equals $str1,$str2,$cnt -> $result" %}
   ins_encode %{
     // Count is in 8-bit bytes; non-Compact chars are 16 bits.
     __ string_equals($str1$$Register, $str2$$Register,
-                     $result$$Register, $cnt$$Register);
+                     $result$$Register, $cnt$$Register,
+                     $str1_hi$$Register, $str2_hi$$Register);
   %}
   ins_pipe(pipe_class_memory);
 %}
