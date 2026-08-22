@@ -37,6 +37,7 @@
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
+#include "memory/iterator.hpp"
 #include "memory/iterator.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "runtime/atomicAccess.hpp"
