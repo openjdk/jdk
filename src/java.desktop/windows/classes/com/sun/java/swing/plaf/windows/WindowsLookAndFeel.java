@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,16 +173,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
     @Override
     public void initialize() {
         super.initialize();
-
-        // Set the flag which determines which version of Windows should
-        // be rendered. This flag only need to be set once.
-        // if version <= 4.0 then the classic LAF should be loaded.
-        if (OSInfo.getWindowsVersion().compareTo(OSInfo.WINDOWS_95) <= 0) {
-            isClassicWindows = true;
-        } else {
-            isClassicWindows = false;
-            XPStyle.invalidateStyle();
-        }
+        XPStyle.invalidateStyle();
 
         // Using the fonts set by the user can potentially cause
         // performance and compatibility issues, so allow this feature
@@ -340,11 +331,6 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         ColorUIResource gray = new ColorUIResource(Color.gray);
         ColorUIResource darkGray = new ColorUIResource(Color.darkGray);
         ColorUIResource scrollBarTrackHighlight = darkGray;
-
-        // Set the flag which determines which version of Windows should
-        // be rendered. This flag only need to be set once.
-        // if version <= 4.0 then the classic LAF should be loaded.
-        isClassicWindows = OSInfo.getWindowsVersion().compareTo(OSInfo.WINDOWS_95) <= 0;
 
         // *** Tree
         Object treeExpandedIcon = WindowsTreeUI.ExpandedIcon.createExpandedIcon();
@@ -599,8 +585,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
 
 
         if (!(this instanceof WindowsClassicLookAndFeel) &&
-                (OSInfo.getOSType() == OSInfo.OSType.WINDOWS &&
-                OSInfo.getWindowsVersion().compareTo(OSInfo.WINDOWS_XP) >= 0)) {
+                (OSInfo.getOSType() == OSInfo.OSType.WINDOWS)) {
             String prop = System.getProperty("swing.noxp");
             if (prop == null) {
 
@@ -1595,8 +1580,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
     }
 
     static boolean isOnVista() {
-        return OSInfo.getOSType() == OSInfo.OSType.WINDOWS
-                && OSInfo.getWindowsVersion().compareTo(OSInfo.WINDOWS_VISTA) >= 0;
+        return OSInfo.getOSType() == OSInfo.OSType.WINDOWS;
     }
 
     static boolean isOnWindows7() {
@@ -1915,10 +1899,6 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         WindowsDesktopProperty.flushUnreferencedProperties();
     }
 
-    // Flag which indicates that the Win98/Win2k/WinME features
-    // should be disabled.
-    private static boolean isClassicWindows = false;
-
     /**
      * Gets the state of the flag which indicates if the old Windows
      * look and feel should be rendered. This flag is used by the
@@ -1930,7 +1910,8 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
      * @since 1.4
      */
     public static boolean isClassicWindows() {
-        return isClassicWindows;
+        // we could probably remove the whole method
+        return false;
     }
 
     /**
@@ -2097,18 +2078,6 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
                             String nativeImageName, String fallbackName) {
             this.nativeImageName = nativeImageName;
             this.fallbackName = fallbackName;
-
-            if (OSInfo.getOSType() == OSInfo.OSType.WINDOWS &&
-                    OSInfo.getWindowsVersion().compareTo(OSInfo.WINDOWS_XP) < 0) {
-                // This desktop property is needed to trigger reloading the icon.
-                // It is kept in member variable to avoid GC.
-                this.desktopProperty = new TriggerDesktopProperty(desktopPropertyName) {
-                    @Override protected void updateUI() {
-                        icon = null;
-                        super.updateUI();
-                    }
-                };
-            }
         }
 
         @Override
