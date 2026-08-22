@@ -472,6 +472,7 @@ void PhaseOutput::shorten_branches(uint* blk_starts) {
   // Initialize the sizes to 0
   int code_size  = 0;          // Size in bytes of generated code
   int stub_size  = 0;          // Size in bytes of all stub entries
+  AARCH64_ONLY(stub_size += MacroAssembler::max_static_call_dispatch_adapter_size();)
   // Size in bytes of all relocation entries, including those in local stubs.
   // Start with 2-bytes of reloc info for the unvalidated entry point
   int reloc_size = 1;          // Number of relocation entries

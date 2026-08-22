@@ -30,7 +30,6 @@
 #include "nativeInst_aarch64.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.hpp"
-#include "runtime/orderAccess.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/ostream.hpp"
@@ -320,22 +319,6 @@ bool NativeInstruction::is_ldrw_to_zr(address instr) {
   unsigned insn = *(unsigned*)instr;
   return (Instruction_aarch64::extract(insn, 31, 22) == 0b1011100101 &&
           Instruction_aarch64::extract(insn, 4, 0) == 0b11111);
-}
-
-bool NativeInstruction::is_general_jump() {
-  if (is_movz()) {
-    NativeInstruction* inst1 = nativeInstruction_at(addr_at(instruction_size * 1));
-    if (inst1->is_movk()) {
-      NativeInstruction* inst2 = nativeInstruction_at(addr_at(instruction_size * 2));
-      if (inst2->is_movk()) {
-        NativeInstruction* inst3 = nativeInstruction_at(addr_at(instruction_size * 3));
-        if (inst3->is_blr()) {
-          return true;
-        }
-      }
-    }
-  }
-  return false;
 }
 
 bool NativeInstruction::is_movz() {

@@ -28,9 +28,12 @@
 
 #include "asm/assembler.hpp"
 #include "runtime/icache.hpp"
+#include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
 #include "runtime/os.hpp"
+#include "utilities/align.hpp"
 
+class Method;
 
 // We have interfaces for the following instructions:
 // - NativeInstruction
@@ -45,6 +48,7 @@
 // - - NativeLdSt
 // - - NativePostCallNop
 // - - NativeDeoptInstruction
+// - - NativeStaticCallStub
 
 // The base class for different kinds of native instruction abstractions.
 // Provides the primitive operations to manipulate code relative to this.
@@ -74,7 +78,6 @@ public:
 
   inline bool is_nop() const;
   bool is_jump();
-  bool is_general_jump();
   inline bool is_cond_jump();
   bool is_safepoint_poll();
   bool is_movz();
@@ -474,6 +477,50 @@ inline bool is_NativeCallTrampolineStub_at(address addr) {
 inline NativeCallTrampolineStub* nativeCallTrampolineStub_at(address addr) {
   assert(is_NativeCallTrampolineStub_at(addr), "no call trampoline found");
   return (NativeCallTrampolineStub*)addr;
+}
+
+// Static call stub:
+//
+//   ldr   rmethod, (pc + 8|12) ; offset 0
+//   b     dispatch_adapter     ; offset 4 -- jump to per-nmethod dispatch adapter
+//   [nop]                      ; offset 8 -- pad, only when the body starts at 4 mod 8
+//   .quad 0                    ; Method* slot, always 8-byte aligned
+class NativeStaticCallStub : public NativeInstruction {
+ private:
+  int data_offset() const {
+    return (int)(align_up(addr_at(body_size), wordSize) - addr_at(0));
+  }
+
+ public:
+  enum {
+    body_size = 2 * NativeInstruction::instruction_size,  // ldr + b
+    max_instruction_size = body_size + NativeInstruction::instruction_size + wordSize // body + worst-case pad + slot
+  };
+
+  int size() const { return data_offset() + wordSize; }
+
+  Method* method() const { return (Method*)ptr_at(data_offset()); }
+
+  void set_method(Method* m) {
+    assert(is_aligned(addr_at(data_offset()), wordSize), "must be 8-byte aligned");
+    set_ptr_at(data_offset(), (address)m);
+    OrderAccess::release();
+  }
+};
+
+inline bool is_NativeStaticCallStub_at(address addr) {
+  uint32_t* i = (uint32_t*)addr;
+  const bool ldr_literal_to_rmethod =
+      NativeInstruction::is_ldr_gpr_literal_at(addr) &&
+      (Instruction_aarch64::extract(i[0], 4, 0) == (uint32_t)rmethod->encoding());
+
+  const bool uncond_branch = (Instruction_aarch64::extract(i[1], 31, 26) == 0b00101u);
+  return ldr_literal_to_rmethod && uncond_branch;
+}
+
+inline NativeStaticCallStub* nativeStaticCallStub_at(address addr) {
+  assert(is_NativeStaticCallStub_at(addr), "no static call stub found");
+  return (NativeStaticCallStub*)addr;
 }
 
 class NativeMembar : public NativeInstruction {
