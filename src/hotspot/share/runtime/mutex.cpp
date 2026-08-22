@@ -246,10 +246,10 @@ bool Monitor::wait(uint64_t timeout) {
 
   // Check safepoint state after resetting owner and possible NSV.
   // Although the (HotSpot) monitor is logically released, the underlying
-  // OS monitor is still held. If this is the Heap_lock we would
-  // deadlock in the GC prologue trying to acquire the lock recursively.
-  // Suppress GC-a-lot in that case.
-  check_safepoint_state(self, this != Heap_lock);
+  // OS monitor is still held. Do not execute GC-a-lot here because
+  // garbage collection may (in)directly require the current monitor to
+  // progress. 
+  check_safepoint_state(self, false /* allow_gcalot */);
 
   int wait_status;
   InFlightMutexRelease ifmr(this);
