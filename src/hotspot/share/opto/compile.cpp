@@ -586,6 +586,12 @@ void Compile::print_compile_messages() {
     tty->print_cr("** Bailout: Recompile without locks coarsening         **");
     tty->print_cr("*********************************************************");
   }
+  if ((do_stringopts() != OptimizeStringConcat) && PrintOpto) {
+    // Recompiling without string concatenation optimizations
+    tty->print_cr("*********************************************************");
+    tty->print_cr("** Bailout: Recompile without StringOpts               **");
+    tty->print_cr("*********************************************************");
+  }
   if (env()->break_at_compile()) {
     // Open the debugger when compiling this method.
     tty->print("### Breaking when compiling: ");
@@ -2717,10 +2723,13 @@ void Compile::inline_string_calls(bool parse_time) {
     PhaseRemoveUseless pru(initial_gvn(), *igvn_worklist());
   }
 
-  {
+  if (C->do_stringopts()) {
     ResourceMark rm;
     print_method(PHASE_BEFORE_STRINGOPTS, 3);
     PhaseStringOpts pso(initial_gvn());
+    if (C->failing()) {
+      return;
+    }
     print_method(PHASE_AFTER_STRINGOPTS, 3);
   }
 
@@ -4457,7 +4466,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   }
 
   case Op_Proj: {
-    if (OptimizeStringConcat || IncrementalInline) {
+    if (C->do_stringopts() || IncrementalInline) {
       ProjNode* proj = n->as_Proj();
       if (proj->_is_io_use) {
         assert(proj->_con == TypeFunc::I_O || proj->_con == TypeFunc::Memory, "");
