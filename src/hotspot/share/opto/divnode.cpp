@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +58,72 @@ ModDNode::ModDNode(Compile* C, Node* a, Node* b) : ModFloatingNode(C, OptoRuntim
 ModFNode::ModFNode(Compile* C, Node* a, Node* b) : ModFloatingNode(C, OptoRuntime::modf_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::frem), "frem") {
   init_req(TypeFunc::Parms + 0, a);
   init_req(TypeFunc::Parms + 1, b);
+}
+
+// Copy sign bit from sign_src to magnitude using bit manipulation.
+// JLS 15.17.3: If the result is not NaN, the sign of the result equals the sign of the dividend.
+static Node* copy_sign_d(PhaseIterGVN* igvn, Node* magnitude, Node* sign_src) {
+  Node* mag_bits  = igvn->register_new_node_with_optimizer(new MoveD2LNode(magnitude));
+  Node* sign_bits = igvn->register_new_node_with_optimizer(new MoveD2LNode(sign_src));
+  Node* mag_abs   = igvn->register_new_node_with_optimizer(new AndLNode(mag_bits,  igvn->longcon(max_jlong)));
+  Node* sign_only = igvn->register_new_node_with_optimizer(new AndLNode(sign_bits, igvn->longcon(min_jlong)));
+  Node* combined  = igvn->register_new_node_with_optimizer(new OrLNode(mag_abs, sign_only));
+  return new MoveL2DNode(combined);
+}
+
+TupleNode* ModDNode::make_tuple_of_input_state_and_result(PhaseIterGVN* phase, Node* result) {
+  Compile* C = phase->C;
+  C->remove_macro_node(this);
+  return TupleNode::make(
+      tf()->range_cc(),
+      in(TypeFunc::Control),
+      in(TypeFunc::I_O),
+      in(TypeFunc::Memory),
+      in(TypeFunc::FramePtr),
+      in(TypeFunc::ReturnAdr),
+      result,
+      C->top());
+}
+
+// Optimize drem(x, d) where d is a constant integral double and is_integral_fp(x):
+//   copysign(ConvL2D(ConvD2L(x) % d_as_long), x)
+Node* ModDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (!can_reshape) {
+    return nullptr;
+  }
+
+  PhaseIterGVN* igvn = phase->is_IterGVN();
+  Node* x = dividend();
+  Node* y = divisor();
+
+  // Divisor must be a constant integral double with |d| < 2^DBL_MANT_DIG (= 2^53).
+  // This ensures |ModL result| < 2^53, and all integers below 2^53 are exactly
+  // representable as double, so ConvL2D of the result is exact.
+  const TypeD* divisor_type = phase->type(y)->isa_double_constant();
+  if (divisor_type == nullptr) {
+    return CallLeafPureNode::Ideal(phase, can_reshape);
+  }
+
+  double divisor_d = divisor_type->getd();
+  if (!g_isfinite(divisor_d) || divisor_d == 0.0 || fabs(divisor_d) >= (1LL << DBL_MANT_DIG)) {
+    return CallLeafPureNode::Ideal(phase, can_reshape);
+  }
+  jlong divisor_l = (jlong)divisor_d;
+  if ((double)divisor_l != divisor_d) {
+    // Divisor not integral
+    return CallLeafPureNode::Ideal(phase, can_reshape);
+  }
+
+  // Dividend is provably integral, no branch needed
+  if (is_integral_fp(phase, x, 0)) {
+    Node* x_as_long = igvn->transform(new ConvD2LNode(x));
+    Node* mod_l = igvn->transform(new ModLNode(in(TypeFunc::Control), x_as_long, igvn->longcon(divisor_l)));
+    Node* result = igvn->transform(new ConvL2DNode(mod_l));
+    result = igvn->transform(copy_sign_d(igvn, result, x));
+    return make_tuple_of_input_state_and_result(igvn, result);
+  }
+
+  return CallLeafPureNode::Ideal(phase, can_reshape);
 }
 
 //----------------------magic_int_divide_constants-----------------------------
