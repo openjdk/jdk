@@ -63,6 +63,10 @@ public:
                 XMMRegister dst, XMMRegister src1, Address src2,
                 int vlen_enc);
 
+  void smin_fp(BasicType elem_bt,
+               XMMRegister dst, XMMRegister a, XMMRegister b,
+               XMMRegister tmp1, XMMRegister tmp2);
+
   void vminmax_fp(int opcode, BasicType elem_bt,
                   XMMRegister dst, XMMRegister a, XMMRegister b,
                   XMMRegister tmp, XMMRegister atmp, XMMRegister btmp,
