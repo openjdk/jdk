@@ -24,8 +24,10 @@ package jdk.jpackage.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.lang.reflect.Array;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.converter.SimpleArgumentConverter;
 
@@ -82,19 +84,24 @@ public final class JUnitUtils {
                 return false;
             }
 
-            if (expectedMessage != null && !expectedMessage.equals(ex.getMessage())) {
+            if (expectedMessage != null && !Objects.equals(expectedMessage.orElse(null), ex.getMessage())) {
                 return false;
             }
 
-            if (expectedCauseType != null && !expectedCauseType.isInstance(ex.getCause())) {
-                return false;
+            if (expectedCauseType != null) {
+                var cause = ex.getCause();
+                if (expectedCauseType.isEmpty() != (cause == null)) {
+                    return false;
+                } else if (expectedCauseType.isPresent() && !expectedCauseType.orElseThrow().isInstance(cause)) {
+                    return false;
+                }
             }
 
             return true;
         }
 
         public ExceptionPattern hasMessage(String v) {
-            expectedMessage = v;
+            expectedMessage = Optional.ofNullable(v);
             return this;
         }
 
@@ -104,7 +111,7 @@ public final class JUnitUtils {
         }
 
         public ExceptionPattern isCauseInstanceOf(Class<? extends Throwable> v) {
-            expectedCauseType = v;
+            expectedCauseType = Optional.ofNullable(v);
             return this;
         }
 
@@ -116,21 +123,29 @@ public final class JUnitUtils {
             return hasCause(true);
         }
 
-        private String expectedMessage;
+        private Optional<String> expectedMessage;
         private Class<? extends Exception> expectedType;
-        private Class<? extends Throwable> expectedCauseType;
+        private Optional<Class<? extends Throwable>> expectedCauseType;
     }
 
 
-    public static class StringArrayConverter extends SimpleArgumentConverter {
+    public static class ArrayConverter extends SimpleArgumentConverter {
 
         @Override
         protected Object convert(Object source, Class<?> targetType) {
-            if (source instanceof String && String[].class.isAssignableFrom(targetType)) {
-                return ((String) source).split("\\s*,\\s*");
-            } else {
-                throw new IllegalArgumentException();
+            if (!(source instanceof String value) || !targetType.isArray()) {
+                throw new IllegalArgumentException("Expected a String and an array type");
             }
+
+            var componentType = targetType.getComponentType();
+            var values = value.split("\\s*,\\s*");
+            var result = Array.newInstance(componentType, values.length);
+
+            for (int i = 0; i < values.length; i++) {
+                Array.set(result, i, TestMethodSupplier.fromString(values[i], componentType));
+            }
+
+            return result;
         }
     }
 

@@ -27,8 +27,10 @@ package jdk.jpackage.internal.cli;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 import static jdk.jpackage.internal.cli.OptionSpecBuilder.pathSeparator;
 import static jdk.jpackage.internal.cli.OptionSpecBuilder.toList;
+import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_APP_IMAGE;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_MAC_PKG;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_NATIVE;
+import static jdk.jpackage.internal.cli.StandardBundlingOperation.MACOS_CREATE_BUNDLE;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.SIGN_MAC_APP_IMAGE;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.fromOptionName;
 import static jdk.jpackage.internal.cli.StandardOptionContext.createOptionSpecBuilderMutator;
@@ -58,18 +60,22 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.cli.CannedException.CannedExceptionCarrier;
 import jdk.jpackage.internal.cli.OptionValueExceptionFactory.StandardArgumentsMapper;
+import jdk.jpackage.internal.log.LogEnvironment;
 import jdk.jpackage.internal.model.AppImageBundleType;
 import jdk.jpackage.internal.model.BundleType;
+import jdk.jpackage.internal.model.BundleVersion;
 import jdk.jpackage.internal.model.BundlingOperationDescriptor;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.LauncherShortcut;
 import jdk.jpackage.internal.model.LauncherShortcutStartupDirectory;
-import jdk.jpackage.internal.util.RootedPath;
+import jdk.jpackage.internal.model.PackageType;
 import jdk.jpackage.internal.model.SelfContainedException;
+import jdk.jpackage.internal.util.PathUtils;
+import jdk.jpackage.internal.util.RootedPath;
 import jdk.jpackage.internal.util.SetBuilder;
-import jdk.jpackage.internal.log.LogEnvironment;
 
 /**
  * jpackage command line options
@@ -181,24 +187,30 @@ public final class StandardOption {
             .createArray(toList());
 
     public static final OptionValue<Path> ICON = fileOption("icon")
-            .validator(new Predicate<>() {
-                @Override
-                public boolean test(Path path) {
-                    if (!path.toString().isEmpty()) {
-                        return StandardValidator.IS_FILE_OR_SYMLINK.test(path);
-                    } else {
-                        return true;
-                    }
-                }
-            })
             .inScope(LauncherProperty.VALUE)
+            .mutate(b -> {
+                setupIconValidation(b, new StandardOptionContext(OperatingSystem.current()));
+            })
+            .mutate(createOptionSpecBuilderMutator(StandardOption::setupIconValidation))
             .create();
 
     public static final OptionValue<String> COPYRIGHT = stringOption("copyright").valuePattern("copyright string").create();
 
     public static final OptionValue<Path> LICENSE_FILE = fileOption("license-file").create();
 
-    public static final OptionValue<String> APP_VERSION = stringOption("app-version").create();
+    public static final OptionValue<BundleVersion> APP_VERSION = option("app-version", BundleVersion.class)
+            .converter(BundleVersion::of)
+            .mutate(createOptionSpecBuilderMutator((b, context) -> {
+                context.bundlingOperation().map(StandardBundlingOperation::bundleType).ifPresent(bundleType -> {
+                    b.validator(StandardValidator.versionValidator(bundleType));
+                    b.validatorExceptionFactory((optionName, optionValue, formatString, cause) -> {
+                        return ((CannedExceptionCarrier)cause.orElseThrow()).resolve(
+                                new CannedFormattedMessage.Context(optionName, optionValue.value(), context));
+                    });
+                    b.validatorExceptionFormatString("");
+                });
+            }))
+            .create();
 
     public static final OptionValue<String> ABOUT_URL = urlOption("about-url")
             .scope(CREATE_NATIVE).inScope(NOT_BUILDING_APP_IMAGE)
@@ -225,6 +237,8 @@ public final class StandardOption {
     static final OptionValue<Path[]> FILE_ASSOCIATIONS_INTERNAL = fileOption("file-associations")
             .tokenizer(pathSeparator())
             .outOfScope(BundlingOperationModifier.BUNDLE_RUNTIME)
+            .outOfScope(CREATE_APP_IMAGE)
+            .inScope(MACOS_CREATE_BUNDLE)
             .createArray();
 
     static final OptionValue<AdditionalLauncher[]> ADD_LAUNCHER_INTERNAL = createAddLauncherOption("add-launcher");
@@ -242,10 +256,28 @@ public final class StandardOption {
 
     public static final OptionValue<Path> INSTALL_DIR = pathOption("install-dir")
             .valuePattern("directory path")
+            .scope(CREATE_NATIVE).inScope(NOT_BUILDING_APP_IMAGE)
             .mutate(createOptionSpecBuilderMutator((b, context) -> {
                 if (context.os() == OperatingSystem.WINDOWS) {
                     b.description("help.option.install-dir" + resourceKeySuffix(context.os()));
                 }
+
+                b.validatorExceptionFormatString("error.parameter-not-install-dir");
+                b.validatorExceptionFactory(ERROR_WITH_VALUE_AND_OPTION_NAME);
+                b.validator(StandardValidator.installDirValidator(context.bundlingOperation().filter(bundlingOperation -> {
+                    // Don't run bundling operation-specific validation because
+                    // the operation is not in sync with the platform.
+                    return bundlingOperation.os() == context.os();
+                }).map(StandardBundlingOperation::packageType).orElseGet(() -> {
+                    // Package type is unknown. Install dir validation will not be complete but still feasible.
+                    // Do as much as we can.
+                    return new PackageType() {
+                        @Override
+                        public String label() {
+                            throw new UnsupportedOperationException();
+                        }};
+                })));
+
             }))
             .create();
 
@@ -257,7 +289,7 @@ public final class StandardOption {
                     var directoryValidator = b.createValidator().orElseThrow();
                     var macBundleValidator = b
                             .validatorExceptionFormatString("error.parameter-not-mac-bundle")
-                            .validator(StandardValidator.IS_VALID_MAC_BUNDLE)
+                            .validator(StandardValidator.IS_MAC_BUNDLE)
                             .createValidator().orElseThrow();
                     // Use "lazy and" validator composition.
                     // If the value of the option is not a directory, we want only one error reported, not two:
@@ -316,7 +348,29 @@ public final class StandardOption {
 
     public static final OptionValue<String> LINUX_PACKAGE_NAME = stringOption("linux-package-name")
             .valuePattern("package name")
-            .scope(nativeBundling()).create();
+            .scope(nativeBundling())
+            .mutate(createOptionSpecBuilderMutator((b, context) -> {
+                context.bundlingOperation().ifPresent(op -> {
+                    switch (op) {
+                        case CREATE_LINUX_DEB -> {
+                            b.validator(StandardValidator.IS_LINUX_DEB_PACKAGE_NAME);
+                            b.mutate(validationErrorWithAdviceMutator(
+                                    "error.parameter-not-deb-package-name",
+                                    "error.parameter-not-deb-package-name.advice"));
+                        }
+                        case CREATE_LINUX_RPM -> {
+                            b.validator(StandardValidator.IS_LINUX_RPM_PACKAGE_NAME);
+                            b.mutate(validationErrorWithAdviceMutator(
+                                    "error.parameter-not-rpm-package-name",
+                                    "error.parameter-not-rpm-package-name.advice"));
+                        }
+                        default -> {
+                            // NOP
+                        }
+                    }
+                });
+            }))
+            .create();
 
     public static final OptionValue<String> LINUX_DEB_MAINTAINER_EMAIL = stringOption("linux-deb-maintainer")
             .valuePattern("email address")
@@ -363,11 +417,9 @@ public final class StandardOption {
 
     public static final OptionValue<String> MAC_BUNDLE_IDENTIFIER = stringOption("mac-package-identifier")
             .valuePattern("package identifier")
-            .validator(StandardValidator.IS_VALID_MAC_BUNDLE_IDENTIFIER)
-            .validatorExceptionFactory(OptionValueExceptionFactory.build((message, cause) -> {
-                return new ConfigException(message, I18N.format("error.parameter-not-mac-bundle-identifier.advice"), cause);
-            }).formatArgumentsTransformer(StandardArgumentsMapper.VALUE_AND_NAME).create())
-            .validatorExceptionFormatString("error.parameter-not-mac-bundle-identifier")
+            .validator(StandardValidator.IS_MAC_BUNDLE_IDENTIFIER)
+            .mutate(validationErrorWithAdviceMutator(
+                    "error.parameter-not-mac-bundle-identifier", "error.parameter-not-mac-bundle-identifier.advice"))
             .create();
 
     public static final OptionValue<String> MAC_BUNDLE_SIGNING_PREFIX = stringOption("mac-package-signing-prefix").scope(MAC_SIGNING).create();
@@ -640,6 +692,17 @@ public final class StandardOption {
         };
     }
 
+    private static <T> Consumer<OptionSpecBuilder<T>> validationErrorWithAdviceMutator(String messageFormatKey, String adviceKey) {
+        Objects.requireNonNull(messageFormatKey);
+        Objects.requireNonNull(adviceKey);
+        return builder -> {
+            builder.validatorExceptionFactory(OptionValueExceptionFactory.build((message, cause) -> {
+                return new ConfigException(message, I18N.format(adviceKey), cause);
+            }).formatArgumentsTransformer(StandardArgumentsMapper.VALUE_AND_NAME).create());
+            builder.validatorExceptionFormatString(messageFormatKey);
+        };
+    }
+
     private static <T> Function<OptionValue.Builder<RootedPath[][]>, OptionValue<List<Collection<RootedPath>>>> toExplodedPathList() {
         return builder -> {
             return builder.to((RootedPath[][] v) -> {
@@ -774,6 +837,76 @@ public final class StandardOption {
                 }).defaultArrayValue(new AdditionalLauncher[0]).createArray();
     }
 
+    private static void setupIconValidation(OptionSpecBuilder<Path> b, StandardOptionContext context) {
+
+        b.validator(new Predicate<>() {
+            @Override
+            public boolean test(Path path) {
+                if (!path.toString().isEmpty()) {
+                    return StandardValidator.IS_FILE_OR_SYMLINK.test(path);
+                } else {
+                    return true;
+                }
+            }
+        });
+
+        String errorKey;
+        if (context.asFileSource().isPresent()) {
+            errorKey = switch (context.os()) {
+                case WINDOWS -> "error.properties-parameter-not-ico-icon";
+                case MACOS -> "error.properties-parameter-not-icns-icon";
+                case LINUX -> "error.properties-parameter-not-png-icon";
+                default -> {
+                    throw new AssertionError();
+                }
+            };
+        } else {
+            errorKey = switch (context.os()) {
+                case WINDOWS -> "error.parameter-not-ico-icon";
+                case MACOS -> "error.parameter-not-icns-icon";
+                case LINUX -> "error.parameter-not-png-icon";
+                default -> {
+                    throw new AssertionError();
+                }
+            };
+        }
+
+        var fileValidator = b.createValidator().orElseThrow();
+        var extensionValidator = b.copy()
+                .validatorExceptionFormatString(errorKey)
+                .validator(iconExtensionValidator(context.os()))
+                .createValidator().orElseThrow();
+        b.validator(Validator.andLazy(fileValidator, extensionValidator));
+
+    }
+
+    private static Predicate<Path> iconExtensionValidator(OperatingSystem os) {
+
+        var extension = switch (os) {
+            case WINDOWS -> ".ico";
+            case MACOS -> ".icns";
+            case LINUX -> ".png";
+            default -> {
+                throw new AssertionError();
+            }
+        };
+
+        return new Predicate<>() {
+            @Override
+            public boolean test(Path path) {
+                if (!path.toString().isEmpty()) {
+                    if (os == OperatingSystem.WINDOWS) {
+                        return extension.equalsIgnoreCase(PathUtils.getSuffix(path));
+                    } else {
+                        return extension.equals(PathUtils.getSuffix(path));
+                    }
+                } else {
+                    return true;
+                }
+            }
+        };
+    }
+
     private static BundleType parseBundleType(String str, OperatingSystem appImageOS) {
         Objects.requireNonNull(str);
         Objects.requireNonNull(appImageOS);
@@ -792,20 +925,14 @@ public final class StandardOption {
     }
 
     private static String resourceKeySuffix(OperatingSystem os) {
-        switch (os) {
-            case LINUX -> {
-                return ".linux";
-            }
-            case MACOS -> {
-                return ".mac";
-            }
-            case WINDOWS -> {
-                return ".win";
-            }
+        return switch (os) {
+            case WINDOWS -> ".win";
+            case MACOS -> ".mac";
+            case LINUX -> ".linux";
             default -> {
                 throw new IllegalArgumentException();
             }
-        }
+        };
     }
 
 

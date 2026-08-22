@@ -24,10 +24,10 @@
  */
 package jdk.jpackage.internal;
 
-import static jdk.jpackage.internal.cli.StandardValidator.IS_VALID_MAC_BUNDLE_IDENTIFIER;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
+import static jdk.jpackage.internal.cli.StandardValidator.IS_MAC_BUNDLE_IDENTIFIER;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -45,14 +45,16 @@ import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.AppImageSigningConfig;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
+import jdk.jpackage.internal.model.BundleVersion;
 import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.DottedVersion;
 import jdk.jpackage.internal.model.ExternalApplication;
 import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.MacApplication;
 import jdk.jpackage.internal.model.MacApplicationMixin;
-import jdk.jpackage.internal.summary.StandardWarning;
 import jdk.jpackage.internal.summary.StandardProperty;
+import jdk.jpackage.internal.summary.StandardWarning;
 import jdk.jpackage.internal.summary.SummaryAccumulator;
 import jdk.jpackage.internal.util.PListReader;
 import jdk.jpackage.internal.util.Result;
@@ -131,13 +133,12 @@ final class MacApplicationBuilder {
 
         var app = superBuilder.create();
 
-        validateAppVersion(app);
         summary().ifPresent(s -> {
             validateAppContentDirs(s, app);
         });
 
         final var mixin = new MacApplicationMixin.Stub(
-                validatedIcon(),
+                Optional.ofNullable(icon),
                 validatedBundleName(app),
                 validatedBundleIdentifier(app),
                 validatedCategory(),
@@ -163,14 +164,6 @@ final class MacApplicationBuilder {
                 app.appStore(),
                 app.signingConfig());
         return MacApplication.create(ApplicationBuilder.overrideAppImageLayout(app, appImageLayout), mixin);
-    }
-
-    private static void validateAppVersion(Application app) {
-        try {
-            CFBundleVersion.of(app.version());
-        } catch (IllegalArgumentException ex) {
-            throw I18N.buildConfigException(ex).advice("error.invalid-cfbundle-version.advice").create();
-        }
     }
 
     private static Stream<Path> appContentTopPaths(Application app) {
@@ -251,9 +244,18 @@ final class MacApplicationBuilder {
             }
 
             if (builder.superBuilder.version().isEmpty()) {
-                plist.findValue("CFBundleVersion").ifPresent(ver -> {
-                    Log.trace("Derive bundle version [%s] from [%s] file", ver, externalInfoPlistFile);
-                    builder.superBuilder.version(ver);
+                var property = "CFBundleVersion";
+                plist.findValue(property).ifPresent(ver -> {
+                    Optional<DottedVersion> derivedVersion = Optional.empty();
+                    try {
+                        derivedVersion = Optional.of(DottedVersion.greedy(ver));
+                        Log.trace("Derive bundle version [%s] from [%s] file", ver, externalInfoPlistFile);
+                    } catch (Exception ex) {
+                        Log.trace(ex,
+                                "Failed to derive bundle version from [%s] file: invalid value of \"%s\" property: [%s]",
+                                externalInfoPlistFile, property, ver);
+                    }
+                    derivedVersion.map(BundleVersion::of).map(builder.superBuilder::version);
                 });
             }
         });
@@ -318,13 +320,13 @@ final class MacApplicationBuilder {
                     })
                     .orElseGet(app::name);
 
-            if (!IS_VALID_MAC_BUNDLE_IDENTIFIER.test(derivedValue)) {
+            if (!IS_MAC_BUNDLE_IDENTIFIER.test(derivedValue)) {
                 // Derived bundle identifier is invalid. Try to adjust it by dropping all invalid characters.
                 derivedValue = derivedValue.codePoints()
                         .mapToObj(Character::toString)
-                        .filter(IS_VALID_MAC_BUNDLE_IDENTIFIER)
+                        .filter(IS_MAC_BUNDLE_IDENTIFIER)
                         .collect(Collectors.joining(""));
-                if (!IS_VALID_MAC_BUNDLE_IDENTIFIER.test(derivedValue)) {
+                if (!IS_MAC_BUNDLE_IDENTIFIER.test(derivedValue)) {
                     throw new ConfigException(
                             I18N.format("error.invalid-derived-bundle-identifier"),
                             I18N.format("error.invalid-derived-bundle-identifier.advice"));
@@ -338,10 +340,6 @@ final class MacApplicationBuilder {
 
     private String validatedCategory() {
         return "public.app-category." + Optional.ofNullable(category).orElseGet(DEFAULTS::category);
-    }
-
-    private Optional<Path> validatedIcon() {
-        return Optional.ofNullable(icon).map(LauncherBuilder::validateIcon);
     }
 
     private Optional<SummaryAccumulator> summary() {

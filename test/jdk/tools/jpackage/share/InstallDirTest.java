@@ -31,7 +31,6 @@ import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.PackageTest;
-import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.RunnablePackageTest.Action;
 
 /**
@@ -89,22 +88,6 @@ public class InstallDirTest {
         .addInitializer(cmd -> {
             cmd.addArguments("--install-dir", installDir);
         }).run();
-    }
-
-    @Test(ifOS = OperatingSystem.LINUX)
-    @Parameter("/")
-    @Parameter(".")
-    @Parameter("foo")
-    @Parameter("/opt/foo/.././.")
-    public static void testLinuxInvalid(String installDir) {
-        new PackageTest().configureHelloApp()
-        .setExpectedExitCode(1)
-        .forTypes(PackageType.LINUX)
-        .addInitializer(cmd -> {
-            cmd.addArguments("--install-dir", installDir);
-            cmd.validateErr(JPackageCommand.makeError("error.invalid-install-dir", installDir));
-        })
-        .run();
     }
 
     record TestSpec(Path installDir, boolean runtimeInstaller) {

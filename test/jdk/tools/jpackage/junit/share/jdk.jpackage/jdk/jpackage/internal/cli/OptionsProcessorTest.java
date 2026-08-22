@@ -23,6 +23,7 @@
 package jdk.jpackage.internal.cli;
 
 import static jdk.jpackage.internal.cli.TestUtils.assertExceptionListEquals;
+import static jdk.jpackage.internal.util.OperatingSystemUtils.operatingSystemLabel;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
@@ -59,6 +60,7 @@ import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -123,24 +125,43 @@ public class OptionsProcessorTest {
         }).create("--add-launcher", "foo=" + propFile).execute();
     }
 
-    @Test
-    public void testFa(@TempDir Path workDir) throws IOException {
+    @ParameterizedTest
+    @CsvSource({
+        "MACOS,true",
+        "WINDOWS,false",
+        "LINUX,false"
+    })
+    public void testFa(OperatingSystem os, boolean accepted, @TempDir Path workDir) throws IOException {
 
         final var propFile = workDir.resolve("fa.properties");
         Files.write(propFile, List.of("description=Hello"));
 
-        build().createAppImageByDefault().withMockupMainJar(workDir).createBundleCallback(cmdline -> {
-            assertFalse(StandardOption.FILE_ASSOCIATIONS_INTERNAL.containsIn(cmdline));
+        var validator = build().os(os).createAppImageByDefault().withMockupMainJar(workDir).mutate(builder -> {
+            if (accepted) {
+                builder.createBundleCallback(cmdline -> {
+                    assertFalse(StandardOption.FILE_ASSOCIATIONS_INTERNAL.containsIn(cmdline));
 
-            var fas = StandardOption.FILE_ASSOCIATIONS.getFrom(cmdline);
-            assertEquals(1, fas.size());
+                    var fas = StandardOption.FILE_ASSOCIATIONS.getFrom(cmdline);
+                    assertEquals(1, fas.size());
 
-            var fa = fas.getFirst();
+                    var fa = fas.getFirst();
 
-            assertEquals("Hello", StandardFaOption.DESCRIPTION.getFrom(fa));
-            assertEquals(propFile, StandardOption.SOURCE_PROPERY_FILE.getFrom(fa));
+                    assertEquals("Hello", StandardFaOption.DESCRIPTION.getFrom(fa));
+                    assertEquals(propFile, StandardOption.SOURCE_PROPERY_FILE.getFrom(fa));
+                });
+            } else {
+                builder.expectValidationErrors(
+                        new JPackageException(I18N.format("ERR_InvalidTypeOptionOnPlatform",
+                                "--file-associations", "app-image", operatingSystemLabel(os)))
+                );
+            }
+        }).create("--file-associations=" + propFile);
 
-        }).create("--file-associations=" + propFile).execute();
+        if (accepted) {
+            validator.execute();
+        } else {
+            validator.validate();
+        }
     }
 
     /**
@@ -150,10 +171,18 @@ public class OptionsProcessorTest {
     public void testNonOptionArgumntsError(@TempDir Path workDir) {
 
         build()
-        .withDefaultBundlingOperation(true)
-        .createAppImageBundlingOperation()
+        .createAppImageByDefault()
         .expectValidationErrors(
                 new JPackageException(I18N.format("error.non-option-arguments", 1)),
+                new JPackageException(I18N.format("ERR_NoEntryPoint"))
+        ).create("foo").validate();
+
+        build()
+        .createAppImageByDefault()
+        .expectBundlingEnvironmentConfigurationErrors(new Exception("Ops"))
+        .expectValidationErrors(
+                new JPackageException(I18N.format("error.non-option-arguments", 1)),
+                new Exception("Ops"),
                 new JPackageException(I18N.format("ERR_NoEntryPoint"))
         ).create("foo").validate();
 
@@ -163,6 +192,13 @@ public class OptionsProcessorTest {
                 new JPackageException(I18N.format("error.non-option-arguments", 3)),
                 new JPackageException(I18N.format("ERR_NoEntryPoint"))
         ).create("some", "-t", "app-image", "foo", "bar", "--dest", "dir").validate();
+
+        build()
+        .createAppImageBundlingOperation()
+        .expectValidationErrors(
+                new JPackageException(I18N.format("error.non-option-arguments", 3)),
+                new JPackageException(I18N.format("ERR_InvalidInstallerType", "unknown"), new IllegalArgumentException())
+        ).create("some", "-t", "unknown", "foo", "bar", "--dest", "dir").validate();
     }
 
     /**
@@ -290,6 +326,28 @@ public class OptionsProcessorTest {
     }
 
     /**
+     * Test wording of options that are invalid with the bundling type and/or platform.
+     */
+    @Test
+    void testInvalidPlatformOrTypeOption(@TempDir Path workDir) {
+
+        final var os = OperatingSystem.WINDOWS;
+        final var formattedOS = operatingSystemLabel(os);
+
+        build().os(os).createAppImageByDefault().withMockupMainJar(workDir).expectValidationErrors(
+                new JPackageException(I18N.format("ERR_UnsupportedOption", "--mac-sign", formattedOS))
+        ).create("--mac-sign").validate();
+
+        build().os(os)
+                .withDefaultBundlingOperation(true)
+                .bundlingOperation(StandardBundlingOperation.CREATE_LINUX_DEB.descriptor())
+                .withMockupMainJar(workDir)
+                .expectValidationErrors(
+                        new JPackageException(I18N.format("ERR_InvalidTypeOption", "--win-console", "deb"))
+                ).create("--win-console").validate();
+    }
+
+    /**
      * Test that multiple converter/validator errors are in the same order as
      * erroneous options on the command line.
      */
@@ -344,43 +402,56 @@ public class OptionsProcessorTest {
     @ValueSource(ints = {0, 1})
     public void testMultipleErrors2(int testType, @TempDir Path workDir) throws IOException {
 
+        final var os = OperatingSystem.WINDOWS;
+        final var formattedOS = operatingSystemLabel(os);
+
         List<String> badOptions;
+        List<String> expectedErrors;
         switch (testType) {
             case 0 -> {
-                badOptions = List.of("--linux-shortcut", "--win-console");
+                badOptions = List.of("--linux-shortcut", "--win-console", "--mac-package-name", "foo");
+                expectedErrors = List.of(
+                        I18N.format("ERR_UnsupportedOption", "--linux-shortcut", formattedOS),
+                        I18N.format("ERR_InvalidTypeOption", "--win-console", "dmg"),
+                        I18N.format("ERR_UnsupportedOption", "--mac-package-name", formattedOS)
+                );
             }
             case 1 -> {
-                badOptions = List.of("--win-console", "--linux-shortcut");
+                badOptions = List.of("--win-console", "--linux-shortcut", "--mac-package-name", "foo");
+                expectedErrors = List.of(
+                        I18N.format("ERR_InvalidTypeOption", "--win-console", "dmg"),
+                        I18N.format("ERR_UnsupportedOption", "--linux-shortcut", formattedOS),
+                        I18N.format("ERR_UnsupportedOption", "--mac-package-name", formattedOS)
+                );
             }
             default -> {
                 throw new IllegalArgumentException();
             }
         }
 
-        var builder = build().os(OperatingSystem.WINDOWS)
+        var builder = build().os(os)
                 .bundlingOperation(StandardBundlingOperation.CREATE_WIN_MSI.descriptor())
-                .expectValidationErrors(new JPackageException(I18N.format("ERR_InvalidInstallerType", "dmg")));
-
-        for (var badOption : badOptions) {
-            builder.expectValidationErrors(new JPackageException(I18N.format("ERR_UnsupportedOption", badOption)));
-        }
+                .expectValidationErrors(new JPackageException(I18N.format("ERR_InvalidInstallerType", "dmg")))
+                .expectValidationErrors(expectedErrors.stream().map(JPackageException::new).toList());
 
         List<Object> args = new ArrayList<>(List.of("-t", "dmg", "-i", workDir.resolve("non-existent")));
         args.addAll(badOptions);
-        args.addAll(List.of("--mac-package-name", "foo"));
         builder.create(args).validate();
     }
 
     @Test
     public void testMultipleErrors3(@TempDir Path workDir) throws IOException {
 
-        build().os(OperatingSystem.WINDOWS)
+        final var os = OperatingSystem.WINDOWS;
+        final var formattedOS = operatingSystemLabel(os);
+
+        build().os(os)
                 .bundlingOperation(StandardBundlingOperation.CREATE_WIN_MSI.descriptor())
                 .withDefaultBundlingOperation(true)
                 .expectValidationErrors(
-                        new JPackageException(I18N.format("ERR_UnsupportedOption", "--linux-shortcut")),
-                        new JPackageException(I18N.format("ERR_UnsupportedOption", "--mac-package-name")),
-                        new JPackageException(I18N.format("ERR_UnsupportedOption", "--linux-menu-group"))
+                        new JPackageException(I18N.format("ERR_UnsupportedOption", "--linux-shortcut", formattedOS)),
+                        new JPackageException(I18N.format("ERR_UnsupportedOption", "--mac-package-name", formattedOS)),
+                        new JPackageException(I18N.format("ERR_UnsupportedOption", "--linux-menu-group", formattedOS))
                 )
                 .create("-i", workDir.resolve("non-existent"), "--linux-shortcut", "--mac-package-name", "foo", "--linux-menu-group", "grp").validate();
     }
@@ -389,6 +460,9 @@ public class OptionsProcessorTest {
     @ValueSource(ints = {0, 1, 2})
     public void testMultipleErrors4(int testType, @TempDir Path workDir) throws IOException {
 
+        final var os = OperatingSystem.WINDOWS;
+        final var formattedOS = operatingSystemLabel(os);
+
         List<String> args;
         List<String> expectedErrors = null;
 
@@ -396,28 +470,28 @@ public class OptionsProcessorTest {
             case 0 -> {
                 args = List.of("--linux-shortcut", "--mac-package-name", "foo", "-p", "m1", "--linux-menu-group", "grp", "-p", "m2", "--app-image", "foo");
                 expectedErrors = List.of(
-                        I18N.format("ERR_UnsupportedOption", "--linux-shortcut"),
-                        I18N.format("ERR_UnsupportedOption", "--mac-package-name"),
-                        I18N.format("ERR_InvalidTypeOption", "-p", "msi"),
-                        I18N.format("ERR_UnsupportedOption", "--linux-menu-group")
+                        I18N.format("ERR_UnsupportedOption", "--linux-shortcut", formattedOS),
+                        I18N.format("ERR_UnsupportedOption", "--mac-package-name", formattedOS),
+                        I18N.format("ERR_InvalidTypeOption", "-p", "msi", formattedOS),
+                        I18N.format("ERR_UnsupportedOption", "--linux-menu-group", formattedOS)
                 );
             }
             case 1 -> {
                 args = List.of("--linux-shortcut", "--mac-package-name", "foo", "--module-path", "m1", "--linux-menu-group", "grp", "-p", "m2", "--app-image", "foo");
                 expectedErrors = List.of(
-                        I18N.format("ERR_UnsupportedOption", "--linux-shortcut"),
-                        I18N.format("ERR_UnsupportedOption", "--mac-package-name"),
-                        I18N.format("ERR_InvalidTypeOption", "--module-path", "msi"),
-                        I18N.format("ERR_UnsupportedOption", "--linux-menu-group")
+                        I18N.format("ERR_UnsupportedOption", "--linux-shortcut", formattedOS),
+                        I18N.format("ERR_UnsupportedOption", "--mac-package-name", formattedOS),
+                        I18N.format("ERR_InvalidTypeOption", "--module-path", "msi", formattedOS),
+                        I18N.format("ERR_UnsupportedOption", "--linux-menu-group", formattedOS)
                 );
             }
             case 2 -> {
                 args = List.of("--linux-shortcut", "--mac-package-name", "foo", "-p", "m1", "--linux-menu-group", "grp", "--module-path", "m2", "--app-image", "foo");
                 expectedErrors = List.of(
-                        I18N.format("ERR_UnsupportedOption", "--linux-shortcut"),
-                        I18N.format("ERR_UnsupportedOption", "--mac-package-name"),
-                        I18N.format("ERR_InvalidTypeOption", "--module-path", "msi"),
-                        I18N.format("ERR_UnsupportedOption", "--linux-menu-group")
+                        I18N.format("ERR_UnsupportedOption", "--linux-shortcut", formattedOS),
+                        I18N.format("ERR_UnsupportedOption", "--mac-package-name", formattedOS),
+                        I18N.format("ERR_InvalidTypeOption", "--module-path", "msi", formattedOS),
+                        I18N.format("ERR_UnsupportedOption", "--linux-menu-group", formattedOS)
                 );
             }
             default -> {
@@ -425,13 +499,91 @@ public class OptionsProcessorTest {
             }
         }
 
-        build().os(OperatingSystem.WINDOWS)
+        build().os(os)
                 .withDefaultBundlingOperation(true)
                 .bundlingOperation(StandardBundlingOperation.CREATE_WIN_MSI.descriptor())
                 .expectValidationErrors(expectedErrors.stream().map(JPackageException::new).toList())
                 .create(args.toArray()).validate();
     }
 
+    /**
+     * Valid icon for the specified platform, but invalid bundling operation on the platform.
+     */
+    @ParameterizedTest
+    @EnumSource(names = { "WINDOWS", "LINUX", "MACOS" })
+    public void testInvalidBundlingOperationWithValidOption(OperatingSystem os, @TempDir Path workDir) throws IOException {
+
+        var iconSuffix = switch (os) {
+            case WINDOWS -> ".ico";
+            case LINUX -> ".png";
+            case MACOS -> ".icns";
+            default -> throw new AssertionError();
+        };
+
+        var bundlingOperation = switch (os) {
+            case WINDOWS -> "dmg";
+            case LINUX -> "msi";
+            case MACOS -> "rpm";
+            default -> throw new AssertionError();
+        };
+
+        var icon = workDir.resolve("icon" + iconSuffix);
+
+        Files.write(icon, new byte[0]);
+
+        build().os(os)
+                .expectValidationErrors(new JPackageException(I18N.format("ERR_InvalidInstallerType", bundlingOperation)))
+                .create("--type", bundlingOperation, "--icon", icon).validate();
+    }
+
+    /**
+     * Valid install directory for the specified platform, but invalid bundling operation on the platform.
+     */
+    @Test
+    public void testInvalidBundlingOperationWithValidOption2(@TempDir Path workDir) throws IOException {
+
+        var os = OperatingSystem.current();
+
+        var installDir = switch (os) {
+            case WINDOWS -> "Foo";
+            case LINUX -> "/opt/foo";
+            case MACOS -> "/Applications/foo";
+            default -> throw new AssertionError();
+        };
+
+        var bundlingOperation = switch (os) {
+            case WINDOWS -> "dmg";
+            case LINUX -> "msi";
+            case MACOS -> "rpm";
+            default -> throw new AssertionError();
+        };
+
+        build().os(os)
+                .expectValidationErrors(new JPackageException(I18N.format("ERR_InvalidInstallerType", bundlingOperation)))
+                .create("--type", bundlingOperation, "--install-dir", installDir).validate();
+    }
+
+    /**
+     * Invalid Linux bundling operation on the platform with valid Linux platform option.
+     */
+    @ParameterizedTest
+    @EnumSource(names = { "WINDOWS", "MACOS" })
+    public void testInvalidBundlingOperationWithValidOption3(OperatingSystem os) throws IOException {
+
+        final var formattedOS = operatingSystemLabel(os);
+
+        build().os(os)
+                .expectValidationErrors(
+                        new JPackageException(I18N.format("ERR_InvalidInstallerType", "rpm")),
+                        new JPackageException(I18N.format("ERR_UnsupportedOption", "--linux-package-name", formattedOS)))
+                .create("--type", "rpm", "--linux-package-name", "foo").validate();
+
+        build().os(os)
+                .expectValidationErrors(
+                        new JPackageException(I18N.format("ERR_InvalidInstallerType", "rpm")),
+                        new JPackageException(I18N.format("ERR_UnsupportedOption", "--linux-package-name", formattedOS)))
+                .create("--type", "rpm", "--linux-package-name", "#").validate();
+    }
 
     /**
      * Test that it will collect all errors when processing multiple property files
@@ -662,9 +814,9 @@ public class OptionsProcessorTest {
 
             CliBundlingEnvironment bundlingEnv = bundlingEnvironmentBuilder.createBundleCallback(recorder).create();
 
-            var optionsBuilder = Utils.buildParser(os, bundlingEnv).create().apply(stringArgs).orElseThrow();
+            var optionsBuilder = Utils.buildParser(os).create().apply(stringArgs).orElseThrow();
 
-            var op = new OptionsProcessor(optionsBuilder, OperatingSystem.current(), bundlingEnv);
+            var op = new OptionsProcessor(optionsBuilder, os, bundlingEnv);
 
             Collection<Map<String, Object>> errors;
             if (expectedValidationErrorsOrdered) {
@@ -767,6 +919,11 @@ public class OptionsProcessorTest {
 
         OptionsProcessorValidatorBuilder validationErrorsOrdered(boolean v) {
             expectedValidationErrorsOrdered = v;
+            return this;
+        }
+
+        OptionsProcessorValidatorBuilder mutate(Consumer<OptionsProcessorValidatorBuilder> mutator) {
+            mutator.accept(this);
             return this;
         }
 

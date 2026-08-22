@@ -244,7 +244,7 @@ final class ExecutableRebrander {
             return new ExecutableProperties(
                     app.vendor(),
                     launcher.description(),
-                    app.winVersion(),
+                    app.version().asDottedVersion().orElseThrow(),
                     app.copyright(),
                     launcher.name(),
                     launcher.executableNameWithSuffix());
@@ -254,7 +254,7 @@ final class ExecutableRebrander {
             return new ExecutableProperties(
                     pkg.app().vendor(),
                     pkg.description(),
-                    DottedVersion.lazy(pkg.version()),
+                    pkg.version().asDottedVersion().orElseThrow(),
                     pkg.app().copyright(),
                     pkg.packageName(),
                     pkg.packageFileNameWithSuffix());

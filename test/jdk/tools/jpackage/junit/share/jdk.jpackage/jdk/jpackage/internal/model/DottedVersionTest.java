@@ -29,7 +29,6 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -38,6 +37,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -79,6 +79,9 @@ public class DottedVersionTest {
                     new TestConfig("1", type, 1),
                     new TestConfig("2.20034.045", type, 3, "2.20034.45"),
                     new TestConfig("2.234.0", type, 3),
+                    new TestConfig("1.02.3", type, 3, "1.2.3"),
+                    new TestConfig("1.02.3.0.0", type, 5, "1.2.3.0.0"),
+                    new TestConfig("1.0002.3.0.0", type, 5, "1.2.3.0.0"),
                     new TestConfig("0", type, 1),
                     new TestConfig("0.1", type, 2),
                     new TestConfig("9".repeat(1000), type, 1),
@@ -110,7 +113,8 @@ public class DottedVersionTest {
                 TestConfig.lazy("+0", "+0", 0, ""),
                 TestConfig.lazy("1.2.3+ea", "+ea", 3, "1.2.3"),
                 TestConfig.lazy(".7", ".7", 0, ""),
-                TestConfig.lazy(".+7", ".+7", 0, "")
+                TestConfig.lazy(".+7", ".+7", 0, ""),
+                TestConfig.lazy("1.000.002.0003.45+24~foo", "+24~foo", 5, "1.0.2.3.45")
         ));
 
         return data;
@@ -220,9 +224,9 @@ public class DottedVersionTest {
         void run() {
             final String expectedErrorMsg;
             if (invalidComponent.isEmpty()) {
-                expectedErrorMsg = MessageFormat.format(I18N.getString("error.version-string-zero-length-component"), version);
+                expectedErrorMsg = "Version has an empty component";
             } else {
-                expectedErrorMsg = MessageFormat.format(I18N.getString("error.version-string-invalid-component"), version, invalidComponent);
+                expectedErrorMsg = String.format("Version has invalid component: [%s]", invalidComponent);
             }
 
             final var ex = assertThrowsExactly(IllegalArgumentException.class, () -> DottedVersion.greedy(version));
@@ -244,6 +248,7 @@ public class DottedVersionTest {
                 new InvalidVersionTestSpec("4.2."),
                 new InvalidVersionTestSpec("3..2", ".2"),
                 new InvalidVersionTestSpec("3...2", "..2"),
+                new InvalidVersionTestSpec("1.b.3", "b.3"),
                 new InvalidVersionTestSpec("2.a", "a"),
                 new InvalidVersionTestSpec("0a", "a"),
                 new InvalidVersionTestSpec("1.0a", "0a"),
@@ -270,7 +275,7 @@ public class DottedVersionTest {
     @Test
     public void testEmptyGreedy() {
         final var ex = assertThrowsExactly(IllegalArgumentException.class, () -> DottedVersion.greedy(""));
-        assertEquals(I18N.getString("error.version-string-empty"), ex.getMessage());
+        assertEquals("The version must not be empty", ex.getMessage());
     }
 
     @Test
@@ -311,6 +316,7 @@ public class DottedVersionTest {
                 { type, "1", "1", 0 },
                 { type, "2", "2.0", 0 },
                 { type, "2.00", "2.0", 0 },
+                { type, "1.02.3", "1.2.3", 0 },
                 { type, "1.2.3.4", "1.2.3.4.5", -1 },
                 { type, "1.2.3.4", "1.2.3.4.0.1", -1 },
                 { type, "34", "33", 1 },
@@ -355,6 +361,23 @@ public class DottedVersionTest {
         }
 
         return 0;
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+        "GREEDY,1.0,",
+        "LAZY,1.0,",
+        "LAZY,1.0-foo,1.0",
+        "LAZY,1.02-foo,1.02",
+    })
+    public void test_stripUnprocessedSuffix(Type type, String ver, String verWithoutSuffix) {
+
+        var dottedVer = type.createVersion.apply(ver);
+        if (verWithoutSuffix == null) {
+            assertSame(dottedVer, dottedVer.stripUnprocessedSuffix());
+        } else {
+            assertEquals(verWithoutSuffix, dottedVer.stripUnprocessedSuffix().toString());
+        }
     }
 
     public enum Type {

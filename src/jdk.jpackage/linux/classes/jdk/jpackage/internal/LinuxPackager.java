@@ -113,7 +113,7 @@ abstract class LinuxPackager<T extends LinuxPackage> implements Consumer<Packagi
 
         data.put("APPLICATION_PACKAGE", pkg.packageName());
         data.put("APPLICATION_VENDOR", pkg.app().vendor());
-        data.put("APPLICATION_VERSION", pkg.version());
+        data.put("APPLICATION_VERSION", pkg.version().toString());
         data.put("APPLICATION_DESCRIPTION", pkg.description());
 
         String defaultDeps = String.join(", ", requiredPackages);

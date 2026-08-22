@@ -326,7 +326,7 @@ final class WinMsiPackager implements Consumer<PackagingPipeline.Builder> {
         wixVars.put("JpAppName", pkg.packageName());
         wixVars.put("JpAppDescription", pkg.description());
         wixVars.put("JpAppVendor", pkg.app().vendor());
-        wixVars.put("JpAppVersion", pkg.version());
+        wixVars.put("JpAppVersion", pkg.version().toString());
         if (Files.exists(installerIcon)) {
             wixVars.put("JpIcon", installerIcon.toString());
         }
