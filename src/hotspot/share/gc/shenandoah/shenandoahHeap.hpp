@@ -613,13 +613,7 @@ public:
   void set_unload_classes(bool uc);
   bool unload_classes() const;
 
-  // Perform STW class unloading and weak root cleaning
-  void parallel_cleaning(ShenandoahGeneration* generation);
-
 private:
-  void stw_unload_classes();
-  void stw_process_weak_roots();
-  void stw_weak_refs(ShenandoahGeneration* generation);
 
   inline void assert_lock_for_affiliation(ShenandoahAffiliation orig_affiliation,
                                           ShenandoahAffiliation new_affiliation);

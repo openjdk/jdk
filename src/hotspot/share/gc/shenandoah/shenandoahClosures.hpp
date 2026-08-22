@@ -194,19 +194,6 @@ public:
 // ========= Update References
 //
 
-template <ShenandoahGenerationType GENERATION>
-class ShenandoahMarkUpdateRefsClosure : public ShenandoahMarkRefsSuperClosure {
-private:
-  template <class T>
-  inline void work(T* p);
-
-public:
-  ShenandoahMarkUpdateRefsClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp, ShenandoahObjToScanQueue* old_q);
-
-  virtual void do_oop(narrowOop* p) { work(p); }
-  virtual void do_oop(oop* p)       { work(p); }
-};
-
 class ShenandoahUpdateRefsSuperClosure : public ShenandoahSuperClosure {};
 
 class ShenandoahNonConcUpdateRefsClosure : public ShenandoahUpdateRefsSuperClosure {

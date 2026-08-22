@@ -218,24 +218,6 @@ void ShenandoahNMethodAndDisarmClosure::do_nmethod(nmethod* nm) {
 // ========= Update References
 //
 
-template <ShenandoahGenerationType GENERATION>
-ShenandoahMarkUpdateRefsClosure<GENERATION>::ShenandoahMarkUpdateRefsClosure(ShenandoahObjToScanQueue* q,
-                                                                             ShenandoahReferenceProcessor* rp,
-                                                                             ShenandoahObjToScanQueue* old_q) :
-  ShenandoahMarkRefsSuperClosure(q, rp, old_q) {
-  assert(_heap->is_stw_gc_in_progress(), "Can only be used for STW GC");
-}
-
-template<ShenandoahGenerationType GENERATION>
-template<class T>
-inline void ShenandoahMarkUpdateRefsClosure<GENERATION>::work(T* p) {
-  // Update the location
-  _heap->non_conc_update_with_forwarded(p);
-
-  // ...then do the usual thing
-  ShenandoahMarkRefsSuperClosure::work<T, GENERATION>(p);
-}
-
 template<class T>
 inline void ShenandoahNonConcUpdateRefsClosure::work(T* p) {
   _heap->non_conc_update_with_forwarded(p);
