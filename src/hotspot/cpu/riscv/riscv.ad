@@ -4648,6 +4648,22 @@ instruct loadN(iRegNNoSp dst, memory mem)
   ins_pipe(iload_reg_mem);
 %}
 
+instruct loadN_decode(iRegPNoSp dst, memory mem) %{
+  predicate(CompressedOops::shift() == 0 &&
+            CompressedOops::base() == nullptr &&
+            n->in(1)->as_Load()->barrier_data() == 0);
+  match(Set dst (DecodeN (LoadN mem)));
+
+  ins_cost(LOAD_COST);
+  format %{ "lwu  $dst, $mem\t# compressed ptr -> ptr, #@loadN_decode" %}
+
+  ins_encode %{
+    __ lwu(as_Register($dst$$reg), Address(as_Register($mem$$base), $mem$$disp));
+  %}
+
+  ins_pipe(iload_reg_mem);
+%}
+
 // Load Klass Pointer
 instruct loadKlass(iRegPNoSp dst, memory mem)
 %{
