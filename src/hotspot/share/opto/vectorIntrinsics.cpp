@@ -1810,10 +1810,11 @@ bool LibraryCallKit::inline_vector_compare() {
     return false;
   }
 
-  if (!is_supported_lane_type(vltype)) {
-    log_if_needed("  ** unsupported lane type =%s", VectorSupport::lanetype2name(vltype));
-    return false;
-  }
+  // Float16 (IEEE binary16) compares use a dedicated opcode so they are matched
+  // to the FP16 compare instruction instead of the integral short compare.
+  bool is_fp16 = (vltype == VectorSupport::LT_FLOAT16);
+
+  int cmp_op = is_fp16 ? Op_VectorMaskCmpHF : Op_VectorMaskCmp;
 
   if (!is_klass_initialized(vector_klass) || !is_klass_initialized(mask_klass)) {
     log_if_needed("  ** klass argument not initialized");
@@ -1832,7 +1833,7 @@ bool LibraryCallKit::inline_vector_compare() {
     }
   }
 
-  if (!arch_supports_vector(Op_VectorMaskCmp, num_elem, elem_bt, VecMaskUseStore)) {
+  if (!arch_supports_vector(cmp_op, num_elem, elem_bt, VecMaskUseStore)) {
     log_if_needed("  ** not supported: arity=2 op=comp/%d vlen=%d etype=%s ismask=usestore",
                     cond->get_con(), num_elem, type2name(elem_bt));
     return false;
@@ -1855,7 +1856,7 @@ bool LibraryCallKit::inline_vector_compare() {
     return false;
   }
 
-  bool use_predicate = is_masked_op && arch_supports_vector(Op_VectorMaskCmp, num_elem, elem_bt, VecMaskUsePred);
+  bool use_predicate = is_masked_op && arch_supports_vector(cmp_op, num_elem, elem_bt, VecMaskUsePred);
   if (is_masked_op && !use_predicate && !arch_supports_vector(Op_AndV, num_elem, elem_bt, VecMaskUseLoad)) {
     log_if_needed("  ** not supported: arity=2 op=comp/%d vlen=%d etype=%s ismask=usestore is_masked_op=1",
                     cond->get_con(), num_elem, type2name(elem_bt));
@@ -1869,7 +1870,8 @@ bool LibraryCallKit::inline_vector_compare() {
   ConINode* pred_node = (ConINode*)gvn().makecon(cond);
 
   const TypeVect* vmask_type = TypeVect::makemask(mask_bt, num_elem);
-  Node* operation = new VectorMaskCmpNode(pred, v1, v2, pred_node, vmask_type);
+  Node* operation = is_fp16 ? (Node*) new VectorMaskCmpHFNode(pred, v1, v2, pred_node, vmask_type)
+                            : (Node*) new VectorMaskCmpNode(pred, v1, v2, pred_node, vmask_type);
   trace_vector(operation);
 
   if (is_masked_op) {
