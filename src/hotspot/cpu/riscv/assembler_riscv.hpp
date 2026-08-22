@@ -1802,6 +1802,11 @@ protected:
     fp_base<D_64_dp, 0b00101>(Rd, Rs1, Rs2, 0b011);
   }
 
+  void fround_d(FloatRegister Rd, FloatRegister Rs1, RoundingMode rm = rtz) {
+    assert_cond(UseZfa);
+    fp_base<D_64_dp, 0b01000>(Rd, Rs1, 0b00100, rm);
+  }
+
 // ==========================
 // RISC-V Vector Extension
 // ==========================
