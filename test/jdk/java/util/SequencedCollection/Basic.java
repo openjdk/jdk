@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import static org.testng.Assert.assertTrue;
 
 /*
  * @test
- * @bug     8266571
+ * @bug     8266571 8383625
  * @summary Basic tests for SequencedCollection
  * @modules java.base/java.util:open
  * @build   SimpleDeque SimpleList SimpleSortedSet
@@ -259,17 +259,30 @@ public class Basic {
         ).iterator();
     }
 
-    @DataProvider(name="unmodifiable")
-    public Iterator<Object[]> unmodifiable() {
+    // These collections are considered "strictly unmodifiable" in that
+    // their mutator methods always throw UOE even if no actual modification
+    // would take place.
+
+    @DataProvider(name="strictlyUnmodifiable")
+    public Iterator<Object[]> strictlyUnmodifiable() {
         return Arrays.asList(
             new Object[] { "ListOf", ORIGINAL, ORIGINAL },
             new Object[] { "ListOfSub", ORIGINAL.subList(1, 3), ORIGINAL.subList(1, 3) },
-            new Object[] { "SingleList", Collections.singletonList("a"), List.of("a") },
             new Object[] { "UnmodColl", ucoll(new ArrayList<>(ORIGINAL)), ORIGINAL },
             new Object[] { "UnmodList", ulist(new ArrayList<>(ORIGINAL)), ORIGINAL },
             new Object[] { "UnmodNav", unav(new TreeSet<>(ORIGINAL)), ORIGINAL },
             new Object[] { "UnmodSet", uset(new LinkedHashSet<>(ORIGINAL)), ORIGINAL },
             new Object[] { "UnmodSorted", usorted(new TreeSet<>(ORIGINAL)), ORIGINAL }
+        ).iterator();
+    }
+
+    // SingletonList is the outlier here in that it doesn't throw UOE
+    // when a mutator method is called that doesn't attempt to modify it.
+
+    @DataProvider(name="unmodifiable")
+    public Iterator<Object[]> unmodifiable() {
+        return Arrays.<Object[]>asList(
+            new Object[] { "SingleList", Collections.singletonList("a"), List.of("a") }
         ).iterator();
     }
 
@@ -430,8 +443,8 @@ public class Basic {
     }
 
     /**
-     * Check that modification operations will throw UnsupportedOperationException,
-     * in one direction.
+     * Check that modification operations that would actually modify the
+     * collection will throw UnsupportedOperationException.
      *
      * @param seq the SequencedCollection under test
      */
@@ -439,36 +452,58 @@ public class Basic {
         final var UOE = UnsupportedOperationException.class;
 
         assertThrows(UOE, () -> seq.add("x"));
-        assertThrows(UOE, () -> seq.clear());
-        assertThrows(UOE, () -> { var it = seq.iterator(); it.next(); it.remove(); });
-        assertThrows(UOE, () -> seq.removeIf(x -> true));
-
+        assertThrows(UOE, () -> seq.addAll(List.copyOf(seq)));
         assertThrows(UOE, () -> seq.addFirst("x"));
         assertThrows(UOE, () -> seq.addLast("x"));
-        assertThrows(UOE, () -> seq.removeFirst());
-        assertThrows(UOE, () -> seq.removeLast());
-
-// TODO these ops should throw unconditionally, but they don't in some implementations
-     // assertThrows(UOE, () -> seq.addAll(List.of()));
-     // assertThrows(UOE, () -> seq.remove("x"));
-     // assertThrows(UOE, () -> seq.removeAll(List.of()));
-     // assertThrows(UOE, () -> seq.removeIf(x -> false));
-     // assertThrows(UOE, () -> seq.retainAll(seq));
-        assertThrows(UOE, () -> seq.addAll(seq));
+        assertThrows(UOE, () -> seq.clear());
+        assertThrows(UOE, () -> { var it = seq.iterator(); it.next(); it.remove(); });
         assertThrows(UOE, () -> seq.remove(seq.iterator().next()));
         assertThrows(UOE, () -> seq.removeAll(seq));
+        assertThrows(UOE, () -> seq.removeFirst());
+        assertThrows(UOE, () -> seq.removeIf(x -> true));
+        assertThrows(UOE, () -> seq.removeLast());
         assertThrows(UOE, () -> seq.retainAll(List.of()));
     }
 
     /**
+     * Check that all modification operations always throw UnsupportedOperationException,
+     * in one direction. This includes modification operations (calls to mutator methods)
+     * that don't actually change the collection, such as removing a nonexistent element.
+     *
+     * @param seq the SequencedCollection under test
+     */
+    public void checkStrictlyUnmodifiable1(SequencedCollection<String> seq) {
+        final var UOE = UnsupportedOperationException.class;
+
+        checkUnmodifiable1(seq);
+
+        assertThrows(UOE, () -> seq.addAll(List.of()));
+        assertThrows(UOE, () -> seq.remove("x"));
+        assertThrows(UOE, () -> seq.removeAll(List.of()));
+        assertThrows(UOE, () -> seq.removeIf(x -> false));
+        assertThrows(UOE, () -> seq.retainAll(seq));
+    }
+
+    /**
      * Check that modification operations will throw UnsupportedOperationException,
-     * in both directions.
+     * if they attempt to modify the collection, in both directions.
      *
      * @param seq the SequencedCollection under test
      */
     public void checkUnmodifiable(SequencedCollection<String> seq) {
         checkUnmodifiable1(seq);
         checkUnmodifiable1(seq.reversed());
+    }
+
+    /**
+     * Check that modification operations will always throw UnsupportedOperationException,
+     * in both directions.
+     *
+     * @param seq the SequencedCollection under test
+     */
+    public void checkStrictlyUnmodifiable(SequencedCollection<String> seq) {
+        checkStrictlyUnmodifiable1(seq);
+        checkStrictlyUnmodifiable1(seq.reversed());
     }
 
     static final Class<? extends Throwable> CCE = ClassCastException.class;
@@ -661,6 +696,12 @@ public class Basic {
     @Test(dataProvider="unmodifiable")
     public void testUnmodifiable(String label, SequencedCollection<String> seq, List<String> ref) {
         checkUnmodifiable(seq);
+        checkContents(seq, ref);
+    }
+
+    @Test(dataProvider="strictlyUnmodifiable")
+    public void testStrictlyUnmodifiable(String label, SequencedCollection<String> seq, List<String> ref) {
+        checkStrictlyUnmodifiable(seq);
         checkContents(seq, ref);
     }
 
