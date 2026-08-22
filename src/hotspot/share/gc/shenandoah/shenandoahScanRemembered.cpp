@@ -108,12 +108,6 @@ bool ShenandoahDirectCardMarkRememberedSet::is_write_card_dirty(HeapWord* p) con
   return (bp[0] == CardTable::dirty_card_val());
 }
 
-void ShenandoahDirectCardMarkRememberedSet::mark_card_as_dirty(HeapWord* p) {
-  size_t index = card_index_for_addr(p);
-  CardValue* bp = &(_card_table->write_byte_map())[index];
-  bp[0] = CardTable::dirty_card_val();
-}
-
 void ShenandoahDirectCardMarkRememberedSet::mark_range_as_dirty(HeapWord* p, size_t num_heap_words) {
   CardValue* bp = &(_card_table->write_byte_map_base())[uintptr_t(p) >> _card_shift];
   CardValue* end_bp = &(_card_table->write_byte_map_base())[uintptr_t(p + num_heap_words) >> _card_shift];
@@ -474,10 +468,6 @@ bool ShenandoahScanRemembered::is_card_dirty(HeapWord* p) {
   return _rs->is_card_dirty(p);
 }
 
-void ShenandoahScanRemembered::mark_card_as_dirty(HeapWord* p) {
-  _rs->mark_card_as_dirty(p);
-}
-
 bool ShenandoahScanRemembered::is_write_card_dirty(HeapWord* p) {
   return _rs->is_write_card_dirty(p);
 }
@@ -812,7 +802,7 @@ void ShenandoahScanRememberedTask::do_work(uint worker_id) {
 
   ShenandoahObjToScanQueue* q = _queue_set->queue(worker_id);
   ShenandoahObjToScanQueue* old = _old_queue_set == nullptr ? nullptr : _old_queue_set->queue(worker_id);
-  ShenandoahMarkRefsClosure<YOUNG> cl(q, _rp, old);
+  ShenandoahRedirtyCardsMarkClosure cl(q, _rp, old);
   ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
   ShenandoahScanRemembered* scanner = heap->old_generation()->card_scan();
 

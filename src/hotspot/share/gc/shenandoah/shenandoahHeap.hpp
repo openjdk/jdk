@@ -287,6 +287,7 @@ private:
   size_t    _num_regions;
   ShenandoahHeapRegion** _regions;
   uint8_t* _affiliations;       // Holds array of enum ShenandoahAffiliation, including FREE status in non-generational mode
+  uint8_t* _biased_affiliations;
 
 public:
 
@@ -633,6 +634,8 @@ public:
   inline bool is_in_active_generation(oop obj) const;
   inline bool is_in_young(const void* p) const;
   inline bool is_in_old(const void* p) const;
+  inline bool has_affiliation(const void* p, ShenandoahAffiliation affiliation) const;
+  inline bool has_affiliation(oop obj, ShenandoahAffiliation affiliation) const;
 
   // Returns true iff the young generation is being collected and the given pointer
   // is in the old generation. This is used to prevent the young collection from treating

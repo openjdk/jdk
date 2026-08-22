@@ -193,7 +193,9 @@ public:
   void clear_cards_for(ShenandoahHeapRegion* region);
 
   // Mark card for this location as dirty
-  void mark_card_as_dirty(void* location);
+  void mark_card_as_dirty(void* location) const {
+    _card_scan->mark_card_as_dirty((HeapWord*)location);
+  }
 
   template<typename T>
   class ShenandoahHeapRegionLambda : public ShenandoahHeapRegionClosure {

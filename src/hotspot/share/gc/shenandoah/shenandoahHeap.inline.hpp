@@ -382,6 +382,21 @@ inline bool ShenandoahHeap::is_in_old(const void* p) const {
   return is_in_reserved(p) && (region_affiliation(heap_region_index_containing(p)) == ShenandoahAffiliation::OLD_GENERATION);
 }
 
+inline bool ShenandoahHeap::has_affiliation(const void* p, ShenandoahAffiliation affiliation) const {
+  if (!is_in_reserved(p)) {
+    return false;
+  }
+
+  const size_t index = p2u(p) >> ShenandoahHeapRegion::region_size_bytes_shift();
+  return AtomicAccess::load(_biased_affiliations + index) == affiliation;
+}
+
+inline bool ShenandoahHeap::has_affiliation(oop obj, ShenandoahAffiliation affiliation) const {
+  assert(is_in_reserved(obj), "Expected decoded oop (" PTR_FORMAT ") to be in the heap", p2i(obj));
+  const size_t index = p2u(obj) >> ShenandoahHeapRegion::region_size_bytes_shift();
+  return AtomicAccess::load(_biased_affiliations + index) == affiliation;
+}
+
 inline bool ShenandoahHeap::is_in_old_during_young_collection(oop obj) const {
   return active_generation()->is_young() && is_in_old(obj);
 }
