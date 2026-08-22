@@ -23,9 +23,6 @@
  */
 
 #include "oops/markWord.hpp"
-#include "runtime/basicLock.inline.hpp"
-#include "runtime/javaThread.hpp"
-#include "runtime/objectMonitor.inline.hpp"
 #include "utilities/ostream.hpp"
 
 #ifdef _LP64
@@ -34,29 +31,13 @@ STATIC_ASSERT(markWord::klass_shift + markWord::klass_bits == 64);
 STATIC_ASSERT(markWord::klass_shift == markWord::hash_bits + markWord::hash_shift);
 #endif
 
-markWord markWord::displaced_mark_helper() const {
-  assert(has_displaced_mark_helper(), "check");
-  // Make sure we have an inflated monitor.
-  guarantee(has_monitor(), "bad header=" INTPTR_FORMAT, value());
-  ObjectMonitor* monitor = this->monitor();
-  return monitor->header();
-}
-
-void markWord::set_displaced_mark_helper(markWord m) const {
-  assert(has_displaced_mark_helper(), "check");
-  // Make sure we have an inflated monitor.
-  guarantee(has_monitor(), "bad header=" INTPTR_FORMAT, value());
-  ObjectMonitor* monitor = this->monitor();
-  monitor->set_header(m);
-}
-
-void markWord::print_on(outputStream* st, bool print_monitor_info) const {
+void markWord::print_on(outputStream* st) const {
   if (is_marked()) {  // last bits = 11
     st->print(" marked(" INTPTR_FORMAT ")", value());
   } else if (has_monitor()) {  // last bits = 10
     // have to check has_monitor() before is_locked()
     // Valhalla: inline types/arrays can't be monitored
-    st->print(" monitor(" INTPTR_FORMAT ")=", value());
+    st->print(" monitor(" INTPTR_FORMAT ")", value());
   } else if (is_locked()) {  // last bits != 01 => 00
     // thin locked
     // Valhalla: inline types can not possess an object monitor

@@ -235,9 +235,6 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   void                set_metadata(uintptr_t value);
   volatile uintptr_t* metadata_addr();
 
-  markWord            header() const;
-  void                set_header(markWord hdr);
-
   intptr_t            hash() const;
   void                set_hash(intptr_t hash);
 
