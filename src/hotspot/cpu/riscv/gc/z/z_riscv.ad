@@ -96,7 +96,7 @@ static void z_store_barrier(MacroAssembler* masm, const MachNode* node, Address 
 instruct zLoadP(iRegPNoSp dst, memory mem, iRegPNoSp tmp, rFlagsReg cr)
 %{
   match(Set dst (LoadP mem));
-  predicate(UseZGC && n->as_Load()->barrier_data() != 0);
+  predicate(UseZGC && !needs_acquiring_load(n) && n->as_Load()->barrier_data() != 0);
   effect(TEMP dst, TEMP tmp, KILL cr);
   ins_is_late_expanded_null_check_candidate(true);
 
@@ -113,10 +113,30 @@ instruct zLoadP(iRegPNoSp dst, memory mem, iRegPNoSp tmp, rFlagsReg cr)
   ins_pipe(iload_reg_mem);
 %}
 
+instruct zLoadPVolatile(iRegPNoSp dst, indirect mem, iRegPNoSp tmp, rFlagsReg cr)
+%{
+  match(Set dst (LoadP mem));
+  predicate(UseZGC && needs_acquiring_load(n) && n->as_Load()->barrier_data() != 0);
+  effect(TEMP dst, TEMP tmp, KILL cr);
+  ins_is_late_expanded_null_check_candidate(true);
+
+  ins_cost(VOLATILE_REF_COST);
+
+  format %{ "ld.aq  $dst, $mem, #@zLoadPVolatile" %}
+
+  ins_encode %{
+    const Address ref_addr($mem$$Register);
+    __ ld_aq($dst$$Register, ref_addr);
+    z_load_barrier(masm, this, ref_addr, $dst$$Register, $tmp$$Register);
+  %}
+
+  ins_pipe(pipe_serial);
+%}
+
 // Store Pointer
 instruct zStoreP(memory mem, iRegP src, iRegPNoSp tmp1, iRegPNoSp tmp2, rFlagsReg cr)
 %{
-  predicate(UseZGC && n->as_Store()->barrier_data() != 0);
+  predicate(UseZGC && !needs_releasing_store(n) && n->as_Store()->barrier_data() != 0);
   match(Set mem (StoreP mem src));
   effect(TEMP tmp1, TEMP tmp2, KILL cr);
 
@@ -126,6 +146,22 @@ instruct zStoreP(memory mem, iRegP src, iRegPNoSp tmp1, iRegPNoSp tmp2, rFlagsRe
     const Address ref_addr(as_Register($mem$$base), $mem$$disp);
     z_store_barrier(masm, this, ref_addr, $src$$Register, $tmp1$$Register, $tmp2$$Register, false /* is_atomic */);
     __ sd($tmp1$$Register, ref_addr);
+  %}
+  ins_pipe(pipe_serial);
+%}
+
+instruct zStorePVolatile(indirect mem, iRegP src, iRegPNoSp tmp1, iRegPNoSp tmp2, rFlagsReg cr)
+%{
+  predicate(UseZGC && needs_releasing_store(n) && n->as_Store()->barrier_data() != 0);
+  match(Set mem (StoreP mem src));
+  effect(TEMP tmp1, TEMP tmp2, KILL cr);
+
+  ins_cost(VOLATILE_REF_COST);
+  format %{ "sd.rl  $mem, $src\t# ptr, #@zStorePVolatile" %}
+  ins_encode %{
+    guarantee($mem$$disp == 0, "impossible encoding");
+    z_store_barrier(masm, this, Address($mem$$Register), $src$$Register, $tmp1$$Register, $tmp2$$Register, false /* is_atomic */);
+    __ sd_rl($tmp1$$Register, Address($mem$$Register));
   %}
   ins_pipe(pipe_serial);
 %}

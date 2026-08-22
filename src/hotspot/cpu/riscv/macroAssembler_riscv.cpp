@@ -494,9 +494,7 @@ void MacroAssembler::clinit_barrier(Register klass, Register tmp, Label* L_fast_
     L_slow_path = &L_fallthrough;
   }
 
-  // Fast path check: class is fully initialized
-  lbu(tmp, Address(klass, InstanceKlass::init_state_offset()));
-  membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
+  lbu_acquire(tmp, Address(klass, InstanceKlass::init_state_offset()), tmp);
   sub(tmp, tmp, InstanceKlass::fully_initialized);
   beqz(tmp, *L_fast_path);
 

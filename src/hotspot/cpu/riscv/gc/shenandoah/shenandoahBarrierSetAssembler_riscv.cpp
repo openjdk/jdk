@@ -578,19 +578,33 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier_c1_runtime_stub(StubA
 #undef __
 #define __ masm->
 
-void ShenandoahBarrierSetAssembler::load_c2(const MachNode* node, MacroAssembler* masm, Register dst, Address src, Register tmp1, Register tmp2, bool is_narrow) {
+void ShenandoahBarrierSetAssembler::load_c2(const MachNode* node, MacroAssembler* masm, Register dst, Address src,
+    Register tmp1, Register tmp2, bool is_narrow, bool is_acquire) {
   // Do the actual load. This load is the candidate for implicit null check, and MUST come first.
   if (is_narrow) {
-    __ lwu(dst, src);
+    if (is_acquire) {
+      assert(src.getMode() == Address::base_plus_offset && src.offset() == 0,
+          "acquire path requires address to be base-only");
+      __ lw_aq(dst, src);
+      __ zext(dst, dst, 32);
+    } else {
+      __ lwu(dst, src);
+    }
   } else {
-    __ ld(dst, src);
+    if (is_acquire) {
+      assert(src.getMode() == Address::base_plus_offset && src.offset() == 0,
+          "acquire path requires address to be base-only");
+      __ ld_aq(dst, src);
+    } else {
+      __ ld(dst, src);
+    }
   }
 
   ShenandoahBarrierStubC2::load_post(masm, node, dst, src, tmp1, tmp2, is_narrow);
 }
 
 void ShenandoahBarrierSetAssembler::store_c2(const MachNode* node, MacroAssembler* masm, Address dst, bool dst_narrow,
-    Register src, bool src_narrow, Register tmp1, Register tmp2, Register tmp3) {
+    Register src, bool src_narrow, Register tmp1, Register tmp2, Register tmp3, bool is_volatile) {
 
   ShenandoahBarrierStubC2::store_pre(masm, node, dst, tmp1, tmp2, tmp3, dst_narrow);
 
@@ -606,9 +620,21 @@ void ShenandoahBarrierSetAssembler::store_c2(const MachNode* node, MacroAssemble
       }
       src = tmp1;
     }
-    __ sw(src, dst);
+    if (is_volatile) {
+      assert(dst.getMode() == Address::base_plus_offset && dst.offset() == 0,
+          "volatile path requires address to be base-only");
+      __ sw_rl(src, dst);
+    } else {
+      __ sw(src, dst);
+    }
   } else {
-    __ sd(src, dst);
+    if (is_volatile) {
+      assert(dst.getMode() == Address::base_plus_offset && dst.offset() == 0,
+          "volatile path requires address to be base-only");
+      __ sd_rl(src, dst);
+    } else {
+      __ sd(src, dst);
+    }
   }
 
   ShenandoahBarrierStubC2::store_post(masm, node, dst, tmp2, tmp3);

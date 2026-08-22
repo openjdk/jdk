@@ -1801,8 +1801,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // Now set thread in native
   __ la(t1, Address(xthread, JavaThread::thread_state_offset()));
   __ mv(t0, _thread_in_native);
-  __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-  __ sw(t0, Address(t1));
+  __ sw_release(t0, Address(t1));
 
   // Clobbers t1
   __ rt_call(native_func);
@@ -1844,8 +1843,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // change thread state
   __ la(t1, Address(xthread, JavaThread::thread_state_offset()));
   __ mv(t0, _thread_in_Java);
-  __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-  __ sw(t0, Address(t1));
+  __ sw_release(t0, Address(t1));
 
   if (method->is_object_wait0()) {
     // Check preemption for Object.wait()

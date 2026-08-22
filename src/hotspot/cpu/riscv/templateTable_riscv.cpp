@@ -25,6 +25,7 @@
  */
 
 #include "asm/macroAssembler.inline.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -163,8 +164,7 @@ void TemplateTable::patch_bytecode(Bytecodes::Code bc, Register bc_reg,
         __ la(temp_reg, Address(temp_reg, in_bytes(ResolvedFieldEntry::put_code_offset())));
       }
       // Load-acquire the bytecode to match store-release in ResolvedFieldEntry::fill_in()
-      __ lbu(temp_reg, Address(temp_reg, 0));
-      __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
+      __ lbu_acquire(temp_reg, Address(temp_reg, 0));
       __ mv(bc_reg, bc);
       __ beqz(temp_reg, L_patch_done);
       break;
@@ -203,8 +203,7 @@ void TemplateTable::patch_bytecode(Bytecodes::Code bc, Register bc_reg,
   // in fast bytecode codelets. load_field_entry has a memory barrier that gains
   // the needed ordering, together with control dependency on entering the fast codelet
   // itself.
-  __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-  __ sb(bc_reg, at_bcp(0));
+  __ sb_release(bc_reg, at_bcp(0));
   __ bind(L_patch_done);
 }
 
@@ -303,8 +302,7 @@ void TemplateTable::ldc(LdcType type) {
   // get type
   __ addi(x13, x11, tags_offset);
   __ add(x13, x10, x13);
-  __ lbu(x13, Address(x13, 0));
-  __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
+  __ lbu_acquire(x13, Address(x13, 0));
 
   // unresolved class - get the resolved class
   __ mv(t1, (u1)JVM_CONSTANT_UnresolvedClass);
@@ -2304,8 +2302,7 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
       break;
   }
   // Load-acquire the bytecode to match store-release in InterpreterRuntime
-  __ lbu(temp, Address(temp, 0));
-  __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
+  __ lbu_acquire(temp, Address(temp, 0));
 
   __ mv(t0, (int) code);
 
@@ -2357,8 +2354,7 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
     __ la(temp, Address(Rcache, in_bytes(ResolvedFieldEntry::put_code_offset())));
   }
   // Load-acquire the bytecode to match store-release in ResolvedFieldEntry::fill_in()
-  __ lbu(temp, Address(temp, 0));
-  __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
+  __ lbu_acquire(temp, Address(temp, 0));
   __ mv(t0, (int) code);  // have we resolved this bytecode?
 
   // Class initialization barrier for static fields
@@ -2531,8 +2527,7 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   Label resolved;
 
   __ load_resolved_indy_entry(cache, index);
-  __ ld(method, Address(cache, in_bytes(ResolvedIndyEntry::method_offset())));
-  __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
+  __ ld_acquire(method, Address(cache, in_bytes(ResolvedIndyEntry::method_offset())));
 
   // Compare the method to zero
   __ bnez(method, resolved);
@@ -2545,8 +2540,7 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   __ call_VM(noreg, entry, method);
   // Update registers with resolved info
   __ load_resolved_indy_entry(cache, index);
-  __ ld(method, Address(cache, in_bytes(ResolvedIndyEntry::method_offset())));
-  __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
+  __ ld_acquire(method, Address(cache, in_bytes(ResolvedIndyEntry::method_offset())));
 
 #ifdef ASSERT
   __ bnez(method, resolved);
@@ -2623,6 +2617,37 @@ void TemplateTable::pop_and_check_object(Register r) {
   __ verify_oop(r);
 }
 
+// 8179954: We need to make sure that the code generated for volatile accesses
+// forms a sequentially-consistent set of operations when combined with the
+// Zalasr load-acquire and store-release instructions used by C2.
+//
+// With UseZalasr, C2 compiles a volatile store to a bare s{b|h|w|d}.rl and
+// elides the trailing StoreLoad fence, relying on RVWMO preserved program
+// order rule 7 ("a and b both have RCsc annotations") to order that store
+// before a later l{b|h|w|d}.aq. The interpreter reads volatile fields with a
+// plain load followed by a trailing fence, and a plain load carries no RCsc
+// annotation, so no preserved-program-order rule applies. Without a leading
+// fence it is possible for a simple Dekker test to fail if loads use
+// load;fence but stores use s.rl. This can happen if C2 compiles the stores
+// in one method and we interpret the loads in another.
+//
+// The fence is only needed when C2 may be used; flags must hold the resolved
+// field entry flags and t0 is clobbered.
+static bool needs_volatile_load_leading_fence() {
+  return UseZalasr && !CompilerConfig::is_c1_or_interpreter_only();
+}
+
+static void volatile_load_leading_fence(Register flags, InterpreterMacroAssembler* _masm) {
+  if (!needs_volatile_load_leading_fence()) {
+    return;
+  }
+  Label notVolatile;
+  __ test_bit(t0, flags, ResolvedFieldEntry::is_volatile_shift);
+  __ beqz(t0, notVolatile);
+  __ membar(MacroAssembler::AnyAny);
+  __ bind(notVolatile);
+}
+
 void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteControl rc) {
   const Register cache     = x12;
   const Register obj       = x14;
@@ -2641,6 +2666,8 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
     // obj is on the stack
     pop_and_check_object(obj);
   }
+
+  volatile_load_leading_fence(flags, _masm);
 
   __ add(off, obj, off);
   const Address field(off);
@@ -3344,6 +3371,8 @@ void TemplateTable::fast_accessfield(TosState state) {
   __ add(x11, x10, x11);
   const Address field(x11, 0);
 
+  volatile_load_leading_fence(x13 /* flags */, _masm);
+
   // access field
   switch (bytecode()) {
     case Bytecodes::_fast_vgetfield:
@@ -3401,6 +3430,11 @@ void TemplateTable::fast_xaccess(TosState state) {
 
   __ load_sized_value(x11, Address(x12, in_bytes(ResolvedFieldEntry::field_offset_offset())), sizeof(int), true /*is_signed*/);
   __ verify_field_offset(x11);
+
+  if (needs_volatile_load_leading_fence()) {
+    __ load_unsigned_byte(x13, Address(x12, in_bytes(ResolvedFieldEntry::flags_offset())));
+    volatile_load_leading_fence(x13 /* flags */, _masm);
+  }
 
   // make sure exception is reported in correct bcp range (getfield is
   // next instruction)
@@ -3745,8 +3779,7 @@ void TemplateTable::_new() {
   const int tags_offset = Array<u1>::base_offset_in_bytes();
   __ add(t0, x10, x13);
   __ la(t0, Address(t0, tags_offset));
-  __ lbu(t0, t0);
-  __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
+  __ lbu_acquire(t0, t0);
   __ subi(t1, t0, (u1)JVM_CONSTANT_Class);
   __ bnez(t1, slow_case);
 
@@ -3884,8 +3917,7 @@ void TemplateTable::checkcast() {
   // See if bytecode has already been quicked
   __ addi(t0, x13, Array<u1>::base_offset_in_bytes());
   __ add(x11, t0, x9);
-  __ lbu(x11, x11);
-  __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
+  __ lbu_acquire(x11, x11);
   __ subi(t0, x11, (u1)JVM_CONSTANT_Class);
   __ beqz(t0, quicked);
 
@@ -3937,8 +3969,7 @@ void TemplateTable::instanceof() {
   // See if bytecode has already been quicked
   __ addi(t0, x13, Array<u1>::base_offset_in_bytes());
   __ add(x11, t0, x9);
-  __ lbu(x11, x11);
-  __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
+  __ lbu_acquire(x11, x11);
   __ subi(t0, x11, (u1)JVM_CONSTANT_Class);
   __ beqz(t0, quicked);
 
