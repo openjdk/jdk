@@ -33,6 +33,11 @@ import sun.jvm.hotspot.types.TypeDataBase;
 import sun.jvm.hotspot.types.WrongTypeException;
 
 
+/**
+ * Inline represents "inlineOop" in HotSpot in SA.
+ * SA can use this to represent instances of a class that is inline-able (InlineKlass),
+ * both flattened instances and heap instances.
+ */
 public class Inline extends Instance {
 
     private final InlineKlass klass;
