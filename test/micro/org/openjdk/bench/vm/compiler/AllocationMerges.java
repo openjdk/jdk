@@ -1192,6 +1192,70 @@ public abstract class AllocationMerges {
         bh.consume(result);
     }
 
+    // -------------------------------------------------------------------------
+
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    int testInstanceOfNullMerge(boolean cond, int x) {
+        ArrayShape s = null;
+        if (cond) {
+            s = new ArraySquare(x);
+        }
+        if (s instanceof ArraySquare sq) {
+            return sq.l;
+        }
+        return 0;
+    }
+
+    @Benchmark
+    public void testInstanceOfNullMerge_runner(Blackhole bh) {
+        int result = 0;
+        for (int i = 0 ; i < SIZE; i++) {
+            result += testInstanceOfNullMerge(cond1[i], xs[i]);
+        }
+        bh.consume(result);
+    }
+
+    // -------------------------------------------------------------------------
+
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    int testInstanceOfWithBinding(boolean cond, int x, int y) {
+        ArrayShape s = cond ? new ArraySquare(x) : new ArrayCircle(y);
+        if (s instanceof ArraySquare sq) {
+            return sq.l;
+        }
+        return s.l;
+    }
+
+    @Benchmark
+    public void testInstanceOfWithBinding_runner(Blackhole bh) {
+        int result = 0;
+        for (int i = 0 ; i < SIZE; i++) {
+            result += testInstanceOfWithBinding(cond1[i], xs[i], ys[i]);
+        }
+        bh.consume(result);
+    }
+
+    // -------------------------------------------------------------------------
+
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    int testInstanceOfWithoutBinding(boolean cond, int x, int y) {
+        ArrayShape s = cond ? new ArraySquare(x) : new ArrayCircle(y);
+        if (s instanceof ArraySquare) {
+            return s.x;
+        }
+        return s.l;
+    }
+
+    @Benchmark
+    public void testInstanceOfWithoutBinding_runner(Blackhole bh) {
+        int result = 0;
+        for (int i = 0 ; i < SIZE; i++) {
+            result += testInstanceOfWithoutBinding(cond1[i], xs[i], ys[i]);
+        }
+        bh.consume(result);
+    }
+
+
     // ------------------ Utility for Benchmarking ------------------- //
 
     @Fork(value = 3, jvmArgs = {
@@ -1281,6 +1345,30 @@ public abstract class AllocationMerges {
 
     class Circle extends Shape {
         Circle(int l) {
+            super(0, 0);
+            this.l = l;
+        }
+    }
+
+    static class ArrayShape {
+        int x, y, l;
+        int[] dummy = new int[32];
+
+        ArrayShape(int x, int y) {
+            this.x = x;
+            this.y = y;
+        }
+    }
+
+    static class ArraySquare extends ArrayShape {
+        ArraySquare(int l) {
+            super(0, 0);
+            this.l = l;
+        }
+    }
+
+    static class ArrayCircle extends ArrayShape {
+        ArrayCircle(int l) {
             super(0, 0);
             this.l = l;
         }
