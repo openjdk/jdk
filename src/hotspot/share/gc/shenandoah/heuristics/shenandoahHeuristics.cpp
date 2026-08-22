@@ -233,19 +233,22 @@ void ShenandoahHeuristics::log_trigger(const char* fmt, ...) const {
   }
 }
 
+ShenandoahHeuristics::PenaltyData ShenandoahHeuristics::consume_penalty_data() {
+  const size_t declines = _declined_trigger_count.exchange(0, memory_order_relaxed);
+  const bool stalls = _allocation_stalls.exchange(false, memory_order_relaxed);
+  log_debug(gc, ergo)("Declined trigger count at end: %zu", declines);
+  return { declines, stalls };
+}
+
 void ShenandoahHeuristics::record_concurrent_completion() {
   _gc_times_learned++;
-  const bool stalls = _allocation_stalls.exchange(false, memory_order_relaxed);
-  if (!stalls) {
+  const PenaltyData data = consume_penalty_data();
+  if (!data.stalls) {
     adjust_penalty(Concurrent_Adjust);
-  } else if (_declined_trigger_count.load_relaxed() > Penalty_Free_Declinations) {
-    // There were stalls _and_ the trigger was lazy, penalize it. Else, there were
-    // stalls, but the trigger was not lazy. Make no adjustments in this case.
+  } else if (data.declined_triggers > Penalty_Free_Declinations) {
+    // There were stalls _and_ the trigger was lazy, penalize it.
     adjust_penalty(Stall_Penalty);
   }
-
-  log_debug(gc, ergo)("Declined trigger count at end: %zu", _declined_trigger_count.load_relaxed());
-  _declined_trigger_count.store_relaxed(0);
 }
 
 void ShenandoahHeuristics::record_allocation_stall() {
@@ -253,8 +256,12 @@ void ShenandoahHeuristics::record_allocation_stall() {
 }
 
 void ShenandoahHeuristics::record_full_gc(GCCause::Cause cause) {
+  const PenaltyData data = consume_penalty_data();
   if (cause == GCCause::_shenandoah_upgrade_to_full_gc) {
     adjust_penalty(Full_Penalty);
+  } else if (data.stalls && data.declined_triggers > Penalty_Free_Declinations) {
+    // There were stalls _and_ the trigger was lazy, penalize it.
+    adjust_penalty(Stall_Penalty);
   }
 }
 

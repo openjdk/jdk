@@ -102,6 +102,12 @@ protected:
   Atomic<size_t> _declined_trigger_count;
   Atomic<bool> _allocation_stalls;
 
+  // Snapshot declined trigger count and alloc stalls to compute appropriate penalties (if warranted)
+  struct PenaltyData {
+    size_t declined_triggers;
+    bool stalls;
+  };
+
   class RegionData {
     private:
     ShenandoahHeapRegion* _region;
@@ -279,7 +285,9 @@ public:
   // Format prefix and emit log message indicating a GC cycle hs been triggered
   void log_trigger(const char* fmt, ...) const ATTRIBUTE_PRINTF(2, 3);
 
-  DEBUG_ONLY(static void assert_humongous_mark_consistency(ShenandoahHeapRegion* region));
+  PenaltyData consume_penalty_data();
+
+  DEBUG_ONLY( static void assert_humongous_mark_consistency(ShenandoahHeapRegion* region));
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHHEURISTICS_HPP
