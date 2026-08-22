@@ -241,8 +241,6 @@ PhaseOutput::~PhaseOutput() {
 }
 
 void PhaseOutput::perform_mach_node_analysis() {
-  // Late barrier analysis must be done after schedule and bundle
-  // Otherwise liveness based spilling will fail
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   bs->late_barrier_analysis();
 
@@ -330,13 +328,6 @@ void PhaseOutput::Output() {
   estimate_buffer_size(_buf_sizes._const);
   if (C->failing()) return;
 
-  // Pre-compute the length of blocks and replace
-  // long branches with short if machine supports it.
-  // Must be done before ScheduleAndBundle due to SPARC delay slots
-  uint* blk_starts = NEW_RESOURCE_ARRAY(uint, C->cfg()->number_of_blocks() + 1);
-  blk_starts[0] = 0;
-  shorten_branches(blk_starts);
-
   if (!C->is_osr_compilation() && C->has_scalarized_args()) {
     // Compute the offsets of the entry points required by the inline type calling convention
     if (!C->method()->is_static()) {
@@ -367,7 +358,17 @@ void PhaseOutput::Output() {
     return;
   }
 
+  // Perform Mach node analysis, including GC barrier work. Must be done after
+  // schedule and bundle, otherwise liveness based spilling will fail.
   perform_mach_node_analysis();
+
+  // Pre-compute the length of blocks and replace long branches with short
+  // if machine supports it. Must be done after Mach node analysis, otherwise
+  // GC barrier elision shifts branches and internal alignments enough
+  // to pessimize/invalidate earlier analysis.
+  uint* blk_starts = NEW_RESOURCE_ARRAY(uint, C->cfg()->number_of_blocks() + 1);
+  blk_starts[0] = 0;
+  shorten_branches(blk_starts);
 
   // Complete sizing of codebuffer
   CodeBuffer* cb = init_buffer();
@@ -645,6 +646,9 @@ void PhaseOutput::shorten_branches(uint* blk_starts) {
         if (C->matcher()->is_short_branch_offset(mach->rule(), br_size, offset)) {
           // We've got a winner.  Replace this branch.
           MachNode* replacement = mach->as_MachBranch()->short_branch_version();
+
+          // Do not lose the platform-specific flags on the node.
+          mach->pd_copy_flags_to(replacement);
 
           // Update the jmp_size.
           int new_size = replacement->size(C->regalloc());
@@ -1687,6 +1691,9 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
               // We've got a winner.  Replace this branch.
               MachNode* replacement = mach->as_MachBranch()->short_branch_version();
 
+              // Do not lose the platform-specific flags on the node.
+              mach->pd_copy_flags_to(replacement);
+
               // Update the jmp_size.
               int new_size = replacement->size(C->regalloc());
               assert((br_size - new_size) >= (int)nop_size, "short_branch size should be smaller");
@@ -1823,7 +1830,9 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
     }
     // Verify that the distance for generated before forward
     // short branches is still valid.
-    guarantee((int)(blk_starts[i+1] - blk_starts[i]) >= (current_offset - blk_offset), "shouldn't increase block size");
+    guarantee((int)(blk_starts[i+1] - blk_starts[i]) >= (current_offset - blk_offset),
+      "shouldn't increase block size: blk_starts[i+1] = %d, blk_starts[i] = %d, current_offset = %d, blk_offset = %d",
+      (int)blk_starts[i+1], (int)blk_starts[i], current_offset, blk_offset);
 
     // Save new block start offset
     blk_starts[i] = blk_offset;
