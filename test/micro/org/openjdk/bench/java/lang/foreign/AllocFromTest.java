@@ -73,6 +73,14 @@ public class AllocFromTest extends CLayouts {
         }
     }
 
+    @Fork(jvmArgsAppend = {"-Djava.lang.foreign.native.confined.pool.power.size=0"})
+    @Benchmark
+    public MemorySegment alloc_confined_no_pool() {
+        try (Arena arena = Arena.ofConfined()) {
+            return arena.allocateFrom(ValueLayout.JAVA_BYTE, arr);
+        }
+    }
+
     @Benchmark
     public MemorySegment alloc_malloc_arena() {
         try (MallocArena arena = new MallocArena()) {
@@ -93,6 +101,9 @@ public class AllocFromTest extends CLayouts {
             return arena.allocateFrom(ValueLayout.JAVA_BYTE, arr);
         }
     }
+
+    @Fork(value = 3, jvmArgsAppend = "-Djmh.executor=VIRTUAL")
+    public static class OfVirtual extends AllocFromTest {}
 
     static class SlicingPool {
         final MemorySegment pool = Arena.ofAuto().allocate(1024);

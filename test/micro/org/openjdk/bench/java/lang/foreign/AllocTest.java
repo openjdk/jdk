@@ -60,6 +60,14 @@ public class AllocTest extends CLayouts {
         }
     }
 
+    @Fork(jvmArgsAppend = {"-Djava.lang.foreign.native.confined.pool.power.size=0"})
+    @Benchmark
+    public long alloc_confined_no_pool() {
+        try (Arena arena = Arena.ofConfined()) {
+            return arena.allocate(size).address();
+        }
+    }
+
     @Benchmark
     public long alloc_calloc_arena() {
         try (CallocArena arena = new CallocArena()) {
@@ -73,6 +81,9 @@ public class AllocTest extends CLayouts {
             return arena.allocate(size).address();
         }
     }
+
+    @Fork(value = 3, jvmArgsAppend = "-Djmh.executor=VIRTUAL")
+    public static class OfVirtual extends AllocTest {}
 
     private static class CallocArena implements Arena {
 

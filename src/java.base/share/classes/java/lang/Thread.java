@@ -34,6 +34,7 @@ import java.util.Objects;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.StructureViolationException;
 import java.util.concurrent.locks.LockSupport;
+import jdk.internal.foreign.ConfinedSegmentPool;
 import jdk.internal.event.ThreadSleepEvent;
 import jdk.internal.misc.TerminatingThreadLocal;
 import jdk.internal.misc.Unsafe;
@@ -277,7 +278,8 @@ public class Thread implements Runnable {
     private volatile ClassLoader contextClassLoader;
 
     // Additional fields for platform threads.
-    // All fields, except task and terminatingThreadLocals, are accessed directly by the VM.
+    // All fields, except task, terminatingThreadLocals, and confinedMemoryPools,
+    // are accessed directly by the VM.
     private static class FieldHolder {
         final ThreadGroup group;
         final Runnable task;
@@ -291,6 +293,12 @@ public class Thread implements Runnable {
 
         // This map is maintained by the ThreadLocal class
         ThreadLocal.ThreadLocalMap terminatingThreadLocals;
+
+        /**
+         * Lazily initialized cache storage managed by {@link ConfinedSegmentPool}.
+         * Access is confined to this platform thread, directly or as a carrier.
+         */
+        long[] confinedMemoryPools;
 
         FieldHolder(ThreadGroup group,
                     Runnable task,
@@ -366,6 +374,30 @@ public class Thread implements Runnable {
 
     static void setScopedValueBindings(Object bindings) {
         currentThread().scopedValueBindings = bindings;
+    }
+
+    long[] confinedMemoryPools() {
+        return holder.confinedMemoryPools;
+    }
+
+    long[] getOrCreateConfinedMemoryPools(int poolSlots) {
+        long[] confinedMemoryPools = holder.confinedMemoryPools;
+        if (confinedMemoryPools == null) {
+            confinedMemoryPools = holder.confinedMemoryPools = new long[poolSlots];
+        }
+        return confinedMemoryPools;
+    }
+
+    boolean hasConfinedMemoryPools() {
+        final long[] confinedMemoryPools = holder.confinedMemoryPools;
+        if (confinedMemoryPools != null) {
+            for (long pool : confinedMemoryPools) {
+                if (pool != 0) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**
@@ -1576,6 +1608,11 @@ public class Thread implements Runnable {
                 TerminatingThreadLocal.threadTerminated();
             }
         } finally {
+            // Avoid initializing ConfinedSegmentPool for threads that
+            // have never used pooling.
+            if (hasConfinedMemoryPools()) {
+                ConfinedSegmentPool.releaseOnThreadExit(this);
+            }
             clearReferences();
         }
     }
