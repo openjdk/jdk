@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,6 +125,9 @@ public interface ClassType extends ReferenceType {
 
     /** Perform method invocation with only the invoking thread resumed */
     static final int INVOKE_SINGLE_THREADED = 0x1;
+    /** Perform the equivalent of ObjectReference.disableCollection() on
+        any ObjectReference returned, including any exception thrown. */
+    static final int INVOKE_DISABLE_COLLECTION = 0x4;
 
     /**
      * Invokes the specified static {@link Method} in the
