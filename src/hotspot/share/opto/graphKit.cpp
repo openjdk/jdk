@@ -3421,9 +3421,10 @@ void GraphKit::guard_klass_is_initialized(Node* klass) {
   precond(ClassInitBarrierMode == 1); // catch new value
   int init_state_off = in_bytes(InstanceKlass::init_state_offset());
   Node* adr = basic_plus_adr(top(), klass, init_state_off);
+  // should use MemNode::acquire for InstanceKlass::_init_state field load
   Node* init_state = LoadNode::make(_gvn, nullptr, immutable_memory(), adr,
                                     adr->bottom_type()->is_ptr(), TypeInt::BYTE,
-                                    T_BYTE, MemNode::unordered);
+                                    T_BYTE, MemNode::acquire);
   init_state = _gvn.transform(init_state);
 
   Node* initialized_state = makecon(TypeInt::make(InstanceKlass::fully_initialized));

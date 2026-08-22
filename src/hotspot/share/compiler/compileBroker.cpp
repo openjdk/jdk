@@ -2436,6 +2436,8 @@ void CompileBroker::collect_statistics(CompilerThread* thread, elapsedTimer time
   int compile_id = task->compile_id();
   bool is_osr = (task->osr_bci() != standard_entry_bci);
   const int comp_level = task->comp_level();
+  assert(comp_level > CompLevel_none && comp_level <= CompLevel_full_optimization,
+         "CompilerStatistics object does not exist for compilation level %d", comp_level);
   CompilerCounters* counters = thread->counters();
 
   MutexLocker locker(CompileStatistics_lock);
@@ -2523,7 +2525,7 @@ void CompileBroker::collect_statistics(CompilerThread* thread, elapsedTimer time
         stats->_nmethods_size += task->nm_total_size();
         stats->_nmethods_code_size += task->nm_insts_size();
       } else {
-        assert(false, "CompilerStatistics object does not exist for compilation level %d", comp_level);
+        ShouldNotReachHere();
       }
 
       // Collect statistic per compiler
@@ -2605,6 +2607,9 @@ void CompileBroker::log_not_entrant(nmethod* nm) {
   if (CITime || log_is_enabled(Info, init)) {
     CompilerStatistics* stats = nullptr;
     int level = nm->comp_level();
+    if (level == CompLevel_none) {
+      return; // native wrapper
+    }
     if (nm->is_aot()) {
       if (nm->preloaded()) {
         assert(level == CompLevel_full_optimization, "%d", level);
