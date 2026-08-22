@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4931668
+ * @bug 4931668 8001150
  * @summary Tests XEmbed server/client functionality
  * @author denis mikhalkin: area=awt.xembed
  * @requires (!(os.family=="mac") & !(os.family=="windows"))
@@ -48,8 +48,13 @@ public class TestXEmbedServerJava extends TestXEmbedServer {
             "You may start XEmbed client by pressing 'Add client' button.\n" +
             "Check that focus transfer with mouse works, that focus traversal with Tab/Shift-Tab works.\n" +
             "Check that XEmbed server client's growing and shrinking.\n" +
-            "Check that Drag&Drop works in all combinations.\n" +
-            "Check the keyboard input works in both text fields.\n";
+            "Check the keyboard input works in both text fields.\n" +
+            "  - Input some sample text into the server text field.\n" +
+            "  - Drag the text in the server text field and drop it to the left or right of the existing text within the same text field.\n" +
+            "  - Input some sample text into the client text field.\n" +
+            "  - Drag the text in the client text field and drop it to the left or right of the existing text within the same text field.\n" +
+            "  - Drag the text from the client text field to the server text field.\n" +
+            "  - Drag the text from the server text field to the client text field.\n";
         Frame f = new Frame("Instructions");
         f.setLayout(new BorderLayout());
         f.add(new TextArea(instruction), BorderLayout.CENTER);
