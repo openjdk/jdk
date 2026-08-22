@@ -34,6 +34,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.constant.Constable;
 import java.lang.constant.ConstantDesc;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.CharBuffer;
 import java.nio.charset.*;
 import java.util.ArrayList;
@@ -63,6 +64,9 @@ import sun.nio.cs.ArrayEncoder;
 
 import sun.nio.cs.ISO_8859_1;
 import sun.nio.cs.US_ASCII;
+import sun.nio.cs.UTF_16;
+import sun.nio.cs.UTF_16LE;
+import sun.nio.cs.UTF_16BE;
 import sun.nio.cs.UTF_8;
 
 /**
@@ -1153,6 +1157,22 @@ public final class String
         return dp;
     }
 
+    private static int encodedLengthUTF16LEorUTF16BE(byte coder, byte[] value) {
+        long length = ((long) value.length >> coder) << 1;
+        if (length > (long) Integer.MAX_VALUE) {
+            throw new OutOfMemoryError("Required length exceeds implementation limit");
+        }
+        return (int) length;
+    }
+
+    private static int encodedLengthUTF16(byte coder, byte[] value) {
+        long length = (((long) value.length >> coder) << 1) + 2; // BOM
+        if (length > (long) Integer.MAX_VALUE) {
+            throw new OutOfMemoryError("Required length exceeds implementation limit");
+        }
+        return (int) length;
+    }
+
     //------------------------------ utf8 ------------------------------------
 
     /**
@@ -1631,6 +1651,35 @@ public final class String
             throw new OutOfMemoryError("Required length exceeds implementation limit");
         }
         return (int) dp;
+    }
+
+    /**
+     * {@return true if the substring contains any unpaired surrogates}
+     */
+    private static boolean hasUnpairedSurrogates(byte[] val, int off, int len) {
+        Preconditions.checkFromIndexSize(off, len, val.length >> 1, Preconditions.AIOOBE_FORMATTER);
+
+        int sp = off;
+        int sl = off + len;
+
+        while (sp < sl) {
+            char c = StringUTF16.getChar(val, sp);
+            if (c >= Character.MIN_HIGH_SURROGATE) {
+                break;
+            }
+            sp++;
+        }
+        while (sp < sl) {
+            char c = StringUTF16.getChar(val, sp++);
+            if (Character.isSurrogate(c)) {
+                if (!Character.isHighSurrogate(c) || sp == sl ||
+                        !Character.isLowSurrogate(StringUTF16.getChar(val, sp))) {
+                    return true;
+                }
+                sp++; // skip valid low surrogate
+            }
+        }
+        return false;
     }
 
     /**
@@ -2114,30 +2163,46 @@ public final class String
             return encodedLengthUTF8(coder, value);
         } else if (cs == ISO_8859_1.INSTANCE || cs == US_ASCII.INSTANCE) {
             return encodedLengthASCIIor8859_1(coder, value);
+        } else if (cs == UTF_16LE.INSTANCE || cs == UTF_16BE.INSTANCE) {
+            return encodedLengthUTF16LEorUTF16BE(coder, value);
+        } else if (cs == UTF_16.INSTANCE) {
+            return encodedLengthUTF16(coder, value);
         }
         return getBytes(cs).length;
     }
 
     boolean bytesCompatible(Charset charset, int srcIndex, int numChars) {
+        Objects.requireNonNull(charset);
+        Objects.checkFromIndexSize(srcIndex, numChars, length());
+        if (numChars == 0) {
+            return charset == ISO_8859_1.INSTANCE
+                    || charset == UTF_8.INSTANCE
+                    || charset == US_ASCII.INSTANCE
+                    || charset == UTF_16LE.INSTANCE
+                    || charset == UTF_16BE.INSTANCE;
+        }
         if (isLatin1()) {
             if (charset == ISO_8859_1.INSTANCE) {
                 return true; // ok, same encoding
             } else if (charset == UTF_8.INSTANCE || charset == US_ASCII.INSTANCE) {
                 return !StringCoding.hasNegatives(value, srcIndex, numChars); // ok, if ASCII-compatible
             }
+        } else {
+            // UTF-16, where the platform and charset endianness match, and the string contains no unpaired surrogates
+            Charset nativeUtf16 = ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN ? UTF_16LE.INSTANCE : UTF_16BE.INSTANCE;
+            return charset == nativeUtf16 && !hasUnpairedSurrogates(value, srcIndex, numChars);
         }
         return false;
     }
 
-    void copyToSegmentRaw(MemorySegment segment, long offset, int srcIndex, int srcLength) {
-        if (!isLatin1()) {
-            // This method is intended to be used together with bytesCompatible, which currently only supports
-            // latin1 strings. In the future, bytesCompatible could be updated to handle more cases, like
-            // UTF-16 strings (when the platform and charset endianness match, and the String doesn’t contain
-            // unpaired surrogates). If that happens, copyToSegmentRaw should also be updated.
-            throw new IllegalStateException("This string does not support copyToSegmentRaw");
-        }
-        MemorySegment.copy(value, srcIndex, segment, ValueLayout.JAVA_BYTE, offset, srcLength);
+    /** This method is intended to be used together with {@link #bytesCompatible(Charset, int, int)}. */
+    int copyToSegmentRaw(MemorySegment segment, long offset, int srcIndex, int numChars) {
+        Objects.requireNonNull(segment);
+        Objects.checkFromIndexSize(srcIndex, numChars, length());
+        int byteOffset = srcIndex << coder;
+        int byteLength = numChars << coder;
+        MemorySegment.copy(value, byteOffset, segment, ValueLayout.JAVA_BYTE, offset, byteLength);
+        return byteLength;
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,20 +135,20 @@ public interface SegmentAllocator {
     default MemorySegment allocateFrom(String str, Charset charset) {
         Objects.requireNonNull(charset);
         Objects.requireNonNull(str);
-        int termCharSize = StringSupport.CharsetKind.of(charset).terminatorCharSize();
+        int codeUnitSize = StringSupport.CharsetKind.of(charset).codeUnitSize();
         MemorySegment segment;
         int length;
         if (StringSupport.bytesCompatible(str, charset, 0, str.length())) {
-            length = str.length();
-            segment = allocateNoInit((long) length + termCharSize);
+            length = str.length() * codeUnitSize;
+            segment = allocateNoInit((long) length + codeUnitSize);
             StringSupport.copyToSegmentRaw(str, segment, 0, 0, str.length());
         } else {
             byte[] bytes = str.getBytes(charset);
             length = bytes.length;
-            segment = allocateNoInit((long) bytes.length + termCharSize);
+            segment = allocateNoInit((long) bytes.length + codeUnitSize);
             MemorySegment.copy(bytes, 0, segment, ValueLayout.JAVA_BYTE, 0, bytes.length);
         }
-        for (int i = 0 ; i < termCharSize ; i++) {
+        for (int i = 0 ; i < codeUnitSize ; i++) {
             segment.set(ValueLayout.JAVA_BYTE, length + i, (byte)0);
         }
         return segment;
@@ -192,7 +192,8 @@ public interface SegmentAllocator {
         Objects.checkFromIndexSize(srcIndex, numChars, str.length());
         MemorySegment segment;
         if (StringSupport.bytesCompatible(str, charset, srcIndex, numChars)) {
-            segment = allocateNoInit(numChars);
+            int codeUnitSize = StringSupport.CharsetKind.of(charset).codeUnitSize();
+            segment = allocateNoInit((long) numChars * codeUnitSize);
             StringSupport.copyToSegmentRaw(str, segment, 0, srcIndex, numChars);
         } else {
             byte[] bytes = str.substring(srcIndex, srcIndex + numChars).getBytes(charset);
