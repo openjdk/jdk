@@ -2724,6 +2724,8 @@ public:
   static bool profile_arguments_jsr292_only();
   static bool profile_return();
   static bool profile_parameters();
+  static bool profile_array_accesses();
+  static bool profile_acmp();
   static bool profile_return_jsr292_only();
 
   void clean_method_data(bool always_clean);
