@@ -5537,6 +5537,20 @@ void C2_MacroAssembler::vector_mask_cast(XMMRegister dst, XMMRegister src,
   }
 }
 
+// A predicate mask produced for a partial (sub-128-bit) vector can carry
+// spurious set bits in lanes [mask_len, ...) because the producing operation
+// is emitted at the minimum 128-bit width and writes every lane the register
+// can hold. Such bits are not valid mask lanes and must be cleared so that
+// downstream consumers observe the correct active-lane set.
+void C2_MacroAssembler::clip_partial_mask(KRegister kdst, int mask_len) {
+  assert(mask_len > 0 && mask_len <= 16, "unexpected partial mask length");
+  int shift = 16 - mask_len;
+  if (shift != 0) {
+    kshiftlwl(kdst, kdst, shift);
+    kshiftrwl(kdst, kdst, shift);
+  }
+}
+
 void C2_MacroAssembler::evpternlog(XMMRegister dst, int func, KRegister mask, XMMRegister src2, XMMRegister src3,
                                    bool merge, BasicType bt, int vlen_enc) {
   if (bt == T_INT) {
