@@ -845,11 +845,11 @@ const Type* CmpUNode::Value(PhaseGVN* phase) const {
       int hi_tr2 = max_jint;
       bool underflow = lo_long != (jlong)lo_tr2;
       bool overflow  = hi_long != (jlong)hi_tr1;
+      int w = MAX2(r0->_widen, r1->_widen); // _widen does not matter here
       // Use sub(t1, t2) when there is no overflow (one type range)
-      // or when both overflow and underflow (too complex).
+      // or when the wrapped ranges cover all jint values.
       if ((underflow != overflow) && (hi_tr1 < lo_tr2)) {
         // Overflow only on one boundary, compare 2 separate type ranges.
-        int w = MAX2(r0->_widen, r1->_widen); // _widen does not matter here
         const TypeInt* tr1 = TypeInt::make(lo_tr1, hi_tr1, w);
         const TypeInt* tr2 = TypeInt::make(lo_tr2, hi_tr2, w);
         const TypeInt* cmp1 = sub(tr1, t2)->is_int();
@@ -857,6 +857,14 @@ const Type* CmpUNode::Value(PhaseGVN* phase) const {
         // Compute union, so that cmp handles all possible results from the two cases
         const Type* t_cmp = cmp1->meet(cmp2);
         // Pick narrowest type, based on overflow computation and on immediate inputs
+        return t_sub->filter(t_cmp);
+      } else if (underflow && overflow &&
+                 (hi_long < min_jint || lo_long > max_jint)) {
+        // Both bounds are either below min_jint or above max_jint, so the
+        // wrapped result is still representable as one contiguous range.
+        assert(lo_tr2 <= hi_tr1, "wrapped lower bound must not exceed wrapped upper bound");
+        const TypeInt* tr = TypeInt::make(lo_tr2, hi_tr1, w);
+        const Type* t_cmp = sub(tr, t2);
         return t_sub->filter(t_cmp);
       }
     }
