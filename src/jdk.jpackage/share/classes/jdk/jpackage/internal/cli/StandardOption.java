@@ -119,8 +119,7 @@ public final class StandardOption {
     static final OptionValue<LogEnvironment.Builder> VERBOSE = option("verbose", LogEnvironment.Builder.class)
             .scope(StandardBundlingOperation.values())
             .inScope(NOT_BUILDING_APP_IMAGE)
-            .converterExceptionFactory(ERROR_WITH_VALUE_AND_OPTION_NAME)
-            .converterExceptionFormatString("error.parameter-invalid-value")
+            .mutate(setDefaultErrorReporting())
             .converter(LogConfigParser::valueOf)
             .defaultOptionalValue(LogConfigParser.defaultVerbose())
             .valuePattern("[<[-]category(,[-]category)*>]")
@@ -624,6 +623,24 @@ public final class StandardOption {
                     b.validator(createExistingPathValidator(validatorBuilder, false));
                 });
             }));
+        };
+    }
+
+    static <T> Consumer<OptionSpecBuilder<T>> setDefaultErrorReporting() {
+        return builder -> {
+            builder.mutate(createOptionSpecBuilderMutator((b, context) -> {
+                context.asFileSource().ifPresent(propertyFile -> {
+                    var vactory = forMessageWithOptionValueAndName(propertyFile);
+                    b.validatorExceptionFactory(vactory);
+                    b.validatorExceptionFormatString("error.properties-parameter-invalid-value");
+                    b.converterExceptionFactory(vactory);
+                    b.converterExceptionFormatString("error.properties-parameter-invalid-value");
+                });
+            }))
+            .converterExceptionFactory(ERROR_WITH_VALUE_AND_OPTION_NAME)
+            .converterExceptionFormatString("error.parameter-invalid-value")
+            .validatorExceptionFactory(ERROR_WITH_VALUE_AND_OPTION_NAME)
+            .validatorExceptionFormatString("error.parameter-invalid-value");
         };
     }
 
