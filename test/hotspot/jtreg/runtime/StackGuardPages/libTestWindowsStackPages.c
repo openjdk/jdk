@@ -25,14 +25,28 @@
 #include <windows.h>
 
 JNIEXPORT jlong JNICALL
-Java_TestWindowsStackPages_getStackGuarantee(JNIEnv* env, jclass cls) {
-    ULONG stack_guarantee = 0;
-    if (SetThreadStackGuarantee(&stack_guarantee) == 0) {
+Java_TestWindowsStackPages_getStackGuardPages(JNIEnv* env, jclass cls) {
+    MEMORY_BASIC_INFORMATION stack_info;
+    MEMORY_BASIC_INFORMATION guard_info;
+    SYSTEM_INFO system_info;
+    char stack_address;
+
+    if (VirtualQuery(&stack_address, &stack_info, sizeof(stack_info)) == 0 ||
+        VirtualQuery(stack_info.AllocationBase, &guard_info, sizeof(guard_info)) == 0) {
         jclass exception = (*env)->FindClass(env, "java/lang/RuntimeException");
         if (exception != NULL) {
-            (*env)->ThrowNew(env, exception, "SetThreadStackGuarantee query failed");
+            (*env)->ThrowNew(env, exception, "VirtualQuery failed");
         }
         return 0;
     }
-    return (jlong)stack_guarantee;
+
+    // Return the count of committed pages that are marked with `PAGE_NOACCESS`.
+    // We expect this count to match the number of Red and Yellow pages.
+    if (guard_info.State == MEM_COMMIT && guard_info.Protect == PAGE_NOACCESS) {
+        // We need the page count, not bytes.
+        GetSystemInfo(&system_info);
+        return (jlong)(guard_info.RegionSize / system_info.dwPageSize);
+    }
+
+    return -1;
 }

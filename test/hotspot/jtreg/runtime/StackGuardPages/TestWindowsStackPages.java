@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 8067946 8390002
- * @summary Verifies that the Windows thread stack guarantee covers HotSpot's
- *          recoverable stack zones specified using the number of yellow pages
+ * @summary Verifies that Windows stack guard-zone protection follows the
+ *          configured number of red and yellow pages
  * @requires os.family == "windows"
  * @library /test/lib
  * @run main/native TestWindowsStackPages
@@ -44,7 +44,7 @@ public class TestWindowsStackPages {
 
     public static void main(String[] args) throws Exception {
         if (args.length > 0) {
-            checkStackGuarantee(Integer.parseInt(args[0]));
+            checkStackGuardPages(Integer.parseInt(args[0]));
             return;
         }
 
@@ -53,56 +53,59 @@ public class TestWindowsStackPages {
                     .shouldMatch(YELLOW_PAGES_FLAG + "[ ]+=[ ]+3")
                     .shouldHaveExitValue(0);
 
-        // Check to make sure that the minimum value is three.
+        // Check that the minimum value is three.
         ProcessTools.executeTestJava("-XX:" + YELLOW_PAGES_FLAG + "=2", "-version")
                     .shouldContain(YELLOW_PAGES_FLAG + "=2 is outside the allowed range")
                     .shouldNotHaveExitValue(0);
 
-        // Check that the thread stack guarantee includes the yellow pages, excluding
-        // the stack-growth guard page, with the default number of red pages.
+        // Check the minimum yellow zone with the default red zone.
         ProcessTools.executeTestJava("-Djava.library.path=" + Utils.TEST_NATIVE_PATH,
-                "-XX:" + YELLOW_PAGES_FLAG + "=8", "-XX:" + RED_PAGES_FLAG + "=1",
-                TestWindowsStackPages.class.getName(), "8")
+                "-XX:" + YELLOW_PAGES_FLAG + "=3", "-XX:" + RED_PAGES_FLAG + "=1",
+                TestWindowsStackPages.class.getName(), "4")
                 .shouldHaveExitValue(0);
 
-        // Check that the thread stack guarantee does not include the fatal red pages.
+        // Check that increasing the yellow zone increases the protected region.
+        ProcessTools.executeTestJava("-Djava.library.path=" + Utils.TEST_NATIVE_PATH,
+                "-XX:" + YELLOW_PAGES_FLAG + "=8", "-XX:" + RED_PAGES_FLAG + "=1",
+                TestWindowsStackPages.class.getName(), "9")
+                .shouldHaveExitValue(0);
+
+        // Check that increasing the red zone also increases the protected region.
         ProcessTools.executeTestJava("-Djava.library.path=" + Utils.TEST_NATIVE_PATH,
                 "-XX:" + YELLOW_PAGES_FLAG + "=8", "-XX:" + RED_PAGES_FLAG + "=3",
-                TestWindowsStackPages.class.getName(), "8")
+                TestWindowsStackPages.class.getName(), "11")
                 .shouldHaveExitValue(0);
     }
 
-    private static void checkStackGuarantee(int yellowPages) throws Exception {
-        long startupValue = getStackGuarantee();
-        long expectedValue = (yellowPages - /* stack growth guard page */ 1) * 4096;
-
-        if (startupValue != expectedValue) {
-            throw new RuntimeException("invariant failure for startup value: " +
-                startupValue + " v/s " + expectedValue);
+    private static void checkStackGuardPages(int expectedPages) throws Exception {
+        long startupValue = getStackGuardPages();
+        if (startupValue != expectedPages) {
+            throw new RuntimeException("invariant failure for startup thread: " +
+                startupValue + " pages v/s " + expectedPages);
         }
 
         ProbeThread thread = new ProbeThread();
         thread.start();
         thread.join();
 
-        if (thread.guarantee() != expectedValue) {
-            throw new RuntimeException("invariant failure for thread value: " +
-                thread.guarantee() + " v/s " + expectedValue);
+        if (thread.guardPages() != expectedPages) {
+            throw new RuntimeException("invariant failure for Java thread: " +
+                thread.guardPages() + " pages v/s " + expectedPages);
         }
     }
 
     private static final class ProbeThread extends Thread {
-        private long stackGuarantee;
+        private long stackGuardPages;
 
         @Override
         public void run() {
-            stackGuarantee = getStackGuarantee();
+            stackGuardPages = getStackGuardPages();
         }
 
-        long guarantee() {
-            return stackGuarantee;
+        long guardPages() {
+            return stackGuardPages;
         }
     }
 
-    private static native long getStackGuarantee();
+    private static native long getStackGuardPages();
 }

@@ -2746,17 +2746,24 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
                                 exceptionInfo->ContextRecord);
       }
     } else if (exception_code == EXCEPTION_ACCESS_VIOLATION) {
+      // Decide the next steps based on the address that caused the exception.
+      address addr = (address) exception_record->ExceptionInformation[1];
+      StackOverflow* overflow_state = thread->stack_overflow_state();
+      if (overflow_state->in_stack_yellow_reserved_zone(addr)) {
+        assert(!in_vm, "Undersized StackShadowPages");
+        overflow_state->disable_stack_yellow_reserved_zone();
+        return in_java
+            ? Handle_Exception(exceptionInfo, SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::STACK_OVERFLOW))
+            : EXCEPTION_CONTINUE_EXECUTION;
+      } else if (overflow_state->in_stack_red_zone(addr)) {
+        overflow_state->disable_stack_red_zone();
+        tty->print_raw_cr("An unrecoverable stack overflow has occurred.");
+        VMError::report_and_die(t, exception_code, pc, exception_record,
+                                exceptionInfo->ContextRecord);
+      }
+
       if (in_java) {
         // Either stack overflow or null pointer exception.
-        address addr = (address) exception_record->ExceptionInformation[1];
-        address stack_end = thread->stack_end();
-        if (addr < stack_end && addr >= stack_end - os::vm_page_size()) {
-          // Stack overflow.
-          assert(!os::uses_stack_guard_pages(),
-                 "should be caught by red zone code above.");
-          return Handle_Exception(exceptionInfo,
-                                  SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::STACK_OVERFLOW));
-        }
         // Check for safepoint polling and implicit null
         // We only expect null pointers in the stubs (vtable)
         // the rest are checked explicitly now.
@@ -3966,26 +3973,6 @@ bool os::pd_release_memory(char* addr, size_t bytes) {
 }
 
 bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
-  // `SetThreadStackGuarantee()` specifies the minimum amount of stack that
-  // remains available when Windows raises `EXCEPTION_STACK_OVERFLOW`.  HotSpot
-  // uses the yellow and reserved zones to handle recoverable stack overflows,
-  // so their combined size decides the argument to `SetThreadStackGuarantee().
-  // The red zone is used only for unrecoverable overflows and is therefore
-  // excluded, although it remains part of the total stack guard-zone size.
-  //
-  // One page of the yellow and reserved zones is the guard page whose access
-  // triggers the stack overflow exception.  That page is not part of the stack
-  // that is available to handle the exception, so we request one page less than
-  // the combined yellow and reserved zone size.
-  const size_t requested = StackOverflow::stack_yellow_reserved_zone_size()
-                           - os::vm_page_size();
-  ULONG ulong_requested = checked_cast<ULONG>(requested);
-
-  if (SetThreadStackGuarantee(&ulong_requested) == 0) {
-    log_warning(os, thread)("Failed to set thread stack guarantee to %zu bytes "
-                            "(error %lu)", requested, GetLastError());
-  }
-
   return os::commit_memory(addr, size, !ExecMem);
 }
 
@@ -4072,7 +4059,7 @@ bool os::protect_memory(char* addr, size_t bytes, ProtType prot,
 
 bool os::guard_memory(char* addr, size_t bytes) {
   DWORD old_status;
-  return VirtualProtect(addr, bytes, PAGE_READWRITE | PAGE_GUARD, &old_status) != 0;
+  return VirtualProtect(addr, bytes, PAGE_NOACCESS, &old_status) != 0;
 }
 
 bool os::unguard_memory(char* addr, size_t bytes) {
