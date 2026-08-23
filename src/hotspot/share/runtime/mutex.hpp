@@ -141,7 +141,7 @@ class Mutex : public CHeapObj<mtSynchronizer> {
  protected:
   void set_owner_implementation(Thread* owner)                        NOT_DEBUG({ raw_set_owner(owner);});
   void check_block_state       (Thread* thread)                       NOT_DEBUG_RETURN;
-  void check_safepoint_state   (Thread* thread)                       NOT_DEBUG_RETURN;
+  void check_safepoint_state   (Thread* thread, bool allow_gcalot)    NOT_DEBUG_RETURN;
   void check_no_safepoint_state(Thread* thread)                       NOT_DEBUG_RETURN;
   void check_rank              (Thread* thread)                       NOT_DEBUG_RETURN;
   void assert_owner            (Thread* expected)                     NOT_DEBUG_RETURN;

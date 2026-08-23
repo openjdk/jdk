@@ -36,6 +36,7 @@
 #include "memory/allocation.hpp"
 #include "oops/array.hpp"
 #include "oops/compressedOops.hpp"
+#include "runtime/globals.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.hpp"
 
@@ -102,6 +103,39 @@ public:
   void print(outputStream* st, int region_index);
 };
 
+#define CDS_MUST_MATCH_FLAGS_DO(f) \
+  f(UseArrayFlattening) \
+  f(UseFieldFlattening) \
+  f(InlineTypePassFieldsAsArgs) \
+  f(InlineTypeReturnedAsFields) \
+  f(UseNullFreeNonAtomicValueFlattening) \
+  f(UseNullFreeAtomicValueFlattening) \
+  f(UseNullableAtomicValueFlattening) \
+  f(UseNullableNonAtomicValueFlattening) \
+  f(FlatteningBudget)
+
+
+class CDSMustMatchFlags {
+private:
+  size_t _max_name_width;
+#define DECLARE_CDS_MUST_MATCH_FLAG(n) \
+  decltype(n) _v_##n;
+  CDS_MUST_MATCH_FLAGS_DO(DECLARE_CDS_MUST_MATCH_FLAG);
+#undef DECLARE_CDS_MUST_MATCH_FLAG
+
+  inline static void do_print(outputStream* st, bool v);
+  LP64_ONLY(inline static void do_print(outputStream* st, uint v);)
+  inline static void do_print(outputStream* st, intx v);
+  inline static void do_print(outputStream* st, uintx v);
+  inline static void do_print(outputStream* st, double v);
+  void print_info() const;
+
+public:
+  void init();
+  bool runtime_check() const;
+  void print(outputStream* st) const;
+};
+
 class FileMapHeader: private CDSFileMapHeaderBase {
   friend class CDSConstants;
   friend class VMStructs;
@@ -120,6 +154,7 @@ private:
   CompressedOops::Mode _narrow_oop_mode;          // compressed oop encoding mode
   bool    _object_streaming_mode;                 // dump was created for object streaming
   bool    _compressed_oops;                       // save the flag UseCompressedOops
+  bool    _compatible_oop_compression;            // value of AOTCompatibleOopCompression at dump time
   int     _narrow_klass_pointer_bits;             // save number of bits in narrowKlass
   int     _narrow_klass_shift;                    // save shift width used to pre-compute narrowKlass IDs in archived heap objects
   narrowPtr _cloned_vtables;                      // The address of the first cloned vtable
@@ -138,11 +173,11 @@ private:
   bool   _has_platform_or_app_classes;  // Archive contains app or platform classes
   char*  _requested_base_address;       // Archive relocation is not necessary if we map with this base address.
   char*  _mapped_base_address;          // Actual base address where archive is mapped.
-
-  bool   _use_optimized_module_handling;// No module-relation VM options were specified, so we can skip
-                                        // some expensive operations.
   bool   _has_aot_linked_classes;       // Was the CDS archive created with -XX:+AOTClassLinking
+  bool   _aot_class_linking_value;      // The value of the AOTClassLinking variable when this archive was created
   bool   _has_full_module_graph;        // Does this CDS archive contain the full archived module graph?
+  bool   _has_valhalla_patched_classes; // Is this archived dumped with --enable-preview?
+  CDSMustMatchFlags _must_match;        // These flags must be the same between dumptime and runtime
   size_t _rw_ptrmap_start_pos;          // The first bit in the ptrmap corresponds to this position in the rw region
   size_t _ro_ptrmap_start_pos;          // The first bit in the ptrmap corresponds to this position in the ro region
 
@@ -150,13 +185,13 @@ private:
   AOTStreamedHeapHeader _streamed_heap_header;
 
   // The following are parameters that affect MethodData layout.
-  u1      _compiler_type;
   uint    _type_profile_level;
   int     _type_profile_args_limit;
   int     _type_profile_parms_limit;
   intx    _type_profile_width;
   intx    _bci_profile_width;
   bool    _profile_traps;
+  bool    _profile_exception_handlers;
   bool    _type_profile_casts;
   int     _spec_trap_limit_extra_entries;
 
@@ -198,7 +233,9 @@ public:
   char* mapped_base_address()              const { return _mapped_base_address; }
   bool has_platform_or_app_classes()       const { return _has_platform_or_app_classes; }
   bool has_aot_linked_classes()            const { return _has_aot_linked_classes; }
+  bool aot_class_linking_value()           const { return _aot_class_linking_value; }
   bool compressed_oops()                   const { return _compressed_oops; }
+  bool compatible_oop_compression()        const { return _compatible_oop_compression; }
   int narrow_klass_pointer_bits()          const { return _narrow_klass_pointer_bits; }
   int narrow_klass_shift()                 const { return _narrow_klass_shift; }
   bool has_full_module_graph()             const { return _has_full_module_graph; }
@@ -249,6 +286,10 @@ public:
     return (0 <= region && region < NUM_CDS_REGIONS);
   }
 
+  bool check_must_match_flags() const {
+    return _must_match.runtime_check();
+  }
+
   void print(outputStream* st);
 };
 
@@ -281,7 +322,7 @@ public:
   FileMapHeader *header() const       { return _header; }
   static bool get_base_archive_name_from_header(const char* archive_name,
                                                 const char** base_archive_name);
-  static bool is_preimage_static_archive(const char* file);
+  static void check_preimage_static_archive(const char* file);
 
   bool init_from_file(int fd);
 

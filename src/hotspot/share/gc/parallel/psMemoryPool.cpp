@@ -32,7 +32,7 @@ PSOldGenerationPool::PSOldGenerationPool(PSOldGen* old_gen,
 }
 
 MemoryUsage PSOldGenerationPool::get_memory_usage() {
-  size_t maxSize   = (available_for_allocation() ? max_size() : 0);
+  size_t maxSize   = max_size();
   size_t used      = used_in_bytes();
   size_t committed = _old_gen->capacity_in_bytes();
 
@@ -59,7 +59,7 @@ PSEdenSpacePool::PSEdenSpacePool(PSYoungGen* young_gen,
 }
 
 MemoryUsage PSEdenSpacePool::get_memory_usage() {
-  size_t maxSize   = (available_for_allocation() ? max_size() : 0);
+  size_t maxSize   = max_size();
   size_t used = used_in_bytes();
   size_t committed = _space->capacity_in_bytes();
 
@@ -80,7 +80,7 @@ PSSurvivorSpacePool::PSSurvivorSpacePool(PSYoungGen* young_gen,
 }
 
 MemoryUsage PSSurvivorSpacePool::get_memory_usage() {
-  size_t maxSize = (available_for_allocation() ? max_size() : 0);
+  size_t maxSize = max_size();
   size_t used    = used_in_bytes();
   size_t committed = committed_in_bytes();
   return MemoryUsage(initial_size(), used, committed, maxSize);

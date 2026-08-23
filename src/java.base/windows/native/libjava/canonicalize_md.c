@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,10 +181,12 @@ WCHAR* getFinalPath(WCHAR* path, WCHAR* finalPath, DWORD size)
                 int isUnc = (finalPath[4] == L'U' &&
                              finalPath[5] == L'N' &&
                              finalPath[6] == L'C');
+                // keep leading double backslashes in case of UNC
+                const int startIdx = (isUnc) ? 1 : 0;
                 int prefixLen = (isUnc) ? 7 : 4;
                 // the amount to copy includes terminator
                 int amountToCopy = len - prefixLen + 1;
-                wmemmove(finalPath, finalPath + prefixLen, amountToCopy);
+                wmemmove(finalPath + startIdx, finalPath + prefixLen, amountToCopy);
             }
 
             return finalPath;

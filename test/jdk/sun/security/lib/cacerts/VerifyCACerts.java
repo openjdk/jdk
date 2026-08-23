@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  *      8223499 8225392 8232019 8234245 8233223 8225068 8225069 8243321 8243320
  *      8243559 8225072 8258630 8259312 8256421 8225081 8225082 8225083 8245654
  *      8305975 8304760 8307134 8295894 8314960 8317373 8317374 8318759 8319187
- *      8321408 8316138 8341057 8303770 8350498 8359170 8361212
+ *      8321408 8316138 8341057 8303770 8350498 8359170 8361212 8372351 8387123
  * @summary Check root CA entries in cacerts file
  */
 import java.io.ByteArrayInputStream;
@@ -47,12 +47,12 @@ public class VerifyCACerts {
             + File.separator + "security" + File.separator + "cacerts";
 
     // The numbers of certs now.
-    private static final int COUNT = 109;
+    private static final int COUNT = 110;
 
     // SHA-256 of cacerts, can be generated with
     // shasum -a 256 cacerts | sed -e 's/../&:/g' | tr '[:lower:]' '[:upper:]' | cut -c1-95
     private static final String CHECKSUM
-            = "70:73:12:D3:E8:01:89:28:F5:3D:10:8E:45:34:F6:28:CB:BF:AD:18:19:6D:F1:A2:E7:28:84:30:0B:E1:A6:9F";
+            = "AA:C2:64:41:28:06:1F:83:92:54:7C:DD:95:82:61:4C:8F:FA:09:7B:17:64:A7:A8:7C:A9:F6:27:25:95:2D:BB";
 
     // Hex formatter to upper case with ":" delimiter
     private static final HexFormat HEX = HexFormat.ofDelimiter(":").withUpperCase();
@@ -143,8 +143,6 @@ public class VerifyCACerts {
                     "96:BC:EC:06:26:49:76:F3:74:60:77:9A:CF:28:C5:A7:CF:E8:A3:C0:AA:E1:1A:8F:FC:EE:05:C0:BD:DF:08:C6");
             put("letsencryptisrgx2 [jdk]",
                     "69:72:9B:8E:15:A8:6E:FC:17:7A:57:AF:B7:17:1D:FC:64:AD:D2:8C:2F:CA:8C:F1:50:7E:34:45:3C:CB:14:70");
-            put("luxtrustglobalrootca [jdk]",
-                    "A1:B2:DB:EB:64:E7:06:C6:16:9E:3C:41:18:B2:3B:AA:09:01:8A:84:27:66:6D:8B:F0:E2:88:91:EC:05:19:50");
             put("quovadisrootca [jdk]",
                     "A4:5E:DE:3B:BB:F0:9C:8A:E1:5C:72:EF:C0:72:68:D6:93:A2:1C:99:6F:D5:1E:67:CA:07:94:60:FD:6D:88:73");
             put("quovadisrootca1g3 [jdk]",
@@ -279,6 +277,10 @@ public class VerifyCACerts {
                     "7E:76:26:0A:E6:9A:55:D3:F0:60:B0:FD:18:B2:A8:C0:14:43:C8:7B:60:79:10:30:C9:FA:0B:05:85:10:1A:38");
             put("sectigocodesignroote46 [jdk]",
                     "8F:63:71:D8:CC:5A:A7:CA:14:96:67:A9:8B:54:96:39:89:51:E4:31:9F:7A:FB:CC:6A:66:0D:67:3E:43:8D:0B");
+            put("wisekeyglobalrootgbca [jdk]",
+                    "6B:9C:08:E8:6E:B0:F7:67:CF:AD:65:CD:98:B6:21:49:E5:49:4A:67:F5:84:5E:7B:D1:ED:01:9F:27:B8:6B:D6");
+            put("wisekeyglobalrootgcca [jdk]",
+                    "85:60:F9:1C:36:24:DA:BA:95:70:B5:FE:A0:DB:E3:6F:F1:1A:83:23:BE:94:86:85:4F:B3:F3:4A:55:71:19:8D");
         }
     };
 
@@ -292,8 +294,6 @@ public class VerifyCACerts {
             add("addtrustexternalca [jdk]");
             // Valid until: Sat May 30 10:44:50 GMT 2020
             add("addtrustqualifiedca [jdk]");
-            // Valid until: Wed Mar 17 02:51:37 PDT 2021
-            add("luxtrustglobalrootca [jdk]");
             // Valid until: Wed Mar 17 11:33:33 PDT 2021
             add("quovadisrootca [jdk]");
             // Valid until: Sat May 21 04:00:00 GMT 2022

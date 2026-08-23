@@ -30,8 +30,6 @@
  * @requires vm.compiler1.enabled & vm.compiler2.enabled
  * @comment Both C1 and C2 JIT compilers are required because the test verifies
  *          compiler's runtime blobs generation.
- * @requires vm.opt.VerifyOops == null | vm.opt.VerifyOops == false
- * @comment VerifyOops flag switch off AOT code generation. Skip it.
  * @library /test/lib /test/setup_aot
  * @build AOTCodeFlags JavacBenchApp
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
@@ -49,8 +47,6 @@
  * @requires vm.compiler1.enabled & vm.compiler2.enabled
  * @comment Both C1 and C2 JIT compilers are required because the test verifies
  *          compiler's runtime blobs generation.
- * @requires vm.opt.VerifyOops == null | vm.opt.VerifyOops == false
- * @comment VerifyOops flag switch off AOT code generation. Skip it.
  * @library /test/lib /test/setup_aot
  * @build AOTCodeFlags JavacBenchApp
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
@@ -68,8 +64,6 @@
  * @requires vm.compiler1.enabled & vm.compiler2.enabled
  * @comment Both C1 and C2 JIT compilers are required because the test verifies
  *          compiler's runtime blobs generation.
- * @requires vm.opt.VerifyOops == null | vm.opt.VerifyOops == false
- * @comment VerifyOops flag switch off AOT code generation. Skip it.
  * @library /test/lib /test/setup_aot
  * @build AOTCodeFlags JavacBenchApp
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
@@ -87,8 +81,6 @@
  * @requires vm.compiler1.enabled & vm.compiler2.enabled
  * @comment Both C1 and C2 JIT compilers are required because the test verifies
  *          compiler's runtime blobs generation.
- * @requires vm.opt.VerifyOops == null | vm.opt.VerifyOops == false
- * @comment VerifyOops flag switch off AOT code generation. Skip it.
  * @library /test/lib /test/setup_aot
  * @build AOTCodeFlags JavacBenchApp
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
@@ -217,10 +209,7 @@ public class AOTCodeFlags {
                         // AOTStubCaching is on, non-zero stubs should be stored
                         out.shouldMatch("Shared Blobs:\\s+total=[1-9][0-9]+");
                         out.shouldMatch("C1 Blobs:\\s+total=[1-9][0-9]+");
-                        // we do not currently load or store C2 stubs
-                        // because we are seeing weird memory errors
-                        // when loading them -- see JDK-8357593
-                        out.shouldMatch("C2 Blobs:\\s+total=0");
+                        out.shouldMatch("C2 Blobs:\\s+total=[1-9][0-9]+");
                     } else {
                         // AOTStubCaching is off, no stubs should be stored
                         out.shouldMatch("Shared Blobs:\\s+total=0");

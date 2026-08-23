@@ -36,19 +36,19 @@ define_pd_global(bool, ImplicitNullChecks,       true);  // Generate code for im
 define_pd_global(bool, TrapBasedNullChecks,     false);
 define_pd_global(bool, UncommonNullCast,         true);  // Uncommon-trap nulls past to check cast
 
-define_pd_global(bool, DelayCompilerStubsGeneration, COMPILER2_OR_JVMCI);
+define_pd_global(bool, DelayCompilerStubsGeneration, COMPILER2_PRESENT(true) NOT_COMPILER2(false));
 
 define_pd_global(size_t, CodeCacheSegmentSize,   64);
 define_pd_global(uint, CodeEntryAlignment,       64);
 define_pd_global(intx, OptoLoopAlignment,        16);
 
-#define DEFAULT_STACK_YELLOW_PAGES (2)
+#define DEFAULT_STACK_YELLOW_PAGES (NOT_WINDOWS(2) WINDOWS_ONLY(3))
 #define DEFAULT_STACK_RED_PAGES (1)
 // Java_java_net_SocketOutputStream_socketWrite0() uses a 64k buffer on the
 // stack if compiled for unix and LP64. To pass stack overflow tests we need
 // 20 shadow pages.
 #define DEFAULT_STACK_SHADOW_PAGES (20 DEBUG_ONLY(+5))
-#define DEFAULT_STACK_RESERVED_PAGES (1)
+#define DEFAULT_STACK_RESERVED_PAGES (NOT_WINDOWS(1) WINDOWS_ONLY(0))
 
 #define MIN_STACK_YELLOW_PAGES DEFAULT_STACK_YELLOW_PAGES
 #define MIN_STACK_RED_PAGES    DEFAULT_STACK_RED_PAGES
@@ -66,6 +66,9 @@ define_pd_global(bool, RewriteBytecodes,     true);
 define_pd_global(bool, RewriteFrequentPairs, true);
 
 define_pd_global(bool, PreserveFramePointer, false);
+
+define_pd_global(bool, InlineTypePassFieldsAsArgs, true);
+define_pd_global(bool, InlineTypeReturnedAsFields, true);
 
 define_pd_global(uintx, TypeProfileLevel, 111);
 

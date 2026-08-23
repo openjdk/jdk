@@ -28,7 +28,6 @@
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  *
- * @requires vm.compiler1.enabled | !vm.graal.enabled
  * @requires vm.opt.DeoptimizeALot != true
  *
  * @build jdk.test.whitebox.WhiteBox

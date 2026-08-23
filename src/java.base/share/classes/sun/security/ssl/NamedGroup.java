@@ -880,9 +880,7 @@ enum NamedGroup {
                 // FFDHE (RFC 7919)
                 FFDHE_2048,
                 FFDHE_3072,
-                FFDHE_4096,
-                FFDHE_6144,
-                FFDHE_8192
+                FFDHE_4096
         };
 
         // Filter default groups names against default constraints.

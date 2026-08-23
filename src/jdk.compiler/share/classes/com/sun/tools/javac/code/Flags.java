@@ -125,13 +125,16 @@ public class Flags {
     // for example.
     @Use({FlagTarget.CLASS})
     @NoToStringValue
-    public static final int ACC_SUPER    = 1<<5;
+    public static final int ACC_IDENTITY = 1<<5;
     @Use({FlagTarget.METHOD})
     @NoToStringValue
     public static final int ACC_BRIDGE   = 1<<6;
     @Use({FlagTarget.METHOD})
     @NoToStringValue
     public static final int ACC_VARARGS  = 1<<7;
+    @Use({FlagTarget.VARIABLE})
+    @NoToStringValue
+    public static final int ACC_STRICT   = 1<<11;
     @Use({FlagTarget.CLASS})
     @NoToStringValue
     public static final int ACC_MODULE   = 1<<15;
@@ -151,6 +154,14 @@ public class Flags {
     @Use({FlagTarget.VARIABLE})
     public static final int HASINIT          = 1<<18;
 
+    /** Flag is set for a class or interface whose instances have identity
+     * i.e. any concrete class not declared with the modifier `value'
+     * (a) abstract class not declared `value'
+     * (b) older class files with ACC_SUPER bit set
+     */
+    @Use({FlagTarget.CLASS})
+    public static final int IDENTITY_TYPE            = 1<<18;
+
     /** Class is an implicitly declared top level class.
      */
     @Use({FlagTarget.CLASS})
@@ -159,18 +170,22 @@ public class Flags {
     /** Variable with implicit/inferred type.
      */
     @Use(FlagTarget.VARIABLE)
-    public static final int VAR_VARIABLE     = 1<<19;
+    public static final int VAR_VARIABLE     = 1<<21;
 
     /** Flag is set for compiler-generated anonymous method symbols
      *  that `own' an initializer block.
      */
     @Use({FlagTarget.METHOD})
-    public static final int BLOCK            = 1<<20;
+    public static final int BLOCK            = 1<<21;
+
+    /** Marks a type as a value class */
+    @Use({FlagTarget.CLASS})
+    public static final int VALUE_CLASS      = 1<<20;
 
     /** A parameter of a lambda function.
      */
     @Use(FlagTarget.VARIABLE)
-    public static final int LAMBDA_PARAMETER     = 1<<20;
+    public static final int LAMBDA_PARAMETER     = 1<<23;
 
     /** Flag is set for ClassSymbols that are being compiled from source.
      */
@@ -370,6 +385,11 @@ public class Flags {
     @Use({FlagTarget.CLASS})
     public static final long TYPE_TRANSLATED = 1L<<50;
 
+    /** Flag is set for the outer this field of an inner class.
+     */
+    @Use({FlagTarget.VARIABLE})
+    public static final long OUTER_THIS_FIELD = 1L<<50;
+
     /**
      * Flag to indicate class symbol is for module-info
      */
@@ -506,6 +526,12 @@ public class Flags {
     public static final long NON_SEALED = 1L<<63;  // part of ExtendedStandardFlags, cannot be reused
 
     /**
+     * Flag to indicate that a field is strict
+     */
+    @Use({FlagTarget.VARIABLE})
+    public static final long STRICT = 1L<<19; // VarSymbols
+
+    /**
      * Describe modifier flags as they might appear in source code, i.e.,
      * separated by spaces and in the order suggested by JLS 8.1.1.
      */
@@ -520,8 +546,8 @@ public class Flags {
     @NotFlag
     public static final int
         AccessFlags                       = PUBLIC | PROTECTED | PRIVATE,
-        LocalClassFlags                   = FINAL | ABSTRACT | STRICTFP | ENUM | SYNTHETIC,
-        StaticLocalFlags                  = LocalClassFlags | STATIC | INTERFACE,
+        LocalClassFlags                   = FINAL | ABSTRACT | STRICTFP | ENUM | SYNTHETIC | IDENTITY_TYPE,
+        StaticLocalClassFlags             = LocalClassFlags | STATIC | INTERFACE,
         MemberClassFlags                  = LocalClassFlags | INTERFACE | AccessFlags,
         MemberStaticClassFlags            = MemberClassFlags | STATIC,
         ClassFlags                        = LocalClassFlags | INTERFACE | PUBLIC | ANNOTATION,
@@ -537,16 +563,20 @@ public class Flags {
     @NotFlag
     public static final long
         //NOTE: flags in ExtendedStandardFlags cannot be overlayed across Symbol kinds:
-        ExtendedStandardFlags             = (long)StandardFlags | DEFAULT | SEALED | NON_SEALED,
-        ExtendedMemberClassFlags          = (long)MemberClassFlags | SEALED | NON_SEALED,
-        ExtendedMemberStaticClassFlags    = (long) MemberStaticClassFlags | SEALED | NON_SEALED,
-        ExtendedClassFlags                = (long)ClassFlags | SEALED | NON_SEALED,
-        ModifierFlags                     = ((long)StandardFlags & ~INTERFACE) | DEFAULT | SEALED | NON_SEALED,
+        ExtendedStandardFlags             = (long)StandardFlags | DEFAULT | SEALED | NON_SEALED | VALUE_CLASS,
+        ExtendedMemberClassFlags          = (long)MemberClassFlags | SEALED | NON_SEALED | VALUE_CLASS,
+        ExtendedMemberStaticClassFlags    = (long) MemberStaticClassFlags | SEALED | NON_SEALED | VALUE_CLASS,
+        ExtendedClassFlags                = (long)ClassFlags | SEALED | NON_SEALED | VALUE_CLASS,
+        ExtendedLocalClassFlags           = (long) LocalClassFlags | VALUE_CLASS,
+        ExtendedStaticLocalClassFlags     = (long) StaticLocalClassFlags | VALUE_CLASS,
+        ValueFieldFlags                   = (long) VarFlags | STRICT | FINAL,
+        ModifierFlags                     = ((long)StandardFlags & ~INTERFACE) | DEFAULT | SEALED | NON_SEALED | VALUE_CLASS,
         InterfaceMethodMask               = ABSTRACT | PRIVATE | STATIC | PUBLIC | STRICTFP | DEFAULT,
         AnnotationTypeElementMask         = ABSTRACT | PUBLIC,
         LocalVarFlags                     = FINAL | PARAMETER,
         ReceiverParamFlags                = PARAMETER;
 
+    @SuppressWarnings("preview") // allow use of VALUE_CLASS when building jdk.compiler.interim
     public static Set<Modifier> asModifierSet(long flags) {
         Set<Modifier> modifiers = modifierSets.get(flags);
         if (modifiers == null) {
@@ -567,6 +597,7 @@ public class Flags {
             if (0 != (flags & NATIVE))    modifiers.add(Modifier.NATIVE);
             if (0 != (flags & STRICTFP))  modifiers.add(Modifier.STRICTFP);
             if (0 != (flags & DEFAULT))   modifiers.add(Modifier.DEFAULT);
+            if (0 != (flags & VALUE_CLASS))     modifiers.add(Modifier.VALUE);
             modifiers = Collections.unmodifiableSet(modifiers);
             modifierSets.put(flags, modifiers);
         }

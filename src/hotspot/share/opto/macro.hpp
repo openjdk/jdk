@@ -25,6 +25,9 @@
 #ifndef SHARE_OPTO_MACRO_HPP
 #define SHARE_OPTO_MACRO_HPP
 
+#include "ci/ciInstanceKlass.hpp"
+#include "opto/callnode.hpp"
+#include "opto/node.hpp"
 #include "opto/phase.hpp"
 
 class  AllocateNode;
@@ -94,24 +97,31 @@ public:
 
 private:
   // projections extracted from a call node
-  CallProjections _callprojs;
+  CallProjections* _callprojs;
 
   void expand_allocate(AllocateNode *alloc);
   void expand_allocate_array(AllocateArrayNode *alloc);
   void expand_allocate_common(AllocateNode* alloc,
                               Node* length,
+                              Node* init_val,
                               const TypeFunc* slow_call_type,
                               address slow_call_address,
                               Node* valid_length_test);
   void yank_alloc_node(AllocateNode* alloc);
-  Node* value_from_mem(Node* start, Node* ctl, BasicType ft, const Type* ftype, const TypeOopPtr* adr_t, AllocateNode* alloc);
-  Node *value_from_mem_phi(Node *mem, BasicType ft, const Type *ftype, const TypeOopPtr *adr_t, AllocateNode *alloc, Node_Stack *value_phis, int level);
 
-  bool eliminate_boxing_node(CallStaticJavaNode *boxing);
+  void process_field_value_at_safepoint(const Type* field_type, Node* field_val, SafePointNode* sfpt, Unique_Node_List* value_worklist);
+  bool add_array_elems_to_safepoint(AllocateNode* alloc, const TypeAryPtr* array_type, SafePointNode* sfpt, Unique_Node_List* value_worklist);
+  bool add_inst_fields_to_safepoint(ciInstanceKlass* iklass, AllocateNode* alloc, Node* base, int offset_minus_header, SafePointNode* sfpt, Unique_Node_List* value_worklist);
+  Node* value_from_alloc(BasicType ft, const TypeOopPtr* adr_t, AllocateNode* alloc);
+  Node* value_from_mem(Node* start, Node* ctl, BasicType ft, const Type* ftype, const TypeOopPtr* adr_t, AllocateNode* alloc);
+  Node* value_from_mem_phi(Node* mem, BasicType ft, const Type* ftype, const TypeOopPtr* adr_t, AllocateNode* alloc, Node_Stack* value_phis, int level);
+  Node* inline_type_from_mem(ciInlineKlass* vk, const TypeAryPtr* elem_adr_type, int elem_idx, int offset_in_element, bool null_free, AllocateNode* alloc, SafePointNode* sfpt);
+
+  bool eliminate_boxing_node(CallStaticJavaNode* call);
   bool eliminate_allocate_node(AllocateNode *alloc);
-  void undo_previous_scalarizations(GrowableArray <SafePointNode *> safepoints_done, AllocateNode* alloc);
-  bool scalar_replacement(AllocateNode *alloc, GrowableArray <SafePointNode *>& safepoints);
-  void process_users_of_allocation(CallNode *alloc);
+  void undo_previous_scalarizations(Unique_Node_List& safepoints_done, AllocateNode* alloc);
+  bool scalar_replacement(AllocateNode* alloc, Unique_Node_List& safepoints);
+  void process_users_of_allocation(CallNode *alloc, bool inline_alloc = false);
 
   void eliminate_gc_barrier(Node *p2x);
   void mark_eliminated_box(Node* box, Node* obj);
@@ -119,6 +129,7 @@ private:
   bool eliminate_locking_node(AbstractLockNode *alock);
   void expand_lock_node(LockNode *lock);
   void expand_unlock_node(UnlockNode *unlock);
+  void expand_mh_intrinsic_return(CallStaticJavaNode* call);
 
   // More helper methods modeled after GraphKit for array copy
   void insert_mem_bar(Node** ctrl, Node** mem, int opcode, int alias_idx, Node* precedent = nullptr);
@@ -128,6 +139,7 @@ private:
   // helper methods modeled after LibraryCallKit for array copy
   Node* generate_guard(Node** ctrl, Node* test, RegionNode* region, float true_prob);
   Node* generate_slow_guard(Node** ctrl, Node* test, RegionNode* region);
+  Node* generate_fair_guard(Node** ctrl, Node* test, RegionNode* region);
 
   void generate_partial_inlining_block(Node** ctrl, MergeMemNode** mem, const TypePtr* adr_type,
                                        RegionNode** exit_block, Node** result_memory, Node* length,
@@ -138,6 +150,10 @@ private:
 
   // More helper methods for array copy
   Node* generate_nonpositive_guard(Node** ctrl, Node* index, bool never_negative);
+  Node* mark_word_test(Node** ctrl, Node* obj, MergeMemNode* mem, uintptr_t mask_val, RegionNode* region);
+  Node* generate_flat_array_guard(Node** ctrl, Node* array, MergeMemNode* mem, RegionNode* region);
+  Node* generate_null_free_array_guard(Node** ctrl, Node* array, MergeMemNode* mem, RegionNode* region);
+
   void finish_arraycopy_call(Node* call, Node** ctrl, MergeMemNode** mem, const TypePtr* adr_type);
   Node* generate_arraycopy(ArrayCopyNode *ac,
                            AllocateArrayNode* alloc,
@@ -147,22 +163,28 @@ private:
                            Node* src,  Node* src_offset,
                            Node* dest, Node* dest_offset,
                            Node* copy_length,
+                           Node* dest_length,
+                           bool raw_base,
                            bool disjoint_bases = false,
                            bool length_never_negative = false,
                            RegionNode* slow_region = nullptr);
   void generate_clear_array(Node* ctrl, MergeMemNode* merge_mem,
                             const TypePtr* adr_type,
                             Node* dest,
+                            Node* val,
+                            Node* raw_val,
                             BasicType basic_elem_type,
                             Node* slice_idx,
                             Node* slice_len,
-                            Node* dest_size);
+                            Node* dest_size,
+                            bool raw_base);
   bool generate_block_arraycopy(Node** ctrl, MergeMemNode** mem,
                                 const TypePtr* adr_type,
                                 BasicType basic_elem_type,
                                 Node* src, Node* src_offset,
                                 Node* dest, Node* dest_offset,
-                                Node* dest_size, bool dest_uninitialized);
+                                Node* dest_size, bool dest_uninitialized,
+                                bool raw_base);
   MergeMemNode* generate_slow_arraycopy(ArrayCopyNode *ac,
                                         Node** ctrl, Node* mem, Node** io,
                                         const TypePtr* adr_type,
@@ -174,7 +196,8 @@ private:
                                      Node* dest_elem_klass,
                                      Node* src,  Node* src_offset,
                                      Node* dest, Node* dest_offset,
-                                     Node* copy_length, bool dest_uninitialized);
+                                     Node* copy_length, bool dest_uninitialized,
+                                     bool raw_base);
   Node* generate_generic_arraycopy(Node** ctrl, MergeMemNode** mem,
                                    const TypePtr* adr_type,
                                    Node* src,  Node* src_offset,
@@ -186,11 +209,16 @@ private:
                                     bool disjoint_bases,
                                     Node* src,  Node* src_offset,
                                     Node* dest, Node* dest_offset,
-                                    Node* copy_length, bool dest_uninitialized);
-
+                                    Node* copy_length, bool dest_uninitialized,
+                                    bool raw_base);
+  const TypePtr* adjust_for_flat_array(const TypeAryPtr* top_dest, Node*& src_offset,
+                                       Node*& dest_offset, Node*& length, BasicType& dest_elem,
+                                       Node*& dest_length);
   void expand_arraycopy_node(ArrayCopyNode *ac);
 
   void expand_subtypecheck_node(SubTypeCheckNode *check);
+
+  void expand_flatarraycheck_node(FlatArrayCheckNode* check);
 
   int replace_input(Node *use, Node *oldref, Node *newref);
   void migrate_outs(Node *old, Node *target);
@@ -213,12 +241,12 @@ public:
   }
 
   void refine_strip_mined_loop_macro_nodes();
-  void eliminate_macro_nodes();
+  void eliminate_macro_nodes(bool eliminate_locks = true);
   bool expand_macro_nodes();
   void eliminate_opaque_looplimit_macro_nodes();
 
-  SafePointScalarObjectNode* create_scalarized_object_description(AllocateNode *alloc, SafePointNode* sfpt);
-  static bool can_eliminate_allocation(PhaseIterGVN *igvn, AllocateNode *alloc, GrowableArray <SafePointNode *> *safepoints);
+  SafePointScalarObjectNode* create_scalarized_object_description(AllocateNode *alloc, SafePointNode* sfpt, Unique_Node_List* value_worklist);
+  static bool can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode* alloc, Unique_Node_List* safepoints);
 
 
   PhaseIterGVN &igvn() const { return _igvn; }
