@@ -203,11 +203,12 @@ public abstract non-sealed class X509Certificate extends Certificate
         throws CertificateExpiredException, CertificateNotYetValidException {
 
         Date date;
-        try {
+        if (instant.isBefore(Instant.ofEpochMilli(Long.MIN_VALUE))) {
+            date = new Date(Long.MIN_VALUE);
+        } else if (instant.isAfter(Instant.ofEpochMilli(Long.MAX_VALUE))) {
+            date = new Date(Long.MAX_VALUE);
+        } else {
             date = Date.from(instant);
-        } catch (IllegalArgumentException e) {
-            date = instant.isBefore(Instant.EPOCH)
-                    ? new Date(Long.MIN_VALUE) : new Date(Long.MAX_VALUE);
         }
         checkValidity(date);
     }
