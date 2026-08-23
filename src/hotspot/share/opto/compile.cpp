@@ -1442,7 +1442,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
     }
 
     // Remove size and stability
-    const TypeAry* normalized_ary = TypeAry::make(ta->elem(), TypeInt::POS, false, ta->is_flat(), ta->is_not_flat(), ta->is_not_null_free(), ta->is_atomic());
+    const TypeAry* normalized_ary = TypeAry::make(ta->elem(), TypeInt::POS, false, ta->is_flat(), ta->is_not_flat(), ta->is_null_free(), ta->is_not_null_free(), ta->is_atomic());
     // Remove ptr, const_oop, and offset
     if (ta->elem() == Type::BOTTOM) {
       // Bottom array (meet of int[] and byte[] for example), accesses to it will be done with
@@ -1465,7 +1465,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
 
     // All arrays of references share the same slice
     if (!ta->is_flat() && ta->elem()->make_oopptr() != nullptr) {
-      const TypeAry* tary = TypeAry::make(TypeInstPtr::BOTTOM, TypeInt::POS, false, false, true, true, true);
+      const TypeAry* tary = TypeAry::make(TypeInstPtr::BOTTOM, TypeInt::POS, false, false, true, false, true, true);
       tj = ta = TypeAryPtr::make(TypePtr::BotPTR, nullptr, tary, nullptr, false, Type::Offset::bottom);
     }
 
@@ -1726,7 +1726,7 @@ Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_cr
            Type::str(adr_type), Type::str(flat), Type::str(flatten_alias_type(flat)));
     assert(flat != TypePtr::BOTTOM, "cannot alias-analyze an untyped ptr: adr_type = %s",
            Type::str(adr_type));
-    if (flat->isa_oopptr() && !flat->isa_klassptr()) {
+    if (flat->isa_instptr()) {
       const TypeOopPtr* foop = flat->is_oopptr();
       // Scalarizable allocations have exact klass always.
       bool exact = !foop->klass_is_exact() || foop->is_known_instance();
@@ -6072,10 +6072,10 @@ void Compile::igv_print_graph_to_network(const char* name, GrowableArray<const N
 
 Node* Compile::narrow_value(BasicType bt, Node* value, const Type* type, PhaseGVN* phase, bool transform_res) {
   precond(type != nullptr);
-
-  if (phase->type(value)->higher_equal(type)) {
+  if (type->base() == Type::Int && phase->type(value)->higher_equal(type)) {
     return value;
   }
+
   Node* result = nullptr;
   if (bt == T_BYTE) {
     result = phase->transform(new LShiftINode(value, phase->intcon(24)));
