@@ -47,7 +47,6 @@ import static jdk.jpackage.internal.cli.StandardValueConverter.uuidConv;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -73,8 +72,8 @@ import jdk.jpackage.internal.model.LauncherShortcut;
 import jdk.jpackage.internal.model.LauncherShortcutStartupDirectory;
 import jdk.jpackage.internal.model.PackageType;
 import jdk.jpackage.internal.model.SelfContainedException;
+import jdk.jpackage.internal.util.ExplodedPath;
 import jdk.jpackage.internal.util.PathUtils;
-import jdk.jpackage.internal.util.RootedPath;
 import jdk.jpackage.internal.util.SetBuilder;
 
 /**
@@ -139,12 +138,10 @@ public final class StandardOption {
                 });
             })).create();
 
-    public static final OptionValue<? extends Collection<RootedPath>> INPUT = directoryOption("input").addAliases("i")
+    public static final OptionValue<ExplodedPath> INPUT = directoryOption("input").addAliases("i")
             .outOfScope(NOT_BUILDING_APP_IMAGE)
             .map(explodedPathOptionMapper(explodedPathConverter().create()))
-            .create(optionValueBuilder -> {
-                return optionValueBuilder.to(List::of).create();
-            });
+            .create();
 
     public static final OptionValue<Path> DEST = directoryOption("dest").addAliases("d")
             .valuePattern("destination path")
@@ -221,7 +218,7 @@ public final class StandardOption {
             .inScope(LauncherProperty.VALUE)
             .createArray(toList());
 
-    public static final OptionValue<List<Collection<RootedPath>>> APP_CONTENT = existingPathOption("app-content")
+    public static final OptionValue<List<ExplodedPath>> APP_CONTENT = existingPathOption("app-content")
             .tokenizer(",")
             .valuePattern("additional content")
             .outOfScope(NOT_BUILDING_APP_IMAGE)
@@ -231,7 +228,7 @@ public final class StandardOption {
                     b.description("help.option.app-content" + resourceKeySuffix(context.os()));
                 }
             }))
-            .createArray(toExplodedPathList());
+            .createArray(toList());
 
     static final OptionValue<Path[]> FILE_ASSOCIATIONS_INTERNAL = fileOption("file-associations")
             .tokenizer(pathSeparator())
@@ -398,11 +395,11 @@ public final class StandardOption {
     // MacOS-specific
     //
 
-    public static final OptionValue<List<Collection<RootedPath>>> MAC_DMG_CONTENT = existingPathOption("mac-dmg-content")
+    public static final OptionValue<List<ExplodedPath>> MAC_DMG_CONTENT = existingPathOption("mac-dmg-content")
             .valuePattern("additional content path")
             .tokenizer(",")
             .map(explodedPathOptionMapper(explodedPathConverter().withPathFileName().create()))
-            .createArray(toExplodedPathList());
+            .createArray(toList());
 
     public static final OptionValue<Boolean> MAC_SIGN = booleanOption("mac-sign").scope(MAC_SIGNING).addAliases("s").create();
 
@@ -695,7 +692,7 @@ public final class StandardOption {
         };
     }
 
-    static Function<OptionSpecBuilder<Path>, OptionSpecBuilder<RootedPath[]>> explodedPathOptionMapper(ValueConverter<Path, RootedPath[]> conv) {
+    static Function<OptionSpecBuilder<Path>, OptionSpecBuilder<ExplodedPath>> explodedPathOptionMapper(ValueConverter<Path, ExplodedPath> conv) {
         Objects.requireNonNull(conv);
         return builder -> {
             return builder.map(conv)
@@ -717,16 +714,6 @@ public final class StandardOption {
                 return new ConfigException(message, I18N.format(adviceKey), cause);
             }).formatArgumentsTransformer(StandardArgumentsMapper.VALUE_AND_NAME).create());
             builder.validatorExceptionFormatString(messageFormatKey);
-        };
-    }
-
-    private static <T> Function<OptionValue.Builder<RootedPath[][]>, OptionValue<List<Collection<RootedPath>>>> toExplodedPathList() {
-        return builder -> {
-            return builder.to((RootedPath[][] v) -> {
-                return Stream.of(v).map(arr -> {
-                    return (Collection<RootedPath>)List.of(arr);
-                }).toList();
-            }).create();
         };
     }
 

@@ -26,15 +26,13 @@
 package jdk.jpackage.internal.cli;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.UUID;
-import java.util.function.Function;
 import jdk.jpackage.internal.model.BundleVersion;
 import jdk.jpackage.internal.model.LauncherShortcut;
 import jdk.jpackage.internal.model.ParseUtils;
-import jdk.jpackage.internal.util.RootedPath;
+import jdk.jpackage.internal.util.ExplodedPath;
 
 
 final class StandardValueConverter {
@@ -74,10 +72,10 @@ final class StandardValueConverter {
         private ExplodedPathConverterBuilder() {
         }
 
-        ValueConverter<Path, RootedPath[]> create() {
+        ValueConverter<Path, ExplodedPath> create() {
             return ValueConverter.create(path -> {
                 return explodePath(path, withPathFileName);
-            }, RootedPath[].class);
+            }, ExplodedPath.class);
         }
 
         ExplodedPathConverterBuilder withPathFileName(boolean v) {
@@ -116,24 +114,21 @@ final class StandardValueConverter {
     private static final ValueConverter<String, LauncherShortcut> ADD_LAUNCHER_SHORTCUT_CONV = ValueConverter.create(
             ParseUtils::parseLauncherShortcutForAddLauncher, LauncherShortcut.class);
 
-    private static RootedPath[] explodePath(Path path, boolean withPathFileName) throws Exception {
+    private static ExplodedPath explodePath(Path path, boolean withPathFileName) throws Exception {
 
-        Function<Path, RootedPath> mapper;
-        if (withPathFileName) {
-            mapper = RootedPath.toRootedPath(path.getParent());
-        } else {
-            mapper = RootedPath.toRootedPath(path);
-        }
-
-        RootedPath[] items;
-        try (var walk = Files.walk(path)) {
-            items = walk.map(mapper).toArray(RootedPath[]::new);
+        ExplodedPath reply;
+        try {
+            reply = ExplodedPath.of(path);
         } catch (IOException ex) {
             // IOException is not a converter error, it is a converting error, so map it into IAE.
             throw new IllegalArgumentException(ex);
         }
 
-        return items;
+        if (withPathFileName) {
+            reply = reply.getParent();
+        }
+
+        return reply;
     }
 
     private static final ValueConverter<String, BundleVersion> VERSION_CONV = ValueConverter.create(str -> {

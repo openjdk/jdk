@@ -45,6 +45,7 @@ import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.AppImageSigningConfig;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
+import jdk.jpackage.internal.model.ApplicationLayout.Directory;
 import jdk.jpackage.internal.model.BundleVersion;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.DottedVersion;
@@ -56,9 +57,9 @@ import jdk.jpackage.internal.model.MacApplicationMixin;
 import jdk.jpackage.internal.summary.StandardProperty;
 import jdk.jpackage.internal.summary.StandardWarning;
 import jdk.jpackage.internal.summary.SummaryAccumulator;
+import jdk.jpackage.internal.util.ExplodedPath;
 import jdk.jpackage.internal.util.PListReader;
 import jdk.jpackage.internal.util.Result;
-import jdk.jpackage.internal.util.RootedPath;
 
 final class MacApplicationBuilder {
 
@@ -167,9 +168,11 @@ final class MacApplicationBuilder {
     }
 
     private static Stream<Path> appContentTopPaths(Application app) {
-        return app.contentDirSources().stream().filter(rootedPath -> {
-            return rootedPath.branch().getNameCount() == 1;
-        }).map(RootedPath::fullPath);
+        return app.filterUserContent(Directory.CONTENT_DIR).flatMap(explodedPath -> {
+            return explodedPath.children().stream().map(ExplodedPath.Node::path).filter(childPath -> {
+                return childPath.getNameCount() == 1;
+            }).map(explodedPath.root()::resolve);
+        });
     }
 
     private static void validateAppContentDirs(SummaryAccumulator summary, Application app) {

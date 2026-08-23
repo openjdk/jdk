@@ -29,9 +29,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
-import jdk.jpackage.internal.util.RootedPath;
+import jdk.jpackage.internal.model.AppImageLayout.DirectorySelector;
+import jdk.jpackage.internal.util.ExplodedPath;
 
 /**
  * A generic application for packaging.
@@ -80,25 +82,28 @@ public non-sealed interface Application extends BundleSpec {
     String copyright();
 
     /**
-     * Gets the source paths that should be copied into
-     * {@link ApplicationLayout#appDirectory()} directory of the image of this
-     * application.
+     * Gets the configuration for user-supplied paths to copy into the application
+     * image.
      * <p>
-     * Source paths are supposed to contain the applications's classes and other
-     * resources.
+     * Each item in the collection specifies source paths and the directory in the
+     * application image where they should be copied.
      *
      * @return the source paths
      */
-    Collection<RootedPath> appDirSources();
+    Collection<Map.Entry<ExplodedPath, DirectorySelector>> userContent();
 
     /**
-     * Gets the source paths that should be copied into
-     * {@link ApplicationLayout#contentDirectory()} directory of the image of this
-     * application.
+     * Returns user content that should be copied to the given destination directory.
+     * @param dest the destination directory
      *
-     * @return the source paths
+     * @return the filtered user content
      */
-    Collection<RootedPath> contentDirSources();
+    default Stream<ExplodedPath> filterUserContent(DirectorySelector dest) {
+        Objects.requireNonNull(dest);
+        return userContent().stream().filter(v -> {
+            return v.getValue() == dest;
+        }).map(Map.Entry::getKey);
+    }
 
     /**
      * Gets the unresolved app image layout of this application.
@@ -250,8 +255,7 @@ public non-sealed interface Application extends BundleSpec {
             BundleVersion version,
             String vendor,
             String copyright,
-            Collection<RootedPath> appDirSources,
-            Collection<RootedPath> contentDirSources,
+            Collection<Map.Entry<ExplodedPath, DirectorySelector>> userContent,
             AppImageLayout imageLayout,
             Optional<RuntimeBuilder> runtimeBuilder,
             List<Launcher> launchers,

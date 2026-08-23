@@ -51,7 +51,6 @@ import static jdk.jpackage.internal.model.StandardPackageType.MAC_PKG;
 import static jdk.jpackage.internal.util.function.ExceptionBox.toUnchecked;
 
 import java.nio.file.Path;
-import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -76,7 +75,6 @@ import jdk.jpackage.internal.model.MacPkgPackage;
 import jdk.jpackage.internal.model.PackageType;
 import jdk.jpackage.internal.model.RuntimeLayout;
 import jdk.jpackage.internal.util.MacBundle;
-import jdk.jpackage.internal.util.RootedPath;
 import jdk.jpackage.internal.util.Slot;
 import jdk.jpackage.internal.util.function.ExceptionBox;
 
@@ -95,14 +93,12 @@ final class MacFromOptions {
 
         final var pkgBuilder = new MacDmgPackageBuilder(superPkgBuilder);
 
-        MAC_DMG_CONTENT.findIn(options).map((List<Collection<RootedPath>> v) -> {
-            // Reverse the order of content sources.
-            // If there are multiple source files for the same
-            // destination file, only the first will be used.
-            // Reversing the order of content sources makes it use the last file
-            // from the original list of source files for the given destination file.
-            return v.reversed().stream().flatMap(Collection::stream).toList();
-        }).ifPresent(pkgBuilder::dmgRootDirSources);
+        // Reverse the order of content sources.
+        // If there are multiple source files for the same
+        // destination file, only the first will be used.
+        // Reversing the order of content sources makes it use the last file
+        // from the original list of source files for the given destination file.
+        MAC_DMG_CONTENT.findIn(options).map(List::reversed).ifPresent(pkgBuilder::dmgRootDirSources);
 
         return pkgBuilder.create();
     }
