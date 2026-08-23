@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Random;
 
 import jtreg.SkippedException;
 import jdk.test.lib.Asserts;
@@ -54,6 +55,7 @@ public class SecurityPropertiesPluginTest {
     private static final String TEST_DIR = System.getProperty("test.dir", ".");
     private static final boolean LINKABLE_RUNTIME =
             LinkableRuntimeImage.isLinkableRuntime();
+    private static final String DELIMS = "=: ";
 
     public static void main(String[] args) throws Throwable {
 
@@ -63,7 +65,7 @@ public class SecurityPropertiesPluginTest {
         }
 
         /*
-         * Test props option with file containing 5 properties:
+         * Test props option with file containing properties:
          * one that overrides a current property,
          * one that is a user-defined property,
          * two include properties (it should only use the 2nd one)
@@ -122,9 +124,12 @@ public class SecurityPropertiesPluginTest {
 
     private static Path writePropsToFile(Map<String, String> propMap,
             String filename) throws Exception {
+        Random r = new Random();
         Path p = Path.of(TEST_DIR, filename);
         StringBuilder sb = new StringBuilder();
-        propMap.forEach((k, v) -> sb.append(k + "=" + v
+        // use random delimiter
+        char delim = DELIMS.charAt(r.nextInt(DELIMS.length()));
+        propMap.forEach((k, v) -> sb.append(k + delim + v
                                             + System.lineSeparator()));
         Files.writeString(p, sb, StandardCharsets.ISO_8859_1);
         return p;

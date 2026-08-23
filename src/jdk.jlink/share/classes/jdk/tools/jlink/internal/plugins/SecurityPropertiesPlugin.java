@@ -121,18 +121,16 @@ public class SecurityPropertiesPlugin extends AbstractPlugin {
             String line = br.readLine();
             while (line != null) {
                 if (!line.isEmpty() && line.charAt(0) != '#') {
-                    // assume "=" used as delimiter
-                    int index = line.indexOf('=');
-                    if (index != -1) {
-                        String propName = line.substring(0, index);
-                        String propValue = props.remove(propName.trim());
-                        if (propValue != null) {
-                            // skip multi-line values in original
-                            while (line.endsWith("\\")) {
-                                line = br.readLine();
-                            }
-                            line = propName + "=" + propValue;
+                    // assume "=", ":", or whitespace used as delimiter
+                    String[] res = line.stripLeading().split("[=:\s]", 2);
+                    String propName = res[0];
+                    String propValue = props.remove(propName.trim());
+                    if (propValue != null) {
+                        // skip multi-line values in original
+                        while (line.endsWith("\\")) {
+                            line = br.readLine();
                         }
+                        line = propName + "=" + propValue;
                     }
                 }
                 lines.add(line);
@@ -148,9 +146,10 @@ public class SecurityPropertiesPlugin extends AbstractPlugin {
         // add user-defined properties at end
         props.forEach((k, v) -> lines.add(k + "=" + v));
 
-        // add include property at end if it has been specified
+        // add include property at end if it has been specified and use
+        // space character as delimiter
         if (includeValue != null) {
-            lines.add("include=" + includeValue);
+            lines.add("include " + includeValue);
         }
 
         // Write contents of list to byte array. Use ISO_8859_1 to be
