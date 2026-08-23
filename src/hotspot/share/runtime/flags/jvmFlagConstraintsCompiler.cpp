@@ -67,7 +67,7 @@ JVMFlag::Error CICompilerCountConstraintFunc(intx value, bool verbose) {
 #ifndef ASSERT
   int active_processor_count = os::active_processor_count();
   // On a single-CPU machine we still can run C1 and C2 compiler threads, so allow up to 2x for tiered.
-  int reasonable_threads_num = CompilerConfig::is_tiered() ? active_processor_count * 2 : active_processor_count;
+  int reasonable_threads_num = MAX2(2, CompilerConfig::is_tiered() ? active_processor_count * 2 : active_processor_count);
   if (value > reasonable_threads_num) {
     JVMFlag::printError(verbose, "CICompilerCount is too large (%" PRIdPTR ") for current active processor count %d \n",
                         CICompilerCount, active_processor_count);

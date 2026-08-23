@@ -31,10 +31,10 @@
 #include "runtime/handles.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-StackMapFrame::StackMapFrame(u2 max_locals, u2 max_stack, ClassVerifier* v) :
+StackMapFrame::StackMapFrame(u2 max_locals, u2 max_stack, AssertUnsetFieldTable* initial_strict_fields, ClassVerifier* v) :
                       _offset(0), _locals_size(0), _stack_size(0),
                       _stack_mark(0), _max_locals(max_locals),
-                      _max_stack(max_stack), _flags(0), _verifier(v) {
+                      _max_stack(max_stack), _flags(0), _assert_unset_fields(initial_strict_fields), _verifier(v) {
   Thread* thr = v->thread();
   _locals = NEW_RESOURCE_ARRAY_IN_THREAD(thr, VerificationType, max_locals);
   _stack = NEW_RESOURCE_ARRAY_IN_THREAD(thr, VerificationType, max_stack);
@@ -47,10 +47,51 @@ StackMapFrame::StackMapFrame(u2 max_locals, u2 max_stack, ClassVerifier* v) :
   }
 }
 
+void StackMapFrame::unsatisfied_strict_fields_error(InstanceKlass* klass, int bci) {
+  // Default these to `<Unknown>` as they will be replaced with the correct
+  // values by the `find_unset` lambda as we only call this code when
+  // an error has already been determined.  This just provides a safe
+  // obvious fallback value.
+  Symbol* name = vmSymbols::unknown_class_name();
+  Symbol* sig = vmSymbols::unknown_class_name();
+  int num_uninit_fields = 0;
+
+  auto find_unset = [&] (const NameAndSig& key, const bool& value) {
+    if (!value) {
+      name = key._name;
+      sig = key._signature;
+      num_uninit_fields++;
+    }
+  };
+  assert_unset_fields()->iterate_all(find_unset);
+
+  verifier()->verify_error(
+    ErrorContext::bad_strict_fields(bci, this),
+    "All strict final fields must be initialized before super(): %d field(s), %s:%s in %s",
+    num_uninit_fields,
+    name->as_C_string(),
+    sig->as_C_string(),
+    klass->name()->as_C_string()
+  );
+}
+
+void StackMapFrame::print_strict_fields(AssertUnsetFieldTable* table) {
+  ResourceMark rm;
+  auto printfields = [&] (const NameAndSig& key, const bool& value) {
+    log_info(verification)("Strict field: %s%s (Satisfied: %s)",
+                           key._name->as_C_string(),
+                           key._signature->as_C_string(),
+                           value ? "true" : "false");
+  };
+  table->iterate_all(printfields);
+}
+
 StackMapFrame* StackMapFrame::frame_in_exception_handler(u1 flags) {
   Thread* thr = _verifier->thread();
   VerificationType* stack = NEW_RESOURCE_ARRAY_IN_THREAD(thr, VerificationType, 1);
-  StackMapFrame* frame = new StackMapFrame(_offset, flags, _locals_size, 0, _max_locals, _max_stack, _locals, stack, _verifier);
+  StackMapFrame* frame = new StackMapFrame(_offset, flags, _locals_size, 0,
+                                           _max_locals, _max_stack, _locals, stack,
+                                           _assert_unset_fields, _verifier);
   return frame;
 }
 
@@ -80,7 +121,7 @@ VerificationType StackMapFrame::set_locals_from_arg(
   if (!m->is_static()) {
     init_local_num++;
     // add one extra argument for instance method
-    if (m->name() == vmSymbols::object_initializer_name() &&
+    if (m->is_object_constructor() &&
        thisKlass.name() != vmSymbols::java_lang_Object()) {
       _locals[0] = VerificationType::uninitialized_this_type();
       _flags |= FLAG_THIS_UNINIT;
@@ -185,6 +226,16 @@ bool StackMapFrame::is_assignable_to(
     *ctx = ErrorContext::bad_type(target->offset(),
         TypeOrigin::stack(mismatch_loc, (StackMapFrame*)this),
         TypeOrigin::sm_stack(mismatch_loc, (StackMapFrame*)target));
+    return false;
+  }
+
+  // Check that assert unset fields are compatible
+  bool compatible = verify_unset_fields_compatibility(target->assert_unset_fields());
+  if (!compatible) {
+    print_strict_fields(assert_unset_fields());
+    print_strict_fields(target->assert_unset_fields());
+    *ctx = ErrorContext::strict_fields_mismatch(target->offset(),
+        (StackMapFrame*)this, (StackMapFrame*)target);
     return false;
   }
 

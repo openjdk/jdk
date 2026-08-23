@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2026 IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +33,14 @@
 #include "interpreter/interp_masm.hpp"
 #include "memory/universe.hpp"
 #include "nativeInst_s390.hpp"
+#include "oops/inlineKlass.hpp"
 #include "oops/instanceOop.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"
 #include "prims/upcallLinker.hpp"
+#include "runtime/continuation.hpp"
+#include "runtime/continuationEntry.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.hpp"
@@ -121,6 +125,10 @@ class StubGenerator: public StubCodeGenerator {
     StubId stub_id = StubId::stubgen_call_stub_id;
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
+
+    if (InlineTypeReturnedAsFields) {
+      __ stop("fix T_OBJECT");
+    }
 
     Register r_arg_call_wrapper_addr   = Z_ARG1;
     Register r_arg_result_addr         = Z_ARG2;
@@ -330,6 +338,8 @@ class StubGenerator: public StubCodeGenerator {
       // Pop frame. Done here to minimize stalls.
       __ pop_frame();
 
+      __ pop_cont_fastpath();
+
       // Reload some volatile registers which we've spilled before the call
       // to template interpreter / native entry.
       // Access all locals via frame pointer, because we know nothing about
@@ -441,8 +451,18 @@ class StubGenerator: public StubCodeGenerator {
         __ z_stg(Z_RET, 0, r_arg_result_addr);
         __ z_br(Z_R14); // Return to caller.
         __ align(handlerLen);
+      // T_FLAT_ELEMENT:
+        guarantee(T_FLAT_ELEMENT == T_VOID + 1, "check BasicType definition in globalDefinitions.hpp");
+        // never reachable, see SignatureIterator::fp_is_valid_type in signature.cpp, it only accepts
+        // is_java_primitive || is_reference_type || T_VOID.
+        // T_FLAT_ELEMENT fails all three, so no method's stored result type can ever be T_FLAT_ELEMENT.
+        __ z_illtrap(0xde);  // pattern: 0x00de00ad
+        __ z_illtrap(0xad);
+        __ z_illtrap(0xbe);
+        __ z_illtrap(0xef);
+        __ align(handlerLen);
       // T_ADDRESS:
-        guarantee(T_ADDRESS == T_VOID+1, "check BasicType definition in globalDefinitions.hpp");
+        guarantee(T_ADDRESS == T_FLAT_ELEMENT+1, "check BasicType definition in globalDefinitions.hpp");
         __ z_stg(Z_RET, 0, r_arg_result_addr);
         __ z_br(Z_R14); // Return to caller.
         __ align(handlerLen);
@@ -3223,28 +3243,182 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  address generate_cont_thaw(bool return_barrier, bool exception) {
+  address generate_cont_thaw(StubId stub_id) {
     if (!Continuations::enabled()) return nullptr;
-    Unimplemented();
-    return nullptr;
+
+    Continuation::thaw_kind kind;
+    bool return_barrier;
+    bool return_barrier_exception;
+
+    switch (stub_id) {
+      case StubId::stubgen_cont_thaw_id:
+        kind = Continuation::thaw_top;
+        return_barrier = false;
+        return_barrier_exception = false;
+        break;
+      case StubId::stubgen_cont_returnBarrier_id:
+        kind = Continuation::thaw_return_barrier;
+        return_barrier = true;
+        return_barrier_exception = false;
+        break;
+      case StubId::stubgen_cont_returnBarrierExc_id:
+        kind = Continuation::thaw_return_barrier_exception;
+        return_barrier = true;
+        return_barrier_exception = true;
+        break;
+      default:
+        ShouldNotReachHere();
+    }
+
+    StubCodeMark mark(this, stub_id);
+    address start = __ pc();
+
+    // TODO: Handle Valhalla return types. May require generating different return barriers.
+
+    if (kind == Continuation::thaw_top) {
+      __ clobber_nonvolatile_registers(); // Except Z_thread
+    }
+
+    if (return_barrier) {
+      // Save return values in non-volatile float registers to preserve them across VM calls.
+      // Z_F8 and Z_F9 are non-volatile (callee-saved) registers on s390 (F8-F15 are non-volatile).
+      // They are safe to use here because:
+      // 1. clobber_nonvolatile_registers() is NOT called for return_barrier cases (only for thaw_top)
+      // 2. These registers are preserved across the VM leaf calls (prepare_thaw, thaw_entry)
+      __ z_ldgr(Z_F8, Z_RET);   // Save integer return value in non-volatile float register
+      __ z_ldr(Z_F9, Z_FRET);   // Save float return value in non-volatile float register
+
+      DEBUG_ONLY(__ z_lg(Z_R1_scratch, _z_common_abi(callers_sp), Z_SP);)
+      __ z_lg(Z_SP, Address(Z_thread, JavaThread::cont_entry_offset()));
+#ifdef ASSERT
+      __ z_cg(Z_R1_scratch, _z_common_abi(callers_sp), Z_SP);
+      __ asm_assert(/* check_equal=*/ true, FILE_AND_LINE ": callers sp is corrupt at thaw entry", 69);
+#endif
+
+    }
+
+#ifdef ASSERT
+    __ z_cg(Z_SP, Address(Z_thread, JavaThread::cont_entry_offset()));
+    __ asm_assert(/* check_equal=*/ true, FILE_AND_LINE ": incorrect Z_SP", 70);
+#endif
+
+    __ z_lghi(Z_ARG2, return_barrier ? 1 : 0);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, Continuation::prepare_thaw), Z_thread, Z_ARG2);
+
+#ifdef ASSERT
+    __ z_cg(Z_SP, Address(Z_thread, JavaThread::cont_entry_offset()));
+    __ asm_assert(/* check equal = */ true, FILE_AND_LINE ": incorrect Z_SP after prepare_thaw", 48);
+#endif // ASSERT
+
+    // Z_RET contains the size of the frames to thaw, 0 if overflow or no more frames
+    NearLabel L_thaw_success;
+    __ z_ltgr(Z_RET, Z_RET);
+    __ branch_optimized(Assembler::bcondNotEqual, L_thaw_success);
+    __ load_const_optimized(Z_R1_scratch, (SharedRuntime::throw_StackOverflowError_entry()));
+    __ call(Z_R1_scratch);
+    __ bind(L_thaw_success);
+
+    // Make room for the thawed frames and align the stack.
+    __ add64(Z_RET, frame::z_abi_160_size);
+
+#ifdef ASSERT
+    __ z_tmll(Z_RET, frame::alignment_in_bytes - 1);
+    __ asm_assert(Assembler::bcondAllZero, FILE_AND_LINE ": size is not aligned properly", 71);
+#endif // ASSERT
+
+    __ z_lcgr(Z_RET, Z_RET); // negate Z_RET value
+    __ resize_frame( /* offset = */ Z_RET,/* fp = */ Z_R1, /* load_fp = */ true);
+
+    __ z_lghi(Z_ARG2, kind);
+    __ add64(Z_SP, -frame::z_abi_160_size);  // Register save area for Continuation::thaw
+    __ call_VM_leaf(Continuation::thaw_entry(), Z_thread, Z_ARG2);
+    __ z_lgr(Z_SP, Z_RET); // Z_RET contains the SP of the thawed top frame
+
+    if (return_barrier) {
+      // we're now in the caller of the frame that returned to the barrier
+      // restore return value (no safepoint in the call to thaw, so even an oop return value should be OK)
+
+      __ z_lgdr(Z_RET, Z_F8);    // Restore integer return value
+      __ z_ldr(Z_FRET, Z_F9);    // Restore float return value
+    } else {
+      // we're now on the yield frame (which is in an address above us b/c rsp has been pushed down)
+      __ z_lghi(Z_RET, 0); // return 0 (success) from doYield
+    }
+
+    if (return_barrier_exception) {
+      Register handler = Z_R1_scratch;
+      __ z_lg(Z_ARG2, _z_common_abi(return_pc), Z_SP); // exception pc
+      __ save_return_pc();
+      __ push_frame_abi160(0 + 2 * BytesPerWord);
+      __ z_stg(Z_RET , 0 * BytesPerWord + frame::z_abi_160_size, Z_SP); // save return value containing the exception oop
+
+      __ z_stg(Z_ARG2, 1 * BytesPerWord + frame::z_abi_160_size, Z_SP); // save exception_pc
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), Z_thread, Z_ARG2);
+
+      // Copy handler's address.
+      __ z_lgr(handler, Z_RET);
+
+      // Set up the arguments for the exception handler:
+      // - Z_ARG1: exception oop
+      // - Z_ARG2: exception pc
+      __ z_lg(Z_ARG1, 0 * BytesPerWord + frame::z_abi_160_size, Z_SP); // load the exception oop
+      __ z_lg(Z_ARG2, 1 * BytesPerWord + frame::z_abi_160_size, Z_SP); // load the exception pc
+      __ pop_frame();
+      __ restore_return_pc();
+    } else {
+      // We're "returning" into the topmost thawed frame; see Thaw::push_return_frame
+      __ z_lg(Z_R1_scratch, _z_common_abi(return_pc), Z_SP);
+    }
+    __ z_br(Z_R1_scratch);
+
+    return start;
   }
 
   address generate_cont_thaw() {
-    if (!Continuations::enabled()) return nullptr;
-    Unimplemented();
-    return nullptr;
+    return generate_cont_thaw(StubId::stubgen_cont_thaw_id);
   }
 
   address generate_cont_returnBarrier() {
-    if (!Continuations::enabled()) return nullptr;
-    Unimplemented();
-    return nullptr;
+    return generate_cont_thaw(StubId::stubgen_cont_returnBarrier_id);
   }
 
   address generate_cont_returnBarrier_exception() {
+    return generate_cont_thaw(StubId::stubgen_cont_returnBarrierExc_id);
+  }
+
+  address generate_cont_preempt_stub() {
     if (!Continuations::enabled()) return nullptr;
-    Unimplemented();
-    return nullptr;
+    StubId stub_id = StubId::stubgen_cont_preempt_id;
+    StubCodeMark mark(this, stub_id);
+    address start = __ pc();
+
+    __ clobber_nonvolatile_registers(); // Except Z_thread
+
+    __ reset_last_Java_frame(/*check_last_java_sp=*/ false);
+
+    // Set sp to enterSpecial frame, i.e. remove all frames copied into the heap.
+    __ z_lg(Z_SP, Address(Z_thread, JavaThread::cont_entry_offset()));
+
+    Label preemption_cancelled;
+
+    __ z_cli(in_bytes(JavaThread::preemption_cancelled_offset()), Z_thread, 0);
+    __ z_brne(preemption_cancelled);
+
+    // Remove enterSpecial frame from the stack and return to Continuation.run() to unmount.
+    SharedRuntime::continuation_enter_cleanup(_masm);
+    __ pop_frame();
+    __ restore_return_pc();
+    __ z_br(Z_R14);
+
+    // We acquired the monitor after freezing the frames so call thaw to continue execution.
+    __ bind(preemption_cancelled);
+    __ z_mvi(in_bytes(JavaThread::preemption_cancelled_offset()), Z_thread, 0);
+
+    __ load_const_optimized(Z_R1, ContinuationEntry::thaw_call_pc_address());
+    __ z_lg(Z_R1, Address(Z_R1));
+    __ z_br(Z_R1);
+
+    return start;
   }
 
   // exception handler for upcall stubs
@@ -3327,9 +3501,10 @@ class StubGenerator: public StubCodeGenerator {
     if (!Continuations::enabled()) return;
 
     // Continuation stubs:
-    StubRoutines::_cont_thaw          = generate_cont_thaw();
-    StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
+    StubRoutines::_cont_thaw             = generate_cont_thaw();
+    StubRoutines::_cont_returnBarrier    = generate_cont_returnBarrier();
     StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
+    StubRoutines::_cont_preempt_stub     = generate_cont_preempt_stub();
   }
 
   void generate_final_stubs() {
@@ -3361,7 +3536,7 @@ class StubGenerator: public StubCodeGenerator {
 
     StubRoutines::zarch::_partial_subtype_check            = generate_partial_subtype_check();
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
     // Generate AES intrinsics code.
     if (UseAESIntrinsics) {
       if (VM_Version::has_Crypto_AES()) {
@@ -3405,7 +3580,6 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_sha512_implCompressMB = generate_SHA512_stub(StubId::stubgen_sha512_implCompressMB_id);
     }
 
-#ifdef COMPILER2
     if (UseMultiplyToLenIntrinsic) {
       StubRoutines::_multiplyToLen = generate_multiplyToLen();
     }
@@ -3417,8 +3591,7 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_montgomerySquare
         = CAST_FROM_FN_PTR(address, SharedRuntime::montgomery_square);
     }
-#endif
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
   }
 
  public:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@
 #include <java_awt_Toolkit.h>
 #include <java_awt_event_InputMethodEvent.h>
 
-extern void initScreens(JNIEnv *env);
+extern BOOL initScreens(JNIEnv *env);
 extern "C" void awt_dnd_initialize();
 extern "C" void awt_dnd_uninitialize();
 extern "C" void awt_clipboard_uninitialize(JNIEnv *env);
@@ -157,6 +157,78 @@ extern "C" JNIEXPORT jboolean JNICALL AWTIsHeadless() {
 }
 
 #define IDT_AWT_MOUSECHECK 0x101
+#define IDT_AWT_DISPLAYCHANGE 0x102
+
+#define AWT_DISPLAYCHANGE_RETRY_DELAY 250
+#define AWT_DISPLAYCHANGE_RETRY_LIMIT 20
+
+class DisplayChangeHandler {
+public:
+    static BOOL Handle(JNIEnv *env, HWND hWnd) {
+        // Reinitialize screens
+        if (!initScreens(env)) {
+            OnDisplayChangeFailed(hWnd);
+            return FALSE;
+        }
+
+        OnDisplayChangeSucceeded(hWnd);
+
+        // Notify Java side - call WToolkit.displayChanged()
+        jclass clazz = env->FindClass("sun/awt/windows/WToolkit");
+        DASSERT(clazz != NULL);
+        if (!clazz) throw std::bad_alloc();
+        env->CallStaticVoidMethod(clazz, AwtToolkit::displayChangeMID);
+
+        return !env->ExceptionCheck();
+    }
+
+    static void Reset(HWND hWnd) {
+        ::KillTimer(hWnd, IDT_AWT_DISPLAYCHANGE);
+        retryCount = 0;
+    }
+
+    static void ScheduleFromSessionChange(HWND hWnd) {
+        if (!recoveryPending) {
+            return;
+        }
+        Reset(hWnd);
+        Schedule(hWnd);
+    }
+
+private:
+    static void OnDisplayChangeFailed(HWND hWnd) {
+        recoveryPending = TRUE;
+        Schedule(hWnd);
+    }
+
+    static void OnDisplayChangeSucceeded(HWND hWnd) {
+        recoveryPending = FALSE;
+        Reset(hWnd);
+    }
+
+    static void Schedule(HWND hWnd) {
+        if (retryCount >= AWT_DISPLAYCHANGE_RETRY_LIMIT) {
+            Reset(hWnd);
+            J2dRlsTraceLn(J2D_TRACE_ERROR,
+                          "AwtToolkit: Display change retry limit exceeded.");
+            return;
+        }
+
+        retryCount++;
+        if (::SetTimer(hWnd, IDT_AWT_DISPLAYCHANGE,
+                       AWT_DISPLAYCHANGE_RETRY_DELAY, NULL) == 0) {
+            Reset(hWnd);
+            J2dRlsTraceLn(J2D_TRACE_ERROR,
+                          "AwtToolkit: Failed to schedule display change retry.");
+        }
+    }
+
+    static int retryCount;
+    static BOOL recoveryPending;
+};
+
+int DisplayChangeHandler::retryCount = 0;
+BOOL DisplayChangeHandler::recoveryPending = FALSE;
 
 static LPCTSTR szAwtToolkitClassName = TEXT("SunAwtToolkit");
 
@@ -1004,6 +1076,14 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
       }
 
       case WM_TIMER: {
+          if (wParam == IDT_AWT_DISPLAYCHANGE) {
+              if (DisplayChangeHandler::Handle(env, hWnd)) {
+                  GetInstance().m_displayChanged = TRUE;
+                  ::PostMessage(HWND_BROADCAST, WM_PALETTEISCHANGING, NULL, NULL);
+              }
+              return 0;
+          }
+
           // 6479820. Should check if a window is in manual resizing process: skip
           // sending any MouseExit/Enter events while inside resize-loop.
           // Note that window being in manual moving process could still
@@ -1245,18 +1325,11 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
           return tk.m_inputMethodData;
       }
       case WM_DISPLAYCHANGE: {
-          // Reinitialize screens
-          initScreens(env);
-
-          // Notify Java side - call WToolkit.displayChanged()
-          jclass clazz = env->FindClass("sun/awt/windows/WToolkit");
-          DASSERT(clazz != NULL);
-          if (!clazz) throw std::bad_alloc();
-          env->CallStaticVoidMethod(clazz, AwtToolkit::displayChangeMID);
-
-          GetInstance().m_displayChanged = TRUE;
-
-          ::PostMessage(HWND_BROADCAST, WM_PALETTEISCHANGING, NULL, NULL);
+          DisplayChangeHandler::Reset(hWnd);
+          if (DisplayChangeHandler::Handle(env, hWnd)) {
+              GetInstance().m_displayChanged = TRUE;
+              ::PostMessage(HWND_BROADCAST, WM_PALETTEISCHANGING, NULL, NULL);
+          }
           break;
       }
       /* Session management */
@@ -1341,6 +1414,9 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
                                               activate
                                               ? JNI_TRUE
                                               : JNI_FALSE, reason);
+              if (activate) {
+                  DisplayChangeHandler::ScheduleFromSessionChange(hWnd);
+              }
           }
           break;
       }
@@ -2770,41 +2846,6 @@ Java_sun_awt_windows_WToolkit_isDynamicLayoutSupportedNative(JNIEnv *env,
     return (jboolean) AwtToolkit::GetInstance().IsDynamicLayoutSupported();
 
     CATCH_BAD_ALLOC_RET(FALSE);
-}
-
-/*
- * Class:     sun_awt_windows_WToolkit
- * Method:    printWindowsVersion
- * Signature: ()Ljava/lang/String;
- */
-JNIEXPORT jstring JNICALL
-Java_sun_awt_windows_WToolkit_getWindowsVersion(JNIEnv *env, jclass cls)
-{
-    TRY;
-
-    WCHAR szVer[128];
-
-    DWORD version = ::GetVersion();
-    swprintf(szVer, 128, L"0x%x = %ld", version, version);
-    int l = lstrlen(szVer);
-
-    if (IS_WIN2000) {
-        if (IS_WINXP) {
-            if (IS_WINVISTA) {
-                swprintf(szVer + l, 128, L" (Windows Vista)");
-            } else {
-                swprintf(szVer + l, 128, L" (Windows XP)");
-            }
-        } else {
-            swprintf(szVer + l, 128, L" (Windows 2000)");
-        }
-    } else {
-        swprintf(szVer + l, 128, L" (Unknown)");
-    }
-
-    return JNU_NewStringPlatform(env, szVer);
-
-    CATCH_BAD_ALLOC_RET(NULL);
 }
 
 JNIEXPORT void JNICALL

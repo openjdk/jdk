@@ -25,7 +25,12 @@
 #ifndef SHARE_GC_SHARED_REFERENCEPOLICY_HPP
 #define SHARE_GC_SHARED_REFERENCEPOLICY_HPP
 
+#include "cppstdlib/limits.hpp"
+#include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/integerCast.hpp"
 
 // referencePolicy is used to determine when soft reference objects
 // should be cleared.
@@ -58,14 +63,18 @@ class AlwaysClearPolicy : public ReferencePolicy {
 
 class AbstractLRUReferencePolicy : public ReferencePolicy {
  private:
-  jlong _max_interval = -1;
+  static constexpr uint64_t UninitializedMaxInterval = std::numeric_limits<uint64_t>::max();
+  uint64_t _max_interval = UninitializedMaxInterval;
 
  protected:
-  void set_max_interval(jlong max_interval);
+  void set_max_interval(uint64_t max_interval);
 
  public:
   bool should_clear_reference(oop p, jlong timestamp_clock) final;
   void setup() override = 0;
+
+  static constexpr uint64_t MaximumMaxInterval = integer_cast<uint64_t>(max_jlong);
+  static_assert(UninitializedMaxInterval > MaximumMaxInterval, "Used to catch uninitialized _max_interval");
 };
 
 class LRUCurrentHeapPolicy : public AbstractLRUReferencePolicy {

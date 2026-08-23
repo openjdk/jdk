@@ -46,11 +46,11 @@ sealed interface RtfConverter {
         }
 
         try (InputStream fin = Files.newInputStream(path)) {
-            byte[] firstBits = new byte[7];
+            byte[] firstBits = fin.readNBytes(Details.RTF_HEADER.length());
 
-            if (fin.read(firstBits) == firstBits.length) {
+            if (Details.RTF_HEADER.length() == firstBits.length) {
                 String header = new String(firstBits);
-                return "{\\rtf1\\".equals(header);
+                return Details.RTF_HEADER.equals(header);
             }
         }
 
@@ -58,7 +58,7 @@ sealed interface RtfConverter {
     }
 
     static Optional<RtfConverter> createSimple(Path path) throws IOException {
-        if (isRtfFile(path)) {
+        if (!Files.isDirectory(path) && !isRtfFile(path)) {
             return Optional.of(Details.Simple.VALUE);
         } else {
             return Optional.empty();
@@ -136,5 +136,6 @@ sealed interface RtfConverter {
             }
         }
 
+        private static final String RTF_HEADER = "{\\rtf1\\";
     }
 }
