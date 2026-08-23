@@ -43,7 +43,7 @@ import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.cli.Validator.ValidatingConsumerException;
 import jdk.jpackage.internal.model.PackageType;
 import jdk.jpackage.internal.util.FileUtils;
-import jdk.jpackage.test.JUnitUtils.ExceptionPattern;
+import jdk.jpackage.test.ExceptionPattern;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
@@ -214,7 +214,7 @@ class StandardValidatorTest {
 
         final var ex = assertThrowsExactly(ValidatingConsumerException.class, () -> testee.accept(classname));
 
-        assertTrue(new ExceptionPattern().isCauseInstanceOf(IllegalArgumentException.class).match(ex));
+        assertTrue(ExceptionPattern.build().expectCause(IllegalArgumentException.class).create().match(ex));
     }
 
     @Test

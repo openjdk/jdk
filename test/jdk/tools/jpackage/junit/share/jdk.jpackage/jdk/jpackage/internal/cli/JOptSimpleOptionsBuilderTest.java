@@ -64,7 +64,7 @@ import jdk.jpackage.internal.cli.TestUtils.OptionFailure;
 import jdk.jpackage.internal.cli.TestUtils.TestException;
 import jdk.jpackage.internal.model.BundlingOperationDescriptor;
 import jdk.jpackage.internal.util.Result;
-import jdk.jpackage.test.JUnitUtils.ExceptionPattern;
+import jdk.jpackage.test.ExceptionPattern;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -641,9 +641,9 @@ public class JOptSimpleOptionsBuilderTest {
         assertFalse(result.hasValue());
         assertEquals(1, result.errors().size());
 
-        assertTrue(new ExceptionPattern()
-                .isInstanceOf(jdk.internal.joptsimple.OptionException.class)
-                .match(result.errors().iterator().next()));
+        assertTrue(ExceptionPattern.build()
+                .expectType(jdk.internal.joptsimple.OptionException.class)
+                .create().match(result.errors().iterator().next()));
     }
 
     @ParameterizedTest

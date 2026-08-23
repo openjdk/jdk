@@ -26,8 +26,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.lang.reflect.Array;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.converter.SimpleArgumentConverter;
 
@@ -71,63 +69,6 @@ public final class JUnitUtils {
 
     public static Exception removeExceptionCause(Exception ex) {
         return new ExceptionCauseRemover(ex);
-    }
-
-
-    public static final class ExceptionPattern {
-
-        public ExceptionPattern() {
-        }
-
-        public boolean match(Exception ex) {
-            Objects.requireNonNull(ex);
-
-            if (expectedType != null && !expectedType.isInstance(ex)) {
-                return false;
-            }
-
-            if (expectedMessage != null && !Objects.equals(expectedMessage.orElse(null), ex.getMessage())) {
-                return false;
-            }
-
-            if (expectedCauseType != null) {
-                var cause = ex.getCause();
-                if (expectedCauseType.isEmpty() != (cause == null)) {
-                    return false;
-                } else if (expectedCauseType.isPresent() && !expectedCauseType.orElseThrow().isInstance(cause)) {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        public ExceptionPattern hasMessage(String v) {
-            expectedMessage = Optional.ofNullable(v);
-            return this;
-        }
-
-        public ExceptionPattern isInstanceOf(Class<? extends Exception> v) {
-            expectedType = v;
-            return this;
-        }
-
-        public ExceptionPattern isCauseInstanceOf(Class<? extends Throwable> v) {
-            expectedCauseType = Optional.ofNullable(v);
-            return this;
-        }
-
-        public ExceptionPattern hasCause(boolean v) {
-            return isCauseInstanceOf(v ? Exception.class : null);
-        }
-
-        public ExceptionPattern hasCause() {
-            return hasCause(true);
-        }
-
-        private Optional<String> expectedMessage;
-        private Class<? extends Exception> expectedType;
-        private Optional<Class<? extends Throwable>> expectedCauseType;
     }
 
 

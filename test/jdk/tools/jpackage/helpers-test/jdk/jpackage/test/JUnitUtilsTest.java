@@ -26,12 +26,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import jdk.jpackage.test.JUnitUtils.ArrayConverter;
-import jdk.jpackage.test.JUnitUtils.ExceptionPattern;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.converter.ConvertWith;
@@ -128,122 +125,5 @@ class JUnitUtilsTest {
 
         assertEquals(null, strArray);
         assertEquals(null, intArray);
-    }
-
-    @ParameterizedTest
-    @CsvSource({
-        ",true,true",
-        "FOO,true,false",
-        "NULL,false,true",
-        "BAR,false,false",
-    })
-    void test_ExceptionPattern_hasMessage(ExceptionPatternMessageMode mode, boolean exWithMessageMatch, boolean exWithoutMessageMatch) {
-
-        var exWithMessage = new Exception(ExceptionPatternMessageMode.FOO.name());
-        var exWithoutMessage = new Exception();
-
-        var pattern = new ExceptionPattern();
-        Optional.ofNullable(mode).ifPresent(m -> {
-            switch (m) {
-                case NULL -> pattern.hasMessage(null);
-                default -> pattern.hasMessage(m.name());
-            }
-        });
-
-        assertEquals(exWithMessageMatch, pattern.match(exWithMessage));
-        assertEquals(exWithoutMessageMatch, pattern.match(exWithoutMessage));
-    }
-
-    enum ExceptionPatternMessageMode {
-        NULL,
-        FOO,
-        BAR,
-    }
-
-    @ParameterizedTest
-    @CsvSource({
-        ",true,true",
-        "NULL,false,true",
-        "IllegalArgumentException,true,false",
-        "RuntimeException,true,false",
-        "Exception,true,false",
-        "IOException,false,false",
-        "NullPointerException,false,false",
-        "TRUE,true,false",
-        "FALSE,false,true",
-        "TRUE_DEFAULT,true,false",
-    })
-    void test_ExceptionPattern_hasCause(ExceptionPatternCauseMode mode, boolean exWithCauseMatch, boolean exWithoutCauseMatch) {
-
-        var exWithCause = new Exception(new IllegalArgumentException());
-        var exWithoutCause = new Exception();
-
-        var pattern = new ExceptionPattern();
-        Optional.ofNullable(mode).ifPresent(m -> {
-            switch (m) {
-                case NULL -> pattern.isCauseInstanceOf(null);
-                case IllegalArgumentException -> pattern.isCauseInstanceOf(IllegalArgumentException.class);
-                case RuntimeException -> pattern.isCauseInstanceOf(RuntimeException.class);
-                case Exception -> pattern.isCauseInstanceOf(Exception.class);
-                case IOException -> pattern.isCauseInstanceOf(IOException.class);
-                case NullPointerException -> pattern.isCauseInstanceOf(NullPointerException.class);
-                case TRUE -> pattern.hasCause(true);
-                case FALSE -> pattern.hasCause(false);
-                case TRUE_DEFAULT -> pattern.hasCause();
-            }
-        });
-
-        assertEquals(exWithCauseMatch, pattern.match(exWithCause));
-        assertEquals(exWithoutCauseMatch, pattern.match(exWithoutCause));
-    }
-
-    enum ExceptionPatternCauseMode {
-        NULL,
-        IllegalArgumentException,
-        RuntimeException,
-        Exception,
-        IOException,
-        NullPointerException,
-        TRUE,
-        FALSE,
-        TRUE_DEFAULT,
-    }
-
-    @ParameterizedTest
-    @CsvSource({
-        ",true",
-        "NULL,true",
-        "IllegalArgumentException,true",
-        "RuntimeException,true",
-        "Exception,true",
-        "IOException,false,false",
-        "NullPointerException,false",
-    })
-    void test_ExceptionPattern_isInstanceOf(ExceptionPatternTypeMode mode, boolean match) {
-
-        var ex = new IllegalArgumentException();
-
-        var pattern = new ExceptionPattern();
-        Optional.ofNullable(mode).ifPresent(m -> {
-            switch (m) {
-                case NULL -> pattern.isInstanceOf(null);
-                case IllegalArgumentException -> pattern.isInstanceOf(IllegalArgumentException.class);
-                case RuntimeException -> pattern.isInstanceOf(RuntimeException.class);
-                case Exception -> pattern.isInstanceOf(Exception.class);
-                case IOException -> pattern.isInstanceOf(IOException.class);
-                case NullPointerException -> pattern.isInstanceOf(NullPointerException.class);
-            }
-        });
-
-        assertEquals(match, pattern.match(ex));
-    }
-
-    enum ExceptionPatternTypeMode {
-        NULL,
-        IllegalArgumentException,
-        RuntimeException,
-        Exception,
-        NullPointerException,
-        IOException,
     }
 }

@@ -27,9 +27,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.Optional;
 import jdk.internal.util.OperatingSystem;
-import jdk.jpackage.test.JUnitUtils.ExceptionPattern;
+import jdk.jpackage.test.ExceptionPattern;
 import org.junit.jupiter.api.Test;
 
 class UtilsTest {
@@ -39,10 +38,10 @@ class UtilsTest {
         var errors = buildParser().create().apply(new String[] {"--foo"}).errors();
         assertEquals(1, errors.size());
 
-        assertTrue(new ExceptionPattern()
-                .isInstanceOf(Utils.ParseException.class)
-                .hasMessage(I18N.format("ERR_InvalidOption", "--foo"))
-                .match(errors.iterator().next()));
+        assertTrue(ExceptionPattern.build()
+                .expectType(Utils.ParseException.class)
+                .expectMessage(I18N.format("ERR_InvalidOption", "--foo"))
+                .create().match(errors.iterator().next()));
     }
 
     @Test
@@ -50,10 +49,10 @@ class UtilsTest {
         var errors = buildParser().create().apply(new String[] {"--name"}).errors();
         assertEquals(1, errors.size());
 
-        assertTrue(new ExceptionPattern()
-                .isInstanceOf(Utils.ParseException.class)
-                .hasMessage(I18N.format("ERR_InvalidOption", "--name"))
-                .match(errors.iterator().next()));
+        assertTrue(ExceptionPattern.build()
+                .expectType(Utils.ParseException.class)
+                .expectMessage(I18N.format("ERR_InvalidOption", "--name"))
+                .create().match(errors.iterator().next()));
     }
 
     @Test

@@ -33,7 +33,7 @@ import jdk.jpackage.internal.cli.CannedException.CannedExceptionCarrier;
 import jdk.jpackage.internal.cli.CannedFormattedMessage.Context;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.JPackageException;
-import jdk.jpackage.test.JUnitUtils.ExceptionPattern;
+import jdk.jpackage.test.ExceptionPattern;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -95,11 +95,11 @@ class CannedExceptionTest {
 
         var carrier = new CannedExceptionCarrier(canned);
 
-        assertTrue(new ExceptionPattern()
-                .isInstanceOf(CannedExceptionCarrier.class)
-                .hasCause(false)
-                .hasMessage(null)
-                .match(carrier));
+        assertTrue(ExceptionPattern.build()
+                .expectType(CannedExceptionCarrier.class)
+                .expectNullCause()
+                .expectNullMessage()
+                .create().match(carrier));
 
         assertResolvedException(carrier.resolve(DUMMY_CONTEXT), canned);
     }
@@ -114,13 +114,13 @@ class CannedExceptionTest {
 
     private static void assertResolvedException(RuntimeException ex, CannedException cannedEx) {
 
-        var pattern = new ExceptionPattern()
-                .hasCause(false)
-                .hasMessage(cannedEx.error().resolve(DUMMY_CONTEXT));
+        var pattern = ExceptionPattern.build()
+                .expectNullCause()
+                .expectMessage(cannedEx.error().resolve(DUMMY_CONTEXT));
 
-        pattern.isInstanceOf(cannedEx.advice().isPresent() ? ConfigException.class : JPackageException.class);
+        pattern.expectType(cannedEx.advice().isPresent() ? ConfigException.class : JPackageException.class);
 
-        assertTrue(pattern.match(ex));
+        assertTrue(pattern.create().match(ex));
 
         cannedEx.advice().ifPresent(advice -> {
             assertEquals(advice.resolve(DUMMY_CONTEXT), ((ConfigException)ex).getAdvice());
