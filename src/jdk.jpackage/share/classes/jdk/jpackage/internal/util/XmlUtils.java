@@ -31,8 +31,11 @@ import java.io.Writer;
 import java.lang.reflect.Proxy;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.xml.parsers.DocumentBuilder;
@@ -50,6 +53,7 @@ import javax.xml.transform.stax.StAXResult;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
+import org.w3c.dom.Attr;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -159,5 +163,56 @@ public final class XmlUtils {
         return Optional.ofNullable(nodes).map(v -> {
             return IntStream.range(0, v.getLength()).mapToObj(v::item);
         }).orElseGet(Stream::of);
+    }
+
+    public static String pathOf(Node n) {
+
+        var names = new ArrayList<String>();
+
+        switch (n.getNodeType()) {
+            case Node.ATTRIBUTE_NODE -> {
+                names.add("@" + nonNullName(n));
+                n = ((Attr)n).getOwnerElement();
+            }
+            case Node.ELEMENT_NODE -> {
+                // NOP
+            }
+            case Node.DOCUMENT_NODE -> {
+                return "/";
+            }
+            default -> {
+                throw new IllegalArgumentException();
+            }
+        }
+
+        while (n.getNodeType() != Node.DOCUMENT_NODE) {
+            names.add(pathComponent(n));
+            n = n.getParentNode();
+        }
+
+        return names.reversed().stream().collect(Collectors.joining("/", "/", ""));
+    }
+
+    private static String nonNullName(Node n) {
+        return Optional.ofNullable(n.getLocalName()).orElseGet(n::getNodeName);
+    }
+
+    private static String pathComponent(Node n) {
+
+        var name = nonNullName(n);
+        var ns = n.getNamespaceURI();
+
+        int counter = 1;
+        while ((n = n.getPreviousSibling()) != null) {
+            if (Objects.equals(name, nonNullName(n)) && Objects.equals(ns, n.getNamespaceURI())) {
+                counter++;
+            }
+        }
+
+        if (counter == 1) {
+            return name;
+        } else {
+            return String.format("%s[%d]", name, counter);
+        }
     }
 }
