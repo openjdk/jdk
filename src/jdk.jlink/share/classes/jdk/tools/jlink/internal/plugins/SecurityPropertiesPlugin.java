@@ -32,6 +32,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -111,9 +112,11 @@ public class SecurityPropertiesPlugin extends AbstractPlugin {
 
         List<String> lines = new ArrayList<>();
 
-        // read in contents of java.security file into separate list,
-        // replacing values of overridden properties as we go
-        try (InputStreamReader isr = new InputStreamReader(content);
+        // Read in contents of java.security file into separate list,
+        // replacing values of overridden properties as we go.
+        // Use ISO_8859_1 to be consistent with java.security file loading.
+        try (InputStreamReader isr = new InputStreamReader(content,
+                    StandardCharsets.ISO_8859_1);
                 BufferedReader br = new BufferedReader(isr)) {
             String line = br.readLine();
             while (line != null) {
@@ -150,9 +153,11 @@ public class SecurityPropertiesPlugin extends AbstractPlugin {
             lines.add("include=" + includeValue);
         }
 
-        // write contents of list to byte array
+        // Write contents of list to byte array. Use ISO_8859_1 to be
+        // consistent with java.security file loading.
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (OutputStreamWriter osw = new OutputStreamWriter(baos);
+        try (OutputStreamWriter osw = new OutputStreamWriter(baos,
+                 StandardCharsets.ISO_8859_1);
              BufferedWriter bw = new BufferedWriter(osw)) {
             for (CharSequence line: lines) {
                 bw.append(line);

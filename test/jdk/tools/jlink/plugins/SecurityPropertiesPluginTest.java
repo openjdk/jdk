@@ -22,6 +22,7 @@
  */
 
 import java.io.FileInputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -58,7 +59,7 @@ public class SecurityPropertiesPluginTest {
 
         helper = Helper.newHelper(LINKABLE_RUNTIME);
         if (helper == null) {
-            throw new SkippedException("Test not run");
+            throw new SkippedException("Test not run: no linkable runtime");
         }
 
         /*
@@ -66,13 +67,16 @@ public class SecurityPropertiesPluginTest {
          * one that overrides a current property,
          * one that is a user-defined property,
          * two include properties (it should only use the 2nd one)
-         * one that overrides a multi-valued property.
+         * one that overrides a multi-valued property,
+         * one that uses a character that is encoded differently in
+         * ISO-8859-1 vs. UTF-8.
          */
         Map<String, String> propMap =
                 Map.of("keystore.type", "bogus",
                        "foo", "bar",
                        "include", "file1",
-                       "jdk.certpath.disabledAlgorithms", "MD2");
+                       "jdk.certpath.disabledAlgorithms", "MD2",
+                       "iso_8859_1_char", "é");
         Path p = writePropsToFile(propMap, "test.security");
         test("modOne", p.toString(), propMap);
 
@@ -100,7 +104,8 @@ public class SecurityPropertiesPluginTest {
             Asserts.assertEquals(v, props.getProperty(k)));
 
         // check include is last line
-        List<String> lines = Files.readAllLines(image.resolve(SECPROPS_PATH));
+        List<String> lines = Files.readAllLines(image.resolve(SECPROPS_PATH),
+            StandardCharsets.ISO_8859_1);
         Asserts.assertEquals(lines.getLast(), "include=file1");
     }
 
@@ -121,7 +126,7 @@ public class SecurityPropertiesPluginTest {
         StringBuilder sb = new StringBuilder();
         propMap.forEach((k, v) -> sb.append(k + "=" + v
                                             + System.lineSeparator()));
-        Files.writeString(p, sb);
+        Files.writeString(p, sb, StandardCharsets.ISO_8859_1);
         return p;
     }
 }

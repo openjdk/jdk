@@ -388,6 +388,8 @@ networkaddress.cache.negative.ttl=10
 #
 # Example,
 #   ocsp.responderURL=http://ocsp.example.net:80
+foo=€
+bar=\u20AC
 
 #
 # Subject name of the OCSP responder's certificate
