@@ -618,8 +618,6 @@ public class PackagingPipelineTest {
                 "Acme",
                 "copyright",
                 List.of(),
-                List.of(),
-                List.of(),
                 appImageLayout,
                 runtimeBuilder,
                 List.of(),
