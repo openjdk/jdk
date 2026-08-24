@@ -169,10 +169,11 @@ bool ConnectionGraph::compute_escape() {
   java_objects_worklist.append(phantom_obj);
   for( uint next = 0; next < ideal_nodes.size(); ++next ) {
     Node* n = ideal_nodes.at(next);
-    if ((n->Opcode() == Op_LoadX || n->Opcode() == Op_StoreX) &&
+    if (n->is_Mem() &&
         !n->in(MemNode::Address)->is_AddP() &&
         _igvn->type(n->in(MemNode::Address))->isa_oopptr()) {
-      // Load/Store at mark work address is at offset 0 so has no AddP which confuses EA
+      // EA expects on-heap memory addresses to be represented by an AddP. An AddP with a zero
+      // offset can be optimized to its oop base, so recreate it.
       Node* addp = AddPNode::make_with_base(n->in(MemNode::Address), n->in(MemNode::Address), _igvn->MakeConX(0));
       _igvn->register_new_node_with_optimizer(addp);
       _igvn->replace_input_of(n, MemNode::Address, addp);
