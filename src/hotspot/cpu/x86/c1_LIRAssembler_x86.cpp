@@ -427,7 +427,7 @@ int LIR_Assembler::emit_unwind_handler() {
   }
 
   // remove the activation and dispatch to the unwind handler
-  __ remove_frame(initial_frame_size_in_bytes(), needs_stack_repair());
+  __ remove_frame(initial_frame_size_in_bytes(), false);
   __ jump(RuntimeAddress(Runtime1::entry_for(StubId::c1_unwind_exception_id)));
 
   // Emit the slow path assembly
@@ -518,7 +518,7 @@ void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
   }
 
   // Pop the stack before the safepoint code
-  __ remove_frame(initial_frame_size_in_bytes(), needs_stack_repair());
+  __ remove_frame(initial_frame_size_in_bytes(), false);
 
   if (StackReservedPages > 0 && compilation()->has_reserved_stack_access()) {
     __ reserved_stack_check();
@@ -1628,12 +1628,8 @@ void LIR_Assembler::emit_opSubstitutabilityCheck(LIR_OpSubstitutabilityCheck* op
   } else {
     Register tmp1 = op->tmp1()->as_register();
     Register tmp2 = op->tmp2()->as_register();
-    if (left == right) { // same operand, so clearly the same klasses, let's save the check
-      __ jmp (*op->stub()->entry());  //  -> do slow check
-    } else {
-      __ cmp_klasses_from_objects(left, right, tmp1, tmp2);
-      __ jcc(Assembler::equal, *op->stub()->entry()); // same klass -> do slow check
-    }
+    __ cmp_klasses_from_objects(left, right, tmp1, tmp2);
+    __ jcc(Assembler::equal, *op->stub()->entry()); // same klass -> do slow check
     // fall through to L_oops_not_equal
   }
 

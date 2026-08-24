@@ -25,6 +25,7 @@ package compiler.valhalla.inlinetypes;
 
 import compiler.lib.ir_framework.*;
 import jdk.test.lib.Asserts;
+import jdk.test.whitebox.WhiteBox;
 import test.java.lang.invoke.lib.InstructionHelper;
 
 import java.lang.invoke.MethodHandle;
@@ -38,28 +39,27 @@ import jdk.internal.value.ValueClass;
 import jdk.internal.vm.annotation.LooselyConsistentValue;
 import jdk.internal.vm.annotation.NullRestricted;
 
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.ALLOC_OF_MYVALUE_KLASS;
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.INLINE_ARRAY_NULL_GUARD;
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.LOAD_OF_ANY_KLASS;
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.LOAD_UNKNOWN_INLINE;
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.STORE_OF_ANY_KLASS;
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.STORE_UNKNOWN_INLINE;
 import static compiler.valhalla.inlinetypes.InlineTypes.*;
 
 import static compiler.lib.ir_framework.IRNode.ALLOC;
+import static compiler.lib.ir_framework.IRNode.ALLOC_OF_MYVALUE_KLASS;
 import static compiler.lib.ir_framework.IRNode.CLASS_CHECK_TRAP;
 import static compiler.lib.ir_framework.IRNode.COUNTED_LOOP;
 import static compiler.lib.ir_framework.IRNode.COUNTED_LOOP_MAIN;
 import static compiler.lib.ir_framework.IRNode.DYNAMIC_CALL_OF_METHOD;
 import static compiler.lib.ir_framework.IRNode.FIELD_ACCESS;
+import static compiler.lib.ir_framework.IRNode.INLINE_ARRAY_NULL_GUARD;
 import static compiler.lib.ir_framework.IRNode.LOAD;
-import static compiler.lib.ir_framework.IRNode.STORE;
+import static compiler.lib.ir_framework.IRNode.LOAD_OF_ANY_KLASS;
 import static compiler.lib.ir_framework.IRNode.LOAD_P;
+import static compiler.lib.ir_framework.IRNode.LOAD_UNKNOWN_INLINE;
 import static compiler.lib.ir_framework.IRNode.LOOP;
 import static compiler.lib.ir_framework.IRNode.MEMBAR;
 import static compiler.lib.ir_framework.IRNode.NULL_CHECK_TRAP;
 import static compiler.lib.ir_framework.IRNode.PREDICATE_TRAP;
 import static compiler.lib.ir_framework.IRNode.STATIC_CALL_OF_METHOD;
+import static compiler.lib.ir_framework.IRNode.STORE_OF_ANY_KLASS;
+import static compiler.lib.ir_framework.IRNode.STORE_UNKNOWN_INLINE;
 import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
 
 /*
@@ -4608,11 +4608,11 @@ public class TestLWorld {
     }
 
     @LooselyConsistentValue
-    static value class ValueClassWithDouble {
-        double d;
+    static value class ValueClassWithFloat {
+        float f;
 
-        ValueClassWithDouble(double d) {
-            this.d = d;
+        ValueClassWithFloat(float f) {
+            this.f = f;
         }
     }
 
@@ -4636,36 +4636,70 @@ public class TestLWorld {
     }
 
     @LooselyConsistentValue
-    static value class SubValueClassWithDouble extends AbstractValueClassWithByte {
-        double d;
+    static value class SubValueClassWithFloat extends AbstractValueClassWithByte {
+        float f;
 
-        SubValueClassWithDouble(double d) {
-            this.d = d;
-            super((byte)(d + 1));
+        SubValueClassWithFloat(float f) {
+            this.f = f;
+            super((byte)(f + 1));
         }
     }
 
-    // TODO 8350865 We need more copies of these tests for all ValueClass array factories
-    static final ValueClassWithInt[] VALUE_CLASS_WITH_INT_ARRAY = (ValueClassWithInt[]) ValueClass.newNullRestrictedNonAtomicArray(ValueClassWithInt.class, 2, new ValueClassWithInt(0));
-    static final ValueClassWithDouble[] VALUE_CLASS_WITH_DOUBLE_ARRAY = (ValueClassWithDouble[]) ValueClass.newNullRestrictedNonAtomicArray(ValueClassWithDouble.class, 2, new ValueClassWithDouble(0));
-    static final SubValueClassWithInt[] SUB_VALUE_CLASS_WITH_INT_ARRAY = (SubValueClassWithInt[]) ValueClass.newNullRestrictedNonAtomicArray(SubValueClassWithInt.class, 2, new SubValueClassWithInt(0));
-    static final SubValueClassWithDouble[] SUB_VALUE_CLASS_WITH_DOUBLE_ARRAY = (SubValueClassWithDouble[]) ValueClass.newNullRestrictedNonAtomicArray(SubValueClassWithDouble.class, 2, new SubValueClassWithDouble(0));
+    static final ValueClassWithInt[] VALUE_CLASS_WITH_INT_ARRAY_NULL_RESTRICTED_NON_ATOMIC = (ValueClassWithInt[]) ValueClass.newNullRestrictedNonAtomicArray(ValueClassWithInt.class, 2, new ValueClassWithInt(0));
+    static final ValueClassWithFloat[] VALUE_CLASS_WITH_FLOAT_ARRAY_NULL_RESTRICTED_NON_ATOMIC = (ValueClassWithFloat[]) ValueClass.newNullRestrictedNonAtomicArray(ValueClassWithFloat.class, 2, new ValueClassWithFloat(0));
+    static final SubValueClassWithInt[] SUB_VALUE_CLASS_WITH_INT_ARRAY_NULL_RESTRICTED_NON_ATOMIC = (SubValueClassWithInt[]) ValueClass.newNullRestrictedNonAtomicArray(SubValueClassWithInt.class, 2, new SubValueClassWithInt(0));
+    static final SubValueClassWithFloat[] SUB_VALUE_CLASS_WITH_FLOAT_ARRAY_NULL_RESTRICTED_NON_ATOMIC = (SubValueClassWithFloat[]) ValueClass.newNullRestrictedNonAtomicArray(SubValueClassWithFloat.class, 2, new SubValueClassWithFloat(0));
 
+    static final ValueClassWithInt[] VALUE_CLASS_WITH_INT_ARRAY_NULL_RESTRICTED_ATOMIC = (ValueClassWithInt[]) ValueClass.newNullRestrictedAtomicArray(ValueClassWithInt.class, 2, new ValueClassWithInt(0));
+    static final ValueClassWithFloat[] VALUE_CLASS_WITH_FLOAT_ARRAY_NULL_RESTRICTED_ATOMIC = (ValueClassWithFloat[]) ValueClass.newNullRestrictedAtomicArray(ValueClassWithFloat.class, 2, new ValueClassWithFloat(0));
+    static final SubValueClassWithInt[] SUB_VALUE_CLASS_WITH_INT_ARRAY_NULL_RESTRICTED_ATOMIC = (SubValueClassWithInt[]) ValueClass.newNullRestrictedAtomicArray(SubValueClassWithInt.class, 2, new SubValueClassWithInt(0));
+    static final SubValueClassWithFloat[] SUB_VALUE_CLASS_WITH_FLOAT_ARRAY_NULL_RESTRICTED_ATOMIC = (SubValueClassWithFloat[]) ValueClass.newNullRestrictedAtomicArray(SubValueClassWithFloat.class, 2, new SubValueClassWithFloat(0));
+
+    static final ValueClassWithInt[] VALUE_CLASS_WITH_INT_ARRAY_NULLABLE_ATOMIC = (ValueClassWithInt[]) ValueClass.newNullableAtomicArray(ValueClassWithInt.class, 2);
+    static final ValueClassWithFloat[] VALUE_CLASS_WITH_FLOAT_ARRAY_NULLABLE_ATOMIC = (ValueClassWithFloat[]) ValueClass.newNullableAtomicArray(ValueClassWithFloat.class, 2);
+    static final SubValueClassWithInt[] SUB_VALUE_CLASS_WITH_INT_ARRAY_NULLABLE_ATOMIC = (SubValueClassWithInt[]) ValueClass.newNullableAtomicArray(SubValueClassWithInt.class, 2);
+    static final SubValueClassWithFloat[] SUB_VALUE_CLASS_WITH_FLOAT_ARRAY_NULLABLE_ATOMIC = (SubValueClassWithFloat[]) ValueClass.newNullableAtomicArray(SubValueClassWithFloat.class, 2);
+
+    static final ValueClassWithInt[] VALUE_CLASS_WITH_INT_ARRAY_REF = (ValueClassWithInt[]) ValueClass.newReferenceArray(ValueClassWithInt.class, 2);
+    static final ValueClassWithFloat[] VALUE_CLASS_WITH_FLOAT_ARRAY_REF = (ValueClassWithFloat[]) ValueClass.newReferenceArray(ValueClassWithFloat.class, 2);
+    static final SubValueClassWithInt[] SUB_VALUE_CLASS_WITH_INT_ARRAY_REF = (SubValueClassWithInt[]) ValueClass.newReferenceArray(SubValueClassWithInt.class, 2);
+    static final SubValueClassWithFloat[] SUB_VALUE_CLASS_WITH_FLOAT_ARRAY_REF = (SubValueClassWithFloat[]) ValueClass.newReferenceArray(SubValueClassWithFloat.class, 2);
 
     static {
-        VALUE_CLASS_WITH_INT_ARRAY[0] = new ValueClassWithInt(5);
-        VALUE_CLASS_WITH_DOUBLE_ARRAY[0] = new ValueClassWithDouble(6);
-        SUB_VALUE_CLASS_WITH_INT_ARRAY[0] = new SubValueClassWithInt(7);
-        SUB_VALUE_CLASS_WITH_DOUBLE_ARRAY[0] = new SubValueClassWithDouble(8);
+        VALUE_CLASS_WITH_INT_ARRAY_NULL_RESTRICTED_NON_ATOMIC[0] = new ValueClassWithInt(5);
+        VALUE_CLASS_WITH_FLOAT_ARRAY_NULL_RESTRICTED_NON_ATOMIC[0] = new ValueClassWithFloat(6);
+        SUB_VALUE_CLASS_WITH_INT_ARRAY_NULL_RESTRICTED_NON_ATOMIC[0] = new SubValueClassWithInt(7);
+        SUB_VALUE_CLASS_WITH_FLOAT_ARRAY_NULL_RESTRICTED_NON_ATOMIC[0] = new SubValueClassWithFloat(8);
+
+        VALUE_CLASS_WITH_INT_ARRAY_NULL_RESTRICTED_ATOMIC[0] = new ValueClassWithInt(5);
+        VALUE_CLASS_WITH_FLOAT_ARRAY_NULL_RESTRICTED_ATOMIC[0] = new ValueClassWithFloat(6);
+        SUB_VALUE_CLASS_WITH_INT_ARRAY_NULL_RESTRICTED_ATOMIC[0] = new SubValueClassWithInt(7);
+        SUB_VALUE_CLASS_WITH_FLOAT_ARRAY_NULL_RESTRICTED_ATOMIC[0] = new SubValueClassWithFloat(8);
+
+        VALUE_CLASS_WITH_INT_ARRAY_NULLABLE_ATOMIC[0] = new ValueClassWithInt(5);
+        VALUE_CLASS_WITH_FLOAT_ARRAY_NULLABLE_ATOMIC[0] = new ValueClassWithFloat(6);
+        SUB_VALUE_CLASS_WITH_INT_ARRAY_NULLABLE_ATOMIC[0] = new SubValueClassWithInt(7);
+        SUB_VALUE_CLASS_WITH_FLOAT_ARRAY_NULLABLE_ATOMIC[0] = new SubValueClassWithFloat(8);
+
+        VALUE_CLASS_WITH_INT_ARRAY_REF[0] = new ValueClassWithInt(5);
+        VALUE_CLASS_WITH_FLOAT_ARRAY_REF[0] = new ValueClassWithFloat(6);
+        SUB_VALUE_CLASS_WITH_INT_ARRAY_REF[0] = new SubValueClassWithInt(7);
+        SUB_VALUE_CLASS_WITH_FLOAT_ARRAY_REF[0] = new SubValueClassWithFloat(8);
+    }
+
+    // Make sure the WhiteBox API is only loaded in the Test VM such that we can run this test in driver mode
+    static class Flags {
+        private static final WhiteBox WHITEBOX = WhiteBox.getWhiteBox();
+        private static final boolean UseArrayFlattening = WHITEBOX.getBooleanVMFlag("UseArrayFlattening");
     }
 
     @Test
-    static void testFlatArrayInexactObjectStore(Object o, boolean flag) {
+    static void testFlatArrayInexactObjectStore_NullRestricted_NonAtomic(Object o, boolean flag) {
         Object[] oArr;
         if (flag) {
-            oArr = VALUE_CLASS_WITH_INT_ARRAY; // VALUE_CLASS_WITH_INT_ARRAY is statically known to be flat.
+            oArr = VALUE_CLASS_WITH_INT_ARRAY_NULL_RESTRICTED_NON_ATOMIC; // VALUE_CLASS_WITH_INT_ARRAY_NULL_RESTRICTED_NON_ATOMIC is statically known to be flat.
         } else {
-            oArr = VALUE_CLASS_WITH_DOUBLE_ARRAY; // VALUE_CLASS_WITH_DOUBLE_ARRAY is statically known to be flat.
+            oArr = VALUE_CLASS_WITH_FLOAT_ARRAY_NULL_RESTRICTED_NON_ATOMIC; // VALUE_CLASS_WITH_FLOAT_ARRAY_NULL_RESTRICTED_NON_ATOMIC is statically known to be flat.
         }
         // The type of 'oArr' is inexact here because we merge two arrays. Since both arrays are flat, 'oArr' is also flat:
         //     Type: flat:narrowoop: java/lang/Object:NotNull * (flat in array)[int:2]
@@ -4675,12 +4709,12 @@ public class TestLWorld {
     }
 
     @Test
-    static Object testFlatArrayInexactObjectLoad(boolean flag) {
+    static Object testFlatArrayInexactObjectLoad_NullRestricted_NonAtomic(boolean flag) {
         Object[] oArr;
         if (flag) {
-            oArr = VALUE_CLASS_WITH_INT_ARRAY; // VALUE_CLASS_WITH_INT_ARRAY is statically known to be flat.
+            oArr = VALUE_CLASS_WITH_INT_ARRAY_NULL_RESTRICTED_NON_ATOMIC; // VALUE_CLASS_WITH_INT_ARRAY_NULL_RESTRICTED_NON_ATOMIC is statically known to be flat.
         } else {
-            oArr = VALUE_CLASS_WITH_DOUBLE_ARRAY; // VALUE_CLASS_WITH_DOUBLE_ARRAY is statically known to be flat.
+            oArr = VALUE_CLASS_WITH_FLOAT_ARRAY_NULL_RESTRICTED_NON_ATOMIC; // VALUE_CLASS_WITH_FLOAT_ARRAY_NULL_RESTRICTED_NON_ATOMIC is statically known to be flat.
         }
         // The type of 'oArr' is inexact here because we merge two arrays. Since both arrays are flat, 'oArr' is also flat:
         //     Type: flat:narrowoop: java/lang/Object:NotNull * (flat in array)[int:2]
@@ -4690,59 +4724,326 @@ public class TestLWorld {
     }
 
     @Test
-    static void testFlatArrayInexactAbstractValueClassStore(AbstractValueClassWithByte abstractValueClassWithByte,
+    static void testFlatArrayInexactAbstractValueClassStore_NullRestricted_NonAtomic(AbstractValueClassWithByte abstractValueClassWithByte,
                                                             boolean flag) {
         AbstractValueClassWithByte[] avArr;
         if (flag) {
-            avArr = SUB_VALUE_CLASS_WITH_INT_ARRAY;
+            avArr = SUB_VALUE_CLASS_WITH_INT_ARRAY_NULL_RESTRICTED_NON_ATOMIC;
         } else {
-            avArr = SUB_VALUE_CLASS_WITH_DOUBLE_ARRAY;
+            avArr = SUB_VALUE_CLASS_WITH_FLOAT_ARRAY_NULL_RESTRICTED_NON_ATOMIC;
         }
-        // Same as testFlatArrayInexactObjectStore() but the inexact type is with an abstract value class:
+        // Same as testFlatArrayInexactObjectStore_NullRestricted_NonAtomic() but the inexact type is with an abstract value class:
         //    flat:narrowoop: compiler/valhalla/inlinetypes/TestLWorld$AbstractValueClassWithByte:NotNull * (flat in array)[int:2]
         avArr[0] = abstractValueClassWithByte;
     }
 
     @Test
-    static AbstractValueClassWithByte testFlatArrayInexactAbstractValueClassLoad(boolean flag) {
+    static AbstractValueClassWithByte testFlatArrayInexactAbstractValueClassLoad_NullRestricted_NonAtomic(boolean flag) {
         AbstractValueClassWithByte[] avArr;
         if (flag) {
-            avArr = SUB_VALUE_CLASS_WITH_INT_ARRAY;
+            avArr = SUB_VALUE_CLASS_WITH_INT_ARRAY_NULL_RESTRICTED_NON_ATOMIC;
         } else {
-            avArr = SUB_VALUE_CLASS_WITH_DOUBLE_ARRAY;
+            avArr = SUB_VALUE_CLASS_WITH_FLOAT_ARRAY_NULL_RESTRICTED_NON_ATOMIC;
         }
-        // Same as testFlatArrayInexactObjectLoad() but the inexact type is with an abstract value class:
+        // Same as testFlatArrayInexactObjectLoad_NullRestricted_NonAtomic() but the inexact type is with an abstract value class:
         //    flat:narrowoop: compiler/valhalla/inlinetypes/TestLWorld$AbstractValueClassWithByte:NotNull * (flat in array)[int:2]
         return avArr[0];
     }
 
-    @Run(test = {"testFlatArrayInexactObjectStore",
-                 "testFlatArrayInexactObjectLoad",
-                 "testFlatArrayInexactAbstractValueClassStore",
-                 "testFlatArrayInexactAbstractValueClassLoad"})
-    static void runFlatArrayInexactLoadAndStore() {
-        boolean flag = true;
+    @Run(test = {"testFlatArrayInexactObjectStore_NullRestricted_NonAtomic",
+                 "testFlatArrayInexactObjectLoad_NullRestricted_NonAtomic",
+                 "testFlatArrayInexactAbstractValueClassStore_NullRestricted_NonAtomic",
+                 "testFlatArrayInexactAbstractValueClassLoad_NullRestricted_NonAtomic"})
+    static void runFlatArrayInexactLoadAndStore_NullRestricted_NonAtomic() {
+        Asserts.assertEQ(Flags.UseArrayFlattening, ValueClass.isFlatArray(VALUE_CLASS_WITH_INT_ARRAY_NULL_RESTRICTED_NON_ATOMIC));
+        Asserts.assertEQ(Flags.UseArrayFlattening, ValueClass.isFlatArray(VALUE_CLASS_WITH_FLOAT_ARRAY_NULL_RESTRICTED_NON_ATOMIC));
+        Asserts.assertEQ(Flags.UseArrayFlattening, ValueClass.isFlatArray(SUB_VALUE_CLASS_WITH_INT_ARRAY_NULL_RESTRICTED_NON_ATOMIC));
+        Asserts.assertEQ(Flags.UseArrayFlattening, ValueClass.isFlatArray(SUB_VALUE_CLASS_WITH_FLOAT_ARRAY_NULL_RESTRICTED_NON_ATOMIC));
+
         ValueClassWithInt valueClassWithInt = new ValueClassWithInt(15);
-        ValueClassWithDouble valueClassWithDouble = new ValueClassWithDouble(16);
+        ValueClassWithFloat ValueClassWithFloat = new ValueClassWithFloat(16);
 
-        testFlatArrayInexactObjectStore(valueClassWithInt, true);
-        Asserts.assertEQ(valueClassWithInt, VALUE_CLASS_WITH_INT_ARRAY[0]);
-        testFlatArrayInexactObjectStore(valueClassWithDouble, false);
-        Asserts.assertEQ(valueClassWithDouble, VALUE_CLASS_WITH_DOUBLE_ARRAY[0]);
+        testFlatArrayInexactObjectStore_NullRestricted_NonAtomic(valueClassWithInt, true);
+        Asserts.assertEQ(valueClassWithInt, VALUE_CLASS_WITH_INT_ARRAY_NULL_RESTRICTED_NON_ATOMIC[0]);
+        testFlatArrayInexactObjectStore_NullRestricted_NonAtomic(ValueClassWithFloat, false);
+        Asserts.assertEQ(ValueClassWithFloat, VALUE_CLASS_WITH_FLOAT_ARRAY_NULL_RESTRICTED_NON_ATOMIC[0]);
 
-        Asserts.assertEQ(valueClassWithInt, testFlatArrayInexactObjectLoad(true));
-        Asserts.assertEQ(valueClassWithDouble, testFlatArrayInexactObjectLoad(false));
+        Asserts.assertEQ(valueClassWithInt, testFlatArrayInexactObjectLoad_NullRestricted_NonAtomic(true));
+        Asserts.assertEQ(ValueClassWithFloat, testFlatArrayInexactObjectLoad_NullRestricted_NonAtomic(false));
 
         SubValueClassWithInt subValueClassWithInt = new SubValueClassWithInt(17);
-        SubValueClassWithDouble subValueClassWithDouble = new SubValueClassWithDouble(18);
+        SubValueClassWithFloat subValueClassWithFloat = new SubValueClassWithFloat(18);
 
-        testFlatArrayInexactAbstractValueClassStore(subValueClassWithInt, true);
-        Asserts.assertEQ(subValueClassWithInt, SUB_VALUE_CLASS_WITH_INT_ARRAY[0]);
-        testFlatArrayInexactAbstractValueClassStore(subValueClassWithDouble, false);
-        Asserts.assertEQ(subValueClassWithDouble, SUB_VALUE_CLASS_WITH_DOUBLE_ARRAY[0]);
+        testFlatArrayInexactAbstractValueClassStore_NullRestricted_NonAtomic(subValueClassWithInt, true);
+        Asserts.assertEQ(subValueClassWithInt, SUB_VALUE_CLASS_WITH_INT_ARRAY_NULL_RESTRICTED_NON_ATOMIC[0]);
+        testFlatArrayInexactAbstractValueClassStore_NullRestricted_NonAtomic(subValueClassWithFloat, false);
+        Asserts.assertEQ(subValueClassWithFloat, SUB_VALUE_CLASS_WITH_FLOAT_ARRAY_NULL_RESTRICTED_NON_ATOMIC[0]);
 
-        Asserts.assertEQ(subValueClassWithInt, testFlatArrayInexactAbstractValueClassLoad(true));
-        Asserts.assertEQ(subValueClassWithDouble, testFlatArrayInexactAbstractValueClassLoad(false));
+        Asserts.assertEQ(subValueClassWithInt, testFlatArrayInexactAbstractValueClassLoad_NullRestricted_NonAtomic(true));
+        Asserts.assertEQ(subValueClassWithFloat, testFlatArrayInexactAbstractValueClassLoad_NullRestricted_NonAtomic(false));
+    }
+
+    @Test
+    static void testFlatArrayInexactObjectStore_NullRestricted_Atomic(Object o, boolean flag) {
+        Object[] oArr;
+        if (flag) {
+            oArr = VALUE_CLASS_WITH_INT_ARRAY_NULL_RESTRICTED_ATOMIC; // VALUE_CLASS_WITH_INT_ARRAY_NULL_RESTRICTED_ATOMIC is statically known to be flat.
+        } else {
+            oArr = VALUE_CLASS_WITH_FLOAT_ARRAY_NULL_RESTRICTED_ATOMIC; // VALUE_CLASS_WITH_FLOAT_ARRAY_NULL_RESTRICTED_ATOMIC is statically known to be flat.
+        }
+        // The type of 'oArr' is inexact here because we merge two arrays. Since both arrays are flat, 'oArr' is also flat:
+        //     Type: flat:narrowoop: java/lang/Object:NotNull * (flat in array)[int:2]
+        // Since the type is inexact, we do not know the exact flat array layout statically and thus need to fall back
+        // to call "store_unknown_inline_Type()" at runtime where we know the flat array layout
+        oArr[0] = o;
+    }
+
+    @Test
+    static Object testFlatArrayInexactObjectLoad_NullRestricted_Atomic(boolean flag) {
+        Object[] oArr;
+        if (flag) {
+            oArr = VALUE_CLASS_WITH_INT_ARRAY_NULL_RESTRICTED_ATOMIC; // VALUE_CLASS_WITH_INT_ARRAY is statically known to be flat.
+        } else {
+            oArr = VALUE_CLASS_WITH_FLOAT_ARRAY_NULL_RESTRICTED_ATOMIC; // VALUE_CLASS_WITH_FLOAT_ARRAY is statically known to be flat.
+        }
+        // The type of 'oArr' is inexact here because we merge two arrays. Since both arrays are flat, 'oArr' is also flat:
+        //     Type: flat:narrowoop: java/lang/Object:NotNull * (flat in array)[int:2]
+        // Since the type is inexact, we do not know the exact flat array layout statically and thus need to fall back
+        // to call "load_unknown_inline_Type()" at runtime where we know the flat array layout
+        return oArr[0];
+    }
+
+    @Test
+    static void testFlatArrayInexactAbstractValueClassStore_NullRestricted_Atomic(AbstractValueClassWithByte abstractValueClassWithByte, boolean flag) {
+        AbstractValueClassWithByte[] avArr;
+        if (flag) {
+            avArr = SUB_VALUE_CLASS_WITH_INT_ARRAY_NULL_RESTRICTED_ATOMIC;
+        } else {
+            avArr = SUB_VALUE_CLASS_WITH_FLOAT_ARRAY_NULL_RESTRICTED_ATOMIC;
+        }
+        // Same as testFlatArrayInexactObjectStore_NullRestricted_Atomic() but the inexact type is with an abstract value class:
+        //    flat:narrowoop: compiler/valhalla/inlinetypes/TestLWorld$AbstractValueClassWithByte:NotNull * (flat in array)[int:2]
+        avArr[0] = abstractValueClassWithByte;
+    }
+
+    @Test
+    static AbstractValueClassWithByte testFlatArrayInexactAbstractValueClassLoad_NullRestricted_Atomic(boolean flag) {
+        AbstractValueClassWithByte[] avArr;
+        if (flag) {
+            avArr = SUB_VALUE_CLASS_WITH_INT_ARRAY_NULL_RESTRICTED_ATOMIC;
+        } else {
+            avArr = SUB_VALUE_CLASS_WITH_FLOAT_ARRAY_NULL_RESTRICTED_ATOMIC;
+        }
+        // Same as testFlatArrayInexactObjectLoad_NullRestricted_Atomic() but the inexact type is with an abstract value class:
+        //    flat:narrowoop: compiler/valhalla/inlinetypes/TestLWorld$AbstractValueClassWithByte:NotNull * (flat in array)[int:2]
+        return avArr[0];
+    }
+
+    @Run(test = {"testFlatArrayInexactObjectStore_NullRestricted_Atomic",
+                 "testFlatArrayInexactObjectLoad_NullRestricted_Atomic",
+                 "testFlatArrayInexactAbstractValueClassStore_NullRestricted_Atomic",
+                 "testFlatArrayInexactAbstractValueClassLoad_NullRestricted_Atomic"})
+    static void runFlatArrayInexactLoadAndStore_NullRestricted_Atomic() {
+        Asserts.assertEQ(Flags.UseArrayFlattening, ValueClass.isFlatArray(VALUE_CLASS_WITH_INT_ARRAY_NULL_RESTRICTED_ATOMIC));
+        Asserts.assertEQ(Flags.UseArrayFlattening, ValueClass.isFlatArray(VALUE_CLASS_WITH_FLOAT_ARRAY_NULL_RESTRICTED_ATOMIC));
+        Asserts.assertEQ(Flags.UseArrayFlattening, ValueClass.isFlatArray(SUB_VALUE_CLASS_WITH_INT_ARRAY_NULL_RESTRICTED_ATOMIC));
+        Asserts.assertEQ(Flags.UseArrayFlattening, ValueClass.isFlatArray(SUB_VALUE_CLASS_WITH_FLOAT_ARRAY_NULL_RESTRICTED_ATOMIC));
+
+        ValueClassWithInt valueClassWithInt = new ValueClassWithInt(15);
+        ValueClassWithFloat ValueClassWithFloat = new ValueClassWithFloat(16);
+
+        testFlatArrayInexactObjectStore_NullRestricted_Atomic(valueClassWithInt, true);
+        Asserts.assertEQ(valueClassWithInt, VALUE_CLASS_WITH_INT_ARRAY_NULL_RESTRICTED_ATOMIC[0]);
+        testFlatArrayInexactObjectStore_NullRestricted_Atomic(ValueClassWithFloat, false);
+        Asserts.assertEQ(ValueClassWithFloat, VALUE_CLASS_WITH_FLOAT_ARRAY_NULL_RESTRICTED_ATOMIC[0]);
+
+        Asserts.assertEQ(valueClassWithInt, testFlatArrayInexactObjectLoad_NullRestricted_Atomic(true));
+        Asserts.assertEQ(ValueClassWithFloat, testFlatArrayInexactObjectLoad_NullRestricted_Atomic(false));
+
+        SubValueClassWithInt subValueClassWithInt = new SubValueClassWithInt(17);
+        SubValueClassWithFloat subValueClassWithFloat = new SubValueClassWithFloat(18);
+
+        testFlatArrayInexactAbstractValueClassStore_NullRestricted_Atomic(subValueClassWithInt, true);
+        Asserts.assertEQ(subValueClassWithInt, SUB_VALUE_CLASS_WITH_INT_ARRAY_NULL_RESTRICTED_ATOMIC[0]);
+        testFlatArrayInexactAbstractValueClassStore_NullRestricted_Atomic(subValueClassWithFloat, false);
+        Asserts.assertEQ(subValueClassWithFloat, SUB_VALUE_CLASS_WITH_FLOAT_ARRAY_NULL_RESTRICTED_ATOMIC[0]);
+
+        Asserts.assertEQ(subValueClassWithInt, testFlatArrayInexactAbstractValueClassLoad_NullRestricted_Atomic(true));
+        Asserts.assertEQ(subValueClassWithFloat, testFlatArrayInexactAbstractValueClassLoad_NullRestricted_Atomic(false));
+    }
+
+    @Test
+    static void testFlatArrayInexactObjectStore_Nullable_Atomic(Object o, boolean flag) {
+        Object[] oArr;
+        if (flag) {
+            oArr = VALUE_CLASS_WITH_INT_ARRAY_NULLABLE_ATOMIC; // VALUE_CLASS_WITH_INT_ARRAY_NULLABLE_ATOMIC is statically known to be flat.
+        } else {
+            oArr = VALUE_CLASS_WITH_FLOAT_ARRAY_NULLABLE_ATOMIC; // VALUE_CLASS_WITH_FLOAT_ARRAY_NULLABLE_ATOMIC is statically known to be flat.
+        }
+        // The type of 'oArr' is inexact here because we merge two arrays. Since both arrays are flat, 'oArr' is also flat:
+        //     Type: flat:narrowoop: java/lang/Object * (flat in array)[int:2]
+        // Since the type is inexact, we do not know the exact flat array layout statically and thus need to fall back
+        // to call "store_unknown_inline_Type()" at runtime where we know the flat array layout
+        oArr[0] = o;
+    }
+
+    @Test
+    static Object testFlatArrayInexactObjectLoad_Nullable_Atomic(boolean flag) {
+        Object[] oArr;
+        if (flag) {
+            oArr = VALUE_CLASS_WITH_INT_ARRAY_NULLABLE_ATOMIC; // VALUE_CLASS_WITH_INT_ARRAY_NULLABLE_ATOMIC is statically known to be flat.
+        } else {
+            oArr = VALUE_CLASS_WITH_FLOAT_ARRAY_NULLABLE_ATOMIC; // VALUE_CLASS_WITH_FLOAT_ARRAY_NULLABLE_ATOMIC is statically known to be flat.
+        }
+        // The type of 'oArr' is inexact here because we merge two arrays. Since both arrays are flat, 'oArr' is also flat:
+        //     Type: flat:narrowoop: java/lang/Object * (flat in array)[int:2]
+        // Since the type is inexact, we do not know the exact flat array layout statically and thus need to fall back
+        // to call "load_unknown_inline_Type()" at runtime where we know the flat array layout
+        return oArr[0];
+    }
+
+    @Test
+    static void testFlatArrayInexactAbstractValueClassStore_Nullable_Atomic(AbstractValueClassWithByte abstractValueClassWithByte, boolean flag) {
+        AbstractValueClassWithByte[] avArr;
+        if (flag) {
+            avArr = SUB_VALUE_CLASS_WITH_INT_ARRAY_NULLABLE_ATOMIC;
+        } else {
+            avArr = SUB_VALUE_CLASS_WITH_FLOAT_ARRAY_NULLABLE_ATOMIC;
+        }
+        // Same as testFlatArrayInexactObjectStore_Nullable_Atomic() but the inexact type is with an abstract value class:
+        //    flat:narrowoop: compiler/valhalla/inlinetypes/TestLWorld$AbstractValueClassWithByte * (flat in array)[int:2]
+        avArr[0] = abstractValueClassWithByte;
+    }
+
+    @Test
+    static AbstractValueClassWithByte testFlatArrayInexactAbstractValueClassLoad_Nullable_Atomic(boolean flag) {
+        AbstractValueClassWithByte[] avArr;
+        if (flag) {
+            avArr = SUB_VALUE_CLASS_WITH_INT_ARRAY_NULLABLE_ATOMIC;
+        } else {
+            avArr = SUB_VALUE_CLASS_WITH_FLOAT_ARRAY_NULLABLE_ATOMIC;
+        }
+        // Same as testFlatArrayInexactObjectLoad_Nullable_Atomic() but the inexact type is with an abstract value class:
+        //    flat:narrowoop: compiler/valhalla/inlinetypes/TestLWorld$AbstractValueClassWithByte * (flat in array)[int:2]
+        return avArr[0];
+    }
+
+    @Run(test = {"testFlatArrayInexactObjectStore_Nullable_Atomic",
+                 "testFlatArrayInexactObjectLoad_Nullable_Atomic",
+                 "testFlatArrayInexactAbstractValueClassStore_Nullable_Atomic",
+                 "testFlatArrayInexactAbstractValueClassLoad_Nullable_Atomic"})
+    static void runFlatArrayInexactLoadAndStore_Nullable_Atomic() {
+        Asserts.assertEQ(Flags.UseArrayFlattening, ValueClass.isFlatArray(VALUE_CLASS_WITH_INT_ARRAY_NULLABLE_ATOMIC));
+        Asserts.assertEQ(Flags.UseArrayFlattening, ValueClass.isFlatArray(VALUE_CLASS_WITH_FLOAT_ARRAY_NULLABLE_ATOMIC));
+        Asserts.assertEQ(Flags.UseArrayFlattening, ValueClass.isFlatArray(SUB_VALUE_CLASS_WITH_INT_ARRAY_NULLABLE_ATOMIC));
+        Asserts.assertEQ(Flags.UseArrayFlattening, ValueClass.isFlatArray(SUB_VALUE_CLASS_WITH_FLOAT_ARRAY_NULLABLE_ATOMIC));
+
+        ValueClassWithInt valueClassWithInt = new ValueClassWithInt(15);
+        ValueClassWithFloat ValueClassWithFloat = new ValueClassWithFloat(16);
+
+        testFlatArrayInexactObjectStore_Nullable_Atomic(valueClassWithInt, true);
+        Asserts.assertEQ(valueClassWithInt, VALUE_CLASS_WITH_INT_ARRAY_NULLABLE_ATOMIC[0]);
+        testFlatArrayInexactObjectStore_Nullable_Atomic(ValueClassWithFloat, false);
+        Asserts.assertEQ(ValueClassWithFloat, VALUE_CLASS_WITH_FLOAT_ARRAY_NULLABLE_ATOMIC[0]);
+
+        Asserts.assertEQ(valueClassWithInt, testFlatArrayInexactObjectLoad_Nullable_Atomic(true));
+        Asserts.assertEQ(ValueClassWithFloat, testFlatArrayInexactObjectLoad_Nullable_Atomic(false));
+
+        SubValueClassWithInt subValueClassWithInt = new SubValueClassWithInt(17);
+        SubValueClassWithFloat subValueClassWithFloat = new SubValueClassWithFloat(18);
+
+        testFlatArrayInexactAbstractValueClassStore_Nullable_Atomic(subValueClassWithInt, true);
+        Asserts.assertEQ(subValueClassWithInt, SUB_VALUE_CLASS_WITH_INT_ARRAY_NULLABLE_ATOMIC[0]);
+        testFlatArrayInexactAbstractValueClassStore_Nullable_Atomic(subValueClassWithFloat, false);
+        Asserts.assertEQ(subValueClassWithFloat, SUB_VALUE_CLASS_WITH_FLOAT_ARRAY_NULLABLE_ATOMIC[0]);
+
+        Asserts.assertEQ(subValueClassWithInt, testFlatArrayInexactAbstractValueClassLoad_Nullable_Atomic(true));
+        Asserts.assertEQ(subValueClassWithFloat, testFlatArrayInexactAbstractValueClassLoad_Nullable_Atomic(false));
+    }
+
+    @Test
+    static void testFlatArrayInexactObjectStore_Ref(Object o, boolean flag) {
+        Object[] oArr;
+        if (flag) {
+            oArr = VALUE_CLASS_WITH_INT_ARRAY_REF; // VALUE_CLASS_WITH_INT_ARRAY_REF is statically known not to be flat.
+        } else {
+            oArr = VALUE_CLASS_WITH_FLOAT_ARRAY_REF; // VALUE_CLASS_WITH_FLOAT_ARRAY_REF is statically known not to be flat.
+        }
+        // In the similar cases above, the layout is unknown despite the array being known to be flat.
+        // Here, we have a reference array, so it is not a concern, but let's do it anyway, to cover all cases.
+        oArr[0] = o;
+    }
+
+    @Test
+    static Object testFlatArrayInexactObjectLoad_Ref(boolean flag) {
+        Object[] oArr;
+        if (flag) {
+            oArr = VALUE_CLASS_WITH_INT_ARRAY_REF; // VALUE_CLASS_WITH_INT_ARRAY_REF is statically known not to be flat.
+        } else {
+            oArr = VALUE_CLASS_WITH_FLOAT_ARRAY_REF; // VALUE_CLASS_WITH_FLOAT_ARRAY_REF is statically known not to be flat.
+        }
+        // In the similar cases above, the layout is unknown despite the array being known to be flat.
+        // Here, we have a reference array, so it is not a concern, but let's do it anyway, to cover all cases.
+        return oArr[0];
+    }
+
+    @Test
+    static void testFlatArrayInexactAbstractValueClassStore_Ref(AbstractValueClassWithByte abstractValueClassWithByte, boolean flag) {
+        AbstractValueClassWithByte[] avArr;
+        if (flag) {
+            avArr = SUB_VALUE_CLASS_WITH_INT_ARRAY_REF;
+        } else {
+            avArr = SUB_VALUE_CLASS_WITH_FLOAT_ARRAY_REF;
+        }
+        // Same as testFlatArrayInexactObjectStore_Ref() but the inexact type is with an abstract value class:
+        //    narrowoop: compiler/valhalla/inlinetypes/TestLWorld$AbstractValueClassWithByte * [int:2]
+        avArr[0] = abstractValueClassWithByte;
+    }
+
+    @Test
+    static AbstractValueClassWithByte testFlatArrayInexactAbstractValueClassLoad_Ref(boolean flag) {
+        AbstractValueClassWithByte[] avArr;
+        if (flag) {
+            avArr = SUB_VALUE_CLASS_WITH_INT_ARRAY_REF;
+        } else {
+            avArr = SUB_VALUE_CLASS_WITH_FLOAT_ARRAY_REF;
+        }
+        // Same as testFlatArrayInexactObjectLoad_Ref() but the inexact type is with an abstract value class:
+        //    narrowoop: compiler/valhalla/inlinetypes/TestLWorld$AbstractValueClassWithByte * [int:2]
+        return avArr[0];
+    }
+
+    @Run(test = {"testFlatArrayInexactObjectStore_Ref",
+                 "testFlatArrayInexactObjectLoad_Ref",
+                 "testFlatArrayInexactAbstractValueClassStore_Ref",
+                 "testFlatArrayInexactAbstractValueClassLoad_Ref"})
+    static void runFlatArrayInexactLoadAndStore_Ref() {
+        Asserts.assertFalse(ValueClass.isFlatArray(VALUE_CLASS_WITH_INT_ARRAY_REF));
+        Asserts.assertFalse(ValueClass.isFlatArray(VALUE_CLASS_WITH_FLOAT_ARRAY_REF));
+        Asserts.assertFalse(ValueClass.isFlatArray(SUB_VALUE_CLASS_WITH_INT_ARRAY_REF));
+        Asserts.assertFalse(ValueClass.isFlatArray(SUB_VALUE_CLASS_WITH_FLOAT_ARRAY_REF));
+
+        ValueClassWithInt valueClassWithInt = new ValueClassWithInt(15);
+        ValueClassWithFloat ValueClassWithFloat = new ValueClassWithFloat(16);
+
+        testFlatArrayInexactObjectStore_Ref(valueClassWithInt, true);
+        Asserts.assertEQ(valueClassWithInt, VALUE_CLASS_WITH_INT_ARRAY_REF[0]);
+        testFlatArrayInexactObjectStore_Ref(ValueClassWithFloat, false);
+        Asserts.assertEQ(ValueClassWithFloat, VALUE_CLASS_WITH_FLOAT_ARRAY_REF[0]);
+
+        Asserts.assertEQ(valueClassWithInt, testFlatArrayInexactObjectLoad_Ref(true));
+        Asserts.assertEQ(ValueClassWithFloat, testFlatArrayInexactObjectLoad_Ref(false));
+
+        SubValueClassWithInt subValueClassWithInt = new SubValueClassWithInt(17);
+        SubValueClassWithFloat subValueClassWithFloat = new SubValueClassWithFloat(18);
+
+        testFlatArrayInexactAbstractValueClassStore_Ref(subValueClassWithInt, true);
+        Asserts.assertEQ(subValueClassWithInt, SUB_VALUE_CLASS_WITH_INT_ARRAY_REF[0]);
+        testFlatArrayInexactAbstractValueClassStore_Ref(subValueClassWithFloat, false);
+        Asserts.assertEQ(subValueClassWithFloat, SUB_VALUE_CLASS_WITH_FLOAT_ARRAY_REF[0]);
+
+        Asserts.assertEQ(subValueClassWithInt, testFlatArrayInexactAbstractValueClassLoad_Ref(true));
+        Asserts.assertEQ(subValueClassWithFloat, testFlatArrayInexactAbstractValueClassLoad_Ref(false));
     }
 
     // Check that comparisons between Java mirrors are optimized to comparisons of the klass
