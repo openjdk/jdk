@@ -128,14 +128,23 @@ class StackMapReader : StackObj {
   u2 _max_locals;
   u2 _max_stack;
 
+  // Contains assert_unset_fields generated from classfile
+  StackMapFrame::AssertUnsetFieldTable* _assert_unset_fields_buffer;
+
   // Check if reading first entry
   bool _first;
+
+  // We track whether an uninitializedThis was in the previous frame's
+  // locals independently of the flags parameter as most StackMapTable
+  // frames reuse the same locals as the previous frame.  Chop and
+  // Full frames need to handle this specially.
+  bool _uninit_in_prev_frame_locals;
 
   StackMapFrame* next_helper(TRAPS);
   void check_offset(StackMapFrame* frame);
   void check_size(TRAPS);
   int32_t chop(VerificationType* locals, int32_t length, int32_t chops);
-  VerificationType parse_verification_type(u1* flags, TRAPS);
+  VerificationType parse_verification_type(u1* flags, bool parsing_locals, TRAPS);
   void check_verification_type_array_size(
       int32_t size, int32_t max_size, TRAPS) {
     if (size < 0 || size > max_size) {
@@ -154,7 +163,8 @@ class StackMapReader : StackObj {
     SAME_LOCALS_1_STACK_ITEM_FRAME_START = 64,
     SAME_LOCALS_1_STACK_ITEM_FRAME_END = 127,
     RESERVED_START = 128,
-    RESERVED_END = 246,
+    RESERVED_END = 245,
+    EARLY_LARVAL = 246,
     SAME_LOCALS_1_STACK_ITEM_EXTENDED = 247,
     CHOP_FRAME_START = 248,
     CHOP_FRAME_END = 250,
@@ -169,7 +179,8 @@ class StackMapReader : StackObj {
   StackMapReader(ClassVerifier* v, StackMapStream* stream,
                  char* code_data, int32_t code_len,
                  StackMapFrame* init_frame,
-                 u2 max_locals, u2 max_stack, TRAPS);
+                 u2 max_locals, u2 max_stack,
+                 StackMapFrame::AssertUnsetFieldTable* initial_strict_fields, TRAPS);
 
   inline int32_t get_frame_count()   const { return _frame_count; }
   inline StackMapFrame* prev_frame() const { return _prev_frame; }

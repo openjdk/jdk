@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ public class FontManagerNativeLibrary {
               top of freetype library (that is used in binary form).
 
               This wrapper is compiled into fontmanager and this make
-              fontmanger library depending on freetype library.
+              font manager library depending on freetype library.
 
               On Windows DLL's in the JRE's BIN directory cannot be
               found by windows DLL loading as that directory is not
