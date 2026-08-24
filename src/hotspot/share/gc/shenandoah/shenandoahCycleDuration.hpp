@@ -40,7 +40,9 @@ class ShenandoahCycleDuration {
 
 public:
   explicit ShenandoahCycleDuration(uint size = GC_TIME_SAMPLE_SIZE);
-  void record_duration(double timestamp_at_start, double duration);
+  // In the case that a duration has been scaled to account for atypical behavior such as an abbreviated cycle or a
+  // surged-worker cycle, synthetic_duration_faxtor represents the factor by which the actual value was scaled.
+  void record_duration(double timestamp_at_start, double duration, double synthetic_duration_factor);
   double predict_duration(double timestamp_at_start, double margin_of_error);
 };
 
