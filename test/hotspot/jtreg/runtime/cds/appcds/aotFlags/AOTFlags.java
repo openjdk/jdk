@@ -148,18 +148,19 @@ public class AOTFlags {
             "-XX:+AOTCompatibleOopCompression", // avoid production run failure due to incompatible CompressedOops::base
             "-cp", appJar);
         out = CDSTestUtils.executeAndLog(pb, "asm");
+        out.shouldContain("AOTClassLinking is updated to true (the same as when AOT configuration file");
         out.shouldContain("AOTCache creation is complete");
         out.shouldMatch("hello[.]aot");
         out.shouldHaveExitValue(0);
 
         //----------------------------------------------------------------------
-        printTestCase("Production Run with AOTCache, which was created with -XX:-AOTClassLinking");
+        printTestCase("Production Run with AOTCache created from the last step");
         pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:AOTCache=" + aotCacheFile,
             "-Xlog:aot",
             "-cp", appJar, helloClass);
         out = CDSTestUtils.executeAndLog(pb, "prod");
-        out.shouldContain("Using AOT-linked classes: false (static archive: no aot-linked classes)");
+        out.shouldContain("Using AOT-linked classes: true");
         out.shouldContain("Opened AOT cache hello.aot.");
         out.shouldContain("Hello World");
         out.shouldHaveExitValue(0);
@@ -185,8 +186,10 @@ public class AOTFlags {
             "-Xlog:aot=debug",
             "-cp", appJar);
         out = CDSTestUtils.executeAndLog(pb, "asm");
+        out.shouldContain("AOTClassLinking is updated to false (the same as when AOT configuration file");
         out.shouldContain("Writing AOTCache file:");
         out.shouldMatch("aot.*hello[.]aot");
+        out.shouldContain("Using AOT-linked classes: false");
         out.shouldHaveExitValue(0);
 
         //----------------------------------------------------------------------
@@ -473,8 +476,20 @@ public class AOTFlags {
         out.shouldHaveExitValue(1);
 
         //----------------------------------------------------------------------
-        printTestCase("Cannot use a dynamic CDS archive for -XX:AOTCache");
+        printTestCase("Cannot use a classic CDS archive with -XX:+AOTClassLinking");
         String staticArchive = "static.jsa";
+
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-Xshare:dump",
+            "-XX:SharedArchiveFile=" + staticArchive,
+            "-XX:+AOTClassLinking");
+        out = CDSTestUtils.executeAndLog(pb, "static");
+        out.shouldContain("AOTClassLinking is not supported for classic CDS archive");
+        out.shouldHaveExitValue(0);
+
+        //----------------------------------------------------------------------
+        printTestCase("Cannot use a dynamic CDS archive for -XX:AOTCache");
+        staticArchive = "static.jsa";
         String dynamicArchive = "dynamic.jsa";
 
         pb = ProcessTools.createLimitedTestJavaProcessBuilder(

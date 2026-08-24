@@ -2609,7 +2609,8 @@ void TemplateTable::jvmti_post_field_access(Register Rcache, Register Rscratch, 
       // Restore object pointer.
       __ pop_ptr(R17_tos);
       __ verify_oop(R17_tos);
-    } else {
+    }
+    if (Rcache.is_volatile()) {
       // Cache is still needed to get class or obj.
       __ load_field_entry(Rcache, Rscratch);
     }
@@ -2646,10 +2647,12 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
                  Rscratch      = R11_scratch1; // used by load_field_cp_cache_entry
                  // R12_scratch2 used by load_field_cp_cache_entry
 
-  static address field_branch_table[number_of_states],
+  static address field_rw_branch_table[number_of_states],
+                 field_norw_branch_table[number_of_states],
                  static_branch_table[number_of_states];
 
-  address* branch_table = (is_static || rc == may_not_rewrite) ? static_branch_table : field_branch_table;
+  address* branch_table = is_static ? static_branch_table :
+    (rc == may_rewrite ? field_rw_branch_table : field_norw_branch_table);
 
   // Get field offset.
   resolve_cache_and_index_for_field(byte_no, Rcache, Rscratch);
@@ -2697,14 +2700,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
 #ifdef ASSERT
   __ bind(LFlagInvalid);
   __ stop("got invalid flag");
-#endif
 
-  if (!is_static && rc == may_not_rewrite) {
-    // We reuse the code from is_static.  It's jumped to via the table above.
-    return;
-  }
-
-#ifdef ASSERT
   // __ bind(Lvtos);
   address pc_before_fence = __ pc();
   __ fence(); // Volatile entry point (one instruction before non-volatile_entry point).
@@ -3322,7 +3318,7 @@ void TemplateTable::fast_storefield(TosState state) {
     {
       Label is_flat, done;
       __ test_field_is_flat(Rflags, is_flat);
-      __ null_check_throw(Rclass_or_obj, -1, Rscratch);
+      __ null_check_throw(R17_tos, -1, Rscratch);
       do_oop_store(_masm, Rclass_or_obj, Roffset, R17_tos, Rscratch, Rscratch2, Rscratch3, IN_HEAP);
       __ b(done);
       __ bind(is_flat);
@@ -3384,7 +3380,7 @@ void TemplateTable::fast_accessfield(TosState state) {
   Label LisVolatile;
   ByteSize cp_base_offset = ConstantPoolCache::base_offset();
 
-  const Register Rcache        = R3_ARG1,
+  const Register Rcache        = R31, // Needs to survive C call.
                  Rclass_or_obj = R17_tos,
                  Roffset       = R22_tmp2,
                  Rflags        = R23_tmp3,

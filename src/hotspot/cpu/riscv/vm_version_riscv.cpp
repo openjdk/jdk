@@ -30,6 +30,7 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ostream.hpp"
 
 #include <ctype.h>
 
@@ -508,4 +509,63 @@ bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
     break;
   }
   return true;
+}
+
+int VM_Version::cpu_features_size() {
+  return sizeof(RVExtFeatures);
+}
+
+void VM_Version::store_cpu_features(void* buf) {
+  memcpy(buf, RVExtFeatures::current(), sizeof(RVExtFeatures));
+}
+
+bool VM_Version::verify_aot_code_cache_features(void* features_buffer) {
+  RVExtFeatures* features_to_test = (RVExtFeatures*)features_buffer;
+  return RVExtFeatures::current()->verify_aot_code_cache_features(features_to_test);
+}
+
+// Print one feature using the same spelling as features_string(): single letter
+// extensions appear as "rvc"/"rvv" and multi-character extensions with a lower
+// case leading character ("Zba" -> "zba"). Must stay in sync with the feature
+// string built in VM_Version::setup_cpu_available_features().
+void VM_Version::print_feature_name(stringStream& ss, RVFeatureValue* feature) {
+  const char* pretty = feature->pretty();
+  if (strlen(pretty) == 1) {
+    ss.print("rv%s", pretty);
+  } else {
+    ss.print("%c%s", (char)tolower(pretty[0]), &pretty[1]);
+  }
+}
+
+void VM_Version::insert_features_names(RVExtFeatures* features, stringStream& ss) {
+  const char* sep = "";
+  int i = 0;
+  while (i < RVExtFeatures::MAX_CPU_FEATURE_INDEX) {
+    if (features->support_feature(i)) {
+      ss.print("%s", sep);
+      print_feature_name(ss, _feature_list[i]);
+      sep = ", ";
+    }
+    i += 1;
+  }
+}
+
+void VM_Version::get_cpu_features_name(void* features_buffer, stringStream& ss) {
+  RVExtFeatures* features = (RVExtFeatures*)features_buffer;
+  insert_features_names(features, ss);
+}
+
+void VM_Version::get_missing_features_name(void* features_set1, void* features_set2, stringStream& ss) {
+  RVExtFeatures* rv_ext_features_set1 = (RVExtFeatures*)features_set1;
+  RVExtFeatures* rv_ext_features_set2 = (RVExtFeatures*)features_set2;
+  const char* sep = "";
+  int i = 0;
+  while (i < RVExtFeatures::MAX_CPU_FEATURE_INDEX) {
+    if (rv_ext_features_set1->support_feature(i) && !rv_ext_features_set2->support_feature(i)) {
+      ss.print("%s", sep);
+      print_feature_name(ss, _feature_list[i]);
+      sep = ", ";
+    }
+    i += 1;
+  }
 }

@@ -1077,6 +1077,14 @@ void VM_Version::get_processor_features() {
       FLAG_SET_DEFAULT(UseAPX, false);
     }
   }
+#if defined(COMPILER2)
+  if (UseAPX) {
+    // Increase InlineSmallCode by 10%
+    if (FLAG_IS_DEFAULT(InlineSmallCode)) {
+      FLAG_SET_DEFAULT(InlineSmallCode, InlineSmallCode * 1.10);
+    }
+  }
+#endif
 
   CHECK_CPU_FEATURE(UseCLMUL, CLMUL, supports_clmul(), "CLMUL" MULTI_INST_WARNING_MSG);
   CHECK_CPU_FEATURE(UseAES, AES, supports_aes(), "AES" MULTI_INST_WARNING_MSG);
@@ -1794,7 +1802,12 @@ void VM_Version::get_processor_features() {
     }
 #ifdef COMPILER2
     if (FLAG_IS_DEFAULT(UseFPUForSpilling) && supports_sse4_2()) {
-      FLAG_SET_DEFAULT(UseFPUForSpilling, true);
+      // Spilling to FPU registers not beneficial on Haswell and beyond
+      if (UseAVX > 1) {
+        FLAG_SET_DEFAULT(UseFPUForSpilling, false);
+      } else {
+        FLAG_SET_DEFAULT(UseFPUForSpilling, true);
+      }
     }
 #endif
   }
@@ -3028,8 +3041,10 @@ VM_Version::VM_Features VM_Version::CpuidInfo::feature_flags() const {
       vm_features.set_feature(CPU_SERIALIZE);
     if (sef_cpuid7_edx.bits.hybrid != 0)
       vm_features.set_feature(CPU_HYBRID);
-    if (_cpuid_info.sef_cpuid7_edx.bits.avx512_fp16 != 0)
-      vm_features.set_feature(CPU_AVX512_FP16);
+  }
+
+  if (_cpuid_info.sef_cpuid7_edx.bits.avx512_fp16 != 0) {
+    vm_features.set_feature(CPU_AVX512_FP16);
   }
 
   // ZX additional features.

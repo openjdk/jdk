@@ -793,52 +793,6 @@ frame::frame(void* sp, void* fp, void* pc) {
 
 #endif
 
-// Check for a method with scalarized inline type arguments that needs
-// a stack repair and return the repaired sender stack pointer.
-intptr_t* frame::repair_sender_sp(intptr_t* sender_sp, intptr_t** saved_fp_addr) const {
-  nmethod* nm = _cb->as_nmethod_or_null();
-  if (nm != nullptr && nm->needs_stack_repair()) {
-    // The stack increment resides just below the saved FP on the stack and
-    // records the total frame size excluding the two words for saving FP and LR
-    // (see MacroAssembler::remove_frame).
-    intptr_t* sp_inc_addr = (intptr_t*) (saved_fp_addr - 1);
-    assert(*sp_inc_addr % StackAlignmentInBytes == 0, "sp_inc not aligned");
-    int real_frame_size = (*sp_inc_addr / wordSize) + metadata_words_at_bottom;
-    assert(real_frame_size >= _cb->frame_size() && real_frame_size <= 1000000, "invalid frame size");
-    sender_sp = unextended_sp() + real_frame_size;
-  }
-  return sender_sp;
-}
-
-// See comment in MacroAssembler::remove_frame
-frame::CompiledFramePointers frame::compiled_frame_details() const {
-  // we cannot rely upon the last fp having been saved to the thread
-  // in C2 code but it will have been pushed onto the stack. so we
-  // have to find it relative to the unextended sp
-
-  assert(_cb->frame_size() > 0, "must have non-zero frame size");
-
-  // if need stack repair: the bottom of the fake frame, under LR #2
-  // else the bottom of the frame
-  intptr_t* l_sender_sp = (!PreserveFramePointer || _sp_is_trusted)
-      ? unextended_sp() + _cb->frame_size()
-      : sender_sp();
-
-  assert(!_sp_is_trusted || l_sender_sp == real_fp(), "");
-
-  // the actual bottom of the frame. This actually changes something if the frame needs stack repair
-  l_sender_sp = repair_sender_sp(l_sender_sp, (intptr_t**)(l_sender_sp - frame::sender_sp_offset));
-
-  // From the sender's sp, we can locate the real saved lr (x30) and rfp (x29): they are
-  // immediately above, no matter if the stack was extended or not
-  CompiledFramePointers cfp;
-  cfp.sender_sp = l_sender_sp;
-  cfp.saved_fp_addr = (intptr_t**)(l_sender_sp - frame::sender_sp_offset);
-  cfp.sender_pc_addr = (address*)(l_sender_sp - frame::return_addr_offset);
-
-  return cfp;
-}
-
 intptr_t* frame::repair_sender_sp(nmethod* nm, intptr_t* sp, intptr_t** saved_fp_addr) {
   assert(nm != nullptr && nm->needs_stack_repair(), "");
   // The stack increment resides just below the saved FP on the stack and
@@ -851,8 +805,8 @@ intptr_t* frame::repair_sender_sp(nmethod* nm, intptr_t* sp, intptr_t** saved_fp
 }
 
 bool frame::was_augmented_on_entry(int& real_size) const {
-  assert(is_compiled_frame(), "");
-  if (_cb->as_nmethod_or_null()->needs_stack_repair()) {
+  assert(_cb != nullptr && _cb->is_nmethod(), "");
+  if (_cb->as_nmethod()->needs_stack_repair()) {
     // The stack increment resides just below the saved FP on the stack and
     // records the total frame size excluding the two words for saving FP and LR
     // (see MacroAssembler::remove_frame).

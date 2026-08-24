@@ -3418,6 +3418,11 @@ void LIRGenerator::substitutability_check(If* x, LIRItem& left, LIRItem& right) 
 void LIRGenerator::substitutability_check_common(Value left_val, Value right_val, LIRItem& left, LIRItem& right,
                                                  LIR_Opr equal_result, LIR_Opr not_equal_result, LIR_Opr result,
                                                  CodeEmitInfo* info) {
+  if (left.result() == right.result()) {
+    __ move(equal_result, result);
+    return;
+  }
+
   LIR_Opr tmp1 = LIR_OprFact::illegalOpr;
   LIR_Opr tmp2 = LIR_OprFact::illegalOpr;
 
