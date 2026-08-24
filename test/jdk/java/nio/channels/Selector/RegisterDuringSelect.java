@@ -30,7 +30,7 @@
  */
 
 /* @test
- * @requires (os.family == "aix")
+ * @requires (os.family != "windows")
  * @build SelectorUtils
  * @run main/othervm -Djava.nio.channels.spi.SelectorProvider=sun.nio.ch.PollSelectorProvider RegisterDuringSelect
  */

@@ -33,7 +33,7 @@
  */
 
 /* @test
- * @requires (os.family == "aix")
+ * @requires (os.family != "windows")
  * @run junit/othervm -Djava.nio.channels.spi.SelectorProvider=sun.nio.ch.PollSelectorProvider SelectWithConsumer
  */
 

@@ -28,7 +28,7 @@
  */
 
 /* @test
- * @requires (os.family == "aix")
+ * @requires (os.family != "windows")
  * @library .. /test/lib
  * @run main/othervm -Djava.nio.channels.spi.SelectorProvider=sun.nio.ch.PollSelectorProvider Wakeup
  */
