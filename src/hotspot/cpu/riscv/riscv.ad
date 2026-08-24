@@ -2711,16 +2711,6 @@ operand immI_31()
   interface(CONST_INTER);
 %}
 
-operand immI_31bits()
-%{
-  predicate(n->get_int() == 0x7fffffff);
-  match(ConI);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
 operand immI_63()
 %{
   predicate(n->get_int() == 63);
@@ -2847,10 +2837,32 @@ operand immIpowerOf2() %{
   interface(CONST_INTER);
 %}
 
+// Int immediate: a mask of contiguous low-order ones which is too wide to be
+// encoded as a 12-bit immediate for andi, e.g. 0xfff, 0xffff, 0x7fffffff
+operand immI_bitmask() %{
+  predicate(is_power_of_2((juint)n->get_int() + 1) &&
+            !Assembler::is_simm12((int64_t)n->get_int()));
+  match(ConI);
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 // Long Immediate: low 32-bit mask
 operand immL_32bits()
 %{
   predicate(n->get_long() == 0xFFFFFFFFL);
+  match(ConL);
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Long immediate: a mask of contiguous low-order ones which is too wide to be
+// encoded as a 12-bit immediate for andi, e.g. 0xfff, 0xffffffff, 0x7fffffffffffffff
+operand immL_bitmask() %{
+  predicate(is_power_of_2((julong)n->get_long() + 1) &&
+            !Assembler::is_simm12(n->get_long()));
   match(ConL);
   op_cost(0);
   format %{ %}
@@ -7949,20 +7961,21 @@ instruct andI_reg_reg(iRegINoSp dst, iRegI src1, iRegI src2) %{
   ins_pipe(ialu_reg_reg);
 %}
 
-// Clear the sign bit of an int. This pattern is used by, for example,
-// LibraryCallKit::inline_native_hashcode
-instruct andI_31bits(iRegINoSp dst, iRegIorL2I src1, immI_31bits mask) %{
+// And with a mask of contiguous low-order ones which cannot be encoded as
+// a 12-bit immediate. This is cheaper than materializing the mask into a
+// register: it is implemented as a zero-extension with a pair of shifts, or
+// a single zext.h/zext.w instruction when Zbb/Zba is available. This pattern
+// is used by, for example, LibraryCallKit::inline_native_hashcode with
+// mask 0x7fffffff.
+instruct andI_bitmask(iRegINoSp dst, iRegIorL2I src1, immI_bitmask mask) %{
   match(Set dst (AndI src1 mask));
 
   ins_cost(ALU_COST * 2);
-  format %{
-    "slli  $dst, $src1, 33\n\t"
-    "srli  $dst, $dst, 33\t#@andI_31bits"
-  %}
+  format %{ "zext  $dst, $src1, trailing_ones($mask)\t#@andI_bitmask" %}
 
   ins_encode %{
-    __ slli(as_Register($dst$$reg), as_Register($src1$$reg), 33);
-    __ srli(as_Register($dst$$reg), as_Register($dst$$reg),  33);
+    __ zext(as_Register($dst$$reg), as_Register($src1$$reg),
+            log2i_exact((juint)$mask$$constant + 1));
   %}
 
   ins_pipe(ialu_reg_shift);
@@ -8078,6 +8091,22 @@ instruct andL_reg_imm(iRegLNoSp dst, iRegL src1, immLAdd src2) %{
   %}
 
   ins_pipe(ialu_reg_imm);
+%}
+
+// And with a mask of contiguous low-order ones which cannot be encoded as
+// a 12-bit immediate, see andI_bitmask above.
+instruct andL_bitmask(iRegLNoSp dst, iRegL src1, immL_bitmask mask) %{
+  match(Set dst (AndL src1 mask));
+
+  ins_cost(ALU_COST * 2);
+  format %{ "zext  $dst, $src1, trailing_ones($mask)\t#@andL_bitmask" %}
+
+  ins_encode %{
+    __ zext(as_Register($dst$$reg), as_Register($src1$$reg),
+            log2i_exact((julong)$mask$$constant + 1));
+  %}
+
+  ins_pipe(ialu_reg_shift);
 %}
 
 // Register Or Long
