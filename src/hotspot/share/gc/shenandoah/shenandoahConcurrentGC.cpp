@@ -678,7 +678,7 @@ void ShenandoahConcurrentGC::entry_reset_after_collect() {
 
 void ShenandoahConcurrentGC::update_phase(ShenandoahController::ShenandoahCollectorPhase phase) const {
   if (_controller != nullptr) {
-    update_phase(phase);
+    _controller->set_phase(phase);
   }
 }
 
