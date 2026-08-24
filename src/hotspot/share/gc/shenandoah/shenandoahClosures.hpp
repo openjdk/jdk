@@ -71,7 +71,7 @@ private:
   bool _weak;
 
 protected:
-  template <class T, ShenandoahGenerationType GENERATION, bool REDIRTY=false>
+  template <class T, ShenandoahGenerationType GENERATION, bool REDIRTY = false>
   void work(T *p);
 
 public:
