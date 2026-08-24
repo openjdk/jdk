@@ -60,8 +60,7 @@ public final class JsonParseException extends RuntimeException {
      *         {@code '\n'} (linefeed, {@code U+000A}) characters. Non-negative.
      * @param pos the zero-based position of the error within the line, counted
      *         in UTF-16 code units. Non-negative.
-     * @throws IllegalArgumentException if either {@code line} or {@code pos} are
-     *      negative
+     * @throws IllegalArgumentException if {@code line} or {@code pos} are negative
      */
     public JsonParseException(String message, int line, int pos) {
         super(message);
