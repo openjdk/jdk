@@ -220,7 +220,7 @@ class Options {
        /* eliminate_boxing = */ false,
        /* do_lock_coarsening = */ false,
        /* do_superword = */ true,
-       /* do_stringopts = */ true,
+       /* do_stringopts = */ false,
        /* install_code = */ true
     );
   }
