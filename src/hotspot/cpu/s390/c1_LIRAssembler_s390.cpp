@@ -3058,7 +3058,45 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
 }
 
 void LIR_Assembler::emit_profile_multiple_array_types(LIR_OpProfileMultipleArrayTypes* op) {
-  Unimplemented();
+  Register array = op->array()->as_pointer_register();
+  Register tmp1 = op->tmp1()->as_pointer_register();
+  Register tmp2 = op->tmp2()->as_pointer_register();
+  ciMethodData* md = op->md();
+
+  Label not_flat, done;
+  __ test_non_flat_array_oop(array, tmp1, not_flat);
+
+  Register klass = tmp1;
+  __ load_klass(klass, array);
+
+  Register mdo = tmp2;
+  metadata2reg(md->constant_encoding(), mdo);
+
+  int mdp_offset = md->byte_offset_of_slot(op->load(), in_ByteSize(0));
+  __ profile_array_type_at_load(klass, mdo, mdp_offset, array);
+
+  __ z_bru(done);
+  __ bind(not_flat);
+  metadata2reg(md->constant_encoding(), mdo);
+
+  Label null_free;
+
+  __ test_null_free_array_oop(array, tmp1, null_free);
+
+  {
+    Address counter_addr(mdo, md->byte_offset_of_slot(op->load(), ArrayLoadData::not_flat_nullable_count_offset()));
+    __ add2mem_64(counter_addr, DataLayout::counter_increment, tmp1);
+  }
+
+  __ z_bru(done);
+  __ bind(null_free);
+
+  {
+    Address counter_addr(mdo, md->byte_offset_of_slot(op->load(), ArrayLoadData::not_flat_null_free_count_offset()));
+    __ add2mem_64(counter_addr, DataLayout::counter_increment, tmp1);
+  }
+
+  __ bind(done);
 }
 
 void LIR_Assembler::emit_profile_inline_type(LIR_OpProfileInlineType* op) {
