@@ -3085,14 +3085,7 @@ void LinearScan::do_linear_scan() {
   allocate_registers();
   CHECK_BAILOUT();
 
-  NOT_PRODUCT(print_lir(1, "After allocate_registers"));
-  NOT_PRODUCT(print_intervals("After allocate_registers"));
-
   resolve_data_flow();
-
-  NOT_PRODUCT(print_lir(1, "After resolve_data_flow"));
-  NOT_PRODUCT(print_intervals("After resolve_data_flow"));
-
   if (compilation()->has_exception_handlers()) {
     resolve_exception_handlers();
   }
@@ -4307,7 +4300,7 @@ Interval* Interval::split_child_at_op_id(int op_id, LIR_OpVisitState::OprMode mo
   }
 
   assert(result != nullptr, "no matching interval found");
-  assert(result->covers(op_id, mode), "op_id %d not covered by interval %d", op_id, result->reg_num());
+  assert(result->covers(op_id, mode), "op_id not covered by interval");
 
   return result;
 }
