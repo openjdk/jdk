@@ -71,7 +71,7 @@ class LockerThread : public JavaTestThread {
     // state we have...
     ObjectLocker ol(h_obj, THREAD);
     ol.notify_all(THREAD);
-    assert_test_pattern(h_obj, "monitor");
+    assert_test_pattern(h_obj, "has_monitor");
   }
 };
 
@@ -91,7 +91,7 @@ TEST_VM(markWord, printing) {
   // Thread tries to lock it.
   {
     ObjectLocker ol(h_obj, THREAD);
-    assert_mark_word_print_pattern(h_obj, "locked");
+    assert_mark_word_print_pattern(h_obj, "is_locked");
   }
   assert_mark_word_print_pattern(h_obj, "is_unlocked no_hash");
 
@@ -109,7 +109,7 @@ TEST_VM(markWord, printing) {
     st->doit();
 
     ol.wait_uninterruptibly(THREAD);
-    assert_test_pattern(h_obj, "monitor");
+    assert_test_pattern(h_obj, "has_monitor");
     done.wait_with_safepoint_check(THREAD);  // wait till the thread is done.
   }
 }
