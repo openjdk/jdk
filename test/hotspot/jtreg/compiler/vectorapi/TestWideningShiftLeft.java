@@ -121,10 +121,10 @@ public class TestWideningShiftLeft {
         }
     }
 
-    // vwsll.vi masks byte-to-short shifts to four bits, while Java masks them
-    // to five bits before narrowing. A shift of 16 must therefore not use it.
+    // ShortVector shift counts use the destination element width, so 16
+    // wraps to zero and is a valid vwsll.b2s.vi immediate.
     @Test
-    @IR(failOn = {IRNode.RISCV_VWSLL_B2S_VI}, applyIfCPUFeature = {"zvbb", "true"})
+    @IR(counts = {IRNode.RISCV_VWSLL_B2S_VI, "1"}, applyIfCPUFeature = {"zvbb", "true"})
     public static ShortVector testByteToShortShift16() {
         ByteVector src = ByteVector.fromArray(ByteVector.SPECIES_64, BYTES, 0);
         return ((ShortVector) src.convertShape(VectorOperators.ZERO_EXTEND_B2S,
@@ -135,7 +135,8 @@ public class TestWideningShiftLeft {
     public static void runByteToShortShift16() {
         ShortVector result = testByteToShortShift16();
         for (int i = 0; i < result.length(); i++) {
-            if (result.lane(i) != 0) {
+            short expected = (short) (BYTES[i] & 0xff);
+            if (result.lane(i) != expected) {
                 throw new RuntimeException("byte-to-short shift-16 mismatch at lane " + i);
             }
         }
