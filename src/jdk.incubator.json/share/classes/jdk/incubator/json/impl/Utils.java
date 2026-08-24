@@ -49,8 +49,6 @@ public class Utils {
     /*
      * Escapes a String to ensure it is a valid JSON String.
      * Backslash, double quote, and control chars are escaped.
-     * Providing this method in Utils allows for a bypass of `JsonString.of(str).value()`
-     * for the toString representation of JsonObject member names.
      */
     public static String escape(String str) {
         StringBuilder sb = null; // Lazy init
