@@ -624,6 +624,8 @@ jdk/jfr/event/oldobject/TestZ.java                              8375615 generic-
 
 # jdk_internal
 
+jdk/internal/platform/docker/TestLimitsUpdating.java 8390823 linux-all
+
 ############################################################################
 
 # jdk_jpackage

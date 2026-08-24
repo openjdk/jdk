@@ -112,6 +112,8 @@ runtime/Thread/TestAlwaysPreTouchStacks.java 8383372 macosx-aarch64
 applications/jcstress/copy.java 8229852 linux-all
 
 containers/docker/TestJFREvents.java 8327723 linux-x64
+containers/docker/TestLimitsUpdating.java 8390823 linux-all
+containers/docker/ShareTmpDir.java 8390823 linux-all
 
 #############################################################################
 
