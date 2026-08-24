@@ -775,17 +775,22 @@ void Parse::array_store(BasicType bt) {
             // Element type is known, cast and store to flat array layout.
             Node* flat_array = cast_to_flat_array(array, vk);
 
-            // Re-execute flat array store if buffering triggers deoptimization
-            PreserveReexecuteState preexecs(this);
-            jvms()->set_should_reexecute(true);
-            inc_sp(3);
+            // It may be the case that array is only known to be not flat when we try to cast it to
+            // a flat array. For example, array is a not-null-free array and vk does not have a
+            // nullable layout.
+            if (!flat_array->is_top()) {
+              // Re-execute flat array store if buffering triggers deoptimization
+              PreserveReexecuteState preexecs(this);
+              jvms()->set_should_reexecute(true);
+              inc_sp(3);
 
-            if (!stored_value_casted->is_InlineType()) {
-              assert(_gvn.type(stored_value_casted) == TypePtr::NULL_PTR, "Unexpected value");
-              stored_value_casted = InlineTypeNode::make_null(_gvn, vk);
+              if (!stored_value_casted->is_InlineType()) {
+                assert(_gvn.type(stored_value_casted) == TypePtr::NULL_PTR, "Unexpected value");
+                stored_value_casted = InlineTypeNode::make_null(_gvn, vk);
+              }
+
+              stored_value_casted->as_InlineType()->store_flat_array(this, flat_array, array_index);
             }
-
-            stored_value_casted->as_InlineType()->store_flat_array(this, flat_array, array_index);
           } else {
             // Element type is unknown, emit a runtime call since the flat array layout is not statically known.
             store_to_unknown_flat_array(array, array_index, stored_value_casted);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Vector;
-
 
 /**
  * This class helps to print test-execution trace messages.
@@ -209,19 +208,6 @@ public class Log {
     @Deprecated
     public synchronized void println(String message) {
         doPrint(message);
-    }
-
-    /**
-     * Print <code>message</code> to the assigned output stream,
-     * if log mode is <i>non</i>-verbose.
-     *
-     * @deprecated  Test ought to be quiet if log mode is non-verbose
-     *              and there is no errors found by the test. Methods
-     *              <code>display()</code> and <code>complain()</code>
-     *              are enough for testing purposes.
-     */
-    @Deprecated
-    public synchronized void comment(String message) {
     }
 
     /**
