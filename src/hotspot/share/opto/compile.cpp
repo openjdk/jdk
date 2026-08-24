@@ -3948,6 +3948,10 @@ void Compile::final_graph_reshaping_impl(Node *n, Final_Reshape_Counts& frc, Uni
   if ( n->outcnt() == 0 ) return; // dead node
   uint nop = n->Opcode();
 
+  if (EliminateDoubledIndex) {
+    eliminate_doubled_index(n, dead_nodes);
+  }
+
   // Check for 2-input instruction with "last use" on right input.
   // Swap to left input.  Implements item (2).
   if( n->req() == 3 &&          // two-input instruction
@@ -6257,3 +6261,48 @@ Node* Compile::make_debug_print_call(const char* str, address call_addr, PhaseGV
   return call;
 }
 #endif // !PRODUCT
+
+//  Replace Phi and SafePoint debug inputs:
+//
+//  1. n->in(i) : Phi(CountedLoop, _, incr=AddI(self, ConI(stride)))
+//                => AddI(incr, ConI(-stride))
+//  2. n->in(i) : AddI(Phi(CountedLoop, _, incr=AddI(self, ConI(stride))), ConI(k))
+//                => AddI(incr, ConI(k - stride))
+//
+//  to avoid doubled index:
+//    for (int i=init, prev=init-stride; ; ) { use(prev); prev=i; i += stride; }
+//  =>
+//    for (int i=init; ; ) { use(i-stride); i += stride; }
+//
+void Compile::eliminate_doubled_index(Node* n, Unique_Node_List& dead_nodes) {
+  uint start = 0, end = 0;
+  if (n->is_Phi()) {
+    start = 1;
+    end = n->req();
+  } else if (n->is_SafePoint()) {
+    JVMState* jvms = n->as_SafePoint()->jvms();
+    if (jvms == nullptr) { return; }
+    start = jvms->debug_start();
+    end = jvms->debug_end();
+  }
+  for (uint i = start; i < end; i++) {
+    Node* in = n->in(i);
+    if (in == nullptr) { continue; }
+    if (in->is_Phi() ||
+        (in->Opcode() == Op_AddI && in->in(1)->is_Phi() && in->in(2)->is_Con())) {
+      Node* phi = in->is_Phi() ? in : in->in(1);
+      if (phi->req() == 3 && phi->in(0)->is_CountedLoop()) {
+        Node* incr = phi->in(2);
+        if (incr->Opcode() == Op_AddI && incr->in(1) == phi &&
+            incr->in(2)->is_Con() && incr->outcnt() >= 2) {
+          jint add_offset = in->is_Phi() ? 0 : in->in(2)->get_int();
+          jint delta = java_subtract(add_offset, incr->in(2)->get_int());
+          if (delta != 0 || in != incr) {
+            n->set_req(i, delta != 0 ? new AddINode(incr, ConINode::make(delta)) : incr);
+            dead_nodes.push(in);
+          }
+        }
+      }
+    }
+  }
+}

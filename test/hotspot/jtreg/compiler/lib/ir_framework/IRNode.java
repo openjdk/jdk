@@ -1797,6 +1797,11 @@ public class IRNode {
         beforeMatchingNameRegex(PHI, "Phi");
     }
 
+    public static final String PHI_INPUT_SPILL_COPY = PREFIX + "PHI_INPUT_SPILL_COPY" + POSTFIX;
+    static {
+        machOnlyNameRegex(PHI_INPUT_SPILL_COPY, "PhiInputSpillCopy");
+    }
+
     public static final String POPCOUNT_I = PREFIX + "POPCOUNT_I" + POSTFIX;
     static {
         beforeMatchingNameRegex(POPCOUNT_I, "PopCountI");
