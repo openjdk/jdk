@@ -1269,9 +1269,9 @@ void MacroAssembler::wrap_label(Register r1, Register r2, Label &L,
 // cmov_zicond_eqz: dst = (cond == 0) ? src : dst
 void MacroAssembler::cmov_zicond_eqz(Register dst, Register src, Register cond, Register tmp) {
   assert(UseZicond, "UseZicond must be enabled");
+  assert_different_registers(dst, src, cond);
   czero_eqz(dst, dst, cond);
   if (src != zr) {
-    assert_different_registers(dst, src, cond);
     czero_nez(tmp, src, cond);
     add(dst, dst, tmp);
   }
@@ -1280,9 +1280,9 @@ void MacroAssembler::cmov_zicond_eqz(Register dst, Register src, Register cond, 
 // cmov_zicond_nez: dst = (cond != 0) ? src : dst
 void MacroAssembler::cmov_zicond_nez(Register dst, Register src, Register cond, Register tmp) {
   assert(UseZicond, "UseZicond must be enabled");
+  assert_different_registers(dst, src, cond);
   czero_nez(dst, dst, cond);
   if (src != zr) {
-    assert_different_registers(dst, src, cond);
     czero_eqz(tmp, src, cond);
     add(dst, dst, tmp);
   }
