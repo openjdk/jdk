@@ -29,9 +29,7 @@
 import java.lang.foreign.*;
 
 import java.lang.invoke.VarHandle;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Spliterator;
+import java.util.*;
 import java.util.concurrent.CountedCompleter;
 import java.util.concurrent.RecursiveTask;
 import java.util.concurrent.atomic.AtomicLong;
@@ -147,13 +145,19 @@ public class TestSpliterator {
                 .elements(MemoryLayout.sequenceLayout(0, ValueLayout.JAVA_INT));
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testHyperAligned() {
         Arena scope = Arena.ofAuto();
         MemorySegment segment = scope.allocate(8, 1);
         // compute an alignment constraint (in bytes) which exceed that of the native segment
         long bigByteAlign = Long.lowestOneBit(segment.address()) << 1;
-        segment.elements(MemoryLayout.sequenceLayout(2, ValueLayout.JAVA_INT.withByteAlignment(bigByteAlign)));
+        MemoryLayout elementLayout = MemoryLayout.structLayout(
+                Collections.nCopies(Math.toIntExact(bigByteAlign), ValueLayout.JAVA_BYTE).toArray(MemoryLayout[]::new))
+                .withByteAlignment(bigByteAlign);
+        SequenceLayout layout = MemoryLayout.sequenceLayout(2, elementLayout);
+        IllegalArgumentException iae = expectThrows(IllegalArgumentException.class,
+                () -> segment.elements(layout));
+        assertEquals(iae.getMessage(), "Incompatible alignment constraints");
     }
 
     static long sumSingle(long acc, MemorySegment segment) {
