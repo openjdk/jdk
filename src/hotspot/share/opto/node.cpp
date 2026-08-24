@@ -33,6 +33,7 @@
 #include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/connode.hpp"
+#include "opto/inlinetypenode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/machnode.hpp"
 #include "opto/matcher.hpp"
@@ -575,6 +576,12 @@ Node *Node::clone() const {
     n->as_SafePoint()->clone_jvms(C);
     n->as_SafePoint()->clone_replaced_nodes();
   }
+  if (n->is_InlineType()) {
+    C->add_inline_type(n);
+  }
+  if (n->is_LoadFlat() || n->is_StoreFlat()) {
+    C->add_flat_access(n);
+  }
   Compile::current()->record_modified_node(n);
   return n;                     // Return the clone
 }
@@ -637,6 +644,9 @@ void Node::destruct(PhaseValues* phase) {
   }
   if (for_post_loop_opts_igvn()) {
     compile->remove_from_post_loop_opts_igvn(this);
+  }
+  if (is_InlineType()) {
+    compile->remove_inline_type(this);
   }
   if (for_merge_stores_igvn()) {
     compile->remove_from_merge_stores_igvn(this);
@@ -2882,7 +2892,7 @@ bool Node::is_iteratively_computed() {
 //--------------------------find_similar------------------------------
 // Return a node with opcode "opc" and same inputs as "this" if one can
 // be found; Otherwise return null;
-Node* Node::find_similar(int opc) {
+Node* Node::find_similar(int opc, bool is_commutative) {
   if (req() >= 2) {
     Node* def = in(1);
     if (def && def->outcnt() >= 2) {
@@ -2890,9 +2900,26 @@ Node* Node::find_similar(int opc) {
         Node* use = def->fast_out(i);
         if (use != this &&
             use->Opcode() == opc &&
-            use->req() == req() &&
-            has_same_inputs_as(use)) {
-          return use;
+            use->req() == req()) {
+          bool same = false;
+          if (!is_commutative || req() < 3) {
+            same = use->has_same_inputs_as(this);
+          } else {
+            if (use->in(0) == in(0) &&
+                ((use->in(1) == in(1) && use->in(2) == in(2)) ||
+                 (use->in(1) == in(2) && use->in(2) == in(1)))) {
+              same = true;
+              for (uint j = 3; j < req(); j++) {
+                if (use->in(j) != in(j)) {
+                  same = false;
+                  break;
+                }
+              }
+            }
+          }
+          if (same) {
+            return use;
+          }
         }
       }
     }
@@ -2999,6 +3026,27 @@ bool Node::is_div_or_mod(BasicType bt) const { return Opcode() == Op_Div(bt) || 
 // the local in the caller.
 bool Node::is_data_proj_of_pure_function(const Node* maybe_pure_function) const {
   return Opcode() == Op_Proj && as_Proj()->_con == TypeFunc::Parms && maybe_pure_function->is_CallLeafPure();
+}
+
+// Whether this is an intrinsic node that accesses memory and has a memory input, such as array
+// equal intrinsic. Some nodes do access memory but do not have a memory input, such as
+// PartialSubTypeCheck, they are not included here.
+bool Node::is_memory_access_intrinsic() const {
+  switch (Opcode()) {
+    case Op_StrComp:
+    case Op_StrEquals:
+    case Op_StrIndexOf:
+    case Op_StrIndexOfChar:
+    case Op_StrCompressedCopy:
+    case Op_StrInflatedCopy:
+    case Op_AryEq:
+    case Op_CountPositives:
+    case Op_VectorizedHashCode:
+    case Op_EncodeISOArray:
+      return true;
+    default:
+      return false;
+  }
 }
 
 //--------------------------has_non_debug_uses------------------------------

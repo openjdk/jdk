@@ -125,12 +125,13 @@ ReservedSpace MemoryReserver::reserve_memory_special(char* requested_address,
                                                      size_t size,
                                                      size_t alignment,
                                                      size_t page_size,
-                                                     bool exec) {
+                                                     bool exec,
+                                                     MemTag mem_tag) {
   log_trace(pagesize)("Attempt special mapping: size: " EXACTFMT ", alignment: " EXACTFMT,
                       EXACTFMTARGS(size),
                       EXACTFMTARGS(alignment));
 
-  char* base = os::reserve_memory_special(size, alignment, page_size, requested_address, exec);
+  char* base = os::reserve_memory_special(size, alignment, page_size, requested_address, mem_tag, exec);
 
   if (base != nullptr) {
     assert(is_aligned(base, alignment),
@@ -172,7 +173,7 @@ ReservedSpace MemoryReserver::reserve(char* requested_address,
     // explicit large pages and these have to be committed up front to ensure
     // no reservations are lost.
     do {
-      ReservedSpace reserved = reserve_memory_special(requested_address, size, alignment, page_size, executable);
+      ReservedSpace reserved = reserve_memory_special(requested_address, size, alignment, page_size, executable, mem_tag);
       if (reserved.is_reserved()) {
         // Successful reservation using large pages.
         return reserved;
@@ -470,10 +471,13 @@ static char** get_attach_addresses_for_disjoint_mode() {
   }
   uint start = i;
 
-  // Avoid more steps than requested.
+  // Avoid more steps than requested, and avoid expanding the page table
+  // by over-eager probing.
   i = 0;
   while (addresses[start+i] != 0) {
-    if (i == HeapSearchSteps) {
+    if (i == HeapSearchSteps ||
+       (addresses[start+i] >= os::vm_page_table_expansion_point()))
+    {
       addresses[start+i] = 0;
       break;
     }

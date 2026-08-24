@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,29 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * Class {@code Object} is the root of the class hierarchy.
  * Every class has {@code Object} as a superclass. All objects,
  * including arrays, implement the methods of this class.
+ *
+ * <div class="preview-block">
+ *      <div class="preview-comment">
+ *          When preview features are enabled, subclasses of {@code java.lang.Object}
+ *          are either {@linkplain Class#isValue value classes} or identity classes.
+ *          A <em>value object</em> is an instance of a non-abstract value class. All
+ *          other objects, including arrays, are <em>identity objects</em>. See
+ *          The Java Language Specification {@jls value-objects-8.1.1.5 Value Classes}.
+ *          <p>
+ *          When preview features are disabled, all classes are identity classes and
+ *          all objects are identity objects.
+ *          <p>
+ *          It is not possible to synchronize on a value object. An attempt to {@code
+ *          synchronize} on a value object causes {@link IdentityException} to be thrown.
+ *          <p>
+ *          The {@link #finalize()} method of a value class will never be invoked by
+ *          the garbage collector.
+ *          <p>
+ *          A {@linkplain java.lang.ref.Reference Reference object} can only refer to an
+ *          object with identity. Creating a reference object with a value object as
+ *          the referent throws {@code IdentityException}.
+ *      </div>
+ * </div>
  *
  * @see     java.lang.Class
  * @since   1.0
@@ -147,10 +170,11 @@ public class Object {
      * the most discriminating possible equivalence relation on objects;
      * that is, for any non-null reference values {@code x} and
      * {@code y}, this method returns {@code true} if and only
-     * if {@code x} and {@code y} refer to the same object
-     * ({@code x == y} has the value {@code true}).
-     *
-     * In other words, under the reference equality equivalence
+     * if {@code x} and {@code y} refer to the same identity object or
+     * <a id=equalsIndistinguishable>indistinguishable value objects ({@code x == y} has the value
+     * {@code true})</a>.
+     * <p>
+     * In other words, under the object equality equivalence
      * relation, each equivalence class only has a single element.
      *
      * @apiNote
@@ -183,17 +207,20 @@ public class Object {
      * <blockquote>
      * <pre>
      * x.clone().getClass() == x.getClass()</pre></blockquote>
-     * will be {@code true}, but these are not absolute requirements.
+     * will also be {@code true}, but these are not absolute requirements.
+     * The clone of a value object, in particular, may be indistinguishable from
+     * the original.
+     * <p>
      * While it is typically the case that:
      * <blockquote>
      * <pre>
      * x.clone().equals(x)</pre></blockquote>
      * will be {@code true}, this is not an absolute requirement.
      * <p>
-     * By convention, the returned object should be obtained by calling
-     * {@code super.clone}.  If a class and all of its superclasses (except
-     * {@code Object}) obey this convention, it will be the case that
-     * {@code x.clone().getClass() == x.getClass()}.
+     * By convention, the {@code clone} method of an identity class should return an
+     * object obtained by calling {@code super.clone}. If a class and all of its
+     * superclasses (except {@code Object}) obey this convention, it will be the
+     * case that {@code x.clone().getClass() == x.getClass()}.
      * <p>
      * By convention, the object returned by this method should be independent
      * of this object (which is being cloned).  To achieve this independence,
@@ -205,6 +232,16 @@ public class Object {
      * primitive fields or references to immutable objects, then it is usually
      * the case that no fields in the object returned by {@code super.clone}
      * need to be modified.
+     * <p>
+     * Value classes may similarly perform deep copies of any mutable field
+     * values before constructing a new class instance with those copies.
+     *
+     * @apiNote
+     * It should be rare for new classes to implement the {@link Cloneable} interface.
+     * Copy constructors and static factory methods provide a more explicit and flexible
+     * means of creating copies, allowing classes to define and document their copying
+     * semantics without the constraints imposed by {@code Cloneable} interface and
+     * the {@code clone} method.
      *
      * @implSpec
      * The method {@code clone} for class {@code Object} performs a
@@ -214,11 +251,15 @@ public class Object {
      * are considered to implement the interface {@code Cloneable} and that
      * the return type of the {@code clone} method of an array type {@code T[]}
      * is {@code T[]} where T is any reference or primitive type.
-     * Otherwise, this method creates a new instance of the class of this
-     * object and initializes all its fields with exactly the contents of
+     * <p>
+     * For an identity object, this method creates a new instance of the class of
+     * this object and initializes all its fields with exactly the contents of
      * the corresponding fields of this object, as if by assignment; the
      * contents of the fields are not themselves cloned. Thus, this method
      * performs a "shallow copy" of this object, not a "deep copy" operation.
+     * <p>
+     * For a value object, this method returns an object that is indistinguishable
+     * from this object.
      * <p>
      * The class {@code Object} does not itself implement the interface
      * {@code Cloneable}, so calling the {@code clone} method on an object
@@ -297,6 +338,14 @@ public class Object {
      * </ul>
      * <p>
      * Only one thread at a time can own an object's monitor.
+     * <div class="preview-block">
+     *      <div class="preview-comment">
+     *          The {@code notify} method requires that the current thread be the owner
+     *          of the object's monitor. Since it is not possible to synchronize on a
+     *          value object, an attempt to call this method on a value object will
+     *          always fail with {@code IllegalMonitorStateException}.
+     *      </div>
+     * </div>
      *
      * @throws  IllegalMonitorStateException  if the current thread is not
      *               the owner of this object's monitor.
@@ -323,6 +372,15 @@ public class Object {
      * description of the ways in which a thread can become the owner of
      * a monitor.
      *
+     * <div class="preview-block">
+     *      <div class="preview-comment">
+     *          The {@code notifyAll} method requires that the current thread be the owner
+     *          of the object's monitor. Since it is not possible to synchronize on a
+     *          value object, an attempt to call this method on a value object will
+     *          always fail with {@code IllegalMonitorStateException}.
+     *      </div>
+     * </div>
+     *
      * @throws  IllegalMonitorStateException  if the current thread is not
      *               the owner of this object's monitor.
      * @see        java.lang.Object#notify()
@@ -338,6 +396,15 @@ public class Object {
      * In all respects, this method behaves as if {@code wait(0L, 0)}
      * had been called. See the specification of the {@link #wait(long, int)} method
      * for details.
+     *
+     * <div class="preview-block">
+     *      <div class="preview-comment">
+     *          The {@code wait} method requires that the current thread be the owner
+     *          of the object's monitor. Since it is not possible to synchronize on a
+     *          value object, an attempt to call this method on a value object will
+     *          always fail with {@code IllegalMonitorStateException}.
+     *      </div>
+     * </div>
      *
      * @throws IllegalMonitorStateException if the current thread is not
      *         the owner of the object's monitor
@@ -361,6 +428,15 @@ public class Object {
      * In all respects, this method behaves as if {@code wait(timeoutMillis, 0)}
      * had been called. See the specification of the {@link #wait(long, int)} method
      * for details.
+     *
+     * <div class="preview-block">
+     *      <div class="preview-comment">
+     *          The {@code wait} method requires that the current thread be the owner
+     *          of the object's monitor. Since it is not possible to synchronize on a
+     *          value object, an attempt to call this method on a value object will
+     *          always fail with {@code IllegalMonitorStateException}.
+     *      </div>
+     * </div>
      *
      * @param  timeoutMillis the maximum time to wait, in milliseconds
      * @throws IllegalArgumentException if {@code timeoutMillis} is negative
@@ -458,6 +534,15 @@ public class Object {
      * this exception is thrown. This exception is not thrown until the lock status of
      * this object has been restored as described above.
      *
+     * <div class="preview-block">
+     *      <div class="preview-comment">
+     *          The {@code wait} method requires that the current thread be the owner
+     *          of the object's monitor. Since it is not possible to synchronize on a
+     *          value object, an attempt to call this method on a value object will
+     *          always fail with {@code IllegalMonitorStateException}.
+     *      </div>
+     * </div>
+     *
      * @apiNote
      * The recommended approach to waiting is to check the condition being awaited in
      * a {@code while} loop around the call to {@code wait}, as shown in the example
@@ -507,14 +592,24 @@ public class Object {
     }
 
     /**
-     * Called by the garbage collector on an object when garbage collection
+     * Called by the garbage collector on an identity object when garbage collection
      * determines that there are no more references to the object.
-     * A subclass overrides the {@code finalize} method to dispose of
+     * An identity class may override the {@code finalize} method to dispose of
      * system resources or to perform other cleanup.
+     * <div class="preview-block">
+     *      <div class="preview-comment">
+     *          The {@code finalize} method of a value class is never directly
+     *          invoked by the garbage collector. This includes the case where an
+     *          abstract value class declares a {@code finalize} method and the
+     *          class is extended by an identity class; the garbage collector never
+     *          directly invokes the {@code finalize} method declared by the
+     *          abstract value class.
+     *      </div>
+     * </div>
      * <p>
      * <b>When running in a Java virtual machine in which finalization has been
-     * disabled or removed, the garbage collector will never call
-     * {@code finalize()}. In a Java virtual machine in which finalization is
+     * disabled or removed, the garbage collector will never call {@code finalize()}
+     * for any object. In a Java virtual machine in which finalization is
      * enabled, the garbage collector might call {@code finalize} only after an
      * indefinite delay.</b>
      * <p>

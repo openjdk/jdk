@@ -439,7 +439,8 @@ protected:
     decl(AVX512_FP16,       avx512_fp16       ) /* AVX512 FP16 ISA support*/ \
     decl(AVX10_1,           avx10_1           ) /* AVX10 512 bit vector ISA Version 1 support*/ \
     decl(AVX10_2,           avx10_2           ) /* AVX10 512 bit vector ISA Version 2 support*/ \
-    decl(HYBRID,            hybrid            ) /* Hybrid architecture */
+    decl(HYBRID,            hybrid            ) /* Hybrid architecture */ \
+    decl(FAST_BMI2,         fast_bmi2         ) /* Native Hardware support for PEXT/PDEP BMI2 instructions */
 
 #define DECLARE_CPU_FEATURE_FLAG(id, name) CPU_##id,
     CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_FLAG)
@@ -683,6 +684,11 @@ protected:
     uint32_t          apx_xstate_size;          // EAX: size of APX state (128)
     uint32_t          apx_xstate_offset;        // EBX: offset in standard XSAVE area
 
+    // cpuid function 0xD, subleaf 5, 6 and 7 (AVX-512 extended state)
+    uint32_t          opmask_xstate_offset;          // EBX: offset of Opmask component
+    uint32_t          zmm0to15_hi256_xstate_offset;  // EBX: offset of ZMM_Hi256 component
+    uint32_t          zmm16to31_xstate_offset;       // EBX: offset of Hi16_ZMM component
+
     VM_Features feature_flags() const;
 
     // Asserts
@@ -720,6 +726,7 @@ private:
   }
 
   static bool compute_has_intel_jcc_erratum();
+  static bool compute_fast_bmi2();
 
   static bool os_supports_avx_vectors();
   static bool os_supports_apx_egprs();
@@ -748,9 +755,15 @@ public:
   static ByteSize apx_save_offset() { return byte_offset_of(CpuidInfo, apx_save); }
   static ByteSize apx_xstate_offset_offset() { return byte_offset_of(CpuidInfo, apx_xstate_offset); }
   static ByteSize apx_xstate_size_offset() { return byte_offset_of(CpuidInfo, apx_xstate_size); }
+  static ByteSize opmask_xstate_offset_offset() { return byte_offset_of(CpuidInfo, opmask_xstate_offset); }
+  static ByteSize zmm0to15_hi256_xstate_offset_offset() { return byte_offset_of(CpuidInfo, zmm0to15_hi256_xstate_offset); }
+  static ByteSize zmm16to31_xstate_offset_offset() { return byte_offset_of(CpuidInfo, zmm16to31_xstate_offset); }
 
   static uint32_t apx_xstate_offset() { return _cpuid_info.apx_xstate_offset; }
   static uint32_t apx_xstate_size()   { return _cpuid_info.apx_xstate_size; }
+  static uint32_t opmask_xstate_offset()        { return _cpuid_info.opmask_xstate_offset; }
+  static uint32_t zmm0to15_hi256_xstate_offset() { return _cpuid_info.zmm0to15_hi256_xstate_offset; }
+  static uint32_t zmm16to31_xstate_offset()      { return _cpuid_info.zmm16to31_xstate_offset; }
 
   // The value used to check ymm register after signal handle
   static int ymm_test_value()    { return 0xCAFEBABE; }
@@ -901,6 +914,7 @@ public:
   static bool supports_hv()           { return _features.supports_feature(CPU_HV); }
   static bool supports_serialize()    { return _features.supports_feature(CPU_SERIALIZE); }
   static bool supports_hybrid()       { return _features.supports_feature(CPU_HYBRID); }
+  static bool supports_fast_bmi2()    { return _features.supports_feature(CPU_FAST_BMI2); }
   static bool supports_f16c()         { return _features.supports_feature(CPU_F16C); }
   static bool supports_pku()          { return _features.supports_feature(CPU_PKU); }
   static bool supports_ospke()        { return _features.supports_feature(CPU_OSPKE); }
