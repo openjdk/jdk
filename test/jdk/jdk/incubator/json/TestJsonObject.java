@@ -183,9 +183,14 @@ public class TestJsonObject {
                 // Escaped names
                 Arguments.of("{ \"foo\" : null, \"\\u0066oo\" : null ", "Duplicate member name: \"foo\" was already parsed. Path: \"{\". Location: line 0, position 16."),
                 Arguments.of("{ \"\\u00M\" ", "Invalid Unicode escape sequence. 'M' is not a hex digit. Path: \"{\". Location: line 0, position 7."),
+                Arguments.of("{ \"\\u00\f\" ", "Invalid Unicode escape sequence. '\\u000C' is not a hex digit. Path: \"{\". Location: line 0, position 7."),
+                Arguments.of("{ \"\\u00\u0020\" ", "Invalid Unicode escape sequence. '\\u0020' is not a hex digit. Path: \"{\". Location: line 0, position 7."),
+                Arguments.of("{ \"\\u00\u2028\" ", "Invalid Unicode escape sequence. '\\u2028' is not a hex digit. Path: \"{\". Location: line 0, position 7."),
                 Arguments.of("{ \"foo\\n\" : null, \"foo\\n\" : null ", "Duplicate member name: \"foo\\n\" was already parsed. Path: \"{\". Location: line 0, position 18."),
                 Arguments.of("{ \"foo\\a\" ", "Unrecognized escape sequence: \"\\a\". Path: \"{\". Location: line 0, position 7."),
                 Arguments.of("{ \"foo\\\f\" ", "Unrecognized escape sequence: \"\\\\u000C\". Path: \"{\". Location: line 0, position 7."),
+                Arguments.of("{ \"foo\\\u0020\" ", "Unrecognized escape sequence: \"\\\\u0020\". Path: \"{\". Location: line 0, position 7."),
+                Arguments.of("{ \"foo\\\u2028\" ", "Unrecognized escape sequence: \"\\\\u2028\". Path: \"{\". Location: line 0, position 7."),
 
                 // multi-line duplicate member for error location validation
                 Arguments.of("""

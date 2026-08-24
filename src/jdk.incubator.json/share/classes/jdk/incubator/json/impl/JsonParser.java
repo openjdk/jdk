@@ -555,7 +555,7 @@ public final class JsonParser {
     }
 
     private static String formatChar(char c) {
-        return c >= 0x20 && c <= 0x7E ?
+        return c >= 0x21 && c <= 0x7E ? // Space is represented as "\u0020" for visibility
             Character.toString(c) :
             String.format(Locale.ROOT, "\\u%04X", (int)c);
     }
