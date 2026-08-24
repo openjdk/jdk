@@ -95,9 +95,13 @@ public class TestJsonString {
                 Arguments.of("\"\t", "Unescaped control code. Path: \"\". Location: line 0, position 1."),
                 Arguments.of("\"foo\\a \"", "Unrecognized escape sequence: \"\\a\". Path: \"\". Location: line 0, position 5."),
                 Arguments.of("\"foo\\\f \"", "Unrecognized escape sequence: \"\\\\u000C\". Path: \"\". Location: line 0, position 5."),
+                Arguments.of("\"foo\\\u0020 \"", "Unrecognized escape sequence: \"\\\\u0020\". Path: \"\". Location: line 0, position 5."),
+                Arguments.of("\"foo\\\u2028 \"", "Unrecognized escape sequence: \"\\\\u2028\". Path: \"\". Location: line 0, position 5."),
                 Arguments.of("\"foo\\u0\"", "Invalid Unicode escape sequence. Expected four hex digits. Path: \"\". Location: line 0, position 5."),
                 Arguments.of("\"foo\\uZZZZ\"", "Invalid Unicode escape sequence. 'Z' is not a hex digit. Path: \"\". Location: line 0, position 6."),
                 Arguments.of("\"foo\\u\f000\"", "Invalid Unicode escape sequence. '\\u000C' is not a hex digit. Path: \"\". Location: line 0, position 6."),
+                Arguments.of("\"foo\\u\u0020000\"", "Invalid Unicode escape sequence. '\\u0020' is not a hex digit. Path: \"\". Location: line 0, position 6."),
+                Arguments.of("\"foo\\u\u2028000\"", "Invalid Unicode escape sequence. '\\u2028' is not a hex digit. Path: \"\". Location: line 0, position 6."),
                 Arguments.of("\"foo ", "JSON String is not closed with a quotation mark. Path: \"\". Location: line 0, position 5."));
 
         @ParameterizedTest
