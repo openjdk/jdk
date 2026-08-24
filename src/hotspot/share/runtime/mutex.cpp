@@ -248,7 +248,7 @@ bool Monitor::wait(uint64_t timeout) {
   // Although the (HotSpot) monitor is logically released, the underlying
   // OS monitor is still held. Do not execute GC-a-lot here because
   // garbage collection may (in)directly require the current monitor to
-  // progress. 
+  // progress.
   check_safepoint_state(self, false /* allow_gcalot */);
 
   int wait_status;
