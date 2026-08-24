@@ -585,10 +585,10 @@ void G1CollectionSet::select_candidates_from_retained(double time_remaining_ms) 
       continue;
     }
 
-    if (fits_in_remaining_time || (num_expensive_regions < min_regions)) {
+    if (num_initial_regions < min_regions || fits_in_remaining_time) {
       predicted_initial_time_ms += predicted_time_ms;
       if (!fits_in_remaining_time) {
-        num_expensive_regions++;
+        num_expensive_regions += group->length();
       }
 
       add_group_to_collection_set(group);
