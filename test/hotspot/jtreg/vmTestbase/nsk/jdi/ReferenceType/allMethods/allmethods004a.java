@@ -33,24 +33,22 @@ import nsk.share.jdi.*;
 
 public class allmethods004a {
 
-    private static void display(String message) {
-        System.err.println(message);
-    }
+    private static Log log = new Log(System.err);
 
     public static void main (String argv[]) {
 
-        display("**> allmethods004a: debugee started!");
+        log.display("**> allmethods004a: debugee started!");
         ArgumentHandler argHandler = new ArgumentHandler(argv);
         IOPipe pipe = argHandler.createDebugeeIOPipe();
 
         allmethods004aClassForCheck class_for_check = new allmethods004aClassForCheck();
 
-        display("**> allmethods004a: waiting for \"quit\" signal...");
+        log.display("**> allmethods004a: waiting for \"quit\" signal...");
         pipe.println("ready");
         String instruction = pipe.readln();
         if (instruction.equals("quit")) {
-            display("**> allmethods004a: \"quit\" signal recieved!");
-            display("**> allmethods004a: completed succesfully!");
+            log.display("**> allmethods004a: \"quit\" signal recieved!");
+            log.display("**> allmethods004a: completed succesfully!");
             System.exit(0/*STATUS_PASSED*/ + 95/*STATUS_TEMP*/);
         }
         System.err.println("##> allmethods004a: unexpected signal (no \"quit\") - " + instruction);

@@ -35,46 +35,42 @@ import nsk.share.jdi.*;
 
 public class reflectype002a {
 
+    private static Log log = new Log(System.err);
+
     private final static String package_prefix = "nsk.jdi.ClassObjectReference.reflectedType.";
     private final static String checked_class_name = package_prefix + "reflectype002b";
-
-    private static void display(String message) {
-        System.err.println(message);
-    }
 
     public static void main (String argv[]) {
 
         ArgumentHandler argHandler = new ArgumentHandler(argv);
 
-        display("**> reflectype002a: debugee started!");
+        log.display("**> reflectype002a: debugee started!");
         IOPipe pipe = argHandler.createDebugeeIOPipe();
         pipe.println("ready0");
 
         String checked_class_dir = (argHandler.getArguments())[0] + File.separator + "loadclass";
 
-        display("**> reflectype002a: waiting for \"checked class dir\" info...");
+        log.display("**> reflectype002a: waiting for \"checked class dir\" info...");
 
         ClassUnloader classUnloader = new ClassUnloader();
 
         try {
             classUnloader.loadClass(checked_class_name, checked_class_dir);
-            display
-                ("--> reflectype002a: checked class loaded:" + checked_class_name);
+            log.display("--> reflectype002a: checked class loaded:" + checked_class_name);
         }
         catch ( Exception e ) {  // ClassNotFoundException
             System.err.println
                 ("**> reflectype002a: load class: exception thrown = " + e.toString());
-            display
-                ("--> reflectype002a: checked class NOT loaded:" + checked_class_name);
+            log.display("--> reflectype002a: checked class NOT loaded:" + checked_class_name);
             // Debuuger finds this fact itself
         }
 
-        display("**> reflectype002a: waiting for \"continue\" or \"quit\" signal...");
+        log.display("**> reflectype002a: waiting for \"continue\" or \"quit\" signal...");
         pipe.println("ready1");
         String instruction = pipe.readln();
         if (instruction.equals("quit")) {
-            display("**> reflectype002a: \"quit\" signal recieved!");
-            display("**> reflectype002a: completed!");
+            log.display("**> reflectype002a: \"quit\" signal recieved!");
+            log.display("**> reflectype002a: completed!");
             System.exit(0/*STATUS_PASSED*/ + 95/*STATUS_TEMP*/);
         }
         if ( ! instruction.equals("continue")) {
@@ -84,24 +80,24 @@ public class reflectype002a {
             System.exit(2/*STATUS_FAILED*/ + 95/*STATUS_TEMP*/);
         }
 
-        display("**> reflectype002a: \"continue\" signal recieved!");
-        display("**> reflectype002a: enforce to unload checked class...");
+        log.display("**> reflectype002a: \"continue\" signal recieved!");
+        log.display("**> reflectype002a: enforce to unload checked class...");
 
         boolean test_class_loader_finalized = classUnloader.unloadClass();
 
         if ( ! test_class_loader_finalized ) {
-            display("**> reflectype002a: checked class may be NOT unloaded!");
+            log.display("**> reflectype002a: checked class may be NOT unloaded!");
             pipe.println("not_unloaded");
         }
         else {
-            display("**> reflectype002a: checked class unloaded!");
+            log.display("**> reflectype002a: checked class unloaded!");
             pipe.println("ready2");
         }
-        display("**> reflectype002a: waiting for \"quit\" signal...");
+        log.display("**> reflectype002a: waiting for \"quit\" signal...");
         instruction = pipe.readln();
         if (instruction.equals("quit")) {
-            display("**> reflectype002a: \"quit\" signal recieved!");
-            display("**> reflectype002a: completed!");
+            log.display("**> reflectype002a: \"quit\" signal recieved!");
+            log.display("**> reflectype002a: completed!");
             System.exit(0/*STATUS_PASSED*/ + 95/*STATUS_TEMP*/);
         }
         System.err.println("##> reflectype002a: unexpected signal (no \"quit\") - " + instruction);

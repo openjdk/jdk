@@ -33,18 +33,16 @@ import nsk.share.jdi.*;
 
 public class visibmethod001a {
 
+    private static Log log = new Log(System.err);
+
     private final static String
         package_prefix = "nsk.jdi.ReferenceType.visibleMethods.";
 //        package_prefix = "";    //  for DEBUG without package
     static String checked_class_name = package_prefix + "visibmethod001aClassForCheck";
 
-    private static void display(String message) {
-        System.err.println(message);
-    }
-
     public static void main (String argv[]) {
 
-        display("**> visibmethod001a: debugee started!");
+        log.display("**> visibmethod001a: debugee started!");
         ArgumentHandler argHandler = new ArgumentHandler(argv);
         IOPipe pipe = argHandler.createDebugeeIOPipe();
 
@@ -52,23 +50,21 @@ public class visibmethod001a {
         try {
             checked_class_classobj =
                 Class.forName(checked_class_name, true, visibmethod001a.class.getClassLoader());
-            display
-                ("--> visibmethod001a: checked class loaded:" + checked_class_name);
+            log.display("--> visibmethod001a: checked class loaded:" + checked_class_name);
         }
         catch ( Throwable thrown ) {  // ClassNotFoundException
 //            System.err.println
 //                ("**> visibmethod001a: load class: Throwable thrown = " + thrown.toString());
-            display
-                ("--> visibmethod001a: checked class NOT loaded: " + checked_class_name);
+            log.display("--> visibmethod001a: checked class NOT loaded: " + checked_class_name);
             // Debuuger finds this fact itself
         }
 
-        display("**> visibmethod001a: waiting for \"quit\" signal...");
+        log.display("**> visibmethod001a: waiting for \"quit\" signal...");
         pipe.println("ready");
         String instruction = pipe.readln();
         if (instruction.equals("quit")) {
-            display("**> visibmethod001a: \"quit\" signal recieved!");
-            display("**> visibmethod001a: completed succesfully!");
+            log.display("**> visibmethod001a: \"quit\" signal recieved!");
+            log.display("**> visibmethod001a: completed succesfully!");
             System.exit(0/*STATUS_PASSED*/ + 95/*STATUS_TEMP*/);
         }
         System.err.println("!!**> visibmethod001a: unexpected signal (no \"quit\") - " + instruction);

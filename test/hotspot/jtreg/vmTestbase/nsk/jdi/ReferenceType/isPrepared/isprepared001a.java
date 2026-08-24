@@ -33,30 +33,28 @@ import nsk.share.jdi.*;
 
 public class isprepared001a {
 
+    private static Log log = new Log(System.err);
+
     NotPreparedClass not_prepared_class_0, not_prepared_class_1[] = {not_prepared_class_0};
 
     NotPreparedInterface not_prepared_interface_0, not_prepared_interface_1[] = {not_prepared_interface_0};
 
     PreparedClass  prepared_class_0 = new PreparedClass();
 
-    private static void display(String message) {
-        System.err.println(message);
-    }
-
     public static void main (String argv[]) {
 
-        display("**> isprepared001a: debugee started!");
+        log.display("**> isprepared001a: debugee started!");
         ArgumentHandler argHandler = new ArgumentHandler(argv);
         IOPipe pipe = argHandler.createDebugeeIOPipe();
 
         isprepared001a isprepared001a_obj = new isprepared001a();
 
-        display("**> isprepared001a: waiting for \"quit\" signal...");
+        log.display("**> isprepared001a: waiting for \"quit\" signal...");
         pipe.println("ready");
         String instruction = pipe.readln();
         if (instruction.equals("quit")) {
-            display("**> isprepared001a: \"quit\" signal recieved!");
-            display("**> isprepared001a: completed succesfully!");
+            log.display("**> isprepared001a: \"quit\" signal recieved!");
+            log.display("**> isprepared001a: completed succesfully!");
             System.exit(0/*STATUS_PASSED*/ + 95/*STATUS_TEMP*/);
         }
         System.err.println("!!**> isprepared001a: unexpected signal (no \"quit\") - " + instruction);

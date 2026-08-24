@@ -35,49 +35,43 @@ import nsk.share.jdi.*;
 
 public class allfields003a {
 
+    private static Log log = new Log(System.err);
+
     static String package_prefix = "nsk.jdi.ReferenceType.allFields.";
     static String checked_class_name = package_prefix + "allfields003b";
-
-    private static void display(String message) {
-        System.err.println(message);
-    }
 
     public static void main (String argv[]) {
 
         ArgumentHandler argHandler = new ArgumentHandler(argv);
 
-        display("**> allfields003a: debugee started!");
+        log.display("**> allfields003a: debugee started!");
         IOPipe pipe = argHandler.createDebugeeIOPipe();
 
-        display("**> allfields003a: waiting for \"checked class dir\" info...");
+        log.display("**> allfields003a: waiting for \"checked class dir\" info...");
         pipe.println("ready0");
 
         String checked_class_dir = (argHandler.getArguments())[0] + File.separator + "loadclass";
 
-        display
-            ("--> allfields003a: checked class dir:" + checked_class_dir);
+        log.display("--> allfields003a: checked class dir:" + checked_class_dir);
 
         ClassUnloader classUnloader = new ClassUnloader();
 
         try {
             classUnloader.loadClass(checked_class_name, checked_class_dir);
-            display
-                ("--> allfields003a: checked class loaded:" + checked_class_name);
+            log.display("--> allfields003a: checked class loaded:" + checked_class_name);
         }
         catch ( Exception e ) {  // ClassNotFoundException
-            display
-                ("**> allfields003a: load class: exception thrown = " + e.toString());
-            display
-                ("--> allfields003a: checked class NOT loaded:" + checked_class_name);
+            log.display("**> allfields003a: load class: exception thrown = " + e.toString());
+            log.display("--> allfields003a: checked class NOT loaded:" + checked_class_name);
             // Debuuger finds this fact itself
         }
 
-        display("**> allfields003a: waiting for \"continue\" or \"quit\" signal...");
+        log.display("**> allfields003a: waiting for \"continue\" or \"quit\" signal...");
         pipe.println("ready1");
         String instruction = pipe.readln();
         if (instruction.equals("quit")) {
-            display("**> allfields003a: \"quit\" signal recieved!");
-            display("**> allfields003a: completed!");
+            log.display("**> allfields003a: \"quit\" signal recieved!");
+            log.display("**> allfields003a: completed!");
             System.exit(0/*STATUS_PASSED*/ + 95/*STATUS_TEMP*/);
         }
         if ( ! instruction.equals("continue")) {
@@ -87,24 +81,24 @@ public class allfields003a {
             System.exit(2/*STATUS_FAILED*/ + 95/*STATUS_TEMP*/);
         }
 
-        display("**> allfields003a: \"continue\" signal recieved!");
-        display("**> allfields003a: enforce to unload checked class...");
+        log.display("**> allfields003a: \"continue\" signal recieved!");
+        log.display("**> allfields003a: enforce to unload checked class...");
 
         boolean test_class_loader_finalized = classUnloader.unloadClass();
 
         if ( ! test_class_loader_finalized ) {
-            display("**> allfields003a: checked class may be NOT unloaded!");
+            log.display("**> allfields003a: checked class may be NOT unloaded!");
             pipe.println("not_unloaded");
         }
         else {
-            display("**> allfields003a: checked class unloaded!");
+            log.display("**> allfields003a: checked class unloaded!");
             pipe.println("ready2");
         }
-        display("**> allfields003a: waiting for \"quit\" signal...");
+        log.display("**> allfields003a: waiting for \"quit\" signal...");
         instruction = pipe.readln();
         if (instruction.equals("quit")) {
-            display("**> allfields003a: \"quit\" signal recieved!");
-            display("**> allfields003a: completed!");
+            log.display("**> allfields003a: \"quit\" signal recieved!");
+            log.display("**> allfields003a: completed!");
             System.exit(0/*STATUS_PASSED*/ + 95/*STATUS_TEMP*/);
         }
         System.err.println("!!**> allfields003a: unexpected signal (no \"quit\") - " + instruction);

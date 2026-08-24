@@ -33,6 +33,8 @@ import nsk.share.jdi.*;
 
 public class modifiers001a {
 
+    private static Log log = new Log(System.err);
+
     // Classes must be loaded and linked, so all fields must be
     // initialized
     Boolean   Z0 = Boolean.valueOf(false);
@@ -70,22 +72,18 @@ public class modifiers001a {
     interf_impl m_interf_impl_0 = new interf_impl();
     interf m_interf_0, m_interf_1[] = {m_interf_0};
 
-    private static void display(String message) {
-        System.err.println(message);
-    }
-
     public static void main (String argv[]) {
 
-        display("**> modifiers001a: debugee started!");
+        log.display("**> modifiers001a: debugee started!");
         modifiers001a obj = new modifiers001a();
         ArgumentHandler argHandler = new ArgumentHandler(argv);
         IOPipe pipe = argHandler.createDebugeeIOPipe();
-        display("**> modifiers001a: waiting for \"quit\" signal...");
+        log.display("**> modifiers001a: waiting for \"quit\" signal...");
         pipe.println("ready");
         String instruction = pipe.readln();
         if (instruction.equals("quit")) {
-            display("**> modifiers001a: \"quit\" signal recieved!");
-            display("**> modifiers001a: completed succesfully!");
+            log.display("**> modifiers001a: \"quit\" signal recieved!");
+            log.display("**> modifiers001a: completed succesfully!");
             System.exit(0/*STATUS_PASSED*/ + 95/*STATUS_TEMP*/);
         }
         System.err.println("!!**> modifiers001a: unexpected signal (no \"quit\") - " + instruction);

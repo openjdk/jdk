@@ -33,6 +33,8 @@ import nsk.share.jdi.*;
 
 public class name001a {
 
+    private static Log log = new Log(System.err);
+
     boolean z0, z1[]={z0}, z2[][]={z1};
     byte    b0, b1[]={b0}, b2[][]={b1};
     char    c0, c1[]={c0}, c2[][]={c1};
@@ -72,24 +74,20 @@ public class name001a {
                       interf_for_check1[]={interf_for_check0},
                       interf_for_check2[][]={interf_for_check1};
 
-    private static void display(String message) {
-        System.err.println(message);
-    }
-
     public static void main (String argv[]) {
 
-        display("**> name001a: debugee started!");
+        log.display("**> name001a: debugee started!");
         ArgumentHandler argHandler = new ArgumentHandler(argv);
         IOPipe pipe = argHandler.createDebugeeIOPipe();
 
         name001a name001a_obj = new name001a();
 
-        display("**> name001a: waiting for \"quit\" signal...");
+        log.display("**> name001a: waiting for \"quit\" signal...");
         pipe.println("ready");
         String instruction = pipe.readln();
         if (instruction.equals("quit")) {
-            display("**> name001a: \"quit\" signal recieved!");
-            display("**> name001a: completed succesfully!");
+            log.display("**> name001a: \"quit\" signal recieved!");
+            log.display("**> name001a: completed succesfully!");
             System.exit(0/*STATUS_PASSED*/ + 95/*STATUS_TEMP*/);
         }
         System.err.println("!!**> name001a: unexpected signal (no \"quit\") - " + instruction);

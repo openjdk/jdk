@@ -33,6 +33,8 @@ import nsk.share.jdi.*;
 
 public class sourcename001a {
 
+    private static Log log = new Log(System.err);
+
     // Classes must be loaded and linked, so all fields must be
     // initialized
     static class  s_class {}
@@ -54,24 +56,20 @@ public class sourcename001a {
     sourcename001 sourcename001_0 = new sourcename001(),
                   sourcename001_1[]={sourcename001_0};
 
-    private static void display(String message) {
-        System.err.println(message);
-    }
-
     public static void main (String argv[]) {
 
-        display("**> sourcename001a: debugee started!");
+        log.display("**> sourcename001a: debugee started!");
         ArgumentHandler argHandler = new ArgumentHandler(argv);
         IOPipe pipe = argHandler.createDebugeeIOPipe();
 
         sourcename001a sourcename001a_obj = new sourcename001a();
 
-        display("**> sourcename001a: waiting for \"quit\" signal...");
+        log.display("**> sourcename001a: waiting for \"quit\" signal...");
         pipe.println("ready");
         String instruction = pipe.readln();
         if (instruction.equals("quit")) {
-            display("**> sourcename001a: \"quit\" signal recieved!");
-            display("**> sourcename001a: completed succesfully!");
+            log.display("**> sourcename001a: \"quit\" signal recieved!");
+            log.display("**> sourcename001a: completed succesfully!");
             System.exit(0/*STATUS_PASSED*/ + 95/*STATUS_TEMP*/);
         }
         System.err.println("!!**> sourcename001a: unexpected signal (no \"quit\") - " + instruction);

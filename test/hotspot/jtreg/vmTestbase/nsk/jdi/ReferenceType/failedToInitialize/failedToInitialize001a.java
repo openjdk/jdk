@@ -33,6 +33,8 @@ import nsk.share.jdi.*;
 
 public class failedToInitialize001a {
 
+    private static Log log = new Log(System.err);
+
     failedToInitialize001 a001_0=new failedToInitialize001();
 
     // Interfaces must be loaded and linked, so classes that implement
@@ -40,13 +42,9 @@ public class failedToInitialize001a {
     interf_impl interf_impl_0 = new interf_impl();
     interf interf_0, interf_1[]={interf_0};
 
-    private static void display(String message) {
-        System.err.println(message);
-    }
-
     public static void main (String argv[]) {
 
-        display("**> failedToInitialize001a: debugee started!");
+        log.display("**> failedToInitialize001a: debugee started!");
         ArgumentHandler argHandler = new ArgumentHandler(argv);
         IOPipe pipe = argHandler.createDebugeeIOPipe();
 
@@ -59,8 +57,7 @@ public class failedToInitialize001a {
             System.exit(2/*STATUS_FAILED*/ + 95/*STATUS_TEMP*/);
         }
         catch (ExceptionInInitializerError e) {
-            display
-                ("**> failedToInitialize001a: ExceptionInInitializerError caught (fail_init_class)!");
+            log.display("**> failedToInitialize001a: ExceptionInInitializerError caught (fail_init_class)!");
         }
 
         try {
@@ -71,16 +68,15 @@ public class failedToInitialize001a {
             System.exit(2/*STATUS_FAILED*/ + 95/*STATUS_TEMP*/);
         }
         catch (ExceptionInInitializerError e) {
-            display
-                ("**> failedToInitialize001a: ExceptionInInitializerError caught (fail_init_subcl)!");
+            log.display("**> failedToInitialize001a: ExceptionInInitializerError caught (fail_init_subcl)!");
         }
 
-        display("**> failedToInitialize001a: waiting for \"quit\" signal...");
+        log.display("**> failedToInitialize001a: waiting for \"quit\" signal...");
         pipe.println("ready");
         String instruction = pipe.readln();
         if (instruction.equals("quit")) {
-            display("**> failedToInitialize001a: \"quit\" signal recieved!");
-            display("**> failedToInitialize001a: completed succesfully!");
+            log.display("**> failedToInitialize001a: \"quit\" signal recieved!");
+            log.display("**> failedToInitialize001a: completed succesfully!");
             System.exit(0/*STATUS_PASSED*/ + 95/*STATUS_TEMP*/);
         }
         System.err.println("!!**> failedToInitialize001a: unexpected signal (no \"quit\") - " + instruction);

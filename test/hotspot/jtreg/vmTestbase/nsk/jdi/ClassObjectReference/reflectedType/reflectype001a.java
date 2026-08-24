@@ -33,6 +33,8 @@ import nsk.share.jdi.*;
 
 public class reflectype001a {
 
+    private static Log log = new Log(System.err);
+
     boolean z0, z1[]={z0}, z2[][]={z1};
     byte    b0, b1[]={b0}, b2[][]={b1};
     char    c0, c1[]={c0}, c2[][]={c1};
@@ -71,24 +73,21 @@ public class reflectype001a {
     package_interf_impl pii0 = new package_interf_impl();
     package_interf package_interf0, package_interf1[]={package_interf0},
                     package_interf2[][]={package_interf1};
-    private static void display(String message) {
-        System.err.println(message);
-    }
 
     public static void main (String argv[]) {
 
-        display("**> reflectype001a: debugee started!");
+        log.display("**> reflectype001a: debugee started!");
         ArgumentHandler argHandler = new ArgumentHandler(argv);
         IOPipe pipe = argHandler.createDebugeeIOPipe();
 
         reflectype001a reflectype001a_obj = new reflectype001a();
 
-        display("**> reflectype001a: waiting for \"quit\" signal...");
+        log.display("**> reflectype001a: waiting for \"quit\" signal...");
         pipe.println("ready");
         String instruction = pipe.readln();
         if (instruction.equals("quit")) {
-            display("**> reflectype001a: \"quit\" signal recieved!");
-            display("**> reflectype001a: completed succesfully!");
+            log.display("**> reflectype001a: \"quit\" signal recieved!");
+            log.display("**> reflectype001a: completed succesfully!");
             System.exit(0/*STATUS_PASSED*/ + 95/*STATUS_TEMP*/);
         }
         System.err.println("!!**> reflectype001a: unexpected signal (no \"quit\") - " + instruction);

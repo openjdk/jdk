@@ -33,6 +33,8 @@ import nsk.share.jdi.*;
 
 public class isinit001a {
 
+    private static Log log = new Log(System.err);
+
     NotInitializedClass not_initialized_class_0,
         not_initialized_class_1[] = {not_initialized_class_0};
 
@@ -43,24 +45,20 @@ public class isinit001a {
 
     int copy_super_class_int_var = SubClass.super_class_int_var;
 
-    private static void display(String message) {
-        System.err.println(message);
-    }
-
     public static void main (String argv[]) {
 
-        display("**> isinit001a: debugee started!");
+        log.display("**> isinit001a: debugee started!");
         ArgumentHandler argHandler = new ArgumentHandler(argv);
         IOPipe pipe = argHandler.createDebugeeIOPipe();
 
         isinit001a isinit001a_obj = new isinit001a();
 
-        display("**> isinit001a: waiting for \"quit\" signal...");
+        log.display("**> isinit001a: waiting for \"quit\" signal...");
         pipe.println("ready");
         String instruction = pipe.readln();
         if (instruction.equals("quit")) {
-            display("**> isinit001a: \"quit\" signal recieved!");
-            display("**> isinit001a: completed succesfully!");
+            log.display("**> isinit001a: \"quit\" signal recieved!");
+            log.display("**> isinit001a: completed succesfully!");
             System.exit(0/*STATUS_PASSED*/ + 95/*STATUS_TEMP*/);
         }
         System.err.println("!!**> isinit001a: unexpected signal (no \"quit\") - " + instruction);

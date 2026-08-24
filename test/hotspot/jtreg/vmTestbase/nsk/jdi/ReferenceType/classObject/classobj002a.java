@@ -35,21 +35,19 @@ import nsk.share.jdi.*;
 
 public class classobj002a {
 
+    private static Log log = new Log(System.err);
+
     private final static String package_prefix = "nsk.jdi.ReferenceType.classObject.";
     private final static String checked_class_name = package_prefix + "classobj002b";
-
-    private static void display(String message) {
-        System.err.println(message);
-    }
 
     public static void main (String argv[]) {
 
         ArgumentHandler argHandler = new ArgumentHandler(argv);
 
-        display("**> classobj002a: debugee started!");
+        log.display("**> classobj002a: debugee started!");
         IOPipe pipe = argHandler.createDebugeeIOPipe();
 
-        display("**> classobj002a: waiting for \"checked class dir\" info...");
+        log.display("**> classobj002a: waiting for \"checked class dir\" info...");
         pipe.println("ready0");
 
         String checked_class_dir = (argHandler.getArguments())[0] + File.separator + "loadclass";
@@ -58,23 +56,21 @@ public class classobj002a {
 
         try {
             classUnloader.loadClass(checked_class_name, checked_class_dir);
-            display
-                ("--> classobj002a: checked class loaded:" + checked_class_name);
+            log.display("--> classobj002a: checked class loaded:" + checked_class_name);
         }
         catch ( Exception e ) {  // ClassNotFoundException
             System.err.println
                 ("**> classobj002a: load class: exception thrown = " + e.toString());
-            display
-                ("--> classobj002a: checked class NOT loaded:" + checked_class_name);
+            log.display("--> classobj002a: checked class NOT loaded:" + checked_class_name);
             // Debugger finds this fact itself
         }
 
-        display("**> classobj002a: waiting for \"continue\" or \"quit\" signal...");
+        log.display("**> classobj002a: waiting for \"continue\" or \"quit\" signal...");
         pipe.println("ready1");
         String instruction = pipe.readln();
         if (instruction.equals("quit")) {
-            display("**> classobj002a: \"quit\" signal recieved!");
-            display("**> classobj002a: completed!");
+            log.display("**> classobj002a: \"quit\" signal recieved!");
+            log.display("**> classobj002a: completed!");
             System.exit(0/*STATUS_PASSED*/ + 95/*STATUS_TEMP*/);
         }
         if ( ! instruction.equals("continue")) {
@@ -84,24 +80,24 @@ public class classobj002a {
             System.exit(2/*STATUS_FAILED*/ + 95/*STATUS_TEMP*/);
         }
 
-        display("**> classobj002a: \"continue\" signal recieved!");
-        display("**> classobj002a: enforce to unload checked class...");
+        log.display("**> classobj002a: \"continue\" signal recieved!");
+        log.display("**> classobj002a: enforce to unload checked class...");
 
         boolean test_class_loader_finalized = classUnloader.unloadClass();
 
         if ( ! test_class_loader_finalized ) {
-            display("**> classobj002a: checked class may be NOT unloaded!");
+            log.display("**> classobj002a: checked class may be NOT unloaded!");
             pipe.println("not_unloaded");
         }
         else {
-            display("**> classobj002a: checked class unloaded!");
+            log.display("**> classobj002a: checked class unloaded!");
             pipe.println("ready2");
         }
-        display("**> classobj002a: waiting for \"quit\" signal...");
+        log.display("**> classobj002a: waiting for \"quit\" signal...");
         instruction = pipe.readln();
         if (instruction.equals("quit")) {
-            display("**> classobj002a: \"quit\" signal recieved!");
-            display("**> classobj002a: completed!");
+            log.display("**> classobj002a: \"quit\" signal recieved!");
+            log.display("**> classobj002a: completed!");
             System.exit(0/*STATUS_PASSED*/ + 95/*STATUS_TEMP*/);
         }
         System.err.println("##> classobj002a: unexpected signal (no \"quit\") - " + instruction);

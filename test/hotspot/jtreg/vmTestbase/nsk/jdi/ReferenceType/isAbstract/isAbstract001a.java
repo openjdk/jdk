@@ -33,6 +33,8 @@ import nsk.share.jdi.*;
 
 public class isAbstract001a {
 
+    private static Log log = new Log(System.err);
+
     // Abstract classes must be extended by a class and that class must be
     // initialized, so that abstract classes could be returnedin debugger
 
@@ -58,22 +60,18 @@ public class isAbstract001a {
     abstr_interf abstr_interf_0, abstr_interf_1[]={abstr_interf_0};
     abstr_interf_impl abstr_interf_impl_0= new abstr_interf_impl();
 
-    private static void display(String message) {
-        System.err.println(message);
-    }
-
     public static void main (String argv[]) {
 
-        display("**> isAbstract001a: debugee started!");
+        log.display("**> isAbstract001a: debugee started!");
         isAbstract001a isAbstract001a_obj = new isAbstract001a();
         ArgumentHandler argHandler = new ArgumentHandler(argv);
         IOPipe pipe = argHandler.createDebugeeIOPipe();
-        display("**> isAbstract001a: waiting for \"quit\" signal...");
+        log.display("**> isAbstract001a: waiting for \"quit\" signal...");
         pipe.println("ready");
         String instruction = pipe.readln();
         if (instruction.equals("quit")) {
-            display("**> isAbstract001a: \"quit\" signal recieved!");
-            display("**> isAbstract001a: completed succesfully!");
+            log.display("**> isAbstract001a: \"quit\" signal recieved!");
+            log.display("**> isAbstract001a: completed succesfully!");
             System.exit(0/*STATUS_PASSED*/ + 95/*STATUS_TEMP*/);
         }
         System.err.println("!!**> isAbstract001a: unexpected signal (no \"quit\") - " + instruction);

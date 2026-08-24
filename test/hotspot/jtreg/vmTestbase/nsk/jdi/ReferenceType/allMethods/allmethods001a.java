@@ -33,18 +33,16 @@ import nsk.share.jdi.*;
 
 public class allmethods001a {
 
+    private static Log log = new Log(System.err);
+
     private final static String
         package_prefix = "nsk.jdi.ReferenceType.allMethods.";
 //        package_prefix = "";    //  for DEBUG without package
     static String checked_class_name = package_prefix + "allmethods001aClassForCheck";
 
-    private static void display(String message) {
-        System.err.println(message);
-    }
-
     public static void main (String argv[]) {
 
-        display("**> allmethods001a: debugee started!");
+        log.display("**> allmethods001a: debugee started!");
         ArgumentHandler argHandler = new ArgumentHandler(argv);
         IOPipe pipe = argHandler.createDebugeeIOPipe();
 
@@ -52,23 +50,21 @@ public class allmethods001a {
         try {
             checked_class_classobj =
                 Class.forName(checked_class_name, true, allmethods001a.class.getClassLoader());
-            display
-                ("--> allmethods001a: checked class loaded:" + checked_class_name);
+            log.display("--> allmethods001a: checked class loaded:" + checked_class_name);
         }
         catch ( Throwable thrown ) {  // ClassNotFoundException
 //            System.err.println
 //                ("**> allmethods001a: load class: Throwable thrown = " + thrown.toString());
-            display
-                ("--> allmethods001a: checked class NOT loaded: " + checked_class_name);
+            log.display("--> allmethods001a: checked class NOT loaded: " + checked_class_name);
             // Debuuger finds this fact itself
         }
 
-        display("**> allmethods001a: waiting for \"quit\" signal...");
+        log.display("**> allmethods001a: waiting for \"quit\" signal...");
         pipe.println("ready");
         String instruction = pipe.readln();
         if (instruction.equals("quit")) {
-            display("**> allmethods001a: \"quit\" signal recieved!");
-            display("**> allmethods001a: completed succesfully!");
+            log.display("**> allmethods001a: \"quit\" signal recieved!");
+            log.display("**> allmethods001a: completed succesfully!");
             System.exit(0/*STATUS_PASSED*/ + 95/*STATUS_TEMP*/);
         }
         System.err.println("!!**> allmethods001a: unexpected signal (no \"quit\") - " + instruction);

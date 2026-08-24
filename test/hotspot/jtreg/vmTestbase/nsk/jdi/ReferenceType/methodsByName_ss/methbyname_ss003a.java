@@ -35,21 +35,19 @@ import nsk.share.jdi.*;
 
 public class methbyname_ss003a {
 
+    private static Log log = new Log(System.err);
+
     private final static String package_prefix = "nsk.jdi.ReferenceType.methodsByName_ss.";
     private final static String checked_class_name = package_prefix + "methbyname_ss003b";
-
-    private static void display(String message) {
-        System.err.println(message);
-    }
 
     public static void main (String argv[]) {
 
         ArgumentHandler argHandler = new ArgumentHandler(argv);
 
-        display("**> methbyname_ss003a: debugee started!");
+        log.display("**> methbyname_ss003a: debugee started!");
         IOPipe pipe = argHandler.createDebugeeIOPipe();
 
-        display("**> methbyname_ss003a: waiting for \"checked class dir\" info...");
+        log.display("**> methbyname_ss003a: waiting for \"checked class dir\" info...");
         pipe.println("ready0");
         String checked_class_dir = (argHandler.getArguments())[0] + File.separator + "loadclass";
 
@@ -57,23 +55,21 @@ public class methbyname_ss003a {
 
         try {
             classUnloader.loadClass(checked_class_name, checked_class_dir);
-            display
-                ("--> methbyname_ss003a: checked class loaded:" + checked_class_name);
+            log.display("--> methbyname_ss003a: checked class loaded:" + checked_class_name);
         }
         catch ( Exception e ) {  // ClassNotFoundException
             System.err.println
                 ("**> methbyname_ss003a: load class: exception thrown = " + e.toString());
-            display
-                ("--> methbyname_ss003a: checked class NOT loaded:" + checked_class_name);
+            log.display("--> methbyname_ss003a: checked class NOT loaded:" + checked_class_name);
             // Debuuger finds this fact itself
         }
 
-        display("**> methbyname_ss003a: waiting for \"continue\" or \"quit\" signal...");
+        log.display("**> methbyname_ss003a: waiting for \"continue\" or \"quit\" signal...");
         pipe.println("ready1");
         String instruction = pipe.readln();
         if (instruction.equals("quit")) {
-            display("**> methbyname_ss003a: \"quit\" signal recieved!");
-            display("**> methbyname_ss003a: completed!");
+            log.display("**> methbyname_ss003a: \"quit\" signal recieved!");
+            log.display("**> methbyname_ss003a: completed!");
             System.exit(0/*STATUS_PASSED*/ + 95/*STATUS_TEMP*/);
         }
         if ( ! instruction.equals("continue")) {
@@ -83,24 +79,24 @@ public class methbyname_ss003a {
             System.exit(2/*STATUS_FAILED*/ + 95/*STATUS_TEMP*/);
         }
 
-        display("**> methbyname_ss003a: \"continue\" signal recieved!");
-        display("**> methbyname_ss003a: enforce to unload checked class...");
+        log.display("**> methbyname_ss003a: \"continue\" signal recieved!");
+        log.display("**> methbyname_ss003a: enforce to unload checked class...");
 
         boolean test_class_loader_finalized = classUnloader.unloadClass();
 
         if ( ! test_class_loader_finalized ) {
-            display("**> methbyname_ss003a: checked class may be NOT unloaded!");
+            log.display("**> methbyname_ss003a: checked class may be NOT unloaded!");
             pipe.println("not_unloaded");
         }
         else {
-            display("**> methbyname_ss003a: checked class unloaded!");
+            log.display("**> methbyname_ss003a: checked class unloaded!");
             pipe.println("ready2");
         }
-        display("**> methbyname_ss003a: waiting for \"quit\" signal...");
+        log.display("**> methbyname_ss003a: waiting for \"quit\" signal...");
         instruction = pipe.readln();
         if (instruction.equals("quit")) {
-            display("**> methbyname_ss003a: \"quit\" signal recieved!");
-            display("**> methbyname_ss003a: completed!");
+            log.display("**> methbyname_ss003a: \"quit\" signal recieved!");
+            log.display("**> methbyname_ss003a: completed!");
             System.exit(0/*STATUS_PASSED*/ + 95/*STATUS_TEMP*/);
         }
         System.err.println("!!**> methbyname_ss003a: unexpected signal (no \"quit\") - " + instruction);

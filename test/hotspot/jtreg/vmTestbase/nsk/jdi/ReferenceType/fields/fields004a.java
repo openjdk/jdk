@@ -33,24 +33,22 @@ import nsk.share.jdi.*;
 
 public class fields004a {
 
-    private static void display(String message) {
-        System.err.println(message);
-    }
+    private static Log log = new Log(System.err);
 
     public static void main (String argv[]) {
 
-        display("**> fields004a: debugee started!");
+        log.display("**> fields004a: debugee started!");
         ArgumentHandler argHandler = new ArgumentHandler(argv);
         IOPipe pipe = argHandler.createDebugeeIOPipe();
 
         fields004aClassForCheck class_for_check = new fields004aClassForCheck();
 
-        display("**> fields004a: waiting for \"quit\" signal...");
+        log.display("**> fields004a: waiting for \"quit\" signal...");
         pipe.println("ready");
         String instruction = pipe.readln();
         if (instruction.equals("quit")) {
-            display("**> fields004a: \"quit\" signal recieved!");
-            display("**> fields004a: completed succesfully!");
+            log.display("**> fields004a: \"quit\" signal recieved!");
+            log.display("**> fields004a: completed succesfully!");
             System.exit(0/*STATUS_PASSED*/ + 95/*STATUS_TEMP*/);
         }
         System.err.println("##> fields004a: unexpected signal (no \"quit\") - " + instruction);

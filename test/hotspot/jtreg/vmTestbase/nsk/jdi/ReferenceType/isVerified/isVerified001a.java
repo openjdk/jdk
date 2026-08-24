@@ -33,6 +33,8 @@ import nsk.share.jdi.*;
 
 public class isVerified001a {
 
+    private static Log log = new Log(System.err);
+
     isVerified001 a001_0 = new isVerified001();
 
     not_verif_cls not_verif_cls_0, not_verif_cls_1[] = {not_verif_cls_0};
@@ -43,24 +45,20 @@ public class isVerified001a {
 
     verif_subcl  verif_subcl_0 = new verif_subcl();
 
-    private static void display(String message) {
-        System.err.println(message);
-    }
-
     public static void main (String argv[]) {
 
-        display("**> isVerified001a: debugee started!");
+        log.display("**> isVerified001a: debugee started!");
         ArgumentHandler argHandler = new ArgumentHandler(argv);
         IOPipe pipe = argHandler.createDebugeeIOPipe();
 
         isVerified001a isVerified001a_obj = new isVerified001a();
 
-        display("**> isVerified001a: waiting for \"quit\" signal...");
+        log.display("**> isVerified001a: waiting for \"quit\" signal...");
         pipe.println("ready");
         String instruction = pipe.readln();
         if (instruction.equals("quit")) {
-            display("**> isVerified001a: \"quit\" signal recieved!");
-            display("**> isVerified001a: completed succesfully!");
+            log.display("**> isVerified001a: \"quit\" signal recieved!");
+            log.display("**> isVerified001a: completed succesfully!");
             System.exit(0/*STATUS_PASSED*/ + 95/*STATUS_TEMP*/);
         }
         System.err.println("!!**> isVerified001a: unexpected signal (no \"quit\") - " + instruction);

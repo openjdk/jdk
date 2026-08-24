@@ -33,24 +33,22 @@ import nsk.share.jdi.*;
 
 public class visibfield001a {
 
-    private static void display(String message) {
-        System.err.println(message);
-    }
+    private static Log log = new Log(System.err);
 
     public static void main (String argv[]) {
 
-        display("**> visibfield001a: debugee started!");
+        log.display("**> visibfield001a: debugee started!");
         ArgumentHandler argHandler = new ArgumentHandler(argv);
         IOPipe pipe = argHandler.createDebugeeIOPipe();
 
         visibfield001aClassForCheck class_for_check = new visibfield001aClassForCheck();
 
-        display("**> visibfield001a: waiting for \"quit\" signal...");
+        log.display("**> visibfield001a: waiting for \"quit\" signal...");
         pipe.println("ready");
         String instruction = pipe.readln();
         if (instruction.equals("quit")) {
-            display("**> visibfield001a: \"quit\" signal recieved!");
-            display("**> visibfield001a: completed succesfully!");
+            log.display("**> visibfield001a: \"quit\" signal recieved!");
+            log.display("**> visibfield001a: completed succesfully!");
             System.exit(0/*STATUS_PASSED*/ + 95/*STATUS_TEMP*/);
         }
         System.err.println("!!**> visibfield001a: unexpected signal (no \"quit\") - " + instruction);

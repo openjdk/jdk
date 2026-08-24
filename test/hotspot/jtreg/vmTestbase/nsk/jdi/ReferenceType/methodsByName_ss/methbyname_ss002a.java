@@ -34,18 +34,16 @@ import java.io.*;
 
 public class methbyname_ss002a {
 
+    private static Log log = new Log(System.err);
+
     private final static String
         package_prefix = "nsk.jdi.ReferenceType.methodsByName_ss.";
 //        package_prefix = "";    //  for DEBUG without package
     static String checked_class_name = package_prefix + "methbyname_ss002aClassForCheck";
 
-    private static void display(String message) {
-        System.err.println(message);
-    }
-
     public static void main (String argv[]) {
 
-        display("**> methbyname_ss002a: debugee started!");
+        log.display("**> methbyname_ss002a: debugee started!");
         ArgumentHandler argHandler = new ArgumentHandler(argv);
         IOPipe pipe = argHandler.createDebugeeIOPipe();
 
@@ -54,19 +52,17 @@ public class methbyname_ss002a {
         methbyname_ss002aClassLoader customClassLoader = new methbyname_ss002aClassLoader(checked_class_dir, checked_class_name);
         try {
             customClassLoader.preloadClass(checked_class_name);
-            display
-                ("--> methbyname_ss002a: checked class loaded but not prepared: " + checked_class_name);
+            log.display("--> methbyname_ss002a: checked class loaded but not prepared: " + checked_class_name);
         } catch (Throwable e) {  // ClassNotFoundException
-            display
-                ("--> methbyname_ss002a: checked class NOT loaded: " + e);
+            log.display("--> methbyname_ss002a: checked class NOT loaded: " + e);
         }
 
-        display("**> methbyname_ss002a: waiting for \"quit\" signal...");
+        log.display("**> methbyname_ss002a: waiting for \"quit\" signal...");
         pipe.println("ready");
         String instruction = pipe.readln();
         if (instruction.equals("quit")) {
-            display("**> methbyname_ss002a: \"quit\" signal recieved!");
-            display("**> methbyname_ss002a: completed succesfully!");
+            log.display("**> methbyname_ss002a: \"quit\" signal recieved!");
+            log.display("**> methbyname_ss002a: completed succesfully!");
             System.exit(0/*STATUS_PASSED*/ + 95/*STATUS_TEMP*/);
         }
         System.err.println("!!**> methbyname_ss002a: unexpected signal (no \"quit\") - " + instruction);

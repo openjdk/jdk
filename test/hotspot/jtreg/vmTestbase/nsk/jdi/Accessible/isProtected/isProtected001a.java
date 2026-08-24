@@ -33,6 +33,8 @@ import nsk.share.jdi.*;
 
 public class isProtected001a {
 
+    private static Log log = new Log(System.err);
+
     boolean z0, z1[]={z0}, z2[][]={z1};
     byte    b0, b1[]={b0}, b2[][]={b1};
     char    c0, c1[]={c0}, c2[][]={c1};
@@ -79,22 +81,18 @@ public class isProtected001a {
     pack_priv_interf_impl ppii0 = new pack_priv_interf_impl();
     pack_priv_interf ppi0, ppi1[]={ppi0}, ppi2[][]={ppi1};
 
-    private static void display(String message) {
-        System.err.println(message);
-    }
-
     public static void main (String argv[]) {
 
-        display("**> isProtected001a: debugee started!");
+        log.display("**> isProtected001a: debugee started!");
         isProtected001a isProtected001a_obj = new isProtected001a();
         ArgumentHandler argHandler = new ArgumentHandler(argv);
         IOPipe pipe = argHandler.createDebugeeIOPipe();
-        display("**> isProtected001a: waiting for \"quit\" signal...");
+        log.display("**> isProtected001a: waiting for \"quit\" signal...");
         pipe.println("ready");
         String instruction = pipe.readln();
         if (instruction.equals("quit")) {
-            display("**> isProtected001a: \"quit\" signal recieved!");
-            display("**> isProtected001a: completed succesfully!");
+            log.display("**> isProtected001a: \"quit\" signal recieved!");
+            log.display("**> isProtected001a: completed succesfully!");
             System.exit(0/*STATUS_PASSED*/ + 95/*STATUS_TEMP*/);
         }
         System.err.println("!!**> isProtected001a: unexpected signal (no \"quit\") - " + instruction);

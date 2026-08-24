@@ -34,18 +34,16 @@ import java.io.*;
 
 public class fieldbyname002a {
 
+    private static Log log = new Log(System.err);
+
     private final static String
         package_prefix = "nsk.jdi.ReferenceType.fieldByName.";
 //        package_prefix = "";    //  for DEBUG without package
     static String checked_class_name = package_prefix + "fieldbyname002aClassForCheck";
 
-    private static void display(String message) {
-        System.err.println(message);
-    }
-
     public static void main (String argv[]) {
 
-        display("**> fieldbyname002a: debugee started!");
+        log.display("**> fieldbyname002a: debugee started!");
         ArgumentHandler argHandler = new ArgumentHandler(argv);
         IOPipe pipe = argHandler.createDebugeeIOPipe();
 
@@ -54,19 +52,17 @@ public class fieldbyname002a {
         fieldbyname002aClassLoader customClassLoader = new fieldbyname002aClassLoader(checked_class_dir, checked_class_name);
         try {
             customClassLoader.preloadClass(checked_class_name);
-            display
-                ("--> fieldbyname002a: checked class loaded but not prepared: " + checked_class_name);
+            log.display("--> fieldbyname002a: checked class loaded but not prepared: " + checked_class_name);
         } catch (Throwable e) {  // ClassNotFoundException
-            display
-                ("--> fieldbyname002a: checked class NOT loaded: " + e);
+            log.display("--> fieldbyname002a: checked class NOT loaded: " + e);
         }
 
-        display("**> fieldbyname002a: waiting for \"quit\" signal...");
+        log.display("**> fieldbyname002a: waiting for \"quit\" signal...");
         pipe.println("ready");
         String instruction = pipe.readln();
         if (instruction.equals("quit")) {
-            display("**> fieldbyname002a: \"quit\" signal recieved!");
-            display("**> fieldbyname002a: completed succesfully!");
+            log.display("**> fieldbyname002a: \"quit\" signal recieved!");
+            log.display("**> fieldbyname002a: completed succesfully!");
             System.exit(0/*STATUS_PASSED*/ + 95/*STATUS_TEMP*/);
         }
         System.err.println("!!**> fieldbyname002a: unexpected signal (no \"quit\") - " + instruction);

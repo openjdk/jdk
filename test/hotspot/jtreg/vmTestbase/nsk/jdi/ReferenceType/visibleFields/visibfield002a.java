@@ -34,18 +34,16 @@ import java.io.*;
 
 public class visibfield002a {
 
+    private static Log log = new Log(System.err);
+
     private final static String
         package_prefix = "nsk.jdi.ReferenceType.visibleFields.";
 //        package_prefix = "";    //  for DEBUG without package
     static String checked_class_name = package_prefix + "visibfield002aClassForCheck";
 
-    private static void display(String message) {
-        System.err.println(message);
-    }
-
     public static void main (String argv[]) {
 
-        display("**> visibfield002a: debugee started!");
+        log.display("**> visibfield002a: debugee started!");
         ArgumentHandler argHandler = new ArgumentHandler(argv);
         IOPipe pipe = argHandler.createDebugeeIOPipe();
 
@@ -54,19 +52,17 @@ public class visibfield002a {
         visibfield002aClassLoader customClassLoader = new visibfield002aClassLoader(checked_class_dir, checked_class_name);
         try {
             customClassLoader.preloadClass(checked_class_name);
-            display
-                ("--> visibfield002a: checked class loaded but not prepared: " + checked_class_name);
+            log.display("--> visibfield002a: checked class loaded but not prepared: " + checked_class_name);
         } catch (Throwable e) {  // ClassNotFoundException
-            display
-                ("--> visibfield002a: checked class NOT loaded: " + e);
+            log.display("--> visibfield002a: checked class NOT loaded: " + e);
         }
 
-        display("**> visibfield002a: waiting for \"quit\" signal...");
+        log.display("**> visibfield002a: waiting for \"quit\" signal...");
         pipe.println("ready");
         String instruction = pipe.readln();
         if (instruction.equals("quit")) {
-            display("**> visibfield002a: \"quit\" signal recieved!");
-            display("**> visibfield002a: completed succesfully!");
+            log.display("**> visibfield002a: \"quit\" signal recieved!");
+            log.display("**> visibfield002a: completed succesfully!");
             System.exit(0/*STATUS_PASSED*/ + 95/*STATUS_TEMP*/);
         }
         System.err.println("!!**> visibfield002a: unexpected signal (no \"quit\") - " + instruction);

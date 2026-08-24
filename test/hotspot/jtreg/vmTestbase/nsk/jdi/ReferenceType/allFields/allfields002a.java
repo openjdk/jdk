@@ -34,16 +34,14 @@ import java.io.*;
 
 public class allfields002a {
 
+    private static Log log = new Log(System.err);
+
     private final static String package_prefix = "nsk.jdi.ReferenceType.allFields.";
     private final static String checked_class_name = package_prefix + "allfields002b";
 
-    private static void display(String message) {
-        System.err.println(message);
-    }
-
     public static void main (String argv[]) {
 
-        display("**> allfields002a: debugee started!");
+        log.display("**> allfields002a: debugee started!");
         ArgumentHandler argHandler = new ArgumentHandler(argv);
         IOPipe pipe = argHandler.createDebugeeIOPipe();
 
@@ -52,19 +50,17 @@ public class allfields002a {
         allfields002aClassLoader customClassLoader = new allfields002aClassLoader(checked_class_dir, checked_class_name);
         try {
             customClassLoader.preloadClass(checked_class_name);
-            display
-                ("--> allfields002a: checked class loaded but not prepared: " + checked_class_name);
+            log.display("--> allfields002a: checked class loaded but not prepared: " + checked_class_name);
         } catch (Throwable e) {  // ClassNotFoundException
-            display
-                ("--> allfields002a: checked class NOT loaded: " + e);
+            log.display("--> allfields002a: checked class NOT loaded: " + e);
         }
 
-        display("**> allfields002a: waiting for \"quit\" signal...");
+        log.display("**> allfields002a: waiting for \"quit\" signal...");
         pipe.println("ready");
         String instruction = pipe.readln();
         if (instruction.equals("quit")) {
-            display("**> allfields002a: \"quit\" signal recieved!");
-            display("**> allfields002a: completed succesfully!");
+            log.display("**> allfields002a: \"quit\" signal recieved!");
+            log.display("**> allfields002a: completed succesfully!");
             System.exit(0/*STATUS_PASSED*/ + 95/*STATUS_TEMP*/);
         }
         System.err.println("!!**> allfields002a: unexpected signal (no \"quit\") - " + instruction);

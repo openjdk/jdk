@@ -33,6 +33,8 @@ import nsk.share.jdi.*;
 
 public class classesbyname001a {
 
+    private static Log log = new Log(System.err);
+
     //----------------------------------------------------- template section
 
     static final int PASSED = 0;
@@ -40,14 +42,6 @@ public class classesbyname001a {
     static final int PASS_BASE = 95;
 
      //--------------------------------------------------   log procedures
-
-    private static void log1(String message) {
-        System.err.println("**> classesbyname001a: " + message);
-    }
-
-    private static void logErr(String message) {
-        System.err.println("!!**> classesbyname001a: " + message);
-    }
 
     //====================================================== test program
 
@@ -57,7 +51,7 @@ public class classesbyname001a {
 
     public static void main (String argv[]) {
 
-        log1("debugee started!");
+        log.display("**> classesbyname001a: debugee started!");
 
         // informing debuger of readyness
         ArgumentHandler argHandler = new ArgumentHandler(argv);
@@ -68,10 +62,10 @@ public class classesbyname001a {
         for (int i = 0; ; i++) {
             String instruction;
 
-            log1("waiting for an instruction from the debuger ...");
+            log.display("**> classesbyname001a: waiting for an instruction from the debuger ...");
             instruction = pipe.readln();
             if (instruction.equals("quit")) {
-                log1("'quit' recieved");
+                log.display("**> classesbyname001a: 'quit' recieved");
                 break ;
             }
 
@@ -123,8 +117,8 @@ public class classesbyname001a {
                 }
 
             } else {
-                logErr("unexpected instruction: " + instruction);
-                logErr("FAILED!");
+                log.complain("classesbyname001a: unexpected instruction: " + instruction);
+                log.complain("classesbyname001a: FAILED!");
                 exitCode = 2;
                 break ;
             }
