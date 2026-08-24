@@ -225,7 +225,7 @@ public class SecureDS {
                 }
 
                 // Test following link to file
-                view = stream.getFileAttributeView(link, PosixFileAttributeView.class);
+                view = stream.getFileAttributeView(linkEntry, PosixFileAttributeView.class);
                 view.setPermissions(noperms);
                 assertEquals(noperms, getPosixFilePermissions(file));
                 assertEquals(permsLink, getPosixFilePermissions(link, NOFOLLOW_LINKS));
@@ -234,7 +234,7 @@ public class SecureDS {
                 assertEquals(permsLink, getPosixFilePermissions(link, NOFOLLOW_LINKS));
 
                 // Test not following link to file
-                var linkView = stream.getFileAttributeView(link, PosixFileAttributeView.class, NOFOLLOW_LINKS);
+                var linkView = stream.getFileAttributeView(linkEntry, PosixFileAttributeView.class, NOFOLLOW_LINKS);
                 if (Platform.isLinux()) {
                     // Symbolic link permissions do not apply on Linux
                     assertThrows(IOException.class, () -> linkView.setPermissions(noperms));

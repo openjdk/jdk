@@ -1994,6 +1994,20 @@ static void shuffle_fisher_yates(T* arr, unsigned num, FastRandom& frand) {
   }
 }
 
+#ifndef S390
+// Default implementation: page table never expands.
+uintptr_t os::vm_page_table_expansion_point() {
+  return align_down(UINTPTR_MAX, os::vm_allocation_granularity());
+}
+#else
+uintptr_t os::vm_page_table_expansion_point() {
+  // On s390x, page table will dynamically expand based on user demand
+  // (eg mmap probing with high addresses). First expansion happens
+  // at 2^42 (4TB).
+  return nth_bit<uintptr_t>(42);
+}
+#endif
+
 // Helper for os::attempt_reserve_memory_between
 // Given an array of things, do a hemisphere split such that the resulting
 // order is: [first, last, first + 1, last - 1, ...]
@@ -2372,8 +2386,8 @@ char* os::attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc,
 }
 
 char* os::map_memory(int fd, const char* file_name, size_t file_offset,
-                           char *addr, size_t bytes, MemTag mem_tag,
-                            bool read_only, bool allow_exec) {
+                     char *addr, size_t bytes, bool read_only,
+                     MemTag mem_tag, bool allow_exec) {
   char* result = pd_map_memory(fd, file_name, file_offset, addr, bytes, read_only, allow_exec);
   if (result != nullptr) {
     MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC, mem_tag);

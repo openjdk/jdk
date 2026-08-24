@@ -1077,6 +1077,14 @@ void VM_Version::get_processor_features() {
       FLAG_SET_DEFAULT(UseAPX, false);
     }
   }
+#if defined(COMPILER2)
+  if (UseAPX) {
+    // Increase InlineSmallCode by 10%
+    if (FLAG_IS_DEFAULT(InlineSmallCode)) {
+      FLAG_SET_DEFAULT(InlineSmallCode, InlineSmallCode * 1.10);
+    }
+  }
+#endif
 
   CHECK_CPU_FEATURE(UseCLMUL, CLMUL, supports_clmul(), "CLMUL" MULTI_INST_WARNING_MSG);
   CHECK_CPU_FEATURE(UseAES, AES, supports_aes(), "AES" MULTI_INST_WARNING_MSG);
@@ -1146,6 +1154,10 @@ void VM_Version::get_processor_features() {
            cpu_family(), _model, _stepping, os::cpu_microcode_revision());
   ss.print(", ");
   int features_offset = (int)ss.size();
+  if (compute_fast_bmi2()) {
+    _features.set_feature(CPU_FAST_BMI2);
+  }
+
   insert_features_names(_features, ss);
 
   _cpu_info_string = ss.as_string(true);
@@ -1743,7 +1755,7 @@ void VM_Version::get_processor_features() {
 #endif
 
   // Use XMM/YMM MOVDQU instruction for Object Initialization
-  if (!UseFastStosb && UseUnalignedLoadStores) {
+  if (UseUnalignedLoadStores) {
     if (FLAG_IS_DEFAULT(UseXMMForObjInit)) {
       UseXMMForObjInit = true;
     }
@@ -1794,7 +1806,12 @@ void VM_Version::get_processor_features() {
     }
 #ifdef COMPILER2
     if (FLAG_IS_DEFAULT(UseFPUForSpilling) && supports_sse4_2()) {
-      FLAG_SET_DEFAULT(UseFPUForSpilling, true);
+      // Spilling to FPU registers not beneficial on Haswell and beyond
+      if (UseAVX > 1) {
+        FLAG_SET_DEFAULT(UseFPUForSpilling, false);
+      } else {
+        FLAG_SET_DEFAULT(UseFPUForSpilling, true);
+      }
     }
 #endif
   }
@@ -1992,6 +2009,51 @@ bool VM_Version::compute_has_intel_jcc_erratum() {
     // If we are running on another intel machine not recognized in the table, we are okay.
     return false;
   }
+}
+
+// The BMI2 instruction set includes PEXT (parallel bits extract) and PDEP
+// (parallel bits deposit), which are used to intrinsify Integer/Long.compress
+// and Integer/Long.expand (added in JDK 19, see https://bugs.openjdk.org/browse/JDK-8283893).
+//
+// While all BMI2-capable CPUs can execute these instructions, PEXT and PDEP
+// are unique in that some vendors implement them via microcode rather than
+// native ALU hardware. The microcoded versions are significantly slower (high latency/low throughput)
+// than the manual bitwise fallback used in the Java implementation.
+// Conversely, all other BMI2 instructions (BZHI, MULX, RORX, SARX, SHRX, SHLX)
+// execute efficiently on every BMI2-capable CPU and are unaffected by this check.
+//
+// The logic in this method is based on official optimization guides from hardware vendors,
+// to guarantee that microcode implementations of PEXT/PDEP are not used.
+bool VM_Version::compute_fast_bmi2() {
+  if (!supports_bmi2()) {
+    return false;
+  }
+
+  if (is_intel()) {
+    // All Intel CPUs with BMI2 (Haswell+) implement PEXT/PDEP natively.
+    // 3-cycle latency, 1-per-cycle throughput on a dedicated ALU port.
+    // Source: Intel Intrinsics Guide, https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html
+    return true;
+  }
+
+  if (is_amd()) {
+    // AMD added BMI2 in Excavator (Family 0x15, model 0x60+) but used
+    // microcode for PEXT/PDEP through all of Zen 2 (Family 0x17).
+    // Native ALU hardware support arrived with Zen 3 (Family 0x19).
+    // Source: AMD Software Optimization Guide (doc #56665), Section 2.10.2, https://developer.amd.com/resources/developer-guides-manuals/
+    uint32_t family = extended_cpu_family();
+    return family >= CPU_FAMILY_AMD_19H;
+  }
+
+  // Zhaoxin added BMI2 support in Lujiazui (KX-6000+).
+  // Based on community benchmarks(https://uops.info/html-instr/PDEP_R64_R64_R64.html),
+  // PEXT/PDEP performance is known to be similarly poor to pre-Zen3 AMD, suggesting a microcode implementation.
+  // This cannot be confirmed as Zhaoxin publishes no public optimization guide.
+
+  // On VIA/Centaur CNS, BMI2 is implemented in hardware with PDEP/PEXT executing at two per cycle (better than Haswell).
+  // Intel acquired Centaur in 2021, and CNS never reached production, so we don't check for it.
+
+  return false;
 }
 
 // On Xen, the cpuid instruction returns
@@ -3028,8 +3090,10 @@ VM_Version::VM_Features VM_Version::CpuidInfo::feature_flags() const {
       vm_features.set_feature(CPU_SERIALIZE);
     if (sef_cpuid7_edx.bits.hybrid != 0)
       vm_features.set_feature(CPU_HYBRID);
-    if (_cpuid_info.sef_cpuid7_edx.bits.avx512_fp16 != 0)
-      vm_features.set_feature(CPU_AVX512_FP16);
+  }
+
+  if (_cpuid_info.sef_cpuid7_edx.bits.avx512_fp16 != 0) {
+    vm_features.set_feature(CPU_AVX512_FP16);
   }
 
   // ZX additional features.
