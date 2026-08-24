@@ -3021,7 +3021,7 @@ class StubGenerator: public StubCodeGenerator {
   // instructions.
   //
   // ==========================================================================
-  // Emit AES encrypt rounds.
+  // Emits the AES encrypt round instructions.
   //
   // vRet:    in/out — the AES state (plaintext in, ciphertext out)
   // key:     register holding pointer to expanded key array
@@ -3097,7 +3097,8 @@ class StubGenerator: public StubCodeGenerator {
   }
 
 
-  // Emit AES decrypt rounds.
+  // ==========================================================================
+  // Emits the AES decrypt round instructions.
   //
   // vRet:    in/out — the AES state (ciphertext in, plaintext out)
   // key:     register holding pointer to expanded key array
@@ -3257,11 +3258,11 @@ class StubGenerator: public StubCodeGenerator {
 
 
   // ==========================================================================
-  //  CBC Decrypt stub — using helper functions
-  //  Arguments for generated stub:
-  //   R3_ARG1   - source byte array address
-  //   R4_ARG2   - destination byte array address
-  //   R5_ARG3   - round key array
+  //  CBC Decrypt stub
+  //  Arguments:
+  //  R3_ARG1   - source byte array address
+  //  R4_ARG2   - destination byte array address
+  //  R5_ARG3   - round key array
   // ==========================================================================
 
   address generate_cipherBlockChaining_decryptAESCrypt() {
