@@ -476,15 +476,15 @@ G1EvacuationPrediction G1Policy::predict_retained_regions_evacuation() const {
   for (G1CSetCandidateGroup* group : *retained_groups) {
     assert(group->length() == 1, "We should only have one region in a retained group");
     G1HeapRegion* r = group->region_at(0); // We only have one region per group.
-    // TODO: err on taking the less efficient regions. Assuming that
-    // retained regions are also sorted on gc efficiency.
-    if (r->has_pinned_objects()) {
-      num_pinned_regions++;
-      continue;
-    }
+
     if (min_regions_left == 0) {
       // Minimum amount of regions considered. Exit.
       break;
+    }
+    // Skip over pinned retained candidates.
+    if (r->has_pinned_objects()) {
+      num_pinned_regions++;
+      continue;
     }
     min_regions_left--;
     G1EvacuationPrediction group_prediction = group->predict_group_evacuation();
