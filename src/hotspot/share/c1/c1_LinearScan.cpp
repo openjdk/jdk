@@ -1394,7 +1394,7 @@ void LinearScan::build_intervals() {
       // might not happen if the corresponding virtual register used within
       // 'handler' is replaced by another one in an earlier optimization pass.
       // An example of such a replacement is GraphBuilder::shift_op().
-      if (op_id != -1 && has_info(op_id)) {
+      if (compilation()->has_exception_handlers() && op_id != -1 && has_info(op_id)) {
         XHandlers* xhandlers = visitor.all_xhandler();
         for (int k = 0; k < xhandlers->length(); k++) {
           BlockBegin* handler = xhandlers->handler_at(k)->entry_block();
