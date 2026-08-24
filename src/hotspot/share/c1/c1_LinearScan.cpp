@@ -1389,11 +1389,11 @@ void LinearScan::build_intervals() {
       // |    live-in:  {.., R, ..}
       // |    ..
       //
-      // Normally, the debug information generation logic above will add
-      // registers such R in the above scenario as uses of 'op', but this might
-      // not happen if the corresponding virtual register used within 'handler'
-      // is replaced by another one in an earlier optimization pass. An example
-      // of such a replacement is GraphBuilder::shift_op().
+      // Normally, the debug information generation logic below will add
+      // registers such as R in the above scenario as uses of 'op', but this
+      // might not happen if the corresponding virtual register used within
+      // 'handler' is replaced by another one in an earlier optimization pass.
+      // An example of such a replacement is GraphBuilder::shift_op().
       if (op_id != -1 && has_info(op_id)) {
         XHandlers* xhandlers = visitor.all_xhandler();
         for (int k = 0; k < xhandlers->length(); k++) {
@@ -3085,12 +3085,12 @@ void LinearScan::do_linear_scan() {
   allocate_registers();
   CHECK_BAILOUT();
 
-  NOT_PRODUCT(print_lir(3, "After allocate_registers"));
+  NOT_PRODUCT(print_lir(1, "After allocate_registers"));
   NOT_PRODUCT(print_intervals("After allocate_registers"));
 
   resolve_data_flow();
 
-  NOT_PRODUCT(print_lir(3, "After resolve_data_flow"));
+  NOT_PRODUCT(print_lir(1, "After resolve_data_flow"));
   NOT_PRODUCT(print_intervals("After resolve_data_flow"));
 
   if (compilation()->has_exception_handlers()) {

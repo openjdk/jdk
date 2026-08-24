@@ -45,8 +45,9 @@ class TestExceptionBranchWithLiveRangeHole {
         try {
             for (;;) {
                 i = i << 32;
-                // i should be live at this point, because it is used below in
-                // the exception handler code.
+                // The pre-shift value of i should be live here, because it is
+                // used below in the exception handler code, after the
+                // canonicalization (i << 32) >>> 32 => i is applied.
                 array[1] = 0;
             }
         } catch (ArrayIndexOutOfBoundsException e) {
