@@ -384,11 +384,11 @@ inline bool ShenandoahHeap::is_in_active_generation(oop obj) const {
 }
 
 inline bool ShenandoahHeap::is_in_young(const void* p) const {
-  return is_in_reserved(p) && (region_affiliation(heap_region_index_containing(p)) == ShenandoahAffiliation::YOUNG_GENERATION);
+  return has_affiliation(p, YOUNG_GENERATION);
 }
 
 inline bool ShenandoahHeap::is_in_old(const void* p) const {
-  return is_in_reserved(p) && (region_affiliation(heap_region_index_containing(p)) == ShenandoahAffiliation::OLD_GENERATION);
+  return has_affiliation(p, OLD_GENERATION);
 }
 
 inline bool ShenandoahHeap::has_affiliation(const void* p, ShenandoahAffiliation affiliation) const {
