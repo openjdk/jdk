@@ -555,9 +555,9 @@ public final class JsonParser {
     }
 
     private static String formatChar(char c) {
-        return Character.isISOControl(c) ?
-            String.format(Locale.ROOT, "\\u%04X", (int)c) :
-            Character.toString(c);
+        return c >= 0x20 && c <= 0x7E ?
+            Character.toString(c) :
+            String.format(Locale.ROOT, "\\u%04X", (int)c);
     }
 
     // Parsing error messages ----------------------
