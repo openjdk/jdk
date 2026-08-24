@@ -5375,7 +5375,9 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
     mv(x11, r_sub_klass);
     mv(x12, tmp3);
     mv(x13, result);
-    mv(x14, (address)("mismatch"));
+    const char* msg = "mismatch";
+    const char* str = (code_section()->scratch_emit()) ? msg : AOTCodeCache::add_C_string(msg);
+    la(x14, ExternalAddress((address) str));
     rt_call(CAST_FROM_FN_PTR(address, Klass::on_secondary_supers_verification_failure));
     should_not_reach_here();
   }
