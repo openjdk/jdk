@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,18 +50,21 @@ public class TestVectorTest {
     // scalar materialization (CmpI/CMoveI) of the mask query result. They are only
     // valid when VectorMask.fromLong and the mask query are fully intrinsified.
     // IncrementalInlineVector is enabled by default: when the intrinsic fails to
-    // apply on a given configuration (e.g. VectorMask.fromLong under -XX:UseAVX=0),
-    // the fallback is inlined and materializes the result with the very scalar
-    // nodes these rules forbid. We therefore guard the rules to the configurations
-    // where full intrinsification is guaranteed: on x64 that requires UseAVX > 0
-    // (and bmi2), while on the other supported platforms the @requires clause above
-    // already guarantees it, so the rules apply unconditionally there.
+    // apply on a given configuration (e.g. VectorMask.fromLong under -XX:UseAVX=0
+    // or -XX:UseSVE=0/1 on AArch64), the fallback is inlined and materializes the
+    // result with the very scalar nodes these rules forbid. We therefore guard the
+    // rules to the configurations where full intrinsification is guaranteed: on x64
+    // that requires UseAVX > 0 (and bmi2), on AArch64 that requires UseSVE > 1
+    // (SVE2 mode, the default on SVE2-capable hardware), while on the remaining
+    // supported platforms the @requires clause above already guarantees it.
     @Test
     @IR(failOn = {IRNode.CMP_I, IRNode.CMOVE_I}, counts = {IRNode.VECTOR_TEST, "1"},
         applyIfPlatform = {"x64", "true"}, applyIf = {"UseAVX", "> 0"},
         applyIfCPUFeature = {"bmi2", "true"})
     @IR(failOn = {IRNode.CMP_I, IRNode.CMOVE_I}, counts = {IRNode.VECTOR_TEST, "1"},
-        applyIfPlatform = {"x64", "false"})
+        applyIfPlatform = {"aarch64", "true"}, applyIf = {"UseSVE", "> 1"})
+    @IR(failOn = {IRNode.CMP_I, IRNode.CMOVE_I}, counts = {IRNode.VECTOR_TEST, "1"},
+        applyIfPlatformAnd = {"x64", "false", "aarch64", "false"})
     public int branch(long maskLong) {
         var mask = VectorMask.fromLong(ByteVector.SPECIES_PREFERRED, maskLong);
         return mask.allTrue() ? call() : 0;
@@ -72,7 +75,9 @@ public class TestVectorTest {
         applyIfPlatform = {"x64", "true"}, applyIf = {"UseAVX", "> 0"},
         applyIfCPUFeature = {"bmi2", "true"})
     @IR(failOn = {IRNode.CMP_I}, counts = {IRNode.VECTOR_TEST, "1", IRNode.CMOVE_I, "1"},
-        applyIfPlatform = {"x64", "false"})
+        applyIfPlatform = {"aarch64", "true"}, applyIf = {"UseSVE", "> 1"})
+    @IR(failOn = {IRNode.CMP_I}, counts = {IRNode.VECTOR_TEST, "1", IRNode.CMOVE_I, "1"},
+        applyIfPlatformAnd = {"x64", "false", "aarch64", "false"})
     public int cmove(long maskLong) {
         var mask = VectorMask.fromLong(ByteVector.SPECIES_PREFERRED, maskLong);
         return mask.allTrue() ? 1 : 0;
