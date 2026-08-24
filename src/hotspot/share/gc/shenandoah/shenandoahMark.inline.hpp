@@ -332,6 +332,7 @@ bool ShenandoahMark::in_generation(ShenandoahHeap* const heap, oop obj) {
 template<class T, ShenandoahGenerationType GENERATION, bool REDIRTY>
 void ShenandoahMark::mark_through_ref(T *p, ShenandoahObjToScanQueue* q, ShenandoahObjToScanQueue* old_q, ShenandoahMarkingContext* const mark_context, bool weak) {
   static_assert(GENERATION != NON_GEN, "Should use the non-generational specialization");
+  static_assert(!REDIRTY || GENERATION == YOUNG, "Redirty is only valid for young marking");
 
   // Note: This is a very hot code path, so the code should be conditional on GENERATION template
   // parameter where possible, in order to generate the most efficient code.
@@ -352,6 +353,8 @@ void ShenandoahMark::mark_through_ref(T *p, ShenandoahObjToScanQueue* q, Shenand
       // may visit class metadata that lives outside the heap so we cannot
       // assume (or assert) that `p` is in old.
       heap->old_generation()->mark_card_as_dirty(p);
+    } else if (GENERATION == YOUNG && !REDIRTY) {
+      assert(!heap->has_affiliation(p, OLD_GENERATION), "Young mark should not encounter pointers in old");
     } else if (GENERATION == GLOBAL && heap->has_affiliation(p, OLD_GENERATION) && heap->has_affiliation(obj, YOUNG_GENERATION)) {
       // Mark card as dirty because GLOBAL marking finds interesting pointer.
       heap->old_generation()->mark_card_as_dirty(p);
