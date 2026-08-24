@@ -391,6 +391,13 @@ inline bool ShenandoahHeap::is_in_old(const void* p) const {
   return has_affiliation(p, OLD_GENERATION);
 }
 
+inline bool ShenandoahHeap::is_old_to_young(const void* maybe_old, oop maybe_young) const {
+  if (ShenandoahHeapRegion::is_in_same_region(maybe_old, maybe_young)) {
+    return false;
+  }
+  return has_affiliation(maybe_old, OLD_GENERATION) && has_affiliation(maybe_young, YOUNG_GENERATION);
+}
+
 inline bool ShenandoahHeap::has_affiliation(const void* p, ShenandoahAffiliation affiliation) const {
   if (!is_in_reserved(p)) {
     return false;

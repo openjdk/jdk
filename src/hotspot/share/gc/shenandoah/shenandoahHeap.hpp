@@ -635,6 +635,9 @@ public:
   inline bool is_in_young(const void* p) const;
   inline bool is_in_old(const void* p) const;
 
+  // Returns true if `maybe_old` is in old and `maybe_young` is in young
+  inline bool is_old_to_young(const void* maybe_old, oop maybe_young) const;
+
   // Returns false if `p` is not in the heap or does not have the given affiliation.
   inline bool has_affiliation(const void* p, ShenandoahAffiliation affiliation) const;
 

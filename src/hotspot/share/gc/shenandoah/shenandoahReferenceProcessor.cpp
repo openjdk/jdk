@@ -64,7 +64,7 @@ static void card_mark_barrier(T* field, oop value) {
   assert(ShenandoahCardBarrier, "Card-mark barrier should be on");
   ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
   assert(heap->is_in_or_null(value), "Should be in heap");
-  if (heap->is_in_old(field) && heap->is_in_young(value)) {
+  if (heap->is_old_to_young(field, value)) {
     // For Shenandoah, each generation collects all the _referents_ that belong to the
     // collected generation. We can end up with discovered lists that contain a mixture
     // of old and young _references_. These references are linked together through the

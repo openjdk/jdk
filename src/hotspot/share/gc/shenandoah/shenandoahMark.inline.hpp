@@ -355,7 +355,7 @@ void ShenandoahMark::mark_through_ref(T *p, ShenandoahObjToScanQueue* q, Shenand
       heap->old_generation()->mark_card_as_dirty(p);
     } else if (GENERATION == YOUNG && !REDIRTY) {
       assert(!heap->has_affiliation(p, OLD_GENERATION), "Young mark should not encounter pointers in old");
-    } else if (GENERATION == GLOBAL && heap->has_affiliation(p, OLD_GENERATION) && heap->has_affiliation(obj, YOUNG_GENERATION)) {
+    } else if (GENERATION == GLOBAL && heap->is_old_to_young(p, obj)) {
       // Mark card as dirty because GLOBAL marking finds interesting pointer.
       heap->old_generation()->mark_card_as_dirty(p);
     }
