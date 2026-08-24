@@ -36,10 +36,14 @@ source %{
 
 static void z_color(MacroAssembler* masm, const MachNode* node, Register dst, Register src) {
   assert_different_registers(src, dst);
-  __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeLoad);
-  __ z_llill(dst, barrier_Relocation::unpatched);
   if (src != noreg) {
-    __ z_rosbg(dst, src, 0, 63 - ZPointerLoadShift, ZPointerLoadShift);
+    // noreg means null, no need to color
+    __ z_sllg(dst, src, ZPointerLoadShift);
+    __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeLoad);
+    __ z_oill(dst, barrier_Relocation::unpatched);
+  } else {
+    __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeLoad);
+    __ z_llill(dst, barrier_Relocation::unpatched);
   }
 }
 
@@ -49,12 +53,11 @@ static void z_uncolor(MacroAssembler* masm, const MachNode* node, Register ref) 
 
 static void z_keep_alive_load_barrier(MacroAssembler* masm, const MachNode* node, Address ref_addr, Register ref) {
   assert(ref != Z_R0_scratch, "ref must not be R0");
-  __ z_lgr(Z_R0_scratch, ref);
   __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatMarkBadBeforeTest);
-  __ z_nill(Z_R0_scratch, barrier_Relocation::unpatched);
+  __ z_tmll(ref, barrier_Relocation::unpatched);
 
   ZLoadBarrierStubC2* const stub = ZLoadBarrierStubC2::create(node, ref_addr, ref);
-  __ branch_optimized(Assembler::bcondNotZero, *stub->entry());
+  __ branch_optimized(Assembler::bcondNotAllZero, *stub->entry());
 
   z_uncolor(masm, node, ref);
 
@@ -78,10 +81,10 @@ static void z_load_barrier(MacroAssembler* masm, const MachNode* node, Address r
   }
 
   ZLoadBarrierStubC2* const stub = ZLoadBarrierStubC2::create(node, ref_addr, ref);
-  __ z_lgr(Z_R0_scratch, ref);
   __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadBadBeforeTest);
-  __ z_nill(Z_R0_scratch, barrier_Relocation::unpatched);
-  __ branch_optimized(Assembler::bcondNotZero, *stub->entry());
+  __ z_tmll(ref, barrier_Relocation::unpatched);
+
+  __ branch_optimized(Assembler::bcondNotAllZero, *stub->entry());
 
   z_uncolor(masm, node, ref);
   __ bind(*stub->continuation());
@@ -184,14 +187,13 @@ instruct zCompareAndSwap(iRegI res, iRegP mem, iRegP oldval, iRegP newval, iRegP
 
     __ z_csg($oldval_temp$$Register, $newval_temp$$Register, mem_addr);
     if (VM_Version::has_LoadStoreConditional()) {
-      __ load_const_optimized(Z_R0_scratch, 0L);           // false (failed)
-      __ load_const_optimized($res$$Register, 1L);         // true  (succeed)
-      __ z_locgr($res$$Register, Z_R0_scratch, Assembler::bcondNotEqual);
+      __ z_lghi($res$$Register, 1L);                                  // true  (succeed)
+      __ z_locghi($res$$Register, 0L, Assembler::bcondNotEqual);      // false (failed)
     } else {
       Label done;
-      __ load_const_optimized($res$$Register, 0L);         // false (failed)
-      __ z_brne(done);                                     // Assume true to be the common case.
-      __ load_const_optimized($res$$Register, 1L);         // true  (succeed)
+      __ load_const_optimized($res$$Register, 0L);                    // false (failed)
+      __ z_brne(done);                                                // Assume true to be the common case.
+      __ load_const_optimized($res$$Register, 1L);                    // true  (succeed)
       __ bind(done);
     }
   %}
@@ -214,8 +216,7 @@ instruct zGetAndSetP(iRegP newval, iRegP mem, iRegP temp1, iRegP temp2, flagsReg
     __ bind(retry);
     __ z_csg($temp2$$Register, $temp1$$Register, mem_addr);
     __ branch_optimized(Assembler::bcondNotEqual, retry);
-    __ z_lgr($newval$$Register, $temp2$$Register);
-    z_uncolor(masm, this, $newval$$Register);
+    __ z_srlg($newval$$Register, $temp2$$Register, ZPointerLoadShift);
   %}
   ins_pipe(pipe_class_dummy);
 %}

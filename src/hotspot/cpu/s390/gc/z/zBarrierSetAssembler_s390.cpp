@@ -678,17 +678,16 @@ void ZBarrierSetAssembler::generate_c1_load_barrier(LIR_Assembler* ce,
                                                     bool on_non_strong) const {
 
   if (on_non_strong) {
-    __ z_lgr(Z_R0_scratch, ref->as_register());
     __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatMarkBadBeforeTest);
-    __ z_nill(Z_R0_scratch, barrier_Relocation::unpatched);
+    __ z_tmll(ref->as_register(), barrier_Relocation::unpatched);
 
-    __ branch_optimized(Assembler::bcondNotZero, *stub->entry());
+    __ branch_optimized(Assembler::bcondNotAllZero, *stub->entry());
     z_uncolor(ce, ref);
   } else {
-    __ z_lgr(Z_R0_scratch, ref->as_register());
     __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadBadBeforeTest);
-    __ z_nill(Z_R0_scratch, barrier_Relocation::unpatched);
-    __ branch_optimized(Assembler::bcondNotZero, *stub->entry());
+    __ z_tmll(ref->as_register(), barrier_Relocation::unpatched);
+
+    __ branch_optimized(Assembler::bcondNotAllZero, *stub->entry());
     z_uncolor(ce, ref);
   }
 
