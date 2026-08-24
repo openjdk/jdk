@@ -431,7 +431,7 @@ final class Finished {
                     chc.conContext.finishHandshake();
                 }
 
-                recordEvent(chc.conContext.conSession);
+                recordEvent(chc);
             }
 
             // The handshake message has been delivered.
@@ -496,7 +496,7 @@ final class Finished {
                     shc.conContext.finishHandshake();
                 }
 
-                recordEvent(shc.conContext.conSession);
+                recordEvent(shc);
             }
 
             // The handshake message has been delivered.
@@ -563,7 +563,7 @@ final class Finished {
                     chc.conContext.finishHandshake();
                 }
 
-                recordEvent(chc.conContext.conSession);
+                recordEvent(chc);
             } else {
                 chc.handshakeProducers.put(SSLHandshake.FINISHED.id,
                         SSLHandshake.FINISHED);
@@ -622,7 +622,7 @@ final class Finished {
                     shc.conContext.finishHandshake();
                 }
 
-                recordEvent(shc.conContext.conSession);
+                recordEvent(shc);
             } else {
                 shc.handshakeProducers.put(SSLHandshake.FINISHED.id,
                         SSLHandshake.FINISHED);
@@ -755,7 +755,7 @@ final class Finished {
 
             completeHandshakeState(chc);
             chc.conContext.finishHandshake();
-            recordEvent(chc.conContext.conSession);
+            recordEvent(chc);
 
             // The handshake message has been delivered.
             return null;
@@ -1149,7 +1149,7 @@ final class Finished {
                 shc.conContext.finishHandshake();
             }
 
-            recordEvent(shc.conContext.conSession);
+            recordEvent(shc);
 
             //
             // produce
@@ -1167,9 +1167,10 @@ final class Finished {
         hc.handshakeFinished = true;
     }
 
-    private static void recordEvent(SSLSessionImpl session) {
+    private static void recordEvent(HandshakeContext hc) {
         TLSHandshakeEvent event = new TLSHandshakeEvent();
         if (event.shouldCommit() || EventHelper.isLoggingSecurity()) {
+            SSLSessionImpl session = hc.conContext.conSession;
             int hash = 0;
             try {
                 // use hash code for Id
