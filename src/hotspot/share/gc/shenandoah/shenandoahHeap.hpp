@@ -634,7 +634,11 @@ public:
   inline bool is_in_active_generation(oop obj) const;
   inline bool is_in_young(const void* p) const;
   inline bool is_in_old(const void* p) const;
+
+  // Returns false if `p` is not in the heap or does not have the given affiliation.
   inline bool has_affiliation(const void* p, ShenandoahAffiliation affiliation) const;
+
+  // Does not check that `obj` is in the heap (debug builds assert that `obj` is in the heap.
   inline bool has_affiliation(oop obj, ShenandoahAffiliation affiliation) const;
 
   // Returns true iff the young generation is being collected and the given pointer
