@@ -181,6 +181,15 @@ StackMapReader::StackMapReader(ClassVerifier* v, StackMapStream* stream,
     // There's no stackmap table present. Frame count and size are 0.
     _frame_count = 0;
   }
+
+  VerificationType* locals = init_frame->locals();
+  _uninit_in_prev_frame_locals = false;
+  for (int i = 0; i < init_frame->locals_size(); i++) {
+    if (locals[i].is_uninitialized_this()) {
+      _uninit_in_prev_frame_locals = true;
+      break;
+    }
+  }
 }
 
 int32_t StackMapReader::chop(
@@ -200,7 +209,8 @@ int32_t StackMapReader::chop(
 
 #define CHECK_NT CHECK_(VerificationType::bogus_type())
 
-VerificationType StackMapReader::parse_verification_type(u1* flags, TRAPS) {
+VerificationType StackMapReader::parse_verification_type(u1* flags, bool parsing_locals, TRAPS) {
+  assert(flags != nullptr, "must be initialized");
   u1 tag = _stream->get_u1(CHECK_NT);
   if (tag < (u1)ITEM_UninitializedThis) {
     return VerificationType::from_tag(tag);
@@ -218,8 +228,12 @@ VerificationType StackMapReader::parse_verification_type(u1* flags, TRAPS) {
     return VerificationType::reference_type(klass_name);
   }
   if (tag == ITEM_UninitializedThis) {
-    if (flags != nullptr) {
-      *flags |= FLAG_THIS_UNINIT;
+    *flags |= FLAG_THIS_UNINIT;
+    // An uninitializedThis in the locals array can sometimes be preserved
+    // between frames while uninitializedThis in the stack cannot as the stack
+    // is cleared. Chop and Full frames need special handling.
+    if (parsing_locals) {
+      _uninit_in_prev_frame_locals = true;
     }
     return VerificationType::uninitialized_this_type();
   }
@@ -326,8 +340,11 @@ StackMapFrame* StackMapReader::next_helper(TRAPS) {
       offset = _prev_frame->offset() + frame_type + 1;
       locals = _prev_frame->locals();
     }
+
+    u1 flags = (u1)_uninit_in_prev_frame_locals;
+
     frame = new StackMapFrame(
-      offset, _prev_frame->flags(), _prev_frame->locals_size(), 0,
+      offset, flags, _prev_frame->locals_size(), 0,
       _max_locals, _max_stack, locals, nullptr,
       _assert_unset_fields_buffer, _verifier);
     if (_first && locals != nullptr) {
@@ -352,7 +369,8 @@ StackMapFrame* StackMapReader::next_helper(TRAPS) {
     VerificationType* stack = NEW_RESOURCE_ARRAY_IN_THREAD(
       THREAD, VerificationType, 2);
     u2 stack_size = 1;
-    stack[0] = parse_verification_type(nullptr, CHECK_VERIFY_(_verifier, nullptr));
+    u1 flags = _uninit_in_prev_frame_locals;
+    stack[0] = parse_verification_type(&flags, false /*parsing_locals*/, CHECK_VERIFY_(_verifier, nullptr));
     if (stack[0].is_category2()) {
       stack[1] = stack[0].to_category2_2nd();
       stack_size = 2;
@@ -360,7 +378,7 @@ StackMapFrame* StackMapReader::next_helper(TRAPS) {
     check_verification_type_array_size(
       stack_size, _max_stack, CHECK_VERIFY_(_verifier, nullptr));
     frame = new StackMapFrame(
-      offset, _prev_frame->flags(), _prev_frame->locals_size(), stack_size,
+      offset, flags, _prev_frame->locals_size(), stack_size,
       _max_locals, _max_stack, locals, stack,
       _assert_unset_fields_buffer, _verifier);
     if (_first && locals != nullptr) {
@@ -394,7 +412,8 @@ StackMapFrame* StackMapReader::next_helper(TRAPS) {
     VerificationType* stack = NEW_RESOURCE_ARRAY_IN_THREAD(
       THREAD, VerificationType, 2);
     u2 stack_size = 1;
-    stack[0] = parse_verification_type(nullptr, CHECK_VERIFY_(_verifier, nullptr));
+    u1 flags = _uninit_in_prev_frame_locals;
+    stack[0] = parse_verification_type(&flags, false /*parsing_locals*/, CHECK_VERIFY_(_verifier, nullptr));
     if (stack[0].is_category2()) {
       stack[1] = stack[0].to_category2_2nd();
       stack_size = 2;
@@ -402,7 +421,7 @@ StackMapFrame* StackMapReader::next_helper(TRAPS) {
     check_verification_type_array_size(
       stack_size, _max_stack, CHECK_VERIFY_(_verifier, nullptr));
     frame = new StackMapFrame(
-      offset, _prev_frame->flags(), _prev_frame->locals_size(), stack_size,
+      offset, flags, _prev_frame->locals_size(), stack_size,
       _max_locals, _max_stack, locals, stack,
       _assert_unset_fields_buffer, _verifier);
     if (_first && locals != nullptr) {
@@ -418,7 +437,7 @@ StackMapFrame* StackMapReader::next_helper(TRAPS) {
     int length = _prev_frame->locals_size();
     int chops = SAME_FRAME_EXTENDED - frame_type;
     int new_length = length;
-    u1 flags = _prev_frame->flags();
+    u1 flags = (u1)_uninit_in_prev_frame_locals;
     assert(chops == 0 || (frame_type >= CHOP_FRAME_START && frame_type <= CHOP_FRAME_END), "should be");
     if (chops != 0) {
       new_length = chop(locals, length, chops);
@@ -426,9 +445,11 @@ StackMapFrame* StackMapReader::next_helper(TRAPS) {
         new_length, _max_locals, CHECK_VERIFY_(_verifier, nullptr));
       // Recompute flags since uninitializedThis could have been chopped.
       flags = 0;
+      _uninit_in_prev_frame_locals = false;
       for (int i=0; i<new_length; i++) {
         if (locals[i].is_uninitialized_this()) {
           flags |= FLAG_THIS_UNINIT;
+          _uninit_in_prev_frame_locals = true;
           break;
         }
       }
@@ -465,9 +486,9 @@ StackMapFrame* StackMapReader::next_helper(TRAPS) {
     for (int i = 0; i < _prev_frame->locals_size(); i++) {
       locals[i] = pre_locals[i];
     }
-    u1 flags = _prev_frame->flags();
+    u1 flags = (u1)_uninit_in_prev_frame_locals;
     for (int i = 0; i < appends; i++) {
-      locals[real_length] = parse_verification_type(&flags, CHECK_NULL);
+      locals[real_length] = parse_verification_type(&flags, true /*parsing_locals*/, CHECK_NULL);
       if (locals[real_length].is_category2()) {
         locals[real_length + 1] = locals[real_length].to_category2_2nd();
         ++real_length;
@@ -491,6 +512,7 @@ StackMapFrame* StackMapReader::next_helper(TRAPS) {
   if (frame_type == FULL_FRAME) {
     // full_frame
     u1 flags = 0;
+    _uninit_in_prev_frame_locals = false;
     u2 locals_size = _stream->get_u2(CHECK_NULL);
     int real_locals_size = 0;
     if (locals_size > 0) {
@@ -498,7 +520,7 @@ StackMapFrame* StackMapReader::next_helper(TRAPS) {
         THREAD, VerificationType, locals_size*2);
     }
     for (int i = 0; i < locals_size; i++) {
-      locals[real_locals_size] = parse_verification_type(&flags, CHECK_NULL);
+      locals[real_locals_size] = parse_verification_type(&flags, true /*parsing_locals*/, CHECK_NULL);
       if (locals[real_locals_size].is_category2()) {
         locals[real_locals_size + 1] =
           locals[real_locals_size].to_category2_2nd();
@@ -516,7 +538,7 @@ StackMapFrame* StackMapReader::next_helper(TRAPS) {
         THREAD, VerificationType, stack_size*2);
     }
     for (int i = 0; i < stack_size; i++) {
-      stack[real_stack_size] = parse_verification_type(nullptr, CHECK_NULL);
+      stack[real_stack_size] = parse_verification_type(&flags, false /*parsing_locals*/, CHECK_NULL);
       if (stack[real_stack_size].is_category2()) {
         stack[real_stack_size + 1] = stack[real_stack_size].to_category2_2nd();
         ++real_stack_size;

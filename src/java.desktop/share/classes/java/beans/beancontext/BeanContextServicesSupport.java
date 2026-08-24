@@ -1285,7 +1285,7 @@ public class      BeanContextServicesSupport extends BeanContextSupport
     protected transient HashMap<Object, BCSSServiceProvider>  services;
 
     /**
-     * The number of instances of a serializable {@code BeanContextServceProvider}.
+     * The number of instances of a serializable {@code BeanContextServiceProvider}.
      */
     protected transient int                      serializable = 0;
 

@@ -685,6 +685,14 @@ Node* PhaseGVN::apply_ideal(Node* k, bool can_reshape) {
   return i;
 }
 
+Node* PhaseGVN::apply_identity(Node* n) {
+  DEBUG_ONLY(uint old_unique = is_verify_IGVN_method_return() ? C->unique() : 0;)
+  Node* const i = n->Identity(this);
+  assert(!is_verify_IGVN_method_return() || i->_idx < old_unique,
+         "Identity() must return an existing node");
+  return i;
+}
+
 //------------------------------transform--------------------------------------
 // Return a node which computes the same function as this node, but
 // in a faster or cheaper fashion.
@@ -736,7 +744,7 @@ Node* PhaseGVN::transform(Node* n) {
   }
 
   // Now check for Identities
-  i = k->Identity(this);        // Look for a nearby replacement
+  i = apply_identity(k);        // Look for a nearby replacement
   if (i != k) {                 // Found? Return replacement!
     set_progress();
     return i;
@@ -870,7 +878,7 @@ PhaseIterGVN::PhaseIterGVN() : _delay_transform(false),
 void PhaseIterGVN::shuffle_worklist() {
   if (_worklist.size() < 2) return;
   for (uint i = _worklist.size() - 1; i >= 1; i--) {
-    uint j = C->random() % (i + 1);
+    uint j = C->stress().random() % (i + 1);
     swap(_worklist.adr()[i], _worklist.adr()[j]);
   }
 }
@@ -1423,7 +1431,7 @@ void PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape, bool deep_revisit
     //   }
     //   break; // keep verifying
 
-    // AddFNode::Ideal calls "commute", which can reorder the inputs for this:
+    // AddFPNode::Ideal calls "commute", which can reorder the inputs for this:
     //   Check for tight loop increments: Loop-phi of Add of loop-phi
     // It wants to take the phi into in(1):
     //    471  Phi  === 435 38 390
@@ -2142,7 +2150,7 @@ void PhaseIterGVN::verify_Identity_for(Node* n) {
     return;
   }
 
-  Node* i = n->Identity(this);
+  Node* i = apply_identity(n);
   // If we cannot find any other Identity, we are happy.
   if (i == n) {
     verify_empty_worklist(n);
@@ -2227,18 +2235,12 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   DEBUG_ONLY(dead_loop_check(k);)
   DEBUG_ONLY(bool is_new = (k->outcnt() == 0);)
   C->remove_modified_node(k);
-#ifndef PRODUCT
-  uint hash_before = is_verify_Ideal_return() ? k->hash() : 0;
-#endif
+  DEBUG_ONLY(uint hash_before = is_verify_IGVN_method_return() ? k->hash() : 0;)
   Node* i = apply_ideal(k, /*can_reshape=*/true);
   assert(i != k || is_new || i->outcnt() > 0, "don't return dead nodes");
-#ifndef PRODUCT
-  if (is_verify_Ideal_return()) {
-    assert(k->outcnt() == 0 || i != nullptr || hash_before == k->hash(), "hash changed after Ideal returned nullptr for %s", k->Name());
-  }
-  verify_step(k);
-#endif
-
+  assert(!is_verify_IGVN_method_return() || k->outcnt() == 0 ||
+         i != nullptr || hash_before == k->hash(), "hash changed after Ideal returned nullptr for %s", k->Name());
+  NOT_PRODUCT(verify_step(k);)
   DEBUG_ONLY(uint loop_count = 1;)
   if (i != nullptr) {
     set_progress();
@@ -2262,17 +2264,12 @@ Node *PhaseIterGVN::transform_old(Node* n) {
     // Try idealizing again
     DEBUG_ONLY(is_new = (k->outcnt() == 0);)
     C->remove_modified_node(k);
-#ifndef PRODUCT
-    uint hash_before = is_verify_Ideal_return() ? k->hash() : 0;
-#endif
+    DEBUG_ONLY(uint hash_before = is_verify_IGVN_method_return() ? k->hash() : 0;)
     i = apply_ideal(k, /*can_reshape=*/true);
     assert(i != k || is_new || (i->outcnt() > 0), "don't return dead nodes");
-#ifndef PRODUCT
-    if (is_verify_Ideal_return()) {
-      assert(k->outcnt() == 0 || i != nullptr || hash_before == k->hash(), "hash changed after Ideal returned nullptr for %s", k->Name());
-    }
-    verify_step(k);
-#endif
+    assert(!is_verify_IGVN_method_return() || k->outcnt() == 0 ||
+           i != nullptr || hash_before == k->hash(), "hash changed after Ideal returned nullptr for %s", k->Name());
+    NOT_PRODUCT(verify_step(k);)
     DEBUG_ONLY(loop_count++;)
   }
 
@@ -2306,7 +2303,7 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   }
 
   // Now check for Identities
-  i = k->Identity(this);      // Look for a nearby replacement
+  i = apply_identity(k);      // Look for a nearby replacement
   if (i != k) {                // Found? Return replacement!
     set_progress();
     add_users_to_worklist(k);
@@ -2700,6 +2697,29 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       return u->Opcode() == Op_AndI || u->Opcode() == Op_AndL;
     });
   }
+  // If changed LShift inputs, check CompressBits and ExpandBits users for
+  // compress(x, 1 << n), compress(x, -1 << n),
+  // expand(x, 1 << n), expand(x, -1 << n) optimizations.
+  if (use_op == Op_LShiftI || use_op == Op_LShiftL) {
+    add_users_to_worklist_if(worklist, use, [&](Node* u) {
+      return (u->Opcode() == Op_CompressBits || u->Opcode() == Op_ExpandBits) &&
+             u->in(2) == use;
+    });
+  }
+  // If changed ExpandBits inputs, check CompressBits users for
+  // compress(expand(x, m), m) optimization.
+  if (use_op == Op_ExpandBits) {
+    add_users_to_worklist_if(worklist, use, [&](Node* u) {
+      return u->Opcode() == Op_CompressBits && u->in(1) == use;
+    });
+  }
+  // If changed CompressBits inputs, check ExpandBits users for
+  // expand(compress(x, m), m) optimization.
+  if (use_op == Op_CompressBits) {
+    add_users_to_worklist_if(worklist, use, [&](Node* u) {
+      return u->Opcode() == Op_ExpandBits && u->in(1) == use;
+    });
+  }
   // If changed AddI/SubI inputs, check CmpU for range check optimization.
   if (use_op == Op_AddI || use_op == Op_SubI) {
     add_users_to_worklist_if(worklist, use, [](Node* u) {
@@ -3075,7 +3095,7 @@ void PhaseCCP::verify_analyze(Unique_Node_List& worklist_verify) {
 // Fetch next node from worklist to be examined in this iteration.
 Node* PhaseCCP::fetch_next_node(Unique_Node_List& worklist) {
   if (StressCCP) {
-    return worklist.remove(C->random() % worklist.size());
+    return worklist.remove(C->stress().random() % worklist.size());
   } else {
     return worklist.pop();
   }
