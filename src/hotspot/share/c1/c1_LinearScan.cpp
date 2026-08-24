@@ -1364,11 +1364,11 @@ void LinearScan::build_intervals() {
         add_use(opr, block_from, op_id, use_kind_of_input_operand(op, opr));
       }
 
-      // If the currently visited operation 'op' may branch into an exception
-      // handler block 'handler', add all live-in registers of 'handler' as
-      // virtual uses of 'op'. This ensures that all such registers are live
-      // into 'op', which might otherwise not happen if 'op' is scheduled within
-      // a hole of their corresponding intervals, as in the following
+      // If the visited operation 'op' may branch into an exception handler
+      // block 'handler', add all live-in registers of 'handler' as virtual uses
+      // of 'op'. This ensures that all such registers are live into 'op', which
+      // might otherwise not happen if 'op' is scheduled within a hole of their
+      // corresponding intervals, as in the following
       // post-compute_global_live_sets() scenario:
       //
       // R
@@ -1387,6 +1387,12 @@ void LinearScan::build_intervals() {
       // |  handler:
       // |    live-in:  {.., R, ..}
       // |    ..
+      //
+      // Normally, the debug information generation logic above will add
+      // registers such R in the above example as uses of 'op', but this might
+      // not happen if the corresponding virtual register used within 'handler'
+      // is replaced by another one in an earlier optimization pass. An example
+      // of such a replacement is GraphBuilder::shift_op().
       if (op_id != -1 && has_info(op_id)) {
         XHandlers* xhandlers = visitor.all_xhandler();
         for (int k = 0; k < xhandlers->length(); k++) {
