@@ -744,8 +744,9 @@ void LinearScan::compute_global_live_sets() {
   // Perform a backward dataflow analysis to compute live_out and live_in for each block.
   // The loop is executed until a fixpoint is reached (no changes in an iteration)
   // Exception handlers must be processed because not all live values are
-  // present in the state array, e.g. because of global value numbering
-  // TBD: extend comment, write that we complement this at the local level by adding virtual uses below.
+  // present in the state array, e.g. because of global value numbering.
+  // Exception handler live_in information is also used by build_intervals() to
+  // account for local liveness holes in exception-throwing blocks.
   do {
     change_occurred = false;
 
