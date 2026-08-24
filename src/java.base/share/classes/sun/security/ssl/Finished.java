@@ -423,18 +423,14 @@ final class Finished {
                         engineGetClientSessionContext()).put(
                             chc.handshakeSession);
                 }
-                chc.conContext.conSession = chc.handshakeSession.finish();
-                chc.conContext.protocolVersion = chc.negotiatedProtocol;
-                chc.conContext.conSession.setNegotiatedNamedGroup(
-                        chc.getNegotiatedNamedGroup());
 
-                // handshake context cleanup.
-                chc.handshakeFinished = true;
+                completeHandshakeState(chc);
 
                 // May need to retransmit the last flight for DTLS.
                 if (!chc.sslContext.isDTLS()) {
                     chc.conContext.finishHandshake();
                 }
+
                 recordEvent(chc.conContext.conSession);
             }
 
@@ -492,18 +488,14 @@ final class Finished {
                                 shc.handshakeSession);
                     }
                 }
-                shc.conContext.conSession = shc.handshakeSession.finish();
-                shc.conContext.protocolVersion = shc.negotiatedProtocol;
-                shc.conContext.conSession.setNegotiatedNamedGroup(
-                        shc.getNegotiatedNamedGroup());
 
-                // handshake context cleanup.
-                shc.handshakeFinished = true;
+                completeHandshakeState(shc);
 
                 // May need to retransmit the last flight for DTLS.
                 if (!shc.sslContext.isDTLS()) {
                     shc.conContext.finishHandshake();
                 }
+
                 recordEvent(shc.conContext.conSession);
             }
 
@@ -563,18 +555,14 @@ final class Finished {
                         engineGetClientSessionContext()).put(
                             chc.handshakeSession);
                 }
-                chc.conContext.conSession = chc.handshakeSession.finish();
-                chc.conContext.protocolVersion = chc.negotiatedProtocol;
-                chc.conContext.conSession.setNegotiatedNamedGroup(
-                        chc.getNegotiatedNamedGroup());
 
-                // handshake context cleanup.
-                chc.handshakeFinished = true;
+                completeHandshakeState(chc);
 
                 // May need to retransmit the last flight for DTLS.
                 if (!chc.sslContext.isDTLS()) {
                     chc.conContext.finishHandshake();
                 }
+
                 recordEvent(chc.conContext.conSession);
             } else {
                 chc.handshakeProducers.put(SSLHandshake.FINISHED.id,
@@ -626,18 +614,14 @@ final class Finished {
                         engineGetServerSessionContext()).put(
                             shc.handshakeSession);
                 }
-                shc.conContext.conSession = shc.handshakeSession.finish();
-                shc.conContext.protocolVersion = shc.negotiatedProtocol;
-                shc.conContext.conSession.setNegotiatedNamedGroup(
-                        shc.getNegotiatedNamedGroup());
 
-                // handshake context cleanup.
-                shc.handshakeFinished = true;
+                completeHandshakeState(shc);
 
                 // May need to retransmit the last flight for DTLS.
                 if (!shc.sslContext.isDTLS()) {
                     shc.conContext.finishHandshake();
                 }
+
                 recordEvent(shc.conContext.conSession);
             } else {
                 shc.handshakeProducers.put(SSLHandshake.FINISHED.id,
@@ -769,13 +753,7 @@ final class Finished {
             chc.handshakeSession.setResumptionMasterSecret(
                     resumptionMasterSecret);
 
-            chc.conContext.conSession = chc.handshakeSession.finish();
-            chc.conContext.protocolVersion = chc.negotiatedProtocol;
-            chc.conContext.conSession.setNegotiatedNamedGroup(
-                    chc.getNegotiatedNamedGroup());
-
-            // handshake context cleanup.
-            chc.handshakeFinished = true;
+            completeHandshakeState(chc);
             chc.conContext.finishHandshake();
             recordEvent(chc.conContext.conSession);
 
@@ -1164,19 +1142,13 @@ final class Finished {
                         "Failure to derive application secrets", gse);
             }
 
-            //  update connection context
-            shc.conContext.conSession = shc.handshakeSession.finish();
-            shc.conContext.protocolVersion = shc.negotiatedProtocol;
-            shc.conContext.conSession.setNegotiatedNamedGroup(
-                    shc.getNegotiatedNamedGroup());
-
-            // handshake context cleanup.
-            shc.handshakeFinished = true;
+            completeHandshakeState(shc);
 
             // May need to retransmit the last flight for DTLS.
             if (!shc.sslContext.isDTLS()) {
                 shc.conContext.finishHandshake();
             }
+
             recordEvent(shc.conContext.conSession);
 
             //
@@ -1185,6 +1157,14 @@ final class Finished {
                 NewSessionTicket.t13PosthandshakeProducer.produce(shc);
             }
         }
+    }
+
+    private static void completeHandshakeState(HandshakeContext hc) {
+        hc.conContext.conSession = hc.handshakeSession.finish();
+        hc.conContext.protocolVersion = hc.negotiatedProtocol;
+        hc.conContext.conSession.setNegotiatedNamedGroup(
+                hc.getNegotiatedNamedGroup());
+        hc.handshakeFinished = true;
     }
 
     private static void recordEvent(SSLSessionImpl session) {
