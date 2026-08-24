@@ -3243,7 +3243,7 @@ class StubGenerator: public StubCodeGenerator {
     aes_encrypt_rounds(vRet, key, keylen, tmp, vKey1, vKey2, vKey3, vKey4);
 
     __ vor             (vIV, vRet, vRet);                     // MUST precede the store
-    __ store_byte_vector_unaligned(vRet, 0, to, tmp, vp);     // may clobber vRet
+    __ store_byte_vector_unaligned(vRet, 0, to, tmp, vp);
     __ addi            (to, to, 16);
 
     __ subi            (len, len, 16);
@@ -3316,7 +3316,7 @@ class StubGenerator: public StubCodeGenerator {
     __ vxor            (vRet, vRet, vIV);           // CBC XOR (after decrypt)
     __ vor             (vIV, vSavedCT, vSavedCT);   // IV = previous ciphertext
 
-    __ store_byte_vector_unaligned(vRet, 0, to, tmp, vp);   // may clobber vRet
+    __ store_byte_vector_unaligned(vRet, 0, to, tmp, vp);
     __ addi            (to, to, 16);
 
     __ subi            (len, len, 16);
