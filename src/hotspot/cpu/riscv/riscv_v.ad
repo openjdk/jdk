@@ -3744,6 +3744,45 @@ instruct vlsrL_vi_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
   ins_pipe(pipe_slow);
 %}
 
+instruct vwsllBtoS_vi(vReg dst, vReg src, immI shift) %{
+  predicate(UseZvbb && ((n->in(2)->in(1)->get_int() & 0x1f) < BitsPerShort));
+  match(Set dst (LShiftVS (VectorUCastB2X src) (LShiftCntV shift)));
+  effect(TEMP_DEF dst);
+  format %{ "vwsllBtoS_vi $dst, $src, $shift" %}
+  ins_encode %{
+    uint32_t con = (unsigned)$shift$$constant & 0x1f;
+    __ vsetvli_helper(T_BYTE, Matcher::vector_length(this), Assembler::mf2);
+    __ vwsll_vi(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), con);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vwsllStoI_vi(vReg dst, vReg src, immI shift) %{
+  predicate(UseZvbb);
+  match(Set dst (LShiftVI (VectorUCastS2X src) (LShiftCntV shift)));
+  effect(TEMP_DEF dst);
+  format %{ "vwsllStoI_vi $dst, $src, $shift" %}
+  ins_encode %{
+    uint32_t con = (unsigned)$shift$$constant & 0x1f;
+    __ vsetvli_helper(T_SHORT, Matcher::vector_length(this), Assembler::mf2);
+    __ vwsll_vi(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), con);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vwsllItoL_vi(vReg dst, vReg src, immI shift) %{
+  predicate(UseZvbb && ((n->in(2)->in(1)->get_int() & 0x3f) < 32));
+  match(Set dst (LShiftVL (VectorUCastI2X src) (LShiftCntV shift)));
+  effect(TEMP_DEF dst);
+  format %{ "vwsllItoL_vi $dst, $src, $shift" %}
+  ins_encode %{
+    uint32_t con = (unsigned)$shift$$constant & 0x1f;
+    __ vsetvli_helper(T_INT, Matcher::vector_length(this), Assembler::mf2);
+    __ vwsll_vi(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), con);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 instruct vlslB_vi(vReg dst, vReg src, immI shift) %{
   match(Set dst (LShiftVB src (LShiftCntV shift)));
   format %{ "vlslB_vi $dst, $src, $shift" %}

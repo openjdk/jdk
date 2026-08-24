@@ -2586,6 +2586,7 @@ enum Nf {
   INSN(vandn_vv,   0b1010111, 0b000, 0b000001);
   INSN(vror_vv,    0b1010111, 0b000, 0b010100);
   INSN(vrol_vv,    0b1010111, 0b000, 0b010101);
+  INSN(vwsll_vv,   0b1010111, 0b000, 0b110101);
 
   // Vector Bit-manipulation used in Cryptography (Zvbc) Extension
   INSN(vclmul_vv,  0b1010111, 0b010, 0b001100);
@@ -2602,6 +2603,7 @@ enum Nf {
   INSN(vandn_vx,   0b1010111, 0b100, 0b000001);
   INSN(vrol_vx,    0b1010111, 0b100, 0b010101);
   INSN(vror_vx,    0b1010111, 0b100, 0b010100);
+  INSN(vwsll_vx,   0b1010111, 0b100, 0b110101);
 
 #undef INSN
 
@@ -2629,6 +2631,18 @@ enum Nf {
 
 #undef INSN
 #undef patch_VArith_imm6
+
+#define INSN(NAME, op, funct3, funct6)                                                       \
+  void NAME(VectorRegister Vd, VectorRegister Vs2, uint32_t imm,                             \
+            VectorMask vm = unmasked) {                                                      \
+    guarantee(is_uimm5(imm), "uimm is invalid");                                            \
+    patch_VArith(op, Vd, funct3, imm, Vs2, vm, funct6);                                      \
+  }
+
+  // Vector Bit-manipulation used in Cryptography (Zvbb) Extension
+  INSN(vwsll_vi,   0b1010111, 0b011, 0b110101);
+
+#undef INSN
 
 #define INSN(NAME, op, funct3, Vs1, funct6)                                    \
   void NAME(VectorRegister Vd, VectorRegister Vs2, VectorMask vm = unmasked) { \
