@@ -52,7 +52,7 @@ package runtime.valhalla.inlinetypes;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import jdk.internal.value.ValueClass;
-
+import jdk.test.lib.Asserts;
 public class DirectMethodTest {
     static boolean expectFlat = false;
 
@@ -62,8 +62,7 @@ public class DirectMethodTest {
 
     public static void checkFlat(Object[] array) {
         boolean isFlat = ValueClass.isFlatArray(array);
-        if (isFlat != expectFlat) {
-            throw new RuntimeException("Expected array to be " + (expectFlat ? "flat" : "not flat") + ", it wasn't");
+        Asserts.assertEquals(expectFlat, isFlat);
         }
     }
 
