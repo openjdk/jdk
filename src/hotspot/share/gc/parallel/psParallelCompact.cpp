@@ -545,6 +545,23 @@ bool PSParallelCompact::check_maximum_compaction(bool should_do_max_compaction,
       || is_region_full;
 }
 
+static size_t compute_max_waste_bytes(size_t live_bytes, size_t max_old_gen_bytes) {
+  // A two-word filler crossing the dense-prefix boundary replaces one dead
+  // prefix word, so reserve one word for its net increase in live data when
+  // such a filler is possible.
+  const bool can_place_filler = !UseCompactObjectHeaders &&
+                                MinObjAlignment < checked_cast<int>(CollectedHeap::min_fill_size());
+  const size_t filler_overhead_bytes = can_place_filler ? HeapWordSize : 0;
+  const size_t old_gen_slack_bytes = max_old_gen_bytes > live_bytes
+                                     ? max_old_gen_bytes - live_bytes
+                                     : 0;
+  const size_t max_retained_dead_bytes = old_gen_slack_bytes > filler_overhead_bytes
+                                         ? old_gen_slack_bytes - filler_overhead_bytes
+                                         : 0;
+  const size_t dead_ratio_waste_bytes = (MaxHeapSize - MaxNewSize) * (MarkSweepDeadRatio / 100.0);
+  return MIN2(dead_ratio_waste_bytes, max_retained_dead_bytes);
+}
+
 HeapWord* PSParallelCompact::compute_dense_prefix_for_old_space(MutableSpace* old_space,
                                                                 HeapWord* full_region_prefix_end,
                                                                 size_t max_waste_bytes,
@@ -631,12 +648,18 @@ size_t PSParallelCompact::compute_dense_prefix_and_assumed_live_bytes(bool shoul
                                                                       PSOldGen* old_gen,
                                                                       HeapWord* full_region_prefix_end) {
   MutableSpace* old_space = old_gen->object_space();
-  const size_t max_waste_bytes = old_gen->reserved_size() * (MarkSweepDeadRatio / 100.0);
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
+  const size_t max_young_gen_bytes = UseAdaptiveSizePolicy ? heap->young_gen()->reserved_size() : MaxNewSize;
+  const size_t max_old_gen_bytes = MaxHeapSize - max_young_gen_bytes;
+  const size_t live_bytes = total_live_words * HeapWordSize;
+  // Retaining dead space is optional. Do not let it consume the selected
+  // young-gen target when the live data itself fits alongside that target.
+  const size_t max_waste_bytes = compute_max_waste_bytes(live_bytes, max_old_gen_bytes);
 
   should_do_max_compaction = check_maximum_compaction(should_do_max_compaction,
-                                                       total_live_words,
-                                                       old_space,
-                                                       full_region_prefix_end);
+                                                      total_live_words,
+                                                      old_space,
+                                                      full_region_prefix_end);
 
   HeapWord* dense_prefix_end = compute_dense_prefix_for_old_space(old_space,
                                                                   full_region_prefix_end,
@@ -659,7 +682,14 @@ size_t PSParallelCompact::compute_dense_prefix_and_assumed_live_bytes(bool shoul
   // boundary.  total_live_words was computed before the filler was placed, so
   // add 2 words to account for both words of the filler.
   size_t filler_live_words = filler_placed ? 2 : 0;
-  return (total_live_words + filler_live_words) * HeapWordSize + dead_in_prefix * HeapWordSize;
+  size_t assumed_live_bytes = (total_live_words + filler_live_words) * HeapWordSize + dead_in_prefix * HeapWordSize;
+#ifdef ASSERT
+  if (!should_do_max_compaction && live_bytes <= max_old_gen_bytes) {
+    assert(assumed_live_bytes <= max_old_gen_bytes,
+           "retained dead space consumed the young-gen target");
+  }
+#endif
+  return assumed_live_bytes;
 }
 
 void PSParallelCompact::summarize_spaces(size_t assumed_live_bytes) {
