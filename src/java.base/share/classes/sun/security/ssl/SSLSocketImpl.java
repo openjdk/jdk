@@ -1415,6 +1415,13 @@ public final class SSLSocketImpl
         }
     }
 
+    @Override
+    public String [] getSupportedNamedGroups() {
+        return sslContext.getSupportedNamedGroups().stream()
+                .map(ng -> ng.name)
+                .toArray(String[]::new);
+    }
+
     /**
      * Read the initial handshake records.
      */

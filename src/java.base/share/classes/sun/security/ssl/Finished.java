@@ -425,6 +425,8 @@ final class Finished {
                 }
                 chc.conContext.conSession = chc.handshakeSession.finish();
                 chc.conContext.protocolVersion = chc.negotiatedProtocol;
+                chc.conContext.conSession.setNegotiatedNamedGroup(
+                        chc.getNegotiatedNamedGroup());
 
                 // handshake context cleanup.
                 chc.handshakeFinished = true;
@@ -433,6 +435,7 @@ final class Finished {
                 if (!chc.sslContext.isDTLS()) {
                     chc.conContext.finishHandshake();
                 }
+                recordEvent(chc.conContext.conSession);
             }
 
             // The handshake message has been delivered.
@@ -491,6 +494,8 @@ final class Finished {
                 }
                 shc.conContext.conSession = shc.handshakeSession.finish();
                 shc.conContext.protocolVersion = shc.negotiatedProtocol;
+                shc.conContext.conSession.setNegotiatedNamedGroup(
+                        shc.getNegotiatedNamedGroup());
 
                 // handshake context cleanup.
                 shc.handshakeFinished = true;
@@ -499,6 +504,7 @@ final class Finished {
                 if (!shc.sslContext.isDTLS()) {
                     shc.conContext.finishHandshake();
                 }
+                recordEvent(shc.conContext.conSession);
             }
 
             // The handshake message has been delivered.
@@ -559,15 +565,17 @@ final class Finished {
                 }
                 chc.conContext.conSession = chc.handshakeSession.finish();
                 chc.conContext.protocolVersion = chc.negotiatedProtocol;
+                chc.conContext.conSession.setNegotiatedNamedGroup(
+                        chc.getNegotiatedNamedGroup());
 
                 // handshake context cleanup.
                 chc.handshakeFinished = true;
-                recordEvent(chc);
 
                 // May need to retransmit the last flight for DTLS.
                 if (!chc.sslContext.isDTLS()) {
                     chc.conContext.finishHandshake();
                 }
+                recordEvent(chc.conContext.conSession);
             } else {
                 chc.handshakeProducers.put(SSLHandshake.FINISHED.id,
                         SSLHandshake.FINISHED);
@@ -620,15 +628,17 @@ final class Finished {
                 }
                 shc.conContext.conSession = shc.handshakeSession.finish();
                 shc.conContext.protocolVersion = shc.negotiatedProtocol;
+                shc.conContext.conSession.setNegotiatedNamedGroup(
+                        shc.getNegotiatedNamedGroup());
 
                 // handshake context cleanup.
                 shc.handshakeFinished = true;
-                recordEvent(shc);
 
                 // May need to retransmit the last flight for DTLS.
                 if (!shc.sslContext.isDTLS()) {
                     shc.conContext.finishHandshake();
                 }
+                recordEvent(shc.conContext.conSession);
             } else {
                 shc.handshakeProducers.put(SSLHandshake.FINISHED.id,
                         SSLHandshake.FINISHED);
@@ -761,12 +771,13 @@ final class Finished {
 
             chc.conContext.conSession = chc.handshakeSession.finish();
             chc.conContext.protocolVersion = chc.negotiatedProtocol;
+            chc.conContext.conSession.setNegotiatedNamedGroup(
+                    chc.getNegotiatedNamedGroup());
 
             // handshake context cleanup.
             chc.handshakeFinished = true;
             chc.conContext.finishHandshake();
-            recordEvent(chc);
-
+            recordEvent(chc.conContext.conSession);
 
             // The handshake message has been delivered.
             return null;
@@ -1156,6 +1167,8 @@ final class Finished {
             //  update connection context
             shc.conContext.conSession = shc.handshakeSession.finish();
             shc.conContext.protocolVersion = shc.negotiatedProtocol;
+            shc.conContext.conSession.setNegotiatedNamedGroup(
+                    shc.getNegotiatedNamedGroup());
 
             // handshake context cleanup.
             shc.handshakeFinished = true;
@@ -1164,7 +1177,7 @@ final class Finished {
             if (!shc.sslContext.isDTLS()) {
                 shc.conContext.finishHandshake();
             }
-            recordEvent(shc);
+            recordEvent(shc.conContext.conSession);
 
             //
             // produce
@@ -1174,10 +1187,9 @@ final class Finished {
         }
     }
 
-    private static void recordEvent(HandshakeContext hc) {
+    private static void recordEvent(SSLSessionImpl session) {
         TLSHandshakeEvent event = new TLSHandshakeEvent();
         if (event.shouldCommit() || EventHelper.isLoggingSecurity()) {
-            SSLSessionImpl session = hc.conContext.conSession;
             int hash = 0;
             try {
                 // use hash code for Id
@@ -1188,13 +1200,12 @@ final class Finished {
                  // not verified msg
             }
             long peerCertificateId = Integer.toUnsignedLong(hash);
-            String namedGroup = "N/A";
-            for (SSLCredentials cred : hc.handshakeCredentials) {
-                if (cred instanceof NamedGroupCredentials ngCred) {
-                    namedGroup = ngCred.getNamedGroup().name;
-                    break;
-                }
+
+            String namedGroup = session.getNegotiatedNamedGroup();
+            if (namedGroup == null) {
+                namedGroup = "N/A";
             }
+
             if (event.shouldCommit()) {
                 event.peerHost = session.getPeerHost();
                 event.peerPort = session.getPeerPort();

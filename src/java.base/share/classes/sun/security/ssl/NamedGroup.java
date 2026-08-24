@@ -33,6 +33,7 @@ import java.security.spec.NamedParameterSpec;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Objects;
@@ -917,6 +918,25 @@ enum NamedGroup {
                 }
                 namedGroups = defaultNames;
             }
+        }
+
+        // Returns all supported named groups for the specified protocols and
+        // cipher suites. Default named groups are returned first.
+        static List<NamedGroup> getSupportedGroups(List<ProtocolVersion> protocols,
+                List<CipherSuite> cipherSuites) {
+
+            LinkedHashSet<NamedGroup> supportedGroups = new LinkedHashSet<>();
+            supportedGroups.addAll(Arrays.asList(defaultGroups));
+            supportedGroups.addAll(Arrays.asList(NamedGroup.values()));
+
+            return supportedGroups.stream()
+                    .filter(ng -> ng.isAvailable(protocols))
+                    .filter(ng -> ng.isSupported(cipherSuites))
+                    .filter(ng -> SSLConfiguration.enableFFDHE ||
+                            ng.spec != NamedGroupSpec.NAMED_GROUP_FFDHE)
+                    .filter(ng -> ng.isPermitted(
+                            SSLAlgorithmConstraints.DEFAULT))
+                    .toList();
         }
 
         // Avoid the group lookup for default and customized groups.
