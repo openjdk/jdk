@@ -96,7 +96,7 @@ G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _reserve_factor((double) G1ReservePercent / 100.0),
   _reserve_regions(0),
   _young_gen_sizer(),
-  _free_regions_at_end_of_collection(0),
+  _free_regions_for_young_sizing(0),
   _pending_cards_from_gc(0),
   _collection_set(nullptr),
   _g1h(nullptr),
@@ -122,13 +122,17 @@ void G1Policy::init(G1CollectedHeap* g1h, G1CollectionSet* collection_set) {
 
   _young_gen_sizer.adjust_max_new_size(_g1h->max_num_regions());
 
-  _free_regions_at_end_of_collection = _g1h->num_free_regions();
+  update_free_regions_for_young_sizing();
 
   update_young_regions_bounds();
 }
 
 void G1Policy::record_young_gc_pause_start() {
   phase_times()->record_gc_pause_start();
+}
+
+void G1Policy::update_free_regions_for_young_sizing() {
+  _free_regions_for_young_sizing.store_relaxed(_g1h->num_free_regions());
 }
 
 void G1Policy::record_new_heap_size(uint new_number_of_regions) {
@@ -186,20 +190,17 @@ void G1Policy::update_young_regions_bounds(const G1EvacuationPrediction& base_pr
                                 min_num_young_regions_by_sizer,
                                 max_num_young_regions_by_sizer);
 
+  uint target_num_young_regions = calculate_target_num_young_regions(predictor,
+                                                                     min_num_young_regions_by_sizer);
+
   uint desired_num_young_regions = predictor.desired_num_young_regions();
-  uint max_num_young_regions_by_evacuation_space = predictor.max_num_young_regions_by_evacuation_space();
-
-  uint target_num_young_regions = calculate_target_num_young_regions(desired_num_young_regions,
-                                                                     min_num_young_regions_by_sizer,
-                                                                     max_num_young_regions_by_evacuation_space);
-
   log_trace(gc, ergo, heap)("Young num regions update: base time %1.3fms survivor bytes to copy %zu "
                             "old target %u desired: %u evacuation space max: %u target: %u",
                             base_prediction._time_ms,
                             base_prediction._bytes_to_copy,
                             old_target_num_young_regions,
                             desired_num_young_regions,
-                            max_num_young_regions_by_evacuation_space,
+                            predictor.max_num_young_regions_by_evacuation_space(),
                             target_num_young_regions);
 
   // Write back. This is not an attempt to control visibility order to other threads
@@ -282,7 +283,7 @@ G1YoungGenPredictor::G1YoungGenPredictor(const G1Policy* const policy,
   _desired_num_eden_regions_by_mmu = _use_adaptive_sizing ?
                                      policy->calculate_desired_num_eden_regions_by_mmu() : 0;
 
-  _base_free_regions = policy->_free_regions_at_end_of_collection;
+  _base_free_regions = policy->free_regions_for_young_sizing();
   _survivor_used_bytes = g1h->survivor()->used_bytes();
 
   postcond(_num_survivor_regions < _absolute_min_num_young_regions);
@@ -291,9 +292,11 @@ G1YoungGenPredictor::G1YoungGenPredictor(const G1Policy* const policy,
   postcond(_use_adaptive_sizing || _desired_num_eden_regions_by_mmu == 0);
 }
 
-uint G1Policy::calculate_target_num_young_regions(uint desired_num_young_regions,
-                                                  uint min_num_young_regions_by_sizer,
-                                                  uint max_num_young_regions_by_evacuation_space) const {
+uint G1Policy::calculate_target_num_young_regions(const G1YoungGenPredictor& predictor,
+                                                  uint min_num_young_regions_by_sizer) const {
+  uint desired_num_young = predictor.desired_num_young_regions();
+  uint max_num_young_regions_by_evacuation_space = predictor.max_num_young_regions_by_evacuation_space();
+  uint base_free_regions = predictor.base_free_regions();
   uint num_young_regions = _g1h->num_young_regions();
 
   uint max_target_by_evacuation_space = MAX2(num_young_regions,
@@ -301,7 +304,7 @@ uint G1Policy::calculate_target_num_young_regions(uint desired_num_young_regions
 
   // Cap by predicted evacuation space before determining how much
   // additional Eden can be provided from the currently free regions.
-  uint evacuation_limited_target_young = MIN2(desired_num_young_regions,
+  uint evacuation_limited_target_young = MIN2(desired_num_young,
                                               max_target_by_evacuation_space);
 
   uint receiving_additional_eden = 0;
@@ -310,7 +313,7 @@ uint G1Policy::calculate_target_num_young_regions(uint desired_num_young_regions
     // number of young regions concurrently). Do not allow more, potentially resulting in GC.
     log_trace(gc, ergo, heap)("Target young regions: Already used up desired young regions %u "
                               "evacuation space max %u allocated young regions %u",
-                              desired_num_young_regions,
+                              desired_num_young,
                               max_num_young_regions_by_evacuation_space,
                               num_young_regions);
   } else {
@@ -329,13 +332,13 @@ uint G1Policy::calculate_target_num_young_regions(uint desired_num_young_regions
                                         (reserve_regions + 1) / 2);
 
     log_trace(gc, ergo, heap)("Target young regions: Common "
-                              "free regions at end of collection %u "
+                              "free regions for young sizing %u "
                               "desired number of young regions %u "
                               "evacuation space max young regions %u "
                               "reserve region %u "
                               "max to eat into reserve %u",
-                              _free_regions_at_end_of_collection,
-                              desired_num_young_regions,
+                              base_free_regions,
+                              desired_num_young,
                               max_num_young_regions_by_evacuation_space,
                               reserve_regions,
                               max_to_eat_into_reserve);
@@ -344,9 +347,9 @@ uint G1Policy::calculate_target_num_young_regions(uint desired_num_young_regions
     uint evacuation_limited_target_eden = evacuation_limited_target_young - survivor_regions_count;
     uint num_eden_regions = num_young_regions - survivor_regions_count;
 
-    if (_free_regions_at_end_of_collection <= reserve_regions) {
+    if (base_free_regions <= reserve_regions) {
       // Fully eat (or already eating) into the reserve.
-      uint receiving_eden = MIN3(_free_regions_at_end_of_collection,
+      uint receiving_eden = MIN3(base_free_regions,
                                  evacuation_limited_target_eden,
                                  max_to_eat_into_reserve);
       // Ensure that we provision for at least one Eden region.
@@ -359,9 +362,9 @@ uint G1Policy::calculate_target_num_young_regions(uint desired_num_young_regions
       log_trace(gc, ergo, heap)("Target young regions: Fully eat into reserve "
                                 "receiving eden %u receiving additional eden %u",
                                 receiving_eden, receiving_additional_eden);
-    } else if (_free_regions_at_end_of_collection < (evacuation_limited_target_eden + reserve_regions)) {
+    } else if (base_free_regions < (evacuation_limited_target_eden + reserve_regions)) {
       // Partially eat into the reserve, at most max_to_eat_into_reserve regions.
-      uint free_outside_reserve = _free_regions_at_end_of_collection - reserve_regions;
+      uint free_outside_reserve = base_free_regions - reserve_regions;
       assert(free_outside_reserve < evacuation_limited_target_eden,
              "must be %u %u",
              free_outside_reserve, evacuation_limited_target_eden);
@@ -458,7 +461,6 @@ G1EvacuationPrediction G1Policy::predict_survivor_regions_evacuation() const {
 
   return {survivor_regions_evac_time, survivor_bytes_to_copy};
 }
-
 
 G1EvacuationPrediction G1Policy::predict_retained_regions_evacuation() const {
   uint num_regions = 0;
@@ -565,7 +567,7 @@ void G1Policy::record_full_collection_end(size_t allocation_word_size) {
   _eden_surv_rate_group->start_adding_regions();
   // also call this on any additional surv rate groups
 
-  _free_regions_at_end_of_collection = _g1h->num_free_regions();
+  update_free_regions_for_young_sizing();
   _survivor_surv_rate_group->reset();
   update_young_regions_bounds();
 
@@ -948,7 +950,7 @@ G1CollectorState G1Policy::record_young_collection_end(bool concurrent_operation
   assert(!(collector_state()->is_in_concurrent_start_gc() && collector_state()->is_in_concurrent_cycle()),
          "If the last pause has been concurrent start, we should not have been in the marking cycle");
 
-  _free_regions_at_end_of_collection = _g1h->num_free_regions();
+  update_free_regions_for_young_sizing();
 
   Pause this_pause = collector_state()->gc_pause_type(concurrent_operation_is_full_mark);
   size_t humongous_allocation_bytes = G1CollectedHeap::is_humongous(allocation_word_size) ?

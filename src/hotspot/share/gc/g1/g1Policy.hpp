@@ -93,6 +93,8 @@ public:
 
   uint desired_num_young_regions() const;
   uint max_num_young_regions_by_evacuation_space() const;
+
+  uint base_free_regions() const { return _base_free_regions; }
 };
 
 class G1Policy: public CHeapObj<mtGC> {
@@ -141,7 +143,10 @@ class G1Policy: public CHeapObj<mtGC> {
 
   G1YoungGenSizer _young_gen_sizer;
 
-  uint _free_regions_at_end_of_collection;
+  // Baseline free regions snapshot used for sizing the young gen.
+  // This is updated at the end of GC or after successful humongous allocation.
+  // Eden allocations are accounted for separately by the sizing logic.
+  Atomic<uint> _free_regions_for_young_sizing;
 
   // Tracks the number of cards marked as dirty (only) during garbage collection
   // (evacuation) on the card table.
@@ -159,6 +164,8 @@ class G1Policy: public CHeapObj<mtGC> {
   bool should_update_surv_rate_group_predictors();
 
   double pending_cards_processing_time() const;
+
+  uint free_regions_for_young_sizing() const { return _free_regions_for_young_sizing.load_relaxed(); }
 public:
   const G1Predictions& predictor() const { return _predictor; }
   const G1Analytics* analytics()   const { return const_cast<const G1Analytics*>(_analytics); }
@@ -166,6 +173,8 @@ public:
   G1RemSetTrackingPolicy* remset_tracker() { return &_remset_tracker; }
 
   G1OldGenAllocationTracker* old_gen_alloc_tracker() { return &_old_gen_alloc_tracker; }
+
+  void update_free_regions_for_young_sizing();
 
   void set_region_eden(G1HeapRegion* hr) {
     hr->install_surv_rate_group(_eden_surv_rate_group);
@@ -249,9 +258,8 @@ private:
 
   // Limit the given desired number of young regions to available free regions
   // and required evacuation space.
-  uint calculate_target_num_young_regions(uint desired_num_young_regions,
-                                          uint min_num_young_regions_by_sizer,
-                                          uint max_num_young_regions_by_evacuation_space) const;
+  uint calculate_target_num_young_regions(const G1YoungGenPredictor& predictor,
+                                          uint min_num_young_regions_by_sizer) const;
 
   G1EvacuationPrediction predict_survivor_regions_evacuation() const;
   G1EvacuationPrediction predict_retained_regions_evacuation() const;
