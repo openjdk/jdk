@@ -694,6 +694,8 @@ void ZBarrierSetAssembler::generate_c1_load_barrier(LIR_Assembler* ce,
   __ bind(*stub->continuation());
 }
 
+// Code emitted by code stub "ZLoadBarrierStubC1" which in turn is emitted by ZBarrierSetC1::load_barrier.
+// Invokes the runtime stub which is defined just below.
 void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
                                                          ZLoadBarrierStubC1* stub) const {
   // Stub entry
@@ -732,6 +734,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
   __ restore_return_pc();
   __ pop_frame();
 
+  // The runtime stub passes the result via the R0 register
   __ z_lgr(ref, Z_R0);
   __ branch_optimized(Assembler::bcondAlways, *stub->continuation());
 }
@@ -806,6 +809,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler *
 
   int offset = 16 + nbytes_save + frame::z_abi_160_size;
 
+  // Load the arguments back again from the stack
   __ z_lg(Z_ARG1, offset, Z_SP);             offset += 8;            // ref
   __ z_lg(Z_ARG2, offset, Z_SP);                                     // ref_addr
 
@@ -872,11 +876,14 @@ public:
       __ lgr_if_needed(Z_ARG1, _ref);
       __ z_lghi(Z_ARG2, 0);
     } else {
+      // Self Healing
       assert_different_registers(_ref, _ref_addr.base(), noreg);
 
       if (_ref == Z_ARG1) {
+        // _ref is already at correct place
         __ z_lay(Z_ARG2, _ref_addr);
       } else if (_ref != Z_ARG2) {
+        // _ref is in wrong place, but not in Z_ARG2, so fix it first
         __ z_lay(Z_ARG2, _ref_addr);
         __ z_lgr(Z_ARG1, _ref);
       } else if (_ref_addr.base() != Z_ARG1 && _ref_addr.index() != Z_ARG1) {
