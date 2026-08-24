@@ -4809,6 +4809,74 @@ Node* ConnectionGraph::find_inst_mem(Node* orig_mem, int alias_idx, Unique_Node_
   return result;
 }
 
+#ifdef ASSERT
+void ConnectionGraph::verify_ram_after_reduce_phi(const Unique_Node_List &reducible_merges, const Unique_Node_List& reduced_merges) {
+  if (VerifyReduceAllocationMerges) {
+    {
+      // Checks that nodes added by reduce_phi() were properly added to the connection graph
+      ResourceMark rm;
+      Unique_Node_List wq;
+      wq.push(_compile->root());
+      for (uint i = 0; i < wq.size(); ++i) {
+        Node* n = wq.at(i);
+        switch (n->Opcode()) {
+          case Op_CastPP:
+          case Op_AddP:
+          case Op_LoadP:
+          case Op_LoadN: {
+            Node* base = nullptr;
+            if (n->Opcode() == Op_CastPP) {
+              base = n->in(1);
+            } else {
+              Node* addp = nullptr;
+              if (n->Opcode() == Op_LoadP || n->Opcode() == Op_LoadN) {
+                addp = n->in(MemNode::Address);
+                if (!addp->is_AddP()) {
+                  addp = nullptr;
+                }
+              } else {
+                assert(n->Opcode() == Op_AddP, "");
+                addp = n;
+              }
+              base = addp != nullptr ? get_addp_base(addp) : nullptr;
+            }
+            assert(base == nullptr || unique_java_object(base) == nullptr || !unique_java_object(base)->scalar_replaceable() ||
+                   (n->_idx < nodes_size() && ptnode_adr(n->_idx) != nullptr), "missing node");
+            break;
+          }
+          default:
+            break;
+        }
+        for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
+          Node* u = n->fast_out(j);
+          wq.push(u);
+        }
+      }
+    }
+
+    for (uint i = 0; i < reducible_merges.size(); i++) {
+      Node* phi = reducible_merges.at(i);
+
+      if (!reduced_merges.member(phi)) {
+        phi->dump(2);
+        phi->dump(-2);
+        assert(false, "This reducible merge wasn't reduced.");
+      }
+
+      // At this point reducible Phis shouldn't have AddP users anymore; only SafePoints or Casts.
+      for (DUIterator_Fast jmax, j = phi->fast_outs(jmax); j < jmax; j++) {
+        Node* use = phi->fast_out(j);
+        if (!use->is_SafePoint() && !use->is_CastPP()) {
+          phi->dump(2);
+          phi->dump(-2);
+          assert(false, "Unexpected user of reducible Phi -> %d:%s:%d", use->_idx, use->Name(), use->outcnt());
+        }
+      }
+    }
+  }
+}
+#endif
+
 //
 //  Convert the types of non-escaped object to instance types where possible,
 //  propagate the new type information through the graph, and update memory
@@ -5233,69 +5301,8 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
 
   }
 
-
-  {
-    Unique_Node_List wq;
-    wq.push(_compile->root());
-    for (uint i = 0; i < wq.size(); ++i) {
-      Node* n = wq.at(i);
-      switch (n->Opcode()) {
-        case Op_CastPP:
-        case Op_AddP:
-        case Op_LoadP:
-        case Op_LoadN: {
-          Node* base = nullptr;
-          if (n->Opcode() == Op_CastPP) {
-            base = n->in(1);
-          } else {
-            Node* addp = nullptr;
-            if (n->Opcode() == Op_LoadP || n->Opcode() == Op_LoadN) {
-              addp = n->in(MemNode::Address);
-              if (!addp->is_AddP()) {
-                addp = nullptr;
-              }
-            } else {
-              assert(n->Opcode() == Op_AddP, "");
-              addp = n;
-            }
-            base = addp != nullptr ? get_addp_base(addp) : nullptr;
-          }
-          assert(base == nullptr || unique_java_object(base) == nullptr || !unique_java_object(base)->scalar_replaceable() ||
-                 (n->_idx < nodes_size() && ptnode_adr(n->_idx) != nullptr), "missing node");
-          break;
-        }
-        default:
-          break;
-      }
-      for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
-        Node* u = n->fast_out(j);
-        wq.push(u);
-      }
-    }
-  }
-
 #ifdef ASSERT
-  if (VerifyReduceAllocationMerges) {
-    for (uint i = 0; i < reducible_merges.size(); i++) {
-      Node* phi = reducible_merges.at(i);
-
-      if (!reduced_merges.member(phi)) {
-        phi->dump(2);
-        phi->dump(-2);
-        assert(false, "This reducible merge wasn't reduced.");
-      }
-
-      // At this point reducible Phis shouldn't have AddP users anymore; only SafePoints or Casts.
-      for (DUIterator_Fast jmax, j = phi->fast_outs(jmax); j < jmax; j++) {
-        Node* use = phi->fast_out(j);
-        if (!use->is_SafePoint() && !use->is_CastPP()) {
-          phi->dump(2);
-          phi->dump(-2);
-          assert(false, "Unexpected user of reducible Phi -> %d:%s:%d", use->_idx, use->Name(), use->outcnt());
-        }
-      }
-    }
-  }
+  verify_ram_after_reduce_phi(reducible_merges, reduced_merges);
 #endif
 
   // Go over all ArrayCopy nodes and if one of the inputs has a unique
