@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * Copyright (c) 2023, Rivos Inc. All rights reserved.
@@ -32,10 +32,11 @@
 #include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/growableArray.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/sizes.hpp"
 
 class RiscvHwprobe;
+class stringStream;
 
 class VM_Version : public Abstract_VM_Version {
   friend RiscvHwprobe;
@@ -396,6 +397,15 @@ private:
       int idx = element_index(f);
       return (_features_bitmap[idx] & feature_bit(f)) != 0;
     }
+
+    bool verify_aot_code_cache_features(RVExtFeatures* features_to_test) const {
+      for (int i = 0; i < element_count(); i++) {
+        if (_features_bitmap[i] != features_to_test->_features_bitmap[i]) {
+          return false;
+        }
+      }
+      return true;
+    }
   };
 
   // enable extensions based on profile, current supported profiles:
@@ -445,6 +455,7 @@ private:
     RV_ENABLE_EXTENSION(UseZicond)                  \
     RV_ENABLE_EXTENSION(UseZihintpause)             \
     RV_ENABLE_EXTENSION(UseZvfhmin)                 \
+    RV_ENABLE_EXTENSION(UseZvbb)                    \
 
   static void useRVA23U64Profile();
 
@@ -522,6 +533,17 @@ private:
 
   // Check intrinsic support
   static bool is_intrinsic_supported(vmIntrinsicID id);
+
+  // AOT Code Cache support
+  static int  cpu_features_size();
+  static void store_cpu_features(void* buf);
+  static bool verify_aot_code_cache_features(void* features_buffer);
+  static void get_cpu_features_name(void* features_buffer, stringStream& ss);
+  static void get_missing_features_name(void* features_set1, void* features_set2, stringStream& ss);
+
+ private:
+  static void print_feature_name(stringStream& ss, RVFeatureValue* feature);
+  static void insert_features_names(RVExtFeatures* features, stringStream& ss);
 };
 
 #endif // CPU_RISCV_VM_VERSION_RISCV_HPP

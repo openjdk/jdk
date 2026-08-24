@@ -446,17 +446,14 @@ javax/management/remote/mandatory/connection/BrokenConnectionTest.java 8262312 l
 java/net/DatagramSocket/DatagramSocketExample.java              8308807 aix-ppc64
 java/net/DatagramSocket/DatagramSocketMulticasting.java         8308807 aix-ppc64
 
-java/net/MulticastSocket/B6427403.java                          8308807 aix-ppc64
 java/net/MulticastSocket/IPMulticastIF.java                     8308807 aix-ppc64
 java/net/MulticastSocket/JoinLeave.java                         8308807 aix-ppc64
-java/net/MulticastSocket/MulticastAddresses.java                8308807 aix-ppc64
 java/net/MulticastSocket/NoLoopbackPackets.java                 7122846,8308807 macosx-all,aix-ppc64
 java/net/MulticastSocket/NoSetNetworkInterface.java             8308807 aix-ppc64
-java/net/MulticastSocket/Promiscuous.java                       8308807 aix-ppc64
 java/net/MulticastSocket/SetGetNetworkInterfaceTest.java        8308807 aix-ppc64
 java/net/MulticastSocket/SetLoopbackMode.java                   7122846,8308807 macosx-all,aix-ppc64
 java/net/MulticastSocket/SetOutgoingIf.java                     8308807 aix-ppc64
-java/net/MulticastSocket/Test.java                              7145658,8308807 macosx-all,aix-ppc64
+java/net/MulticastSocket/Test.java                              7145658 macosx-all
 
 ############################################################################
 
@@ -469,8 +466,8 @@ java/nio/channels/DatagramChannel/Unref.java                    8233437 generic-
 java/nio/channels/DatagramChannel/BasicMulticastTests.java      8144003 macosx-all
 java/nio/channels/DatagramChannel/MulticastSendReceiveTests.java 8144003 macosx-all
 java/nio/channels/DatagramChannel/Promiscuous.java              8144003 macosx-all
-java/nio/channels/SocketChannel/CloseDuringConnect.java         8375658 macosx-26.0,macosx-26.1,macosx-26.2,macosx-26.3,macosx-26.4,macosx-26.5
-java/nio/channels/SocketChannel/OpenLeak.java                   8375658 macosx-26.0,macosx-26.1,macosx-26.2,macosx-26.3,macosx-26.4,macosx-26.5
+java/nio/channels/SocketChannel/CloseDuringConnect.java         8375658 macosx-all
+java/nio/channels/SocketChannel/OpenLeak.java                   8375658 macosx-all
 
 ############################################################################
 
@@ -552,6 +549,7 @@ javax/swing/JEditorPane/6917744/bug6917744.java 8213124 macosx-all
 javax/swing/JFrame/8175301/ScaledFrameBackgroundTest.java 8274106 macosx-aarch64
 
 javax/swing/JColorChooser/Test6827032.java 8224968 windows-x64
+javax/swing/JMenu/PopupReferenceMemoryLeak.java 8370510 windows-x64
 
 sanity/client/SwingSet/src/ToolTipDemoTest.java 8293001 linux-all
 sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java 8265770 macosx-all
@@ -567,6 +565,10 @@ javax/swing/plaf/synth/7158712/bug7158712.java 8324782 macosx-all
 ############################################################################
 
 # jdk_time
+
+############################################################################
+
+# jdk_valhalla
 
 ############################################################################
 
@@ -695,3 +697,10 @@ tools/sincechecker/modules/jdk.management.jfr/JdkManagementJfrCheckSince.java 83
 
 #############################################################################
 
+# Value Objects failures start here:
+
+java/awt/image/multiresolution/MultiResolutionToolkitImageTest.java 8375778 macosx-aarch64
+
+java/util/Arrays/largeMemory/ParallelPrefix.java 8386501 generic-all
+
+sun/tools/jhsdb/JStackStressTest.java 8247940 macosx-aarch64

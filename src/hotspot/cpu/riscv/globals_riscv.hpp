@@ -76,6 +76,9 @@ define_pd_global(intx, InitArrayShortSize, BytesPerLong);
 
 define_pd_global(intx, InlineSmallCode,          1000);
 
+define_pd_global(bool, InlineTypePassFieldsAsArgs, false);
+define_pd_global(bool, InlineTypeReturnedAsFields, false);
+
 #define ARCH_FLAGS(develop,                                                      \
                    product,                                                      \
                    range,                                                        \
@@ -108,7 +111,7 @@ define_pd_global(intx, InlineSmallCode,          1000);
   product(bool, UseZfhmin, false, DIAGNOSTIC, "Use Zfhmin instructions")         \
   product(bool, UseZacas, false, EXPERIMENTAL, "Use Zacas instructions")         \
   product(bool, UseZabha, false, EXPERIMENTAL, "Use UseZabha instructions")      \
-  product(bool, UseZcb, false, EXPERIMENTAL, "Use Zcb instructions")             \
+  product(bool, UseZcb, false, DIAGNOSTIC, "Use Zcb instructions")               \
   product(bool, UseZic64b, false, EXPERIMENTAL, "Use Zic64b instructions")       \
   product(bool, UseZicbom, false, EXPERIMENTAL, "Use Zicbom instructions")       \
   product(bool, UseZicbop, false, EXPERIMENTAL, "Use Zicbop instructions")       \
@@ -118,7 +121,7 @@ define_pd_global(intx, InlineSmallCode,          1000);
           "Use Zihintpause instructions")                                        \
   product(bool, UseZtso, false, EXPERIMENTAL, "Assume Ztso memory model")        \
   product(bool, UseZvbb, false, DIAGNOSTIC, "Use Zvbb instructions")             \
-  product(bool, UseZvbc, false, EXPERIMENTAL, "Use Zvbc instructions")           \
+  product(bool, UseZvbc, false, DIAGNOSTIC, "Use Zvbc instructions")             \
   product(bool, UseZvfh, false, DIAGNOSTIC, "Use Zvfh instructions")             \
   product(bool, UseZvfhmin, false, DIAGNOSTIC, "Use Zvfhmin instructions")       \
   product(bool, UseZvkg, false, DIAGNOSTIC, "Use Zvkg instructions")             \

@@ -698,6 +698,13 @@ const Type *AddLNode::add_ring( const Type *t0, const Type *t1 ) const {
 
 
 //=============================================================================
+//------------------------------Ideal------------------------------------------
+Node* AddFPNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  // Floating-point addition is commutative but not associative.
+  return commute(phase, this) ? this : nullptr;
+}
+
+//=============================================================================
 //------------------------------add_of_identity--------------------------------
 // Check for addition of the identity
 const Type *AddFNode::add_of_identity( const Type *t1, const Type *t2 ) const {
@@ -722,12 +729,6 @@ const Type *AddFNode::add_ring( const Type *t0, const Type *t1 ) const {
     return bottom_type();
   }
   return TypeF::make( t0->getf() + t1->getf() );
-}
-
-//------------------------------Ideal------------------------------------------
-Node *AddFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  // Floating point additions are not associative because of boundary conditions (infinity)
-  return commute(phase, this) ? this : nullptr;
 }
 
 //=============================================================================
@@ -771,12 +772,6 @@ const Type *AddDNode::add_ring( const Type *t0, const Type *t1 ) const {
     return bottom_type();
   }
   return TypeD::make( t0->getd() + t1->getd() );
-}
-
-//------------------------------Ideal------------------------------------------
-Node *AddDNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  // Floating point additions are not associative because of boundary conditions (infinity)
-  return commute(phase, this) ? this : nullptr;
 }
 
 
@@ -857,14 +852,23 @@ const Type *AddPNode::bottom_type() const {
   if (in(Address) == nullptr)  return TypePtr::BOTTOM;
   const TypePtr *tp = in(Address)->bottom_type()->isa_ptr();
   if( !tp ) return Type::TOP;   // TOP input means TOP output
-  assert( in(Offset)->Opcode() != Op_ConP, "" );
-  const Type *t = in(Offset)->bottom_type();
-  if( t == Type::TOP )
-    return tp->add_offset(Type::OffsetTop);
-  const TypeX *tx = t->is_intptr_t();
+
+  assert(in(Offset)->Opcode() != Op_ConP, "");
+  const Type* t = in(Offset)->bottom_type();
+  if (t == Type::TOP) {
+    return Type::TOP;
+  }
+
+  const TypeX* tx = t->is_intptr_t();
   intptr_t txoffset = Type::OffsetBot;
   if (tx->is_con()) {   // Left input is an add of a constant?
     txoffset = tx->get_con();
+  }
+  if (tp->isa_aryptr()) {
+    // In the case of a flat inline type array, each field has its
+    // own slice so we need to extract the field being accessed from
+    // the address computation
+    return tp->is_aryptr()->add_field_offset_and_offset(txoffset);
   }
   return tp->add_offset(txoffset);
 }
@@ -885,6 +889,12 @@ const Type* AddPNode::Value(PhaseGVN* phase) const {
   intptr_t p2offset = Type::OffsetBot;
   if (p2->is_con()) {   // Left input is an add of a constant?
     p2offset = p2->get_con();
+  }
+  if (p1->isa_aryptr()) {
+    // In the case of a flat inline type array, each field has its
+    // own slice so we need to extract the field being accessed from
+    // the address computation
+    return p1->is_aryptr()->add_field_offset_and_offset(p2offset);
   }
   return p1->add_offset(p2offset);
 }
