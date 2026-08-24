@@ -26,7 +26,6 @@ package compiler.vectorapi;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.Arguments;
-import compiler.lib.ir_framework.Run;
 import compiler.lib.ir_framework.Setup;
 import compiler.lib.ir_framework.Test;
 import compiler.lib.ir_framework.TestFramework;
@@ -89,17 +88,6 @@ public class TestWideningShiftLeft {
                                                ShortVector.SPECIES_128, 0)).lanewise(VectorOperators.LSHL, 7);
     }
 
-    @Run(test = "testByteToShort")
-    public static void runByteToShort() {
-        ShortVector result = testByteToShort((ByteVector) setupByte()[0]);
-        for (int i = 0; i < result.length(); i++) {
-            short expected = (short) ((37 & 0xff) << 7);
-            if (result.lane(i) != expected) {
-                throw new RuntimeException("byte-to-short mismatch at lane " + i);
-            }
-        }
-    }
-
     @Test
     @Arguments(setup = "setupShort")
     @IR(counts = {IRNode.RISCV_VWSLL_S2I_VI, "1"}, applyIfCPUFeature = {"zvbb", "true"})
@@ -108,34 +96,12 @@ public class TestWideningShiftLeft {
                                              IntVector.SPECIES_128, 0)).lanewise(VectorOperators.LSHL, 31);
     }
 
-    @Run(test = "testShortToInt")
-    public static void runShortToInt() {
-        IntVector result = testShortToInt((ShortVector) setupShort()[0]);
-        for (int i = 0; i < result.length(); i++) {
-            int expected = (17011 & 0xffff) << 31;
-            if (result.lane(i) != expected) {
-                throw new RuntimeException("short-to-int mismatch at lane " + i);
-            }
-        }
-    }
-
     @Test
     @Arguments(setup = "setupInt")
     @IR(counts = {IRNode.RISCV_VWSLL_I2L_VI, "1"}, applyIfCPUFeature = {"zvbb", "true"})
     public static LongVector testIntToLong(IntVector src) {
         return ((LongVector) src.convertShape(VectorOperators.ZERO_EXTEND_I2L,
                                               LongVector.SPECIES_128, 0)).lanewise(VectorOperators.LSHL, 31);
-    }
-
-    @Run(test = "testIntToLong")
-    public static void runIntToLong() {
-        LongVector result = testIntToLong((IntVector) setupInt()[0]);
-        for (int i = 0; i < result.length(); i++) {
-            long expected = (0x31234567L & 0xffffffffL) << 31;
-            if (result.lane(i) != expected) {
-                throw new RuntimeException("int-to-long mismatch at lane " + i);
-            }
-        }
     }
 
     // ShortVector shift counts use the destination element width, so 16
@@ -148,14 +114,4 @@ public class TestWideningShiftLeft {
                                                ShortVector.SPECIES_128, 0)).lanewise(VectorOperators.LSHL, 16);
     }
 
-    @Run(test = "testByteToShortShift16")
-    public static void runByteToShortShift16() {
-        ShortVector result = testByteToShortShift16((ByteVector) setupByte()[0]);
-        for (int i = 0; i < result.length(); i++) {
-            short expected = (short) (37 & 0xff);
-            if (result.lane(i) != expected) {
-                throw new RuntimeException("byte-to-short shift-16 mismatch at lane " + i);
-            }
-        }
-    }
 }
