@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1221,7 +1221,7 @@ public final class SoftSynthesizer implements AudioSynthesizer,
                 // Always create external_channels array
                 // with 16 or more channels
                 // so getChannels works correctly
-                // when the synhtesizer is closed.
+                // when the synthesizer is closed.
                 if (channels.length < 16)
                     external_channels = new SoftChannelProxy[16];
                 else

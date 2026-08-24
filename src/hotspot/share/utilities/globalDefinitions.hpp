@@ -738,7 +738,7 @@ inline bool is_java_type(BasicType t) {
   return T_BOOLEAN <= t && t <= T_VOID;
 }
 
-inline bool is_java_primitive(BasicType t) {
+constexpr inline bool is_java_primitive(BasicType t) {
   return T_BOOLEAN <= t && t <= T_LONG;
 }
 
@@ -1207,7 +1207,7 @@ inline int build_int_from_shorts( u2 low, u2 high ) {
 }
 
 // swap a & b
-template<class T> static void swap(T& a, T& b) {
+template<class T> inline void swap(T& a, T& b) {
   T tmp = a;
   a = b;
   b = tmp;
