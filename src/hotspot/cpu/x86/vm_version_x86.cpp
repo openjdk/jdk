@@ -1574,11 +1574,16 @@ void VM_Version::get_processor_features() {
         FLAG_SET_DEFAULT(UseUnalignedLoadStores, true);
       }
 #ifdef COMPILER2
-      if (supports_sse4_2() && FLAG_IS_DEFAULT(UseFPUForSpilling)) {
-        FLAG_SET_DEFAULT(UseFPUForSpilling, true);
+      // Enable UseFPUForSpilling on Zen1/Zen2 (family 0x17) and Hygon Dhyana (family 0x18).
+      // On Zen3 (family 0x19) and beyond it should be default off.
+      if (cpu_family() < 0x19) {
+        if (supports_sse4_2() && FLAG_IS_DEFAULT(UseFPUForSpilling)) {
+          FLAG_SET_DEFAULT(UseFPUForSpilling, true);
+        }
       }
-#endif
+#endif // COMPILER2
     }
+
   }
 
   if (is_intel()) { // Intel cpus specific settings
