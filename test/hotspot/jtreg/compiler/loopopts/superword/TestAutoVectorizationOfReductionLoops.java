@@ -79,9 +79,13 @@ public class TestAutoVectorizationOfReductionLoops {
 
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_F, "> 0",
-                  IRNode.ADD_VF,  "> 0",
-                  IRNode.MUL_REDUCTION_VF,  "> 0"},
-    applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+                  IRNode.ADD_VF, "> 0",
+                  IRNode.MUL_REDUCTION_VF, "> 0"},
+        applyIfCPUFeature = {"sse4.1", "true"})
+    @IR(counts = {IRNode.LOAD_VECTOR_F, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.ADD_VF, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.MUL_REDUCTION_VF, "> 0"},
+        applyIfCPUFeature = {"asimd", "true"})
     private static float testMulReductionVF(int n, float[] x, float[] y) {
         float result = 1.0f;
         for(int i = 0; i < n; i++) {
@@ -103,9 +107,13 @@ public class TestAutoVectorizationOfReductionLoops {
 
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_D, "> 0",
-                  IRNode.ADD_VD,  "> 0",
-                  IRNode.MUL_REDUCTION_VD,  "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+                  IRNode.ADD_VD, "> 0",
+                  IRNode.MUL_REDUCTION_VD, "> 0"},
+        applyIfCPUFeature = {"sse4.1", "true"})
+    @IR(counts = {IRNode.LOAD_VECTOR_D, IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.ADD_VD, IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.MUL_REDUCTION_VD, "> 0"},
+        applyIfCPUFeature = {"asimd", "true"})
     private static double testMulReductionVD(int n, double[] x, double[] y) {
         double result = 1.0;
         for(int i = 0; i < n; i++) {
