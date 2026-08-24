@@ -1998,7 +1998,7 @@ void PhaseIterGVN::make_dependent_paths_dead_if_top(Node* dead_node, const Type*
   wq.push(dead_node);
   for (uint i = 0; i < wq.size(); i++) {
     Node* n = wq.at(i);
-    if (n != dead_node && (n->is_Phi() || n->is_CFG())) {
+    if (n->is_Phi() || n->is_CFG()) {
       continue;
     }
     for (DUIterator_Fast kmax, k = n->fast_outs(kmax); k < kmax; k++) {
