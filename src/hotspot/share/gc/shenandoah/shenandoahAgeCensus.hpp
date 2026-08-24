@@ -189,6 +189,13 @@ class ShenandoahAgeCensus: public CHeapObj<mtGC> {
   // Visible for testing. Use is_tenurable for consistent tenuring comparisons.
   uint tenuring_threshold() const { return _tenuring_threshold[_epoch]; }
 
+  // Returns zero when always_tenure is true (which is only true when the gc
+  // is triggered by WB.fullGC()). Note that zero itself is the floor, so do
+  // not subtract from it to get the younger cohort.
+  uint effective_threshold() const {
+    return is_always_tenure() ? 0 : tenuring_threshold();
+  }
+
   // Return true if this age is at or above the tenuring threshold, or if always tenure is enabled.
   bool is_tenurable(uint age) const {
     return age >= tenuring_threshold() || _always_tenure;
