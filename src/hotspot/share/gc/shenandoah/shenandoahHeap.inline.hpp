@@ -139,7 +139,7 @@ inline void ShenandoahHeap::conc_update_with_forwarded(T* p) {
 
       // Either we succeed in updating the reference, or something else gets in our way.
       // We don't care if that is another concurrent GC update, or another mutator update.
-      atomic_update_oop(fwd, p, obj);
+      atomic_update_oop(fwd, p, o);
     }
   }
 }
@@ -196,14 +196,14 @@ inline void ShenandoahHeap::atomic_update_oop(oop update, oop* addr, oop compare
 
 inline void ShenandoahHeap::atomic_update_oop(oop update, narrowOop* addr, narrowOop compare) {
   assert(is_aligned(addr, sizeof(narrowOop)), "Address should be aligned: " PTR_FORMAT, p2i(addr));
-  narrowOop u = CompressedOops::encode(update);
+  narrowOop u = CompressedOops::encode_not_null(update);
   AtomicAccess::cmpxchg(addr, compare, u, memory_order_release);
 }
 
 inline void ShenandoahHeap::atomic_update_oop(oop update, narrowOop* addr, oop compare) {
   assert(is_aligned(addr, sizeof(narrowOop)), "Address should be aligned: " PTR_FORMAT, p2i(addr));
   narrowOop c = CompressedOops::encode(compare);
-  narrowOop u = CompressedOops::encode(update);
+  narrowOop u = CompressedOops::encode_not_null(update);
   AtomicAccess::cmpxchg(addr, c, u, memory_order_release);
 }
 
@@ -214,14 +214,14 @@ inline bool ShenandoahHeap::atomic_update_oop_check(oop update, oop* addr, oop c
 
 inline bool ShenandoahHeap::atomic_update_oop_check(oop update, narrowOop* addr, narrowOop compare) {
   assert(is_aligned(addr, sizeof(narrowOop)), "Address should be aligned: " PTR_FORMAT, p2i(addr));
-  narrowOop u = CompressedOops::encode(update);
+  narrowOop u = CompressedOops::encode_not_null(update);
   return (narrowOop) AtomicAccess::cmpxchg(addr, compare, u, memory_order_release) == compare;
 }
 
 inline bool ShenandoahHeap::atomic_update_oop_check(oop update, narrowOop* addr, oop compare) {
   assert(is_aligned(addr, sizeof(narrowOop)), "Address should be aligned: " PTR_FORMAT, p2i(addr));
   narrowOop c = CompressedOops::encode(compare);
-  narrowOop u = CompressedOops::encode(update);
+  narrowOop u = CompressedOops::encode_not_null(update);
   return CompressedOops::decode(AtomicAccess::cmpxchg(addr, c, u, memory_order_release)) == compare;
 }
 
@@ -236,7 +236,7 @@ inline void ShenandoahHeap::atomic_clear_oop(oop* addr, oop compare) {
 
 inline void ShenandoahHeap::atomic_clear_oop(narrowOop* addr, oop compare) {
   assert(is_aligned(addr, sizeof(narrowOop)), "Address should be aligned: " PTR_FORMAT, p2i(addr));
-  narrowOop cmp = CompressedOops::encode(compare);
+  narrowOop cmp = CompressedOops::encode_not_null(compare);
   AtomicAccess::cmpxchg(addr, cmp, narrowOop(), memory_order_relaxed);
 }
 
