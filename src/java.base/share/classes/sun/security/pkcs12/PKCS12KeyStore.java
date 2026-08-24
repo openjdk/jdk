@@ -2243,14 +2243,18 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             s.getInteger(); // skip version
 
             ContentInfo authSafe = new ContentInfo(s);
-            DerInputStream as = new DerInputStream(authSafe.getData());
-            for (DerValue seq : as.getSequence(2)) {
-                DerInputStream sci = new DerInputStream(seq.toByteArray());
-                ContentInfo safeContents = new ContentInfo(sci);
-                if (safeContents.getContentType()
-                        .equals(ContentInfo.ENCRYPTED_DATA_OID)) {
-                    // Certificate encrypted
-                    return false;
+            byte[] authSafeData = authSafe.getData();
+
+            if (authSafeData != null) {
+                DerInputStream as = new DerInputStream(authSafeData);
+                for (DerValue seq : as.getSequence(2)) {
+                    DerInputStream sci = new DerInputStream(seq.toByteArray());
+                    ContentInfo safeContents = new ContentInfo(sci);
+                    if (safeContents.getContentType()
+                            .equals(ContentInfo.ENCRYPTED_DATA_OID)) {
+                        // Certificate encrypted
+                        return false;
+                    }
                 }
             }
 

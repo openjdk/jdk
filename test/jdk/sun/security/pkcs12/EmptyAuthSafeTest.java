@@ -25,32 +25,66 @@
  * @test
  * @bug 8326087
  * @summary Verify keystore loads when authSafe content is absent.
+ * @modules java.base/sun.security.pkcs12
  */
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.KeyStore;
 import java.util.Base64;
 
+import sun.security.pkcs12.PKCS12KeyStore;
+
 public class EmptyAuthSafeTest {
 
-    static final char[] PASSWORD = "1234".toCharArray();
+    private static final char[] PASSWORD = "1234".toCharArray();
+
+    // No authSafe content but with MacData present
+    private static final String ks1 = "MFsCAQMwCwYJKoZIhvcNAQcBMEkwMTANBglghk"
+            + "gBZQMEAgEFAAQgX2iKyj065lT1hA8c7H+NREUaXuTdy/W2aHjeVJNT/N0EEAAR"
+            + "IjNEVWZ3iJmqu8zd7v8CAggA";
+
+    // No authSafe content and no MacData
+    private static final String ks2 = "MBACAQMwCwYJKoZIhvcNAQcB";
 
     public static void main(String[] args) throws Exception {
-        var authsafe = """
-                MFsCAQMwCwYJKoZIhvcNAQcBMEkwMTANBglghkgBZQMEAgEFAAQgX2iKyj065lT1hA8c7H+NREUaXuTdy/W2aHjeVJNT/N0EEAARIjNEVWZ3iJmqu8zd7v8CAggA""";
 
-        loadAndStore(authsafe);
+        assertLoadAndStore(ks1);
+
+        assertIsPasswordless(ks1, false);
+        assertIsPasswordless(ks2, true);
     }
 
-    static void loadAndStore(String data) throws Exception {
+    static void assertLoadAndStore(String data) throws Exception {
         var bytes = Base64.getMimeDecoder().decode(data);
         var ks = KeyStore.getInstance("PKCS12");
         ks.load(new ByteArrayInputStream(bytes), PASSWORD);
+        if (ks.size() != 0) {
+            throw new Exception("Expected no entries");
+        }
         var baos = new ByteArrayOutputStream();
         ks.store(baos, PASSWORD);
         var newBytes = baos.toByteArray();
         var bais = new ByteArrayInputStream(newBytes);
         ks.load(bais, PASSWORD);
+        if (ks.size() != 0) {
+            throw new Exception("Expected no entries");
+        }
+    }
+
+    private static void assertIsPasswordless(
+            String encoded, boolean expected) throws Exception {
+        Path keyStoreFile = Files.createTempFile(
+                Path.of(System.getProperty("test.classes")),
+                "empty-auth-safe-", ".p12");
+        Files.write(keyStoreFile, Base64.getMimeDecoder().decode(encoded));
+
+        boolean actual = PKCS12KeyStore.isPasswordless(keyStoreFile.toFile());
+        if (actual != expected) {
+            throw new Exception("Expected isPasswordless() to return "
+                    + expected + ", got " + actual);
+        }
     }
 }
