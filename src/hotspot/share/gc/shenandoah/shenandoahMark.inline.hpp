@@ -30,7 +30,7 @@
 #include "gc/shenandoah/shenandoahMark.hpp"
 
 #include "gc/shared/continuationGCSupport.inline.hpp"
-#include "gc/shenandoah/shenandoahAgeCensus.hpp"
+#include "gc/shenandoah/shenandoahAgeCensus.inline.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
