@@ -222,40 +222,46 @@ public class StreamDecoder extends Reader {
             }
 
             if (bb.hasRemaining() || remaining.length > 0) {
-                while (bb.hasRemaining()) {
-                    CoderResult cr = decoder.decode(bb, cb, remaining.length == 0);
+                try {
+                    while (bb.hasRemaining()) {
+                        CoderResult cr = decoder.decode(bb, cb, remaining.length == 0);
+                        if (cr.isError())
+                            cr.throwException();
+                        if (cr.isOverflow())
+                            cb = ensureFree(cb, bb.remaining());
+                        if (cr.isUnderflow())
+                            break;
+                    }
+
+                    ByteBuffer bbuf = !bb.hasRemaining()
+                            ? ByteBuffer.wrap(remaining)
+                            : bb.capacity() - bb.remaining() >= remaining.length
+                            ? bb.compact().put(remaining).flip()
+                            : ByteBuffer.allocate(bb.remaining() + remaining.length)
+                                    .put(bb).put(remaining).flip();
+
+                    while (bbuf.hasRemaining()) {
+                        CoderResult cr = decoder.decode(bbuf, cb, true);
+                        if (cr.isError())
+                            cr.throwException();
+                        if (cr.isOverflow())
+                            cb = ensureFree(cb, bbuf.remaining());
+                        if (cr.isUnderflow())
+                            break;
+                    }
+
+                    CoderResult cr = decoder.flush(cb);
+                    while (cr.isOverflow()) {
+                        cb = ensureFree(cb, 1);
+                        cr = decoder.flush(cb);
+                    }
                     if (cr.isError())
                         cr.throwException();
-                    if (cr.isOverflow())
-                        cb = ensureFree(cb, bb.remaining());
-                    if (cr.isUnderflow())
-                        break;
+                } finally {
+                    decoder.reset();
+                    decoderContainsBytes = false;
+                    bb.clear().flip();
                 }
-
-                ByteBuffer bbuf = !bb.hasRemaining()
-                        ? ByteBuffer.wrap(remaining)
-                        : bb.capacity() - bb.remaining() >= remaining.length
-                        ? bb.compact().put(remaining).flip()
-                        : ByteBuffer.allocate(bb.remaining() + remaining.length)
-                                .put(bb).put(remaining).flip();
-
-                while (bbuf.hasRemaining()) {
-                    CoderResult cr = decoder.decode(bbuf, cb, true);
-                    if (cr.isError())
-                        cr.throwException();
-                    if (cr.isOverflow())
-                        cb = ensureFree(cb, bbuf.remaining());
-                    if (cr.isUnderflow())
-                        break;
-                }
-
-                CoderResult cr = decoder.flush(cb);
-                while (cr.isOverflow()) {
-                    cb = ensureFree(cb, 1);
-                    cr = decoder.flush(cb);
-                }
-                if (cr.isError())
-                    cr.throwException();
             }
 
             return cb.flip().toString();

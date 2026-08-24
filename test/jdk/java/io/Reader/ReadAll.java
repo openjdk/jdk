@@ -265,5 +265,19 @@ public class ReadAll {
             string = isr.readAllAsString();
         }
         assertEquals("CD" + p8192, string);
+
+        // InputStreamReader implementation: read() after readAllString() (Slow path)
+        try (InputStreamReader isr = new InputStreamReader(
+                new ByteArrayInputStream(stringExpected.getBytes()))) {
+            assertEquals(stringExpected, isr.readAllAsString());
+            assertEquals(-1, isr.read()); // must not throw but return -1
+        }
+
+        // InputStreamReader implementation: readAllAsString() after readAllString() (Slow path)
+        try (InputStreamReader isr = new InputStreamReader(
+                new ByteArrayInputStream(stringExpected.getBytes()))) {
+            assertEquals(stringExpected, isr.readAllAsString());
+            assertEquals("", isr.readAllAsString());
+        }
     }
 }
