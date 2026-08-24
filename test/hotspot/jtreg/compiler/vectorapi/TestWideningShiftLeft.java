@@ -67,7 +67,7 @@ public class TestWideningShiftLeft {
     @Test
     @IR(counts = {IRNode.RISCV_VWSLL_B2S_VI, "1"}, applyIfCPUFeature = {"zvbb", "true"})
     public static ShortVector testByteToShort() {
-        ByteVector src = ByteVector.fromArray(ByteVector.SPECIES_64, BYTES, 0);
+        ByteVector src = ByteVector.broadcast(ByteVector.SPECIES_64, (byte) 37);
         return ((ShortVector) src.convertShape(VectorOperators.ZERO_EXTEND_B2S,
                                                ShortVector.SPECIES_128, 0)).lanewise(VectorOperators.LSHL, 7);
     }
@@ -76,7 +76,7 @@ public class TestWideningShiftLeft {
     public static void runByteToShort() {
         ShortVector result = testByteToShort();
         for (int i = 0; i < result.length(); i++) {
-            short expected = (short) ((BYTES[i] & 0xff) << 7);
+            short expected = (short) ((37 & 0xff) << 7);
             if (result.lane(i) != expected) {
                 throw new RuntimeException("byte-to-short mismatch at lane " + i);
             }
@@ -86,7 +86,7 @@ public class TestWideningShiftLeft {
     @Test
     @IR(counts = {IRNode.RISCV_VWSLL_S2I_VI, "1"}, applyIfCPUFeature = {"zvbb", "true"})
     public static IntVector testShortToInt() {
-        ShortVector src = ShortVector.fromArray(ShortVector.SPECIES_64, SHORTS, 0);
+        ShortVector src = ShortVector.broadcast(ShortVector.SPECIES_64, (short) 17011);
         return ((IntVector) src.convertShape(VectorOperators.ZERO_EXTEND_S2I,
                                              IntVector.SPECIES_128, 0)).lanewise(VectorOperators.LSHL, 31);
     }
@@ -95,7 +95,7 @@ public class TestWideningShiftLeft {
     public static void runShortToInt() {
         IntVector result = testShortToInt();
         for (int i = 0; i < result.length(); i++) {
-            int expected = (SHORTS[i] & 0xffff) << 31;
+            int expected = (17011 & 0xffff) << 31;
             if (result.lane(i) != expected) {
                 throw new RuntimeException("short-to-int mismatch at lane " + i);
             }
@@ -105,7 +105,7 @@ public class TestWideningShiftLeft {
     @Test
     @IR(counts = {IRNode.RISCV_VWSLL_I2L_VI, "1"}, applyIfCPUFeature = {"zvbb", "true"})
     public static LongVector testIntToLong() {
-        IntVector src = IntVector.fromArray(IntVector.SPECIES_64, INTS, 0);
+        IntVector src = IntVector.broadcast(IntVector.SPECIES_64, 0x31234567);
         return ((LongVector) src.convertShape(VectorOperators.ZERO_EXTEND_I2L,
                                               LongVector.SPECIES_128, 0)).lanewise(VectorOperators.LSHL, 31);
     }
@@ -114,7 +114,7 @@ public class TestWideningShiftLeft {
     public static void runIntToLong() {
         LongVector result = testIntToLong();
         for (int i = 0; i < result.length(); i++) {
-            long expected = (INTS[i] & 0xffffffffL) << 31;
+            long expected = (0x31234567L & 0xffffffffL) << 31;
             if (result.lane(i) != expected) {
                 throw new RuntimeException("int-to-long mismatch at lane " + i);
             }
@@ -126,7 +126,7 @@ public class TestWideningShiftLeft {
     @Test
     @IR(counts = {IRNode.RISCV_VWSLL_B2S_VI, "1"}, applyIfCPUFeature = {"zvbb", "true"})
     public static ShortVector testByteToShortShift16() {
-        ByteVector src = ByteVector.fromArray(ByteVector.SPECIES_64, BYTES, 0);
+        ByteVector src = ByteVector.broadcast(ByteVector.SPECIES_64, (byte) 37);
         return ((ShortVector) src.convertShape(VectorOperators.ZERO_EXTEND_B2S,
                                                ShortVector.SPECIES_128, 0)).lanewise(VectorOperators.LSHL, 16);
     }
@@ -135,7 +135,7 @@ public class TestWideningShiftLeft {
     public static void runByteToShortShift16() {
         ShortVector result = testByteToShortShift16();
         for (int i = 0; i < result.length(); i++) {
-            short expected = (short) (BYTES[i] & 0xff);
+            short expected = (short) (37 & 0xff);
             if (result.lane(i) != expected) {
                 throw new RuntimeException("byte-to-short shift-16 mismatch at lane " + i);
             }
