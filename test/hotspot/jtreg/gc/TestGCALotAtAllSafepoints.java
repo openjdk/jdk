@@ -34,7 +34,7 @@ package gc;
  * @requires vm.gc.Serial
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run driver/timeout=60 gc.TestGCALotAtAllSafepoints -XX:+UseSerialGC
+ * @run driver/timeout=60 gc.TestGCALotAtAllSafepoints -XX:+UseSerialGC -XX:ScavengeALotInterval=1
  */
 
 /**
@@ -48,7 +48,7 @@ package gc;
  * @requires vm.gc.Parallel
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run driver/timeout=60 gc.TestGCALotAtAllSafepoints -XX:+UseParallelGC
+ * @run driver/timeout=60 gc.TestGCALotAtAllSafepoints -XX:+UseParallelGC -XX:ScavengeALotInterval=1
  */
 
 /**
@@ -62,7 +62,7 @@ package gc;
  * @requires vm.gc.G1
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run driver/timeout=60 gc.TestGCALotAtAllSafepoints -XX:+UseG1GC
+ * @run driver/timeout=60 gc.TestGCALotAtAllSafepoints -XX:+UseG1GC -XX:ScavengeALotInterval=1
  */
 
 /**
@@ -76,7 +76,7 @@ package gc;
  * @requires vm.gc.Z
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run driver/timeout=60 gc.TestGCALotAtAllSafepoints -XX:+UseZGC
+ * @run driver/timeout=60 gc.TestGCALotAtAllSafepoints -XX:+UseZGC -XX:ScavengeALotInterval=1
  */
 
 /**
@@ -90,7 +90,7 @@ package gc;
  * @requires vm.gc.Shenandoah
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run driver/timeout=60 gc.TestGCALotAtAllSafepoints -XX:+UseShenandoahGC
+ * @run driver/timeout=60 gc.TestGCALotAtAllSafepoints -XX:+UseShenandoahGC -XX:ScavengeALotInterval=13
  */
 
 import jdk.test.lib.process.ProcessTools;
@@ -99,6 +99,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestGCALotAtAllSafepoints {
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(args[0],
+                                                                             args[1],
                                                                              "-Xmx16m",
                                                                              "-XX:+GCALotAtAllSafepoints",
                                                                              "-XX:+ScavengeALot",
