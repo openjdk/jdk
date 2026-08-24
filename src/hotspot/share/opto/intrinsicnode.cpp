@@ -63,6 +63,8 @@ const Type* StrIntrinsicNode::Value(PhaseGVN* phase) const {
   return bottom_type();
 }
 
+uint StrIntrinsicNode::size_of() const { return sizeof(*this); }
+
 //=============================================================================
 //------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.  Strip out

@@ -100,6 +100,28 @@ ShenandoahGCPauseMark::ShenandoahGCPauseMark(uint gc_id, const char* notificatio
   );
 }
 
+ShenandoahPauseSubphase::ShenandoahPauseSubphase(const char* title, ShenandoahPhaseTimings::Phase phase, bool log_heap_usage) :
+  ShenandoahTimingsTracker(phase),
+  _tracer(title, nullptr, GCCause::_no_gc, log_heap_usage),
+  _timer(ShenandoahHeap::heap()->gc_timer()) {
+  _timer->register_gc_phase_start(title, Ticks::now());
+}
+
+ShenandoahPauseSubphase::~ShenandoahPauseSubphase() {
+  _timer->register_gc_phase_end(Ticks::now());
+}
+
+ShenandoahConcurrentSubphase::ShenandoahConcurrentSubphase(const char* title, ShenandoahPhaseTimings::Phase phase, bool log_heap_usage) :
+  ShenandoahTimingsTracker(phase),
+  _tracer(title, nullptr, GCCause::_no_gc, log_heap_usage),
+  _timer(ShenandoahHeap::heap()->gc_timer()) {
+  _timer->register_gc_phase_start(title, Ticks::now());
+}
+
+ShenandoahConcurrentSubphase::~ShenandoahConcurrentSubphase() {
+  _timer->register_gc_phase_end(Ticks::now());
+}
+
 ShenandoahPausePhase::ShenandoahPausePhase(const char* title, ShenandoahPhaseTimings::Phase phase, bool log_heap_usage) :
   ShenandoahTimingsTracker(phase),
   _tracer(title, nullptr, GCCause::_no_gc, log_heap_usage),
