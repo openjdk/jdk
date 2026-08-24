@@ -543,6 +543,7 @@ class ClassFileParser {
 
   void create_acmp_maps(InstanceKlass* ik, TRAPS);
   void set_fast_acmp_members(InlineKlass* vk) const;
+  void set_fast_hashcode_members(InlineKlass* vk) const;
 
  public:
   ClassFileParser(ClassFileStream* stream,
