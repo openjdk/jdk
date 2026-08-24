@@ -3085,12 +3085,12 @@ void LinearScan::do_linear_scan() {
   allocate_registers();
   CHECK_BAILOUT();
 
-  NOT_PRODUCT(print_lir(1, "After allocate_registers"));
+  NOT_PRODUCT(print_lir(3, "After allocate_registers"));
   NOT_PRODUCT(print_intervals("After allocate_registers"));
 
   resolve_data_flow();
 
-  NOT_PRODUCT(print_lir(1, "After resolve_data_flow"));
+  NOT_PRODUCT(print_lir(3, "After resolve_data_flow"));
   NOT_PRODUCT(print_intervals("After resolve_data_flow"));
 
   if (compilation()->has_exception_handlers()) {
