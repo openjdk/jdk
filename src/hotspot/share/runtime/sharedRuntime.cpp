@@ -592,7 +592,14 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
     // native nmethods don't have exception handlers
     assert(!nm->is_native_method() || nm->method()->is_continuation_enter_intrinsic(), "no exception handler");
     assert(nm->header_begin() != nm->exception_begin(), "no exception handler");
-    if (nm->is_deopt_pc(return_address)) {
+    // For platform threads, checking the return pc already covers the case
+    // where only this compiled frame was deoptimized, as well as the case
+    // where the nmethod was marked for deoptimization. For virtual threads,
+    // we also need to check if the nmethod is marked for deoptimization because
+    // the return pc may not have been patched if the nmethod was deoptimized
+    // while the frame was frozen. Since this check is benign for platform
+    // threads, we do it unconditionally.
+    if (nm->is_deopt_pc(return_address) || nm->is_marked_for_deoptimization()) {
       // If we come here because of a stack overflow, the stack may be
       // unguarded. Reguard the stack otherwise if we return to the
       // deopt blob and the stack bang causes a stack overflow we

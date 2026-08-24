@@ -284,8 +284,8 @@ class JavaThread: public Thread {
  public:
   // These functions check conditions before possibly going to a safepoint.
   // including NoSafepointVerifier.
-  void check_for_valid_safepoint_state() NOT_DEBUG_RETURN;
-  void check_possible_safepoint()        NOT_DEBUG_RETURN;
+  void check_for_valid_safepoint_state(bool allow_gcalot = true) NOT_DEBUG_RETURN;
+  void check_possible_safepoint()                                NOT_DEBUG_RETURN;
 
 #ifdef ASSERT
  private:
