@@ -2966,6 +2966,236 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // AES key array length in ints: AES-128 -> 44, AES-192 -> 52, AES-256 -> 60.
+  // Key-size dispatch compares keylen against the AES-192 value:
+  //   keylen < 52 -> AES-128, keylen == 52 -> AES-192, keylen > 52 -> AES-256.
+  static const int AES_192_KEYLEN_INTS = 52;
+
+  // Load round keys into v4..v18, right-aligned by key size:
+  //   AES-256: rk[0..14] = v4..v18;  AES-192: rk[2..14] = v6..v18;  AES-128: rk[4..14] = v8..v18
+  // Requires VL=4/e32/m1 to be set by the caller. Advances key; clobbers t2.
+  void aes_load_round_keys(Register key, Register keylen) {
+    Label L_load192, L_load128;
+    __ mv(t2, AES_192_KEYLEN_INTS);
+    __ bltu(keylen, t2, L_load128);
+    __ beq(keylen, t2, L_load192);
+    __ vle32_v(v4, key);
+    __ vrev8_v(v4, v4);
+    __ addi(key, key, 16);
+    __ vle32_v(v5, key);
+    __ vrev8_v(v5, v5);
+    __ addi(key, key, 16);
+    __ bind(L_load192);
+    __ vle32_v(v6, key);
+    __ vrev8_v(v6, v6);
+    __ addi(key, key, 16);
+    __ vle32_v(v7, key);
+    __ vrev8_v(v7, v7);
+    __ addi(key, key, 16);
+    __ bind(L_load128);
+    { VectorRegister ck[] = {v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18};
+      for (int i = 0; i < 11; i++) {
+        __ vle32_v(ck[i], key);
+        __ vrev8_v(ck[i], ck[i]);
+        __ addi(key, key, 16);
+      }
+    }
+  }
+
+  // Emit full AES decrypt: shared head (vaesz + 9 vaesdm) + key-size divergent tail.
+  // round_keys[] must be right-aligned: AES-128 uses rk[4..14], AES-192 uses rk[2..14], AES-256 uses rk[0..14].
+  // Dispatches on keylen at runtime; clobbers t2.
+  void aes_decrypt_all(VectorRegister data[], int n, Register keylen, VectorRegister rk[]) {
+    Label L128, L192, Ltail;
+    __ mv(t2, AES_192_KEYLEN_INTS);
+    for (int d = 0; d < n; d++) __ vaesz_vs(data[d], rk[14]);
+    for (int r = 13; r >= 5; r--)
+      for (int d = 0; d < n; d++) __ vaesdm_vs(data[d], rk[r]);
+    __ bltu(keylen, t2, L128);
+    __ beq(keylen, t2, L192);
+    for (int r = 4; r >= 1; r--)
+      for (int d = 0; d < n; d++) __ vaesdm_vs(data[d], rk[r]);
+    for (int d = 0; d < n; d++) __ vaesdf_vs(data[d], rk[0]);
+    __ j(Ltail);
+    __ bind(L192);
+    for (int r = 4; r >= 3; r--)
+      for (int d = 0; d < n; d++) __ vaesdm_vs(data[d], rk[r]);
+    for (int d = 0; d < n; d++) __ vaesdf_vs(data[d], rk[2]);
+    __ j(Ltail);
+    __ bind(L128);
+    for (int d = 0; d < n; d++) __ vaesdf_vs(data[d], rk[4]);
+    __ bind(Ltail);
+  }
+
+  // Emit full AES encrypt: key-size divergent head + shared tail (vaesz + 9 vaesem + vaesef).
+  // round_keys[] right-aligned: AES-128 uses rk[4..14], AES-192 uses rk[2..14], AES-256 uses rk[0..14].
+  // Dispatches on keylen at runtime; clobbers t2.
+  void aes_encrypt_all(VectorRegister data[], int n, Register keylen, VectorRegister rk[]) {
+    Label L128, L192, Ltail;
+    __ mv(t2, AES_192_KEYLEN_INTS);
+    __ bltu(keylen, t2, L128);
+    __ beq(keylen, t2, L192);
+    for (int d = 0; d < n; d++) __ vaesz_vs(data[d], rk[0]);
+    for (int r = 1; r <= 4; r++)
+      for (int d = 0; d < n; d++) __ vaesem_vs(data[d], rk[r]);
+    __ j(Ltail);
+    __ bind(L192);
+    for (int d = 0; d < n; d++) __ vaesz_vs(data[d], rk[2]);
+    for (int r = 3; r <= 4; r++)
+      for (int d = 0; d < n; d++) __ vaesem_vs(data[d], rk[r]);
+    __ j(Ltail);
+    __ bind(L128);
+    for (int d = 0; d < n; d++) __ vaesz_vs(data[d], rk[4]);
+    __ bind(Ltail);
+    for (int r = 5; r <= 13; r++)
+      for (int d = 0; d < n; d++) __ vaesem_vs(data[d], rk[r]);
+    for (int d = 0; d < n; d++) __ vaesef_vs(data[d], rk[14]);
+  }
+
+  // Generate the ECB loop: an m1/e32 bulk loop with VL = VLMAX followed by a
+  // single-block m1 tail. VL comes from the register form vsetvli (rd, x0),
+  // so one loop shape serves every VLEN: each bulk iteration processes
+  // VLEN/128 AES blocks (1 block at VLEN=128, 2 at VLEN=256, 4 at VLEN=512).
+  // Round keys are m1 groups applied with the .vs broadcast forms.
+  // Clobbers t0 and t2.
+  void ecb_loop(Register from, Register to, Register len, Register keylen,
+                VectorRegister rk[], bool encrypt) {
+    const Register batch_bytes = t0;
+    Label L_bulk_loop, L_tail_loop, L_done;
+    VectorRegister data[1] = {v20};
+
+    // m1/e32 with VL = VLMAX; batch_bytes = VL * 4.
+    __ vsetvli(batch_bytes, x0, Assembler::e32, Assembler::m1);
+    __ slli(batch_bytes, batch_bytes, 2);
+    BLOCK_COMMENT("ecb bulk loop (m1, VLMAX)");
+    __ bind(L_bulk_loop);
+    __ bltu(len, batch_bytes, L_tail_loop);
+    __ vle32_v(v20, from);
+    __ add(from, from, batch_bytes);
+    if (encrypt) aes_encrypt_all(data, 1, keylen, rk);
+    else         aes_decrypt_all(data, 1, keylen, rk);
+    __ vse32_v(v20, to);
+    __ add(to, to, batch_bytes);
+    __ sub(len, len, batch_bytes);
+    __ j(L_bulk_loop);
+
+    BLOCK_COMMENT("ecb tail: single block (m1)");
+    __ bind(L_tail_loop);
+    __ beqz(len, L_done);
+    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
+    __ vle32_v(v20, from);
+    __ addi(from, from, 16);
+    if (encrypt) aes_encrypt_all(data, 1, keylen, rk);
+    else         aes_decrypt_all(data, 1, keylen, rk);
+    __ vse32_v(v20, to);
+    __ addi(to, to, 16);
+    __ subi(len, len, 16);
+    __ j(L_tail_loop);
+
+    __ bind(L_done);
+  }
+
+  // Arguments:
+  //
+  // Inputs:
+  //   c_rarg0   - source byte array address
+  //   c_rarg1   - destination byte array address
+  //   c_rarg2   - K (key) in little endian int array
+  //   c_rarg3   - input length in bytes (a multiple of 16)
+  //
+  // Output:
+  //   c_rarg0   - the number of bytes processed
+  //
+  address generate_electronicCodeBook_encryptAESCrypt() {
+    assert(UseAESIntrinsics, "need AES instructions (Zvkned extension) support");
+
+    StubId stub_id = StubId::stubgen_electronicCodeBook_encryptAESCrypt_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, stub_id);
+
+    const Register from        = c_rarg0;
+    const Register to          = c_rarg1;
+    const Register key         = c_rarg2;
+    const Register len         = c_rarg3;
+    const Register keylen      = x28;
+    const Register saved_len   = x29;
+
+    start = __ pc();
+    __ enter();
+    __ mv(saved_len, len);
+
+    __ lwu(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
+
+    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
+    aes_load_round_keys(key, keylen);
+
+    VectorRegister rk[] = {
+      v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18
+    };
+
+    ecb_loop(from, to, len, keylen, rk, true);
+
+    __ mv(c_rarg0, saved_len);
+    __ leave();
+    __ ret();
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
+    return start;
+  }
+
+  address generate_electronicCodeBook_decryptAESCrypt() {
+    assert(UseAESIntrinsics, "need AES instructions (Zvkned extension) support");
+
+    StubId stub_id = StubId::stubgen_electronicCodeBook_decryptAESCrypt_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, stub_id);
+
+    const Register from        = c_rarg0;
+    const Register to          = c_rarg1;
+    const Register key         = c_rarg2;
+    const Register len         = c_rarg3;
+    const Register keylen      = x28;
+    const Register saved_len   = x29;
+
+    start = __ pc();
+    __ enter();
+    __ mv(saved_len, len);
+
+    __ lwu(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
+
+    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
+    aes_load_round_keys(key, keylen);
+
+    VectorRegister rk[] = {
+      v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18
+    };
+
+    ecb_loop(from, to, len, keylen, rk, false);
+
+    __ mv(c_rarg0, saved_len);
+    __ leave();
+    __ ret();
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
+    return start;
+  }
+
   void cipherBlockChaining_encryptAESCrypt(int round, Register from, Register to, Register key,
                                            Register rvec, Register input_len) {
     const Register len = x29;
@@ -8002,6 +8232,8 @@ static const int64_t right_3_bits = right_n_bits(3);
     if (UseAESIntrinsics) {
       StubRoutines::_aescrypt_encryptBlock = generate_aescrypt_encryptBlock();
       StubRoutines::_aescrypt_decryptBlock = generate_aescrypt_decryptBlock();
+      StubRoutines::_electronicCodeBook_encryptAESCrypt = generate_electronicCodeBook_encryptAESCrypt();
+      StubRoutines::_electronicCodeBook_decryptAESCrypt = generate_electronicCodeBook_decryptAESCrypt();
       StubRoutines::_cipherBlockChaining_encryptAESCrypt = generate_cipherBlockChaining_encryptAESCrypt();
       StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_decryptAESCrypt();
     }
