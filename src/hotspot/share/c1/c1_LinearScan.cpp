@@ -564,7 +564,6 @@ void LinearScan::compute_local_live_sets() {
   // iterate all blocks
   for (int i = 0; i < num_blocks; i++) {
     BlockBegin* block = block_at(i);
-    TRACE_LINEAR_SCAN(4, tty->print_cr("B%d", block->block_id()));
 
     ResourceBitMap live_gen(live_size);
     ResourceBitMap live_kill(live_size);
@@ -584,7 +583,6 @@ void LinearScan::compute_local_live_sets() {
     assert(visitor.no_operands(instructions->at(0)), "first operation must always be a label");
     for (int j = 1; j < num_inst; j++) {
       LIR_Op* op = instructions->at(j);
-      TRACE_LINEAR_SCAN(4, tty->print_cr("op%d", op->id()));
 
       // visit operation to collect all operands
       visitor.visit(op);
@@ -607,7 +605,6 @@ void LinearScan::compute_local_live_sets() {
         if (opr->is_virtual_register()) {
           assert(reg_num(opr) == opr->vreg_number() && !is_valid_reg_num(reg_numHi(opr)), "invalid optimization below");
           reg = opr->vreg_number();
-          TRACE_LINEAR_SCAN(4, tty->print_cr("  input virtual register %d", reg));
           if (!live_kill.at(reg)) {
             live_gen.set_bit(reg);
             TRACE_LINEAR_SCAN(4, tty->print_cr("  Setting live_gen for register %d at instruction %d", reg, op->id()));
@@ -638,12 +635,9 @@ void LinearScan::compute_local_live_sets() {
 
       // Add uses of live locals from interpreter's point of view for proper debug information generation
       n = visitor.info_count();
-      TRACE_LINEAR_SCAN(4, tty->print("op: "); op->print(); tty->cr());
       for (k = 0; k < n; k++) {
-        TRACE_LINEAR_SCAN(4, tty->print_cr("  k: %d", k));
         CodeEmitInfo* info = visitor.info_at(k);
         ValueStack* stack = info->stack();
-        TRACE_LINEAR_SCAN(4, tty->print("stack: "); stack->print(); tty->cr());
         for_each_state_value(stack, value,
           set_live_gen_kill(value, op, live_gen, live_kill);
           local_has_fpu_registers = local_has_fpu_registers || value->type()->is_float_kind();
@@ -767,32 +761,14 @@ void LinearScan::compute_global_live_sets() {
       if (n + e > 0) {
         // block has successors
         if (n > 0) {
-#ifdef ASSERT
-          if (TraceLinearScanLevel >= 4) {
-            tty->print("live_out B%d u= live_in B%d = ", block->block_id(), block->sux_at(0)->block_id());
-            print_bitmap(block->sux_at(0)->live_in());
-          }
-#endif
           live_out.set_from(block->sux_at(0)->live_in());
           for (int j = 1; j < n; j++) {
-#ifdef ASSERT
-            if (TraceLinearScanLevel >= 4) {
-              tty->print("live_out B%d u= live_in B%d = ", block->block_id(), block->sux_at(j)->block_id());
-              print_bitmap(block->sux_at(j)->live_in());
-            }
-#endif
             live_out.set_union(block->sux_at(j)->live_in());
           }
         } else {
           live_out.clear();
         }
         for (int j = 0; j < e; j++) {
-#ifdef ASSERT
-          if (TraceLinearScanLevel >= 4) {
-            tty->print("live_out B%d u= live_in B%d = ", block->block_id(), block->exception_handler_at(j)->block_id());
-            print_bitmap(block->exception_handler_at(j)->live_in());
-          }
-#endif
           live_out.set_union(block->exception_handler_at(j)->live_in());
         }
 
@@ -1314,7 +1290,6 @@ void LinearScan::build_intervals() {
   // iterate all blocks in reverse order
   for (i = block_count() - 1; i >= 0; i--) {
     BlockBegin* block = block_at(i);
-    TRACE_LINEAR_SCAN(2, tty->print_cr("B%d", block->block_id()));
     LIR_OpList* instructions = block->lir()->instructions_list();
     int         block_from =   block->first_lir_instruction_id();
     int         block_to =     block->last_lir_instruction_id();
@@ -1350,7 +1325,6 @@ void LinearScan::build_intervals() {
     for (int j = instructions->length() - 1; j >= 1; j--) {
       LIR_Op* op = instructions->at(j);
       int op_id = op->id();
-      TRACE_LINEAR_SCAN(2, tty->print_cr("op%d", op_id));
 
       // visit operation to collect all operands
       visitor.visit(op);
@@ -3086,27 +3060,21 @@ void LinearScan::assign_reg_num() {
 
 
 void LinearScan::do_linear_scan() {
-  TRACE_LINEAR_SCAN(3, tty->print_cr("number_instructions()"));
   number_instructions();
 
   NOT_PRODUCT(print_lir(1, "Before Register Allocation"));
 
-  TRACE_LINEAR_SCAN(3, tty->print_cr("compute_local_live_sets()"));
   compute_local_live_sets();
-  TRACE_LINEAR_SCAN(3, tty->print_cr("compute_global_live_sets()"));
   compute_global_live_sets();
   CHECK_BAILOUT();
 
-  TRACE_LINEAR_SCAN(3, tty->print_cr("build_intervals()"));
   build_intervals();
   CHECK_BAILOUT();
-  TRACE_LINEAR_SCAN(3, tty->print_cr("sort_intervals()"));
   sort_intervals_before_allocation();
 
   NOT_PRODUCT(print_intervals("Before Register Allocation"));
   NOT_PRODUCT(LinearScanStatistic::compute(this, _stat_before_alloc));
 
-  TRACE_LINEAR_SCAN(3, tty->print_cr("allocate_registers()"));
   allocate_registers();
   CHECK_BAILOUT();
 
