@@ -28,6 +28,7 @@
 #include "asm/assembler.inline.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "ci/ciInlineKlass.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -523,20 +524,25 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
     ResourceMark rm;
     stringStream ss;
     ss.print("verify_oop: %s: %s (%s:%d)", reg->name(), s, file, line);
-    b = code_string(ss.as_string());
+#if INCLUDE_CDS
+    if (AOTCodeCache::is_on_for_dump() && !code_section()->scratch_emit()) {
+      // This will duplicate string to preserve it.
+      b = AOTCodeCache::add_C_string(ss.as_string());
+    } else
+#endif
+    {
+      b = code_string(ss.as_string());
+    }
   }
   BLOCK_COMMENT("verify_oop {");
 
   push_reg(RegSet::of(ra, t0, t1, c_rarg0), sp);
 
   mv(c_rarg0, reg); // c_rarg0 : x10
-  {
-    // The length of the instruction sequence emitted should not depend
-    // on the address of the char buffer so that the size of mach nodes for
-    // scratch emit and normal emit matches.
-    IncompressibleScope scope(this); // Fixed length
-    movptr(t0, (address) b);
-  }
+  // The length of the instruction sequence emitted should not depend
+  // on the address of the char buffer so that the size of mach nodes for
+  // scratch emit and normal emit matches.
+  la(t0, ExternalAddress((address)b));
 
   // Call indirectly to solve generation ordering problem
   ld(t1, RuntimeAddress(StubRoutines::verify_oop_subroutine_entry_address()));
@@ -709,7 +715,15 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
     ResourceMark rm;
     stringStream ss;
     ss.print("verify_oop_addr: %s (%s:%d)", s, file, line);
-    b = code_string(ss.as_string());
+#if INCLUDE_CDS
+    if (AOTCodeCache::is_on_for_dump() && !code_section()->scratch_emit()) {
+      // This will duplicate string to preserve it.
+      b = AOTCodeCache::add_C_string(ss.as_string());
+    } else
+#endif
+    {
+      b = code_string(ss.as_string());
+    }
   }
   BLOCK_COMMENT("verify_oop_addr {");
 
@@ -722,13 +736,10 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
     ld(x10, addr);
   }
 
-  {
-    // The length of the instruction sequence emitted should not depend
-    // on the address of the char buffer so that the size of mach nodes for
-    // scratch emit and normal emit matches.
-    IncompressibleScope scope(this); // Fixed length
-    movptr(t0, (address) b);
-  }
+  // The length of the instruction sequence emitted should not depend
+  // on the address of the char buffer so that the size of mach nodes for
+  // scratch emit and normal emit matches.
+  la(t0, ExternalAddress((address)b));
 
   // Call indirectly to solve generation ordering problem
   ld(t1, RuntimeAddress(StubRoutines::verify_oop_subroutine_entry_address()));
