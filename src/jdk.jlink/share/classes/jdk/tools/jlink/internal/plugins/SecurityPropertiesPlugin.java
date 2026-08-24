@@ -120,10 +120,17 @@ public class SecurityPropertiesPlugin extends AbstractPlugin {
                 BufferedReader br = new BufferedReader(isr)) {
             String line = br.readLine();
             while (line != null) {
-                if (!line.isEmpty() && line.charAt(0) != '#') {
-                    // assume "=", ":", or whitespace used as delimiter
-                    String[] res = line.stripLeading().split("[=:\s]", 2);
-                    String propName = res[0];
+                if (line.isEmpty() || line.charAt(0) == '#'
+                        || line.charAt(0) == '!') {
+                    lines.add(line);
+                    line = br.readLine();
+                    continue;
+                }
+                // assume "=", ":", or whitespace used as delimiter
+                String[] res = line.stripLeading().split("[=:\s]", 2);
+                String propName = res[0];
+                // if propName is empty, then line contained all whitespace
+                if (!propName.isEmpty()) {
                     String propValue = props.remove(propName.trim());
                     if (propValue != null) {
                         // skip multi-line values in original

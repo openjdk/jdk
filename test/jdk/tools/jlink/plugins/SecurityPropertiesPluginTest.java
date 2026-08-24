@@ -65,20 +65,22 @@ public class SecurityPropertiesPluginTest {
         }
 
         /*
-         * Test props option with file containing properties:
+         * Test props option with file containing the following properties:
          * one that overrides a current property,
          * one that is a user-defined property,
          * two include properties (it should only use the 2nd one)
          * one that overrides a multi-valued property,
          * one that uses a character that is encoded differently in
-         * ISO-8859-1 vs. UTF-8.
+         * ISO-8859-1 vs. UTF-8,
+         * one that contains an empty string as the value.
          */
         Map<String, String> propMap =
                 Map.of("keystore.type", "bogus",
                        "foo", "bar",
                        "include", "file1",
                        "jdk.certpath.disabledAlgorithms", "MD2",
-                       "iso_8859_1_char", "é");
+                       "iso_8859_1_char", "é",
+                       "empty", "");
         Path p = writePropsToFile(propMap, "test.security");
         test("modOne", p.toString(), propMap);
 
@@ -108,7 +110,10 @@ public class SecurityPropertiesPluginTest {
         // check include is last line
         List<String> lines = Files.readAllLines(image.resolve(SECPROPS_PATH),
             StandardCharsets.ISO_8859_1);
-        Asserts.assertEquals(lines.getLast(), "include=file1");
+        Asserts.assertEquals(lines.getLast(), "include file1");
+
+        // TODO: make sure there is only one instance of
+        // "jdk.certpath.disabledAlgorithms" and it is in the right place.
     }
 
     private static void testBadOptions() throws Exception {
@@ -126,7 +131,11 @@ public class SecurityPropertiesPluginTest {
             String filename) throws Exception {
         Random r = new Random();
         Path p = Path.of(TEST_DIR, filename);
+        // write some comments in both formats ('#' and '!') and blank line
         StringBuilder sb = new StringBuilder();
+        sb.append("# Test properties file\n")
+          .append("! Test properties file\n")
+          .append("     ");
         // use random delimiter
         char delim = DELIMS.charAt(r.nextInt(DELIMS.length()));
         propMap.forEach((k, v) -> sb.append(k + delim + v
