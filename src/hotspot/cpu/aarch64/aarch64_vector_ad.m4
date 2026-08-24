@@ -2117,7 +2117,7 @@ instruct reduce_strict_order_add2F_neon(vRegF dst_src1, vReg vsrc, vRegF tmp) %{
   format %{ "reduce_strict_order_add2F_neon $dst_src1, $dst_src1, $vsrc\t# 2F, strict order" %}
   ins_encode %{
     __ fadds($dst_src1$$FloatRegister, $dst_src1$$FloatRegister, $vsrc$$FloatRegister);
-    __ ins($tmp$$FloatRegister, __ S, $vsrc$$FloatRegister, 0, 1);
+    __ ext($tmp$$FloatRegister, __ T8B, $vsrc$$FloatRegister, $vsrc$$FloatRegister, 4);
     __ fadds($dst_src1$$FloatRegister, $dst_src1$$FloatRegister, $tmp$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
@@ -2132,11 +2132,11 @@ instruct reduce_strict_order_add4F_neon(vRegF dst_src1, vReg vsrc, vRegF tmp) %{
   format %{ "reduce_strict_order_add4F_neon $dst_src1, $dst_src1, $vsrc\t# 4F, strict order" %}
   ins_encode %{
     __ fadds($dst_src1$$FloatRegister, $dst_src1$$FloatRegister, $vsrc$$FloatRegister);
-    __ ins($tmp$$FloatRegister, __ S, $vsrc$$FloatRegister, 0, 1);
+    __ ext($tmp$$FloatRegister, __ T16B, $vsrc$$FloatRegister, $vsrc$$FloatRegister, 4);
     __ fadds($dst_src1$$FloatRegister, $dst_src1$$FloatRegister, $tmp$$FloatRegister);
-    __ ins($tmp$$FloatRegister, __ S, $vsrc$$FloatRegister, 0, 2);
+    __ ext($tmp$$FloatRegister, __ T16B, $vsrc$$FloatRegister, $vsrc$$FloatRegister, 8);
     __ fadds($dst_src1$$FloatRegister, $dst_src1$$FloatRegister, $tmp$$FloatRegister);
-    __ ins($tmp$$FloatRegister, __ S, $vsrc$$FloatRegister, 0, 3);
+    __ ext($tmp$$FloatRegister, __ T16B, $vsrc$$FloatRegister, $vsrc$$FloatRegister, 12);
     __ fadds($dst_src1$$FloatRegister, $dst_src1$$FloatRegister, $tmp$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
@@ -2234,7 +2234,7 @@ instruct reduce_strict_order_add2D_neon(vRegD dst_src1, vReg vsrc, vRegD tmp) %{
   format %{ "reduce_strict_order_add2D_neon $dst_src1, $dst_src1, $vsrc\t# 2D, strict order" %}
   ins_encode %{
     __ faddd($dst_src1$$FloatRegister, $dst_src1$$FloatRegister, $vsrc$$FloatRegister);
-    __ ins($tmp$$FloatRegister, __ D, $vsrc$$FloatRegister, 0, 1);
+    __ ext($tmp$$FloatRegister, __ T16B, $vsrc$$FloatRegister, $vsrc$$FloatRegister, 8);
     __ faddd($dst_src1$$FloatRegister, $dst_src1$$FloatRegister, $tmp$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
