@@ -339,19 +339,16 @@ public:
       ciInlineKlass* vk = element_ptr->inline_klass();
       Node* flat_array = _parse.cast_to_flat_array(array, vk);
 
-      InlineTypeNode* vt = InlineTypeNode::make_from_flat_array(&_parse, vk, flat_array, _array_index, null_free_prob, null_free_atomic_prob);
-      ld = vt;
-
-      if (_region != nullptr && 0) {
-        Node* null_ctl = _parse.top();
-        _parse.null_check_common(vt->get_null_marker(), T_INT, false, &null_ctl);
-
-        _res_phi->add_req(_parse.zerocon(T_OBJECT));
-        _region->add_req(null_ctl);
-        _io_phi->add_req(_parse.i_o());
-        _mem_phi->add_req(_parse.reset_memory());
-        _parse.set_all_memory(_mem);
+      // It may be the case that array is only known to be not flat when we try to cast it to a
+      // flat array. For example, array is a not-null-free array and vk does not have a
+      // nullable layout.
+      InlineTypeNode* vt = nullptr;
+      if (!flat_array->is_top()) {
+         vt = InlineTypeNode::make_from_flat_array(&_parse, vk, flat_array, _array_index, null_free_prob, null_free_atomic_prob);
+      } else {
+        vt  = InlineTypeNode::make_null(_gvn, vk);
       }
+      ld = vt;
     } else {
       ld = _parse.load_from_unknown_flat_array(array, _array_index, element_ptr);
       const TypeAryPtr* array_type = _gvn.type(array)->is_aryptr();
