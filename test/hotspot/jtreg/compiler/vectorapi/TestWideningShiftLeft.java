@@ -25,6 +25,7 @@ package compiler.vectorapi;
 
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
+import compiler.lib.ir_framework.Arguments;
 import compiler.lib.ir_framework.Run;
 import compiler.lib.ir_framework.Test;
 import compiler.lib.ir_framework.TestFramework;
@@ -64,17 +65,29 @@ public class TestWideningShiftLeft {
         TestFramework.run();
     }
 
+    public static Object[] setupByte() {
+        return new Object[] { ByteVector.broadcast(ByteVector.SPECIES_64, (byte) 37) };
+    }
+
+    public static Object[] setupShort() {
+        return new Object[] { ShortVector.broadcast(ShortVector.SPECIES_64, (short) 17011) };
+    }
+
+    public static Object[] setupInt() {
+        return new Object[] { IntVector.broadcast(IntVector.SPECIES_64, 0x31234567) };
+    }
+
     @Test
+    @Arguments(setup = "setupByte")
     @IR(counts = {IRNode.RISCV_VWSLL_B2S_VI, "1"}, applyIfCPUFeature = {"zvbb", "true"})
-    public static ShortVector testByteToShort() {
-        ByteVector src = ByteVector.broadcast(ByteVector.SPECIES_64, (byte) 37);
+    public static ShortVector testByteToShort(ByteVector src) {
         return ((ShortVector) src.convertShape(VectorOperators.ZERO_EXTEND_B2S,
                                                ShortVector.SPECIES_128, 0)).lanewise(VectorOperators.LSHL, 7);
     }
 
     @Run(test = "testByteToShort")
     public static void runByteToShort() {
-        ShortVector result = testByteToShort();
+        ShortVector result = testByteToShort((ByteVector) setupByte()[0]);
         for (int i = 0; i < result.length(); i++) {
             short expected = (short) ((37 & 0xff) << 7);
             if (result.lane(i) != expected) {
@@ -84,16 +97,16 @@ public class TestWideningShiftLeft {
     }
 
     @Test
+    @Arguments(setup = "setupShort")
     @IR(counts = {IRNode.RISCV_VWSLL_S2I_VI, "1"}, applyIfCPUFeature = {"zvbb", "true"})
-    public static IntVector testShortToInt() {
-        ShortVector src = ShortVector.broadcast(ShortVector.SPECIES_64, (short) 17011);
+    public static IntVector testShortToInt(ShortVector src) {
         return ((IntVector) src.convertShape(VectorOperators.ZERO_EXTEND_S2I,
                                              IntVector.SPECIES_128, 0)).lanewise(VectorOperators.LSHL, 31);
     }
 
     @Run(test = "testShortToInt")
     public static void runShortToInt() {
-        IntVector result = testShortToInt();
+        IntVector result = testShortToInt((ShortVector) setupShort()[0]);
         for (int i = 0; i < result.length(); i++) {
             int expected = (17011 & 0xffff) << 31;
             if (result.lane(i) != expected) {
@@ -103,16 +116,16 @@ public class TestWideningShiftLeft {
     }
 
     @Test
+    @Arguments(setup = "setupInt")
     @IR(counts = {IRNode.RISCV_VWSLL_I2L_VI, "1"}, applyIfCPUFeature = {"zvbb", "true"})
-    public static LongVector testIntToLong() {
-        IntVector src = IntVector.broadcast(IntVector.SPECIES_64, 0x31234567);
+    public static LongVector testIntToLong(IntVector src) {
         return ((LongVector) src.convertShape(VectorOperators.ZERO_EXTEND_I2L,
                                               LongVector.SPECIES_128, 0)).lanewise(VectorOperators.LSHL, 31);
     }
 
     @Run(test = "testIntToLong")
     public static void runIntToLong() {
-        LongVector result = testIntToLong();
+        LongVector result = testIntToLong((IntVector) setupInt()[0]);
         for (int i = 0; i < result.length(); i++) {
             long expected = (0x31234567L & 0xffffffffL) << 31;
             if (result.lane(i) != expected) {
@@ -124,16 +137,16 @@ public class TestWideningShiftLeft {
     // ShortVector shift counts use the destination element width, so 16
     // wraps to zero and is a valid vwsll.b2s.vi immediate.
     @Test
+    @Arguments(setup = "setupByte")
     @IR(counts = {IRNode.RISCV_VWSLL_B2S_VI, "1"}, applyIfCPUFeature = {"zvbb", "true"})
-    public static ShortVector testByteToShortShift16() {
-        ByteVector src = ByteVector.broadcast(ByteVector.SPECIES_64, (byte) 37);
+    public static ShortVector testByteToShortShift16(ByteVector src) {
         return ((ShortVector) src.convertShape(VectorOperators.ZERO_EXTEND_B2S,
                                                ShortVector.SPECIES_128, 0)).lanewise(VectorOperators.LSHL, 16);
     }
 
     @Run(test = "testByteToShortShift16")
     public static void runByteToShortShift16() {
-        ShortVector result = testByteToShortShift16();
+        ShortVector result = testByteToShortShift16((ByteVector) setupByte()[0]);
         for (int i = 0; i < result.length(); i++) {
             short expected = (short) (37 & 0xff);
             if (result.lane(i) != expected) {
