@@ -121,7 +121,7 @@ public:
   }
 
   // Clear the group-owned card set.
-  void clear_cardset();
+  void clear_card_set();
 
   void clear(bool uninstall_group_cardset = false);
 

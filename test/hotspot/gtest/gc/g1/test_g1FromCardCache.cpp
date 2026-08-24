@@ -25,55 +25,55 @@
 #include "unittest.hpp"
 
 TEST(G1FromCardCache, hit_and_miss) {
-  const uintptr_t source_card = 64;
-  const uint cardset_a = 3;
-  const uint cardset_b = 13;
-  const uint cardset_high = 1024;
+  const uintptr_t from_card = 64;
+  const uint cset_group_a = 3;
+  const uint cset_group_b = 13;
+  const uint cset_group_high = 1024;
 
   G1FromCardCache cache;
 
-  EXPECT_FALSE(cache.contains_or_add(source_card, cardset_a));
-  EXPECT_TRUE(cache.contains_or_add(source_card, cardset_a));
+  EXPECT_FALSE(cache.contains_or_add(from_card, cset_group_a));
+  EXPECT_TRUE(cache.contains_or_add(from_card, cset_group_a));
 
-  // Retain multiple cardsets for the same source_card.
-  EXPECT_FALSE(cache.contains_or_add(source_card, cardset_b));
-  EXPECT_TRUE(cache.contains_or_add(source_card, cardset_a));
-  EXPECT_TRUE(cache.contains_or_add(source_card, cardset_b));
+  // Retain multiple cset groups for the same from_card.
+  EXPECT_FALSE(cache.contains_or_add(from_card, cset_group_b));
+  EXPECT_TRUE(cache.contains_or_add(from_card, cset_group_a));
+  EXPECT_TRUE(cache.contains_or_add(from_card, cset_group_b));
 
   // A group id is not an array index.
-  EXPECT_FALSE(cache.contains_or_add(source_card, cardset_high));
-  EXPECT_TRUE(cache.contains_or_add(source_card, cardset_high));
+  EXPECT_FALSE(cache.contains_or_add(from_card, cset_group_high));
+  EXPECT_TRUE(cache.contains_or_add(from_card, cset_group_high));
 }
 
-TEST(G1FromCardCache, source_card_transition) {
-  const uintptr_t source_card_a = 2;
-  const uintptr_t source_card_b = 3;
-  const uint cardset_id = 17;
+TEST(G1FromCardCache, from_card_transition) {
+  const uintptr_t from_card_a = 2;
+  const uintptr_t from_card_b = 3;
+  const uint cset_group_id = 17;
 
   G1FromCardCache cache;
 
-  EXPECT_FALSE(cache.contains_or_add(source_card_a, cardset_id));
-  EXPECT_TRUE(cache.contains_or_add(source_card_a, cardset_id));
+  EXPECT_FALSE(cache.contains_or_add(from_card_a, cset_group_id));
+  EXPECT_TRUE(cache.contains_or_add(from_card_a, cset_group_id));
 
-  // Discard previous source_card data.
-  EXPECT_FALSE(cache.contains_or_add(source_card_b, cardset_id));
-  EXPECT_TRUE(cache.contains_or_add(source_card_b, cardset_id));
+  // Discard previous from_card data.
+  EXPECT_FALSE(cache.contains_or_add(from_card_b, cset_group_id));
+  EXPECT_TRUE(cache.contains_or_add(from_card_b, cset_group_id));
 
   // Verify that it was discarded before.
-  EXPECT_FALSE(cache.contains_or_add(source_card_a, cardset_id));
+  EXPECT_FALSE(cache.contains_or_add(from_card_a, cset_group_id));
 }
 
 TEST(G1FromCardCache, cache_reset) {
-  const uintptr_t source_card = 17;
-  const uint cardset_id = 17;
+  const uintptr_t from_card = 17;
+  const uint cset_group_id = 17;
 
   G1FromCardCache cache;
 
-  EXPECT_FALSE(cache.contains_or_add(source_card, cardset_id));
-  EXPECT_TRUE(cache.contains_or_add(source_card, cardset_id));
+  EXPECT_FALSE(cache.contains_or_add(from_card, cset_group_id));
+  EXPECT_TRUE(cache.contains_or_add(from_card, cset_group_id));
 
   cache.reset();
 
-  EXPECT_FALSE(cache.contains_or_add(source_card, cardset_id));
-  EXPECT_TRUE(cache.contains_or_add(source_card, cardset_id));
+  EXPECT_FALSE(cache.contains_or_add(from_card, cset_group_id));
+  EXPECT_TRUE(cache.contains_or_add(from_card, cset_group_id));
 }

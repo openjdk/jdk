@@ -1078,9 +1078,9 @@ class G1MergeHeapRootsTask : public WorkerTask {
         // We want to continue collecting remembered set entries for humongous regions
         // that were not reclaimed.
         G1CSetCandidateGroup* group = r->rem_set()->cset_group();
-        assert(group != nullptr, "must have a cardset group");
-        assert(group->length() == 1, "humongous regions cardset group must have a single entry");
-        group->clear_cardset();
+        assert(group != nullptr, "must have a cset group");
+        assert(group->length() == 1, "humongous regions cset group must have a single entry");
+        group->clear_card_set();
       }
 
       // Postcondition
@@ -1266,8 +1266,7 @@ inline void check_card_ptr(CardTable::CardValue* card_ptr, G1CardTable* ct) {
 #endif
 }
 
-G1RemSet::RefineResult G1RemSet::refine_card_concurrently(CardValue* const card_ptr,
-                                                          G1ConcurrentRefineOopClosure& conc_refine_cl) {
+G1RemSet::RefineResult G1RemSet::refine_card_concurrently(CardValue* const card_ptr) {
   assert(!_g1h->is_stw_gc_active(), "Only call concurrently");
   G1CardTable* ct = _g1h->refinement_table();
   check_card_ptr(card_ptr, ct);
@@ -1297,8 +1296,7 @@ G1RemSet::RefineResult G1RemSet::refine_card_concurrently(CardValue* const card_
   MemRegion dirty_region(start, MIN2(scan_limit, end));
   assert(!dirty_region.is_empty(), "sanity");
 
-  conc_refine_cl.reset_for_scan();
-
+  G1ConcurrentRefineOopClosure conc_refine_cl(_g1h);
   if (r->oops_on_memregion_seq_iterate_careful<false>(dirty_region, &conc_refine_cl) != nullptr) {
     if (conc_refine_cl.has_ref_to_cset()) {
       return HasRefToCSet;

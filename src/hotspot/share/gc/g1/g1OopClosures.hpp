@@ -220,12 +220,6 @@ public:
   bool has_ref_to_cset() const { return _has_ref_to_cset; }
   bool has_ref_to_old() const { return _has_ref_to_old; }
 
-  void reset_for_scan() {
-    _from_card_cache.reset();
-    _has_ref_to_cset = false;
-    _has_ref_to_old = false;
-  }
-
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS; }
 
   template <class T> void do_oop_work(T* p);

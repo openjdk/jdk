@@ -25,36 +25,35 @@
 #ifndef SHARE_GC_G1_G1FROMCARDCACHE_HPP
 #define SHARE_GC_G1_G1FROMCARDCACHE_HPP
 
+#include "gc/shared/gc_globals.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-// G1FromCardCache remembers which destination cardsets have been
-// encountered while a worker scans the current source card.
+// G1FromCardCache remembers which destination cset groups have
+// been encountered while a worker scans the current from_card.
 class G1FromCardCache {
-  // Match GCCardSizeInBytes limits NOT_LP64(512) LP64_ONLY(1024).
-  static constexpr uint MaxCardSizeInBytes = NOT_LP64(512) LP64_ONLY(1024);
-  static constexpr uint MaxNumCardsets = MaxCardSizeInBytes / sizeof(narrowOop);
+  static constexpr uint MaxOopsPerCard = MAX_GC_CARD_SIZE_IN_BYTES / sizeof(narrowOop);
 
-  uintptr_t _source_card;
-  uint _num_cardsets;
-  uint _cardset_ids[MaxNumCardsets];
+  uintptr_t _from_card;
+  uint _num_cset_groups;
+  uint _cset_group_ids[MaxOopsPerCard];
 
   NONCOPYABLE(G1FromCardCache);
 
 public:
   G1FromCardCache()
-    : _source_card(0),
-      _num_cardsets(0) {}
+    : _from_card(0),
+      _num_cset_groups(0) {}
 
-  // Discard the state associated with the _source_card. This must be called before
-  // a worker begins a new refinement or rebuild scan and after a rebuild yield.
+  // Discard the state associated with the _from_card.
   void reset() {
-    _num_cardsets = 0;
+    _from_card = 0;
+    _num_cset_groups = 0;
   }
 
-  // Returns true if cardset_id has already been encountered while
-  // scanning source_card. Otherwise, records the id and returns false.
-  inline bool contains_or_add(uintptr_t source_card, uint cardset_id);
+  // Returns true if cset_group_id has already been encountered while
+  // scanning from_card. Otherwise, records the id and returns false.
+  inline bool contains_or_add(uintptr_t from_card, uint cset_group_id);
 };
 
 #endif // SHARE_GC_G1_G1FROMCARDCACHE_HPP

@@ -32,11 +32,11 @@ G1FullGCResetMetadataTask::G1ResetMetadataClosure::G1ResetMetadataClosure(G1Full
 
 void G1FullGCResetMetadataTask::G1ResetMetadataClosure::reset_region_metadata(G1HeapRegion* hr) {
   if (hr->rem_set()->has_cset_group()) {
-    assert(hr->is_starts_humongous(), "Only humongous regions can retain a cardset");
+    assert(hr->is_starts_humongous(), "Only humongous regions can retain a cset group");
     assert(hr->rem_set()->cset_group()->length() == 1,
-           "Humongous region cardset-group must contain exactly one region");
+           "Humongous region cset group must contain exactly one region");
 
-    hr->rem_set()->cset_group()->clear_cardset();
+    hr->rem_set()->cset_group()->clear_card_set();
   }
 
   hr->rem_set()->clear();

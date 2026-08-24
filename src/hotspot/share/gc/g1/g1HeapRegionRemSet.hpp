@@ -34,8 +34,8 @@
 #include "utilities/bitMap.hpp"
 
 class G1CardSetMemoryManager;
-class G1FromCardCache;
 class G1CSetCandidateGroup;
+class G1FromCardCache;
 class outputStream;
 
 class G1HeapRegionRemSet : public CHeapObj<mtGC> {
@@ -144,7 +144,7 @@ public:
   inline void set_state_updating();
   inline void set_state_complete();
 
-  inline void add_reference(OopOrNarrowOopStar from, G1FromCardCache& fcc);
+  inline void add_reference(OopOrNarrowOopStar from, G1FromCardCache& from_card_cache);
 
   // Clear the region-specific remset state.
   void clear();

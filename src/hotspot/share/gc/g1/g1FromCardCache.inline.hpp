@@ -27,23 +27,21 @@
 
 #include "gc/g1/g1FromCardCache.hpp"
 
-bool G1FromCardCache::contains_or_add(uintptr_t source_card, uint cardset_id) {
-  if (_num_cardsets == 0 || _source_card != source_card) {
-    _source_card = source_card;
-    _num_cardsets = 0;
+bool G1FromCardCache::contains_or_add(uintptr_t from_card, uint cset_group_id) {
+  if (_from_card != from_card) {
+    _from_card = from_card;
+    _num_cset_groups = 0;
   }
 
-  for (uint i = 0; i < _num_cardsets; i++) {
-    if (_cardset_ids[i] == cardset_id) {
+  for (uint i = 0; i < _num_cset_groups; i++) {
+    if (_cset_group_ids[i] == cset_group_id) {
       return true;
     }
   }
 
-  assert(_num_cardsets < MaxNumCardsets, "source card has too many destination cardsets");
+  assert(_num_cset_groups < MaxOopsPerCard, "from_card has too many destination cset groups");
 
-  if (_num_cardsets < MaxNumCardsets) {
-    _cardset_ids[_num_cardsets++] = cardset_id;
-  }
+  _cset_group_ids[_num_cset_groups++] = cset_group_id;
   return false;
 }
 

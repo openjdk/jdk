@@ -300,7 +300,6 @@ public:
 
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     G1RebuildRSAndScrubRegionClosure cl(_cm, _should_rebuild_remset);
-
     g1h->heap_region_par_iterate_from_worker_offset(&cl, &_hr_claimer, worker_id);
   }
 };

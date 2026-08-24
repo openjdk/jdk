@@ -121,13 +121,13 @@ uintptr_t G1HeapRegionRemSet::to_card(OopOrNarrowOopStar from) const {
   return pointer_delta(from, _heap_base_address, 1) >> CardTable::card_shift();
 }
 
-void G1HeapRegionRemSet::add_reference(OopOrNarrowOopStar from, G1FromCardCache& fcc) {
+void G1HeapRegionRemSet::add_reference(OopOrNarrowOopStar from, G1FromCardCache& from_card_cache) {
   precond(has_cset_group());
   precond(_state != Untracked);
 
   uintptr_t from_card = uintptr_t(from) >> CardTable::card_shift();
 
-  if (fcc.contains_or_add(from_card, cset_group()->group_id())) {
+  if (from_card_cache.contains_or_add(from_card, cset_group()->group_id())) {
     // We can't check whether the card is in the remembered set - the card container
     // may be coarsened just now.
     return;
