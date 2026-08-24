@@ -54,6 +54,7 @@
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/flags/jvmFlagAccess.hpp"
 #include "runtime/flags/jvmFlagLimit.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
@@ -74,6 +75,8 @@
 #include "jfr/jfr.hpp"
 #endif
 
+#include <string.h>
+
 static const char _default_java_launcher[] = "generic";
 
 #define DEFAULT_JAVA_LAUNCHER _default_java_launcher
@@ -93,7 +96,6 @@ const char*  Arguments::_sun_java_launcher      = DEFAULT_JAVA_LAUNCHER;
 bool   Arguments::_executing_unit_tests         = false;
 
 // These parameters are reset in method parse_vm_init_args()
-bool   Arguments::_AlwaysCompileLoopMethods     = AlwaysCompileLoopMethods;
 bool   Arguments::_UseOnStackReplacement        = UseOnStackReplacement;
 bool   Arguments::_BackgroundCompilation        = BackgroundCompilation;
 bool   Arguments::_ClipInlining                 = ClipInlining;
@@ -529,10 +531,10 @@ static SpecialFlag const special_jvm_flags[] = {
   { "DynamicDumpSharedSpaces",      JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "RequireSharedSpaces",          JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "UseSharedSpaces",              JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
+  { "CompilationMode",              JDK_Version::jdk(28), JDK_Version::jdk(29), JDK_Version::jdk(30)},
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "InitiatingHeapOccupancyPercent", JDK_Version::jdk(27),  JDK_Version::jdk(28), JDK_Version::jdk(29) },
-  { "AlwaysCompileLoopMethods",     JDK_Version::jdk(27),  JDK_Version::jdk(28), JDK_Version::jdk(29) },
 
   // -------------- Obsolete Flags - sorted by expired_in --------------
 
@@ -543,6 +545,7 @@ static SpecialFlag const special_jvm_flags[] = {
 #ifdef _LP64
   { "UseCompressedClassPointers",   JDK_Version::jdk(25),  JDK_Version::jdk(27), JDK_Version::undefined() },
 #endif
+  { "AlwaysCompileLoopMethods",     JDK_Version::jdk(27),  JDK_Version::jdk(28), JDK_Version::jdk(29) },
 
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
@@ -1354,7 +1357,6 @@ void Arguments::set_mode_flags(Mode mode) {
   // Default values may be platform/compiler dependent -
   // use the saved values
   ClipInlining               = Arguments::_ClipInlining;
-  AlwaysCompileLoopMethods   = Arguments::_AlwaysCompileLoopMethods;
   UseOnStackReplacement      = Arguments::_UseOnStackReplacement;
   BackgroundCompilation      = Arguments::_BackgroundCompilation;
 
@@ -1366,7 +1368,6 @@ void Arguments::set_mode_flags(Mode mode) {
   case _int:
     UseCompiler              = false;
     UseLoopCounter           = false;
-    AlwaysCompileLoopMethods = false;
     UseOnStackReplacement    = false;
     break;
   case _mixed:
@@ -1672,7 +1673,6 @@ Arguments::ArgsRange Arguments::parse_memory_size(const char* s,
 
 jint Arguments::parse_vm_init_args(GrowableArrayCHeap<VMInitArgsGroup, mtArguments>* all_args) {
   // Save default settings for some mode flags
-  Arguments::_AlwaysCompileLoopMethods = AlwaysCompileLoopMethods;
   Arguments::_UseOnStackReplacement    = UseOnStackReplacement;
   Arguments::_ClipInlining             = ClipInlining;
   Arguments::_BackgroundCompilation    = BackgroundCompilation;
@@ -1702,6 +1702,7 @@ jint Arguments::parse_vm_init_args(GrowableArrayCHeap<VMInitArgsGroup, mtArgumen
   // needs to know about processor and memory resources must occur after
   // this point.
 
+  os::check_temp_directory();
   os::init_container_support();
 
   SystemMemoryBarrier::initialize();
@@ -2640,8 +2641,7 @@ jint Arguments::finalize_vm_init_args() {
   }
 
   // Called after ClassLoader::lookup_vm_options() but before class loading begins.
-  // TODO: Obtain and pass correct preview mode flag value here.
-  ClassLoader::set_preview_mode(false);
+  ClassLoader::set_preview_mode(is_valhalla_enabled());
 
   if (!check_vm_args_consistency()) {
     return JNI_ERR;
@@ -2965,7 +2965,7 @@ static bool use_vm_log() {
   if (LogCompilation || !FLAG_IS_DEFAULT(LogFile) ||
       PrintCompilation || PrintInlining || PrintDependencies || PrintNativeNMethods ||
       PrintDebugInfo || PrintRelocations || PrintNMethods || PrintExceptionHandlers ||
-      PrintAssembly || TraceDeoptimization ||
+      PrintAssembly ||
       (VerifyDependencies && FLAG_IS_CMDLINE(VerifyDependencies))) {
     return true;
   }
@@ -3438,17 +3438,6 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   return JNI_OK;
 }
 
-void Arguments::set_compact_headers_flags() {
-#ifdef _LP64
-  if (UseCompactObjectHeaders && !UseObjectMonitorTable) {
-    if (FLAG_IS_CMDLINE(UseObjectMonitorTable)) {
-      warning("-UseObjectMonitorTable is incompatible with +UseCompactObjectHeaders; ignoring -UseObjectMonitorTable");
-    }
-    FLAG_SET_DEFAULT(UseObjectMonitorTable, true);
-  }
-#endif
-}
-
 jint Arguments::apply_ergo() {
   // Set flags based on ergonomics.
   jint result = set_ergonomics_flags();
@@ -3458,8 +3447,6 @@ jint Arguments::apply_ergo() {
   GCConfig::arguments()->set_heap_size();
 
   GCConfig::arguments()->initialize();
-
-  set_compact_headers_flags();
 
   CompressedKlassPointers::pre_initialize();
 
@@ -3511,6 +3498,75 @@ jint Arguments::apply_ergo() {
   if (BytecodeVerificationLocal && !BytecodeVerificationRemote) {
     log_info(verification)("Turning on remote verification because local verification is on");
     FLAG_SET_DEFAULT(BytecodeVerificationRemote, true);
+  }
+  if (!is_valhalla_enabled()) {
+#define WARN_IF_NOT_DEFAULT_FLAG(flag)                                                                       \
+    if (!FLAG_IS_DEFAULT(flag)) {                                                                            \
+      warning("Preview-specific flag \"%s\" has no effect when --enable-preview is not specified.", #flag);  \
+    }
+
+#define DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(flag)  \
+    WARN_IF_NOT_DEFAULT_FLAG(flag)                  \
+    FLAG_SET_DEFAULT(flag, false);
+
+    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(InlineTypePassFieldsAsArgs);
+    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(InlineTypeReturnedAsFields);
+    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(UseArrayFlattening);
+    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(UseFieldFlattening);
+    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(UseNullFreeNonAtomicValueFlattening);
+    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(UseNullableAtomicValueFlattening);
+    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(UseNullFreeAtomicValueFlattening);
+    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(UseNullableNonAtomicValueFlattening);
+    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(UseAcmpFastPath);
+    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(UseHashcodeFastPath);
+    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(PrintInlineLayout);
+    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(PrintFlatArrayLayout);
+    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(IgnoreAssertUnsetFields);
+    WARN_IF_NOT_DEFAULT_FLAG(FlatArrayElementMaxOops);
+    WARN_IF_NOT_DEFAULT_FLAG(ForceNonTearable);
+#ifdef ASSERT
+    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(StressCallingConvention);
+    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(PreloadClasses);
+    WARN_IF_NOT_DEFAULT_FLAG(PrintInlineKlassFields);
+#endif
+#ifdef COMPILER1
+    DEBUG_ONLY(DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(C1UseDelayedFlattenedFieldReads);)
+#endif
+#ifdef COMPILER2
+    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(UseArrayLoadStoreProfile);
+    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(UseACmpProfile);
+#endif
+#undef DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT
+#undef WARN_IF_NOT_DEFAULT_FLAG
+  } else {
+#define DISABLE_FLAG_AND_WARN_IF_NO_FLATTENING(flag, fallback)                                        \
+    if (!FLAG_IS_DEFAULT(flag) && !UseArrayFlattening && !UseFieldFlattening) {                       \
+      warning("Flattening flag \"%s\" has no effect when all flattening modes are disabled.", #flag); \
+      FLAG_SET_DEFAULT(flag, fallback);                                                               \
+    }
+
+    DISABLE_FLAG_AND_WARN_IF_NO_FLATTENING(UseNullFreeNonAtomicValueFlattening, false);
+    DISABLE_FLAG_AND_WARN_IF_NO_FLATTENING(UseNullableAtomicValueFlattening, false);
+    DISABLE_FLAG_AND_WARN_IF_NO_FLATTENING(UseNullFreeAtomicValueFlattening, false);
+    DISABLE_FLAG_AND_WARN_IF_NO_FLATTENING(UseNullableNonAtomicValueFlattening, false);
+    DISABLE_FLAG_AND_WARN_IF_NO_FLATTENING(FlatArrayElementMaxOops, 0);
+    DISABLE_FLAG_AND_WARN_IF_NO_FLATTENING(FlatteningBudget, 0);
+#undef DISABLE_FLAG_AND_WARN_IF_NO_FLATTENING
+    if (is_interpreter_only() && !CDSConfig::is_dumping_archive() && !UseSharedSpaces) {
+      // Disable calling convention optimizations if inline types are not supported.
+      // Also these aren't useful in -Xint. However, don't disable them when dumping or using
+      // the CDS archive, as the values must match between dumptime and runtime.
+      FLAG_SET_DEFAULT(InlineTypePassFieldsAsArgs, false);
+      FLAG_SET_DEFAULT(InlineTypeReturnedAsFields, false);
+    }
+    if (!UseNullFreeNonAtomicValueFlattening &&
+        !UseNullableAtomicValueFlattening &&
+        !UseNullFreeAtomicValueFlattening &&
+        !UseNullableNonAtomicValueFlattening) {
+      // Flattening is disabled
+      FLAG_SET_DEFAULT(UseArrayFlattening, false);
+      FLAG_SET_DEFAULT(UseFieldFlattening, false);
+    }
   }
 
 #ifndef PRODUCT

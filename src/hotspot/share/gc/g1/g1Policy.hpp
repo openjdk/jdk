@@ -151,12 +151,12 @@ public:
   double predict_region_code_root_scan_time(G1HeapRegion* hr, bool for_young_only_phase) const;
 
   double predict_merge_scan_time(size_t card_rs_length) const;
-  // Predict other time for count young regions.
-  double predict_young_region_other_time_ms(uint count) const;
-  double predict_non_young_other_time_ms(uint count) const;
-  // Predict copying live data time for count eden regions. Return the predict bytes if
+  // Predict other time for young regions.
+  double predict_young_region_other_time_ms(uint num_regions) const;
+  double predict_non_young_other_time_ms(uint num_regions) const;
+  // Predict copying live data time for eden regions. Return the predict bytes if
   // bytes_to_copy is non-null.
-  double predict_eden_copy_time_ms(uint count, size_t* bytes_to_copy = nullptr) const;
+  double predict_eden_copy_time_ms(uint num_eden_regions, size_t* bytes_to_copy = nullptr) const;
 
   void cset_regions_freed();
 
@@ -335,9 +335,8 @@ private:
 
 public:
   // This sets the initiate_conc_mark_if_possible() flag to start a
-  // new cycle, as long as we are not already in one. It's best if it
-  // is called during a safepoint when the test whether a cycle is in
-  // progress or not is stable.
+  // new cycle, as long as we are not already in one. It is called
+  // at a safepoint.
   bool force_concurrent_start_if_outside_cycle(GCCause::Cause gc_cause);
 
   // Decide whether this garbage collection pause should be a concurrent start

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,6 +87,7 @@ public class read001 extends JdbTest {
     static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
     static final String FIRST_BREAK    = DEBUGGEE_CLASS + ".main";
     static final String LAST_BREAK     = DEBUGGEE_CLASS + ".lastBreak";
+    static final String THREAD_STARTED_BREAK = PACKAGE_NAME + ".read001aTestedThread.threadStarted";
 
     static final String SCENARIO_FILE = "jdb.scenario";
     static final int SCENARIO_COMMANDS_COUNT = 5;
@@ -97,7 +98,7 @@ public class read001 extends JdbTest {
 
         // stop in lastBreak() method
         jdb.setBreakpointInMethod(LAST_BREAK);
-        reply = jdb.receiveReplyFor(JdbCommand.cont);
+        waitForTestedThreadStarts(THREAD_STARTED_BREAK, 1);
 
         // return to testedInstanceMethod()
         reply = jdb.receiveReplyFor(JdbCommand.step);

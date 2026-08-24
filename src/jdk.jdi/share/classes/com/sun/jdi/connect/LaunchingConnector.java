@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public interface LaunchingConnector extends Connector {
      * received.
      * <p>
      * <b>Important note:</b> If a target VM is launched through this
-     * funcctions, its output and error streams must be read as it
+     * function, its output and error streams must be read as it
      * executes. These streams are available through the
      * {@link java.lang.Process Process} object returned by
      * {@link VirtualMachine#process}. If the streams are not periodically
