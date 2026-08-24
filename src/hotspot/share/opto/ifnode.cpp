@@ -1945,6 +1945,9 @@ Node* IfNode::dominated_by(Node* prev_dom, PhaseIterGVN* igvn, bool prev_dom_not
         // For Regions it may not be in slot 0.
         uint l;
         for (l = 0; s->in(l) != ifp; l++) { }
+        if (s->is_Loop() && s->as_Loop()->is_loop_nest_inner_loop() && l == LoopNode::LoopBackControl) {
+          s->as_Loop()->clear_loop_nest_inner_loop();
+        }
         igvn->replace_input_of(s, l, ctrl_target);
       }
     } // End for each child of a projection
