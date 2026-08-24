@@ -38,8 +38,8 @@
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/g1/g1IHOPControl.hpp"
 #include "gc/g1/g1Policy.hpp"
-#include "gc/g1/g1SurvivorRegions.hpp"
 #include "gc/g1/g1YoungGenSizer.hpp"
+#include "gc/g1/g1YoungRegions.hpp"
 #include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "gc/shared/gcPolicyCounters.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
@@ -236,9 +236,9 @@ G1YoungGenPredictor::G1YoungGenPredictor(const G1Policy* const policy,
   // Calculate the absolute and desired min bounds first.
 
   // This is how many survivor regions we already have.
-  _num_survivor_regions = g1h->survivor_regions_count();
+  const uint num_survivor_regions = g1h->num_survivor_regions();
   // Size of the already allocated young gen.
-  _num_young_regions = g1h->young_regions_count();
+  const uint allocated_num_young_regions = g1h->num_young_regions();
   // This is the absolute minimum number of young regions that we can return. Ensure that we
   // don't go below any user-defined minimum bound.  Also, we must have at least
   // one eden region, to ensure progress. But when revising during the ensuing
@@ -294,7 +294,7 @@ G1YoungGenPredictor::G1YoungGenPredictor(const G1Policy* const policy,
 uint G1Policy::calculate_target_num_young_regions(uint desired_num_young_regions,
                                                   uint min_num_young_regions_by_sizer,
                                                   uint max_num_young_regions_by_evacuation_space) const {
-  uint num_young_regions = _g1h->young_regions_count();
+  uint num_young_regions = _g1h->num_young_regions();
 
   uint max_target_by_evacuation_space = MAX2(num_young_regions,
                                              max_num_young_regions_by_evacuation_space);
@@ -340,7 +340,7 @@ uint G1Policy::calculate_target_num_young_regions(uint desired_num_young_regions
                               reserve_regions,
                               max_to_eat_into_reserve);
 
-    uint survivor_regions_count = _g1h->survivor_regions_count();
+    uint survivor_regions_count = _g1h->num_survivor_regions();
     uint evacuation_limited_target_eden = evacuation_limited_target_young - survivor_regions_count;
     uint num_eden_regions = num_young_regions - survivor_regions_count;
 
@@ -448,7 +448,7 @@ uint G1YoungGenPredictor::max_num_young_regions_by_evacuation_space() const {
 }
 
 G1EvacuationPrediction G1Policy::predict_survivor_regions_evacuation() const {
-  double survivor_regions_evac_time = predict_young_region_other_time_ms(_g1h->survivor()->length());
+  double survivor_regions_evac_time = predict_young_region_other_time_ms(_g1h->survivor()->num_regions());
   size_t survivor_bytes_to_copy = 0;
   for (G1HeapRegion* r : _g1h->survivor()->regions()) {
     size_t bytes_to_copy = predict_bytes_to_copy(r);
@@ -1108,12 +1108,12 @@ double G1Policy::predict_gc_efficiency(G1HeapRegion* hr) {
   return hr->reclaimable_bytes() / total_based_on_incoming_refs_ms;
 }
 
-double G1Policy::predict_young_region_other_time_ms(uint count) const {
-  return _analytics->predict_young_other_time_ms(count);
+double G1Policy::predict_young_region_other_time_ms(uint num_regions) const {
+  return _analytics->predict_young_other_time_ms(num_regions);
 }
 
-double G1Policy::predict_non_young_other_time_ms(uint count) const {
-  return _analytics->predict_non_young_other_time_ms(count);
+double G1Policy::predict_non_young_other_time_ms(uint num_regions) const {
+  return _analytics->predict_non_young_other_time_ms(num_regions);
 }
 
 G1EvacuationPrediction G1Policy::predict_eden_evacuation(uint count) const {
@@ -1166,7 +1166,7 @@ double G1Policy::predict_region_code_root_scan_time(G1HeapRegion* hr, bool for_y
 }
 
 bool G1Policy::should_allocate_mutator_region() const {
-  if (_g1h->young_regions_count() < target_num_young_regions()) {
+  if (_g1h->num_young_regions() < target_num_young_regions()) {
     return true;
   }
 
@@ -1190,7 +1190,7 @@ bool G1Policy::use_adaptive_num_young_regions() const {
 size_t G1Policy::estimate_used_young_bytes_locked() const {
   assert_lock_strong(Heap_lock);
   G1Allocator* allocator = _g1h->allocator();
-  uint used = _g1h->young_regions_count();
+  uint used = _g1h->num_young_regions();
   uint alloc = allocator->num_nodes();
   uint full = used - MIN2(used, alloc);
   size_t bytes_used = full * G1HeapRegion::GrainBytes;
@@ -1378,7 +1378,7 @@ void G1Policy::record_pause(Pause gc_type,
 
   update_gc_pause_time_ratios(gc_type, start, end);
 
-  size_t humongous_bytes = _g1h->humongous_regions_count() * G1HeapRegion::GrainBytes;
+  size_t humongous_bytes = _g1h->num_humongous_regions() * G1HeapRegion::GrainBytes;
   G1AllocationIntervalStats alloc_interval_stats = _old_gen_alloc_tracker.end_allocation_interval(humongous_bytes);
   bool is_periodic_gc = _g1h->gc_cause() == GCCause::_g1_periodic_collection;
 

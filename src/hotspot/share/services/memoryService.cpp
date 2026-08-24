@@ -235,7 +235,7 @@ Handle MemoryService::create_MemoryUsage_obj(MemoryUsage usage, TRAPS) {
                           ik,
                           vmSymbols::long_long_long_long_void_signature(),
                           &args,
-                          CHECK_NH);
+                          THREAD);
 }
 
 TraceMemoryManagerStats::TraceMemoryManagerStats(GCMemoryManager* gc_memory_manager,

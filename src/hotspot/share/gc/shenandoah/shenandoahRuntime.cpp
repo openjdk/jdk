@@ -30,11 +30,11 @@
 #include "utilities/copy.hpp"
 
 JRT_LEAF(void, ShenandoahRuntime::arraycopy_barrier_oop(oop* src, oop* dst, size_t length))
-  ShenandoahBarrierSet::barrier_set()->arraycopy_barrier(src, dst, length);
+  ShenandoahBarrierSet::barrier_set()->arraycopy_barrier(src, dst, length, false);
 JRT_END
 
 JRT_LEAF(void, ShenandoahRuntime::arraycopy_barrier_narrow_oop(narrowOop* src, narrowOop* dst, size_t length))
-  ShenandoahBarrierSet::barrier_set()->arraycopy_barrier(src, dst, length);
+  ShenandoahBarrierSet::barrier_set()->arraycopy_barrier(src, dst, length, false);
 JRT_END
 
 JRT_LEAF(void, ShenandoahRuntime::write_barrier_pre(oopDesc* obj))
@@ -63,7 +63,7 @@ JRT_LEAF(narrowOop, ShenandoahRuntime::load_reference_barrier_strong_narrow_narr
   assert(!CompressedOops::is_null(src), "Filtered by caller");
   oop s = CompressedOops::decode_not_null(src);
   oop r = ShenandoahBarrierSet::barrier_set()->load_reference_barrier_mutator<ON_STRONG_OOP_REF, narrowOop>(s, load_addr);
-  return CompressedOops::encode(r);
+  return CompressedOops::encode_not_null(r);
 JRT_END
 
 JRT_LEAF(oopDesc*, ShenandoahRuntime::load_reference_barrier_weak(oopDesc* src, oop* load_addr))
