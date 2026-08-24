@@ -27,6 +27,7 @@ import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.Arguments;
 import compiler.lib.ir_framework.Run;
+import compiler.lib.ir_framework.Setup;
 import compiler.lib.ir_framework.Test;
 import compiler.lib.ir_framework.TestFramework;
 import jdk.incubator.vector.ByteVector;
@@ -65,14 +66,17 @@ public class TestWideningShiftLeft {
         TestFramework.run();
     }
 
+    @Setup
     public static Object[] setupByte() {
         return new Object[] { ByteVector.broadcast(ByteVector.SPECIES_64, (byte) 37) };
     }
 
+    @Setup
     public static Object[] setupShort() {
         return new Object[] { ShortVector.broadcast(ShortVector.SPECIES_64, (short) 17011) };
     }
 
+    @Setup
     public static Object[] setupInt() {
         return new Object[] { IntVector.broadcast(IntVector.SPECIES_64, 0x31234567) };
     }
