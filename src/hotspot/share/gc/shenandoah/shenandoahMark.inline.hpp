@@ -308,7 +308,7 @@ public:
     assert(size == 0 || !_heap->has_forwarded_objects() || _heap->is_concurrent_old_mark_in_progress(), "Forwarded objects are not expected here");
     for (size_t i = 0; i < size; ++i) {
       oop *p = (oop *) &buffer[i];
-      ShenandoahMark::mark_through_ref<oop, GENERATION>(p, _queue, _old_queue, _mark_context, false);
+      ShenandoahMark::mark_through_ref<oop, GENERATION, false>(p, _queue, _old_queue, _mark_context, false);
     }
   }
 };

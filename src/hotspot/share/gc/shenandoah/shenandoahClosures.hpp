@@ -71,7 +71,7 @@ private:
   bool _weak;
 
 protected:
-  template <class T, ShenandoahGenerationType GENERATION, bool REDIRTY = false>
+  template <class T, ShenandoahGenerationType GENERATION, bool REDIRTY>
   void work(T *p);
 
 public:
@@ -96,7 +96,7 @@ class ShenandoahMarkRefsClosure : public ShenandoahMarkRefsSuperClosure {
 private:
   template <class T>
   ALWAYSINLINE
-  void do_oop_work(T* p) { work<T, GENERATION>(p); }
+  void do_oop_work(T* p) { work<T, GENERATION, false>(p); }
 
 public:
   ShenandoahMarkRefsClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp, ShenandoahObjToScanQueue* old_q) :

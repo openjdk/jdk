@@ -50,7 +50,7 @@ protected:
   ShenandoahMark(ShenandoahGeneration* generation);
 
 public:
-  template<class T, ShenandoahGenerationType GENERATION, bool REDIRTY = false>
+  template<class T, ShenandoahGenerationType GENERATION, bool REDIRTY>
   ALWAYSINLINE
   static void mark_through_ref(T* p, ShenandoahObjToScanQueue* q, ShenandoahObjToScanQueue* old_q, ShenandoahMarkingContext* const mark_context, bool weak);
 

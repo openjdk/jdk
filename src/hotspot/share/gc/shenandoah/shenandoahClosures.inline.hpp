@@ -229,7 +229,7 @@ inline void ShenandoahMarkUpdateRefsClosure<GENERATION>::work(T* p) {
   _heap->non_conc_update_with_forwarded(p);
 
   // ...then do the usual thing
-  ShenandoahMarkRefsSuperClosure::work<T, GENERATION>(p);
+  ShenandoahMarkRefsSuperClosure::work<T, GENERATION, false>(p);
 }
 
 template<class T>
