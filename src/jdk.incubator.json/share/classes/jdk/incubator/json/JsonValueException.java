@@ -32,8 +32,8 @@ import java.io.Serial;
  * This exception is thrown under the following conditions:
  * <ul>
  *   <li>
- *     An <a href="package-summary.html#access">access</a> or a
- *     <a href="package-summary.html#conversion">conversion</a> method is invoked on a
+ *     An {@linkplain jdk.incubator.json/jdk.incubator.json##access access} or a
+ *     {@linkplain jdk.incubator.json/jdk.incubator.json##conversion conversion} method is invoked on a
  *     {@code JsonValue} of an incompatible type. For example, calling
  *     {@code asBoolean()} on a {@code JsonString}.
  *   </li>

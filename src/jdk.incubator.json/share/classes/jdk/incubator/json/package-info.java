@@ -27,9 +27,9 @@
  * This API supports processing of JSON text in a simple manner. It is organized around the {@link
  * JsonValue} interface which represents a JSON value, and the {@link Json} class which provides
  * methods to parse and generate JSON text. Typical usage of this API involves first
- * <a href="#parsing">parsing</a> JSON text into a {@code JsonValue}, <a href="#access">navigating</a>
+ * {@linkplain ##parsing parsing} JSON text into a {@code JsonValue}, {@linkplain ##access navigating}
  * the parsed JSON value to the desired JSON value using <i>access</i> methods, and lastly
- * <a href="#conversion">converting</a> the desired value using a <i>conversion</i> method.
+ * {@linkplain ##conversion converting} the desired value using a <i>conversion</i> method.
  * For example:
  * {@snippet lang = java:
  * List<JsonValue> providers = Json.parse(text)

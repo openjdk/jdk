@@ -40,11 +40,11 @@ import java.util.Optional;
  * interface for navigation, conversion, and generation.
  *
  * <p>Code that relies on equality or hashing should utilize the results of a
- * <a href="package-summary.html#conversion">conversion</a> method instead of the
- * {@code JsonValue} itself.
+ * {@linkplain jdk.incubator.json/jdk.incubator.json##conversion conversion}
+ * method instead of the {@code JsonValue} itself.
  *
  * <p>Instances of {@code JsonValue} are immutable and thread safe. See the
- * <a href="package-summary.html">package documentation</a>
+ * {@linkplain jdk.incubator.json/jdk.incubator.json package documentation}
  * for an overview of parsing, accessing, converting, and generating JSON text.
  *
  * @since 28
