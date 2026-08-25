@@ -366,7 +366,7 @@ JCov scales make it possible to record which tests cover each part of the
 instrumented code. To collect coverage with scales, set `JCOV_SCALES=true`,
 for example:
 
-    $ make jcov-test TEST=jdk_lang JCOV_SCALES=true
+    $ make jcov-test TEST=jdk_lang TEST_OPTS="JCOV_SCALES=true"
 
 The resulting coverage data contains the association between covered code and
 the tests that covered it. A corresponding `testlist.txt` file, which contains
