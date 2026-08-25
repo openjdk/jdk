@@ -2268,6 +2268,7 @@ class CountedLoopConverter {
   bool is_safepoint_invalid(SafePointNode* sfpt) const;
 
   ParsePredicateNode* loop_limit_check_parse_predicate() const;
+  bool limit_check_parse_predicate_exists_and_dominates(Node* raw_limit) const;
 
  public:
   CountedLoopConverter(PhaseIdealLoop* phase, Node* head, IdealLoopTree* loop, const BasicType iv_bt)

@@ -2377,13 +2377,7 @@ bool CountedLoopConverter::is_counted_loop() {
   Node* raw_limit = _structure.exit_test().raw_limit();
 
   if (_structure.exit_test().should_speculatively_narrow_limit()) {
-    ParsePredicateNode* parse_predicate = loop_limit_check_parse_predicate();
-    if (parse_predicate == nullptr) {
-      return false;
-    }
-
-    Node* parse_predicate_entry = parse_predicate->in(0);
-    if (!_phase->is_dominator(_phase->get_ctrl(raw_limit), parse_predicate_entry)) {
+    if (!limit_check_parse_predicate_exists_and_dominates(raw_limit)) {
       return false;
     }
   }
@@ -2403,13 +2397,7 @@ bool CountedLoopConverter::is_counted_loop() {
     //     limit + final_correction = adjusted_limit - 1 + stride <= max_int
     assert(!_head->as_Loop()->is_loop_nest_inner_loop(), "loop was transformed");
 
-    ParsePredicateNode* parse_predicate = loop_limit_check_parse_predicate();
-    if (parse_predicate == nullptr) {
-      return false;
-    }
-
-    Node* parse_predicate_entry = parse_predicate->in(0);
-    if (!_phase->is_dominator(_phase->get_ctrl(raw_limit), parse_predicate_entry)) {
+    if (!limit_check_parse_predicate_exists_and_dominates(raw_limit)) {
       return false;
     }
 
@@ -2626,6 +2614,14 @@ ParsePredicateNode* CountedLoopConverter::loop_limit_check_parse_predicate() con
   }
 
   return loop_limit_check_predicate_block->parse_predicate();
+}
+
+bool CountedLoopConverter::limit_check_parse_predicate_exists_and_dominates(Node* raw_limit) const {
+  ParsePredicateNode* parse_predicate = loop_limit_check_parse_predicate();
+  if (parse_predicate == nullptr) {
+    return false;
+  }
+  return _phase->is_dominator(_phase->get_ctrl(raw_limit), parse_predicate->in(0));
 }
 
 IdealLoopTree* CountedLoopConverter::convert() {
