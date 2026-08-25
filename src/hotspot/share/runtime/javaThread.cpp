@@ -292,7 +292,6 @@ void JavaThread::check_for_valid_safepoint_state(bool allow_gcalot) {
 
   switch (thread_state()) {
   case _thread_in_vm:
-  case _thread_in_Java:
     // In debug builds, leaf entries use NoHandleMark and NoSafepointVerifier,
     // while non-leaf entries use HandleMarkCleaner.
     if (last_handle_mark() == nullptr) {
@@ -1115,6 +1114,8 @@ void JavaThread::check_special_condition_for_native_trans(JavaThread *thread) {
   assert(thread->thread_state() == _thread_in_Java, "wrong state");
   assert(!thread->has_last_Java_frame() || thread->frame_anchor()->walkable(), "Unwalkable stack in native->Java transition");
 
+  thread->set_thread_state(_thread_in_vm);
+
   // Enable WXWrite: called directly from interpreter native wrapper.
   MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
 
@@ -1124,6 +1125,8 @@ void JavaThread::check_special_condition_for_native_trans(JavaThread *thread) {
   // yet safe to use. We catch such situations in the subsequent stack watermark
   // barrier, which will trap unsafe stack frames.
   StackWatermarkSet::before_unwind(thread);
+
+  thread->set_thread_state(_thread_in_Java);
 }
 
 #ifndef PRODUCT
