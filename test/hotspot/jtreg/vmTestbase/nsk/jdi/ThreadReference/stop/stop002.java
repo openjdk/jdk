@@ -233,7 +233,7 @@ public class stop002 {
                 objRef.setValue(gotOpaqueFrameException, vm.mirrorOf(false));
             } catch (OpaqueFrameException ofe) {
                 if (vthreadMode) {
-                    log.display("TEST #4 PASSED: stop() call resulted in OpaqueFrameException.");
+                    log.display("TEST #4 PASSED: stop() call resulted in OpaqueFrameException while in vthread mode.");
                 } else {
                     ofe.printStackTrace();
                     log.complain("TEST #4 FAILED: caught unexpected " + ofe);
