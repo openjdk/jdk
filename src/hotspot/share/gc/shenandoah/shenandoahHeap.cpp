@@ -1250,6 +1250,7 @@ ShenandoahSelfForwardTask::ShenandoahSelfForwardTask(ShenandoahHeap* heap, Shena
 
 void ShenandoahSelfForwardTask::work(uint worker_id) {
   ShenandoahConcurrentWorkerSession worker_session(worker_id);
+  SuspendibleThreadSetJoiner joiner;
   ShenandoahHeapRegion* r;
   while ((r = _cs->claim_next()) != nullptr) {
     ShenandoahSelfForwardClosure cl;
@@ -1279,7 +1280,7 @@ void ShenandoahHeap::evacuate_collection_set(ShenandoahGeneration* generation) {
     // mutators from attempting to evacuate the object during update refs. We could,
     // alternatively, have the LRB distinguish between the evacuation phase and the
     // self-update phase, but this would increase barrier complexity.
-    log_info(gc)("Cleaning up failed evacuations");
+    log_debug(gc)("Cleaning up failed evacuations");
     ShenandoahSelfForwardTask self_forward_task(this, _collection_set);
     workers()->run_task(&self_forward_task);
   }
@@ -1489,10 +1490,8 @@ void ShenandoahHeap::print_heap_regions_on(outputStream* st) const {
   st->print_cr("Heap Regions:");
   st->print_cr("Region state: EU=empty-uncommitted, EC=empty-committed, R=regular, H=humongous start, HP=pinned humongous start");
   st->print_cr("              HC=humongous continuation, CS=collection set, TR=trash, P=pinned, CSP=pinned collection set");
-  st->print_cr("BTE=bottom/top/end, TAMS=top-at-mark-start");
-  st->print_cr("UWM=update watermark, U=used");
-  st->print_cr("T=TLAB allocs, G=GCLAB allocs");
-  st->print_cr("S=shared allocs, L=live data");
+  st->print_cr("A=age, BTE=bottom/top/end, TAMS=top-at-mark-start, UWM=update watermark, U=used");
+  st->print_cr("T=TLAB allocs, G=GCLAB allocs, S=shared allocs, L=live data");
   st->print_cr("CP=critical pins");
 
   for (size_t i = 0; i < num_regions(); i++) {

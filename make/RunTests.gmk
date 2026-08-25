@@ -1054,9 +1054,11 @@ define SetupRunJtregTestBody
   $1_JTREG_BASIC_OPTIONS += -timeoutFactor:$$(JTREG_TIMEOUT_FACTOR)
 
   clean-outputdirs-$1:
-	$$(call LogWarn, Clean up dirs for $1)
-	$$(RM) -r $$($1_TEST_SUPPORT_DIR)
-	$$(RM) -r $$($1_TEST_RESULTS_DIR)
+        ifeq ($(JTREG_STATUS),)
+	  $$(call LogWarn, Clean up dirs for $1)
+	  $$(RM) -r $$($1_TEST_SUPPORT_DIR)
+	  $$(RM) -r $$($1_TEST_RESULTS_DIR)
+        endif
 
   $1_COMMAND_LINE := \
       $$(JTREG_JAVA) $$($1_JTREG_LAUNCHER_OPTIONS) \

@@ -150,22 +150,16 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
 
   if (immediate_percent <= ShenandoahImmediateThreshold) {
     choose_collection_set_from_regiondata(collection_set, candidates, cand_idx, immediate_garbage + free);
-  } else if (heap->mode()->is_generational()) {
-    adjust_reserves_for_abbreviated(heap);
+  } else {
+    prepare_for_abbreviated_cycle();
   }
+
   collection_set->summarize(total_garbage, immediate_garbage, immediate_regions);
   ShenandoahTracer::report_evacuation_info(collection_set, free_regions, immediate_regions, immediate_garbage);
 }
 
 void ShenandoahHeuristics::start_idle_span() {
   // do nothing
-}
-
-void ShenandoahHeuristics::adjust_reserves_for_abbreviated(ShenandoahHeap* heap) {
-  // We are not going to evacuate because this is an abbreviated cycle.  Reset the reserves.
-  heap->young_generation()->set_evacuation_reserve(0UL);
-  heap->old_generation()->set_evacuation_reserve(0UL);
-  heap->old_generation()->set_promoted_reserve(0UL);
 }
 
 void ShenandoahHeuristics::record_cycle_start() {
@@ -233,19 +227,22 @@ void ShenandoahHeuristics::log_trigger(const char* fmt, ...) const {
   }
 }
 
+ShenandoahHeuristics::PenaltyData ShenandoahHeuristics::consume_penalty_data() {
+  const size_t declines = _declined_trigger_count.exchange(0, memory_order_relaxed);
+  const bool stalls = _allocation_stalls.exchange(false, memory_order_relaxed);
+  log_debug(gc, ergo)("Declined trigger count at end: %zu", declines);
+  return { declines, stalls };
+}
+
 void ShenandoahHeuristics::record_concurrent_completion() {
   _gc_times_learned++;
-  const bool stalls = _allocation_stalls.exchange(false, memory_order_relaxed);
-  if (!stalls) {
+  const PenaltyData data = consume_penalty_data();
+  if (!data.stalls) {
     adjust_penalty(Concurrent_Adjust);
-  } else if (_declined_trigger_count.load_relaxed() > Penalty_Free_Declinations) {
-    // There were stalls _and_ the trigger was lazy, penalize it. Else, there were
-    // stalls, but the trigger was not lazy. Make no adjustments in this case.
+  } else if (data.declined_triggers > Penalty_Free_Declinations) {
+    // There were stalls _and_ the trigger was lazy, penalize it.
     adjust_penalty(Stall_Penalty);
   }
-
-  log_debug(gc, ergo)("Declined trigger count at end: %zu", _declined_trigger_count.load_relaxed());
-  _declined_trigger_count.store_relaxed(0);
 }
 
 void ShenandoahHeuristics::record_allocation_stall() {
@@ -253,8 +250,12 @@ void ShenandoahHeuristics::record_allocation_stall() {
 }
 
 void ShenandoahHeuristics::record_full_gc(GCCause::Cause cause) {
+  const PenaltyData data = consume_penalty_data();
   if (cause == GCCause::_shenandoah_upgrade_to_full_gc) {
     adjust_penalty(Full_Penalty);
+  } else if (data.stalls && data.declined_triggers > Penalty_Free_Declinations) {
+    // There were stalls _and_ the trigger was lazy, penalize it.
+    adjust_penalty(Stall_Penalty);
   }
 }
 

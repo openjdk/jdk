@@ -34,7 +34,7 @@ class ShenandoahOldGeneration;
 
 class ShenandoahOldGC : public ShenandoahConcurrentGC {
  public:
-  ShenandoahOldGC(ShenandoahController* controller, ShenandoahOldGeneration* generation, ShenandoahSharedFlag& allow_preemption);
+  ShenandoahOldGC(ShenandoahOldGeneration* generation, ShenandoahSharedFlag& allow_preemption);
   bool collect(GCCause::Cause cause) override;
 
  protected:

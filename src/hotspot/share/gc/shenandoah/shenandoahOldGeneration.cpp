@@ -109,7 +109,6 @@ ShenandoahOldGeneration::ShenandoahOldGeneration(uint max_queues)
     _promoted_reserve(0),
     _promoted_expended(0),
     _promotion_potential(0),
-    _pad_for_promote_in_place(0),
     _promotable_humongous_regions(0),
     _promotable_regular_regions(0),
     _is_parsable(true),
@@ -363,7 +362,7 @@ void ShenandoahOldGeneration::cancel_gc() {
     validate_idle();
 #endif
   } else {
-    log_info(gc)("Terminating old gc cycle.");
+    log_info(gc, phases)("Terminating old gc cycle.");
     // Stop marking
     cancel_marking();
     // Stop tracking old regions

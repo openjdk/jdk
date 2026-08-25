@@ -38,10 +38,10 @@ class ShenandoahControlThread: public ShenandoahController {
     stw_full
   } GCMode;
 
-  ShenandoahSharedFlag _gc_requested;
-  GCCause::Cause       _requested_gc_cause;
+  GCCause::Cause _requested_gc_cause;
 
-  // This lock is used to coordinate waking up the control thread
+  // This lock is used to coordinate waking up the control thread and
+  // protecting _requested_gc_cause.
   Monitor _control_lock;
 
 public:
