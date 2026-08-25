@@ -28,7 +28,7 @@
  * @enablePreview
  * @library /test/lib
  * @run main ${test.main.class}
- * @run main/othervm -Xbatch ${test.main.class}
+ * @run main/othervm -Xbatch -XX:CompileOnly=${test.main.class}::test* ${test.main.class}
  */
 
 import jdk.test.lib.Asserts;
