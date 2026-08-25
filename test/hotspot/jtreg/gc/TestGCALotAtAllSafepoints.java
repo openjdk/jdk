@@ -34,7 +34,7 @@ package gc;
  * @requires vm.gc.Serial
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run driver/timeout=60 gc.TestGCALotAtAllSafepoints -XX:+UseSerialGC -XX:ScavengeALotInterval=1
+ * @run driver/timeout=60 gc.TestGCALotAtAllSafepoints -XX:+UseSerialGC
  */
 
 /**
@@ -48,7 +48,7 @@ package gc;
  * @requires vm.gc.Parallel
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run driver/timeout=60 gc.TestGCALotAtAllSafepoints -XX:+UseParallelGC -XX:ScavengeALotInterval=1
+ * @run driver/timeout=60 gc.TestGCALotAtAllSafepoints -XX:+UseParallelGC
  */
 
 /**
@@ -62,7 +62,7 @@ package gc;
  * @requires vm.gc.G1
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run driver/timeout=60 gc.TestGCALotAtAllSafepoints -XX:+UseG1GC -XX:ScavengeALotInterval=1
+ * @run driver/timeout=60 gc.TestGCALotAtAllSafepoints -XX:+UseG1GC
  */
 
 /**
@@ -76,7 +76,7 @@ package gc;
  * @requires vm.gc.Z
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run driver/timeout=60 gc.TestGCALotAtAllSafepoints -XX:+UseZGC -XX:ScavengeALotInterval=1
+ * @run driver/timeout=60 gc.TestGCALotAtAllSafepoints -XX:+UseZGC
  */
 
 /**
@@ -90,7 +90,7 @@ package gc;
  * @requires vm.gc.Shenandoah
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run driver/timeout=60 gc.TestGCALotAtAllSafepoints -XX:+UseShenandoahGC -XX:ScavengeALotInterval=13
+ * @run driver/timeout=60 gc.TestGCALotAtAllSafepoints -XX:+UseShenandoahGC
  */
 
 import jdk.test.lib.process.ProcessTools;
@@ -99,12 +99,16 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestGCALotAtAllSafepoints {
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(args[0],
-                                                                             args[1],
                                                                              "-Xmx16m",
+                                                                             // Even this small test can generate thousands of GCs. Reduce them.
+                                                                             "-XX:ScavengeALotInterval=13",
                                                                              "-XX:+GCALotAtAllSafepoints",
                                                                              "-XX:+ScavengeALot",
+                                                                             "-Xlog:gc,gc+start,safepoint",
                                                                              "NoSuchClass");
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+
+        Process process = ProcessTools.startProcess("gcalot", pb);
+        OutputAnalyzer output = new OutputAnalyzer(process);
         output.shouldMatch("Error: Could not find or load main class NoSuchClass");
         output.shouldHaveExitValue(1);
     }

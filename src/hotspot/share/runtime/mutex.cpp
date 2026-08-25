@@ -61,7 +61,7 @@ void Mutex::check_block_state(Thread* thread) {
          "locking not allowed when crash protection is set");
 }
 
-void Mutex::check_safepoint_state(Thread* thread, bool allow_gcalot) {
+void Mutex::check_safepoint_state(Thread* thread) {
   check_block_state(thread);
 
   // If the lock acquisition checks for safepoint, verify that the lock was created with rank that
@@ -72,7 +72,7 @@ void Mutex::check_safepoint_state(Thread* thread, bool allow_gcalot) {
 
   if (thread->is_active_Java_thread()) {
     // Also check NoSafepointVerifier, and thread state is _thread_in_vm
-    JavaThread::cast(thread)->check_for_valid_safepoint_state(allow_gcalot);
+    JavaThread::cast(thread)->check_for_valid_safepoint_state();
   }
 }
 
@@ -116,7 +116,7 @@ void Mutex::lock_contended(Thread* self) {
 void Mutex::lock(Thread* self) {
   assert(owner() != self, "invariant");
 
-  check_safepoint_state(self, true /* allow_gcalot */);
+  check_safepoint_state(self);
   check_rank(self);
 
   OrderAccess::fence();
@@ -249,7 +249,10 @@ bool Monitor::wait(uint64_t timeout) {
   // OS monitor is still held. Do not execute GC-a-lot here because
   // garbage collection may (in)directly require the current monitor to
   // progress.
-  check_safepoint_state(self, false /* allow_gcalot */);
+  {
+    SkipGCALot sgcalot(self);
+    check_safepoint_state(self);
+  }
 
   int wait_status;
   InFlightMutexRelease ifmr(this);

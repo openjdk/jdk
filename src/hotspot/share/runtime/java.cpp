@@ -384,7 +384,7 @@ void before_exit(JavaThread* thread, bool halt) {
   // Suppress GC-a-lot for threads entering shutdown as Monitor::lock() calls in the
   // remainder of the shutdown sequence could otherwise block when executing a
   // GC-a-lot caused collection.
-  DEBUG_ONLY(thread->set_skip_gcalot(true);)
+  NOT_PRODUCT(thread->set_skip_gcalot(true);)
 
   // Note: don't use a Mutex to guard the entire before_exit(), as
   // JVMTI post_thread_end_event and post_vm_death_event will run native code.
