@@ -35,6 +35,8 @@ import java.lang.invoke.MethodHandle;
 import static java.lang.foreign.ValueLayout.ADDRESS;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -51,9 +53,10 @@ public class TestPassHeapSegment extends UpcallTestHelper  {
     public void testNoHeapArgs() throws Throwable {
         MethodHandle handle = downcallHandle("test_args", FunctionDescriptor.ofVoid(ADDRESS));
         MemorySegment segment = MemorySegment.ofArray(new byte[]{ 0, 1, 2 });
-        assertThrows(IllegalArgumentException.class, () -> {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> {
             handle.invoke(segment);
         });
+        assertTrue(e.getMessage().matches(".*Heap segment not allowed.*"));
     }
 
     @Test
@@ -64,9 +67,10 @@ public class TestPassHeapSegment extends UpcallTestHelper  {
             assert Linker.Option.captureStateLayout().byteAlignment() % 4 == 0;
             MemorySegment captureHeap = MemorySegment.ofArray(new int[(int) Linker.Option.captureStateLayout().byteSize() / 4]);
             MemorySegment segment = arena.allocateFrom(C_CHAR, new byte[]{ 0, 1, 2 });
-            assertThrows(IllegalArgumentException.class, () -> {
+            IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> {
                 handle.invoke(captureHeap, segment);
             });
+            assertTrue(e.getMessage().matches(".*Heap segment not allowed.*"));
         }
     }
 

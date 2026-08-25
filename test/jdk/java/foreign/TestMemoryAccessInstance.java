@@ -144,9 +144,10 @@ public class TestMemoryAccessInstance {
         Arena scope = Arena.ofAuto();
         MemorySegment targetSegment = scope.allocate(byteSize, 1);
         MemorySegment segment = MemorySegment.ofArray(new byte[]{ 0, 1, 2 });
-        assertThrows(IllegalArgumentException.class, () -> {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> {
             targetSegment.set(ValueLayout.ADDRESS, 0, segment);
         });
+        assertTrue(e.getMessage().matches(".*Heap segment not allowed.*"));
     }
 
     @Test
@@ -155,9 +156,10 @@ public class TestMemoryAccessInstance {
         Arena scope = Arena.ofAuto();
         MemorySegment targetSegment = scope.allocate(byteSize, 1);
         MemorySegment segment = MemorySegment.ofArray(new byte[]{ 0, 1, 2 });
-        assertThrows(IllegalArgumentException.class, () -> {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> {
             targetSegment.setAtIndex(ValueLayout.ADDRESS, 0, segment);
         });
+        assertTrue(e.getMessage().matches(".*Heap segment not allowed.*"));
     }
 
     @ParameterizedTest

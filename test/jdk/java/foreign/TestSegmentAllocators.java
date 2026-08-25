@@ -205,9 +205,10 @@ public class TestSegmentAllocators {
     public void testArenaAllocateFromHeapSegment() {
         try (Arena arena = Arena.ofConfined()) {
             var heapSegment = MemorySegment.ofArray(new int[]{1});
-            assertThrows(IllegalArgumentException.class, () -> {
+            IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> {
                 arena.allocateFrom(ValueLayout.ADDRESS, heapSegment);
             });
+            assertTrue(e.getMessage().matches(".*Heap segment not allowed.*"));
         }
     }
 
@@ -216,9 +217,10 @@ public class TestSegmentAllocators {
         try (Arena arena = Arena.ofConfined()) {
             SegmentAllocator allocator = SegmentAllocator.prefixAllocator(arena.allocate(16));
             var heapSegment = MemorySegment.ofArray(new int[]{1});
-            assertThrows(IllegalArgumentException.class, () -> {
+            IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> {
                 allocator.allocateFrom(ValueLayout.ADDRESS, heapSegment);
             });
+            assertTrue(e.getMessage().matches(".*Heap segment not allowed.*"));
         }
     }
 

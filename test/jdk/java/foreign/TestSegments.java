@@ -100,8 +100,11 @@ public class TestSegments {
 
     @Test
     public void testAllocateTooBig() {
-        assertThrows(OutOfMemoryError.class,
+        // One of two ex. types may be thrown. Throwable is common ancestor.
+        Throwable t = assertThrows(Throwable.class,
                 () -> Arena.ofAuto().allocate(Long.MAX_VALUE, 1));
+        // must be either
+        assertTrue(t instanceof OutOfMemoryError || t instanceof IllegalArgumentException);
     }
 
     @Test

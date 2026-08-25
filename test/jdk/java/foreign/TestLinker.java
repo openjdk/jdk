@@ -136,16 +136,18 @@ public class TestLinker extends NativeTestHelper {
     public void testInvalidOption(int invalidIndex) {
         Linker.Option option = Linker.Option.firstVariadicArg(invalidIndex);
         FunctionDescriptor desc = FunctionDescriptor.ofVoid();
-        assertThrows(IllegalArgumentException.class, () -> {
+        IllegalArgumentException e =assertThrows(IllegalArgumentException.class, () -> {
             Linker.nativeLinker().downcallHandle(desc, option);
         });
+        assertTrue(e.getMessage().matches(".*not in bounds for descriptor.*"));
     }
 
     @Test
     public void testInvalidPreservedValueName() {
-        assertThrows(IllegalArgumentException.class, () -> {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> {
             Linker.Option.captureCallState("foo");
         });
+        assertTrue(e.getMessage().matches(".*Unknown name.*"));
     }
 
     @ParameterizedTest

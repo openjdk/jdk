@@ -46,9 +46,10 @@ import jdk.internal.foreign.CABI;
 import static java.lang.foreign.ValueLayout.*;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -77,18 +78,20 @@ public class TestIllegalLink extends NativeTestHelper {
     @ParameterizedTest
     @MethodSource("downcallOnlyOptions")
     public void testIllegalUpcallOptions(Linker.Option downcallOnlyOption) {
-        assertThrows(IllegalArgumentException.class, () -> {
+        IllegalArgumentException iae = assertThrows(IllegalArgumentException.class, () -> {
             ABI.upcallStub(DUMMY_TARGET_MH, FunctionDescriptor.ofVoid(), Arena.ofAuto(), downcallOnlyOption);
         });
+        assertTrue(iae.getMessage().matches(".*Not supported for upcall.*"));
     }
 
     @ParameterizedTest
     @MethodSource("illegalCaptureState")
+    @DisabledOnOs(OS.WINDOWS)
     public void testIllegalCaptureState(String name) {
-        assumeFalse(IS_WINDOWS);
-        assertThrows(IllegalArgumentException.class, () -> {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> {
             Linker.Option.captureCallState(name);
         });
+        assertTrue(e.getMessage().matches(".*Unknown name.*"));
     }
 
     // where

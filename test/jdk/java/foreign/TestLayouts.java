@@ -407,16 +407,18 @@ public class TestLayouts {
 
     @Test
     public void testScaleNegativeOffset() {
-        assertThrows(IllegalArgumentException.class, () -> {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> {
             JAVA_INT.scale(-1, 0);
         });
+        assertTrue(e.getMessage().matches(".*offset is negative.*"));
     }
 
     @Test
     public void testScaleNegativeIndex() {
-        assertThrows(IllegalArgumentException.class, () -> {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> {
             JAVA_INT.scale(0, -1);
         });
+        assertTrue(e.getMessage().matches(".*index is negative.*"));
     }
 
     @Test

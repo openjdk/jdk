@@ -189,9 +189,10 @@ public class TestSegmentCopy {
     public void badCopy6Arg() {
         try (Arena scope = Arena.ofConfined()) {
             MemorySegment dest = scope.allocate(ValueLayout.JAVA_INT).asReadOnly();
-            assertThrows(IllegalArgumentException.class, () -> {
+            IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> {
                 MemorySegment.copy(new int[1],0, dest, ValueLayout.JAVA_INT, 0 ,1);
             });
+            assertTrue(e.getMessage().matches(".*Attempt to write a read-only segment.*"));
         }
     }
 
