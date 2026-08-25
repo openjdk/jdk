@@ -1292,6 +1292,9 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   Label slow_unlock, unlock_done;
   if (method->is_synchronized()) {
+    // Get locked oop from the handle we passed to jni
+    __ ldr(sync_obj, Address(sync_handle));
+
     log_trace(fastlock)("SharedRuntime unlock fast");
     __ fast_unlock(sync_obj, R2 /* t1 */, tmp /* t2 */, Rtemp /* t3 */,
                    7 /* savemask */, slow_unlock);

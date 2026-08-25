@@ -37,6 +37,7 @@
 #include "opto/convertnode.hpp"
 #include "opto/escape.hpp"
 #include "opto/inlinetypenode.hpp"
+#include "opto/library_call.hpp"
 #include "opto/locknode.hpp"
 #include "opto/machnode.hpp"
 #include "opto/matcher.hpp"
@@ -1195,14 +1196,22 @@ Node* CallStaticJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     }
   }
 
-  // Try to replace the runtime call to the substitutability test emitted by acmp if we can reason
-  // about the operands
-  if (can_reshape && !control()->is_top() && !memory()->is_top() && method() != nullptr &&
-      method()->holder() == phase->C->env()->ValueObjectMethods_klass() &&
-      method()->name() == ciSymbols::isSubstitutable_name()) {
-    Node* res = replace_is_substitutable(phase->is_IterGVN());
-    if (res != nullptr) {
-      return res;
+  if (can_reshape && !control()->is_top() && !memory()->is_top() && method() != nullptr) {
+    if (method()->holder() == phase->C->env()->ValueObjectMethods_klass() &&
+        method()->name() == ciSymbols::isSubstitutable_name()) {
+      // Try to replace the runtime call to the substitutability test emitted by acmp if we can reason
+      // about the operands
+      Node* res = replace_is_substitutable(phase->is_IterGVN());
+      if (res != nullptr) {
+        return res;
+      }
+    } else if (method()->holder() == phase->C->env()->System_klass() &&
+        method()->name() == ciSymbols::identityHashCode_name()) {
+      // Same with identityHashCode
+      Node* res = replace_identity_hash_code(phase->is_IterGVN());
+      if (res != nullptr) {
+        return res;
+      }
     }
   }
 
@@ -1396,6 +1405,70 @@ bool CallStaticJavaNode::remove_unknown_flat_array_load(PhaseIterGVN* igvn, Node
   igvn->add_input_to(igvn->C->root(), halt);
 
   return true;
+}
+
+Node* CallStaticJavaNode::replace_identity_hash_code(PhaseIterGVN* igvn) {
+  Node* arg = in(TypeFunc::Parms);
+  intptr_t klass_hash;
+  if (!InlineTypeNode::can_emit_identity_hash_code(*igvn, arg, klass_hash)) {
+    // We can't expand, but now, maybe we can also tell the fast path won't work
+    const Type* arg_type = igvn->type(arg);
+    if (UseHashcodeFastPath && igvn->type(arg)->is_inlinetypeptr()) {
+      ciInlineKlass* vk = arg_type->inline_klass();
+      bool fast_path_wont_work = false;
+      fast_path_wont_work = fast_path_wont_work || vk->number_of_oop_entries_in_acmp_map() > 0;
+      fast_path_wont_work = fast_path_wont_work || vk->number_of_nonoop_entries_in_acmp_map() > 1;
+      if (vk->number_of_nonoop_entries_in_acmp_map() == 1) {
+        int size = vk->get_nonoop_segment_of_acmp_map(0)._size;
+        fast_path_wont_work = fast_path_wont_work || (size != 1 && size != 2 && size != 4 && size != 8);
+      }
+      if (fast_path_wont_work) {
+        IfNode* fast_path_if = LibraryCallKit::hashcode_fast_path_if_from_identity_hash_code_call(igvn, this);
+        if (fast_path_if != nullptr) {
+          fast_path_if->set_req(1, igvn->intcon(1));
+          igvn->_worklist.push(fast_path_if);
+          return this;
+        }
+      }
+    }
+    return nullptr;
+  }
+
+  // Delay IGVN during macro expansion
+  assert(!igvn->delay_transform(), "must not delay during Ideal");
+  igvn->set_delay_transform(true);
+  GraphKit kit(this, *igvn);
+
+  Node* replace = InlineTypeNode::emit_identity_hash_code(&kit, arg, klass_hash);
+  igvn->set_delay_transform(false);
+  assert(replace != nullptr, "must succeed");
+
+  if (UseHashcodeFastPath) {
+    // Sabotage the fast hashcode path
+    IfNode* fast_path_if = LibraryCallKit::hashcode_fast_path_if_from_identity_hash_code_call(igvn, this);
+    if (fast_path_if != nullptr) {
+      fast_path_if->set_req(1, igvn->intcon(1));
+      igvn->_worklist.push(fast_path_if);
+    }
+  }
+
+  // Kill exception projections and return a tuple that will replace the call
+  CallProjections* projs = extract_projections(false /*separate_io_proj*/);
+  if (projs->fallthrough_catchproj != nullptr) {
+    igvn->replace_node(projs->fallthrough_catchproj, kit.control());
+  }
+  if (projs->catchall_memproj != nullptr) {
+    igvn->replace_node(projs->catchall_memproj, igvn->C->top());
+  }
+  if (projs->catchall_ioproj != nullptr) {
+    igvn->replace_node(projs->catchall_ioproj, igvn->C->top());
+  }
+  if (projs->catchall_catchproj != nullptr) {
+    igvn->replace_node(projs->catchall_catchproj, igvn->C->top());
+  }
+  Node* new_mem = kit.reset_memory();
+  assert(in(TypeFunc::Memory) == new_mem, "must not modify memory");
+  return TupleNode::make(tf()->range_cc(), igvn->C->top(), kit.i_o(), new_mem, kit.frameptr(), kit.returnadr(), replace);
 }
 
 // Try to replace a runtime call to the substitutability test by either a simple pointer comparison

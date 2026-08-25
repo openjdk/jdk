@@ -84,10 +84,8 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
   // Finish fast lock unsuccessfully. slow_path MUST branch to with flag != 0
   Label slow_path;
 
-  if (UseObjectMonitorTable) {
-    // Clear cache in case fast locking succeeds or we need to take the slow-path.
-    sd(zr, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
-  }
+  // Clear cache in case fast locking succeeds or we need to take the slow-path.
+  sd(zr, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(tmp1, obj);
@@ -149,61 +147,56 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
     const ByteSize omc_monitor_offset = OMCache::monitor_offset();
     const ByteSize omc_obj_offset     = OMCache::obj_offset();
 
-    if (!UseObjectMonitorTable) {
-      assert(tmp1_monitor == tmp1_mark, "should be the same here");
-    } else {
-      const Register tmp2_hash = tmp2;
-      const Register tmp3_bucket = tmp3;
-      Label monitor_found;
+    const Register tmp2_hash = tmp2;
+    const Register tmp3_bucket = tmp3;
+    Label monitor_found;
 
-      // Save the mark, we might need it to extract the hash.
-      mv(tmp2_hash, tmp1_mark);
+    // Save the mark, we might need it to extract the hash.
+    mv(tmp2_hash, tmp1_mark);
 
-      // Look for the monitor in the current thread's object monitor cache (omc).
+    // Look for the monitor in the current thread's object monitor cache (omc).
 
-      ld(tmp1_monitor, Address(xthread, thr_omc_offset + omc_monitor_offset));
-      ld(tmp4, Address(xthread, thr_omc_offset + omc_obj_offset));
-      beq(obj, tmp4, monitor_found);
+    ld(tmp1_monitor, Address(xthread, thr_omc_offset + omc_monitor_offset));
+    ld(tmp4, Address(xthread, thr_omc_offset + omc_obj_offset));
+    beq(obj, tmp4, monitor_found);
 
-      // Look for the monitor in the table.
+    // Look for the monitor in the table.
 
-      // Get the hash code.
-      srli(tmp2_hash, tmp2_hash, markWord::hash_shift);
+    // Get the hash code.
+    srli(tmp2_hash, tmp2_hash, markWord::hash_shift);
 
-      // Get the table and calculate the bucket's address.
-      la(tmp3_t, ExternalAddress(ObjectMonitorTable::current_table_address()));
-      ld(tmp3_t, Address(tmp3_t));
-      ld(tmp1, Address(tmp3_t, ObjectMonitorTable::table_capacity_mask_offset()));
-      andr(tmp2_hash, tmp2_hash, tmp1);
-      ld(tmp3_t, Address(tmp3_t, ObjectMonitorTable::table_buckets_offset()));
+    // Get the table and calculate the bucket's address.
+    la(tmp3_t, ExternalAddress(ObjectMonitorTable::current_table_address()));
+    ld(tmp3_t, Address(tmp3_t));
+    ld(tmp1, Address(tmp3_t, ObjectMonitorTable::table_capacity_mask_offset()));
+    andr(tmp2_hash, tmp2_hash, tmp1);
+    ld(tmp3_t, Address(tmp3_t, ObjectMonitorTable::table_buckets_offset()));
 
-      // Read the monitor from the bucket.
-      shadd(tmp3_bucket, tmp2_hash, tmp3_t, tmp4, LogBytesPerWord);
-      ld(tmp1_monitor, Address(tmp3_bucket));
+    // Read the monitor from the bucket.
+    shadd(tmp3_bucket, tmp2_hash, tmp3_t, tmp4, LogBytesPerWord);
+    ld(tmp1_monitor, Address(tmp3_bucket));
 
-      // Check if the monitor in the bucket is special (empty, tombstone or removed).
-      mv(tmp2, ObjectMonitorTable::SpecialPointerValues::below_is_special);
-      bltu(tmp1_monitor, tmp2, slow_path);
+    // Check if the monitor in the bucket is special (empty, tombstone or removed).
+    mv(tmp2, ObjectMonitorTable::SpecialPointerValues::below_is_special);
+    bltu(tmp1_monitor, tmp2, slow_path);
 
-      // Check if object matches.
-      ld(tmp3, Address(tmp1_monitor, ObjectMonitor::object_offset()));
-      BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
-      bs_asm->try_peek_weak_handle_in_nmethod(this, tmp3, tmp3, tmp2, slow_path);
-      bne(tmp3, obj, slow_path);
+    // Check if object matches.
+    ld(tmp3, Address(tmp1_monitor, ObjectMonitor::object_offset()));
+    BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+    bs_asm->try_peek_weak_handle_in_nmethod(this, tmp3, tmp3, tmp2, slow_path);
+    bne(tmp3, obj, slow_path);
 
-      // Store the monitor in the current thread's object monitor cache (omc).
-      sd(tmp1_monitor, Address(xthread, thr_omc_offset + omc_monitor_offset));
-      sd(obj, Address(xthread, thr_omc_offset + omc_obj_offset));
+    // Store the monitor in the current thread's object monitor cache (omc).
+    sd(tmp1_monitor, Address(xthread, thr_omc_offset + omc_monitor_offset));
+    sd(obj, Address(xthread, thr_omc_offset + omc_obj_offset));
 
-      bind(monitor_found);
-    }
+    bind(monitor_found);
 
     const Register tmp2_owner_addr = tmp2;
     const Register tmp3_owner = tmp3;
 
-    const ByteSize monitor_tag = in_ByteSize(UseObjectMonitorTable ? 0 : checked_cast<int>(markWord::monitor_value));
-    const Address owner_address(tmp1_monitor, ObjectMonitor::owner_offset() - monitor_tag);
-    const Address recursions_address(tmp1_monitor, ObjectMonitor::recursions_offset() - monitor_tag);
+    const Address owner_address(tmp1_monitor, ObjectMonitor::owner_offset());
+    const Address recursions_address(tmp1_monitor, ObjectMonitor::recursions_offset());
 
     Label monitor_locked;
 
@@ -224,10 +217,8 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
     increment(recursions_address, 1, tmp2, tmp3);
 
     bind(monitor_locked);
-    if (UseObjectMonitorTable) {
-      // Cache the monitor for unlock.
-      sd(tmp1_monitor, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
-    }
+    // Cache the monitor for unlock.
+    sd(tmp1_monitor, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
   }
 
   bind(locked);
@@ -300,7 +291,7 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register box,
     // there will be no monitor in the box. So we need to push back the obj
     // so that the runtime can fix any potential anonymous owner.
     test_bit(tmp3_t, tmp1_mark, exact_log2(markWord::monitor_value));
-    bnez(tmp3_t, UseObjectMonitorTable ? push_and_slow_path : inflated);
+    bnez(tmp3_t, push_and_slow_path);
 
     // Try to unlock. Transition lock bits 0b00 => 0b01
     assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid lea");
@@ -344,16 +335,10 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register box,
 
     const Register tmp1_monitor = tmp1;
 
-    if (!UseObjectMonitorTable) {
-      assert(tmp1_monitor == tmp1_mark, "should be the same here");
-      // Untag the monitor.
-      subi(tmp1_monitor, tmp1_mark, (int)markWord::monitor_value);
-    } else {
-      ld(tmp1_monitor, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
-      // No valid pointer below alignof(ObjectMonitor*). Take the slow path.
-      mv(tmp3_t, alignof(ObjectMonitor*));
-      bltu(tmp1_monitor, tmp3_t, slow_path);
-    }
+    ld(tmp1_monitor, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
+    // No valid pointer below alignof(ObjectMonitor*). Take the slow path.
+    mv(tmp3_t, alignof(ObjectMonitor*));
+    bltu(tmp1_monitor, tmp3_t, slow_path);
 
     const Register tmp2_recursions = tmp2;
     Label not_recursive;
@@ -1852,7 +1837,7 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
 
   vsetvli(consumed, cnt, Assembler::e32, Assembler::m2);
   vle32_v(v_coeffs, t1); // 31^^(stride - 1) ... 31^^0
-  vmv_v_x(v_sum, x0);
+  vmv_v_i(v_sum, 0);
 
   bind(VEC_LOOP);
   arrays_hashcode_elload_v(v_src, v_tmp, ary, eltype);
@@ -2617,7 +2602,7 @@ void C2_MacroAssembler::java_round_float_v(VectorRegister dst, VectorRegister sr
   // replacing vfclass with feq as performance optimization
   vmfeq_vv(v0, src, src);
   // set dst = 0 in cases of NaN
-  vmv_v_x(dst, zr);
+  vmv_v_i(dst, 0);
 
   // dst = (src + 0.5) rounded down towards negative infinity
   vfadd_vf(dst, src, ftmp, Assembler::v0_t);
@@ -2641,7 +2626,7 @@ void C2_MacroAssembler::java_round_double_v(VectorRegister dst, VectorRegister s
   // replacing vfclass with feq as performance optimization
   vmfeq_vv(v0, src, src);
   // set dst = 0 in cases of NaN
-  vmv_v_x(dst, zr);
+  vmv_v_i(dst, 0);
 
   // dst = (src + 0.5) rounded down towards negative infinity
   vfadd_vf(dst, src, ftmp, Assembler::v0_t);
@@ -2699,7 +2684,7 @@ void C2_MacroAssembler::clear_array_v(Register base, Register cnt) {
 
   // making zero words
   vsetvli(t0, cnt, Assembler::e64, Assembler::m4);
-  vxor_vv(v4, v4, v4);
+  vmv_v_i(v4, 0);
 
   bind(loop);
   vsetvli(t0, cnt, Assembler::e64, Assembler::m4);
@@ -3296,7 +3281,7 @@ void C2_MacroAssembler::integer_narrow_v(VectorRegister dst, BasicType dst_bt, u
 #define VFCVT_SAFE(VFLOATCVT)                                                      \
 void C2_MacroAssembler::VFLOATCVT##_safe(VectorRegister dst, VectorRegister src) { \
   assert_different_registers(dst, src);                                            \
-  vxor_vv(dst, dst, dst);                                                          \
+  vmv_v_i(dst, 0);                                                                 \
   vmfeq_vv(v0, src, src);                                                          \
   VFLOATCVT(dst, src, Assembler::v0_t);                                            \
 }

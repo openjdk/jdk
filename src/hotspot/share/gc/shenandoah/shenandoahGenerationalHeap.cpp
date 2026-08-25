@@ -244,7 +244,6 @@ oop ShenandoahGenerationalHeap::evacuate_object(oop p, Thread* thread) {
     if (mark.has_displaced_mark_helper()) {
       // We don't want to deal with MT here just to ensure we read the right mark word.
       // Skip the potential promotion attempt for this one.
-      assert(!UseObjectMonitorTable, "Do not expect displaced mark words when using the object monitor table");
     } else if (age_census()->is_tenurable(from_region->age() + mark.age())) {
       // If the object is tenurable, try to promote it
       oop result = try_evacuate_object<YOUNG_GENERATION, OLD_GENERATION>(p, thread, from_region);
@@ -1032,7 +1031,7 @@ void ShenandoahGenerationalHeap::complete_concurrent_cycle() {
 
 void ShenandoahGenerationalHeap::entry_global_coalesce_and_fill() {
   const char* msg = "Coalescing and filling old regions";
-  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_coalesce_and_fill);
+  ShenandoahConcurrentSubphase gc_phase(msg, ShenandoahPhaseTimings::conc_coalesce_and_fill);
 
   TraceCollectorStats tcs(monitoring_support()->concurrent_collection_counters());
   EventMark em("%s", msg);

@@ -26,6 +26,7 @@
 
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
+#include "cds/archiveBuilder.hpp"
 #include "ci/ciInlineKlass.hpp"
 #include "code/compiledIC.hpp"
 #include "compiler/disassembler.hpp"
@@ -879,9 +880,13 @@ void MacroAssembler::resolve_global_jobject(Register value, Register tmp1, Regis
 }
 
 void MacroAssembler::stop(const char* msg) {
-  BLOCK_COMMENT(msg);
+  // Skip AOT caching C strings in scratch buffer.
+  const char* str = (code_section()->scratch_emit()) ? msg : AOTCodeCache::add_C_string(msg);
+  BLOCK_COMMENT(str);
+  // load msg into a0 so we can access it from the signal handler
+  // ExternalAddress enables saving and restoring via the code cache
+  la(c_rarg0, ExternalAddress((address) str));
   illegal_instruction(Assembler::csr::time);
-  emit_int64((uintptr_t)msg);
 }
 
 void MacroAssembler::unimplemented(const char* what) {
@@ -911,10 +916,8 @@ void MacroAssembler::emit_static_call_stub() {
 void MacroAssembler::call_VM_leaf_base(address entry_point,
                                        int number_of_arguments,
                                        Label *retaddr) {
-  int32_t offset = 0;
   push_reg(RegSet::of(t1, xmethod), sp);   // push << t1 & xmethod >> to sp
-  movptr(t1, entry_point, offset, t0);
-  jalr(t1, offset);
+  rt_call(entry_point, t1, t0);
   if (retaddr != nullptr) {
     bind(*retaddr);
   }
@@ -1164,16 +1167,17 @@ void MacroAssembler::jalr(Register Rs, int32_t offset) {
   Assembler::jalr(x1, Rs, offset);
 }
 
-void MacroAssembler::rt_call(address dest, Register tmp) {
-  assert(tmp != x5, "tmp register must not be x5.");
+void MacroAssembler::rt_call(address dest, Register tmp1, Register tmp2) {
+  assert_different_registers(tmp1, x5);
+  assert_different_registers(tmp1, tmp2);
   RuntimeAddress target(dest);
   if (CodeCache::contains(dest)) {
-    far_call(target, tmp);
+    far_call(target, tmp1);
   } else {
     relocate(target.rspec(), [&] {
       int32_t offset;
-      movptr(tmp, target.target(), offset);
-      jalr(tmp, offset);
+      movptr(tmp1, target.target(), offset, tmp2);
+      jalr(tmp1, offset);
     });
   }
 }
@@ -2182,7 +2186,7 @@ void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register le
       vsetivli(zr, N, Assembler::e32, Assembler::m1, Assembler::mu, Assembler::tu);
     }
 
-    vmv_v_x(vcrc, zr);
+    vmv_v_i(vcrc, 0);
     vmv_s_x(vcrc, crc);
 
     // multiple of 64
@@ -2327,7 +2331,7 @@ void MacroAssembler::kernel_crc32_vclmul_fold_vectorsize_16(Register crc, Regist
   vle64_v(v6, buf); addi(buf, buf, STEP);
   vle64_v(v7, buf); addi(buf, buf, STEP);
 
-  vmv_v_x(v31, zr);
+  vmv_v_i(v31, 0);
   vsetivli(zr, 1, Assembler::e32, Assembler::m1, Assembler::mu, Assembler::tu);
   vmv_s_x(v31, crc);
   vsetivli(zr, N, Assembler::e64, Assembler::m1, Assembler::mu, Assembler::tu);
@@ -2450,7 +2454,7 @@ void MacroAssembler::kernel_crc32_vclmul_fold_vectorsize_32(Register crc, Regist
   //    now, v1 should contains: 010101...
 
   // initial crc
-  vmv_v_x(v24, zr);
+  vmv_v_i(v24, 0);
   vsetivli(zr, 1, Assembler::e32, Assembler::m4, Assembler::mu, Assembler::tu);
   vmv_s_x(v24, crc);
   vsetivli(zr, N, Assembler::e64, Assembler::m4, Assembler::mu, Assembler::tu);
@@ -3054,7 +3058,7 @@ int MacroAssembler::patch_oop(address insn_addr, address o) {
 
 void MacroAssembler::reinit_heapbase() {
   if (UseCompressedOops) {
-    if (Universe::is_fully_initialized()) {
+    if (Universe::is_fully_initialized() && !AOTCodeCache::is_on_for_dump()) {
       mv(xheapbase, CompressedOops::base());
     } else {
       ld(xheapbase, ExternalAddress(CompressedOops::base_addr()));
@@ -3765,16 +3769,6 @@ void MacroAssembler::test_oop_prototype_bit(Register oop, Register temp_reg, int
   assert_different_registers(temp_reg, t0);
   // load mark word
   ld(temp_reg, Address(oop, oopDesc::mark_offset_in_bytes()));
-  if (!UseObjectMonitorTable) {
-    Label test_mark_word;
-    // check displaced
-    test_bit(t0, temp_reg, exact_log2(markWord::unlocked_value));
-    bnez(t0, test_mark_word);
-    // slow path use klass prototype
-    load_prototype_header(temp_reg, oop);
-
-    bind(test_mark_word);
-  }
   andi(temp_reg, temp_reg, tst_bit);
   if (jmp_set) {
     bnez(temp_reg, jmp_label, /* is_far */ true);
@@ -3935,18 +3929,27 @@ void MacroAssembler::decode_klass_not_null(Register dst, Register src, Register 
   assert_different_registers(dst, tmp);
   assert_different_registers(src, tmp);
 
-  if (CompressedKlassPointers::base() == nullptr) {
+  Register xbase = tmp;
+
+  if (AOTCodeCache::is_on_for_dump()) {
+    // We are generating code during AOT buildup that will run in *future* processes
+    // with likely different encoding settings. Therefore, we have to load the
+    // encoding base dynamically, we cannot just bake it in as immediate.
+    // Note that we only need to do this for base. The encoding shift would be the
+    // same between build time and runtime: the standard precomputed shift.
+    assert(CompressedKlassPointers::shift() == ArchiveBuilder::precomputed_narrow_klass_shift(),
+           "unexpected compressed klass shift!");
+    ld(xbase, ExternalAddress(CompressedKlassPointers::base_addr()));
+  } else if (CompressedKlassPointers::base() == nullptr) {
     if (CompressedKlassPointers::shift() != 0) {
       slli(dst, src, CompressedKlassPointers::shift());
     } else {
       mv(dst, src);
     }
     return;
+  } else {
+    mv(xbase, (uintptr_t)CompressedKlassPointers::base());
   }
-
-  Register xbase = tmp;
-
-  mv(xbase, (uintptr_t)CompressedKlassPointers::base());
 
   if (CompressedKlassPointers::shift() != 0) {
     // dst = (src << shift) + xbase
@@ -3962,6 +3965,28 @@ void MacroAssembler::encode_klass_not_null(Register r, Register tmp) {
 }
 
 void MacroAssembler::encode_klass_not_null(Register dst, Register src, Register tmp) {
+  Register xbase = dst;
+  if (dst == src) {
+    xbase = tmp;
+  }
+
+  if (AOTCodeCache::is_on_for_dump()) {
+    // We are generating code during AOT buildup that will run in *future* processes
+    // with likely different encoding settings. Therefore, we have to load the
+    // encoding base dynamically and must not take the base-value dependent zext
+    // short cut below. Note that we only need to do this for base; the encoding
+    // shift is the same at build and run time: the standard precomputed shift.
+    assert(CompressedKlassPointers::shift() == ArchiveBuilder::precomputed_narrow_klass_shift(),
+           "unexpected compressed klass shift!");
+    assert_different_registers(src, xbase);
+    ld(xbase, ExternalAddress(CompressedKlassPointers::base_addr()));
+    sub(dst, src, xbase);
+    if (CompressedKlassPointers::shift() != 0) {
+      srli(dst, dst, CompressedKlassPointers::shift());
+    }
+    return;
+  }
+
   if (CompressedKlassPointers::base() == nullptr) {
     if (CompressedKlassPointers::shift() != 0) {
       srli(dst, src, CompressedKlassPointers::shift());
@@ -3975,11 +4000,6 @@ void MacroAssembler::encode_klass_not_null(Register dst, Register src, Register 
       CompressedKlassPointers::shift() == 0) {
     zext(dst, src, 32);
     return;
-  }
-
-  Register xbase = dst;
-  if (dst == src) {
-    xbase = tmp;
   }
 
   assert_different_registers(src, xbase);
@@ -5363,8 +5383,7 @@ void MacroAssembler::get_thread(Register thread) {
                       RegSet::range(x28, x31) + ra - thread;
   push_reg(saved_regs, sp);
 
-  mv(t1, CAST_FROM_FN_PTR(address, Thread::current));
-  jalr(t1);
+  rt_call(CAST_FROM_FN_PTR(address, Thread::current), t1, t0);
   if (thread != c_rarg0) {
     mv(thread, c_rarg0);
   }
@@ -5374,10 +5393,31 @@ void MacroAssembler::get_thread(Register thread) {
 }
 
 void MacroAssembler::load_byte_map_base(Register reg) {
+#if INCLUDE_CDS
+  if (AOTCodeCache::is_on_for_dump()) {
+    address byte_map_base_adr = AOTRuntimeConstants::card_table_base_address();
+    ld(reg, ExternalAddress(byte_map_base_adr));
+    return;
+  }
+#endif
   CardTableBarrierSet* ctbs = CardTableBarrierSet::barrier_set();
   // Strictly speaking the card table base isn't an address at all, and it might
   // even be negative. It is thus materialised as a constant.
   mv(reg, (uint64_t)ctbs->card_table_base_const());
+}
+
+void MacroAssembler::load_aotrc_address(Register reg, address a) {
+#if INCLUDE_CDS
+  assert(AOTRuntimeConstants::contains(a), "address out of range for data area");
+  if (AOTCodeCache::is_on_for_dump()) {
+    // all aotrc field addresses should be registered in the AOTCodeCache address table
+    la(reg, ExternalAddress(a));
+  } else {
+    mv(reg, (intptr_t)a);
+  }
+#else
+  ShouldNotReachHere();
+#endif
 }
 
 void MacroAssembler::build_frame(int framesize) {
@@ -7035,10 +7075,8 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register tmp1,
   // instruction emitted as it is part of C1's null check semantics.
   ld(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
 
-  if (UseObjectMonitorTable) {
-    // Clear cache in case fast locking succeeds or we need to take the slow-path.
-    sd(zr, Address(basic_lock, BasicObjectLock::lock_offset() + in_ByteSize((BasicLock::object_monitor_cache_offset_in_bytes()))));
-  }
+  // Clear cache in case fast locking succeeds or we need to take the slow-path.
+  sd(zr, Address(basic_lock, BasicObjectLock::lock_offset() + in_ByteSize((BasicLock::object_monitor_cache_offset_in_bytes()))));
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(tmp1, obj);

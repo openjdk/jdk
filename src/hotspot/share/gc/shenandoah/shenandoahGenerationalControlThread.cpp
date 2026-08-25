@@ -426,7 +426,7 @@ void ShenandoahGenerationalControlThread::resume_concurrent_old_cycle(Shenandoah
   // We can only tolerate being cancelled during concurrent marking or during preparation for mixed
   // evacuation. This flag here (passed by reference) is used to control precisely where the regulator
   // is allowed to cancel a GC.
-  ShenandoahOldGC gc(this, generation, _allow_old_preemption);
+  ShenandoahOldGC gc(generation, _allow_old_preemption);
   if (gc.collect(cause)) {
     _heap->notify_gc_progress();
     generation->heuristics()->record_concurrent_completion();
@@ -548,7 +548,7 @@ bool ShenandoahGenerationalControlThread::request_concurrent_gc(ShenandoahGenera
     }
 
     // Cancel the old GC and wait for the control thread to start servicing the new request.
-    log_info(gc)("Preempting old generation mark to allow %s GC", generation->name());
+    log_info(gc, phases)("Preempting old generation mark to allow %s GC", generation->name());
     while (gc_mode() == servicing_old) {
       _heap->cancel_gc(GCCause::_shenandoah_concurrent_gc);
       notify_control_thread(ml, GCCause::_shenandoah_concurrent_gc, generation);

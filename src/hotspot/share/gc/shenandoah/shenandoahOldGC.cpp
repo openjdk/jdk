@@ -36,8 +36,8 @@
 #include "utilities/events.hpp"
 
 
-ShenandoahOldGC::ShenandoahOldGC(ShenandoahController* controller, ShenandoahOldGeneration* generation, ShenandoahSharedFlag& allow_preemption)
-  : ShenandoahConcurrentGC(controller, generation, false)
+ShenandoahOldGC::ShenandoahOldGC(ShenandoahOldGeneration* generation, ShenandoahSharedFlag& allow_preemption)
+  : ShenandoahConcurrentGC(nullptr, generation, false)
   , _old_generation(generation)
   , _allow_preemption(allow_preemption) {
 }
@@ -88,6 +88,9 @@ bool ShenandoahOldGC::collect(GCCause::Cause cause) {
   assert(!_old_generation->is_doing_mixed_evacuations(), "Should not start an old gc with pending mixed evacuations");
   assert(!_old_generation->is_preparing_for_mark(), "Old regions need to be parsable during concurrent mark.");
   heap->release_injected_pins();
+
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent GC", "");
+  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_gc, /* log_heap_usage = */ true);
 
   // Enable preemption of old generation mark.
   _allow_preemption.set();

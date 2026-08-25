@@ -43,10 +43,8 @@ import static org.openjdk.bench.java.lang.ScopedValuesData.*;
 @Fork(value = 1,
       jvmArgs = {"-Djmh.executor.class=org.openjdk.bench.java.lang.ScopedValuesExecutorService",
                         "-Djmh.executor=CUSTOM",
-                        "-Djmh.blackhole.mode=COMPILER",
-                        "--enable-preview"})
+                        "-Djmh.blackhole.mode=COMPILER"})
 @State(Scope.Thread)
-@SuppressWarnings("preview")
 public class ScopedValues {
 
     private static final Integer THE_ANSWER = 42;
