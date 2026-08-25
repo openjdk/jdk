@@ -1782,12 +1782,12 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
         // The current step had a timeout. Lets continue reporting with the next step.
         st->print_raw("[timeout occurred during error reporting in step \"");
         st->print_raw(_current_step_info);
-        st->print_cr("\"] after " INT64_FORMAT " s.",
+        st->print_cr("\"] after " JLONG_FORMAT " s.",
                      ((os::javaTimeNanos() - get_step_start_time()) / SECONDS_TO_NANOS_FACTOR));
       } else if (_reporting_did_timeout.load_relaxed()) {
         // We hit ErrorLogTimeout. Reporting will stop altogether. Let's wrap things
         // up, the process is about to be stopped by the WatcherThread.
-        st->print_cr("------ Timeout during error reporting after " INT64_FORMAT " s. ------",
+        st->print_cr("------ Timeout during error reporting after " JLONG_FORMAT " s. ------",
                      ((os::javaTimeNanos() - get_reporting_start_time()) / SECONDS_TO_NANOS_FACTOR));
         st->flush();
         // Watcherthread is about to call os::die. Lets just wait.
