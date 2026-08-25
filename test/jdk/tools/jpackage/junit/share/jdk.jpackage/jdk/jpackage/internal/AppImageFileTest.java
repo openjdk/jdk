@@ -664,7 +664,7 @@ public class AppImageFileTest {
                 // Invalid app name.
                 InvalidXmlTestSpec.build().xml(createWithHeader(
                         """
-                        <main-launcher name='*foo*'>
+                        <main-launcher name='/foo\\'>
                           <description/>
                         </main-launcher>
                         <app-version>1.0</app-version>
@@ -672,7 +672,7 @@ public class AppImageFileTest {
                         """
                 )).expect(expect(
                         "error.properties-parameter-invalid-value",
-                        "*foo*", "/jpackage-state/main-launcher/@name", JPACKAGE_XML).create()),
+                        "/foo\\", "/jpackage-state/main-launcher/@name", JPACKAGE_XML).create()),
 
                 // Invalid main class
                 InvalidXmlTestSpec.build().os(OperatingSystem.MACOS).xml(createWithHeader(
