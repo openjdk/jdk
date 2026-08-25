@@ -255,7 +255,7 @@ The `jpackage` tool will take as input a Java application and a Java run-time im
 :   A comma separated list of paths to files and/or directories
     to add to the application payload.
 
-    --app-content is processed before --app-resources, independent
+    --app-content is processed after --app-resources, independent
     of command-line order.
 
     This option can be used more than once.
@@ -272,8 +272,8 @@ The `jpackage` tool will take as input a Java application and a Java run-time im
     platform-specific path separator (`:` on Linux and macOS; `;` on Windows),
     to add to the application resources directory.
 
-    A colliding file from --app-resources replaces
-    one from --app-content.
+    A colliding file from --app-content replaces
+    one from --app-resources.
 
     This option can be used more than once.
 

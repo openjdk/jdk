@@ -311,7 +311,7 @@ public class AppContentTest {
             .addInitializer(cmd -> {
                 contentFactories.stream().map(group -> {
                     return group.stream().map(contentFactory -> {
-                        return contentFactory.create(cmd, option);
+                        return contentFactory.create(cmd, option.wrapInResourcesOnMac());
                     }).toList();
                 }).forEach(allContent::add);
             }).addInitializer(cmd -> {
@@ -446,8 +446,8 @@ public class AppContentTest {
         return new TestSpec.Builder();
     }
 
-    private static Path createAppContentRoot(AppFilesOption option) {
-        if (option.wrapInResourcesOnMac()) {
+    private static Path createAppContentRoot(boolean srcRootMustBeResourcesDir) {
+        if (srcRootMustBeResourcesDir) {
             return TKit.createTempDirectory("app-content").resolve(RESOURCES_DIR);
         } else {
             return TKit.createTempDirectory("app-content");
@@ -466,7 +466,7 @@ public class AppContentTest {
 
     @FunctionalInterface
     private interface ContentFactory {
-        Content create(JPackageCommand cmd, AppFilesOption option);
+        Content create(JPackageCommand cmd, boolean srcRootMustBeResourcesDir);
     }
 
     private interface Content {
@@ -607,7 +607,7 @@ public class AppContentTest {
         }
 
         @Override
-        public Content create(JPackageCommand cmd, AppFilesOption option) {
+        public Content create(JPackageCommand cmd, boolean srcRootMustBeResourcesDir) {
             var nonexistent = makePath.apply(cmd);
             if (Files.exists(nonexistent)) {
                 throw new IllegalStateException();
@@ -720,8 +720,8 @@ public class AppContentTest {
         }
 
         @Override
-        public Content create(JPackageCommand cmd, AppFilesOption option) {
-            final var appContentRoot = createAppContentRoot(option);
+        public Content create(JPackageCommand cmd, boolean srcRootMustBeResourcesDir) {
+            final var appContentRoot = createAppContentRoot(srcRootMustBeResourcesDir);
 
             final var symlinkPath = appContentRoot.resolve(symlinkPath());
             final var symlinkedPath = appContentRoot.resolve(symlinkedPath());
@@ -737,7 +737,7 @@ public class AppContentTest {
             }
 
             List<Path> contentPaths;
-            if (option.wrapInResourcesOnMac()) {
+            if (srcRootMustBeResourcesDir) {
                 contentPaths = List.of(appContentRoot);
             } else if (basedir.equals(Path.of(""))) {
                 contentPaths = Stream.of(symlinkPath(), symlinkedPath()).map(path -> {
@@ -794,17 +794,17 @@ public class AppContentTest {
         }
 
         @Override
-        public Content create(JPackageCommand cmd, AppFilesOption option) {
+        public Content create(JPackageCommand cmd, boolean srcRootMustBeResourcesDir) {
             Path srcPath = factory.get();
             if (!srcPath.endsWith(pathInAppContentRoot)) {
                 throw new IllegalArgumentException();
             }
 
             Path dstPath;
-            if (!option.wrapInResourcesOnMac()) {
+            if (!srcRootMustBeResourcesDir) {
                 dstPath = srcPath;
             } else {
-                var contentDir = createAppContentRoot(option);
+                var contentDir = createAppContentRoot(srcRootMustBeResourcesDir);
                 dstPath = contentDir.resolve(pathInAppContentRoot);
                 try {
                     FileUtils.copyRecursive(srcPath, dstPath);

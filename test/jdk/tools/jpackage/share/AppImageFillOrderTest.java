@@ -42,6 +42,7 @@ import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.AppImageFile;
 import jdk.jpackage.test.ApplicationLayout;
 import jdk.jpackage.test.PackageTest;
+import jdk.jpackage.test.RunnablePackageTest.Action;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.TKit;
 
@@ -65,8 +66,8 @@ import jdk.jpackage.test.TKit;
  * Custom content comes from:
  * <ul>
  * <li>input directory (--input)
- * <li>app content (--app-content)
  * <li>app resources (--app-resources)
+ * <li>app content (--app-content)
  * <ul>
  */
 public class AppImageFillOrderTest {
@@ -130,10 +131,10 @@ public class AppImageFillOrderTest {
     @Test
     @Parameter("false")
     @Parameter("true")
-    public void testAppResourcesOverrideAppContent(boolean resourcesFirst)
+    public void testAppContentOverrideAppResources(boolean resourcesFirst)
             throws IOException {
         var cmd = createJPackage().setFakeRuntime();
-        var inputs = AppResourcesOverrideInputs.create();
+        var inputs = AppContentOverrideInputs.create();
 
         inputs.addTo(cmd, resourcesFirst);
 
@@ -145,24 +146,24 @@ public class AppImageFillOrderTest {
     @Test
     @Parameter("false")
     @Parameter("true")
-    public void testAppResourcesOverrideAppContentInPackage(
+    public void testAppContentOverrideAppResourcesInPackage(
             boolean resourcesFirst) throws IOException {
-        var inputs = AppResourcesOverrideInputs.create();
+        var inputs = AppContentOverrideInputs.create();
 
         new PackageTest()
                 .configureHelloApp()
                 .addInitializer(JPackageCommand::setFakeRuntime)
                 .addInitializer(cmd -> inputs.addTo(cmd, resourcesFirst))
                 .addInstallVerifier(inputs::verify)
-                .run();
+                .run(Action.CREATE_AND_UNPACK);
     }
 
-    private record AppResourcesOverrideInputs(
+    private record AppContentOverrideInputs(
             Path appContentFile,
             Path appResourcesFile,
             Path appContentArg) {
 
-        static AppResourcesOverrideInputs create() throws IOException {
+        static AppContentOverrideInputs create() throws IOException {
             var appContentRoot = TKit.createTempDirectory("app-content");
 
             Path appContentFile;
@@ -181,7 +182,7 @@ public class AppImageFillOrderTest {
                     .resolve("shared.txt");
             TKit.createTextFile(appResourcesFile, List.of("app-resources"));
 
-            return new AppResourcesOverrideInputs(
+            return new AppContentOverrideInputs(
                     appContentFile, appResourcesFile, appContentArg);
         }
 
@@ -199,8 +200,8 @@ public class AppImageFillOrderTest {
             var outputFile = cmd.appLayout().resourcesDirectory()
                     .resolve("shared.txt");
 
-            TKit.assertSameFileContent(appResourcesFile, outputFile);
-            TKit.assertMismatchFileContent(appContentFile, outputFile);
+            TKit.assertSameFileContent(appContentFile, outputFile);
+            TKit.assertMismatchFileContent(appResourcesFile, outputFile);
         }
     }
 
