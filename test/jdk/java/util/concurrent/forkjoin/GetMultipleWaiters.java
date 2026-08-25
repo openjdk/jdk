@@ -53,13 +53,13 @@ class GetMultipleWaiters {
             } catch (Throwable t) {
                 thrown[0] = t;
             }
-        }, "waiter-A", Thread.State.WAITING);
+        }, "Get-waiter-A", Thread.State.WAITING);
         var b = startThreadAndAwaitState(() -> {
             try {
                 task.get();
             } catch (Throwable ignore) {
             }
-        }, "waiter-B", Thread.State.WAITING);
+        }, "Get-waiter-B", Thread.State.WAITING);
 
         try {
             a.interrupt();
@@ -67,8 +67,7 @@ class GetMultipleWaiters {
 
             assertInstanceOf(InterruptedException.class, thrown[0]);
         } finally {
-            task.cancel(false);
-            a.join();
+            task.complete(null);
             b.join();
         }
     }
@@ -88,21 +87,20 @@ class GetMultipleWaiters {
             } catch (Throwable t) {
                 thrown[0] = t;
             }
-        }, "waiter-A", Thread.State.TIMED_WAITING);
+        }, "TimedGet-waiter-A", Thread.State.TIMED_WAITING);
         var b = startThreadAndAwaitState(() -> {
             try {
                 task.get();
             } catch (Throwable ignore) {
             }
-        }, "waiter-B", Thread.State.WAITING);
+        }, "TimedGet-waiter-B", Thread.State.WAITING);
 
         try {
             a.join();
 
             assertInstanceOf(TimeoutException.class, thrown[0]);
         } finally {
-            task.cancel(false);
-            a.join();
+            task.complete(null);
             b.join();
         }
     }
