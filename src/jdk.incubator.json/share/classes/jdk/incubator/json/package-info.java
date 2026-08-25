@@ -161,13 +161,13 @@
  * {@code JsonValue.toString()} produces compact JSON text which does not
  * include JSON insignificant whitespaces, preferable for network transmission
  * or storage. For example:
- * {@snippet lang=TEXT:
+ * {@snippet lang=json:
  * {"providers":["SUN","SunRsaSign","SunEC"],"version":1}
  * }
  * {@code Json.toDisplayString(JsonValue, String)} produces pretty-printed
  * JSON text which is easier to read, preferable for debugging or logging.
  * For example:
- * {@snippet lang=TEXT:
+ * {@snippet lang=json:
  * {
  *   "providers": [
  *     "SUN",
