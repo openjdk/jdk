@@ -208,7 +208,7 @@ instruct zGetAndSetP(iRegP newval, iRegP mem, iRegP temp1, iRegP temp2, flagsReg
   format %{ "GetAndSetP   $newval,[$mem]\t # EXCHANGE (oop, atomic), temp $temp1" %}
 
   ins_encode %{
-    Label retry;
+    NearLabel retry;
     const Address mem_addr = Address($mem$$Register, 0);
 
     z_store_barrier(masm, this, mem_addr, $newval$$Register, $temp1$$Register, true /* is_atomic */);
