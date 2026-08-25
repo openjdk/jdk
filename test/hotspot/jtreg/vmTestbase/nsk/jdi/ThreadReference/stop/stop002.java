@@ -67,7 +67,7 @@ public class stop002 {
     static final String DEBUGGEE_STOP_LOOP1_FIELD = "stopLooping1";
     static final String DEBUGGEE_STOP_LOOP2_FIELD = "stopLooping2";
     // debuggee field used to indicate that debugger got OpaqueFrameException
-    static final String DEBUGGEE_GOT_OPE_FIELD = "gotOpaqueFrameException";
+    static final String DEBUGGEE_GOT_OFE_FIELD = "gotOpaqueFrameException";
 
     // debuggee source line where it should be stopped
     static final int DEBUGGEE_STOPATLINE = 91;
@@ -147,7 +147,7 @@ public class stop002 {
                 throw new RuntimeException("Failed to find a \"stop loop\" field");
             }
 
-            gotOpaqueFrameException = mainClass.fieldByName(DEBUGGEE_GOT_OPE_FIELD);
+            gotOpaqueFrameException = mainClass.fieldByName(DEBUGGEE_GOT_OFE_FIELD);
             if (gotOpaqueFrameException == null) {
                 throw new RuntimeException("Failed to find a \"gotOpaqueFrameException\" field");
             }
