@@ -175,15 +175,29 @@ bool ShenandoahCollectorPolicy::should_handle_requested_gc(GCCause::Cause cause)
   return true;
 }
 
+static PLAB* shenandoah_get_lab(ShenandoahHeapRegion* region) {
+  if (region->is_young()) {
+    return ShenandoahThreadLocalData::gclab(Thread::current());
+  }
+
+  assert(region->is_old(), "Region in cset(%zu) must be young or old", region->index());
+  ShenandoahPLAB* shenandoah_plab = ShenandoahThreadLocalData::shenandoah_plab(Thread::current());
+  assert(shenandoah_plab != nullptr, "Must have plab in generational mode");
+  return shenandoah_plab->plab();
+}
+
 bool ShenandoahCollectorPolicy::should_abandon_evacuations(ShenandoahHeapRegion* region) {
   if (region->has_self_forwards()) {
-    PLAB* gclab = ShenandoahThreadLocalData::gclab(Thread::current());
-    if (gclab->words_remaining() < PLAB::min_size()) {
+    PLAB* lab = shenandoah_get_lab(region);
+    if (lab->words_remaining() < PLAB::min_size()) {
       // This region and this thread are lost. This thread has evacuated all it can. If
       // we let it continue on to other regions, it will only fail those as well. We want
-      // to let other threads try the regions that this thread could not.
+      // to let other threads try the regions that this thread could not. This isn't as
+      // precise as it could be. In a mixed collection, we would ideally have a way to
+      // stop this thread from claiming old or young regions, depending on which lab is
+      // exhausted.
       log_debug(gc, thread)("Region (%zu) has self-forwards and labs are exhausted (remaining words: %zu)",
-                            region->index(), gclab->words_remaining());
+                            region->index(), lab->words_remaining());
       return true;
     }
   }
