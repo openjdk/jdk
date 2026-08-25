@@ -27,10 +27,10 @@
  * @summary Verify that the first metaspace GC happens near the MetaspaceSize threshold
  * @requires vm.hasJFR
  * @library /test/lib
- * @run main/othervm -Xms200m -XX:-UseCompressedOops TestMetaspaceFirstGC
- * @run main/othervm -Xms200m -XX:-UseCompressedOops -XX:MetaspaceSize=10m TestMetaspaceFirstGC 10m
- * @run main/othervm -Xms200m -XX:-UseCompressedOops -XX:MetaspaceSize=50m TestMetaspaceFirstGC 50m
- * @run main/othervm -Xms200m -XX:-UseCompressedOops -XX:MetaspaceSize=99m TestMetaspaceFirstGC 99m
+ * @run main/othervm -Xms200m TestMetaspaceFirstGC
+ * @run main/othervm -Xms200m -XX:MetaspaceSize=10m TestMetaspaceFirstGC 10m
+ * @run main/othervm -Xms200m -XX:MetaspaceSize=50m TestMetaspaceFirstGC 50m
+ * @run main/othervm -Xms200m -XX:MetaspaceSize=99m TestMetaspaceFirstGC 99m
  */
 
 import java.lang.reflect.InvocationHandler;
