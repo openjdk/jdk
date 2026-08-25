@@ -34,7 +34,7 @@ source %{
 
 #include "gc/z/zBarrierSetAssembler.hpp"
 
-static void z_color(MacroAssembler* masm, const MachNode* node, Register dst, Register src) {
+static void z_color(MacroAssembler* masm, Register dst, Register src) {
   assert_different_registers(src, dst);
   if (src != noreg) {
     // noreg means null, no need to color
@@ -47,7 +47,7 @@ static void z_color(MacroAssembler* masm, const MachNode* node, Register dst, Re
   }
 }
 
-static void z_uncolor(MacroAssembler* masm, const MachNode* node, Register ref) {
+static void z_uncolor(MacroAssembler* masm, Register ref) {
   __ z_srlg(ref, ref, ZPointerLoadShift);
 }
 
@@ -59,7 +59,7 @@ static void z_keep_alive_load_barrier(MacroAssembler* masm, const MachNode* node
   ZLoadBarrierStubC2* const stub = ZLoadBarrierStubC2::create(node, ref_addr, ref);
   __ branch_optimized(Assembler::bcondNotAllZero, *stub->entry());
 
-  z_uncolor(masm, node, ref);
+  z_uncolor(masm, ref);
 
   __ bind(*stub->continuation());
 }
@@ -67,7 +67,7 @@ static void z_keep_alive_load_barrier(MacroAssembler* masm, const MachNode* node
 static void z_load_barrier(MacroAssembler* masm, const MachNode* node, Address ref_addr, Register ref) {
   Assembler::InlineSkippedInstructionsCounter skipped_counter(masm);
   if (node->barrier_data() == ZBarrierElided) {
-    z_uncolor(masm, node, ref);
+    z_uncolor(masm, ref);
     return;
   }
 
@@ -86,14 +86,14 @@ static void z_load_barrier(MacroAssembler* masm, const MachNode* node, Address r
 
   __ branch_optimized(Assembler::bcondNotAllZero, *stub->entry());
 
-  z_uncolor(masm, node, ref);
+  z_uncolor(masm, ref);
   __ bind(*stub->continuation());
 }
 
 static void z_store_barrier(MacroAssembler* masm, const MachNode* node, Address ref_addr, Register rnew_zaddress, Register rnew_zpointer, bool is_atomic) {
   Assembler::InlineSkippedInstructionsCounter skipped_counter(masm);
   if (node->barrier_data() == ZBarrierElided) {
-    z_color(masm, node, rnew_zpointer, rnew_zaddress);
+    z_color(masm, rnew_zpointer, rnew_zaddress);
   } else {
     bool is_native = (node->barrier_data() & ZBarrierNative) != 0;
     bool is_nokeepalive = (node->barrier_data() & ZBarrierNoKeepalive) != 0;
@@ -164,9 +164,9 @@ instruct zCompareAndExchangeP(iRegP res, iRegP mem, iRegP oldval, iRegP newval, 
     const Address mem_addr = Address($mem$$Register, 0);
 
     z_store_barrier(masm, this, mem_addr, $newval$$Register, $newval_temp$$Register, true);
-    z_color(masm, this, $res$$Register, $oldval$$Register);
+    z_color(masm, $res$$Register, $oldval$$Register);
     __ z_csg($res$$Register, $newval_temp$$Register, mem_addr);
-    z_uncolor(masm, this, $res$$Register);
+    z_uncolor(masm, $res$$Register);
   %}
   ins_pipe(pipe_class_dummy);
 %}
@@ -183,19 +183,11 @@ instruct zCompareAndSwap(iRegI res, iRegP mem, iRegP oldval, iRegP newval, iRegP
     assert_different_registers($oldval$$Register, $mem$$Register);
     const Address mem_addr = Address($mem$$Register, 0);
     z_store_barrier(masm, this, mem_addr, $newval$$Register, $newval_temp$$Register, true /* is_atomic */);
-    z_color(masm, this, $oldval_temp$$Register, $oldval$$Register);
+    z_color(masm, $oldval_temp$$Register, $oldval$$Register);
 
     __ z_csg($oldval_temp$$Register, $newval_temp$$Register, mem_addr);
-    if (VM_Version::has_LoadStoreConditional()) {
-      __ z_lghi($res$$Register, 1L);                                  // true  (succeed)
-      __ z_locghi($res$$Register, 0L, Assembler::bcondNotEqual);      // false (failed)
-    } else {
-      Label done;
-      __ load_const_optimized($res$$Register, 0L);                    // false (failed)
-      __ z_brne(done);                                                // Assume true to be the common case.
-      __ load_const_optimized($res$$Register, 1L);                    // true  (succeed)
-      __ bind(done);
-    }
+    __ z_lghi($res$$Register, 1L);                                                   // true  (succeed)
+    __ load_on_condition_imm_64($res$$Register, 0L, Assembler::bcondNotEqual);       // false (failed)
   %}
   ins_pipe(pipe_class_dummy);
 %}
@@ -216,6 +208,7 @@ instruct zGetAndSetP(iRegP newval, iRegP mem, iRegP temp1, iRegP temp2, flagsReg
     __ bind(retry);
     __ z_csg($temp2$$Register, $temp1$$Register, mem_addr);
     __ branch_optimized(Assembler::bcondNotEqual, retry);
+    // Uncolor the old value
     __ z_srlg($newval$$Register, $temp2$$Register, ZPointerLoadShift);
   %}
   ins_pipe(pipe_class_dummy);
