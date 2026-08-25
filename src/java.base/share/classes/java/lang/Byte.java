@@ -57,14 +57,12 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  * as interchangeable and should not use instances for synchronization or
  * with {@linkplain java.lang.ref.Reference object references}.
  *
- * <div class="preview-block">
- *      <div class="preview-comment">
+ * {@previewNote [jep=401]
  *          When preview features are enabled, {@code Byte} is a {@linkplain Class#isValue value class}.
  *          Use of value class instances for synchronization or with
  *          {@linkplain java.lang.ref.Reference object references} result in
  *          {@link IdentityException}.
- *      </div>
- * </div>
+ * }
  *
  * @see     java.lang.Number
  * @since   1.1
@@ -156,8 +154,7 @@ public final /*value*/ class Byte extends Number
     /**
      * Returns a {@code Byte} instance representing the specified
      * {@code byte} value.
-     * <div class="preview-block">
-     *      <div class="preview-comment">
+     * {@previewNote [jep=401]
      *          <p>
      *              - When preview features are NOT enabled, {@code Byte} is an identity class.
      *              If a new {@code Byte} instance is not required, this method
@@ -171,8 +168,7 @@ public final /*value*/ class Byte extends Number
      *              The {@code valueOf} behavior is the same as invoking the constructor,
      *              whether cached or not.
      *          </p>
-     *      </div>
-     * </div>
+     * }
      *
      * @param  b a byte value.
      * @return a {@code Byte} instance representing {@code b}.

@@ -173,7 +173,7 @@ public final class Files {
      * exist, or initially truncating an existing {@link #isRegularFile
      * regular-file} to a size of {@code 0} if it exists.
      *
-     * <p> <b>Usage Examples:</b>
+     * @note [header="Examples:"]
      * {@snippet lang=java :
      *     Path path = ...
      *
@@ -307,7 +307,7 @@ public final class Files {
      * <p> In the case of the default provider, the returned seekable byte channel
      * is a {@link java.nio.channels.FileChannel}.
      *
-     * <p> <b>Usage Examples:</b>
+     * @note [header="Examples:"]
      * {@snippet lang=java :
      *     Path path = ...
      *
@@ -534,7 +534,7 @@ public final class Files {
      * directory that execute in a race-free manner then the returned directory
      * stream is a {@link SecureDirectoryStream}.
      *
-     * <p> <b>Usage Example:</b>
+     * @note [header="Example:"]
      * Suppose we want to iterate over the files in a directory that are
      * larger than 8K.
      * {@snippet lang=java :
@@ -1155,7 +1155,7 @@ public final class Files {
      * the file and the creation of the new file may not be atomic with respect
      * to other file system activities.
      *
-     * <p> <b>Usage Example:</b>
+     * @note [header="Example:"]
      * Suppose we want to copy a file into a directory, giving it the same file
      * name as the source file:
      * {@snippet lang=java :
@@ -1268,7 +1268,7 @@ public final class Files {
      * may both exist, the target file may be incomplete or some of its file
      * attributes may not been copied from the original file.
      *
-     * <p> <b>Usage Examples:</b>
+     * @note [header="Examples:"]
      * Suppose we want to rename a file to "newname", keeping the file in the
      * same directory:
      * {@snippet lang=java :
@@ -1619,7 +1619,7 @@ public final class Files {
      * symbolic links are not followed. This option is ignored by implementations
      * that do not support symbolic links.
      *
-     * <p> <b>Usage Example:</b>
+     * @note [header="Example:"]
      * Suppose we want read or set a file's ACL, if supported:
      * {@snippet lang=java :
      *     Path path = ...
@@ -1668,7 +1668,7 @@ public final class Files {
      * <p> It is implementation specific if all file attributes are read as an
      * atomic operation with respect to other file system operations.
      *
-     * <p> <b>Usage Example:</b>
+     * @note [header="Example:"]
      * Suppose we want to read a file's attributes in bulk:
      * {@snippet lang=java :
      *     Path path = ...
@@ -1730,7 +1730,7 @@ public final class Files {
      * of the link is set. If the option {@link LinkOption#NOFOLLOW_LINKS
      * NOFOLLOW_LINKS} is present then symbolic links are not followed.
      *
-     * <p> <b>Usage Example:</b>
+     * @note [header="Example:"]
      * Suppose we want to set the DOS "hidden" attribute:
      * {@snippet lang=java :
      *     Path path = ...
@@ -1792,7 +1792,7 @@ public final class Files {
      * of the link is read. If the option {@link LinkOption#NOFOLLOW_LINKS
      * NOFOLLOW_LINKS} is present then symbolic links are not followed.
      *
-     * <p> <b>Usage Example:</b>
+     * @note [header="Example:"]
      * Suppose we require the user ID of the file owner on a system that
      * supports a "{@code unix}" view:
      * {@snippet lang=java :
@@ -2028,7 +2028,7 @@ public final class Files {
      * supports {@link FileOwnerAttributeView}. This file attribute view provides
      * access to a file attribute that is the owner of the file.
      *
-     * <p> <b>Usage Example:</b>
+     * @note [header="Example:"]
      * Suppose we want to make "joe" the owner of a file:
      * {@snippet lang=java :
      *     Path path = ...
@@ -2197,7 +2197,7 @@ public final class Files {
      * underlying file store is not defined. It may or not fail by throwing an
      * {@code IOException}.
      *
-     * <p> <b>Usage Example:</b>
+     * @note [header="Example:"]
      * Suppose we want to set the last modified time to the current time:
      * {@snippet lang=java :
      *     Path path = ...
@@ -2796,7 +2796,8 @@ public final class Files {
      * highly input stream and file system provider specific and therefore not
      * specified.
      *
-     * <p> <b>Usage example</b>: Suppose we want to capture a web page and save
+     * @note [header="Example:"]
+     * Suppose we want to capture a web page and save
      * it to a file:
      * {@snippet lang=java :
      *     Path path = ...
@@ -3140,7 +3141,8 @@ public final class Files {
      * error occurs then it may do so after the file has been created or
      * truncated, or after some bytes have been written to the file.
      *
-     * <p> <b>Usage example</b>: By default the method creates a new file or
+     * @note [header="Example:"]
+     * By default the method creates a new file or
      * overwrites an existing file. Suppose you instead want to append bytes
      * to an existing file:
      * {@snippet lang=java :

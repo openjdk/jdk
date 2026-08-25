@@ -1386,8 +1386,7 @@ public final class Class<T> implements java.io.Serializable,
      * arrays, the values of other modifiers are {@code false} other
      * than as specified above.
      *
-     * <div class="preview-block">
-     *      <div class="preview-comment">
+     * {@previewNote [jep=401]
      *          When preview features are enabled and this {@code Class} object
      *          either represents a class whose {@code class} file does not
      *          depend on preview features or represents an array type, its
@@ -1395,15 +1394,13 @@ public final class Class<T> implements java.io.Serializable,
      *          <p>
      *          When preview features are disabled, the {@code Class} object
      *          does not have its {@code identity} modifier set.
-     *      </div>
-     * </div>
+     * }
      *
      * <p> The modifier encodings are defined in section {@jvms 4.1}
      * of <cite>The Java Virtual Machine Specification</cite>.
      *
      * @apiNote
-     * <div class="preview-block">
-     *      <div class="preview-comment">
+     * {@previewNote [jep=401]
      *          Developers should be aware that the presence of the {@code
      *          identity} modifier is dependent on whether preview features are
      *          enabled.  Use the {@link #isValue() Class.isValue()} method to
@@ -1416,8 +1413,7 @@ public final class Class<T> implements java.io.Serializable,
      *          {@snippet lang=java :
      *          !clazz.isPrimitive() && !clazz.isValue() && !clazz.isInterface()
      *          }
-     *      </div>
-     * </div>
+     * }
      *
      * @return the {@code int} representing the modifiers for this class
      * @see     java.lang.reflect.Modifier
@@ -1452,8 +1448,7 @@ public final class Class<T> implements java.io.Serializable,
      * For {@code Class} objects representing void, primitive types, and
      * arrays, access flags are absent other than as specified above.
      *
-     * <div class="preview-block">
-     *      <div class="preview-comment">
+     * {@previewNote [jep=401]
      *          When preview features are enabled and this {@code Class} object
      *          either represents a class whose {@code class} file does not
      *          depend on preview features or represents an array type, its
@@ -1461,12 +1456,10 @@ public final class Class<T> implements java.io.Serializable,
      *          <p>
      *          When preview features are disabled, the {@code Class} object
      *          does not have the {@code IDENTITY} flag set.
-     *      </div>
-     * </div>
+     * }
      *
      * @apiNote
-     * <div class="preview-block">
-     *      <div class="preview-comment">
+     * {@previewNote [jep=401]
      *          Developers should be aware that the presence of the {@code
      *          identity} modifier is dependent on whether preview features are
      *          enabled.  Use the {@link #isValue() Class.isValue()} method to
@@ -1479,8 +1472,7 @@ public final class Class<T> implements java.io.Serializable,
      *          {@snippet lang=java :
      *          !clazz.isPrimitive() && !clazz.isValue() && !clazz.isInterface()
      *          }
-     *      </div>
-     * </div>
+     * }
      *
      * @see #getModifiers()
      * @jvms 4.1 The ClassFile Structure

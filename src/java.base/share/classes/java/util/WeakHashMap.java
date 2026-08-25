@@ -43,8 +43,7 @@ import java.util.function.Consumer;
  * so this class behaves somewhat differently from other {@code Map}
  * implementations.
  *
- * <div class="preview-block">
- *      <div class="preview-comment">
+ * {@previewNote [jep=401]
  *          {@linkplain java.util.Objects#hasIdentity Value objects} can not be used as
  *          keys in a {@code WeakHashMap}. The {@link #put(Object, Object) put(K, V)}
  *          method, and all methods that associate a value with a key, throw {@link
@@ -52,8 +51,7 @@ import java.util.function.Consumer;
  *          The {@link WeakHashMap#WeakHashMap(Map)} constructor and the {@link
  *          #putAll(Map)} method also throw {@code IdentityException} if invoked with
  *          a {@code Map} containing a key that is a value object.
- *      </div>
- * </div>
+ * }
  *
  * <p> Both null values and the null key are supported. This class has
  * performance characteristics similar to those of the {@code HashMap}
@@ -99,7 +97,7 @@ import java.util.function.Consumer;
  * removed only after the weak references to it, both inside and outside of the
  * map, have been cleared by the garbage collector.
  *
- * <p> <strong>Implementation note:</strong> The values in a
+ * {@note [header="Implementation note:"] The values in a
  * {@code WeakHashMap} are held by ordinary strong references.  Thus care
  * should be taken to ensure that values do not strongly refer to their
  * own keys, either directly or indirectly, since that will prevent the keys
@@ -112,6 +110,7 @@ import java.util.function.Consumer;
  * {@code WeakReferences} before
  * inserting, as in: {@code m.put(key, new WeakReference(value))},
  * and then unwrapping upon each {@code get}.
+ * }
  *
  * <p>The iterators returned by the {@code iterator} method of the collections
  * returned by all of this class's "collection view methods" are

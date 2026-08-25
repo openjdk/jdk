@@ -43,7 +43,7 @@ import java.util.stream.Stream;
  * list.  Operations that index into the list will traverse the list from
  * the beginning or the end, whichever is closer to the specified index.
  *
- * <p><strong>Note that this implementation is not synchronized.</strong>
+ * {@note [header="Note that this implementation is not synchronized."]
  * If multiple threads access a linked list concurrently, and at least
  * one of the threads modifies the list structurally, it <i>must</i> be
  * synchronized externally.  (A structural modification is any operation
@@ -55,8 +55,8 @@ import java.util.stream.Stream;
  * If no such object exists, the list should be "wrapped" using the
  * {@link Collections#synchronizedList Collections.synchronizedList}
  * method.  This is best done at creation time, to prevent accidental
- * unsynchronized access to the list:<pre>
- *   List list = Collections.synchronizedList(new LinkedList(...));</pre>
+ * unsynchronized access to the list:
+ * <pre>List list = Collections.synchronizedList(new LinkedList(...));</pre>}
  *
  * <p>The iterators returned by this class's {@code iterator} and
  * {@code listIterator} methods are <i>fail-fast</i>: if the list is

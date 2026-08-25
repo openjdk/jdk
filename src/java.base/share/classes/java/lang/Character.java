@@ -212,14 +212,12 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  * as interchangeable and should not use instances for synchronization or
  * with {@linkplain java.lang.ref.Reference object references}.
  *
- * <div class="preview-block">
- *      <div class="preview-comment">
+ * {@previewNote [jep=401]
  *          When preview features are enabled, {@code Character} is a {@linkplain Class#isValue value class}.
  *          Use of value class instances for synchronization or with
  *          {@linkplain java.lang.ref.Reference object references} result in
  *          {@link IdentityException}.
- *      </div>
- * </div>
+ * }
  *
  * @spec https://www.unicode.org/reports/tr44 Unicode Character Database
  * @author  Lee Boynton
@@ -4652,10 +4650,10 @@ public final /*value*/ class Character
          * given character, or {@code null} if the character is not a
          * member of a defined block.
          *
-         * <p><b>Note:</b> This method cannot handle
+         * {@note This method cannot handle
          * <a href="Character.html#supplementary"> supplementary
          * characters</a>.  To support all Unicode characters, including
-         * supplementary characters, use the {@link #of(int)} method.
+         * supplementary characters, use the {@link #of(int)} method.}
          *
          * @param   c  The character in question
          * @return  The {@code UnicodeBlock} instance representing the
@@ -9468,8 +9466,7 @@ public final /*value*/ class Character
     /**
      * Returns a {@code Character} instance representing the specified
      * {@code char} value.
-     * <div class="preview-block">
-     *      <div class="preview-comment">
+     * {@previewNote [jep=401]
      *          <p>
      *              - When preview features are NOT enabled, {@code Character} is an identity class.
      *              If a new {@code Character} instance is not required, this method
@@ -9486,8 +9483,7 @@ public final /*value*/ class Character
      *              The {@code valueOf} behavior is the same as invoking the constructor,
      *              whether cached or not.
      *          </p>
-     *      </div>
-     * </div>
+     * }
      *
      * @param  c a char value.
      * @return a {@code Character} instance representing {@code c}.
@@ -10350,10 +10346,10 @@ public final /*value*/ class Character
      * </pre></blockquote>
      * <p> Many other Unicode characters are lowercase too.
      *
-     * <p><b>Note:</b> This method cannot handle <a
+     * {@note This method cannot handle <a
      * href="#supplementary"> supplementary characters</a>. To support
      * all Unicode characters, including supplementary characters, use
-     * the {@link #isLowerCase(int)} method.
+     * the {@link #isLowerCase(int)} method.}
      *
      * @param   ch   the character to be tested.
      * @return  {@code true} if the character is lowercase;
@@ -10416,10 +10412,10 @@ public final /*value*/ class Character
      * </pre></blockquote>
      * <p> Many other Unicode characters are uppercase too.
      *
-     * <p><b>Note:</b> This method cannot handle <a
+     * {@note This method cannot handle <a
      * href="#supplementary"> supplementary characters</a>. To support
      * all Unicode characters, including supplementary characters, use
-     * the {@link #isUpperCase(int)} method.
+     * the {@link #isUpperCase(int)} method.}
      *
      * @param   ch   the character to be tested.
      * @return  {@code true} if the character is uppercase;
@@ -10487,10 +10483,10 @@ public final /*value*/ class Character
      * </ul>
      * <p> Many other Unicode characters are titlecase too.
      *
-     * <p><b>Note:</b> This method cannot handle <a
+     * {@note This method cannot handle <a
      * href="#supplementary"> supplementary characters</a>. To support
      * all Unicode characters, including supplementary characters, use
-     * the {@link #isTitleCase(int)} method.
+     * the {@link #isTitleCase(int)} method.}
      *
      * @param   ch   the character to be tested.
      * @return  {@code true} if the character is titlecase;
@@ -10564,10 +10560,10 @@ public final /*value*/ class Character
      *
      * Many other character ranges contain digits as well.
      *
-     * <p><b>Note:</b> This method cannot handle <a
+     * {@note This method cannot handle <a
      * href="#supplementary"> supplementary characters</a>. To support
      * all Unicode characters, including supplementary characters, use
-     * the {@link #isDigit(int)} method.
+     * the {@link #isDigit(int)} method.}
      *
      * @param   ch   the character to be tested.
      * @return  {@code true} if the character is a digit;
@@ -10623,10 +10619,10 @@ public final /*value*/ class Character
      * <li>It has a value in a range defined by the UnicodeData file.
      * </ul>
      *
-     * <p><b>Note:</b> This method cannot handle <a
+     * {@note This method cannot handle <a
      * href="#supplementary"> supplementary characters</a>. To support
      * all Unicode characters, including supplementary characters, use
-     * the {@link #isDefined(int)} method.
+     * the {@link #isDefined(int)} method.}
      *
      * @param   ch   the character to be tested
      * @return  {@code true} if the character has a defined meaning
@@ -10684,10 +10680,10 @@ public final /*value*/ class Character
      * Not all letters have case. Many characters are
      * letters but are neither uppercase nor lowercase nor titlecase.
      *
-     * <p><b>Note:</b> This method cannot handle <a
+     * {@note This method cannot handle <a
      * href="#supplementary"> supplementary characters</a>. To support
      * all Unicode characters, including supplementary characters, use
-     * the {@link #isLetter(int)} method.
+     * the {@link #isLetter(int)} method.}
      *
      * @param   ch   the character to be tested.
      * @return  {@code true} if the character is a letter;
@@ -10752,10 +10748,10 @@ public final /*value*/ class Character
      * {@code Character.isDigit(char ch)} returns
      * {@code true} for the character.
      *
-     * <p><b>Note:</b> This method cannot handle <a
+     * {@note This method cannot handle <a
      * href="#supplementary"> supplementary characters</a>. To support
      * all Unicode characters, including supplementary characters, use
-     * the {@link #isLetterOrDigit(int)} method.
+     * the {@link #isLetterOrDigit(int)} method.}
      *
      * @param   ch   the character to be tested.
      * @return  {@code true} if the character is a letter or digit;
@@ -10924,10 +10920,10 @@ public final /*value*/ class Character
      * <li> {@code ch} is a connecting punctuation character (such as {@code '_'}).
      * </ul>
      *
-     * <p><b>Note:</b> This method cannot handle <a
+     * {@note This method cannot handle <a
      * href="#supplementary"> supplementary characters</a>. To support
      * all Unicode characters, including supplementary characters, use
-     * the {@link #isJavaIdentifierStart(int)} method.
+     * the {@link #isJavaIdentifierStart(int)} method.}
      *
      * @param   ch the character to be tested.
      * @return  {@code true} if the character may start a Java identifier;
@@ -10991,10 +10987,10 @@ public final /*value*/ class Character
      * {@code true} for the character
      * </ul>
      *
-     * <p><b>Note:</b> This method cannot handle <a
+     * {@note This method cannot handle <a
      * href="#supplementary"> supplementary characters</a>. To support
      * all Unicode characters, including supplementary characters, use
-     * the {@link #isJavaIdentifierPart(int)} method.
+     * the {@link #isJavaIdentifierPart(int)} method.}
      *
      * @param   ch      the character to be tested.
      * @return {@code true} if the character may be part of a
@@ -11068,10 +11064,10 @@ public final /*value*/ class Character
      * {@code 'VERTICAL TILDE'} is added to {@code Start} for backward
      * compatibility.
      *
-     * <p><b>Note:</b> This method cannot handle <a
+     * {@note This method cannot handle <a
      * href="#supplementary"> supplementary characters</a>. To support
      * all Unicode characters, including supplementary characters, use
-     * the {@link #isUnicodeIdentifierStart(int)} method.
+     * the {@link #isUnicodeIdentifierStart(int)} method.}
      *
      * @param   ch      the character to be tested.
      * @return  {@code true} if the character may start a Unicode
@@ -11159,10 +11155,10 @@ public final /*value*/ class Character
      * {@code ignorable} is added to {@code Continue} for backward
      * compatibility.
      *
-     * <p><b>Note:</b> This method cannot handle <a
+     * {@note This method cannot handle <a
      * href="#supplementary"> supplementary characters</a>. To support
      * all Unicode characters, including supplementary characters, use
-     * the {@link #isUnicodeIdentifierPart(int)} method.
+     * the {@link #isUnicodeIdentifierPart(int)} method.}
      *
      * @param   ch      the character to be tested.
      * @return  {@code true} if the character may be part of a
@@ -11246,10 +11242,10 @@ public final /*value*/ class Character
      * category value
      * </ul>
      *
-     * <p><b>Note:</b> This method cannot handle <a
+     * {@note This method cannot handle <a
      * href="#supplementary"> supplementary characters</a>. To support
      * all Unicode characters, including supplementary characters, use
-     * the {@link #isIdentifierIgnorable(int)} method.
+     * the {@link #isIdentifierIgnorable(int)} method.}
      *
      * @param   ch      the character to be tested.
      * @return  {@code true} if the character is an ignorable control
@@ -11422,10 +11418,10 @@ public final /*value*/ class Character
      * mappings, context-sensitive mappings, and 1:M character mappings, whereas
      * the {@code Character} case mapping methods cannot.
      *
-     * <p><b>Note:</b> This method cannot handle <a
+     * {@note This method cannot handle <a
      * href="#supplementary"> supplementary characters</a>. To support
      * all Unicode characters, including supplementary characters, use
-     * the {@link #toLowerCase(int)} method.
+     * the {@link #toLowerCase(int)} method.}
      *
      * @param   ch   the character to be converted.
      * @return  the lowercase equivalent of the character, if any;
@@ -11482,10 +11478,10 @@ public final /*value*/ class Character
      * mappings, context-sensitive mappings, and 1:M character mappings, whereas
      * the {@code Character} case mapping methods cannot.
      *
-     * <p><b>Note:</b> This method cannot handle <a
+     * {@note This method cannot handle <a
      * href="#supplementary"> supplementary characters</a>. To support
      * all Unicode characters, including supplementary characters, use
-     * the {@link #toUpperCase(int)} method.
+     * the {@link #toUpperCase(int)} method.}
      *
      * @param   ch   the character to be converted.
      * @return  the uppercase equivalent of the character, if any;
@@ -11541,10 +11537,10 @@ public final /*value*/ class Character
      * does not always return {@code true} for some ranges of
      * characters.
      *
-     * <p><b>Note:</b> This method cannot handle <a
+     * {@note This method cannot handle <a
      * href="#supplementary"> supplementary characters</a>. To support
      * all Unicode characters, including supplementary characters, use
-     * the {@link #toTitleCase(int)} method.
+     * the {@link #toTitleCase(int)} method.}
      *
      * @param   ch   the character to be converted.
      * @return  the titlecase equivalent of the character, if any;
@@ -11623,10 +11619,10 @@ public final /*value*/ class Character
      *     is returned.
      * </ul>
      *
-     * <p><b>Note:</b> This method cannot handle <a
+     * {@note This method cannot handle <a
      * href="#supplementary"> supplementary characters</a>. To support
      * all Unicode characters, including supplementary characters, use
-     * the {@link #digit(int, int)} method.
+     * the {@link #digit(int, int)} method.}
      *
      * @param   ch      the character to be converted.
      * @param   radix   the radix.
@@ -11712,10 +11708,10 @@ public final /*value*/ class Character
      * nonnegative integer (for example, a fractional value), then -2
      * is returned.
      *
-     * <p><b>Note:</b> This method cannot handle <a
+     * {@note This method cannot handle <a
      * href="#supplementary"> supplementary characters</a>. To support
      * all Unicode characters, including supplementary characters, use
-     * the {@link #getNumericValue(int)} method.
+     * the {@link #getNumericValue(int)} method.}
      *
      * @param   ch      the character to be converted.
      * @return  the numeric value of the character, as a nonnegative {@code int}
@@ -11819,10 +11815,10 @@ public final /*value*/ class Character
      * <li> {@code PARAGRAPH_SEPARATOR}
      * </ul>
      *
-     * <p><b>Note:</b> This method cannot handle <a
+     * {@note This method cannot handle <a
      * href="#supplementary"> supplementary characters</a>. To support
      * all Unicode characters, including supplementary characters, use
-     * the {@link #isSpaceChar(int)} method.
+     * the {@link #isSpaceChar(int)} method.}
      *
      * @param   ch      the character to be tested.
      * @return  {@code true} if the character is a space character;
@@ -11880,10 +11876,10 @@ public final /*value*/ class Character
      * <li> It is {@code '\u005Cu001F'}, U+001F UNIT SEPARATOR.
      * </ul>
      *
-     * <p><b>Note:</b> This method cannot handle <a
+     * {@note This method cannot handle <a
      * href="#supplementary"> supplementary characters</a>. To support
      * all Unicode characters, including supplementary characters, use
-     * the {@link #isWhitespace(int)} method.
+     * the {@link #isWhitespace(int)} method.}
      *
      * @param   ch the character to be tested.
      * @return  {@code true} if the character is a Java whitespace
@@ -11933,10 +11929,10 @@ public final /*value*/ class Character
      * through {@code '\u005Cu001F'} or in the range
      * {@code '\u005Cu007F'} through {@code '\u005Cu009F'}.
      *
-     * <p><b>Note:</b> This method cannot handle <a
+     * {@note This method cannot handle <a
      * href="#supplementary"> supplementary characters</a>. To support
      * all Unicode characters, including supplementary characters, use
-     * the {@link #isISOControl(int)} method.
+     * the {@link #isISOControl(int)} method.}
      *
      * @param   ch      the character to be tested.
      * @return  {@code true} if the character is an ISO control character;
@@ -11975,10 +11971,10 @@ public final /*value*/ class Character
     /**
      * Returns a value indicating a character's general category.
      *
-     * <p><b>Note:</b> This method cannot handle <a
+     * {@note This method cannot handle <a
      * href="#supplementary"> supplementary characters</a>. To support
      * all Unicode characters, including supplementary characters, use
-     * the {@link #getType(int)} method.
+     * the {@link #getType(int)} method.}
      *
      * @param   ch      the character to be tested.
      * @return  a value of type {@code int} representing the
@@ -12104,10 +12100,10 @@ public final /*value*/ class Character
      * visual ordering of text. The directionality value of undefined
      * {@code char} values is {@code DIRECTIONALITY_UNDEFINED}.
      *
-     * <p><b>Note:</b> This method cannot handle <a
+     * {@note This method cannot handle <a
      * href="#supplementary"> supplementary characters</a>. To support
      * all Unicode characters, including supplementary characters, use
-     * the {@link #getDirectionality(int)} method.
+     * the {@link #getDirectionality(int)} method.}
      *
      * @param  ch {@code char} for which the directionality property
      *            is requested.
@@ -12193,10 +12189,10 @@ public final /*value*/ class Character
      * parenthesis</i>.  This will appear as a "(" in text that is
      * left-to-right but as a ")" in text that is right-to-left.
      *
-     * <p><b>Note:</b> This method cannot handle <a
+     * {@note This method cannot handle <a
      * href="#supplementary"> supplementary characters</a>. To support
      * all Unicode characters, including supplementary characters, use
-     * the {@link #isMirrored(int)} method.
+     * the {@link #isMirrored(int)} method.}
      *
      * @param  ch {@code char} for which the mirrored property is requested
      * @return {@code true} if the char is mirrored, {@code false}

@@ -74,7 +74,7 @@ package java.util;
  *   ordering as the input sorted map.</li>
  * </ol>
  *
- * <p><strong>Note</strong>: several methods return submaps with restricted key
+ * {@note Several methods return submaps with restricted key
  * ranges. Such ranges are <em>half-open</em>, that is, they include their low
  * endpoint but not their high endpoint (where applicable).  If you need a
  * <em>closed range</em> (which includes both endpoints), and the key type
@@ -83,14 +83,14 @@ package java.util;
  * {@code successor(highEndpoint)}.  For example, suppose that {@code m}
  * is a map whose keys are strings.  The following idiom obtains a view
  * containing all of the key-value mappings in {@code m} whose keys are
- * between {@code low} and {@code high}, inclusive:<pre>
- *   SortedMap&lt;String, V&gt; sub = m.subMap(low, high+"\0");</pre>
+ * between {@code low} and {@code high}, inclusive:
+ * <pre>SortedMap&lt;String, V&gt; sub = m.subMap(low, high+"\0");</pre>
  *
  * A similar technique can be used to generate an <em>open range</em>
  * (which contains neither endpoint).  The following idiom obtains a
  * view containing all of the key-value mappings in {@code m} whose keys
- * are between {@code low} and {@code high}, exclusive:<pre>
- *   SortedMap&lt;String, V&gt; sub = m.subMap(low+"\0", high);</pre>
+ * are between {@code low} and {@code high}, exclusive:
+ * <pre>SortedMap&lt;String, V&gt; sub = m.subMap(low+"\0", high);</pre>}
  *
  * <p>This interface is a member of the
  * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">

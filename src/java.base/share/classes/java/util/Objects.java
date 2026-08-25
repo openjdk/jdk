@@ -160,13 +160,11 @@ public final class Objects {
      * overridden}
      *
      * @apiNote
-     * <div class="preview-block">
-     *      <div class="preview-comment">
+     * {@previewNote [jep=401]
      *          Note that, like ==, the hash code string exposes information about a value object's
      *          private fields that might otherwise be hidden by an identity object.
      *          Developers should be cautious about storing sensitive secrets in value object fields.
-     *      </div>
-     * </div>
+     * }
      *
      * @implNote
      * This method constructs a string for an object without calling

@@ -63,14 +63,12 @@ import static java.lang.String.COMPACT_STRINGS;
  * as interchangeable and should not use instances for synchronization or
  * with {@linkplain java.lang.ref.Reference object references}.
  *
- * <div class="preview-block">
- *      <div class="preview-comment">
+ * {@previewNote [jep=401]
  *          When preview features are enabled, {@code Integer} is a {@linkplain Class#isValue value class}.
  *          Use of value class instances for synchronization or with
  *          {@linkplain java.lang.ref.Reference object references} result in
  *          {@link IdentityException}.
- *      </div>
- * </div>
+ * }
  *
  * <p>Implementation note: The implementations of the "bit twiddling"
  * methods (such as {@link #highestOneBit(int) highestOneBit} and
@@ -996,8 +994,7 @@ public final /*value*/ class Integer extends Number
     /**
      * Returns an {@code Integer} instance representing the specified
      * {@code int} value.
-     * <div class="preview-block">
-     *      <div class="preview-comment">
+     * {@previewNote [jep=401]
      *          <p>
      *              - When preview features are NOT enabled, {@code Integer} is an identity class.
      *              If a new {@code Integer} instance is not
@@ -1013,8 +1010,7 @@ public final /*value*/ class Integer extends Number
      *              The {@code valueOf} behavior is the same as invoking the constructor,
      *              whether cached or not.
      *          </p>
-     *      </div>
-     * </div>
+     * }
      *
      * @param  i an {@code int} value.
      * @return an {@code Integer} instance representing {@code i}.

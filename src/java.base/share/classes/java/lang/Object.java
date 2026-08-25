@@ -33,8 +33,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * Every class has {@code Object} as a superclass. All objects,
  * including arrays, implement the methods of this class.
  *
- * <div class="preview-block">
- *      <div class="preview-comment">
+ * {@previewNote [jep=401]
  *          When preview features are enabled, subclasses of {@code java.lang.Object}
  *          are either {@linkplain Class#isValue value classes} or identity classes.
  *          A <em>value object</em> is an instance of a non-abstract value class. All
@@ -53,8 +52,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *          A {@linkplain java.lang.ref.Reference Reference object} can only refer to an
  *          object with identity. Creating a reference object with a value object as
  *          the referent throws {@code IdentityException}.
- *      </div>
- * </div>
+ * }
  *
  * @see     java.lang.Class
  * @since   1.0
@@ -73,15 +71,15 @@ public class Object {
      * {@code Class} object is the object that is locked by {@code
      * static synchronized} methods of the represented class.
      *
-     * <p><b>The actual result type is {@code Class<? extends |X|>}
+     * <p><b>The actual result type is {@code Class<? extends |X|>}</b>
      * where {@code |X|} is the erasure of the static type of the
-     * expression on which {@code getClass} is called.</b> For
+     * expression on which {@code getClass} is called. For
      * example, no cast is required in this code fragment:</p>
      *
-     * <p>
-     * {@code Number n = 0;                             }<br>
-     * {@code Class<? extends Number> c = n.getClass(); }
-     * </p>
+     * <pre>{@code
+     * Number n = 0;
+     * Class<? extends Number> c = n.getClass();
+     * }</pre>
      *
      * @return The {@code Class} object that represents the runtime
      *         class of this object.
@@ -338,14 +336,13 @@ public class Object {
      * </ul>
      * <p>
      * Only one thread at a time can own an object's monitor.
-     * <div class="preview-block">
-     *      <div class="preview-comment">
+     *
+     * {@previewNote [jep=401]
      *          The {@code notify} method requires that the current thread be the owner
      *          of the object's monitor. Since it is not possible to synchronize on a
      *          value object, an attempt to call this method on a value object will
      *          always fail with {@code IllegalMonitorStateException}.
-     *      </div>
-     * </div>
+     * }
      *
      * @throws  IllegalMonitorStateException  if the current thread is not
      *               the owner of this object's monitor.
@@ -372,14 +369,12 @@ public class Object {
      * description of the ways in which a thread can become the owner of
      * a monitor.
      *
-     * <div class="preview-block">
-     *      <div class="preview-comment">
+     * {@previewNote [jep=401]
      *          The {@code notifyAll} method requires that the current thread be the owner
      *          of the object's monitor. Since it is not possible to synchronize on a
      *          value object, an attempt to call this method on a value object will
      *          always fail with {@code IllegalMonitorStateException}.
-     *      </div>
-     * </div>
+     * }
      *
      * @throws  IllegalMonitorStateException  if the current thread is not
      *               the owner of this object's monitor.
@@ -397,14 +392,12 @@ public class Object {
      * had been called. See the specification of the {@link #wait(long, int)} method
      * for details.
      *
-     * <div class="preview-block">
-     *      <div class="preview-comment">
+     * {@previewNote [jep=401]
      *          The {@code wait} method requires that the current thread be the owner
      *          of the object's monitor. Since it is not possible to synchronize on a
      *          value object, an attempt to call this method on a value object will
      *          always fail with {@code IllegalMonitorStateException}.
-     *      </div>
-     * </div>
+     * }
      *
      * @throws IllegalMonitorStateException if the current thread is not
      *         the owner of the object's monitor
@@ -429,14 +422,12 @@ public class Object {
      * had been called. See the specification of the {@link #wait(long, int)} method
      * for details.
      *
-     * <div class="preview-block">
-     *      <div class="preview-comment">
+     * {@previewNote [jep=401]
      *          The {@code wait} method requires that the current thread be the owner
      *          of the object's monitor. Since it is not possible to synchronize on a
      *          value object, an attempt to call this method on a value object will
      *          always fail with {@code IllegalMonitorStateException}.
-     *      </div>
-     * </div>
+     * }
      *
      * @param  timeoutMillis the maximum time to wait, in milliseconds
      * @throws IllegalArgumentException if {@code timeoutMillis} is negative
@@ -534,14 +525,12 @@ public class Object {
      * this exception is thrown. This exception is not thrown until the lock status of
      * this object has been restored as described above.
      *
-     * <div class="preview-block">
-     *      <div class="preview-comment">
+     * {@previewNote [jep=401]
      *          The {@code wait} method requires that the current thread be the owner
      *          of the object's monitor. Since it is not possible to synchronize on a
      *          value object, an attempt to call this method on a value object will
      *          always fail with {@code IllegalMonitorStateException}.
-     *      </div>
-     * </div>
+     * }
      *
      * @apiNote
      * The recommended approach to waiting is to check the condition being awaited in
@@ -596,17 +585,16 @@ public class Object {
      * determines that there are no more references to the object.
      * An identity class may override the {@code finalize} method to dispose of
      * system resources or to perform other cleanup.
-     * <div class="preview-block">
-     *      <div class="preview-comment">
+     *
+     * {@previewNote [jep=401]
      *          The {@code finalize} method of a value class is never directly
      *          invoked by the garbage collector. This includes the case where an
      *          abstract value class declares a {@code finalize} method and the
      *          class is extended by an identity class; the garbage collector never
      *          directly invokes the {@code finalize} method declared by the
      *          abstract value class.
-     *      </div>
-     * </div>
-     * <p>
+     * }
+     *
      * <b>When running in a Java virtual machine in which finalization has been
      * disabled or removed, the garbage collector will never call {@code finalize()}
      * for any object. In a Java virtual machine in which finalization is

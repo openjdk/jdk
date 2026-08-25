@@ -364,7 +364,8 @@ public final class System {
      * the difference between two such values, obtained within the same
      * instance of a Java virtual machine, is computed.
      *
-     * <p>For example, to measure how long some code takes to execute:
+     * @note [header=Examples:]
+     * To measure how long some code takes to execute:
      * <pre> {@code
      * long startTime = System.nanoTime();
      * // ... the code being measured ...
@@ -487,20 +488,17 @@ public final class System {
      * hashCode().
      * The hash code for the null reference is zero.
      *
-     * <div class="preview-block">
-     *      <div class="preview-comment">
+     * {@previewNote [jep=401]
      *          The "identity hash code" of a {@linkplain Class#isValue() value object}
      *          is computed by combining the identity hash codes of the value object's fields recursively.
-     *      </div>
-     * </div>
+     * }
+     *
      * @apiNote
-     * <div class="preview-block">
-     *      <div class="preview-comment">
+     * {@previewNote [jep=401]
      *          Note that, like ==, this hash code exposes information about a value object's
      *          private fields that might otherwise be hidden by an identity object.
      *          Developers should be cautious about storing sensitive secrets in value object fields.
-     *      </div>
-     * </div>
+     * }
      *
      * @param x object for which the hashCode is to be calculated
      * @return  the hashCode
@@ -643,9 +641,9 @@ public final class System {
      * {@link Locale##default_locale Default Locale} section in the {@code Locale}
      * class description may also be obtained with this method.
      *
-     * @apiNote
-     * <strong>Changing a standard system property may have unpredictable results
-     * unless otherwise specified.</strong>
+     * @apiNote [kind=important id=system-properties-api-note]
+     * Changing a standard system property may have unpredictable results
+     * unless otherwise specified.
      * Property values may be cached during initialization or on first use.
      * Setting a standard property after initialization using {@link #getProperties()},
      * {@link #setProperties(Properties)}, {@link #setProperty(String, String)}, or
@@ -714,10 +712,10 @@ public final class System {
      * {@code null}, then the current set of system properties is
      * forgotten.
      *
-     * @apiNote
-     * <strong>Changing a standard system property may have unpredictable results
-     * unless otherwise specified</strong>.
-     * See {@linkplain #getProperties getProperties} for details.
+     * @apiNote [kind=important]
+     * Changing a standard system property may have unpredictable results
+     * unless otherwise specified.
+     * See {@linkplain ##system-properties-api-note getProperties} for details.
      *
      * @param      props   the new system properties.
      * @see        #getProperties
@@ -739,10 +737,10 @@ public final class System {
      * properties is first created and initialized in the same manner as
      * for the {@code getProperties} method.
      *
-     * @apiNote
-     * <strong>Changing a standard system property may have unpredictable results
-     * unless otherwise specified</strong>.
-     * See {@linkplain #getProperties getProperties} for details.
+     * @apiNote [kind=important]
+     * Changing a standard system property may have unpredictable results
+     * unless otherwise specified.
+     * See {@linkplain ##system-properties-api-note getProperties} for details.
      *
      * @param      key   the name of the system property.
      * @return     the string value of the system property,
@@ -783,10 +781,10 @@ public final class System {
     /**
      * Sets the system property indicated by the specified key.
      *
-     * @apiNote
-     * <strong>Changing a standard system property may have unpredictable results
-     * unless otherwise specified</strong>.
-     * See {@linkplain #getProperties getProperties} for details.
+     * @apiNote [kind=important]
+     * Changing a standard system property may have unpredictable results
+     * unless otherwise specified.
+     * See {@linkplain ##system-properties-api-note getProperties} for details.
      *
      * @param      key   the name of the system property.
      * @param      value the value of the system property.
@@ -809,10 +807,10 @@ public final class System {
     /**
      * Removes the system property indicated by the specified key.
      *
-     * @apiNote
-     * <strong>Changing a standard system property may have unpredictable results
-     * unless otherwise specified</strong>.
-     * See {@linkplain #getProperties getProperties} method for details.
+     * @apiNote [kind=important]
+     * Changing a standard system property may have unpredictable results
+     * unless otherwise specified.
+     * See {@linkplain ##system-properties-api-note getProperties} method for details.
      *
      * @param      key   the name of the system property to be removed.
      * @return     the previous string value of the system property,

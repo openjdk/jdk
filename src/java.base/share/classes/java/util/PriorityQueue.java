@@ -62,22 +62,22 @@ import jdk.internal.util.ArraysSupport;
  * the priority queue in any particular order. If you need ordered
  * traversal, consider using {@code Arrays.sort(pq.toArray())}.
  *
- * <p><strong>Note that this implementation is not synchronized.</strong>
+ * {@note [header="Note that this implementation is not synchronized."]
  * Multiple threads should not access a {@code PriorityQueue}
  * instance concurrently if any of the threads modifies the queue.
  * Instead, use the thread-safe {@link
- * java.util.concurrent.PriorityBlockingQueue} class.
+ * java.util.concurrent.PriorityBlockingQueue} class.}
  *
- * <p>Implementation note: this implementation provides
+ * <p>This class is a member of the
+ * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
+ * Java Collections Framework</a>.
+ *
+ * @implNote This implementation provides
  * O(log(n)) time for the enqueuing and dequeuing methods
  * ({@code offer}, {@code poll}, {@code remove()} and {@code add});
  * linear time for the {@code remove(Object)} and {@code contains(Object)}
  * methods; and constant time for the retrieval methods
  * ({@code peek}, {@code element}, and {@code size}).
- *
- * <p>This class is a member of the
- * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
- * Java Collections Framework</a>.
  *
  * @since 1.5
  * @author Josh Bloch, Doug Lea

@@ -37,16 +37,15 @@ import javax.annotation.processing.SupportedSourceVersion;
  * appropriate for the {@link SourceVersion#RELEASE_6 RELEASE_6}
  * source version.
  *
- * @apiNote
- * <p id=note_for_subclasses><strong>WARNING:</strong> The {@code
- * AnnotationValueVisitor} interface implemented by this class may
+ * @note [id=note_for_subclasses header=Warning: kind=bordered]
+ * The {@code AnnotationValueVisitor} interface implemented by this class may
  * have methods added to it in the future to accommodate new,
  * currently unknown, language structures added to future versions of
  * the Java programming language.  Therefore, methods whose
  * names begin with {@code "visit"} may be added to this class in the
  * future; to avoid incompatibilities, classes and subclasses which
  * extend this class should not declare any instance methods with
- * names beginning with {@code "visit"}.</p>
+ * names beginning with {@code "visit"}.
  *
  * <p>When such a new visit method is added, the default
  * implementation in this class will be to directly or indirectly call

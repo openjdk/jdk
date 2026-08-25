@@ -86,7 +86,7 @@ import jdk.internal.access.SharedSecrets;
  * are {@link Comparable}, this class may use comparison order among
  * keys to help break ties.
  *
- * <p><strong>Note that this implementation is not synchronized.</strong>
+ * {@note [header="Note that this implementation is not synchronized."]
  * If multiple threads access a hash map concurrently, and at least one of
  * the threads modifies the map structurally, it <i>must</i> be
  * synchronized externally.  (A structural modification is any operation
@@ -98,8 +98,8 @@ import jdk.internal.access.SharedSecrets;
  * If no such object exists, the map should be "wrapped" using the
  * {@link Collections#synchronizedMap Collections.synchronizedMap}
  * method.  This is best done at creation time, to prevent accidental
- * unsynchronized access to the map:<pre>
- *   Map m = Collections.synchronizedMap(new HashMap(...));</pre>
+ * unsynchronized access to the map:
+ * <pre>Map m = Collections.synchronizedMap(new HashMap(...));</pre>}
  *
  * <p>The iterators returned by all of this class's "collection view methods"
  * are <i>fail-fast</i>: if the map is structurally modified at any time after

@@ -251,9 +251,9 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * transformation to the elements of the stream, and then flattening the
      * resulting elements into a new stream.
      *
-     * <p><b>Examples.</b>
+     * @note [header=Examples:]
      *
-     * <p>If {@code orders} is a stream of purchase orders, and each purchase
+     * If {@code orders} is a stream of purchase orders, and each purchase
      * order contains a collection of line items, then the following produces a
      * stream containing all the line items in all the orders:
      * <pre>{@code
@@ -381,9 +381,9 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * the returned stream. This can be provided in the form of explicit type declarations for
      * the lambda parameters or as an explicit type argument to the {@code mapMulti} call.
      *
-     * <p><b>Examples</b>
+     * @note [header=Examples:]
      *
-     * <p>Given a stream of {@code Number} objects, the following
+     * Given a stream of {@code Number} objects, the following
      * produces a list containing only the {@code Integer} objects:
      * <pre>{@code
      *     Stream<Number> numbers = ... ;
@@ -1122,7 +1122,8 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * <p>This is a <a href="package-summary.html#StreamOps">terminal
      * operation</a>.
      *
-     * @apiNote There are many existing classes in the JDK whose signatures are
+     * @note [header=Examples:]
+     * There are many existing classes in the JDK whose signatures are
      * well-suited for use with method references as arguments to {@code collect()}.
      * For example, the following will accumulate strings into an {@code ArrayList}:
      * <pre>{@code
@@ -1186,7 +1187,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * with non-thread-safe data structures (such as {@code ArrayList}), no
      * additional synchronization is needed for a parallel reduction.
      *
-     * @apiNote
+     * @note [header=Examples:]
      * The following will accumulate strings into a List:
      * <pre>{@code
      *     List<String> asList = stringStream.collect(Collectors.toList());

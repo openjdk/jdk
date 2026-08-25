@@ -194,7 +194,7 @@ public abstract class FileSystem
      * Java virtual machine. When an I/O error occurs, perhaps because a file
      * store is not accessible, then it is not returned by the iterator.
      *
-     * <p> <b>Usage Example:</b>
+     * @note [header="Example:"]
      * Suppose we want to print the space usage for all file stores:
      * {@snippet lang=java :
      *     for (FileStore store: FileSystems.getDefault().getFileStores()) {
@@ -426,7 +426,7 @@ public abstract class FileSystem
      * <i>(optional operation)</i>. The resulting lookup service may be used to
      * lookup user or group names.
      *
-     * <p> <b>Usage Example:</b>
+     * @note [header="Example:"]
      * Suppose we want to make "joe" the owner of a file:
      * {@snippet lang=java :
      *     UserPrincipalLookupService lookupService = FileSystems.getDefault().getUserPrincipalLookupService();

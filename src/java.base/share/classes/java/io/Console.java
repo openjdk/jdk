@@ -72,21 +72,8 @@ import sun.nio.cs.UTF_8;
  * specified {@code Locale}, or the
  * {@link Locale##default_locale default format Locale} to produce localized
  * formatted strings.
- * <p>
- * Invoking {@code close()} on the objects returned by the {@link #reader()}
- * and the {@link #writer()} will not close the underlying stream of those
- * objects.
- * <p>
- * The console-read methods return {@code null} when the end of the
- * console input stream is reached, for example by typing control-D on
- * Unix or control-Z on Windows.  Subsequent read operations will succeed
- * if additional characters are later entered on the console's input
- * device.
- * <p>
- * Unless otherwise specified, passing a {@code null} argument to any method
- * in this class will cause a {@link NullPointerException} to be thrown.
- * <p>
- * <b>Security note:</b>
+ *
+ * {@note [header="Security note:"]
  * If an application needs to read a password or other secure data, it should
  * use {@link #readPassword()} or {@link #readPassword(String, Object...)} and
  * manually zero the returned character array after processing to minimize the
@@ -101,6 +88,20 @@ import sun.nio.cs.UTF_8;
  *     java.util.Arrays.fill(passwd, ' ');
  * }
  * }
+ * }
+ *
+ * Invoking {@code close()} on the objects returned by the {@link #reader()}
+ * and the {@link #writer()} will not close the underlying stream of those
+ * objects.
+ * <p>
+ * The console-read methods return {@code null} when the end of the
+ * console input stream is reached, for example by typing control-D on
+ * Unix or control-Z on Windows.  Subsequent read operations will succeed
+ * if additional characters are later entered on the console's input
+ * device.
+ * <p>
+ * Unless otherwise specified, passing a {@code null} argument to any method
+ * in this class will cause a {@link NullPointerException} to be thrown.
  *
  * @author  Xueming Shen
  * @since   1.6

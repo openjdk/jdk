@@ -50,14 +50,12 @@ import java.util.Optional;
  * as interchangeable and should not use instances for synchronization or
  * with {@linkplain java.lang.ref.Reference object references}.
  *
- * <div class="preview-block">
- *      <div class="preview-comment">
+ * {@previewNote [jep=401]
  *          When preview features are enabled, {@code Boolean} is a {@linkplain Class#isValue value class}.
  *          Use of value class instances for synchronization or with
  *          {@linkplain java.lang.ref.Reference object references} result in
  *          {@link IdentityException}.
- *      </div>
- * </div>
+ * }
  *
  * @author  Arthur van Hoff
  * @since   1.0
@@ -169,8 +167,7 @@ public final /*value*/ class Boolean
     /**
      * Returns a {@code Boolean} instance representing the specified
      * {@code boolean} value.
-     * <div class="preview-block">
-     *      <div class="preview-comment">
+     * {@previewNote [jep=401]
      *          <p>
      *              - When preview features are NOT enabled, {@code Boolean} is an identity class.
      *              If the specified {@code boolean} value is {@code true},
@@ -186,8 +183,7 @@ public final /*value*/ class Boolean
      *              - When preview features are enabled, {@code Boolean} is a {@linkplain Class#isValue value class}.
      *              The {@code valueOf} behavior is the same as invoking the constructor.
      *          </p>
-     *      </div>
-     * </div>
+     * }
      *
      * @param  b a boolean value.
      * @return a {@code Boolean} instance representing {@code b}.

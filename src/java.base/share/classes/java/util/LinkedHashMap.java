@@ -110,7 +110,7 @@ import java.util.function.Function;
  * than for {@code HashMap}, as iteration times for this class are unaffected
  * by capacity.
  *
- * <p><strong>Note that this implementation is not synchronized.</strong>
+ * {@note [header="Note that this implementation is not synchronized."]
  * If multiple threads access a linked hash map concurrently, and at least
  * one of the threads modifies the map structurally, it <em>must</em> be
  * synchronized externally.  This is typically accomplished by
@@ -119,8 +119,8 @@ import java.util.function.Function;
  * If no such object exists, the map should be "wrapped" using the
  * {@link Collections#synchronizedMap Collections.synchronizedMap}
  * method.  This is best done at creation time, to prevent accidental
- * unsynchronized access to the map:<pre>
- *   Map m = Collections.synchronizedMap(new LinkedHashMap(...));</pre>
+ * unsynchronized access to the map:
+ * <pre>Map m = Collections.synchronizedMap(new LinkedHashMap(...));</pre>}
  *
  * A structural modification is any operation that adds or deletes one or more
  * mappings or, in the case of access-ordered linked hash maps, affects
@@ -128,7 +128,7 @@ import java.util.function.Function;
  * the value associated with a key that is already contained in the map is not
  * a structural modification.  <strong>In access-ordered linked hash maps,
  * merely querying the map with {@code get} is a structural modification.
- * </strong>)
+ * </strong>
  *
  * <p>The iterators returned by the {@code iterator} method of the collections
  * returned by all of this class's collection view methods are
