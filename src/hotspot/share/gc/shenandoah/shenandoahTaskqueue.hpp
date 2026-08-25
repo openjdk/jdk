@@ -44,7 +44,7 @@ class BufferedOverflowTaskQueue: public OverflowTaskQueue<E, MT, N>
 public:
   typedef OverflowTaskQueue<E, MT, N> taskqueue_t;
 
-  BufferedOverflowTaskQueue() : _buf_empty(true) {};
+  BufferedOverflowTaskQueue() : _buf_empty(true), _overflow_empty(false) {};
 
   TASKQUEUE_STATS_ONLY(using taskqueue_t::stats;)
 
@@ -64,6 +64,7 @@ public:
 
 private:
   bool _buf_empty;
+  bool _overflow_empty;
   E _elem;
 };
 

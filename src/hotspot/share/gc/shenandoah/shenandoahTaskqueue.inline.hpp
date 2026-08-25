@@ -39,31 +39,48 @@ bool BufferedOverflowTaskQueue<E, MT, N>::pop(E &t) {
     return true;
   }
 
+  // If we have overflow, try to maintain reasonable queue population for
+  // other workers to steal, while leaving enough space for local pushes.
+  bool has_overflow = !_overflow_empty;
+  if (has_overflow) {
+    constexpr int frac = 2;
+    uint size = taskqueue_t::size();
+    uint fill = (N/frac > size) ? (N/frac - size) : 0;
+    for (uint i = 0; i < fill && taskqueue_t::pop_overflow(t); i++) {
+      bool pushed = taskqueue_t::try_push_to_taskqueue(t);
+      assert(pushed, "Should always succeed pushing");
+    }
+    _overflow_empty = taskqueue_t::overflow_empty();
+  }
+
+  // Now pop from local.
   if (taskqueue_t::pop_local(t)) {
     return true;
   }
 
-  return taskqueue_t::pop_overflow(t);
+  // Unlikely: someone might have stolen from local queue, despite our replenishment.
+  // Take one from overflow queue again, or confirm there is no more work.
+  return has_overflow && taskqueue_t::pop_overflow(t);
 }
 
 template <class E, MemTag MT, unsigned int N>
 bool BufferedOverflowTaskQueue<E, MT, N>::push(E t) {
   if (_buf_empty) {
-    _elem = t;
     _buf_empty = false;
-  } else {
-    bool pushed = taskqueue_t::push(_elem);
-    assert(pushed, "overflow queue should always succeed pushing");
-    _elem = t;
+  } else if (!taskqueue_t::try_push_to_taskqueue(_elem)) {
+    taskqueue_t::overflow_stack()->push(_elem);
+    _overflow_empty = false;
   }
+  _elem = t;
   return true;
 }
 
 template <class E, MemTag MT, unsigned int N>
 void BufferedOverflowTaskQueue<E, MT, N>::clear() {
-    _buf_empty = true;
-    taskqueue_t::set_empty();
-    taskqueue_t::overflow_stack()->clear();
+  _buf_empty = true;
+  _overflow_empty = true;
+  taskqueue_t::set_empty();
+  taskqueue_t::overflow_stack()->clear();
 }
 
 
