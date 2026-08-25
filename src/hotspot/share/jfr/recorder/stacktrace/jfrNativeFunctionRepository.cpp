@@ -28,6 +28,7 @@
 #include "jvm_io.h"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
+#include "utilities/macros.hpp"
 
 #ifdef LINUX
 #include <elf.h>
@@ -64,23 +65,24 @@ class JfrNativeLibrary : public JfrCHeapObj {
   }
 };
 
-// Sampled pcs are stored in bitmaps, each covering 256-byte address range.
-// This allows storing only one range object per 256 pcs in a map.
+// Sampled pcs are stored in bitmaps, each covering a range of
+// 256 instruction addresses (256 bytes on x86, 1024 bytes on AArch64).
+// This allows storing only one range object per multiple neighboring pcs in a map.
 // NativeFunction ID consists of the range ID and an offset within the range.
 class JfrNativeAddressRange {
  private:
-  static constexpr int SHIFT = 8;
-  static constexpr uintptr_t SIZE = 1 << SHIFT;
-  static constexpr uintptr_t MASK = SIZE - 1;
+  // Minimal address alignment for architectures with fixed-width instructions
+  static constexpr int ALIGN_SHIFT = 0 AARCH64_ONLY(+2) PPC64_ONLY(+2);
+  static constexpr int BITS_SHIFT = 8;
+  static constexpr uintptr_t MASK = (uintptr_t(1) << BITS_SHIFT) - 1;
 
-  // TODO: use denser bitmap on AArch64, where pcs are 4-byte aligned
-  uintptr_t _bitmap[SIZE / BitsPerWord]; // referenced pcs within the range
+  uintptr_t _bitmap[(1 << BITS_SHIFT) / BitsPerWord]; // referenced pcs within the range
 
  public:
   traceid _id;
 
   static traceid key(uintptr_t pc) {
-    return pc >> SHIFT;
+    return pc >> (ALIGN_SHIFT + BITS_SHIFT);
   }
 
   JfrNativeAddressRange() : _id(0) {
@@ -88,12 +90,12 @@ class JfrNativeAddressRange {
   }
 
   traceid function_id_for(uintptr_t pc) const {
-    return (_id << SHIFT) | (pc & MASK);
+    return (_id << BITS_SHIFT) | ((pc >> ALIGN_SHIFT) & MASK);
   }
 
   // Returns true if the pc was not referenced before.
   bool set(uintptr_t pc) {
-    const uintptr_t bit = pc & MASK;
+    const uintptr_t bit = (pc >> ALIGN_SHIFT) & MASK;
     uintptr_t& word = _bitmap[bit / BitsPerWord];
     const uintptr_t mask = static_cast<uintptr_t>(1) << (bit % BitsPerWord);
     if ((word & mask) != 0) {
