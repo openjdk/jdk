@@ -93,6 +93,10 @@ public final class LinuxHelper {
                 desktopFileName);
     }
 
+    public static boolean isDesktopFileValidateCommandAvailable() {
+        return DesktopFileValidateAvailable.VALUE;
+    }
+
     static Path getServiceUnitFilePath(JPackageCommand cmd, String launcherName) {
         cmd.verifyIsOfType(PackageType.LINUX);
         return cmd.pathToUnpackedPackageFile(
@@ -552,6 +556,10 @@ public final class LinuxHelper {
 
         TKit.trace(String.format("Check [%s] file BEGIN", desktopFile));
 
+        if (isDesktopFileValidateCommandAvailable()) {
+            Executor.of("desktop-file-validate", desktopFile.toString()).dumpOutput().execute();
+        }
+
         var launcherName = launcherNameFromDesktopFile(cmd, desktopFile);
 
         var data = new DesktopFile(desktopFile, true);
@@ -997,6 +1005,11 @@ public final class LinuxHelper {
                 VALUE = null;
             }
         }
+    }
+
+    private static final class DesktopFileValidateAvailable {
+
+        static final boolean VALUE = Result.of(Executor.of("desktop-file-validate", "-h")::executeWithoutExitCodeCheck).hasValue();
     }
 
     private static final Pattern XDG_CMD_ICON_SIZE_PATTERN = Pattern.compile("\\s--size\\s+(\\d+)\\b");
