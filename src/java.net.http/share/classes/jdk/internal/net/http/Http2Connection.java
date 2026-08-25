@@ -68,6 +68,7 @@ import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.MinimalFuture;
 import jdk.internal.net.http.common.SequentialScheduler;
+import jdk.internal.net.http.common.TimeSource;
 import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.common.ValidatingHeadersConsumer;
 import jdk.internal.net.http.common.ValidatingHeadersConsumer.Context;
@@ -1551,6 +1552,17 @@ class Http2Connection implements Closeable {
         // must be done with "stateLock" held to co-ordinate idle connection management
         stateLock.lock();
         try {
+
+            // Idle connection timeout processing might be delayed when this
+            // connection checkout request has arrived. Hence, first check for
+            // the timeout.
+            var timedOut = idleConnectionTimeoutEvent != null &&
+                    !idleConnectionTimeoutEvent.deadline().isAfter(TimeSource.now());
+            if (timedOut) {
+                setFinalStream();
+                return false;
+            }
+
             cancelIdleCloseEvent();
             // consider the reservation successful only if the connection is open and
             // hasn't been chosen for idle termination

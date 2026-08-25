@@ -52,6 +52,7 @@ import jdk.internal.net.http.Http3PushManager.CancelPushReason;
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.MinimalFuture;
+import jdk.internal.net.http.common.TimeSource;
 import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.http3.ConnectionSettings;
 import jdk.internal.net.http.http3.Http3Error;
@@ -894,6 +895,17 @@ public final class Http3Connection implements AutoCloseable {
         // must be done with "stateLock" held to co-ordinate idle connection management
         lock();
         try {
+
+            // Idle connection timeout processing might be delayed when this
+            // connection checkout request has arrived. Hence, first check for
+            // the timeout.
+            var timedOut = idleConnectionTimeoutEvent != null &&
+                    !idleConnectionTimeoutEvent.deadline().isAfter(TimeSource.now());
+            if (timedOut) {
+                setFinalStream();
+                return false;
+            }
+
             cancelIdleShutdownEvent();
             // co-ordinate with the QUIC connection to prevent it from silently terminating
             // a potentially idle transport

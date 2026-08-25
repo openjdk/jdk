@@ -161,12 +161,17 @@ final class ConnectionPool {
                                  InetSocketAddress addr,
                                  InetSocketAddress proxy) {
         if (stopped) return null;
+        List<HttpConnection> purgedConnections;
+        HttpConnection acquiredConnection;
         stateLock.lock();
         try {
-            return getConnection0(secure, addr, proxy);
+            purgedConnections = purgeExpiredConnections(timeSource.instant(), null);
+            acquiredConnection = getConnection0(secure, addr, proxy);
         } finally {
             stateLock.unlock();
         }
+        purgedConnections.forEach(this::close);
+        return acquiredConnection;
     }
 
     private HttpConnection getConnection0(boolean secure,
@@ -308,35 +313,38 @@ final class ConnectionPool {
 
     // Used for whitebox testing
     long purgeExpiredConnectionsAndReturnNextDeadline(Deadline now) {
-        long nextPurge = 0;
+        long[] nextPurge = {0};
 
         // We may be in the process of adding new elements
         // to the expiry list - but those elements will not
         // have outlast their keep alive timer yet since we're
         // just adding them.
-        if (!expiryList.purgeMaybeRequired()) return nextPurge;
+        if (!expiryList.purgeMaybeRequired()) return nextPurge[0];
 
         List<HttpConnection> closelist;
         stateLock.lock();
         try {
-            closelist = expiryList.purgeUntil(now);
-            for (HttpConnection c : closelist) {
-                if (c instanceof PlainHttpConnection) {
-                    boolean wasPresent = removeFromPool(c, plainPool);
-                    assert wasPresent;
-                } else {
-                    boolean wasPresent = removeFromPool(c, sslPool);
-                    assert wasPresent;
-                }
-            }
-            nextPurge = now.until(
-                    expiryList.nextExpiryDeadline().orElse(now),
-                    ChronoUnit.MILLIS);
+            closelist = purgeExpiredConnections(now, nextPurge);
         } finally {
             stateLock.unlock();
         }
         closelist.forEach(this::close);
-        return nextPurge;
+        return nextPurge[0];
+    }
+
+    private List<HttpConnection> purgeExpiredConnections(Deadline now, long[] nextPurgeInstant) {
+        assert stateLock.isHeldByCurrentThread();
+        var closelist = expiryList.purgeUntil(now);
+        for (HttpConnection c : closelist) {
+            var wasPresent = removeFromPool(c, c instanceof PlainHttpConnection ? plainPool : sslPool);
+            assert wasPresent;
+        }
+        if (nextPurgeInstant != null) {
+            nextPurgeInstant[0] = now.until(
+                    expiryList.nextExpiryDeadline().orElse(now),
+                    ChronoUnit.MILLIS);
+        }
+        return closelist;
     }
 
     private void close(HttpConnection c) {
