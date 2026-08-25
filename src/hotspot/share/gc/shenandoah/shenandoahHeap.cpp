@@ -1482,8 +1482,8 @@ void ShenandoahHeap::trash_cset_regions() {
     }
   }
   set->clear();
-  log_info(gc)("Memory available in regions that failed evacuation: " PROPERFMT,
-               PROPERFMTARGS(free_bytes_in_evac_failed_regions));
+  log_info(gc, free)("Memory available in regions that failed evacuation: " PROPERFMT,
+                     PROPERFMTARGS(free_bytes_in_evac_failed_regions));
 }
 
 void ShenandoahHeap::print_heap_regions_on(outputStream* st) const {
