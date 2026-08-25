@@ -62,16 +62,6 @@ inline intptr_t* vframeStreamCommon::frame_id() const {
   return _frame.id();
 }
 
-inline int vframeStreamCommon::vframe_id() const {
-  assert(_mode == compiled_mode, "unexpected mode: %d", _mode);
-  return _vframe_id;
-}
-
-inline int vframeStreamCommon::decode_offset() const {
-  assert(_mode == compiled_mode, "unexpected mode: %d", _mode);
-  return _decode_offset;
-}
-
 inline bool vframeStreamCommon::is_interpreted_frame() const { return _frame.is_interpreted_frame(); }
 
 inline void vframeStreamCommon::next() {
@@ -244,12 +234,6 @@ inline bool vframeStreamCommon::fill_from_frame() {
 
 
         JavaThreadState state = _thread != nullptr ? _thread->thread_state() : _thread_in_Java;
-
-        // in_Java should be good enough to test safepoint safety
-        // if state were say in_Java_trans then we'd expect that
-        // the pc would have already been slightly adjusted to
-        // one that would produce a pcDesc since the trans state
-        // would be one that might in fact anticipate a safepoint
 
         if (state == _thread_in_Java ) {
           // This will get a method a zero bci and no inlining.

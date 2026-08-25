@@ -31,7 +31,7 @@ import sun.jvm.hotspot.debugger.DebuggerException;
 
 public class DwarfParser {
   private static final Cleaner CLEANER = Cleaner.create();
-  private final long p_dwarf_context; // native dwarf context handle
+  protected final long p_dwarf_context; // native dwarf context handle
 
   private static native void init0();
   private static native long createDwarfContext(long lib);
@@ -46,14 +46,20 @@ public class DwarfParser {
     return () -> DwarfParser.destroyDwarfContext(context);
   }
 
-  public DwarfParser(Address lib) {
-    p_dwarf_context = createDwarfContext(lib.asLongValue());
+  // Declare this constructor as protected because it is danger if 3rd party classes passes
+  // non-pointer value of DwarfParser class in JNI.
+  protected DwarfParser(long ptr) {
+    p_dwarf_context = ptr;
 
     if (p_dwarf_context == 0L) {
       throw new DebuggerException("Could not create DWARF context");
     }
 
     CLEANER.register(this, cleanerFor(p_dwarf_context));
+  }
+
+  public DwarfParser(Address lib) {
+    this(createDwarfContext(lib.asLongValue()));
   }
 
   public boolean isIn(Address pc) {

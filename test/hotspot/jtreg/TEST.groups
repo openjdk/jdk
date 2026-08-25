@@ -46,7 +46,7 @@ hotspot_gc = \
 
 # By design this group should include ALL tests under runtime sub-directory
 hotspot_runtime = \
-  runtime
+  runtime \
 
 hotspot_runtime_no_cds = \
   runtime \
@@ -61,6 +61,17 @@ hotspot_handshake = \
 
 hotspot_serviceability = \
   serviceability
+
+hotspot_valhalla = \
+  runtime/valhalla \
+  compiler/valhalla \
+  serviceability/jvmti/valhalla
+
+hotspot_valhalla_runtime = \
+  runtime/valhalla
+
+hotspot_valhalla_adopted = \
+   gc/stress/gcbasher
 
 hotspot_resourcehogs = \
   resourcehogs
@@ -152,19 +163,6 @@ tier1_compiler_1 = \
   compiler/blackhole/ \
   compiler/c1/ \
   compiler/c2/ \
-  -compiler/arraycopy/stress \
-  -compiler/c2/Test6850611.java \
-  -compiler/c2/cr6890943/Test6890943.java \
-  -compiler/c2/Test6905845.java \
-  -compiler/c2/cr6340864 \
-  -compiler/c2/cr6589834 \
-  -compiler/c2/cr8004867 \
-  -compiler/c2/stemmer \
-  -compiler/c2/Test6792161.java \
-  -compiler/c2/Test6603011.java \
-  -compiler/c2/Test6912517.java
-
-tier1_compiler_2 = \
   compiler/ccp/ \
   compiler/ciTypeFlow/ \
   compiler/classUnloading/ \
@@ -176,24 +174,42 @@ tier1_compiler_2 = \
   compiler/escapeAnalysis/ \
   compiler/exceptions/ \
   compiler/floatingpoint/ \
+  -compiler/arraycopy/stress \
+  -compiler/c2/Test6850611.java \
+  -compiler/c2/cr6890943/Test6890943.java \
+  -compiler/c2/Test6905845.java \
+  -compiler/c2/cr6340864 \
+  -compiler/c2/cr6589834 \
+  -compiler/c2/cr8004867 \
+  -compiler/c2/stemmer \
+  -compiler/c2/Test6792161.java \
+  -compiler/c2/Test6603011.java \
+  -compiler/c2/Test6912517.java \
+  -compiler/classUnloading/methodUnloading/TestOverloadCompileQueues.java \
+  -compiler/codecache/stress \
+  -compiler/codegen/aes
+
+tier1_compiler_2 = \
   compiler/gcbarriers/ \
   compiler/igvn/ \
   compiler/inlining/ \
   compiler/integerArithmetic/ \
   compiler/interpreter/ \
-  compiler/jvmci/ \
-  -compiler/classUnloading/methodUnloading/TestOverloadCompileQueues.java \
-  -compiler/codecache/stress \
-  -compiler/codegen/aes \
-  -compiler/gcbarriers/PreserveFPRegistersTest.java
-
-tier1_compiler_3 = \
   compiler/intrinsics/ \
   compiler/jsr292/ \
   compiler/locks/ \
   compiler/loopopts/ \
   compiler/macronodes/ \
   compiler/memoryinitialization/ \
+  -compiler/gcbarriers/PreserveFPRegistersTest.java \
+  -compiler/igvn/TestMaskedStoreIdealization.java \
+  -compiler/intrinsics/bmi \
+  -compiler/intrinsics/mathexact \
+  -compiler/intrinsics/sha \
+  -compiler/intrinsics/bigInteger/TestMultiplyToLen.java \
+  -compiler/intrinsics/zip/TestAdler32.java
+
+tier1_compiler_3 = \
   compiler/osr/ \
   compiler/predicates/ \
   compiler/profiling \
@@ -205,15 +221,20 @@ tier1_compiler_3 = \
   compiler/types/ \
   compiler/uncommontrap/ \
   compiler/unsafe/ \
+  compiler/valhalla/ \
   compiler/vectorization/ \
-  -compiler/intrinsics/bmi \
-  -compiler/intrinsics/mathexact \
-  -compiler/intrinsics/sha \
-  -compiler/intrinsics/bigInteger/TestMultiplyToLen.java \
-  -compiler/intrinsics/zip/TestAdler32.java \
   -compiler/loopopts/Test7052494.java \
   -compiler/memoryinitialization/ZeroTLABTest.java \
-  -compiler/runtime/Test6826736.java
+  -compiler/runtime/Test6826736.java \
+  -compiler/valhalla/inlinetypes/TestVirtualThreads.java
+
+tier1_compiler_3_no_valhalla = \
+  :tier1_compiler_3 \
+  -compiler/valhalla
+
+tier1_compiler_3_valhalla = \
+  :tier1_compiler_3 \
+  -:tier1_compiler_3_no_valhalla
 
 tier2_compiler = \
   compiler/allocation/ \
@@ -245,6 +266,11 @@ tier3_compiler = \
   :hotspot_compiler \
   -:tier1_compiler \
   -:tier2_compiler
+
+tier1_compiler_no_valhalla = \
+  :tier1_compiler_1 \
+  :tier1_compiler_2 \
+  :tier1_compiler_3_no_valhalla
 
 ctw_1 = \
   applications/ctw/modules/ \
@@ -315,11 +341,15 @@ tier1_gc_shenandoah = \
   gc/shenandoah/compiler/ \
   gc/shenandoah/mxbeans/ \
   gc/shenandoah/TestSmallHeap.java \
-  gc/shenandoah/oom/
+  gc/shenandoah/oom/ \
+  gtest/ShenandoahGtests.java
 
 tier2_gc_shenandoah = \
+  compiler/valhalla/inlinetypes/TestWrongFlatArrayCopyStubWithShenandoah.java \
   runtime/MemberName/MemberNameLeak.java \
   runtime/CompressedOops/UseCompressedOops.java \
+  runtime/valhalla/inlinetypes/FlatArrayCopyingTest.java \
+  runtime/valhalla/inlinetypes/InlineOops.java \
   gc/TestHumongousReferenceObject.java \
   gc/TestSystemGC.java \
   gc/arguments/TestDisableDefaultGC.java \
@@ -399,6 +429,10 @@ tier1_runtime = \
  -runtime/signal \
  -runtime/stack
 
+tier1_runtime_no_valhalla = \
+  :tier1_runtime \
+  -runtime/valhalla
+
 hotspot_cds = \
   runtime/cds/ \
   runtime/CompressedOops/
@@ -408,9 +442,9 @@ hotspot_cds_only = \
 
 hotspot_appcds_dynamic = \
   runtime/cds/appcds/ \
+ -runtime/cds/appcds/agent \
  -runtime/cds/appcds/aotAnnotations \
  -runtime/cds/appcds/aotCache \
- -runtime/cds/appcds/aotClassLinking \
  -runtime/cds/appcds/aotCode \
  -runtime/cds/appcds/aotFlags \
  -runtime/cds/appcds/aotProfile \
@@ -421,7 +455,6 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/dynamicArchive \
  -runtime/cds/appcds/jigsaw/ExactOptionMatch.java \
  -runtime/cds/appcds/jigsaw/modulepath/ModulePathAndFMG.java \
- -runtime/cds/appcds/jigsaw/modulepath/OptimizeModuleHandlingTest.java \
  -runtime/cds/appcds/loaderConstraints/DynamicLoaderConstraintsTest.java \
  -runtime/cds/appcds/javaldr/ArrayTest.java \
  -runtime/cds/appcds/jcmd/JCmdTestStaticDump.java \
@@ -434,7 +467,9 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/resolvedConstants \
  -runtime/cds/appcds/ArchiveRelocationTest.java \
  -runtime/cds/appcds/BadBSM.java \
+ -runtime/cds/appcds/ClassPathAttrCircularReference.java \
  -runtime/cds/appcds/CommandLineFlagCombo.java \
+ -runtime/cds/appcds/CommandLineFlagComboNegative.java \
  -runtime/cds/appcds/DumpClassList.java \
  -runtime/cds/appcds/DumpClassListWithLF.java \
  -runtime/cds/appcds/DumpRuntimeClassesTest.java \
@@ -504,77 +539,6 @@ hotspot_cds_epsilongc = \
   runtime/cds/appcds/jigsaw \
   runtime/cds/appcds/loaderConstraints
 
-# Run "old" CDS tests with -XX:+AOTClassLinking. This should include most CDS tests, except for
-# those that rely on redefining classes that are already archived.
-# Note that appcds/aotXXX directories are excluded -- those tests already specifically
-# test AOT class linking, so there's no need to run them again with -XX:+AOTClassLinking.
-hotspot_aot_classlinking = \
-  runtime/cds \
- -runtime/cds/appcds/aotAnnotations \
- -runtime/cds/appcds/aotCache \
- -runtime/cds/appcds/aotClassLinking \
- -runtime/cds/appcds/aotCode \
- -runtime/cds/appcds/aotFlags \
- -runtime/cds/appcds/aotProfile \
- -runtime/cds/appcds/BadBSM.java \
- -runtime/cds/appcds/cacheObject/ArchiveHeapTestClass.java \
- -runtime/cds/appcds/cacheObject/ArchivedIntegerCacheTest.java \
- -runtime/cds/appcds/cacheObject/ArchivedModuleCompareTest.java \
- -runtime/cds/appcds/CDSandJFR.java \
- -runtime/cds/appcds/LambdaContainsOldInf.java \
- -runtime/cds/appcds/customLoader/CustomClassListDump.java \
- -runtime/cds/appcds/customLoader/HelloCustom_JFR.java \
- -runtime/cds/appcds/customLoader/OldClassAndInf.java \
- -runtime/cds/appcds/customLoader/ParallelTestMultiFP.java \
- -runtime/cds/appcds/customLoader/ParallelTestSingleFP.java \
- -runtime/cds/appcds/customLoader/SameNameInTwoLoadersTest.java \
- -runtime/cds/appcds/DumpClassListWithLF.java \
- -runtime/cds/appcds/dynamicArchive \
- -runtime/cds/appcds/HelloExtTest.java \
- -runtime/cds/appcds/jigsaw/classpathtests/EmptyClassInBootClassPath.java \
- -runtime/cds/appcds/jigsaw/ExactOptionMatch.java \
- -runtime/cds/appcds/jigsaw/JigsawOptionsCombo.java \
- -runtime/cds/appcds/jigsaw/modulepath/AddModules.java \
- -runtime/cds/appcds/jigsaw/modulepath/JvmtiAddPath.java \
- -runtime/cds/appcds/jigsaw/modulepath/MainModuleOnly.java \
- -runtime/cds/appcds/jigsaw/modulepath/ModulePathAndCP.java \
- -runtime/cds/appcds/jigsaw/modulepath/ModulePathAndCP_JFR.java \
- -runtime/cds/appcds/jigsaw/modulepath/ModulePathAndFMG.java \
- -runtime/cds/appcds/jigsaw/modulepath/OptimizeModuleHandlingTest.java \
- -runtime/cds/appcds/jigsaw/overridetests/OverrideTests.java \
- -runtime/cds/appcds/jigsaw/RedefineClassesInModuleGraph.java \
- -runtime/cds/appcds/JvmtiAddPath.java \
- -runtime/cds/appcds/jvmti \
- -runtime/cds/appcds/LambdaProxyClasslist.java \
- -runtime/cds/appcds/loaderConstraints/LoaderConstraintsTest.java \
- -runtime/cds/appcds/methodHandles \
- -runtime/cds/appcds/NestHostOldInf.java \
- -runtime/cds/appcds/OldClassTest.java \
- -runtime/cds/appcds/OldClassWithjsr.java \
- -runtime/cds/appcds/OldInfExtendsInfDefMeth.java \
- -runtime/cds/appcds/OldSuperClass.java \
- -runtime/cds/appcds/OldSuperInfIndirect.java \
- -runtime/cds/appcds/OldSuperInf.java \
- -runtime/cds/appcds/redefineClass \
- -runtime/cds/appcds/resolvedConstants/AOTLinkedLambdas.java \
- -runtime/cds/appcds/resolvedConstants/AOTLinkedVarHandles.java \
- -runtime/cds/appcds/resolvedConstants/ResolvedConstants.java \
- -runtime/cds/appcds/RewriteBytecodesTest.java \
- -runtime/cds/appcds/SignedJar.java \
- -runtime/cds/appcds/SpecifySysLoaderProp.java \
- -runtime/cds/appcds/StaticArchiveWithLambda.java \
- -runtime/cds/appcds/TestEpsilonGCWithCDS.java \
- -runtime/cds/appcds/TestParallelGCWithCDS.java \
- -runtime/cds/appcds/TestSerialGCWithCDS.java \
- -runtime/cds/appcds/TestZGCWithCDS.java \
- -runtime/cds/appcds/TestWithProfiler.java \
- -runtime/cds/appcds/VerifyObjArrayCloneTest.java \
- -runtime/cds/serviceability/ReplaceCriticalClassesForSubgraphs.java \
- -runtime/cds/serviceability/ReplaceCriticalClasses.java \
- -runtime/cds/serviceability/transformRelatedClasses/TransformInterfaceAndImplementor.java \
- -runtime/cds/serviceability/transformRelatedClasses/TransformSuperAndSubClasses.java \
- -runtime/cds/serviceability/transformRelatedClasses/TransformSuperSubTwoPckgs.java
-
 # needs -nativepath:<output>/images/test/hotspot/jtreg/native/
 hotspot_metaspace = \
   gtest/MetaspaceGtests.java \
@@ -627,6 +591,10 @@ tier1_serviceability = \
   -serviceability/sa/ClhsdbJstackXcompStress.java \
   -serviceability/sa/TestJmapCore.java \
   -serviceability/sa/TestJmapCoreMetaspace.java
+
+tier1_serviceability_no_valhalla = \
+  :tier1_serviceability \
+  -serviceability/jvmti/valhalla
 
 tier1 = \
   :tier1_common \

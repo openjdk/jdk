@@ -24,14 +24,13 @@
 /*
  * @test
  * @requires jdk.foreign.linker != "FALLBACK"
- * @requires (os.arch == "aarch64" | os.arch=="riscv64" | os.arch=="x86_64" | os.arch=="amd64") & os.name == "Linux"
- * @requires os.maxMemory > 4G
  * @requires vm.compMode != "Xcomp"
  * @modules java.base/jdk.internal.foreign
+ * @library /test/lib
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  * @bug 8337753
  *
- * @run testng/native/othervm/timeout=3200
+ * @run testng/native/othervm
  *   -Xcheck:jni
  *   -XX:+IgnoreUnrecognizedVMOptions
  *   -XX:-VerifyDependencies
@@ -44,7 +43,10 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemorySegment;
 
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+import jdk.test.lib.Utils;
 
 import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
@@ -59,11 +61,27 @@ public class TestUpcallStress extends TestUpcallBase {
         System.loadLibrary("TestUpcall");
     }
 
+    static final int THREAD_COUNT = 100;
+
+    ExecutorService executor;
+
+    @BeforeClass
+    public void setup() {
+        executor = Executors.newFixedThreadPool(THREAD_COUNT);
+    }
+
+    @AfterClass
+    public void tearDown() throws InterruptedException {
+        executor.shutdown();
+        // Let it run for a while, and then just terminate
+        executor.awaitTermination(Utils.adjustTimeout(30), TimeUnit.SECONDS);
+    }
+
+
     @Test(dataProvider="functions", dataProviderClass=CallGeneratorHelper.class)
     public void testUpcallsStress(int count, String fName, Ret ret, List<ParamType> paramTypes,
-                                  List<StructFieldType> fields) throws Throwable {
-        ExecutorService executor = Executors.newFixedThreadPool(16);
-        for (int threadIdx = 0; threadIdx < 16; threadIdx++) {
+                                  List<StructFieldType> fields) {
+        for (int threadIdx = 0; threadIdx < THREAD_COUNT; threadIdx++) {
             executor.submit(() -> {
                 for (int iter = 0; iter < 10000; iter++) {
                     List<Consumer<Object>> returnChecks = new ArrayList<>();
@@ -91,8 +109,5 @@ public class TestUpcallStress extends TestUpcallBase {
                 }
             });
         }
-        // This shutdownNow is 'wrong', since it doesn't wait for tasks to terminate,
-        // but it seems to be the only way to reproduce the race of JDK-8337753
-        executor.shutdownNow();
     }
 }

@@ -23,7 +23,6 @@
 
 package nsk.jvmti.unit.GetAllStackTraces;
 
-import jdk.test.lib.thread.ThreadWrapper;
 import java.io.PrintStream;
 import nsk.share.Consts;
 
@@ -118,8 +117,12 @@ public class getallstktr001 {
         }
         return GetResult();
     }
+    // Note: TestThread must extend Thread, not ThreadWrapper. This test uses
+    // JVMTI GetAllStackTraces which only returns platform threads, and 40
+    // threads blocking on native RawMonitorEnter pins carriers causing deadlock.
+    // See JDK-8384958.
 
-    static class TestThread extends ThreadWrapper {
+    static class TestThread extends Thread {
         static int counter=0;
         int ind;
         public TestThread(String name) {

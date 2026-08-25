@@ -146,6 +146,7 @@ Performance</a>
 <li><a href="#virus-checking" id="toc-virus-checking">Virus
 Checking</a></li>
 <li><a href="#ccache" id="toc-ccache">Ccache</a></li>
+<li><a href="#sccache" id="toc-sccache">Sccache</a></li>
 <li><a href="#precompiled-headers"
 id="toc-precompiled-headers">Precompiled Headers</a></li>
 <li><a href="#icecc-icecream" id="toc-icecc-icecream">Icecc /
@@ -365,11 +366,13 @@ free disk space is required.</p>
 also possible to use <a href="#cross-compiling">cross-compiling</a>.</p>
 <h4 id="branch-protection">Branch Protection</h4>
 <p>In order to use Branch Protection features in the VM,
-<code>--enable-branch-protection</code> must be used. This option
-requires C++ compiler support (GCC 9.1.0+ or Clang 10+). The resulting
-build can be run on both machines with and without support for branch
-protection in hardware. Branch Protection is only supported for Linux
-targets.</p>
+<code>--enable-branch-protection</code> must be used. This option requires C++
+compiler support for <code>-mbranch-protection=standard</code> in GCC 9.1.0+ or
+Clang 10+ on Linux/AArch64 or for <code>/guard:signret</code> in Visual Studio
+2019+ on Windows/ARM64. The resulting build can be run on both machines with and
+without support for branch protection in hardware. Branch Protection is fully
+supported for the Linux/AArch64 target and only partially supported for the
+Windows/ARM64 targets.</p>
 <h3 id="building-on-32-bit-arm">Building on 32-bit ARM</h3>
 <p>This is not recommended. Instead, see the section on <a
 href="#cross-compiling">Cross-compiling</a>.</p>
@@ -394,11 +397,11 @@ to date at the time of writing.</p>
 <tbody>
 <tr class="odd">
 <td>Linux/x64</td>
-<td>Oracle Enterprise Linux 6.4 / 8.x</td>
+<td>Oracle Linux 6.4 / 8.x</td>
 </tr>
 <tr class="even">
 <td>Linux/aarch64</td>
-<td>Oracle Enterprise Linux 7.6 / 8.x</td>
+<td>Oracle Linux 7.6 / 8.x</td>
 </tr>
 <tr class="odd">
 <td>macOS</td>
@@ -545,7 +548,7 @@ earlier versions may also work.</p>
 no longer comes bundled with Xcode, so it needs to be installed
 separately. This can either be done via the Xcode's Settings/Components
 UI, or in the command line calling
-<code>xcodebuild -downloadComponent metalToolchain</code>.</p>
+<code>xcodebuild -downloadComponent MetalToolchain</code>.</p>
 <p>The standard macOS environment contains the basic tooling needed to
 build, but for external libraries a package manager is recommended. The
 JDK uses <a href="https://brew.sh/">homebrew</a> in the examples, but
@@ -1495,26 +1498,24 @@ following targets are known to work:</p>
 </tr>
 </tbody>
 </table>
-<p><code>BASE_OS</code> must be one of <code>OL</code> for Oracle
-Enterprise Linux or <code>Fedora</code>. If the base OS is
-<code>Fedora</code> the corresponding Fedora release can be specified
-with the help of the <code>BASE_OS_VERSION</code> option. If the build
-is successful, the new devkits can be found in the
+<p><code>BASE_OS</code> must be one of <code>OL</code> for Oracle Linux
+or <code>Fedora</code>. The release/version of the base OS can be
+specified using the <code>BASE_OS_VERSION</code> option. If the build is
+successful, the new devkits can be found in the
 <code>build/devkit/result</code> subdirectory:</p>
 <pre><code>cd make/devkit
-make TARGETS=&quot;ppc64le-linux-gnu aarch64-linux-gnu&quot; BASE_OS=Fedora BASE_OS_VERSION=21
+make TARGETS=&quot;ppc64le-linux-gnu aarch64-linux-gnu&quot; BASE_OS=Fedora
 ls -1 ../../build/devkit/result/
 x86_64-linux-gnu-to-aarch64-linux-gnu
 x86_64-linux-gnu-to-ppc64le-linux-gnu</code></pre>
 <p>Notice that devkits are not only useful for targeting different build
 platforms. Because they contain the full build dependencies for a system
-(i.e. compiler and root file system), they can easily be used to build
-well-known, reliable and reproducible build environments. You can for
-example create and use a devkit with GCC 7.3 and a Fedora 12 sysroot
-environment (with glibc 2.11) on Ubuntu 14.04 (which doesn't have GCC
-7.3 by default) to produce JDK binaries which will run on all Linux
-systems with runtime libraries newer than the ones from Fedora 12 (e.g.
-Ubuntu 16.04, SLES 11 or RHEL 6).</p>
+(i.e., compiler and root file system/sysroot), they can easily be used
+to build well-known, reliable, and reproducible build environments. You
+can, for example, create and use a devkit with a version of the GCC
+compiler not provided by the host OS, using a sysroot from an older
+Linux distribution to produce JDK binaries which will run on all Linux
+systems with newer runtime libraries.</p>
 <h4 id="using-debian-debootstrap">Using Debian debootstrap</h4>
 <p>On Debian (or a derivative like Ubuntu), you can create sysroots for
 foreign architectures with tools provided by the OS. You can use
@@ -1816,6 +1817,14 @@ Using ccache can radically speed up compilation of native code if you
 often rebuild the same sources. Your mileage may vary however, so we
 recommend evaluating it for yourself. To enable it, make sure it's on
 the path and configure with <code>--enable-ccache</code>.</p>
+<h3 id="sccache">Sccache</h3>
+<p>The JDK build supports building with sccache when using gcc, clang, or
+Microsoft toolchains.  To enable it, make sure the sccache binary is on the path
+(or specify the path to the binary using the <code>SCCACHE</code> argument to
+the configure script) and configure with <code>--enable-sccache</code>.  To
+optionally specify where sccache stores its cache files, use
+<code>--with-sccache-dir</code>.  Precompiled headers are disabled when sccache
+is enabled.</p>
 <h3 id="precompiled-headers">Precompiled Headers</h3>
 <p>By default, the Hotspot build uses pre-compiled headers (PCH) on the
 toolchains were it is properly supported (clang, gcc, and Visual
