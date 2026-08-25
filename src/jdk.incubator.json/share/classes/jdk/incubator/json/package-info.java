@@ -141,11 +141,14 @@
  * fallback value is used over throwing an exception.
  *
  * <h2 id="generation">Generating JSON text</h2>
- * {@code JsonValue} overrides {@link Object#toString()} to generate RFC 8259
- * compliant JSON text in a compact representation with JSON insignificant white
- * spaces eliminated.
- * For generating JSON texts suitable for display, use
- * the generation method {@link Json#toDisplayString(JsonValue, String)} instead.
+ * Generating JSON text is performed with either {@link
+ * JsonValue#toString()} or {@link Json#toDisplayString(JsonValue, String)}.
+ * These methods produce String representations of a {@code JsonValue}.
+ * The returned text adheres to the JSON grammar defined in RFC 8259.
+ * {@code JsonValue.toString()} produces the compact representation which does not
+ * include JSON insignificant whitespaces, preferable for network transmission
+ * or storage. {@code Json.toDisplayString(JsonValue, String)} produces a text which
+ * is human friendly, preferable for debugging or logging.
  *
  * @spec https://datatracker.ietf.org/doc/html/rfc8259 RFC 8259: The JavaScript
  *      Object Notation (JSON) Data Interchange Format
