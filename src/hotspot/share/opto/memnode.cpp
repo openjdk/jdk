@@ -1335,17 +1335,17 @@ static Node* see_through_inline_type(PhaseValues* phase, const LoadNode* load, N
 // This method may find an unencoded node instead of the corresponding encoded one.
 Node* LoadNode::can_see_stored_value_through_membars(Node* st, PhaseValues* phase) const {
   auto verify_type = [&](Node* res) {
-    if (res == nullptr || is_java_primitive(value_basic_type()) || res->bottom_type()->higher_equal(type())) {
+    if (res == nullptr || res->bottom_type() == Type::TOP) {
       return true;
     }
 
     // We can return an uncompressed oop when this is a LoadN
-    const Type* this_type = type()->make_ptr();
-    if (this_type == nullptr) {
-      return false;
+    if (const TypePtr* this_ptr_type = type()->make_ptr(); this_ptr_type != nullptr) {
+      const TypePtr* res_ptr_type = res->bottom_type()->make_ptr();
+      return res_ptr_type != nullptr && res_ptr_type->higher_equal(this_ptr_type);
     }
 
-    return res->bottom_type()->higher_equal(this_type);
+    return is_java_primitive(value_basic_type()) || res->bottom_type()->higher_equal(type());
   };
 
   Node* ld_adr = in(MemNode::Address);
