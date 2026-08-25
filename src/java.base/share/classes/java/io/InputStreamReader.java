@@ -185,7 +185,8 @@ public class InputStreamReader extends Reader {
 
     @Override
     public String readAllAsString() throws IOException {
-        return sd.readAllAsString();
+        String s = sd.tryReadAllAsString();
+        return (s != null) ? s : super.readAllAsString();
     }
 
     /**
