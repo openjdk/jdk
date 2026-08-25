@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,6 +144,9 @@ public class stop001a {
     }
 
     // tested thread class
+    // Note: TestedClass must extend Thread, not ThreadWrapper. JDWP
+    // ThreadReference.Stop returns THREAD_NOT_SUSPENDED for a virtual thread
+    // that is not suspended at an event. See JDK-8382276.
     public static class TestedClass extends Thread {
 
         // field with the tested Thread value
