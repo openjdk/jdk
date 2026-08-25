@@ -886,7 +886,7 @@ void ShenandoahHeapRegion::set_affiliation(ShenandoahAffiliation new_affiliation
 // top to the end of the last self forwarded object. This requires no changes on the allocation path.
 //
 // We must also leave old regions in a walkable state because they could be visited by a remembered set scan.
-class ShenandoahReclaimSelfForwarded : ObjectClosure {
+class ShenandoahReclaimSelfForwarded : public ObjectClosure {
 
   // This is a nullptr for young regions. For old regions, we use it to patch up the card table.
   ShenandoahScanRemembered* _cards;

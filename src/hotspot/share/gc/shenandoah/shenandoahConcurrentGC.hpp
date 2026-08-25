@@ -33,8 +33,6 @@
 #include "gc/shenandoah/shenandoahHeap.hpp"
 
 class ShenandoahGeneration;
-class ShenandoahController;
-
 class VM_ShenandoahInitMark;
 class VM_ShenandoahFinalMarkStartEvac;
 class VM_ShenandoahInitUpdateRefs;
