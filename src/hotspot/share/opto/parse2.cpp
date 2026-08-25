@@ -818,6 +818,27 @@ static void merge_ranges(SwitchRange* ranges, int& rp) {
   }
 }
 
+static ciMultiBranchData* get_switch_profile(ciMethodData* method_data, int bci) {
+  if (!method_data->is_mature() || !UseSwitchProfiling) {
+    return nullptr;
+  }
+  ciProfileData* data = method_data->bci_to_data(bci);
+  if (data == nullptr || !data->is_MultiBranchData()) {
+    return nullptr;
+  }
+  // Ignore an entirely empty profile
+  ciMultiBranchData* profile = (ciMultiBranchData*)data;
+  if (profile->default_count() != 0) {
+    return profile;
+  }
+  for (int i = 0; i < profile->number_of_cases(); i++) {
+    if (profile->count_at(i) != 0) {
+      return profile;
+    }
+  }
+  return nullptr;
+}
+
 //-------------------------------do_tableswitch--------------------------------
 void Parse::do_tableswitch() {
   // Get information about tableswitch
@@ -834,14 +855,7 @@ void Parse::do_tableswitch() {
     return;
   }
 
-  ciMethodData* methodData = method()->method_data();
-  ciMultiBranchData* profile = nullptr;
-  if (methodData->is_mature() && UseSwitchProfiling) {
-    ciProfileData* data = methodData->bci_to_data(bci());
-    if (data != nullptr && data->is_MultiBranchData()) {
-      profile = (ciMultiBranchData*)data;
-    }
-  }
+  ciMultiBranchData* profile = get_switch_profile(method()->method_data(), bci());
   bool trim_ranges = !C->too_many_traps(method(), bci(), Deoptimization::Reason_unstable_if);
 
   // generate decision tree, using trichotomy when possible
@@ -908,14 +922,7 @@ void Parse::do_lookupswitch() {
     return;
   }
 
-  ciMethodData* methodData = method()->method_data();
-  ciMultiBranchData* profile = nullptr;
-  if (methodData->is_mature() && UseSwitchProfiling) {
-    ciProfileData* data = methodData->bci_to_data(bci());
-    if (data != nullptr && data->is_MultiBranchData()) {
-      profile = (ciMultiBranchData*)data;
-    }
-  }
+  ciMultiBranchData* profile = get_switch_profile(method()->method_data(), bci());
   bool trim_ranges = !C->too_many_traps(method(), bci(), Deoptimization::Reason_unstable_if);
 
   // generate decision tree, using trichotomy when possible
@@ -1288,15 +1295,7 @@ bool Parse::create_jump_tables(Node* key_val, SwitchRange* lo, SwitchRange* hi) 
     }
   }
 
-  ciMethodData* methodData = method()->method_data();
-  ciMultiBranchData* profile = nullptr;
-  if (methodData->is_mature()) {
-    ciProfileData* data = methodData->bci_to_data(bci());
-    if (data != nullptr && data->is_MultiBranchData()) {
-      profile = (ciMultiBranchData*)data;
-    }
-  }
-
+  ciMultiBranchData* profile = get_switch_profile(method()->method_data(), bci());
   Node* jtn = _gvn.transform(new JumpNode(control(), key_val, num_cases, probs, profile == nullptr ? COUNT_UNKNOWN : total));
 
   // These are the switch destinations hanging off the jumpnode
