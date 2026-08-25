@@ -344,7 +344,8 @@ static void record_cpu_time_thread(const JfrCPUTimeSampleRequest& request, const
     JfrStackTrace stacktrace;
     if (native_pc_count > 0) {
       stacktrace.record_native_frames(request._native_pcs, native_pc_count);
-    } else if (could_compute_top_frame && !stacktrace.record(jt, top_frame, in_continuation, request._request)) {
+    }
+    if (could_compute_top_frame && !stacktrace.record(jt, top_frame, in_continuation, request._request)) {
       // Unable to record stacktrace. Fail.
       JfrCPUTimeThreadSampling::send_empty_event(request._request._sample_ticks, tid, request._cpu_time_period);
       return;
