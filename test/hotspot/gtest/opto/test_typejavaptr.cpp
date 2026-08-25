@@ -1921,6 +1921,16 @@ constexpr std::array<KlassPtrMirror, KlassPtrMirror::_samples_size> KlassPtrMirr
 
 template <class PtrType, class Ptr>
 static void test_meet_join() {
+#ifdef TARGET_COMPILER_visCPP
+  if (PtrType::AryType::_2d_samples[0].ptr() == TypePtr::TopPTR) {
+    // On GHA, the constexpr evaluation mechanism of MSVC seems to have a smaller computing step
+    // limit, which results in it failing to compute _2d_samples, which is a constexpr variable. In
+    // addition, when it fails to evaluate a constexpr variable, instead of throwing an error, MSVC
+    // silently leaves the variable in an invalid state.
+    return;
+  }
+#endif // TARGET_COMPILER_visCPP
+
   constexpr size_t samples_size = PtrType::InstType::_samples.size() + PtrType::AryType::_1d_samples.size() + PtrType::AryType::_2d_samples.size();
   if constexpr (PtrType::is_oopptr_type) {
     static_assert(samples_size == 2040);
