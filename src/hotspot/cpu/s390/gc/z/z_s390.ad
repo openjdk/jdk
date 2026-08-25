@@ -156,7 +156,7 @@ instruct zStorePNull(memory mem, immP0 zero, iRegP temp, flagsReg cr) %{
 instruct zCompareAndExchangeP(iRegP res, iRegP mem, iRegP oldval, iRegP newval, iRegP newval_temp, flagsReg cr) %{
   match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
   predicate(UseZGC && n->as_LoadStore()->barrier_data() != 0);
-  effect(TEMP_DEF res, USE mem,  TEMP newval_temp, KILL cr);
+  effect(TEMP_DEF res, USE mem, TEMP newval_temp, KILL cr);
 
   format %{ "CompareAndExchangeP $oldval, $newval, $mem" %}
   ins_encode %{
