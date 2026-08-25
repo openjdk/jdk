@@ -97,7 +97,7 @@ class JfrNativeAddressRange {
   bool set(uintptr_t pc) {
     const uintptr_t bit = (pc >> ALIGN_SHIFT) & MASK;
     uintptr_t& word = _bitmap[bit / BitsPerWord];
-    const uintptr_t mask = static_cast<uintptr_t>(1) << (bit % BitsPerWord);
+    const uintptr_t mask = uintptr_t(1) << (bit % BitsPerWord);
     if ((word & mask) != 0) {
       return false;
     }
@@ -179,8 +179,34 @@ static bool parse_build_id(const dl_phdr_info* info, const ElfW(Phdr)* phdr, cha
   return false;
 }
 
+static const char* get_main_executable() {
+  static char* _main_exe = nullptr;
+
+  if (_main_exe == nullptr) {
+    char name[1024];
+    ssize_t len = ::readlink("/proc/self/exe", name, sizeof(name) - 1);
+    name[MAX2<ssize_t>(len, 0)] = '\0';      // empty string if readlink fails
+    _main_exe = os::strdup(name, mtTracing); // cached for the process lifetime
+  }
+
+  return _main_exe != nullptr ? _main_exe : "";
+}
+
 static int library_callback(dl_phdr_info* info, size_t size, void* data) {
-  // Compute library boundaries from the loadable segments
+  const char* path = info->dlpi_name;
+  if (path == nullptr || path[0] == '\0') {
+    path = get_main_executable();
+  }
+
+  // Check if the library has been already added
+  JfrNativeLibrary** libraries = static_cast<JfrNativeLibrary**>(data);
+  for (JfrNativeLibrary* lib = *libraries; lib != nullptr; lib = lib->_next) {
+    if (lib->_base == info->dlpi_addr && strcmp(lib->_path, path) == 0) {
+      return 0;
+    }
+  }
+
+  // Compute library boundaries from loaded segments
   uintptr_t lo = UINTPTR_MAX;
   uintptr_t hi = 0;
   for (int i = 0; i < info->dlpi_phnum; i++) {
@@ -194,18 +220,7 @@ static int library_callback(dl_phdr_info* info, size_t size, void* data) {
     return 0;
   }
 
-  const char* path = info->dlpi_name;
-  if (path == nullptr || path[0] == '\0') {
-    path = "java"; // TODO: Get main executable path from /proc/self/exe
-  }
-
-  JfrNativeLibrary** libraries = static_cast<JfrNativeLibrary**>(data);
-  for (JfrNativeLibrary* lib = *libraries; lib != nullptr; lib = lib->_next) {
-    if (lib->_base == info->dlpi_addr && strcmp(lib->_path, path) == 0) {
-      return 0;
-    }
-  }
-
+  // Add new library to the linked list and fill its build-id
   JfrNativeLibrary* lib = new JfrNativeLibrary(path, info->dlpi_addr, lo, hi, *libraries);
   for (int i = 0; i < info->dlpi_phnum; i++) {
     const ElfW(Phdr)* phdr = &info->dlpi_phdr[i];
@@ -229,6 +244,7 @@ void JfrNativeFunctionRepository::update_libraries() {}
 #endif // LINUX
 
 JfrNativeLibrary* JfrNativeFunctionRepository::find_library(uintptr_t pc) {
+  // TODO: Linear search is not ideal, but there are usually not too many libraries
   for (JfrNativeLibrary* lib = _libraries; lib != nullptr; lib = lib->_next) {
     if (lib->contains(pc)) {
       return lib;
@@ -240,7 +256,7 @@ JfrNativeLibrary* JfrNativeFunctionRepository::find_library(uintptr_t pc) {
 void JfrNativeFunctionRepository::resolve_and_write_function(JfrChunkWriter& cw, uintptr_t pc, JfrNativeLibrary* lib) {
   char name[1024];
   int offset;
-  if (!os::dll_address_to_function_name(reinterpret_cast<address>(pc), name, sizeof(name), &offset, true)) {
+  if (!os::dll_address_to_function_name(reinterpret_cast<address>(pc), name, sizeof(name), &offset, false)) {
     name[0] = '\0';
   }
 
@@ -255,7 +271,7 @@ void JfrNativeFunctionRepository::resolve_and_write_function(JfrChunkWriter& cw,
     cw.write(lib->_id);
     cw.write(pc - lib->_base);
   } else {
-    cw.write(static_cast<u8>(0));
+    cw.write<u8>(0);
     cw.write(pc);
   }
   cw.write(name);
@@ -320,7 +336,7 @@ size_t JfrNativeFunctionRepository::write_libraries(JfrChunkWriter& cw, bool cle
     if (lib->_id != 0 && !lib->_written) {
       cw.write(lib->_id);
       cw.write(lib->_path);
-      cw.write(static_cast<u8>(lib->_base));
+      cw.write(lib->_base);
       cw.write(lib->_build_id);
       lib->_written = true;
       count++;
