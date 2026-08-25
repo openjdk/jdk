@@ -40,6 +40,7 @@ public class ArrayListIterate {
     private static final int SIZE = 1048576;
 
     private ArrayList<Object> list;
+    private int[] array;
 
     @Setup
     public void setup() {
@@ -47,6 +48,7 @@ public class ArrayListIterate {
         for (int i = 0; i < SIZE; i++) {
             list.add(new Object());
         }
+        array = new int[SIZE];
     }
 
     @Benchmark
@@ -65,5 +67,27 @@ public class ArrayListIterate {
         for (int i = 0; i < list.size(); i++) {
             bh.consume(list.get(i));
         }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(SIZE)
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public int array_index(Blackhole bh) {
+        for (int i = 0; i < array.length; i++) {
+            bh.consume(array[i]);
+        }
+        return array.length - 1;
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(SIZE)
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public int array_double_index(Blackhole bh) {
+        int prev = -1;
+        for (int i = 0; i < array.length; i++) {
+            bh.consume(array[i]);
+            prev = i;
+        }
+        return prev;
     }
 }
