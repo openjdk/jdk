@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,12 @@
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.concurrent.Phaser;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.stream.IntStream;
 import java.util.spi.ToolProvider;
 
 /*
@@ -42,8 +48,33 @@ public class JLinkToolProviderTest {
         JLINK_TOOL.run(pw, pw, options);
     }
 
+    private static void checkConcurrentAccess(int count) throws Exception {
+        Phaser startBarrier = new Phaser(count);
+
+        try (var executor = Executors.newFixedThreadPool(count)) {
+            List<Future<String>> futures = IntStream.range(0, count).mapToObj(idx -> executor.submit(() -> {
+                startBarrier.arriveAndAwaitAdvance();
+
+                StringWriter out = new StringWriter();
+                StringWriter err = new StringWriter();
+                int code = JLINK_TOOL.run(new PrintWriter(out), new PrintWriter(err),
+                        "--add-modules", "java.base",
+                        "--output", Path.of(".").resolve("image-" + idx).toString());
+                return code + ":" + out.toString().trim() + ":" + err.toString().trim();
+            })).toList();
+
+            for (Future<String> future : futures) {
+                String result = future.get();
+                if (!"0::".equals(result)) {
+                    throw new AssertionError(result);
+                }
+            }
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         checkJlinkOptions("--help");
         checkJlinkOptions("--list-plugins");
+        checkConcurrentAccess(Math.max(2, Runtime.getRuntime().availableProcessors() / 4));
     }
 }

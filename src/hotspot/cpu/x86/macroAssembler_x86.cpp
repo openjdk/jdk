@@ -28,6 +28,7 @@
 #include "code/compiledIC.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "compiler/disassembler.hpp"
+#include "ci/ciInlineKlass.hpp"
 #include "crc32c.h"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
@@ -43,7 +44,9 @@
 #include "oops/compressedKlass.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/resolvedFieldEntry.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.hpp"
@@ -53,10 +56,15 @@
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/signature_cc.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+#include "vmreg_x86.inline.hpp"
+#ifdef COMPILER2
+#include "opto/output.hpp"
+#endif
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
@@ -1302,6 +1310,10 @@ void MacroAssembler::call_VM_leaf(address entry_point, Register arg_0, Register 
   call_VM_leaf(entry_point, 3);
 }
 
+void MacroAssembler::super_call_VM_leaf(address entry_point) {
+  MacroAssembler::call_VM_leaf_base(entry_point, 1);
+}
+
 void MacroAssembler::super_call_VM_leaf(address entry_point, Register arg_0) {
   pass_arg0(this, arg_0);
   MacroAssembler::call_VM_leaf_base(entry_point, 1);
@@ -2391,6 +2403,72 @@ void MacroAssembler::null_check(Register reg, int offset) {
     // nothing to do, (later) access of M[reg + offset]
     // will provoke OS null exception if reg is null
   }
+}
+
+void MacroAssembler::test_markword_is_inline_type(Register markword, Label& is_inline_type) {
+  andptr(markword, markWord::inline_type_pattern_mask);
+  cmpptr(markword, markWord::inline_type_pattern);
+  jcc(Assembler::equal, is_inline_type);
+}
+
+void MacroAssembler::test_oop_is_not_inline_type(Register object, Register tmp, Label& not_inline_type, bool can_be_null) {
+  if (can_be_null) {
+    testptr(object, object);
+    jcc(Assembler::zero, not_inline_type);
+  }
+  const int is_inline_type_mask = markWord::inline_type_pattern;
+  movptr(tmp, Address(object, oopDesc::mark_offset_in_bytes()));
+  andptr(tmp, is_inline_type_mask);
+  cmpptr(tmp, is_inline_type_mask);
+  jcc(Assembler::notEqual, not_inline_type);
+}
+
+void MacroAssembler::test_field_is_null_free_inline_type(Register flags, Register temp_reg, Label& is_null_free_inline_type) {
+  movl(temp_reg, flags);
+  testl(temp_reg, 1 << ResolvedFieldEntry::is_null_free_inline_type_shift);
+  jcc(Assembler::notEqual, is_null_free_inline_type);
+}
+
+void MacroAssembler::test_field_is_not_null_free_inline_type(Register flags, Register temp_reg, Label& not_null_free_inline_type) {
+  movl(temp_reg, flags);
+  testl(temp_reg, 1 << ResolvedFieldEntry::is_null_free_inline_type_shift);
+  jcc(Assembler::equal, not_null_free_inline_type);
+}
+
+void MacroAssembler::test_field_is_flat(Register flags, Register temp_reg, Label& is_flat) {
+  movl(temp_reg, flags);
+  testl(temp_reg, 1 << ResolvedFieldEntry::is_flat_shift);
+  jcc(Assembler::notEqual, is_flat);
+}
+
+void MacroAssembler::test_oop_prototype_bit(Register oop, Register temp_reg, int32_t test_bit, bool jmp_set, Label& jmp_label) {
+  // load mark word
+  movptr(temp_reg, Address(oop, oopDesc::mark_offset_in_bytes()));
+  testl(temp_reg, test_bit);
+  jcc((jmp_set) ? Assembler::notZero : Assembler::zero, jmp_label);
+}
+
+void MacroAssembler::test_flat_array_oop(Register oop, Register temp_reg,
+                                         Label& is_flat_array) {
+  test_oop_prototype_bit(oop, temp_reg, markWord::flat_array_bit_in_place, true, is_flat_array);
+}
+
+void MacroAssembler::test_non_flat_array_oop(Register oop, Register temp_reg,
+                                             Label& is_non_flat_array) {
+  test_oop_prototype_bit(oop, temp_reg, markWord::flat_array_bit_in_place, false, is_non_flat_array);
+}
+
+void MacroAssembler::test_null_free_array_oop(Register oop, Register temp_reg, Label&is_null_free_array) {
+  test_oop_prototype_bit(oop, temp_reg, markWord::null_free_array_bit_in_place, true, is_null_free_array);
+}
+
+void MacroAssembler::test_non_null_free_array_oop(Register oop, Register temp_reg, Label&is_non_null_free_array) {
+  test_oop_prototype_bit(oop, temp_reg, markWord::null_free_array_bit_in_place, false, is_non_null_free_array);
+}
+
+void MacroAssembler::test_flat_array_layout(Register lh, Label& is_flat_array) {
+  testl(lh, Klass::_lh_array_tag_flat_value_bit_inplace);
+  jcc(Assembler::notZero, is_flat_array);
 }
 
 void MacroAssembler::os_breakpoint() {
@@ -3733,6 +3811,28 @@ void MacroAssembler::zero_memory(Register address, Register length_in_bytes, int
   bind(done);
 }
 
+void MacroAssembler::inline_layout_info(Register holder_klass, Register index, Register layout_info) {
+  movptr(layout_info, Address(holder_klass, InstanceKlass::inline_layout_info_array_offset()));
+#ifdef ASSERT
+  {
+    Label done;
+    cmpptr(layout_info, 0);
+    jcc(Assembler::notEqual, done);
+    stop("inline_layout_info_array is null");
+    bind(done);
+  }
+#endif
+
+  InlineLayoutInfo array[2];
+  int size = (char*)&array[1] - (char*)&array[0]; // computing size of array elements
+  if (is_power_of_2(size)) {
+    shll(index, log2i_exact(size)); // Scale index by power of 2
+  } else {
+    imull(index, index, size); // Scale the index to be the entry index * array_element_size
+  }
+  lea(layout_info, Address(layout_info, index, Address::times_1, Array<InlineLayoutInfo>::base_offset_in_bytes()));
+}
+
 // Look up the method for a megamorphic invokeinterface call.
 // The target method is determined by <intf_klass, itable_index>.
 // The receiver klass is in recv_klass.
@@ -4507,7 +4607,7 @@ void MacroAssembler::lookup_secondary_supers_table_var(Register r_sub_klass,
   assert(Array<Klass*>::length_offset_in_bytes() == 0, "Adjust this code");
 
   cmpq(r_super_klass, Address(r_array_base, r_array_index, Address::times_8));
-  jccb(Assembler::equal, L_success);
+  jcc(Assembler::equal, L_success);
 
   // Restore slot to its true value
   movb(slot, Address(r_super_klass, Klass::hash_slot_offset()));
@@ -4518,7 +4618,7 @@ void MacroAssembler::lookup_secondary_supers_table_var(Register r_sub_klass,
 
   // Is there another entry to check? Consult the bitmap.
   btq(r_bitmap, 1);
-  jccb(Assembler::carryClear, L_failure);
+  jcc(Assembler::carryClear, L_failure);
 
   // Calls into the stub generated by lookup_secondary_supers_table_slow_path.
   // Arguments: r_super_klass, r_array_base, r_array_index, r_bitmap.
@@ -4657,21 +4757,6 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
   }
 }
 
-struct VerifyHelperArguments {
-  Klass* _super;
-  Klass* _sub;
-  intptr_t _linear_result;
-  intptr_t _table_result;
-};
-
-static void verify_secondary_supers_table_helper(const char* msg, VerifyHelperArguments* args) {
-  Klass::on_secondary_supers_verification_failure(args->_super,
-                                                  args->_sub,
-                                                  args->_linear_result,
-                                                  args->_table_result,
-                                                  msg);
-}
-
 // Make sure that the hashed lookup and a linear scan agree.
 void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
                                                    Register r_super_klass,
@@ -4714,15 +4799,31 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
   cmpl(linear_result, result);
   jcc(Assembler::equal, L_done);
 
-  { // To avoid calling convention issues, build a record on the stack
-    // and pass the pointer to that instead.
+  { // Push values on stack and load them into argument registers
+    // to avoid overlaping registers issue.
     push(result);
     push(linear_result);
     push(r_sub_klass);
     push(r_super_klass);
-    movptr(c_rarg1, rsp);
-    movptr(c_rarg0, (uintptr_t) "mismatch");
-    call(RuntimeAddress(CAST_FROM_FN_PTR(address, verify_secondary_supers_table_helper)));
+    movptr(c_rarg0, Address(rsp, 0 * wordSize)); // super
+    movptr(c_rarg1, Address(rsp, 1 * wordSize)); // sub
+    movptr(c_rarg2, Address(rsp, 2 * wordSize)); // linear_result
+    movptr(c_rarg3, Address(rsp, 3 * wordSize)); // table_result
+    const char* msg = "mismatch";
+    const char* str = (code_section()->scratch_emit()) ? msg : AOTCodeCache::add_C_string(msg);
+    lea(rscratch1, ExternalAddress((address)str));
+#ifdef _WIN64
+    // Win64 pass only 4 arguments in registers, push message on stack.
+    // Windows always allocates space for its register args and we
+    // need one more for 5th argument.
+    subq(rsp, (frame::arg_reg_save_area_bytes + wordSize));
+    andq(rsp, -StackAlignmentInBytes); // align stack as required by ABI
+    movptr(Address(rsp, frame::arg_reg_save_area_bytes), rscratch1);
+#else
+    movptr(c_rarg4, rscratch1);
+    andq(rsp, -StackAlignmentInBytes); // align stack as required by ABI
+#endif
+    call(RuntimeAddress(CAST_FROM_FN_PTR(address, Klass::on_secondary_supers_verification_failure)));
     should_not_reach_here();
   }
   bind(L_done);
@@ -4783,7 +4884,11 @@ void MacroAssembler::cmov32(Condition cc, Register dst, Register src) {
 }
 
 void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, int line) {
-  if (!VerifyOops) return;
+  if (!VerifyOops || VerifyAdapterSharing) {
+    // Below address of the code string confuses VerifyAdapterSharing
+    // because it may differ between otherwise equivalent adapters.
+    return;
+  }
 
   BLOCK_COMMENT("verify_oop {");
   push(rscratch1);
@@ -4796,7 +4901,15 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
     ResourceMark rm;
     stringStream ss;
     ss.print("verify_oop: %s: %s (%s:%d)", reg->name(), s, file, line);
-    b = code_string(ss.as_string());
+#if INCLUDE_CDS
+    if (AOTCodeCache::is_on_for_dump() && !code_section()->scratch_emit()) {
+      // this will duplicate string to preserve it
+      b = AOTCodeCache::add_C_string(ss.as_string());
+    } else
+#endif
+    {
+      b = code_string(ss.as_string());
+    }
   }
   AddressLiteral buffer((address) b, external_word_Relocation::spec_for_immediate());
   pushptr(buffer.addr(), rscratch1);
@@ -5036,7 +5149,11 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
 }
 
 void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* file, int line) {
-  if (!VerifyOops) return;
+  if (!VerifyOops || VerifyAdapterSharing) {
+    // Below address of the code string confuses VerifyAdapterSharing
+    // because it may differ between otherwise equivalent adapters.
+    return;
+  }
 
   push(rscratch1);
   push(rax); // save rax,
@@ -5057,7 +5174,15 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
     ResourceMark rm;
     stringStream ss;
     ss.print("verify_oop_addr: %s (%s:%d)", s, file, line);
-    b = code_string(ss.as_string());
+#if INCLUDE_CDS
+    if (AOTCodeCache::is_on_for_dump() && !code_section()->scratch_emit()) {
+      // this will duplicate string to preserve it
+      b = AOTCodeCache::add_C_string(ss.as_string());
+    } else
+#endif
+    {
+      b = code_string(ss.as_string());
+    }
   }
   AddressLiteral buffer((address) b, external_word_Relocation::spec_for_immediate());
   pushptr(buffer.addr(), rscratch1);
@@ -5428,23 +5553,38 @@ void MacroAssembler::load_method_holder(Register holder, Register method) {
   movptr(holder, Address(holder, ConstantPool::pool_holder_offset()));          // InstanceKlass*
 }
 
+void MacroAssembler::load_metadata(Register dst, Register src) {
+  if (UseCompactObjectHeaders) {
+    load_narrow_klass_compact(dst, src);
+  } else {
+    movl(dst, Address(src, oopDesc::klass_offset_in_bytes()));
+  }
+}
+
 void MacroAssembler::load_narrow_klass_compact(Register dst, Register src) {
   assert(UseCompactObjectHeaders, "expect compact object headers");
   movq(dst, Address(src, oopDesc::mark_offset_in_bytes()));
   shrq(dst, markWord::klass_shift);
 }
 
+void MacroAssembler::load_narrow_klass(Register dst, Register src) {
+  if (UseCompactObjectHeaders) {
+    load_narrow_klass_compact(dst, src);
+  } else {
+    movl(dst, Address(src, oopDesc::klass_offset_in_bytes()));
+  }
+}
+
 void MacroAssembler::load_klass(Register dst, Register src, Register tmp) {
   assert_different_registers(src, tmp);
   assert_different_registers(dst, tmp);
+  load_narrow_klass(dst, src);
+  decode_klass_not_null(dst, tmp);
+}
 
-  if (UseCompactObjectHeaders) {
-    load_narrow_klass_compact(dst, src);
-    decode_klass_not_null(dst, tmp);
-  } else {
-    movl(dst, Address(src, oopDesc::klass_offset_in_bytes()));
-    decode_klass_not_null(dst, tmp);
-  }
+void MacroAssembler::load_prototype_header(Register dst, Register src, Register tmp) {
+  load_klass(dst, src, tmp);
+  movptr(dst, Address(dst, Klass::prototype_header_offset()));
 }
 
 void MacroAssembler::store_klass(Register dst, Register src, Register tmp) {
@@ -5500,6 +5640,28 @@ void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators, Ad
     bs->BarrierSetAssembler::store_at(this, decorators, type, dst, val, tmp1, tmp2, tmp3);
   } else {
     bs->store_at(this, decorators, type, dst, val, tmp1, tmp2, tmp3);
+  }
+}
+
+void MacroAssembler::flat_field_copy(DecoratorSet decorators, Register src, Register dst,
+                                     Register inline_layout_info) {
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->flat_field_copy(this, decorators, src, dst, inline_layout_info);
+}
+
+void MacroAssembler::payload_offset(Register inline_klass, Register offset) {
+  movptr(offset, Address(inline_klass, InlineKlass::adr_members_offset()));
+  movl(offset, Address(offset, InlineKlass::payload_offset_offset()));
+}
+
+void MacroAssembler::payload_addr(Register oop, Register data, Register inline_klass) {
+  // ((address) (void*) o) + vk->payload_offset();
+  Register offset = (data == oop) ? rscratch1 : data;
+  payload_offset(inline_klass, offset);
+  if (data == oop) {
+    addptr(data, offset);
+  } else {
+    lea(data, Address(oop, offset));
   }
 }
 
@@ -5865,22 +6027,508 @@ void MacroAssembler::reinit_heapbase() {
   }
 }
 
+int MacroAssembler::store_inline_type_fields_to_buf(ciInlineKlass* vk, bool from_interpreter) {
+  assert(InlineTypeReturnedAsFields, "Inline types should never be returned as fields");
+  // An inline type might be returned. If fields are in registers we
+  // need to allocate an inline type instance and initialize it with
+  // the value of the fields.
+  Label skip;
+  // We only need a new buffered inline type if a new one is not returned
+  testptr(rax, 1);
+  jcc(Assembler::zero, skip);
+  int call_offset = -1;
+
+  // The following code is similar to allocation code in TemplateTable::_new but has some slight differences,
+  // e.g. object size is always not zero, sometimes it's constant; storing klass ptr after
+  // allocating is not necessary if vk != nullptr, etc.
+  Label slow_case;
+  // 1. Try to allocate a new buffered inline instance either from TLAB or eden space
+  mov(rscratch1, rax); // save rax for slow_case since *_allocate may corrupt it when allocation failed
+  if (vk != nullptr) {
+    // Called from C1, where the return type is statically known.
+    movptr(rbx, (intptr_t)vk->get_InlineKlass());
+    jint lh = vk->layout_helper();
+    assert(lh != Klass::_lh_neutral_value, "inline class in return type must have been resolved");
+    if (UseTLAB && !Klass::layout_helper_needs_slow_path(lh)) {
+      tlab_allocate(rax, noreg, lh, r13, r14, slow_case);
+    } else {
+      jmp(slow_case);
+    }
+  } else {
+    // Call from interpreter. RAX contains ((the InlineKlass* of the return type) | 0x01)
+    mov(rbx, rax);
+    andptr(rbx, -2);
+    if (UseTLAB) {
+      movl(r14, Address(rbx, Klass::layout_helper_offset()));
+      testl(r14, Klass::_lh_instance_slow_path_bit);
+      jcc(Assembler::notZero, slow_case);
+      tlab_allocate(rax, r14, 0, r13, r14, slow_case);
+    } else {
+      jmp(slow_case);
+    }
+  }
+  if (UseTLAB) {
+    // 2. Initialize buffered inline instance header
+    Register buffer_obj = rax;
+    Register klass = rbx;
+    if (UseCompactObjectHeaders) {
+      Register mark_word = r13;
+      movptr(mark_word, Address(klass, Klass::prototype_header_offset()));
+      movptr(Address(buffer_obj, oopDesc::mark_offset_in_bytes()), mark_word);
+    } else {
+      movptr(Address(buffer_obj, oopDesc::mark_offset_in_bytes()), (intptr_t)markWord::inline_type_prototype().value());
+      xorl(r13, r13);
+      store_klass_gap(buffer_obj, r13);
+      if (vk == nullptr) {
+        // store_klass corrupts rbx(klass), so save it in r13 for later use (interpreter case only).
+        mov(r13, klass);
+      }
+      store_klass(buffer_obj, klass, rscratch1);
+      klass = r13;
+    }
+    // 3. Initialize its fields with an inline class specific handler
+    if (vk != nullptr) {
+      call(RuntimeAddress(vk->pack_handler())); // no need for call info as this will not safepoint.
+    } else {
+      movptr(rbx, Address(klass, InlineKlass::adr_members_offset()));
+      movptr(rbx, Address(rbx, InlineKlass::pack_handler_offset()));
+      call(rbx);
+    }
+    jmp(skip);
+  }
+  bind(slow_case);
+  // We failed to allocate a new inline type, fall back to a runtime
+  // call. Some oop field may be live in some registers but we can't
+  // tell. That runtime call will take care of preserving them
+  // across a GC if there's one.
+  mov(rax, rscratch1);
+
+  if (from_interpreter) {
+    super_call_VM_leaf(SharedRuntime::store_inline_type_fields_to_buf_entry());
+  } else {
+    call(RuntimeAddress(SharedRuntime::store_inline_type_fields_to_buf_entry()));
+    call_offset = offset();
+  }
+
+  bind(skip);
+  return call_offset;
+}
+
+// Move a value between registers/stack slots and update the reg_state
+bool MacroAssembler::move_helper(VMReg from, VMReg to, BasicType bt, RegState reg_state[]) {
+  assert(from->is_valid() && to->is_valid(), "source and destination must be valid");
+  if (reg_state[to->value()] == reg_written) {
+    return true; // Already written
+  }
+  if (from != to && bt != T_VOID) {
+    if (reg_state[to->value()] == reg_readonly) {
+      return false; // Not yet writable
+    }
+    if (from->is_reg()) {
+      if (to->is_reg()) {
+        if (from->is_XMMRegister()) {
+          if (bt == T_DOUBLE) {
+            movdbl(to->as_XMMRegister(), from->as_XMMRegister());
+          } else {
+            assert(bt == T_FLOAT, "must be float");
+            movflt(to->as_XMMRegister(), from->as_XMMRegister());
+          }
+        } else {
+          movq(to->as_Register(), from->as_Register());
+        }
+      } else {
+        int st_off = to->reg2stack() * VMRegImpl::stack_slot_size + wordSize;
+        Address to_addr = Address(rsp, st_off);
+        if (from->is_XMMRegister()) {
+          if (bt == T_DOUBLE) {
+            movdbl(to_addr, from->as_XMMRegister());
+          } else {
+            assert(bt == T_FLOAT, "must be float");
+            movflt(to_addr, from->as_XMMRegister());
+          }
+        } else {
+          movq(to_addr, from->as_Register());
+        }
+      }
+    } else {
+      Address from_addr = Address(rsp, from->reg2stack() * VMRegImpl::stack_slot_size + wordSize);
+      if (to->is_reg()) {
+        if (to->is_XMMRegister()) {
+          if (bt == T_DOUBLE) {
+            movdbl(to->as_XMMRegister(), from_addr);
+          } else {
+            assert(bt == T_FLOAT, "must be float");
+            movflt(to->as_XMMRegister(), from_addr);
+          }
+        } else {
+          movq(to->as_Register(), from_addr);
+        }
+      } else {
+        int st_off = to->reg2stack() * VMRegImpl::stack_slot_size + wordSize;
+        movq(r13, from_addr);
+        movq(Address(rsp, st_off), r13);
+      }
+    }
+  }
+  // Update register states
+  reg_state[from->value()] = reg_writable;
+  reg_state[to->value()] = reg_written;
+  return true;
+}
+
+// Calculate the extra stack space required for packing or unpacking inline
+// args and adjust the stack pointer (see MacroAssembler::remove_frame).
+int MacroAssembler::extend_stack_for_inline_args(int args_on_stack) {
+  int sp_inc = args_on_stack * VMRegImpl::stack_slot_size;
+  sp_inc = align_up(sp_inc, StackAlignmentInBytes);
+  assert(sp_inc > 0, "sanity");
+  // Two additional slots to account for return address
+  sp_inc +=  2 * VMRegImpl::stack_slot_size;
+
+  push(rbp);
+  subptr(rsp, sp_inc);
+#ifdef ASSERT
+  movl(Address(rsp, 0), badRegWordVal);
+  movl(Address(rsp, VMRegImpl::stack_slot_size), badRegWordVal);
+#endif
+  return sp_inc + wordSize; // account for rbp space
+}
+
+// Read all fields from an inline type buffer and store the field values in registers/stack slots.
+bool MacroAssembler::unpack_inline_helper(const GrowableArray<SigEntry>* sig, int& sig_index,
+                                          VMReg from, int& from_index, VMRegPair* to, int to_count, int& to_index,
+                                          RegState reg_state[]) {
+  assert(sig->at(sig_index)._bt == T_VOID, "should be at end delimiter");
+  assert(from->is_valid(), "source must be valid");
+  bool progress = false;
+#ifdef ASSERT
+  const int start_offset = offset();
+#endif
+
+  Label L_null, L_notNull;
+  // Don't use r14 as tmp because it's used for spilling (see MacroAssembler::spill_reg_for)
+  Register tmp1 = r10;
+  Register tmp2 = r13;
+  Register fromReg = noreg;
+  ScalarizedInlineArgsStream stream(sig, sig_index, to, to_count, to_index, true);
+  bool done = true;
+  bool mark_done = true;
+  VMReg toReg;
+  BasicType bt;
+  // Check if argument requires a null check
+  bool null_check = false;
+  VMReg nullCheckReg;
+  while (stream.next(nullCheckReg, bt)) {
+    if (sig->at(stream.sig_index())._offset == -1) {
+      null_check = true;
+      break;
+    }
+  }
+  stream.reset(sig_index, to_index);
+  while (stream.next(toReg, bt)) {
+    assert(toReg->is_valid(), "destination must be valid");
+    int idx = (int)toReg->value();
+    if (reg_state[idx] == reg_readonly) {
+      if (idx != from->value()) {
+        mark_done = false;
+      }
+      done = false;
+      continue;
+    } else if (reg_state[idx] == reg_written) {
+      continue;
+    }
+    assert(reg_state[idx] == reg_writable, "must be writable");
+    reg_state[idx] = reg_written;
+    progress = true;
+
+    if (fromReg == noreg) {
+      if (from->is_reg()) {
+        fromReg = from->as_Register();
+      } else {
+        int st_off = from->reg2stack() * VMRegImpl::stack_slot_size + wordSize;
+        movq(tmp1, Address(rsp, st_off));
+        fromReg = tmp1;
+      }
+      if (null_check) {
+        // Nullable inline type argument, emit null check
+        testptr(fromReg, fromReg);
+        jcc(Assembler::zero, L_null);
+      }
+    }
+    int off = sig->at(stream.sig_index())._offset;
+    if (off == -1) {
+      assert(null_check, "Missing null check at");
+      if (toReg->is_stack()) {
+        int st_off = toReg->reg2stack() * VMRegImpl::stack_slot_size + wordSize;
+        movq(Address(rsp, st_off), 1);
+      } else {
+        movq(toReg->as_Register(), 1);
+      }
+      continue;
+    }
+    if (sig->at(stream.sig_index())._vt_oop) {
+      if (toReg->is_stack()) {
+        int st_off = toReg->reg2stack() * VMRegImpl::stack_slot_size + wordSize;
+        movq(Address(rsp, st_off), fromReg);
+      } else {
+        movq(toReg->as_Register(), fromReg);
+      }
+      continue;
+    }
+    assert(off > 0, "offset in object should be positive");
+    Address fromAddr = Address(fromReg, off);
+    if (!toReg->is_XMMRegister()) {
+      Register dst = toReg->is_stack() ? tmp2 : toReg->as_Register();
+      if (is_reference_type(bt)) {
+        load_heap_oop(dst, fromAddr);
+      } else {
+        bool is_signed = (bt != T_CHAR) && (bt != T_BOOLEAN);
+        load_sized_value(dst, fromAddr, type2aelembytes(bt), is_signed);
+      }
+      if (toReg->is_stack()) {
+        int st_off = toReg->reg2stack() * VMRegImpl::stack_slot_size + wordSize;
+        movq(Address(rsp, st_off), dst);
+      }
+    } else if (bt == T_DOUBLE) {
+      movdbl(toReg->as_XMMRegister(), fromAddr);
+    } else {
+      assert(bt == T_FLOAT, "must be float");
+      movflt(toReg->as_XMMRegister(), fromAddr);
+    }
+  }
+  if (progress && null_check) {
+    if (done) {
+      jmp(L_notNull);
+      bind(L_null);
+      // Set null marker to zero to signal that the argument is null.
+      // Also set all fields to zero since the runtime requires a canonical
+      // representation of a flat null.
+      stream.reset(sig_index, to_index);
+      while (stream.next(toReg, bt)) {
+        if (toReg->is_stack()) {
+          int st_off = toReg->reg2stack() * VMRegImpl::stack_slot_size + wordSize;
+          movq(Address(rsp, st_off), 0);
+        } else if (toReg->is_XMMRegister()) {
+          xorps(toReg->as_XMMRegister(), toReg->as_XMMRegister());
+        } else {
+          xorl(toReg->as_Register(), toReg->as_Register());
+        }
+      }
+      bind(L_notNull);
+    } else {
+      bind(L_null);
+    }
+  }
+
+  sig_index = stream.sig_index();
+  to_index = stream.regs_index();
+
+  if (mark_done && reg_state[from->value()] != reg_written) {
+    // This is okay because no one else will write to that slot
+    reg_state[from->value()] = reg_writable;
+  }
+  from_index--;
+  assert(progress || (start_offset == offset()), "should not emit code");
+  return done;
+}
+
+bool MacroAssembler::pack_inline_helper(const GrowableArray<SigEntry>* sig, int& sig_index, int vtarg_index,
+                                        VMRegPair* from, int from_count, int& from_index, VMReg to,
+                                        RegState reg_state[], Register val_array) {
+  assert(sig->at(sig_index)._bt == T_METADATA, "should be at delimiter");
+  assert(to->is_valid(), "destination must be valid");
+
+  if (reg_state[to->value()] == reg_written) {
+    skip_unpacked_fields(sig, sig_index, from, from_count, from_index);
+    return true; // Already written
+  }
+
+  // Be careful with r14 because it's used for spilling (see MacroAssembler::spill_reg_for).
+  Register val_obj_tmp = r11;
+  Register from_reg_tmp = r14;
+  Register tmp1 = r10;
+  Register tmp2 = r13;
+  Register tmp3 = rbx;
+  Register val_obj = to->is_stack() ? val_obj_tmp : to->as_Register();
+
+  assert_different_registers(val_obj_tmp, from_reg_tmp, tmp1, tmp2, tmp3, val_array);
+
+  if (reg_state[to->value()] == reg_readonly) {
+    if (!is_reg_in_unpacked_fields(sig, sig_index, to, from, from_count, from_index)) {
+      skip_unpacked_fields(sig, sig_index, from, from_count, from_index);
+      return false; // Not yet writable
+    }
+    val_obj = val_obj_tmp;
+  }
+
+  ScalarizedInlineArgsStream stream(sig, sig_index, from, from_count, from_index);
+  VMReg fromReg;
+  BasicType bt;
+  Label L_null;
+  while (stream.next(fromReg, bt)) {
+    assert(fromReg->is_valid(), "source must be valid");
+    reg_state[fromReg->value()] = reg_writable;
+
+    int off = sig->at(stream.sig_index())._offset;
+    if (off == -1) {
+      // Nullable inline type argument, emit null check
+      Label L_notNull;
+      if (fromReg->is_stack()) {
+        int ld_off = fromReg->reg2stack() * VMRegImpl::stack_slot_size + wordSize;
+        testb(Address(rsp, ld_off), 1);
+      } else {
+        testb(fromReg->as_Register(), 1);
+      }
+      jcc(Assembler::notZero, L_notNull);
+      movptr(val_obj, 0);
+      jmp(L_null);
+      bind(L_notNull);
+      continue;
+    }
+    if (sig->at(stream.sig_index())._vt_oop) {
+      // buffer argument: use if non null
+      if (fromReg->is_stack()) {
+        int ld_off = fromReg->reg2stack() * VMRegImpl::stack_slot_size + wordSize;
+        movptr(val_obj, Address(rsp, ld_off));
+      } else {
+        movptr(val_obj, fromReg->as_Register());
+      }
+      testptr(val_obj, val_obj);
+      jcc(Assembler::notEqual, L_null);
+      // otherwise get the buffer from the just allocated pool of buffers
+      int index = arrayOopDesc::base_offset_in_bytes(T_OBJECT) + vtarg_index * type2aelembytes(T_OBJECT);
+      load_heap_oop(val_obj, Address(val_array, index));
+      continue;
+    }
+
+    assert(off > 0, "offset in object should be positive");
+    size_t size_in_bytes = is_java_primitive(bt) ? type2aelembytes(bt) : wordSize;
+
+    // Pack the scalarized field into the value object.
+    Address dst(val_obj, off);
+    if (!fromReg->is_XMMRegister()) {
+      Register src;
+      if (fromReg->is_stack()) {
+        src = from_reg_tmp;
+        int ld_off = fromReg->reg2stack() * VMRegImpl::stack_slot_size + wordSize;
+        load_sized_value(src, Address(rsp, ld_off), size_in_bytes, /* is_signed */ false);
+      } else {
+        src = fromReg->as_Register();
+      }
+      assert_different_registers(dst.base(), src, tmp1, tmp2, tmp3, val_array);
+      if (is_reference_type(bt)) {
+        // store_heap_oop transitively calls oop_store_at which corrupts to.base(). We need to keep val_obj valid.
+        mov(tmp3, val_obj);
+        Address dst_with_tmp3(tmp3, off);
+        store_heap_oop(dst_with_tmp3, src, tmp1, tmp2, tmp3, IN_HEAP | ACCESS_WRITE | IS_DEST_UNINITIALIZED);
+      } else {
+        store_sized_value(dst, src, size_in_bytes);
+      }
+    } else if (bt == T_DOUBLE) {
+      movdbl(dst, fromReg->as_XMMRegister());
+    } else {
+      assert(bt == T_FLOAT, "must be float");
+      movflt(dst, fromReg->as_XMMRegister());
+    }
+  }
+  bind(L_null);
+  sig_index = stream.sig_index();
+  from_index = stream.regs_index();
+
+  assert(reg_state[to->value()] == reg_writable, "must have already been read");
+  bool success = move_helper(val_obj->as_VMReg(), to, T_OBJECT, reg_state);
+  assert(success, "to register must be writable");
+  return true;
+}
+
+VMReg MacroAssembler::spill_reg_for(VMReg reg) {
+  return reg->is_XMMRegister() ? xmm8->as_VMReg() : r14->as_VMReg();
+}
+
+void MacroAssembler::remove_frame(int initial_framesize, bool needs_stack_repair) {
+  assert((initial_framesize & (StackAlignmentInBytes-1)) == 0, "frame size not aligned");
+  if (needs_stack_repair) {
+    // The method has a scalarized entry point (where fields of value object arguments
+    // are passed through registers and stack), and a non-scalarized entry point (where
+    // value object arguments are given as oops). The non-scalarized entry point will
+    // first load each field of value object arguments and store them in registers and on
+    // the stack in a way compatible with the scalarized entry point. To do so, some extra
+    // stack space might be reserved (if argument registers are not enough). On leaving the
+    // method, this space must be freed.
+    //
+    // In case we used the non-scalarized entry point the stack looks like this:
+    //
+    // | Arguments from caller     |
+    // |---------------------------|  <-- caller's SP
+    // | Return address #1         |
+    // | Saved RBP #1              |
+    // |---------------------------|
+    // | Extension space for       |
+    // |   inline arg (un)packing  |
+    // |---------------------------|  <-- start of this method's frame
+    // | Return address #2         |
+    // | Saved RBP #2              |
+    // |---------------------------|  <-- RBP (with -XX:+PreserveFramePointer)
+    // | sp_inc                    |
+    // | method locals             |
+    // |---------------------------|  <-- SP
+    //
+    // Space for the return pc and saved rbp is reserved twice. But only the #1 copies
+    // contain the real values of return pc and saved rbp. The #2 copies are not reliable
+    // and should not be used. They are mostly needed to add space between the extension
+    // space and the locals, as there would be between the real arguments and the locals
+    // if we don't need to do unpacking (from the scalarized entry point).
+    //
+    // When leaving, one must load RBP #1 into RBP, and use the copy #1 of the return address,
+    // while keeping in mind that from the scalarized entry point, there will be only one
+    // copy. Indeed, in the case we used the scalarized calling convention, the stack looks like this:
+    //
+    // | Arguments from caller     |
+    // |---------------------------|  <-- caller's SP
+    // | Return address            |
+    // | Saved RBP                 |
+    // |---------------------------|  <-- FP (with -XX:+PreserveFramePointer)
+    // | sp_inc                    |
+    // | method locals             |
+    // |---------------------------|  <-- SP
+    //
+    // The sp_inc stack slot holds the total size of the frame, including the extension
+    // space and copies #2 of the return address and the saved RBP (but never the copies
+    // #1 of the return address and saved RBP). That is how to find the copies #1 of the
+    // return address and saved rbp. This size is expressed in bytes. Be careful when using
+    // it from C++ in pointer arithmetic you might need to divide it by wordSize.
+
+    // The stack increment resides just below the saved rbp
+    addq(rsp, Address(rsp, initial_framesize - wordSize));
+    pop(rbp);
+  } else {
+    if (initial_framesize > 0) {
+      addq(rsp, initial_framesize);
+    }
+    pop(rbp);
+  }
+}
+
 #ifdef COMPILER2
 
-// clear memory of size 'cnt' qwords, starting at 'base' using XMM/YMM/ZMM registers
-void MacroAssembler::xmm_clear_mem(Register base, Register cnt, Register rtmp, XMMRegister xtmp, KRegister mask) {
+// Fill memory with 'val', for 'cnt' qwords starting at 'base', using XMM/YMM/ZMM registers.
+void MacroAssembler::xmm_fill_mem(Register base, Register cnt, Register val, XMMRegister xtmp, KRegister mask) {
   // cnt - number of qwords (8-byte words).
   // base - start address, qword aligned.
-  Label L_zero_64_bytes, L_loop, L_sloop, L_tail, L_end;
-  bool use64byteVector = (MaxVectorSize == 64) && (CopyAVX3Threshold == 0);
+  // val - qword pattern to fill.
+  Label L_fill_64_bytes, L_loop, L_sloop, L_tail, L_end;
+  bool use64byteVector = (MaxVectorSize == 64) && (CopyAVX3Threshold == 0) && VM_Version::supports_bmi2();
   if (use64byteVector) {
-    vpxor(xtmp, xtmp, xtmp, AVX_512bit);
+    evpbroadcastq(xtmp, val, AVX_512bit);
   } else if (MaxVectorSize >= 32) {
-    vpxor(xtmp, xtmp, xtmp, AVX_256bit);
+    movdq(xtmp, val);
+    punpcklqdq(xtmp, xtmp);
+    vinserti128_high(xtmp, xtmp);
   } else {
-    pxor(xtmp, xtmp);
+    movdq(xtmp, val);
+    punpcklqdq(xtmp, xtmp);
   }
-  jmp(L_zero_64_bytes);
+  jmp(L_fill_64_bytes);
 
   BIND(L_loop);
   if (MaxVectorSize >= 32) {
@@ -5893,15 +6541,15 @@ void MacroAssembler::xmm_clear_mem(Register base, Register cnt, Register rtmp, X
   }
   addptr(base, 64);
 
-  BIND(L_zero_64_bytes);
+  BIND(L_fill_64_bytes);
   subptr(cnt, 8);
   jccb(Assembler::greaterEqual, L_loop);
 
-  // Copy trailing 64 bytes
+  // Fill trailing 64 bytes.
   if (use64byteVector) {
     addptr(cnt, 8);
     jccb(Assembler::equal, L_end);
-    fill64_masked(3, base, 0, xtmp, mask, cnt, rtmp, true);
+    fill64_masked(3, base, 0, xtmp, mask, cnt, val, true);
     jmp(L_end);
   } else {
     addptr(cnt, 4);
@@ -5919,8 +6567,8 @@ void MacroAssembler::xmm_clear_mem(Register base, Register cnt, Register rtmp, X
   BIND(L_tail);
   addptr(cnt, 4);
   jccb(Assembler::lessEqual, L_end);
-  if (UseAVX > 2 && MaxVectorSize >= 32 && VM_Version::supports_avx512vl()) {
-    fill32_masked(3, base, 0, xtmp, mask, cnt, rtmp);
+  if (UseAVX > 2 && MaxVectorSize >= 32 && VM_Version::supports_avx512vl() && VM_Version::supports_bmi2()) {
+    fill32_masked(3, base, 0, xtmp, mask, cnt, val);
   } else {
     decrement(cnt);
 
@@ -6022,20 +6670,23 @@ void MacroAssembler::clear_mem(Register base, int cnt, Register rtmp, XMMRegiste
   }
 }
 
-void MacroAssembler::clear_mem(Register base, Register cnt, Register tmp, XMMRegister xtmp,
-                               bool is_large, KRegister mask) {
+void MacroAssembler::clear_mem(Register base, Register cnt, Register val, XMMRegister xtmp,
+                               bool is_large, bool requires_word_fill, KRegister mask) {
   // cnt      - number of qwords (8-byte words).
   // base     - start address, qword aligned.
   // is_large - if optimizers know cnt is larger than InitArrayShortSize
+  // requires_word_fill - if true, val contains the qword pattern to fill; if
+  //                      false, val is scratch and this method creates zero
   assert(base==rdi, "base register must be edi for rep stos");
-  assert(tmp==rax,   "tmp register must be eax for rep stos");
+  assert(val==rax,   "val register must be eax for rep stos");
   assert(cnt==rcx,   "cnt register must be ecx for rep stos");
   assert(InitArrayShortSize % BytesPerLong == 0,
     "InitArrayShortSize should be the multiple of BytesPerLong");
 
   Label DONE;
-  if (!is_large || !UseXMMForObjInit) {
-    xorptr(tmp, tmp);
+
+  if (!requires_word_fill) {
+    xorptr(val, val);
   }
 
   if (!is_large) {
@@ -6048,7 +6699,7 @@ void MacroAssembler::clear_mem(Register base, Register cnt, Register tmp, XMMReg
 
     // Use individual pointer-sized stores for small counts:
     BIND(LOOP);
-    movptr(Address(base, cnt, Address::times_ptr), tmp);
+    movptr(Address(base, cnt, Address::times_ptr), val);
     decrement(cnt);
     jccb(Assembler::greaterEqual, LOOP);
     jmpb(DONE);
@@ -6056,12 +6707,13 @@ void MacroAssembler::clear_mem(Register base, Register cnt, Register tmp, XMMReg
     BIND(LONG);
   }
 
-  // Use longer rep-prefixed ops for non-small counts:
-  if (UseFastStosb) {
+  // Use longer rep-prefixed ops for non-small counts. rep stosb is valid only
+  // for zeroing; an arbitrary qword pattern must be copied in full.
+  if (UseFastStosb && !requires_word_fill) {
     shlptr(cnt, 3); // convert to number of bytes
     rep_stosb();
   } else if (UseXMMForObjInit) {
-    xmm_clear_mem(base, cnt, tmp, xtmp, mask);
+    xmm_fill_mem(base, cnt, val, xtmp, mask);
   } else {
     rep_stos();
   }
@@ -6982,7 +7634,7 @@ void MacroAssembler::vectorized_mismatch(Register obja, Register objb, Register 
   xorq(result, result);
 
   if ((AVX3Threshold == 0) && (UseAVX > 2) &&
-      VM_Version::supports_avx512vlbw() && UseCountTrailingZerosInstruction) {
+      VM_Version::supports_avx512vlbw() && UseCountTrailingZerosInstruction && VM_Version::supports_bmi2()) {
     Label VECTOR64_LOOP, VECTOR64_NOT_EQUAL, VECTOR32_TAIL;
 
     cmpq(length, 64);
@@ -9948,10 +10600,8 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register reg_r
   // instruction emitted as it is part of C1's null check semantics.
   movptr(reg_rax, Address(obj, oopDesc::mark_offset_in_bytes()));
 
-  if (UseObjectMonitorTable) {
-    // Clear cache in case fast locking succeeds or we need to take the slow-path.
-    movptr(Address(basic_lock, BasicObjectLock::lock_offset() + in_ByteSize((BasicLock::object_monitor_cache_offset_in_bytes()))), 0);
-  }
+  // Clear cache in case fast locking succeeds or we need to take the slow-path.
+  movptr(Address(basic_lock, BasicObjectLock::lock_offset() + in_ByteSize((BasicLock::object_monitor_cache_offset_in_bytes()))), 0);
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(tmp, obj, rscratch1);
@@ -9978,6 +10628,11 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register reg_r
   movptr(tmp, reg_rax);
   andptr(tmp, ~(int32_t)markWord::unlocked_value);
   orptr(reg_rax, markWord::unlocked_value);
+  if (Arguments::is_valhalla_enabled()) {
+    // Mask inline_type bit such that we go to the slow path if object is an inline type
+    andptr(reg_rax, ~((int) markWord::inline_type_bit_in_place));
+  }
+
   lock(); cmpxchgptr(tmp, Address(obj, oopDesc::mark_offset_in_bytes()));
   jcc(Assembler::notEqual, slow);
 

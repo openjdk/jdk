@@ -308,7 +308,7 @@ void DowncallLinker::StubGenerator::generate() {
     // Restore cpu control state after JNI call
     __ restore_cpu_control_state_after_jni(rscratch1, tmp1);
 
-    __ mov(tmp1, _thread_in_native_trans);
+    __ mov(tmp1, _thread_in_vm);
     __ strw(tmp1, Address(rthread, JavaThread::thread_state_offset()));
 
     // Force this write out before the read below

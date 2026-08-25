@@ -291,6 +291,7 @@ public:
   do_var(bool,  UseCRC32Intrinsics) \
   do_var(bool,  UseDilithiumIntrinsics) \
   do_var(bool,  UseGHASHIntrinsics) \
+  do_var(bool,  UseIntPoly25519Intrinsics) \
   do_var(bool,  UseKyberIntrinsics) \
   do_var(bool,  UseMD5Intrinsics) \
   do_var(bool,  UsePoly1305Intrinsics) \
@@ -299,7 +300,11 @@ public:
   do_var(bool,  UseSHA256Intrinsics) \
   do_var(bool,  UseSHA3Intrinsics) \
   do_var(bool,  UseSHA512Intrinsics) \
+  do_var(bool,  UseIntPolyIntrinsics) \
   do_var(bool,  UseVectorizedMismatchIntrinsic) \
+  do_var(bool,  InlineTypeReturnedAsFields) \
+  do_var(bool,  VMContinuations) \
+  do_var(bool,  VerifyOops) \
   do_fun(int,   CompressedKlassPointers_shift,          CompressedKlassPointers::shift()) \
   do_fun(bool,  JavaAssertions_systemClassDefault,      JavaAssertions::systemClassDefault()) \
   do_fun(bool,  JavaAssertions_userClassDefault,        JavaAssertions::userClassDefault()) \
@@ -342,10 +347,23 @@ public:
   do_var(int,   AVX3Threshold)                          /* array copy stubs and nmethods */ \
   do_var(bool,  EnableX86ECoreOpts)                     /* nmethods */ \
   do_var(bool,  UseLibmIntrinsic) \
-  do_var(bool,  UseIntPolyIntrinsics) \
   // END
 #else
 #define AOTCODECACHE_CONFIGS_X86_DO(do_var, do_fun)
+#endif
+
+#if defined(RISCV64) && !defined(ZERO)
+#define AOTCODECACHE_CONFIGS_RISCV_DO(do_var, do_fun) \
+  do_var(intx,  BlockZeroingLowLimit)                   /* zero blocks stub */ \
+  do_var(bool,  UseBlockZeroing)                        /* zero blocks stub and nmethods */ \
+  do_var(bool,  UseConservativeFence)                   /* fence encoding in stubs and nmethods */ \
+  do_var(bool,  UseCtxFencei)                           /* method entry barrier stub */ \
+  do_var(bool,  UseSecondarySupersCache)                /* secondary supers cache in nmethods */ \
+  do_var(bool,  UseZabha)                               /* narrow cmpxchg selection in nmethods */ \
+  do_fun(int,   RVZicbozBlockSize,                      (int)VM_Version::zicboz_block_size.value()) \
+  // END
+#else
+#define AOTCODECACHE_CONFIGS_RISCV_DO(do_var, do_fun)
 #endif
 
 #define AOTCODECACHE_CONFIGS_DO(do_var, do_fun) \
@@ -353,6 +371,7 @@ public:
   AOTCODECACHE_CONFIGS_COMPILER2_DO(do_var, do_fun) \
   AOTCODECACHE_CONFIGS_AARCH64_DO(do_var, do_fun) \
   AOTCODECACHE_CONFIGS_X86_DO(do_var, do_fun) \
+  AOTCODECACHE_CONFIGS_RISCV_DO(do_var, do_fun) \
   // END
 
 #define AOTCODECACHE_DECLARE_VAR(type, name) type _saved_ ## name;
@@ -373,7 +392,7 @@ protected:
     bool _useUnalignedLoadStores;
 #endif
 
-#if defined(AARCH64) && !defined(ZERO)
+#if (defined(AARCH64) || defined(RISCV64)) && !defined(ZERO)
     bool _avoidUnalignedAccesses;
 #endif
 
@@ -461,7 +480,6 @@ private:
   AOTCodeEntry* _load_entries;   // Used when reading cache
   uint*         _search_entries; // sorted by ID table [id, index]
   AOTCodeEntry* _store_entries;  // Used when writing cache
-  const char*   _C_strings_buf;  // Loaded buffer for _C_strings[] table
   uint          _store_entries_cnt;
 
   static AOTCodeCache* open_for_use();
@@ -495,6 +513,7 @@ public:
   uint load_size() const { return _load_size; }
   uint write_position() const { return _write_position; }
 
+  static void init_C_strings_caching();
   void load_strings();
   int store_strings();
 
@@ -680,6 +699,9 @@ class AOTRuntimeConstants {
   address _card_table_base;
   uint    _grain_shift;
   address _cset_base;
+  uintptr_t _verify_oop_mask;
+  uintptr_t _verify_oop_bits;
+
   static address _field_addresses_list[];
   static AOTRuntimeConstants _aot_runtime_constants;
   // private constructor for unique singleton
@@ -696,6 +718,8 @@ class AOTRuntimeConstants {
   static address card_table_base_address();
   static address grain_shift_address() { return (address)&_aot_runtime_constants._grain_shift; }
   static address cset_base_address() { return (address)&_aot_runtime_constants._cset_base; }
+  static address verify_oop_mask_address() { return (address)&_aot_runtime_constants._verify_oop_mask; }
+  static address verify_oop_bits_address() { return (address)&_aot_runtime_constants._verify_oop_bits; }
   static address* field_addresses_list() {
     return _field_addresses_list;
   }
@@ -704,6 +728,8 @@ class AOTRuntimeConstants {
   static address card_table_base_address() { return nullptr; }
   static address grain_shift_address()     { return nullptr; }
   static address cset_base_address()       { return nullptr; }
+  static address verify_oop_mask_address() { return nullptr; }
+  static address verify_oop_bits_address() { return nullptr; }
   static address* field_addresses_list()   { return nullptr; }
 #endif
 };
