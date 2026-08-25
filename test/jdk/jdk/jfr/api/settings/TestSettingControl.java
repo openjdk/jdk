@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,7 @@ public class TestSettingControl {
         new SettingTest("period", "everyChunk", "jdk.ExceptionStatistics", List.of("everyChunk", "60 s", "1 s")),
         new SettingTest("cutoff", "infinity", "jdk.OldObjectSample", List.of("0 ms", "1 s", "infinity")),
         new SettingTest("throttle", "off", "jdk.ObjectAllocationSample", List.of("off", "100/s", "10/ms")),
+        new SettingTest("nativeStack", "false", "jdk.CPUTimeSample", List.of("false", "true")),
         new SettingTest("filter", "", "jdk.MethodTrace", List.of("", "foo.bar::Baz", "com.example.Test;foo.bar::Baz"))
     );
 

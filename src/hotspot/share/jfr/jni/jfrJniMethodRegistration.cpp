@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2025, Datadog, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -87,6 +87,7 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"setThrottle", (char*)"(JJJ)Z", (void*)jfr_set_throttle,
       (char*)"setCPURate", (char*)"(D)V", (void*)jfr_set_cpu_rate,
       (char*)"setCPUPeriod", (char*)"(J)V", (void*)jfr_set_cpu_period,
+      (char*)"setCPUNativeStackTrace", (char*)"(Z)V", (void*)jfr_set_cpu_native_stack_trace,
       (char*)"emitOldObjectSamples", (char*)"(JZZ)V", (void*)jfr_emit_old_object_samples,
       (char*)"shouldRotateDisk", (char*)"()Z", (void*)jfr_should_rotate_disk,
       (char*)"exclude", (char*)"(Ljava/lang/Thread;)V", (void*)jfr_exclude_thread,
