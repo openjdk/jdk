@@ -742,7 +742,7 @@ void AOTMappedHeapWriter::update_header_for_requested_obj(oop requested_obj, oop
   }
   // We need to retain the identity_hash, because it may have been used by some hashtables
   // in the shared heap.
-  if (!src_obj->fast_no_hash_check() && (!(Arguments::is_valhalla_enabled() && src_obj->mark().is_inline_type()))) {
+  if (src_obj->has_identity_hash() && (!(Arguments::is_valhalla_enabled() && src_obj->mark().is_inline_type()))) {
     intptr_t src_hash = src_obj->identity_hash();
     if (UseCompactObjectHeaders) {
       fake_oop->set_mark(fake_oop->mark().copy_set_hash(src_hash));
