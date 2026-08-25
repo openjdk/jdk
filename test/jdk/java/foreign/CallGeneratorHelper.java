@@ -210,7 +210,7 @@ public class CallGeneratorHelper extends NativeTestHelper {
 
     // This can be used to generate the test implementation.
     // From the test/jdk/java/foreign directory, run this class using:
-    // java -cp <jtreg_home>\lib\testng-7.3.0.jar --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED ./CallGeneratorHelper.java
+    // java -cp <jtreg_home>/lib/junit-platform-console-standalone-1.14.2.jar --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED ./CallGeneratorHelper.java
     // Copyright header has to be added manually, and on Windows line endings have to be changed from \r\n to just \n
     public static void main(String[] args) throws IOException {
         try (PrintStream shared = printStream("shared.h");
