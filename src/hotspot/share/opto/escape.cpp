@@ -4351,6 +4351,18 @@ bool ConnectionGraph::split_AddP(Node *addp, Node *base) {
   int alias_idx = _compile->get_alias_index(tinst);
   if (igvn->type(addp)->isa_oopptr()) {
     igvn->set_type(addp, tinst);
+  } else {
+#ifdef ASSERT
+    InitializeNode* init = base->in(0)->in(0)->as_Initialize();
+    bool found = false;
+    for (uint i = InitializeNode::RawStores; i < init->req(); i++) {
+      Node* st = init->in(i);
+      if (st->in(MemNode::Address) == addp) {
+        found = true;
+      }
+    }
+    assert(found, "expected AddP from captured store");
+#endif
   }
   // record the allocation in the node map
   set_map(addp, get_map(base->_idx));
