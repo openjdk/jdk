@@ -26,17 +26,15 @@
  * @bug 8390870
  * @summary ForkJoinTask.get must honor its timeout and interrupts even
  *          when another thread is waiting on the same task.
- * @run junit GetMultipleWaiters
+ * @run junit/othervm/timeout=20 GetMultipleWaiters
  */
 
-import java.time.Duration;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.fail;
 
 class GetMultipleWaiters {
 
@@ -49,30 +47,24 @@ class GetMultipleWaiters {
         var task = ForkJoinTask.adapt(() -> {});
         Throwable[] thrown = {null};
 
-        var a = new Thread(() -> {
+        var a = startThreadAndAwaitState(() -> {
             try {
                 task.get();
             } catch (Throwable t) {
                 thrown[0] = t;
             }
-        }, "waiter-A");
-        var b = new Thread(() -> {
+        }, "waiter-A", Thread.State.WAITING);
+        var b = startThreadAndAwaitState(() -> {
             try {
                 task.get();
             } catch (Throwable ignore) {
             }
-        }, "waiter-B");
+        }, "waiter-B", Thread.State.WAITING);
 
         try {
-            a.start();
-            while (a.getState() != Thread.State.WAITING)
-                Thread.sleep(1);
-            b.start();
-            while (b.getState() != Thread.State.WAITING)
-                Thread.sleep(1);
             a.interrupt();
+            a.join();
 
-            assertJoins(a);
             assertInstanceOf(InterruptedException.class, thrown[0]);
         } finally {
             task.cancel(false);
@@ -90,29 +82,23 @@ class GetMultipleWaiters {
         var task = ForkJoinTask.adapt(() -> {});
         Throwable[] thrown = {null};
 
-        var a = new Thread(() -> {
+        var a = startThreadAndAwaitState(() -> {
             try {
                 task.get(1, TimeUnit.SECONDS);
             } catch (Throwable t) {
                 thrown[0] = t;
             }
-        }, "waiter-A");
-        var b = new Thread(() -> {
+        }, "waiter-A", Thread.State.TIMED_WAITING);
+        var b = startThreadAndAwaitState(() -> {
             try {
                 task.get();
             } catch (Throwable ignore) {
             }
-        }, "waiter-B");
+        }, "waiter-B", Thread.State.WAITING);
 
         try {
-            a.start();
-            while (a.getState() != Thread.State.TIMED_WAITING)
-                Thread.sleep(1);
-            b.start();
-            while (b.getState() != Thread.State.WAITING)
-                Thread.sleep(1);
+            a.join();
 
-            assertJoins(a);
             assertInstanceOf(TimeoutException.class, thrown[0]);
         } finally {
             task.cancel(false);
@@ -121,19 +107,11 @@ class GetMultipleWaiters {
         }
     }
 
-    /**
-     * Fails with the thread's state and stack trace if it does not
-     * terminate within 10 seconds.
-     */
-    private void assertJoins(Thread thread) throws InterruptedException {
-        if (!thread.join(Duration.ofSeconds(10))) {
-            var sb = new StringBuilder();
-            sb.append(thread.getName())
-              .append(" did not terminate, state=")
-              .append(thread.getState());
-            for (var e : thread.getStackTrace())
-                sb.append(System.lineSeparator()).append("    at ").append(e);
-            fail(sb.toString());
-        }
+    static Thread startThreadAndAwaitState(Runnable r, String name, Thread.State state) throws Exception {
+        var t = new Thread(r, name);
+        t.start();
+        while (t.getState() != state)
+            Thread.sleep(1);
+        return t;
     }
 }
