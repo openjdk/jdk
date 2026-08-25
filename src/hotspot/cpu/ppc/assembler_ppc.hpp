@@ -2607,7 +2607,7 @@ class Assembler : public AbstractAssembler {
   inline void load_byte_vector_unaligned(VectorRegister dest, int offs, Register base, Register tmp,
                                          VectorRegister vp); // vp should be pre-computed (see generator below)
   inline void store_byte_vector_unaligned(VectorRegister val, int offs, Register base, Register tmp,
-                                          VectorRegister vp); // may clobber val
+                                          VectorRegister vp, VectorRegister vtmp = vnoreg); // clobbers val if no vtmp provided
   inline void compute_vp_for_byte_vector_unaligned(VectorRegister dest, VectorRegister vtmp);
   inline void load_word_vector_unaligned(VectorRegister dest, int offs, Register base, Register tmp);
   inline void store_word_vector_unaligned(VectorRegister val, int offs, Register base, Register tmp);

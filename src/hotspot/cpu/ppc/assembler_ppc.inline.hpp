@@ -1240,7 +1240,8 @@ inline void Assembler::vec_perm(VectorRegister dest, VectorRegister first, Vecto
 #endif
 }
 
-inline void Assembler::load_byte_vector_unaligned(VectorRegister dest, int offs, Register base, Register tmp, VectorRegister vp) {
+inline void Assembler::load_byte_vector_unaligned(VectorRegister dest, int offs, Register base, Register tmp,
+                                                  VectorRegister vp) {
   VectorSRegister vsr = dest->to_vsr();
   if (PowerArchitecturePPC64 >= 9) {
 #if !defined(VM_LITTLE_ENDIAN)
@@ -1261,12 +1262,14 @@ inline void Assembler::load_byte_vector_unaligned(VectorRegister dest, int offs,
       lxvd2x(vsr, base, tmp);
     }
 #if defined(VM_LITTLE_ENDIAN)
-    vperm(dest, dest, dest, vp); // need to swap bytes in both double-words
+    // need to swap bytes in both double-words
+    vperm(dest, dest, dest, vp);
 #endif
   }
 }
 
-inline void Assembler::store_byte_vector_unaligned(VectorRegister val, int offs, Register base, Register tmp, VectorRegister vp) {
+inline void Assembler::store_byte_vector_unaligned(VectorRegister val, int offs, Register base, Register tmp,
+                                                   VectorRegister vp, VectorRegister vtmp) {
   VectorSRegister vsr = val->to_vsr();
   if (PowerArchitecturePPC64 >= 9) {
 #if !defined(VM_LITTLE_ENDIAN)
@@ -1281,7 +1284,13 @@ inline void Assembler::store_byte_vector_unaligned(VectorRegister val, int offs,
 #endif
   } else { // Power8 only supports very limited instructions
 #if defined(VM_LITTLE_ENDIAN)
-    vperm(val, val, val, vp); // need to swap bytes in both double-words
+    // need to swap bytes in both double-words
+    if (vtmp != vnoreg) {
+      vperm(vtmp, val, val, vp);
+      vsr = vtmp->to_vsr();
+    } else {
+      vperm(val, val, val, vp); // clobbers val!
+    }
 #endif
     if (offs == 0) {
       stxvd2x(vsr, base);
