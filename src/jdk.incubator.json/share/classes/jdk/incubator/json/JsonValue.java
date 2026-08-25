@@ -38,122 +38,13 @@ import java.util.Optional;
  * around a syntactic element within a JSON text. The {@code JsonValue} subtypes
  * correspond to the JSON types, while {@code JsonValue} itself provides a uniform
  * interface for navigation, conversion, and generation.
- * <p>
- * A root {@code JsonValue} can be produced by parsing a JSON text with
- * {@link Json#parse(String)}. Use the {@link ##access access} methods to navigate
- * to the desired {@code JsonValue}. From there, use the {@link ##conversion conversion}
- * methods to extract a corresponding Java value. Code that relies on equality
- * or hashing should utilize the results of a <i>conversion</i> method instead of
- * the {@code JsonValue} itself.
- * <p>
- * JSON text can be produced using the {@link ##generation generation} methods.
  *
- * <h2 id="access">Navigating JSON texts</h2>
- * Use the access methods to navigate to the desired JSON value. {@link
- * #get(String)} is provided for JSON object and {@link #get(int)} for JSON array.
- * Given the JSON text:
- * {@snippet lang=java:
- * JsonValue json = Json.parse("""
- *     { "foo": ["bar", true, 42], "baz": null }
- *     """);
- * }
- * the JSON String "bar" can be accessed as follows:
- * {@snippet lang=java:
- * JsonValue foo0 = json.get("foo").get(0);
- * }
- * If an access method is invoked on an incompatible JSON type (for example,
- * calling {@code get(String)} on a JSON array), a {@code JsonValueException}
- * is thrown.
+ * <p>Code that relies on equality or hashing should utilize the results of a
+ * <i>conversion</i> method instead of the {@code JsonValue} itself.
  *
- * <h3>Missing Object Members</h3>
- * A member of a JSON object can be optional. In this scenario, use the access method
- * {@link #tryGet(String)} which returns an {@code Optional} of {@code JsonValue}.
- * For example:
- * {@snippet lang=java:
- * json.tryGet("foo")
- *     .ifPresent(IO::println)
- * }
- * This example only prints the value if the member named "foo" exists.
- *
- * <h3>Handling of null</h3>
- * JSON null can be used to signify absence.
- * In this scenario, use the access method {@link #tryValue()} which returns an
- * {@code Optional} of {@code JsonValue}. For example:
- * {@snippet lang=java:
- * json.get("baz")
- *     .tryValue()
- *     .ifPresent(IO::println)
- * }
- * This example only prints the value if the member named "baz" is not a JSON
- * null.
- *
- * <h2 id=conversion>Converting JSON values to Java values</h2>
- * Use the conversion methods to produce a Java value from the {@code
- * JsonValue}. Each conversion method corresponds to a JSON type:
- * <ul>
- *     <li>{@code asString()} converts a {@code JsonString} instance into a Java
- *     {@code String} with RFC 8259 JSON escape sequences translated to their
- *     corresponding characters.</li>
- *     <li>{@code asInt()} converts a {@code JsonNumber} instance to a Java
- *     {@code int} if its numeric value can be represented exactly.</li>
- *     <li>{@code asLong()} converts a {@code JsonNumber} instance to a Java
- *     {@code long} if its numeric value can be represented exactly.</li>
- *     <li>{@code asDouble()} converts a {@code JsonNumber} instance to a Java
- *     {@code double} if its numeric value can be rounded to a finite Java {@code double}.</li>
- *     <li>{@code asBoolean()} converts a {@code JsonBoolean} instance to a Java
- *     {@code boolean} value of {@code true} or {@code false}.</li>
- *     <li>{@code asMap()} converts a {@code JsonObject} instance into an
- *     unmodifiable Java {@code Map}. If the JSON object contains no members, an
- *     empty {@code Map} is returned.</li>
- *     <li>{@code asList()} converts a {@code JsonArray} instance into an
- *     unmodifiable Java {@code List}. If the JSON array contains no elements,
- *     an empty {@code List} is returned.</li>
- * </ul>
- * For example,
- * {@snippet lang=java:
- * String bar = foo0.asString();
- * }
- * The code above retrieves the Java String "bar" from the JSON value {@code foo0}.
- * If an incorrect conversion method is used, which does not correspond to the matching
- * JSON type, for example {@code foo0.asBoolean()}, a {@code JsonValueException} is thrown.
- * <p>
- * These conversion methods always return a value when the {@code JsonValue} is
- * of the correct JSON type. The exceptions are {@code asInt()}, {@code asLong()},
- * and {@code asDouble()}; they may throw a {@code JsonValueException} even
- * when the {@code JsonValue} is a JSON number, for example if it is outside
- * their supported ranges.
- *
- * <h2>Handling variance</h2>
- * If the type for a JSON value is variable, it can be handled as follows:
- * {@snippet lang = java:
- * switch (json.get("foo")) {
- *     case JsonString js -> js.asString(); // handle the value as JSON string
- *     case JsonArray ja -> ja.get(0).asString(); // handle the value as JSON array
- *     default -> throw new JsonValueException("unexpected type");
- * }
- *}
- * There may be times when a JSON text can vary, but providing a fallback
- * value is preferable to throwing an exception. For example:
- * {@snippet lang = java:
- * Optional.of(json)
- *     .filter(j -> j instanceof JsonObject)
- *     .flatMap(j -> j.tryGet("foo"))
- *     .filter(j -> j instanceof JsonString)
- *     .map(JsonValue::asString)
- *     .orElse("bar");
- *}
- * The code above ensures that if the root JSON text is not an object,
- * the member "foo" does not exist, or if "foo" is not a String, that the "bar"
- * fallback value is used over throwing an exception.
- *
- * <h2 id="generation">Generating JSON texts</h2>
- * {@code JsonValue} overrides {@link Object#toString()} to generate RFC 8259
- * compliant JSON text in a compact representation with JSON insignificant white
- * spaces eliminated.
- * For generating JSON texts suitable for display, use
- * the generation method {@link Json#toDisplayString(JsonValue, String)} instead.
- * <p>
- * Instances of {@code JsonValue} are immutable and thread safe.
+ * <p>Instances of {@code JsonValue} are immutable and thread safe. See the
+ * <a href="package-summary.html#access">package documentation</a>
+ * for an overview of parsing, accessing, converting, and generating JSON text.
  *
  * @since 28
  */
