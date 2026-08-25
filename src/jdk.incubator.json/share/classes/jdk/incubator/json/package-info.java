@@ -26,16 +26,18 @@
 /**
  * This API supports processing of JSON text in a simple manner. It is organized around the {@link
  * JsonValue} interface which represents a JSON value, and the {@link Json} class which provides
- * methods to parse and generate JSON text. Typical usage of this API involves first parsing JSON text
- * into a {@code JsonValue}, using <i>access</i> methods to navigate the parsed JSON value, and lastly using
- * <i>conversion</i> methods to extract your desired values. For example:
+ * methods to parse and generate JSON text. Typical usage of this API involves first
+ * <a href="#parsing">parsing</a> JSON text into a {@code JsonValue}, <a href="#access">navigating</a>
+ * the parsed JSON value to the desired JSON value using <i>access</i> methods, and lastly
+ * <a href="#conversion">converting</a> the desired value using a <i>conversion</i> method.
+ * For example:
  * {@snippet lang = java:
  * List<JsonValue> providers = Json.parse(text)
  *          .get("providers") // access
  *          .asList(); // conversion
  * }
  *
- * <h2>Parsing JSON text</h2>
+ * <h2 id="parsing">Parsing JSON text</h2>
  * Parsing JSON text can be done using either {@link Json#parse(java.lang.String)} or {@link Json#parse(char[])}.
  * {@snippet lang = java:
  * JsonValue json = Json.parse(text);
@@ -46,10 +48,10 @@
  * The parsing APIs provided do not accept JSON text that contains JSON objects with duplicate member names.
  * <p>
  * The result of a successful parse is a {@code JsonValue}. The {@code JsonValue} interface has six
- * sub-interfaces: JsonString, JsonNumber, JsonBoolean, JsonNull, JsonObject,
- * and JsonArray. These sub-interfaces correspond to the JSON syntax.
- * This type hierarchy allows you to use pattern matching to determine the subtype
- * of a {@code JsonValue}. {@code JsonValue} is also immutable and thread safe.
+ * sub-interfaces: {@link JsonString}, {@link JsonNumber}, {@link JsonBoolean}, {@link JsonNull},
+ * {@link JsonObject}, and {@link JsonArray}. These sub-interfaces correspond to each value in the
+ * JSON syntax. This type hierarchy allows you to use pattern matching to determine the subtype
+ * of a {@code JsonValue}. {@code JsonValue} is immutable and thread safe.
  *
  * <h2 id="access">Navigating JSON text</h2>
  * Once you have retrieved a {@code JsonValue} from parsing, use the access methods to navigate
@@ -94,7 +96,7 @@
  * <h3>Handling variance in type or structure</h3>
  * If the type for a JSON value is variable, it can be handled as follows:
  * {@snippet lang = java:
- * JsonValue firstProvider = switch (json.get("providers")) {
+ * String firstProvider = switch (json.get("providers")) {
  *     case JsonString js -> js.asString(); // handle the value as JSON string
  *     case JsonArray ja -> ja.get(0).asString(); // handle the value as JSON array
  *     default -> throw new JsonValueException("unexpected type");
@@ -104,7 +106,7 @@
  * {@code JsonArray}, there are times when you may prefer a fallback value instead.
  * For example:
  * {@snippet lang = java:
- * JsonValue firstProvider = java.util.Optional.of(json)
+ * String firstProvider = Optional.of(json)
  *     .filter(j -> j instanceof JsonObject)
  *     .flatMap(j -> j.tryGet("providers"))
  *     .filter(j -> j instanceof JsonString)
