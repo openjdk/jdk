@@ -321,10 +321,8 @@ void ShenandoahHeap::increase_object_age(oop obj, uint additional_age) {
   // to increase the age when the header is displaced.
   markWord w = obj->mark();
   // It is possible that we have copied the object after another thread has
-  // already successfully completed evacuation. While harmless (we would never
-  // publish our copy), don't even attempt to modify the age when that
-  // happens.
-  if (!w.has_displaced_mark_helper() && !w.is_marked()) {
+  // already successfully completed evacuation.
+  if (!w.is_marked()) {
     w = w.set_age(MIN2(markWord::max_age, w.age() + additional_age));
     obj->set_mark(w);
   }
