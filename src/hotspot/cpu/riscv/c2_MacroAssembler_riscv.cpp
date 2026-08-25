@@ -523,12 +523,13 @@ void C2_MacroAssembler::string_indexof_char(Register str1, Register cnt1,
   Register loop_step = tmp4;
   Register trailing_chars = tmp4;
   Register unaligned_chars = tmp4;
+  Register start_index = tmp4;
 
   BLOCK_COMMENT("string_indexof_char {");
   beqz(cnt1, NOMATCH);
 
   subi(t0, cnt1, isL ? 32 : 16);
-  mv(mask1, zr);
+  mv(start_index, zr);
   blez(t0, SHORT);
 
   mv(orig_cnt, cnt1);
@@ -587,16 +588,15 @@ void C2_MacroAssembler::string_indexof_char(Register str1, Register cnt1,
   // Tail (1..7 chars) after the SWAR loop has advanced str1. cnt1 holds the
   // remaining char count; the number of chars already scanned by the loop is
   // (orig_cnt - cnt1). string_indexof_char_short returns an index relative to
-  // the current str1, so we must add that prefix back to get the real index.
-  // Save the prefix in mask1 (tmp3) and pass it as start_index.
+  // the current str1, so we pass that prefix as start_index to recover the
+  // real index.
   // Note: ch was broadcast across all 8 bytes for the SWAR loop above, but the
   // short helper compares a single element, so restore ch to a single char.
-  isL ? zext_b(ch, ch) : zext(ch, ch, 16);
-  sub(mask1, orig_cnt, cnt1);
-  j(SHORT);
+  isL ? zext(ch, ch, 8) : zext(ch, ch, 16);
+  sub(start_index, orig_cnt, cnt1);
 
   bind(SHORT);
-  string_indexof_char_short(str1, cnt1, ch, result, mask1, isL);
+  string_indexof_char_short(str1, cnt1, ch, result, start_index, isL);
   j(DONE);
 
   bind(HIT);
