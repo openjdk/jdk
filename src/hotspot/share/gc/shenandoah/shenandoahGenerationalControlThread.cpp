@@ -155,7 +155,7 @@ ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread:
   }
 
   request.generation = _heap->global_generation();
-  request.generation->heuristics()->log_trigger("Handle Allocation Failure: %s", GCCause::to_string(request.cause));
+  request.generation->heuristics()->log_trigger("Handle Full GC: %s", GCCause::to_string(request.cause));
   return stw_full;
 }
 
