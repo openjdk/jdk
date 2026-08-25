@@ -63,7 +63,6 @@ public class DirectMethodTest {
     public static void checkFlat(Object[] array) {
         boolean isFlat = ValueClass.isFlatArray(array);
         Asserts.assertEquals(expectFlat, isFlat);
-        }
     }
 
     static value class SmallValue {
