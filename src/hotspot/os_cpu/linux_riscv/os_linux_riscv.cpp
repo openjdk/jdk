@@ -77,6 +77,11 @@
 
 #define REG_LR       1
 #define REG_FP       8
+// First argument register (x10), used to pass the stop() message
+// to the signal handler.
+#ifndef REG_A0
+#define REG_A0       10
+#endif
 #define REG_BCP      22
 
 NOINLINE address os::current_stack_pointer() {
@@ -240,11 +245,8 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
           stub = SharedRuntime::handle_unsafe_access(thread, next_pc);
         }
       } else if (sig == SIGILL && nativeInstruction_at(pc)->is_stop()) {
-        // Pull a pointer to the error message out of the instruction
-        // stream.
-        const uint64_t *detail_msg_ptr
-          = (uint64_t*)(pc + NativeInstruction::instruction_size);
-        const char *detail_msg = (const char *)*detail_msg_ptr;
+        // A pointer to the message will have been placed in a0
+        const char *detail_msg = (const char *)(uc->uc_mcontext.__gregs[REG_A0]);
         const char *msg = "stop";
         if (TraceTraps) {
           tty->print_cr("trap: %s: (SIGILL)", msg);
