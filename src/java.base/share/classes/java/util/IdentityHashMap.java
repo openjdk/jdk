@@ -49,14 +49,12 @@ import jdk.internal.access.SharedSecrets;
  * use of the {@code equals} method when comparing objects.  This class is
  * designed for use only in the rare cases wherein {@code ==} semantics are required.}
  *
- * <div class="preview-block">
- *      <div class="preview-comment">
+ * {@previewNote [jep=401]
  *          When preview features are enabled, keys and values may be
  *          {@linkplain java.util.Objects#hasIdentity value objects}.
  *          Two value object keys are {@code ==} if they are instances
  *          of the same class and the values of their instance fields are the same.
- *      </div>
- * </div>
+ * }
  *
  * <p>The view collections of this map also have {@code ==} equality semantics
  * for their elements. See the {@link #keySet() keySet}, {@link #values() values},

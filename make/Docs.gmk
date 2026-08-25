@@ -98,7 +98,7 @@ JAVADOC_OPTIONS := -XDignore.symbol.file=true -use -keywords -notimestamp \
     -serialwarn -encoding utf-8 -docencoding utf-8 -breakiterator \
     -splitIndex --system none -javafx --expand-requires transitive \
     --enable-preview -source $(JDK_SOURCE_TARGET_VERSION) \
-    --override-methods=summary
+    --override-methods=summary --preview-note-tag previewNote
 
 # The reference options must stay stable to allow for comparisons across the
 # development cycle.

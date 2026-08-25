@@ -160,16 +160,14 @@ import static jdk.internal.util.ModifiedUtf.utfLen;
  * <p>Records are serialized differently than ordinary serializable or externalizable
  * objects, see <a href="ObjectInputStream.html#record-serialization">record serialization</a>.
  *
- * <div class="preview-block">
- *      <div class="preview-comment">
- *          <p>{@linkplain Class#isValue Value classes} that are not records cannot be
+ * {@previewNote [jep=401]
+ *          {@linkplain Class#isValue Value classes} that are not records cannot be
  *          serialized directly. To serialize an instance of a value class, the
  *          <a href="{@docRoot}/../specs/serialization/output.html#the-writereplace-method">
  *          {@code writeReplace}</a> method can provide a proxy object instead. That
  *          object can then be serialized, and used to reconstruct the expected value
  *          class instance at deserialization time.
- *      </div>
- * </div>
+ * }
  *
  * @spec serialization/index.html Java Object Serialization Specification
  * @author      Mike Warres
@@ -322,17 +320,15 @@ public class ObjectOutputStream
      * OutputStream, which is left in an indeterminate state, and it is up to
      * the caller to ignore or recover the stream state.
      *
-     * <div class="preview-block">
-     *      <div class="preview-comment">
-     *          <p>An object that instantiates a concrete
+     * {@previewNote [jep=401]
+     *          An object that instantiates a concrete
      *          {@linkplain Class#isValue value class}, or that extends a
      *          Serializable abstract value class that declares instance fields,
      *          can only be serialized if it is a record, or it implements
      *          {@code writeReplace}, or it is a boxed primitive value.
      *          Otherwise, {@code writeObject} throws an
      *          {@code InvalidClassException}.
-     *      </div>
-     * </div>
+     * }
      *
      * @throws  InvalidClassException Something is wrong with a class used by
      *          serialization.

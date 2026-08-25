@@ -67,15 +67,13 @@ package java.lang;
  * </pre>
  * then it must be the case that {@code r.equals(copy)}.
  *
- * <div class="preview-block">
- *      <div class="preview-comment">
+ * {@previewNote [jep=401]
  *          When preview features are enabled, {@code Record} is
  *          an abstract {@linkplain Class#isValue value class}.
  *          Subclasses of {@code Record} can be either identity classes
  *          or {@linkplain Class#isValue value classes}.
  *          See The Java Language Specification {@jls value-objects-8.1.1.5 Value Classes}.
- *      </div>
- * </div>
+ * }
  *
  * @apiNote
  * A record class that {@code implements} {@link java.io.Serializable} is said

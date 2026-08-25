@@ -145,16 +145,14 @@ package java.io;
  * handling methods discussed above, except {@code writeReplace},
  * are ignored for record types.
  *
- * <div class="preview-block">
- *      <div class="preview-comment">
- *          <p>{@linkplain Class#isValue Value classes} that are not records can
+ * {@previewNote [jep=401]
+ *          {@linkplain Class#isValue Value classes} that are not records can
  *          implement {@code Serializable}, but cannot be serialized directly. Instead,
  *          the {@code writeReplace} method should be used to designate an alternative
  *          object for serialization. At deserialization time, the alternative object
  *          can implement {@code readResolve} to construct the expected value class
  *          instance.
- *      </div>
- * </div>
+ * }
  *
  * The serialization runtime associates with each serializable class a version
  * number, called a serialVersionUID, which is used during deserialization to

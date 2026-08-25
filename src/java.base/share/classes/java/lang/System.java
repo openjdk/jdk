@@ -488,20 +488,17 @@ public final class System {
      * hashCode().
      * The hash code for the null reference is zero.
      *
-     * <div class="preview-block">
-     *      <div class="preview-comment">
+     * {@previewNote [jep=401]
      *          The "identity hash code" of a {@linkplain Class#isValue() value object}
      *          is computed by combining the identity hash codes of the value object's fields recursively.
-     *      </div>
-     * </div>
+     * }
+     *
      * @apiNote
-     * <div class="preview-block">
-     *      <div class="preview-comment">
+     * {@previewNote [jep=401]
      *          Note that, like ==, this hash code exposes information about a value object's
      *          private fields that might otherwise be hidden by an identity object.
      *          Developers should be cautious about storing sensitive secrets in value object fields.
-     *      </div>
-     * </div>
+     * }
      *
      * @param x object for which the hashCode is to be calculated
      * @return  the hashCode

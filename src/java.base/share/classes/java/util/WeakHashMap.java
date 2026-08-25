@@ -43,8 +43,7 @@ import java.util.function.Consumer;
  * so this class behaves somewhat differently from other {@code Map}
  * implementations.
  *
- * <div class="preview-block">
- *      <div class="preview-comment">
+ * {@previewNote [jep=401]
  *          {@linkplain java.util.Objects#hasIdentity Value objects} can not be used as
  *          keys in a {@code WeakHashMap}. The {@link #put(Object, Object) put(K, V)}
  *          method, and all methods that associate a value with a key, throw {@link
@@ -52,8 +51,7 @@ import java.util.function.Consumer;
  *          The {@link WeakHashMap#WeakHashMap(Map)} constructor and the {@link
  *          #putAll(Map)} method also throw {@code IdentityException} if invoked with
  *          a {@code Map} containing a key that is a value object.
- *      </div>
- * </div>
+ * }
  *
  * <p> Both null values and the null key are supported. This class has
  * performance characteristics similar to those of the {@code HashMap}

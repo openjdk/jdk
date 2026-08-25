@@ -55,14 +55,12 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * as interchangeable and should not use instances for synchronization or
  * with {@linkplain java.lang.ref.Reference object references}.
  *
- * <div class="preview-block">
- *      <div class="preview-comment">
+ * {@previewNote [jep=401]
  *          When preview features are enabled, {@code Double} is a {@linkplain Class#isValue value class}.
  *          Use of value class instances for synchronization or with
  *          {@linkplain java.lang.ref.Reference object references} result in
  *          {@link IdentityException}.
- *      </div>
- * </div>
+ * }
  *
  * <h2><a id=equivalenceRelation>Floating-point Equality, Equivalence,
  * and Comparison</a></h2>
@@ -970,8 +968,7 @@ public final /*value*/ class Double extends Number
     /**
      * Returns a {@code Double} instance representing the specified
      * {@code double} value.
-     * <div class="preview-block">
-     *      <div class="preview-comment">
+     * {@previewNote [jep=401]
      *          <p>
      *              - When preview features are NOT enabled, {@code Double} is an identity class.
      *              If a new {@code Double} instance is not required, this
@@ -984,8 +981,7 @@ public final /*value*/ class Double extends Number
      *              - When preview features are enabled, {@code Double} is a {@linkplain Class#isValue value class}.
      *              The {@code valueOf} behavior is the same as invoking the constructor.
      *          </p>
-     *      </div>
-     * </div>
+     * }
      *
      * @param  d a double value.
      * @return a {@code Double} instance representing {@code d}.

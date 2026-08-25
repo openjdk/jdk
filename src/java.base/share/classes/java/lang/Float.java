@@ -53,14 +53,12 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * as interchangeable and should not use instances for synchronization or
  * with {@linkplain java.lang.ref.Reference object references}.
  *
- * <div class="preview-block">
- *      <div class="preview-comment">
+ * {@previewNote [jep=401]
  *          When preview features are enabled, {@code Float} is a {@linkplain Class#isValue value class}.
  *          Use of value class instances for synchronization or with
  *          {@linkplain java.lang.ref.Reference object references} result in
  *          {@link IdentityException}.
- *      </div>
- * </div>
+ * }
  *
  * <h2><a id=equivalenceRelation>Floating-point Equality, Equivalence,
  * and Comparison</a></h2>
@@ -571,8 +569,7 @@ public final /*value*/ class Float extends Number
     /**
      * Returns a {@code Float} instance representing the specified
      * {@code float} value.
-     * <div class="preview-block">
-     *      <div class="preview-comment">
+     * {@previewNote [jep=401]
      *          <p>
      *              - When preview features are NOT enabled, {@code Float} is an identity class.
      *              If a new {@code Float} instance is not required, this
@@ -585,8 +582,7 @@ public final /*value*/ class Float extends Number
      *              - When preview features are enabled, {@code Float} is a {@linkplain Class#isValue value class}.
      *              The {@code valueOf} behavior is the same as invoking the constructor.
      *          </p>
-     *      </div>
-     * </div>
+     * }
      *
      * @param  f a float value.
      * @return a {@code Float} instance representing {@code f}.

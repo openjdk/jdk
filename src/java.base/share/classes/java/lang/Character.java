@@ -212,14 +212,12 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  * as interchangeable and should not use instances for synchronization or
  * with {@linkplain java.lang.ref.Reference object references}.
  *
- * <div class="preview-block">
- *      <div class="preview-comment">
+ * {@previewNote [jep=401]
  *          When preview features are enabled, {@code Character} is a {@linkplain Class#isValue value class}.
  *          Use of value class instances for synchronization or with
  *          {@linkplain java.lang.ref.Reference object references} result in
  *          {@link IdentityException}.
- *      </div>
- * </div>
+ * }
  *
  * @spec https://www.unicode.org/reports/tr44 Unicode Character Database
  * @author  Lee Boynton
@@ -9468,8 +9466,7 @@ public final /*value*/ class Character
     /**
      * Returns a {@code Character} instance representing the specified
      * {@code char} value.
-     * <div class="preview-block">
-     *      <div class="preview-comment">
+     * {@previewNote [jep=401]
      *          <p>
      *              - When preview features are NOT enabled, {@code Character} is an identity class.
      *              If a new {@code Character} instance is not required, this method
@@ -9486,8 +9483,7 @@ public final /*value*/ class Character
      *              The {@code valueOf} behavior is the same as invoking the constructor,
      *              whether cached or not.
      *          </p>
-     *      </div>
-     * </div>
+     * }
      *
      * @param  c a char value.
      * @return a {@code Character} instance representing {@code c}.

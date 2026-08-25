@@ -235,16 +235,14 @@ import jdk.internal.util.ByteArray;
  * <cite>Java Object Serialization Specification,</cite> Section 1.13,
  * "Serialization of Records"</a> for additional information.
  *
- * <div class="preview-block">
- *      <div class="preview-comment">
- *          <p>{@linkplain Class#isValue Value classes} that are not records cannot be
+ * {@previewNote [jep=401]
+ *          {@linkplain Class#isValue Value classes} that are not records cannot be
  *          deserialized directly. To serialize an instance of a value class, a proxy
  *          object should be used instead. That object can then implement
  *          <a href="{@docRoot}/../specs/serialization/input.html#the-readresolve-method">
  *          {@code readResolve}</a> to construct and return the expected value class
  *          instance.
- *      </div>
- * </div>
+ * }
  *
  * @spec serialization/index.html Java Object Serialization Specification
  * @author      Mike Warres
@@ -441,16 +439,14 @@ public class ObjectInputStream
      * the InputStream and leave it in an indeterminate state; it is up to the
      * caller to ignore or recover the stream state.
      *
-     * <div class="preview-block">
-     *      <div class="preview-comment">
-     *          <p>An object in the stream that instantiates a concrete
+     * {@previewNote [jep=401]
+     *          An object in the stream that instantiates a concrete
      *          {@linkplain Class#isValue value class}, or that extends a
      *          Serializable abstract value class that declares instance fields,
      *          can only be deserialized if it is a record or a boxed primitive
      *          value. Otherwise, {@code readObject} throws an
      *          {@code InvalidClassException}.
-     *      </div>
-     * </div>
+     * }
      *
      * @throws  ClassNotFoundException Class of a serialized object cannot be
      *          found.

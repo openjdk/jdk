@@ -62,14 +62,12 @@ import static java.lang.String.COMPACT_STRINGS;
  * as interchangeable and should not use instances for synchronization or
  * with {@linkplain java.lang.ref.Reference object references}.
  *
- * <div class="preview-block">
- *      <div class="preview-comment">
+ * {@previewNote [jep=401]
  *          When preview features are enabled, {@code Long} is a {@linkplain Class#isValue value class}.
  *          Use of value class instances for synchronization or with
  *          {@linkplain java.lang.ref.Reference object references} result in
  *          {@link IdentityException}.
- *      </div>
- * </div>
+ * }
  *
  *
  * <p>Implementation note: The implementations of the "bit twiddling"
@@ -965,8 +963,7 @@ public final /*value*/ class Long extends Number
     /**
      * Returns a {@code Long} instance representing the specified
      * {@code long} value.
-     * <div class="preview-block">
-     *      <div class="preview-comment">
+     * {@previewNote [jep=401]
      *          <p>
      *              - When preview features are NOT enabled, {@code Long} is an identity class.
      *              If a new {@code Long} instance is not required, this method
@@ -982,8 +979,7 @@ public final /*value*/ class Long extends Number
      *              The {@code valueOf} behavior is the same as invoking the constructor,
      *              whether cached or not.
      *          </p>
-     *      </div>
-     * </div>
+     * }
      *
      * @param  l a long value.
      * @return a {@code Long} instance representing {@code l}.

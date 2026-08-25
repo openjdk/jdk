@@ -65,8 +65,7 @@ import java.io.ObjectInput;
  * <cite>Java Object Serialization Specification,</cite> Section 1.13,
  * "Serialization of Records"</a>.
  *
- * <div class="preview-block">
- *      <div class="preview-comment">
+ * {@previewNote [jep=401]
  *          <p>{@linkplain Class#isValue Value classes} that are not records are
  *          permitted to implement {@code Externalizable}, but the class has no
  *          mutable fields, and so is unlikely to be able to properly implement
@@ -75,8 +74,7 @@ import java.io.ObjectInput;
  *          serialization. At deserialization time, the alternative object can
  *          implement {@code readResolve} to construct the expected value class
  *          instance.
- *      </div>
- * </div>
+ * }
  *
  * @see java.io.ObjectOutputStream
  * @see java.io.ObjectInputStream
