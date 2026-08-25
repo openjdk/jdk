@@ -815,7 +815,7 @@ public class Attr extends JCTree.Visitor {
                 for (JCExpression bound : tvar.bounds.tail)
                     bounds = bounds.prepend(attribType(bound, env));
                 bounds = bounds.reverse();
-                if (bounds.tail.isEmpty() && bounds.head.hasTag(ARRAY)) {
+                if (bounds.head.hasTag(ARRAY)) {
                     /* A single bound that is an array type may structurally reference
                      * this same type variable, as in `<T extends T[]>`, setting the bound to
                      * Object as a recovery strategy
