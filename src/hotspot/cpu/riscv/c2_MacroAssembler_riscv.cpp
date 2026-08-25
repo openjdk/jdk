@@ -408,6 +408,7 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register box,
 // StringLatin1.indexOfChar
 void C2_MacroAssembler::string_indexof_char_short(Register str1, Register cnt1,
                                                   Register ch, Register result,
+                                                  Register start_index,
                                                   bool isL)
 {
   Register ch1 = t0;
@@ -500,7 +501,7 @@ void C2_MacroAssembler::string_indexof_char_short(Register str1, Register cnt1,
   addi(index, index, 7);
 
   bind(MATCH);
-  mv(result, index);
+  add(result, start_index, index);
   bind(NOMATCH);
   BLOCK_COMMENT("} string_indexof_char_short");
 }
@@ -527,6 +528,7 @@ void C2_MacroAssembler::string_indexof_char(Register str1, Register cnt1,
   beqz(cnt1, NOMATCH);
 
   subi(t0, cnt1, isL ? 32 : 16);
+  mv(mask1, zr);
   blez(t0, SHORT);
 
   mv(orig_cnt, cnt1);
@@ -540,7 +542,7 @@ void C2_MacroAssembler::string_indexof_char(Register str1, Register cnt1,
       srli(unaligned_chars, unaligned_chars, 1);
     }
     // do unaligned part per element
-    string_indexof_char_short(str1, unaligned_chars, ch, result, isL);
+    string_indexof_char_short(str1, unaligned_chars, ch, result, zr, isL);
     bgez(result, DONE);
     mv(orig_cnt, cnt1);
     sub(cnt1, cnt1, unaligned_chars);
@@ -586,18 +588,15 @@ void C2_MacroAssembler::string_indexof_char(Register str1, Register cnt1,
   // remaining char count; the number of chars already scanned by the loop is
   // (orig_cnt - cnt1). string_indexof_char_short returns an index relative to
   // the current str1, so we must add that prefix back to get the real index.
-  // Save the prefix in mask1 (tmp3), which the short helper does not clobber.
+  // Save the prefix in mask1 (tmp3) and pass it as start_index.
   // Note: ch was broadcast across all 8 bytes for the SWAR loop above, but the
   // short helper compares a single element, so restore ch to a single char.
   isL ? zext_b(ch, ch) : zext(ch, ch, 16);
   sub(mask1, orig_cnt, cnt1);
-  string_indexof_char_short(str1, cnt1, ch, result, isL);
-  bltz(result, DONE);
-  add(result, result, mask1);
-  j(DONE);
+  j(SHORT);
 
   bind(SHORT);
-  string_indexof_char_short(str1, cnt1, ch, result, isL);
+  string_indexof_char_short(str1, cnt1, ch, result, mask1, isL);
   j(DONE);
 
   bind(HIT);
