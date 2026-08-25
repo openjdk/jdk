@@ -383,6 +383,9 @@ inline bool ShenandoahHeap::is_in_old(const void* p) const {
 }
 
 inline bool ShenandoahHeap::is_old_to_young(const void* maybe_old, oop maybe_young) const {
+  if (maybe_young == nullptr) {
+    return false;
+  }
   if (ShenandoahHeapRegion::is_in_same_region(maybe_old, maybe_young)) {
     return false;
   }
