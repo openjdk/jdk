@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8358521
+ * @bug 8358521 8389666
  * @summary Optimize vector operations by reassociating broadcasted inputs
  * @modules jdk.incubator.vector
  * @library /test/lib /
@@ -105,6 +105,41 @@ public class TestVectorBroadcastTransforms {
         int ib = R.nextInt();
         int ir = int_mul(ia, ib);
         Verify.checkEQ(ir, ia * ib);
+    }
+
+    // Integer vector DIV is currently matched on SVE. push_through_replicate
+    // must be able to scalarize DivVI via VectorNode::make_scalar(Op_DivI).
+    @Test
+    @IR(failOn = IRNode.DIV_VI,
+        applyIfCPUFeature = {"sve", "true"},
+        counts = { IRNode.DIV_I, ">= 1",
+                   IRNode.REPLICATE_I, IRNode.VECTOR_SIZE_ANY, ">= 1" })
+    static int int_div(int ia, int ib) {
+        return IntVector.broadcast(ISP, ia)
+                   .lanewise(VectorOperators.DIV, IntVector.broadcast(ISP, ib))
+                   .lane(0);
+    }
+
+    @Run(test = "int_div")
+    static void run_int_div() {
+        int ia = R.nextInt();
+        int ib = R.nextInt();
+        if (ib == 0) ib = 1;
+        int ir = int_div(ia, ib);
+        Verify.checkEQ(ir, ia / ib);
+    }
+
+    // Minimal crash reproducer from VectorExpressionFuzzer (constant broadcasts).
+    @Test
+    static int int_div_broadcast_constants() {
+        return IntVector.broadcast(IntVector.SPECIES_128, -4096)
+                   .div(IntVector.broadcast(IntVector.SPECIES_128, 1))
+                   .lane(0);
+    }
+
+    @Run(test = "int_div_broadcast_constants")
+    static void run_int_div_broadcast_constants() {
+        Verify.checkEQ(int_div_broadcast_constants(), -4096);
     }
 
     @Test
@@ -255,6 +290,26 @@ public class TestVectorBroadcastTransforms {
         long lb = R.nextLong();
         long lr = long_mul(la, lb);
         Verify.checkEQ(lr, la * lb);
+    }
+
+    @Test
+    @IR(failOn = IRNode.DIV_VL,
+        applyIfCPUFeature = {"sve", "true"},
+        counts = { IRNode.DIV_L, ">= 1",
+                   IRNode.REPLICATE_L, IRNode.VECTOR_SIZE_ANY, ">= 1" })
+    static long long_div(long la, long lb) {
+        return LongVector.broadcast(LSP, la)
+                   .div(LongVector.broadcast(LSP, lb))
+                   .lane(0);
+    }
+
+    @Run(test = "long_div")
+    static void run_long_div() {
+        long la = R.nextLong();
+        long lb = R.nextLong();
+        if (lb == 0L) lb = 1L;
+        long lr = long_div(la, lb);
+        Verify.checkEQ(lr, la / lb);
     }
 
     @Test
@@ -785,6 +840,26 @@ public class TestVectorBroadcastTransforms {
     }
 
     @Test
+    @IR(failOn = IRNode.DIV_VB,
+        applyIfCPUFeature = {"sve", "true"},
+        counts = { IRNode.DIV_I, ">= 1",
+                   IRNode.REPLICATE_B, IRNode.VECTOR_SIZE_ANY, ">= 1" })
+    static byte byte_div(byte ba, byte bb) {
+        return ByteVector.broadcast(BSP, ba)
+                   .div(ByteVector.broadcast(BSP, bb))
+                   .lane(0);
+    }
+
+    @Run(test = "byte_div")
+    static void run_byte_div() {
+        byte ba = (byte) R.nextInt();
+        byte bb = (byte) R.nextInt();
+        if (bb == 0) bb = 1;
+        byte br = byte_div(ba, bb);
+        Verify.checkEQ(br, (byte) (ba / bb));
+    }
+
+    @Test
     @IR(failOn = IRNode.AND_VB,
         applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
         counts = { IRNode.AND_I, ">= 1", IRNode.REPLICATE_B, IRNode.VECTOR_SIZE_ANY, ">= 1" })
@@ -1005,6 +1080,26 @@ public class TestVectorBroadcastTransforms {
         short sb = (short) R.nextInt();
         short sr = short_mul(sa, sb);
         Verify.checkEQ(sr, (short) (sa * sb));
+    }
+
+    @Test
+    @IR(failOn = IRNode.DIV_VS,
+        applyIfCPUFeature = {"sve", "true"},
+        counts = { IRNode.DIV_I, ">= 1",
+                   IRNode.REPLICATE_S, IRNode.VECTOR_SIZE_ANY, ">= 1" })
+    static short short_div(short sa, short sb) {
+        return ShortVector.broadcast(SSP, sa)
+                   .div(ShortVector.broadcast(SSP, sb))
+                   .lane(0);
+    }
+
+    @Run(test = "short_div")
+    static void run_short_div() {
+        short sa = (short) R.nextInt();
+        short sb = (short) R.nextInt();
+        if (sb == 0) sb = 1;
+        short sr = short_div(sa, sb);
+        Verify.checkEQ(sr, (short) (sa / sb));
     }
 
     @Test
