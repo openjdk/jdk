@@ -308,8 +308,10 @@ void DowncallLinker::StubGenerator::generate() {
     // Restore cpu control state after JNI call
     __ restore_cpu_control_state_after_jni(rscratch1, tmp1);
 
-    __ mov(tmp1, _thread_in_vm);
-    __ strw(tmp1, Address(rthread, JavaThread::thread_state_offset()));
+    // change thread state
+    __ mov(tmp1, _thread_in_Java);
+    __ lea(tmp2, Address(rthread, JavaThread::thread_state_offset()));
+    __ stlrw(tmp1, tmp2);
 
     // Force this write out before the read below
     if (!UseSystemMemoryBarrier) {
@@ -325,11 +327,6 @@ void DowncallLinker::StubGenerator::generate() {
     __ cbnzw(tmp1, L_safepoint_poll_slow_path);
 
     __ bind(L_after_safepoint_poll);
-
-    // change thread state
-    __ mov(tmp1, _thread_in_Java);
-    __ lea(tmp2, Address(rthread, JavaThread::thread_state_offset()));
-    __ stlrw(tmp1, tmp2);
 
     __ block_comment("reguard stack check");
     __ ldrb(tmp1, Address(rthread, JavaThread::stack_guard_state_offset()));

@@ -2456,7 +2456,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   default       : ShouldNotReachHere();
   }
 
-  __ movl(Address(r15_thread, JavaThread::thread_state_offset()), _thread_in_vm);
+  // change thread state
+  __ movl(Address(r15_thread, JavaThread::thread_state_offset()), _thread_in_Java);
 
   // Force this write out before the read below
   if (!UseSystemMemoryBarrier) {
@@ -2495,9 +2496,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     restore_native_result(masm, ret_type, stack_slots);
     __ bind(Continue);
   }
-
-  // change thread state
-  __ movl(Address(r15_thread, JavaThread::thread_state_offset()), _thread_in_Java);
 
   if (method->is_object_wait0()) {
     // Check preemption for Object.wait()

@@ -955,8 +955,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ push(ltos);
 
   // change thread state
-  __ movl(Address(thread, JavaThread::thread_state_offset()),
-          _thread_in_vm);
+  __ movl(Address(thread, JavaThread::thread_state_offset()), _thread_in_Java);
 
   // Force this write out before the read below
   if (!UseSystemMemoryBarrier) {
@@ -992,9 +991,6 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ reinit_heapbase();
     __ bind(Continue);
   }
-
-  // change thread state
-  __ movl(Address(thread, JavaThread::thread_state_offset()), _thread_in_Java);
 
   // Check preemption for Object.wait()
   Label not_preempted;

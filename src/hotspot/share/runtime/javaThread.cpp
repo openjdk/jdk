@@ -290,8 +290,20 @@ void JavaThread::check_for_valid_safepoint_state(bool allow_gcalot) {
   // are held.
   check_possible_safepoint();
 
-  if (thread_state() != _thread_in_vm) {
-    fatal("LEAF method calling lock?");
+  switch (thread_state()) {
+  case _thread_in_vm:
+  case _thread_in_Java:
+    // In debug builds, leaf entries use NoHandleMark and NoSafepointVerifier,
+    // while non-leaf entries use HandleMarkCleaner.
+    if (last_handle_mark() == nullptr) {
+      fatal("LEAF method calling lock?");
+    }
+    if (handle_area()->no_handle_mark_active()) {
+      fatal("LEAF method calling lock?");
+    }
+    break;
+  default:
+    fatal("illegal thread state %d, LEAF method calling lock?", thread_state());
   }
 
   if (GCALotAtAllSafepoints && allow_gcalot) {
@@ -1100,7 +1112,7 @@ void JavaThread::verify_not_published() {
 // pending, when _suspend_flags is non-zero or when we need to process a stack
 // watermark. Also check for pending async exceptions (except unsafe access error).
 void JavaThread::check_special_condition_for_native_trans(JavaThread *thread) {
-  assert(thread->thread_state() == _thread_in_vm, "wrong state");
+  assert(thread->thread_state() == _thread_in_Java, "wrong state");
   assert(!thread->has_last_Java_frame() || thread->frame_anchor()->walkable(), "Unwalkable stack in native->Java transition");
 
   // Enable WXWrite: called directly from interpreter native wrapper.
