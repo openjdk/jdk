@@ -5109,10 +5109,8 @@ class StubGenerator: public StubCodeGenerator {
 
     Label rounds24_loop_0, rounds24_loop_1;
 
-    bool can_use_r18 = false;
-#ifndef R18_RESERVED
-    can_use_r18 = true;
-#endif
+    const bool can_use_r18 = R18_RESERVED_ONLY(false) NOT_R18_RESERVED(true);
+
     bool can_use_fp = !PreserveFramePointer;
 
     __ enter();
@@ -5165,10 +5163,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // restore callee-saved registers
     __ pop(saved_regs, sp);
-    if (can_use_fp && can_use_r18) {
-      __ ldr(r18_tls, Address(sp, 96));
-      __ add(rfp, sp, 112); // leave() will copy rfp to sp below
-    } // else no need to recalculate rfp, since it wasn't changed
+    __ mov(rfp, sp);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ mov(r0, zr); // return 0
@@ -8919,14 +8914,17 @@ class StubGenerator: public StubCodeGenerator {
     {
 
       Register tmp3, tmp4;
+      RegSet saved_regs;
+
       if (can_use_fp && can_use_r18) {
         tmp3 = rfp;
         tmp4 = r18_tls;
       } else {
         tmp3 = a[4];
         tmp4 = a[9];
-        __ stp(tmp3, tmp4, __ pre(sp, -16));
+        saved_regs = RegSet::of(tmp3, tmp4);
       }
+      __ push(saved_regs, sp);
 
       __ eor3(tmp3, a[0], a[5], a[10]);
       __ eor3(tmp4, tmp3, a[15], a[20]); // tmp4 = a0^a5^a10^a15^a20 = c0
@@ -8956,9 +8954,8 @@ class StubGenerator: public StubCodeGenerator {
       __ eor(a[7], a[7], tmp2);
       __ eor(a[12], a[12], tmp2);
       __ rax1(tmp0, tmp0, tmp4); // d4
-      if (!can_use_fp || !can_use_r18) {
-        __ ldp(tmp3, tmp4, __ post(sp, 16));
-      }
+      __ pop(saved_regs, sp);
+
       __ eor(a[17], a[17], tmp2);
       __ eor(a[22], a[22], tmp2);
       __ eor(a[4], a[4], tmp0);
@@ -9051,10 +9048,8 @@ class StubGenerator: public StubCodeGenerator {
     Label sha3_loop, rounds24_preloop, loop_body;
     Label sha3_512_or_sha3_384, shake128;
 
-    bool can_use_r18 = false;
-#ifndef R18_RESERVED
-    can_use_r18 = true;
-#endif
+    const bool can_use_r18 = R18_RESERVED_ONLY(false) NOT_R18_RESERVED(true);
+
     bool can_use_fp = !PreserveFramePointer;
 
     __ enter();
@@ -12520,7 +12515,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     // we're now on the yield frame (which is in an address above us b/c rsp has been pushed down)
-    __ sub(sp, rscratch2, 2*wordSize); // now pointing to rfp spill
+    __ sub(sp, rscratch2, 2 * wordSize); // now pointing to rfp spill
     __ mov(rfp, sp);
 
     if (return_barrier_exception) {
