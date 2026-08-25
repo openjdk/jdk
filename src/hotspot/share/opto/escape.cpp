@@ -4357,7 +4357,7 @@ bool ConnectionGraph::split_AddP(Node *addp, Node *base) {
     bool found = false;
     for (uint i = InitializeNode::RawStores; i < init->req(); i++) {
       Node* st = init->in(i);
-      if (st->in(MemNode::Address) == addp) {
+      if (st->is_Store() && st->in(MemNode::Address) == addp) {
         found = true;
       }
     }
