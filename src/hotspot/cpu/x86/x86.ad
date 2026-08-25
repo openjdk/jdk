@@ -4120,8 +4120,10 @@ bool Matcher::pd_clone_address_expressions(AddPNode* m, Matcher::MStack& mstack,
     mstack.push(off, Visit);
     mstack.push(m->in(AddPNode::Base), Pre_Visit);
     return true;
-  } else if (clone_shift(off, this, mstack, address_visited) ||
-             clone_conv(off, this, mstack, address_visited)) {
+  } else if (clone_shift(off, this, mstack, address_visited)) {
+    // Note: clone_conv is intentionally not called here.
+    // x86 has no memory operand matching bare AddP(reg, ConvI2L(idx))
+    // without a constant displacement.
     address_visited.test_set(m->_idx); // Flag as address_visited
     mstack.push(m->in(AddPNode::Address), Pre_Visit);
     mstack.push(m->in(AddPNode::Base), Pre_Visit);

@@ -27,7 +27,7 @@
  * @summary Verify lower IR expectations for array addressing operations
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run driver ${test.main.class}
+ * @run main/othervm --add-exports=java.base/jdk.internal.misc=ALL-UNNAMED ${test.main.class}
  */
 
 package compiler.c2;
@@ -57,9 +57,11 @@ public class TestArrayAddressing {
         comp.addJavaSourceCode("compiler.c2.templated.ArrayAddressing", generate(comp));
 
         // Compile the source file.
-        comp.compile();
+        comp.compile("--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED");
 
-        comp.invoke("compiler.c2.templated.ArrayAddressing", "main", new Object[] {new String[] {}});
+        comp.invoke("compiler.c2.templated.ArrayAddressing", "main", new Object[] {new String[] {
+            "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED"
+        }});
     }
 
     private static String generate(CompileFramework comp) {
@@ -76,7 +78,9 @@ public class TestArrayAddressing {
             // package and class name.
             "compiler.c2.templated", "ArrayAddressing",
             // List of imports.
-            Set.of("compiler.lib.generators.*"),
+            Set.of("compiler.lib.generators.*",
+                   "java.util.Objects",
+                   "jdk.internal.misc.Unsafe"),
             // classpath, so the Test VM has access to the compiled class files.
             comp.getEscapedClassPathOfCompiledClasses(),
             // The list of tests.
@@ -87,6 +91,7 @@ public class TestArrayAddressing {
         var template = Template.make(() -> scope(
             """
             private static final Generator<Integer> GEN_I = Generators.G.ints();
+            private static final Unsafe UNSAFE = Unsafe.getUnsafe();
             """
         ));
         return template.asToken();
@@ -96,9 +101,10 @@ public class TestArrayAddressing {
         TemplateToken generate() {
             var template = Template.make(() -> scope(
                 let("type", type.name()),
+                let("uMethodName", "get" + type.name().substring(0, 1).toUpperCase() + type.name().substring(1)),
                 """
                 @Setup
-                public static Object[] $setup() {
+                public static Object[] $setupOneArray() {
                     final #type[] arr = new #type[100];
                     for (int i = 0; i < arr.length; i++) {
                         arr[i] = (#type) GEN_I.next().intValue();
@@ -107,7 +113,7 @@ public class TestArrayAddressing {
                 }
 
                 @Test
-                @Arguments(setup = "$setup")
+                @Arguments(setup = "$setupOneArray")
                 @IR(counts = {IRNode.X86_SCONV_I2L, "= 0"},
                     applyIfPlatform = {"x64", "true"},
                     phase = CompilePhase.MATCHING)
@@ -118,7 +124,7 @@ public class TestArrayAddressing {
                 static volatile int $volatileField;
 
                 @Test
-                @Arguments(setup = "$setup")
+                @Arguments(setup = "$setupOneArray")
                 @IR(counts = {IRNode.X86_SCONV_I2L, "= 0"},
                     applyIfPlatform = {"x64", "true"},
                     phase = CompilePhase.MATCHING)
@@ -130,13 +136,36 @@ public class TestArrayAddressing {
                 }
 
                 @Test
-                @Arguments(setup = "$setup")
+                @Arguments(setup = "$setupOneArray")
                 @IR(counts = {IRNode.X86_SCONV_I2L, "= 0"},
                     applyIfPlatform = {"x64", "true"},
                     phase = CompilePhase.MATCHING)
                 private static int $testDifferentOffset(#type[] arr, int i) {
                     i = Integer.min(Integer.max(i, 0), 1000);
                     return arr[i] + arr[i + 1];
+                }
+
+                private static final int $base = (int) UNSAFE.arrayBaseOffset(#type[].class);
+
+                @Setup
+                public static Object[] $setupTwoArrays() {
+                    final #type[] a = new #type[100];
+                    final #type[] b = new #type[100];
+                    for (int i = 0; i < a.length; i++) {
+                        a[i] = (#type) GEN_I.next().intValue();
+                        b[i] = (#type) GEN_I.next().intValue();
+                    }
+                    return new Object[] {a, b, $base + 42};
+                }
+
+                @Test
+                @Arguments(setup = "$setupTwoArrays")
+                @IR(counts = {IRNode.X86_SCONV_I2L, "= 1"},
+                    applyIfPlatform = {"x64", "true"},
+                    phase = CompilePhase.MATCHING)
+                private static int $testUnsafe(#type[] a, #type b[], int offset) {
+                    int checked = Objects.checkIndex(offset, 1000);
+                    return UNSAFE.#uMethodName(a, checked) + UNSAFE.#uMethodName(b, checked);
                 }
                 """
             ));
