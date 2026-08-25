@@ -115,9 +115,9 @@ public class TextComponentDragEnabledTest {
         for (boolean expected : new boolean[] { false, true }) {
             for (UIManager.LookAndFeelInfo laf :
                 UIManager.getInstalledLookAndFeels()) {
-                UIManager.setLookAndFeel(new MetalLookAndFeel());
 
                 for (Supplier<JTextComponent> supplier : TEXT_COMPONENTS) {
+                    UIManager.setLookAndFeel(new MetalLookAndFeel());
                     JTextComponent component = supplier.get();
                     component.setDragEnabled(expected);
 
