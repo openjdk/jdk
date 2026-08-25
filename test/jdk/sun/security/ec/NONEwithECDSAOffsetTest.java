@@ -36,7 +36,6 @@ import jtreg.SkippedException;
 /*
  * @test
  * @bug 8385672
- * @key randomness
  * @summary This test validates the length checks in SunEC's NONEwithECDSA
  *         implementation
  * @library /test/lib/

@@ -157,6 +157,8 @@ abstract class ECDSASignature extends SignatureSpi {
         @Override
         protected void engineUpdate(byte[] b, int off, int len)
         throws SignatureException {
+            // Check capacity. If precomputedDigest is already full, this
+            // condition effectively becomes 'len > -1' and will always be true
             if (len > precomputedDigest.length - offset) {
                 offset = RAW_ECDSA_MAX + 1;
                 return;
