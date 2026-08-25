@@ -2080,7 +2080,7 @@ void MethodAnnotationCollector::apply_to(const methodHandle& m) {
 
 void ClassFileParser::ClassAnnotationCollector::apply_to(InstanceKlass* ik) {
   assert(ik != nullptr, "invariant");
-  if (has_annotation(_jdk_internal_vm_annotation_Contended)) {
+  if (ik->is_identity_class() && has_annotation(_jdk_internal_vm_annotation_Contended)) {
     ik->set_is_contended(is_contended());
   }
   if (has_annotation(_jdk_internal_ValueBased)) {
@@ -5676,8 +5676,9 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
     oop_map_blocks->copy(ik->start_of_nonstatic_oop_maps());
   }
 
-  if (_has_contended_fields || _parsed_annotations->is_contended() ||
-      ( _super_klass != nullptr && _super_klass->has_contended_annotations())) {
+  if (ik->is_identity_class() &&
+      (_has_contended_fields || _parsed_annotations->is_contended() ||
+       (_super_klass != nullptr && _super_klass->has_contended_annotations()))) {
     ik->set_has_contended_annotations(true);
   }
 
@@ -6409,7 +6410,7 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
 
   _layout_info = new FieldLayoutInfo();
   FieldLayoutBuilder lb(class_name(), loader_data(), super_klass(), _cp, /*_fields*/ _temp_field_info,
-      _parsed_annotations->is_contended(), is_inline_type(),
+      access_flags().is_identity_class() && _parsed_annotations->is_contended(), is_inline_type(),
       access_flags().is_abstract() && !access_flags().is_identity_class() && !access_flags().is_interface(),
       _must_be_atomic, _layout_info, _inline_layout_info_array);
   lb.build_layout();
