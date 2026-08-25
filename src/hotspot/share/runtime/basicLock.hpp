@@ -47,8 +47,6 @@ class BasicLock {
  public:
   BasicLock() : _monitor(nullptr) {}
 
-  void set_bad_monitor_deopt() { set_monitor(reinterpret_cast<ObjectMonitor*>(badDispHeaderDeopt)); }
-
   inline ObjectMonitor* object_monitor_cache() const;
   inline void clear_object_monitor_cache();
   inline void set_object_monitor_cache(ObjectMonitor* mon);
