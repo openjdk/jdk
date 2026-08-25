@@ -2969,7 +2969,7 @@ void LIR_Assembler::emit_profile_multiple_array_types(LIR_OpProfileMultipleArray
   __ test_non_flat_array_oop (array, tmp1, not_flat);
 
   Register klass = tmp1;
-  __ load_klass(klass, array);
+  __ load_klass(klass, array, tmp2);
 
   Register mdo = tmp2;
   __ mov_metadata(mdo, md->constant_encoding());

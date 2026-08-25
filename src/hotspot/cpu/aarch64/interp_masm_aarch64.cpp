@@ -1233,7 +1233,7 @@ void InterpreterMacroAssembler::profile_array_type(Register mdp,
 
 void InterpreterMacroAssembler::profile_multiple_array_types(Register mdp,
                                                              Register array,
-                                                             Register tmp) {
+                                                             Register tmp, const Register tmp2) {
   if (ProfileInterpreter) {
     Label profile_continue;
 
@@ -1243,7 +1243,7 @@ void InterpreterMacroAssembler::profile_multiple_array_types(Register mdp,
     Label not_flat;
     test_non_flat_array_oop(array, tmp, not_flat);
 
-    load_klass(tmp, array);
+    load_klass(tmp, array, tmp2);
     profile_array_type_at_load(tmp, mdp, 0);
 
     b(profile_continue);
@@ -1264,7 +1264,7 @@ void InterpreterMacroAssembler::profile_multiple_array_types(Register mdp,
   }
 }
 
-void InterpreterMacroAssembler::profile_multiple_element_types(Register mdp, Register element, Register tmp) {
+void InterpreterMacroAssembler::profile_multiple_element_types(Register mdp, Register element, Register tmp, const Register tmp2) {
   if (ProfileInterpreter) {
     Label profile_continue;
 
