@@ -625,6 +625,9 @@ struct GtestFriendToMacroAssembler {
       // test movk-based
       // Only bits in the third quadrant and not a valid immediate
       build_and_run_encode_decode_klass((address)0x0000'A000'0000'0000ULL, 0, MA::KlassDecodeMovk);
+      build_and_run_encode_decode_klass((address)0x0000'0005'0000'0000ULL, 0, MA::KlassDecodeMovk);
+      build_and_run_encode_decode_klass((address)0x0000'0005'0000'0000ULL, 2, MA::KlassDecodeMovk);
+      build_and_run_encode_decode_klass((address)0x0000'0005'0000'0000ULL, 10, MA::KlassDecodeMovk);
 
       // test Fallback mode.
       // base has low bits that intersect with nKlass, no other mode would work
