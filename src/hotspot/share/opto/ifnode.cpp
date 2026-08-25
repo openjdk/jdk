@@ -1880,6 +1880,17 @@ Node* IfNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* prev_dom = search_identical(dist, igvn);
 
   if (prev_dom != nullptr) {
+    Node* true_proj = proj_out(1);
+    Node* false_proj = proj_out(0);
+
+    Node* head = true_proj->find_out_with(Op_Loop);
+    if (head == nullptr) {
+      head = false_proj->find_out_with(Op_Loop);
+    }
+    if (head != nullptr && head->as_Loop()->is_loop_nest_inner_loop()) {
+      return nullptr;
+    }
+
     // Dominating CountedLoopEnd (left over from some now dead loop) will become the new loop exit. Outer strip mined
     // loop will go away. Mark this loop as no longer strip mined.
     if (is_CountedLoopEnd()) {
@@ -1945,9 +1956,6 @@ Node* IfNode::dominated_by(Node* prev_dom, PhaseIterGVN* igvn, bool prev_dom_not
         // For Regions it may not be in slot 0.
         uint l;
         for (l = 0; s->in(l) != ifp; l++) { }
-        if (s->is_Loop() && s->as_Loop()->is_loop_nest_inner_loop() && l == LoopNode::LoopBackControl) {
-          s->as_Loop()->clear_loop_nest_inner_loop();
-        }
         igvn->replace_input_of(s, l, ctrl_target);
       }
     } // End for each child of a projection
