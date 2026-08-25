@@ -22,7 +22,10 @@
  */
 
 import java.lang.Integer;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Random;
 import java.util.function.BiFunction;
 import java.util.function.IntFunction;
@@ -31,10 +34,9 @@ import java.util.stream.Stream;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import jdk.incubator.vector.VectorOperators;
 import jdk.incubator.vector.VectorSpecies;
 import jdk.test.lib.Utils;
-
-import org.testng.Assert;
 
 public class AbstractVectorTest {
 
@@ -239,5 +241,34 @@ public class AbstractVectorTest {
         }
         int wrapped = Math.floorMod(index, vsp.length());
         return wrapped - vsp.length();
+    }
+
+    private static final List<VectorOperators.Operator> VECTOR_OPERATORS = vectorOperators();
+
+    private static List<VectorOperators.Operator> vectorOperators() {
+        List<VectorOperators.Operator> operators = new ArrayList<>();
+        for (var field : VectorOperators.class.getFields()) {
+            if (!Modifier.isStatic(field.getModifiers()) ||
+                !VectorOperators.Operator.class.isAssignableFrom(field.getType())) {
+                continue;
+            }
+            try {
+                operators.add((VectorOperators.Operator) field.get(null));
+            } catch (ReflectiveOperationException e) {
+                throw new AssertionError(e);
+            }
+        }
+        operators.sort(Comparator.comparing(VectorOperators.Operator::name));
+        return List.copyOf(operators);
+    }
+
+    static Object[][] unsupportedOperatorProvider(
+            VectorSpecies<?> species,
+            Class<? extends VectorOperators.Operator> operatorType) {
+        return VECTOR_OPERATORS.stream()
+                .filter(operatorType::isInstance)
+                .filter(op -> !op.compatibleWith(species.elementType()))
+                .map(op -> new Object[] {op})
+                .toArray(Object[][]::new);
     }
 }

@@ -93,6 +93,7 @@ unslice_template="Unslice-op"
 unslice1_template="Unslice-bop"
 unslice1_masked_template="Unslice-Masked-bop"
 miscellaneous_template="Miscellaneous"
+lanewise_unsupported_template="Lanewise-Unsupported"
 
 function replace_variables {
   local filename=$1
@@ -233,6 +234,7 @@ function gen_op_tmpl {
 
   local gen_perf_tests=$generate_perf_tests
   if [[ $template == *"-Broadcast-"* ]] || [[ $template == "Miscellaneous" ]] ||
+     [[ $template == $lanewise_unsupported_template ]] ||
      [[ $template == *"Compare-Masked"* ]] || [[ $template == *"Compare-Broadcast"* ]] ||
      [[ $template == *"Mask-Binary"* ]]; then
     gen_perf_tests=false
@@ -400,6 +402,11 @@ function gen_with_op {
 function gen_get_op {
   echo "Generating get op $1 ($2)..."
   gen_op_tmpl $get_template "$@"
+}
+
+function gen_lanewise_unsupported {
+  echo "Generating unsupported lanewise operations..."
+  gen_op_tmpl $lanewise_unsupported_template "LANEWISE_UNSUPPORTED" ""
 }
 
 function gen_unit_header {
@@ -640,6 +647,9 @@ gen_op_tmpl $mask_fromtolong_template "FromToLong" ""
 
 # Miscellaneous Smoke Tests
 gen_op_tmpl $miscellaneous_template "MISC" "" ""
+
+# Unsupported lanewise operations
+gen_lanewise_unsupported
 
 gen_unit_footer $unit_output
 
