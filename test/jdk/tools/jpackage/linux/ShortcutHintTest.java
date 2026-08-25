@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@ import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.FileAssociations;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageCommand.MessageCategory;
+import jdk.jpackage.test.JPackageOutputValidator;
 import jdk.jpackage.test.LinuxHelper;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
@@ -148,7 +150,7 @@ public class ShortcutHintTest {
      */
     @Test
     public static void testDesktopFileFromResourceDir() throws IOException {
-        final String expectedVersionString = "Version=12345678";
+        final String expectedTryExecDesktopEntry = "TryExec=notify-send";
 
         final Path tempDir = TKit.createTempDirectory("resources");
 
@@ -169,13 +171,13 @@ public class ShortcutHintTest {
                             "Comment=APPLICATION_DESCRIPTION",
                             "Icon=APPLICATION_ICON",
                             "Categories=DEPLOY_BUNDLE_CATEGORY",
-                            expectedVersionString
+                            expectedTryExecDesktopEntry
                     ));
         })
         .addInstallVerifier(cmd -> {
             Path desktopFile = LinuxHelper.getDesktopFile(cmd);
             TKit.assertFileExists(desktopFile);
-            TKit.assertTextStream(expectedVersionString)
+            TKit.assertTextStream(expectedTryExecDesktopEntry)
                     .label(String.format("[%s] file", desktopFile))
                     .predicate(String::equals)
                     .apply(Files.readAllLines(desktopFile));
@@ -193,6 +195,43 @@ public class ShortcutHintTest {
     public static void testMenuGroup(String menuGroup) {
         createTest().addInitializer(JPackageCommand::setFakeRuntime).addInitializer(cmd -> {
             cmd.addArgument("--linux-shortcut").setArgumentValue("--linux-menu-group", menuGroup);
-        }).run(Action.CREATE_AND_UNPACK);
+        }).addInitializer(ShortcutHintTest::validateMenuGroupNameValidation).run(Action.CREATE_AND_UNPACK);
+    }
+
+    @Test
+    public static void testDefaultMenuGroup() {
+        if (!LinuxHelper.isDesktopFileValidateCommandAvailable()) {
+            throw TKit.throwSkippedException("desktop-file-validate command is NOT available");
+        }
+
+        createTest().addInitializer(JPackageCommand::setFakeRuntime).addInitializer(cmd -> {
+            cmd.addArgument("--linux-shortcut");
+        }).addInitializer(ShortcutHintTest::validateMenuGroupNameValidation).run(Action.CREATE_AND_UNPACK);
+    }
+
+    private static void validateMenuGroupNameValidation(JPackageCommand cmd) {
+        if (!LinuxHelper.isDesktopFileValidateCommandAvailable()) {
+            cmd.validateResult(_ -> {
+                TKit.trace("Skip lookup for traces of the desktop-file-validate command execution in the output");
+            });
+            return;
+        }
+
+        var expectValidation = cmd.hasArgument("--linux-menu-group");
+
+        var matchCommand = TKit.assertTextStream("Running desktop-file-validate")
+                .predicate(String::startsWith).label("starts with");
+        cmd.setEnabledMessageCategories(MessageCategory.TOOLS);
+        // jpackage must run "desktop-file-validate" command at most once.
+        new JPackageOutputValidator()
+                .matchTimestamps().stripTimestamps()
+                .mutate(validator -> {
+                    if (expectValidation) {
+                        validator.add(matchCommand);
+                    }
+                    validator.add(matchCommand.copy().negate());
+                })
+                .stdout()
+                .applyTo(cmd);
     }
 }

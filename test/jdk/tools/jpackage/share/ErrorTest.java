@@ -63,6 +63,7 @@ import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JPackageOutputValidator;
 import jdk.jpackage.test.JavaTool;
 import jdk.jpackage.test.MacSign;
+import jdk.jpackage.test.LinuxHelper;
 import jdk.jpackage.test.MacSign.CertificateRequest;
 import jdk.jpackage.test.MacSign.CertificateType;
 import jdk.jpackage.test.MacSign.KeychainWithCertsSpec;
@@ -1098,6 +1099,14 @@ public final class ErrorTest {
                         .error("error.rpm-invalid-value-for-package-name", "#")
                         .advice("error.rpm-invalid-value-for-package-name.advice")
         ).map(TestSpec.Builder::create).toList());
+
+        if (LinuxHelper.isDesktopFileValidateCommandAvailable()) {
+            Stream.of(
+                    testSpec().type(PackageType.LINUX_RPM).addArgs("--linux-menu-group", "%$@#!")
+                            .error("error.parameter-invalid-value", "%$@#!", "--linux-menu-group")
+                            .advice("error.invalid-desktop-category.advice")
+            ).map(TestSpec.Builder::create).forEach(testCases::add);
+        }
 
         invalidShortcut(testCases::add, "--linux-shortcut");
 

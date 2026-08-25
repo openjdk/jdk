@@ -26,18 +26,24 @@ package jdk.jpackage.internal;
 
 import static jdk.jpackage.internal.I18N.buildConfigException;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.ApplicationLayout;
+import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.LinuxApplication;
 import jdk.jpackage.internal.model.LinuxPackage;
 import jdk.jpackage.internal.model.LinuxPackageMixin;
 import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.model.RuntimeLayout;
 import jdk.jpackage.internal.model.StandardPackageType;
+import jdk.jpackage.internal.util.CommandOutputControl.UnexpectedExitCodeException;
 
 final class LinuxPackageBuilder {
 
@@ -71,6 +77,12 @@ final class LinuxPackageBuilder {
 
         final var app = ApplicationBuilder.overrideAppImageLayout(pkgBuilder.app(), relativeInstalledLayout);
 
+        menuGroupName().ifPresent(_ -> {
+            Optional.ofNullable(probeMenuGroupNameFile).ifPresent(_ -> {
+                validateMenuGroupName(probeMenuGroupNameFile, menuGroupName);
+            });
+        });
+
         return create(pkgBuilder
                 .app(LinuxApplication.create(app))
                 .installedPackageLayout(relativeInstalledLayout.resolveAt(Path.of("/")).resetRootDirectory())
@@ -79,7 +91,7 @@ final class LinuxPackageBuilder {
 
     private LinuxPackage create(Package pkg) {
         return LinuxPackage.create(pkg, new LinuxPackageMixin.Stub(
-                Optional.ofNullable(menuGroupName).orElseGet(DEFAULTS::menuGroupName),
+                menuGroupName().orElseGet(DEFAULTS::menuGroupName),
                 category(),
                 Optional.ofNullable(additionalDependencies),
                 release(),
@@ -94,6 +106,10 @@ final class LinuxPackageBuilder {
     LinuxPackageBuilder menuGroupName(String v) {
         menuGroupName = v;
         return this;
+    }
+
+    Optional<String> menuGroupName() {
+        return Optional.ofNullable(menuGroupName);
     }
 
     LinuxPackageBuilder category(String v) {
@@ -121,6 +137,11 @@ final class LinuxPackageBuilder {
 
     LinuxPackageBuilder arch(LinuxPackageArch v) {
         arch = v;
+        return this;
+    }
+
+    LinuxPackageBuilder probeMenuGroupNameFile(Path v) {
+        probeMenuGroupNameFile = v;
         return this;
     }
 
@@ -181,6 +202,38 @@ final class LinuxPackageBuilder {
         }
     }
 
+    private static void validateMenuGroupName(Path probeFile, String menuGroupName) {
+        Objects.requireNonNull(probeFile);
+        Objects.requireNonNull(menuGroupName);
+
+        try {
+            Files.createDirectories(probeFile.getParent());
+            Files.write(probeFile, List.of(
+                    "[Desktop Entry]",
+                    DesktopEntry.NAME.formatDesktopFileEntry("acme"),
+                    DesktopEntry.EXEC.formatDesktopFileEntry("foo"),
+                    DesktopEntry.TYPE.formatDesktopFileEntry("Application"),
+                    DesktopEntry.CATEGORIES.formatDesktopFileEntry(menuGroupName)));
+        } catch (IOException ex) {
+            // This is fatal if we can't create a probe file.
+            throw new UncheckedIOException(ex);
+        }
+
+        try {
+            Executor.of("desktop-file-validate", probeFile.toString()).executeExpectSuccess();
+            return;
+        } catch (UnexpectedExitCodeException ex) {
+            // Validation failed as the command returned an unexpected exit code.
+            throw new ConfigException(
+                    I18N.format("error.parameter-invalid-value", menuGroupName, "--linux-menu-group"),
+                    I18N.format("error.invalid-desktop-category.advice"), ex);
+        } catch (IOException ex) {
+            // The command probably isn't available; keep going, as this validation is optional.
+            Log.trace(ex);
+            return;
+        }
+    }
+
     private record Defaults(String menuGroupName) {
     }
 
@@ -189,6 +242,7 @@ final class LinuxPackageBuilder {
     private String category;
     private String additionalDependencies;
     private String release;
+    private Path probeMenuGroupNameFile;
     private LinuxPackageArch arch;
 
     private final PackageBuilder pkgBuilder;
