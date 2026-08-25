@@ -1772,7 +1772,7 @@ void CCombinedSegTable::GetEUDCFileName(LPWSTR lpszFileName, int cchFileName)
     }
     HKEY hRootKey = HKEY_CURRENT_USER;
     HKEY hKey;
-    LONG lRet = ::RegOpenKeyExA(hRootKey, lpszSubKey, 0, KEY_ALL_ACCESS, &hKey);
+    LONG lRet = ::RegOpenKeyExA(hRootKey, lpszSubKey, 0, KEY_READ, &hKey);
     if (lRet != ERROR_SUCCESS) {
         m_fEUDCSubKeyExist = FALSE;
         return; // no EUDC font
