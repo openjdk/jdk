@@ -124,7 +124,7 @@ void ShenandoahGenerationalControlThread::check_for_request(ShenandoahGCRequest&
   log_debug(gc, thread)("request.cause: %s, request.generation: %s",
     GCCause::to_string(request.cause), request.generation == nullptr ? "None" : request.generation->name());
 
-  _heap->clear_cancelled_gc();
+  _heap->clear_cancellation(request.cause);
   _requested_gc_cause = GCCause::_no_gc;
   _requested_generation = nullptr;
 
