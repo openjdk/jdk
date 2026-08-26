@@ -67,6 +67,7 @@ class outputStream;
                                                                                   "  CMR: ")                         \
   SHENANDOAH_WORKER_PHASE_DEF(f, conc_mark,                                       "Concurrent Marking",              \
                                                                                   "  CM: ")                          \
+  SHENANDOAH_SIMPLE_PHASE_DEF(f, conc_mark_rebalance_queues,                      "  Rebalance Queues")              \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, conc_mark_satb_flush,                            "  Flush SATB")                    \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, final_mark_gross,                                "Pause Final Mark (G)")            \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, final_mark,                                      "Pause Final Mark (N)")            \
