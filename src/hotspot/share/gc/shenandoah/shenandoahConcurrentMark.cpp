@@ -174,11 +174,6 @@ void ShenandoahConcurrentMark::concurrent_mark() {
   uint nworkers = workers->active_workers();
   task_queues()->reserve(nworkers);
 
-  {
-    ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_mark_rebalance_queues, true);
-    task_queues()->rebalance(nworkers);
-  }
-
   ShenandoahGenerationType gen_type = _generation->type();
   ShenandoahSATBMarkQueueSet& qset = ShenandoahBarrierSet::satb_mark_queue_set();
   ShenandoahFlushSATBHandshakeClosure flush_satb(qset);

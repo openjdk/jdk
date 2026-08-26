@@ -62,8 +62,6 @@ public:
     return _buf_empty && taskqueue_t::is_empty();
   }
 
-  inline size_t full_size();
-
 private:
   bool _buf_empty;
   E _elem;
@@ -360,7 +358,6 @@ public:
 
   bool is_empty();
   void clear();
-  void rebalance(size_t num_queues);
 };
 
 class ShenandoahTerminatorTerminator : public TerminatorTerminator {
