@@ -2323,6 +2323,8 @@ public class Code {
         int prevNextReg = nextreg;
         nextreg = first;
         for (int i = nextreg; i < prevNextReg; i++) endScope(i);
+        //make sure variables for which we ended the scopes here are
+        //not defined in the state of the pendingJumps:
         undefineVariablesInChain(pendingJumps, first);
     }
 
