@@ -26,7 +26,9 @@
 import jdk.internal.javac.ParticipatesInPreview;
 
 /**
- * Defines the JSON API.
+ * Defines the JSON API. See the {@link jdk.incubator.json/jdk.incubator.json}
+ * package specification for an overview of the API.
+ *
  * {@incubating}
  *
  * @moduleGraph

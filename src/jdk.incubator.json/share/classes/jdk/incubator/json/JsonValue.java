@@ -34,17 +34,18 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * The interface that represents a JSON value. {@code JsonValue} is a wrapper
- * around a syntactic element within a JSON text. The {@code JsonValue} subtypes
+ * The interface that represents a JSON value. A {@code JsonValue} represents
+ * a syntactic element within a JSON text. The {@code JsonValue} subtypes
  * correspond to the JSON types, while {@code JsonValue} itself provides a uniform
  * interface for navigation, conversion, and generation.
  *
- * <p>Code that relies on equality or hashing should utilize the results of a
+ * <p>{@code JsonValue} does not define any identity or value semantics.
+ * Code that requires equality, hashing, or comparisons should use a
  * {@linkplain jdk.incubator.json/jdk.incubator.json##conversion conversion}
- * method instead of the {@code JsonValue} itself.
+ * method to obtain a Java value upon which such operations are performed.
  *
  * <p>Instances of {@code JsonValue} are immutable and thread safe. See the
- * {@linkplain jdk.incubator.json/jdk.incubator.json package documentation}
+ * {@linkplain jdk.incubator.json/jdk.incubator.json package specification}
  * for an overview of parsing, accessing, converting, and generating JSON text.
  *
  * @since 28
@@ -52,14 +53,15 @@ import java.util.Optional;
 public sealed interface JsonValue permits JsonString, JsonNumber, JsonObject, JsonArray, JsonBoolean, JsonNull {
 
     /**
-     * {@return the String representation of this {@code JsonValue} that conforms
-     * to the JSON syntax}
+     * {@return a JSON syntax conformant String representation of this {@code JsonValue}}
      *
      * The returned string represents the same JSON value as this object and
-     * does not contain insignificant whitespace or line separators. It is not
-     * required to preserve the exact lexical representation of the input JSON
-     * text or to produce a canonical representation. Subinterfaces may
-     * specify stronger preservation behavior for their corresponding JSON type.
+     * does not contain insignificant whitespace or line separators. The returned
+     * String is not a canonical representation of the JSON value. If this {@code JsonValue}
+     * was obtained via one of the parsing methods on the {@link Json} class, the
+     * returned String is not necessarily an exact lexical match of the JSON text that
+     * was parsed. Subinterfaces may specify stronger preservation behavior for their
+     * corresponding JSON type.
      * <p>
      * For a String representation suitable for display, use
      * {@link Json#toDisplayString(JsonValue, String)}.
@@ -89,13 +91,14 @@ public sealed interface JsonValue permits JsonString, JsonNumber, JsonObject, Js
 
     /**
      * {@return an {@code int} if this {@code JsonValue} is an instance of {@link JsonNumber}
-     * and it can be converted from its string representation; otherwise, throws a
-     * {@code JsonValueException}} That is, it can be
-     * expressed exactly as a whole number and is within the range of
-     * {@link Integer#MIN_VALUE} and {@link Integer#MAX_VALUE}. This occurs,
+     * that can be converted exactly; otherwise, throws a {@code JsonValueException}}
+     *
+     * This {@code JsonValue} must be a JSON number that represents
+     * a whole number and that is within the range
+     * {@link Integer#MIN_VALUE} to {@link Integer#MAX_VALUE}, inclusive. This is true
      * even if the string contains an exponent or a fractional part consisting of
      * only zero digits. For example, both the JSON number "123.0" and "1.23e2"
-     * produce an {@code int} value of "123". A {@code JsonValueException}
+     * produce an {@code int} value of {@code 123}. A {@code JsonValueException}
      * is thrown when the numeric value cannot be represented as an {@code int};
      * for example, the value "5.5".
      *
@@ -112,14 +115,15 @@ public sealed interface JsonValue permits JsonString, JsonNumber, JsonObject, Js
     }
 
     /**
-     * {@return a {@code long} if this {@code JsonValue} is an instance of {@link JsonNumber} and
-     * it can be converted from its string representation; otherwise, throws a
-     * {@code JsonValueException}} That is, it can be expressed exactly
-     * as a whole number and is within the range of {@link Long#MIN_VALUE} and
-     * {@link Long#MAX_VALUE}. This occurs, even if the string contains an
+     * {@return a {@code long} if this {@code JsonValue} is an instance of {@link JsonNumber}
+     * that can be converted exactly; otherwise, throws a {@code JsonValueException}}
+     *
+     * This {@code JsonValue} must be a JSON number that represents
+     * a whole number and that is within the range {@link Long#MIN_VALUE} to
+     * {@link Long#MAX_VALUE}, inclusive. This is true even if the string contains an
      * exponent or a fractional part consisting of only zero digits. For example,
      * both the JSON number "123.0" and "1.23e2" produce a {@code long} value of
-     * "123". A {@code JsonValueException} is thrown when the numeric value
+     * {@code 123}. A {@code JsonValueException} is thrown when the numeric value
      * cannot be represented as a {@code long}; for example, the value "5.5".
      *
      * @implSpec
@@ -135,22 +139,30 @@ public sealed interface JsonValue permits JsonString, JsonNumber, JsonObject, Js
     }
 
     /**
-     * {@return a finite {@code double} if this {@code JsonValue} is an instance of
-     * {@link JsonNumber} and it can be converted from its string representation using
-     * {@link Double#parseDouble(String)}; otherwise, throws a {@code JsonValueException}}
-     * If the converted {@code double} value is {@link Double#POSITIVE_INFINITY}
-     * or {@link Double#NEGATIVE_INFINITY}, a {@code JsonValueException} is thrown.
+     * {@return a {@code double} if this {@code JsonValue} is an instance of {@link JsonNumber}
+     * that can be converted, as if by {@link Double#parseDouble Double.parseDouble}, to a finite
+     * {@code double} value; otherwise, throws a {@code JsonValueException}}
      *
-     * @apiNote Callers of this method should be aware of the potential loss in
-     * precision when the string representation of the {@code JsonNumber} is converted
-     * to a {@code double}.
+     * @apiNote Callers of this method should be aware of the potential loss in precision or
+     * magnitude when a {@code JsonNumber} is converted to a {@code double}. A JSON number with
+     * more than about 15 decimal digits may be rounded to the nearest {@code double} value. A
+     * JSON number with a magnitude larger than about 1.8E308 cannot be represented as a finite
+     * {@code double}, and attempting to convert such a number will result in
+     * {@code JsonValueException}. (This differs from {@link Double#parseDouble Double.parseDouble},
+     * which will return {@link Double#POSITIVE_INFINITY} or {@link Double#NEGATIVE_INFINITY} for
+     * such cases.) This method will never return {@link Double#NaN}. However, this method will
+     * properly convert and return negative zero (&minus;0.0). To handle numbers of almost
+     * arbitrary precision and magnitude, consider converting to {@link java.math.BigDecimal
+     * BigDecimal} using {@code new BigDecimal(jsonNumber.toString())}. Note however that
+     * {@code BigDecimal} cannot represent negative zero.
+     *
      * @implSpec
      * The default implementation provided by {@code JsonValue} throws {@code
      * JsonValueException}. As such, implementors of {@code JsonNumber} are expected to
      * provide an implementation of this method.
      *
      * @throws JsonValueException if this {@code JsonValue} is not an instance
-     *      of {@code JsonNumber} or is not representable as a {@code double}.
+     *      of {@code JsonNumber} or is not representable as a finite {@code double}.
      */
     default double asDouble() {
         throw Utils.composeTypeError(this, "JsonNumber");
@@ -216,8 +228,8 @@ public sealed interface JsonValue permits JsonString, JsonNumber, JsonObject, Js
 
     /**
      * {@return the {@code JsonValue} associated with the given member name if this
-     * {@code JsonValue} is an instance of {@link JsonObject}} Otherwise, throws a
-     * {@code JsonValueException}.
+     * {@code JsonValue} is an instance of {@link JsonObject}; otherwise, throws a
+     * {@code JsonValueException}}
      *
      * @implSpec
      * The default implementation obtains a {@code JsonValue} which is the result
@@ -239,11 +251,10 @@ public sealed interface JsonValue permits JsonString, JsonNumber, JsonObject, Js
     }
 
     /**
-     * {@return an {@code Optional} containing the {@code JsonValue} associated
-     * with the given member name if this {@code JsonValue} is an instance of
-     * {@link JsonObject}} Otherwise, throws a {@code JsonValueException}.
-     * If there is no association with the given member name, an empty
-     * {@code Optional} is returned.
+     * {@return an {@code Optional} containing the value of a given member of
+     * this {@link JsonObject}, or an empty {@code Optional} if the member is
+     * absent; throws {@code JsonValueException} if this {@code JsonValue} is
+     * not a {@code JsonObject}}
      *
      * @implSpec
      * The default implementation obtains an {@code Optional<JsonValue>} by invoking {@link
@@ -260,8 +271,8 @@ public sealed interface JsonValue permits JsonString, JsonNumber, JsonObject, Js
 
     /**
      * {@return the {@code JsonValue} associated with the given index if this
-     * {@code JsonValue} is an instance of {@link JsonArray}} Otherwise, throws a
-     * {@code JsonValueException}.
+     * {@code JsonValue} is an instance of {@link JsonArray}; otherwise, throws a
+     * {@code JsonValueException}}
      *
      * @implSpec
      * The default implementation obtains a {@code JsonValue} which is the result

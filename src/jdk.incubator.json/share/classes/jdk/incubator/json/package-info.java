@@ -45,18 +45,18 @@
  * A successful parse indicates that the JSON text adheres to the JSON grammar.
  * Unsuccessful parsing throws a {@link JsonParseException}, which provides a detail message that includes
  * error details, a path to the root of the JSON text, and its location within the text.
- * The parsing APIs provided do not accept JSON text that contains JSON objects with duplicate member names.
+ * The parsing APIs do not accept JSON text that contains JSON objects with duplicate member names.
  * <p>
  * The result of a successful parse is a {@code JsonValue}. The {@code JsonValue} interface has six
  * sub-interfaces: {@link JsonString}, {@link JsonNumber}, {@link JsonBoolean}, {@link JsonNull},
- * {@link JsonObject}, and {@link JsonArray}. These sub-interfaces correspond to each value in the
+ * {@link JsonObject}, and {@link JsonArray}. Each sub-interface corresponds to one of the elements of
  * JSON syntax. This type hierarchy allows you to use pattern matching to determine the subtype
- * of a {@code JsonValue}. {@code JsonValue} is immutable and thread safe.
+ * of a {@code JsonValue}. {@code JsonValue} instances are immutable and thread safe.
  *
  * <h2 id="access">Navigating JSON text</h2>
- * Once you have retrieved a {@code JsonValue} from parsing, use the access methods to navigate
- * to the desired JSON value. {@link JsonValue#get(String)} is provided for JSON object and {@link
- * JsonValue#get(int)} for JSON array.
+ * Once you have obtained a {@code JsonValue} from parsing, use the access methods to navigate
+ * through JSON structural elements. {@link JsonValue#get(String)} is provided for JSON objects and {@link
+ * JsonValue#get(int)} for JSON arrays.
  * Given the JSON text:
  * {@snippet lang=java:
  * JsonValue json = Json.parse("""
@@ -118,8 +118,8 @@
  * then the "None" fallback value is used over throwing an exception.
  *
  * <h2 id=conversion>Converting JSON values to Java values</h2>
- * Once you have accessed your desired {@code JsonValue}, use the conversion methods to produce
- * a corresponding Java value. Each conversion method corresponds to a JSON type:
+ * Once you have navigated to your desired {@code JsonValue}, use the conversion methods to produce
+ * a corresponding Java value. Each conversion method requires a particular JSON type:
  * <ul>
  *     <li>{@link JsonValue#asString() asString()} converts a {@code JsonString} instance into a Java
  *     {@code String} with RFC 8259 JSON escape sequences translated to their
@@ -147,7 +147,7 @@
  * If an incorrect conversion method is used, which does not correspond to the matching
  * JSON type, for example {@code firstProvider.asBoolean()}, a {@code JsonValueException} is thrown.
  * <p>
- * These conversion methods always return a value when the {@code JsonValue} is
+ * Most conversion methods always return a value when the {@code JsonValue} is
  * of the correct JSON type. The exceptions are {@code asInt()}, {@code asLong()},
  * and {@code asDouble()}; they may throw a {@code JsonValueException} even
  * when the {@code JsonValue} is a JSON number, for example if it is outside
@@ -159,7 +159,7 @@
  * These methods produce String representations of a {@code JsonValue} that adhere
  * to the JSON grammar defined in RFC 8259.
  * {@code JsonValue.toString()} produces compact JSON text which does not
- * include JSON insignificant whitespaces, preferable for network transmission
+ * include JSON insignificant whitespace, preferable for network transmission
  * or storage. For example:
  * {@snippet lang=json:
  * {"providers":["SUN","SunRsaSign","SunEC"],"version":1}

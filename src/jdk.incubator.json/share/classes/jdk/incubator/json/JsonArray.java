@@ -42,13 +42,14 @@ import jdk.incubator.json.impl.JsonArrayImpl;
 public non-sealed interface JsonArray extends JsonValue {
 
     /**
-     * {@return an unmodifiable list of the {@code JsonValue} elements}
+     * {@return an unmodifiable list of the {@code JsonValue} elements
+     * of this {@code JsonArray}}
      */
     @Override
     List<JsonValue> asList();
 
     /**
-     * {@return the {@code JsonValue} associated with the given index}
+     * {@return the {@code JsonValue} at the given index of this {@code JsonArray}}
      *
      * @param index {@inheritDoc}
      * @throws JsonValueException if the given index is out of bounds
