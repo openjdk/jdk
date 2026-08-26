@@ -82,7 +82,6 @@
 //
 //  - klass - klass identifier used when UseCompactObjectHeaders == true
 
-class ObjectMonitor;
 class outputStream;
 
 class markWord {
@@ -253,27 +252,6 @@ class markWord {
   markWord set_has_monitor() const {
     return markWord((value() & ~lock_mask_in_place) | monitor_value);
   }
-  ObjectMonitor* monitor() const {
-    // Locking with OM table does not use markWord for monitors.
-    ShouldNotCallThis();
-    return (ObjectMonitor*) nullptr;
-  }
-
-  static markWord encode(ObjectMonitor* monitor) {
-    // Locking with OM table does not use markWord for monitors.
-    ShouldNotCallThis();
-    return markWord(0);
-  }
-
-  bool has_monitor_pointer() const {
-    return false; // Locking with OM table does not use markWord for monitors.
-  }
-
-  bool has_displaced_mark_helper() const {
-    return has_monitor_pointer();
-  }
-  markWord displaced_mark_helper() const;
-  void set_displaced_mark_helper(markWord m) const;
 
   // used to encode pointers during GC
   markWord clear_lock_bits() const { return markWord(value() & ~lock_mask_in_place); }
@@ -299,7 +277,6 @@ class markWord {
   }
 
   bool is_flat_array() const {
-    assert(!has_monitor_pointer(), "Bits are not valid if replaced by a monitor pointer: " PTR_FORMAT, value());
     assert(!is_marked(), "Bits might not be valid if marked by the GC: " PTR_FORMAT, value());
 #ifdef _LP64 // 64 bit encodings only
     return (mask_bits(value(), flat_array_bit_in_place) != 0);
@@ -309,7 +286,6 @@ class markWord {
   }
 
   bool is_null_free_array() const {
-    assert(!has_monitor_pointer(), "Bits are not valid if replaced by a monitor pointer: " PTR_FORMAT, value());
     assert(!is_marked(), "Bits might not be valid if marked by the GC: " PTR_FORMAT, value());
 #ifdef _LP64 // 64 bit encodings only
     return (mask_bits(value(), null_free_array_bit_in_place) != 0);
@@ -356,7 +332,7 @@ class markWord {
   }
 
   // Debugging
-  void print_on(outputStream* st, bool print_monitor_info = true) const;
+  void print_on(outputStream* st) const;
 
   // Prepare address of oop for placement into mark
   inline static markWord encode_pointer_as_mark(void* p) { return from_pointer(p).set_marked(); }

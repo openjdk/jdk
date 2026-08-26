@@ -59,6 +59,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/bitMap.inline.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -3976,6 +3977,15 @@ Node* GraphKit::flat_array_test(Node* array_or_klass, bool flat) {
 }
 
 Node* GraphKit::null_free_array_test(Node* array, bool null_free) {
+  const TypeAryPtr* array_type = gvn().type(array)->isa_aryptr();
+  if (array_type != nullptr) {
+    if (array_type->is_null_free()) {
+      return intcon(null_free);
+    } else if (array_type->is_not_null_free()) {
+      return intcon(!null_free);
+    }
+  }
+
   return mark_word_test(array, markWord::null_free_array_bit_in_place, null_free);
 }
 
@@ -3986,6 +3996,15 @@ Node* GraphKit::null_free_atomic_array_test(Node* array, ciInlineKlass* vk) {
     return intcon(1); // Always atomic
   } else if (!vk->has_null_free_atomic_layout()) {
     return intcon(0); // Never atomic
+  }
+
+  const TypeAryPtr* array_type = gvn().type(array)->isa_aryptr();
+  if (array_type != nullptr) {
+    if (array_type->is_atomic()) {
+      return intcon(1);
+    } else if (array_type->klass_is_exact() && !array_type->is_atomic()) {
+      return intcon(0);
+    }
   }
 
   Node* array_klass = load_object_klass(array);
@@ -4230,33 +4249,19 @@ void GraphKit::shared_unlock(Node* box, Node* obj) {
 Node* GraphKit::get_layout_helper(Node* klass_node, jint& constant_value) {
   const TypeKlassPtr* klass_t = _gvn.type(klass_node)->isa_klassptr();
   if (!StressReflectiveCode && klass_t != nullptr) {
-    bool xklass = klass_t->klass_is_exact();
-    bool can_be_flat = false;
-    const TypeAryPtr* ary_type = klass_t->as_exact_instance_type()->isa_aryptr();
-    if (UseArrayFlattening && !xklass && ary_type != nullptr) {
-      // Don't constant fold if the runtime type might be a flat array but the static type is not.
-      const TypeOopPtr* elem = ary_type->elem()->make_oopptr();
-      can_be_flat = ary_type->can_be_inline_array() && (!elem->is_inlinetypeptr() || elem->inline_klass()->maybe_flat_in_array());
+    if (klass_t->klass_is_exact()) {
+      constant_value = klass_t->exact_klass()->layout_helper();
+      return nullptr;
     }
-    if (!can_be_flat && (xklass || (klass_t->isa_aryklassptr() && klass_t->is_aryklassptr()->elem() != Type::BOTTOM))) {
-      jint lhelper;
-      if (klass_t->is_flat()) {
-        lhelper = ary_type->flat_layout_helper();
-      } else if (klass_t->isa_aryklassptr()) {
-        BasicType elem = ary_type->elem()->array_element_basic_type();
-        if (is_reference_type(elem, true)) {
-          elem = T_OBJECT;
-        }
-        lhelper = Klass::array_layout_helper(elem);
-      } else {
-        lhelper = klass_t->is_instklassptr()->exact_klass()->layout_helper();
-      }
-      if (lhelper != Klass::_lh_neutral_value) {
-        constant_value = lhelper;
-        return (Node*) nullptr;
-      }
+
+    const TypeAryKlassPtr* aryklass_t = klass_t->isa_aryklassptr();
+    if (aryklass_t != nullptr && aryklass_t->elem()->isa_klassptr() != nullptr && aryklass_t->is_not_flat()) {
+      // If we know that the array cannot be flat, then the layout_helper value is known
+      constant_value = Klass::array_layout_helper(T_OBJECT);
+      return nullptr;
     }
   }
+
   constant_value = Klass::_lh_neutral_value;  // put in a known value
   Node* lhp = off_heap_plus_addr(klass_node, in_bytes(Klass::layout_helper_offset()));
   return make_load(nullptr, lhp, TypeInt::INT, T_INT, MemNode::unordered);
@@ -4436,13 +4441,6 @@ Node* GraphKit::new_instance(Node* klass_node,
     (*return_size_val) = size;
   }
 
-  // This is a precise notnull oop of the klass.
-  // (Actually, it need not be precise if this is a reflective allocation.)
-  // It's what we cast the result to.
-  const TypeKlassPtr* tklass = _gvn.type(klass_node)->isa_klassptr();
-  if (!tklass)  tklass = TypeInstKlassPtr::OBJECT;
-  const TypeOopPtr* oop_type = tklass->as_exact_instance_type();
-
   // Now generate allocation code
 
   // The entire memory state is needed for slow path of the allocation
@@ -4454,6 +4452,20 @@ Node* GraphKit::new_instance(Node* klass_node,
                                          control(), mem, i_o(),
                                          size, klass_node,
                                          initial_slow_test, inline_type_node);
+
+  // This is a precise notnull oop of the klass.
+  // (Actually, it need not be precise if this is a reflective allocation.)
+  // It's what we cast the result to.
+  const TypeInstKlassPtr* tklass = _gvn.type(klass_node)->isa_instklassptr();
+  const TypeOopPtr* oop_type;
+  if (tklass == nullptr) {
+    oop_type = TypeInstPtr::BOTTOM;
+  } else if (tklass->klass_is_exact() && (tklass->instance_klass()->is_abstract() || !tklass->interfaces()->eq(tklass->instance_klass()))) {
+    // tklass may be an abstract class or an interface, for which we cannot make a TypeOopPtr
+    oop_type = TypeInstPtr::BOTTOM;
+  } else {
+    oop_type = tklass->as_exact_instance_type();
+  }
 
   return set_output_for_allocation(alloc, oop_type, deoptimize_on_exception);
 }
@@ -4816,7 +4828,7 @@ Node* GraphKit::load_String_value(Node* str, bool set_ctrl) {
                                                      false, nullptr, Type::Offset(0));
   const TypePtr* value_field_type = string_type->add_offset(value_offset);
   const TypeAryPtr* value_type = TypeAryPtr::make(TypePtr::BotPTR,
-                                                  TypeAry::make(TypeInt::BYTE, TypeInt::POS, false, false, true, true, true),
+                                                  TypeAry::make(TypeInt::BYTE, TypeInt::POS, false, false, true, false, true, true),
                                                   ciTypeArrayKlass::make(T_BYTE), true, Type::Offset(0));
   Node* p = basic_plus_adr(str, str, value_offset);
   Node* load = access_load_at(str, p, value_field_type, value_type, T_OBJECT,

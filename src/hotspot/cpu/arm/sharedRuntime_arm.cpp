@@ -1263,9 +1263,9 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ c2bool(R0);
   }
 
-  // Do a safepoint check while thread is in transition state
+  // Do a safepoint check
   Label call_safepoint_runtime, return_to_java;
-  __ mov(Rtemp, _thread_in_native_trans);
+  __ mov(Rtemp, _thread_in_vm);
   __ str_32(Rtemp, Address(Rthread, JavaThread::thread_state_offset()));
 
   // make sure the store is observed before reading the SafepointSynchronize state and further mem refs

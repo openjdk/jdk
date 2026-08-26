@@ -119,11 +119,7 @@ public class classesbyname001 {
         logHandler      = new Log(out, argsHandler);
         Binder binder   = new Binder(argsHandler, logHandler);
 
-        if (argsHandler.verbose()) {
-            debugee = binder.bindToDebugee(debugeeName + " -vbs");  // *** tp
-        } else {
-            debugee = binder.bindToDebugee(debugeeName);            // *** tp
-        }
+        debugee = binder.bindToDebugee(debugeeName);
 
         IOPipe pipe     = new IOPipe(debugee);
 
