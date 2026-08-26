@@ -26,6 +26,7 @@ package org.openjdk.bench.vm.compiler;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.bench.util.InMemoryJavaCompiler;
 import org.openjdk.bench.vm.compiler.JumpTableSwitch.InputState;
@@ -80,7 +81,7 @@ public class JumpTableSwitch {
         @Param({"1", "2", "4"})
         public int step;
 
-        @Param({"even", "defaultHeavy"})
+        @Param({"even", "defaultHeavy", "normal"})
         public String distribution;
 
         private MethodHandle switchMethod;
@@ -88,11 +89,7 @@ public class JumpTableSwitch {
         @Setup
         public void setup() throws ReflectiveOperationException {
             int seed = 0x1234ABCD;
-            if (step == 1) {
-                fillDense(values, cases, seed);
-            } else {
-                fillSparse(values, cases, step, seed);
-            }
+            fillValues(values, cases, step, seed);
 
             String className = "GeneratedSwitch" + cases + "Step" + step;
             String source = switchSource(className, cases, step);
@@ -111,33 +108,18 @@ public class JumpTableSwitch {
                 MethodType.methodType(int.class, int[].class));
         }
 
-        private void fillDense(int[] values, int size, int seed) {
+        private void fillValues(int[] values, int cases, int step, int seed) {
+            Random random = new Random(seed);
             for (int i = 0; i < values.length; i++) {
-                seed = nextSeed(seed);
-                int value = Integer.remainderUnsigned(seed, size);
+                int value = random.nextInt(cases);
                 values[i] = switch (distribution) {
-                    case "even" -> value;
-                    case "defaultHeavy" -> ((seed & 3) == 0) ? value : size + value;
+                    case "even" -> value * step;
+                    case "defaultHeavy" -> (random.nextInt(4) == 0 ? value : cases + value) * step;
+                    case "normal" -> random.ints(10, 0, cases).sum() / 10 * step;
                     default -> throw new IllegalStateException("unexpected distribution: " + distribution);
                 };
             }
         }
-
-        private void fillSparse(int[] values, int cases, int step, int seed) {
-            for (int i = 0; i < values.length; i++) {
-                seed = nextSeed(seed);
-                int value = Integer.remainderUnsigned(seed, cases) * step;
-                values[i] = switch (distribution) {
-                    case "even" -> value;
-                    case "defaultHeavy" -> ((seed & 3) == 0) ? value : (cases + Integer.remainderUnsigned(seed, cases)) * step;
-                    default -> throw new IllegalStateException("unexpected distribution: " + distribution);
-                };
-            }
-        }
-    }
-
-    private static int nextSeed(int seed) {
-        return seed * 1664525 + 1013904223;
     }
 
     private static String switchSource(String className, int cases, int step) {
@@ -147,12 +129,10 @@ public class JumpTableSwitch {
             .append("    int result = 0;\n")
             .append("    for (int value : values) {\n")
             .append("      switch (value) {\n");
-        int seed = 0xC0FFEE;
+        Random random = new Random(0xC0FFEE);
         for (int i = 0; i < cases; i++) {
-            seed = nextSeed(seed);
-            char operator = OPERATORS[Integer.remainderUnsigned(seed, OPERATORS.length)];
-            seed = nextSeed(seed);
-            int constant = Integer.remainderUnsigned(seed, 200_001) - 100_000;
+            char operator = OPERATORS[random.nextInt(OPERATORS.length)];
+            int constant = random.nextInt(200_001) - 100_000;
             source.append("        case ").append(i * step).append(": result ")
                 .append(operator).append("= ").append(constant).append("; break;\n");
         }
