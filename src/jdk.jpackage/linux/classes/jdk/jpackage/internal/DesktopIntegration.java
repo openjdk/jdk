@@ -34,12 +34,16 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.imageio.ImageIO;
 import javax.xml.stream.XMLStreamException;
@@ -135,6 +139,21 @@ final class DesktopIntegration extends ShellCustomAction {
         }
         return new DesktopIntegration(env, (LinuxPackage) pkg,
                 (LinuxLauncher) pkg.app().mainLauncher().orElseThrow());
+    }
+
+    SortedMap<LinuxLauncher, Path> cookedDesktopEntryFiles() {
+        return unfold().flatMap(v -> {
+            return v.desktopFile.stream().map(InstallableFile::srcPath).map(path -> {
+                return Map.entry(v.launcher, path);
+            });
+        }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (a, b) -> {
+            throw new IllegalStateException();
+        }, () -> {
+            // The main launcher first; additional launchers follow, sorted by name.
+            return new TreeMap<>(Comparator.<LinuxLauncher>comparingInt(launcher -> {
+                return launcher == pkg.app().mainLauncher().orElseThrow() ? 0 : 1;
+            }).thenComparing(LinuxLauncher::name));
+        }));
     }
 
     @Override
@@ -243,6 +262,10 @@ final class DesktopIntegration extends ShellCustomAction {
                 }).map(Path::toString).map(DesktopEntry.PATH::formatDesktopFileEntry).orElse(null));
 
         return data;
+    }
+
+    private Stream<DesktopIntegration> unfold() {
+        return Stream.concat(Stream.of(this), nestedIntegrations.stream().flatMap(DesktopIntegration::unfold));
     }
 
     /**

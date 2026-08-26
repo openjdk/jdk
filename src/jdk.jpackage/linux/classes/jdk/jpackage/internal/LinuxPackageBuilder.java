@@ -43,7 +43,6 @@ import jdk.jpackage.internal.model.LinuxPackageMixin;
 import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.model.RuntimeLayout;
 import jdk.jpackage.internal.model.StandardPackageType;
-import jdk.jpackage.internal.util.CommandOutputControl.UnexpectedExitCodeException;
 
 final class LinuxPackageBuilder {
 
@@ -77,10 +76,10 @@ final class LinuxPackageBuilder {
 
         final var app = ApplicationBuilder.overrideAppImageLayout(pkgBuilder.app(), relativeInstalledLayout);
 
-        menuGroupName().ifPresent(_ -> {
-            Optional.ofNullable(probeMenuGroupNameFile).ifPresent(_ -> {
-                validateMenuGroupName(probeMenuGroupNameFile, menuGroupName);
-            });
+        menuGroupName().filter(_ -> {
+            return desktopEntryFileValidator != null && probeMenuGroupNameFile != null;
+        }).ifPresent(v -> {
+            validateMenuGroupName(desktopEntryFileValidator, probeMenuGroupNameFile, v);
         });
 
         return create(pkgBuilder
@@ -145,6 +144,11 @@ final class LinuxPackageBuilder {
         return this;
     }
 
+    LinuxPackageBuilder desktopEntryFileValidator(DesktopEntryFileValidator v) {
+        desktopEntryFileValidator = v;
+        return this;
+    }
+
     private static LinuxApplicationLayout usrTreePackageLayout(Path prefix, String packageName) {
         final var lib = prefix.resolve(Path.of("lib", packageName));
         return LinuxApplicationLayout.create(
@@ -202,7 +206,8 @@ final class LinuxPackageBuilder {
         }
     }
 
-    private static void validateMenuGroupName(Path probeFile, String menuGroupName) {
+    private static void validateMenuGroupName(DesktopEntryFileValidator desktopEntryFileValidator, Path probeFile, String menuGroupName) {
+        Objects.requireNonNull(desktopEntryFileValidator);
         Objects.requireNonNull(probeFile);
         Objects.requireNonNull(menuGroupName);
 
@@ -219,17 +224,15 @@ final class LinuxPackageBuilder {
             throw new UncheckedIOException(ex);
         }
 
-        try {
-            Executor.of("desktop-file-validate", probeFile.toString()).executeExpectSuccess();
-        } catch (UnexpectedExitCodeException ex) {
-            // Validation failed as the command returned an unexpected exit code.
-            throw new ConfigException(
-                    I18N.format("error.parameter-invalid-value", menuGroupName, "--linux-menu-group"),
-                    I18N.format("error.invalid-desktop-category.advice"), ex);
-        } catch (IOException ex) {
-            // The command probably isn't available; keep going, as this validation is optional.
-            Log.trace(ex);
-        }
+        var result = desktopEntryFileValidator.validate(probeFile);
+        result.exitCode().ifPresent(exitCode -> {
+            if (exitCode != 0) {
+                // Validation failed as the command returned an unexpected exit code.
+                throw new ConfigException(
+                        I18N.format("error.parameter-invalid-value", menuGroupName, "--linux-menu-group"),
+                        I18N.format("error.invalid-desktop-category.advice"));
+            }
+        });
     }
 
     private record Defaults(String menuGroupName) {
@@ -241,6 +244,7 @@ final class LinuxPackageBuilder {
     private String additionalDependencies;
     private String release;
     private Path probeMenuGroupNameFile;
+    private DesktopEntryFileValidator desktopEntryFileValidator;
     private LinuxPackageArch arch;
 
     private final PackageBuilder pkgBuilder;

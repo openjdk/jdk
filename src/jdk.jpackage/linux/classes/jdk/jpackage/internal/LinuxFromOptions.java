@@ -128,7 +128,9 @@ final class LinuxFromOptions {
         LINUX_PACKAGE_DEPENDENCIES.ifPresentIn(options, pkgBuilder::additionalDependencies);
         LINUX_APP_CATEGORY.ifPresentIn(options, pkgBuilder::category);
         LINUX_MENU_GROUP.ifPresentIn(options, v -> {
-            pkgBuilder.menuGroupName(v).probeMenuGroupNameFile(TEMP_ROOT.getFrom(options).resolve("desktop-file-validate/probe.desktop"));
+            pkgBuilder.menuGroupName(v)
+                    .probeMenuGroupNameFile(TEMP_ROOT.getFrom(options).resolve("desktop-file-validate/probe.desktop"));
+            pkgBuilder.desktopEntryFileValidator(sysEnv.desktopEntryFileValidator());
         });
         LINUX_RELEASE.ifPresentIn(options, pkgBuilder::release);
         LINUX_PACKAGE_NAME.ifPresentIn(options, pkgBuilder::literalName);

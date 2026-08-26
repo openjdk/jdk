@@ -62,8 +62,8 @@ import jdk.jpackage.test.CannedFormattedString;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JPackageOutputValidator;
 import jdk.jpackage.test.JavaTool;
-import jdk.jpackage.test.MacSign;
 import jdk.jpackage.test.LinuxHelper;
+import jdk.jpackage.test.MacSign;
 import jdk.jpackage.test.MacSign.CertificateRequest;
 import jdk.jpackage.test.MacSign.CertificateType;
 import jdk.jpackage.test.MacSign.KeychainWithCertsSpec;
@@ -176,6 +176,33 @@ public final class ErrorTest {
         EMPTY_KEYCHAIN,
         KEYCHAIN_WITH_APP_IMAGE_CERT,
         KEYCHAIN_WITH_PKG_CERT,
+        RESOURCE_DIR(toFunction(cmd -> {
+            return TKit.createTempDirectory("resources");
+        })),
+        FAKE_RUNTIME(toFunction(cmd -> {
+            return JPackageCommand.createInputRuntimeImage(JPackageCommand.RuntimeImageType.RUNTIME_TYPE_FAKE);
+        })),
+        LINUX_ADD_INVALID_DESKTOP_ENTRY_FILE_RESOURCE(toFunction(cmd -> {
+            var resourceDir = Path.of(cmd.getArgumentValue("--resource-dir"));
+            TKit.createTextFile(resourceDir.resolve(cmd.mainLauncherName() + ".desktop"), List.of(
+                    "Version=12345"
+            ));
+            return resourceDir;
+        })),
+        LINUX_ADD_INVALID_FOO_DESKTOP_ENTRY_FILE_RESOURCE(toFunction(cmd -> {
+            var resourceDir = Path.of(cmd.getArgumentValue("--resource-dir"));
+            TKit.createTextFile(resourceDir.resolve("Foo.desktop"), List.of(
+                    "Version=54321"
+            ));
+            return resourceDir;
+        })),
+        LINUX_ADD_INVALID_ZOO_DESKTOP_ENTRY_FILE_RESOURCE(toFunction(cmd -> {
+            var resourceDir = Path.of(cmd.getArgumentValue("--resource-dir"));
+            TKit.createTextFile(resourceDir.resolve("Zoo.desktop"), List.of(
+                    "Version=777"
+            ));
+            return resourceDir;
+        })),
         ;
 
         private Token() {
@@ -409,6 +436,11 @@ public final class ErrorTest {
 
             Builder unsupportedPlatformOption(String arg, String ... otherArgs) {
                 return addArgs(arg).addArgs(otherArgs).error("ERR_UnsupportedOption", arg);
+            }
+
+            Builder mutate(Consumer<Builder> mutator) {
+                mutator.accept(this);
+                return this;
             }
 
             TestSpec create() {
@@ -1111,6 +1143,74 @@ public final class ErrorTest {
                     testSpec().type(PackageType.LINUX_RPM).addArgs("--linux-menu-group", "%$@#!")
                             .error("error.parameter-invalid-value", "%$@#!", "--linux-menu-group")
                             .advice("error.invalid-desktop-category.advice")
+            ).map(TestSpec.Builder::create).forEach(testCases::add);
+
+            Consumer<TestSpec.Builder> desktopValidatorInitializer = builder -> {
+                builder.type(PackageType.LINUX_RPM)
+                        .addArgs("--runtime-image", Token.FAKE_RUNTIME.toString())
+                        .addArgs("--linux-shortcut")
+                        .removeArgs("--name").addArgs("--name", "Wake")
+                        .addArgs("--resource-dir", Token.RESOURCE_DIR.toString())
+                        .addArgs("--temp", Token.EMPTY_DIR.toString());
+            };
+
+            // Invalid desktop entry files
+            Stream.of(
+                    // Invalid main desktop entry file
+                    testSpec().mutate(desktopValidatorInitializer)
+                            .addArgs("--resource-dir", Token.LINUX_ADD_INVALID_DESKTOP_ENTRY_FILE_RESOURCE.toString())
+                            .error("error.invalid-desktop-entry-file.main-launcher",
+                                    String.format("%s/image/opt/wake/lib/wake-Wake.desktop", Token.EMPTY_DIR))
+                            .advice("error.invalid-desktop-entry-file.advice"),
+                    // Valid main desktop entry file, invalid additional launcher desktop file
+                    testSpec().mutate(desktopValidatorInitializer)
+                            .addArgs("--resource-dir", Token.LINUX_ADD_INVALID_FOO_DESKTOP_ENTRY_FILE_RESOURCE.toString())
+                            .addArgs("--add-launcher", "Foo=" + Token.ADD_LAUNCHER_PROPERTY_FILE.toString())
+                            .error("error.invalid-desktop-entry-file.add-launcher",
+                                    String.format("%s/image/opt/wake/lib/wake-Foo.desktop", Token.EMPTY_DIR),
+                                    "Foo")
+                            .advice("error.invalid-desktop-entry-file.advice"),
+                    // Invalid main desktop entry file, valid additional launcher desktop file and one of additional launchers
+                    testSpec().mutate(desktopValidatorInitializer)
+                            .addArgs("--resource-dir", Token.LINUX_ADD_INVALID_DESKTOP_ENTRY_FILE_RESOURCE.toString())
+                            .addArgs("--resource-dir", Token.LINUX_ADD_INVALID_ZOO_DESKTOP_ENTRY_FILE_RESOURCE.toString())
+                            .addArgs("--add-launcher", "Zoo=" + Token.ADD_LAUNCHER_PROPERTY_FILE)
+                            .addArgs("--add-launcher", "Foo=" + Token.ADD_LAUNCHER_PROPERTY_FILE)
+                            .error("error.invalid-desktop-entry-file.main-launcher",
+                                    String.format("%s/image/opt/wake/lib/wake-Wake.desktop", Token.EMPTY_DIR))
+                            .error("error.invalid-desktop-entry-file.add-launcher",
+                                    String.format("%s/image/opt/wake/lib/wake-Zoo.desktop", Token.EMPTY_DIR),
+                                    "Zoo")
+                            .advice("error.invalid-desktop-entry-file.advice"),
+                    // Main desktop entry file and all additional launcher desktop files invalid
+                    testSpec().mutate(desktopValidatorInitializer)
+                            .addArgs("--resource-dir", Token.LINUX_ADD_INVALID_DESKTOP_ENTRY_FILE_RESOURCE.toString())
+                            .addArgs("--resource-dir", Token.LINUX_ADD_INVALID_ZOO_DESKTOP_ENTRY_FILE_RESOURCE.toString())
+                            .addArgs("--resource-dir", Token.LINUX_ADD_INVALID_FOO_DESKTOP_ENTRY_FILE_RESOURCE.toString())
+                            .addArgs("--add-launcher", "Zoo=" + Token.ADD_LAUNCHER_PROPERTY_FILE)
+                            .addArgs("--add-launcher", "Foo=" + Token.ADD_LAUNCHER_PROPERTY_FILE)
+                            .error("error.invalid-desktop-entry-file.main-launcher",
+                                    String.format("%s/image/opt/wake/lib/wake-Wake.desktop", Token.EMPTY_DIR))
+                            .error("error.invalid-desktop-entry-file.add-launcher",
+                                    String.format("%s/image/opt/wake/lib/wake-Foo.desktop", Token.EMPTY_DIR),
+                                    "Foo")
+                            .error("error.invalid-desktop-entry-file.add-launcher",
+                                    String.format("%s/image/opt/wake/lib/wake-Zoo.desktop", Token.EMPTY_DIR),
+                                    "Zoo")
+                            .advice("error.invalid-desktop-entry-file.advice"),
+                    // All additional launcher desktop files invalid
+                    testSpec().mutate(desktopValidatorInitializer)
+                            .addArgs("--resource-dir", Token.LINUX_ADD_INVALID_ZOO_DESKTOP_ENTRY_FILE_RESOURCE.toString())
+                            .addArgs("--resource-dir", Token.LINUX_ADD_INVALID_FOO_DESKTOP_ENTRY_FILE_RESOURCE.toString())
+                            .addArgs("--add-launcher", "Zoo=" + Token.ADD_LAUNCHER_PROPERTY_FILE)
+                            .addArgs("--add-launcher", "Foo=" + Token.ADD_LAUNCHER_PROPERTY_FILE)
+                            .error("error.invalid-desktop-entry-file.add-launcher",
+                                    String.format("%s/image/opt/wake/lib/wake-Foo.desktop", Token.EMPTY_DIR),
+                                    "Foo")
+                            .error("error.invalid-desktop-entry-file.add-launcher",
+                                    String.format("%s/image/opt/wake/lib/wake-Zoo.desktop", Token.EMPTY_DIR),
+                                    "Zoo")
+                            .advice("error.invalid-desktop-entry-file.advice")
             ).map(TestSpec.Builder::create).forEach(testCases::add);
         }
 
