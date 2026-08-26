@@ -28,7 +28,7 @@ package jdk.incubator.json;
 import java.io.Serial;
 
 /**
- * Indicates that an error has been detected while traversing the {@code JsonValue}.
+ * Indicates that an error has been detected while operating on the {@code JsonValue}.
  * This exception is thrown under the following conditions:
  * <ul>
  *   <li>
