@@ -27,7 +27,7 @@
  * @modules java.base/jdk.internal.foreign
  * @library /test/lib
  * @run testng/othervm                                                       TestSegmentAllocators
- * @run testng/othervm -Djava.lang.foreign.native.confined.pool.power.size=0 TestSegmentAllocators
+ * @run testng/othervm -Djava.lang.foreign.native.confined.pool.power.size=-1 TestSegmentAllocators
  * @run testng/othervm -Djava.lang.foreign.native.confined.pool.power.size=3 TestSegmentAllocators
  * @run testng/othervm -Djava.lang.foreign.native.confined.pool.power.size=4 TestSegmentAllocators
  * @run testng/othervm -Djava.lang.foreign.native.confined.pool.power.size=5 TestSegmentAllocators

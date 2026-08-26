@@ -44,7 +44,7 @@ public class NestedArenasAllocTest {
     }
 
     @Benchmark
-    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.confined.pool.power.size=0"})
+    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.confined.pool.power.size=-1"})
     public long alloc_confined_nested_no_pool() {
         return allocateNested();
     }

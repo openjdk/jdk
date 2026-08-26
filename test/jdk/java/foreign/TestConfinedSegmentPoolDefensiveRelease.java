@@ -239,8 +239,7 @@ final class TestConfinedSegmentPoolDefensiveRelease {
         if (pools == null) {
             return 0;
         }
-        for (int i = 0; i < 4; i++) {
-            final long pool = pools[i];
+        for (long pool : pools) {
             if (pool != 0) {
                 return pool;
             }

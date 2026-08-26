@@ -75,7 +75,7 @@ public sealed class ArenaImpl implements Arena {
 
         @Override
         public void close() {
-            // Invalidate every segment before making the pool reusable.
+            // If this fails, the session remains open and the pool must remain owned.
             session.justClose();
             // The session cleanup at the end of this method may throw, so we
             // need to release the acquired pooled memory first.

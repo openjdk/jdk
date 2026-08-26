@@ -25,6 +25,7 @@
  * @test
  * @modules java.base/jdk.internal.foreign:+open java.base/jdk.internal.access java.base/jdk.internal.misc java.base/jdk.internal.util
  * @library /test/lib
+ * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=-1 TestConfinedSegmentPool
  * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=0 TestConfinedSegmentPool
  * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=1 TestConfinedSegmentPool
  * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=2 TestConfinedSegmentPool
@@ -32,6 +33,12 @@
  * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=4 TestConfinedSegmentPool
  * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=5 TestConfinedSegmentPool
  * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=6 TestConfinedSegmentPool
+ * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=7 TestConfinedSegmentPool
+ * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=20 TestConfinedSegmentPool
+ * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.count=0 TestConfinedSegmentPool
+ * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.count=1 TestConfinedSegmentPool
+ * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.count=3 TestConfinedSegmentPool
+ * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.count=-1 TestConfinedSegmentPool
  */
 
 import jdk.internal.access.JavaLangAccess;
@@ -58,6 +65,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -67,8 +75,11 @@ final class TestConfinedSegmentPool {
 
     static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
     static final long POOLED_MEMORY_SIZE = ConfinedSegmentPool.pooledMemorySize();
+    static final int THREAD_POOL_COUNT = configuredPowerOfTwo(
+            "java.lang.foreign.native.confined.pool.power.count", 0, 3, 2);
 
-    static final boolean POOL_ACCOMMODATES_TWO_LONGS = POOLED_MEMORY_SIZE >= Long.BYTES * 2;
+    static final boolean POOL_ACCOMMODATES_TWO_LONGS =
+            isPoolEnabled() && POOLED_MEMORY_SIZE >= Long.BYTES * 2;
 
     @ParameterizedTest
     @MethodSource("threadFactories")
@@ -126,7 +137,7 @@ final class TestConfinedSegmentPool {
             if (isPoolEnabled()) {
                 assertNotNull(pools);
                 // Thread-exit cleanup must clear every cache entry.
-                assertArrayEquals(new long[4], pools);
+                assertArrayEquals(new long[THREAD_POOL_COUNT], pools);
             } else {
                 // No pool array was ever allocated
                 assertNull(pools);
@@ -252,16 +263,16 @@ final class TestConfinedSegmentPool {
 
     @Test
     void zeroing() {
-        for (int i = 0; i < POOLED_MEMORY_SIZE; i++) {
+        assumeTrue(isPoolEnabled());
+        MemorySegment zeroes = MemorySegment.ofArray(new byte[Math.toIntExact(POOLED_MEMORY_SIZE)]);
+        for (long size : zeroingSizes()) {
             try (Arena thirdArena = Arena.ofConfined()) {
-                MemorySegment segment = thirdArena.allocate(ValueLayout.JAVA_BYTE, i);
+                MemorySegment segment = thirdArena.allocate(ValueLayout.JAVA_BYTE, size);
                 segment.fill((byte) 0xAA);
             }
             try (Arena thirdArena = Arena.ofConfined()) {
                 MemorySegment segment = thirdArena.allocate(ValueLayout.JAVA_BYTE, POOLED_MEMORY_SIZE);
-                for (int j = 0; j < POOLED_MEMORY_SIZE; j++) {
-                    assertEquals(0, segment.get(ValueLayout.JAVA_BYTE, j), i + ", " + j);
-                }
+                assertEquals(-1L, segment.mismatch(zeroes), "used size: " + size);
             }
         }
     }
@@ -380,15 +391,16 @@ final class TestConfinedSegmentPool {
         AtomicReference<Throwable> failure = new AtomicReference<>();
 
         Thread thread = Thread.ofPlatform().unstarted(() -> {
-            Arena[] cached = new Arena[4];
+            Arena[] cached = new Arena[THREAD_POOL_COUNT];
 
             try {
                 allocateOneByte(cached);
-                closeAll(cached); // Four non-zero entries for released pools
+                closeAll(cached); // One non-zero entry for each configured cache slot
 
                 long[] pools = JLA.getConfinedMemoryPools(Thread.currentThread());
                 assertNotNull(pools);
-                assertEquals(4L, Arrays.stream(pools).filter(p -> p != 0).count());
+                assertEquals(THREAD_POOL_COUNT,
+                        Arrays.stream(pools).filter(p -> p != 0).count());
             } catch (Throwable ex) {
                 failure.set(ex);
             }
@@ -403,7 +415,7 @@ final class TestConfinedSegmentPool {
         }
 
         // Thread-exit cleanup must clear every cache entry.
-        assertArrayEquals(new long[4], JLA.getConfinedMemoryPools(thread));
+        assertArrayEquals(new long[THREAD_POOL_COUNT], JLA.getConfinedMemoryPools(thread));
     }
 
     @Test
@@ -484,7 +496,8 @@ final class TestConfinedSegmentPool {
 
                 originalAddress = u.allocateMemory(POOLED_MEMORY_SIZE);
                 negativeAliasAddress = originalAddress | Long.MIN_VALUE;
-                pools = JLA.getOrCreateConfinedMemoryPools(Thread.currentThread(), 4);
+                pools = JLA.getOrCreateConfinedMemoryPools(
+                        Thread.currentThread(), THREAD_POOL_COUNT);
 
 
                 u.setMemory(originalAddress, POOLED_MEMORY_SIZE, (byte) 0);
@@ -522,22 +535,22 @@ final class TestConfinedSegmentPool {
     }
 
     private void testCacheSaturation() {
-        Arena[] initial = new Arena[5];
-        Arena[] verification = new Arena[4];
+        Arena[] initial = new Arena[THREAD_POOL_COUNT + 1];
+        Arena[] verification = new Arena[THREAD_POOL_COUNT];
 
         try {
             long[] addresses = allocateOneByte(initial);
 
-            // The first four releases fill the cache.
-            for (int i = 0; i < 4; i++) {
+            // The first releases fill every configured cache slot.
+            for (int i = 0; i < THREAD_POOL_COUNT; i++) {
                 initial[i].close();
             }
 
-            // The fifth release must free its pool.
-            initial[4].close();
+            // One further release must free its pool.
+            initial[THREAD_POOL_COUNT].close();
 
-            // All four cached pools must remain reusable.
-            long[] expected = Arrays.copyOf(addresses, 4);
+            // All cached pools must remain reusable.
+            long[] expected = Arrays.copyOf(addresses, THREAD_POOL_COUNT);
             long[] actual = allocateOneByte(verification);
             Arrays.sort(expected);
             Arrays.sort(actual);
@@ -593,11 +606,11 @@ final class TestConfinedSegmentPool {
     }
 
     static boolean isPoolEnabled() {
-        return POOLED_MEMORY_SIZE > 0;
+        return POOLED_MEMORY_SIZE > 0 && THREAD_POOL_COUNT > 0;
     }
 
     static long currentPool() {
-        if (POOLED_MEMORY_SIZE <= 0) {
+        if (!isPoolEnabled()) {
             return 0;
         }
         return currentPlatformPool(JLA.currentCarrierThread());
@@ -608,13 +621,31 @@ final class TestConfinedSegmentPool {
         if (pools == null) {
             return 0;
         }
-        for (int i = 0; i < 4; i++) {
-            final long pool = pools[i];
+        for (long pool : pools) {
             if (pool != 0) {
                 return pool;
             }
         }
         return 0;
+    }
+
+    private static long[] zeroingSizes() {
+        return LongStream.of(0, 1, 7, 8, 9, 15, 16, 17,
+                        31, 32, 33, 63, 64, 65,
+                        POOLED_MEMORY_SIZE / 2,
+                        POOLED_MEMORY_SIZE - 1,
+                        POOLED_MEMORY_SIZE)
+                .filter(size -> size >= 0 && size <= POOLED_MEMORY_SIZE)
+                .distinct()
+                .toArray();
+    }
+
+    private static int configuredPowerOfTwo(String property, int minPower,
+                                             int maxPower, int defaultPower) {
+        int power = Integer.getInteger(property, defaultPower);
+        return power < 0
+                ? -1
+                : 1 << Math.clamp(power, minPower, maxPower);
     }
 
     static void awaitCleaner(CountDownLatch latch) throws InterruptedException {

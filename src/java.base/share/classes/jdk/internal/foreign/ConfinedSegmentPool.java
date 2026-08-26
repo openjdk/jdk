@@ -35,11 +35,11 @@ import jdk.internal.vm.annotation.ForceInline;
 /**
  * Provides reusable native-memory pools for confined arenas.
  *<p>
- * Each platform thread lazily maintains a cache of up to {@value #PLATFORM_POOL_COUNT}
- * fixed-size pools. Small allocations made by a confined arena are carved out from
- * one pool. Allocations that do not fit in the pool use the regular native allocator.
- * If no cached pool is available, the arena may allocate a local pool and
- * attempt to cache it when the arena is closed.
+ * Each platform thread lazily maintains a cache containing a configurable number
+ * of fixed-size pools. Small allocations made by a confined arena are carved out
+ * from one pool. Allocations that do not fit in the pool use the regular native
+ * allocator. If no cached pool is available, the arena may allocate a local pool
+ * and attempt to cache it when the arena is closed.
  *<p>
  * A platform thread acquires pools from its own cache, while a virtual thread
  * acquires pools from its current carrier thread's cache. In both cases, an
@@ -70,7 +70,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * </ul>
  * Acquired pools are not represented in the cache.
  * <p>
- * Pooling can be disabled through the internal pool-size configuration.
+ * Pooling can be disabled through the internal pool configuration.
  * When disabled, all allocations use the regular native allocator.
  *<p>
  * This class operates directly on native addresses using {@link Unsafe}.
@@ -88,25 +88,29 @@ public final class ConfinedSegmentPool {
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
     // Internal tuning knob; no behavioral or compatibility guarantees are given.
-    // Setting the pool-size power to 0 disables confined pooling.
-    private static final String POOLED_MEMORY_PROPERTY = "java.lang.foreign.native.confined.pool.power.size";
+    // A negative value disables pooling; otherwise the pool size is
+    // 2^3, 2^4, ..., 2^20 bytes, defaulting to 2^6 = 64 bytes.
+    private static final String POOLED_MEMORY_SIZE_PROPERTY = "java.lang.foreign.native.confined.pool.power.size";
 
-    // -1 disables pooling; otherwise the pool size is 8, 16, 32, or 64 bytes.
-    private static final long POOLED_MEMORY_SIZE = clampedPowerOfPropertyOr(POOLED_MEMORY_PROPERTY, 6);
+    private static final long POOLED_MEMORY_SIZE =
+            clampedPowerOfPropertyOr(POOLED_MEMORY_SIZE_PROPERTY, 3, 20, 6);
 
-    private static final int PLATFORM_POOL_COUNT = 4;
+    // Internal tuning knob; no behavioral or compatibility guarantees are given.
+    // A negative value disables pooling; otherwise the pool count is
+    // 1, 2, 4, or 8, defaulting to 4.
+    private static final String THREAD_POOL_COUNT_PROPERTY = "java.lang.foreign.native.confined.pool.power.count";
 
-    // Constant-folded away in release builds; checks owner-thread invariants
-    // in debug builds.
-    private static final boolean DEBUG = !"release".equals(VM.getSavedProperty("jdk.debug"));
+    private static final int THREAD_POOL_COUNT =
+            clampedPowerOfPropertyOr(THREAD_POOL_COUNT_PROPERTY, 0, 3, 2);
+
+    private static final boolean POOLING_DISABLED = POOLED_MEMORY_SIZE <= 0 || THREAD_POOL_COUNT <= 0;
 
     /**
-     * Returns the size of the native memory pool.
+     * Returns the size of the native memory pool, or {@code -1} if pooling is disabled.
      */
     public static long pooledMemorySize() {
-        return POOLED_MEMORY_SIZE;
+        return POOLING_DISABLED ? -1 : POOLED_MEMORY_SIZE;
     }
-
 
     /**
      * Acquires and removes a pool from the appropriate cache for an arena owned
@@ -117,11 +121,8 @@ public final class ConfinedSegmentPool {
      */
     @ForceInline
     static long acquire(Thread thread) {
-        assertCurrentThreadInDebugMode(thread);
-        if (POOLED_MEMORY_SIZE <= 0) {
-            return 0;
-        }
-        return acquireFromCache(cacheOwner(thread));
+        assert thread == Thread.currentThread();
+        return POOLING_DISABLED ? 0 : acquireFromCache(cacheOwner(thread));
     }
 
     /**
@@ -129,11 +130,8 @@ public final class ConfinedSegmentPool {
      * thread cache. On arena close, the pool is cached or freed.
      */
     static long allocateLocal(Thread thread) {
-        assertCurrentThreadInDebugMode(thread);
-        if (POOLED_MEMORY_SIZE <= 0) {
-            return 0;
-        }
-        return allocatePlatformPool();
+        assert thread == Thread.currentThread();
+        return POOLING_DISABLED ? 0 : allocatePlatformPool();
     }
 
     /**
@@ -143,7 +141,7 @@ public final class ConfinedSegmentPool {
      */
     @ForceInline
     static void release(Thread thread, long pool, long size) {
-        assertCurrentThreadInDebugMode(thread);
+        assert thread == Thread.currentThread();
         releaseToCache(cacheOwner(thread), pool, size);
     }
 
@@ -157,7 +155,7 @@ public final class ConfinedSegmentPool {
         if (pools == null) {
             return;
         }
-        for (int i = 0; i < PLATFORM_POOL_COUNT; i++) {
+        for (int i = 0; i < THREAD_POOL_COUNT; i++) {
             final long pool = pools[i];
             if (pool != 0) {
                 U.freeMemory(pool);
@@ -167,19 +165,12 @@ public final class ConfinedSegmentPool {
     }
 
     @ForceInline
-    private static void assertCurrentThreadInDebugMode(Thread thread) {
-        if (DEBUG && thread != Thread.currentThread()) {
-            throw new AssertionError();
-        }
-    }
-
-    @ForceInline
     private static long acquireFromCache(Thread cacheOwner) {
         final long[] pools = JLA.getConfinedMemoryPools(cacheOwner);
         if (pools == null) {
             return 0;
         }
-        for (int i = 0; i < PLATFORM_POOL_COUNT; i++) {
+        for (int i = 0; i < THREAD_POOL_COUNT; i++) {
             final long pool = pools[i];
             if (pool != 0) {
                 pools[i] = 0; // available -> arena-owned and detached
@@ -217,7 +208,7 @@ public final class ConfinedSegmentPool {
 
         zeroOutMemory(pool, size);
 
-        for (int i = 0; i < PLATFORM_POOL_COUNT; i++) {
+        for (int i = 0; i < THREAD_POOL_COUNT; i++) {
             final long entry = pools[i];
             if (entry == pool) {
                 throw cannotReleasePooledMemory(pool, size); // already released
@@ -234,7 +225,7 @@ public final class ConfinedSegmentPool {
     @DontInline
     private static long[] createPoolCacheOrFree(Thread cacheOwner, long pool) {
         try {
-            return JLA.getOrCreateConfinedMemoryPools(cacheOwner, PLATFORM_POOL_COUNT);
+            return JLA.getOrCreateConfinedMemoryPools(cacheOwner, THREAD_POOL_COUNT);
         } catch (OutOfMemoryError _) {
             // In the unlikely event a `new long[]` fails we still need to free the
             // pool and allow the rest of the Arena's cleanup operations to continue
@@ -256,31 +247,47 @@ public final class ConfinedSegmentPool {
     @SuppressWarnings("fallthrough")
     @ForceInline
     private static void zeroOutMemory(long address, long size) {
-        // Deliberate fall-through clears the required number of 8-byte buckets
-        // without a loop branch. The validated size guarantees writes remain in-pool.
-        switch ((int) ((size + Long.BYTES - 1) >>> 3)) {
-            case 8: U.putLong(address + 0x38, 0L);
-            case 7: U.putLong(address + 0x30, 0L);
-            case 6: U.putLong(address + 0x28, 0L);
-            case 5: U.putLong(address + 0x20, 0L);
-            case 4: U.putLong(address + 0x18, 0L);
-            case 3: U.putLong(address + 0x10, 0L);
-            case 2: U.putLong(address + 0x08, 0L);
-            case 1: U.putLong(address, 0L);
-            case 0: break;
-            default: throw new IllegalStateException(Long.toString(size));
+        // Pools are always at least `long` aligned so we can use aligned Unsafe access
+        // below.
+        // We are first checking `POOLED_MEMORY_SIZE` here rather than
+        // `size` to enable potential code elimination by the C2 compiler.
+        if (POOLED_MEMORY_SIZE <= 64 || size <= 64) {
+            // Deliberate fall-through clears the required number of 8-byte buckets
+            // without a loop branch. The validated size guarantees writes remain in-pool.
+            switch ((int) ((size + Long.BYTES - 1) >>> 3)) {
+                case 8: U.putLong(address + 0x38, 0L);
+                case 7: U.putLong(address + 0x30, 0L);
+                case 6: U.putLong(address + 0x28, 0L);
+                case 5: U.putLong(address + 0x20, 0L);
+                case 4: U.putLong(address + 0x18, 0L);
+                case 3: U.putLong(address + 0x10, 0L);
+                case 2: U.putLong(address + 0x08, 0L);
+                case 1: U.putLong(address, 0L);
+                case 0: break;
+                default: throw new IllegalStateException(Long.toString(size));
+            }
+        } else {
+            // This is safe because the underlying pool is guaranteed to be of a size
+            // that is a multiple of a `long`.
+            for (int i = 0; i < size; i += Long.BYTES) {
+                U.putLong(address + i, 0L);
+            }
         }
     }
 
-    private static int clampedPowerOfPropertyOr(String name, int defaultPower) {
+    private static int clampedPowerOfPropertyOr(String name, int minPower,
+                                                 int maxPower, int defaultPower) {
+        // Slicing out memory segment from an otherwise page aligned pool slab would make
+        // native memory slices non-aligned to page boundaries. Hence, we need to
+        // disable pooling in such cases.
         if (VM.isDirectMemoryPageAligned()) {
             return -1;
         }
         final int power = Integer.getInteger(name, defaultPower);
 
-        return power <= 0
+        return power < 0
                 ? -1
-                : 1 << Math.clamp(power, 3, 6);
+                : 1 << Math.clamp(power, minPower, maxPower);
     }
 
 }
