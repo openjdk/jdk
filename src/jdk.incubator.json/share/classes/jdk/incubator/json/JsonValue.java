@@ -96,11 +96,11 @@ public sealed interface JsonValue permits JsonString, JsonNumber, JsonObject, Js
      * This {@code JsonValue} must be a JSON number that represents
      * a whole number and that is within the range
      * {@link Integer#MIN_VALUE} to {@link Integer#MAX_VALUE}, inclusive. This is true
-     * even if the string contains an exponent or a fractional part consisting of
-     * only zero digits. For example, both the JSON number "123.0" and "1.23e2"
+     * even if the JSON number contains an exponent or a fractional part consisting of
+     * all zeroes. For example, the JSON numbers "123.0" and "1.23e2" both
      * produce an {@code int} value of {@code 123}. A {@code JsonValueException}
      * is thrown when the numeric value cannot be represented as an {@code int};
-     * for example, the value "5.5".
+     * for example, the JSON number "5.5".
      *
      * @implSpec
      * The default implementation provided by {@code JsonValue} throws {@code
@@ -120,11 +120,11 @@ public sealed interface JsonValue permits JsonString, JsonNumber, JsonObject, Js
      *
      * This {@code JsonValue} must be a JSON number that represents
      * a whole number and that is within the range {@link Long#MIN_VALUE} to
-     * {@link Long#MAX_VALUE}, inclusive. This is true even if the string contains an
-     * exponent or a fractional part consisting of only zero digits. For example,
-     * both the JSON number "123.0" and "1.23e2" produce a {@code long} value of
+     * {@link Long#MAX_VALUE}, inclusive. This is true even if the JSON number contains an
+     * exponent or a fractional part consisting of all zeroes. For example,
+     * the JSON numbers "123.0" and "1.23e2" both produce a {@code long} value of
      * {@code 123}. A {@code JsonValueException} is thrown when the numeric value
-     * cannot be represented as a {@code long}; for example, the value "5.5".
+     * cannot be represented as a {@code long}; for example, the JSON number "5.5".
      *
      * @implSpec
      * The default implementation provided by {@code JsonValue} throws {@code
@@ -147,14 +147,15 @@ public sealed interface JsonValue permits JsonString, JsonNumber, JsonObject, Js
      * magnitude when a {@code JsonNumber} is converted to a {@code double}. A JSON number
      * may be rounded to the nearest representable {@code double} value, and a JSON number
      * with more than about 15 decimal digits may lose precision. A JSON number with a
-     * magnitude larger than about 1.8E308 cannot be represented as a finite {@code double},
+     * magnitude larger than about 1.8&nbsp;&times;&nbsp;10<sup>308</sup> cannot be
+     * represented as a finite {@code double},
      * and attempting to convert such a number will result in {@code JsonValueException}.
      * (This differs from {@link Double#parseDouble Double.parseDouble}, which will return
      * {@link Double#POSITIVE_INFINITY} or {@link Double#NEGATIVE_INFINITY} for such cases.)
      * This method will never return {@link Double#NaN}. However, this method will
-     * properly convert and return negative zero (&minus;0.0). To handle numbers of almost
+     * properly convert and return negative zero ({@code -0.0}). To handle numbers of almost
      * arbitrary precision and magnitude, consider converting to {@link java.math.BigDecimal
-     * BigDecimal} using {@code new BigDecimal(jsonNumber.toString())}. Note however that
+     * BigDecimal} using {@code new BigDecimal(jsonNumber.toString())}. Note that
      * {@code BigDecimal} cannot represent negative zero.
      *
      * @implSpec
