@@ -1018,25 +1018,14 @@ TosState as_TosState(BasicType type);
 //  _thread_in_vm       : Executing in the vm
 //  _thread_in_Java     : Executing either interpreted or compiled Java code (or could be in a stub)
 //
-// Each state has an associated xxxx_trans state, which is an intermediate state used when a thread is in
-// a transition from one state to another. These extra states makes it possible for the safepoint code to
-// handle certain thread_states without having to suspend the thread - making the safepoint code faster.
-//
-// Given a state, the xxxx_trans state can always be found by adding 1.
-//
 enum JavaThreadState {
   _thread_uninitialized     =  0, // should never happen (missing initialization)
-  _thread_new               =  2, // just starting up, i.e., in process of being initialized
-  _thread_new_trans         =  3, // corresponding transition state (not used, included for completeness)
-  _thread_in_native         =  4, // running in native code
-  _thread_in_native_trans   =  5, // corresponding transition state
-  _thread_in_vm             =  6, // running in VM
-  _thread_in_vm_trans       =  7, // corresponding transition state
-  _thread_in_Java           =  8, // running in Java or in stub code
-  _thread_in_Java_trans     =  9, // corresponding transition state (not used, included for completeness)
-  _thread_blocked           = 10, // blocked in vm
-  _thread_blocked_trans     = 11, // corresponding transition state
-  _thread_max_state         = 12  // maximum thread state+1 - used for statistics allocation
+  _thread_new                   , // just starting up, i.e., in process of being initialized
+  _thread_in_native             , // running in native code
+  _thread_in_vm                 , // running in VM
+  _thread_in_Java               , // running in Java or in stub code
+  _thread_blocked               , // blocked in vm
+  _thread_max_state               // maximum thread state+1 - used for statistics allocation
 };
 
 //----------------------------------------------------------------------------------------------------
