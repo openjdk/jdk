@@ -160,7 +160,7 @@ public class TestCPUTimeSampleNativeStack {
             Asserts.assertNotEquals(library.getLong("baseAddress"), 0L, "Library must have a base address");
             String buildId = library.getString("buildId");
             Asserts.assertNotNull(buildId, "Library must have a build id");
-            Asserts.assertTrue(buildId.matches("([0-9a-f]{2})*"), "Build id must be a hex string" + buildId);
+            Asserts.assertTrue(buildId.matches("([0-9a-f]{2})*"), "Build id must be a hex string: " + buildId);
         }
         return !name.isEmpty() && library != null;
     }
