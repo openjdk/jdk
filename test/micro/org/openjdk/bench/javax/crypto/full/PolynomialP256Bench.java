@@ -54,11 +54,12 @@ public class PolynomialP256Bench {
     final IntegerPolynomialP256 residueField = IntegerPolynomialP256.ONE;
     final BigInteger refx =
         new BigInteger("6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296", 16);
-    final ImmutableIntegerModuloP x = residueField.getElement(refx);
-    final ImmutableIntegerModuloP X = montField.getElement(refx);
-    final ImmutableIntegerModuloP one = residueField.get1();
-    final ImmutableIntegerModuloP ONE = montField.get1();
+    final ImmutableIntegerModuloP xResidue = residueField.getElement(refx);
+    final ImmutableIntegerModuloP xMontgomery = montField.getElement(refx);
+    final ImmutableIntegerModuloP oneResidue = residueField.get1();
+    final ImmutableIntegerModuloP oneMontgomery = montField.get1();
     final int ITERATIONS = 10_000;
+    boolean run = false;
 
     @Param({"true", "false"})
     private boolean isMontBench;
@@ -68,9 +69,9 @@ public class PolynomialP256Bench {
         MutableIntegerModuloP test;
 
         if (isMontBench) {
-            test = X.mutable();
+            test = xMontgomery.mutable();
         } else {
-            test = x.mutable();
+            test = xResidue.mutable();
         }
         for (int i = 0; i < ITERATIONS; i++) {
             test = test.setProduct(test);
@@ -84,9 +85,9 @@ public class PolynomialP256Bench {
         MutableIntegerModuloP test;
 
         if (isMontBench) {
-            test = X.mutable();
+            test = xMontgomery.mutable();
         } else {
-            test = x.mutable();
+            test = xResidue.mutable();
         }
         for (int i = 0; i < ITERATIONS; i++) {
             test = test.setSquare();
@@ -101,11 +102,11 @@ public class PolynomialP256Bench {
         MutableIntegerModuloP test2;
 
         if (isMontBench) {
-            test1 = X.mutable();
-            test2 = ONE.mutable();
+            test1 = xMontgomery.mutable();
+            test2 = oneMontgomery.mutable();
         } else {
-            test1 = x.mutable();
-            test2 = one.mutable();
+            test1 = xResidue.mutable();
+            test2 = oneResidue.mutable();
         }
         for (int i = 0; i < ITERATIONS; i++) {
             test1.conditionalSet(test2, 0);
