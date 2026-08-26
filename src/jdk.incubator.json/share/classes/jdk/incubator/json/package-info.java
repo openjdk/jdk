@@ -111,11 +111,11 @@
  *     .flatMap(j -> j.tryGet("providers"))
  *     .filter(j -> j instanceof JsonString)
  *     .map(JsonValue::asString)
- *     .orElse("None");
+ *     .orElse("none");
  * }
  * This code ensures that if the root JSON value is not an object,
  * the member "providers" does not exist, or if the value of "providers" is not a JSON String,
- * then the "None" fallback value is used over throwing an exception.
+ * then the {@code "none"} fallback value is used over throwing an exception.
  *
  * <h2 id=conversion>Converting JSON values to Java values</h2>
  * Once you have navigated to your desired {@code JsonValue}, use the conversion methods to produce
