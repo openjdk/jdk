@@ -118,11 +118,11 @@ public:
                           Register addr,
                           Label& medium_path,
                           Label& continuation,
-                          bool dest_unintialized) const;
+                          bool dest_uninitialized) const;
 
-  void generate_disjoint_oop_copy(MacroAssembler* masm, bool dest_unintialized);
+  void generate_disjoint_oop_copy(MacroAssembler* masm, bool dest_uninitialized);
 
-  void generate_conjoint_oop_copy(MacroAssembler* masm, bool dest_unintialized);
+  void generate_conjoint_oop_copy(MacroAssembler* masm, bool dest_uninitialized);
 
   void load_copy_masks(MacroAssembler* masm,
                        Register load_bad_mask,
