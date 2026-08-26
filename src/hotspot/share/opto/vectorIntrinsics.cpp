@@ -1681,7 +1681,7 @@ bool LibraryCallKit::inline_vector_test() {
 
   Node* opd1 = unbox_vector(argument(4), vbox_type, elem_bt, num_elem);
   if (opd1 == nullptr) {
-    log_if_needed("  ** unbox failed m1=%s", argument(4)->Name());
+    log_if_needed("  ** unbox failed m1=%s", NodeClassNames[argument(4)->Opcode()]);
     return false;
   }
 
@@ -1690,7 +1690,7 @@ bool LibraryCallKit::inline_vector_test() {
                                                 opd1->bottom_type()->isa_pvectmask())) {
     opd2 = unbox_vector(argument(5), vbox_type, elem_bt, num_elem);
     if (opd2 == nullptr) {
-      log_if_needed("  ** unbox failed m2=%s", argument(5)->Name());
+      log_if_needed("  ** unbox failed m2=%s", NodeClassNames[argument(5)->Opcode()]);
       return false;
     }
   } else {
