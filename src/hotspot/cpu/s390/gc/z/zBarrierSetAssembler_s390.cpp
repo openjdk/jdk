@@ -61,11 +61,11 @@ private:
     MacroAssembler* masm = _masm;
 
     bool preserve_R2 = _result != Z_R2;
-    _nbytes_save = (15 - (preserve_R2 ? 0 : 1)) * BytesPerWord;
+    _nbytes_save = (13 - (preserve_R2 ? 0 : 1)) * BytesPerWord;
     int offset = frame::z_abi_160_size;
 
-    __ push_frame_abi160(_nbytes_save);   offset += 8;
-    __ save_return_pc();                  offset += 8;
+    __ push_frame_abi160(_nbytes_save);
+    __ save_return_pc();
     __ z_stg(Z_R1, offset, Z_SP);         offset += 8;
     if(preserve_R2) {
       __ z_stg(Z_R2, offset, Z_SP);       offset += 8;
@@ -90,9 +90,9 @@ private:
       __ z_lgr(Z_R0, result);
       result = Z_R0;
     }
-    int offset = frame::z_abi_160_size + 8;
+    int offset = frame::z_abi_160_size;
 
-    __ restore_return_pc();               offset += 8;
+    __ restore_return_pc();
     __ z_lg(Z_R1, offset, Z_SP);          offset += 8;
     if(restore_R2) {
       __ z_lg(Z_R2, offset, Z_SP);        offset += 8;
@@ -255,12 +255,10 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
     __ branch_optimized(Assembler::bcondNotEqual, medium_path);
     __ bind(medium_path_continuation);
     if (rnew_zaddress == noreg) {
-      __ z_xgr(rnew_zpointer, rnew_zpointer);
+      __ clear_reg(rnew_zpointer, true, false);
     } else {
-      __ z_lgr(rnew_zpointer, rnew_zaddress);
-      __ z_sllg(rnew_zpointer, rnew_zpointer, ZPointerLoadShift);
+      __ z_sllg(rnew_zpointer, rnew_zaddress, ZPointerLoadShift);
     }
-
     __ z_og(rnew_zpointer,  Address(Z_thread, ZThreadLocalData::store_good_mask_offset()));
   }
 }
@@ -364,9 +362,8 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
       if (src == noreg) {
         __ z_xgr(temp1, temp1);
       } else {
-        __ z_lgr(temp1, src);
+        __ z_sllg(temp1, src, ZPointerLoadShift);
       }
-      __ z_sllg(temp1, temp1, ZPointerLoadShift);
       __ z_og(temp1, Address(Z_thread, ZThreadLocalData::store_good_mask_offset()));
     } else {
       Label done;
@@ -487,7 +484,7 @@ void ZBarrierSetAssembler::copy_store_at_slow(MacroAssembler* masm,
 void ZBarrierSetAssembler::generate_disjoint_oop_copy(MacroAssembler* masm, bool dest_uninitialized) {
   const Register zpointer = Z_R1;
   Label done, loop, load_bad, load_good, store_bad, store_good;
-  __ z_cghi(Z_ARG3, 0);
+  __ z_ltgr(Z_ARG3, Z_ARG3);
   __ z_bre(done);
 
   __ bind(loop);
@@ -640,10 +637,9 @@ void ZBarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembler* masm,
   BarrierSetAssembler::try_peek_weak_handle_in_nmethod(masm, weak_handle, obj, temp, slow_path);
 
   // Check if the oop is bad, in which case we need to take the slow path.
-  __ z_lgr(temp, obj);
   __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatMarkBadBeforeTest);
-  __ z_nill(temp, barrier_Relocation::unpatched);
-  __ branch_optimized(Assembler::bcondNotEqual, slow_path);
+  __ z_tmll(temp, barrier_Relocation::unpatched);
+  __ branch_optimized(Assembler::bcondNotAllZero, slow_path);
 
   // Oop is okay, so we uncolor it.
   __ z_srlg(obj, obj, ZPointerLoadShift);

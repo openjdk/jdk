@@ -519,7 +519,7 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result
   z_lgf(Z_R0, Address(result, arrayOopDesc::length_offset_in_bytes()));
   z_sllg(Z_R0, Z_R0, LogBytesPerHeapOop);
   compare64_and_branch(index, Z_R0, Assembler::bcondLow, index_ok);
-  stop("resolved reference index out of bounds", 0x09256);
+  stop("resolved reference index out of bounds", 0x56);
   bind(index_ok);
 #endif
   z_agr(result, index);    // Address of indexed array element.
