@@ -698,6 +698,7 @@ class SleepingThread extends BaseThread {
         for (int i = elements.length - 1; i >= 0; i--) {
             if (elements[i].getClassName().equals("java.lang.Thread")
                     && elements[i].getMethodName().equals("sleep")) {
+                // The frames below the sleep entry are the test's own stack and still get checked.
                 return super.checkStackTrace(
                         Arrays.copyOfRange(elements, i, elements.length));
             }

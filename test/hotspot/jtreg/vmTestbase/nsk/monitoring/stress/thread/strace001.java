@@ -234,7 +234,7 @@ public class strace001 {
         return result;
     }
 
-    // The method checks whether the element belongs to the test's own code
+    // The method checks whether the element belongs to the test's own code.
     private static boolean isTestFrame(StackTraceElement element) {
         String name = element.getClassName() + "." + element.getMethodName();
         for (int i = 0; i < expectedTrace.length; i++) {
