@@ -3031,7 +3031,7 @@ class StubGenerator: public StubCodeGenerator {
                           Register key, Register keylen, Register tmp,
                           VectorRegister vKey1, VectorRegister vKey2,
                           VectorRegister vKey3, VectorRegister vKey4) {
-    Label L_doLast, L_error, L_done;
+    Label L_doLast;
 
     // round 0: AddRoundKey
     __ load_word_vector_unaligned(vKey1, 0, key, tmp);
@@ -3074,11 +3074,8 @@ class StubGenerator: public StubCodeGenerator {
     __ cmpwi           (CR0, keylen, 52);   // AES-192 -> final rounds
     __ beq             (CR0, L_doLast);
 #ifdef ASSERT
-      Label L_valid_keylen;
       __ cmpwi         (CR0, keylen, 60);
-      __ beq           (CR0, L_valid_keylen);
-      __ stop("aes_encrypt_rounds: invalid key length");
-      __ bind(L_valid_keylen);
+      __ asm_assert_eq(FILE_AND_LINE ": aes_encrypt_rounds - invalid key length");
 #endif
 
     __ vcipher         (vRet, vRet, vKey1);
@@ -3106,7 +3103,7 @@ class StubGenerator: public StubCodeGenerator {
                           VectorRegister vKey1, VectorRegister vKey2,
                           VectorRegister vKey3, VectorRegister vKey4,
                           VectorRegister vKey5) {
-    Label L_doLast, L_do44, L_do52, L_error;
+    Label L_doLast, L_do44, L_do52;
 
     __ cmpwi           (CR0, keylen, 44);
     __ beq             (CR0, L_do44);
@@ -3115,11 +3112,8 @@ class StubGenerator: public StubCodeGenerator {
     __ beq             (CR0, L_do52);
 
 #ifdef ASSERT
-      Label L_valid_keylen;
       __ cmpwi         (CR0, keylen, 60);
-      __ beq           (CR0, L_valid_keylen);
-      __ stop("aes_encrypt_rounds: invalid key length");
-      __ bind(L_valid_keylen);
+      __ asm_assert_eq(FILE_AND_LINE ": aes_decrypt_rounds - invalid key length");
 #endif
     // ---- AES-256: round keys 15-11 ----
     __ load_word_vector_unaligned(vKey1, 224, key, tmp);
@@ -3214,16 +3208,15 @@ class StubGenerator: public StubCodeGenerator {
     VectorRegister vKey3 = VR3;
     VectorRegister vKey4 = VR4;
     VectorRegister vIn   = VR5;
-    VectorRegister vIV   = VR6;
-    VectorRegister vp    = VR7;   // permute vector for P8 LE byte accesses
-    VectorRegister vTmp  = VR8;
+    VectorRegister vp    = VR6;   // permute vector for P8 LE byte accesses
+    VectorRegister vTmp  = VR7;
 
     __ mr              (len, input_len);
 
     // vp must be computed once, before any byte vector access. Clobbers R0.
     __ compute_vp_for_byte_vector_unaligned(vp, /*temp*/ vRet);
 
-    __ load_byte_vector_unaligned(vIV, 0, rvec, tmp, vp);
+    __ load_byte_vector_unaligned(vRet, 0, rvec, tmp, vp);
 
     __ lwz             (keylen, arrayOopDesc::length_offset_in_bytes() -
                                 arrayOopDesc::base_offset_in_bytes(T_INT), key);
@@ -3231,15 +3224,14 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(L_enc_loop);
     __ load_byte_vector_unaligned(vIn, 0, from, tmp, vp);
     __ addi            (from, from, 16);
-    __ vxor            (vRet, vIV, vIn);                      // CBC XOR
+    __ vxor            (vRet, vRet, vIn);                      // CBC XOR
     aes_encrypt_rounds(vRet, key, keylen, tmp, vKey1, vKey2, vKey3, vKey4);
-
-    __ vor             (vIV, vRet, vRet);                     // MUST precede the store
     __ store_byte_vector_unaligned(vRet, 0, to, tmp, vp, vTmp);
     __ addi            (to, to, 16);
     __ addic_          (len, len, -16);
     __ bne             (CR0, L_enc_loop);
-    __ store_byte_vector_unaligned(vIV, 0, rvec, tmp, vp);    // IV writeback
+    // save the last ciphertext block in rvec; it is the IV for the next call
+    __ store_byte_vector_unaligned(vRet, 0, rvec, tmp, vp, vTmp);
     __ mr              (R3_RET, input_len);
     __ blr();
 
@@ -3310,7 +3302,7 @@ class StubGenerator: public StubCodeGenerator {
     __ addi            (to, to, 16);
     __ addic_          (len, len, -16);
     __ bne             (CR0, L_dec_loop);
-    __ store_byte_vector_unaligned(vIV, 0, rvec, tmp, vp);  // IV writeback
+    __ store_byte_vector_unaligned(vIV, 0, rvec, tmp, vp, vTmp);
     __ mr              (R3_RET, input_len);
     __ blr();
 
