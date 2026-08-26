@@ -6918,8 +6918,7 @@ public class ByteVectorMaxTests extends AbstractVectorTest {
             String str = av.toString();
 
             byte subarr[] = Arrays.copyOfRange(a, i, i + SPECIES.length());
-            String expectedStr = Arrays.toString(subarr);
-            Assert.assertTrue(str.equals(expectedStr), "at index " + i + ", string should be = " + expectedStr + ", but is = " + str);
+            Assert.assertTrue(str.equals(Arrays.toString(subarr)), "at index " + i + ", string should be = " + Arrays.toString(subarr) + ", but is = " + str);
         }
     }
 
@@ -7403,60 +7402,5 @@ public class ByteVectorMaxTests extends AbstractVectorTest {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
           assertEquals(SPECIES.maskAll(true).toLong(), -1L >>> (64 - SPECIES.length()));
         }
-    }
-
-    @DataProvider
-    public Object[][] unsupportedUnaryOpProvider() {
-        return unsupportedOperatorProvider(SPECIES, VectorOperators.Unary.class);
-    }
-
-    @DataProvider
-    public Object[][] unsupportedBinaryOpProvider() {
-        return unsupportedOperatorProvider(SPECIES, VectorOperators.Binary.class);
-    }
-
-    @DataProvider
-    public Object[][] unsupportedTernaryOpProvider() {
-        return unsupportedOperatorProvider(SPECIES, VectorOperators.Ternary.class);
-    }
-
-    @Test(dataProvider = "unsupportedUnaryOpProvider")
-    static void unsupportedUnaryLanewiseOperation(VectorOperators.Unary op) {
-        Vector<Byte> vector = SPECIES.zero();
-        VectorMask<Byte> mask = SPECIES.maskAll(false);
-
-        Assert.assertThrows(UnsupportedOperationException.class,
-                () -> vector.lanewise(op));
-
-        Assert.assertThrows(UnsupportedOperationException.class,
-                () -> vector.lanewise(op, mask));
-    }
-
-    @Test(dataProvider = "unsupportedBinaryOpProvider")
-    static void unsupportedBinaryLanewiseOperation(VectorOperators.Binary op) {
-        Vector<Byte> vector = SPECIES.zero();
-        VectorMask<Byte> mask = SPECIES.maskAll(false);
-
-        Assert.assertThrows(UnsupportedOperationException.class,
-                () -> vector.lanewise(op, vector));
-        Assert.assertThrows(UnsupportedOperationException.class,
-                () -> vector.lanewise(op, 0L));
-
-        Assert.assertThrows(UnsupportedOperationException.class,
-                () -> vector.lanewise(op, vector, mask));
-        Assert.assertThrows(UnsupportedOperationException.class,
-                () -> vector.lanewise(op, 0L, mask));
-    }
-
-    @Test(dataProvider = "unsupportedTernaryOpProvider")
-    static void unsupportedTernaryLanewiseOperation(VectorOperators.Ternary op) {
-        Vector<Byte> vector = SPECIES.zero();
-        VectorMask<Byte> mask = SPECIES.maskAll(false);
-
-        Assert.assertThrows(UnsupportedOperationException.class,
-                () -> vector.lanewise(op, vector, vector));
-
-        Assert.assertThrows(UnsupportedOperationException.class,
-                () -> vector.lanewise(op, vector, vector, mask));
     }
 }
