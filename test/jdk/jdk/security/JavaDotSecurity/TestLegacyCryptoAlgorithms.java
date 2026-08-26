@@ -29,9 +29,9 @@ import java.security.Security;
  * @summary Test the default setting of the jdk.crypto.legacyAlgorithms security property
  * @comment This property has a default value of "Cipher.RSA/ECB/PKCS1Padding"
  *          This test assures the default is not changed.
- * @run main TestLegacyAlgorithms
+ * @run main TestLegacyCryptoAlgorithms
  */
-public class TestLegacyAlgorithms {
+public class TestLegacyCryptoAlgorithms {
 
     public static void main(String args[]) throws Exception {
         String value = Security.getProperty("jdk.crypto.legacyAlgorithms");
