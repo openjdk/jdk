@@ -24,7 +24,11 @@
 import static jdk.test.lib.Asserts.assertEquals;
 import static jdk.test.lib.Asserts.assertTrue;
 
+import java.net.InetSocketAddress;
 import java.util.Arrays;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import javax.net.ssl.ExtendedSSLSession;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
@@ -39,80 +43,28 @@ import javax.net.ssl.SSLSocket;
  *          Verify that SSLSocket reports the supported named groups.
  * @library /javax/net/ssl/templates
  *          /test/lib
+ * @build NamedGroupTestData
+ *
+ * @run main SSLSocketNegotiatedSupportedNamedGroup
+ * @run main/othervm -Djdk.tls.server.enableSessionTicketExtension=true
+ *      -Djdk.tls.client.enableSessionTicketExtension=true
+ *      SSLSocketNegotiatedSupportedNamedGroup resume TLSv1.3
+ * @run main/othervm -Djdk.tls.server.enableSessionTicketExtension=false
+ *      -Djdk.tls.client.enableSessionTicketExtension=true
+ *      SSLSocketNegotiatedSupportedNamedGroup resume TLSv1.3
+ * @run main/othervm -Djdk.tls.server.enableSessionTicketExtension=true
+ *      -Djdk.tls.client.enableSessionTicketExtension=true
+ *      SSLSocketNegotiatedSupportedNamedGroup resume TLSv1.2
+ * @run main/othervm -Djdk.tls.server.enableSessionTicketExtension=false
+ *      -Djdk.tls.client.enableSessionTicketExtension=false
+ *      SSLSocketNegotiatedSupportedNamedGroup resume TLSv1.2
  */
 
 public class SSLSocketNegotiatedSupportedNamedGroup extends SSLSocketTemplate {
 
-    private static final String[] DEFAULT_SUPPORTED_NG =
-            // Some algorithms not available on Windows
-            System.getProperty("os.name").startsWith("Windows") ?
-                    new String[]{
-                            "X25519MLKEM768",
-                            "x25519",
-                            "secp256r1",
-                            "secp384r1",
-                            "secp521r1",
-                            "x448",
-                            "ffdhe2048",
-                            "ffdhe3072",
-                            "ffdhe4096",
-                            "sect233k1",
-                            "sect233r1",
-                            "sect239k1",
-                            "sect283k1",
-                            "sect283r1",
-                            "sect409k1",
-                            "sect409r1",
-                            "sect571k1",
-                            "sect571r1",
-                            "secp256k1",
-                            "ffdhe6144",
-                            "ffdhe8192",
-                            "SecP256r1MLKEM768",
-                            "SecP384r1MLKEM1024"
-                    } :
-                    new String[]{
-                            "X25519MLKEM768",
-                            "x25519",
-                            "secp256r1",
-                            "secp384r1",
-                            "secp521r1",
-                            "x448",
-                            "ffdhe2048",
-                            "ffdhe3072",
-                            "ffdhe4096",
-                            "sect233k1",
-                            "sect233r1",
-                            "sect239k1",
-                            "sect283k1",
-                            "sect283r1",
-                            "sect409k1",
-                            "sect409r1",
-                            "sect571k1",
-                            "sect571r1",
-                            "secp224k1",
-                            "secp224r1",
-                            "secp256k1",
-                            "ffdhe6144",
-                            "ffdhe8192",
-                            "SecP256r1MLKEM768",
-                            "SecP384r1MLKEM1024"
-                    };
-
-
-    private static final String[][] TEST_VALUES = new String[][]{
-            // Default named groups
-            {null, "X25519MLKEM768", "TLSv1.3"},
-            {null, "x25519", "TLSv1.2"},
-
-            // Single named group
-            {"secp384r1", "secp384r1", "TLSv1.3"},
-            {"secp384r1", "secp384r1", "TLSv1.2"},
-
-            // Multiple named groups
-            {"secp256r1,secp384r1", "secp256r1", "TLSv1.3"},
-            {"secp256r1,secp384r1", "secp256r1", "TLSv1.2"},
-    };
+    private static final String INITIAL_GROUP = "secp256r1";
+    private static final String RESUMED_GROUP = "secp384r1";
+    private static final int TIMEOUT = 10000;
 
     private final String[] inputNamedGroups;
     private final String negotiatedNamedGroup;
@@ -126,6 +78,16 @@ public class SSLSocketNegotiatedSupportedNamedGroup extends SSLSocketTemplate {
     }
 
     public static void main(String[] args) throws Exception {
+        if (args.length > 0 && args[0].equals("resume")) {
+            new SSLSocketNegotiatedSupportedNamedGroup(
+                    null, null, args[1]).testResumption();
+            return;
+        }
+
+        runFullHandshakeTests();
+    }
+
+    private static void runFullHandshakeTests() throws Exception {
         // Check SSLServerSocket.getSupportedNamedGroups() call with default
         // configuration.
         SSLSocketTemplate defaultTest = new SSLSocketTemplate();
@@ -134,24 +96,31 @@ public class SSLSocketNegotiatedSupportedNamedGroup extends SSLSocketTemplate {
         try (SSLServerSocket sslServerSocket =
                 (SSLServerSocket) sslssf.createServerSocket(
                         defaultTest.serverPort, 0, defaultTest.serverAddress)) {
-            assertTrue(Arrays.equals(DEFAULT_SUPPORTED_NG,
+            assertTrue(Arrays.equals(NamedGroupTestData.DEFAULT_SUPPORTED_NG,
                             sslServerSocket.getSupportedNamedGroups()),
                     Arrays.toString(sslServerSocket.getSupportedNamedGroups()));
         }
 
         // Run through test values
-        for (String[] v : TEST_VALUES) {
-            System.out.println("Running with test parameters: "
-                    + Arrays.toString(v));
-            new SSLSocketNegotiatedSupportedNamedGroup(
-                    v[0] != null ? v[0].split(",") : null,
-                    v[1], v[2]).run();
+        for (String[] v : NamedGroupTestData.TEST_VALUES) {
+            // SSLSocket doesn't support DTLS
+            if (!v[2].startsWith("DTLS")) {
+                System.out.println("Running with test parameters: "
+                        + Arrays.toString(v));
+                new SSLSocketNegotiatedSupportedNamedGroup(
+                        v[0] != null ? v[0].split(",") : null,
+                        v[1], v[2]).run();
+            }
         }
     }
 
     @Override
     protected void configureServerSocket(SSLServerSocket socket) {
         SSLParameters params = socket.getSSLParameters();
+        if (protocol.equals("TLSv1.2")) {
+            params.setCipherSuites(new String[]{
+                    NamedGroupTestData.TLS12_CIPHER_SUITE});
+        }
         params.setProtocols(new String[]{protocol});
         params.setNamedGroups(inputNamedGroups);
         socket.setSSLParameters(params);
@@ -160,6 +129,10 @@ public class SSLSocketNegotiatedSupportedNamedGroup extends SSLSocketTemplate {
     @Override
     protected void configureClientSocket(SSLSocket socket) {
         SSLParameters params = socket.getSSLParameters();
+        if (protocol.equals("TLSv1.2")) {
+            params.setCipherSuites(new String[]{
+                    NamedGroupTestData.TLS12_CIPHER_SUITE});
+        }
         params.setProtocols(new String[]{protocol});
         params.setNamedGroups(inputNamedGroups);
         socket.setSSLParameters(params);
@@ -179,7 +152,7 @@ public class SSLSocketNegotiatedSupportedNamedGroup extends SSLSocketTemplate {
 
     private void checkNamedGroup(SSLSocket socket) {
         // Check SSLSocket.getSupportedNamedGroups() call
-        assertTrue(Arrays.equals(DEFAULT_SUPPORTED_NG,
+        assertTrue(Arrays.equals(NamedGroupTestData.DEFAULT_SUPPORTED_NG,
                         socket.getSupportedNamedGroups()),
                 Arrays.toString(socket.getSupportedNamedGroups()));
 
@@ -187,5 +160,129 @@ public class SSLSocketNegotiatedSupportedNamedGroup extends SSLSocketTemplate {
         ExtendedSSLSession session =
                 (ExtendedSSLSession) socket.getSession();
         assertEquals(negotiatedNamedGroup, session.getNegotiatedNamedGroup());
+    }
+
+    private void testResumption() throws Exception {
+        // Key exchange is not performed in TLSv1.2 resumption unlike in TLSv1.3,
+        // so the session.getNegotiatedNamedGroup() TLSv1.2 resumed session
+        // returns null.
+        String resumedNamedGroup = protocol.equals("TLSv1.3") ?
+                RESUMED_GROUP : null;
+
+        SSLContext serverContext = createServerSSLContext();
+        SSLContext clientContext = createClientSSLContext();
+
+        try (SSLServerSocket serverSocket = (SSLServerSocket)
+                serverContext.getServerSocketFactory().createServerSocket(
+                        0, 0, serverAddress);
+                ExecutorService executor = Executors.newSingleThreadExecutor()) {
+
+            configureResumptionServerSocket(serverSocket);
+            serverSocket.setSoTimeout(TIMEOUT);
+
+            Future<?> serverFuture = executor.submit(() -> {
+                runResumptionServer(serverSocket, resumedNamedGroup);
+                return null;
+            });
+
+            long initialCreationTime = runResumptionClient(
+                    clientContext, serverSocket.getLocalPort(),
+                    INITIAL_GROUP, INITIAL_GROUP, false);
+
+            long resumedCreationTime = runResumptionClient(
+                    clientContext, serverSocket.getLocalPort(),
+                    RESUMED_GROUP, resumedNamedGroup, true);
+
+            assertTrue(initialCreationTime == resumedCreationTime,
+                    "Client session was not resumed");
+            serverFuture.get();
+        }
+    }
+
+    private void configureResumptionServerSocket(SSLServerSocket socket) {
+        SSLParameters params = socket.getSSLParameters();
+        params.setProtocols(new String[]{protocol});
+        params.setNamedGroups(new String[]{INITIAL_GROUP, RESUMED_GROUP});
+        if (protocol.equals("TLSv1.2")) {
+            params.setCipherSuites(new String[]{
+                    NamedGroupTestData.TLS12_CIPHER_SUITE});
+        }
+        socket.setSSLParameters(params);
+    }
+
+    private void runResumptionServer(SSLServerSocket serverSocket,
+            String resumedNamedGroup) throws Exception {
+
+        long initialCreationTime = 0;
+        String[] expectedNamedGroups = {
+                INITIAL_GROUP, resumedNamedGroup};
+
+        for (int i = 0; i < expectedNamedGroups.length; i++) {
+            try (SSLSocket socket = (SSLSocket) serverSocket.accept()) {
+                socket.setSoTimeout(TIMEOUT);
+
+                if (i == 1) {
+                    socket.setEnableSessionCreation(false);
+                }
+
+                socket.startHandshake();
+                ExtendedSSLSession session =
+                        (ExtendedSSLSession) socket.getSession();
+
+                assertEquals(expectedNamedGroups[i],
+                        session.getNegotiatedNamedGroup());
+
+                if (i == 0) {
+                    initialCreationTime = session.getCreationTime();
+                } else {
+                    assertTrue(initialCreationTime == session.getCreationTime(),
+                            "Server session was not resumed");
+                }
+
+                socket.getInputStream().read();
+                socket.getOutputStream().write(280);
+                socket.getOutputStream().flush();
+            }
+        }
+    }
+
+    private long runResumptionClient(SSLContext context, int serverPort,
+            String namedGroup, String expectedNamedGroup,
+            boolean requireResumption) throws Exception {
+
+        try (SSLSocket socket =
+                (SSLSocket) context.getSocketFactory().createSocket()) {
+
+            SSLParameters params = socket.getSSLParameters();
+            params.setProtocols(new String[]{protocol});
+            params.setNamedGroups(new String[]{namedGroup});
+
+            if (protocol.equals("TLSv1.2")) {
+                params.setCipherSuites(new String[]{
+                        NamedGroupTestData.TLS12_CIPHER_SUITE});
+            }
+
+            socket.setSSLParameters(params);
+            socket.setSoTimeout(TIMEOUT);
+
+            if (requireResumption) {
+                socket.setEnableSessionCreation(false);
+            }
+
+            socket.connect(new InetSocketAddress(serverAddress, serverPort),
+                    TIMEOUT);
+            socket.startHandshake();
+
+            ExtendedSSLSession session = (ExtendedSSLSession) socket.getSession();
+            assertEquals(expectedNamedGroup, session.getNegotiatedNamedGroup());
+
+            long creationTime = session.getCreationTime();
+
+            socket.getOutputStream().write(85);
+            socket.getOutputStream().flush();
+            socket.getInputStream().read();
+
+            return creationTime;
+        }
     }
 }
