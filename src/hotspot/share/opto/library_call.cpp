@@ -2976,10 +2976,17 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
 
   Compile::AliasType* alias_type = C->alias_type(adr_type);
   BasicType bt = alias_type->basic_type();
-  if (bt != T_ILLEGAL &&
-      (is_reference_type(bt) != (type == T_OBJECT))) {
-    // Don't intrinsify mismatched object accesses.
-    return false;
+  if (bt != T_ILLEGAL) {
+    if (adr_type->isa_aryptr() && adr_type->is_flat()) {
+      // mismatched access to a flat array element:
+      // type=T_OBJECT doesn't make sense (and breaks Compile::adjust_flat_array_access_aliases()).
+      // Some other type may need to be supported so this may need to be relaxed.
+      return false;
+    }
+    if (is_reference_type(bt) != (type == T_OBJECT)) {
+      // Don't intrinsify mismatched object accesses.
+      return false;
+    }
   }
 
   old_state.discard();
@@ -4240,7 +4247,7 @@ bool LibraryCallKit::inline_native_setCurrentThread() {
 const Type* LibraryCallKit::scopedValueCache_type() {
   ciKlass* objects_klass = ciObjArrayKlass::make(env()->Object_klass());
   const TypeOopPtr* etype = TypeOopPtr::make_from_klass(env()->Object_klass());
-  const TypeAry* arr0 = TypeAry::make(etype, TypeInt::POS, /* stable= */ false, /* flat= */ false, /* not_flat= */ true, /* not_null_free= */ true, true);
+  const TypeAry* arr0 = TypeAry::make(etype, TypeInt::POS, /* stable= */ false, /* flat= */ false, /* not_flat= */ true, /*null_free=*/ false, /* not_null_free= */ true, true);
 
   // Because we create the scopedValue cache lazily we have to make the
   // type of the result BotPTR.

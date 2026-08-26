@@ -852,11 +852,14 @@ const Type *AddPNode::bottom_type() const {
   if (in(Address) == nullptr)  return TypePtr::BOTTOM;
   const TypePtr *tp = in(Address)->bottom_type()->isa_ptr();
   if( !tp ) return Type::TOP;   // TOP input means TOP output
-  assert( in(Offset)->Opcode() != Op_ConP, "" );
-  const Type *t = in(Offset)->bottom_type();
-  if( t == Type::TOP )
-    return tp->add_offset(Type::OffsetTop);
-  const TypeX *tx = t->is_intptr_t();
+
+  assert(in(Offset)->Opcode() != Op_ConP, "");
+  const Type* t = in(Offset)->bottom_type();
+  if (t == Type::TOP) {
+    return Type::TOP;
+  }
+
+  const TypeX* tx = t->is_intptr_t();
   intptr_t txoffset = Type::OffsetBot;
   if (tx->is_con()) {   // Left input is an add of a constant?
     txoffset = tx->get_con();

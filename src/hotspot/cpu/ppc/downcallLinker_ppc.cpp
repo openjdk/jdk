@@ -297,7 +297,7 @@ void DowncallLinker::StubGenerator::generate() {
   Label L_after_reguard;
 
   if (_needs_transition) {
-    __ li(tmp, _thread_in_native_trans);
+    __ li(tmp, _thread_in_vm);
     __ release();
     __ stw(tmp, in_bytes(JavaThread::thread_state_offset()), R16_thread);
     if (!UseSystemMemoryBarrier) {

@@ -89,7 +89,7 @@ inline bool MutexedWriteOp<Operation>::process(typename Operation::Type* t) {
 }
 
 template <typename Type>
-static void retired_sensitive_acquire(Type* t, Thread* thread) {
+inline void retired_sensitive_acquire(Type* t, Thread* thread) {
   assert(t != nullptr, "invariant");
   assert(thread != nullptr, "invariant");
   assert(thread == Thread::current(), "invariant");
