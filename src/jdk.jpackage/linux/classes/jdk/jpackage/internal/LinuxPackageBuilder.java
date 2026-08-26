@@ -221,7 +221,6 @@ final class LinuxPackageBuilder {
 
         try {
             Executor.of("desktop-file-validate", probeFile.toString()).executeExpectSuccess();
-            return;
         } catch (UnexpectedExitCodeException ex) {
             // Validation failed as the command returned an unexpected exit code.
             throw new ConfigException(
@@ -230,7 +229,6 @@ final class LinuxPackageBuilder {
         } catch (IOException ex) {
             // The command probably isn't available; keep going, as this validation is optional.
             Log.trace(ex);
-            return;
         }
     }
 
