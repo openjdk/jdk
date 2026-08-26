@@ -45,7 +45,7 @@ class GetMultipleWaiters {
     @Test
     void testGet() throws Exception {
         var task = ForkJoinTask.adapt(() -> {});
-        Throwable[] thrown = {null};
+        var thrown = new Throwable[1];
 
         var a = startThreadAndAwaitState(() -> {
             try {
@@ -79,7 +79,7 @@ class GetMultipleWaiters {
     @Test
     void testTimedGet() throws Exception {
         var task = ForkJoinTask.adapt(() -> {});
-        Throwable[] thrown = {null};
+        var thrown = new Throwable[1];
 
         var a = startThreadAndAwaitState(() -> {
             try {
