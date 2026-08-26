@@ -7255,12 +7255,16 @@ bool LibraryCallKit::inline_encodeISOArray(bool ascii) {
   // 'dst_start' points to dst array + scaled offset
 
   // See GraphKit::compress_string
+  const TypePtr* src_adr_type = TypeAryPtr::get_array_body_type(src_elem);
+  const TypePtr* dst_adr_type = TypeAryPtr::get_array_body_type(dst_elem);
+  assert(src_adr_type == TypeAryPtr::BYTES || src_adr_type == TypeAryPtr::CHARS, "unexpected src_adr_type");
+  assert(dst_adr_type == TypeAryPtr::BYTES, "unexpected dst_adr_type");
   const TypePtr* adr_type;
-  Node* mem = capture_memory(adr_type, src_type, dst_type);
+  Node* mem = capture_memory(adr_type, src_adr_type, dst_adr_type);
   Node* enc = new EncodeISOArrayNode(control(), mem, adr_type, src_start, dst_start, length, ascii);
   enc = _gvn.transform(enc);
   Node* res_mem = _gvn.transform(new SCMemProjNode(enc));
-  memory_effect(res_mem, src_type, dst_type);
+  memory_effect(res_mem, src_adr_type, dst_adr_type);
 
   set_result(enc);
   clear_upper_avx();
