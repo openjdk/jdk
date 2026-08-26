@@ -465,8 +465,8 @@ void ZBarrierSetAssembler::copy_store_at_slow(MacroAssembler* masm,
                                               Register addr,
                                               Label& medium_path,
                                               Label& continuation,
-                                              bool dest_unintialized) const {
-  if (!dest_unintialized) {
+                                              bool dest_uninitialized) const {
+  if (!dest_uninitialized) {
     Label slow_path, slow_path_continuation;
     __ bind(medium_path);
     store_barrier_medium(masm, Address(addr, 0), Z_tmp_1, Z_tmp_2, false, false, continuation, slow_path, slow_path_continuation);
