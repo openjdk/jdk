@@ -144,13 +144,14 @@ public sealed interface JsonValue permits JsonString, JsonNumber, JsonObject, Js
      * {@code double} value; otherwise, throws a {@code JsonValueException}}
      *
      * @apiNote Callers of this method should be aware of the potential loss in precision or
-     * magnitude when a {@code JsonNumber} is converted to a {@code double}. A JSON number with
-     * more than about 15 decimal digits may be rounded to the nearest {@code double} value. A
-     * JSON number with a magnitude larger than about 1.8E308 cannot be represented as a finite
-     * {@code double}, and attempting to convert such a number will result in
-     * {@code JsonValueException}. (This differs from {@link Double#parseDouble Double.parseDouble},
-     * which will return {@link Double#POSITIVE_INFINITY} or {@link Double#NEGATIVE_INFINITY} for
-     * such cases.) This method will never return {@link Double#NaN}. However, this method will
+     * magnitude when a {@code JsonNumber} is converted to a {@code double}. A JSON number
+     * may be rounded to the nearest representable {@code double} value, and a JSON number
+     * with more than about 15 decimal digits may lose precision. A JSON number with a
+     * magnitude larger than about 1.8E308 cannot be represented as a finite {@code double},
+     * and attempting to convert such a number will result in {@code JsonValueException}.
+     * (This differs from {@link Double#parseDouble Double.parseDouble}, which will return
+     * {@link Double#POSITIVE_INFINITY} or {@link Double#NEGATIVE_INFINITY} for such cases.)
+     * This method will never return {@link Double#NaN}. However, this method will
      * properly convert and return negative zero (&minus;0.0). To handle numbers of almost
      * arbitrary precision and magnitude, consider converting to {@link java.math.BigDecimal
      * BigDecimal} using {@code new BigDecimal(jsonNumber.toString())}. Note however that
