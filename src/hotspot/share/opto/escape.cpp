@@ -4352,6 +4352,7 @@ bool ConnectionGraph::split_AddP(Node *addp, Node *base) {
   if (igvn->type(addp)->isa_oopptr()) {
     igvn->set_type(addp, tinst);
   } else {
+    // Captured stores should remain raw memory stores
 #ifdef ASSERT
     InitializeNode* init = base->in(0)->in(0)->as_Initialize();
     bool found = false;
