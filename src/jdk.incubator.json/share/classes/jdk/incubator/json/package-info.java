@@ -143,7 +143,7 @@
  * {@snippet lang=java:
  * String sun = firstProvider.asString();
  * }
- * The code above retrieves the Java String "SUN" from the JSON value {@code firstProvider}.
+ * The code above retrieves the Java String {@code "SUN"} from the JSON value {@code firstProvider}.
  * If an incorrect conversion method is used, which does not correspond to the matching
  * JSON type, for example {@code firstProvider.asBoolean()}, a {@code JsonValueException} is thrown.
  * <p>
