@@ -113,7 +113,7 @@ void ShenandoahHeapRegion::make_regular_allocation(ShenandoahAffiliation affilia
 }
 
 void ShenandoahHeapRegion::make_regular_for_partial_recycling() {
-  shenandoah_assert_heaplocked();
+  shenandoah_assert_heaplocked_or_safepoint();
   assert(has_self_forwards(), "Only for regions holding self forwarded objects");
   switch (state()) {
     case _cset:
@@ -300,7 +300,7 @@ void ShenandoahHeapRegion::make_cset() {
 }
 
 void ShenandoahHeapRegion::make_trash() {
-  shenandoah_assert_heaplocked();
+  shenandoah_assert_heaplocked_or_safepoint();
   assert(!has_self_forwards(), "Should not have evacuation failures");
   reset_age();
   switch (state()) {
