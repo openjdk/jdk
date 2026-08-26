@@ -109,7 +109,7 @@ void Rewriter::make_constant_pool_cache(TRAPS) {
   assert(_field_entry_index == _initialized_field_entries.length(), "Field entry size mismatch");
   assert(_method_entry_index == _initialized_method_entries.length(), "Method entry size mismatch");
   ConstantPoolCache* cache =
-      ConstantPoolCache::allocate(loader_data, _invokedynamic_references_map,
+      ConstantPoolCache::allocate(loader_data,
                                   _initialized_indy_entries, _initialized_field_entries, _initialized_method_entries,
                                   CHECK);
 
@@ -584,7 +584,6 @@ Rewriter::Rewriter(InstanceKlass* klass, const constantPoolHandle& cpool, Array<
     _cp_map(cpool->length()),
     _reference_map(cpool->length()),
     _resolved_references_map(cpool->length() / 2),
-    _invokedynamic_references_map(cpool->length() / 2),
     _method_handle_invokers(cpool->length()),
     _invokedynamic_index(0),
     _field_entry_index(0),

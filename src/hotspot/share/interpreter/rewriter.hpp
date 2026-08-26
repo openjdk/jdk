@@ -43,7 +43,6 @@ class Rewriter: public StackObj {
   GrowableArray<int>  _cp_map;
   GrowableArray<int>  _reference_map; // maps from cp index to resolved_refs index (or -1)
   GrowableArray<int>  _resolved_references_map; // for strings, methodHandle, methodType
-  GrowableArray<int>  _invokedynamic_references_map; // for invokedynamic resolved refs
   GrowableArray<int>  _method_handle_invokers;
   int                 _resolved_reference_limit;
   int                 _invokedynamic_index;
@@ -68,7 +67,6 @@ class Rewriter: public StackObj {
 
     _method_handle_invokers.trunc_to(0);
     _resolved_references_map.trunc_to(0);
-    _invokedynamic_references_map.trunc_to(0);
     _resolved_reference_limit = -1;
   }
 
@@ -105,9 +103,6 @@ class Rewriter: public StackObj {
     assert(_resolved_reference_limit >= 0, "must add indy refs after first iteration");
     int ref_index = _resolved_references_map.append(cp_index);  // many-to-one
     assert(ref_index >= _resolved_reference_limit, "");
-    if (_pool->tag_at(cp_index).value() != JVM_CONSTANT_InvokeDynamic) {
-      _invokedynamic_references_map.at_put_grow(ref_index, cache_index, -1);
-    }
     return ref_index;
   }
 
