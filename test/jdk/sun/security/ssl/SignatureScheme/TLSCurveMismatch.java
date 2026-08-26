@@ -50,7 +50,7 @@ import jdk.test.lib.security.CertificateBuilder;
 
 /*
  * @test
- * @bug 8345277
+ * @bug 8345277 8381641
  * @summary TLS1.2 clients using ecdsa_secp256r1_sha256 signature scheme
  *          cannot connect to JDK servers with secp384r1 certificates
  *
@@ -117,16 +117,17 @@ public class TLSCurveMismatch extends SSLSocketTemplate {
                 });
 
         // TLSv1.3 should always fail because of EC curve mismatch between the
-        // signature scheme and a certificate key.
+        // signature scheme and a certificate key. The failure now happens
+        // when selecting server certificate and authentication signature scheme,
+        // so the server detects that no authentication scheme is available.
         runAndCheckException(() -> new TLSCurveMismatch("TLSv1.3",
                         new String[]{SIGNING_KEY_CURVE, SIG_SCHEME_CURVE})
                         .run(),
                 serverEx -> {
                     assertTrue(serverEx instanceof SSLException);
                     assertEquals(serverEx.getMessage(),
-                            "(internal_error) No supported CertificateVerify "
-                                    + "signature algorithm for "
-                                    + KEY_ALGORITHM + " key");
+                            "(handshake_failure) No available authentication "
+                                    + "scheme");
                 });
     }
 

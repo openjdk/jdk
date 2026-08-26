@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8366364
+ * @bug 8366364 8381641
  * @summary Return enabled signature schemes with
  *          SSLConfiguration#getSSLParameters() call
  * @library /javax/net/ssl/templates
@@ -69,6 +69,9 @@ public class DefaultSSLConfigSignatureSchemes extends SSLEngineTemplate {
                     "rsa_pkcs1_sha256",
                     "rsa_pkcs1_sha384",
                     "rsa_pkcs1_sha512",
+                    "mldsa44",
+                    "mldsa65",
+                    "mldsa87",
                     "dsa_sha256",
                     "ecdsa_sha224",
                     "rsa_sha224",

@@ -117,6 +117,19 @@ enum SignatureScheme {
                                     ProtocolVersion.PROTOCOLS_TO_13,
                                     ProtocolVersion.PROTOCOLS_TO_12),
 
+    // ML_DSA algorithms
+    MLDSA44                 (0x0904, "mldsa44", "ML-DSA-44",
+                                    "ML-DSA",
+                                    ProtocolVersion.PROTOCOLS_OF_13),
+
+    MLDSA65                 (0x0905, "mldsa65", "ML-DSA-65",
+                                    "ML-DSA",
+                                    ProtocolVersion.PROTOCOLS_OF_13),
+
+    MLDSA87                 (0x0906, "mldsa87", "ML-DSA-87",
+                                    "ML-DSA",
+                                    ProtocolVersion.PROTOCOLS_OF_13),
+
     // Legacy algorithms
     DSA_SHA256              (0x0402, "dsa_sha256", "SHA256withDSA",
                                     "DSA",
@@ -537,6 +550,20 @@ enum SignatureScheme {
             if (keySize >= ss.minimalKeySize &&
                     keyAlgorithm.equalsIgnoreCase(ss.keyAlgorithm) &&
                     ss.isAllowed(constraints, version, HANDSHAKE_SCOPE)) {
+                if (ss.checkNamedParam()) {
+                    String keyParams = KeyUtil.getAlgorithm(signingKey);
+                    if (!ss.algorithm.equalsIgnoreCase(keyParams)) {
+                        if (SSLLogger.isOn() &&
+                                SSLLogger.isOn(
+                                        SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
+                            SSLLogger.finest(
+                                    "Ignore the signature algorithm (" + ss +
+                                    "), unsupported named parameter: " +
+                                    keyParams);
+                        }
+                        continue;
+                    }
+                }
                 if ((ss.namedGroup != null) && (ss.namedGroup.spec ==
                         NamedGroupSpec.NAMED_GROUP_ECDHE)) {
                     ECParameterSpec params =
@@ -598,6 +625,10 @@ enum SignatureScheme {
         return null;
     }
 
+    private boolean checkNamedParam() {
+        return "ML-DSA".equalsIgnoreCase(keyAlgorithm);
+    }
+
     // Returns true if this signature scheme is supported for the given
     // protocol version and SSL scopes.
     private boolean isSupportedProtocol(
@@ -640,6 +671,14 @@ enum SignatureScheme {
             InvalidAlgorithmParameterException, InvalidKeyException {
         if (!isAvailable) {
             return null;
+        }
+
+        if (checkNamedParam()) {
+            String keyParams = KeyUtil.getAlgorithm(publicKey);
+            if (!algorithm.equalsIgnoreCase(keyParams)) {
+                throw new InvalidKeyException("Unsupported named parameter: " +
+                        keyParams);
+            }
         }
 
         Signature verifier = Signature.getInstance(algorithm);
