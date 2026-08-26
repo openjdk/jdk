@@ -136,7 +136,6 @@ class outputStream;
                                                                                                                      \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, full_gc_gross,                                   "Pause Full GC (G)")               \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, full_gc,                                         "Pause Full GC (N)")               \
-  SHENANDOAH_SIMPLE_PHASE_DEF(f, full_gc_un_self_forward,                         "  Un-Self-Forward")               \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, full_gc_heapdump_pre,                            "  Pre Heap Dump")                 \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, full_gc_prepare,                                 "  Prepare")                       \
   SHENANDOAH_WORKER_PHASE_DEF(f, full_gc_update_roots,                            "    Update Roots",                \

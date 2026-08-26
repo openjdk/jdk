@@ -98,11 +98,6 @@ void ShenandoahGenerationalControlThread::stop_service() {
   // to reach a safepoint (this runs on a java thread).
 }
 
-bool ShenandoahGenerationalControlThread::should_run_full_gc(GCCause::Cause cause) const {
-  const bool old_evacs_failed = _heap->old_generation()->has_failed_evacuations();
-  return old_evacs_failed || ShenandoahCollectorPolicy::should_run_full_gc(cause);
-}
-
 void ShenandoahGenerationalControlThread::check_for_request(ShenandoahGCRequest& request) {
   // Hold the lock while we read request cause and generation
   MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
@@ -140,7 +135,7 @@ void ShenandoahGenerationalControlThread::check_for_request(ShenandoahGCRequest&
   assert(request.generation != nullptr, "request.generation cannot be null, cause is: %s", GCCause::to_string(request.cause));
 
   GCMode mode;
-  if (should_run_full_gc(request.cause)) {
+  if (ShenandoahCollectorPolicy::should_run_full_gc(request.cause)) {
     mode = prepare_for_full_gc(request);
   } else {
     mode = prepare_for_concurrent_gc(request);
@@ -268,6 +263,12 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
       // to start another cycle.
       _heap->clear_cancellation(_requested_gc_cause);
       _requested_gc_cause = GCCause::_no_gc;
+    }
+
+    if (_heap->old_generation()->clear_failed_evacuation()) {
+      // Immediately run a full GC.
+      log_info(gc, ergo)("Requesting a full gc because of evacuation failures in old");
+      notify_control_thread(ml, GCCause::_shenandoah_upgrade_to_full_gc, _heap->global_generation());
     }
   }
 
