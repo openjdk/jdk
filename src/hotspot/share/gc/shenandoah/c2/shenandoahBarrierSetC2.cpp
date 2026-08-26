@@ -27,7 +27,6 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shenandoah/c2/shenandoahBarrierSetC2.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
-#include "gc/shenandoah/shenandoahForwarding.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahRuntime.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
@@ -415,7 +414,7 @@ void ShenandoahBarrierSetC2::eliminate_gc_barrier_data(Node* node) const {
   }
 }
 
-void ShenandoahBarrierSetC2::eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const {
+void ShenandoahBarrierSetC2::eliminate_gc_barrier(PhaseIterGVN* macro, Node* node) const {
   eliminate_gc_barrier_data(node);
 }
 
@@ -554,8 +553,10 @@ bool ShenandoahBarrierSetC2::clone_needs_barrier(const TypeOopPtr* src_type, boo
   } else if (src_type->isa_aryptr() != nullptr) {
     // Array: need barrier only if array is oop-bearing.
     BasicType src_elem = src_type->isa_aryptr()->elem()->array_element_basic_type();
-    if (is_reference_type(src_elem, true)) {
+    if (is_reference_type(src_elem, true) && src_type->is_not_flat()) {
       is_oop_array = true;
+    } else if (!src_type->is_not_flat()) {
+      // Maybe flat, assume the worst.
     } else {
       return false;
     }
@@ -633,6 +634,12 @@ void ShenandoahBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCo
   const jlong offset = src_offset->get_long();
   const TypeAryPtr* const ary_ptr = src->get_ptr_type()->isa_aryptr();
   BasicType bt = ary_ptr->elem()->array_element_basic_type();
+  if (offset != arrayOopDesc::base_offset_in_bytes(bt)) {
+    // Something is off with flat arrays. Go to runtime instead.
+    // TODO: Figure this out.
+    clone_in_runtime(phase, ac, ShenandoahRuntime::clone_addr(), "ShenandoahRuntime::clone");
+    return;
+  }
   assert(offset == arrayOopDesc::base_offset_in_bytes(bt), "should match");
 
   const char*   copyfunc_name = "arraycopy";
@@ -704,10 +711,9 @@ void ShenandoahBarrierSetC2::print_barrier_data(outputStream* os, uint8_t data) 
     fatal("Unknown bit!");
   }
 
-  os->print_cr(" GC configuration: %sLRB %sSATB %sCAS %sClone %sCard",
+  os->print_cr(" GC configuration: %sLRB %sSATB %sClone %sCard",
     (ShenandoahLoadRefBarrier ? "+" : "-"),
     (ShenandoahSATBBarrier    ? "+" : "-"),
-    (ShenandoahCASBarrier     ? "+" : "-"),
     (ShenandoahCloneBarrier   ? "+" : "-"),
     (ShenandoahCardBarrier    ? "+" : "-")
   );
@@ -904,16 +910,16 @@ void ShenandoahBarrierStubC2::load_post(MacroAssembler* masm, const MachNode* no
   }
 }
 
-void ShenandoahBarrierStubC2::store_pre(MacroAssembler* masm, const MachNode* node, Register obj, Address addr, Register tmp1, Register tmp2, bool narrow) {
+void ShenandoahBarrierStubC2::store_pre(MacroAssembler* masm, const MachNode* node, Address addr, Register tmp1, Register tmp2, Register tmp3, bool narrow) {
   // Store pre-barrier: SATB, keep-alive the current memory value.
   if (needs_slow_barrier(node)) {
     assert(!needs_load_ref_barrier(node), "Should not be required for stores");
-    ShenandoahBarrierStubC2* const stub = create(node, obj, addr, tmp1, tmp2, narrow, /* do_load = */ true);
+    ShenandoahBarrierStubC2* const stub = create(node, tmp1, addr, tmp2, tmp3, narrow, /* do_load = */ true);
     stub->enter_if_gc_state(*masm, ShenandoahHeap::MARKING, tmp1);
   }
 }
 
-void ShenandoahBarrierStubC2::load_store_pre(MacroAssembler* masm, const MachNode* node, Register obj, Address addr, Register tmp1, Register tmp2, bool narrow) {
+void ShenandoahBarrierStubC2::load_store_pre(MacroAssembler* masm, const MachNode* node, Address addr, Register tmp1, Register tmp2, Register tmp3, bool narrow) {
   // Load/Store pre-barrier:
   //  a. Avoids false positives from CAS encountering to-space memory values.
   //  b. Satisfies the need for LRB for the CAE result.
@@ -922,7 +928,7 @@ void ShenandoahBarrierStubC2::load_store_pre(MacroAssembler* masm, const MachNod
   // (a) and (b) are covered because load barrier does memory location fixup.
   // (c) is covered by KA on the current memory value.
   if (needs_slow_barrier(node)) {
-    ShenandoahBarrierStubC2* const stub = create(node, obj, addr, tmp1, tmp2, narrow, /* do_load = */ true);
+    ShenandoahBarrierStubC2* const stub = create(node, tmp1, addr, tmp2, tmp3, narrow, /* do_load = */ true);
     char check = 0;
     check |= needs_keep_alive_barrier(node) ? ShenandoahHeap::MARKING : 0;
     check |= needs_load_ref_barrier(node)   ? ShenandoahHeap::HAS_FORWARDED : 0;

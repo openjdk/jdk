@@ -251,13 +251,14 @@ void ZBarrierSet::on_thread_destroy(Thread* thread) {
 }
 
 void ZBarrierSet::on_thread_attach(Thread* thread) {
+  BarrierSet::on_thread_attach(thread);
+
   // Set thread local masks
   ZThreadLocalData::set_load_bad_mask(thread, ZPointerLoadBadMask);
   ZThreadLocalData::set_load_good_mask(thread, ZPointerLoadGoodMask);
   ZThreadLocalData::set_mark_bad_mask(thread, ZPointerMarkBadMask);
   ZThreadLocalData::set_store_bad_mask(thread, ZPointerStoreBadMask);
   ZThreadLocalData::set_store_good_mask(thread, ZPointerStoreGoodMask);
-  ZThreadLocalData::set_nmethod_disarmed(thread, ZPointerStoreGoodMask);
   if (thread->is_Java_thread()) {
     JavaThread* const jt = JavaThread::cast(thread);
     StackWatermark* const watermark = new ZStackWatermark(jt);

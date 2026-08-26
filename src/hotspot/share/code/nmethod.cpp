@@ -688,6 +688,17 @@ void nmethod::preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map
       has_receiver = !(callee->access_flags().is_static());
       has_appendix = false;
       signature    = callee->signature();
+
+      // If inline types are passed as fields, use the extended signature
+      // which contains the types of all (oop) fields of the inline type.
+      if (is_compiled_by_c2() && callee->has_scalarized_args()) {
+        const GrowableArray<SigEntry>* sig = callee->adapter()->get_sig_cc();
+        assert(sig != nullptr, "sig should never be null");
+        TempNewSymbol tmp_sig = SigEntry::create_symbol(sig);
+        has_receiver = false; // The extended signature contains the receiver type
+        fr.oops_compiled_arguments_do(tmp_sig, has_receiver, has_appendix, reg_map, f);
+        return;
+      }
     } else {
       SimpleScopeDesc ssd(this, pc);
 
@@ -1163,6 +1174,8 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
 
 // Fill in default values for various fields
 void nmethod::init_defaults(CodeBuffer *code_buffer, CodeOffsets* offsets) {
+  assert(frame_complete_offset() == offsets->value(CodeOffsets::Frame_Complete), "offset truncated?");
+
   // avoid uninitialized fields, even for short time periods
   _exception_cache            = nullptr;
   _gc_data                    = nullptr;
@@ -1186,6 +1199,10 @@ void nmethod::init_defaults(CodeBuffer *code_buffer, CodeOffsets* offsets) {
 
   CHECKED_CAST(_entry_offset,              uint16_t, (offsets->value(CodeOffsets::Entry)));
   CHECKED_CAST(_verified_entry_offset,     uint16_t, (offsets->value(CodeOffsets::Verified_Entry)));
+
+  _inline_entry_offset             = _entry_offset;
+  _verified_inline_entry_offset    = _verified_entry_offset;
+  _verified_inline_ro_entry_offset = _verified_entry_offset;
 
   _skipped_instructions_size = code_buffer->total_skipped_instructions_size();
 }
@@ -1234,7 +1251,7 @@ nmethod::nmethod(
   {
     DEBUG_ONLY(NoSafepointVerifier nsv;)
     assert_locked_or_safepoint(CodeCache_lock);
-
+    assert(!method->has_scalarized_args(), "scalarized native wrappers not supported yet");
     init_defaults(code_buffer, offsets);
 
     _osr_entry_point         = nullptr;
@@ -1375,14 +1392,21 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
   _oops_do_mark_link            = nullptr;
   _compiled_ic_data             = nullptr;
 
-  if (nm._osr_entry_point != nullptr) {
-    _osr_entry_point            = (nm._osr_entry_point - (address) &nm) + (address) this;
+  // Relocate the OSR entry point from nm to the new nmethod.
+  if (nm._osr_entry_point == nullptr) {
+    _osr_entry_point = nullptr;
   } else {
-    _osr_entry_point            = nullptr;
+    address new_addr = nm._osr_entry_point - (address) &nm + (address) this;
+    assert(new_addr >= code_begin() && new_addr < code_end(),
+           "relocated address must be within code bounds");
+    _osr_entry_point = new_addr;
   }
-
   _entry_offset                 = nm._entry_offset;
   _verified_entry_offset        = nm._verified_entry_offset;
+  _inline_entry_offset             = nm._inline_entry_offset;
+  _verified_inline_entry_offset    = nm._verified_inline_entry_offset;
+  _verified_inline_ro_entry_offset = nm._verified_inline_ro_entry_offset;
+
   _entry_bci                    = nm._entry_bci;
   _immutable_data_size          = nm._immutable_data_size;
 
@@ -1657,6 +1681,16 @@ nmethod::nmethod(
     }
 
     int metadata_size = align_up(code_buffer->total_metadata_size(), wordSize);
+    if (offsets->value(CodeOffsets::Inline_Entry) != CodeOffsets::no_such_entry_point) {
+      CHECKED_CAST(_inline_entry_offset            , uint16_t, offsets->value(CodeOffsets::Inline_Entry));
+    }
+    if (offsets->value(CodeOffsets::Verified_Inline_Entry) != CodeOffsets::no_such_entry_point) {
+      CHECKED_CAST(_verified_inline_entry_offset   , uint16_t, offsets->value(CodeOffsets::Verified_Inline_Entry));
+    }
+    if (offsets->value(CodeOffsets::Verified_Inline_Entry_RO) != CodeOffsets::no_such_entry_point) {
+      CHECKED_CAST(_verified_inline_ro_entry_offset, uint16_t, offsets->value(CodeOffsets::Verified_Inline_Entry_RO));
+    }
+
     assert(_mutable_data_size == _relocation_size + metadata_size,
            "wrong mutable data size: %d != %d + %d",
            _mutable_data_size, _relocation_size, metadata_size);
@@ -3079,10 +3113,10 @@ bool nmethod::check_dependency_on(DepChange& changes) {
 // Called from mark_for_deoptimization, when dependee is invalidated.
 bool nmethod::is_dependent_on_method(Method* dependee) {
   for (Dependencies::DepStream deps(this); deps.next(); ) {
-    if (deps.type() != Dependencies::evol_method)
-      continue;
-    Method* method = deps.method_argument(0);
-    if (method == dependee) return true;
+    if (Dependencies::has_method_dep(deps.type())) {
+      Method* method = deps.method_argument(0);
+      if (method == dependee) return true;
+    }
   }
   return false;
 }
@@ -3278,11 +3312,11 @@ void nmethod::print_on_impl(outputStream* st) const {
                                              p2i(oops_begin()),
                                              p2i(oops_end()),
                                              oops_size());
-  if (mutable_data_size() > 0) st->print_cr(" mutable data [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+  if (mutable_data_size () > 0) st->print_cr(" mutable data   [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
                                              p2i(mutable_data_begin()),
                                              p2i(mutable_data_end()),
                                              mutable_data_size());
-  if (relocation_size() > 0)   st->print_cr(" relocation     [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+  if (relocation_size   () > 0) st->print_cr(" relocation     [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
                                              p2i(relocation_begin()),
                                              p2i(relocation_end()),
                                              relocation_size());
@@ -3783,9 +3817,6 @@ const char* nmethod::reloc_string_for(u_char* begin, u_char* end) {
           address dest = r->destination();
           if (StubRoutines::contains(dest)) {
             StubCodeDesc* desc = StubCodeDesc::desc_for(dest);
-            if (desc == nullptr) {
-              desc = StubCodeDesc::desc_for(dest + frame::pc_return_offset);
-            }
             if (desc != nullptr) {
               st.print(" Stub::%s", desc->name());
               return st.as_string();
@@ -3848,7 +3879,6 @@ const char* nmethod::reloc_string_for(u_char* begin, u_char* end) {
         case relocInfo::poll_type:             return "poll";
         case relocInfo::poll_return_type:      return "poll_return";
         case relocInfo::trampoline_stub_type:  return "trampoline_stub";
-        case relocInfo::entry_guard_type:      return "entry_guard";
         case relocInfo::post_call_nop_type:    return "post_call_nop";
         case relocInfo::barrier_type: {
           barrier_Relocation* const reloc = iter.barrier_reloc();
@@ -3882,7 +3912,10 @@ const char* nmethod::nmethod_section_label(address pos) const {
   const char* label = nullptr;
   if (pos == code_begin())                                              label = "[Instructions begin]";
   if (pos == entry_point())                                             label = "[Entry Point]";
+  if (pos == inline_entry_point())                                      label = "[Inline Entry Point]";
   if (pos == verified_entry_point())                                    label = "[Verified Entry Point]";
+  if (pos == verified_inline_entry_point())                             label = "[Verified Inline Entry Point]";
+  if (pos == verified_inline_ro_entry_point())                          label = "[Verified Inline Entry Point (RO)]";
   if (pos == consts_begin() && pos != insts_begin())                    label = "[Constants]";
   // Check stub_code before checking exception_handler or deopt_handler.
   if (pos == this->stub_begin())                                        label = "[Stub Code]";
@@ -3891,105 +3924,147 @@ const char* nmethod::nmethod_section_label(address pos) const {
   return label;
 }
 
+static int maybe_print_entry_label(outputStream* stream, address pos, address entry, const char* label) {
+  if (pos == entry) {
+    stream->bol();
+    stream->print_cr("%s", label);
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
 void nmethod::print_nmethod_labels(outputStream* stream, address block_begin, bool print_section_labels) const {
   if (print_section_labels) {
-    const char* label = nmethod_section_label(block_begin);
-    if (label != nullptr) {
-      stream->bol();
-      stream->print_cr("%s", label);
+    int n = 0;
+    // Multiple entry points may be at the same position. Print them all.
+    n += maybe_print_entry_label(stream, block_begin, entry_point(),                    "[Entry Point]");
+    n += maybe_print_entry_label(stream, block_begin, inline_entry_point(),             "[Inline Entry Point]");
+    n += maybe_print_entry_label(stream, block_begin, verified_entry_point(),           "[Verified Entry Point]");
+    n += maybe_print_entry_label(stream, block_begin, verified_inline_entry_point(),    "[Verified Inline Entry Point]");
+    n += maybe_print_entry_label(stream, block_begin, verified_inline_ro_entry_point(), "[Verified Inline Entry Point (RO)]");
+    if (n == 0) {
+      const char* label = nmethod_section_label(block_begin);
+      if (label != nullptr) {
+        stream->bol();
+        stream->print_cr("%s", label);
+      }
     }
   }
 
-  if (block_begin == entry_point()) {
-    Method* m = method();
-    if (m != nullptr) {
-      stream->print("  # ");
-      m->print_value_on(stream);
-      stream->cr();
+  Method* m = method();
+  if (m == nullptr || is_osr_method()) {
+    return;
+  }
+
+  // Print the name of the method (only once)
+  address low = MIN3(entry_point(),
+                     verified_entry_point(),
+                     inline_entry_point());
+  // The verified inline entry point and verified inline RO entry point are not always
+  // used. When they are unused. CodeOffsets::Verified_Inline_Entry(_RO) is -1. Hence,
+  // the calculated entry point is smaller than the block they are offsetting into.
+  if (verified_inline_entry_point() >= block_begin) {
+    low = MIN2(low, verified_inline_entry_point());
+  }
+  if (verified_inline_ro_entry_point() >= block_begin) {
+    low = MIN2(low, verified_inline_ro_entry_point());
+  }
+  assert(low != nullptr, "sanity");
+  if (block_begin == low) {
+    stream->print("  # ");
+    m->print_value_on(stream);
+    stream->cr();
+  }
+
+  // Print the arguments for the 3 types of verified entry points
+  CompiledEntrySignature ces(m);
+  ces.compute_calling_conventions(false);
+  const GrowableArray<SigEntry>* sig_cc;
+  const VMRegPair* regs;
+  if (block_begin == verified_entry_point()) {
+    sig_cc = ces.sig_cc();
+    regs = ces.regs_cc();
+  } else if (block_begin == verified_inline_entry_point()) {
+    sig_cc = ces.sig();
+    regs = ces.regs();
+  } else if (block_begin == verified_inline_ro_entry_point()) {
+    sig_cc = ces.sig_cc_ro();
+    regs = ces.regs_cc_ro();
+  } else {
+    return;
+  }
+
+  bool has_this = !m->is_static();
+  if (ces.has_inline_recv() && block_begin == verified_entry_point()) {
+    // <this> argument is scalarized for verified_entry_point()
+    has_this = false;
+  }
+  const char* spname = "sp"; // make arch-specific?
+  int stack_slot_offset = this->frame_size() * wordSize;
+  int tab1 = 14, tab2 = 24;
+  int sig_index = 0;
+  int arg_index = has_this ? -1 : 0;
+  bool did_old_sp = false;
+  for (ExtendedSignature sig = ExtendedSignature(sig_cc, SigEntryFilter()); !sig.at_end(); ++sig) {
+    bool at_this = (arg_index == -1);
+    bool at_old_sp = false;
+    BasicType t = (*sig)._bt;
+    if (at_this) {
+      stream->print("  # this: ");
+    } else {
+      stream->print("  # parm%d: ", arg_index);
     }
-    if (m != nullptr && !is_osr_method()) {
-      ResourceMark rm;
-      int sizeargs = m->size_of_parameters();
-      BasicType* sig_bt = NEW_RESOURCE_ARRAY(BasicType, sizeargs);
-      VMRegPair* regs   = NEW_RESOURCE_ARRAY(VMRegPair, sizeargs);
-      {
-        int sig_index = 0;
-        if (!m->is_static())
-          sig_bt[sig_index++] = T_OBJECT; // 'this'
-        for (SignatureStream ss(m->signature()); !ss.at_return_type(); ss.next()) {
-          BasicType t = ss.type();
-          sig_bt[sig_index++] = t;
-          if (type2size[t] == 2) {
-            sig_bt[sig_index++] = T_VOID;
-          } else {
-            assert(type2size[t] == 1, "size is 1 or 2");
-          }
-        }
-        assert(sig_index == sizeargs, "");
+    stream->move_to(tab1);
+    VMReg fst = regs[sig_index].first();
+    VMReg snd = regs[sig_index].second();
+    if (fst->is_reg()) {
+      stream->print("%s", fst->name());
+      if (snd->is_valid())  {
+        stream->print(":%s", snd->name());
       }
-      const char* spname = "sp"; // make arch-specific?
-      SharedRuntime::java_calling_convention(sig_bt, regs, sizeargs);
-      int stack_slot_offset = this->frame_size() * wordSize;
-      int tab1 = 14, tab2 = 24;
-      int sig_index = 0;
-      int arg_index = (m->is_static() ? 0 : -1);
-      bool did_old_sp = false;
-      for (SignatureStream ss(m->signature()); !ss.at_return_type(); ) {
-        bool at_this = (arg_index == -1);
-        bool at_old_sp = false;
-        BasicType t = (at_this ? T_OBJECT : ss.type());
-        assert(t == sig_bt[sig_index], "sigs in sync");
-        if (at_this)
-          stream->print("  # this: ");
-        else
-          stream->print("  # parm%d: ", arg_index);
-        stream->move_to(tab1);
-        VMReg fst = regs[sig_index].first();
-        VMReg snd = regs[sig_index].second();
-        if (fst->is_reg()) {
-          stream->print("%s", fst->name());
-          if (snd->is_valid())  {
-            stream->print(":%s", snd->name());
-          }
-        } else if (fst->is_stack()) {
-          int offset = fst->reg2stack() * VMRegImpl::stack_slot_size + stack_slot_offset;
-          if (offset == stack_slot_offset)  at_old_sp = true;
-          stream->print("[%s+0x%x]", spname, offset);
-        } else {
-          stream->print("reg%d:%d??", (int)(intptr_t)fst, (int)(intptr_t)snd);
-        }
-        stream->print(" ");
-        stream->move_to(tab2);
-        stream->print("= ");
-        if (at_this) {
-          m->method_holder()->print_value_on(stream);
-        } else {
-          bool did_name = false;
-          if (!at_this && ss.is_reference()) {
-            Symbol* name = ss.as_symbol();
-            name->print_value_on(stream);
-            did_name = true;
-          }
-          if (!did_name)
-            stream->print("%s", type2name(t));
-        }
-        if (at_old_sp) {
-          stream->print("  (%s of caller)", spname);
-          did_old_sp = true;
-        }
-        stream->cr();
-        sig_index += type2size[t];
-        arg_index += 1;
-        if (!at_this)  ss.next();
+    } else if (fst->is_stack()) {
+      int offset = fst->reg2stack() * VMRegImpl::stack_slot_size + stack_slot_offset;
+      if (offset == stack_slot_offset)  at_old_sp = true;
+      stream->print("[%s+0x%x]", spname, offset);
+    } else {
+      stream->print("reg%d:%d??", (int)(intptr_t)fst, (int)(intptr_t)snd);
+    }
+    stream->print(" ");
+    stream->move_to(tab2);
+    stream->print("= ");
+    if (at_this) {
+      m->method_holder()->print_value_on(stream);
+    } else {
+      bool did_name = false;
+      if (is_reference_type(t) && !(*sig)._vt_oop) {
+        Symbol* name = (*sig)._name;
+        name->print_value_on(stream);
+        did_name = true;
       }
-      if (!did_old_sp) {
-        stream->print("  # ");
-        stream->move_to(tab1);
-        stream->print("[%s+0x%x]", spname, stack_slot_offset);
-        stream->print("  (%s of caller)", spname);
-        stream->cr();
+      if (!did_name)
+        stream->print("%s", type2name(t));
+      if ((*sig)._null_marker) {
+        stream->print(" (null marker)");
+      }
+      if ((*sig)._vt_oop) {
+        stream->print(" (VT OOP)");
       }
     }
+    if (at_old_sp) {
+      stream->print("  (%s of caller)", spname);
+      did_old_sp = true;
+    }
+    stream->cr();
+    sig_index += type2size[t];
+    arg_index += 1;
+  }
+  if (!did_old_sp) {
+    stream->print("  # ");
+    stream->move_to(tab1);
+    stream->print("[%s+0x%x]", spname, stack_slot_offset);
+    stream->print("  (%s of caller)", spname);
+    stream->cr();
   }
 }
 
@@ -4108,7 +4183,7 @@ void nmethod::print_code_comment_on(outputStream* st, int column, address begin,
           break;
         }
       }
-      st->print(" {reexecute=%d rethrow=%d return_oop=%d}", sd->should_reexecute(), sd->rethrow_exception(), sd->return_oop());
+      st->print(" {reexecute=%d rethrow=%d return_oop=%d return_scalarized=%d}", sd->should_reexecute(), sd->rethrow_exception(), sd->return_oop(), sd->return_scalarized());
     }
 
     // Print all scopes

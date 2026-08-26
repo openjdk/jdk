@@ -51,7 +51,7 @@ public class AOTCodeCompressedOopsTest {
         {
             Tester t = new Tester();
             t.setHeapConfig(Tester.RunMode.ASSEMBLY, true, true);
-            t.runAOTAssemblyWorkflow();
+            t.runAOTTrainingAndAssemblyWorkflow();
             t.setHeapConfig(Tester.RunMode.PRODUCTION, true, true);
             t.productionRun();
             t.setHeapConfig(Tester.RunMode.PRODUCTION, true, false);
@@ -62,7 +62,7 @@ public class AOTCodeCompressedOopsTest {
         {
             Tester t = new Tester();
             t.setHeapConfig(Tester.RunMode.ASSEMBLY, true, false);
-            t.runAOTAssemblyWorkflow();
+            t.runAOTTrainingAndAssemblyWorkflow();
             t.setHeapConfig(Tester.RunMode.PRODUCTION, true, true);
             t.productionRun();
             t.setHeapConfig(Tester.RunMode.PRODUCTION, true, false);
@@ -73,7 +73,7 @@ public class AOTCodeCompressedOopsTest {
         {
             Tester t = new Tester();
             t.setHeapConfig(Tester.RunMode.ASSEMBLY, false, false);
-            t.runAOTAssemblyWorkflow();
+            t.runAOTTrainingAndAssemblyWorkflow();
             t.setHeapConfig(Tester.RunMode.PRODUCTION, true, true);
             t.productionRun();
             t.setHeapConfig(Tester.RunMode.PRODUCTION, true, false);
@@ -125,7 +125,10 @@ public class AOTCodeCompressedOopsTest {
             switch (runMode) {
             case RunMode.ASSEMBLY: {
                     List<String> args = getVMArgsForHeapConfig(zeroBaseInAsmPhase, zeroShiftInAsmPhase);
+                    // By default CDSAppTester adds -XX:+AOTCompatibleOopCompression option,
+                    // which defeats the purpose of this test. So disable this option.
                     args.addAll(List.of("-XX:+UnlockDiagnosticVMOptions",
+                                        "-XX:-AOTCompatibleOopCompression",
                                         "-Xlog:aot=info",
                                         "-Xlog:aot+codecache+init=debug",
                                         "-Xlog:aot+codecache+exit=debug"));

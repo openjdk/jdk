@@ -69,7 +69,7 @@ public:
 
   // Returns true if the young generation is configured to enqueue old
   // oops for the old generation mark queues.
-  bool is_bootstrap_cycle() const {
+  bool is_old_marking_active() const {
     return _old_gen_task_queues != nullptr;
   }
 

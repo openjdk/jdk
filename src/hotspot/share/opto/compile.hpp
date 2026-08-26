@@ -32,6 +32,7 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "compiler/compilerEvent.hpp"
+#include "compiler/stress.hpp"
 #include "libadt/dict.hpp"
 #include "libadt/vectset.hpp"
 #include "memory/resourceArea.hpp"
@@ -45,6 +46,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/vmThread.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/ticks.hpp"
 #include "utilities/vmEnums.hpp"
 
@@ -53,6 +55,7 @@ class AddPNode;
 class Block;
 class Bundle;
 class CallGenerator;
+class CallNode;
 class CallStaticJavaNode;
 class CloneMap;
 class CompilationFailureInfo;
@@ -97,10 +100,11 @@ class TypeVect;
 class Type_Array;
 class Unique_Node_List;
 class UnstableIfTrap;
+class InlineTypeNode;
 class nmethod;
 class Node_Stack;
 struct Final_Reshape_Counts;
-class VerifyMeetResult;
+class VerifyMeetJoinResult;
 
 enum LoopOptsMode {
   LoopOptsDefault,
@@ -336,6 +340,7 @@ class Compile : public Phase {
   bool                  _major_progress;
   bool                  _inlining_progress;     // progress doing incremental inlining?
   bool                  _inlining_incrementally;// Are we doing incremental inlining (post parse)
+  bool                  _strength_reduction;    // Are we doing strength reduction to direct call
   bool                  _do_cleanup;            // Cleanup is needed before proceeding with incremental inlining
   bool                  _has_loops;             // True if the method _may_ have some loops
   bool                  _has_split_ifs;         // True if the method _may_ have some split-if
@@ -343,6 +348,8 @@ class Compile : public Phase {
   bool                  _has_stringbuilder;     // True StringBuffers or StringBuilders are allocated
   bool                  _has_boxed_value;       // True if a boxed object is allocated
   bool                  _has_reserved_stack_access; // True if the method or an inlined method is annotated with ReservedStackAccess
+  bool                  _has_circular_inline_type; // True if method loads an inline type with a circular, non-flat field
+  bool                  _needs_nm_slot;         // True if an extra stack slot is needed to hold the null marker at scalarized returns
   uint                  _max_vector_size;       // Maximum size of generated vectors
   bool                  _clear_upper_avx;       // Clear upper bits of ymm registers using vzeroupper
   uint                  _trap_hist[trapHistLength];  // Cumulative traps
@@ -370,7 +377,9 @@ class Compile : public Phase {
   bool                  _has_scoped_access;     // For shared scope closure
   bool                  _clinit_barrier_on_entry; // True if clinit barrier is needed on nmethod entry
   int                   _loop_opts_cnt;         // loop opts round
-  uint                  _stress_seed;           // Seed for stress testing
+  bool                  _has_flat_accesses;     // Any known flat array accesses?
+  bool                  _flat_accesses_share_alias; // Initially all flat array share a single slice
+  bool                  _scalarize_in_safepoints; // Scalarize inline types in safepoint debug info
 
   // Compilation environment.
   Arena                 _comp_arena;            // Arena with lifetime equivalent to Compile
@@ -389,10 +398,14 @@ class Compile : public Phase {
   GrowableArray<Node*>  _expensive_nodes;       // List of nodes that are expensive to compute and that we'd better not let the GVN freely common
   GrowableArray<ReachabilityFenceNode*> _reachability_fences; // List of reachability fences
   GrowableArray<Node*>  _for_post_loop_igvn;    // List of nodes for IGVN after loop opts are over
+  GrowableArray<Node*>  _inline_type_nodes;     // List of InlineType nodes
+  GrowableArray<Node*>  _flat_access_nodes;     // List of LoadFlat and StoreFlat nodes
   GrowableArray<Node*>  _for_merge_stores_igvn; // List of nodes for IGVN merge stores
   GrowableArray<UnstableIfTrap*> _unstable_if_traps;        // List of ifnodes after IGVN
   GrowableArray<Node_List*> _coarsened_locks;   // List of coarsened Lock and Unlock nodes
   ConnectionGraph*      _congraph;
+
+  Stress                _stress;
 #ifndef PRODUCT
   IdealGraphPrinter*    _igv_printer;
   static IdealGraphPrinter* _debug_file_printer;
@@ -602,6 +615,8 @@ public:
   bool              inlining_progress() const   { return _inlining_progress; }
   void          set_inlining_incrementally(bool z) { _inlining_incrementally = z; }
   bool              inlining_incrementally() const { return _inlining_incrementally; }
+  void          set_strength_reduction(bool z)  { _strength_reduction = z; }
+  bool              strength_reduction() const  { return _strength_reduction; }
   void          set_do_cleanup(bool z)          { _do_cleanup = z; }
   bool              do_cleanup() const          { return _do_cleanup; }
   bool              major_progress() const      { return _major_progress; }
@@ -624,6 +639,8 @@ public:
   void          set_has_boxed_value(bool z)     { _has_boxed_value = z; }
   bool              has_reserved_stack_access() const { return _has_reserved_stack_access; }
   void          set_has_reserved_stack_access(bool z) { _has_reserved_stack_access = z; }
+  bool              has_circular_inline_type() const { return _has_circular_inline_type; }
+  void          set_has_circular_inline_type(bool z) { _has_circular_inline_type = z; }
   uint              max_vector_size() const     { return _max_vector_size; }
   void          set_max_vector_size(uint s)     { _max_vector_size = s; }
   bool              clear_upper_avx() const     { return _clear_upper_avx; }
@@ -658,6 +675,18 @@ public:
   void       set_node_count_inlining_cutoff(uint n) { _node_count_inlining_cutoff = n; }
   bool              clinit_barrier_on_entry()       { return _clinit_barrier_on_entry; }
   void          set_clinit_barrier_on_entry(bool z) { _clinit_barrier_on_entry = z; }
+  void          set_flat_accesses()              { _has_flat_accesses = true; }
+  bool          flat_accesses_share_alias() const { return _flat_accesses_share_alias; }
+  void          set_flat_accesses_share_alias(bool z) { _flat_accesses_share_alias = z; }
+  bool          scalarize_in_safepoints() const { return _scalarize_in_safepoints; }
+  void          set_scalarize_in_safepoints(bool z) { _scalarize_in_safepoints = z; }
+
+  // Support for scalarized inline type calling convention
+  bool              has_scalarized_args() const  { return _method != nullptr && _method->has_scalarized_args(); }
+  bool              needs_stack_repair()  const  { return _method != nullptr && _method->needs_stack_repair(); }
+  bool              needs_nm_slot()       const  { return _needs_nm_slot; }
+  void          set_needs_nm_slot(bool v)        { _needs_nm_slot = v; }
+
   bool              has_monitors() const         { return _has_monitors; }
   void          set_has_monitors(bool v)         { _has_monitors = v; }
   bool              has_scoped_access() const    { return _has_scoped_access; }
@@ -687,6 +716,8 @@ public:
   void end_method();
 
   void print_method(CompilerPhaseType compile_phase, int level, Node* n = nullptr);
+
+  Stress& stress() { return _stress; }
 
 #ifndef PRODUCT
   bool should_print_igv(int level);
@@ -798,6 +829,27 @@ public:
   void record_for_post_loop_opts_igvn(Node* n);
   void remove_from_post_loop_opts_igvn(Node* n);
   void process_for_post_loop_opts_igvn(PhaseIterGVN& igvn);
+
+  // Keep track of inline type nodes for later processing
+  void add_inline_type(Node* n);
+  void remove_inline_type(Node* n);
+
+  bool clear_argument_if_only_used_as_buffer_at_calls(Node* result_cast, PhaseIterGVN& igvn);
+
+  void process_inline_types(PhaseIterGVN &igvn, bool remove = false);
+
+  void add_flat_access(Node* n);
+  void remove_flat_access(Node* n);
+  void process_flat_accesses(PhaseIterGVN& igvn);
+
+  template <class F>
+  void for_each_flat_access(F consumer) {
+    for (int i = _flat_access_nodes.length() - 1; i >= 0; i--) {
+      consumer(_flat_access_nodes.at(i));
+    }
+  }
+
+  void adjust_flat_array_access_aliases(PhaseIterGVN& igvn);
 
   void record_unstable_if_trap(UnstableIfTrap* trap);
   bool remove_unstable_if_trap(CallStaticJavaNode* unc, bool yield);
@@ -982,11 +1034,11 @@ public:
   }
 
   AliasType*        alias_type(int                idx)  { assert(idx < num_alias_types(), "oob"); return _alias_types[idx]; }
-  AliasType*        alias_type(const TypePtr* adr_type, ciField* field = nullptr) { return find_alias_type(adr_type, false, field); }
+  AliasType*        alias_type(const TypePtr* adr_type, ciField* field = nullptr, bool uncached = false) { return find_alias_type(adr_type, false, field, uncached); }
   bool         have_alias_type(const TypePtr* adr_type);
   AliasType*        alias_type(ciField*         field);
 
-  int               get_alias_index(const TypePtr* at)  { return alias_type(at)->index(); }
+  int               get_alias_index(const TypePtr* at, bool uncached = false) { return alias_type(at, nullptr, uncached)->index(); }
   const TypePtr*    get_adr_type(uint aidx)             { return alias_type(aidx)->adr_type(); }
   int               get_general_index(uint aidx)        { return alias_type(aidx)->general_index(); }
 
@@ -1079,7 +1131,7 @@ public:
     if (StressIncrementalInlining) {
       assert(_late_inlines_pos < _late_inlines.length(), "unthinkable!");
       if (_late_inlines.length() - _late_inlines_pos >= 2) {
-        int j = (C->random() % (_late_inlines.length() - _late_inlines_pos)) + _late_inlines_pos;
+        int j = (C->stress().random() % (_late_inlines.length() - _late_inlines_pos)) + _late_inlines_pos;
         swap(_late_inlines.at(_late_inlines_pos), _late_inlines.at(j));
       }
     }
@@ -1130,7 +1182,7 @@ public:
   bool inline_incrementally_one();
   void inline_incrementally_cleanup(PhaseIterGVN& igvn);
   void inline_incrementally(PhaseIterGVN& igvn);
-  bool should_stress_inlining() { return StressIncrementalInlining && (random() % 2) == 0; }
+  bool should_stress_inlining() { return StressIncrementalInlining && (stress().random() % 2) == 0; }
   bool should_delay_inlining() { return AlwaysIncrementalInline || should_stress_inlining(); }
   void inline_string_calls(bool parse_time);
   void inline_boxing_calls(PhaseIterGVN& igvn);
@@ -1237,7 +1289,7 @@ public:
   void grow_alias_types();
   AliasCacheEntry* probe_alias_cache(const TypePtr* adr_type);
   const TypePtr *flatten_alias_type(const TypePtr* adr_type) const;
-  AliasType* find_alias_type(const TypePtr* adr_type, bool no_create, ciField* field);
+  AliasType* find_alias_type(const TypePtr* adr_type, bool no_create, ciField* field, bool uncached = false);
 
   void verify_top(Node*) const PRODUCT_RETURN;
 
@@ -1257,6 +1309,7 @@ public:
   void final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& frc, uint nop, Unique_Node_List& dead_nodes);
   void final_graph_reshaping_walk(Node_Stack& nstack, Node* root, Final_Reshape_Counts& frc, Unique_Node_List& dead_nodes);
   void handle_div_mod_op(Node* n, BasicType bt, bool is_unsigned);
+  void handle_mulhi_mul_op(Node* n, bool is_unsigned);
 
   // Logic cone optimization.
   void optimize_logic_cones(PhaseIterGVN &igvn);
@@ -1330,13 +1383,6 @@ public:
   // Convert integer value to a narrowed long type dependent on ctrl (for example, a range check)
   static Node* constrained_convI2L(PhaseGVN* phase, Node* value, const TypeInt* itype, Node* ctrl, bool carry_dependency = false);
 
-  // Auxiliary methods for randomized fuzzing/stressing
-  int random();
-  bool randomized_select(int count);
-
-  // seed random number generation and log the seed for repeatability.
-  void initialize_stress_seed(const DirectiveSet* directive);
-
   // supporting clone_map
   CloneMap&     clone_map();
   void          set_clone_map(Dict* d);
@@ -1346,7 +1392,7 @@ public:
   bool needs_clinit_barrier(ciInstanceKlass* ik, ciMethod* accessing_method);
 
 #ifdef ASSERT
-  VerifyMeetResult* _type_verify;
+  VerifyMeetJoinResult* _type_verify;
   void set_exception_backedge() { _exception_backedge = true; }
   bool has_exception_backedge() const { return _exception_backedge; }
 #endif

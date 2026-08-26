@@ -84,12 +84,12 @@ public class MOptionTest extends ModuleTestBase {
                 .run(Task.Expect.SUCCESS)
                 .writeAll();
 
-        if (!moduleInfoTimeStamp.equals(Files.getLastModifiedTime(moduleInfoClass))) {
-            throw new AssertionError("Classfile update!");
+        if (Files.getLastModifiedTime(moduleInfoClass).compareTo(moduleInfoTimeStamp) <= 0) {
+            throw new AssertionError("Classfile too old!");
         }
 
-        if (!testTestTimeStamp.equals(Files.getLastModifiedTime(testTestClass))) {
-            throw new AssertionError("Classfile update!");
+        if (Files.getLastModifiedTime(testTestClass).compareTo(Files.getLastModifiedTime(testTest)) < 0) {
+            throw new AssertionError("Classfiles too old!");
         }
 
         // Date back the source file by one second compared to the current time.
@@ -102,8 +102,8 @@ public class MOptionTest extends ModuleTestBase {
                 .run(Task.Expect.SUCCESS)
                 .writeAll();
 
-        if (!moduleInfoTimeStamp.equals(Files.getLastModifiedTime(moduleInfoClass))) {
-            throw new AssertionError("Classfile update!");
+        if (Files.getLastModifiedTime(moduleInfoClass).compareTo(moduleInfoTimeStamp) <= 0) {
+            throw new AssertionError("Classfile too old!");
         }
 
         if (Files.getLastModifiedTime(testTestClass).compareTo(Files.getLastModifiedTime(testTest)) < 0) {
@@ -219,20 +219,20 @@ public class MOptionTest extends ModuleTestBase {
                 .run(Task.Expect.SUCCESS)
                 .writeAll();
 
-        if (!m1ModuleInfoTimeStamp.equals(Files.getLastModifiedTime(m1ModuleInfoClass))) {
-            throw new AssertionError("Classfile update!");
+        if (Files.getLastModifiedTime(m1ModuleInfoClass).compareTo(m1ModuleInfoTimeStamp) <= 0) {
+            throw new AssertionError("Classfile too old!");
         }
 
-        if (!m2ModuleInfoTimeStamp.equals(Files.getLastModifiedTime(m2ModuleInfoClass))) {
-            throw new AssertionError("Classfile update!");
+        if (Files.getLastModifiedTime(m2ModuleInfoClass).compareTo(m2ModuleInfoTimeStamp) <= 0) {
+            throw new AssertionError("Classfile too old!");
         }
 
-        if (!C1TimeStamp.equals(Files.getLastModifiedTime(classC1))) {
-            throw new AssertionError("Classfile update!");
+        if (Files.getLastModifiedTime(classC1).compareTo(Files.getLastModifiedTime(C1Source)) < 0) {
+            throw new AssertionError("Classfiles too old!");
         }
 
-        if (!C2TimeStamp.equals(Files.getLastModifiedTime(classC2))) {
-            throw new AssertionError("Classfile update!");
+        if (Files.getLastModifiedTime(classC2).compareTo(Files.getLastModifiedTime(C2Source)) < 0) {
+            throw new AssertionError("Classfiles too old!");
         }
 
         // Date back the source file by one second compared to the current time.
@@ -246,12 +246,12 @@ public class MOptionTest extends ModuleTestBase {
                 .run(Task.Expect.SUCCESS)
                 .writeAll();
 
-        if (!m1ModuleInfoTimeStamp.equals(Files.getLastModifiedTime(m1ModuleInfoClass))) {
-            throw new AssertionError("Classfile update!");
+        if (Files.getLastModifiedTime(m1ModuleInfoClass).compareTo(m1ModuleInfoTimeStamp) <= 0) {
+            throw new AssertionError("Classfile too old!");
         }
 
-        if (!m2ModuleInfoTimeStamp.equals(Files.getLastModifiedTime(m2ModuleInfoClass))) {
-            throw new AssertionError("Classfile update!");
+        if (Files.getLastModifiedTime(m2ModuleInfoClass).compareTo(m2ModuleInfoTimeStamp) <= 0) {
+            throw new AssertionError("Classfile too old!");
         }
 
         if (Files.getLastModifiedTime(classC1).compareTo(Files.getLastModifiedTime(C1Source)) < 0) {

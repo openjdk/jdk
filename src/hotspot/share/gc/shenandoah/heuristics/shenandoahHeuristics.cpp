@@ -30,6 +30,7 @@
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
+#include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahTrace.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "logging/log.hpp"
@@ -151,7 +152,10 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
 
   if (immediate_percent <= ShenandoahImmediateThreshold) {
     choose_collection_set_from_regiondata(collection_set, candidates, cand_idx, immediate_garbage + free);
+  } else {
+    prepare_for_abbreviated_cycle();
   }
+
   collection_set->summarize(total_garbage, immediate_garbage, immediate_regions);
   ShenandoahTracer::report_evacuation_info(collection_set, free_regions, immediate_regions, immediate_garbage);
 }
@@ -259,7 +263,15 @@ void ShenandoahHeuristics::record_success_concurrent() {
   adjust_penalty(Concurrent_Adjust);
 }
 
-void ShenandoahHeuristics::record_degenerated() {
+void ShenandoahHeuristics::record_degenerated(bool is_generational_global) {
+
+  if (!is_generational_global) {
+    // We don't penalize generational GC heuristics for global GC because heuristics predict based on assumption of young GC.
+    _most_recent_declined_trigger_count = _declined_trigger_count;
+    _declined_trigger_count = 0;
+  } else {
+    _most_recent_declined_trigger_count = _declined_trigger_count = 0;
+  }
   adjust_penalty(Degenerated_Penalty);
 }
 
@@ -272,9 +284,7 @@ void ShenandoahHeuristics::record_allocation_failure_gc() {
 }
 
 void ShenandoahHeuristics::record_requested_gc() {
-  // Assume users call System.gc() when external state changes significantly,
-  // which forces us to re-learn the GC timings and allocation rates.
-  _gc_times_learned = 0;
+  // Do nothing.
 }
 
 bool ShenandoahHeuristics::can_unload_classes() {

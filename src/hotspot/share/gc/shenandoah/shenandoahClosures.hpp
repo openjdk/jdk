@@ -71,7 +71,7 @@ private:
   bool _weak;
 
 protected:
-  template <class T, ShenandoahGenerationType GENERATION>
+  template <class T, ShenandoahGenerationType GENERATION, bool REDIRTY>
   void work(T *p);
 
 public:
@@ -95,14 +95,35 @@ template <ShenandoahGenerationType GENERATION>
 class ShenandoahMarkRefsClosure : public ShenandoahMarkRefsSuperClosure {
 private:
   template <class T>
-  inline void do_oop_work(T* p)     { work<T, GENERATION>(p); }
+  ALWAYSINLINE
+  void do_oop_work(T* p) { work<T, GENERATION, false>(p); }
 
 public:
   ShenandoahMarkRefsClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp, ShenandoahObjToScanQueue* old_q) :
           ShenandoahMarkRefsSuperClosure(q, rp, old_q) {};
 
-  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
-  virtual void do_oop(oop* p)       { do_oop_work(p); }
+  ALWAYSINLINE
+  void do_oop(narrowOop* p) override { do_oop_work(p); }
+
+  ALWAYSINLINE
+  void do_oop(oop* p) override { do_oop_work(p); }
+};
+
+class ShenandoahRedirtyCardsMarkClosure : public ShenandoahMarkRefsSuperClosure {
+private:
+  template <class T>
+  ALWAYSINLINE
+  void do_oop_work(T* p) { work<T, YOUNG, true>(p); }
+
+public:
+  ShenandoahRedirtyCardsMarkClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp, ShenandoahObjToScanQueue* old_q)
+    : ShenandoahMarkRefsSuperClosure(q, rp, old_q) {}
+
+  ALWAYSINLINE
+  void do_oop(narrowOop* p) override { do_oop_work(p); }
+
+  ALWAYSINLINE
+  void do_oop(oop* p) override { do_oop_work(p); }
 };
 
 class ShenandoahForwardedIsAliveClosure : public BoolObjectClosure {
@@ -252,5 +273,17 @@ public:
   inline void do_oop(oop* p);
 };
 #endif // ASSERT
+
+class ShenandoahMultiThreadClosure : public ThreadClosure {
+  ThreadClosure& _cl1;
+  ThreadClosure& _cl2;
+public:
+  ShenandoahMultiThreadClosure(ThreadClosure& cl1, ThreadClosure& cl2) :
+    _cl1(cl1), _cl2(cl2) {}
+  inline void do_thread(Thread* thread) override {
+    _cl1.do_thread(thread);
+    _cl2.do_thread(thread);
+  }
+};
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHCLOSURES_HPP

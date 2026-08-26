@@ -316,6 +316,7 @@ final class LazyConstantTest {
         int interrupted = 1;
         AtomicInteger observedInterrupted = new AtomicInteger(unset);
         CountDownLatch supplierRunning = new CountDownLatch(1);
+        CountDownLatch interruptOccured = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
 
         LazyConstant<Integer> constant = LazyConstant.of(() -> {
@@ -325,22 +326,33 @@ final class LazyConstantTest {
             } catch (InterruptedException e) {
                 observedInterrupted.set(Thread.currentThread().isInterrupted() ? interrupted : notInterrupted);
                 Thread.currentThread().interrupt(); // restore if await cleared it
+                interruptOccured.countDown();
             }
             return VALUE;
         });
 
         AtomicInteger interruptedAfterGet = new AtomicInteger(unset);
 
-        Thread t = Thread.ofPlatform().start(() -> {
-            assertEquals(VALUE, constant.get());
-            interruptedAfterGet.set(Thread.currentThread().isInterrupted() ? interrupted : notInterrupted);
-        });
+        Thread t = null;
+        try {
+            t = Thread.ofPlatform().start(() -> {
+                assertEquals(VALUE, constant.get());
+                interruptedAfterGet.set(Thread.currentThread().isInterrupted() ? interrupted : notInterrupted);
+            });
 
-        assertTrue(supplierRunning.await(TIME_OUT_S, TimeUnit.SECONDS));
-        Thread.sleep(OVERLAP_TIME_MS);
-        t.interrupt();
-        release.countDown();
-        t.join();
+            assertTrue(supplierRunning.await(TIME_OUT_S, TimeUnit.SECONDS));
+            t.interrupt();
+            assertTrue(interruptOccured.await(TIME_OUT_S, TimeUnit.SECONDS));
+        } finally {
+            // Safety net: if the test fails or is interrupted before the worker observes
+            // the interrupt, the latch is opened so the worker is not left parked
+            // until timeout and join has a chance to complete promptly.
+            release.countDown();
+            if (t != null) {
+                t.join(TimeUnit.SECONDS.toMillis(TIME_OUT_S));
+            }
+        }
+        assertFalse(t.isAlive());
 
         assertEquals(notInterrupted, observedInterrupted.get()); // Observed before restoration of the status
         assertEquals(interrupted, interruptedAfterGet.get(), "get() cleared interrupt status");
