@@ -177,8 +177,6 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   {
     // Call VM
     ZRuntimeCallSpill rcs(masm, dst);
-    //__ lgr_if_needed(Z_ARG1, dst);
-    //__ z_lgr(Z_ARG2, temp1);
     __ call_VM_leaf(ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr(decorators), dst, temp1);
   }
 
@@ -359,7 +357,7 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
 
     if (dest_uninitialized) {
       if (src == noreg) {
-        __ z_xgr(temp1, temp1);
+        __ clear_reg(temp1, true, false);
       } else {
         __ z_sllg(temp1, src, ZPointerLoadShift);
       }
@@ -637,7 +635,7 @@ void ZBarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembler* masm,
 
   // Check if the oop is bad, in which case we need to take the slow path.
   __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatMarkBadBeforeTest);
-  __ z_tmll(temp, barrier_Relocation::unpatched);
+  __ z_tmll(obj, barrier_Relocation::unpatched);
   __ branch_optimized(Assembler::bcondNotAllZero, slow_path);
 
   // Oop is okay, so we uncolor it.

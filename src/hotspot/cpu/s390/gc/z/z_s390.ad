@@ -195,7 +195,7 @@ instruct zCompareAndSwap(iRegI res, iRegP mem, iRegP oldval, iRegP newval, iRegP
 instruct zGetAndSetP(iRegP newval, iRegP mem, iRegP temp1, iRegP temp2, flagsReg cr) %{
   match(Set newval (GetAndSetP mem newval));
   predicate(UseZGC && n->as_LoadStore()->barrier_data() != 0);
-  effect(TEMP temp1, TEMP temp2, KILL cr);
+  effect(TEMP_DEF newval, TEMP temp1, TEMP temp2, KILL cr);
 
   format %{ "GetAndSetP   $newval,[$mem]\t # EXCHANGE (oop, atomic), temp $temp1" %}
 
