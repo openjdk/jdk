@@ -954,9 +954,12 @@ void ShenandoahHeapRegion::partially_recycle() {
 
   // Reset some of the region states that would be cleared if this region was completely recycled
   const HeapWord* old_top = top();
+  _top_at_evac_start = _bottom;
+  _mixed_candidate_garbage_words = 0;
   clear_live_data();
   reset_alloc_metadata();
   heap->marking_context()->reset_top_at_mark_start(this);
+  set_update_watermark(bottom());
   clear_has_self_forwards();
 
   // Adjust top to the end of our last encountered self-forwarded object. Everything above this is reusable memory.
