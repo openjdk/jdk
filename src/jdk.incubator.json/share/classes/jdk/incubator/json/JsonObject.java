@@ -53,23 +53,19 @@ import jdk.incubator.json.impl.JsonObjectImpl;
 public non-sealed interface JsonObject extends JsonValue {
 
     /**
-     * {@return an unmodifiable map of {@code String} to {@code JsonValue}}
-     * @implNote
-     * The JDK platform implementation of {@code JsonObject} preserves the
-     * encounter order of members. When a {@code JsonObject} is created by
-     * parsing, this corresponds to the order of members in the source JSON
-     * text. When created via the {@link #of(Map)} factory method, the order
-     * follows the encounter order of the provided map.
+     * {@inheritDoc}
+     *
+     * @implNote {@inheritDoc}
      */
     @Override
     Map<String, JsonValue> asMap();
 
     /**
-     * {@return the {@code JsonValue} associated with the given member name}
+     * {@inheritDoc}
      *
      * @param name {@inheritDoc}
-     * @throws JsonValueException if there is no association with the member name
      * @throws NullPointerException {@inheritDoc}
+     * @throws JsonValueException if there is no association with the member name
      */
     @Override
     default JsonValue get(String name) {
@@ -78,10 +74,7 @@ public non-sealed interface JsonObject extends JsonValue {
     }
 
     /**
-     * {@return an {@code Optional} containing the {@code JsonValue} associated
-     * with the given member name}
-     * If there is no association with the given member name, an empty
-     * {@code Optional} is returned.
+     * {@inheritDoc}
      *
      * @param name {@inheritDoc}
      * @throws NullPointerException {@inheritDoc}

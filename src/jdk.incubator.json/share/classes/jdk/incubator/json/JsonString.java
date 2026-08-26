@@ -85,9 +85,7 @@ public non-sealed interface JsonString extends JsonValue {
     String toString();
 
     /**
-     * {@return the {@code String} value represented by this {@code JsonString}}
-     * Any JSON escape sequences in this {@code JsonString} are converted to their
-     * unescaped form.
+     * {@inheritDoc}
      *
      * @see #toString()
      */
