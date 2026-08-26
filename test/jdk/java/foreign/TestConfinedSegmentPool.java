@@ -25,20 +25,20 @@
  * @test
  * @modules java.base/jdk.internal.foreign:+open java.base/jdk.internal.access java.base/jdk.internal.misc java.base/jdk.internal.util
  * @library /test/lib
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=-1 TestConfinedSegmentPool
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=0 TestConfinedSegmentPool
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=1 TestConfinedSegmentPool
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=2 TestConfinedSegmentPool
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=3 TestConfinedSegmentPool
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=4 TestConfinedSegmentPool
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=5 TestConfinedSegmentPool
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=6 TestConfinedSegmentPool
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=7 TestConfinedSegmentPool
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=20 TestConfinedSegmentPool
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.count=0 TestConfinedSegmentPool
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.count=1 TestConfinedSegmentPool
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.count=3 TestConfinedSegmentPool
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.count=-1 TestConfinedSegmentPool
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=-1 TestConfinedSegmentPool
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=0 TestConfinedSegmentPool
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=1 TestConfinedSegmentPool
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=2 TestConfinedSegmentPool
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=3 TestConfinedSegmentPool
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=4 TestConfinedSegmentPool
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=5 TestConfinedSegmentPool
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=6 TestConfinedSegmentPool
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=7 TestConfinedSegmentPool
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=20 TestConfinedSegmentPool
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.count=0 TestConfinedSegmentPool
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.count=1 TestConfinedSegmentPool
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.count=3 TestConfinedSegmentPool
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.count=-1 TestConfinedSegmentPool
  */
 
 import jdk.internal.access.JavaLangAccess;
@@ -76,7 +76,7 @@ final class TestConfinedSegmentPool {
     static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
     static final long POOLED_MEMORY_SIZE = ConfinedSegmentPool.pooledMemorySize();
     static final int THREAD_POOL_COUNT = configuredPowerOfTwo(
-            "java.lang.foreign.native.confined.pool.power.count", 0, 3, 2);
+            "jdk.internal.foreign.native.confined.pool.power.count", 0, 3, 2);
 
     static final boolean POOL_ACCOMMODATES_TWO_LONGS =
             isPoolEnabled() && POOLED_MEMORY_SIZE >= Long.BYTES * 2;

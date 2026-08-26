@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,14 @@ public class AllocFromTest extends CLayouts {
         }
     }
 
-    @Fork(jvmArgsAppend = {"-Djava.lang.foreign.native.confined.pool.power.size=-1"})
+    // Reserve jvmArgsAppend for OfVirtual; method-level append arguments take
+    // precedence over the append arguments declared by a subclass. Method-level
+    // jvmArgs replaces class-level jvmArgs, so repeat the required access options.
+    @Fork(jvmArgs = {
+            "--enable-native-access=ALL-UNNAMED",
+            "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED",
+            "-Djdk.internal.foreign.native.confined.pool.power.size=-1"
+    })
     @Benchmark
     public MemorySegment alloc_confined_no_pool() {
         try (Arena arena = Arena.ofConfined()) {

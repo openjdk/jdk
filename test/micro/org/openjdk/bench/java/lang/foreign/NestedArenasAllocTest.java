@@ -44,7 +44,13 @@ public class NestedArenasAllocTest {
     }
 
     @Benchmark
-    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.confined.pool.power.size=-1"})
+    // Reserve jvmArgsAppend for OfVirtual; method-level append arguments take
+    // precedence over the append arguments declared by a subclass. Method-level
+    // jvmArgs replaces class-level jvmArgs, so repeat the required access options.
+    @Fork(jvmArgs = {
+            "--enable-native-access=ALL-UNNAMED",
+            "-Djdk.internal.foreign.native.confined.pool.power.size=-1"
+    })
     public long alloc_confined_nested_no_pool() {
         return allocateNested();
     }

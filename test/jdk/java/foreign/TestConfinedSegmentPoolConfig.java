@@ -25,31 +25,31 @@
  * @test
  * @modules java.base/jdk.internal.foreign java.base/jdk.internal.access
  * @run junit                                                                           TestConfinedSegmentPoolConfig
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=0              TestConfinedSegmentPoolConfig
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=1              TestConfinedSegmentPoolConfig
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=2              TestConfinedSegmentPoolConfig
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=3              TestConfinedSegmentPoolConfig
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=4              TestConfinedSegmentPoolConfig
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=5              TestConfinedSegmentPoolConfig
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=6              TestConfinedSegmentPoolConfig
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=7              TestConfinedSegmentPoolConfig
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=20             TestConfinedSegmentPoolConfig
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=21             TestConfinedSegmentPoolConfig
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=24             TestConfinedSegmentPoolConfig
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=-1             TestConfinedSegmentPoolConfig
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=23847682736221 TestConfinedSegmentPoolConfig
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=TEXT           TestConfinedSegmentPoolConfig
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.count=0              TestConfinedSegmentPoolConfig
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.count=1              TestConfinedSegmentPoolConfig
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.count=2              TestConfinedSegmentPoolConfig
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.count=3              TestConfinedSegmentPoolConfig
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.count=4              TestConfinedSegmentPoolConfig
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.count=-1             TestConfinedSegmentPoolConfig
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.count=23847682736221 TestConfinedSegmentPoolConfig
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.count=TEXT           TestConfinedSegmentPoolConfig
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=0              TestConfinedSegmentPoolConfig
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=1              TestConfinedSegmentPoolConfig
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=2              TestConfinedSegmentPoolConfig
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=3              TestConfinedSegmentPoolConfig
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=4              TestConfinedSegmentPoolConfig
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=5              TestConfinedSegmentPoolConfig
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=6              TestConfinedSegmentPoolConfig
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=7              TestConfinedSegmentPoolConfig
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=20             TestConfinedSegmentPoolConfig
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=21             TestConfinedSegmentPoolConfig
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=24             TestConfinedSegmentPoolConfig
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=-1             TestConfinedSegmentPoolConfig
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=23847682736221 TestConfinedSegmentPoolConfig
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=TEXT           TestConfinedSegmentPoolConfig
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.count=0              TestConfinedSegmentPoolConfig
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.count=1              TestConfinedSegmentPoolConfig
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.count=2              TestConfinedSegmentPoolConfig
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.count=3              TestConfinedSegmentPoolConfig
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.count=4              TestConfinedSegmentPoolConfig
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.count=-1             TestConfinedSegmentPoolConfig
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.count=23847682736221 TestConfinedSegmentPoolConfig
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.count=TEXT           TestConfinedSegmentPoolConfig
  * @run junit/othervm -Dsun.nio.PageAlignDirectMemory=true
- *                    -Djava.lang.foreign.native.confined.pool.power.size=PAGE_ALIGN
- *                    -Djava.lang.foreign.native.confined.pool.power.count=PAGE_ALIGN
+ *                    -Djdk.internal.foreign.native.confined.pool.power.size=PAGE_ALIGN
+ *                    -Djdk.internal.foreign.native.confined.pool.power.count=PAGE_ALIGN
  *                    TestConfinedSegmentPoolConfig
  */
 
@@ -70,8 +70,8 @@ final class TestConfinedSegmentPoolConfig {
 
     static final int DISABLED = -1;
 
-    static final String POOLED_MEMORY_SIZE_PROPERTY = "java.lang.foreign.native.confined.pool.power.size";
-    static final String THREAD_POOL_COUNT_PROPERTY = "java.lang.foreign.native.confined.pool.power.count";
+    static final String POOLED_MEMORY_SIZE_PROPERTY = "jdk.internal.foreign.native.confined.pool.power.size";
+    static final String THREAD_POOL_COUNT_PROPERTY = "jdk.internal.foreign.native.confined.pool.power.count";
 
     @Test
     void configuration() throws Throwable {

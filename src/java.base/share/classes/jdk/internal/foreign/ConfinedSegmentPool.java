@@ -90,7 +90,7 @@ public final class ConfinedSegmentPool {
     // Internal tuning knob; no behavioral or compatibility guarantees are given.
     // A negative value disables pooling; otherwise the pool size is
     // 2^3, 2^4, ..., 2^20 bytes, defaulting to 2^6 = 64 bytes.
-    private static final String POOLED_MEMORY_SIZE_PROPERTY = "java.lang.foreign.native.confined.pool.power.size";
+    private static final String POOLED_MEMORY_SIZE_PROPERTY = "jdk.internal.foreign.native.confined.pool.power.size";
 
     private static final long POOLED_MEMORY_SIZE =
             clampedPowerOfPropertyOr(POOLED_MEMORY_SIZE_PROPERTY, 3, 20, 6);
@@ -98,7 +98,7 @@ public final class ConfinedSegmentPool {
     // Internal tuning knob; no behavioral or compatibility guarantees are given.
     // A negative value disables pooling; otherwise the pool count is
     // 1, 2, 4, or 8, defaulting to 4.
-    private static final String THREAD_POOL_COUNT_PROPERTY = "java.lang.foreign.native.confined.pool.power.count";
+    private static final String THREAD_POOL_COUNT_PROPERTY = "jdk.internal.foreign.native.confined.pool.power.count";
 
     private static final int THREAD_POOL_COUNT =
             clampedPowerOfPropertyOr(THREAD_POOL_COUNT_PROPERTY, 0, 3, 2);
@@ -155,7 +155,7 @@ public final class ConfinedSegmentPool {
         if (pools == null) {
             return;
         }
-        for (int i = 0; i < THREAD_POOL_COUNT; i++) {
+        for (int i = 0; i < pools.length; i++) {
             final long pool = pools[i];
             if (pool != 0) {
                 U.freeMemory(pool);
@@ -170,7 +170,7 @@ public final class ConfinedSegmentPool {
         if (pools == null) {
             return 0;
         }
-        for (int i = 0; i < THREAD_POOL_COUNT; i++) {
+        for (int i = 0; i < pools.length; i++) {
             final long pool = pools[i];
             if (pool != 0) {
                 pools[i] = 0; // available -> arena-owned and detached
@@ -206,14 +206,13 @@ public final class ConfinedSegmentPool {
             }
         }
 
-        zeroOutMemory(pool, size);
-
-        for (int i = 0; i < THREAD_POOL_COUNT; i++) {
+        for (int i = 0; i < pools.length; i++) {
             final long entry = pools[i];
             if (entry == pool) {
                 throw cannotReleasePooledMemory(pool, size); // already released
             }
             if (entry == 0) {
+                zeroOutMemory(pool, size);
                 pools[i] = pool;
                 return;
             }

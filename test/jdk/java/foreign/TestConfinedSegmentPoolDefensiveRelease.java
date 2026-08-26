@@ -26,19 +26,19 @@
  * @modules java.base/jdk.internal.foreign:+open java.base/java.lang:+open java.base/jdk.internal.access
  * @library /test/lib
  * @run junit                                                                            TestConfinedSegmentPoolDefensiveRelease
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=0              TestConfinedSegmentPoolDefensiveRelease
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=1              TestConfinedSegmentPoolDefensiveRelease
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=2              TestConfinedSegmentPoolDefensiveRelease
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=3              TestConfinedSegmentPoolDefensiveRelease
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=4              TestConfinedSegmentPoolDefensiveRelease
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=5              TestConfinedSegmentPoolDefensiveRelease
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=6              TestConfinedSegmentPoolDefensiveRelease
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=7              TestConfinedSegmentPoolDefensiveRelease
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=-1             TestConfinedSegmentPoolDefensiveRelease
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=23847682736221 TestConfinedSegmentPoolDefensiveRelease
- * @run junit/othervm -Djava.lang.foreign.native.confined.pool.power.size=TEXT           TestConfinedSegmentPoolDefensiveRelease
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=0              TestConfinedSegmentPoolDefensiveRelease
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=1              TestConfinedSegmentPoolDefensiveRelease
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=2              TestConfinedSegmentPoolDefensiveRelease
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=3              TestConfinedSegmentPoolDefensiveRelease
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=4              TestConfinedSegmentPoolDefensiveRelease
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=5              TestConfinedSegmentPoolDefensiveRelease
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=6              TestConfinedSegmentPoolDefensiveRelease
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=7              TestConfinedSegmentPoolDefensiveRelease
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=-1             TestConfinedSegmentPoolDefensiveRelease
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=23847682736221 TestConfinedSegmentPoolDefensiveRelease
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=TEXT           TestConfinedSegmentPoolDefensiveRelease
  * @run junit/othervm -Dsun.nio.PageAlignDirectMemory=true
- *                    -Djava.lang.foreign.native.confined.pool.power.size=PAGE_ALIGN
+ *                    -Djdk.internal.foreign.native.confined.pool.power.size=PAGE_ALIGN
  *                    TestConfinedSegmentPoolDefensiveRelease
  */
 
