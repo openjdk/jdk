@@ -1680,6 +1680,10 @@ bool LibraryCallKit::inline_vector_test() {
   }
 
   Node* opd1 = unbox_vector(argument(4), vbox_type, elem_bt, num_elem);
+  if (opd1 == nullptr) {
+    return false;
+  }
+
   Node* opd2;
   if (Matcher::vectortest_needs_second_argument(booltest == BoolTest::overflow,
                                                 opd1->bottom_type()->isa_pvectmask())) {
@@ -1687,8 +1691,8 @@ bool LibraryCallKit::inline_vector_test() {
   } else {
     opd2 = opd1;
   }
-  if (opd1 == nullptr || opd2 == nullptr) {
-    return false; // operand unboxing failed
+  if (opd2 == nullptr) {
+    return false;
   }
 
   Node* cmp = gvn().transform(trace_vector(new VectorTestNode(opd1, opd2, booltest)));
