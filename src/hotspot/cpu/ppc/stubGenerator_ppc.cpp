@@ -3074,8 +3074,11 @@ class StubGenerator: public StubCodeGenerator {
     __ cmpwi           (CR0, keylen, 52);   // AES-192 -> final rounds
     __ beq             (CR0, L_doLast);
 #ifdef ASSERT
-    __ cmpwi           (CR0, keylen, 60);
-    __ bne             (CR0, L_error);
+      Label L_valid_keylen;
+      __ cmpwi         (CR0, keylen, 60);
+      __ beq           (CR0, L_valid_keylen);
+      __ stop("aes_encrypt_rounds: invalid key length");
+      __ bind(L_valid_keylen);
 #endif
 
     __ vcipher         (vRet, vRet, vKey1);
@@ -3088,12 +3091,6 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(L_doLast);
     __ vcipher         (vRet, vRet, vKey1);
     __ vcipherlast     (vRet, vRet, vKey2);
-#ifdef ASSERT
-    __ b(L_done);
-    __ bind(L_error);
-    __ stop("aes_encrypt_rounds: invalid key length");
-    __ bind(L_done);
-#endif
   }
 
 
@@ -3109,18 +3106,21 @@ class StubGenerator: public StubCodeGenerator {
                           VectorRegister vKey1, VectorRegister vKey2,
                           VectorRegister vKey3, VectorRegister vKey4,
                           VectorRegister vKey5) {
-    Label L_doLast, L_do44, L_do52, L_done, L_error;
+    Label L_doLast, L_do44, L_do52, L_error;
 
     __ cmpwi           (CR0, keylen, 44);
     __ beq             (CR0, L_do44);
 
     __ cmpwi           (CR0, keylen, 52);
     __ beq             (CR0, L_do52);
-#ifdef ASSERT
-    __ cmpwi           (CR0, keylen, 60);
-    __ bne             (CR0, L_error);
-#endif
 
+#ifdef ASSERT
+      Label L_valid_keylen;
+      __ cmpwi         (CR0, keylen, 60);
+      __ beq           (CR0, L_valid_keylen);
+      __ stop("aes_encrypt_rounds: invalid key length");
+      __ bind(L_valid_keylen);
+#endif
     // ---- AES-256: round keys 15-11 ----
     __ load_word_vector_unaligned(vKey1, 224, key, tmp);
     __ load_word_vector_unaligned(vKey2, 208, key, tmp);
@@ -3166,35 +3166,29 @@ class StubGenerator: public StubCodeGenerator {
     __ vncipher        (vRet, vRet, vKey3);
     __ vncipher        (vRet, vRet, vKey4);
     __ vncipher        (vRet, vRet, vKey5);
-
     __ load_word_vector_unaligned(vKey1, 64, key, tmp);
     __ load_word_vector_unaligned(vKey2, 48, key, tmp);
     __ load_word_vector_unaligned(vKey3, 32, key, tmp);
     __ load_word_vector_unaligned(vKey4, 16, key, tmp);
     __ load_word_vector_unaligned(vKey5, 0,  key, tmp);
-
     __ vncipher        (vRet, vRet, vKey1);
     __ vncipher        (vRet, vRet, vKey2);
     __ vncipher        (vRet, vRet, vKey3);
     __ vncipher        (vRet, vRet, vKey4);
     __ vncipherlast    (vRet, vRet, vKey5);
-#ifdef ASSERT
-    __ b(L_done);
-    __ bind(L_error);
-    __ stop("aes_decrypt_rounds: invalid key length");
-    __ bind(L_done);
-#endif
   }
-
 
   // ==========================================================================
   // CBC Encrypt stub — using helper functions
-  // Arguments for generated stub:
-  //  R3_ARG1   - source byte array address
-  //  R4_ARG2   - destination byte array address
-  //  R5_ARG3   - round key array
-  // ==========================================================================
-
+  //   from:      R3_ARG1          - source byte array address (plaintext)
+  //   to:        R4_ARG2          - destination byte array address (ciphertext)
+  //   key:       R5_ARG3          - round key array
+  //   rvec:      R6_ARG4          - r vector byte array address (initialization vector)
+  //   input_len: R7_ARG5          - length of input in bytes
+  //
+  // Returns:
+  //   R3_RET - number of bytes processed
+  //
   address generate_cipherBlockChaining_encryptAESCrypt() {
     assert(UseAESIntrinsics, "need AES instructions support");
     StubId stub_id = StubId::stubgen_cipherBlockChaining_encryptAESCrypt_id;
@@ -3222,6 +3216,7 @@ class StubGenerator: public StubCodeGenerator {
     VectorRegister vIn   = VR5;
     VectorRegister vIV   = VR6;
     VectorRegister vp    = VR7;   // permute vector for P8 LE byte accesses
+    VectorRegister vTmp  = VR8;
 
     __ mr              (len, input_len);
 
@@ -3234,35 +3229,36 @@ class StubGenerator: public StubCodeGenerator {
                                 arrayOopDesc::base_offset_in_bytes(T_INT), key);
 
     __ bind(L_enc_loop);
-
     __ load_byte_vector_unaligned(vIn, 0, from, tmp, vp);
     __ addi            (from, from, 16);
-
     __ vxor            (vRet, vIV, vIn);                      // CBC XOR
-
     aes_encrypt_rounds(vRet, key, keylen, tmp, vKey1, vKey2, vKey3, vKey4);
 
     __ vor             (vIV, vRet, vRet);                     // MUST precede the store
-    __ store_byte_vector_unaligned(vRet, 0, to, tmp, vp);
+    __ store_byte_vector_unaligned(vRet, 0, to, tmp, vp, vTmp);
     __ addi            (to, to, 16);
-
-    __ subi            (len, len, 16);
-    __ cmpdi           (CR0, len, 0);
+    __ addic_          (len, len, -16);
     __ bne             (CR0, L_enc_loop);
-
     __ store_byte_vector_unaligned(vIV, 0, rvec, tmp, vp);    // IV writeback
     __ mr              (R3_RET, input_len);
     __ blr();
+
     return start;
   }
-
 
   // ==========================================================================
   //  CBC Decrypt stub
   //  Arguments:
-  //  R3_ARG1   - source byte array address
-  //  R4_ARG2   - destination byte array address
-  //  R5_ARG3   - round key array
+  //    R3_ARG1 - from:      source byte array address (ciphertext)
+  //    R4_ARG2 - to:        destination byte array address (plaintext)
+  //    R5_ARG3 - key:       round key array
+  //    R6_ARG4 - rvec:      r vector byte array address (in/out), holds the
+  //                         initialization vector on entry and is updated with
+  //                         the last ciphertext block on exit
+  //    R7_ARG5 - input_len: length of input in bytes, a multiple of 16
+  //
+  //  Returns:
+  //    R3_RET  - number of bytes processed
   // ==========================================================================
 
   address generate_cipherBlockChaining_decryptAESCrypt() {
@@ -3293,9 +3289,8 @@ class StubGenerator: public StubCodeGenerator {
     VectorRegister vIV      = VR6;
     VectorRegister vSavedCT = VR7;
     VectorRegister vp       = VR8;   // permute vector for P8 LE byte accesses
-
+    VectorRegister vTmp     = VR9;
     __ mr              (len, input_len);
-
     // vp must be computed before any byte vector access. Clobbers R0.
     __ compute_vp_for_byte_vector_unaligned(vp, /*temp*/ vRet);
 
@@ -3305,30 +3300,23 @@ class StubGenerator: public StubCodeGenerator {
                                 arrayOopDesc::base_offset_in_bytes(T_INT), key);
 
     __ bind(L_dec_loop);
-
     __ load_byte_vector_unaligned(vRet, 0, from, tmp, vp);
     __ addi            (from, from, 16);
-
     __ vor             (vSavedCT, vRet, vRet);      // AES will destroy vRet
-
     aes_decrypt_rounds(vRet, key, keylen, tmp, vKey1, vKey2, vKey3, vKey4, vKey5);
-
     __ vxor            (vRet, vRet, vIV);           // CBC XOR (after decrypt)
     __ vor             (vIV, vSavedCT, vSavedCT);   // IV = previous ciphertext
-
-    __ store_byte_vector_unaligned(vRet, 0, to, tmp, vp);
+    __ store_byte_vector_unaligned(vRet, 0, to, tmp, vp, vTmp);
     __ addi            (to, to, 16);
-
-    __ subi            (len, len, 16);
-    __ cmpdi           (CR0, len, 0);
+    __ addic_          (len, len, -16);
     __ bne             (CR0, L_dec_loop);
-
     __ store_byte_vector_unaligned(vIV, 0, rvec, tmp, vp);  // IV writeback
     __ mr              (R3_RET, input_len);
     __ blr();
 
     return start;
   }
+
   address generate_sha256_implCompress(StubId stub_id) {
     assert(UseSHA, "need SHA instructions");
     bool multi_block;
