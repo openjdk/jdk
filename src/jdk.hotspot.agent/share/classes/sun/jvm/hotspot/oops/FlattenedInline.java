@@ -28,21 +28,38 @@ import java.io.PrintStream;
 
 import sun.jvm.hotspot.debugger.OopHandle;
 import sun.jvm.hotspot.oops.ObjectHeap;
+import sun.jvm.hotspot.utilities.Assert;
 
 
 /**
- * Inline represents "inlineOop" in HotSpot in SA.
- * See FlattenedInline for flattened object.
+ * FlattenedInline represents flattened object in HotSpot.
+ * Note that there is no corresponding class in HotSpot. This class is used
+ * in SA to handle flattened object in same way with oop.
  */
-public class Inline extends Instance {
+public class FlattenedInline extends Inline {
 
-    Inline(OopHandle handle, ObjectHeap heap) {
+    private final InlineKlass klass;
+
+    FlattenedInline(OopHandle handle, ObjectHeap heap, InlineKlass klass) {
         super(handle, heap);
+        if (Assert.ASSERTS_ENABLED) {
+            Assert.that(klass != null, "klass should not be null");
+        }
+        this.klass = klass;
+    }
+
+    @Override
+    public Klass getKlass() {
+        return klass;
+    }
+
+    @Override
+    public void iterateFields(OopVisitor visitor, boolean doVMFields) {
+        klass.iterateNonStaticFields(visitor, this);
     }
 
     @Override
     public void printValueOn(PrintStream tty) {
-        tty.print("Inlined object");
+        tty.print("Inlined object (flattened)");
     }
-
 }

@@ -197,7 +197,7 @@ public class ObjectHeap {
   // This method would be used to instantiate flattened object.
   public Oop newOop(OopHandle handle, InlineKlass klass) {
     return (handle == null) ? null
-                            : new Inline(handle, this, klass);
+                            : new FlattenedInline(handle, this, klass);
   }
 
   // Print all objects in the object heap
