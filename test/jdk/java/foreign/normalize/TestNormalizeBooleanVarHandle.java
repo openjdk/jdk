@@ -23,11 +23,9 @@
 
 /*
  * @test
- * @run testng TestNormalizeBooleanVarHandle
+ * @run junit TestNormalizeBooleanVarHandle
  */
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
@@ -38,14 +36,20 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static java.lang.foreign.ValueLayout.*;
-import static org.testng.Assert.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 // test normalization of smaller than int primitive types
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestNormalizeBooleanVarHandle {
 
     static final VarHandle VH = JAVA_BOOLEAN.varHandle();
 
-    @Test(dataProvider = "bools")
+    @ParameterizedTest
+    @MethodSource("bools")
     public void testBool(Function<Arena, MemorySegment> segmentFactory, Predicate<MemorySegment> accessor,
                          byte testValue, boolean expected) {
         try (Arena arena = Arena.ofConfined()) {
@@ -53,11 +57,10 @@ public class TestNormalizeBooleanVarHandle {
             ms.set(JAVA_BYTE, 0L, testValue);
 
             boolean b = accessor.test(ms);
-            assertEquals(b, expected);
+            assertEquals(expected, b);
         }
     }
 
-    @DataProvider
     public static Object[][] bools() {
         List<Object[]> cases = new ArrayList<>();
         for (Function<Arena, MemorySegment> segmentFactory : factories()) {
