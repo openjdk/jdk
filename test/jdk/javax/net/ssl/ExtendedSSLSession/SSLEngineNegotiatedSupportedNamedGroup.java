@@ -102,7 +102,8 @@ public class SSLEngineNegotiatedSupportedNamedGroup extends SSLEngineTemplate {
         // Check SSLEngine.getSupportedNamedGroups() call
         assertTrue(Arrays.equals(getDefaultSupportedGroups(),
                 engine.getSupportedNamedGroups()), "Expected: "
-                + Arrays.toString(getDefaultSupportedGroups()) + "; Got: "
+                + Arrays.toString(getDefaultSupportedGroups())
+                + "; Received: "
                 + Arrays.toString(engine.getSupportedNamedGroups()));
 
         // Check ExtendedSSLSession.getNegotiatedNamedGroup() call
@@ -111,15 +112,9 @@ public class SSLEngineNegotiatedSupportedNamedGroup extends SSLEngineTemplate {
         assertEquals(negotiatedNamedGroup, session.getNegotiatedNamedGroup());
     }
 
-    // X25519MLKEM768, SecP256r1MLKEM768 and SecP384r1MLKEM1024 not supported
-    // in DTLS
     private static String[] getDefaultSupportedGroups() {
-        if (protocol.startsWith("DTLS")) {
-            return Arrays.stream(NamedGroupTestData.DEFAULT_SUPPORTED_NG)
-                    .filter(s -> !s.equals("X25519MLKEM768"))
-                    .filter(s -> !s.equals("SecP256r1MLKEM768"))
-                    .filter(s -> !s.equals("SecP384r1MLKEM1024"))
-                    .toArray(String[]::new);
+        if (protocol.equals("DTLSv1.2")) {
+            return NamedGroupTestData.DTLS12_SUPPORTED_NG;
         } else {
             return NamedGroupTestData.DEFAULT_SUPPORTED_NG;
         }

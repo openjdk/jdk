@@ -25,33 +25,59 @@
 final class NamedGroupTestData {
 
     static final String[] DEFAULT_SUPPORTED_NG = new String[]{
-                    "X25519MLKEM768",
-                    "x25519",
-                    "secp256r1",
-                    "secp384r1",
-                    "secp521r1",
-                    "x448",
-                    "ffdhe2048",
-                    "ffdhe3072",
-                    "ffdhe4096",
-                    "sect233k1",
-                    "sect233r1",
-                    "sect239k1",
-                    "sect283k1",
-                    "sect283r1",
-                    "sect409k1",
-                    "sect409r1",
-                    "sect571k1",
-                    "sect571r1",
-                    "secp224k1",
-                    "secp224r1",
-                    "secp256k1",
-                    "ffdhe6144",
-                    "ffdhe8192",
-                    "SecP256r1MLKEM768",
-                    "SecP384r1MLKEM1024"
-            };
+            "X25519MLKEM768",
+            "x25519",
+            "secp256r1",
+            "secp384r1",
+            "secp521r1",
+            "x448",
+            "ffdhe2048",
+            "ffdhe3072",
+            "ffdhe4096",
+            "sect233k1",
+            "sect233r1",
+            "sect239k1",
+            "sect283k1",
+            "sect283r1",
+            "sect409k1",
+            "sect409r1",
+            "sect571k1",
+            "sect571r1",
+            "secp224k1",
+            "secp224r1",
+            "secp256k1",
+            "ffdhe6144",
+            "ffdhe8192",
+            "SecP256r1MLKEM768",
+            "SecP384r1MLKEM1024"
+    };
 
+    // X25519MLKEM768, SecP256r1MLKEM768 and SecP384r1MLKEM1024 are not
+    // supported in DTLSv1.2
+    static final String[] DTLS12_SUPPORTED_NG = new String[]{
+            "x25519",
+            "secp256r1",
+            "secp384r1",
+            "secp521r1",
+            "x448",
+            "ffdhe2048",
+            "ffdhe3072",
+            "ffdhe4096",
+            "sect233k1",
+            "sect233r1",
+            "sect239k1",
+            "sect283k1",
+            "sect283r1",
+            "sect409k1",
+            "sect409r1",
+            "sect571k1",
+            "sect571r1",
+            "secp224k1",
+            "secp224r1",
+            "secp256k1",
+            "ffdhe6144",
+            "ffdhe8192"
+    };
 
     static final String[][] TEST_VALUES = new String[][]{
             // Default named groups

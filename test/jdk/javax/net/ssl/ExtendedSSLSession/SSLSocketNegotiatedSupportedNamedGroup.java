@@ -46,17 +46,11 @@ import javax.net.ssl.SSLSocket;
  * @build NamedGroupTestData
  *
  * @run main SSLSocketNegotiatedSupportedNamedGroup
- * @run main/othervm -Djdk.tls.server.enableSessionTicketExtension=true
- *      -Djdk.tls.client.enableSessionTicketExtension=true
+ * @run main SSLSocketNegotiatedSupportedNamedGroup resume TLSv1.3
+ * @run main SSLSocketNegotiatedSupportedNamedGroup resume TLSv1.2
+ * @run main/othervm -Djdk.tls.server.enableSessionTicketExtension=false
  *      SSLSocketNegotiatedSupportedNamedGroup resume TLSv1.3
  * @run main/othervm -Djdk.tls.server.enableSessionTicketExtension=false
- *      -Djdk.tls.client.enableSessionTicketExtension=true
- *      SSLSocketNegotiatedSupportedNamedGroup resume TLSv1.3
- * @run main/othervm -Djdk.tls.server.enableSessionTicketExtension=true
- *      -Djdk.tls.client.enableSessionTicketExtension=true
- *      SSLSocketNegotiatedSupportedNamedGroup resume TLSv1.2
- * @run main/othervm -Djdk.tls.server.enableSessionTicketExtension=false
- *      -Djdk.tls.client.enableSessionTicketExtension=false
  *      SSLSocketNegotiatedSupportedNamedGroup resume TLSv1.2
  */
 
@@ -75,6 +69,16 @@ public class SSLSocketNegotiatedSupportedNamedGroup extends SSLSocketTemplate {
         this.inputNamedGroups = inputNamedGroups;
         this.negotiatedNamedGroup = negotiatedNamedGroup;
         this.protocol = protocol;
+    }
+
+    @Override
+    protected ContextParameters getClientContextParameters() {
+        return new ContextParameters(protocol, "PKIX", "SunX509");
+    }
+
+    @Override
+    protected ContextParameters getServerContextParameters() {
+        return new ContextParameters(protocol, "PKIX", "SunX509");
     }
 
     public static void main(String[] args) throws Exception {
@@ -153,8 +157,10 @@ public class SSLSocketNegotiatedSupportedNamedGroup extends SSLSocketTemplate {
     private void checkNamedGroup(SSLSocket socket) {
         // Check SSLSocket.getSupportedNamedGroups() call
         assertTrue(Arrays.equals(NamedGroupTestData.DEFAULT_SUPPORTED_NG,
-                        socket.getSupportedNamedGroups()),
-                Arrays.toString(socket.getSupportedNamedGroups()));
+                        socket.getSupportedNamedGroups()), "Expected: "
+                + Arrays.toString(NamedGroupTestData.DEFAULT_SUPPORTED_NG)
+                + "; Received: "
+                + Arrays.toString(socket.getSupportedNamedGroups()));
 
         // Check ExtendedSSLSession.getNegotiatedNamedGroup() call
         ExtendedSSLSession session =
