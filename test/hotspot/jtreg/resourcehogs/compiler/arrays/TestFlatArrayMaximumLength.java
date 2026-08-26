@@ -28,8 +28,8 @@ package compiler.arrays;
  * @bug 8391178
  * @summary Test correctness of C2's type for the length of large flat arrays
  * @enablePreview
- * @requires vm.compiler2.enabled & os.maxMemory >= 4G
- * @run main/othervm -Xmx3g -Xcomp -XX:-TieredCompilation
+ * @requires vm.compiler2.enabled & os.maxMemory > 4G
+ * @run main/othervm -Xmx4g -Xcomp -XX:-TieredCompilation
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+UseArrayFlattening -XX:+UseNullableAtomicValueFlattening
  *                   -XX:CompileCommand=compileonly,${test.main.class}::test*
  *                   ${test.main.class}
