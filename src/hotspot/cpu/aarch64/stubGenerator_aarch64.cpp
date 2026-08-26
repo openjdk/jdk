@@ -8903,6 +8903,37 @@ class StubGenerator: public StubCodeGenerator {
     __ eor(a4, a4, tmp2);
   }
 
+  // The Keccak algorithm needs to read and update 25 state registers
+  // (`a[0]` ... `a[24]`) and maintain a round-constant cursor, `rc`.
+  // It also computes up to 5 intermediate values that are all live at the
+  // same time across some part of the computation, `tmp0` ... `tmp4`.
+  // This means that up to 31 independent values are live at once,
+  // preferably stored in registers to avoid having to push and pop
+  // intermediate results. Since `sp` cannot be overwritten this means
+  // that for the best performance every other gpr register needs to be
+  // used to store this data.
+
+  // When `r18` is not reserved and frame pointers need not be preserved then
+  // `rfp` and `r18` are aliased to temporaries `tmp3` and `tmp4`, respectively.
+  // All other register mappings are determined by the emitter.
+
+  // If `r18` or `rfp` cannot be used then 2 of the 31 live register values are
+  // pushed to the stack after their values are consumed and then popped when
+  // needed, reducing the count of values that need to be held live in registers
+  // to 29. This frees the registers associated with the pushed data for reuse
+  // as temporaries.  Luckily, the algorithm consumes two state-lanes,
+  // `a[4]` and `a[9]`, well before all 5 temporary values are live and only
+  // needs to reuse those specific `a[]` lanes after two of these temporary
+  // values, `tmp3` and `tmp4` are no longer live. In this case, the values in
+  // `a[4]` and `a[9]` can be pushed once early during the computation to free
+  // two registers for use as temporaries and popped once later in the
+  // computation when those two temporaries are no longer needed.  In
+  // this case `a[4]` and `a[9]` are aliased to temporaries `tmp3`
+  // and `tmp4`, respectively, for the segment of the computation that lies
+  // between the push and pop.
+
+  // When `r18` and `rfp` are available then `saved_regs` will be empty.  In
+  // this case push/pop will not emit any instructions, introducing no spills.
   void keccak_round_gpr(bool can_use_fp, bool can_use_r18, Register rc,
                         const Register a[], Register tmp0, Register tmp1,
                         Register tmp2) {
