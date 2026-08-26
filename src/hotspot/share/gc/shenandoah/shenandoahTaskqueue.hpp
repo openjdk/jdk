@@ -44,7 +44,7 @@ class BufferedOverflowTaskQueue: public OverflowTaskQueue<E, MT, N>
 public:
   typedef OverflowTaskQueue<E, MT, N> taskqueue_t;
 
-  BufferedOverflowTaskQueue() : _buf_empty(true), _overflow_empty(false) {};
+  BufferedOverflowTaskQueue() : _buf_empty(true) {};
 
   TASKQUEUE_STATS_ONLY(using taskqueue_t::stats;)
 
@@ -62,9 +62,10 @@ public:
     return _buf_empty && taskqueue_t::is_empty();
   }
 
+  inline size_t full_size();
+
 private:
   bool _buf_empty;
-  bool _overflow_empty;
   E _elem;
 };
 
@@ -359,6 +360,7 @@ public:
 
   bool is_empty();
   void clear();
+  void rebalance(size_t num_queues);
 };
 
 class ShenandoahTerminatorTerminator : public TerminatorTerminator {
