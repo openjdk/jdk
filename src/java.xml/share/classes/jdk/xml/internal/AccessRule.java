@@ -153,78 +153,111 @@ public class AccessRule {
                 throw new IllegalArgumentException("Unsupported scheme in resource access pattern: " + pattern);
 
             String rest = pattern.substring(schemeSep + 1);
-            // Remove up to 3 leading slashes
-            String afterSlashes;
+            int slashCount = getSlashAfterScheme(rest);
 
-            HostPattern hostPattern = null;
-            Integer port = null;
-            PathPattern pathPattern = null;
-            // Handle file and jrt schemes as path patterns.
-            boolean isLocalScheme = scheme.equals("file") || scheme.equals("jrt");
-            if (isLocalScheme) {
-                // Remove up to 3 leading slashes
-                afterSlashes = rest.replaceFirst("^/{0,3}", "");
-                // Should be only path or wildcard, must not be empty (file: is not allowed)
-                if (afterSlashes.isEmpty())
-                    throw new IllegalArgumentException(scheme + " rule must have non-empty path: " + pattern);
-                // afterSlashes is the path pattern, can be "*"
-                if (afterSlashes.equals("*")) {
-                    pathPattern = PathPattern.of("*");
-                } else {
-                    if (!afterSlashes.startsWith("/")) afterSlashes = "/" + afterSlashes;
-                    pathPattern = PathPattern.of(afterSlashes);
-                }
+            if ("jrt".equals(scheme) || ("file".equals(scheme) && slashCount != 2)) {
+                return parseLocalPath(scheme, slashCount, rest, pattern);
+            }
+
+            return parseAuthorityForm(scheme, slashCount, rest, pattern);
+        }
+
+        private static URIPatternRule parseAuthorityForm(String scheme, int slashCount,
+            String rest, String pattern) {
+            // Authority must have two leading slashes.
+            if (slashCount != 2) {
+                throw new IllegalArgumentException("Rule for scheme '" + scheme
+                        + "' must specify an authority: " + pattern);
+            }
+            String afterSlashes = rest.substring(2);
+            if (afterSlashes.isEmpty() || afterSlashes.startsWith(":") || afterSlashes.startsWith("/")) {
+                throw new IllegalArgumentException("Rule for scheme '" + scheme
+                        + "' must specify a non-empty host: " + pattern);
+            }
+
+            String hostPart;
+            String pathPart = null;
+
+            int slashIndex = afterSlashes.indexOf('/');
+            if (slashIndex >= 0) {
+                hostPart = afterSlashes.substring(0, slashIndex);
+                pathPart = afterSlashes.substring(slashIndex);
             } else {
-                // Remove up to 2 leading slashes
-                afterSlashes = rest.replaceFirst("^/{0,2}", "");
-                // Find "host[:port][/path]"
-                if (afterSlashes.isEmpty() || afterSlashes.startsWith(":") || afterSlashes.startsWith("/")) {
-                    throw new IllegalArgumentException("Rule for scheme '" + scheme + "' must specify a non-empty host: " + pattern);
-                }
+                hostPart = afterSlashes;
+            }
 
-                String hostPart;
-                String pathPart = null;
-                int slashIndex = afterSlashes.indexOf('/');
-                if (slashIndex >= 0) {
-                    hostPart = afterSlashes.substring(0, slashIndex);
-                    pathPart = afterSlashes.substring(slashIndex); // includes "/"
-                } else {
-                    hostPart = afterSlashes;
-                }
-                // Validate host
-                if (hostPart.isEmpty())
-                    throw new IllegalArgumentException("Host must not be blank for scheme: " + scheme);
-                // Port
-                int portSep = hostPart.lastIndexOf(':');
-                if (portSep == hostPart.length() - 1) {
-                    throw new IllegalArgumentException("Empty port: " + pattern);
-                }
-                if (portSep > 0 && portSep < hostPart.length() - 1
-                    && isPortNumber(hostPart.substring(portSep + 1))) {
-                    hostPattern = HostPattern.of(hostPart.substring(0, portSep));
-                    try {
-                        port = Integer.parseInt(hostPart.substring(portSep + 1));
-                        if (port < 0 || port > 65535)
-                            throw new IllegalArgumentException("Port must be 0-65535: " + pattern);
-                    } catch (NumberFormatException e) {
-                        throw new IllegalArgumentException("Port must be numeric: " + pattern);
-                    }
-                } else if (!hostPart.isEmpty()) {
-                    hostPattern = HostPattern.of(hostPart);
-                }
-
-                // Validate path
-                if (pathPart != null && pathPart.length() > 1 && pathPart.indexOf("//") >= 0)
-                    throw new IllegalArgumentException("Path component must not contain empty segments: " + pattern);
-
-                // pathPattern is set only if specified, null otherwise
-                if (pathPart != null && !pathPart.isEmpty() && !pathPart.equals("/*")) {
-                    pathPattern = PathPattern.of(pathPart);
-                } else if (pathPart != null && (pathPart.isEmpty() || pathPart.equals("/*"))) {
-                    pathPattern = PathPattern.of("*");
+            int portSep;
+            int pos = 0;
+            // Check IPv6 literal first as ':' within the brackets belong to the host
+            if (hostPart.startsWith("[")) {
+                pos = hostPart.indexOf(']');
+                if (pos < 0) {
+                    throw new IllegalArgumentException("Invalid IPv6 host: " + pattern);
                 }
             }
+            portSep = hostPart.indexOf(':', pos);
+
+            String host;
+            Integer port = null;
+
+            if (portSep >= 0) {
+                if ("file".equals(scheme)) {
+                    throw new IllegalArgumentException("Port component is not supported for file URI: " + pattern);
+                }
+                host = hostPart.substring(0, portSep);
+                String portPart = hostPart.substring(portSep + 1);
+                port = parsePortNumber(portPart, hostPart);
+            } else {
+                host = hostPart;
+            }
+
+            HostPattern hostPattern = HostPattern.of(host);
+
+            PathPattern pathPattern = null;
+            if (pathPart != null) {
+                if (pathPart.isEmpty() || pathPart.equals("/*")) {
+                    pathPattern = PathPattern.of("*");
+                } else {
+                    pathPattern = PathPattern.of(pathPart);
+                }
+            }
+
             return new URIPatternRule(scheme, hostPattern, port, pathPattern);
+        }
+
+        private static URIPatternRule parseLocalPath(
+            String scheme, int slashCount, String rest, String pattern) {
+
+            // Remove the leading slashes
+            String path = rest.substring(slashCount);
+
+            if (path.isEmpty()) {
+                throw new IllegalArgumentException(
+                    scheme + " rule must have non-empty path: " + pattern);
+            }
+
+            if ("*".equals(path)) {
+                return new URIPatternRule(scheme, null, null, PathPattern.of("*"));
+            }
+
+            // add a slash for the path pattern
+            if (!path.startsWith("/")) {
+                path = "/" + path;
+            }
+
+            return new URIPatternRule(scheme, null, null, PathPattern.of(path));
+        }
+
+        //The slash following the scheme may appear one to three times.
+        private static int getSlashAfterScheme(String s) {
+            int count = 0;
+            while (count < s.length() && s.charAt(count) == '/') {
+                count++;
+                if (count > 3) {
+                    throw new IllegalArgumentException("Too many leading slashes: " + s);
+                }
+            }
+            return count;
         }
 
         public boolean matches(URI uri) {
@@ -236,25 +269,27 @@ public class AccessRule {
             // Resource access matching applies only to hierarchical URIs. Opaque URIs
             // have no hierarchical host/port/path components to match.
             if (uri == null || uri.isOpaque()) return false;
+
+            // match scheme
             String testScheme = uri.getScheme();
             if (testScheme == null || !testScheme.equalsIgnoreCase(scheme)) return false;
 
-            // Local: path-pattern match only
+            // match host
+            String testHost = uri.getHost();
             if (hostPattern == null) {
-                if (pathPattern == null) return true; // match all local of that scheme
-                String uriPath = uri.getPath();
-                return pathPattern.matches(uriPath);
+                // A hostless rule only matches a hostless URI.
+                if (testHost != null) {
+                    return false;
+                }
+            } else {
+                // A host-based rule requires a matching host.
+                if (!hostPattern.matches(testHost)) return false;
+                if (port != null && port != (uri.getPort() == -1 ? getDefaultPort(scheme) : uri.getPort())) return false;
+            }
+            if (pathPattern != null) {
+                return pathPattern.matches(uri.getPath());
             }
 
-            // Network: host and port required
-            String testHost = uri.getHost();
-            if (!hostPattern.matches(testHost)) return false;
-            if (port != null && port != (uri.getPort() == -1 ? getDefaultPort(scheme) : uri.getPort())) return false;
-            // If a pathPattern is present, also match path; else, path is ignored
-            if (pathPattern != null) {
-                String uriPath = uri.getPath();
-                return pathPattern.matches(uriPath);
-            }
             return true;
         }
 
@@ -279,14 +314,21 @@ public class AccessRule {
         }
 
         /**
-         * Check if string is an integer between 0 and 65535 (valid TCP/UDP port range).
+         * {@return the port number.}
+         * @throws IllegalArgumentException if portPart is not an integer
+         * between 0 and 65535 (valid TCP/UDP port range).
          */
-        private static boolean isPortNumber(String str) {
+        private static int parsePortNumber(String portPart, String pattern) {
+            if (portPart.isEmpty()) {
+                throw new IllegalArgumentException("Empty port: " + pattern);
+            }
             try {
-                int port = Integer.parseInt(str);
-                return port >= 0 && port <= 65535;
+                int port = Integer.parseInt(portPart);
+                if (port < 0 || port > 65535)
+                    throw new IllegalArgumentException("Port must be 0-65535: " + pattern);
+                return port;
             } catch (NumberFormatException e) {
-                return false;
+                throw new IllegalArgumentException("Port must be numeric: " + pattern, e);
             }
         }
 
@@ -361,11 +403,10 @@ public class AccessRule {
                 return null;
             }
         }
-
     }
 
     public static class PathPattern {
-        private final String pattern; // E.g. /dtds/* or /*
+        private final String pattern; // e.g. /dtds/* or /*
         private final boolean isAny;
         private final boolean isDirectory; // endsWith /*
 
@@ -381,10 +422,12 @@ public class AccessRule {
             if (pattern.equals("*") || pattern.equals("/*")) {
                 return new PathPattern(pattern, true, false);
             }
+            // Now validate. Note: no validation needed if the whole component is a wildcard
+            validatePath(pattern);
             if (pattern.endsWith("/*")) {
-                return new PathPattern(normalizePath(pattern.substring(0, pattern.length() - 2)), false, true);
+                return new PathPattern(pattern.substring(0, pattern.length() - 2), false, true);
             }
-            return new PathPattern(normalizePath(pattern), false, false);
+            return new PathPattern(pattern, false, false);
         }
 
         public boolean matches(String testPath) {
@@ -398,26 +441,82 @@ public class AccessRule {
             return testPath.equals(pattern);
         }
 
-        // Normalizes URI path for rule matching, consistent with URI.normalize().
-        private static String normalizePath(String path) {
-            boolean absolute = path.startsWith("/");
-            List<String> segments = new ArrayList<>();
-            for (String segment : path.split("/")) {
-                if (segment.isEmpty() || segment.equals(".")) {
-                    continue;
+        /*
+         * Validates the path component. A path is either a literal file or directory
+         * or wildcard (*).
+         */
+        private static void validatePath(String pathPart) {
+            if (pathPart != null) {
+                if (pathPart.indexOf("//") >= 0) {
+                    throw new IllegalArgumentException(
+                        "Path component must not contain empty segments: " + pathPart);
                 }
-                if (segment.equals("..")) {
-                    if (!segments.isEmpty()) {
-                        segments.remove(segments.size() - 1);
-                    } else if (!absolute) {
-                        segments.add(segment);
+
+                for (String segment : pathPart.split("/")) {
+                    if (isDotSegment(segment)) {
+                        throw new IllegalArgumentException(
+                            "Path component must not contain dot segments: " + pathPart);
                     }
-                } else {
-                    segments.add(segment);
                 }
             }
-            String normalizedPath = String.join("/", segments);
-            return absolute ? "/" + normalizedPath : normalizedPath;
         }
+    }
+
+    // Normalizes URI path for rule matching, consistent with URI.normalize().
+    private static String normalizePath(String path) {
+        boolean absolute = path.startsWith("/");
+        List<String> segments = new ArrayList<>();
+        boolean isDotSegment = false;
+        for (String segment : path.split("/")) {
+            if (segment.isEmpty() || segment.equals(".")) {
+                continue;
+            }
+            // URI spec:  A ".." segment is removed only if it is preceded by a non-".." segment
+            if (segment.equals("..")) {
+                if (!segments.isEmpty() && !segments.get(segments.size() - 1).equals("..")) {
+                    segments.remove(segments.size() - 1);
+                    continue;
+                }
+            }
+            segments.add(segment);
+        }
+        String normalizedPath = String.join("/", segments);
+        return absolute ? "/" + normalizedPath : normalizedPath;
+    }
+
+    /*
+     * Checks whether the specified path segment represents a dot segment,
+     * {@code "."} or {@code ".."}, or encoded as {@code "%2e"}.
+     */
+    private static boolean isDotSegment(String segment) {
+        int len = segment.length();
+
+        if (len == 0 || len > 6) {
+            return false;
+        } else if (".".equals(segment) || "..".equals(segment)) {
+            return true;
+        } else if (segment.indexOf('%') < 0) {
+            return false;
+        }
+
+        // encoded dot segment
+        int dots = 0;
+        for (int i = 0; i < len;) {
+            if (segment.charAt(i) == '.') {
+                dots++;
+                i++;
+            } else if (i + 2 < len
+                && segment.charAt(i) == '%'
+                && segment.charAt(i + 1) == '2'
+                && (segment.charAt(i + 2) == 'e'
+                || segment.charAt(i + 2) == 'E')) {
+                dots++;
+                i += 3;
+            } else {
+                return false;
+            }
+        }
+
+        return dots == 1 || dots == 2;
     }
 }

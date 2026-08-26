@@ -53,30 +53,58 @@ public class AccessRuleTest {
         return Stream.of(
             Arguments.of("*", "http://all.access", true),
             Arguments.of("", "http://no.access", false),
-            Arguments.of("http:*; http:/*; http://*", "http://all.http.access", true),
+            Arguments.of("http://*", "http://all.http.access", true),
             Arguments.of("http://*.oracle.com", "http://subdomains.oracle.com/dtds/example.dtd", true),
-            Arguments.of("https:*;https:/*;https://*", "https://all.https.access", true),
+            Arguments.of("https://*", "https://all.https.access", true),
             Arguments.of("https://*.oracle.com", "https://subdomains.oracle.com/dtds/example.dtd", true),
-            Arguments.of("file:*;file:/*;file://*;file:///*", "file://all.file.access", true),
             Arguments.of("http://www.oracle.com", "http://www.oracle.com/dtds/example.dtd", true),
             Arguments.of("http://www.oracle.com, http://*.oracle.com",
                 "http://www.oracle.com/dtds/example.dtd; http://subdomains.oracle.com/dtds/example.dtd", true),
             Arguments.of("file:/dtds/dtd1.dtd", "file:/dtds/dtd1.dtd", true),
             Arguments.of("file:/dtds/dtd1.dtd, file:/xsds/*", "file:/dtds/dtd1.dtd; file:/xsds/example.xsd", true),
-            Arguments.of("file:/dir/*", "file:/dir/child.dtd", true),
-            Arguments.of("file:/dir/*", "file:/dir/../foo.dtd; file:/dir/%2e%2e/foo.dtd", false),
-            Arguments.of("file:/*", "file:/dir/../../foo.dtd; file:/../foo.dtd", true),
+            Arguments.of("file:/dir/*", "file:/dir/child.dtd; file:/dir/sub/example.dtd", true),
             Arguments.of("http://www.oracle.com, file:/dtds/dtd1.dtd, file:/xsds/*",
                 "http://www.oracle.com/dtds/example.dtd; file:/dtds/dtd1.dtd; file:/xsds/example.xsd", true),
-            Arguments.of("http://[2001:db8::1]",
-                "http://[2001:0db8:0000:0000:0000:0000:0000:0001]/dtds/example.dtd; "
+            Arguments.of("http://[2001:db8::1]", "http://[2001:0db8:0000:0000:0000:0000:0000:0001]/dtds/example.dtd; "
                     + "http://[2001:db8:0:0:0:0:0:1]/dtds/example.dtd", true),
-            Arguments.of("http://[2001:0db8:0000:0000:0000:0000:0000:0001]",
-                "http://[2001:db8::1]/dtds/example.dtd", true),
-            Arguments.of("jrt:*; jrt:/java.xml/*", "jrt:/java.xml/jdk/xml/internal/jdkcatalog/JDKCatalog.xml", true),
+            Arguments.of("http://[2001:0db8:0000:0000:0000:0000:0000:0001]", "http://[2001:db8::1]/dtds/example.dtd", true),
+            Arguments.of("jrt:/*; jrt:/java.xml/*", "jrt:/java.xml/jdk/xml/internal/jdkcatalog/JDKCatalog.xml", true),
             Arguments.of("file:/tmp/foo.jar",
                 "jar:file:/tmp/foo.jar!/dtds/example.dtd; jar:file:/tmp/foo.jar!/xsds/example.xsd", true),
-            Arguments.of("file:/tmp/foo.jar", "jar:file:/tmp/bar.jar!/dtds/example.dtd", false)
+            Arguments.of("file:/tmp/foo.jar", "jar:file:/tmp/bar.jar!/dtds/example.dtd", false),
+
+            // URI normalization: each "." segment is simply removed
+            Arguments.of("file:/dir/*", "file:/dir/./foo.dtd; file:/dir/sub/./foo.dtd; file:/dir/./sub/foo.dtd", true),
+            // A ".." segment is removed only if it is preceded by a non-".." segment
+            Arguments.of("file:/dir/*", "file:/dir/../dir/foo.dtd; file:/dir/sub/../foo.dtd", true),
+            Arguments.of("file:/dir/*", "file:/../dir/foo.dtd; file:/../../dir/foo.dtd; file:/dir/../foo.dtd;" +
+                " file:/dir/sub/../../foo.dtd; file:/dir/a/b/../../../foo.dtd", false),
+
+            // both "." and ".." segments
+            Arguments.of("file:/dir/*", "file:/dir/sub/../foo.dtd; file:/dir/./sub/../foo.dtd", true),
+            Arguments.of("file:/dir/*", "file:/dir/./sub/../foo.dtd; file:/dir/sub/./../sub/../foo.dtd", true),
+            Arguments.of("file:/dir/*", "file:/dir/./../sub/../foo.dtd; file:/dir/sub/./../../foo.dtd", false),
+
+            // encoded dot segments
+            Arguments.of("file:/dir/*", "file:/dir/%2e/sub/../foo.dtd", true),
+            Arguments.of("file:/dir/*", "file:/dir/%2e%2e/foo.dtd; file:/dir/%2E%2E/foo.dtd", false),
+            Arguments.of("file:/dir/*", "file:/dir/.%2e/foo.dtd; file:/dir/%2e./foo.dtd", false),
+            Arguments.of("file:/dir/*", "file:/%2e%2e%2fdir%2ffoo.dtd; file:/dir/%2e%2e%2ffoo.dtd; file:/dir%2f%2e%2e%2ffoo.dtd; file:/dir%2f..%2f..%2ffoo.dtd", false),
+
+            // rule allows all file access
+            Arguments.of("file:/*; file:///*", "file:/dir/../../foo.dtd; file:/../foo.dtd; file:/dir/sub/../foo.dtd", true),
+            Arguments.of("file:/*; file:///*", "file:/all.file.access; file:///all.file.access", true),
+            Arguments.of("file://*", "file://all.file.access", true),
+
+            // file scheme with server authority, including Windows UNC path
+            Arguments.of("file://server/*", "file://server/foo.dtd; file://server/dir/foo.dtd", true),
+            Arguments.of("file://server/share/*", "file://server/share/foo.dtd; file://SERVER/share/foo.dtd", true),
+            Arguments.of("file://server/share/foo.dtd", "file://server/share/foo.dtd", true),
+            Arguments.of("file://server/*", "file://server1/foo.dtd; file:/foo.dtd", false),
+            Arguments.of("file://server/share/*", "file://server1/share/foo.dtd; file://server/SHARE/foo.dtd", false),
+            Arguments.of("file:/share/*", "file://server/share/foo.dtd", false),
+            Arguments.of("file:/*", "file://server/foo.dtd", false),
+            Arguments.of("file://[2001:db8::1]", "file://[2001:0db8::1]/dtds/example.dtd; file://[2001:db8:0:0:0:0:0:1]/dtds/example.dtd", true)
         );
     }
 
@@ -88,23 +116,24 @@ public class AccessRuleTest {
     private static Stream<Arguments> testInvalidInput() {
 
         return Stream.of(
-            Arguments.of("http://:8080", IllegalArgumentException.class),
-            Arguments.of("http:///dtds", IllegalArgumentException.class),
             Arguments.of("scheme", IllegalArgumentException.class),
-            Arguments.of("http", IllegalArgumentException.class),
-            Arguments.of("http:", IllegalArgumentException.class),
-            Arguments.of("http://:8080", IllegalArgumentException.class),
-            Arguments.of("http://example.com:", IllegalArgumentException.class),
+            Arguments.of("http; http:; http:*; http:/; http:/*; http://; http://:", IllegalArgumentException.class),
+            Arguments.of("file; file:; file:*, file:/; file://; file://:", IllegalArgumentException.class),
+            Arguments.of("jrt; jrt:; jrt:*, jrt:/", IllegalArgumentException.class),
+            Arguments.of("http://:8080; http://example.com:", IllegalArgumentException.class),
+            Arguments.of("file://:8080; file://server:8080/", IllegalArgumentException.class),
             Arguments.of("http:///dtds", IllegalArgumentException.class),
             Arguments.of("http://example.com, , file:*", IllegalArgumentException.class),
             Arguments.of("http://example.com, *, file:*", IllegalArgumentException.class),
-            Arguments.of("jar:file:/tmp/foo.jar!/dtds/*", IllegalArgumentException.class)
+            Arguments.of("jar:file:/tmp/foo.jar!/dtds/*", IllegalArgumentException.class),
+            Arguments.of("file:/dir/./foo.dtd; file:/dir/../foo.dtd; file:/dir/%2e/foo.dtd; " +
+                "file:/dir/%2e%2e/foo.dtd; file:/dir/.%2e/foo.dtd; file:/dir/%2e./foo.dtd", IllegalArgumentException.class),
+            Arguments.of("file://server/share/../foo.dtd", IllegalArgumentException.class)
         );
     }
 
     /**
-     * Verifies that the Access External Properties are supported throughout the
-     * JAXP APIs.
+     * Verifies access rules set by the Resource Access property.
      * @param rules the access rules separate by ";"
      * @param systemIds system IDs represented as semicolon-separated URI strings
      * @param permitted the flag indicating whether the rules permit the resource
@@ -114,7 +143,7 @@ public class AccessRuleTest {
      */
     @ParameterizedTest
     @MethodSource("testData")
-    public void testAccessExternalProperties(String rules, String systemIds, boolean permitted)
+    public void testAccessRule(String rules, String systemIds, boolean permitted)
         throws Exception {
         String[] accessRules = rules.split(";");
         for (String rule : accessRules) {
@@ -137,17 +166,19 @@ public class AccessRuleTest {
     @MethodSource("testInvalidInput")
     public void testAccessRule(String rule, Class<Throwable> expectedType) throws Exception {
             assertThrows(expectedType, () -> parseRules(rule));
-
     }
 
     /**
-     * Attempts to parse an access rule
-     * @param rule the access rule
+     * Attempts to parse one or a semi-colon separated list of access rules.
+     * @param rule the access rule(s)
 
-     * @throws Exception if the test fails due to test configuration issues other
-     * than the expected result
+     * @throws Exception if error occurs while attempting to create an AccessRule.
      */
     private void parseRules(String rule) {
-        AccessRule accessRule = new AccessRule(rule.trim());
+        String[] rules = rule.split(";");
+        for (String rule1 : rules) {
+            System.out.println("Test invalid rule: [" + rule1 + "]");
+            AccessRule accessRule = new AccessRule(rule1.trim());
+        }
     }
 }
