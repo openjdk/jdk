@@ -28,9 +28,9 @@
  * @summary C2: Incorrect escape analysis in reduce allocation merges causes NPE
  * @library /test/lib
  * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:-UseDeepIGVNRevisit -XX:+UnlockDiagnosticVMOptions
- *                    -XX:+StressIGVN -XX:StressSeed=30740779 -XX:CompileCommand=compileonly,${test.main.class}::* ${test.main.class}
+ *                   -XX:+StressIGVN -XX:StressSeed=30740779 -XX:CompileCommand=compileonly,${test.main.class}::* ${test.main.class}
  * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:-UseDeepIGVNRevisit -XX:+UnlockDiagnosticVMOptions
- *                    -XX:+StressIGVN -XX:StressSeed=42701780 -XX:CompileCommand=compileonly,${test.main.class}::* ${test.main.class}
+ *                   -XX:+StressIGVN -XX:StressSeed=42701780 -XX:CompileCommand=compileonly,${test.main.class}::* ${test.main.class}
  * @run main ${test.main.class}
  */
 
