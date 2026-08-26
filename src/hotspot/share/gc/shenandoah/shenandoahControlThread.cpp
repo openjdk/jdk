@@ -282,7 +282,7 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   //
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (check_cancellation_or_degen(ShenandoahGC::_degenerated_outside_cycle)) {
-    log_info(gc, phases)("Cancelled");
+    log_info(gc)("Cancelled before cycle started");
     return;
   }
   heap->increment_total_collections(false);
