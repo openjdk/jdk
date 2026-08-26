@@ -193,7 +193,6 @@ class StackMapReader : StackObj {
 
   StackMapFrame* next(TRAPS);
   void check_end(TRAPS);
-  void check_unset_fields_allowed(u1 flags);
 };
 
 #endif // SHARE_CLASSFILE_STACKMAPTABLE_HPP

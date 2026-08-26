@@ -126,10 +126,10 @@ public class StrictInstanceFieldsTest {
         // --------------
 
         // Field not initialized before super call
-        negativeTest(BadChild.class, "All strict final fields must be initialized before super()");
+        negativeTest(BadChild.class, "All strict fields must be initialized before super()");
 
         // Field not initialized before super call
-        negativeTest(BadChild1.class, "All strict final fields must be initialized before super()");
+        negativeTest(BadChild1.class, "All strict fields must be initialized before super()");
 
         // Attempt to assign a strict field not present in the original set of unset fields
         negativeTest(StrictFieldNotSubset.class, "Initializing unknown strict field");
@@ -138,7 +138,7 @@ public class StrictInstanceFieldsTest {
         negativeTest(ControlFlowChildBad.class, "Inconsistent stackmap frames at branch target", true, false);
 
         // Constructor with control flow but field is not initialized and stackmap is malformed
-        negativeTest(ControlFlowAlias.class, "All strict final fields must be initialized before super()", false);
+        negativeTest(ControlFlowAlias.class, "All strict fields must be initialized before super()", false);
 
         // Constructor with try-catch but field is not initialized
         negativeTest(TryCatchChildBad.class, "Inconsistent stackmap frames at branch target");

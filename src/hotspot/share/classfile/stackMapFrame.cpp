@@ -115,6 +115,11 @@ void StackMapFrame::initialize_object(
   if (old_object == VerificationType::uninitialized_this_type()) {
     // "this" has been initialized - reset flags
     _flags = 0;
+
+    // At this point, all unset fields were satisfied or a VerifyError was thrown
+    // earlier. With no uninitializedThis, there should be no unset fields list in
+    // the current frame. Null it out just in case.
+    _assert_unset_fields = nullptr;
   }
 }
 
