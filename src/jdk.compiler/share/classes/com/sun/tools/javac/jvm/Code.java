@@ -2323,6 +2323,14 @@ public class Code {
         int prevNextReg = nextreg;
         nextreg = first;
         for (int i = nextreg; i < prevNextReg; i++) endScope(i);
+        undefineVariablesInChain(pendingJumps, first);
+    }
+
+    public void undefineVariablesInChain(Chain toClear, int limit) {
+        while (toClear != null) {
+            toClear.state.defined.excludeFrom(limit);
+            toClear = toClear.next;
+        }
     }
 
 /* ************************************************************************
