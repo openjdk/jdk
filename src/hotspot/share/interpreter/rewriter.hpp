@@ -99,7 +99,7 @@ class Rewriter: public StackObj {
   }
 
   // add a new entry to the resolved_references map (for invokedynamic and invokehandle only)
-  int add_invokedynamic_resolved_references_entry(int cp_index, int cache_index) {
+  int add_invokedynamic_resolved_references_entry(int cp_index) {
     assert(_resolved_reference_limit >= 0, "must add indy refs after first iteration");
     int ref_index = _resolved_references_map.append(cp_index);  // many-to-one
     assert(ref_index >= _resolved_reference_limit, "");

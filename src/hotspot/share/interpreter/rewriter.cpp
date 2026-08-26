@@ -255,14 +255,14 @@ void Rewriter::maybe_rewrite_invokehandle(address opc, int cp_index, int cache_i
             MethodHandles::is_signature_polymorphic_name(vmClasses::MethodHandle_klass(),
                                                          _pool->uncached_name_ref_at(cp_index))) {
           // we may need a resolved_refs entry for the appendix
-          int resolved_index = add_invokedynamic_resolved_references_entry(cp_index, cache_index);
+          int resolved_index = add_invokedynamic_resolved_references_entry(cp_index);
           _initialized_method_entries.at(cache_index).set_resolved_references_index((u2)resolved_index);
           status = +1;
         } else if (_pool->uncached_klass_ref_at_noresolve(cp_index) == vmSymbols::java_lang_invoke_VarHandle() &&
                    MethodHandles::is_signature_polymorphic_name(vmClasses::VarHandle_klass(),
                                                                 _pool->uncached_name_ref_at(cp_index))) {
           // we may need a resolved_refs entry for the appendix
-          int resolved_index = add_invokedynamic_resolved_references_entry(cp_index, cache_index);
+          int resolved_index = add_invokedynamic_resolved_references_entry(cp_index);
           _initialized_method_entries.at(cache_index).set_resolved_references_index((u2)resolved_index);
           status = +1;
         } else {
@@ -294,7 +294,7 @@ void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse) {
   assert(p[-1] == Bytecodes::_invokedynamic, "not invokedynamic bytecode");
   if (!reverse) {
     int cp_index = Bytes::get_Java_u2(p);
-    int resolved_index = add_invokedynamic_resolved_references_entry(cp_index, -1); // Indy no longer has a CPCE
+    int resolved_index = add_invokedynamic_resolved_references_entry(cp_index); // Indy no longer has a CPCE
     // Replace the trailing four bytes with an index to the array of
     // indy resolution information in the CPC. There is one entry for
     // each bytecode, even if they make the same call. In other words,
