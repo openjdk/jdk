@@ -131,7 +131,7 @@ public class AppImageFillOrderTest {
     @Test
     @Parameter("false")
     @Parameter("true")
-    public void testAppContentOverrideAppResources(boolean resourcesFirst)
+    public void testAppContentOverridesAppResources(boolean resourcesFirst)
             throws IOException {
         var cmd = createJPackage().setFakeRuntime();
         var inputs = AppContentOverrideInputs.create();
@@ -146,12 +146,15 @@ public class AppImageFillOrderTest {
     @Test
     @Parameter("false")
     @Parameter("true")
-    public void testAppContentOverrideAppResourcesInPackage(
+    public void testAppContentOverridesAppResourcesInPackage(
             boolean resourcesFirst) throws IOException {
         var inputs = AppContentOverrideInputs.create();
 
         new PackageTest()
                 .configureHelloApp()
+                .addInitializer(cmd -> {
+                    cmd.setArgumentValue("--name", "Foo");
+                })
                 .addInitializer(JPackageCommand::setFakeRuntime)
                 .addInitializer(cmd -> inputs.addTo(cmd, resourcesFirst))
                 .addInstallVerifier(inputs::verify)
