@@ -3054,7 +3054,7 @@ BufferedInlineTypeBlob* SharedRuntime::generate_buffered_inline_type_adapter(con
 
   __ ret(lr);
 
-  __ flush();
+  // Code will be copied. No ICache sync required.
 
   return BufferedInlineTypeBlob::create(&buffer, pack_fields_off, pack_fields_jobject_off, unpack_fields_off);
 }
@@ -3305,9 +3305,7 @@ RuntimeStub* SharedRuntime::generate_return_value_stub(address destination) {
   __ leave();
   __ far_jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
 
-  // -------------
-  // make sure all code is generated
-  masm->flush();
+  // Code will be copied. No ICache sync required.
 
   RuntimeStub* stub = RuntimeStub::new_runtime_stub(name, &code, frame_complete, frame_size_in_words, oop_maps, false);
   AOTCodeCache::store_code_blob(*stub, AOTCodeEntry::SharedBlob, StubInfo::blob(id));
