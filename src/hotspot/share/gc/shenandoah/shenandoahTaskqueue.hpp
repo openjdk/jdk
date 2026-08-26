@@ -62,6 +62,8 @@ public:
     return _buf_empty && taskqueue_t::is_empty();
   }
 
+  inline size_t full_size();
+
 private:
   bool _buf_empty;
   E _elem;
@@ -305,59 +307,13 @@ public:
 typedef BufferedOverflowTaskQueue<ShenandoahMarkTask, mtGC> ShenandoahBufferedOverflowTaskQueue;
 typedef Padded<ShenandoahBufferedOverflowTaskQueue> ShenandoahObjToScanQueue;
 
-template <class T, MemTag MT>
-class ParallelClaimableQueueSet: public GenericTaskQueueSet<T, MT> {
-private:
-  shenandoah_padding(0);
-  Atomic<jint>      _claimed_index;
-  shenandoah_padding(1);
-
-  DEBUG_ONLY(uint   _reserved;  )
-
+class ShenandoahObjToScanQueueSet: public GenericTaskQueueSet<ShenandoahObjToScanQueue, mtGC> {
 public:
-  using GenericTaskQueueSet<T, MT>::size;
-
-public:
-  ParallelClaimableQueueSet(int n) : GenericTaskQueueSet<T, MT>(n), _claimed_index(0) {
-    DEBUG_ONLY(_reserved = 0; )
-  }
-
-  void clear_claimed() { _claimed_index.store_relaxed(0); }
-  T*   claim_next();
-
-  // reserve queues that not for parallel claiming
-  void reserve(uint n) {
-    assert(n <= size(), "Sanity");
-    _claimed_index.store_relaxed((jint)n);
-    DEBUG_ONLY(_reserved = n;)
-  }
-
-  DEBUG_ONLY(uint get_reserved() const { return (uint)_reserved; })
-};
-
-template <class T, MemTag MT>
-T* ParallelClaimableQueueSet<T, MT>::claim_next() {
-  jint size = (jint)GenericTaskQueueSet<T, MT>::size();
-
-  if (_claimed_index.load_relaxed() >= size) {
-    return nullptr;
-  }
-
-  jint index = _claimed_index.add_then_fetch(1, memory_order_relaxed);
-
-  if (index <= size) {
-    return GenericTaskQueueSet<T, MT>::queue((uint)index - 1);
-  } else {
-    return nullptr;
-  }
-}
-
-class ShenandoahObjToScanQueueSet: public ParallelClaimableQueueSet<ShenandoahObjToScanQueue, mtGC> {
-public:
-  ShenandoahObjToScanQueueSet(int n) : ParallelClaimableQueueSet<ShenandoahObjToScanQueue, mtGC>(n) {}
+  ShenandoahObjToScanQueueSet(int n) : GenericTaskQueueSet<ShenandoahObjToScanQueue, mtGC>(n) {}
 
   bool is_empty();
   void clear();
+  void rebalance(size_t num_queues);
 };
 
 class ShenandoahTerminatorTerminator : public TerminatorTerminator {

@@ -172,7 +172,7 @@ public:
 
   // Task queues
   ShenandoahObjToScanQueueSet* task_queues() const { return _task_queues; }
-  virtual void reserve_task_queues(uint workers);
+  virtual void rebalance_task_queues(uint workers);
   virtual ShenandoahObjToScanQueueSet* old_gen_task_queues() const;
 
   // Scan remembered set at start of concurrent young-gen marking.

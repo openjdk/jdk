@@ -77,10 +77,10 @@ bool ShenandoahYoungGeneration::is_concurrent_mark_in_progress() {
   return ShenandoahHeap::heap()->is_concurrent_young_mark_in_progress();
 }
 
-void ShenandoahYoungGeneration::reserve_task_queues(uint workers) {
-  ShenandoahGeneration::reserve_task_queues(workers);
+void ShenandoahYoungGeneration::rebalance_task_queues(uint workers) {
+  ShenandoahGeneration::rebalance_task_queues(workers);
   if (is_old_marking_active()) {
-    _old_gen_task_queues->reserve(workers);
+    _old_gen_task_queues->rebalance(workers);
   }
 }
 
