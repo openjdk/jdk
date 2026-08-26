@@ -35,7 +35,6 @@
 #include <sys/mman.h>
 #endif // LINUX
 
-
 // Default value if probing is not implemented for a certain platform
 // Max address bit is restricted by implicit assumptions in the code, for instance
 // the bit layout of ZForwardingEntry or Partial array entry (see ZMarkStackEntry) in mark stack
