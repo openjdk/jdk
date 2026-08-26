@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8385134
- * @summary Test that C2 ignores an empty switch profile.
+ * @summary Test that switch profiles do not override C2 type information and empty profiles are ignored.
  * @requires vm.compiler1.enabled & vm.compiler2.enabled
  * @library /test/lib /
  * @run driver compiler.profiling.TestEmptySwitchProfile
@@ -53,12 +53,12 @@ public class TestEmptySwitchProfile {
 
     @ForceCompile(CompLevel.C1_FULL_PROFILE)
     @DontCompile(Compiler.C2)
-    private static int profileTableSwitch() {
-        // C1 inlines and constant-folds the tableswitch, omitting profiling
-        return tableSwitch(2);
+    private static int profileTableSwitch(int val) {
+        // C1 profiles non-constant case 0 but constant-folds hot case 2, leaving its profile count at zero.
+        return tableSwitch(val) + tableSwitch(2);
     }
 
-    // Test that C2 does not emit an uncommon trap for (hot) case 2
+    // Test that the nonempty profile does not override C2's constant case 2.
     @Test
     @IR(failOn = IRNode.UNSTABLE_IF_TRAP)
     private static int testTableSwitch() {
@@ -69,7 +69,7 @@ public class TestEmptySwitchProfile {
     @Warmup(10_000)
     private static void runTestTableSwitch(RunInfo info) {
         if (info.isWarmUp()) {
-            profileTableSwitch();
+            profileTableSwitch(0);
         } else {
             Asserts.assertEquals(testTableSwitch(), 44);
         }
@@ -88,12 +88,12 @@ public class TestEmptySwitchProfile {
 
     @ForceCompile(CompLevel.C1_FULL_PROFILE)
     @DontCompile(Compiler.C2)
-    private static int profileLookupSwitch() {
-        // C1 inlines and constant-folds the lookupswitch, omitting profiling
-        return lookupSwitch(50_000);
+    private static int profileLookupSwitch(int val) {
+        // C1 profiles non-constant case 0 but constant-folds hot case 50_000, leaving its profile count at zero.
+        return lookupSwitch(val) + lookupSwitch(50_000);
     }
 
-    // Test that C2 does not emit an uncommon trap for (hot) case 50_000
+    // Test that the nonempty profile does not override C2's constant case 50_000.
     @Test
     @IR(failOn = IRNode.UNSTABLE_IF_TRAP)
     private static int testLookupSwitch() {
@@ -104,10 +104,53 @@ public class TestEmptySwitchProfile {
     @Warmup(10_000)
     private static void runTestLookupSwitch(RunInfo info) {
         if (info.isWarmUp()) {
-            profileLookupSwitch();
+            profileLookupSwitch(0);
         } else {
             Asserts.assertEquals(testLookupSwitch(), 44);
         }
     }
-}
 
+    @ForceInline
+    private static int emptyTableSwitch(int val) {
+        return switch (val) {
+            case 0 -> 42;
+            case 1 -> 43;
+            case 2 -> 44;
+            default -> -42;
+        };
+    }
+
+    @ForceInline
+    private static int emptyLookupSwitch(int val) {
+        return switch (val) {
+            case 0 -> 42;
+            case 1_000 -> 43;
+            case 50_000 -> 44;
+            default -> -42;
+        };
+    }
+
+    @ForceCompile(CompLevel.C1_FULL_PROFILE)
+    @DontCompile(Compiler.C2)
+    private static int profileEmptySwitches() {
+        // C1 constant-folds both switches, leaving both profile counts at zero.
+        return emptyTableSwitch(2) + emptyLookupSwitch(50_000);
+    }
+
+    // Test that C2 treats entirely empty profiles as unavailable when both switch keys are non-constant.
+    @Test
+    @IR(failOn = IRNode.UNSTABLE_IF_TRAP)
+    private static int testNonConstantWithEmptyProfile(int tableVal, int lookupVal) {
+        return emptyTableSwitch(tableVal) + emptyLookupSwitch(lookupVal);
+    }
+
+    @Run(test = "testNonConstantWithEmptyProfile")
+    @Warmup(10_000)
+    private static void runTestNonConstantWithEmptyProfile(RunInfo info) {
+        if (info.isWarmUp()) {
+            profileEmptySwitches();
+        } else {
+            Asserts.assertEquals(testNonConstantWithEmptyProfile(2, 50_000), 88);
+        }
+    }
+}

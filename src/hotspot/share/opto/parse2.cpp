@@ -839,6 +839,11 @@ static ciMultiBranchData* get_switch_profile(ciMethodData* method_data, int bci)
   return nullptr;
 }
 
+static bool is_constant_switch_key(Node* key_val) {
+  const TypeInt* key_type = key_val->bottom_type()->isa_int();
+  return key_type != nullptr && key_type->is_con();
+}
+
 //-------------------------------do_tableswitch--------------------------------
 void Parse::do_tableswitch() {
   // Get information about tableswitch
@@ -855,8 +860,9 @@ void Parse::do_tableswitch() {
     return;
   }
 
-  ciMultiBranchData* profile = get_switch_profile(method()->method_data(), bci());
-  bool trim_ranges = !C->too_many_traps(method(), bci(), Deoptimization::Reason_unstable_if);
+  bool constant_key = is_constant_switch_key(peek());
+  ciMultiBranchData* profile = constant_key ? nullptr : get_switch_profile(method()->method_data(), bci());
+  bool trim_ranges = profile != nullptr && !C->too_many_traps(method(), bci(), Deoptimization::Reason_unstable_if);
 
   // generate decision tree, using trichotomy when possible
   int rnum = len+2;
@@ -905,7 +911,7 @@ void Parse::do_tableswitch() {
   }
 
   Node* lookup = pop(); // lookup value
-  jump_switch_ranges(lookup, &ranges[0], &ranges[rp]);
+  jump_switch_ranges(lookup, &ranges[0], &ranges[rp], 0, trim_ranges);
 }
 
 
@@ -922,8 +928,9 @@ void Parse::do_lookupswitch() {
     return;
   }
 
-  ciMultiBranchData* profile = get_switch_profile(method()->method_data(), bci());
-  bool trim_ranges = !C->too_many_traps(method(), bci(), Deoptimization::Reason_unstable_if);
+  bool constant_key = is_constant_switch_key(peek());
+  ciMultiBranchData* profile = constant_key ? nullptr : get_switch_profile(method()->method_data(), bci());
+  bool trim_ranges = profile != nullptr && !C->too_many_traps(method(), bci(), Deoptimization::Reason_unstable_if);
 
   // generate decision tree, using trichotomy when possible
   jint* table = NEW_RESOURCE_ARRAY(jint, len*3);
@@ -981,7 +988,7 @@ void Parse::do_lookupswitch() {
   }
 
   Node *lookup = pop(); // lookup value
-  jump_switch_ranges(lookup, &ranges[0], &ranges[rp]);
+  jump_switch_ranges(lookup, &ranges[0], &ranges[rp], 0, trim_ranges);
 }
 
 static float if_prob(float taken_cnt, float total_cnt) {
@@ -1164,14 +1171,12 @@ void Parse::linear_search_switch_ranges(Node* key_val, SwitchRange*& lo, SwitchR
 }
 
 //----------------------------create_jump_tables-------------------------------
-bool Parse::create_jump_tables(Node* key_val, SwitchRange* lo, SwitchRange* hi) {
+bool Parse::create_jump_tables(Node* key_val, SwitchRange* lo, SwitchRange* hi, bool trim_ranges) {
   // Are jumptables enabled
   if (!UseJumpTables)  return false;
 
   // Are jumptables supported
   if (!Matcher::has_match_rule(Op_Jump))  return false;
-
-  bool trim_ranges = !C->too_many_traps(method(), bci(), Deoptimization::Reason_unstable_if);
 
   // Decide if a guard is needed to lop off big ranges at either (or
   // both) end(s) of the input set. We'll call this the default target
@@ -1316,9 +1321,8 @@ bool Parse::create_jump_tables(Node* key_val, SwitchRange* lo, SwitchRange* hi) 
 }
 
 //----------------------------jump_switch_ranges-------------------------------
-void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, int switch_depth) {
+void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, int switch_depth, bool trim_ranges) {
   Block* switch_block = block();
-  bool trim_ranges = !C->too_many_traps(method(), bci(), Deoptimization::Reason_unstable_if);
 
   if (switch_depth == 0) {
     // Do special processing for the top-level call.
@@ -1401,7 +1405,7 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
     assert(lo->hi() == (lo+1)->lo()-1, "contiguous ranges");
     assert(hi->lo() == (hi-1)->hi()+1, "contiguous ranges");
 
-    if (create_jump_tables(key_val, lo, hi)) return;
+    if (create_jump_tables(key_val, lo, hi, trim_ranges)) return;
 
     SwitchRange* mid = nullptr;
     float total_cnt = sum_of_cnts(lo, hi);
@@ -1456,7 +1460,7 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
         Node   *iffalse = _gvn.transform( new IfFalseNode(iff_lt) );
         { PreserveJVMState pjvms(this);
           set_control(iffalse);
-          jump_switch_ranges(key_val, mid+1, hi, depth+1);
+          jump_switch_ranges(key_val, mid+1, hi, depth+1, trim_ranges);
         }
         set_control(iftrue);
       }
@@ -1474,7 +1478,7 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
         Node *iffalse = _gvn.transform( new IfFalseNode(iff_ge) );
         { PreserveJVMState pjvms(this);
           set_control(iftrue);
-          jump_switch_ranges(key_val, mid == lo ? mid+1 : mid, hi, depth+1);
+          jump_switch_ranges(key_val, mid == lo ? mid+1 : mid, hi, depth+1, trim_ranges);
         }
         set_control(iffalse);
       }
