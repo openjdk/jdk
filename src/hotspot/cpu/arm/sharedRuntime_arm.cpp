@@ -938,8 +938,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
     __ ldr(Rtemp, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
 
-    assert(markWord::unlocked_value == 1, "adjust this code");
-    __ tbz(Rtemp, exact_log2(markWord::unlocked_value), slow_case);
+    assert(markWord::neutral_value == 1, "adjust this code");
+    __ tbz(Rtemp, exact_log2(markWord::neutral_value), slow_case);
 
     __ bics(Rtemp, Rtemp, ~markWord::hash_mask_in_place);
     __ mov(R0, AsmOperand(Rtemp, lsr, markWord::hash_shift), ne);

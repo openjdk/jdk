@@ -3079,11 +3079,6 @@ void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
 // FlatArrayCheckNode (array1 array2 ...) is expanded into:
 //
 // long mark = array1.mark | array2.mark | ...;
-// long locked_bit = markWord::unlocked_value & array1.mark & array2.mark & ...;
-// if (locked_bit == 0) {
-//   // One array is locked, load prototype header from the klass
-//   mark = array1.klass.proto | array2.klass.proto | ...
-// }
 // if ((mark & markWord::flat_array_bit_in_place) == 0) {
 //    ...
 // }
@@ -3091,7 +3086,6 @@ void PhaseMacroExpand::expand_flatarraycheck_node(FlatArrayCheckNode* check) {
   bool array_inputs = _igvn.type(check->in(FlatArrayCheckNode::ArrayOrKlass))->isa_oopptr() != nullptr;
   if (array_inputs) {
     Node* mark = MakeConX(0);
-    Node* locked_bit = MakeConX(markWord::unlocked_value);
     Node* mem = check->in(FlatArrayCheckNode::Memory);
     for (uint i = FlatArrayCheckNode::ArrayOrKlass; i < check->req(); ++i) {
       Node* ary = check->in(i);
@@ -3101,53 +3095,20 @@ void PhaseMacroExpand::expand_flatarraycheck_node(FlatArrayCheckNode* check) {
       Node* mark_adr = basic_plus_adr(ary, oopDesc::mark_offset_in_bytes());
       Node* mark_load = _igvn.transform(LoadNode::make(_igvn, nullptr, mem, mark_adr, mark_adr->bottom_type()->is_ptr(), TypeX_X, TypeX_X->basic_type(), MemNode::unordered));
       mark = _igvn.transform(new OrXNode(mark, mark_load));
-      locked_bit = _igvn.transform(new AndXNode(locked_bit, mark_load));
     }
     assert(!mark->is_Con(), "Should have been optimized out");
-    Node* cmp = _igvn.transform(new CmpXNode(locked_bit, MakeConX(0)));
-    Node* is_unlocked = _igvn.transform(new BoolNode(cmp, BoolTest::ne));
 
-    // BoolNode might be shared, replace each if user
+    // Replace the bool node
     Node* old_bol = check->unique_out();
     assert(old_bol->is_Bool() && old_bol->as_Bool()->_test._test == BoolTest::ne, "unexpected condition");
-    for (DUIterator_Last imin, i = old_bol->last_outs(imin); i >= imin; --i) {
-      IfNode* old_iff = old_bol->last_out(i)->as_If();
-      Node* ctrl = old_iff->in(0);
-      RegionNode* region = new RegionNode(3);
-      Node* mark_phi = new PhiNode(region, TypeX_X);
 
-      // Check if array is unlocked
-      IfNode* iff = _igvn.transform(new IfNode(ctrl, is_unlocked, PROB_MAX, COUNT_UNKNOWN))->as_If();
+    // Check if flat array bits are set
+    Node* mask = MakeConX(markWord::flat_array_bit_in_place);
+    Node* masked = _igvn.transform(new AndXNode(_igvn.transform(mark), mask));
+    Node* cmp = _igvn.transform(new CmpXNode(masked, MakeConX(0)));
+    Node* is_not_flat = _igvn.transform(new BoolNode(cmp, BoolTest::eq));
+    _igvn.replace_node(old_bol, is_not_flat);
 
-      // Unlocked: Use bits from mark word
-      region->init_req(1, _igvn.transform(new IfTrueNode(iff)));
-      mark_phi->init_req(1, mark);
-
-      // Locked: Load prototype header from klass
-      ctrl = _igvn.transform(new IfFalseNode(iff));
-      Node* proto = MakeConX(0);
-      for (uint i = FlatArrayCheckNode::ArrayOrKlass; i < check->req(); ++i) {
-        Node* ary = check->in(i);
-        // Make loads control dependent to make sure they are only executed if array is locked
-        Node* klass_adr = basic_plus_adr(ary, oopDesc::klass_offset_in_bytes());
-        Node* klass = _igvn.transform(LoadKlassNode::make(_igvn, C->immutable_memory(), klass_adr, TypeInstPtr::KLASS, TypeInstKlassPtr::OBJECT));
-        Node* proto_adr = basic_plus_adr(top(), klass, in_bytes(Klass::prototype_header_offset()));
-        Node* proto_load = _igvn.transform(LoadNode::make(_igvn, ctrl, C->immutable_memory(), proto_adr, proto_adr->bottom_type()->is_ptr(), TypeX_X, TypeX_X->basic_type(), MemNode::unordered));
-        proto = _igvn.transform(new OrXNode(proto, proto_load));
-      }
-      region->init_req(2, ctrl);
-      mark_phi->init_req(2, proto);
-
-      // Check if flat array bits are set
-      Node* mask = MakeConX(markWord::flat_array_bit_in_place);
-      Node* masked = _igvn.transform(new AndXNode(_igvn.transform(mark_phi), mask));
-      cmp = _igvn.transform(new CmpXNode(masked, MakeConX(0)));
-      Node* is_not_flat = _igvn.transform(new BoolNode(cmp, BoolTest::eq));
-
-      ctrl = _igvn.transform(region);
-      iff = _igvn.transform(new IfNode(ctrl, is_not_flat, PROB_MAX, COUNT_UNKNOWN))->as_If();
-      _igvn.replace_node(old_iff, iff);
-    }
     _igvn.replace_node(check, C->top());
   } else {
     // Fall back to layout helper check
