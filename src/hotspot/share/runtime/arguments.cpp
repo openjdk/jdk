@@ -3625,11 +3625,7 @@ jint Arguments::apply_ergo() {
                                           UseProfiledLoopPredicate ||
                                           ShortRunningLongLoop;
 
-  if (!UseParsePredicates && (UseLoopLimitCheckPredicate ||
-                              UseAutoVectorizationPredicate ||
-                              UseLoopPredicate ||
-                              UseProfiledLoopPredicate ||
-                              ShortRunningLongLoop)) {
+  if (!UseParsePredicates && any_parse_predicate_flag_enabled) {
     // Disable any Parse Predicate enabling flag when UseParsePredicates is not set.
     FLAG_SET_ERGO(UseLoopLimitCheckPredicate, false);
     FLAG_SET_ERGO(UseLoopPredicate, false);
@@ -3648,8 +3644,7 @@ jint Arguments::apply_ergo() {
 
   }
 
-  if (UseParsePredicates && !UseLoopLimitCheckPredicate && !UseLoopPredicate && !UseProfiledLoopPredicate &&
-      !UseAutoVectorizationPredicate && !ShortRunningLongLoop) {
+  if (UseParsePredicates && !any_parse_predicate_flag_enabled) {
     warning("Disabling UseParsePredicates because all Parse Predicate flags are disabled: UseLoopLimitCheckPredicate,"
             " UseLoopPredicate, UseProfiledLoopPredicate, UseAutoVectorizationPredicate, and ShortRunningLongLoop");
     FLAG_SET_ERGO(UseParsePredicates, false);
