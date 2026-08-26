@@ -74,11 +74,6 @@ private:
   // It is also used when computing the optimum size for the old generation.
   size_t _promotion_potential;
 
-  // When a region is selected to be promoted in place, the remaining free memory is filled
-  // in to prevent additional allocations (preventing premature promotion of newly allocated
-  // objects). This field records the total amount of padding used for such regions.
-  size_t _pad_for_promote_in_place;
-
   // During construction of the collection set, we keep track of regions that are eligible
   // for promotion in place. These fields track the count of those humongous and regular regions.
   // This data is used to force the evacuation phase even when the collection set is otherwise
@@ -152,10 +147,6 @@ public:
   // See description in field declaration
   void set_promotion_potential(size_t val) { _promotion_potential = val; }
   size_t get_promotion_potential() const { return _promotion_potential; }
-
-  // See description in field declaration
-  void set_pad_for_promote_in_place(size_t pad) { _pad_for_promote_in_place = pad; }
-  size_t get_pad_for_promote_in_place() const { return _pad_for_promote_in_place; }
 
   // See description in field declaration
   void set_expected_humongous_region_promotions(size_t region_count) { _promotable_humongous_regions = region_count; }

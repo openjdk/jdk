@@ -24,6 +24,7 @@
  *
  */
 
+#include "code/aotCodeCache.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
@@ -219,8 +220,17 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
 
   // Test for in-cset
   if (is_strong) {
-    __ mv(t1, ShenandoahHeap::in_cset_fast_test_addr());
-    __ srli(t0, x10, ShenandoahHeapRegion::region_size_bytes_shift_jint());
+#if INCLUDE_CDS
+    if (AOTCodeCache::is_on_for_dump()) {
+      __ ld(t1, ExternalAddress(AOTRuntimeConstants::cset_base_address()));
+      __ lwu(t0, ExternalAddress(AOTRuntimeConstants::grain_shift_address()));
+      __ srl(t0, x10, t0);
+    } else
+#endif
+    {
+      __ mv(t1, ShenandoahHeap::in_cset_fast_test_addr());
+      __ srli(t0, x10, ShenandoahHeapRegion::region_size_bytes_shift_jint());
+    }
     __ add(t1, t1, t0);
     __ lbu(t1, Address(t1));
     __ test_bit(t0, t1, 0);
@@ -434,10 +444,20 @@ void ShenandoahBarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembl
 }
 
 void ShenandoahBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& L_error) {
+  assert_different_registers(obj, tmp1, tmp2);
   // Check if the oop is in the right area of memory
-  __ mv(tmp2, (intptr_t) Universe::verify_oop_mask());
-  __ andr(tmp1, obj, tmp2);
-  __ mv(tmp2, (intptr_t) Universe::verify_oop_bits());
+#if INCLUDE_CDS
+  if (AOTCodeCache::is_on_for_dump()) {
+    __ ld(tmp2, ExternalAddress(AOTRuntimeConstants::verify_oop_mask_address()));
+    __ andr(tmp1, obj, tmp2);
+    __ ld(tmp2, ExternalAddress(AOTRuntimeConstants::verify_oop_bits_address()));
+  } else
+#endif
+  {
+    __ mv(tmp2, (intptr_t) Universe::verify_oop_mask());
+    __ andr(tmp1, obj, tmp2);
+    __ mv(tmp2, (intptr_t) Universe::verify_oop_bits());
+  }
 
   // Compare tmp1 and tmp2.
   __ bne(tmp1, tmp2, L_error);
@@ -815,8 +835,14 @@ void ShenandoahBarrierStubC2::lrb(MacroAssembler& masm) {
     __ mv(_tmp2, _obj);
   }
 
-  __ mv(_tmp1, ShenandoahHeap::in_cset_fast_test_addr());
-  __ srli(_tmp2, _tmp2, ShenandoahHeapRegion::region_size_bytes_shift_jint());
+  if (AOTCodeCache::is_on_for_dump()) {
+    __ lwu(_tmp1, ExternalAddress(AOTRuntimeConstants::grain_shift_address()));
+    __ srl(_tmp2, _tmp2, _tmp1);
+    __ ld(_tmp1, ExternalAddress(AOTRuntimeConstants::cset_base_address()));
+  } else {
+    __ mv(_tmp1, ShenandoahHeap::in_cset_fast_test_addr());
+    __ srli(_tmp2, _tmp2, ShenandoahHeapRegion::region_size_bytes_shift_jint());
+  }
   __ add(_tmp1, _tmp1, _tmp2);
   __ lbu(_tmp1, Address(_tmp1, 0));
   maybe_far_jump_if_zero(masm, _tmp1);
@@ -854,7 +880,7 @@ void ShenandoahBarrierStubC2::lrb(MacroAssembler& masm) {
     // Save the result where needed. Narrow entries return narrowOop (32 bits)
     // we need to zero the upper 32 bits of x10.
     if (_narrow) {
-      __ zext_w(_obj, x10);
+      __ zext(_obj, x10, 32);
     } else {
       __ mv(_obj, x10);
     }

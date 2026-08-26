@@ -979,7 +979,7 @@ public class TestNullableArrays {
     }
 
     @Test
-    @IR(failOn = {ALLOC_ARRAY_OF_MYVALUE_KLASS, LOOP, UNSTABLE_IF_TRAP, PREDICATE_TRAP})
+    @IR(failOn = {LOOP, UNSTABLE_IF_TRAP, PREDICATE_TRAP})
     @IR(failOn = LOAD_OF_ANY_KLASS, applyIf = {"InlineTypeReturnedAsFields", "false"})
     @IR(counts = {LOAD_OF_ANY_KLASS, "4"}, applyIf = {"InlineTypeReturnedAsFields", "true"})
     public MyValue2 test29(MyValue2[] src) {
