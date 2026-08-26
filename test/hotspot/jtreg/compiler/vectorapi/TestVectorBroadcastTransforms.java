@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8358521 8389666
+ * @bug 8358521 8389666 8391171
  * @summary Optimize vector operations by reassociating broadcasted inputs
  * @modules jdk.incubator.vector
  * @library /test/lib /
@@ -107,11 +107,11 @@ public class TestVectorBroadcastTransforms {
         Verify.checkEQ(ir, ia * ib);
     }
 
-    // Integer vector DIV is currently matched on SVE. push_through_replicate
+    // Integer vector DIV is currently matched on SVE and RVV. push_through_replicate
     // must be able to scalarize DivVI via VectorNode::make_scalar(Op_DivI).
     @Test
     @IR(failOn = IRNode.DIV_VI,
-        applyIfCPUFeature = {"sve", "true"},
+        applyIfCPUFeatureOr = {"sve", "true", "rvv", "true"},
         counts = { IRNode.DIV_I, ">= 1",
                    IRNode.REPLICATE_I, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static int int_div(int ia, int ib) {
@@ -294,7 +294,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.DIV_VL,
-        applyIfCPUFeature = {"sve", "true"},
+        applyIfCPUFeatureOr = {"sve", "true", "rvv", "true"},
         counts = { IRNode.DIV_L, ">= 1",
                    IRNode.REPLICATE_L, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static long long_div(long la, long lb) {
@@ -841,7 +841,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.DIV_VB,
-        applyIfCPUFeature = {"sve", "true"},
+        applyIfCPUFeatureOr = {"sve", "true", "rvv", "true"},
         counts = { IRNode.DIV_I, ">= 1",
                    IRNode.REPLICATE_B, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static byte byte_div(byte ba, byte bb) {
@@ -1084,7 +1084,7 @@ public class TestVectorBroadcastTransforms {
 
     @Test
     @IR(failOn = IRNode.DIV_VS,
-        applyIfCPUFeature = {"sve", "true"},
+        applyIfCPUFeatureOr = {"sve", "true", "rvv", "true"},
         counts = { IRNode.DIV_I, ">= 1",
                    IRNode.REPLICATE_S, IRNode.VECTOR_SIZE_ANY, ">= 1" })
     static short short_div(short sa, short sb) {
