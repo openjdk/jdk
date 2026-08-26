@@ -63,7 +63,7 @@
  *     { "providers": [ "SUN", "SunRsaSign", "SunEC" ], "version": 1 }
  *     """);
  * }
- * the JSON string {@code "SUN"} can be accessed as follows:
+ * the JSON string "SUN" can be accessed as follows:
  * {@snippet lang=java:
  * JsonValue firstProvider = json.get("providers").get(0);
  * }
