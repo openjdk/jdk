@@ -30,6 +30,8 @@
  * @run main/othervm -Xbatch -XX:-ReduceInitialCardMarks -XX:-ReduceBulkZeroing ${test.main.class}
  */
 
+package compiler.escapeAnalysis;
+
 import java.util.Arrays;
 
 public class TestCopyOfBrokenAntiDependency {
