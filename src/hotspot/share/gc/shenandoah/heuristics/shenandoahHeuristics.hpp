@@ -88,6 +88,7 @@ protected:
   static constexpr uint Moving_Average_Samples = 10; // Number of samples to store in moving averages
 
   // True denotes that GC has been triggered, so no need to trigger again.
+  shenandoah_padding(0);
   Atomic<bool> _start_gc_is_pending;
 
   // This counts how many times since previous GC finished that this heuristic has answered false to should_start_gc().
@@ -96,8 +97,11 @@ protected:
   // note that once the trigger has been accepted, _start_gc_is_pending will be set and subsequent attempts to evaluate
   // the trigger conditions will return early and will not increase _declined_trigger_count. This is written to
   // by both the regulator and control thread, read by control thread.
+  shenandoah_padding(1);
   Atomic<size_t> _declined_trigger_count;
+  shenandoah_padding(2);
   Atomic<bool> _allocation_stalls;
+  shenandoah_padding(3);
 
   // Snapshot declined trigger count and alloc stalls to compute appropriate penalties (if warranted)
   struct PenaltyData {
