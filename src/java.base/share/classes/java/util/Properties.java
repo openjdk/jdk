@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -265,9 +265,9 @@ public class Properties extends Hashtable<Object,Object> {
      *
      * <p>
      * If a logical line is spread across several natural lines, the
-     * backslash escaping the line terminator sequence, the line
-     * terminator sequence, and any white space at the start of the
-     * following line have no effect on the key or element values.
+     * backslash escaping the line terminator sequence and any white
+     * space at the start of the following line have no effect on the
+     * key or element values.
      * The remainder of the discussion of key and element parsing
      * (when loading) will assume all the characters constituting
      * the key and element appear on a single natural line after
