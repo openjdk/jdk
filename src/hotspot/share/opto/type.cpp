@@ -4717,7 +4717,6 @@ jint TypeAryPtr::max_array_length() const {
   }
 }
 
-
 //-----------------------------narrow_size_type-------------------------------
 // Narrow the given size type to the index range for the given array base type.
 // Return null if the resulting int type becomes empty.
