@@ -26,6 +26,7 @@ package org.openjdk.bench.java.util;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 
+import java.lang.constant.MethodTypeDesc;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
@@ -41,6 +42,7 @@ public class ArrayListIterate {
 
     private ArrayList<Object> list;
     private int[] array;
+    private String shortDescriptor;
 
     @Setup
     public void setup() {
@@ -49,6 +51,7 @@ public class ArrayListIterate {
             list.add(new Object());
         }
         array = new int[SIZE];
+        shortDescriptor = "([IJLjava/lang/String;Z)Ljava/util/List;";
     }
 
     @Benchmark
@@ -90,4 +93,12 @@ public class ArrayListIterate {
         }
         return prev;
     }
+
+    // The benchmark brought over from java.lang.constant.MethodTypeDescFactories
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public MethodTypeDesc mtd_ofDescriptor() {
+        return MethodTypeDesc.ofDescriptor(shortDescriptor);
+    }
+
 }
