@@ -212,6 +212,12 @@ public sealed interface JsonValue permits JsonString, JsonNumber, JsonObject, Js
      * The default implementation provided by {@code JsonValue} throws {@code
      * JsonValueException}. As such, implementors of {@code JsonObject} are expected to
      * provide an implementation of this method.
+     * @implNote
+     * The JDK platform implementation of {@code JsonObject} preserves the
+     * encounter order of members. When a {@code JsonObject} is created by
+     * parsing, this corresponds to the order of members in the source JSON
+     * text. When created via the {@link JsonObject#of(Map)} factory method, the order
+     * follows the encounter order of the provided map.
      *
      * @throws JsonValueException if this {@code JsonValue} is not an instance of {@code JsonObject}.
      */
@@ -222,9 +228,7 @@ public sealed interface JsonValue permits JsonString, JsonNumber, JsonObject, Js
     // Access methods are able to provide a suitable default implementation directly
     // in JsonValue, and as such are not specified to be implemented by sub-interfaces.
     // However, relevant sub-interfaces will override them to explicitly have them
-    // declared in their Javadoc as well as make any specification changes.
-    // tryValue specification would be unchanged by all sub-interfaces, and as
-    // a result is left un-overridden.
+    // declared in their Javadoc as well as make any needed specification alterations.
 
     /**
      * {@return the {@code JsonValue} associated with the given member name if this

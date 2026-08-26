@@ -63,50 +63,30 @@ import jdk.incubator.json.impl.JsonNumberImpl;
 public non-sealed interface JsonNumber extends JsonValue {
 
     /**
-     * {@return an {@code int} value from the string representation}
-     * That is, it can be
-     * expressed exactly as a whole number and is within the range of
-     * {@link Integer#MIN_VALUE} and {@link Integer#MAX_VALUE}. This occurs,
-     * even if the string contains an exponent or a fractional part consisting of
-     * only zero digits. For example, both the JSON number "123.0" and "1.23e2"
-     * produce an {@code int} value of "123". A {@code JsonValueException}
-     * is thrown when the numeric value cannot be represented as an {@code int};
-     * for example, the value "5.5".
+     * {@inheritDoc}
      *
-     * @throws JsonValueException if this {@code JsonNumber} cannot
-     *      be represented as an {@code int}.
+     * @throws JsonValueException if this {@code JsonNumber} is not representable
+     *      as an {@code int}.
      */
     @Override
     int asInt();
 
     /**
-     * {@return a {@code long} value from the string representation}
-     * That is, it can be expressed exactly
-     * as a whole number and is within the range of {@link Long#MIN_VALUE} and
-     * {@link Long#MAX_VALUE}. This occurs, even if the string contains an
-     * exponent or a fractional part consisting of only zero digits. For example,
-     * both the JSON number "123.0" and "1.23e2" produce a {@code long} value of
-     * "123". A {@code JsonValueException} is thrown when the numeric value
-     * cannot be represented as a {@code long}; for example, the value "5.5".
+     * {@inheritDoc}
      *
-     * @throws JsonValueException if this {@code JsonNumber} cannot
-     *      be represented as a {@code long}.
+     * @throws JsonValueException if this {@code JsonNumber} is not representable
+     *      as a {@code long}.
      */
     @Override
     long asLong();
 
     /**
-     * {@return a finite {@code double} value from its string representation}
-     * The conversion is performed using {@link Double#parseDouble(String)},
-     * including rounding to the nearest representable {@code double} value
-     * and underflow to signed zero where applicable.
-     * If the converted {@code double} value is {@link Double#POSITIVE_INFINITY}
-     * or {@link Double#NEGATIVE_INFINITY}, a {@code JsonValueException} is thrown.
+     * {@inheritDoc}
      *
      * @apiNote {@inheritDoc}
      *
-     * @throws JsonValueException if this {@code JsonNumber} cannot
-     *      be represented as a finite {@code double}.
+     * @throws JsonValueException if this {@code JsonNumber} is not representable
+     *      as a finite {@code double}.
      */
     @Override
     double asDouble();
