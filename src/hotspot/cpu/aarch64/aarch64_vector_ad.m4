@@ -2245,9 +2245,7 @@ dnl                                 type, insn suffix, element size
 define(`REDUCE_STRICT_ORDER_ADD_FP_NEON', `
 instruct reduce_strict_order_add$1_neon(vReg$1 dst_src1, vReg vsrc, vReg$1 tmp) %{
   predicate(UseSVE == 0 &&
-            ifelse($1, F,
-                   `(Matcher::vector_length(n->in(2)) == 2 ||
-                     Matcher::vector_length(n->in(2)) == 4)',
+            ifelse($1, F, `Matcher::vector_length(n->in(2)) <= 4',
                    `Matcher::vector_length(n->in(2)) == 2') &&
             n->as_Reduction()->requires_strict_order());
   match(Set dst_src1 (AddReductionV$1 dst_src1 vsrc));

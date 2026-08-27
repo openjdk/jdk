@@ -3743,8 +3743,7 @@ instruct reduce_addL_sve(iRegLNoSp dst, iRegL isrc, vReg vsrc, vRegD tmp) %{
 
 instruct reduce_strict_order_addF_neon(vRegF dst_src1, vReg vsrc, vRegF tmp) %{
   predicate(UseSVE == 0 &&
-            (Matcher::vector_length(n->in(2)) == 2 ||
-             Matcher::vector_length(n->in(2)) == 4) &&
+            Matcher::vector_length(n->in(2)) <= 4 &&
             n->as_Reduction()->requires_strict_order());
   match(Set dst_src1 (AddReductionVF dst_src1 vsrc));
   effect(TEMP tmp);
