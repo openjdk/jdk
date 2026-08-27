@@ -21,7 +21,7 @@
  * questions.
  */
 
-// Not a test, data-only class.
+// Test data class, not a test.
 final class NamedGroupTestData {
 
     static final String[] DEFAULT_SUPPORTED_NG = new String[]{
@@ -80,17 +80,22 @@ final class NamedGroupTestData {
     };
 
     static final String[][] TEST_VALUES = new String[][]{
-            // Default named groups
+            /*
+             * Test values format as follows:
+             *   Requested Named Group(s), Negotiated Named Group, Protocol
+             */
+
+            // Use default named group
             {null, "X25519MLKEM768", "TLSv1.3"},
             {null, "x25519", "TLSv1.2"},
             {null, "x25519", "DTLSv1.2"},
 
-            // Single named group
+            // Request a single named group
             {"secp384r1", "secp384r1", "TLSv1.3"},
             {"secp384r1", "secp384r1", "TLSv1.2"},
             {"secp384r1", "secp384r1", "DTLSv1.2"},
 
-            // Multiple named groups
+            // Request multiple named groups
             {"secp256r1,secp384r1", "secp256r1", "TLSv1.3"},
             {"secp256r1,secp384r1", "secp256r1", "TLSv1.2"},
             {"secp256r1,secp384r1", "secp256r1", "DTLSv1.2"},

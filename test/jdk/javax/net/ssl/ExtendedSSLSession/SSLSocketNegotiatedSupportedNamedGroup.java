@@ -45,9 +45,14 @@ import javax.net.ssl.SSLSocket;
  *          /test/lib
  * @build NamedGroupTestData
  *
+ * @comment Full Handshake
  * @run main SSLSocketNegotiatedSupportedNamedGroup
+ *
+ * @comment Stateless Resumption
  * @run main SSLSocketNegotiatedSupportedNamedGroup resume TLSv1.3
  * @run main SSLSocketNegotiatedSupportedNamedGroup resume TLSv1.2
+ *
+ * @comment Stateful Resumption
  * @run main/othervm -Djdk.tls.server.enableSessionTicketExtension=false
  *      SSLSocketNegotiatedSupportedNamedGroup resume TLSv1.3
  * @run main/othervm -Djdk.tls.server.enableSessionTicketExtension=false
@@ -58,7 +63,7 @@ public class SSLSocketNegotiatedSupportedNamedGroup extends SSLSocketTemplate {
 
     private static final String INITIAL_GROUP = "secp256r1";
     private static final String RESUMED_GROUP = "secp384r1";
-    private static final int TIMEOUT = 10000;
+    private static final int TIMEOUT = 20000;
 
     private final String[] inputNamedGroups;
     private final String negotiatedNamedGroup;
@@ -168,10 +173,11 @@ public class SSLSocketNegotiatedSupportedNamedGroup extends SSLSocketTemplate {
         assertEquals(negotiatedNamedGroup, session.getNegotiatedNamedGroup());
     }
 
+    // Resumption test entry point.
     private void testResumption() throws Exception {
         // Key exchange is not performed in TLSv1.2 resumption unlike in TLSv1.3,
-        // so the session.getNegotiatedNamedGroup() TLSv1.2 resumed session
-        // returns null.
+        // so getNegotiatedNamedGroup() returns null for a resumed TLSv1.2
+        // session.
         String resumedNamedGroup = protocol.equals("TLSv1.3") ?
                 RESUMED_GROUP : null;
 
@@ -186,16 +192,19 @@ public class SSLSocketNegotiatedSupportedNamedGroup extends SSLSocketTemplate {
             configureResumptionServerSocket(serverSocket);
             serverSocket.setSoTimeout(TIMEOUT);
 
+            // Start server.
             Future<?> serverFuture = executor.submit(() -> {
-                runResumptionServer(serverSocket, resumedNamedGroup);
+                runServer(serverSocket, resumedNamedGroup);
                 return null;
             });
 
-            long initialCreationTime = runResumptionClient(
+            // Run initial client.
+            long initialCreationTime = runClient(
                     clientContext, serverSocket.getLocalPort(),
                     INITIAL_GROUP, INITIAL_GROUP, false);
 
-            long resumedCreationTime = runResumptionClient(
+            // Run resumption client.
+            long resumedCreationTime = runClient(
                     clientContext, serverSocket.getLocalPort(),
                     RESUMED_GROUP, resumedNamedGroup, true);
 
@@ -216,7 +225,7 @@ public class SSLSocketNegotiatedSupportedNamedGroup extends SSLSocketTemplate {
         socket.setSSLParameters(params);
     }
 
-    private void runResumptionServer(SSLServerSocket serverSocket,
+    private void runServer(SSLServerSocket serverSocket,
             String resumedNamedGroup) throws Exception {
 
         long initialCreationTime = 0;
@@ -227,6 +236,7 @@ public class SSLSocketNegotiatedSupportedNamedGroup extends SSLSocketTemplate {
             try (SSLSocket socket = (SSLSocket) serverSocket.accept()) {
                 socket.setSoTimeout(TIMEOUT);
 
+                // Don't create a new session on 2nd connection.
                 if (i == 1) {
                     socket.setEnableSessionCreation(false);
                 }
@@ -252,9 +262,9 @@ public class SSLSocketNegotiatedSupportedNamedGroup extends SSLSocketTemplate {
         }
     }
 
-    private long runResumptionClient(SSLContext context, int serverPort,
+    private long runClient(SSLContext context, int serverPort,
             String namedGroup, String expectedNamedGroup,
-            boolean requireResumption) throws Exception {
+            boolean resume) throws Exception {
 
         try (SSLSocket socket =
                 (SSLSocket) context.getSocketFactory().createSocket()) {
@@ -271,7 +281,7 @@ public class SSLSocketNegotiatedSupportedNamedGroup extends SSLSocketTemplate {
             socket.setSSLParameters(params);
             socket.setSoTimeout(TIMEOUT);
 
-            if (requireResumption) {
+            if (resume) {
                 socket.setEnableSessionCreation(false);
             }
 
@@ -282,13 +292,11 @@ public class SSLSocketNegotiatedSupportedNamedGroup extends SSLSocketTemplate {
             ExtendedSSLSession session = (ExtendedSSLSession) socket.getSession();
             assertEquals(expectedNamedGroup, session.getNegotiatedNamedGroup());
 
-            long creationTime = session.getCreationTime();
-
             socket.getOutputStream().write(85);
             socket.getOutputStream().flush();
             socket.getInputStream().read();
 
-            return creationTime;
+            return session.getCreationTime();
         }
     }
 }
