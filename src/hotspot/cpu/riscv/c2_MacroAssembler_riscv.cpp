@@ -955,6 +955,68 @@ void C2_MacroAssembler::string_indexof(Register haystack, Register needle,
   BLOCK_COMMENT("} string_indexof");
 }
 
+// Vector counterpart of string_indexof. The RVV stub scans the haystack with
+// the first/last needle character filter, which beats both the linear scan and
+// the Boyer-Moore-Horspool variant used above as soon as the needle is long
+// enough to amortize the call. Very short needles keep using the scalar linear
+// scan, where the call would dominate the search itself.
+//
+// result: x10
+// src: x11
+// src_count: x12
+// pattern: x13
+// pattern_count: x14
+void C2_MacroAssembler::string_indexof_v(Register haystack, Register needle,
+                                         Register haystack_len, Register needle_len,
+                                         Register tmp1, Register tmp2,
+                                         Register tmp3, Register tmp4,
+                                         Register result, int ae)
+{
+  assert(ae != StrIntrinsicNode::LU, "Invalid encoding");
+
+  Label LINEARSEARCH, DONE;
+
+  bool needle_isL = ae == StrIntrinsicNode::LL || ae == StrIntrinsicNode::UL;
+  bool isLL = ae == StrIntrinsicNode::LL;
+
+  BLOCK_COMMENT("string_indexof_v {");
+
+  // Note, inline_string_indexOf() generates checks:
+  // if (pattern.count > src.count) return -1;
+  // if (pattern.count == 0) return 0;
+
+  // needle_len < 8, use linear scan.
+  // tmp4 is expected to be "haystack_len-needle_len" by string_indexof_linearscan
+  sub(tmp4, haystack_len, needle_len);
+  subi(t0, needle_len, 8);
+  bltz(t0, LINEARSEARCH);
+
+  RuntimeAddress stub = nullptr;
+  if (isLL) {
+    stub = RuntimeAddress(StubRoutines::riscv::string_indexof_linear_ll_v());
+    assert(stub.target() != nullptr, "string_indexof_linear_ll_v stub has not been generated");
+  } else if (needle_isL) {
+    stub = RuntimeAddress(StubRoutines::riscv::string_indexof_linear_ul_v());
+    assert(stub.target() != nullptr, "string_indexof_linear_ul_v stub has not been generated");
+  } else {
+    stub = RuntimeAddress(StubRoutines::riscv::string_indexof_linear_uu_v());
+    assert(stub.target() != nullptr, "string_indexof_linear_uu_v stub has not been generated");
+  }
+  address call = reloc_call(stub);
+  if (call == nullptr) {
+    DEBUG_ONLY(reset_labels(LINEARSEARCH, DONE));
+    ciEnv::current()->record_failure("CodeCache is full");
+    return;
+  }
+  j(DONE);
+
+  bind(LINEARSEARCH);
+  string_indexof_linearscan(haystack, needle, haystack_len, needle_len, tmp1, tmp2, tmp3, tmp4, -1, result, ae);
+
+  bind(DONE);
+  BLOCK_COMMENT("} string_indexof_v");
+}
+
 // string_indexof
 // result: x10
 // src: x11
