@@ -29,7 +29,7 @@
 #include "gc/shared/plab.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahController.hpp"
-#include "gc/shenandoah/shenandoahHeapRegion.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "logging/log.hpp"
 #include "utilities/copy.hpp"
