@@ -24,7 +24,7 @@
 
 #include "asm/macroAssembler.hpp"
 
-void MacroAssembler::pd_extend_stack(Register const_method, Register temp1, Register temp2) {
+void MacroAssembler::pd_extend_stack(Register const_method, Register temp) {
     // nothing required here
 }
 
