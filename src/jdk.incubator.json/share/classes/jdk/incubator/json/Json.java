@@ -104,7 +104,7 @@ public final class Json {
     /**
      * {@return the String representation of the given {@code JsonValue} that conforms
      * to the JSON syntax} As opposed to the compact output returned by {@link
-     * JsonValue#toString()}, this method returns a JSON string that is better
+     * JsonValue#toString()}, this method returns JSON text that is better
      * suited for display. The {@code indent} parameter specifies the indentation
      * string used for each line and may contain only JSON insignificant whitespace
      * characters: space ({@code ' '}), horizontal tab ({@code '\t'}), line feed
