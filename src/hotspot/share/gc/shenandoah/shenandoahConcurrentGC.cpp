@@ -1238,7 +1238,7 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
 
   // Remember if we had self forwards. We want this flag cleared before we verify,
   // but we use it to control parallelism when we trash (and partially recycle) regions.
-  bool had_self_forwards = heap->has_forwarded_objects();
+  const bool had_self_forwards = heap->has_self_forwarded_objects();
   heap->finish_concurrent_roots();
 
   // Clear cancelled GC, if set. On cancellation path, the block before would handle
