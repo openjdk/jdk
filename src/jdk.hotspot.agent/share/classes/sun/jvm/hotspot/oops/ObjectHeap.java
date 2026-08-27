@@ -194,7 +194,10 @@ public class ObjectHeap {
     throw new UnknownOopException(handle.toString());
   }
 
-  // This method would be used to instantiate flattened object.
+  // This method is used to instantiate a flattened object.
+  // "handle" does not point directly to the payload of a flattened object.
+  // It must be adjusted by subtracting the payload offset from the flattened
+  // field address.
   public Oop newOop(OopHandle handle, InlineKlass klass) {
     return (handle == null) ? null
                             : new FlattenedInline(handle, this, klass);
