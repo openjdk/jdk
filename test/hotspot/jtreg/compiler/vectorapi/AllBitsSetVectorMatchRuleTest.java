@@ -240,6 +240,160 @@ public class AllBitsSetVectorMatchRuleTest {
         }
     }
 
+    @Test
+    @IR(counts = { IRNode.RISCV_VMASK_NOT_I, "1" }, applyIfPlatform = {"riscv64", "true"})
+    public static void testMaskNotI() {
+        VectorMask<Integer> avm = VectorMask.fromArray(I_SPECIES, ma, 0);
+        avm.not().intoArray(mr, 0);
+
+        // Verify results
+        for (int i = 0; i < I_SPECIES.length(); i++) {
+            Asserts.assertEquals(!ma[i], mr[i]);
+        }
+    }
+
+    @Test
+    @IR(counts = { IRNode.RISCV_VMASK_NOT_L, "1" }, applyIfPlatform = {"riscv64", "true"})
+    public static void testMaskNotL() {
+        VectorMask<Long> avm = VectorMask.fromArray(L_SPECIES, ma, 0);
+        avm.not().intoArray(mr, 0);
+
+        // Verify results
+        for (int i = 0; i < L_SPECIES.length(); i++) {
+            Asserts.assertEquals(!ma[i], mr[i]);
+        }
+    }
+
+    @Test
+    @IR(counts = { IRNode.RISCV_VMASK_NAND_I, "1" }, applyIfPlatform = {"riscv64", "true"})
+    public static void testMaskNandI() {
+        VectorMask<Integer> avm = VectorMask.fromArray(I_SPECIES, ma, 0);
+        VectorMask<Integer> bvm = VectorMask.fromArray(I_SPECIES, mb, 0);
+        avm.and(bvm).not().intoArray(mr, 0);
+
+        // Verify results
+        for (int i = 0; i < I_SPECIES.length(); i++) {
+            Asserts.assertEquals(!(ma[i] & mb[i]), mr[i]);
+        }
+    }
+
+    @Test
+    @IR(counts = { IRNode.RISCV_VMASK_NAND_L, "1" }, applyIfPlatform = {"riscv64", "true"})
+    public static void testMaskNandL() {
+        VectorMask<Long> avm = VectorMask.fromArray(L_SPECIES, ma, 0);
+        VectorMask<Long> bvm = VectorMask.fromArray(L_SPECIES, mb, 0);
+        avm.and(bvm).not().intoArray(mr, 0);
+
+        // Verify results
+        for (int i = 0; i < L_SPECIES.length(); i++) {
+            Asserts.assertEquals(!(ma[i] & mb[i]), mr[i]);
+        }
+    }
+
+    @Test
+    @IR(counts = { IRNode.RISCV_VMASK_NOR_I, "1" }, applyIfPlatform = {"riscv64", "true"})
+    public static void testMaskNorI() {
+        VectorMask<Integer> avm = VectorMask.fromArray(I_SPECIES, ma, 0);
+        VectorMask<Integer> bvm = VectorMask.fromArray(I_SPECIES, mb, 0);
+        avm.or(bvm).not().intoArray(mr, 0);
+
+        // Verify results
+        for (int i = 0; i < I_SPECIES.length(); i++) {
+            Asserts.assertEquals(!(ma[i] | mb[i]), mr[i]);
+        }
+    }
+
+    @Test
+    @IR(counts = { IRNode.RISCV_VMASK_NOR_L, "1" }, applyIfPlatform = {"riscv64", "true"})
+    public static void testMaskNorL() {
+        VectorMask<Long> avm = VectorMask.fromArray(L_SPECIES, ma, 0);
+        VectorMask<Long> bvm = VectorMask.fromArray(L_SPECIES, mb, 0);
+        avm.or(bvm).not().intoArray(mr, 0);
+
+        // Verify results
+        for (int i = 0; i < L_SPECIES.length(); i++) {
+            Asserts.assertEquals(!(ma[i] | mb[i]), mr[i]);
+        }
+    }
+
+    @Test
+    @IR(counts = { IRNode.RISCV_VMASK_XNOR_I, "1" }, applyIfPlatform = {"riscv64", "true"})
+    public static void testMaskXnorI() {
+        VectorMask<Integer> avm = VectorMask.fromArray(I_SPECIES, ma, 0);
+        VectorMask<Integer> bvm = VectorMask.fromArray(I_SPECIES, mb, 0);
+        avm.xor(bvm).not().intoArray(mr, 0);
+
+        // Verify results
+        for (int i = 0; i < I_SPECIES.length(); i++) {
+            Asserts.assertEquals(!(ma[i] ^ mb[i]), mr[i]);
+        }
+    }
+
+    @Test
+    @IR(counts = { IRNode.RISCV_VMASK_XNOR_L, "1" }, applyIfPlatform = {"riscv64", "true"})
+    public static void testMaskXnorL() {
+        VectorMask<Long> avm = VectorMask.fromArray(L_SPECIES, ma, 0);
+        VectorMask<Long> bvm = VectorMask.fromArray(L_SPECIES, mb, 0);
+        avm.xor(bvm).not().intoArray(mr, 0);
+
+        // Verify results
+        for (int i = 0; i < L_SPECIES.length(); i++) {
+            Asserts.assertEquals(!(ma[i] ^ mb[i]), mr[i]);
+        }
+    }
+
+    @Test
+    @IR(counts = { IRNode.RISCV_VMASK_XNOR_I, "1" }, applyIfPlatform = {"riscv64", "true"})
+    public static void testMaskEqI() {
+        VectorMask<Integer> avm = VectorMask.fromArray(I_SPECIES, ma, 0);
+        VectorMask<Integer> bvm = VectorMask.fromArray(I_SPECIES, mb, 0);
+        avm.eq(bvm).intoArray(mr, 0);
+
+        // Verify results
+        for (int i = 0; i < I_SPECIES.length(); i++) {
+            Asserts.assertEquals(ma[i] == mb[i], mr[i]);
+        }
+    }
+
+    @Test
+    @IR(counts = { IRNode.RISCV_VMASK_XNOR_L, "1" }, applyIfPlatform = {"riscv64", "true"})
+    public static void testMaskEqL() {
+        VectorMask<Long> avm = VectorMask.fromArray(L_SPECIES, ma, 0);
+        VectorMask<Long> bvm = VectorMask.fromArray(L_SPECIES, mb, 0);
+        avm.eq(bvm).intoArray(mr, 0);
+
+        // Verify results
+        for (int i = 0; i < L_SPECIES.length(); i++) {
+            Asserts.assertEquals(ma[i] == mb[i], mr[i]);
+        }
+    }
+
+    @Test
+    @IR(counts = { IRNode.RISCV_VMASK_OR_NOT_I, "1" }, applyIfPlatform = {"riscv64", "true"})
+    public static void testMaskOrNotI() {
+        VectorMask<Integer> avm = VectorMask.fromArray(I_SPECIES, ma, 0);
+        VectorMask<Integer> bvm = VectorMask.fromArray(I_SPECIES, mb, 0);
+        avm.or(bvm.not()).intoArray(mr, 0);
+
+        // Verify results
+        for (int i = 0; i < I_SPECIES.length(); i++) {
+            Asserts.assertEquals(ma[i] | !mb[i], mr[i]);
+        }
+    }
+
+    @Test
+    @IR(counts = { IRNode.RISCV_VMASK_OR_NOT_L, "1" }, applyIfPlatform = {"riscv64", "true"})
+    public static void testMaskOrNotL() {
+        VectorMask<Long> avm = VectorMask.fromArray(L_SPECIES, ma, 0);
+        VectorMask<Long> bvm = VectorMask.fromArray(L_SPECIES, mb, 0);
+        avm.or(bvm.not()).intoArray(mr, 0);
+
+        // Verify results
+        for (int i = 0; i < L_SPECIES.length(); i++) {
+            Asserts.assertEquals(ma[i] | !mb[i], mr[i]);
+        }
+    }
+
     // Tests that mask.not().and(other) matches to VMASK_AND_NOT (AndVMask commutative rule).
     @Test
     @IR(counts = { IRNode.VMASK_AND_NOT_I, "1" }, applyIfCPUFeatureOr = {"sve", "true", "rvv", "true"})

@@ -339,7 +339,6 @@ oop oopDesc::forwardee(markWord mark) const {
   }
 }
 
-// Note that the forwardee is not the same thing as the displaced_mark.
 // The forwardee is used when copying during scavenge and mark-sweep.
 // It does need to clear the low two locking- and GC-related bits.
 oop oopDesc::forwardee() const {
@@ -354,21 +353,13 @@ void oopDesc::unset_self_forwarded() {
 uint oopDesc::age() const {
   markWord m = mark();
   assert(!m.is_marked(), "Attempt to read age from forwarded mark");
-  if (m.has_displaced_mark_helper()) {
-    return m.displaced_mark_helper().age();
-  } else {
-    return m.age();
-  }
+  return m.age();
 }
 
 void oopDesc::incr_age() {
   markWord m = mark();
   assert(!m.is_marked(), "Attempt to increment age of forwarded mark");
-  if (m.has_displaced_mark_helper()) {
-    m.set_displaced_mark_helper(m.displaced_mark_helper().incr_age());
-  } else {
-    set_mark(m.incr_age());
-  }
+  set_mark(m.incr_age());
 }
 
 template <typename OopClosureType>
@@ -432,18 +423,6 @@ bool oopDesc::fast_no_hash_check() {
   markWord mrk = mark_acquire();
   assert(!mrk.is_marked(), "should never be marked");
   return mrk.is_unlocked() && mrk.has_no_hash();
-}
-
-bool oopDesc::has_displaced_mark() const {
-  return mark().has_displaced_mark_helper();
-}
-
-markWord oopDesc::displaced_mark() const {
-  return mark().displaced_mark_helper();
-}
-
-void oopDesc::set_displaced_mark(markWord m) {
-  mark().set_displaced_mark_helper(m);
 }
 
 bool oopDesc::mark_must_be_preserved() const {
