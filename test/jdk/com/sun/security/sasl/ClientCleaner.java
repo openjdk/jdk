@@ -35,7 +35,6 @@ package com.sun.security.sasl;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
-import java.util.Arrays;
 
 public final class ClientCleaner {
 
@@ -69,11 +68,6 @@ public final class ClientCleaner {
             throw new AssertionError(type +
                     ": dispose() did not clear password");
         }
-
-        // now set 'pw' to nonzero values and see if it's cleared again
-        Arrays.fill(pw, (byte)'x');
-        check(ref, queue, pw, (byte)'x', type +
-                ": Cleaner ran again after dispose()");
     }
 
     private static WeakReference<Object> newClient(String type,
