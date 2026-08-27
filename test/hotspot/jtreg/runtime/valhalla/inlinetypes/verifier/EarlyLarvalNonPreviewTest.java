@@ -1,5 +1,4 @@
 /*
- * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
  * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,33 +21,26 @@
  * questions.
  */
 
-/**
+/*
  * @test
- * @bug 8238384 8391160
- * @summary Test that Arrays.copyOf with non-escaping allocations and distinct memory slices compiles without assertion failures
- * @run main/othervm -Xbatch ${test.main.class}
- * @run main/othervm -Xbatch -XX:-ReduceInitialCardMarks -XX:-ReduceBulkZeroing ${test.main.class}
+ * @enablePreview
+ * @library /test/lib
+ * @modules java.base/jdk.internal.vm.annotation
+ *          java.base/jdk.internal.value
+ * @compile EarlyLarvalNonPreviewApp.jasm
+ * @run main EarlyLarvalNonPreviewTest
  */
 
-package compiler.escapeAnalysis;
-
-import java.util.Arrays;
-
-public class TestCopyOfBrokenAntiDependency {
-
+public class EarlyLarvalNonPreviewTest {
     public static void main(String[] args) {
-        for (int i = 0; i < 20_000; i++) {
-            test(100);
+        try {
+            var value = new EarlyLarvalNonPreviewApp(-1, -2);
+            throw new RuntimeException("Expected ClassFormatError");
+        } catch (ClassFormatError c) {
+            if (!c.getMessage().equals("StackMapTable format error: reserved frame type")) {
+                throw new RuntimeException("Unexpected ClassFormatError " + c.getMessage());
+            }
+            System.out.println("Test passed");
         }
-    }
-
-    private static Object test(int length) {
-        Object[] src  = new Object[length]; // non escaping
-        final Object[] dst = Arrays.copyOf(src, 10); // can't be removed
-        final Object[] dst2 = Arrays.copyOf(dst, 100);
-        // load is control dependent on membar from previous copyOf
-        // but has memory edge to first copyOf.
-        final Object v = dst[0];
-        return v;
     }
 }

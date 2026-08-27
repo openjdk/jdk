@@ -1,5 +1,4 @@
 /*
- * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
  * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,31 +23,36 @@
 
 /**
  * @test
- * @bug 8238384 8391160
- * @summary Test that Arrays.copyOf with non-escaping allocations and distinct memory slices compiles without assertion failures
- * @run main/othervm -Xbatch ${test.main.class}
- * @run main/othervm -Xbatch -XX:-ReduceInitialCardMarks -XX:-ReduceBulkZeroing ${test.main.class}
+ * @bug 8375639
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:StressLongCountedLoop=1 -XX:+AlwaysIncrementalInline
+ *                   -Xbatch -XX:CompileCommand=compileonly,${test.main.class}::test ${test.main.class}
+ * @run main ${test.main.class}
  */
 
-package compiler.escapeAnalysis;
+package compiler.longcountedloops;
 
-import java.util.Arrays;
+public class TestInnerLoopConstantFoldedExitTest {
+    static int offset = 1;
+    static final char[] array = {'a', 'b'};
 
-public class TestCopyOfBrokenAntiDependency {
-
-    public static void main(String[] args) {
-        for (int i = 0; i < 20_000; i++) {
-            test(100);
+    static void loop(String s, int off) {
+        for (int i = 0; i < 2; i++) {
+            if (array[off + i] != s.charAt(i)) {
+                return;
+            }
         }
     }
 
-    private static Object test(int length) {
-        Object[] src  = new Object[length]; // non escaping
-        final Object[] dst = Arrays.copyOf(src, 10); // can't be removed
-        final Object[] dst2 = Arrays.copyOf(dst, 100);
-        // load is control dependent on membar from previous copyOf
-        // but has memory edge to first copyOf.
-        final Object v = dst[0];
-        return v;
+    static void test() {
+        int start = offset - 1;
+        loop("cd", start);
+        loop("ab", start);
+    }
+
+    public static void main(String[] args) {
+        for (int i = 0; i < 50_000; i++) {
+            test();
+        }
     }
 }
+

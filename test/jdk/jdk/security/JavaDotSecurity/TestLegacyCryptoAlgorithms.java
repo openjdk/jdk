@@ -1,5 +1,4 @@
 /*
- * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
  * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,33 +21,23 @@
  * questions.
  */
 
+import java.security.Security;
+
 /**
  * @test
- * @bug 8238384 8391160
- * @summary Test that Arrays.copyOf with non-escaping allocations and distinct memory slices compiles without assertion failures
- * @run main/othervm -Xbatch ${test.main.class}
- * @run main/othervm -Xbatch -XX:-ReduceInitialCardMarks -XX:-ReduceBulkZeroing ${test.main.class}
+ * @bug 8388138
+ * @summary Test the default setting of the jdk.crypto.legacyAlgorithms security property
+ * @comment This property has a default value of "Cipher.RSA/ECB/PKCS1Padding"
+ *          This test assures the default is not changed.
+ * @run main TestLegacyCryptoAlgorithms
  */
+public class TestLegacyCryptoAlgorithms {
 
-package compiler.escapeAnalysis;
-
-import java.util.Arrays;
-
-public class TestCopyOfBrokenAntiDependency {
-
-    public static void main(String[] args) {
-        for (int i = 0; i < 20_000; i++) {
-            test(100);
+    public static void main(String args[]) throws Exception {
+        String value = Security.getProperty("jdk.crypto.legacyAlgorithms");
+        if (value == null || !value.equals("Cipher.RSA/ECB/PKCS1Padding")) {
+            throw new RuntimeException("Test failed: jdk.crypto.legacyAlgorithms " +
+                "security property does not have default value of Cipher.RSA/ECB/PKCS1Padding");
         }
-    }
-
-    private static Object test(int length) {
-        Object[] src  = new Object[length]; // non escaping
-        final Object[] dst = Arrays.copyOf(src, 10); // can't be removed
-        final Object[] dst2 = Arrays.copyOf(dst, 100);
-        // load is control dependent on membar from previous copyOf
-        // but has memory edge to first copyOf.
-        final Object v = dst[0];
-        return v;
     }
 }

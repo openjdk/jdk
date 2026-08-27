@@ -1,5 +1,4 @@
 /*
- * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
  * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,33 +21,34 @@
  * questions.
  */
 
-/**
- * @test
- * @bug 8238384 8391160
- * @summary Test that Arrays.copyOf with non-escaping allocations and distinct memory slices compiles without assertion failures
- * @run main/othervm -Xbatch ${test.main.class}
- * @run main/othervm -Xbatch -XX:-ReduceInitialCardMarks -XX:-ReduceBulkZeroing ${test.main.class}
- */
+final identity class EarlyLarvalNonPreviewApp extends java/lang/Record version 72:0
+{
+  public final Field x:I;
+  public final Field y:I;
 
-package compiler.escapeAnalysis;
-
-import java.util.Arrays;
-
-public class TestCopyOfBrokenAntiDependency {
-
-    public static void main(String[] args) {
-        for (int i = 0; i < 20_000; i++) {
-            test(100);
-        }
-    }
-
-    private static Object test(int length) {
-        Object[] src  = new Object[length]; // non escaping
-        final Object[] dst = Arrays.copyOf(src, 10); // can't be removed
-        final Object[] dst2 = Arrays.copyOf(dst, 100);
-        // load is control dependent on membar from previous copyOf
-        // but has memory edge to first copyOf.
-        final Object v = dst[0];
-        return v;
-    }
+  public Method "<init>":"(II)V"
+    stack 2  locals 3
+     0:  #{ x }
+     1:  #{ y }
+  {
+         aload_0;
+         invokespecial     Method java/lang/Record."<init>":"()V";
+         aload_0;
+         iload_1;
+         putfield          Field x:"I";
+         iload_1;
+         ifge              L16;
+         iload_2;
+         ineg;
+         istore_2;
+  L16:   stack_frame_type early_larval;
+          unset_fields;
+          frame_type full;
+              locals_map      class EarlyLarvalNonPreviewApp, int, int;
+              stack_map;
+         aload_0;
+         iload_2;
+         putfield          Field y:"I";
+         return;
+  }
 }

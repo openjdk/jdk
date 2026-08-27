@@ -407,7 +407,8 @@ void ShenandoahGenerationalControlThread::service_concurrent_old_cycle(const She
 
       if (!filling_complete) {
         assert(old_generation->state() == ShenandoahOldGeneration::FILLING, "Should still be filling");
-        log_info(gc, thread)("Preparation for old generation cycle was cancelled");
+        // Need to report at "gc" level to report GC ID proper.
+        log_info(gc)("Preparation for old generation cycle was cancelled");
         break;
       }
 
