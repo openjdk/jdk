@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8358521 8389666 8391171
+ * @bug 8358521 8389666
  * @summary Optimize vector operations by reassociating broadcasted inputs
  * @modules jdk.incubator.vector
  * @library /test/lib /
