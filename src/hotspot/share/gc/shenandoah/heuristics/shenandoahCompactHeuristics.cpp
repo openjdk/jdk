@@ -60,14 +60,14 @@ bool ShenandoahCompactHeuristics::should_start_gc() {
   const size_t min_threshold = capacity / 100 * ShenandoahMinFreeThreshold;
 
   if (available < min_threshold) {
-    log_trigger("Free (Soft) (" PROPERFMT ") is below minimum threshold (" PROPERFMT ")",
+    log_trigger("Occupancy. " PROPERFMT " free, below " PROPERFMT " threshold",
                 PROPERFMTARGS(available), PROPERFMTARGS(min_threshold));
     accept_trigger();
     return true;
   }
 
   if (bytes_allocated > threshold_bytes_allocated) {
-    log_trigger("Allocated since last cycle started (" PROPERFMT ") is larger than allocation threshold (" PROPERFMT ")",
+    log_trigger("Allocation. " PROPERFMT " allocated, above " PROPERFMT " threshold",
                 PROPERFMTARGS(bytes_allocated), PROPERFMTARGS(threshold_bytes_allocated));
     accept_trigger();
     return true;

@@ -46,8 +46,8 @@ bool ShenandoahStaticHeuristics::should_start_gc() {
 
   size_t threshold_available = capacity / 100 * ShenandoahMinFreeThreshold;
   if (available < threshold_available) {
-    log_trigger("Free (Soft) (" PROPERFMT ") is below minimum threshold (" PROPERFMT ")",
-                 PROPERFMTARGS(available), PROPERFMTARGS(threshold_available));
+    log_trigger("Occupancy. " PROPERFMT " free, below " PROPERFMT " threshold",
+            PROPERFMTARGS(available), PROPERFMTARGS(threshold_available));
     accept_trigger();
     return true;
   }
