@@ -965,8 +965,11 @@ void ShenandoahHeapRegion::partially_recycle() {
   // Adjust top to the end of our last encountered self-forwarded object. Everything above this is reusable memory.
   set_top(reclaimer.last_self_forwarded_object());
   const size_t reclaimed_bytes = pointer_delta(old_top, top()) * HeapWordSize;
-
-  log_debug(gc)("Reclaimed " PROPERFMT " from partially evacuated region (%zu)", PROPERFMTARGS(reclaimed_bytes), index());
+  if (reclaimed_bytes > 0) {
+    // Region could be used for new allocations, and we don't want those to be promoted prematurely
+    log_debug(gc)("Reclaimed " PROPERFMT " from partially evacuated region (%zu)", PROPERFMTARGS(reclaimed_bytes), index());
+    reset_age();
+  }
 }
 
 void ShenandoahHeapRegion::decrement_humongous_waste() {
