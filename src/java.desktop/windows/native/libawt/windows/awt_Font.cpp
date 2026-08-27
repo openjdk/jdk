@@ -1770,6 +1770,7 @@ void CCombinedSegTable::GetEUDCFileName(LPWSTR lpszFileName, int cchFileName)
         m_fEUDCSubKeyExist = FALSE;
         return; // can not get codepage information
     }
+    DASSERT(strlen((LPCSTR)lpszSubKey) > 0);
     HKEY hRootKey = HKEY_CURRENT_USER;
     HKEY hKey;
     LONG lRet = ::RegOpenKeyExA(hRootKey, lpszSubKey, 0, KEY_READ, &hKey);
