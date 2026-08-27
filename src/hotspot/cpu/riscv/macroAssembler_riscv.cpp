@@ -3822,9 +3822,6 @@ void MacroAssembler::encode_heap_oop(Register d, Register s) {
       assert_different_registers(s, t0);
       sub(t0, s, xheapbase);
       czero_eqz(d, t0, s);  // d = s == 0 ? 0 : t0
-    } else if (UseZbb) {
-      sub(d, s, xheapbase);
-      max(d, d, zr);
     } else {
       Label notNull;
       sub(d, s, xheapbase);
