@@ -65,7 +65,7 @@ public class TestStressArrayCopy {
     //
     // Default to 1/4 of the CPUs, and allow users to override.
     static final int MAX_PARALLELISM = Integer.getInteger("maxParallelism",
-            Math.max(1, Runtime.getRuntime().availableProcessors() / 4));
+        Math.max(1, Runtime.getRuntime().availableProcessors() / 4));
 
     private static List<String> mix(List<String> o, String... mix) {
         List<String> n = new ArrayList<>(o);
@@ -145,15 +145,15 @@ public class TestStressArrayCopy {
         }
 
         String[] classNames = {
-                "compiler.arraycopy.stress.StressBooleanArrayCopy",
-                "compiler.arraycopy.stress.StressByteArrayCopy",
-                "compiler.arraycopy.stress.StressCharArrayCopy",
-                "compiler.arraycopy.stress.StressShortArrayCopy",
-                "compiler.arraycopy.stress.StressIntArrayCopy",
-                "compiler.arraycopy.stress.StressFloatArrayCopy",
-                "compiler.arraycopy.stress.StressLongArrayCopy",
-                "compiler.arraycopy.stress.StressDoubleArrayCopy",
-                "compiler.arraycopy.stress.StressObjectArrayCopy",
+            "compiler.arraycopy.stress.StressBooleanArrayCopy",
+            "compiler.arraycopy.stress.StressByteArrayCopy",
+            "compiler.arraycopy.stress.StressCharArrayCopy",
+            "compiler.arraycopy.stress.StressShortArrayCopy",
+            "compiler.arraycopy.stress.StressIntArrayCopy",
+            "compiler.arraycopy.stress.StressFloatArrayCopy",
+            "compiler.arraycopy.stress.StressLongArrayCopy",
+            "compiler.arraycopy.stress.StressDoubleArrayCopy",
+            "compiler.arraycopy.stress.StressObjectArrayCopy",
         };
 
         System.out.println("Total configs: " + configs.size());
@@ -163,6 +163,8 @@ public class TestStressArrayCopy {
 
         ArrayList<Fork> forks = new ArrayList<>();
         int jobs = 0;
+        final long REPORT_INTERVAL_MS = 30_000;
+        long lastReport = 0;
 
         for (List<String> c : configs) {
             for (String className : classNames) {
@@ -188,11 +190,15 @@ public class TestStressArrayCopy {
                         forks.remove(f);
                         jobs--;
                     } else {
-                        System.out.println("Still waiting for " + jobs + " processes to complete:");
-                        for (Fork f2 : forks) {
-                            if (f2.p().isAlive()) {
-                                long elapsed = (System.currentTimeMillis() - f2.startTime()) / 1000;
-                                System.out.println("  Still running: " + f2.className() + " config: " + f2.config() + " elapsed: " + elapsed + "s");
+                        long now = System.currentTimeMillis();
+                        if (now - lastReport >= REPORT_INTERVAL_MS) {
+                            lastReport = now;
+                            System.out.println("Still waiting for " + jobs + " processes to complete:");
+                            for (Fork f2 : forks) {
+                                if (f2.p().isAlive()) {
+                                    long elapsed = (now - f2.startTime()) / 1000;
+                                    System.out.println("  Still running: " + f2.className() + " config: " + f2.config() + " elapsed: " + elapsed + "s");
+                                }
                             }
                         }
                         // Nothing is done, wait a little.
