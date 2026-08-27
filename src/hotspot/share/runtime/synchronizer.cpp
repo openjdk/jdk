@@ -373,7 +373,7 @@ bool ObjectSynchronizer::quick_notify(oopDesc* obj, JavaThread* current, bool al
   }
 
   if (mark.has_monitor()) {
-    ObjectMonitor* const mon = read_monitor(obj, mark);
+    ObjectMonitor* const mon = read_monitor(obj);
     if (mon == nullptr) {
       // Racing with inflation/deflation go slow path
       return false;
@@ -715,7 +715,7 @@ bool ObjectSynchronizer::current_thread_holds_lock(JavaThread* current,
   }
 
   while (mark.has_monitor()) {
-    ObjectMonitor* monitor = read_monitor(obj, mark);
+    ObjectMonitor* monitor = read_monitor(obj);
     if (monitor != nullptr) {
       return monitor->is_entered(current) != 0;
     }
@@ -744,7 +744,7 @@ JavaThread* ObjectSynchronizer::get_lock_owner(ThreadsList * t_list, Handle h_ob
   }
 
   while (mark.has_monitor()) {
-    ObjectMonitor* monitor = read_monitor(obj, mark);
+    ObjectMonitor* monitor = read_monitor(obj);
     if (monitor != nullptr) {
       return Threads::owning_thread_from_monitor(t_list, monitor);
     }
@@ -1377,7 +1377,7 @@ void ObjectSynchronizer::chk_in_use_entry(ObjectMonitor* n, outputStream* out,
   }
 
   const markWord mark = obj->mark();
-  ObjectMonitor* const obj_mon = read_monitor(obj, mark);
+  ObjectMonitor* const obj_mon = read_monitor(obj);
   if (n != obj_mon) {
     out->print_cr("ERROR: monitor=" INTPTR_FORMAT ": in-use monitor's "
                   "object does not refer to the same monitor: obj="
@@ -1660,7 +1660,7 @@ bool ObjectSynchronizer::fast_lock_spin_enter(oop obj, LockStack& lock_stack, Ja
       return true;
     } else if (observed_deflation) {
       // Spin while monitor is being deflated.
-      ObjectMonitor* monitor = ObjectSynchronizer::read_monitor(obj, mark);
+      ObjectMonitor* monitor = ObjectSynchronizer::read_monitor(obj);
       return monitor == nullptr || monitor->is_being_async_deflated();
     }
     // Else stop spinning.
@@ -1860,7 +1860,7 @@ ObjectMonitor* ObjectSynchronizer::inflate_locked_or_imse(oop obj, ObjectSynchro
     }
 
     assert(mark.has_monitor(), "must be");
-    ObjectMonitor* monitor = ObjectSynchronizer::read_monitor(obj, mark);
+    ObjectMonitor* monitor = ObjectSynchronizer::read_monitor(obj);
     if (monitor != nullptr) {
       if (monitor->has_anonymous_owner()) {
         LockStack& lock_stack = current->lock_stack();
@@ -2090,10 +2090,6 @@ ObjectMonitor* ObjectSynchronizer::get_monitor_from_table(oop obj) {
 }
 
 ObjectMonitor* ObjectSynchronizer::read_monitor(oop obj) {
-  return ObjectSynchronizer::read_monitor(obj, obj->mark());
-}
-
-ObjectMonitor* ObjectSynchronizer::read_monitor(oop obj, markWord mark) {
   return ObjectSynchronizer::get_monitor_from_table(obj);
 }
 

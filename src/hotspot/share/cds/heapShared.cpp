@@ -35,7 +35,7 @@
 #include "cds/aotStreamedHeapLoader.hpp"
 #include "cds/aotStreamedHeapWriter.hpp"
 #include "cds/archiveBuilder.hpp"
-#include "cds/archiveUtils.hpp"
+#include "cds/archiveUtils.inline.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cdsEnumKlass.hpp"
@@ -61,12 +61,14 @@
 #include "memory/universe.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/fieldStreams.inline.hpp"
+#include "oops/flatArrayOop.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopCast.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "prims/resolvedMethodTable.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/globals_extension.hpp"
@@ -142,6 +144,8 @@ ArchivedKlassSubGraphInfoRecord* HeapShared::_run_time_special_subgraph;
 GrowableArrayCHeap<oop, mtClassShared>* HeapShared::_pending_roots = nullptr;
 OopHandle HeapShared::_scratch_basic_type_mirrors[T_VOID+1];
 MetaspaceObjToOopHandleTable* HeapShared::_scratch_objects_table = nullptr;
+static GrowableArray<int>* _dumptime_resolved_methods = nullptr;
+static Array<int>* _runtime_resolved_methods = nullptr;
 
 static bool is_subgraph_root_class_of(ArchivableStaticFieldInfo fields[], InstanceKlass* ik) {
   for (int i = 0; fields[i].valid(); i++) {
@@ -640,6 +644,7 @@ bool HeapShared::archive_object(oop obj, oop referrer, KlassSubGraphInfo* subgra
         m = RegeneratedClasses::maybe_get_regenerated_object(m);
         InstanceKlass* method_holder = m->method_holder();
         AOTArtifactFinder::add_cached_class(method_holder);
+        _dumptime_resolved_methods->append(HeapShared::append_root(obj));
       }
     }
   }
@@ -712,6 +717,7 @@ void HeapShared::remove_scratch_resolved_references(ConstantPool* src) {
 
 void HeapShared::init_dumping() {
   _scratch_objects_table = new (mtClass)MetaspaceObjToOopHandleTable();
+  _dumptime_resolved_methods = new (mtClassShared) GrowableArray<int>(100, mtClassShared);
   _pending_roots = new GrowableArrayCHeap<oop, mtClassShared>(500);
   _pending_roots->append(nullptr); // root index 0 represents a null oop
   DEBUG_ONLY(_dumptime_classes_with_cached_oops = new (mtClassShared)ArchivableKlassTable());
@@ -1024,6 +1030,10 @@ void HeapShared::write_heap(AOTMappedHeapInfo* mapped_heap_info, AOTStreamedHeap
   delete _pending_roots;
   _pending_roots = nullptr;
 
+  _runtime_resolved_methods = ArchiveUtils::archive_array(_dumptime_resolved_methods);
+  delete _dumptime_resolved_methods;
+  _dumptime_resolved_methods = nullptr;
+
   make_archived_object_cache_gc_safe();
 }
 
@@ -1313,7 +1323,25 @@ void HeapShared::write_subgraph_info_table() {
 void HeapShared::serialize_tables(SerializeClosure* soc) {
   _run_time_subgraph_info_table.serialize_header(soc);
   soc->do_ptr(&_run_time_special_subgraph);
+  soc->do_ptr(&_runtime_resolved_methods);
   DEBUG_ONLY(soc->do_ptr(&_runtime_classes_with_cached_oops));
+}
+
+void HeapShared::load_cached_resolved_methods() {
+  precond(CDSConfig::is_using_aot_linked_classes());
+  if (_runtime_resolved_methods != nullptr) {
+    JavaThread* current = JavaThread::current();
+    HandleMark hm(current);
+    for (int i = 0; i < _runtime_resolved_methods->length(); i++) {
+      int root_index = _runtime_resolved_methods->at(i);
+      Handle mem_name(current,  get_root(root_index, /*clear=*/true));
+      Method* method = java_lang_invoke_ResolvedMethodName::vmtarget(mem_name());
+      InstanceKlass* holder = method->method_holder();
+      holder->set_has_resolved_methods();
+      oop o = ResolvedMethodTable::add_method(method, mem_name);
+      precond(o == mem_name());
+    }
+  }
 }
 
 static void verify_the_heap(Klass* k, const char* which) {
@@ -1715,6 +1743,107 @@ void HeapShared::init_box_classes(TRAPS) {
   }
 }
 
+// Used by HeapShared::find_inline_classes().
+class HeapShared::InlineKlassFinder : public FieldClosure {
+  KlassSubGraphInfo* _subgraph_info;
+  InstanceKlass* _ik;
+  address _obj;
+public:
+  // obj points to the "logical address" of:
+  //     (a) a regular heap object, or
+  //     (b) an element of a flattened array, or
+  //     (c) a flattened field embedded inside a heap object.
+  // For (a), obj is the same as the address of the heap object.
+  // For (b) and (c), obj points to InlineKlass::cast(_ik)->payload_offset() bytes below
+  // the payload.
+  InlineKlassFinder(KlassSubGraphInfo* subgraph_info, InstanceKlass* ik, address obj)
+    : _subgraph_info(subgraph_info), _ik(ik), _obj(obj) {
+    precond(obj != nullptr);
+    precond(ik->has_inlined_fields());
+  }
+
+  // This function is called on every field of _ik.
+  void do_field(fieldDescriptor* fd) override {
+    if (fd->is_flat()) {
+      precond(fd->field_type() == T_OBJECT);
+      precond(_ik == fd->field_holder());
+
+      // The type of this flattened field
+      InlineKlass* vk = _ik->get_inline_type_field_klass(fd->index());
+
+      // The "logical address" of this flattened field
+      address field_addr = _obj + fd->offset() - vk->payload_offset();
+
+      if (fd->is_null_free_inline_type() || !vk->is_payload_marked_as_null(field_addr)) {
+        // Found a non-null flattened instance of vk. Let's record vk.
+        add_inline_class(_subgraph_info, vk);
+        if (vk->has_inlined_fields()) {
+          InlineKlassFinder finder(_subgraph_info, vk, field_addr);
+          finder.find();
+        }
+      }
+    }
+  }
+
+  void find() {
+    _ik->do_nonstatic_fields(this);
+  }
+};
+
+void HeapShared::add_inline_class(KlassSubGraphInfo* subgraph_info, InlineKlass* k) {
+  subgraph_info->add_subgraph_object_klass(k);
+  if (InstanceKlass::cast(k)->is_enum_subclass()
+      || (subgraph_info == _dump_time_special_subgraph)) {
+      AOTArtifactFinder::add_aot_inited_class(k);
+  }
+}
+
+// Recursively scan for any InlineKlass K that has least one non-null flattened instance
+// inside orig_obj. K should be recorded with add_inline_class().
+//
+// Reason for doing this:
+//
+//     value class Point { short x; short y; ... }
+//     value class Line {
+//         @NullRestricted Point p1;
+//         @NullRestricted Point p2; ... }
+//
+// Klasses of non-flattened instances are already recorded by HeapShared::archive_object().
+//
+// If only a single instance of Line is archived, HeapShared::archive_object() would
+// have never visited a (non-flattened) instance of Point, but we must store Point in
+// AOT-initialized state. This function finds Point.
+void HeapShared::find_inline_classes(KlassSubGraphInfo* subgraph_info, oop orig_obj) {
+  Klass* klass = orig_obj->klass();
+
+  if (klass->is_flatArray_klass()) {
+    FlatArrayKlass* fak = FlatArrayKlass::cast(klass);
+    precond(orig_obj->is_flatArray());
+    flatArrayOop fa = oop_cast<flatArrayOop>(orig_obj);
+    InlineKlass* elem_k = fak->element_klass();
+    bool added = false;
+    for (int i = 0; i < fa->length(); i++) {
+      if (fak->is_null_free_array_klass() || !fa->obj_at_is_null(i)) {
+        if (!added) {
+          add_inline_class(subgraph_info, elem_k);
+        }
+        if (elem_k->has_inlined_fields()) {
+          // "logical address" of the i-th array element.
+          address elem = static_cast<address>(fa->value_at_addr(i, fak->layout_helper())) - elem_k->payload_offset();
+          InlineKlassFinder finder(subgraph_info, elem_k, elem);
+          finder.find();
+        }
+      }
+    }
+  } else if (klass->is_instance_klass()) {
+    InstanceKlass* ik = InstanceKlass::cast(klass);
+    if (ik->has_inlined_fields()) {
+      InlineKlassFinder finder(subgraph_info, ik, cast_from_oop<address>(orig_obj));
+      finder.find();
+    }
+  }
+}
+
 // (1) If orig_obj has not been archived yet, archive it.
 // (2) If orig_obj has not been seen yet (since start_recording_subgraph() was called),
 //     trace all  objects that are reachable from it, and make sure these objects are archived.
@@ -1849,6 +1978,8 @@ bool HeapShared::walk_one_object(PendingOopStack* stack, int level, KlassSubGrap
     OopFieldPusher pusher(stack, level, record_klasses_only, subgraph_info, orig_obj);
     orig_obj->oop_iterate(&pusher);
   }
+
+  find_inline_classes(subgraph_info, orig_obj);
 
   if (CDSConfig::is_dumping_aot_linked_classes()) {
     // The enum klasses are archived with aot-initialized mirror.

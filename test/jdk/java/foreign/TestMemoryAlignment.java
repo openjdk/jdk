@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @run testng TestMemoryAlignment
+ * @run junit TestMemoryAlignment
  */
 
 import java.io.File;
@@ -46,18 +46,23 @@ import java.nio.file.StandardOpenOption;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
-import org.testng.annotations.*;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestMemoryAlignment {
 
-    @Test(dataProvider = "alignments")
+    @ParameterizedTest
+    @MethodSource("createAlignments")
     public void testAlignedAccess(long align) {
         ValueLayout layout = ValueLayout.JAVA_INT
                 .withOrder(ByteOrder.BIG_ENDIAN);
-        assertEquals(layout.byteAlignment(), 4);
+        assertEquals(4, layout.byteAlignment());
         ValueLayout aligned = layout.withByteAlignment(align);
-        assertEquals(aligned.byteAlignment(), align); //unreasonable alignment here, to make sure access throws
+        assertEquals(align, aligned.byteAlignment()); //unreasonable alignment here, to make sure access throws
         VarHandle vh = aligned.varHandle();
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment segment = arena.allocate(aligned);
@@ -69,42 +74,26 @@ public class TestMemoryAlignment {
             vh.set(nextSegment, 0L, 0xffffff);
 
             int val = (int)vh.get(segment, 0L);
-            assertEquals(val, -42);
+            assertEquals(-42, val);
         }
     }
 
-    @Test(dataProvider = "alignments")
-    public void testUnalignedAccess(long align) {
-        ValueLayout layout = ValueLayout.JAVA_INT
-                .withOrder(ByteOrder.BIG_ENDIAN);
-        assertEquals(layout.byteAlignment(), 4);
-        ValueLayout aligned = layout.withByteAlignment(align);
-        try (Arena arena = Arena.ofConfined()) {
-            MemoryLayout alignedGroup = MemoryLayout.structLayout(MemoryLayout.paddingLayout(1), aligned);
-            assertEquals(alignedGroup.byteAlignment(), align);
-            VarHandle vh = aligned.varHandle();
-            MemorySegment segment = arena.allocate(alignedGroup);;
-            vh.set(segment.asSlice(1L), 0L, -42);
-            assertEquals(align, 8); //this is the only case where access is aligned
-        } catch (IllegalArgumentException ex) {
-            assertNotEquals(align, 8); //if align != 8, access is always unaligned
-        }
-    }
-
-    @Test(dataProvider = "alignments")
+    @ParameterizedTest
+    @MethodSource("createAlignments")
     public void testUnalignedPath(long align) {
         MemoryLayout layout = ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN);
         MemoryLayout aligned = layout.withByteAlignment(align).withName("value");
         try {
             GroupLayout alignedGroup = MemoryLayout.structLayout(MemoryLayout.paddingLayout(1), aligned);
             alignedGroup.varHandle(PathElement.groupElement("value"));
-            assertEquals(align, 1); //this is the only case where path is aligned
+            assertEquals(1, align); //this is the only case where path is aligned
         } catch (IllegalArgumentException ex) {
-            assertNotEquals(align, 1); //if align != 8, path is always unaligned
+            assertNotEquals(1, align); //if align != 8, path is always unaligned
         }
     }
 
-    @Test(dataProvider = "alignments")
+    @ParameterizedTest
+    @MethodSource("createAlignments")
     public void testUnalignedSequence(long align) {
         try {
             SequenceLayout layout = MemoryLayout.sequenceLayout(5, ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN).withByteAlignment(align));
@@ -129,22 +118,23 @@ public class TestMemoryAlignment {
         GroupLayout g = MemoryLayout.structLayout(vChar.withByteAlignment(1).withName("a"),
                                vShort.withByteAlignment(1).withName("b"),
                                vInt.withByteAlignment(1).withName("c"));
-        assertEquals(g.byteAlignment(), 1);
+        assertEquals(1, g.byteAlignment());
         VarHandle vh_c = g.varHandle(PathElement.groupElement("a"));
         VarHandle vh_s = g.varHandle(PathElement.groupElement("b"));
         VarHandle vh_i = g.varHandle(PathElement.groupElement("c"));
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment segment = arena.allocate(g);;
             vh_c.set(segment, 0L, Byte.MIN_VALUE);
-            assertEquals(vh_c.get(segment, 0L), Byte.MIN_VALUE);
+            assertEquals(Byte.MIN_VALUE, vh_c.get(segment, 0L));
             vh_s.set(segment, 0L, Short.MIN_VALUE);
-            assertEquals(vh_s.get(segment, 0L), Short.MIN_VALUE);
+            assertEquals(Short.MIN_VALUE, vh_s.get(segment, 0L));
             vh_i.set(segment, 0L, Integer.MIN_VALUE);
-            assertEquals(vh_i.get(segment, 0L), Integer.MIN_VALUE);
+            assertEquals(Integer.MIN_VALUE, vh_i.get(segment, 0L));
         }
     }
 
-    @Test(dataProvider = "alignments")
+    @ParameterizedTest
+    @MethodSource("createAlignments")
     public void testActualByteAlignment(long align) {
         if (align > (1L << 10)) {
             return;
@@ -153,8 +143,8 @@ public class TestMemoryAlignment {
             var segment = arena.allocate(4, align);
             assertTrue(segment.maxByteAlignment() >= align);
             // Power of two?
-            assertEquals(Long.bitCount(segment.maxByteAlignment()), 1);
-            assertEquals(segment.asSlice(1).maxByteAlignment(), 1);
+            assertEquals(1, Long.bitCount(segment.maxByteAlignment()));
+            assertEquals(1, segment.asSlice(1).maxByteAlignment());
         }
     }
 
@@ -167,8 +157,8 @@ public class TestMemoryAlignment {
             // be positive.
             assertTrue(segment.maxByteAlignment() >= Byte.BYTES);
             // Power of two?
-            assertEquals(Long.bitCount(segment.maxByteAlignment()), 1);
-            assertEquals(segment.asSlice(1).maxByteAlignment(), 1);
+            assertEquals(1, Long.bitCount(segment.maxByteAlignment()));
+            assertEquals(1, segment.asSlice(1).maxByteAlignment());
         } finally {
             tmp.delete();
         }
@@ -177,25 +167,24 @@ public class TestMemoryAlignment {
     @Test()
     public void testActualByteAlignmentNull() {
         long alignment = MemorySegment.NULL.maxByteAlignment();
-        assertEquals(1L << 62, alignment);
+        assertEquals(alignment, 1L << 62);
     }
 
-    @Test(dataProvider = "heapSegments")
+    @ParameterizedTest
+    @MethodSource("heapSegments")
     public void testActualByteAlignmentHeap(MemorySegment segment, int bytes) {
-        assertEquals(segment.maxByteAlignment(), bytes);
+        assertEquals(bytes, segment.maxByteAlignment());
         // A slice at offset 1 should always have an alignment of 1
         var segmentSlice = segment.asSlice(1);
-        assertEquals(segmentSlice.maxByteAlignment(), 1);
+        assertEquals(1, segmentSlice.maxByteAlignment());
     }
 
-    @DataProvider(name = "alignments")
     public Object[][] createAlignments() {
         return LongStream.range(1, 20)
                 .mapToObj(v -> new Object[] { 1L << v })
                 .toArray(Object[][]::new);
     }
 
-    @DataProvider(name = "heapSegments")
     public Object[][] heapSegments() {
         return Stream.of(
                         new Object[]{MemorySegment.ofArray(new byte[]{1}), Byte.BYTES},
