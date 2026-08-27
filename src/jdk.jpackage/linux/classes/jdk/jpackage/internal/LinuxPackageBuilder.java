@@ -24,20 +24,26 @@
  */
 package jdk.jpackage.internal;
 
-import static jdk.jpackage.internal.I18N.buildConfigException;
+import static jdk.jpackage.internal.cli.StandardValidator.IS_LINUX_DEB_PACKAGE_NAME;
+import static jdk.jpackage.internal.cli.StandardValidator.IS_LINUX_RPM_PACKAGE_NAME;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.regex.Pattern;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.ApplicationLayout;
+import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.LinuxApplication;
 import jdk.jpackage.internal.model.LinuxPackage;
 import jdk.jpackage.internal.model.LinuxPackageMixin;
 import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.model.RuntimeLayout;
 import jdk.jpackage.internal.model.StandardPackageType;
+import jdk.jpackage.internal.util.CommandOutputControl.UnexpectedExitCodeException;
 
 final class LinuxPackageBuilder {
 
@@ -46,15 +52,15 @@ final class LinuxPackageBuilder {
     }
 
     LinuxPackage create() {
-        pkgBuilder.name(Optional.ofNullable(literalName).orElseGet(() -> {
-            // Lower case and turn spaces/underscores into dashes
+        pkgBuilder.name(Optional.ofNullable(linuxPackageName).orElseGet(() -> {
+            // Lower case and turn spaces/underscores into hyphens
             return pkgBuilder.create().packageName().toLowerCase().replaceAll("[ _]", "-");
         }));
 
         final var tmpPkg = pkgBuilder.create();
 
         tmpPkg.asStandardPackageType().ifPresent(stdPkgType -> {
-            validatePackageName(tmpPkg.packageName(), stdPkgType);
+            validateDerivedPackageName(tmpPkg.packageName(), stdPkgType);
         });
 
         final AppImageLayout relativeInstalledLayout;
@@ -71,6 +77,12 @@ final class LinuxPackageBuilder {
 
         final var app = ApplicationBuilder.overrideAppImageLayout(pkgBuilder.app(), relativeInstalledLayout);
 
+        menuGroupName().ifPresent(_ -> {
+            Optional.ofNullable(probeMenuGroupNameFile).ifPresent(_ -> {
+                validateMenuGroupName(probeMenuGroupNameFile, menuGroupName);
+            });
+        });
+
         return create(pkgBuilder
                 .app(LinuxApplication.create(app))
                 .installedPackageLayout(relativeInstalledLayout.resolveAt(Path.of("/")).resetRootDirectory())
@@ -79,21 +91,25 @@ final class LinuxPackageBuilder {
 
     private LinuxPackage create(Package pkg) {
         return LinuxPackage.create(pkg, new LinuxPackageMixin.Stub(
-                Optional.ofNullable(menuGroupName).orElseGet(DEFAULTS::menuGroupName),
+                menuGroupName().orElseGet(DEFAULTS::menuGroupName),
                 category(),
                 Optional.ofNullable(additionalDependencies),
                 release(),
                 arch.value()));
     }
 
-    LinuxPackageBuilder literalName(String v) {
-        literalName = v;
+    LinuxPackageBuilder linuxPackageName(String v) {
+        linuxPackageName = v;
         return this;
     }
 
     LinuxPackageBuilder menuGroupName(String v) {
         menuGroupName = v;
         return this;
+    }
+
+    Optional<String> menuGroupName() {
+        return Optional.ofNullable(menuGroupName);
     }
 
     LinuxPackageBuilder category(String v) {
@@ -124,6 +140,11 @@ final class LinuxPackageBuilder {
         return this;
     }
 
+    LinuxPackageBuilder probeMenuGroupNameFile(Path v) {
+        probeMenuGroupNameFile = v;
+        return this;
+    }
+
     private static LinuxApplicationLayout usrTreePackageLayout(Path prefix, String packageName) {
         final var lib = prefix.resolve(Path.of("lib", packageName));
         return LinuxApplicationLayout.create(
@@ -138,57 +159,69 @@ final class LinuxPackageBuilder {
                 lib.resolve("lib/libapplauncher.so"));
     }
 
-    private static void validatePackageName(String packageName, StandardPackageType pkgType) {
+    private static void validateDerivedPackageName(String packageName, StandardPackageType pkgType) {
         switch (pkgType) {
             case LINUX_DEB -> {
-                //
-                // Debian rules for package naming are used here
-                // https://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-Source
-                //
-                // Package names must consist only of lower case letters (a-z),
-                // digits (0-9), plus (+) and minus (-) signs, and periods (.).
-                // They must be at least two characters long and
-                // must start with an alphanumeric character.
-                //
-                var regexp = Pattern.compile("^[a-z][a-z\\d\\+\\-\\.]+");
-                if (!regexp.matcher(packageName).matches()) {
-                    throw buildConfigException()
-                            .message("error.deb-invalid-value-for-package-name", packageName)
-                            .advice("error.deb-invalid-value-for-package-name.advice")
-                            .create();
+                if (!IS_LINUX_DEB_PACKAGE_NAME.test(packageName)) {
+                    throw new ConfigException(
+                            I18N.format("error.invalid-derived-deb-package-name", packageName),
+                            I18N.getString("error.invalid-derived-deb-package-name.advice"));
                 }
             }
             case LINUX_RPM -> {
-                //
-                // Fedora rules for package naming are used here
-                // https://fedoraproject.org/wiki/Packaging:NamingGuidelines?rd=Packaging/NamingGuidelines
-                //
-                // all Fedora packages must be named using only the following ASCII
-                // characters. These characters are displayed here:
-                //
-                // abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._+
-                //
-                var regexp = Pattern.compile("[a-z\\d\\+\\-\\.\\_]+", Pattern.CASE_INSENSITIVE);
-                if (!regexp.matcher(packageName).matches()) {
-                    throw buildConfigException()
-                            .message("error.rpm-invalid-value-for-package-name", packageName)
-                            .advice("error.rpm-invalid-value-for-package-name.advice")
-                            .create();
+                if (!IS_LINUX_RPM_PACKAGE_NAME.test(packageName)) {
+                    throw new ConfigException(
+                            I18N.format("error.invalid-derived-rpm-package-name", packageName),
+                            I18N.getString("error.invalid-derived-rpm-package-name.advice"));
                 }
             }
             default -> {
+                throw new AssertionError();
             }
+        }
+    }
+
+    private static void validateMenuGroupName(Path probeFile, String menuGroupName) {
+        Objects.requireNonNull(probeFile);
+        Objects.requireNonNull(menuGroupName);
+
+        try {
+            Files.createDirectories(probeFile.getParent());
+            Files.write(probeFile, List.of(
+                    "[Desktop Entry]",
+                    "Name=APPLICATION_NAME",
+                    "Exec=APPLICATION_LAUNCHER",
+                    "Type=Application",
+                    "Categories=" + menuGroupName));
+        } catch (IOException ex) {
+            // This is fatal if we can't create a probe file.
+            throw new UncheckedIOException(ex);
+        }
+
+        try {
+            Executor.of("desktop-file-validate", probeFile.toString()).executeExpectSuccess();
+            return;
+        } catch (UnexpectedExitCodeException ex) {
+            // Validation failed as the command returned an unexpected exit code.
+            throw new ConfigException(
+                    I18N.format("error.parameter-invalid-value", menuGroupName, "--linux-menu-group"),
+                    I18N.format("error.invalid-desktop-category.advice"), ex);
+        } catch (IOException ex) {
+            // The command probably isn't available; keep going, as this validation is optional.
+            Log.trace(ex);
+            return;
         }
     }
 
     private record Defaults(String menuGroupName) {
     }
 
-    private String literalName;
+    private String linuxPackageName;
     private String menuGroupName;
     private String category;
     private String additionalDependencies;
     private String release;
+    private Path probeMenuGroupNameFile;
     private LinuxPackageArch arch;
 
     private final PackageBuilder pkgBuilder;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,23 +22,24 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jpackage.internal;
+package jdk.jpackage.internal.util;
 
-import jdk.jpackage.internal.model.DottedVersion;
+import java.util.Objects;
+import jdk.internal.util.OperatingSystem;
 
+public final class OperatingSystemUtils {
 
-final class CFBundleVersion {
-    /**
-     * Parse the given string as OSX CFBundleVersion.
-     * CFBundleVersion (String - iOS, OS X) specifies the build version number of
-     * the bundle, which identifies an iteration (released or unreleased) of the
-     * bundle. The build version number should be a string comprised of non-negative,
-     * period-separated integers. macOS will ignore anything after 3 components, but
-     * it acceptable to have more then 3 components.
-     *
-     * @throws IllegalArgumentException
-     */
-    static DottedVersion of(String value) {
-        return DottedVersion.greedy(value);
+    private OperatingSystemUtils() {
+    }
+
+    public static String operatingSystemLabel(OperatingSystem os) {
+        return switch (Objects.requireNonNull(os)) {
+            case WINDOWS -> "Windows";
+            case LINUX -> "Linux";
+            case MACOS -> "macOS";
+            default -> {
+                throw new AssertionError();
+            }
+        };
     }
 }

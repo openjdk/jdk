@@ -34,9 +34,11 @@ import static jdk.jpackage.internal.cli.StandardAppImageFileOption.WIN_LAUNCHER_
 import static jdk.jpackage.internal.cli.StandardOption.APPCLASS;
 import static jdk.jpackage.internal.cli.StandardOption.APP_VERSION;
 import static jdk.jpackage.internal.cli.StandardOption.NAME;
+import static jdk.jpackage.internal.util.function.ExceptionBox.visitUnboxedExceptionsRecursively;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 
 import java.io.FileOutputStream;
@@ -51,7 +53,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.TreeMap;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.cli.OptionIdentifier;
@@ -62,12 +67,17 @@ import jdk.jpackage.internal.cli.WithOptionIdentifier;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
 import jdk.jpackage.internal.model.ApplicationLayout;
+import jdk.jpackage.internal.model.BundleVersion;
 import jdk.jpackage.internal.model.ExternalApplication;
 import jdk.jpackage.internal.model.ExternalApplication.LauncherInfo;
 import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.LauncherShortcut;
 import jdk.jpackage.internal.model.LauncherShortcutStartupDirectory;
+import jdk.jpackage.test.CannedArgument;
+import jdk.jpackage.test.CannedFormattedString;
+import jdk.jpackage.test.ExceptionPattern;
+import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.ObjectMapper;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -101,7 +111,7 @@ public class AppImageFileTest {
 
     @Test
     public void testMalformedXml() throws IOException {
-        var ex = assertThrowsExactly(JPackageException.class, () -> createFromXml(List.of("<a>"), OperatingSystem.current(), tempFolder));
+        var ex = assertThrowsExactly(JPackageException.class, () -> createFromXml("<a>", OperatingSystem.current(), tempFolder));
         Assertions.assertEquals(I18N.format("error.malformed-app-image-file", ".jpackage.xml", tempFolder), ex.getMessage());
         assertNotNull(ex.getCause());
     }
@@ -127,7 +137,7 @@ public class AppImageFileTest {
     }
 
     @Test
-    @EnabledOnOs(value = OS.WINDOWS, disabledReason = "Can reliably lock a file using FileLock to cuase an IOException on Windows only")
+    @EnabledOnOs(value = OS.WINDOWS, disabledReason = "Can reliably lock a file using FileLock to cause an IOException on Windows only")
     @SuppressWarnings("try")
     public void testGenericIOException() throws IOException {
 
@@ -145,10 +155,8 @@ public class AppImageFileTest {
 
     @ParameterizedTest
     @MethodSource
-    public void testInavlidXml(List<String> xmlData) throws IOException {
-        var ex = assertThrowsExactly(JPackageException.class, () -> createFromXml(xmlData, OperatingSystem.current(), tempFolder));
-        Assertions.assertEquals(I18N.format("error.invalid-app-image-file", ".jpackage.xml", tempFolder), ex.getMessage());
-        assertNotNull(ex.getCause());
+    public void testInavlidXml(InvalidXmlTestSpec testSpec) {
+        testSpec.test(tempFolder);
     }
 
     @ParameterizedTest
@@ -161,7 +169,7 @@ public class AppImageFileTest {
     private static final class AppBuilder {
 
         AppBuilder version(String v) {
-            version = Objects.requireNonNull(v);
+            version = BundleVersion.of(v);
             return this;
         }
 
@@ -228,7 +236,6 @@ public class AppImageFileTest {
                     version,
                     null,
                     null,
-                    List.of(),
                     List.of(),
                     null,
                     Optional.empty(),
@@ -364,7 +371,7 @@ public class AppImageFileTest {
         }
 
 
-        private String version = "1.0";
+        private BundleVersion version = BundleVersion.of("1.0");
         private String appName = "Foo";
         private String mainClass = "Main";
         private final ExtraPropertyBuilder extra = new ExtraPropertyBuilder();
@@ -373,12 +380,17 @@ public class AppImageFileTest {
     }
 
 
-    private record ReadTestSpec(ExternalApplication expected, List<String> xmlData, OperatingSystem os) {
+    private record ReadTestSpec(ExternalApplication expected, String xmlData, OperatingSystem os) {
 
         ReadTestSpec {
             Objects.requireNonNull(expected);
             Objects.requireNonNull(xmlData);
             Objects.requireNonNull(os);
+        }
+
+        @Override
+        public String toString() {
+            return String.format("%s %s %s", toString(expected), os, xmlData);
         }
 
         void test(Path appImageDir) throws IOException {
@@ -401,8 +413,8 @@ public class AppImageFileTest {
                 return this;
             }
 
-            Builder xml(String... xml) {
-                xmlData = List.of(xml);
+            Builder xml(String v) {
+                xmlData = v;
                 return this;
             }
 
@@ -412,12 +424,132 @@ public class AppImageFileTest {
             }
 
             ReadTestSpec create() {
-                return new ReadTestSpec(expected, createXml(os, xmlData.toArray(String[]::new)), os);
+                return new ReadTestSpec(expected, createXml(os, xmlData), os);
             }
 
             private ExternalApplication expected;
-            private List<String> xmlData;
+            private String xmlData;
             private OperatingSystem os = OperatingSystem.LINUX;
+        }
+
+        private static String toString(ExternalApplication app) {
+            var tokens = new ArrayList<String>();
+
+            tokens.add(String.format("name=[%s]", app.appName()));
+            tokens.add(String.format("version=[%s]", app.appVersion()));
+            tokens.add(String.format("main=%s", toString(app.mainLauncher().asOptions()).orElseThrow()));
+            var addLaunchers = app.addLaunchers();
+            if (!addLaunchers.isEmpty()) {
+                tokens.add(String.format("launchers=%s", addLaunchers.stream()
+                        .map(LauncherInfo::asOptions)
+                        .map(ReadTestSpec::toString)
+                        .map(Optional::orElseThrow)
+                        .toList()));
+            }
+            toString(app.extra()).ifPresent(v -> {
+                tokens.add(String.format("custom=%s", v));
+            });
+
+            return String.join(", ", tokens);
+        }
+
+        private static Optional<String> toString(Options options) {
+            var map = toPropertyMap(options).entrySet().stream().collect(toMap(Map.Entry::getKey, e -> {
+                var value = e.getValue().toString();
+                if (Objects.equals(e.getKey(), DESCRIPTION.getName())) {
+                    value = "[" + value + "]";
+                }
+                return value;
+            }));
+            if (map.isEmpty()) {
+                return Optional.empty();
+            } else {
+                return Optional.of(new TreeMap<>(map).toString());
+            }
+        }
+    }
+
+
+    private record InvalidXmlTestSpec(OperatingSystem os, String xmlData, List<ExceptionPattern> expected) {
+
+        InvalidXmlTestSpec {
+            Objects.requireNonNull(os);
+            Objects.requireNonNull(xmlData);
+            expected.forEach(Objects::requireNonNull);
+        }
+
+        @Override
+        public String toString() {
+            return String.format("%s %s %s", os, expected, xmlData);
+        }
+
+        void test(Path appImageDir) {
+            Objects.requireNonNull(appImageDir);
+
+            var resolved = expected.stream().map(pattern -> {
+                return pattern.resolveCannedArgumentsRecursive(message -> {
+                    return switch (message) {
+                        case CannedFormattedString canned -> {
+                            yield canned.mapArgs(arg -> {
+                                if (arg == JPACKAGE_XML) {
+                                    return AppImageFile.getPathInAppImage(DUMMY_LAYOUT.resolveAt(appImageDir));
+                                } else if (arg == APP_IMAGE_DIR) {
+                                    return appImageDir;
+                                } else {
+                                    return arg;
+                                }
+                            }).getValue();
+                        }
+                        default -> message.getValue();
+                    };
+                });
+            }).toList();
+
+            var ex = assertThrows(Exception.class, () -> {
+                createFromXml(xmlData, os, appImageDir);
+            });
+
+            var unfoldedExceptions = new ArrayList<Exception>();
+            visitUnboxedExceptionsRecursively(ex, unfoldedExceptions::add);
+
+            Assertions.assertEquals(resolved.size(), unfoldedExceptions.size());
+            IntStream.range(0, resolved.size()).forEach(idx -> {
+                resolved.get(idx).match(unfoldedExceptions.get(idx), Assertions::fail);
+            });
+        }
+
+        static Builder build() {
+            return new Builder();
+        }
+
+        static final class Builder {
+
+            Builder expect(ExceptionPattern pattern) {
+                expected.add(Objects.requireNonNull(pattern));
+                return this;
+            }
+
+            Builder expect(ExceptionPattern.Builder pattern) {
+                return expect(pattern.create());
+            }
+
+            Builder xml(String v) {
+                xml = v;
+                return this;
+            }
+
+            Builder os(OperatingSystem v) {
+                os = v;
+                return this;
+            }
+
+            InvalidXmlTestSpec create() {
+                return new InvalidXmlTestSpec(os, xml, expected);
+            }
+
+            private String xml;
+            private OperatingSystem os = OperatingSystem.current();
+            private List<ExceptionPattern> expected = new ArrayList<>();
         }
     }
 
@@ -430,13 +562,27 @@ public class AppImageFileTest {
         return Stream.of(Map.of("a", "b"), Map.of("foo", ""));
     }
 
-    private static List<List<String>> testInavlidXml() {
-        List<List<String>> data = new ArrayList<>();
+    private static ExceptionPattern.Builder expect(String key, Object... formatArgs) {
+        return ExceptionPattern.build()
+                .expectMessage(JPackageStringBundle.MAIN.cannedFormattedString(key, formatArgs))
+                .expectType(JPackageException.class);
+    }
+
+    private static ExceptionPattern.Builder expectInvalidFile() {
+        return expect("error.invalid-app-image-file", ".jpackage.xml", APP_IMAGE_DIR).expectCause(Exception.class);
+    }
+
+    private static List<InvalidXmlTestSpec> testInavlidXml() {
+        List<InvalidXmlTestSpec> data = new ArrayList<>();
 
         var os = OperatingSystem.current();
 
-        data.addAll(List.of
-                (List.of("<foo/>"),
+        Consumer<InvalidXmlTestSpec.Builder> addTestCase = v -> {
+            data.add(v.create());
+        };
+
+        Stream.of(
+                "<foo/>",
                 createValidBodyWithHeader(null, null),
                 createValidBodyWithHeader("foo", "foo"),
                 createValidBodyWithHeader(null, "foo"),
@@ -448,56 +594,117 @@ public class AppImageFileTest {
                 createXml(os, "<main-launcher></main-launcher>"),
                 createXml(os, "<main-launcher>A</main-launcher>"),
                 createXml(os, "<add-launcher>A</add-launcher>"),
-                createXml(os, createValidBodyWithHeader(AppImageFile.getPlatform(os), AppImageFile.getVersion()).toArray(String[]::new)),
-                createWithHeader(AppImageFile.getPlatform(os), AppImageFile.getVersion(), () -> {
-                    // Missing 'app-version' element.
-                    return List.of(
-                            "<main-launcher name='D'>",
-                            "  <description>Foo</description>",
-                            "</main-launcher>",
-                            "<main-class>Hello</main-class>"
-                    );
-                }),
-                createWithHeader(AppImageFile.getPlatform(os), AppImageFile.getVersion(), () -> {
-                    // Missing 'description' element in the main launcher.
-                    return List.of(
-                            "<app-version>321</app-version>",
-                            "<main-launcher name='B'/>"
-                    );
-                }),
-                createWithHeader(AppImageFile.getPlatform(os), AppImageFile.getVersion(), () -> {
-                    // Missing 'description' element in the additional launcher.
-                    return List.of(
-                            "<app-version>123</app-version>",
-                            "<main-launcher name='B'>",
-                            "  <description>Foo</description>",
-                            "</main-launcher>",
-                            "<main-class>Hello</main-class>",
-                            "<add-launcher name='C'/>"
-                    );
-                })
-        ));
+                createXml(os, createValidBodyWithHeader(AppImageFile.getPlatform(os), AppImageFile.getVersion()))
+        ).map(xml -> {
+            return InvalidXmlTestSpec.build().xml(xml).expect(expectInvalidFile());
+        }).forEach(addTestCase);
 
-        if (OperatingSystem.isMacOS()) {
-            data.add(createXml(os, "<main-launcher name='Foo'/>", "<main-class></main-class>"));
-        }
+        Stream.of(
+                // Missing 'main-class' element.
+                Map.entry("main-class", InvalidXmlTestSpec.build().xml(createWithHeader(
+                        AppImageFile.getPlatform(OperatingSystem.MACOS), AppImageFile.getVersion(),
+                        """
+                        <app-version>1</app-version>
+                        <main-launcher name='D'>
+                          <description>Foo</description>
+                        </main-launcher>
+                        """
+                )).os(OperatingSystem.MACOS)),
+                // Missing 'app-version' element.
+                Map.entry("app-version", InvalidXmlTestSpec.build().xml(createWithHeader(
+                        """
+                        <main-launcher name='D'>
+                          <description>Foo</description>
+                        </main-launcher>
+                        <main-class>Hello</main-class>
+                        """
+                ))),
+                // Missing 'description' element in the main launcher.
+                Map.entry("description", InvalidXmlTestSpec.build().xml(createWithHeader(
+                        """
+                        <app-version>321</app-version>
+                        <main-launcher name='B'/>
+                        <main-class>Hello</main-class>
+                        """
+                ))),
+                // Missing 'description' element in the additional launcher.
+                Map.entry("description", InvalidXmlTestSpec.build().xml(createWithHeader(
+                        """
+                        <app-version>123</app-version>
+                        <main-launcher name='B'>
+                          <description>Foo</description>
+                        </main-launcher>
+                        <main-class>Hello</main-class>
+                        <add-launcher name='C'/>
+                        """
+                )))
+        ).map(spec -> {
+            var cause = ExceptionPattern.build()
+                    .expectMessage(String.format("Missing mandatory '%s' property", spec.getKey()))
+                    .expectNullCause()
+                    .create();
+            return spec.getValue().expect(expectInvalidFile().expectCause(cause));
+        }).forEach(addTestCase);
+
+        Stream.of(
+                // Empty 'app-version' element.
+                InvalidXmlTestSpec.build().xml(createWithHeader(
+                        """
+                        <main-launcher name='D'>
+                          <description>Blah-Blah-Blah</description>
+                        </main-launcher>
+                        <app-version>7.8</app-version>
+                        <app-version></app-version>
+                        <main-class>Hello</main-class>
+                        """
+                )).expect(expect(
+                        "error.properties-parameter-invalid-value",
+                        "", "/jpackage-state/app-version[2]", JPACKAGE_XML).create()),
+
+                // Invalid app name.
+                InvalidXmlTestSpec.build().xml(createWithHeader(
+                        """
+                        <main-launcher name='/foo\\'>
+                          <description/>
+                        </main-launcher>
+                        <app-version>1.0</app-version>
+                        <main-class>Hello</main-class>
+                        """
+                )).expect(expect(
+                        "error.properties-parameter-invalid-value",
+                        "/foo\\", "/jpackage-state/main-launcher/@name", JPACKAGE_XML).create()),
+
+                // Invalid main class
+                InvalidXmlTestSpec.build().os(OperatingSystem.MACOS).xml(createWithHeader(
+                        AppImageFile.getPlatform(OperatingSystem.MACOS), AppImageFile.getVersion(),
+                        """
+                        <main-launcher name='foo'>
+                          <description/>
+                        </main-launcher>
+                        <app-version>1.0</app-version>
+                        <main-class>.Hello</main-class>
+                        """
+                )).expect(expect(
+                        "error.properties-parameter-invalid-value",
+                        ".Hello", "/jpackage-state/main-class", JPACKAGE_XML).create())
+        ).map(InvalidXmlTestSpec.Builder::create).forEach(data::add);
 
         return data;
     }
 
-    private static List<String> createValidBodyWithHeader(String platform, String version) {
-        return createWithHeader(platform, version, () -> {
-            return List.of(
-                    "<main-launcher name='D'>",
-                    "  <description>Blah-Blah-Blah</description>",
-                    "</main-launcher>",
-                    "<app-version>100</app-version>",
-                    "<main-class>Hello</main-class>"
-            );
-        });
+    private static String createValidBodyWithHeader(String platform, String version) {
+        return createWithHeader(platform, version,
+                """
+                <main-launcher name='D'>
+                    <description>Blah-Blah-Blah</description>
+                </main-launcher>
+                <app-version>100</app-version>
+                <main-class>Hello</main-class>
+                """
+        );
     }
 
-    private static List<String> createWithHeader(String platform, String version, Supplier<List<String>> body) {
+    private static String createWithHeader(String platform, String version, String body) {
 
         var sb = new StringBuilder();
         sb.append("<jpackage-state");
@@ -509,27 +716,33 @@ public class AppImageFileTest {
         });
         sb.append(">");
 
-        return Stream.of(List.of(sb.toString()), body.get(), List.of("</jpackage-state>")).flatMap(Collection::stream).toList();
+        return sb.append(Objects.requireNonNull(body)).append("</jpackage-state>").toString();
+    }
+
+    private static String createWithHeader(String body) {
+        return createWithHeader(AppImageFile.getPlatform(OperatingSystem.current()), AppImageFile.getVersion(), body);
     }
 
 
     private static Collection<ReadTestSpec> platformSpecificProperties() {
         var builder = ReadTestSpec.build().xml(
-                "<app-version>1.34</app-version>",
-                "<main-class>Foo</main-class>",
-                "<y/>",
-                "<x>property-x</x>",
-                "<app-store>False</app-store>",
-                "<add-launcher name='add-launcher'>",
-                "  <description>Quick brown fox</description>",
-                "  <service>true</service>",
-                "  <linux-shortcut>true</linux-shortcut>",
-                "  <win-shortcut>false</win-shortcut>",
-                "  <win-menu>app-dir</win-menu>",
-                "</add-launcher>",
-                "<main-launcher name='Bar'>",
-                "  <description>Bar launcher description</description>",
-                "</main-launcher>"
+                """
+                <app-version>1.34</app-version>
+                <main-class>Foo</main-class>
+                <y/>
+                <x>property-x</x>
+                <app-store>False</app-store>
+                <add-launcher name='add-launcher'>
+                  <description>Quick brown fox</description>
+                  <service>true</service>
+                  <linux-shortcut>true</linux-shortcut>
+                  <win-shortcut>false</win-shortcut>
+                  <win-menu>app-dir</win-menu>
+                </add-launcher>
+                <main-launcher name='Bar'>
+                  <description>Bar launcher description</description>
+                </main-launcher>
+                """
         );
 
         Supplier<AppBuilder.LauncherBuilder> appBuilder = () -> {
@@ -560,11 +773,13 @@ public class AppImageFileTest {
                 ReadTestSpec.build().expect(
                         build().version("72").mainlauncher().description("Blah-Blah-Blah").commit().appName("Y").mainClass("main.Class")
                 ).xml(
-                        "<main-launcher name='Y'>",
-                        "  <description>Blah-Blah-Blah</description>",
-                        "</main-launcher>",
-                        "<app-version>72</app-version>",
-                        "<main-class>main.Class</main-class>"
+                        """
+                        <main-launcher name='Y'>
+                          <description>Blah-Blah-Blah</description>
+                        </main-launcher>
+                        <app-version>72</app-version>
+                        <main-class>main.Class</main-class>
+                        """
                 ),
                 ReadTestSpec.build().os(OperatingSystem.LINUX).expect(
                         build()
@@ -578,34 +793,36 @@ public class AppImageFileTest {
                                 .description("service-launcher description")
                                 .commit()
                 ).xml(
-                        "<app-version>1.2</app-version>",
-                        "<app-version>1.0</app-version>",
-                        "<main-class>OverwrittenMain</main-class>",
-                        "<main-class>Main</main-class>",
-                        "<x>property-x</x>",
-                        "<add-launcher name='service-launcher' service='true'>",
-                        "  <linux-shortcut><nested>foo</nested></linux-shortcut>",
-                        "  <description>service-launcher description</description>",
-                        "</add-launcher>",
-                        "<add-launcher name='another-launcher'>",
-                        "  <linux-shortcut>true</linux-shortcut>",
-                        "  <linux-shortcut>app-<!-- This is a comment -->dir</linux-shortcut>",
-                        "  <description>another-launcher description</description>",
-                        "</add-launcher>",
-                        "<main-launcher name='Bar'/>",
-                        "<main-launcher name='Foo'>",
-                        "  <description>Main launcher description</description>",
-                        "</main-launcher>"
+                        """
+                        <app-version>1.2</app-version>
+                        <app-version>1.0</app-version>
+                        <main-class>OverwrittenMain</main-class>
+                        <main-class>Main</main-class>
+                        <x>property-x</x>
+                        <add-launcher name='service-launcher' service='true'>
+                          <linux-shortcut><nested>foo</nested></linux-shortcut>
+                          <description>service-launcher description</description>
+                        </add-launcher>
+                        <add-launcher name='another-launcher'>
+                          <linux-shortcut>true</linux-shortcut>
+                          <linux-shortcut>app-<!-- This is a comment -->dir</linux-shortcut>
+                          <description>another-launcher description</description>
+                        </add-launcher>
+                        <main-launcher name='Bar'/>
+                        <main-launcher name='Foo'>
+                          <description>Main launcher description</description>
+                        </main-launcher>
+                        """
                 )
         ).map(ReadTestSpec.Builder::create));
     }
 
-    private static ExternalApplication createFromXml(List<String> xmlData, OperatingSystem os, Path appImageDir) throws IOException {
+    private static ExternalApplication createFromXml(String xmlData, OperatingSystem os, Path appImageDir) throws IOException {
         Path path = AppImageFile.getPathInAppImage(DUMMY_LAYOUT.resolveAt(appImageDir));
 
         List<String> data = new ArrayList<>();
         data.add("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>");
-        data.addAll(xmlData);
+        data.add(Objects.requireNonNull(xmlData));
 
         Files.write(path, data, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 
@@ -623,12 +840,12 @@ public class AppImageFileTest {
         }));
     }
 
-    private static final List<String> createXml(OperatingSystem os, String ...xml) {
-        final List<String> content = new ArrayList<>();
-        content.add(String.format("<jpackage-state platform=\"%s\" version=\"%s\">", AppImageFile.getPlatform(os), AppImageFile.getVersion()));
-        content.addAll(List.of(xml));
-        content.add("</jpackage-state>");
-        return content;
+    private static final String createXml(OperatingSystem os, String xml) {
+        return new StringBuilder()
+            .append(String.format("<jpackage-state platform=\"%s\" version=\"%s\">", AppImageFile.getPlatform(os), AppImageFile.getVersion()))
+            .append(Objects.requireNonNull(xml))
+            .append("</jpackage-state>")
+            .toString();
     }
 
     private static Map<String, Object> toPropertyMap(Options options) {
@@ -639,6 +856,9 @@ public class AppImageFileTest {
 
     @TempDir
     private Path tempFolder;
+
+    private static final CannedArgument APP_IMAGE_DIR = CannedArgument.ofString("@@APP_IMAGE_DIR@@");
+    private static final CannedArgument JPACKAGE_XML = CannedArgument.ofString("@@JPACKAGE_XML@@");
 
     private static final ObjectMapper OM;
 
@@ -657,6 +877,9 @@ public class AppImageFileTest {
                 })
                 .subst(ExternalApplication.class, "extra", obj -> {
                     return toPropertyMap(obj.extra());
+                })
+                .subst(ExternalApplication.class, "appVersion", obj -> {
+                    return obj.appVersion().toString();
                 })
                 .subst(LauncherInfo.class, "extra", obj -> {
                     return toPropertyMap(obj.extra());

@@ -27,15 +27,18 @@ package jdk.jpackage.internal.cli;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.fromOptionName;
+import static jdk.jpackage.internal.cli.StandardOption.setDefaultErrorReporting;
 
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.model.BundleVersion;
 import jdk.jpackage.internal.model.LauncherShortcut;
 
 /**
@@ -65,8 +68,18 @@ public final class StandardAppImageFileOption {
             });
         }
 
-        public Options parse(Path appImageFile, Map<String, String> properties, OperatingSystem os) throws InvalidOptionValueException {
+        public Options parse(Path appImageFile, List<Property> properties, OperatingSystem os) {
             return parseProperties(appImageFile, properties, os, options().map(OptionValue::getOption));
+        }
+    }
+
+
+    public record Property(String name, String value, String pointer) {
+
+        public Property {
+            Objects.requireNonNull(name);
+            Objects.requireNonNull(value);
+            Objects.requireNonNull(pointer);
         }
     }
 
@@ -82,15 +95,20 @@ public final class StandardAppImageFileOption {
     public static final OptionValue<String> LAUNCHER_NAME = stringOption("name")
             .inScope(AppImageFileOptionScope.LAUNCHER)
             .inScope(MandatoryOption.VALUE)
+            .validator(StandardValidator.IS_NAME_VALID)
+            .mutate(setDefaultErrorReporting())
             .toOptionValueBuilder().id(StandardOption.NAME.id()).create();
 
     /**
      * The version of the application.
      */
-    public static final OptionValue<String> APP_VERSION = stringOption("app-version")
+    public static final OptionValue<BundleVersion> APP_VERSION = option("app-version", BundleVersion.class)
             .inScope(AppImageFileOptionScope.APP)
             .inScope(MandatoryOption.VALUE)
-            .toOptionValueBuilder().id(StandardOption.APP_VERSION.id()).create();
+            .converter(StandardValueConverter.versionConv())
+            .mutate(setDefaultErrorReporting())
+            .toOptionValueBuilder().id(StandardOption.APP_VERSION.id())
+            .create();
 
     /**
      * Should install a launcher as a service?
@@ -151,14 +169,7 @@ public final class StandardAppImageFileOption {
             .inScope(MandatoryOption.VALUE)
             .mutate(setPlatformScope(OperatingSystem.MACOS))
             .validator(StandardValidator.IS_CLASSNAME)
-            // In case of validation failure, report it with
-            // an exception of type InvalidOptionValueException with empty message.
-            .validatorExceptionFactory(
-                    OptionValueExceptionFactory.build(InvalidOptionValueException::new)
-                            .messageFormatter((_, _) -> "") // just a stub
-                            .create()
-            )
-            .validatorExceptionFormatString("") // just a stub, not used
+            .mutate(setDefaultErrorReporting())
             .toOptionValueBuilder().id(StandardOption.APPCLASS.id()).create();
 
     /**
@@ -168,15 +179,6 @@ public final class StandardAppImageFileOption {
             .inScope(AppImageFileOptionScope.APP)
             .mutate(setPlatformScope(OperatingSystem.MACOS))
             .toOptionValueBuilder().id(StandardOption.MAC_APP_STORE.id()).create();
-
-    public static final class InvalidOptionValueException extends RuntimeException {
-
-        InvalidOptionValueException(String str, Throwable t) {
-            super(str, t);
-        }
-
-        private static final long serialVersionUID = 1L;
-    }
 
 
     public static final class MissingMandatoryOptionException extends RuntimeException {
@@ -211,9 +213,9 @@ public final class StandardAppImageFileOption {
 
     private static Options parseProperties(
             Path appImageFile,
-            Map<String, String> properties,
+            List<Property> properties,
             OperatingSystem os,
-            Stream<Option> options) throws InvalidOptionValueException, MissingMandatoryOptionException {
+            Stream<Option> options) throws MissingMandatoryOptionException {
 
         var scope = StandardBundlingOperation.ofPlatform(os).collect(toSet());
 
@@ -223,14 +225,17 @@ public final class StandardAppImageFileOption {
             return !Collections.disjoint(option.spec().scope(), scope);
         }).map(option -> {
             var spec = context.mapOptionSpec(option.spec());
-            var strValue = Optional.ofNullable(properties.get(spec.name().name()));
+            var propValue = properties.stream().filter(prop -> {
+                return Objects.equals(prop.name(), spec.name().name());
+            }).findFirst();
 
-            if (strValue.isEmpty() && spec.scope().contains(MandatoryOption.VALUE)) {
-                throw new MissingMandatoryOptionException(String.format("Missing mandatory '%s' property", spec.name().name()));
+            if (propValue.isEmpty() && spec.scope().contains(MandatoryOption.VALUE)) {
+                throw new MissingMandatoryOptionException(String.format(
+                        "Missing mandatory '%s' property", spec.name().name()));
             }
 
-            return strValue.map(v -> {
-                return spec.convert(spec.name(), StringToken.of(v)).orElseThrow();
+            return propValue.map(v -> {
+                return spec.convert(OptionName.of(v.pointer()), StringToken.of(v.value())).orElseThrow();
             }).map(v -> {
                 return Map.entry(option, v);
             });

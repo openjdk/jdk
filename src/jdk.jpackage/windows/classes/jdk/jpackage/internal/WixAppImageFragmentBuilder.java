@@ -86,7 +86,7 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         registryKeyPath = Path.of("Software",
                 pkg.app().vendor(),
                 pkg.app().name(),
-                pkg.version()).toString();
+                pkg.version().toString()).toString();
 
         installDir = (systemWide ? PROGRAM_FILES : LOCAL_PROGRAM_FILES).resolve(
                 pkg.relativeInstallDir());

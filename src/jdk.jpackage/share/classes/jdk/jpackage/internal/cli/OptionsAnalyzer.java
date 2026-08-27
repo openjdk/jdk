@@ -25,6 +25,10 @@
 
 package jdk.jpackage.internal.cli;
 
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.mapping;
+import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.toUnmodifiableSet;
 import static jdk.jpackage.internal.cli.StandardOption.ADD_MODULES;
 import static jdk.jpackage.internal.cli.StandardOption.INPUT;
 import static jdk.jpackage.internal.cli.StandardOption.JLINK_OPTIONS;
@@ -45,6 +49,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -52,11 +57,10 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.model.BundleType;
 import jdk.jpackage.internal.model.BundlingEnvironment;
-import jdk.jpackage.internal.model.BundlingOperationDescriptor;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.JPackageException;
-import jdk.jpackage.internal.model.BundleType;
 
 /**
  * Analyzes jpackage command line structure.
@@ -64,23 +68,28 @@ import jdk.jpackage.internal.model.BundleType;
 final class OptionsAnalyzer {
 
     OptionsAnalyzer(Options cmdline, OperatingSystem os, BundlingEnvironment bundlingEnv) {
-        this(cmdline, getBundlingOperation(cmdline, os, bundlingEnv), false);
+        this(cmdline, os, getBundlingOperation(cmdline, os, bundlingEnv), false);
     }
 
-    OptionsAnalyzer(Options cmdline, StandardBundlingOperation bundlingOperation) {
-        this(cmdline, bundlingOperation, true);
+    OptionsAnalyzer(Options cmdline, OperatingSystem os, StandardBundlingOperation bundlingOperation) {
+        this(cmdline, os, bundlingOperation, true);
     }
 
-    private OptionsAnalyzer(Options cmdline, StandardBundlingOperation bundlingOperation, boolean typedOptions) {
+    private OptionsAnalyzer(Options cmdline, OperatingSystem os, StandardBundlingOperation bundlingOperation, boolean typedOptions) {
         this.cmdline = Objects.requireNonNull(cmdline);
+        this.os = Objects.requireNonNull(os);
         this.bundlingOperation = Objects.requireNonNull(bundlingOperation);
         this.typedOptions = typedOptions;
         hasAppImage = PREDEFINED_APP_IMAGE.containsIn(cmdline);
         isRuntimeInstaller = isRuntimeInstaller(cmdline, bundlingOperation);
     }
 
-    BundlingOperationDescriptor bundlingOperation() {
-        return bundlingOperation.descriptor();
+    StandardBundlingOperation bundlingOperation() {
+        return bundlingOperation;
+    }
+
+    Options cmdline() {
+        return cmdline;
     }
 
     List<ExceptionWithOrigin> findErrors() {
@@ -95,7 +104,7 @@ final class OptionsAnalyzer {
         StandardOption.options().stream()
                 .filter(cmdline::contains)
                 .map(Option::spec)
-                .filter(matchInScope(bundlingOperation).and(matchInScope(bundlingOperationModifiers())).negate())
+                .filter(matchInScope(bundlingOperation).and(matchInScope(bundlingOperationModifiers())).and(matchOS(os)).negate())
                 .map(optionSpec -> {
                     var err = onOutOfScopeOption(optionSpec);
                     return errorWithOrigin(err, optionSpec);
@@ -236,21 +245,21 @@ final class OptionsAnalyzer {
     private RuntimeException onOutOfScopeOption(OptionSpec<?> optionSpec) {
         Objects.requireNonNull(optionSpec);
 
-        if (optionSpec.scope().stream()
-                .filter(StandardBundlingOperation.class::isInstance)
-                .map(StandardBundlingOperation.class::cast)
-                .map(StandardBundlingOperation::os).noneMatch(bundlingOperation.os()::equals)) {
+        if (!matchOS(os).test(optionSpec)) {
             // The option is for different OS.
-            return error("ERR_UnsupportedOption", mapFormatArguments(optionSpec));
+            return error("ERR_UnsupportedOption", mapFormatArguments(optionSpec, os));
         } else if (StandardBundlingOperation.SIGN_MAC_APP_IMAGE.equals(bundlingOperation)) {
             // The option is not applicable when signing a predefined app image.
             return error("ERR_InvalidOptionWithAppImageSigning", mapFormatArguments(optionSpec));
         } else if (StandardBundlingOperation.CREATE_NATIVE.contains(bundlingOperation) && isRuntimeInstaller) {
             // The option is not applicable when packaging of a runtime in a native bundle.
             return error("ERR_NoInstallerEntryPoint", mapFormatArguments(optionSpec));
+        }
+
+        if (MULTI_OS_BUNDLE_TYPES.contains(bundlingOperation.bundleTypeValue()) && isMultiOS(optionSpec)) {
+            return error("ERR_InvalidTypeOptionOnPlatform", mapFormatArguments(optionSpec, bundlingOperation.bundleTypeValue(), os));
         } else {
-            return error("ERR_InvalidTypeOption", mapFormatArguments(
-                    optionSpec, bundlingOperation.bundleTypeValue()));
+            return error("ERR_InvalidTypeOption", mapFormatArguments(optionSpec, bundlingOperation.bundleTypeValue()));
         }
     }
 
@@ -354,6 +363,27 @@ final class OptionsAnalyzer {
         return matchInScope(List.of(scope));
     }
 
+    private static Predicate<OptionSpec<?>> matchOS(Collection<OperatingSystem> scope) {
+        Objects.requireNonNull(scope);
+        return optionSpec -> {
+            return optionSpec.scope().stream()
+                    .filter(StandardBundlingOperation.class::isInstance)
+                    .map(StandardBundlingOperation.class::cast)
+                    .map(StandardBundlingOperation::os).toList().containsAll(scope);
+        };
+    }
+
+    private static Predicate<OptionSpec<?>> matchOS(OperatingSystem... scope) {
+        return matchOS(List.of(scope));
+    }
+
+    private static boolean isMultiOS(OptionSpec<?> optionSpec) {
+        return optionSpec.scope().stream()
+                .filter(StandardBundlingOperation.class::isInstance)
+                .map(StandardBundlingOperation.class::cast)
+                .map(StandardBundlingOperation::os).distinct().count() > 1;
+    }
+
     private static List<Option> asOptionList(OptionValue<?>... options) {
         return Stream.of(options).map(OptionValue::getOption).toList();
     }
@@ -403,12 +433,21 @@ final class OptionsAnalyzer {
 
 
     private final Options cmdline;
+    private final OperatingSystem os;
     private final StandardBundlingOperation bundlingOperation;
     private final boolean typedOptions;
     private final boolean hasAppImage;
     private final boolean isRuntimeInstaller;
 
     private static final List<MutualExclusiveOptions> MUTUAL_EXCLUSIVE_OPTIONS;
+
+    private static final Set<String> MULTI_OS_BUNDLE_TYPES = Stream.of(StandardBundlingOperation.values())
+            .collect(groupingBy(
+                    StandardBundlingOperation::bundleTypeValue,
+                    mapping(StandardBundlingOperation::os, toSet())
+            )).entrySet().stream().filter(e -> {
+                return e.getValue().size() > 1;
+            }).map(Map.Entry::getKey).collect(toUnmodifiableSet());
 
     static {
         final List<MutualExclusiveOptions> config = new ArrayList<>();

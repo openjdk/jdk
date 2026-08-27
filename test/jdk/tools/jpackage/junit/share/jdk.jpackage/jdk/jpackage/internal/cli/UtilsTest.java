@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,39 +27,36 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.Optional;
 import jdk.internal.util.OperatingSystem;
-import jdk.jpackage.internal.model.BundlingEnvironment;
-import jdk.jpackage.internal.model.BundlingOperationDescriptor;
-import jdk.jpackage.test.JUnitUtils.ExceptionPattern;
+import jdk.jpackage.test.ExceptionPattern;
 import org.junit.jupiter.api.Test;
 
-public class UtilsTest {
+class UtilsTest {
 
     @Test
-    public void testInvalidOption() {
+    void testInvalidOption() {
         var errors = buildParser().create().apply(new String[] {"--foo"}).errors();
         assertEquals(1, errors.size());
 
-        assertTrue(new ExceptionPattern()
-                .isInstanceOf(Utils.ParseException.class)
-                .hasMessage(I18N.format("ERR_InvalidOption", "--foo"))
-                .match(errors.iterator().next()));
+        assertTrue(ExceptionPattern.build()
+                .expectType(Utils.ParseException.class)
+                .expectMessage(I18N.format("ERR_InvalidOption", "--foo"))
+                .create().match(errors.iterator().next()));
     }
 
     @Test
-    public void testMissingValueOption() {
+    void testMissingValueOption() {
         var errors = buildParser().create().apply(new String[] {"--name"}).errors();
         assertEquals(1, errors.size());
 
-        assertTrue(new ExceptionPattern()
-                .isInstanceOf(Utils.ParseException.class)
-                .hasMessage(I18N.format("ERR_InvalidOption", "--name"))
-                .match(errors.iterator().next()));
+        assertTrue(ExceptionPattern.build()
+                .expectType(Utils.ParseException.class)
+                .expectMessage(I18N.format("ERR_InvalidOption", "--name"))
+                .create().match(errors.iterator().next()));
     }
 
     @Test
-    public void test_getOptionsWithSpecs() {
+    void test_getOptionsWithSpecs() {
 
         var options = Utils.getOptionsWithSpecs(UtilsTest.class).map(OptionValue::getOption).collect(toUnmodifiableSet());
 
@@ -81,11 +78,6 @@ public class UtilsTest {
     }
 
     private static JOptSimpleOptionsBuilder buildParser() {
-        return Utils.buildParser(OperatingSystem.LINUX, new BundlingEnvironment() {
-            @Override
-            public Optional<BundlingOperationDescriptor> defaultOperation() {
-                return Optional.empty();
-            }
-        });
+        return Utils.buildParser(OperatingSystem.LINUX);
     }
 }

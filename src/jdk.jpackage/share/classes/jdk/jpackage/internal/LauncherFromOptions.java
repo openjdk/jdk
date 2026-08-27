@@ -41,6 +41,7 @@ import static jdk.jpackage.internal.cli.StandardOption.PREDEFINED_RUNTIME_IMAGE;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -51,16 +52,21 @@ import jdk.jpackage.internal.FileAssociationGroup.FileAssociationNoMimesExceptio
 import jdk.jpackage.internal.cli.Options;
 import jdk.jpackage.internal.cli.StandardFaOption;
 import jdk.jpackage.internal.model.CustomLauncherIcon;
-import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.DefaultLauncherIcon;
 import jdk.jpackage.internal.model.FileAssociation;
+import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.LauncherIcon;
-import jdk.jpackage.internal.util.RootedPath;
+import jdk.jpackage.internal.util.ExplodedPath;
 
 final class LauncherFromOptions {
 
     LauncherFromOptions() {
+    }
+
+    LauncherFromOptions defaultIconResourceName(String v) {
+        defaultIconResourceName = v;
+        return this;
     }
 
     LauncherFromOptions faGroupBuilderMutator(BiConsumer<FileAssociationGroup.Builder, LauncherBuilder> v) {
@@ -83,7 +89,8 @@ final class LauncherFromOptions {
     }
 
     Launcher create(Options options) {
-        final var builder = new LauncherBuilder();
+        final var builder = new LauncherBuilder()
+                .defaultIconResourceName(Objects.requireNonNull(defaultIconResourceName));
 
         DESCRIPTION.ifPresentIn(options, builder::description);
         builder.icon(toLauncherIcon(ICON.findIn(options).orElse(null)));
@@ -93,9 +100,7 @@ final class LauncherFromOptions {
         if (PREDEFINED_APP_IMAGE.findIn(options).isEmpty()) {
             final var startupInfoBuilder = new LauncherStartupInfoBuilder();
 
-            INPUT.findIn(options).flatMap(v -> {
-                return v.stream().findAny().map(RootedPath::root);
-            }).ifPresent(startupInfoBuilder::inputDir);
+            INPUT.findIn(options).map(ExplodedPath::root).ifPresent(startupInfoBuilder::inputDir);
             ARGUMENTS.ifPresentIn(options, startupInfoBuilder::defaultParameters);
             JAVA_OPTIONS.ifPresentIn(options, startupInfoBuilder::javaOptions);
             MAIN_JAR.ifPresentIn(options, startupInfoBuilder::mainJar);
@@ -171,4 +176,5 @@ final class LauncherFromOptions {
 
     private BiConsumer<FileAssociationGroup.Builder, LauncherBuilder> faGroupBuilderMutator;
     private BiFunction<Options, FileAssociation, FileAssociation> faMapper;
+    private String defaultIconResourceName;
 }

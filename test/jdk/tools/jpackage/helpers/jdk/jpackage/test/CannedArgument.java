@@ -24,12 +24,28 @@ package jdk.jpackage.test;
 
 import java.nio.file.Path;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 @FunctionalInterface
 public interface CannedArgument {
 
     public String getValue();
+
+    public static CannedArgument ofString(String str) {
+        return new CannedArgument() {
+
+            @Override
+            public String getValue() {
+                return str;
+            }
+
+            @Override
+            public String toString() {
+                return Optional.ofNullable(str).orElse("null");
+            }
+        };
+    }
 
     public static CannedArgument create(Supplier<Object> supplier, String label) {
         Objects.requireNonNull(supplier);

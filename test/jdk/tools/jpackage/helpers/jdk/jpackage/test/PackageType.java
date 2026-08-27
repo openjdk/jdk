@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,12 +42,13 @@ import jdk.jpackage.internal.util.function.ThrowingSupplier;
  * jpackage type traits.
  */
 public enum PackageType {
-    WIN_MSI(".msi", OperatingSystem.WINDOWS),
-    WIN_EXE(".exe", OperatingSystem.WINDOWS),
-    LINUX_DEB(".deb", OperatingSystem.LINUX),
-    LINUX_RPM(".rpm", OperatingSystem.LINUX),
-    MAC_DMG(".dmg", OperatingSystem.MACOS),
-    MAC_PKG(".pkg", OperatingSystem.MACOS),
+
+    WIN_MSI(".msi", OperatingSystem.WINDOWS, "bundle-type.win-msi"),
+    WIN_EXE(".exe", OperatingSystem.WINDOWS, "bundle-type.win-exe"),
+    LINUX_DEB(".deb", OperatingSystem.LINUX, "bundle-type.linux-deb"),
+    LINUX_RPM(".rpm", OperatingSystem.LINUX, "bundle-type.linux-rpm"),
+    MAC_DMG(".dmg", OperatingSystem.MACOS, "bundle-type.mac-dmg"),
+    MAC_PKG(".pkg", OperatingSystem.MACOS, "bundle-type.mac-pkg"),
     IMAGE(OperatingSystem.current()),
     WIN_IMAGE(OperatingSystem.WINDOWS),
     LINUX_IMAGE(OperatingSystem.LINUX),
@@ -56,26 +57,33 @@ public enum PackageType {
 
     PackageType(OperatingSystem os) {
         this.os = Objects.requireNonNull(os);
-        type  = "app-image";
+        type = "app-image";
         suffix = null;
         supported = (os == OperatingSystem.current());
         enabled = supported;
+        this.bundleTypeLabelKey = switch (os) {
+            case WINDOWS -> "bundle-type.win-app";
+            case LINUX -> "bundle-type.linux-app";
+            case MACOS -> "bundle-type.mac-app";
+            default -> throw new AssertionError();
+        };
     }
 
-    PackageType(String packageName, String bundleSuffix, OperatingSystem os) {
+    PackageType(String packageName, String bundleSuffix, OperatingSystem os, String bundleTypeLabelKey) {
         this.os = Objects.requireNonNull(os);
         type  = Objects.requireNonNull(packageName);
         suffix = Objects.requireNonNull(bundleSuffix);
         supported = isSupported(new BundlingOperationDescriptor(os, type));
         enabled = supported && !Inner.DISABLED_PACKAGERS.contains(getType());
+        this.bundleTypeLabelKey = Objects.requireNonNull(bundleTypeLabelKey);
 
         if (suffix != null && enabled) {
             TKit.trace(String.format("Bundler %s enabled", getType()));
         }
     }
 
-    PackageType(String bundleSuffix, OperatingSystem os) {
-        this(bundleSuffix.substring(1), bundleSuffix, os);
+    PackageType(String bundleSuffix, OperatingSystem os, String bundleTypeLabelKey) {
+        this(bundleSuffix.substring(1), bundleSuffix, os, bundleTypeLabelKey);
     }
 
     void applyTo(JPackageCommand cmd) {
@@ -108,6 +116,10 @@ public enum PackageType {
 
     public OperatingSystem os() {
         return os;
+    }
+
+    public CannedFormattedString bundleTypeLabel() {
+        return JPackageStringBundle.MAIN.cannedFormattedString(bundleTypeLabelKey);
     }
 
     public static PackageType appImageForOS(OperatingSystem os) {
@@ -145,6 +157,7 @@ public enum PackageType {
     private final String suffix;
     private final boolean enabled;
     private final boolean supported;
+    private final String bundleTypeLabelKey;
 
     public static final Set<PackageType> LINUX = orderedSet(LINUX_DEB, LINUX_RPM);
     public static final Set<PackageType> WINDOWS = orderedSet(WIN_MSI, WIN_EXE);

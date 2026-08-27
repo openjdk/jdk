@@ -26,6 +26,7 @@ import static java.util.stream.Collectors.toMap;
 import static jdk.internal.util.OperatingSystem.LINUX;
 import static jdk.internal.util.OperatingSystem.MACOS;
 import static jdk.internal.util.OperatingSystem.WINDOWS;
+import static jdk.jpackage.internal.util.OperatingSystemUtils.operatingSystemLabel;
 import static jdk.jpackage.internal.util.PListWriter.writePList;
 import static jdk.jpackage.internal.util.XmlUtils.createXml;
 import static jdk.jpackage.internal.util.XmlUtils.toXmlConsumer;
@@ -63,6 +64,7 @@ import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JPackageOutputValidator;
 import jdk.jpackage.test.JavaTool;
 import jdk.jpackage.test.MacSign;
+import jdk.jpackage.test.LinuxHelper;
 import jdk.jpackage.test.MacSign.CertificateRequest;
 import jdk.jpackage.test.MacSign.CertificateType;
 import jdk.jpackage.test.MacSign.KeychainWithCertsSpec;
@@ -402,7 +404,9 @@ public final class ErrorTest {
             }
 
             Builder unsupportedPlatformOption(String arg, String ... otherArgs) {
-                return addArgs(arg).addArgs(otherArgs).error("ERR_UnsupportedOption", arg);
+                return addArgs(arg)
+                        .addArgs(otherArgs)
+                        .error("ERR_UnsupportedOption", arg, operatingSystemLabel(OperatingSystem.current()));
             }
 
             TestSpec create() {
@@ -569,7 +573,10 @@ public final class ErrorTest {
                     .error("error.no-module-in-path", "com.foo.bar"),
             // non-existing argument file
             testSpec().noAppDesc().notype().addArgs("@foo")
-                    .error("ERR_CannotParseOptions", "foo")
+                    .error("ERR_CannotParseOptions", "foo"),
+            // invalid install-dir
+            testSpec().nativeType().addArgs("--install-dir", "..")
+                    .error("error.parameter-not-install-dir", "..", "--install-dir")
         ).map(TestSpec.Builder::create).toList());
 
         // --main-jar and --module-name
@@ -621,15 +628,24 @@ public final class ErrorTest {
     }
 
     public static Collection<Object[]> invalidAppVersion() {
-        return toTestArgs(Stream.of(
-                // Invalid app version. Just cover all different error messages.
-                // Extensive testing of invalid version strings is done in DottedVersionTest unit test.
-                testSpec().addArgs("--app-version", "").error("error.version-string-empty"),
-                testSpec().addArgs("--app-version", "1.").error("error.version-string-zero-length-component", "1."),
-                testSpec().addArgs("--app-version", "1.b.3").error("error.version-string-invalid-component", "1.b.3", "b.3")
-        ).map(builder -> {
+
+        Collection<TestSpec.Builder> builders = new ArrayList<>();
+
+        // Invalid app version. Just cover all different error messages.
+        // Extensive testing of invalid version strings is done in DottedVersionTest unit test.
+        builders.add(testSpec().addArgs("--app-version", "").error("error.parameter-not-version", "", "--app-version", BUNDLE_TYPE_LABEL));
+        if (!TKit.isLinux()) {
+            for (var ver : List.of("1.", "1.b.3")) {
+                builders.add(testSpec().addArgs("--app-version", ver).error("error.parameter-not-version", ver, "--app-version", BUNDLE_TYPE_LABEL));
+            }
+        }
+
+        return toTestArgs(builders.stream().map(builder -> {
             if (TKit.isOSX()) {
-                builder.advice("error.invalid-cfbundle-version.advice");
+                builder.advice("error.parameter-not-mac-version.advice", BUNDLE_TYPE_LABEL);
+            };
+            if (TKit.isWindows()) {
+                builder.advice("error.parameter-not-win-version.advice", BUNDLE_TYPE_LABEL);
             };
             return builder;
         }));
@@ -707,8 +723,6 @@ public final class ErrorTest {
         var appImageCmd = JPackageCommand.helloAppImage().setFakeRuntime();
         appImageCmd.executeAndAssertImageCreated();
         Files.createDirectory(appImageCmd.appLayout().runtimeHomeDirectory().resolve("bin"));
-
-        final var keychain = SignEnvMock.SingleCertificateKeychain.FOO.keychain();
 
         var spec = testSpec()
                 .noAppDesc()
@@ -969,24 +983,48 @@ public final class ErrorTest {
                             .error("error.missing-service-installer")
                             .advice("error.missing-service-installer.advice"),
                     // The below version strings are invalid for msi and exe packaging.
-                    // They are valid for app image packaging.
                     testSpec().type(type).addArgs("--app-version", "1234")
-                            .error("error.msi-product-version-components", "1234")
-                            .advice("error.version-string-wrong-format.advice"),
+                            .error("error.parameter-not-version", "1234", "--app-version", BUNDLE_TYPE_LABEL)
+                            .advice("error.parameter-not-msi-version.advice", BUNDLE_TYPE_LABEL),
                     testSpec().type(type).addArgs("--app-version", "1.2.3.4.5")
-                            .error("error.msi-product-version-components", "1.2.3.4.5")
-                            .advice("error.version-string-wrong-format.advice"),
+                            .error("error.parameter-not-version", "1.2.3.4.5", "--app-version", BUNDLE_TYPE_LABEL)
+                            .advice("error.parameter-not-msi-version.advice", BUNDLE_TYPE_LABEL),
                     testSpec().type(type).addArgs("--app-version", "256.1")
-                            .error("error.msi-product-version-major-out-of-range")
-                            .advice("error.version-string-wrong-format.advice"),
+                            .error("error.parameter-not-version.major-out-of-range", "256.1", "--app-version", BUNDLE_TYPE_LABEL, "256")
+                            .advice("error.parameter-not-msi-version.advice", BUNDLE_TYPE_LABEL),
                     testSpec().type(type).addArgs("--app-version", "1.256")
-                            .error("error.msi-product-version-minor-out-of-range")
-                            .advice("error.version-string-wrong-format.advice"),
+                            .error("error.parameter-not-version.minor-out-of-range", "1.256", "--app-version", BUNDLE_TYPE_LABEL, "256")
+                            .advice("error.parameter-not-msi-version.advice", BUNDLE_TYPE_LABEL),
                     testSpec().type(type).addArgs("--app-version", "1.2.65536")
-                            .error("error.msi-product-version-build-out-of-range")
-                            .advice("error.version-string-wrong-format.advice")
+                            .error("error.parameter-not-version.build-out-of-range", "1.2.65536", "--app-version", BUNDLE_TYPE_LABEL, "65536")
+                            .advice("error.parameter-not-msi-version.advice", BUNDLE_TYPE_LABEL),
+                    testSpec().type(type).addArgs("--app-version", "1.2.3.65536")
+                            .error("error.parameter-not-version.revision-out-of-range", "1.2.3.65536", "--app-version", BUNDLE_TYPE_LABEL, "65536")
+                            .advice("error.parameter-not-msi-version.advice", BUNDLE_TYPE_LABEL)
             );
         }).flatMap(x -> x).map(TestSpec.Builder::create).toList());
+
+        Stream.of(
+                // The below version strings are invalid for Windows app image packaging packaging.
+                testSpec().addArgs("--app-version", "1.2.3.4.5")
+                        .error("error.parameter-not-version", "1.2.3.4.5", "--app-version", BUNDLE_TYPE_LABEL)
+                        .advice("error.parameter-not-win-version.advice", BUNDLE_TYPE_LABEL),
+                testSpec().addArgs("--app-version", "65536")
+                        .error("error.parameter-not-version.major-out-of-range", "65536", "--app-version", BUNDLE_TYPE_LABEL, "65536")
+                        .advice("error.parameter-not-win-version.advice", BUNDLE_TYPE_LABEL),
+                testSpec().addArgs("--app-version", "65536.1")
+                        .error("error.parameter-not-version.major-out-of-range", "65536.1", "--app-version", BUNDLE_TYPE_LABEL, "65536")
+                        .advice("error.parameter-not-win-version.advice", BUNDLE_TYPE_LABEL),
+                testSpec().addArgs("--app-version", "1.65536")
+                        .error("error.parameter-not-version.minor-out-of-range", "1.65536", "--app-version", BUNDLE_TYPE_LABEL, "65536")
+                        .advice("error.parameter-not-win-version.advice", BUNDLE_TYPE_LABEL),
+                testSpec().addArgs("--app-version", "1.2.65536")
+                        .error("error.parameter-not-version.build-out-of-range", "1.2.65536", "--app-version", BUNDLE_TYPE_LABEL, "65536")
+                        .advice("error.parameter-not-win-version.advice", BUNDLE_TYPE_LABEL),
+                testSpec().addArgs("--app-version", "1.2.3.65536")
+                        .error("error.parameter-not-version.revision-out-of-range", "1.2.3.65536", "--app-version", BUNDLE_TYPE_LABEL, "65536")
+                        .advice("error.parameter-not-win-version.advice", BUNDLE_TYPE_LABEL)
+        ).map(TestSpec.Builder::create).forEach(testCases::add);
 
         invalidShortcut(testCases::add, "--win-menu");
         invalidShortcut(testCases::add, "--win-shortcut");
@@ -1092,12 +1130,26 @@ public final class ErrorTest {
 
         testCases.addAll(Stream.of(
                 testSpec().type(PackageType.LINUX_DEB).addArgs("--linux-package-name", "#")
-                        .error("error.deb-invalid-value-for-package-name", "#")
-                        .advice("error.deb-invalid-value-for-package-name.advice"),
+                        .error("error.parameter-not-deb-package-name", "#", "--linux-package-name")
+                        .advice("error.parameter-not-deb-package-name.advice"),
                 testSpec().type(PackageType.LINUX_RPM).addArgs("--linux-package-name", "#")
-                        .error("error.rpm-invalid-value-for-package-name", "#")
-                        .advice("error.rpm-invalid-value-for-package-name.advice")
+                        .error("error.parameter-not-rpm-package-name", "#", "--linux-package-name")
+                        .advice("error.parameter-not-rpm-package-name.advice"),
+                testSpec().type(PackageType.LINUX_DEB).removeArgs("--name").addArgs("--name", "A")
+                        .error("error.invalid-derived-deb-package-name", "a")
+                        .advice("error.invalid-derived-deb-package-name.advice"),
+                testSpec().type(PackageType.LINUX_RPM).removeArgs("--name").addArgs("--name", "A{}")
+                        .error("error.invalid-derived-rpm-package-name", "a{}")
+                        .advice("error.invalid-derived-rpm-package-name.advice")
         ).map(TestSpec.Builder::create).toList());
+
+        if (LinuxHelper.isDesktopFileValidateCommandAvailable()) {
+            Stream.of(
+                    testSpec().type(PackageType.LINUX_RPM).addArgs("--linux-menu-group", "%$@#!")
+                            .error("error.parameter-invalid-value", "%$@#!", "--linux-menu-group")
+                            .advice("error.invalid-desktop-category.advice")
+            ).map(TestSpec.Builder::create).forEach(testCases::add);
+        }
 
         invalidShortcut(testCases::add, "--linux-shortcut");
 
@@ -1226,8 +1278,11 @@ public final class ErrorTest {
         }
 
         TestSpec toTestSpec() {
-            return value.map(v -> testSpec().unsupportedPlatformOption(name, v)).orElseGet(
-                    () -> testSpec().unsupportedPlatformOption(name)).create();
+            return value.map(v -> {
+                return testSpec().unsupportedPlatformOption(name, v);
+            }).orElseGet(() -> {
+                return testSpec().unsupportedPlatformOption(name);
+            }).create();
         }
 
         static Collection<Object[]> createTestArgs(UnsupportedPlatformOption... options) {
@@ -1305,6 +1360,10 @@ public final class ErrorTest {
     }
 
     private static final Pattern LINE_SEP_REGEXP = Pattern.compile("\\R");
+
+    private static final JPackageCommand.CannedArgument BUNDLE_TYPE_LABEL = JPackageCommand.cannedArgument(cmd -> {
+        return cmd.packageType().bundleTypeLabel().getValue();
+    }, "@@BUNDLE_TYPE_LABEL@@");
 
     private final class SignEnvMock {
 

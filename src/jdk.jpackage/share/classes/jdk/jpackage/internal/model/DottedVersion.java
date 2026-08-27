@@ -25,21 +25,20 @@
 package jdk.jpackage.internal.model;
 
 import java.math.BigInteger;
-import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Dotted numeric version string. E.g.: 1.0.37, 10, 0.5
+ * Dotted numeric version string. E.g.: 1.0.37, 10, 0.5+34-foo
  */
 public final class DottedVersion {
 
     private DottedVersion(String version, boolean greedy) {
         if (version.isEmpty()) {
             if (greedy) {
-                throw new IllegalArgumentException(I18N.getString("error.version-string-empty"));
+                throw new IllegalArgumentException("The version must not be empty");
             } else {
                 this.components = new Component[0];
                 this.suffix = "";
@@ -56,17 +55,8 @@ public final class DottedVersion {
                             }
                         }
 
-                        try {
-                            return new Component(digits);
-                        } catch (NumberFormatException ex) {
-                            if (!greedy) {
-                                return null;
-                            } else {
-                                throw new IllegalArgumentException(MessageFormat.format(I18N.
-                                        getString("error.version-string-invalid-component"), version,
-                                        digits));
-                            }
-                        }
+                        return new Component(digits);
+
                     }).takeWhile(Objects::nonNull).toArray(Component[]::new);
             suffix = ds.getUnprocessedString();
             if (!suffix.isEmpty() && greedy) {
@@ -76,8 +66,8 @@ public final class DottedVersion {
     }
 
     private DottedVersion(Component[] components, String suffix) {
-        this.components = components;
-        this.suffix = suffix;
+        this.components = Objects.requireNonNull(components);
+        this.suffix = Objects.requireNonNull(suffix);
     }
 
     private static class DigitsSupplier {
@@ -140,11 +130,9 @@ public final class DottedVersion {
 
             final String errMessage;
             if (tail.isEmpty()) {
-                errMessage = MessageFormat.format(I18N.getString(
-                        "error.version-string-zero-length-component"), input);
+                errMessage = "Version has an empty component";
             } else {
-                errMessage = MessageFormat.format(I18N.getString(
-                        "error.version-string-invalid-component"), input, tail);
+                errMessage = String.format("Version has invalid component: [%s]", tail);
             }
             return new IllegalArgumentException(errMessage);
         }
@@ -236,15 +224,44 @@ public final class DottedVersion {
         }
     }
 
+    /**
+     * Returns a copy of this {@code DottedVersion} with empty unprocessed suffix or
+     * this {@code DottedVersion} if the suffix is empty.
+     */
+    public DottedVersion stripUnprocessedSuffix() {
+        if (suffix.isEmpty()) {
+            return this;
+        } else {
+            return new DottedVersion(components, "");
+        }
+    }
+
+    /**
+     * Returns the value of the input string used to create this
+     * {@code DottedVersion}. If this instance is an instance created by
+     * {@link #trim(int)}, {@link #pad(int)}, or {@link #stripUnprocessedSuffix()}
+     * methods, returns the input string with corresponding alterations.
+     */
     @Override
     public String toString() {
         return Stream.of(components).map(Component::toString).collect(Collectors.joining(".")) + suffix;
     }
 
+    /**
+     * Returns the value of unprocessed suffix of the input string.
+     */
     public String getUnprocessedSuffix() {
         return suffix;
     }
 
+    /**
+     * Returns a string constructed from digital components.
+     * <p>
+     * Leading zeroes will be stripped from each digital component, and the
+     * unprocessed suffix will be omitted in the result string. E.g.: for a
+     * {@link DottedVersion} constructed from "1.000.002.0003.45+24~foo" string, the
+     * result will be "1.0.2.3.45".
+     */
     public String toComponentsString() {
         return Stream.of(components).map(Component::parsedValue).map(BigInteger::toString).collect(Collectors.joining("."));
     }

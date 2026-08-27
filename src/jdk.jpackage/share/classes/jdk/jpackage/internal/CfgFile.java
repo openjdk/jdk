@@ -47,7 +47,7 @@ final class CfgFile {
     CfgFile(Application app, Launcher launcher) {
         startupInfo = launcher.startupInfo().orElseThrow();
         outputFileName = launcher.executableName() + ".cfg";
-        version = Objects.requireNonNull(app.version());
+        version = Objects.requireNonNull(app.version().toString());
     }
 
     void create(ApplicationLayout appLayout) throws IOException {

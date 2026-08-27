@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,34 +24,106 @@ package jdk.jpackage.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 
+import java.util.List;
 import java.util.Map;
+import jdk.jpackage.test.JUnitUtils.ArrayConverter;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.converter.ConvertWith;
+import org.junit.jupiter.params.provider.CsvSource;
 
-public class JUnitUtilsTest {
+class JUnitUtilsTest {
 
     @Test
-    public void test_assertArrayEquals() {
+    void test_assertArrayEquals() {
         JUnitUtils.assertArrayEquals(new int[] {1, 2, 3}, new int[] {1, 2, 3});
         JUnitUtils.assertArrayEquals(new long[] {1, 2, 3}, new long[] {1, 2, 3});
         JUnitUtils.assertArrayEquals(new boolean[] {true, true}, new boolean[] {true, true});
         JUnitUtils.assertArrayEquals(null, null);
+
+        assertThrows(ClassCastException.class, () -> {
+            JUnitUtils.assertArrayEquals(new int[0], new Integer[0]);
+        });
+
+        assertThrows(AssertionError.class, () -> {
+            JUnitUtils.assertArrayEquals(new int[0], new int[1]);
+        });
+
+        assertThrows(AssertionError.class, () -> {
+            JUnitUtils.assertArrayEquals(new int[0], null);
+        });
+
+        assertThrows(AssertionError.class, () -> {
+            JUnitUtils.assertArrayEquals(null, new int[0]);
+        });
     }
 
     @Test
-    public void test_assertArrayEquals_negative() {
+    void test_assertArrayEquals_negative() {
         assertThrows(AssertionError.class, () -> {
             JUnitUtils.assertArrayEquals(new int[] {1, 2, 3}, new int[] {2, 3});
         });
     }
 
     @Test
-    public void test_exceptionAsPropertyMapWithMessageWithoutCause() {
+    void test_removeExceptionCause() {
+
+        var ex = JUnitUtils.removeExceptionCause(new IllegalArgumentException("Hello", new NullPointerException()));
+        assertEquals(null, ex.getCause());
+
+        var props = JUnitUtils.exceptionAsPropertyMap(ex);
+        assertEquals(IllegalArgumentException.class, props.get("getType"));
+        assertEquals("Hello", props.get("getMessage"));
+        assertEquals(null, props.get("getCause"));
+    }
+
+    @Test
+    void test_exceptionAsPropertyMap() {
+
+        var ex = new IllegalArgumentException("Hello", new NullPointerException("Bye"));
+        var props = JUnitUtils.exceptionAsPropertyMap(ex);
+
+        assertEquals(IllegalArgumentException.class.getName(), props.get("getClass"));
+        assertEquals("Hello", props.get("getMessage"));
+
+        @SuppressWarnings("unchecked")
+        var causeProps = (Map<String, Object>)props.get("getCause");
+        assertEquals(NullPointerException.class.getName(), causeProps.get("getClass"));
+        assertEquals("Bye", causeProps.get("getMessage"));
+        assertEquals(null, causeProps.get("getCause"));
+    }
+
+    @Test
+    void test_exceptionAsPropertyMapWithMessageWithoutCause() {
 
         var ex = new Exception("foo");
 
         var map = JUnitUtils.exceptionAsPropertyMap(ex);
 
         assertEquals(Map.of("getClass", Exception.class.getName(), "getMessage", "foo"), map);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+        "'a,b,c','100,200,300'",
+    })
+    void test_ArrayConverter(
+            @ConvertWith(ArrayConverter.class) String[] strArray,
+            @ConvertWith(ArrayConverter.class) Integer[] intArray) {
+
+        assertEquals(List.of("a", "b", "c"), List.of(strArray));
+        assertEquals(List.of(100, 200, 300), List.of(intArray));
+    }
+
+    @ParameterizedTest
+    @CsvSource(",")
+    void test_ArrayConverter_null(
+            @ConvertWith(ArrayConverter.class) String[] strArray,
+            @ConvertWith(ArrayConverter.class) Integer[] intArray) {
+
+        assertEquals(null, strArray);
+        assertEquals(null, intArray);
     }
 }

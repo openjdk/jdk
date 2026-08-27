@@ -25,6 +25,7 @@
 package jdk.jpackage.internal;
 
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableMap;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 import static jdk.jpackage.internal.cli.StandardAppImageFileOption.APP_VERSION;
@@ -42,7 +43,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -55,8 +55,8 @@ import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.cli.OptionValue;
 import jdk.jpackage.internal.cli.Options;
 import jdk.jpackage.internal.cli.StandardAppImageFileOption.AppImageFileOptionScope;
-import jdk.jpackage.internal.cli.StandardAppImageFileOption.InvalidOptionValueException;
 import jdk.jpackage.internal.cli.StandardAppImageFileOption.MissingMandatoryOptionException;
+import jdk.jpackage.internal.cli.StandardAppImageFileOption.Property;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.ExternalApplication;
@@ -73,7 +73,7 @@ import org.xml.sax.SAXException;
 final class AppImageFile {
 
     AppImageFile(Application app) {
-        appVersion = Objects.requireNonNull(app.version());
+        appVersion = Objects.requireNonNull(app.version().toString());
         extra = Objects.requireNonNull(app.extraAppImageFileData());
         launcherInfos = app.launchers().stream().map(LauncherInfo::new).toList();
     }
@@ -182,23 +182,26 @@ final class AppImageFile {
                 throw new InvalidAppImageFileException();
             }
 
-            final var appOptions = AppImageFileOptionScope.APP.parse(appImageFilePath, AppImageProperties.main(doc, xPath), os);
+            final var appOptions = parse(AppImageFileOptionScope.APP, appImageFilePath, AppImageProperties.main(doc, xPath), os);
 
             final var mainLauncherOptions = LauncherElement.MAIN.readAll(doc, xPath).stream().reduce((_, second) -> {
                 return second;
             }).map(launcherProps -> {
-                return AppImageFileOptionScope.LAUNCHER.parse(appImageFilePath, launcherProps, os);
+                return parse(AppImageFileOptionScope.LAUNCHER, appImageFilePath, launcherProps, os);
             }).orElseThrow(InvalidAppImageFileException::new);
 
             final var addLauncherOptions = LauncherElement.ADDITIONAL.readAll(doc, xPath).stream().map(launcherProps -> {
-                return AppImageFileOptionScope.LAUNCHER.parse(appImageFilePath, launcherProps, os);
+                return parse(AppImageFileOptionScope.LAUNCHER, appImageFilePath, launcherProps, os);
             }).toList();
 
-            try {
-                return ExternalApplication.create(Options.concat(appOptions, mainLauncherOptions), addLauncherOptions, os);
-            } catch (NoSuchElementException ex) {
-                throw new InvalidAppImageFileException(ex);
-            }
+            // ExternalApplication.create() may throw NoSuchElementException if it doesn't find an option.
+            // However, AppImageFileOptionScope.parse() is supposed to validate if the values extracted from the XML contain
+            // values for the mandatory options and will throw MissingMandatoryOptionException if some are missing.
+            // So ExternalApplication.create() should never throw NoSuchElementException.
+            // If it still does, it is a bug in AppImageFileOptionScope.parse().
+            // Thus, don't trap NoSuchElementException exceptions as it will mask a bug.
+            //Top-level error reporting code will handle it gracefully anyway.
+            return ExternalApplication.create(Options.concat(appOptions, mainLauncherOptions), addLauncherOptions, os);
 
         } catch (XPathExpressionException ex) {
             // This should never happen as XPath expressions should be correct
@@ -209,7 +212,7 @@ final class AppImageFile {
         } catch (NoSuchFileException ex) {
             // Don't save the original exception as its error message is redundant.
             throw new JPackageException(I18N.format("error.missing-app-image-file", relativeAppImageFilePath, appImageDir));
-        } catch (InvalidAppImageFileException|InvalidOptionValueException|MissingMandatoryOptionException ex) {
+        } catch (InvalidAppImageFileException|MissingMandatoryOptionException ex) {
             // Invalid input XML
             throw new JPackageException(I18N.format("error.invalid-app-image-file", relativeAppImageFilePath, appImageDir), ex);
         } catch (IOException ex) {
@@ -225,6 +228,27 @@ final class AppImageFile {
         return Objects.requireNonNull(PLATFORM_LABELS.get(Objects.requireNonNull(os)));
     }
 
+    private static Options parse(
+            AppImageFileOptionScope scope, Path appImageFile, Map<String, String> props, OperatingSystem os) {
+        return scope.parse(appImageFile, convert(props), os);
+    }
+
+    private static List<Property> convert(Map<String, String> properties) {
+        return properties.entrySet().stream().map(e -> {
+            var xpath = e.getKey();
+            // xpath can be /foo/tar[2]/@bar, or /foo/bar[1], or /foo/bar; in all cases we need the "bar" substring.
+            var name = xpath.substring(Integer.max(xpath.lastIndexOf('/'), xpath.lastIndexOf('@')) + 1);
+            var idx = name.indexOf('[');
+            if (idx >= 0) {
+                name = name.substring(0, idx);
+            }
+            return new Property(
+                    name,
+                    e.getValue(),
+                    xpath);
+        }).toList();
+    }
+
 
     private static final class AppImageProperties {
 
@@ -234,7 +258,7 @@ final class AppImageFile {
 
         static Map<String, String> launcher(Element launcherNode, XPath xPath) throws XPathExpressionException {
             final var attrData = XmlUtils.toStream(launcherNode.getAttributes())
-                    .collect(toUnmodifiableMap(Node::getNodeName, Node::getNodeValue));
+                    .collect(toUnmodifiableMap(XmlUtils::pathOf, Node::getNodeValue));
 
             final var extraData = queryProperties(launcherNode, xPath, LAUNCHER_PROPERTIES_XPATH_QUERY);
 
@@ -244,13 +268,13 @@ final class AppImageFile {
             return data;
         }
 
-        private static  Map<String, String> queryProperties(Element e, XPath xPath, String xpathExpr)
+        private static Map<String, String> queryProperties(Element e, XPath xPath, String xpathExpr)
                 throws XPathExpressionException {
             return XmlUtils.queryNodes(e, xPath, xpathExpr)
                     .map(Element.class::cast)
-                    .collect(toUnmodifiableMap(Node::getNodeName, selectedElement -> {
-                        return selectedElement.getTextContent();
-                    }, (a, b) -> b));
+                    .collect(toMap(Element::getNodeName, x -> x, (a, b) -> b))
+                    .values().stream()
+                    .collect(toUnmodifiableMap(XmlUtils::pathOf, Element::getTextContent));
         }
 
         private static String xpathQueryForExtraProperties(Set<String> excludeNames) {
@@ -273,7 +297,7 @@ final class AppImageFile {
 
         static {
             final String nonEmptyMainElements = MAIN_ELEMENT_NAMES.stream().map(name -> {
-                return String.format("/jpackage-state/%s[text()]", name);
+                return String.format("/jpackage-state/%s", name);
             }).collect(joining("|"));
 
             MAIN_PROPERTIES_XPATH_QUERY = String.format("%s|/jpackage-state/%s", nonEmptyMainElements,
@@ -340,10 +364,6 @@ final class AppImageFile {
     private static class InvalidAppImageFileException extends RuntimeException {
 
         InvalidAppImageFileException() {
-        }
-
-        InvalidAppImageFileException(Throwable t) {
-            super(t);
         }
 
         private static final long serialVersionUID = 1L;

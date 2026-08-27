@@ -130,7 +130,7 @@ public final class Summary implements SummaryAccumulator {
     }
 
     private static String version(BundleSpec bundle) {
-        return getProperty(bundle, Application::version, Package::version);
+        return getProperty(bundle, Application::version, Package::version).toString();
     }
 
     private static <T> T getProperty(BundleSpec bundle,

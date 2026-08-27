@@ -24,13 +24,15 @@ package jdk.jpackage.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.lang.reflect.Array;
 import java.util.Map;
-import java.util.Objects;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.converter.SimpleArgumentConverter;
 
 
 public final class JUnitUtils {
+
+    private JUnitUtils() {}
 
     /**
      * Convenience adapter for {@link Assertions#assertArrayEquals(byte[], byte[])},
@@ -70,67 +72,28 @@ public final class JUnitUtils {
     }
 
 
-    public static final class ExceptionPattern {
-
-        public ExceptionPattern() {
-        }
-
-        public boolean match(Exception ex) {
-            Objects.requireNonNull(ex);
-
-            if (expectedType != null && !expectedType.isInstance(ex)) {
-                return false;
-            }
-
-            if (expectedMessage != null && !expectedMessage.equals(ex.getMessage())) {
-                return false;
-            }
-
-            if (expectedCauseType != null && !expectedCauseType.isInstance(ex.getCause())) {
-                return false;
-            }
-
-            return true;
-        }
-
-        public ExceptionPattern hasMessage(String v) {
-            expectedMessage = v;
-            return this;
-        }
-
-        public ExceptionPattern isInstanceOf(Class<? extends Exception> v) {
-            expectedType = v;
-            return this;
-        }
-
-        public ExceptionPattern isCauseInstanceOf(Class<? extends Throwable> v) {
-            expectedCauseType = v;
-            return this;
-        }
-
-        public ExceptionPattern hasCause(boolean v) {
-            return isCauseInstanceOf(v ? Exception.class : null);
-        }
-
-        public ExceptionPattern hasCause() {
-            return hasCause(true);
-        }
-
-        private String expectedMessage;
-        private Class<? extends Exception> expectedType;
-        private Class<? extends Throwable> expectedCauseType;
-    }
-
-
-    public static class StringArrayConverter extends SimpleArgumentConverter {
+    public static class ArrayConverter extends SimpleArgumentConverter {
 
         @Override
         protected Object convert(Object source, Class<?> targetType) {
-            if (source instanceof String && String[].class.isAssignableFrom(targetType)) {
-                return ((String) source).split("\\s*,\\s*");
-            } else {
-                throw new IllegalArgumentException();
+
+            if (source == null) {
+                return null;
             }
+
+            if (!(source instanceof String value) || !targetType.isArray()) {
+                throw new IllegalArgumentException("Expected a String and an array type");
+            }
+
+            var componentType = targetType.getComponentType();
+            var values = value.split("\\s*,\\s*");
+            var result = Array.newInstance(componentType, values.length);
+
+            for (int i = 0; i < values.length; i++) {
+                Array.set(result, i, TestMethodSupplier.fromString(values[i], componentType));
+            }
+
+            return result;
         }
     }
 
@@ -142,6 +105,7 @@ public final class JUnitUtils {
             type = ex.getClass();
         }
 
+        // Not explicitly but implicitly used by exceptionAsPropertyMap()
         public Class<?> getType() {
             return type;
         }

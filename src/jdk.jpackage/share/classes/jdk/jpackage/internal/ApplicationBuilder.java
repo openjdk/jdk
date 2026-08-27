@@ -27,6 +27,7 @@ package jdk.jpackage.internal;
 import static jdk.jpackage.internal.I18N.buildConfigException;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -36,10 +37,11 @@ import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.UnaryOperator;
 import jdk.jpackage.internal.model.AppImageLayout;
+import jdk.jpackage.internal.model.AppImageLayout.DirectorySelector;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
+import jdk.jpackage.internal.model.BundleVersion;
 import jdk.jpackage.internal.model.ExternalApplication;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.LauncherIcon;
@@ -48,12 +50,13 @@ import jdk.jpackage.internal.model.LauncherStartupInfo;
 import jdk.jpackage.internal.model.ResourceDirLauncherIcon;
 import jdk.jpackage.internal.model.RuntimeBuilder;
 import jdk.jpackage.internal.model.RuntimeLayout;
-import jdk.jpackage.internal.util.RootedPath;
+import jdk.jpackage.internal.util.ExplodedPath;
 import jdk.jpackage.internal.util.RuntimeReleaseFile;
 
 final class ApplicationBuilder {
 
     ApplicationBuilder() {
+        userContent = new ArrayList<>();
     }
 
     ApplicationBuilder(ApplicationBuilder other) {
@@ -62,18 +65,24 @@ final class ApplicationBuilder {
         version = other.version;
         vendor = other.vendor;
         copyright = other.copyright;
-        appDirSources = other.appDirSources;
+        userContent = new ArrayList<>(other.userContent);
         externalApp = other.externalApp;
-        contentDirSources = other.contentDirSources;
         appImageLayout = other.appImageLayout;
         runtimeBuilder = other.runtimeBuilder;
         launchers = other.launchers;
         runtimeReleaseFile = other.runtimeReleaseFile;
-        derivedVersionNormalizer = other.derivedVersionNormalizer;
+        derivedVersionConverter = other.derivedVersionConverter;
     }
 
     ApplicationBuilder copy() {
         return new ApplicationBuilder(this);
+    }
+
+    interface DerivedValueOrigin {}
+
+    enum StandardDerivedValueOrigin implements DerivedValueOrigin {
+        MODULE_INFO,
+        RELEASE_FILE,
     }
 
     Application create() {
@@ -94,8 +103,7 @@ final class ApplicationBuilder {
                 validatedVersion(),
                 Optional.ofNullable(vendor).orElseGet(DEFAULTS::vendor),
                 Optional.ofNullable(copyright).orElseGet(DEFAULTS::copyright),
-                Optional.ofNullable(appDirSources).orElseGet(List::of),
-                Optional.ofNullable(contentDirSources).orElseGet(List::of),
+                List.copyOf(userContent),
                 appImageLayout,
                 Optional.ofNullable(runtimeBuilder),
                 launchersAsList,
@@ -145,12 +153,12 @@ final class ApplicationBuilder {
         return this;
     }
 
-    ApplicationBuilder version(String v) {
+    ApplicationBuilder version(BundleVersion v) {
         version = v;
         return this;
     }
 
-    Optional<String> version() {
+    Optional<BundleVersion> version() {
         return Optional.ofNullable(version);
         }
 
@@ -169,44 +177,55 @@ final class ApplicationBuilder {
         return this;
     }
 
-    ApplicationBuilder appDirSources(Collection<RootedPath> v) {
-        appDirSources = v;
+    ApplicationBuilder addUserContent(ExplodedPath source, DirectorySelector dest) {
+        userContent.add(Map.entry(source, dest));
         return this;
     }
 
-    ApplicationBuilder contentDirSources(Collection<RootedPath> v) {
-        contentDirSources = v;
+    ApplicationBuilder addUserContent(List<ExplodedPath> source, DirectorySelector dest) {
+        // Reverse the order of content sources.
+        // If there are multiple source files for the same
+        // destination file, only the first will be used.
+        // Reversing the order of content sources makes it use the last file
+        // from the original list of source files for the given destination file.
+        source.reversed().forEach(v -> {
+            addUserContent(v, dest);
+        });
         return this;
     }
 
-    ApplicationBuilder derivedVersionNormalizer(UnaryOperator<String> v) {
-        derivedVersionNormalizer = v;
+    ApplicationBuilder derivedVersionConverter(BiFunction<DerivedValueOrigin, String, Optional<BundleVersion>> v) {
+        derivedVersionConverter = v;
         return this;
     }
 
-    private String validatedVersion() {
+    Optional<BiFunction<DerivedValueOrigin, String, Optional<BundleVersion>>> derivedVersionConverter() {
+        return Optional.ofNullable(derivedVersionConverter);
+    }
+
+    private BundleVersion validatedVersion() {
         return Optional.ofNullable(version).or(() -> {
             // Application version has not been specified explicitly. Derive it.
-            var derivedVersion = derivedVersion();
-            if (derivedVersionNormalizer != null) {
-                derivedVersion = derivedVersion.map(v -> {
-                    var mappedVersion = derivedVersionNormalizer.apply(v);
-                    if (!mappedVersion.equals(v)) {
-                        Log.trace("Normalize derived bundle version from [%s] to [%s]", v, mappedVersion);
+            return derivedVersion().flatMap(v -> {
+                var mappedVersion = derivedVersionConverter().orElse((_, ver) -> {
+                    return Optional.of(BundleVersion.of(ver));
+                }).apply(v.getKey(), v.getValue());
+                mappedVersion.map(BundleVersion::toString).ifPresent(ver -> {
+                    if (!ver.equals(v.getValue())) {
+                        Log.trace("Normalize derived bundle version from [%s] to [%s]", v.getValue(), ver);
                     }
-                    return mappedVersion;
                 });
-            }
-            return derivedVersion;
+                return mappedVersion;
+            });
         }).orElseGet(DEFAULTS::version);
     }
 
-    private Optional<String> derivedVersion() {
+    private Optional<Map.Entry<DerivedValueOrigin, String>> derivedVersion() {
         if (appImageLayout instanceof RuntimeLayout && runtimeReleaseFile != null) {
             try {
                 var releaseVersion = new RuntimeReleaseFile(runtimeReleaseFile).getJavaVersion().toString();
                 Log.trace("Derive bundle version [%s] from [%s] file", releaseVersion, runtimeReleaseFile);
-                return Optional.of(releaseVersion);
+                return Optional.of(Map.entry(StandardDerivedValueOrigin.RELEASE_FILE, releaseVersion));
             } catch (Exception ex) {
                 Log.trace(ex, "Failed to derive bundle version from [%s] file", runtimeReleaseFile);
                 return Optional.empty();
@@ -221,6 +240,8 @@ final class ApplicationBuilder {
                             Log.trace("Derive bundle version [%s] from [%s] module", v, modularStartupInfo.moduleName());
                         });
                         return moduleVersion;
+                    }).map(ver -> {
+                        return Map.entry(StandardDerivedValueOrigin.MODULE_INFO, ver);
                     });
         } else {
             return Optional.empty();
@@ -337,8 +358,7 @@ final class ApplicationBuilder {
                 app.version(),
                 app.vendor(),
                 app.copyright(),
-                app.appDirSources(),
-                app.contentDirSources(),
+                app.userContent(),
                 Objects.requireNonNull(appImageLayout),
                 app.runtimeBuilder(),
                 app.launchers(),
@@ -374,7 +394,7 @@ final class ApplicationBuilder {
         }
     }
 
-    private record Defaults(String version, String vendor) {
+    private record Defaults(BundleVersion version, String vendor) {
         String copyright() {
             return I18N.format("param.copyright.default", new Date());
         }
@@ -382,19 +402,18 @@ final class ApplicationBuilder {
 
     private String name;
     private String description;
-    private String version;
+    private BundleVersion version;
     private String vendor;
     private String copyright;
-    private Collection<RootedPath> appDirSources;
+    private Collection<Map.Entry<ExplodedPath, DirectorySelector>> userContent;
     private ExternalApplication externalApp;
-    private Collection<RootedPath> contentDirSources;
     private AppImageLayout appImageLayout;
     private RuntimeBuilder runtimeBuilder;
     private ApplicationLaunchers launchers;
     private Path runtimeReleaseFile;
-    private UnaryOperator<String> derivedVersionNormalizer;
+    private BiFunction<DerivedValueOrigin, String, Optional<BundleVersion>> derivedVersionConverter;
 
     private static final Defaults DEFAULTS = new Defaults(
-            "1.0",
+            BundleVersion.of("1.0"),
             I18N.getString("param.vendor.default"));
 }

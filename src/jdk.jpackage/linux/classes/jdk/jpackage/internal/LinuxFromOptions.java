@@ -27,7 +27,6 @@ package jdk.jpackage.internal;
 import static jdk.jpackage.internal.FromOptions.buildApplicationBuilder;
 import static jdk.jpackage.internal.FromOptions.createPackageBuilder;
 import static jdk.jpackage.internal.LinuxPackagingPipeline.APPLICATION_LAYOUT;
-import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_LINUX_RPM;
 import static jdk.jpackage.internal.cli.StandardOption.LINUX_APP_CATEGORY;
 import static jdk.jpackage.internal.cli.StandardOption.LINUX_DEB_MAINTAINER_EMAIL;
 import static jdk.jpackage.internal.cli.StandardOption.LINUX_MENU_GROUP;
@@ -36,10 +35,15 @@ import static jdk.jpackage.internal.cli.StandardOption.LINUX_PACKAGE_NAME;
 import static jdk.jpackage.internal.cli.StandardOption.LINUX_RELEASE;
 import static jdk.jpackage.internal.cli.StandardOption.LINUX_RPM_LICENSE_TYPE;
 import static jdk.jpackage.internal.cli.StandardOption.LINUX_SHORTCUT_HINT;
+import static jdk.jpackage.internal.cli.StandardOption.TEMP_ROOT;
 import static jdk.jpackage.internal.model.StandardPackageType.LINUX_DEB;
 import static jdk.jpackage.internal.model.StandardPackageType.LINUX_RPM;
 
+import java.util.Optional;
+import jdk.jpackage.internal.ApplicationBuilder.StandardDerivedValueOrigin;
 import jdk.jpackage.internal.cli.Options;
+import jdk.jpackage.internal.cli.StandardValidator;
+import jdk.jpackage.internal.model.BundleVersion;
 import jdk.jpackage.internal.model.DottedVersion;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.LinuxApplication;
@@ -56,7 +60,9 @@ final class LinuxFromOptions {
 
     static LinuxApplication createLinuxApplication(Options options) {
 
-        final var launcherFromOptions = new LauncherFromOptions().faWithDefaultDescription();
+        final var launcherFromOptions = new LauncherFromOptions()
+                .defaultIconResourceName("JavaApp.png")
+                .faWithDefaultDescription();
 
         final var appBuilder = buildApplicationBuilder().create(options, launcherOptions -> {
 
@@ -72,8 +78,20 @@ final class LinuxFromOptions {
 
         appBuilder.launchers().map(LinuxPackagingPipeline::normalizeShortcuts).ifPresent(appBuilder::launchers);
 
-        if (OptionUtils.bundlingOperation(options) == CREATE_LINUX_RPM) {
-            appBuilder.derivedVersionNormalizer(LinuxFromOptions::normalizeRpmVersion);
+        switch (OptionUtils.bundlingOperation(options)) {
+            case CREATE_LINUX_RPM -> {
+                appBuilder.derivedVersionConverter((origin, ver) -> {
+                    return deriveVersion(LINUX_RPM, origin, ver);
+                });
+            }
+            case CREATE_LINUX_DEB -> {
+                appBuilder.derivedVersionConverter((origin, ver) -> {
+                    return deriveVersion(LINUX_DEB, origin, ver);
+                });
+            }
+            default -> {
+                // NOP
+            }
         }
 
         return LinuxApplication.create(appBuilder.create());
@@ -126,23 +144,41 @@ final class LinuxFromOptions {
 
         LINUX_PACKAGE_DEPENDENCIES.ifPresentIn(options, pkgBuilder::additionalDependencies);
         LINUX_APP_CATEGORY.ifPresentIn(options, pkgBuilder::category);
-        LINUX_MENU_GROUP.ifPresentIn(options, pkgBuilder::menuGroupName);
+        LINUX_MENU_GROUP.ifPresentIn(options, v -> {
+            pkgBuilder.menuGroupName(v).probeMenuGroupNameFile(TEMP_ROOT.getFrom(options).resolve("desktop-file-validate/probe.desktop"));
+        });
         LINUX_RELEASE.ifPresentIn(options, pkgBuilder::release);
-        LINUX_PACKAGE_NAME.ifPresentIn(options, pkgBuilder::literalName);
+        LINUX_PACKAGE_NAME.ifPresentIn(options, pkgBuilder::linuxPackageName);
 
         return pkgBuilder;
     }
 
-    private static String normalizeRpmVersion(String version) {
-        // RPM does not support "-" symbol in version. In some case
-        // we might have "-" from "release" file version.
-        // Normalize version if it has "-" symbols. All other supported version
-        // formats by "release" file should be supported by RPM.
-        if (version.contains("-")) {
-            return DottedVersion.lazy(version).toComponentsString();
+    private static Optional<BundleVersion> deriveVersion(
+            StandardPackageType type, ApplicationBuilder.DerivedValueOrigin origin, String version) {
+
+        var bundleVersion = BundleVersion.of(version);
+
+        var validator = StandardValidator.isVersionPredicate(type);
+
+        if (!validator.test(bundleVersion)) {
+            // Version is not valid.
+            switch (origin) {
+                case StandardDerivedValueOrigin.MODULE_INFO, StandardDerivedValueOrigin.RELEASE_FILE -> {
+                    // These origins should provide dotted versions.
+                    // If such version is invalid, this is due to invalid suffix.
+                    // Trim the suffix and rerun validation.
+                    return bundleVersion.asDottedVersion()
+                            .map(DottedVersion::stripUnprocessedSuffix)
+                            .map(BundleVersion::of)
+                            .filter(validator);
+                }
+                default -> {
+                    throw new AssertionError();
+                }
+            }
         }
 
-        return version;
+        return Optional.of(bundleVersion);
     }
 
     private static void updateSummary(Options options, LinuxPackage pkg) {

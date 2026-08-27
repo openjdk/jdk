@@ -57,6 +57,7 @@ import jdk.jpackage.internal.PackagingPipeline.TaskID;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLayout;
+import jdk.jpackage.internal.model.BundleVersion;
 import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.model.PackageType;
 import jdk.jpackage.internal.model.RuntimeBuilder;
@@ -613,10 +614,9 @@ public class PackagingPipelineTest {
         return new Application.Stub(
                 "foo",
                 "My app",
-                "1.0",
+                BundleVersion.of("1.0"),
                 "Acme",
                 "copyright",
-                List.of(),
                 List.of(),
                 appImageLayout,
                 runtimeBuilder,
@@ -641,7 +641,7 @@ public class PackagingPipelineTest {
                     },
                     "the-package",
                     "My package",
-                    "1.0",
+                    BundleVersion.of("1.0"),
                     Optional.empty(),
                     Optional.empty(),
                     Optional.ofNullable(predefinedAppImage),

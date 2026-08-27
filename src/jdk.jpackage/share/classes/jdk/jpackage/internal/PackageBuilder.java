@@ -24,13 +24,12 @@
  */
 package jdk.jpackage.internal;
 
-import static jdk.jpackage.internal.I18N.buildConfigException;
-
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.Application;
+import jdk.jpackage.internal.model.BundleVersion;
 import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.model.Package.Stub;
 import jdk.jpackage.internal.model.PackageType;
@@ -44,43 +43,12 @@ final class PackageBuilder {
     }
 
     Package create() {
-        final var validatedName = validatedName();
-
-        Path relativeInstallDir;
-        if (installDir != null) {
-            var normalizedInstallDir = mapInstallDir(installDir, type);
-            if (type instanceof StandardPackageType stdType) {
-                Optional<Path> installDirName = Optional.of(Path.of(validatedName));
-                switch (stdType) {
-                    case LINUX_DEB, LINUX_RPM -> {
-                        switch (normalizedInstallDir.toString()) {
-                            case "/usr", "/usr/local" -> {
-                                installDirName = Optional.empty();
-                            }
-                        }
-                    }
-                    case WIN_EXE, WIN_MSI -> {
-                        installDirName = Optional.empty();
-                    }
-                    case MAC_DMG, MAC_PKG -> {
-                        installDirName = Optional.of(app.appImageDirName());
-                    }
-                }
-                normalizedInstallDir = installDirName.map(normalizedInstallDir::resolve).orElse(normalizedInstallDir);
-            }
-            relativeInstallDir = normalizedInstallDir;
-        } else {
-            relativeInstallDir = defaultInstallDir().orElseThrow(UnsupportedOperationException::new);
-        }
-
-        if (relativeInstallDir.isAbsolute()) {
-            relativeInstallDir = relativeInstallDir.getRoot().relativize(relativeInstallDir);
-        }
+        final var relativeInstallDir = relativeInstallDir();
 
         return new Stub(
                 app,
                 type,
-                validatedName,
+                validatedName(),
                 Optional.ofNullable(description).orElseGet(app::description),
                 version = Optional.ofNullable(version).orElseGet(app::version),
                 Optional.ofNullable(aboutURL),
@@ -126,12 +94,12 @@ final class PackageBuilder {
         return Optional.ofNullable(description);
     }
 
-    PackageBuilder version(String v) {
+    PackageBuilder version(BundleVersion v) {
         version = v;
         return this;
     }
 
-    Optional<String> version() {
+    Optional<BundleVersion> version() {
         return Optional.ofNullable(version);
     }
 
@@ -173,7 +141,7 @@ final class PackageBuilder {
 
     Optional<Path> defaultInstallDir() {
         if (type instanceof StandardPackageType stdType) {
-            return defaultInstallDir(stdType, validatedName(), app);
+            return Optional.of(defaultInstallDir(stdType, validatedName(), app));
         } else {
             return Optional.empty();
         }
@@ -192,67 +160,67 @@ final class PackageBuilder {
         return name().orElseGet(app::name);
     }
 
+    private Path relativeInstallDir() {
+
+        final var relativeInstallDir = installDir().map(theInstallDir -> {
+            if (type instanceof StandardPackageType stdType) {
+                Optional<Path> installDirName = switch (stdType) {
+                    case LINUX_DEB, LINUX_RPM -> {
+                        yield switch (theInstallDir.toString()) {
+                            case "/usr", "/usr/local" -> Optional.empty();
+                            default -> Optional.of(Path.of(validatedName()));
+                        };
+                    }
+                    case WIN_EXE, WIN_MSI -> {
+                        yield Optional.empty();
+                    }
+                    case MAC_DMG, MAC_PKG -> {
+                        yield Optional.of(app.appImageDirName());
+                    }
+                };
+                return installDirName.map(installDir::resolve).orElse(theInstallDir);
+            } else {
+                return theInstallDir;
+            }
+        }).orElseGet(() -> {
+            return defaultInstallDir().orElseThrow(UnsupportedOperationException::new);
+        });
+
+        if (relativeInstallDir.isAbsolute()) {
+            return relativeInstallDir.getRoot().relativize(relativeInstallDir);
+        } else {
+            return relativeInstallDir;
+        }
+    }
+
     private AppImageLayout validatedInstalledPackageLayout(Path relativeInstallDir) {
         return installedPackageLayout().orElseGet(() -> {
-            var theInstallDir = relativeInstallDir;
-            if (type instanceof StandardPackageType stdType) {
-                switch (stdType) {
-                    case LINUX_DEB, LINUX_RPM, MAC_DMG, MAC_PKG -> {
-                        theInstallDir = Path.of("/").resolve(theInstallDir);
-                    }
-                    default -> {}
+            var theInstallDir = switch (type) {
+                case StandardPackageType stdType -> {
+                    yield switch (stdType) {
+                        case LINUX_DEB, LINUX_RPM, MAC_DMG, MAC_PKG -> {
+                            yield Path.of("/").resolve(relativeInstallDir);
+                        }
+                        default -> {
+                            yield relativeInstallDir;
+                        }
+                    };
                 }
-            }
+                default -> {
+                    yield relativeInstallDir;
+                }
+            };
             return app.imageLayout().resolveAt(theInstallDir).resetRootDirectory();
         });
     }
 
-    private static Path mapInstallDir(Path installDir, PackageType type) {
-        var ex = buildConfigException("error.invalid-install-dir", installDir).create();
-
-        if (installDir.getNameCount() == 0) {
-            throw ex;
-        }
-
-        if (installDir.getFileName().equals(Path.of(""))) {
-            // Trailing '/' or '\\'. Strip them away.
-            installDir = installDir.getParent();
-        }
-
-        if (installDir.toString().isEmpty()) {
-            throw ex;
-        }
-
-        if (type instanceof StandardPackageType stdType) {
-            switch (stdType) {
-                case WIN_EXE, WIN_MSI -> {
-                    if (installDir.isAbsolute()) {
-                        throw ex;
-                    }
-                }
-                default -> {
-                    if (!installDir.isAbsolute()) {
-                        throw ex;
-                    }
-                }
-            }
-        }
-
-        if (!installDir.normalize().toString().equals(installDir.toString())) {
-            // Don't allow '..' or '.' in path components
-            throw ex;
-        }
-
-        return installDir;
-    }
-
-    private static Optional<Path> defaultInstallDir(StandardPackageType pkgType, String pkgName, Application app) {
-        switch (pkgType) {
+    private static Path defaultInstallDir(StandardPackageType pkgType, String pkgName, Application app) {
+        return switch (pkgType) {
             case WIN_EXE, WIN_MSI -> {
-                return Optional.of(app.appImageDirName());
+                yield app.appImageDirName();
             }
             case LINUX_DEB, LINUX_RPM -> {
-                return Optional.of(Path.of("/opt").resolve(pkgName));
+                yield Path.of("/opt").resolve(pkgName);
             }
             case MAC_DMG, MAC_PKG -> {
                 final Path dirName = app.appImageDirName();
@@ -262,19 +230,16 @@ final class PackageBuilder {
                 } else {
                     base = Path.of("/Applications");
                 }
-                return Optional.of(base.resolve(dirName));
+                yield base.resolve(dirName);
             }
-            default -> {
-                return Optional.empty();
-            }
-        }
+        };
     }
 
     private Application app;
     private String name;
     private Path fileName;
     private String description;
-    private String version;
+    private BundleVersion version;
     private String aboutURL;
     private Path licenseFile;
     private Path predefinedAppImage;

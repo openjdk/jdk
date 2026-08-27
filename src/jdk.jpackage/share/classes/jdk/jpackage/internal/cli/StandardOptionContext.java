@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,15 +34,24 @@ import jdk.internal.util.OperatingSystem;
 /**
  * The standard context for parsing command line options.
  */
-record StandardOptionContext(OperatingSystem os, OptionSource src) {
+record StandardOptionContext(OperatingSystem os, OptionSource src, Optional<StandardBundlingOperation> bundlingOperation) {
 
     StandardOptionContext {
         Objects.requireNonNull(os);
         Objects.requireNonNull(src);
+        Objects.requireNonNull(bundlingOperation);
     }
 
     StandardOptionContext(OperatingSystem os) {
-        this(os, OptionSource.COMMAND_LINE);
+        this(os, OptionSource.COMMAND_LINE, Optional.empty());
+    }
+
+    StandardOptionContext(OperatingSystem os, StandardBundlingOperation bundlingOperation) {
+        this(os, OptionSource.COMMAND_LINE, Optional.of(bundlingOperation));
+    }
+
+    StandardOptionContext(StandardBundlingOperation bundlingOperation) {
+        this(bundlingOperation.os(), OptionSource.COMMAND_LINE, Optional.of(bundlingOperation));
     }
 
     StandardOptionContext() {
@@ -50,7 +59,7 @@ record StandardOptionContext(OperatingSystem os, OptionSource src) {
     }
 
     StandardOptionContext forFile(Path file) {
-        return new StandardOptionContext(os, OptionSource.fromFile(file));
+        return new StandardOptionContext(os, OptionSource.fromFile(file), bundlingOperation);
     }
 
     Optional<Path> asFileSource() {
