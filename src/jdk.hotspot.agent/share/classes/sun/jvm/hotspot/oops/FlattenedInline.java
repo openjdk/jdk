@@ -32,9 +32,9 @@ import sun.jvm.hotspot.utilities.Assert;
 
 
 /**
- * FlattenedInline represents flattened object in HotSpot.
+ * FlattenedInline represents a flattened object in HotSpot.
  * Note that there is no corresponding class in HotSpot. This class is used
- * in SA to handle flattened object in same way with oop.
+ * in SA to handle a flattened object in same way as an oop.
  */
 public class FlattenedInline extends Inline {
 
