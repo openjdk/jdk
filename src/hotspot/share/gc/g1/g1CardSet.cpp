@@ -967,7 +967,7 @@ public:
 
   void operator()(uint card_idx, uint length) {
     for (uint i = 0; i < length; i++) {
-      _cl.do_card(_region_idx, card_idx);
+      _cl.do_card(_region_idx, card_idx + i);
     }
   }
 };

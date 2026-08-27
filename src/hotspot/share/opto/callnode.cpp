@@ -1261,12 +1261,13 @@ bool CallStaticJavaNode::is_uncommon_trap() const {
 int CallStaticJavaNode::uncommon_trap_request() const {
   return is_uncommon_trap() ? extract_uncommon_trap_request(this) : 0;
 }
+
 int CallStaticJavaNode::extract_uncommon_trap_request(const Node* call) {
 #ifndef PRODUCT
   if (!(call->req() > TypeFunc::Parms &&
         call->in(TypeFunc::Parms) != nullptr &&
-        call->in(TypeFunc::Parms)->is_Con() &&
-        call->in(TypeFunc::Parms)->bottom_type()->isa_int())) {
+        call->in(TypeFunc::Parms)->bottom_type()->isa_int() &&
+        call->in(TypeFunc::Parms)->bottom_type()->is_int()->is_con())) {
     assert(in_dump() != 0, "OK if dumping");
     tty->print("[bad uncommon trap]");
     return 0;

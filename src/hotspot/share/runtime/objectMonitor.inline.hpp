@@ -74,18 +74,6 @@ inline volatile uintptr_t* ObjectMonitor::metadata_addr() {
   return &_metadata;
 }
 
-inline markWord ObjectMonitor::header() const {
-  // Locking with OM table does not use header.
-  ShouldNotCallThis();
-  return markWord(metadata());
-}
-
-inline void ObjectMonitor::set_header(markWord hdr) {
-  // Locking with OM table does not use header.
-  ShouldNotCallThis();
-  set_metadata(hdr.value());
-}
-
 inline intptr_t ObjectMonitor::hash() const {
   return metadata();
 }
