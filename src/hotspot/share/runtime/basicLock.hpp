@@ -55,7 +55,7 @@ class BasicLock {
   void print_on(outputStream* st, oop owner) const;
 
   // move a basic lock (used during deoptimization)
-  void move_to(oop obj, BasicLock* dest);
+  void move_to(BasicLock* dest);
 };
 
 // A BasicObjectLock associates a specific Java object with a BasicLock.

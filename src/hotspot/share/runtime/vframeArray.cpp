@@ -98,7 +98,7 @@ void vframeArrayElement::fill_in(compiledVFrame* vf, bool realloc_failures) {
           assert(ObjectSynchronizer::current_thread_holds_lock(current_thread, Handle(current_thread, dest->obj())),
                  "should be held, before move_to");
 
-          monitor->lock()->move_to(monitor->owner(), dest->lock());
+          monitor->lock()->move_to(dest->lock());
 
           assert(ObjectSynchronizer::current_thread_holds_lock(current_thread, Handle(current_thread, dest->obj())),
                  "should be held, after move_to");
@@ -393,7 +393,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
     top->set_obj(src->obj());
     assert(src->obj() != nullptr || ObjectSynchronizer::current_thread_holds_lock(thread, Handle(thread, src->obj())),
            "should be held, before move_to");
-    src->lock()->move_to(src->obj(), top->lock());
+    src->lock()->move_to(top->lock());
     assert(src->obj() != nullptr || ObjectSynchronizer::current_thread_holds_lock(thread, Handle(thread, src->obj())),
            "should be held, after move_to");
   }
