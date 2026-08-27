@@ -64,7 +64,7 @@ public class Mark extends VMObject {
     hashMask            = db.lookupLongConstant("markWord::hash_mask").longValue();
     hashMaskInPlace     = db.lookupLongConstant("markWord::hash_mask_in_place").longValue();
     fastLockedValue     = db.lookupLongConstant("markWord::fast_locked_value").longValue();
-    neutralValue        = db.lookupLongConstant("markWord::neutral_value").longValue();
+    neutralValue        = db.lookupLongConstant("markWord::lock_neutral_value").longValue();
     monitorValue        = db.lookupLongConstant("markWord::monitor_value").longValue();
     markedValue         = db.lookupLongConstant("markWord::marked_value").longValue();
     noHash              = db.lookupLongConstant("markWord::no_hash").longValue();

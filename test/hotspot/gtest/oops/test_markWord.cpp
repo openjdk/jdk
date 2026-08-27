@@ -93,11 +93,11 @@ TEST_VM(markWord, printing) {
     ObjectLocker ol(h_obj, THREAD);
     assert_mark_word_print_pattern(h_obj, "is_fast_locked");
   }
-  assert_mark_word_print_pattern(h_obj, "is_neutral no_hash");
+  assert_mark_word_print_pattern(h_obj, "is_lock_neutral no_hash");
 
   // Hash the object then print it.
   intx hash = h_obj->identity_hash();
-  assert_mark_word_print_pattern(h_obj, "is_neutral hash=0x");
+  assert_mark_word_print_pattern(h_obj, "is_lock_neutral hash=0x");
 
   // Wait gets the lock inflated.
   {
@@ -114,11 +114,11 @@ TEST_VM(markWord, printing) {
   }
 }
 
-static void assert_neutral_state(markWord mark) {
+static void assert_lock_neutral_state(markWord mark) {
   EXPECT_FALSE(mark.is_fast_locked());
   EXPECT_FALSE(mark.has_monitor());
   EXPECT_FALSE(mark.is_marked());
-  EXPECT_TRUE(mark.is_neutral());
+  EXPECT_TRUE(mark.is_lock_neutral());
 }
 
 static void assert_copy_set_hash(markWord mark) {
@@ -136,7 +136,7 @@ static void assert_type(markWord mark) {
 
 TEST_VM(markWord, prototype) {
   markWord mark = markWord::prototype();
-  assert_neutral_state(mark);
+  assert_lock_neutral_state(mark);
 
   assert_type(mark);
 
@@ -155,7 +155,7 @@ static void assert_inline_type(markWord mark) {
 
 TEST_VM(markWord, inline_type_prototype) {
   markWord mark = markWord::inline_type_prototype();
-  assert_neutral_state(mark);
+  assert_lock_neutral_state(mark);
   assert_test_pattern(&mark, " inline_type");
 
   assert_inline_type(mark);
@@ -173,7 +173,7 @@ static void assert_flat_array_type(markWord mark) {
 
 TEST_VM(markWord, null_free_flat_array_prototype) {
   markWord mark = markWord::flat_array_prototype(true /* null_free */);
-  assert_neutral_state(mark);
+  assert_lock_neutral_state(mark);
 
   assert_flat_array_type(mark);
   EXPECT_TRUE(mark.is_null_free_array());
@@ -190,7 +190,7 @@ TEST_VM(markWord, null_free_flat_array_prototype) {
 
 TEST_VM(markWord, nullable_flat_array_prototype) {
   markWord mark = markWord::flat_array_prototype(false /* null_free */);
-  assert_neutral_state(mark);
+  assert_lock_neutral_state(mark);
 
   assert_flat_array_type(mark);
   EXPECT_FALSE(mark.is_null_free_array());
@@ -213,7 +213,7 @@ static void assert_null_free_array_type(markWord mark) {
 
 TEST_VM(markWord, null_free_array_prototype) {
   markWord mark = markWord::null_free_array_prototype();
-  assert_neutral_state(mark);
+  assert_lock_neutral_state(mark);
 
   assert_null_free_array_type(mark);
 

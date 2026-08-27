@@ -272,8 +272,8 @@ inline void   oopDesc::float_field_put(int offset, jfloat value)    { *field_add
 inline jdouble oopDesc::double_field(int offset) const              { return *field_addr<jdouble>(offset);  }
 inline void    oopDesc::double_field_put(int offset, jdouble value) { *field_addr<jdouble>(offset) = value; }
 
-bool oopDesc::is_neutral() const {
-  return mark().is_neutral();
+bool oopDesc::is_lock_neutral() const {
+  return mark().is_lock_neutral();
 }
 
 bool oopDesc::is_gc_marked() const {
@@ -401,10 +401,10 @@ bool oopDesc::is_instanceof_or_null(oop obj, Klass* klass) {
 }
 
 intptr_t oopDesc::identity_hash() {
-  // Fast case; if the object is neutral and the hash value is set, no locking is needed
+  // Fast case; if the object is lock-neutral and the hash value is set, no locking is needed
   // Note: The mark must be read into local variable to avoid concurrent updates.
   markWord mrk = mark();
-  if (mrk.is_neutral() && !mrk.has_no_hash()) {
+  if (mrk.is_lock_neutral() && !mrk.has_no_hash()) {
     return mrk.hash();
   } else if (mrk.is_marked()) {
     return mrk.hash();
@@ -418,7 +418,7 @@ intptr_t oopDesc::identity_hash() {
 bool oopDesc::fast_no_hash_check() {
   markWord mrk = mark_acquire();
   assert(!mrk.is_marked(), "should never be marked");
-  return mrk.is_neutral() && mrk.has_no_hash();
+  return mrk.is_lock_neutral() && mrk.has_no_hash();
 }
 
 bool oopDesc::mark_must_be_preserved() const {

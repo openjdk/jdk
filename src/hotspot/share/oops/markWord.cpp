@@ -39,8 +39,8 @@ void markWord::print_on(outputStream* st) const {
   st->print(" mark(");
   if (has_monitor()) {         // last bits = 10
     st->print("has_monitor");
-  } else if (is_neutral()) {  // last bits = 01
-    st->print("is_neutral");
+  } else if (is_lock_neutral()) {  // last bits = 01
+    st->print("is_lock_neutral");
   } else {                     // last bits = 00
     assert(is_fast_locked(), "should be");
     st->print("is_fast_locked");

@@ -751,7 +751,7 @@ void AOTMappedHeapWriter::update_header_for_requested_obj(oop requested_obj, oop
     } else {
       fake_oop->set_mark(markWord::prototype().copy_set_hash(src_hash));
     }
-    assert(fake_oop->mark().is_neutral(), "sanity");
+    assert(fake_oop->mark().is_lock_neutral(), "sanity");
 
     DEBUG_ONLY(intptr_t archived_hash = fake_oop->identity_hash());
     assert(src_hash == archived_hash, "Different hash codes: original " INTPTR_FORMAT ", archived " INTPTR_FORMAT, src_hash, archived_hash);

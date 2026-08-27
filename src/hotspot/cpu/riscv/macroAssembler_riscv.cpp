@@ -7120,13 +7120,13 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register tmp1,
 
   // Try to lock. Transition lock-bits 0b01 => 0b00
   assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid a la");
-  ori(mark, mark, markWord::neutral_value);
+  ori(mark, mark, markWord::lock_neutral_value);
   if (Arguments::is_valhalla_enabled()) {
     // Mask inline_type bit such that we go to the slow path if object is an inline type
     andi(mark, mark, ~((int) markWord::inline_type_bit_in_place));
   }
 
-  xori(t, mark, markWord::neutral_value);
+  xori(t, mark, markWord::lock_neutral_value);
   cmpxchg(/*addr*/ obj, /*expected*/ mark, /*new*/ t, Assembler::int64,
           /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ t);
   bne(mark, t, slow, /* is_far */ true);
@@ -7189,7 +7189,7 @@ void MacroAssembler::fast_unlock(Register obj, Register tmp1, Register tmp2, Reg
 #ifdef ASSERT
   // Check header not unlocked (0b01).
   Label not_unlocked;
-  test_bit(t, mark, exact_log2(markWord::neutral_value));
+  test_bit(t, mark, exact_log2(markWord::lock_neutral_value));
   beqz(t, not_unlocked);
   stop("fast_unlock already unlocked");
   bind(not_unlocked);
@@ -7197,7 +7197,7 @@ void MacroAssembler::fast_unlock(Register obj, Register tmp1, Register tmp2, Reg
 
   // Try to unlock. Transition lock bits 0b00 => 0b01
   assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid lea");
-  ori(t, mark, markWord::neutral_value);
+  ori(t, mark, markWord::lock_neutral_value);
   cmpxchg(/*addr*/ obj, /*expected*/ mark, /*new*/ t, Assembler::int64,
           /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, /*result*/ t);
   beq(mark, t, unlocked);

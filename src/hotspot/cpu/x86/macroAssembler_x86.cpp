@@ -10621,8 +10621,8 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register reg_r
 
   // Try to lock. Transition lock bits 0b01 => 0b00
   movptr(tmp, reg_rax);
-  andptr(tmp, ~(int32_t)markWord::neutral_value);
-  orptr(reg_rax, markWord::neutral_value);
+  andptr(tmp, ~(int32_t)markWord::lock_neutral_value);
+  orptr(reg_rax, markWord::lock_neutral_value);
   if (Arguments::is_valhalla_enabled()) {
     // Mask inline_type bit such that we go to the slow path if object is an inline type
     andptr(reg_rax, ~((int) markWord::inline_type_bit_in_place));
@@ -10677,7 +10677,7 @@ void MacroAssembler::fast_unlock(Register obj, Register reg_rax, Register tmp, L
 #ifdef ASSERT
   // Check header not unlocked (0b01).
   Label not_unlocked;
-  testptr(reg_rax, markWord::neutral_value);
+  testptr(reg_rax, markWord::lock_neutral_value);
   jcc(Assembler::zero, not_unlocked);
   stop("fast_unlock already unlocked");
   bind(not_unlocked);
@@ -10685,7 +10685,7 @@ void MacroAssembler::fast_unlock(Register obj, Register reg_rax, Register tmp, L
 
   // Try to unlock. Transition lock bits 0b00 => 0b01
   movptr(tmp, reg_rax);
-  orptr(tmp, markWord::neutral_value);
+  orptr(tmp, markWord::lock_neutral_value);
   lock(); cmpxchgptr(tmp, Address(obj, oopDesc::mark_offset_in_bytes()));
   jcc(Assembler::equal, unlocked);
 

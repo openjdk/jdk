@@ -800,7 +800,7 @@ JRT_LEAF(void, InterpreterRuntime::monitorexit(BasicObjectLock* elem))
   assert(Universe::heap()->is_in(obj), "must be an object");
   // The object could become unlocked through a JNI call, which we have no other checks for.
   // Give a fatal message if CheckJNICalls. Otherwise we ignore it.
-  if (obj->is_neutral()) {
+  if (obj->is_lock_neutral()) {
     if (CheckJNICalls) {
       fatal("Object has been unlocked by JNI");
     }

@@ -262,7 +262,7 @@ class oopDesc {
   static void verify(oopDesc* oopDesc);
 
   // locking operations
-  inline bool is_neutral() const;
+  inline bool is_lock_neutral() const;
 
   // asserts and guarantees
   static bool is_oop(oop obj);

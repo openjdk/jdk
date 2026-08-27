@@ -728,8 +728,8 @@ bool ObjectSynchronizer::current_thread_holds_lock(JavaThread* current,
     }
   }
 
-  // Neutral case, header in place
-  assert(mark.is_neutral(), "sanity check");
+  // Lock-neutral case, header in place
+  assert(mark.is_lock_neutral(), "sanity check");
   return false;
 }
 
@@ -757,11 +757,7 @@ JavaThread* ObjectSynchronizer::get_lock_owner(ThreadsList * t_list, Handle h_ob
     }
   }
 
-  // Neutral case, header in place.
-  // Cannot have assertion since this object may have been
-  // fast-locked by another thread when reaching here.
-  // assert(mark.is_neutral(), "sanity check");
-
+  // Lock-neutral case, header in place.
   return nullptr;
 }
 
@@ -1509,7 +1505,7 @@ void ObjectSynchronizer::deflate_mark_word(oop obj) {
   assert(!mark.has_no_hash(), "obj with inflated monitor must have had a hash");
 
   while (mark.has_monitor()) {
-    const markWord new_mark = mark.set_neutral();
+    const markWord new_mark = mark.set_lock_neutral();
     mark = obj->cas_set_mark(new_mark, mark);
   }
 }
@@ -1631,7 +1627,7 @@ class ObjectSynchronizer::VerifyThreadState {
 
 inline bool ObjectSynchronizer::fast_lock_try_enter(oop obj, LockStack& lock_stack, JavaThread* current) {
   markWord mark = obj->mark();
-  while (mark.is_neutral()) {
+  while (mark.is_lock_neutral()) {
     ensure_lock_stack_space(current);
     assert(!lock_stack.is_full(), "must have made room on the lock stack");
     assert(!lock_stack.contains(obj), "thread must not already hold the lock");
@@ -1803,9 +1799,9 @@ void ObjectSynchronizer::exit(oop object, BasicLock* lock, JavaThread* current) 
   }
 
   while (mark.is_fast_locked()) {
-    markWord neutral_mark = mark.set_neutral();
+    markWord lock_neutral_mark = mark.set_lock_neutral();
     markWord old_mark = mark;
-    mark = object->cas_set_mark(neutral_mark, old_mark);
+    mark = object->cas_set_mark(lock_neutral_mark, old_mark);
     if (old_mark == mark) {
       // CAS successful, remove from lock_stack
       size_t recursion = lock_stack.remove(object) - 1;
@@ -1842,7 +1838,7 @@ ObjectMonitor* ObjectSynchronizer::inflate_locked_or_imse(oop obj, ObjectSynchro
 
   for (;;) {
     markWord mark = obj->mark_acquire();
-    if (mark.is_neutral()) {
+    if (mark.is_lock_neutral()) {
       // No lock, IMSE.
       THROW_MSG_(vmSymbols::java_lang_IllegalMonitorStateException(),
                  "current thread is not owner", nullptr);
@@ -1890,7 +1886,7 @@ ObjectMonitor* ObjectSynchronizer::inflate_fast_locked_object(oop object, Object
   ObjectSynchronizer::FastHashCode(current, object);
 
   markWord mark = object->mark_acquire();
-  assert(mark.is_fast_locked() || mark.has_monitor(), "Cannot be neutral");
+  assert(mark.is_fast_locked() || mark.has_monitor(), "Must be fast-locked or async inflated");
 
   for (;;) {
     // Fetch the monitor from the table
@@ -1984,7 +1980,7 @@ ObjectMonitor* ObjectSynchronizer::inflate_and_enter(oop object, BasicLock* lock
       os::naked_yield();
 
     } else {
-      assert(mark.is_neutral(), "Implied");
+      assert(mark.is_lock_neutral(), "Implied");
       // Retry immediately
     }
 
@@ -2001,7 +1997,7 @@ ObjectMonitor* ObjectSynchronizer::inflate_and_enter(oop object, BasicLock* lock
     //                   the ObjectMonitor owner and remove the
     //                   lock from the locking_thread's lock stack.
     // *  fast-locked  - Coerce it to inflated from fast-locked.
-    // *  neutral      - Inflate the object. Successful CAS is locked
+    // *  lock-neutral - Inflate the object. Successful CAS is locked
 
     // CASE: inflated
     if (mark.has_monitor()) {
@@ -2038,17 +2034,16 @@ ObjectMonitor* ObjectSynchronizer::inflate_and_enter(oop object, BasicLock* lock
       break; // Success
     }
 
-    // CASE: neutral
+    // CASE: lock-neutral
 
-    // Catch if the object's header is not neutral.
-    assert(mark.is_neutral(), "invariant: header=" INTPTR_FORMAT, mark.value());
+    assert(mark.is_lock_neutral(), "invariant: header=" INTPTR_FORMAT, mark.value());
     markWord old_mark = object->cas_set_mark(mark.set_has_monitor(), mark);
     if (old_mark != mark) {
       // CAS failed
       continue;
     }
 
-    // Transitioned from neutral to monitor means locking_thread owns the lock.
+    // Transitioned from lock-neutral to monitor means locking_thread owns the lock.
     monitor->set_owner_from_anonymous(locking_thread);
 
     return monitor;
@@ -2112,7 +2107,7 @@ bool ObjectSynchronizer::quick_enter_internal(oop obj, BasicLock* lock, JavaThre
     return true;
   }
 
-  if (mark.is_neutral()) {
+  if (mark.is_lock_neutral()) {
     markWord fast_locked_mark = mark.set_fast_locked();
     if (obj->cas_set_mark(fast_locked_mark, mark) == mark) {
       // Successfully fast-locked, push object to lock-stack and return.
