@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 /**
  * @summary Tests for ZoneRules class.
  *
- * @bug 8212970 8236903 8239836
+ * @bug 8212970 8236903 8239836 8388214
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestZoneRules {
@@ -91,15 +91,17 @@ public class TestZoneRules {
             {WINDHOEK, LocalDate.of(1994, 3, 23), OFF_1, OFF_1, false},
             {WINDHOEK, LocalDate.of(2016, 9, 23), OFF_2, OFF_1, true},
 
-            // Africa/Casablanca for the Rule "Morocco" Defines negative DST till 2037 as of 2019a.
+            // Africa/Casablanca for the Rule "Morocco" defines negative DST until early 2026,
+            // then returns to standard UTC permanently later that year, starting with 2026c.
             {CASABLANCA, LocalDate.of(1939, 9, 13), OFF_1, OFF_0, true},
             {CASABLANCA, LocalDate.of(1939, 11, 20), OFF_0, OFF_0, false},
             {CASABLANCA, LocalDate.of(2018, 6, 18), OFF_1, OFF_0, true},
             {CASABLANCA, LocalDate.of(2019, 1, 1), OFF_1, OFF_0, true},
             {CASABLANCA, LocalDate.of(2019, 5, 6), OFF_0, OFF_0, false},
-            {CASABLANCA, LocalDate.of(2037, 10, 5), OFF_0, OFF_0, false},
-            {CASABLANCA, LocalDate.of(2037, 11, 16), OFF_1, OFF_0, true},
-            {CASABLANCA, LocalDate.of(2038, 11, 8), OFF_1, OFF_0, true},
+            {CASABLANCA, LocalDate.of(2026, 2, 16), OFF_0, OFF_0, false},
+            {CASABLANCA, LocalDate.of(2026, 3, 23), OFF_1, OFF_0, true},
+            {CASABLANCA, LocalDate.of(2026, 9, 21), OFF_0, OFF_0, false},
+            {CASABLANCA, LocalDate.of(2038, 11, 8), OFF_0, OFF_0, false},
         };
     }
 

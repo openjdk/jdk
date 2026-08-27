@@ -247,7 +247,7 @@ void DowncallLinker::StubGenerator::generate() {
 
   if (_needs_transition) {
     __ block_comment("thread_native2java {");
-    __ set_thread_state(_thread_in_native_trans);
+    __ set_thread_state(_thread_in_vm);
 
     if (!UseSystemMemoryBarrier) {
       __ z_fence(); // Order state change wrt. safepoint poll.

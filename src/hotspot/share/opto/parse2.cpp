@@ -125,8 +125,16 @@ void Parse::array_load(BasicType bt) {
         if (element_ptr->is_inlinetypeptr()) {
           ciInlineKlass* vk = element_ptr->inline_klass();
           Node* flat_array = cast_to_flat_array(array, vk);
-          Node* vt = InlineTypeNode::make_from_flat_array(this, vk, flat_array, array_index);
-          ideal.set(res, vt);
+
+          // It may be the case that array is only known to be not flat when we try to cast it to a
+          // flat array. For example, array is a not-null-free array and vk does not have a
+          // nullable layout.
+          if (!flat_array->is_top()) {
+            Node* vt = InlineTypeNode::make_from_flat_array(this, vk, flat_array, array_index);
+            ideal.set(res, vt);
+          } else {
+            ideal.set(res, InlineTypeNode::make_null(gvn(), vk));
+          }
         } else {
           // Element type is unknown, and thus we cannot statically determine the exact flat array layout. Emit a
           // runtime call to correctly load the inline type element from the flat array.
@@ -290,17 +298,22 @@ void Parse::array_store(BasicType bt) {
             // Element type is known, cast and store to flat array layout.
             Node* flat_array = cast_to_flat_array(array, vk);
 
-            // Re-execute flat array store if buffering triggers deoptimization
-            PreserveReexecuteState preexecs(this);
-            jvms()->set_should_reexecute(true);
-            inc_sp(3);
+            // It may be the case that array is only known to be not flat when we try to cast it to
+            // a flat array. For example, array is a not-null-free array and vk does not have a
+            // nullable layout.
+            if (!flat_array->is_top()) {
+              // Re-execute flat array store if buffering triggers deoptimization
+              PreserveReexecuteState preexecs(this);
+              jvms()->set_should_reexecute(true);
+              inc_sp(3);
 
-            if (!stored_value_casted->is_InlineType()) {
-              assert(_gvn.type(stored_value_casted) == TypePtr::NULL_PTR, "Unexpected value");
-              stored_value_casted = InlineTypeNode::make_null(_gvn, vk);
+              if (!stored_value_casted->is_InlineType()) {
+                assert(_gvn.type(stored_value_casted) == TypePtr::NULL_PTR, "Unexpected value");
+                stored_value_casted = InlineTypeNode::make_null(_gvn, vk);
+              }
+
+              stored_value_casted->as_InlineType()->store_flat_array(this, flat_array, array_index);
             }
-
-            stored_value_casted->as_InlineType()->store_flat_array(this, flat_array, array_index);
           } else {
             // Element type is unknown, emit a runtime call since the flat array layout is not statically known.
             store_to_unknown_flat_array(array, array_index, stored_value_casted);
@@ -1789,7 +1802,7 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
 
   Node* counter = nullptr;
   Node* incr_store = nullptr;
-  bool do_stress_trap = StressUnstableIfTraps && ((C->random() % 2) == 0);
+  bool do_stress_trap = StressUnstableIfTraps && ((C->stress().random() % 2) == 0);
   if (do_stress_trap) {
     increment_trap_stress_counter(counter, incr_store);
   }
@@ -1893,7 +1906,7 @@ void Parse::do_if(BoolTest::mask btest, Node* c, bool can_trap, bool new_path, N
 
   Node* counter = nullptr;
   Node* incr_store = nullptr;
-  bool do_stress_trap = StressUnstableIfTraps && ((C->random() % 2) == 0);
+  bool do_stress_trap = StressUnstableIfTraps && ((C->stress().random() % 2) == 0);
   if (do_stress_trap) {
     increment_trap_stress_counter(counter, incr_store);
   }
@@ -2063,19 +2076,21 @@ void Parse::acmp_type_check(Node* input, const TypeOopPtr* tinput, ProfilePtrKin
   Node* null_ctl;
   Node* cast = acmp_null_check(input, tinput, input_ptr, null_ctl);
 
-  if (input_type != nullptr) {
-    Deoptimization::DeoptReason reason;
-    if (tinput->speculative_type() != nullptr && !too_many_traps_or_recompiles(Deoptimization::Reason_speculate_class_check)) {
-      reason = Deoptimization::Reason_speculate_class_check;
+  if (!stopped()) {
+    if (input_type != nullptr) {
+      Deoptimization::DeoptReason reason;
+      if (tinput->speculative_type() != nullptr && !too_many_traps_or_recompiles(Deoptimization::Reason_speculate_class_check)) {
+        reason = Deoptimization::Reason_speculate_class_check;
+      } else {
+        reason = Deoptimization::Reason_class_check;
+      }
+      acmp_type_check_or_trap(&cast, input_type, reason);
     } else {
-      reason = Deoptimization::Reason_class_check;
+      // No specific type, check for inline type
+      BuildCutout unless(this, inline_type_test(cast, /* is_inline = */ false), PROB_MAX);
+      inc_sp(2);
+      uncommon_trap_exact(Deoptimization::Reason_class_check, Deoptimization::Action_maybe_recompile);
     }
-    acmp_type_check_or_trap(&cast, input_type, reason);
-  } else {
-    // No specific type, check for inline type
-    BuildCutout unless(this, inline_type_test(cast, /* is_inline = */ false), PROB_MAX);
-    inc_sp(2);
-    uncommon_trap_exact(Deoptimization::Reason_class_check, Deoptimization::Action_maybe_recompile);
   }
 
   Node* ne_region = new RegionNode(2);
@@ -2338,11 +2353,10 @@ void Parse::do_acmp(BoolTest::mask btest, Node* left, Node* right) {
     Node* offset_addr = off_heap_plus_addr(members, in_bytes(InlineKlass::fast_acmp_offset_offset()));
     Node* offset = make_load(control(), offset_addr, TypeInt::INT, T_INT, MemNode::unordered);
 
-    Node* offset_cmp = CmpI(offset, zerocon(T_INT));
-    Node* offset_bol = _gvn.transform(new BoolNode(offset_cmp, BoolTest::lt));
+    Node* offset_bol = BoolCmpI(offset, BoolTest::lt, zerocon(T_INT));
     mask_iff = create_and_map_if(control(), offset_bol, PROB_FAIR, COUNT_UNKNOWN);
-    Node* slow_path_ctl = _gvn.transform(new IfTrueNode(mask_iff));
-    Node* fast_path_ctl = _gvn.transform(new IfFalseNode(mask_iff));
+    Node* slow_path_ctl = IfTrue(mask_iff);
+    Node* fast_path_ctl = IfFalse(mask_iff);
     set_control(slow_path_ctl);
 
     {
@@ -2356,11 +2370,11 @@ void Parse::do_acmp(BoolTest::mask btest, Node* left, Node* right) {
       // *(left + offset) & mask == *(right + offset) & mask
       Node* left_payload_addr = basic_plus_adr(not_null_left, offset_l);
       Node* left_payload = make_load(control(), left_payload_addr, TypeLong::LONG, T_LONG, MemNode::unordered, LoadNNode::DependsOnlyOnTest, false, true, true, true);
-      Node* left_masked = _gvn.transform(new AndLNode(left_payload, fast_acmp_mask));
+      Node* left_masked = AndL(left_payload, fast_acmp_mask);
 
       Node* right_payload_addr = basic_plus_adr(not_null_right, offset_l);
       Node* right_payload = make_load(control(), right_payload_addr, TypeLong::LONG, T_LONG, MemNode::unordered, LoadNNode::DependsOnlyOnTest, false, true, true, true);
-      Node* right_masked = _gvn.transform(new AndLNode(right_payload, fast_acmp_mask));
+      Node* right_masked = AndL(right_payload, fast_acmp_mask);
 
       Node* masked_cmp = CmpL(left_masked, right_masked);
 
@@ -2561,7 +2575,7 @@ void Parse::stress_trap(IfNode* orig_iff, Node* counter, Node* incr_store) {
   assert(success, "Trap already modified");
 
   // Add a check before the original if that will trap with a certain frequency and execute the original if otherwise
-  int freq_log = (C->random() % 31) + 1; // Random logarithmic frequency in [1, 31]
+  int freq_log = (C->stress().random() % 31) + 1; // Random logarithmic frequency in [1, 31]
   Node* mask = intcon(right_n_bits(freq_log));
   counter = _gvn.transform(new AndINode(counter, mask));
   Node* cmp = _gvn.transform(new CmpINode(counter, intcon(0)));
@@ -2585,7 +2599,7 @@ void Parse::stress_trap(IfNode* orig_iff, Node* counter, Node* incr_store) {
 
 bool Parse::path_is_suitable_for_uncommon_trap(float prob) const {
   // Randomly skip emitting an uncommon trap
-  if (StressUnstableIfTraps && ((C->random() % 2) == 0)) {
+  if (StressUnstableIfTraps && ((C->stress().random() % 2) == 0)) {
     return false;
   }
   // Don't want to speculate on uncommon traps when running with -Xcomp
