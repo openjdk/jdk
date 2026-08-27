@@ -87,18 +87,23 @@ public final class ConfinedSegmentPool {
 
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
-    // Internal tuning knob; no behavioral or compatibility guarantees are given.
+    private static final String PROPERTY_PATH = "jdk.internal.foreign.native.confined.pool.power.";
+
+    // Unsupported implementation-specific tuning knob; no behavioral or compatibility
+    // guarantees are given.
     // A negative value disables pooling; otherwise the pool size is
     // 2^3, 2^4, ..., 2^20 bytes, defaulting to 2^6 = 64 bytes.
-    private static final String POOLED_MEMORY_SIZE_PROPERTY = "jdk.internal.foreign.native.confined.pool.power.size";
+    private static final String POOLED_MEMORY_SIZE_PROPERTY = PROPERTY_PATH + "size";
 
     private static final long POOLED_MEMORY_SIZE =
             clampedPowerOfPropertyOr(POOLED_MEMORY_SIZE_PROPERTY, 3, 20, 6);
 
-    // Internal tuning knob; no behavioral or compatibility guarantees are given.
+    // Unsupported implementation-specific tuning knob; no behavioral or compatibility
+    // guarantees are given.
     // A negative value disables pooling; otherwise the pool count is
-    // 1, 2, 4, or 8, defaulting to 4.
-    private static final String THREAD_POOL_COUNT_PROPERTY = "jdk.internal.foreign.native.confined.pool.power.count";
+    // 1, 2, 4, or 8, defaulting to 4 corresponding to a cache capacity of four available
+    // pools per platform thread.
+    private static final String THREAD_POOL_COUNT_PROPERTY = PROPERTY_PATH + "count";
 
     private static final int THREAD_POOL_COUNT =
             clampedPowerOfPropertyOr(THREAD_POOL_COUNT_PROPERTY, 0, 3, 2);

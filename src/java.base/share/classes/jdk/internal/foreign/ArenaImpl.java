@@ -77,12 +77,15 @@ public sealed class ArenaImpl implements Arena {
         public void close() {
             // If this fails, the session remains open and the pool must remain owned.
             session.justClose();
-            // The session cleanup at the end of this method may throw, so we
-            // need to release the acquired pooled memory first.
-            if (pool != 0) {
-                ConfinedSegmentPool.release(session.owner, pool, poolSp);
+            try {
+                session.resourceList.cleanup();
+            } finally {
+                // Cleanup actions can access the backing region through globally scoped
+                // cleanup segments, so clear and release the pool only after they have run.
+                if (pool != 0) {
+                    ConfinedSegmentPool.release(session.owner, pool, poolSp);
+                }
             }
-            session.resourceList.cleanup();
         }
 
         @Override
