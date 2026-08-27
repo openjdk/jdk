@@ -1885,6 +1885,11 @@ public class IRNode {
         parsePredicateNodes(AUTO_VECTORIZATION_CHECK_PARSE_PREDICATE, "Auto_Vectorization_Check");
     }
 
+    public static final String SHORT_RUNNING_LONG_LOOP_PARSE_PREDICATE = PREFIX + "SHORT_RUNNING_LONG_LOOP_PARSE_PREDICATE" + POSTFIX;
+    static {
+        parsePredicateNodes(SHORT_RUNNING_LONG_LOOP_PARSE_PREDICATE, "Short_Running_Long_Loop");
+    }
+
     public static final String PREDICATE_TRAP = PREFIX + "PREDICATE_TRAP" + POSTFIX;
     static {
         trapNodes(PREDICATE_TRAP, "predicate");
