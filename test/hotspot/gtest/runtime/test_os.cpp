@@ -1140,17 +1140,17 @@ TEST_VM(os, vm_max_address) {
   const uintptr_t s = os::vm_max_address();
 
 #ifdef S390
-  ASSERT_EQ(s, 0);
+  ASSERT_EQ(s, 0UL);
   return;
 #endif
 
-  ASSERT_TRUE(is_power_of_2(s));
+  ASSERT_TRUE(is_power_of_2(s)) << s;
   // Minimum and maximum values expected (none of our 64-bit
   // platforms has a smaller or larger address space than that).
   constexpr uintptr_t min = 256 * G;
   constexpr uintptr_t max = AIX_ONLY(Exbi) NOT_AIX(64 * Pebi);
-  ASSERT_GE(s, min);
-  ASSERT_LE(s, max);
+  ASSERT_GE(s, min) << s;
+  ASSERT_LE(s, max) << s;
 }
 #endif // _LP64
 

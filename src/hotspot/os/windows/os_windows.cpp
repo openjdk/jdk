@@ -129,6 +129,8 @@ static FILETIME process_user_time;
 static FILETIME process_kernel_time;
 static HANDLE heap_file_handle = INVALID_HANDLE_VALUE;
 
+static uintptr_t          g_vm_max_address                      = 0;
+
 #if defined(_M_ARM64)
   #define __CPU__ aarch64
 #elif defined(_M_AMD64)
@@ -4282,9 +4284,6 @@ int                       os::win32::_build_minor               = 0;
 
 bool                      os::win32::_processor_group_warning_displayed = false;
 bool                      os::win32::_job_object_processor_group_warning_displayed = false;
-
-static uintptr_t          g_vm_max_address                      = 0;
-
 
 void getWindowsInstallationType(char* buffer, int bufferSize) {
   HKEY hKey;
