@@ -29,6 +29,7 @@
  * @run main ${test.main.class}
  */
 
+package compiler.longcountedloops;
 
 public class TestInnerLoopConstantFoldedExitTest {
     static int offset = 1;
