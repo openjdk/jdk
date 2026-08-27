@@ -1880,8 +1880,8 @@ Node* IfNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* prev_dom = search_identical(dist, igvn);
 
   if (prev_dom != nullptr) {
-    Node* true_proj = proj_out(1);
-    Node* false_proj = proj_out(0);
+    Node* true_proj = this->true_proj();
+    Node* false_proj = this->false_proj();
 
     Node* head = true_proj->find_out_with(Op_Loop);
     if (head == nullptr) {
