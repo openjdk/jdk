@@ -23,9 +23,10 @@
 
 /*
  * @test
- * @bug 4780570 4731671 6354700 6367077 6670965 4882974
+ * @bug 4780570 4731671 6354700 6367077 6670965 4882974 8353495
  * @summary Checks for LD_LIBRARY_PATH and execution on *nixes
  * @requires os.family != "windows"
+ * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @library /test/lib
  * @modules jdk.compiler
  *          jdk.zipfs
