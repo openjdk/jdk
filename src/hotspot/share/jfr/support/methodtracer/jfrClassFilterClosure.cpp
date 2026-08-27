@@ -93,7 +93,6 @@ void JfrFilterClassClosure::add(const InstanceKlass* ik) {
 }
 
 bool JfrFilterClassClosure::do_entry(const traceid& id, const InstanceKlass*& ik) {
-  assert(id == JfrTraceId::load_raw(ik), "invariant");
   if (JfrKlassUnloading::is_unloaded(id, true)) {
     // Returning true removes the unloaded entry from the placeholder table.
     return true;
