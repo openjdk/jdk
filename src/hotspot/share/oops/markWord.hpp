@@ -52,10 +52,10 @@
 //  - lock bits are used to describe lock states: fast-locked/lock-neutral/inflated
 //    and to indicate that an object has been GC marked / forwarded.
 //
-//    [header          | 00]  fast-locked        locked regular object header (fast-locking in use)
-//    [header          | 01]  lock-neutral       regular object header
-//    [header          | 10]  monitor            inflated lock
-//    [ptr             | 11]  marked             used to mark an object (header is swapped out)
+//    [header          | 00]  fast_locked   object has been fast-locked
+//    [header          | 01]  lock_neutral  object has no monitor and is not locked
+//    [header          | 10]  monitor       object has a monitor (lock state recorded there)
+//    [ptr             | 11]  marked        used to mark an object (header is swapped out)
 //
 //  - self-fwd - used by some GCs to indicate in-place forwarding.
 //

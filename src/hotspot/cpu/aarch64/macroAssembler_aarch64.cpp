@@ -7979,7 +7979,7 @@ void MacroAssembler::fast_unlock(Register obj, Register t1, Register t2, Registe
   tbnz(mark, log2i_exact(markWord::monitor_value), push_and_slow);
 
 #ifdef ASSERT
-  // Check header not unlocked (0b01).
+  // Check header not unlocked / lock-neutral (0b01).
   Label not_unlocked;
   tbz(mark, log2i_exact(markWord::lock_neutral_value), not_unlocked);
   stop("fast_unlock already unlocked");
