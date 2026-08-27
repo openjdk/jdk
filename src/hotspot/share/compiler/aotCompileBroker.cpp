@@ -188,7 +188,8 @@ void AOTCompileBroker::compile_aot_code(ArchiveBuilder* builder, TRAPS) {
   if (TrainingData::have_data()) {
     ResourceMark rm;
     CompLevel highest_level = CompilationPolicy::highest_compile_level();
-    if (highest_level >= CompLevel_full_optimization && ClassInitBarrierMode > 0) {
+    if (highest_level >= CompLevel_full_optimization && ClassInitBarrierMode > 0 &&
+        !AOTCodeCache::skip_aot_code(CompLevel_full_optimization + 1)) {
       AOTCompileIterator aci(CompLevel_full_optimization, true /*for_preload*/, THREAD);
       TrainingData::iterate([&](TrainingData* td) {
         aci.apply(td);
@@ -197,11 +198,13 @@ void AOTCompileBroker::compile_aot_code(ArchiveBuilder* builder, TRAPS) {
     }
 
     for (int level = CompLevel_simple; level <= highest_level; level++) {
-      AOTCompileIterator aci((CompLevel)level, false /*for_preload*/, THREAD);
-      TrainingData::iterate([&](TrainingData* td) {
-        aci.apply(td);
-      });
-      aci.compile(builder, THREAD);
+      if (!AOTCodeCache::skip_aot_code(level)) {
+        AOTCompileIterator aci((CompLevel)level, false /*for_preload*/, THREAD);
+        TrainingData::iterate([&](TrainingData* td) {
+          aci.apply(td);
+        });
+        aci.compile(builder, THREAD);
+      }
     }
   }
 }

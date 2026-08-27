@@ -967,7 +967,7 @@ uint AOTCodeCache::write_bytes(const void* buffer, uint nbytes) {
   return nbytes;
 }
 
-static bool skip_aot_code(uint comp_level) {
+bool AOTCodeCache::skip_aot_code(uint comp_level) {
   // DisableAOTCode uses decimal values as bitmask:
   // Tier 1 (A1)                  |     1
   // Tier 2 (A1 + counters)       |    10

@@ -52,7 +52,7 @@ public class TestDisableAOTCode {
         String aotConfigFile = "app.aotconfig";
         String aotCacheFile = "app.aot";
         String appClass = "JavacBenchApp";
-        String appArgs = "10";
+        String appArgs = "1";
 
         ProcessBuilder pb;
         OutputAnalyzer out;
@@ -72,12 +72,64 @@ public class TestDisableAOTCode {
             "-XX:AOTMode=create",
             "-XX:AOTConfiguration=" + aotConfigFile,
             "-XX:AOTCache=" + aotCacheFile,
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:DisableAOTCode=1",
             "-cp", appJar);
 
-        out = CDSTestUtils.executeAndLog(pb, "assemble");
+        out = CDSTestUtils.executeAndLog(pb, "assemble_no_AOT_T1");
+        out.shouldMatch("aot,codecache,exit.*\\s+Tier 1: total=0");
+        out.shouldMatch("aot,codecache,exit.*\\s+Tier 2:.*");
+        out.shouldMatch("aot,codecache,exit.*\\s+Tier 3: total=0");
+        out.shouldMatch("aot,codecache,exit.*\\s+Tier 4:.*");
+        out.shouldMatch("aot,codecache,exit.*\\s+Tier 5:.*");
+        out.shouldHaveExitValue(0);
+
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-Xlog:aot+codecache+exit",
+            "-XX:AOTMode=create",
+            "-XX:AOTConfiguration=" + aotConfigFile,
+            "-XX:AOTCache=" + aotCacheFile,
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:DisableAOTCode=10000",
+            "-cp", appJar);
+
+        out = CDSTestUtils.executeAndLog(pb, "assemble_no_AOT_T5");
         out.shouldMatch("aot,codecache,exit.*\\s+Tier 1:.*");
         out.shouldMatch("aot,codecache,exit.*\\s+Tier 2:.*");
-        out.shouldMatch("aot,codecache,exit.*\\s+Tier 3:.*");
+        out.shouldMatch("aot,codecache,exit.*\\s+Tier 3: total=0");
+        out.shouldMatch("aot,codecache,exit.*\\s+Tier 4:.*");
+        out.shouldMatch("aot,codecache,exit.*\\s+Tier 5: total=0");
+        out.shouldHaveExitValue(0);
+
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-Xlog:aot+codecache+exit",
+            "-XX:AOTMode=create",
+            "-XX:AOTConfiguration=" + aotConfigFile,
+            "-XX:AOTCache=" + aotCacheFile,
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:DisableAOTCode=11111",
+            "-cp", appJar);
+
+        out = CDSTestUtils.executeAndLog(pb, "assemble_no_AOT_all");
+        out.shouldMatch("aot,codecache,exit.*\\s+Tier 1: total=0");
+        out.shouldMatch("aot,codecache,exit.*\\s+Tier 2: total=0");
+        out.shouldMatch("aot,codecache,exit.*\\s+Tier 3: total=0");
+        out.shouldMatch("aot,codecache,exit.*\\s+Tier 4: total=0");
+        out.shouldMatch("aot,codecache,exit.*\\s+Tier 5: total=0");
+        out.shouldHaveExitValue(0);
+
+
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-Xlog:aot+codecache+exit",
+            "-XX:AOTMode=create",
+            "-XX:AOTConfiguration=" + aotConfigFile,
+            "-XX:AOTCache=" + aotCacheFile,
+            "-cp", appJar);
+
+        out = CDSTestUtils.executeAndLog(pb, "assemble_default");
+        out.shouldMatch("aot,codecache,exit.*\\s+Tier 1:.*");
+        out.shouldMatch("aot,codecache,exit.*\\s+Tier 2:.*");
+        out.shouldMatch("aot,codecache,exit.*\\s+Tier 3: total=0");
         out.shouldMatch("aot,codecache,exit.*\\s+Tier 4:.*");
         out.shouldMatch("aot,codecache,exit.*\\s+Tier 5:.*");
         out.shouldHaveExitValue(0);

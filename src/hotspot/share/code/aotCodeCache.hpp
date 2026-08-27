@@ -793,6 +793,7 @@ public:
   static bool maybe_dumping_code() NOT_CDS_RETURN_(false);
 
   static void invalidate(AOTCodeEntry* entry) NOT_CDS_RETURN;
+  static bool skip_aot_code(uint comp_level) NOT_CDS_RETURN_(true);
   static AOTCodeEntry* find_code_entry(const methodHandle& method, uint comp_level) NOT_CDS_RETURN_(nullptr);
   static void preload_code(JavaThread* thread) NOT_CDS_RETURN;
 
