@@ -143,7 +143,7 @@ class G1Policy: public CHeapObj<mtGC> {
 
   G1YoungGenSizer _young_gen_sizer;
 
-  // Baseline free regions snapshot used for sizing the young gen.
+  // Baseline free regions used for sizing the young gen.
   // This is updated at the end of GC or after successful humongous allocation.
   // Eden allocations are accounted for separately by the sizing logic.
   Atomic<uint> _free_regions_for_young_sizing;
@@ -165,7 +165,10 @@ class G1Policy: public CHeapObj<mtGC> {
 
   double pending_cards_processing_time() const;
 
-  uint free_regions_for_young_sizing() const { return _free_regions_for_young_sizing.load_relaxed(); }
+  uint free_regions_for_young_sizing() const {
+    return _free_regions_for_young_sizing.load_relaxed();
+  }
+
 public:
   const G1Predictions& predictor() const { return _predictor; }
   const G1Analytics* analytics()   const { return const_cast<const G1Analytics*>(_analytics); }
@@ -204,12 +207,12 @@ public:
   double predict_region_code_root_scan_time(G1HeapRegion* hr, bool for_young_only_phase) const;
 
   double predict_merge_scan_time(size_t card_rs_length) const;
-  // Predict other time for count young regions.
-  double predict_young_region_other_time_ms(uint count) const;
-  double predict_non_young_other_time_ms(uint count) const;
+  // Predict other time for young regions.
+  double predict_young_region_other_time_ms(uint num_regions) const;
+  double predict_non_young_other_time_ms(uint num_regions) const;
   // Predict evacuation time, including per-region overhead, and copied bytes
-  // for count eden regions.
-  G1EvacuationPrediction predict_eden_evacuation(uint count) const;
+  // for eden regions.
+  G1EvacuationPrediction predict_eden_evacuation(uint num_eden_regions) const;
 
   void cset_regions_freed();
 
@@ -441,9 +444,6 @@ private:
   size_t desired_survivor_size(uint max_regions) const;
 
 public:
-  // Returns the evacuation-space reserve for young regions. The reserve is limited
-  // by the used bytes in the source young regions because evacuation cannot require
-  // more destination space than can be copied out of those regions, plus waste.
   static size_t young_evacuation_reserve_bytes(size_t predicted_young_bytes_to_copy,
                                                size_t max_young_bytes_to_copy);
 

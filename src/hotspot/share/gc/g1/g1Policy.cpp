@@ -50,9 +50,9 @@
 #include "utilities/growableArray.hpp"
 
 static size_t evacuation_reserve_bytes(double bytes_to_copy) {
-  // Consider the natural expected waste.
-  // (100 + TargetPLABWastePct) represents the increase in expected bytes during
-  // copying due to anticipated waste in the PLABs.
+  // Consider the expected waste.
+  // (100 + TargetPLABWastePct) represents the increase in expected
+  // bytes during copying due to waste in the PLABs.
   double reserve_regions =
     ceil(bytes_to_copy * (100.0 + TargetPLABWastePct) /
          (100.0 * G1HeapRegion::GrainBytes));
@@ -70,8 +70,8 @@ size_t G1Policy::young_evacuation_reserve_bytes(size_t predicted_young_bytes_to_
   // Add some safety margin to factor in the confidence of our prediction.
   // (100.0 / G1ConfidencePercent) is a scale factor that expresses the uncertainty
   // of the calculation: the lower the confidence, the more headroom.
-  const double confidence_adjusted_bytes =
-    predicted_young_bytes_to_copy * (100.0 / G1ConfidencePercent);
+  const double confidence_adjusted_bytes = predicted_young_bytes_to_copy *
+                                           (100.0 / G1ConfidencePercent);
 
   const double bytes_to_copy = MIN2(confidence_adjusted_bytes,
                                     (double)max_young_bytes_to_copy);
@@ -190,10 +190,10 @@ void G1Policy::update_young_regions_bounds(const G1EvacuationPrediction& base_pr
                                 min_num_young_regions_by_sizer,
                                 max_num_young_regions_by_sizer);
 
+  uint desired_num_young_regions = predictor.desired_num_young_regions();
   uint target_num_young_regions = calculate_target_num_young_regions(predictor,
                                                                      min_num_young_regions_by_sizer);
 
-  uint desired_num_young_regions = predictor.desired_num_young_regions();
   log_trace(gc, ergo, heap)("Young num regions update: base time %1.3fms survivor bytes to copy %zu "
                             "old target %u desired: %u evacuation space max: %u target: %u",
                             base_prediction._time_ms,
@@ -237,9 +237,9 @@ G1YoungGenPredictor::G1YoungGenPredictor(const G1Policy* const policy,
   // Calculate the absolute and desired min bounds first.
 
   // This is how many survivor regions we already have.
-  const uint num_survivor_regions = g1h->num_survivor_regions();
+  _num_survivor_regions = g1h->num_survivor_regions();
   // Size of the already allocated young gen.
-  const uint allocated_num_young_regions = g1h->num_young_regions();
+  _num_young_regions = g1h->num_young_regions();
   // This is the absolute minimum number of young regions that we can return. Ensure that we
   // don't go below any user-defined minimum bound.  Also, we must have at least
   // one eden region, to ensure progress. But when revising during the ensuing
@@ -452,10 +452,11 @@ uint G1YoungGenPredictor::max_num_young_regions_by_evacuation_space() const {
 
 G1EvacuationPrediction G1Policy::predict_survivor_regions_evacuation() const {
   double survivor_regions_evac_time = predict_young_region_other_time_ms(_g1h->survivor()->num_regions());
+  bool is_young_only_pause = collector_state()->is_in_young_only_phase();
   size_t survivor_bytes_to_copy = 0;
   for (G1HeapRegion* r : _g1h->survivor()->regions()) {
     size_t bytes_to_copy = predict_bytes_to_copy(r);
-    survivor_regions_evac_time += predict_copy_time_ms(bytes_to_copy, _g1h->collector_state()->is_in_young_only_phase());
+    survivor_regions_evac_time += predict_copy_time_ms(bytes_to_copy, is_young_only_pause);
     survivor_bytes_to_copy += bytes_to_copy;
   }
 
@@ -1119,16 +1120,16 @@ double G1Policy::predict_non_young_other_time_ms(uint num_regions) const {
   return _analytics->predict_non_young_other_time_ms(num_regions);
 }
 
-G1EvacuationPrediction G1Policy::predict_eden_evacuation(uint count) const {
-  if (count == 0) {
+G1EvacuationPrediction G1Policy::predict_eden_evacuation(uint num_eden_regions) const {
+  if (num_eden_regions == 0) {
     return {0.0, 0};
   }
-  size_t bytes_to_copy = _eden_surv_rate_group->accum_surv_rate_pred(count - 1) * G1HeapRegion::GrainBytes;
+  size_t bytes_to_copy = _eden_surv_rate_group->accum_surv_rate_pred(num_eden_regions - 1) * G1HeapRegion::GrainBytes;
 
   double copy_time_ms = _analytics->predict_object_copy_time_ms(bytes_to_copy,
                                                                 collector_state()->is_in_young_only_phase());
 
-  double evacuation_time_ms = copy_time_ms + predict_young_region_other_time_ms(count);
+  double evacuation_time_ms = copy_time_ms + predict_young_region_other_time_ms(num_eden_regions);
 
   return {evacuation_time_ms, bytes_to_copy};
 }
