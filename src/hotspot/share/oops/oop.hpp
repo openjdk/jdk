@@ -320,7 +320,7 @@ class oopDesc {
   inline bool has_identity_hash();
 
 private:
-  intptr_t slow_identity_hash(markWord mark, Thread* current);
+  intptr_t slow_identity_hash(markWord current_mark, Thread* current);
 
 public:
   // Checks if the mark word needs to be preserved

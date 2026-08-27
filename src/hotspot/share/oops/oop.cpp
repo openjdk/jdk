@@ -115,14 +115,15 @@ void oopDesc::verify(oopDesc* oop_desc) {
   verify_on(tty, oop_desc);
 }
 
-intptr_t oopDesc::slow_identity_hash(markWord mark, Thread* current) {
-  precond(!mark.has_hash());
+intptr_t oopDesc::slow_identity_hash(markWord current_mark, Thread* current) {
+  precond(!current_mark.has_hash());
 
   assert(!is_inline(), "slow_identity_hash should not be called for value objects");
 
   // Calculate the new hash
   const intptr_t new_hash = ObjectSynchronizer::get_next_hash(current, this);
 
+  markWord mark = current_mark;
   while (true) {
     const markWord old_mark = mark;
     const markWord new_mark = mark.copy_set_hash(new_hash);
