@@ -45,14 +45,14 @@ final class TestConfinedSegmentPoolCleanup {
     // A random value
     private static final long MARKER = 0xF25C214F82C1422FL;
 
-    @ParameterizedTest(name = "{0}, cleanupThrows={2}")
+    @ParameterizedTest(name = "{0}, throwableType={2}")
     @MethodSource("configurations")
-    void cleanupRunsBeforePoolRelease(String name, Thread.Builder builder, boolean cleanupThrows) throws Throwable {
+    <T extends Throwable & ExpectedCleanupThrowable> void cleanupRunsBeforePoolRelease(String name, Thread.Builder builder, Class<T> throwableType) throws Throwable {
         // It does not matter if a VT is running on a previously-used carrier thread.
-        TestConfinedSegmentPoolUtils.runOn(builder, () -> testCleanup(cleanupThrows));
+        TestConfinedSegmentPoolUtils.runOn(builder, () -> testCleanup(throwableType));
     }
 
-    private static void testCleanup(boolean cleanupThrows) {
+    private static <T extends Throwable & ExpectedCleanupThrowable> void testCleanup(Class<T> throwableType) {
         Arena arena = Arena.ofConfined();
         long address;
         try {
@@ -60,13 +60,15 @@ final class TestConfinedSegmentPoolCleanup {
             address = segment.address();
             segment.reinterpret(Long.BYTES, arena, cleanupSegment -> {
                 cleanupSegment.set(ValueLayout.JAVA_LONG, 0, MARKER);
-                if (cleanupThrows) {
-                    throw new ExpectedCleanupException();
+                switch (throwableType) {
+                    case Class<?> c when ExpectedCleanupException.class.equals(c) -> throw new ExpectedCleanupException();
+                    case Class<?> c when ExpectedCleanupError.class.equals(c) -> throw new ExpectedCleanupError();
+                    case null, default -> { } // Do nothing
                 }
             });
 
-            if (cleanupThrows) {
-                assertThrows(ExpectedCleanupException.class, arena::close);
+            if (throwableType != null) {
+                assertThrows(throwableType, arena::close);
             } else {
                 arena.close();
             }
@@ -87,11 +89,15 @@ final class TestConfinedSegmentPoolCleanup {
 
     private static Stream<Arguments> configurations() {
         return Stream.of(
-                Arguments.of("platform", Thread.ofPlatform(), false),
-                Arguments.of("platform", Thread.ofPlatform(), true),
-                Arguments.of("virtual", Thread.ofVirtual(), false),
-                Arguments.of("virtual", Thread.ofVirtual(), true));
+                Arguments.of("platform", Thread.ofPlatform(), null),
+                Arguments.of("platform", Thread.ofPlatform(), ExpectedCleanupException.class),
+                Arguments.of("platform", Thread.ofPlatform(), ExpectedCleanupError.class),
+                Arguments.of("virtual", Thread.ofVirtual(), null),
+                Arguments.of("virtual", Thread.ofVirtual(), ExpectedCleanupException.class),
+                Arguments.of("virtual", Thread.ofVirtual(), ExpectedCleanupError.class));
     }
 
-    private static final class ExpectedCleanupException extends RuntimeException { }
+    private sealed interface ExpectedCleanupThrowable{};
+    private static final class ExpectedCleanupException extends RuntimeException implements ExpectedCleanupThrowable {}
+    private static final class ExpectedCleanupError extends Error implements ExpectedCleanupThrowable {}
 }

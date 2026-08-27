@@ -136,7 +136,7 @@ public final class ConfinedSegmentPool {
      */
     static long allocateLocal(Thread thread) {
         assert thread == Thread.currentThread();
-        return POOLING_DISABLED ? 0 : allocateDetatchedPool();
+        return POOLING_DISABLED ? 0 : allocateDetachedPool();
     }
 
     /**
@@ -185,7 +185,7 @@ public final class ConfinedSegmentPool {
         return 0;
     }
 
-    private static long allocateDetatchedPool() {
+    private static long allocateDetachedPool() {
         final long address;
         try {
             address = U.allocateMemory(POOLED_MEMORY_SIZE);
@@ -213,13 +213,13 @@ public final class ConfinedSegmentPool {
 
         for (int i = 0; i < pools.length; i++) {
             final long entry = pools[i];
+            if (entry == pool) {
+                throw cannotReleasePooledMemory(pool, usedSize); // already released
+            }
             if (entry == 0) {
                 zeroOutMemory(pool, usedSize);
                 pools[i] = pool;
                 return;
-            }
-            if (entry == pool) {
-                throw cannotReleasePooledMemory(pool, usedSize); // already released
             }
         }
         U.freeMemory(pool);
