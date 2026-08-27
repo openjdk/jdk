@@ -729,7 +729,7 @@ void AOTMappedHeapWriter::update_header_for_requested_obj(oop requested_obj, oop
   narrowKlass nk = ArchiveBuilder::current()->get_requested_narrow_klass(src_klass);
   address buffered_addr = requested_addr_to_buffered_addr(cast_from_oop<address>(requested_obj));
 
-  markWord mw = Arguments::enable_preview() ? src_klass->prototype_header() : markWord::prototype();
+  markWord mw = Arguments::is_valhalla_enabled() ? src_klass->prototype_header() : markWord::prototype();
   oopDesc* fake_oop = (oopDesc*)buffered_addr;
 
   // We need to retain the identity_hash, because it may have been used by some hashtables
