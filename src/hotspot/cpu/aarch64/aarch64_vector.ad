@@ -3737,38 +3737,27 @@ instruct reduce_addL_sve(iRegLNoSp dst, iRegL isrc, vReg vsrc, vRegD tmp) %{
   ins_pipe(pipe_slow);
 %}
 
+
 // reduction addF
 
-instruct reduce_strict_order_add2F_neon(vRegF dst_src1, vReg vsrc, vRegF tmp) %{
-  predicate(UseSVE == 0 &&
-            Matcher::vector_length(n->in(2)) == 2 &&
-            n->as_Reduction()->requires_strict_order());
-  match(Set dst_src1 (AddReductionVF dst_src1 vsrc));
-  effect(TEMP tmp);
-  format %{ "reduce_strict_order_add2F_neon $dst_src1, $dst_src1, $vsrc\t# 2F, strict order" %}
-  ins_encode %{
-    __ fadds($dst_src1$$FloatRegister, $dst_src1$$FloatRegister, $vsrc$$FloatRegister);
-    __ ext($tmp$$FloatRegister, __ T8B, $vsrc$$FloatRegister, $vsrc$$FloatRegister, 4);
-    __ fadds($dst_src1$$FloatRegister, $dst_src1$$FloatRegister, $tmp$$FloatRegister);
-  %}
-  ins_pipe(pipe_slow);
-%}
 
-instruct reduce_strict_order_add4F_neon(vRegF dst_src1, vReg vsrc, vRegF tmp) %{
+instruct reduce_strict_order_addF_neon(vRegF dst_src1, vReg vsrc, vRegF tmp) %{
   predicate(UseSVE == 0 &&
-            Matcher::vector_length(n->in(2)) == 4 &&
+            (Matcher::vector_length(n->in(2)) == 2 ||
+             Matcher::vector_length(n->in(2)) == 4) &&
             n->as_Reduction()->requires_strict_order());
   match(Set dst_src1 (AddReductionVF dst_src1 vsrc));
   effect(TEMP tmp);
-  format %{ "reduce_strict_order_add4F_neon $dst_src1, $dst_src1, $vsrc\t# 4F, strict order" %}
+  format %{ "reduce_strict_order_addF_neon $dst_src1, $dst_src1, $vsrc\t# strict order" %}
   ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
+    assert(length_in_bytes == 8 || length_in_bytes == 16, "unsupported");
+    Assembler::SIMD_Arrangement T = length_in_bytes == 8 ? __ T8B : __ T16B;
     __ fadds($dst_src1$$FloatRegister, $dst_src1$$FloatRegister, $vsrc$$FloatRegister);
-    __ ext($tmp$$FloatRegister, __ T16B, $vsrc$$FloatRegister, $vsrc$$FloatRegister, 4);
-    __ fadds($dst_src1$$FloatRegister, $dst_src1$$FloatRegister, $tmp$$FloatRegister);
-    __ ext($tmp$$FloatRegister, __ T16B, $vsrc$$FloatRegister, $vsrc$$FloatRegister, 8);
-    __ fadds($dst_src1$$FloatRegister, $dst_src1$$FloatRegister, $tmp$$FloatRegister);
-    __ ext($tmp$$FloatRegister, __ T16B, $vsrc$$FloatRegister, $vsrc$$FloatRegister, 12);
-    __ fadds($dst_src1$$FloatRegister, $dst_src1$$FloatRegister, $tmp$$FloatRegister);
+    for (uint offset = 4; offset < length_in_bytes; offset += 4) {
+      __ ext($tmp$$FloatRegister, T, $vsrc$$FloatRegister, $vsrc$$FloatRegister, offset);
+      __ fadds($dst_src1$$FloatRegister, $dst_src1$$FloatRegister, $tmp$$FloatRegister);
+    }
   %}
   ins_pipe(pipe_slow);
 %}
@@ -3865,17 +3854,23 @@ instruct reduce_addF_sve(vRegF dst_src1, vReg src2) %{
 
 // reduction addD
 
-instruct reduce_strict_order_add2D_neon(vRegD dst_src1, vReg vsrc, vRegD tmp) %{
+
+instruct reduce_strict_order_addD_neon(vRegD dst_src1, vReg vsrc, vRegD tmp) %{
   predicate(UseSVE == 0 &&
             Matcher::vector_length(n->in(2)) == 2 &&
             n->as_Reduction()->requires_strict_order());
   match(Set dst_src1 (AddReductionVD dst_src1 vsrc));
   effect(TEMP tmp);
-  format %{ "reduce_strict_order_add2D_neon $dst_src1, $dst_src1, $vsrc\t# 2D, strict order" %}
+  format %{ "reduce_strict_order_addD_neon $dst_src1, $dst_src1, $vsrc\t# strict order" %}
   ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
+    assert(length_in_bytes == 8 || length_in_bytes == 16, "unsupported");
+    Assembler::SIMD_Arrangement T = length_in_bytes == 8 ? __ T8B : __ T16B;
     __ faddd($dst_src1$$FloatRegister, $dst_src1$$FloatRegister, $vsrc$$FloatRegister);
-    __ ext($tmp$$FloatRegister, __ T16B, $vsrc$$FloatRegister, $vsrc$$FloatRegister, 8);
-    __ faddd($dst_src1$$FloatRegister, $dst_src1$$FloatRegister, $tmp$$FloatRegister);
+    for (uint offset = 8; offset < length_in_bytes; offset += 8) {
+      __ ext($tmp$$FloatRegister, T, $vsrc$$FloatRegister, $vsrc$$FloatRegister, offset);
+      __ faddd($dst_src1$$FloatRegister, $dst_src1$$FloatRegister, $tmp$$FloatRegister);
+    }
   %}
   ins_pipe(pipe_slow);
 %}

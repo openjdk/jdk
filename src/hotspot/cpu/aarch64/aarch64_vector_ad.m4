@@ -2240,41 +2240,35 @@ REDUCE_ADD_INT_NEON_SVE_PAIRWISE(I, iRegIorL2I)
 // reduction addL
 REDUCE_ADD_INT_NEON_SVE_PAIRWISE(L, iRegL)
 
+dnl REDUCE_STRICT_ORDER_ADD_FP_NEON($1,   $2,          $3          )
+dnl                                 type, insn suffix, element size
+define(`REDUCE_STRICT_ORDER_ADD_FP_NEON', `
+instruct reduce_strict_order_add$1_neon(vReg$1 dst_src1, vReg vsrc, vReg$1 tmp) %{
+  predicate(UseSVE == 0 &&
+            ifelse($1, F,
+                   `(Matcher::vector_length(n->in(2)) == 2 ||
+                     Matcher::vector_length(n->in(2)) == 4)',
+                   `Matcher::vector_length(n->in(2)) == 2') &&
+            n->as_Reduction()->requires_strict_order());
+  match(Set dst_src1 (AddReductionV$1 dst_src1 vsrc));
+  effect(TEMP tmp);
+  format %{ "reduce_strict_order_add$1_neon $dst_src1, $dst_src1, $vsrc\t# strict order" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
+    assert(length_in_bytes == 8 || length_in_bytes == 16, "unsupported");
+    Assembler::SIMD_Arrangement T = length_in_bytes == 8 ? __ T8B : __ T16B;
+    __ fadd$2($dst_src1$$FloatRegister, $dst_src1$$FloatRegister, $vsrc$$FloatRegister);
+    for (uint offset = $3; offset < length_in_bytes; offset += $3) {
+      __ ext($tmp$$FloatRegister, T, $vsrc$$FloatRegister, $vsrc$$FloatRegister, offset);
+      __ fadd$2($dst_src1$$FloatRegister, $dst_src1$$FloatRegister, $tmp$$FloatRegister);
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+
 // reduction addF
 
-instruct reduce_strict_order_add2F_neon(vRegF dst_src1, vReg vsrc, vRegF tmp) %{
-  predicate(UseSVE == 0 &&
-            Matcher::vector_length(n->in(2)) == 2 &&
-            n->as_Reduction()->requires_strict_order());
-  match(Set dst_src1 (AddReductionVF dst_src1 vsrc));
-  effect(TEMP tmp);
-  format %{ "reduce_strict_order_add2F_neon $dst_src1, $dst_src1, $vsrc\t# 2F, strict order" %}
-  ins_encode %{
-    __ fadds($dst_src1$$FloatRegister, $dst_src1$$FloatRegister, $vsrc$$FloatRegister);
-    __ ext($tmp$$FloatRegister, __ T8B, $vsrc$$FloatRegister, $vsrc$$FloatRegister, 4);
-    __ fadds($dst_src1$$FloatRegister, $dst_src1$$FloatRegister, $tmp$$FloatRegister);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct reduce_strict_order_add4F_neon(vRegF dst_src1, vReg vsrc, vRegF tmp) %{
-  predicate(UseSVE == 0 &&
-            Matcher::vector_length(n->in(2)) == 4 &&
-            n->as_Reduction()->requires_strict_order());
-  match(Set dst_src1 (AddReductionVF dst_src1 vsrc));
-  effect(TEMP tmp);
-  format %{ "reduce_strict_order_add4F_neon $dst_src1, $dst_src1, $vsrc\t# 4F, strict order" %}
-  ins_encode %{
-    __ fadds($dst_src1$$FloatRegister, $dst_src1$$FloatRegister, $vsrc$$FloatRegister);
-    __ ext($tmp$$FloatRegister, __ T16B, $vsrc$$FloatRegister, $vsrc$$FloatRegister, 4);
-    __ fadds($dst_src1$$FloatRegister, $dst_src1$$FloatRegister, $tmp$$FloatRegister);
-    __ ext($tmp$$FloatRegister, __ T16B, $vsrc$$FloatRegister, $vsrc$$FloatRegister, 8);
-    __ fadds($dst_src1$$FloatRegister, $dst_src1$$FloatRegister, $tmp$$FloatRegister);
-    __ ext($tmp$$FloatRegister, __ T16B, $vsrc$$FloatRegister, $vsrc$$FloatRegister, 12);
-    __ fadds($dst_src1$$FloatRegister, $dst_src1$$FloatRegister, $tmp$$FloatRegister);
-  %}
-  ins_pipe(pipe_slow);
-%}
+REDUCE_STRICT_ORDER_ADD_FP_NEON(F, s, 4)
 
 instruct reduce_non_strict_order_add2F_neon(vRegF dst, vRegF fsrc, vReg vsrc) %{
   // Non-strictly ordered floating-point add reduction for a 64-bits-long vector. This rule is
@@ -2359,20 +2353,7 @@ REDUCE_ADD_FP_SVE(F,  S)
 
 // reduction addD
 
-instruct reduce_strict_order_add2D_neon(vRegD dst_src1, vReg vsrc, vRegD tmp) %{
-  predicate(UseSVE == 0 &&
-            Matcher::vector_length(n->in(2)) == 2 &&
-            n->as_Reduction()->requires_strict_order());
-  match(Set dst_src1 (AddReductionVD dst_src1 vsrc));
-  effect(TEMP tmp);
-  format %{ "reduce_strict_order_add2D_neon $dst_src1, $dst_src1, $vsrc\t# 2D, strict order" %}
-  ins_encode %{
-    __ faddd($dst_src1$$FloatRegister, $dst_src1$$FloatRegister, $vsrc$$FloatRegister);
-    __ ext($tmp$$FloatRegister, __ T16B, $vsrc$$FloatRegister, $vsrc$$FloatRegister, 8);
-    __ faddd($dst_src1$$FloatRegister, $dst_src1$$FloatRegister, $tmp$$FloatRegister);
-  %}
-  ins_pipe(pipe_slow);
-%}
+REDUCE_STRICT_ORDER_ADD_FP_NEON(D, d, 8)
 
 instruct reduce_non_strict_order_add2D_neon(vRegD dst, vRegD dsrc, vReg vsrc) %{
   // Non-strictly ordered floating-point add reduction for doubles. This rule is
