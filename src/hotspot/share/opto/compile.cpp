@@ -6290,6 +6290,12 @@ void Compile::eliminate_doubled_index(Node* n) {
       if (incr != nullptr && incr->Opcode() == Op_AddI && incr->outcnt() >= 2 &&
           incr->in(1) == phi &&
           incr->in(2)->is_Con()) {
+        { // here we skip uses before the increment: reading incr there would force it early and cost a copy
+          Node* ctrl = n->is_Phi() ? n->in(0)->in(i) : n->in(0); // expected ctrl is "IF(incr < limit)"
+          if (ctrl == nullptr || !ctrl->is_Proj() || !ctrl->in(0)->is_If()) { continue; }
+          Node* cmp = ctrl->in(0)->in(1)->is_Bool() ? ctrl->in(0)->in(1)->in(1) : nullptr;
+          if (cmp == nullptr || (cmp->in(1) != incr && cmp->in(2) != incr)) { continue; }
+        }
         jint stride = incr->in(2)->get_int();
         n->set_req(i, new AddINode(incr, ConINode::make(java_subtract(0, stride))));
       }
