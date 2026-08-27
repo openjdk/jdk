@@ -69,6 +69,7 @@ protected:
 
   // Written by control thread and mutators, clamped between ConcGCThreads and ParallelGCThreads.
   Atomic<size_t> _concurrent_worker_count;
+  shenandoah_padding(4);
 
   // Increments the internal GC count.
   void update_gc_id();
