@@ -184,7 +184,6 @@ struct LayoutDescriptions {
       return _non_atomic_alignment;
     case LayoutKind::REFERENCE:
     case LayoutKind::UNKNOWN:
-    case LayoutKind::COUNT:
       ShouldNotReachHere();
       return 0;
     }
