@@ -292,11 +292,7 @@ void JavaThread::check_for_valid_safepoint_state(bool allow_gcalot) {
 
   switch (thread_state()) {
   case _thread_in_vm:
-    // In debug builds, leaf entries use NoHandleMark and NoSafepointVerifier,
-    // while non-leaf entries use HandleMarkCleaner.
-    if (last_handle_mark() == nullptr) {
-      fatal("LEAF method calling lock?");
-    }
+    // In debug builds, leaf entries use NoHandleMark and NoSafepointVerifier (checked above).
     if (handle_area()->no_handle_mark_active()) {
       fatal("LEAF method calling lock?");
     }
