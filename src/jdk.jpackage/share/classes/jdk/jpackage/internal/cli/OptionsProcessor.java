@@ -169,6 +169,7 @@ final class OptionsProcessor {
         validatedOptionsResult.value().ifPresent(validatedOptions -> {
             // Second pass: analyze command line options with values converted from strings.
             var errors = new OptionsAnalyzer(validatedOptions.options(),
+                    os,
                     StandardBundlingOperation.valueOf(validatedOptions.bundlingOperation()).orElseThrow(() -> {
                         // The bundle operation descriptor should correspond to one of the standard bundling operations.
                         throw new AssertionError();
