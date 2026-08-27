@@ -63,7 +63,7 @@ public class StringTableCorruptionTest {
         RETAIN.add(s1);
 
         // Fill in StringTable to trigger growth.
-        // Also do a few GCs to make sure test behavior does not depend to stray GCs.
+        // Also do a few intentional GCs to make sure test behavior does not depend on accidental GCs.
         for (int i = 0; i < 4_000_000; i++) {
             String s = ("s_" + i).intern();
             RETAIN.add(s);
