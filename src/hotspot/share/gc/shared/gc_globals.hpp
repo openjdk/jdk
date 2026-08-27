@@ -46,7 +46,7 @@
 #include "gc/z/z_globals.hpp"
 #endif
 
-#define MAX_GC_CARD_SIZE_IN_BYTES NOT_LP64(512) LP64_ONLY(1024)
+constexpr uint MaxCardSizeInBytes = NOT_LP64(512) LP64_ONLY(1024);
 
 #define GC_FLAGS(develop,                                                   \
                  develop_pd,                                                \
@@ -525,7 +525,7 @@
                                                                             \
   product(uint, GCCardSizeInBytes, 512,                                     \
           "Card table entry size (in bytes) for card based collectors")     \
-          range(128, MAX_GC_CARD_SIZE_IN_BYTES)                             \
+          range(128, MaxCardSizeInBytes)                                    \
           constraint(GCCardSizeInBytesConstraintFunc,AtParse)
   // end of GC_FLAGS
 

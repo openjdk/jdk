@@ -622,7 +622,7 @@ void G1CollectionSet::select_candidates_from_retained(double time_remaining_ms) 
   // for the regions in these groups.
   candidates()->remove(&remove_from_retained);
 
-  groups_to_abandon.clear(true /* uninstall_group_cardset */);
+  groups_to_abandon.clear(true /* uninstall_cset_group */);
 
   assert(num_optional_regions >= prev_num_optional_regions, "Sanity");
   uint selected_optional_regions = num_optional_regions - prev_num_optional_regions;

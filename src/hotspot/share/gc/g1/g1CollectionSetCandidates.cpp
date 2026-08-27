@@ -68,9 +68,9 @@ double G1CSetCandidateGroup::liveness_percent() const {
   return ((capacity - _reclaimable_bytes) * 100.0) / capacity;
 }
 
-void G1CSetCandidateGroup::clear(bool uninstall_group_cardset) {
+void G1CSetCandidateGroup::clear(bool uninstall_cset_group) {
   clear_card_set();
-  if (uninstall_group_cardset) {
+  if (uninstall_cset_group) {
     for (G1CollectionSetCandidateInfo ci : _candidates) {
       G1HeapRegion* r = ci._r;
       r->uninstall_cset_group();
@@ -153,9 +153,9 @@ G1CSetCandidateGroup* G1CSetCandidateGroupList::at(uint index) {
   return _groups.at(index);
 }
 
-void G1CSetCandidateGroupList::clear(bool uninstall_group_cardset) {
+void G1CSetCandidateGroupList::clear(bool uninstall_cset_group) {
   for (G1CSetCandidateGroup* gr : _groups) {
-    gr->clear(uninstall_group_cardset);
+    gr->clear(uninstall_cset_group);
     delete gr;
   }
   _groups.clear();
@@ -244,8 +244,8 @@ void G1CollectionSetCandidates::initialize(uint max_regions) {
 }
 
 void G1CollectionSetCandidates::clear() {
-  _retained_groups.clear(true /* uninstall_group_cardset */);
-  _from_marking_groups.clear(true /* uninstall_group_cardset */);
+  _retained_groups.clear(true /* uninstall_cset_group */);
+  _from_marking_groups.clear(true /* uninstall_cset_group */);
   for (uint i = 0; i < _max_regions; i++) {
     _contains_map[i] = CandidateOrigin::Invalid;
   }

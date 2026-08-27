@@ -123,7 +123,7 @@ public:
   // Clear the group-owned card set.
   void clear_card_set();
 
-  void clear(bool uninstall_group_cardset = false);
+  void clear(bool uninstall_cset_group = false);
 
   G1CSetCandidateGroupIterator begin() const {
     return _candidates.begin();
@@ -151,9 +151,9 @@ public:
 
   // Delete all groups from the list. The cardset cleanup for regions within the
   // groups could have been done elsewhere (e.g. when adding groups to the
-  // collection set or to retained regions). The uninstall_group_cardset is set to
+  // collection set or to retained regions). The uninstall_cset_group is set to
   // true if cleanup needs to happen as we clear the groups from the list.
-  void clear(bool uninstall_group_cardset = false);
+  void clear(bool uninstall_cset_group = false);
 
   G1CSetCandidateGroup* at(uint index);
 

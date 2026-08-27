@@ -32,7 +32,7 @@
 // G1FromCardCache remembers which destination cset groups have
 // been encountered while a worker scans the current from_card.
 class G1FromCardCache {
-  static constexpr uint MaxOopsPerCard = MAX_GC_CARD_SIZE_IN_BYTES / sizeof(narrowOop);
+  static constexpr uint MaxOopsPerCard = MaxCardSizeInBytes / sizeof(narrowOop);
 
   uintptr_t _from_card;
   uint _num_cset_groups;

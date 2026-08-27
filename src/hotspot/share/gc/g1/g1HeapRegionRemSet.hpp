@@ -63,7 +63,7 @@ public:
   G1HeapRegionRemSet();
   ~G1HeapRegionRemSet();
 
-  bool cardset_is_empty() const {
+  bool card_set_is_empty() const {
     return !has_cset_group() || card_set()->is_empty();
   }
 
@@ -94,7 +94,7 @@ public:
   }
 
   bool is_empty() const {
-    return (code_roots_list_length() == 0) && cardset_is_empty();
+    return (code_roots_list_length() == 0) && card_set_is_empty();
   }
 
   bool occupancy_less_or_equal_than(size_t occ) const {
