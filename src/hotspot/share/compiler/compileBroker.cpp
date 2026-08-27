@@ -2169,7 +2169,7 @@ void CompileBroker::handle_full_code_cache(CodeBlobType code_blob_type) {
 #ifndef PRODUCT
     if (ExitOnFullCodeCache) {
       codecache_print(/* detailed= */ true);
-      vm_exit(1);
+      vm_direct_exit(1);
     }
 #endif
     if (UseCodeCacheFlushing) {
