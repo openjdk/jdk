@@ -102,7 +102,7 @@ class StackMapFrame : public ResourceObj {
         _stack[i] = VerificationType::bogus_type();
       }
     }
-    _assert_unset_fields = cp._assert_unset_fields;
+    set_assert_unset_fields(cp.assert_unset_fields());
     _verifier = nullptr;
   }
 
@@ -139,6 +139,8 @@ class StackMapFrame : public ResourceObj {
     return new StackMapFrame(*smf);
   }
 
+  StackMapFrame& operator=(StackMapFrame const&) = delete;
+
   inline void set_offset(int32_t offset)      { _offset = offset; }
   inline void set_verifier(ClassVerifier* v)  { _verifier = v; }
   inline void set_flags(u1 flags)             { _flags = flags; }
@@ -160,8 +162,17 @@ class StackMapFrame : public ResourceObj {
     return _assert_unset_fields;
   }
 
+  static AssertUnsetFieldTable* copy_unset_fields(AssertUnsetFieldTable* unset_fields) {
+    AssertUnsetFieldTable* new_table = new AssertUnsetFieldTable();
+    auto copy_unset_field = [&] (const NameAndSig& key, const bool& value) {
+      new_table->put(key, value);
+    };
+    unset_fields->iterate_all(copy_unset_field);
+    return new_table;
+  }
+
   void set_assert_unset_fields(AssertUnsetFieldTable* table) {
-    _assert_unset_fields = table;
+    _assert_unset_fields = copy_unset_fields(table);
   }
 
   // Called when verifying putfields to mark strict instance fields as satisfied
@@ -282,6 +293,11 @@ class StackMapFrame : public ResourceObj {
           "Operand stack overflow");
       return;
     }
+
+    if (type.is_uninitialized_this()) {
+      _flags |= FLAG_THIS_UNINIT;
+    }
+
     _stack[_stack_size++] = type;
   }
 

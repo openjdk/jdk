@@ -427,7 +427,7 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
   // ThreadStateTransition::transition_from_native() cannot be used
   // here because it does not check for asynchronous exceptions.
   // We have to manage the transition ourself.
-  thread->set_thread_state_fence(_thread_in_native_trans);
+  thread->set_thread_state_fence(_thread_in_vm);
 
   // Handle safepoint operations, pending suspend requests,
   // and pending asynchronous exceptions.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -215,6 +215,9 @@ public class monitorinfo001a {
     } // TestedClass class
 
     // thread which will owns monitor of the tested object
+    // Note: the monitor threads must extend Thread, not ThreadWrapper. JDWP
+    // ObjectReference.MonitorInfo reports no owner and no waiters when virtual
+    // threads own or wait on the monitor. See JDK-8382276.
     public static class MonitorOwnerThread extends Thread {
 
         public Object ready = new Object();

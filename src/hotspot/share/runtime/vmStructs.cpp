@@ -498,7 +498,7 @@
   nonstatic_field(CodeBlob,                    _relocation_size,                              int)                                   \
   nonstatic_field(CodeBlob,                    _content_offset,                               int)                                   \
   nonstatic_field(CodeBlob,                    _code_offset,                                  int)                                   \
-  nonstatic_field(CodeBlob,                    _frame_complete_offset,                        int16_t)                               \
+  nonstatic_field(CodeBlob,                    _frame_complete_offset,                        int)                                   \
   nonstatic_field(CodeBlob,                    _data_offset,                                  int)                                   \
   nonstatic_field(CodeBlob,                    _frame_size,                                   int)                                   \
   nonstatic_field(CodeBlob,                    _oop_maps,                                     ImmutableOopMapSet*)                   \
@@ -1372,15 +1372,10 @@
                                                                           \
   declare_constant(_thread_uninitialized)                                 \
   declare_constant(_thread_new)                                           \
-  declare_constant(_thread_new_trans)                                     \
   declare_constant(_thread_in_native)                                     \
-  declare_constant(_thread_in_native_trans)                               \
   declare_constant(_thread_in_vm)                                         \
-  declare_constant(_thread_in_vm_trans)                                   \
   declare_constant(_thread_in_Java)                                       \
-  declare_constant(_thread_in_Java_trans)                                 \
   declare_constant(_thread_blocked)                                       \
-  declare_constant(_thread_blocked_trans)                                 \
   declare_constant(JavaThread::_not_terminated)                           \
   declare_constant(JavaThread::_thread_exiting)                           \
                                                                           \
