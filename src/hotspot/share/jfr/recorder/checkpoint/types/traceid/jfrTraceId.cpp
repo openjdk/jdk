@@ -296,6 +296,6 @@ void JfrTraceId::untag_jdk_jfr_event_sub(const Klass* k) {
 #ifdef ASSERT
 traceid JfrTraceId::preload_bits(const Klass* k) {
   assert(k != nullptr, "invariant");
-  return PRELOAD_TAG_BITS(k);
+  return PRELOAD_TAG_BITS_OF(k);
 }
 #endif

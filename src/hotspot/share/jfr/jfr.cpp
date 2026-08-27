@@ -192,7 +192,9 @@ void Jfr::on_definition(const InstanceKlass* ik, JavaThread* jt) {
 void Jfr::on_deallocation(const Klass* k) {
   assert(k != nullptr, "invariant");
   assert(SafepointSynchronize::is_at_safepoint(), "only called at safepoint");
-  JfrKlassUnloading::add_to_unloaded_set(k);
+  if (JfrMethodTracer::in_use() && JfrTraceId::has_sticky_bit(k)) {
+    JfrKlassUnloading::add_to_unloaded_set(k);
+  }
 }
 
 #if INCLUDE_CDS

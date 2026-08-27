@@ -70,8 +70,8 @@
 #define PRELOAD_TAG_BIT_STICKY_MASK               (~(PRELOAD_TAG_BIT_STICKY))
 #define PRELOAD_TAG_BIT_BOOTLOADER                (EPOCH_0_METHOD_BIT)
 #define PRELOAD_TAG_BIT_BOOTLOADER_MASK           (~(PRELOAD_TAG_BIT_BOOTLOADER))
-#define PRELOAD_TAG_BITS_MASK                     (EVENT_BITS)
-
+#define PRELOAD_TAG_BITS                          (PRELOAD_TAG_BIT_STICKY | PRELOAD_TAG_BIT_BOOTLOADER)
+#define PRELOAD_TAG_BITS_CLEAR_MASK               (~(PRELOAD_TAG_BITS))
 
 // epoch relative bits
 #define THIS_EPOCH_BIT                            (JfrTraceIdEpoch::this_epoch_bit())
@@ -98,7 +98,7 @@
 #define METHOD_META_TAG(method, bits)             (JfrTraceIdBits::meta_store(bits, method))
 #define METHOD_FLAG_CLEAR(method, bits)           (JfrTraceIdBits::clear_cas(bits, method))
 #define METHOD_META_MASK_CLEAR(method, mask)      (JfrTraceIdBits::meta_mask_store(mask, method))
-#define PRELOAD_TAG_BITS(ptr)                     (TRACE_ID_MASKED(ptr, TAG_BITS))
+#define PRELOAD_TAG_BITS_OF(ptr)                  (TRACE_ID_MASKED(ptr, PRELOAD_TAG_BITS))
 
 // predicates
 #define USED_THIS_EPOCH(ptr)                      (TRACE_ID_PREDICATE(ptr, (STICKY_BIT | TRANSIENT_BIT | THIS_EPOCH_BIT)))

@@ -76,13 +76,10 @@ void JfrKlassUnloading::clear() {
 void JfrKlassUnloading::add_to_unloaded_set(const Klass* k) {
   assert(k != nullptr, "invariant");
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
-  const traceid id = JfrTraceId::load_raw(k);
-  if (id == 0) {
-    return;
-  }
+  assert(USED_ANY_EPOCH(k), "invariant");
   JfrCHeapTraceIdSet* const unload_set = get_unload_set();
   assert(unload_set != nullptr, "invariant");
-  unload_set->add(id);
+  unload_set->add(JfrTraceId::load_raw(k));
 }
 
 #if INCLUDE_MANAGEMENT
@@ -104,8 +101,11 @@ bool JfrKlassUnloading::on_unload(const Klass* k) {
   if (IS_JDK_JFR_EVENT_SUBKLASS(k)) {
     ++event_klass_unloaded_count;
   }
-  add_to_unloaded_set(k);
-  return USED_THIS_EPOCH(k) || USED_PREVIOUS_EPOCH(k);
+  if (USED_ANY_EPOCH(k)) {
+    add_to_unloaded_set(k);
+    return true;
+  }
+  return false;
 }
 
 static inline bool is_unloaded(const JfrCHeapTraceIdSet* set, const traceid& id) {
