@@ -1914,6 +1914,15 @@ void MethodData::deallocate_contents(ClassLoaderData* loader_data) {
   release_C_heap_structures();
 }
 
+void MethodData::release_C_heap_structures() {
+  // The class unloading protocol guarantees that this object is
+  // unreachable at this point, so no synchronization is necessary.
+  if (_extra_data_lock != nullptr) {
+    delete _extra_data_lock;
+    _extra_data_lock = nullptr;
+  }
+}
+
 #if INCLUDE_CDS
 void MethodData::remove_unshareable_info() {
   _extra_data_lock = nullptr;

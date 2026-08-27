@@ -113,7 +113,7 @@ void ShenandoahHeapRegion::make_regular_allocation(ShenandoahAffiliation affilia
 }
 
 void ShenandoahHeapRegion::make_regular_for_partial_recycling() {
-  shenandoah_assert_heaplocked();
+  shenandoah_assert_heaplocked_or_safepoint();
   assert(has_self_forwards(), "Only for regions holding self forwarded objects");
   switch (state()) {
     case _cset:
@@ -300,7 +300,7 @@ void ShenandoahHeapRegion::make_cset() {
 }
 
 void ShenandoahHeapRegion::make_trash() {
-  shenandoah_assert_heaplocked();
+  shenandoah_assert_heaplocked_or_safepoint();
   assert(!has_self_forwards(), "Should not have evacuation failures");
   reset_age();
   switch (state()) {
@@ -886,7 +886,7 @@ void ShenandoahHeapRegion::set_affiliation(ShenandoahAffiliation new_affiliation
 // top to the end of the last self forwarded object. This requires no changes on the allocation path.
 //
 // We must also leave old regions in a walkable state because they could be visited by a remembered set scan.
-class ShenandoahReclaimSelfForwarded : ObjectClosure {
+class ShenandoahReclaimSelfForwarded : public ObjectClosure {
 
   // This is a nullptr for young regions. For old regions, we use it to patch up the card table.
   ShenandoahScanRemembered* _cards;
@@ -954,16 +954,22 @@ void ShenandoahHeapRegion::partially_recycle() {
 
   // Reset some of the region states that would be cleared if this region was completely recycled
   const HeapWord* old_top = top();
+  _top_at_evac_start = _bottom;
+  _mixed_candidate_garbage_words = 0;
   clear_live_data();
   reset_alloc_metadata();
   heap->marking_context()->reset_top_at_mark_start(this);
+  set_update_watermark(bottom());
   clear_has_self_forwards();
 
   // Adjust top to the end of our last encountered self-forwarded object. Everything above this is reusable memory.
   set_top(reclaimer.last_self_forwarded_object());
   const size_t reclaimed_bytes = pointer_delta(old_top, top()) * HeapWordSize;
-
-  log_debug(gc)("Reclaimed " PROPERFMT " from partially evacuated region (%zu)", PROPERFMTARGS(reclaimed_bytes), index());
+  if (reclaimed_bytes > 0) {
+    // Region could be used for new allocations, and we don't want those to be promoted prematurely
+    log_debug(gc)("Reclaimed " PROPERFMT " from partially evacuated region (%zu)", PROPERFMTARGS(reclaimed_bytes), index());
+    reset_age();
+  }
 }
 
 void ShenandoahHeapRegion::decrement_humongous_waste() {

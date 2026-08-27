@@ -2617,21 +2617,8 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   }
 
   // Publish thread state
-  // --------------------------------------------------------------------------
-
-  // Switch thread to "native transition" state before reading the
-  // synchronization state. This additional state is necessary because reading
-  // and testing the synchronization state is not atomic w.r.t. GC, as this
-  // scenario demonstrates:
-  //   - Java thread A, in _thread_in_native state, loads _not_synchronized
-  //     and is preempted.
-  //   - VM thread changes sync state to synchronizing and suspends threads
-  //     for GC.
-  //   - Thread A is resumed to finish this native method, but doesn't block
-  //     here since it didn't see any synchronization in progress, and escapes.
-
-  // Transition from _thread_in_native to _thread_in_native_trans.
-  __ li(R0, _thread_in_native_trans);
+  // Transition from _thread_in_native to _thread_in_vm.
+  __ li(R0, _thread_in_vm);
   __ release();
   // TODO: PPC port assert(4 == JavaThread::sz_thread_state(), "unexpected field size");
   __ stw(R0, thread_(thread_state));
@@ -2682,10 +2669,10 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     // Publish thread state.
     // --------------------------------------------------------------------------
 
-    // Thread state is thread_in_native_trans. Any safepoint blocking has
+    // Thread state is _thread_in_vm. Any safepoint blocking has
     // already happened so we can now change state to _thread_in_Java.
 
-    // Transition from _thread_in_native_trans to _thread_in_Java.
+    // Transition from _thread_in_vm to _thread_in_Java.
     __ li(R0, _thread_in_Java);
     __ lwsync(); // Acquire safepoint and suspend state, release thread state.
     // TODO: PPC port assert(4 == JavaThread::sz_thread_state(), "unexpected field size");

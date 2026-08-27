@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,10 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import jdk.internal.foreign.Utils;
-import org.testng.annotations.*;
 
+import org.junit.jupiter.api.TestInstance;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class CallGeneratorHelper extends NativeTestHelper {
 
     static final List<MemoryLayout> STACK_PREFIX_LAYOUTS = Stream.concat(
@@ -151,7 +153,6 @@ public class CallGeneratorHelper extends NativeTestHelper {
         }
     }
 
-    @DataProvider(name = "functions")
     public static Object[][] functions() {
         int functions = 0;
         List<Object[]> downcalls = new ArrayList<>();
@@ -209,7 +210,7 @@ public class CallGeneratorHelper extends NativeTestHelper {
 
     // This can be used to generate the test implementation.
     // From the test/jdk/java/foreign directory, run this class using:
-    // java -cp <jtreg_home>\lib\testng-7.3.0.jar --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED ./CallGeneratorHelper.java
+    // java -cp <jtreg_home>/lib/junit-platform-console-standalone-1.14.2.jar --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED ./CallGeneratorHelper.java
     // Copyright header has to be added manually, and on Windows line endings have to be changed from \r\n to just \n
     public static void main(String[] args) throws IOException {
         try (PrintStream shared = printStream("shared.h");

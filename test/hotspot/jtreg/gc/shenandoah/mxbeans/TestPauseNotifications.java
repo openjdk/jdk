@@ -110,8 +110,7 @@ public class TestPauseNotifications {
 
     private static boolean isExpectedPauseAction(String action) {
         return "Init Mark".equals(action) || "Final Mark".equals(action) || "Full GC".equals(action)
-            || "Degenerated GC".equals(action) || "Init Update Refs".equals(action)
-            || "Final Update Refs".equals(action) || "Final Roots".equals(action);
+            || "Init Update Refs".equals(action) || "Final Update Refs".equals(action) || "Final Roots".equals(action);
     }
 
     public static void main(String[] args) throws Exception {

@@ -410,6 +410,7 @@ jint ShenandoahHeap::initialize() {
 
   _regions = NEW_C_HEAP_ARRAY(ShenandoahHeapRegion*, _num_regions, mtGC);
   _affiliations = NEW_C_HEAP_ARRAY(uint8_t, _num_regions, mtGC);
+  _biased_affiliations = _affiliations - (p2u(base()) >> ShenandoahHeapRegion::region_size_bytes_shift());
 
   {
     ShenandoahHeapLocker locker(lock());
@@ -568,6 +569,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _num_regions(0),
   _regions(nullptr),
   _affiliations(nullptr),
+  _biased_affiliations(nullptr),
   _gc_state_changed(false),
   _gc_no_progress_count(0),
   _cancel_requested_time(0),
@@ -1465,24 +1467,48 @@ void ShenandoahHeap::assert_no_self_forwards() const {
 }
 #endif
 
-void ShenandoahHeap::trash_cset_regions() {
-  ShenandoahHeapLocker locker(lock());
+class ShenandoahTrashRegionTask : public WorkerTask {
+  ShenandoahCollectionSet* _collection_set;
+  Atomic<size_t> _free_bytes_in_evac_failed_regions;
+public:
+  explicit ShenandoahTrashRegionTask(ShenandoahCollectionSet* collection_set)
+    : WorkerTask("ShenandoahTrashRegions")
+    , _collection_set(collection_set), _free_bytes_in_evac_failed_regions(0) {}
 
-  size_t free_bytes_in_evac_failed_regions = 0;
+  size_t free_bytes_in_evac_failed_regions() const {
+    return _free_bytes_in_evac_failed_regions.load_relaxed();
+  }
+
+  void work(uint worker_id) override {
+    ShenandoahHeapRegion* r;
+    size_t free_bytes = 0;
+    while ((r = _collection_set->claim_next()) != nullptr) {
+      if (r->has_self_forwards()) {
+        r->partially_recycle();
+        free_bytes += r->free();
+      } else {
+        r->make_trash();
+      }
+    }
+    _free_bytes_in_evac_failed_regions.add_then_fetch(free_bytes);
+  }
+};
+
+void ShenandoahHeap::trash_cset_regions(bool had_self_forwards) {
   ShenandoahCollectionSet* set = collection_set();
-  ShenandoahHeapRegion* r;
   set->clear_current_index();
-  while ((r = set->next()) != nullptr) {
-    if (r->has_self_forwards()) {
-      r->partially_recycle();
-      free_bytes_in_evac_failed_regions += r->free();
-    } else {
+  if (had_self_forwards) {
+    ShenandoahTrashRegionTask task(set);
+    workers()->run_task(&task);
+    log_info(gc, free)("Memory available in regions that failed evacuation: " PROPERFMT,
+                       PROPERFMTARGS(task.free_bytes_in_evac_failed_regions()));
+  } else {
+    ShenandoahHeapRegion* r;
+    while ((r = set->next()) != nullptr) {
       r->make_trash();
     }
   }
   set->clear();
-  log_info(gc)("Memory available in regions that failed evacuation: " PROPERFMT,
-               PROPERFMTARGS(free_bytes_in_evac_failed_regions));
 }
 
 void ShenandoahHeap::print_heap_regions_on(outputStream* st) const {
@@ -2537,7 +2563,7 @@ void ShenandoahHeap::update_heap_references(ShenandoahGeneration* generation) {
   workers()->run_task(&task);
 }
 
-void ShenandoahHeap::update_heap_region_states() {
+void ShenandoahHeap::update_heap_region_states(bool had_self_forwards) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
   assert(!is_full_gc_in_progress(), "Only for concurrent GC");
 
@@ -2549,7 +2575,7 @@ void ShenandoahHeap::update_heap_region_states() {
 
   {
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_update_refs_trash_cset);
-    trash_cset_regions();
+    trash_cset_regions(had_self_forwards);
   }
 }
 

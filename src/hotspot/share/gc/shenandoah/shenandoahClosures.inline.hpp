@@ -76,10 +76,10 @@ ShenandoahMarkRefsSuperClosure::ShenandoahMarkRefsSuperClosure(ShenandoahObjToSc
         _mark_context(ShenandoahHeap::heap()->marking_context()),
         _weak(false) {}
 
-template<class T, ShenandoahGenerationType GENERATION>
+template<class T, ShenandoahGenerationType GENERATION, bool REDIRTY>
 ALWAYSINLINE
 void ShenandoahMarkRefsSuperClosure::work(T* p) {
-  ShenandoahMark::mark_through_ref<T, GENERATION>(p, _queue, _old_queue, _mark_context, _weak);
+  ShenandoahMark::mark_through_ref<T, GENERATION, REDIRTY>(p, _queue, _old_queue, _mark_context, _weak);
 }
 
 ShenandoahForwardedIsAliveClosure::ShenandoahForwardedIsAliveClosure() :
@@ -217,7 +217,6 @@ void ShenandoahNMethodAndDisarmClosure::do_nmethod(nmethod* nm) {
 //
 // ========= Update References
 //
-
 template<class T>
 inline void ShenandoahNonConcUpdateRefsClosure::work(T* p) {
   _heap->non_conc_update_with_forwarded(p);

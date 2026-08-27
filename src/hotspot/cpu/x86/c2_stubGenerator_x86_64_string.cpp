@@ -220,7 +220,7 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
 
   assert(StubInfo::entry_count(stub_id) == 1, "sanity check");
   GrowableArray<address> extras;
-  const int expected_extra_count = 2 * NUMBER_OF_CASES;
+  DEBUG_ONLY(const int expected_extra_count = 2 * NUMBER_OF_CASES;)
   address start = stubgen->load_archive_data(stub_id, nullptr, &extras);
   if (start != nullptr) {
     assert(extras.length() == expected_extra_count,
@@ -1009,7 +1009,6 @@ static void broadcast_first_and_last_needle(Register needle, Register needle_len
                                             MacroAssembler *_masm) {
   bool isUL = (ae == StrIntrinsicNode::UL);
   bool isUU = (ae == StrIntrinsicNode::UU);
-  bool isU = (isUU || isUL);
   Label L_short;
 
   // Always need needle broadcast to ymm registers
@@ -1775,8 +1774,6 @@ static void setup_jump_tables(StrIntrinsicNode::ArgEncoding ae, Label &L_error, 
   bool isUU = (ae == StrIntrinsicNode::UU);
   bool isU = isUL || isUU;  // At least one is UTF-16
   const XMMRegister byte_1 = XMM_BYTE_1;
-
-  int jmp_ndx = 0;
 
   ////////////////////////////////////////////////
   //  On entry to each case, the register state is:
