@@ -74,8 +74,9 @@
 //    * valhalla reserved: Reserved for future use
 //
 //    Inline types cannot be locked.
-//    They have a deterministic hash based on the immutable payload and class,
-//    which may be cached in the markWord.
+//
+//    Inline types have a deterministic hash based on the immutable payload
+//    and class, which may be cached in the markWord.
 //
 //  - hash - contains the hash value: largest value is 31 bits, see
 //    os::random().  Also, 64-bit VMs require a hash value no bigger than 32
