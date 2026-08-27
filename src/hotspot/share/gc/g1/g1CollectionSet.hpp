@@ -207,7 +207,7 @@ class G1CollectionSet {
 
   void add_region_to_collection_set(G1HeapRegion* r);
 
-  void select_candidates_from_marking(SelectionBudget* budget);
+  void select_candidates_from_marking(SelectionBudget& budget);
 
   // Select groups for evacuation from the optional candidates given the time budget
   // and return the number of actually selected regions.
@@ -221,7 +221,7 @@ class G1CollectionSet {
 
   // Select the regions comprising the initial and optional collection set from marking
   // and retained collection set candidates.
-  void finalize_old_part(SelectionBudget* budget);
+  void finalize_old_part(SelectionBudget& budget);
 
   size_t old_cset_copy_budget_bytes(size_t predicted_young_bytes_to_copy,
                                     size_t young_used_bytes) const;

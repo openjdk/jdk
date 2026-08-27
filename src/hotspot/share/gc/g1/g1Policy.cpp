@@ -503,16 +503,16 @@ G1EvacuationPrediction G1Policy::predict_retained_regions_evacuation() const {
 G1EvacuationPrediction G1Policy::predict_min_marking_candidates_evacuation() const {
   precond(next_gc_should_be_mixed());
 
-  G1CSetCandidateGroupList* marking_groups = &candidates()->from_marking_groups();
+  G1CSetCandidateGroupList& marking_groups = candidates()->from_marking_groups();
   uint min_marking_candidates = calc_min_old_cset_length(candidates()->last_marking_candidates_length());
-  uint min_regions = MIN2(min_marking_candidates, marking_groups->num_regions());
+  uint min_regions = MIN2(min_marking_candidates, marking_groups.num_regions());
 
   uint selected_regions = 0;
   uint selected_groups = 0;
   double predicted_evac_time_ms = 0.0;
   size_t predicted_bytes_to_copy = 0;
 
-  for (G1CSetCandidateGroup* group : *marking_groups) {
+  for (G1CSetCandidateGroup* group : marking_groups) {
     if (selected_regions >= min_regions) {
       break;
     }
@@ -526,7 +526,7 @@ G1EvacuationPrediction G1Policy::predict_min_marking_candidates_evacuation() con
   log_trace(gc, ergo, cset)("Predicted minimum marking candidates: required min %u, "
                             "available %u regions, selected %u regions in %u groups, "
                             "time %1.3fms, bytes to copy %zu",
-                            min_marking_candidates, marking_groups->num_regions(),
+                            min_marking_candidates, marking_groups.num_regions(),
                             selected_regions, selected_groups,
                             predicted_evac_time_ms, predicted_bytes_to_copy);
 
