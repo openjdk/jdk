@@ -133,10 +133,7 @@ public class TestVectorLogicConeFuzzer {
         comp.compile("--add-modules=jdk.incubator.vector");
 
         List<String> vmArgs = new ArrayList<>(List.of(
-            "--add-modules=jdk.incubator.vector",
-            "-XX:-TieredCompilation",
-            "-XX:UseAVX=3",
-            "-XX:CompileThresholdScaling=0.3"
+            "--add-modules=jdk.incubator.vector"
         ));
         vmArgs.addAll(Arrays.asList(args));
 
