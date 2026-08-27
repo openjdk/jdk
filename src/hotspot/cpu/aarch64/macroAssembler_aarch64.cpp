@@ -2331,14 +2331,12 @@ void MacroAssembler::profile_array_type_at_load(Register recv, Register mdp, int
 
   b(L_count_update);
   bind(null_free_non_atomic);
-  ldrw(rscratch1, Address(recv, layout_kind_offset));
   cmpw(rscratch1, (int)LayoutKind::NULL_FREE_NON_ATOMIC_FLAT);
   br(NE, nullable_atomic_flat);
   mov(offset, flat_nullfree_not_atomic_count_offset);
 
   b(L_count_update);
   bind(nullable_atomic_flat);
-  ldrw(rscratch1, Address(recv, layout_kind_offset));
   cmpw(rscratch1, (int)LayoutKind::NULLABLE_ATOMIC_FLAT);
   br(NE, failure);
   mov(offset, flat_nullable_count_offset);
