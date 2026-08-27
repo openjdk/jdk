@@ -3221,6 +3221,7 @@ class StubGenerator: public StubCodeGenerator {
     __ lwz             (keylen, arrayOopDesc::length_offset_in_bytes() -
                                 arrayOopDesc::base_offset_in_bytes(T_INT), key);
 
+    __ align(32);
     __ bind(L_enc_loop);
     __ load_byte_vector_unaligned(vIn, 0, from, tmp, vp);
     __ addi            (from, from, 16);
@@ -3230,6 +3231,7 @@ class StubGenerator: public StubCodeGenerator {
     __ addi            (to, to, 16);
     __ addic_          (len, len, -16);
     __ bne             (CR0, L_enc_loop);
+
     // save the last ciphertext block in rvec; it is the IV for the next call
     __ store_byte_vector_unaligned(vRet, 0, rvec, tmp, vp, vTmp);
     __ mr              (R3_RET, input_len);
@@ -3291,6 +3293,7 @@ class StubGenerator: public StubCodeGenerator {
     __ lwz             (keylen, arrayOopDesc::length_offset_in_bytes() -
                                 arrayOopDesc::base_offset_in_bytes(T_INT), key);
 
+    __ align(32);
     __ bind(L_dec_loop);
     __ load_byte_vector_unaligned(vRet, 0, from, tmp, vp);
     __ addi            (from, from, 16);
@@ -3302,6 +3305,7 @@ class StubGenerator: public StubCodeGenerator {
     __ addi            (to, to, 16);
     __ addic_          (len, len, -16);
     __ bne             (CR0, L_dec_loop);
+
     __ store_byte_vector_unaligned(vIV, 0, rvec, tmp, vp, vTmp);
     __ mr              (R3_RET, input_len);
     __ blr();
