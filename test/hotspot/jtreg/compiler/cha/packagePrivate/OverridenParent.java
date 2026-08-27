@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,16 +20,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package compiler.cha.packagePrivate;
 
-
-/*
- * @test
- * @requires os.family != "windows" & os.family != "aix"
- *
- * @summary converted from VM testbase runtime/signal/sigstop01.
- * VM testbase keywords: [signal, runtime, linux, macosx]
- *
- * @library /test/lib
- * @run main/native SigTestDriver SIGSTOP
+/**
+ * An abstract class such that all of its concrete subclasses have a single implementation of
+ * {@link #call} that is defined in a subclass of this class.
  */
-
+public abstract class OverridenParent {
+    int call() {
+        return 0;
+    }
+}

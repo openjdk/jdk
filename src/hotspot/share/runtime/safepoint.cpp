@@ -297,9 +297,9 @@ void SafepointSynchronize::arm_safepoint() {
   //  4. Blocked
   //     A thread which is blocked will not be allowed to return from the
   //     block condition until the safepoint operation is complete.
-  //  5. In VM or Transitioning between states
-  //     If a Java thread is currently running in the VM or transitioning
-  //     between states, the safepointing code will poll the thread state
+  //  5. In VM
+  //     If a Java thread is currently running in the VM,
+  //     the safepointing code will poll the thread state
   //     until the thread blocks itself when it attempts transitions to a
   //     new state or locking a safepoint checked monitor.
 

@@ -425,7 +425,7 @@ void ShenandoahGenerationalControlThread::service_concurrent_old_cycle(const She
       if (_heap->cancelled_gc()) {
         // Young generation bootstrap cycle has failed. Concurrent mark for old generation
         // is going to resume after degenerated bootstrap cycle completes.
-        log_info(gc)("Bootstrap cycle for old generation was cancelled");
+        log_info(gc, phases)("Bootstrap cycle for old generation was cancelled");
         return;
       }
 
@@ -656,7 +656,7 @@ bool ShenandoahGenerationalControlThread::request_concurrent_gc(ShenandoahGenera
     }
 
     // Cancel the old GC and wait for the control thread to start servicing the new request.
-    log_info(gc)("Preempting old generation mark to allow %s GC", generation->name());
+    log_info(gc, phases)("Preempting old generation mark to allow %s GC", generation->name());
     while (gc_mode() == servicing_old) {
       _heap->cancel_gc(GCCause::_shenandoah_concurrent_gc);
       notify_control_thread(ml, GCCause::_shenandoah_concurrent_gc, generation);

@@ -1245,7 +1245,7 @@ inline void Assembler::load_byte_vector_unaligned(VectorRegister dest, int offs,
   VectorSRegister vsr = dest->to_vsr();
   if (PowerArchitecturePPC64 >= 9) {
 #if !defined(VM_LITTLE_ENDIAN)
-    lxv(vsr, offs, base); // all vector load/store intructions use the same byte order on BE
+    lxv(vsr, offs, base); // all vector load/store instructions use the same byte order on BE
 #else
     if (offs == 0) {
       lxvb16x(vsr, base);
@@ -1273,7 +1273,7 @@ inline void Assembler::store_byte_vector_unaligned(VectorRegister val, int offs,
   VectorSRegister vsr = val->to_vsr();
   if (PowerArchitecturePPC64 >= 9) {
 #if !defined(VM_LITTLE_ENDIAN)
-    stxv(vsr, offs, base); // all vector load/store intructions use the same byte order on BE
+    stxv(vsr, offs, base); // all vector load/store instructions use the same byte order on BE
 #else
     if (offs == 0) {
       stxvb16x(vsr, base);
@@ -1316,7 +1316,7 @@ inline void Assembler::load_word_vector_unaligned(VectorRegister dest, int offs,
   VectorSRegister vsr = dest->to_vsr();
 #if !defined(VM_LITTLE_ENDIAN)
   if (PowerArchitecturePPC64 >= 9) {
-    lxv(vsr, offs, base); // all vector load/store intructions use the same byte order on BE
+    lxv(vsr, offs, base); // all vector load/store instructions use the same byte order on BE
   } else
 #endif
   if (offs == 0) {
@@ -1331,7 +1331,7 @@ inline void Assembler::store_word_vector_unaligned(VectorRegister val, int offs,
   VectorSRegister vsr = val->to_vsr();
 #if !defined(VM_LITTLE_ENDIAN)
   if (PowerArchitecturePPC64 >= 9) {
-    stxv(vsr, offs, base); // all vector load/store intructions use the same byte order on BE
+    stxv(vsr, offs, base); // all vector load/store instructions use the same byte order on BE
   } else
 #endif
   if (offs == 0) {

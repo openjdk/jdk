@@ -177,7 +177,7 @@ public abstract class JdbTest {
             log = new Log(out, argumentHandler);
 
             if (shouldPass()) {
-                log.println("TEST PASSED");
+                log.display("TEST PASSED");
                 return;
             }
 

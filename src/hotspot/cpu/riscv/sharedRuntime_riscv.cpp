@@ -1817,14 +1817,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   Label safepoint_in_progress, safepoint_in_progress_done;
 
-  // Switch thread to "native transition" state before reading the synchronization state.
-  // This additional state is necessary because reading and testing the synchronization
-  // state is not atomic w.r.t. GC, as this scenario demonstrates:
-  //     Java thread A, in _thread_in_native state, loads _not_synchronized and is preempted.
-  //     VM thread changes sync state to synchronizing and suspends threads for GC.
-  //     Thread A is resumed to finish this native method, but doesn't block here since it
-  //     didn't see any synchronization is progress, and escapes.
-  __ mv(t0, _thread_in_native_trans);
+  __ mv(t0, _thread_in_vm);
 
   __ sw(t0, Address(xthread, JavaThread::thread_state_offset()));
 
