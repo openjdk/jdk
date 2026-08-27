@@ -136,7 +136,7 @@ void ShenandoahConcurrentMark::mark_concurrent_roots() {
 
   WorkerThreads* workers = heap->workers();
   ShenandoahReferenceProcessor* rp = _generation->ref_processor();
-  _generation->rebalance_task_queues(workers->active_workers());
+
   switch (_generation->type()) {
     case YOUNG: {
       ShenandoahMarkConcurrentRootsTask<YOUNG> task(task_queues(), old_task_queues(), rp,
@@ -271,7 +271,6 @@ void ShenandoahConcurrentMark::finish_mark_work() {
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::finish_mark);
 
     TaskTerminator terminator(nworkers, task_queues());
-
     switch (_generation->type()) {
       case YOUNG:{
         ShenandoahFinalMarkingTask<YOUNG> task(this, &terminator);

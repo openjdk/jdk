@@ -388,10 +388,6 @@ void ShenandoahGeneration::post_initialize(ShenandoahHeap* heap) {
   assert(_free_set != nullptr, "bad initialization order");
 }
 
-void ShenandoahGeneration::rebalance_task_queues(uint workers) {
-  _task_queues->rebalance(workers);
-}
-
 ShenandoahObjToScanQueueSet* ShenandoahGeneration::old_gen_task_queues() const {
   return nullptr;
 }
@@ -401,7 +397,6 @@ void ShenandoahGeneration::scan_remembered_set(bool is_concurrent) {
 
   ShenandoahGenerationalHeap* const heap = ShenandoahGenerationalHeap::heap();
   uint nworkers = heap->workers()->active_workers();
-  rebalance_task_queues(nworkers);
 
   ShenandoahReferenceProcessor* rp = ref_processor();
   ShenandoahRegionChunkIterator work_list(nworkers);
