@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,7 +110,9 @@ void Rewriter::make_constant_pool_cache(TRAPS) {
   assert(_method_entry_index == _initialized_method_entries.length(), "Method entry size mismatch");
   ConstantPoolCache* cache =
       ConstantPoolCache::allocate(loader_data,
-                                  _initialized_indy_entries, _initialized_field_entries, _initialized_method_entries,
+                                  _initialized_indy_entries,
+                                  _initialized_field_entries,
+                                  _initialized_method_entries,
                                   CHECK);
 
   // initialize object cache in constant pool
