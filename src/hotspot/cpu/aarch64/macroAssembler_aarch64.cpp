@@ -2323,7 +2323,7 @@ void MacroAssembler::profile_array_type_at_load(Register recv, Register mdp, int
 
   Register offset = rscratch2;
   int layout_kind_offset = in_bytes(FlatArrayKlass::layout_kind_offset());
-  Label null_free_non_atomic, null_free_atomic, nullable_atomic_flat, failure, L_count_update;
+  Label null_free_non_atomic, nullable_atomic_flat, failure, L_count_update;
   ldrw(rscratch1, Address(recv, layout_kind_offset));
   cmpw(rscratch1, (int)LayoutKind::NULL_FREE_ATOMIC_FLAT);
   br(NE, null_free_non_atomic);

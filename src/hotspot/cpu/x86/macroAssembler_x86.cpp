@@ -5207,7 +5207,7 @@ void MacroAssembler::profile_array_type_at_load(Register recv, Register mdp, int
   }
   Register offset = rscratch1;
   int layout_kind_offset = in_bytes(FlatArrayKlass::layout_kind_offset());
-  Label null_free_non_atomic, null_free_atomic, nullable_atomic_flat, failure, L_count_update;
+  Label null_free_non_atomic, nullable_atomic_flat, failure, L_count_update;
   cmpl(Address(recv, layout_kind_offset), (int)LayoutKind::NULL_FREE_ATOMIC_FLAT);
   jccb(Assembler::notEqual, null_free_non_atomic);
   movptr(offset, flat_nullfree_atomic_count_offset);
