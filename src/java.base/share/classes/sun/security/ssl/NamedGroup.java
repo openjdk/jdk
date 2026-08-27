@@ -35,7 +35,6 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Objects;
 import java.util.Set;
 import javax.crypto.KeyAgreement;
@@ -434,33 +433,8 @@ enum NamedGroup {
         return "UNDEFINED-NAMED-GROUP(" + id + ")";
     }
 
-    public static List<NamedGroup> namesOf(String[] namedGroups) {
-        if (namedGroups == null) {
-            return null;
-        }
-
-        if (namedGroups.length == 0) {
-            return List.of();
-        }
-
-        List<NamedGroup> ngs = new ArrayList<>(namedGroups.length);
-        for (String ss : namedGroups) {
-            NamedGroup ng = NamedGroup.nameOf(ss);
-            if (ng == null || !ng.isAvailable) {
-                if (SSLLogger.isOn() &&
-                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
-                    SSLLogger.finest(
-                            "Ignore the named group (" + ss
-                                    + "), unsupported or unavailable");
-                }
-
-                continue;
-            }
-
-            ngs.add(ng);
-        }
-
-        return Collections.unmodifiableList(ngs);
+    static String[] namesOf(List<NamedGroup> groups) {
+        return groups.stream().map(ng -> ng.name).toArray(String[]::new);
     }
 
     // Is there any supported group permitted by the constraints?

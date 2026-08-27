@@ -266,9 +266,7 @@ final class SSLServerSocketImpl extends SSLServerSocket {
 
     @Override
     public String [] getSupportedNamedGroups() {
-        return sslContext.getSupportedNamedGroups().stream()
-                .map(ng -> ng.name)
-                .toArray(String[]::new);
+        return NamedGroup.namesOf(sslContext.getSupportedNamedGroups());
     }
 
     @Override

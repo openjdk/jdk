@@ -1417,9 +1417,7 @@ public final class SSLSocketImpl
 
     @Override
     public String [] getSupportedNamedGroups() {
-        return sslContext.getSupportedNamedGroups().stream()
-                .map(ng -> ng.name)
-                .toArray(String[]::new);
+        return NamedGroup.namesOf(sslContext.getSupportedNamedGroups());
     }
 
     /**
