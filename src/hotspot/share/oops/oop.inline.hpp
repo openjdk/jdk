@@ -272,10 +272,6 @@ inline void   oopDesc::float_field_put(int offset, jfloat value)    { *field_add
 inline jdouble oopDesc::double_field(int offset) const              { return *field_addr<jdouble>(offset);  }
 inline void    oopDesc::double_field_put(int offset, jdouble value) { *field_addr<jdouble>(offset) = value; }
 
-bool oopDesc::is_lock_neutral() const {
-  return mark().is_lock_neutral();
-}
-
 bool oopDesc::is_gc_marked() const {
   return mark().is_marked();
 }

@@ -728,7 +728,7 @@ bool ObjectSynchronizer::current_thread_holds_lock(JavaThread* current,
     }
   }
 
-  // Lock-neutral case, header in place
+  // Lock-neutral case
   assert(mark.is_lock_neutral(), "sanity check");
   return false;
 }
@@ -757,7 +757,7 @@ JavaThread* ObjectSynchronizer::get_lock_owner(ThreadsList * t_list, Handle h_ob
     }
   }
 
-  // Lock-neutral case, header in place.
+  // Lock-neutral case
   return nullptr;
 }
 
@@ -1782,7 +1782,6 @@ void ObjectSynchronizer::exit(oop object, BasicLock* lock, JavaThread* current) 
   assert(current == Thread::current(), "must be");
 
   markWord mark = object->mark();
-  assert(mark.is_fast_locked() || mark.has_monitor(), "must be");
 
   LockStack& lock_stack = current->lock_stack();
   if (mark.is_fast_locked()) {
@@ -1808,6 +1807,18 @@ void ObjectSynchronizer::exit(oop object, BasicLock* lock, JavaThread* current) 
       assert(recursion == 0, "Should not have unlocked here");
       return;
     }
+  }
+
+  // The object could become unlocked through a JNI call, which we have no other checks for.
+  // Give a fatal message if CheckJNICalls. Otherwise we ignore it.
+  if (mark.is_lock_neutral()) {
+    assert(ObjectSynchronizer::current_thread_holds_lock(current, Handle(current, object)),
+           "current must have proporly exited the monitor when using JNI");
+    if (CheckJNICalls) {
+      fatal("Object has been unlocked by JNI");
+    }
+
+    return;
   }
 
   assert(mark.has_monitor(), "must be");
