@@ -60,9 +60,7 @@ public:
   bool contains(oop obj) const override;
 
   void reserve_task_queues(uint workers) override;
-  void set_old_gen_task_queues(ShenandoahObjToScanQueueSet* old_gen_queues) {
-    _old_gen_task_queues = old_gen_queues;
-  }
+
   ShenandoahObjToScanQueueSet* old_gen_task_queues() const override {
     return _old_gen_task_queues;
   }
@@ -72,6 +70,12 @@ public:
   bool is_old_marking_active() const {
     return _old_gen_task_queues != nullptr;
   }
+
+  // Take a reference to the old task queues and reference processor
+  void prepare_for_bootstrap(ShenandoahGeneration* generation);
+
+  // Clear references to old gen marking
+  void clear_bootstrap_configuration();
 
   size_t used() const override;
   size_t used_regions() const override;
