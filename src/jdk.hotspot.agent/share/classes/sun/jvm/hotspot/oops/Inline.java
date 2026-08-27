@@ -41,6 +41,11 @@ public class Inline extends Instance {
     }
 
     @Override
+    public boolean isInline() {
+        return true;
+    }
+
+    @Override
     public void printValueOn(PrintStream tty) {
         tty.print("Inlined object");
     }
