@@ -6285,6 +6285,11 @@ void Compile::eliminate_doubled_index(Node* n) {
   }
   for (uint i = start; i < end; i++) {
     Node* phi = n->in(i);
+    jint k = 0; // after unrolling the lagging value is AddI(phi, k), not phi itself
+    if (phi != nullptr && phi->Opcode() == Op_AddI && phi->in(2)->is_Con()) {
+      k = phi->in(2)->get_int();
+      phi = phi->in(1);
+    }
     if (phi != nullptr && phi->is_Phi() && phi->req() == 3 && phi->in(0)->is_CountedLoop()) {
       Node* incr = phi->in(2);
       if (incr != nullptr && incr->Opcode() == Op_AddI && incr->outcnt() >= 2 &&
@@ -6296,8 +6301,9 @@ void Compile::eliminate_doubled_index(Node* n) {
           Node* cmp = ctrl->in(0)->in(1)->is_Bool() ? ctrl->in(0)->in(1)->in(1) : nullptr;
           if (cmp == nullptr || (cmp->in(1) != incr && cmp->in(2) != incr)) { continue; }
         }
-        jint stride = incr->in(2)->get_int();
-        n->set_req(i, new AddINode(incr, ConINode::make(java_subtract(0, stride))));
+        jint delta = java_subtract(k, incr->in(2)->get_int());
+        if (delta == 0) { continue; }
+        n->set_req(i, new AddINode(incr, ConINode::make(delta)));
       }
     }
   }
