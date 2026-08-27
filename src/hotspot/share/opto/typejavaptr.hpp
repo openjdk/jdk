@@ -357,6 +357,15 @@ private:
         if (!exact_ary_type->is_atomic() && other_ary_type->is_atomic()) {
           return true;
         }
+        if (!exact_ary_type->is_flat() && other_ary_type->is_flat()) {
+          return true;
+        }
+        if (!exact_ary_type->is_not_flat() && other_ary_type->is_not_flat()) {
+          return true;
+        }
+        if (!exact_ary_type->is_not_null_free() && other_ary_type->is_not_null_free()) {
+          return true;
+        }
       }
 
       auto exact_elem = exact_ary_type->elem();

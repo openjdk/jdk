@@ -196,7 +196,7 @@ public:
         reason = Deoptimization::Reason_class_check;
       }
       if (reason != Deoptimization::Reason_none) {
-        Node* test = _parse.null_free_array_test(_array, false);
+        Node* test = _parse.null_free_array_test(array, false);
         IfNode* iff = _parse.create_and_xform_if(_parse.control(), test, PROB_MIN, COUNT_UNKNOWN);
         _parse.set_control(_gvn.transform(new IfTrueNode(iff)));
         {
@@ -210,7 +210,7 @@ public:
           }
           return _parse.C->top();
         }
-        const TypeAryPtr* array_type = _gvn.type(_array)->is_aryptr()->cast_to_null_free(true);
+        const TypeAryPtr* array_type = _gvn.type(array)->is_aryptr()->cast_to_null_free(true);
         array = _gvn.transform(new CheckCastPPNode(_parse.control(), array, array_type));
         if (_parse.needs_range_check(array_type->size(), _array_index)) {
           decorator_set |= C2_UNKNOWN_CONTROL_LOAD;
