@@ -514,19 +514,20 @@ void C2_MacroAssembler::string_indexof_char(Register str1, Register cnt1,
                                             Register tmp3, Register tmp4,
                                             bool isL)
 {
-  Label CH1_LOOP, HIT, NOMATCH, DONE, SHORT;
+  Label CH1_LOOP, HIT, DONE, SHORT;
   Register ch1 = t0;
   Register orig_cnt = t1;
-  Register mask1 = tmp3;
+  Register mask1 = tmp1;
   Register mask2 = tmp2;
-  Register match_mask = tmp1;
+  Register match_mask = tmp3;
   Register loop_step = tmp4;
   Register trailing_chars = tmp4;
   Register unaligned_chars = tmp4;
   Register start_index = tmp4;
 
   BLOCK_COMMENT("string_indexof_char {");
-  beqz(cnt1, NOMATCH);
+  mv(result, -1);
+  beqz(cnt1, DONE);
 
   subi(t0, cnt1, isL ? 32 : 16);
   mv(start_index, zr);
@@ -581,7 +582,7 @@ void C2_MacroAssembler::string_indexof_char(Register str1, Register cnt1,
   bnez(match_mask, HIT);
   bge(cnt1, loop_step, CH1_LOOP);
 
-  beqz(cnt1, NOMATCH);
+  beqz(cnt1, DONE);
   if (!isL) {
     srli(cnt1, cnt1, 1);
   }
@@ -601,7 +602,7 @@ void C2_MacroAssembler::string_indexof_char(Register str1, Register cnt1,
 
   bind(HIT);
   // count bits of trailing zero chars
-  ctzc_bits(trailing_chars, match_mask, isL, ch1, result);
+  ctzc_bits(trailing_chars, match_mask, isL, mask1, mask2);
   srli(trailing_chars, trailing_chars, 3);
   addi(cnt1, cnt1, 8);
 
@@ -613,10 +614,6 @@ void C2_MacroAssembler::string_indexof_char(Register str1, Register cnt1,
 
   sub(result, orig_cnt, cnt1);
   add(result, result, trailing_chars);
-  j(DONE);
-
-  bind(NOMATCH);
-  mv(result, -1);
 
   bind(DONE);
   BLOCK_COMMENT("} string_indexof_char");
