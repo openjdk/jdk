@@ -49,6 +49,7 @@ public class VectorPartialMaskOperationTest {
     public static void main(String[] args) {
         TestFramework framework = new TestFramework();
         framework.addFlags("--add-modules=jdk.incubator.vector");
+        framework.setDefaultWarmup(10000);
         framework.start();
     }
 
