@@ -1772,7 +1772,7 @@ public:
       InlineKlass* vk = _ik->get_inline_type_field_klass(fd->index());
 
       // The "logical address" of this flattened field
-      address field_addr = _obj + fd->offset() - vk->payload_offset();
+      address field_addr = _obj + fd->offset() - vk->layouts().payload_offset();
 
       if (fd->is_null_free_inline_type() || !vk->is_payload_marked_as_null(field_addr)) {
         // Found a non-null flattened instance of vk. Let's record vk.
@@ -1829,7 +1829,7 @@ void HeapShared::find_inline_classes(KlassSubGraphInfo* subgraph_info, oop orig_
         }
         if (elem_k->has_inlined_fields()) {
           // "logical address" of the i-th array element.
-          address elem = static_cast<address>(fa->value_at_addr(i, fak->layout_helper())) - elem_k->payload_offset();
+          address elem = static_cast<address>(fa->value_at_addr(i, fak->layout_helper())) - elem_k->layouts().payload_offset();
           InlineKlassFinder finder(subgraph_info, elem_k, elem);
           finder.find();
         }

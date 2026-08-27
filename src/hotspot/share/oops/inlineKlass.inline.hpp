@@ -49,7 +49,7 @@ void InlineKlass::oop_iterate_value_payload_f(address payload, Function function
   // OopMap offsets are relative to an object header, but we are iterating over
   // inlined value payloads, which often don't have an object header. Set up a
   // synthetic object base that can be used by the oop map offset calculations.
-  const address synthetic_object_base = payload - payload_offset();
+  const address synthetic_object_base = payload - layouts().payload_offset();
 
   for (; map < end_map; map++) {
     T* p = (T*) (synthetic_object_base + map->offset());
@@ -78,7 +78,7 @@ inline void InlineKlass::oop_iterate_value_payload_bounded(address payload, OopC
   // OopMap offsets are relative to an object header, but we are iterating over
   // inlined value payloads, which often don't have an object header. Set up a
   // synthetic object base that can be used by the oop map offset calculations.
-  const address synthetic_object_base = payload - payload_offset();
+  const address synthetic_object_base = payload - layouts().payload_offset();
 
   for (; map < end_map; map++) {
     T* p = (T*) (synthetic_object_base + map->offset());
