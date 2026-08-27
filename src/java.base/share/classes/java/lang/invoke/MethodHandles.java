@@ -7703,6 +7703,18 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
     }
 
     /**
+     * Creates a synchronizing method handle that executes the give {@code body}
+     * while synchronizing on a lock object passed as the first argument.
+     *
+     * @param body body of the synchronized block
+     * @return the syncrhonizing method handle
+     */
+    public static MethodHandle synchronize(MethodHandle body) {
+        Objects.requireNonNull(body);
+        return MethodHandleImpl.makeSynchronize(body);
+    }
+
+    /**
      * Adapts a target var handle by pre-processing incoming and outgoing values using a pair of filter functions.
      * <p>
      * When calling e.g. {@link VarHandle#set(Object...)} on the resulting var handle, the incoming value (of type {@code T}, where

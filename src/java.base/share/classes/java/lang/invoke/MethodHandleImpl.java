@@ -1347,6 +1347,7 @@ abstract class MethodHandleImpl {
         GUARD_WITH_CATCH,
         TRY_FINALLY,
         TABLE_SWITCH,
+        SYNCHRONIZE,
         LOOP,
         ARRAY_LOAD,
         ARRAY_STORE,
@@ -1497,7 +1498,8 @@ abstract class MethodHandleImpl {
             NF_loop = 4,
             NF_profileBoolean = 5,
             NF_tableSwitch = 6,
-            NF_LIMIT = 7;
+            NF_synchronize = 7,
+            NF_LIMIT = 8;
 
     private static final @Stable NamedFunction[] NFS = new NamedFunction[NF_LIMIT];
 
@@ -1527,6 +1529,8 @@ abstract class MethodHandleImpl {
                                                 .getDeclaredMethod("profileBoolean", boolean.class, int[].class));
                 case NF_tableSwitch         -> new NamedFunction(MethodHandleImpl.class
                                                 .getDeclaredMethod("tableSwitch", int.class, MethodHandle.class, CasesHolder.class, Object[].class));
+                case NF_synchronize         -> new NamedFunction(MethodHandleImpl.class
+                                                .getDeclaredMethod("synchronize", Object.class, MethodHandle.class, Object[].class));
                 default -> throw new InternalError("Undefined function: " + func);
             };
         } catch (ReflectiveOperationException ex) {
@@ -2243,6 +2247,91 @@ abstract class MethodHandleImpl {
             selectedCase = caseActions[input];
         }
         return selectedCase.invokeWithArguments(args);
+    }
+
+    public static MethodHandle makeSynchronize(MethodHandle body) {
+        MethodType varargsType = body.type().changeReturnType(Object[].class);
+        MethodHandle collectArgs = varargsArray(body.type().parameterCount()).asType(varargsType);
+
+        MethodHandle unboxResult = unboxResultHandle(body.type().returnType());
+
+        BoundMethodHandle.SpeciesData data = BoundMethodHandle.speciesData_LLL();
+        MethodType type = body.type().insertParameterTypes(0, Object.class);
+        LambdaForm form = makeSynchronizeForm(type.basicType(), data);
+        BoundMethodHandle mh;
+        try {
+            mh = (BoundMethodHandle) data.factory().invokeBasic(type, form, (Object) body, (Object) collectArgs,
+                    (Object) unboxResult);
+        } catch (Throwable ex) {
+            throw uncaughtException(ex);
+        }
+        assert(mh.type() == type);
+        return mh;
+    }
+
+    private static LambdaForm makeSynchronizeForm(MethodType basicType, BoundMethodHandle.SpeciesData data) {
+        LambdaForm lform = basicType.form().cachedLambdaForm(MethodTypeForm.LF_SYNCHRONIZE);
+        if (lform != null) {
+            return lform;
+        }
+
+        final int THIS_MH       = 0;
+        final int ARG_BASE      = 1; // start of incoming arguments
+        final int ARG_LIMIT     = ARG_BASE + basicType.parameterCount();
+        final int ARG_LOCK      = ARG_BASE;
+        assert ARG_LOCK < ARG_LIMIT;
+        final int ARGS_FORWARDED = ARG_LOCK + 1; // skip lock arg
+
+        int nameCursor = ARG_LIMIT;
+        final int GET_COLLECT_ARGS  = nameCursor++;
+        final int GET_BODY_HANDLE   = nameCursor++;
+        final int GET_UNBOX_RESULT  = nameCursor++;
+        final int BOXED_ARGS        = nameCursor++;
+        final int SYNCHRONIZE       = nameCursor++;
+        final int UNBOXED_RESULT    = nameCursor++;
+
+        int fieldCursor = 0;
+        final int FIELD_BODY_HANDLE  = fieldCursor++;
+        final int FIELD_COLLECT_ARGS  = fieldCursor++;
+        final int FIELD_UNBOX_RESULT  = fieldCursor++;
+
+        Name[] names = invokeArguments(nameCursor - ARG_LIMIT, basicType);
+
+        names[THIS_MH] = names[THIS_MH].withConstraint(data);
+        names[GET_BODY_HANDLE] = new Name(data.getterFunction(FIELD_BODY_HANDLE), names[THIS_MH]);
+        names[GET_COLLECT_ARGS]  = new Name(data.getterFunction(FIELD_COLLECT_ARGS), names[THIS_MH]);
+        names[GET_UNBOX_RESULT]  = new Name(data.getterFunction(FIELD_UNBOX_RESULT), names[THIS_MH]);
+
+        {
+            MethodType collectArgsType = basicType.dropParameterTypes(0, 1).changeReturnType(Object.class);
+            MethodHandle invokeBasic = MethodHandles.basicInvoker(collectArgsType);
+            Object[] args = new Object[invokeBasic.type().parameterCount()];
+            args[0] = names[GET_COLLECT_ARGS];
+            System.arraycopy(names, ARGS_FORWARDED, args, 1, ARG_LIMIT - ARGS_FORWARDED); // skip lock arg
+            names[BOXED_ARGS] = new Name(new NamedFunction(makeIntrinsic(invokeBasic, Intrinsic.SYNCHRONIZE)), args);
+        }
+
+        {
+            Object[] tfArgs = new Object[]{
+                    names[ARG_LOCK], names[GET_BODY_HANDLE], names[BOXED_ARGS]};
+            names[SYNCHRONIZE] = new Name(getFunction(NF_synchronize), tfArgs);
+        }
+
+        {
+            MethodHandle invokeBasic = MethodHandles.basicInvoker(MethodType.methodType(basicType.rtype(), Object.class));
+            Object[] unboxArgs = new Object[]{names[GET_UNBOX_RESULT], names[SYNCHRONIZE]};
+            names[UNBOXED_RESULT] = new Name(invokeBasic, unboxArgs);
+        }
+
+        lform = LambdaForm.create(basicType.parameterCount() + 1, names, Kind.SYNCHRONIZE);
+        return basicType.form().setCachedLambdaForm(MethodTypeForm.LF_SYNCHRONIZE, lform);
+    }
+
+    @Hidden
+    static Object synchronize(Object synchronizeOn, MethodHandle body, Object[] args) throws Throwable {
+        synchronized (synchronizeOn) {
+            return body.invokeWithArguments(args);
+        }
     }
 
     // type is validated, value is not
