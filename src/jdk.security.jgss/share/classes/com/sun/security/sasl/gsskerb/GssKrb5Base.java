@@ -186,8 +186,14 @@ abstract class GssKrb5Base extends AbstractSaslImpl {
 
     public void dispose() throws SaslException {
         if (secCtx != null) {
-            cleanable.clean();
-            secCtx = null;
+            try {
+                cleanable.clean();
+            } catch (RuntimeException re) {
+                throw new SaslException("Problem disposing GSS context",
+                        re.getCause());
+            } finally {
+                secCtx = null;
+            }
         }
     }
 
