@@ -41,37 +41,38 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
+import java.util.function.BiFunction;
 
 public class AddAll {
     static final int N = 100;
     public static void main(String[] args) {
-        test(new ArrayList<Integer>());
-        test(new LinkedList<Integer>());
-        test(new HashSet<Integer>());
-        test(new LinkedHashSet<Integer>());
+        test(new ArrayList<Integer>(), AddAll::range);
+        test(new LinkedList<Integer>(), AddAll::range);
+        test(new HashSet<Integer>(), AddAll::range);
+        test(new LinkedHashSet<Integer>(), AddAll::range);
 
-        testTuple(new ArrayList<VClass>());
-        testTuple(new LinkedList<VClass>());
-        testTuple(new HashSet<VClass>());
-        testTuple(new LinkedHashSet<VClass>());
+        test(new ArrayList<VClass>(), AddAll::rangeTuple);
+        test(new LinkedList<VClass>(), AddAll::rangeTuple);
+        test(new HashSet<VClass>(), AddAll::rangeTuple);
+        test(new LinkedHashSet<VClass>(), AddAll::rangeTuple);
     }
 
     private static Random rnd = new Random();
 
-    static void test(Collection<Integer> c) {
+    static <T> void test(Collection<T> c, BiFunction<Integer, Integer,T[]> rangeFactory) {
         int x = 0;
         for (int i = 0; i < N; i++) {
             int rangeLen = rnd.nextInt(10);
-            if (Collections.addAll(c, range(x, x + rangeLen)) !=
+            if (Collections.addAll(c, rangeFactory.apply(x, x + rangeLen)) !=
                     (rangeLen != 0))
                 throw new RuntimeException("" + rangeLen);
             x += rangeLen;
         }
         if (c instanceof List) {
-            if (!c.equals(Arrays.asList(range(0, x))))
+            if (!c.equals(Arrays.asList(rangeFactory.apply(0, x))))
                 throw new RuntimeException(x +": "+c);
         } else {
-            if (!c.equals(new HashSet<Integer>(Arrays.asList(range(0, x)))))
+            if (!c.equals(new HashSet<T>(Arrays.asList(rangeFactory.apply(0, x)))))
                 throw new RuntimeException(x +": "+c);
         }
     }
@@ -81,24 +82,6 @@ public class AddAll {
         for (int i = from, j=0; i < to; i++, j++)
             result[j] = new Integer(i);
         return result;
-    }
-
-    static void testTuple(Collection<VClass> c) {
-        int x = 0;
-        for (int i = 0; i < N; i++) {
-            int rangeLen = rnd.nextInt(10);
-            if (Collections.addAll(c, rangeTuple(x, x + rangeLen)) !=
-                    (rangeLen != 0))
-                throw new RuntimeException("" + rangeLen);
-            x += rangeLen;
-        }
-        if (c instanceof List) {
-            if (!c.equals(Arrays.asList(rangeTuple(0, x))))
-                throw new RuntimeException(x + ": " + c);
-        } else {
-            if (!c.equals(new HashSet<VClass>(Arrays.asList(rangeTuple(0, x)))))
-                throw new RuntimeException(x + ": " + c);
-        }
     }
 
     private static VClass[] rangeTuple(int from, int to) {
