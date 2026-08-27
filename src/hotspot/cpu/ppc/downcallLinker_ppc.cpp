@@ -374,5 +374,5 @@ void DowncallLinker::StubGenerator::generate() {
 
   //////////////////////////////////////////////////////////////////////////////
 
-  __ invalidate_icache();
+  // Code will be copied. No ICache sync required.
 }

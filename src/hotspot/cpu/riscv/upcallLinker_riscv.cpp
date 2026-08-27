@@ -330,7 +330,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
 
   //////////////////////////////////////////////////////////////////////////////
 
-  __ invalidate_icache();
+  // Code will be copied. No ICache sync required.
 
 #ifndef PRODUCT
   stringStream ss;
