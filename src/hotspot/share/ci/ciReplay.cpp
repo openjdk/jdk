@@ -1083,7 +1083,7 @@ class CompileReplay : public StackObj {
       case T_ARRAY:
       case T_OBJECT:
         if (fd->is_null_free_inline_type() && fd->is_flat()) {
-          InlineKlass* vk = InlineKlass::cast(fd->field_holder()->get_inline_type_field_klass(fd->index()));
+          InlineKlass* vk = fd->flat_field_klass();
           int field_offset = fd->offset() - vk->payload_offset();
           oop obj = cast_to_oop(cast_from_oop<address>(_vt) + field_offset);
           InlineTypeFieldInitializer init_fields(obj, _replay);

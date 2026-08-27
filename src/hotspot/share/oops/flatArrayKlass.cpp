@@ -429,9 +429,19 @@ void FlatArrayKlass::oop_print_elements_on(flatArrayOop fa, outputStream* st) {
   for(int index = 0; index < print_len; index++) {
     int off = (address) fa->value_at_addr(index, layout_helper()) - cast_from_oop<address>(fa);
     st->print_cr(" - Index %3d offset %3d: ", index, off);
-    oop obj = cast_to_oop((address)fa->value_at_addr(index, layout_helper()) - vk->payload_offset());
-    FieldPrinter print_field(st, obj);
-    vk->do_nonstatic_fields(&print_field);
+    if (!fa->is_null_free_array() && fa->obj_at_is_null(index)) {
+      st->print_cr(" - (null)");
+    } else {
+      size_t base_offset = fa->value_offset(index, layout_helper());
+      if (base_offset >= max_jint - 0x1000) {
+        // TODO: the oopDesc::xxx_at() APIs are limited to int offsets, but it's
+        // possible for a value object be inlined at an offset higher than 0x7ffffffff.
+        st->print_cr(" - ???");
+      } else {
+        FieldPrinter print_field(st, fa, /*indent*/0, vk, checked_cast<int>(base_offset));
+        vk->do_nonstatic_fields(&print_field);
+      }
+    }
     st->cr();
   }
   int remaining = fa->length() - print_len;

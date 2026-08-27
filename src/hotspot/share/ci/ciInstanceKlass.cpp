@@ -593,7 +593,7 @@ void ciInstanceKlass::compute_nonstatic_fields_impl(const GrowableArray<ciField*
 
     fieldDescriptor& fd = fs.field_descriptor();
     if (fd.is_flat()) {
-      InlineKlass* k = this_klass->get_inline_type_field_klass(fd.index());
+      InlineKlass* k = fd.flat_field_klass();
       ciInlineKlass* vk = CURRENT_ENV->get_klass(k)->as_inline_klass();
       field_num += vk->nof_nonstatic_fields();
       field_num += fd.has_null_marker() ? 1 : 0;
@@ -630,7 +630,7 @@ void ciInstanceKlass::compute_nonstatic_fields_impl(const GrowableArray<ciField*
 
     if (fd.is_flat()) {
       // Flat fields are embedded
-      Klass* k = get_instanceKlass()->get_inline_type_field_klass(fd.index());
+      Klass* k = fd.flat_field_klass();
       ciInlineKlass* vk = CURRENT_ENV->get_klass(k)->as_inline_klass();
       // Iterate over fields of the flat inline type and copy them to 'this'
       for (int i = 0; i < vk->nof_nonstatic_fields(); ++i) {

@@ -1746,47 +1746,30 @@ void HeapShared::init_box_classes(TRAPS) {
 // Used by HeapShared::find_inline_classes().
 class HeapShared::InlineKlassFinder : public FieldClosure {
   KlassSubGraphInfo* _subgraph_info;
-  InstanceKlass* _ik;
-  address _obj;
+  oop _obj;
 public:
-  // obj points to the "logical address" of:
-  //     (a) a regular heap object, or
-  //     (b) an element of a flattened array, or
-  //     (c) a flattened field embedded inside a heap object.
-  // For (a), obj is the same as the address of the heap object.
-  // For (b) and (c), obj points to InlineKlass::cast(_ik)->payload_offset() bytes below
-  // the payload.
-  InlineKlassFinder(KlassSubGraphInfo* subgraph_info, InstanceKlass* ik, address obj)
-    : _subgraph_info(subgraph_info), _ik(ik), _obj(obj) {
+  InlineKlassFinder(KlassSubGraphInfo* subgraph_info, oop obj, InlineKlass* inline_klass, int inline_offset)
+    : FieldClosure(inline_klass, inline_offset), _subgraph_info(subgraph_info),_obj(obj) {
     precond(obj != nullptr);
-    precond(ik->has_inlined_fields());
+    assert(obj->klass() != inline_klass, "a value class cannot be inlined into itself");
   }
 
-  // This function is called on every field of _ik.
   void do_field(fieldDescriptor* fd) override {
     if (fd->is_flat()) {
       precond(fd->field_type() == T_OBJECT);
-      precond(_ik == fd->field_holder());
 
-      // The type of this flattened field
-      InlineKlass* vk = _ik->get_inline_type_field_klass(fd->index());
-
-      // The "logical address" of this flattened field
-      address field_addr = _obj + fd->offset() - vk->payload_offset();
-
-      if (fd->is_null_free_inline_type() || !vk->is_payload_marked_as_null(field_addr)) {
-        // Found a non-null flattened instance of vk. Let's record vk.
+      if (!fd->is_flat_field_marked_as_null(_obj, this)) {
+        // Found a non-null inlined instance of vk. Let's record vk.
+        InlineKlass* vk = fd->flat_field_klass();
         add_inline_class(_subgraph_info, vk);
         if (vk->has_inlined_fields()) {
-          InlineKlassFinder finder(_subgraph_info, vk, field_addr);
-          finder.find();
+          // Scan the fields of this inlined instance of vk whose payload is at field_offset_in_obj.
+          int field_offset_in_obj = fd->field_offset_in_obj(this);
+          InlineKlassFinder finder(_subgraph_info, _obj, vk, field_offset_in_obj);
+          vk->do_nonstatic_fields(&finder);
         }
       }
     }
-  }
-
-  void find() {
-    _ik->do_nonstatic_fields(this);
   }
 };
 
@@ -1798,7 +1781,7 @@ void HeapShared::add_inline_class(KlassSubGraphInfo* subgraph_info, InlineKlass*
   }
 }
 
-// Recursively scan for any InlineKlass K that has least one non-null flattened instance
+// Recursively scan for any InlineKlass K that has least one non-null inlined instance
 // inside orig_obj. K should be recorded with add_inline_class().
 //
 // Reason for doing this:
@@ -1808,10 +1791,10 @@ void HeapShared::add_inline_class(KlassSubGraphInfo* subgraph_info, InlineKlass*
 //         @NullRestricted Point p1;
 //         @NullRestricted Point p2; ... }
 //
-// Klasses of non-flattened instances are already recorded by HeapShared::archive_object().
+// Klasses of non-inlined instances are already recorded by HeapShared::archive_object().
 //
 // If only a single instance of Line is archived, HeapShared::archive_object() would
-// have never visited a (non-flattened) instance of Point, but we must store Point in
+// have never visited a (non-inlined) instance of Point, but we must store Point in
 // AOT-initialized state. This function finds Point.
 void HeapShared::find_inline_classes(KlassSubGraphInfo* subgraph_info, oop orig_obj) {
   Klass* klass = orig_obj->klass();
@@ -1825,21 +1808,26 @@ void HeapShared::find_inline_classes(KlassSubGraphInfo* subgraph_info, oop orig_
     for (int i = 0; i < fa->length(); i++) {
       if (fak->is_null_free_array_klass() || !fa->obj_at_is_null(i)) {
         if (!added) {
+          // add elem_k for the first non-null element that we found.
           add_inline_class(subgraph_info, elem_k);
+          added = true;
         }
+
+        // Each element in fa may have different null fields, so we must scan
+        // all elements to ensure discovery of all non-null fields.
         if (elem_k->has_inlined_fields()) {
-          // "logical address" of the i-th array element.
-          address elem = static_cast<address>(fa->value_at_addr(i, fak->layout_helper())) - elem_k->payload_offset();
-          InlineKlassFinder finder(subgraph_info, elem_k, elem);
-          finder.find();
+          size_t value_offset = fa->value_offset(i, fak->layout_helper());
+          guarantee(value_offset <= max_jint, "large value array not supported by AOT");
+          InlineKlassFinder finder(subgraph_info, orig_obj, elem_k, value_offset);
+          elem_k->do_nonstatic_fields(&finder);
         }
       }
     }
   } else if (klass->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(klass);
     if (ik->has_inlined_fields()) {
-      InlineKlassFinder finder(subgraph_info, ik, cast_from_oop<address>(orig_obj));
-      finder.find();
+      InlineKlassFinder finder(subgraph_info, orig_obj, nullptr, 0);
+      ik->do_nonstatic_fields(&finder);
     }
   }
 }

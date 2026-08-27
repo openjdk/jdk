@@ -66,6 +66,7 @@ public class AOTMapReader {
         ArrayList<HeapObject> heapObjects = new ArrayList<>();
         HashMap<Long, HeapObject> oopToObject = new HashMap<>();
         HashMap<Long, HeapObject> narrowOopToObject = new HashMap<>();
+        HashMap<String, ArrayList<HeapObject>> heapObjectsByType = new HashMap<>();
         public int stringCount = 0;
 
         void add(HeapObject heapObject) {
@@ -77,6 +78,13 @@ public class AOTMapReader {
             if (heapObject.className.equals("java.lang.String")) {
                 stringCount ++;
             }
+
+            ArrayList<HeapObject> objs = heapObjectsByType.get(heapObject.className);
+            if (objs == null) {
+                objs = new ArrayList<>();
+                heapObjectsByType.put(heapObject.className, objs);
+            }
+            objs.add(heapObject);
         }
 
         public int heapObjectCount() {
@@ -94,6 +102,19 @@ public class AOTMapReader {
         public void shouldHaveClass(String className) {
             if (!hasClass(className)) {
                 throw new RuntimeException("AOT map file is missing class " + className);
+            }
+        }
+
+        public String[] getHeapObjectsOfType(String typeName) {
+            ArrayList<HeapObject> list = heapObjectsByType.get(typeName);
+            if (list == null) {
+                return null;
+            } else {
+                String[] objs = new String[list.size()];
+                for (int i = 0; i < list.size(); i++) {
+                    objs[i] = list.get(i).stringContent;
+                }
+                return objs;
             }
         }
     }
@@ -128,10 +149,12 @@ public class AOTMapReader {
         ArrayList<Field> fields;
         String className;
         Klass klass;
+        String stringContent;
 
         HeapObject(String className, String oop, String narrowOop) {
             this.className = className;
             address = new HeapAddress(oop, narrowOop);
+            stringContent = "";
         }
 
         void setKlass(String klassName, String address) {
@@ -143,6 +166,9 @@ public class AOTMapReader {
                 fields = new ArrayList<Field>();
             }
             fields.add(new Field(name, offset, oopStr, narrowOopStr));
+        }
+        void setStringContent(String s) {
+            stringContent = s;
         }
     }
 
@@ -218,6 +244,7 @@ public class AOTMapReader {
     // 0x00000008000d18a0: @@ Class             520 java.lang.Cloneable
     static Pattern classPattern = Pattern.compile("^0x([0-9a-f]+): @@ Class [ ]*([0-9]+) (.*)");
 
+    static StringBuilder currentHeapObjectLines = null;
 
     private static Matcher match(String line, Pattern pattern) {
         Matcher m = pattern.matcher(line);
@@ -229,8 +256,14 @@ public class AOTMapReader {
     }
 
     private static void parseHeapObject(String className, String oop, String narrowOop) throws IOException {
-        HeapObject heapObject = parseHeapObjectImpl(className, oop, narrowOop);
-        mapFile.add(heapObject);
+        try {
+            currentHeapObjectLines = new StringBuilder();
+            HeapObject heapObject = parseHeapObjectImpl(className, oop, narrowOop);
+            heapObject.setStringContent(currentHeapObjectLines.toString());
+            mapFile.add(heapObject);
+        } finally {
+            currentHeapObjectLines = null;
+        }
     }
 
     private static void parseFlatNullFree(Matcher m) throws IOException {
@@ -368,6 +401,13 @@ public class AOTMapReader {
     static String nextLine()  throws IOException {
         line = reader.readLine();
         ++ lineCount;
+
+        if (currentHeapObjectLines != null) {
+            if (currentHeapObjectLines.length() > 0) {
+                currentHeapObjectLines.append("\n");
+            }
+            currentHeapObjectLines.append(line);
+        }
         return line;
     }
 

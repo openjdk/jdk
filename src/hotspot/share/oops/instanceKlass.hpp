@@ -79,26 +79,58 @@ class OopMapCache;
 class InterpreterOopMap;
 class PackageEntry;
 class ModuleEntry;
+class InlineKlass;
 
-// This is used in iterators below.
+// FieldClosure is used to iterate on the fields of an InstanceKlass.
+// - When _inline_klass is null, _inline_offset must be zero. This is used for
+//   - Iterating on the static fields of a class, or
+//   - Iterating on the non-static fields in a heap oop (excluding any fields declared
+//     inside inlined fields).
+// - When _inline_klass is non-null, _inline_offset must be non-zero. This is used for
+//   iterating on the fields of a value object of the type _inline_klass. The
+//   payload of the value object is inlined at _inline_offset from the heap address
+//   of the oop.
+//
+// For example, if we have a heap oop of the Line class:
+//
+//      value class Point {
+//          @NullRestricted Integer x;
+//          @NullRestricted Integer y;
+//      }
+//      value class Line {
+//          @NullRestricted Point p1;
+//          @NullRestricted Point p2;
+//      }
+//
+// Assuming that object header is 8 bytes:
+// When do_field() is called on:  _inline_klass: _inline_offset:
+//   Line::p1                       null           0
+//   Line::p2                       null           0
+//   Line::p1::x                    Point          8  -> p1 is inlined at offset 8 of the heap oop
+//   Line::p1::y                    Point          8
+//   Line::p2::x                    Point         16
+//   Line::p2::y                    Point         16
+//   Line::p1::x::value             Integer        8
+//   Line::p1::y::value             Integer       12
+//   Line::p2::x::value             Integer       16
+//   Line::p2::y::value             Integer       20  -> p2.y is inlined at offset 20 of the heap oop
 class FieldClosure: public StackObj {
+  InlineKlass* _inline_klass;
+  int _inline_offset; // in bytes
 public:
-  virtual void do_field(fieldDescriptor* fd) = 0;
-};
+  FieldClosure(InlineKlass* inline_klass = nullptr, int inline_offset = 0)
+    : _inline_klass(inline_klass), _inline_offset(inline_offset) {
+    if (inline_klass == nullptr) {
+      precond(inline_offset == 0);
+    } else {
+      assert(inline_offset != 0, "value object cannot be inlined at offset 0");
+    }
+  }
 
-// Print fields.
-// If "obj" argument to constructor is null, prints fields as if they are static fields,
-// otherwise prints non-static fields. It is possible to print non-static fields the same
-// way as static fields when no oops are available, such as when debug printing classes.
-class FieldPrinter: public FieldClosure {
-   oop _obj;
-   outputStream* _st;
-   int _indent;
-   int _base_offset;
- public:
-   FieldPrinter(outputStream* st, oop obj = nullptr, int indent = 0, int base_offset = 0) :
-                 _obj(obj), _st(st), _indent(indent), _base_offset(base_offset) {}
-   void do_field(fieldDescriptor* fd);
+  InlineKlass* inline_klass() const { return _inline_klass; }
+  int inline_offset() const { return _inline_offset; }
+
+  virtual void do_field(fieldDescriptor* fd) = 0;
 };
 
 // Describes where oops are located in instances of this klass.
@@ -1298,9 +1330,7 @@ public:
   void print_class_flags(outputStream* st) const;
 
   void oop_print_value_on(oop obj, outputStream* st) override;
-
-  void oop_print_on      (oop obj, outputStream* st) override { oop_print_on(obj, st, 0, 0); }
-  void oop_print_on      (oop obj, outputStream* st, int indent = 0, int base_offset = 0);
+  void oop_print_on      (oop obj, outputStream* st) override;
 
 #ifndef PRODUCT
   void print_dependent_nmethods(bool verbose = false);

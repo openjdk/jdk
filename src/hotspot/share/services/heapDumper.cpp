@@ -1273,8 +1273,7 @@ void DumperSupport::dump_instance_fields(AbstractDumpWriter* writer, oop o, int 
     if (field.is_flat()) {
       // check for possible nulls
       if (field.is_flat_nullable()) {
-        address payload = cast_from_oop<address>(o) + field_offset;
-        if (field.inline_klass()->is_payload_marked_as_null(payload)) {
+        if (field.inline_klass()->is_payload_marked_as_null(o, field_offset)) {
           writer->write_objectID(nullptr);
           continue;
         }
