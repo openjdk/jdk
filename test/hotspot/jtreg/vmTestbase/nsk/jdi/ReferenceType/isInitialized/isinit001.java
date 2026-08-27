@@ -64,7 +64,6 @@ public class isinit001 {
 
     };
 
-
     public static void main (String argv[]) {
         int result = run(argv,System.out);
         if (result != 0) {
@@ -111,13 +110,9 @@ public class isinit001 {
         print_log_on_verbose("    of the com.sun.jdi package for ClassType, InterfaceType\n");
 
         String debugee_launch_command = debugeeName;
-        if (verbose_mode) {
-            debugee_launch_command = debugeeName + " -vbs";
-        }
 
         Debugee debugee = binder.bindToDebugee(debugee_launch_command);
         IOPipe pipe = new IOPipe(debugee);
-
 
         debugee.redirectStderr(out);
         print_log_on_verbose("--> isinit001: isinit001a debugee launched");

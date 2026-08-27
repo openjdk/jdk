@@ -111,10 +111,14 @@ class UnsafeAccessErrorHandshakeClosure : public AsyncHandshakeClosure {
  public:
   UnsafeAccessErrorHandshakeClosure() : AsyncHandshakeClosure("UnsafeAccessErrorHandshakeClosure") {}
   void do_thread(Thread* thr) {
+    PRAGMA_DIAG_PUSH
+    PRAGMA_NONNULL_IGNORED
+    // Suppress GCC warning for nonnull as it doesn't recognize that `thr` is always the current thread.
     JavaThread* self = JavaThread::cast(thr);
     assert(self == JavaThread::current(), "must be");
 
     self->handshake_state()->handle_unsafe_access_error();
+    PRAGMA_DIAG_POP
   }
   bool is_async_exception()   { return true; }
 };
