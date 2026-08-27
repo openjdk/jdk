@@ -232,8 +232,10 @@ module java.base {
     exports jdk.internal.ref to
         java.desktop,
         java.net.http,
+        java.security.sasl,
         java.smartcardio,
-        jdk.naming.dns;
+        jdk.naming.dns,
+        jdk.security.jgss;
     exports jdk.internal.reflect to
         java.logging,
         java.sql,
