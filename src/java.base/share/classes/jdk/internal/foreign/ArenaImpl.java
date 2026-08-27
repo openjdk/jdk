@@ -99,7 +99,7 @@ public sealed class ArenaImpl implements Arena {
         }
 
         @ForceInline
-        NativeMemorySegmentImpl allocateLowLevel(long byteSize, long byteAlignment, boolean init) {
+        private NativeMemorySegmentImpl allocateLowLevel(long byteSize, long byteAlignment, boolean init) {
             // Only alignments no greater than the pool size are guaranteed to have an
             // aligned address within the pool. This also bounds the alignment arithmetic.
             if (byteSize <= POOL_SIZE && byteAlignment <= POOL_SIZE) {

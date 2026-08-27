@@ -25,11 +25,10 @@
  * @test
  * @modules java.base/jdk.internal.foreign java.base/java.lang:+open java.base/jdk.internal.access
  * @library /test/lib
+ * @build TestConfinedSegmentPoolUtils
  * @run junit TestConfinedSegmentVtMigration
  */
 
-import jdk.internal.access.JavaLangAccess;
-import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.ConfinedSegmentPool;
 import jdk.test.lib.thread.VThreadScheduler;
 import org.junit.jupiter.api.Test;
@@ -48,8 +47,6 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 final class TestConfinedSegmentVtMigration {
 
-    static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
-    static final long POOLED_MEMORY_SIZE = ConfinedSegmentPool.pooledMemorySize();
     private static final long TIMEOUT_SECONDS = 10;
 
     @Test
@@ -96,14 +93,14 @@ final class TestConfinedSegmentVtMigration {
                             try (Arena scratch = Arena.ofConfined()) {
                                 pool = scratch.allocate(ValueLayout.JAVA_BYTE).address();
                             }
-                            assertEquals(pool, currentPool());
+                            assertEquals(pool, TestConfinedSegmentPoolUtils.currentPool());
 
                             // Keep this arena alive while the virtual thread migrates from carrier A
                             // to carrier B.
                             arena = Arena.ofConfined();
                             MemorySegment segment = arena.allocate(ValueLayout.JAVA_BYTE);
                             assertEquals(pool, segment.address());
-                            assertEquals(0, currentPool());
+                            assertEquals(0, TestConfinedSegmentPoolUtils.currentPool());
                             segment.set(ValueLayout.JAVA_BYTE, 0, (byte) 42);
 
                             // Wait until the test thread terminates carrier A and allows this
@@ -120,7 +117,7 @@ final class TestConfinedSegmentVtMigration {
 
                             arena.close();
                             arena = null;
-                            assertEquals(pool, currentPool());
+                            assertEquals(pool, TestConfinedSegmentPoolUtils.currentPool());
 
                             try (Arena verify = Arena.ofConfined()) {
                                 MemorySegment verifySegment =
@@ -147,7 +144,7 @@ final class TestConfinedSegmentVtMigration {
             try {
                 assertTrue(readyToPark.await(TIMEOUT_SECONDS, TimeUnit.SECONDS),
                         "virtual thread did not reach the park point");
-                rethrowIfFailed(failure.get());
+                TestConfinedSegmentPoolUtils.rethrowIfFailed(failure.get());
                 awaitState(vthread, Thread.State.WAITING);
 
                 executorA.shutdown();
@@ -162,7 +159,7 @@ final class TestConfinedSegmentVtMigration {
                 vthread.join(TimeUnit.SECONDS.toMillis(TIMEOUT_SECONDS));
             }
             assertFalse(vthread.isAlive(), "virtual thread did not terminate");
-            rethrowIfFailed(failure.get());
+            TestConfinedSegmentPoolUtils.rethrowIfFailed(failure.get());
             assertNotSame(initialCarrier.get(), resumedCarrier.get());
         }
     }
@@ -182,30 +179,4 @@ final class TestConfinedSegmentVtMigration {
         }
     }
 
-    private static void rethrowIfFailed(Throwable failure) throws Throwable {
-        if (failure != null) {
-            throw failure;
-        }
-    }
-
-    static long currentPool() {
-        if (POOLED_MEMORY_SIZE <= 0) {
-            return 0;
-        }
-        return currentPlatformPool(JLA.currentCarrierThread());
-    }
-
-    private static long currentPlatformPool(Thread thread) {
-        final long[] pools = JLA.getConfinedMemoryPools(thread);
-        if (pools == null) {
-            return 0;
-        }
-        for (int i = 0; i < 4; i++) {
-            final long pool = pools[i];
-            if (pool != 0) {
-                return pool;
-            }
-        }
-        return 0;
-    }
 }

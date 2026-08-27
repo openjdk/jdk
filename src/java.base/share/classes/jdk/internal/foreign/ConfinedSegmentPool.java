@@ -136,7 +136,7 @@ public final class ConfinedSegmentPool {
      */
     static long allocateLocal(Thread thread) {
         assert thread == Thread.currentThread();
-        return POOLING_DISABLED ? 0 : allocatePlatformPool();
+        return POOLING_DISABLED ? 0 : allocateDetatchedPool();
     }
 
     /**
@@ -145,9 +145,9 @@ public final class ConfinedSegmentPool {
      * return pools to the current carrier.
      */
     @ForceInline
-    static void release(Thread thread, long pool, long size) {
+    static void release(Thread thread, long pool, long usedSize) {
         assert thread == Thread.currentThread();
-        releaseToCache(cacheOwner(thread), pool, size);
+        releaseToCache(cacheOwner(thread), pool, usedSize);
     }
 
     /**
@@ -185,7 +185,7 @@ public final class ConfinedSegmentPool {
         return 0;
     }
 
-    private static long allocatePlatformPool() {
+    private static long allocateDetatchedPool() {
         final long address;
         try {
             address = U.allocateMemory(POOLED_MEMORY_SIZE);
@@ -197,10 +197,10 @@ public final class ConfinedSegmentPool {
     }
 
     @ForceInline
-    private static void releaseToCache(Thread cacheOwner, long pool, long size) {
+    private static void releaseToCache(Thread cacheOwner, long pool, long usedSize) {
         // Reject invalid prefixes before zeroOutMemory performs unchecked writes.
-        if (pool == 0 || size < 0 || size > POOLED_MEMORY_SIZE) {
-            throw cannotReleasePooledMemory(pool, size);
+        if (pool == 0 || usedSize < 0 || usedSize > POOLED_MEMORY_SIZE) {
+            throw cannotReleasePooledMemory(pool, usedSize);
         }
 
         long[] pools = JLA.getConfinedMemoryPools(cacheOwner);
@@ -213,13 +213,13 @@ public final class ConfinedSegmentPool {
 
         for (int i = 0; i < pools.length; i++) {
             final long entry = pools[i];
-            if (entry == pool) {
-                throw cannotReleasePooledMemory(pool, size); // already released
-            }
             if (entry == 0) {
-                zeroOutMemory(pool, size);
+                zeroOutMemory(pool, usedSize);
                 pools[i] = pool;
                 return;
+            }
+            if (entry == pool) {
+                throw cannotReleasePooledMemory(pool, usedSize); // already released
             }
         }
         U.freeMemory(pool);
@@ -277,7 +277,7 @@ public final class ConfinedSegmentPool {
         } else {
             // This is safe because the underlying pool is guaranteed to be of a size
             // that is a multiple of a `long`.
-            for (int i = 0; i < size; i += Long.BYTES) {
+            for (long i = 0; i < size; i += Long.BYTES) {
                 U.putLong(address + i, 0L);
             }
         }
@@ -295,7 +295,7 @@ public final class ConfinedSegmentPool {
 
         return power < 0
                 ? -1
-                : 1 << Math.clamp(power, minPower, maxPower);
+                : Math.toIntExact(1L << Math.clamp(power, minPower, maxPower));
     }
 
 }

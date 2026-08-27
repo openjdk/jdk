@@ -24,6 +24,8 @@
 /*
  * @test
  * @summary Cleanup actions must run before a confined arena releases its pool
+ * @modules java.base/jdk.internal.foreign java.base/jdk.internal.access
+ * @build TestConfinedSegmentPoolUtils
  * @run junit/othervm --enable-native-access=ALL-UNNAMED TestConfinedSegmentPoolCleanup
  */
 
@@ -34,32 +36,20 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 final class TestConfinedSegmentPoolCleanup {
 
+    // A random value
     private static final long MARKER = 0xF25C214F82C1422FL;
 
     @ParameterizedTest(name = "{0}, cleanupThrows={2}")
     @MethodSource("configurations")
     void cleanupRunsBeforePoolRelease(String name, Thread.Builder builder, boolean cleanupThrows) throws Throwable {
-        AtomicReference<Throwable> failure = new AtomicReference<>();
         // It does not matter if a VT is running on a previously-used carrier thread.
-        Thread thread = builder.start(() -> {
-            try {
-                testCleanup(cleanupThrows);
-            } catch (Throwable ex) {
-                failure.set(ex);
-            }
-        });
-
-        thread.join();
-        if (failure.get() != null) {
-            throw failure.get();
-        }
+        TestConfinedSegmentPoolUtils.runOn(builder, () -> testCleanup(cleanupThrows));
     }
 
     private static void testCleanup(boolean cleanupThrows) {

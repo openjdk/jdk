@@ -388,7 +388,7 @@ public class Thread implements Runnable {
         return confinedMemoryPools;
     }
 
-    boolean hasConfinedMemoryPools() {
+    boolean hasAvailableConfinedMemoryPools() {
         final long[] confinedMemoryPools = holder.confinedMemoryPools;
         if (confinedMemoryPools != null) {
             for (long pool : confinedMemoryPools) {
@@ -1610,7 +1610,7 @@ public class Thread implements Runnable {
         } finally {
             // Avoid initializing ConfinedSegmentPool for threads that
             // have never used pooling.
-            if (hasConfinedMemoryPools()) {
+            if (hasAvailableConfinedMemoryPools()) {
                 ConfinedSegmentPool.releaseOnThreadExit(this);
             }
             clearReferences();

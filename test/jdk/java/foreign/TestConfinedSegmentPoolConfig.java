@@ -24,6 +24,7 @@
 /*
  * @test
  * @modules java.base/jdk.internal.foreign java.base/jdk.internal.access
+ * @build TestConfinedSegmentPoolUtils
  * @run junit                                                                           TestConfinedSegmentPoolConfig
  * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=0              TestConfinedSegmentPoolConfig
  * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=1              TestConfinedSegmentPoolConfig
@@ -53,81 +54,59 @@
  *                    TestConfinedSegmentPoolConfig
  */
 
-import jdk.internal.access.JavaLangAccess;
-import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.ConfinedSegmentPool;
 import org.junit.jupiter.api.Test;
 
 import java.lang.foreign.Arena;
 import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 final class TestConfinedSegmentPoolConfig {
 
-    static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
-
-    static final int DISABLED = -1;
-
-    static final String POOLED_MEMORY_SIZE_PROPERTY = "jdk.internal.foreign.native.confined.pool.power.size";
-    static final String THREAD_POOL_COUNT_PROPERTY = "jdk.internal.foreign.native.confined.pool.power.count";
+    static final int DISABLED = TestConfinedSegmentPoolUtils.DISABLED;
+    static final String POOLED_MEMORY_SIZE_PROPERTY = TestConfinedSegmentPoolUtils.POOLED_MEMORY_SIZE_PROPERTY;
+    static final String THREAD_POOL_COUNT_PROPERTY = TestConfinedSegmentPoolUtils.THREAD_POOL_COUNT_PROPERTY;
 
     @Test
     void configuration() throws Throwable {
         boolean pageAligned = "PAGE_ALIGN".equals(System.getProperty(POOLED_MEMORY_SIZE_PROPERTY));
         long configuredSize = pageAligned
                 ? DISABLED
-                : configuredPowerOfTwo(POOLED_MEMORY_SIZE_PROPERTY, 3, 20, 6);
+                : TestConfinedSegmentPoolUtils.configuredPowerOfTwo(
+                        POOLED_MEMORY_SIZE_PROPERTY, 3, 20, 6);
         int expectedCount = pageAligned
                 ? DISABLED
-                : configuredPowerOfTwo(THREAD_POOL_COUNT_PROPERTY, 0, 3, 2);
+                : TestConfinedSegmentPoolUtils.configuredPowerOfTwo(
+                        THREAD_POOL_COUNT_PROPERTY, 0, 3, 2);
         long expectedSize = configuredSize > 0 && expectedCount > 0
                 ? configuredSize
                 : DISABLED;
 
         assertEquals(expectedSize, ConfinedSegmentPool.pooledMemorySize());
 
-        AtomicReference<Throwable> failure = new AtomicReference<>();
-        Thread thread = Thread.ofPlatform().unstarted(() -> {
-            try {
-                try (Arena arena = Arena.ofConfined()) {
-                    arena.allocate(1);
-                }
+        Thread thread = TestConfinedSegmentPoolUtils.runOn(Thread.ofPlatform(), () -> {
+            try (Arena arena = Arena.ofConfined()) {
+                arena.allocate(1);
+            }
 
-                long[] pools = JLA.getConfinedMemoryPools(Thread.currentThread());
-                if (expectedSize > 0 && expectedCount > 0) {
-                    assertNotNull(pools);
-                    assertEquals(expectedCount, pools.length);
-                    assertEquals(1, Arrays.stream(pools).filter(pool -> pool != 0).count());
-                } else {
-                    assertNull(pools);
-                }
-            } catch (Throwable ex) {
-                failure.set(ex);
+            long[] pools = TestConfinedSegmentPoolUtils.confinedMemoryPools(
+                    Thread.currentThread());
+            if (expectedSize > 0 && expectedCount > 0) {
+                assertNotNull(pools);
+                assertEquals(expectedCount, pools.length);
+                assertEquals(1, Arrays.stream(pools).filter(pool -> pool != 0).count());
+            } else {
+                assertNull(pools);
             }
         });
 
-        thread.start();
-        thread.join();
-        if (failure.get() != null) {
-            throw failure.get();
-        }
-
-        long[] pools = JLA.getConfinedMemoryPools(thread);
+        long[] pools = TestConfinedSegmentPoolUtils.confinedMemoryPools(thread);
         if (expectedSize > 0 && expectedCount > 0) {
             assertArrayEquals(new long[expectedCount], pools);
         } else {
             assertNull(pools);
         }
-    }
-
-    private static int configuredPowerOfTwo(String property, int minPower,
-                                             int maxPower, int defaultPower) {
-        int power = Integer.getInteger(property, defaultPower);
-        return power < 0
-                ? DISABLED
-                : 1 << Math.clamp(power, minPower, maxPower);
     }
 
 }

@@ -25,6 +25,7 @@
  * @test
  * @modules java.base/jdk.internal.foreign:+open java.base/java.lang:+open java.base/jdk.internal.access
  * @library /test/lib
+ * @build TestConfinedSegmentPoolUtils
  * @run junit                                                                            TestConfinedSegmentPoolDefensiveRelease
  * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=0              TestConfinedSegmentPoolDefensiveRelease
  * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=1              TestConfinedSegmentPoolDefensiveRelease
@@ -42,8 +43,6 @@
  *                    TestConfinedSegmentPoolDefensiveRelease
  */
 
-import jdk.internal.access.JavaLangAccess;
-import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.ConfinedSegmentPool;
 import jdk.test.lib.thread.VThreadScheduler;
 import org.junit.jupiter.api.Test;
@@ -63,37 +62,23 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 final class TestConfinedSegmentPoolDefensiveRelease {
 
-    static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
-    static final long POOLED_MEMORY_SIZE = ConfinedSegmentPool.pooledMemorySize();
     static final Method RELEASE = releaseMethod();
 
     @Test
-    void releaseWithNoPreviousAcquire() throws Exception {
-        AtomicReference<Throwable> failure = new AtomicReference<>();
-        Thread untouchedThread = Thread.ofPlatform().unstarted(() -> {
-            try {
-                assertThrows(IllegalStateException.class, () -> release(Thread.currentThread(), 0, 1));
-            } catch (Throwable throwable) {
-                failure.set(throwable);
-            }
-        });
-        untouchedThread.start();
-        untouchedThread.join();
-        if (failure.get() != null) {
-            // Expose any exception from the thread.
-            throw new AssertionError(failure.get());
-        }
+    void releaseWithNoPreviousAcquire() throws Throwable {
+        TestConfinedSegmentPoolUtils.runOn(Thread.ofPlatform(), () ->
+                assertThrows(IllegalStateException.class, () -> release(Thread.currentThread(), 0, 1)));
     }
 
     @Test
-    void releaseWithNoPreviousAcquireVt() {
+    void releaseWithNoPreviousAcquireVt() throws Throwable {
         testOnVirtualThreadWithUntouchedCarrierThread(() -> {
             assertThrows(IllegalStateException.class, () -> release(Thread.currentThread(), 0, 1));
         });
     }
 
     @Test
-    void releaseAfterRelease() {
+    void releaseAfterRelease() throws Throwable {
         testOnUntouchedThread(pool -> assertThrows(IllegalStateException.class, () -> release(Thread.currentThread(), pool, 1)));
     }
 
@@ -108,7 +93,7 @@ final class TestConfinedSegmentPoolDefensiveRelease {
 
             // The first allocation starts at the pool base, and closing the
             // arena returns that pool to the dedicated carrier.
-            assertEquals(pool, currentPool());
+            assertEquals(pool, TestConfinedSegmentPoolUtils.currentPool());
 
             assertThrows(IllegalStateException.class,
                     () -> release(Thread.currentThread(), pool, 1));
@@ -116,7 +101,7 @@ final class TestConfinedSegmentPoolDefensiveRelease {
     }
 
     @Test
-    void releaseIllegalSize() {
+    void releaseIllegalSize() throws Throwable {
         // Only test with pooling enabled
         assumeTrue(ConfinedSegmentPool.pooledMemorySize() > 0);
         testOnUntouchedThread(pool -> {
@@ -124,9 +109,10 @@ final class TestConfinedSegmentPoolDefensiveRelease {
                 arena.allocate(1);
                 assertThrows(IllegalStateException.class, () -> release(Thread.currentThread(), pool, ConfinedSegmentPool.pooledMemorySize() + 1));
                 assertThrows(IllegalStateException.class, () -> release(Thread.currentThread(), pool, -1));
-                assertEquals(0 /* acquired and detached */, currentPool());
+                assertEquals(0 /* acquired and detached */,
+                        TestConfinedSegmentPoolUtils.currentPool());
             }
-            assertEquals(pool /* released */, currentPool());
+            assertEquals(pool /* released */, TestConfinedSegmentPoolUtils.currentPool());
         });
     }
 
@@ -138,47 +124,34 @@ final class TestConfinedSegmentPoolDefensiveRelease {
             try (Arena scratch = Arena.ofConfined()) {
                 pool = scratch.allocate(1).address();
             }
-            assertEquals(pool, currentPool());
+            assertEquals(pool, TestConfinedSegmentPoolUtils.currentPool());
 
             try (Arena arena = Arena.ofConfined()) {
                 assertEquals(pool, arena.allocate(1).address());
                 assertThrows(IllegalStateException.class, () -> release(Thread.currentThread(), pool, ConfinedSegmentPool.pooledMemorySize() + 1));
                 assertThrows(IllegalStateException.class, () -> release(Thread.currentThread(), pool, -1));
-                assertEquals(0 /* acquired but not remembered */, currentPool());
+                assertEquals(0 /* acquired but not remembered */,
+                        TestConfinedSegmentPoolUtils.currentPool());
             }
-            assertEquals(pool /* released */, currentPool());
+            assertEquals(pool /* released */, TestConfinedSegmentPoolUtils.currentPool());
         });
     }
 
-    static void testOnUntouchedThread(LongConsumer c) {
+    static void testOnUntouchedThread(LongConsumer c) throws Throwable {
         // Only test with pooling enabled
         assumeTrue(ConfinedSegmentPool.pooledMemorySize() > 0);
-        AtomicReference<Throwable> failure = new AtomicReference<>();
-        Thread untouchedThread = Thread.ofPlatform().unstarted(() -> {
+        TestConfinedSegmentPoolUtils.runOn(Thread.ofPlatform(), () -> {
             try (Arena arena = Arena.ofConfined()) {
                 arena.allocate(1);
             }
-            long pool = currentPool();
+            long pool = TestConfinedSegmentPoolUtils.currentPool();
             assertNotEquals(0L, pool, "Pool was not allocated");
-            try {
-                c.accept(pool);
-            } catch (Throwable throwable) {
-                failure.set(throwable);
-            }
+            c.accept(pool);
         });
-        untouchedThread.start();
-        try {
-            untouchedThread.join();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        if (failure.get() != null) {
-            // Expose any exception from the thread.
-            throw new AssertionError(failure.get());
-        }
     }
 
-    static void testOnVirtualThreadWithUntouchedCarrierThread(Runnable action) {
+    static void testOnVirtualThreadWithUntouchedCarrierThread(Runnable action)
+            throws Throwable {
         AtomicReference<Throwable> failure = new AtomicReference<>();
 
         ThreadFactory carrierFactory = task -> Thread.ofPlatform()
@@ -203,10 +176,7 @@ final class TestConfinedSegmentPoolDefensiveRelease {
             }
         }
 
-        if (failure.get() != null) {
-            // Expose any exception from the thread.
-            throw new AssertionError(failure.get());
-        }
+        TestConfinedSegmentPoolUtils.rethrowIfFailed(failure.get());
     }
 
     static void release(Thread thread, long pool, long size) throws Throwable {
@@ -225,26 +195,6 @@ final class TestConfinedSegmentPoolDefensiveRelease {
         } catch (ReflectiveOperationException ex) {
             throw new ExceptionInInitializerError(ex);
         }
-    }
-
-    static long currentPool() {
-        if (POOLED_MEMORY_SIZE <= 0) {
-            return 0;
-        }
-        return currentPlatformPool(JLA.currentCarrierThread());
-    }
-
-    private static long currentPlatformPool(Thread thread) {
-        final long[] pools = JLA.getConfinedMemoryPools(thread);
-        if (pools == null) {
-            return 0;
-        }
-        for (long pool : pools) {
-            if (pool != 0) {
-                return pool;
-            }
-        }
-        return 0;
     }
 
 }
