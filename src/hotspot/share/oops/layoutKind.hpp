@@ -184,9 +184,10 @@ struct LayoutDescriptions {
       return _non_atomic_alignment;
     case LayoutKind::REFERENCE:
     case LayoutKind::UNKNOWN:
-      ShouldNotReachHere();
-      return 0;
+      break;
     }
+    ShouldNotReachHere();
+    return 0;
   }
 
   int payload_offset() const { return _payload_offset; }
