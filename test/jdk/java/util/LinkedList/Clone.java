@@ -35,58 +35,35 @@ import jdk.test.lib.valueclass.VClass;
 import java.util.LinkedList;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.function.IntFunction;
 
 public class Clone {
     public static void main(String[] args) {
-        testStrings();
-        testVClass();
+        test(i -> "elem" + i);
+        test(i -> new VClass(i, new int[] { 0 }));
     }
 
-    private static void testStrings() {
+    private static void test(IntFunction<Object> elementFactory) {
         LinkedList2 l = new LinkedList2();
         checkLinkedListClone(l, "LinkedList.clone() is broken 1.");
-        l.add("a");
+        l.add(elementFactory.apply(1));
         checkLinkedListClone(l, "LinkedList.clone() is broken 2.");
-        l.add("b");
+        l.add(elementFactory.apply(2));
         checkLinkedListClone(l, "LinkedList.clone() is broken 3.");
 
-
         TreeSet2 s = new TreeSet2();
         checkTreeSetClone(s, "TreeSet.clone() is broken.");
-        s.add("a");
+        s.add(elementFactory.apply(1));
         checkTreeSetClone(s, "TreeSet.clone() is broken.");
-        s.add("b");
+        s.add(elementFactory.apply(2));
         checkTreeSetClone(s, "TreeSet.clone() is broken.");
 
         TreeMap2 m = new TreeMap2();
         checkTreeMapClone(m, "TreeMap.clone() is broken.");
-        m.put("a", "b");
+        m.put(elementFactory.apply(1), elementFactory.apply(-1));
         checkTreeMapClone(m, "TreeMap.clone() is broken.");
-        m.put("c", "d");
+        m.put(elementFactory.apply(2), elementFactory.apply(-2));
         checkTreeMapClone(m, "TreeMap.clone() is broken.");
-    }
-
-    private static void testVClass() {
-        LinkedList2 l = new LinkedList2();
-        checkLinkedListClone(l, "LinkedList.clone() is broken for VClass 1.");
-        l.add(new VClass(1, new int[] { 0 }));
-        checkLinkedListClone(l, "LinkedList.clone() is broken for VClass 2.");
-        l.add(new VClass(2, new int[] { 0 }));
-        checkLinkedListClone(l, "LinkedList.clone() is broken for VClass 3.");
-
-        TreeSet2 s = new TreeSet2();
-        checkTreeSetClone(s, "TreeSet.clone() is broken for VClass 1.");
-        s.add(new VClass(1, new int[] { 0 }));
-        checkTreeSetClone(s, "TreeSet.clone() is broken for VClass 2.");
-        s.add(new VClass(2, new int[] { 0 }));
-        checkTreeSetClone(s, "TreeSet.clone() is broken for VClass 3.");
-
-        TreeMap2 m = new TreeMap2();
-        checkTreeMapClone(m, "TreeMap.clone() is broken for VClass 1.");
-        m.put(new VClass(1, new int[] { 0 }), new VClass(1, new int[] { 1 }));
-        checkTreeMapClone(m, "TreeMap.clone() is broken for VClass 2.");
-        m.put(new VClass(2, new int[] { 0 }), new VClass(2, new int[] { 1 }));
-        checkTreeMapClone(m, "TreeMap.clone() is broken for VClass 3.");
     }
 
     private static void checkLinkedListClone(LinkedList2 l, String message) {

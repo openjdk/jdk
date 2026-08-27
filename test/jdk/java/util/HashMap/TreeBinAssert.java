@@ -40,6 +40,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 
 public class TreeBinAssert {
     private static final int ITR_RM = -1; // Remove an item via Iterator
@@ -117,28 +118,49 @@ public class TreeBinAssert {
 
     @Test(dataProvider = "SizeAndHashes")
     public void testMap(int size, int[] hashes) {
-        Map<Key,Integer> map = new HashMap<>(size);
+        testMapImpl(size, hashes, Key::new);
+    }
+
+    @Test(dataProvider = "SizeAndHashes")
+    public void testMapVClass(int size, int[] hashes) {
+        testMapImpl(size, hashes, KeyVClass::new);
+    }
+
+    private <T> void testMapImpl(int size, int[] hashes, IntFunction<T> keyFactory) {
+        Map<T, Integer> map = new HashMap<>(size);
 
         doTest(map, hashes,
-               (c,k) -> { ((Map<Key,Integer>)c).put(k,0); },
-               (c)   -> { return ((Map<Key,Integer>)c).keySet().iterator(); }
+               (c,k) -> { ((Map<T, Integer>) c).put(k,0); },
+               (c)   -> { return ((Map<T, Integer>) c).keySet().iterator(); },
+               keyFactory
         );
     }
 
     @Test(dataProvider = "SizeAndHashes")
     public void testSet(int size, int[] hashes) {
-        Set<Key> set = new LinkedHashSet<>(size);
+        testSetImpl(size, hashes, Key::new);
+    }
+
+    @Test(dataProvider = "SizeAndHashes")
+    public void testSetVClass(int size, int[] hashes) {
+        testSetImpl(size, hashes, KeyVClass::new);
+    }
+
+    private <T> void testSetImpl(int size, int[] hashes, IntFunction<T> keyFactory) {
+        Set<T> set = new LinkedHashSet<>(size);
 
         doTest(set, hashes,
-               (c,k) -> { ((Set<Key>)c).add(k); },
-               (c)   -> { return ((Set<Key>)c).iterator(); }
+               (c,k) -> { ((Set<T>) c).add(k); },
+               (c)   -> { return ((Set<T>) c).iterator(); },
+               keyFactory
         );
     }
 
-    private void doTest(Object collection, int[] hashes,
-                        BiConsumer<Object,Key> addKey,
-                        Function<Object,Iterator<Key>> mkItr) {
-        Iterator<Key> itr = null; // saved iterator, used for removals
+    private <T> void doTest(Object collection, int[] hashes,
+                            BiConsumer<Object,T> addKey,
+                            Function<Object,Iterator<T>> mkItr,
+                            IntFunction<T> keyFactory) {
+        Iterator<T> itr = null; // saved iterator, used for removals
         for (int h : hashes) {
             if (h == ITR_RM) {
                 if (itr == null) {
@@ -148,7 +170,7 @@ public class TreeBinAssert {
                 itr.remove();
             } else {
                 itr = null;
-                addKey.accept(collection, new Key(h));
+                addKey.accept(collection, keyFactory.apply(h));
             }
         }
     }
@@ -192,44 +214,6 @@ public class TreeBinAssert {
 
         @Override public int compareTo(KeyVClass k) {
             return Integer.compare(this.hash, k.hash);
-        }
-    }
-
-    @Test(dataProvider = "SizeAndHashes")
-    public void testMapVClass(int size, int[] hashes) {
-        Map<KeyVClass,Integer> map = new HashMap<>(size);
-
-        doTestVClass(map, hashes,
-                     (c,k) -> { ((Map<KeyVClass,Integer>)c).put(k,0); },
-                     (c)   -> { return ((Map<KeyVClass,Integer>)c).keySet().iterator(); }
-        );
-    }
-
-    @Test(dataProvider = "SizeAndHashes")
-    public void testSetVClass(int size, int[] hashes) {
-        Set<KeyVClass> set = new LinkedHashSet<>(size);
-
-        doTestVClass(set, hashes,
-                     (c,k) -> { ((Set<KeyVClass>)c).add(k); },
-                     (c)   -> { return ((Set<KeyVClass>)c).iterator(); }
-        );
-    }
-
-    private void doTestVClass(Object collection, int[] hashes,
-                              BiConsumer<Object,KeyVClass> addKey,
-                              Function<Object,Iterator<KeyVClass>> mkItr) {
-        Iterator<KeyVClass> itr = null;
-        for (int h : hashes) {
-            if (h == ITR_RM) {
-                if (itr == null) {
-                    itr = mkItr.apply(collection);
-                }
-                itr.next();
-                itr.remove();
-            } else {
-                itr = null;
-                addKey.accept(collection, new KeyVClass(h));
-            }
         }
     }
 }

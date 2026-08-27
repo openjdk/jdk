@@ -36,18 +36,16 @@ import java.util.TreeMap;
 
 public class KeySetRemove {
     public static void main(String[] args) throws Exception {
-        Map[] m = { new HashMap(), new TreeMap() };
-        for (int i = 0; i < m.length; i++) {
-            m[i].put("bananas", null);
-            if (!m[i].keySet().remove("bananas"))
-                throw new Exception("Yes, we have no bananas: " + i);
-        }
+        test("bananas");
+        test(new VClass(1, new int[] { 1 }));
+    }
 
-        Map[] valueMaps = { new HashMap<>(), new TreeMap<>() };
-        for (int i = 0; i < valueMaps.length; i++) {
-            valueMaps[i].put(new VClass(1, new int[] { 1 }), null);
-            if (!valueMaps[i].keySet().remove(new VClass(1, new int[] { 1 })))
-                throw new Exception("VClass{1, [1]} was not removed: " + i);
+    private static void test(Object key) throws Exception {
+        Map[] maps = { new HashMap(), new TreeMap() };
+        for (int i = 0; i < maps.length; i++) {
+            maps[i].put(key, null);
+            if (!maps[i].keySet().remove(key))
+                throw new Exception(key + " was not removed: " + i);
         }
     }
 }

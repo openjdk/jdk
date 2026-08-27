@@ -34,21 +34,14 @@ import java.util.Map;
 
 public class EmptyMapIterator {
     public static void main(String[] args) throws Exception {
-        testStringKeys();
-        testIntegerKeys();
+        test("key", "value");
+        test(Integer.valueOf(1), Integer.valueOf(2));
     }
 
-    private static void testStringKeys() throws Exception {
-        HashMap map = new HashMap();
-        Iterator iter = map.entrySet().iterator();
-        map.put("key", "value");
-        expectConcurrentModification(iter);
-    }
-
-    private static void testIntegerKeys() throws Exception {
-        HashMap<Integer,Integer> map = new HashMap<>();
-        Iterator<Map.Entry<Integer,Integer>> iter = map.entrySet().iterator();
-        map.put(Integer.valueOf(1), Integer.valueOf(2));
+    private static void test(Object key, Object value) throws Exception {
+        HashMap<Object, Object> map = new HashMap<>();
+        Iterator<Map.Entry<Object, Object>> iter = map.entrySet().iterator();
+        map.put(key, value);
         expectConcurrentModification(iter);
     }
 

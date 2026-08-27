@@ -30,6 +30,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.function.IntFunction;
 import java.util.stream.LongStream;
 import jdk.test.lib.valueclass.VClass;
 
@@ -119,22 +120,32 @@ public class ToArray {
     }
 
     private static void checkMap(boolean ordered) {
-        Map<String, String> map = ordered ? new LinkedHashMap<>() : new HashMap<>();
-        checkToArray("Empty-keys", new String[0], map.keySet(), !ordered);
-        checkToArray("Empty-values", new String[0], map.values(), !ordered);
+        checkMapImpl(ordered, String::valueOf, new String[0]);
+    }
 
-        List<String> keys = new ArrayList<>();
-        List<String> values = new ArrayList<>();
+    private static void checkVClassMap(boolean ordered) {
+        checkMapImpl(ordered, i -> new VClass(i, new int[] { i }), new VClass[0]);
+    }
+
+    private static <T extends Comparable<T>> void checkMapImpl(boolean ordered, IntFunction<T> factory, T[] emptyArray) {
+        Map<T, T> map = ordered ? new LinkedHashMap<>() : new HashMap<>();
+        checkToArray("Empty-keys", emptyArray, map.keySet(), !ordered);
+        checkToArray("Empty-values", emptyArray, map.values(), !ordered);
+
+        List<T> keys = new ArrayList<>();
+        List<T> values = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
-            keys.add(String.valueOf(i));
-            values.add(String.valueOf(i * 2));
-            map.put(String.valueOf(i), String.valueOf(i * 2));
-            checkToArray(i + "-keys", keys.toArray(new String[0]), map.keySet(), !ordered);
-            checkToArray(i + "-values", values.toArray(new String[0]), map.values(), !ordered);
+            T key = factory.apply(i);
+            T value = factory.apply(i * 2);
+            keys.add(key);
+            values.add(value);
+            map.put(key, value);
+            checkToArray(i + "-keys", keys.toArray(emptyArray), map.keySet(), !ordered);
+            checkToArray(i + "-values", values.toArray(emptyArray), map.values(), !ordered);
         }
         map.clear();
-        checkToArray("Empty-keys", new String[0], map.keySet(), !ordered);
-        checkToArray("Empty-values", new String[0], map.values(), !ordered);
+        checkToArray("Empty-keys", emptyArray, map.keySet(), !ordered);
+        checkToArray("Empty-values", emptyArray, map.values(), !ordered);
     }
 
     private static void checkSet(boolean ordered) {
@@ -157,24 +168,5 @@ public class ToArray {
         }
         checkToArray("Collisions", LongStream.range(0, 100).mapToObj(x -> x | (x << 32))
                 .toArray(Long[]::new), longSet, !ordered);
-    }
-
-    private static void checkVClassMap(boolean ordered) {
-        Map<VClass, VClass> map = ordered ? new LinkedHashMap<>() : new HashMap<>();
-        checkToArray("Empty-tuple-keys", new VClass[0], map.keySet(), !ordered);
-        checkToArray("Empty-tuple-values", new VClass[0], map.values(), !ordered);
-
-        List<VClass> keys = new ArrayList<>();
-        List<VClass> values = new ArrayList<>();
-        for (int i = 0; i < 100; i++) {
-            keys.add(new VClass(i, new int[] { i }));
-            values.add(new VClass(i * 2, new int[] { i * 2 }));
-            map.put(new VClass(i, new int[] { i }), new VClass(i * 2, new int[] { i * 2 }));
-            checkToArray(i + "-tuple-keys", keys.toArray(new VClass[0]), map.keySet(), !ordered);
-            checkToArray(i + "-tuple-values", values.toArray(new VClass[0]), map.values(), !ordered);
-        }
-        map.clear();
-        checkToArray("Empty-tuple-keys", new VClass[0], map.keySet(), !ordered);
-        checkToArray("Empty-tuple-values", new VClass[0], map.values(), !ordered);
     }
 }
