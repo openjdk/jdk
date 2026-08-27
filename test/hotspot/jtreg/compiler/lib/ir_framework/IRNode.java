@@ -2808,6 +2808,56 @@ public class IRNode {
         machOnlyNameRegex(VMASK_AND_NOT_L, "vmask_and_notL");
     }
 
+    public static final String RISCV_VMASK_OR_NOT_I = PREFIX + "RISCV_VMASK_OR_NOT_I" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_VMASK_OR_NOT_I, "vmask_or_notI");
+    }
+
+    public static final String RISCV_VMASK_OR_NOT_L = PREFIX + "RISCV_VMASK_OR_NOT_L" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_VMASK_OR_NOT_L, "vmask_or_notL");
+    }
+
+    public static final String RISCV_VMASK_NAND_I = PREFIX + "RISCV_VMASK_NAND_I" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_VMASK_NAND_I, "vmask_nandI");
+    }
+
+    public static final String RISCV_VMASK_NAND_L = PREFIX + "RISCV_VMASK_NAND_L" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_VMASK_NAND_L, "vmask_nandL");
+    }
+
+    public static final String RISCV_VMASK_NOR_I = PREFIX + "RISCV_VMASK_NOR_I" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_VMASK_NOR_I, "vmask_norI");
+    }
+
+    public static final String RISCV_VMASK_NOR_L = PREFIX + "RISCV_VMASK_NOR_L" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_VMASK_NOR_L, "vmask_norL");
+    }
+
+    public static final String RISCV_VMASK_XNOR_I = PREFIX + "RISCV_VMASK_XNOR_I" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_VMASK_XNOR_I, "vmask_xnorI");
+    }
+
+    public static final String RISCV_VMASK_XNOR_L = PREFIX + "RISCV_VMASK_XNOR_L" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_VMASK_XNOR_L, "vmask_xnorL");
+    }
+
+    public static final String RISCV_VMASK_NOT_I = PREFIX + "RISCV_VMASK_NOT_I" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_VMASK_NOT_I, "vmask_notI");
+    }
+
+    public static final String RISCV_VMASK_NOT_L = PREFIX + "RISCV_VMASK_NOT_L" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_VMASK_NOT_L, "vmask_notL");
+    }
+
     public static final String VMLA = PREFIX + "VMLA" + POSTFIX;
     static {
         machOnlyNameRegex(VMLA, "vmla");
