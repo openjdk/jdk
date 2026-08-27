@@ -72,6 +72,8 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.converter.ConvertWith;
+import org.junit.jupiter.params.converter.SimpleArgumentConverter;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -222,9 +224,13 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
     }
 
     @ParameterizedTest
-    @MethodSource("pathOptionsValid")
-    public void test_APP_CONTENT_OR_RESOURCES_valid(OptionValue<List<Collection<RootedPath>>> option,
-            String delimiter, @TempDir Path workDir) throws IOException {
+    @CsvSource({
+        "app-content,COMMA",
+        "app-resources,PATH_SEPARATOR",
+    })
+    public void test_AppContent_valid(
+            @ConvertWith(OptionValueConverter.class) OptionValue<List<Collection<RootedPath>>> option,
+            Delimiter delimiter, @TempDir Path workDir) throws IOException {
 
         var spec = option.getSpec();
 
@@ -238,7 +244,7 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
 
         Object convertedValue = spec.convert(
                 spec.name(),
-                StringToken.of(Stream.of(contentDir, file).map(Path::toString).collect(joining(delimiter)))
+                StringToken.of(Stream.of(contentDir, file).map(Path::toString).collect(joining(delimiter.value)))
         ).orElseThrow();
 
         var paths = option.getFrom(Options.of(Map.of(option, convertedValue)));
@@ -255,13 +261,25 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
         assertEquals(expectedPathList, sortedPathList);
     }
 
-    private static Stream<OptionValue<List<Collection<RootedPath>>>> pathOptionsInvalid() {
-        return Stream.of(StandardOption.APP_CONTENT, StandardOption.APP_RESOURCES);
+    enum Delimiter {
+        COMMA(","),
+        PATH_SEPARATOR(File.pathSeparator),
+        ;
+
+        Delimiter(String value) {
+            this.value = Objects.requireNonNull(value);
+        }
+
+        private final String value;
     }
 
     @ParameterizedTest
-    @MethodSource("pathOptionsInvalid")
-    public void test_APP_CONTENT_OR_RESOURCES_invalid(OptionValue<List<Collection<RootedPath>>> option,
+    @CsvSource({
+        "app-content",
+        "app-resources",
+    })
+    public void test_AppContent_invalid(
+            @ConvertWith(OptionValueConverter.class) OptionValue<?> option,
             @TempDir Path workDir) throws IOException {
         var spec = option.getSpec();
 
@@ -965,6 +983,30 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
                 Set.copyOf(StandardBundlingOperation.CREATE_BUNDLE), "bundle",
                 Set.of(StandardBundlingOperation.values()), "all"
         );
+    }
+
+    static final class OptionValueConverter extends SimpleArgumentConverter {
+
+        @Override
+        protected Object convert(Object source, Class<?> targetType) {
+            if (!OptionValue.class.isAssignableFrom(targetType)) {
+                throw new IllegalArgumentException();
+            }
+
+            if (source == null) {
+                return null;
+            }
+
+            if (source instanceof String optionName) {
+                return Utils.getOptionsWithSpecs(StandardOption.class).filter(op -> {
+                    return op.getOption().spec().names().contains(OptionName.of(optionName));
+                }).findFirst().orElseThrow(() -> {
+                    throw new IllegalArgumentException("Failed to find standard option with the name=[" + optionName + "]");
+                });
+            } else {
+                throw new IllegalArgumentException();
+            }
+        }
     }
 
     private static final Path GOLDEN_JPACKAGE_OPTIONS_MD = TKit.TEST_SRC_ROOT.resolve(
