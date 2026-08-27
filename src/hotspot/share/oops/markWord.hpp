@@ -250,10 +250,10 @@ class markWord {
   // used to encode pointers during GC
   markWord clear_lock_bits() const { return markWord(value() & ~lock_mask_in_place); }
 
-  // age operations
   markWord set_marked()   { return markWord((value() & ~lock_mask_in_place) | marked_value); }
   markWord set_unmarked() { return markWord((value() & ~lock_mask_in_place) | lock_neutral_value); }
 
+  // age operations
   uint     age()           const { return (uint) mask_bits(value() >> age_shift, age_mask); }
   markWord set_age(uint v) const {
     assert((v & ~age_mask) == 0, "shouldn't overflow age field");
