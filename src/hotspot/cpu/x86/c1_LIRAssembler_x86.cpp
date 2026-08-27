@@ -262,7 +262,6 @@ void LIR_Assembler::osr_entry() {
   //
 
   // build frame
-  ciMethod* m = compilation()->method();
   __ build_frame(initial_frame_size_in_bytes(), bang_size_in_bytes());
 
   // OSR buffer is
@@ -1339,7 +1338,6 @@ void LIR_Assembler::type_profile_helper(Register mdo,
 
 void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, Label* failure, Label* obj_is_null) {
   // we always need a stub for the failure case.
-  CodeStub* stub = op->stub();
   Register obj = op->object()->as_register();
   Register k_RInfo = op->tmp1()->as_register();
   Register klass_RInfo = op->tmp2()->as_register();
@@ -2341,7 +2339,7 @@ void LIR_Assembler::emit_static_call_stub() {
     return;
   }
 
-  int start = __ offset();
+  DEBUG_ONLY(int start = __ offset();)
 
   // make sure that the displacement word of the call ends up word aligned
   __ align(BytesPerWord, __ offset() + NativeMovConstReg::instruction_size_rex + NativeCall::displacement_offset);
@@ -2937,7 +2935,6 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
 void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   ciMethod* method = op->profiled_method();
   int bci          = op->profiled_bci();
-  ciMethod* callee = op->profiled_callee();
   Register tmp_load_klass = rscratch1;
 
   // Update counter for all call types

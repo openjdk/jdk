@@ -538,7 +538,7 @@ void G1CollectionSet::select_candidates_from_retained(double time_remaining_ms) 
   double predicted_initial_time_ms = 0.0;
   double predicted_optional_time_ms = 0.0;
 
-  uint const min_regions = _policy->min_retained_old_cset_length();
+  uint const min_num_regions = _policy->min_retained_old_cset_length();
   // We want to make sure that on the one hand we process the retained regions asap,
   // but on the other hand do not take too many of them as optional regions.
   // So we split the time budget into budget we will unconditionally take into the
@@ -552,7 +552,7 @@ void G1CollectionSet::select_candidates_from_retained(double time_remaining_ms) 
   log_debug(gc, ergo, cset)("Start adding retained candidates to collection set. "
                             "Min %u regions, available %u regions (%u groups), "
                             "time remaining %1.2fms, optional remaining %1.2fms",
-                            min_regions, retained_groups->num_regions(), retained_groups->length(),
+                            min_num_regions, retained_groups->num_regions(), retained_groups->length(),
                             time_remaining_ms, optional_time_remaining_ms);
 
   G1CSetCandidateGroupList remove_from_retained;
@@ -585,10 +585,10 @@ void G1CollectionSet::select_candidates_from_retained(double time_remaining_ms) 
       continue;
     }
 
-    if (fits_in_remaining_time || (num_expensive_regions < min_regions)) {
+    if (num_initial_regions < min_num_regions || fits_in_remaining_time) {
       predicted_initial_time_ms += predicted_time_ms;
       if (!fits_in_remaining_time) {
-        num_expensive_regions++;
+        num_expensive_regions += group->length();
       }
 
       add_group_to_collection_set(group);
