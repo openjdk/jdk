@@ -67,7 +67,9 @@ public class TestWideningShiftLeft {
     }
 
     public static void main(String[] args) {
-        TestFramework.run();
+        TestFramework testFramework = new TestFramework();
+        testFramework.addFlags("--add-modules=jdk.incubator.vector")
+                     .start();
     }
 
     @Test
