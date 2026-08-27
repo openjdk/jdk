@@ -1888,6 +1888,8 @@ Node* IfNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       head = false_proj->find_out_with(Op_Loop);
     }
     if (head != nullptr && head->as_Loop()->is_loop_nest_inner_loop()) {
+      // Exit test for a loop that's in the process of being transformed into a counted loop: do not remove that exit
+      // test so the counted loop transformation happens.
       return nullptr;
     }
 

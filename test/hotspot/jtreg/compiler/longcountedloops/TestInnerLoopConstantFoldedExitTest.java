@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8375639
-  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:StressLongCountedLoop=1 -XX:+AlwaysIncrementalInline
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:StressLongCountedLoop=1 -XX:+AlwaysIncrementalInline
  *                   -Xbatch -XX:CompileCommand=compileonly,${test.main.class}::test ${test.main.class}
  * @run main ${test.main.class}
  */
