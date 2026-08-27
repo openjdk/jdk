@@ -63,7 +63,7 @@ import org.junit.jupiter.params.provider.MethodSource;
  *                   -Djdk.httpclient.HttpClient.log=headers
  *                   -Djdk.internal.httpclient.disableHostnameVerification
  *                   -Djdk.internal.httpclient.debug=false
- *                    TlsContextTest
+ *                    ${test.main.class}
  */
 
 public class TlsContextTest implements HttpServerAdapters {

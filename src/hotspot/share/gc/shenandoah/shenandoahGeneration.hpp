@@ -63,7 +63,7 @@ private:
   // Return available assuming that we can allocate no more than capacity bytes within this generation.
   size_t available(size_t capacity) const;
 
- public:
+public:
   ShenandoahGeneration(ShenandoahGenerationType type,
                        uint max_workers);
   ~ShenandoahGeneration();
@@ -96,7 +96,6 @@ private:
   virtual size_t max_capacity() const override = 0;
 
   size_t available() const override;
-  size_t available_with_reserve() const;
 
   // Returns the memory available based on the _soft_ max heap capacity (soft_max_heap - used).
   // The soft max heap size may be adjusted lower than the max heap size to cause the trigger
@@ -144,7 +143,7 @@ private:
   virtual bool contains(ShenandoahAffiliation affiliation) const = 0;
 
   // Return true if this region is affiliated with this generation.
-  virtual bool contains(ShenandoahHeapRegion* region) const = 0;
+  virtual bool contains(ShenandoahHeapRegion* region) const override = 0;
 
   // Return true if this object is affiliated with this generation.
   virtual bool contains(oop obj) const = 0;

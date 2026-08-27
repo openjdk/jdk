@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,18 +29,20 @@ import java.io.ObjectStreamClass;
 import java.io.ObjectStreamField;
 import java.io.Serializable;
 import java.util.Arrays;
-import org.testng.annotations.Test;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.assertFalse;
 
 import jdk.test.lib.util.ForceGC;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /* @test
  * @bug 8277072
  * @library /test/lib/
  * @build jdk.test.lib.util.ForceGC
  * @summary ObjectStreamClass caches keep ClassLoaders alive
- * @run testng TestOSCClassLoaderLeak
+ * @run junit TestOSCClassLoaderLeak
  */
 public class TestOSCClassLoaderLeak {
 

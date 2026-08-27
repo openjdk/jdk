@@ -24,8 +24,8 @@
 /*
  * @test
  * @summary Ensure that the POST method is retied when the property is set.
- * @run junit/othervm -Djdk.httpclient.enableAllMethodRetry RetryPost
- * @run junit/othervm -Djdk.httpclient.enableAllMethodRetry=true RetryPost
+ * @run junit/othervm -Djdk.httpclient.enableAllMethodRetry ${test.main.class}
+ * @run junit/othervm -Djdk.httpclient.enableAllMethodRetry=true ${test.main.class}
  */
 
 import java.io.IOException;

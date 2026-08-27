@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,15 +29,18 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.ReadOnlyBufferException;
 
-import org.testng.annotations.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
  * @bug 8341566
  * @summary Check for expected behavior of Reader.of().
- * @run testng Of
+ * @run junit Of
  */
 public class Of {
     final static String CONTENT = "Some Reader Test";
@@ -45,7 +48,6 @@ public class Of {
     /*
      * Readers to be tested.
      */
-    @DataProvider
     public static Reader[] readers() {
         return new Reader[] {
             new StringReader(CONTENT),
@@ -81,135 +83,152 @@ public class Of {
         };
     }
 
-    @Test(dataProvider = "readers")
+    @ParameterizedTest
+    @MethodSource("readers")
     public void testRead(Reader reader) throws IOException {
         String s = "";
         for (int c; (c = reader.read()) != -1; s += (char) c);
-        assertEquals(s, CONTENT, "read() returned wrong value");
+        assertEquals(CONTENT, s, "read() returned wrong value");
     }
 
-    @Test(dataProvider = "readers")
+    @ParameterizedTest
+    @MethodSource("readers")
     public void testReadBII(Reader reader) throws IOException {
         char[] c = new char[16];
-        assertEquals(reader.read(c, 8, 8), 8,
+        assertEquals(8, reader.read(c, 8, 8),
                 "read(char[],int,int) does not respect given start or end");
-        assertEquals(reader.read(c, 0, 16), 8,
+        assertEquals(8, reader.read(c, 0, 16),
                 "read(char[],int,int) does not respect end of stream");
-        assertEquals(new String(c),
-                CONTENT.substring(8, 16) + CONTENT.substring(0, 8),
+        assertEquals(CONTENT.substring(8, 16) + CONTENT.substring(0, 8),
+                new String(c),
                 "read(char[],int,int) provides wrong content");
     }
 
-    @Test(dataProvider = "readers")
+    @ParameterizedTest
+    @MethodSource("readers")
     public void testReadBIILenZero(Reader reader) throws IOException {
-        assertEquals(reader.read(new char[1], 0, 0), 0,
+        assertEquals(0, reader.read(new char[1], 0, 0),
                 "read(char[],int,int) != 0");
     }
 
-    @Test(dataProvider = "readers")
+    @ParameterizedTest
+    @MethodSource("readers")
     public void testReadDirectCharBuffer(Reader reader) throws IOException {
         CharBuffer charBuffer = ByteBuffer.allocateDirect(32).asCharBuffer();
         charBuffer.position(8);
-        assertEquals(reader.read(charBuffer), 8,
+        assertEquals(8, reader.read(charBuffer),
                 "read(CharBuffer) does not respect position or limit");
         charBuffer.rewind();
-        assertEquals(reader.read(charBuffer), 8,
+        assertEquals(8, reader.read(charBuffer),
                 "read(CharBuffer) does not respect end of stream");
         charBuffer.rewind();
-        assertEquals(charBuffer.toString(),
-                // last part first proofs that copy loops correctly stopped
-                CONTENT.substring(8, 16) + CONTENT.substring(0, 8),
+        // last part first proves that copy loops correctly stopped
+        assertEquals(CONTENT.substring(8, 16) + CONTENT.substring(0, 8),
+                charBuffer.toString(),
                 "read(CharBuffer) provides wrong content");
     }
 
-    @Test(dataProvider = "readers")
+    @ParameterizedTest
+    @MethodSource("readers")
     public void testReadNonDirectCharBuffer(Reader reader) throws IOException {
         CharBuffer charBuffer = CharBuffer.allocate(16);
         charBuffer.position(8);
-        assertEquals(reader.read(charBuffer), 8,
+        assertEquals(8, reader.read(charBuffer),
                 "read(CharBuffer) does not respect position or limit");
         charBuffer.rewind();
-        assertEquals(reader.read(charBuffer), 8,
+        assertEquals(8, reader.read(charBuffer),
                 "read(CharBuffer) does not respect end of stream");
         charBuffer.rewind();
-        assertEquals(charBuffer.toString(),
-                CONTENT.substring(8, 16) + CONTENT.substring(0, 8),
+        assertEquals(CONTENT.substring(8, 16) + CONTENT.substring(0, 8),
+                charBuffer.toString(),
                 "read(CharBuffer) provides wrong content");
     }
 
-    @Test(dataProvider = "readers")
+    @ParameterizedTest
+    @MethodSource("readers")
     public void testReadCharBufferZeroRemaining(Reader reader) throws IOException {
         CharBuffer charBuffer = CharBuffer.allocate(0);
-        assertEquals(reader.read(charBuffer), 0, "read(CharBuffer) != 0");
+        assertEquals(0, reader.read(charBuffer), "read(CharBuffer) != 0");
     }
 
-    @Test(dataProvider = "readers")
+    @ParameterizedTest
+    @MethodSource("readers")
     public void testReady(Reader reader) throws IOException {
         assertTrue(reader.ready());
     }
 
-    @Test(dataProvider = "readers")
+    @ParameterizedTest
+    @MethodSource("readers")
     public void testSkip(Reader reader) throws IOException {
-        assertEquals(reader.skip(8), 8, "skip() does not respect limit");
-        assertEquals(reader.skip(9), 8, "skip() does not respect end of stream");
-        assertEquals(reader.skip(1), 0, "skip() does not respect empty stream");
+        assertEquals(8, reader.skip(8), "skip() does not respect limit");
+        assertEquals(8, reader.skip(9), "skip() does not respect end of stream");
+        assertEquals(0, reader.skip(1), "skip() does not respect empty stream");
     }
 
-    @Test(dataProvider = "readers")
+    @ParameterizedTest
+    @MethodSource("readers")
     public void testTransferTo(Reader reader) throws IOException {
         StringWriter sw = new StringWriter(16);
-        assertEquals(reader.transferTo(sw), 16, "transferTo() != 16");
-        assertEquals(reader.transferTo(sw), 0,
+        assertEquals(16, reader.transferTo(sw), "transferTo() != 16");
+        assertEquals(0, reader.transferTo(sw),
                 "transferTo() does not respect empty stream");
-        assertEquals(sw.toString(), CONTENT,
+        assertEquals(CONTENT, sw.toString(),
                 "transferTo() provides wrong content");
     }
 
-    @Test(dataProvider = "readers")
+    @ParameterizedTest
+    @MethodSource("readers")
     public void testReadClosed(Reader reader) throws IOException {
         reader.close();
         assertThrows(IOException.class, () -> {reader.read();});
     }
 
-    @Test(dataProvider = "readers")
+    @ParameterizedTest
+    @MethodSource("readers")
     public void testReadBIIClosed(Reader reader) throws IOException {
         reader.close();
         assertThrows(IOException.class, () -> reader.read(new char[1], 0, 1));
     }
 
-    @Test(dataProvider = "readers")
+    @ParameterizedTest
+    @MethodSource("readers")
     public void testReadCharBufferClosed(Reader reader) throws IOException {
         CharBuffer charBuffer = CharBuffer.allocate(1);
         reader.close();
         assertThrows(IOException.class, () -> reader.read(charBuffer));
     }
 
-    @Test(dataProvider = "readers")
+    @ParameterizedTest
+    @MethodSource("readers")
     public void testReadCharBufferZeroRemainingClosed(Reader reader) throws IOException {
         CharBuffer charBuffer = CharBuffer.allocate(0);
         reader.close();
         assertThrows(IOException.class, () -> reader.read(charBuffer));
     }
 
-    @Test(dataProvider = "readers")
+    @ParameterizedTest
+    @MethodSource("readers")
     public void testReadyClosed(Reader reader) throws IOException {
         reader.close();
         assertThrows(IOException.class, () -> reader.ready());
     }
 
-    @Test(dataProvider = "readers")
+    @ParameterizedTest
+    @MethodSource("readers")
     public void testSkipClosed(Reader reader) throws IOException {
         reader.close();
         assertThrows(IOException.class, () -> reader.skip(1));
     }
 
-    @Test(dataProvider = "readers")
+    @ParameterizedTest
+    @MethodSource("readers")
     public void testTransferToClosed(Reader reader) throws IOException {
         reader.close();
         assertThrows(IOException.class, () -> reader.transferTo(new StringWriter(1)));
     }
 
-    @Test(dataProvider = "readers")
+    @ParameterizedTest
+    @MethodSource("readers")
     public void testCloseClosed(Reader reader) throws IOException {
         reader.close();
         reader.close();

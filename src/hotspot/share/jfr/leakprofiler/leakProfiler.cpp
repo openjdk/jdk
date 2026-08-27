@@ -34,9 +34,15 @@
 #include "runtime/vmThread.hpp"
 
 bool LeakProfiler::is_supported() {
-  if (UseShenandoahGC) {
+  if (UseShenandoahGC || UseZGC) {
     // Leak Profiler uses mark words in the ways that might interfere
     // with concurrent GC uses of them. This affects Shenandoah.
+    //
+    // Generational ZGC only does weak reference processing in the old generation.
+    // All objects that would usually die, because we are sampling stuff
+    // that immediately becomes garbage, will be artificially kept alive
+    // until an old-generation collection. This incurs a significant
+    // performance hit by causing allocation stalls.
     return false;
   }
   return true;
@@ -58,7 +64,8 @@ bool LeakProfiler::start(int sample_count) {
 
   // Exit cleanly if not supported
   if (!is_supported()) {
-    log_trace(jfr, system)("Object sampling is not supported");
+    log_info(jfr, system)("jdk.OldObjectSample event is currently not supported for %s.",
+      UseShenandoahGC ? "ShenandoahGC" : "ZGC");
     return false;
   }
 

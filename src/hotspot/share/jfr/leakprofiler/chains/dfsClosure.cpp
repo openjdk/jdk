@@ -34,6 +34,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/os.hpp"
 #include "utilities/align.hpp"
 
 UnifiedOopRef DFSClosure::_reference_stack[max_dfs_depth];
@@ -67,9 +68,27 @@ void DFSClosure::find_leaks_from_root_set(EdgeStore* edge_store,
   rs.process();
 }
 
+static address calculate_headroom_limit() {
+  static constexpr size_t required_headroom = K * 64;
+  const Thread* const t = Thread::current_or_null();
+  return t->stack_end() + required_headroom;
+}
+
 DFSClosure::DFSClosure(EdgeStore* edge_store, JFRBitSet* mark_bits, const Edge* start_edge)
   :_edge_store(edge_store), _mark_bits(mark_bits), _start_edge(start_edge),
-  _max_depth(max_dfs_depth), _depth(0), _ignore_root_set(false) {
+  _max_depth(max_dfs_depth), _depth(0), _ignore_root_set(false),
+  _headroom_limit(calculate_headroom_limit()) {
+}
+
+bool DFSClosure::have_headroom() const {
+  const address sp = (address) os::current_stack_pointer();
+#ifdef ASSERT
+  const Thread* const t = Thread::current_or_null();
+  assert(t->is_VM_thread(), "invariant");
+  assert(t->is_in_full_stack(_headroom_limit), "invariant");
+  assert(t->is_in_full_stack(sp), "invariant");
+#endif
+  return sp > _headroom_limit;
 }
 
 void DFSClosure::closure_impl(UnifiedOopRef reference, const oop pointee) {
@@ -97,7 +116,7 @@ void DFSClosure::closure_impl(UnifiedOopRef reference, const oop pointee) {
     }
   }
   assert(_max_depth >= 1, "invariant");
-  if (_depth < _max_depth - 1) {
+  if (_depth < _max_depth - 1 && have_headroom()) {
     _depth++;
     pointee->oop_iterate(this);
     assert(_depth > 0, "invariant");

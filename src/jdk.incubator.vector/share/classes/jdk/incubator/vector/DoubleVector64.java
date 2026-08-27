@@ -31,16 +31,17 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
 
+import jdk.internal.ValueBased;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
 
-import static jdk.internal.vm.vector.VectorSupport.*;
-
 import static jdk.incubator.vector.VectorOperators.*;
+import static jdk.internal.vm.vector.VectorSupport.*;
 
 // -- This file was mechanically generated: Do not edit! -- //
 
 @SuppressWarnings("cast")  // warning: redundant cast
+@ValueBased
 final class DoubleVector64 extends DoubleVector {
     static final DoubleSpecies VSPECIES =
         (DoubleSpecies) DoubleVector.SPECIES_64;
@@ -358,7 +359,7 @@ final class DoubleVector64 extends DoubleVector {
     @Override
     @ForceInline
     public final DoubleShuffle64 toShuffle() {
-        return (DoubleShuffle64) toShuffle(vspecies(), false);
+        return (DoubleShuffle64) toShuffle(VSPECIES, false);
     }
 
     // Specialized unary testing
@@ -557,7 +558,7 @@ final class DoubleVector64 extends DoubleVector {
     }
 
     // Mask
-
+    @ValueBased
     static final class DoubleMask64 extends AbstractMask<Double> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 
@@ -605,7 +606,7 @@ final class DoubleVector64 extends DoubleVector {
 
         @Override
         DoubleMask64 uOp(MUnOp f) {
-            boolean[] res = new boolean[vspecies().laneCount()];
+            boolean[] res = new boolean[VSPECIES.laneCount()];
             boolean[] bits = getBits();
             for (int i = 0; i < res.length; i++) {
                 res[i] = f.apply(i, bits[i]);
@@ -615,7 +616,7 @@ final class DoubleVector64 extends DoubleVector {
 
         @Override
         DoubleMask64 bOp(VectorMask<Double> m, MBinOp f) {
-            boolean[] res = new boolean[vspecies().laneCount()];
+            boolean[] res = new boolean[VSPECIES.laneCount()];
             boolean[] bits = getBits();
             boolean[] mbits = ((DoubleMask64)m).getBits();
             for (int i = 0; i < res.length; i++) {
@@ -765,16 +766,16 @@ final class DoubleVector64 extends DoubleVector {
         @ForceInline
         public boolean anyTrue() {
             return VectorSupport.test(BT_ne, DoubleMask64.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> anyTrueHelper(((DoubleMask64)m).getBits()));
+                                         this, VSPECIES.maskAll(true),
+                                         (m, _) -> anyTrueHelper(((DoubleMask64)m).getBits()));
         }
 
         @Override
         @ForceInline
         public boolean allTrue() {
             return VectorSupport.test(BT_overflow, DoubleMask64.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> allTrueHelper(((DoubleMask64)m).getBits()));
+                                         this, VSPECIES.maskAll(true),
+                                         (m, _) -> allTrueHelper(((DoubleMask64)m).getBits()));
         }
 
         @ForceInline
@@ -782,7 +783,7 @@ final class DoubleVector64 extends DoubleVector {
         static DoubleMask64 maskAll(boolean bit) {
             return VectorSupport.fromBitsCoerced(DoubleMask64.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                                  (bit ? -1 : 0), MODE_BROADCAST, null,
-                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+                                                 (v, _) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final DoubleMask64  TRUE_MASK = new DoubleMask64(true);
         private static final DoubleMask64 FALSE_MASK = new DoubleMask64(false);
@@ -790,7 +791,7 @@ final class DoubleVector64 extends DoubleVector {
     }
 
     // Shuffle
-
+    @ValueBased
     static final class DoubleShuffle64 extends AbstractShuffle<Double> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 
@@ -831,7 +832,7 @@ final class DoubleVector64 extends DoubleVector {
         @Override
         @ForceInline
         public DoubleVector64 toVector() {
-            return (DoubleVector64) toBitsVector().castShape(vspecies(), 0);
+            return (DoubleVector64) toBitsVector().castShape(VSPECIES, 0);
         }
 
         @Override
@@ -842,7 +843,7 @@ final class DoubleVector64 extends DoubleVector {
 
         @Override
         LongVector64 toBitsVector0() {
-            return ((LongVector64) vspecies().asIntegral().dummyVector()).vectorFactory(indices());
+            return ((LongVector64) VSPECIES.asIntegral().dummyVector()).vectorFactory(indices());
         }
 
         @Override
@@ -916,7 +917,7 @@ final class DoubleVector64 extends DoubleVector {
         @ForceInline
         public final DoubleMask64 laneIsValid() {
             return (DoubleMask64) toBitsVector().compare(VectorOperators.GE, 0)
-                    .cast(vspecies());
+                    .cast(VSPECIES);
         }
 
         @ForceInline
@@ -924,7 +925,7 @@ final class DoubleVector64 extends DoubleVector {
         public final DoubleShuffle64 rearrange(VectorShuffle<Double> shuffle) {
             DoubleShuffle64 concreteShuffle = (DoubleShuffle64) shuffle;
             return (DoubleShuffle64) toBitsVector().rearrange(concreteShuffle.cast(LongVector.SPECIES_64))
-                    .toShuffle(vspecies(), false);
+                    .toShuffle(VSPECIES, false);
         }
 
         @ForceInline
@@ -937,7 +938,7 @@ final class DoubleVector64 extends DoubleVector {
                 v = (LongVector64) v.blend(v.lanewise(VectorOperators.ADD, length()),
                             v.compare(VectorOperators.LT, 0));
             }
-            return (DoubleShuffle64) v.toShuffle(vspecies(), false);
+            return (DoubleShuffle64) v.toShuffle(VSPECIES, false);
         }
 
         private static long[] prepare(int[] indices, int offset) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -91,10 +91,14 @@ class AsyncExceptionHandshakeClosure : public AsyncHandshakeClosure {
   }
 
   void do_thread(Thread* thr) {
+    PRAGMA_DIAG_PUSH
+    PRAGMA_NONNULL_IGNORED
+    // Suppress GCC warning for nonnull as it doesn't recognize that `thr` is always the current thread.
     JavaThread* self = JavaThread::cast(thr);
     assert(self == JavaThread::current(), "must be");
 
     self->handle_async_exception(exception());
+    PRAGMA_DIAG_POP
   }
   oop exception() {
     assert(!_exception.is_empty(), "invariant");
@@ -107,10 +111,14 @@ class UnsafeAccessErrorHandshakeClosure : public AsyncHandshakeClosure {
  public:
   UnsafeAccessErrorHandshakeClosure() : AsyncHandshakeClosure("UnsafeAccessErrorHandshakeClosure") {}
   void do_thread(Thread* thr) {
+    PRAGMA_DIAG_PUSH
+    PRAGMA_NONNULL_IGNORED
+    // Suppress GCC warning for nonnull as it doesn't recognize that `thr` is always the current thread.
     JavaThread* self = JavaThread::cast(thr);
     assert(self == JavaThread::current(), "must be");
 
     self->handshake_state()->handle_unsafe_access_error();
+    PRAGMA_DIAG_POP
   }
   bool is_async_exception()   { return true; }
 };
@@ -192,6 +200,14 @@ void JavaThread::enter_critical() {
   _jni_active_critical++;
 }
 
+void JavaThread::enter_jni_deferred_suspension() {
+  precond(JavaThread::current() == this);
+  assert(_thread_state != _thread_in_native && _thread_state != _thread_blocked,
+         "Must not defer suspension when handshake-safe");
+  int sc = AtomicAccess::load(&_jni_deferred_suspension_count);
+  AtomicAccess::store(&_jni_deferred_suspension_count, sc + 1);
+}
+
 inline void JavaThread::set_done_attaching_via_jni() {
   _jni_attach_state = _attached_via_jni;
   OrderAccess::fence();
@@ -246,7 +262,6 @@ inline InstanceKlass* JavaThread::class_being_initialized() const {
 }
 
 inline void JavaThread::om_set_monitor_cache(ObjectMonitor* monitor) {
-  assert(UseObjectMonitorTable, "must be");
   assert(monitor != nullptr, "use om_clear_monitor_cache to clear");
   assert(this == current() || monitor->has_owner(this), "only add owned monitors for other threads");
   assert(this == current() || is_obj_deopt_suspend(), "thread must not run concurrently");
@@ -255,9 +270,7 @@ inline void JavaThread::om_set_monitor_cache(ObjectMonitor* monitor) {
 }
 
 inline void JavaThread::om_clear_monitor_cache() {
-  if (UseObjectMonitorTable) {
-    _om_cache.clear();
-  }
+  _om_cache.clear();
 }
 
 inline ObjectMonitor* JavaThread::om_get_from_monitor_cache(oop obj) {

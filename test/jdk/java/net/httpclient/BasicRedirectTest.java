@@ -29,7 +29,7 @@
  * @run junit/othervm
  *       -Djdk.httpclient.HttpClient.log=trace,headers,requests
  *       -Djdk.internal.httpclient.debug=true
- *       BasicRedirectTest
+ *       ${test.main.class}
  */
 
 import java.io.IOException;

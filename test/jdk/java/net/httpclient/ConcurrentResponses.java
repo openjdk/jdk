@@ -31,7 +31,7 @@
  *        jdk.httpclient.test.lib.common.TestServerConfigurator
  * @run junit/othervm
  *      -Djdk.internal.httpclient.debug=true
- *      ConcurrentResponses
+ *      ${test.main.class}
  */
 
 //*      -Djdk.internal.httpclient.HttpClient.log=all

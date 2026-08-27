@@ -37,7 +37,7 @@ import org.junit.jupiter.params.provider.MethodSource;
  * @test
  * @library /test/lib
  * @summary Tests to check QUIC frame decoding errors are handled correctly
- * @run junit/othervm QuicFramesDecoderTest
+ * @run junit/othervm ${test.main.class}
  */
 public class QuicFramesDecoderTest {
 

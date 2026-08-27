@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ public class JspawnhelperWarnings {
         oa.shouldHaveExitValue(EXITCODE_OFFSET + ESTEP_JSPAWN_ARG_ERROR);
         oa.shouldContain("jspawnhelper fail: (1-0-0)");
         oa.shouldContain("This command is not for general use");
-        if (nArgs != 2) {
+        if (nArgs != 1) {
             oa.shouldContain("Incorrect number of arguments");
         } else {
             oa.shouldContain("Incorrect Java version");
@@ -69,10 +69,9 @@ public class JspawnhelperWarnings {
     }
 
     private static void testVersion() throws Exception {
-        String[] args = new String[3];
+        String[] args = new String[2];
         args[0] = Paths.get(System.getProperty("java.home"), "lib", "jspawnhelper").toString();
         args[1] = "wrongVersion";
-        args[2] = "1:1:1";
         Process p = ProcessTools.startProcess("jspawnhelper", new ProcessBuilder(args));
         OutputAnalyzer oa = new OutputAnalyzer(p);
         oa.shouldHaveExitValue(EXITCODE_OFFSET + ESTEP_JSPAWN_VERSION_ERROR);
@@ -88,7 +87,7 @@ public class JspawnhelperWarnings {
         switch (args[0]) {
             case "badargs" -> {
                 for (int nArgs = 0; nArgs < 10; nArgs++) {
-                    if (nArgs != 2) {
+                    if (nArgs != 1) {
                         tryWithNArgs(nArgs);
                     }
                 }

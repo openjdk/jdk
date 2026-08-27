@@ -64,6 +64,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedKlass.inline.hpp"
+#include "oops/fieldStreams.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -79,8 +80,9 @@
 #include "utilities/hashTable.hpp"
 #include "utilities/stringUtils.hpp"
 
-SystemDictionaryShared::ArchiveInfo SystemDictionaryShared::_static_archive;
-SystemDictionaryShared::ArchiveInfo SystemDictionaryShared::_dynamic_archive;
+SystemDictionaryShared::ArchiveInfo SystemDictionaryShared::_info_for_static_archive;
+SystemDictionaryShared::ArchiveInfo SystemDictionaryShared::_info_for_dynamic_archive;
+SystemDictionaryShared::ArchiveInfo SystemDictionaryShared::_info_for_dumping;
 
 DumpTimeSharedClassTable* SystemDictionaryShared::_dumptime_table = nullptr;
 
@@ -89,11 +91,9 @@ DEBUG_ONLY(bool SystemDictionaryShared::_class_loading_may_happen = true;)
 
 #ifdef ASSERT
 static void check_klass_after_loading(const Klass* k) {
-#ifdef _LP64
-  if (k != nullptr && UseCompressedClassPointers) {
+  if (k != nullptr) {
     CompressedKlassPointers::check_encodable(k);
   }
-#endif
 }
 #endif
 
@@ -134,8 +134,8 @@ InstanceKlass* SystemDictionaryShared::lookup_from_stream(Symbol* class_name,
     return nullptr;
   }
 
-  const RunTimeClassInfo* record = find_record(&_static_archive._unregistered_dictionary,
-                                               &_dynamic_archive._unregistered_dictionary,
+  const RunTimeClassInfo* record = find_record(&_info_for_static_archive._unregistered_dictionary,
+                                               &_info_for_dynamic_archive._unregistered_dictionary,
                                                class_name);
   if (record == nullptr) {
     return nullptr;
@@ -202,6 +202,20 @@ DumpTimeClassInfo* SystemDictionaryShared::get_info_locked(InstanceKlass* k) {
   DumpTimeClassInfo* info = _dumptime_table->get_info(k);
   assert(info != nullptr, "must be");
   return info;
+}
+
+void SystemDictionaryShared::check_code_source(InstanceKlass* ik, const ClassFileStream* cfs) {
+  if (CDSConfig::is_dumping_preimage_static_archive() && !is_builtin_loader(ik->class_loader_data())) {
+    if (cfs == nullptr || cfs->source() == nullptr || strncmp(cfs->source(), "file:", 5) != 0) {
+      // AOT cache filtering:
+      // For non-built-in loaders, cache only the classes that have a file: code source, so
+      // we can avoid caching dynamically generated classes that are likely to change from
+      // run to run. This is similar to the filtering in ClassListWriter::write_to_stream()
+      // for the classic CDS static archive.
+      SystemDictionaryShared::log_exclusion(ik, "Not loaded from \"file:\" code source");
+      SystemDictionaryShared::set_excluded(ik);
+    }
+  }
 }
 
 bool SystemDictionaryShared::should_be_excluded_impl(InstanceKlass* k, DumpTimeClassInfo* info) {
@@ -284,6 +298,18 @@ class SystemDictionaryShared::ExclusionCheckCandidates
         }
         return true; // Keep iterating.
       });
+    }
+
+    // Inline fields need to have their layouts preserved between dumptime and runtime.
+    // To ensure this, the types of the fields must be stored in the archive along with
+    // the field holder.
+    if (k->has_inlined_fields() || k->has_null_restricted_static_fields()) {
+      for (AllFieldStream fs(k); !fs.done(); fs.next()) {
+        if (fs.is_flat() || fs.is_null_free_inline_type()) {
+          InlineKlass* field_klass = k->get_inline_type_field_klass(fs.index());
+          add_candidate(InstanceKlass::cast(field_klass));
+        }
+      }
     }
   }
 
@@ -371,11 +397,6 @@ bool SystemDictionaryShared::is_jfr_event_class(InstanceKlass *k) {
     k = k->super();
   }
   return false;
-}
-
-bool SystemDictionaryShared::is_early_klass(InstanceKlass* ik) {
-  DumpTimeClassInfo* info = _dumptime_table->get(ik);
-  return (info != nullptr) ? info->is_early_klass() : false;
 }
 
 bool SystemDictionaryShared::check_self_exclusion(InstanceKlass* k) {
@@ -509,6 +530,20 @@ bool SystemDictionaryShared::check_dependencies_exclusion(InstanceKlass* k, Dump
     if (excluded) {
       // At least one verification constraint class has been excluded
       return true;
+    }
+  }
+
+  // If any of the null restricted or flat field types are excluded, the current
+  // klass must be excluded as well, otherwise there is no guarantee that the
+  // field layouts will be consistent at runtime.
+  if (k->has_inlined_fields() || k->has_null_restricted_static_fields()) {
+    for (AllFieldStream fs(k); !fs.done(); fs.next()) {
+      if (fs.is_flat() || fs.is_null_free_inline_type()) {
+        InlineKlass* field_klass = k->get_inline_type_field_klass(fs.index());
+        if (is_dependency_excluded(k, InstanceKlass::cast(field_klass), "inline field type")) {
+          return true;
+        }
+      }
     }
   }
 
@@ -694,7 +729,7 @@ void SystemDictionaryShared::copy_unregistered_class_size_and_crc32(InstanceKlas
   precond(klass->in_aot_cache());
 
   // A shared class must have a RunTimeClassInfo record
-  const RunTimeClassInfo* record = find_record(&_static_archive._unregistered_dictionary,
+  const RunTimeClassInfo* record = find_record(&_info_for_static_archive._unregistered_dictionary,
                                                nullptr, klass->name());
   precond(record != nullptr);
   precond(record->klass() == klass);
@@ -1270,7 +1305,7 @@ unsigned int SystemDictionaryShared::hash_for_shared_dictionary(address ptr) {
     uintx offset = ArchiveBuilder::current()->any_to_offset(ptr);
     unsigned int hash = primitive_hash<uintx>(offset);
     DEBUG_ONLY({
-        if (MetaspaceObj::in_aot_cache((const MetaspaceObj*)ptr)) {
+        if (AOTMetaspace::in_aot_cache(ptr)) {
           assert(hash == SystemDictionaryShared::hash_for_shared_dictionary_quick(ptr), "must be");
         }
       });
@@ -1328,7 +1363,7 @@ void SystemDictionaryShared::write_dictionary(RunTimeSharedDictionary* dictionar
 }
 
 void SystemDictionaryShared::write_to_archive(bool is_static_archive) {
-  ArchiveInfo* archive = get_archive(is_static_archive);
+  ArchiveInfo* archive = get_archive(is_static_archive, /*is_dumping=*/true);
 
   write_dictionary(&archive->_builtin_dictionary, true);
   write_dictionary(&archive->_unregistered_dictionary, false);
@@ -1341,7 +1376,7 @@ void SystemDictionaryShared::write_to_archive(bool is_static_archive) {
 
 void SystemDictionaryShared::serialize_dictionary_headers(SerializeClosure* soc,
                                                           bool is_static_archive) {
-  ArchiveInfo* archive = get_archive(is_static_archive);
+  ArchiveInfo* archive = get_archive(is_static_archive, soc->writing());
 
   archive->_builtin_dictionary.serialize_header(soc);
   archive->_unregistered_dictionary.serialize_header(soc);
@@ -1388,8 +1423,8 @@ SystemDictionaryShared::find_record(RunTimeSharedDictionary* static_dict, RunTim
 }
 
 InstanceKlass* SystemDictionaryShared::find_builtin_class(Symbol* name) {
-  const RunTimeClassInfo* record = find_record(&_static_archive._builtin_dictionary,
-                                               &_dynamic_archive._builtin_dictionary,
+  const RunTimeClassInfo* record = find_record(&_info_for_static_archive._builtin_dictionary,
+                                               &_info_for_dynamic_archive._builtin_dictionary,
                                                name);
   if (record != nullptr) {
     assert(!record->klass()->is_hidden(), "hidden class cannot be looked up by name");
@@ -1430,11 +1465,12 @@ const char* SystemDictionaryShared::loader_type_for_shared_class(Klass* k) {
 }
 
 void SystemDictionaryShared::get_all_archived_classes(bool is_static_archive, GrowableArray<Klass*>* classes) {
-  get_archive(is_static_archive)->_builtin_dictionary.iterate_all([&] (const RunTimeClassInfo* record) {
+  ArchiveInfo* archive = get_archive(is_static_archive, /*is_dumping=*/false);
+  archive->_builtin_dictionary.iterate_all([&] (const RunTimeClassInfo* record) {
       classes->append(record->klass());
     });
 
-  get_archive(is_static_archive)->_unregistered_dictionary.iterate_all([&] (const RunTimeClassInfo* record) {
+  archive->_unregistered_dictionary.iterate_all([&] (const RunTimeClassInfo* record) {
       classes->append(record->klass());
     });
 }
@@ -1481,10 +1517,10 @@ void SystemDictionaryShared::ArchiveInfo::print_table_statistics(const char* pre
 void SystemDictionaryShared::print_shared_archive(outputStream* st, bool is_static) {
   if (CDSConfig::is_using_archive()) {
     if (is_static) {
-      _static_archive.print_on("", st, true);
+      _info_for_static_archive.print_on("", st, true);
     } else {
       if (DynamicArchive::is_mapped()) {
-        _dynamic_archive.print_on("Dynamic ", st, false);
+        _info_for_dynamic_archive.print_on("Dynamic ", st, false);
       }
     }
   }
@@ -1497,9 +1533,9 @@ void SystemDictionaryShared::print_on(outputStream* st) {
 
 void SystemDictionaryShared::print_table_statistics(outputStream* st) {
   if (CDSConfig::is_using_archive()) {
-    _static_archive.print_table_statistics("Static ", st, true);
+    _info_for_static_archive.print_table_statistics("Static ", st, true);
     if (DynamicArchive::is_mapped()) {
-      _dynamic_archive.print_table_statistics("Dynamic ", st, false);
+      _info_for_dynamic_archive.print_table_statistics("Dynamic ", st, false);
     }
   }
 }

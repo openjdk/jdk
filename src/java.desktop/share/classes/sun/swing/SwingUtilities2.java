@@ -1292,7 +1292,7 @@ public class SwingUtilities2 {
      * returns true if the Graphics is print Graphics
      * false otherwise
      */
-    static boolean isPrinting(Graphics g) {
+    public static boolean isPrinting(Graphics g) {
         return (g instanceof PrinterGraphics || g instanceof PrintGraphics);
     }
 
@@ -1434,15 +1434,6 @@ public class SwingUtilities2 {
             return result;
         }
     }
-
-    /**
-    * checks if the system clipboard can be accessed.
-    * This is true in a headful environment, false in a headless one
-    *
-    */
-   public static boolean canAccessSystemClipboard() {
-       return !GraphicsEnvironment.isHeadless();
-   }
 
     public static String displayPropertiesToCSS(Font font, Color fg) {
         StringBuilder rule = new StringBuilder("body {");
@@ -1646,17 +1637,17 @@ public class SwingUtilities2 {
             if (container.isFocusCycleRoot()) {
                 FocusTraversalPolicy policy = container.getFocusTraversalPolicy();
                 Component comp = policy.getDefaultComponent(container);
-                if (comp!=null) {
+                if (comp != null) {
                     comp.requestFocus(FocusEvent.Cause.TRAVERSAL);
                     return comp;
                 }
             }
             Container rootAncestor = container.getFocusCycleRootAncestor();
-            if (rootAncestor!=null) {
+            if (rootAncestor != null) {
                 FocusTraversalPolicy policy = rootAncestor.getFocusTraversalPolicy();
                 Component comp = policy.getComponentAfter(rootAncestor, container);
 
-                if (comp!=null && SwingUtilities.isDescendingFrom(comp, container)) {
+                if (comp != null && SwingUtilities.isDescendingFrom(comp, container)) {
                     comp.requestFocus(FocusEvent.Cause.TRAVERSAL);
                     return comp;
                 }

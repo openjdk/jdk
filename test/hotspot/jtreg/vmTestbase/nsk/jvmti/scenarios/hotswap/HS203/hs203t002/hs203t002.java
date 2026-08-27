@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,17 +77,17 @@ public class hs203t002 extends RedefineAgent {
             while(!MyThread.resume.get());
             MyThread.resume.set(false);
             Thread.sleep(10000);
-            popThreadFrame(mt);
-            resumeThread(mt);
+            popThreadFrame(mt.getThread());
+            resumeThread(mt.getThread());
             while(!MyThread.resume2.get());
             Thread.sleep(10000);
-                        suspendThread(mt);
+                        suspendThread(mt.getThread());
             //mt.suspend();
-            popThreadFrame(mt);
-            resumeThread(mt);
+            popThreadFrame(mt.getThread());
+            resumeThread(mt.getThread());
             MyThread.resume.set(true);
             mt.join();
-                        log.println(" ..."+mt.threadState);
+                        log.display(" ..."+mt.threadState);
                 } catch(Exception ie) {
                         ie.printStackTrace();
                 }
@@ -95,7 +95,7 @@ public class hs203t002 extends RedefineAgent {
                 if ( (mt.threadState < 1000)  && (redefineAttempted() && isRedefined()) ) {
                         passed = true;
                 } else {
-                        log.println(" FAILED ...");
+                        log.display(" FAILED ...");
                 }
         return passed;
 

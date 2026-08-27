@@ -41,22 +41,11 @@
 #include "TimeZone_md.h"
 #include "path_util.h"
 
-#define fileopen        fopen
-#define filegets        fgets
-#define fileclose       fclose
-
-#if defined(__linux__) || defined(_ALLBSD_SOURCE)
+#if defined(__linux__) || defined(MACOSX)
 static const char *ZONEINFO_DIR = "/usr/share/zoneinfo";
 static const char *DEFAULT_ZONEINFO_FILE = "/etc/localtime";
-#else
-static const char *SYS_INIT_FILE = "/etc/default/init";
-static const char *ZONEINFO_DIR = "/usr/share/lib/zoneinfo";
-static const char *DEFAULT_ZONEINFO_FILE = "/usr/share/lib/zoneinfo/localtime";
-#endif /* defined(__linux__) || defined(_ALLBSD_SOURCE) */
-
 static const char popularZones[][4] = {"UTC", "GMT"};
 
-#if defined(__linux__) || defined(MACOSX)
 static char *isFileIdentical(char* buf, size_t size, char *pathname);
 
 /*
@@ -95,7 +84,7 @@ getZoneName(char *str)
 {
     static const char *zidir = "zoneinfo/";
 
-    char *pos = strstr((const char *)str, zidir);
+    char* pos = strstr(str, zidir);
     if (pos == NULL) {
         return NULL;
     }
@@ -121,7 +110,7 @@ getPathName(const char *dir, const char *name) {
 /*
  * Scans the specified directory and its subdirectories to find a
  * zoneinfo file which has the same content as /etc/localtime on Linux
- * or /usr/share/lib/zoneinfo/localtime on Solaris given in 'buf'.
+ * given in 'buf'.
  * If file is symbolic link, then the contents it points to are in buf.
  * Returns a zone ID if found, otherwise, NULL is returned.
  */
@@ -431,6 +420,10 @@ mapPlatformToJavaTimezone(const char *java_home_dir, const char *tz) {
      * This restriction has been removed from AIX7. */
 
     tz_buf = strdup(tz);
+    if (tz_buf == NULL) {
+        jio_fprintf(stderr, "Failed to allocate timezone buffer\n");
+        goto tzerr;
+    }
     tz_len = strlen(tz_buf);
 
     /* Open tzmappings file, with buffer overrun check */
@@ -450,6 +443,10 @@ mapPlatformToJavaTimezone(const char *java_home_dir, const char *tz) {
         tz_len = (temp_tz == NULL) ? strlen(tz) : temp_tz - tz;
         free((void *) tz_buf);
         tz_buf = (char *)malloc(tz_len + 1);
+        if (tz_buf == NULL) {
+            jio_fprintf(stderr, "Failed to allocate timezone buffer\n");
+            goto tzerr;
+        }
         memcpy(tz_buf, tz, tz_len);
         tz_buf[tz_len] = '\0';
         javatz = getJavaTimezoneFromPlatform(tz_buf, tz_len, mapfilename);
@@ -467,7 +464,7 @@ tzerr:
     return javatz;
 }
 
-#endif /* defined(_AIX) */
+#endif /* defined(__linux__) || defined(MACOSX) || defined(_AIX) */
 
 /*
  * findJavaTZ_md() maps platform time zone ID to Java time zone ID
@@ -534,7 +531,6 @@ char *
 getGMTOffsetID()
 {
     char buf[32];
-    char offset[6];
     struct tm localtm;
     time_t clock = time(NULL);
     if (localtime_r(&clock, &localtm) == NULL) {
@@ -568,6 +564,7 @@ getGMTOffsetID()
     snprintf(buf, sizeof(buf), (const char *)"GMT%c%02.2d:%02.2d",
             gmt_off < 0 ? '-' : '+' , abs(gmt_off / 60), gmt_off % 60);
 #else
+    char offset[6];
     if (strftime(offset, 6, "%z", &localtm) != 5) {
         return strdup("GMT");
     }

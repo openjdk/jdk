@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -259,12 +259,11 @@ VirtualSpaceNode* VirtualSpaceNode::create_node(size_t word_size,
   }
 
 #ifndef _LP64
-  // On 32-bit, with +UseCompressedClassPointers, the whole address space is the encoding range. We therefore
-  // don't need a class space. However, as a pragmatic workaround for pesty overflow problems on 32-bit, we leave
-  // a small area at the end of the address space out of the encoding range. We just assume no Klass will ever live
+  // On 32-bit, the whole address space is the encoding range. We therefore don't need a class space.
+  // However, as a pragmatic workaround for pesty overflow problems on 32-bit, we leave a small area
+  // at the end of the address space out of the encoding range. We just assume no Klass will ever live
   // there (it won't, for no OS we support on 32-bit has user-addressable memory up there).
-  assert(!UseCompressedClassPointers ||
-         rs.end() <= (char*)CompressedKlassPointers::max_klass_range_size(), "Weirdly high address");
+  assert(rs.end() <= (char*)CompressedKlassPointers::max_klass_range_size(), "Weirdly high address");
 #endif // _LP64
 
   MemTracker::record_virtual_memory_tag(rs, mtMetaspace);

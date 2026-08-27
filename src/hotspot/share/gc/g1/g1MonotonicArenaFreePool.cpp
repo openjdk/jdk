@@ -159,7 +159,7 @@ G1MonotonicArenaFreePool::~G1MonotonicArenaFreePool() {
   for (uint i = 0; i < _num_free_lists; i++) {
     _free_lists[i].~SegmentFreeList();
   }
-  FREE_C_HEAP_ARRAY(mtGC, _free_lists);
+  FREE_C_HEAP_ARRAY(_free_lists);
 }
 
 G1MonotonicArenaMemoryStats G1MonotonicArenaFreePool::memory_sizes() const {

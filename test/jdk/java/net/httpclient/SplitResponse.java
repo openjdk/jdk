@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ import static java.net.http.HttpResponse.BodyHandlers.ofString;
  * @run main/othervm/timeout=480
  *     -Djdk.internal.httpclient.debug=true
  *     -Djdk.httpclient.HttpClient.log=all
- *     SplitResponse HTTP connection:CLOSE mode:SYNC
+ *     ${test.main.class} HTTP connection:CLOSE mode:SYNC
  */
 
 /**

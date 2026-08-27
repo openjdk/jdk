@@ -36,17 +36,18 @@
 #include "memory/universe.hpp"
 #include "prims/jvmtiAgentList.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/formatBuffer.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 bool CDSConfig::_is_dumping_static_archive = false;
 bool CDSConfig::_is_dumping_preimage_static_archive = false;
 bool CDSConfig::_is_dumping_final_static_archive = false;
 bool CDSConfig::_is_dumping_dynamic_archive = false;
-bool CDSConfig::_is_using_optimized_module_handling = true;
 bool CDSConfig::_is_dumping_full_module_graph = true;
 bool CDSConfig::_is_using_full_module_graph = true;
 bool CDSConfig::_has_aot_linked_classes = false;
@@ -108,6 +109,27 @@ void CDSConfig::ergo_initialize() {
   }
 
   AOTMapLogger::ergo_initialize();
+
+  setup_compiler_args();
+
+  if (is_dumping_full_module_graph()) {
+    precond(allow_only_single_java_thread());
+
+    // The AttachListenerThread may execute Java code or load new classes. It might see
+    // unexpected results after HeapShared::prepare_for_archiving().
+    //
+    // We disable all new incoming attach requests, so you can't use jcmd, etc, on this JVM.
+    // Since we are not running any application code in this JVM and only executed a very
+    // limited set of Java code (for module system init, class loading, indy resolution,
+    // etc), there is usually no need to attach to this JVM.
+    FLAG_SET_ERGO(DisableAttachMechanism, true);
+  }
+
+  if (!AOTMetaspace::shared_base_valid((char*)SharedBaseAddress)) {
+     log_warning(cds)("SharedBaseAddress " PTR_FORMAT " is invalid. Reverting to " PTR_FORMAT,
+                 p2i((void*)SharedBaseAddress), p2i((void*)DEFAULT_SHARED_BASE_ADDRESS));
+     FLAG_SET_ERGO(SharedBaseAddress, DEFAULT_SHARED_BASE_ADDRESS);
+  }
 }
 
 const char* CDSConfig::default_archive_path() {
@@ -137,12 +159,15 @@ const char* CDSConfig::default_archive_path() {
     if (!UseCompressedOops) {
       tmp.print_raw("_nocoops");
     }
-    if (UseCompactObjectHeaders) {
-      // Note that generation of xxx_coh.jsa variants require
-      // --enable-cds-archive-coh at build time
-      tmp.print_raw("_coh");
+    if (!UseCompactObjectHeaders) {
+      // Note that generation of xxx_nocoh.jsa variants require
+      // --enable-cds-archive-nocoh at build time
+      tmp.print_raw("_nocoh");
     }
 #endif
+    if (Arguments::is_valhalla_enabled()) {
+      tmp.print_raw("_preview");
+    }
     tmp.print_raw(".jsa");
     _default_archive_path = os::strdup(tmp.base());
   }
@@ -299,8 +324,8 @@ void CDSConfig::ergo_init_classic_archive_paths() {
 
 void CDSConfig::check_internal_module_property(const char* key, const char* value) {
   if (Arguments::is_incompatible_cds_internal_module_property(key)) {
-    stop_using_optimized_module_handling();
-    aot_log_info(aot)("optimized module handling: disabled due to incompatible property: %s=%s", key, value);
+    disable_full_module_graph();
+    aot_log_info(aot)("full mmodule graph: disabled due to incompatible property: %s=%s", key, value);
   }
 }
 
@@ -460,7 +485,7 @@ void CDSConfig::check_aot_flags() {
   // At least one AOT flag has been used
   _new_aot_flags_used = true;
 
-  if (FLAG_IS_DEFAULT(AOTMode) || strcmp(AOTMode, "auto") == 0 || strcmp(AOTMode, "on") == 0) {
+  if (FLAG_IS_DEFAULT(AOTMode) || strcmp(AOTMode, "auto") == 0 || strcmp(AOTMode, "on") == 0 || strcmp(AOTMode, "required") == 0) {
     check_aotmode_auto_or_on();
   } else if (strcmp(AOTMode, "off") == 0) {
     check_aotmode_off();
@@ -487,7 +512,7 @@ void CDSConfig::check_aotmode_auto_or_on() {
   if (FLAG_IS_DEFAULT(AOTMode) || (strcmp(AOTMode, "auto") == 0)) {
     RequireSharedSpaces = false;
   } else {
-    assert(strcmp(AOTMode, "on") == 0, "already checked");
+    assert(strcmp(AOTMode, "on") == 0 || strcmp(AOTMode, "required") == 0 , "already checked");
     RequireSharedSpaces = true;
   }
 }
@@ -518,7 +543,7 @@ static void substitute_aot_filename(JVMFlagsEnum flag_enum) {
     JVMFlag::Error err = JVMFlagAccess::set_ccstr(flag, &new_filename, JVMFlagOrigin::ERGONOMIC);
     assert(err == JVMFlag::SUCCESS, "must never fail");
   }
-  FREE_C_HEAP_ARRAY(char, new_filename);
+  FREE_C_HEAP_ARRAY(new_filename);
 }
 
 void CDSConfig::check_aotmode_record() {
@@ -554,9 +579,8 @@ void CDSConfig::check_aotmode_record() {
   _is_dumping_static_archive = true;
   _is_dumping_preimage_static_archive = true;
 
-  // At VM exit, the module graph may be contaminated with program states.
+  // At the end of the training run, the module graph may be contaminated with program states.
   // We will rebuild the module graph when dumping the CDS final image.
-  _is_using_optimized_module_handling = false;
   _is_using_full_module_graph = false;
   _is_dumping_full_module_graph = false;
 }
@@ -588,10 +612,7 @@ void CDSConfig::check_aotmode_create() {
   UseSharedSpaces = true;
   RequireSharedSpaces = true;
 
-  if (!FileMapInfo::is_preimage_static_archive(AOTConfiguration)) {
-    vm_exit_during_initialization("Must be a valid AOT configuration generated by the current JVM", AOTConfiguration);
-  }
-
+  FileMapInfo::check_preimage_static_archive(AOTConfiguration);
   CDSConfig::enable_dumping_static_archive();
 
   // We don't load any agents in the assembly phase, so we can ensure that the agents
@@ -634,8 +655,6 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
     // Using any form of the new AOTMode switch enables enhanced optimizations.
     FLAG_SET_ERGO_IF_DEFAULT(AOTClassLinking, true);
   }
-
-  setup_compiler_args();
 
   if (AOTClassLinking) {
     // If AOTClassLinking is specified, enable all AOT optimizations by default.
@@ -748,11 +767,20 @@ void CDSConfig::setup_compiler_args() {
 void CDSConfig::prepare_for_dumping() {
   assert(CDSConfig::is_dumping_archive(), "sanity");
 
+  if (is_dumping_classic_static_archive() && AOTClassLinking) {
+    if (FLAG_IS_CMDLINE(AOTClassLinking)) {
+      log_warning(cds)("AOTClassLinking is not supported for classic CDS archive");
+    }
+    FLAG_SET_ERGO(AOTClassLinking, false);
+    FLAG_SET_ERGO(AOTInvokeDynamicLinking, false);
+  }
+
   if (is_dumping_dynamic_archive() && AOTClassLinking) {
     if (FLAG_IS_CMDLINE(AOTClassLinking)) {
       log_warning(cds)("AOTClassLinking is not supported for dynamic CDS archive");
     }
     FLAG_SET_ERGO(AOTClassLinking, false);
+    FLAG_SET_ERGO(AOTInvokeDynamicLinking, false);
   }
 
   if (is_dumping_dynamic_archive() && !is_using_archive()) {
@@ -842,13 +870,6 @@ bool CDSConfig::is_dumping_regenerated_lambdaform_invokers() {
   }
 }
 
-void CDSConfig::stop_using_optimized_module_handling() {
-  _is_using_optimized_module_handling = false;
-  _is_dumping_full_module_graph = false; // This requires is_using_optimized_module_handling()
-  _is_using_full_module_graph = false; // This requires is_using_optimized_module_handling()
-}
-
-
 CDSConfig::DumperThreadMark::DumperThreadMark(JavaThread* current) {
   assert(_dumper_thread == nullptr, "sanity");
   _dumper_thread = current;
@@ -891,10 +912,6 @@ const char* CDSConfig::type_of_archive_being_written() {
 // If an incompatible VM options is found, return a text message that explains why
 static const char* check_options_incompatible_with_dumping_heap() {
 #if INCLUDE_CDS_JAVA_HEAP
-  if (!UseCompressedClassPointers) {
-    return "UseCompressedClassPointers must be true";
-  }
-
   return nullptr;
 #else
   return "JVM not configured for writing Java heap objects";
@@ -941,7 +958,7 @@ bool CDSConfig::is_preserving_verification_constraints() {
   } else if (is_dumping_final_static_archive()) { // writing AOT cache
     return is_dumping_aot_linked_classes();
   } else if (is_dumping_classic_static_archive()) {
-    return is_dumping_aot_linked_classes();
+    return false;
   } else {
     return false;
   }
@@ -972,23 +989,39 @@ bool CDSConfig::is_loading_heap() {
 }
 
 bool CDSConfig::is_dumping_klass_subgraphs() {
-  if (is_dumping_classic_static_archive() || is_dumping_final_static_archive()) {
+  if (is_dumping_aot_linked_classes()) {
     // KlassSubGraphs (see heapShared.cpp) is a legacy mechanism for archiving oops. It
     // has been superceded by AOT class linking. This feature is used only when
     // AOT class linking is disabled.
-    //
-    // KlassSubGraphs are disabled in the preimage static archive, which contains a very
-    // limited set of oops.
-    return is_dumping_heap() && !is_dumping_aot_linked_classes();
-  } else {
     return false;
   }
+
+  if (is_dumping_preimage_static_archive()) {
+    // KlassSubGraphs are disabled in the preimage static archive, which contains a very
+    // limited set of oops.
+    return false;
+  }
+
+  if (!is_dumping_full_module_graph()) {
+    // KlassSubGraphs cannot be partially disabled. Since some of the KlassSubGraphs
+    // are used for (legacy support) of the archived full module graph, if
+    // is_dumping_full_module_graph() is calse, we must disable all KlassSubGraphs.
+    return false;
+  }
+
+  return is_dumping_heap();
 }
 
 bool CDSConfig::is_using_klass_subgraphs() {
   return (is_loading_heap() &&
           !CDSConfig::is_using_aot_linked_classes() &&
           !CDSConfig::is_dumping_final_static_archive());
+}
+
+// Prevent the JVM from dumping or using the archived full module graph
+void CDSConfig::disable_full_module_graph() {
+  _is_dumping_full_module_graph = false;
+  _is_using_full_module_graph = false;
 }
 
 bool CDSConfig::is_using_full_module_graph() {
@@ -1031,7 +1064,7 @@ void CDSConfig::stop_using_full_module_graph(const char* reason) {
 }
 
 bool CDSConfig::is_dumping_aot_linked_classes() {
-  if (is_dumping_classic_static_archive() || is_dumping_final_static_archive()) {
+  if (is_dumping_final_static_archive()) {
     // FMG is required to guarantee that all cached boot/platform/app classes
     // are visible in the production run, so they can be unconditionally
     // loaded during VM bootstrap.

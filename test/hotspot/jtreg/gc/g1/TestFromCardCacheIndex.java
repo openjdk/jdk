@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
  * @summary Ensure that G1 does not miss a remembered set entry due to from card cache default value indices.
  * @requires vm.gc.G1
  * @requires vm.debug
+ * @comment VM heap and shadow memory of ASan overlap
+ * @requires !vm.asan
  * @requires vm.bits != "32"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc

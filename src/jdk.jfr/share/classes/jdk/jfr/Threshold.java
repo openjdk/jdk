@@ -50,7 +50,7 @@ public @interface Threshold {
     /**
      * The threshold (for example, {@code "20 ms"}).
      * <p>
-     * A {@code String} representation of a positive {@code Long} value followed by an
+     * A {@code String} representation of a positive {@code long} value followed by an
      * empty space and one of the following units:<br>
      * <br>
      * {@code "ns"} (nanoseconds)<br>

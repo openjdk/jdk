@@ -33,7 +33,7 @@
  *        jdk.test.lib.net.SimpleSSLContext
  * @run junit/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors
  *                     -Djdk.internal.httpclient.debug=true
- *                     H3BasicTest
+ *                     ${test.main.class}
  */
 // -Dseed=-163464189156654174
 

@@ -129,7 +129,8 @@ class TestStringDeduplicationTools {
                 GarbageCollectionNotificationInfo info = GarbageCollectionNotificationInfo.from((CompositeData) n.getUserData());
                 // Shenandoah and Z GC also report GC pauses, skip them
                 if (info.getGcName().startsWith("Shenandoah")) {
-                    if ("end of GC cycle".equals(info.getGcAction())) {
+                    String action = info.getGcAction();
+                    if (action != null && action.contains("GC cycle")) {
                         gcCount++;
                     }
                 } else if (info.getGcName().startsWith("ZGC")) {

@@ -272,9 +272,7 @@ void MemSummaryReporter::report_summary_of_tag(MemTag mem_tag,
   } else if (mem_tag == mtClass) {
     // Metadata information
     report_metadata(Metaspace::NonClassType);
-    if (Metaspace::using_class_space()) {
-      report_metadata(Metaspace::ClassType);
-    }
+    CLASS_SPACE_ONLY(report_metadata(Metaspace::ClassType);)
   }
   out->cr();
 }
@@ -754,9 +752,9 @@ void MemSummaryDiffReporter::diff_summary_of_tag(MemTag mem_tag,
 void MemSummaryDiffReporter::print_metaspace_diff(const MetaspaceCombinedStats& current_ms,
                                                   const MetaspaceCombinedStats& early_ms) const {
   print_metaspace_diff("Metadata", current_ms.non_class_space_stats(), early_ms.non_class_space_stats());
-  if (Metaspace::using_class_space()) {
-    print_metaspace_diff("Class space", current_ms.class_space_stats(), early_ms.class_space_stats());
-  }
+#if INCLUDE_CLASS_SPACE
+  print_metaspace_diff("Class space", current_ms.class_space_stats(), early_ms.class_space_stats());
+#endif
 }
 
 void MemSummaryDiffReporter::print_metaspace_diff(const char* header,

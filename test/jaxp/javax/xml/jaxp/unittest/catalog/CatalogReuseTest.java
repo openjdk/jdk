@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,22 +22,27 @@
  */
 package catalog;
 
-import java.net.URI;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import javax.xml.catalog.Catalog;
 import javax.xml.catalog.CatalogFeatures;
 import javax.xml.catalog.CatalogManager;
-import org.testng.Assert;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import java.net.URI;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
  * @bug 8253569
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng catalog.CatalogReuseTest
+ * @run junit catalog.CatalogReuseTest
  * @summary Verifies that a catalog can be reused.
  */
+@TestInstance(Lifecycle.PER_CLASS)
 public class CatalogReuseTest extends CatalogSupportBase {
     static final CatalogFeatures FEATURES_STRICT = CatalogFeatures.builder().
             with(CatalogFeatures.Feature.RESOLVE, "strict").build();
@@ -46,7 +51,6 @@ public class CatalogReuseTest extends CatalogSupportBase {
         DataProvider: reuses a catalog. The length of the URIs is in descending order.
         Data columns: catalog, uri, expected
      */
-    @DataProvider(name = "dataWithCatalogD")
     public Object[][] dataWithCatalogD() {
         Catalog c = getCatalog();
         return new Object[][]{
@@ -59,7 +63,6 @@ public class CatalogReuseTest extends CatalogSupportBase {
         DataProvider: reuses a catalog. The length of the URIs is in ascending order.
         Data columns: catalog, uri, expected
      */
-    @DataProvider(name = "dataWithCatalogA")
     public Object[][] dataWithCatalogA() {
         Catalog c = getCatalog();
         return new Object[][]{
@@ -72,18 +75,17 @@ public class CatalogReuseTest extends CatalogSupportBase {
         DataProvider: provides no catalog. A new catalog will be created for each test.
         Data columns: uri, expected
      */
-    @DataProvider(name = "dataWithoutCatalog")
     public Object[][] dataWithoutCatalog() {
-        return new Object[][]{
-            {"http://entailments/example.org/A/B/derived.ttl", "derived/A/B/derived.ttl"},
-            {"http://example.org/A/B.owl", "sources/A/B.owl"},
-         };
+        return new Object[][] {
+                { "http://entailments/example.org/A/B/derived.ttl", "derived/A/B/derived.ttl" },
+                { "http://example.org/A/B.owl", "sources/A/B.owl" },
+        };
     }
 
     /*
      * Initializing fields
      */
-    @BeforeClass
+    @BeforeAll
     public void setUpClass() throws Exception {
         super.setUp();
     }
@@ -91,36 +93,38 @@ public class CatalogReuseTest extends CatalogSupportBase {
     /*
      * Verifies that a Catalog object can be reused, that no state data are
      * in the way of a subsequent matching attempt.
-    */
-    @Test(dataProvider = "dataWithCatalogD")
+     */
+    @ParameterizedTest
+    @MethodSource("dataWithCatalogD")
     public void testD(Catalog c, String uri, String expected) throws Exception {
         String m = c.matchURI(uri);
-        Assert.assertTrue(m.endsWith(expected), "Expected: " + expected);
+        assertTrue(m.endsWith(expected), "Expected: " + expected);
     }
 
     /*
      * Verifies that a Catalog object can be reused.
-    */
-    @Test(dataProvider = "dataWithCatalogA")
+     */
+    @ParameterizedTest
+    @MethodSource("dataWithCatalogA")
     public void testA(Catalog c, String uri, String expected) throws Exception {
         String m = c.matchURI(uri);
-        Assert.assertTrue(m.endsWith(expected), "Expected: " + expected);
+        assertTrue(m.endsWith(expected), "Expected: " + expected);
     }
 
     /*
      * Verifies that a match is found in a newly created Catalog.
-    */
-    @Test(dataProvider = "dataWithoutCatalog")
+     */
+    @ParameterizedTest
+    @MethodSource("dataWithoutCatalog")
     public void testNew(String uri, String expected) throws Exception {
         Catalog c = getCatalog();
         String m = c.matchURI(uri);
-        Assert.assertTrue(m.endsWith(expected), "Expected: " + expected);
+        assertTrue(m.endsWith(expected), "Expected: " + expected);
 
     }
 
     private Catalog getCatalog() {
         String uri = "file://" + slash + filepath + "/catalogReuse.xml";
-        Catalog c = CatalogManager.catalog(FEATURES_STRICT, uri != null? URI.create(uri) : null);
-        return c;
+        return CatalogManager.catalog(FEATURES_STRICT, URI.create(uri));
     }
 }
