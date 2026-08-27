@@ -2001,8 +2001,9 @@ uintptr_t os::vm_min_address() {
 }
 
 uintptr_t os::vm_max_address() {
-  // On 64-bit AIX, we have 57 address bits for user space addresses
-  return right_n_bits<uintptr_t>(57);
+  // On 64-bit AIX, we have 60 user-addressable address bits
+  // (1ExiB) unshared with kernel.
+  return right_n_bits<uintptr_t>(60);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

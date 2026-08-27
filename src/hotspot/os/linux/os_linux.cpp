@@ -161,8 +161,6 @@ physical_memory_size_type os::Linux::_physical_memory = 0;
 
 address   os::Linux::_initial_thread_stack_bottom = nullptr;
 uintptr_t os::Linux::_initial_thread_stack_size   = 0;
-uintptr_t os::Linux::_vm_min_address = 0;
-uintptr_t os::Linux::_vm_max_address = 0;
 
 pthread_t os::Linux::_main_thread;
 const char * os::Linux::_libc_version = nullptr;
@@ -4440,102 +4438,85 @@ uintptr_t os::vm_min_address() {
   return value;
 }
 
-// Helper for os::vm_max_address
-static address find_primordial_stack_top() {
-  FILE *fp = os::fopen("/proc/self/maps", "r");
-  if (fp != nullptr) {
-    address low, high;
-    char line[128];
-    while (fgets(line, sizeof(line), fp)) {
-      if (sscanf(line, "%p-%p", &low, &high) == 2) {
-        if (strstr(line, "[stack]") != nullptr) {
-          return high;
-        }
-      }
-    }
-    fclose(fp);
+#ifdef _LP64
+
+// Returns true if user address space covers at least bits bits (checks if address space
+// between [2^(bits-1), 2^bits) is user-addressable). Assumption here is that user address space
+// is limited by a power-of-2 boundary, which is the case for all our 64-bit platforms.
+static bool mmap_probe_at(int bits) {
+  assert(bits > 0 && bits < 64, "invalid bit size");
+  const uintptr_t f = nth_bit<uintptr_t>(bits);
+  const uintptr_t h = f / 2;
+
+  // After kernel 4.17, we have MAP_FIXED_NOREPLACE. If it fails with EEXISTS, we hit an existing
+  // mapping, so we are still inside user address space.
+  // Kernels before 4.17 silently ignore MAP_FIXED_NOREPLACE: hint is a hint only. If the hint is
+  // in valid user address space but points to an existing mapping, we will mapp somewhere else.
+  // In both cases mmap will return EINVAL if hint points outside the addressable user space.
+  void* hint = (void*)h;
+  void* const result = ::mmap((void*)h, os::vm_page_size(), PROT_NONE,
+      MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE | MAP_FIXED_NOREPLACE, -1, 0);
+  if (result != MAP_FAILED) {
+    ::munmap(result, os::vm_page_size());
+    return true;
   }
-  return false;
-}
-
-// Helper for os::vm_max_address:
-// Given a number of bits, use mmap probing to determine if the region between
-// [size/2, size) is user-addressable
-static bool mmap_probe_at(size_t size) {
-  const uintptr_t f = size;
-  const uintptr_t h = size / 2;
-  const uintptr_t q = size / 4;
-  const uintptr_t e = size / 8;
-
-  const uintptr_t hints[] = {
-      f - 1,     // end of range
-      h,         // start of range
-      h + q,     // midpoint
-      h + q + e, // 3/4
-      h + q - e  // 1/4
-  };
-
-  constexpr int numhints = sizeof(hints) / sizeof(hints[0]);
-
-  void* result = MAP_FAILED;
-  for (int n = 0; n < numhints; n++) {
-    void* const hint = (void*) (align_down(hints[n], os::vm_allocation_granularity()));
-    result = ::mmap(hint, os::vm_page_size(), PROT_NONE, MAP_ANONYMOUS | MAP_NORESERVE, -1, 0);
-    if (result != MAP_FAILED) {
-      ::munmap(result, os::vm_page_size());
-      if ((uintptr_t)result >= h && (uintptr_t)result < f) {
-        // Success
-        return true;
-      }
-    }
+  log_trace(os)("mmap_probe_at: " PTR_FORMAT "->" PTR_FORMAT " (%d)", p2i(hint), p2i(result), errno);
+  switch (errno) {
+  case EEXIST: return true;
+  case EINVAL:
+  case ENOMEM:
+    // Both EINVAL and ENOMEM may be returned if the hint address is not in user-addressable
+    // memory.
+    return false;
+  break;
+  default:
+    fatal("Failed to probe memory (mmap errno=%d)", errno);
   }
   return false;
 }
 
 uintptr_t os::vm_max_address() {
 
+  static bool initialized = false;
   static uintptr_t value = 0;
 
-#ifndef _LP64
-  return 2 * G;
-#endif
-
-#ifdef S390
-  // Full 64-bit user space address is user-addressable on s390;
-  // However, see comment above os::vm_page_table_expansion_point().
-  return align_down((uintptr_t)-1, os::vm_allocation_granularity());
-#endif
-
-  if (value != 0) {
+  if (initialized) {
     return value;
   }
 
-  constexpr size_t address_space_sizes[] = {
-#if defined(AARCH64)
-      256 * G, 2 * T, 128 * T, 4 * P,
-#elif defined(PPC64)
-      128 * T, 512 * T,
-#elif defined(RISCV)
-      256 * G, 2 * T, 64 * P,
-#elif defined(AMD64)
-      128 * T, 64 * P,
-#endif
-      0
-      };
+#ifdef S390
+  // On s390, technically the full 64-bit user space address is user-addressable. But
+  // note that this is mostly theoretical: using high addresses triggers a stepped page table
+  // expansion, which we usually want to avoid. See also: os::vm_page_table_expansion_point().
+  value = 0;
 
-  int hit = -1, i = 0;
-  while(address_space_sizes[i] > 0) {
-    if (!mmap_probe_at(address_space_sizes[i])) {
-      break;
-    }
-    hit = i;
+#else
+  // 4PB: e.g. RiscV with Sv57, x64 with LVA57
+  // (note: 57 bits, but 50/50 split with kernel)
+  constexpr int maxbits = 56;
+  // 256GB: Arm64 small SBCs, e.g. Raspbian OS
+  constexpr int minbits = 38;
+  bool success = false;
+  int bits = maxbits;
+  while (!success && bits >= minbits) {
+    success = mmap_probe_at(bits);
+    bits--;
   }
+  assert(bits >= minbits, "mmap probing failed?");
+  value = nth_bit<uintptr_t>(bits);
+#endif // !S390
 
-  if (hit == -1) {
-    // address space may be extremely populated. Fall back to the lowest size
-
-  }
+  return value;
 }
+
+#else
+
+uintptr_t os::vm_max_address() {
+  return 2 * G;
+}
+
+#endif // _LP64
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // thread priority support
@@ -4839,9 +4820,6 @@ jint os::init_2(void) {
   if (!suppress_primordial_thread_resolution) {
     Linux::capture_initial_stack(JavaThread::stack_size_at_create());
   }
-
-  Linux::capture_vm_min_address();
-  Linux::capture_vm_max_address();
 
   Linux::libpthread_init();
   Linux::sched_getcpu_init();

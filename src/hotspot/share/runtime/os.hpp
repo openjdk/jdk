@@ -208,6 +208,11 @@ class os: AllStatic {
   static OSThread*          _starting_thread;
   static PageSizes          _page_sizes;
 
+  // The default value for os::vm_min_address() unless the platform knows better. This value
+  // is chosen to give us reasonable protection against null pointer dereferences while being
+  // low enough to leave most of the valuable low-4gb address space open.
+  static constexpr size_t _vm_min_address_default = 16 * M;
+
   static char*  pd_reserve_memory(size_t bytes, bool executable);
 
   static char*  pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool executable);
@@ -497,21 +502,16 @@ class os: AllStatic {
   // Returns the lowest address the process is allowed to map against.
   static uintptr_t vm_min_address();
 
-  // Returns the highest address the process is allowed to access.
-  // (eg. 0x7FFF_FFFF_FFFF for a 47-bit address space).
-  // Note: it will never be (uintptr_t)-1, even if that were theoretically possible
-  // (e.g. on s390 with a 64-bit address space, or on 32-bit).
+  // Returns the end of the user-addressable address space.
+  // (eg. 0x100_0000_0000_0000 (64 Pebi) for LVA57).
+  // A return value of 0 means that the platform technically has no user address
+  // space limit (any address can be a user-addressable mapping).
   static uintptr_t vm_max_address();
 
   // Some kernels (e.g. s390x) can dynamically expand the page table. This function returns
   // the lowest user space address that will expand the page table for the first time.
   // We typically want to avoid expanding the page table unless it is really necessary.
   static uintptr_t vm_page_table_expansion_point();
-
-  // The minimum value for os::vm_min_address() we enforce across our platforms. This value
-  // is chosen to give us reasonable protection against null pointer dereferences while being
-  // low enough to leave most of the valuable low-4gb address space open.
-  static constexpr uintptr_t vm_min_address_default = 16 * M;
 
   // Returns an upper limit beyond which reserve_memory() calls are guaranteed
   // to fail. It is not guaranteed that reserving less memory than this will
