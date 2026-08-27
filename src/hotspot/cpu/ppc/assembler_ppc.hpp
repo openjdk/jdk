@@ -539,6 +539,10 @@ class Assembler : public AbstractAssembler {
     STXVL_OPCODE   = (31u << OPCODE_SHIFT |  397u << 1),
     LXVD2X_OPCODE  = (31u << OPCODE_SHIFT |  844u << 1),
     STXVD2X_OPCODE = (31u << OPCODE_SHIFT |  972u << 1),
+    LXVW4X_OPCODE  = (31u << OPCODE_SHIFT |  780u << 1),
+    STXVW4X_OPCODE = (31u << OPCODE_SHIFT |  908u << 1),
+    LXVB16X_OPCODE = (31u << OPCODE_SHIFT |  876u << 1),
+    STXVB16X_OPCODE= (31u << OPCODE_SHIFT | 1004u << 1),
     MTVSRD_OPCODE  = (31u << OPCODE_SHIFT |  179u << 1),
     MTVSRDD_OPCODE = (31u << OPCODE_SHIFT |  435u << 1),
     MTVSRWZ_OPCODE = (31u << OPCODE_SHIFT |  243u << 1),
@@ -2386,8 +2390,17 @@ class Assembler : public AbstractAssembler {
   inline void lxvd2x(   VectorSRegister d, Register a, Register b);
   inline void stxvd2x(  VectorSRegister d, Register a);
   inline void stxvd2x(  VectorSRegister d, Register a, Register b);
+  inline void lxvw4x(   VectorSRegister d, Register a);
+  inline void lxvw4x(   VectorSRegister d, Register a, Register b);
+  inline void stxvw4x(  VectorSRegister d, Register a);
+  inline void stxvw4x(  VectorSRegister d, Register a, Register b);
 
   // Power9
+  inline void lxvb16x(  VectorSRegister d, Register a);
+  inline void lxvb16x(  VectorSRegister d, Register a, Register b);
+  inline void stxvb16x( VectorSRegister d, Register a);
+  inline void stxvb16x( VectorSRegister d, Register a, Register b);
+
   inline void lxv(      VectorSRegister d, int si16, Register a);
   inline void stxv(     VectorSRegister d, int si16, Register a);
   inline void lxvx(     VectorSRegister d, Register a, Register b);
@@ -2589,6 +2602,15 @@ class Assembler : public AbstractAssembler {
   inline void load_perm(VectorRegister perm, Register addr);
   inline void vec_perm(VectorRegister first_dest, VectorRegister second, VectorRegister perm);
   inline void vec_perm(VectorRegister dest, VectorRegister first, VectorRegister second, VectorRegister perm);
+
+  // Load/Store unaligned vectors with offs (multiple of 16). Byte versions require vp for Power8 LE.
+  inline void load_byte_vector_unaligned(VectorRegister dest, int offs, Register base, Register tmp,
+                                         VectorRegister vp); // vp should be pre-computed (see generator below)
+  inline void store_byte_vector_unaligned(VectorRegister val, int offs, Register base, Register tmp,
+                                          VectorRegister vp, VectorRegister vtmp = vnoreg); // clobbers val if no vtmp provided
+  inline void compute_vp_for_byte_vector_unaligned(VectorRegister dest, VectorRegister vtmp);
+  inline void load_word_vector_unaligned(VectorRegister dest, int offs, Register base, Register tmp);
+  inline void store_word_vector_unaligned(VectorRegister val, int offs, Register base, Register tmp);
 
   // RegisterOrConstant versions.
   // These emitters choose between the versions using two registers and
