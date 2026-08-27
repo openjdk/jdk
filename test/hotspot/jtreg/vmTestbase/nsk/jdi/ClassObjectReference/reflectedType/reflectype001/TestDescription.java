@@ -53,7 +53,6 @@
  *        nsk.jdi.ClassObjectReference.reflectedType.reflectype001a
  * @run driver
  *      nsk.jdi.ClassObjectReference.reflectedType.reflectype001
- *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

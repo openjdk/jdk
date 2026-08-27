@@ -113,7 +113,7 @@ public class AOTFlags {
             "-XX:AOTMode=off",
             "-cp", appJar, helloClass);
         out = CDSTestUtils.executeAndLog(pb, "prod");
-        out.shouldNotContain(", sharing");
+        out.shouldNotContain(", aot production");
         out.shouldNotContain("Opened AOT cache hello.aot.");
         out.shouldContain("Hello World");
         out.shouldHaveExitValue(0);
@@ -127,7 +127,7 @@ public class AOTFlags {
             "-XX:AOTMode=auto",
             "-cp", appJar, helloClass);
         out = CDSTestUtils.executeAndLog(pb, "prod");
-        out.shouldContain(", sharing");
+        out.shouldContain(", aot production");
         out.shouldContain("Opened AOT cache hello.aot.");
         out.shouldContain("Hello World");
         out.shouldHaveExitValue(0);
@@ -142,7 +142,7 @@ public class AOTFlags {
                 "-XX:AOTMode=" + mode,
                 "-cp", appJar, helloClass);
             out = CDSTestUtils.executeAndLog(pb, "prod");
-            out.shouldContain(", sharing");
+            out.shouldContain(", aot production");
             out.shouldContain("Opened AOT cache hello.aot.");
             out.shouldContain("Hello World");
             out.shouldHaveExitValue(0);

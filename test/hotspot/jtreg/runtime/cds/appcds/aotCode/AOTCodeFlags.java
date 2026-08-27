@@ -34,12 +34,9 @@
  * @comment Both C1 and C2 JIT compilers are required because the test verifies
  *          compiler's runtime blobs generation.
  * @library /test/lib /test/setup_aot
- * @build AOTCodeFlags JavacBenchApp
+ * @build AOTCodeFlags
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
- *                 JavacBenchApp
- *                 JavacBenchApp$ClassFile
- *                 JavacBenchApp$FileManager
- *                 JavacBenchApp$SourceFile
+ *                 AOTCodeSimpleTestApp
  * @run driver/timeout=1500 AOTCodeFlags
  */
 /**
@@ -54,12 +51,9 @@
  * @comment Both C1 and C2 JIT compilers are required because the test verifies
  *          compiler's runtime blobs generation.
  * @library /test/lib /test/setup_aot
- * @build AOTCodeFlags JavacBenchApp
+ * @build AOTCodeFlags
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
- *                 JavacBenchApp
- *                 JavacBenchApp$ClassFile
- *                 JavacBenchApp$FileManager
- *                 JavacBenchApp$SourceFile
+ *                 AOTCodeSimpleTestApp
  * @run driver/timeout=1500 AOTCodeFlags Z
  */
 /**
@@ -74,12 +68,9 @@
  * @comment Both C1 and C2 JIT compilers are required because the test verifies
  *          compiler's runtime blobs generation.
  * @library /test/lib /test/setup_aot
- * @build AOTCodeFlags JavacBenchApp
+ * @build AOTCodeFlags
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
- *                 JavacBenchApp
- *                 JavacBenchApp$ClassFile
- *                 JavacBenchApp$FileManager
- *                 JavacBenchApp$SourceFile
+ *                 AOTCodeSimpleTestApp
  * @run driver/timeout=1500 AOTCodeFlags Shenandoah
  */
 /**
@@ -94,12 +85,9 @@
  * @comment Both C1 and C2 JIT compilers are required because the test verifies
  *          compiler's runtime blobs generation.
  * @library /test/lib /test/setup_aot
- * @build AOTCodeFlags JavacBenchApp
+ * @build AOTCodeFlags
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
- *                 JavacBenchApp
- *                 JavacBenchApp$ClassFile
- *                 JavacBenchApp$FileManager
- *                 JavacBenchApp$SourceFile
+ *                 AOTCodeSimpleTestApp
  * @run driver/timeout=1500 AOTCodeFlags Parallel
  */
 
@@ -110,6 +98,7 @@ import jdk.test.lib.cds.CDSAppTester;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class AOTCodeFlags {
+    private static String appName = AOTCodeSimpleTestApp.class.getName();
     private static String gcName = null;
     public static void main(String... args) throws Exception {
         Tester t = new Tester(args.length == 0 ? null : args[0]);
@@ -189,6 +178,10 @@ public class AOTCodeFlags {
                                 "-Xlog:aot+codecache+exit=debug",
                                 "-Xlog:aot+codecache+nmethod=info",
                                 "-Xlog:aot+codecache+stubs=debug"));
+
+            // Ensure compilations are finished before the JVM exits.
+            args.add("-Xbatch");
+
             switch (runMode) {
             case RunMode.ASSEMBLY:
                 args.addAll(getVMArgsForTestMode(aMode));
@@ -204,7 +197,7 @@ public class AOTCodeFlags {
 
         @Override
         public String[] appCommandLine(RunMode runMode) {
-            return new String[] { "JavacBenchApp", "1" };
+            return new String[] { appName };
         }
 
         @Override
