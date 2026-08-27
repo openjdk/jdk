@@ -157,8 +157,8 @@ public class TreeBinAssert {
     }
 
     private <T> void doTest(Object collection, int[] hashes,
-                            BiConsumer<Object,T> addKey,
-                            Function<Object,Iterator<T>> mkItr,
+                            BiConsumer<Object, T> addKey,
+                            Function<Object, Iterator<T>> mkItr,
                             IntFunction<T> keyFactory) {
         Iterator<T> itr = null; // saved iterator, used for removals
         for (int h : hashes) {

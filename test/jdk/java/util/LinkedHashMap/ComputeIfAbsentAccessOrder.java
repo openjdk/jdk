@@ -36,7 +36,7 @@ public class ComputeIfAbsentAccessOrder {
     }
 
     private static void test(Object first, Object second) {
-        LinkedHashMap<Object,Object> map = new LinkedHashMap<>(2, 0.75f, true);
+        LinkedHashMap<Object, Object> map = new LinkedHashMap<>(2, 0.75f, true);
         map.put(first, null);
         map.put(second, null);
 
