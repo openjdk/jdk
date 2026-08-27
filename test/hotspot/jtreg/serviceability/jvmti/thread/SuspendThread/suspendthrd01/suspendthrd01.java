@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,64 +36,47 @@
  *     5001769 TEST_RFE: remove usage of deprecated GetThreadStatus function
  *
  * @library /test/lib
- * @run main/othervm/native -agentlib:suspendthrd01=-waittime=5 suspendthrd01
+ * @run main/othervm/native -agentlib:suspendthrd01 suspendthrd01
  */
 
-import jdk.test.lib.jvmti.DebugeeClass;
-
-public class suspendthrd01 extends DebugeeClass {
+public class suspendthrd01 {
 
     // load native library if required
     static {
         System.loadLibrary("suspendthrd01");
     }
 
+    native static boolean suspendTestedThread(Thread thread);
+    native static boolean checkSuspendedState(Thread thread);
+    native static boolean resumeTestedThread(Thread thread);
+
     // run test from command line
     public static void main(String argv[]) {
-        new suspendthrd01().runIt(argv);
-    }
-
-    /* =================================================================== */
-
-    long timeout = 0;
-    int status = DebugeeClass.TEST_PASSED;
-
-    // run debuggee
-    public void runIt(String argv[]) {
-        timeout =  60 * 1000; // milliseconds
-
-        // create tested thread
         suspendthrd01Thread thread = new suspendthrd01Thread("TestedThread");
-
-        // run tested thread
-        System.out.println("Staring tested thread");
-        try {
-            thread.start();
-            if (!thread.checkReady()) {
-                throw new RuntimeException("Unable to prepare tested thread: " + thread);
-            }
-
-            // testing sync
-            System.out.println("Sync: thread started");
-            status = checkStatus(status);
-        } finally {
-            // let thread to finish
-            thread.letFinish();
+        System.out.println("Starting tested thread");
+        thread.start();
+        if (!thread.checkReady()) {
+            throw new RuntimeException("Unable to prepare tested thread: " + thread);
         }
-
-        // wait for thread to finish
+        if (!suspendTestedThread(thread)) {
+            throw new RuntimeException("SuspendThread failed");
+        }
+        try {
+            // the suspended thread cannot see the flag and must not finish
+            thread.letFinish();
+            if (!checkSuspendedState(thread)) {
+                throw new RuntimeException("Thread is not in the suspended state");
+            }
+        } finally {
+            if (!resumeTestedThread(thread)) {
+                throw new RuntimeException("ResumeThread failed");
+            }
+        }
         System.out.println("Finishing tested thread");
         try {
             thread.join();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
-        }
-
-        // testing sync
-        System.out.println("Sync: thread finished");
-        status = checkStatus(status);
-        if (checkStatus(status) != 0) {
-            new RuntimeException();
         }
     }
 }

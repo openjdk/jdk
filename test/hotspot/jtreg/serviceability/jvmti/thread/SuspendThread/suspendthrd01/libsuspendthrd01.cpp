@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,112 +20,56 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 #include <string.h>
 #include "jvmti.h"
 #include "jvmti_common.hpp"
-#include "jvmti_thread.hpp"
 
 extern "C" {
 
-/* ============================================================================= */
+static jvmtiEnv *jvmti = nullptr;
 
-/* scaffold objects */
-static jlong timeout = 0;
-
-/* constant names */
-#define THREAD_NAME     "TestedThread"
-
-/* ============================================================================= */
-
-/** Agent algorithm. */
-static void JNICALL
-agentProc(jvmtiEnv *jvmti, JNIEnv *jni, void *arg) {
-
-  LOG("Wait for thread to start\n");
-  if (!agent_wait_for_sync(timeout))
-    return;
-
-  /* perform testing */
-  {
-    LOG("Find thread: %s\n", THREAD_NAME);
-    jthread tested_thread = find_thread_by_name(jvmti, jni, THREAD_NAME);
-    if (tested_thread == nullptr) {
-      return;
-    }
-    LOG("  ... found thread: %p\n", (void *) tested_thread);
-
-    LOG("Suspend thread: %p\n", (void *) tested_thread);
-    suspend_thread(jvmti, jni, tested_thread);
-
-    LOG("Let thread to run and finish\n");
-    if (!agent_resume_sync()) {
-      return;
-    }
-
-    LOG("Get state vector for thread: %p\n", (void *) tested_thread);
-    {
-      jint state = get_thread_state(jvmti, jni, tested_thread);
-      LOG("  ... got state vector: %s (%d)\n", TranslateState(state), (int) state);
-
-      if ((state & JVMTI_THREAD_STATE_SUSPENDED) == 0) {
-        LOG("SuspendThread() does not turn on flag SUSPENDED:\n"
-            "#   state: %s (%d)\n", TranslateState(state), (int) state);
-        set_agent_fail_status();
-      }
-    }
-
-    LOG("Resume thread: %p\n", (void *) tested_thread);
-    resume_thread(jvmti, jni, tested_thread);
-
-    LOG("Wait for thread to finish\n");
-    if (!agent_wait_for_sync(timeout)) {
-      return;
-    }
-
-    LOG("Delete thread reference\n");
-    jni->DeleteGlobalRef(tested_thread);
+JNIEXPORT jboolean JNICALL
+Java_suspendthrd01_suspendTestedThread(JNIEnv *jni, jclass cls, jthread thread) {
+  LOG("Suspend thread: %p\n", (void *) thread);
+  jvmtiError err = jvmti->SuspendThread(thread);
+  if (err != JVMTI_ERROR_NONE) {
+    LOG("suspendTestedThread: SuspendThread failed: %s (%d)\n", TranslateError(err), err);
+    return JNI_FALSE;
   }
-
-  LOG("Let debugee to finish\n");
-  if (!agent_resume_sync()) {
-    return;
-  }
+  return JNI_TRUE;
 }
 
-/* ============================================================================= */
+JNIEXPORT jboolean JNICALL
+Java_suspendthrd01_checkSuspendedState(JNIEnv *jni, jclass cls, jthread thread) {
+  jint state = get_thread_state(jvmti, jni, thread);
+  LOG("Thread state: %s (%d)\n", TranslateState(state), (int) state);
+  return (state & JVMTI_THREAD_STATE_SUSPENDED) != 0 ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_suspendthrd01_resumeTestedThread(JNIEnv *jni, jclass cls, jthread thread) {
+  LOG("Resume thread: %p\n", (void *) thread);
+  jvmtiError err = jvmti->ResumeThread(thread);
+  if (err != JVMTI_ERROR_NONE) {
+    LOG("resumeTestedThread: ResumeThread failed: %s (%d)\n", TranslateError(err), err);
+    return JNI_FALSE;
+  }
+  return JNI_TRUE;
+}
 
 JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
-  jvmtiEnv *jvmti = nullptr;
-
-  timeout = 60 * 1000;
-
   jint res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_9);
   if (res != JNI_OK || jvmti == nullptr) {
     LOG("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
-
-  /* add specific capabilities for suspending thread */
-
   jvmtiCapabilities caps;
   memset(&caps, 0, sizeof(caps));
   caps.can_suspend = 1;
   if (jvmti->AddCapabilities(&caps) != JVMTI_ERROR_NONE) {
     return JNI_ERR;
   }
-
-
-  if (init_agent_data(jvmti, &agent_data) != JVMTI_ERROR_NONE) {
-    return JNI_ERR;
-  }
-
-  /* register agent proc and arg */
-  if (!set_agent_proc(agentProc, nullptr)) {
-    return JNI_ERR;
-  }
-
   return JNI_OK;
 }
 
