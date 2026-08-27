@@ -2186,6 +2186,10 @@ public:
     return _ptrtype->is_known_instance();
   }
 
+  virtual bool maybe_null() const {
+    return _ptrtype->maybe_null();
+  }
+
 #ifndef PRODUCT
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const;
 #endif

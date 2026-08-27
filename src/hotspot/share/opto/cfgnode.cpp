@@ -2948,7 +2948,7 @@ private:
             _nodes_from_phi.push(in);
           }
         }
-      } else if (n->is_ConstraintCast() || n->is_EncodeP() || n->is_DecodeN()) {
+      } else if (should_skip_over(n)) {
         Node* in = n->in(1);
         if (in != nullptr) {
           _nodes_from_phi.push(in);
@@ -2977,7 +2977,7 @@ private:
             _nodes_from_phi.push(in);
           }
         }
-      } else if (n->is_ConstraintCast() || n->is_DecodeN() || n->is_EncodeP()) {
+      } else if (should_skip_over(n)) {
         Node* in = n->in(1);
         if (in != nullptr) {
           _nodes_from_phi.push(in);
@@ -3048,7 +3048,7 @@ private:
             }
           }
         }
-      } else if (n->is_ConstraintCast() || n->is_DecodeN() || n->is_EncodeP()) {
+      } else if (should_skip_over(n)) {
         Node* in = n->in(1);
         Node* in_clone = get_clone(in);
         assert(in_clone != nullptr, "must be cloned");
@@ -3102,7 +3102,7 @@ private:
             after.push(in);
           }
         }
-      } else if (n->is_ConstraintCast() || n->is_EncodeP() || n->is_DecodeN()) {
+      } else if (should_skip_over(n)) {
         Node* in = n->in(1);
         if (in != nullptr) {
           after.push(in);
@@ -3156,6 +3156,10 @@ private:
   }
 #endif
 
+  bool should_skip_over(Node* n) {
+    return n->is_ConstraintCast() || n->is_EncodeP() || n->is_DecodeN();
+  }
+
   Node* do_transform(PhiNode* phi) {
     assert(_inline_klass != nullptr, "must be");
     InlineTypeNode* vt = InlineTypeNode::make_null(*_phase, _inline_klass, /* transform = */ false)->clone_with_phis(
@@ -3170,7 +3174,7 @@ private:
       if (n == nullptr) {
         continue;
       }
-      while (n->is_ConstraintCast() || n->is_EncodeP() || n->is_DecodeN()) {
+      while (should_skip_over(n)) {
         if (n->is_ConstraintCast()) {
           casts.push(n);
         }
@@ -3241,7 +3245,7 @@ public:
     for (uint next = 0; next < _nodes_from_phi.size(); next++) {
       Node* n = _nodes_from_phi.at(next);
       if (n->is_Phi()) {
-        assert(n->bottom_type()->isa_ptr(), "broken graph");
+        assert(n->bottom_type()->make_ptr() != nullptr, "broken graph");
         if (n != _root_phi && !_can_reshape) {
           return false;
         }
