@@ -103,11 +103,7 @@ public class fieldbyname002 {
 
         Debugee debugee;
 
-        if (argsHandler.verbose()) {
-            debugee = binder.bindToDebugee(debugeeName + " -vbs");
-        } else {
-            debugee = binder.bindToDebugee(debugeeName);
-        }
+        debugee = binder.bindToDebugee(debugeeName);
 
         print_log_on_verbose("==> nsk/jdi/ReferenceType/fieldByName/fieldbyname002 test LOG:");
         print_log_on_verbose("==> test checks fieldByName(...) method of ReferenceType interface ");

@@ -1241,6 +1241,9 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "must be at safepoint");
 
+  // Remember if we had self forwards. We want this flag cleared before we verify,
+  // but we use it to control parallelism when we trash (and partially recycle) regions.
+  const bool had_self_forwards = heap->has_self_forwarded_objects();
   heap->finish_concurrent_roots();
 
   // Clear cancelled GC, if set. On cancellation path, the block before would handle
@@ -1256,7 +1259,7 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
 
   // If we are running in generational mode, this will also age active regions that
   // haven't been used for allocation.
-  heap->update_heap_region_states();
+  heap->update_heap_region_states(had_self_forwards);
 
   heap->set_update_refs_in_progress(false);
   heap->set_has_forwarded_objects(false);

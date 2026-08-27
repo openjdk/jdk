@@ -144,10 +144,8 @@ private:
   // Print table for young region ages if log is enabled
   void maybe_print_young_region_ages() const;
 
+  // Will also schedule an immediate full gc if old evacuations failed
   void clear_allocation_failure_and_notify_waiters();
-
-  // Returns true if we should run a full gc
-  bool should_run_full_gc(GCCause::Cause cause) const;
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALCONTROLTHREAD_HPP

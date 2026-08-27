@@ -224,7 +224,8 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   // reclaimable regions, Shenandoah can skip the evacuation phase.
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (check_cancellation()) {
-    log_info(gc, phases)("Cancelled");
+    // Need to report at "gc" level to report GC ID proper.
+    log_info(gc)("Cancelled before cycle started");
     return;
   }
   heap->increment_total_collections(false);
