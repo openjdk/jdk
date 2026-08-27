@@ -118,11 +118,10 @@ void oopDesc::verify(oopDesc* oop_desc) {
 intptr_t oopDesc::slow_identity_hash(markWord mark, Thread* current) {
   precond(!mark.has_hash());
 
-  // VM should be calling bootstrap method.
-  assert(!klass()->is_inline_klass(), "slow_identity_hash should not be called for inline classes");
+  assert(!is_inline(), "slow_identity_hash should not be called for value objects");
 
   // Calculate the new hash
-  const intptr_t new_hash = ObjectSynchronizer::get_next_hash(current, this);  // get a new hash
+  const intptr_t new_hash = ObjectSynchronizer::get_next_hash(current, this);
 
   while (true) {
     const markWord old_mark = mark;
