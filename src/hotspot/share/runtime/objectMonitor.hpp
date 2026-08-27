@@ -154,13 +154,9 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   // ParkEvent of unblocker thread.
   static ParkEvent* _vthread_unparker_ParkEvent;
 
-  // Because of frequent access, the metadata field is at offset zero (0).
-  // Enforced by the assert() in metadata_addr().
-  // * Locking with UseObjectMonitorTable:
-  //   Contains the _object's hashCode.
-  // * Locking without UseObjectMonitorTable:
-  //   Contains the displaced object header word - mark
-  volatile uintptr_t _metadata;     // metadata
+  // Because of frequent access, the _metadata field is at offset zero (0),
+  // which is enforced by a STATIC_ASSERT() in metadata_addr().
+  volatile uintptr_t _metadata;     // contains the _object's hashCode
   WeakHandle _object;               // backward object pointer
   // Separate _metadata and _owner on different cache lines since both can
   // have busy multi-threaded access. _metadata and _object are set at initial
@@ -221,26 +217,9 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   static ByteSize succ_offset()        { return byte_offset_of(ObjectMonitor, _succ); }
   static ByteSize entry_list_offset()  { return byte_offset_of(ObjectMonitor, _entry_list); }
 
-  // ObjectMonitor references can be ORed with markWord::monitor_value
-  // as part of the ObjectMonitor tagging mechanism. When we combine an
-  // ObjectMonitor reference with an offset, we need to remove the tag
-  // value in order to generate the proper address.
-  //
-  // We can either adjust the ObjectMonitor reference and then add the
-  // offset or we can adjust the offset that is added to the ObjectMonitor
-  // reference. The latter avoids an AGI (Address Generation Interlock)
-  // stall so the helper macro adjusts the offset value that is returned
-  // to the ObjectMonitor reference manipulation code:
-  //
-  #define OM_OFFSET_NO_MONITOR_VALUE_TAG(f) \
-    ((in_bytes(ObjectMonitor::f ## _offset())) - checked_cast<int>(markWord::monitor_value))
-
   uintptr_t           metadata() const;
   void                set_metadata(uintptr_t value);
   volatile uintptr_t* metadata_addr();
-
-  markWord            header() const;
-  void                set_header(markWord hdr);
 
   intptr_t            hash() const;
   void                set_hash(intptr_t hash);
@@ -415,7 +394,6 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
  public:
   // Deflation support
   bool      deflate_monitor(Thread* current);
-  void      install_displaced_markword_in_object(const oop obj);
 
   // JFR support
   static bool is_jfr_excluded(const Klass* monitor_klass);

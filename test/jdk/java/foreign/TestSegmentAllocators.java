@@ -26,23 +26,20 @@
  * @test
  * @modules java.base/jdk.internal.foreign
  * @library /test/lib
- * @run testng/othervm                                                       TestSegmentAllocators
- * @run testng/othervm -Djdk.internal.foreign.native.confined.pool.power.size=-1 TestSegmentAllocators
- * @run testng/othervm -Djdk.internal.foreign.native.confined.pool.power.size=3 TestSegmentAllocators
- * @run testng/othervm -Djdk.internal.foreign.native.confined.pool.power.size=4 TestSegmentAllocators
- * @run testng/othervm -Djdk.internal.foreign.native.confined.pool.power.size=5 TestSegmentAllocators
+ * @run junit/othervm                                                           TestSegmentAllocators
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=-1 TestSegmentAllocators
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=3  TestSegmentAllocators
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=4  TestSegmentAllocators
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=5  TestSegmentAllocators
  */
 
 import java.lang.foreign.*;
 
 import jdk.test.lib.thread.VThreadRunner;
-import org.testng.annotations.*;
-import org.testng.IHookCallBack;
-import org.testng.IHookable;
-import org.testng.ITestResult;
 
 import java.lang.foreign.Arena;
 import java.lang.invoke.VarHandle;
+import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.CharBuffer;
@@ -59,47 +56,38 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.InvocationInterceptor;
+import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
+import org.junit.jupiter.params.Parameter;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.MethodSource;
 
-public class TestSegmentAllocators implements IHookable {
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@ParameterizedClass
+@EnumSource(TestSegmentAllocators.ThreadMode.class)
+@ExtendWith(TestSegmentAllocators.ThreadModeInterceptor.class)
+public class TestSegmentAllocators {
 
     final static int ELEMS = 128;
 
-    private final boolean virtual;
+    @Parameter(0)
+    private ThreadMode threadMode;
 
-    @Factory(dataProvider = "threadModes")
-    public static Object[] createTests(boolean virtual) {
-        return new Object[] { new TestSegmentAllocators(virtual) };
+    enum ThreadMode {
+        PLATFORM,
+        VIRTUAL
     }
 
-    private TestSegmentAllocators(boolean virtual) {
-        this.virtual = virtual;
-    }
-
-    @DataProvider(name = "threadModes")
-    public static Object[][] threadModes() {
-        return new Object[][] {
-                { false },
-                { true }
-        };
-    }
-
-    @Override
-    public void run(IHookCallBack callBack, ITestResult testResult) {
-        if (virtual) {
-            VThreadRunner.run(() -> callBack.runTestMethod(testResult));
-        } else {
-            callBack.runTestMethod(testResult);
-        }
-    }
-
-    @Override
-    public String toString() {
-        return virtual ? "virtual" : "platform";
-    }
-
-    @Test(dataProvider = "scalarAllocations")
     @SuppressWarnings("unchecked")
+    @ParameterizedTest
+    @MethodSource("scalarAllocations")
     public <Z, L extends ValueLayout> void testAllocation(Z value, AllocationFactory allocationFactory, L layout, AllocationFunction<Z, L> allocationFunction, Function<MemoryLayout, VarHandle> handleFactory) {
         layout = (L)layout.withByteAlignment(layout.byteSize());
         L[] layouts = (L[])new ValueLayout[] {
@@ -120,10 +108,10 @@ public class TestSegmentAllocators implements IHookable {
                     SegmentAllocator allocator = allocationFactory.allocator(alignedLayout.byteSize() * ELEMS, arena);
                     for (int i = 0; i < elems; i++) {
                         MemorySegment address = allocationFunction.allocate(allocator, alignedLayout, value);
-                        assertEquals(address.byteSize(), alignedLayout.byteSize());
+                        assertEquals(alignedLayout.byteSize(), address.byteSize());
                         addressList.add(address);
                         VarHandle handle = handleFactory.apply(alignedLayout);
-                        assertEquals(value, handle.get(address, 0L));
+                        assertEquals(handle.get(address, 0L), value);
                     }
                     boolean isBound = allocationFactory.isBound();
                     try {
@@ -144,14 +132,18 @@ public class TestSegmentAllocators implements IHookable {
 
     static final int SIZE_256M = 1024 * 1024 * 256;
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testReadOnlySlicingAllocator() {
-        SegmentAllocator.slicingAllocator(MemorySegment.ofArray(new int[0]).asReadOnly());
+        assertThrows(IllegalArgumentException.class, () -> {
+            SegmentAllocator.slicingAllocator(MemorySegment.ofArray(new int[0]).asReadOnly());
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testReadOnlyPrefixAllocator() {
-        SegmentAllocator.prefixAllocator(MemorySegment.ofArray(new int[0]).asReadOnly());
+        assertThrows(IllegalArgumentException.class, () -> {
+            SegmentAllocator.prefixAllocator(MemorySegment.ofArray(new int[0]).asReadOnly());
+        });
     }
 
     @Test
@@ -161,9 +153,9 @@ public class TestSegmentAllocators implements IHookable {
                 SegmentAllocator allocator = SegmentAllocator.slicingAllocator(arena.allocate(i * 2 + 1));
                 MemorySegment address = allocator.allocate(i, i);
                 //check size
-                assertEquals(address.byteSize(), i);
+                assertEquals(i, address.byteSize());
                 //check alignment
-                assertEquals(address.address() % i, 0);
+                assertEquals(0, address.address() % i);
             }
         }
     }
@@ -177,59 +169,83 @@ public class TestSegmentAllocators implements IHookable {
         }
     }
 
-    @Test(dataProvider = "allocators", expectedExceptions = IllegalArgumentException.class)
+    @ParameterizedTest
+    @MethodSource("allocators")
     public void testBadAllocationSize(SegmentAllocator allocator) {
-        allocator.allocate(-1);
+        assertThrows(IllegalArgumentException.class, () -> {
+            allocator.allocate(-1);
+        });
     }
 
-    @Test(dataProvider = "allocators", expectedExceptions = IllegalArgumentException.class)
+    @ParameterizedTest
+    @MethodSource("allocators")
     public void testBadAllocationAlignZero(SegmentAllocator allocator) {
-        allocator.allocate(1, 0);
+        assertThrows(IllegalArgumentException.class, () -> {
+            allocator.allocate(1, 0);
+        });
     }
 
-    @Test(dataProvider = "allocators", expectedExceptions = IllegalArgumentException.class)
+    @ParameterizedTest
+    @MethodSource("allocators")
     public void testBadAllocationAlignNeg(SegmentAllocator allocator) {
-        allocator.allocate(1, -1);
+        assertThrows(IllegalArgumentException.class, () -> {
+            allocator.allocate(1, -1);
+        });
     }
 
-    @Test(dataProvider = "allocators", expectedExceptions = IllegalArgumentException.class)
+    @ParameterizedTest
+    @MethodSource("allocators")
     public void testBadAllocationAlignNotPowerTwo(SegmentAllocator allocator) {
-        allocator.allocate(1, 3);
+        assertThrows(IllegalArgumentException.class, () -> {
+            allocator.allocate(1, 3);
+        });
     }
 
-    @Test(dataProvider = "allocators", expectedExceptions = IllegalArgumentException.class)
+    @ParameterizedTest
+    @MethodSource("allocators")
     public void testBadAllocationArrayNegSize(SegmentAllocator allocator) {
-        allocator.allocate(ValueLayout.JAVA_BYTE, -1);
+        assertThrows(IllegalArgumentException.class, () -> {
+            allocator.allocate(ValueLayout.JAVA_BYTE, -1);
+        });
     }
 
-    @Test(dataProvider = "allocators", expectedExceptions = IllegalArgumentException.class)
+    @ParameterizedTest
+    @MethodSource("allocators")
     public void testBadAllocationArrayOverflow(SegmentAllocator allocator) {
-        allocator.allocate(ValueLayout.JAVA_LONG,  Long.MAX_VALUE);
+        assertThrows(IllegalArgumentException.class, () -> {
+            allocator.allocate(ValueLayout.JAVA_LONG,  Long.MAX_VALUE);
+        });
     }
 
-    @Test(expectedExceptions = OutOfMemoryError.class)
+    @Test
     public void testBadArenaNullReturn() {
         try (Arena arena = Arena.ofConfined()) {
-            arena.allocate(Long.MAX_VALUE, 2);
+            assertThrows(OutOfMemoryError.class, () -> {
+                arena.allocate(Long.MAX_VALUE, 2);
+            });
         }
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class,
-            expectedExceptionsMessageRegExp = ".*Heap segment not allowed.*")
+    @Test
     public void testArenaAllocateFromHeapSegment() {
         try (Arena arena = Arena.ofConfined()) {
             var heapSegment = MemorySegment.ofArray(new int[]{1});
-            arena.allocateFrom(ValueLayout.ADDRESS, heapSegment);
+            IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> {
+                arena.allocateFrom(ValueLayout.ADDRESS, heapSegment);
+            });
+            assertTrue(e.getMessage().matches(".*Heap segment not allowed.*"));
         }
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class,
-            expectedExceptionsMessageRegExp = ".*Heap segment not allowed.*")
+    @Test
     public void testAllocatorAllocateFromHeapSegment() {
         try (Arena arena = Arena.ofConfined()) {
             SegmentAllocator allocator = SegmentAllocator.prefixAllocator(arena.allocate(16));
             var heapSegment = MemorySegment.ofArray(new int[]{1});
-            allocator.allocateFrom(ValueLayout.ADDRESS, heapSegment);
+            IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> {
+                allocator.allocateFrom(ValueLayout.ADDRESS, heapSegment);
+            });
+            assertTrue(e.getMessage().matches(".*Heap segment not allowed.*"));
         }
     }
 
@@ -330,7 +346,7 @@ public class TestSegmentAllocators implements IHookable {
         allocator.allocateFrom(ValueLayout.JAVA_FLOAT);
         allocator.allocateFrom(ValueLayout.JAVA_LONG);
         allocator.allocateFrom(ValueLayout.JAVA_DOUBLE);
-        assertEquals(calls.get(), 7);
+        assertEquals(7, calls.get());
     }
 
     @Test
@@ -349,11 +365,12 @@ public class TestSegmentAllocators implements IHookable {
             };
         };
         allocator.allocateFrom("Hello");
-        assertEquals(calls.get(), 1);
+        assertEquals(1, calls.get());
     }
 
 
-    @Test(dataProvider = "arrayAllocations")
+    @ParameterizedTest
+    @MethodSource("arrayAllocations")
     public <Z> void testArray(AllocationFactory allocationFactory, ValueLayout layout, AllocationFunction<Object, ValueLayout> allocationFunction, ToArrayHelper<Z> arrayHelper) {
         Z arr = arrayHelper.array();
         Arena[] arenas = {
@@ -365,12 +382,35 @@ public class TestSegmentAllocators implements IHookable {
                 SegmentAllocator allocator = allocationFactory.allocator(100, arena);
                 MemorySegment address = allocationFunction.allocate(allocator, layout, arr);
                 Z found = arrayHelper.toArray(address, layout);
-                assertEquals(found, arr);
+                assertArraysEqual(arr, found);
             }
         }
     }
 
-    @Test(dataProvider = "arrayAllocations")
+    private static void assertArraysEqual(Object arr, Object found) {
+        //in JUnit, assertEquals will really only call .equals, and that does not work well for arrays
+        //there's a set of explicit assertArrayEquals method, but we need "sharp" types for that to work(??):
+        if (arr instanceof byte[]) {
+            assertArrayEquals((byte[]) arr, (byte[]) found);
+        } else if (arr instanceof char[]) {
+            assertArrayEquals((char[]) arr, (char[]) found);
+        } else if (arr instanceof short[]) {
+            assertArrayEquals((short[]) arr, (short[]) found);
+        } else if (arr instanceof int[]) {
+            assertArrayEquals((int[]) arr, (int[]) found);
+        } else if (arr instanceof long[]) {
+            assertArrayEquals((long[]) arr, (long[]) found);
+        } else if (arr instanceof float[]) {
+            assertArrayEquals((float[]) arr, (float[]) found);
+        } else if (arr instanceof double[]) {
+            assertArrayEquals((double[]) arr, (double[]) found);
+        } else {
+            assertArrayEquals((Object[]) arr, (Object[]) found);
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("arrayAllocations")
     public <Z> void testPredicatesAndCommands(AllocationFactory allocationFactory, ValueLayout layout, AllocationFunction<Object, ValueLayout> allocationFunction, ToArrayHelper<Z> arrayHelper) {
         Z arr = arrayHelper.array();
         Arena[] arenas = {
@@ -391,7 +431,6 @@ public class TestSegmentAllocators implements IHookable {
         }
     }
 
-    @DataProvider(name = "scalarAllocations")
     static Object[][] scalarAllocations() {
         List<Object[]> scalarAllocations = new ArrayList<>();
         for (AllocationFactory factory : AllocationFactory.values()) {
@@ -447,7 +486,6 @@ public class TestSegmentAllocators implements IHookable {
         return scalarAllocations.toArray(Object[][]::new);
     }
 
-    @DataProvider(name = "arrayAllocations")
     static Object[][] arrayAllocations() {
         List<Object[]> arrayAllocations = new ArrayList<>();
         for (AllocationFactory factory : AllocationFactory.values()) {
@@ -651,10 +689,36 @@ public class TestSegmentAllocators implements IHookable {
         };
     }
 
-    @DataProvider(name = "allocators")
     static Object[][] allocators() {
         return new Object[][] {
                 { SegmentAllocator.prefixAllocator(Arena.global().allocate(10, 1)) },
         };
+    }
+
+    public static final class ThreadModeInterceptor implements InvocationInterceptor {
+
+        @Override
+        public void interceptTestMethod(Invocation<Void> invocation,
+                                        ReflectiveInvocationContext<Method> invocationContext,
+                                        ExtensionContext extensionContext) throws Throwable {
+            proceed(invocation, extensionContext);
+        }
+
+        @Override
+        public void interceptTestTemplateMethod(Invocation<Void> invocation,
+                                                ReflectiveInvocationContext<Method> invocationContext,
+                                                ExtensionContext extensionContext) throws Throwable {
+            proceed(invocation, extensionContext);
+        }
+
+        private static void proceed(Invocation<Void> invocation,
+                                    ExtensionContext extensionContext) throws Throwable {
+            TestSegmentAllocators test = (TestSegmentAllocators) extensionContext.getRequiredTestInstance();
+            if (test.threadMode == ThreadMode.VIRTUAL) {
+                VThreadRunner.run(invocation::proceed);
+            } else {
+                invocation.proceed();
+            }
+        }
     }
 }

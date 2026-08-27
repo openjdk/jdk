@@ -31,7 +31,7 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
- * @run testng/othervm/timeout=480
+ * @run junit/othervm/timeout=480
  *   -Xbootclasspath/a:.
  *   -XX:+UnlockDiagnosticVMOptions
  *   -XX:+WhiteBoxAPI
@@ -41,7 +41,6 @@
  */
 
 import jdk.test.whitebox.WhiteBox;
-import org.testng.annotations.Test;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
@@ -53,7 +52,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
-import static org.testng.Assert.assertFalse;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import org.junit.jupiter.api.Test;
 
 public class TestConcurrentClose {
     static final WhiteBox WB = WhiteBox.getWhiteBox();

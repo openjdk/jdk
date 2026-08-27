@@ -28,11 +28,11 @@ import jdk.test.lib.Asserts;
 
 import java.lang.reflect.Method;
 
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.ALLOC_OF_MYVALUE_KLASS;
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.STORE_OF_ANY_KLASS;
 import static compiler.valhalla.inlinetypes.InlineTypes.*;
 
 import static compiler.lib.ir_framework.IRNode.ALLOC;
+import static compiler.lib.ir_framework.IRNode.ALLOC_OF_MYVALUE_KLASS;
+import static compiler.lib.ir_framework.IRNode.STORE_OF_ANY_KLASS;
 
 import jdk.internal.vm.annotation.LooselyConsistentValue;
 import jdk.internal.vm.annotation.NullRestricted;
@@ -129,8 +129,8 @@ public class TestValueClasses {
         // Don't generate bytecodes but call through runtime for reflective calls
         scenarios[0].addFlags("-Dsun.reflect.inflationThreshold=10000");
         scenarios[1].addFlags("-Dsun.reflect.inflationThreshold=10000");
-        scenarios[3].addFlags("-XX:-MonomorphicArrayCheck", "-XX:+UnlockDiagnosticVMOptions", "-XX:+UseArrayFlattening");
-        scenarios[4].addFlags("-XX:-UseTLAB", "-XX:-MonomorphicArrayCheck");
+        scenarios[3].addFlags("-XX:+UnlockDiagnosticVMOptions", "-XX:+UseArrayFlattening", "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-MonomorphicArrayCheck");
+        scenarios[4].addFlags("-XX:-UseTLAB", "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-MonomorphicArrayCheck");
 
         InlineTypes.getFramework()
                    .addScenarios(scenarios[Integer.parseInt(args[0])])

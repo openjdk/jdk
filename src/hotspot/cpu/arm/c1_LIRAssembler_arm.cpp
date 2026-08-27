@@ -2878,7 +2878,10 @@ void LIR_Assembler::emit_opFlattenedArrayCheck(LIR_OpFlattenedArrayCheck* op) {
 }
 
 void LIR_Assembler::emit_opNullFreeArrayCheck(LIR_OpNullFreeArrayCheck* op) {
-  Unimplemented();
+  // Since there is no markWord::null_free_array_bit_in_place on ARM32,
+  // setting the EQ flag by cmp(tmp, tmp) by will tell C1 that the array is NOT null-free.
+  Register tmp = op->tmp()->as_register();
+  __ cmp(tmp, tmp);
 }
 
 void LIR_Assembler::emit_opSubstitutabilityCheck(LIR_OpSubstitutabilityCheck* op) {

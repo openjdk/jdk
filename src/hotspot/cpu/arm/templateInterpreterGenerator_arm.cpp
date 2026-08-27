@@ -1014,7 +1014,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   }
 
   // Do safepoint check
-  __ mov(Rtemp, _thread_in_native_trans);
+  __ mov(Rtemp, _thread_in_vm);
   __ str_32(Rtemp, Address(Rthread, JavaThread::thread_state_offset()));
 
   // Force this write out before the read below

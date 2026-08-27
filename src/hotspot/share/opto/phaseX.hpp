@@ -451,10 +451,20 @@ public:
   // Helper to call Node::Ideal() and BarrierSetC2::ideal_node().
   Node* apply_ideal(Node* i, bool can_reshape);
 
+  // Helper to call Node::Identity() and verify that it returns an existing node.
+  Node* apply_identity(Node* n);
+
 #ifdef ASSERT
   void dump_infinite_loop_info(Node* n, const char* where);
   // Check for a simple dead loop when a data node references itself.
   void dead_loop_check(Node *n);
+  // This checks that:
+  // - Identity() returns only existing nodes (GVN and IGVN).
+  // - Ideal() does not return nullptr if the node's hash has changed (IGVN).
+  static bool is_verify_IGVN_method_return() {
+    // '-XX:VerifyIterativeGVN=100000'
+    return ((VerifyIterativeGVN % 1'000'000) / 100'000) == 1;
+  }
 #endif
 };
 
@@ -668,19 +678,15 @@ public:
   }
   static bool is_verify_Ideal() {
     // '-XX:VerifyIterativeGVN=100'
-    return ((VerifyIterativeGVN % 1000) / 100) == 1;
+    return ((VerifyIterativeGVN % 1'000) / 100) == 1;
   }
   static bool is_verify_Identity() {
     // '-XX:VerifyIterativeGVN=1000'
-    return ((VerifyIterativeGVN % 10000) / 1000) == 1;
+    return ((VerifyIterativeGVN % 10'000) / 1'000) == 1;
   }
   static bool is_verify_invariants() {
     // '-XX:VerifyIterativeGVN=10000'
-    return ((VerifyIterativeGVN % 100000) / 10000) == 1;
-  }
-  static bool is_verify_Ideal_return() {
-    // '-XX:VerifyIterativeGVN=100000'
-    return ((VerifyIterativeGVN % 1000000) / 100000) == 1;
+    return ((VerifyIterativeGVN % 100'000) / 10'000) == 1;
   }
 protected:
   // Sub-quadratic implementation of '-XX:VerifyIterativeGVN=1' (Use-Def verification).
