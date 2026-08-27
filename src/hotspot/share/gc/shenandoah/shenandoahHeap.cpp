@@ -410,6 +410,7 @@ jint ShenandoahHeap::initialize() {
 
   _regions = NEW_C_HEAP_ARRAY(ShenandoahHeapRegion*, _num_regions, mtGC);
   _affiliations = NEW_C_HEAP_ARRAY(uint8_t, _num_regions, mtGC);
+  _biased_affiliations = _affiliations - (p2u(base()) >> ShenandoahHeapRegion::region_size_bytes_shift());
 
   {
     ShenandoahHeapLocker locker(lock());
@@ -568,6 +569,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _num_regions(0),
   _regions(nullptr),
   _affiliations(nullptr),
+  _biased_affiliations(nullptr),
   _gc_state_changed(false),
   _gc_no_progress_count(0),
   _cancel_requested_time(0),
@@ -1465,10 +1467,8 @@ void ShenandoahHeap::print_heap_regions_on(outputStream* st) const {
   st->print_cr("Heap Regions:");
   st->print_cr("Region state: EU=empty-uncommitted, EC=empty-committed, R=regular, H=humongous start, HP=pinned humongous start");
   st->print_cr("              HC=humongous continuation, CS=collection set, TR=trash, P=pinned, CSP=pinned collection set");
-  st->print_cr("BTE=bottom/top/end, TAMS=top-at-mark-start");
-  st->print_cr("UWM=update watermark, U=used");
-  st->print_cr("T=TLAB allocs, G=GCLAB allocs");
-  st->print_cr("S=shared allocs, L=live data");
+  st->print_cr("A=age, BTE=bottom/top/end, TAMS=top-at-mark-start, UWM=update watermark, U=used");
+  st->print_cr("T=TLAB allocs, G=GCLAB allocs, S=shared allocs, L=live data");
   st->print_cr("CP=critical pins");
 
   for (size_t i = 0; i < num_regions(); i++) {
