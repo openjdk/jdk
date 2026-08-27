@@ -4834,16 +4834,17 @@ void MacroAssembler::atomically_flip_locked_state(bool is_unlock, Register obj, 
 
   bind(retry);
   STATIC_ASSERT(markWord::fast_locked_value == 0); // Or need to change this!
+  STATIC_ASSERT(markWord::lock_neutral_value == 1); // Or need to change this!
   if (!is_unlock) {
     ldarx(tmp, obj, MacroAssembler::cmpxchgx_hint_acquire_lock());
-    xori(tmp, tmp, markWord::lock_neutral_value); // flip unlocked bit
+    xori(tmp, tmp, markWord::lock_neutral_value); // flip lock-neutral bit
     andi_(R0, tmp, markWord::lock_mask_in_place | markWord::inline_type_bit_in_place);
     bne(CR0, failed); // failed if new header doesn't contain locked_value (which is 0) or belongs to an inline type
   } else {
     ldarx(tmp, obj, MacroAssembler::cmpxchgx_hint_release_lock());
     andi_(R0, tmp, markWord::lock_mask_in_place);
     bne(CR0, failed); // failed if old header doesn't contain locked_value (which is 0)
-    ori(tmp, tmp, markWord::lock_neutral_value); // set unlocked bit
+    ori(tmp, tmp, markWord::lock_neutral_value); // set lock-neutral bit
   }
   stdcx_(tmp, obj);
   bne(CR0, retry);
