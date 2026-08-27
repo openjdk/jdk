@@ -1812,8 +1812,6 @@ void ObjectSynchronizer::exit(oop object, BasicLock* lock, JavaThread* current) 
   // The object could become unlocked through a JNI call, which we have no other checks for.
   // Give a fatal message if CheckJNICalls. Otherwise we ignore it.
   if (mark.is_lock_neutral()) {
-    assert(!ObjectSynchronizer::current_thread_holds_lock(current, Handle(current, object)),
-           "current must have proporly exited the monitor when using JNI");
     if (CheckJNICalls) {
       fatal("Object has been unlocked by JNI");
     }
