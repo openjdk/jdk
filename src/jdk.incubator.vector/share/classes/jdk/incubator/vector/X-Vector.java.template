@@ -1183,12 +1183,6 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
 #end[intOrLong]
 #end[BITWISE]
 #if[FP]
-            case VECTOR_OP_OR: return (v0, v1, vm) ->
-#if[FP16]
-                    v0.bOp(v1, vm, (i, a, b) -> FloatVector.fromBits(FloatVector.toBits(a) | FloatVector.toBits(b)));
-#else[FP16]
-                    v0.bOp(v1, vm, (i, a, b) -> fromBits(toBits(a) | toBits(b)));
-#end[FP16]
             case VECTOR_OP_ATAN2: return (v0, v1, vm) ->
                     v0.bOp(v1, vm, (i, a, b) -> ($fallbacktype$) Math.atan2(a, b));
             case VECTOR_OP_POW: return (v0, v1, vm) ->

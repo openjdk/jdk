@@ -44,7 +44,7 @@ extern "C" {
 
 #ifdef WINDOWS
 jboolean initialized = JNI_FALSE;
-BOOL(WINAPI * pfnGetDiskSpaceInformation)(LPCWSTR, LPVOID) = NULL;
+HRESULT(WINAPI * pfnGetDiskSpaceInformation)(LPCWSTR, LPVOID) = NULL;
 #endif
 
 //
@@ -82,29 +82,28 @@ Java_GetXSpace_getSpace0
     if (pfnGetDiskSpaceInformation != NULL) {
         // use GetDiskSpaceInformationW
         DISK_SPACE_INFORMATION diskSpaceInfo;
-        BOOL hres = pfnGetDiskSpaceInformation(path, &diskSpaceInfo);
-        (*env)->ReleaseStringChars(env, root, strchars);
+        HRESULT hres = pfnGetDiskSpaceInformation(path, &diskSpaceInfo);
         if (FAILED(hres)) {
-            JNU_ThrowByNameWithLastError(env, "java/io/IOException",
-                                         "GetDiskSpaceInformationW");
-            return totalSpaceIsEstimated;
+            totalSpaceIsEstimated = JNI_TRUE;
+        } else {
+            (*env)->ReleaseStringChars(env, root, strchars);
+            ULONGLONG bytesPerAllocationUnit =
+                diskSpaceInfo.SectorsPerAllocationUnit*diskSpaceInfo.BytesPerSector;
+            array[0] = (jlong)(diskSpaceInfo.ActualTotalAllocationUnits*
+                               bytesPerAllocationUnit);
+            array[1] = (jlong)(diskSpaceInfo.CallerTotalAllocationUnits*
+                               bytesPerAllocationUnit);
+            array[2] = (jlong)(diskSpaceInfo.ActualAvailableAllocationUnits*
+                               bytesPerAllocationUnit);
+            array[3] = (jlong)(diskSpaceInfo.CallerAvailableAllocationUnits*
+                               bytesPerAllocationUnit);
         }
-
-        ULONGLONG bytesPerAllocationUnit =
-            diskSpaceInfo.SectorsPerAllocationUnit*diskSpaceInfo.BytesPerSector;
-        array[0] = (jlong)(diskSpaceInfo.ActualTotalAllocationUnits*
-                           bytesPerAllocationUnit);
-        array[1] = (jlong)(diskSpaceInfo.CallerTotalAllocationUnits*
-                           bytesPerAllocationUnit);
-        array[2] = (jlong)(diskSpaceInfo.ActualAvailableAllocationUnits*
-                           bytesPerAllocationUnit);
-        array[3] = (jlong)(diskSpaceInfo.CallerAvailableAllocationUnits*
-                           bytesPerAllocationUnit);
     } else {
         totalSpaceIsEstimated = JNI_TRUE;
+    }
 
-        // if GetDiskSpaceInformationW is unavailable ("The specified
-        // procedure could not be found"), fall back to GetDiskFreeSpaceExW
+    if (totalSpaceIsEstimated == JNI_TRUE) {
+        // fall back to GetDiskFreeSpaceExW
         ULARGE_INTEGER freeBytesAvailable;
         ULARGE_INTEGER totalNumberOfBytes;
         ULARGE_INTEGER totalNumberOfFreeBytes;
@@ -112,7 +111,7 @@ Java_GetXSpace_getSpace0
         BOOL hres = GetDiskFreeSpaceExW(path, &freeBytesAvailable,
             &totalNumberOfBytes, &totalNumberOfFreeBytes);
         (*env)->ReleaseStringChars(env, root, strchars);
-        if (FAILED(hres)) {
+        if (!hres) {
             JNU_ThrowByNameWithLastError(env, "java/io/IOException",
                                          "GetDiskFreeSpaceExW");
             return totalSpaceIsEstimated;
@@ -159,32 +158,6 @@ Java_GetXSpace_getSpace0
     return totalSpaceIsEstimated;
 }
 
-JNIEXPORT jboolean JNICALL
-Java_GetXSpace_isCDDrive
-    (JNIEnv *env, jclass cls, jstring root)
-{
-#ifdef WINDOWS
-    const jchar* strchars = (*env)->GetStringChars(env, root, NULL);
-    if (strchars == NULL) {
-        JNU_ThrowByNameWithLastError(env, "java/lang/RuntimeException",
-                                     "GetStringChars");
-        return JNI_FALSE;
-    }
-
-    LPCWSTR path = (LPCWSTR)strchars;
-    UINT driveType = GetDriveTypeW(path);
-
-    (*env)->ReleaseStringChars(env, root, strchars);
-
-    if (driveType != DRIVE_CDROM) {
-        return JNI_FALSE;
-    }
-
-    return JNI_TRUE;
-#else
-    return JNI_FALSE;
-#endif
-}
 #ifdef __cplusplus
 }
 #endif

@@ -49,6 +49,27 @@
 
 typedef void (MacroAssembler::* chr_insn)(Register Rt, const Address &adr);
 
+void C2_MacroAssembler::entry_barrier() {
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  // Dummy labels for just measuring the code size
+  Label dummy_slow_path;
+  Label dummy_continuation;
+  Label dummy_guard;
+  Label* slow_path = &dummy_slow_path;
+  Label* continuation = &dummy_continuation;
+  Label* guard = &dummy_guard;
+  if (!Compile::current()->output()->in_scratch_emit_size()) {
+    // Use real labels from actual stub when not emitting code for the purpose of measuring its size
+    C2EntryBarrierStub* stub = new (Compile::current()->comp_arena()) C2EntryBarrierStub();
+    Compile::current()->output()->add_stub(stub);
+    slow_path = &stub->entry();
+    continuation = &stub->continuation();
+    guard = &stub->guard();
+  }
+  // In the C2 code, we move the non-hot part of nmethod entry barriers out-of-line to a stub.
+  bs->nmethod_entry_barrier(this, slow_path, continuation, guard);
+}
+
 // jdk.internal.util.ArraysSupport.vectorizedHashCode
 address C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register result,
                                            FloatRegister vdata0, FloatRegister vdata1,
@@ -161,10 +182,8 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register t1,
   // Finish fast lock unsuccessfully. MUST branch to with flag == NE
   Label slow_path;
 
-  if (UseObjectMonitorTable) {
-    // Clear cache in case fast locking succeeds or we need to take the slow-path.
-    str(zr, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
-  }
+  // Clear cache in case fast locking succeeds or we need to take the slow-path.
+  str(zr, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(t1, obj, rscratch2);
@@ -219,63 +238,60 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register t1,
     bind(inflated);
 
     const Register t1_monitor = t1;
+    // Offsets into the current thread's object monitor cache (omc).
+    const ByteSize thr_omc_offset     = JavaThread::om_cache_offset();
+    const ByteSize omc_monitor_offset = OMCache::monitor_offset();
+    const ByteSize omc_obj_offset     = OMCache::obj_offset();
 
-    if (!UseObjectMonitorTable) {
-      assert(t1_monitor == t1_mark, "should be the same here");
-    } else {
-      const Register t1_hash = t1;
-      Label monitor_found;
+    const Register t1_hash = t1;
+    Label monitor_found;
 
-      // Save the mark, we might need it to extract the hash.
-      mov(t3, t1_mark);
+    // Save the mark, we might need it to extract the hash.
+    mov(t3, t1_mark);
 
-      // Look for the monitor in the om_cache.
+    // Look for the monitor in the current thread's object monitor cache (omc).
 
-      ByteSize cache_offset   = JavaThread::om_cache_oops_offset();
-      ByteSize monitor_offset = OMCache::oop_to_monitor_difference();
-      const int num_unrolled  = OMCache::CAPACITY;
-      for (int i = 0; i < num_unrolled; i++) {
-        ldr(t1_monitor, Address(rthread, cache_offset + monitor_offset));
-        ldr(t2, Address(rthread, cache_offset));
-        cmp(obj, t2);
-        br(Assembler::EQ, monitor_found);
-        cache_offset = cache_offset + OMCache::oop_to_oop_difference();
-      }
+    ldr(t1_monitor, Address(rthread, thr_omc_offset + omc_monitor_offset));
+    ldr(t2, Address(rthread, thr_omc_offset + omc_obj_offset));
+    cmp(obj, t2);
+    br(Assembler::EQ, monitor_found);
 
-      // Look for the monitor in the table.
+    // Look for the monitor in the table.
 
-      // Get the hash code.
-      ubfx(t1_hash, t3, markWord::hash_shift, markWord::hash_bits);
+    // Get the hash code.
+    ubfx(t1_hash, t3, markWord::hash_shift, markWord::hash_bits);
 
-      // Get the table and calculate the bucket's address
-      lea(t3, ExternalAddress(ObjectMonitorTable::current_table_address()));
-      ldr(t3, Address(t3));
-      ldr(t2, Address(t3, ObjectMonitorTable::table_capacity_mask_offset()));
-      ands(t1_hash, t1_hash, t2);
-      ldr(t3, Address(t3, ObjectMonitorTable::table_buckets_offset()));
+    // Get the table and calculate the bucket's address
+    lea(t3, ExternalAddress(ObjectMonitorTable::current_table_address()));
+    ldr(t3, Address(t3));
+    ldr(t2, Address(t3, ObjectMonitorTable::table_capacity_mask_offset()));
+    ands(t1_hash, t1_hash, t2);
+    ldr(t3, Address(t3, ObjectMonitorTable::table_buckets_offset()));
 
-      // Read the monitor from the bucket.
-      ldr(t1_monitor, Address(t3, t1_hash, Address::lsl(LogBytesPerWord)));
+    // Read the monitor from the bucket.
+    ldr(t1_monitor, Address(t3, t1_hash, Address::lsl(LogBytesPerWord)));
 
-      // Check if the monitor in the bucket is special (empty, tombstone or removed).
-      cmp(t1_monitor, (unsigned char)ObjectMonitorTable::SpecialPointerValues::below_is_special);
-      br(Assembler::LO, slow_path);
+    // Check if the monitor in the bucket is special (empty, tombstone or removed).
+    cmp(t1_monitor, (unsigned char)ObjectMonitorTable::SpecialPointerValues::below_is_special);
+    br(Assembler::LO, slow_path);
 
-      // Check if object matches.
-      ldr(t3, Address(t1_monitor, ObjectMonitor::object_offset()));
-      BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
-      bs_asm->try_peek_weak_handle_in_nmethod(this, t3, t3, t2, slow_path);
-      cmp(t3, obj);
-      br(Assembler::NE, slow_path);
+    // Check if object matches.
+    ldr(t3, Address(t1_monitor, ObjectMonitor::object_offset()));
+    BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+    bs_asm->try_peek_weak_handle_in_nmethod(this, t3, t3, t2, slow_path);
+    cmp(t3, obj);
+    br(Assembler::NE, slow_path);
 
-      bind(monitor_found);
-    }
+    // Store the monitor in the current thread's object monitor cache (omc).
+    str(t1_monitor, Address(rthread, thr_omc_offset + omc_monitor_offset));
+    str(obj, Address(rthread, thr_omc_offset + omc_obj_offset));
+
+    bind(monitor_found);
 
     const Register t2_owner_addr = t2;
     const Register t3_owner = t3;
-    const ByteSize monitor_tag = in_ByteSize(UseObjectMonitorTable ? 0 : checked_cast<int>(markWord::monitor_value));
-    const Address owner_address(t1_monitor, ObjectMonitor::owner_offset() - monitor_tag);
-    const Address recursions_address(t1_monitor, ObjectMonitor::recursions_offset() - monitor_tag);
+    const Address owner_address(t1_monitor, ObjectMonitor::owner_offset());
+    const Address recursions_address(t1_monitor, ObjectMonitor::recursions_offset());
 
     Label monitor_locked;
 
@@ -295,9 +311,8 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register t1,
     increment(recursions_address, 1);
 
     bind(monitor_locked);
-    if (UseObjectMonitorTable) {
-      str(t1_monitor, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
-    }
+    // Cache the monitor for unlock.
+    str(t1_monitor, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
   }
 
   bind(locked);
@@ -364,7 +379,7 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register box, Register t1,
     // Because we got here by popping (meaning we pushed in locked)
     // there will be no monitor in the box. So we need to push back the obj
     // so that the runtime can fix any potential anonymous owner.
-    tbnz(t1_mark, exact_log2(markWord::monitor_value), UseObjectMonitorTable ? push_and_slow_path : inflated);
+    tbnz(t1_mark, exact_log2(markWord::monitor_value), push_and_slow_path);
 
     // Try to unlock. Transition lock bits 0b00 => 0b01
     assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid lea");
@@ -406,17 +421,10 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register box, Register t1,
 
     const Register t1_monitor = t1;
 
-    if (!UseObjectMonitorTable) {
-      assert(t1_monitor == t1_mark, "should be the same here");
-
-      // Untag the monitor.
-      add(t1_monitor, t1_mark, -(int)markWord::monitor_value);
-    } else {
-      ldr(t1_monitor, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
-      // null check with Flags == NE, no valid pointer below alignof(ObjectMonitor*)
-      cmp(t1_monitor, checked_cast<uint8_t>(alignof(ObjectMonitor*)));
-      br(Assembler::LO, slow_path);
-    }
+    ldr(t1_monitor, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
+    // null check with Flags == NE, no valid pointer below alignof(ObjectMonitor*)
+    cmp(t1_monitor, checked_cast<uint8_t>(alignof(ObjectMonitor*)));
+    br(Assembler::LO, slow_path);
 
     const Register t2_recursions = t2;
     Label not_recursive;
@@ -1506,9 +1514,9 @@ void C2_MacroAssembler::sve_vmask_fromlong(FloatRegister dst, Register src,
   // Expected:  dst = 0x00 01 01 00 00 01 00 01 01 00 00 00 01 01 00 01
 
   // Put long value from general purpose register into the first lane of vector.
+  // The higher lanes are set to zero.
   // vtmp = 0x0000000000000000 | 0x000000000000658D
-  sve_dup(vtmp, B, 0);
-  mov(vtmp, D, 0, src);
+  fmovd(vtmp, src);
 
   // Transform the value in the first lane which is mask in bit now to the mask in
   // byte, which can be done by SVE2's BDEP instruction.
@@ -2428,7 +2436,8 @@ void C2_MacroAssembler::neon_reverse_bytes(FloatRegister dst, FloatRegister src,
 void C2_MacroAssembler::neon_rearrange_hsd(FloatRegister dst, FloatRegister src,
                                            FloatRegister shuffle, FloatRegister tmp,
                                            BasicType bt, bool isQ) {
-  assert_different_registers(dst, src, shuffle, tmp);
+  assert_different_registers(dst, src, tmp);
+  assert_different_registers(shuffle, tmp);
   SIMD_Arrangement size1 = isQ ? T16B : T8B;
   SIMD_Arrangement size2 = esize2arrangement((uint)type2aelembytes(bt), isQ);
 
@@ -2969,4 +2978,43 @@ int C2_MacroAssembler::vector_iota_entry_index(BasicType bt) {
   default:
     ShouldNotReachHere();
   }
+}
+
+// Vector integer division for BYTE elements. Each BYTE is widened to SHORT for
+// the low and high halves of the register, divided using the SHORT helper
+// (which widens further to INT), and the two SHORT result halves are narrowed
+// back to BYTE.
+void C2_MacroAssembler::sve_sdiv_byte(FloatRegister dst_src1, FloatRegister src2,
+                                      FloatRegister vtmp1, FloatRegister vtmp2,
+                                      FloatRegister vtmp3, FloatRegister vtmp4) {
+  assert_different_registers(dst_src1, src2, vtmp1, vtmp2, vtmp3, vtmp4);
+  FloatRegister src1 = dst_src1;
+  // Low half of the bytes -> SHORT, then divide (result SHORT in vtmp1).
+  sve_sunpklo(vtmp1, H, src1);
+  sve_sunpklo(vtmp2, H, src2);
+  sve_sdiv_short(vtmp1, vtmp2, vtmp3, vtmp4);
+  // High half of the bytes -> SHORT, then divide (result SHORT in src1).
+  sve_sunpkhi(src1, H, src1);
+  sve_sunpkhi(vtmp2, H, src2);
+  sve_sdiv_short(src1, vtmp2, vtmp3, vtmp4);
+  // Narrow the two SHORT result halves back to BYTE.
+  sve_uzp1(dst_src1, B, vtmp1, src1);
+}
+
+// Vector integer division for SHORT elements, implemented by widening each
+// element to 32 bits, performing SDIV, and narrowing back.
+void C2_MacroAssembler::sve_sdiv_short(FloatRegister dst_src1, FloatRegister src2,
+                                       FloatRegister vtmp1, FloatRegister vtmp2) {
+  assert_different_registers(dst_src1, src2, vtmp1, vtmp2);
+  FloatRegister src1 = dst_src1;
+  // Low half: SHORT -> INT, then divide.
+  sve_sunpklo(vtmp1, S, src1);
+  sve_sunpklo(vtmp2, S, src2);
+  sve_sdiv(vtmp1, S, ptrue, vtmp2);
+  // High half: SHORT -> INT, then divide.
+  sve_sunpkhi(src1, S, src1);
+  sve_sunpkhi(vtmp2, S, src2);
+  sve_sdiv(src1, S, ptrue, vtmp2);
+  // Narrow the two INT result halves back to SHORT.
+  sve_uzp1(dst_src1, H, vtmp1, src1);
 }

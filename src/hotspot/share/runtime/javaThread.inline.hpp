@@ -111,10 +111,14 @@ class UnsafeAccessErrorHandshakeClosure : public AsyncHandshakeClosure {
  public:
   UnsafeAccessErrorHandshakeClosure() : AsyncHandshakeClosure("UnsafeAccessErrorHandshakeClosure") {}
   void do_thread(Thread* thr) {
+    PRAGMA_DIAG_PUSH
+    PRAGMA_NONNULL_IGNORED
+    // Suppress GCC warning for nonnull as it doesn't recognize that `thr` is always the current thread.
     JavaThread* self = JavaThread::cast(thr);
     assert(self == JavaThread::current(), "must be");
 
     self->handshake_state()->handle_unsafe_access_error();
+    PRAGMA_DIAG_POP
   }
   bool is_async_exception()   { return true; }
 };
@@ -258,7 +262,6 @@ inline InstanceKlass* JavaThread::class_being_initialized() const {
 }
 
 inline void JavaThread::om_set_monitor_cache(ObjectMonitor* monitor) {
-  assert(UseObjectMonitorTable, "must be");
   assert(monitor != nullptr, "use om_clear_monitor_cache to clear");
   assert(this == current() || monitor->has_owner(this), "only add owned monitors for other threads");
   assert(this == current() || is_obj_deopt_suspend(), "thread must not run concurrently");
@@ -267,9 +270,7 @@ inline void JavaThread::om_set_monitor_cache(ObjectMonitor* monitor) {
 }
 
 inline void JavaThread::om_clear_monitor_cache() {
-  if (UseObjectMonitorTable) {
-    _om_cache.clear();
-  }
+  _om_cache.clear();
 }
 
 inline ObjectMonitor* JavaThread::om_get_from_monitor_cache(oop obj) {
