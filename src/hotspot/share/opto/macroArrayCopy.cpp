@@ -1377,8 +1377,8 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
     Node* membar = ac->proj_out(TypeFunc::Control)->unique_ctrl_out();
     assert(membar->is_MemBar(), "expect MemBar after clonebasic");
     assert(membar->in(TypeFunc::Memory)->is_MergeMem() &&
-            membar->in(TypeFunc::Memory)->as_MergeMem()->memory_at(Compile::AliasIdxRaw)->is_Proj() &&
-            membar->in(TypeFunc::Memory)->as_MergeMem()->memory_at(Compile::AliasIdxRaw)->in(0) == ac,
+           membar->in(TypeFunc::Memory)->as_MergeMem()->memory_at(Compile::AliasIdxRaw)->is_Proj() &&
+           membar->in(TypeFunc::Memory)->as_MergeMem()->memory_at(Compile::AliasIdxRaw)->in(0) == ac,
             "MemBar is from ac");
     membar->as_MemBar()->set_trailing_expanded_array_copy();
 
