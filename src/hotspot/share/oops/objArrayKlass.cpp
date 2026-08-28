@@ -211,7 +211,7 @@ ArrayDescription ObjArrayKlass::array_layout_selection(const Klass* element, Arr
     }
   } else {
     // nullable implies atomic, so the non-atomic property is ignored
-    if (vk->layouts().has_nullable_atomic_layout()) {
+    if (vk->layouts().has_a(LayoutKind::NULLABLE_ATOMIC_FLAT)) {
       return ArrayDescription(FlatArrayKlassKind, props, LayoutKind::NULLABLE_ATOMIC_FLAT);
     } else {
       return ArrayDescription(RefArrayKlassKind, props, LayoutKind::REFERENCE);

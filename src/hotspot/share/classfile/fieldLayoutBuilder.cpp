@@ -1164,22 +1164,23 @@ void FieldLayoutBuilder::compute_inline_class_layout() {
         layouts().set_payload_alignment(_layout->super_min_align_required());
       }
       const int payload_alignment = layouts().payload_alignment();
+      assert(_layout->super_alignment() != -1, "Must be");
       assert(_layout->super_alignment() >= payload_alignment, "Incompatible alignment");
       assert(_layout->super_alignment() % payload_alignment == 0, "Incompatible alignment");
 
 
       if (payload_alignment < _layout->super_alignment()) {
-        int new_alignment = payload_alignment > _layout->super_min_align_required() ? payload_alignment : _layout->super_min_align_required();
+        int new_alignment = MAX2(payload_alignment, _layout->super_min_align_required());
         assert(new_alignment % payload_alignment == 0, "Must be");
         assert(new_alignment % _layout->super_min_align_required() == 0, "Must be");
-        layouts().payload_alignment() = new_alignment;
+        layouts().set_payload_alignment(new_alignment);
       }
       _layout->set_start(_layout->first_field_block());
     } else {
       // Abstract value class inheriting fields, restore the pessimistic alignment
       // constraint (see comment above) and ensure no field will be inserted before
       // the first inherited field.
-      layouts().payload_alignment() = type2aelembytes(BasicType::T_LONG);
+      layouts().set_payload_alignment(type2aelembytes(BasicType::T_LONG));
       _layout->set_start(_layout->first_field_block());
     }
   }
@@ -1313,7 +1314,7 @@ void FieldLayoutBuilder::compute_inline_class_layout() {
           assert(!_is_empty_inline_class, "Should not get here with empty values");
           layouts().set_null_marker_offset(_layout->find_null_marker()->offset());
         }
-        layouts().payload_alignment() = required_alignment;
+        layouts().set_payload_alignment(required_alignment);
       } else {
         layouts().set_size_in_bytes_of(LayoutKind::NULL_FREE_ATOMIC_FLAT, LayoutDescriptions::MissingValue);
         if (layouts().has_a(LayoutKind::NULLABLE_ATOMIC_FLAT) &&
@@ -1325,7 +1326,7 @@ void FieldLayoutBuilder::compute_inline_class_layout() {
         layouts().size_in_bytes_of(LayoutKind::NULLABLE_ATOMIC_FLAT, LayoutDescriptions::MissingValue);
       }
     } else {
-      layouts().payload_alignment() = required_alignment;
+      layouts().set_payload_alignment(required_alignment);
     }
 
     // If the inline class has a nullable layout, the layout used in heap allocated standalone

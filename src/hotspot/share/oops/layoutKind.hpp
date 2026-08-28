@@ -195,13 +195,15 @@ struct LayoutDescriptions {
     assert(_payload_alignment != LayoutDescriptions::MissingValue, "Uninitialized");
     return _payload_alignment;
   }
-  bool has_payload_alignment() { return _payload_alignment != MissingValue; }
-  int& payload_alignment()                    { return _payload_alignment; }
-  void set_payload_alignment(int alignment) { _payload_alignment = alignment; }
-  int  non_atomic_alignment() const { return _non_atomic_alignment; }
-  void set_non_atomic_alignment(int alignment) { _non_atomic_alignment = alignment; }
-  int& non_atomic_alignment()                  { return _non_atomic_alignment; }
 
+  bool has_payload_alignment() { return _payload_alignment != MissingValue; }
+  void set_payload_alignment(int alignment) { _payload_alignment = alignment; }
+
+  int  non_atomic_alignment() const {
+    assert(_non_atomic_alignment != LayoutDescriptions::MissingValue, "Uninitialized");
+    return _non_atomic_alignment;
+  }
+  void set_non_atomic_alignment(int alignment) { _non_atomic_alignment = alignment; }
 
   bool has_a(LayoutKind lk) const {
     return size_in_bytes_of(lk) != MissingValue;
@@ -211,8 +213,6 @@ struct LayoutDescriptions {
   bool has_any(Ts... lks) const {
     return (has_a(lks) || ...);
   }
-
-  bool has_nullable_atomic_layout() const      { return has_a(LayoutKind::NULLABLE_ATOMIC_FLAT); }
 
   void print_on(outputStream& st) const {
     for (int i = (int)LayoutKind::BUFFERED; i < (int)LayoutKind::COUNT; i++) {
