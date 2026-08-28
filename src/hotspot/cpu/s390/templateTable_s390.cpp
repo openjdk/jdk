@@ -880,7 +880,7 @@ void TemplateTable::aaload() {
     __ bind(is_flat_array);
     // Flat path: delegate to runtime; result returned in Z_tos (= Z_RET).
     // Note: index is already shifted, need to pass unshifted index to runtime
-    __ z_srlg(Z_ARG3, index, shift);  // Unshift index back to original value
+    __ z_srag(Z_ARG3, index, shift);  // Unshift index back to original value
     __ call_VM(Z_tos, CAST_FROM_FN_PTR(address, InterpreterRuntime::flat_array_load),
                Z_tmp_1, Z_ARG3);
     __ bind(done);
