@@ -297,7 +297,7 @@ void DowncallLinker::StubGenerator::generate() {
   Label L_after_reguard;
 
   if (_needs_transition) {
-    __ li(tmp, _thread_in_vm);
+    __ li(tmp, _thread_in_Java);
     __ release();
     __ stw(tmp, in_bytes(JavaThread::thread_state_offset()), R16_thread);
     if (!UseSystemMemoryBarrier) {
@@ -310,11 +310,6 @@ void DowncallLinker::StubGenerator::generate() {
     __ cmpwi(CR0, tmp, 0);
     __ bne(CR0, L_safepoint_poll_slow_path);
     __ bind(L_after_safepoint_poll);
-
-    // change thread state
-    __ li(tmp, _thread_in_Java);
-    __ lwsync(); // Acquire safepoint and suspend state, release thread state.
-    __ stw(tmp, in_bytes(JavaThread::thread_state_offset()), R16_thread);
 
     __ block_comment("reguard stack check");
     __ lwz(tmp, in_bytes(JavaThread::stack_guard_state_offset()), R16_thread);
