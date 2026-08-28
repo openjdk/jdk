@@ -4697,17 +4697,24 @@ const TypeAryPtr* TypeAryPtr::cast_to_instance_id(int instance_id) const {
 
 //-----------------------------max_array_length-------------------------------
 // A wrapper around arrayOopDesc::max_array_length(etype) with some input normalization.
-jint TypeAryPtr::max_array_length(BasicType etype) {
-  if (!is_java_primitive(etype) && !::is_reference_type(etype)) {
-    if (etype == T_NARROWOOP) {
-      etype = T_OBJECT;
-    } else if (etype == T_ILLEGAL) { // bottom[]
-      etype = T_BYTE; // will produce conservatively high value
-    } else {
-      fatal("not an element type: %s", type2name(etype));
+jint TypeAryPtr::max_array_length() const {
+  if (is_not_flat()) {
+    BasicType etype = elem()->array_element_basic_type();
+    if (!is_java_primitive(etype) && !::is_reference_type(etype)) {
+      if (etype == T_NARROWOOP) {
+        etype = T_OBJECT;
+      } else if (etype == T_ILLEGAL) { // bottom[]
+        etype = T_BYTE; // will produce conservatively high value
+      } else {
+        fatal("not an element type: %s", type2name(etype));
+      }
     }
+    return arrayOopDesc::max_array_length(etype);
+  } else {
+    // A flat array's maximum length depends on its layout. If the layout
+    // is not known, max_jint is the only conservative upper bound.
+    return is_flat() && klass_is_exact() ? max_flat_elements() : max_jint;
   }
-  return arrayOopDesc::max_array_length(etype);
 }
 
 //-----------------------------narrow_size_type-------------------------------
@@ -4717,7 +4724,7 @@ const TypeInt* TypeAryPtr::narrow_size_type(const TypeInt* size) const {
   jint hi = size->_hi;
   jint lo = size->_lo;
   jint min_lo = 0;
-  jint max_hi = max_array_length(elem()->array_element_basic_type());
+  jint max_hi = max_array_length();
   //if (index_not_size)  --max_hi;     // type of a valid array index, FTR
   bool chg = false;
   if (lo < min_lo) {
