@@ -26,6 +26,7 @@ package sun.jvm.hotspot.oops;
 
 import java.io.PrintStream;
 
+import sun.jvm.hotspot.debugger.Address;
 import sun.jvm.hotspot.debugger.OopHandle;
 import sun.jvm.hotspot.oops.ObjectHeap;
 import sun.jvm.hotspot.utilities.Assert;
@@ -40,11 +41,15 @@ public class FlattenedInline extends Inline {
 
     private final InlineKlass klass;
 
-    FlattenedInline(OopHandle handle, ObjectHeap heap, InlineKlass klass) {
-        super(handle, heap);
+    FlattenedInline(Address payload, ObjectHeap heap, InlineKlass klass) {
         if (Assert.ASSERTS_ENABLED) {
             Assert.that(klass != null, "klass should not be null");
         }
+        // Create oop handle for holder object that contains the flattened
+        // field payload.
+        OopHandle handle = payload.addOffsetToAsOopHandle(- klass.payloadOffset());
+
+        super(handle, heap);
         this.klass = klass;
     }
 

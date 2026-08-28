@@ -194,13 +194,15 @@ public class ObjectHeap {
     throw new UnknownOopException(handle.toString());
   }
 
-  // This method is used to instantiate a flattened object.
-  // "handle" does not point directly to the payload of a flattened object.
-  // It must be adjusted by subtracting the payload offset from the flattened
-  // field address.
-  public Oop newOop(OopHandle handle, InlineKlass klass) {
-    return (handle == null) ? null
-                            : new FlattenedInline(handle, this, klass);
+  // This method is used to instantiate a holder object that contains
+  // the flattened field payload.
+  public Oop newOop(Address payload, InlineKlass klass) {
+    if (Assert.ASSERTS_ENABLED) {
+      Assert.that(payload != null, "payload should not be null");
+    }
+    return klass.isPayloadMarkedAsNull(payload)
+               ? null
+               : new FlattenedInline(payload, this, klass);
   }
 
   // Print all objects in the object heap

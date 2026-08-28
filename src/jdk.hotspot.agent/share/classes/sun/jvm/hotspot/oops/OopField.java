@@ -49,24 +49,16 @@ public class OopField extends Field {
     return SystemDictionaryHelper.findInstanceKlass(klsName);
   }
 
-  @Override
-  public long getOffset() {
-    long ofs = super.getOffset();
-    if (isFlat()) {
-      // Subtract payload offset because this field is flattened.
-      ofs -= ((InlineKlass)getFieldKlass()).members().payloadOffset();
-    }
-    return ofs;
-  }
-
   public Oop getValue(Oop obj) {
     if (!isVMField() && !obj.isInstance() && !obj.isArray()) {
       throw new InternalError();
     }
     var heap = obj.getHeap();
     if (isFlat()) {
-      var handle = obj.getHandle().addOffsetToAsOopHandle(getOffset());
-      return heap.newOop(handle, (InlineKlass)getFieldKlass());
+      // OopHandle does not allow to call addOffsetTo() due to prevent interior
+      // object pointers. So addOffsetToAsOopHandle() is required here.
+      Address payload = obj.getHandle().addOffsetToAsOopHandle(getOffset());
+      return heap.newOop(payload, (InlineKlass)getFieldKlass());
     } else {
       return heap.newOop(getValueAsOopHandle(obj));
     }

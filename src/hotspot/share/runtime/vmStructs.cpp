@@ -222,6 +222,7 @@
   nonstatic_field(InstanceKlass,               _access_flags,                                 AccessFlags)                           \
   nonstatic_field(InstanceKlass,               _adr_inline_klass_members,                     address)                               \
   nonstatic_field(InlineKlass::Members,        _payload_offset,                               int)                                   \
+  nonstatic_field(InlineKlass::Members,        _null_marker_offset,                           int)                                   \
   nonstatic_field(Klass,                       _super_check_offset,                           juint)                                 \
   nonstatic_field(Klass,                       _secondary_super_cache,                        Klass*)                                \
   nonstatic_field(Klass,                       _secondary_supers,                             Array<Klass*>*)                        \

@@ -44,12 +44,14 @@ public class LingeredAppWithValueObject extends LingeredApp {
         public final byte b;
         public final Rec  rec;
         public final byte c;
+        public final Rec  nullField;
 
         public ValueObj(byte a, byte b, byte c, byte recA, byte recB) {
             this.a = a;
             this.b = b;
             this.c = c;
             this.rec = new Rec(recA, recB);
+            this.nullField = null;
         }
     }
 

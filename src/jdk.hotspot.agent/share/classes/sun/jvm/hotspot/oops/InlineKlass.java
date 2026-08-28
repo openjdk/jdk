@@ -41,6 +41,7 @@ public class InlineKlass extends InstanceKlass {
   public static class Members extends VMObject {
 
     private static CIntField payloadOffsetField;
+    private static CIntField nullMarkerOffsetField;
 
     static {
       VM.registerVMInitializedObserver((o, d) -> initialize(VM.getVM().getTypeDataBase()));
@@ -49,6 +50,7 @@ public class InlineKlass extends InstanceKlass {
     private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
       Type type = db.lookupType("InlineKlass::Members");
       payloadOffsetField = new CIntField(type.getCIntegerField("_payload_offset"), 0);
+      nullMarkerOffsetField = new CIntField(type.getCIntegerField("_null_marker_offset"), 0);
     }
 
     public Members(Address addr) {
@@ -57,6 +59,10 @@ public class InlineKlass extends InstanceKlass {
 
     public int payloadOffset() {
       return (int)payloadOffsetField.getValue(this);
+    }
+
+    public int nullMarkerOffset() {
+      return (int)nullMarkerOffsetField.getValue(this);
     }
 
   }
@@ -80,6 +86,29 @@ public class InlineKlass extends InstanceKlass {
 
   public Members members() {
     return VMObjectFactory.newObject(Members.class, getAdrInlineKlassMembers());
+  }
+
+  public int nullMarkerOffset() {
+    return members().nullMarkerOffset();
+  }
+
+  public int payloadOffset() {
+    return members().payloadOffset();
+  }
+
+  public int nullMarkerOffsetInPayload() {
+    return nullMarkerOffset() - payloadOffset();
+  }
+
+  public OopHandle nullMarkerAddress(Address payload) {
+    // "payload" might be OopHandle (e.g. when it comes from OopField), then
+    // we cannot use addOffsetTo() because it is not allowed due to prevent
+    // interior object pointers. Hence addOffsetToAsOopHandle() is called here.
+    return payload.addOffsetToAsOopHandle(nullMarkerOffsetInPayload());
+  }
+
+  public boolean isPayloadMarkedAsNull(Address payload) {
+    return nullMarkerAddress(payload).getJByteAt(0) == (byte)0;
   }
 
 }

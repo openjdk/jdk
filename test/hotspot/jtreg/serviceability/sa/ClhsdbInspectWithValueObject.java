@@ -75,7 +75,8 @@ public class ClhsdbInspectWithValueObject {
               "rec:",
                 "recA: 10",
                 "recB: 20",
-              "c: 3"
+              "c: 3",
+              "nullField: null"
             ));
             test.run(theApp.getPid(), List.of(cmd), expStrMap, null);
         } finally {
