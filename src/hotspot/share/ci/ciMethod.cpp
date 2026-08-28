@@ -820,17 +820,7 @@ ciMethod* ciMethod::find_monomorphic_target(ciInstanceKlass* caller,
   if (target() == root_m->get_Method()) {
     return root_m;
   }
-  if (!root_m->is_public() &&
-      !root_m->is_protected()) {
-    // If we are going to reason about inheritance, it's easiest
-    // if the method in question is public, protected, or private.
-    // If the answer is not root_m, it is conservatively correct
-    // to return null, even if the CHA encountered irrelevant
-    // methods in other packages.
-    // %%% TO DO: Work out logic for package-private methods
-    // with the same name but different vtable indexes.
-    return nullptr;
-  }
+
   return CURRENT_THREAD_ENV->get_method(target());
 }
 

@@ -658,7 +658,8 @@ public final class ErrorTest {
                 List.of("--arguments", "foo"),
                 List.of("--java-options", "-Dfoo.bar=10"),
                 List.of("--add-launcher", "foo=foo.properties"),
-                List.of("--app-content", "dir"));
+                List.of("--app-content", "dir"),
+                List.of("--app-resources", "dir"));
 
         if (TKit.isWindows()) {
             argsStream = Stream.concat(argsStream, Stream.of(List.of("--win-console")));
