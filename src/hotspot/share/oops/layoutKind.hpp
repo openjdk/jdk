@@ -165,12 +165,6 @@ struct LayoutDescriptions {
     return sz == MissingValue ? default_value : sz;
   }
 
-  int& size_in_bytes_of(LayoutKind lk) {
-    assert(lk != LayoutKind::REFERENCE, "must be");
-    // - 1 to ignore REFERENCE
-    return _sizes[static_cast<size_t>(lk) - 1];
-  }
-
   int alignment_of(LayoutKind lk) const {
     assert(has_a(lk), "Layout not available");
     switch (lk) {
@@ -191,14 +185,11 @@ struct LayoutDescriptions {
   }
 
   int payload_offset() const { return _payload_offset; }
-  int& payload_offset() { return _payload_offset; }
+  void set_payload_offset(int offset) { _payload_offset = offset; }
 
   int null_marker_offset() const { return _null_marker_offset; }
-  int& null_marker_offset() { return _null_marker_offset; }
+  void set_null_marker_offset(int offset) { _null_marker_offset = offset; }
   int null_marker_offset_in_payload() const { return null_marker_offset() - payload_offset(); }
-
-  int&  payload_size_in_bytes()   { return size_in_bytes_of(LayoutKind::BUFFERED); }
-  int& nullable_non_atomic_size_in_bytes() { return size_in_bytes_of(LayoutKind::NULLABLE_NON_ATOMIC_FLAT); }
 
   int  payload_alignment() const {
     assert(_payload_alignment != LayoutDescriptions::MissingValue, "Uninitialized");

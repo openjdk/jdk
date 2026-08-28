@@ -305,8 +305,7 @@ class FieldLayoutBuilder : public ResourceObj {
 
   FieldGroup* get_or_create_contended_group(int g);
 
-  int& payload_offset()     { return _available_layouts.payload_offset(); }
-  int& null_marker_offset() { return _available_layouts.null_marker_offset(); }
+  LayoutDescriptions& layouts() { return _available_layouts; }
 
  public:
   FieldLayoutBuilder(const Symbol* classname, ClassLoaderData* loader_data, const InstanceKlass* super_klass, ConstantPool* constant_pool,

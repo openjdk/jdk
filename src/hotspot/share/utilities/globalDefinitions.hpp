@@ -1130,6 +1130,14 @@ template<class T> constexpr T MIN3(T a, T b, T c)      { return MIN2(MIN2(a, b),
 template<class T> constexpr T MAX4(T a, T b, T c, T d) { return MAX2(MAX3(a, b, c), d); }
 template<class T> constexpr T MIN4(T a, T b, T c, T d) { return MIN2(MIN3(a, b, c), d); }
 
+template<typename T> constexpr T MAXN(T a) {
+  return a;
+}
+template<typename T, typename... Ts> constexpr T MAXN(T t, Ts... ts) {
+  auto x = MAXN(ts...);
+  return t > x ? t : x;
+}
+
 #define ABS(x) asserted_abs(x, __FILE__, __LINE__)
 
 template<class T> inline T asserted_abs(T x, const char* file, int line) {
