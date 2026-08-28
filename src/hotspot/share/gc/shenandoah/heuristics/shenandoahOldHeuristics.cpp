@@ -1,6 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -413,11 +413,11 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
   size_t live_data = 0;
   RegionData* candidates = _region_data;
   for (size_t i = 0; i < num_regions; i++) {
-    ShenandoahHeapRegion* region = heap->get_region(i);
-    if (!region->is_old()) {
+    if (heap->region_affiliation(i) != OLD_GENERATION) {
       continue;
     }
 
+    ShenandoahHeapRegion* region = heap->get_region(i);
     size_t garbage = region->garbage();
     size_t live_bytes = region->get_live_data_bytes();
     if (!region->was_promoted_in_place()) {

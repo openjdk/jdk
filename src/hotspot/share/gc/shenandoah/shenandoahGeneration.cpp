@@ -1,6 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -325,12 +325,16 @@ bool ShenandoahGeneration::is_bitmap_clear() {
   ShenandoahMarkingContext* context = heap->marking_context();
   const size_t num_regions = heap->num_regions();
   for (size_t idx = 0; idx < num_regions; idx++) {
+    const ShenandoahAffiliation affiliation = heap->region_affiliation(idx);
+    if (affiliation == FREE || !contains(affiliation)) {
+      // Skip unaffiliated regions and those outside this generation
+      continue;
+    }
+
     ShenandoahHeapRegion* r = heap->get_region(idx);
-    if (contains(r) && r->is_affiliated()) {
-      if (heap->is_bitmap_slice_committed(r) && (context->top_at_mark_start(r) > r->bottom()) &&
-          !context->is_bitmap_range_within_region_clear(r->bottom(), r->end())) {
-        return false;
-      }
+    if (heap->is_bitmap_slice_committed(r) && (context->top_at_mark_start(r) > r->bottom()) &&
+        !context->is_bitmap_range_within_region_clear(r->bottom(), r->end())) {
+      return false;
     }
   }
   return true;
