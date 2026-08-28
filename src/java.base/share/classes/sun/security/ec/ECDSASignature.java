@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,7 +157,9 @@ abstract class ECDSASignature extends SignatureSpi {
         @Override
         protected void engineUpdate(byte[] b, int off, int len)
         throws SignatureException {
-            if (offset >= precomputedDigest.length) {
+            // Check capacity. If precomputedDigest is already full, this
+            // condition effectively becomes 'len > -1' and will always be true
+            if (len > precomputedDigest.length - offset) {
                 offset = RAW_ECDSA_MAX + 1;
                 return;
             }
@@ -172,7 +174,7 @@ abstract class ECDSASignature extends SignatureSpi {
             if (len <= 0) {
                 return;
             }
-            if (len >= precomputedDigest.length - offset) {
+            if (len > precomputedDigest.length - offset) {
                 offset = RAW_ECDSA_MAX + 1;
                 return;
             }
