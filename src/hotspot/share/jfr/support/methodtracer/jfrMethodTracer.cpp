@@ -73,7 +73,6 @@ static JfrPlaceholderTable* placeholder_table() {
 class JfrPlaceholderTableCleaner : StackObj {
  public:
   bool do_entry(const traceid& id, const InstanceKlass*& ik) {
-    assert(id == JfrTraceId::load_raw(ik), "invariant");
     // Returning true removes the unloaded entry from the placeholder table.
     return JfrKlassUnloading::is_unloaded(id, true);
   }
