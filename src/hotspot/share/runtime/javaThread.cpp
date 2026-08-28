@@ -1099,13 +1099,9 @@ void JavaThread::verify_not_published() {
 // Slow path when the native==>Java barriers detect a safepoint/handshake is
 // pending, when _suspend_flags is non-zero or when we need to process a stack
 // watermark. Also check for pending async exceptions (except unsafe access error).
-// Note only the native==>Java barriers can call this function when thread state
-// is _thread_in_native_trans.
 void JavaThread::check_special_condition_for_native_trans(JavaThread *thread) {
-  assert(thread->thread_state() == _thread_in_native_trans, "wrong state");
+  assert(thread->thread_state() == _thread_in_vm, "wrong state");
   assert(!thread->has_last_Java_frame() || thread->frame_anchor()->walkable(), "Unwalkable stack in native->Java transition");
-
-  thread->set_thread_state(_thread_in_vm);
 
   // Enable WXWrite: called directly from interpreter native wrapper.
   MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
@@ -1333,15 +1329,10 @@ static const char* _get_thread_state_name(JavaThreadState _thread_state) {
   switch (_thread_state) {
   case _thread_uninitialized:     return "_thread_uninitialized";
   case _thread_new:               return "_thread_new";
-  case _thread_new_trans:         return "_thread_new_trans";
   case _thread_in_native:         return "_thread_in_native";
-  case _thread_in_native_trans:   return "_thread_in_native_trans";
   case _thread_in_vm:             return "_thread_in_vm";
-  case _thread_in_vm_trans:       return "_thread_in_vm_trans";
   case _thread_in_Java:           return "_thread_in_Java";
-  case _thread_in_Java_trans:     return "_thread_in_Java_trans";
   case _thread_blocked:           return "_thread_blocked";
-  case _thread_blocked_trans:     return "_thread_blocked_trans";
   default:                        return "unknown thread state";
   }
 }
