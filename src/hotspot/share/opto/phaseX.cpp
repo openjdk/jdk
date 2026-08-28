@@ -2386,6 +2386,9 @@ void PhaseIterGVN::remove_globally_dead_node(Node* dead, NodeOrigin origin) {
                 }
                 assert(!(i < imax), "sanity");
               }
+            } else if (in->is_Phi()) {
+              // A Phi may only have other Phis as its transitive uses, it is dead then
+              _worklist.push(in);
             } else if (dead->is_data_proj_of_pure_function(in)) {
               _worklist.push(in);
             } else {
