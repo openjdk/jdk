@@ -95,13 +95,7 @@ void vframeArrayElement::fill_in(compiledVFrame* vf, bool realloc_failures) {
           assert(monitor->owner() != nullptr, "monitor owner must not be null");
           assert(!monitor->owner()->is_unlocked(), "monitor must be locked");
           dest->set_obj(monitor->owner());
-          assert(ObjectSynchronizer::current_thread_holds_lock(current_thread, Handle(current_thread, dest->obj())),
-                 "should be held, before move_to");
-
-          monitor->lock()->move_to(dest->lock());
-
-          assert(ObjectSynchronizer::current_thread_holds_lock(current_thread, Handle(current_thread, dest->obj())),
-                 "should be held, after move_to");
+          monitor->lock()->set_object_monitor_cache(monitor->lock()->object_monitor_cache());
         }
       }
     }
@@ -391,11 +385,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
     top = iframe()->previous_monitor_in_interpreter_frame(top);
     BasicObjectLock* src = _monitors->at(index);
     top->set_obj(src->obj());
-    assert(src->obj() != nullptr || ObjectSynchronizer::current_thread_holds_lock(thread, Handle(thread, src->obj())),
-           "should be held, before move_to");
-    src->lock()->move_to(top->lock());
-    assert(src->obj() != nullptr || ObjectSynchronizer::current_thread_holds_lock(thread, Handle(thread, src->obj())),
-           "should be held, after move_to");
+    top->lock()->set_object_monitor_cache(src->lock()->object_monitor_cache());
   }
   iframe()->interpreter_frame_set_bcp(bcp);
   if (ProfileInterpreter) {

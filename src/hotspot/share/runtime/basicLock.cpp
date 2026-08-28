@@ -34,10 +34,3 @@ void BasicLock::print_on(outputStream* st, oop owner) const {
     mon->print_on(st);
   }
 }
-
-void BasicLock::move_to(BasicLock* dest) {
-  // Preserve the ObjectMonitor*, the cache is cleared when a box is reused
-  // and only read while the lock is held, so no stale ObjectMonitor* is
-  // encountered.
-  dest->set_object_monitor_cache(object_monitor_cache());
-}

@@ -53,9 +53,6 @@ class BasicLock {
   static int object_monitor_cache_offset_in_bytes() { return monitor_offset_in_bytes(); }
 
   void print_on(outputStream* st, oop owner) const;
-
-  // move a basic lock (used during deoptimization)
-  void move_to(BasicLock* dest);
 };
 
 // A BasicObjectLock associates a specific Java object with a BasicLock.
