@@ -724,13 +724,13 @@ bool ShenandoahOldHeuristics::should_resume_old_cycle() {
   // If we are preparing to mark old, or if we are already marking old, then try to continue that work.
   if (_old_generation->is_concurrent_mark_in_progress()) {
     assert(_old_generation->state() == ShenandoahOldGeneration::MARKING, "Unexpected old gen state: %s", _old_generation->state_name());
-    log_trigger("Resume Old Marking");
+    log_trigger("Resume Marking");
     return true;
   }
 
   if (_old_generation->is_preparing_for_mark()) {
     assert(_old_generation->state() == ShenandoahOldGeneration::FILLING, "Unexpected old gen state: %s", _old_generation->state_name());
-    log_trigger("Resume Prepare Old Marking");
+    log_trigger("Resume Prepare Marking");
     return true;
   }
 
@@ -750,7 +750,7 @@ bool ShenandoahOldHeuristics::should_start_gc() {
     const size_t old_gen_capacity = _old_generation->max_capacity();
     const size_t heap_capacity = heap->capacity();
     const double percent = percent_of(old_gen_capacity, heap_capacity);
-    log_trigger("Handle Old Expansion Failure. %zu%s (%.1f%%) old generation",
+    log_trigger("Handle Expansion Failure. %zu%s (%.1f%%) old generation",
                  byte_size_in_proper_unit(old_gen_capacity), proper_unit_for_byte_size(old_gen_capacity), percent);
     adjust_old_garbage_threshold();
     return true;
