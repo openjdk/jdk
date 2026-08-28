@@ -53,10 +53,10 @@ class MethodTimes implements JavaMessage {
         int maxWidthNames = maxMethodNameWidth();
         int maxDurationsWidth = maxDurationsWidth();
         List<Map.Entry<String, Long>>  sortedMethodTimes = sortByDurationAsc();
+        String format = "- %-" + (maxWidthNames + 3) + "s %" + maxDurationsWidth + "d ms%n";
 
         for (Map.Entry<String, Long> entry : sortedMethodTimes) {
-            System.out.printf("- %-" + (maxWidthNames + 3) + "s %" + maxDurationsWidth + "d ns%n",
-                              entry.getKey() + ":", entry.getValue());
+            System.out.printf(format, entry.getKey() + ":", entry.getValue());
         }
 
         System.out.println();

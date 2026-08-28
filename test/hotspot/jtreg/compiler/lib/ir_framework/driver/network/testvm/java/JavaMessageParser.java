@@ -45,8 +45,8 @@ public class JavaMessageParser implements TestVmMessageParser<JavaMessages> {
     private static final Pattern TAG_PATTERN = Pattern.compile("^(\\[[^]]+])\\s*(.*)$");
 
     private final List<String> stdoutMessages;
-    private final List<String> executedTests;
     private final Map<String, Long> methodTimes;
+    private final List<String> executedTests;
     private final MultiLineParser<VMInfo> vmInfoParser;
     private final MultiLineParser<ApplicableIRRules> applicableIRRulesParser;
 
@@ -123,8 +123,8 @@ public class JavaMessageParser implements TestVmMessageParser<JavaMessages> {
     @Override
     public JavaMessages output() {
         return new JavaMessages(new StdoutMessages(stdoutMessages),
-                                new ExecutedTests(executedTests),
                                 new MethodTimes(methodTimes),
+                                new ExecutedTests(executedTests),
                                 applicableIRRulesParser.output(),
                                 vmInfoParser.output());
     }
