@@ -192,14 +192,13 @@ struct LayoutDescriptions {
   int null_marker_offset_in_payload() const { return null_marker_offset() - payload_offset(); }
 
   int  payload_alignment() const {
-    assert(_payload_alignment != LayoutDescriptions::MissingValue, "Uninitialized");
     return _payload_alignment;
   }
 
-  bool has_payload_alignment() { return _payload_alignment != MissingValue; }
+  bool has_payload_alignment() const { return _payload_alignment != MissingValue; }
   void set_payload_alignment(int alignment) { _payload_alignment = alignment; }
 
-  int  non_atomic_alignment() const {
+  int non_atomic_alignment() const {
     assert(_non_atomic_alignment != LayoutDescriptions::MissingValue, "Uninitialized");
     return _non_atomic_alignment;
   }

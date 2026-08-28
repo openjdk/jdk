@@ -1164,7 +1164,6 @@ void FieldLayoutBuilder::compute_inline_class_layout() {
         layouts().set_payload_alignment(_layout->super_min_align_required());
       }
       const int payload_alignment = layouts().payload_alignment();
-      assert(_layout->super_alignment() != -1, "Must be");
       assert(_layout->super_alignment() >= payload_alignment, "Incompatible alignment");
       assert(_layout->super_alignment() % payload_alignment == 0, "Incompatible alignment");
 

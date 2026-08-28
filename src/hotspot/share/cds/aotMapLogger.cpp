@@ -905,7 +905,7 @@ public:
           if (fd->field_flags().has_null_marker()) {
             for (int i = 0; i < _indent + 1; i++) _st->print("  ");
             _st->print_cr(" - [null_marker] @%d %s",
-                          vk->layouts().null_marker_offset() + _base_offset + field_offset,
+                      vk->layouts().null_marker_offset() + _base_offset + field_offset,
                       is_null ? "Field marked as null" : "Field marked as non-null");
           }
           return; // Do not print underlying representation
