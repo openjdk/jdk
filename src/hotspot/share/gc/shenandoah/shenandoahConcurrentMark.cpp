@@ -177,7 +177,6 @@ void ShenandoahConcurrentMark::concurrent_mark() {
     ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_mark_rebalance_queues, true);
     task_queues()->rebalance(nworkers);
   }
-  TASKQUEUE_STATS_ONLY(task_queues()->reset_taskqueue_stats());
 
   ShenandoahGenerationType gen_type = _generation->type();
   ShenandoahSATBMarkQueueSet& qset = ShenandoahBarrierSet::satb_mark_queue_set();
@@ -268,7 +267,6 @@ void ShenandoahConcurrentMark::finish_mark_work() {
       ShenandoahTimingsTracker t(ShenandoahPhaseTimings::final_mark_rebalance_queues, true);
       task_queues()->rebalance(nworkers);
     }
-    TASKQUEUE_STATS_ONLY(task_queues()->reset_taskqueue_stats());
 
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::finish_mark);
 
