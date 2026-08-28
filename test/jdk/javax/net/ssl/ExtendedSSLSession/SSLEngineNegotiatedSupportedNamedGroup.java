@@ -82,10 +82,6 @@ public class SSLEngineNegotiatedSupportedNamedGroup extends SSLEngineTemplate {
     private void run() throws Exception {
         for (SSLEngine engine : new SSLEngine[]{serverEngine, clientEngine}) {
             SSLParameters params = engine.getSSLParameters();
-            if (protocol.endsWith("v1.2")) {
-                params.setCipherSuites(new String[]{
-                        NamedGroupTestData.TLS12_CIPHER_SUITE});
-            }
             params.setProtocols(new String[]{protocol});
             params.setNamedGroups(inputNamedGroups);
             engine.setSSLParameters(params);

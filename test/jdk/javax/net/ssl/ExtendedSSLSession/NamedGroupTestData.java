@@ -100,8 +100,4 @@ final class NamedGroupTestData {
             {"secp256r1,secp384r1", "secp256r1", "TLSv1.2"},
             {"secp256r1,secp384r1", "secp256r1", "DTLSv1.2"},
     };
-
-    // Require an ephemeral elliptic-curve key exchange for TLSv1.2.
-    static final String TLS12_CIPHER_SUITE =
-            "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256";
 }

@@ -126,10 +126,6 @@ public class SSLSocketNegotiatedSupportedNamedGroup extends SSLSocketTemplate {
     @Override
     protected void configureServerSocket(SSLServerSocket socket) {
         SSLParameters params = socket.getSSLParameters();
-        if (protocol.equals("TLSv1.2")) {
-            params.setCipherSuites(new String[]{
-                    NamedGroupTestData.TLS12_CIPHER_SUITE});
-        }
         params.setProtocols(new String[]{protocol});
         params.setNamedGroups(inputNamedGroups);
         socket.setSSLParameters(params);
@@ -138,10 +134,6 @@ public class SSLSocketNegotiatedSupportedNamedGroup extends SSLSocketTemplate {
     @Override
     protected void configureClientSocket(SSLSocket socket) {
         SSLParameters params = socket.getSSLParameters();
-        if (protocol.equals("TLSv1.2")) {
-            params.setCipherSuites(new String[]{
-                    NamedGroupTestData.TLS12_CIPHER_SUITE});
-        }
         params.setProtocols(new String[]{protocol});
         params.setNamedGroups(inputNamedGroups);
         socket.setSSLParameters(params);
@@ -218,10 +210,6 @@ public class SSLSocketNegotiatedSupportedNamedGroup extends SSLSocketTemplate {
         SSLParameters params = socket.getSSLParameters();
         params.setProtocols(new String[]{protocol});
         params.setNamedGroups(new String[]{INITIAL_GROUP, RESUMED_GROUP});
-        if (protocol.equals("TLSv1.2")) {
-            params.setCipherSuites(new String[]{
-                    NamedGroupTestData.TLS12_CIPHER_SUITE});
-        }
         socket.setSSLParameters(params);
     }
 
@@ -272,12 +260,6 @@ public class SSLSocketNegotiatedSupportedNamedGroup extends SSLSocketTemplate {
             SSLParameters params = socket.getSSLParameters();
             params.setProtocols(new String[]{protocol});
             params.setNamedGroups(new String[]{namedGroup});
-
-            if (protocol.equals("TLSv1.2")) {
-                params.setCipherSuites(new String[]{
-                        NamedGroupTestData.TLS12_CIPHER_SUITE});
-            }
-
             socket.setSSLParameters(params);
             socket.setSoTimeout(TIMEOUT);
 
