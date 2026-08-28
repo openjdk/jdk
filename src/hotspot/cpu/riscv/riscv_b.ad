@@ -156,6 +156,21 @@ instruct convI2S_reg_reg_b(iRegINoSp dst, iRegIorL2I src, immI_16 lshift, immI_1
   ins_pipe(ialu_reg);
 %}
 
+// short to unsigned int
+instruct convS2UI_reg_reg_b(iRegINoSp dst, iRegIorL2I src, immI_16bits mask) %{
+  predicate(UseZbb);
+  match(Set dst (AndI src mask));
+
+  format %{ "zext.h  $dst, $src\t# s2ui, #@convS2UI_reg_reg_b" %}
+
+  ins_cost(ALU_COST);
+  ins_encode %{
+    __ zext_h(as_Register($dst$$reg), as_Register($src$$reg));
+  %}
+
+  ins_pipe(ialu_reg);
+%}
+
 // int to unsigned long (zero extend)
 instruct convI2UL_reg_reg_b(iRegLNoSp dst, iRegIorL2I src, immL_32bits mask) %{
   predicate(UseZba);
@@ -171,26 +186,7 @@ instruct convI2UL_reg_reg_b(iRegLNoSp dst, iRegIorL2I src, immL_32bits mask) %{
   ins_pipe(ialu_reg_shift);
 %}
 
-// Single-instruction forms of And with a mask of contiguous low-order ones,
-// see andI_bitmask/andL_bitmask in riscv.ad for the generic two-instruction
-// fallback.
-
-// int And with a low 16-bit mask, e.g. short/char to unsigned int
-instruct andI_16bits_b(iRegINoSp dst, iRegIorL2I src, immI_16bits mask) %{
-  predicate(UseZbb);
-  match(Set dst (AndI src mask));
-
-  format %{ "zext.h  $dst, $src\t#@andI_16bits_b" %}
-
-  ins_cost(ALU_COST);
-  ins_encode %{
-    __ zext_h(as_Register($dst$$reg), as_Register($src$$reg));
-  %}
-
-  ins_pipe(ialu_reg);
-%}
-
-// long And with a low 16-bit mask
+// And with a low 16-bit mask, which is a zero extension of a short
 instruct andL_16bits_b(iRegLNoSp dst, iRegL src, immL_16bits mask) %{
   predicate(UseZbb);
   match(Set dst (AndL src mask));
@@ -205,7 +201,7 @@ instruct andL_16bits_b(iRegLNoSp dst, iRegL src, immL_16bits mask) %{
   ins_pipe(ialu_reg);
 %}
 
-// long And with a low 32-bit mask
+// And with a low 32-bit mask, which is a zero extension of an int
 instruct andL_32bits_b(iRegLNoSp dst, iRegL src, immL_32bits mask) %{
   predicate(UseZba);
   match(Set dst (AndL src mask));
