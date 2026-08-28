@@ -203,7 +203,7 @@ bool ShenandoahHeuristics::should_start_gc() {
   if (_guaranteed_gc_interval > 0) {
     double last_time_ms = (os::elapsedTime() - _last_cycle_end) * 1000;
     if (last_time_ms > _guaranteed_gc_interval) {
-      log_trigger("Guaranteed Interval. %0.f ms since last GC, above %zu ms guaranteed interval",
+      log_trigger("Guaranteed Interval. %.0f ms since last GC, above %zu ms guaranteed interval",
                   last_time_ms, _guaranteed_gc_interval);
       accept_trigger();
       return true;

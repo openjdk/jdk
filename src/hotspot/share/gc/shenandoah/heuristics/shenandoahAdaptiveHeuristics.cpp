@@ -290,7 +290,7 @@ bool ShenandoahAdaptiveHeuristics::trigger_average_allocation_rate(const Shenand
   if (rate.baseline_consumption() > allocatable_bytes) {
     const ShenandoahSignedSize baseline_rate = ShenandoahSignedSize::get(rate.baseline_rate());
     log_trigger("Allocation Rate. %.2fms GC predicted, " PROPERFMT " free, "
-                "" PROPERFMT_F "/s average allocation rate",
+                PROPERFMT_F "/s average allocation rate",
                 rate.duration_seconds() * 1000, PROPERFMTARGS(allocatable_bytes),
                 PROPERFMTARGS_SIGNED(baseline_rate));
     accept_trigger_with_type(RATE);
@@ -398,7 +398,7 @@ bool ShenandoahAdaptiveHeuristics::trigger_accelerating_allocation_rate(const Sh
     const ShenandoahSignedSize acceleration = ShenandoahSignedSize::get(rate.acceleration());
     assert(rate.momentary_consumption() == 0, "Acceleration trigger is meant to exclude momentary trigger");
     log_trigger("Allocation Rate. %.2fms GC predicted, " PROPERFMT " free, "
-                "" PROPERFMT_F "/s predicted allocation rate, " PROPERFMT_F "/s^2 acceleration",
+                PROPERFMT_F "/s predicted allocation rate, " PROPERFMT_F "/s^2 acceleration",
                 rate.duration_seconds() * 1000, PROPERFMTARGS(allocatable_bytes),
                 PROPERFMTARGS_SIGNED(predicted_rate), PROPERFMTARGS_SIGNED(acceleration));
     accept_trigger_with_type(RATE);
