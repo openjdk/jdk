@@ -899,8 +899,9 @@ public final class Http3Connection implements AutoCloseable {
             // Idle connection timeout processing might be delayed when this
             // connection checkout request has arrived. Hence, first check for
             // the timeout.
-            var timedOut = idleConnectionTimeoutEvent != null &&
-                    !idleConnectionTimeoutEvent.deadline().isAfter(TimeSource.now());
+            var idleConnectionTimeoutEventCopy = idleConnectionTimeoutEvent;
+            var timedOut = idleConnectionTimeoutEventCopy != null &&
+                    !idleConnectionTimeoutEventCopy.deadline().isAfter(TimeSource.now());
             if (timedOut) {
                 setFinalStream();
                 return false;
