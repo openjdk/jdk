@@ -5420,7 +5420,7 @@ void ClassFileParser::set_fast_acmp_members(InlineKlass* vk) const {
     assert(trailing_zeroes % BitsPerByte == 0, "we should mask full bytes");
     mask = (int64_t)((uint64_t)mask >> trailing_zeroes);
     assert(count_trailing_zeros(static_cast<uint64_t>(mask)) == 0, "fast acmp mask can be moved further!");
-    int offset = _layout_info->_payload_offset - trailing_zeroes / BitsPerByte;
+    int offset = _layout_info->_available_layouts().payload_offset() - trailing_zeroes / BitsPerByte;
     assert(offset >= 0, "fast acmp path shouldn't load before the object");
     vk->set_fast_acmp_offset(offset);
     vk->set_fast_acmp_mask(mask);
