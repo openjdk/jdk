@@ -509,7 +509,7 @@ void FieldLayout::reconstruct_layout(const InstanceKlass* ik, bool& has_nonstati
       block->set_offset(fs.offset());
       all_fields->append(block);
     }
-    ik = ik->super() == nullptr ? nullptr : ik->super();
+    ik = ik->super();
   }
   assert(last_offset == -1 || last_offset > 0, "Sanity");
   if (last_offset > 0 &&
@@ -1001,7 +1001,7 @@ void FieldLayoutBuilder::inline_class_field_sorting() {
   }
   _root_group->sort_by_size();
   _static_fields->sort_by_size();
-  layouts().payload_alignment() = alignment;
+  layouts().set_payload_alignment(alignment);
   assert(_has_nonstatic_fields || _is_abstract_value, "Concrete value types do not support zero instance size yet");
 }
 
@@ -1139,7 +1139,7 @@ void FieldLayoutBuilder::compute_inline_class_layout() {
       // the alignment constraints of the fields of the sub-classes, so the worst
       // case scenario is assumed, which is currently the alignment of T_LONG.
       // PADDING is added if needed to ensure the payload will respect this alignment.
-      layouts().payload_alignment() = type2aelembytes(BasicType::T_LONG);
+      layouts().set_payload_alignment(type2aelembytes(BasicType::T_LONG));
     }
     assert(_layout->start()->next_block()->block_kind() == LayoutRawBlock::EMPTY, "Unexpected");
     LayoutRawBlock* first_empty = _layout->start()->next_block();
@@ -1160,12 +1160,13 @@ void FieldLayoutBuilder::compute_inline_class_layout() {
       // known, compute which alignment to use, then set first allowed field offset.
 
       assert(_has_nonstatic_fields, "Concrete value classes must have at least one field");
-      if (layouts().payload_alignment() == LayoutDescriptions::MissingValue) { // current class declares no local nonstatic fields
-        layouts().payload_alignment() = _layout->super_min_align_required();
+      if (!layouts().has_payload_alignment()) { // current class declares no local nonstatic fields
+        layouts().set_payload_alignment(_layout->super_min_align_required());
       }
       const int payload_alignment = layouts().payload_alignment();
       assert(_layout->super_alignment() >= payload_alignment, "Incompatible alignment");
       assert(_layout->super_alignment() % payload_alignment == 0, "Incompatible alignment");
+
 
       if (payload_alignment < _layout->super_alignment()) {
         int new_alignment = payload_alignment > _layout->super_min_align_required() ? payload_alignment : _layout->super_min_align_required();
