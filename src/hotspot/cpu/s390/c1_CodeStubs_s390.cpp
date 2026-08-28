@@ -153,6 +153,10 @@ StoreFlattenedArrayStub::StoreFlattenedArrayStub(LIR_Opr array, LIR_Opr index, L
 
 void StoreFlattenedArrayStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
+  // _index is a T_INT LIR operand; on s390x 32-bit ops leave the upper 32 bits
+  // of the register undefined.  Sign-extend to 64 bits before storing into the
+  // parameter slot so the runtime stub (which reloads with z_lg) sees a clean value.
+  __ z_lgfr(_index->as_register(), _index->as_register()); // int -> long
   ce->store_parameter(_array->as_register(), 2);
   ce->store_parameter(_index->as_register(), 1);
   ce->store_parameter(_value->as_register(), 0);
