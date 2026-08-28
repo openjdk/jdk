@@ -34,6 +34,7 @@
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/basicLock.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/monitorChunk.hpp"
