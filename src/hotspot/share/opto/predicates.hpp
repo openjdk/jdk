@@ -816,22 +816,40 @@ class PredicateIterator : public StackObj {
   // Returns the entry to the earliest predicate.
   Node* for_each(PredicateVisitor& predicate_visitor) const {
     Node* current_node = _start_node;
-    PredicateBlockIterator loop_limit_check_predicate_iterator(current_node, Deoptimization::Reason_loop_limit_check);
-    current_node = loop_limit_check_predicate_iterator.for_each(predicate_visitor);
-    if (UseAutoVectorizationPredicate) {
-      PredicateBlockIterator auto_vectorization_check_iterator(current_node, Deoptimization::Reason_auto_vectorization_check);
-      current_node = auto_vectorization_check_iterator.for_each(predicate_visitor);
+    if (!UseParsePredicates) {
+      // We cannot do nothing when UseParsePredicates is not set: We could still have Assertion Predicates from Range
+      // Check Elimination even without Parse Predicates. We have one "generic" block, but we use
+      // Reason_loop_limit_check (could also use another predicate related reason) to not confuse the iteration logic
+      // with non-predicate deoptimization reasons.
+      return apply_for(predicate_visitor, current_node, Deoptimization::Reason_loop_limit_check);
     }
+
+    if (UseLoopLimitCheckPredicate) {
+      current_node = apply_for(predicate_visitor, current_node, Deoptimization::Reason_loop_limit_check);
+    }
+
+    if (UseAutoVectorizationPredicate) {
+      current_node = apply_for(predicate_visitor, current_node, Deoptimization::Reason_auto_vectorization_check);
+    }
+
     if (UseLoopPredicate) {
       if (UseProfiledLoopPredicate) {
-        PredicateBlockIterator profiled_loop_predicate_iterator(current_node, Deoptimization::Reason_profile_predicate);
-        current_node = profiled_loop_predicate_iterator.for_each(predicate_visitor);
+        current_node = apply_for(predicate_visitor, current_node, Deoptimization::Reason_profile_predicate);
       }
-      PredicateBlockIterator loop_predicate_iterator(current_node, Deoptimization::Reason_predicate);
-      current_node = loop_predicate_iterator.for_each(predicate_visitor);
+      current_node = apply_for(predicate_visitor, current_node, Deoptimization::Reason_predicate);
     }
-    PredicateBlockIterator short_running_loop_predicate_iterator(current_node, Deoptimization::Reason_short_running_long_loop);
-    return short_running_loop_predicate_iterator.for_each(predicate_visitor);
+
+    if (ShortRunningLongLoop) {
+      current_node = apply_for(predicate_visitor, current_node, Deoptimization::Reason_short_running_long_loop);
+    }
+    return current_node;
+  }
+
+ private:
+  [[nodiscard]] static Node* apply_for(PredicateVisitor& predicate_visitor, Node* current_node,
+                                       Deoptimization::DeoptReason reason) {
+    PredicateBlockIterator predicate_block_iterator(current_node, reason);
+    return predicate_block_iterator.for_each(predicate_visitor);
   }
 };
 

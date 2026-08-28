@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=true -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=false -Xverify:all TestMemoryAccess
- * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=true -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true -Xverify:all TestMemoryAccess
- * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=false -Xverify:all TestMemoryAccess
- * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true -Xverify:all TestMemoryAccess
+ * @run junit/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=true -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=false -Xverify:all TestMemoryAccess
+ * @run junit/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=true -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true -Xverify:all TestMemoryAccess
+ * @run junit/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=false -Xverify:all TestMemoryAccess
+ * @run junit/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true -Xverify:all TestMemoryAccess
  */
 
 import java.lang.foreign.*;
@@ -36,42 +36,51 @@ import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 import java.util.function.Function;
 
-import org.testng.annotations.*;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestMemoryAccess {
 
-    @Test(dataProvider = "elements")
+    @ParameterizedTest
+    @MethodSource("createData")
     public void testAccess(Function<MemorySegment, MemorySegment> viewFactory, ValueLayout elemLayout, Checker checker) {
         ValueLayout layout = elemLayout.withName("elem");
         testAccessInternal(viewFactory, layout, layout.varHandle(), checker);
     }
 
-    @Test(dataProvider = "elements")
+    @ParameterizedTest
+    @MethodSource("createData")
     public void testPaddedAccessByName(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, Checker checker) {
         GroupLayout layout = MemoryLayout.structLayout(MemoryLayout.paddingLayout(elemLayout.byteSize()), elemLayout.withName("elem"));
         testAccessInternal(viewFactory, layout, layout.varHandle(PathElement.groupElement("elem")), checker);
     }
 
-    @Test(dataProvider = "elements")
+    @ParameterizedTest
+    @MethodSource("createData")
     public void testPaddedAccessByIndexSeq(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, Checker checker) {
         SequenceLayout layout = MemoryLayout.sequenceLayout(2, elemLayout);
         testAccessInternal(viewFactory, layout, layout.varHandle(PathElement.sequenceElement(1)), checker);
     }
 
-    @Test(dataProvider = "arrayElements")
+    @ParameterizedTest
+    @MethodSource("createArrayData")
     public void testArrayAccess(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, ArrayChecker checker) {
         SequenceLayout seq = MemoryLayout.sequenceLayout(10, elemLayout.withName("elem"));
         testArrayAccessInternal(viewFactory, seq, seq.varHandle(PathElement.sequenceElement()), checker);
     }
 
-    @Test(dataProvider = "arrayElements")
+    @ParameterizedTest
+    @MethodSource("createArrayData")
     public void testPaddedArrayAccessByName(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, ArrayChecker checker) {
         SequenceLayout seq = MemoryLayout.sequenceLayout(10, MemoryLayout.structLayout(MemoryLayout.paddingLayout(elemLayout.byteSize()), elemLayout.withName("elem")));
         testArrayAccessInternal(viewFactory, seq, seq.varHandle(MemoryLayout.PathElement.sequenceElement(), MemoryLayout.PathElement.groupElement("elem")), checker);
     }
 
-    @Test(dataProvider = "arrayElements")
+    @ParameterizedTest
+    @MethodSource("createArrayData")
     public void testPaddedArrayAccessByIndexSeq(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, ArrayChecker checker) {
         SequenceLayout seq = MemoryLayout.sequenceLayout(10, MemoryLayout.sequenceLayout(2, elemLayout));
         testArrayAccessInternal(viewFactory, seq, seq.varHandle(PathElement.sequenceElement(), MemoryLayout.PathElement.sequenceElement(1)), checker);
@@ -143,7 +152,8 @@ public class TestMemoryAccess {
         }
     }
 
-    @Test(dataProvider = "matrixElements")
+    @ParameterizedTest
+    @MethodSource("createMatrixData")
     public void testMatrixAccess(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, MatrixChecker checker) {
         SequenceLayout seq = MemoryLayout.sequenceLayout(20,
                 MemoryLayout.sequenceLayout(10, elemLayout.withName("elem")));
@@ -151,7 +161,8 @@ public class TestMemoryAccess {
                 PathElement.sequenceElement(), PathElement.sequenceElement()), checker);
     }
 
-    @Test(dataProvider = "matrixElements")
+    @ParameterizedTest
+    @MethodSource("createMatrixData")
     public void testPaddedMatrixAccessByName(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, MatrixChecker checker) {
         SequenceLayout seq = MemoryLayout.sequenceLayout(20,
                 MemoryLayout.sequenceLayout(10, MemoryLayout.structLayout(MemoryLayout.paddingLayout(elemLayout.byteSize()), elemLayout.withName("elem"))));
@@ -161,7 +172,8 @@ public class TestMemoryAccess {
                 checker);
     }
 
-    @Test(dataProvider = "matrixElements")
+    @ParameterizedTest
+    @MethodSource("createMatrixData")
     public void testPaddedMatrixAccessByIndexSeq(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, MatrixChecker checker) {
         SequenceLayout seq = MemoryLayout.sequenceLayout(20,
                 MemoryLayout.sequenceLayout(10, MemoryLayout.sequenceLayout(2, elemLayout)));
@@ -211,7 +223,6 @@ public class TestMemoryAccess {
     static Function<MemorySegment, MemorySegment> ID = Function.identity();
     static Function<MemorySegment, MemorySegment> IMMUTABLE = MemorySegment::asReadOnly;
 
-    @DataProvider(name = "elements")
     public Object[][] createData() {
         return new Object[][] {
                 //BE, RW
@@ -288,7 +299,6 @@ public class TestMemoryAccess {
         };
     }
 
-    @DataProvider(name = "arrayElements")
     public Object[][] createArrayData() {
         return new Object[][] {
                 //BE, RW
@@ -331,41 +341,40 @@ public class TestMemoryAccess {
 
         ArrayChecker BYTE = (handle, segment, i) -> {
             handle.set(segment, 0L, i, (byte)i);
-            assertEquals(i, (byte)handle.get(segment, 0L, i));
+            assertEquals((byte)handle.get(segment, 0L, i), i);
         };
 
         ArrayChecker SHORT = (handle, segment, i) -> {
             handle.set(segment, 0L, i, (short)i);
-            assertEquals(i, (short)handle.get(segment, 0L, i));
+            assertEquals((short)handle.get(segment, 0L, i), i);
         };
 
         ArrayChecker CHAR = (handle, segment, i) -> {
             handle.set(segment, 0L, i, (char)i);
-            assertEquals(i, (char)handle.get(segment, 0L, i));
+            assertEquals((char)handle.get(segment, 0L, i), i);
         };
 
         ArrayChecker INT = (handle, segment, i) -> {
             handle.set(segment, 0L, i, (int)i);
-            assertEquals(i, (int)handle.get(segment, 0L, i));
+            assertEquals((int)handle.get(segment, 0L, i), i);
         };
 
         ArrayChecker LONG = (handle, segment, i) -> {
             handle.set(segment, 0L, i, (long)i);
-            assertEquals(i, (long)handle.get(segment, 0L, i));
+            assertEquals((long)handle.get(segment, 0L, i), i);
         };
 
         ArrayChecker FLOAT = (handle, segment, i) -> {
             handle.set(segment, 0L, i, (float)i);
-            assertEquals((float)i, (float)handle.get(segment, 0L, i));
+            assertEquals((float)handle.get(segment, 0L, i), (float)i);
         };
 
         ArrayChecker DOUBLE = (handle, segment, i) -> {
             handle.set(segment, 0L, i, (double)i);
-            assertEquals((double)i, (double)handle.get(segment, 0L, i));
+            assertEquals((double)handle.get(segment, 0L, i), (double)i);
         };
     }
 
-    @DataProvider(name = "matrixElements")
     public Object[][] createMatrixData() {
         return new Object[][] {
                 //BE, RW
@@ -416,47 +425,47 @@ public class TestMemoryAccess {
 
         MatrixChecker BYTE = (handle, segment, r, c) -> {
             handle.set(segment, 0L, r, c, (byte)(r + c));
-            assertEquals(r + c, (byte)handle.get(segment, 0L, r, c));
+            assertEquals((byte)handle.get(segment, 0L, r, c), r + c);
         };
 
         MatrixChecker BOOLEAN = (handle, segment, r, c) -> {
             handle.set(segment, 0L, r, c, (r + c) != 0);
-            assertEquals((r + c) != 0, (boolean)handle.get(segment, 0L, r, c));
+            assertEquals((boolean)handle.get(segment, 0L, r, c), (r + c) != 0);
         };
 
         MatrixChecker SHORT = (handle, segment, r, c) -> {
             handle.set(segment, 0L, r, c, (short)(r + c));
-            assertEquals(r + c, (short)handle.get(segment, 0L, r, c));
+            assertEquals((short)handle.get(segment, 0L, r, c), r + c);
         };
 
         MatrixChecker CHAR = (handle, segment, r, c) -> {
             handle.set(segment, 0L, r, c, (char)(r + c));
-            assertEquals(r + c, (char)handle.get(segment, 0L, r, c));
+            assertEquals((char)handle.get(segment, 0L, r, c), r + c);
         };
 
         MatrixChecker INT = (handle, segment, r, c) -> {
             handle.set(segment, 0L, r, c, (int)(r + c));
-            assertEquals(r + c, (int)handle.get(segment, 0L, r, c));
+            assertEquals((int)handle.get(segment, 0L, r, c), r + c);
         };
 
         MatrixChecker LONG = (handle, segment, r, c) -> {
             handle.set(segment, 0L, r, c, r + c);
-            assertEquals(r + c, (long)handle.get(segment, 0L, r, c));
+            assertEquals((long)handle.get(segment, 0L, r, c), r + c);
         };
 
         MatrixChecker ADDR = (handle, segment, r, c) -> {
             handle.set(segment, 0L, r, c, MemorySegment.ofAddress(r + c));
-            assertEquals(MemorySegment.ofAddress(r + c), (MemorySegment) handle.get(segment, 0L, r, c));
+            assertEquals((MemorySegment) handle.get(segment, 0L, r, c), MemorySegment.ofAddress(r + c));
         };
 
         MatrixChecker FLOAT = (handle, segment, r, c) -> {
             handle.set(segment, 0L, r, c, (float)(r + c));
-            assertEquals((float)(r + c), (float)handle.get(segment, 0L, r, c));
+            assertEquals((float)handle.get(segment, 0L, r, c), (float)(r + c));
         };
 
         MatrixChecker DOUBLE = (handle, segment, r, c) -> {
             handle.set(segment, 0L, r, c, (double)(r + c));
-            assertEquals((double)(r + c), (double)handle.get(segment, 0L, r, c));
+            assertEquals((double)handle.get(segment, 0L, r, c), (double)(r + c));
         };
     }
 }

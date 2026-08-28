@@ -169,10 +169,11 @@ bool ConnectionGraph::compute_escape() {
   java_objects_worklist.append(phantom_obj);
   for( uint next = 0; next < ideal_nodes.size(); ++next ) {
     Node* n = ideal_nodes.at(next);
-    if ((n->Opcode() == Op_LoadX || n->Opcode() == Op_StoreX) &&
+    if (n->is_Mem() &&
         !n->in(MemNode::Address)->is_AddP() &&
         _igvn->type(n->in(MemNode::Address))->isa_oopptr()) {
-      // Load/Store at mark work address is at offset 0 so has no AddP which confuses EA
+      // EA expects on-heap memory addresses to be represented by an AddP. An AddP with a zero
+      // offset can be optimized to its oop base, so recreate it.
       Node* addp = AddPNode::make_with_base(n->in(MemNode::Address), n->in(MemNode::Address), _igvn->MakeConX(0));
       _igvn->register_new_node_with_optimizer(addp);
       _igvn->replace_input_of(n, MemNode::Address, addp);
@@ -4517,10 +4518,8 @@ void ConnectionGraph::move_inst_mem(Node* n, Unique_Node_List& orig_phis) {
       if (n != mmem->memory_at(general_idx) || alias_idx == general_idx) {
         continue; // Nothing to do
       }
-      // Replace previous general reference to mem node.
-      uint orig_uniq = C->unique();
-      Node* m = find_inst_mem(n, general_idx, orig_phis);
-      assert(orig_uniq == C->unique(), "no new nodes");
+      // Replace previous general reference to mem node and assert no new node is created.
+      Node* m = find_inst_mem_assert_no_new_node(n, general_idx, orig_phis);
       mmem->set_memory_at(general_idx, m);
       --imax;
       --i;
@@ -4537,15 +4536,26 @@ void ConnectionGraph::move_inst_mem(Node* n, Unique_Node_List& orig_phis) {
           alias_idx == general_idx) {
         continue; // Nothing to do
       }
-      // Move to general memory slice.
-      uint orig_uniq = C->unique();
-      Node* m = find_inst_mem(n, general_idx, orig_phis);
-      assert(orig_uniq == C->unique(), "no new nodes");
+      // Move to general memory slice and assert no new node is created.
+      Node* m = find_inst_mem_assert_no_new_node(n, general_idx, orig_phis);
       igvn->hash_delete(use);
       imax -= use->replace_edge(n, m, igvn);
       igvn->hash_insert(use);
       record_for_optimizer(use);
       --i;
+    } else if (use->is_memory_access_intrinsic()) {
+      if (alias_idx == general_idx) {
+        continue;
+      }
+      if (use->in(MemNode::Memory) == n) {
+        // Move to general memory slice and assert no new node is created.
+        Node* m = find_inst_mem_assert_no_new_node(n, general_idx, orig_phis);
+        igvn->hash_delete(use);
+        imax -= use->replace_edge(n, m, igvn);
+        igvn->hash_insert(use);
+        record_for_optimizer(use);
+        --i;
+      }
 #ifdef ASSERT
     } else if (use->is_Mem()) {
       // Memory nodes should have new memory input.
@@ -4786,6 +4796,13 @@ Node* ConnectionGraph::find_inst_mem(Node* orig_mem, int alias_idx, Unique_Node_
     }
   }
   // the result is either MemNode, PhiNode, InitializeNode.
+  return result;
+}
+
+Node* ConnectionGraph::find_inst_mem_assert_no_new_node(Node* orig_mem, int alias_idx, Unique_Node_List& orig_phis) {
+  uint orig_uniq = _compile->unique();
+  Node* result = find_inst_mem(orig_mem, alias_idx, orig_phis);
+  assert(orig_uniq == _compile->unique(), "no new nodes");
   return result;
 }
 
@@ -5193,12 +5210,8 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
           // They overwrite memory edge corresponding to destination array,
           memnode_worklist.push(use);
         } else if (!(op == Op_CmpP || op == Op_Conv2B ||
-              op == Op_CastP2X ||
-              op == Op_FastLock || op == Op_AryEq ||
-              op == Op_StrComp || op == Op_CountPositives ||
-              op == Op_StrCompressedCopy || op == Op_StrInflatedCopy ||
-              op == Op_StrEquals || op == Op_VectorizedHashCode ||
-              op == Op_StrIndexOf || op == Op_StrIndexOfChar ||
+              op == Op_CastP2X || op == Op_FastLock ||
+              use->is_memory_access_intrinsic() ||
               op == Op_SubTypeCheck || op == Op_InlineType || op == Op_FlatArrayCheck ||
               op == Op_ReinterpretS2HF ||
               op == Op_ReachabilityFence ||
@@ -5389,9 +5402,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
           // They overwrite memory edge corresponding to destination array,
           memnode_worklist.push(use);
         } else if (!(BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier_node(use) ||
-              op == Op_AryEq || op == Op_StrComp || op == Op_CountPositives ||
-              op == Op_StrCompressedCopy || op == Op_StrInflatedCopy || op == Op_VectorizedHashCode ||
-              op == Op_StrEquals || op == Op_StrIndexOf || op == Op_StrIndexOfChar || op == Op_FlatArrayCheck)) {
+                     use->is_memory_access_intrinsic() || op == Op_FlatArrayCheck)) {
           n->dump();
           use->dump();
           assert(false, "EA: missing memory path");
