@@ -185,6 +185,9 @@ class G1CollectionSet {
   struct SelectionBudget {
     double _time_budget_ms;
     size_t _copy_budget_bytes;
+
+    void deduct_from_budget(const G1EvacuationPrediction& prediction);
+    void deduct_only_time(const G1EvacuationPrediction& prediction);
   };
 
   class CandidateSelection;

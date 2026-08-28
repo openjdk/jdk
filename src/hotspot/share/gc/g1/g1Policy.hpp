@@ -53,49 +53,9 @@ class G1IHOPControl;
 class G1Analytics;
 class G1SurvivorRegions;
 class G1Policy;
+class G1YoungGenPredictor;
 class GCPolicyCounters;
 class STWGCTimer;
-
-// Holds the common inputs used to calculate young-generation sizing.
-class G1YoungGenPredictor {
-  double _base_time_ms;
-  uint _base_free_regions;
-  uint _absolute_min_num_young_regions;
-  uint _absolute_max_num_young_regions;
-  uint _desired_num_eden_regions_by_mmu;
-  uint _num_young_regions;
-  uint _num_survivor_regions;
-  size_t _survivor_bytes_to_copy;
-  size_t _survivor_used_bytes;
-  size_t _old_bytes_to_copy;
-  const G1Policy* const _policy;
-  bool _use_adaptive_sizing;
-
-  uint min_num_eden_regions() const {
-    return _absolute_min_num_young_regions - _num_survivor_regions;
-  }
-
-  uint max_num_eden_regions() const {
-    return _absolute_max_num_young_regions - _num_survivor_regions;
-  }
-
-  bool fits_with_evacuation_reserve(uint num_eden_regions) const;
-  bool will_fit(uint num_eden_regions) const;
-
-  uint desired_num_eden_regions_by_pause() const;
-  uint desired_num_eden_regions_by_evacuation_space() const;
-
-public:
-  G1YoungGenPredictor(const G1Policy* const policy,
-                      const G1EvacuationPrediction& base_prediction,
-                      uint min_num_young_regions_by_sizer,
-                      uint max_num_young_regions_by_sizer);
-
-  uint desired_num_young_regions() const;
-  uint max_num_young_regions_by_evacuation_space() const;
-
-  uint base_free_regions() const { return _base_free_regions; }
-};
 
 class G1Policy: public CHeapObj<mtGC> {
   friend class G1YoungGenPredictor;
