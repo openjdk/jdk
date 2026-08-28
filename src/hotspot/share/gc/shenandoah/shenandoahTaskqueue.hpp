@@ -311,9 +311,10 @@ class ShenandoahObjToScanQueueSet: public GenericTaskQueueSet<ShenandoahObjToSca
 public:
   ShenandoahObjToScanQueueSet(int n) : GenericTaskQueueSet<ShenandoahObjToScanQueue, mtGC>(n) {}
 
+  void rebalance(size_t target_queues);
+
   bool is_empty();
   void clear();
-  void rebalance(size_t num_queues);
 };
 
 class ShenandoahTerminatorTerminator : public TerminatorTerminator {

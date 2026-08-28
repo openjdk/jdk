@@ -28,6 +28,7 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
+#include "utilities/stack.inline.hpp"
 
 void ShenandoahObjToScanQueueSet::clear() {
   uint size = GenericTaskQueueSet<ShenandoahObjToScanQueue, mtGC>::size();
@@ -51,6 +52,8 @@ bool ShenandoahObjToScanQueueSet::is_empty() {
 }
 
 void ShenandoahObjToScanQueueSet::rebalance(size_t target_queues) {
+  assert(target_queues > 0 && target_queues <= size(), "Should be in bounds: %zu", target_queues);
+
   // Figure out the population target.
   size_t total = 0;
   for (uint i = 0; i < GenericTaskQueueSet::size(); i++) {
@@ -59,6 +62,11 @@ void ShenandoahObjToScanQueueSet::rebalance(size_t target_queues) {
     total += q->full_size();
   }
   size_t target_size = total / target_queues;
+
+  if (target_size == 0) {
+    // Nothing to do.
+    return;
+  }
 
   // Redistribute the work between queues.
   // Do two passes to make sure all queues had a chance to push and pop.
@@ -72,7 +80,7 @@ void ShenandoahObjToScanQueueSet::rebalance(size_t target_queues) {
       // Push and pop targets relative to expected average size.
       size_t q_size = q->full_size();
       size_t to_pop  = (q_size > target_size) ? (q_size - target_size) : 0;
-      size_t to_push = (q_size < target_size) ? MIN2(ts.size(), target_size - q_size): 0;
+      size_t to_push = (q_size < target_size) ? MIN2(ts.size(), target_size - q_size) : 0;
 
       if (i >= target_queues) {
         // Queue must be emptied out.
