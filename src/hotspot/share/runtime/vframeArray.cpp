@@ -95,7 +95,7 @@ void vframeArrayElement::fill_in(compiledVFrame* vf, bool realloc_failures) {
           assert(monitor->owner() != nullptr, "monitor owner must not be null");
           assert(!monitor->owner()->is_unlocked(), "monitor must be locked");
           dest->set_obj(monitor->owner());
-          monitor->lock()->set_object_monitor_cache(monitor->lock()->object_monitor_cache());
+          dest->lock()->set_object_monitor_cache(monitor->lock()->object_monitor_cache());
         }
       }
     }
