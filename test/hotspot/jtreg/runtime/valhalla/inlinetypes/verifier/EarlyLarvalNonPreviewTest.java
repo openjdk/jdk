@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,26 +19,28 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
-#include "gc/shenandoah/shenandoahBarrierSetStackChunk.hpp"
+/*
+ * @test
+ * @enablePreview
+ * @library /test/lib
+ * @modules java.base/jdk.internal.vm.annotation
+ *          java.base/jdk.internal.value
+ * @compile EarlyLarvalNonPreviewApp.jasm
+ * @run main EarlyLarvalNonPreviewTest
+ */
 
-void ShenandoahBarrierSetStackChunk::encode_gc_mode(stackChunkOop chunk, OopIterator* oop_iterator) {
-  // Nothing to do
-}
-
-void ShenandoahBarrierSetStackChunk::decode_gc_mode(stackChunkOop chunk, OopIterator* oop_iterator) {
-  // Nothing to do
-}
-
-oop ShenandoahBarrierSetStackChunk::load_oop(stackChunkOop chunk, oop* addr) {
-  oop result = BarrierSetStackChunk::load_oop(chunk, addr);
-  return ShenandoahBarrierSet::barrier_set()->load_reference_barrier(ON_STRONG_OOP_REF, result, (oop*)nullptr);
-}
-
-oop ShenandoahBarrierSetStackChunk::load_oop(stackChunkOop chunk, narrowOop* addr) {
-  oop result = BarrierSetStackChunk::load_oop(chunk, addr);
-  return ShenandoahBarrierSet::barrier_set()->load_reference_barrier(ON_STRONG_OOP_REF, result, (narrowOop*)nullptr);
+public class EarlyLarvalNonPreviewTest {
+    public static void main(String[] args) {
+        try {
+            var value = new EarlyLarvalNonPreviewApp(-1, -2);
+            throw new RuntimeException("Expected ClassFormatError");
+        } catch (ClassFormatError c) {
+            if (!c.getMessage().equals("StackMapTable format error: reserved frame type")) {
+                throw new RuntimeException("Unexpected ClassFormatError " + c.getMessage());
+            }
+            System.out.println("Test passed");
+        }
+    }
 }

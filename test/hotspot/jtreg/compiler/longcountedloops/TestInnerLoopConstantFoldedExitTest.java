@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,26 +19,40 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
-#include "gc/shenandoah/shenandoahBarrierSetStackChunk.hpp"
+/**
+ * @test
+ * @bug 8375639
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:StressLongCountedLoop=1 -XX:+AlwaysIncrementalInline
+ *                   -Xbatch -XX:CompileCommand=compileonly,${test.main.class}::test ${test.main.class}
+ * @run main ${test.main.class}
+ */
 
-void ShenandoahBarrierSetStackChunk::encode_gc_mode(stackChunkOop chunk, OopIterator* oop_iterator) {
-  // Nothing to do
+package compiler.longcountedloops;
+
+public class TestInnerLoopConstantFoldedExitTest {
+    static int offset = 1;
+    static final char[] array = {'a', 'b'};
+
+    static void loop(String s, int off) {
+        for (int i = 0; i < 2; i++) {
+            if (array[off + i] != s.charAt(i)) {
+                return;
+            }
+        }
+    }
+
+    static void test() {
+        int start = offset - 1;
+        loop("cd", start);
+        loop("ab", start);
+    }
+
+    public static void main(String[] args) {
+        for (int i = 0; i < 50_000; i++) {
+            test();
+        }
+    }
 }
 
-void ShenandoahBarrierSetStackChunk::decode_gc_mode(stackChunkOop chunk, OopIterator* oop_iterator) {
-  // Nothing to do
-}
-
-oop ShenandoahBarrierSetStackChunk::load_oop(stackChunkOop chunk, oop* addr) {
-  oop result = BarrierSetStackChunk::load_oop(chunk, addr);
-  return ShenandoahBarrierSet::barrier_set()->load_reference_barrier(ON_STRONG_OOP_REF, result, (oop*)nullptr);
-}
-
-oop ShenandoahBarrierSetStackChunk::load_oop(stackChunkOop chunk, narrowOop* addr) {
-  oop result = BarrierSetStackChunk::load_oop(chunk, addr);
-  return ShenandoahBarrierSet::barrier_set()->load_reference_barrier(ON_STRONG_OOP_REF, result, (narrowOop*)nullptr);
-}
