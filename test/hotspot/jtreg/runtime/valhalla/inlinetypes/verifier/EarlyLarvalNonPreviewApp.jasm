@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,26 +19,36 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
-#include "gc/shenandoah/shenandoahBarrierSetStackChunk.hpp"
+final identity class EarlyLarvalNonPreviewApp extends java/lang/Record version 72:0
+{
+  public final Field x:I;
+  public final Field y:I;
 
-void ShenandoahBarrierSetStackChunk::encode_gc_mode(stackChunkOop chunk, OopIterator* oop_iterator) {
-  // Nothing to do
-}
-
-void ShenandoahBarrierSetStackChunk::decode_gc_mode(stackChunkOop chunk, OopIterator* oop_iterator) {
-  // Nothing to do
-}
-
-oop ShenandoahBarrierSetStackChunk::load_oop(stackChunkOop chunk, oop* addr) {
-  oop result = BarrierSetStackChunk::load_oop(chunk, addr);
-  return ShenandoahBarrierSet::barrier_set()->load_reference_barrier(ON_STRONG_OOP_REF, result, (oop*)nullptr);
-}
-
-oop ShenandoahBarrierSetStackChunk::load_oop(stackChunkOop chunk, narrowOop* addr) {
-  oop result = BarrierSetStackChunk::load_oop(chunk, addr);
-  return ShenandoahBarrierSet::barrier_set()->load_reference_barrier(ON_STRONG_OOP_REF, result, (narrowOop*)nullptr);
+  public Method "<init>":"(II)V"
+    stack 2  locals 3
+     0:  #{ x }
+     1:  #{ y }
+  {
+         aload_0;
+         invokespecial     Method java/lang/Record."<init>":"()V";
+         aload_0;
+         iload_1;
+         putfield          Field x:"I";
+         iload_1;
+         ifge              L16;
+         iload_2;
+         ineg;
+         istore_2;
+  L16:   stack_frame_type early_larval;
+          unset_fields;
+          frame_type full;
+              locals_map      class EarlyLarvalNonPreviewApp, int, int;
+              stack_map;
+         aload_0;
+         iload_2;
+         putfield          Field y:"I";
+         return;
+  }
 }
