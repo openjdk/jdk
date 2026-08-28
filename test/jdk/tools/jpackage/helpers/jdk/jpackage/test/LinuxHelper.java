@@ -694,8 +694,8 @@ public final class LinuxHelper {
                 expectedValidatedDesktopEntryFileNames = List.of();
             }
 
-            var missing = expectedValidatedDesktopEntryFileNames.stream().filter(fname -> {
-                return validatedDesktopEntryFiles.stream().map(Path::getFileName).filter(Predicate.isEqual(fname)).findAny().isEmpty();
+            var missing = expectedValidatedDesktopEntryFileNames.stream().filter(fileName -> {
+                return validatedDesktopEntryFiles.stream().map(Path::getFileName).filter(Predicate.isEqual(fileName)).findAny().isEmpty();
             }).sorted().toList();
 
             var unexpected = validatedDesktopEntryFiles.stream().filter(path -> {
