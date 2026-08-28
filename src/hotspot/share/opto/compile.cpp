@@ -460,7 +460,7 @@ void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_Lis
         n->raw_del_out(j);
         --j;
         --max;
-        if (child->is_data_proj_of_pure_function(n)) {
+        if (n->should_process_when_disconnect_output(child)) {
           worklist.push(n);
         }
       }

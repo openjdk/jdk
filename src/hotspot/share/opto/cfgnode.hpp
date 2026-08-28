@@ -179,7 +179,7 @@ class PhiNode : public TypeNode {
   static Node* merge_through_phi(Node* root_phi, PhaseIterGVN* igvn);
 
   bool must_wait_for_region_in_irreducible_loop(PhaseGVN* phase) const;
-  bool is_dead_phi();
+
   bool is_split_through_mergemem_terminating() const;
 
   void verify_type_stability(const PhaseGVN* phase, const Type* union_of_input_types, const Type* new_type) const NOT_DEBUG_RETURN;
@@ -239,6 +239,7 @@ public:
   LoopSafety simple_data_loop_check(Node *in) const;
   // Is it unsafe data loop? It becomes a dead loop if this phi node removed.
   bool is_unsafe_data_reference(Node *in) const;
+  bool is_dead_phi();
   int is_diamond_phi() const;
   bool try_clean_memory_phi(PhaseIterGVN* igvn);
   virtual int Opcode() const;

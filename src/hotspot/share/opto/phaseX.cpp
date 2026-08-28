@@ -1096,7 +1096,11 @@ bool PhaseIterGVN::drain_worklist() {
       return true;
     }
     DEBUG_ONLY(trace_PhaseIterGVN_verbose(n, _num_processed++);)
-    if (n->outcnt() != 0) {
+    if (n->outcnt() == 0 || (n->is_Phi() && n->as_Phi()->is_dead_phi())) {
+      if (!n->is_top()) {
+        remove_globally_dead_node(n, NodeOrigin::Graph);
+      }
+    } else {
       NOT_PRODUCT(const Type* oldtype = type_or_null(n));
       // Do the transformation
       DEBUG_ONLY(int live_nodes_before = C->live_nodes();)
@@ -1112,8 +1116,6 @@ bool PhaseIterGVN::drain_worklist() {
              "(should be at most %d)",
              increase, max_live_nodes_increase_per_iteration);
       NOT_PRODUCT(trace_PhaseIterGVN(n, nn, oldtype, progress);)
-    } else if (!n->is_top()) {
-      remove_dead_node(n, NodeOrigin::Graph);
     }
     loop_count++;
   }
@@ -2386,10 +2388,7 @@ void PhaseIterGVN::remove_globally_dead_node(Node* dead, NodeOrigin origin) {
                 }
                 assert(!(i < imax), "sanity");
               }
-            } else if (in->is_Phi()) {
-              // A Phi may only have other Phis as its transitive uses, it is dead then
-              _worklist.push(in);
-            } else if (dead->is_data_proj_of_pure_function(in)) {
+            } else if (in->should_process_when_disconnect_output(dead)) {
               _worklist.push(in);
             } else {
               BarrierSet::barrier_set()->barrier_set_c2()->enqueue_useful_gc_barrier(this, in);
@@ -3626,7 +3625,11 @@ void Node::set_req_X( uint i, Node *n, PhaseIterGVN *igvn ) {
   set_req(i, n);
 
   // old goes dead?
-  if( old ) {
+  if (old != nullptr) {
+    if (old->should_process_when_disconnect_output(this)) {
+      igvn->_worklist.push(old);
+    }
+
     switch (old->outcnt()) {
     case 0:
       // Put into the worklist to kill later. We do not kill it now because the

@@ -1293,6 +1293,14 @@ public:
   // for the transformations to happen.
   bool has_special_unique_user() const;
 
+  // Some nodes can be processed when one of its outputs is disconnected
+  bool should_process_when_disconnect_output(Node* output) const;
+
+private:
+  bool is_data_proj_of_pure_function(const Node* maybe_pure_function) const;
+
+public:
+
   // Skip Proj and CatchProj nodes chains. Check for Null and Top.
   Node* find_exact_control(Node* ctrl);
 
@@ -1455,8 +1463,6 @@ public:
   bool is_memory_phi() const { return is_Phi() && bottom_type() == Type::MEMORY; }
 
   bool is_div_or_mod(BasicType bt) const;
-
-  bool is_data_proj_of_pure_function(const Node* maybe_pure_function) const;
 
 //----------------- Printing, etc
 #ifndef PRODUCT

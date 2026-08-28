@@ -2135,6 +2135,27 @@ bool PhiNode::is_unsafe_data_reference(Node *in) const {
   return false; // The phi is not reachable from its inputs
 }
 
+// A Phi may only have other Phis as its transitive outputs, it is dead then. We may not be able to
+// remove it normally because a Phi can be a transitive output of itself.
+bool PhiNode::is_dead_phi() {
+  ResourceMark rm;
+  Unique_Node_List worklist;
+  worklist.push(this);
+  for (uint wl_idx = 0; wl_idx < worklist.size(); wl_idx++) {
+    Node* n = worklist.at(wl_idx);
+    for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+      Node* out = n->fast_out(i);
+      if (out->is_Phi()) {
+        worklist.push(out);
+      } else {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
 // Is this Phi's region or some inputs to the region enqueued for IGVN
 // and so could cause the region to be optimized out?
 bool PhiNode::wait_for_region_igvn(PhaseGVN* phase) {
@@ -2201,27 +2222,6 @@ bool PhiNode::must_wait_for_region_in_irreducible_loop(PhaseGVN* phase) const {
     }
   }
   return false;
-}
-
-// A Phi may only have other Phis as its transitive outputs, it is dead then. We may not be able to
-// remove it normally because a Phi can be a transitive output of itself.
-bool PhiNode::is_dead_phi() {
-  ResourceMark rm;
-  Unique_Node_List worklist;
-  worklist.push(this);
-  for (uint wl_idx = 0; wl_idx < worklist.size(); wl_idx++) {
-    Node* n = worklist.at(wl_idx);
-    for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
-      Node* out = n->fast_out(i);
-      if (out->is_Phi()) {
-        worklist.push(out);
-      } else {
-        return false;
-      }
-    }
-  }
-
-  return true;
 }
 
 // Check if splitting a bot memory Phi through a parent MergeMem may lead to
@@ -2299,10 +2299,6 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   if (must_wait_for_region_in_irreducible_loop(phase)) {
     return nullptr;
-  }
-
-  if (can_reshape && is_dead_phi()) {
-    return top;
   }
 
   // The are 2 situations when only one valid phi's input is left
