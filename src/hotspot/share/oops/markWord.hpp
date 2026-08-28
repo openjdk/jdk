@@ -184,8 +184,8 @@ class markWord {
   static const uintptr_t monitor_value            = 2;
   static const uintptr_t marked_value             = 3;
 
-  static const uintptr_t inline_type_pattern      = inline_type_bit_in_place | lock_neutral_value;
-  static const uintptr_t inline_type_pattern_mask = inline_type_bit_in_place | lock_mask_in_place;
+  static const uintptr_t inline_type_pattern      = inline_type_bit_in_place;
+  static const uintptr_t inline_type_pattern_mask = inline_type_bit_in_place;
 
   static const uintptr_t no_hash                  = 0 ;  // no hash value assigned
   static const uintptr_t no_hash_in_place         = (uintptr_t)no_hash << hash_shift;
@@ -197,6 +197,7 @@ class markWord {
   static markWord zero() { return markWord(uintptr_t(0)); }
 
   bool is_inline_type() const {
+    precond(!is_marked());
 #ifdef _LP64 // 64 bit encodings only
     return (mask_bits(value(), inline_type_pattern_mask) == inline_type_pattern);
 #else
