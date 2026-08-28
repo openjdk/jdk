@@ -404,25 +404,21 @@ bool oopDesc::is_instanceof_or_null(oop obj, Klass* klass) {
   return obj == nullptr || obj->klass()->is_subtype_of(klass);
 }
 
-intptr_t oopDesc::identity_hash() {
-  // Fast case; if the object is unlocked and the hash value is set, no locking is needed
+intptr_t oopDesc::identity_hash(Thread* current) {
   // Note: The mark must be read into local variable to avoid concurrent updates.
   markWord mrk = mark();
-  if (mrk.is_unlocked() && !mrk.has_no_hash()) {
+  assert(!mrk.is_marked(), "should never be marked");
+
+  if (mrk.has_hash()) {
     return mrk.hash();
-  } else if (mrk.is_marked()) {
-    return mrk.hash();
-  } else {
-    return slow_identity_hash();
   }
+
+  return slow_identity_hash(mrk, current == nullptr ? Thread::current() : current);
 }
 
-// This checks fast simple case of whether the oop has_no_hash,
-// to optimize JVMTI table lookup.
-bool oopDesc::fast_no_hash_check() {
+bool oopDesc::has_identity_hash() {
   markWord mrk = mark_acquire();
-  assert(!mrk.is_marked(), "should never be marked");
-  return mrk.is_unlocked() && mrk.has_no_hash();
+  return mrk.has_hash();
 }
 
 bool oopDesc::mark_must_be_preserved() const {
