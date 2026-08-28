@@ -1447,7 +1447,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     // hand.
     //
     __ mov(c_rarg0, rthread);
-    __ lea(rscratch2, RuntimeAddress(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans)));
+    __ lea(rscratch2, RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::check_special_condition_for_native_trans)));
     __ blr(rscratch2);
     __ get_method(rmethod);
     __ reinit_heapbase();

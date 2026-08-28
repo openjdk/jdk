@@ -1103,28 +1103,6 @@ void JavaThread::verify_not_published() {
 }
 #endif
 
-// Slow path when the native==>Java barriers detect a safepoint/handshake is
-// pending, when _suspend_flags is non-zero or when we need to process a stack
-// watermark. Also check for pending async exceptions (except unsafe access error).
-void JavaThread::check_special_condition_for_native_trans(JavaThread *thread) {
-  assert(thread->thread_state() == _thread_in_Java, "wrong state");
-  assert(!thread->has_last_Java_frame() || thread->frame_anchor()->walkable(), "Unwalkable stack in native->Java transition");
-
-  thread->set_thread_state(_thread_in_vm);
-
-  // Enable WXWrite: called directly from interpreter native wrapper.
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
-
-  SafepointMechanism::process_if_requested_with_exit_check(thread, true /* check asyncs */);
-
-  // After returning from native, it could be that the stack frames are not
-  // yet safe to use. We catch such situations in the subsequent stack watermark
-  // barrier, which will trap unsafe stack frames.
-  StackWatermarkSet::before_unwind(thread);
-
-  thread->set_thread_state(_thread_in_Java);
-}
-
 #ifndef PRODUCT
 // Deoptimization
 // Function for testing deoptimization

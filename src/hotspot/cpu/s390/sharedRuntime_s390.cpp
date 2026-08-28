@@ -2777,7 +2777,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     //
     __ bind(sync);
 
-    address entry_point = CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans);
+    address entry_point = CAST_FROM_FN_PTR(address, SharedRuntime::check_special_condition_for_native_trans);
 
     __ call_VM_leaf(entry_point, Z_thread);
 

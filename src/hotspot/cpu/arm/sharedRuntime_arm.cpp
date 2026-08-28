@@ -1336,7 +1336,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ bind(call_safepoint_runtime);
   push_result_registers(masm, ret_type);
   __ mov(R0, Rthread);
-  __ call(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
+  __ call(CAST_FROM_FN_PTR(address, SharedRuntime::check_special_condition_for_native_trans));
   pop_result_registers(masm, ret_type);
   __ b(return_to_java);
 

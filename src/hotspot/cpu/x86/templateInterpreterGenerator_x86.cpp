@@ -986,7 +986,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ mov(r12, rsp); // remember sp (can only use r12 if not using call_VM)
     __ subptr(rsp, frame::arg_reg_save_area_bytes); // windows
     __ andptr(rsp, -16); // align stack as required by ABI
-    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans)));
+    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::check_special_condition_for_native_trans)));
     __ mov(rsp, r12); // restore sp
     __ reinit_heapbase();
     __ bind(Continue);

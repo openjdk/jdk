@@ -2040,7 +2040,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 #ifndef PRODUCT
     assert(frame::arg_reg_save_area_bytes == 0, "not expecting frame reg save area");
 #endif
-    __ rt_call(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
+    __ rt_call(CAST_FROM_FN_PTR(address, SharedRuntime::check_special_condition_for_native_trans));
 
     // Restore any method result value
     restore_native_result(masm, ret_type, stack_slots);

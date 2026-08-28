@@ -1594,7 +1594,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ z_bre(Continue); // 0 -> no flag set -> not suspended
     __ bind(do_safepoint);
     __ z_lgr(Z_ARG1, Z_thread);
-    __ call_c(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
+    __ call_c(CAST_FROM_FN_PTR(address, SharedRuntime::check_special_condition_for_native_trans));
     __ bind(Continue);
   }
 

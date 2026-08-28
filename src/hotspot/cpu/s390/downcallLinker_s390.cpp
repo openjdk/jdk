@@ -286,7 +286,7 @@ void DowncallLinker::StubGenerator::generate() {
       // Need to save the native result registers around any runtime calls.
       out_reg_spiller.generate_spill(_masm, out_spill_offset);
 
-    __ load_const_optimized(call_target_address, CAST_FROM_FN_PTR(uint64_t, JavaThread::check_special_condition_for_native_trans));
+    __ load_const_optimized(call_target_address, CAST_FROM_FN_PTR(uint64_t, SharedRuntime::check_special_condition_for_native_trans));
     __ z_lgr(Z_ARG1, Z_thread);
     __ call(call_target_address);
 

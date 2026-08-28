@@ -349,7 +349,7 @@ void DowncallLinker::StubGenerator::generate() {
     }
 
     __ mov(c_rarg0, r15_thread);
-    runtime_call(_masm, CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
+    runtime_call(_masm, CAST_FROM_FN_PTR(address, SharedRuntime::check_special_condition_for_native_trans));
 
     if (should_save_return_value) {
       out_reg_spiller.generate_fill(_masm, out_spill_rsp_offset);

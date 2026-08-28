@@ -335,7 +335,7 @@ void DowncallLinker::StubGenerator::generate() {
       out_reg_spiller.generate_spill(_masm, out_spill_offset);
     }
 
-    __ load_const_optimized(call_target_address, CAST_FROM_FN_PTR(uint64_t, JavaThread::check_special_condition_for_native_trans), R0);
+    __ load_const_optimized(call_target_address, CAST_FROM_FN_PTR(uint64_t, SharedRuntime::check_special_condition_for_native_trans), R0);
     __ mr(R3_ARG1, R16_thread);
     __ call_c(call_target_address);
 

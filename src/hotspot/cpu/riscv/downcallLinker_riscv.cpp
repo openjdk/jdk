@@ -353,7 +353,7 @@ void DowncallLinker::StubGenerator::generate() {
 
     __ mv(c_rarg0, xthread);
     assert(frame::arg_reg_save_area_bytes == 0, "not expecting frame reg save area");
-    __ rt_call(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
+    __ rt_call(CAST_FROM_FN_PTR(address, SharedRuntime::check_special_condition_for_native_trans));
 
     if (should_save_return_value) {
       out_reg_spiller.generate_fill(_masm, out_spill_offset);

@@ -433,7 +433,7 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
   // and pending asynchronous exceptions.
   if (SafepointMechanism::should_process(thread) ||
       thread->has_special_condition_for_native_trans()) {
-    JavaThread::check_special_condition_for_native_trans(thread);
+    SharedRuntime::check_special_condition_for_native_trans(thread);
     CHECK_UNHANDLED_OOPS_ONLY(thread->clear_unhandled_oops());
   }
 

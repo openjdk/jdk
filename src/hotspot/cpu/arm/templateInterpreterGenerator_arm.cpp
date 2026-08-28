@@ -1041,7 +1041,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ b(skip_call, eq);
   __ bind(call);
   __ mov(R0, Rthread);
-  __ call(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans), relocInfo::none);
+  __ call(CAST_FROM_FN_PTR(address, SharedRuntime::check_special_condition_for_native_trans), relocInfo::none);
   __ bind(skip_call);
 
 #if R9_IS_SCRATCHED
