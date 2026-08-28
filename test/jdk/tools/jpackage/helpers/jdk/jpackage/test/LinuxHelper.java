@@ -442,7 +442,7 @@ public final class LinuxHelper {
         });
 
         test.addInitializer(cmd -> {
-            cmd.setEnabledMessageCategories(MessageCategory.TOOLS);
+            cmd.enableMessageCategories(MessageCategory.TOOLS);
             verifyDesktopFileValidateInvocationsInOutput(cmd, integrated);
         });
     }
