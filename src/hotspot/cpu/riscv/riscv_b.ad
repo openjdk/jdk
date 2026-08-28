@@ -183,7 +183,7 @@ instruct convI2UL_reg_reg_b(iRegLNoSp dst, iRegIorL2I src, immL_32bits mask) %{
     __ zext_w(as_Register($dst$$reg), as_Register($src$$reg));
   %}
 
-  ins_pipe(ialu_reg_shift);
+  ins_pipe(ialu_reg);
 %}
 
 // And with a low 16-bit mask
