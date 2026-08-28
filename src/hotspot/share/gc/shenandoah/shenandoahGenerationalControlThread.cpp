@@ -403,7 +403,8 @@ void ShenandoahGenerationalControlThread::service_concurrent_old_cycle(const She
       // acknowledge the cancellation request, the subsequent young cycle will observe
       // the request and essentially cancel itself.
       if (check_cancellation_or_degen(ShenandoahGC::_degenerated_outside_cycle)) {
-        log_info(gc, thread)("Preparation for old generation cycle was cancelled");
+        // Need to report at "gc" level to report GC ID proper.
+        log_info(gc)("Preparation for old generation cycle was cancelled");
         return;
       }
 
