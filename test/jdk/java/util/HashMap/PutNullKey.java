@@ -64,20 +64,12 @@ public class PutNullKey {
 
         @Override
         public boolean equals(Object o) {
-            if (null == o) {
-                return false;
-            }
-
-            if (o.getClass() != CollidingHash.class) {
-                return false;
-            }
-
-            return value == ((CollidingHash) o).value;
+            return o instanceof CollidingHash t && value == t.value;
         }
 
         @Override
         public int compareTo(CollidingHash o) {
-            return value - o.value;
+            return Integer.compare(value, o.value);
         }
     }
 
@@ -98,20 +90,12 @@ public class PutNullKey {
 
         @Override
         public boolean equals(Object o) {
-            if (null == o) {
-                return false;
-            }
-
-            if (o.getClass() != CollidingHashValue.class) {
-                return false;
-            }
-
-            return value == ((CollidingHashValue) o).value;
+            return o instanceof CollidingHashValue t && value == t.value;
         }
 
         @Override
         public int compareTo(CollidingHashValue o) {
-            return value - o.value;
+            return Integer.compare(value, o.value);
         }
     }
 
