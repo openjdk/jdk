@@ -366,7 +366,7 @@ class ClassVerifier : public StackObj {
 
   void verify_field_instructions(
     RawBytecodeStream* bcs, StackMapFrame* current_frame,
-    const constantPoolHandle& cp, bool allow_arrays, AssertUnsetFieldTable* initial_strict_fields, TRAPS);
+    const constantPoolHandle& cp, bool allow_arrays, TRAPS);
 
   void verify_invoke_init(
     RawBytecodeStream* bcs, u2 ref_index, VerificationType ref_class_type,

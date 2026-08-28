@@ -174,17 +174,11 @@ class StackMapFrame : public ResourceObj {
   }
 
   // Called when verifying putfields to mark strict instance fields as satisfied
-  bool satisfy_unset_field(Symbol* name, Symbol* signature, AssertUnsetFieldTable* initial_strict_fields) {
-    if (_assert_unset_fields == nullptr) {
-      return true;
+  void satisfy_unset_field(Symbol* name, Symbol* signature) {
+    if (_assert_unset_fields != nullptr) {
+      NameAndSig field(name, signature);
+      _assert_unset_fields->remove(field);
     }
-
-    NameAndSig field(name, signature);
-    if (!initial_strict_fields->contains(field)) {
-      return false;
-    }
-    _assert_unset_fields->remove(field);
-    return true;
   }
 
   // Verify that all strict fields have been initialized

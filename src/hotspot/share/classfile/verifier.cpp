@@ -1729,13 +1729,13 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
         case Bytecodes::_putstatic :
           // pass TRUE, operand can be an array type for getstatic/putstatic.
           verify_field_instructions(
-            &bcs, &current_frame, cp, true, nullptr, CHECK_VERIFY(this));
+            &bcs, &current_frame, cp, true, CHECK_VERIFY(this));
           no_control_flow = false; break;
         case Bytecodes::_getfield :
         case Bytecodes::_putfield :
           // pass FALSE, operand can't be an array type for getfield/putfield.
           verify_field_instructions(
-            &bcs, &current_frame, cp, false, read_only_strict_fields, CHECK_VERIFY(this));
+            &bcs, &current_frame, cp, false, CHECK_VERIFY(this));
           no_control_flow = false; break;
         case Bytecodes::_invokevirtual :
         case Bytecodes::_invokespecial :
@@ -2341,7 +2341,6 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
                                               StackMapFrame* current_frame,
                                               const constantPoolHandle& cp,
                                               bool allow_arrays,
-                                              AssertUnsetFieldTable* initial_strict_fields,
                                               TRAPS) {
   u2 index = bcs->get_index_u2();
   verify_cp_type(bcs->bci(), index, cp,
@@ -2420,12 +2419,7 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
           stack_object_type = current_type();
 
           if (fd.access_flags().is_strict()) {
-            if (!current_frame->satisfy_unset_field(fd.name(), fd.signature(), initial_strict_fields)) {
-              log_info(verification)("Attempting to initialize field not found in initial strict instance fields: %s%s",
-                                     fd.name()->as_C_string(), fd.signature()->as_C_string());
-              verify_error(ErrorContext::bad_strict_fields(bci, current_frame),
-                           "Initializing unknown strict field: %s:%s", fd.name()->as_C_string(), fd.signature()->as_C_string());
-            }
+            current_frame->satisfy_unset_field(fd.name(), fd.signature());
           }
         }
       } else if (Verifier::supports_strict_fields(_klass)) {
