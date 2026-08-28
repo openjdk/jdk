@@ -39,7 +39,11 @@ struct ARMB_constants {
   static uintptr_t absolute_max() {
     // see attempt_reserve_memory_between()
 #ifdef _LP64
-    return MIN2(os::vm_max_address() + 1, nth_bit<uintptr_t>(48));
+    uintptr_t max = os::vm_max_address();
+    if (max == 0 || max > nth_bit<uintptr_t>(48)) {
+      max = nth_bit<uintptr_t>(48);
+    }
+    return max;
 #else
     return 3 * G;
 #endif

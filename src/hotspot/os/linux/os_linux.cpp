@@ -4438,7 +4438,7 @@ uintptr_t os::vm_min_address() {
   return value;
 }
 
-#ifdef _LP64
+#if !defined(S390) && !defined(ARM32)
 
 // Returns true if user address space covers at least bits bits (checks if address space
 // between [2^(bits-1), 2^bits) is user-addressable). Assumption here is that user address space
@@ -4448,25 +4448,21 @@ static bool mmap_probe_at(int bits) {
   const uintptr_t f = nth_bit<uintptr_t>(bits);
   const uintptr_t h = f / 2;
 
-  // After kernel 4.17, we have MAP_FIXED_NOREPLACE. If it fails with EEXISTS, we hit an existing
-  // mapping, so we are still inside user address space.
-  // Kernels before 4.17 silently ignore MAP_FIXED_NOREPLACE: hint is a hint only. If the hint is
-  // in valid user address space but points to an existing mapping, we will mapp somewhere else.
-  // In both cases mmap will return EINVAL if hint points outside the addressable user space.
-  void* hint = (void*)h;
-  void* const result = ::mmap((void*)h, os::vm_page_size(), PROT_NONE,
+  void* const hint = (void*)h;
+  void* const result = ::mmap(hint, os::vm_page_size(), PROT_NONE,
       MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE | MAP_FIXED_NOREPLACE, -1, 0);
+  log_trace(os)("mmap_probe_at: " PTR_FORMAT "->" PTR_FORMAT " (%d)", p2i(hint), p2i(result), errno);
   if (result != MAP_FAILED) {
     ::munmap(result, os::vm_page_size());
     return true;
   }
-  log_trace(os)("mmap_probe_at: " PTR_FORMAT "->" PTR_FORMAT " (%d)", p2i(hint), p2i(result), errno);
   switch (errno) {
-  case EEXIST: return true;
+  case EEXIST:
+    // MAP_FIXED_NOREPLACE refused to replace an existing mapping, so it must be inside user address space
+    return true;
   case EINVAL:
   case ENOMEM:
-    // Both EINVAL and ENOMEM may be returned if the hint address is not in user-addressable
-    // memory.
+    // Both EINVAL and ENOMEM indicate that the hint address is not in user-addressable memory.
     return false;
   break;
   default:
@@ -4477,20 +4473,12 @@ static bool mmap_probe_at(int bits) {
 
 uintptr_t os::vm_max_address() {
 
-  static bool initialized = false;
   static uintptr_t value = 0;
 
-  if (initialized) {
+  if (value != 0) {
     return value;
   }
 
-#ifdef S390
-  // On s390, technically the full 64-bit user space address is user-addressable. But
-  // note that this is mostly theoretical: using high addresses triggers a stepped page table
-  // expansion, which we usually want to avoid. See also: os::vm_page_table_expansion_point().
-  value = 0;
-
-#else
   // 4PB: e.g. RiscV with Sv57, x64 with LVA57
   // (note: 57 bits, but 50/50 split with kernel)
   constexpr int maxbits = 56;
@@ -4502,17 +4490,10 @@ uintptr_t os::vm_max_address() {
     success = mmap_probe_at(bits);
     bits--;
   }
-  assert(bits >= minbits, "mmap probing failed?");
-  value = nth_bit<uintptr_t>(bits);
-#endif // !S390
+  assert(success, "mmap probing failed?");
+  value = (success) ? nth_bit<uintptr_t>(bits + 1) : nth_bit<uintptr_t>(48);
 
   return value;
-}
-
-#else
-
-uintptr_t os::vm_max_address() {
-  return 2 * G;
 }
 
 #endif // _LP64

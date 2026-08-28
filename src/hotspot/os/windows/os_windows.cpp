@@ -4479,9 +4479,9 @@ void os::win32::initialize_system_info() {
   _processor_type  = si.dwProcessorType;
   _processor_level = si.wProcessorLevel;
 
-  g_vm_max_address = p2u(si.lpMaximumApplicationAddress); // usually 128TB - 1
+  g_vm_max_address = p2u(si.lpMaximumApplicationAddress) + 1; // usually 128TB - 1
   assert(is_aligned(_vm_max_address + 1, si.dwAllocationGranularity), "strange alignment?");
-  assert(_vm_max_address > (G * 4), "weirdly low?");
+  assert(g_vm_max_address > (G * 4), "weirdly low?");
 
   DWORD processors = 0;
   bool schedules_all_processor_groups = win32::is_windows_11_or_greater() || win32::is_windows_server_2022_or_greater();
