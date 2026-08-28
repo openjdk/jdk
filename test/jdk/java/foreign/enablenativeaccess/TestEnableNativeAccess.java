@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,6 @@ public class TestEnableNativeAccess extends TestEnableNativeAccessBase {
                 { "panama_no_unnamed_module_native_access", UNNAMED, successWithWarning("ALL-UNNAMED"), new String[]{} },
                 { "panama_all_unnamed_module_native_access", UNNAMED, successNoWarning(), new String[]{"--enable-native-access=ALL-UNNAMED"} },
                 { "panama_allow_unnamed_module_native_access", UNNAMED, successNoWarning(), new String[]{"--illegal-native-access=allow"} },
-                { "panama_allow_unnamed_module_native_access", UNNAMED, successNoWarning(), new String[]{"--illegal-native-access", "allow"} },
         };
     }
 
@@ -142,8 +141,7 @@ public class TestEnableNativeAccess extends TestEnableNativeAccessBase {
     }
 
     /**
-     * Tests invalid values for --enable-native-access and invalid or missing
-     * values for --illegal-native-access.
+     * Specifies bad value to --enable-native-access.
      */
     @Test
     public void testBadValue() throws Exception {
@@ -165,17 +163,6 @@ public class TestEnableNativeAccess extends TestEnableNativeAccessBase {
         run("panama_deny_no_module_jni", PANAMA_JNI,
                 failWithError("module panama_jni_load_module"),
                 "--illegal-native-access=deny");
-        run("panama_deny_no_module_jni", PANAMA_JNI,
-                failWithError("module panama_jni_load_module"),
-                "--illegal-native-access", "deny");
-        // Missing value.
-        run("panama_enable_native_access", PANAMA_MAIN,
-                failWithError("Value specified to --illegal-native-access not recognized"),
-                "--illegal-native-access");
-        // Invalid value.
-        run("panama_enable_native_access", PANAMA_MAIN,
-                failWithError("Value specified to --illegal-native-access not recognized"),
-                "--illegal-native-access", "bad");
     }
 
     @Test

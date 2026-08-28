@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,26 +19,25 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
-#include "gc/shenandoah/shenandoahBarrierSetStackChunk.hpp"
+import java.security.Security;
 
-void ShenandoahBarrierSetStackChunk::encode_gc_mode(stackChunkOop chunk, OopIterator* oop_iterator) {
-  // Nothing to do
-}
+/**
+ * @test
+ * @bug 8388138
+ * @summary Test the default setting of the jdk.crypto.legacyAlgorithms security property
+ * @comment This property has a default value of "Cipher.RSA/ECB/PKCS1Padding"
+ *          This test assures the default is not changed.
+ * @run main TestLegacyCryptoAlgorithms
+ */
+public class TestLegacyCryptoAlgorithms {
 
-void ShenandoahBarrierSetStackChunk::decode_gc_mode(stackChunkOop chunk, OopIterator* oop_iterator) {
-  // Nothing to do
-}
-
-oop ShenandoahBarrierSetStackChunk::load_oop(stackChunkOop chunk, oop* addr) {
-  oop result = BarrierSetStackChunk::load_oop(chunk, addr);
-  return ShenandoahBarrierSet::barrier_set()->load_reference_barrier(ON_STRONG_OOP_REF, result, (oop*)nullptr);
-}
-
-oop ShenandoahBarrierSetStackChunk::load_oop(stackChunkOop chunk, narrowOop* addr) {
-  oop result = BarrierSetStackChunk::load_oop(chunk, addr);
-  return ShenandoahBarrierSet::barrier_set()->load_reference_barrier(ON_STRONG_OOP_REF, result, (narrowOop*)nullptr);
+    public static void main(String args[]) throws Exception {
+        String value = Security.getProperty("jdk.crypto.legacyAlgorithms");
+        if (value == null || !value.equals("Cipher.RSA/ECB/PKCS1Padding")) {
+            throw new RuntimeException("Test failed: jdk.crypto.legacyAlgorithms " +
+                "security property does not have default value of Cipher.RSA/ECB/PKCS1Padding");
+        }
+    }
 }
