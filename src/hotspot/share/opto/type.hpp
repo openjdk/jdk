@@ -1818,7 +1818,7 @@ public:
 
   const TypeAryPtr* cast_to_autobox_cache() const;
 
-  static jint max_array_length(BasicType etype);
+  jint max_array_length() const;
 
   int flat_offset() const;
   const Offset field_offset() const { return _field_offset; }
