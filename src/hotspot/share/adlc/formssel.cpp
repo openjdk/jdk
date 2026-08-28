@@ -3735,10 +3735,9 @@ int MatchNode::cisc_spill_match(FormDict& globals, RegisterForm* registers, Matc
       //     from_instr: andI_rReg_ndd, MatchRule: ( Set dst (AndI  src1 src2) ).       src1: (position(DEF) = -1, position(USE) = 1)
       //     to_instr: andI_rReg_mem, MatchRule:   ( Set dst (AndI  dst (LoadI  src)) ). dst: (position(DEF) = 0,  position(USE) = 1)
       if (from_instr->operand_position(this->_name, Component::DEF) != to_instr->operand_position(mRule2->_name, Component::DEF)) {
-        return Not_cisc_spillable;
+        cisc_spillable = Not_cisc_spillable;
       }
     }
-    cisc_spillable = Maybe_cisc_spillable;
   } else {
     const InstructForm *form2_inst = form2 ? form2->is_instruction() : nullptr;
     const char *name_left  = mRule2->_lChild ? mRule2->_lChild->_opType : nullptr;
@@ -3762,7 +3761,7 @@ int MatchNode::cisc_spill_match(FormDict& globals, RegisterForm* registers, Matc
         reg_type       = _result;
         return Is_cisc_spillable;
       } else {
-        return Not_cisc_spillable;
+        cisc_spillable = Not_cisc_spillable;
       }
     }
     // Detect reg vs memory
@@ -3772,7 +3771,7 @@ int MatchNode::cisc_spill_match(FormDict& globals, RegisterForm* registers, Matc
       reg_type       = _result;
       return Is_cisc_spillable;
     } else {
-      return Not_cisc_spillable;
+      cisc_spillable = Not_cisc_spillable;
     }
   }
 
@@ -3786,9 +3785,6 @@ int MatchNode::cisc_spill_match(FormDict& globals, RegisterForm* registers, Matc
       left_spillable = Maybe_cisc_spillable;
     } else  if (_lChild != nullptr) {
       left_spillable = _lChild->cisc_spill_match(globals, registers, mRule2->_lChild, operand, reg_type, from_instr, to_instr);
-      if (left_spillable == Not_cisc_spillable) {
-        return Not_cisc_spillable;
-      }
     }
 
     // Check right operands
@@ -3823,13 +3819,13 @@ int  MatchRule::matchrule_cisc_spill_match(FormDict& globals, RegisterForm* regi
 
   // Check left operands: at root, must be target of 'Set'
   if( (_lChild == nullptr) || (mRule2->_lChild == nullptr) ) {
-    return Not_cisc_spillable;
+    left_spillable = Not_cisc_spillable;
   } else {
     // Do not support cisc-spilling instruction's target location
     if( root_ops_match(globals, _lChild->_opType, mRule2->_lChild->_opType) ) {
       left_spillable = Maybe_cisc_spillable;
     } else {
-      return Not_cisc_spillable;
+      left_spillable = Not_cisc_spillable;
     }
   }
 
