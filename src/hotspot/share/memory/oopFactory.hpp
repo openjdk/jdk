@@ -31,7 +31,7 @@
 #include "runtime/handles.hpp"
 #include "utilities/exceptions.hpp"
 
-class InlineKlass;
+class ValueKlass;
 
 // oopFactory is a class used for creating new objects.
 
@@ -65,7 +65,7 @@ class oopFactory: AllStatic {
   static refArrayOop     new_refArray(Klass* klass, int length, ArrayProperties properties, TRAPS);
 
   // Factory to create flat arrays.
-  static flatArrayOop    new_flatArray(InlineKlass* klass, int length, ArrayProperties props, TRAPS);
+  static flatArrayOop    new_flatArray(ValueKlass* klass, int length, ArrayProperties props, TRAPS);
 
   // Helper that returns a Handle
   static refArrayHandle  new_refArray_handle(Klass* klass, int length, TRAPS);

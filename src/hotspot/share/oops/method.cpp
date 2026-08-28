@@ -53,7 +53,6 @@
 #include "nmt/memTracker.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/constMethod.hpp"
-#include "oops/inlineKlass.inline.hpp"
 #include "oops/jmethodIDTable.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
@@ -63,6 +62,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "oops/trainingData.hpp"
+#include "oops/valueKlass.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
@@ -765,18 +765,18 @@ int Method::extra_stack_words() {
   return extra_stack_entries() * Interpreter::stackElementSize;
 }
 
-// InlineKlass the method is declared to return. This must not
+// ValueKlass the method is declared to return. This must not
 // safepoint as it is called with references live on the stack at
 // locations the GC is unaware of.
-InlineKlass* Method::returns_inline_type() const {
-  assert(InlineTypeReturnedAsFields, "Inline types should never be returned as fields");
+ValueKlass* Method::returns_value_type() const {
+  assert(ValueTypeReturnedAsFields, "Value types should never be returned as fields");
   if (is_native()) {
     return nullptr;
   }
   NoSafepointVerifier nsv;
   SignatureStream ss(signature());
   ss.skip_to_return_type();
-  return ss.as_inline_klass(method_holder());
+  return ss.as_value_klass(method_holder());
 }
 
 bool Method::compute_has_loops_flag() {
@@ -927,9 +927,9 @@ bool Method::is_getter() const {
     default:
       return false;
   }
-  if (InlineTypeReturnedAsFields && returns_inline_type() != nullptr) {
+  if (ValueTypeReturnedAsFields && returns_value_type() != nullptr) {
     // Don't treat this as (trivial) getter method because the
-    // inline type could be returned in a scalarized form.
+    // value type could be returned in a scalarized form.
     return false;
   }
   return true;
@@ -955,7 +955,7 @@ bool Method::is_setter() const {
   if (java_code_at(5) != Bytecodes::_return)   return false;
   if (has_scalarized_args()) {
     // Don't treat this as (trivial) setter method because the
-    // inline type argument should be passed in a scalarized form.
+    // value type argument should be passed in a scalarized form.
     return false;
   }
   return true;
@@ -1352,7 +1352,7 @@ void Method::link_method(const methodHandle& h_method, TRAPS) {
   // problem we'll make these lazily later.
   // With the scalarized calling convention, create adapters for abstract
   // methods as well because the adapter is used to propagate the signature.
-  if (_adapter == nullptr && (!h_method->is_abstract() || InlineTypePassFieldsAsArgs)) {
+  if (_adapter == nullptr && (!h_method->is_abstract() || ValueTypePassFieldsAsArgs)) {
     make_adapters(h_method, CHECK);
   }
   h_method->_from_compiled_entry = h_method->get_c2i_entry();
@@ -1377,7 +1377,7 @@ void Method::link_method(const methodHandle& h_method, TRAPS) {
 }
 
 void Method::make_adapters(const methodHandle& mh, TRAPS) {
-  assert(!mh->is_abstract() || InlineTypePassFieldsAsArgs, "abstract methods do not have adapters");
+  assert(!mh->is_abstract() || ValueTypePassFieldsAsArgs, "abstract methods do not have adapters");
   PerfTraceTime timer(ClassLoader::perf_method_adapters_time());
 
   // Adapters for compiled code are made eagerly here.  They are fairly

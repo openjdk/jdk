@@ -60,7 +60,7 @@ class RecordComponent;
 //      The embedded nonstatic oop-map blocks are short pairs (offset, length)
 //      indicating where oops are located in instances of this klass.
 //    [EMBEDDED implementor of the interface] only exists for interface
-//    [EMBEDDED InlineKlass::Members] only if is an InlineKlass instance
+//    [EMBEDDED ValueKlass::Members] only if is an ValueKlass instance
 
 
 // forward declaration for class -- see below for definition
@@ -142,15 +142,15 @@ class OopMapBlock {
 struct JvmtiCachedClassFileData;
 
 class InlineLayoutInfo : public MetaspaceObj {
-  InlineKlass* _klass;
+  ValueKlass* _klass;
   LayoutKind _kind;
   int _null_marker_offset; // null marker offset for this field, relative to the beginning of the current container
 
  public:
   InlineLayoutInfo(): _klass(nullptr), _kind(LayoutKind::UNKNOWN), _null_marker_offset(-1)  {}
 
-  InlineKlass* klass() const { return _klass; }
-  void set_klass(InlineKlass* k) { _klass = k; }
+  ValueKlass* klass() const { return _klass; }
+  void set_klass(ValueKlass* k) { _klass = k; }
 
   LayoutKind kind() const {
     assert(_kind != LayoutKind::UNKNOWN, "Not set");
@@ -276,7 +276,7 @@ class InstanceKlass: public Klass {
   u1              _reference_type;          // reference type
   int             _acmp_maps_offset;        // offset to injected static field storing .acmp_maps for value classes
                                             // unfortunately, abstract values need one too so it cannot be stored in
-                                            // the InlineKlass::Members that only exist for InlineKlass.
+                                            // the ValueKlass::Members that only exist for ValueKlass.
 
   AccessFlags        _access_flags;    // Access flags. The class/interface distinction is stored here.
 
@@ -329,12 +329,12 @@ class InstanceKlass: public Klass {
   Array<InlineLayoutInfo>* _inline_layout_info_array;
   Array<u2>* _loadable_descriptors;
   Array<int>* _acmp_maps_array; // Metadata copy of the acmp_maps oop used in value classes.
-                                // When loading an inline klass from the CDS/AOT archive
+                                // When loading a value klass from the CDS/AOT archive
                                 // this copy can be used to regenerate the ".acmp_maps" oop
                                 // if it is not stored in the archive.
 
   // Located here because sub-klasses can't have their own C++ fields
-  address _adr_inline_klass_members;
+  address _adr_value_klass_members;
 
   friend class SystemDictionary;
 
@@ -395,7 +395,7 @@ class InstanceKlass: public Klass {
 
   // Query if this class has atomicity requirements (default is yes)
   // This bit can occur anywhere, but is only significant
-  // for inline classes *and* their super types.
+  // for value classes *and* their super types.
   // It inherits from supers.
   // Its value depends on the ForceNonTearable VM option, the LooselyConsistentValue annotation
   // and the presence of flat fields with atomicity requirements
@@ -474,7 +474,7 @@ class InstanceKlass: public Klass {
   inline Symbol* field_signature   (int index) const;
   bool field_is_flat(int index) const { return field_flags(index).is_flat(); }
   bool field_has_null_marker(int index) const { return field_flags(index).has_null_marker(); }
-  bool field_is_null_free_inline_type(int index) const;
+  bool field_is_null_free_value_type(int index) const;
   bool is_class_in_loadable_descriptors_attribute(Symbol* name) const;
 
   int field_null_marker_offset(int index) const { return inline_layout_info(index).null_marker_offset(); }
@@ -779,7 +779,7 @@ public:
   u2 major_version() const;
   void set_major_version(u2 major_version);
 
-  bool supports_inline_types() const;
+  bool supports_value_types() const;
 
   // source debug extension
   const char* source_debug_extension() const { return _source_debug_extension; }
@@ -993,7 +993,7 @@ public:
   static ByteSize init_thread_offset() { return byte_offset_of(InstanceKlass, _init_thread); }
 
   static ByteSize inline_layout_info_array_offset() { return byte_offset_of(InstanceKlass, _inline_layout_info_array); }
-  static ByteSize adr_inline_klass_members_offset() { return byte_offset_of(InstanceKlass, _adr_inline_klass_members); }
+  static ByteSize adr_value_klass_members_offset() { return byte_offset_of(InstanceKlass, _adr_value_klass_members); }
 
   // subclass/subinterface checks
   bool implements_interface(Klass* k) const;
@@ -1067,7 +1067,7 @@ public:
                   int itable_length,
                   int nonstatic_oop_map_size,
                   bool is_interface,
-                  bool is_inline_type);
+                  bool is_concrete_value_class);
 
   int size() const override;
 
@@ -1098,8 +1098,8 @@ public:
     return _inline_layout_info_array->adr_at(index);
   }
 
-  inline InlineKlass* get_inline_type_field_klass(int idx) const ;
-  inline InlineKlass* get_inline_type_field_klass_or_null(int idx) const;
+  inline ValueKlass* get_value_type_field_klass(int idx) const ;
+  inline ValueKlass* get_value_type_field_klass_or_null(int idx) const;
 
   // Use this to return the size of an instance in heap words:
   int size_helper() const {

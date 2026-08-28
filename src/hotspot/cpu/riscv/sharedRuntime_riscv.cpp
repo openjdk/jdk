@@ -390,7 +390,7 @@ int SharedRuntime::java_return_convention(const BasicType *sig_bt,
   return int_args + fp_args;
 }
 
-BufferedInlineTypeBlob* SharedRuntime::generate_buffered_inline_type_adapter(const InlineKlass* vk) {
+BufferedValueTypeBlob* SharedRuntime::generate_buffered_value_type_adapter(const ValueKlass* vk) {
   Unimplemented();
   return nullptr;
 }
@@ -423,13 +423,13 @@ static void patch_callers_callsite(MacroAssembler *masm) {
   __ bind(L);
 }
 
-// For each inline type argument, sig includes the list of fields of
-// the inline type. This utility function computes the number of
-// arguments for the call if inline types are passed by reference (the
+// For each value type argument, sig includes the list of fields of
+// the value type. This utility function computes the number of
+// arguments for the call if value types are passed by reference (the
 // calling convention the interpreter expects).
 static int compute_total_args_passed_int(const GrowableArray<SigEntry>* sig_extended) {
   int total_args_passed = 0;
-  assert(!InlineTypePassFieldsAsArgs, "");
+  assert(!ValueTypePassFieldsAsArgs, "");
   total_args_passed = sig_extended->length();
   return total_args_passed;
 }
@@ -547,21 +547,21 @@ static void gen_c2i_adapter(MacroAssembler *masm,
   // Now write the args into the outgoing interpreter space
 
   // next_arg_comp is the next argument from the compiler point of
-  // view (inline type fields are passed in registers/on the stack). In
-  // sig_extended, an inline type argument starts with: T_METADATA,
-  // followed by the types of the fields of the inline type and T_VOID
-  // to mark the end of the inline type. ignored counts the number of
-  // T_METADATA/T_VOID. next_vt_arg is the next inline type argument:
+  // view (value type fields are passed in registers/on the stack). In
+  // sig_extended, a value type argument starts with: T_METADATA,
+  // followed by the types of the fields of the value type and T_VOID
+  // to mark the end of the value type. ignored counts the number of
+  // T_METADATA/T_VOID. next_vt_arg is the next value type argument:
   // used to get the buffer for that argument from the pool of buffers
   // we allocated above and want to pass to the
   // interpreter. next_arg_int is the next argument from the
-  // interpreter point of view (inline types are passed by reference).
+  // interpreter point of view (value types are passed by reference).
   for (int next_arg_comp = 0, ignored = 0, next_vt_arg = 0, next_arg_int = 0;
        next_arg_comp < sig_extended->length(); next_arg_comp++) {
     assert(ignored <= next_arg_comp, "shouldn't skip over more slots than there are arguments");
     assert(next_arg_int <= total_args_passed, "more arguments for the interpreter than expected?");
     BasicType bt = sig_extended->at(next_arg_comp)._bt;
-    assert(!InlineTypePassFieldsAsArgs, "");
+    assert(!ValueTypePassFieldsAsArgs, "");
 
     int st_off = (total_args_passed - next_arg_int - 1) * Interpreter::stackElementSize;
     int next_off = st_off - Interpreter::stackElementSize;
@@ -2775,7 +2775,7 @@ RuntimeStub* SharedRuntime::generate_throw_exception(StubId id, address runtime_
 }
 
 // Call here from the interpreter or compiled code to store returned
-// values to a newly allocated inline type instance.
+// values to a newly allocated value type instance.
 RuntimeStub* SharedRuntime::generate_return_value_stub(address destination) {
   Unimplemented();
   return nullptr;

@@ -28,7 +28,7 @@
 #include "code/relocInfo.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-class ciInlineKlass;
+class ciValueKlass;
 class SigEntry;
 class VMRegPair;
 
@@ -1086,7 +1086,7 @@ public:
   static int ic_check_size();
   int ic_check(int end_alignment);
 
-  // Inline type specific methods
+  // Value type specific methods
   #include "asm/macroAssembler_common.hpp"
 
   void remove_frame(int initial_framesize);

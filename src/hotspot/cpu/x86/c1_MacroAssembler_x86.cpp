@@ -274,7 +274,7 @@ void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
 }
 
 int C1_MacroAssembler::scalarized_entry(const CompiledEntrySignature* ces, int frame_size_in_bytes, int bang_size_in_bytes, int sp_offset_for_orig_pc, Label& verified_inline_entry_label, bool is_inline_ro_entry) {
-  assert(InlineTypePassFieldsAsArgs, "sanity");
+  assert(ValueTypePassFieldsAsArgs, "sanity");
   // Make sure there is enough stack space for this method's activation.
   assert(bang_size_in_bytes >= frame_size_in_bytes, "stack bang size incorrect");
   generate_stack_overflow_check(bang_size_in_bytes);
@@ -286,7 +286,7 @@ int C1_MacroAssembler::scalarized_entry(const CompiledEntrySignature* ces, int f
   int args_on_stack    = ces->args_on_stack();
   int args_on_stack_cc = is_inline_ro_entry ? ces->args_on_stack_cc_ro() : ces->args_on_stack_cc();
 
-  assert(sig->length() <= sig_cc->length(), "Zero-sized inline class not allowed!");
+  assert(sig->length() <= sig_cc->length(), "Zero-sized value class not allowed!");
   BasicType* sig_bt = NEW_RESOURCE_ARRAY(BasicType, sig_cc->length());
   int args_passed = sig->length();
   int args_passed_cc = SigEntry::fill_sig_bt(sig_cc, sig_bt);
@@ -301,9 +301,9 @@ int C1_MacroAssembler::scalarized_entry(const CompiledEntrySignature* ces, int f
 
   movptr(rbx, (intptr_t)(ces->method()));
   if (is_inline_ro_entry) {
-    call(RuntimeAddress(Runtime1::entry_for(StubId::c1_buffer_inline_args_no_receiver_id)));
+    call(RuntimeAddress(Runtime1::entry_for(StubId::c1_buffer_value_args_no_receiver_id)));
   } else {
-    call(RuntimeAddress(Runtime1::entry_for(StubId::c1_buffer_inline_args_id)));
+    call(RuntimeAddress(Runtime1::entry_for(StubId::c1_buffer_value_args_id)));
   }
   int rt_call_offset = offset();
 

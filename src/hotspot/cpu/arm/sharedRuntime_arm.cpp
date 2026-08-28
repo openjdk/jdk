@@ -351,7 +351,7 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
   return slot;
 }
 
-// InlineTypeReturnedAsFields is disabled, so we need to only care about the single return value
+// ValueTypeReturnedAsFields is disabled, so we need to only care about the single return value
 // in this calling convention.
 const uint SharedRuntime::java_return_convention_max_int = 1;
 const uint SharedRuntime::java_return_convention_max_float = 1;
@@ -1943,13 +1943,13 @@ RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
 
 #endif // INCLUDE_JFR
 
-BufferedInlineTypeBlob* SharedRuntime::generate_buffered_inline_type_adapter(const InlineKlass* vk) {
+BufferedValueTypeBlob* SharedRuntime::generate_buffered_value_type_adapter(const ValueKlass* vk) {
   Unimplemented();
   return nullptr;
 }
 
 // Call here from the interpreter or compiled code to store returned
-// values to a newly allocated inline type instance.
+// values to a newly allocated value type instance.
 RuntimeStub* SharedRuntime::generate_return_value_stub(address destination) {
   Unimplemented();
   return nullptr;

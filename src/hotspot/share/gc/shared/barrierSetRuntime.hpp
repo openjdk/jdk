@@ -26,7 +26,7 @@
 #define SHARE_GC_SHARED_BARRIERSETRUNTIME_HPP
 
 #include "memory/allocation.hpp"
-#include "oops/inlineKlass.hpp"
+#include "oops/valueKlass.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class BarrierSetRuntime: public AllStatic {

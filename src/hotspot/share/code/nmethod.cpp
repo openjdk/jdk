@@ -689,8 +689,8 @@ void nmethod::preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map
       has_appendix = false;
       signature    = callee->signature();
 
-      // If inline types are passed as fields, use the extended signature
-      // which contains the types of all (oop) fields of the inline type.
+      // If value types are passed as fields, use the extended signature
+      // which contains the types of all (oop) fields of the value type.
       if (is_compiled_by_c2() && callee->has_scalarized_args()) {
         const GrowableArray<SigEntry>* sig = callee->adapter()->get_sig_cc();
         assert(sig != nullptr, "sig should never be null");

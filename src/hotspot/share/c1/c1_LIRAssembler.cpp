@@ -29,8 +29,8 @@
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_ValueStack.hpp"
-#include "ci/ciInlineKlass.hpp"
 #include "ci/ciUtilities.inline.hpp"
+#include "ci/ciValueKlass.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/oopMap.hpp"
 #include "runtime/os.hpp"
@@ -482,9 +482,9 @@ void LIR_Assembler::emit_call(LIR_OpJavaCall* op) {
     break;
   }
 
-  ciInlineKlass* vk = nullptr;
+  ciValueKlass* vk = nullptr;
   if (op->maybe_return_as_fields(&vk)) {
-    int offset = store_inline_type_fields_to_buf(vk);
+    int offset = store_value_type_fields_to_buf(vk);
     add_call_info(offset, op->info(), true);
   }
 }
@@ -577,7 +577,7 @@ void LIR_Assembler::emit_op1(LIR_Op1* op) {
 }
 
 void LIR_Assembler::add_scalarized_debug_info(int pc_offset) {
-  // The VEP and VIEP(RO) of a C1-compiled method call buffer_inline_args_xxx()
+  // The VEP and VIEP(RO) of a C1-compiled method call buffer_value_args_xxx()
   // before doing any argument shuffling. This call may cause GC. When GC happens,
   // all the parameters are still as passed by the caller, so we just use
   // map->set_include_argument_oops() inside frame::sender_for_compiled_frame(RegisterMap* map).
@@ -594,12 +594,12 @@ void LIR_Assembler::add_scalarized_debug_info(int pc_offset) {
 }
 
 // The entries points of C1-compiled methods can have the following types:
-// (1) Methods with no inline type args
-// (2) Methods with inline type receiver but no inline type args
+// (1) Methods with no value type args
+// (2) Methods with value type receiver but no value type args
 //     VIEP_RO is the same as VIEP
-// (3) Methods with non-inline type receiver and some inline type args
+// (3) Methods with non-value type receiver and some value type args
 //     VIEP_RO is the same as VEP
-// (4) Methods with inline type receiver and other inline type args
+// (4) Methods with value type receiver and other value type args
 //     Separate VEP, VIEP and VIEP_RO
 //
 // (1)               (2)                 (3)                    (4)
@@ -622,7 +622,7 @@ void LIR_Assembler::emit_std_entries() {
 
   if (method()->has_scalarized_args()) {
     VM_ENTRY_MARK;
-    assert(InlineTypePassFieldsAsArgs, "must be");
+    assert(ValueTypePassFieldsAsArgs, "must be");
     CompiledEntrySignature ces(method()->get_Method());
     ces.compute_calling_conventions(false);
     CodeOffsets::Entries ro_entry_type = ces.c1_inline_ro_entry_type();
@@ -667,7 +667,7 @@ void LIR_Assembler::emit_std_entries() {
                            offsets()->value(ro_entry_type));
     }
   } else {
-    // All 3 entries are the same (no inline type packing)
+    // All 3 entries are the same (no value type packing)
     offsets()->set_value(CodeOffsets::Entry, _masm->offset());
     offsets()->set_value(CodeOffsets::Inline_Entry, _masm->offset());
     if (needs_icache(method())) {

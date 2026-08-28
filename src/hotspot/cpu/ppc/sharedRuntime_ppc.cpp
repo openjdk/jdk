@@ -1020,25 +1020,25 @@ static void patch_callers_callsite(MacroAssembler *masm, int adapter_size, int t
   __ bind(L);
 }
 
-// For each inline type argument, sig includes the list of fields of
-// the inline type. This utility function computes the number of
-// arguments for the call if inline types are passed by reference (the
+// For each value type argument, sig includes the list of fields of
+// the value type. This utility function computes the number of
+// arguments for the call if value types are passed by reference (the
 // calling convention the interpreter expects).
 static int compute_total_args_passed_int(const GrowableArray<SigEntry>* sig_extended) {
   int total_args_passed = 0;
-  if (InlineTypePassFieldsAsArgs) {
+  if (ValueTypePassFieldsAsArgs) {
     for (int i = 0; i < sig_extended->length(); i++) {
       BasicType bt = sig_extended->at(i)._bt;
       if (bt == T_METADATA) {
-        // In sig_extended, an inline type argument starts with:
+        // In sig_extended, a value type argument starts with:
         // T_METADATA, followed by the types of the fields of the
-        // inline type and T_VOID to mark the end of the value
-        // type. Inline types are flattened so, for instance, in the
-        // case of an inline type with an int field and an inline type
+        // value type and T_VOID to mark the end of the value
+        // type. Value types are flattened so, for instance, in the
+        // case of a value type with an int field and a value type
         // field that itself has 2 fields, an int and a long:
         // T_METADATA T_INT T_METADATA T_INT T_LONG T_VOID (second
-        // slot for the T_LONG) T_VOID (inner inline type) T_VOID
-        // (outer inline type)
+        // slot for the T_LONG) T_VOID (inner value type) T_VOID
+        // (outer value type)
         total_args_passed++;
         int vt = 1;
         do {
@@ -1116,8 +1116,8 @@ static void gen_c2i_adapter(MacroAssembler *masm,
 
   __ bind(skip_fixup);
 
-  if (InlineTypePassFieldsAsArgs) {
-    // Is there an inline type argument?
+  if (ValueTypePassFieldsAsArgs) {
+    // Is there a value type argument?
     bool has_inline_argument = false;
     for (int i = 0; i < sig_extended->length() && !has_inline_argument; i++) {
       has_inline_argument = (sig_extended->at(i)._bt == T_METADATA);
@@ -1145,7 +1145,7 @@ static void gen_c2i_adapter(MacroAssembler *masm,
   int st_off = adapter_size - wordSize;
 
   // Write the args into the outgoing interpreter space.
-  // TODO: support for InlineTypePassFieldsAsArgs
+  // TODO: support for ValueTypePassFieldsAsArgs
   for (int i = 0; i < total_args_passed; i++) {
     BasicType bt = sig_extended->at(i)._bt;
 
@@ -3864,13 +3864,13 @@ void SharedRuntime::montgomery_square(jint *a_ints, jint *n_ints,
   reverse_words(m, (unsigned long *)m_ints, longwords);
 }
 
-BufferedInlineTypeBlob* SharedRuntime::generate_buffered_inline_type_adapter(const InlineKlass* vk) {
+BufferedValueTypeBlob* SharedRuntime::generate_buffered_value_type_adapter(const ValueKlass* vk) {
   Unimplemented();
   return nullptr;
 }
 
 // Call here from the interpreter or compiled code to store returned
-// values to a newly allocated inline type instance.
+// values to a newly allocated value type instance.
 RuntimeStub* SharedRuntime::generate_return_value_stub(address destination) {
   Unimplemented();
   return nullptr;

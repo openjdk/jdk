@@ -516,7 +516,7 @@ public:
   Symbol* klass_name() const;                    // returns the name of the method holder
   BasicType result_type() const                  { return constMethod()->result_type(); }
   bool is_returning_oop() const                  { BasicType r = result_type(); return is_reference_type(r); }
-  InlineKlass* returns_inline_type() const;
+  ValueKlass* returns_value_type() const;
 
   // Checked exceptions thrown by this method (resolved to mirrors)
   objArrayHandle resolved_checked_exceptions(TRAPS) { return resolved_checked_exceptions_impl(this, THREAD); }

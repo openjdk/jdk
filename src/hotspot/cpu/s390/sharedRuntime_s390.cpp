@@ -1011,26 +1011,26 @@ static void patch_callers_callsite(MacroAssembler *masm, int adapter_size, int t
   __ bind(L);
 }
 
-// For each inline type argument, sig includes the list of fields of
-// the inline type. This utility function computes the number of
-// arguments for the call if inline types are passed by reference (the
+// For each value type argument, sig includes the list of fields of
+// the value type. This utility function computes the number of
+// arguments for the call if value types are passed by reference (the
 // calling convention the interpreter expects).
 static int compute_total_args_passed_int(const GrowableArray<SigEntry>* sig_extended) {
   int total_args_passed = 0;
-  if (InlineTypePassFieldsAsArgs) {
+  if (ValueTypePassFieldsAsArgs) {
     assert(false, "untested: compute_total_args_passed_int");
     for (int i = 0; i < sig_extended->length(); i++) {
       BasicType bt = sig_extended->at(i)._bt;
       if (bt == T_METADATA) {
-        // In sig_extended, an inline type argument starts with:
+        // In sig_extended, a value type argument starts with:
         // T_METADATA, followed by the types of the fields of the
-        // inline type and T_VOID to mark the end of the value
-        // type. Inline types are flattened so, for instance, in the
-        // case of an inline type with an int field and an inline type
+        // value type and T_VOID to mark the end of the value
+        // type. Value types are flattened so, for instance, in the
+        // case of a value type with an int field and a value type
         // field that itself has 2 fields, an int and a long:
         // T_METADATA T_INT T_METADATA T_INT T_LONG T_VOID (second
-        // slot for the T_LONG) T_VOID (inner inline type) T_VOID
-        // (outer inline type)
+        // slot for the T_LONG) T_VOID (inner value type) T_VOID
+        // (outer value type)
         total_args_passed++;
         int vt = 1;
         do {
@@ -1111,14 +1111,14 @@ static void gen_c2i_adapter(MacroAssembler *masm,
   __ bind(skip_fixup);
 
   // Name some registers to be used in the following code
-  Register buf_array = Z_R11;   // Array of buffered inline types
-  Register buf_oop = Z_R12;     // Buffered inline type oop
+  Register buf_array = Z_R11;   // Array of buffered value types
+  Register buf_oop = Z_R12;     // Buffered value type oop
   Register tmp1 = Z_R0_scratch;
   Register tmp2 = Z_R1_scratch;
 
-  if (InlineTypePassFieldsAsArgs) {
-    __ untested("InlineTypePassFieldsAsArgs sharedRuntime");
-    // Is there an inline type argument?
+  if (ValueTypePassFieldsAsArgs) {
+    __ untested("ValueTypePassFieldsAsArgs sharedRuntime");
+    // Is there a value type argument?
     bool has_inline_argument = false;
     for (int i = 0; i < sig_extended->length() && !has_inline_argument; i++) {
       has_inline_argument = (sig_extended->at(i)._bt == T_METADATA);
@@ -1136,7 +1136,7 @@ static void gen_c2i_adapter(MacroAssembler *masm,
       __ z_lgr(Z_ARG1, Z_thread);
       __ z_lgr(Z_ARG2, Z_method);
       __ load_const_optimized(Z_ARG3, (intptr_t)alloc_inline_receiver);
-      __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::allocate_inline_types), Z_ARG1, Z_ARG2, Z_ARG3);
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::allocate_value_types), Z_ARG1, Z_ARG2, Z_ARG3);
 
       // TODO: use blob-relative offset, matching the pattern in the rest of
       // sharedRuntime_s390.cpp ("offset() - start_off")
@@ -1186,7 +1186,7 @@ static void gen_c2i_adapter(MacroAssembler *masm,
     assert(next_arg_int <= total_args_passed, "more arguments for the interpreter than expected?");
     BasicType bt = sig_extended->at(next_arg_comp)._bt;
 
-    if (!InlineTypePassFieldsAsArgs || bt != T_METADATA) {
+    if (!ValueTypePassFieldsAsArgs || bt != T_METADATA) {
       const VMRegPair reg_pair = regs[next_arg_comp - ignored];
 
       VMReg r_1 = reg_pair.first();
@@ -1249,7 +1249,7 @@ static void gen_c2i_adapter(MacroAssembler *masm,
       st_off -= wordSize;
       next_arg_int++;
     } else {
-      // Handle inline type arguments
+      // Handle value type arguments
       ignored++;
       next_arg_int++;
       int vt = 1;
@@ -1284,7 +1284,7 @@ static void gen_c2i_adapter(MacroAssembler *masm,
         } else {
           int off = sig_extended->at(next_arg_comp)._offset;
           if (off == -1) {
-            // Nullable inline type argument
+            // Nullable value type argument
             VMReg reg = regs[next_arg_comp - ignored].first();
             Label L_notNull;
             if (reg->is_stack()) {
@@ -3076,7 +3076,7 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
 
   // Jump to the compiled code just as if compiled code was doing it.
   // load target address from method:
-  if (InlineTypePassFieldsAsArgs) {
+  if (ValueTypePassFieldsAsArgs) {
     fatal("implement function SharedRuntime::gen_i2c_adapter");
     __ z_lg(Z_R1_scratch, Address(Z_method, Method::from_compiled_inline_offset()));
   } else {
@@ -4350,13 +4350,13 @@ int SharedRuntime::java_return_convention(const BasicType *sig_bt, VMRegPair *re
   return int_args + fp_args;
 }
 
-BufferedInlineTypeBlob* SharedRuntime::generate_buffered_inline_type_adapter(const InlineKlass* vk) {
+BufferedValueTypeBlob* SharedRuntime::generate_buffered_value_type_adapter(const ValueKlass* vk) {
   Unimplemented();
   return nullptr;
 }
 
 // Call here from the interpreter or compiled code to store returned
-// values to a newly allocated inline type instance.
+// values to a newly allocated value type instance.
 RuntimeStub* SharedRuntime::generate_return_value_stub(address destination) {
   Unimplemented();
   return nullptr;

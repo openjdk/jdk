@@ -840,8 +840,9 @@ const int ObjectAlignmentInBytes = 8;
   product(uint, FlatteningBudget, 1024, EXPERIMENTAL,                       \
           "Maximum size (in bytes) dedicated to flat fields in an instance")\
           range(0, 1024 * 1024)                                             \
-  develop(ccstrlist, PrintInlineKlassFields, "",                            \
-          "Print fields collected by InlineKlass::collect_fields")          \
+                                                                            \
+  develop(ccstrlist, PrintValueKlassFields, "",                             \
+          "Print fields collected by ValueKlass::collect_fields")           \
                                                                             \
   /* Need to limit the extent of the padding to reasonable size.          */\
   /* 8K is well beyond the reasonable HW cache line size, even with       */\
@@ -1956,11 +1957,11 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseFastUnorderedTimeStamps, false, EXPERIMENTAL,            \
           "Use platform unstable time where supported for timestamps only") \
                                                                             \
-  product_pd(bool, InlineTypePassFieldsAsArgs, DIAGNOSTIC,                  \
-          "Pass each inline type field as an argument at calls")            \
+  product_pd(bool, ValueTypePassFieldsAsArgs, DIAGNOSTIC,                  \
+          "Pass each value type field as an argument at calls")            \
                                                                             \
-  product_pd(bool, InlineTypeReturnedAsFields, DIAGNOSTIC,                  \
-          "Return fields instead of an inline type reference")              \
+  product_pd(bool, ValueTypeReturnedAsFields, DIAGNOSTIC,                  \
+          "Return fields instead of a value type reference")              \
                                                                             \
   develop(bool, StressCallingConvention, false,                             \
           "Stress the scalarized calling convention.")                      \
@@ -1969,7 +1970,7 @@ const int ObjectAlignmentInBytes = 8;
           "Preloading all classes from the LoadableDescriptors attribute")  \
                                                                             \
   product(ccstrlist, ForceNonTearable, "", DIAGNOSTIC,                      \
-          "List of inline classes which are forced to be atomic "           \
+          "List of value classes which are forced to be atomic "            \
           "(whitespace and commas separate names, "                         \
           "and leading and trailing stars '*' are wildcards)")              \
                                                                             \

@@ -25,9 +25,9 @@
 import jdk.internal.vm.annotation.LooselyConsistentValue;
 import jdk.internal.vm.annotation.NullRestricted;
 
-public class HelloInlineClassApp {
+public class HelloValueClassApp {
 
-    public HelloInlineClassApp() {
+    public HelloValueClassApp() {
         point = new Point(0, 0);
         super();
     }
@@ -113,11 +113,11 @@ public class HelloInlineClassApp {
 
         Point pzero = new Point(0,0);
         Point pone = new Point(1, 1);
-        if (HelloInlineClassApp.rectangle.p0 != pzero || HelloInlineClassApp.rectangle.p1 != pone) {
+        if (HelloValueClassApp.rectangle.p0 != pzero || HelloValueClassApp.rectangle.p1 != pone) {
             throw new RuntimeException("Static field rectangle not as expected");
         }
 
-        HelloInlineClassApp app = new HelloInlineClassApp();
+        HelloValueClassApp app = new HelloValueClassApp();
         if (app.point != pzero) {
             throw new RuntimeException("Non-static field point not as expected");
         }

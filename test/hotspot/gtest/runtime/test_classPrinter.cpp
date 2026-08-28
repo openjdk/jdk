@@ -57,7 +57,7 @@ TEST_VM(ClassPrinter, print_classes) {
   const char* o3 = s3.freeze();
   ASSERT_THAT(o3, HasSubstr("class: java/lang/Integer mirror:")) << "must find java/lang/Integer";
   Klass::KlassKind kind = Arguments::is_valhalla_enabled()
-                              ? Klass::InlineKlassKind
+                              ? Klass::ValueKlassKind
                               : Klass::InstanceKlassKind;
   stringStream headerExpected;
   headerExpected.print("InstanceKlass (kind=%d): java.lang.Integer {0x", kind);

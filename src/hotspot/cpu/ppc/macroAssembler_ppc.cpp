@@ -3295,32 +3295,32 @@ void MacroAssembler::load_method_holder(Register holder, Register method) {
   ld(holder, ConstantPool::pool_holder_offset(), holder);
 }
 
-void MacroAssembler::test_markword_is_inline_type(Register markword, Label& is_inline_type) {
+void MacroAssembler::test_markword_is_value_type(Register markword, Label& is_value_type) {
   assert_different_registers(markword, R0);
-  andi(R0, markword, markWord::inline_type_pattern_mask);
-  cmpwi(CR0, R0, markWord::inline_type_pattern);
-  beq(CR0, is_inline_type);
+  andi(R0, markword, markWord::value_type_pattern_mask);
+  cmpwi(CR0, R0, markWord::value_type_pattern);
+  beq(CR0, is_value_type);
 }
 
-void MacroAssembler::test_oop_is_not_inline_type(Register object, Label& not_inline_type, bool can_be_null) {
+void MacroAssembler::test_oop_is_not_value_type(Register object, Label& not_value_type, bool can_be_null) {
   if (can_be_null) {
     cmpdi(CR0, object, 0);
-    beq(CR0, not_inline_type);
+    beq(CR0, not_value_type);
   }
   ld(R0, oopDesc::mark_offset_in_bytes(), object);
-  andi(R0, R0, markWord::inline_type_pattern_mask);
-  cmpwi(CR0, R0, markWord::inline_type_pattern);
-  bne(CR0, not_inline_type);
+  andi(R0, R0, markWord::value_type_pattern_mask);
+  cmpwi(CR0, R0, markWord::value_type_pattern);
+  bne(CR0, not_value_type);
 }
 
-void MacroAssembler::test_field_is_null_free_inline_type(Register flags, Label& is_null_free_inline_type) {
-  testbitdi(CR0, R0, flags, ResolvedFieldEntry::is_null_free_inline_type_shift);
-  bne(CR0, is_null_free_inline_type);
+void MacroAssembler::test_field_is_null_free_value_type(Register flags, Label& is_null_free_value_type) {
+  testbitdi(CR0, R0, flags, ResolvedFieldEntry::is_null_free_value_type_shift);
+  bne(CR0, is_null_free_value_type);
 }
 
-void MacroAssembler::test_field_is_not_null_free_inline_type(Register flags, Label& not_null_free_inline_type) {
-  testbitdi(CR0, R0, flags, ResolvedFieldEntry::is_null_free_inline_type_shift);
-  beq(CR0, not_null_free_inline_type);
+void MacroAssembler::test_field_is_not_null_free_value_type(Register flags, Label& not_null_free_value_type) {
+  testbitdi(CR0, R0, flags, ResolvedFieldEntry::is_null_free_value_type_shift);
+  beq(CR0, not_null_free_value_type);
 }
 
 void MacroAssembler::test_field_is_flat(Register flags, Label& is_flat) {
@@ -3379,14 +3379,14 @@ void MacroAssembler::flat_field_copy(DecoratorSet decorators, Register src, Regi
   bs->flat_field_copy(this, decorators, src, dst, inline_layout_info);
 }
 
-void MacroAssembler::payload_offset(Register inline_klass, Register offset) {
-  ld(offset, in_bytes(InlineKlass::adr_members_offset()), inline_klass);
-  lwz(offset, in_bytes(InlineKlass::payload_offset_offset()), offset);
+void MacroAssembler::payload_offset(Register value_klass, Register offset) {
+  ld(offset, in_bytes(ValueKlass::adr_members_offset()), value_klass);
+  lwz(offset, in_bytes(ValueKlass::payload_offset_offset()), offset);
 }
 
-void MacroAssembler::payload_address(Register oop, Register data, Register inline_klass, Register t1) {
+void MacroAssembler::payload_address(Register oop, Register data, Register value_klass, Register t1) {
   // ((address) (void*) o) + vk->payload_offset();
-  payload_offset(inline_klass, t1);
+  payload_offset(value_klass, t1);
   add(data, oop, t1);
 }
 
@@ -4838,8 +4838,8 @@ void MacroAssembler::atomically_flip_locked_state(bool is_unlock, Register obj, 
   if (!is_unlock) {
     ldarx(tmp, obj, MacroAssembler::cmpxchgx_hint_acquire_lock());
     xori(tmp, tmp, markWord::lock_neutral_value); // flip lock-neutral bit
-    andi_(R0, tmp, markWord::lock_mask_in_place | markWord::inline_type_bit_in_place);
-    bne(CR0, failed); // failed if new header doesn't contain fast_locked_value (which is 0) or belongs to an inline type
+    andi_(R0, tmp, markWord::lock_mask_in_place | markWord::value_type_bit_in_place);
+    bne(CR0, failed); // failed if new header doesn't contain fast_locked_value (which is 0) or belongs to a value type
   } else {
     ldarx(tmp, obj, MacroAssembler::cmpxchgx_hint_release_lock());
     andi_(R0, tmp, markWord::lock_mask_in_place);
@@ -4992,8 +4992,8 @@ void MacroAssembler::fast_unlock(Register obj, Register t1, Label& slow) {
   bind(unlocked);
 }
 
-// Unimplemented methods for inline types.
-int MacroAssembler::store_inline_type_fields_to_buf(ciInlineKlass* vk, bool from_interpreter) {
+// Unimplemented methods for value types.
+int MacroAssembler::store_value_type_fields_to_buf(ciValueKlass* vk, bool from_interpreter) {
    Unimplemented();
 }
 

@@ -34,7 +34,6 @@
 #include "opto/castnode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/idealGraphPrinter.hpp"
-#include "opto/inlinetypenode.hpp"
 #include "opto/locknode.hpp"
 #include "opto/memnode.hpp"
 #include "opto/opaquenode.hpp"
@@ -42,6 +41,7 @@
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 #include "opto/type.hpp"
+#include "opto/valuetypenode.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
@@ -180,7 +180,7 @@ Node* Parse::check_interpreter_type(Node* l, ciType* ci_type, SafePointNode* &ba
     // TypeFlow asserted a specific object type. Value must have that type.
     assert(_gvn.type(l) == TypePtr::NULL_PTR || _gvn.type(l)->isa_oopptr(), "must be an oop");
     if (ci_type->is_null_free()) {
-      // Check inline types for null here to prevent checkcast from adding an
+      // Check value types for null here to prevent checkcast from adding an
       // exception state before the bytecode entry (use 'bad_type_ctrl' instead).
       Node* bad_type_ctrl = nullptr;
       l = null_check_oop(l, &bad_type_ctrl);
@@ -393,7 +393,7 @@ void Parse::load_interpreter_state(Node* osr_buf) {
       // Keep all oop locals alive until the method returns as if there are
       // reachability fences for them at the end of the method.
       Node* loc = local(index);
-      if (!loc->is_InlineType() && loc->bottom_type() != TypePtr::NULL_PTR) {
+      if (!loc->is_ValueType() && loc->bottom_type() != TypePtr::NULL_PTR) {
         assert(loc->bottom_type()->isa_oopptr() != nullptr, "%s", Type::str(loc->bottom_type()));
         _stress_rf_hook->add_req(loc);
       }
@@ -410,7 +410,7 @@ void Parse::load_interpreter_state(Node* osr_buf) {
       // Keep all oops on stack alive until the method returns as if there are
       // reachability fences for them at the end of the method.
       Node* stk = stack(index);
-      if (!stk->is_InlineType() && stk->bottom_type() != TypePtr::NULL_PTR) {
+      if (!stk->is_ValueType() && stk->bottom_type() != TypePtr::NULL_PTR) {
         assert(stk->bottom_type()->isa_oopptr() != nullptr, "%s", Type::str(stk->bottom_type()));
         _stress_rf_hook->add_req(stk);
       }
@@ -901,15 +901,15 @@ JVMState* Compile::build_start_state(StartNode* start, const TypeFunc* tf) {
   for (uint j = 0; i < (uint)arg_size; i++) {
     const Type* t = tf->domain_sig()->field_at(i);
     Node* parm = nullptr;
-    if (t->is_inlinetypeptr() && method()->is_scalarized_arg(arg_num)) {
-      // Inline type arguments are not passed by reference: we get an argument per
-      // field of the inline type. Build InlineTypeNodes from the inline type arguments.
+    if (t->is_valueklassptr() && method()->is_scalarized_arg(arg_num)) {
+      // Value type arguments are not passed by reference: we get an argument per
+      // field of the value type. Build ValueTypeNodes from the value type arguments.
       GraphKit kit(jvms, &gvn);
       kit.set_control(map->control());
       Node* old_mem = map->memory();
-      // Use immutable memory for inline type loads and restore it below
+      // Use immutable memory for value type loads and restore it below
       kit.set_all_memory(C->immutable_memory());
-      parm = InlineTypeNode::make_from_multi(&kit, start, t->inline_klass(), j, /* in= */ true, /* null_free= */ !t->maybe_null());
+      parm = ValueTypeNode::make_from_multi(&kit, start, t->value_klass(), j, /* in= */ true, /* null_free= */ !t->maybe_null());
       assert(map == kit.map(), "broken if map changes");
       map->set_control(kit.control());
       map->set_memory(old_mem);
@@ -959,17 +959,17 @@ void Compile::return_values(JVMState* jvms) {
     kit.inc_sp(-ret_size);  // pop the return value(s)
     kit.sync_jvms();
     Node* res = kit.argument(0);
-    if (tf()->returns_inline_type_as_fields()) {
-      // Multiple return values (inline type fields): add as many edges
+    if (tf()->returns_value_type_as_fields()) {
+      // Multiple return values (value type fields): add as many edges
       // to the Return node as returned values.
-      InlineTypeNode* vt = res->as_InlineType();
+      ValueTypeNode* vt = res->as_ValueType();
       ret->add_req_batch(nullptr, tf()->range_cc()->cnt() - TypeFunc::Parms);
       if (vt->is_allocated(&kit.gvn()) && !StressCallingConvention) {
         ret->init_req(TypeFunc::Parms, vt);
       } else {
         // Return the tagged klass pointer to signal scalarization to the caller
         Node* tagged_klass = vt->tagged_klass(kit.gvn());
-        // Return null if the inline type is null (null marker field is not set)
+        // Return null if the value type is null (null marker field is not set)
         Node* conv   = kit.gvn().transform(new ConvI2LNode(vt->get_null_marker()));
         Node* shl    = kit.gvn().transform(new LShiftLNode(conv, kit.intcon(63)));
         Node* shr    = kit.gvn().transform(new RShiftLNode(shl, kit.intcon(63)));
@@ -1346,7 +1346,7 @@ void Parse::do_method_entry() {
     int max_locals = jvms()->loc_size();
     for (int idx = 0; idx < max_locals; idx++) {
       Node* loc = local(idx);
-      if (!loc->is_InlineType() &&
+      if (!loc->is_ValueType() &&
           loc->bottom_type()->isa_oopptr() != nullptr &&
           !is_auto_boxed_primitive(loc)) { // ignore auto-boxed primitives
         _stress_rf_hook->add_req(loc);
@@ -1399,7 +1399,7 @@ void Parse::do_method_entry() {
       lock_obj = makecon(t_lock);
     } else {                  // Else pass the "this" pointer,
       lock_obj = local(0);    // which is Parm0 from StartNode
-      assert(!_gvn.type(lock_obj)->make_oopptr()->can_be_inline_type(), "can't be an inline type");
+      assert(!_gvn.type(lock_obj)->make_oopptr()->can_be_value_type(), "can't be a value type");
     }
     // Clear out dead values from the debug info.
     kill_dead_locals();
@@ -1418,12 +1418,12 @@ void Parse::do_method_entry() {
   for (int i = 0; i < arg_size; i++) {
     Node* parm = local(i);
     const Type* t = _gvn.type(parm);
-    if (t->is_inlinetypeptr()) {
+    if (t->is_valueklassptr()) {
       // If the parameter is a value object, try to scalarize it if we know that it is unrestricted (not early larval)
       // Parameters are non-larval except the receiver of a constructor, which must be an early larval object.
       if (!(i == 0 && method()->receiver_maybe_larval())) {
-        // Create InlineTypeNode from the oop and replace the parameter
-        Node* vt = InlineTypeNode::make_from_oop(this, parm, t->inline_klass());
+        // Create ValueTypeNode from the oop and replace the parameter
+        Node* vt = ValueTypeNode::make_from_oop(this, parm, t->value_klass());
         replace_in_map(parm, vt);
       }
     } else if (UseTypeSpeculation && (i == (arg_size - 1)) && depth() == 1 && method()->is_varargs() && t->isa_aryptr()) {
@@ -1884,7 +1884,7 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
   assert(sp() == target->start_sp(), "");
   clean_stack(sp());
 
-  // Check for merge conflicts involving inline types
+  // Check for merge conflicts involving value types
   JVMState* old_jvms = map()->jvms();
   int old_bci = bci();
   JVMState* tmp_jvms = old_jvms->clone_shallow(C);
@@ -1911,21 +1911,21 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
         ct = target->flow()->stack_type_at(stk_idx);
       }
       if (t != nullptr && t != Type::BOTTOM) {
-        // An object can appear in the JVMS as either an oop or an InlineTypeNode. If the merge is
-        // an InlineTypeNode, we need all the merge inputs to be InlineTypeNodes. Else, if the
+        // An object can appear in the JVMS as either an oop or an ValueTypeNode. If the merge is
+        // an ValueTypeNode, we need all the merge inputs to be ValueTypeNodes. Else, if the
         // merge is an oop, each merge input needs to be either an oop or an buffered
-        // InlineTypeNode.
-        if (!t->is_inlinetypeptr()) {
-          // The merge cannot be an InlineTypeNode, ensure the input is buffered if it is an
-          // InlineTypeNode
-          if (n->is_InlineType()) {
-            map()->set_req(j, n->as_InlineType()->buffer(this));
+        // ValueTypeNode.
+        if (!t->is_valueklassptr()) {
+          // The merge cannot be an ValueTypeNode, ensure the input is buffered if it is an
+          // ValueTypeNode
+          if (n->is_ValueType()) {
+            map()->set_req(j, n->as_ValueType()->buffer(this));
           }
         } else {
           // Scalarize the value object if it is not larval
-          if (!n->is_InlineType() && !ct->is_early_larval()) {
+          if (!n->is_ValueType() && !ct->is_early_larval()) {
             assert(_gvn.type(n) == TypePtr::NULL_PTR, "must be a null constant");
-            map()->set_req(j, InlineTypeNode::make_null(_gvn, t->inline_klass()));
+            map()->set_req(j, ValueTypeNode::make_null(_gvn, t->value_klass()));
           }
         }
       }
@@ -2031,7 +2031,7 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
       Node* phi;
       if (m->is_Phi() && m->as_Phi()->region() == r) {
         phi = m;
-      } else if (m->is_InlineType() && m->as_InlineType()->has_phi_inputs(r)) {
+      } else if (m->is_ValueType() && m->as_ValueType()->has_phi_inputs(r)) {
         phi = m;
       } else {
         phi = nullptr;
@@ -2082,18 +2082,18 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
       //  - the corresponding control edges is top (a dead incoming path)
       // It is a bug if we create a phi which sees a garbage value on a live path.
 
-      // Merging two inline types?
-      if (phi != nullptr && phi->is_InlineType()) {
+      // Merging two value types?
+      if (phi != nullptr && phi->is_ValueType()) {
         // Reload current state because it may have been updated by ensure_phi
         assert(phi == map()->in(j), "unexpected value in map");
-        assert(phi->as_InlineType()->has_phi_inputs(r), "");
-        InlineTypeNode* vtm = phi->as_InlineType(); // Current inline type
-        InlineTypeNode* vtn = n->as_InlineType(); // Incoming inline type
-        assert(vtm == phi, "Inline type should have Phi input");
+        assert(phi->as_ValueType()->has_phi_inputs(r), "");
+        ValueTypeNode* vtm = phi->as_ValueType(); // Current value type
+        ValueTypeNode* vtn = n->as_ValueType(); // Incoming value type
+        assert(vtm == phi, "Value type should have Phi input");
 
 #ifdef ASSERT
         if (TraceOptoParse) {
-          tty->print_cr("\nMerging inline types");
+          tty->print_cr("\nMerging value types");
           tty->print_cr("Current:");
           vtm->dump(2);
           tty->print_cr("Incoming:");
@@ -2280,8 +2280,8 @@ int Parse::Block::add_new_path() {
       if (n->is_Phi() && n->as_Phi()->region() == r) {
         assert(n->req() == pnum, "must be same size as region");
         n->add_req(nullptr);
-      } else if (n->is_InlineType() && n->as_InlineType()->has_phi_inputs(r)) {
-        n->as_InlineType()->add_new_path(r);
+      } else if (n->is_ValueType() && n->as_ValueType()->has_phi_inputs(r)) {
+        n->as_ValueType()->add_new_path(r);
       }
     }
   }
@@ -2319,7 +2319,7 @@ Node* Parse::ensure_phi(int idx, bool nocreate) {
   if (o->is_Phi() && o->as_Phi()->region() == region) {
     return o->as_Phi();
   }
-  InlineTypeNode* vt = o->isa_InlineType();
+  ValueTypeNode* vt = o->isa_ValueType();
   if (vt != nullptr && vt->has_phi_inputs(region)) {
     return vt;
   }
@@ -2356,10 +2356,10 @@ Node* Parse::ensure_phi(int idx, bool nocreate) {
     return nullptr;
   }
 
-  if (vt != nullptr && t->is_inlinetypeptr()) {
-    // Inline types are merged by merging their field values.
-    // Create a cloned InlineTypeNode with phi inputs that
-    // represents the merged inline type and update the map.
+  if (vt != nullptr && t->is_valueklassptr()) {
+    // Value types are merged by merging their field values.
+    // Create a cloned ValueTypeNode with phi inputs that
+    // represents the merged value type and update the map.
     vt = vt->clone_with_phis(&_gvn, region);
     map->set_req(idx, vt);
     return vt;
@@ -2512,28 +2512,28 @@ void Parse::return_current(Node* value) {
   if (value != nullptr) {
     Node* phi = _exits.argument(0);
     const Type* return_type = phi->bottom_type();
-    if ((tf()->returns_inline_type_as_fields() || (_caller->has_method() && !Compile::current()->inlining_incrementally())) &&
-        return_type->is_inlinetypeptr()) {
-      // Inline type is returned as fields, make sure it is scalarized
-      if (!value->is_InlineType()) {
-        value = InlineTypeNode::make_from_oop(this, value, return_type->inline_klass());
+    if ((tf()->returns_value_type_as_fields() || (_caller->has_method() && !Compile::current()->inlining_incrementally())) &&
+        return_type->is_valueklassptr()) {
+      // Value type is returned as fields, make sure it is scalarized
+      if (!value->is_ValueType()) {
+        value = ValueTypeNode::make_from_oop(this, value, return_type->value_klass());
       }
       if (!_caller->has_method() || Compile::current()->inlining_incrementally()) {
         // Returning from root or an incrementally inlined method. Make sure all non-flat
         // fields are buffered and re-execute if allocation triggers deoptimization.
         PreserveReexecuteState preexecs(this);
-        assert(tf()->returns_inline_type_as_fields(), "must be returned as fields");
+        assert(tf()->returns_value_type_as_fields(), "must be returned as fields");
         jvms()->set_should_reexecute(true);
         inc_sp(1);
-        value = value->as_InlineType()->allocate_fields(this);
+        value = value->as_ValueType()->allocate_fields(this);
       }
-    } else if (value->is_InlineType()) {
-      // Inline type is returned as oop, make sure it is buffered and re-execute
+    } else if (value->is_ValueType()) {
+      // Value type is returned as oop, make sure it is buffered and re-execute
       // if allocation triggers deoptimization.
       PreserveReexecuteState preexecs(this);
       jvms()->set_should_reexecute(true);
       inc_sp(1);
-      value = value->as_InlineType()->buffer(this);
+      value = value->as_ValueType()->buffer(this);
     }
     // ...else
     // If returning oops to an interface-return, there is a silent free

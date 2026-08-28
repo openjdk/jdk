@@ -36,7 +36,7 @@
 package compiler.c2.irTests.stable;
 
 import compiler.lib.ir_framework.*;
-import compiler.valhalla.inlinetypes.*;
+import compiler.valhalla.valuetypes.*;
 import jdk.internal.value.ValueClass;
 import jdk.internal.vm.annotation.Stable;
 import jdk.test.lib.Asserts;

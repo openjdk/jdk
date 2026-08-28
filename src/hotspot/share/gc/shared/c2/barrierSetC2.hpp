@@ -148,14 +148,14 @@ class C2ParseAccess: public C2Access {
 protected:
   GraphKit*         _kit;
   Node* _ctl;
-  const InlineTypeNode* _vt; // For flat, atomic accesses that might require GC barriers on oop fields
+  const ValueTypeNode* _vt; // For flat, atomic accesses that might require GC barriers on oop fields
 
   void* barrier_set_state() const;
 
 public:
   C2ParseAccess(GraphKit* kit, DecoratorSet decorators,
                 BasicType type, Node* base, C2AccessValuePtr& addr,
-                Node* ctl = nullptr, const InlineTypeNode* vt = nullptr) :
+                Node* ctl = nullptr, const ValueTypeNode* vt = nullptr) :
     C2Access(decorators, type, base, addr),
     _kit(kit),
     _ctl(ctl),
@@ -165,7 +165,7 @@ public:
 
   GraphKit* kit() const           { return _kit; }
   Node* control() const;
-  const InlineTypeNode* vt() const { return _vt; }
+  const ValueTypeNode* vt() const { return _vt; }
 
   virtual PhaseGVN& gvn() const;
   virtual bool is_parse_access() const { return true; }

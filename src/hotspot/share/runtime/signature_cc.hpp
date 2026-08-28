@@ -75,7 +75,7 @@ public:
   void reset(int sig_idx, int regs_idx) {
     _sig_idx = sig_idx;
     _regs_idx = regs_idx;
-    assert(_sig->at(_sig_idx)._bt == ((_step > 0) ? T_METADATA : T_VOID), "should be at inline type delimiter");
+    assert(_sig->at(_sig_idx)._bt == ((_step > 0) ? T_METADATA : T_VOID), "should be at value type delimiter");
     _depth = 1;
     DEBUG_ONLY(_finished = false);
   }

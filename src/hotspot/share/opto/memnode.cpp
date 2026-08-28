@@ -24,8 +24,8 @@
  */
 
 #include "ci/ciFlatArrayKlass.hpp"
-#include "ci/ciInlineKlass.hpp"
 #include "ci/ciInstanceKlass.hpp"
+#include "ci/ciValueKlass.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmIntrinsics.hpp"
@@ -44,7 +44,6 @@
 #include "opto/compile.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
-#include "opto/inlinetypenode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/machnode.hpp"
 #include "opto/matcher.hpp"
@@ -58,6 +57,7 @@
 #include "opto/regmask.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/traceMergeStoresTag.hpp"
+#include "opto/valuetypenode.hpp"
 #include "opto/vectornode.hpp"
 #include "runtime/arguments.hpp"
 #include "utilities/align.hpp"
@@ -243,7 +243,7 @@ Node* MemNode::optimize_simple_memory_chain(Node* mchain, const TypeOopPtr* t_oo
   if (phase->is_IterGVN() && phase->C->allow_macro_nodes() && load != nullptr && load->is_Load() && !load->as_Load()->is_mismatched_access()) {
     is_strict_final_load = t_oop->is_ptr_to_strict_final_field();
 #ifdef ASSERT
-    if ((t_oop->is_inlinetypeptr() && t_oop->inline_klass()->contains_field_offset(t_oop->offset())) || t_oop->is_ptr_to_boxed_value()) {
+    if ((t_oop->is_valueklassptr() && t_oop->value_klass()->contains_field_offset(t_oop->offset())) || t_oop->is_ptr_to_boxed_value()) {
       assert(is_strict_final_load, "sanity check for basic cases");
     }
 #endif // ASSERT
@@ -1226,7 +1226,7 @@ static bool skip_through_membars(Compile::AliasType* atp, const TypeInstPtr* tp,
                          (tp != nullptr) && (tp->isa_aryptr() != nullptr) &&
                          tp->isa_aryptr()->is_stable();
 
-    return (eliminate_boxing && non_volatile) || is_stable_ary || tp->is_inlinetypeptr();
+    return (eliminate_boxing && non_volatile) || is_stable_ary || tp->is_valueklassptr();
   }
 
   return false;
@@ -1306,13 +1306,13 @@ Node* LoadNode::can_see_arraycopy_value(Node* st, PhaseGVN* phase) const {
   return nullptr;
 }
 
-static Node* see_through_inline_type(PhaseValues* phase, const LoadNode* load, Node* base, int offset) {
+static Node* see_through_value_type(PhaseValues* phase, const LoadNode* load, Node* base, int offset) {
   if (load->is_mismatched_access() || base == nullptr) {
     return nullptr;
   }
 
-  InlineTypeNode* vt = base->isa_InlineType();
-  if (vt == nullptr || offset < vt->type()->inline_klass()->payload_offset()) {
+  ValueTypeNode* vt = base->isa_ValueType();
+  if (vt == nullptr || offset < vt->type()->value_klass()->payload_offset()) {
     return nullptr;
   }
 
@@ -1332,8 +1332,8 @@ Node* LoadNode::can_see_stored_value_through_membars(Node* st, PhaseValues* phas
   Node* ld_adr = in(MemNode::Address);
   intptr_t ld_off = 0;
   Node* ld_base = AddPNode::Ideal_base_and_offset(ld_adr, phase, ld_off);
-  // Try to see through an InlineTypeNode
-  Node* value = see_through_inline_type(phase, this, ld_base, ld_off);
+  // Try to see through an ValueTypeNode
+  Node* value = see_through_value_type(phase, this, ld_base, ld_off);
   if (value != nullptr) {
     return value;
   }
@@ -1494,16 +1494,16 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseValues* phase) const {
         if (init_value->is_EncodeP()) {
           init_value = init_value->in(1);
         }
-        if (!init_value->is_InlineType() || ld_adr_type->field_offset() == Type::Offset::bottom) {
+        if (!init_value->is_ValueType() || ld_adr_type->field_offset() == Type::Offset::bottom) {
           return nullptr;
         }
 
-        ciInlineKlass* vk = phase->type(init_value)->inline_klass();
+        ciValueKlass* vk = phase->type(init_value)->value_klass();
         int field_offset_in_payload = ld_adr_type->field_offset().get();
         if (field_offset_in_payload == vk->null_marker_offset_in_payload()) {
-          return init_value->as_InlineType()->get_null_marker();
+          return init_value->as_ValueType()->get_null_marker();
         } else {
-          return init_value->as_InlineType()->field_value_by_offset(field_offset_in_payload + vk->payload_offset(), true);
+          return init_value->as_ValueType()->field_value_by_offset(field_offset_in_payload + vk->payload_offset(), true);
         }
       }
       assert(ld_alloc->in(AllocateNode::RawInitValue) == nullptr, "init value may not be null");
@@ -2196,7 +2196,7 @@ Node* LoadNode::Ideal_load_common(PhaseGVN* phase, bool can_reshape) {
     // Check for useless control edge in some common special cases
     if (in(MemNode::Control) != nullptr
         // TODO 8350865 Can we re-enable this?
-        && !(phase->type(address)->is_inlinetypeptr() && is_mismatched_access())
+        && !(phase->type(address)->is_valueklassptr() && is_mismatched_access())
         && can_remove_control()
         && phase->type(base)->higher_equal(TypePtr::NOTNULL)
         && all_controls_dominate(base, phase->C->start(), phase)) {
@@ -2453,8 +2453,8 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
       int offset = tinst->offset();
       if (ik == phase->C->env()->Class_klass()) {
         ciType* t = tinst->java_mirror_type();
-        if (t != nullptr && t->is_inlinetype() && offset == t->as_inline_klass()->field_map_offset()) {
-          ciConstant map = t->as_inline_klass()->get_field_map();
+        if (t != nullptr && t->is_value_klass() && offset == t->as_value_klass()->field_map_offset()) {
+          ciConstant map = t->as_value_klass()->get_field_map();
           bool is_narrow_oop = (bt == T_NARROWOOP);
           return Type::make_from_constant(map, true, 1, is_narrow_oop);
         }
@@ -2511,8 +2511,8 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
         assert(Opcode() == Op_LoadI, "must load an int from _super_check_offset");
         return TypeInt::make(klass->super_check_offset());
       }
-      if (klass->is_inlinetype() && tkls->offset() == in_bytes(InstanceKlass::acmp_maps_offset_offset())) {
-        return TypeInt::make(klass->as_inline_klass()->field_map_offset());
+      if (klass->is_value_klass() && tkls->offset() == in_bytes(InstanceKlass::acmp_maps_offset_offset())) {
+        return TypeInt::make(klass->as_value_klass()->field_map_offset());
       }
       if (klass->is_obj_array_klass() && tkls->offset() == in_bytes(ObjArrayKlass::next_refined_array_klass_offset())) {
         // Fold loads from LibraryCallKit::load_default_refined_array_klass
@@ -2622,7 +2622,7 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
     Node* alloc = is_new_object_mark_load();
     if (alloc != nullptr) {
       if (Arguments::is_valhalla_enabled()) {
-        // The mark word may contain property bits (inline, flat, null-free)
+        // The mark word may contain property bits (value, flat, null-free)
         Node* klass_node = alloc->in(AllocateNode::KlassNode);
         const TypeKlassPtr* tkls = phase->type(klass_node)->isa_klassptr();
         if (tkls != nullptr && tkls->is_loaded() && tkls->klass_is_exact()) {

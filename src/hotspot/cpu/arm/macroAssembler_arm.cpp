@@ -1894,8 +1894,8 @@ void MacroAssembler::remove_frame(int frame_size_in_bytes) {
   raw_pop(FP, LR);
 }
 
-// Unimplemented methods for inline types.
-int MacroAssembler::store_inline_type_fields_to_buf(ciInlineKlass* vk, bool from_interpreter) {
+// Unimplemented methods for value types.
+int MacroAssembler::store_value_type_fields_to_buf(ciValueKlass* vk, bool from_interpreter) {
    Unimplemented();
 }
 

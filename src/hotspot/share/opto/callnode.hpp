@@ -822,7 +822,7 @@ public:
   // Does this node returns pointer?
   bool returns_pointer() const {
     const TypeTuple* r = tf()->range_sig();
-    return (!tf()->returns_inline_type_as_fields() &&
+    return (!tf()->returns_value_type_as_fields() &&
             r->cnt() > TypeFunc::Parms &&
             r->field_at(TypeFunc::Parms)->isa_ptr());
   }
@@ -916,12 +916,12 @@ public:
       C->add_macro_node(this);
     }
     const TypeTuple *r = tf->range_sig();
-    if (InlineTypeReturnedAsFields &&
+    if (ValueTypeReturnedAsFields &&
         method != nullptr &&
         method->is_method_handle_intrinsic() &&
         r->cnt() > TypeFunc::Parms &&
         r->field_at(TypeFunc::Parms)->isa_oopptr() &&
-        r->field_at(TypeFunc::Parms)->is_oopptr()->can_be_inline_type()) {
+        r->field_at(TypeFunc::Parms)->is_oopptr()->can_be_value_type()) {
       // Make sure this call is processed by PhaseMacroExpand::expand_mh_intrinsic_return
       init_flags(Flag_is_macro);
       C->add_macro_node(this);
@@ -1120,8 +1120,8 @@ public:
     InitialTest,                      // slow-path test (may be constant)
     ALength,                          // array length (or TOP if none)
     ValidLengthTest,
-    InlineType,                       // InlineTypeNode if this is an inline type allocation
-    InitValue,                        // Init value for null-free inline type arrays
+    ValueType,                        // ValueTypeNode if this is a value type allocation
+    InitValue,                        // Init value for null-free value type arrays
     RawInitValue,                     // Same as above but as raw machine word
     ParmLimit
   };
@@ -1133,7 +1133,7 @@ public:
     fields[InitialTest] = TypeInt::BOOL;
     fields[ALength]     = t;  // length (can be a bad length)
     fields[ValidLengthTest] = TypeInt::BOOL;
-    fields[InlineType] = Type::BOTTOM;
+    fields[ValueType] = Type::BOTTOM;
     fields[InitValue] = TypeInstPtr::NOTNULL;
     fields[RawInitValue] = TypeX_X;
 
@@ -1157,7 +1157,7 @@ public:
   virtual uint size_of() const; // Size is bigger
   AllocateNode(Compile* C, const TypeFunc *atype, Node *ctrl, Node *mem, Node *abio,
                Node *size, Node *klass_node, Node *initial_test,
-               InlineTypeNode* inline_type_node = nullptr);
+               ValueTypeNode* value_type_node = nullptr);
   // Expansion modifies the JVMState, so we need to deep clone it
   virtual bool needs_deep_clone_jvms(Compile* C) { return true; }
   virtual int Opcode() const;

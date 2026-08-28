@@ -1909,8 +1909,8 @@ void TemplateTable::if_acmp(Condition cc) {
 
   __ profile_acmp(x12, x11, x10, x14);
 
-  Register is_inline_type_mask = t1;
-  __ mv(is_inline_type_mask, markWord::inline_type_pattern);
+  Register is_value_type_mask = t1;
+  __ mv(is_value_type_mask, markWord::value_type_pattern);
 
   if (Arguments::is_valhalla_enabled()) {
     // The substitutability test is only necessary if x11 and x10 are not the same...
@@ -1931,14 +1931,14 @@ void TemplateTable::if_acmp(Condition cc) {
 
     // ...and both are values...
     __ ld(x12, Address(x11, oopDesc::mark_offset_in_bytes()));
-    __ andr(x12, x12, is_inline_type_mask);
+    __ andr(x12, x12, is_value_type_mask);
     __ ld(x14, Address(x10, oopDesc::mark_offset_in_bytes()));
-    __ andr(x14, x14, is_inline_type_mask);
+    __ andr(x14, x14, is_value_type_mask);
     __ andr(x12, x12, x14);
     if (cc == equal) {
-      __ bne(x12, is_inline_type_mask, not_taken);
+      __ bne(x12, is_value_type_mask, not_taken);
     } else {
-      __ bne(x12, is_inline_type_mask, taken);
+      __ bne(x12, is_value_type_mask, taken);
     }
 
     // ...with the same value klass
@@ -2956,7 +2956,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
       __ pop(atos);
       if (is_static) {
         Label is_nullable;
-        __ test_field_is_not_null_free_inline_type(flags, x28, is_nullable);
+        __ test_field_is_not_null_free_value_type(flags, x28, is_nullable);
         __ null_check(x10); // FIXME JDK-8341120
         __ bind(is_nullable);
         // field address
@@ -2967,7 +2967,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
       } else {
         Label null_free_reference, is_flat, rewrite_inline;
         __ test_field_is_flat(flags, x28, is_flat);
-        __ test_field_is_null_free_inline_type(flags, x28, null_free_reference);
+        __ test_field_is_null_free_value_type(flags, x28, null_free_reference);
         pop_and_check_object(obj);
         {
           __ add(off, obj, off);
@@ -2979,7 +2979,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
           patch_bytecode(Bytecodes::_fast_aputfield, bc, x9, true, byte_no);
         }
         __ j(Done);
-        // Implementation of the inline type semantic
+        // Implementation of the value type semantic
         __ bind(null_free_reference);
         __ null_check(x10); // FIXME JDK-8341120
         pop_and_check_object(obj);
@@ -4035,9 +4035,9 @@ void TemplateTable::monitorenter() {
    // check for null object
    __ null_check(x10);
 
-   Label is_inline_type;
+   Label is_value_type;
    __ ld(t0, Address(x10, oopDesc::mark_offset_in_bytes()));
-   __ test_markword_is_inline_type(t0, is_inline_type);
+   __ test_markword_is_value_type(t0, is_value_type);
 
    const Address monitor_block_top(
          fp, frame::interpreter_frame_monitor_block_top_offset * wordSize);
@@ -4139,7 +4139,7 @@ void TemplateTable::monitorenter() {
    // next instruction.
    __ dispatch_next(vtos);
 
-   __ bind(is_inline_type);
+   __ bind(is_value_type);
    __ call_VM(noreg, CAST_FROM_FN_PTR(address,
                      InterpreterRuntime::throw_identity_exception), x10);
    __ should_not_reach_here();
@@ -4151,10 +4151,10 @@ void TemplateTable::monitorexit() {
   // check for null object
   __ null_check(x10);
 
-  const int is_inline_type_mask = markWord::inline_type_pattern;
+  const int is_value_type_mask = markWord::value_type_pattern;
   Label has_identity;
   __ ld(t0, Address(x10, oopDesc::mark_offset_in_bytes()));
-  __ mv(t1, is_inline_type_mask);
+  __ mv(t1, is_value_type_mask);
   __ andr(t0, t0, t1);
   __ bne(t0, t1, has_identity);
   __ call_VM(noreg, CAST_FROM_FN_PTR(address,

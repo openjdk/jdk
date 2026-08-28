@@ -259,12 +259,12 @@ public:
            type()->higher_equal(tp);
   }
 
-  bool can_be_inline_type() const {
-    return Arguments::is_valhalla_enabled() && _type->isa_instptr() && _type->is_instptr()->can_be_inline_type();
+  bool can_be_value_type() const {
+    return Arguments::is_valhalla_enabled() && _type->isa_instptr() && _type->is_instptr()->can_be_value_type();
   }
 
-  Node* try_push_inline_types_down(PhaseGVN* phase, bool can_reshape);
-  DEBUG_ONLY(bool can_push_inline_types_down(PhaseGVN* phase);)
+  Node* try_push_value_types_down(PhaseGVN* phase, bool can_reshape);
+  DEBUG_ONLY(bool can_push_value_types_down(PhaseGVN* phase);)
 
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);

@@ -769,14 +769,14 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
               __ beq(t0, tmp, ok);
               __ mv(t0, (int)Klass::_lh_array_tag_flat_value); // new "[LVT;"
               __ beq(t0, tmp, ok);
-              __ stop("assert(is an object or inline type array klass)");
+              __ stop("assert(is an object or value type array klass)");
               break;
             case StubId::c1_new_null_free_array_id:
               __ mv(t0, (int)Klass::_lh_array_tag_flat_value); // the array can be a flat array.
               __ beq(t0, tmp, ok);
               __ mv(t0, (int)Klass::_lh_array_tag_ref_value);  // the array cannot be a flat array (due to the InlineArrayElementMaxFlatSize, etc.)
               __ beq(t0, tmp, ok);
-              __ stop("assert(is an object or inline type array klass)");
+              __ stop("assert(is an object or value type array klass)");
               break;
             default: ShouldNotReachHere();
          }
@@ -834,17 +834,17 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
       }
       break;
 
-    case StubId::c1_buffer_inline_args_id:
-    case StubId::c1_buffer_inline_args_no_receiver_id:
+    case StubId::c1_buffer_value_args_id:
+    case StubId::c1_buffer_value_args_no_receiver_id:
       {
-        const char* name = (id == StubId::c1_buffer_inline_args_id) ?
-          "buffer_inline_args" : "buffer_inline_args_no_receiver";
+        const char* name = (id == StubId::c1_buffer_value_args_id) ?
+          "buffer_value_args" : "buffer_value_args_no_receiver";
         StubFrame f(sasm, name, dont_gc_arguments);
         OopMap* map = save_live_registers(sasm);
         Register method = x9;   // Incoming
-        address entry = (id == StubId::c1_buffer_inline_args_id) ?
-          CAST_FROM_FN_PTR(address, buffer_inline_args) :
-          CAST_FROM_FN_PTR(address, buffer_inline_args_no_receiver);
+        address entry = (id == StubId::c1_buffer_value_args_id) ?
+          CAST_FROM_FN_PTR(address, buffer_value_args) :
+          CAST_FROM_FN_PTR(address, buffer_value_args_no_receiver);
         // This is called from a C1 method's scalarized entry point
         // where x10-x17 may be holding live argument values so we can't
         // return the result in x10 as the other stubs do. RA is used as

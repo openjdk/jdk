@@ -285,10 +285,10 @@ void PhaseOutput::Output() {
   } else {
     if (C->method()) {
       if (C->method()->has_scalarized_args()) {
-        // Add entry point to unpack all inline type arguments
+        // Add entry point to unpack all value type arguments
         C->cfg()->insert(broot, 0, new MachVEPNode(&verified_entry, /* verified */ true, /* receiver_only */ false));
         if (!C->method()->is_static()) {
-          // Add verified/unverified entry points to only unpack inline type receiver at interface calls
+          // Add verified/unverified entry points to only unpack value type receiver at interface calls
           C->cfg()->insert(broot, 0, new MachVEPNode(&verified_entry, /* verified */ false, /* receiver_only */ false));
           C->cfg()->insert(broot, 0, new MachVEPNode(&verified_entry, /* verified */ true,  /* receiver_only */ true));
           C->cfg()->insert(broot, 0, new MachVEPNode(&verified_entry, /* verified */ false, /* receiver_only */ true));
@@ -338,7 +338,7 @@ void PhaseOutput::Output() {
   shorten_branches(blk_starts);
 
   if (!C->is_osr_compilation() && C->has_scalarized_args()) {
-    // Compute the offsets of the entry points required by the inline type calling convention
+    // Compute the offsets of the entry points required by the value type calling convention
     if (!C->method()->is_static()) {
       // We have entries at the beginning of the method, implemented by the first 4 nodes.
       // Entry                     (unverified) @ offset 0
@@ -749,7 +749,7 @@ void PhaseOutput::set_sv_for_object_node(GrowableArray<ScopeValue*> *objs,
 
 static jint array_description_value(const TypeAryPtr* ary_type) {
   ciArrayKlass* array_klass = ary_type->exact_klass()->as_array_klass();
-  const bool is_element_inline = array_klass->element_klass()->is_inlinetype();
+  const bool is_element_inline = array_klass->element_klass()->is_value_klass();
   ArrayProperties properties = ArrayProperties::Default()
       .with_null_restricted(is_element_inline && array_klass->is_elem_null_free())
       .with_non_atomic(is_element_inline && !array_klass->is_elem_atomic());
@@ -793,10 +793,10 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
       assert(cik->is_instance_klass() ||
              cik->is_array_klass(), "Not supported allocation.");
       uint first_ind = spobj->first_index(sfpt->jvms());
-      // Nullable, scalarized inline types have a null_marker input
+      // Nullable, scalarized value types have a null_marker input
       // that needs to be checked before using the field values.
       ScopeValue* properties = nullptr;
-      if (cik->is_inlinetype()) {
+      if (cik->is_value_klass()) {
         Node* null_marker_node = sfpt->in(first_ind++);
         assert(null_marker_node != nullptr, "null_marker node not found");
         if (!null_marker_node->is_top()) {
@@ -1151,7 +1151,7 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
           ciKlass* cik = t->is_oopptr()->exact_klass();
           assert(cik->is_instance_klass() ||
                  cik->is_array_klass(), "Not supported allocation.");
-          assert(!cik->is_inlinetype(), "Synchronization on value object?");
+          assert(!cik->is_value_klass(), "Synchronization on value object?");
           ScopeValue* properties = nullptr;
           if (cik->is_array_klass() && !cik->is_type_array_klass()) {
             properties = new ConstantIntValue(array_description_value(t->is_aryptr()));
@@ -3191,7 +3191,7 @@ void PhaseOutput::init_scratch_buffer_blob(int const_size) {
     _scratch_const_size = const_size;
     int size = C2Compiler::initial_code_buffer_size(const_size);
     if (C->has_scalarized_args()) {
-      // Inline type entry points (MachVEPNodes) require lots of space when
+      // Value type entry points (MachVEPNodes) require lots of space when
       // unpacking fields from buffered arguments. Increase the scratch buffer
       // for field moves, GC barriers and oop verification accordingly.
       const int move_size = 32;
@@ -3205,20 +3205,20 @@ void PhaseOutput::init_scratch_buffer_blob(int const_size) {
         barrier_size += 400;
       }
       ciMethod* method = C->method();
-      auto add_inline_arg_size = [&](ciInlineKlass* vk) {
+      auto add_inline_arg_size = [&](ciValueKlass* vk) {
         size += vk->inline_arg_length() * move_size;
         size += vk->oop_count() * barrier_size;
       };
       int arg_num = 0;
       if (!method->is_static()) {
         if (method->is_scalarized_arg(arg_num)) {
-          add_inline_arg_size(method->holder()->as_inline_klass());
+          add_inline_arg_size(method->holder()->as_value_klass());
         }
         arg_num++;
       }
       for (ciSignatureStream str(method->signature()); !str.at_return_type(); str.next()) {
         if (method->is_scalarized_arg(arg_num)) {
-          add_inline_arg_size(str.type()->as_inline_klass());
+          add_inline_arg_size(str.type()->as_value_klass());
         }
         arg_num++;
       }

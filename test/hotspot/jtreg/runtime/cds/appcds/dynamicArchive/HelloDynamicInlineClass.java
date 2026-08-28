@@ -30,18 +30,18 @@
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @compile ../test-classes/HelloInlineClassApp.java
+ * @compile ../test-classes/HelloValueClassApp.java
  * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar hello_inline.jar HelloInlineClassApp HelloInlineClassApp$Point HelloInlineClassApp$Rectangle HelloInlineClassApp$ValueRecord
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar hello_value.jar HelloValueClassApp HelloValueClassApp$Point HelloValueClassApp$Rectangle HelloValueClassApp$ValueRecord
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. HelloDynamicInlineClass
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. HelloDynamicValueClass
  */
 
 import jdk.test.lib.helpers.ClassFileInstaller;
 
-public class HelloDynamicInlineClass extends DynamicArchiveTestBase {
+public class HelloDynamicValueClass extends DynamicArchiveTestBase {
     public static void main(String[] args) throws Exception {
-        runTest(HelloDynamicInlineClass::test);
+        runTest(HelloDynamicValueClass::test);
     }
 
     static void test() throws Exception {
@@ -52,8 +52,8 @@ public class HelloDynamicInlineClass extends DynamicArchiveTestBase {
     }
 
     private static void doTest(String baseArchiveName, String topArchiveName) throws Exception {
-        String appJar = ClassFileInstaller.getJarPath("hello_inline.jar");
-        String mainClass = "HelloInlineClassApp";
+        String appJar = ClassFileInstaller.getJarPath("hello_value.jar");
+        String mainClass = "HelloValueClassApp";
         dump2(baseArchiveName, topArchiveName,
              "--enable-preview",
              "-Xlog:cds",
@@ -68,7 +68,7 @@ public class HelloDynamicInlineClass extends DynamicArchiveTestBase {
             "-Xlog:cds+dynamic=debug,cds=debug",
             "-cp", appJar, mainClass)
             .assertNormalExit(output -> {
-                    output.shouldContain("HelloInlineClassApp$Point source: shared objects file")
+                    output.shouldContain("HelloValueClassApp$Point source: shared objects file")
                           .shouldHaveExitValue(0);
               });
     }

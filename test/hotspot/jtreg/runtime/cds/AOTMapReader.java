@@ -195,14 +195,14 @@ public class AOTMapReader {
     //  - final 'key' 'Ljava/lang/Object;' @16 0x00000007ffc68260 (0xfff8d04c) java.lang.String
     static Pattern oopFieldPattern2 = Pattern.compile(" - [^']* '([^']+)'.*@([0-9]+) 0x([0-9a-f]+) [(]0x([0-9a-f]+)[)] (.*)");
 
-    // - Flat inline type element 'java/lang/Integer': - Index   1 offset  24:
+    // - Flat value type element 'java/lang/Integer': - Index   1 offset  24:
     // or
-    // - Flat inline type field 'java/lang/Integer':
-    static Pattern flatFieldPattern = Pattern.compile(" - Flat inline type field '([^']+)':\\s*(null)?\\s*$");
-    static Pattern flatElementPattern = Pattern.compile(" - Flat inline type element '([^']+)':\\s*- Index\\s+(\\d+)\\s+offset\\s+(\\d+):\\s*(null)?\\s*$");
+    // - Flat value type field 'java/lang/Integer':
+    static Pattern flatFieldPattern = Pattern.compile(" - Flat value type field '([^']+)':\\s*(null)?\\s*$");
+    static Pattern flatElementPattern = Pattern.compile(" - Flat value type element '([^']+)':\\s*- Index\\s+(\\d+)\\s+offset\\s+(\\d+):\\s*(null)?\\s*$");
 
-    static Pattern flatNullFreeFieldPattern = Pattern.compile(" - Flat inline null-free type field '([^']+)':\\s*$");
-    static Pattern flatNullFreeElementPattern = Pattern.compile(" - Flat inline null-free type element '([^']+)':\\s*- Index\\s+(\\d+)\\s+offset\\s+(\\d+):\\s*$");
+    static Pattern flatNullFreeFieldPattern = Pattern.compile(" - Flat value null-free type field '([^']+)':\\s*$");
+    static Pattern flatNullFreeElementPattern = Pattern.compile(" - Flat value null-free type element '([^']+)':\\s*- Index\\s+(\\d+)\\s+offset\\s+(\\d+):\\s*$");
 
     static Pattern nullMarkerPattern = Pattern.compile(" - \\[null_marker\\] @[0-9]+ Field marked as (.*)");
 

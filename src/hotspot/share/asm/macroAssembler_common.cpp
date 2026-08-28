@@ -26,7 +26,7 @@
 #include "asm/assembler.inline.hpp"
 #include "asm/macroAssembler.hpp"
 #include "jvm.h"
-#include "oops/inlineKlass.inline.hpp"
+#include "oops/valueKlass.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature_cc.hpp"
 #ifdef COMPILER2
@@ -80,7 +80,7 @@ MacroAssembler::RegState* MacroAssembler::init_reg_state(VMRegPair* regs, int nu
 
 #ifdef COMPILER2
 int MacroAssembler::unpack_inline_args(Compile* C, bool receiver_only) {
-  assert(C->has_scalarized_args(), "inline type argument scalarization is disabled");
+  assert(C->has_scalarized_args(), "value type argument scalarization is disabled");
   ciMethod* method = C->method();
   const GrowableArray<SigEntry>* sig = method->get_sig_cc();
   assert(sig != nullptr, "must have scalarized signature");
@@ -102,8 +102,8 @@ int MacroAssembler::unpack_inline_args(Compile* C, bool receiver_only) {
   } else {
     // Only unpack the receiver, all other arguments are already scalarized
     ciInstanceKlass* holder = method->holder();
-    int rec_len = (holder->is_inlinetype() && method->is_scalarized_arg(0)) ? holder->as_inline_klass()->inline_arg_length() : 1;
-    // Copy scalarized signature but skip receiver and inline type delimiters
+    int rec_len = (holder->is_value_klass() && method->is_scalarized_arg(0)) ? holder->as_value_klass()->inline_arg_length() : 1;
+    // Copy scalarized signature but skip receiver and value type delimiters
     for (int i = 0; i < sig->length(); i++) {
       if (SigEntry::skip_value_delimiters(sig, i) && rec_len <= 0) {
         sig_bt[args_passed++] = sig->at(i)._bt;
@@ -140,7 +140,7 @@ void MacroAssembler::shuffle_inline_args(bool is_packing, bool receiver_only,
   int max_stack = MAX2(args_on_stack + sp_inc/VMRegImpl::stack_slot_size, args_on_stack_to);
   RegState* reg_state = init_reg_state(regs, args_passed, sp_inc, max_stack);
 
-  // Emit code for packing/unpacking inline type arguments
+  // Emit code for packing/unpacking value type arguments
   // We try multiple times and eventually start spilling to resolve (circular) dependencies
   bool done = (args_passed_to == 0);
   for (int i = 0; i < 2*args_passed_to && !done; ++i) {
@@ -185,7 +185,7 @@ void MacroAssembler::shuffle_inline_args(bool is_packing, bool receiver_only,
                                      from_reg, from_index, regs_to, args_passed_to, to_index,
                                      reg_state);
         if (from_index == -1 && sig_index != 0) {
-          // This can happen when we are confusing an empty inline type argument which is
+          // This can happen when we are confusing an empty value type argument which is
           // not counted in the scalarized signature for the receiver. Just ignore it.
           assert(receiver_only, "sanity");
           from_index = 0;
@@ -193,7 +193,7 @@ void MacroAssembler::shuffle_inline_args(bool is_packing, bool receiver_only,
       }
     }
   }
-  guarantee(done, "Could not resolve circular dependency when shuffling inline type arguments");
+  guarantee(done, "Could not resolve circular dependency when shuffling value type arguments");
 }
 
 bool MacroAssembler::shuffle_inline_args_spill(bool is_packing, const GrowableArray<SigEntry>* sig, int sig_index,
@@ -219,7 +219,7 @@ bool MacroAssembler::shuffle_inline_args_spill(bool is_packing, const GrowableAr
       }
     }
     if (!found) {
-      // Spilling fields in this inline type arg won't break cycles
+      // Spilling fields in this value type arg won't break cycles
       return true;
     }
   }

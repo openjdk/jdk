@@ -31,7 +31,6 @@
 #include "opto/convertnode.hpp"
 #include "opto/countbitsnode.hpp"
 #include "opto/divnode.hpp"
-#include "opto/inlinetypenode.hpp"
 #include "opto/intrinsicnode.hpp"
 #include "opto/locknode.hpp"
 #include "opto/loopnode.hpp"
@@ -48,6 +47,7 @@
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
 #include "opto/subtypenode.hpp"
+#include "opto/valuetypenode.hpp"
 #include "opto/vectornode.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_SHENANDOAHGC

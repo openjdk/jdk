@@ -25,23 +25,23 @@
 #include "memory/allocation.hpp"
 #include "memory/universe.hpp"
 #include "oops/fieldStreams.inline.hpp"
-#include "oops/inlineKlass.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/valueKlass.hpp"
 #include "oops/weakHandle.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiTagMapTable.hpp"
 
 
 static unsigned get_value_object_hash(oop holder, int offset, Klass* klass) {
-  assert(klass->is_inline_klass(), "Must be InlineKlass");
-  // For inline types, use the klass as a hash code and let the equals match the obj.
+  assert(klass->is_value_klass(), "Must be ValueKlass");
+  // For value types, use the klass as a hash code and let the equals match the obj.
   // It might have a long bucket but TBD to improve this if a customer situation arises.
   return (unsigned)((int64_t)klass >> 3);
 }
 
 static unsigned get_value_object_hash(const JvmtiHeapwalkObject & obj) {
   assert(obj.is_value(), "Must be value class");
-  return get_value_object_hash(obj.obj(), obj.offset(), obj.inline_klass());
+  return get_value_object_hash(obj.obj(), obj.offset(), obj.value_klass());
 }
 
 static bool equal_oops(oop obj1, oop obj2); // forward declaration
@@ -71,14 +71,14 @@ static bool equal_fields(char type, oop obj1, int offset1, oop obj2, int offset2
   ShouldNotReachHere();
 }
 
-static bool is_null_flat_field(oop obj, int offset, InlineKlass* klass) {
+static bool is_null_flat_field(oop obj, int offset, ValueKlass* klass) {
   return klass->is_payload_marked_as_null(cast_from_oop<address>(obj) + offset);
 }
 
 // For heap-allocated objects offset is 0 and 'klass' is obj1->klass() (== obj2->klass()).
-// For flattened objects offset is the offset in the holder object, 'klass' is inlined object class.
+// For flattened objects offset is the offset in the holder object, 'klass' is value object class.
 // The object must be prechecked for non-null values.
-static bool equal_value_objects(oop obj1, int offset1, oop obj2, int offset2, InlineKlass* klass) {
+static bool equal_value_objects(oop obj1, int offset1, oop obj2, int offset2, ValueKlass* klass) {
   for (JavaFieldStream fld(klass); !fld.done(); fld.next()) {
     // ignore static fields
     if (fld.access_flags().is_static()) {
@@ -88,8 +88,8 @@ static bool equal_value_objects(oop obj1, int offset1, oop obj2, int offset2, In
     int field_offset2 = offset2 + fld.offset() - (offset2 > 0 ? klass->payload_offset() : 0);
     if (fld.is_flat()) { // flat value field
       InstanceKlass* holder_klass = fld.field_holder();
-      InlineKlass* field_klass = holder_klass->get_inline_type_field_klass(fld.index());
-      if (!fld.is_null_free_inline_type()) {
+      ValueKlass* field_klass = holder_klass->get_value_type_field_klass(fld.index());
+      if (!fld.is_null_free_value_type()) {
         bool field1_is_null = is_null_flat_field(obj1, field_offset1, field_klass);
         bool field2_is_null = is_null_flat_field(obj2, field_offset2, field_klass);
         if (field1_is_null != field2_is_null) {
@@ -118,21 +118,21 @@ static bool equal_oops(oop obj1, oop obj2) {
     return true;
   }
 
-  if (obj1 != nullptr && obj2 != nullptr && obj1->klass() == obj2->klass() && obj1->is_inline_type()) {
-    InlineKlass* vk = InlineKlass::cast(obj1->klass());
+  if (obj1 != nullptr && obj2 != nullptr && obj1->klass() == obj2->klass() && obj1->is_value_type()) {
+    ValueKlass* vk = ValueKlass::cast(obj1->klass());
     return equal_value_objects(obj1, 0, obj2, 0, vk);
   }
   return false;
 }
 
 bool JvmtiHeapwalkObject::equals(const JvmtiHeapwalkObject& obj1, const JvmtiHeapwalkObject& obj2) {
-  if (obj1 == obj2) { // the same oop/offset/inline_klass
+  if (obj1 == obj2) { // the same oop/offset/value_klass
     return true;
   }
 
-  if (obj1.is_value() && obj1.inline_klass() == obj2.inline_klass()) {
+  if (obj1.is_value() && obj1.value_klass() == obj2.value_klass()) {
     // instances of the same value class
-    return equal_value_objects(obj1.obj(), obj1.offset(), obj2.obj(), obj2.offset(), obj1.inline_klass());
+    return equal_value_objects(obj1.obj(), obj1.offset(), obj2.obj(), obj2.offset(), obj1.value_klass());
   }
   return false;
 }
@@ -178,7 +178,7 @@ void JvmtiTagMapKey::release_handle() {
 
 JvmtiHeapwalkObject JvmtiTagMapKey::heapwalk_object() const {
   if (_obj != nullptr) {
-    return JvmtiHeapwalkObject(_obj->obj(), _obj->offset(), _obj->inline_klass(), _obj->layout_kind());
+    return JvmtiHeapwalkObject(_obj->obj(), _obj->offset(), _obj->value_klass(), _obj->layout_kind());
   }
   oop obj = object_no_keepalive();
   if (obj == nullptr) {
@@ -245,7 +245,7 @@ jlong* JvmtiTagMapTable::lookup(const JvmtiHeapwalkObject& obj) const {
   }
 
   if (!obj.is_value() && !obj.obj()->has_identity_hash()) {
-    // Objects in the table all have a hashcode, unless inlined types.
+    // Objects in the table all have a hashcode, unless value types.
     return nullptr;
   }
   JvmtiTagMapKey entry(&obj);
@@ -319,7 +319,7 @@ void JvmtiTagMapTable::remove_dead_entries(GrowableArray<jlong>* objects) {
 }
 
 JvmtiFlatTagMapKey::JvmtiFlatTagMapKey(const JvmtiHeapwalkObject& obj)
-  : _holder(obj.obj()), _offset(obj.offset()), _inline_klass(obj.inline_klass()), _layout_kind(obj.layout_kind()) {
+  : _holder(obj.obj()), _offset(obj.offset()), _value_klass(obj.value_klass()), _layout_kind(obj.layout_kind()) {
 }
 
 JvmtiFlatTagMapKey::JvmtiFlatTagMapKey(const JvmtiFlatTagMapKey& src) : _h() {
@@ -335,12 +335,12 @@ JvmtiFlatTagMapKey::JvmtiFlatTagMapKey(const JvmtiFlatTagMapKey& src) : _h() {
   // holder object is always null after a copy.
   _holder = nullptr;
   _offset = src._offset;
-  _inline_klass = src._inline_klass;
+  _value_klass = src._value_klass;
   _layout_kind = src._layout_kind;
 }
 
 JvmtiHeapwalkObject JvmtiFlatTagMapKey::heapwalk_object() const {
-  return JvmtiHeapwalkObject(_holder != nullptr ? _holder : holder_no_keepalive(), _offset, _inline_klass, _layout_kind);
+  return JvmtiHeapwalkObject(_holder != nullptr ? _holder : holder_no_keepalive(), _offset, _value_klass, _layout_kind);
 }
 
 oop JvmtiFlatTagMapKey::holder() const {
@@ -359,14 +359,14 @@ void JvmtiFlatTagMapKey::release_handle() {
 }
 
 unsigned JvmtiFlatTagMapKey::get_hash(const JvmtiFlatTagMapKey& entry) {
-  return get_value_object_hash(entry._holder, entry._offset, entry._inline_klass);
+  return get_value_object_hash(entry._holder, entry._offset, entry._value_klass);
 }
 
 bool JvmtiFlatTagMapKey::equals(const JvmtiFlatTagMapKey& lhs, const JvmtiFlatTagMapKey& rhs) {
-  if (lhs._inline_klass == rhs._inline_klass) {
+  if (lhs._value_klass == rhs._value_klass) {
     oop lhs_obj = lhs._holder != nullptr ? lhs._holder : lhs._h.peek();
     oop rhs_obj = rhs._holder != nullptr ? rhs._holder : rhs._h.peek();
-    return equal_value_objects(lhs_obj, lhs._offset, rhs_obj, rhs._offset, lhs._inline_klass);
+    return equal_value_objects(lhs_obj, lhs._offset, rhs_obj, rhs._offset, lhs._value_klass);
   }
   return false;
 }

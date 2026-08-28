@@ -26,7 +26,7 @@
 
 #include "asm/codeBuffer.hpp"
 #include "asm/macroAssembler.inline.hpp"
-#include "ci/ciInlineKlass.hpp"
+#include "ci/ciValueKlass.hpp"
 #include "code/compiledIC.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -3921,35 +3921,35 @@ void MacroAssembler::null_check(Register reg, Register tmp, int64_t offset) {
 }
 
 //-------------------------------------
-//  Valhalla inline type support
+//  Valhalla value type support
 //-------------------------------------
 
-void MacroAssembler::test_markword_is_inline_type(Register markword, Label& is_inline_type) {
-  static_assert(markWord::inline_type_pattern <= 0x7FFF, "must fit in simm16 for z_chi");
-  z_nilf(markword, markWord::inline_type_pattern_mask);
-  z_chi(markword, markWord::inline_type_pattern);
-  branch_optimized(bcondEqual, is_inline_type);
+void MacroAssembler::test_markword_is_value_type(Register markword, Label& is_value_type) {
+  static_assert(markWord::value_type_pattern <= 0x7FFF, "must fit in simm16 for z_chi");
+  z_nilf(markword, markWord::value_type_pattern_mask);
+  z_chi(markword, markWord::value_type_pattern);
+  branch_optimized(bcondEqual, is_value_type);
 }
 
-void MacroAssembler::test_oop_is_not_inline_type(Register object, Register tmp, Label& not_inline_type, bool can_be_null) {
+void MacroAssembler::test_oop_is_not_value_type(Register object, Register tmp, Label& not_value_type, bool can_be_null) {
   if (can_be_null) {
     z_ltgr(object, object);
-    branch_optimized(bcondEqual, not_inline_type);
+    branch_optimized(bcondEqual, not_value_type);
   }
   z_lg(tmp, oopDesc::mark_offset_in_bytes(), object);
-  z_nilf(tmp, markWord::inline_type_pattern_mask);
-  z_chi(tmp, markWord::inline_type_pattern);
-  branch_optimized(bcondNotEqual, not_inline_type);
+  z_nilf(tmp, markWord::value_type_pattern_mask);
+  z_chi(tmp, markWord::value_type_pattern);
+  branch_optimized(bcondNotEqual, not_value_type);
 }
 
-void MacroAssembler::test_field_is_null_free_inline_type(Register flags, Label& is_null_free) {
-  testbit(flags, ResolvedFieldEntry::is_null_free_inline_type_shift);
+void MacroAssembler::test_field_is_null_free_value_type(Register flags, Label& is_null_free) {
+  testbit(flags, ResolvedFieldEntry::is_null_free_value_type_shift);
   z_brc(Assembler::bcondAllOne, is_null_free);
 }
 
-void MacroAssembler::test_field_is_not_null_free_inline_type(Register flags, Label& not_null_free_inline_type) {
-  testbit(flags, ResolvedFieldEntry::is_null_free_inline_type_shift);
-  z_brc(Assembler::bcondAllZero, not_null_free_inline_type);
+void MacroAssembler::test_field_is_not_null_free_value_type(Register flags, Label& not_null_free_value_type) {
+  testbit(flags, ResolvedFieldEntry::is_null_free_value_type_shift);
+  z_brc(Assembler::bcondAllZero, not_null_free_value_type);
 }
 
 void MacroAssembler::test_field_is_flat(Register flags, Label& is_flat) {
@@ -4557,19 +4557,19 @@ void MacroAssembler::flat_field_copy(DecoratorSet decorators, Register src, Regi
   bs->flat_field_copy(this, decorators, src, dst, inline_layout_info);
 }
 
-void MacroAssembler::payload_offset(Register inline_klass, Register offset) {
-  z_lg(offset, Address(inline_klass, InlineKlass::adr_members_offset()));
-  z_llgf(offset, Address(offset, InlineKlass::payload_offset_offset()));
+void MacroAssembler::payload_offset(Register value_klass, Register offset) {
+  z_lg(offset, Address(value_klass, ValueKlass::adr_members_offset()));
+  z_llgf(offset, Address(offset, ValueKlass::payload_offset_offset()));
 }
 
-void MacroAssembler::payload_addr(Register oop, Register data, Register inline_klass) {
+void MacroAssembler::payload_addr(Register oop, Register data, Register value_klass) {
   // ((address) (void*) o) + vk->payload_offset();
   //
-  // oop must differ from inline_klass: payload_offset() overwrites inline_klass
+  // oop must differ from value_klass: payload_offset() overwrites value_klass
   // with the payload offset integer before we add it back to oop.
-  assert_different_registers(oop, inline_klass);
+  assert_different_registers(oop, value_klass);
   Register offset = (data == oop) ? Z_R1_scratch : data;
-  payload_offset(inline_klass, offset);
+  payload_offset(value_klass, offset);
   if (data == oop) {
     z_agr(data, offset);
   } else {
@@ -6374,10 +6374,10 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register temp1
     const Register locked_obj = top;
     z_oill(mark, markWord::lock_neutral_value);
     if (Arguments::is_valhalla_enabled()) {
-      static_assert((uint32_t)markWord::inline_type_bit_in_place <= 0x7FFFFFFF,
-                     "inline_type_bit_in_place must fit in low 32 bits for z_nilf");
-      // Mask inline_type bit so CAS fails (-> slow) if object is an inline type.
-      z_nilf(mark, ~((uint32_t)markWord::inline_type_bit_in_place));
+      static_assert((uint32_t)markWord::value_type_bit_in_place <= 0x7FFFFFFF,
+                     "value_type_bit_in_place must fit in low 32 bits for z_nilf");
+      // Mask value_type bit so CAS fails (-> slow) if object is a value type.
+      z_nilf(mark, ~((uint32_t)markWord::value_type_bit_in_place));
     }
     z_lgr(locked_obj, mark);
     // Clear lock-bits from locked_obj (locked state)
@@ -6535,10 +6535,10 @@ void MacroAssembler::compiler_fast_lock_object(Register obj, Register box, Regis
       const Register locked_obj = top;
       z_oill(mark, markWord::lock_neutral_value);
       if (Arguments::is_valhalla_enabled()) {
-        static_assert((uint32_t)markWord::inline_type_bit_in_place <= 0x7FFFFFFF,
-                      "inline_type_bit_in_place must fit in low 32 bits for z_nilf");
-        // Mask inline_type bit so CAS fails (-> slow) if object is an inline type.
-        z_nilf(mark, ~((uint32_t)markWord::inline_type_bit_in_place));
+        static_assert((uint32_t)markWord::value_type_bit_in_place <= 0x7FFFFFFF,
+                      "value_type_bit_in_place must fit in low 32 bits for z_nilf");
+        // Mask value_type bit so CAS fails (-> slow) if object is a value type.
+        z_nilf(mark, ~((uint32_t)markWord::value_type_bit_in_place));
       }
       z_lgr(locked_obj, mark);
       // Clear lock-bits from locked_obj (locked state)
@@ -7149,8 +7149,8 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   add2mem_64(Address(offset), DataLayout::counter_increment, r0_tmp);
 }
 
-// Unimplemented methods for inline types.
-int MacroAssembler::store_inline_type_fields_to_buf(ciInlineKlass* vk, bool from_interpreter) {
+// Unimplemented methods for value types.
+int MacroAssembler::store_value_type_fields_to_buf(ciValueKlass* vk, bool from_interpreter) {
    Unimplemented();
    return 0;
 }
