@@ -507,7 +507,17 @@ ATTRIBUTE_ALIGNED(4096) juint StubRoutines::riscv::_crc_table[] =
 };
 
 #if INCLUDE_CDS
-// nothing to do for riscv
+extern void StubGenerator_init_AOTAddressTable(GrowableArray<address>& external_addresses);
+
 void StubRoutines::init_AOTAddressTable() {
+  ResourceMark rm;
+  GrowableArray<address> external_addresses;
+  // publish static addresses referred to by riscv generator
+  // n.b. we have to use an extern call here because class
+  // StubGenerator, which provides the static method that knows how to
+  // add the relevant addresses, is declared in a source file rather
+  // than in a separately includeable header.
+  StubGenerator_init_AOTAddressTable(external_addresses);
+  AOTCodeCache::publish_external_addresses(external_addresses);
 }
 #endif // INCLUDE_CDS

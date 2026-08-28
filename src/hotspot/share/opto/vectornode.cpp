@@ -1281,6 +1281,10 @@ Node* VectorNode::make_scalar(Compile* c, int vopc, BasicType bt, Node* control,
       return new AndINode(in1, in2);
     case Op_AndL:
       return new AndLNode(in1, in2);
+    case Op_DivI:
+      return new DivINode(control, in1, in2);
+    case Op_DivL:
+      return new DivLNode(control, in1, in2);
     case Op_DivF:
       return new DivFNode(control, in1, in2);
     case Op_DivD:

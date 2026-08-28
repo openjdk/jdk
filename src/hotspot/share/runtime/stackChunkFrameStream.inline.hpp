@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,8 +178,16 @@ inline bool StackChunkFrameStream<ChunkFrames::CompiledOnly>::is_interpreted() c
 //
 template <ChunkFrames frame_kind>
 inline int StackChunkFrameStream<frame_kind>::frame_size() const {
-  return is_interpreted() ? interpreter_frame_size()
-                          : cb()->frame_size() + stack_argsize() + frame::metadata_words_at_top;
+  if (is_interpreted()) {
+    return interpreter_frame_size();
+  } else if (is_compiled() && cb()->as_nmethod()->needs_stack_repair()) {
+    int real_frame_size = 0;
+    frame f = to_frame();
+    if (f.was_augmented_on_entry(real_frame_size)) {
+      return real_frame_size;
+    }
+  }
+  return cb()->frame_size() + stack_argsize() + frame::metadata_words_at_top;
 }
 
 template <ChunkFrames frame_kind>

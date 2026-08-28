@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import java.io.*;
  * for ArrayType, ClassType, InterfaceType
  */
 
-public class isProtected001 extends Log {
+public class isProtected001 {
     static java.io.PrintStream out_stream;
     static boolean verbose_mode = false;
 
@@ -133,11 +133,7 @@ public class isProtected001 extends Log {
         Binder binder   = new Binder(argsHandler, logHandler);
 
 
-        if (argsHandler.verbose()) {
-            debugee = binder.bindToDebugee(debugeeName + " -vbs");
-        } else {
-            debugee = binder.bindToDebugee(debugeeName);
-        }
+        debugee = binder.bindToDebugee(debugeeName);
 
         IOPipe pipe     = new IOPipe(debugee);
 
