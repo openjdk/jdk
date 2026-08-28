@@ -425,7 +425,7 @@ double G1CollectionSet::select_candidates_from_marking(double time_remaining_ms)
   double optional_threshold_ms = time_remaining_ms * _policy->optional_prediction_fraction();
 
   uint min_num_old_cset_regions = _policy->calc_min_old_cset_length(candidates()->last_marking_candidates_length());
-  uint max_old_cset_length = MAX2(min_num_old_cset_regions, _policy->calc_max_old_cset_length());
+  uint max_num_old_cset_regions = MAX2(min_num_old_cset_regions, _policy->calc_max_old_cset_length());
   bool check_time_remaining = _policy->use_adaptive_num_young_regions();
 
   G1CSetCandidateGroupList* from_marking_groups = &candidates()->from_marking_groups();
@@ -435,13 +435,13 @@ double G1CollectionSet::select_candidates_from_marking(double time_remaining_ms)
   log_debug(gc, ergo, cset)("Start adding marking candidates to collection set. "
                             "Min %u regions, max %u regions, available %u regions (%u groups), "
                             "time remaining %1.2fms, optional threshold %1.2fms",
-                            min_num_old_cset_regions, max_old_cset_length, from_marking_groups->num_regions(), from_marking_groups->length(),
+                            min_num_old_cset_regions, max_num_old_cset_regions, from_marking_groups->num_regions(), from_marking_groups->length(),
                             time_remaining_ms, optional_threshold_ms);
 
   G1CSetCandidateGroupList selected_groups;
 
   for (G1CSetCandidateGroup* group : *from_marking_groups) {
-    if (num_initial_regions + num_optional_regions >= max_old_cset_length) {
+    if (num_initial_regions + num_optional_regions >= max_num_old_cset_regions) {
       // Added maximum number of old regions to the CSet.
       print_finish_message("Maximum number of regions reached", true);
       break;
