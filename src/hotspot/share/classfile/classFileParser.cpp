@@ -5389,7 +5389,7 @@ void ClassFileParser::set_fast_acmp_members(InlineKlass* vk) const {
   // We build the mask for a 64-bit load from the start of the payload. For each contiguous piece of memory
   // we build the mask containing 1's where it would be in the loaded long.
   for (int i = 0; i < _layout_info->_nonoop_acmp_map->length(); i++) {
-    int piece_start = _layout_info->_nonoop_acmp_map->at(i)._offset - _layout_info->_payload_offset;
+    int piece_start = _layout_info->_nonoop_acmp_map->at(i)._offset - _layout_info->_available_layouts.payload_offset();
     int piece_size = _layout_info->_nonoop_acmp_map->at(i)._size;
     int piece_end = piece_start + piece_size - 1;
     if (piece_end >= BytesPerLong) {  // Too far! Can't fit in an 8-byte load, fast path will not be taken
