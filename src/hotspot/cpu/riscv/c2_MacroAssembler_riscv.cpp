@@ -576,10 +576,10 @@ void C2_MacroAssembler::string_indexof_char(Register str1, Register cnt1,
 
   bind(CH1_LOOP);
   ld(ch1, Address(str1));
-  addi(str1, str1, 8);
-  subi(cnt1, cnt1, 8);
   compute_match_mask(ch1, ch, match_mask, mask1, mask2);
   bnez(match_mask, HIT);
+  addi(str1, str1, 8);
+  subi(cnt1, cnt1, 8);
   bge(cnt1, loop_step, CH1_LOOP);
 
   beqz(cnt1, DONE);
@@ -604,7 +604,6 @@ void C2_MacroAssembler::string_indexof_char(Register str1, Register cnt1,
   // count bits of trailing zero chars
   ctzc_bits(trailing_chars, match_mask, isL, mask1, mask2);
   srli(trailing_chars, trailing_chars, 3);
-  addi(cnt1, cnt1, 8);
 
   // match case
   if (!isL) {
