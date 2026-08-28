@@ -165,7 +165,7 @@ final class ConnectionPool {
         HttpConnection acquiredConnection;
         stateLock.lock();
         try {
-            purgedConnections = purgeExpiredConnections(timeSource.instant(), null);
+            purgedConnections = purgeExpiredConnections(timeSource.instant());
             acquiredConnection = getConnection0(secure, addr, proxy);
         } finally {
             stateLock.unlock();
@@ -313,36 +313,34 @@ final class ConnectionPool {
 
     // Used for whitebox testing
     long purgeExpiredConnectionsAndReturnNextDeadline(Deadline now) {
-        long[] nextPurge = {0};
+        long nextPurge = 0;
 
         // We may be in the process of adding new elements
         // to the expiry list - but those elements will not
         // have outlast their keep alive timer yet since we're
         // just adding them.
-        if (!expiryList.purgeMaybeRequired()) return nextPurge[0];
+        if (!expiryList.purgeMaybeRequired()) return nextPurge;
 
         List<HttpConnection> closelist;
         stateLock.lock();
         try {
-            closelist = purgeExpiredConnections(now, nextPurge);
+            closelist = purgeExpiredConnections(now);
+            nextPurge = now.until(
+                    expiryList.nextExpiryDeadline().orElse(now),
+                    ChronoUnit.MILLIS);
         } finally {
             stateLock.unlock();
         }
         closelist.forEach(this::close);
-        return nextPurge[0];
+        return nextPurge;
     }
 
-    private List<HttpConnection> purgeExpiredConnections(Deadline now, long[] nextPurgeInstant) {
+    private List<HttpConnection> purgeExpiredConnections(Deadline now) {
         assert stateLock.isHeldByCurrentThread();
         var closelist = expiryList.purgeUntil(now);
         for (HttpConnection c : closelist) {
             var wasPresent = removeFromPool(c, c instanceof PlainHttpConnection ? plainPool : sslPool);
             assert wasPresent;
-        }
-        if (nextPurgeInstant != null) {
-            nextPurgeInstant[0] = now.until(
-                    expiryList.nextExpiryDeadline().orElse(now),
-                    ChronoUnit.MILLIS);
         }
         return closelist;
     }
