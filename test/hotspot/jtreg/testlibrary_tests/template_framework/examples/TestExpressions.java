@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8359412 8370922 8369699 8390782
+ * @bug 8359412 8370922 8369699
  * @key randomness
  * @summary Demonstrate the use of Expressions from the Template Library.
  * @modules java.base/jdk.internal.misc
