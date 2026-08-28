@@ -223,18 +223,35 @@ class Http2Connection implements Closeable {
          */
         @Override
         public void handle() {
-            // first check if the connection is still idle.
-            // must be done with the "stateLock" held, to allow for synchronizing actions like
-            // closing the connection and checking out from connection pool (which too is expected
-            // to use this same lock)
             stateLock.lock();
             try {
-                if (cancelled) {
+
+                // Are we still the effective idle timeout handler? If not, we're done.
+                if (idleConnectionTimeoutEvent != this) {
                     if (debug.on()) {
-                        debug.log("Idle timeout event already cancelled, not initiating idle connection close");
+                        debug.log("Idle timeout event is found obsolete, skipping it");
                     }
                     return;
                 }
+
+                if (cancelled) {
+                    if (debug.on()) {
+                        debug.log("Idle timeout event is found cancelled, skipping it");
+                    }
+                    return;
+                }
+
+                if (!isIdle()) {
+                    if (debug.on()) {
+                        debug.log("Idle timeout event found the connection in-use, skipping the event");
+                    }
+                    // When the active/reserved stream later closes, it won't
+                    // arm a new idle timer upon seeing this one, which is
+                    // already fired. Hence, detach this event.
+                    idleConnectionTimeoutEvent = null;
+                    return;
+                }
+
                 // the connection has been idle long enough, we now
                 // mark a state indicating that the connection is chosen
                 // for idle termination and should not be handed out (from the pool)
@@ -654,10 +671,17 @@ class Http2Connection implements Closeable {
     final boolean shouldClose() {
         stateLock.lock();
         try {
-            return finalStream() && streams.isEmpty() && numReservedClientStreams == 0;
+            return finalStream() && isIdle();
         } finally {
             stateLock.unlock();
         }
+    }
+
+    private boolean isIdle() {
+        assert stateLock.isHeldByCurrentThread();
+        return streams.isEmpty() &&
+                numReservedServerStreams == 0 &&
+                numReservedClientStreams == 0;
     }
 
     /**
@@ -1558,7 +1582,7 @@ class Http2Connection implements Closeable {
             // the timeout.
             var timedOut = idleConnectionTimeoutEvent != null &&
                     !idleConnectionTimeoutEvent.deadline().isAfter(TimeSource.now());
-            if (timedOut) {
+            if (timedOut && isIdle()) {
                 setFinalStream();
                 return false;
             }
