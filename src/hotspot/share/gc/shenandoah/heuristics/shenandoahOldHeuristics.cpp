@@ -321,7 +321,7 @@ bool ShenandoahOldHeuristics::finalize_mixed_evacs() {
   }
   decrease_unprocessed_old_collection_candidates_live_memory(_evacuated_old_bytes);
   if (_included_old_regions > 0) {
-    log_info(gc)("Old-gen mixed evac (%zu regions, evacuating %zu%s, reclaiming: %zu%s)",
+    log_info(gc, ergo)("Old-gen mixed evac (%zu regions, evacuating %zu%s, reclaiming: %zu%s)",
                  _included_old_regions,
                  byte_size_in_proper_unit(_evacuated_old_bytes), proper_unit_for_byte_size(_evacuated_old_bytes),
                  byte_size_in_proper_unit(_collected_old_bytes), proper_unit_for_byte_size(_collected_old_bytes));
@@ -339,10 +339,10 @@ bool ShenandoahOldHeuristics::finalize_mixed_evacs() {
     // if they are all pinned we transition to a state that will allow us to make these uncollected
     // (pinned) regions parsable.
     if (all_candidates_are_pinned()) {
-      log_info(gc)("All candidate regions " UINT32_FORMAT " are pinned", unprocessed_old_collection_candidates());
+      log_info(gc, ergo)("All candidate regions " UINT32_FORMAT " are pinned", unprocessed_old_collection_candidates());
       _old_generation->abandon_mixed_evacuations();
     } else {
-      log_info(gc)("No regions selected for mixed collection. "
+      log_info(gc, ergo)("No regions selected for mixed collection. "
                    "Old evacuation budget: " PROPERFMT ", Next candidate: " UINT32_FORMAT ", Last candidate: " UINT32_FORMAT,
                    PROPERFMTARGS(_old_evacuation_reserve),
                    _next_old_collection_candidate, _last_old_collection_candidate);
@@ -382,7 +382,7 @@ bool ShenandoahOldHeuristics::top_off_collection_set(ShenandoahCollectionSet* co
       regions_for_old_expansion = 0;
     }
     if (regions_for_old_expansion > 0) {
-      log_info(gc)("Augmenting old-gen evacuation budget from unexpended young-generation reserve by %zu regions",
+      log_info(gc, ergo)("Augmenting old-gen evacuation budget from unexpended young-generation reserve by %zu regions",
                    regions_for_old_expansion);
       add_regions_to_old = regions_for_old_expansion;
       size_t budget_supplement = region_size_bytes * regions_for_old_expansion;
@@ -844,7 +844,7 @@ void ShenandoahOldHeuristics::adjust_old_garbage_threshold() {
       } else {
         _old_garbage_threshold = ShenandoahOldGarbageThreshold - adjustment_potential / 3;
       }
-      log_info(gc)("Adjusting old garbage threshold to %lu because Old Generation used regions represents %lu%% of heap",
+      log_info(gc, ergo)("Adjusting old garbage threshold to %lu because Old Generation used regions represents %lu%% of heap",
                    _old_garbage_threshold, percent_used);
     }
   }

@@ -370,6 +370,10 @@ public:
     return _index;
   }
 
+  static bool is_in_same_region(const void* p, oop obj) {
+    return (((uintptr_t) p ^ cast_from_oop<uintptr_t>(obj)) >> region_size_bytes_shift()) == 0;
+  }
+
   inline void save_top_before_promote();
   inline HeapWord* get_top_before_promote() const { return _top_before_promoted; }
 
@@ -514,6 +518,7 @@ public:
   }
 
   void reset_age() {
+    assert(get_top_before_promote() == nullptr, "Cannot reset age on region (%zu) scheduled for promotion", index());
     CENSUS_NOISE(_youth += _age;)
     _age = 0;
   }

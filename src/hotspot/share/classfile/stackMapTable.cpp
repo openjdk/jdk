@@ -278,6 +278,13 @@ StackMapFrame* StackMapReader::next_helper(bool& parsed_early_larval, TRAPS) {
   u1 frame_type = _stream->get_u1(CHECK_NULL);
 
   if (frame_type == EARLY_LARVAL) {
+    // early_larval frames are only supported in classes that support strict fields (preview classes)
+    if (!Verifier::supports_strict_fields(_verifier->current_class())) {
+       // reserved frame types when preview classes are disabled
+      _stream->stackmap_format_error(
+         "reserved frame type", CHECK_VERIFY_(_verifier, nullptr));
+    }
+
     if (parsed_early_larval) {
       _prev_frame->verifier()->verify_error(
         ErrorContext::bad_strict_fields(_prev_frame->offset(), _prev_frame),
