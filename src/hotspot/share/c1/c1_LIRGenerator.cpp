@@ -1558,7 +1558,12 @@ void LIRGenerator::do_CompareAndSwap(Intrinsic* x, ValueType* type) {
 // Returns an int/long value with the null marker bit set.
 static LIR_Opr null_marker_mask(BasicType bt, int nm_offset) {
   assert(nm_offset >= 0, "field does not have null marker");
-  jlong null_marker = 1ULL << (nm_offset << LogBitsPerByte);
+#ifdef VM_LITTLE_ENDIAN
+  int bit_pos = nm_offset << LogBitsPerByte;
+#else
+  int bit_pos = (type2aelembytes(bt) - nm_offset - 1) << LogBitsPerByte;
+#endif
+  jlong null_marker = 1ULL << bit_pos;
   return (bt == T_LONG) ? LIR_OprFact::longConst(null_marker) : LIR_OprFact::intConst(null_marker);
 }
 
