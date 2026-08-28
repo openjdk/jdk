@@ -73,11 +73,12 @@ class G1CSetCandidateGroup : public CHeapObj<mtGCCardSet>{
 
   size_t _reclaimable_bytes;
   double _gc_efficiency;
+  // The _group_id identifies a candidate group in logging and in the
+  // FromCardCache. A group id must be assigned to at most one cset group
+  // at any time.
   uint _group_id;
 
 public:
-  // The group id identifies a candidate group in logging and in the
-  // FromCardCache.
   static constexpr uint NoGroupId = 0;
   static constexpr uint YoungId = NoGroupId + 1;
   static constexpr uint FirstNonYoungId = YoungId + 1;
@@ -149,8 +150,8 @@ public:
   G1CSetCandidateGroupList();
   void append(G1CSetCandidateGroup* group);
 
-  // Delete all groups from the list. The cardset cleanup for regions within the
-  // groups could have been done elsewhere (e.g. when adding groups to the
+  // Delete all groups from the list. The card set cleanup for regions within
+  // the groups could have been done elsewhere (e.g. when adding groups to the
   // collection set or to retained regions). The uninstall_cset_group is set to
   // true if cleanup needs to happen as we clear the groups from the list.
   void clear(bool uninstall_cset_group = false);

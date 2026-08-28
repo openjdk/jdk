@@ -368,7 +368,7 @@ private:
   static const uint8_t FirstStartBits           = 0x7f;
 
   // Check that we have enough bits to store the largest possible offset into a card for an object start.
-  STATIC_ASSERT((MaxCardSizeInBytes / HeapWordSize) - 1 <= FirstStartBits);
+  STATIC_ASSERT((MaxGCCardSizeInBytes / HeapWordSize) - 1 <= FirstStartBits);
 
   crossing_info* _object_starts;
 
