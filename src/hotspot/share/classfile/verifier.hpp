@@ -40,6 +40,21 @@ struct NameAndSig {
   NameAndSig(Symbol* n, Symbol* s) : _name(n), _signature(s) {}
 };
 
+inline unsigned int nameandsig_hash(NameAndSig const& field) {
+  Symbol* name = field._name;
+  return (unsigned int) name->identity_hash();
+}
+
+inline bool nameandsig_equals(NameAndSig const& f1, NameAndSig const& f2) {
+  return f1._name == f2._name &&
+          f1._signature == f2._signature;
+}
+
+// List of unset strict fields. The boolean value is a dummy so this acts as a set
+typedef HashTable<NameAndSig, bool, 17,
+                  AnyObj::RESOURCE_AREA, mtInternal,
+                  nameandsig_hash, nameandsig_equals> AssertUnsetFieldTable;
+
 // The verifier class
 class Verifier : AllStatic {
  public:
@@ -349,7 +364,7 @@ class ClassVerifier : public StackObj {
 
   void verify_field_instructions(
     RawBytecodeStream* bcs, StackMapFrame* current_frame,
-    const constantPoolHandle& cp, bool allow_arrays, TRAPS);
+    const constantPoolHandle& cp, bool allow_arrays, AssertUnsetFieldTable* initial_strict_fields, TRAPS);
 
   void verify_invoke_init(
     RawBytecodeStream* bcs, u2 ref_index, VerificationType ref_class_type,

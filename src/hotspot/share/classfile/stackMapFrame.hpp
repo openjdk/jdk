@@ -41,21 +41,6 @@ enum {
 };
 
 class StackMapFrame : public ResourceObj {
- public:
-  static unsigned int nameandsig_hash(NameAndSig const& field) {
-    Symbol* name = field._name;
-    return (unsigned int) name->identity_hash();
-  }
-
-  static inline bool nameandsig_equals(NameAndSig const& f1, NameAndSig const& f2) {
-    return f1._name == f2._name &&
-           f1._signature == f2._signature;
-  }
-
-  // Maps a strict field's name and signature to whether or not it was initialized
-  typedef HashTable<NameAndSig, bool, 17,
-                    AnyObj::RESOURCE_AREA, mtInternal,
-                    nameandsig_hash, nameandsig_equals> AssertUnsetFieldTable;
  private:
   int32_t _offset;
 
@@ -189,18 +174,17 @@ class StackMapFrame : public ResourceObj {
   }
 
   // Called when verifying putfields to mark strict instance fields as satisfied
-  bool satisfy_unset_field(Symbol* name, Symbol* signature) {
+  bool satisfy_unset_field(Symbol* name, Symbol* signature, AssertUnsetFieldTable* initial_strict_fields) {
     if (_assert_unset_fields == nullptr) {
       return true;
     }
 
-    NameAndSig dummy_field(name, signature);
-
-    if (_assert_unset_fields->contains(dummy_field)) {
-      _assert_unset_fields->put(dummy_field, true);
-      return true;
+    NameAndSig field(name, signature);
+    if (!initial_strict_fields->contains(field)) {
+      return false;
     }
-    return false;
+    _assert_unset_fields->remove(field);
+    return true;
   }
 
   // Verify that all strict fields have been initialized
@@ -208,32 +192,10 @@ class StackMapFrame : public ResourceObj {
   bool verify_unset_fields_satisfied() const {
     // A frame without uninitializedThis or otherwise without any strict fields
     // will have a null unset field table.
-    if (_assert_unset_fields == nullptr) {
+    if (_assert_unset_fields == nullptr || _assert_unset_fields->number_of_entries() == 0) {
       return true;
     }
-
-    bool all_satisfied = true;
-    auto check_satisfied = [&] (const NameAndSig& key, const bool& value) {
-      all_satisfied &= value;
-    };
-    _assert_unset_fields->iterate_all(check_satisfied);
-    return all_satisfied;
-  }
-
-  // Merge incoming unset strict fields from StackMapTable with
-  // initial strict instance fields
-  static AssertUnsetFieldTable* merge_unset_fields(AssertUnsetFieldTable* initial_fields, AssertUnsetFieldTable* new_fields) {
-    if (initial_fields == nullptr) {
-      return new_fields;
-    }
-
-    auto merge_satisfied = [&] (const NameAndSig& key, const bool& value) {
-      if (!new_fields->contains(key)) {
-        new_fields->put(key, true);
-      }
-    };
-    initial_fields->iterate_all(merge_satisfied);
-    return new_fields;
+    return false;
   }
 
   // Verify that strict fields are compatible between the current frame and the successor
@@ -254,12 +216,8 @@ class StackMapFrame : public ResourceObj {
     bool compatible = true;
     auto is_unset = [&] (const NameAndSig& key, const bool& satisfied) {
       // Successor must have same (or more) unsatisfied debts as current frame.
-      if (!satisfied) {
-        bool* target_satisfied = target_table->get(key);
-        guarantee(target_satisfied != nullptr, "Must be present");
-        if (*target_satisfied == true) {
-          compatible = false;
-        }
+      if (!target_table->contains(key)) {
+        compatible = false;
       }
     };
     _assert_unset_fields->iterate_all(is_unset);

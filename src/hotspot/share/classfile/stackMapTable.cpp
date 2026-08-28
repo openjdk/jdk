@@ -167,7 +167,7 @@ StackMapReader::StackMapReader(ClassVerifier* v, StackMapStream* stream,
                                char* code_data, int32_t code_len,
                                StackMapFrame* init_frame,
                                u2 max_locals, u2 max_stack,
-                               StackMapFrame::AssertUnsetFieldTable* initial_strict_fields, TRAPS) :
+                               AssertUnsetFieldTable* initial_strict_fields, TRAPS) :
                                   _verifier(v), _stream(stream), _code_data(code_data),
                                   _code_length(code_len), _parsed_frame_count(0),
                                   _prev_frame(init_frame), _max_locals(max_locals),
@@ -286,7 +286,7 @@ StackMapFrame* StackMapReader::next_helper(bool& parsed_early_larval, TRAPS) {
     }
 
     u2 num_unset_fields = _stream->get_u2(CHECK_NULL);
-    StackMapFrame::AssertUnsetFieldTable* new_fields = new StackMapFrame::AssertUnsetFieldTable();
+    AssertUnsetFieldTable* new_fields = new AssertUnsetFieldTable();
 
     for (u2 i = 0; i < num_unset_fields; i++) {
       u2 index = _stream->get_u2(CHECK_NULL);
@@ -314,7 +314,7 @@ StackMapFrame* StackMapReader::next_helper(bool& parsed_early_larval, TRAPS) {
       }
     }
 
-    _assert_unset_fields_buffer = StackMapFrame::merge_unset_fields(_initial_unset_fields, new_fields);
+    _assert_unset_fields_buffer = new_fields;
 
     // Continue reading frame data
     if (at_end()) {

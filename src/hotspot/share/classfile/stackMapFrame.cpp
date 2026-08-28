@@ -54,35 +54,24 @@ void StackMapFrame::unsatisfied_strict_fields_error(InstanceKlass* klass, int bc
   // obvious fallback value.
   Symbol* name = vmSymbols::unknown_class_name();
   Symbol* sig = vmSymbols::unknown_class_name();
-  int num_uninit_fields = 0;
-
-  auto find_unset = [&] (const NameAndSig& key, const bool& value) {
-    if (!value) {
-      name = key._name;
-      sig = key._signature;
-      num_uninit_fields++;
-    }
-  };
-  assert_unset_fields()->iterate_all(find_unset);
+  int num_uninit_fields = assert_unset_fields()->number_of_entries();
 
   verifier()->verify_error(
     ErrorContext::bad_strict_fields(bci, this),
-    "All strict fields must be initialized before super(): %d field(s), %s:%s in %s",
+    "All strict fields must be initialized before super(): %d field(s) in %s",
     num_uninit_fields,
-    name->as_C_string(),
-    sig->as_C_string(),
     klass->name()->as_C_string()
   );
+  print_strict_fields(assert_unset_fields());
 }
 
 void StackMapFrame::print_strict_fields(AssertUnsetFieldTable* table) {
   ResourceMark rm;
   if (table != nullptr) {
     auto printfields = [&] (const NameAndSig& key, const bool& value) {
-      log_info(verification)("Strict field: %s%s (Satisfied: %s)",
+      log_info(verification)("Strict field: %s%s",
                             key._name->as_C_string(),
-                            key._signature->as_C_string(),
-                            value ? "true" : "false");
+                            key._signature->as_C_string());
     };
     table->iterate_all(printfields);
   } else {
@@ -115,11 +104,6 @@ void StackMapFrame::initialize_object(
   if (old_object == VerificationType::uninitialized_this_type()) {
     // "this" has been initialized - reset flags
     _flags = 0;
-
-    // At this point, all unset fields were satisfied or a VerifyError was thrown
-    // earlier. With no uninitializedThis, there should be no unset fields list in
-    // the current frame. Null it out just in case.
-    _assert_unset_fields = nullptr;
   }
 }
 
