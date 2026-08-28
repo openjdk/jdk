@@ -171,6 +171,7 @@ class LinuxPackageBuilderTest {
                 null,
                 List.of(),
                 List.of(),
+                List.of(),
                 ApplicationLayout.build().setAll("").create(),
                 Optional.empty(),
                 List.of(),
