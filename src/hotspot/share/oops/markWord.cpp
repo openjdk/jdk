@@ -48,10 +48,10 @@ void markWord::print_on(outputStream* st) const {
   if (is_inline_type()) {
     st->print(" inline_type");
   }
-  if (has_no_hash()) {
-    st->print(" no_hash");
-  } else {
+  if (has_hash()) {
     st->print(" hash=" INTPTR_FORMAT, hash());
+  } else {
+    st->print(" no_hash");
   }
 #ifdef _LP64 // 64 bit encodings have array information
   // flat or null-free do not imply each other

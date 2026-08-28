@@ -909,7 +909,7 @@ void HeapShared::copy_and_rescan_aot_inited_mirror(InstanceKlass* ik) {
 void HeapShared::copy_java_mirror(oop orig_mirror, oop scratch_m) {
   // We need to retain the identity_hash, because it may have been used by some hashtables
   // in the shared heap.
-  if (!orig_mirror->fast_no_hash_check()) {
+  if (orig_mirror->has_identity_hash()) {
     intptr_t src_hash = orig_mirror->identity_hash();
     if (UseCompactObjectHeaders) {
       narrowKlass nk = CompressedKlassPointers::encode(orig_mirror->klass());
