@@ -2808,7 +2808,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ blr();
 
-    return start;
+     return start;
   }
 
   // Arguments for generated stub:
