@@ -3414,7 +3414,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
         <externallink id="../api/java.base/java/lang/Class.html#isValue()">
         Value classes<sup>PREVIEW</sup></externallink> rely upon strict field
         initialization. This function can not be used to return from a constructor
-        of a value class.
+        of a value class with one or more fields.
       </description>
       <origin>new</origin>
       <capabilities>

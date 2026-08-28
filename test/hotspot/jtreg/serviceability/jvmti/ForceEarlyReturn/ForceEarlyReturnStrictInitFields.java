@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8387648
  * @summary Test ForceEarlyReturnVoid when the target thread's top frame is the class
  *     initializer, constructor or method of a class with strictly-initialized fields.
  * @enablePreview
@@ -339,7 +340,7 @@ class ForceEarlyReturnStrictInitFields {
      * rely upon strict field initialization.
      */
     @Nested
-    class ValueClassConstructor extends ForceEarlyReturnTest {
+    class ValueClassConstructor1 extends ForceEarlyReturnTest {
         value class TestClass {
             private int x;
 
@@ -378,6 +379,45 @@ class ForceEarlyReturnStrictInitFields {
         void testAfterSuper() throws Exception {
             int err = test(() -> new TestClass(this, 2), TestClass.class, "<init>");
             assertEquals(JVMTI_ERROR_OPAQUE_FRAME, err);
+        }
+    }
+
+    /**
+     * Test ForceEarlyReturnVoid when the target thread's top frame is the
+     * constructor of a value class with no instance fields.
+     */
+    @Nested
+    class ValueClassConstructor2 extends ForceEarlyReturnTest {
+        value class TestClass {
+            TestClass(ForceEarlyReturnTest test, int where) {
+                // before super
+                if (where == 1) {
+                    test.ready = true;
+                    while (!test.canContinue) {}
+                }
+
+                super();
+
+                // after super
+                if (where == 2) {
+                    test.ready = true;
+                    while (!test.canContinue) {}
+                }
+            }
+        }
+
+        @Test
+        void testBeforeSuper() throws Exception {
+            // no strict fields
+            int err = test(() -> new TestClass(this, 1), TestClass.class, "<init>");
+            assertEquals(JVMTI_ERROR_NONE, err);
+        }
+
+        @Test
+        void testAfterSuper() throws Exception {
+            // no strict fields
+            int err = test(() -> new TestClass(this, 2), TestClass.class, "<init>");
+            assertEquals(JVMTI_ERROR_NONE, err);
         }
     }
 
@@ -522,11 +562,10 @@ class ForceEarlyReturnStrictInitFields {
             private static int x;
 
             static {
-                // spin here until ForceEarlyReturnVoid executes
+                // before strict field is initialized
                 ready = true;
                 while (!canContinue) {}
 
-                // should not get there
                 x = 100;
                 finished = true;
             }
@@ -581,11 +620,10 @@ class ForceEarlyReturnStrictInitFields {
             static {
                 x = 100;
 
-                // spin here until ForceEarlyReturnVoid executes
+                // after strict field is initialized
                 ready = true;
                 while (!canContinue) {}
 
-                // should not get there
                 finished = true;
             }
         }
