@@ -118,11 +118,13 @@ class IsAvailable {
             // Verify that closing the socket removes the availability
             LOGGER.info("Closing the socket...");
             infra.clientSocket.close();
-            // Closing the peer socket does not guarantee that EOF is immediately observable
-            // on the client side. This test sends no application data, so observing EOF does
-            // not consume data needed by the assertion.
-            assertEquals(-1, infra.readFromHttpClientSocket(),
-                    "Expected EOF after closing the peer socket");
+            // Closing the server socket may not immediately be observable by
+            // the client. Read from the client's _internal_ socket to ensure
+            // that EOF, which is necessary for the `HttpClient::available`
+            // verification, has arrived.
+            assertEquals(
+                    -1, infra.readFromHttpClientSocket(),
+                    "Expected EOF after closing the server socket");
             LOGGER.info("Checking the connection (#2)...");
             assertFalse(infra.available(), "Connection over closed socket should not be available");
             assertEquals(readTimeout, infra.httpClient.getReadTimeout(), "Read-timeout should be restored");
@@ -148,10 +150,13 @@ class IsAvailable {
                 clientSocketOutputStream.write("unexpected data".getBytes(US_ASCII));
             }
 
-            // The raw read consumes one byte; the payload must leave data for the
-            // `HttpClient::available` probe below.
-            assertTrue(infra.readFromHttpClientSocket() >= 0,
-                    "Expected unexpected data on the client socket");
+            // Writing to the server socket may not immediately be observable
+            // by the client. Read from the client's _internal_ socket to ensure
+            // that the data, which is necessary for the `HttpClient::available`
+            // verification, has arrived.
+            assertTrue(
+                    infra.readFromHttpClientSocket() >= 0,
+                    "Unexpected data should have arrived to the client socket");
 
             // Verify that the presence of stale data on the socket removes the availability
             LOGGER.info("Checking the connection (#2)...");
