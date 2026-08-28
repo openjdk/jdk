@@ -2139,7 +2139,7 @@ void MacroAssembler::profile_receiver_type_helper(Register recv, Register mdp, L
 #ifdef ASSERT
   // We are about to walk the MDO slots without asking for offsets.
   // Check that our math hits all the right spots.
-  for (uint c = 0; c < ReceiverTypeData::row_limit(); c++) {
+  for (uint c = 0; c < row_limit; c++) {
     int real_recv_offset  = mdp_offset + in_bytes(MegamorphicTypeData::receiver_offset(base, c));
     int real_count_offset = mdp_offset + in_bytes(MegamorphicTypeData::receiver_count_offset(base, c));
     int offset = base_receiver_offset + receiver_step*c;
