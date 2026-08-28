@@ -286,7 +286,6 @@ static void check_object_context() {
 }
 
 ObjectMonitor::ObjectMonitor(oop object) :
-  _metadata(0),
   _object(_oop_storage, object),
   _owner(NO_OWNER),
   _previous_owner_tid(0),
@@ -2586,12 +2585,11 @@ void ObjectMonitor::print() const { print_on(tty); }
 // Print the ObjectMonitor like a debugger would:
 //
 // (ObjectMonitor) 0x00007fdfb6012e40 = {
-//   _metadata = 0x0000000000000001
 //   _object = 0x000000070ff45fd0
 //   _pad_buf0 = {
 //     [0] = '\0'
 //     ...
-//     [43] = '\0'
+//     [55] = '\0'
 //   }
 //   _owner = 0x0000000000000000
 //   _previous_owner_tid = 0
@@ -2614,7 +2612,6 @@ void ObjectMonitor::print() const { print_on(tty); }
 //
 void ObjectMonitor::print_debug_style_on(outputStream* st) const {
   st->print_cr("(ObjectMonitor*) " INTPTR_FORMAT " = {", p2i(this));
-  st->print_cr("  _metadata = " INTPTR_FORMAT, _metadata);
   st->print_cr("  _object = " INTPTR_FORMAT, p2i(object_peek()));
   st->print_cr("  _pad_buf0 = {");
   st->print_cr("    [0] = '\\0'");

@@ -568,6 +568,7 @@ ObjectMonitor* ObjectMonitorTable::monitor_put_get(ObjectMonitor* monitor, oop o
   const intptr_t hash = obj->mark().hash();
   Table* curr =  _curr.load_acquire();
 
+  assert(hash != 0, "must be");
   for (;;) {
     // Curr is the latest table and is reasonably loaded.
     ObjectMonitor* result = curr->get_set(obj, curr->as_entry(monitor), hash);
