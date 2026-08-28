@@ -47,10 +47,8 @@ bool BufferedOverflowTaskQueue<E, MT, N>::pop(E &t) {
     // If we have overflow, try to maintain reasonable queue population for
     // other workers to steal, while leaving enough space for local pushes.
     E tmp;
-    constexpr int frac = 2;
-    uint size = taskqueue_t::size();
-    uint fill = (N/frac > size) ? (N/frac - size) : 0;
-    for (uint i = 0; i < fill && taskqueue_t::pop_overflow(tmp); i++) {
+    assert(taskqueue_t::size() == 0, "Local queue is empty");
+    for (uint i = 0; (i < N/2) && taskqueue_t::pop_overflow(tmp); i++) {
       bool pushed = taskqueue_t::try_push_to_taskqueue(tmp);
       assert(pushed, "Should always succeed pushing");
     }
