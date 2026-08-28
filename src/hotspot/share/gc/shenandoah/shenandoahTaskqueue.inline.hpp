@@ -44,18 +44,24 @@ bool BufferedOverflowTaskQueue<E, MT, N>::pop(E &t) {
   }
 
   if (taskqueue_t::pop_overflow(t)) {
-    // If we have overflow, try to maintain reasonable queue population for
-    // other workers to steal, while leaving enough space for local pushes.
-    E tmp;
-    assert(taskqueue_t::size() == 0, "Local queue is empty");
-    for (uint i = 0; (i < N/2) && taskqueue_t::pop_overflow(tmp); i++) {
-      bool pushed = taskqueue_t::try_push_to_taskqueue(tmp);
-      assert(pushed, "Should always succeed pushing");
-    }
+    pop_more_overflow();
     return true;
   }
 
   return false;
+}
+
+template <class E, MemTag MT, unsigned int N>
+void BufferedOverflowTaskQueue<E, MT, N>::pop_more_overflow() {
+  // If we have overflow, try to maintain reasonable queue population for
+  // other workers to steal, while leaving enough space for local pushes.
+  // Outlined from pop fastpath to improve inlining.
+  E tmp;
+  assert(taskqueue_t::size() == 0, "Local queue is empty");
+  for (uint i = 0; (i < N/2) && taskqueue_t::pop_overflow(tmp); i++) {
+    bool pushed = taskqueue_t::try_push_to_taskqueue(tmp);
+    assert(pushed, "Should always succeed pushing");
+  }
 }
 
 template <class E, MemTag MT, unsigned int N>
