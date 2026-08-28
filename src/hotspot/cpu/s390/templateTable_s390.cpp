@@ -868,7 +868,7 @@ void TemplateTable::aaload() {
   __ profile_array_type<ArrayLoadData>(/*array=*/Z_tmp_1, Z_tmp_2, Z_ARG2);
 
   if (UseArrayFlattening) {
-    Label is_flat_array, done;
+    NearLabel is_flat_array, done;
 
     __ test_flat_array_oop(Z_tmp_1, Z_tmp_2, is_flat_array);
     // Non-flat path: normal oop load.
