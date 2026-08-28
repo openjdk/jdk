@@ -152,22 +152,16 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
 
   if (immediate_percent <= ShenandoahImmediateThreshold) {
     choose_collection_set_from_regiondata(collection_set, candidates, cand_idx, immediate_garbage + free);
-  } else if (heap->mode()->is_generational()) {
-    adjust_reserves_for_abbreviated(heap);
+  } else {
+    prepare_for_abbreviated_cycle();
   }
+
   collection_set->summarize(total_garbage, immediate_garbage, immediate_regions);
   ShenandoahTracer::report_evacuation_info(collection_set, free_regions, immediate_regions, immediate_garbage);
 }
 
 void ShenandoahHeuristics::start_idle_span() {
   // do nothing
-}
-
-void ShenandoahHeuristics::adjust_reserves_for_abbreviated(ShenandoahHeap* heap) {
-  // We are not going to evacuate because this is an abbreviated cycle.  Reset the reserves.
-  heap->young_generation()->set_evacuation_reserve(0UL);
-  heap->old_generation()->set_evacuation_reserve(0UL);
-  heap->old_generation()->set_promoted_reserve(0UL);
 }
 
 void ShenandoahHeuristics::record_degenerated_cycle_start(bool out_of_cycle) {

@@ -345,6 +345,7 @@ void G1CollectionSetCandidates::add_retained_region_unsorted(G1HeapRegion* r) {
 
   G1CSetCandidateGroup* gr = new G1CSetCandidateGroup();
   gr->add(r);
+  gr->calculate_efficiency();
 
   _retained_groups.append(gr);
 }
