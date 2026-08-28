@@ -117,10 +117,7 @@ public class StreamDecoder extends Reader {
     }
 
     public int read() throws IOException {
-        synchronized (lock) {
-            readCalled = true;
-            return read0();
-        }
+        return read0();
     }
 
     @SuppressWarnings("fallthrough")
@@ -313,8 +310,6 @@ public class StreamDecoder extends Reader {
     }
 
     int implRead(char[] cbuf, int off, int end) throws IOException {
-        readCalled = true;
-
         // In order to handle surrogate pairs, this method requires that
         // the invoker attempt to read at least two characters.  Saving the
         // extra character, if any, at a higher level is easier than trying
