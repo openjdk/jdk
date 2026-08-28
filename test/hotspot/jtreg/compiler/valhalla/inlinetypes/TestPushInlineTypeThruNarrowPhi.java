@@ -40,7 +40,7 @@ public class TestPushInlineTypeThruNarrowPhi {
     }
 
     static MyValue1 fieldV1 = new MyValue1(42);
-    
+
     public static void main(String[] args) {
         for (int i = 0; i < 20_000; i++) {
             test1(true);
