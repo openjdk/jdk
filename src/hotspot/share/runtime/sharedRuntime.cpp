@@ -4220,7 +4220,7 @@ JRT_END
 // pending, when _suspend_flags is non-zero or when we need to process a stack
 // watermark. Also check for pending async exceptions (except unsafe access error).
 JRT_ENTRY(void, SharedRuntime::check_special_condition_for_native_trans(JavaThread *current))
-  assert(!thread->has_last_Java_frame() || thread->frame_anchor()->walkable(), "Unwalkable stack in native->Java transition");
+  assert(!current->has_last_Java_frame() || current->frame_anchor()->walkable(), "Unwalkable stack in native->Java transition");
 
   // After returning from native, it could be that the stack frames are not
   // yet safe to use. We catch such situations in the subsequent stack watermark
