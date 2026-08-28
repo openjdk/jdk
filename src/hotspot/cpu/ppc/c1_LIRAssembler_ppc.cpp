@@ -2250,7 +2250,7 @@ void LIR_Assembler::emit_alloc_obj(LIR_OpAllocObj* op) {
 
 void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
   LP64_ONLY( __ extsw(op->len()->as_register(), op->len()->as_register()); )
-  if (UseSlowPath ||
+  if (UseSlowPath || op->always_slow_path() ||
       (!UseFastNewObjectArray && (is_reference_type(op->type()))) ||
       (!UseFastNewTypeArray   && (!is_reference_type(op->type())))) {
     __ b(*op->stub()->entry());
@@ -3180,13 +3180,9 @@ void LIR_Assembler::emit_opSubstitutabilityCheck(LIR_OpSubstitutabilityCheck* op
   } else {
     Register tmp1 = op->tmp1()->as_register();
     Register tmp2 = op->tmp2()->as_register();
-    if (left == right) { // same operand, so clearly the same klasses, let's save the check
-      __ b(*op->stub()->entry());  //  -> do slow check
-    } else {
-      __ cmp_klasses_from_objects(CR0, left, right, tmp1, tmp2);
-      __ bc_far_optimized(Assembler::bcondCRbiIs1, __ bi0(CR0, Assembler::equal),
-                          *op->stub()->entry()); // same klass -> do slow check
-    }
+    __ cmp_klasses_from_objects(CR0, left, right, tmp1, tmp2);
+    __ bc_far_optimized(Assembler::bcondCRbiIs1, __ bi0(CR0, Assembler::equal),
+                        *op->stub()->entry()); // same klass -> do slow check
     // fall through to L_oops_not_equal
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,33 +88,33 @@ public class hc001 extends JdbTest {
     private String runPrologue() {
         String[] reply = null;
 
-        log.println("\n### Debugger: runPrologue");
+        log.display("\n### Debugger: runPrologue");
 
         // uncomment this line to enable verbose output from jdb
         // log.enableVerbose(true);
 
         // run jdb command "stop in"
         jdb.setBreakpointInMethod(EMPTY_METHOD_NAME);
-        log.println("\nDebugger: breakpoint is set at:\n\t" + EMPTY_METHOD_NAME);
+        log.display("\nDebugger: breakpoint is set at:\n\t" + EMPTY_METHOD_NAME);
 
         // run jdb command "cont"
         reply = jdb.receiveReplyFor(JdbCommand.cont);
         if (!jdb.isAtBreakpoint(reply, EMPTY_METHOD_NAME)) {
             throwFailure("Debugger: Missed breakpoint at:\n\t" + EMPTY_METHOD_NAME);
         }
-        log.println("\nDebugger: breakpoint is hit at:\n\t" + EMPTY_METHOD_NAME);
+        log.display("\nDebugger: breakpoint is hit at:\n\t" + EMPTY_METHOD_NAME);
 
         // run jdb command "eval" for hidden class field HC_NAME_FIELD
         reply = jdb.receiveReplyFor(JdbCommand.eval + HC_NAME_FIELD);
         int beg = reply[0].indexOf('"') + 1;
         int end = reply[0].lastIndexOf('"');
         if (end == -1 || beg > end) {
-            log.println("\nDebugger: the jdb command:\n\t" + JdbCommand.eval + HC_NAME_FIELD);
-            log.println("\treturned bad reply:\n\t" + reply[0]);
+            log.display("\nDebugger: the jdb command:\n\t" + JdbCommand.eval + HC_NAME_FIELD);
+            log.display("\treturned bad reply:\n\t" + reply[0]);
             throwFailure("Debugger: failed to evaluate debuggee field:\n\t" + HC_NAME_FIELD);
         }
         String hiddenClassName = reply[0].substring(beg, end); // we know the hidden class name now
-        log.println("\nDebugger: jdb command eval returned hidden class name:\n\t" + hiddenClassName);
+        log.display("\nDebugger: jdb command eval returned hidden class name:\n\t" + hiddenClassName);
 
         return hiddenClassName;
     }
@@ -123,21 +123,21 @@ public class hc001 extends JdbTest {
     private void testClassCommands(String hcName) {
         String[] reply = null;
 
-        log.println("\n### Debugger: testClassCommands");
+        log.display("\n### Debugger: testClassCommands");
 
         // run jdb command "classes"
         reply = jdb.receiveReplyFor(JdbCommand.classes);
         if (!checkPattern(reply, hcName)) {
             throwFailure("Debugger: expected jdb command classes to list hidden class:\n\t" + hcName);
         }
-        log.println("\nDebugger: found matched class in jdb command classes reply:\n\t" + hcName);
+        log.display("\nDebugger: found matched class in jdb command classes reply:\n\t" + hcName);
 
         // run jdb command "class" for hidden class
         reply = jdb.receiveReplyFor(JdbCommand._class + hcName);
         if (!checkPattern(reply, hcName)) {
             throwFailure("Debugger: expected hiddenclass name in jdb command class reply: " + hcName);
         }
-        log.println("\nDebugger: found matched class in jdb command class reply:\n\t" + hcName);
+        log.display("\nDebugger: found matched class in jdb command class reply:\n\t" + hcName);
     }
 
     /* Transition the debuggee's execution to the hidden class method start. */
@@ -145,22 +145,22 @@ public class hc001 extends JdbTest {
         String hcMethodName = hcName + "." + HC_METHOD_NAME;
         String[] reply = null;
 
-        log.println("\n### Debugger: stopInHiddenClassMethod");
+        log.display("\n### Debugger: stopInHiddenClassMethod");
 
         // set a breakpoint in hidden class method hcMethodName()
         jdb.setBreakpointInMethod(hcMethodName);
-        log.println("\nDebugger: breakpoint is set at:\n\t" + hcMethodName);
+        log.display("\nDebugger: breakpoint is set at:\n\t" + hcMethodName);
 
         // run jdb command "clear": should list breakpoint in hcMethodName
         reply = jdb.receiveReplyFor(JdbCommand.clear);
         if (!checkPattern(reply, hcMethodName)) {
             throwFailure("Debugger: expected jdb clear command to list breakpoint: " + hcMethodName);
         }
-        log.println("\nDebugger: jdb command clear lists breakpoint at:\n\t" + hcMethodName);
+        log.display("\nDebugger: jdb command clear lists breakpoint at:\n\t" + hcMethodName);
 
         // run jdb command "cont"
         jdb.receiveReplyFor(JdbCommand.cont);
-        log.println("\nDebugger: executed jdb command cont");
+        log.display("\nDebugger: executed jdb command cont");
     }
 
     /* Test the jdb commands "up" and "where" for hidden class. */
@@ -168,25 +168,25 @@ public class hc001 extends JdbTest {
         String hcMethodName = hcName + "." + HC_METHOD_NAME;
         String[] reply = null;
 
-        log.println("\n### Debugger: testUpWhereCommands");
+        log.display("\n### Debugger: testUpWhereCommands");
 
         // run jdb command "where": should list hcMethodName frame
         reply = jdb.receiveReplyFor(JdbCommand.where);
         if (!checkPattern(reply, hcMethodName)) {
             throwFailure("Debugger: jdb command where does not show expected frame: " + hcMethodName);
         }
-        log.println("\nDebugger: jdb command where showed expected frame:\n\t" + hcMethodName);
+        log.display("\nDebugger: jdb command where showed expected frame:\n\t" + hcMethodName);
 
         // run jdb command "up"
         jdb.receiveReplyFor(JdbCommand.up);
-        log.println("\nDebugger: executed jdb command up");
+        log.display("\nDebugger: executed jdb command up");
 
         // run jdb command "where": should not list hcMethodName frame
         reply = jdb.receiveReplyFor(JdbCommand.where);
         if (checkPattern(reply, hcMethodName)) {
             throwFailure("Debugger: jdb command where showed unexpected frame: " + hcMethodName);
         }
-        log.println("\nDebugger: jdb command where does not show unexpected frame:\n\t" + hcMethodName);
+        log.display("\nDebugger: jdb command where does not show unexpected frame:\n\t" + hcMethodName);
     }
 
     /* Test the jdb commands "down" and "where" for hidden class. */
@@ -194,39 +194,39 @@ public class hc001 extends JdbTest {
         String hcMethodName = hcName + "." + HC_METHOD_NAME;
         String[] reply = null;
 
-        log.println("\n### Debugger: testDownWhereCommands");
+        log.display("\n### Debugger: testDownWhereCommands");
 
         // run jdb command "down"
         jdb.receiveReplyFor(JdbCommand.down);
-        log.println("\nDebugger: executed jdb command down");
+        log.display("\nDebugger: executed jdb command down");
 
         // run jdb command "where": should list hcMethodName frame again
         reply = jdb.receiveReplyFor(JdbCommand.where);
         if (!checkPattern(reply, hcMethodName)) {
             throwFailure("Debugger: jdb command where does not show expected frame: " + hcMethodName);
         }
-        log.println("\nDebugger: jdb command where showed expected frame:\n\t" + hcMethodName);
+        log.display("\nDebugger: jdb command where showed expected frame:\n\t" + hcMethodName);
     }
 
     /* Test the jdb commands "fields" and "methods" for hidden class. */
     private void testFieldsMethods(String hcName) {
         String[] reply = null;
 
-        log.println("\n### Debugger: testFieldsMethods");
+        log.display("\n### Debugger: testFieldsMethods");
 
         // run jdb command "methods" for hidden class
         reply = jdb.receiveReplyFor(JdbCommand.methods + hcName);
         if (!checkPattern(reply, hcName)) {
             throwFailure("Debugger: no expected hidden class name in its methods: " + hcName);
         }
-        log.println("\nDebugger: jdb command \"methods\" showed expected method:\n\t" + HC_METHOD_NAME);
+        log.display("\nDebugger: jdb command \"methods\" showed expected method:\n\t" + HC_METHOD_NAME);
 
         // run jdb command "fields" for hidden class
         reply = jdb.receiveReplyFor(JdbCommand.fields + hcName);
         if (!checkPattern(reply, HC_FIELD_NAME)) {
             throwFailure("Debugger: no expected hidden class field in its fields: " + HC_FIELD_NAME);
         }
-        log.println("\nDebugger: jdb command \"fields\" showed expected field:\n\t" + HC_FIELD_NAME);
+        log.display("\nDebugger: jdb command \"fields\" showed expected field:\n\t" + HC_FIELD_NAME);
     }
 
     /* Test the jdb commands "watch" and "unwatch" for hidden class. */
@@ -234,14 +234,14 @@ public class hc001 extends JdbTest {
         String hcFieldName = hcName + "." + HC_FIELD_NAME;
         String[] reply = null;
 
-        log.println("\n### Debugger: testWatchCommands");
+        log.display("\n### Debugger: testWatchCommands");
 
         // run jdb command "watch" for hidden class field HC_FIELD_NAME
         reply = jdb.receiveReplyFor(JdbCommand.watch + hcFieldName);
         if (!checkPattern(reply, HC_FIELD_NAME)) {
             throwFailure("Debugger: was not able to set watch point: " + hcFieldName);
         }
-        log.println("\nDebugger: jdb command \"watch\" added expected field to watch:\n\t" + hcFieldName);
+        log.display("\nDebugger: jdb command \"watch\" added expected field to watch:\n\t" + hcFieldName);
 
         // run jdb command "cont"
         jdb.receiveReplyFor(JdbCommand.cont);
@@ -252,7 +252,7 @@ public class hc001 extends JdbTest {
         if (!checkPattern(reply, HC_FIELD_NAME)) {
             throwFailure("Debugger: expect field name in unwatch reply: " + hcFieldName);
         }
-        log.println("\nDebugger: jdb command \"unwatch\" removed expected field from watch:\n\t" + hcFieldName);
+        log.display("\nDebugger: jdb command \"unwatch\" removed expected field from watch:\n\t" + hcFieldName);
     }
 
     /* Test the jdb commands "eval", "print" and "dump" for hidden class. */
@@ -260,28 +260,28 @@ public class hc001 extends JdbTest {
         String hcFieldName = hcName + "." + HC_FIELD_NAME;
         String[] reply = null;
 
-        log.println("\n### Debugger: testEvalCommands");
+        log.display("\n### Debugger: testEvalCommands");
 
         // run jdb command "eval" for hidden class field HC_FIELD_NAME
         reply = jdb.receiveReplyFor(JdbCommand.eval + hcFieldName);
         if (!checkPattern(reply, hcFieldName)) {
             throwFailure("Debugger: expected field name in jdb command eval field reply: " + hcFieldName);
         }
-        log.println("\nDebugger: jdb command \"eval\" showed expected hidden class field name:\n\t" + hcFieldName);
+        log.display("\nDebugger: jdb command \"eval\" showed expected hidden class field name:\n\t" + hcFieldName);
 
         // run jdb command "print" for hidden class field HC_FIELD_NAME
         reply = jdb.receiveReplyFor(JdbCommand.print + hcFieldName);
         if (!checkPattern(reply, hcFieldName)) {
             throwFailure("Debugger: expected field name in jdb command print field reply: " + hcFieldName);
         }
-        log.println("\nDebugger: jdb command \"print\" showed expected hidden class field name:\n\t" + hcFieldName);
+        log.display("\nDebugger: jdb command \"print\" showed expected hidden class field name:\n\t" + hcFieldName);
 
         // execute jdb command "dump" for hidden class field HC_FIELD_NAME
         reply = jdb.receiveReplyFor(JdbCommand.dump + hcFieldName);
         if (!checkPattern(reply, hcFieldName)) {
             throwFailure("Debugger: expected field name in jdb command dump field reply: " + hcFieldName);
         }
-        log.println("\nDebugger: jdb command \"dump\" showed expected hidden class field name:\n\t" + hcFieldName);
+        log.display("\nDebugger: jdb command \"dump\" showed expected hidden class field name:\n\t" + hcFieldName);
     }
 
     /* Test the jdb command "watch" with an invalid class name. */
@@ -295,7 +295,7 @@ public class hc001 extends JdbTest {
         if (checkPattern(reply, "Deferring watch modification")) {
             throwFailure(MsgBase + " must not set deferred watch point");
         }
-        log.println(MsgBase + " did not set deferred watch point");
+        log.display(MsgBase + " did not set deferred watch point");
     }
 
     /* Test the jdb command "eval" with an invalid class name. */
@@ -309,7 +309,7 @@ public class hc001 extends JdbTest {
         if (!checkPattern(reply, "ParseException")) {
             throwFailure(MsgBase + " must be rejected with ParseException");
         }
-        log.println(MsgBase + " was rejected with ParseException");
+        log.display(MsgBase + " was rejected with ParseException");
     }
 
     /* Test the jdb commands "watch" and "eval" with various invalid class names. */
@@ -321,7 +321,7 @@ public class hc001 extends JdbTest {
             "xx.yyy.zzz/"
         };
 
-        log.println("\n### Debugger: testInvalidCommands");
+        log.display("\n### Debugger: testInvalidCommands");
 
         // run jdb commands "watch" and "eval" with invalid class names
         for (int idx = 0; idx < invClassNames.length; idx++) {

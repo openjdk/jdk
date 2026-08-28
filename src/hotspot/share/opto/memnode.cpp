@@ -1249,8 +1249,19 @@ Node* LoadNode::can_see_arraycopy_value(Node* st, PhaseGVN* phase) const {
     Node* ctl = ac->in(0);
     Node* src = ac->in(ArrayCopyNode::Src);
 
-    if (!ac->as_ArrayCopy()->is_clonebasic() && !phase->type(src)->isa_aryptr()) {
+    const TypeAryPtr* dst_arytype = phase->type(ac->in(ArrayCopyNode::Dest))->isa_aryptr();
+    const TypeAryPtr* src_arytype = phase->type(src)->isa_aryptr();
+    if (src_arytype == nullptr && !ac->as_ArrayCopy()->is_clonebasic()) {
       return nullptr;
+    }
+
+    if (src_arytype != nullptr && dst_arytype != nullptr) {
+      // Cannot transform if the layouts are different
+      bool may_transform = (src_arytype->is_not_flat() && dst_arytype->is_not_flat()) ||
+                           (src_arytype->klass_is_exact() && dst_arytype->klass_is_exact() && src_arytype->exact_klass() == dst_arytype->exact_klass());
+      if (!may_transform) {
+        return nullptr;
+      }
     }
 
     // load depends on the tests that validate the arraycopy
@@ -2337,6 +2348,10 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
   assert(off != Type::OffsetTop, "case covered by TypePtr::empty");
   Compile* C = phase->C;
 
+  if (is_mismatched_access()) {
+    return _type;
+  }
+
   // If load can see a previous constant store, use that.
   Node* value = can_see_stored_value_through_membars(mem, phase);
   if (value != nullptr && value->is_Con()) {
@@ -2393,7 +2408,7 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
     // expression (LShiftL quux 3) independently optimized to the constant 8.
     if ((t->isa_int() == nullptr) && (t->isa_long() == nullptr)
         && (_type->isa_vect() == nullptr)
-        && !ary->is_flat()
+        && ary->is_not_flat()
         && Opcode() != Op_LoadKlass && Opcode() != Op_LoadNKlass) {
       // t might actually be lower than _type, if _type is a unique
       // concrete subclass of abstract class t.
