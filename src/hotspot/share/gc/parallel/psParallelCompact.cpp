@@ -558,7 +558,7 @@ static size_t compute_max_waste_bytes(size_t live_bytes, size_t max_old_gen_byte
   const size_t max_retained_dead_bytes = old_gen_slack_bytes > filler_overhead_bytes
                                          ? old_gen_slack_bytes - filler_overhead_bytes
                                          : 0;
-  const size_t dead_ratio_waste_bytes = (MaxHeapSize - MaxNewSize) * (MarkSweepDeadRatio / 100.0);
+  const size_t dead_ratio_waste_bytes = max_old_gen_bytes * (MarkSweepDeadRatio / 100.0);
   return MIN2(dead_ratio_waste_bytes, max_retained_dead_bytes);
 }
 
