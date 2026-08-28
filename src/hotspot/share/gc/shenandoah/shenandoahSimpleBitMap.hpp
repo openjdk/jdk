@@ -27,7 +27,11 @@
 
 #include "cppstdlib/cstddef.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/integerCast.hpp"
+#include "utilities/vmassert_reinstall.hpp"
+
+#include <sys/types.h>
 
 // TODO: Merge the enhanced capabilities of ShenandoahSimpleBitMap into src/hotspot/share/utilities/bitMap.hpp
 //       and deprecate ShenandoahSimpleBitMap.  The key enhanced capabilities to be integrated include:

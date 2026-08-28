@@ -26,9 +26,16 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGIONCOUNTERS_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGIONCOUNTERS_HPP
 
+#include "jni_md.h"
 #include "logging/logFileStreamOutput.hpp"
 #include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
 #include "runtime/atomic.hpp"
+
+#include <stddef.h>
+
+class PerfLongVariable;
+class ShenandoahHeap;
 
 /**
  * This provides the following in JVMStat:

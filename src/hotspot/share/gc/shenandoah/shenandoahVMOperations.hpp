@@ -25,11 +25,16 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHVMOPERATIONS_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHVMOPERATIONS_HPP
 
+#include "gc/shared/gcCause.hpp"
+#include "gc/shared/gcId.hpp"
 #include "gc/shared/gcVMOperations.hpp"
+#include "runtime/vmOperation.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class ShenandoahConcurrentGC;
 class ShenandoahDegenGC;
 class ShenandoahFullGC;
+class ShenandoahGeneration;
 
 // VM_operations for the Shenandoah Collector.
 //

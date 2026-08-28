@@ -24,13 +24,15 @@
  */
 
 
+#include "gc/shared/gcId.hpp"
 #include "gc/shared/workerDataArray.inline.hpp"
-#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
+#include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/os.hpp"
 #include "utilities/ostream.hpp"
 
 #define SHENANDOAH_PHASE_NAME_FORMAT "%-30s"

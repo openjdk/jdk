@@ -25,10 +25,14 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHFULLGC_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHFULLGC_HPP
 
+#include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shenandoah/shenandoahGC.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
+
+class GCTimer;
+class ShenandoahHeapRegionSet;
 
 /**
  * This implements Full GC (e.g. when invoking System.gc()) using a mark-compact algorithm.
@@ -52,8 +56,8 @@
  */
 
 class PreservedMarksSet;
-class VM_ShenandoahFullGC;
 class ShenandoahDegenGC;
+class VM_ShenandoahFullGC;
 
 class ShenandoahFullGC : public ShenandoahGC {
   friend class ShenandoahPrepareForCompactionObjectClosure;

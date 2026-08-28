@@ -34,11 +34,25 @@
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
+#include "gc/shenandoah/shenandoahSharedVariables.hpp"
+#include "jni_md.h"
+#include "oops/markWord.hpp"
+#include "oops/oopsHierarchy.hpp"
 #include "runtime/atomic.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/sizes.hpp"
+#include "utilities/vmassert_reinstall.hpp"
 
-class VMStructs;
+#include <stddef.h>
+#include <stdint.h>
+#include <type_traits>
+
+class OopIterateClosure;
+class outputStream;
+class ShenandoahAllocRequest;
 class ShenandoahHeapRegionStateConstant;
+class VMStructs;
 
 class ShenandoahHeapRegion {
   friend class VMStructs;

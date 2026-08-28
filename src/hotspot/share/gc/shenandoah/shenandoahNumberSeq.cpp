@@ -27,6 +27,11 @@
 
 #include "gc/shenandoah/shenandoahNumberSeq.hpp"
 #include "runtime/atomicAccess.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/powerOfTwo.hpp"
+#include "utilities/vmassert_reinstall.hpp"
+
+#include <cmath>
 
 HdrSeq::HdrSeq() {
   _hdr = NEW_C_HEAP_ARRAY(int*, MagBuckets, mtInternal);

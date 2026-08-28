@@ -24,11 +24,19 @@
  */
 
 #include "gc/shared/allocTracer.hpp"
-#include "gc/shared/gc_globals.hpp"
+#include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahController.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
+#include "logging/log.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/thread.hpp"
+#include "utilities/checkedCast.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/vmassert_reinstall.hpp"
 
 void ShenandoahController::update_gc_id() {
   _gc_id.add_then_fetch((size_t)1);

@@ -30,10 +30,15 @@
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
+#include "nmt/memTag.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "utilities/globalDefinitions.hpp"
 
-class ShenandoahObjToScanQueueSet;
+#include <stddef.h>
+
+class MemRegion;
 class ShenandoahHeapRegion;
+class ShenandoahObjToScanQueueSet;
 
 /**
  * Encapsulate a marking bitmap with the top-at-mark-start and top-bitmaps array.

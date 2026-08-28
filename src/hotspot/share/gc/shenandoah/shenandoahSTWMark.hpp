@@ -25,11 +25,13 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHSTWMARK_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHSTWMARK_HPP
 
+#include "gc/shared/taskTerminator.hpp"
 #include "gc/shenandoah/shenandoahMark.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.hpp"
+#include "utilities/globalDefinitions.hpp"
 
-class ShenandoahSTWMarkTask;
 class ShenandoahGeneration;
+class ShenandoahSTWMarkTask;
 
 class ShenandoahSTWMark : public ShenandoahMark {
   friend class ShenandoahSTWMarkTask;

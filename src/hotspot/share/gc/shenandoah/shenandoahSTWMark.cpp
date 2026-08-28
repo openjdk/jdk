@@ -25,17 +25,30 @@
 
 
 #include "code/nmethod.hpp"
-#include "gc/shared/taskTerminator.hpp"
+#include "gc/shared/gc_globals.hpp"
+#include "gc/shared/oopStorageSetParState.inline.hpp"
+#include "gc/shared/taskqueue.inline.hpp"
 #include "gc/shared/workerThread.hpp"
+#include "gc/shenandoah/shenandoahClosures.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
+#include "gc/shenandoah/shenandoahCodeRoots.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationType.hpp"
+#include "gc/shenandoah/shenandoahHeap.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
+#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahSTWMark.hpp"
+#include "gc/shenandoah/shenandoahTaskqueue.hpp"
+#include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
+#include "runtime/thread.hpp"
 #include "runtime/threads.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/macros.hpp"
+#include "utilities/vmassert_reinstall.hpp"
 
 class ShenandoahSTWMarkTask : public WorkerTask {
 private:

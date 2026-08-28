@@ -24,13 +24,21 @@
 
 
 #include "compiler/oopMap.hpp"
+#include "gc/shared/oopStorageSetParState.inline.hpp"
 #include "gc/shared/workerThread.hpp"
+#include "gc/shenandoah/shenandoahClosures.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahGC.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
+#include "gc/shenandoah/shenandoahRootProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
+#include "memory/iterator.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/vmassert_reinstall.hpp"
 
 const char* ShenandoahGC::degen_point_to_string(ShenandoahDegenPoint point) {
   switch(point) {

@@ -32,7 +32,15 @@
 #include "memory/allocation.hpp"
 #include "memory/reservedSpace.hpp"
 #include "memory/virtualspace.hpp"
+#include "nmt/memTag.hpp"
+#include "oops/oopsHierarchy.hpp"
 #include "runtime/atomic.hpp"
+
+#include <stddef.h>
+
+class outputStream;
+class ShenandoahHeap;
+class ShenandoahHeapRegion;
 
 class ShenandoahCollectionSet : public CHeapObj<mtGC> {
   friend class ShenandoahHeap;

@@ -31,11 +31,11 @@
 #include "runtime/javaThread.hpp"
 
 class BarrierSetNMethod;
+class SATBMarkQueueSet;
 class ShenandoahBarrierSet;
 class ShenandoahHeap;
 class ShenandoahMarkingContext;
 class ShenandoahReferenceProcessor;
-class SATBMarkQueueSet;
 
 //
 // ========= Super

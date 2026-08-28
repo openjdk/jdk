@@ -26,8 +26,12 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGIONCLOSURES_HPP
 
 
+#include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
+
+#include <stddef.h>
 
 // Applies the given closure to all regions with the given affiliation
 template<ShenandoahAffiliation AFFILIATION>

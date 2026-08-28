@@ -26,6 +26,9 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHBARRIERSETSTACKCHUNK_HPP
 
 #include "gc/shared/barrierSetStackChunk.hpp"
+#include "oops/oopsHierarchy.hpp"
+
+class OopIterator;
 
 class ShenandoahBarrierSetStackChunk : public BarrierSetStackChunk {
 public:

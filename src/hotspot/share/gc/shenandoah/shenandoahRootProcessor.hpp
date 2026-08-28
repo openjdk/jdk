@@ -32,9 +32,17 @@
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
+#include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/threads.hpp"
+#include "runtime/threadSMR.hpp"
+#include "utilities/globalDefinitions.hpp"
+
+class ShenandoahHeap;
+class ShenandoahNMethodTableSnapshot;
+class Thread;
 
 template <bool CONCURRENT>
 class ShenandoahVMWeakRoots {

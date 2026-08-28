@@ -25,8 +25,12 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHTRACE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHTRACE_HPP
 
+#include "gc/shared/gcName.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
+
+#include <stddef.h>
 
 class ShenandoahCollectionSet;
 class ShenandoahInPlacePromotionPlanner;

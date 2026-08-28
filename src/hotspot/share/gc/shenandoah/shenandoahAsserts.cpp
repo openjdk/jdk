@@ -23,17 +23,45 @@
  */
 
 
+#include "classfile/javaClasses.hpp"
+#include "classfile/vmClasses.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
+#include "gc/shenandoah/shenandoahController.hpp"
 #include "gc/shenandoah/shenandoahForwarding.hpp"
+#include "gc/shenandoah/shenandoahForwarding.inline.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
+#include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.inline.hpp"
+#include "gc/shenandoah/shenandoahMarkingContext.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
+#include "memory/metaspace.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
+#include "oops/compressedKlass.inline.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/klass.hpp"
+#include "oops/markWord.hpp"
+#include "oops/markWord.inline.hpp"
+#include "oops/oop.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/globals.hpp"
+#include "runtime/mutex.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
-#include "utilities/vmError.hpp"
+#include "runtime/safepoint.hpp"
+#include "runtime/thread.hpp"
+#include "utilities/ostream.hpp"
+
+#include <stddef.h>
+#include <stdint.h>
+
+class BoolObjectClosure;
+class Metadata;
 
 void print_raw_memory(ShenandoahMessageBuffer &msg, void* loc) {
   // Be extra safe. Only access data that is guaranteed to be safe:

@@ -23,9 +23,13 @@
  */
 
 
+#include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahSATBMarkQueueSet.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
+#include "utilities/vmassert_reinstall.hpp"
+
+class Thread;
 
 ShenandoahSATBMarkQueueSet::ShenandoahSATBMarkQueueSet(BufferNode::Allocator* allocator) :
   SATBMarkQueueSet(allocator), _filter_out_young(false)

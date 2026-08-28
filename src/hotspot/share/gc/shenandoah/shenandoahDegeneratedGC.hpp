@@ -25,10 +25,12 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHDEGENERATEDGC_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHDEGENERATEDGC_HPP
 
+#include "gc/shared/gcCause.hpp"
 #include "gc/shenandoah/shenandoahGC.hpp"
 
-class VM_ShenandoahDegeneratedGC;
 class ShenandoahGeneration;
+class ShenandoahHeap;
+class VM_ShenandoahDegeneratedGC;
 
 class ShenandoahDegenGC : public ShenandoahGC {
   friend class VM_ShenandoahDegeneratedGC;

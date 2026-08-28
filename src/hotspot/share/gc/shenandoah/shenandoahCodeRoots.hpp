@@ -33,6 +33,8 @@
 #include "memory/iterator.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+class nmethod;
+class NMethodClosure;
 class ShenandoahHeap;
 class ShenandoahHeapRegion;
 class ShenandoahNMethodTable;

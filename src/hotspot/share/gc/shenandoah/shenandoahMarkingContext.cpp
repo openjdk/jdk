@@ -25,9 +25,15 @@
  */
 
 #include "gc/shared/markBitMap.inline.hpp"
+#include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.hpp"
+#include "logging/log.hpp"
+#include "memory/memRegion.hpp"
 #include "runtime/orderAccess.hpp"
+#include "utilities/vmassert_reinstall.hpp"
 
 ShenandoahMarkingContext::ShenandoahMarkingContext(MemRegion heap_region, MemRegion bitmap_region, size_t num_regions) :
   _mark_bit_map(heap_region, bitmap_region),

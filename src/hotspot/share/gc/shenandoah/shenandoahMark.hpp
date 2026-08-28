@@ -33,8 +33,14 @@
 #include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
+#include "memory/allocation.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "utilities/globalDefinitions.hpp"
 
+class Klass;
+class ShenandoahGeneration;
 class ShenandoahMarkingContext;
+class TaskTerminator;
 
 // Base class for mark
 // Mark class does not maintain states. Instead, mark states are

@@ -27,6 +27,8 @@
 
 #include "gc/shared/gcArguments.hpp"
 
+#include <stddef.h>
+
 class CollectedHeap;
 
 class ShenandoahArguments : public GCArguments {

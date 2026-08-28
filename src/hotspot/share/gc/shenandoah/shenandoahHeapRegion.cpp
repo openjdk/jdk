@@ -25,26 +25,43 @@
  */
 
 #include "gc/shared/cardTable.hpp"
-#include "gc/shared/space.hpp"
+#include "gc/shared/spaceDecorator.hpp"
 #include "gc/shared/tlab_globals.hpp"
-#include "gc/shenandoah/shenandoahCardTable.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
+#include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
+#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
+#include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
+#include "gc/shenandoah/shenandoahMarkingContext.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
+#include "gc/shenandoah/shenandoahScanRemembered.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
-#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
-#include "jfr/jfrEvents.hpp"
-#include "memory/allocation.hpp"
+#include "jfrfiles/jfrEventClasses.hpp"
+#include "logging/log.hpp"
+#include "memory/iterator.hpp"
 #include "memory/iterator.inline.hpp"
+#include "memory/memRegion.hpp"
 #include "memory/universe.hpp"
+#include "oops/oop.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/stackChunkOop.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
+#include "runtime/thread.hpp"
+#include "utilities/align.hpp"
+#include "utilities/formatBuffer.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
+
+#include <inttypes.h>
+#include <string.h>
 
 size_t ShenandoahHeapRegion::RegionCount = 0;
 size_t ShenandoahHeapRegion::RegionSizeBytes = 0;

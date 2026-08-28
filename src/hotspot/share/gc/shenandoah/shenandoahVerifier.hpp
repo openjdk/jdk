@@ -29,11 +29,21 @@
 #include "gc/shared/markBitMap.hpp"
 #include "gc/shenandoah/shenandoahRootVerifier.hpp"
 #include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "runtime/atomic.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/stack.hpp"
+#include "utilities/stack.inline.hpp"
 
+#include <stddef.h>
+
+class MarkBitMap;
+class ShenandoahGeneration;
 class ShenandoahHeap;
+class ShenandoahHeapRegion;
 class ShenandoahMarkingContext;
+enum class VerifyOption : uint;
 
 #ifdef _WINDOWS
 #pragma warning( disable : 4522 )

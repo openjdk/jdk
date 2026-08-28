@@ -28,6 +28,8 @@
 #include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 #include "memory/allocation.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/vmassert_reinstall.hpp"
 
 class ShenandoahObjToScanQueueSet;
 

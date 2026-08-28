@@ -28,6 +28,7 @@
 
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
+#include "gc/shared/threadLocalAllocBuffer.hpp"
 #include "gc/shenandoah/shenandoahClosures.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
@@ -35,8 +36,14 @@
 #include "runtime/stackWatermark.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+#include <stdint.h>
+
+class BarrierSetNMethod;
 class frame;
 class JavaThread;
+class nmethod;
+class RegisterMap;
+class ShenandoahHeap;
 
 class ShenandoahOnStackNMethodClosure : public NMethodClosure {
 private:

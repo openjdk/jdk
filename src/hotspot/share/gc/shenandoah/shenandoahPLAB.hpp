@@ -27,7 +27,12 @@
 
 #include "gc/shared/plab.hpp"
 #include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
+#include "utilities/globalDefinitions.hpp"
 
+#include <stddef.h>
+
+class PLAB;
 class ShenandoahGenerationalHeap;
 
 class ShenandoahPLAB : public CHeapObj<mtGC> {

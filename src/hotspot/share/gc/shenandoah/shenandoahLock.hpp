@@ -29,7 +29,16 @@
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/javaThread.hpp"
+#include "runtime/orderAccess.hpp"
 #include "runtime/safepoint.hpp"
+#include "runtime/thread.hpp"
+#include "utilities/macros.hpp"
+#include "utilities/vmassert_reinstall.hpp"
+
+#include <stdint.h>
+#include <type_traits>
+
+class JavaThread;
 
 class ShenandoahLock {
 private:

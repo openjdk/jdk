@@ -30,8 +30,21 @@
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
+#include "oops/oopsHierarchy.hpp"
 #include "runtime/atomic.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/macros.hpp"
+#include "utilities/vmassert_reinstall.hpp"
+
+#include <stddef.h>
+
+template <typename> class GrowableArray;
+class nmethod;
+class NMethodClosure;
+class OopClosure;
+class ShenandoahHeap;
 
 // Use ShenandoahReentrantLock as ShenandoahNMethodLock
 typedef ShenandoahReentrantLock<ShenandoahSimpleLock> ShenandoahNMethodLock;

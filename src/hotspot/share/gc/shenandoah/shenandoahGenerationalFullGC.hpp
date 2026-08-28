@@ -26,11 +26,19 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALFULLGC_HPP
 
 #include "gc/shared/preservedMarks.hpp"
+#include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "memory/iterator.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 
+#include <stddef.h>
+
+template <typename T> class GrowableArray;
+class PreservedMarks;
+class ShenandoahGenerationalHeap;
 class ShenandoahHeap;
 class ShenandoahHeapRegion;
 

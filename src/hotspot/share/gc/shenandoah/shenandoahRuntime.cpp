@@ -22,12 +22,20 @@
  *
  */
 
+#include "gc/shenandoah/shenandoahAsserts.hpp"
+#include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahRuntime.hpp"
-#include "gc/shenandoah/shenandoahThreadLocalData.hpp"
+#include "oops/access.hpp"
+#include "oops/accessDecorators.hpp"
+#include "oops/compressedOops.hpp"
+#include "oops/compressedOops.inline.hpp"
+#include "oops/oop.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
-#include "utilities/copy.hpp"
+#include "utilities/vmassert_reinstall.hpp"
+
+#include <type_traits>
 
 JRT_LEAF(void, ShenandoahRuntime::arraycopy_barrier_oop(oop* src, oop* dst, size_t length))
   ShenandoahBarrierSet::barrier_set()->arraycopy_barrier(src, dst, length, false);
