@@ -1964,7 +1964,7 @@ void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
     }
   }
 
-  if (GenerateArrayStoreCheck && needs_store_check) {
+  if (needs_store_check) {
     CodeEmitInfo* store_check_info = new CodeEmitInfo(range_check_info);
     array_store_check(value.result(), array.result(), store_check_info, x->profiled_method(), x->profiled_bci());
   }
@@ -3097,7 +3097,6 @@ void LIRGenerator::do_Base(Base* x) {
   __ std_entry(LIR_OprFact::illegalOpr);
   // Emit moves from physical registers / stack slots to virtual registers
   CallingConvention* args = compilation()->frame_map()->incoming_arguments();
-  IRScope* irScope = compilation()->hir()->top_scope();
   int java_index = 0;
   for (int i = 0; i < args->length(); i++) {
     LIR_Opr src = args->at(i);
@@ -3445,7 +3444,7 @@ void LIRGenerator::do_RuntimeCall(address routine, Intrinsic* x) {
   assert(x->number_of_arguments() == 0, "wrong type");
   // Enforce computation of _reserved_argument_area_size which is required on some platforms.
   BasicTypeList signature;
-  CallingConvention* cc = frame_map()->c_calling_convention(&signature);
+  frame_map()->c_calling_convention(&signature);
   LIR_Opr reg = result_register_for(x->type());
   __ call_runtime_leaf(routine, getThreadTemp(),
                        reg, new LIR_OprList());

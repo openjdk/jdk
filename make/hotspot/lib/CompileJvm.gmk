@@ -285,13 +285,6 @@ ifeq ($(call isTargetOs, windows), true)
   $(BUILD_LIBJVM_TARGET): $(WIN_EXPORT_FILE)
 endif
 
-# Always recompile abstract_vm_version.cpp if libjvm needs to be relinked. This ensures
-# that the internal vm version is updated as it relies on __DATE__ and __TIME__
-# macros.
-ABSTRACT_VM_VERSION_OBJ := $(JVM_OUTPUTDIR)/objs/abstract_vm_version$(OBJ_SUFFIX)
-$(ABSTRACT_VM_VERSION_OBJ): $(filter-out $(ABSTRACT_VM_VERSION_OBJ), \
-    $(BUILD_LIBJVM_TARGET_DEPS))
-
 ifneq ($(GENERATE_COMPILE_COMMANDS_ONLY), true)
   ifeq ($(call isTargetOs, windows), true)
     # It doesn't matter which jvm.lib file gets exported, but we need

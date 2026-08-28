@@ -27,14 +27,12 @@
  * @summary Test that UTF-16 string concat overflow does not produce a negative size backing array
  * @requires vm.compiler2.enabled & os.maxMemory > 4G
  * @library /test/lib /
- * @run main/othervm -Xmx4g -XX:-OptoScheduling ${test.main.class}
+ * @run main/othervm -Xmx4g ${test.main.class}
  * @run main/othervm -Xmx4g -Xint ${test.main.class}
- * @run main/othervm -Xmx4g -XX:-TieredCompilation -Xcomp -XX:-OptoScheduling
+ * @run main/othervm -Xmx4g -XX:-TieredCompilation -Xcomp
  *                   -XX:CompileOnly=${test.main.class}::f
  *                   ${test.main.class}
  */
-
-// The test uses -XX:-OptoScheduling to avoid the assert "too many D-U pinch points" on aarch64 (JDK-8328078).
 
 package compiler.stringopts;
 

@@ -400,7 +400,9 @@ void Arguments::init_system_properties() {
   PropertyList_add(&_system_properties, new SystemProperty("jdk.debug", VM_Version::jdk_debug_level(),  false));
 
   // Initialize the vm.info now, but it will need updating after argument parsing.
-  _vm_info = new SystemProperty("java.vm.info", VM_Version::vm_info_string(), true);
+  const char* vm_info_str = VM_Version::vm_info_string();
+  _vm_info = new SystemProperty("java.vm.info", vm_info_str, true);
+  FREE_C_HEAP_ARRAY(vm_info_str);
 
   // Following are JVMTI agent writable properties.
   // Properties values are set to nullptr and they are
@@ -1347,8 +1349,10 @@ void Arguments::set_mode_flags(Mode mode) {
 
   // Ensure Agent_OnLoad has the correct initial values.
   // This may not be the final mode; mode may change later in onload phase.
+  const char* vm_info_str = VM_Version::vm_info_string();
   PropertyList_unique_add(&_system_properties, "java.vm.info",
-                          VM_Version::vm_info_string(), AddProperty, UnwriteableProperty, ExternalProperty);
+                          vm_info_str, AddProperty, UnwriteableProperty, ExternalProperty);
+  FREE_C_HEAP_ARRAY(vm_info_str);
 
   UseInterpreter             = true;
   UseCompiler                = true;
@@ -3601,6 +3605,37 @@ jint Arguments::apply_ergo() {
   if (!FLAG_IS_DEFAULT(UseLoopPredicate) && !UseLoopPredicate && UseProfiledLoopPredicate) {
     warning("Disabling UseProfiledLoopPredicate since UseLoopPredicate is turned off.");
     FLAG_SET_ERGO(UseProfiledLoopPredicate, false);
+  }
+
+  bool any_parse_predicate_flag_enabled = UseLoopLimitCheckPredicate ||
+                                          UseAutoVectorizationPredicate ||
+                                          UseLoopPredicate ||
+                                          UseProfiledLoopPredicate ||
+                                          ShortRunningLongLoop;
+
+  if (!UseParsePredicates && any_parse_predicate_flag_enabled) {
+    // Disable any Parse Predicate enabling flag when UseParsePredicates is not set.
+    FLAG_SET_ERGO(UseLoopLimitCheckPredicate, false);
+    FLAG_SET_ERGO(UseLoopPredicate, false);
+    FLAG_SET_ERGO(UseProfiledLoopPredicate, false);
+    FLAG_SET_ERGO(UseAutoVectorizationPredicate, false);
+    FLAG_SET_ERGO(ShortRunningLongLoop, false);
+
+    if ((!FLAG_IS_DEFAULT(UseLoopLimitCheckPredicate) && UseLoopLimitCheckPredicate) ||
+        (!FLAG_IS_DEFAULT(UseAutoVectorizationPredicate) && UseAutoVectorizationPredicate) ||
+        (!FLAG_IS_DEFAULT(UseLoopPredicate) && UseLoopPredicate) ||
+        (!FLAG_IS_DEFAULT(UseProfiledLoopPredicate) && UseProfiledLoopPredicate) ||
+        (!FLAG_IS_DEFAULT(ShortRunningLongLoop) && ShortRunningLongLoop)) {
+      warning("Disabling UseParsePredicates disables all Parse Predicate enabling flags: UseLoopLimitCheckPredicate,"
+              " UseLoopPredicate, UseProfiledLoopPredicate, UseAutoVectorizationPredicate, and ShortRunningLongLoop");
+    }
+
+  }
+
+  if (UseParsePredicates && !any_parse_predicate_flag_enabled) {
+    warning("Disabling UseParsePredicates because all Parse Predicate flags are disabled: UseLoopLimitCheckPredicate,"
+            " UseLoopPredicate, UseProfiledLoopPredicate, UseAutoVectorizationPredicate, and ShortRunningLongLoop");
+    FLAG_SET_ERGO(UseParsePredicates, false);
   }
 #endif // COMPILER2
 

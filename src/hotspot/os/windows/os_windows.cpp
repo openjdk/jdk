@@ -127,6 +127,7 @@ static FILETIME process_creation_time;
 static FILETIME process_exit_time;
 static FILETIME process_user_time;
 static FILETIME process_kernel_time;
+static HANDLE heap_file_handle = INVALID_HANDLE_VALUE;
 
 #if defined(_M_ARM64)
   #define __CPU__ aarch64
@@ -3244,6 +3245,20 @@ int os::create_file_for_heap(const char* dir) {
     warning("Problem opening file for heap (%s)", os::strerror(errno));
     return -1;
   }
+
+  guarantee(heap_file_handle == INVALID_HANDLE_VALUE,
+            "Heap backing file already exists");
+
+  HANDLE process = GetCurrentProcess();
+  HANDLE file_handle = (HANDLE)_get_osfhandle(fd);
+
+  if (!DuplicateHandle(process, file_handle, process, &heap_file_handle,
+                       0, FALSE, DUPLICATE_SAME_ACCESS)) {
+    warning("Could not retain handle to heap backing file (error %lu)", GetLastError());
+    ::close(fd);
+    return -1;
+  }
+
   return fd;
 }
 
