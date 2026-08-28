@@ -406,7 +406,7 @@ bool ClassPathZipEntry::has_entry(JavaThread* current, const char* name, Handle 
                            h_class_name,
                            current);
 
-    // Not using TRAPS, the thread must be checked manually
+    // Not using CHECK, the thread must be checked manually
     if (current->has_pending_exception()) {
       current->clear_pending_exception();
       return false;
