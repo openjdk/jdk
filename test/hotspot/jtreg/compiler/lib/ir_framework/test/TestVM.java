@@ -883,7 +883,7 @@ public class TestVM {
                 StringWriter sw = new StringWriter();
                 PrintWriter pw = new PrintWriter(sw);
                 e.printStackTrace(pw);
-                builder.append("Method: ").append(testName).append(":").append(System.lineSeparator()).append(sw)
+                builder.append("Failed test: ").append(test).append(":").append(System.lineSeparator()).append(sw)
                        .append(System.lineSeparator()).append(System.lineSeparator());
                 failures++;
             }
