@@ -159,6 +159,7 @@ final class LinuxPackageBuilder {
                         .desktopIntegrationDirectory(lib)
                         .appModsDirectory(lib.resolve("app/mods"))
                         .contentDirectory(lib)
+                        .resourcesDirectory(lib)
                         .create(),
                 lib.resolve("lib/libapplauncher.so"));
     }

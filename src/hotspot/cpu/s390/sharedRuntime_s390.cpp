@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2026 SAP SE. All rights reserved.
  * Copyright (c) 2026 IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -2220,7 +2220,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     assert(vep_offset != -1,        "Must be set");
 #endif
 
-    __ flush();
+    // Code will be copied. No ICache sync required.
     nmethod* nm = nmethod::new_native_nmethod(method,
                                               compile_id,
                                               masm->code(),
@@ -2250,7 +2250,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
     int frame_complete = ((intptr_t)__ pc()) - start; // Not complete, period.
 
-    __ flush();
+    // Code will be copied. No ICache sync required.
 
     int stack_slots = SharedRuntime::out_preserve_stack_slots();  // No out slots at all, actually.
 
@@ -2968,7 +2968,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   __ restore_return_pc();
   __ z_br(Z_R1_scratch);
 
-  __ flush();
+  // Code will be copied. No ICache sync required.
   //////////////////////////////////////////////////////////////////////
   // end of code generation
   //////////////////////////////////////////////////////////////////////
@@ -3543,8 +3543,7 @@ void SharedRuntime::generate_deopt_blob() {
   // return to the interpreter entry point.
   __ z_br(Z_R14);
 
-  // Make sure all code is generated
-  masm->flush();
+  // Code will be copied. No ICache sync required.
 
   _deopt_blob = DeoptimizationBlob::create(&buffer, oop_maps, 0, exception_offset, reexecute_offset, RegisterSaver::live_reg_frame_size(RegisterSaver::all_registers, SuperwordUseVX)/wordSize);
   _deopt_blob->set_unpack_with_exception_in_tls_offset(exception_in_tls_offset);
@@ -3682,7 +3681,7 @@ UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
   // return to the interpreter entry point
   __ z_br(Z_R14);
 
-  masm->flush();
+  // Code will be copied. No ICache sync required.
   return UncommonTrapBlob::create(&buffer, nullptr, framesize_in_bytes/wordSize);
 }
 #endif // COMPILER2
@@ -3780,8 +3779,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(StubId id, address call_ptr)
 
   __ z_br(Z_R14);
 
-  // Make sure all code is generated
-  masm->flush();
+  // Code will be copied. No ICache sync required.
 
   // Fill-out other meta info
   return SafepointBlob::create(&buffer, oop_maps, RegisterSaver::live_reg_frame_size(RegisterSaver::all_registers, save_vectors)/wordSize);
@@ -3863,8 +3861,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(StubId id, address destination
   __ z_br(Z_R1_scratch);
 
   // -------------
-  // make sure all code is generated
-  masm->flush();
+  // Code will be copied. No ICache sync required.
 
   // return the blob
   // frame_size_words or bytes??

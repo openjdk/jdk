@@ -26,7 +26,6 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHINPLACEPROMOTER_HPP
 
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
-#include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
 
 class ShenandoahMarkingContext;
@@ -82,12 +81,7 @@ class ShenandoahInPlacePromotionPlanner {
     size_t garbage;
 
     RegionPromotionStats() : count(0), usage(0), free(0), garbage(0) {}
-    void update(ShenandoahHeapRegion* region) {
-      count++;
-      usage += region->get_live_data_bytes();
-      free += region->free();
-      garbage += region->garbage();
-    }
+    void update(ShenandoahHeapRegion* region);
   };
 
   const size_t _old_garbage_threshold;
