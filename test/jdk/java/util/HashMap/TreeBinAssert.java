@@ -130,8 +130,8 @@ public class TreeBinAssert {
         Map<T, Integer> map = new HashMap<>(size);
 
         doTest(map, hashes,
-               (c,k) -> { ((Map<T, Integer>) c).put(k,0); },
-               (c)   -> { return ((Map<T, Integer>) c).keySet().iterator(); },
+               (c, k) -> { ((Map<T, Integer>) c).put(k,0); },
+               (c)    -> { return ((Map<T, Integer>) c).keySet().iterator(); },
                keyFactory
         );
     }
@@ -150,8 +150,8 @@ public class TreeBinAssert {
         Set<T> set = new LinkedHashSet<>(size);
 
         doTest(set, hashes,
-               (c,k) -> { ((Set<T>) c).add(k); },
-               (c)   -> { return ((Set<T>) c).iterator(); },
+               (c, k) -> { ((Set<T>) c).add(k); },
+               (c)    -> { return ((Set<T>) c).iterator(); },
                keyFactory
         );
     }

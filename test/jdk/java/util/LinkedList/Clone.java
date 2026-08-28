@@ -39,7 +39,7 @@ import java.util.function.IntFunction;
 
 public class Clone {
     public static void main(String[] args) {
-        test(i -> "elem" + i);
+        test(i -> String.valueOf(i));
         test(i -> new VClass(i, new int[] { 0 }));
     }
 
@@ -60,9 +60,9 @@ public class Clone {
 
         TreeMap2 m = new TreeMap2();
         checkTreeMapClone(m, "TreeMap.clone() is broken.");
-        m.put(elementFactory.apply(1), elementFactory.apply(-1));
+        m.put(elementFactory.apply(1), elementFactory.apply(2));
         checkTreeMapClone(m, "TreeMap.clone() is broken.");
-        m.put(elementFactory.apply(2), elementFactory.apply(-2));
+        m.put(elementFactory.apply(3), elementFactory.apply(4));
         checkTreeMapClone(m, "TreeMap.clone() is broken.");
     }
 

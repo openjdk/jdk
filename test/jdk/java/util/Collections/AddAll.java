@@ -59,7 +59,7 @@ public class AddAll {
 
     private static Random rnd = new Random();
 
-    static <T> void test(Collection<T> c, BiFunction<Integer, Integer,T[]> rangeFactory) {
+    static <T> void test(Collection<T> c, BiFunction<Integer, Integer, T[]> rangeFactory) {
         int x = 0;
         for (int i = 0; i < N; i++) {
             int rangeLen = rnd.nextInt(10);
