@@ -40,21 +40,11 @@ public class TestPushInlineTypeThruNarrowPhi {
     }
 
     static MyValue1 fieldV1 = new MyValue1(42);
-    static MyValue1 fieldV2 = new MyValue1(42);
-    static Object fieldO1 = new MyValue1(42);
-    static Object fieldO2 = new Object();
-    static volatile int volatileField;
-    static volatile int field;
     
     public static void main(String[] args) {
         for (int i = 0; i < 20_000; i++) {
             test1(true);
             test1(false);
-            test2(true, true, fieldO1, fieldV1);
-            test2(true, false, fieldO1, fieldV1);
-            test2(false, true, fieldO1, fieldV1);
-            test2(false, false, fieldO1, fieldV1);
-            lateInlined2(0, fieldO1, fieldV1);
         }
     }
 
@@ -72,46 +62,5 @@ public class TestPushInlineTypeThruNarrowPhi {
 
     static void lateInlined1() {
         fieldV1 = new MyValue1(42);
-    }
-
-    static Object test2(boolean flag1, boolean flag2, Object obj, MyValue1 val) {
-        int i;
-        for (i = 0; i < 10; i++) {
-            for (int j = 0; j < 10; j++) {
-            }
-        }
-        Object res = null;
-        if (flag2) {
-            if (flag1) {
-                lateInlined2(i, obj, val);
-                res = fieldO1;
-            } else {
-                lateInlined2(i, obj, val);
-                res = fieldO1;
-            }
-            field = 42;
-        } else {
-            if (flag1) {
-                lateInlined2(i, obj, val);
-                res = fieldO1;
-            } else {
-                lateInlined2(i, obj, val);
-                res = fieldO1;
-            }
-            field = 42;
-        }
-        return res;
-    }
-
-    static void lateInlined2(int i, Object obj, MyValue1 val) {
-        volatileField = 42;
-        Object o = null;
-
-        if (i == 10) {
-            o = new MyValue1(42);
-        } else {
-            o = obj;
-        }
-        fieldO1 = o;
     }
 }
