@@ -49,7 +49,7 @@ public class StreamDecoder extends Reader {
     private static final int MIN_BYTE_BUFFER_SIZE = 32;
     private static final int DEFAULT_BYTE_BUFFER_SIZE = 8192;
 
-    private volatile boolean readCalled;
+    private boolean readCalled;
     private volatile boolean closed;
 
     private void ensureOpen() throws IOException {
@@ -117,12 +117,17 @@ public class StreamDecoder extends Reader {
     }
 
     public int read() throws IOException {
-        return read0();
+        synchronized (lock) {
+            readCalled = true;
+            return read0();
+        }
     }
 
     @SuppressWarnings("fallthrough")
     private int read0() throws IOException {
         synchronized (lock) {
+            readCalled = true;
+
             // Return the leftover char, if there is one
             if (haveLeftoverChar) {
                 haveLeftoverChar = false;
@@ -150,6 +155,7 @@ public class StreamDecoder extends Reader {
 
     public int read(char[] cbuf, int offset, int length) throws IOException {
         synchronized (lock) {
+            readCalled = true;
             int off = offset;
             int len = length;
 
@@ -191,10 +197,6 @@ public class StreamDecoder extends Reader {
             // indicating EOF, then we don't return their sum as this loses data.
             return (nr < 0) ? (n == 1 ? 1 : nr) : (n + nr);
         }
-    }
-
-    private static CharBuffer ensureFree(CharBuffer cb, int minFree) {
-        return cb.remaining() < minFree ? CharBuffer.allocate(cb.position() + minFree).put(cb.flip()) : cb;
     }
 
     public boolean ready() throws IOException {
@@ -278,7 +280,6 @@ public class StreamDecoder extends Reader {
     }
 
     private int readBytes() throws IOException {
-        readCalled = true;
         bb.compact();
         try {
             if (ch != null) {
@@ -312,6 +313,7 @@ public class StreamDecoder extends Reader {
     }
 
     int implRead(char[] cbuf, int off, int end) throws IOException {
+        readCalled = true;
 
         // In order to handle surrogate pairs, this method requires that
         // the invoker attempt to read at least two characters.  Saving the
@@ -392,9 +394,12 @@ public class StreamDecoder extends Reader {
     }
 
     public String tryReadAllAsString() throws IOException {
+        if (in == null || !decoderFromCharset) {
+            return null;
+        }
         synchronized (lock) {
             ensureOpen();
-            if (in != null && decoderFromCharset && !readCalled) {
+            if (!readCalled) {
                 return new String(in.readAllBytes(), cs);
             }
         }
