@@ -28,9 +28,6 @@
 #include "gc/g1/g1FromCardCache.hpp"
 
 bool G1FromCardCache::contains_or_add(uintptr_t from_card, uint cset_group_id) {
-  // Cards are scanned in order, so all references from the same card are
-  // visited consecutively. State for a previous _from_card can therefore
-  // be discarded.
   if (_from_card != from_card) {
     _from_card = from_card;
     _num_cset_groups = 0;
@@ -42,7 +39,7 @@ bool G1FromCardCache::contains_or_add(uintptr_t from_card, uint cset_group_id) {
     }
   }
 
-  assert(_num_cset_groups < MaxOopsPerCard, "from_card has too many destination cset groups");
+  assert(_num_cset_groups < MaxGroupsPerCard, "from_card has too many destination cset groups");
 
   _cset_group_ids[_num_cset_groups++] = cset_group_id;
   return false;

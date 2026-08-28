@@ -29,14 +29,24 @@
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-// G1FromCardCache remembers which destination cset groups have
-// been encountered while a worker scans the current from_card.
+// G1FromCardCache remembers which destination cset groups have been
+// encountered while a worker scans the current from_card.
+//
+// Refinement and remembered set rebuild scan the heap linearly, visiting
+// references from a card consecutively. Therefore, the cache only tracks
+// the destination cset groups found while scanning the current card. The
+// cache state is discarded when advancing to the next card.
+//
+// A scan can be suspended at a yield point. A GC may run while it is
+// suspended and change the cset group assignments. Therefore, the cache
+// must be reset before the scan resumes after every yield.
 class G1FromCardCache {
-  static constexpr uint MaxOopsPerCard = MaxCardSizeInBytes / sizeof(narrowOop);
+  // Worst case: each reference in a card targets a different cset group.
+  static constexpr uint MaxGroupsPerCard = MaxGCCardSizeInBytes / sizeof(narrowOop);
 
   uintptr_t _from_card;
   uint _num_cset_groups;
-  uint _cset_group_ids[MaxOopsPerCard];
+  uint _cset_group_ids[MaxGroupsPerCard];
 
   NONCOPYABLE(G1FromCardCache);
 
