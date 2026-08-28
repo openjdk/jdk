@@ -558,7 +558,7 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
 
         oop_maps = new OopMapSet();
         oop_maps->add_gc_map(call_offset, map);
-        restore_live_registers_except_r2(sasm);
+        restore_live_registers(sasm);
         __ z_br(Z_R14);
       }
       break;
