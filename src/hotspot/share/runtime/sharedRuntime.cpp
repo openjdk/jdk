@@ -4219,8 +4219,12 @@ JRT_END
 // Slow path when the native==>Java barriers detect a safepoint/handshake is
 // pending, when _suspend_flags is non-zero or when we need to process a stack
 // watermark. Also check for pending async exceptions (except unsafe access error).
-JRT_ENTRY(void, SharedRuntime::check_special_condition_for_native_trans(JavaThread *current))
+JRT_BLOCK_ENTRY(void, SharedRuntime::check_special_condition_for_native_trans(JavaThread *current))
   assert(!current->has_last_Java_frame() || current->frame_anchor()->walkable(), "Unwalkable stack in native->Java transition");
+
+  JRT_BLOCK
+  // Process safepoint, check for pending async exceptions, etc
+  JRT_BLOCK_END
 
   // After returning from native, it could be that the stack frames are not
   // yet safe to use. We catch such situations in the subsequent stack watermark
