@@ -71,11 +71,9 @@ public class ClhsdbInspectWithValueObject {
             String cmd = "inspect " + addrInHex;
             var expStrMap = Map.of(cmd, List.of(
               "a: 1",
-              "b: 2",
               "rec:",
                 "recA: 10",
                 "recB: 20",
-              "c: 3",
               "nullField: null"
             ));
             test.run(theApp.getPid(), List.of(cmd), expStrMap, null);

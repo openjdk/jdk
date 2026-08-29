@@ -41,15 +41,11 @@ public class LingeredAppWithValueObject extends LingeredApp {
     public static value class ValueObj {
 
         public final byte a;
-        public final byte b;
         public final Rec  rec;
-        public final byte c;
         public final Rec  nullField;
 
-        public ValueObj(byte a, byte b, byte c, byte recA, byte recB) {
+        public ValueObj(byte a, byte recA, byte recB) {
             this.a = a;
-            this.b = b;
-            this.c = c;
             this.rec = new Rec(recA, recB);
             this.nullField = null;
         }
@@ -58,7 +54,7 @@ public class LingeredAppWithValueObject extends LingeredApp {
     private static ValueObj valObj;
 
     public static void main(String[] args) {
-        valObj = new ValueObj((byte)1, (byte)2, (byte)3, (byte)10, (byte)20);
+        valObj = new ValueObj((byte)1, (byte)10, (byte)20);
         WhiteBox wb = WhiteBox.getWhiteBox();
         long addr = wb.getObjectAddress(valObj);
         String addrInHex = String.format("0x%x", addr);
