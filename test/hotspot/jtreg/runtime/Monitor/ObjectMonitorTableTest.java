@@ -24,9 +24,9 @@
 /**
  * @test id=NormalDeflation
  * @summary A collection of small tests using synchronized, wait, notify to try
- *          and achieve good cheap coverage of UseObjectMonitorTable.
+ *          and achieve good cheap coverage of ObjectMonitorTable.
  * @library /test/lib
- * @run main/othervm UseObjectMonitorTableTest
+ * @run main/othervm ObjectMonitorTableTest
  */
 
 /**
@@ -35,7 +35,7 @@
  * @library /test/lib
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions
  *                   -XX:GuaranteedAsyncDeflationInterval=1
- *                   UseObjectMonitorTableTest
+ *                   ObjectMonitorTableTest
  */
 
 import jdk.test.lib.Utils;
@@ -48,7 +48,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.Random;
 import java.util.stream.Stream;
 
-public class UseObjectMonitorTableTest {
+public class ObjectMonitorTableTest {
     static final ThreadFactory TF = Executors.defaultThreadFactory();
 
     static class WaitNotifyTest implements Runnable {
@@ -232,10 +232,10 @@ public class UseObjectMonitorTableTest {
             try {
                 t.join();
             } catch (InterruptedException e) {
-                throw new RuntimeException("UseObjectMonitorTableTest: Unexpected interrupt", e);
+                throw new RuntimeException("ObjectMonitorTableTest: Unexpected interrupt", e);
             }
         });
 
-        System.out.println("UseObjectMonitorTableTest passed.");
+        System.out.println("ObjectMonitorTableTest passed.");
     }
 }
