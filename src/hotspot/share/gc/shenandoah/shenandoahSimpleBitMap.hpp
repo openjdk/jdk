@@ -25,7 +25,6 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHSIMPLEBITMAP_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHSIMPLEBITMAP_HPP
 
-#include "cppstdlib/cstddef.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/integerCast.hpp"

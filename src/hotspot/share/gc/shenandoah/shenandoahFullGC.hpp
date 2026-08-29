@@ -26,10 +26,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHFULLGC_HPP
 
 #include "gc/shared/gcCause.hpp"
-#include "gc/shared/gcTimer.hpp"
 #include "gc/shenandoah/shenandoahGC.hpp"
-#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
-#include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 
 class GCTimer;
 class ShenandoahHeapRegionSet;
@@ -56,8 +53,6 @@ class ShenandoahHeapRegionSet;
  */
 
 class PreservedMarksSet;
-class ShenandoahDegenGC;
-class VM_ShenandoahFullGC;
 
 class ShenandoahFullGC : public ShenandoahGC {
   friend class ShenandoahPrepareForCompactionObjectClosure;

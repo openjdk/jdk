@@ -26,8 +26,6 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGIONSET_HPP
 
 #include "gc/shenandoah/shenandoahHeap.hpp"
-#include "gc/shenandoah/shenandoahHeapRegion.hpp"
-#include "gc/shenandoah/shenandoahPadding.hpp"
 #include "jni_md.h"
 #include "memory/allocation.hpp"
 #include "nmt/memTag.hpp"

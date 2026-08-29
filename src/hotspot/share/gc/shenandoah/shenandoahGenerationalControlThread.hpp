@@ -31,12 +31,10 @@
 #include "gc/shenandoah/shenandoahGC.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "runtime/mutex.hpp"
-#include "runtime/mutexLocker.hpp"
 
 class MonitorLocker;
 class ShenandoahGeneration;
 class ShenandoahGenerationalHeap;
-class ShenandoahHeap;
 class ShenandoahOldGeneration;
 
 class ShenandoahGenerationalControlThread: public ShenandoahController {

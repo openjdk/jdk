@@ -27,9 +27,7 @@
 
 #include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
 #include "gc/shenandoah/shenandoahAffiliation.hpp"
-#include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
-#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
@@ -43,10 +41,8 @@
 class LogStream;
 class ShenandoahAllocRequest;
 class ShenandoahHeapRegion;
-class ShenandoahHeapRegionClosure;
 class ShenandoahHeuristics;
 class ShenandoahMode;
-class ShenandoahOldHeuristics;
 class ShenandoahScanRemembered;
 class Thread;
 

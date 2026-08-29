@@ -39,11 +39,9 @@
 #include <stddef.h>
 
 class CollectedHeap;
-class PLAB;
 class ShenandoahAgeCensus;
 class ShenandoahCollectorPolicy;
 class ShenandoahGeneration;
-class ShenandoahGenerationalControlThread;
 class ShenandoahHeapRegion;
 class ShenandoahMarkingContext;
 class ShenandoahRegulatorThread;

@@ -181,9 +181,7 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahNumberSeq.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
-#include "gc/shenandoah/shenandoahTaskqueue.hpp"
 #include "memory/allocation.hpp"
-#include "memory/iterator.hpp"
 #include "nmt/memTag.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
@@ -194,15 +192,11 @@
 #include <stddef.h>
 #include <stdint.h>
 
-class CardTable;
 class OopIterateClosure;
-class ShenandoahConcurrentMark;
-class ShenandoahHeap;
 class ShenandoahHeapRegion;
 class ShenandoahMarkingContext;
 class ShenandoahObjToScanQueueSet;
 class ShenandoahReferenceProcessor;
-class ShenandoahRegionIterator;
 
 typedef CardTable::CardValue CardValue;
 

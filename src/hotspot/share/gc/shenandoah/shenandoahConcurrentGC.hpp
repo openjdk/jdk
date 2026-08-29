@@ -33,10 +33,6 @@
 
 class ShenandoahGeneration;
 class ShenandoahHeap;
-class VM_ShenandoahFinalMarkStartEvac;
-class VM_ShenandoahFinalUpdateRefs;
-class VM_ShenandoahInitMark;
-class VM_ShenandoahInitUpdateRefs;
 
 class ShenandoahConcurrentGC : public ShenandoahGC {
   friend class VM_ShenandoahInitMark;

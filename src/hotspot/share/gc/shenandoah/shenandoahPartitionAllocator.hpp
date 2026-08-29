@@ -25,12 +25,11 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHPARTITIONALLOCATOR_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHPARTITIONALLOCATOR_HPP
 
-#include "gc/shenandoah/shenandoahAllocRequest.hpp"
-#include "gc/shenandoah/shenandoahFreeSet.hpp"
-#include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "memory/allocation.hpp"
 #include "nmt/memTag.hpp"
 #include "utilities/globalDefinitions.hpp"
+
+#include <stdint.h>
 
 class ShenandoahAllocRequest;
 class ShenandoahFreeSet;

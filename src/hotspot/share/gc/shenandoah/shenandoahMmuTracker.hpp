@@ -30,7 +30,6 @@
 
 #include <stddef.h>
 
-class ShenandoahGeneration;
 class ShenandoahMmuTask;
 
 /**

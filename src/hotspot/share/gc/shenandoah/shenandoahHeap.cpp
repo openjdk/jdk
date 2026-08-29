@@ -184,7 +184,6 @@
 
 class GCTracer;
 class Klass;
-class MemoryPool;
 class nmethod;
 enum class VerifyOption : uint;
 #if INCLUDE_JFR

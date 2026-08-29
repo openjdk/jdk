@@ -31,7 +31,6 @@
 
 #include <stddef.h>
 
-class JavaThread;
 class oopDesc;
 
 class ShenandoahRuntime : public AllStatic {

@@ -26,8 +26,6 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHVERIFIER_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHVERIFIER_HPP
 
-#include "gc/shared/markBitMap.hpp"
-#include "gc/shenandoah/shenandoahRootVerifier.hpp"
 #include "memory/allocation.hpp"
 #include "nmt/memTag.hpp"
 #include "oops/oopsHierarchy.hpp"
@@ -42,7 +40,6 @@ class MarkBitMap;
 class ShenandoahGeneration;
 class ShenandoahHeap;
 class ShenandoahHeapRegion;
-class ShenandoahMarkingContext;
 enum class VerifyOption : uint;
 
 #ifdef _WINDOWS

@@ -31,7 +31,6 @@
 #include "utilities/globalDefinitions.hpp"
 
 class ShenandoahGeneration;
-class ShenandoahSTWMarkTask;
 
 class ShenandoahSTWMark : public ShenandoahMark {
   friend class ShenandoahSTWMarkTask;

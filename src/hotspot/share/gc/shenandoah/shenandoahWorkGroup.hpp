@@ -26,12 +26,9 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHWORKGROUP_HPP
 
 #include "gc/shared/workerThread.hpp"
-#include "gc/shenandoah/shenandoahTaskqueue.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/vmassert_reinstall.hpp"
-
-class ShenandoahObjToScanQueueSet;
 
 class ShenandoahWorkerScope : public StackObj {
 private:

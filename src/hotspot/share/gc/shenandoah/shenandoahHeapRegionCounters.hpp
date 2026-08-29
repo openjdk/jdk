@@ -27,7 +27,6 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGIONCOUNTERS_HPP
 
 #include "jni_md.h"
-#include "logging/logFileStreamOutput.hpp"
 #include "memory/allocation.hpp"
 #include "nmt/memTag.hpp"
 #include "runtime/atomic.hpp"

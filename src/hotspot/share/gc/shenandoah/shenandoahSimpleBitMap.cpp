@@ -33,8 +33,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/vmassert_reinstall.hpp"
 
-#include <stddef.h>
-
 ShenandoahSimpleBitMap::ShenandoahSimpleBitMap(idx_t num_bits) :
     _num_bits(num_bits),
     _num_words(align_up(num_bits, BitsPerWord) / BitsPerWord),

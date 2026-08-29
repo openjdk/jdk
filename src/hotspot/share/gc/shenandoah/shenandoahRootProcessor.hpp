@@ -25,7 +25,6 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHROOTPROCESSOR_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHROOTPROCESSOR_HPP
 
-#include "code/codeCache.hpp"
 #include "gc/shared/oopStorageSetParState.hpp"
 #include "gc/shenandoah/shenandoahCodeRoots.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"

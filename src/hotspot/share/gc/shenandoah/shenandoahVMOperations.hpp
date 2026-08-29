@@ -27,7 +27,6 @@
 
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcId.hpp"
-#include "gc/shared/gcVMOperations.hpp"
 #include "runtime/vmOperation.hpp"
 #include "utilities/globalDefinitions.hpp"
 

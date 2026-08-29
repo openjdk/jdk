@@ -26,15 +26,10 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHSTACKWATERMARK_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHSTACKWATERMARK_HPP
 
-#include "gc/shared/barrierSet.hpp"
-#include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/threadLocalAllocBuffer.hpp"
 #include "gc/shenandoah/shenandoahClosures.hpp"
-#include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
-#include "oops/oopsHierarchy.hpp"
 #include "runtime/stackWatermark.hpp"
-#include "utilities/globalDefinitions.hpp"
 
 #include <stdint.h>
 

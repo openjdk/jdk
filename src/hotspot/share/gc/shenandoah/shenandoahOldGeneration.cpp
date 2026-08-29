@@ -76,7 +76,6 @@
 #include "utilities/events.hpp"
 #include "utilities/vmassert_reinstall.hpp"
 
-#include <stddef.h>
 #include <type_traits>
 
 class ShenandoahHeuristics;

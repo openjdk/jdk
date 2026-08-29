@@ -25,7 +25,6 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHNMETHOD_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHNMETHOD_HPP
 
-#include "code/nmethod.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
@@ -34,7 +33,6 @@
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmassert_reinstall.hpp"
 

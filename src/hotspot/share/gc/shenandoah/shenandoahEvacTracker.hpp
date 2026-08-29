@@ -25,11 +25,9 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHEVACTRACKER_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHEVACTRACKER_HPP
 
-#include "gc/shared/ageTable.hpp"
 #include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "memory/allocation.hpp"
 #include "nmt/memTag.hpp"
-#include "utilities/ostream.hpp"
 
 #include <stddef.h>
 

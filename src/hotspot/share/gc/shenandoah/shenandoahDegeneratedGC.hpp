@@ -30,7 +30,6 @@
 
 class ShenandoahGeneration;
 class ShenandoahHeap;
-class VM_ShenandoahDegeneratedGC;
 
 class ShenandoahDegenGC : public ShenandoahGC {
   friend class VM_ShenandoahDegeneratedGC;
