@@ -217,26 +217,9 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   static ByteSize succ_offset()        { return byte_offset_of(ObjectMonitor, _succ); }
   static ByteSize entry_list_offset()  { return byte_offset_of(ObjectMonitor, _entry_list); }
 
-  // ObjectMonitor references can be ORed with markWord::monitor_value
-  // as part of the ObjectMonitor tagging mechanism. When we combine an
-  // ObjectMonitor reference with an offset, we need to remove the tag
-  // value in order to generate the proper address.
-  //
-  // We can either adjust the ObjectMonitor reference and then add the
-  // offset or we can adjust the offset that is added to the ObjectMonitor
-  // reference. The latter avoids an AGI (Address Generation Interlock)
-  // stall so the helper macro adjusts the offset value that is returned
-  // to the ObjectMonitor reference manipulation code:
-  //
-  #define OM_OFFSET_NO_MONITOR_VALUE_TAG(f) \
-    ((in_bytes(ObjectMonitor::f ## _offset())) - checked_cast<int>(markWord::monitor_value))
-
   uintptr_t           metadata() const;
   void                set_metadata(uintptr_t value);
   volatile uintptr_t* metadata_addr();
-
-  markWord            header() const;
-  void                set_header(markWord hdr);
 
   intptr_t            hash() const;
   void                set_hash(intptr_t hash);
