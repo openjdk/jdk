@@ -1048,6 +1048,21 @@ void PhaseIterGVN::trace_PhaseIterGVN_verbose(Node* n, int num_processed) {
 }
 #endif /* ASSERT */
 
+// Whether a node can be killed during IGVN. While transform may kill a node based on its inputs,
+// this can also decide to kill a node based on its outputs.
+bool PhaseIterGVN::can_kill(Node* n) const {
+  if (n->is_top()) {
+    return false;
+  }
+  if (n->outcnt() == 0) {
+    return true;
+  }
+  if (n->is_Phi() && n->as_Phi()->is_dead_phi()) {
+    return true;
+  }
+  return false;
+}
+
 bool PhaseIterGVN::needs_deep_revisit(const Node* n) const {
   // LoadNode::Value() -> can_see_stored_value() walks up through many memory
   // nodes. LoadNode::Ideal() -> find_previous_store() also walks up to 50
@@ -1096,11 +1111,9 @@ bool PhaseIterGVN::drain_worklist() {
       return true;
     }
     DEBUG_ONLY(trace_PhaseIterGVN_verbose(n, _num_processed++);)
-    if (n->outcnt() == 0 || (n->is_Phi() && n->as_Phi()->is_dead_phi())) {
-      if (!n->is_top()) {
-        remove_globally_dead_node(n, NodeOrigin::Graph);
-      }
-    } else {
+    if (can_kill(n)) {
+      remove_globally_dead_node(n, NodeOrigin::Graph);
+    } else if (!n->is_top()) {
       NOT_PRODUCT(const Type* oldtype = type_or_null(n));
       // Do the transformation
       DEBUG_ONLY(int live_nodes_before = C->live_nodes();)
