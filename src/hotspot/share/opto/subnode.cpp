@@ -843,11 +843,11 @@ const Type* CmpUNode::Value(PhaseGVN* phase) const {
       int lo_wrapped_range = (int)lo_sum_range;
       bool underflow = lo_sum_range != (jlong)lo_wrapped_range;
       bool overflow  = hi_sum_range != (jlong)hi_wrapped_range;
-      int w = MAX2(ti11->_widen, ti12->_widen); // _widen does not matter here
       // Use sub(t1, t2) when there is no overflow (one type range)
-      // or when the wrapped ranges cover all jint values.
+      // or when both overflow and underflow (too complex).
       if ((underflow != overflow) && (hi_wrapped_range < lo_wrapped_range)) {
         // Overflow only on one boundary, compare 2 separate type ranges.
+        int w = MAX2(ti11->_widen, ti12->_widen); // _widen does not matter here
         const TypeInt* wrapped_range1 = TypeInt::make(min_jint, hi_wrapped_range, w);
         const TypeInt* wrapped_range2 = TypeInt::make(lo_wrapped_range, max_jint, w);
         const TypeInt* cmp1 = sub(wrapped_range1, t2)->is_int();
@@ -855,15 +855,6 @@ const Type* CmpUNode::Value(PhaseGVN* phase) const {
         // Compute union, so that cmp handles all possible results from the two cases
         const Type* t_cmp = cmp1->meet(cmp2);
         // Pick narrowest type, based on overflow computation and on immediate inputs
-        return t_sub->filter(t_cmp);
-      } else if (underflow && overflow &&
-                 (hi_sum_range < min_jint || lo_sum_range > max_jint)) {
-        // Both bounds are either below min_jint or above max_jint, so the
-        // wrapped result is still representable as one contiguous range.
-        assert(lo_wrapped_range <= hi_wrapped_range,
-               "wrapped lower bound must not exceed wrapped upper bound");
-        const TypeInt* wrapped_range = TypeInt::make(lo_wrapped_range, hi_wrapped_range, w);
-        const Type* t_cmp = sub(wrapped_range, t2);
         return t_sub->filter(t_cmp);
       }
     }
