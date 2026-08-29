@@ -28,6 +28,7 @@
 #define CPU_RISCV_MACROASSEMBLER_RISCV_HPP
 
 #include "asm/assembler.inline.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/vmreg.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "oops/compressedOops.hpp"
@@ -684,6 +685,9 @@ class MacroAssembler: public Assembler {
   void bltz(Register Rs, const address dest);
   void bgtz(Register Rs, const address dest);
 
+  void cmov_zicond_eqz(Register dst, Register src, Register cond, Register tmp = t0);
+  void cmov_zicond_nez(Register dst, Register src, Register cond, Register tmp = t0);
+
   void cmov_eq(Register cmp1, Register cmp2, Register dst, Register src);
   void cmov_ne(Register cmp1, Register cmp2, Register dst, Register src);
   void cmov_le(Register cmp1, Register cmp2, Register dst, Register src);
@@ -770,7 +774,7 @@ class MacroAssembler: public Assembler {
   // is used to keep the entry address for jalr/movptr.
   // Uses call() for intra code cache, else movptr + jalr.
   // Clobebrs t1
-  void rt_call(address dest, Register tmp = t1);
+  void rt_call(address dest, Register tmp1 = t1, Register tmp2 = noreg);
 
   // ret: jalr x0, 0(x1)
   inline void ret() {
@@ -1290,6 +1294,9 @@ public:
   }
 
   void load_byte_map_base(Register reg);
+
+  // Load a constant address in the AOT Runtime Constants area
+  void load_aotrc_address(Register reg, address a);
 
   void bang_stack_with_offset(int offset) {
     // stack grows down, caller passes positive offset
@@ -1835,7 +1842,7 @@ public:
   static bool is_pc_relative_at(address branch);
 
   static bool is_membar(address addr) {
-    return (Bytes::get_native_u4(addr) & 0x7f) == 0b1111 && extract_funct3(addr) == 0;
+    return (Assembler::ld_instr(addr) & 0x7f) == 0b1111 && extract_funct3(addr) == 0;
   }
   static uint32_t get_membar_kind(address addr);
   static void set_membar_kind(address addr, uint32_t order_kind);

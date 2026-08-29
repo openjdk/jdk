@@ -69,6 +69,8 @@ class Verifier : AllStatic {
   // Print output for class+resolve
   static void trace_class_resolution(Klass* resolve_class, InstanceKlass* verify_class);
 
+  static bool supports_strict_fields(InstanceKlass* klass);
+
  private:
   static Symbol* inference_verify(
     InstanceKlass* klass, char* msg, size_t msg_len, TRAPS);

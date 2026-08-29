@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,6 +100,7 @@ public interface ApplicationLayout extends AppImageLayout, ApplicationLayoutMixi
             appModsDirectory = appLayout.appModsDirectory();
             desktopIntegrationDirectory = appLayout.desktopIntegrationDirectory();
             contentDirectory = appLayout.contentDirectory();
+            resourcesDirectory = appLayout.resourcesDirectory();
         }
 
         public ApplicationLayout create() {
@@ -111,11 +112,13 @@ public interface ApplicationLayout extends AppImageLayout, ApplicationLayoutMixi
             Objects.requireNonNull(appModsDirectory);
             Objects.requireNonNull(desktopIntegrationDirectory);
             Objects.requireNonNull(contentDirectory);
+            Objects.requireNonNull(resourcesDirectory);
 
             return ApplicationLayout.create(new AppImageLayout.Stub(
                     rootDirectory, runtimeDirectory), new ApplicationLayoutMixin.Stub(
                     launchersDirectory, appDirectory, appModsDirectory,
-                    desktopIntegrationDirectory, contentDirectory));
+                    desktopIntegrationDirectory, contentDirectory,
+                    resourcesDirectory));
         }
 
         public Builder setAll(String path) {
@@ -130,6 +133,7 @@ public interface ApplicationLayout extends AppImageLayout, ApplicationLayoutMixi
             appModsDirectory(path);
             desktopIntegrationDirectory(path);
             contentDirectory(path);
+            resourcesDirectory(path);
             return this;
         }
 
@@ -141,6 +145,7 @@ public interface ApplicationLayout extends AppImageLayout, ApplicationLayoutMixi
             appModsDirectory(mapNullablePath(mapper, appModsDirectory));
             desktopIntegrationDirectory(mapNullablePath(mapper, desktopIntegrationDirectory));
             contentDirectory(mapNullablePath(mapper, contentDirectory));
+            resourcesDirectory(mapNullablePath(mapper, resourcesDirectory));
             return this;
         }
 
@@ -207,6 +212,15 @@ public interface ApplicationLayout extends AppImageLayout, ApplicationLayoutMixi
             return this;
         }
 
+        public Builder resourcesDirectory(String v) {
+            return resourcesDirectory(Path.of(v));
+        }
+
+        public Builder resourcesDirectory(Path v) {
+            resourcesDirectory = v;
+            return this;
+        }
+
         private Path rootDirectory = Path.of("");
         private Path launchersDirectory;
         private Path appDirectory;
@@ -214,5 +228,6 @@ public interface ApplicationLayout extends AppImageLayout, ApplicationLayoutMixi
         private Path appModsDirectory;
         private Path desktopIntegrationDirectory;
         private Path contentDirectory;
+        private Path resourcesDirectory;
     }
 }
