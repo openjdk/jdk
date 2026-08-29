@@ -48,18 +48,24 @@ public class TestXEmbedServerJava extends TestXEmbedServer {
             "You may start XEmbed client by pressing 'Add client' button.\n" +
             "Check that focus transfer with mouse works, that focus traversal with Tab/Shift-Tab works.\n" +
             "Check that XEmbed server client's growing and shrinking.\n" +
+            "  - Click the Increase size button in the embedded client and verify the client area grows.\n" +
+            "  - Click the Decrease size button in the embedded client and verify the client area shrinks.\n" +
+            "  - Repeat the grow and shrink actions a few times and verify the embedded client resizes correctly each time.\n" +
             "Check the keyboard input works in both text fields.\n" +
             "  - Input some sample text into the server text field.\n" +
-            "  - Drag the text in the server text field and drop it to the left or right of the existing text within the same text field.\n" +
+            "  - Drag the entire text in the server text field and verify it is dropped to the right of the existing text within the same text field.\n" +
             "  - Input some sample text into the client text field.\n" +
-            "  - Drag the text in the client text field and drop it to the left or right of the existing text within the same text field.\n" +
-            "  - Drag the text from the client text field to the server text field.\n" +
-            "  - Drag the text from the server text field to the client text field.\n";
+            "  - Drag the entire text in the client text field and verify it is dropped to the right of the existing text within the same text field.\n" +
+            "  - Drag the text from the client text field to the server text field and verify it is dropped to the right of the existing text.\n" +
+            "  - Drag the text from the server text field to the client text field and verify it is dropped to the right of the existing text.\n";
         Frame f = new Frame("Instructions");
+        TextArea instructionArea =
+                new TextArea(instruction, 16, 72, TextArea.SCROLLBARS_VERTICAL_ONLY);
+        instructionArea.setEditable(false);
         f.setLayout(new BorderLayout());
-        f.add(new TextArea(instruction), BorderLayout.CENTER);
+        f.add(instructionArea, BorderLayout.CENTER);
         f.pack();
-        f.setLocation(0, 400);
+        f.setLocation(20, 20);
         f.setVisible(true);
 
         TestXEmbedServerJava lock = new TestXEmbedServerJava();
