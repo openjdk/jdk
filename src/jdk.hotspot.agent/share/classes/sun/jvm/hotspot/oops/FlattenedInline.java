@@ -54,8 +54,23 @@ public class FlattenedInline extends Inline {
     }
 
     @Override
+    public Mark getMark() {
+        throw new UnsupportedOperationException("Flattened object does not have mark word");
+    }
+
+    @Override
     public Klass getKlass() {
         return klass;
+    }
+
+    @Override
+    public long identityHash() {
+        throw new UnsupportedOperationException("Flattened object does not support identity hash");
+    }
+
+    @Override
+    public long slowIdentityHash() {
+        throw new UnsupportedOperationException("Flattened object does not support identity hash");
     }
 
     @Override
