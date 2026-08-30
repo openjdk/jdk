@@ -41,6 +41,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/timerTrace.hpp"
 #include "utilities/debug.hpp"
@@ -427,7 +428,7 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
   // ThreadStateTransition::transition_from_native() cannot be used
   // here because it does not check for asynchronous exceptions.
   // We have to manage the transition ourself.
-  thread->set_thread_state_fence(_thread_in_vm);
+  thread->set_thread_state_fence(_thread_in_Java);
 
   // Handle safepoint operations, pending suspend requests,
   // and pending asynchronous exceptions.
@@ -437,8 +438,6 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
     CHECK_UNHANDLED_OOPS_ONLY(thread->clear_unhandled_oops());
   }
 
-  // Finally we can change the thread state to _thread_in_Java.
-  thread->set_thread_state(_thread_in_Java);
   fixup_after_potential_safepoint();
 
   // Notify the stack watermarks machinery that we are unwinding.
