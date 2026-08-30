@@ -308,7 +308,9 @@ void DowncallLinker::StubGenerator::generate() {
     __ restore_cpu_control_state_after_jni(t0);
 
     __ block_comment("{ thread native2java");
-    __ mv(t0, _thread_in_vm);
+    // change thread state
+    __ mv(t0, _thread_in_Java);
+    __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
     __ sw(t0, Address(xthread, JavaThread::thread_state_offset()));
 
     // Force this write out before the read below
@@ -321,11 +323,6 @@ void DowncallLinker::StubGenerator::generate() {
     __ bnez(t0, L_safepoint_poll_slow_path);
 
     __ bind(L_after_safepoint_poll);
-
-    // change thread state
-    __ mv(t0, _thread_in_Java);
-    __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-    __ sw(t0, Address(xthread, JavaThread::thread_state_offset()));
 
     __ block_comment("reguard stack check");
     __ lbu(t0, Address(xthread, JavaThread::stack_guard_state_offset()));

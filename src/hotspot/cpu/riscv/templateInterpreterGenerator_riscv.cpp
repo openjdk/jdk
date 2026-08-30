@@ -1212,8 +1212,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // change thread state
   // Force all preceding writes to be observed prior to thread state change
   __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-
-  __ mv(t0, _thread_in_vm);
+  __ mv(t0, _thread_in_Java);
   __ sw(t0, Address(xthread, JavaThread::thread_state_offset()));
 
   // Force this write out before the read below
@@ -1241,13 +1240,6 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ reinit_heapbase();
     __ bind(Continue);
   }
-
-  // change thread state
-  // Force all preceding writes to be observed prior to thread state change
-  __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-
-  __ mv(t0, _thread_in_Java);
-  __ sw(t0, Address(xthread, JavaThread::thread_state_offset()));
 
   // Check preemption for Object.wait()
   Label not_preempted;
