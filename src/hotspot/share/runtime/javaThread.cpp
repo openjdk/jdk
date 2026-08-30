@@ -281,7 +281,7 @@ void JavaThread::check_possible_safepoint() {
 #endif // CHECK_UNHANDLED_OOPS
 }
 
-void JavaThread::check_for_valid_safepoint_state(bool allow_gcalot) {
+void JavaThread::check_for_valid_safepoint_state() {
   // Don't complain if running a debugging command.
   if (DebuggingContext::is_enabled()) return;
 
@@ -301,7 +301,7 @@ void JavaThread::check_for_valid_safepoint_state(bool allow_gcalot) {
     fatal("illegal thread state %d, LEAF method calling lock?", thread_state());
   }
 
-  if (GCALotAtAllSafepoints && allow_gcalot) {
+  if (GCALotAtAllSafepoints) {
     // We could enter a safepoint here and thus have a gc
     InterfaceSupport::check_gc_alot();
   }

@@ -1418,10 +1418,6 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
       if (ac->_dest_type != TypeOopPtr::BOTTOM) {
         adr_type = ac->_dest_type->add_offset(Type::OffsetBot)->is_ptr();
       }
-      if (ac->_src_type != ac->_dest_type) {
-        adr_type = TypeRawPtr::BOTTOM;
-        raw_base = true;
-      }
     }
     merge_mem = MergeMemNode::make(mem);
     transform_later(merge_mem);
