@@ -1817,9 +1817,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   Label safepoint_in_progress, safepoint_in_progress_done;
 
-  // change thread state
-  __ mv(t0, _thread_in_Java);
-  __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
+  __ mv(t0, _thread_in_vm);
+
   __ sw(t0, Address(xthread, JavaThread::thread_state_offset()));
 
   // Force this write out before the read below
@@ -1834,6 +1833,12 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ bnez(t0, safepoint_in_progress);
     __ bind(safepoint_in_progress_done);
   }
+
+  // change thread state
+  __ la(t1, Address(xthread, JavaThread::thread_state_offset()));
+  __ mv(t0, _thread_in_Java);
+  __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
+  __ sw(t0, Address(t1));
 
   if (method->is_object_wait0()) {
     // Check preemption for Object.wait()
