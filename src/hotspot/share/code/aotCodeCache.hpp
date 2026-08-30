@@ -489,10 +489,8 @@ protected:
     bool _avoidUnalignedAccesses;
 #endif
 
-    uint _cpu_features_offset; // offset in the cache where cpu features are stored
   public:
-    void record(uint cpu_features_offset);
-    bool verify_cpu_features(AOTCodeCache* cache) const;
+    void record();
     bool verify(AOTCodeCache* cache) const;
   };
 
@@ -504,13 +502,15 @@ protected:
     };
     uint   _version;         // AOT code version (should match when reading code cache)
     uint   _cache_size;      // cache size in bytes
-    uint   _strings_count;   // number of recorded C strings
-    uint   _strings_offset;  // offset to recorded C strings
+    uint   _cpu_features_size;
+    uint   _cpu_features_offset;   // offset in the cache where cpu features are stored
+    uint   _preload_entries_count; // entries for pre-loading code
+    uint   _preload_entries_offset;
     uint   _entries_count;   // number of recorded entries
     uint   _entries_offset;  // offset of AOTCodeEntry array describing entries
     uint   _search_table_offset; // offset of table for looking up an AOTCodeEntry
-    uint   _preload_entries_count; // entries for pre-loading code
-    uint   _preload_entries_offset;
+    uint   _strings_count;   // number of recorded C strings
+    uint   _strings_offset;  // offset to recorded C strings
     uint   _adapters_count;
     uint   _shared_blobs_count;
     uint   _stubgen_blobs_count;
@@ -518,39 +518,49 @@ protected:
     uint   _C2_blobs_count;
     Config _config; // must be the last element as there is trailing data stored immediately after Config
 
+    bool contains(uint offset, uint size) const {
+      return offset <= _cache_size && size <= (_cache_size - offset);
+    }
+
   public:
     void init(uint cache_size,
-              uint strings_count,       uint strings_offset,
-              uint entries_count,       uint entries_offset, uint search_table_offset,
+              uint cpu_features_size,     uint cpu_features_offset,
               uint preload_entries_count, uint preload_entries_offset,
-              uint adapters_count,      uint shared_blobs_count,
-              uint stubgen_blobs_count, uint C1_blobs_count,
-              uint C2_blobs_count,      uint cpu_features_offset) {
+              uint entries_count,         uint entries_offset,
+              uint search_table_offset,
+              uint strings_count,         uint strings_offset,
+              uint adapters_count,        uint shared_blobs_count,
+              uint stubgen_blobs_count,   uint C1_blobs_count,
+              uint C2_blobs_count) {
       _version        = AOT_CODE_VERSION;
       _cache_size     = cache_size;
-      _strings_count  = strings_count;
-      _strings_offset = strings_offset;
+      _cpu_features_size   = cpu_features_size;
+      _cpu_features_offset = cpu_features_offset;
+      _preload_entries_count  = preload_entries_count;
+      _preload_entries_offset = preload_entries_offset;
       _entries_count  = entries_count;
       _entries_offset = entries_offset;
       _search_table_offset = search_table_offset;
-      _preload_entries_count  = preload_entries_count;
-      _preload_entries_offset = preload_entries_offset;
+      _strings_count  = strings_count;
+      _strings_offset = strings_offset;
       _adapters_count = adapters_count;
-      _shared_blobs_count = shared_blobs_count;
+      _shared_blobs_count  = shared_blobs_count;
       _stubgen_blobs_count = stubgen_blobs_count;
       _C1_blobs_count = C1_blobs_count;
       _C2_blobs_count = C2_blobs_count;
-      _config.record(cpu_features_offset);
+      _config.record();
     }
 
     uint cache_size()     const { return _cache_size; }
-    uint strings_count()  const { return _strings_count; }
-    uint strings_offset() const { return _strings_offset; }
-    uint entries_count()  const { return _entries_count; }
-    uint entries_offset() const { return _entries_offset; }
-    uint search_table_offset() const { return _search_table_offset; }
+    uint cpu_features_size()   const { return _cpu_features_size; }
+    uint cpu_features_offset() const { return _cpu_features_offset; }
     uint preload_entries_count()  const { return _preload_entries_count; }
     uint preload_entries_offset() const { return _preload_entries_offset; }
+    uint entries_count()  const { return _entries_count; }
+    uint entries_offset() const { return _entries_offset; }
+    uint strings_count()  const { return _strings_count; }
+    uint strings_offset() const { return _strings_offset; }
+    uint search_table_offset() const { return _search_table_offset; }
     uint adapters_count() const { return _adapters_count; }
     uint stubgen_blobs_count()   const { return _stubgen_blobs_count; }
     uint shared_blobs_count()    const { return _shared_blobs_count; }
@@ -563,8 +573,19 @@ protected:
                                          - _C1_blobs_count
                                          - _C2_blobs_count
                                          - _adapters_count; }
-    bool verify(uint load_size)  const;
+    bool verify(const char* load_buffer, uint load_size)  const;
+    bool verify_cpu_features(AOTCodeCache* cache) const;
+    size_t verify_section(uint offset,
+                          uint count,
+                          size_t unit_size,
+                          size_t low_limit,
+                          const char* section_name) const;
     bool verify_config(AOTCodeCache* cache) const { // Called after Universe initialized
+      // check CPU features before checking flags that may be
+      // auto-configured in response to them
+      if (!verify_cpu_features(cache)) {
+        return false;
+      }
       return _config.verify(cache);
     }
   };
@@ -599,6 +620,8 @@ private:
   uint compile_id() const { return _compile_id; }
   uint comp_level() const { return _comp_level; }
 
+  ReservedSpace _reserved_space; // Reserved space to map AOT code cache
+
   static AOTCodeCache* open_for_use();
   static AOTCodeCache* open_for_dump();
 
@@ -618,6 +641,9 @@ private:
   bool lookup_failed()   const { return _lookup_failed; }
 
   void add_stub_entry(EntryId entry_id, address entry) NOT_CDS_RETURN;
+
+  ~AOTCodeCache();
+
 public:
   AOTCodeCache(bool is_dumping, bool is_using);
 
@@ -632,7 +658,7 @@ public:
   uint write_position() const { return _write_position; }
 
   static void init_C_strings_caching();
-  void load_strings();
+  bool load_strings();
   int store_strings();
 
   static void set_shared_stubs_complete() NOT_CDS_RETURN;
@@ -655,10 +681,12 @@ public:
   }
   void preload_aot_code(TRAPS);
 
+  void set_load_entries();
   AOTCodeEntry* find_entry(AOTCodeEntry::Kind kind, uint id, uint comp_level = 0);
+  AOTCodeEntry* search_entry(AOTCodeEntry::Kind kind, uint id, uint comp_level);
   void invalidate_entry(AOTCodeEntry* entry);
 
-  void store_cpu_features(char*& buffer, uint buffer_size);
+  char* store_cpu_features(char* buffer, uint buffer_size);
 
   bool finish_write();
 

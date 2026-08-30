@@ -960,7 +960,7 @@ void CompilationPolicy::compile(const methodHandle& mh, int bci, CompLevel level
     if (TrainingData::have_data() && (bci == InvocationEntryBci)) {
       MethodTrainingData* mtd = MethodTrainingData::find_fast(mh);
       if (mtd != nullptr) {
-        CompileTrainingData* ctd = mtd->last_toplevel_compile(level);
+        CompileTrainingData* ctd = mtd->compile_data_for_aot_code(level);
         if (ctd != nullptr && (ctd->init_deps_left_acquire() == 0)) {
           AOTCodeEntry* aot_code_entry = find_aot_code_entry(mh, level, reason);
           if (aot_code_entry != nullptr) {

@@ -1232,13 +1232,6 @@ SafePointNode* Parse::create_entry_map() {
     GraphKit kit(_caller);
     if (!method()->is_static()) {
       kit.null_check_receiver_before_call(method());
-    } else if (C->do_clinit_barriers() && C->needs_clinit_barrier(method()->holder(), _caller->method())) {
-      ciMethod* declared_method = kit.method()->get_method_at_bci(kit.bci());
-      const int nargs = declared_method->arg_size();
-      kit.inc_sp(nargs);
-      Node* holder = makecon(TypeKlassPtr::make(method()->holder(), Type::trust_interfaces));
-      kit.guard_klass_is_initialized(holder);
-      kit.dec_sp(nargs);
     }
     _caller = kit.transfer_exceptions_into_jvms();
 

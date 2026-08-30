@@ -23,6 +23,7 @@
  */
 
 #include "cds/cdsConfig.hpp"
+#include "cds/cppVtables.hpp"
 #include "cds/heapShared.inline.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
@@ -1114,6 +1115,23 @@ bool Klass::is_valid(Klass* k) {
   if (!Symbol::is_valid(k->name())) return false;
   return ClassLoaderDataGraph::is_valid(k->class_loader_data());
 }
+
+#if INCLUDE_CDS
+// Check that this pointer is valid by checking that the vtbl pointer matches
+bool Klass::is_valid_aot_klass(const Klass* k) {
+  if (k == nullptr) {
+    return false;
+  } else if (!is_aligned(k, sizeof(MetaWord))) {
+    // Quick sanity check on pointer.
+    return false;
+  } else if (!os::is_readable_range(k, k + 1)) {
+    return false;
+  } else if (!k->in_aot_cache()) {
+    return false;
+  }
+  return CppVtables::is_valid_shared_klass(k);
+}
+#endif
 
 Method* Klass::method_at_vtable(int index)  {
 #ifndef PRODUCT

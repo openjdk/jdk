@@ -1451,7 +1451,6 @@ bool FileMapInfo::map_aot_code_region(ReservedSpace rs) {
 
     if (VerifySharedSpaces && !r->check_region_crc(mapped_base)) {
       aot_log_error(aot)("region %d CRC error", AOTMetaspace::ac);
-      os::unmap_memory(mapped_base, r->used_aligned());
       return false;
     }
 
@@ -1460,14 +1459,19 @@ bool FileMapInfo::map_aot_code_region(ReservedSpace rs) {
     if (!relocate_pointers_in_aot_code_region()) {
       r->set_mapped_from_file(false);
       r->set_mapped_base(nullptr);
-      os::unmap_memory(mapped_base, r->used_aligned());
       return false;
     }
+    r->set_in_reserved_space(true);
     aot_log_info(aot)("Mapped static  region #%d at base " INTPTR_FORMAT " top " INTPTR_FORMAT " (%s)",
                   AOTMetaspace::ac, p2i(r->mapped_base()), p2i(r->mapped_end()),
                   shared_region_name[AOTMetaspace::ac]);
     return true;
   }
+}
+
+void FileMapInfo::unmap_aot_code_region() {
+  unmap_region(AOTMetaspace::ac);
+  return;
 }
 
 class CachedCodeRelocator: public BitMapClosure {

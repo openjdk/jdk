@@ -353,6 +353,39 @@ void CppVtables::zero_archived_vtables() {
 
 bool CppVtables::is_valid_shared_method(const Method* m) {
   assert(AOTMetaspace::in_aot_cache(m), "must be");
-  return vtable_of(m) == _index[Method_Kind]->cloned_vtable() ||
-         vtable_of(m) == _archived_cpp_vtptrs[Method_Kind];
+  const intptr_t* vt = vtable_of(m);
+  // _archived_cpp_vtptrs[kind] is not null only during AOT assmbly phase
+  const intptr_t* archived_vt = _archived_cpp_vtptrs[Method_Kind];
+  return vt == _index[Method_Kind]->cloned_vtable() ||
+         (archived_vt != nullptr && vt == archived_vt);
 }
+
+#define CPP_VTABLE_KLASS_DO(f) \
+  f(InstanceKlass) \
+  f(InstanceClassLoaderKlass) \
+  f(InstanceMirrorKlass) \
+  f(InstanceRefKlass) \
+  f(InstanceStackChunkKlass) \
+  f(TypeArrayKlass) \
+  f(ObjArrayKlass) \
+  f(RefArrayKlass) \
+  f(FlatArrayKlass) \
+  f(InlineKlass)
+
+#define KLASS_CHECK(c) \
+  archived_vt = _archived_cpp_vtptrs[c##_Kind]; \
+  if (vt == _index[c##_Kind]->cloned_vtable() || \
+      (archived_vt != nullptr && vt == archived_vt)) { \
+    return true; \
+  }
+
+bool CppVtables::is_valid_shared_klass(const Klass* k) {
+  assert(AOTMetaspace::in_aot_cache(k), "must be");
+  const intptr_t* vt = vtable_of(k);
+  intptr_t* archived_vt;
+  CPP_VTABLE_KLASS_DO(KLASS_CHECK);
+  return false;
+}
+
+#undef KLASS_CHECK
+#undef CPP_VTABLE_KLASS_DO

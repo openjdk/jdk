@@ -34,6 +34,7 @@
 #include "memory/universe.hpp"
 #include "memory/virtualspace.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/method.hpp"
 
 bool AOTCacheAccess::can_generate_aot_code(address addr) {
   assert(CDSConfig::is_dumping_final_static_archive(), "must be");
@@ -53,6 +54,49 @@ bool AOTCacheAccess::can_generate_aot_code_for(InstanceKlass* ik) {
     return false;
   }
   return true;
+}
+
+Klass* AOTCacheAccess::try_narrow_ptr_to_klass(narrowPtr narrowp) {
+  Metadata* metadata = try_narrow_ptr_to_metadata(narrowp, sizeof(Klass));
+  if (metadata == nullptr) {
+    return nullptr;
+  }
+  Klass* k = (Klass*)metadata;
+  return Klass::is_valid_aot_klass(k) ? k : nullptr;
+}
+
+Method* AOTCacheAccess::try_narrow_ptr_to_method(narrowPtr narrowp) {
+  Metadata* metadata = try_narrow_ptr_to_metadata(narrowp, sizeof(Method));
+  if (metadata == nullptr) {
+    return nullptr;
+  }
+  Method* m = (Method*)metadata;
+  return Method::is_valid_method(m) ? m : nullptr;
+}
+
+Metadata* AOTCacheAccess::try_narrow_ptr_to_metadata(narrowPtr narrowp, size_t size) {
+  if (narrowp == AOTCompressedPointers::null()) {
+    return nullptr;
+  }
+  uintptr_t base = SharedBaseAddress;
+  uintptr_t low_bound  = p2u(MetaspaceObj::aot_metaspace_base());
+  uintptr_t high_bound = p2u(MetaspaceObj::aot_metaspace_top());
+  if (base > low_bound || low_bound > high_bound) { // paranoid check
+    return nullptr;
+  }
+  size_t low_offset  = low_bound  - base;
+  size_t high_offset = high_bound - base;
+
+  size_t offset = AOTCompressedPointers::get_byte_offset(narrowp);
+  if (offset == 0 || offset > AOTCompressedPointers::MaxMetadataOffsetBytes ||
+      offset < low_offset || offset >= high_offset ||
+      size > (high_offset - offset)) {
+    return nullptr;
+  }
+
+  Metadata* meta = reinterpret_cast<Metadata*>(base + offset);
+  assert(Metaspace::in_aot_cache(meta), "must be");
+  return meta;
 }
 
 #if INCLUDE_CDS_JAVA_HEAP
@@ -87,6 +131,12 @@ bool AOTCacheAccess::map_aot_code_region(ReservedSpace rs) {
   FileMapInfo* static_mapinfo = FileMapInfo::current_info();
   assert(UseSharedSpaces && static_mapinfo != nullptr, "must be");
   return static_mapinfo->map_aot_code_region(rs);
+}
+
+void AOTCacheAccess::unmap_aot_code_region() {
+  FileMapInfo* static_mapinfo = FileMapInfo::current_info();
+  assert(UseSharedSpaces && static_mapinfo != nullptr, "must be");
+  return static_mapinfo->unmap_aot_code_region();
 }
 
 bool AOTCacheAccess::is_aot_code_region_empty() {
