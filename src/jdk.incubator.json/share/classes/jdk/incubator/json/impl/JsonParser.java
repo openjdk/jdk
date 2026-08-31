@@ -49,7 +49,7 @@ public final class JsonParser {
     private final char[] doc;
     // Lazily initialized for member names with escape sequences
     private final LazyConstant<StringBuilder> sb = LazyConstant.of(StringBuilder::new);
-    // Current offset during parsing
+    // Current cursor position during parsing
     private int cursorPos;
     // For exception message on failure
     private int line;
@@ -493,7 +493,7 @@ public final class JsonParser {
         return cursorPos < doc.length;
     }
 
-    // Walk to the next non-white space char from the current cursorPos
+    // Walk to the next non-white space char from the current cursor position
     private void skipWhitespaces() {
         while (hasInput()) {
             if (notWhitespace()) {
@@ -510,18 +510,18 @@ public final class JsonParser {
             case '\n' -> {
                 // Increments the line and lineStart
                 line++;
-                lineStart = offset + 1;
+                lineStart = cursorPos + 1;
                 yield false;
             }
             default -> true;
         };
     }
 
-    // Returns true if within bounds and if the char at the current parser offset
-    // is equivalent to the input one. If so, offset is incremented.
+    // Returns true if within bounds and if the char at the current cursor position
+    // is equivalent to the input one. If so, cursor position is incremented.
     private boolean charEquals(char c) {
-        if (hasInput() && c == doc[offset]) {
-            offset++;
+        if (hasInput() && c == doc[cursorPos]) {
+            cursorPos++;
             return true;
         }
         return false;
@@ -529,16 +529,16 @@ public final class JsonParser {
 
     // To be thrown when a structure is incorrect, which derives the path from the enclosing structure itself
     private JsonParseException structureFailure(int start, String message) {
-        return failure(offset, line, lineStart, message, start, true);
+        return failure(cursorPos, line, lineStart, message, start, true);
     }
 
     // To be thrown when a "value" is incorrect, which derives the path from the value
     private JsonParseException valueFailure(int start, String message) {
-        return failure(offset, line, lineStart, message, start, false);
+        return failure(cursorPos, line, lineStart, message, start, false);
     }
 
     private JsonParseException failure(String message, int recentStart, boolean structural) {
-        return failure(offset, line, lineStart, message, recentStart, structural);
+        return failure(cursorPos, line, lineStart, message, recentStart, structural);
     }
 
     private JsonParseException failure(int off, int l, int ls, String message, int head, boolean structural) {
