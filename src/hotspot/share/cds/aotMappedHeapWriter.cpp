@@ -725,39 +725,26 @@ template <typename T> void AOTMappedHeapWriter::mark_oop_pointer(T* buffered_add
   oopmap->set_bit(idx);
 }
 
-void AOTMappedHeapWriter::update_header_for_requested_obj(oop requested_obj, oop src_obj,  Klass* src_klass) {
+void AOTMappedHeapWriter::update_header_for_requested_obj(oop requested_obj, oop src_obj, Klass* src_klass) {
   narrowKlass nk = ArchiveBuilder::current()->get_requested_narrow_klass(src_klass);
   address buffered_addr = requested_addr_to_buffered_addr(cast_from_oop<address>(requested_obj));
 
-  oop fake_oop = cast_to_oop(buffered_addr);
-  if (UseCompactObjectHeaders) {
-    markWord prototype_header = src_klass->prototype_header().set_narrow_klass(nk);
-    fake_oop->set_mark(prototype_header);
-  } else {
-    fake_oop->set_narrow_klass(nk);
-  }
+  markWord mw = Arguments::is_valhalla_enabled() ? src_klass->prototype_header() : markWord::prototype();
+  oopDesc* fake_oop = (oopDesc*)buffered_addr;
 
-  if (src_obj == nullptr) {
-    return;
-  }
   // We need to retain the identity_hash, because it may have been used by some hashtables
   // in the shared heap.
-  if (!src_obj->fast_no_hash_check() && (!(Arguments::is_valhalla_enabled() && src_obj->mark().is_inline_type()))) {
+  if (src_obj != nullptr && !src_obj->is_inline_type() && src_obj->has_identity_hash()) {
     intptr_t src_hash = src_obj->identity_hash();
-    if (UseCompactObjectHeaders) {
-      fake_oop->set_mark(fake_oop->mark().copy_set_hash(src_hash));
-    } else if (Arguments::is_valhalla_enabled()) {
-      fake_oop->set_mark(src_klass->prototype_header().copy_set_hash(src_hash));
-    } else {
-      fake_oop->set_mark(markWord::prototype().copy_set_hash(src_hash));
-    }
-    assert(fake_oop->mark().is_unlocked(), "sanity");
-
-    DEBUG_ONLY(intptr_t archived_hash = fake_oop->identity_hash());
-    assert(src_hash == archived_hash, "Different hash codes: original " INTPTR_FORMAT ", archived " INTPTR_FORMAT, src_hash, archived_hash);
+    mw = mw.copy_set_hash(src_hash);
   }
-  // Strip age bits.
-  fake_oop->set_mark(fake_oop->mark().set_age(0));
+
+  if (UseCompactObjectHeaders) {
+    fake_oop->set_mark(mw.set_narrow_klass(nk));
+  } else {
+    fake_oop->set_mark(mw);
+    fake_oop->set_narrow_klass(nk);
+  }
 }
 
 class AOTMappedHeapWriter::EmbeddedOopRelocator: public BasicOopIterateClosure {

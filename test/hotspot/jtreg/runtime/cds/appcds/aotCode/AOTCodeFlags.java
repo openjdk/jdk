@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,15 +30,10 @@
  * @requires vm.compiler1.enabled & vm.compiler2.enabled
  * @comment Both C1 and C2 JIT compilers are required because the test verifies
  *          compiler's runtime blobs generation.
- * @requires vm.opt.VerifyOops == null | vm.opt.VerifyOops == false
- * @comment VerifyOops flag switch off AOT code generation. Skip it.
  * @library /test/lib /test/setup_aot
- * @build AOTCodeFlags JavacBenchApp
+ * @build AOTCodeFlags
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
- *                 JavacBenchApp
- *                 JavacBenchApp$ClassFile
- *                 JavacBenchApp$FileManager
- *                 JavacBenchApp$SourceFile
+ *                 AOTCodeSimpleTestApp
  * @run driver/timeout=1500 AOTCodeFlags
  */
 /**
@@ -49,15 +44,10 @@
  * @requires vm.compiler1.enabled & vm.compiler2.enabled
  * @comment Both C1 and C2 JIT compilers are required because the test verifies
  *          compiler's runtime blobs generation.
- * @requires vm.opt.VerifyOops == null | vm.opt.VerifyOops == false
- * @comment VerifyOops flag switch off AOT code generation. Skip it.
  * @library /test/lib /test/setup_aot
- * @build AOTCodeFlags JavacBenchApp
+ * @build AOTCodeFlags
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
- *                 JavacBenchApp
- *                 JavacBenchApp$ClassFile
- *                 JavacBenchApp$FileManager
- *                 JavacBenchApp$SourceFile
+ *                 AOTCodeSimpleTestApp
  * @run driver/timeout=1500 AOTCodeFlags Z
  */
 /**
@@ -68,15 +58,10 @@
  * @requires vm.compiler1.enabled & vm.compiler2.enabled
  * @comment Both C1 and C2 JIT compilers are required because the test verifies
  *          compiler's runtime blobs generation.
- * @requires vm.opt.VerifyOops == null | vm.opt.VerifyOops == false
- * @comment VerifyOops flag switch off AOT code generation. Skip it.
  * @library /test/lib /test/setup_aot
- * @build AOTCodeFlags JavacBenchApp
+ * @build AOTCodeFlags
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
- *                 JavacBenchApp
- *                 JavacBenchApp$ClassFile
- *                 JavacBenchApp$FileManager
- *                 JavacBenchApp$SourceFile
+ *                 AOTCodeSimpleTestApp
  * @run driver/timeout=1500 AOTCodeFlags Shenandoah
  */
 /**
@@ -87,15 +72,10 @@
  * @requires vm.compiler1.enabled & vm.compiler2.enabled
  * @comment Both C1 and C2 JIT compilers are required because the test verifies
  *          compiler's runtime blobs generation.
- * @requires vm.opt.VerifyOops == null | vm.opt.VerifyOops == false
- * @comment VerifyOops flag switch off AOT code generation. Skip it.
  * @library /test/lib /test/setup_aot
- * @build AOTCodeFlags JavacBenchApp
+ * @build AOTCodeFlags
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
- *                 JavacBenchApp
- *                 JavacBenchApp$ClassFile
- *                 JavacBenchApp$FileManager
- *                 JavacBenchApp$SourceFile
+ *                 AOTCodeSimpleTestApp
  * @run driver/timeout=1500 AOTCodeFlags Parallel
  */
 
@@ -106,6 +86,7 @@ import jdk.test.lib.cds.CDSAppTester;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class AOTCodeFlags {
+    private static String appName = AOTCodeSimpleTestApp.class.getName();
     private static String gcName = null;
     public static void main(String... args) throws Exception {
         Tester t = new Tester(args.length == 0 ? null : args[0]);
@@ -179,6 +160,10 @@ public class AOTCodeFlags {
             args.addAll(List.of("-Xlog:aot+codecache+init=debug",
                                 "-Xlog:aot+codecache+exit=debug",
                                 "-Xlog:aot+codecache+stubs=debug"));
+
+            // Ensure compilations are finished before the JVM exits.
+            args.add("-Xbatch");
+
             switch (runMode) {
             case RunMode.ASSEMBLY:
                 args.addAll(getVMArgsForTestMode(aMode));
@@ -194,7 +179,7 @@ public class AOTCodeFlags {
 
         @Override
         public String[] appCommandLine(RunMode runMode) {
-            return new String[] { "JavacBenchApp", "10" };
+            return new String[] { appName };
         }
 
         @Override

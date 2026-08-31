@@ -32,6 +32,7 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "compiler/compilerEvent.hpp"
+#include "compiler/stress.hpp"
 #include "libadt/dict.hpp"
 #include "libadt/vectset.hpp"
 #include "memory/resourceArea.hpp"
@@ -103,7 +104,7 @@ class InlineTypeNode;
 class nmethod;
 class Node_Stack;
 struct Final_Reshape_Counts;
-class VerifyMeetResult;
+class VerifyMeetJoinResult;
 
 enum LoopOptsMode {
   LoopOptsDefault,
@@ -379,7 +380,6 @@ class Compile : public Phase {
   bool                  _has_flat_accesses;     // Any known flat array accesses?
   bool                  _flat_accesses_share_alias; // Initially all flat array share a single slice
   bool                  _scalarize_in_safepoints; // Scalarize inline types in safepoint debug info
-  uint                  _stress_seed;           // Seed for stress testing
 
   // Compilation environment.
   Arena                 _comp_arena;            // Arena with lifetime equivalent to Compile
@@ -404,6 +404,8 @@ class Compile : public Phase {
   GrowableArray<UnstableIfTrap*> _unstable_if_traps;        // List of ifnodes after IGVN
   GrowableArray<Node_List*> _coarsened_locks;   // List of coarsened Lock and Unlock nodes
   ConnectionGraph*      _congraph;
+
+  Stress                _stress;
 #ifndef PRODUCT
   IdealGraphPrinter*    _igv_printer;
   static IdealGraphPrinter* _debug_file_printer;
@@ -681,7 +683,7 @@ public:
 
   // Support for scalarized inline type calling convention
   bool              has_scalarized_args() const  { return _method != nullptr && _method->has_scalarized_args(); }
-  bool              needs_stack_repair()  const  { return _method != nullptr && _method->c2_needs_stack_repair(); }
+  bool              needs_stack_repair()  const  { return _method != nullptr && _method->needs_stack_repair(); }
   bool              needs_nm_slot()       const  { return _needs_nm_slot; }
   void          set_needs_nm_slot(bool v)        { _needs_nm_slot = v; }
 
@@ -714,6 +716,8 @@ public:
   void end_method();
 
   void print_method(CompilerPhaseType compile_phase, int level, Node* n = nullptr);
+
+  Stress& stress() { return _stress; }
 
 #ifndef PRODUCT
   bool should_print_igv(int level);
@@ -1127,7 +1131,7 @@ public:
     if (StressIncrementalInlining) {
       assert(_late_inlines_pos < _late_inlines.length(), "unthinkable!");
       if (_late_inlines.length() - _late_inlines_pos >= 2) {
-        int j = (C->random() % (_late_inlines.length() - _late_inlines_pos)) + _late_inlines_pos;
+        int j = (C->stress().random() % (_late_inlines.length() - _late_inlines_pos)) + _late_inlines_pos;
         swap(_late_inlines.at(_late_inlines_pos), _late_inlines.at(j));
       }
     }
@@ -1178,7 +1182,7 @@ public:
   bool inline_incrementally_one();
   void inline_incrementally_cleanup(PhaseIterGVN& igvn);
   void inline_incrementally(PhaseIterGVN& igvn);
-  bool should_stress_inlining() { return StressIncrementalInlining && (random() % 2) == 0; }
+  bool should_stress_inlining() { return StressIncrementalInlining && (stress().random() % 2) == 0; }
   bool should_delay_inlining() { return AlwaysIncrementalInline || should_stress_inlining(); }
   void inline_string_calls(bool parse_time);
   void inline_boxing_calls(PhaseIterGVN& igvn);
@@ -1379,13 +1383,6 @@ public:
   // Convert integer value to a narrowed long type dependent on ctrl (for example, a range check)
   static Node* constrained_convI2L(PhaseGVN* phase, Node* value, const TypeInt* itype, Node* ctrl, bool carry_dependency = false);
 
-  // Auxiliary method for randomized fuzzing/stressing
-  int random();
-  bool randomized_select(int count);
-
-  // seed random number generation and log the seed for repeatability.
-  void initialize_stress_seed(const DirectiveSet* directive);
-
   // supporting clone_map
   CloneMap&     clone_map();
   void          set_clone_map(Dict* d);
@@ -1395,7 +1392,7 @@ public:
   bool needs_clinit_barrier(ciInstanceKlass* ik, ciMethod* accessing_method);
 
 #ifdef ASSERT
-  VerifyMeetResult* _type_verify;
+  VerifyMeetJoinResult* _type_verify;
   void set_exception_backedge() { _exception_backedge = true; }
   bool has_exception_backedge() const { return _exception_backedge; }
 #endif

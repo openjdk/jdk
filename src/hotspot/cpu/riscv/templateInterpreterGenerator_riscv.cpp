@@ -1210,7 +1210,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // change thread state
   // Force all preceding writes to be observed prior to thread state change
-  __ mv(t0, _thread_in_native_trans);
+  __ mv(t0, _thread_in_vm);
   __ sw_release(t0, Address(xthread, JavaThread::thread_state_offset()), t1);
 
   // Force this write out before the read below

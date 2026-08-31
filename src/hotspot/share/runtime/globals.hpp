@@ -521,10 +521,10 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, CreateCoredumpOnCrash, true,                                \
           "Create core/mini dump on VM fatal error")                        \
                                                                             \
-  product(uint64_t, ErrorLogTimeout, 2 * 60,                                \
+  product(uint, ErrorLogTimeout, 2 * 60,                                    \
           "Timeout, in seconds, to limit the time spent on writing an "     \
-          "error log in case of a crash.")                                  \
-          range(0, (uint64_t)max_jlong/1000)                                \
+          "error log in case of a crash. A value of 0 disables the "        \
+          "timeout.")                                                       \
                                                                             \
   product(bool, ErrorLogSecondaryErrorDetails, false, DIAGNOSTIC,           \
           "If enabled, show details on secondary crashes in the error log") \
@@ -1223,10 +1223,6 @@ const int ObjectAlignmentInBytes = 8;
   /* compilation */                                                         \
   product(bool, UseCompiler, true,                                          \
           "Use Just-In-Time compilation")                                   \
-                                                                            \
-  product(bool, AlwaysCompileLoopMethods, false,                            \
-          "(Deprecated) When using recompilation, never interpret methods " \
-          "containing loops")                                               \
                                                                             \
   product(int,  AllocatePrefetchStyle, 1,                                   \
           "0 = no prefetch, "                                               \
@@ -1985,10 +1981,6 @@ const int ObjectAlignmentInBytes = 8;
              "Mark all threads after a safepoint, and clear on a modify "   \
              "fence. Add cleanliness checks.")                              \
                                                                             \
-  product(bool, UseObjectMonitorTable, true, DIAGNOSTIC,                    \
-          "Use a table to record inflated monitors rather than the first "  \
-          "word of the object.")                                            \
-                                                                            \
   product(int, FastLockingSpins, 8, DIAGNOSTIC,                             \
           "Specifies the number of times fast locking will attempt to "     \
           "CAS the markWord before inflating. Between each CAS it will "    \
@@ -2037,6 +2029,9 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, UseAcmpFastPath, true, DIAGNOSTIC,                          \
           "Use fast path for acmp.")                                        \
+                                                                            \
+  product(bool, UseHashcodeFastPath, true, DIAGNOSTIC,                      \
+          "Use fast path for identityHashCode.")                            \
 
 // end of RUNTIME_FLAGS
 
