@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,7 +123,7 @@ public final class SoundClip {
      * <p>
      * Threading notes : Most applications will not need to do anything except call {@code loop()}.
      * The following is therefore something most applications need not be concerned about.
-     * Play back is managed in a background thread, which is ususally a daemon thread.
+     * Play back is managed in a background thread, which is usually a daemon thread.
      * Running daemon threads do not prevent the VM from exiting.
      * So at least one thread must be alive to prevent the VM from terminating.
      * A UI application with any window displayed automatically satisfies this requirement.

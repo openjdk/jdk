@@ -163,19 +163,6 @@ tier1_compiler_1 = \
   compiler/blackhole/ \
   compiler/c1/ \
   compiler/c2/ \
-  -compiler/arraycopy/stress \
-  -compiler/c2/Test6850611.java \
-  -compiler/c2/cr6890943/Test6890943.java \
-  -compiler/c2/Test6905845.java \
-  -compiler/c2/cr6340864 \
-  -compiler/c2/cr6589834 \
-  -compiler/c2/cr8004867 \
-  -compiler/c2/stemmer \
-  -compiler/c2/Test6792161.java \
-  -compiler/c2/Test6603011.java \
-  -compiler/c2/Test6912517.java
-
-tier1_compiler_2 = \
   compiler/ccp/ \
   compiler/ciTypeFlow/ \
   compiler/classUnloading/ \
@@ -187,24 +174,42 @@ tier1_compiler_2 = \
   compiler/escapeAnalysis/ \
   compiler/exceptions/ \
   compiler/floatingpoint/ \
+  -compiler/arraycopy/stress \
+  -compiler/c2/Test6850611.java \
+  -compiler/c2/cr6890943/Test6890943.java \
+  -compiler/c2/Test6905845.java \
+  -compiler/c2/cr6340864 \
+  -compiler/c2/cr6589834 \
+  -compiler/c2/cr8004867 \
+  -compiler/c2/stemmer \
+  -compiler/c2/Test6792161.java \
+  -compiler/c2/Test6603011.java \
+  -compiler/c2/Test6912517.java \
+  -compiler/classUnloading/methodUnloading/TestOverloadCompileQueues.java \
+  -compiler/codecache/stress \
+  -compiler/codegen/aes
+  
+tier1_compiler_2 = \
   compiler/gcbarriers/ \
   compiler/igvn/ \
   compiler/inlining/ \
   compiler/integerArithmetic/ \
   compiler/interpreter/ \
-  -compiler/classUnloading/methodUnloading/TestOverloadCompileQueues.java \
-  -compiler/codecache/stress \
-  -compiler/codegen/aes \
-  -compiler/gcbarriers/PreserveFPRegistersTest.java \
-  -compiler/igvn/TestMaskedStoreIdealization.java
-
-tier1_compiler_3 = \
   compiler/intrinsics/ \
   compiler/jsr292/ \
   compiler/locks/ \
   compiler/loopopts/ \
   compiler/macronodes/ \
   compiler/memoryinitialization/ \
+  -compiler/gcbarriers/PreserveFPRegistersTest.java \
+  -compiler/igvn/TestMaskedStoreIdealization.java \
+  -compiler/intrinsics/bmi \
+  -compiler/intrinsics/mathexact \
+  -compiler/intrinsics/sha \
+  -compiler/intrinsics/bigInteger/TestMultiplyToLen.java \
+  -compiler/intrinsics/zip/TestAdler32.java
+
+tier1_compiler_3 = \
   compiler/osr/ \
   compiler/predicates/ \
   compiler/profiling \
@@ -218,11 +223,6 @@ tier1_compiler_3 = \
   compiler/unsafe/ \
   compiler/valhalla/ \
   compiler/vectorization/ \
-  -compiler/intrinsics/bmi \
-  -compiler/intrinsics/mathexact \
-  -compiler/intrinsics/sha \
-  -compiler/intrinsics/bigInteger/TestMultiplyToLen.java \
-  -compiler/intrinsics/zip/TestAdler32.java \
   -compiler/loopopts/Test7052494.java \
   -compiler/memoryinitialization/ZeroTLABTest.java \
   -compiler/runtime/Test6826736.java \
@@ -455,7 +455,6 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/dynamicArchive \
  -runtime/cds/appcds/jigsaw/ExactOptionMatch.java \
  -runtime/cds/appcds/jigsaw/modulepath/ModulePathAndFMG.java \
- -runtime/cds/appcds/jigsaw/modulepath/OptimizeModuleHandlingTest.java \
  -runtime/cds/appcds/loaderConstraints/DynamicLoaderConstraintsTest.java \
  -runtime/cds/appcds/javaldr/ArrayTest.java \
  -runtime/cds/appcds/jcmd/JCmdTestStaticDump.java \
@@ -468,6 +467,7 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/resolvedConstants \
  -runtime/cds/appcds/ArchiveRelocationTest.java \
  -runtime/cds/appcds/BadBSM.java \
+ -runtime/cds/appcds/ClassPathAttrCircularReference.java \
  -runtime/cds/appcds/CommandLineFlagCombo.java \
  -runtime/cds/appcds/CommandLineFlagComboNegative.java \
  -runtime/cds/appcds/DumpClassList.java \
@@ -553,8 +553,6 @@ hotspot_aot_classlinking = \
  -runtime/cds/appcds/aotProfile \
  -runtime/cds/appcds/ArchivedFieldMetadataMismatchTest.java \
  -runtime/cds/appcds/BadBSM.java \
- -runtime/cds/appcds/cacheObject/ArchivedFlatArrayTest.java \
- -runtime/cds/appcds/cacheObject/ArchiveHeapTestClass.java \
  -runtime/cds/appcds/cacheObject/ArchivedIntegerCacheTest.java \
  -runtime/cds/appcds/cacheObject/ArchivedModuleCompareTest.java \
  -runtime/cds/appcds/CDSandJFR.java \
@@ -578,7 +576,6 @@ hotspot_aot_classlinking = \
  -runtime/cds/appcds/jigsaw/modulepath/ModulePathAndCP.java \
  -runtime/cds/appcds/jigsaw/modulepath/ModulePathAndCP_JFR.java \
  -runtime/cds/appcds/jigsaw/modulepath/ModulePathAndFMG.java \
- -runtime/cds/appcds/jigsaw/modulepath/OptimizeModuleHandlingTest.java \
  -runtime/cds/appcds/jigsaw/overridetests/OverrideTests.java \
  -runtime/cds/appcds/jigsaw/RedefineClassesInModuleGraph.java \
  -runtime/cds/appcds/JvmtiAddPath.java \

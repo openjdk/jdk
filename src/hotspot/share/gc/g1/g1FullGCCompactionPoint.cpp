@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -193,26 +193,26 @@ uint G1FullGCCompactionPoint::find_contiguous_before(G1HeapRegion* hr, uint num_
     return 0;
   }
 
-  uint contiguous_region_count = 1;
+  uint num_contiguous_regions = 1;
 
   uint range_end = 1;
   uint range_limit = (uint)_compaction_regions->length();
 
   for (; range_end < range_limit; range_end++) {
-    if (contiguous_region_count == num_regions) {
+    if (num_contiguous_regions == num_regions) {
       break;
     }
     // Check if the current region and the previous region are contiguous.
     bool regions_are_contiguous = (_compaction_regions->at(range_end)->hrm_index() - _compaction_regions->at(range_end - 1)->hrm_index()) == 1;
-    contiguous_region_count = regions_are_contiguous ? contiguous_region_count + 1 : 1;
+    num_contiguous_regions = regions_are_contiguous ? num_contiguous_regions + 1 : 1;
   }
 
-  if (contiguous_region_count < num_regions &&
+  if (num_contiguous_regions < num_regions &&
       hr->hrm_index() - _compaction_regions->at(range_end-1)->hrm_index() != 1) {
     // We reached the end but the final region is not contiguous with the target region;
     // no contiguous regions to move to.
     return UINT_MAX;
   }
   // Return the index of the first region in the range of contiguous regions.
-  return range_end - contiguous_region_count;
+  return range_end - num_contiguous_regions;
 }

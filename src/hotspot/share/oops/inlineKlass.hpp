@@ -279,12 +279,17 @@ class InlineKlass: public InstanceKlass {
   bool contains_oops() const { return nonstatic_oop_map_count() > 0; }
   int nonstatic_oop_count();
 
-  // oop iterate raw inline type data pointer (where oop_addr may not be an oop, but backing/array-element)
-  template <typename T, class OopClosureType>
-  inline void oop_iterate_specialized(const address oop_addr, OopClosureType* closure);
+  // oop iterate the payload of a value object.
+  //
+  // * Function: void function(T* p)
+  template <typename T, typename Function>
+  inline void oop_iterate_value_payload_f(address payload, Function function);
 
   template <typename T, class OopClosureType>
-  inline void oop_iterate_specialized_bounded(const address oop_addr, OopClosureType* closure, uintptr_t lo, uintptr_t hi);
+  inline void oop_iterate_value_payload(address payload, OopClosureType* closure);
+
+  template <typename T, class OopClosureType>
+  inline void oop_iterate_value_payload_bounded(address payload, OopClosureType* closure, uintptr_t lo, uintptr_t hi);
 
   // Support for the scalarized calling convention
   void initialize_calling_convention(TRAPS);

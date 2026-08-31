@@ -1224,10 +1224,6 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseCompiler, true,                                          \
           "Use Just-In-Time compilation")                                   \
                                                                             \
-  product(bool, AlwaysCompileLoopMethods, false,                            \
-          "(Deprecated) When using recompilation, never interpret methods " \
-          "containing loops")                                               \
-                                                                            \
   product(int,  AllocatePrefetchStyle, 1,                                   \
           "0 = no prefetch, "                                               \
           "1 = generate prefetch instructions for each allocation, "        \
@@ -1257,16 +1253,6 @@ const int ObjectAlignmentInBytes = 8;
   product(intx,  AllocatePrefetchInstr, 0,                                  \
           "Select instruction to prefetch ahead of allocation pointer")     \
           constraint(AllocatePrefetchInstrConstraintFunc, AfterMemoryInit)  \
-                                                                            \
-  /* deoptimization */                                                      \
-  product(bool, TraceDeoptimization, false, DIAGNOSTIC,                     \
-          "Trace deoptimization")                                           \
-                                                                            \
-  develop(bool, PrintDeoptimizationDetails, false,                          \
-          "Print more information about deoptimization")                    \
-                                                                            \
-  develop(bool, DebugDeoptimization, false,                                 \
-          "Tracing various information while debugging deoptimization")     \
                                                                             \
   product(double, SelfDestructTimer, 0.0,                                   \
           "Will cause VM to terminate after a given time "                  \
@@ -1994,10 +1980,6 @@ const int ObjectAlignmentInBytes = 8;
           false AARCH64_ONLY(DEBUG_ONLY(||true)),                           \
              "Mark all threads after a safepoint, and clear on a modify "   \
              "fence. Add cleanliness checks.")                              \
-                                                                            \
-  product(bool, UseObjectMonitorTable, true, DIAGNOSTIC,                    \
-          "Use a table to record inflated monitors rather than the first "  \
-          "word of the object.")                                            \
                                                                             \
   product(int, FastLockingSpins, 8, DIAGNOSTIC,                             \
           "Specifies the number of times fast locking will attempt to "     \

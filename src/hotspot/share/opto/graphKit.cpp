@@ -29,6 +29,7 @@
 #include "ci/ciObjArray.hpp"
 #include "ci/ciUtilities.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "compiler/compileLog.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
@@ -3984,7 +3985,6 @@ Node* GraphKit::null_free_array_test(Node* array, bool null_free) {
 Node* GraphKit::null_free_atomic_array_test(Node* array, ciInlineKlass* vk) {
   assert(vk->has_null_free_atomic_layout() || vk->has_null_free_non_atomic_layout(), "Can't be null-free and flat");
 
-  // TODO 8350865 Add a stress flag to always access atomic if layout exists?
   if (!vk->has_null_free_non_atomic_layout()) {
     return intcon(1); // Always atomic
   } else if (!vk->has_null_free_atomic_layout()) {
@@ -4021,7 +4021,9 @@ Node* GraphKit::atomic_layout_array_test_and_get_layout_kind(Node* array, Region
 }
 
 // Deoptimize if 'ary' is a null-free inline type array and 'val' is null
-Node* GraphKit::inline_array_null_guard(Node* ary, Node* val, int nargs, bool safe_for_replace) {
+// Return `ary` as nullable if `val` is statically known to be null. Beware
+// it will also replace_in_map `ary` with the casted version.
+Node* GraphKit::inline_array_null_guard(Node* ary, Node* val, int nargs) {
   RegionNode* region = new RegionNode(3);
   Node* null_ctl = top();
   null_check_oop(val, &null_ctl);
@@ -4045,9 +4047,7 @@ Node* GraphKit::inline_array_null_guard(Node* ary, Node* val, int nargs, bool sa
     const TypeAryPtr* ary_t = _gvn.type(ary)->is_aryptr();
     ary_t = ary_t->cast_to_not_null_free();
     Node* cast = _gvn.transform(new CheckCastPPNode(control(), ary, ary_t));
-    if (safe_for_replace) {
-      replace_in_map(ary, cast);
-    }
+    replace_in_map(ary, cast);
     ary = cast;
   }
   return ary;

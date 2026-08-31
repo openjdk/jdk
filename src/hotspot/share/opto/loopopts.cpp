@@ -140,7 +140,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
       // otherwise it will be not updated during igvn->transform since
       // igvn->type(x) is set to x->Value() already.
       x->raise_bottom_type(t);
-      Node* y = x->Identity(&_igvn);
+      Node* y = _igvn.apply_identity(x);
       if (y != x) {
         wins.add_win(i);
         x = y;
@@ -1133,7 +1133,7 @@ void PhaseIdealLoop::move_flat_array_check_out_of_loop(Node* n) {
     return;
   }
   Node* mem = n->in(FlatArrayCheckNode::Memory);
-  Node* array = n->in(FlatArrayCheckNode::ArrayOrKlass)->uncast();
+  Node* array = n->in(FlatArrayCheckNode::ArrayOrKlass);
   IdealLoopTree* check_loop = get_loop(get_ctrl(n));
   IdealLoopTree* ary_loop = get_loop(get_ctrl(array));
 
