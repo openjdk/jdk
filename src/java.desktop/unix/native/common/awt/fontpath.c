@@ -23,9 +23,7 @@
  * questions.
  */
 
-#if defined(__linux__)
 #include <string.h>
-#endif /* __linux__ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
