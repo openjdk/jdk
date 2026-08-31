@@ -62,3 +62,29 @@
  *    jdk/jpackage/internal/LinuxPackageArchTest.java
  * @run junit jdk.jpackage/jdk.jpackage.internal.LinuxPackageArchTest
  */
+
+/* @test
+ * @summary Test LinuxPackageBuilder
+ * @requires (os.family == "linux")
+ * @compile/module=jdk.jpackage -Xlint:all -Werror
+ *    jdk/jpackage/internal/LinuxPackageBuilderTest.java
+ * @run junit jdk.jpackage/jdk.jpackage.internal.LinuxPackageBuilderTest
+ */
+
+/* @test
+ * @summary Test DesktopEntry
+ * @requires (os.family == "linux")
+ * @compile/module=jdk.jpackage -Xlint:all -Werror
+ *    jdk/jpackage/internal/DesktopEntryTest.java
+ * @run junit jdk.jpackage/jdk.jpackage.internal.DesktopEntryTest
+ */
+
+/* @test
+ * @summary Test DesktopEntryFileValidator
+ * @requires (os.family == "linux")
+ * @library /test/jdk/tools/jpackage/helpers
+ * @build jdk.jpackage.test.mock.*
+ * @compile/module=jdk.jpackage -Xlint:all -Werror
+ *    jdk/jpackage/internal/DesktopEntryFileValidatorTest.java
+ * @run junit jdk.jpackage/jdk.jpackage.internal.DesktopEntryFileValidatorTest
+ */

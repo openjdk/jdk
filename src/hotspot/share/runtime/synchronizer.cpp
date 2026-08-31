@@ -635,7 +635,7 @@ static SharedGlobals GVars;
 //   There are simple ways to "diffuse" the middle address bits over the
 //   generated hashCode values:
 
-static intptr_t get_next_hash(Thread* current, oop obj) {
+intptr_t ObjectSynchronizer::get_next_hash(Thread* current, oop obj) {
   intptr_t value = 0;
   if (hashCode == 0) {
     // This form uses global Park-Miller RNG.
@@ -673,30 +673,6 @@ static intptr_t get_next_hash(Thread* current, oop obj) {
   if (value == 0) value = 0xBAD;
   assert(value != markWord::no_hash, "invariant");
   return value;
-}
-
-intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
-  // VM should be calling bootstrap method.
-  assert(!obj->klass()->is_inline_klass(), "FastHashCode should not be called for inline classes");
-
-  while (true) {
-    markWord temp, test;
-    intptr_t hash;
-    markWord mark = obj->mark_acquire();
-    // The hash is located in the object header.
-    hash = mark.hash();
-    if (hash != 0) {                     // if it has a hash, just return it
-      return hash;
-    }
-    hash = get_next_hash(current, obj);  // get a new hash
-    temp = mark.copy_set_hash(hash);     // merge the hash into header
-    // try to install the hash
-    test = obj->cas_set_mark(temp, mark);
-    if (test == mark) {                  // if the hash was installed, return it
-      return hash;
-    }
-    // CAS failed, retry
-  }
 }
 
 bool ObjectSynchronizer::current_thread_holds_lock(JavaThread* current,
@@ -1506,7 +1482,7 @@ void ObjectSynchronizer::remove_monitor(ObjectMonitor* monitor, oop obj) {
 
 void ObjectSynchronizer::deflate_mark_word(oop obj) {
   markWord mark = obj->mark_acquire();
-  assert(!mark.has_no_hash(), "obj with inflated monitor must have had a hash");
+  assert(mark.has_hash(), "obj with inflated monitor must have had a hash");
 
   while (mark.has_monitor()) {
     const markWord new_mark = mark.clear_lock_bits().set_unlocked();
@@ -1887,7 +1863,7 @@ ObjectMonitor* ObjectSynchronizer::inflate_fast_locked_object(oop object, Object
   ObjectMonitor* monitor;
 
   // Inflating requires a hash code
-  ObjectSynchronizer::FastHashCode(current, object);
+  (void)object->identity_hash(current);
 
   markWord mark = object->mark_acquire();
   assert(!mark.is_unlocked(), "Cannot be unlocked");
@@ -1952,7 +1928,7 @@ ObjectMonitor* ObjectSynchronizer::inflate_and_enter(oop object, BasicLock* lock
   // Get or create the monitor
   if (monitor == nullptr) {
     // Lightweight monitors require that hash codes are installed first
-    ObjectSynchronizer::FastHashCode(locking_thread, object);
+    (void)object->identity_hash(locking_thread);
     monitor = get_or_insert_monitor(object, current, cause);
   }
 

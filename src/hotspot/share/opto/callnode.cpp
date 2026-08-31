@@ -1561,6 +1561,9 @@ Node* CallDynamicJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       assert(IncrementalInlineVirtual, "required");
       assert(cg->call_node() == this, "mismatch");
 
+      Node* receiver_node = in(TypeFunc::Parms);
+      const TypeOopPtr* receiver_type = phase->type(receiver_node)->isa_oopptr();
+
       if (cg->callee_method() == nullptr) {
         // Recover symbolic info for method resolution.
         ciMethod* caller = jvms()->method();
@@ -1579,9 +1582,6 @@ Node* CallDynamicJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
         ciInstanceKlass* klass = ciEnv::get_instance_klass_for_declared_method_holder(holder);
 
-        Node* receiver_node = in(TypeFunc::Parms);
-        const TypeOopPtr* receiver_type = phase->type(receiver_node)->isa_oopptr();
-
         int  not_used3;
         bool call_does_dispatch;
         ciMethod* callee = phase->C->optimize_virtual_call(caller, klass, holder, orig_callee, receiver_type, true /*is_virtual*/,
@@ -1590,8 +1590,9 @@ Node* CallDynamicJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
           cg->set_callee_method(callee);
         }
       }
-      if (cg->callee_method() != nullptr) {
-        // Register for late inlining.
+      if (cg->callee_method() != nullptr && receiver_type != nullptr && !receiver_type->maybe_null()) {
+        // Only register for late inlining if the receiver is null-free because
+        // LateInlineVirtualCallGenerator::do_late_inline_check() rejects nullable receivers.
         register_for_late_inline(); // MH late inlining prepends to the list, so do the same
       }
     } else {

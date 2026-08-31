@@ -1964,7 +1964,7 @@ void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
     }
   }
 
-  if (GenerateArrayStoreCheck && needs_store_check) {
+  if (needs_store_check) {
     CodeEmitInfo* store_check_info = new CodeEmitInfo(range_check_info);
     array_store_check(value.result(), array.result(), store_check_info, x->profiled_method(), x->profiled_bci());
   }
