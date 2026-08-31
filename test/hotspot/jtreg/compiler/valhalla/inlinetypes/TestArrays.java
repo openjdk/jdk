@@ -834,6 +834,7 @@ public class TestArrays {
         return dst[0];
     }
 
+
     @Run(test = "test29")
     public void test29_verifier() {
         MyValue2[] src = (MyValue2[])ValueClass.newNullRestrictedNonAtomicArray(MyValue2.class, 10, MyValue2.DEFAULT);
@@ -842,6 +843,99 @@ public class TestArrays {
         }
         MyValue2 v = test29(src);
         Asserts.assertEQ(src[0], v);
+    }
+
+
+    // Check that scalar replacemnt is not applied when cloning an atomic array (JDK-8390513)
+    // Test29a performs a clone() of an atomic array just before a safepoint.
+    // IR verification looks for the copying of the content to the new array.
+    // If scalar replacement is applied, no array is copied, elements' fields
+    // are just loaded with LOAD_* nodes in case SafePointScalarObject nodes need them
+    static value class MyValueOfBytes {
+        byte b0, b1, b2, b3, b4, b5;
+        MyValueOfBytes() {
+            this((byte)0);
+        }
+        MyValueOfBytes(int i) {
+            byte b = (byte)i;
+            b0 = b;
+            b1 = b;
+            b2 = b;
+            b3 = b;
+            b4 = b;
+            b5 = b;
+        }
+    }
+
+    static final MyValueOfBytes[] mvobArray29a;
+    static {
+        mvobArray29a = new MyValueOfBytes[64];
+        for (int i = 0; i < mvobArray29a.length; i++) {
+            mvobArray29a[i] = new MyValueOfBytes(i);
+        }
+    }
+
+    @Test
+    @IR(applyIf = {"UseArrayFlattening", "true"},
+        counts = {JLONG_ARRAYCOPY, "= 1"},
+        phase = CompilePhase.AFTER_MACRO_EXPANSION)
+    public int test29a(boolean check) {
+        MyValueOfBytes[] array = mvobArray29a.clone();
+        return check ? test29a_consumer(array) : 0;
+    }
+
+    @DontInline
+    public int test29a_consumer(MyValueOfBytes[] array) {
+       int ret = 0;
+        for (int i = 0; i < array.length; i++) {
+            var val = array[i];
+            ret += val.b0 + val.b1 + val.b2 + val.b3 + val.b4 + val.b5;
+        }
+        return ret;
+    }
+
+    @Run(test = "test29a")
+    public void test29a_verifier() {
+        int v;
+        for (int i = 0; i < 10_000; i++) {
+            v = test29a(false);
+        }
+    }
+
+    static final MyValueOfBytes[] mvobArray29b;
+    static {
+        mvobArray29b = (MyValueOfBytes[])ValueClass.newNullRestrictedAtomicArray(MyValueOfBytes.class, 64, new MyValueOfBytes(0));
+        for (int i = 0; i < mvobArray29b.length; i++) {
+            mvobArray29b[i] = new MyValueOfBytes(i);
+        }
+    }
+
+    // Same as test29a but with a null-free atomic array
+    @Test
+    @IR(applyIf = {"UseArrayFlattening", "true"},
+        counts = {JLONG_ARRAYCOPY, "= 1"},
+        phase = CompilePhase.AFTER_MACRO_EXPANSION)
+    public int test29b(boolean check) {
+        MyValueOfBytes[] array = mvobArray29b.clone();
+        return check ? test29a_consumer(array) : 0;
+    }
+
+    @DontInline
+    public int test29b_consumer(MyValueOfBytes[] array) {
+       int ret = 0;
+        for (int i = 0; i < array.length; i++) {
+            var val = array[i];
+            ret += val.b0 + val.b1 + val.b2 + val.b3 + val.b4 + val.b5;
+        }
+        return ret;
+    }
+
+    @Run(test = "test29b")
+    public void test29b_verifier() {
+        int v;
+        for (int i = 0; i < 10_000; i++) {
+            v = test29b(false);
+        }
     }
 
     // non escaping allocation with uncommon trap that needs
