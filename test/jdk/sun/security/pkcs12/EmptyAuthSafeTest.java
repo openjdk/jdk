@@ -53,6 +53,9 @@ public class EmptyAuthSafeTest {
 
         assertLoadAndStore(ks1);
 
+        assertProbe(ks1);
+        assertProbe(ks2);
+
         assertIsPasswordless(ks1, false);
         assertIsPasswordless(ks2, true);
     }
@@ -85,6 +88,18 @@ public class EmptyAuthSafeTest {
         if (actual != expected) {
             throw new Exception("Expected isPasswordless() to return "
                     + expected + ", got " + actual);
+        }
+    }
+
+    private static void assertProbe(String encoded) throws Exception {
+        Path file = Files.createTempFile(
+                Path.of(System.getProperty("test.classes")),
+                "empty-auth-safe-", ".p12");
+        Files.write(file, Base64.getMimeDecoder().decode(encoded));
+
+        KeyStore ks = KeyStore.getInstance(file.toFile(), PASSWORD);
+        if (!ks.getType().equalsIgnoreCase("PKCS12") || ks.size() != 0) {
+            throw new Exception("PKCS12 keystore was not correctly probed");
         }
     }
 }

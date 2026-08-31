@@ -2503,7 +2503,8 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     }
 
     /*
-     * PKCS12 permitted first 24 bytes:
+     * PKCS12 permitted first 24 bytes. The last entry is 18 bytes representing
+     * no authSafe content and no MacData.
      *
      * 30 80 02 01 03 30 80 06 09 2A 86 48 86 F7 0D 01 07 01 A0 80 24 80 04 --
      * 30 82 -- -- 02 01 03 30 82 -- -- 06 09 2A 86 48 86 F7 0D 01 07 01 A0 8-
@@ -2515,6 +2516,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
      * 30 83 -- -- -- 02 01 03 30 83 -- -- -- 06 09 2A 86 48 86 F7 0D 01 07 01
      * 30 84 -- -- -- -- 02 01 03 30 83 -- -- -- 06 09 2A 86 48 86 F7 0D 01 07
      * 30 84 -- -- -- -- 02 01 03 30 84 -- -- -- -- 06 09 2A 86 48 86 F7 0D 01
+     * 30 -- 02 01 03 30 0B 06 09 2A 86 48 86 F7 0D 01 07 01
      */
 
     private static final long[][] PKCS12_HEADER_PATTERNS = {
@@ -2527,7 +2529,8 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         { 0x3083000000020103L, 0x3082000006092A86L, 0x4886F70D010701A0L },
         { 0x3083000000020103L, 0x308300000006092AL, 0x864886F70D010701L },
         { 0x3084000000000201L, 0x0330830000000609L, 0x2A864886F70D0107L },
-        { 0x3084000000000201L, 0x0330840000000006L, 0x092A864886F70D01L }
+        { 0x3084000000000201L, 0x0330840000000006L, 0x092A864886F70D01L },
+        { 0x3000020103300B06L, 0x092A864886F70D01L, 0x0701300000000000L }
     };
 
     private static final long[][] PKCS12_HEADER_MASKS = {
@@ -2540,8 +2543,25 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         { 0xFFFF000000FFFFFFL, 0xFFFF0000FFFFFFFFL, 0xFFFFFFFFFFFFFFFFL },
         { 0xFFFF000000FFFFFFL, 0xFFFF000000FFFFFFL, 0xFFFFFFFFFFFFFFFFL },
         { 0xFFFF00000000FFFFL, 0xFFFFFF000000FFFFL, 0xFFFFFFFFFFFFFFFFL },
-        { 0xFFFF00000000FFFFL, 0xFFFFFF00000000FFL, 0xFFFFFFFFFFFFFFFFL }
+        { 0xFFFF00000000FFFFL, 0xFFFFFF00000000FFL, 0xFFFFFFFFFFFFFFFFL },
+        { 0xFF00FFFFFFFFFFFFL, 0xFFFFFFFFFFFFFFFFL, 0xFFFFFF0000000000L }
     };
+
+    private static final long[] PKCS12_HEADER_PATTERNS_SHORT = {
+        0x3010020103300B06L, 0x092A864886F70D01L, 0x0701000000000000L
+    };
+
+    private static final long[] PKCS12_HEADER_MASKS_SHORT = {
+        0xFFFFFFFFFFFFFFFFL, 0xFFFFFFFFFFFFFFFFL, 0xFFFF000000000000L
+    };
+
+    private static long bytesToLong(byte[] bytes) {
+        long value = 0;
+        for (byte b : bytes) {
+            value = (value << Byte.SIZE) | Byte.toUnsignedLong(b);
+        }
+        return value << ((Long.BYTES - bytes.length) * Byte.SIZE);
+    }
 
     /**
      * Probe the first few bytes of the keystore data stream for a valid
@@ -2559,21 +2579,34 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
 
         long firstPeek = dataStream.readLong();
         long nextPeek = dataStream.readLong();
-        long finalPeek = dataStream.readLong();
+        long finalPeek;
+        byte[] finalBytes = dataStream.readNBytes(Long.BYTES);
         boolean result = false;
 
-        for (int i = 0; i < PKCS12_HEADER_PATTERNS.length; i++) {
-            if (PKCS12_HEADER_PATTERNS[i][0] ==
-                    (firstPeek & PKCS12_HEADER_MASKS[i][0]) &&
-                (PKCS12_HEADER_PATTERNS[i][1] ==
-                    (nextPeek & PKCS12_HEADER_MASKS[i][1])) &&
-                (PKCS12_HEADER_PATTERNS[i][2] ==
-                    (finalPeek & PKCS12_HEADER_MASKS[i][2]))) {
+        if (finalBytes.length == Long.BYTES) {
+            finalPeek = bytesToLong(finalBytes);
+            for (int i = 0; i < PKCS12_HEADER_PATTERNS.length; i++) {
+                if (PKCS12_HEADER_PATTERNS[i][0] ==
+                        (firstPeek & PKCS12_HEADER_MASKS[i][0]) &&
+                    (PKCS12_HEADER_PATTERNS[i][1] ==
+                        (nextPeek & PKCS12_HEADER_MASKS[i][1])) &&
+                    (PKCS12_HEADER_PATTERNS[i][2] ==
+                        (finalPeek & PKCS12_HEADER_MASKS[i][2]))) {
+                    result = true;
+                    break;
+                }
+            }
+        } else if (finalBytes.length == Short.BYTES) {
+            finalPeek = bytesToLong(finalBytes);
+            if (PKCS12_HEADER_PATTERNS_SHORT[0] ==
+                    (firstPeek & PKCS12_HEADER_MASKS_SHORT[0]) &&
+                (PKCS12_HEADER_PATTERNS_SHORT[1] ==
+                    (nextPeek & PKCS12_HEADER_MASKS_SHORT[1])) &&
+                (PKCS12_HEADER_PATTERNS_SHORT[2] ==
+                    (finalPeek & PKCS12_HEADER_MASKS_SHORT[2]))) {
                 result = true;
-                break;
             }
         }
-
         return result;
     }
 
