@@ -312,7 +312,7 @@ private:
         break;
       case ShenandoahVerifier::_verify_cset_forwarded:
         if (_heap->in_collection_set(obj)) {
-          check(ShenandoahAsserts::_safe_all, obj, (obj != fwd),
+          check(ShenandoahAsserts::_safe_all, obj, obj != fwd || obj->is_self_forwarded(),
                  "Object in collection set, should have forwardee");
         }
         break;
@@ -1172,7 +1172,7 @@ void ShenandoahVerifier::verify_before_update_refs(ShenandoahGeneration* generat
           verify_remembered_set,        // verify read-write remembered set
           _verify_forwarded_allow,     // forwarded references allowed
           _verify_marked_complete,     // bitmaps might be stale, but alloc-after-mark should be well
-          _verify_cset_disable,        // self forwarded objects will exist in cset regions
+          _verify_cset_forwarded,      // all cset refs are fully forwarded
           _verify_liveness_disable,    // no reliable liveness data anymore
           _verify_regions_notrash,     // trash regions have been recycled already
           _verify_size_exact,          // expect generation and heap sizes to match exactly
@@ -1186,7 +1186,7 @@ void ShenandoahVerifier::verify_after_update_refs(ShenandoahGeneration* generati
           generation,
           "After Updating References",
           _verify_remembered_disable,  // do not verify remembered set
-          _verify_forwarded_allow,     // failed evac regions may contain forwarded refs
+          _verify_forwarded_none,      // no forwarded references (self forwarded objects should be cleared)
           _verify_marked_disable,      // no need to check unreachable objects, end of cycle
           _verify_cset_none,           // no cset references, all updated
           _verify_liveness_disable,    // no reliable liveness data anymore
