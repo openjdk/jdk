@@ -55,8 +55,8 @@ TEST_VM(NMTChunkAccounting, non_standard_chunks) {
     return;
   }
 
-  static const size_t NUM_ARENAS = 200;
-  static const size_t CHUNK_SIZE = ARENA_ALIGN(5000);
+  constexpr size_t NUM_ARENAS = 200;
+  constexpr size_t CHUNK_SIZE = 5000;
 
   const CountersSnapshot before = take_snapshot();
   const size_t expected_arena_size = before.mtTest_arena_size + NUM_ARENAS * CHUNK_SIZE;

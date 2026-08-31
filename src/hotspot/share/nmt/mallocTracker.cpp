@@ -193,18 +193,16 @@ void MallocTracker::chunk_assigned_to_arena(void* memblock, MemTag new_tag, cons
   // Only decrement per-tag counters, leave the total malloc amounts unchanged.
   MallocMemorySummary::as_snapshot()->by_tag(header->mem_tag())->record_free(header->size());
 
-  uint32_t new_mst_marker = 0;
-  if (MemTracker::tracking_level() == NMT_detail && header->mem_tag() != new_tag) {
-    MallocSiteTable::deallocation_at(header->size(), header->mst_marker());
-    if (!MallocSiteTable::allocation_at(new_stack, header->size(), &new_mst_marker, new_tag)) {
-      fatal("NMT is now out of sync.");
-    }
-  }
-
   // Arena only accounts for payload. Account for the header size and count. Attribute it to the arena's tag.
   MallocMemorySummary::as_snapshot()->by_tag(new_tag)->record_malloc(Chunk::aligned_overhead_size());
 
+  uint32_t new_mst_marker = 0;
   if (header->mem_tag() != new_tag) {
+    if (MemTracker::tracking_level() == NMT_detail) {
+      MallocSiteTable::deallocation_at(header->size(), header->mst_marker());
+      bool res = MallocSiteTable::allocation_at(new_stack, header->size(), &new_mst_marker, new_tag);
+      assert(res, "MallocSiteTable::allocation_at failed. NMT is now out of sync");
+    }
     header->set_mem_tag(new_tag);
     header->set_mst_marker(new_mst_marker);
   }
@@ -216,16 +214,14 @@ void MallocTracker::add_chunk_to_pool(void* memblock, const NativeCallStack& new
 
   // Only increment mtChunk, leave the total malloc amounts unchanged.
   MallocMemorySummary::as_snapshot()->by_tag(mtChunk)->record_malloc(header->size());
+  MallocMemorySummary::as_snapshot()->by_tag(header->mem_tag())->record_free(Chunk::aligned_overhead_size());
 
   uint32_t new_mst_marker = 0;
   if (MemTracker::tracking_level() == NMT_detail) {
     MallocSiteTable::deallocation_at(header->size(), header->mst_marker());
-    if (!MallocSiteTable::allocation_at(new_stack, header->size(), &new_mst_marker, mtChunk)) {
-      fatal("NMT is now out of sync.");
-    }
+    bool res = MallocSiteTable::allocation_at(new_stack, header->size(), &new_mst_marker, mtChunk);
+    assert(res, "MallocSiteTable::allocation_at failed. NMT is now out of sync");
   }
-
-  MallocMemorySummary::as_snapshot()->by_tag(header->mem_tag())->record_free(Chunk::aligned_overhead_size());
 
   header->set_mem_tag(mtChunk);
   header->set_mst_marker(new_mst_marker);
