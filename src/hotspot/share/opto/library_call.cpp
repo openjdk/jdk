@@ -5369,7 +5369,7 @@ bool LibraryCallKit::should_bail_out_on_non_ref_arrays(const TypeAryPtr* src_typ
     return true;
   }
 
-  if (UseArrayFlattening) {
+  if (!UseArrayFlattening) {
     // The remaining checks revolve around array flatness. Without array flatness, we don't need the stronger non-ref
     // runtime check excluding flat arrays.
     return false;
@@ -5391,7 +5391,7 @@ bool LibraryCallKit::should_bail_out_on_non_ref_arrays(const TypeAryPtr* src_typ
   // TODO 8251971: Optimize for the case when flat src/dst are later found to not contain
   //               oops (i.e., move this check to the macro expansion phase).
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  if (bs->array_copy_requires_gc_barriers(true, T_OBJECT, false, false, BarrierSetC2::Parsing)) {
+  if (!bs->array_copy_requires_gc_barriers(true, T_OBJECT, false, false, BarrierSetC2::Parsing)) {
     // No barriers required.
     return false;
   }
