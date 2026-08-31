@@ -3919,7 +3919,8 @@ class StubGenerator: public StubCodeGenerator {
   address generate_updateBytesAdler32() {
 
     __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", "updateBytesAdler32");
+    StubId stub_id = StubId::stubgen_updateBytesAdler32_id;
+    StubCodeMark mark(this, stub_id);
     address start = __ function_entry();
 
     const uint32_t BASE = 65521;
@@ -3945,22 +3946,26 @@ class StubGenerator: public StubCodeGenerator {
     Register count = R10;
     Register tmp0  = R11;
     Register tmp1  = R12;
+    Register tmp   = R13;
 
     VectorRegister vdata    = VR0;
     VectorRegister vones    = VR1;
     VectorRegister vweights = VR2;
     VectorRegister vacc1    = VR3;
     VectorRegister vacc2    = VR4;
+    VectorRegister vp       = VR5;
 
     __ load_const32(base, BASE);
     __ load_const32(nmax, NMAX);
 
     // load tables
+    __ compute_vp_for_byte_vector_unaligned(vp, vacc1);
+
     __ load_const(tmp0, (address)ADLER32_ONES);
-    __ lvx(vones, tmp0);
+    __ load_byte_vector_unaligned(vones, 0, tmp0, tmp, vp);
 
     __ load_const(tmp0, (address)ADLER32_WEIGHTS);
-    __ lvx(vweights, tmp0);
+    __ load_byte_vector_unaligned(vweights, 0, tmp0, tmp, vp);
 
     // split Adler
     __ clrldi(s1, adler, 48);      // low 16 bits
@@ -3982,7 +3987,7 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(L_nmax_loop);
 
     generate_updateBytesAdler32_accum(s1, s2, buf, tmp0, tmp1,
-                         vdata, vones, vweights, vacc1, vacc2);
+                         vdata, vones, vweights, vacc1, vacc2, vp);
 
     __ addi(count, count, -16);
 
@@ -4016,7 +4021,7 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(L_by16_loop);
 
     generate_updateBytesAdler32_accum(s1, s2, buf, tmp0, tmp1,
-                         vdata, vones, vweights, vacc1, vacc2);
+                         vdata, vones, vweights, vacc1, vacc2, vp);
 
     __ addi(len, len, -16);
 
@@ -4064,13 +4069,13 @@ class StubGenerator: public StubCodeGenerator {
   void generate_updateBytesAdler32_accum(Register s1, Register s2, Register buf,
                              Register tmp0, Register tmp1, VectorRegister vdata,
                              VectorRegister vones, VectorRegister vweights,
-                             VectorRegister vacc1, VectorRegister vacc2) {
+                             VectorRegister vacc1, VectorRegister vacc2, VectorRegister vp) {
 
     // save s1
     __ mr(tmp1, s1);
 
     // load 16 input bytes
-    __ lxvx(vdata.to_vsr(),  buf);
+    __ load_byte_vector_unaligned(vdata, 0, buf, tmp0, vp);
 
     // compute the weighted sum
 

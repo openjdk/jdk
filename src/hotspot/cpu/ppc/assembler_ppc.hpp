@@ -684,11 +684,10 @@ class Assembler : public AbstractAssembler {
     VMHADDSHS_OPCODE=(4u  << OPCODE_SHIFT |   32u     ),
     VMHRADDSHS_OPCODE=(4u << OPCODE_SHIFT |   33u     ),
     VMLADDUHM_OPCODE=(4u  << OPCODE_SHIFT |   34u     ),
-    VMSUBUHM_OPCODE= (4u  << OPCODE_SHIFT |   36u     ),
+    VMSUMUBM_OPCODE= (4u  << OPCODE_SHIFT |   36u     ),
     VMSUMMBM_OPCODE= (4u  << OPCODE_SHIFT |   37u     ),
     VMSUMSHM_OPCODE= (4u  << OPCODE_SHIFT |   40u     ),
     VMSUMSHS_OPCODE= (4u  << OPCODE_SHIFT |   41u     ),
-    VMSUMUBM_OPCODE= (4u  << OPCODE_SHIFT |   36u     ),
     VMSUMUHM_OPCODE= (4u  << OPCODE_SHIFT |   38u     ),
     VMSUMUHS_OPCODE= (4u  << OPCODE_SHIFT |   39u     ),
     VMADDFP_OPCODE = (4u  << OPCODE_SHIFT |   46u     ),
@@ -2293,11 +2292,10 @@ class Assembler : public AbstractAssembler {
   inline void vmhaddshs(VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c);
   inline void vmhraddshs(VectorRegister d,VectorRegister a, VectorRegister b, VectorRegister c);
   inline void vmladduhm(VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c);
-  inline void vmsubuhm( VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c);
+  inline void vmsumubm( VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c);
   inline void vmsummbm( VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c);
   inline void vmsumshm( VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c);
   inline void vmsumshs( VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c);
-  inline void vmsumubm( VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c);
   inline void vmsumuhm( VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c);
   inline void vmsumuhs( VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c);
   inline void vmaddfp(  VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c);
