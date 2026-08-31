@@ -3042,3 +3042,12 @@ double ShenandoahFreeSet::external_fragmentation() {
   }
 }
 
+#ifdef ASSERT
+void ShenandoahFreeSet::assert_region_usage_more_than_usage() {
+  if (ShenandoahHeap::heap()->mode()->is_generational()) {
+    assert(_young_affiliated_regions * ShenandoahHeapRegion::region_size_bytes() >= _total_young_used, "sanity");
+    assert(_old_affiliated_regions * ShenandoahHeapRegion::region_size_bytes() >= _total_old_used, "sanity");
+  }
+  assert(_global_affiliated_regions * ShenandoahHeapRegion::region_size_bytes() >= _total_global_used, "sanity");
+}
+#endif

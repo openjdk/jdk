@@ -29,7 +29,6 @@
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
-#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
@@ -566,14 +565,10 @@ private:
          OldCollectorSizeChanged || OldCollectorEmptiesChanged)) {
       _global_affiliated_regions = _young_affiliated_regions + _old_affiliated_regions;
     }
-#ifdef ASSERT
-    if (ShenandoahHeap::heap()->mode()->is_generational()) {
-      assert(_young_affiliated_regions * ShenandoahHeapRegion::region_size_bytes() >= _total_young_used, "sanity");
-      assert(_old_affiliated_regions * ShenandoahHeapRegion::region_size_bytes() >= _total_old_used, "sanity");
-    }
-    assert(_global_affiliated_regions * ShenandoahHeapRegion::region_size_bytes() >= _total_global_used, "sanity");
-#endif
+    DEBUG_ONLY(assert_region_usage_more_than_usage());
   }
+
+  DEBUG_ONLY(void assert_region_usage_more_than_usage());
 
   bool transfer_one_region_from_mutator_to_old_collector(size_t idx, size_t alloc_capacity);
 
