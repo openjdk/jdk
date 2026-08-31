@@ -23,7 +23,6 @@
  */
 
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
-
 #include "utilities/ostream.hpp"
 
 HeapWord* G1HeapRegionRemSet::_heap_base_address = nullptr;
