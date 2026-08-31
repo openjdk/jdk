@@ -261,5 +261,35 @@ public class MultiReleaseJars {
                 out.shouldContain("I am running on version " + MAJOR_VERSION_STRING);
             })
             .runAOTWorkflow();
+
+        // 8. AOT Test with space after enableMultiRelease=true
+        SimpleCDSAppTester.of("Multi-Release-AOT")
+            .addVmArgs("-Xlog:aot",
+                       enableMultiRelease + " ")
+            .classpath(appJar3)
+            .appCommandLine(mainClass)
+            .setTrainingChecker((OutputAnalyzer out) -> {
+                out.shouldNotMatch("class version/Version cannot be archived because it was not defined");
+            })
+            .setProductionChecker((OutputAnalyzer out) -> {
+                out.shouldContain("I am running on version " + MAJOR_VERSION_STRING);
+            })
+            .runAOTWorkflow();
+
+        // 9. AOT Test with multi-release disabled
+        SimpleCDSAppTester.of("No-Multi-Release-AOT")
+            .setCheckExitValue(false)
+            .addVmArgs("-Xlog:aot",
+                       "-Djdk.util.jar.enableMultiRelease=false")
+            .classpath(appJar3)
+            .appCommandLine(mainClass)
+            .setTrainingChecker((OutputAnalyzer out) -> {
+                out.shouldNotMatch("class version/Version cannot be archived because it was not defined");
+            })
+            .setProductionChecker((OutputAnalyzer out) -> {
+                out.shouldHaveExitValue(1);
+                out.shouldContain("java.lang.ClassNotFoundException: version.Version");
+            })
+            .runAOTWorkflow();
     }
 }
