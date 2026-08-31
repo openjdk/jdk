@@ -53,6 +53,8 @@ class MethodTimes implements JavaMessage {
         int maxWidthNames = maxMethodNameWidth();
         int maxDurationsWidth = maxDurationsWidth();
         List<Map.Entry<String, Long>>  sortedMethodTimes = sortByDurationAsc();
+
+        // printf() has no '*' as dynamic-width specifier, so the calculated widths are inserted into the format string.
         String format = "- %-" + (maxWidthNames + 3) + "s %" + maxDurationsWidth + "d ms%n";
 
         for (Map.Entry<String, Long> entry : sortedMethodTimes) {

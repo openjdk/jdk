@@ -159,8 +159,7 @@ public class TestVMProcess {
         }
         // Primary exception: non-zero Test VM exit.
         String exceptionInfo = buildPrimaryExceptionInfo() + secondaryException;
-        throw new TestVMException(exceptionInfo);
-
+        return new TestVMException(exceptionInfo);
     }
 
     private String buildSecondaryExceptionInfo(RuntimeException e) {
