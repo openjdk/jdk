@@ -26,6 +26,7 @@
 #include "memory/allocation.hpp"
 
 #include <cmath>
+#include <float.h>
 
 ShenandoahWeightedSeq::ShenandoahWeightedSeq(uint size)
 : _size(size),
@@ -46,7 +47,8 @@ ShenandoahWeightedSeq::ShenandoahWeightedSeq(uint size)
   _yy_sum(0),
   _slope(0.0),
   _y_intercept(0.0),
-  _residual_sd(0.0) {
+  _residual_sd(0.0),
+  _slope_se(0.0) {
 }
 
 ShenandoahWeightedSeq::~ShenandoahWeightedSeq() {
@@ -65,78 +67,56 @@ void ShenandoahWeightedSeq::add(double x, double y) {
   }
 }
 
-void ShenandoahWeightedSeq::deduct_oldest_and_rebase(const double x_absolute, const double y_absolute, const double weight) {
-  // Suppose we want to shift _x_origin by delta. Our accumulators for x
-  // components are based on the relative value 'x - x_origin', call this 'a'.
-  // We want to update our accumulators to hold 'a - delta'.
-  // Our new value for
-  // updated sum(x) = sum(a - delta)
-  //                = sum(a) - n * delta.
-  // Similarly
-  // updated sum(x^2) = sum((a - delta)^2)
-  //                  = sum(a^2 - 2 * delta * a + delta^2)
-  //                  = sum(a^2) - 2 * delta * sum(a) + n * delta^2
-  // Finally
-  // updated sum(xy) = sum(a - delta) * y
-  //                 = sum(xy) - delta * sum(y)
-  const double x_delta = x_absolute - _x_origin;
-  const double y_delta = y_absolute - _y_origin;
-
-  // order matters here, we must use old _x_sum
-  _xx_sum = _xx_sum - 2.0 * x_delta * _x_sum + _num_samples * x_delta * x_delta;
-  _xy_sum = _xy_sum - x_delta * _y_sum;
-  _x_sum  = _x_sum  - _num_samples * x_delta;
-  _x_origin = x_absolute;
-
-  // similarly, rebase y
-  _yy_sum = _yy_sum - 2.0 * y_delta * _y_sum + _num_samples * y_delta * y_delta;
-  _xy_sum = _xy_sum - y_delta * _x_sum;
-  _y_sum = _y_sum - _num_samples * y_delta;
-  _y_origin = y_absolute;
-
-  // and our weighted sums
-  _weighted_yy_sum = _weighted_yy_sum - 2.0 * y_delta * _weighted_y_sum + _weighted_sum * y_delta * y_delta;
-  _weighted_y_sum = _weighted_y_sum - _weighted_sum * y_delta;
-  _weighted_sum -= weight;
-}
-
-void ShenandoahWeightedSeq::add_latest(double x_absolute, double y_absolute, double weight) {
-  const double x_delta = x_absolute - _x_origin;
-  const double y_delta = y_absolute - _y_origin;
-  _x_sum += x_delta;
-  _y_sum += y_delta;
-  _xy_sum += x_delta * y_delta;
-  _xx_sum += x_delta * x_delta;
-  _yy_sum += y_delta * y_delta;
-  _weighted_sum += weight;
-  _weighted_y_sum += y_delta * weight;
-  _weighted_yy_sum += y_delta * y_delta * weight;
-}
-
 void ShenandoahWeightedSeq::add(double x, double y, double weight) {
-  // Update best-fit linear regression
-  const uint index = (_first_sample_index + _num_samples) % _size;
-  if (_num_samples == _size) {
-    deduct_oldest_and_rebase(_x_values[index], _y_values[index], _weights[index]);
-  } else if (_num_samples == 0) {
-    _x_origin = x;
-    _y_origin = y;
+  uint index = 0;
+  if (_num_samples < _size) {
+    index = _num_samples++;
+  } else {
+    index = _first_sample_index;
+    _first_sample_index = (_first_sample_index + 1) % _size;
   }
-
   _x_values[index] = x;
   _y_values[index] = y;
   _weights[index] = weight;
 
-  add_latest(x, y, weight);
+  // Recompute everything from current data, to avoid accumulating errors.
+  _x_sum = 0;
+  _y_sum = 0;
+  _xx_sum = 0;
+  _xy_sum = 0;
+  _yy_sum = 0;
+  _weighted_sum = 0;
+  _weighted_y_sum = 0;
+  _weighted_yy_sum = 0;
 
-  if (_num_samples < _size) {
-    _num_samples++;
-  } else {
-    _first_sample_index = (_first_sample_index + 1) % _size;
+  // Most robust estimation is when origin is at average
+  _x_origin = 0;
+  _y_origin = 0;
+  for (uint i = 0; i < _num_samples; i++) {
+    _x_origin += _x_values[i];
+    _y_origin += _y_values[i];
+  }
+  _x_origin /= _num_samples;
+  _y_origin /= _num_samples;
+
+  for (uint i = 0; i < _num_samples; i++) {
+    double x = _x_values[i] - _x_origin;
+    double y = _y_values[i] - _y_origin;
+    _x_sum += x;
+    _y_sum += y;
+    _xx_sum += x * x;
+    _xy_sum += x * y;
+    _yy_sum += y * y;
+    _weighted_sum += _weights[i];
+    _weighted_y_sum += _weights[i] * y;
+    _weighted_yy_sum += _weights[i] * y * y;
   }
 
-  const double x_spread = _num_samples * _xx_sum - _x_sum * _x_sum;
-  if (x_spread <= 0.0 || _num_samples < 2) {
+  // For centered math, the "noisy" path is when the spread is at the scale
+  // representation noise of inputs.
+  const double K = 100.0;
+  const double x_noise = K * DBL_EPSILON * _x_origin;
+  if (_num_samples < 2 || _xx_sum <= _num_samples * x_noise * x_noise) {
     // All samples are the sample point, can't make a line
     _slope = 0;
     _y_intercept = y - _y_origin;
@@ -144,12 +124,14 @@ void ShenandoahWeightedSeq::add(double x, double y, double weight) {
     return;
   }
 
+  const double x_spread = _num_samples * _xx_sum - _x_sum * _x_sum;
   _slope = (_num_samples * _xy_sum - _x_sum * _y_sum) / x_spread;
   _y_intercept = (_y_sum - _slope * _x_sum) / _num_samples;
   const double total_sum_of_squares = _yy_sum - _y_sum * _y_sum / _num_samples;
   const double sum_of_cross_deviations = _xy_sum - _x_sum * _y_sum / _num_samples;
   const double residual_sum_of_squares = total_sum_of_squares - _slope * sum_of_cross_deviations;
   _residual_sd = std::sqrt(MAX2(residual_sum_of_squares, 0.0) / _num_samples);
+  _slope_se = std::sqrt(MAX2(residual_sum_of_squares, 0.0) / _num_samples) / _xx_sum;
 }
 
 double ShenandoahWeightedSeq::predict(double x_absolute, double margin_of_error) const {

@@ -61,6 +61,7 @@ class ShenandoahWeightedSeq {
   double _slope;            // slope
   double _y_intercept;      // y-intercept
   double _residual_sd;      // sd on deviance from prediction
+  double _slope_se;         // slope error estimate
 
 public:
 
@@ -105,8 +106,9 @@ public:
   // An unweighted standard deviation of the unweighted mean
   double sd() const;
 
-  // The slope for a line of best fit through the samples
+  // The slope for a line of best fit through the samples and its error
   double slope() const { return _slope; }
+  double slope_se() const { return _slope_se; }
 
   // Predict the y-value for the given x value based on linear reg
   double predict_y(double x_absolute) const {
@@ -118,13 +120,6 @@ public:
     slope = _slope;
     intercept = predict_y(x_absolute);
   }
-
-private:
-  // Removes about to be overwritten sample from x accumulators and rebases x origin
-  void deduct_oldest_and_rebase(double x, double y, double weight);
-
-  // Record the sample into the sequence, update x, y accumulators
-  void add_latest(double x, double y, double weight);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHWEIGHTEDSEQ_HPP
