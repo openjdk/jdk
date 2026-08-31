@@ -212,13 +212,20 @@ int ShenandoahCollectorPolicy::cause_priority(GCCause::Cause cause) {
   }
 
   switch (cause) {
-    case GCCause::_shenandoah_stop_vm: return 7;
-    case GCCause::_shenandoah_upgrade_to_full_gc: return 6;
-    case GCCause::_shenandoah_humongous_allocation_failure: return 4;
-    case GCCause::_shenandoah_allocation_failure_evac: return 3;
-    case GCCause::_allocation_failure: return 2;
-    case GCCause::_shenandoah_concurrent_gc: return 1;
-    case GCCause::_no_gc: return 0;
+    case GCCause::_shenandoah_stop_vm:
+      return 7;
+    case GCCause::_shenandoah_upgrade_to_full_gc:
+      return 6;
+    case GCCause::_shenandoah_humongous_allocation_failure:
+      return 4;
+    case GCCause::_shenandoah_allocation_failure_evac:
+      return 3;
+    case GCCause::_allocation_failure:
+      return 2;
+    case GCCause::_shenandoah_concurrent_gc:
+      return 1;
+    case GCCause::_no_gc:
+      return 0;
     default:
       // Unanticipated gc causes are treated as an allocation failure and cannot be
       // preempted by regulator requests
