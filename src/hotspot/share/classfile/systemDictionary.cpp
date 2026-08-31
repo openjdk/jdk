@@ -1668,7 +1668,7 @@ InstanceKlass* SystemDictionary::find_or_define_instance_class(Symbol* class_nam
     k->class_loader_data()->add_to_deallocate_list(k);
   } else if (HAS_PENDING_EXCEPTION) {
     // Remove this InstanceKlass from the LoaderConstraintTable if added.
-    LoaderConstraintTable::remove_failed_loaded_klass(k, class_loader_data(class_loader));
+    LoaderConstraintTable::check_failed_loaded_klass(k, class_loader_data(class_loader));
     assert(defined_k == nullptr, "Should not have a klass if there's an exception");
     k->class_loader_data()->add_to_deallocate_list(k);
   }

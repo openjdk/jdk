@@ -442,20 +442,17 @@ InstanceKlass* LoaderConstraintTable::find_constrained_klass(Symbol* name,
   return nullptr;
 }
 
-// Removes a class that was added to the table then class loading subsequently failed for this class,
+// Checks that a class wasn't added to the table then class loading subsequently failed for this class,
 // so we don't have a dangling pointer to InstanceKlass in the LoaderConstraintTable.
-void LoaderConstraintTable::remove_failed_loaded_klass(InstanceKlass* klass,
-                                                       ClassLoaderData* loader) {
+void LoaderConstraintTable::check_failed_loaded_klass(InstanceKlass* klass,
+                                                      ClassLoaderData* loader) {
 
+#if ASSERT
   MutexLocker ml(SystemDictionary_lock);
   Symbol* name = klass->name();
-  LoaderConstraint *p = find_loader_constraint(name, loader);
-  if (p != nullptr && p->klass() != nullptr && p->klass() == klass) {
-    log_info(class, loader, constraints)("removing klass %s: failed to load", name->as_C_string());
-    // We only null out the class, since the constraint for the class name for this loader is still valid as
-    // it was added when checking signature loaders for a method or field resolution.
-    p->set_klass(nullptr);
-  }
+  LoaderConstraint* p = find_loader_constraint(name, loader);
+  assert (p == nullptr || p->klass() == klass, "pointer to class that failed to load");
+#endif
 }
 
 void LoaderConstraintTable::merge_loader_constraints(Symbol* class_name,
