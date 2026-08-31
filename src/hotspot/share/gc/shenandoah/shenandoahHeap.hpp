@@ -505,7 +505,7 @@ private:
 
   virtual void update_heap_references(ShenandoahGeneration* generation);
   // Final update region states
-  void update_heap_region_states(bool had_self_forwards);
+  void update_heap_region_states();
   virtual void final_update_refs_update_region_states();
 
   void rendezvous_threads(const char* name);
@@ -874,7 +874,7 @@ public:
   void log_heap_status(const char *msg) const;
 
 private:
-  void trash_cset_regions(bool had_self_forwards);
+  void trash_cset_regions();
 
 // ---------- Testing helpers functions
 //
