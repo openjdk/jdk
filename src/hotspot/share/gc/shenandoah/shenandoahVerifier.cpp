@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2017, 2025, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -312,7 +312,7 @@ private:
         break;
       case ShenandoahVerifier::_verify_cset_forwarded:
         if (_heap->in_collection_set(obj)) {
-          check(ShenandoahAsserts::_safe_all, obj, (obj != fwd),
+          check(ShenandoahAsserts::_safe_all, obj, obj != fwd || obj->is_self_forwarded(),
                  "Object in collection set, should have forwardee");
         }
         break;
@@ -1186,13 +1186,13 @@ void ShenandoahVerifier::verify_after_update_refs(ShenandoahGeneration* generati
           generation,
           "After Updating References",
           _verify_remembered_disable,  // do not verify remembered set
-          _verify_forwarded_none,      // no forwarded references
+          _verify_forwarded_none,      // no forwarded references (self forwarded objects should be cleared)
           _verify_marked_disable,      // no need to check unreachable objects, end of cycle
           _verify_cset_none,           // no cset references, all updated
           _verify_liveness_disable,    // no reliable liveness data anymore
           _verify_regions_nocset,      // no cset regions, trash regions have appeared
                                        // expect generation and heap sizes to match exactly, including trash
-          _verify_size_exact_including_trash,
+          _verify_size_exact,
           _verify_gcstate_stable       // update refs had cleaned up forwarded objects
   );
 }
@@ -1209,23 +1209,8 @@ void ShenandoahVerifier::verify_after_gc(ShenandoahGeneration* generation) {
           _verify_liveness_disable,    // no reliable liveness data anymore
           _verify_regions_nocset,      // no cset regions, trash regions have appeared
                                        // expect generation and heap sizes to match exactly, including trash
-          _verify_size_exact_including_trash,
+          _verify_size_exact,
           _verify_gcstate_stable       // GC state was turned off
-  );
-}
-
-void ShenandoahVerifier::verify_after_degenerated(ShenandoahGeneration* generation) {
-  verify_at_safepoint(
-          generation,
-          "After Degenerated GC",
-          _verify_remembered_disable,  // do not verify remembered set
-          _verify_forwarded_none,      // all objects are non-forwarded
-          _verify_marked_disable,      // no need to check unreachable objects, end of cycle
-          _verify_cset_none,           // no cset references
-          _verify_liveness_disable,    // no reliable liveness data anymore
-          _verify_regions_notrash_nocset, // no trash, no cset
-          _verify_size_exact,          // expect generation and heap sizes to match exactly
-          _verify_gcstate_stable       // degenerated refs had cleaned up forwarded objects
   );
 }
 
@@ -1297,7 +1282,7 @@ private:
                 "Verify Roots In To-Space", "Should be marked", __FILE__, __LINE__);
       }
 
-      if (heap->in_collection_set(obj)) {
+      if (heap->in_collection_set(obj) && !heap->heap_region_containing(obj)->has_self_forwards()) {
         ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, nullptr,
                 "Verify Roots In To-Space", "Should not be in collection set", __FILE__, __LINE__);
       }

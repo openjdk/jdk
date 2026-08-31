@@ -1,6 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -850,22 +850,16 @@ void ShenandoahOldHeuristics::adjust_old_garbage_threshold() {
   }
 }
 
-void ShenandoahOldHeuristics::record_success_concurrent() {
+void ShenandoahOldHeuristics::record_concurrent_completion() {
   // Forget any triggers that occurred while OLD GC was ongoing.  If we really need to start another, it will retrigger.
   clear_triggers();
-  this->ShenandoahHeuristics::record_success_concurrent();
+  this->ShenandoahHeuristics::record_concurrent_completion();
 }
 
-void ShenandoahOldHeuristics::record_degenerated(bool is_generational_global) {
+void ShenandoahOldHeuristics::record_full_gc(GCCause::Cause cause) {
   // Forget any triggers that occurred while OLD GC was ongoing.  If we really need to start another, it will retrigger.
   clear_triggers();
-  this->ShenandoahHeuristics::record_degenerated(is_generational_global);
-}
-
-void ShenandoahOldHeuristics::record_success_full() {
-  // Forget any triggers that occurred while OLD GC was ongoing.  If we really need to start another, it will retrigger.
-  clear_triggers();
-  this->ShenandoahHeuristics::record_success_full();
+  this->ShenandoahHeuristics::record_full_gc(cause);
 }
 
 const char* ShenandoahOldHeuristics::name() {

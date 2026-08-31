@@ -155,7 +155,7 @@ template <typename T>
 inline oop ShenandoahBarrierSet::oop_load_post(DecoratorSet decorators, oop value, T* addr) {
   assert((decorators & ON_UNKNOWN_OOP_REF) == 0, "Reference strength must be known");
 
-  shenandoah_assert_not_in_cset_loc_except(addr, !is_heap_access(decorators) || _heap->cancelled_gc());
+  shenandoah_assert_not_in_cset_loc_except(addr, !is_heap_access(decorators) || _heap->cancelled_gc() || _heap->has_self_forwarded_objects());
 
   // Perform LRB to handle evacuation and possibly weak loads.
   value = load_reference_barrier(decorators, value, addr);
@@ -172,9 +172,9 @@ template <typename T>
 inline void ShenandoahBarrierSet::oop_store_pre(DecoratorSet decorators, T* addr, oop new_value) {
   assert((decorators & ON_UNKNOWN_OOP_REF) == 0, "Reference strength must be known");
 
-  shenandoah_assert_not_in_cset_loc_except(addr, !is_heap_access(decorators) || _heap->cancelled_gc());
-  shenandoah_assert_not_in_cset_except(nullptr, new_value, new_value == nullptr || _heap->cancelled_gc());
-  shenandoah_assert_not_forwarded_except(nullptr, new_value, new_value == nullptr || _heap->cancelled_gc());
+  shenandoah_assert_not_in_cset_loc_except(addr, !is_heap_access(decorators) || _heap->cancelled_gc() || _heap->has_self_forwarded_objects());
+  shenandoah_assert_not_in_cset_except(nullptr, new_value, new_value == nullptr || ShenandoahForwarding::is_self_forwarded(new_value));
+  shenandoah_assert_not_forwarded_except(nullptr, new_value, new_value == nullptr || ShenandoahForwarding::is_self_forwarded(new_value));
 
   shenandoah_assert_marked_if(nullptr, new_value,
                               !CompressedOops::is_null(new_value) &&
@@ -199,11 +199,11 @@ inline void ShenandoahBarrierSet::oop_cmpxchg_pre(DecoratorSet decorators, T* ad
   assert((decorators & ON_UNKNOWN_OOP_REF) == 0, "CAS should have resolved ref strength");
   assert((decorators & ON_STRONG_OOP_REF) != 0, "CAS only for strong refs");
 
-  shenandoah_assert_not_in_cset_loc_except(addr, !is_heap_access(decorators) || _heap->cancelled_gc());
-  shenandoah_assert_not_in_cset_except(nullptr, compare_value, compare_value == nullptr || _heap->cancelled_gc());
-  shenandoah_assert_not_in_cset_except(nullptr, new_value, new_value == nullptr || _heap->cancelled_gc());
-  shenandoah_assert_not_forwarded_except(addr, compare_value, compare_value == nullptr || _heap->cancelled_gc());
-  shenandoah_assert_not_forwarded_except(addr, new_value, new_value == nullptr || _heap->cancelled_gc());
+  shenandoah_assert_not_in_cset_loc_except(addr, !is_heap_access(decorators) || _heap->cancelled_gc() || _heap->has_self_forwarded_objects());
+  shenandoah_assert_not_in_cset_except(nullptr, compare_value, compare_value == nullptr || ShenandoahForwarding::is_self_forwarded(compare_value));
+  shenandoah_assert_not_in_cset_except(nullptr, new_value, new_value == nullptr || ShenandoahForwarding::is_self_forwarded(new_value));
+  shenandoah_assert_not_forwarded_except(addr, compare_value, compare_value == nullptr || ShenandoahForwarding::is_self_forwarded(compare_value));
+  shenandoah_assert_not_forwarded_except(addr, new_value, new_value == nullptr || ShenandoahForwarding::is_self_forwarded(new_value));
 
   // Handle the previous value through SATB, as we are about to perform the store.
   oop prev = RawAccess<>::oop_load(addr);
@@ -221,9 +221,9 @@ inline void ShenandoahBarrierSet::oop_xchg_pre(DecoratorSet decorators, T* addr,
   assert((decorators & ON_UNKNOWN_OOP_REF) == 0, "XCHG should have resolved ref strength");
   assert((decorators & ON_STRONG_OOP_REF) != 0, "XCHG only for strong refs");
 
-  shenandoah_assert_not_in_cset_loc_except(addr, !is_heap_access(decorators) || _heap->cancelled_gc());
-  shenandoah_assert_not_in_cset_except(nullptr, new_value, new_value == nullptr || _heap->cancelled_gc());
-  shenandoah_assert_not_forwarded_except(addr, new_value, new_value == nullptr || _heap->cancelled_gc());
+  shenandoah_assert_not_in_cset_loc_except(addr, !is_heap_access(decorators) || _heap->cancelled_gc() || _heap->has_self_forwarded_objects());
+  shenandoah_assert_not_in_cset_except(nullptr, new_value, new_value == nullptr || ShenandoahForwarding::is_self_forwarded(new_value));
+  shenandoah_assert_not_forwarded_except(addr, new_value, new_value == nullptr || ShenandoahForwarding::is_self_forwarded(new_value));
 
   // Handle the previous value through SATB, as we are about to perform the store.
   oop prev = RawAccess<>::oop_load(addr);
