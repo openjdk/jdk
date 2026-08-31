@@ -86,7 +86,7 @@ public sealed interface JsonValue permits JsonString, JsonNumber, JsonObject, Js
      * @throws JsonValueException if this {@code JsonValue} is not an instance of {@code JsonBoolean}.
      */
     default boolean asBoolean() {
-        throw Utils.composeTypeError(this, "JsonBoolean");
+        throw Utils.composeTypeError(this, JsonBoolean.class);
     }
 
     /**
@@ -111,7 +111,7 @@ public sealed interface JsonValue permits JsonString, JsonNumber, JsonObject, Js
      *      of {@code JsonNumber} or is not representable as an {@code int}.
      */
     default int asInt() {
-        throw Utils.composeTypeError(this, "JsonNumber");
+        throw Utils.composeTypeError(this, JsonNumber.class);
     }
 
     /**
@@ -135,7 +135,7 @@ public sealed interface JsonValue permits JsonString, JsonNumber, JsonObject, Js
      *      of {@code JsonNumber} or is not representable as a {@code long}.
      */
     default long asLong() {
-        throw Utils.composeTypeError(this, "JsonNumber");
+        throw Utils.composeTypeError(this, JsonNumber.class);
     }
 
     /**
@@ -167,7 +167,7 @@ public sealed interface JsonValue permits JsonString, JsonNumber, JsonObject, Js
      *      of {@code JsonNumber} or is not representable as a finite {@code double}.
      */
     default double asDouble() {
-        throw Utils.composeTypeError(this, "JsonNumber");
+        throw Utils.composeTypeError(this, JsonNumber.class);
     }
 
     /**
@@ -186,7 +186,7 @@ public sealed interface JsonValue permits JsonString, JsonNumber, JsonObject, Js
      * @throws JsonValueException if this {@code JsonValue} is not an instance of {@code JsonString}.
      */
     default String asString() {
-        throw Utils.composeTypeError(this, "JsonString");
+        throw Utils.composeTypeError(this, JsonString.class);
     }
 
     /**
@@ -202,7 +202,7 @@ public sealed interface JsonValue permits JsonString, JsonNumber, JsonObject, Js
      * @throws JsonValueException if this {@code JsonValue} is not an instance of {@code JsonArray}.
      */
     default List<JsonValue> asList() {
-        throw Utils.composeTypeError(this, "JsonArray");
+        throw Utils.composeTypeError(this, JsonArray.class);
     }
 
     /**
@@ -224,7 +224,7 @@ public sealed interface JsonValue permits JsonString, JsonNumber, JsonObject, Js
      * @throws JsonValueException if this {@code JsonValue} is not an instance of {@code JsonObject}.
      */
     default Map<String, JsonValue> asMap() {
-        throw Utils.composeTypeError(this, "JsonObject");
+        throw Utils.composeTypeError(this, JsonObject.class);
     }
 
     // Access methods are able to provide a suitable default implementation directly
