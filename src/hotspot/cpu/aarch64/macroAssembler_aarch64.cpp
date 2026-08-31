@@ -1972,7 +1972,9 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
     mov(r1, r_sub_klass);           // r1 <- r4
     mov(r2, /*expected*/rscratch1); // r2 <- r8
     mov(r3, result);                // r3 <- r5
-    mov(r4, (address)("mismatch")); // r4 <- const
+    const char* msg = "mismatch";
+    const char* str = (code_section()->scratch_emit()) ? msg : AOTCodeCache::add_C_string(msg);
+    lea(r4, ExternalAddress((address)str)); // r4 <- const
     rt_call(CAST_FROM_FN_PTR(address, Klass::on_secondary_supers_verification_failure), rscratch2);
     should_not_reach_here();
   }
@@ -2043,7 +2045,7 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
   stp(rscratch2, lr, Address(pre(sp, -2 * wordSize)));
 
   mov(r0, reg);
-  movptr(rscratch1, (uintptr_t)(address)b);
+  lea(rscratch1, ExternalAddress((address)b));
 
   // call indirectly to solve generation ordering problem
   lea(rscratch2, RuntimeAddress(StubRoutines::verify_oop_subroutine_entry_address()));
@@ -2094,7 +2096,7 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
   } else {
     ldr(r0, addr);
   }
-  movptr(rscratch1, (uintptr_t)(address)b);
+  lea(rscratch1, ExternalAddress((address)b));
 
   // call indirectly to solve generation ordering problem
   lea(rscratch2, RuntimeAddress(StubRoutines::verify_oop_subroutine_entry_address()));

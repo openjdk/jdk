@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,36 +21,39 @@
  * questions.
  */
 
-import org.testng.annotations.Test;
 
 import java.lang.foreign.*;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import org.testng.annotations.*;
-
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /*
  * @test
- * @run testng CompositeLookupTest
+ * @run junit CompositeLookupTest
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class CompositeLookupTest {
 
-    @Test(dataProvider = "testCases")
+    @ParameterizedTest
+    @MethodSource("testCases")
     public void testLookups(SymbolLookup lookup, List<Result> results) {
         for (Result result : results) {
             switch (result) {
                 case Success(String name, long expectedLookupId) -> {
                     Optional<MemorySegment> symbol = lookup.find(name);
                     assertTrue(symbol.isPresent());
-                    assertEquals(symbol.get().address(), expectedLookupId);
+                    assertEquals(expectedLookupId, symbol.get().address());
                 }
                 case Failure(String name) -> {
                     Optional<MemorySegment> symbol = lookup.find(name);
                     assertFalse(symbol.isPresent());
                 }
+
             }
         }
     }
@@ -76,7 +79,6 @@ public class CompositeLookupTest {
     record Success(String name, long expectedLookupId) implements Result { }
     record Failure(String name) implements Result { }
 
-    @DataProvider(name = "testCases")
     public Object[][] testCases() {
         return new Object[][]{
                 {
