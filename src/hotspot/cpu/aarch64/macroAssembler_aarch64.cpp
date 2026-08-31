@@ -6041,6 +6041,7 @@ void MacroAssembler::remove_frame(int initial_framesize, bool needs_stack_repair
     ldr(rscratch1, Address(sp, sp_inc_offset));
     add(sp, sp, rscratch1);
     ldp(rfp, lr, Address(post(sp, 2 * wordSize)));
+    authenticate_return_address();
   } else {
     remove_frame(initial_framesize);
   }
@@ -7182,8 +7183,17 @@ int MacroAssembler::extend_stack_for_inline_args(int args_on_stack) {
   sp_inc = align_up(sp_inc, StackAlignmentInBytes);
   assert(sp_inc > 0, "sanity");
 
-  // Save a copy of the FP and LR here for deoptimization patching and frame walking
+  // Save a copy of the FP and LR here for deoptimization patching and frame
+  // walking. See remove_frame(). Sign LR #1 before spilling. Strip afterwards
+  // so build_frame() can use its normal path (it expects a raw LR and signs
+  // before spilling LR #2). Signing LR #2 is not strictly necessary. Reusing
+  // the signed LR #1 (PACIAZ, modifier zero) or storing a raw LR #2 (layout
+  // placeholder) would both work, but would need a special build_frame() path
+  // for stack repair, which adds code complexity. Current approach (strip +
+  // re-sign) keeps one generic build_frame().
+  protect_return_address();
   stp(rfp, lr, Address(pre(sp, -2 * wordSize)));
+  strip_return_address();
 
   // Adjust the stack pointer. This will be repaired on return by MacroAssembler::remove_frame
   if (sp_inc < (1 << 9)) {
