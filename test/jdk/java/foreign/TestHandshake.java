@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,10 @@
  * @requires vm.flavor != "zero"
  * @modules java.base/jdk.internal.vm.annotation java.base/jdk.internal.misc
  * @key randomness
- * @run testng/othervm TestHandshake
- * @run testng/othervm -Xint TestHandshake
- * @run testng/othervm -XX:TieredStopAtLevel=1 TestHandshake
- * @run testng/othervm -XX:-TieredCompilation TestHandshake
+ * @run junit/othervm TestHandshake
+ * @run junit/othervm -Xint TestHandshake
+ * @run junit/othervm -XX:TieredStopAtLevel=1 TestHandshake
+ * @run junit/othervm -XX:-TieredCompilation TestHandshake
  */
 
 import java.lang.foreign.Arena;
@@ -46,13 +46,16 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
-import static org.testng.Assert.*;
 
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestHandshake {
 
     static final int ITERATIONS = 5;
@@ -66,7 +69,8 @@ public class TestHandshake {
     static final AtomicLong start = new AtomicLong();
     static final AtomicBoolean started = new AtomicBoolean();
 
-    @Test(dataProvider = "accessors")
+    @ParameterizedTest
+    @MethodSource("accessors")
     public void testHandshake(String testName, AccessorFactory accessorFactory) throws InterruptedException {
         for (int it = 0 ; it < ITERATIONS ; it++) {
             Arena arena = Arena.ofShared();
@@ -286,7 +290,6 @@ public class TestHandshake {
         AbstractSegmentAccessor make(int id, MemorySegment segment, Arena arena);
     }
 
-    @DataProvider
     static Object[][] accessors() {
         return new Object[][] {
                 { "SegmentAccessor", (AccessorFactory)SegmentAccessor::new },

@@ -514,20 +514,138 @@ protected:
     rdy = 0b111,     // in instruction's rm field, selects dynamic rounding mode.In Rounding Mode register, Invalid.
   };
 
+  // Efficient reading and writing of unaligned data in platform-specific byte ordering
+  // RISC-V needs to check for alignment.
+
+  static inline u2 get_native_u2(address p) {
+    if ((intptr_t(p) & 1) == 0) {
+      return *(u2*)p;
+    } else {
+      return ((u2)(p[1]) << 8) |
+             ((u2)(p[0]));
+    }
+  }
+
+  static inline u4 get_native_u4(address p) {
+    switch (intptr_t(p) & 3) {
+      case 0:
+        return *(u4*)p;
+
+      case 2:
+        return ((u4)(((u2*)p)[1]) << 16) |
+               ((u4)(((u2*)p)[0]));
+
+      default:
+        return ((u4)(p[3]) << 24) |
+               ((u4)(p[2]) << 16) |
+               ((u4)(p[1]) <<  8) |
+               ((u4)(p[0]));
+    }
+  }
+
+  static inline u8 get_native_u8(address p) {
+    switch (intptr_t(p) & 7) {
+      case 0:
+        return *(u8*)p;
+
+      case 4:
+        return ((u8)(((u4*)p)[1]) << 32) |
+               ((u8)(((u4*)p)[0]));
+
+      case 2:
+      case 6:
+        return ((u8)(((u2*)p)[3]) << 48) |
+               ((u8)(((u2*)p)[2]) << 32) |
+               ((u8)(((u2*)p)[1]) << 16) |
+               ((u8)(((u2*)p)[0]));
+
+      default:
+        return ((u8)(p[7]) << 56) |
+               ((u8)(p[6]) << 48) |
+               ((u8)(p[5]) << 40) |
+               ((u8)(p[4]) << 32) |
+               ((u8)(p[3]) << 24) |
+               ((u8)(p[2]) << 16) |
+               ((u8)(p[1]) <<  8) |
+               ((u8)(p[0]));
+    }
+  }
+
+  static inline void put_native_u2(address p, u2 x) {
+    if ((intptr_t(p) & 1) == 0) {
+      *(u2*)p = x;
+    } else {
+      p[1] = x >> 8;
+      p[0] = x;
+    }
+  }
+
+  static inline void put_native_u4(address p, u4 x) {
+    switch (intptr_t(p) & 3) {
+      case 0:
+        *(u4*)p = x;
+        break;
+
+      case 2:
+        ((u2*)p)[1] = x >> 16;
+        ((u2*)p)[0] = x;
+        break;
+
+      default:
+        ((u1*)p)[3] = x >> 24;
+        ((u1*)p)[2] = x >> 16;
+        ((u1*)p)[1] = x >>  8;
+        ((u1*)p)[0] = x;
+        break;
+    }
+  }
+
+  static inline void put_native_u8(address p, u8 x) {
+    switch (intptr_t(p) & 7) {
+      case 0:
+        *(u8*)p = x;
+        break;
+
+      case 4:
+        ((u4*)p)[1] = x >> 32;
+        ((u4*)p)[0] = x;
+        break;
+
+      case 2:
+      case 6:
+        ((u2*)p)[3] = x >> 48;
+        ((u2*)p)[2] = x >> 32;
+        ((u2*)p)[1] = x >> 16;
+        ((u2*)p)[0] = x;
+        break;
+
+      default:
+        ((u1*)p)[7] = x >> 56;
+        ((u1*)p)[6] = x >> 48;
+        ((u1*)p)[5] = x >> 40;
+        ((u1*)p)[4] = x >> 32;
+        ((u1*)p)[3] = x >> 24;
+        ((u1*)p)[2] = x >> 16;
+        ((u1*)p)[1] = x >>  8;
+        ((u1*)p)[0] = x;
+        break;
+    }
+  }
+
   // handle unaligned access
   static inline uint16_t ld_c_instr(address addr) {
-    return Bytes::get_native_u2(addr);
+    return get_native_u2(addr);
   }
   static inline void sd_c_instr(address addr, uint16_t c_instr) {
-    Bytes::put_native_u2(addr, c_instr);
+    put_native_u2(addr, c_instr);
   }
 
   // handle unaligned access
   static inline uint32_t ld_instr(address addr) {
-    return Bytes::get_native_u4(addr);
+    return get_native_u4(addr);
   }
   static inline void sd_instr(address addr, uint32_t instr) {
-    Bytes::put_native_u4(addr, instr);
+    put_native_u4(addr, instr);
   }
 
   static inline uint32_t extract(uint32_t val, unsigned msb, unsigned lsb) {

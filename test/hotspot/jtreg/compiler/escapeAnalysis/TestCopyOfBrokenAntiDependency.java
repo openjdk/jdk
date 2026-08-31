@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +24,13 @@
 
 /**
  * @test
- * @bug 8238384
- * @summary CTW: C2 compilation fails with "assert(store != load->find_exact_control(load->in(0))) failed: dependence cycle found"
- *
- * @run main/othervm -XX:-BackgroundCompilation TestCopyOfBrokenAntiDependency
- *
+ * @bug 8238384 8391160
+ * @summary Test that Arrays.copyOf with non-escaping allocations and distinct memory slices compiles without assertion failures
+ * @run main/othervm -Xbatch ${test.main.class}
+ * @run main/othervm -Xbatch -XX:-ReduceInitialCardMarks -XX:-ReduceBulkZeroing ${test.main.class}
  */
+
+package compiler.escapeAnalysis;
 
 import java.util.Arrays;
 

@@ -183,7 +183,37 @@ instruct convI2UL_reg_reg_b(iRegLNoSp dst, iRegIorL2I src, immL_32bits mask) %{
     __ zext_w(as_Register($dst$$reg), as_Register($src$$reg));
   %}
 
-  ins_pipe(ialu_reg_shift);
+  ins_pipe(ialu_reg);
+%}
+
+// And with a low 16-bit mask
+instruct andL_16bits_b(iRegLNoSp dst, iRegL src, immL_16bits mask) %{
+  predicate(UseZbb);
+  match(Set dst (AndL src mask));
+
+  format %{ "zext.h  $dst, $src\t#@andL_16bits_b" %}
+
+  ins_cost(ALU_COST);
+  ins_encode %{
+    __ zext_h(as_Register($dst$$reg), as_Register($src$$reg));
+  %}
+
+  ins_pipe(ialu_reg);
+%}
+
+// And with a low 32-bit mask
+instruct andL_32bits_b(iRegLNoSp dst, iRegL src, immL_32bits mask) %{
+  predicate(UseZba);
+  match(Set dst (AndL src mask));
+
+  format %{ "zext.w  $dst, $src\t#@andL_32bits_b" %}
+
+  ins_cost(ALU_COST);
+  ins_encode %{
+    __ zext_w(as_Register($dst$$reg), as_Register($src$$reg));
+  %}
+
+  ins_pipe(ialu_reg);
 %}
 
 // BSWAP instructions
