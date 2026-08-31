@@ -27,6 +27,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_HPP
 
 #include "gc/shared/taskqueue.hpp"
+#include "gc/shared/taskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "jni_md.h"
 #include "memory/padded.hpp"
@@ -39,7 +40,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/stack.inline.hpp"
 #include "utilities/vmassert_reinstall.hpp"
-
 
 class ShenandoahHeap;
 

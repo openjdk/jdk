@@ -35,7 +35,6 @@
 #include "utilities/vmassert_reinstall.hpp"
 
 #include <stdint.h>
-#include <type_traits>
 
 class JavaThread;
 

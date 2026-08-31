@@ -38,8 +38,6 @@
 #include "utilities/ostream.hpp"
 #include "utilities/vmassert_reinstall.hpp"
 
-#include <stddef.h>
-
 ShenandoahHeapRegionSetIterator::ShenandoahHeapRegionSetIterator(const ShenandoahHeapRegionSet* const set) :
         _set(set), _heap(ShenandoahHeap::heap()), _current_index(0) {}
 

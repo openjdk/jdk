@@ -63,8 +63,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/vmassert_reinstall.hpp"
 
-#include <type_traits>
-
 class ShenandoahIsUnloadingOopClosure : public OopClosure {
 private:
   ShenandoahMarkingContext* const _marking_context;

@@ -57,9 +57,6 @@
 #include "runtime/thread.hpp"
 #include "utilities/ostream.hpp"
 
-#include <stddef.h>
-#include <stdint.h>
-
 class BoolObjectClosure;
 class Metadata;
 

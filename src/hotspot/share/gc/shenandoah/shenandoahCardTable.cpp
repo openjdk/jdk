@@ -37,8 +37,6 @@
 #include "utilities/align.hpp"
 #include "utilities/vmassert_reinstall.hpp"
 
-#include <stdint.h>
-
 void ShenandoahCardTable::initialize() {
   size_t num_cards = cards_required(_whole_heap.word_size());
 

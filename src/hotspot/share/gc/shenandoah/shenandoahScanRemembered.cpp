@@ -66,7 +66,6 @@
 #include "utilities/vmassert_reinstall.hpp"
 
 #include <sys/types.h>
-#include <type_traits>
 
 class HeapWordImpl;
 class Thread;

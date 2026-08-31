@@ -99,8 +99,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/vmassert_reinstall.hpp"
 
-#include <type_traits>
-
 // Breakpoint support
 class ShenandoahBreakpointGCScope : public StackObj {
 private:

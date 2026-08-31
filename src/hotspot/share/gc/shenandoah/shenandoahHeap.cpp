@@ -179,7 +179,6 @@
 
 #include <new>
 #include <string.h>
-#include <type_traits>
 
 class GCTracer;
 class Klass;

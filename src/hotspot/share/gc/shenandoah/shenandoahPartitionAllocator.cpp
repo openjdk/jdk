@@ -37,8 +37,6 @@
 #include "utilities/align.hpp"
 #include "utilities/vmassert_reinstall.hpp"
 
-#include <stddef.h>
-
 template<ShenandoahFreeSetPartitionId PARTITION>
 ShenandoahPartitionAllocator<PARTITION>::ShenandoahPartitionAllocator(ShenandoahFreeSet* free_set)
   : _free_set(free_set),

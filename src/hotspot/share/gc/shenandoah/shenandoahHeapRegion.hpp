@@ -40,8 +40,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/vmassert_reinstall.hpp"
 
-#include <type_traits>
-
 class OopIterateClosure;
 class outputStream;
 class ShenandoahAllocRequest;

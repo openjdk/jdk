@@ -36,8 +36,6 @@
 #include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#include <type_traits>
-
 class AlwaysClearPolicy;
 class ReferencePolicy;
 class ShenandoahGeneration;

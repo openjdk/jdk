@@ -87,8 +87,6 @@
 #include "utilities/ostream.hpp"
 #include "utilities/vmassert_reinstall.hpp"
 
-#include <type_traits>
-
 class Metadata;
 enum class VerifyOption : uint;
 

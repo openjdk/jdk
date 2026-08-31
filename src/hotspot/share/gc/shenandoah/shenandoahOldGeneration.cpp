@@ -76,8 +76,6 @@
 #include "utilities/events.hpp"
 #include "utilities/vmassert_reinstall.hpp"
 
-#include <type_traits>
-
 class ShenandoahHeuristics;
 
 class ShenandoahPurgeSATBTask : public WorkerTask {
