@@ -101,11 +101,11 @@ public class JavaMessageParser implements TestVmMessageParser<JavaMessages> {
 
     private void parsePrintTimes(String message) {
         // When using @Run with multiple tests, we could have several commas in the message
-        int lastCommandIndex = message.lastIndexOf(',');
-        TestFramework.check(lastCommandIndex > 0 && lastCommandIndex < message.length() - 1, "unexpected format");
-        String methodName = message.substring(0, lastCommandIndex);
+        int lastCommaIndex = message.lastIndexOf(',');
+        TestFramework.check(lastCommaIndex > 0 && lastCommaIndex < message.length() - 1, "unexpected format");
+        String methodName = message.substring(0, lastCommaIndex);
         try {
-            long duration = Long.parseLong(message.substring(lastCommandIndex + 1));
+            long duration = Long.parseLong(message.substring(lastCommaIndex + 1));
             methodTimes.put(methodName, duration);
         } catch (NumberFormatException e) {
             throw new TestFrameworkException("invalid duration", e);
