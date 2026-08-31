@@ -373,7 +373,7 @@ bool ObjectSynchronizer::quick_notify(oopDesc* obj, JavaThread* current, bool al
   }
 
   if (mark.has_monitor()) {
-    ObjectMonitor* const mon = read_monitor(obj, mark);
+    ObjectMonitor* const mon = read_monitor(obj);
     if (mon == nullptr) {
       // Racing with inflation/deflation go slow path
       return false;
@@ -635,7 +635,7 @@ static SharedGlobals GVars;
 //   There are simple ways to "diffuse" the middle address bits over the
 //   generated hashCode values:
 
-static intptr_t get_next_hash(Thread* current, oop obj) {
+intptr_t ObjectSynchronizer::get_next_hash(Thread* current, oop obj) {
   intptr_t value = 0;
   if (hashCode == 0) {
     // This form uses global Park-Miller RNG.
@@ -675,30 +675,6 @@ static intptr_t get_next_hash(Thread* current, oop obj) {
   return value;
 }
 
-intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
-  // VM should be calling bootstrap method.
-  assert(!obj->klass()->is_inline_klass(), "FastHashCode should not be called for inline classes");
-
-  while (true) {
-    markWord temp, test;
-    intptr_t hash;
-    markWord mark = obj->mark_acquire();
-    // The hash is located in the object header.
-    hash = mark.hash();
-    if (hash != 0) {                     // if it has a hash, just return it
-      return hash;
-    }
-    hash = get_next_hash(current, obj);  // get a new hash
-    temp = mark.copy_set_hash(hash);     // merge the hash into header
-    // try to install the hash
-    test = obj->cas_set_mark(temp, mark);
-    if (test == mark) {                  // if the hash was installed, return it
-      return hash;
-    }
-    // CAS failed, retry
-  }
-}
-
 bool ObjectSynchronizer::current_thread_holds_lock(JavaThread* current,
                                                    Handle h_obj) {
   if (h_obj->mark().is_inline_type()) {
@@ -715,7 +691,7 @@ bool ObjectSynchronizer::current_thread_holds_lock(JavaThread* current,
   }
 
   while (mark.has_monitor()) {
-    ObjectMonitor* monitor = read_monitor(obj, mark);
+    ObjectMonitor* monitor = read_monitor(obj);
     if (monitor != nullptr) {
       return monitor->is_entered(current) != 0;
     }
@@ -744,7 +720,7 @@ JavaThread* ObjectSynchronizer::get_lock_owner(ThreadsList * t_list, Handle h_ob
   }
 
   while (mark.has_monitor()) {
-    ObjectMonitor* monitor = read_monitor(obj, mark);
+    ObjectMonitor* monitor = read_monitor(obj);
     if (monitor != nullptr) {
       return Threads::owning_thread_from_monitor(t_list, monitor);
     }
@@ -1377,7 +1353,7 @@ void ObjectSynchronizer::chk_in_use_entry(ObjectMonitor* n, outputStream* out,
   }
 
   const markWord mark = obj->mark();
-  ObjectMonitor* const obj_mon = read_monitor(obj, mark);
+  ObjectMonitor* const obj_mon = read_monitor(obj);
   if (n != obj_mon) {
     out->print_cr("ERROR: monitor=" INTPTR_FORMAT ": in-use monitor's "
                   "object does not refer to the same monitor: obj="
@@ -1506,7 +1482,7 @@ void ObjectSynchronizer::remove_monitor(ObjectMonitor* monitor, oop obj) {
 
 void ObjectSynchronizer::deflate_mark_word(oop obj) {
   markWord mark = obj->mark_acquire();
-  assert(!mark.has_no_hash(), "obj with inflated monitor must have had a hash");
+  assert(mark.has_hash(), "obj with inflated monitor must have had a hash");
 
   while (mark.has_monitor()) {
     const markWord new_mark = mark.clear_lock_bits().set_unlocked();
@@ -1660,7 +1636,7 @@ bool ObjectSynchronizer::fast_lock_spin_enter(oop obj, LockStack& lock_stack, Ja
       return true;
     } else if (observed_deflation) {
       // Spin while monitor is being deflated.
-      ObjectMonitor* monitor = ObjectSynchronizer::read_monitor(obj, mark);
+      ObjectMonitor* monitor = ObjectSynchronizer::read_monitor(obj);
       return monitor == nullptr || monitor->is_being_async_deflated();
     }
     // Else stop spinning.
@@ -1860,7 +1836,7 @@ ObjectMonitor* ObjectSynchronizer::inflate_locked_or_imse(oop obj, ObjectSynchro
     }
 
     assert(mark.has_monitor(), "must be");
-    ObjectMonitor* monitor = ObjectSynchronizer::read_monitor(obj, mark);
+    ObjectMonitor* monitor = ObjectSynchronizer::read_monitor(obj);
     if (monitor != nullptr) {
       if (monitor->has_anonymous_owner()) {
         LockStack& lock_stack = current->lock_stack();
@@ -1887,7 +1863,7 @@ ObjectMonitor* ObjectSynchronizer::inflate_fast_locked_object(oop object, Object
   ObjectMonitor* monitor;
 
   // Inflating requires a hash code
-  ObjectSynchronizer::FastHashCode(current, object);
+  (void)object->identity_hash(current);
 
   markWord mark = object->mark_acquire();
   assert(!mark.is_unlocked(), "Cannot be unlocked");
@@ -1952,7 +1928,7 @@ ObjectMonitor* ObjectSynchronizer::inflate_and_enter(oop object, BasicLock* lock
   // Get or create the monitor
   if (monitor == nullptr) {
     // Lightweight monitors require that hash codes are installed first
-    ObjectSynchronizer::FastHashCode(locking_thread, object);
+    (void)object->identity_hash(locking_thread);
     monitor = get_or_insert_monitor(object, current, cause);
   }
 
@@ -2090,10 +2066,6 @@ ObjectMonitor* ObjectSynchronizer::get_monitor_from_table(oop obj) {
 }
 
 ObjectMonitor* ObjectSynchronizer::read_monitor(oop obj) {
-  return ObjectSynchronizer::read_monitor(obj, obj->mark());
-}
-
-ObjectMonitor* ObjectSynchronizer::read_monitor(oop obj, markWord mark) {
   return ObjectSynchronizer::get_monitor_from_table(obj);
 }
 

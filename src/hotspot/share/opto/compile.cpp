@@ -3322,7 +3322,7 @@ void Compile::Optimize() {
       return;
     }
     print_method(PHASE_AFTER_MACRO_ELIMINATION, 2);
-    if (mex.expand_macro_nodes()) {
+    if (!mex.expand_macro_nodes()) {
       assert(failing(), "must bail out w/ explicit message");
       return;
     }
