@@ -2084,7 +2084,7 @@ void ConnectionGraph::add_to_congraph_unsafe_access(Node* n, uint opcode, Unique
     }
 #endif
   } else {
-    // Ignore copy of the BoxNode (OSR compilation).
+    // Ignore initialization of the BoxLock (OSR compilation).
     if (adr->is_BoxLock()) {
       return;
     }
