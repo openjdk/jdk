@@ -62,7 +62,7 @@ public final class Utils {
             // Requires escaping
             } else {
                 if (sb == null) {
-                    sb = new StringBuilder().append(str, 0, i);
+                    sb = new StringBuilder(str.length()).append(str, 0, i);
                 }
                 sb.append('\\');
                 // Non-control characters
