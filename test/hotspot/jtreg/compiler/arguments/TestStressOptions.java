@@ -64,7 +64,7 @@
  *      compiler.arguments.TestStressOptions
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+StressEliminateAllocations -XX:StressSeed=42
  *      compiler.arguments.TestStressOptions
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+StressVerifyMeetJoin
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+StressVerifyMeetJoin
  *      ${test.main.class}
  */
 
