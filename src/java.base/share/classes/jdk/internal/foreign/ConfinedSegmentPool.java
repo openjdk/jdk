@@ -266,15 +266,6 @@ public final class ConfinedSegmentPool {
         return new IllegalStateException("Cannot release pooled memory owned by " + JLA.currentCarrierThread() + ", pool = " + pool + ", size = " + size);
     }
 
-    // A mounted virtual thread cannot migrate until its continuation yields.
-    // Callers use this carrier only in cache operations with no yield point.
-    // Hence, it is safe to assume we remain on the owner carrier thread during
-    // operations in this class.
-    @ForceInline
-    private static Thread cacheOwner(Thread thread) {
-        return thread.isVirtual() ? JLA.currentCarrierThread() : thread;
-    }
-
     @SuppressWarnings("fallthrough")
     @ForceInline
     private static void zeroOutMemory(long address, long size) {
