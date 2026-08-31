@@ -57,7 +57,6 @@ public:
 
   // Discard the state associated with the _from_card.
   void reset() {
-    _from_card = 0;
     _num_cset_groups = 0;
   }
 
