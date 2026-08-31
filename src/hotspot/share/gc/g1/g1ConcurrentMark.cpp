@@ -1962,18 +1962,16 @@ public:
   { }
 
   void operator()(G1TaskQueueEntry task_entry) const {
-    if (task_entry.is_partial_array_state()) {
-      oop obj = task_entry.to_partial_array_state()->source();
-      guarantee(_g1h->is_in_reserved(obj), "Partial Array " PTR_FORMAT " must be in heap.", p2i(obj));
-      return;
-    }
-    guarantee(oopDesc::is_oop(task_entry.to_oop()),
+    oop obj = task_entry.is_partial_array_state()
+            ? task_entry.to_partial_array_state()->source()
+            : task_entry.to_oop();
+    guarantee(oopDesc::is_oop(obj),
               "Non-oop " PTR_FORMAT ", phase: %s, info: %d",
-              p2i(task_entry.to_oop()), _phase, _info);
-    G1HeapRegion* r = _g1h->heap_region_containing(task_entry.to_oop());
+              p2i(obj), _phase, _info);
+    G1HeapRegion* r = _g1h->heap_region_containing(obj);
     guarantee(!(r->in_collection_set() || r->has_index_in_opt_cset()),
               "obj " PTR_FORMAT " from %s (%d) in region %u in (optional) collection set",
-              p2i(task_entry.to_oop()), _phase, _info, r->hrm_index());
+              p2i(obj), _phase, _info, r->hrm_index());
   }
 };
 
@@ -2013,7 +2011,7 @@ void G1ConcurrentMark::verify_no_collection_set_oops() {
       // See above note on the global finger verification.
       G1HeapRegion* r = _g1h->heap_region_containing_or_null(task_finger);
       guarantee(r == nullptr || task_finger == r->bottom() ||
-                !r->in_collection_set() || !r->has_index_in_opt_cset(),
+                !(r->in_collection_set() || r->has_index_in_opt_cset()),
                 "task finger: " PTR_FORMAT " region: " HR_FORMAT,
                 p2i(task_finger), HR_FORMAT_PARAMS(r));
     }
