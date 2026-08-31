@@ -2505,7 +2505,7 @@ void ShenandoahHeap::assert_pinned_region_status(ShenandoahGeneration* generatio
 
     ShenandoahHeapRegion* r = get_region(i);
     assert((r->is_pinned() && r->pin_count() > 0) || (!r->is_pinned() && r->pin_count() == 0),
-            "Region %zu pinning status is inconsistent", i);
+           "Region %zu pinning status is inconsistent", i);
   }
 }
 #endif

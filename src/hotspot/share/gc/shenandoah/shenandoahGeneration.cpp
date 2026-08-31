@@ -24,10 +24,12 @@
  */
 
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionClosures.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
@@ -326,8 +328,8 @@ bool ShenandoahGeneration::is_bitmap_clear() {
   const size_t num_regions = heap->num_regions();
   for (size_t idx = 0; idx < num_regions; idx++) {
     const ShenandoahAffiliation affiliation = heap->region_affiliation(idx);
-    if (affiliation == FREE || !contains(affiliation)) {
-      // Skip unaffiliated regions and those outside this generation
+    if (!contains(affiliation) || affiliation == FREE) {
+      // Skip regions outside this generation or those that are unaffiliated
       continue;
     }
 
