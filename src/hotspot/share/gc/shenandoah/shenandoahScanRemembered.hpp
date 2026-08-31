@@ -235,7 +235,8 @@ public:
   inline void mark_range_as_dirty(size_t card_index, size_t num_cards);
   inline bool is_card_dirty(HeapWord* p) const;
   inline bool is_write_card_dirty(HeapWord* p) const;
-  inline void mark_card_as_dirty(HeapWord* p);
+  inline void mark_card_as_dirty(HeapWord* p) const;
+
   inline void mark_range_as_dirty(HeapWord* p, size_t num_heap_words);
   inline void mark_range_as_clean(HeapWord* p, size_t num_heap_words);
 
@@ -782,7 +783,8 @@ public:
   bool is_write_card_dirty(size_t card_index);
   bool is_card_dirty(HeapWord* p);
   bool is_write_card_dirty(HeapWord* p);
-  void mark_card_as_dirty(HeapWord* p);
+  inline void mark_card_as_dirty(HeapWord* p) const;
+
   void mark_range_as_dirty(HeapWord* p, size_t num_heap_words);
   void mark_range_as_clean(HeapWord* p, size_t num_heap_words);
 

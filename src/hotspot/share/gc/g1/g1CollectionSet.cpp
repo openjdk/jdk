@@ -733,8 +733,8 @@ void G1CollectionSet::select_candidates_from_marking(SelectionBudget& budget) {
   double optional_threshold_ms = candidate_selection.time_budget_ms() *
                                  _policy->optional_prediction_fraction();
 
-  uint min_old_cset_length = _policy->calc_min_old_cset_length(candidates()->last_marking_candidates_length());
-  uint max_old_cset_length = MAX2(min_old_cset_length, _policy->calc_max_old_cset_length());
+  uint min_num_old_cset_regions = _policy->calc_min_old_cset_length(candidates()->last_marking_candidates_length());
+  uint max_num_old_cset_regions = MAX2(min_num_old_cset_regions, _policy->calc_max_old_cset_length());
   bool enforce_time_budget = _policy->use_adaptive_num_young_regions();
 
   G1CSetCandidateGroupList* from_marking_groups = &candidates()->from_marking_groups();

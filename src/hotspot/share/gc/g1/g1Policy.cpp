@@ -139,6 +139,7 @@ G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _young_gen_sizer(),
   _free_regions_for_young_sizing(0),
   _pending_cards_from_gc(0),
+  _to_collection_set_cards(0),
   _collection_set(nullptr),
   _g1h(nullptr),
   _phase_times_timer(gc_timer),
