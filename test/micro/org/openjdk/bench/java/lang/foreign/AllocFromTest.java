@@ -73,19 +73,11 @@ public class AllocFromTest extends CLayouts {
         }
     }
 
-    // Reserve jvmArgsAppend for OfVirtual; method-level append arguments take
-    // precedence over the append arguments declared by a subclass. Method-level
-    // jvmArgs replaces class-level jvmArgs, so repeat the required access options.
-    @Fork(jvmArgs = {
-            "--enable-native-access=ALL-UNNAMED",
-            "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED",
-            "-Djdk.internal.foreign.native.confined.pool.power.size=-1"
-    })
+    // Save `jvmArgsAppend` for `OfVirtual`
+    @Fork(jvmArgs = {"--enable-native-access=ALL-UNNAMED", "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED", "-Djdk.internal.foreign.native.confined.pool.power.size=-1"})
     @Benchmark
     public MemorySegment alloc_confined_no_pool() {
-        try (Arena arena = Arena.ofConfined()) {
-            return arena.allocateFrom(ValueLayout.JAVA_BYTE, arr);
-        }
+        return alloc_confined();
     }
 
     @Benchmark
