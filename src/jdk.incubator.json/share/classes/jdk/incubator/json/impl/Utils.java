@@ -41,7 +41,7 @@ import java.util.Locale;
 /**
  * Shared utilities for Json classes.
  */
-public class Utils {
+public final class Utils {
 
     // Non instantiable
     private Utils() {}
