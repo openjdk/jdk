@@ -96,6 +96,15 @@ int VectorNode::opcode(int sopc, BasicType bt) {
     return (bt == T_DOUBLE ? Op_VectorBlend : 0);
   case Op_Bool:
     return Op_VectorMaskCmp;
+  case Op_DivI:
+    switch (bt) {
+    case T_BYTE:  return Op_DivVB;
+    case T_SHORT: return Op_DivVS;
+    case T_INT:   return Op_DivVI;
+    default:      return 0;
+    }
+  case Op_DivL:
+    return (bt == T_LONG ? Op_DivVL : 0);
   case Op_DivHF:
     return (bt == T_SHORT ? Op_DivVHF : 0);
   case Op_DivF:
@@ -333,6 +342,12 @@ int VectorNode::scalar_opcode(int vopc, BasicType bt) {
     case Op_MulVD:
       return Op_MulD;
 
+    case Op_DivVB:
+    case Op_DivVS:
+    case Op_DivVI:
+      return Op_DivI;
+    case Op_DivVL:
+      return Op_DivL;
     case Op_DivVF:
       return Op_DivF;
     case Op_DivVD:
@@ -680,7 +695,7 @@ void VectorNode::vector_operands(Node* n, uint* start, uint* end) {
   case Op_AddI: case Op_AddL: case Op_AddHF: case Op_AddF: case Op_AddD:
   case Op_SubI: case Op_SubL: case Op_SubHF: case Op_SubF: case Op_SubD:
   case Op_MulI: case Op_MulL: case Op_MulHF: case Op_MulF: case Op_MulD:
-  case Op_DivHF: case Op_DivF: case Op_DivD:
+  case Op_DivI: case Op_DivL: case Op_DivHF: case Op_DivF: case Op_DivD:
   case Op_AndI: case Op_AndL:
   case Op_OrI:  case Op_OrL:
   case Op_XorI: case Op_XorL:
@@ -759,6 +774,10 @@ VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, const TypeVect* vt, b
   case Op_MulVF:  return new MulVFNode(n1, n2, vt);
   case Op_MulVD:  return new MulVDNode(n1, n2, vt);
 
+  case Op_DivVB:  return new DivVBNode(n1, n2, vt);
+  case Op_DivVS:  return new DivVSNode(n1, n2, vt);
+  case Op_DivVI:  return new DivVINode(n1, n2, vt);
+  case Op_DivVL:  return new DivVLNode(n1, n2, vt);
   case Op_DivVHF: return new DivVHFNode(n1, n2, vt);
   case Op_DivVF:  return new DivVFNode(n1, n2, vt);
   case Op_DivVD:  return new DivVDNode(n1, n2, vt);
@@ -874,6 +893,7 @@ VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, Node* n3, const TypeV
   case Op_SignumVD: return new SignumVDNode(n1, n2, n3, vt);
   case Op_SignumVF: return new SignumVFNode(n1, n2, n3, vt);
   case Op_VectorBlend: return new VectorBlendNode(n1, n2, n3);
+  case Op_VectorBitwiseBlend: return new VectorBitwiseBlendNode(n1, n2, n3, vt);
   default:
     fatal("Missed vector creation for '%s'", NodeClassNames[vopc]);
     return nullptr;
@@ -1261,6 +1281,10 @@ Node* VectorNode::make_scalar(Compile* c, int vopc, BasicType bt, Node* control,
       return new AndINode(in1, in2);
     case Op_AndL:
       return new AndLNode(in1, in2);
+    case Op_DivI:
+      return new DivINode(control, in1, in2);
+    case Op_DivL:
+      return new DivLNode(control, in1, in2);
     case Op_DivF:
       return new DivFNode(control, in1, in2);
     case Op_DivD:
@@ -1343,6 +1367,14 @@ Node* VectorNode::reassociate_vector_operation(PhaseGVN* phase) {
     return nullptr;
   }
 
+  // Reassociation is beneficial if transformed node with replicate inputs can
+  // subsequently be collapsed by push_through_replicate into Replicate(ScalarOp(..)).
+  // That folding needs a scalar opcode for this operation/element type.
+  // Safety check to ensure we skip useless/redundant reassociations.
+  if (scalar_opcode(Opcode(), vect_type()->element_basic_type()) == 0) {
+    return nullptr;
+  }
+
   Node* in1 = in(1);
   Node* in2 = in(2);
   if (in2->Opcode() == Op_Replicate && in1->Opcode() == Opcode()) {
@@ -1407,6 +1439,13 @@ Node* VectorNode::push_through_replicate(PhaseGVN* phase) {
 
   sop = phase->transform(sop);
 
+  // For subword types, the scalar operation computes at int width and may
+  // produce values outside the subword range. Narrow the result unconditionally
+  // before feeding it to Replicate.
+  if (is_subword_type(bt)) {
+    sop = Compile::narrow_value(bt, sop, Type::get_const_basic_type(bt), phase, true);
+  }
+
   return new ReplicateNode(sop, vect_type());
 }
 
@@ -1416,9 +1455,12 @@ Node* VectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     return n;
   }
 
+  bool inputs_have_been_swapped = false;
   // Sort inputs of commutative non-predicated vector operations to help value numbering.
   if (should_swap_inputs_to_help_global_value_numbering()) {
+    assert(in(1) != in(2), "it is useless to swap identical inputs");
     swap_edges(1, 2);
+    inputs_have_been_swapped = true;
   }
 
   n = push_through_replicate(phase);
@@ -1426,7 +1468,14 @@ Node* VectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     return n;
   }
 
-  return reassociate_vector_operation(phase);
+  n = reassociate_vector_operation(phase);
+  if (n != nullptr) {
+    return n;
+  }
+  if (inputs_have_been_swapped) {
+    return this;
+  }
+  return nullptr;
 }
 
 // Traverses a chain of VectorMaskCast and returns the first non VectorMaskCast node.
@@ -2288,12 +2337,21 @@ Node* VectorUnboxNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
       if (in_vt->length() == out_vt->length()) {
         Node* value = vbox->in(VectorBoxNode::Value);
+        if (phase->type(value) == Type::TOP) {
+          return nullptr;
+        }
 
         bool is_vector_mask = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorMask_klass());
         if (is_vector_mask) {
           // VectorUnbox (VectorBox vmask) ==> VectorMaskCast vmask
           const TypeVect* vmask_type = TypeVect::makemask(out_vt->element_basic_type(), out_vt->length());
-          return new VectorMaskCastNode(value, vmask_type);
+          const TypeVect* value_type = value->bottom_type()->is_vect();
+          // Very rarely, profiling can give us output types that are not
+          // compatible with the input type, where one is PVectMask and
+          // the other not. Such a path should be unreachable anyway.
+          if ((value_type->isa_pvectmask() == nullptr) == (vmask_type->isa_pvectmask() == nullptr)) {
+            return new VectorMaskCastNode(value, vmask_type);
+          }
         } else {
           // Vector type mismatch is only supported for masks, but sometimes it happens in pathological cases.
         }
@@ -2768,6 +2826,70 @@ Node* XorVNode::Ideal_XorV_VectorMaskCmp(PhaseGVN* phase, bool can_reshape) {
   return res;
 }
 
+// XorV(a, AndV(sel, XorV(a, b)))       => VectorBitwiseBlend(a, b, sel)
+// XorV(a, AndV(sel, XorV(a, b)), mask) =>
+//   VectorBlend(a, VectorBitwiseBlend(a, b, sel), mask)
+Node* XorVNode::Ideal_XorV_to_VectorBitwiseBlend(PhaseGVN* phase, bool can_reshape) {
+  const TypeVect* vt = vect_type();
+  BasicType bt = vt->element_basic_type();
+  uint vlen = vt->length();
+  if (!Matcher::match_rule_supported_vector(Op_VectorBitwiseBlend, vlen, bt)) {
+    return nullptr;
+  }
+
+  bool is_masked = is_predicated_vector();
+  if (is_masked &&
+      !Matcher::match_rule_supported_vector(Op_VectorBlend, vlen, bt)) {
+    return nullptr;
+  }
+
+  // For the predicated case in(1) is fixed as the merge source. Otherwise the
+  // outer XorV is commutative.
+  Node* a = nullptr;
+  Node* andv = nullptr;
+  if (is_masked || in(2)->Opcode() == Op_AndV) {
+    andv = in(2);
+    a = in(1);
+  } else {
+    andv = in(1);
+    a = in(2);
+  }
+  if (andv->Opcode() != Op_AndV || andv->is_predicated_vector()) {
+    return nullptr;
+  }
+
+  Node* sel = nullptr;
+  Node* inner_xor = nullptr;
+  if (andv->in(2)->Opcode() == Op_XorV) {
+    inner_xor = andv->in(2);
+    sel = andv->in(1);
+  } else if (andv->in(1)->Opcode() == Op_XorV) {
+    inner_xor = andv->in(1);
+    sel = andv->in(2);
+  } else {
+    return nullptr;
+  }
+  if (inner_xor->is_predicated_vector()) {
+    return nullptr;
+  }
+
+  Node* b = nullptr;
+  if (inner_xor->in(1) == a) {
+    b = inner_xor->in(2);
+  } else if (inner_xor->in(2) == a) {
+    b = inner_xor->in(1);
+  } else {
+    return nullptr;
+  }
+
+  Node* blend = new VectorBitwiseBlendNode(a, b, sel, vt);
+  if (!is_masked) {
+    return blend;
+  }
+  blend = phase->transform(blend);
+  return new VectorBlendNode(a, blend, in(3));
+}
+
 Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // (XorV src src)      => (Replicate zero)
   // (XorVMask src src)  => (MaskAll zero)
@@ -2783,6 +2905,11 @@ Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   }
 
   Node* res = Ideal_XorV_VectorMaskCmp(phase, can_reshape);
+  if (res != nullptr) {
+    return res;
+  }
+
+  res = Ideal_XorV_to_VectorBitwiseBlend(phase, can_reshape);
   if (res != nullptr) {
     return res;
   }

@@ -36,7 +36,6 @@ void Compile::pd_compiler2_init() {
   if (UseAVX < 3) {
     int delta = XMMRegister::max_slots_per_register * XMMRegister::number_of_registers;
     int bottom = ConcreteRegisterImpl::max_fpr;
-    int top = bottom + delta;
     int middle = bottom + (delta / 2);
     int xmm_slots = XMMRegister::max_slots_per_register;
     int lower = xmm_slots / 2;

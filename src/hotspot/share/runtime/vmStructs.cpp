@@ -60,6 +60,8 @@
 #include "oops/constMethod.hpp"
 #include "oops/cpCache.hpp"
 #include "oops/fieldInfo.hpp"
+#include "oops/flatArrayKlass.hpp"
+#include "oops/inlineKlass.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceOop.hpp"
 #include "oops/klass.hpp"
@@ -496,7 +498,7 @@
   nonstatic_field(CodeBlob,                    _relocation_size,                              int)                                   \
   nonstatic_field(CodeBlob,                    _content_offset,                               int)                                   \
   nonstatic_field(CodeBlob,                    _code_offset,                                  int)                                   \
-  nonstatic_field(CodeBlob,                    _frame_complete_offset,                        int16_t)                               \
+  nonstatic_field(CodeBlob,                    _frame_complete_offset,                        int)                                   \
   nonstatic_field(CodeBlob,                    _data_offset,                                  int)                                   \
   nonstatic_field(CodeBlob,                    _frame_size,                                   int)                                   \
   nonstatic_field(CodeBlob,                    _oop_maps,                                     ImmutableOopMapSet*)                   \
@@ -928,9 +930,12 @@
     declare_type(Metadata, MetaspaceObj)                                  \
     declare_type(Klass, Metadata)                                         \
            declare_type(ArrayKlass, Klass)                                \
-           declare_type(ObjArrayKlass, ArrayKlass)                        \
            declare_type(TypeArrayKlass, ArrayKlass)                       \
+           declare_type(ObjArrayKlass, ArrayKlass)                        \
+             declare_type(FlatArrayKlass, ArrayKlass)                     \
+             declare_type(RefArrayKlass, ArrayKlass)                      \
       declare_type(InstanceKlass, Klass)                                  \
+        declare_type(InlineKlass, InstanceKlass)                          \
         declare_type(InstanceClassLoaderKlass, InstanceKlass)             \
         declare_type(InstanceMirrorKlass, InstanceKlass)                  \
         declare_type(InstanceRefKlass, InstanceKlass)                     \
@@ -1367,15 +1372,10 @@
                                                                           \
   declare_constant(_thread_uninitialized)                                 \
   declare_constant(_thread_new)                                           \
-  declare_constant(_thread_new_trans)                                     \
   declare_constant(_thread_in_native)                                     \
-  declare_constant(_thread_in_native_trans)                               \
   declare_constant(_thread_in_vm)                                         \
-  declare_constant(_thread_in_vm_trans)                                   \
   declare_constant(_thread_in_Java)                                       \
-  declare_constant(_thread_in_Java_trans)                                 \
   declare_constant(_thread_blocked)                                       \
-  declare_constant(_thread_blocked_trans)                                 \
   declare_constant(JavaThread::_not_terminated)                           \
   declare_constant(JavaThread::_thread_exiting)                           \
                                                                           \
@@ -1408,7 +1408,7 @@
   declare_constant(Klass::_lh_header_size_mask)                           \
   declare_constant(Klass::_lh_array_tag_shift)                            \
   declare_constant(Klass::_lh_array_tag_type_value)                       \
-  declare_constant(Klass::_lh_array_tag_obj_value)                        \
+  declare_constant(Klass::_lh_array_tag_ref_value)                        \
                                                                           \
   declare_constant(Method::nonvirtual_vtable_index)                       \
   declare_constant(Method::extra_stack_entries_for_jsr292)                \
@@ -1519,6 +1519,9 @@
   declare_constant(FieldInfo::FieldFlags::_ff_generic)                    \
   declare_constant(FieldInfo::FieldFlags::_ff_stable)                     \
   declare_constant(FieldInfo::FieldFlags::_ff_contended)                  \
+  declare_constant(FieldInfo::FieldFlags::_ff_null_free_inline_type)      \
+  declare_constant(FieldInfo::FieldFlags::_ff_flat)                       \
+  declare_constant(FieldInfo::FieldFlags::_ff_null_marker)                \
                                                                           \
   /******************************/                                        \
   /* Debug info                 */                                        \
@@ -1708,8 +1711,6 @@
   /* frame              */                                                \
   /**********************/                                                \
   NOT_ZERO(PPC64_ONLY(declare_constant(frame::entry_frame_locals_size)))  \
-                                                                          \
-  declare_constant(frame::pc_return_offset)                               \
                                                                           \
   /*************/                                                         \
   /* vmSymbols */                                                         \
@@ -2132,3 +2133,4 @@ void vmStructs_init() {
   VMStructs::init();
 }
 #endif // ASSERT
+

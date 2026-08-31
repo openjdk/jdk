@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import java.util.Random;
  * @summary Test merging of consecutive stores
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run main/timeout=480 compiler.c2.TestMergeStores aligned
+ * @run driver/timeout=480 ${test.main.class} aligned
  */
 
 /*
@@ -48,7 +48,7 @@ import java.util.Random;
  * @summary Test merging of consecutive stores
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run main/timeout=480 compiler.c2.TestMergeStores unaligned
+ * @run driver/timeout=480 ${test.main.class} unaligned
  */
 
 /*
@@ -58,7 +58,7 @@ import java.util.Random;
  * @summary Test merging of consecutive stores
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run main/timeout=480 compiler.c2.TestMergeStores StressIGVN
+ * @run driver/timeout=480 ${test.main.class} StressIGVN
  */
 
 public class TestMergeStores {

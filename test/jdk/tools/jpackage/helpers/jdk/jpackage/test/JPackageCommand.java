@@ -1508,6 +1508,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             return !(TKit.isOSX() && MacHelper.signPredefinedAppImage(cmd));
         }).create()),
         APP_CONTENT(new Builder("--app-content").multiple().create()),
+        APP_RESOURCES(new Builder("--app-resources").multiple().create()),
         RESOURCE_DIR(new Builder("--resource-dir").create()),
         MAC_DMG_CONTENT(new Builder("--mac-dmg-content").multiple().create()),
         RUNTIME_IMAGE(new Builder("--runtime-image").create());

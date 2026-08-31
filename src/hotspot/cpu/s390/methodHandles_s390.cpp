@@ -138,7 +138,7 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
   assert(method == Z_method, "interpreter calling convention");
   __ verify_method_ptr(method);
 
-  assert(target != method, "don 't you kill the method reg!");
+  assert(target != method, "don't you kill the method reg!");
 
   Label L_no_such_method;
 
@@ -153,7 +153,7 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
     __ load_and_test_int(temp, Address(Z_thread, JavaThread::interp_only_mode_offset()));
     __ z_bre(run_compiled_code);
 
-    // Null method test is replicated below in compiled case.,
+    // Null method test is replicated below in compiled case.
     __ z_ltgr(temp, method);
     __ z_bre(L_no_such_method);
 
@@ -168,7 +168,7 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
   __ z_bre(L_no_such_method);
 
   ByteSize offset = for_compiler_entry ?
-                       Method::from_compiled_offset() : Method::from_interpreted_offset();
+                       Method::from_compiled_inline_offset() : Method::from_interpreted_offset();
   Address method_from(method, offset);
 
   __ z_lg(target, method_from);
