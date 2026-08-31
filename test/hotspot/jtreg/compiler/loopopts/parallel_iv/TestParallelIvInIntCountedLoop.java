@@ -31,7 +31,7 @@ import java.util.Random;
 
 /**
  * @test
- * @bug 8328528
+ * @bug 8328528 8360517
  * @key randomness
  * @summary test the long typed parallel iv replacing transformation for int counted loop
  * @library /test/lib /
@@ -388,5 +388,27 @@ public class TestParallelIvInIntCountedLoop {
         int init2 = RNG.nextInt(Integer.MIN_VALUE + s + 1, s); // Limit bounds to avoid loop variables from overflowing.
         Asserts.assertEQ(Math.ceilDiv(((long) s - init2), (long) STRIDE) * (long) STRIDE_2 + init1,
                 testIntCountedLoopWithLongIVWithRandomStridesAndInits(init1, init2, s));
+    }
+
+    // prev == i+const on every iteration ?
+    //   => prev's usage is replaced by (i+const)
+    //   => C2 removes the variable as it is not used any more
+    //   => C2 finds a trivial CountedLoop and removes it as well
+    @Test
+    @IR(failOn = { IRNode.COUNTED_LOOP })
+    private static int testIntCountedLoopWithDoubledIv(int stop) {
+        int a = 0, prev = -1;
+        for (int i = 0; i < stop; i++) {
+            a = prev;
+            prev = i;
+        }
+
+        return a;
+    }
+
+    @Run(test = "testIntCountedLoopWithDoubledIv")
+    private static void runTestIntCountedLoopWithDoubledIv() {
+        int s = RNG.nextInt(2, 1024);
+        Asserts.assertEQ(s - 2, testIntCountedLoopWithDoubledIv(s));
     }
 }
