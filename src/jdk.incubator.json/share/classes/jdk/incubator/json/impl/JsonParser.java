@@ -48,9 +48,9 @@ public final class JsonParser {
     // Access to the underlying JSON contents
     private final char[] doc;
     // Lazily initialized for member names with escape sequences
-    private final LazyConstant<StringBuilder> sb = LazyConstant.of(this::initSb);
-    // Current offset during parsing
-    private int offset;
+    private final LazyConstant<StringBuilder> sb = LazyConstant.of(StringBuilder::new);
+    // Current cursor position during parsing
+    private int cursorPos;
     // For exception message on failure
     private int line;
     private int lineStart;
@@ -122,20 +122,20 @@ public final class JsonParser {
      */
     private void parseValue() {
         skipWhitespaces();
-        int start = offset;
+        int start = cursorPos;
 
         if (!hasInput()) {
             throw valueFailure(start, "Expected a JSON Object, Array, String, Number, Boolean, or Null");
         }
 
-        switch (doc[offset]) {
+        switch (doc[cursorPos]) {
             case '{' -> {
-                offset++;
+                cursorPos++;
                 skipWhitespaces();
                 containers.push(new ObjectContainer(start));
             }
             case '[' -> {
-                offset++;
+                cursorPos++;
                 skipWhitespaces();
                 containers.push(new ArrayContainer(start));
             }
@@ -167,7 +167,7 @@ public final class JsonParser {
                     return;
                 }
 
-                int nameStart = offset;
+                int nameStart = cursorPos;
                 var name = parseName(oc.startOffset);
                 int nameLine = line;
                 int nameLineStart = lineStart;
@@ -241,7 +241,7 @@ public final class JsonParser {
     // Place the value as either the root, an object member, or an array element.
     private void finishValue(JsonValue jv, int start) {
         if (hasInput()) {
-            switch (doc[offset]) {
+            switch (doc[cursorPos]) {
                 // Attribute incorrect values appended directly on a valid value as
                 // error on the value rather than its enclosing structure.
                 case ']', '}', ',', ' ', '\t', '\r', '\n' -> {}
@@ -278,10 +278,10 @@ public final class JsonParser {
         }
         var escape = false;
         boolean useBldr = false;
-        var start = offset;
+        var start = cursorPos;
 
-        for (; hasInput(); offset++) {
-            var c = doc[offset];
+        for (; hasInput(); cursorPos++) {
+            var c = doc[cursorPos];
             if (escape) {
                 var escapeLength = 0;
                 switch (c) {
@@ -301,7 +301,7 @@ public final class JsonParser {
                 }
                 if (!useBldr) {
                     // Append everything up to the first escape sequence
-                    sb.get().append(doc, start, offset - escapeLength - 1 - start);
+                    sb.get().append(doc, start, cursorPos - escapeLength - 1 - start);
                     useBldr = true;
                 }
                 escape = false;
@@ -309,13 +309,13 @@ public final class JsonParser {
                 escape = true;
                 continue;
             } else if (c == '"') {
-                offset++;
+                cursorPos++;
                 if (useBldr) {
                     var name = sb.get().toString();
                     sb.get().setLength(0);
                     return name;
                 } else {
-                    return new String(doc, start, offset - start - 1);
+                    return new String(doc, start, cursorPos - start - 1);
                 }
             } else if (c < ' ') {
                 throw structureFailure(objStart, UNESCAPED_CONTROL_CODE);
@@ -336,11 +336,11 @@ public final class JsonParser {
      * See https://datatracker.ietf.org/doc/html/rfc8259#section-7
      */
     private JsonString parseString() {
-        int start = offset++; // Move past the starting quote
+        int start = cursorPos++; // Move past the starting quote
         var escape = false;
         boolean hasEscape = false;
-        for (; hasInput(); offset++) {
-            var c = doc[offset];
+        for (; hasInput(); cursorPos++) {
+            var c = doc[cursorPos];
             if (escape) {
                 switch (c) {
                     // Allowed JSON escapes
@@ -354,7 +354,7 @@ public final class JsonParser {
                 hasEscape = true;
                 escape = true;
             } else if (c == '"') {
-                return new JsonStringImpl(doc, false, start, ++offset, hasEscape);
+                return new JsonStringImpl(doc, false, start, ++cursorPos, hasEscape);
             } else if (c < ' ') {
                 throw valueFailure(start, UNESCAPED_CONTROL_CODE);
             }
@@ -363,7 +363,7 @@ public final class JsonParser {
     }
 
     private JsonBooleanImpl parseTrue() {
-        var start = offset++;
+        var start = cursorPos++;
         if (charEquals('r') && charEquals('u') && charEquals('e')) {
             return new JsonBooleanImpl(true, doc, start);
         }
@@ -371,7 +371,7 @@ public final class JsonParser {
     }
 
     private JsonBooleanImpl parseFalse() {
-        var start = offset++;
+        var start = cursorPos++;
         if (charEquals('a') && charEquals('l') && charEquals('s')
                 && charEquals('e')) {
             return new JsonBooleanImpl(false, doc, start);
@@ -380,7 +380,7 @@ public final class JsonParser {
     }
 
     private JsonNullImpl parseNull() {
-        var start = offset++;
+        var start = cursorPos++;
         if (charEquals('u') && charEquals('l') && charEquals('l')) {
             return new JsonNullImpl(doc, start);
         }
@@ -399,14 +399,14 @@ public final class JsonParser {
         boolean sawZero = false;
         boolean havePart = false;
         boolean sawSign = false;
-        var start = offset;
+        var start = cursorPos;
 
         endloop:
-        for (; hasInput(); offset++) {
-            var c = doc[offset];
+        for (; hasInput(); cursorPos++) {
+            var c = doc[cursorPos];
             switch (c) {
                 case '-' -> {
-                    if ((offset != start && expOff == -1) || havePart || sawSign) {
+                    if ((cursorPos != start && expOff == -1) || havePart || sawSign) {
                         throw valueFailure(start, INVALID_POSITION_IN_NUMBER.formatted(c));
                     }
                     sawSign = true;
@@ -421,7 +421,7 @@ public final class JsonParser {
                     if (decOff == -1 && expOff == -1 && sawZero) {
                         throw valueFailure(start, INVALID_POSITION_IN_NUMBER.formatted('0'));
                     }
-                    if (doc[offset] == '0' && !havePart) {
+                    if (doc[cursorPos] == '0' && !havePart) {
                         sawZero = true;
                     }
                     havePart = true;
@@ -433,7 +433,7 @@ public final class JsonParser {
                         if (!havePart) {
                             throw valueFailure(start, INVALID_POSITION_IN_NUMBER.formatted(c));
                         }
-                        decOff = offset;
+                        decOff = cursorPos;
                         havePart = false;
                     }
                 }
@@ -444,7 +444,7 @@ public final class JsonParser {
                         if (!havePart) {
                             throw valueFailure(start, INVALID_POSITION_IN_NUMBER.formatted(c));
                         }
-                        expOff = offset;
+                        expOff = cursorPos;
                         havePart = false;
                         sawSign = false;
                     }
@@ -458,25 +458,21 @@ public final class JsonParser {
         if (!havePart) {
             throw valueFailure(start, "Input expected after '[.|e|E]'");
         }
-        return new JsonNumberImpl(doc, false, start, offset, decOff, expOff);
+        return new JsonNumberImpl(doc, false, start, cursorPos, decOff, expOff);
     }
 
     // Utility functions
 
-    private StringBuilder initSb() {
-        return new StringBuilder();
-    }
-
     // Unescapes the Unicode escape sequence and produces a char
     private char codeUnit(int start, boolean structural) {
         char val = 0;
-        int end = offset + 4;
+        int end = cursorPos + 4;
         if (end >= doc.length) {
             throw failure("Invalid Unicode escape sequence. Expected four hex digits",
                     start, structural);
         }
-        while (offset < end) {
-            char c = doc[++offset];
+        while (cursorPos < end) {
+            char c = doc[++cursorPos];
             val <<= 4;
             val += (char) (
                     switch (c) {
@@ -494,38 +490,38 @@ public final class JsonParser {
 
     // Returns true if the parser has not yet reached the end of the text
     private boolean hasInput() {
-        return offset < doc.length;
+        return cursorPos < doc.length;
     }
 
-    // Walk to the next non-white space char from the current offset
+    // Walk to the next non-white space char from the current cursor position
     private void skipWhitespaces() {
         while (hasInput()) {
             if (notWhitespace()) {
                 break;
             }
-            offset++;
+            cursorPos++;
         }
     }
 
     // see https://datatracker.ietf.org/doc/html/rfc8259#section-2
     private boolean notWhitespace() {
-        return switch (doc[offset]) {
+        return switch (doc[cursorPos]) {
             case ' ', '\t', '\r' -> false;
             case '\n' -> {
                 // Increments the line and lineStart
                 line++;
-                lineStart = offset + 1;
+                lineStart = cursorPos + 1;
                 yield false;
             }
             default -> true;
         };
     }
 
-    // Returns true if within bounds and if the char at the current parser offset
-    // is equivalent to the input one. If so, offset is incremented.
+    // Returns true if within bounds and if the char at the current cursor position
+    // is equivalent to the input one. If so, cursor position is incremented.
     private boolean charEquals(char c) {
-        if (hasInput() && c == doc[offset]) {
-            offset++;
+        if (hasInput() && c == doc[cursorPos]) {
+            cursorPos++;
             return true;
         }
         return false;
@@ -533,16 +529,16 @@ public final class JsonParser {
 
     // To be thrown when a structure is incorrect, which derives the path from the enclosing structure itself
     private JsonParseException structureFailure(int start, String message) {
-        return failure(offset, line, lineStart, message, start, true);
+        return failure(cursorPos, line, lineStart, message, start, true);
     }
 
     // To be thrown when a "value" is incorrect, which derives the path from the value
     private JsonParseException valueFailure(int start, String message) {
-        return failure(offset, line, lineStart, message, start, false);
+        return failure(cursorPos, line, lineStart, message, start, false);
     }
 
     private JsonParseException failure(String message, int recentStart, boolean structural) {
-        return failure(offset, line, lineStart, message, recentStart, structural);
+        return failure(cursorPos, line, lineStart, message, recentStart, structural);
     }
 
     private JsonParseException failure(int off, int l, int ls, String message, int head, boolean structural) {

@@ -41,7 +41,7 @@ import java.util.Locale;
 /**
  * Shared utilities for Json classes.
  */
-public class Utils {
+public final class Utils {
 
     // Non instantiable
     private Utils() {}
@@ -62,7 +62,7 @@ public class Utils {
             // Requires escaping
             } else {
                 if (sb == null) {
-                    sb = new StringBuilder().append(str, 0, i);
+                    sb = new StringBuilder(str.length()).append(str, 0, i);
                 }
                 sb.append('\\');
                 // Non-control characters
@@ -94,7 +94,7 @@ public class Utils {
     }
 
     // Use to compose an exception when casting to an incorrect type
-    public static JsonValueException composeTypeError(JsonValue jv, String expected) {
+    public static JsonValueException composeTypeError(JsonValue jv, Class<? extends JsonValue> expected) {
         var actual = switch (jv) {
             case JsonObject _ -> "JsonObject";
             case JsonArray _ -> "JsonArray";
@@ -103,7 +103,7 @@ public class Utils {
             case JsonNumber _ -> "JsonNumber";
             case JsonString _ -> "JsonString";
         };
-        return composeError(jv, "%s is not a %s.".formatted(actual, expected));
+        return composeError(jv, "%s is not a %s.".formatted(actual, expected.getSimpleName()));
     }
 
     static String getParsingPath(int offset, char[] doc, boolean structural) {
