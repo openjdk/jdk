@@ -1087,7 +1087,8 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
   // The below poll is for the stack watermark barrier. It allows fixing up frames lazily,
   // that would normally not be safe to use. Such bad returns into unsafe territory of
   // the stack, will call InterpreterRuntime::at_unwind.
-  Label slow_path, fast_path;
+  NearLabel fast_path;
+  Label slow_path;
   safepoint_poll(slow_path, Z_R0_scratch, true /* at_return */, false /* in_nmethod */);
   branch_optimized(Assembler::bcondAlways, fast_path);
   bind (slow_path);

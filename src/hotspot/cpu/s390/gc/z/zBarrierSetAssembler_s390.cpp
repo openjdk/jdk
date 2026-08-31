@@ -143,8 +143,7 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
 
   assert_different_registers(temp1, dst);
 
-  Label done;
-  Label uncolor;
+  NearLabel done, uncolor;
 
   //
   // Fast Path
@@ -363,7 +362,7 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
       }
       __ z_og(temp1, Address(Z_thread, ZThreadLocalData::store_good_mask_offset()));
     } else {
-      Label done;
+      NearLabel done;
       Label medium;
       Label medium_continuation;
       Label slow;
@@ -480,7 +479,8 @@ void ZBarrierSetAssembler::copy_store_at_slow(MacroAssembler* masm,
 // TODO: Use vector instructions
 void ZBarrierSetAssembler::generate_disjoint_oop_copy(MacroAssembler* masm, bool dest_uninitialized) {
   const Register zpointer = Z_R1;
-  Label done, loop, load_bad, load_good, store_bad, store_good;
+  NearLabel done, loop;
+  Label load_bad, load_good, store_bad, store_good;
   __ z_ltgr(Z_ARG3, Z_ARG3);
   __ z_bre(done);
 
@@ -506,7 +506,8 @@ void ZBarrierSetAssembler::generate_disjoint_oop_copy(MacroAssembler* masm, bool
 
 void ZBarrierSetAssembler::generate_conjoint_oop_copy(MacroAssembler* masm, bool dest_uninitialized) {
   const Register zpointer = Z_R1;
-  Label done, loop, load_bad, load_good, store_bad, store_good;
+  NearLabel done, loop;
+  Label load_bad, load_good, store_bad, store_good;
   __ z_slag(Z_R0, Z_ARG3, 3);
   __ branch_optimized(Assembler::bcondZero, done);
   // Point behind last elements and copy backwards.
@@ -579,7 +580,7 @@ void ZBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm,
                                                          Label& slowpath) {
   BLOCK_COMMENT("ZBarrierSetAssembler::try_resolve_jobject_in_native {");
 
-  Label done, tagged, weak_tagged, uncolor;
+  NearLabel done, tagged, weak_tagged, uncolor;
   Address load_bad_mask = load_bad_mask_from_jni_env(jni_env),
           mark_bad_mask = mark_bad_mask_from_jni_env(jni_env);
 
@@ -982,7 +983,7 @@ void ZBarrierSetAssembler::check_oop(MacroAssembler *masm, Register obj, const c
 
   __ z_stg(Z_R1, offset, Z_SP);
 
-  Label done, skip_uncolor;
+  NearLabel done, skip_uncolor;
   // Skip (colored) null
   __ z_srlg(Z_R1, obj, ZPointerLoadShift);
   __ z_ltgr(Z_R1, Z_R1);
