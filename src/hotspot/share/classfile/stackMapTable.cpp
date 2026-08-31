@@ -293,34 +293,37 @@ StackMapFrame* StackMapReader::next_helper(bool& parsed_early_larval, TRAPS) {
     }
 
     u2 num_unset_fields = _stream->get_u2(CHECK_NULL);
-    AssertUnsetFieldTable* new_fields = new AssertUnsetFieldTable();
+    AssertUnsetFieldTable* new_fields = nullptr;
 
-    for (u2 i = 0; i < num_unset_fields; i++) {
-      u2 index = _stream->get_u2(CHECK_NULL);
+    if (num_unset_fields > 0) {
+      new_fields = new AssertUnsetFieldTable();
 
-      if (!_cp->is_within_bounds(index) || !_cp->tag_at(index).is_name_and_type()) {
-        _prev_frame->verifier()->verify_error(
-          ErrorContext::bad_strict_fields(_prev_frame->offset(), _prev_frame),
-          "Invalid constant pool index in early larval frame: %d", index);
-        return nullptr;
-      }
+      for (u2 i = 0; i < num_unset_fields; i++) {
+        u2 index = _stream->get_u2(CHECK_NULL);
 
-      Symbol* name = _cp->symbol_at(_cp->name_ref_index_at(index));
-      Symbol* sig = _cp->symbol_at(_cp->signature_ref_index_at(index));
-      NameAndSig tmp(name, sig);
-
-      if (_initial_unset_fields == nullptr || !_initial_unset_fields->contains(tmp)) {
-        log_info(verification)("NameAndType %s%s(CP index: %d) is not found among initial strict instance fields", name->as_C_string(), sig->as_C_string(), index);
-        StackMapFrame::print_strict_fields(_initial_unset_fields);
-        _prev_frame->verifier()->verify_error(
+        if (!_cp->is_within_bounds(index) || !_cp->tag_at(index).is_name_and_type()) {
+          _prev_frame->verifier()->verify_error(
             ErrorContext::bad_strict_fields(_prev_frame->offset(), _prev_frame),
-            "Strict fields not a subset of initial strict instance fields: %s:%s", name->as_C_string(), sig->as_C_string());
-        return nullptr;
-      } else {
-        new_fields->put(tmp, false);
+            "Invalid constant pool index in early larval frame: %d", index);
+          return nullptr;
+        }
+
+        Symbol* name = _cp->symbol_at(_cp->name_ref_index_at(index));
+        Symbol* sig = _cp->symbol_at(_cp->signature_ref_index_at(index));
+        NameAndSig tmp(name, sig);
+
+        if (_initial_unset_fields == nullptr || !_initial_unset_fields->contains(tmp)) {
+          log_info(verification)("NameAndType %s%s(CP index: %d) is not found among initial strict instance fields", name->as_C_string(), sig->as_C_string(), index);
+          StackMapFrame::print_strict_fields(_initial_unset_fields);
+          _prev_frame->verifier()->verify_error(
+              ErrorContext::bad_strict_fields(_prev_frame->offset(), _prev_frame),
+              "Strict fields not a subset of initial strict instance fields: %s:%s", name->as_C_string(), sig->as_C_string());
+          return nullptr;
+        } else {
+          new_fields->put(tmp, false);
+        }
       }
     }
-
     _assert_unset_fields_buffer = new_fields;
 
     // Continue reading frame data

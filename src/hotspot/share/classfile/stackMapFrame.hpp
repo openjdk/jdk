@@ -166,15 +166,17 @@ class StackMapFrame : public ResourceObj {
   }
 
   void set_assert_unset_fields(AssertUnsetFieldTable* table) {
-    if (table == nullptr) {
-      _assert_unset_fields = nullptr;
-    } else {
-      _assert_unset_fields = copy_unset_fields(table);
-    }
+    _assert_unset_fields = copy_unset_fields(table);
   }
 
   // Called when verifying putfields to mark strict instance fields as satisfied
   void satisfy_unset_field(Symbol* name, Symbol* signature) {
+    // The verifier creates the initial set of strict instance fields and
+    // validates the set of strict fields named in early_larval frames
+    // so there is no way to have a non-strict field in the set.  We
+    // can unconditionally remove fields here, regardless of whether
+    // they are strict or not, or have been removed already, as the
+    // easiest and safest implementation.
     if (_assert_unset_fields != nullptr) {
       NameAndSig field(name, signature);
       _assert_unset_fields->remove(field);
@@ -195,8 +197,21 @@ class StackMapFrame : public ResourceObj {
   // Verify that strict fields are compatible between the current frame and the successor
   // Called during merging of frames
   bool verify_unset_fields_compatibility(AssertUnsetFieldTable* target_table) const {
+    // There are four permutations of the source and target unset fields:
+    //   1. Source and target unset fields are null
+    //     Both frames have a null set of fields.  null == null so this is a trivial merge
+    //   2. Source unset fields are null, target unset fields are non-null
+    //     This is not possible as we are trying to go from either an initialized state
+    //     back to an uninitialized state.
+    //   3. Source unset fields are non-null, target unset fields are null
+    //     Error case, We are jumping from an uninitialized state to an initialized one
+    //     or from a frame with unset strict field information to one that doesn't.
+    //   4. Source and target unset fields are non-null
+    //     We are merging from one frame with unset strict fields information to another
+    //     and must ensure the unset fields lists are compatible.
+
     // It is valid to inherit more debts, so if the current frame's unset fields
-    // list is null, any set of unset fields is compatible
+    // list is null, any set of unset fields is compatible.
     if (_assert_unset_fields == nullptr) {
       return true;
     }

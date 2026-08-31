@@ -228,28 +228,14 @@ bool StackMapFrame::is_assignable_to(
     return false;
   }
 
-  // There are four permutations of the source and target unset fields:
-  //   1. Source and target unset fields are null
-  //     Both frames have a null set of fields.  null == null so this is a trivial merge
-  //   2. Source unset fields are null, target unset fields are non-null
-  //     This is not possible as we are trying to go from either an initialized state
-  //     back to an uninitialized state.
-  //   3. Source unset fields are non-null, target unset fields are null
-  //     Error case, We are jumping from an uninitialized state to an initialized one
-  //     or from a frame with unset strict field information to one that doesn't.
-  //   4. Source and target unset fields are non-null
-  //     We are merging from one frame with unset strict fields information to another
-  //     and must ensure the unset fields lists are compatible.
-  if ((assert_unset_fields() != nullptr) || (target->assert_unset_fields() != nullptr)) {
-    // Check that assert unset fields are compatible
-    bool compatible = verify_unset_fields_compatibility(target->assert_unset_fields());
-    if (!compatible) {
-      print_strict_fields(assert_unset_fields());
-      print_strict_fields(target->assert_unset_fields());
-      *ctx = ErrorContext::strict_fields_mismatch(target->offset(),
-          (StackMapFrame*)this, (StackMapFrame*)target);
-      return false;
-    }
+  // Check that assert unset fields are compatible
+  bool compatible = verify_unset_fields_compatibility(target->assert_unset_fields());
+  if (!compatible) {
+    print_strict_fields(assert_unset_fields());
+    print_strict_fields(target->assert_unset_fields());
+    *ctx = ErrorContext::strict_fields_mismatch(target->offset(),
+        (StackMapFrame*)this, (StackMapFrame*)target);
+    return false;
   }
 
   return true;
