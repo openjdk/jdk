@@ -40,30 +40,8 @@ import jdk.incubator.json.JsonValue;
 public final class JsonGenerator {
 
     private sealed interface StructureFrame permits ArrayFrame, ObjectFrame {}
-
-    private static final class ArrayFrame implements StructureFrame {
-        private final Iterator<JsonValue> elements;
-        private final int depth; // For indentation
-        private boolean first; // Whether iterator points to first value
-
-        private ArrayFrame(Iterator<JsonValue> elements, int depth) {
-            this.elements = elements;
-            this.depth = depth;
-            first = true;
-        }
-    }
-
-    private static final class ObjectFrame implements StructureFrame {
-        private final Iterator<Map.Entry<String, JsonValue>> members;
-        private final int depth; // For indentation
-        private boolean first; // Whether iterator points to first entry
-
-        private ObjectFrame(Iterator<Map.Entry<String, JsonValue>> members, int depth) {
-            this.members = members;
-            this.depth = depth;
-            first = true;
-        }
-    }
+    private record ArrayFrame(Iterator<JsonValue> elements, int depth) implements StructureFrame {}
+    private record ObjectFrame(Iterator<Map.Entry<String, JsonValue>> members, int depth) implements StructureFrame {}
 
     // Generates JSON text for Json[Object|Array].toString()
     public static String toCompactString(JsonValue jv) {
@@ -77,6 +55,7 @@ public final class JsonGenerator {
 
     private static String generate(JsonValue root, String indent, boolean isDisplay) {
         var sb = new StringBuilder();
+        String delim = isDisplay ? ",\n" : ",";
         Deque<StructureFrame> stack = new ArrayDeque<>();
         enterValue(root, sb, stack, 0, isDisplay);
 
@@ -85,32 +64,22 @@ public final class JsonGenerator {
                 case ArrayFrame af -> {
                     var elements = af.elements;
                     if (elements.hasNext()) {
-                        if (af.first) {
-                            af.first = false;
-                        } else {
-                            sb.append(isDisplay ? ",\n" : ",");
-                        }
+                        var stackSize = stack.size();
                         if (isDisplay) {
                             sb.repeat(indent, af.depth + 1);
                         }
                         enterValue(elements.next(), sb, stack, af.depth + 1, isDisplay);
-                    } else {
-                        if (isDisplay) {
-                            sb.append("\n");
-                            sb.repeat(indent, af.depth);
+                        if (stackSize == stack.size()) {
+                            sb.append(delim); // Appends after non-structural
                         }
-                        sb.append("]");
-                        stack.pop();
+                    } else {
+                        closeStructure(sb, stack, "]", indent, delim, af.depth, isDisplay);
                     }
                 }
                 case ObjectFrame of -> {
                     var members = of.members;
                     if (members.hasNext()) {
-                        if (of.first) {
-                            of.first = false;
-                        } else {
-                            sb.append(isDisplay ? ",\n" : ",");
-                        }
+                        var stackSize = stack.size();
                         var entry = members.next();
                         if (isDisplay) {
                             sb.repeat(indent, of.depth + 1);
@@ -120,18 +89,31 @@ public final class JsonGenerator {
                                 .append("\":")
                                 .append(isDisplay ? " " : "");
                         enterValue(entry.getValue(), sb, stack, of.depth + 1, isDisplay);
-                    } else {
-                        if (isDisplay) {
-                            sb.append("\n");
-                            sb.repeat(indent, of.depth);
+                        if (stackSize == stack.size()) {
+                            sb.append(delim); // Appends after non-structural
                         }
-                        sb.append("}");
-                        stack.pop();
+                    } else {
+                        closeStructure(sb, stack, "}", indent, delim, of.depth, isDisplay);
                     }
                 }
             }
         }
         return sb.toString();
+    }
+
+    private static void closeStructure(StringBuilder sb, Deque<StructureFrame> stack, String close, String indent,
+                                       String delim, int depth, boolean isDisplay) {
+        // We always append delim for each child, so trim the final exccess
+        sb.setLength(sb.length() - delim.length());
+        if (isDisplay) {
+            sb.append("\n");
+            sb.repeat(indent, depth);
+        }
+        sb.append(close);
+        stack.pop();
+        if (!stack.isEmpty()) {
+            sb.append(delim); // Need to append delim for structures
+        }
     }
 
     private static void enterValue(JsonValue jv, StringBuilder sb, Deque<StructureFrame> stack,
