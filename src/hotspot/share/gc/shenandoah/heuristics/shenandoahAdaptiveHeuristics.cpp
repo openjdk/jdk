@@ -151,26 +151,25 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
 }
 
 void ShenandoahAdaptiveHeuristics::add_degenerated_gc_time(double time_at_start, double gc_time, bool abbreviated) {
-  // Conservatively add sample into linear model if this time is above the predicted concurrent gc time.  Additionally,
-  // add an adjusted sample time to the model if this cycle is abbreviated and we are learning.
+  // Conservatively add sample into linear model under certain special conditions, described below.
   bool add_sample = false;
   double scale_factor = 1.0;
   if (abbreviated) {
-    const size_t max_learn = ShenandoahLearningSteps;
     // In the case that an abbreviated cycle degenerated, it may be that our current prediction of GC time is too short,
-    // so add this approximation of GC time into the record, even if we have already learned and een if the prediction
-    // was longer than our aproximation of normal GC time. We have observed that failing to record duration of degenerated
+    // so add this approximation of GC time into the record even if we have already learned and even if the prediction
+    // was longer than our approximation of normal GC time. We have observed that failing to record duration of degenerated
     // abbreviated GC cycles can result in cascading of degen and full GC cycles.
 
-    // Assume a regular cycle takes twice as long as mark-only cycle (only for purposes of finishing learn cycles).
-    // All the memory marked must be either evacuated or updated.  Evacuation and updating normally require less
-    // synchronization than marking, so we expect this approximation is conservative.
+    // See comment in record_success_concurrent() for doubling-of-gc_time rationale.
     gc_time += gc_time;
     scale_factor = 2.0;
     add_sample = true;
   } else if (_cycles.predict_duration(time_at_start, _margin_of_error_sd) < gc_time) {
     add_sample = true;
   }
+  // We do not add degenerated cycles into linear model if the degenerated cycle runs in less time that was predicted.
+  // The linear prediction model is based on normal numbers of concurrent GC worker threads.  We would expect that using
+  // all parallel GC threads on a degenerated cycle would allow degen to run faster than the linear model predicts.
 
   if (add_sample) {
     _cycles.record_duration(time_at_start, gc_time, scale_factor);
@@ -184,7 +183,6 @@ void ShenandoahAdaptiveHeuristics::record_success_concurrent(bool abbreviated) {
   double scale_factor = 1.0;
   bool add_sample = false;
   if (abbreviated) {
-    // We add adjusted gc time for abbreviated cycles only if we are still learning.
     const size_t max_learn = ShenandoahLearningSteps;
     // Assume a regular cycle takes twice as long as mark-only cycle. This is a rough approximation based on the following
     // observations:
@@ -197,9 +195,15 @@ void ShenandoahAdaptiveHeuristics::record_success_concurrent(bool abbreviated) {
     //     as the memory traversed by marking. These are rough approximations, as new memory allocated (above TAMS) will
     //     need to be updated but is not marked, for example. But this approximation is better than assuming that time
     //     required for an abbreviated cycle is the same as the time required for a non-abbreviated cycle.
+    //  4. Generational workloads especially are vulnerable to abnormally long evacuation cycles (due to mixed-evacuation
+    //     workloads) and abnormally long update-ref cycles (due to high promotion or the need to update all of the old
+    //     generation following a mixed evacuation). In these scenarios, total GC effort is normally much higher than
+    //     twice the mark time. Global cycles are also not typical of a normal GC cycle behavior. For "typical normal"
+    //     GC cycles, doubling the mark GC time is considered a "reasonable approximation" of full GC cycle time. Handling
+    //     for non-typical GC cycles is being addressed in WIP: https://github.com/openjdk/jdk/pull/30318.
     gc_time += gc_time;
     scale_factor = 2.0;
-    // Only add adjusted abbreviated cycle times if we are still learning or if the new adjusted measurements is below the
+    // Only add adjusted abbreviated cycle times if we are still learning or if the new adjusted measurement is below the
     // most current prediction. Workloads that have a large number of abbreviated cycles are vulnerable to overly conservative
     // linear prediction of execution time based on learning cycles alone. This happens because any small error in the
     // linear prediction model is amplified as the time between learning cycles and current prediction event increases.

@@ -35,7 +35,13 @@ ShenandoahCycleDuration::ShenandoahCycleDuration(uint size)
   , _gc_times(size) {}
 
 void ShenandoahCycleDuration::record_duration(double timestamp_at_start, double duration, double synthetic_duration_factor) {
-  log_debug(gc, sampling)("Cycle started at: %.3f, completed in %.3fs", timestamp_at_start, duration / synthetic_duration_factor);
+  if (synthetic_duration_factor == 0.0) {
+    log_debug(gc, sampling)("Cycle started at: %.3f, completed in %.3fs (with unknown scaling factor)",
+                            timestamp_at_start, duration);
+  } else {
+    log_debug(gc, sampling)("Cycle started at: %.3f, completed in %.3fs",
+                            timestamp_at_start, duration / synthetic_duration_factor);
+  }
   MonitorLocker locker(&_gc_times_lock, Mutex::_no_safepoint_check_flag);
   _gc_times.add(timestamp_at_start, duration);
 }
