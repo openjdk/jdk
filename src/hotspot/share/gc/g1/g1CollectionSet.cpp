@@ -424,8 +424,8 @@ double G1CollectionSet::select_candidates_from_marking(double time_remaining_ms)
 
   double optional_threshold_ms = time_remaining_ms * _policy->optional_prediction_fraction();
 
-  uint min_num_old_cset_regions = _policy->calc_min_old_cset_length(candidates()->last_marking_candidates_length());
-  uint max_num_old_cset_regions = MAX2(min_num_old_cset_regions, _policy->calc_max_old_cset_length());
+  uint min_num_old_cset_regions = _policy->calc_min_num_old_cset_regions(candidates()->last_marking_candidates_length());
+  uint max_num_old_cset_regions = MAX2(min_num_old_cset_regions, _policy->calc_max_num_old_cset_regions());
   bool check_time_remaining = _policy->use_adaptive_num_young_regions();
 
   G1CSetCandidateGroupList* from_marking_groups = &candidates()->from_marking_groups();
@@ -525,7 +525,7 @@ void G1CollectionSet::select_candidates_from_retained(double time_remaining_ms) 
   double predicted_initial_time_ms = 0.0;
   double predicted_optional_time_ms = 0.0;
 
-  uint const min_num_regions = _policy->min_retained_old_cset_length();
+  uint const min_num_regions = _policy->min_num_retained_old_cset_regions();
   // We want to make sure that on the one hand we process the retained regions asap,
   // but on the other hand do not take too many of them as optional regions.
   // So we split the time budget into budget we will unconditionally take into the
