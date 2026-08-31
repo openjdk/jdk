@@ -55,18 +55,24 @@ void ShenandoahSynchronizePinnedRegionStates::synchronize_pin_count(ShenandoahHe
   }
 }
 
-ShenandoahFinalMarkUpdateRegionStateClosure::ShenandoahFinalMarkUpdateRegionStateClosure(ShenandoahMarkingContext *ctx, ShenandoahGeneration* generation) :
-        _ctx(ctx), _generation(generation) { }
+ShenandoahFinalMarkUpdateRegionStateClosure::ShenandoahFinalMarkUpdateRegionStateClosure(ShenandoahMarkingContext* ctx, ShenandoahGeneration* generation) :
+    _ctx(ctx), _generation(generation) {
+  assert(_ctx != nullptr, "Marking context is required");
+  assert(_generation != nullptr, "Generation is required");
+}
 
 void ShenandoahFinalMarkUpdateRegionStateClosure::heap_region_do(ShenandoahHeapRegion* r) {
   // Region data can only be adjusted for regions in the generation this cycle marked.
+  // For old regions during a young cycle, we only sync the pin status and update
+  // the watermark. We cannot reset the TAMS for old regions because we rely on
+  // that to keep promoted objects alive after old marking is complete.
   const bool in_marked_generation = _generation->contains(r);
   if (r->is_active()) {
     if (in_marked_generation) {
       // All allocations past TAMS are implicitly live, adjust the region data.
       // Bitmaps/TAMS are swapped at this point, so we need to poll complete bitmap.
-      HeapWord *tams = _ctx->top_at_mark_start(r);
-      HeapWord *top = r->top();
+      HeapWord* tams = _ctx->top_at_mark_start(r);
+      HeapWord* top = r->top();
       if (top > tams) {
         r->increase_live_data_alloc_words(pointer_delta(top, tams));
       }
