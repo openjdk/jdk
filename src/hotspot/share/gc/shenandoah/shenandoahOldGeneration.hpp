@@ -30,10 +30,10 @@
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
-#include "gc/shenandoah/shenandoahScanRemembered.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 
 class LogStream;
+class ShenandoahScanRemembered;
 class ShenandoahHeapRegion;
 class ShenandoahHeapRegionClosure;
 class ShenandoahOldHeuristics;
@@ -73,11 +73,6 @@ private:
   // evacuation or by promote-in-place.  This value is used by the young heuristic to trigger mixed collections.
   // It is also used when computing the optimum size for the old generation.
   size_t _promotion_potential;
-
-  // When a region is selected to be promoted in place, the remaining free memory is filled
-  // in to prevent additional allocations (preventing premature promotion of newly allocated
-  // objects). This field records the total amount of padding used for such regions.
-  size_t _pad_for_promote_in_place;
 
   // During construction of the collection set, we keep track of regions that are eligible
   // for promotion in place. These fields track the count of those humongous and regular regions.
@@ -154,10 +149,6 @@ public:
   size_t get_promotion_potential() const { return _promotion_potential; }
 
   // See description in field declaration
-  void set_pad_for_promote_in_place(size_t pad) { _pad_for_promote_in_place = pad; }
-  size_t get_pad_for_promote_in_place() const { return _pad_for_promote_in_place; }
-
-  // See description in field declaration
   void set_expected_humongous_region_promotions(size_t region_count) { _promotable_humongous_regions = region_count; }
   void set_expected_regular_region_promotions(size_t region_count) { _promotable_regular_regions = region_count; }
   size_t get_expected_in_place_promotions() const { return _promotable_humongous_regions + _promotable_regular_regions; }
@@ -202,7 +193,7 @@ public:
   void clear_cards_for(ShenandoahHeapRegion* region);
 
   // Mark card for this location as dirty
-  void mark_card_as_dirty(void* location);
+  void mark_card_as_dirty(void* location) const;
 
   template<typename T>
   class ShenandoahHeapRegionLambda : public ShenandoahHeapRegionClosure {
@@ -352,7 +343,7 @@ public:
 
   size_t usage_trigger_threshold() const;
 
-  bool can_start_gc() {
+  bool can_start_gc() const {
     return _state == IDLE;
   }
 
