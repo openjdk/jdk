@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2015, 2022, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 #include "gc/shenandoah/shenandoahMark.hpp"
 
 #include "gc/shared/continuationGCSupport.inline.hpp"
-#include "gc/shenandoah/shenandoahAgeCensus.hpp"
+#include "gc/shenandoah/shenandoahAgeCensus.inline.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
@@ -73,6 +73,11 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
         InstanceKlass::cast(klass)->oop_oop_iterate<OT>(obj, cl);
         break;
       }
+      case Klass::InlineKlassKind: {
+        // Inline instance.
+        InlineKlass::cast(klass)->oop_oop_iterate<OT>(obj, cl);
+        break;
+      }
       case Klass::InstanceRefKlassKind: {
         // (Weak) reference instance.
         InstanceRefKlass::cast(klass)->oop_oop_iterate<OT>(obj, cl);
@@ -99,9 +104,17 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
         break;
       }
       case Klass::ObjArrayKlassKind: {
-        // Object array and no chunk is set. Must be the first
+        fatal("Unexpected unrefined object array klass");
+      }
+      case Klass::RefArrayKlassKind: {
+        // Reference array and no chunk is set. Must be the first
         // time we visit it, start the chunked processing.
         do_chunked_array_start<T, OT>(q, cl, obj, klass, weak);
+        break;
+      }
+      case Klass::FlatArrayKlassKind: {
+        // Flat array, all elements are embedded.
+        FlatArrayKlass::cast(klass)->oop_oop_iterate<OT>(obj, cl);
         break;
       }
       default: {
@@ -115,7 +128,7 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
       count_liveness<GENERATION>(live_data, obj, klass, worker_id);
     }
   } else {
-    // Object array chunk. Process it.
+    // Reference array chunk. Process it.
     do_chunked_array<T, OT>(q, cl, obj, klass, task->chunk(), task->pow(), weak);
   }
 }
@@ -182,18 +195,18 @@ void ShenandoahMark::count_liveness(ShenandoahLiveData* live_data, oop obj, Klas
 
 template <class T, class OT>
 void ShenandoahMark::do_chunked_array_start(ShenandoahObjToScanQueue* q, T* cl, oop obj, Klass* klass, bool weak) {
-  assert(obj->is_objArray(), "expect object array");
-  objArrayOop array = objArrayOop(obj);
+  assert(obj->is_refArray(), "expect ref array");
+  refArrayOop array = refArrayOop(obj);
   int len = array->length();
 
-  // Mark objArray klass metadata
+  // Mark reference array klass metadata
   if (Devirtualizer::do_metadata(cl)) {
     Devirtualizer::do_klass(cl, klass);
   }
 
   if (len <= (int) ObjArrayMarkingStride*2) {
     // A few slices only, process directly
-    ObjArrayKlass::cast(klass)->oop_oop_iterate_elements_range<OT>(array, cl, 0, len);
+    RefArrayKlass::cast(klass)->oop_oop_iterate_elements_range<OT>(array, cl, 0, len);
   } else {
     int bits = log2i_graceful(len);
     // Compensate for non-power-of-two arrays, cover the array in excess:
@@ -242,15 +255,15 @@ void ShenandoahMark::do_chunked_array_start(ShenandoahObjToScanQueue* q, T* cl, 
     // Process the irregular tail, if present
     int from = last_idx;
     if (from < len) {
-      ObjArrayKlass::cast(klass)->oop_oop_iterate_elements_range<OT>(array, cl, from, len);
+      RefArrayKlass::cast(klass)->oop_oop_iterate_elements_range<OT>(array, cl, from, len);
     }
   }
 }
 
 template <class T, class OT>
 void ShenandoahMark::do_chunked_array(ShenandoahObjToScanQueue* q, T* cl, oop obj, Klass* klass, int chunk, int pow, bool weak) {
-  assert(obj->is_objArray(), "expect object array");
-  objArrayOop array = objArrayOop(obj);
+  assert(obj->is_refArray(), "expect ref array");
+  refArrayOop array = refArrayOop(obj);
 
   // Split out tasks, as suggested in ShenandoahMarkTask docs. Avoid pushing tasks that
   // are known to start beyond the array.
@@ -272,7 +285,7 @@ void ShenandoahMark::do_chunked_array(ShenandoahObjToScanQueue* q, T* cl, oop ob
   assert (0 < to && to <= len, "to is sane: %d/%d", to, len);
 #endif
 
-  ObjArrayKlass::cast(klass)->oop_oop_iterate_elements_range<OT>(array, cl, from, to);
+  RefArrayKlass::cast(klass)->oop_oop_iterate_elements_range<OT>(array, cl, from, to);
 }
 
 template <ShenandoahGenerationType GENERATION>
@@ -295,7 +308,7 @@ public:
     assert(size == 0 || !_heap->has_forwarded_objects() || _heap->is_concurrent_old_mark_in_progress(), "Forwarded objects are not expected here");
     for (size_t i = 0; i < size; ++i) {
       oop *p = (oop *) &buffer[i];
-      ShenandoahMark::mark_through_ref<oop, GENERATION>(p, _queue, _old_queue, _mark_context, false);
+      ShenandoahMark::mark_through_ref<oop, GENERATION, false>(p, _queue, _old_queue, _mark_context, false);
     }
   }
 };
@@ -304,11 +317,11 @@ template<ShenandoahGenerationType GENERATION>
 bool ShenandoahMark::in_generation(ShenandoahHeap* const heap, oop obj) {
   // Each in-line expansion of in_generation() resolves GENERATION at compile time.
   if (GENERATION == YOUNG) {
-    return heap->is_in_young(obj);
+    return heap->has_affiliation(obj, YOUNG_GENERATION);
   }
 
   if (GENERATION == OLD) {
-    return heap->is_in_old(obj);
+    return heap->has_affiliation(obj, OLD_GENERATION);
   }
 
   assert((GENERATION == GLOBAL || GENERATION == NON_GEN), "Unexpected generation type");
@@ -316,51 +329,58 @@ bool ShenandoahMark::in_generation(ShenandoahHeap* const heap, oop obj) {
   return true;
 }
 
-template<class T, ShenandoahGenerationType GENERATION>
+template<class T, ShenandoahGenerationType GENERATION, bool REDIRTY>
 void ShenandoahMark::mark_through_ref(T *p, ShenandoahObjToScanQueue* q, ShenandoahObjToScanQueue* old_q, ShenandoahMarkingContext* const mark_context, bool weak) {
+  static_assert(GENERATION != NON_GEN, "Should use the non-generational specialization");
+  static_assert(!REDIRTY || GENERATION == YOUNG, "Redirty is only valid for young marking");
+
   // Note: This is a very hot code path, so the code should be conditional on GENERATION template
   // parameter where possible, in order to generate the most efficient code.
-
   T o = RawAccess<>::oop_load(p);
-  if (!CompressedOops::is_null(o)) {
-    oop obj = CompressedOops::decode_not_null(o);
+  if (CompressedOops::is_null(o)) {
+    return;
+  }
 
-    ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
-    shenandoah_assert_not_forwarded(p, obj);
-    shenandoah_assert_not_in_cset_except(p, obj, heap->cancelled_gc());
-    if (in_generation<GENERATION>(heap, obj)) {
-      mark_ref(q, mark_context, weak, obj);
-      shenandoah_assert_marked(p, obj);
-      if (GENERATION == YOUNG && heap->is_in_old(p)) {
-        // Mark card as dirty because remembered set scanning still finds interesting pointer.
-        heap->old_generation()->mark_card_as_dirty((HeapWord*)p);
-      } else if (GENERATION == GLOBAL && heap->is_in_old(p) && heap->is_in_young(obj)) {
-        // Mark card as dirty because GLOBAL marking finds interesting pointer.
-        heap->old_generation()->mark_card_as_dirty((HeapWord*)p);
-      }
-    } else if (old_q != nullptr) {
-      // Young mark, bootstrapping old_q or concurrent with old_q marking.
-      mark_ref(old_q, mark_context, weak, obj);
-      shenandoah_assert_marked(p, obj);
-    } else if (GENERATION == OLD) {
-      // Old mark, found a young pointer.
-      if (heap->is_in(p)) {
-        assert(heap->is_in_young(obj), "Expected young object.");
-        heap->old_generation()->mark_card_as_dirty(p);
-      }
+  ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
+  oop obj = CompressedOops::decode_not_null(o);
+  shenandoah_assert_not_forwarded(p, obj);
+  shenandoah_assert_not_in_cset_except(p, obj, heap->cancelled_gc());
+  if (in_generation<GENERATION>(heap, obj)) {
+    mark_ref(q, mark_context, weak, obj);
+    shenandoah_assert_marked(p, obj);
+    if (REDIRTY && heap->has_affiliation(p, OLD_GENERATION)) {
+      // We are redirtying the remembered set, the object iterator
+      // may visit class metadata that lives outside the heap so we cannot
+      // assume (or assert) that `p` is in old.
+      heap->old_generation()->mark_card_as_dirty(p);
+    } else if (GENERATION == YOUNG && !REDIRTY) {
+      assert(!heap->has_affiliation(p, OLD_GENERATION), "Young mark should not encounter pointers in old");
+    } else if (GENERATION == GLOBAL && heap->is_old_to_young(p, obj)) {
+      // Mark card as dirty because GLOBAL marking finds interesting pointer.
+      heap->old_generation()->mark_card_as_dirty(p);
+    }
+  } else if (old_q != nullptr) {
+    // Young mark, bootstrapping old_q or concurrent with old_q marking.
+    mark_ref(old_q, mark_context, weak, obj);
+    shenandoah_assert_marked(p, obj);
+  } else if (GENERATION == OLD) {
+    // Old mark, found a young pointer.
+    if (heap->is_in_reserved(p)) {
+      assert(heap->has_affiliation(obj, YOUNG_GENERATION), "Expected young object.");
+      heap->old_generation()->mark_card_as_dirty(p);
     }
   }
 }
 
 template<>
 ALWAYSINLINE
-void ShenandoahMark::mark_through_ref<oop, ShenandoahGenerationType::NON_GEN>(oop *p, ShenandoahObjToScanQueue* q, ShenandoahObjToScanQueue* old_q, ShenandoahMarkingContext* const mark_context, bool weak) {
+void ShenandoahMark::mark_through_ref<oop, NON_GEN, false>(oop *p, ShenandoahObjToScanQueue* q, ShenandoahObjToScanQueue* old_q, ShenandoahMarkingContext* const mark_context, bool weak) {
   mark_non_generational_ref(p, q, mark_context, weak);
 }
 
 template<>
 ALWAYSINLINE
-void ShenandoahMark::mark_through_ref<narrowOop, ShenandoahGenerationType::NON_GEN>(narrowOop *p, ShenandoahObjToScanQueue* q, ShenandoahObjToScanQueue* old_q, ShenandoahMarkingContext* const mark_context, bool weak) {
+void ShenandoahMark::mark_through_ref<narrowOop, NON_GEN, false>(narrowOop *p, ShenandoahObjToScanQueue* q, ShenandoahObjToScanQueue* old_q, ShenandoahMarkingContext* const mark_context, bool weak) {
   mark_non_generational_ref(p, q, mark_context, weak);
 }
 

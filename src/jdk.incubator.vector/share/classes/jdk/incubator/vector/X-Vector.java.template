@@ -843,16 +843,16 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
     final
     $abstractvectortype$ lanewiseTemplate(VectorOperators.Unary op) {
         if (opKind(op, VO_SPECIAL)) {
+#if[BITWISE]
             if (op == ZOMO) {
                 return blend(broadcast(-1), compare(NE, 0));
             }
-#if[BITWISE]
             else if (op == NOT) {
                 return broadcast(-1).lanewise(XOR, this);
             }
 #end[BITWISE]
 #if[FP]
-            else if (opKind(op, VO_MATHLIB)) {
+            if (opKind(op, VO_MATHLIB)) {
                 return unaryMathOp(op);
             }
 #end[FP]
@@ -878,16 +878,16 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
                                           VectorMask<$Boxtype$> m) {
         m.check(maskClass, this);
         if (opKind(op, VO_SPECIAL)) {
+#if[BITWISE]
             if (op == ZOMO) {
                 return blend(broadcast(-1), compare(NE, 0, m));
             }
-#if[BITWISE]
             else if (op == NOT) {
                 return lanewise(XOR, broadcast(-1), m);
             }
 #end[BITWISE]
 #if[FP]
-            else if (opKind(op, VO_MATHLIB)) {
+            if (opKind(op, VO_MATHLIB)) {
                 return blend(unaryMathOp(op), m);
             }
 #end[FP]
@@ -1183,12 +1183,6 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
 #end[intOrLong]
 #end[BITWISE]
 #if[FP]
-            case VECTOR_OP_OR: return (v0, v1, vm) ->
-#if[FP16]
-                    v0.bOp(v1, vm, (i, a, b) -> FloatVector.fromBits(FloatVector.toBits(a) | FloatVector.toBits(b)));
-#else[FP16]
-                    v0.bOp(v1, vm, (i, a, b) -> fromBits(toBits(a) | toBits(b)));
-#end[FP16]
             case VECTOR_OP_ATAN2: return (v0, v1, vm) ->
                     v0.bOp(v1, vm, (i, a, b) -> ($fallbacktype$) Math.atan2(a, b));
             case VECTOR_OP_POW: return (v0, v1, vm) ->

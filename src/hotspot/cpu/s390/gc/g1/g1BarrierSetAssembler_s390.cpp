@@ -427,16 +427,27 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, Decorato
 
 void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                          const Address& dst, Register val, Register tmp1, Register tmp2, Register tmp3) {
+  bool in_heap = (decorators & IN_HEAP) != 0;
+  bool as_normal = (decorators & AS_NORMAL) != 0;
+  bool dest_uninitialized = (decorators & IS_DEST_UNINITIALIZED) != 0;
+
+  bool needs_pre_barrier = as_normal && !dest_uninitialized;
+  bool needs_post_barrier = (val != noreg && in_heap);
+
+  assert_different_registers(val, tmp1, tmp2, tmp3);
+
   bool is_array = (decorators & IS_ARRAY) != 0;
   bool on_anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
   bool precise = is_array || on_anonymous;
   // Load and record the previous value.
-  g1_write_barrier_pre(masm, decorators, &dst, tmp3, val, tmp1, tmp2, false);
+  if (needs_pre_barrier) {
+    g1_write_barrier_pre(masm, decorators, &dst, tmp3, val, tmp1, tmp2, false);
+  }
 
   BarrierSetAssembler::store_at(masm, decorators, type, dst, val, tmp1, tmp2, tmp3);
 
   // No need for post barrier if storing null
-  if (val != noreg) {
+  if (needs_post_barrier) {
     const Register base = dst.base(),
                    idx  = dst.index();
     const intptr_t disp = dst.disp();

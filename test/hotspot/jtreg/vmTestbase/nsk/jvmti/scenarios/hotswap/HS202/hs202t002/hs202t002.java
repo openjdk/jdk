@@ -92,9 +92,9 @@ public class hs202t002 extends RedefineAgent {
             boolean passed = false;
             if (successState == state && isRedefined()) {
                 passed = true;
-                log.println(" ... Passed state (" + state + ")");
+                log.display(" ... Passed state (" + state + ")");
             } else {
-                log.println(" ... Failed state (" + state + ")");
+                log.display(" ... Failed state (" + state + ")");
             }
             return passed;
         }

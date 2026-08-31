@@ -1186,6 +1186,10 @@ public class TypeEnter implements Completer {
                 Assert.check(tree.sym.isCompleted());
                 tree.sym.setAnnotationTypeMetadata(new AnnotationTypeMetadata(tree.sym, annotate.annotationTypeSourceCompleter()));
             }
+
+            if ((tree.sym.flags() & (INTERFACE | VALUE_CLASS)) == 0) {
+                tree.sym.flags_field |= IDENTITY_TYPE;
+            }
         }
 
         private void addAccessor(JCVariableDecl tree, Env<AttrContext> env) {

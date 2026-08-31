@@ -116,20 +116,29 @@ class oopDesc {
   inline size_t size_given_klass(Klass* klass);
 
   // type test operations (inlined in oop.inline.hpp)
-  inline bool is_instance()    const;
-  inline bool is_instanceRef() const;
-  inline bool is_stackChunk()  const;
-  inline bool is_array()       const;
-  inline bool is_objArray()    const;
-  inline bool is_typeArray()   const;
+  inline bool is_instance()         const;
+  inline bool is_inline()           const;
+  inline bool is_instanceRef()      const;
+  inline bool is_stackChunk()       const;
+  inline bool is_array()            const;
+  inline bool is_objArray()         const;
+  inline bool is_typeArray()        const;
+  inline bool is_flatArray()        const;
+  inline bool is_refArray()         const;
+  inline bool is_refined_objArray() const;
+  inline bool is_array_with_oops()  const;
+
+  inline bool is_inline_type()      const;
 
   // type test operations that don't require inclusion of oop.inline.hpp.
-  bool is_instance_noinline()    const;
-  bool is_instanceRef_noinline() const;
-  bool is_stackChunk_noinline()  const;
-  bool is_array_noinline()       const;
-  bool is_objArray_noinline()    const;
-  bool is_typeArray_noinline()   const;
+  bool is_instance_noinline()         const;
+  bool is_instanceRef_noinline()      const;
+  bool is_stackChunk_noinline()       const;
+  bool is_array_noinline()            const;
+  bool is_objArray_noinline()         const;
+  bool is_refArray_noinline()         const;
+  bool is_typeArray_noinline()        const;
+  bool is_flatArray_noinline()        const;
 
  protected:
   inline oop        as_oop() const { return const_cast<oopDesc*>(this); }
@@ -307,15 +316,13 @@ class oopDesc {
   inline static bool is_instanceof_or_null(oop obj, Klass* klass);
 
   // identity hash; returns the identity hash key (computes it if necessary)
-  inline intptr_t identity_hash();
-  intptr_t slow_identity_hash();
-  inline bool fast_no_hash_check();
+  inline intptr_t identity_hash(Thread* current = nullptr);
+  inline bool has_identity_hash();
 
-  // marks are forwarded to stack when object is locked
-  inline bool     has_displaced_mark() const;
-  inline markWord displaced_mark() const;
-  inline void     set_displaced_mark(markWord m);
+private:
+  intptr_t slow_identity_hash(markWord current_mark, Thread* current);
 
+public:
   // Checks if the mark word needs to be preserved
   inline bool mark_must_be_preserved() const;
   inline bool mark_must_be_preserved(markWord m) const;
