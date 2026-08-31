@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,60 +25,34 @@
  * @test
  * @bug 6857159
  * @summary local schedule failed with checkcast of Thread.currentThread()
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *      -Xbatch -XX:CompileCommand=compileonly,compiler.c2.Test6857159$ct0::run
- *      compiler.c2.Test6857159
+ * @modules java.base/jdk.internal.access
+ * @run main ${test.main.class}
+ * @run main/othervm -Xbatch
+ *                   -XX:CompileCommand=compileonly,${test.main.class}::test
+ *                   -XX:CompileCommand=dontinline,${test.main.class}::notInlined
+ *                   ${test.main.class}
  */
 
 package compiler.c2;
 
-import jdk.test.whitebox.WhiteBox;
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 
-public class Test6857159 extends Thread {
-    public static void main(String[] args) throws Exception {
-        var whiteBox = WhiteBox.getWhiteBox();
-        var method = ct0.class.getDeclaredMethod("run");
-        for (int i = 0; i < 20000; i++) {
-            Thread t = null;
-            switch (i % 3) {
-                case 0:
-                    t = new ct0();
-                    break;
-                case 1:
-                    t = new ct1();
-                    break;
-                case 2:
-                    t = new ct2();
-                    break;
-            }
-            t.start();
-            t.join();
-        }
-        if (!whiteBox.isMethodCompiled(method)) {
-            throw new AssertionError(method + " didn't get compiled");
+public class Test6857159 {
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+
+    public static void main(String[] args) {
+        for (int i = 0; i < 50_000; i++) {
+            test();
         }
     }
 
-    static class ct0 extends Test6857159 {
-        public void message() { }
+    static void notInlined() { }
 
-        public void run() {
-            message();
-            ct0 ct = (ct0) Thread.currentThread();
-            ct.message();
-        }
-    }
+    static Class<?> test() {
+        notInlined();
 
-    static class ct1 extends ct0 {
-        public void message() { }
-    }
-
-    static class ct2 extends ct0 {
-        public void message() { }
+        // These intrinsics create immutable klass loads whose addresses depend on the carrier thread load
+        return JLA.currentCarrierThread().getClass().getSuperclass();
     }
 }
