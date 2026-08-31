@@ -31,7 +31,6 @@
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#include <stddef.h>
 
 template <typename T> class GrowableArray;
 class PreservedMarks;

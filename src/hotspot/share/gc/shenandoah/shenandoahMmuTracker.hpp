@@ -28,7 +28,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/numberSeq.hpp"
 
-#include <stddef.h>
 
 class ShenandoahMmuTask;
 

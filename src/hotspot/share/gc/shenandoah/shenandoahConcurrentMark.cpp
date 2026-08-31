@@ -57,7 +57,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/vmassert_reinstall.hpp"
 
-#include <stddef.h>
 
 class ShenandoahReferenceProcessor;
 

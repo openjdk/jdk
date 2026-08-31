@@ -65,7 +65,6 @@
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/vmassert_reinstall.hpp"
 
-#include <stdint.h>
 #include <sys/types.h>
 #include <type_traits>
 

@@ -58,7 +58,6 @@
 #include "utilities/ostream.hpp"
 #include "utilities/vmassert_reinstall.hpp"
 
-#include <stddef.h>
 #include <type_traits>
 
 ShenandoahNMethod::ShenandoahNMethod(nmethod* nm, GrowableArray<oop*>& oops, bool non_immediate_oops) :

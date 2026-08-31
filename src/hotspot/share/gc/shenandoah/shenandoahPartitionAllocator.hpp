@@ -29,7 +29,6 @@
 #include "nmt/memTag.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#include <stdint.h>
 
 class ShenandoahAllocRequest;
 class ShenandoahFreeSet;

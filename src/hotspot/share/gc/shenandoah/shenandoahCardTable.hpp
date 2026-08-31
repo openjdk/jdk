@@ -29,7 +29,6 @@
 #include "memory/memRegion.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#include <stddef.h>
 
 class ReservedSpace;
 

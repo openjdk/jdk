@@ -77,7 +77,6 @@
 #include "utilities/ostream.hpp"
 #include "utilities/vmassert_reinstall.hpp"
 
-#include <stddef.h>
 
 class BarrierSetAssembler;
 class StackWatermark;

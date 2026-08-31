@@ -40,7 +40,6 @@
 #include "utilities/stack.inline.hpp"
 #include "utilities/vmassert_reinstall.hpp"
 
-#include <stdint.h>
 
 class ShenandoahHeap;
 

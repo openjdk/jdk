@@ -48,7 +48,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/vmassert_reinstall.hpp"
 
-#include <stddef.h>
 
 ShenandoahControlThread::ShenandoahControlThread() :
   ShenandoahController(),

@@ -41,7 +41,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/vmassert_reinstall.hpp"
 
-#include <stddef.h>
 
 ShenandoahAgeCensus::ShenandoahAgeCensus()
   : ShenandoahAgeCensus(ShenandoahHeap::heap()->max_workers())

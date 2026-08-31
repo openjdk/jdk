@@ -36,7 +36,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/vmassert_reinstall.hpp"
 
-#include <stddef.h>
 
 template <typename> class GrowableArray;
 class nmethod;

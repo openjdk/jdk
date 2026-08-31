@@ -29,7 +29,6 @@
 #include "nmt/memTag.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#include <stddef.h>
 
 class PLAB;
 class ShenandoahGenerationalHeap;

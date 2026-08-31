@@ -44,7 +44,6 @@
 #include "utilities/vmassert_reinstall.hpp"
 
 #include <new>
-#include <stddef.h>
 #include <type_traits>
 
 class ShenandoahThreadLocalData {

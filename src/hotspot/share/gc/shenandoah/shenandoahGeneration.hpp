@@ -34,7 +34,6 @@
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#include <stddef.h>
 
 class ShenandoahFreeSet;
 class ShenandoahHeap;

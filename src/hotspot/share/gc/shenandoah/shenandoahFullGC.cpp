@@ -100,7 +100,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/vmassert_reinstall.hpp"
 
-#include <stddef.h>
 #include <type_traits>
 
 class Method;

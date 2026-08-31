@@ -32,7 +32,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/vmassert_reinstall.hpp"
 
-#include <stddef.h>
 
 class ShenandoahGeneration;
 class ShenandoahHeap;

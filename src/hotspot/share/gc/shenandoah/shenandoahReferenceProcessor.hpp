@@ -36,7 +36,6 @@
 #include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#include <stddef.h>
 #include <type_traits>
 
 class AlwaysClearPolicy;

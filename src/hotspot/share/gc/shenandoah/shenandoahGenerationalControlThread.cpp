@@ -62,7 +62,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/vmassert_reinstall.hpp"
 
-#include <stddef.h>
 
 ShenandoahGenerationalControlThread::ShenandoahGenerationalControlThread() :
   _control_lock(CONTROL_LOCK_RANK, "ShenandoahGCRequest_lock", true),

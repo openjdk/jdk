@@ -189,8 +189,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/vmassert_reinstall.hpp"
 
-#include <stddef.h>
-#include <stdint.h>
 
 class OopIterateClosure;
 class ShenandoahHeapRegion;

@@ -33,7 +33,6 @@
 #include "nmt/memTag.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#include <stddef.h>
 
 class outputStream;
 class ShenandoahTracer;

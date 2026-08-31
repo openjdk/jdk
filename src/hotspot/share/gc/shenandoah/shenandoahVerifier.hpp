@@ -34,7 +34,6 @@
 #include "utilities/stack.hpp"
 #include "utilities/stack.inline.hpp"
 
-#include <stddef.h>
 
 class MarkBitMap;
 class ShenandoahGeneration;

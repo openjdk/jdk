@@ -36,7 +36,6 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/vmassert_reinstall.hpp"
 
-#include <stddef.h>
 
 class CollectedHeap;
 class ShenandoahAgeCensus;

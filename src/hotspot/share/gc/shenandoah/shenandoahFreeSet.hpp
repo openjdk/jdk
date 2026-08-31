@@ -38,7 +38,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/vmassert_reinstall.hpp"
 
-#include <stdint.h>
 #include <sys/types.h>
 
 class LogStream;

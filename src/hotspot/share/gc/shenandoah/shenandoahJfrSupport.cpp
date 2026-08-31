@@ -31,7 +31,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
-#include <stdint.h>
 #if INCLUDE_JFR
 #include "jfr/metadata/jfrSerializer.hpp"
 #endif

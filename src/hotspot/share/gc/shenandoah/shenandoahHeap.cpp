@@ -178,7 +178,6 @@
 #include "utilities/vmassert_reinstall.hpp"
 
 #include <new>
-#include <stdint.h>
 #include <string.h>
 #include <type_traits>
 

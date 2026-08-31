@@ -31,8 +31,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
-#include <stddef.h>
-#include <stdint.h>
 
 class ShenandoahMarkBitMap {
 public:
