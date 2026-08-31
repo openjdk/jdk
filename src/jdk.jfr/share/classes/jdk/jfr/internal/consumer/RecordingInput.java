@@ -98,7 +98,7 @@ public final class RecordingInput implements DataInput, AutoCloseable {
         this(f, DEFAULT_BLOCK_SIZE);
     }
 
-    void positionPhysical(long position) throws IOException {
+    public void positionPhysical(long position) throws IOException {
         file.seek(position);
     }
 
@@ -110,7 +110,7 @@ public final class RecordingInput implements DataInput, AutoCloseable {
         return file.readLong();
     }
 
-    void readPhysicalFully(byte[] dest, int offset, int length) throws IOException {
+    public void readPhysicalFully(byte[] dest, int offset, int length) throws IOException {
         file.readFully(dest, offset, length);
     }
 

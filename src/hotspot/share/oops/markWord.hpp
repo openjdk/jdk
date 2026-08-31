@@ -73,9 +73,12 @@
 //    * null-free arrays:  An array instance without null elements
 //    * valhalla reserved: Reserved for future use
 //
-//    Inline types cannot be locked and do not have an identity hash.
+//    Inline types cannot be locked.
 //
-//  - hash - contains the identity hash value: largest value is 31 bits, see
+//    Inline types have a deterministic hash based on the immutable payload
+//    and class, which may be cached in the markWord.
+//
+//  - hash - contains the hash value: largest value is 31 bits, see
 //    os::random().  Also, 64-bit VMs require a hash value no bigger than 32
 //    bits because they will not properly generate a mask larger than that:
 //    see library_call.cpp
@@ -228,7 +231,7 @@ class markWord {
     // The reserved bits are only guaranteed to be unset if the mark word is "unlocked"
     LP64_ONLY(assert(!is_unlocked() || mask_bits(value(),  valhalla_reserved_bit_in_place) == 0,
                      "Reserved bits should not be used. _value: " PTR_FORMAT, _value));
-    return !is_unlocked() || !has_no_hash();
+    return !is_unlocked() || has_hash();
   }
 
   // WARNING: The following routines are used EXCLUSIVELY by
@@ -269,11 +272,13 @@ class markWord {
 
   // hash operations
   intptr_t hash() const {
+    precond(!is_marked());
     return mask_bits(value() >> hash_shift, hash_mask);
   }
 
-  bool has_no_hash() const {
-    return hash() == no_hash;
+  bool has_hash() const {
+    precond(!is_marked());
+    return hash() != no_hash;
   }
 
   bool is_flat_array() const {
