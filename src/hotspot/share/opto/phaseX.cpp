@@ -1117,7 +1117,9 @@ bool PhaseIterGVN::drain_worklist() {
     }
     loop_count++;
   }
-  return false;
+  // A bailout in the last transformation would otherwise reach verification
+  // with the graph flushed.
+  return C->failing();
 }
 
 void PhaseIterGVN::push_deep_revisit_candidates() {
@@ -1195,6 +1197,11 @@ bool PhaseIterGVN::deep_revisit() {
 }
 
 void PhaseIterGVN::optimize(bool deep) {
+  if (C->failing()) {
+    // A failure in a previous phase flushed the graph (record_failure sets the
+    // root to null); there is nothing left to optimize or verify.
+    return;
+  }
   bool deep_revisit_converged = false;
   DEBUG_ONLY(_num_processed = 0;)
   NOT_PRODUCT(init_verifyPhaseIterGVN();)
@@ -1222,6 +1229,7 @@ void PhaseIterGVN::optimize(bool deep) {
 
 #ifdef ASSERT
 void PhaseIterGVN::verify_optimize(bool deep_revisit_converged) {
+  assert(!C->failing_internal(), "should not verify a failed compilation");
   assert(_worklist.size() == 0, "igvn worklist must be empty before verify");
 
   if (is_verify_Value() ||
