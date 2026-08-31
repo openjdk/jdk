@@ -4223,7 +4223,12 @@ JRT_BLOCK_ENTRY(void, SharedRuntime::check_special_condition_for_native_trans(Ja
   assert(!current->has_last_Java_frame() || current->frame_anchor()->walkable(), "Unwalkable stack in native->Java transition");
 
   JRT_BLOCK
-  // Process safepoint, check for pending async exceptions, etc
+  // This block looks empty, but we are guaranteed to process the
+  // safepoint at block exit because we only get here if we already
+  // checked for a safepoint.
+  assert(SafepointMechanism::local_poll_armed(current), "why are we here?");
+
+  // On block exit, process safepoint, check for pending async exceptions, etc
   JRT_BLOCK_END
 
   // After returning from native, it could be that the stack frames are not
