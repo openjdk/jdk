@@ -447,7 +447,7 @@ InstanceKlass* LoaderConstraintTable::find_constrained_klass(Symbol* name,
 void LoaderConstraintTable::check_failed_loaded_klass(InstanceKlass* klass,
                                                       ClassLoaderData* loader) {
 
-#if ASSERT
+#ifdef ASSERT
   MutexLocker ml(SystemDictionary_lock);
   Symbol* name = klass->name();
   LoaderConstraint* p = find_loader_constraint(name, loader);
