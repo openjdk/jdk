@@ -33,7 +33,7 @@ import jdk.incubator.json.JsonArray;
 import jdk.incubator.json.JsonValue;
 
 /**
- * JsonArray implementation class
+ * JsonArray implementation class. Instances of this class are immutable.
  */
 public final class JsonArrayImpl implements JsonArray, JsonValueSupport {
 
@@ -41,12 +41,12 @@ public final class JsonArrayImpl implements JsonArray, JsonValueSupport {
     private final int offset;
     private final char[] doc;
 
-    public JsonArrayImpl(List<JsonValue> from) {
+    public JsonArrayImpl(List<? extends JsonValue> from) {
         this(from, -1, null);
     }
 
-    public JsonArrayImpl(List<JsonValue> from, int o, char[] d) {
-        theValues = from;
+    public JsonArrayImpl(List<? extends JsonValue> from, int o, char[] d) {
+        theValues = List.copyOf(from);
         offset = o;
         doc = d;
     }
@@ -54,7 +54,7 @@ public final class JsonArrayImpl implements JsonArray, JsonValueSupport {
     // Conversion override
     @Override
     public List<JsonValue> asList() {
-        return Collections.unmodifiableList(theValues);
+        return theValues;
     }
 
     // Navigation overrides (on default) -> bypass the unmodifiable wrap
