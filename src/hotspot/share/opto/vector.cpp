@@ -39,7 +39,7 @@ static bool is_vector_mask(ciKlass* klass) {
 // A node is vector-related if it either produces a vector/mask value or
 // consumes one.
 static bool is_vector_related(const Node* n) {
-  // Produces a vector/mask value (AndV, VectorStoreMask, LoadVector, ...).
+  // Produces a vector/mask value (AndV, LoadVector, ...).
   if (n->bottom_type()->isa_vect() != nullptr) {
     return true;
   }

@@ -673,6 +673,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _post_loop_opts_phase(false),
       _merge_stores_phase(false),
       _allow_macro_nodes(true),
+      _post_vector_phase(false),
       _inlining_progress(false),
       _inlining_incrementally(false),
       _strength_reduction(false),
@@ -978,6 +979,7 @@ Compile::Compile(ciEnv* ci_env,
       _post_loop_opts_phase(false),
       _merge_stores_phase(false),
       _allow_macro_nodes(true),
+      _post_vector_phase(false),
       _inlining_progress(false),
       _inlining_incrementally(false),
       _has_reserved_stack_access(false),
@@ -1129,7 +1131,6 @@ void Compile::Init(bool aliasing) {
   set_clear_upper_avx(false);  //false as default for clear upper bits of ymm registers
   Copy::zero_to_bytes(_trap_hist, sizeof(_trap_hist));
   set_decompile_count(0);
-  set_post_vector_phase(false);
 
 #ifndef PRODUCT
   _phase_counter = 0;
