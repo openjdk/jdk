@@ -48,7 +48,7 @@ public final class JsonParser {
     // Access to the underlying JSON contents
     private final char[] doc;
     // Lazily initialized for member names with escape sequences
-    private final LazyConstant<StringBuilder> sb = LazyConstant.of(this::initSb);
+    private final LazyConstant<StringBuilder> sb = LazyConstant.of(StringBuilder::new);
     // Current offset during parsing
     private int offset;
     // For exception message on failure
@@ -462,10 +462,6 @@ public final class JsonParser {
     }
 
     // Utility functions
-
-    private StringBuilder initSb() {
-        return new StringBuilder();
-    }
 
     // Unescapes the Unicode escape sequence and produces a char
     private char codeUnit(int start, boolean structural) {
