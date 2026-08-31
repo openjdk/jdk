@@ -193,10 +193,9 @@ void Parse::do_get_xxx(Node* obj, ciField* field) {
       type = Type::get_const_basic_type(bt);
     }
 
-    const TypePtr* adr_type = C->alias_type(field)->adr_type();
     DecoratorSet decorators = IN_HEAP;
     decorators |= field->is_volatile() ? MO_SEQ_CST : MO_UNORDERED;
-    ld = access_load_at(obj, adr, adr_type, type, bt, decorators);
+    ld = access_load_at(obj, adr, type, bt, decorators);
     if (field_klass->is_inlinetype()) {
       // Load a non-flattened inline type from memory
       ld = InlineTypeNode::make_from_oop(this, ld, field_klass->as_inline_klass());
@@ -311,13 +310,12 @@ void Parse::do_put_xxx(Node* obj, ciField* field, bool is_field) {
       }
     }
 
-    const TypePtr* adr_type = C->alias_type(field)->adr_type();
-    assert(C->get_alias_index(adr_type) == C->get_alias_index(_gvn.type(adr)->isa_ptr()),
+    assert(C->get_alias_index(C->alias_type(field)->adr_type()) == C->get_alias_index(_gvn.type(adr)->isa_ptr()),
            "slice of address and input slice don't match");
     DecoratorSet decorators = IN_HEAP;
     decorators |= is_vol ? MO_SEQ_CST : MO_UNORDERED;
     inc_sp(1);
-    access_store_at(obj, adr, adr_type, val, field_type, bt, decorators);
+    access_store_at(obj, adr, val, field_type, bt, decorators);
     dec_sp(1);
   }
 
@@ -414,14 +412,15 @@ Node* Parse::expand_multianewarray(ciArrayKlass* array_klass, Node* *lengths, in
     jint length_con = find_int_con(length, -1);
     guarantee(length_con >= 0, "non-constant multianewarray");
     ciArrayKlass* array_klass_1 = array_klass->as_obj_array_klass()->element_klass()->as_array_klass();
-    const TypePtr* adr_type = TypeAryPtr::OOPS;
     const TypeOopPtr*    elemtype = _gvn.type(array)->is_aryptr()->elem()->make_oopptr();
     const intptr_t header   = arrayOopDesc::base_offset_in_bytes(T_OBJECT);
     for (jint i = 0; i < length_con; i++) {
       Node*    elem   = expand_multianewarray(array_klass_1, &lengths[1], ndimensions-1, nargs);
       intptr_t offset = header + ((intptr_t)i << LogBytesPerHeapOop);
       Node*    eaddr  = basic_plus_adr(array, offset);
-      access_store_at(array, eaddr, adr_type, elem, elemtype, T_OBJECT, IN_HEAP | IS_ARRAY);
+      assert(C->get_alias_index(TypeAryPtr::OOPS) == C->get_alias_index(_gvn.type(eaddr)->isa_ptr()),
+        "slice of address and input slice don't match");
+      access_store_at(array, eaddr, elem, elemtype, T_OBJECT, IN_HEAP | IS_ARRAY);
     }
   }
   return array;

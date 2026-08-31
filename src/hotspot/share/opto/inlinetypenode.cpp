@@ -438,8 +438,7 @@ void InlineTypeNode::load(GraphKit* kit, Node* base, Node* ptr, bool immutable_m
       if (trust_null_free_oop && field_null_free) {
         val_type = val_type->join_speculative(TypePtr::NOTNULL);
       }
-      const TypePtr* field_ptr_type = (decorators & C2_MISMATCHED) == 0 ? kit->gvn().type(field_ptr)->is_ptr() : TypeRawPtr::BOTTOM;
-      value = kit->access_load_at(base, field_ptr, field_ptr_type, val_type, bt, decorators);
+      value = kit->access_load_at(base, field_ptr, val_type, bt, decorators);
     }
     set_field_value(i, value);
   }
@@ -461,8 +460,7 @@ void InlineTypeNode::store_flat(GraphKit* kit, Node* base, Node* ptr, bool atomi
     if (!null_free) {
       int nm_offset = vk->null_marker_offset_in_payload();
       Node* nm_ptr = kit->basic_plus_adr(base, ptr, nm_offset);
-      const TypePtr* nm_ptr_type = (decorators & C2_MISMATCHED) == 0 ? kit->gvn().type(nm_ptr)->is_ptr() : TypeRawPtr::BOTTOM;
-      kit->access_store_at(base, nm_ptr, nm_ptr_type, get_null_marker(), TypeInt::BOOL, T_BOOLEAN, decorators);
+      kit->access_store_at(base, nm_ptr, get_null_marker(), TypeInt::BOOL, T_BOOLEAN, decorators);
     }
     store(kit, base, ptr, immutable_memory, decorators);
     return;
@@ -570,9 +568,8 @@ void InlineTypeNode::store(GraphKit* kit, Node* base, Node* ptr, bool immutable_
     } else {
       // Store field value to memory
       BasicType bt = type2field[ft->basic_type()];
-      const TypePtr* field_ptr_type = (decorators & C2_MISMATCHED) == 0 ? kit->gvn().type(field_ptr)->is_ptr() : TypeRawPtr::BOTTOM;
       const Type* val_type = Type::get_const_type(ft);
-      kit->access_store_at(base, field_ptr, field_ptr_type, field_val, val_type, bt, decorators);
+      kit->access_store_at(base, field_ptr, field_val, val_type, bt, decorators);
     }
   }
 }
@@ -1536,8 +1533,7 @@ InlineTypeNode* InlineTypeNode::make_from_flat_impl(GraphKit* kit, ciInlineKlass
     if (!null_free) {
       int nm_offset = vk->null_marker_offset_in_payload();
       Node* nm_ptr = kit->basic_plus_adr(base, ptr, nm_offset);
-      const TypePtr* nm_ptr_type = (decorators & C2_MISMATCHED) == 0 ? gvn.type(nm_ptr)->is_ptr() : TypeRawPtr::BOTTOM;
-      Node* nm_value = kit->access_load_at(base, nm_ptr, nm_ptr_type, TypeInt::BOOL, T_BOOLEAN, decorators);
+      Node* nm_value = kit->access_load_at(base, nm_ptr, TypeInt::BOOL, T_BOOLEAN, decorators);
       vt->set_req(NullMarker, nm_value);
     }
 
@@ -2064,7 +2060,7 @@ bool LoadFlatNode::expand_non_atomic(PhaseIterGVN& igvn) const {
     const TypePtr* field_ptr_type = field_ptr->Value(&igvn)->is_ptr();
     igvn.set_type(field_ptr, field_ptr_type);
 
-    Node* field_value = kit.access_load_at(base, field_ptr, field_ptr_type, igvn.type(proj_out), field->type()->basic_type(), _decorators);
+    Node* field_value = kit.access_load_at(base, field_ptr, igvn.type(proj_out), field->type()->basic_type(), _decorators);
     igvn.replace_node(proj_out, field_value);
   }
 
@@ -2074,7 +2070,7 @@ bool LoadFlatNode::expand_non_atomic(PhaseIterGVN& igvn) const {
       Node* null_marker_ptr = kit.basic_plus_adr(base, ptr, _vk->null_marker_offset_in_payload());
       const TypePtr* null_marker_ptr_type = null_marker_ptr->Value(&igvn)->is_ptr();
       igvn.set_type(null_marker_ptr, null_marker_ptr_type);
-      Node* null_marker_value = kit.access_load_at(base, null_marker_ptr, null_marker_ptr_type, TypeInt::BOOL, T_BOOLEAN, _decorators);
+      Node* null_marker_value = kit.access_load_at(base, null_marker_ptr, TypeInt::BOOL, T_BOOLEAN, _decorators);
       igvn.replace_node(proj_out, null_marker_value);
     }
   }
@@ -2099,7 +2095,7 @@ void LoadFlatNode::expand_atomic(PhaseIterGVN& igvn) const {
 
   BasicType payload_bt = _vk->atomic_size_to_basic_type(_null_free);
   kit.insert_mem_bar(Op_MemBarCPUOrder);
-  Node* payload = kit.access_load_at(base, ptr, TypeRawPtr::BOTTOM, Type::get_const_basic_type(payload_bt), payload_bt,
+  Node* payload = kit.access_load_at(base, ptr, Type::get_const_basic_type(payload_bt), payload_bt,
                                      _decorators | C2_MISMATCHED | C2_CONTROL_DEPENDENT_LOAD | C2_UNKNOWN_CONTROL_LOAD, kit.control());
   kit.insert_mem_bar(Op_MemBarCPUOrder);
 
@@ -2267,7 +2263,7 @@ bool StoreFlatNode::expand_non_atomic(PhaseIterGVN& igvn) const {
     const TypePtr* field_ptr_type = field_ptr->Value(&igvn)->is_ptr();
     igvn.set_type(field_ptr, field_ptr_type);
     Node* field_value = value->field_value_by_offset(field->offset_in_bytes(), true);
-    kit.access_store_at(base, field_ptr, field_ptr_type, field_value, igvn.type(field_value), field->type()->basic_type(), _decorators);
+    kit.access_store_at(base, field_ptr, field_value, igvn.type(field_value), field->type()->basic_type(), _decorators);
   }
 
   if (!_null_free) {
@@ -2275,7 +2271,7 @@ bool StoreFlatNode::expand_non_atomic(PhaseIterGVN& igvn) const {
     const TypePtr* null_marker_ptr_type = null_marker_ptr->Value(&igvn)->is_ptr();
     igvn.set_type(null_marker_ptr, null_marker_ptr_type);
     Node* null_marker_value = value->get_null_marker();
-    kit.access_store_at(base, null_marker_ptr, null_marker_ptr_type, null_marker_value, TypeInt::BOOL, T_BOOLEAN, _decorators);
+    kit.access_store_at(base, null_marker_ptr, null_marker_value, TypeInt::BOOL, T_BOOLEAN, _decorators);
   }
 
   Node* old_ctrl = proj_out_or_null(TypeFunc::Control);
@@ -2316,7 +2312,7 @@ void StoreFlatNode::expand_atomic(PhaseIterGVN& igvn) const {
     assert(oop_off_2 == -1 || !UseG1GC, "sanity");
     // ZGC does not support compressed oops, so only one oop can be in the payload which is written by a "normal" oop store.
     assert((oop_off_1 == -1 && oop_off_2 == -1) || !UseZGC, "ZGC does not support embedded oops in flat fields");
-    kit.access_store_at(base, ptr, TypeRawPtr::BOTTOM, payload, Type::get_const_basic_type(payload_bt), payload_bt, _decorators | C2_MISMATCHED, true, value);
+    kit.access_store_at(base, ptr, payload, Type::get_const_basic_type(payload_bt), payload_bt, _decorators | C2_MISMATCHED, true, value);
   } else {
     // Contains oops and requires late barrier expansion. Emit a special store node that allows to emit GC barriers in the backend.
     assert(UseG1GC, "Unexpected GC");
