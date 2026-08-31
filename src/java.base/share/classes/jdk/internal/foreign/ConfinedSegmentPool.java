@@ -29,6 +29,8 @@ import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
+import jdk.internal.vm.Continuation;
+import jdk.internal.vm.ContinuationSupport;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 
@@ -127,7 +129,19 @@ public final class ConfinedSegmentPool {
     @ForceInline
     static long acquire(Thread thread) {
         assert thread == Thread.currentThread();
-        return POOLING_DISABLED ? 0 : acquireFromCache(cacheOwner(thread));
+        if (POOLING_DISABLED) {
+            return 0;
+        }
+        if (ContinuationSupport.isSupported() && thread.isVirtual()) {
+            Continuation.pin();
+            try {
+                return acquireFromCache(JLA.currentCarrierThread());
+            } finally {
+                Continuation.unpin();
+            }
+        } else {
+            return acquireFromCache(thread);
+        }
     }
 
     /**
@@ -147,7 +161,16 @@ public final class ConfinedSegmentPool {
     @ForceInline
     static void release(Thread thread, long pool, long usedSize) {
         assert thread == Thread.currentThread();
-        releaseToCache(cacheOwner(thread), pool, usedSize);
+        if (ContinuationSupport.isSupported() && thread.isVirtual()) {
+            Continuation.pin();
+            try {
+                releaseToCache(JLA.currentCarrierThread(), pool, usedSize);
+            } finally {
+                Continuation.unpin();
+            }
+        } else {
+            releaseToCache(thread, pool, usedSize);
+        }
     }
 
     /**
