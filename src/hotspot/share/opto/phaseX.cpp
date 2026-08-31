@@ -1117,9 +1117,7 @@ bool PhaseIterGVN::drain_worklist() {
     }
     loop_count++;
   }
-  // A bailout in the last transformation would otherwise reach verification
-  // with the graph flushed.
-  return C->failing();
+  return false;
 }
 
 void PhaseIterGVN::push_deep_revisit_candidates() {

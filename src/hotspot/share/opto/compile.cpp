@@ -3089,7 +3089,9 @@ void Compile::Optimize() {
   }
   assert(!has_vbox_nodes(), "sanity");
 
-  if (failing())  return;
+  if (failing()) {
+    return;
+  }
 
   if (RenumberLiveNodes && live_nodes() + NodeLimitFudgeFactor < unique()) {
     Compile::TracePhase tp(_t_renumberLive);
