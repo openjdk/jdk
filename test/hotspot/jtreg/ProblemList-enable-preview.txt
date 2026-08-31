@@ -53,3 +53,6 @@ runtime/cds/appcds/aotCode/AOTCodeCompressedOopsTest.java 8389577 generic-all
 runtime/cds/appcds/aotCode/AOTCodeCPUFeatureIncompatibilityTest.java 8389577 generic-all
 runtime/cds/appcds/aotCode/TestDisableAOTCode.java 8389577 generic-all
 runtime/cds/appcds/aotCode/TestVerifyAOTCode.java 8389577 generic-all
+
+test/hotspot/jtreg/runtime/cds/appcds/aotCode/TestAOTCodeCounters.java 8390238 generic-all
+test/hotspot/jtreg/runtime/cds/appcds/aotCode/TestAOTCodeFeatures.java 8390238 generic-all
