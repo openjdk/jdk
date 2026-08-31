@@ -35,20 +35,13 @@
  *     Modified due to fix of the RFE
  *     5001769 TEST_RFE: remove usage of deprecated GetThreadStatus function
  *
- * @library /test/lib
- * @run main/othervm/native -agentlib:suspendthrd01 suspendthrd01
+ * @library /test/lib /test/hotspot/jtreg/testlibrary
+ * @run main/othervm/native suspendthrd01
  */
 
+import jvmti.JVMTIUtils;
+
 public class suspendthrd01 {
-
-    // load native library if required
-    static {
-        System.loadLibrary("suspendthrd01");
-    }
-
-    native static boolean suspendTestedThread(Thread thread);
-    native static boolean checkSuspendedState(Thread thread);
-    native static boolean resumeTestedThread(Thread thread);
 
     // run test from command line
     public static void main(String argv[]) {
@@ -58,19 +51,16 @@ public class suspendthrd01 {
         if (!thread.checkReady()) {
             throw new RuntimeException("Unable to prepare tested thread: " + thread);
         }
-        if (!suspendTestedThread(thread)) {
-            throw new RuntimeException("SuspendThread failed");
-        }
+        JVMTIUtils.suspendThread(thread);
         try {
             // the suspended thread cannot see the flag and must not finish
             thread.letFinish();
-            if (!checkSuspendedState(thread)) {
-                throw new RuntimeException("Thread is not in the suspended state");
+            int state = JVMTIUtils.getThreadState(thread);
+            if ((state & JVMTIUtils.JVMTI_THREAD_STATE_SUSPENDED) == 0) {
+                throw new RuntimeException("Thread is not in the suspended state: " + state);
             }
         } finally {
-            if (!resumeTestedThread(thread)) {
-                throw new RuntimeException("ResumeThread failed");
-            }
+            JVMTIUtils.resumeThread(thread);
         }
         System.out.println("Finishing tested thread");
         try {
