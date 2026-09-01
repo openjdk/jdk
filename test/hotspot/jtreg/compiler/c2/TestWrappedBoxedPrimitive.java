@@ -26,7 +26,7 @@
  * @bug 8384101
  * @summary Test that references to boxed primitives are not considered final.
  * @library /test/lib /
- * @run main/othervm -Xbatch -XX:-TieredCompilation
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions
  *                   -XX:CompileCommand=compileonly,${test.main.class}::test*
  *                   -XX:+StressIncrementalInlining -XX:StressSeed=2
  *                   ${test.main.class}
