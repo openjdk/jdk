@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,17 +52,17 @@ import org.junit.jupiter.params.provider.MethodSource;
 public class VarHandleTestAccessByte extends VarHandleBaseTest {
     static final byte static_final_v = (byte)0x01;
 
-    static byte static_v;
+    static byte static_v = (byte)0x01;
 
-    final byte final_v = (byte)0x01;
+    final byte final_v;
 
     byte v;
 
     static final byte static_final_v2 = (byte)0x01;
 
-    static byte static_v2;
+    static byte static_v2 = (byte)0x01;
 
-    final byte final_v2 = (byte)0x01;
+    final byte final_v2;
 
     byte v2;
 
@@ -76,6 +76,13 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
 
     VarHandle vhArray;
 
+    public VarHandleTestAccessByte() {
+        final_v = (byte)0x01;
+        v = (byte)0x01;
+        final_v2 = (byte)0x01;
+        v2 = (byte)0x01;
+        super();
+    }
 
     VarHandle[] allocate(boolean same) {
         List<VarHandle> vhs = new ArrayList<>();
@@ -1452,6 +1459,5 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
             });
         }
     }
-
 }
 
