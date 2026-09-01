@@ -1335,11 +1335,11 @@ The following examples show the defaults for various option values:
 -keysize
     2048 (when using -genkeypair and -keyalg is "DSA")
     3072 (when using -genkeypair and -keyalg is "RSA", "RSASSA-PSS", or "DH")
-    384 (when using -genkeypair and -keyalg is "EC")
     56 (when using -genseckey and -keyalg is "DES")
     168 (when using -genseckey and -keyalg is "DESede")
 
 -groupname
+    secp384r1 (when using -genkeypair and -keyalg is "EC")
     ed25519 (when using -genkeypair and -keyalg is "EdDSA")
     x25519 (when using -genkeypair and -keyalg is "XDH")
     ML-DSA-65 (when using -genkeypair and -keyalg is "ML-DSA")

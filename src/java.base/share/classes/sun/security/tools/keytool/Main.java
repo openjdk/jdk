@@ -1917,42 +1917,36 @@ public final class Main {
                               String signerAlias)
         throws Exception
     {
-        if (groupName != null) {
-            if (keysize != -1) {
-                throw new Exception(rb.getString("groupname.keysize.coexist"));
+        if (groupName != null && keysize != -1) {
+            throw new Exception(rb.getString("groupname.keysize.coexist"));
+        } else if (keysize != -1 || groupName != null) {
+            // Good. No need to choose default, but some warnings
+            if (keysize != -1 && "EC".equalsIgnoreCase(keyAlgName)) {
+                weakWarnings.add(String.format(
+                        rb.getString("deprecate.keysize.for.ec"),
+                        ecGroupNameForSize(keysize)));
             }
         } else {
-            if (keysize == -1) {
-                if ("EC".equalsIgnoreCase(keyAlgName)) {
-                    keysize = SecurityProviderConstants.DEF_EC_KEY_SIZE;
-                } else if ("RSA".equalsIgnoreCase(keyAlgName)) {
-                    keysize = SecurityProviderConstants.DEF_RSA_KEY_SIZE;
-                } else if ("RSASSA-PSS".equalsIgnoreCase(keyAlgName)) {
-                    keysize = SecurityProviderConstants.DEF_RSASSA_PSS_KEY_SIZE;
-                } else if ("DSA".equalsIgnoreCase(keyAlgName)) {
-                    keysize = SecurityProviderConstants.DEF_DSA_KEY_SIZE;
-                } else if ("EdDSA".equalsIgnoreCase(keyAlgName)) {
-                    keysize = SecurityProviderConstants.DEF_ED_KEY_SIZE;
-                } else if ("Ed25519".equalsIgnoreCase(keyAlgName)) {
-                    keysize = 255;
-                } else if ("Ed448".equalsIgnoreCase(keyAlgName)) {
-                    keysize = 448;
-                } else if ("XDH".equalsIgnoreCase(keyAlgName)) {
-                    keysize = SecurityProviderConstants.DEF_XEC_KEY_SIZE;
-                } else if ("X25519".equalsIgnoreCase(keyAlgName)) {
-                    keysize = 255;
-                } else if ("X448".equalsIgnoreCase(keyAlgName)) {
-                    keysize = 448;
-                } else if ("DH".equalsIgnoreCase(keyAlgName)) {
-                    keysize = SecurityProviderConstants.DEF_DH_KEY_SIZE;
-                }
-            } else {
-                if ("EC".equalsIgnoreCase(keyAlgName)) {
-                    weakWarnings.add(String.format(
-                            rb.getString("deprecate.keysize.for.ec"),
-                            ecGroupNameForSize(keysize)));
-                }
-            }
+            // Need to choose a default. Could be keysize or groupname
+            keysize = switch (keyAlgName.toUpperCase(Locale.ROOT)) {
+                case "RSA" -> SecurityProviderConstants.DEF_RSA_KEY_SIZE;
+                case "RSASSA-PSS" -> SecurityProviderConstants.DEF_RSASSA_PSS_KEY_SIZE;
+                case "DSA" -> SecurityProviderConstants.DEF_DSA_KEY_SIZE;
+                case "DH" -> SecurityProviderConstants.DEF_DH_KEY_SIZE;
+                default -> -1;
+            };
+            groupName = switch (keyAlgName.toUpperCase(Locale.ROOT)) {
+                case "EC" -> "secp384r1";
+                case "EDDSA" -> "Ed25519";
+                case "XDH" -> "X25519";
+                case "ML-DSA" -> "ML-DSA-65";
+                case "ML-KEM" -> "ML-KEM-768";
+                default -> null;
+            };
+            // After this, keysize might still be -1 and groupname might still
+            // be null. In some cases this is totally fine, for example, if
+            // keyAlgName is already "ML-KEM-768". In some cases we will depend
+            // on the provider to choose.
         }
 
         if (alias == null) {
@@ -2006,7 +2000,7 @@ public final class Main {
         if (groupName != null) {
             keypair.generate(groupName);
         } else {
-            // This covers keysize both specified and unspecified
+            // keysize could be -1
             keypair.generate(keysize);
         }
 
