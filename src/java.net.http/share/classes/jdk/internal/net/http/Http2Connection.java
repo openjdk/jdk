@@ -679,9 +679,11 @@ class Http2Connection implements Closeable {
 
     private boolean isIdle() {
         assert stateLock.isHeldByCurrentThread();
-        return streams.isEmpty() &&
-                numReservedServerStreams == 0 &&
-                numReservedClientStreams == 0;
+        // There should not be any server reserved streams if there is no client
+        // streams for HTTP/2, because push promises are supposed to be created
+        // while the main response stream is still open. Hence, we don't do a
+        // `numReservedServerStreams == 0` check.
+        return streams.isEmpty() && numReservedClientStreams == 0;
     }
 
     /**
