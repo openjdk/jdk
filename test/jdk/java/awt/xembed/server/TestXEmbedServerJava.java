@@ -59,8 +59,7 @@ public class TestXEmbedServerJava extends TestXEmbedServer {
             "  - Drag the text from the client text field to the server text field and verify it is dropped to the right of the existing text.\n" +
             "  - Drag the text from the server text field to the client text field and verify it is dropped to the right of the existing text.\n";
         Frame f = new Frame("Instructions");
-        TextArea instructionArea =
-                new TextArea(instruction, 16, 72, TextArea.SCROLLBARS_VERTICAL_ONLY);
+        TextArea instructionArea = new TextArea(instruction, 16, 104);
         instructionArea.setEditable(false);
         f.setLayout(new BorderLayout());
         f.add(instructionArea, BorderLayout.CENTER);
@@ -69,6 +68,7 @@ public class TestXEmbedServerJava extends TestXEmbedServer {
         f.setVisible(true);
 
         TestXEmbedServerJava lock = new TestXEmbedServerJava();
+        lock.f.setLocation(260, lock.f.getY());
         try {
             synchronized(lock) {
                 lock.wait();

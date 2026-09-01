@@ -34,7 +34,7 @@ import java.awt.datatransfer.*;
 
 public abstract class TestXEmbedServer {
     // vertical position of server AND client windows
-    private static final int VERTICAL_POSITION = 360;
+    private static final int VERTICAL_POSITION = 200;
 
     private static final Logger log = Logger.getLogger("test.xembed");
     Frame f;
@@ -169,7 +169,7 @@ public abstract class TestXEmbedServer {
         dummy.setBounds(0, VERTICAL_POSITION, 100, 100);
         dummy.setVisible(true);
 
-        f.setBounds(540, VERTICAL_POSITION, 700, 300);
+        f.setBounds(300, VERTICAL_POSITION, 800, 300);
         f.setVisible(true);
     }
 
