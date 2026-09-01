@@ -5217,9 +5217,10 @@ instruct prefetchalloc( memory mem ) %{
 // ============================================================================
 // Atomic operation instructions
 //
-// Only the acquiring variants of CompareAndSwapX, GetAndSetX and GetAndAddX are
-// defined here: needs_acquiring_load_reserved() always returns true for these
-// opcodes (see is_CAS()), so the non-acquiring variants are unreachable.
+// CompareAndSwapX, GetAndSetX, and GetAndAddX represent sequentially
+// consistent operations. C2 therefore emits a trailing MemBarAcquire for
+// these nodes, so their RISC-V implementation always needs acquire semantics.
+// Non-acquiring match rules would consequently be unreachable.
 
 instruct compareAndSwapBAcq_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval,
                                    iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
