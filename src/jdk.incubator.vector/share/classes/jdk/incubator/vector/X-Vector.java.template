@@ -843,16 +843,16 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
     final
     $abstractvectortype$ lanewiseTemplate(VectorOperators.Unary op) {
         if (opKind(op, VO_SPECIAL)) {
+#if[BITWISE]
             if (op == ZOMO) {
                 return blend(broadcast(-1), compare(NE, 0));
             }
-#if[BITWISE]
             else if (op == NOT) {
                 return broadcast(-1).lanewise(XOR, this);
             }
 #end[BITWISE]
 #if[FP]
-            else if (opKind(op, VO_MATHLIB)) {
+            if (opKind(op, VO_MATHLIB)) {
                 return unaryMathOp(op);
             }
 #end[FP]
@@ -878,16 +878,16 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
                                           VectorMask<$Boxtype$> m) {
         m.check(maskClass, this);
         if (opKind(op, VO_SPECIAL)) {
+#if[BITWISE]
             if (op == ZOMO) {
                 return blend(broadcast(-1), compare(NE, 0, m));
             }
-#if[BITWISE]
             else if (op == NOT) {
                 return lanewise(XOR, broadcast(-1), m);
             }
 #end[BITWISE]
 #if[FP]
-            else if (opKind(op, VO_MATHLIB)) {
+            if (opKind(op, VO_MATHLIB)) {
                 return blend(unaryMathOp(op), m);
             }
 #end[FP]
