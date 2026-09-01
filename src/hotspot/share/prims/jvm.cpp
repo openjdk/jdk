@@ -826,7 +826,7 @@ JVM_ENTRY(jint, JVM_IHashCode(JNIEnv* env, jobject handle))
       current_mark = ho->mark();
       new_mark = current_mark.copy_set_hash(identity_hash);
       old_mark = ho->cas_set_mark(new_mark, current_mark);
-      assert(old_mark.has_no_hash() || old_mark.hash() == new_mark.hash(),
+      assert(!old_mark.has_hash() || old_mark.hash() == new_mark.hash(),
             "CAS identity hash invariant violated, expected=" INTPTR_FORMAT " actual=" INTPTR_FORMAT,
             new_mark.hash(),
             old_mark.hash());
@@ -834,7 +834,7 @@ JVM_ENTRY(jint, JVM_IHashCode(JNIEnv* env, jobject handle))
 
     return checked_cast<jint>(new_mark.hash());
   } else {
-    return checked_cast<jint>(ObjectSynchronizer::FastHashCode(THREAD, obj));
+    return checked_cast<jint>(obj->identity_hash(THREAD));
   }
 JVM_END
 
