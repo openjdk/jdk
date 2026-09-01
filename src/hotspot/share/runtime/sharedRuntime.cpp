@@ -4223,7 +4223,6 @@ JRT_BLOCK_ENTRY(void, SharedRuntime::check_special_condition_for_native_trans(Ja
   assert(!current->has_last_Java_frame() || current->frame_anchor()->walkable(), "Unwalkable stack in native->Java transition");
 
   JRT_BLOCK
-  // To get here, a safepoint was pending when the assembly code polled.
   // This block looks empty, but the ThreadInVMfromJava hidden in the macro
   // does all the heavy lifting.
 
