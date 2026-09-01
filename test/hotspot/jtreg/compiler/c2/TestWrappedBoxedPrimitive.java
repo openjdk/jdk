@@ -38,10 +38,23 @@ package compiler.c2;
 import jdk.test.lib.Asserts;
 
 public class TestWrappedBoxedPrimitive {
-    private static final class Holder {
+    private static class Holder {
         Integer notZero = 0xbad;
+
+        Integer get() {
+            return notZero;
+        }
+
         private void touch () {
             notZero = 1234;
+        }
+    }
+
+    private static final class EvilHolder extends Holder {
+        @Override
+        Integer get() {
+            notZero = 1234;
+            return notZero;
         }
     }
 
@@ -62,17 +75,27 @@ public class TestWrappedBoxedPrimitive {
 
     }
 
+    private static int testGetter() {
+        Holder holder = new EvilHolder();
+        holder.get();
+        return holder.notZero;
+    }
+
     public static void main(String[] args) {
         int intHolderKlass = testHolderKlass();
         int intHolderArray = testArray();
+        int intHolderGetter = testGetter();
         for (int i = 0; i < 10_000; i++) {
             testHolderKlass();
             testArray();
+            testGetter();
         }
         int c2HolderKlass = testHolderKlass();
         int c2HolderArray = testArray();
+        int c2HolderGetter = testGetter();
 
         Asserts.assertEQ(intHolderKlass, c2HolderKlass);
         Asserts.assertEQ(intHolderArray, c2HolderArray);
+        Asserts.assertEQ(intHolderGetter, c2HolderGetter);
     }
 }
