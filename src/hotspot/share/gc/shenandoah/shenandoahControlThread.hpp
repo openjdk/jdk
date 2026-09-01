@@ -56,7 +56,6 @@ protected:
   void notify_alloc_stall(GCCause::Cause cause) override;
 
 private:
-  bool check_cancellation();
   void service_concurrent_normal_cycle(GCCause::Cause cause);
   void service_stw_full_cycle(GCCause::Cause cause);
 

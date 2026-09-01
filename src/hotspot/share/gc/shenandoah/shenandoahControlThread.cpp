@@ -58,11 +58,7 @@ void ShenandoahControlThread::run_service() {
 
   ShenandoahHeuristics* const heuristics = heap->heuristics();
   while (!should_terminate()) {
-    const GCCause::Cause cancelled_cause = heap->cancelled_cause();
-    if (cancelled_cause == GCCause::_shenandoah_stop_vm) {
-      break;
-    }
-    assert(cancelled_cause == GCCause::_no_gc, "Cannot be cancelled for: %s", GCCause::to_string(cancelled_cause));
+    assert(!heap->cancelled_gc() || should_terminate(), "Can only be cancelled for shutdown");
 
     // Figure out if we have pending requests.
     GCCause::Cause cause;
@@ -223,7 +219,7 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   // heuristics say there are no regions to compact, and all the collection comes from immediately
   // reclaimable regions, Shenandoah can skip the evacuation phase.
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  if (check_cancellation()) {
+  if (ShenandoahHeap::heap()->cancelled_gc()) {
     // Need to report at "gc" level to report GC ID proper.
     log_info(gc)("Cancelled before cycle started");
     return;
@@ -242,23 +238,8 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
     heap->log_heap_status("At end of GC");
   } else {
     assert(heap->cancelled_gc(), "Must have been cancelled");
-    check_cancellation();
     heap->log_heap_status("At end of cancelled GC");
   }
-}
-
-bool ShenandoahControlThread::check_cancellation() {
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  const GCCause::Cause cancelled_cause = heap->cancelled_cause();
-  if (cancelled_cause == GCCause::_no_gc) {
-    return false;
-  }
-
-  if (cancelled_cause == GCCause::_shenandoah_stop_vm) {
-    return true;
-  }
-
-  fatal("Unexpected reason for cancellation: %s", GCCause::to_string(cancelled_cause));
 }
 
 void ShenandoahControlThread::stop_service() {

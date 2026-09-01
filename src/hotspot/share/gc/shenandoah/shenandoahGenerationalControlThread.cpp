@@ -135,8 +135,7 @@ void ShenandoahGenerationalControlThread::check_for_request(ShenandoahGCRequest&
   // Hold the lock while we read request cause and generation
   MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
 
-  log_debug(gc, thread)("cancelled cause: %s, requested cause: %s",
-    GCCause::to_string(_heap->cancelled_cause()), GCCause::to_string(_requested_gc_cause));
+  log_debug(gc, thread)("Requested cause: %s", GCCause::to_string(_requested_gc_cause));
 
   request.cause = _requested_gc_cause;
   request.generation = _requested_generation;
@@ -157,14 +156,15 @@ void ShenandoahGenerationalControlThread::check_for_request(ShenandoahGCRequest&
   log_debug(gc, thread)("request.cause: %s, request.generation: %s",
     GCCause::to_string(request.cause), request.generation == nullptr ? "None" : request.generation->name());
 
-  _heap->clear_cancellation(request.cause);
   _requested_gc_cause = GCCause::_no_gc;
   _requested_generation = nullptr;
 
   if (request.cause == GCCause::_no_gc || request.cause == GCCause::_shenandoah_stop_vm) {
+    assert(!_heap->cancelled_gc() || _heap->is_shutting_down(), "Cancellation must not outlive an empty request");
     return;
   }
 
+  _heap->clear_cancelled_gc();
   assert(request.generation != nullptr, "request.generation cannot be null, cause is: %s", GCCause::to_string(request.cause));
 
   GCMode mode;
@@ -250,7 +250,7 @@ void ShenandoahGenerationalControlThread::clear_allocation_failure_and_notify_wa
       // for reclaimed memory. We'll wake them up, and they'll retry their allocation.
       // If our waiters cannot allocate, they will signal the control thread again
       // to start another cycle.
-      _heap->clear_cancellation(_requested_gc_cause);
+      _heap->clear_cancelled_gc();
       _requested_gc_cause = GCCause::_no_gc;
     }
 
@@ -366,7 +366,7 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
   }
 
   log_debug(gc, thread)("Completed GC (%s): %s, %s, cancelled: %s",
-    gc_mode_name(gc_mode()), GCCause::to_string(request.cause), request.generation->name(), GCCause::to_string(_heap->cancelled_cause()));
+    gc_mode_name(gc_mode()), GCCause::to_string(request.cause), request.generation->name(), BOOL_TO_STR(_heap->cancelled_gc()));
 }
 
 // Young and old concurrent cycles are initiated by the regulator. Implicit

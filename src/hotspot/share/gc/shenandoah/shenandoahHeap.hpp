@@ -443,14 +443,14 @@ private:
   // the responsiveness of the heuristic when starting a cycle.
   double _cancel_requested_time;
 
-  // Indicates the reason the current GC has been cancelled (GCCause::_no_gc means the gc is not cancelled).
-  ShenandoahSharedEnumFlag<GCCause::Cause> _cancelled_gc;
+  // True when gc threads should stop
+  ShenandoahSharedFlag _cancelled_gc;
 
   // Returns true if cancel request was successfully communicated.
   // Returns false if some other thread already communicated cancel
   // request.  A true return value does not mean GC has been
   // cancelled, only that the process of cancelling GC has begun.
-  bool try_cancel_gc(GCCause::Cause cause);
+  bool try_cancel_gc();
 
 public:
   // True if gc has been cancelled
@@ -459,15 +459,8 @@ public:
   // Used by workers in the GC cycle to detect cancellation and honor STS requirements
   inline bool check_cancelled_gc_and_yield(bool sts_active = true);
 
-  // This indicates the reason the last GC cycle was cancelled.
-  inline GCCause::Cause cancelled_cause() const;
-
-  // Clears the cancellation cause and resets the oom handler
+  // Clears the cancellation
   inline void clear_cancelled_gc();
-
-  // Clears the cancellation cause iff the current cancellation reason equals the given
-  // expected cancellation cause. Does not reset the oom handler.
-  inline GCCause::Cause clear_cancellation(GCCause::Cause expected);
 
   void cancel_concurrent_mark();
 
