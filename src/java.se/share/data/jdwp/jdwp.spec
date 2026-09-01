@@ -2168,11 +2168,12 @@ JDWP "Java(tm) Debug Wire Protocol"
             (Error INVALID_OBJECT    "Thread or value is not a known ID.")
             (Error THREAD_NOT_SUSPENDED)
             (Error OPAQUE_FRAME      "Unable to force the current frame to return "
-                                     "(e.g. the current frame is executing a native method or "
-                                     "the current frame is a constructor of a class with "
-                                     "strictly-initialized instance fields in its class "
-                                     "hierarchy or the class initializer of a class with "
-                                     "strictly-initialized static fields).")
+                                     "(e.g. the current frame is executing a native method or, "
+                                     "if preview features are enabled in the target VM, "
+                                     "either the current frame is a constructor of a class "
+                                     "with strictly-initialized instance fields in its class "
+                                     "hierarchy or the current frame is the class initializer "
+                                     "of a class with strictly-initialized static fields).")
             (Error NO_MORE_FRAMES)
             (Error NOT_IMPLEMENTED)
             (Error TYPE_MISMATCH   "Value is not an appropriate type for the "

@@ -3432,9 +3432,10 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           The implementation is unable to force the current frame to return
           (e.g. the current frame is executing a native method or, if preview features
-          are enabled, the current frame is a constructor of a class with
-          strictly-initialized instance fields in its class hierarchy or the class
-          initializer of a class with strictly-initialized static fields.)
+          are enabled, either the current frame is a constructor of a class with
+          strictly-initialized instance fields in its class hierarchy or the current
+          frame is the class initializer of a class with strictly-initialized static
+          fields.)
         </error>
         <error id="JVMTI_ERROR_TYPE_MISMATCH">
           The called method has a result type.
