@@ -116,12 +116,14 @@ void ShenandoahObjToScanQueueSet::rebalance(size_t target_queues) {
     }
   }
 
-  // If there is leftover work in overflow stack, move it into local queue.
+  // If there is leftover work in overflow stack, shift it into local queue.
   // This exposes tasks to work-stealing. Avoid filling out the local queue
   // completely: we want to leave some space for local pushes.
   for (uint i = 0; i < GenericTaskQueueSet::size(); i++) {
     ShenandoahObjToScanQueue* q = queue(i);
-    size_t to_balance = MIN2<size_t>(q->overflow_stack()->size(), (q->capacity() - q->size()) / 3 * 4);
+    size_t q_limit = q->capacity() / 3 * 4;
+    size_t q_free  = (q_limit > q->size()) ? (q_limit - q->size()) : 0;
+    size_t to_balance = MIN2<size_t>(q->overflow_stack()->size(), q_free);
     for (size_t c = 0; c < to_balance; c++) {
       bool succ_pop = q->pop_overflow(t);
       assert(succ_pop, "Must succeed");
@@ -133,16 +135,20 @@ void ShenandoahObjToScanQueueSet::rebalance(size_t target_queues) {
 #ifdef ASSERT
   // Final checks.
   assert(ts.is_empty(), "Must be empty");
+  size_t total_after = 0;
   for (uint i = 0; i < GenericTaskQueueSet::size(); i++) {
     ShenandoahObjToScanQueue* q = queue(i);
     if (i < target_queues) {
-      assert((target_size <= q->full_size() + 1) && (q->full_size() <= target_size + 1),
+      size_t full_size = q->full_size();
+      assert((target_size <= full_size + 1) && (full_size <= target_size + 1),
              "Queue size (%zu) is off the target (%zu)",
-              q->full_size(), target_size);
+              full_size, target_size);
+      total_after += full_size;
     } else {
       assert(q->is_empty(), "Queue must be empty");
     }
   }
+  assert(total == total_after, "Lost elements: %zu vs %zu", total, total_after);
 #endif
 }
 
