@@ -162,8 +162,7 @@ uint32_t MacroAssembler::get_membar_kind(address addr) {
   assert_cond(addr != nullptr);
   assert(is_membar(addr), "no membar found");
 
-  uint32_t insn = Bytes::get_native_u4(addr);
-
+  uint32_t insn = Assembler::ld_instr(addr);
   uint32_t predecessor = Assembler::extract(insn, 27, 24);
   uint32_t successor = Assembler::extract(insn, 23, 20);
 
@@ -179,7 +178,7 @@ void MacroAssembler::set_membar_kind(address addr, uint32_t order_kind) {
 
   MacroAssembler::membar_mask_to_pred_succ(order_kind, predecessor, successor);
 
-  uint32_t insn = Bytes::get_native_u4(addr);
+  uint32_t insn = Assembler::ld_instr(addr);
   address pInsn = (address) &insn;
   Assembler::patch(pInsn, 27, 24, predecessor);
   Assembler::patch(pInsn, 23, 20, successor);
