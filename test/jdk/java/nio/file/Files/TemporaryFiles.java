@@ -75,11 +75,15 @@ class TemporaryFiles {
         return Stream.of(
                 Arguments.arguments(null, null, null),
                 Arguments.arguments(null, "blah", null),
+                Arguments.arguments(null, "", null),
                 Arguments.arguments(null, null, ".dat"),
+                Arguments.arguments(null, null, ""),
                 Arguments.arguments(null, "blah", ".dat"),
                 Arguments.arguments(TEST_TMPDIR, null, null),
                 Arguments.arguments(TEST_TMPDIR, "blah", null),
+                Arguments.arguments(TEST_TMPDIR, "", null),
                 Arguments.arguments(TEST_TMPDIR, null, ".dat"),
+                Arguments.arguments(TEST_TMPDIR, null, ""),
                 Arguments.arguments(TEST_TMPDIR, "blah", ".dat")
         );
     }
@@ -93,11 +97,13 @@ class TemporaryFiles {
         try {
             // check file name
             String name = file.getFileName().toString();
-            if (prefix != null) {
+            if (prefix != null && !prefix.isEmpty()) {
                 assertTrue(name.startsWith(prefix), "Should start with " + prefix);
             }
-            String expectedSuffix = (suffix != null) ? suffix : ".tmp";
-            assertTrue(name.endsWith(expectedSuffix), "Should end with " + expectedSuffix);
+            if (suffix == null || !suffix.isEmpty()) {
+                String expectedSuffix = (suffix != null) ? suffix : ".tmp";
+                assertTrue(name.endsWith(expectedSuffix), "Should end with " + expectedSuffix);
+            }
 
             // check file is in expected directory
             Path expectedDir = (dir != null) ? dir : SYS_TMPDIR;
@@ -127,8 +133,10 @@ class TemporaryFiles {
         return Stream.of(
                 Arguments.arguments(null, null),
                 Arguments.arguments(null, "blah"),
+                Arguments.arguments(null, ""),
                 Arguments.arguments(TEST_TMPDIR, null),
-                Arguments.arguments(TEST_TMPDIR, "blah")
+                Arguments.arguments(TEST_TMPDIR, "blah"),
+                Arguments.arguments(TEST_TMPDIR, "")
         );
     }
 
@@ -140,7 +148,7 @@ class TemporaryFiles {
             Files.createTempDirectory(dir, prefix);
         try {
             // check directory name
-            if (prefix != null) {
+            if (prefix != null && !prefix.isEmpty()) {
                 String name = subdir.getFileName().toString();
                 assertTrue(name.startsWith(prefix), "Should start with " + prefix);
             }
@@ -250,6 +258,19 @@ class TemporaryFiles {
                 Files.delete(dir);
             }
         }
+    }
+
+    /**
+     * Test Files.createTempXXX with an attribute that cannot be set.
+     */
+    @Test
+    void testUnknownAttribute() {
+        var attr  = new FileAttribute<String>() {
+            @Override public String name()  { return "unknown"; }
+            @Override public String value() { return "foo"; }
+        };
+        assertThrows(UnsupportedOperationException.class, () -> Files.createTempFile("blah", ".dat", attr));
+        assertThrows(UnsupportedOperationException.class, () -> Files.createTempDirectory("blah", attr));
     }
 
     /**
