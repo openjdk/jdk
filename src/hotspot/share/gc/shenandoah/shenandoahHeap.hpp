@@ -546,6 +546,7 @@ private:
 
 public:
   ShenandoahController*   control_thread() const { return _control_thread; }
+  inline bool is_stopping() const;
 
   ShenandoahGeneration*      global_generation() const { return _global_generation; }
   ShenandoahYoungGeneration* young_generation()  const {

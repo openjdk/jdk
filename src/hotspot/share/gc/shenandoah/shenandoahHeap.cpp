@@ -2280,7 +2280,7 @@ size_t ShenandoahHeap::tlab_used() const {
 }
 
 bool ShenandoahHeap::try_cancel_gc() {
-  return _cancelled_gc.try_set();
+  return !is_stopping() && _cancelled_gc.try_set();
 }
 
 void ShenandoahHeap::cancel_concurrent_mark() {

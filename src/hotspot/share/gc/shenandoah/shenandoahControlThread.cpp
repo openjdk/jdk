@@ -243,7 +243,7 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
 }
 
 void ShenandoahControlThread::stop_service() {
-  ShenandoahHeap::heap()->cancel_gc(GCCause::_shenandoah_stop_vm);
+  // Nothing to do here, worker threads will also check should_terminate, by way of shHeap::is_stopping.
 }
 
 void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {

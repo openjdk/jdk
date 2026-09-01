@@ -251,8 +251,12 @@ inline void ShenandoahHeap::atomic_clear_oop(narrowOop* addr, narrowOop compare)
   AtomicAccess::cmpxchg(addr, compare, narrowOop(), memory_order_relaxed);
 }
 
+inline bool ShenandoahHeap::is_stopping() const {
+  return control_thread()->should_terminate();
+}
+
 inline bool ShenandoahHeap::cancelled_gc() const {
-  return _cancelled_gc.is_set();
+  return _cancelled_gc.is_set() || is_stopping();
 }
 
 inline bool ShenandoahHeap::check_cancelled_gc_and_yield(bool sts_active) {

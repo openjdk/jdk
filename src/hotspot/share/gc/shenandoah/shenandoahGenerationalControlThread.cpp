@@ -109,7 +109,6 @@ void ShenandoahGenerationalControlThread::run_service() {
 void ShenandoahGenerationalControlThread::stop_service() {
   log_debug(gc, thread)("Stopping control thread");
   MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
-  _heap->cancel_gc(GCCause::_shenandoah_stop_vm);
   notify_control_thread(ml, GCCause::_shenandoah_stop_vm);
   // We can't wait here because it may interfere with the active cycle's ability
   // to reach a safepoint (this runs on a java thread).
@@ -158,13 +157,12 @@ void ShenandoahGenerationalControlThread::check_for_request(ShenandoahGCRequest&
 
   _requested_gc_cause = GCCause::_no_gc;
   _requested_generation = nullptr;
+  _heap->clear_cancelled_gc();
 
   if (request.cause == GCCause::_no_gc || request.cause == GCCause::_shenandoah_stop_vm) {
-    assert(!_heap->cancelled_gc() || _heap->is_shutting_down(), "Cancellation must not outlive an empty request");
     return;
   }
 
-  _heap->clear_cancelled_gc();
   assert(request.generation != nullptr, "request.generation cannot be null, cause is: %s", GCCause::to_string(request.cause));
 
   GCMode mode;
@@ -249,8 +247,8 @@ void ShenandoahGenerationalControlThread::clear_allocation_failure_and_notify_wa
       // If an allocation failure occurred during this cycle, we'll have threads waiting
       // for reclaimed memory. We'll wake them up, and they'll retry their allocation.
       // If our waiters cannot allocate, they will signal the control thread again
-      // to start another cycle.
-      _heap->clear_cancelled_gc();
+      // to start another cycle. If we didn't clear the request here, the control thread would
+      // immediately begin another allocation failure cycle.
       _requested_gc_cause = GCCause::_no_gc;
     }
 

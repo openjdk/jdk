@@ -124,7 +124,7 @@ void ShenandoahGenerationalEvacuationTask::evacuate_and_promote_regions() {
 
     if (_heap->check_cancelled_gc_and_yield()) {
       // GC is cancelled (vm is stopping), no further work
-      assert(_heap->is_shutting_down(), "Can only stop evacuation for shutdown");
+      assert(_heap->is_stopping(), "Can only stop evacuation for shutdown");
       return;
     }
   }
