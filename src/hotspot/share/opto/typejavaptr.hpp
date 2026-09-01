@@ -355,7 +355,8 @@ private:
         if (both_are_exact) {
           return exact_klass != other_klass || exact_type->interfaces() != other_type->interfaces();
         } else {
-          return !exact_klass->is_subtype_of(other_klass) || !exact_type->interfaces()->contains(other_type->interfaces());
+          return !other_klass->is_loaded() || !exact_klass->is_subtype_of(other_klass) ||
+                 !exact_type->interfaces()->contains(other_type->interfaces());
         }
       }
 
