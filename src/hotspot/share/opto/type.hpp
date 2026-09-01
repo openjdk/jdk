@@ -423,6 +423,8 @@ public:
 #endif // !PRODUCT
   [[noreturn]] void typerr(const Type *t) const; // Mixing types error
 
+  DEBUG_ONLY(static void verify_meet_join());
+
   // Create basic type
   static const Type* get_const_basic_type(BasicType type) {
     assert((uint)type <= T_CONFLICT && _const_basic_type[type] != nullptr, "bad type");
