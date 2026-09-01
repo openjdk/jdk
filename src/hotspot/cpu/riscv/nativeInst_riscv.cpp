@@ -234,7 +234,7 @@ void NativeMovConstReg::verify() {
 intptr_t NativeMovConstReg::data() const {
   address addr = MacroAssembler::target_addr_for_insn(instruction_address());
   if (maybe_cpool_ref(instruction_address())) {
-    return Bytes::get_native_u8(addr);
+    return MacroAssembler::get_native_u8(addr);
   } else {
     return (intptr_t)addr;
   }
@@ -243,7 +243,7 @@ intptr_t NativeMovConstReg::data() const {
 void NativeMovConstReg::set_data(intptr_t x) {
   if (maybe_cpool_ref(instruction_address())) {
     address addr = MacroAssembler::target_addr_for_insn(instruction_address());
-    Bytes::put_native_u8(addr, x);
+    MacroAssembler::put_native_u8(addr, x);
   } else {
     // Store x into the instruction stream.
     MacroAssembler::pd_patch_instruction_size(instruction_address(), (address)x);
@@ -259,11 +259,11 @@ void NativeMovConstReg::set_data(intptr_t x) {
     while (iter.next()) {
       if (iter.type() == relocInfo::oop_type) {
         oop* oop_addr = iter.oop_reloc()->oop_addr();
-        Bytes::put_native_u8((address)oop_addr, x);
+        MacroAssembler::put_native_u8((address)oop_addr, x);
         break;
       } else if (iter.type() == relocInfo::metadata_type) {
         Metadata** metadata_addr = iter.metadata_reloc()->metadata_addr();
-        Bytes::put_native_u8((address)metadata_addr, x);
+        MacroAssembler::put_native_u8((address)metadata_addr, x);
         break;
       }
     }

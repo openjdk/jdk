@@ -670,7 +670,7 @@ bool CgroupSubsystem::active_processor_count(int (*cpu_bound_func)(), double& va
  *
  * return:
  *    false if retrieving the value failed
- *    true if retrieving the value was successfull and the value was
+ *    true if retrieving the value was successful and the value was
  *    set in the 'value' reference.
  */
 bool CgroupSubsystem::memory_limit_in_bytes(physical_memory_size_type upper_bound,

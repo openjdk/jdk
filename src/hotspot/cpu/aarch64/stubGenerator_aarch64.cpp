@@ -729,9 +729,6 @@ class StubGenerator: public StubCodeGenerator {
     __ call_VM_leaf(CAST_FROM_FN_PTR(address,
                          SharedRuntime::exception_handler_for_return_address),
                     rthread, c_rarg1);
-    // Reinitialize the ptrue predicate register, in case the external runtime
-    // call clobbers ptrue reg, as we may return to SVE compiled code.
-    __ reinitialize_ptrue();
 
     // we should not really care that lr is no longer the callee
     // address. we saved the value the handler needs in r19 so we can
@@ -830,7 +827,7 @@ class StubGenerator: public StubCodeGenerator {
     assert(frame::arg_reg_save_area_bytes == 0, "not expecting frame reg save area");
 #endif
     BLOCK_COMMENT("call MacroAssembler::debug");
-    __ mov(rscratch1, CAST_FROM_FN_PTR(address, MacroAssembler::debug64));
+    __ lea(rscratch1, RuntimeAddress(CAST_FROM_FN_PTR(address, MacroAssembler::debug64)));
     __ blr(rscratch1);
     __ hlt(0);
 
@@ -2623,11 +2620,13 @@ class StubGenerator: public StubCodeGenerator {
     __ eor(rscratch2, rscratch2, scratch_src_klass);
     __ cbnz(rscratch2, L_failed);
 
-    // Check for flat inline type array -> return -1
-    __ test_flat_array_oop(src, rscratch2, L_failed);
+    if (Arguments::is_valhalla_enabled()) {
+      // Check for flat inline type array -> return -1
+      __ test_flat_array_oop(src, rscratch2, L_failed);
 
-    // Check for null-free (non-flat) inline type array -> handle as object array
-    __ test_null_free_array_oop(src, rscratch2, L_objArray);
+      // Check for null-free (non-flat) inline type array -> handle as object array
+      __ test_null_free_array_oop(src, rscratch2, L_objArray);
+    }
 
     //  if (!src->is_Array()) return -1;
     __ tbz(lh, 31, L_failed);  // i.e. (lh >= 0)
@@ -12515,9 +12514,6 @@ class StubGenerator: public StubCodeGenerator {
 
       __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), rthread, c_rarg1);
 
-      // Reinitialize the ptrue predicate register, in case the external runtime call clobbers ptrue reg, as we may return to SVE compiled code.
-      // __ reinitialize_ptrue();
-
       // see OptoRuntime::generate_exception_blob: r0 -- exception oop, r3 -- exception pc
 
       __ mov(r1, r0); // the exception handler
@@ -12830,7 +12826,7 @@ class StubGenerator: public StubCodeGenerator {
     // Native caller has no idea how to handle exceptions,
     // so we just crash here. Up to callee to catch exceptions.
     __ verify_oop(r0);
-    __ movptr(rscratch1, CAST_FROM_FN_PTR(uint64_t, UpcallLinker::handle_uncaught_exception));
+    __ lea(rscratch1, RuntimeAddress(CAST_FROM_FN_PTR(address, UpcallLinker::handle_uncaught_exception)));
     __ blr(rscratch1);
     __ should_not_reach_here();
 

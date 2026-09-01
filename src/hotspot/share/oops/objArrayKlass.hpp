@@ -50,7 +50,6 @@ class ObjArrayKlass : public ArrayKlass {
 
   static ArrayDescription array_layout_selection(Klass* element, ArrayProperties properties);
   ObjArrayKlass* allocate_klass_from_description(ArrayDescription ad, TRAPS);
-  ObjArrayKlass* klass_from_description(ArrayDescription adesc, TRAPS);
 
   inline ObjArrayKlass* next_refined_array_klass_acquire() const;
   inline void release_set_next_refined_klass(ObjArrayKlass* ak);
@@ -74,6 +73,7 @@ class ObjArrayKlass : public ArrayKlass {
   Klass* element_klass() const      { return _element_klass; }
 
   ObjArrayKlass* klass_with_properties(ArrayProperties props, TRAPS);
+  ObjArrayKlass* klass_from_description(ArrayDescription adesc, TRAPS);
 
   ObjArrayKlass* next_refined_array_klass() const   { return _next_refined_array_klass; }
   bool find_refined_array_klass(ObjArrayKlass* k);
@@ -100,9 +100,12 @@ class ObjArrayKlass : public ArrayKlass {
                                                 int n, Klass* element_klass, TRAPS);
 
   oop multi_allocate(int rank, jint* sizes, TRAPS) override;
+  virtual objArrayOop allocate_instance(int length, TRAPS);
 
   // Copying
   void copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos, int length, TRAPS) override;
+  void array_copy_offsets_and_range_check(arrayOop s, int src_pos,
+                                          arrayOop d, int dst_pos, int length, TRAPS);
 
   // Compute protection domain
   oop protection_domain() const override { return bottom_klass()->protection_domain(); }

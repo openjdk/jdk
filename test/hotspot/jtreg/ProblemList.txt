@@ -71,8 +71,6 @@ compiler/escapeAnalysis/TestBCEscapeAnalyzerOverflow.java 8387392 windows-aarch6
 
 compiler/vectorapi/VectorStoreMaskIdentityTest.java 8388281 generic-all
 
-compiler/igvn/TestMaskedStoreIdealization.java 8388490 generic-all
-
 #############################################################################
 
 # :hotspot_gc
@@ -104,12 +102,12 @@ runtime/os/TestTracePageSizes.java#Parallel 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#Serial 8267460 linux-aarch64
 runtime/ErrorHandling/MachCodeFramesInErrorFile.java 8313315 linux-ppc64le
 runtime/NMT/VirtualAllocCommitMerge.java 8309698 linux-s390x
-runtime/Thread/TestAlwaysPreTouchStacks.java 8383372 macosx-aarch64
 
 applications/jcstress/copy.java 8229852 linux-all
 
 containers/docker/TestJFREvents.java 8327723 linux-x64
-containers/docker/TestJcmdWithSideCar.java 8341518 linux-all
+containers/docker/TestLimitsUpdating.java 8390823 linux-all
+containers/docker/ShareTmpDir.java 8390823 linux-all
 
 #############################################################################
 
@@ -137,6 +135,8 @@ serviceability/sa/ClhsdbThreadContext.java        8356704 windows-x64
 serviceability/jvmti/stress/StackTrace/NotSuspended/GetStackTraceNotSuspendedStressTest.java 8315980 linux-all,windows-x64
 
 serviceability/jvmti/GetModulesInfo/JvmtiGetAllModulesTest.java 8385679 generic-all
+
+serviceability/jvmti/RedefineClasses/RedefineRunningMethodsWithBacktrace.java 8390812 windows-x64
 
 #############################################################################
 
@@ -205,8 +205,6 @@ compiler/codegen/TestRedundantLea.java#Spill                            8361089 
 compiler/vectorapi/TestVectorReassociations.java 8388927 generic-all
 
 serviceability/sa/TestJhsdbJstackMixedWithXComp.java#xcomp-disable-tiered-compilation 8386674 linux-aarch64
-
-vmTestbase/nsk/jvmti/IterateOverReachableObjects/iterreachobj002/TestDescription.java 8384882 linux-all
 
 # The following test failure(s) DID NOT reproduce during Tier[1-8] testing
 # done for 8377828. Further analysis was done with 8376235 and just one

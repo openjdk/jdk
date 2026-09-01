@@ -144,7 +144,7 @@ private:
     Atomic<TaskQueueEntryChunk*>* _buckets;
     char _pad0[DEFAULT_PADDING_SIZE];
     Atomic<size_t> _size;
-    char _pad4[DEFAULT_PADDING_SIZE - sizeof(size_t)];
+    char _pad4[DEFAULT_PADDING_SIZE - sizeof(_size)];
 
     size_t bucket_size(size_t bucket) {
       return (bucket == 0) ?
@@ -211,10 +211,10 @@ private:
 
   char _pad0[DEFAULT_PADDING_SIZE];
   Atomic<TaskQueueEntryChunk*> _free_list;  // Linked list of free chunks that can be allocated by users.
-  char _pad1[DEFAULT_PADDING_SIZE - sizeof(TaskQueueEntryChunk*)];
+  char _pad1[DEFAULT_PADDING_SIZE - sizeof(_free_list)];
   Atomic<TaskQueueEntryChunk*> _chunk_list; // List of chunks currently containing data.
   Atomic<size_t> _chunks_in_chunk_list;
-  char _pad2[DEFAULT_PADDING_SIZE - sizeof(TaskQueueEntryChunk*) - sizeof(_chunks_in_chunk_list)];
+  char _pad2[DEFAULT_PADDING_SIZE - sizeof(_chunk_list) - sizeof(_chunks_in_chunk_list)];
 
   // Atomically add the given chunk to the list.
   void add_chunk_to_list(Atomic<TaskQueueEntryChunk*>* list, TaskQueueEntryChunk* elem);
@@ -354,7 +354,6 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
                                               // always pointing to the end of the
                                               // last claimed region
 
-  uint                    _worker_id_offset;
   uint                    _max_num_tasks;    // Maximum number of marking tasks
   uint                    _num_active_tasks; // Number of tasks currently active
   G1CMTask**              _tasks;            // Task queue array (max_worker_id length)
@@ -566,8 +565,6 @@ public:
   inline void update_top_at_rebuild_start(G1HeapRegion* r);
   // TARS for the given region during remembered set rebuilding.
   inline HeapWord* top_at_rebuild_start(G1HeapRegion* r) const;
-
-  uint worker_id_offset() const { return _worker_id_offset; }
 
   // Fully allocates and initializes data structures for the concurrent cycle.
   // Methods that use concurrent cycle state such as the concurrent mark threads,

@@ -33,7 +33,7 @@
  *        panama_jni_use_module/*
  *
  *        org.openjdk.foreigntest.unnamed.PanamaMainUnnamedModule
- * @run testng/othervm/native/timeout=180 TestEnableNativeAccess
+ * @run junit/othervm/native/timeout=180 TestEnableNativeAccess
  * @summary Basic test for java --enable-native-access
  */
 
@@ -43,9 +43,11 @@ import java.util.stream.Stream;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Basic test of --enable-native-access with expected behaviour:
@@ -57,10 +59,9 @@ import static org.testng.Assert.*;
  *                            (on first access per module only)
 */
 
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestEnableNativeAccess extends TestEnableNativeAccessBase {
 
-    @DataProvider(name = "succeedCases")
     public Object[][] succeedCases() {
         return new Object[][] {
                 { "panama_enable_native_access", PANAMA_MAIN, successNoWarning(), new String[]{"--enable-native-access=panama_module"} },
@@ -110,7 +111,8 @@ public class TestEnableNativeAccess extends TestEnableNativeAccessBase {
         return outputAnalyzer;
     }
 
-    @Test(dataProvider = "succeedCases")
+    @ParameterizedTest
+    @MethodSource("succeedCases")
     public void testSucceed(String action, String cls, Result expectedResult, String... vmopts) throws Exception {
         run(action, cls, expectedResult, vmopts);
     }
@@ -119,6 +121,7 @@ public class TestEnableNativeAccess extends TestEnableNativeAccessBase {
      * Tests that without --enable-native-access, a multi-line warning is printed
      * on first access of a module.
      */
+    @Test
     public void testWarnFirstAccess() throws Exception {
         List<String> output1 = run("panama_enable_native_access_first", PANAMA_MAIN,
                 successWithWarning("panama")).asLines();
@@ -129,6 +132,7 @@ public class TestEnableNativeAccess extends TestEnableNativeAccessBase {
      * Specifies --enable-native-access more than once, each list of module names
      * is appended.
      */
+    @Test
     public void testRepeatedOption() throws Exception {
         run("panama_enable_native_access_last_one_wins", PANAMA_MAIN,
                 success(), "--enable-native-access=java.base", "--enable-native-access=panama_module");
@@ -139,6 +143,7 @@ public class TestEnableNativeAccess extends TestEnableNativeAccessBase {
     /**
      * Specifies bad value to --enable-native-access.
      */
+    @Test
     public void testBadValue() throws Exception {
         run("panama_deny_bad_unknown_module", PANAMA_MAIN,
                 failWithWarning("WARNING: Unknown module: BAD specified to --enable-native-access"),
@@ -160,6 +165,7 @@ public class TestEnableNativeAccess extends TestEnableNativeAccessBase {
                 "--illegal-native-access=deny");
     }
 
+    @Test
     public void testDetailedWarningMessage() throws Exception {
         run("panama_enable_native_access_warn_jni", PANAMA_JNI,
                 success()

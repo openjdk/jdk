@@ -324,11 +324,11 @@ void InlineTypeNode::make_scalar_in_safepoint(PhaseIterGVN* igvn, Unique_Node_Li
   }
 }
 
-void InlineTypeNode::make_scalar_in_safepoints(PhaseIterGVN* igvn, bool allow_oop) {
-  make_scalar_in_safepoints(igvn, allow_oop, nullptr);
+bool InlineTypeNode::make_scalar_in_safepoints(PhaseIterGVN* igvn, bool allow_oop) {
+  return make_scalar_in_safepoints(igvn, allow_oop, nullptr);
 }
 
-void InlineTypeNode::make_scalar_in_safepoints(PhaseIterGVN* igvn, bool allow_oop, SafePointNode* safepoint) {
+bool InlineTypeNode::make_scalar_in_safepoints(PhaseIterGVN* igvn, bool allow_oop, SafePointNode* safepoint) {
   // If the inline type has a constant or loaded oop, use the oop instead of scalarization
   // in the safepoint to avoid keeping field loads live just for the debug info.
   Node* oop = get_oop();
@@ -378,8 +378,13 @@ void InlineTypeNode::make_scalar_in_safepoints(PhaseIterGVN* igvn, bool allow_oo
     safepoints.push(safepoint);
   }
 
+  // Scalarize the inline type in all safepoint uses but first check if we
+  // have enough nodes left to create a new SafePointScalarObjectNode per use.
+  Compile* C = igvn->C;
+  if ((C->live_nodes() + safepoints.size() + NodeLimitFudgeFactor) > C->max_node_limit()) {
+    return false;
+  }
   Unique_Node_List vt_worklist;
-  // Process all safepoint uses and scalarize inline type
   while (safepoints.size() > 0) {
     SafePointNode* sfpt = safepoints.pop()->as_SafePoint();
     if (use_oop) {
@@ -397,11 +402,14 @@ void InlineTypeNode::make_scalar_in_safepoints(PhaseIterGVN* igvn, bool allow_oo
   // Now scalarize non-flat fields
   for (uint i = 0; i < vt_worklist.size(); ++i) {
     InlineTypeNode* vt = vt_worklist.at(i)->isa_InlineType();
-    vt->make_scalar_in_safepoints(igvn);
+    if (!vt->make_scalar_in_safepoints(igvn)) {
+      return false;
+    }
   }
   if (outcnt() == 0) {
     igvn->record_for_igvn(this);
   }
+  return true;
 }
 
 void InlineTypeNode::load(GraphKit* kit, Node* base, Node* ptr, bool immutable_memory, bool trust_null_free_oop, DecoratorSet decorators) {
@@ -598,14 +606,32 @@ static bool check_cycle(ciInlineKlass* vk) {
   return false;
 }
 
+// Check if 'lhs' and 'rhs' are the same oop, possibly wrapped in an InlineTypeNode.
+static bool same_oop(PhaseGVN* phase, Node* lhs, Node* rhs) {
+  InlineTypeNode* lhs_inline = lhs->isa_InlineType();
+  if (lhs_inline != nullptr && lhs_inline->is_allocated(phase)) {
+    lhs = lhs_inline->get_oop();
+  }
+  InlineTypeNode* rhs_inline = rhs->isa_InlineType();
+  if (rhs_inline != nullptr && rhs_inline->is_allocated(phase)) {
+    rhs = rhs_inline->get_oop();
+  }
+  return lhs->eqv_uncast(rhs);
+}
+
 // Check if a substitutability check between 'lhs' and 'rhs' can be implemented in IR
-bool InlineTypeNode::can_emit_substitutability_check(Node* lhs, Node* rhs) {
+bool InlineTypeNode::can_emit_substitutability_check(PhaseGVN* phase, Node* lhs, Node* rhs) {
+  // We can't create new InlineTypeNodes after macro expansion
+  if (!phase->C->allow_macro_nodes()) {
+    return false;
+  }
+
   if (!lhs->bottom_type()->isa_ptr() ||
       (rhs != nullptr && !rhs->bottom_type()->isa_ptr())) {
     return false;
   }
 
-  if (rhs != nullptr && lhs->eqv_uncast(rhs)) {
+  if (rhs != nullptr && same_oop(phase, lhs, rhs)) {
     return true;
   }
 
@@ -641,7 +667,7 @@ bool InlineTypeNode::can_emit_substitutability_check(Node* lhs, Node* rhs) {
 
     Node* lhs_fv = lhs_inline->field_value(i);
     Node* rhs_fv = rhs_inline != nullptr ? rhs_inline->field_value(i) : nullptr;
-    if (!can_emit_substitutability_check(lhs_fv, rhs_fv)) {
+    if (!can_emit_substitutability_check(phase, lhs_fv, rhs_fv)) {
       return false;
     }
   }
@@ -696,7 +722,7 @@ static Node* emit_substitutability_check_pointer(GraphKit* kit, PhiNode* result,
   }
 
   Node* cmp = nullptr;
-  if (lhs->eqv_uncast(rhs)) {
+  if (same_oop(&gvn, lhs, rhs)) {
     cmp = kit->intcon(0);
   } else if (!lhs_type->is_ptr()->can_be_inline_type() || !rhs_type->is_ptr()->can_be_inline_type()) {
     // If one of the sides is not a value object, can only be substitutable if they are the same
@@ -993,6 +1019,115 @@ Node* InlineTypeNode::emit_substitutability_check(GraphKit* kit, Node* lhs, Node
 
   kit->set_control(region);
   return result;
+}
+
+// Check if identityHashCode of 'arg' can be implemented in IR.
+// Set klass_hash to be used as the seed of the hash. It might not be available later,
+// and we want emit_identity_hash_code not to fail on that.
+bool InlineTypeNode::can_emit_identity_hash_code(const PhaseIterGVN& igvn, Node* arg, intptr_t& klass_hash) {
+  const Type* arg_type = igvn.type(arg);
+  if (arg_type == TypePtr::NULL_PTR) {
+    return true;
+  }
+  if (!arg_type->is_inlinetypeptr()) {
+    return false;
+  }
+  ciInlineKlass* vk = arg_type->inline_klass();
+  if (vk->number_of_oop_entries_in_acmp_map() > 0) {
+    return false;
+  }
+  klass_hash = vk->java_mirror()->hash();
+  if (klass_hash == markWord::no_hash) {
+    return false;
+  }
+  return true;
+}
+
+Node* InlineTypeNode::emit_identity_hash_code(GraphKit* kit, Node* arg, intptr_t klass_hash) {
+  if (!kit->C->allow_macro_nodes()) {
+    // After macro expansion, InlineTypeNodes are also eliminated, creation of new ones then is not
+    // allowed
+    return nullptr;
+  }
+  PhaseIterGVN& igvn = *kit->gvn().is_IterGVN();
+
+  RegionNode* region = new RegionNode(1);
+  PhiNode* phi_result = new PhiNode(region, TypeInt::INT);
+  igvn.register_new_node_with_optimizer(region);
+  igvn.register_new_node_with_optimizer(phi_result);
+
+  Node* null_ctl = kit->top();
+  arg = kit->null_check_oop(arg, &null_ctl, false, false, false);
+  if (!null_ctl->is_top()) {
+    region->add_req(null_ctl);
+    phi_result->add_req(kit->intcon(0));
+  }
+  const Type* arg_type = igvn.type(arg);
+  if (arg_type->empty()) {
+    kit->set_control(region);
+    return phi_result;
+  }
+
+  assert(arg_type->is_inlinetypeptr(), "should be a value object at this point");
+  assert(!arg_type->maybe_null(), "must check null beforehand");
+  ciInlineKlass* vk = arg_type->inline_klass();
+  int number_of_nonoop_entries = vk->number_of_nonoop_entries_in_acmp_map();
+  assert(vk->number_of_oop_entries_in_acmp_map() == 0, "cannot have oops here");
+
+  auto make_load = [&](int offset, const Type* type, BasicType bt) -> Node* {
+    Node* adr = kit->basic_plus_adr(arg, offset);
+    ciField* field = vk->get_field_by_offset(offset, false);
+    // If the load is by chance not a mismatch, let's mark it so. This way, loading the field can be simplified
+    bool is_mismatch = field == nullptr || field->type()->basic_type() != bt;
+    if (bt == T_BYTE && field != nullptr && field->type()->basic_type() == T_BOOLEAN) {
+      is_mismatch = false;
+      bt = T_BOOLEAN;
+      type = TypeInt::BOOL;
+    }
+    return kit->make_load(kit->control(), adr, type, bt, MemNode::unordered, LoadNode::DependsOnlyOnTest, false, false, is_mismatch, is_mismatch);
+  };
+
+  Node* const thirty_one = kit->intcon(31);
+  Node* result = kit->intcon(checked_cast<jint>(klass_hash));
+  for (int i = 0; i < number_of_nonoop_entries; i++) {
+    AcmpMapSegment segment = vk->get_nonoop_segment_of_acmp_map(i);
+    int offset = segment._offset;
+    int size = segment._size;
+    int nlong = size / 8;
+    for (int j = 0; j < nlong; j++) {
+      Node* la = make_load(offset, TypeLong::LONG, T_LONG);
+      result = kit->AddI(kit->MulI(thirty_one, result), kit->ConvL2I(la));
+      result = kit->AddI(kit->MulI(thirty_one, result), kit->ConvL2I(kit->URShiftL(la, kit->intcon(32))));
+      offset += 8;
+    }
+    size -= nlong * 8;
+    int nint = size / 4;
+    for (int j = 0; j < nint; j++) {
+      Node* ia = make_load(offset, TypeInt::INT, T_INT);
+      result = kit->AddI(kit->MulI(thirty_one, result), ia);
+      offset += 4;
+    }
+    size -= nint * 4;
+    int nshort = size / 2;
+    for (int j = 0; j < nshort; j++) {
+      Node* sa = make_load(offset, TypeInt::SHORT, T_SHORT);
+      result = kit->AddI(kit->MulI(thirty_one, result), sa);
+      offset += 2;
+    }
+    size -= nshort * 2;
+    for (int j = 0; j < size; j++) {
+      Node* ba = make_load(offset, TypeInt::BYTE, T_BYTE);
+      result = kit->AddI(kit->MulI(thirty_one, result), ba);
+      offset++;
+    }
+  }
+  result = kit->AndI(result, kit->intcon(markWord::hash_mask));
+
+  region->add_req(kit->control());
+  phi_result->add_req(result);
+
+  kit->set_control(region);
+  return phi_result;
 }
 
 InlineTypeNode* InlineTypeNode::buffer(GraphKit* kit, bool safe_for_replace) {
@@ -2287,10 +2422,12 @@ const Type* LoadFlatNode::Value(PhaseGVN* phase) const {
 }
 
 const Type* StoreFlatNode::Value(PhaseGVN* phase) const {
+  Node* val = in(TypeFunc::Parms + 2);
   if (phase->type(in(TypeFunc::Control)) == Type::TOP || phase->type(in(TypeFunc::Memory)) == Type::TOP ||
-      phase->type(base()) == Type::TOP || phase->type(ptr()) == Type::TOP || phase->type(value()) == Type::TOP) {
+      phase->type(base()) == Type::TOP || phase->type(ptr()) == Type::TOP || phase->type(val) == Type::TOP) {
     return Type::TOP;
   }
+  assert(val->is_InlineType(), "must be InlineTypeNode: %s", val->Name());
   return bottom_type();
 }
 

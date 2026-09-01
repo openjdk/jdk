@@ -322,7 +322,7 @@ class JvmtiExport : public AllStatic {
   static JvmtiThreadState* hide_single_stepping(JavaThread *thread) NOT_JVMTI_RETURN_(nullptr);
 
   // frame pop management
-  static bool has_frame_pop_for_top_frame(JavaThread *current);
+  static bool has_frame_pop_for_top_frame(JavaThread *current) NOT_JVMTI_RETURN_(false);
 
   // Methods that notify the debugger that something interesting has happened in the VM.
   static void post_early_vm_start        () NOT_JVMTI_RETURN;
