@@ -3762,6 +3762,7 @@ TypeOopPtr::TypeOopPtr(TYPES t, PTR ptr, ciKlass* k, const TypeInterfaces* inter
     interfaces->verify_is_loaded();
   }
   assert(instance_id != InstanceTop, "must not have top instance_id");
+  assert(xk || instance_id == InstanceBot, "a known instance must have an exact type");
   assert(ptr != Constant || instance_id == InstanceBot, "a constant cannot have an instance_id");
 #endif
   if (Compile::current()->eliminate_boxing() && (t == InstPtr) &&
@@ -5534,9 +5535,10 @@ const Type* TypeMetadataPtr::xjoin(const Type* t) const {
   switch (t->base()) {
     case AnyPtr: {
       const TypePtr* tp = t->is_ptr();
-      PTR ptr = join_ptr(tp->ptr());
       Offset offset = join_offset(tp->offset());
-      switch (tp->ptr()) {
+      PTR other_ptr = offset == Offset::top ? TopPTR : tp->ptr();
+      PTR ptr = join_ptr(other_ptr);
+      switch (other_ptr) {
         case TopPTR:
         case Null:
           return TypePtr::make(AnyPtr, ptr, offset, tp->speculative(), tp->inline_depth());
@@ -5887,9 +5889,10 @@ const Type* TypeInstKlassPtr::xjoin(const Type* t) const {
   switch (t->base()) {
     case AnyPtr: {
       const TypePtr* tp = t->is_ptr();
-      PTR ptr = join_ptr(tp->ptr());
       Offset offset = join_offset(tp->offset());
-      switch (tp->ptr()) {
+      PTR other_ptr = offset == Offset::top ? TopPTR : tp->ptr();
+      PTR ptr = join_ptr(other_ptr);
+      switch (other_ptr) {
         case TopPTR:
         case Null:
           return TypePtr::make(AnyPtr, ptr, offset, tp->speculative(), tp->inline_depth());
@@ -6376,9 +6379,10 @@ const Type* TypeAryKlassPtr::xjoin(const Type* t) const {
   switch (t->base()) {
     case AnyPtr: {
       const TypePtr* tp = t->is_ptr();
-      PTR ptr = join_ptr(tp->ptr());
       Offset offset = join_offset(tp->offset());
-      switch (tp->ptr()) {
+      PTR other_ptr = offset == Offset::top ? TopPTR : tp->ptr();
+      PTR ptr = join_ptr(other_ptr);
+      switch (other_ptr) {
         case TopPTR:
         case Null:
           return TypePtr::make(AnyPtr, ptr, offset, tp->speculative(), tp->inline_depth());
