@@ -581,6 +581,7 @@ void StubRoutines::init_AOTAddressTable() {
   // add the relevant addresses, is declared in a source file rather
   // than in a separately includeable header.
   StubGenerator_init_AOTAddressTable(external_addresses);
+  external_addresses.append(crc32c_table_addr());
   AOTCodeCache::publish_external_addresses(external_addresses);
 }
 #endif // INCLUDE_CDS
