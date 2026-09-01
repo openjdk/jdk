@@ -25,7 +25,6 @@
 
 package jdk.incubator.json;
 
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -100,7 +99,7 @@ public non-sealed interface JsonObject extends JsonValue {
         Objects.requireNonNull(map);
 
         if (map.isEmpty()) {
-            return new JsonObjectImpl(Collections.emptyMap());
+            return new JsonObjectImpl(LinkedHashMap.newLinkedHashMap(0));
         } else {
             var m = new LinkedHashMap<String, JsonValue>();
             for (var e : map.entrySet()) {
