@@ -32,7 +32,7 @@
 // STLXR.
 
 // CompareAndSwapX, GetAndSetX, and GetAndAddX represent sequentially
-// consistent operations. C2 therefore emits a trailing MemBarAcquire for
+// consistent operations. C2 emits a trailing MemBarAcquire for
 // these nodes, so their AArch64 implementation always needs acquire semantics.
 // Non-acquiring match rules would consequently be unreachable.
 
