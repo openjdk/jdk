@@ -4308,33 +4308,6 @@ int                       os::win32::_build_minor               = 0;
 bool                      os::win32::_processor_group_warning_displayed = false;
 bool                      os::win32::_job_object_processor_group_warning_displayed = false;
 
-bool getWindowsInstallationType(char* buffer, int bufferSize) {
-  HKEY hKey;
-  const char* subKey = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
-  const char* valueName = "InstallationType";
-
-  DWORD valueLength = bufferSize;
-
-  // Initialize buffer with empty string
-  buffer[0] = '\0';
-
-  // Open the registry key
-  if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, subKey, 0, KEY_READ, &hKey) != ERROR_SUCCESS) {
-    // Return empty buffer if key cannot be opened
-    return false;
-  }
-
-  // Query the value
-  if (RegQueryValueExA(hKey, valueName, nullptr, nullptr, (LPBYTE)buffer, &valueLength) != ERROR_SUCCESS) {
-    RegCloseKey(hKey);
-    buffer[0] = '\0';
-    return false;
-  }
-
-  RegCloseKey(hKey);
-  return true;
-}
-
 static bool isNanoServer() {
   const int BUFFER_SIZE = 256;
   char installationType[BUFFER_SIZE];
