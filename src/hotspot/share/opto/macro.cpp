@@ -3076,8 +3076,11 @@ void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
   _igvn.replace_node(check, C->top());
 }
 
-// FlatArrayCheckNode (array_or_klass1 array_or_klass2 ...) is expanded using
-// mark words if all inputs are arrays and all users are If nodes:
+// FlatArrayCheckNode inputs must be homogeneous: either all array inputs
+// (array1 array2 ...) or all klass inputs (klass1 klass2 ...).
+//
+// For array inputs whose users are all If nodes, the check is expanded using
+// mark words:
 //
 // long mark = array1.mark | array2.mark | ...;
 // long locked_bit = markWord::unlocked_value & array1.mark & array2.mark & ...;
@@ -3089,10 +3092,11 @@ void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
 //   ...
 // }
 //
-// Otherwise, it is expanded using the klass layout helpers:
+// For klass inputs, and for array inputs with a non-If user, the check is
+// expanded using the klass layout helpers. For array inputs, the klasses are
+// loaded first:
 //
-// int layout = klass(array_or_klass1).layout_helper |
-//              klass(array_or_klass2).layout_helper | ...;
+// int layout = klass1.layout_helper | klass2.layout_helper | ...;
 // if ((layout & Klass::_lh_array_tag_flat_value_bit_inplace) == 0) {
 //   ...
 // }
