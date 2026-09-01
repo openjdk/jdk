@@ -69,10 +69,20 @@ public class TestVectorFallbackInlining {
         }
     }
 
+    // The fallback is only late-inlined if it also passes the regular inlining heuristics.
+    // During warmup VectorSupport::insert is called from the interpreter often enough to be
+    // compiled on its own, and with assertions enabled its nmethod grows beyond
+    // InlineSmallCode, so C2 rejects it as "already compiled into a big method". Keep it
+    // inlinable so that the rules below only depend on the late inlining machinery.
+    private static final String FORCE_INLINE_FALLBACK =
+            "-XX:CompileCommand=inline,jdk.internal.vm.vector.VectorSupport::insert";
+
     public static void main(String[] args) {
         TestFramework.runWithFlags("--add-modules=jdk.incubator.vector",
+                                   FORCE_INLINE_FALLBACK,
                                    "-XX:+IncrementalInlineVector");
         TestFramework.runWithFlags("--add-modules=jdk.incubator.vector",
+                                   FORCE_INLINE_FALLBACK,
                                    "-XX:-IncrementalInlineVector");
     }
 
