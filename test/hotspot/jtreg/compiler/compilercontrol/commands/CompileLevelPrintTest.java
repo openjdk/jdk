@@ -26,7 +26,7 @@
  * @test
  * @bug 8313713 8386284
  * @summary Test -XX:CompileCommand=exclude and compileonly with different compilation levels,
- *          monitoring compilation events in VM -XX:+PrintCompilation and -XX:+PrintTieredEvents output
+ *          monitoring compilation events in VM -XX:+PrintCompilation output
  * @requires vm.compMode != "Xint" & vm.flavor == "server"
  *          & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *          & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
@@ -193,7 +193,6 @@ public class CompileLevelPrintTest {
                     "-Xbootclasspath/a:.",
                     "-XX:+PrintCompilation",
                     "-XX:+CIPrintCompilerName",
-                    "-XX:+PrintTieredEvents",
                     "-XX:+LogVMOutput",
                     "-XX:+LogCompilation",
                     "-XX:" + (tieredCompilation ? "+" : "-") + "TieredCompilation",
