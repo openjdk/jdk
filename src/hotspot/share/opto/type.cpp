@@ -1537,6 +1537,78 @@ void Type::typerr( const Type *t ) const {
   ShouldNotReachHere();
 }
 
+#ifdef ASSERT
+void Type::verify_meet_join() {
+  auto should_check = [](const Type* t1, const Type* t2) {
+    if (t1->base() > t2->base()) {
+      swap(t1, t2);
+    }
+
+    switch (t1->base()) {
+      case Bottom:
+      case Top:
+        return true;
+      case Array:
+      case Interfaces:
+      case Tuple:
+      case Function:
+        return false;
+      case DoubleBot:
+      case DoubleCon:
+      case DoubleTop:
+        return t2->isa_double() != nullptr;
+      case FloatBot:
+      case FloatCon:
+      case FloatTop:
+        return t2->isa_float() != nullptr;
+      case HalfFloatBot:
+      case HalfFloatCon:
+      case HalfFloatTop:
+        return t2->isa_half_float() != nullptr;
+      case AnyPtr:
+        return t2->isa_ptr() != nullptr;
+      case OopPtr:
+      case InstPtr:
+        return t2->isa_oopptr() != nullptr;
+      case AryPtr:
+        // When UseCompressedOops is false, not all AryPtr instances agree on whether their elems
+        // are compressed (e.g. TypeAryPtr::NARROWOOPS and TypeAryPtr::OOPS)
+        return t2->isa_oopptr() != nullptr && UseCompressedOops;
+      case InstKlassPtr:
+      case AryKlassPtr:
+        return t2->isa_klassptr() != nullptr;
+      case VectorA:
+      case VectorS:
+      case VectorD:
+      case VectorX:
+      case VectorY:
+      case VectorZ:
+      case VectorMask:
+        return t1 == t2;
+      default:
+        return t1->base() == t2->base();
+    }
+  };
+
+  ResourceMark rm;
+  const Dict* all_types = type_dict();
+  GrowableArray<const Type*> all_types_snapshot(all_types->Size());
+  for (DictI iter(all_types); iter.test(); ++iter) {
+    all_types_snapshot.append(static_cast<const Type*>(iter._key));
+  }
+
+  for (int i = 0; i < all_types_snapshot.length(); i++) {
+    const Type* t1 = all_types_snapshot.at(i);
+    for (int j = i; j < all_types_snapshot.length(); j++) {
+      const Type* t2 = all_types_snapshot.at(j);
+      if (should_check(t1, t2)) {
+        // This will invoke Type::check_fundamental_laws
+        t1->meet(t2);
+      }
+    }
+  }
+}
+#endif // ASSERT
 
 //=============================================================================
 // Convenience common pre-built types.
@@ -4974,7 +5046,7 @@ const Type* TypeAryPtr::xmeet_helper(const Type* t) const {
     int depth = meet_inline_depth(tp->inline_depth());
     switch (tp->ptr()) {
     case TopPTR:
-      return this;
+      return make(ptr, const_oop(), ary(), klass(), klass_is_exact(), offset, field_offset(), instance_id(), speculative, depth, is_autobox_cache());
     case BotPTR:
     case NotNull:
       return TypePtr::make(AnyPtr, ptr, offset, speculative, depth);
@@ -5787,7 +5859,7 @@ const Type* TypeInstKlassPtr::xmeet(const Type* t) const {
     PTR ptr = meet_ptr(tp->ptr());
     switch (tp->ptr()) {
     case TopPTR:
-      return this;
+      return make(ptr, instance_klass(), interfaces(), offset, flat_in_array());
     case Null:
       if( ptr == Null ) return TypePtr::make(AnyPtr, ptr, offset, tp->speculative(), tp->inline_depth());
     case AnyNull:
@@ -5823,7 +5895,7 @@ const Type* TypeInstKlassPtr::xjoin(const Type* t) const {
           return TypePtr::make(AnyPtr, ptr, offset, tp->speculative(), tp->inline_depth());
         case NotNull:
         case BotPTR:
-          return make(ptr, klass(), interfaces(), offset);
+          return make(ptr, klass(), interfaces(), offset, flat_in_array());
         default:
           typerr(t);
       }
@@ -6276,7 +6348,7 @@ const Type* TypeAryKlassPtr::xmeet(const Type* t) const {
     PTR ptr = meet_ptr(tp->ptr());
     switch (tp->ptr()) {
     case TopPTR:
-      return this;
+      return make(ptr, elem(), klass(), offset, is_not_flat(), is_not_null_free(), is_flat(), is_null_free(), is_atomic(), is_refined_type());
     case Null:
       if( ptr == Null ) return TypePtr::make(AnyPtr, ptr, offset, tp->speculative(), tp->inline_depth());
     case AnyNull:
