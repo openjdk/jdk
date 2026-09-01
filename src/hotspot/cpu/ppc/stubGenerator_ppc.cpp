@@ -584,7 +584,6 @@ class StubGenerator: public StubCodeGenerator {
     address start = __ function_entry();
 
     // Registers for parameters
-        // Registers for parameters
     Register state = R3_ARG1;                     // long[] state
     Register subkeyH = R4_ARG2;                   // long[] subH
     Register data = R5_ARG3;                      // byte[] data
@@ -616,8 +615,8 @@ class StubGenerator: public StubCodeGenerator {
     __ sldi(temp1, temp1, 56);
     __ vspltisb(vZero, 0);
     __ mtvrd(vConstC2, temp1);
-    __ lxvd2x(vH->to_vsr(), subkeyH);               // long[] - doubleword semantics
-    __ lxvd2x(vState->to_vsr(), state);             // long[] - doubleword semantics
+    __ lxvd2x(vH->to_vsr(), subkeyH);
+    __ lxvd2x(vState->to_vsr(), state);
     // Operations to obtain lower and higher bytes of subkey H.
     __ vspltisb(vReducedLow, 1);
     __ vspltisb(vTmp10, 7);
