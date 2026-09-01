@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,9 +33,6 @@ import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.hprof.model.JavaClass;
-import jdk.test.lib.hprof.model.JavaHeapObject;
-import jdk.test.lib.hprof.model.JavaObject;
-import jdk.test.lib.hprof.model.JavaThing;
 import jdk.test.lib.hprof.model.Snapshot;
 import jdk.test.lib.hprof.parser.Reader;
 
@@ -146,7 +143,8 @@ public class ClassLoaderFieldsTest {
             Asserts.assertSame(testClass.getLoader(),
                                loaderClass.getInstances(false).nextElement());
 
-            boolean hasClasses = Arrays.stream(loaderClass.getFields())
+            JavaClass classLoaderClass = snapshot.findClass("java.lang.ClassLoader");
+            boolean hasClasses = Arrays.stream(classLoaderClass.getFields())
                                        .anyMatch(field -> field.getName().equals("classes"));
             Asserts.assertFalse(hasClasses);
         }
