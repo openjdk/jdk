@@ -25,7 +25,6 @@
  */
 
 #include "gc/shared/markBitMap.inline.hpp"
-#include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.hpp"
 #include "runtime/orderAccess.hpp"
@@ -42,7 +41,7 @@ bool ShenandoahMarkingContext::is_bitmap_clear() const {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   size_t num_regions = heap->num_regions();
   for (size_t idx = 0; idx < num_regions; idx++) {
-    if (heap->region_affiliation(idx) == FREE) {
+    if (heap->is_region_free(idx)) {
       continue;
     }
 

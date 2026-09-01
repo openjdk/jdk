@@ -23,7 +23,6 @@
  *
  */
 
-#include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
@@ -631,7 +630,7 @@ void ShenandoahScanRemembered::roots_do(OopIterateClosure* cl) {
   bool old_bitmap_stable = heap->old_generation()->is_mark_complete();
   log_debug(gc, remset)("Scan remembered set using bitmap: %s", BOOL_TO_STR(old_bitmap_stable));
   for (size_t i = 0, n = heap->num_regions(); i < n; ++i) {
-    if (heap->region_affiliation(i) != OLD_GENERATION) {
+    if (!heap->is_region_old(i)) {
       continue;
     }
 

@@ -1441,7 +1441,7 @@ void ShenandoahVerifier::verify_rem_set_before_mark() {
 
   ShenandoahScanRemembered* scanner = old_generation->card_scan();
   for (size_t i = 0, n = _heap->num_regions(); i < n; ++i) {
-    if (_heap->region_affiliation(i) != OLD_GENERATION) {
+    if (!_heap->is_region_old(i)) {
       continue;
     }
 
@@ -1458,7 +1458,7 @@ void ShenandoahVerifier::verify_rem_set_after_full_gc() {
 
   ShenandoahWriteTableScanner scanner(ShenandoahGenerationalHeap::heap()->old_generation()->card_scan());
   for (size_t i = 0, n = _heap->num_regions(); i < n; ++i) {
-    if (_heap->region_affiliation(i) != OLD_GENERATION) {
+    if (!_heap->is_region_old(i)) {
       continue;
     }
 
@@ -1479,7 +1479,7 @@ void ShenandoahVerifier::verify_rem_set_before_update_ref() {
 
   ShenandoahWriteTableScanner scanner(_heap->old_generation()->card_scan());
   for (size_t i = 0, n = _heap->num_regions(); i < n; ++i) {
-    if (_heap->region_affiliation(i) != OLD_GENERATION) {
+    if (!_heap->is_region_old(i)) {
       continue;
     }
 

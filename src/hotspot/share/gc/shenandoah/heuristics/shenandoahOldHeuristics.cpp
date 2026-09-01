@@ -24,7 +24,6 @@
  */
 
 #include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
-#include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
@@ -415,7 +414,7 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
   size_t live_data = 0;
   RegionData* candidates = _region_data;
   for (size_t i = 0; i < num_regions; i++) {
-    if (heap->region_affiliation(i) != OLD_GENERATION) {
+    if (!heap->is_region_old(i)) {
       continue;
     }
 

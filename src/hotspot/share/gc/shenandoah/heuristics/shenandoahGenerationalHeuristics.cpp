@@ -24,7 +24,6 @@
  */
 
 #include "gc/shenandoah/heuristics/shenandoahGenerationalHeuristics.hpp"
-#include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "gc/shenandoah/shenandoahAllocRate.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
@@ -109,7 +108,7 @@ size_t ShenandoahGenerationalHeuristics::prepare_regions_for_promotion(Shenandoa
   assert_no_in_place_promotions();
   size_t candidates = 0;
   for (size_t i = 0, num_regions = heap->num_regions(); i < num_regions; i++) {
-    if (heap->region_affiliation(i) != YOUNG_GENERATION) {
+    if (!heap->is_region_young(i)) {
       // Skip regions that aren't young
       continue;
     }

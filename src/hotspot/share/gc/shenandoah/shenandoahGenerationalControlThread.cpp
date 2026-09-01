@@ -24,7 +24,6 @@
  *
  */
 
-#include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
@@ -219,7 +218,7 @@ void ShenandoahGenerationalControlThread::maybe_print_young_region_ages() const 
     LogStream ls(lt);
     AgeTable young_region_ages(false);
     for (uint i = 0; i < _heap->num_regions(); ++i) {
-      if (_heap->region_affiliation(i) != YOUNG_GENERATION) {
+      if (!_heap->is_region_young(i)) {
         continue;
       }
 
