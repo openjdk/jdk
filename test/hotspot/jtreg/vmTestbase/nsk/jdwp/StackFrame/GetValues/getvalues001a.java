@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 package nsk.jdwp.StackFrame.GetValues;
 
+import jdk.test.lib.thread.ThreadWrapper;
 import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdwp.*;
@@ -74,7 +75,7 @@ public class getvalues001a {
             log.display("Creating object of tested class");
             TestedObjectClass.object = new TestedObjectClass();
             log.display("Creating tested thread");
-            TestedObjectClass.thread = new TestedThreadClass(THREAD_NAME);
+            TestedObjectClass.thread = new TestedThreadClass(THREAD_NAME).getThread();
 
             // start the thread and wait for notification from it
             synchronized (threadReady) {
@@ -123,7 +124,7 @@ public class getvalues001a {
     }
 
     // tested thread class
-    public static class TestedThreadClass extends Thread {
+    public static class TestedThreadClass extends ThreadWrapper {
 
         TestedThreadClass(String name) {
             super(name);
@@ -144,7 +145,7 @@ public class getvalues001a {
     public static class TestedObjectClass {
 
         // field with the tested thread and object values
-        public static volatile TestedThreadClass thread = null;
+        public static volatile Thread thread = null;
         public static volatile TestedObjectClass object = null;
 
         public void testedMethod() {

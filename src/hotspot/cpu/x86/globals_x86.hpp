@@ -86,6 +86,9 @@ define_pd_global(bool, PreserveFramePointer, false);
 
 define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
 
+define_pd_global(bool, InlineTypePassFieldsAsArgs, true);
+define_pd_global(bool, InlineTypeReturnedAsFields, true);
+
 #define ARCH_FLAGS(develop,                                                 \
                    product,                                                 \
                    range,                                                   \
@@ -105,7 +108,7 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
           "Highest supported AVX instructions set on x86/x64")              \
           range(0, 3)                                                       \
                                                                             \
-  product(bool, UseAPX, false, EXPERIMENTAL,                                \
+  product(bool, UseAPX, false,                                              \
           "Use Intel Advanced Performance Extensions")                      \
                                                                             \
   product(bool, UseKNLSetting, false, DIAGNOSTIC,                           \

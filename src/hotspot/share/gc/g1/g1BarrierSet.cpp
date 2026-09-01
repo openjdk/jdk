@@ -99,16 +99,12 @@ G1BarrierSet::write_ref_array_pre_work(T* dst, size_t count) {
   }
 }
 
-void G1BarrierSet::write_ref_array_pre(oop* dst, size_t count, bool dest_uninitialized) {
-  if (!dest_uninitialized) {
-    write_ref_array_pre_work(dst, count);
-  }
+void G1BarrierSet::write_ref_array_pre(oop* dst, size_t count) {
+  write_ref_array_pre_work(dst, count);
 }
 
-void G1BarrierSet::write_ref_array_pre(narrowOop* dst, size_t count, bool dest_uninitialized) {
-  if (!dest_uninitialized) {
-    write_ref_array_pre_work(dst, count);
-  }
+void G1BarrierSet::write_ref_array_pre(narrowOop* dst, size_t count) {
+  write_ref_array_pre_work(dst, count);
 }
 
 void G1BarrierSet::write_region(MemRegion mr) {

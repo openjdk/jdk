@@ -386,28 +386,28 @@ private:
   G1HeapRegionManager* _hrm;
 
 public:
-  uint _old_count;
-  uint _humongous_count;
-  uint _free_count;
+  uint _num_old_regions;
+  uint _num_humongous_regions;
+  uint _num_free_regions;
 
   VerifyRegionListsClosure(G1HeapRegionSet* old_set,
                            G1HeapRegionSet* humongous_set,
                            G1HeapRegionManager* hrm) :
     _old_set(old_set), _humongous_set(humongous_set), _hrm(hrm),
-    _old_count(), _humongous_count(), _free_count(){ }
+    _num_old_regions(), _num_humongous_regions(), _num_free_regions(){ }
 
   bool do_heap_region(G1HeapRegion* hr) {
     if (hr->is_young()) {
       // TODO
     } else if (hr->is_humongous()) {
       assert(hr->containing_set() == _humongous_set, "Heap region %u is humongous but not in humongous set.", hr->hrm_index());
-      _humongous_count++;
+      _num_humongous_regions++;
     } else if (hr->is_empty()) {
       assert(_hrm->is_free(hr), "Heap region %u is empty but not on the free list.", hr->hrm_index());
-      _free_count++;
+      _num_free_regions++;
     } else if (hr->is_old()) {
       assert(hr->containing_set() == _old_set, "Heap region %u is old but not in the old set.", hr->hrm_index());
-      _old_count++;
+      _num_old_regions++;
     } else {
       fatal("Invalid region type for region %u (%s)", hr->hrm_index(), hr->get_short_type_str());
     }
@@ -415,9 +415,9 @@ public:
   }
 
   void verify_counts(G1HeapRegionSet* old_set, G1HeapRegionSet* humongous_set, G1HeapRegionManager* free_list) {
-    guarantee(old_set->length() == _old_count, "Old set count mismatch. Expected %u, actual %u.", old_set->length(), _old_count);
-    guarantee(humongous_set->length() == _humongous_count, "Hum set count mismatch. Expected %u, actual %u.", humongous_set->length(), _humongous_count);
-    guarantee(free_list->num_free_regions() == _free_count, "Free list count mismatch. Expected %u, actual %u.", free_list->num_free_regions(), _free_count);
+    guarantee(old_set->num_regions() == _num_old_regions, "Old set size mismatch. Expected %u, actual %u.", old_set->num_regions(), _num_old_regions);
+    guarantee(humongous_set->num_regions() == _num_humongous_regions, "Hum set size mismatch. Expected %u, actual %u.", humongous_set->num_regions(), _num_humongous_regions);
+    guarantee(free_list->num_free_regions() == _num_free_regions, "Free list size mismatch. Expected %u, actual %u.", free_list->num_free_regions(), _num_free_regions);
   }
 };
 

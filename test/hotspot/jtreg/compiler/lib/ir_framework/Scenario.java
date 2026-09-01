@@ -23,6 +23,8 @@
 
 package compiler.lib.ir_framework;
 
+import compiler.lib.ir_framework.shared.SystemProperty;
+import compiler.lib.ir_framework.shared.SystemProperty.Mode;
 import compiler.lib.ir_framework.shared.TestRunException;
 
 import java.util.*;
@@ -44,7 +46,7 @@ import java.util.stream.Collectors;
  */
 public class Scenario {
     private static final String ADDITIONAL_SCENARIO_FLAGS_PROPERTY = System.getProperty("ScenarioFlags", "");
-    private static final String SCENARIOS_PROPERTY = System.getProperty("Scenarios", "");
+    private static final String SCENARIOS_PROPERTY = SystemProperty.getCaseInsensitive(Mode.CASE_INSENSITIVE_EMPTY_DEFAULT, "scenario", "scenarios");
     private static final List<String> ADDITIONAL_SCENARIO_FLAGS;
     private static final Set<Integer> ENABLED_SCENARIOS;
 
@@ -99,6 +101,17 @@ public class Scenario {
     public void addFlags(String... flags) {
         if (flags != null) {
             this.flags.addAll(Arrays.asList(flags));
+        }
+    }
+
+    /**
+     * Prepend additional VM flags to this scenario.
+     *
+     * @param flags the additional scenario VM flags.
+     */
+    public void prependFlags(String... flags) {
+        if (flags != null) {
+            this.flags.addAll(0, Arrays.asList(flags));
         }
     }
 
