@@ -2010,7 +2010,32 @@ void os::print_os_info(outputStream* st) {
   VM_Version::print_platform_virtualization_info(st);
 }
 
-bool getWindowsInstallationType(char* buffer, int bufferSize);
+static bool getWindowsInstallationType(char* buffer, int bufferSize) {
+  HKEY hKey;
+  const char* subKey = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
+  const char* valueName = "InstallationType";
+
+  DWORD valueLength = bufferSize;
+
+  // Initialize buffer with empty string
+  buffer[0] = '\0';
+
+  // Open the registry key
+  if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, subKey, 0, KEY_READ, &hKey) != ERROR_SUCCESS) {
+    // Return empty buffer if key cannot be opened
+    return false;
+  }
+
+  // Query the value
+  if (RegQueryValueExA(hKey, valueName, nullptr, nullptr, (LPBYTE)buffer, &valueLength) != ERROR_SUCCESS) {
+    RegCloseKey(hKey);
+    buffer[0] = '\0';
+    return false;
+  }
+
+  RegCloseKey(hKey);
+  return true;
+}
 
 void os::win32::print_windows_version(outputStream* st) {
   bool is_workstation = !IsWindowsServer();
@@ -2102,9 +2127,8 @@ void os::win32::print_windows_version(outputStream* st) {
   // InstallationType (e.g. Server Core, Nano server)
   const int BUFFER_SIZE = 256;
   char installationType[BUFFER_SIZE];
-  bool res = getWindowsInstallationType(installationType, BUFFER_SIZE);
-  if (res) {
-    st->print(" InstallationType %s", installationType);
+  if (getWindowsInstallationType(installationType, BUFFER_SIZE)) {
+    st->print(" InstallationType: \"%s\"", installationType);
   }
   st->cr();
 }
@@ -4311,7 +4335,7 @@ bool getWindowsInstallationType(char* buffer, int bufferSize) {
   return true;
 }
 
-bool isNanoServer() {
+static bool isNanoServer() {
   const int BUFFER_SIZE = 256;
   char installationType[BUFFER_SIZE];
   getWindowsInstallationType(installationType, BUFFER_SIZE);
