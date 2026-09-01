@@ -2764,6 +2764,28 @@ operand immL5()
   interface(CONST_INTER);
 %}
 
+// Zibi branch-with-immediate comparison constant (int): -1 or [1, 31].
+operand immIZibi()
+%{
+  predicate(UseZibi && Assembler::is_zibi_cimm((int64_t)n->get_int()));
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Zibi branch-with-immediate comparison constant (long): -1 or [1, 31].
+operand immLZibi()
+%{
+  predicate(UseZibi && Assembler::is_zibi_cimm(n->get_long()));
+  match(ConL);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 // Integer operands 64 bit
 // 64 bit immediate
 operand immL()
@@ -10085,6 +10107,84 @@ instruct cmpP_narrowOop_imm0_branch(cmpOpEqNe cmp, iRegN op1, immP0 zero, label 
   ins_short_branch(1);
 %}
 
+// Zibi: compare signed int with small immediate and branch near instructions
+instruct cmpI_imm_branch(cmpOpEqNe cmp, iRegI op1, immIZibi imm, label lbl)
+%{
+  predicate(UseZibi);
+  // Same match rule as `far_cmpI_imm_branch'.
+  match(If cmp (CmpI op1 imm));
+
+  effect(USE lbl);
+
+  ins_cost(BRANCH_COST);
+  format %{ "b$cmp  $op1, $imm, $lbl\t#@cmpI_imm_branch" %}
+
+  ins_encode %{
+    __ cmpi_branch($cmp$$cmpcode, as_Register($op1$$reg), $imm$$constant, *($lbl$$label));
+  %}
+
+  ins_pipe(pipe_cmp_branch);
+  ins_short_branch(1);
+%}
+
+instruct cmpI_imm_loop(cmpOpEqNe cmp, iRegI op1, immIZibi imm, label lbl)
+%{
+  predicate(UseZibi);
+  // Same match rule as `far_cmpI_imm_loop'.
+  match(CountedLoopEnd cmp (CmpI op1 imm));
+
+  effect(USE lbl);
+
+  ins_cost(BRANCH_COST);
+  format %{ "b$cmp  $op1, $imm, $lbl\t#@cmpI_imm_loop" %}
+
+  ins_encode %{
+    __ cmpi_branch($cmp$$cmpcode, as_Register($op1$$reg), $imm$$constant, *($lbl$$label));
+  %}
+
+  ins_pipe(pipe_cmp_branch);
+  ins_short_branch(1);
+%}
+
+// Zibi: compare signed long with small immediate and branch near instructions
+instruct cmpL_imm_branch(cmpOpEqNe cmp, iRegL op1, immLZibi imm, label lbl)
+%{
+  predicate(UseZibi);
+  // Same match rule as `far_cmpL_imm_branch'.
+  match(If cmp (CmpL op1 imm));
+
+  effect(USE lbl);
+
+  ins_cost(BRANCH_COST);
+  format %{ "b$cmp  $op1, $imm, $lbl\t#@cmpL_imm_branch" %}
+
+  ins_encode %{
+    __ cmpi_branch($cmp$$cmpcode, as_Register($op1$$reg), $imm$$constant, *($lbl$$label));
+  %}
+
+  ins_pipe(pipe_cmp_branch);
+  ins_short_branch(1);
+%}
+
+instruct cmpL_imm_loop(cmpOpEqNe cmp, iRegL op1, immLZibi imm, label lbl)
+%{
+  predicate(UseZibi);
+  // Same match rule as `far_cmpL_imm_loop'.
+  match(CountedLoopEnd cmp (CmpL op1 imm));
+
+  effect(USE lbl);
+
+  ins_cost(BRANCH_COST);
+  format %{ "b$cmp  $op1, $imm, $lbl\t#@cmpL_imm_loop" %}
+
+  ins_encode %{
+    __ cmpi_branch($cmp$$cmpcode, as_Register($op1$$reg), $imm$$constant, *($lbl$$label));
+  %}
+
+  ins_pipe(pipe_cmp_branch);
+  ins_short_branch(1);
+%}
+
 // Patterns for far (20KiB) variants
 
 instruct far_cmpFlag_branch(cmpOp cmp, rFlagsReg cr, label lbl) %{
@@ -10437,6 +10537,68 @@ instruct far_cmpP_narrowOop_imm0_branch(cmpOpEqNe cmp, iRegN op1, immP0 zero, la
   %}
 
   ins_pipe(pipe_cmpz_branch);
+%}
+
+// Zibi: compare signed int with small immediate and branch far instructions
+instruct far_cmpI_imm_branch(cmpOpEqNe cmp, iRegI op1, immIZibi imm, label lbl) %{
+  predicate(UseZibi);
+  match(If cmp (CmpI op1 imm));
+  effect(USE lbl);
+
+  ins_cost(BRANCH_COST * 2);
+  format %{ "far_b$cmp  $op1, $imm, $lbl\t#@far_cmpI_imm_branch" %}
+
+  ins_encode %{
+    __ cmpi_branch($cmp$$cmpcode, as_Register($op1$$reg), $imm$$constant, *($lbl$$label), /* is_far */ true);
+  %}
+
+  ins_pipe(pipe_cmp_branch);
+%}
+
+instruct far_cmpI_imm_loop(cmpOpEqNe cmp, iRegI op1, immIZibi imm, label lbl) %{
+  predicate(UseZibi);
+  match(CountedLoopEnd cmp (CmpI op1 imm));
+  effect(USE lbl);
+
+  ins_cost(BRANCH_COST * 2);
+  format %{ "far_b$cmp  $op1, $imm, $lbl\t#@far_cmpI_imm_loop" %}
+
+  ins_encode %{
+    __ cmpi_branch($cmp$$cmpcode, as_Register($op1$$reg), $imm$$constant, *($lbl$$label), /* is_far */ true);
+  %}
+
+  ins_pipe(pipe_cmp_branch);
+%}
+
+// Zibi: compare signed long with small immediate and branch far instructions
+instruct far_cmpL_imm_branch(cmpOpEqNe cmp, iRegL op1, immLZibi imm, label lbl) %{
+  predicate(UseZibi);
+  match(If cmp (CmpL op1 imm));
+  effect(USE lbl);
+
+  ins_cost(BRANCH_COST * 2);
+  format %{ "far_b$cmp  $op1, $imm, $lbl\t#@far_cmpL_imm_branch" %}
+
+  ins_encode %{
+    __ cmpi_branch($cmp$$cmpcode, as_Register($op1$$reg), $imm$$constant, *($lbl$$label), /* is_far */ true);
+  %}
+
+  ins_pipe(pipe_cmp_branch);
+%}
+
+instruct far_cmpL_imm_loop(cmpOpEqNe cmp, iRegL op1, immLZibi imm, label lbl) %{
+  predicate(UseZibi);
+  match(CountedLoopEnd cmp (CmpL op1 imm));
+  effect(USE lbl);
+
+  ins_cost(BRANCH_COST * 2);
+  format %{ "far_b$cmp  $op1, $imm, $lbl\t#@far_cmpL_imm_loop" %}
+
+  ins_encode %{
+    __ cmpi_branch($cmp$$cmpcode, as_Register($op1$$reg), $imm$$constant, *($lbl$$label), /* is_far */ true);
+  %}
+
+  ins_pipe(pipe_cmp_branch);
 %}
 
 // ============================================================================

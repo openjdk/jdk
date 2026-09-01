@@ -2040,6 +2040,21 @@ void C2_MacroAssembler::enc_cmpEqNe_imm0_branch(int cmpFlag, Register op1, Label
   }
 }
 
+void C2_MacroAssembler::cmpi_branch(int cmpFlag, Register op1, int64_t constant, Label& L, bool is_far) {
+  assert(UseZibi, "must be");
+  uint32_t cimm = Assembler::encode_zibi_cimm(constant);
+  switch (cmpFlag) {
+    case BoolTest::eq:
+      beqi(op1, cimm, L, is_far);
+      break;
+    case BoolTest::ne:
+      bnei(op1, cimm, L, is_far);
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+}
+
 void C2_MacroAssembler::enc_cmove(int cmpFlag, Register op1, Register op2, Register dst, Register src) {
   if (dst != src) {
     bool is_unsigned = (cmpFlag & unsigned_branch_mask) == unsigned_branch_mask;

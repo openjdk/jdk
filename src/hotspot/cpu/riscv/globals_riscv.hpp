@@ -117,6 +117,8 @@ define_pd_global(bool, InlineTypeReturnedAsFields, false);
   product(bool, UseZicbop, false, EXPERIMENTAL, "Use Zicbop instructions")       \
   product(bool, UseZicboz, false, EXPERIMENTAL, "Use Zicboz instructions")       \
   product(bool, UseZicond, false, DIAGNOSTIC, "Use Zicond instructions")         \
+  product(bool, UseZibi, false, EXPERIMENTAL,                                    \
+          "Use Zibi (branch with immediate) instructions")                       \
   product(bool, UseZihintpause, false, EXPERIMENTAL,                             \
           "Use Zihintpause instructions")                                        \
   product(bool, UseZtso, false, EXPERIMENTAL, "Assume Ztso memory model")        \
