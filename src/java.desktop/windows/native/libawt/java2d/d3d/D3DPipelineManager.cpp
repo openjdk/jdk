@@ -400,9 +400,8 @@ BOOL D3DPPLM_OsVersionMatches(USHORT osInfo) {
             } else {
                 if (osvi.dwMajorVersion == 6 && osvi.dwMinorVersion >= 1) {
                     if (osvi.wProductType == VER_NT_WORKSTATION) {
-                        J2dRlsTrace(J2D_TRACE_INFO, "OS_WINDOWS7 or newer\n");
-                        // this detects also Win8
-                        currentOS = OS_WINDOWS7;
+                        J2dRlsTrace(J2D_TRACE_INFO, "OS_WINDOWS_7_OR_8\n");
+                        currentOS = OS_WINDOWS_7_OR_8;
                     } else {
                         J2dRlsTrace(J2D_TRACE_INFO, "OS_WINSERV_2008R2 or newer\n");
                         // this detects also 2012 (R2)
